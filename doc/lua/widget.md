@@ -377,7 +377,7 @@ Draws a polygon on the canvas.
 
 Draws a list of filled triangles to the canvas.
 
-##### `void` drawText(`String` text, `Json` textPositioning, `unsigned` fontSize, [`Color` color])
+##### `void` drawText(`String` text, `Json` textPositioning, `unsigned` fontSize, [`Color` color], [`float` lineSpacing], [`String` directives])
 
 Draws text on the canvas. textPositioning is in the format:
 

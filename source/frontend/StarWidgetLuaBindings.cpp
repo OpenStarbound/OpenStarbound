@@ -78,8 +78,8 @@ struct LuaUserDataMethods<CanvasWidgetPtr> {
           canvasWidget->drawTriangles(tris, color.value(Color::White).toRgba());
         });
     methods.registerMethod("drawText",
-        [](CanvasWidgetPtr canvasWidget, String text, Json tp, unsigned fontSize, Maybe<Color> color) {
-          canvasWidget->drawText(text, TextPositioning(tp), fontSize, color.value(Color::White).toRgba());
+        [](CanvasWidgetPtr canvasWidget, String text, Json tp, unsigned fontSize, Maybe<Color> color, Maybe<float> lineSpacing, Maybe<String> directives) {
+          canvasWidget->drawText(text, TextPositioning(tp), fontSize, color.value(Color::White).toRgba(), FontMode::Normal, lineSpacing.value(DefaultLineSpacing), directives.value(""));
         });
 
     return methods;

@@ -379,9 +379,16 @@ RectF TextPainter::doRenderGlyph(String::Char c, TextPositioning const& position
   if (reallyRender) {
     if ((int)m_renderSettings.mode & (int)FontMode::Shadow) {
       Color shadow = Color::Black;
-      shadow.setAlpha(m_renderSettings.color[3]);
+      uint8_t alphaU = m_renderSettings.color[3];
+      if (alphaU != 255) {
+        float alpha = byteToFloat(alphaU);
+        shadow.setAlpha(floatToByte(alpha * (1.5f - 0.5f * alpha)));
+      }
+      else
+        shadow.setAlpha(alphaU);
+
+      //Kae: Draw only one shadow glyph instead of stacking two, alpha modified to appear perceptually the same as vanilla
       renderGlyph(c, position.pos + Vec2F(hOffset, vOffset - 2), m_fontSize, 1, shadow.toRgba(), m_processingDirectives);
-      renderGlyph(c, position.pos + Vec2F(hOffset, vOffset - 1), m_fontSize, 1, shadow.toRgba(), m_processingDirectives);
     }
 
     renderGlyph(c, position.pos + Vec2F(hOffset, vOffset), m_fontSize, 1, m_renderSettings.color, m_processingDirectives);
@@ -395,8 +402,9 @@ void TextPainter::renderGlyph(String::Char c, Vec2F const& screenPos, unsigned f
   if (!fontSize)
     return;
 
-  auto texture = m_fontTextureGroup.glyphTexture(c, fontSize, processingDirectives);
-  m_renderer->render(renderTexturedRect(move(texture), Vec2F(screenPos), scale, color, 0.0f));
+  const FontTextureGroup::GlyphTexture& glyphTexture = m_fontTextureGroup.glyphTexture(c, fontSize, processingDirectives);
+  Vec2F offset = glyphTexture.processingOffset * (scale * 0.5f); //Kae: Re-center the glyph if the image scale was changed by the directives (it is positioned from the bottom left) 
+  m_renderer->render(renderTexturedRect(glyphTexture.texture, Vec2F(screenPos) + offset, scale, color, 0.0f));
 }
 
 }

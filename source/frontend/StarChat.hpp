@@ -68,11 +68,13 @@ private:
   float m_chatVisTime;
   float m_fadeRate;
   unsigned m_fontSize;
+  String m_fontDirectives;
   float m_chatLineHeight;
   unsigned m_chatHistoryLimit;
   int m_historyOffset;
 
   CanvasWidgetPtr m_chatLog;
+  Vec2I m_chatLogPadding;
 
   ImageStretchWidgetPtr m_background;
   int m_defaultHeight;

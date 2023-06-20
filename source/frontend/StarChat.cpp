@@ -21,7 +21,9 @@ Chat::Chat(UniverseClientPtr client) : m_client(client) {
 
   auto assets = Root::singleton().assets();
   m_timeChatLastActive = Time::monotonicMilliseconds();
-  m_fontSize = assets->json("/interface/chat/chat.config:config.font.baseSize").toInt();
+  auto fontConfig = assets->json("/interface/chat/chat.config:config.font");
+  m_fontSize = fontConfig.getInt("baseSize");
+  m_fontDirectives = fontConfig.queryString("directives", "");
   m_chatLineHeight = assets->json("/interface/chat/chat.config:config.lineHeight").toFloat();
   m_chatVisTime = assets->json("/interface/chat/chat.config:config.visTime").toFloat();
   m_fadeRate = assets->json("/interface/chat/chat.config:config.fadeRate").toDouble();
@@ -69,6 +71,13 @@ Chat::Chat(UniverseClientPtr client) : m_client(client) {
   m_say = fetchChild<LabelWidget>("say");
 
   m_chatLog = fetchChild<CanvasWidget>("chatLog");
+  if (auto logPadding = fontConfig.optQuery("padding")) {
+    m_chatLogPadding = jsonToVec2I(logPadding.get());
+    m_chatLog->setSize(m_chatLog->size() + m_chatLogPadding * 2);
+    m_chatLog->setPosition(m_chatLog->position() - m_chatLogPadding);
+  }
+  else
+    m_chatLogPadding = Vec2I();
 
   m_bottomButton = fetchChild<ButtonWidget>("bottomButton");
   m_upButton = fetchChild<ButtonWidget>("upButton");
@@ -224,7 +233,7 @@ void Chat::renderImpl() {
   m_say->setColor(fadeGreen);
 
   m_chatLog->clear();
-  Vec2I chatMin;
+  Vec2I chatMin = m_chatLogPadding;
   int messageIndex = -m_historyOffset;
 
   GuiContext& guiContext = GuiContext::singleton();
@@ -249,7 +258,7 @@ void Chat::renderImpl() {
 
     float messageHeight = 0;
     float lineHeightMargin =  + ((m_chatLineHeight * m_fontSize) - m_fontSize);
-    unsigned wrapWidth = m_chatLog->size()[0];
+    unsigned wrapWidth = m_chatLog->size()[0] - m_chatLogPadding[0];
 
     if (message.portrait != "") {
       TextPositioning tp = {Vec2F(chatMin +  m_portraitTextOffset), HorizontalAnchor::LeftAnchor, VerticalAnchor::VMidAnchor, (wrapWidth - m_portraitTextOffset[0])};
@@ -262,13 +271,13 @@ void Chat::renderImpl() {
       m_chatLog->drawImage(m_portraitBackground, Vec2F(imagePosition), 1.0f, fade);
       m_chatLog->drawImage(message.portrait, Vec2F(imagePosition + m_portraitImageOffset), m_portraitScale, fade);
       tp.pos += Vec2F(0, floor(messageHeight / 2));
-      m_chatLog->drawText(messageString, tp, m_fontSize, fade, FontMode::Normal, m_chatLineHeight);
+      m_chatLog->drawText(messageString, tp, m_fontSize, fade, FontMode::Normal, m_chatLineHeight, m_fontDirectives);
 
     } else {
       TextPositioning tp = {Vec2F(chatMin), HorizontalAnchor::LeftAnchor, VerticalAnchor::BottomAnchor, wrapWidth};
       messageHeight = guiContext.determineInterfaceTextSize(messageString, tp).size()[1] + lineHeightMargin;
 
-      m_chatLog->drawText(messageString, tp, m_fontSize, fade, FontMode::Normal, m_chatLineHeight);
+      m_chatLog->drawText(messageString, tp, m_fontSize, fade, FontMode::Normal, m_chatLineHeight, m_fontDirectives);
     }
 
     chatMin[1] += ceil(messageHeight);

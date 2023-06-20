@@ -1,0 +1,17 @@
+{
+  "config" : {
+    "font" : {
+      "directives" : "",
+      "padding" : [0, 0] // Padding to prevent border clipping at the edges of the log canvas while keeping compatible with mods that patch the canvas size
+    },
+    "colors" : {
+      "local" : "^white;",
+      "party" : "^blue;",
+      "broadcast" : "^yellow;",
+      "whisper" : "^pink;",
+      "commandResult" : "^lightgray;",
+      "radioMessage" : "^cyan;",
+      "world" : "^cyan;"
+    }
+  }
+}

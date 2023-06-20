@@ -827,29 +827,36 @@ Json Assets::readJson(String const& path) const {
     Json result = inputUtf8Json(streamData.begin(), streamData.end(), false);
     for (auto const& pair : m_files.get(path).patchSources) {
       auto patchStream = pair.second->read(pair.first);
-      auto patchData = inputUtf8Json(patchStream.begin(), patchStream.end(), false).toArray();
-      try {
-        if (patchData.size()) {
-          if (patchData.at(0).type() == Json::Type::Array) {
-            for (auto const& patch : patchData) {
+      auto patchJson = inputUtf8Json(patchStream.begin(), patchStream.end(), false);
+      if (patchJson.isType(Json::Type::Array)) {
+        auto patchData = patchJson.toArray();
+        try {
+          if (patchData.size()) {
+            if (patchData.at(0).type() == Json::Type::Array) {
+              for (auto const& patch : patchData) {
+                try {
+                  result = jsonPatch(result, patch.toArray());
+                } catch (JsonPatchTestFail const& e) {
+                  Logger::debug("Patch test failure from file %s in source: %s. Caused by: %s", pair.first, m_assetSourcePaths.getLeft(pair.second), e.what());
+                }
+              }
+            } else if (patchData.at(0).type() == Json::Type::Object) {
               try {
-                result = jsonPatch(result, patch.toArray());
+                result = jsonPatch(result, patchData);
               } catch (JsonPatchTestFail const& e) {
                 Logger::debug("Patch test failure from file %s in source: %s. Caused by: %s", pair.first, m_assetSourcePaths.getLeft(pair.second), e.what());
               }
+            } else {
+              throw JsonPatchException(strf("Patch data is wrong type: %s", Json::typeName(patchData.at(0).type())));
             }
-          } else if (patchData.at(0).type() == Json::Type::Object) {
-            try {
-              result = jsonPatch(result, patchData);
-            } catch (JsonPatchTestFail const& e) {
-              Logger::debug("Patch test failure from file %s in source: %s. Caused by: %s", pair.first, m_assetSourcePaths.getLeft(pair.second), e.what());
-            }
-          } else {
-            throw JsonPatchException(strf("Patch data is wrong type: %s", Json::typeName(patchData.at(0).type())));
           }
+        } catch (JsonPatchException const& e) {
+          Logger::error("Could not apply patch from file %s in source: %s.  Caused by: %s", pair.first, m_assetSourcePaths.getLeft(pair.second), e.what());
         }
-      } catch (JsonPatchException const& e) {
-        Logger::error("Could not apply patch from file %s in source: %s.  Caused by: %s", pair.first, m_assetSourcePaths.getLeft(pair.second), e.what());
+      }
+      else if (patchJson.isType(Json::Type::Object)) { //Kae: Do a good ol' json merge instead if the .patch file is a Json object
+        auto patchData = patchJson.toObject();
+        result = jsonMerge(result, patchData);
       }
     }
     return result;
