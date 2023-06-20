@@ -1,0 +1,25 @@
+1 VERSIONINFO
+FILEVERSION     0,9,0,0
+PRODUCTVERSION  0,9,0,0
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904E4"
+    BEGIN
+      VALUE "CompanyName", "Chucklefish LTD"
+      VALUE "FileDescription", "Starbound"
+      VALUE "FileVersion", "0.9beta"
+      VALUE "InternalName", "starbound"
+      VALUE "LegalCopyright", "Chucklefish LTD"
+      VALUE "OriginalFilename", "starbound.exe"
+      VALUE "ProductName", "Starbound"
+      VALUE "ProductVersion", "0.9beta"
+    END
+  END
+
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x409, 1252
+  END
+END
+icon ICON "starbound-largelogo.ico"

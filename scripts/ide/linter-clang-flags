@@ -1,0 +1,1 @@
+-Wall -Wextra -Wuninitialized -Wno-parentheses-equality -Qunused-arguments -Wno-deprecated-declarations -Woverloaded-virtual -Wnon-virtual-dtor -Winit-self

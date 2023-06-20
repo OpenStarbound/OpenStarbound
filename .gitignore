@@ -1,3 +1,15 @@
+build/
+dist/
+attic/
+lib/
+tiled/
+assets/user/
+assets/devel/
+mods/*.pak
+mods/*
+*.sln
+*.suo
+*.vcxproj*
 CMakeLists.txt.user
 CMakeCache.txt
 CMakeFiles

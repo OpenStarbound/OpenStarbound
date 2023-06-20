@@ -1,0 +1,12 @@
+-Isource/application/
+-Isource/core/
+-Isource/extern/
+-Isource/frontend/
+-Isource/game/
+-Isource/game/interfaces/
+-Isource/game/items/
+-Isource/game/objects/
+-Isource/game/scripting/
+-Isource/game/terrain/
+-Isource/graphics/
+-Isource/windowing/

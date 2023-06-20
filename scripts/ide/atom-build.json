@@ -1,0 +1,16 @@
+{
+  "cmd": "make -Cbuild",
+  "name": "starbound",
+  "args": [],
+  "sh": true,
+  "env": {},
+  "errorMatch": "^(?<file>[^\\.]+.hs):(?<line>\\d+):(?<col>\\d+)",
+  "targets": {
+    "build": {
+      "cmd": "make -Cbuild build"
+    },
+    "clean": {
+      "cmd": "make -Cbuild clean"
+    }
+  }
+}

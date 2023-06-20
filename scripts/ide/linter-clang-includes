@@ -1,0 +1,12 @@
+source/application/
+source/core/
+source/extern/
+source/frontend/
+source/game/
+source/game/interfaces/
+source/game/items/
+source/game/objects/
+source/game/scripting/
+source/game/terrain/
+source/graphics/
+source/windowing/
