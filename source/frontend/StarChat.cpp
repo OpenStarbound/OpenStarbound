@@ -268,9 +268,7 @@ void Chat::renderImpl() {
       TextPositioning tp = {Vec2F(chatMin), HorizontalAnchor::LeftAnchor, VerticalAnchor::BottomAnchor, wrapWidth};
       messageHeight = guiContext.determineInterfaceTextSize(messageString, tp).size()[1] + lineHeightMargin;
 
-      auto fadeColor = fade;
-      fadeColor[3] /= 2;
-      m_chatLog->drawText(messageString, tp, m_fontSize, fadeColor, FontMode::Normal, m_chatLineHeight);
+      m_chatLog->drawText(messageString, tp, m_fontSize, fade, FontMode::Normal, m_chatLineHeight);
     }
 
     chatMin[1] += ceil(messageHeight);
