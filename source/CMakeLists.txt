@@ -1,13 +1,24 @@
-PROJECT (starbound)
+CMAKE_MINIMUM_REQUIRED (VERSION 3.4)
 
-CMAKE_MINIMUM_REQUIRED (VERSION 3.0)
+# Find CCache
+FIND_PROGRAM(CCACHE_PATH ccache)
+IF (CCACHE_PATH)
+  SET (CMAKE_C_COMPILER_LAUNCHER   "${CCACHE_PATH}")
+  SET (CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_PATH}")
+  MESSAGE (STATUS "Using CCache")
+ELSE ()
+  MESSAGE (STATUS "Not using CCache")
+ENDIF ()
+
+
+PROJECT (starbound)
 SET (CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../cmake)
 
 SET (CMAKE_CONFIGURATION_TYPES Debug RelWithAsserts RelWithDebInfo Release)
 SET (CMAKE_EXE_LINKER_FLAGS_RELWITHASSERTS "" CACHE STRING "" FORCE)
 # Update the docstring on CMAKE_BUILD_TYPE to show what options we actually
 # allow
-SET (CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE STRING "Choose the type of build, options are: Debug RelWithAsserts RelWithDebInfo Release" FORCE)
+# SET (CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE STRING "Choose the type of build, options are: Debug RelWithAsserts RelWithDebInfo Release" FORCE)
 
 # Discover all the relevant environment / system information and place the
 # result in STAR_* cmake variables.
@@ -135,7 +146,7 @@ IF (DEFINED STAR_ENABLE_STEAM_INTEGRATION)
 ENDIF ()
 
 IF (DEFINED STAR_ENABLE_DISCORD_INTEGRATION)
-  MESSAGE (STATUS "Using Discrod platform services: ${STAR_ENABLE_DISCORD_INTEGRATION}")
+  MESSAGE (STATUS "Using Discord platform services: ${STAR_ENABLE_DISCORD_INTEGRATION}")
 ENDIF ()
 
 MESSAGE (STATUS "Using Lua API checks: ${STAR_LUA_APICHECK}")
@@ -364,7 +375,11 @@ ELSEIF (STAR_SYSTEM_WINDOWS)
   SET (CMAKE_RC_COMPILER_INIT windres)
 
   ENABLE_LANGUAGE (RC)
-  SET (CMAKE_RC_COMPILE_OBJECT "<CMAKE_RC_COMPILER> <FLAGS> -O coff <DEFINES> -i <SOURCE> -o <OBJECT>")
+  IF (STAR_COMPILER STREQUAL "msvc")
+    SET (CMAKE_RC_COMPILE_OBJECT "<CMAKE_RC_COMPILER> /fo <OBJECT> <SOURCE>")
+  ELSE ()
+    SET (CMAKE_RC_COMPILE_OBJECT "<CMAKE_RC_COMPILER> <FLAGS> -O coff <DEFINES> -i <SOURCE> -o <OBJECT>")
+  ENDIF()
 ENDIF ()
 
 IF (STAR_COMPILER STREQUAL "msvc")

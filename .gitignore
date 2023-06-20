@@ -5,8 +5,11 @@ lib/
 tiled/
 assets/user/
 assets/devel/
+assets/packed.pak
 mods/*.pak
 mods/*
+*/.vs/
+*.vs/
 *.sln
 *.suo
 *.vcxproj*
