@@ -412,8 +412,10 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
       return a->entityId() < b->entityId();
     });
 
-  RectI lightRange = m_clientState.window();
-  RectI tileRange = lightRange.padded(bufferTiles);
+  RectI window = m_clientState.window();
+  RectI tileRange = window.padded(bufferTiles);
+  RectI lightRange = window.padded(1);
+  //Kae: Padded by one to fix light spread issues at the edges of the frame.
 
   renderData.tileMinPosition = tileRange.min();
   renderData.lightMinPosition = lightRange.min();
@@ -461,7 +463,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
           auto& tile = column[y];
 
           Vec3F light = materialDatabase->radiantLight(tile.foreground, tile.foregroundMod);
-          light += liquidsDatabase->radiantLight(tile.liquid);
+          light += liquidsDatabase->radiantLight(tile.liquid) * tile.liquid.level;
           if (tile.foregroundLightTransparent) {
             light += materialDatabase->radiantLight(tile.background, tile.backgroundMod);
             if (tile.backgroundLightTransparent && pos[1] + y > undergroundLevel)

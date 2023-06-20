@@ -62,7 +62,8 @@ void TilePainter::setup(WorldCamera const& camera, WorldRenderData& renderData) 
     m_cameraPan = renderData.geometry.diff(cameraCenter, *m_lastCameraCenter);
   m_lastCameraCenter = cameraCenter;
 
-  RectI chunkRange = RectI::integral(RectF(camera.worldTileRect()).scaled(1.0f / RenderChunkSize));
+  //Kae: Padded by one to fix culling issues with certain tile pieces at chunk borders, such as grass.
+  RectI chunkRange = RectI::integral(RectF(camera.worldTileRect().padded(1)).scaled(1.0f / RenderChunkSize));
 
   for (int x = chunkRange.xMin(); x < chunkRange.xMax(); ++x) {
     for (int y = chunkRange.yMin(); y < chunkRange.yMax(); ++y) {
