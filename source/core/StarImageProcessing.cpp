@@ -495,18 +495,19 @@ Image processImageOperations(List<ImageOperation> const& operations, Image image
 
           if (dist < std::numeric_limits<int>::max()) {
             float percent = (dist - 1) / (2.0f * pixels - 1);
-            Color color = Color::rgbaf((Vec4F(op->startColor) * ((1.0f - percent) / 255.0f)) + (Vec4F(op->endColor) * (percent / 255.0f)));
+            Color color = Color::rgba(op->startColor).mix(Color::rgba(op->endColor), percent);
             if (pixel[3] != 0) {
-              if (op->outlineOnly)
-                color.setAlphaF(1.0f - byteToFloat(pixel[3]));
+              if (op->outlineOnly) {
+                float pixelA = byteToFloat(pixel[3]);
+                color.setAlphaF((1.0f - pixelA) * fminf(pixelA, 0.5f) * 2.0f);
+              }
               else {
-                Color pixelCol = Color::rgba(pixel);
-                float pixelA = pixelCol.alphaF();
-                float colorA = color.alphaF();
+                Color pixelF = Color::rgba(pixel);
+                float pixelA = pixelF.alphaF(), colorA = color.alphaF();
                 colorA += pixelA * (1.0f - colorA);
-                pixelCol.convertToLinear();
+                pixelF.convertToLinear(); //Mix in linear color space as it is more perceptually accurate
                 color.convertToLinear();
-                color.mix(pixelCol, pixelA);
+                color = color.mix(pixelF, pixelA);
                 color.convertToSRGB();
                 color.setAlphaF(colorA);
               }
