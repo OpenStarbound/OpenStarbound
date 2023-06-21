@@ -4,6 +4,7 @@
 #include "StarDataStream.hpp"
 #include "StarVariant.hpp"
 #include "StarString.hpp"
+#include "StarXXHash.hpp"
 
 namespace Star {
 
@@ -258,6 +259,8 @@ public:
 
   // Does this Json not share its storage with any other Json?
   bool unique() const;
+
+  void getHash(XXHash3& hasher) const;
 
 private:
   Json const* ptr(size_t index) const;

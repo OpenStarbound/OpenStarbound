@@ -962,14 +962,37 @@ DataStream& operator>>(DataStream& ds, JsonObject& m) {
   return ds;
 }
 
-size_t hash<Json>::operator()(Json const& v) const {
-  // This is probably a bit slow and weird, using the utf-8 output printer to
-  // produce a Json hash.
+void Json::getHash(XXHash3& hasher) const {
+  Json::Type type = (Json::Type)m_data.typeIndex();
+  if (type == Json::Type::Bool)
+    hasher.push(m_data.get<bool>() ? "\2\1" : "\2\0", 2);
+  else {
+    hasher.push((const char*)&type, sizeof(type));
+    if (type == Json::Type::Float)
+      hasher.push((const char*)m_data.ptr<double>(), sizeof(double));
+    else if (type == Json::Type::Int)
+      hasher.push((const char*)m_data.ptr<int64_t>(), sizeof(int64_t));
+    else if (type == Json::Type::String) {
+      const String& str = *m_data.get<StringConstPtr>();
+      hasher.push(str.utf8Ptr(), str.utf8Size());
+    }
+    else if (type == Json::Type::Array) {
+      for (Json const& json : *m_data.get<JsonArrayConstPtr>())
+        json.getHash(hasher);
+    }
+    else if (type == Json::Type::Object) {
+      for (auto const& pair : *m_data.get<JsonObjectConstPtr>()) {
+        hasher.push(pair.first.utf8Ptr(), pair.first.utf8Size());
+        pair.second.getHash(hasher);
+      }
+    }
+  }
+}
 
-  size_t h = 0;
-  auto collector = [&h](char c) { h = h * 101 + c; };
-  outputUtf8Json(v, makeFunctionOutputIterator(collector), 0, true);
-  return h;
+size_t hash<Json>::operator()(Json const& v) const {
+  XXHash3 hasher;
+  v.getHash(hasher);
+  return hasher.digest();
 }
 
 Json const* Json::ptr(size_t index) const {
