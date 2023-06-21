@@ -92,17 +92,9 @@ TextPainter::TextPainter(RendererPtr renderer, TextureGroupPtr textureGroup)
     m_splitIgnore(" \t"),
     m_splitForce("\n\v"),
     m_nonRenderedCharacters("\n\v\r") {
-  auto assets = Root::singleton().assets();
-  auto defaultFont = assets->font("/hobo.ttf");
-  for (auto& fontPath : assets->scanExtension("ttf")) {
-    auto font = assets->font(fontPath);
-    if (font == defaultFont)
-      continue;
-
-    auto fileName = AssetPath::filename(fontPath);
-    addFont(font->clone(), fileName.substr(0, fileName.findLast(".")));
-  }
-  m_fontTextureGroup.addFont(defaultFont->clone(), "hobo", true);
+  reloadFonts();
+  m_reloadTracker = make_shared<TrackerListener>();
+  Root::singleton().registerReloadListener(m_reloadTracker);
 }
 
 RectF TextPainter::renderText(String const& s, TextPositioning const& position) {
@@ -313,6 +305,22 @@ void TextPainter::addFont(FontPtr const& font, String const& name) {
   m_fontTextureGroup.addFont(font, name);
 }
 
+void TextPainter::reloadFonts() {
+  m_fontTextureGroup.clearFonts();
+  m_fontTextureGroup.cleanup(0);
+  auto assets = Root::singleton().assets();
+  auto defaultFont = assets->font("/hobo.ttf");
+  for (auto& fontPath : assets->scanExtension("ttf")) {
+    auto font = assets->font(fontPath);
+    if (font == defaultFont)
+      continue;
+
+    auto fileName = AssetPath::filename(fontPath);
+    addFont(font->clone(), fileName.substr(0, fileName.findLast(".")));
+  }
+  m_fontTextureGroup.addFont(defaultFont->clone(), "hobo", true);
+}
+
 void TextPainter::cleanup(int64_t timeout) {
   m_fontTextureGroup.cleanup(timeout);
 }
@@ -346,6 +354,8 @@ RectF TextPainter::doRenderText(String const& s, TextPositioning const& position
 }
 
 RectF TextPainter::doRenderLine(String const& s, TextPositioning const& position, bool reallyRender, unsigned* charLimit) {
+  if (m_reloadTracker->pullTriggered())
+    reloadFonts();
   String text = s;
   TextPositioning pos = position;
 

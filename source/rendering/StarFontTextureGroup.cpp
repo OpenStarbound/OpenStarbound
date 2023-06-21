@@ -34,6 +34,11 @@ void FontTextureGroup::addFont(FontPtr const& font, String const& name, bool def
     m_defaultFont = m_font = font;
 }
 
+void FontTextureGroup::clearFonts() {
+  m_fonts.clear();
+  m_font = m_defaultFont;
+}
+
 const FontTextureGroup::GlyphTexture& FontTextureGroup::glyphTexture(String::Char c, unsigned size, String const& processingDirectives)
 {
   auto res = m_glyphs.insert(GlyphDescriptor{c, size, processingDirectives, m_font.get() }, GlyphTexture());

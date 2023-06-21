@@ -36,6 +36,7 @@ public:
   void switchFont(String const& font);
   String const& activeFont();
   void addFont(FontPtr const& font, String const& name, bool default = false);
+  void clearFonts();
 private:
   StringMap<FontPtr> m_fonts;
   String m_fontName;

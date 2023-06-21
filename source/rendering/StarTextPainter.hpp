@@ -76,6 +76,7 @@ public:
   void setProcessingDirectives(String directives);
   void setFont(String const& font);
   void addFont(FontPtr const& font, String const& name);
+  void reloadFonts();
 
   void cleanup(int64_t textureTimeout);
 
@@ -105,6 +106,8 @@ private:
   String m_splitIgnore;
   String m_splitForce;
   String m_nonRenderedCharacters;
+
+  TrackerListenerPtr m_reloadTracker;
 };
 
 }
