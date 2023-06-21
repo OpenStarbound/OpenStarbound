@@ -285,7 +285,6 @@ void Player::init(World* world, EntityId entityId, EntityMode mode) {
   Entity::init(world, entityId, mode);
 
   auto speciesDefinition = Root::singleton().speciesDatabase()->species(m_identity.species);
-  m_statusController->setStatusProperty("ouchNoise", speciesDefinition->ouchNoise(m_identity.gender));
 
   m_tools->init(this);
   m_movementController->init(world);
@@ -295,6 +294,7 @@ void Player::init(World* world, EntityId entityId, EntityMode mode) {
   m_techController->init(this, m_movementController.get(), m_statusController.get());
 
   if (mode == EntityMode::Master) {
+    m_statusController->setStatusProperty("ouchNoise", speciesDefinition->ouchNoise(m_identity.gender));
     m_emoteState = HumanoidEmote::Idle;
     m_questManager->init(world);
     m_companions->init(this, world);
@@ -1088,7 +1088,10 @@ Json Player::getGenericProperty(String const& name, Json const& defaultValue) co
 }
 
 void Player::setGenericProperty(String const& name, Json const& value) {
-  m_genericProperties.set(name, value);
+  if (value.isNull())
+    m_genericProperties.erase(name);
+  else
+    m_genericProperties.set(name, value);
 }
 
 PlayerInventoryPtr Player::inventory() const {
@@ -2086,8 +2089,11 @@ QuestManagerPtr Player::questManager() const {
 
 Json Player::diskStore() {
   JsonObject genericScriptStorage;
-  for (auto& p : m_genericScriptContexts)
-    genericScriptStorage[p.first] = p.second->getScriptStorage();
+  for (auto& p : m_genericScriptContexts) {
+    auto scriptStorage = p.second->getScriptStorage();
+    if (!scriptStorage.empty())
+      genericScriptStorage[p.first] = move(scriptStorage);
+  }
 
   return JsonObject{
     {"uuid", *uniqueId()},
