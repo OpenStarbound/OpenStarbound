@@ -656,8 +656,8 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
       }
 
       auto entity = entityFactory->netLoadEntity(entityCreate->entityType, entityCreate->storeData);
-      entity->readNetState(entityCreate->firstNetState);
       entity->init(this, entityCreate->entityId, EntityMode::Slave);
+      entity->readNetState(entityCreate->firstNetState);
       m_entityMap->addEntity(entity);
 
       if (m_interpolationTracker.interpolationEnabled()) {

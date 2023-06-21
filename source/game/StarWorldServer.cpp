@@ -392,8 +392,8 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
         }
 
         auto entity = entityFactory->netLoadEntity(entityCreate->entityType, entityCreate->storeData);
-        entity->readNetState(entityCreate->firstNetState);
         entity->init(this, entityCreate->entityId, EntityMode::Slave);
+        entity->readNetState(entityCreate->firstNetState);
         m_entityMap->addEntity(entity);
 
         if (clientInfo->interpolationTracker.interpolationEnabled())
@@ -605,6 +605,7 @@ void WorldServer::update() {
       signalRegion(monitoredRegion.padded(jsonToVec2I(m_serverConfig.get("playerActiveRegionPad"))));
     queueUpdatePackets(pair.first);
   }
+  m_netStateCache.clear();
 
   for (auto& pair : m_clientInfo)
     pair.second->pendingForward = false;
@@ -1743,10 +1744,14 @@ void WorldServer::queueUpdatePackets(ConnectionId clientId) {
     if (connectionId != clientId) {
       if (auto version = clientInfo->clientSlavesNetVersion.ptr(entityId)) {
         if (auto updateSetPacket = updateSetPackets.value(connectionId)) {
-          auto updateAndVersion = monitoredEntity->writeNetState(*version);
-          if (!updateAndVersion.first.empty())
-            updateSetPacket->deltas[entityId] = move(updateAndVersion.first);
-          *version = updateAndVersion.second;
+          auto pair = make_pair(entityId, *version);
+          auto i = m_netStateCache.find(pair);
+          if (i == m_netStateCache.end())
+            i = m_netStateCache.insert(pair, move(monitoredEntity->writeNetState(*version))).first;
+          const auto& netState = i->second;
+          if (!netState.first.empty())
+            updateSetPacket->deltas[entityId] = netState.first;
+          *version = netState.second;
         }
       } else if (!monitoredEntity->masterOnly()) {
         // Client was unaware of this entity until now
