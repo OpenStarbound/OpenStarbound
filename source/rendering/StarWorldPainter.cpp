@@ -30,7 +30,7 @@ void WorldPainter::renderInit(RendererPtr renderer) {
 
   m_renderer = move(renderer);
   auto textureGroup = m_renderer->createTextureGroup(TextureGroupSize::Large);
-  m_textPainter = make_shared<TextPainter>(m_assets->font("/hobo.ttf")->clone(), m_renderer, textureGroup);
+  m_textPainter = make_shared<TextPainter>(m_renderer, textureGroup);
   m_tilePainter = make_shared<TilePainter>(m_renderer);
   m_drawablePainter = make_shared<DrawablePainter>(m_renderer, make_shared<AssetTextureGroup>(textureGroup));
   m_environmentPainter = make_shared<EnvironmentPainter>(m_renderer);

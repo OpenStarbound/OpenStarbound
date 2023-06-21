@@ -11,7 +11,8 @@ STAR_CLASS(FontTextureGroup);
 
 class FontTextureGroup {
 public:
-  typedef tuple<String::Char, unsigned, String> GlyphDescriptor;
+  // Font* is only included for key uniqueness and should not be dereferenced
+  typedef tuple<String::Char, unsigned, String, Font*> GlyphDescriptor;
 
   struct GlyphTexture {
     TexturePtr texture;
@@ -19,7 +20,7 @@ public:
     Vec2F processingOffset;
   };
 
-  FontTextureGroup(FontPtr font, TextureGroupPtr textureGroup);
+  FontTextureGroup(TextureGroupPtr textureGroup);
 
   const GlyphTexture& glyphTexture(String::Char, unsigned fontSize, String const& processingDirectives);
 
@@ -31,9 +32,15 @@ public:
   // Removes glyphs that haven't been used in more than the given time in
   // milliseconds
   void cleanup(int64_t timeout);
+  // Switches the current font
+  void switchFont(String const& font);
+  void addFont(FontPtr const& font, String const& name, bool default = false);
 private:
-
+  StringMap<FontPtr> m_fonts;
+  String m_fontName;
   FontPtr m_font;
+  FontPtr m_defaultFont;
+
   TextureGroupPtr m_textureGroup;
   HashMap<GlyphDescriptor, GlyphTexture> m_glyphs;
 };

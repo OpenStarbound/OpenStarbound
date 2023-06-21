@@ -3,6 +3,7 @@
 
 #include "StarFontTextureGroup.hpp"
 #include "StarAnchorTypes.hpp"
+#include "StarRoot.hpp"
 
 namespace Star {
 
@@ -51,7 +52,7 @@ struct TextPositioning {
 // kerning*.
 class TextPainter {
 public:
-  TextPainter(FontPtr font, RendererPtr renderer, TextureGroupPtr textureGroup);
+  TextPainter(RendererPtr renderer, TextureGroupPtr textureGroup);
 
   RectF renderText(String const& s, TextPositioning const& position);
   RectF renderLine(String const& s, TextPositioning const& position);
@@ -73,6 +74,8 @@ public:
   void setSplitIgnore(String const& splitIgnore);
   void setFontColor(Vec4B color);
   void setProcessingDirectives(String directives);
+  void setFont(String const& font);
+  void addFont(FontPtr const& font, String const& name);
 
   void cleanup(int64_t textureTimeout);
 
@@ -80,6 +83,7 @@ private:
   struct RenderSettings {
     FontMode mode;
     Vec4B color;
+    String font;
   };
 
   RectF doRenderText(String const& s, TextPositioning const& position, bool reallyRender, unsigned* charLimit);

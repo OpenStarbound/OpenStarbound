@@ -83,15 +83,27 @@ TextPositioning TextPositioning::translated(Vec2F translation) const {
   return {pos + translation, hAnchor, vAnchor, wrapWidth, charLimit};
 }
 
-TextPainter::TextPainter(FontPtr font, RendererPtr renderer, TextureGroupPtr textureGroup)
+TextPainter::TextPainter(RendererPtr renderer, TextureGroupPtr textureGroup)
   : m_renderer(renderer),
-    m_fontTextureGroup(move(font), textureGroup),
+    m_fontTextureGroup(textureGroup),
     m_fontSize(8),
     m_lineSpacing(1.30f),
-    m_renderSettings({FontMode::Normal, Vec4B::filled(255)}),
+    m_renderSettings({FontMode::Normal, Vec4B::filled(255), "hobo"}),
     m_splitIgnore(" \t"),
     m_splitForce("\n\v"),
-    m_nonRenderedCharacters("\n\v\r") {}
+    m_nonRenderedCharacters("\n\v\r") {
+  auto assets = Root::singleton().assets();
+  auto defaultFont = assets->font("/hobo.ttf");
+  for (auto& fontPath : assets->scanExtension("ttf")) {
+    auto font = assets->font(fontPath);
+    if (font == defaultFont)
+      continue;
+
+    auto fileName = AssetPath::filename(fontPath);
+    addFont(font->clone(), fileName.substr(0, fileName.findLast(".")));
+  }
+  m_fontTextureGroup.addFont(defaultFont->clone(), "hobo", true);
+}
 
 RectF TextPainter::renderText(String const& s, TextPositioning const& position) {
   if (position.charLimit) {
@@ -259,6 +271,14 @@ void TextPainter::setProcessingDirectives(String directives) {
   m_processingDirectives = move(directives);
 }
 
+void TextPainter::setFont(String const& font) {
+  m_fontTextureGroup.switchFont(font);
+}
+
+void TextPainter::addFont(FontPtr const& font, String const& name) {
+  m_fontTextureGroup.addFont(font, name);
+}
+
 void TextPainter::cleanup(int64_t timeout) {
   m_fontTextureGroup.cleanup(timeout);
 }
@@ -339,6 +359,8 @@ RectF TextPainter::doRenderLine(String const& s, TextPositioning const& position
             m_renderSettings.mode = (FontMode)((int)m_renderSettings.mode | (int)FontMode::Shadow);
           } else if (command == "noshadow") {
             m_renderSettings.mode = (FontMode)((int)m_renderSettings.mode & (-1 ^ (int)FontMode::Shadow));
+          } else if (command.beginsWith("font=")) {
+            m_renderSettings.font = command.substr(5);
           } else {
             // expects both #... sequences and plain old color names.
             Color c = jsonToColor(command);
@@ -377,6 +399,7 @@ RectF TextPainter::doRenderGlyph(String::Char c, TextPositioning const& position
     vOffset = -(float)m_fontSize;
 
   if (reallyRender) {
+    setFont(m_renderSettings.font);
     if ((int)m_renderSettings.mode & (int)FontMode::Shadow) {
       Color shadow = Color::Black;
       uint8_t alphaU = m_renderSettings.color[3];

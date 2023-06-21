@@ -4,17 +4,31 @@
 
 namespace Star {
 
-FontTextureGroup::FontTextureGroup(FontPtr font, TextureGroupPtr textureGroup)
-  : m_font(move(font)), m_textureGroup(move(textureGroup)) {}
+FontTextureGroup::FontTextureGroup(TextureGroupPtr textureGroup)
+  : m_textureGroup(move(textureGroup)) {}
 
 void FontTextureGroup::cleanup(int64_t timeout) {
   int64_t currentTime = Time::monotonicMilliseconds();
   eraseWhere(m_glyphs, [&](auto const& p) { return currentTime - p.second.time > timeout; });
 }
 
+void FontTextureGroup::switchFont(String const& font) {
+  if (m_fontName != font) {
+    m_fontName = font;
+    auto find = m_fonts.find(font);
+    m_font = find != m_fonts.end() ? find->second : m_defaultFont;
+  }
+}
+
+void FontTextureGroup::addFont(FontPtr const& font, String const& name, bool default) {
+  m_fonts[name] = font;
+  if (default)
+    m_defaultFont = m_font = font;
+}
+
 const FontTextureGroup::GlyphTexture& FontTextureGroup::glyphTexture(String::Char c, unsigned size, String const& processingDirectives)
 {
-  auto res = m_glyphs.insert(GlyphDescriptor{c, size, processingDirectives}, GlyphTexture());
+  auto res = m_glyphs.insert(GlyphDescriptor{c, size, processingDirectives, m_font.get() }, GlyphTexture());
 
   if (res.second) {
     m_font->setPixelSize(size);
