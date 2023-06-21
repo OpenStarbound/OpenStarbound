@@ -2270,9 +2270,8 @@ void Player::queueRadioMessage(RadioMessage message) {
 }
 
 Maybe<Json> Player::pullPendingCinematic() {
-  if (m_pendingCinematic)
-    if (auto cinematic = *m_pendingCinematic)
-      m_log->addCinematic(cinematic.toString());
+  if (m_pendingCinematic && m_pendingCinematic->isType(Json::Type::String))
+    m_log->addCinematic(m_pendingCinematic->toString());
   return take(m_pendingCinematic);
 }
 
