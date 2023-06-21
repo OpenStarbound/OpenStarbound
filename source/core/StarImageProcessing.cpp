@@ -224,6 +224,7 @@ ImageOperation imageOperationFromString(String const& string) {
       else
         operation.endColor = operation.startColor;
       operation.outlineOnly = type == "outline";
+      operation.includeTransparent = false; // Currently just here for anti-aliased fonts
 
       return operation;
 
@@ -476,7 +477,8 @@ Image processImageOperations(List<ImageOperation> const& operations, Image image
 
       borderImage.forEachPixel([&op, &image, &borderImageSize](int x, int y, Vec4B& pixel) {
         int pixels = op->pixels;
-        if (pixel[3] == 0) {
+        bool includeTransparent = op->includeTransparent;
+        if (pixel[3] == 0 || (includeTransparent && pixel[3] != 255)) {
           int dist = std::numeric_limits<int>::max();
           for (int j = -pixels; j < pixels + 1; j++) {
             for (int i = -pixels; i < pixels + 1; i++) {
@@ -493,7 +495,21 @@ Image processImageOperations(List<ImageOperation> const& operations, Image image
 
           if (dist < std::numeric_limits<int>::max()) {
             float percent = (dist - 1) / (2.0f * pixels - 1);
-            pixel = Vec4B(Vec4F(op->startColor) * (1 - percent) + Vec4F(op->endColor) * percent);
+            Vec4F color = (Vec4F(op->startColor) * ((1.0f - percent) / 255.0f)) + (Vec4F(op->endColor) * (percent / 255.0f));
+            color.clamp(0.0f, 1.0f);
+            if (pixel[3] != 0) {
+              float pixelA = byteToFloat(pixel[3]);
+              if (op->outlineOnly)
+                color[3] *= (1.0f - pixelA);
+              else {
+                float colorA = pixelA * (1.0f - color[3]);
+                color[0] = Color::fromLinear((Color::toLinear(color[0]) * colorA) + (Color::toLinear(byteToFloat(pixel[0])) * pixelA));
+                color[1] = Color::fromLinear((Color::toLinear(color[1]) * colorA) + (Color::toLinear(byteToFloat(pixel[1])) * pixelA));
+                color[2] = Color::fromLinear((Color::toLinear(color[2]) * colorA) + (Color::toLinear(byteToFloat(pixel[2])) * pixelA));
+                color[3] += colorA;
+              }
+            }
+            pixel = Vec4B(color.piecewiseMultiply(Vec4F::filled(255.0f)));
           }
         } else if (op->outlineOnly) {
           pixel = Vec4B(0, 0, 0, 0);

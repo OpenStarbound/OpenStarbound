@@ -102,6 +102,7 @@ struct BorderImageOperation {
   Vec4B startColor;
   Vec4B endColor;
   bool outlineOnly;
+  bool includeTransparent;
 };
 
 struct ScaleImageOperation {

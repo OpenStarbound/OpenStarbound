@@ -87,10 +87,10 @@ unsigned Font::width(String::Char c) {
 
 Image Font::render(String::Char c) {
   if (!m_fontImpl)
-    throw FontException("Font::render called on uninitialzed font.");
+    throw FontException("Font::render called on uninitialized font.");
 
   FT_UInt glyph_index = FT_Get_Char_Index(m_fontImpl->face, c);
-  if (FT_Load_Glyph(m_fontImpl->face, glyph_index, FT_LOAD_DEFAULT) != 0)
+  if (FT_Load_Glyph(m_fontImpl->face, glyph_index, FT_LOAD_FORCE_AUTOHINT) != 0)
     return {};
 
   /* convert to an anti-aliased bitmap */

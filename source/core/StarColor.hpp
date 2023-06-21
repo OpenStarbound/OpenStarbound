@@ -141,10 +141,9 @@ public:
   Color& operator+=(Color const& c);
   Color& operator*=(Color const& c);
 
-private:
   static float toLinear(float in);
   static float fromLinear(float in);
-
+private:
   Vec4F m_data;
 };
 

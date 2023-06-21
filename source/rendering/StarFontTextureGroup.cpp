@@ -21,7 +21,12 @@ const FontTextureGroup::GlyphTexture& FontTextureGroup::glyphTexture(String::Cha
     Image image = m_font->render(c);
     if (!processingDirectives.empty()) {
       Vec2F preSize = Vec2F(image.size());
-      image = processImageOperations(parseImageOperations(processingDirectives), image);
+      auto imageOperations = parseImageOperations(processingDirectives);
+      for (auto& imageOp : imageOperations) {
+        if (auto border = imageOp.ptr<BorderImageOperation>())
+          border->includeTransparent = true;
+      }
+      image = processImageOperations(imageOperations, image);
       res.first->second.processingOffset = preSize - Vec2F(image.size());
     }
     else
