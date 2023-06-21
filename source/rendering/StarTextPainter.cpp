@@ -268,7 +268,7 @@ void TextPainter::setFontColor(Vec4B color) {
 }
 
 void TextPainter::setProcessingDirectives(String directives) {
-  m_processingDirectives = move(directives);
+  m_renderSettings.directives = move(directives);
 }
 
 void TextPainter::setFont(String const& font) {
@@ -361,6 +361,10 @@ RectF TextPainter::doRenderLine(String const& s, TextPositioning const& position
             m_renderSettings.mode = (FontMode)((int)m_renderSettings.mode & (-1 ^ (int)FontMode::Shadow));
           } else if (command.beginsWith("font=")) {
             m_renderSettings.font = command.substr(5);
+          } else if (command.beginsWith("directives=")) {
+            // Honestly this is really stupid but I just couldn't help myself
+            // Should probably limit in the future
+            m_renderSettings.directives = command.substr(11);
           } else {
             // expects both #... sequences and plain old color names.
             Color c = jsonToColor(command);
@@ -411,10 +415,10 @@ RectF TextPainter::doRenderGlyph(String::Char c, TextPositioning const& position
         shadow.setAlpha(alphaU);
 
       //Kae: Draw only one shadow glyph instead of stacking two, alpha modified to appear perceptually the same as vanilla
-      renderGlyph(c, position.pos + Vec2F(hOffset, vOffset - 2), m_fontSize, 1, shadow.toRgba(), m_processingDirectives);
+      renderGlyph(c, position.pos + Vec2F(hOffset, vOffset - 2), m_fontSize, 1, shadow.toRgba(), m_renderSettings.directives);
     }
 
-    renderGlyph(c, position.pos + Vec2F(hOffset, vOffset), m_fontSize, 1, m_renderSettings.color, m_processingDirectives);
+    renderGlyph(c, position.pos + Vec2F(hOffset, vOffset), m_fontSize, 1, m_renderSettings.color, m_renderSettings.directives);
   }
 
   return RectF::withSize(position.pos + Vec2F(hOffset, vOffset), {(float)width, (int)m_fontSize});

@@ -34,14 +34,21 @@ const FontTextureGroup::GlyphTexture& FontTextureGroup::glyphTexture(String::Cha
     m_font->setPixelSize(size);
     Image image = m_font->render(c);
     if (!processingDirectives.empty()) {
-      Vec2F preSize = Vec2F(image.size());
-      auto imageOperations = parseImageOperations(processingDirectives);
-      for (auto& imageOp : imageOperations) {
-        if (auto border = imageOp.ptr<BorderImageOperation>())
-          border->includeTransparent = true;
+      try {
+        Vec2F preSize = Vec2F(image.size());
+        auto imageOperations = parseImageOperations(processingDirectives);
+        for (auto& imageOp : imageOperations) {
+          if (auto border = imageOp.ptr<BorderImageOperation>())
+            border->includeTransparent = true;
+        }
+        image = processImageOperations(imageOperations, image);
+        res.first->second.processingOffset = preSize - Vec2F(image.size());
       }
-      image = processImageOperations(imageOperations, image);
-      res.first->second.processingOffset = preSize - Vec2F(image.size());
+      catch (StarException&) {
+        image.forEachPixel([](unsigned x, unsigned y, Vec4B& pixel) {
+          pixel = ((x + y) % 2 == 0) ? Vec4B(255, 0, 255, pixel[3]) : Vec4B(0, 0, 0, pixel[3]);
+        });
+      }
     }
     else
       res.first->second.processingOffset = Vec2F();

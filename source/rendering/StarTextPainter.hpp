@@ -84,6 +84,7 @@ private:
     FontMode mode;
     Vec4B color;
     String font;
+    String directives;
   };
 
   RectF doRenderText(String const& s, TextPositioning const& position, bool reallyRender, unsigned* charLimit);
@@ -104,8 +105,6 @@ private:
   String m_splitIgnore;
   String m_splitForce;
   String m_nonRenderedCharacters;
-
-  String m_processingDirectives;
 };
 
 }
