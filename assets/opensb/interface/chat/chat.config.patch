@@ -1,8 +1,8 @@
 {
   "config" : {
     "font" : {
-      "directives" : "",
-      "padding" : [0, 0] // Padding to prevent border clipping at the edges of the log canvas while keeping compatible with mods that patch the canvas size
+      "directives" : "?border=1;000;0000",
+      "padding" : [1, 1] // Padding to prevent border clipping at the edges of the log canvas while keeping compat with mods that patch the canvas size
     },
     "colors" : {
       "local" : "^white;",

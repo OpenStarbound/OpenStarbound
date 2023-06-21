@@ -7,6 +7,7 @@ namespace Star {
 
 TextBoxWidget::TextBoxWidget(String const& startingText, String const& hint, WidgetCallbackFunc callback)
   : m_text(startingText), m_hint(hint), m_callback(callback) {
+  auto assets = Root::singleton().assets();
   m_regex = ".*";
   m_repeatKeyThreshold = 0;
   m_repeatCode = SpecialRepeatKeyCodes::None;
@@ -15,16 +16,16 @@ TextBoxWidget::TextBoxWidget(String const& startingText, String const& hint, Wid
   m_cursorOffset = startingText.size();
   m_hAnchor = HorizontalAnchor::LeftAnchor;
   m_vAnchor = VerticalAnchor::BottomAnchor;
-  m_color = Color::rgbf(1, 1, 1);
   m_drawBorder = false;
   m_cursorHoriz = Vec2I();
   m_cursorVert = Vec2I();
   m_overfillMode = true;
 
-  auto assets = Root::singleton().assets();
-
   m_maxWidth = assets->json("/interface.config:textBoxDefaultWidth").toInt();
-  m_fontSize = assets->json("/interface.config:font.baseSize").toInt();
+  auto fontConfig = assets->json("/interface.config:font");
+  m_fontSize = fontConfig.getInt("baseSize");
+  m_processingDirectives = fontConfig.getString("defaultDirectives");
+  m_color = Color::rgb(jsonToVec3B(fontConfig.getArray("defaultColor")));
 
   // Meh, padding is hard-coded here
   setSize({m_maxWidth + 6, m_fontSize + 2});
@@ -52,6 +53,7 @@ void TextBoxWidget::renderImpl() {
   }
 
   context()->setFontSize(m_fontSize);
+  context()->setFontProcessingDirectives(m_processingDirectives);
   if (m_text.empty()) {
     context()->setFontColor(m_color.mix(Color::rgbf(0.3f, 0.3f, 0.3f), 0.8f).mix(Color::rgbf(0.0f, 0.0f, 1.0f), blueRate).toRgba());
     context()->renderInterfaceText(m_hint, {pos, m_hAnchor, m_vAnchor});
@@ -59,6 +61,7 @@ void TextBoxWidget::renderImpl() {
     context()->setFontColor(m_color.mix(Color::rgbf(0, 0, 1), blueRate).toRgba());
     context()->renderInterfaceText(m_text, {pos, m_hAnchor, m_vAnchor});
   }
+  context()->setFontProcessingDirectives("");
   context()->setFontColor(Vec4B::filled(255));
 
   if (hasFocus()) {
@@ -158,6 +161,10 @@ void TextBoxWidget::setRegex(String const& regex) {
 
 void TextBoxWidget::setColor(Color const& color) {
   m_color = color;
+}
+
+void TextBoxWidget::setDirectives(String const& directives) {
+  m_processingDirectives = directives;
 }
 
 void TextBoxWidget::setFontSize(int fontSize) {

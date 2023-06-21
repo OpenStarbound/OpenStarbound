@@ -421,6 +421,8 @@ WidgetConstructResult WidgetParser::textboxHandler(String const& name, Json cons
     textbox->setFontSize(config.getInt("fontSize"));
   if (config.contains("color"))
     textbox->setColor(jsonToColor(config.get("color")));
+  if (config.contains("directives"))
+    textbox->setDirectives(config.getString("directives"));
   if (config.contains("border"))
     textbox->setDrawBorder(config.getBool("border"));
   if (config.contains("maxWidth"))

@@ -277,7 +277,7 @@ public:
     };
 
     SDL_AudioSpec obtained = {};
-    if (SDL_OpenAudio(&desired, &obtained) < 0) {
+    if (SDL_OpenAudioDevice(NULL, 0, &desired, &obtained, 0) < 0) {
       Logger::error("Application: Could not open audio device, no sound available!");
     } else if (obtained.freq != desired.freq || obtained.channels != desired.channels || obtained.format != desired.format) {
       SDL_CloseAudio();

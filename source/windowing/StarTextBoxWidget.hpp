@@ -22,6 +22,7 @@ public:
   void setRegex(String const& regex);
 
   void setColor(Color const& color);
+  void setDirectives(String const& directives);
   void setFontSize(int fontSize);
   void setMaxWidth(int maxWidth);
   void setOverfillMode(bool overfillMode);
@@ -61,6 +62,7 @@ private:
   HorizontalAnchor m_hAnchor;
   VerticalAnchor m_vAnchor;
   Color m_color;
+  String m_processingDirectives;
   int m_fontSize;
   int m_maxWidth;
   int m_cursorOffset;
