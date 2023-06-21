@@ -24,6 +24,7 @@ Chat::Chat(UniverseClientPtr client) : m_client(client) {
   auto fontConfig = assets->json("/interface/chat/chat.config:config.font");
   m_fontSize = fontConfig.getInt("baseSize");
   m_fontDirectives = fontConfig.queryString("directives", "");
+  m_font = fontConfig.queryString("type", "");
   m_chatLineHeight = assets->json("/interface/chat/chat.config:config.lineHeight").toFloat();
   m_chatVisTime = assets->json("/interface/chat/chat.config:config.visTime").toFloat();
   m_fadeRate = assets->json("/interface/chat/chat.config:config.fadeRate").toDouble();
@@ -178,6 +179,7 @@ void Chat::addMessages(List<ChatReceivedMessage> const& messages, bool showPane)
     if (message.portrait.empty())
       wrapWidth = m_chatLog->size()[0];
 
+    guiContext.setFont(m_font);
     guiContext.setFontSize(m_fontSize);
     StringList lines;
     if (message.fromNick != "" && message.portrait == "")
@@ -237,6 +239,7 @@ void Chat::renderImpl() {
   int messageIndex = -m_historyOffset;
 
   GuiContext& guiContext = GuiContext::singleton();
+  guiContext.setFont(m_font);
   guiContext.setFontSize(m_fontSize);
   guiContext.setLineSpacing(m_chatLineHeight);
   for (auto message : m_receivedMessages) {
@@ -284,6 +287,7 @@ void Chat::renderImpl() {
   }
 
   guiContext.setDefaultLineSpacing();
+  guiContext.setDefaultFont();
 }
 
 void Chat::hide() {

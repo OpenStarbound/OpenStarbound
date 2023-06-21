@@ -13,6 +13,8 @@ NameplatePainter::NameplatePainter() {
   Json nametagConfig = assets->json("/interface.config:nametag");
   m_opacityRate = nametagConfig.getFloat("opacityRate");
   m_offset = jsonToVec2F(nametagConfig.get("offset"));
+  m_font = nametagConfig.optString("font").value("");
+  m_statusFont = nametagConfig.optString("font").value(m_font);
   m_fontSize = nametagConfig.getFloat("fontSize");
   m_statusFontSize = nametagConfig.getFloat("statusFontSize");
   m_statusOffset = jsonToVec2F(nametagConfig.get("statusOffset"));
@@ -74,6 +76,7 @@ void NameplatePainter::render() {
     if (nametag.opacity == 0.0f)
       return;
 
+    context.setFont(m_font);
     context.setFontSize(m_fontSize);
 
     auto color = Color::rgb(nametag.color);
@@ -87,6 +90,7 @@ void NameplatePainter::render() {
 
     if (nametag.statusText) {
       context.setFontSize(m_statusFontSize);
+      context.setFont(m_statusFont);
       context.setFontColor(statusColor.toRgba());
       context.renderText(*nametag.statusText, statusPosition(bubble.currentPosition));
     }
@@ -107,9 +111,11 @@ TextPositioning NameplatePainter::statusPosition(Vec2F bubblePosition) const {
 RectF NameplatePainter::determineBoundBox(Vec2F bubblePosition, Nametag const& nametag) const {
   auto& context = GuiContext::singleton();
   context.setFontSize(m_fontSize);
+  context.setFont(m_font);
   RectF nametagBox = context.determineTextSize(nametag.name, namePosition(bubblePosition));
   if (nametag.statusText) {
     context.setFontSize(m_statusFontSize);
+    context.setFont(m_statusFont);
     nametagBox.combine(context.determineTextSize(*nametag.statusText, statusPosition(bubblePosition)));
   }
   return nametagBox;

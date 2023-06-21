@@ -1,5 +1,10 @@
 {
   "font" : {
-    "defaultDirectives" : ""
-  }
+    "defaultDirectives" : "",
+    "defaultFont" : ""
+  },
+  "cursorTooltip" : {
+    "font" : ""
+  },
+  "debugFont" : ""
 }

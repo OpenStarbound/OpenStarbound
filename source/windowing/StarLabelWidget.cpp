@@ -19,6 +19,7 @@ LabelWidget::LabelWidget(String text,
   auto fontConfig = assets->json("/interface.config:font");
   m_fontSize = fontConfig.getInt("baseSize");
   m_processingDirectives = fontConfig.getString("defaultDirectives");
+  m_font = fontConfig.queryString("defaultFont", "");
   setText(move(text));
 }
 
@@ -79,6 +80,7 @@ RectI LabelWidget::getScissorRect() const {
 }
 
 void LabelWidget::renderImpl() {
+  context()->setFont(m_font);
   context()->setFontSize(m_fontSize);
   context()->setFontColor(m_color.toRgba());
   context()->setFontProcessingDirectives(m_processingDirectives);
@@ -90,6 +92,7 @@ void LabelWidget::renderImpl() {
 
   context()->renderInterfaceText(m_text, {Vec2F(screenPosition()), m_hAnchor, m_vAnchor, m_wrapWidth, m_textCharLimit});
 
+  context()->setDefaultFont();
   context()->setFontProcessingDirectives("");
   context()->setDefaultLineSpacing();
 }
@@ -98,7 +101,7 @@ void LabelWidget::updateTextRegion() {
   context()->setFontSize(m_fontSize);
   context()->setFontColor(m_color.toRgba());
   context()->setFontProcessingDirectives(m_processingDirectives);
-
+  context()->setFont(m_font);
   if (m_lineSpacing)
     context()->setLineSpacing(*m_lineSpacing);
   else
@@ -107,6 +110,7 @@ void LabelWidget::updateTextRegion() {
   m_textRegion = RectI(context()->determineInterfaceTextSize(m_text, {Vec2F(), m_hAnchor, m_vAnchor, m_wrapWidth, m_textCharLimit}));
   setSize(m_textRegion.size());
 
+  context()->setDefaultFont();
   context()->setFontProcessingDirectives("");
   context()->setDefaultLineSpacing();
 }

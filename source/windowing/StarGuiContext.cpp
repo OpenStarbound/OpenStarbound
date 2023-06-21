@@ -356,6 +356,14 @@ void GuiContext::setFontProcessingDirectives(String const& directives) {
   textPainter()->setProcessingDirectives(directives);
 }
 
+void GuiContext::setFont(String const& font) {
+  textPainter()->setFont(font);
+}
+
+void GuiContext::setDefaultFont() {
+  textPainter()->setFont("");
+}
+
 void GuiContext::setLineSpacing(float lineSpacing) {
   textPainter()->setLineSpacing(lineSpacing);
 }

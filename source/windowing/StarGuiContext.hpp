@@ -101,6 +101,8 @@ public:
   void setFontColor(Vec4B const& color);
   void setFontMode(FontMode mode);
   void setFontProcessingDirectives(String const& directives);
+  void setFont(String const& font);
+  void setDefaultFont();
 
   void setLineSpacing(float lineSpacing);
   void setDefaultLineSpacing();

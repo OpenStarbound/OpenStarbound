@@ -25,6 +25,7 @@ ButtonWidget::ButtonWidget() {
   auto interfaceConfig = assets->json("/interface.config");
   m_pressedOffset = jsonToVec2I(interfaceConfig.get("buttonPressedOffset"));
   m_fontSize = interfaceConfig.query("font.buttonSize").toInt();
+  m_font = interfaceConfig.query("font.defaultFont").toString();
 }
 
 ButtonWidget::ButtonWidget(WidgetCallbackFunc callback,
@@ -89,6 +90,7 @@ void ButtonWidget::renderImpl() {
   if (!m_text.empty()) {
     auto& guiContext = GuiContext::singleton();
     guiContext.setFontSize(m_fontSize);
+    guiContext.setFont(m_font);
     if (m_disabled)
       guiContext.setFontColor(m_fontColorDisabled.toRgba());
     else if (m_fontColorChecked && m_checked)

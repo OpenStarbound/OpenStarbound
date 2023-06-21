@@ -997,6 +997,7 @@ void MainInterface::renderMessages() {
     m_guiContext->drawQuad(m_config->messageTextContainer,
         RectF::withCenter(backgroundTextCenterPos, Vec2F(imgMetadata->imageSize(m_config->messageTextContainer) * interfaceScale())));
 
+    m_guiContext->setFont(m_config->font);
     m_guiContext->setFontSize(m_config->fontSize);
     m_guiContext->setFontColor(Color::White.toRgba());
     m_guiContext->renderText(message->message, {messageTextOffset, HorizontalAnchor::HMidAnchor, VerticalAnchor::VMidAnchor});
@@ -1024,6 +1025,7 @@ void MainInterface::renderMonsterHealthBar() {
     m_guiContext->drawQuad(container, RectF::withCenter(backgroundCenterPos + offset, Vec2F(imgMetadata->imageSize(container) * interfaceScale())));
 
     auto nameTextOffset = jsonToVec2F(assets->json("/interface.config:monsterHealth.nameTextOffset")) * interfaceScale();
+    m_guiContext->setFont(m_config->font);
     m_guiContext->setFontSize(m_config->fontSize);
     m_guiContext->setFontColor(Color::White.toRgba());
     m_guiContext->renderText(showDamageEntity->name(), backgroundCenterPos + nameTextOffset);
@@ -1250,7 +1252,7 @@ void MainInterface::renderDebug() {
 
   auto assets = Root::singleton().assets();
   m_guiContext->setFontSize(m_config->debugFontSize);
-  int counter = 0;
+  m_guiContext->setFont(m_config->debugFont);
   m_guiContext->setFontColor(Color::Green.toRgba());
 
   bool clearMap = m_debugMapClearTimer.wrapTick();
@@ -1258,6 +1260,7 @@ void MainInterface::renderDebug() {
   if (clearMap)
     LogMap::clear();
 
+  int counter = 0;
   for (auto const& pair : logMapValues) {
     TextPositioning positioning = {Vec2F(m_config->debugOffset[0], windowHeight() - m_config->debugOffset[1] - m_config->fontSize * interfaceScale() * counter)};
     m_debugTextRect.combine(m_guiContext->determineTextSize(strf("%s: %s", pair.first, pair.second), positioning).padded(m_config->debugBackgroundPad));
@@ -1307,7 +1310,8 @@ void MainInterface::renderDebug() {
     m_guiContext->drawLine(position + Vec2F(2, -2), position + Vec2F(-2, -2), point.color, 1);
   }
 
-  m_guiContext->setFontSize(assets->json("/interface.config:debugFontSize").toInt());
+  m_guiContext->setFontSize(m_config->debugFontSize);
+
   for (auto const& logText : SpatialLogger::getText("world", clearSpatial)) {
     m_guiContext->setFontColor(logText.color);
     m_guiContext->renderText(logText.text.utf8Ptr(), camera.worldToScreen(logText.position));
@@ -1381,11 +1385,13 @@ void MainInterface::renderCursor() {
     Vec2I cursorOffset = (Vec2I{0, -m_cursor.size().y()} + rawCursorOffset) * interfaceScale();
     Vec2I tooltipOffset = m_cursorScreenPos + cursorOffset;
     size_t fontSize = assets->json("/interface.config:cursorTooltip.fontSize").toUInt();
+    String font = assets->json("/interface.config:cursorTooltip.font").toString();
     Vec4B fontColor = jsonToColor(assets->json("/interface.config:cursorTooltip.color")).toRgba();
 
     m_guiContext->drawQuad(backgroundImage, Vec2F(tooltipOffset) + Vec2F(-tooltipSize.x(), 0), interfaceScale());
     m_guiContext->setFontSize(fontSize);
     m_guiContext->setFontColor(fontColor);
+    m_guiContext->setFont(font);
     m_guiContext->renderText(*m_cursorTooltip,
         TextPositioning(Vec2F(tooltipOffset) + Vec2F(-tooltipSize.x(), tooltipSize.y()) / 2,
             HorizontalAnchor::HMidAnchor,

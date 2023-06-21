@@ -69,6 +69,7 @@ private:
   float m_fadeRate;
   unsigned m_fontSize;
   String m_fontDirectives;
+  String m_font;
   float m_chatLineHeight;
   unsigned m_chatHistoryLimit;
   int m_historyOffset;

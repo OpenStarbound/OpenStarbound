@@ -63,6 +63,7 @@ private:
   VerticalAnchor m_vAnchor;
   Color m_color;
   String m_processingDirectives;
+  String m_font;
   int m_fontSize;
   int m_maxWidth;
   int m_cursorOffset;

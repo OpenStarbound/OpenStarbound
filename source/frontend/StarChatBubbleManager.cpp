@@ -194,7 +194,10 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
       // TODO: Get rid of this stupid fucking bullshit, this is the ugliest
       // fragilest pointlessest horseshit code in the codebase.  It wouldn't
       // bother me so bad if it weren't so fucking easy to do right.
+
+      // yea I agree
       m_guiContext->setFontSize(m_fontSize, m_zoom);
+      m_guiContext->setDefaultFont();
       auto result = m_guiContext->determineTextSize(sayAction.text, m_textTemplate);
       float textWidth = result.width() / m_zoom + m_textPadding[0];
       float textHeight = result.height() / m_zoom + m_textPadding[1];

@@ -43,6 +43,7 @@ struct MainInterfaceConfig {
   static MainInterfaceConfigPtr loadFromAssets();
 
   unsigned fontSize;
+  String font;
 
   String inventoryImage;
   String inventoryImageHover;
@@ -143,6 +144,7 @@ struct MainInterfaceConfig {
 
   Vec2I debugOffset;
   unsigned debugFontSize;
+  String debugFont;
   float debugSpatialClearTime;
   float debugMapClearTime;
   Color debugBackgroundColor;

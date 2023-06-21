@@ -32,6 +32,7 @@ protected:
   float m_pingTimeout;
 
   unsigned m_fontSize;
+  String m_font;
 
 private:
 };

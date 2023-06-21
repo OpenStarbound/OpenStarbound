@@ -57,6 +57,7 @@ private:
   RectI m_itemDraggableArea;
 
   int m_fontSize;
+  String m_font;
   Color m_fontColor;
 
   WidgetCallbackFunc m_callback;

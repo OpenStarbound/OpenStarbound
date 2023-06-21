@@ -33,6 +33,8 @@ private:
 
   float m_opacityRate;
   Vec2F m_offset;
+  String m_font;
+  String m_statusFont;
   float m_fontSize;
   float m_statusFontSize;
   Vec2F m_statusOffset;

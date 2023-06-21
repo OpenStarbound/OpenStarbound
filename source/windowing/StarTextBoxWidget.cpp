@@ -25,6 +25,7 @@ TextBoxWidget::TextBoxWidget(String const& startingText, String const& hint, Wid
   auto fontConfig = assets->json("/interface.config:font");
   m_fontSize = fontConfig.getInt("baseSize");
   m_processingDirectives = fontConfig.getString("defaultDirectives");
+  m_font = fontConfig.queryString("defaultFont", "");
   m_color = Color::rgb(jsonToVec3B(fontConfig.getArray("defaultColor")));
 
   // Meh, padding is hard-coded here
@@ -46,6 +47,7 @@ void TextBoxWidget::renderImpl() {
   else if (m_hAnchor == HorizontalAnchor::RightAnchor)
     pos += Vec2F(size()[0], 0);
 
+  context()->setFont(m_font);
   if ((m_maxWidth != -1) && m_overfillMode) {
     context()->setFontSize(m_fontSize);
     int shift = std::max(0, getCursorOffset() - m_maxWidth);
@@ -61,6 +63,7 @@ void TextBoxWidget::renderImpl() {
     context()->setFontColor(m_color.mix(Color::rgbf(0, 0, 1), blueRate).toRgba());
     context()->renderInterfaceText(m_text, {pos, m_hAnchor, m_vAnchor});
   }
+  context()->setDefaultFont();
   context()->setFontProcessingDirectives("");
   context()->setFontColor(Vec4B::filled(255));
 
@@ -85,6 +88,7 @@ void TextBoxWidget::renderImpl() {
 
 int TextBoxWidget::getCursorOffset() { // horizontal only
   float scale;
+  context()->setFont(m_font);
   context()->setFontSize(m_fontSize);
   if (m_hAnchor == HorizontalAnchor::LeftAnchor) {
     scale = 1.0;
@@ -391,6 +395,7 @@ bool TextBoxWidget::newTextValid(String const& text) const {
   if (!text.regexMatch(m_regex))
     return false;
   if ((m_maxWidth != -1) && !m_overfillMode) {
+    context()->setFont(m_font);
     context()->setFontSize(m_fontSize);
     return context()->stringInterfaceWidth(text) <= m_maxWidth;
   }

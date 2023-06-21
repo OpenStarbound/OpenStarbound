@@ -34,6 +34,7 @@ public:
   void cleanup(int64_t timeout);
   // Switches the current font
   void switchFont(String const& font);
+  String const& activeFont();
   void addFont(FontPtr const& font, String const& name, bool default = false);
 private:
   StringMap<FontPtr> m_fonts;

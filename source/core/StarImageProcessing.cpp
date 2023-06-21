@@ -495,21 +495,23 @@ Image processImageOperations(List<ImageOperation> const& operations, Image image
 
           if (dist < std::numeric_limits<int>::max()) {
             float percent = (dist - 1) / (2.0f * pixels - 1);
-            Vec4F color = (Vec4F(op->startColor) * ((1.0f - percent) / 255.0f)) + (Vec4F(op->endColor) * (percent / 255.0f));
-            color.clamp(0.0f, 1.0f);
+            Color color = Color::rgbaf((Vec4F(op->startColor) * ((1.0f - percent) / 255.0f)) + (Vec4F(op->endColor) * (percent / 255.0f)));
             if (pixel[3] != 0) {
-              float pixelA = byteToFloat(pixel[3]);
               if (op->outlineOnly)
-                color[3] *= (1.0f - pixelA);
+                color.setAlphaF(1.0f - byteToFloat(pixel[3]));
               else {
-                float colorA = pixelA * (1.0f - color[3]);
-                color[0] = Color::fromLinear((Color::toLinear(color[0]) * colorA) + (Color::toLinear(byteToFloat(pixel[0])) * pixelA));
-                color[1] = Color::fromLinear((Color::toLinear(color[1]) * colorA) + (Color::toLinear(byteToFloat(pixel[1])) * pixelA));
-                color[2] = Color::fromLinear((Color::toLinear(color[2]) * colorA) + (Color::toLinear(byteToFloat(pixel[2])) * pixelA));
-                color[3] += colorA;
+                Color pixelCol = Color::rgba(pixel);
+                float pixelA = pixelCol.alphaF();
+                float colorA = color.alphaF();
+                colorA += pixelA * (1.0f - colorA);
+                pixelCol.convertToLinear();
+                color.convertToLinear();
+                color.mix(pixelCol, pixelA);
+                color.convertToSRGB();
+                color.setAlphaF(colorA);
               }
             }
-            pixel = Vec4B(color.piecewiseMultiply(Vec4F::filled(255.0f)));
+            pixel = color.toRgba();
           }
         } else if (op->outlineOnly) {
           pixel = Vec4B(0, 0, 0, 0);

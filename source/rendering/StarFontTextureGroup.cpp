@@ -13,11 +13,19 @@ void FontTextureGroup::cleanup(int64_t timeout) {
 }
 
 void FontTextureGroup::switchFont(String const& font) {
-  if (m_fontName != font) {
+  if (font.empty()) {
+    m_font = m_defaultFont;
+    m_fontName.clear();
+  }
+  else if (m_fontName != font) {
     m_fontName = font;
     auto find = m_fonts.find(font);
     m_font = find != m_fonts.end() ? find->second : m_defaultFont;
   }
+}
+
+String const& FontTextureGroup::activeFont() {
+  return m_fontName;
 }
 
 void FontTextureGroup::addFont(FontPtr const& font, String const& name, bool default) {

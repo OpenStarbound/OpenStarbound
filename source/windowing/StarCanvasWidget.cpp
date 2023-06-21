@@ -60,8 +60,8 @@ void CanvasWidget::drawTriangles(List<tuple<Vec2F, Vec2F, Vec2F>> const& triangl
   m_renderOps.append(make_tuple(triangles, color));
 }
 
-void CanvasWidget::drawText(String s, TextPositioning position, unsigned fontSize, Vec4B const& color, FontMode mode, float lineSpacing, String processingDirectives) {
-  m_renderOps.append(make_tuple(move(s), move(position), fontSize, color, mode, lineSpacing, move(processingDirectives)));
+void CanvasWidget::drawText(String s, TextPositioning position, unsigned fontSize, Vec4B const& color, FontMode mode, float lineSpacing, String font, String processingDirectives) {
+  m_renderOps.append(make_tuple(move(s), move(position), fontSize, color, mode, lineSpacing, move(font), move(processingDirectives)));
 }
 
 Vec2I CanvasWidget::mousePosition() const {
@@ -137,7 +137,7 @@ void CanvasWidget::renderImpl() {
     if (auto args = op.ptr<TrianglesOp>())
       tupleUnpackFunction(bind(&CanvasWidget::renderTriangles, this, renderingOffset, _1, _2), *args);
     if (auto args = op.ptr<TextOp>())
-      tupleUnpackFunction(bind(&CanvasWidget::renderText, this, renderingOffset, _1, _2, _3, _4, _5, _6, _7), *args);
+      tupleUnpackFunction(bind(&CanvasWidget::renderText, this, renderingOffset, _1, _2, _3, _4, _5, _6, _7, _8), *args);
   }
 }
 
@@ -222,18 +222,20 @@ void CanvasWidget::renderTriangles(Vec2F const& renderingOffset, List<tuple<Vec2
   context.drawInterfaceTriangles(translated, color);
 }
 
-void CanvasWidget::renderText(Vec2F const& renderingOffset, String const& s, TextPositioning const& position, unsigned fontSize, Vec4B const& color, FontMode mode, float lineSpacing, String const& directives) {
+void CanvasWidget::renderText(Vec2F const& renderingOffset, String const& s, TextPositioning const& position, unsigned fontSize, Vec4B const& color, FontMode mode, float lineSpacing, String const& font, String const& directives) {
   auto& context = GuiContext::singleton();
   context.setFontProcessingDirectives(directives);
   context.setFontSize(fontSize);
   context.setFontColor(color);
   context.setFontMode(mode);
+  context.setFont(font);
   context.setLineSpacing(lineSpacing);
 
   TextPositioning translatedPosition = position;
   translatedPosition.pos += renderingOffset;
   context.renderInterfaceText(s, translatedPosition);
   context.setDefaultLineSpacing();
+  context.setDefaultFont();
   context.setFontProcessingDirectives("");
 }
 

@@ -144,22 +144,41 @@ int TextPainter::glyphWidth(String::Char c) {
 }
 
 int TextPainter::stringWidth(String const& s) {
+  String font = m_renderSettings.font, setFont = font;
+  m_fontTextureGroup.switchFont(font);
   int width = 0;
   bool escape = false;
 
+  String escapeCode;
   for (String::Char c : Text::preprocessEscapeCodes(s)) {
     if (c == Text::StartEsc)
       escape = true;
+
     if (!escape)
       width += glyphWidth(c);
-    if (c == Text::EndEsc)
+    else if (c == Text::EndEsc) {
+      auto commands = escapeCode.split(',');
+      for (auto& command : commands) {
+        if (command == "reset")
+          m_fontTextureGroup.switchFont(font = setFont);
+        else if (command == "set")
+          setFont = font;
+        else if (command.beginsWith("font="))
+          m_fontTextureGroup.switchFont(font = command.substr(5));
+      }
       escape = false;
+      escapeCode = "";
+    }
+    if (escape && (c != Text::StartEsc))
+      escapeCode.append(c);
   }
 
   return width;
 }
 
 StringList TextPainter::wrapText(String const& s, Maybe<unsigned> wrapWidth) {
+  String font = m_renderSettings.font, setFont = font;
+  m_fontTextureGroup.switchFont(font);
   String text = Text::preprocessEscapeCodes(s);
 
   unsigned lineStart = 0; // Where does this line start ?
@@ -167,6 +186,7 @@ StringList TextPainter::wrapText(String const& s, Maybe<unsigned> wrapWidth) {
   unsigned linePixelWidth = 0; // How wide is this line so far
 
   bool inEscapeSequence = false;
+  String escapeCode;
 
   unsigned splitPos = 0; // Where did we last see a place to split the string ?
   unsigned splitWidth = 0; // How wide was the string there ?
@@ -174,6 +194,7 @@ StringList TextPainter::wrapText(String const& s, Maybe<unsigned> wrapWidth) {
   StringList lines; // list of renderable string lines
 
   // loop through every character in the string
+
   for (auto character : text) {
     // this up here to deal with the (common) occurance that the first charcter
     // is an escape initiator
@@ -182,8 +203,21 @@ StringList TextPainter::wrapText(String const& s, Maybe<unsigned> wrapWidth) {
 
     if (inEscapeSequence) {
       lineCharSize++; // just jump straight to the next character, we don't care what it is.
-      if (character == Text::EndEsc)
+      if (character == Text::EndEsc) {
+        auto commands = escapeCode.split(',');
+        for (auto& command : commands) {
+          if (command == "reset")
+            m_fontTextureGroup.switchFont(font = setFont);
+          else if (command == "set")
+            setFont = font;
+          else if (command.beginsWith("font="))
+            m_fontTextureGroup.switchFont(font = command.substr(5));
+        }
         inEscapeSequence = false;
+        escapeCode = "";
+      }
+      if (character != Text::StartEsc)
+        escapeCode.append(character);
     } else {
       lineCharSize++; // assume at least one character if we get here.
 
@@ -272,7 +306,7 @@ void TextPainter::setProcessingDirectives(String directives) {
 }
 
 void TextPainter::setFont(String const& font) {
-  m_fontTextureGroup.switchFont(font);
+  m_renderSettings.font = font;
 }
 
 void TextPainter::addFont(FontPtr const& font, String const& name) {
@@ -289,7 +323,7 @@ RectF TextPainter::doRenderText(String const& s, TextPositioning const& position
 
   int height = (lines.size() - 1) * m_lineSpacing * m_fontSize + m_fontSize;
 
-  auto savedRenderSettings = m_renderSettings;
+  RenderSettings savedRenderSettings = m_renderSettings;
   m_savedRenderSettings = m_renderSettings;
 
   if (position.vAnchor == VerticalAnchor::BottomAnchor)
@@ -306,7 +340,7 @@ RectF TextPainter::doRenderText(String const& s, TextPositioning const& position
       break;
   }
 
-  m_renderSettings = savedRenderSettings;
+  m_renderSettings = move(savedRenderSettings);
 
   return bounds;
 }
@@ -314,6 +348,7 @@ RectF TextPainter::doRenderText(String const& s, TextPositioning const& position
 RectF TextPainter::doRenderLine(String const& s, TextPositioning const& position, bool reallyRender, unsigned* charLimit) {
   String text = s;
   TextPositioning pos = position;
+
 
   if (pos.hAnchor == HorizontalAnchor::RightAnchor) {
     auto trimmedString = s;
@@ -349,7 +384,7 @@ RectF TextPainter::doRenderLine(String const& s, TextPositioning const& position
       pos.pos[0] += glyphBounds.width();
     } else if (c == Text::EndEsc) {
       auto commands = escapeCode.split(',');
-      for (auto command : commands) {
+      for (auto& command : commands) {
         try {
           if (command == "reset") {
             m_renderSettings = m_savedRenderSettings;
@@ -388,7 +423,7 @@ RectF TextPainter::doRenderLine(String const& s, TextPositioning const& position
 RectF TextPainter::doRenderGlyph(String::Char c, TextPositioning const& position, bool reallyRender) {
   if (m_nonRenderedCharacters.find(String(c)) != NPos)
     return RectF();
-  setFont(m_renderSettings.font);
+  m_fontTextureGroup.switchFont(m_renderSettings.font);
   int width = glyphWidth(c);
   // Offset left by width if right anchored.
   float hOffset = 0;

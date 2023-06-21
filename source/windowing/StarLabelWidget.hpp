@@ -41,6 +41,7 @@ private:
   HorizontalAnchor m_hAnchor;
   VerticalAnchor m_vAnchor;
   String m_processingDirectives;
+  String m_font;
   Maybe<unsigned> m_wrapWidth;
   Maybe<float> m_lineSpacing;
   Maybe<unsigned> m_textCharLimit;

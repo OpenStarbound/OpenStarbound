@@ -78,7 +78,7 @@ unsigned Font::width(String::Char c) {
   if (auto width = m_widthCache.maybe({c, m_pixelSize})) {
     return *width;
   } else {
-    FT_Load_Char(m_fontImpl->face, c, FT_LOAD_DEFAULT);
+    FT_Load_Char(m_fontImpl->face, c, FT_LOAD_FORCE_AUTOHINT);
     unsigned newWidth = (m_fontImpl->face->glyph->advance.x + 32) / 64;
     m_widthCache.insert({c, m_pixelSize}, newWidth);
     return newWidth;

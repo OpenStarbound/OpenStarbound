@@ -14,7 +14,7 @@ MainInterfaceConfigPtr MainInterfaceConfig::loadFromAssets() {
   auto config = make_shared<MainInterfaceConfig>();
 
   config->fontSize = assets->json("/interface.config:font.baseSize").toInt();
-
+  config->font = assets->json("/interface.config:font.defaultFont").toString();
   config->inventoryImage = assets->json("/interface.config:mainBar.inventory.base").toString();
   config->inventoryImageHover = assets->json("/interface.config:mainBar.inventory.hover").toString();
   config->inventoryImageGlow = assets->json("/interface.config:mainBar.inventory.glow").toString();
@@ -113,6 +113,7 @@ MainInterfaceConfigPtr MainInterfaceConfig::loadFromAssets() {
 
   config->debugOffset = jsonToVec2I(assets->json("/interface.config:debugOffset"));
   config->debugFontSize = assets->json("/interface.config:debugFontSize").toUInt();
+  config->debugFont = assets->json("/interface.config:debugFont").toString();
   config->debugSpatialClearTime = assets->json("/interface.config:debugSpatialClearTime").toFloat();
   config->debugMapClearTime = assets->json("/interface.config:debugMapClearTime").toFloat();
   config->debugBackgroundColor = jsonToColor(assets->json("/interface.config:debugBackgroundColor"));

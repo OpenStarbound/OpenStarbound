@@ -10,6 +10,7 @@ FuelWidget::FuelWidget() {
   auto assets = Root::singleton().assets();
 
   m_fontSize = assets->json("/interface.config:font.buttonSize").toInt();
+  m_font = assets->json("/interface.config:font.defaultFont").toString();
 
   m_fuelLevel = 0;
   m_maxLevel = 0;
@@ -73,6 +74,7 @@ void FuelWidget::renderImpl() {
 
   auto& guiContext = GuiContext::singleton();
   guiContext.setFontSize(m_fontSize);
+  guiContext.setFont(m_font);
   if (m_potential != 0) {
     guiContext.setFontColor(Color::White.toRgba());
   } else if (m_fuelLevel == 0) {

@@ -113,6 +113,7 @@ protected:
   WidgetPtr m_icon;
   String m_title;
   String m_subTitle;
+  String m_font;
   unsigned m_fontSize;
   Vec2I m_iconOffset;
   Vec2I m_titleOffset;
