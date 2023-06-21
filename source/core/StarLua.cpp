@@ -1451,8 +1451,10 @@ Maybe<LuaInt> LuaDetail::asInteger(LuaValue const& v) {
       return (LuaInt)f;
     return {};
   }
+  /*// Kae: This prevents 1-1 conversion between Lua and Star::Json.
   if (v.is<LuaString>())
     return maybeLexicalCast<LuaInt>(v.get<LuaString>().ptr());
+  //*/
   return {};
 }
 
