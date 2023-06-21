@@ -262,6 +262,7 @@ public:
     if (!m_sdlGlContext)
       throw ApplicationException::format("Application: Could not create OpenGL context: %s", SDL_GetError());
 
+    SDL_GL_SwapWindow(m_sdlWindow);
     setVSyncEnabled(m_windowVSync);
 
     SDL_StopTextInput();
@@ -277,13 +278,15 @@ public:
     };
 
     SDL_AudioSpec obtained = {};
-    if (SDL_OpenAudioDevice(NULL, 0, &desired, &obtained, 0) < 0) {
+    m_audioDevice = SDL_OpenAudioDevice(NULL, 0, &desired, &obtained, 0);
+    if (!m_audioDevice) {
       Logger::error("Application: Could not open audio device, no sound available!");
     } else if (obtained.freq != desired.freq || obtained.channels != desired.channels || obtained.format != desired.format) {
-      SDL_CloseAudio();
+      SDL_CloseAudioDevice(m_audioDevice);
       Logger::error("Application: Could not open 44.1khz / 16 bit stereo audio device, no sound available!");
     } else {
       Logger::info("Application: Opened default audio device with 44.1khz / 16 bit stereo audio, %s sample size buffer", obtained.samples);
+      SDL_PauseAudioDevice(m_audioDevice, 0);
     }
 
     m_renderer = make_shared<OpenGl20Renderer>();
@@ -291,7 +294,7 @@ public:
   }
 
   ~SdlPlatform() {
-    SDL_CloseAudio();
+    SDL_CloseAudioDevice(m_audioDevice);
 
     m_renderer.reset();
 
@@ -370,7 +373,7 @@ public:
       Logger::error("Application: threw exception during shutdown: %s", outputException(e, true));
     }
 
-    SDL_CloseAudio();
+    SDL_CloseAudioDevice(m_audioDevice);
     m_application.reset();
   }
 
@@ -438,8 +441,10 @@ private:
 
     void setNormalWindow(Vec2U windowSize) override {
       if (parent->m_windowMode != WindowMode::Normal || parent->m_windowSize != windowSize) {
-        if (parent->m_windowMode == WindowMode::Fullscreen || parent->m_windowMode == WindowMode::Borderless)
+        if (parent->m_windowMode == WindowMode::Fullscreen || parent->m_windowMode == WindowMode::Borderless) {
           SDL_SetWindowFullscreen(parent->m_sdlWindow, 0);
+          SDL_SetWindowBordered(parent->m_sdlWindow, SDL_TRUE);
+        }
         else if (parent->m_windowMode == WindowMode::Maximized)
           SDL_RestoreWindow(parent->m_sdlWindow);
 
@@ -453,8 +458,10 @@ private:
 
     void setMaximizedWindow() override {
       if (parent->m_windowMode != WindowMode::Maximized) {
-        if (parent->m_windowMode == WindowMode::Fullscreen || parent->m_windowMode == WindowMode::Borderless)
+        if (parent->m_windowMode == WindowMode::Fullscreen || parent->m_windowMode == WindowMode::Borderless) {
           SDL_SetWindowFullscreen(parent->m_sdlWindow, 0);
+          SDL_SetWindowBordered(parent->m_sdlWindow, SDL_TRUE);
+        }
 
         SDL_MaximizeWindow(parent->m_sdlWindow);
         parent->m_windowMode = WindowMode::Maximized;
@@ -463,7 +470,9 @@ private:
 
     void setBorderlessWindow() override {
       if (parent->m_windowMode != WindowMode::Borderless) {
-        SDL_SetWindowFullscreen(parent->m_sdlWindow, SDL_WINDOW_FULLSCREEN_DESKTOP);
+        SDL_SetWindowFullscreen(parent->m_sdlWindow, 0);
+        SDL_SetWindowBordered(parent->m_sdlWindow, SDL_FALSE);
+        SDL_MaximizeWindow(parent->m_sdlWindow);
         parent->m_windowMode = WindowMode::Borderless;
 
         SDL_DisplayMode actualDisplayMode;
@@ -656,6 +665,7 @@ private:
 
   SDL_Window* m_sdlWindow = nullptr;
   SDL_GLContext m_sdlGlContext = nullptr;
+  SDL_AudioDeviceID m_audioDevice = 0;
 
   Vec2U m_windowSize = {800, 600};
   WindowMode m_windowMode = WindowMode::Normal;

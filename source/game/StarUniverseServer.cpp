@@ -619,20 +619,23 @@ void UniverseServer::updateShips() {
     if (auto shipWorld = getWorld(ClientShipWorldId(p.second->playerUuid()))) {
       shipWorld->executeAction([&](WorldServerThread*, WorldServer* shipWorld) {
         auto const& speciesShips = m_speciesShips.get(p.second->playerSpecies());
-        unsigned oldShipLevel = shipWorld->getProperty("ship.level").toUInt();
+        Json jOldShipLevel = shipWorld->getProperty("ship.level");
         unsigned newShipLevel = min<unsigned>(speciesShips.size() - 1, newShipUpgrades.shipLevel);
 
-        if (oldShipLevel < newShipLevel) {
-          for (unsigned i = oldShipLevel + 1; i <= newShipLevel; ++i) {
-            auto shipStructure = WorldStructure(speciesShips[i]);
-            shipWorld->setCentralStructure(shipStructure);
-            newShipUpgrades.apply(shipStructure.configValue("shipUpgrades"));
+
+        if (jOldShipLevel.isType(Json::Type::Int)) {
+          auto oldShipLevel = jOldShipLevel.toUInt();
+          if (oldShipLevel < newShipLevel) {
+            for (unsigned i = oldShipLevel + 1; i <= newShipLevel; ++i) {
+              auto shipStructure = WorldStructure(speciesShips[i]);
+              shipWorld->setCentralStructure(shipStructure);
+              newShipUpgrades.apply(shipStructure.configValue("shipUpgrades"));
+            }
+
+            p.second->setShipUpgrades(newShipUpgrades);
+            p.second->updateShipChunks(shipWorld->readChunks());
           }
-
-          p.second->setShipUpgrades(newShipUpgrades);
-          p.second->updateShipChunks(shipWorld->readChunks());
         }
-
         shipWorld->setProperty("ship.level", newShipUpgrades.shipLevel);
         shipWorld->setProperty("ship.maxFuel", newShipUpgrades.maxFuel);
         shipWorld->setProperty("ship.crewSize", newShipUpgrades.crewSize);
@@ -1430,6 +1433,7 @@ void UniverseServer::packetsReceived(UniverseConnectionServer*, ConnectionId cli
         clientFlyShip(clientId, flyShip->system, flyShip->location);
 
       } else if (auto chatSend = as<ChatSendPacket>(packet)) {
+        RecursiveMutexLocker locker(m_mainLock);
         m_pendingChat[clientId].append({move(chatSend->text), chatSend->sendMode});
 
       } else if (auto clientContextUpdatePacket = as<ClientContextUpdatePacket>(packet)) {

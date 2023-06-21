@@ -693,33 +693,34 @@ void OpenGl20Renderer::GlRenderBuffer::set(List<RenderPrimitive> primitives) {
 }
 
 void OpenGl20Renderer::logGlErrorSummary(String prefix) {
+  prefix += ": ";
+  Logger::error(prefix.utf8Ptr());
   List<GLenum> errors;
   while (GLenum error = glGetError())
     errors.append(error);
 
-  if (!errors.empty()) {
-    String errorMessage = move(prefix);
-    errorMessage.append(": ");
-    for (auto const& error : errors) {
+  if (GLenum error = glGetError()) {
+    prefix += ": ";
+    Logger::error(prefix.utf8Ptr());
+    do {
       if (error == GL_INVALID_ENUM) {
-        errorMessage += " GL_INVALID_ENUM";
+        Logger::error("GL_INVALID_ENUM");
       } else if (error == GL_INVALID_VALUE) {
-        errorMessage += " GL_INVALID_VALUE";
+        Logger::error("GL_INVALID_VALUE");
       } else if (error == GL_INVALID_OPERATION) {
-        errorMessage += " GL_INVALID_OPERATION";
+        Logger::error("GL_INVALID_OPERATION");
       } else if (error == GL_INVALID_FRAMEBUFFER_OPERATION) {
-        errorMessage += " GL_INVALID_FRAMEBUFFER_OPERATION";
+        Logger::error("GL_INVALID_FRAMEBUFFER_OPERATION");
       } else if (error == GL_OUT_OF_MEMORY) {
-        errorMessage += " GL_OUT_OF_MEMORY";
+        Logger::error("GL_OUT_OF_MEMORY");
       } else if (error == GL_STACK_UNDERFLOW) {
-        errorMessage += " GL_STACK_UNDERFLOW";
+        Logger::error("GL_STACK_UNDERFLOW");
       } else if (error == GL_STACK_OVERFLOW) {
-        errorMessage += " GL_STACK_OVERFLOW";
+        Logger::error("GL_STACK_OVERFLOW");
       } else {
-        errorMessage += " <UNRECOGNIZED GL ERROR>";
+        Logger::error("<UNRECOGNIZED GL ERROR>");
       }
-    }
-    Logger::error(errorMessage.utf8Ptr());
+    } while (error = glGetError());
   }
 }
 

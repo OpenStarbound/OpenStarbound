@@ -18,6 +18,7 @@ Songbook::Songbook(String const& species) {
   m_dataUpdated = false;
   m_dataChanged = false;
   m_timeSourceEpoch = 0;
+  m_epochUpdated = false;
   m_globalNowDelta = 0;
   m_species = species;
   m_stopped = true;
@@ -72,6 +73,10 @@ void Songbook::update(EntityMode mode, World* world) {
     return;
 
   m_globalNowDelta = world->epochTime() * 1000 - Time::millisecondsSinceEpoch();
+  if (m_epochUpdated) {
+    m_epochUpdated = false;
+    m_timeSourceEpoch -= m_globalNowDelta;
+  }
   if (m_dataUpdated) {
     m_dataUpdated = false;
     if (!m_song.isNull()) {
@@ -652,6 +657,7 @@ void Songbook::play(Json const& song, String const& timeSource) {
     m_timeSource = toString(Random::randu64());
 
   {
+    m_epochUpdated = false;
     m_timeSourceEpoch = Time::millisecondsSinceEpoch();
     MutexLocker lock(s_timeSourcesMutex);
     if (!s_timeSources.contains(m_timeSource)) {
@@ -702,7 +708,8 @@ double Songbook::fundamentalPitch(double f) {
 void Songbook::netElementsNeedLoad(bool) {
   if (m_songNetState.pullUpdated()) {
     m_song = m_songNetState.get();
-    m_timeSourceEpoch = m_timeSourceEpochNetState.get() - m_globalNowDelta;
+    m_timeSourceEpoch = m_timeSourceEpochNetState.get();
+    m_epochUpdated = true;
     m_dataUpdated = true;
   }
   m_timeSource = m_timeSourceNetState.get();

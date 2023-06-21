@@ -128,11 +128,6 @@ void ClientApplication::startup(StringList const& cmdLineArgs) {
   m_root = rootLoader.initOrDie(cmdLineArgs).first;
 
   Logger::info("Client Version %s (%s) Source ID: %s Protocol: %s", StarVersionString, StarArchitectureString, StarSourceIdentifierString, StarProtocolVersion);
-
-  auto assets = m_root->assets();
-  m_minInterfaceScale = assets->json("/interface.config:minInterfaceScale").toInt();
-  m_maxInterfaceScale = assets->json("/interface.config:maxInterfaceScale").toInt();
-  m_crossoverRes = jsonToVec2F(assets->json("/interface.config:interfaceCrossoverRes"));
 }
 
 void ClientApplication::shutdown() {
@@ -159,6 +154,11 @@ void ClientApplication::shutdown() {
 void ClientApplication::applicationInit(ApplicationControllerPtr appController) {
   Application::applicationInit(appController);
 
+  auto assets = m_root->assets();
+  m_minInterfaceScale = assets->json("/interface.config:minInterfaceScale").toInt();
+  m_maxInterfaceScale = assets->json("/interface.config:maxInterfaceScale").toInt();
+  m_crossoverRes = jsonToVec2F(assets->json("/interface.config:interfaceCrossoverRes"));
+
   appController->setCursorVisible(false);
 
   AudioFormat audioFormat = appController->enableAudio();
@@ -178,7 +178,7 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
   bool borderless = configuration->get("borderless").toBool();
   bool maximized = configuration->get("maximized").toBool();
 
-  appController->setApplicationTitle(m_root->assets()->json("/client.config:windowTitle").toString());
+  appController->setApplicationTitle(assets->json("/client.config:windowTitle").toString());
   appController->setVSyncEnabled(vsync);
 
   if (fullscreen)
@@ -190,8 +190,8 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
   else
     appController->setNormalWindow(windowedSize);
 
-  appController->setMaxFrameSkip(m_root->assets()->json("/client.config:maxFrameSkip").toUInt());
-  appController->setUpdateTrackWindow(m_root->assets()->json("/client.config:updateTrackWindow").toFloat());
+  appController->setMaxFrameSkip(assets->json("/client.config:maxFrameSkip").toUInt());
+  appController->setUpdateTrackWindow(assets->json("/client.config:updateTrackWindow").toFloat());
 }
 
 void ClientApplication::renderInit(RendererPtr renderer) {

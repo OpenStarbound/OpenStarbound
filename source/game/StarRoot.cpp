@@ -57,7 +57,7 @@ namespace Star {
 
 namespace {
   unsigned const RootMaintenanceSleep = 5000;
-  unsigned const RootLoadThreads = 2;
+  unsigned const RootLoadThreads = 8;
 }
 
 atomic<Root*> Root::s_singleton;

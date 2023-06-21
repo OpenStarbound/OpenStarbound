@@ -81,6 +81,7 @@ private:
 
   String m_timeSource;
   int64_t m_timeSourceEpoch;
+  bool m_epochUpdated;
   String m_instrument;
   Json m_song;
   bool m_stopped;
