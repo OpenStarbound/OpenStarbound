@@ -388,6 +388,7 @@ RectF TextPainter::doRenderLine(String const& s, TextPositioning const& position
 RectF TextPainter::doRenderGlyph(String::Char c, TextPositioning const& position, bool reallyRender) {
   if (m_nonRenderedCharacters.find(String(c)) != NPos)
     return RectF();
+  setFont(m_renderSettings.font);
   int width = glyphWidth(c);
   // Offset left by width if right anchored.
   float hOffset = 0;
@@ -403,7 +404,6 @@ RectF TextPainter::doRenderGlyph(String::Char c, TextPositioning const& position
     vOffset = -(float)m_fontSize;
 
   if (reallyRender) {
-    setFont(m_renderSettings.font);
     if ((int)m_renderSettings.mode & (int)FontMode::Shadow) {
       Color shadow = Color::Black;
       uint8_t alphaU = m_renderSettings.color[3];
