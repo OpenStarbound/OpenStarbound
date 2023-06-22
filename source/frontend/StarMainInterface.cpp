@@ -96,7 +96,8 @@ MainInterface::MainInterface(UniverseClientPtr client, WorldPainterPtr painter, 
 
   m_inventoryWindow = make_shared<InventoryPane>(this, m_client->mainPlayer(), m_containerInteractor);
   m_paneManager.registerPane(MainInterfacePanes::Inventory, PaneLayer::Window, m_inventoryWindow, [this](PanePtr const&) {
-      m_client->mainPlayer()->clearSwap();
+      if (auto player = m_client->mainPlayer())
+          player->clearSwap();
       if (m_containerPane) {
         m_containerPane->dismiss();
         m_containerPane = {};
@@ -216,7 +217,8 @@ void MainInterface::openCraftingWindow(Json const& config, EntityId sourceEntity
 
   m_craftingWindow = make_shared<CraftingPane>(m_client->worldClient(), m_client->mainPlayer(), config, sourceEntityId);
   m_paneManager.displayPane(PaneLayer::Window, m_craftingWindow, [this](PanePtr const&) {
-      m_client->mainPlayer()->clearSwap();
+    if (auto player = m_client->mainPlayer())
+      player->clearSwap();
     });
 }
 
@@ -233,7 +235,8 @@ void MainInterface::openMerchantWindow(Json const& config, EntityId sourceEntity
   m_paneManager.displayPane(PaneLayer::Window,
       m_merchantWindow,
       [this](PanePtr const&) {
-        m_client->mainPlayer()->clearSwap();
+      if (auto player = m_client->mainPlayer())
+        player->clearSwap();
         m_paneManager.dismissRegisteredPane(MainInterfacePanes::Inventory);
       });
   m_paneManager.displayRegisteredPane(MainInterfacePanes::Inventory);
@@ -401,7 +404,8 @@ void MainInterface::handleInteractAction(InteractAction interactAction) {
 
     m_containerPane = make_shared<ContainerPane>(world, m_client->mainPlayer(), m_containerInteractor);
     m_paneManager.displayPane(PaneLayer::Window, m_containerPane, [this](PanePtr const&) {
-        m_client->mainPlayer()->clearSwap();
+      if (auto player = m_client->mainPlayer())
+        player->clearSwap();
         m_paneManager.dismissRegisteredPane(MainInterfacePanes::Inventory);
       });
 
@@ -496,7 +500,8 @@ void MainInterface::handleInteractAction(InteractAction interactAction) {
 
     if (scriptPane->openWithInventory()) {
       m_paneManager.displayPane(PaneLayer::Window, scriptPane, [this](PanePtr const&) {
-        m_client->mainPlayer()->clearSwap();
+        if (auto player = m_client->mainPlayer())
+          player->clearSwap();
         m_paneManager.dismissRegisteredPane(MainInterfacePanes::Inventory);
       });
       m_paneManager.displayRegisteredPane(MainInterfacePanes::Inventory);
