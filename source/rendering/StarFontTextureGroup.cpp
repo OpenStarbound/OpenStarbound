@@ -28,9 +28,9 @@ String const& FontTextureGroup::activeFont() {
   return m_fontName;
 }
 
-void FontTextureGroup::addFont(FontPtr const& font, String const& name, bool default) {
+void FontTextureGroup::addFont(FontPtr const& font, String const& name, bool isDefault) {
   m_fonts[name] = font;
-  if (default)
+  if (isDefault)
     m_defaultFont = m_font = font;
 }
 

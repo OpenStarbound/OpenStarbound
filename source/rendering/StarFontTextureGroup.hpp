@@ -35,7 +35,7 @@ public:
   // Switches the current font
   void switchFont(String const& font);
   String const& activeFont();
-  void addFont(FontPtr const& font, String const& name, bool default = false);
+  void addFont(FontPtr const& font, String const& name, bool isDefault = false);
   void clearFonts();
 private:
   StringMap<FontPtr> m_fonts;
