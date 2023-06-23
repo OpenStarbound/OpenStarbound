@@ -7,71 +7,67 @@ namespace Star {
 
 size_t const MultiTextureCount = 4;
 
-char const* DefaultEffectConfig = R"JSON(
-    {
-      "vertexShader" : "
-        #version 110
+char const* DefaultVertexShader = R"SHADER(
+#version 110
 
-        uniform vec2 textureSize0;
-        uniform vec2 textureSize1;
-        uniform vec2 textureSize2;
-        uniform vec2 textureSize3;
-        uniform vec2 screenSize;
-        uniform mat3 vertexTransform;
+uniform vec2 textureSize0;
+uniform vec2 textureSize1;
+uniform vec2 textureSize2;
+uniform vec2 textureSize3;
+uniform vec2 screenSize;
+uniform mat3 vertexTransform;
 
-        attribute vec2 vertexPosition;
-        attribute vec2 vertexTextureCoordinate;
-        attribute float vertexTextureIndex;
-        attribute vec4 vertexColor;
-        attribute float vertexParam1;
+attribute vec2 vertexPosition;
+attribute vec2 vertexTextureCoordinate;
+attribute float vertexTextureIndex;
+attribute vec4 vertexColor;
+attribute float vertexParam1;
 
-        varying vec2 fragmentTextureCoordinate;
-        varying float fragmentTextureIndex;
-        varying vec4 fragmentColor;
+varying vec2 fragmentTextureCoordinate;
+varying float fragmentTextureIndex;
+varying vec4 fragmentColor;
 
-        void main() {
-          vec2 screenPosition = (vertexTransform * vec3(vertexPosition, 1.0)).xy;
-          gl_Position = vec4(screenPosition / screenSize * 2.0 - 1.0, 0.0, 1.0);
-          if (vertexTextureIndex > 2.9) {
-            fragmentTextureCoordinate = vertexTextureCoordinate / textureSize3;
-          } else if (vertexTextureIndex > 1.9) {
-            fragmentTextureCoordinate = vertexTextureCoordinate / textureSize2;
-          } else if (vertexTextureIndex > 0.9) {
-            fragmentTextureCoordinate = vertexTextureCoordinate / textureSize1;
-          } else {
-            fragmentTextureCoordinate = vertexTextureCoordinate / textureSize0;
-          }
-          fragmentTextureIndex = vertexTextureIndex;
-          fragmentColor = vertexColor;
-        }
-      ",
+void main() {
+  vec2 screenPosition = (vertexTransform * vec3(vertexPosition, 1.0)).xy;
+  gl_Position = vec4(screenPosition / screenSize * 2.0 - 1.0, 0.0, 1.0);
+  if (vertexTextureIndex > 2.9) {
+    fragmentTextureCoordinate = vertexTextureCoordinate / textureSize3;
+  } else if (vertexTextureIndex > 1.9) {
+    fragmentTextureCoordinate = vertexTextureCoordinate / textureSize2;
+  } else if (vertexTextureIndex > 0.9) {
+    fragmentTextureCoordinate = vertexTextureCoordinate / textureSize1;
+  } else {
+    fragmentTextureCoordinate = vertexTextureCoordinate / textureSize0;
+  }
+  fragmentTextureIndex = vertexTextureIndex;
+  fragmentColor = vertexColor;
+}
+)SHADER";
 
-      "fragmentShader" : "
-        #version 110
+char const* DefaultFragmentShader = R"SHADER(
+#version 110
 
-        uniform sampler2D texture0;
-        uniform sampler2D texture1;
-        uniform sampler2D texture2;
-        uniform sampler2D texture3;
+uniform sampler2D texture0;
+uniform sampler2D texture1;
+uniform sampler2D texture2;
+uniform sampler2D texture3;
 
-        varying vec2 fragmentTextureCoordinate;
-        varying float fragmentTextureIndex;
-        varying vec4 fragmentColor;
+varying vec2 fragmentTextureCoordinate;
+varying float fragmentTextureIndex;
+varying vec4 fragmentColor;
 
-        void main() {
-          if (fragmentTextureIndex > 2.9) {
-            gl_FragColor = texture2D(texture3, fragmentTextureCoordinate) * fragmentColor;
-          } else if (fragmentTextureIndex > 1.9) {
-            gl_FragColor = texture2D(texture2, fragmentTextureCoordinate) * fragmentColor;
-          } else if (fragmentTextureIndex > 0.9) {
-            gl_FragColor = texture2D(texture1, fragmentTextureCoordinate) * fragmentColor;
-          } else {
-            gl_FragColor = texture2D(texture0, fragmentTextureCoordinate) * fragmentColor;
-          }
-        }
-      "
-    }
-  )JSON";
+void main() {
+  if (fragmentTextureIndex > 2.9) {
+    gl_FragColor = texture2D(texture3, fragmentTextureCoordinate) * fragmentColor;
+  } else if (fragmentTextureIndex > 1.9) {
+    gl_FragColor = texture2D(texture2, fragmentTextureCoordinate) * fragmentColor;
+  } else if (fragmentTextureIndex > 0.9) {
+    gl_FragColor = texture2D(texture1, fragmentTextureCoordinate) * fragmentColor;
+  } else {
+    gl_FragColor = texture2D(texture0, fragmentTextureCoordinate) * fragmentColor;
+  }
+}
+)SHADER";
 
 OpenGl20Renderer::OpenGl20Renderer() {
   if (glewInit() != GLEW_OK)
@@ -97,7 +93,7 @@ OpenGl20Renderer::OpenGl20Renderer() {
       TextureFiltering::Nearest);
   m_immediateRenderBuffer = createGlRenderBuffer();
 
-  setEffectConfig(Json::parse(DefaultEffectConfig));
+  setEffectConfig(JsonObject(), {{"vertex", DefaultVertexShader}, {"fragment", DefaultFragmentShader}});
 
   m_limitTextureGroupSize = false;
   m_useMultiTexturing = true;
@@ -119,44 +115,44 @@ Vec2U OpenGl20Renderer::screenSize() const {
   return m_screenSize;
 }
 
-void OpenGl20Renderer::setEffectConfig(Json const& effectConfig) {
+void OpenGl20Renderer::setEffectConfig(Json const& effectConfig, StringMap<String> const& shaders) {
   flushImmediatePrimitives();
-
   GLint status = 0;
   char logBuffer[1024];
 
-  GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-  String vertexSource = effectConfig.getString("vertexShader");
-  char const* vertexSourcePtr = vertexSource.utf8Ptr();
-  glShaderSource(vertexShader, 1, &vertexSourcePtr, NULL);
-  glCompileShader(vertexShader);
+  auto compileShader = [&](GLenum type, String const& name) -> GLuint {
+    GLuint shader = glCreateShader(type);
+    auto* source = shaders.ptr(name);
+    if (!source)
+      return 0;
+    char const* sourcePtr = source->utf8Ptr();
+    glShaderSource(shader, 1, &sourcePtr, NULL);
+    glCompileShader(shader);
 
-  glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &status);
-  if (!status) {
-    glGetShaderInfoLog(vertexShader, sizeof(logBuffer), NULL, logBuffer);
-    throw RendererException(strf("Failed to compile vertex shader: %s\n", logBuffer));
-  }
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
+    if (!status) {
+      glGetShaderInfoLog(shader, sizeof(logBuffer), NULL, logBuffer);
+      throw RendererException(strf("Failed to compile %s shader: %s\n", name, logBuffer));
+    }
 
-  GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-  String fragmentSource = effectConfig.getString("fragmentShader");
-  char const* fragmentSourcePtr = fragmentSource.utf8Ptr();
-  glShaderSource(fragmentShader, 1, &fragmentSourcePtr, NULL);
-  glCompileShader(fragmentShader);
+    return shader;
+  };
 
-  glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &status);
-  if (!status) {
-    glGetShaderInfoLog(fragmentShader, sizeof(logBuffer), NULL, logBuffer);
-    throw RendererException(strf("Failed to compile fragment shader: %s\n", logBuffer));
-  }
+  GLuint vertexShader = compileShader(GL_VERTEX_SHADER, "vertex");
+  GLuint fragmentShader = compileShader(GL_FRAGMENT_SHADER, "fragment");
 
   GLuint program = glCreateProgram();
 
-  glAttachShader(program, vertexShader);
-  glAttachShader(program, fragmentShader);
+  if (vertexShader)
+    glAttachShader(program, vertexShader);
+  if (fragmentShader)
+    glAttachShader(program, fragmentShader);
   glLinkProgram(program);
 
-  glDeleteShader(vertexShader);
-  glDeleteShader(fragmentShader);
+  if (vertexShader)
+    glDeleteShader(vertexShader);
+  if (fragmentShader)
+    glDeleteShader(fragmentShader);
 
   glGetProgramiv(program, GL_LINK_STATUS, &status);
   if (!status) {

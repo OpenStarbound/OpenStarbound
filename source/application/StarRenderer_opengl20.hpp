@@ -20,7 +20,7 @@ public:
   String rendererId() const override;
   Vec2U screenSize() const override;
 
-  void setEffectConfig(Json const& effectConfig) override;
+  void setEffectConfig(Json const& effectConfig, StringMap<String> const& shaders) override;
   void setEffectParameter(String const& parameterName, RenderEffectParameter const& parameter) override;
   void setEffectTexture(String const& textureName, Image const& image) override;
 

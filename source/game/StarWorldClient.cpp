@@ -787,6 +787,10 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
         m_outgoingPackets.append(make_shared<EntityMessageResponsePacket>(makeLeft("Entity delivery error"), entityMessagePacket->uuid));
 
       } else {
+        ConnectionId fromConnection = entityMessagePacket->fromConnection;
+        if (fromConnection == *m_clientId) // Kae: The server should not be able to forge entity messages that appear as if they're from us
+          fromConnection = ServerConnectionId;
+
         auto response = entity->receiveMessage(entityMessagePacket->fromConnection, entityMessagePacket->message, entityMessagePacket->args);
         if (response)
           m_outgoingPackets.append(make_shared<EntityMessageResponsePacket>(makeRight(response.take()), entityMessagePacket->uuid));
@@ -805,7 +809,13 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
         response.fail(entityMessageResponsePacket->response.left());
 
     } else if (auto updateWorldProperties = as<UpdateWorldPropertiesPacket>(packet)) {
-      m_worldProperties.merge(updateWorldProperties->updatedProperties, true);
+      // Kae: Properties set to null (nil from Lua) should be erased instead of lingering around
+      for (auto& pair : updateWorldProperties->updatedProperties) {
+        if (pair.second.isNull())
+          m_worldProperties.erase(pair.first);
+        else
+          m_worldProperties[pair.first] = pair.second;
+      }
 
     } else if (auto updateTileProtection = as<UpdateTileProtectionPacket>(packet)) {
       setTileProtection(updateTileProtection->dungeonId, updateTileProtection->isProtected);

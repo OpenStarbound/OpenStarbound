@@ -196,10 +196,25 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
 
 void ClientApplication::renderInit(RendererPtr renderer) {
   Application::renderInit(renderer);
+  auto assets = m_root->assets();
 
   String rendererConfig = strf("/rendering/%s.config", renderer->rendererId());
-  if (m_root->assets()->assetExists(rendererConfig))
-    renderer->setEffectConfig(m_root->assets()->json(rendererConfig));
+  if (assets->assetExists(rendererConfig)) {
+    StringMap<String> shaders;
+    auto config = assets->json(rendererConfig);
+    auto shaderConfig = config.getObject("effectShaders");
+    for (auto& entry : shaderConfig) {
+      if (entry.second.isType(Json::Type::String)) {
+        String shader = entry.second.toString();
+        if (!shader.hasChar('\n')) {
+          auto shaderBytes = assets->bytes(AssetPath::relativeTo(rendererConfig, shader));
+          shader = std::string(shaderBytes->ptr(), shaderBytes->size());
+        }
+        shaders[entry.first] = shader;
+      }
+    }
+    renderer->setEffectConfig(config, shaders);
+  }
   else
     Logger::warn("No rendering config found for renderer with id '%s'", renderer->rendererId());
 

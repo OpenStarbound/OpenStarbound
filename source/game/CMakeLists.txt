@@ -38,6 +38,7 @@ SET (star_game_HEADERS
     StarDamageManager.hpp
     StarDamageTypes.hpp
     StarDanceDatabase.hpp
+    StarDirectives.hpp
     StarDrawable.hpp
     StarDungeonGenerator.hpp
     StarDungeonImagePart.hpp
@@ -296,6 +297,7 @@ SET (star_game_SOURCES
     StarDamageManager.cpp
     StarDamageTypes.cpp
     StarDanceDatabase.cpp
+    StarDirectives.cpp
     StarDrawable.cpp
     StarDungeonGenerator.cpp
     StarDungeonImagePart.cpp

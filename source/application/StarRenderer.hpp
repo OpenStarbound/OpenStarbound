@@ -117,7 +117,7 @@ public:
   // specific to each type of renderer, so it will be necessary to key the
   // configuration off of the renderId string.  This should not be called every
   // frame, because it will result in a recompile of the underlying shader set.
-  virtual void setEffectConfig(Json const& effectConfig) = 0;
+  virtual void setEffectConfig(Json const& effectConfig, StringMap<String> const& shaders) = 0;
 
   // The effect config will specify named parameters and textures which can be
   // set here.
