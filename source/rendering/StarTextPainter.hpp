@@ -79,7 +79,7 @@ public:
   void reloadFonts();
 
   void cleanup(int64_t textureTimeout);
-
+  void applyCommands(String const& unsplitCommands);
 private:
   struct RenderSettings {
     FontMode mode;

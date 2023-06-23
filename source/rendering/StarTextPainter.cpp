@@ -325,13 +325,43 @@ void TextPainter::cleanup(int64_t timeout) {
   m_fontTextureGroup.cleanup(timeout);
 }
 
+void TextPainter::applyCommands(String const& unsplitCommands) {
+  auto commands = unsplitCommands.split(',');
+  for (auto& command : commands) {
+    try {
+      if (command == "reset") {
+        m_renderSettings = m_savedRenderSettings;
+      } else if (command == "set") {
+        m_savedRenderSettings = m_renderSettings;
+      } else if (command == "shadow") {
+        m_renderSettings.mode = (FontMode)((int)m_renderSettings.mode | (int)FontMode::Shadow);
+      } else if (command == "noshadow") {
+        m_renderSettings.mode = (FontMode)((int)m_renderSettings.mode & (-1 ^ (int)FontMode::Shadow));
+      } else if (command.beginsWith("font=")) {
+        m_renderSettings.font = command.substr(5);
+      } else if (command.beginsWith("directives=")) {
+        // Honestly this is really stupid but I just couldn't help myself
+        // Should probably limit in the future
+        m_renderSettings.directives = command.substr(11);
+      } else {
+        // expects both #... sequences and plain old color names.
+        Color c = jsonToColor(command);
+        c.setAlphaF(c.alphaF() * ((float)m_savedRenderSettings.color[3]) / 255);
+        m_renderSettings.color = c.toRgba();
+      }
+    } catch (JsonException&) {
+    } catch (ColorException&) {
+    }
+  }
+}
+
 RectF TextPainter::doRenderText(String const& s, TextPositioning const& position, bool reallyRender, unsigned* charLimit) {
   Vec2F pos = position.pos;
   StringList lines = wrapText(s, position.wrapWidth);
 
   int height = (lines.size() - 1) * m_lineSpacing * m_fontSize + m_fontSize;
 
-  RenderSettings savedRenderSettings = m_renderSettings;
+  RenderSettings backupRenderSettings = m_renderSettings;
   m_savedRenderSettings = m_renderSettings;
 
   if (position.vAnchor == VerticalAnchor::BottomAnchor)
@@ -348,7 +378,7 @@ RectF TextPainter::doRenderText(String const& s, TextPositioning const& position
       break;
   }
 
-  m_renderSettings = move(savedRenderSettings);
+  m_renderSettings = move(backupRenderSettings);
 
   return bounds;
 }
@@ -393,33 +423,7 @@ RectF TextPainter::doRenderLine(String const& s, TextPositioning const& position
       bounds.combine(glyphBounds);
       pos.pos[0] += glyphBounds.width();
     } else if (c == Text::EndEsc) {
-      auto commands = escapeCode.split(',');
-      for (auto& command : commands) {
-        try {
-          if (command == "reset") {
-            m_renderSettings = m_savedRenderSettings;
-          } else if (command == "set") {
-            m_savedRenderSettings = m_renderSettings;
-          } else if (command == "shadow") {
-            m_renderSettings.mode = (FontMode)((int)m_renderSettings.mode | (int)FontMode::Shadow);
-          } else if (command == "noshadow") {
-            m_renderSettings.mode = (FontMode)((int)m_renderSettings.mode & (-1 ^ (int)FontMode::Shadow));
-          } else if (command.beginsWith("font=")) {
-            m_renderSettings.font = command.substr(5);
-          } else if (command.beginsWith("directives=")) {
-            // Honestly this is really stupid but I just couldn't help myself
-            // Should probably limit in the future
-            m_renderSettings.directives = command.substr(11);
-          } else {
-            // expects both #... sequences and plain old color names.
-            Color c = jsonToColor(command);
-            c.setAlphaF(c.alphaF() * ((float)m_savedRenderSettings.color[3]) / 255);
-            m_renderSettings.color = c.toRgba();
-          }
-        } catch (JsonException&) {
-        } catch (ColorException&) {
-        }
-      }
+      applyCommands(escapeCode);
       escape = false;
       escapeCode = "";
     }
