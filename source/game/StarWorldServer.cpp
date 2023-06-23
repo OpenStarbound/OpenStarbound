@@ -392,8 +392,8 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
         }
 
         auto entity = entityFactory->netLoadEntity(entityCreate->entityType, entityCreate->storeData);
-        entity->init(this, entityCreate->entityId, EntityMode::Slave);
         entity->readNetState(entityCreate->firstNetState);
+        entity->init(this, entityCreate->entityId, EntityMode::Slave);
         m_entityMap->addEntity(entity);
 
         if (clientInfo->interpolationTracker.interpolationEnabled())

@@ -284,16 +284,16 @@ EntityType Player::entityType() const {
 void Player::init(World* world, EntityId entityId, EntityMode mode) {
   Entity::init(world, entityId, mode);
 
-  auto speciesDefinition = Root::singleton().speciesDatabase()->species(m_identity.species);
 
   m_tools->init(this);
   m_movementController->init(world);
   m_movementController->setIgnorePhysicsEntities({entityId});
-  m_movementController->setRotation(0);
   m_statusController->init(this, m_movementController.get());
   m_techController->init(this, m_movementController.get(), m_statusController.get());
 
   if (mode == EntityMode::Master) {
+    auto speciesDefinition = Root::singleton().speciesDatabase()->species(m_identity.species);
+    m_movementController->setRotation(0);
     m_statusController->setStatusProperty("ouchNoise", speciesDefinition->ouchNoise(m_identity.gender));
     m_emoteState = HumanoidEmote::Idle;
     m_questManager->init(world);
