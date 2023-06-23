@@ -670,7 +670,7 @@ private:
   Vec2U m_windowSize = {800, 600};
   WindowMode m_windowMode = WindowMode::Normal;
 
-  String m_windowTitle = "";
+  String m_windowTitle = "Starbound";
   bool m_windowVSync = true;
   unsigned m_maxFrameSkip = 5;
   bool m_cursorVisible = true;
