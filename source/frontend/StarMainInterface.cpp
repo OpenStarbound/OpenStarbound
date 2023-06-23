@@ -1368,7 +1368,7 @@ void MainInterface::updateCursor() {
 void MainInterface::renderCursor() {
   // if we're currently playing a cinematic, we should not render the mouse.
   if (m_cinematicOverlay && !m_cinematicOverlay->completed())
-    return;
+    return m_guiContext->applicationController()->setCursorVisible(false);
 
   m_cursor.update(WorldTimestep);
 
