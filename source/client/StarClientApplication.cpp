@@ -159,7 +159,7 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
   m_maxInterfaceScale = assets->json("/interface.config:maxInterfaceScale").toInt();
   m_crossoverRes = jsonToVec2F(assets->json("/interface.config:interfaceCrossoverRes"));
 
-  appController->setCursorVisible(false);
+  appController->setCursorVisible(true);
 
   AudioFormat audioFormat = appController->enableAudio();
   m_mainMixer = make_shared<MainMixer>(audioFormat.sampleRate, audioFormat.channels);

@@ -307,6 +307,15 @@ void GuiContext::drawImageStretchSet(ImageStretchSet const& imageSet, RectF cons
     drawInterfaceQuad(imageSet.end, RectF(Vec2F(), Vec2F(textureSize(imageSet.end))), end, color);
 }
 
+bool GuiContext::trySetCursor(Drawable const& drawable, Vec2I const& offset, int pixelRatio) {
+  if (!drawable.isImage())
+    return false;
+
+  auto assets = Root::singleton().assets();
+  auto& imagePath = drawable.imagePart().image;
+  return applicationController()->setCursorImage(imagePath, assets->image(imagePath), pixelRatio, offset);
+}
+
 RectF GuiContext::renderText(String const& s, TextPositioning const& position) {
   return textPainter()->renderText(s, position);
 }

@@ -90,6 +90,9 @@ public:
 
   void drawImageStretchSet(ImageStretchSet const& imageSet, RectF const& screenPos, GuiDirection direction = GuiDirection::Horizontal, Vec4B const& color = Vec4B::filled(255));
 
+  // Returns true if the hardware cursor was successfully set to the drawable. Generally fails if the Drawable isn't an image part or the image is too big.
+  bool trySetCursor(Drawable const& drawable, Vec2I const& offset, int pixelRatio);
+
   RectF renderText(String const& s, TextPositioning const& positioning);
   RectF renderInterfaceText(String const& s, TextPositioning const& positioning);
 

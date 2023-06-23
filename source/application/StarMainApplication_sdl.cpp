@@ -3,6 +3,9 @@
 #include "StarSignalHandler.hpp"
 #include "StarTickRateMonitor.hpp"
 #include "StarRenderer_opengl20.hpp"
+#include "StarTtlCache.hpp"
+#include "StarImage.hpp"
+#include "StarImageProcessing.hpp"
 
 #include "SDL.h"
 #include "StarPlatformServices_pc.hpp"
@@ -278,23 +281,25 @@ public:
     };
 
     SDL_AudioSpec obtained = {};
-    m_audioDevice = SDL_OpenAudioDevice(NULL, 0, &desired, &obtained, 0);
-    if (!m_audioDevice) {
+    m_sdlAudioDevice = SDL_OpenAudioDevice(NULL, 0, &desired, &obtained, 0);
+    if (!m_sdlAudioDevice) {
       Logger::error("Application: Could not open audio device, no sound available!");
     } else if (obtained.freq != desired.freq || obtained.channels != desired.channels || obtained.format != desired.format) {
-      SDL_CloseAudioDevice(m_audioDevice);
+      SDL_CloseAudioDevice(m_sdlAudioDevice);
       Logger::error("Application: Could not open 44.1khz / 16 bit stereo audio device, no sound available!");
     } else {
       Logger::info("Application: Opened default audio device with 44.1khz / 16 bit stereo audio, %s sample size buffer", obtained.samples);
-      SDL_PauseAudioDevice(m_audioDevice, 0);
+      SDL_PauseAudioDevice(m_sdlAudioDevice, 0);
     }
 
     m_renderer = make_shared<OpenGl20Renderer>();
     m_renderer->setScreenSize(m_windowSize);
+
+    m_cursorCache.setTimeToLive(30000);
   }
 
   ~SdlPlatform() {
-    SDL_CloseAudioDevice(m_audioDevice);
+    SDL_CloseAudioDevice(m_sdlAudioDevice);
 
     m_renderer.reset();
 
@@ -302,6 +307,11 @@ public:
     SDL_DestroyWindow(m_sdlWindow);
 
     SDL_Quit();
+  }
+
+  void cleanup() {
+    m_cursorCache.ptr(m_currentCursor);
+    m_cursorCache.cleanup();
   }
 
   void run() {
@@ -358,6 +368,8 @@ public:
           break;
         }
 
+        m_cursorCache.cleanup();
+
         int64_t spareMilliseconds = round(m_updateTicker.spareTime() * 1000);
         if (spareMilliseconds > 0)
           Thread::sleepPrecise(spareMilliseconds);
@@ -373,7 +385,7 @@ public:
       Logger::error("Application: threw exception during shutdown: %s", outputException(e, true));
     }
 
-    SDL_CloseAudioDevice(m_audioDevice);
+    SDL_CloseAudioDevice(m_sdlAudioDevice);
     m_application.reset();
   }
 
@@ -500,6 +512,10 @@ private:
 
     void setCursorVisible(bool cursorVisible) override {
       parent->m_cursorVisible = cursorVisible;
+    }
+
+    bool setCursorImage(const String& id, const ImageConstPtr& image, unsigned scale, const Vec2I& offset) override {
+      return parent->setCursorImage(id, image, scale, offset);
     }
 
     void setAcceptingTextInput(bool acceptingTextInput) override {
@@ -656,6 +672,65 @@ private:
     }
   }
 
+  static const size_t MaximumCursorDimensions = 128;
+  static const size_t MaximumCursorPixelCount = MaximumCursorDimensions * MaximumCursorDimensions;
+  bool setCursorImage(const String& id, const ImageConstPtr& image, unsigned scale, const Vec2I& offset) {
+    auto imageSize = image->size().piecewiseMultiply(Vec2U::filled(scale));
+    if (!scale || imageSize.max() > MaximumCursorDimensions || (size_t)(imageSize[0] * imageSize[1]) > MaximumCursorPixelCount)
+      return m_cursorVisible = false;
+
+    auto& entry = m_cursorCache.get(m_currentCursor = { scale, offset, id }, [&](auto const&) {
+      auto entry = std::make_shared<CursorEntry>();
+      if (scale != 1) {
+        List<ImageOperation> operations{
+          FlipImageOperation{FlipImageOperation::Mode::FlipY}, // SDL wants an Australian cursor.
+          BorderImageOperation{1, Vec4B(), Vec4B(), false, false}, // Nearest scaling fucks up and clips half off the edges, work around this with border+crop for now.
+          ScaleImageOperation{ScaleImageOperation::Mode::Nearest, Vec2F::filled(scale)},
+          CropImageOperation{RectI::withSize(Vec2I::filled(ceilf((float)scale / 2)), Vec2I(imageSize))}
+        };
+        auto newImage = std::make_shared<Image>(move(processImageOperations(operations, *image)));
+        // Fix fully transparent pixels inverting the underlying display pixel on Windows (allowing this could be made configurable per cursor later!)
+        newImage->forEachPixel([](unsigned x, unsigned y, Vec4B& pixel) { if (!pixel[3]) pixel[0] = pixel[1] = pixel[2] = 0; });
+        entry->image = move(newImage);
+      }
+      else
+        entry->image = image;
+
+      auto size = entry->image->size();
+      uint32_t pixelFormat;
+      switch (entry->image->pixelFormat()) {
+        case PixelFormat::RGB24: // I know this conversion looks wrong, but it's correct. I'm confused too.
+          pixelFormat = SDL_PIXELFORMAT_BGR888;
+          break;
+        case PixelFormat::RGBA32:
+          pixelFormat = SDL_PIXELFORMAT_ABGR8888;
+          break;
+        case PixelFormat::BGR24:
+          pixelFormat = SDL_PIXELFORMAT_RGB888;
+          break;
+        case PixelFormat::BGRA32:
+          pixelFormat = SDL_PIXELFORMAT_ARGB8888;
+          break;
+        default:
+          pixelFormat = SDL_PIXELFORMAT_UNKNOWN;
+      }
+
+      entry->sdlSurface.reset(SDL_CreateRGBSurfaceWithFormatFrom(
+        (void*)entry->image->data(),
+        size[0], size[1],
+        entry->image->bitsPerPixel(),
+        entry->image->bytesPerPixel() * size[0],
+        pixelFormat)
+      );
+      entry->sdlCursor.reset(SDL_CreateColorCursor(entry->sdlSurface.get(), offset[0] * scale, offset[1] * scale));
+
+      return entry;
+    });
+
+    SDL_SetCursor(entry->sdlCursor.get());
+    return m_cursorVisible = true;
+  }
+
   SignalHandler m_signalHandler;
 
   TickRateApproacher m_updateTicker = TickRateApproacher(60.0f, 1.0f);
@@ -665,7 +740,22 @@ private:
 
   SDL_Window* m_sdlWindow = nullptr;
   SDL_GLContext m_sdlGlContext = nullptr;
-  SDL_AudioDeviceID m_audioDevice = 0;
+  SDL_AudioDeviceID m_sdlAudioDevice = 0;
+
+  typedef std::unique_ptr<SDL_Surface, decltype(&SDL_FreeSurface)> SDLSurfaceUPtr;
+  typedef std::unique_ptr<SDL_Cursor, decltype(&SDL_FreeCursor)> SDLCursorUPtr;
+  struct CursorEntry {
+    ImageConstPtr image = nullptr;
+    SDLSurfaceUPtr sdlSurface;
+    SDLCursorUPtr sdlCursor;
+
+    CursorEntry() : image(nullptr), sdlSurface(nullptr, SDL_FreeSurface), sdlCursor(nullptr, SDL_FreeCursor) {};
+  };
+
+  typedef tuple<unsigned, Vec2I, String> CursorDescriptor;
+
+  HashTtlCache<CursorDescriptor, std::shared_ptr<CursorEntry>> m_cursorCache;
+  CursorDescriptor m_currentCursor;
 
   Vec2U m_windowSize = {800, 600};
   WindowMode m_windowMode = WindowMode::Normal;

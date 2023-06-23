@@ -6,6 +6,7 @@
 #include "StarP2PNetworkingService.hpp"
 #include "StarUserGeneratedContentService.hpp"
 #include "StarDesktopService.hpp"
+#include "StarImage.hpp"
 
 namespace Star {
 
@@ -40,6 +41,7 @@ public:
   virtual void setBorderlessWindow() = 0;
   virtual void setVSyncEnabled(bool vSync) = 0;
   virtual void setCursorVisible(bool cursorVisible) = 0;
+  virtual bool setCursorImage(const String& id, const ImageConstPtr& image, unsigned scale, const Vec2I& offset) = 0;
   virtual void setAcceptingTextInput(bool acceptingTextInput) = 0;
 
   virtual AudioFormat enableAudio() = 0;

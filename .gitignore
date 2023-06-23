@@ -1,7 +1,6 @@
 build/
 dist/
 attic/
-lib/
 tiled/
 assets/user/
 assets/devel/
