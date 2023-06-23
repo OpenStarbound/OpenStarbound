@@ -7,6 +7,7 @@ SET (star_core_HEADERS
     StarAStar.hpp
     StarAlgorithm.hpp
     StarArray.hpp
+    StarAssetPath.hpp
     StarAtomicSharedPtr.hpp
     StarAudio.hpp
     StarBTree.hpp
@@ -23,6 +24,7 @@ SET (star_core_HEADERS
     StarDataStream.hpp
     StarDataStreamDevices.hpp
     StarDataStreamExtra.hpp
+    StarDirectives.hpp
     StarDynamicLib.hpp
     StarEither.hpp
     StarEncode.hpp
@@ -121,6 +123,7 @@ SET (star_core_HEADERS
 
 SET (star_core_SOURCES
     StarAudio.cpp
+    StarAssetPath.cpp
     StarBTreeDatabase.cpp
     StarBuffer.cpp
     StarByteArray.cpp
@@ -128,6 +131,7 @@ SET (star_core_SOURCES
     StarCompression.cpp
     StarDataStream.cpp
     StarDataStreamDevices.cpp
+    StarDirectives.cpp
     StarEncode.cpp
     StarFile.cpp
     StarFont.cpp

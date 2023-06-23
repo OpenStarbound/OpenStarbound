@@ -119,22 +119,20 @@ RectU ImageMetadataDatabase::nonEmptyRegion(String const& path) const {
 
 String ImageMetadataDatabase::filterProcessing(String const& path) {
   AssetPath components = AssetPath::split(path);
+  auto directives = move(components.directives);
+  String joined = AssetPath::join(components);
 
-  components.directives.filter([](String const& directive) {
-      ImageOperation operation;
-      try {
-        operation = imageOperationFromString(directive);
-      } catch (StarException const&) {
-        return true;
-      }
-
-      return !(operation.is<HueShiftImageOperation>() ||
-          operation.is<SaturationShiftImageOperation>() ||
-          operation.is<BrightnessMultiplyImageOperation>() ||
-          operation.is<FadeToColorImageOperation>() ||
-          operation.is<ScanLinesImageOperation>() ||
-          operation.is<SetColorImageOperation>());
-    });
+  directives.forEachPair([&](ImageOperation const& operation, String const& string) {
+    if (!(operation.is<HueShiftImageOperation>()       ||
+      operation.is<SaturationShiftImageOperation>()    ||
+      operation.is<BrightnessMultiplyImageOperation>() ||
+      operation.is<FadeToColorImageOperation>()        ||
+      operation.is<ScanLinesImageOperation>()          ||
+      operation.is<SetColorImageOperation>())) {
+      joined += "?";
+      joined += string;
+    }
+  });
 
   return AssetPath::join(components);
 }
@@ -231,19 +229,18 @@ Vec2U ImageMetadataDatabase::calculateImageSize(String const& path) const {
 
   OperationSizeAdjust osa(imageSize);
 
-  for (auto const& directive : components.directives) {
-    ImageOperation operation;
-    try {
-      operation = imageOperationFromString(directive);
-    } catch (StarException const&) {
-      return fallback();
+  bool complete = components.directives.forEachAbortable([&](auto const& leaf) -> bool {
+    for (const ImageOperation& operation : leaf.operations) {
+      operation.call(osa);
+      if (osa.hasError())
+        return false;
+      else
+        return true;
     }
+  });
 
-    operation.call(osa);
-    if (osa.hasError) {
-      return fallback();
-    }
-  }
+  if (!complete)
+    return fallback();
 
   return imageSize;
 }
