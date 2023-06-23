@@ -183,7 +183,7 @@ MovementController::MovementController(MovementParameters const& parameters) {
 
   m_xVelocity.setInterpolator(lerp<float, float>);
   m_yVelocity.setInterpolator(lerp<float, float>);
-  m_rotation.setInterpolator(lerp<float, float>);
+  m_rotation.setInterpolator(angleLerp<float, float>);
   m_xRelativeSurfaceMovingCollisionPosition.setInterpolator(lerp<float, float>);
   m_yRelativeSurfaceMovingCollisionPosition.setInterpolator(lerp<float, float>);
 
