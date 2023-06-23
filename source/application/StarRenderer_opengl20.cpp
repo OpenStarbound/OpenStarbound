@@ -693,10 +693,6 @@ void OpenGl20Renderer::GlRenderBuffer::set(List<RenderPrimitive> primitives) {
 }
 
 void OpenGl20Renderer::logGlErrorSummary(String prefix) {
-  List<GLenum> errors;
-  while (GLenum error = glGetError())
-    errors.append(error);
-
   if (GLenum error = glGetError()) {
     prefix += ": ";
     Logger::error(prefix.utf8Ptr());
