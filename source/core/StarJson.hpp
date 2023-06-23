@@ -201,7 +201,7 @@ public:
   bool queryBool(String const& path, bool def) const;
   int64_t queryInt(String const& path, int64_t def) const;
   uint64_t queryUInt(String const& path, uint64_t def) const;
-  String queryString(String const& path, String def) const;
+  String queryString(String const& path, String const& def) const;
   JsonArray queryArray(String const& path, JsonArray def) const;
   JsonObject queryObject(String const& path, JsonObject def) const;
 

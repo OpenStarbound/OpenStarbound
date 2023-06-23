@@ -659,7 +659,7 @@ uint64_t Json::queryUInt(String const& query, uint64_t def) const {
   return def;
 }
 
-String Json::queryString(String const& query, String def) const {
+String Json::queryString(String const& query, String const& def) const {
   auto json = JsonPath::pathFind(*this, JsonPath::parseQueryPath, query);
   if (json && *json)
     return json->toString();

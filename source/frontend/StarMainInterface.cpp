@@ -754,6 +754,7 @@ void MainInterface::update() {
   m_nameplatePainter->update(m_client->worldClient(), m_worldPainter->camera(), m_client->worldClient()->interactiveHighlightMode());
   m_questIndicatorPainter->update(m_client->worldClient(), m_worldPainter->camera());
 
+  m_chatBubbleManager->setCamera(m_worldPainter->camera());
   if (auto worldClient = m_client->worldClient()) {
     auto chatActions = worldClient->pullPendingChatActions();
     auto portraitActions = chatActions.filtered([](ChatAction action) { return action.is<PortraitChatAction>(); });
@@ -778,7 +779,6 @@ void MainInterface::update() {
     m_chatBubbleManager->addChatActions(chatActions);
     m_chatBubbleManager->update(worldClient);
   }
-  m_chatBubbleManager->setCamera(m_worldPainter->camera());
 
   if (auto container = m_client->worldClient()->get<ContainerEntity>(m_containerInteractor->openContainerId())) {
     if (!m_client->worldClient()->playerCanReachEntity(container->entityId())

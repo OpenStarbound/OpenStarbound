@@ -11,12 +11,16 @@ NameplatePainter::NameplatePainter() {
   auto assets = Root::singleton().assets();
 
   Json nametagConfig = assets->json("/interface.config:nametag");
+  m_showMasterNames = nametagConfig.getBool("showMasterNames");
   m_opacityRate = nametagConfig.getFloat("opacityRate");
+  m_inspectOpacityRate = nametagConfig.queryFloat("inspectOpacityRate", m_opacityRate);
   m_offset = jsonToVec2F(nametagConfig.get("offset"));
-  m_font = nametagConfig.optString("font").value("");
-  m_statusFont = nametagConfig.optString("font").value(m_font);
+  m_font = nametagConfig.queryString("font", "");
+  m_fontDirectives = nametagConfig.queryString("fontDirectives", "");
   m_fontSize = nametagConfig.getFloat("fontSize");
-  m_statusFontSize = nametagConfig.getFloat("statusFontSize");
+  m_statusFont = nametagConfig.queryString("font", m_font);
+  m_statusFontDirectives = nametagConfig.queryString("fontDirectives", m_fontDirectives);
+  m_statusFontSize = nametagConfig.queryFloat("statusFontSize", m_fontSize);
   m_statusOffset = jsonToVec2F(nametagConfig.get("statusOffset"));
   m_statusColor = jsonToColor(nametagConfig.get("statusColor"));
   m_opacityBoost = nametagConfig.getFloat("opacityBoost");
@@ -29,7 +33,7 @@ void NameplatePainter::update(WorldClientPtr const& world, WorldCamera const& ca
 
   Set<EntityId> foundEntities;
   for (auto const& entity : world->query<NametagEntity>(camera.worldScreenRect())) {
-    if (entity->isMaster() || !entity->displayNametag())
+    if ((entity->isMaster() && !m_showMasterNames) || !entity->displayNametag())
       continue;
     if (auto player = as<Player>(entity)) {
       if (player->isTeleporting())
@@ -57,7 +61,7 @@ void NameplatePainter::update(WorldClientPtr const& world, WorldCamera const& ca
       nametag.color = entity->nametagColor();
       bool fullyOnScreen = world->geometry().rectContains(camera.worldScreenRect(), entity->position());
       if (inspectionMode)
-        nametag.opacity = 1.0f;
+        nametag.opacity = approach(1.0f, nametag.opacity, m_inspectOpacityRate);
       else if (fullyOnScreen)
         nametag.opacity = approach(0.0f, nametag.opacity, m_opacityRate);
       else
@@ -77,21 +81,25 @@ void NameplatePainter::render() {
       return;
 
     context.setFont(m_font);
+    context.setFontProcessingDirectives(m_fontDirectives);
     context.setFontSize(m_fontSize);
 
     auto color = Color::rgb(nametag.color);
     color.setAlphaF(nametag.opacity);
-    auto statusColor = m_statusColor;
-    statusColor.setAlphaF(nametag.opacity);
     context.setFontColor(color.toRgba());
     context.setFontMode(FontMode::Shadow);
 
     context.renderText(nametag.name, namePosition(bubble.currentPosition));
 
     if (nametag.statusText) {
-      context.setFontSize(m_statusFontSize);
-      context.setFont(m_statusFont);
+      auto statusColor = m_statusColor;
+      statusColor.setAlphaF(nametag.opacity);
       context.setFontColor(statusColor.toRgba());
+
+      context.setFontSize(m_statusFontSize);
+      context.setFontProcessingDirectives(m_statusFontDirectives);
+      context.setFont(m_statusFont);
+
       context.renderText(*nametag.statusText, statusPosition(bubble.currentPosition));
     }
   });
@@ -111,10 +119,12 @@ TextPositioning NameplatePainter::statusPosition(Vec2F bubblePosition) const {
 RectF NameplatePainter::determineBoundBox(Vec2F bubblePosition, Nametag const& nametag) const {
   auto& context = GuiContext::singleton();
   context.setFontSize(m_fontSize);
+  context.setFontProcessingDirectives(m_fontDirectives);
   context.setFont(m_font);
   RectF nametagBox = context.determineTextSize(nametag.name, namePosition(bubblePosition));
   if (nametag.statusText) {
     context.setFontSize(m_statusFontSize);
+    context.setFontProcessingDirectives(m_statusFontDirectives);
     context.setFont(m_statusFont);
     nametagBox.combine(context.determineTextSize(*nametag.statusText, statusPosition(bubblePosition)));
   }

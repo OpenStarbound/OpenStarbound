@@ -139,13 +139,11 @@ void BubbleSeparator<T>::forEach(function<void(Bubble&, T&)> func) {
       RectF boundBox = bubble.boundBox.translated(positionDelta);
       RectF separated = separateBubble(m_sortedLeftEdges, m_sortedRightEdges, boundBox);
       anyMoved = true;
-      bubble = Bubble{bubble.contents,
-          bubble.idealDestination,
-          bubble.idealDestination,
-          boundBox,
-          bubble.idealDestination + separated.min() - boundBox.min(),
-          separated,
-          bubble.currentPosition + positionDelta};
+      bubble.currentDestination = bubble.idealDestination;
+      bubble.boundBox = boundBox;
+      bubble.separatedPosition = bubble.idealDestination + separated.min() - boundBox.min();
+      bubble.separatedBox = separated;
+      bubble.currentPosition += positionDelta;
     }
   });
   if (anyMoved)
