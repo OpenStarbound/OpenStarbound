@@ -3,6 +3,7 @@
 
 #include "StarDirectives.hpp"
 #include "StarHash.hpp"
+#include "StarDataStream.hpp"
 
 namespace Star {
 
@@ -53,6 +54,7 @@ struct AssetPath {
   static String relativeTo(String const& sourcePath, String const& givenPath);
 
   AssetPath() = default;
+  AssetPath(const char* path);
   AssetPath(String const& path);
   AssetPath(String&& basePath, Maybe<String>&& subPath, DirectivesGroup&& directives);
   AssetPath(const String& basePath, const Maybe<String>& subPath, const DirectivesGroup& directives);
@@ -62,6 +64,9 @@ struct AssetPath {
 
   bool operator==(AssetPath const& rhs) const;
 };
+
+DataStream& operator>>(DataStream& ds, AssetPath& path);
+DataStream& operator<<(DataStream& ds, AssetPath const& path);
 
 std::ostream& operator<<(std::ostream& os, AssetPath const& rhs);
 

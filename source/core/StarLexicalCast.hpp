@@ -47,7 +47,7 @@ Type lexicalCast(std::string const& s, std::ios_base::fmtflags flags = std::ios_
   if (m)
     return m.take();
   else
-    throw BadLexicalCast();
+    throw BadLexicalCast(strf("Lexical cast failed on '%s'", s));
 }
 
 template <typename Type>

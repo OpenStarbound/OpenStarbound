@@ -45,7 +45,6 @@ Particle::Particle() {
   trail = false;
   flippable = true;
   flip = false;
-  directives = "";
 }
 
 Particle::Particle(Json const& config, String const& path) {
@@ -68,6 +67,12 @@ Particle::Particle(Json const& config, String const& path) {
 
   if (type == Type::Animated)
     initializeAnimation();
+
+  auto pathEnd = string.find('?');
+  if (pathEnd == NPos)
+    directives = "";
+  else
+    directives.parse(string.substr(pathEnd));
 
   if (config.contains("color"))
     color = jsonToColor(config.get("color"));
@@ -96,9 +101,11 @@ Particle::Particle(Json const& config, String const& path) {
   length = config.getFloat("length", 10.0f);
 
   destructionAction = DestructionActionNames.getLeft(config.getString("destructionAction", "None"));
-  destructionImage = config.getString("destructionImage", "");
+  String destructionImagePath = config.getString("destructionImage", "");
   if (destructionAction == DestructionAction::Image)
-    destructionImage = AssetPath::relativeTo(path, destructionImage);
+    destructionImagePath = AssetPath::relativeTo(path, destructionImagePath);
+  destructionImage = destructionImagePath;
+
   destructionTime = config.getFloat("destructionTime", 0.0f);
 
   timeToLive = config.getFloat("timeToLive", 0.0f);
@@ -113,7 +120,6 @@ Particle::Particle(Json const& config, String const& path) {
   ignoreWind = config.getBool("ignoreWind", true);
 
   trail = config.getBool("trail", false);
-  directives = "";
 }
 
 Json Particle::toJson() const {
@@ -134,7 +140,7 @@ Json Particle::toJson() const {
       {"angularVelocity", angularVelocity * 180.0f / Constants::pi},
       {"length", length},
       {"destructionAction", DestructionActionNames.getRight(destructionAction)},
-      {"destructionImage", destructionImage},
+      {"destructionImage", AssetPath::join(destructionImage)},
       {"destructionTime", destructionTime},
       {"timeToLive", timeToLive},
       {"layer", LayerNames.getRight(layer)},
@@ -221,7 +227,7 @@ void Particle::destructionUpdate() {
       size = 1.0f;
       color = Color::White;
       type = Particle::Type::Textured;
-      string = destructionImage;
+      image = destructionImage;
       angularVelocity = 0.0f;
       length = 0.0f;
       rotation = 0.0f;
@@ -232,7 +238,7 @@ void Particle::destructionUpdate() {
 void Particle::initializeAnimation() {
   if (!animation) {
     animation = Animation(AssetPath::removeDirectives(string));
-    animation->addProcessing(AssetPath::getDirectives(string));
+    animation->setProcessing(directives);
   }
 }
 

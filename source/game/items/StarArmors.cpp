@@ -21,7 +21,7 @@ ArmorItem::ArmorItem(Json const& config, String const& directory, Json const& da
 
   m_directives = instanceValue("directives", "").toString();
   m_colorOptions = colorDirectivesFromConfig(config.getArray("colorOptions", JsonArray{""}));
-  if (!m_directives.entries || m_directives.entries->empty())
+  if (!m_directives)
     m_directives = "?" + m_colorOptions.wrap(instanceValue("colorIndex", 0).toUInt());
   refreshIconDrawables();
 

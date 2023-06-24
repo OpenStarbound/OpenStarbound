@@ -43,12 +43,8 @@ void Animation::setAngle(float angle) {
   m_angle = angle;
 }
 
-void Animation::setProcessing(String processing) {
+void Animation::setProcessing(Directives processing) {
   m_processing = move(processing);
-}
-
-void Animation::addProcessing(String const& processing) {
-  m_processing = String::joinWith("?", m_processing, processing);
 }
 
 void Animation::setColor(Color color) {
@@ -73,9 +69,8 @@ Drawable Animation::drawable(float pixelSize) const {
   if (m_appendFrame)
     baseFrame += ":" + toString(m_frame);
 
-  baseFrame = String::joinWith("?", baseFrame, m_processing);
-
   Drawable drawable = Drawable::makeImage(move(baseFrame), pixelSize, m_centered, m_offset);
+  drawable.imagePart().addDirectives(m_processing);
   drawable.rotate(m_angle);
   drawable.color = m_color;
   return drawable;

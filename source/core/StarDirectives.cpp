@@ -23,23 +23,24 @@ Directives::Entry::Entry(Entry const& other) {
 
 Directives::Directives() : hash(0) {}
 Directives::Directives(String const& directives) : hash(0) {
-  parse(directives);
+  string = directives;
+  parse(string);
 }
 
 Directives::Directives(String&& directives) : hash(0) {
-  String mine = move(directives);
-  parse(mine);
+  string = move(directives);
+  parse(string);
 }
 
-Directives::Directives(const char* directives) : hash(0) {
-  String string(directives);
+Directives::Directives(const char* directives) : hash(0), string(directives) {
   parse(string);
 }
 
 Directives::Directives(List<Entry>&& newEntries) {
   entries = std::make_shared<List<Entry> const>(move(newEntries));
-  String directives = toString(); // This needs to be better
-  hash = XXH3_64bits(directives.utf8Ptr(), directives.utf8Size());
+  String newString;
+  string = move(buildString(newString));
+  hash = XXH3_64bits(string.utf8Ptr(), string.utf8Size());
 }
 
 void Directives::parse(String const& directives) {
@@ -51,8 +52,12 @@ void Directives::parse(String const& directives) {
   newList.reserve(split.size());
   for (String& str : split) {
     if (!str.empty()) {
-      ImageOperation operation = imageOperationFromString(str);
-      newList.emplace_back(move(operation), move(str));
+      try {
+        ImageOperation operation = imageOperationFromString(str);
+        newList.emplace_back(move(operation), move(str));
+      } catch (StarException const& e) {
+        Logger::logf(LogLevel::Error, "Error parsing image operation: %s", e.what());
+      }
     }
   }
 
@@ -65,25 +70,27 @@ void Directives::parse(String const& directives) {
   //  Logger::logf(LogLevel::Debug, "Directives: Parsed %u character long string", directives.utf8Size());
 }
 
-void Directives::buildString(String& out) const {
+String& Directives::buildString(String& out) const {
   if (entries) {
     for (auto& entry : *entries) {
       out += "?";
       out += entry.string;
     }
   }
+
+  return out;
 }
 
 String Directives::toString() const {
-  String result;
-  buildString(result);
-  //if (result.utf8Size() > 1000)
-  //  Logger::logf(LogLevel::Debug, "Directives: Rebuilt %u character long string", result.utf8Size());
-  return result;
+  return string;
 }
 
 inline bool Directives::empty() const {
   return !entries || entries->empty();
+}
+
+inline Directives::operator bool() const {
+  return !empty();
 }
 
 
@@ -103,17 +110,35 @@ DataStream& operator<<(DataStream& ds, Directives const& directives) {
 }
 
 DirectivesGroup::DirectivesGroup() : m_count(0) {}
-DirectivesGroup::DirectivesGroup(String const& directives) {
-  m_directives.emplace_back(directives);
-  m_count = m_directives.back().entries->size();
+DirectivesGroup::DirectivesGroup(String const& directives) : m_count(0) {
+  if (directives.empty())
+    return;
+
+  Directives parsed(directives);
+  if (parsed) {
+    m_directives.emplace_back(move(parsed));
+    m_count = m_directives.back().entries->size();
+  }
 }
-DirectivesGroup::DirectivesGroup(String&& directives) {
-  m_directives.emplace_back(move(directives));
-  m_count = m_directives.back().entries->size();
+DirectivesGroup::DirectivesGroup(String&& directives) : m_count(0) {
+  if (directives.empty()) {
+    directives.clear();
+    return;
+  }
+
+  Directives parsed(move(directives));
+  if (parsed) {
+    m_directives.emplace_back(move(parsed));
+    m_count = m_directives.back().entries->size();
+  }
 }
 
 inline bool DirectivesGroup::empty() const {
   return m_count == 0;
+}
+
+inline DirectivesGroup::operator bool() const {
+  return empty();
 }
 
 inline bool DirectivesGroup::compare(DirectivesGroup const& other) const {
@@ -156,7 +181,7 @@ inline String DirectivesGroup::toString() const {
 
 void DirectivesGroup::addToString(String& string) const {
   for (auto& directives : m_directives)
-    directives.buildString(string);
+    string += directives.string;
 }
 
 void DirectivesGroup::forEach(DirectivesCallback callback) const {

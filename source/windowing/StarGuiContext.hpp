@@ -62,12 +62,12 @@ public:
   void setInterfaceScissorRect(RectI const& scissor);
   void resetInterfaceScissorRect();
 
-  Vec2U textureSize(String const& texName);
+  Vec2U textureSize(AssetPath const& texName);
 
   void drawQuad(RectF const& screenCoords, Vec4B const& color = Vec4B::filled(255));
-  void drawQuad(String const& texName, RectF const& screenCoords, Vec4B const& color = Vec4B::filled(255));
-  void drawQuad(String const& texName, Vec2F const& screenPos, int pixelRatio, Vec4B const& color = Vec4B::filled(255));
-  void drawQuad(String const& texName, RectF const& texCoords, RectF const& screenCoords, Vec4B const& color = Vec4B::filled(255));
+  void drawQuad(AssetPath const& texName, RectF const& screenCoords, Vec4B const& color = Vec4B::filled(255));
+  void drawQuad(AssetPath const& texName, Vec2F const& screenPos, int pixelRatio, Vec4B const& color = Vec4B::filled(255));
+  void drawQuad(AssetPath const& texName, RectF const& texCoords, RectF const& screenCoords, Vec4B const& color = Vec4B::filled(255));
 
   void drawDrawable(Drawable drawable, Vec2F const& screenPos, int pixelRatio, Vec4B const& color = Vec4B::filled(255));
 
@@ -84,9 +84,9 @@ public:
   void drawInterfaceTriangles(List<tuple<Vec2F, Vec2F, Vec2F>> const& triangles, Vec4B const& color);
 
   void drawInterfaceQuad(RectF const& screenCoords, Vec4B const& color = Vec4B::filled(255));
-  void drawInterfaceQuad(String const& texName, Vec2F const& screenPos, Vec4B const& color = Vec4B::filled(255));
-  void drawInterfaceQuad(String const& texName, Vec2F const& screenPos, float scale, Vec4B const& color = Vec4B::filled(255));
-  void drawInterfaceQuad(String const& texName, RectF const& texCoords, RectF const& screenCoords, Vec4B const& color = Vec4B::filled(255));
+  void drawInterfaceQuad(AssetPath const& texName, Vec2F const& screenPos, Vec4B const& color = Vec4B::filled(255));
+  void drawInterfaceQuad(AssetPath const& texName, Vec2F const& screenPos, float scale, Vec4B const& color = Vec4B::filled(255));
+  void drawInterfaceQuad(AssetPath const& texName, RectF const& texCoords, RectF const& screenCoords, Vec4B const& color = Vec4B::filled(255));
 
   void drawImageStretchSet(ImageStretchSet const& imageSet, RectF const& screenPos, GuiDirection direction = GuiDirection::Horizontal, Vec4B const& color = Vec4B::filled(255));
 

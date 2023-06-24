@@ -147,8 +147,13 @@ bool AssetPath::operator==(AssetPath const& rhs) const {
   return tie(basePath, subPath, directives) == tie(rhs.basePath, rhs.subPath, rhs.directives);
 }
 
+AssetPath::AssetPath(const char* path) {
+  *this = move(AssetPath::split(path));
+}
+
+
 AssetPath::AssetPath(String const& path) {
-  *this = move(AssetPath::split(path)); // split code should probably be in here, but whatever
+  *this = move(AssetPath::split(path));
 }
 
 AssetPath::AssetPath(String&& basePath, Maybe<String>&& subPath, DirectivesGroup&& directives) {
@@ -180,6 +185,21 @@ std::ostream& operator<<(std::ostream& os, AssetPath const& rhs) {
 
 size_t hash<AssetPath>::operator()(AssetPath const& s) const {
   return hashOf(s.basePath, s.subPath, s.directives);
+}
+
+DataStream& operator>>(DataStream& ds, AssetPath& path) {
+  String string;
+  ds.read(string);
+
+  path = move(string);
+
+  return ds;
+}
+
+DataStream& operator<<(DataStream& ds, AssetPath const& path) {
+  ds.write(AssetPath::join(path));
+
+  return ds;
 }
 
 }

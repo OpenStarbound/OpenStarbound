@@ -12,12 +12,11 @@ STAR_CLASS(DirectivesGroup);
 STAR_EXCEPTION(DirectivesException, StarException);
 
 // Kae: My attempt at reducing memory allocation and per-frame string parsing for extremely long directives
-// entries must never be a null ptr!
 class Directives {
 public:
   struct Entry {
     ImageOperation operation;
-    String string;
+    String string; // One day, we can make this a string_view pointing to Entry::string.
 
     Entry(ImageOperation&& newOperation, String&& newString);
     Entry(ImageOperation const& newOperation, String const& newString);
@@ -31,15 +30,17 @@ public:
   Directives(List<Entry>&& entries);
 
   void parse(String const& directives);
-  void buildString(String& out) const;
+  String& buildString(String& out) const;
   String toString() const;
   inline bool empty() const;
+  inline operator bool() const;
 
   friend DataStream& operator>>(DataStream& ds, Directives& directives);
   friend DataStream& operator<<(DataStream& ds, Directives const& directives);
 
   std::shared_ptr<List<Entry> const> entries;
   size_t hash = 0;
+  String string;
 };
 
 class DirectivesGroup {
@@ -51,6 +52,7 @@ public:
   void parseDirectivesIntoLeaf(String const& directives);
 
   inline bool empty() const;
+  inline operator bool() const;
   bool compare(DirectivesGroup const& other) const;
   void append(Directives const& other);
   void append(List<Directives::Entry>&& entries);

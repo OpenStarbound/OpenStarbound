@@ -135,7 +135,7 @@ void GuiContext::resetInterfaceScissorRect() {
   renderer()->setScissorRect({});
 }
 
-Vec2U GuiContext::textureSize(String const& texName) {
+Vec2U GuiContext::textureSize(AssetPath const& texName) {
   return assetTextureGroup()->loadTexture(texName)->size();
 }
 
@@ -143,15 +143,15 @@ void GuiContext::drawQuad(RectF const& screenCoords, Vec4B const& color) {
   renderer()->render(renderFlatRect(screenCoords, color, 0.0f));
 }
 
-void GuiContext::drawQuad(String const& texName, RectF const& screenCoords, Vec4B const& color) {
+void GuiContext::drawQuad(AssetPath const& texName, RectF const& screenCoords, Vec4B const& color) {
   renderer()->render(renderTexturedRect(assetTextureGroup()->loadTexture(texName), screenCoords, color, 0.0f));
 }
 
-void GuiContext::drawQuad(String const& texName, Vec2F const& screenPos, int pixelRatio, Vec4B const& color) {
+void GuiContext::drawQuad(AssetPath const& texName, Vec2F const& screenPos, int pixelRatio, Vec4B const& color) {
   renderer()->render(renderTexturedRect(assetTextureGroup()->loadTexture(texName), screenPos, pixelRatio, color, 0.0f));
 }
 
-void GuiContext::drawQuad(String const& texName, RectF const& texCoords, RectF const& screenCoords, Vec4B const& color) {
+void GuiContext::drawQuad(AssetPath const& texName, RectF const& texCoords, RectF const& screenCoords, Vec4B const& color) {
   renderer()->render(RenderQuad{assetTextureGroup()->loadTexture(texName),
       RenderVertex{Vec2F(screenCoords.xMin(), screenCoords.yMin()), Vec2F(texCoords.xMin(), texCoords.yMin()), color, 0.0f},
       RenderVertex{Vec2F(screenCoords.xMax(), screenCoords.yMin()), Vec2F(texCoords.xMax(), texCoords.yMin()), color, 0.0f},
@@ -209,15 +209,15 @@ void GuiContext::drawInterfaceQuad(RectF const& screenCoords, Vec4B const& color
   drawQuad(screenCoords.scaled(interfaceScale()), color);
 }
 
-void GuiContext::drawInterfaceQuad(String const& texName, Vec2F const& screenCoords, Vec4B const& color) {
+void GuiContext::drawInterfaceQuad(AssetPath const& texName, Vec2F const& screenCoords, Vec4B const& color) {
   drawQuad(texName, screenCoords * interfaceScale(), interfaceScale(), color);
 }
 
-void GuiContext::drawInterfaceQuad(String const& texName, Vec2F const& screenCoords, float scale, Vec4B const& color) {
+void GuiContext::drawInterfaceQuad(AssetPath const& texName, Vec2F const& screenCoords, float scale, Vec4B const& color) {
   drawQuad(texName, screenCoords * interfaceScale(), interfaceScale() * scale, color);
 }
 
-void GuiContext::drawInterfaceQuad(String const& texName, RectF const& texCoords, RectF const& screenCoords, Vec4B const& color) {
+void GuiContext::drawInterfaceQuad(AssetPath const& texName, RectF const& texCoords, RectF const& screenCoords, Vec4B const& color) {
   drawQuad(texName, texCoords, screenCoords.scaled(interfaceScale()), color);
 }
 
