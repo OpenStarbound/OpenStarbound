@@ -2,89 +2,75 @@
 #define STAR_DIRECTIVES_HPP
 
 #include "StarImageProcessing.hpp"
+#include "StarHash.hpp"
 
 namespace Star {
 
-STAR_CLASS(NestedDirectives);
+STAR_CLASS(DirectivesGroup);
 STAR_EXCEPTION(DirectivesException, StarException);
 
 // Kae: My attempt at reducing memory allocation and per-frame string parsing for extremely long directives
-class NestedDirectives {
+struct Directives {
+  struct Entry {
+    ImageOperation operation;
+    String string;
+
+    Entry(ImageOperation&& operation, String&& string);
+  };
+
+  Directives();
+  Directives(String const& directives);
+  Directives(String&& directives);
+
+  void parse(String const& directives);
+
+  void buildString(String& out) const;
+
+  std::shared_ptr<List<Entry> const> entries;
+  size_t hash = 0;
+};
+
+class DirectivesGroup {
 public:
-  struct Leaf {
-    struct Entry {
-      ImageOperation operation;
-      String string;
-
-      bool operator==(Entry const& other) const;
-      bool operator!=(Entry const& other) const;
-      Entry(ImageOperation&& operation, String&& string);
-    };
-    List<Entry> entries;
-
-    size_t length() const;
-    bool operator==(NestedDirectives::Leaf const& other) const;
-    bool operator!=(NestedDirectives::Leaf const& other) const;
-  };
-
-  typedef function<void(Leaf const&)> LeafCallback;
-  typedef function<void(ImageOperation const&, String const&)> LeafPairCallback;
-  typedef function<bool(Leaf const&)> AbortableLeafCallback;
-  typedef function<bool(ImageOperation const&, String const&)> AbortableLeafPairCallback;
-
-  struct Cell;
-  typedef std::shared_ptr<Cell> Branch;
-  typedef std::shared_ptr<Cell const> ConstBranch;
-  typedef List<ConstBranch> Branches;
-
-
-  struct Cell {
-    Variant<Leaf, Branches> value;
-
-    Cell();
-    Cell(Leaf&& leaf);
-    Cell(Branches&& branches);
-    Cell(const Leaf& leaf);
-    Cell(const Branches& branches);
-
-    void buildString(String& string) const;
-    void forEach(LeafCallback& callback) const;
-    bool forEachAbortable(AbortableLeafCallback& callback) const;
-  };
-
-
-  NestedDirectives();
-  NestedDirectives(String const& directives);
-  NestedDirectives(String&& directives);
+  DirectivesGroup();
+  DirectivesGroup(String const& directives);
+  DirectivesGroup(String&& directives);
 
   void parseDirectivesIntoLeaf(String const& directives);
 
-  bool empty() const;
-  bool compare(NestedDirectives const& other) const;
-  void append(NestedDirectives const& other);
-  NestedDirectives& operator+=(NestedDirectives const& other);
-  bool operator==(NestedDirectives const& other) const;
-  bool operator!=(NestedDirectives const& other) const;
+  inline bool empty() const;
+  bool compare(DirectivesGroup const& other) const;
+  inline bool operator==(DirectivesGroup const& other) const;
+  inline bool operator!=(DirectivesGroup const& other) const;
+  void append(Directives const& other);
+  DirectivesGroup& operator+=(Directives const& other);
 
-  const ConstBranch& branch() const;
-
-  String toString() const;
+  inline String toString() const;
   void addToString(String& string) const;
 
-  void forEach(LeafCallback callback) const;
-  void forEachPair(LeafPairCallback callback) const;
-  bool forEachAbortable(AbortableLeafCallback callback) const;
-  bool forEachPairAbortable(AbortableLeafPairCallback callback) const;
+  typedef function<void(Directives::Entry const&)> DirectivesCallback;
+  typedef function<bool(Directives::Entry const&)> AbortableDirectivesCallback;
 
-  Image apply(Image& image) const;
+  void forEach(DirectivesCallback callback) const;
+  bool forEachAbortable(AbortableDirectivesCallback callback) const;
+
+  inline Image applyNewImage(const Image& image) const;
+  void applyExistingImage(Image& image) const;
+  
+  inline size_t hash() const;
 private:
-  void buildString(String& string, const Cell& cell) const;
-  Branches& convertToBranches();
+  void buildString(String& string, const DirectivesGroup& directives) const;
 
-  Branch m_root;
+  List<Directives> m_directives;
+  size_t m_count;
 };
 
-typedef NestedDirectives ImageDirectives;
+template <>
+struct hash<DirectivesGroup> {
+  size_t operator()(DirectivesGroup const& s) const;
+};
+
+typedef DirectivesGroup ImageDirectives;
 
 }
 

@@ -844,9 +844,14 @@ shared_ptr<Assets::AssetData> Assets::loadImage(AssetPath const& path) const {
         as<ImageData>(loadAsset(AssetId{AssetType::Image, {path.basePath, path.subPath, {}}}));
     if (!source)
       return {};
-    List<ImageOperation> operations = path.directives.transformed(imageOperationFromString);
     StringMap<ImageConstPtr> references;
-    for (auto const& ref : imageOperationReferences(operations)) {
+    StringList referencePaths;
+    path.directives.forEach([&](auto const& entry) {
+      addImageOperationReferences(entry.operation, referencePaths);
+    }); // TODO: This can definitely be better, was changed quickly to support the new Directives.
+
+
+    for (auto const& ref : referencePaths) {
       auto components = AssetPath::split(ref);
       validatePath(components, true, false);
       auto refImage = as<ImageData>(loadAsset(AssetId{AssetType::Image, move(components)}));
@@ -857,8 +862,11 @@ shared_ptr<Assets::AssetData> Assets::loadImage(AssetPath const& path) const {
 
     return unlockDuring([&]() {
       auto newData = make_shared<ImageData>();
-      newData->image = make_shared<Image>(processImageOperations(
-          operations, *source->image, [&](String const& ref) { return references.get(ref).get(); }));
+      Image newImage = *source->image;
+      path.directives.forEach([&](auto const& entry) {
+        processImageOperation(entry.operation, newImage, [&](String const& ref) { return references.get(ref).get(); });
+      });
+      newData->image = make_shared<Image>(move(newImage));
       return newData;
     });
 

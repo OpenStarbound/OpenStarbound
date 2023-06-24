@@ -53,10 +53,11 @@ struct AssetPath {
 
   AssetPath() = default;
   AssetPath(String const& path);
-
+  AssetPath(String&& basePath, Maybe<String>&& subPath, DirectivesGroup&& directives);
+  AssetPath(const String& basePath, const Maybe<String>& subPath, const DirectivesGroup& directives);
   String basePath;
   Maybe<String> subPath;
-  NestedDirectives directives;
+  DirectivesGroup directives;
 
   bool operator==(AssetPath const& rhs) const;
 };

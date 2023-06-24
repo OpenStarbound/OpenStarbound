@@ -145,6 +145,8 @@ List<ImageOperation> parseImageOperations(String const& params);
 // Each operation separated by '?', returns string with leading '?'
 String printImageOperations(List<ImageOperation> const& operations);
 
+void addImageOperationReferences(ImageOperation const& operation, StringList& out);
+
 StringList imageOperationReferences(List<ImageOperation> const& operations);
 
 typedef function<Image const*(String const& refName)> ImageReferenceCallback;

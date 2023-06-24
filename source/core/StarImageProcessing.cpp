@@ -352,14 +352,17 @@ String printImageOperations(List<ImageOperation> const& list) {
   return StringList(list.transformed(imageOperationToString)).join("?");
 }
 
+void addImageOperationReferences(ImageOperation const& operation, StringList& out) {
+  if (auto op = operation.ptr<AlphaMaskImageOperation>())
+    out.appendAll(op->maskImages);
+  else if (auto op = operation.ptr<BlendImageOperation>())
+    out.appendAll(op->blendImages);
+}
+
 StringList imageOperationReferences(List<ImageOperation> const& operations) {
   StringList references;
-  for (auto const& operation : operations) {
-    if (auto op = operation.ptr<AlphaMaskImageOperation>())
-      references.appendAll(op->maskImages);
-    else if (auto op = operation.ptr<BlendImageOperation>())
-      references.appendAll(op->blendImages);
-  }
+  for (auto const& operation : operations)
+    addImageOperationReferences(operation, references);
   return references;
 }
 
@@ -417,7 +420,7 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
 
   } else if (auto op = operation.ptr<AlphaMaskImageOperation>()) {
     if (op->maskImages.empty())
-      continue;
+      return;
 
     if (!refCallback)
       throw StarException("Missing image ref callback during AlphaMaskImageOperation in ImageProcessor::process");
@@ -449,7 +452,7 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
 
   } else if (auto op = operation.ptr<BlendImageOperation>()) {
     if (op->blendImages.empty())
-      continue;
+      return;
 
     if (!refCallback)
       throw StarException("Missing image ref callback during BlendImageOperation in ImageProcessor::process");

@@ -122,7 +122,8 @@ String ImageMetadataDatabase::filterProcessing(String const& path) {
   auto directives = move(components.directives);
   String joined = AssetPath::join(components);
 
-  directives.forEachPair([&](ImageOperation const& operation, String const& string) {
+  directives.forEach([&](auto const& entry) {
+    ImageOperation const& operation = entry.operation;
     if (!(operation.is<HueShiftImageOperation>()       ||
       operation.is<SaturationShiftImageOperation>()    ||
       operation.is<BrightnessMultiplyImageOperation>() ||
@@ -130,7 +131,7 @@ String ImageMetadataDatabase::filterProcessing(String const& path) {
       operation.is<ScanLinesImageOperation>()          ||
       operation.is<SetColorImageOperation>())) {
       joined += "?";
-      joined += string;
+      joined += entry.string;
     }
   });
 
@@ -229,14 +230,9 @@ Vec2U ImageMetadataDatabase::calculateImageSize(String const& path) const {
 
   OperationSizeAdjust osa(imageSize);
 
-  bool complete = components.directives.forEachAbortable([&](auto const& leaf) -> bool {
-    for (const ImageOperation& operation : leaf.operations) {
-      operation.call(osa);
-      if (osa.hasError())
-        return false;
-      else
-        return true;
-    }
+  bool complete = components.directives.forEachAbortable([&](auto const& entry) -> bool {
+    entry.operation.call(osa);
+    return !osa.hasError;
   });
 
   if (!complete)

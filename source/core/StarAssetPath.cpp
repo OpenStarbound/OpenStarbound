@@ -151,6 +151,18 @@ AssetPath::AssetPath(String const& path) {
   *this = move(AssetPath::split(path)); // split code should probably be in here, but whatever
 }
 
+AssetPath::AssetPath(String&& basePath, Maybe<String>&& subPath, DirectivesGroup&& directives) {
+  this->basePath = move(basePath);
+  this->subPath = move(subPath);
+  this->directives = move(directives);
+}
+
+AssetPath::AssetPath(String const& basePath, Maybe<String> const& subPath, DirectivesGroup const& directives) {
+  this->basePath = basePath;
+  this->subPath = subPath;
+  this->directives = directives;
+}
+
 std::ostream& operator<<(std::ostream& os, AssetPath const& rhs) {
   os << rhs.basePath;
   if (rhs.subPath) {
@@ -158,9 +170,9 @@ std::ostream& operator<<(std::ostream& os, AssetPath const& rhs) {
     os << *rhs.subPath;
   }
 
-  rhs.directives.forEach([&](ImageOperation const& operation, String const& string) {
+  rhs.directives.forEach([&](auto const& entry) {
     os << "?";
-    os << string;
+    os << entry.string;
    });
 
   return os;
