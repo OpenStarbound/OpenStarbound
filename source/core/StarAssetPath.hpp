@@ -2,6 +2,7 @@
 #define STAR_ASSET_PATH_HPP
 
 #include "StarDirectives.hpp"
+#include "StarHash.hpp"
 
 namespace Star {
 
@@ -63,6 +64,11 @@ struct AssetPath {
 };
 
 std::ostream& operator<<(std::ostream& os, AssetPath const& rhs);
+
+template <>
+struct hash<AssetPath> {
+  size_t operator()(AssetPath const& s) const;
+};
 
 }
 

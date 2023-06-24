@@ -6,6 +6,7 @@
 #include "StarRoot.hpp"
 #include "StarStoredFunctions.hpp"
 #include "StarPlayer.hpp"
+#include "StarDirectives.hpp"
 
 namespace Star {
 
@@ -20,7 +21,7 @@ ArmorItem::ArmorItem(Json const& config, String const& directory, Json const& da
 
   m_directives = instanceValue("directives", "").toString();
   m_colorOptions = colorDirectivesFromConfig(config.getArray("colorOptions", JsonArray{""}));
-  if (m_directives.empty())
+  if (m_directives.entries->empty())
     m_directives = "?" + m_colorOptions.wrap(instanceValue("colorIndex", 0).toUInt());
   refreshIconDrawables();
 
@@ -39,7 +40,7 @@ List<String> const& ArmorItem::colorOptions() {
   return m_colorOptions;
 }
 
-String const& ArmorItem::directives() const {
+Directives const& ArmorItem::directives() const {
   return m_directives;
 }
 
@@ -88,9 +89,11 @@ HeadArmor::HeadArmor(Json const& config, String const& directory, Json const& da
   m_maleImage = AssetPath::relativeTo(directory, config.getString("maleFrames"));
   m_femaleImage = AssetPath::relativeTo(directory, config.getString("femaleFrames"));
 
-  m_maskDirectives = instanceValue("mask").toString();
-  if (!m_maskDirectives.empty() && !m_maskDirectives.contains("?"))
-    m_maskDirectives = "?addmask=" + AssetPath::relativeTo(directory, m_maskDirectives) + ";0;0";
+  String maskDirectivesStr = instanceValue("mask").toString();
+  if (!maskDirectivesStr.empty() && !maskDirectivesStr.contains("?"))
+    m_maskDirectives = "?addmask=" + AssetPath::relativeTo(directory, maskDirectivesStr) + ";0;0";
+  else
+    m_maskDirectives = maskDirectivesStr;
 }
 
 ItemPtr HeadArmor::clone() const {
@@ -104,7 +107,7 @@ String const& HeadArmor::frameset(Gender gender) const {
     return m_femaleImage;
 }
 
-String const& HeadArmor::maskDirectives() const {
+Directives const& HeadArmor::maskDirectives() const {
   return m_maskDirectives;
 }
 

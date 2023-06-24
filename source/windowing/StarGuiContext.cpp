@@ -313,7 +313,7 @@ bool GuiContext::trySetCursor(Drawable const& drawable, Vec2I const& offset, int
 
   auto assets = Root::singleton().assets();
   auto& imagePath = drawable.imagePart().image;
-  return applicationController()->setCursorImage(imagePath, assets->image(imagePath), pixelRatio, offset);
+  return applicationController()->setCursorImage(AssetPath::join(imagePath), assets->image(imagePath), pixelRatio, offset);
 }
 
 RectF GuiContext::renderText(String const& s, TextPositioning const& position) {

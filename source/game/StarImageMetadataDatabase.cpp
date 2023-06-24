@@ -10,7 +10,7 @@
 
 namespace Star {
 
-Vec2U ImageMetadataDatabase::imageSize(String const& path) const {
+Vec2U ImageMetadataDatabase::imageSize(AssetPath const& path) const {
   MutexLocker locker(m_mutex);
   auto i = m_sizeCache.find(path);
   if (i != m_sizeCache.end())
@@ -24,7 +24,7 @@ Vec2U ImageMetadataDatabase::imageSize(String const& path) const {
   return size;
 }
 
-List<Vec2I> ImageMetadataDatabase::imageSpaces(String const& path, Vec2F position, float fillLimit, bool flip) const {
+List<Vec2I> ImageMetadataDatabase::imageSpaces(AssetPath const& path, Vec2F position, float fillLimit, bool flip) const {
   SpacesEntry key = make_tuple(path, Vec2I::round(position), fillLimit, flip);
 
   MutexLocker locker(m_mutex);
@@ -33,7 +33,7 @@ List<Vec2I> ImageMetadataDatabase::imageSpaces(String const& path, Vec2F positio
     return i->second;
   }
 
-  String filteredPath = filterProcessing(path);
+  auto filteredPath = filterProcessing(path);
   SpacesEntry filteredKey = make_tuple(filteredPath, Vec2I::round(position), fillLimit, flip);
 
   auto j = m_spacesCache.find(filteredKey);
@@ -88,14 +88,14 @@ List<Vec2I> ImageMetadataDatabase::imageSpaces(String const& path, Vec2F positio
   return spaces;
 }
 
-RectU ImageMetadataDatabase::nonEmptyRegion(String const& path) const {
+RectU ImageMetadataDatabase::nonEmptyRegion(AssetPath const& path) const {
   MutexLocker locker(m_mutex);
   auto i = m_regionCache.find(path);
   if (i != m_regionCache.end()) {
     return i->second;
   }
 
-  String filteredPath = filterProcessing(path);
+  auto filteredPath = filterProcessing(path);
   auto j = m_regionCache.find(filteredPath);
   if (j != m_regionCache.end()) {
     m_regionCache[path] = j->second;
@@ -117,12 +117,11 @@ RectU ImageMetadataDatabase::nonEmptyRegion(String const& path) const {
   return region;
 }
 
-String ImageMetadataDatabase::filterProcessing(String const& path) {
-  AssetPath components = AssetPath::split(path);
-  auto directives = move(components.directives);
-  String joined = AssetPath::join(components);
+AssetPath ImageMetadataDatabase::filterProcessing(AssetPath const& path) {
+  AssetPath newPath = { path.basePath, path.subPath, {} };
 
-  directives.forEach([&](auto const& entry) {
+  List<Directives::Entry> filtered;
+  path.directives.forEach([&](auto const& entry) {
     ImageOperation const& operation = entry.operation;
     if (!(operation.is<HueShiftImageOperation>()       ||
       operation.is<SaturationShiftImageOperation>()    ||
@@ -130,15 +129,15 @@ String ImageMetadataDatabase::filterProcessing(String const& path) {
       operation.is<FadeToColorImageOperation>()        ||
       operation.is<ScanLinesImageOperation>()          ||
       operation.is<SetColorImageOperation>())) {
-      joined += "?";
-      joined += entry.string;
+      filtered.emplace_back(entry);
     }
   });
 
-  return AssetPath::join(components);
+  newPath.directives.append(move(filtered));
+  return newPath;
 }
 
-Vec2U ImageMetadataDatabase::calculateImageSize(String const& path) const {
+Vec2U ImageMetadataDatabase::calculateImageSize(AssetPath const& path) const {
   // Carefully calculate an image's size while trying not to actually load it.
   // In error cases, this will fall back to calling Assets::image, so that image
   // can possibly produce a missing image asset or properly report the error.
@@ -149,18 +148,17 @@ Vec2U ImageMetadataDatabase::calculateImageSize(String const& path) const {
     return assets->image(path)->size();
   };
 
-  AssetPath components = AssetPath::split(path);
-  if (!assets->assetExists(components.basePath)) {
+  if (!assets->assetExists(path.basePath)) {
     return fallback();
   }
 
   Vec2U imageSize;
-  if (components.subPath) {
-    auto frames = assets->imageFrames(components.basePath);
+  if (path.subPath) {
+    auto frames = assets->imageFrames(path.basePath);
     if (!frames)
       return fallback();
 
-    if (auto rect = frames->getRect(*components.subPath))
+    if (auto rect = frames->getRect(*path.subPath))
       imageSize = rect->size();
     else
       return fallback();
@@ -169,13 +167,13 @@ Vec2U ImageMetadataDatabase::calculateImageSize(String const& path) const {
     // so we don't have to call Image::readPngMetadata on the same file more
     // than once.
     MutexLocker locker(m_mutex);
-    if (auto size = m_sizeCache.maybe(components.basePath)) {
+    if (auto size = m_sizeCache.maybe(path.basePath)) {
       imageSize = *size;
     } else {
       locker.unlock();
-      imageSize = get<0>(Image::readPngMetadata(assets->openFile(components.basePath)));
+      imageSize = get<0>(Image::readPngMetadata(assets->openFile(path.basePath)));
       locker.lock();
-      m_sizeCache[components.basePath] = imageSize;
+      m_sizeCache[path.basePath] = imageSize;
     }
   }
 
@@ -230,7 +228,7 @@ Vec2U ImageMetadataDatabase::calculateImageSize(String const& path) const {
 
   OperationSizeAdjust osa(imageSize);
 
-  bool complete = components.directives.forEachAbortable([&](auto const& entry) -> bool {
+  bool complete = path.directives.forEachAbortable([&](auto const& entry) -> bool {
     entry.operation.call(osa);
     return !osa.hasError;
   });

@@ -3,28 +3,40 @@
 
 #include "StarImageProcessing.hpp"
 #include "StarHash.hpp"
+#include "StarDataStream.hpp"
 
 namespace Star {
 
+STAR_CLASS(Directives);
 STAR_CLASS(DirectivesGroup);
 STAR_EXCEPTION(DirectivesException, StarException);
 
 // Kae: My attempt at reducing memory allocation and per-frame string parsing for extremely long directives
-struct Directives {
+// entries must never be a null ptr!
+class Directives {
+public:
   struct Entry {
     ImageOperation operation;
     String string;
 
     Entry(ImageOperation&& newOperation, String&& newString);
+    Entry(ImageOperation const& newOperation, String const& newString);
+    Entry(Entry const& other);
   };
 
   Directives();
   Directives(String const& directives);
   Directives(String&& directives);
+  Directives(const char* directives);
+  Directives(List<Entry>&& entries);
 
   void parse(String const& directives);
-
   void buildString(String& out) const;
+  String toString() const;
+  inline bool empty() const;
+
+  friend DataStream& operator>>(DataStream& ds, Directives& directives);
+  friend DataStream& operator<<(DataStream& ds, Directives const& directives);
 
   std::shared_ptr<List<Entry> const> entries;
   size_t hash = 0;
@@ -41,6 +53,9 @@ public:
   inline bool empty() const;
   bool compare(DirectivesGroup const& other) const;
   void append(Directives const& other);
+  void append(List<Directives::Entry>&& entries);
+  void clear();
+
   DirectivesGroup& operator+=(Directives const& other);
 
   inline String toString() const;

@@ -13,16 +13,16 @@ AssetTextureGroup::AssetTextureGroup(TextureGroupPtr textureGroup)
   Root::singleton().registerReloadListener(m_reloadTracker);
 }
 
-TexturePtr AssetTextureGroup::loadTexture(String const& imageName) {
-  return loadTexture(imageName, false);
+TexturePtr AssetTextureGroup::loadTexture(AssetPath const& imagePath) {
+  return loadTexture(imagePath, false);
 }
 
-TexturePtr AssetTextureGroup::tryTexture(String const& imageName) {
-  return loadTexture(imageName, true);
+TexturePtr AssetTextureGroup::tryTexture(AssetPath const& imagePath) {
+  return loadTexture(imagePath, true);
 }
 
-bool AssetTextureGroup::textureLoaded(String const& imageName) const {
-  return m_textureMap.contains(imageName);
+bool AssetTextureGroup::textureLoaded(AssetPath const& imagePath) const {
+  return m_textureMap.contains(imagePath);
 }
 
 void AssetTextureGroup::cleanup(int64_t textureTimeout) {
@@ -50,8 +50,8 @@ void AssetTextureGroup::cleanup(int64_t textureTimeout) {
   }
 }
 
-TexturePtr AssetTextureGroup::loadTexture(String const& imageName, bool tryTexture) {
-  if (auto p = m_textureMap.ptr(imageName)) {
+TexturePtr AssetTextureGroup::loadTexture(AssetPath const& imagePath, bool tryTexture) {
+  if (auto p = m_textureMap.ptr(imagePath)) {
     p->second = Time::monotonicMilliseconds();
     return p->first;
   }
@@ -60,9 +60,9 @@ TexturePtr AssetTextureGroup::loadTexture(String const& imageName, bool tryTextu
 
   ImageConstPtr image;
   if (tryTexture)
-    image = assets->tryImage(imageName);
+    image = assets->tryImage(imagePath);
   else
-    image = assets->image(imageName);
+    image = assets->image(imagePath);
 
   if (!image)
     return {};
@@ -72,11 +72,11 @@ TexturePtr AssetTextureGroup::loadTexture(String const& imageName, bool tryTextu
   // in the texture group for these, so we keep track of the image pointers
   // returned to deduplicate them.
   if (auto existingTexture = m_textureDeduplicationMap.value(image)) {
-    m_textureMap.add(imageName, {existingTexture, Time::monotonicMilliseconds()});
+    m_textureMap.add(imagePath, {existingTexture, Time::monotonicMilliseconds()});
     return existingTexture;
   } else {
     auto texture = m_textureGroup->create(*image);
-    m_textureMap.add(imageName, {texture, Time::monotonicMilliseconds()});
+    m_textureMap.add(imagePath, {texture, Time::monotonicMilliseconds()});
     m_textureDeduplicationMap.add(image, texture);
     return texture;
   }

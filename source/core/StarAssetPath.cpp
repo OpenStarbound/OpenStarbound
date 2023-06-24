@@ -66,7 +66,7 @@ AssetPath AssetPath::split(String const& path) {
       ++i;
     }
 
-    if (!directives.empty());
+    if (!directives.empty())
       components.directives.append(move(directives));
   }
 
@@ -176,6 +176,10 @@ std::ostream& operator<<(std::ostream& os, AssetPath const& rhs) {
    });
 
   return os;
+}
+
+size_t hash<AssetPath>::operator()(AssetPath const& s) const {
+  return hashOf(s.basePath, s.subPath, s.directives);
 }
 
 }

@@ -119,12 +119,12 @@ public:
   // <full-path-minus-extension>.frames or default.frames, going up to assets
   // root.  May return the same ImageConstPtr for different paths if the paths
   // are equivalent or they are aliases of other image paths.
-  ImageConstPtr image(String const& path) const;
+  ImageConstPtr image(AssetPath const& path) const;
   // Load images using background processing
   void queueImages(StringList const& paths) const;
   // Return the given image *if* it is already loaded, otherwise queue it for
   // loading.
-  ImageConstPtr tryImage(String const& path) const;
+  ImageConstPtr tryImage(AssetPath const& path) const;
 
   // Returns the best associated FramesSpecification for a given image path, if
   // it exists.  The given path must not contain sub-paths or directives, and

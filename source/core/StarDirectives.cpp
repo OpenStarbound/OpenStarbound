@@ -10,6 +10,16 @@ Directives::Entry::Entry(ImageOperation&& newOperation, String&& newString) {
   string = move(newString);
 }
 
+Directives::Entry::Entry(ImageOperation const& newOperation, String const& newString) {
+  operation = newOperation;
+  string = newString;
+}
+
+Directives::Entry::Entry(Entry const& other) {
+  operation = other.operation;
+  string = other.string;
+}
+
 Directives::Directives() {}
 Directives::Directives(String const& directives) {
   parse(directives);
@@ -18,6 +28,17 @@ Directives::Directives(String const& directives) {
 Directives::Directives(String&& directives) {
   String mine = move(directives);
   parse(mine);
+}
+
+Directives::Directives(const char* directives) {
+  String string(directives);
+  parse(string);
+}
+
+Directives::Directives(List<Entry>&& newEntries) {
+  entries = std::make_shared<List<Entry> const>(move(newEntries));
+  String directives = toString(); // This needs to be better
+  hash = XXH3_64bits(directives.utf8Ptr(), directives.utf8Size());
 }
 
 void Directives::parse(String const& directives) {
@@ -39,6 +60,32 @@ void Directives::buildString(String& out) const {
     out += "?";
     out += entry.string;
   }
+}
+
+String Directives::toString() const {
+  String result;
+  buildString(result);
+  return result;
+}
+
+inline bool Directives::empty() const {
+  return entries->empty();
+}
+
+
+DataStream& operator>>(DataStream& ds, Directives& directives) {
+  String string;
+  ds.read(string);
+
+  directives.parse(string);
+
+  return ds;
+}
+
+DataStream& operator<<(DataStream& ds, Directives const& directives) {
+  ds.write(directives.toString());
+
+  return ds;
 }
 
 DirectivesGroup::DirectivesGroup() : m_count(0) {}
@@ -66,8 +113,19 @@ inline bool DirectivesGroup::compare(DirectivesGroup const& other) const {
 }
 
 void DirectivesGroup::append(Directives const& directives) {
-  m_directives.push_back(directives);
+  m_directives.emplace_back(directives);
   m_count += m_directives.back().entries->size();
+}
+
+void DirectivesGroup::append(List<Directives::Entry>&& entries) {
+  size_t size = entries.size();
+  m_directives.emplace_back(move(entries));
+  m_count += size;
+}
+
+void DirectivesGroup::clear() {
+  m_directives.clear();
+  m_count = 0;
 }
 
 DirectivesGroup& DirectivesGroup::operator+=(Directives const& other) {

@@ -610,7 +610,7 @@ List<Drawable> PaintingBeamTool::drawables() const {
   auto result = BeamItem::drawables();
   for (auto& entry : result) {
     if (entry.isImage())
-      entry.imagePart().image = entry.imagePart().image + m_colorKeys[m_colorIndex];
+      entry.imagePart().image.directives += m_colorKeys[m_colorIndex];
   }
   return result;
 }

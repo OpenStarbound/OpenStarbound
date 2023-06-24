@@ -234,11 +234,10 @@ void Assets::queueJsons(StringList const& paths) const {
   }));
 }
 
-ImageConstPtr Assets::image(String const& path) const {
-  auto components = AssetPath::split(path);
-  validatePath(components, true, true);
+ImageConstPtr Assets::image(AssetPath const& path) const {
+  validatePath(path, true, true);
 
-  return as<ImageData>(getAsset(AssetId{AssetType::Image, move(components)}))->image;
+  return as<ImageData>(getAsset(AssetId{AssetType::Image, path}))->image;
 }
 
 void Assets::queueImages(StringList const& paths) const {
@@ -250,11 +249,10 @@ void Assets::queueImages(StringList const& paths) const {
   }));
 }
 
-ImageConstPtr Assets::tryImage(String const& path) const {
-  auto components = AssetPath::split(path);
-  validatePath(components, true, true);
+ImageConstPtr Assets::tryImage(AssetPath const& path) const {
+  validatePath(path, true, true);
 
-  if (auto imageData = as<ImageData>(tryAsset(AssetId{AssetType::Image, move(components)})))
+  if (auto imageData = as<ImageData>(tryAsset(AssetId{AssetType::Image, path})))
     return imageData->image;
   else
     return {};

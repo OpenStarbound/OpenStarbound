@@ -60,15 +60,15 @@ struct HumanoidIdentity {
   String hairGroup;
   // Must have :normal and :climb
   String hairType;
-  String hairDirectives;
-  String bodyDirectives;
-  String emoteDirectives;
+  Directives hairDirectives;
+  Directives bodyDirectives;
+  Directives emoteDirectives;
   String facialHairGroup;
   String facialHairType;
-  String facialHairDirectives;
+  Directives facialHairDirectives;
   String facialMaskGroup;
   String facialMaskType;
-  String facialMaskDirectives;
+  Directives facialMaskDirectives;
 
   Personality personality;
   Vec4B color;
@@ -125,11 +125,11 @@ public:
   // empty string, it is disabled.
 
   // Asset directives for the head armor.
-  void setHeadArmorDirectives(String directives);
+  void setHeadArmorDirectives(Directives directives);
   // Must have :normal, climb
   void setHeadArmorFrameset(String headFrameset);
   // Asset directives for the chest, back and front arms armor.
-  void setChestArmorDirectives(String directives);
+  void setChestArmorDirectives(Directives directives);
   // Will have :run, :normal, and :duck
   void setChestArmorFrameset(String chest);
   // Same as back arm image frames
@@ -138,16 +138,16 @@ public:
   void setFrontSleeveFrameset(String frontSleeveFrameset);
 
   // Asset directives for the legs armor.
-  void setLegsArmorDirectives(String directives);
+  void setLegsArmorDirectives(Directives directives);
   // Must have :idle, :duck, :walk[1-8], :run[1-8], :jump[1-4], :fall[1-4]
   void setLegsArmorFrameset(String legsFrameset);
 
   // Asset directives for the back armor.
-  void setBackArmorDirectives(String directives);
+  void setBackArmorDirectives(Directives directives);
   // Must have :idle, :duck, :walk[1-8], :run[1-8], :jump[1-4], :fall[1-4]
   void setBackArmorFrameset(String backFrameset);
 
-  void setHelmetMaskDirectives(String helmetMaskDirectives);
+  void setHelmetMaskDirectives(Directives helmetMaskDirectives);
 
   void setBodyHidden(bool hidden);
 
@@ -260,16 +260,16 @@ private:
   String getFrontArmFromIdentity() const;
   String getVaporTrailFrameset() const;
 
-  String getBodyDirectives() const;
-  String getHairDirectives() const;
-  String getEmoteDirectives() const;
-  String getFacialHairDirectives() const;
-  String getFacialMaskDirectives() const;
-  String getHelmetMaskDirectives() const;
-  String getHeadDirectives() const;
-  String getChestDirectives() const;
-  String getLegsDirectives() const;
-  String getBackDirectives() const;
+  Directives getBodyDirectives() const;
+  Directives getHairDirectives() const;
+  Directives getEmoteDirectives() const;
+  Directives getFacialHairDirectives() const;
+  Directives getFacialMaskDirectives() const;
+  Directives getHelmetMaskDirectives() const;
+  Directives getHeadDirectives() const;
+  Directives getChestDirectives() const;
+  Directives getLegsDirectives() const;
+  Directives getBackDirectives() const;
 
   int getEmoteStateSequence() const;
   int getArmStateSequence() const;
@@ -327,14 +327,14 @@ private:
   String m_backSleeveFrameset;
   String m_frontSleeveFrameset;
   String m_headArmorFrameset;
-  String m_headArmorDirectives;
+  Directives m_headArmorDirectives;
   String m_chestArmorFrameset;
-  String m_chestArmorDirectives;
+  Directives m_chestArmorDirectives;
   String m_legsArmorFrameset;
-  String m_legsArmorDirectives;
+  Directives m_legsArmorDirectives;
   String m_backArmorFrameset;
-  String m_backArmorDirectives;
-  String m_helmetMaskDirectives;
+  Directives m_backArmorDirectives;
+  Directives m_helmetMaskDirectives;
 
   State m_state;
   HumanoidEmote m_emoteState;
