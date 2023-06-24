@@ -274,13 +274,13 @@ void Chat::renderImpl() {
       m_chatLog->drawImage(m_portraitBackground, Vec2F(imagePosition), 1.0f, fade);
       m_chatLog->drawImage(message.portrait, Vec2F(imagePosition + m_portraitImageOffset), m_portraitScale, fade);
       tp.pos += Vec2F(0, floor(messageHeight / 2));
-      m_chatLog->drawText(messageString, tp, m_fontSize, fade, FontMode::Normal, m_chatLineHeight, m_fontDirectives);
+      m_chatLog->drawText(messageString, tp, m_fontSize, fade, FontMode::Normal, m_chatLineHeight, m_font, m_fontDirectives);
 
     } else {
       TextPositioning tp = {Vec2F(chatMin), HorizontalAnchor::LeftAnchor, VerticalAnchor::BottomAnchor, wrapWidth};
       messageHeight = guiContext.determineInterfaceTextSize(messageString, tp).size()[1] + lineHeightMargin;
 
-      m_chatLog->drawText(messageString, tp, m_fontSize, fade, FontMode::Normal, m_chatLineHeight, m_fontDirectives);
+      m_chatLog->drawText(messageString, tp, m_fontSize, fade, FontMode::Normal, m_chatLineHeight, m_font, m_fontDirectives);
     }
 
     chatMin[1] += ceil(messageHeight);

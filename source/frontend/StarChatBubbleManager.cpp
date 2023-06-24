@@ -197,6 +197,7 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
 
       // yea I agree
       m_guiContext->setFontSize(m_fontSize, m_zoom);
+      m_guiContext->setFontProcessingDirectives("");
       m_guiContext->setDefaultFont();
       auto result = m_guiContext->determineTextSize(sayAction.text, m_textTemplate);
       float textWidth = result.width() / m_zoom + m_textPadding[0];
@@ -334,6 +335,8 @@ void ChatBubbleManager::drawBubbleText(Vec2F screenPos, BubbleText const& bubble
   // use the alpha as a blend value for the text colour as pulled from data.
   Vec4B const& displayColor = Vec4B(baseColor[0], baseColor[1], baseColor[2], (baseColor[3] * alpha) / 255);
 
+  m_guiContext->setDefaultFont();
+  m_guiContext->setFontProcessingDirectives("");
   m_guiContext->setFontColor(displayColor);
   m_guiContext->setFontSize(get<1>(bubbleText), m_zoom);
 

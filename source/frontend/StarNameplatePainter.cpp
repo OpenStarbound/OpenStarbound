@@ -102,6 +102,9 @@ void NameplatePainter::render() {
 
       context.renderText(*nametag.statusText, statusPosition(bubble.currentPosition));
     }
+    
+    context.setDefaultFont();
+    context.setFontProcessingDirectives("");
   });
 }
 
