@@ -15,8 +15,7 @@ public:
 
   void setAngle(float angle);
 
-  void setProcessing(String processing);
-  void addProcessing(String const& processing);
+  void setProcessing(Directives processing);
 
   void setColor(Color color);
 
@@ -44,7 +43,7 @@ private:
   float m_angle;
   Vec2F m_offset;
   bool m_centered;
-  String m_processing;
+  Directives m_processing;
   Color m_color;
   int m_variantOffset;
 

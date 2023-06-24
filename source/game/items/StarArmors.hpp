@@ -25,7 +25,7 @@ public:
 
   List<String> const& colorOptions();
 
-  String const& directives() const;
+  Directives const& directives() const;
 
   bool hideBody() const;
 
@@ -38,7 +38,7 @@ private:
   List<String> m_colorOptions;
   List<PersistentStatusEffect> m_statusEffects;
   StringSet m_effectSources;
-  String m_directives;
+  Directives m_directives;
   bool m_hideBody;
   Maybe<String> m_techModule;
 };
@@ -51,14 +51,14 @@ public:
   virtual ItemPtr clone() const;
 
   String const& frameset(Gender gender) const;
-  String const& maskDirectives() const;
+  Directives const& maskDirectives() const;
 
   virtual List<Drawable> preview(PlayerPtr const& viewer = {}) const;
 
 private:
   String m_maleImage;
   String m_femaleImage;
-  String m_maskDirectives;
+  Directives m_maskDirectives;
 };
 
 class ChestArmor : public ArmorItem, public PreviewableItem {

@@ -5,6 +5,7 @@
 #include "StarMap.hpp"
 #include "StarString.hpp"
 #include "StarThread.hpp"
+#include "StarAssetPath.hpp"
 
 namespace Star {
 
@@ -15,24 +16,24 @@ STAR_CLASS(ImageMetadataDatabase);
 // because they are expensive to compute and cheap to keep around.
 class ImageMetadataDatabase {
 public:
-  Vec2U imageSize(String const& path) const;
-  List<Vec2I> imageSpaces(String const& path, Vec2F position, float fillLimit, bool flip) const;
-  RectU nonEmptyRegion(String const& path) const;
+  Vec2U imageSize(AssetPath const& path) const;
+  List<Vec2I> imageSpaces(AssetPath const& path, Vec2F position, float fillLimit, bool flip) const;
+  RectU nonEmptyRegion(AssetPath const& path) const;
 
 private:
   // Removes image processing directives that don't affect image spaces /
   // non-empty regions.
-  static String filterProcessing(String const& path);
+  static AssetPath filterProcessing(AssetPath const& path);
 
-  Vec2U calculateImageSize(String const& path) const;
+  Vec2U calculateImageSize(AssetPath const& path) const;
 
   // Path, position, fillLimit, and flip
-  typedef tuple<String, Vec2I, float, bool> SpacesEntry;
+  typedef tuple<AssetPath, Vec2I, float, bool> SpacesEntry;
 
   mutable Mutex m_mutex;
-  mutable StringMap<Vec2U> m_sizeCache;
+  mutable HashMap<AssetPath, Vec2U> m_sizeCache;
   mutable HashMap<SpacesEntry, List<Vec2I>> m_spacesCache;
-  mutable StringMap<RectU> m_regionCache;
+  mutable HashMap<AssetPath, RectU> m_regionCache;
 };
 
 }

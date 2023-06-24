@@ -5,6 +5,7 @@
 #include "StarColor.hpp"
 #include "StarBiMap.hpp"
 #include "StarAnimation.hpp"
+#include "StarAssetPath.hpp"
 
 namespace Star {
 
@@ -75,6 +76,8 @@ struct Particle {
 
   // Used differently depending on the type of the particle.
   String string;
+  AssetPath image;
+  Directives directives;
 
   Color color;
   Color light;
@@ -95,7 +98,7 @@ struct Particle {
   float length;
 
   DestructionAction destructionAction;
-  String destructionImage;
+  AssetPath destructionImage;
   float destructionTime;
 
   float timeToLive;
@@ -110,7 +113,6 @@ struct Particle {
   bool trail;
 
   Maybe<Animation> animation;
-  String directives;
 };
 
 DataStream& operator<<(DataStream& ds, Particle const& particle);

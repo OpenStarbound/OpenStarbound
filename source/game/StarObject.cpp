@@ -1204,8 +1204,9 @@ List<Drawable> Object::orientationDrawables(size_t orientationIndex) const {
   if (!m_orientationDrawablesCache || orientationIndex != m_orientationDrawablesCache->first) {
     m_orientationDrawablesCache = make_pair(orientationIndex, List<Drawable>());
     for (auto const& layer : orientation->imageLayers) {
-      auto drawable = layer;
-      drawable.imagePart().image = drawable.imagePart().image.replaceTags(m_imageKeys, true, "default");
+      Drawable drawable = layer;
+      auto& image = drawable.imagePart().image;
+      image = AssetPath::join(image).replaceTags(m_imageKeys, true, "default");
       if (orientation->flipImages)
         drawable.scale(Vec2F(-1, 1), drawable.boundBox(false).center() - drawable.position);
       m_orientationDrawablesCache->second.append(move(drawable));

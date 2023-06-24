@@ -1,4 +1,5 @@
 #include "StarAssets.hpp"
+#include "StarAssetPath.hpp"
 #include "StarFile.hpp"
 #include "StarTime.hpp"
 #include "StarDirectoryAssetSource.hpp"
@@ -57,169 +58,6 @@ static void validatePath(AssetPath const& components, bool canContainSubPath, bo
     throw AssetException::format("Path '%s' cannot contain sub-path", components);
   if (!canContainDirectives && !components.directives.empty())
     throw AssetException::format("Path '%s' cannot contain directives", components);
-}
-
-// The filename is everything after the last slash (excluding directives) and
-// up to the first directive marker.
-static Maybe<pair<size_t, size_t>> findFilenameRange(std::string const& pathUtf8) {
-  size_t firstDirectiveOrSubPath = pathUtf8.find_first_of(":?");
-  size_t filenameStart = 0;
-  while (true) {
-    size_t find = pathUtf8.find('/', filenameStart);
-    if (find >= firstDirectiveOrSubPath)
-      break;
-    filenameStart = find + 1;
-  }
-
-  if (filenameStart == NPos) {
-    return {};
-  } else if (firstDirectiveOrSubPath == NPos) {
-    return {{filenameStart, pathUtf8.size()}};
-  } else {
-    return {{filenameStart, firstDirectiveOrSubPath}};
-  }
-}
-
-AssetPath AssetPath::split(String const& path) {
-  auto i = path.begin();
-  auto end = path.end();
-
-  AssetPath components;
-
-  // base paths cannot have any ':' or '?' characters, stop at the first one.
-  while (i != end) {
-    String::Char c = *i;
-    if (c == ':' || c == '?')
-      break;
-
-    components.basePath += c;
-    ++i;
-  }
-
-  // Sub-paths must immediately follow base paths and must start with a ':',
-  // after this point any further ':' characters are not special.
-  if (i != end && *i == ':') {
-    ++i;
-    while (i != end) {
-      String::Char c = *i;
-      if (c == '?')
-        break;
-
-      if (!components.subPath)
-        components.subPath.emplace();
-
-      *components.subPath += c;
-      ++i;
-    }
-  }
-
-  // Directives must follow the base path and optional sub-path, and each
-  // directive is separated by one or more '?' characters.
-  while (i != end && *i == '?') {
-    ++i;
-    String directive;
-    while (i != end) {
-      String::Char c = *i;
-      if (c == '?')
-        break;
-
-      directive += c;
-      ++i;
-    }
-    if (!directive.empty())
-      components.directives.append(move(directive));
-  }
-
-  starAssert(i == end);
-
-  return components;
-}
-
-String AssetPath::join(AssetPath const& components) {
-  return toString(components);
-}
-
-String AssetPath::setSubPath(String const& path, String const& subPath) {
-  auto components = split(path);
-  components.subPath = subPath;
-  return join(components);
-}
-
-String AssetPath::removeSubPath(String const& path) {
-  auto components = split(path);
-  components.subPath.reset();
-  return join(components);
-}
-
-String AssetPath::getDirectives(String const& path) {
-  size_t firstDirective = path.find('?');
-  if (firstDirective == NPos)
-    return {};
-  return path.substr(firstDirective + 1);
-}
-
-String AssetPath::addDirectives(String const& path, String const& directives) {
-  return String::joinWith("?", path, directives);
-}
-
-String AssetPath::removeDirectives(String const& path) {
-  size_t firstDirective = path.find('?');
-  if (firstDirective == NPos)
-    return path;
-  return path.substr(0, firstDirective);
-}
-
-String AssetPath::directory(String const& path) {
-  if (auto p = findFilenameRange(path.utf8())) {
-    return String(path.utf8().substr(0, p->first));
-  } else {
-    return String();
-  }
-}
-
-String AssetPath::filename(String const& path) {
-  if (auto p = findFilenameRange(path.utf8())) {
-    return String(path.utf8().substr(p->first, p->second));
-  } else {
-    return String();
-  }
-}
-
-String AssetPath::extension(String const& path) {
-  auto file = filename(path);
-  auto lastDot = file.findLast(".");
-  if (lastDot == NPos)
-    return "";
-
-  return file.substr(lastDot + 1);
-}
-
-String AssetPath::relativeTo(String const& sourcePath, String const& givenPath) {
-  if (!givenPath.empty() && givenPath[0] == '/')
-    return givenPath;
-
-  auto path = directory(sourcePath);
-  path.append(givenPath);
-  return path;
-}
-
-bool AssetPath::operator==(AssetPath const& rhs) const {
-  return tie(basePath, subPath, directives) == tie(rhs.basePath, rhs.subPath, rhs.directives);
-}
-
-std::ostream& operator<<(std::ostream& os, AssetPath const& rhs) {
-  os << rhs.basePath;
-  if (rhs.subPath) {
-    os << ":";
-    os << *rhs.subPath;
-  }
-
-  for (auto const& directive : rhs.directives) {
-    os << "?";
-    os << directive;
-  }
-
-  return os;
 }
 
 Maybe<RectU> FramesSpecification::getRect(String const& frame) const {
@@ -396,11 +234,10 @@ void Assets::queueJsons(StringList const& paths) const {
   }));
 }
 
-ImageConstPtr Assets::image(String const& path) const {
-  auto components = AssetPath::split(path);
-  validatePath(components, true, true);
+ImageConstPtr Assets::image(AssetPath const& path) const {
+  validatePath(path, true, true);
 
-  return as<ImageData>(getAsset(AssetId{AssetType::Image, move(components)}))->image;
+  return as<ImageData>(getAsset(AssetId{AssetType::Image, path}))->image;
 }
 
 void Assets::queueImages(StringList const& paths) const {
@@ -412,11 +249,10 @@ void Assets::queueImages(StringList const& paths) const {
   }));
 }
 
-ImageConstPtr Assets::tryImage(String const& path) const {
-  auto components = AssetPath::split(path);
-  validatePath(components, true, true);
+ImageConstPtr Assets::tryImage(AssetPath const& path) const {
+  validatePath(path, true, true);
 
-  if (auto imageData = as<ImageData>(tryAsset(AssetId{AssetType::Image, move(components)})))
+  if (auto imageData = as<ImageData>(tryAsset(AssetId{AssetType::Image, path})))
     return imageData->image;
   else
     return {};
@@ -1006,9 +842,14 @@ shared_ptr<Assets::AssetData> Assets::loadImage(AssetPath const& path) const {
         as<ImageData>(loadAsset(AssetId{AssetType::Image, {path.basePath, path.subPath, {}}}));
     if (!source)
       return {};
-    List<ImageOperation> operations = path.directives.transformed(imageOperationFromString);
     StringMap<ImageConstPtr> references;
-    for (auto const& ref : imageOperationReferences(operations)) {
+    StringList referencePaths;
+    path.directives.forEach([&](auto const& entry) {
+      addImageOperationReferences(entry.operation, referencePaths);
+    }); // TODO: This can definitely be better, was changed quickly to support the new Directives.
+
+
+    for (auto const& ref : referencePaths) {
       auto components = AssetPath::split(ref);
       validatePath(components, true, false);
       auto refImage = as<ImageData>(loadAsset(AssetId{AssetType::Image, move(components)}));
@@ -1019,8 +860,11 @@ shared_ptr<Assets::AssetData> Assets::loadImage(AssetPath const& path) const {
 
     return unlockDuring([&]() {
       auto newData = make_shared<ImageData>();
-      newData->image = make_shared<Image>(processImageOperations(
-          operations, *source->image, [&](String const& ref) { return references.get(ref).get(); }));
+      Image newImage = *source->image;
+      path.directives.forEach([&](auto const& entry) {
+        processImageOperation(entry.operation, newImage, [&](String const& ref) { return references.get(ref).get(); });
+      });
+      newData->image = make_shared<Image>(move(newImage));
       return newData;
     });
 

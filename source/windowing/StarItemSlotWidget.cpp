@@ -153,8 +153,7 @@ void ItemSlotWidget::renderImpl() {
 
     if (m_showLinkIndicator) {
       // TODO: Hardcoded
-      context()->drawInterfaceQuad("/interface/inventory/itemlinkindicator.png",
-          Vec2F(screenPosition() - Vec2I(1, 1)));
+      context()->drawInterfaceQuad(String("/interface/inventory/itemlinkindicator.png"), Vec2F(screenPosition() - Vec2I(1, 1)));
     }
 
     for (auto i : iconDrawables)
@@ -179,7 +178,7 @@ void ItemSlotWidget::renderImpl() {
     }
 
     int frame = (int)roundf(m_progress * 18); // TODO: Hardcoded lol
-    context()->drawInterfaceQuad(strf("/interface/cooldown.png:%d", frame), Vec2F(screenPosition()));
+    context()->drawInterfaceQuad(String(strf("/interface/cooldown.png:%d", frame)), Vec2F(screenPosition()));
 
     if (m_item->count() > 1 && m_showCount) { // we don't need to tell people that there's only 1 of something
       context()->setFont(m_font);
@@ -192,7 +191,7 @@ void ItemSlotWidget::renderImpl() {
   } else if (m_drawBackingImageWhenEmpty && m_backingImage != "") {
     context()->drawInterfaceQuad(m_backingImage, Vec2F(screenPosition()));
     int frame = (int)roundf(m_progress * 18); // TODO: Hardcoded lol
-    context()->drawInterfaceQuad(strf("/interface/cooldown.png:%d", frame), Vec2F(screenPosition()));
+    context()->drawInterfaceQuad(String(strf("/interface/cooldown.png:%d", frame)), Vec2F(screenPosition()));
   }
 
   if (m_highlightEnabled) {

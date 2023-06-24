@@ -41,9 +41,10 @@ void ImageWidget::setRotation(float rotation) {
 }
 
 String ImageWidget::image() const {
-  if (!m_drawables.size())
+  if (m_drawables.empty())
     return "";
-  return m_drawables[0].imagePart().image;
+  else
+    return AssetPath::join(m_drawables[0].imagePart().image);
 }
 
 void ImageWidget::setDrawables(List<Drawable> drawables) {

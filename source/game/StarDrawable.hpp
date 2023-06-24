@@ -6,6 +6,7 @@
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
 #include "StarJson.hpp"
+#include "StarAssetPath.hpp"
 
 namespace Star {
 
@@ -20,7 +21,7 @@ struct Drawable {
   };
 
   struct ImagePart {
-    String image;
+    AssetPath image;
     // Transformation of the image in pixel space (0, 0) - (width, height) to
     // the final drawn space
     Mat3F transformation;
@@ -28,17 +29,17 @@ struct Drawable {
     // Add directives to this ImagePart, while optionally keeping the
     // transformed center of the image the same if the directives change the
     // image size.
-    void addDirectives(String const& directives, bool keepImageCenterPosition);
+    ImagePart& addDirectives(Directives const& directives, bool keepImageCenterPosition = false);
 
     // Remove directives from this ImagePart, while optionally keeping the
     // transformed center of the image the same if the directives change the
     // image size.
-    void removeDirectives(bool keepImageCenterPosition);
+    ImagePart& removeDirectives(bool keepImageCenterPosition = false);
   };
 
   static Drawable makeLine(Line2F const& line, float lineWidth, Color const& color, Vec2F const& position = Vec2F());
   static Drawable makePoly(PolyF poly, Color const& color, Vec2F const& position = Vec2F());
-  static Drawable makeImage(String image, float pixelSize, bool centered, Vec2F const& position, Color const& color = Color::White);
+  static Drawable makeImage(AssetPath image, float pixelSize, bool centered, Vec2F const& position, Color const& color = Color::White);
 
   template <typename DrawablesContainer>
   static void translateAll(DrawablesContainer& drawables, Vec2F const& translation);

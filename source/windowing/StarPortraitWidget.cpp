@@ -38,7 +38,7 @@ void PortraitWidget::renderImpl() {
   }
   if (m_entity) {
     List<Drawable> portrait = m_entity->portrait(m_portraitMode);
-    for (auto i : portrait) {
+    for (auto& i : portrait) {
       i.scale(m_scale);
       context()->drawInterfaceDrawable(i, Vec2F(screenPosition() + offset));
     }

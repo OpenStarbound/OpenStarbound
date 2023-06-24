@@ -136,6 +136,8 @@ typedef Variant<HueShiftImageOperation, SaturationShiftImageOperation, Brightnes
 ImageOperation imageOperationFromString(String const& string);
 String imageOperationToString(ImageOperation const& operation);
 
+void parseImageOperations(String const& params, function<void(ImageOperation&&)> outputter);
+
 // Each operation is assumed to be separated by '?', with parameters
 // separated by ';' or '='
 List<ImageOperation> parseImageOperations(String const& params);
@@ -143,9 +145,13 @@ List<ImageOperation> parseImageOperations(String const& params);
 // Each operation separated by '?', returns string with leading '?'
 String printImageOperations(List<ImageOperation> const& operations);
 
+void addImageOperationReferences(ImageOperation const& operation, StringList& out);
+
 StringList imageOperationReferences(List<ImageOperation> const& operations);
 
 typedef function<Image const*(String const& refName)> ImageReferenceCallback;
+
+void processImageOperation(ImageOperation const& operation, Image& input, ImageReferenceCallback refCallback = {});
 
 Image processImageOperations(List<ImageOperation> const& operations, Image input, ImageReferenceCallback refCallback = {});
 

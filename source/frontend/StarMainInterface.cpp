@@ -965,8 +965,8 @@ void MainInterface::renderBreath() {
   size_t blocks = round((10 * breath) / breathMax);
 
   if (blocks < 10) {
-    m_guiContext->drawQuad("/interface/breath/breath.png",
-        RectF::withCenter(breathBackgroundCenterPos, Vec2F(imgMetadata->imageSize("/interface/breath/breath.png")) * interfaceScale()));
+    String breathPath = "/interface/breath/breath.png";
+    m_guiContext->drawQuad(breathPath, RectF::withCenter(breathBackgroundCenterPos, Vec2F(imgMetadata->imageSize(breathPath)) * interfaceScale()));
     for (size_t i = 0; i < 10; i++) {
       if (i >= blocks) {
         if (blocks == 0 && Time::monotonicMilliseconds() % 500 > 250)

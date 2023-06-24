@@ -16,7 +16,7 @@
 
 namespace Star {
 
-ArmorWearer::ArmorWearer() {
+ArmorWearer::ArmorWearer() : m_lastNude(true), m_needsHumanoidSync(true) {
   addNetElement(&m_headItemDataNetState);
   addNetElement(&m_chestItemDataNetState);
   addNetElement(&m_legsItemDataNetState);
@@ -27,7 +27,14 @@ ArmorWearer::ArmorWearer() {
   addNetElement(&m_backCosmeticItemDataNetState);
 }
 
-void ArmorWearer::setupHumanoidClothingDrawables(Humanoid& humanoid, bool forceNude) const {
+void ArmorWearer::setupHumanoidClothingDrawables(Humanoid& humanoid, bool forceNude) {
+  if (m_lastNude != forceNude)
+    m_lastNude = forceNude;
+  else if (!m_needsHumanoidSync)
+    return;
+
+  m_needsHumanoidSync = false;
+
   bool bodyHidden = false;
   if (m_headCosmeticItem && !forceNude) {
     humanoid.setHeadArmorFrameset(m_headCosmeticItem->frameset(humanoid.identity().gender));
@@ -161,35 +168,59 @@ List<PersistentStatusEffect> ArmorWearer::statusEffects() const {
 }
 
 void ArmorWearer::setHeadItem(HeadArmorPtr headItem) {
+  if (!Item::itemsEqual(m_headItem, headItem))
+    return;
   m_headItem = headItem;
+  m_needsHumanoidSync = true;
 }
 
 void ArmorWearer::setHeadCosmeticItem(HeadArmorPtr headCosmeticItem) {
+  if (!Item::itemsEqual(m_headCosmeticItem, headCosmeticItem))
+    return;
   m_headCosmeticItem = headCosmeticItem;
+  m_needsHumanoidSync = true;
 }
 
 void ArmorWearer::setChestCosmeticItem(ChestArmorPtr chestCosmeticItem) {
+  if (!Item::itemsEqual(m_chestCosmeticItem, chestCosmeticItem))
+    return;
   m_chestCosmeticItem = chestCosmeticItem;
+  m_needsHumanoidSync = true;
 }
 
 void ArmorWearer::setChestItem(ChestArmorPtr chestItem) {
+  if (!Item::itemsEqual(m_chestItem, chestItem))
+    return;
   m_chestItem = chestItem;
+  m_needsHumanoidSync = true;
 }
 
 void ArmorWearer::setLegsItem(LegsArmorPtr legsItem) {
+  if (!Item::itemsEqual(m_legsItem, legsItem))
+    return;
   m_legsItem = legsItem;
+  m_needsHumanoidSync = true;
 }
 
 void ArmorWearer::setLegsCosmeticItem(LegsArmorPtr legsCosmeticItem) {
+  if (!Item::itemsEqual(m_legsCosmeticItem, legsCosmeticItem))
+    return;
   m_legsCosmeticItem = legsCosmeticItem;
+  m_needsHumanoidSync = true;
 }
 
 void ArmorWearer::setBackItem(BackArmorPtr backItem) {
+  if (!Item::itemsEqual(m_backItem, backItem))
+    return;
   m_backItem = backItem;
+  m_needsHumanoidSync = true;
 }
 
 void ArmorWearer::setBackCosmeticItem(BackArmorPtr backCosmeticItem) {
+  if (!Item::itemsEqual(m_backCosmeticItem, backCosmeticItem))
+    return;
   m_backCosmeticItem = backCosmeticItem;
+  m_needsHumanoidSync = true;
 }
 
 HeadArmorPtr ArmorWearer::headItem() const {
@@ -275,23 +306,26 @@ ItemDescriptor ArmorWearer::backCosmeticItemDescriptor() const {
 void ArmorWearer::netElementsNeedLoad(bool) {
   auto itemDatabase = Root::singleton().itemDatabase();
 
+  bool changed = false;
   if (m_headItemDataNetState.pullUpdated())
-    itemDatabase->loadItem(m_headItemDataNetState.get(), m_headItem);
+    changed |= itemDatabase->loadItem(m_headItemDataNetState.get(), m_headItem);
   if (m_chestItemDataNetState.pullUpdated())
-    itemDatabase->loadItem(m_chestItemDataNetState.get(), m_chestItem);
+    changed |= itemDatabase->loadItem(m_chestItemDataNetState.get(), m_chestItem);
   if (m_legsItemDataNetState.pullUpdated())
-    itemDatabase->loadItem(m_legsItemDataNetState.get(), m_legsItem);
+    changed |= itemDatabase->loadItem(m_legsItemDataNetState.get(), m_legsItem);
   if (m_backItemDataNetState.pullUpdated())
-    itemDatabase->loadItem(m_backItemDataNetState.get(), m_backItem);
+    changed |= itemDatabase->loadItem(m_backItemDataNetState.get(), m_backItem);
 
   if (m_headCosmeticItemDataNetState.pullUpdated())
-    itemDatabase->loadItem(m_headCosmeticItemDataNetState.get(), m_headCosmeticItem);
+    changed |= itemDatabase->loadItem(m_headCosmeticItemDataNetState.get(), m_headCosmeticItem);
   if (m_chestCosmeticItemDataNetState.pullUpdated())
-    itemDatabase->loadItem(m_chestCosmeticItemDataNetState.get(), m_chestCosmeticItem);
+    changed |= itemDatabase->loadItem(m_chestCosmeticItemDataNetState.get(), m_chestCosmeticItem);
   if (m_legsCosmeticItemDataNetState.pullUpdated())
-    itemDatabase->loadItem(m_legsCosmeticItemDataNetState.get(), m_legsCosmeticItem);
+    changed |= itemDatabase->loadItem(m_legsCosmeticItemDataNetState.get(), m_legsCosmeticItem);
   if (m_backCosmeticItemDataNetState.pullUpdated())
-    itemDatabase->loadItem(m_backCosmeticItemDataNetState.get(), m_backCosmeticItem);
+    changed |= itemDatabase->loadItem(m_backCosmeticItemDataNetState.get(), m_backCosmeticItem);
+
+  m_needsHumanoidSync = changed;
 }
 
 void ArmorWearer::netElementsNeedStore() {

@@ -9,37 +9,41 @@
 
 namespace Star {
 
-void Drawable::ImagePart::addDirectives(String const& directives, bool keepImageCenterPosition) {
-  if (directives.empty())
-    return;
+Drawable::ImagePart& Drawable::ImagePart::addDirectives(Directives const& directives, bool keepImageCenterPosition) {
+  if (!directives)
+    return *this;
 
   if (keepImageCenterPosition) {
     auto imageMetadata = Root::singleton().imageMetadataDatabase();
     Vec2F imageSize = Vec2F(imageMetadata->imageSize(image));
-    image = AssetPath::addDirectives(image, {directives});
+    image.directives += directives;
     Vec2F newImageSize = Vec2F(imageMetadata->imageSize(image));
 
     // If we are trying to maintain the image center, PRE translate the image by
     // the change in size / 2
     transformation *= Mat3F::translation((imageSize - newImageSize) / 2);
   } else {
-    image = AssetPath::addDirectives(image, {directives});
+    image.directives += directives;
   }
+
+  return *this;
 }
 
-void Drawable::ImagePart::removeDirectives(bool keepImageCenterPosition) {
+Drawable::ImagePart& Drawable::ImagePart::removeDirectives(bool keepImageCenterPosition) {
   if (keepImageCenterPosition) {
     auto imageMetadata = Root::singleton().imageMetadataDatabase();
     Vec2F imageSize = Vec2F(imageMetadata->imageSize(image));
-    image = AssetPath::removeDirectives(image);
+    image.directives.clear();
     Vec2F newImageSize = Vec2F(imageMetadata->imageSize(image));
 
     // If we are trying to maintain the image center, PRE translate the image by
     // the change in size / 2
     transformation *= Mat3F::translation((imageSize - newImageSize) / 2);
   } else {
-    image = AssetPath::removeDirectives(image);
+    image.directives.clear();
   }
+
+  return *this;
 }
 
 Drawable Drawable::makeLine(Line2F const& line, float lineWidth, Color const& color, Vec2F const& position) {
@@ -60,7 +64,7 @@ Drawable Drawable::makePoly(PolyF poly, Color const& color, Vec2F const& positio
   return drawable;
 }
 
-Drawable Drawable::makeImage(String image, float pixelSize, bool centered, Vec2F const& position, Color const& color) {
+Drawable Drawable::makeImage(AssetPath image, float pixelSize, bool centered, Vec2F const& position, Color const& color) {
   Drawable drawable;
   Mat3F transformation = Mat3F::identity();
   if (centered) {
@@ -120,7 +124,7 @@ Json Drawable::toJson() const {
   } else if (auto poly = part.ptr<PolyPart>()) {
     json.set("poly", jsonFromPolyF(poly->poly));
   } else if (auto image = part.ptr<ImagePart>()) {
-    json.set("image", image->image);
+    json.set("image", AssetPath::join(image->image));
     json.set("transformation", jsonFromMat3F(image->transformation));
   }
 
@@ -242,14 +246,15 @@ DataStream& operator<<(DataStream& ds, Drawable::PolyPart const& poly) {
   return ds;
 }
 
+// I need to find out if this is for network serialization or not eventually
 DataStream& operator>>(DataStream& ds, Drawable::ImagePart& image) {
-  ds >> image.image;
+  ds >> AssetPath::join(image.image);
   ds >> image.transformation;
   return ds;
 }
 
 DataStream& operator<<(DataStream& ds, Drawable::ImagePart const& image) {
-  ds << image.image;
+  ds << AssetPath::join(image.image);
   ds << image.transformation;
   return ds;
 }

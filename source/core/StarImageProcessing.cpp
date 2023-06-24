@@ -328,12 +328,23 @@ String imageOperationToString(ImageOperation const& operation) {
   return "";
 }
 
-List<ImageOperation> parseImageOperations(String const& params) {
-  List<ImageOperation> operations;
+void parseImageOperations(String const& params, function<void(ImageOperation&&)> outputter) {
   for (auto const& op : params.split('?')) {
+    if (!op.empty())
+      outputter(imageOperationFromString(op));
+  }
+}
+
+List<ImageOperation> parseImageOperations(String const& params) {
+  auto split = params.split('?');
+  List<ImageOperation> operations;
+  operations.reserve(split.size());
+
+  for (auto const& op : split) {
     if (!op.empty())
       operations.append(imageOperationFromString(op));
   }
+
   return operations;
 }
 
@@ -341,227 +352,233 @@ String printImageOperations(List<ImageOperation> const& list) {
   return StringList(list.transformed(imageOperationToString)).join("?");
 }
 
+void addImageOperationReferences(ImageOperation const& operation, StringList& out) {
+  if (auto op = operation.ptr<AlphaMaskImageOperation>())
+    out.appendAll(op->maskImages);
+  else if (auto op = operation.ptr<BlendImageOperation>())
+    out.appendAll(op->blendImages);
+}
+
 StringList imageOperationReferences(List<ImageOperation> const& operations) {
   StringList references;
-  for (auto const& operation : operations) {
-    if (auto op = operation.ptr<AlphaMaskImageOperation>())
-      references.appendAll(op->maskImages);
-    else if (auto op = operation.ptr<BlendImageOperation>())
-      references.appendAll(op->blendImages);
-  }
+  for (auto const& operation : operations)
+    addImageOperationReferences(operation, references);
   return references;
 }
 
-Image processImageOperations(List<ImageOperation> const& operations, Image image, ImageReferenceCallback refCallback) {
-  for (auto const& operation : operations) {
-    if (auto op = operation.ptr<HueShiftImageOperation>()) {
-      image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
-        if (pixel[3] != 0)
-          pixel = Color::hueShiftVec4B(pixel, op->hueShiftAmount);
-      });
-    } else if (auto op = operation.ptr<SaturationShiftImageOperation>()) {
-      image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
-        if (pixel[3] != 0) {
-          Color color = Color::rgba(pixel);
-          color.setSaturation(clamp(color.saturation() + op->saturationShiftAmount, 0.0f, 1.0f));
-          pixel = color.toRgba();
-        }
-      });
-    } else if (auto op = operation.ptr<BrightnessMultiplyImageOperation>()) {
-      image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
-        if (pixel[3] != 0) {
-          Color color = Color::rgba(pixel);
-          color.setValue(clamp(color.value() * op->brightnessMultiply, 0.0f, 1.0f));
-          pixel = color.toRgba();
-        }
-      });
-    } else if (auto op = operation.ptr<FadeToColorImageOperation>()) {
-      image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
-        pixel[0] = op->rTable[pixel[0]];
-        pixel[1] = op->gTable[pixel[1]];
-        pixel[2] = op->bTable[pixel[2]];
-      });
-    } else if (auto op = operation.ptr<ScanLinesImageOperation>()) {
-      image.forEachPixel([&op](unsigned, unsigned y, Vec4B& pixel) {
-        if (y % 2 == 0) {
-          pixel[0] = op->fade1.rTable[pixel[0]];
-          pixel[1] = op->fade1.gTable[pixel[1]];
-          pixel[2] = op->fade1.bTable[pixel[2]];
-        } else {
-          pixel[0] = op->fade2.rTable[pixel[0]];
-          pixel[1] = op->fade2.gTable[pixel[1]];
-          pixel[2] = op->fade2.bTable[pixel[2]];
-        }
-      });
-    } else if (auto op = operation.ptr<SetColorImageOperation>()) {
-      image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
-        pixel[0] = op->color[0];
-        pixel[1] = op->color[1];
-        pixel[2] = op->color[2];
-      });
-    } else if (auto op = operation.ptr<ColorReplaceImageOperation>()) {
-      image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
-        if (auto m = op->colorReplaceMap.maybe(pixel))
-          pixel = *m;
-      });
+void processImageOperation(ImageOperation const& operation, Image& image, ImageReferenceCallback refCallback) {
+  if (auto op = operation.ptr<HueShiftImageOperation>()) {
+    image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
+      if (pixel[3] != 0)
+        pixel = Color::hueShiftVec4B(pixel, op->hueShiftAmount);
+    });
+  } else if (auto op = operation.ptr<SaturationShiftImageOperation>()) {
+    image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
+      if (pixel[3] != 0) {
+        Color color = Color::rgba(pixel);
+        color.setSaturation(clamp(color.saturation() + op->saturationShiftAmount, 0.0f, 1.0f));
+        pixel = color.toRgba();
+      }
+    });
+  } else if (auto op = operation.ptr<BrightnessMultiplyImageOperation>()) {
+    image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
+      if (pixel[3] != 0) {
+        Color color = Color::rgba(pixel);
+        color.setValue(clamp(color.value() * op->brightnessMultiply, 0.0f, 1.0f));
+        pixel = color.toRgba();
+      }
+    });
+  } else if (auto op = operation.ptr<FadeToColorImageOperation>()) {
+    image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
+      pixel[0] = op->rTable[pixel[0]];
+      pixel[1] = op->gTable[pixel[1]];
+      pixel[2] = op->bTable[pixel[2]];
+    });
+  } else if (auto op = operation.ptr<ScanLinesImageOperation>()) {
+    image.forEachPixel([&op](unsigned, unsigned y, Vec4B& pixel) {
+      if (y % 2 == 0) {
+        pixel[0] = op->fade1.rTable[pixel[0]];
+        pixel[1] = op->fade1.gTable[pixel[1]];
+        pixel[2] = op->fade1.bTable[pixel[2]];
+      } else {
+        pixel[0] = op->fade2.rTable[pixel[0]];
+        pixel[1] = op->fade2.gTable[pixel[1]];
+        pixel[2] = op->fade2.bTable[pixel[2]];
+      }
+    });
+  } else if (auto op = operation.ptr<SetColorImageOperation>()) {
+    image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
+      pixel[0] = op->color[0];
+      pixel[1] = op->color[1];
+      pixel[2] = op->color[2];
+    });
+  } else if (auto op = operation.ptr<ColorReplaceImageOperation>()) {
+    image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
+      if (auto m = op->colorReplaceMap.maybe(pixel))
+        pixel = *m;
+    });
 
-    } else if (auto op = operation.ptr<AlphaMaskImageOperation>()) {
-      if (op->maskImages.empty())
-        continue;
+  } else if (auto op = operation.ptr<AlphaMaskImageOperation>()) {
+    if (op->maskImages.empty())
+      return;
 
-      if (!refCallback)
-        throw StarException("Missing image ref callback during AlphaMaskImageOperation in ImageProcessor::process");
+    if (!refCallback)
+      throw StarException("Missing image ref callback during AlphaMaskImageOperation in ImageProcessor::process");
 
-      List<Image const*> maskImages;
-      for (auto const& reference : op->maskImages)
-        maskImages.append(refCallback(reference));
+    List<Image const*> maskImages;
+    for (auto const& reference : op->maskImages)
+      maskImages.append(refCallback(reference));
 
-      image.forEachPixel([&op, &maskImages](unsigned x, unsigned y, Vec4B& pixel) {
-        uint8_t maskAlpha = 0;
-        Vec2U pos = Vec2U(Vec2I(x, y) + op->offset);
-        for (auto mask : maskImages) {
-          if (pos[0] < mask->width() && pos[1] < mask->height()) {
-            if (op->mode == AlphaMaskImageOperation::Additive) {
-              // We produce our mask alpha from the maximum alpha of any of
-              // the
-              // mask images.
-              maskAlpha = std::max(maskAlpha, mask->get(pos)[3]);
-            } else if (op->mode == AlphaMaskImageOperation::Subtractive) {
-              // We produce our mask alpha from the minimum alpha of any of
-              // the
-              // mask images.
-              maskAlpha = std::min(maskAlpha, mask->get(pos)[3]);
-            }
-          }
-        }
-        pixel[3] = std::min(pixel[3], maskAlpha);
-      });
-
-    } else if (auto op = operation.ptr<BlendImageOperation>()) {
-      if (op->blendImages.empty())
-        continue;
-
-      if (!refCallback)
-        throw StarException("Missing image ref callback during BlendImageOperation in ImageProcessor::process");
-
-      List<Image const*> blendImages;
-      for (auto const& reference : op->blendImages)
-        blendImages.append(refCallback(reference));
-
-      image.forEachPixel([&op, &blendImages](unsigned x, unsigned y, Vec4B& pixel) {
-        Vec2U pos = Vec2U(Vec2I(x, y) + op->offset);
-        Vec4F fpixel = Color::v4bToFloat(pixel);
-        for (auto blend : blendImages) {
-          if (pos[0] < blend->width() && pos[1] < blend->height()) {
-            Vec4F blendPixel = Color::v4bToFloat(blend->get(pos));
-            if (op->mode == BlendImageOperation::Multiply)
-              fpixel = fpixel.piecewiseMultiply(blendPixel);
-            else if (op->mode == BlendImageOperation::Screen)
-              fpixel = Vec4F::filled(1.0f) - (Vec4F::filled(1.0f) - fpixel).piecewiseMultiply(Vec4F::filled(1.0f) - blendPixel);
-          }
-        }
-        pixel = Color::v4fToByte(fpixel);
-      });
-
-    } else if (auto op = operation.ptr<MultiplyImageOperation>()) {
-      image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
-        pixel = pixel.combine(op->color, [](uint8_t a, uint8_t b) -> uint8_t {
-            return (uint8_t)(((int)a * (int)b) / 255);
-          });
-      });
-
-    } else if (auto op = operation.ptr<BorderImageOperation>()) {
-      Image borderImage(image.size() + Vec2U::filled(op->pixels * 2), PixelFormat::RGBA32);
-      borderImage.copyInto(Vec2U::filled(op->pixels), image);
-      Vec2I borderImageSize = Vec2I(borderImage.size());
-
-      borderImage.forEachPixel([&op, &image, &borderImageSize](int x, int y, Vec4B& pixel) {
-        int pixels = op->pixels;
-        bool includeTransparent = op->includeTransparent;
-        if (pixel[3] == 0 || (includeTransparent && pixel[3] != 255)) {
-          int dist = std::numeric_limits<int>::max();
-          for (int j = -pixels; j < pixels + 1; j++) {
-            for (int i = -pixels; i < pixels + 1; i++) {
-              if (i + x >= pixels && j + y >= pixels && i + x < borderImageSize[0] - pixels && j + y < borderImageSize[1] - pixels) {
-                Vec4B remotePixel = image.get(i + x - pixels, j + y - pixels);
-                if (remotePixel[3] != 0) {
-                  dist = std::min(dist, abs(i) + abs(j));
-                  if (dist == 1) // Early out, if dist is 1 it ain't getting shorter
-                    break;
-                }
-              }
-            }
-          }
-
-          if (dist < std::numeric_limits<int>::max()) {
-            float percent = (dist - 1) / (2.0f * pixels - 1);
-            Color color = Color::rgba(op->startColor).mix(Color::rgba(op->endColor), percent);
-            if (pixel[3] != 0) {
-              if (op->outlineOnly) {
-                float pixelA = byteToFloat(pixel[3]);
-                color.setAlphaF((1.0f - pixelA) * fminf(pixelA, 0.5f) * 2.0f);
-              }
-              else {
-                Color pixelF = Color::rgba(pixel);
-                float pixelA = pixelF.alphaF(), colorA = color.alphaF();
-                colorA += pixelA * (1.0f - colorA);
-                pixelF.convertToLinear(); //Mix in linear color space as it is more perceptually accurate
-                color.convertToLinear();
-                color = color.mix(pixelF, pixelA);
-                color.convertToSRGB();
-                color.setAlphaF(colorA);
-              }
-            }
-            pixel = color.toRgba();
-          }
-        } else if (op->outlineOnly) {
-          pixel = Vec4B(0, 0, 0, 0);
-        }
-      });
-
-      image = borderImage;
-
-    } else if (auto op = operation.ptr<ScaleImageOperation>()) {
-      if (op->mode == ScaleImageOperation::Nearest)
-        image = scaleNearest(image, op->scale);
-      else if (op->mode == ScaleImageOperation::Bilinear)
-        image = scaleBilinear(image, op->scale);
-      else if (op->mode == ScaleImageOperation::Bicubic)
-        image = scaleBicubic(image, op->scale);
-
-    } else if (auto op = operation.ptr<CropImageOperation>()) {
-      image = image.subImage(Vec2U(op->subset.min()), Vec2U(op->subset.size()));
-
-    } else if (auto op = operation.ptr<FlipImageOperation>()) {
-      if (op->mode == FlipImageOperation::FlipX || op->mode == FlipImageOperation::FlipXY) {
-        for (size_t y = 0; y < image.height(); ++y) {
-          for (size_t xLeft = 0; xLeft < image.width() / 2; ++xLeft) {
-            size_t xRight = image.width() - 1 - xLeft;
-
-            auto left = image.get(xLeft, y);
-            auto right = image.get(xRight, y);
-
-            image.set(xLeft, y, right);
-            image.set(xRight, y, left);
+    image.forEachPixel([&op, &maskImages](unsigned x, unsigned y, Vec4B& pixel) {
+      uint8_t maskAlpha = 0;
+      Vec2U pos = Vec2U(Vec2I(x, y) + op->offset);
+      for (auto mask : maskImages) {
+        if (pos[0] < mask->width() && pos[1] < mask->height()) {
+          if (op->mode == AlphaMaskImageOperation::Additive) {
+            // We produce our mask alpha from the maximum alpha of any of
+            // the
+            // mask images.
+            maskAlpha = std::max(maskAlpha, mask->get(pos)[3]);
+          } else if (op->mode == AlphaMaskImageOperation::Subtractive) {
+            // We produce our mask alpha from the minimum alpha of any of
+            // the
+            // mask images.
+            maskAlpha = std::min(maskAlpha, mask->get(pos)[3]);
           }
         }
       }
+      pixel[3] = std::min(pixel[3], maskAlpha);
+    });
 
-      if (op->mode == FlipImageOperation::FlipY || op->mode == FlipImageOperation::FlipXY) {
-        for (size_t x = 0; x < image.width(); ++x) {
-          for (size_t yTop = 0; yTop < image.height() / 2; ++yTop) {
-            size_t yBottom = image.height() - 1 - yTop;
+  } else if (auto op = operation.ptr<BlendImageOperation>()) {
+    if (op->blendImages.empty())
+      return;
 
-            auto top = image.get(x, yTop);
-            auto bottom = image.get(x, yBottom);
+    if (!refCallback)
+      throw StarException("Missing image ref callback during BlendImageOperation in ImageProcessor::process");
 
-            image.set(x, yTop, bottom);
-            image.set(x, yBottom, top);
+    List<Image const*> blendImages;
+    for (auto const& reference : op->blendImages)
+      blendImages.append(refCallback(reference));
+
+    image.forEachPixel([&op, &blendImages](unsigned x, unsigned y, Vec4B& pixel) {
+      Vec2U pos = Vec2U(Vec2I(x, y) + op->offset);
+      Vec4F fpixel = Color::v4bToFloat(pixel);
+      for (auto blend : blendImages) {
+        if (pos[0] < blend->width() && pos[1] < blend->height()) {
+          Vec4F blendPixel = Color::v4bToFloat(blend->get(pos));
+          if (op->mode == BlendImageOperation::Multiply)
+            fpixel = fpixel.piecewiseMultiply(blendPixel);
+          else if (op->mode == BlendImageOperation::Screen)
+            fpixel = Vec4F::filled(1.0f) - (Vec4F::filled(1.0f) - fpixel).piecewiseMultiply(Vec4F::filled(1.0f) - blendPixel);
+        }
+      }
+      pixel = Color::v4fToByte(fpixel);
+    });
+
+  } else if (auto op = operation.ptr<MultiplyImageOperation>()) {
+    image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
+      pixel = pixel.combine(op->color, [](uint8_t a, uint8_t b) -> uint8_t {
+          return (uint8_t)(((int)a * (int)b) / 255);
+        });
+    });
+
+  } else if (auto op = operation.ptr<BorderImageOperation>()) {
+    Image borderImage(image.size() + Vec2U::filled(op->pixels * 2), PixelFormat::RGBA32);
+    borderImage.copyInto(Vec2U::filled(op->pixels), image);
+    Vec2I borderImageSize = Vec2I(borderImage.size());
+
+    borderImage.forEachPixel([&op, &image, &borderImageSize](int x, int y, Vec4B& pixel) {
+      int pixels = op->pixels;
+      bool includeTransparent = op->includeTransparent;
+      if (pixel[3] == 0 || (includeTransparent && pixel[3] != 255)) {
+        int dist = std::numeric_limits<int>::max();
+        for (int j = -pixels; j < pixels + 1; j++) {
+          for (int i = -pixels; i < pixels + 1; i++) {
+            if (i + x >= pixels && j + y >= pixels && i + x < borderImageSize[0] - pixels && j + y < borderImageSize[1] - pixels) {
+              Vec4B remotePixel = image.get(i + x - pixels, j + y - pixels);
+              if (remotePixel[3] != 0) {
+                dist = std::min(dist, abs(i) + abs(j));
+                if (dist == 1) // Early out, if dist is 1 it ain't getting shorter
+                  break;
+              }
+            }
           }
+        }
+
+        if (dist < std::numeric_limits<int>::max()) {
+          float percent = (dist - 1) / (2.0f * pixels - 1);
+          Color color = Color::rgba(op->startColor).mix(Color::rgba(op->endColor), percent);
+          if (pixel[3] != 0) {
+            if (op->outlineOnly) {
+              float pixelA = byteToFloat(pixel[3]);
+              color.setAlphaF((1.0f - pixelA) * fminf(pixelA, 0.5f) * 2.0f);
+            }
+            else {
+              Color pixelF = Color::rgba(pixel);
+              float pixelA = pixelF.alphaF(), colorA = color.alphaF();
+              colorA += pixelA * (1.0f - colorA);
+              pixelF.convertToLinear(); //Mix in linear color space as it is more perceptually accurate
+              color.convertToLinear();
+              color = color.mix(pixelF, pixelA);
+              color.convertToSRGB();
+              color.setAlphaF(colorA);
+            }
+          }
+          pixel = color.toRgba();
+        }
+      } else if (op->outlineOnly) {
+        pixel = Vec4B(0, 0, 0, 0);
+      }
+    });
+
+    image = borderImage;
+
+  } else if (auto op = operation.ptr<ScaleImageOperation>()) {
+    if (op->mode == ScaleImageOperation::Nearest)
+      image = scaleNearest(image, op->scale);
+    else if (op->mode == ScaleImageOperation::Bilinear)
+      image = scaleBilinear(image, op->scale);
+    else if (op->mode == ScaleImageOperation::Bicubic)
+      image = scaleBicubic(image, op->scale);
+
+  } else if (auto op = operation.ptr<CropImageOperation>()) {
+    image = image.subImage(Vec2U(op->subset.min()), Vec2U(op->subset.size()));
+
+  } else if (auto op = operation.ptr<FlipImageOperation>()) {
+    if (op->mode == FlipImageOperation::FlipX || op->mode == FlipImageOperation::FlipXY) {
+      for (size_t y = 0; y < image.height(); ++y) {
+        for (size_t xLeft = 0; xLeft < image.width() / 2; ++xLeft) {
+          size_t xRight = image.width() - 1 - xLeft;
+
+          auto left = image.get(xLeft, y);
+          auto right = image.get(xRight, y);
+
+          image.set(xLeft, y, right);
+          image.set(xRight, y, left);
+        }
+      }
+    }
+
+    if (op->mode == FlipImageOperation::FlipY || op->mode == FlipImageOperation::FlipXY) {
+      for (size_t x = 0; x < image.width(); ++x) {
+        for (size_t yTop = 0; yTop < image.height() / 2; ++yTop) {
+          size_t yBottom = image.height() - 1 - yTop;
+
+          auto top = image.get(x, yTop);
+          auto bottom = image.get(x, yBottom);
+
+          image.set(x, yTop, bottom);
+          image.set(x, yBottom, top);
         }
       }
     }
   }
+}
+
+Image processImageOperations(List<ImageOperation> const& operations, Image image, ImageReferenceCallback refCallback) {
+  for (auto const& operation : operations)
+    processImageOperation(operation, image, refCallback);
 
   return image;
 }

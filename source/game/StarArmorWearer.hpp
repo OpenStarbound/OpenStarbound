@@ -26,7 +26,7 @@ class ArmorWearer : public NetElementSyncGroup {
 public:
   ArmorWearer();
 
-  void setupHumanoidClothingDrawables(Humanoid& humanoid, bool forceNude) const;
+  void setupHumanoidClothingDrawables(Humanoid& humanoid, bool forceNude);
   void effects(EffectEmitter& effectEmitter);
   List<PersistentStatusEffect> statusEffects() const;
 
@@ -82,6 +82,9 @@ private:
   NetElementData<ItemDescriptor> m_chestCosmeticItemDataNetState;
   NetElementData<ItemDescriptor> m_legsCosmeticItemDataNetState;
   NetElementData<ItemDescriptor> m_backCosmeticItemDataNetState;
+
+  bool m_lastNude;
+  bool m_needsHumanoidSync;
 };
 
 }

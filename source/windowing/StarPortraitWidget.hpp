@@ -31,12 +31,12 @@ private:
 
   PortraitEntityPtr m_entity;
   PortraitMode m_portraitMode;
-  String m_noEntityImageFull;
-  String m_noEntityImagePart;
+  AssetPath m_noEntityImageFull;
+  AssetPath m_noEntityImagePart;
   float m_scale;
 
   bool m_iconMode;
-  String m_iconImage;
+  AssetPath m_iconImage;
   Vec2I m_iconOffset;
 };
 

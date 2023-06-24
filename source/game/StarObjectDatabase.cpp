@@ -157,10 +157,11 @@ List<ObjectOrientationPtr> ObjectDatabase::parseOrientations(String const& path,
     orientation->config = orientationSettings;
 
     if (orientationSettings.contains("imageLayers")) {
-      for (auto layer : orientationSettings.get("imageLayers").iterateArray()) {
+      for (Json layer : orientationSettings.get("imageLayers").iterateArray()) {
+        if (auto image = layer.opt("image"))
+          layer = layer.set("image", AssetPath::relativeTo(path, image->toString()));
         Drawable drawable(layer.set("centered", layer.getBool("centered", false)));
         drawable.scale(1.0f / TilePixels);
-        drawable.imagePart().image = AssetPath::relativeTo(path, drawable.imagePart().image);
         orientation->imageLayers.append(drawable);
       }
     } else {
@@ -191,7 +192,7 @@ List<ObjectOrientationPtr> ObjectDatabase::parseOrientations(String const& path,
       auto spaceScanSpaces = Set<Vec2I>::from(orientation->spaces);
       for (auto const& layer : orientation->imageLayers) {
         spaceScanSpaces.addAll(root.imageMetadataDatabase()->imageSpaces(
-            layer.imagePart().image.replaceTags(StringMap<String>(), true, "default"),
+            AssetPath::join(layer.imagePart().image).replaceTags(StringMap<String>(), true, "default"),
             imagePosition,
             orientationSettings.getDouble("spaceScan"),
             orientation->flipImages));
@@ -578,8 +579,9 @@ List<Drawable> ObjectDatabase::cursorHintDrawables(World const* world, String co
 
     auto orientation = config->orientations.at(orientationIndex);
     for (auto const& layer : orientation->imageLayers) {
-      auto drawable = layer;
-      drawable.imagePart().image = drawable.imagePart().image.replaceTags(StringMap<String>(), true, "default");
+      Drawable drawable = layer;
+      auto& image = drawable.imagePart().image;
+      image = AssetPath::join(image).replaceTags(StringMap<String>(), true, "default");
       if (orientation->flipImages)
         drawable.scale(Vec2F(-1, 1), drawable.boundBox(false).center() - drawable.position);
       drawables.append(move(drawable));

@@ -285,4 +285,13 @@ ItemPtr GenericItem::clone() const {
   return make_shared<GenericItem>(*this);
 }
 
+bool Item::itemsEqual(ItemConstPtr const& a, ItemConstPtr const& b) {
+  if (!a && !b) // Both are null
+    return true;
+  if (a && b) // Both aren't null, compare
+    return a->stackableWith(b);
+  else // One is null, so not equal
+    return true;
+}
+
 }
