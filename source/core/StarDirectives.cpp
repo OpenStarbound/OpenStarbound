@@ -2,6 +2,7 @@
 #include "StarImageProcessing.hpp"
 #include "StarDirectives.hpp"
 #include "StarXXHash.hpp"
+#include "StarLogging.hpp"
 
 namespace Star {
 
@@ -20,17 +21,17 @@ Directives::Entry::Entry(Entry const& other) {
   string = other.string;
 }
 
-Directives::Directives() {}
-Directives::Directives(String const& directives) {
+Directives::Directives() : hash(0) {}
+Directives::Directives(String const& directives) : hash(0) {
   parse(directives);
 }
 
-Directives::Directives(String&& directives) {
+Directives::Directives(String&& directives) : hash(0) {
   String mine = move(directives);
   parse(mine);
 }
 
-Directives::Directives(const char* directives) {
+Directives::Directives(const char* directives) : hash(0) {
   String string(directives);
   parse(string);
 }
@@ -42,6 +43,9 @@ Directives::Directives(List<Entry>&& newEntries) {
 }
 
 void Directives::parse(String const& directives) {
+  if (directives.empty())
+    return;
+
   List<Entry> newList;
   StringList split = directives.split('?');
   newList.reserve(split.size());
@@ -51,25 +55,35 @@ void Directives::parse(String const& directives) {
       newList.emplace_back(move(operation), move(str));
     }
   }
+
+  if (newList.empty())
+    return;
+
   entries = std::make_shared<List<Entry> const>(move(newList));
   hash = XXH3_64bits(directives.utf8Ptr(), directives.utf8Size());
+  //if (directives.utf8Size() > 1000)
+  //  Logger::logf(LogLevel::Debug, "Directives: Parsed %u character long string", directives.utf8Size());
 }
 
 void Directives::buildString(String& out) const {
-  for (auto& entry : *entries) {
-    out += "?";
-    out += entry.string;
+  if (entries) {
+    for (auto& entry : *entries) {
+      out += "?";
+      out += entry.string;
+    }
   }
 }
 
 String Directives::toString() const {
   String result;
   buildString(result);
+  //if (result.utf8Size() > 1000)
+  //  Logger::logf(LogLevel::Debug, "Directives: Rebuilt %u character long string", result.utf8Size());
   return result;
 }
 
 inline bool Directives::empty() const {
-  return entries->empty();
+  return !entries || entries->empty();
 }
 
 
@@ -114,7 +128,8 @@ inline bool DirectivesGroup::compare(DirectivesGroup const& other) const {
 
 void DirectivesGroup::append(Directives const& directives) {
   m_directives.emplace_back(directives);
-  m_count += m_directives.back().entries->size();
+  if (directives.entries)
+    m_count += m_directives.back().entries->size();
 }
 
 void DirectivesGroup::append(List<Directives::Entry>&& entries) {
@@ -146,16 +161,20 @@ void DirectivesGroup::addToString(String& string) const {
 
 void DirectivesGroup::forEach(DirectivesCallback callback) const {
   for (auto& directives : m_directives) {
-    for (auto& entry : *directives.entries)
-      callback(entry);
+    if (directives.entries) {
+      for (auto& entry : *directives.entries)
+        callback(entry);
+    }
   }
 }
 
 bool DirectivesGroup::forEachAbortable(AbortableDirectivesCallback callback) const {
   for (auto& directives : m_directives) {
-    for (auto& entry : *directives.entries) {
-      if (!callback(entry))
-        return false;
+    if (directives.entries) {
+      for (auto& entry : *directives.entries) {
+        if (!callback(entry))
+          return false;
+      }
     }
   }
 

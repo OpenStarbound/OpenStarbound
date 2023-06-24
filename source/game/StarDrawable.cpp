@@ -10,7 +10,7 @@
 namespace Star {
 
 Drawable::ImagePart& Drawable::ImagePart::addDirectives(Directives const& directives, bool keepImageCenterPosition) {
-  if (directives.entries->empty())
+  if (!directives.entries || directives.entries->empty())
     return *this;
 
   if (keepImageCenterPosition) {

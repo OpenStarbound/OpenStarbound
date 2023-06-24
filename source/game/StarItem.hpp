@@ -114,6 +114,8 @@ public:
   // Returns just the dynamic parameters
   Json parameters() const;
 
+  static bool itemsEqual(ItemConstPtr const& a, ItemConstPtr const& b);
+
 protected:
   void setMaxStack(uint64_t maxStack);
   void setDescription(String const& description);
