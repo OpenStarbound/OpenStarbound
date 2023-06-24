@@ -1,6 +1,8 @@
 #include "StarImage.hpp"
 #include "StarImageProcessing.hpp"
 #include "StarDirectives.hpp"
+#include "StarXXHash.hpp"
+#include "StarHash.hpp"
 
 namespace Star {
 
@@ -16,20 +18,30 @@ NestedDirectives::NestedDirectives(String&& directives) {
 void NestedDirectives::parseDirectivesIntoLeaf(String const& directives) {
   Leaf leaf;
   for (String& op : directives.split('?')) {
-    if (!op.empty()) {
-      leaf.operations.append(imageOperationFromString(op));
-      leaf.strings.append(move(op));
-    }
+    if (!op.empty())
+      leaf.entries.emplace_back(imageOperationFromString(op), op);
   }
   m_root = std::make_shared<Cell>(move(leaf));
 }
 
-bool NestedDirectives::empty() const {
+inline bool NestedDirectives::empty() const {
   return (bool)m_root;
 }
 
-void NestedDirectives::append(const NestedDirectives& other) {
+inline bool NestedDirectives::compare(NestedDirectives const& other) const {
+  if (m_root == other.m_root)
+    return true;
+
+  return false;
+}
+
+void NestedDirectives::append(NestedDirectives const& other) {
   convertToBranches().emplace_back(other.branch());
+}
+
+NestedDirectives& NestedDirectives::operator+=(NestedDirectives const& other) {
+  append(other);
+  return *this;
 }
 
 String NestedDirectives::toString() const {
@@ -51,9 +63,8 @@ void NestedDirectives::forEach(LeafCallback callback) const {
 void NestedDirectives::forEachPair(LeafPairCallback callback) const {
   if (m_root) {
     LeafCallback pairCallback = [&](Leaf const& leaf) {
-      size_t length = leaf.length();
-      for (size_t i = 0; i != length; ++i)
-        callback(leaf.operations.at(i), leaf.strings.at(i));
+      for (auto& entry : leaf.entries)
+        callback(entry.operation, entry.string);
     };
     m_root->forEach(pairCallback);
   }
@@ -71,9 +82,8 @@ bool NestedDirectives::forEachPairAbortable(AbortableLeafPairCallback callback) 
     return false;
   else {
     AbortableLeafCallback pairCallback = [&](Leaf const& leaf) -> bool {
-      size_t length = leaf.length();
-      for (size_t i = 0; i != length; ++i) {
-        if (!callback(leaf.operations.at(i), leaf.strings.at(i)))
+      for (auto& entry : leaf.entries) {
+        if (!callback(entry.operation, entry.string))
           return false;
       }
 
@@ -85,8 +95,8 @@ bool NestedDirectives::forEachPairAbortable(AbortableLeafPairCallback callback) 
 
 Image NestedDirectives::apply(Image& image) const {
   Image current = image;
-  forEach([&](Leaf const& leaf) {
-    current = processImageOperations(leaf.operations, current);
+  forEachPair([&](ImageOperation const& operation, String const& string) {
+    processImageOperation(operation, current);
   });
   return current;
 }
@@ -105,11 +115,33 @@ NestedDirectives::Branches& NestedDirectives::convertToBranches() {
   return m_root->value.get<Branches>();
 }
 
-size_t NestedDirectives::Leaf::length() const {
-  if (operations.size() != strings.size())
-    throw DirectivesException("NestedDirectives leaf has mismatching operation/string List sizes");
+bool NestedDirectives::Leaf::Entry::operator==(NestedDirectives::Leaf::Entry const& other) const {
+  return string == other.string;
+}
 
-  return operations.size();
+bool NestedDirectives::Leaf::Entry::operator!=(NestedDirectives::Leaf::Entry const& other) const {
+  return string != other.string;
+}
+
+
+size_t NestedDirectives::Leaf::length() const {
+  return entries.size();
+}
+
+bool NestedDirectives::Leaf::operator==(NestedDirectives::Leaf const& other) const {
+  size_t len = length();
+  if (len != other.length())
+    return false;
+
+  for (size_t i = 0; i != len; ++i) {
+    if (entries[i] != other.entries[i])
+      return false;
+  }
+  return true;
+}
+
+bool NestedDirectives::Leaf::operator!=(NestedDirectives::Leaf const& other) const {
+  return !(*this == other);
 }
 
 NestedDirectives::Cell::Cell() : value(Leaf()) {};
@@ -118,11 +150,33 @@ NestedDirectives::Cell::Cell(Branches&& branches) : value(move(branches)) {};
 NestedDirectives::Cell::Cell(const Leaf& leaf) : value(leaf) {};
 NestedDirectives::Cell::Cell(const Branches& branches) : value(branches) {};
 
+/*
+bool NestedDirectives::Cell::operator==(NestedDirectives::Cell const& other) const {
+  if (auto leaf = value.ptr<Leaf>()) {
+    if (auto otherLeaf = other.value.ptr<Leaf>())
+      return *leaf == *otherLeaf;
+    else {
+
+    }
+  }
+  else {
+    for (auto& branch : value.get<Branches>()) {
+
+    }
+  }
+}
+
+
+bool NestedDirectives::Cell::operator!=(NestedDirectives::Cell const& other) const {
+  return !(*this == other);
+}
+//*/
+
 void NestedDirectives::Cell::buildString(String& string) const {
   if (auto leaf = value.ptr<Leaf>())
-    for (auto& leafString : leaf->strings) {
+    for (auto& entry : leaf->entries) {
       string += "?";
-      string += leafString;
+      string += entry.string;
     }
   else {
     for (auto& branch : value.get<Branches>())

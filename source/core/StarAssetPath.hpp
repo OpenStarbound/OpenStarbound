@@ -51,6 +51,9 @@ struct AssetPath {
   // sourcePath.
   static String relativeTo(String const& sourcePath, String const& givenPath);
 
+  AssetPath() = default;
+  AssetPath(String const& path);
+
   String basePath;
   Maybe<String> subPath;
   NestedDirectives directives;

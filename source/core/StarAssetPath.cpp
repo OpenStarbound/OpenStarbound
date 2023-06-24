@@ -147,6 +147,10 @@ bool AssetPath::operator==(AssetPath const& rhs) const {
   return tie(basePath, subPath, directives) == tie(rhs.basePath, rhs.subPath, rhs.directives);
 }
 
+AssetPath::AssetPath(String const& path) {
+  *this = move(AssetPath::split(path)); // split code should probably be in here, but whatever
+}
+
 std::ostream& operator<<(std::ostream& os, AssetPath const& rhs) {
   os << rhs.basePath;
   if (rhs.subPath) {

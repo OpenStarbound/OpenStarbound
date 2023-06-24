@@ -12,10 +12,19 @@ STAR_EXCEPTION(DirectivesException, StarException);
 class NestedDirectives {
 public:
   struct Leaf {
-    List<ImageOperation> operations;
-    List<String> strings;
+    struct Entry {
+      ImageOperation operation;
+      String string;
+
+      bool operator==(Entry const& other) const;
+      bool operator!=(Entry const& other) const;
+      Entry(ImageOperation&& operation, String&& string);
+    };
+    List<Entry> entries;
 
     size_t length() const;
+    bool operator==(NestedDirectives::Leaf const& other) const;
+    bool operator!=(NestedDirectives::Leaf const& other) const;
   };
 
   typedef function<void(Leaf const&)> LeafCallback;
@@ -51,7 +60,11 @@ public:
   void parseDirectivesIntoLeaf(String const& directives);
 
   bool empty() const;
-  void append(const NestedDirectives& other);
+  bool compare(NestedDirectives const& other) const;
+  void append(NestedDirectives const& other);
+  NestedDirectives& operator+=(NestedDirectives const& other);
+  bool operator==(NestedDirectives const& other) const;
+  bool operator!=(NestedDirectives const& other) const;
 
   const ConstBranch& branch() const;
 
