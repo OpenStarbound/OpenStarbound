@@ -5,6 +5,11 @@
 
 namespace Star {
 
+Directives::Entry::Entry(ImageOperation&& newOperation, String&& newString) {
+  operation = move(newOperation);
+  string = move(newString);
+}
+
 Directives::Directives() {}
 Directives::Directives(String const& directives) {
   parse(directives);
@@ -58,14 +63,6 @@ inline bool DirectivesGroup::compare(DirectivesGroup const& other) const {
     return true;
 
   return hash() == other.hash();
-}
-
-inline bool DirectivesGroup::operator==(DirectivesGroup const& other) const {
-  return compare(other);
-}
-
-inline bool DirectivesGroup::operator!=(DirectivesGroup const& other) const {
-  return !compare(other);
 }
 
 void DirectivesGroup::append(Directives const& directives) {
@@ -127,7 +124,15 @@ inline size_t DirectivesGroup::hash() const {
   return hasher.digest();
 }
 
-inline size_t hash<DirectivesGroup>::operator()(DirectivesGroup const& s) const {
+bool operator==(DirectivesGroup const& a, DirectivesGroup const& b) {
+  return a.compare(b);
+}
+
+bool operator!=(DirectivesGroup const& a, DirectivesGroup const& b) {
+  return !a.compare(b);
+}
+
+size_t hash<DirectivesGroup>::operator()(DirectivesGroup const& s) const {
   return s.hash();
 }
 

@@ -15,7 +15,7 @@ struct Directives {
     ImageOperation operation;
     String string;
 
-    Entry(ImageOperation&& operation, String&& string);
+    Entry(ImageOperation&& newOperation, String&& newString);
   };
 
   Directives();
@@ -40,8 +40,6 @@ public:
 
   inline bool empty() const;
   bool compare(DirectivesGroup const& other) const;
-  inline bool operator==(DirectivesGroup const& other) const;
-  inline bool operator!=(DirectivesGroup const& other) const;
   void append(Directives const& other);
   DirectivesGroup& operator+=(Directives const& other);
 
@@ -58,12 +56,16 @@ public:
   void applyExistingImage(Image& image) const;
   
   inline size_t hash() const;
+
+  friend bool operator==(DirectivesGroup const& a, DirectivesGroup const& b);
+  friend bool operator!=(DirectivesGroup const& a, DirectivesGroup const& b);
 private:
   void buildString(String& string, const DirectivesGroup& directives) const;
 
   List<Directives> m_directives;
   size_t m_count;
 };
+
 
 template <>
 struct hash<DirectivesGroup> {
