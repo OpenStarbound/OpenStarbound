@@ -150,7 +150,8 @@ ImageOperation imageOperationFromString(StringView string) {
   try {
     List<StringView> bits;
     string.forEachSplitAnyView("=;", [&](StringView split, size_t, size_t) {
-      bits.emplace_back(split);
+      if (!split.empty())
+        bits.emplace_back(split);
     });
 
     String type = bits.at(0);

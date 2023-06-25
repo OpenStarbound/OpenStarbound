@@ -25,8 +25,8 @@ Directives::Entry::Entry(Entry const& other) {
 }
 
 StringView Directives::Entry::string(Shared const& parent) const {
-  StringView result(parent.string);
-  result = result.substr(begin, length);
+  StringView result = parent.string;
+  result = result.utf8().substr(begin, length);
   return result;
 }
 
