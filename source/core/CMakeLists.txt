@@ -84,6 +84,7 @@ SET (star_core_HEADERS
     StarOrderedMap.hpp
     StarOrderedSet.hpp
     StarParametricFunction.hpp
+    StarPch.hpp
     StarPeriodic.hpp
     StarPeriodicFunction.hpp
     StarPerlin.hpp
@@ -203,3 +204,4 @@ ELSEIF (STAR_SYSTEM_FAMILY_WINDOWS)
 ENDIF ()
 
 ADD_LIBRARY (star_core OBJECT ${star_core_SOURCES} ${star_core_HEADERS})
+TARGET_PRECOMPILE_HEADERS (star_core PUBLIC StarPch.hpp)

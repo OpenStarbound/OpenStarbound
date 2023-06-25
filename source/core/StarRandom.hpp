@@ -187,7 +187,8 @@ typename Container::value_type RandomSource::randValueFrom(
 
 template <typename Container>
 void RandomSource::shuffle(Container& container) {
-  std::random_shuffle(container.begin(), container.end(), [this](size_t max) { return randUInt(max - 1); });
+  size_t max = container.size();
+  std::shuffle(container.begin(), container.end(), URBG<size_t>([this, max]() { return randUInt(max - 1); }));
 }
 
 template <typename Container>
@@ -208,7 +209,8 @@ typename Container::value_type Random::randValueFrom(
 
 template <typename Container>
 void Random::shuffle(Container& container) {
-  std::random_shuffle(container.begin(), container.end(), [](size_t max) { return Random::randUInt(max - 1); });
+  size_t max = container.size();
+  std::shuffle(container.begin(), container.end(), URBG<size_t>([max]() { return Random::randUInt(max - 1); }));
 }
 
 }

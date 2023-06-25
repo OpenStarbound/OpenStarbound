@@ -118,12 +118,28 @@ typename Container::value_type staticRandomValueFrom(Container const& container,
   }
 }
 
+template <typename T>
+class URBG {
+public:
+  typedef function <T()> Function;
+
+  URBG(Function func) : m_func(func) {};
+
+  typedef T result_type;
+  static constexpr T min() { return std::numeric_limits<T>::min(); };
+  static constexpr T max() { return std::numeric_limits<T>::max(); };
+  T operator()() { return m_func(); };
+private:
+  Function m_func;
+};
+
 template <typename Container, typename T, typename... TL>
 void staticRandomShuffle(Container& container, T const& d, TL const&... rest) {
   int mix = 0;
-  std::random_shuffle(container.begin(),
-      container.end(),
-      [&](size_t max) { return staticRandomU32Range(0, max - 1, ++mix, d, rest...); });
+  size_t max = container.size();
+  std::shuffle(container.begin(), container.end(), URBG<size_t>([&]() {
+    return staticRandomU32Range(0, max - 1, ++mix, d, rest...);
+  }));
 }
 
 }

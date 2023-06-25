@@ -1,10 +1,6 @@
 #ifndef STAR_ALGORITHM_HPP
 #define STAR_ALGORITHM_HPP
 
-#include <type_traits>
-#include <vector>
-#include <iterator>
-
 #include "StarException.hpp"
 
 namespace Star {
@@ -265,11 +261,6 @@ void sortByComputedValue(Container& container, Getter&& valueGetter, bool stable
 template <typename Container, typename Getter>
 void stableSortByComputedValue(Container& container, Getter&& valueGetter) {
   return sortByComputedValue(container, forward<Getter>(valueGetter), true);
-}
-
-template <typename Container>
-void shuffle(Container& c) {
-  std::random_shuffle(c.begin(), c.end());
 }
 
 template <typename Container>

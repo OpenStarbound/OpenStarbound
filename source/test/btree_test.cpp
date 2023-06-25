@@ -3,6 +3,7 @@
 #include "StarMap.hpp"
 #include "StarSet.hpp"
 #include "StarLexicalCast.hpp"
+#include "StarRandom.hpp"
 
 #include "gtest/gtest.h"
 
@@ -614,25 +615,25 @@ void testBTree(size_t maxIndexSize, size_t maxLeafSize) {
   }
 
   // record writes/reads repeated WriteRepeat times randomly each cycle
-  std::random_shuffle(keys.begin(), keys.end());
+  Random::shuffle(keys);
   putAll(db, keys);
 
   EXPECT_EQ(db.recordCount(), TestCount);
 
-  std::random_shuffle(keys.begin(), keys.end());
+  Random::shuffle(keys);
   checkAll(db, keys);
 
   // Random reads/writes with ShrinkCount cycles...
   for (size_t i = 0; i < ShrinkCount; ++i) {
-    std::random_shuffle(keys.begin(), keys.end());
+    Random::shuffle(keys);
     List<int> keysTemp = keys.slice(0, keys.size() / 2);
 
     removeAll(db, keysTemp);
 
-    std::random_shuffle(keysTemp.begin(), keysTemp.end());
+    Random::shuffle(keysTemp);
     putAll(db, keysTemp);
 
-    std::random_shuffle(keysTemp.begin(), keysTemp.end());
+    Random::shuffle(keysTemp);
     checkAll(db, keys);
   }
 

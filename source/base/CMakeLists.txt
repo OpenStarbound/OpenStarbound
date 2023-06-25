@@ -35,3 +35,4 @@ SET (star_base_SOURCES
 
 CONFIGURE_FILE (StarVersion.cpp.in ${CMAKE_CURRENT_BINARY_DIR}/StarVersion.cpp)
 ADD_LIBRARY (star_base OBJECT ${star_base_SOURCES} ${star_base_HEADERS} ${CMAKE_CURRENT_BINARY_DIR}/StarVersion.cpp)
+TARGET_PRECOMPILE_HEADERS (star_base REUSE_FROM star_core)

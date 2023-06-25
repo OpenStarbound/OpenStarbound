@@ -1,4 +1,4 @@
-CMAKE_MINIMUM_REQUIRED (VERSION 3.4)
+CMAKE_MINIMUM_REQUIRED (VERSION 3.16)
 
 # Find CCache
 FIND_PROGRAM(CCACHE_PATH ccache)
@@ -227,7 +227,7 @@ ENDIF ()
 
 IF (STAR_COMPILER_GNU)
   SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wuninitialized -Wunreachable-code -Wformat -no-pie")
-  SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wall -Wextra -Wuninitialized -Wunreachable-code -Wformat -no-pie")
+  SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -Wall -Wextra -Wuninitialized -Wunreachable-code -Wformat -no-pie")
 
   IF (STAR_SYSTEM_FAMILY_WINDOWS)
     SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mthreads")
@@ -261,11 +261,11 @@ IF (STAR_COMPILER_GNU)
 
 ELSEIF (STAR_COMPILER_CLANG)
   SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wuninitialized -Wno-parentheses-equality -Wno-deprecated-declarations")
-  SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wall -Wextra -Wuninitialized -Wno-parentheses-equality -Wno-deprecated-declarations")
+  SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -Wall -Wextra -Wuninitialized -Wno-parentheses-equality -Wno-deprecated-declarations")
 
   IF (STAR_SYSTEM_MACOS)
     SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
-    SET (CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++14")
+    SET (CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++17")
     SET (CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++")
   ELSEIF ()
     SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread -D_REENTRANT")
@@ -313,7 +313,7 @@ ELSEIF (STAR_COMPILER_MSVC)
   #            using unions in interesting ways.
 
   SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MP /EHsc /bigobj /wd4996 /wd4351 /wd4800 /wd4244 /wd4305 /wd4267 /wd4456 /wd4503 /wd4250 /wd4624")
-  SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP /EHsc /bigobj /wd4996 /wd4351 /wd4800 /wd4244 /wd4305 /wd4267 /wd4456 /wd4503 /wd4250 /wd4624")
+  SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17 /MP /EHsc /bigobj /wd4996 /wd4351 /wd4800 /wd4244 /wd4305 /wd4267 /wd4456 /wd4503 /wd4250 /wd4624")
 
   IF (STAR_ENABLE_STATIC_MSVC_RUNTIME)
     SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MT")
@@ -351,7 +351,7 @@ ELSEIF (STAR_COMPILER_MSVC)
 
 ELSE ()
   SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -pthread -D_REENTRANT")
-  SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wall -pthread -D_REENTRANT")
+  SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -Wall -pthread -D_REENTRANT")
 
   SET (CMAKE_C_FLAGS_DEBUG "-g")
   SET (CMAKE_CXX_FLAGS_DEBUG "-g")

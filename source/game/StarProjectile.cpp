@@ -584,8 +584,8 @@ void Projectile::processAction(Json const& action) {
 
     bool allowEntityOverlap = parameters.getBool("allowEntityOverlap", true);
 
-    random_shuffle(tileDrops.begin(), tileDrops.end(), [](int i) { return Random::randu64() % i; });
-    for (auto tile : zip(openSpaces, tileDrops)) {
+    Random::shuffle(tileDrops);
+    for (auto& tile : zip(openSpaces, tileDrops)) {
       if (!world()->modifyTile(std::get<0>(tile), PlaceMaterial{TileLayer::Foreground, std::get<1>(tile), MaterialHue()}, allowEntityOverlap)) {
         auto itemDrop = ItemDrop::createRandomizedDrop(materialDatabase->materialItemDrop(std::get<1>(tile)), (Vec2F)std::get<0>(tile));
         world()->addEntity(itemDrop);

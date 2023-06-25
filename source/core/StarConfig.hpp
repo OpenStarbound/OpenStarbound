@@ -1,22 +1,7 @@
+#include "StarPch.hpp"
+
 #ifndef STAR_CONFIG_HPP
 #define STAR_CONFIG_HPP
-
-#include <cstdint>
-#include <cstdlib>
-#include <cstddef>
-#include <cstring>
-#include <cmath>
-#include <tuple>
-#include <memory>
-#include <functional>
-#include <algorithm>
-#include <iostream>
-#include <initializer_list>
-#include <exception>
-#include <stdexcept>
-#include <atomic>
-#include <string>
-#include <iterator>
 
 namespace Star {
 

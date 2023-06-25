@@ -101,25 +101,25 @@ namespace {
     db.open();
 
     // record writes/reads repeated writeRepeat times randomly each cycle
-    std::random_shuffle(keys.begin(), keys.end());
+    Random::shuffle(keys);
     putAll(db, keys);
 
     EXPECT_EQ(db.recordCount(), testCount);
 
-    std::random_shuffle(keys.begin(), keys.end());
+    Random::shuffle(keys);
     checkAll(db, keys);
 
     // Random reads/writes with randCount cycles...
     for (uint32_t i = 0; i < randCount; ++i) {
       List<uint32_t> keysTemp(keys.begin(), keys.begin() + keys.size() / 2);
 
-      std::random_shuffle(keysTemp.begin(), keysTemp.end());
+      Random::shuffle(keysTemp);
       removeAll(db, keysTemp);
 
-      std::random_shuffle(keysTemp.begin(), keysTemp.end());
+      Random::shuffle(keysTemp);
       putAll(db, keysTemp);
 
-      std::random_shuffle(keys.begin(), keys.end());
+      Random::shuffle(keys);
       checkAll(db, keys);
     }
 
@@ -128,7 +128,7 @@ namespace {
     // Random reads/writes/rollbacks with rollbackCount cycles...
     for (uint32_t i = 0; i < rollbackCount ; ++i) {
       List<uint32_t> keysTemp(keys.begin(), keys.begin() + keys.size() / 2);
-      std::random_shuffle(keysTemp.begin(), keysTemp.end());
+      Random::shuffle(keysTemp);
 
       removeAll(db, keysTemp);
       db.rollback();
@@ -193,7 +193,7 @@ TEST(BTreeDatabaseTest, Threading) {
     if (Random::randf() > 0.3)
       deleteKeySet.append(key);
   }
-  std::random_shuffle(writeKeySet.begin(), writeKeySet.end());
+  Random::shuffle(writeKeySet);
 
   {
     auto writer = Thread::invoke("databaseTestWriter",
