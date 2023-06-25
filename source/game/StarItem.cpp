@@ -291,7 +291,7 @@ bool Item::itemsEqual(ItemConstPtr const& a, ItemConstPtr const& b) {
   if (a && b) // Both aren't null, compare
     return a->stackableWith(b);
   else // One is null, so not equal
-    return true;
+    return false;
 }
 
 }

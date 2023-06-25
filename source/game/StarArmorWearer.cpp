@@ -168,56 +168,56 @@ List<PersistentStatusEffect> ArmorWearer::statusEffects() const {
 }
 
 void ArmorWearer::setHeadItem(HeadArmorPtr headItem) {
-  if (!Item::itemsEqual(m_headItem, headItem))
+  if (Item::itemsEqual(m_headItem, headItem))
     return;
   m_headItem = headItem;
   m_needsHumanoidSync = true;
 }
 
 void ArmorWearer::setHeadCosmeticItem(HeadArmorPtr headCosmeticItem) {
-  if (!Item::itemsEqual(m_headCosmeticItem, headCosmeticItem))
+  if (Item::itemsEqual(m_headCosmeticItem, headCosmeticItem))
     return;
   m_headCosmeticItem = headCosmeticItem;
   m_needsHumanoidSync = true;
 }
 
 void ArmorWearer::setChestCosmeticItem(ChestArmorPtr chestCosmeticItem) {
-  if (!Item::itemsEqual(m_chestCosmeticItem, chestCosmeticItem))
+  if (Item::itemsEqual(m_chestCosmeticItem, chestCosmeticItem))
     return;
   m_chestCosmeticItem = chestCosmeticItem;
   m_needsHumanoidSync = true;
 }
 
 void ArmorWearer::setChestItem(ChestArmorPtr chestItem) {
-  if (!Item::itemsEqual(m_chestItem, chestItem))
+  if (Item::itemsEqual(m_chestItem, chestItem))
     return;
   m_chestItem = chestItem;
   m_needsHumanoidSync = true;
 }
 
 void ArmorWearer::setLegsItem(LegsArmorPtr legsItem) {
-  if (!Item::itemsEqual(m_legsItem, legsItem))
+  if (Item::itemsEqual(m_legsItem, legsItem))
     return;
   m_legsItem = legsItem;
   m_needsHumanoidSync = true;
 }
 
 void ArmorWearer::setLegsCosmeticItem(LegsArmorPtr legsCosmeticItem) {
-  if (!Item::itemsEqual(m_legsCosmeticItem, legsCosmeticItem))
+  if (Item::itemsEqual(m_legsCosmeticItem, legsCosmeticItem))
     return;
   m_legsCosmeticItem = legsCosmeticItem;
   m_needsHumanoidSync = true;
 }
 
 void ArmorWearer::setBackItem(BackArmorPtr backItem) {
-  if (!Item::itemsEqual(m_backItem, backItem))
+  if (Item::itemsEqual(m_backItem, backItem))
     return;
   m_backItem = backItem;
   m_needsHumanoidSync = true;
 }
 
 void ArmorWearer::setBackCosmeticItem(BackArmorPtr backCosmeticItem) {
-  if (!Item::itemsEqual(m_backCosmeticItem, backCosmeticItem))
+  if (Item::itemsEqual(m_backCosmeticItem, backCosmeticItem))
     return;
   m_backCosmeticItem = backCosmeticItem;
   m_needsHumanoidSync = true;
