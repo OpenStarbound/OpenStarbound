@@ -862,7 +862,10 @@ shared_ptr<Assets::AssetData> Assets::loadImage(AssetPath const& path) const {
       auto newData = make_shared<ImageData>();
       Image newImage = *source->image;
       path.directives.forEach([&](auto const& entry) {
-        processImageOperation(entry.operation, newImage, [&](String const& ref) { return references.get(ref).get(); });
+        if (auto error = entry.operation.ptr<ErrorImageOperation>())
+          std::rethrow_exception(error->exception);
+        else
+          processImageOperation(entry.operation, newImage, [&](String const& ref) { return references.get(ref).get(); });
       });
       newData->image = make_shared<Image>(move(newImage));
       return newData;

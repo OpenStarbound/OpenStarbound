@@ -234,6 +234,7 @@ void CanvasWidget::renderText(Vec2F const& renderingOffset, String const& s, Tex
   TextPositioning translatedPosition = position;
   translatedPosition.pos += renderingOffset;
   context.renderInterfaceText(s, translatedPosition);
+
   context.setDefaultLineSpacing();
   context.setDefaultFont();
   context.setFontProcessingDirectives("");

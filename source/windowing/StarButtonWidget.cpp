@@ -25,6 +25,7 @@ ButtonWidget::ButtonWidget() {
   auto interfaceConfig = assets->json("/interface.config");
   m_pressedOffset = jsonToVec2I(interfaceConfig.get("buttonPressedOffset"));
   m_fontSize = interfaceConfig.query("font.buttonSize").toInt();
+  m_fontDirectives = interfaceConfig.queryString("font.defaultDirectives", "");
   m_font = interfaceConfig.query("font.defaultFont").toString();
 }
 
@@ -89,6 +90,7 @@ void ButtonWidget::renderImpl() {
 
   if (!m_text.empty()) {
     auto& guiContext = GuiContext::singleton();
+    guiContext.setFontProcessingDirectives(m_fontDirectives);
     guiContext.setFontSize(m_fontSize);
     guiContext.setFont(m_font);
     if (m_disabled)
@@ -100,6 +102,7 @@ void ButtonWidget::renderImpl() {
     guiContext.setFontMode(FontMode::Shadow);
     guiContext.renderInterfaceText(m_text, {textPosition, m_hTextAnchor, VerticalAnchor::VMidAnchor});
     guiContext.setFontMode(FontMode::Normal);
+    guiContext.setFontProcessingDirectives("");
   }
 }
 
@@ -300,6 +303,10 @@ void ButtonWidget::setText(String const& text) {
 
 void ButtonWidget::setFontSize(int size) {
   m_fontSize = size;
+}
+
+void ButtonWidget::setFontDirectives(String directives) {
+  m_fontDirectives = directives;
 }
 
 void ButtonWidget::setTextOffset(Vec2I textOffset) {

@@ -56,7 +56,7 @@ void Directives::parse(String const& directives) {
         ImageOperation operation = imageOperationFromString(str);
         newList.emplace_back(move(operation), move(str));
       } catch (StarException const& e) {
-        Logger::logf(LogLevel::Error, "Error parsing image operation: %s", e.what());
+        newList.emplace_back(ErrorImageOperation{ std::current_exception() }, move(str));
       }
     }
   }
@@ -214,7 +214,10 @@ inline Image DirectivesGroup::applyNewImage(Image const& image) const {
 
 void DirectivesGroup::applyExistingImage(Image& image) const {
   forEach([&](auto const& entry) {
-    processImageOperation(entry.operation, image);
+    if (auto error = entry.operation.ptr<ErrorImageOperation>())
+      std::rethrow_exception(error->exception);
+    else
+      processImageOperation(entry.operation, image);
   });
 }
 

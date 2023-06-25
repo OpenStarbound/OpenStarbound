@@ -183,6 +183,9 @@ WidgetConstructResult WidgetParser::buttonHandler(String const& name, Json const
   if (config.contains("fontSize"))
     button->setFontSize(config.getInt("fontSize"));
 
+  if (config.contains("fontDirectives"))
+    button->setFontDirectives(config.getString("fontDirectives"));
+
   if (config.contains("fontColor"))
     button->setFontColor(jsonToColor(config.get("fontColor")));
 

@@ -218,6 +218,9 @@ private:
   float m_animationTimer;
   int m_currentFrame;
 
+  Directives m_directives;
+  Directives m_colorDirectives;
+
   Maybe<PeriodicFunction<float>> m_lightFlickering;
 
   EntityTileDamageStatusPtr m_tileDamageStatus;

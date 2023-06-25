@@ -183,6 +183,8 @@ Vec2U ImageMetadataDatabase::calculateImageSize(AssetPath const& path) const {
 
     OperationSizeAdjust(Vec2U& size) : imageSize(size), hasError(false) {};
 
+    void operator()(ErrorImageOperation const&) {}
+
     void operator()(HueShiftImageOperation const&) {}
 
     void operator()(SaturationShiftImageOperation const&) {}

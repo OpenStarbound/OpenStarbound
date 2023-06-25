@@ -145,7 +145,19 @@ void Object::init(World* world, EntityId entityId, EntityMode mode) {
 
   if (isMaster()) {
     auto colorName = configValue("color", "default").toString();
-    setImageKey("color", colorName);
+    auto colorEnd = colorName.find('?');
+    if (colorEnd != NPos) {
+      setImageKey("color", colorName);
+      m_colorDirectives = colorName.substr(colorEnd);
+    }
+    else
+      m_colorDirectives = "";
+
+    m_directives = "";
+    if (auto directives = configValue("")) {
+      if (directives.isType(Json::Type::String))
+        m_directives.parse(directives.toString());
+    }
 
     if (m_config->lightColors.contains(colorName))
       m_lightSourceColor.set(m_config->lightColors.get(colorName));
@@ -1205,10 +1217,15 @@ List<Drawable> Object::orientationDrawables(size_t orientationIndex) const {
     m_orientationDrawablesCache = make_pair(orientationIndex, List<Drawable>());
     for (auto const& layer : orientation->imageLayers) {
       Drawable drawable = layer;
-      auto& image = drawable.imagePart().image;
-      image = AssetPath::join(image).replaceTags(m_imageKeys, true, "default");
+      auto& imagePart = drawable.imagePart();
+      imagePart.image.directives.clear();
+      imagePart.image = AssetPath::join(imagePart.image).replaceTags(m_imageKeys, true, "default");
+      imagePart.image.directives = layer.imagePart().image.directives;
+      imagePart.addDirectives(m_colorDirectives).addDirectives(m_directives);
+      
       if (orientation->flipImages)
         drawable.scale(Vec2F(-1, 1), drawable.boundBox(false).center() - drawable.position);
+
       m_orientationDrawablesCache->second.append(move(drawable));
     }
   }

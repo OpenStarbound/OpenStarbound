@@ -69,6 +69,7 @@ public:
 
   virtual void setText(String const& text);
   virtual void setFontSize(int size);
+  virtual void setFontDirectives(String directives);
   virtual void setTextOffset(Vec2I textOffset);
 
   void setTextAlign(HorizontalAnchor hAnchor);
@@ -122,6 +123,7 @@ protected:
 
   int m_fontSize;
   String m_font;
+  String m_fontDirectives;
   String m_text;
   Vec2I m_textOffset;
 
