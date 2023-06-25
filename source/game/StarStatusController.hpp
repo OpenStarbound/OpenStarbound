@@ -78,8 +78,8 @@ public:
 
   bool uniqueStatusEffectActive(String const& effectName) const;
 
-  String primaryDirectives() const;
-  void setPrimaryDirectives(String const& directives);
+  const Directives& primaryDirectives() const;
+  void setPrimaryDirectives(Directives const& directives);
 
   // damage request and notification methods should only be called on the master controller.
   List<DamageNotification> applyDamageRequest(DamageRequest const& damageRequest);
@@ -118,7 +118,7 @@ public:
   void tickMaster();
   void tickSlave();
 
-  String parentDirectives() const;
+  const DirectivesGroup& parentDirectives() const;
   List<Drawable> drawables() const;
   List<LightSource> lightSources() const;
   List<OverheadBar> overheadBars();
@@ -180,7 +180,7 @@ private:
 
   struct UniqueEffectInstance {
     UniqueStatusEffectConfig effectConfig;
-    String parentDirectives;
+    Directives parentDirectives;
     HashSet<StatModifierGroupId> modifierGroups;
     StatScript script;
     UniqueEffectMetadataGroup::ElementId metadataId;
@@ -205,7 +205,7 @@ private:
   NetElementGroup m_netGroup;
   StatCollection m_statCollection;
   NetElementData<JsonObject> m_statusProperties;
-  NetElementString m_parentDirectives;
+  NetElementData<DirectivesGroup> m_parentDirectives;
 
   UniqueEffectMetadataGroup m_uniqueEffectMetadata;
   EffectAnimatorGroup m_effectAnimators;
@@ -226,7 +226,7 @@ private:
 
   Maybe<String> m_primaryAnimationConfig;
   StatScript m_primaryScript;
-  String m_primaryDirectives;
+  Directives m_primaryDirectives;
   EffectAnimatorGroup::ElementId m_primaryAnimatorId;
 
   List<DamageNotification> m_pendingSelfDamageNotifications;

@@ -385,7 +385,7 @@ void NetworkedAnimator::setPartTag(String const& partType, String tagName, Strin
   m_partTags[partType].set(move(tagName), move(tagValue));
 }
 
-void NetworkedAnimator::setProcessingDirectives(String const& directives) {
+void NetworkedAnimator::setProcessingDirectives(Directives const& directives) {
   m_processingDirectives.set(directives);
 }
 
@@ -562,8 +562,7 @@ List<Drawable> NetworkedAnimator::drawables(Vec2F const& position) const {
 }
 
 List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& position) const {
-  String baseProcessingDirectives = "?";
-  baseProcessingDirectives.append(m_processingDirectives.get());
+  List<Directives> baseProcessingDirectives = { m_processingDirectives.get() };
   for (auto& pair : m_effects) {
     auto const& effectState = pair.second;
 
@@ -571,11 +570,9 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
       auto const& effect = m_effects.get(pair.first);
       if (effect.type == "flash") {
         if (effectState.timer > effect.time / 2) {
-          baseProcessingDirectives.append("?");
           baseProcessingDirectives.append(effect.directives);
         }
       } else if (effect.type == "directive") {
-        baseProcessingDirectives.append("?");
         baseProcessingDirectives.append(effect.directives);
       } else {
         throw NetworkedAnimatorException(strf("No such NetworkedAnimator effect type '%s'", effect.type));
@@ -595,10 +592,9 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
         maybeZLevel = activePart.properties.value("flippedZLevel").optFloat().orMaybe(maybeZLevel);
       float zLevel = maybeZLevel.value(0.0f);
 
-      String processingDirectives = baseProcessingDirectives;
+      size_t originalDirectivesSize = baseProcessingDirectives.size();
       if (auto directives = activePart.properties.value("processingDirectives").optString()) {
-        processingDirectives.append("?");
-        processingDirectives.append(*directives);
+        baseProcessingDirectives.append(*directives);
       }
 
       Maybe<unsigned> frame;
@@ -606,8 +602,7 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
         frame = activePart.activeState->frame;
 
         if (auto directives = activePart.activeState->properties.value("processingDirectives").optString()) {
-          processingDirectives.append("?");
-          processingDirectives.append(*directives);
+          baseProcessingDirectives.append(*directives);
         }
       }
 
@@ -629,9 +624,12 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
       });
 
       if (!image.empty() && image[0] != ':' && image[0] != '?') {
-        image = AssetPath::relativeTo(m_relativePath, image) + processingDirectives;
+        image = AssetPath::relativeTo(m_relativePath, image);
 
         auto drawable = Drawable::makeImage(move(image), 1.0f / TilePixels, centered, Vec2F());
+        auto& imagePart = drawable.imagePart();
+        for (Directives const& directives : baseProcessingDirectives)
+          imagePart.addDirectives(directives);
         drawable.transform(partTransformation(partName));
         drawable.transform(globalTransformation());
         drawable.fullbright = fullbright;
@@ -639,6 +637,8 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
 
         drawables.append({move(drawable), zLevel});
       }
+
+      baseProcessingDirectives.resize(originalDirectivesSize);
     });
 
   sort(drawables, [](auto const& a, auto const& b) { return a.second < b.second; });

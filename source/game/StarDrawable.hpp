@@ -30,6 +30,7 @@ struct Drawable {
     // transformed center of the image the same if the directives change the
     // image size.
     ImagePart& addDirectives(Directives const& directives, bool keepImageCenterPosition = false);
+    ImagePart& addDirectivesGroup(DirectivesGroup const& directivesGroup, bool keepImageCenterPosition = false);
 
     // Remove directives from this ImagePart, while optionally keeping the
     // transformed center of the image the same if the directives change the

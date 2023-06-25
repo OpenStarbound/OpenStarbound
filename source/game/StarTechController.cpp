@@ -251,7 +251,7 @@ Maybe<TechController::ParentState> TechController::parentState() const {
   return m_parentState.get();
 }
 
-String TechController::parentDirectives() const {
+DirectivesGroup const& TechController::parentDirectives() const {
   return m_parentDirectives.get();
 }
 
@@ -501,10 +501,11 @@ LuaCallbacks TechController::makeTechCallbacks(TechModule& techModule) {
 
   callbacks.registerCallback("setParentDirectives", [this, &techModule](Maybe<String> const& directives) {
       techModule.parentDirectives = directives.value();
-      String newParentDirectives;
+
+      DirectivesGroup newParentDirectives;
       for (auto& module : m_techModules)
-        newParentDirectives += module.parentDirectives;
-      m_parentDirectives.set(newParentDirectives);
+        newParentDirectives.append(module.parentDirectives);
+      m_parentDirectives.set(move(newParentDirectives));
     });
 
   callbacks.registerCallback("setParentHidden", [this](bool hidden) {

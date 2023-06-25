@@ -353,11 +353,11 @@ List<Drawable> Player::drawables() const {
       for (auto& drawable : m_humanoid->render()) {
         drawable.translate(position() + m_techController->parentOffset());
         if (drawable.isImage()) {
-          drawable.imagePart().addDirectives(m_techController->parentDirectives(), true);
-          drawable.imagePart().addDirectives(m_statusController->parentDirectives(), true);
+          drawable.imagePart().addDirectivesGroup(m_techController->parentDirectives(), true);
+          drawable.imagePart().addDirectivesGroup(m_statusController->parentDirectives(), true);
 
           if (auto anchor = as<LoungeAnchor>(m_movementController->entityAnchor())) {
-            if (auto directives = anchor->directives)
+            if (auto& directives = anchor->directives)
               drawable.imagePart().addDirectives(*directives, true);
           }
         }

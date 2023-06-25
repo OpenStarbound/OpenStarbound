@@ -16,7 +16,7 @@
 
 namespace Star {
 
-ArmorWearer::ArmorWearer() : m_lastNude(true), m_needsHumanoidSync(true) {
+ArmorWearer::ArmorWearer() : m_lastNude(true) {
   addNetElement(&m_headItemDataNetState);
   addNetElement(&m_chestItemDataNetState);
   addNetElement(&m_legsItemDataNetState);
@@ -25,26 +25,34 @@ ArmorWearer::ArmorWearer() : m_lastNude(true), m_needsHumanoidSync(true) {
   addNetElement(&m_chestCosmeticItemDataNetState);
   addNetElement(&m_legsCosmeticItemDataNetState);
   addNetElement(&m_backCosmeticItemDataNetState);
+
+  m_headNeedsSync = m_chestNeedsSync = m_legsNeedsSync = m_backNeedsSync = true;
 }
 
 void ArmorWearer::setupHumanoidClothingDrawables(Humanoid& humanoid, bool forceNude) {
-  if (m_lastNude != forceNude)
+  bool nudeChanged = m_lastNude != forceNude;
+  if (nudeChanged)
     m_lastNude = forceNude;
-  else if (!m_needsHumanoidSync)
-    return;
 
-  m_needsHumanoidSync = false;
+  bool headNeedsSync  = nudeChanged  || m_headNeedsSync;
+  bool chestNeedsSync = nudeChanged  || m_chestNeedsSync;
+  bool legsNeedsSync  = nudeChanged  || m_legsNeedsSync;
+  bool backNeedsSync  = nudeChanged  || m_backNeedsSync;
 
   bool bodyHidden = false;
   if (m_headCosmeticItem && !forceNude) {
-    humanoid.setHeadArmorFrameset(m_headCosmeticItem->frameset(humanoid.identity().gender));
-    humanoid.setHeadArmorDirectives(m_headCosmeticItem->directives());
-    humanoid.setHelmetMaskDirectives(m_headCosmeticItem->maskDirectives());
+    if (headNeedsSync) {
+      humanoid.setHeadArmorFrameset(m_headCosmeticItem->frameset(humanoid.identity().gender));
+      humanoid.setHeadArmorDirectives(m_headCosmeticItem->directives());
+      humanoid.setHelmetMaskDirectives(m_headCosmeticItem->maskDirectives());
+    }
     bodyHidden = bodyHidden || m_headCosmeticItem->hideBody();
   } else if (m_headItem && !forceNude) {
-    humanoid.setHeadArmorFrameset(m_headItem->frameset(humanoid.identity().gender));
-    humanoid.setHeadArmorDirectives(m_headItem->directives());
-    humanoid.setHelmetMaskDirectives(m_headItem->maskDirectives());
+    if (headNeedsSync) {
+      humanoid.setHeadArmorFrameset(m_headItem->frameset(humanoid.identity().gender));
+      humanoid.setHeadArmorDirectives(m_headItem->directives());
+      humanoid.setHelmetMaskDirectives(m_headItem->maskDirectives());
+    }
     bodyHidden = bodyHidden || m_headItem->hideBody();
   } else {
     humanoid.setHeadArmorFrameset("");
@@ -52,16 +60,20 @@ void ArmorWearer::setupHumanoidClothingDrawables(Humanoid& humanoid, bool forceN
   }
 
   if (m_chestCosmeticItem && !forceNude) {
-    humanoid.setBackSleeveFrameset(m_chestCosmeticItem->backSleeveFrameset(humanoid.identity().gender));
-    humanoid.setFrontSleeveFrameset(m_chestCosmeticItem->frontSleeveFrameset(humanoid.identity().gender));
-    humanoid.setChestArmorFrameset(m_chestCosmeticItem->bodyFrameset(humanoid.identity().gender));
-    humanoid.setChestArmorDirectives(m_chestCosmeticItem->directives());
+    if (chestNeedsSync) {
+      humanoid.setBackSleeveFrameset(m_chestCosmeticItem->backSleeveFrameset(humanoid.identity().gender));
+      humanoid.setFrontSleeveFrameset(m_chestCosmeticItem->frontSleeveFrameset(humanoid.identity().gender));
+      humanoid.setChestArmorFrameset(m_chestCosmeticItem->bodyFrameset(humanoid.identity().gender));
+      humanoid.setChestArmorDirectives(m_chestCosmeticItem->directives());
+    }
     bodyHidden = bodyHidden || m_chestCosmeticItem->hideBody();
   } else if (m_chestItem && !forceNude) {
-    humanoid.setBackSleeveFrameset(m_chestItem->backSleeveFrameset(humanoid.identity().gender));
-    humanoid.setFrontSleeveFrameset(m_chestItem->frontSleeveFrameset(humanoid.identity().gender));
-    humanoid.setChestArmorFrameset(m_chestItem->bodyFrameset(humanoid.identity().gender));
-    humanoid.setChestArmorDirectives(m_chestItem->directives());
+    if (chestNeedsSync) {
+      humanoid.setBackSleeveFrameset(m_chestItem->backSleeveFrameset(humanoid.identity().gender));
+      humanoid.setFrontSleeveFrameset(m_chestItem->frontSleeveFrameset(humanoid.identity().gender));
+      humanoid.setChestArmorFrameset(m_chestItem->bodyFrameset(humanoid.identity().gender));
+      humanoid.setChestArmorDirectives(m_chestItem->directives());
+    }
     bodyHidden = bodyHidden || m_chestItem->hideBody();
   } else {
     humanoid.setBackSleeveFrameset("");
@@ -70,28 +82,38 @@ void ArmorWearer::setupHumanoidClothingDrawables(Humanoid& humanoid, bool forceN
   }
 
   if (m_legsCosmeticItem && !forceNude) {
-    humanoid.setLegsArmorFrameset(m_legsCosmeticItem->frameset(humanoid.identity().gender));
-    humanoid.setLegsArmorDirectives(m_legsCosmeticItem->directives());
+    if (legsNeedsSync) {
+      humanoid.setLegsArmorFrameset(m_legsCosmeticItem->frameset(humanoid.identity().gender));
+      humanoid.setLegsArmorDirectives(m_legsCosmeticItem->directives());
+    }
     bodyHidden = bodyHidden || m_legsCosmeticItem->hideBody();
   } else if (m_legsItem && !forceNude) {
-    humanoid.setLegsArmorFrameset(m_legsItem->frameset(humanoid.identity().gender));
-    humanoid.setLegsArmorDirectives(m_legsItem->directives());
+    if (legsNeedsSync) {
+      humanoid.setLegsArmorFrameset(m_legsItem->frameset(humanoid.identity().gender));
+      humanoid.setLegsArmorDirectives(m_legsItem->directives());
+    }
     bodyHidden = bodyHidden || m_legsItem->hideBody();
   } else {
     humanoid.setLegsArmorFrameset("");
   }
 
   if (m_backCosmeticItem && !forceNude) {
-    humanoid.setBackArmorFrameset(m_backCosmeticItem->frameset(humanoid.identity().gender));
-    humanoid.setBackArmorDirectives(m_backCosmeticItem->directives());
+    if (backNeedsSync) {
+      humanoid.setBackArmorFrameset(m_backCosmeticItem->frameset(humanoid.identity().gender));
+      humanoid.setBackArmorDirectives(m_backCosmeticItem->directives());
+    }
     bodyHidden = bodyHidden || m_backCosmeticItem->hideBody();
   } else if (m_backItem && !forceNude) {
-    humanoid.setBackArmorFrameset(m_backItem->frameset(humanoid.identity().gender));
-    humanoid.setBackArmorDirectives(m_backItem->directives());
+    if (backNeedsSync) {
+      humanoid.setBackArmorFrameset(m_backItem->frameset(humanoid.identity().gender));
+      humanoid.setBackArmorDirectives(m_backItem->directives());
+    }
     bodyHidden = bodyHidden || m_backItem->hideBody();
   } else {
     humanoid.setBackArmorFrameset("");
   }
+
+  m_headNeedsSync = m_chestNeedsSync = m_legsNeedsSync = m_backNeedsSync = false;
 
   humanoid.setBodyHidden(bodyHidden);
 }
@@ -171,56 +193,56 @@ void ArmorWearer::setHeadItem(HeadArmorPtr headItem) {
   if (Item::itemsEqual(m_headItem, headItem))
     return;
   m_headItem = headItem;
-  m_needsHumanoidSync = true;
+  m_headNeedsSync |= !m_headCosmeticItem;
 }
 
 void ArmorWearer::setHeadCosmeticItem(HeadArmorPtr headCosmeticItem) {
   if (Item::itemsEqual(m_headCosmeticItem, headCosmeticItem))
     return;
   m_headCosmeticItem = headCosmeticItem;
-  m_needsHumanoidSync = true;
-}
-
-void ArmorWearer::setChestCosmeticItem(ChestArmorPtr chestCosmeticItem) {
-  if (Item::itemsEqual(m_chestCosmeticItem, chestCosmeticItem))
-    return;
-  m_chestCosmeticItem = chestCosmeticItem;
-  m_needsHumanoidSync = true;
+  m_headNeedsSync = true;
 }
 
 void ArmorWearer::setChestItem(ChestArmorPtr chestItem) {
   if (Item::itemsEqual(m_chestItem, chestItem))
     return;
   m_chestItem = chestItem;
-  m_needsHumanoidSync = true;
+  m_chestNeedsSync |= !m_chestCosmeticItem;
+}
+
+void ArmorWearer::setChestCosmeticItem(ChestArmorPtr chestCosmeticItem) {
+  if (Item::itemsEqual(m_chestCosmeticItem, chestCosmeticItem))
+    return;
+  m_chestCosmeticItem = chestCosmeticItem;
+  m_chestNeedsSync = true;
 }
 
 void ArmorWearer::setLegsItem(LegsArmorPtr legsItem) {
   if (Item::itemsEqual(m_legsItem, legsItem))
     return;
   m_legsItem = legsItem;
-  m_needsHumanoidSync = true;
+  m_legsNeedsSync |= !m_legsCosmeticItem;
 }
 
 void ArmorWearer::setLegsCosmeticItem(LegsArmorPtr legsCosmeticItem) {
   if (Item::itemsEqual(m_legsCosmeticItem, legsCosmeticItem))
     return;
   m_legsCosmeticItem = legsCosmeticItem;
-  m_needsHumanoidSync = true;
+  m_legsNeedsSync = true;
 }
 
 void ArmorWearer::setBackItem(BackArmorPtr backItem) {
   if (Item::itemsEqual(m_backItem, backItem))
     return;
   m_backItem = backItem;
-  m_needsHumanoidSync = true;
+  m_backNeedsSync |= !m_backCosmeticItem;
 }
 
 void ArmorWearer::setBackCosmeticItem(BackArmorPtr backCosmeticItem) {
   if (Item::itemsEqual(m_backCosmeticItem, backCosmeticItem))
     return;
   m_backCosmeticItem = backCosmeticItem;
-  m_needsHumanoidSync = true;
+  m_backNeedsSync = true;
 }
 
 HeadArmorPtr ArmorWearer::headItem() const {
@@ -306,26 +328,23 @@ ItemDescriptor ArmorWearer::backCosmeticItemDescriptor() const {
 void ArmorWearer::netElementsNeedLoad(bool) {
   auto itemDatabase = Root::singleton().itemDatabase();
 
-  bool changed = false;
-  if (m_headItemDataNetState.pullUpdated())
-    changed |= itemDatabase->loadItem(m_headItemDataNetState.get(), m_headItem);
-  if (m_chestItemDataNetState.pullUpdated())
-    changed |= itemDatabase->loadItem(m_chestItemDataNetState.get(), m_chestItem);
-  if (m_legsItemDataNetState.pullUpdated())
-    changed |= itemDatabase->loadItem(m_legsItemDataNetState.get(), m_legsItem);
-  if (m_backItemDataNetState.pullUpdated())
-    changed |= itemDatabase->loadItem(m_backItemDataNetState.get(), m_backItem);
-
   if (m_headCosmeticItemDataNetState.pullUpdated())
-    changed |= itemDatabase->loadItem(m_headCosmeticItemDataNetState.get(), m_headCosmeticItem);
+    m_headNeedsSync |= itemDatabase->loadItem(m_headCosmeticItemDataNetState.get(), m_headCosmeticItem);
   if (m_chestCosmeticItemDataNetState.pullUpdated())
-    changed |= itemDatabase->loadItem(m_chestCosmeticItemDataNetState.get(), m_chestCosmeticItem);
+    m_chestNeedsSync |= itemDatabase->loadItem(m_chestCosmeticItemDataNetState.get(), m_chestCosmeticItem);
   if (m_legsCosmeticItemDataNetState.pullUpdated())
-    changed |= itemDatabase->loadItem(m_legsCosmeticItemDataNetState.get(), m_legsCosmeticItem);
+    m_legsNeedsSync |= itemDatabase->loadItem(m_legsCosmeticItemDataNetState.get(), m_legsCosmeticItem);
   if (m_backCosmeticItemDataNetState.pullUpdated())
-    changed |= itemDatabase->loadItem(m_backCosmeticItemDataNetState.get(), m_backCosmeticItem);
+    m_backNeedsSync |= itemDatabase->loadItem(m_backCosmeticItemDataNetState.get(), m_backCosmeticItem);
 
-  m_needsHumanoidSync = changed;
+  if (m_headItemDataNetState.pullUpdated())
+    m_headNeedsSync |= !m_headCosmeticItem && itemDatabase->loadItem(m_headItemDataNetState.get(), m_headItem);
+  if (m_chestItemDataNetState.pullUpdated())
+    m_chestNeedsSync |= !m_chestCosmeticItem && itemDatabase->loadItem(m_chestItemDataNetState.get(), m_chestItem);
+  if (m_legsItemDataNetState.pullUpdated())
+    m_legsNeedsSync |= !m_legsCosmeticItem && itemDatabase->loadItem(m_legsItemDataNetState.get(), m_legsItem);
+  if (m_backItemDataNetState.pullUpdated())
+    m_backNeedsSync |= !m_backCosmeticItem && itemDatabase->loadItem(m_backItemDataNetState.get(), m_backItem);
 }
 
 void ArmorWearer::netElementsNeedStore() {

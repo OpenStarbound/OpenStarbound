@@ -221,7 +221,7 @@ Color::Color(const String& name) {
     if (i != NamedColors.end())
       *this = i->second;
     else
-      throw ColorException(strf("Named color %s not found", name));
+      throw ColorException(strf("Named color %s not found", name), false);
   }
 }
 
@@ -303,30 +303,7 @@ uint32_t Color::toUint32() const {
 }
 
 Color Color::fromHex(String const& s) {
-  uint8_t cbytes[4];
-
-  if (s.utf8Size() == 3) {
-    nibbleDecode(s.utf8Ptr(), 3, (char*)cbytes, 4);
-    cbytes[0] = (cbytes[0] << 4) | cbytes[0];
-    cbytes[1] = (cbytes[1] << 4) | cbytes[1];
-    cbytes[2] = (cbytes[2] << 4) | cbytes[2];
-    cbytes[3] = 255;
-  } else if (s.utf8Size() == 4) {
-    nibbleDecode(s.utf8Ptr(), 4, (char*)cbytes, 4);
-    cbytes[0] = (cbytes[0] << 4) | cbytes[0];
-    cbytes[1] = (cbytes[1] << 4) | cbytes[1];
-    cbytes[2] = (cbytes[2] << 4) | cbytes[2];
-    cbytes[3] = (cbytes[3] << 4) | cbytes[3];
-  } else if (s.utf8Size() == 6) {
-    hexDecode(s.utf8Ptr(), 6, (char*)cbytes, 4);
-    cbytes[3] = 255;
-  } else if (s.utf8Size() == 8) {
-    hexDecode(s.utf8Ptr(), 8, (char*)cbytes, 4);
-  } else {
-    throw ColorException(strf("Improper size for hex string '%s' in Color::fromHex", s));
-  }
-
-  return Color::rgba(cbytes[0], cbytes[1], cbytes[2], cbytes[3]);
+  return Color::rgba(hexToVec4B(s));
 }
 
 Vec4B Color::toRgba() const {
@@ -622,6 +599,33 @@ Vec4B Color::hueShiftVec4B(Vec4B color, float hue) {
 
     return Vec4B(uint8_t(round(var_r * 255)), uint8_t(round(var_g * 255)), uint8_t(round(var_b * 255)), color[3]);
   }
+}
+
+Vec4B Color::hexToVec4B(String const& s) {
+  Array<uint8_t, 4> cbytes;
+
+  if (s.utf8Size() == 3) {
+    nibbleDecode(s.utf8Ptr(), 3, (char*)cbytes.data(), 4);
+    cbytes[0] = (cbytes[0] << 4) | cbytes[0];
+    cbytes[1] = (cbytes[1] << 4) | cbytes[1];
+    cbytes[2] = (cbytes[2] << 4) | cbytes[2];
+    cbytes[3] = 255;
+  } else if (s.utf8Size() == 4) {
+    nibbleDecode(s.utf8Ptr(), 4, (char*)cbytes.data(), 4);
+    cbytes[0] = (cbytes[0] << 4) | cbytes[0];
+    cbytes[1] = (cbytes[1] << 4) | cbytes[1];
+    cbytes[2] = (cbytes[2] << 4) | cbytes[2];
+    cbytes[3] = (cbytes[3] << 4) | cbytes[3];
+  } else if (s.utf8Size() == 6) {
+    hexDecode(s.utf8Ptr(), 6, (char*)cbytes.data(), 4);
+    cbytes[3] = 255;
+  } else if (s.utf8Size() == 8) {
+    hexDecode(s.utf8Ptr(), 8, (char*)cbytes.data(), 4);
+  } else {
+    throw ColorException(strf("Improper size for hex string '%s' in Color::hexToVec4B", s), false);
+  }
+
+  return Vec4B(move(cbytes));
 }
 
 }

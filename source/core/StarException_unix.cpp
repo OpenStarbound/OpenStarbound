@@ -38,8 +38,8 @@ StarException::StarException() noexcept
 
 StarException::~StarException() noexcept {}
 
-StarException::StarException(std::string message) noexcept
-  : StarException("StarException", move(message)) {}
+StarException::StarException(std::string message, bool genStackTrace) noexcept
+  : StarException("StarException", move(message), genStackTrace) {}
 
 StarException::StarException(std::exception const& cause) noexcept
   : StarException("StarException", std::string(), cause) {}
@@ -56,19 +56,19 @@ const char* StarException::what() const throw() {
   return m_whatBuffer.c_str();
 }
 
-StarException::StarException(char const* type, std::string message) noexcept {
-  auto printException = [](std::ostream& os, bool fullStacktrace, char const* type, std::string message, StackCapture stack) {
+StarException::StarException(char const* type, std::string message, bool genStackTrace) noexcept {
+  auto printException = [](std::ostream& os, bool fullStacktrace, char const* type, std::string message, Maybe<StackCapture> stack) {
     os << "(" << type << ")";
     if (!message.empty())
       os << " " << message;
 
-    if (fullStacktrace) {
+    if (fullStacktrace && stack) {
       os << std::endl;
-      os << outputStack(stack);
+      os << outputStack(*stack);
     }
   };
 
-  m_printException = bind(printException, _1, _2, type, move(message), captureStack());
+  m_printException = bind(printException, _1, _2, type, move(message), genStackTrace ? captureStack() : Maybe<StackCapture>());
 }
 
 StarException::StarException(char const* type, std::string message, std::exception const& cause) noexcept

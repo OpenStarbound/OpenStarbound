@@ -229,12 +229,31 @@ inline size_t DirectivesGroup::hash() const {
   return hasher.digest();
 }
 
+const List<Directives>& DirectivesGroup::list() const {
+  return m_directives;
+}
+
 bool operator==(DirectivesGroup const& a, DirectivesGroup const& b) {
   return a.compare(b);
 }
 
 bool operator!=(DirectivesGroup const& a, DirectivesGroup const& b) {
   return !a.compare(b);
+}
+
+DataStream& operator>>(DataStream& ds, DirectivesGroup& directivesGroup) {
+  String string;
+  ds.read(string);
+
+  directivesGroup = move(DirectivesGroup(move(string)));
+
+  return ds;
+}
+
+DataStream& operator<<(DataStream& ds, DirectivesGroup const& directivesGroup) {
+  ds.write(directivesGroup.toString());
+
+  return ds;
 }
 
 size_t hash<DirectivesGroup>::operator()(DirectivesGroup const& s) const {

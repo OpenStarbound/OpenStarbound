@@ -35,8 +35,8 @@ public:
 
   void setHeadItem(HeadArmorPtr headItem);
   void setHeadCosmeticItem(HeadArmorPtr headCosmeticItem);
-  void setChestCosmeticItem(ChestArmorPtr chestCosmeticItem);
   void setChestItem(ChestArmorPtr chestItem);
+  void setChestCosmeticItem(ChestArmorPtr chestCosmeticItem);
   void setLegsItem(LegsArmorPtr legsItem);
   void setLegsCosmeticItem(LegsArmorPtr legsCosmeticItem);
   void setBackItem(BackArmorPtr backItem);
@@ -84,7 +84,10 @@ private:
   NetElementData<ItemDescriptor> m_backCosmeticItemDataNetState;
 
   bool m_lastNude;
-  bool m_needsHumanoidSync;
+  bool m_headNeedsSync;
+  bool m_chestNeedsSync;
+  bool m_legsNeedsSync;
+  bool m_backNeedsSync;
 };
 
 }

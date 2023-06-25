@@ -337,11 +337,11 @@ bool StatusController::uniqueStatusEffectActive(String const& effectName) const 
   return false;
 }
 
-String StatusController::primaryDirectives() const {
+const Directives& StatusController::primaryDirectives() const {
   return m_primaryDirectives;
 }
 
-void StatusController::setPrimaryDirectives(String const& directives) {
+void StatusController::setPrimaryDirectives(Directives const& directives) {
   m_primaryDirectives = directives;
 }
 
@@ -509,11 +509,11 @@ void StatusController::tickMaster() {
       removeUniqueEffect(key);
   }
 
-  String parentDirectives = m_primaryDirectives;
-  for (auto const& pair : m_uniqueEffects) {
-    parentDirectives.append("?");
+  DirectivesGroup parentDirectives;
+  parentDirectives.append(m_primaryDirectives);
+  for (auto const& pair : m_uniqueEffects)
     parentDirectives.append(pair.second.parentDirectives);
-  }
+
   m_parentDirectives.set(move(parentDirectives));
 
   updateAnimators();
@@ -524,7 +524,7 @@ void StatusController::tickSlave() {
   updateAnimators();
 }
 
-String StatusController::parentDirectives() const {
+const DirectivesGroup& StatusController::parentDirectives() const {
   return m_parentDirectives.get();
 }
 

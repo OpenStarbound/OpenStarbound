@@ -173,7 +173,7 @@ ImageOperation imageOperationFromString(String const& string) {
     } else if (type == "replace") {
       ColorReplaceImageOperation operation;
       for (size_t i = 0; i < (bits.size() - 1) / 2; ++i)
-        operation.colorReplaceMap[Color::fromHex(bits[i * 2 + 1]).toRgba()] = Color::fromHex(bits[i * 2 + 2]).toRgba();
+        operation.colorReplaceMap[Color::hexToVec4B(bits[i * 2 + 1])] = Color::hexToVec4B(bits[i * 2 + 2]);
 
       return operation;
 
@@ -259,7 +259,7 @@ ImageOperation imageOperationFromString(String const& string) {
       return FlipImageOperation{FlipImageOperation::FlipXY};
 
     } else {
-      throw ImageOperationException(strf("Could not recognize ImageOperation type %s", type));
+      throw ImageOperationException(strf("Could not recognize ImageOperation type %s", type), false);
     }
   } catch (OutOfRangeException const& e) {
     throw ImageOperationException("Error reading ImageOperation", e);

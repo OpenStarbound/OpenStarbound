@@ -28,7 +28,7 @@ struct LoungeAnchor : EntityAnchor {
   StringSet effectEmitters;
   Maybe<String> emote;
   Maybe<String> dance;
-  Maybe<String> directives;
+  Maybe<Directives> directives;
   JsonObject armorCosmeticOverrides;
   Maybe<String> cursorOverride;
   bool cameraFocus;

@@ -117,7 +117,7 @@ public:
   void setGlobalTag(String tagName, String tagValue);
   void setPartTag(String const& partType, String tagName, String tagValue);
 
-  void setProcessingDirectives(String const& directives);
+  void setProcessingDirectives(Directives const& directives);
   void setZoom(float zoom);
   bool flipped() const;
   float flippedRelativeCenterLine() const;
@@ -287,7 +287,7 @@ private:
   struct Effect {
     String type;
     float time;
-    String directives;
+    Directives directives;
 
     NetElementBool enabled;
     float timer;
@@ -314,7 +314,7 @@ private:
   OrderedHashMap<String, Sound> m_sounds;
   OrderedHashMap<String, Effect> m_effects;
 
-  NetElementString m_processingDirectives;
+  NetElementData<Directives> m_processingDirectives;
   NetElementFloat m_zoom;
 
   NetElementBool m_flipped;

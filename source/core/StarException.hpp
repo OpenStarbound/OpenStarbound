@@ -13,7 +13,7 @@ public:
   StarException() noexcept;
   virtual ~StarException() noexcept;
 
-  explicit StarException(std::string message) noexcept;
+  explicit StarException(std::string message, bool genStackTrace = true) noexcept;
   explicit StarException(std::exception const& cause) noexcept;
   StarException(std::string message, std::exception const& cause) noexcept;
 
@@ -26,7 +26,7 @@ public:
   friend OutputProxy outputException(std::exception const& e, bool fullStacktrace);
 
 protected:
-  StarException(char const* type, std::string message) noexcept;
+  StarException(char const* type, std::string message, bool genStackTrace = true) noexcept;
   StarException(char const* type, std::string message, std::exception const& cause) noexcept;
 
 private:
@@ -68,22 +68,22 @@ void fatalException(std::exception const& e, bool showStackTrace);
   {}
 #endif
 
-#define STAR_EXCEPTION(ClassName, BaseName)                                                                     \
-  class ClassName : public BaseName {                                                                           \
-  public:                                                                                                       \
-    template <typename... Args>                                                                                 \
-    static ClassName format(char const* fmt, Args const&... args) {                                             \
-      return ClassName(strf(fmt, args...));                                                                     \
-    }                                                                                                           \
-    ClassName() : BaseName(#ClassName, std::string()) {}                                                        \
-    explicit ClassName(std::string message) : BaseName(#ClassName, move(message)) {}                            \
-    explicit ClassName(std::exception const& cause) : BaseName(#ClassName, std::string(), cause) {}             \
-    ClassName(std::string message, std::exception const& cause) : BaseName(#ClassName, move(message), cause) {} \
-                                                                                                                \
-  protected:                                                                                                    \
-    ClassName(char const* type, std::string message) : BaseName(type, move(message)) {}                         \
-    ClassName(char const* type, std::string message, std::exception const& cause)                               \
-      : BaseName(type, move(message), cause) {}                                                                 \
+#define STAR_EXCEPTION(ClassName, BaseName)                                                                                \
+  class ClassName : public BaseName {                                                                                      \
+  public:                                                                                                                  \
+    template <typename... Args>                                                                                            \
+    static ClassName format(char const* fmt, Args const&... args) {                                                        \
+      return ClassName(strf(fmt, args...));                                                                                \
+    }                                                                                                                      \
+    ClassName() : BaseName(#ClassName, std::string()) {}                                                                   \
+    explicit ClassName(std::string message, bool genStackTrace = true) : BaseName(#ClassName, move(message), genStackTrace) {}    \
+    explicit ClassName(std::exception const& cause) : BaseName(#ClassName, std::string(), cause) {}                        \
+    ClassName(std::string message, std::exception const& cause) : BaseName(#ClassName, move(message), cause) {}            \
+                                                                                                                           \
+  protected:                                                                                                               \
+    ClassName(char const* type, std::string message, bool genStackTrace = true) : BaseName(type, move(message), genStackTrace) {} \
+    ClassName(char const* type, std::string message, std::exception const& cause)                                          \
+      : BaseName(type, move(message), cause) {}                                                                            \
   }
 
 STAR_EXCEPTION(OutOfRangeException, StarException);

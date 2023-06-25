@@ -67,7 +67,7 @@ public:
   static Color temperature(float temp);
 
   static Vec4B hueShiftVec4B(Vec4B color, float hue);
-
+  static Vec4B Color::hexToVec4B(String const& s);
   // Black
   Color();
 

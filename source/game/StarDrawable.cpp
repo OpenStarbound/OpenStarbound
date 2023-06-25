@@ -29,6 +29,28 @@ Drawable::ImagePart& Drawable::ImagePart::addDirectives(Directives const& direct
   return *this;
 }
 
+Drawable::ImagePart& Drawable::ImagePart::addDirectivesGroup(DirectivesGroup const& directivesGroup, bool keepImageCenterPosition) {
+  if (directivesGroup.empty())
+    return *this;
+
+  if (keepImageCenterPosition) {
+    auto imageMetadata = Root::singleton().imageMetadataDatabase();
+    Vec2F imageSize = Vec2F(imageMetadata->imageSize(image));
+    for (Directives const& directives : directivesGroup.list())
+      image.directives += directives;
+    Vec2F newImageSize = Vec2F(imageMetadata->imageSize(image));
+
+    // If we are trying to maintain the image center, PRE translate the image by
+    // the change in size / 2
+    transformation *= Mat3F::translation((imageSize - newImageSize) / 2);
+  } else {
+    for (Directives const& directives : directivesGroup.list())
+       image.directives += directives;
+  }
+
+  return *this;
+}
+
 Drawable::ImagePart& Drawable::ImagePart::removeDirectives(bool keepImageCenterPosition) {
   if (keepImageCenterPosition) {
     auto imageMetadata = Root::singleton().imageMetadataDatabase();

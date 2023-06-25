@@ -6,6 +6,7 @@
 #include "StarLuaComponents.hpp"
 #include "StarLuaActorMovementComponent.hpp"
 #include "StarTechDatabase.hpp"
+#include "StarDirectives.hpp"
 
 namespace Star {
 
@@ -67,7 +68,7 @@ public:
   void tickSlave();
 
   Maybe<ParentState> parentState() const;
-  String parentDirectives() const;
+  DirectivesGroup const& parentDirectives() const;
   Vec2F parentOffset() const;
   bool toolUsageSuppressed() const;
 
@@ -120,7 +121,7 @@ private:
         scriptComponent;
     bool visible;
     bool toolUsageSuppressed;
-    String parentDirectives;
+    Directives parentDirectives;
     TechAnimatorGroup::ElementId animatorId;
   };
 
@@ -159,7 +160,7 @@ private:
   Vec2F m_aimPosition;
 
   NetElementData<Maybe<ParentState>> m_parentState;
-  NetElementString m_parentDirectives;
+  NetElementData<DirectivesGroup> m_parentDirectives;
   NetElementFloat m_xParentOffset;
   NetElementFloat m_yParentOffset;
   NetElementBool m_parentHidden;

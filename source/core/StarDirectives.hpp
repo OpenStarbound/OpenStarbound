@@ -73,9 +73,13 @@ public:
   void applyExistingImage(Image& image) const;
   
   inline size_t hash() const;
+  const List<Directives>& list() const;
 
   friend bool operator==(DirectivesGroup const& a, DirectivesGroup const& b);
   friend bool operator!=(DirectivesGroup const& a, DirectivesGroup const& b);
+
+  friend DataStream& operator>>(DataStream& ds, DirectivesGroup& directives);
+  friend DataStream& operator<<(DataStream& ds, DirectivesGroup const& directives);
 private:
   void buildString(String& string, const DirectivesGroup& directives) const;
 

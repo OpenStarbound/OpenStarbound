@@ -487,7 +487,7 @@ void Monster::update(uint64_t) {
 void Monster::render(RenderCallback* renderCallback) {
   for (auto& drawable : m_networkedAnimator.drawables(position())) {
     if (drawable.isImage())
-      drawable.imagePart().addDirectives(m_statusController->parentDirectives(), true);
+      drawable.imagePart().addDirectivesGroup(m_statusController->parentDirectives(), true);
     renderCallback->addDrawable(move(drawable), m_monsterVariant.renderLayer);
   }
 
