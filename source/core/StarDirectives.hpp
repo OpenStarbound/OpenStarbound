@@ -4,6 +4,7 @@
 #include "StarImageProcessing.hpp"
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
+#include "StarStringView.hpp"
 
 namespace Star {
 
@@ -14,33 +15,46 @@ STAR_EXCEPTION(DirectivesException, StarException);
 // Kae: My attempt at reducing memory allocation and per-frame string parsing for extremely long directives
 class Directives {
 public:
+  struct Shared;
   struct Entry {
     ImageOperation operation;
-    String string; // One day, we can make this a string_view pointing to Entry::string.
+    size_t begin;
+    size_t length;
 
-    Entry(ImageOperation&& newOperation, String&& newString);
-    Entry(ImageOperation const& newOperation, String const& newString);
+    inline StringView string(Shared const& parent) const;
+    Entry(ImageOperation&& newOperation, size_t begin, size_t end);
+    Entry(ImageOperation const& newOperation, size_t begin, size_t end);
     Entry(Entry const& other);
+  };
+
+  struct Shared {
+    List<Entry> entries;
+    String string;
+    size_t hash = 0;
+
+    bool empty() const;
+    Shared(List<Entry>&& givenEntries, String&& givenString);
   };
 
   Directives();
   Directives(String const& directives);
   Directives(String&& directives);
   Directives(const char* directives);
-  Directives(List<Entry>&& entries);
 
-  void parse(String const& directives);
-  String& buildString(String& out) const;
-  String toString() const;
+  void parse(String&& directives);
+  String string() const;
+  String const* stringPtr() const;
+  String buildString() const;
+  String& addToString(String& out) const;
+  size_t hash() const;
+  size_t size() const;
   bool empty() const;
   operator bool() const;
 
   friend DataStream& operator>>(DataStream& ds, Directives& directives);
   friend DataStream& operator<<(DataStream& ds, Directives const& directives);
 
-  std::shared_ptr<List<Entry> const> entries;
-  size_t hash = 0;
-  String string;
+  std::shared_ptr<Shared const> shared;
 };
 
 class DirectivesGroup {
@@ -49,13 +63,10 @@ public:
   DirectivesGroup(String const& directives);
   DirectivesGroup(String&& directives);
 
-  void parseDirectivesIntoLeaf(String const& directives);
-
   bool empty() const;
   operator bool() const;
   bool compare(DirectivesGroup const& other) const;
   void append(Directives const& other);
-  void append(List<Directives::Entry>&& entries);
   void clear();
 
   DirectivesGroup& operator+=(Directives const& other);
@@ -63,8 +74,8 @@ public:
   String toString() const;
   void addToString(String& string) const;
 
-  typedef function<void(Directives::Entry const&)> DirectivesCallback;
-  typedef function<bool(Directives::Entry const&)> AbortableDirectivesCallback;
+  typedef function<void(Directives::Entry const&, Directives const&)> DirectivesCallback;
+  typedef function<bool(Directives::Entry const&, Directives const&)> AbortableDirectivesCallback;
 
   void forEach(DirectivesCallback callback) const;
   bool forEachAbortable(AbortableDirectivesCallback callback) const;

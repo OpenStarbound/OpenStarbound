@@ -1,7 +1,7 @@
-#include "StarPch.hpp"
-
 #ifndef STAR_CONFIG_HPP
 #define STAR_CONFIG_HPP
+
+#include "StarPch.hpp"
 
 namespace Star {
 

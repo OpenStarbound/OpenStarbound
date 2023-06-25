@@ -2,6 +2,7 @@
 #define STAR_LEXICAL_CAST_HPP
 
 #include "StarString.hpp"
+#include "StarStringView.hpp"
 #include "StarMaybe.hpp"
 
 #include <sstream>
@@ -14,9 +15,9 @@ STAR_EXCEPTION(BadLexicalCast, StarException);
 // Very simple basic lexical cast using stream input.  Always operates in the
 // "C" locale.
 template <typename Type>
-Maybe<Type> maybeLexicalCast(std::string const& s, std::ios_base::fmtflags flags = std::ios_base::boolalpha) {
+Maybe<Type> maybeLexicalCast(StringView s, std::ios_base::fmtflags flags = std::ios_base::boolalpha) {
   Type result;
-  std::istringstream stream(s);
+  std::istringstream stream(std::string(s.utf8()));
   stream.flags(flags);
   stream.imbue(std::locale::classic());
 
@@ -28,36 +29,16 @@ Maybe<Type> maybeLexicalCast(std::string const& s, std::ios_base::fmtflags flags
   if (stream >> ch)
     return {};
 
-  return result;
+  return move(result);
 }
 
 template <typename Type>
-Maybe<Type> maybeLexicalCast(char const* s, std::ios_base::fmtflags flags = std::ios_base::boolalpha) {
-  return maybeLexicalCast<Type>(std::string(s), flags);
-}
-
-template <typename Type>
-Maybe<Type> maybeLexicalCast(String const& s, std::ios_base::fmtflags flags = std::ios_base::boolalpha) {
-  return maybeLexicalCast<Type>(s.utf8(), flags);
-}
-
-template <typename Type>
-Type lexicalCast(std::string const& s, std::ios_base::fmtflags flags = std::ios_base::boolalpha) {
+Type lexicalCast(StringView s, std::ios_base::fmtflags flags = std::ios_base::boolalpha) {
   auto m = maybeLexicalCast<Type>(s, flags);
   if (m)
     return m.take();
   else
     throw BadLexicalCast(strf("Lexical cast failed on '%s'", s));
-}
-
-template <typename Type>
-Type lexicalCast(char const* s, std::ios_base::fmtflags flags = std::ios_base::boolalpha) {
-  return lexicalCast<Type>(std::string(s), flags);
-}
-
-template <typename Type>
-Type lexicalCast(String const& s, std::ios_base::fmtflags flags = std::ios_base::boolalpha) {
-  return lexicalCast<Type>(s.utf8(), flags);
 }
 
 template <class Type>

@@ -12,6 +12,7 @@ namespace Star {
 
 STAR_CLASS(StringList);
 STAR_CLASS(String);
+STAR_CLASS(StringView);
 
 STAR_EXCEPTION(StringException, StarException);
 
@@ -267,6 +268,13 @@ public:
 
   friend std::ostream& operator<<(std::ostream& os, String const& s);
   friend std::istream& operator>>(std::istream& is, String& s);
+
+  // String view functions
+  String(StringView s);
+  String(std::string_view s);
+
+  String& operator+=(StringView s);
+  String& operator+=(std::string_view s);
 
 private:
   int compare(size_t selfOffset,

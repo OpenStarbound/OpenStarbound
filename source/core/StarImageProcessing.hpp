@@ -137,14 +137,14 @@ typedef Variant<ErrorImageOperation, HueShiftImageOperation, SaturationShiftImag
   ScanLinesImageOperation, SetColorImageOperation, ColorReplaceImageOperation, AlphaMaskImageOperation, BlendImageOperation,
   MultiplyImageOperation, BorderImageOperation, ScaleImageOperation, CropImageOperation, FlipImageOperation> ImageOperation;
 
-ImageOperation imageOperationFromString(String const& string);
+ImageOperation imageOperationFromString(StringView string);
 String imageOperationToString(ImageOperation const& operation);
 
-void parseImageOperations(String const& params, function<void(ImageOperation&&)> outputter);
+void parseImageOperations(StringView params, function<void(ImageOperation&&)> outputter);
 
 // Each operation is assumed to be separated by '?', with parameters
 // separated by ';' or '='
-List<ImageOperation> parseImageOperations(String const& params);
+List<ImageOperation> parseImageOperations(StringView params);
 
 // Each operation separated by '?', returns string with leading '?'
 String printImageOperations(List<ImageOperation> const& operations);

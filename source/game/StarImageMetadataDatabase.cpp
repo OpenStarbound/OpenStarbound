@@ -120,20 +120,21 @@ RectU ImageMetadataDatabase::nonEmptyRegion(AssetPath const& path) const {
 AssetPath ImageMetadataDatabase::filterProcessing(AssetPath const& path) {
   AssetPath newPath = { path.basePath, path.subPath, {} };
 
-  List<Directives::Entry> filtered;
-  path.directives.forEach([&](auto const& entry) {
+  String filtered;
+  path.directives.forEach([&](auto const& entry, Directives const& directives) {
     ImageOperation const& operation = entry.operation;
-    if (!(operation.is<HueShiftImageOperation>()       ||
-      operation.is<SaturationShiftImageOperation>()    ||
-      operation.is<BrightnessMultiplyImageOperation>() ||
-      operation.is<FadeToColorImageOperation>()        ||
-      operation.is<ScanLinesImageOperation>()          ||
-      operation.is<SetColorImageOperation>())) {
-      filtered.emplace_back(entry);
+    if (!(operation.is<HueShiftImageOperation>()           ||
+          operation.is<SaturationShiftImageOperation>()    ||
+          operation.is<BrightnessMultiplyImageOperation>() ||
+          operation.is<FadeToColorImageOperation>()        ||
+          operation.is<ScanLinesImageOperation>()          ||
+          operation.is<SetColorImageOperation>())) {
+      filtered += "?";
+      filtered += entry.string(*directives.shared);
     }
-  });
+    });
 
-  newPath.directives.append(move(filtered));
+  newPath.directives = move(filtered);
   return newPath;
 }
 
@@ -230,7 +231,7 @@ Vec2U ImageMetadataDatabase::calculateImageSize(AssetPath const& path) const {
 
   OperationSizeAdjust osa(imageSize);
 
-  bool complete = path.directives.forEachAbortable([&](auto const& entry) -> bool {
+  bool complete = path.directives.forEachAbortable([&](auto const& entry, Directives const& directives) -> bool {
     entry.operation.call(osa);
     return !osa.hasError;
   });

@@ -302,7 +302,7 @@ uint32_t Color::toUint32() const {
   return val;
 }
 
-Color Color::fromHex(String const& s) {
+Color Color::fromHex(StringView s) {
   return Color::rgba(hexToVec4B(s));
 }
 
@@ -601,7 +601,7 @@ Vec4B Color::hueShiftVec4B(Vec4B color, float hue) {
   }
 }
 
-Vec4B Color::hexToVec4B(String const& s) {
+Vec4B Color::hexToVec4B(StringView s) {
   Array<uint8_t, 4> cbytes;
 
   if (s.utf8Size() == 3) {

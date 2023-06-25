@@ -378,8 +378,10 @@ List<Directives> jsonToDirectivesList(Json const& v) {
 
 Json jsonFromDirectivesList(List<Directives> const& v) {
   JsonArray result;
-  for (auto& e : v)
-    result.push_back(e.toString());
+  for (auto& e : v) {
+    if (e)
+      result.push_back(*e.stringPtr());
+  }
   return result;
 }
 

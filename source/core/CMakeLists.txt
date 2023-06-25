@@ -106,6 +106,7 @@ SET (star_core_HEADERS
     StarStaticRandom.hpp
     StarStaticVector.hpp
     StarString.hpp
+    StarStringView.hpp
     StarStrongTypedef.hpp
     StarTcp.hpp
     StarThread.hpp
@@ -163,6 +164,7 @@ SET (star_core_SOURCES
     StarShellParser.cpp
     StarSocket.cpp
     StarString.cpp
+    StarStringView.cpp
     StarTcp.cpp
     StarThread.cpp
     StarTime.cpp

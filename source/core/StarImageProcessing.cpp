@@ -4,6 +4,7 @@
 #include "StarLexicalCast.hpp"
 #include "StarColor.hpp"
 #include "StarImage.hpp"
+#include "StarStringView.hpp"
 
 namespace Star {
 
@@ -145,9 +146,13 @@ FadeToColorImageOperation::FadeToColorImageOperation(Vec3B color, float amount) 
   }
 }
 
-ImageOperation imageOperationFromString(String const& string) {
+ImageOperation imageOperationFromString(StringView string) {
   try {
-    auto bits = string.splitAny("=;");
+    List<StringView> bits;
+    string.forEachSplitAnyView("=;", [&](StringView split, size_t, size_t) {
+      bits.emplace_back(split);
+    });
+
     String type = bits.at(0);
 
     if (type == "hueshift") {
@@ -184,7 +189,7 @@ ImageOperation imageOperationFromString(String const& string) {
       else
         operation.mode = AlphaMaskImageOperation::Subtractive;
 
-      operation.maskImages = bits.at(1).split('+');
+      operation.maskImages = String(bits.at(1)).split('+');
 
       if (bits.size() > 2)
         operation.offset[0] = lexicalCast<int>(bits.at(2));
@@ -202,7 +207,7 @@ ImageOperation imageOperationFromString(String const& string) {
       else
         operation.mode = BlendImageOperation::Screen;
 
-      operation.blendImages = bits.at(1).split('+');
+      operation.blendImages = String(bits.at(1)).split('+');
 
       if (bits.size() > 2)
         operation.offset[0] = lexicalCast<int>(bits.at(2));
@@ -328,22 +333,19 @@ String imageOperationToString(ImageOperation const& operation) {
   return "";
 }
 
-void parseImageOperations(String const& params, function<void(ImageOperation&&)> outputter) {
-  for (auto const& op : params.split('?')) {
+void parseImageOperations(StringView params, function<void(ImageOperation&&)> outputter) {
+  params.forEachSplitView("?", [&](StringView op, size_t, size_t) {
     if (!op.empty())
       outputter(imageOperationFromString(op));
-  }
+  });
 }
 
-List<ImageOperation> parseImageOperations(String const& params) {
-  auto split = params.split('?');
+List<ImageOperation> parseImageOperations(StringView params) {
   List<ImageOperation> operations;
-  operations.reserve(split.size());
-
-  for (auto const& op : split) {
+  params.forEachSplitView("?", [&](StringView op, size_t, size_t) {
     if (!op.empty())
       operations.append(imageOperationFromString(op));
-  }
+    });
 
   return operations;
 }

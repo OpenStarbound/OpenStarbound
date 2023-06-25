@@ -175,9 +175,9 @@ std::ostream& operator<<(std::ostream& os, AssetPath const& rhs) {
     os << *rhs.subPath;
   }
 
-  rhs.directives.forEach([&](auto const& entry) {
+  rhs.directives.forEach([&](auto const& entry, Directives const& directives) {
     os << "?";
-    os << entry.string;
+    os << entry.string(*directives.shared);
    });
 
   return os;

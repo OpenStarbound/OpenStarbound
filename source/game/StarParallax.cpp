@@ -41,7 +41,7 @@ ParallaxLayer::ParallaxLayer(Json const& store) : ParallaxLayer() {
 Json ParallaxLayer::store() const {
   return JsonObject{
       {"textures", jsonFromStringList(textures)},
-      {"directives", directives.toString()},
+      {"directives", directives.string()},
       {"parallaxValue", jsonFromVec2F(parallaxValue)},
       {"repeat", jsonFromVec2B(repeat)},
       {"tileLimitTop", jsonFromMaybe(tileLimitTop)},
@@ -59,11 +59,14 @@ Json ParallaxLayer::store() const {
 void ParallaxLayer::addImageDirectives(Directives const& newDirectives) {
   if (newDirectives) { // TODO: Move to Directives +=
     if (directives) {
-      List<Directives::Entry> newEntries = *directives.entries;
-      for (auto const& entry : *newDirectives.entries)
-        newEntries.push_back(entry);
+      String newString;
 
-      directives = move(newEntries);
+      for (auto const& entry : newDirectives.shared->entries) {
+        newString += "+";
+        newString += entry.string(*newDirectives.shared);
+      }
+
+      directives = move(newString);
     }
     else
       directives = newDirectives;

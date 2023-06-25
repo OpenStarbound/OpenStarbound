@@ -1,7 +1,7 @@
 #ifndef STAR_COLOR_HPP
 #define STAR_COLOR_HPP
 
-#include "StarString.hpp"
+#include "StarStringView.hpp"
 #include "StarVector.hpp"
 
 namespace Star {
@@ -58,7 +58,7 @@ public:
   static Color gray(uint8_t g);
 
   // Only supports 8 bit color
-  static Color fromHex(String const& s);
+  static Color fromHex(StringView s);
 
   // #AARRGGBB
   static Color fromUint32(uint32_t v);
@@ -67,7 +67,7 @@ public:
   static Color temperature(float temp);
 
   static Vec4B hueShiftVec4B(Vec4B color, float hue);
-  static Vec4B Color::hexToVec4B(String const& s);
+  static Vec4B Color::hexToVec4B(StringView s);
   // Black
   Color();
 
