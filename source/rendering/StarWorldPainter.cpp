@@ -182,7 +182,7 @@ void WorldPainter::renderParticles(WorldRenderData& renderData, Particle::Layer 
     } else if (particle.type == Particle::Type::Textured || particle.type == Particle::Type::Animated) {
       Drawable drawable;
       if (particle.type == Particle::Type::Textured)
-        drawable = Drawable::makeImage(particle.string, 1.0f / TilePixels, true, Vec2F(0, 0));
+        drawable = Drawable::makeImage(particle.image, 1.0f / TilePixels, true, Vec2F(0, 0));
       else
         drawable = particle.animation->drawable(1.0f / TilePixels);
 

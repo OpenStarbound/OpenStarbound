@@ -100,6 +100,7 @@ struct Particle {
   DestructionAction destructionAction;
   AssetPath destructionImage;
   float destructionTime;
+  bool destructionSet;
 
   float timeToLive;
   Layer layer;

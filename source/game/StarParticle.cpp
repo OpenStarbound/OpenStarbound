@@ -42,6 +42,7 @@ Particle::Particle() {
   length = 0;
   destructionAction = DestructionAction::None;
   destructionTime = 0.0f;
+  destructionSet = false;
   trail = false;
   flippable = true;
   flip = false;
@@ -224,13 +225,16 @@ void Particle::destructionUpdate() {
     } else if (destructionAction == DestructionAction::Fade) {
       color.setAlphaF(destructionFactor);
     } else if (destructionAction == DestructionAction::Image) {
-      size = 1.0f;
-      color = Color::White;
-      type = Particle::Type::Textured;
-      image = destructionImage;
-      angularVelocity = 0.0f;
-      length = 0.0f;
-      rotation = 0.0f;
+      if (!destructionSet) {
+        size = 1.0f;
+        color = Color::White;
+        type = Particle::Type::Textured;
+        image = destructionImage;
+        angularVelocity = 0.0f;
+        length = 0.0f;
+        rotation = 0.0f;
+        destructionSet = true;
+      }
     }
   }
 }
