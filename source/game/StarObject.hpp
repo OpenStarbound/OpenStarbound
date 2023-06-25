@@ -232,7 +232,7 @@ private:
   size_t m_orientationIndex;
   NetElementSize m_orientationIndexNetState;
   NetElementHashMap<String, String> m_netImageKeys;
-  StringMap<String> m_imageKeys;
+  mutable StringMap<String> m_imageKeys;
 
   void resetEmissionTimers();
   List<GameTimer> m_emissionTimers;

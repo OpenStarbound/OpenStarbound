@@ -143,21 +143,23 @@ void Object::init(World* world, EntityId entityId, EntityMode mode) {
 
   m_orientationDrawablesCache.reset();
 
-  if (isMaster()) {
-    auto colorName = configValue("color", "default").toString();
-    auto colorEnd = colorName.find('?');
-    if (colorEnd != NPos) {
-      setImageKey("color", colorName);
-      m_colorDirectives = colorName.substr(colorEnd);
-    }
-    else
-      m_colorDirectives = "";
+  // This is stupid and we should only have to deal with the new directives parameter, but blah blah backwards compatibility.
+  auto colorName = configValue("color", "default").toString();
+  auto colorEnd = colorName.find('?');
+  if (colorEnd != NPos) {
+    m_colorDirectives = colorName.substr(colorEnd);
+  }
+  else
+    m_colorDirectives = "";
 
-    m_directives = "";
-    if (auto directives = configValue("")) {
-      if (directives.isType(Json::Type::String))
-        m_directives.parse(directives.toString());
-    }
+  m_directives = "";
+  if (auto directives = configValue("")) {
+    if (directives.isType(Json::Type::String))
+      m_directives.parse(directives.toString());
+  }
+
+  if (isMaster()) {
+    setImageKey("color", colorName);
 
     if (m_config->lightColors.contains(colorName))
       m_lightSourceColor.set(m_config->lightColors.get(colorName));
@@ -562,7 +564,7 @@ List<Drawable> Object::cursorHintDrawables() const {
     if (m_direction.get() == Direction::Left)
       placementImage += "?flipx";
     Drawable imageDrawable = Drawable::makeImage(AssetPath::relativeTo(m_config->path, placementImage),
-        1.0 / TilePixels, false, jsonToVec2F(configValue("placementImagePosition")) / TilePixels);
+        1.0 / TilePixels, false, jsonToVec2F(configValue("placementImagePosition", jsonFromVec2F(Vec2F()))) / TilePixels);
     return {imageDrawable};
   } else {
     if (m_orientationIndex != NPos) {
@@ -1217,11 +1219,26 @@ List<Drawable> Object::orientationDrawables(size_t orientationIndex) const {
     m_orientationDrawablesCache = make_pair(orientationIndex, List<Drawable>());
     for (auto const& layer : orientation->imageLayers) {
       Drawable drawable = layer;
+
       auto& imagePart = drawable.imagePart();
       imagePart.image.directives.clear();
-      imagePart.image = AssetPath::join(imagePart.image).replaceTags(m_imageKeys, true, "default");
-      imagePart.image.directives = layer.imagePart().image.directives;
-      imagePart.addDirectives(m_colorDirectives).addDirectives(m_directives);
+      String imagePath = AssetPath::join(imagePart.image);
+      if (m_colorDirectives && m_imageKeys.contains("color")) { // We had to leave color untouched despite separating its directives for server-side compatibility reasons, temporarily substr it in the image key
+        String& color = m_imageKeys.find("color")->second;
+        String backup = move(color);
+        color = backup.substr(0, backup.find('?'));
+        imagePart.image = imagePath.replaceTags(m_imageKeys, true, "default");
+        color = move(backup);
+
+        imagePart.image.directives = layer.imagePart().image.directives;
+        imagePart.addDirectives(m_colorDirectives);
+      }
+      else {
+        imagePart.image = imagePath.replaceTags(m_imageKeys, true, "default");
+        imagePart.image.directives = layer.imagePart().image.directives;
+      }
+
+      imagePart.addDirectives(m_directives);
       
       if (orientation->flipImages)
         drawable.scale(Vec2F(-1, 1), drawable.boundBox(false).center() - drawable.position);

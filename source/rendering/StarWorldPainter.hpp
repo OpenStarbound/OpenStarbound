@@ -44,7 +44,7 @@ private:
   TilePainterPtr m_tilePainter;
 
   Json m_highlightConfig;
-  Map<EntityHighlightEffectType, pair<String, String>> m_highlightDirectives;
+  Map<EntityHighlightEffectType, pair<Directives, Directives>> m_highlightDirectives;
 
   Vec2F m_entityBarOffset;
   Vec2F m_entityBarSpacing;

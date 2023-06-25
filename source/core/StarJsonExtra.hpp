@@ -6,6 +6,7 @@
 #include "StarColor.hpp"
 #include "StarSet.hpp"
 #include "StarWeightedPool.hpp"
+#include "StarDirectives.hpp"
 
 namespace Star {
 
@@ -81,6 +82,8 @@ List<Vec2U> jsonToVec2UList(Json const& v);
 List<Vec2F> jsonToVec2FList(Json const& v);
 List<Vec4B> jsonToVec4BList(Json const& v);
 List<Color> jsonToColorList(Json const& v);
+List<Directives> jsonToDirectivesList(Json const& v);
+Json jsonFromDirectivesList(List<Directives> const& v);
 
 Json weightedChoiceFromJson(Json const& source, Json const& default_);
 

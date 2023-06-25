@@ -39,8 +39,9 @@ ParallaxLayer::ParallaxLayer(Json const& store) : ParallaxLayer() {
 }
 
 Json ParallaxLayer::store() const {
-  return JsonObject{{"textures", jsonFromStringList(textures)},
-      {"directives", directives},
+  return JsonObject{
+      {"textures", jsonFromStringList(textures)},
+      {"directives", directives.toString()},
       {"parallaxValue", jsonFromVec2F(parallaxValue)},
       {"repeat", jsonFromVec2B(repeat)},
       {"tileLimitTop", jsonFromMaybe(tileLimitTop)},
@@ -55,9 +56,18 @@ Json ParallaxLayer::store() const {
       {"fadePercent", fadePercent}};
 }
 
-void ParallaxLayer::addImageDirectives(String const& newDirectives) {
-  if (!newDirectives.empty())
-    directives = String::joinWith("?", directives, newDirectives);
+void ParallaxLayer::addImageDirectives(Directives const& newDirectives) {
+  if (newDirectives) { // TODO: Move to Directives +=
+    if (directives) {
+      List<Directives::Entry> newEntries = *directives.entries;
+      for (auto const& entry : *newDirectives.entries)
+        newEntries.push_back(entry);
+
+      directives = move(newEntries);
+    }
+    else
+      directives = newDirectives;
+  }
 }
 
 void ParallaxLayer::fadeToSkyColor(Color skyColor) {
@@ -225,11 +235,11 @@ void Parallax::buildLayer(Json const& layerSettings, String const& kind) {
 
   layer.addImageDirectives(layerSettings.getString("directives", ""));
   if (isFoliage)
-    layer.addImageDirectives(strf("hueshift=%s", m_parallaxTreeVariant->foliageHueShift));
+    layer.addImageDirectives(String(strf("hueshift=%s", m_parallaxTreeVariant->foliageHueShift)));
   else if (isStem)
-    layer.addImageDirectives(strf("hueshift=%s", m_parallaxTreeVariant->stemHueShift));
+    layer.addImageDirectives(String(strf("hueshift=%s", m_parallaxTreeVariant->stemHueShift)));
   else if (!layerSettings.getBool("nohueshift", false))
-    layer.addImageDirectives(strf("hueshift=%s", m_hueShift));
+    layer.addImageDirectives(String(strf("hueshift=%s", m_hueShift)));
 
   layer.fadePercent = layerSettings.getFloat("fadePercent", 0);
 

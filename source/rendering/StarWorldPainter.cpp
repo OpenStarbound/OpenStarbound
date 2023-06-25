@@ -203,6 +203,8 @@ void WorldPainter::renderParticles(WorldRenderData& renderData, Particle::Layer 
       if (size > 0) {
         m_textPainter->setFontSize(size);
         m_textPainter->setFontColor(particle.color.toRgba());
+        m_textPainter->setProcessingDirectives("");
+        m_textPainter->setFont("");
         m_textPainter->renderText(particle.string, {position, HorizontalAnchor::HMidAnchor, VerticalAnchor::VMidAnchor});
       }
     }

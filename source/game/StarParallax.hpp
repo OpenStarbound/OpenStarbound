@@ -4,6 +4,7 @@
 #include "StarMaybe.hpp"
 #include "StarColor.hpp"
 #include "StarPlantDatabase.hpp"
+#include "StarDirectives.hpp"
 
 namespace Star {
 
@@ -16,11 +17,11 @@ struct ParallaxLayer {
 
   Json store() const;
 
-  void addImageDirectives(String const& newDirectives);
+  void addImageDirectives(Directives const& newDirectives);
   void fadeToSkyColor(Color skyColor);
 
-  StringList textures;
-  String directives;
+  List<String> textures;
+  Directives directives;
   float alpha;
   Vec2F parallaxValue;
   Vec2B repeat;

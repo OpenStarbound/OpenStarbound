@@ -1,8 +1,9 @@
 {
   "nametag" : {
     "showMasterNames" : true,
-    "fontDirectives" : "?border=2;444;4440",
-    "inspectOpacityRate" : 0.15
+    "fontDirectives" : "?border=1;222;2220",
+    "inspectOpacityRate" : 0.15,
+    "movementThreshold" : 0.5
   },
   "font" : {
     "defaultDirectives" : "",

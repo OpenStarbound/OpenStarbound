@@ -80,10 +80,10 @@ void EnvironmentPainter::renderStars(float pixelRatio, Vec2F const& screenSize, 
 
   RectF viewRect = RectF::withSize(Vec2F(), viewSize).padded(screenBuffer);
 
-  for (auto star : stars) {
+  for (auto& star : stars) {
     Vec2F screenPos = transform.transformVec2(star.first);
     if (viewRect.contains(screenPos)) {
-      size_t starFrame = (int)(sky.epochTime + star.second.second) % sky.starFrames;
+      size_t starFrame = (size_t)(sky.epochTime + star.second.second) % sky.starFrames;
       auto const& texture = m_starTextures[star.second.first * sky.starFrames + starFrame];
       m_renderer->render(renderTexturedRect(texture, screenPos * pixelRatio - Vec2F(texture->size()) / 2, 1.0, color, 0.0f));
     }
@@ -224,7 +224,7 @@ void EnvironmentPainter::renderParallaxLayers(
 
   // Note: the "parallax space" referenced below is a grid where the scale of each cell is the size of the parallax image
 
-  for (auto layer : layers) {
+  for (auto& layer : layers) {
     if (layer.alpha == 0)
       continue;
 
@@ -237,8 +237,10 @@ void EnvironmentPainter::renderParallaxLayers(
     Vec2F parallaxValue = layer.parallaxValue;
     Vec2B parallaxRepeat = layer.repeat;
     Vec2F parallaxOrigin = {0.0f, layer.verticalOrigin};
-    Vec2F parallaxSize =
-        Vec2F(m_textureGroup->loadTexture(String::joinWith("?", layer.textures.first(), layer.directives))->size());
+
+    AssetPath first = layer.textures.first();
+    first.directives += layer.directives;
+    Vec2F parallaxSize = Vec2F(m_textureGroup->loadTexture(first)->size());
     Vec2F parallaxPixels = parallaxSize * camera.pixelRatio();
 
     // texture offset in *screen pixel space*
@@ -300,8 +302,10 @@ void EnvironmentPainter::renderParallaxLayers(
         if (tileLimitBottom != bottom && y < tileLimitBottom)
           anchorPoint[1] += fpart(tileLimitBottom) * parallaxPixels[1];
 
-        for (String const& textureImage : layer.textures) {
-          if (auto texture = m_textureGroup->tryTexture(String::joinWith("?", textureImage, layer.directives))) {
+        for (auto const& textureImage : layer.textures) {
+          AssetPath withDirectives = textureImage;
+          withDirectives.directives += layer.directives;
+          if (auto texture = m_textureGroup->tryTexture(withDirectives)) {
             RectF drawRect = RectF::withSize(anchorPoint, subImage.size() * camera.pixelRatio());
             m_renderer->render(RenderQuad{move(texture),
                 {{drawRect.xMin(), drawRect.yMin()}, {subImage.xMin(), subImage.yMin()}, drawColor, lightMapMultiplier},

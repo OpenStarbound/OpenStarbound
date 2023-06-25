@@ -356,10 +356,11 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
       playerAimInteractive = entity->entityId();
   }
 
-  Maybe<StringList> directives;
-  if (auto worldTemplate = m_worldTemplate) {
-    if(auto parameters = worldTemplate->worldParameters())
-      directives = m_worldTemplate->worldParameters()->globalDirectives;
+  const List<Directives>* directives = nullptr;
+  if (auto& worldTemplate = m_worldTemplate) {
+    if (auto& parameters = worldTemplate->worldParameters())
+      if (auto& globalDirectives = m_worldTemplate->worldParameters()->globalDirectives)
+        directives = &globalDirectives.get();
   }
   m_entityMap->forAllEntities([&](EntityPtr const& entity) {
       if (m_startupHiddenEntities.contains(entity->entityId()))
@@ -1263,10 +1264,11 @@ void WorldClient::handleDamageNotifications() {
       
       auto hitParticles = particlesFromDefinition(damageKind.effects.get(material).get(effectHitType).particles, damageNotification.position);
       
-      Maybe<StringList> directives;
-      if (auto worldTemplate = m_worldTemplate) {
-        if(auto parameters = worldTemplate->worldParameters())
-          directives = m_worldTemplate->worldParameters()->globalDirectives;
+      const List<Directives>* directives = nullptr;
+      if (auto& worldTemplate = m_worldTemplate) {
+        if (auto& parameters = worldTemplate->worldParameters())
+          if (auto& globalDirectives = m_worldTemplate->worldParameters()->globalDirectives)
+            directives = &globalDirectives.get();
       }
       if (directives) {
         int directiveIndex = unsigned(damageNotification.targetEntityId) % directives->size();
@@ -1332,10 +1334,11 @@ void WorldClient::removeEntity(EntityId entityId, bool andDie) {
     ClientRenderCallback renderCallback;
     entity->destroy(&renderCallback);
 
-    Maybe<StringList> directives;
-    if (auto worldTemplate = m_worldTemplate) {
-      if(auto parameters = worldTemplate->worldParameters())
-        directives = m_worldTemplate->worldParameters()->globalDirectives;
+    const List<Directives>* directives = nullptr;
+    if (auto& worldTemplate = m_worldTemplate) {
+      if (auto& parameters = worldTemplate->worldParameters())
+        if (auto& globalDirectives = m_worldTemplate->worldParameters()->globalDirectives)
+          directives = &globalDirectives.get();
     }
     if (directives) {
       int directiveIndex = unsigned(entity->entityId()) % directives->size();

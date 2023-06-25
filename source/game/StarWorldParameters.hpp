@@ -58,7 +58,7 @@ struct VisitableWorldParameters {
   WeatherPool weatherPool;
   StringList environmentStatusEffects;
   Maybe<StringList> overrideTech;
-  Maybe<StringList> globalDirectives;
+  Maybe<List<Directives>> globalDirectives;
   BeamUpRule beamUpRule;
   bool disableDeathDrops;
   bool terraformed;

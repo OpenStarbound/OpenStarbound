@@ -301,7 +301,7 @@ StringList jsonToStringList(Json const& v) {
 
 Json jsonFromStringList(List<String> const& v) {
   JsonArray result;
-  for (auto e : v)
+  for (auto& e : v)
     result.push_back(e);
   return result;
 }
@@ -322,7 +322,7 @@ StringSet jsonToStringSet(Json const& v) {
 
 Json jsonFromStringSet(StringSet const& v) {
   JsonArray result;
-  for (auto e : v)
+  for (auto& e : v)
     result.push_back(e);
   return result;
 }
@@ -366,6 +366,20 @@ List<Color> jsonToColorList(Json const& v) {
   List<Color> result;
   for (auto const& entry : v.iterateArray())
     result.append(jsonToColor(entry));
+  return result;
+}
+
+List<Directives> jsonToDirectivesList(Json const& v) {
+  List<Directives> result;
+  for (auto const& entry : v.iterateArray())
+    result.append(move(entry.toString()));
+  return result;
+}
+
+Json jsonFromDirectivesList(List<Directives> const& v) {
+  JsonArray result;
+  for (auto& e : v)
+    result.push_back(e.toString());
   return result;
 }
 
