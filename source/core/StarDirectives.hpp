@@ -32,8 +32,8 @@ public:
   void parse(String const& directives);
   String& buildString(String& out) const;
   String toString() const;
-  inline bool empty() const;
-  inline operator bool() const;
+  bool empty() const;
+  operator bool() const;
 
   friend DataStream& operator>>(DataStream& ds, Directives& directives);
   friend DataStream& operator<<(DataStream& ds, Directives const& directives);
@@ -51,8 +51,8 @@ public:
 
   void parseDirectivesIntoLeaf(String const& directives);
 
-  inline bool empty() const;
-  inline operator bool() const;
+  bool empty() const;
+  operator bool() const;
   bool compare(DirectivesGroup const& other) const;
   void append(Directives const& other);
   void append(List<Directives::Entry>&& entries);
@@ -60,7 +60,7 @@ public:
 
   DirectivesGroup& operator+=(Directives const& other);
 
-  inline String toString() const;
+  String toString() const;
   void addToString(String& string) const;
 
   typedef function<void(Directives::Entry const&)> DirectivesCallback;
@@ -69,10 +69,10 @@ public:
   void forEach(DirectivesCallback callback) const;
   bool forEachAbortable(AbortableDirectivesCallback callback) const;
 
-  inline Image applyNewImage(const Image& image) const;
+  Image applyNewImage(const Image& image) const;
   void applyExistingImage(Image& image) const;
   
-  inline size_t hash() const;
+  size_t hash() const;
   const List<Directives>& list() const;
 
   friend bool operator==(DirectivesGroup const& a, DirectivesGroup const& b);
