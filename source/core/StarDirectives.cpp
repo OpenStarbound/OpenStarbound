@@ -141,7 +141,7 @@ inline DirectivesGroup::operator bool() const {
   return empty();
 }
 
-inline bool DirectivesGroup::compare(DirectivesGroup const& other) const {
+bool DirectivesGroup::compare(DirectivesGroup const& other) const {
   if (m_count != other.m_count)
     return false;
 
