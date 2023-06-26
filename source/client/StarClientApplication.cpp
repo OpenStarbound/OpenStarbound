@@ -408,6 +408,7 @@ void ClientApplication::changeState(MainAppState newState) {
 
     m_universeClient.reset();
     m_mainMixer->setUniverseClient({});
+    m_mainMixer->setWorldPainter({});
     m_titleScreen.reset();
   }
 
@@ -535,6 +536,7 @@ void ClientApplication::changeState(MainAppState newState) {
 
     m_worldPainter = make_shared<WorldPainter>();
     m_mainInterface = make_shared<MainInterface>(m_universeClient, m_worldPainter, m_cinematicOverlay);
+    m_mainMixer->setWorldPainter(m_worldPainter);
 
     if (auto renderer = Application::renderer()) {
       m_worldPainter->renderInit(renderer);

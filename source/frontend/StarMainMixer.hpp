@@ -7,6 +7,7 @@
 namespace Star {
 
 STAR_CLASS(UniverseClient);
+STAR_CLASS(WorldPainter);
 STAR_CLASS(MainMixer);
 
 class MainMixer {
@@ -14,6 +15,7 @@ public:
   MainMixer(unsigned sampleRate, unsigned channels);
 
   void setUniverseClient(UniverseClientPtr universeClient);
+  void setWorldPainter(WorldPainterPtr worldPainter);
 
   void update(bool muteSfx = false, bool muteMusic = false);
 
@@ -24,6 +26,7 @@ public:
 
 private:
   UniverseClientPtr m_universeClient;
+  WorldPainterPtr m_worldPainter;
   MixerPtr m_mixer;
   Set<MixerGroup> m_mutedGroups;
   Map<MixerGroup, float> m_groupVolumes;

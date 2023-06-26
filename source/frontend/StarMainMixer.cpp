@@ -6,6 +6,7 @@
 #include "StarPlayer.hpp"
 #include "StarAssets.hpp"
 #include "StarWorldClient.hpp"
+#include "StarWorldPainter.hpp"
 
 namespace Star {
 
@@ -15,6 +16,10 @@ MainMixer::MainMixer(unsigned sampleRate, unsigned channels) {
 
 void MainMixer::setUniverseClient(UniverseClientPtr universeClient) {
   m_universeClient = move(universeClient);
+}
+
+void MainMixer::setWorldPainter(WorldPainterPtr worldPainter) {
+  m_worldPainter = move(worldPainter);
 }
 
 void MainMixer::update(bool muteSfx, bool muteMusic) {
@@ -30,7 +35,7 @@ void MainMixer::update(bool muteSfx, bool muteMusic) {
           m_mixer->setGroupVolume(group, m_groupVolumes[group], 1.0f);
         }
       } else if (!m_mutedGroups.contains(group)) {
-        float volumeSetting = Root::singleton().configuration()->get(settingName).toFloat() / 100;
+        float volumeSetting = Root::singleton().configuration()->get(settingName).toFloat() / 100.0f;
         if (!m_groupVolumes.contains(group) || volumeSetting != m_groupVolumes[group]) {
           m_mixer->setGroupVolume(group, volumeSetting);
           m_groupVolumes[group] = volumeSetting;
@@ -72,11 +77,26 @@ void MainMixer::update(bool muteSfx, bool muteMusic) {
     Vec2F stereoAdjustmentRange = jsonToVec2F(assets->json("/sfx.config:stereoAdjustmentRange"));
     float attenuationGamma = assets->json("/sfx.config:attenuationGamma").toFloat();
     auto playerPos = m_universeClient->mainPlayer()->position();
+    auto cameraPos = m_worldPainter->camera().centerWorldPosition();
     auto worldGeometry = currentWorld->geometry();
 
     m_mixer->update([&](unsigned channel, Vec2F pos, float rangeMultiplier) {
-        Vec2F diff = worldGeometry.diff(pos, playerPos);
-        float diffMagnitude = diff.magnitude();
+        Vec2F playerDiff = worldGeometry.diff(pos, playerPos);
+        Vec2F cameraDiff = worldGeometry.diff(pos, cameraPos);
+        float playerMagSq = playerDiff.magnitudeSquared();
+        float cameraMagSq = cameraDiff.magnitudeSquared();
+
+        Vec2F diff;
+        float diffMagnitude;
+        if (playerMagSq < cameraMagSq) {
+          diff = playerDiff;
+          diffMagnitude = sqrt(playerMagSq);
+        }
+        else {
+          diff = cameraDiff;
+          diffMagnitude = sqrt(cameraMagSq);
+        }
+
         if (diffMagnitude == 0.0f)
           return 0.0f;
 
