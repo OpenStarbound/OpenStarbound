@@ -1375,10 +1375,13 @@ void MainInterface::renderCursor() {
   Vec2I cursorPos = m_cursorScreenPos;
   Vec2I cursorSize = m_cursor.size();
   Vec2I cursorOffset = m_cursor.offset();
-  cursorPos[0] -= cursorOffset[0] * interfaceScale();
-  cursorPos[1] -= (cursorSize[1] - cursorOffset[1]) * interfaceScale();
-  if (!m_guiContext->trySetCursor(m_cursor.drawable(), cursorOffset, interfaceScale()))
-    m_guiContext->drawDrawable(m_cursor.drawable(), Vec2F(cursorPos), interfaceScale());
+  unsigned int cursorScale = m_cursor.scale(interfaceScale());
+  Drawable cursorDrawable = m_cursor.drawable();
+
+  cursorPos[0] -= cursorOffset[0] * cursorScale;
+  cursorPos[1] -= (cursorSize[1] - cursorOffset[1]) * cursorScale;
+  if (!m_guiContext->trySetCursor(cursorDrawable, cursorOffset, cursorScale))
+    m_guiContext->drawDrawable(cursorDrawable, Vec2F(cursorPos), cursorScale);
 
   if (m_cursorTooltip) {
     auto assets = Root::singleton().assets();
@@ -1388,7 +1391,7 @@ void MainInterface::renderCursor() {
     auto rawCursorOffset = jsonToVec2I(assets->json("/interface.config:cursorTooltip.offset"));
 
     Vec2I tooltipSize = Vec2I(imgDb->imageSize(backgroundImage)) * interfaceScale();
-    Vec2I cursorOffset = (Vec2I{0, -m_cursor.size().y()} + rawCursorOffset) * interfaceScale();
+    Vec2I cursorOffset = (Vec2I{0, -m_cursor.size().y()} + rawCursorOffset) * cursorScale;
     Vec2I tooltipOffset = m_cursorScreenPos + cursorOffset;
     size_t fontSize = assets->json("/interface.config:cursorTooltip.fontSize").toUInt();
     String font = assets->json("/interface.config:cursorTooltip.font").toString();
@@ -1404,7 +1407,7 @@ void MainInterface::renderCursor() {
             VerticalAnchor::VMidAnchor));
   }
 
-  m_cursorItem->setPosition(m_cursorScreenPos / interfaceScale() + m_config->inventoryItemMouseOffset);
+  m_cursorItem->setPosition(m_cursorScreenPos / cursorScale + m_config->inventoryItemMouseOffset);
 
   if (auto swapItem = m_client->mainPlayer()->inventory()->swapSlotItem())
     m_cursorItem->setItem(swapItem);

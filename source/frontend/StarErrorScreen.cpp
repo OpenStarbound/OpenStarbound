@@ -76,11 +76,13 @@ void ErrorScreen::renderCursor() {
   Vec2I cursorPos = m_cursorScreenPos;
   Vec2I cursorSize = m_cursor.size();
   Vec2I cursorOffset = m_cursor.offset();
+  unsigned int cursorScale = m_cursor.scale(interfaceScale());
+  Drawable cursorDrawable = m_cursor.drawable();
 
-  cursorPos[0] -= cursorOffset[0] * interfaceScale();
-  cursorPos[1] -= (cursorSize[1] - cursorOffset[1]) * interfaceScale();
-  if (!m_guiContext->trySetCursor(m_cursor.drawable(), cursorOffset, interfaceScale()))
-    m_guiContext->drawDrawable(m_cursor.drawable(), Vec2F(cursorPos), interfaceScale());
+  cursorPos[0] -= cursorOffset[0] * cursorScale;
+  cursorPos[1] -= (cursorSize[1] - cursorOffset[1]) * cursorScale;
+  if (!m_guiContext->trySetCursor(cursorDrawable, cursorOffset, cursorScale))
+    m_guiContext->drawDrawable(cursorDrawable, Vec2F(cursorPos), cursorScale);
 }
 
 float ErrorScreen::interfaceScale() const {

@@ -20,6 +20,7 @@ public:
   Drawable drawable() const;
   Vec2I size() const;
   Vec2I offset() const;
+  unsigned int scale(unsigned int interfaceScale = 0) const;
 
   void update(float dt);
 
@@ -27,6 +28,7 @@ private:
   String m_configFile;
   Vec2I m_offset;
   Vec2I m_size;
+  unsigned int m_scale;
   MVariant<String, Animation> m_drawable;
 };
 

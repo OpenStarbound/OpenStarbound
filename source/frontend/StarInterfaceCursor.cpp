@@ -36,6 +36,8 @@ void InterfaceCursor::setCursor(String const& configFile) {
     m_drawable = Animation(config.get("animation"), "/interface");
     m_size = Vec2I(m_drawable.get<Animation>().drawable(1.0f).boundBox(false).size());
   }
+
+  m_scale = config.getUInt("scale", 0);
 }
 
 Drawable InterfaceCursor::drawable() const {
@@ -51,6 +53,10 @@ Vec2I InterfaceCursor::size() const {
 
 Vec2I InterfaceCursor::offset() const {
   return m_offset;
+}
+
+unsigned int InterfaceCursor::scale(unsigned int interfaceScale) const {
+  return m_scale ? m_scale : interfaceScale;
 }
 
 void InterfaceCursor::update(float dt) {
