@@ -274,11 +274,11 @@ void ClientApplication::processInput(InputEvent const& event) {
       });
   }
 
+  if (!m_errorScreen->accepted() && m_errorScreen->handleInputEvent(event))
+    return;
+
   if (m_state == MainAppState::Splash) {
     m_cinematicOverlay->handleInputEvent(event);
-
-  } else if (m_state == MainAppState::ModsWarning || m_state == MainAppState::Error) {
-    m_errorScreen->handleInputEvent(event);
 
   } else if (m_state == MainAppState::Title) {
     if (!m_cinematicOverlay->handleInputEvent(event))
@@ -305,10 +305,14 @@ void ClientApplication::update() {
     }
   }
 
+  if (!m_errorScreen->accepted())
+    m_errorScreen->update();
+
   if (m_state == MainAppState::Mods)
     updateMods();
   else if (m_state == MainAppState::ModsWarning)
     updateModsWarning();
+
   if (m_state == MainAppState::Splash)
     updateSplash();
   else if (m_state == MainAppState::Error)
@@ -351,9 +355,10 @@ void ClientApplication::render() {
     m_mainInterface->render();
     m_cinematicOverlay->render();
 
-  } else if (m_state == MainAppState::ModsWarning || m_state == MainAppState::Error) {
-    m_errorScreen->render();
   }
+
+  if (!m_errorScreen->accepted())
+    m_errorScreen->render(m_state == MainAppState::ModsWarning || m_state == MainAppState::Error);
 }
 
 void ClientApplication::getAudioData(int16_t* sampleData, size_t frameCount) {
@@ -395,9 +400,11 @@ void ClientApplication::changeState(MainAppState newState) {
     }
   }
 
-  if (oldState > MainAppState::Title && m_state == MainAppState::Title)
+  if (oldState > MainAppState::Title && m_state == MainAppState::Title) {
     m_titleScreen->resetState();
-
+    m_mainMixer->setUniverseClient({});
+    m_mainMixer->setWorldPainter({});
+  }
   if (oldState >= MainAppState::Title && m_state < MainAppState::Title) {
     m_playerStorage.reset();
 
@@ -547,13 +554,12 @@ void ClientApplication::changeState(MainAppState newState) {
 void ClientApplication::setError(String const& error) {
   Logger::error(error.utf8Ptr());
   m_errorScreen->setMessage(error);
-  changeState(MainAppState::Error);
+  changeState(MainAppState::Title);
 }
 
 void ClientApplication::setError(String const& error, std::exception const& e) {
   Logger::error("%s\n%s", error, outputException(e, true));
   m_errorScreen->setMessage(strf("%s\n%s", error, outputException(e, false)));
-  changeState(MainAppState::Error);
 }
 
 void ClientApplication::updateMods() {
@@ -596,8 +602,6 @@ void ClientApplication::updateMods() {
 }
 
 void ClientApplication::updateModsWarning() {
-  m_errorScreen->update();
-
   if (m_errorScreen->accepted())
     changeState(MainAppState::Splash);
 }
@@ -609,8 +613,6 @@ void ClientApplication::updateSplash() {
 }
 
 void ClientApplication::updateError() {
-  m_errorScreen->update();
-
   if (m_errorScreen->accepted())
     changeState(MainAppState::Title);
 }
@@ -761,9 +763,8 @@ void ClientApplication::updateRunning() {
           errMessage = strf("You were disconnected from the server for the following reason:\n%s", *disconnectReason);
         else
           errMessage = "Client-server connection no longer valid!";
-        Logger::error(errMessage.utf8Ptr());
-        m_errorScreen->setMessage(errMessage);
-        changeState(MainAppState::Error);
+        setError(errMessage);
+        changeState(MainAppState::Title);
         return true;
       }
 

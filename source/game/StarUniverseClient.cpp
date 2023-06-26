@@ -493,7 +493,7 @@ void UniverseClient::handlePackets(List<PacketPtr> const& packets) {
     } else if (auto serverDisconnectPacket = as<ServerDisconnectPacket>(packet)) {
       reset();
       m_disconnectReason = serverDisconnectPacket->reason;
-      m_mainPlayer = {};
+      break; // Stop handling other packets
 
     } else if (auto celestialResponse = as<CelestialResponsePacket>(packet)) {
       m_celestialDatabase->pushResponses(move(celestialResponse->responses));
@@ -542,10 +542,8 @@ void UniverseClient::reset() {
   m_warpDelay = GameTimer(assets->json("/client.config:playerWarpDelay").toFloat());
   m_respawnTimer = GameTimer(assets->json("/client.config:playerReviveTime").toFloat());
 
-  if (m_mainPlayer) {
-    m_mainPlayer->setClientContext({});
+  if (m_mainPlayer)
     m_playerStorage->savePlayer(m_mainPlayer);
-  }
 
   m_connection.reset();
 }

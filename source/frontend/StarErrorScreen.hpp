@@ -23,15 +23,13 @@ public:
 
   bool accepted();
 
-  void render();
+  void render(bool useBackdrop = false);
 
   bool handleInputEvent(InputEvent const& event);
   void update();
 
 private:
   void renderCursor();
-
-  void back();
 
   float interfaceScale() const;
   unsigned windowHeight() const;
