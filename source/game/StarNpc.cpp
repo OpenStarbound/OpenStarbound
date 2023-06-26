@@ -216,9 +216,9 @@ RectF Npc::metaBoundBox() const {
   return RectF(-4, -4, 4, 4);
 }
 
-Vec2F Npc::mouthOffset() const {
-  return Vec2F{m_humanoid.mouthOffset(true)[0] * numericalDirection(m_humanoid.facingDirection()),
-      m_humanoid.mouthOffset(true)[1]};
+Vec2F Npc::mouthOffset(bool ignoreAdjustments) const {
+  return Vec2F{m_humanoid.mouthOffset(ignoreAdjustments)[0] * numericalDirection(m_humanoid.facingDirection()),
+      m_humanoid.mouthOffset(ignoreAdjustments)[1]};
 }
 
 Vec2F Npc::feetOffset() const {
@@ -506,6 +506,10 @@ bool Npc::displayNametag() const {
 
 Vec3B Npc::nametagColor() const {
   return m_npcVariant.nametagColor;
+}
+
+Vec2F Npc::nametagOrigin() const {
+  return mouthPosition(false);
 }
 
 bool Npc::aggressive() const {
@@ -804,7 +808,11 @@ void Npc::getNetStates(bool initial) {
 }
 
 Vec2F Npc::mouthPosition() const {
-  return mouthOffset() + position();
+  return mouthOffset(true) + position();
+}
+
+Vec2F Npc::mouthPosition(bool ignoreAdjustments) const {
+  return mouthOffset(ignoreAdjustments) + position();
 }
 
 List<ChatAction> Npc::pullPendingChatActions() {

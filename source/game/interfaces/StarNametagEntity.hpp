@@ -13,6 +13,7 @@ public:
   virtual Maybe<String> statusText() const = 0;
   virtual bool displayNametag() const = 0;
   virtual Vec3B nametagColor() const = 0;
+  virtual Vec2F nametagOrigin() const = 0;
 };
 
 }

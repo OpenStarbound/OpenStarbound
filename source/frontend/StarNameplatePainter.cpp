@@ -53,7 +53,7 @@ void NameplatePainter::update(WorldClientPtr const& world, WorldCamera const& ca
 
   m_nametags.forEach([&world, &camera, this, inspectionMode](BubbleState<Nametag>& bubbleState, Nametag& nametag) {
     if (auto entity = as<NametagEntity>(world->entity(nametag.entityId))) {
-      bubbleState.idealDestination = camera.worldToScreen(entity->position()) + m_offset * camera.pixelRatio();
+      bubbleState.idealDestination = camera.worldToScreen(entity->nametagOrigin()) + m_offset * camera.pixelRatio();
       bubbleState.boundBox = determineBoundBox(bubbleState.idealDestination, nametag);
 
       nametag.statusText = entity->statusText();

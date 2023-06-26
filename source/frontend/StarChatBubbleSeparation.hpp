@@ -20,13 +20,16 @@ struct BubbleState {
   Vec2F currentDestination;
   // The bound box of the nametag if it was at the destination.
   RectF boundBox;
-  // The position for the bubble chosen by the algorithm (which it may not
+  // The separation offset for the bubble chosen by the algorithm (which it may not
   // have fully moved to yet).
-  Vec2F separatedPosition;
-  // The bound box of the bubble around the separatedPosition.
+  Vec2F seperatedOffset;
+  // The bound box of the bubble around the separatedOffset.
   RectF separatedBox;
-  // Where the bubble is now, which could be anywhere en route to the
-  // separatedPosition.
+  // Where the bubble offset is now, which could be anywhere en route to the
+  // seperatedOffset.
+  Vec2F currentOffset;
+
+  // The final position.
   Vec2F currentPosition;
 };
 
@@ -63,6 +66,11 @@ private:
   List<RectF> m_sortedRightEdges;
 };
 
+bool compareLeft(RectF const& a, RectF const& b);
+bool compareRight(RectF const& a, RectF const& b);
+bool compareOverlapLeft(RectF const& newBox, RectF const& fixedBox);
+bool compareOverlapRight(RectF const& newBox, RectF const& fixedBox);
+
 // Shifts box upwards until it is not overlapping any of the boxes in
 // sortedLeftEdges
 // and sortedRightEdges.
@@ -71,7 +79,7 @@ private:
 // The two lists contain all the chat bubbles that have been separated, sorted
 // by
 // the X positions of their left and right edges respectively.
-RectF separateBubble(List<RectF>& sortedLeftEdges, List<RectF>& sortedRightEdges, RectF box);
+RectF separateBubble(List<RectF> const& sortedLeftEdges, List<RectF> const& sortedRightEdges, List<RectF>& outLeftEdges, List<RectF>& outRightEdges, RectF box);
 
 template <typename T>
 BubbleSeparator<T>::BubbleSeparator(float tweenFactor, float movementThreshold)
@@ -100,9 +108,10 @@ void BubbleSeparator<T>::setMovementThreshold(float movementThreshold) {
 template <typename T>
 void BubbleSeparator<T>::addBubble(Vec2F position, RectF boundBox, T contents, unsigned margin) {
   boundBox.setYMax(boundBox.yMax() + margin);
-  RectF separated = separateBubble(m_sortedLeftEdges, m_sortedRightEdges, boundBox);
-  Vec2F separatedPosition = position + separated.min() - boundBox.min();
-  Bubble bubble = Bubble{contents, position, position, boundBox, separatedPosition, separated, separatedPosition};
+  RectF separated = separateBubble(m_sortedLeftEdges, m_sortedRightEdges, m_sortedLeftEdges, m_sortedRightEdges, boundBox);
+  Vec2F separatedOffset = separated.min() - boundBox.min();
+  Vec2F separatedPosition = position + separatedOffset;
+  Bubble bubble = Bubble{ contents, position, position, boundBox, separatedOffset, separated, separatedOffset, separatedPosition };
   m_bubbles.insertSorted(move(bubble), &BubbleSeparator<T>::compareBubbleY);
 }
 
@@ -126,26 +135,36 @@ List<BubbleState<T>> BubbleSeparator<T>::filtered(function<bool(Bubble const&, T
 template <typename T>
 void BubbleSeparator<T>::forEach(function<void(Bubble&, T&)> func) {
   bool anyMoved = false;
-  m_bubbles.exec([this, func, &anyMoved](Bubble& bubble) {
+  
+  List<Box<float, 2>> leftEdges = move(m_sortedLeftEdges);
+  List<Box<float, 2>> rightEdges = move(m_sortedRightEdges);
+
+  m_bubbles.exec([this, func, &anyMoved, &leftEdges, &rightEdges](Bubble& bubble) {
     RectF oldBoundBox = bubble.boundBox;
 
     func(bubble, bubble.contents);
 
+    // Kae: I'm disabling the movement threshold check for now because it also
+    // stops bubble sorting on bubbles that haven't moved, which causes problems.
+
     Vec2F sizeDelta = bubble.boundBox.size() - oldBoundBox.size();
-    Vec2F positionDelta = bubble.idealDestination - bubble.currentDestination;
-    if (sizeDelta.magnitude() > m_movementThreshold || positionDelta.magnitude() > m_movementThreshold) {
-      m_sortedLeftEdges.remove(bubble.separatedBox);
-      m_sortedRightEdges.remove(bubble.separatedBox);
-      RectF boundBox = bubble.boundBox.translated(positionDelta);
-      RectF separated = separateBubble(m_sortedLeftEdges, m_sortedRightEdges, boundBox);
-      anyMoved = true;
-      bubble.currentDestination = bubble.idealDestination;
-      bubble.boundBox = boundBox;
-      bubble.separatedPosition = bubble.idealDestination + separated.min() - boundBox.min();
-      bubble.separatedBox = separated;
-      bubble.currentPosition += positionDelta;
-    }
+    leftEdges.remove(bubble.separatedBox);
+    rightEdges.remove(bubble.separatedBox);
+    RectF boundBox = RectF::withCenter(bubble.idealDestination, bubble.boundBox.size());
+    RectF separated = separateBubble(leftEdges, rightEdges, m_sortedLeftEdges, m_sortedRightEdges, boundBox);
+    leftEdges.insertSorted(bubble.separatedBox, compareLeft);
+    rightEdges.insertSorted(bubble.separatedBox, compareRight);
+
+    anyMoved = true;
+    bubble.currentDestination = bubble.idealDestination;
+    bubble.boundBox = boundBox;
+    bubble.seperatedOffset = separated.min() - boundBox.min();
+    bubble.separatedBox = separated;
   });
+
+  m_sortedLeftEdges.sort(compareLeft);
+  m_sortedRightEdges.sort(compareRight);
+
   if (anyMoved)
     m_bubbles.sort(&BubbleSeparator<T>::compareBubbleY);
 }
@@ -153,8 +172,10 @@ void BubbleSeparator<T>::forEach(function<void(Bubble&, T&)> func) {
 template <typename T>
 void BubbleSeparator<T>::update() {
   m_bubbles.exec([this](Bubble& bubble) {
-    Vec2F delta = bubble.separatedPosition - bubble.currentPosition;
-    bubble.currentPosition += m_tweenFactor * delta;
+    Vec2F delta = bubble.seperatedOffset - bubble.currentOffset;
+    bubble.currentOffset += m_tweenFactor * delta;
+
+    bubble.currentPosition = bubble.currentDestination + bubble.currentOffset;
   });
 }
 

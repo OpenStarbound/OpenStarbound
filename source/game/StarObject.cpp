@@ -1193,6 +1193,10 @@ Vec2F Object::mouthPosition() const {
   }
 }
 
+Vec2F Object::mouthPosition(bool) const {
+  return mouthPosition();
+}
+
 List<ChatAction> Object::pullPendingChatActions() {
   return std::move(m_pendingChatActions);
 }

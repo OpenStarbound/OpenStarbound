@@ -810,6 +810,10 @@ Vec3B Monster::nametagColor() const {
   return m_monsterVariant.nametagColor;
 }
 
+Vec2F Monster::nametagOrigin() const {
+  return mouthPosition(false);
+}
+
 bool Monster::aggressive() const {
   return m_aggressive;
 }
@@ -824,6 +828,10 @@ Maybe<LuaValue> Monster::evalScript(String const& code) {
 
 Vec2F Monster::mouthPosition() const {
   return mouthOffset() + position();
+}
+
+Vec2F Monster::mouthPosition(bool) const {
+  return mouthPosition();
 }
 
 List<ChatAction> Monster::pullPendingChatActions() {

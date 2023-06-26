@@ -86,7 +86,8 @@ public:
   Vec2F velocity() const override;
 
   Vec2F mouthPosition() const override;
-  Vec2F mouthOffset() const;
+  Vec2F mouthPosition(bool ignoreAdjustments) const override;
+  Vec2F mouthOffset(bool ignoreAdjustments = true) const;
   Vec2F feetOffset() const;
   Vec2F headArmorOffset() const;
   Vec2F chestArmorOffset() const;
@@ -284,6 +285,7 @@ public:
   Maybe<String> statusText() const override;
   bool displayNametag() const override;
   Vec3B nametagColor() const override;
+  Vec2F nametagOrigin() const override;
 
   void setBodyDirectives(String const& directives);
   void setHairType(String const& group, String const& type);

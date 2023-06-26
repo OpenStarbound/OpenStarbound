@@ -580,9 +580,9 @@ Vec2F Player::velocity() const {
   return m_movementController->velocity();
 }
 
-Vec2F Player::mouthOffset() const {
+Vec2F Player::mouthOffset(bool ignoreAdjustments) const {
   return Vec2F(
-      m_humanoid->mouthOffset(true)[0] * numericalDirection(facingDirection()), m_humanoid->mouthOffset(true)[1]);
+      m_humanoid->mouthOffset(ignoreAdjustments)[0] * numericalDirection(facingDirection()), m_humanoid->mouthOffset(ignoreAdjustments)[1]);
 }
 
 Vec2F Player::feetOffset() const {
@@ -610,7 +610,11 @@ Vec2F Player::legsArmorOffset() const {
 }
 
 Vec2F Player::mouthPosition() const {
-  return position() + mouthOffset();
+  return position() + mouthOffset(true);
+}
+
+Vec2F Player::mouthPosition(bool ignoreAdjustments) const {
+  return position() + mouthOffset(ignoreAdjustments);
 }
 
 RectF Player::collisionArea() const {
@@ -1931,6 +1935,10 @@ bool Player::displayNametag() const {
 Vec3B Player::nametagColor() const {
   auto assets = Root::singleton().assets();
   return jsonToVec3B(assets->json("/player.config:nametagColor"));
+}
+
+Vec2F Player::nametagOrigin() const {
+  return mouthPosition(false);
 }
 
 void Player::setBodyDirectives(String const& directives) {

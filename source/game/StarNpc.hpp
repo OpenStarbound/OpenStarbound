@@ -57,7 +57,7 @@ public:
   Vec2F position() const override;
   RectF metaBoundBox() const override;
 
-  Vec2F mouthOffset() const;
+  Vec2F mouthOffset(bool ignoreAdjustments = true) const;
   Vec2F feetOffset() const;
   Vec2F headArmorOffset() const;
   Vec2F chestArmorOffset() const;
@@ -105,6 +105,7 @@ public:
   Maybe<String> statusText() const override;
   bool displayNametag() const override;
   Vec3B nametagColor() const override;
+  Vec2F nametagOrigin() const override;
 
   bool aggressive() const;
 
@@ -112,6 +113,7 @@ public:
   Maybe<LuaValue> evalScript(String const& code) override;
 
   Vec2F mouthPosition() const override;
+  Vec2F mouthPosition(bool ignoreAdjustments) const override;
   List<ChatAction> pullPendingChatActions() override;
 
   bool isInteractive() const override;

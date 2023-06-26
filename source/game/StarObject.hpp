@@ -114,6 +114,7 @@ public:
   Maybe<LuaValue> evalScript(String const& code) override;
 
   virtual Vec2F mouthPosition() const override;
+  virtual Vec2F mouthPosition(bool ignoreAdjustments) const override;
   virtual List<ChatAction> pullPendingChatActions() override;
 
   void breakObject(bool smash = true);

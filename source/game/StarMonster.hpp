@@ -111,6 +111,7 @@ public:
   Maybe<String> statusText() const override;
   bool displayNametag() const override;
   Vec3B nametagColor() const override;
+  Vec2F nametagOrigin() const override;
 
   bool aggressive() const override;
 
@@ -118,6 +119,7 @@ public:
   Maybe<LuaValue> evalScript(String const& code) override;
 
   virtual Vec2F mouthPosition() const override;
+  virtual Vec2F mouthPosition(bool ignoreAdjustments) const override;
   virtual List<ChatAction> pullPendingChatActions() override;
 
   List<PhysicsForceRegion> forceRegions() const override;

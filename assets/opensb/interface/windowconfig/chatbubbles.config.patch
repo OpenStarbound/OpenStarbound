@@ -1,3 +1,4 @@
 {
-	"movementThreshold" : 0.5
+	"movementThreshold" : 0.5,
+	"bubbleOffset" : [0, 1.875]
 }

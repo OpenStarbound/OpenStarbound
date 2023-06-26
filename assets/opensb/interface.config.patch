@@ -3,7 +3,8 @@
     "showMasterNames" : true,
     "fontDirectives" : "?border=1;222;2220",
     "inspectOpacityRate" : 0.15,
-    "movementThreshold" : 0.5
+    "movementThreshold" : 0.5,
+    "offset" : [0, 13]
   },
   "font" : {
     "defaultDirectives" : "",
