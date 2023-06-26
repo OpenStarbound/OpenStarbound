@@ -25,52 +25,34 @@ static Maybe<pair<size_t, size_t>> findFilenameRange(std::string const& pathUtf8
 }
 
 AssetPath AssetPath::split(String const& path) {
-  auto i = path.begin();
-  auto end = path.end();
-
   AssetPath components;
 
-  // base paths cannot have any ':' or '?' characters, stop at the first one.
-  while (i != end) {
-    String::Char c = *i;
-    if (c == ':' || c == '?')
-      break;
+  std::string const& str = path.utf8();
 
-    components.basePath += c;
-    ++i;
-  }
+  //base paths cannot have any ':' or '?' characters, stop at the first one.
+  size_t end = str.find_first_of(":?");
+  components.basePath = str.substr(0, end);
+
+  if (end == NPos)
+    return components;
 
   // Sub-paths must immediately follow base paths and must start with a ':',
   // after this point any further ':' characters are not special.
-  if (i != end && *i == ':') {
-    ++i;
-    while (i != end) {
-      String::Char c = *i;
-      if (c == '?')
-        break;
-
-      if (!components.subPath)
-        components.subPath.emplace();
-
-      *components.subPath += c;
-      ++i;
-    }
+  if (str[end] == ':') {
+    size_t beg = end;
+    end = str.find_first_of("?", beg);
+    size_t len = end - beg - 1;
+    if (len)
+      components.subPath.emplace(str.substr(beg + 1, len));
   }
+
+  if (end == NPos)
+    return components;
 
   // Directives must follow the base path and optional sub-path, and each
   // directive is separated by one or more '?' characters.
-  while (i != end && *i == '?') {
-    String directives;
-    while (i != end) {
-      directives.append(*i);
-      ++i;
-    }
-
-    if (!directives.empty())
-      components.directives.append(move(directives));
-  }
-
-  starAssert(i == end);
+  if (str[end] == '?')
+    components.directives = String(str.substr(end));
 
   return components;
 }

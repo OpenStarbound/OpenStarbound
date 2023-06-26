@@ -1407,7 +1407,7 @@ void MainInterface::renderCursor() {
             VerticalAnchor::VMidAnchor));
   }
 
-  m_cursorItem->setPosition(m_cursorScreenPos / cursorScale + m_config->inventoryItemMouseOffset);
+  m_cursorItem->setPosition(m_cursorScreenPos / interfaceScale() + m_config->inventoryItemMouseOffset);
 
   if (auto swapItem = m_client->mainPlayer()->inventory()->swapSlotItem())
     m_cursorItem->setItem(swapItem);
