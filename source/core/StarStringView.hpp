@@ -95,6 +95,7 @@ public:
 
   StringView& operator=(StringView s);
 
+  friend bool operator==(StringView s1, const char* s2);
   friend bool operator==(StringView s1, StringView s2);
   friend bool operator!=(StringView s1, StringView s2);
   friend bool operator<(StringView s1, StringView s2);

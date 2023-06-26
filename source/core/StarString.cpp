@@ -1,4 +1,5 @@
 #include "StarString.hpp"
+#include "StarStringView.hpp"
 #include "StarBytes.hpp"
 #include "StarFormat.hpp"
 

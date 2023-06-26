@@ -212,6 +212,13 @@ public:
   template <typename Lookup>
   String lookupTags(Lookup&& lookup) const;
 
+  // StringView variant
+  template <typename Lookup>
+  Maybe<String> maybeLookupTagsView(Lookup&& lookup) const;
+
+  template <typename Lookup>
+  String lookupTagsView(Lookup&& lookup) const;
+
   // Replace angle bracket tags in the string with values given by the tags
   // map.  If replaceWithDefault is true, then values that are not found in the
   // tags map are replace with the default string.  If replaceWithDefault is
@@ -422,6 +429,50 @@ String String::lookupTags(Lookup&& lookup) const {
   }
 
   return move(finalString);
+}
+
+template <typename Lookup>
+Maybe<String> String::maybeLookupTagsView(Lookup&& lookup) const {
+  List<std::string_view> finalViews = {};
+  std::string_view view(utf8());
+
+  size_t start = 0;
+  while (true) {
+    if (start >= view.size())
+      break;
+
+    size_t beginTag = view.find_first_of('<', start);
+    if (beginTag == NPos && !start)
+      return Maybe<String>();
+
+    size_t endTag = view.find_first_of('>', beginTag);
+    if (beginTag != NPos && endTag != NPos) {
+      finalViews.append(view.substr(start, beginTag - start));
+      finalViews.append(lookup(view.substr(beginTag + 1, endTag - beginTag - 1)).takeUtf8());
+      start = endTag + 1;
+    } else {
+      finalViews.append(view.substr(start));
+      break;
+    }
+  }
+
+  std::string finalString;
+  size_t finalSize = 0;
+  for (auto& view : finalViews)
+    finalSize += view.size();
+
+  finalString.reserve(finalSize);
+
+  for (auto& view : finalViews)
+    finalString += view;
+
+  return move(finalString);
+}
+
+template <typename Lookup>
+String String::lookupTagsView(Lookup&& lookup) const {
+  auto result = maybeLookupTagsView(lookup);
+  return result ? move(result.take()) : String();
 }
 
 template <typename MapType>

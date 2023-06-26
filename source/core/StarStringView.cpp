@@ -409,6 +409,10 @@ StringView& StringView::operator=(StringView s) {
   return *this;
 }
 
+bool operator==(StringView s1, const char* s2) {
+  return s1.m_view.compare(s2) == 0;
+}
+
 bool operator==(StringView s1, StringView s2) {
   return s1.m_view == s2.m_view;
 }

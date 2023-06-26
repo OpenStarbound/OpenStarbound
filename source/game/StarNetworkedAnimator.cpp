@@ -583,7 +583,11 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
   List<pair<Drawable, float>> drawables;
 
   m_animatedParts.forEachActivePart([&](String const& partName, AnimatedPartSet::ActivePartInformation const& activePart) {
-      String image = activePart.properties.value("image").optString().value();
+      // Make sure we don't copy the original image
+      String fallback = "";
+      Json jImage = activePart.properties.value("image", {});
+      String const& image = jImage.isType(Json::Type::String) ? *jImage.stringPtr() : fallback;
+
       bool centered = activePart.properties.value("centered").optBool().value(true);
       bool fullbright = activePart.properties.value("fullbright").optBool().value(false);
 
@@ -598,8 +602,13 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
       }
 
       Maybe<unsigned> frame;
+      String frameStr;
+      String frameIndexStr;
       if (activePart.activeState) {
-        frame = activePart.activeState->frame;
+        unsigned stateFrame = activePart.activeState->frame;
+        frame = stateFrame;
+        frameStr = static_cast<String>(toString(stateFrame + 1));
+        frameIndexStr = static_cast<String>(toString(stateFrame));
 
         if (auto directives = activePart.activeState->properties.value("processingDirectives").optString()) {
           baseProcessingDirectives.append(*directives);
@@ -607,26 +616,29 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
       }
 
       auto const& partTags = m_partTags.get(partName);
-      image = image.lookupTags([&](String const& tag) -> String {
+      Maybe<String> processedImage = image.maybeLookupTagsView([&](StringView tag) -> StringView {
         if (tag == "frame") {
           if (frame)
-            return toString(*frame + 1);
+            return frameStr;
         } else if (tag == "frameIndex") {
           if (frame)
-            return toString(*frame);
+            return frameIndexStr;
         } else if (auto p = partTags.ptr(tag)) {
-          return *p;
+          return StringView(*p);
         } else if (auto p = m_globalTags.ptr(tag)) {
-          return *p;
+          return StringView(*p);
         }
 
-        return "default";
+        return StringView("default");
       });
+      String const& usedImage = processedImage ? processedImage.get() : image;
 
-      if (!image.empty() && image[0] != ':' && image[0] != '?') {
-        image = AssetPath::relativeTo(m_relativePath, image);
+      if (!usedImage.empty() && usedImage[0] != ':' && usedImage[0] != '?') {
+        String relativeImage;
+        if (usedImage[0] != '/')
+          relativeImage = AssetPath::relativeTo(m_relativePath, usedImage);
 
-        auto drawable = Drawable::makeImage(move(image), 1.0f / TilePixels, centered, Vec2F());
+        auto drawable = Drawable::makeImage(!relativeImage.empty() ? relativeImage : usedImage, 1.0f / TilePixels, centered, Vec2F());
         auto& imagePart = drawable.imagePart();
         for (Directives const& directives : baseProcessingDirectives)
           imagePart.addDirectives(directives);
@@ -637,7 +649,7 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
 
         drawables.append({move(drawable), zLevel});
       }
-
+        
       baseProcessingDirectives.resize(originalDirectivesSize);
     });
 
