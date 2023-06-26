@@ -189,7 +189,7 @@ void WorldPainter::renderParticles(WorldRenderData& renderData, Particle::Layer 
       if (particle.flip && particle.flippable)
         drawable.scale(Vec2F(-1, 1));
       if (drawable.isImage())
-        drawable.imagePart().addDirectives(particle.directives, true);
+        drawable.imagePart().addDirectivesGroup(particle.directives, true);
       drawable.fullbright = particle.fullbright;
       drawable.color = particle.color;
       drawable.rotate(particle.rotation);

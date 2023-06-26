@@ -279,8 +279,8 @@ void PlantDrop::particleForPlantPart(PlantDropPiece const& piece, String const& 
 
     particle = Root::singleton().particleDatabase()->particle(config);
     particle.color.hueShift(mainConfig.getFloat("hueshift", 0) / 360.0f);
-    if (!particle.string.empty())
-      particle.string += AssetPath::getDirectives(piece.image);
+    for (Directives const& directives : piece.image.directives.list())
+      particle.directives.append(directives);
 
     density--;
 

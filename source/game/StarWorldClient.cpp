@@ -401,7 +401,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
       if (directives) {
         int directiveIndex = unsigned(entity->entityId()) % directives->size();
         for (auto& p : renderCallback.particles)
-          p.directives = directives->get(directiveIndex);
+          p.directives.append(directives->get(directiveIndex));
       }
       
       m_particles->addParticles(move(renderCallback.particles));
@@ -1273,7 +1273,7 @@ void WorldClient::handleDamageNotifications() {
       if (directives) {
         int directiveIndex = unsigned(damageNotification.targetEntityId) % directives->size();
         for (auto& p : hitParticles)
-          p.directives = directives->get(directiveIndex);
+          p.directives.append(directives->get(directiveIndex));
       }
       
       m_particles->addParticles(hitParticles);
@@ -1343,7 +1343,7 @@ void WorldClient::removeEntity(EntityId entityId, bool andDie) {
     if (directives) {
       int directiveIndex = unsigned(entity->entityId()) % directives->size();
       for (auto& p : renderCallback.particles)
-        p.directives = directives->get(directiveIndex);
+        p.directives.append(directives->get(directiveIndex));
     }
 
     m_particles->addParticles(move(renderCallback.particles));

@@ -43,7 +43,7 @@ void Animation::setAngle(float angle) {
   m_angle = angle;
 }
 
-void Animation::setProcessing(Directives processing) {
+void Animation::setProcessing(DirectivesGroup processing) {
   m_processing = move(processing);
 }
 
@@ -70,7 +70,7 @@ Drawable Animation::drawable(float pixelSize) const {
     baseFrame += ":" + toString(m_frame);
 
   Drawable drawable = Drawable::makeImage(move(baseFrame), pixelSize, m_centered, m_offset);
-  drawable.imagePart().addDirectives(m_processing);
+  drawable.imagePart().addDirectivesGroup(m_processing);
   drawable.rotate(m_angle);
   drawable.color = m_color;
   return drawable;

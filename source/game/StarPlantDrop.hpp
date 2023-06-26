@@ -4,6 +4,7 @@
 #include "StarNetElementSystem.hpp"
 #include "StarMovementController.hpp"
 #include "StarPlant.hpp"
+#include "StarAssetPath.hpp"
 
 namespace Star {
 
@@ -50,7 +51,7 @@ public:
 private:
   struct PlantDropPiece {
     PlantDropPiece();
-    String image;
+    AssetPath image;
     Vec2F offset;
     int segmentIdx;
     Plant::PlantPieceKind kind;

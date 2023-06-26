@@ -66,14 +66,16 @@ Particle::Particle(Json const& config, String const& path) {
   if (type == Type::Textured || type == Type::Animated)
     string = AssetPath::relativeTo(path, string);
 
-  if (type == Type::Animated)
-    initializeAnimation();
+  image = string;
 
-  auto pathEnd = string.find('?');
-  if (pathEnd == NPos)
-    directives = "";
-  else
-    directives.parse(string.substr(pathEnd));
+  if (type == Type::Animated) {
+    auto pathEnd = string.find('?');
+    if (pathEnd == NPos)
+      directives.clear();
+    else
+      directives = string.substr(pathEnd);
+    initializeAnimation();
+  }
 
   if (config.contains("color"))
     color = jsonToColor(config.get("color"));

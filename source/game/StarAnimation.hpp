@@ -15,7 +15,7 @@ public:
 
   void setAngle(float angle);
 
-  void setProcessing(Directives processing);
+  void setProcessing(DirectivesGroup processing);
 
   void setColor(Color color);
 
@@ -43,7 +43,7 @@ private:
   float m_angle;
   Vec2F m_offset;
   bool m_centered;
-  Directives m_processing;
+  DirectivesGroup m_processing;
   Color m_color;
   int m_variantOffset;
 

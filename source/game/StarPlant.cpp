@@ -773,8 +773,10 @@ void Plant::render(RenderCallback* renderCallback) {
           continue;
         auto particle = Root::singleton().particleDatabase()->particle(config);
         particle.color.hueShift(hueshift);
-        if (!particle.string.empty())
+        if (!particle.string.empty()) {
           particle.string = strf("%s?hueshift=%s", particle.string, hueshift);
+          particle.image = particle.string;
+        }
         particle.position = {m_tileDamageX + Random::randf(), m_tileDamageY + Random::randf()};
         particle.translate(position());
         renderCallback->addParticle(move(particle));

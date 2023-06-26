@@ -77,7 +77,7 @@ struct Particle {
   // Used differently depending on the type of the particle.
   String string;
   AssetPath image;
-  Directives directives;
+  DirectivesGroup directives;
 
   Color color;
   Color light;
