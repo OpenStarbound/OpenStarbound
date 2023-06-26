@@ -255,6 +255,7 @@ NetworkedAnimator& NetworkedAnimator::operator=(NetworkedAnimator&& animator) {
   m_animationRate = move(animator.m_animationRate);
   m_globalTags = move(animator.m_globalTags);
   m_partTags = move(animator.m_partTags);
+  m_cachedPartDrawables = move(animator.m_cachedPartDrawables);
 
   setupNetStates();
 
@@ -278,6 +279,7 @@ NetworkedAnimator& NetworkedAnimator::operator=(NetworkedAnimator const& animato
   m_animationRate = animator.m_animationRate;
   m_globalTags = animator.m_globalTags;
   m_partTags = animator.m_partTags;
+  m_cachedPartDrawables = animator.m_cachedPartDrawables;
 
   setupNetStates();
 
@@ -638,7 +640,20 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
         if (usedImage[0] != '/')
           relativeImage = AssetPath::relativeTo(m_relativePath, usedImage);
 
-        auto drawable = Drawable::makeImage(!relativeImage.empty() ? relativeImage : usedImage, 1.0f / TilePixels, centered, Vec2F());
+        size_t hash = hashOf(relativeImage);
+        auto find = m_cachedPartDrawables.find(partName);
+        bool fail = find == m_cachedPartDrawables.end() || find->second.first != hash;
+        if (fail) {
+          Drawable drawable = Drawable::makeImage(!relativeImage.empty() ? relativeImage : usedImage, 1.0f / TilePixels, centered, Vec2F());
+          if (find == m_cachedPartDrawables.end())
+            find = m_cachedPartDrawables.emplace(partName, std::pair{ hash, move(drawable) }).first;
+          else {
+            find->second.first = hash;
+            find->second.second = move(drawable);
+          }
+        }
+
+        Drawable drawable = find->second.second;
         auto& imagePart = drawable.imagePart();
         for (Directives const& directives : baseProcessingDirectives)
           imagePart.addDirectives(directives);

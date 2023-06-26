@@ -324,6 +324,7 @@ private:
 
   NetElementHashMap<String, String> m_globalTags;
   StableStringMap<NetElementHashMap<String, String>> m_partTags;
+  mutable StringMap<std::pair<size_t, Drawable>> m_cachedPartDrawables;
 };
 
 }
