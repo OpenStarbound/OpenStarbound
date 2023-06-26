@@ -636,14 +636,14 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
       String const& usedImage = processedImage ? processedImage.get() : image;
 
       if (!usedImage.empty() && usedImage[0] != ':' && usedImage[0] != '?') {
-        String relativeImage;
-        if (usedImage[0] != '/')
-          relativeImage = AssetPath::relativeTo(m_relativePath, usedImage);
-
-        size_t hash = hashOf(relativeImage);
+        size_t hash = hashOf(usedImage);
         auto find = m_cachedPartDrawables.find(partName);
         bool fail = find == m_cachedPartDrawables.end() || find->second.first != hash;
         if (fail) {
+          String relativeImage;
+          if (usedImage[0] != '/')
+            relativeImage = AssetPath::relativeTo(m_relativePath, usedImage);
+
           Drawable drawable = Drawable::makeImage(!relativeImage.empty() ? relativeImage : usedImage, 1.0f / TilePixels, centered, Vec2F());
           if (find == m_cachedPartDrawables.end())
             find = m_cachedPartDrawables.emplace(partName, std::pair{ hash, move(drawable) }).first;
