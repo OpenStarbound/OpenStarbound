@@ -121,6 +121,8 @@ AssetPath ImageMetadataDatabase::filterProcessing(AssetPath const& path) {
   AssetPath newPath = { path.basePath, path.subPath, {} };
 
   String filtered;
+  for (auto& directives : path.directives.list())
+    directives.loadOperations();
   path.directives.forEach([&](auto const& entry, Directives const& directives) {
     ImageOperation const& operation = entry.operation;
     if (!(operation.is<HueShiftImageOperation>()           ||
@@ -184,6 +186,8 @@ Vec2U ImageMetadataDatabase::calculateImageSize(AssetPath const& path) const {
 
     OperationSizeAdjust(Vec2U& size) : imageSize(size), hasError(false) {};
 
+    void operator()(NullImageOperation const&) {}
+
     void operator()(ErrorImageOperation const&) {}
 
     void operator()(HueShiftImageOperation const&) {}
@@ -230,6 +234,9 @@ Vec2U ImageMetadataDatabase::calculateImageSize(AssetPath const& path) const {
   };
 
   OperationSizeAdjust osa(imageSize);
+
+  for (auto& directives : path.directives.list())
+    directives.loadOperations();
 
   bool complete = path.directives.forEachAbortable([&](auto const& entry, Directives const& directives) -> bool {
     entry.operation.call(osa);

@@ -127,7 +127,7 @@ void StringView::forEachSplitAnyView(StringView chars, SplitCallback callback) c
   while (true) {
     size_t end = m_view.find_first_of(chars.m_view, beg);
     if (end == NPos) {
-      callback(m_view.substr(beg), beg, end);
+      callback(m_view.substr(beg), beg, m_view.size() - beg);
       break;
     }
     callback(m_view.substr(beg, end - beg), beg, end - beg);
@@ -143,7 +143,7 @@ void StringView::forEachSplitView(StringView pattern, SplitCallback callback) co
   while (true) {
     size_t end = m_view.find(pattern.m_view, beg);
     if (end == NPos) {
-      callback(m_view.substr(beg), beg, end);
+      callback(m_view.substr(beg), beg, m_view.size() - beg);
       break;
     }
     callback(m_view.substr(beg, end - beg), beg, end - beg);

@@ -198,8 +198,11 @@ ImageOperation imageOperationFromString(StringView string) {
             else if (hexLen == 8) {
               hexDecode(hexPtr, 8, c, 4);
             }
-            else
-              throw ImageOperationException(strf("Improper size for hex string '%s' in imageOperationFromString", StringView(hexPtr, hexLen)), false);
+            else if (!which || (ptr != end && ++ptr != end))
+                throw ImageOperationException(strf("Improper size for hex string '%s' in imageOperationFromString", StringView(hexPtr, hexLen)), false);
+            else // we're in A of A=B. In vanilla only A=B pairs are evaluated, so only throw an exception if B is also there.
+                return move(operation);
+              
 
             if (which = !which)
               operation.colorReplaceMap[*(Vec4B*)&a] = *(Vec4B*)&b;

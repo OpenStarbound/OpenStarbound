@@ -33,7 +33,7 @@ void ErrorScreen::setMessage(String const& errorMessage) {
   if (!m_paneManager->isDisplayed(m_errorPane)) {
     m_paneManager->displayPane(PaneLayer::Window, m_errorPane, [this](PanePtr) {
       m_accepted = true;
-      });
+    });
   }
 }
 

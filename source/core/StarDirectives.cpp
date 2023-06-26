@@ -24,6 +24,14 @@ Directives::Entry::Entry(Entry const& other) {
   length = other.length;
 }
 
+ImageOperation const& Directives::Entry::loadOperation(Shared const& parent) const {
+  if (operation.is<NullImageOperation>()) {
+    try { operation = imageOperationFromString(string(parent)); }
+    catch (StarException const& e) { operation = ErrorImageOperation{ std::current_exception() }; }
+  }
+  return operation;
+}
+
 StringView Directives::Entry::string(Shared const& parent) const {
   StringView result = parent.string;
   result = result.utf8().substr(begin, length);
@@ -54,6 +62,15 @@ Directives::Directives(const char* directives) {
   parse(directives);
 }
 
+void Directives::loadOperations() const {
+  if (!shared)
+    return;
+
+  MutexLocker lock(shared->mutex, true);
+  for (auto& entry : shared->entries)
+    entry.loadOperation(*shared);
+}
+
 void Directives::parse(String&& directives) {
   if (directives.empty())
     return;
@@ -63,15 +80,19 @@ void Directives::parse(String&& directives) {
   StringView prefix = "";
   view.forEachSplitView("?", [&](StringView split, size_t beg, size_t end) {
     if (!split.empty()) {
-      try {
-        ImageOperation operation = imageOperationFromString(split);
-        newList.emplace_back(move(operation), beg, end);
-      }
-      catch (StarException const& e) {
-        if (beg == 0)
+      if (beg == 0) {
+        try {
+          ImageOperation operation = imageOperationFromString(split);
+          newList.emplace_back(move(operation), beg, end);
+        }
+        catch (StarException const& e) {
           prefix = split;
-        else
-          newList.emplace_back(ErrorImageOperation{ std::current_exception() }, beg, end);
+          return;
+        }
+      }
+      else {
+        ImageOperation operation = NullImageOperation();
+        newList.emplace_back(move(operation), beg, end);
       }
     }
   });
@@ -259,10 +280,11 @@ inline Image DirectivesGroup::applyNewImage(Image const& image) const {
 
 void DirectivesGroup::applyExistingImage(Image& image) const {
   forEach([&](auto const& entry, Directives const& directives) {
-    if (auto error = entry.operation.ptr<ErrorImageOperation>())
+    ImageOperation const& operation = entry.loadOperation(*directives.shared);
+    if (auto error = operation.ptr<ErrorImageOperation>())
       std::rethrow_exception(error->exception);
     else
-      processImageOperation(entry.operation, image);
+      processImageOperation(operation, image);
   });
 }
 

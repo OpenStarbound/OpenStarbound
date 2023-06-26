@@ -18,6 +18,10 @@ Image scaleBicubic(Image const& srcImage, Vec2F const& scale);
 StringList colorDirectivesFromConfig(JsonArray const& directives);
 String paletteSwapDirectivesFromConfig(Json const& swaps);
 
+struct NullImageOperation {
+
+};
+
 struct ErrorImageOperation {
   std::exception_ptr exception;
 };
@@ -133,7 +137,7 @@ struct FlipImageOperation {
   Mode mode;
 };
 
-typedef Variant<ErrorImageOperation, HueShiftImageOperation, SaturationShiftImageOperation, BrightnessMultiplyImageOperation, FadeToColorImageOperation,
+typedef Variant<NullImageOperation, ErrorImageOperation, HueShiftImageOperation, SaturationShiftImageOperation, BrightnessMultiplyImageOperation, FadeToColorImageOperation,
   ScanLinesImageOperation, SetColorImageOperation, ColorReplaceImageOperation, AlphaMaskImageOperation, BlendImageOperation,
   MultiplyImageOperation, BorderImageOperation, ScaleImageOperation, CropImageOperation, FlipImageOperation> ImageOperation;
 

@@ -5,6 +5,7 @@
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
 #include "StarStringView.hpp"
+#include "StarThread.hpp"
 
 namespace Star {
 
@@ -17,10 +18,11 @@ class Directives {
 public:
   struct Shared;
   struct Entry {
-    ImageOperation operation;
+    mutable ImageOperation operation;
     size_t begin;
     size_t length;
 
+    ImageOperation const& loadOperation(Shared const& parent) const;
     inline StringView string(Shared const& parent) const;
     Entry(ImageOperation&& newOperation, size_t begin, size_t end);
     Entry(ImageOperation const& newOperation, size_t begin, size_t end);
@@ -32,6 +34,7 @@ public:
     String string;
     StringView prefix;
     size_t hash = 0;
+    mutable Mutex mutex;
 
     bool empty() const;
     Shared(List<Entry>&& givenEntries, String&& givenString, StringView givenPrefix);
@@ -42,6 +45,7 @@ public:
   Directives(String&& directives);
   Directives(const char* directives);
 
+  void loadOperations() const;
   void parse(String&& directives);
   String string() const;
   StringView prefix() const;

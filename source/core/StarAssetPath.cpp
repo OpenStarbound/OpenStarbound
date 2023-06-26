@@ -39,11 +39,14 @@ AssetPath AssetPath::split(String const& path) {
   // Sub-paths must immediately follow base paths and must start with a ':',
   // after this point any further ':' characters are not special.
   if (str[end] == ':') {
-    size_t beg = end;
-    end = str.find_first_of("?", beg);
-    size_t len = end - beg - 1;
-    if (len)
-      components.subPath.emplace(str.substr(beg + 1, len));
+    size_t beg = end + 1;
+    if (beg != str.size()) {
+      end = str.find_first_of("?", beg);
+      if (end == NPos && beg + 1 != str.size())
+        components.subPath.emplace(str.substr(beg));
+      else if (size_t len = end - beg)
+        components.subPath.emplace(str.substr(beg, len));
+    }
   }
 
   if (end == NPos)

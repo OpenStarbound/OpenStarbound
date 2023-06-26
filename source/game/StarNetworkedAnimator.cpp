@@ -656,7 +656,7 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
         Drawable drawable = find->second.second;
         auto& imagePart = drawable.imagePart();
         for (Directives const& directives : baseProcessingDirectives)
-          imagePart.addDirectives(directives);
+          imagePart.addDirectives(directives, centered);
         drawable.transform(partTransformation(partName));
         drawable.transform(globalTransformation());
         drawable.fullbright = fullbright;

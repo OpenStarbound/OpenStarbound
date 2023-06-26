@@ -844,6 +844,10 @@ shared_ptr<Assets::AssetData> Assets::loadImage(AssetPath const& path) const {
       return {};
     StringMap<ImageConstPtr> references;
     StringList referencePaths;
+
+    for (auto& directives : path.directives.list())
+      directives.loadOperations();
+
     path.directives.forEach([&](auto const& entry, Directives const& directives) {
       addImageOperationReferences(entry.operation, referencePaths);
     }); // TODO: This can definitely be better, was changed quickly to support the new Directives.
