@@ -30,10 +30,11 @@ public:
   struct Shared {
     List<Entry> entries;
     String string;
+    StringView prefix;
     size_t hash = 0;
 
     bool empty() const;
-    Shared(List<Entry>&& givenEntries, String&& givenString);
+    Shared(List<Entry>&& givenEntries, String&& givenString, StringView givenPrefix);
   };
 
   Directives();
@@ -43,6 +44,7 @@ public:
 
   void parse(String&& directives);
   String string() const;
+  StringView prefix() const;
   String const* stringPtr() const;
   String buildString() const;
   String& addToString(String& out) const;

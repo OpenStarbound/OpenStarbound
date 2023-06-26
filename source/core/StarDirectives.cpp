@@ -34,9 +34,10 @@ bool Directives::Shared::empty() const {
   return entries.empty();
 }
 
-Directives::Shared::Shared(List<Entry>&& givenEntries, String&& givenString) {
+Directives::Shared::Shared(List<Entry>&& givenEntries, String&& givenString, StringView givenPrefix) {
   entries = move(givenEntries);
   string = move(givenString);
+  prefix = givenPrefix;
   hash = XXH3_64bits(string.utf8Ptr(), string.utf8Size());
 }
 
@@ -58,23 +59,27 @@ void Directives::parse(String&& directives) {
     return;
 
   List<Entry> newList;
-
-  StringView(directives).forEachSplitView("?", [&](StringView split, size_t beg, size_t end) {
+  StringView view(directives);
+  StringView prefix = "";
+  view.forEachSplitView("?", [&](StringView split, size_t beg, size_t end) {
     if (!split.empty()) {
       try {
         ImageOperation operation = imageOperationFromString(split);
         newList.emplace_back(move(operation), beg, end);
       }
       catch (StarException const& e) {
-        newList.emplace_back(ErrorImageOperation{ std::current_exception() }, beg, end);
+        if (beg == 0)
+          prefix = split;
+        else
+          newList.emplace_back(ErrorImageOperation{ std::current_exception() }, beg, end);
       }
     }
   });
 
-  if (newList.empty())
+  if (newList.empty() && !prefix.empty())
     return;
 
-  shared = std::make_shared<Shared const>(move(newList), move(directives));
+  shared = std::make_shared<Shared const>(move(newList), move(directives), prefix);
 }
 
 String Directives::string() const {
@@ -82,6 +87,13 @@ String Directives::string() const {
     return "";
   else
     return shared->string;
+}
+
+StringView Directives::prefix() const {
+  if (!shared)
+    return "";
+  else
+    return shared->prefix;
 }
 
 String const* Directives::stringPtr() const {
@@ -93,15 +105,18 @@ String const* Directives::stringPtr() const {
 
 
 String Directives::buildString() const {
-  String built;
   if (shared) {
+    String built = shared->prefix;
+
     for (auto& entry : shared->entries) {
       built += "?";
       built += entry.string(*shared);
     }
+
+    return built;
   }
 
-  return built;
+  return String();
 }
 
 String& Directives::addToString(String& out) const {
