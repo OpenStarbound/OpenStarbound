@@ -24,15 +24,17 @@ ErrorScreen::ErrorScreen() {
       m_accepted = true;
     });
   reader.construct(assets->json("/interface/windowconfig/error.config:paneLayout"), m_errorPane.get());
-
-  m_paneManager->displayPane(PaneLayer::Window, m_errorPane, [this](PanePtr) {
-      m_accepted = true;
-    });
 }
 
 void ErrorScreen::setMessage(String const& errorMessage) {
   m_errorPane->fetchChild<LabelWidget>("labelError")->setText(errorMessage);
   m_accepted = false;
+
+  if (!m_paneManager->isDisplayed(m_errorPane)) {
+    m_paneManager->displayPane(PaneLayer::Window, m_errorPane, [this](PanePtr) {
+      m_accepted = true;
+      });
+  }
 }
 
 bool ErrorScreen::accepted() {
