@@ -5,6 +5,7 @@
 #include "StarColor.hpp"
 #include "StarImage.hpp"
 #include "StarStringView.hpp"
+#include "StarEncode.hpp"
 
 namespace Star {
 
@@ -148,7 +149,69 @@ FadeToColorImageOperation::FadeToColorImageOperation(Vec3B color, float amount) 
 
 ImageOperation imageOperationFromString(StringView string) {
   try {
+    std::string_view view = string.utf8();
+    auto firstBitEnd = view.find_first_of("=;");
+    if (view.substr(0, firstBitEnd).compare("replace") == 0 && (firstBitEnd + 1) != view.size()) {
+      //Perform optimized replace parse
+      ColorReplaceImageOperation operation;
+
+      std::string_view bits = view.substr(firstBitEnd + 1);
+      char const* hexPtr = nullptr;
+      unsigned int hexLen = 0;
+
+      char const* ptr = bits.data();
+      char const* end = ptr + bits.size();
+
+      char a[4]{}, b[4]{};
+      bool which = true;
+
+      while (true) {
+        char ch = *ptr;
+
+        if (ch == '=' || ch == ';' || ptr == end) {
+          char* c = which ? a : b;
+
+          if (hexLen == 3) {
+            nibbleDecode(hexPtr, 3, c, 4);
+            c[0] |= (c[0] << 4);
+            c[1] |= (c[1] << 4);
+            c[2] |= (c[2] << 4);
+            c[3] = 255;
+          }
+          else if (hexLen == 4) {
+            nibbleDecode(hexPtr, 4, c, 4);
+            c[0] |= (c[0] << 4);
+            c[1] |= (c[1] << 4);
+            c[2] |= (c[2] << 4);
+            c[3] |= (c[3] << 4);
+          }
+          else if (hexLen == 6) {
+            hexDecode(hexPtr, 6, c, 4);
+            c[3] = 255;
+          }
+          else if (hexLen == 8) {
+            hexDecode(hexPtr, 8, c, 4);
+          }
+          else
+            throw ImageOperationException(strf("Improper size for hex string '%s' in imageOperationFromString", StringView(hexPtr, hexLen)), false);
+
+          if (which = !which)
+            operation.colorReplaceMap[*(Vec4B*)&a] = *(Vec4B*)&b;
+
+          hexLen = 0;
+        }
+        else if (!hexLen++)
+          hexPtr = ptr;
+
+        if (ptr++ == end)
+          break;
+      }
+
+      return move(operation);
+    }
+
     List<StringView> bits;
+
     string.forEachSplitAnyView("=;", [&](StringView split, size_t, size_t) {
       if (!split.empty())
         bits.emplace_back(split);
