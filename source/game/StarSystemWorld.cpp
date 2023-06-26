@@ -138,7 +138,7 @@ List<CelestialCoordinate> SystemWorld::planets() const {
 
 uint64_t SystemWorld::coordinateSeed(CelestialCoordinate const& coordinate, String const& seedMix) const {
   auto satellite = coordinate.isSatelliteBody() ? coordinate.orbitNumber() : 0;
-  auto planet = coordinate.isSatelliteBody() ? coordinate.parent().orbitNumber() : coordinate.isPlanetaryBody() && coordinate.orbitNumber() || 0;
+  auto planet = coordinate.isSatelliteBody() ? coordinate.parent().orbitNumber() : (coordinate.isPlanetaryBody() && coordinate.orbitNumber()) || 0;
   return staticRandomU64(coordinate.location()[0], coordinate.location()[1], coordinate.location()[2], planet, satellite, seedMix);
 }
 

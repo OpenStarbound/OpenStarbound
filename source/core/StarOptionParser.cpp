@@ -67,7 +67,7 @@ pair<OptionParser::Options, StringList> OptionParser::parseOptions(StringList co
       }
 
     } else {
-      result.arguments.append(move(arg));
+      result.arguments.append(arg);
     }
   }
 

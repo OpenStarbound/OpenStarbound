@@ -710,7 +710,7 @@ void OpenGl20Renderer::logGlErrorSummary(String prefix) {
       } else {
         Logger::error("<UNRECOGNIZED GL ERROR>");
       }
-    } while (error = glGetError());
+    } while ((error = glGetError()));
   }
 }
 

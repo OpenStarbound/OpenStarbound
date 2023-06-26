@@ -88,7 +88,7 @@ TextPainter::TextPainter(RendererPtr renderer, TextureGroupPtr textureGroup)
     m_fontTextureGroup(textureGroup),
     m_fontSize(8),
     m_lineSpacing(1.30f),
-    m_renderSettings({FontMode::Normal, Vec4B::filled(255), "hobo"}),
+    m_renderSettings({FontMode::Normal, Vec4B::filled(255), "hobo", ""}),
     m_splitIgnore(" \t"),
     m_splitForce("\n\v"),
     m_nonRenderedCharacters("\n\v\r") {

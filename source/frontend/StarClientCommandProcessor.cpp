@@ -332,7 +332,7 @@ String ClientCommandProcessor::giveEssentialItem(StringList const& arguments) {
     auto slot = EssentialItemNames.getLeft(arguments.at(1));
     m_universeClient->mainPlayer()->inventory()->setEssentialItem(slot, item);
     return strf("Put %s in player slot %s", item->name(), arguments.at(1));
-  } catch (MapException e) {
+  } catch (MapException const& e) {
     return strf("Invalid essential item slot %s.", arguments.at(1));
   }
 }

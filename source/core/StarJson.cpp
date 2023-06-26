@@ -1025,7 +1025,7 @@ Json jsonMerge(Json const& base, Json const& merger) {
       if (!res.second)
         res.first->second = jsonMerge(res.first->second, p.second);
     }
-    return move(merged);
+    return merged;
 
   } else if (merger.type() == Json::Type::Null) {
     return base;

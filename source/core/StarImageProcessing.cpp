@@ -204,7 +204,8 @@ ImageOperation imageOperationFromString(StringView string) {
                 return move(operation);
               
 
-            if (which = !which)
+            which = !which;
+            if (which)
               operation.colorReplaceMap[*(Vec4B*)&a] = *(Vec4B*)&b;
 
             hexLen = 0;
@@ -219,7 +220,7 @@ ImageOperation imageOperationFromString(StringView string) {
 
       //if (time != 0.0)
       //  Logger::logf(LogLevel::Debug, "Parsed %u long directives to %u replace operations in %fs", view.size(), operation.colorReplaceMap.size(), Time::monotonicTime() - time);
-      return move(operation);
+      return operation;
     }
 
     List<StringView> bits;

@@ -77,87 +77,82 @@ EnumMap<PacketType> const PacketTypeNames{
   {PacketType::SystemObjectSpawn, "SystemObjectSpawn"}
 };
 
-typedef decltype(&make_shared<Packet>) PacketMakePtr;
-Array<PacketMakePtr, 69> const PacketTypeMakers = {
-  (PacketMakePtr)&make_shared<ProtocolRequestPacket>,
-  (PacketMakePtr)&make_shared<ProtocolResponsePacket>,
-  (PacketMakePtr)&make_shared<ServerDisconnectPacket>,
-  (PacketMakePtr)&make_shared<ConnectSuccessPacket>,
-  (PacketMakePtr)&make_shared<ConnectFailurePacket>,
-  (PacketMakePtr)&make_shared<HandshakeChallengePacket>,
-  (PacketMakePtr)&make_shared<ChatReceivePacket>,
-  (PacketMakePtr)&make_shared<UniverseTimeUpdatePacket>,
-  (PacketMakePtr)&make_shared<CelestialResponsePacket>,
-  (PacketMakePtr)&make_shared<PlayerWarpResultPacket>,
-  (PacketMakePtr)&make_shared<PlanetTypeUpdatePacket>,
-  (PacketMakePtr)&make_shared<PausePacket>,
-  (PacketMakePtr)&make_shared<ServerInfoPacket>,
-  (PacketMakePtr)&make_shared<ClientConnectPacket>,
-  (PacketMakePtr)&make_shared<ClientDisconnectRequestPacket>,
-  (PacketMakePtr)&make_shared<HandshakeResponsePacket>,
-  (PacketMakePtr)&make_shared<PlayerWarpPacket>,
-  (PacketMakePtr)&make_shared<FlyShipPacket>,
-  (PacketMakePtr)&make_shared<ChatSendPacket>,
-  (PacketMakePtr)&make_shared<CelestialRequestPacket>,
-  (PacketMakePtr)&make_shared<ClientContextUpdatePacket>,
-  (PacketMakePtr)&make_shared<WorldStartPacket>,
-  (PacketMakePtr)&make_shared<WorldStopPacket>,
-  (PacketMakePtr)&make_shared<WorldLayoutUpdatePacket>,
-  (PacketMakePtr)&make_shared<WorldParametersUpdatePacket>,
-  (PacketMakePtr)&make_shared<CentralStructureUpdatePacket>,
-  (PacketMakePtr)&make_shared<TileArrayUpdatePacket>,
-  (PacketMakePtr)&make_shared<TileUpdatePacket>,
-  (PacketMakePtr)&make_shared<TileLiquidUpdatePacket>,
-  (PacketMakePtr)&make_shared<TileDamageUpdatePacket>,
-  (PacketMakePtr)&make_shared<TileModificationFailurePacket>,
-  (PacketMakePtr)&make_shared<GiveItemPacket>,
-  (PacketMakePtr)&make_shared<EnvironmentUpdatePacket>,
-  (PacketMakePtr)&make_shared<UpdateTileProtectionPacket>,
-  (PacketMakePtr)&make_shared<SetDungeonGravityPacket>,
-  (PacketMakePtr)&make_shared<SetDungeonBreathablePacket>,
-  (PacketMakePtr)&make_shared<SetPlayerStartPacket>,
-  (PacketMakePtr)&make_shared<FindUniqueEntityResponsePacket>,
-  (PacketMakePtr)&make_shared<PongPacket>,
-  (PacketMakePtr)&make_shared<ModifyTileListPacket>,
-  (PacketMakePtr)&make_shared<DamageTileGroupPacket>,
-  (PacketMakePtr)&make_shared<CollectLiquidPacket>,
-  (PacketMakePtr)&make_shared<RequestDropPacket>,
-  (PacketMakePtr)&make_shared<SpawnEntityPacket>,
-  (PacketMakePtr)&make_shared<ConnectWirePacket>,
-  (PacketMakePtr)&make_shared<DisconnectAllWiresPacket>,
-  (PacketMakePtr)&make_shared<WorldClientStateUpdatePacket>,
-  (PacketMakePtr)&make_shared<FindUniqueEntityPacket>,
-  (PacketMakePtr)&make_shared<WorldStartAcknowledgePacket>,
-  (PacketMakePtr)&make_shared<PingPacket>,
-  (PacketMakePtr)&make_shared<EntityCreatePacket>,
-  (PacketMakePtr)&make_shared<EntityUpdateSetPacket>,
-  (PacketMakePtr)&make_shared<EntityDestroyPacket>,
-  (PacketMakePtr)&make_shared<EntityInteractPacket>,
-  (PacketMakePtr)&make_shared<EntityInteractResultPacket>,
-  (PacketMakePtr)&make_shared<HitRequestPacket>,
-  (PacketMakePtr)&make_shared<DamageRequestPacket>,
-  (PacketMakePtr)&make_shared<DamageNotificationPacket>,
-  (PacketMakePtr)&make_shared<EntityMessagePacket>,
-  (PacketMakePtr)&make_shared<EntityMessageResponsePacket>,
-  (PacketMakePtr)&make_shared<UpdateWorldPropertiesPacket>,
-  (PacketMakePtr)&make_shared<StepUpdatePacket>,
-  (PacketMakePtr)&make_shared<SystemWorldStartPacket>,
-  (PacketMakePtr)&make_shared<SystemWorldUpdatePacket>,
-  (PacketMakePtr)&make_shared<SystemObjectCreatePacket>,
-  (PacketMakePtr)&make_shared<SystemObjectDestroyPacket>,
-  (PacketMakePtr)&make_shared<SystemShipCreatePacket>,
-  (PacketMakePtr)&make_shared<SystemShipDestroyPacket>,
-  (PacketMakePtr)&make_shared<SystemObjectSpawnPacket>
-};
-
 Packet::~Packet() {}
 
 PacketPtr createPacket(PacketType type) {
-  unsigned i = (unsigned)type;
-  if (i < PacketTypeMakers.size())
-    return PacketTypeMakers[i]();
-  else
-    throw StarPacketException(strf("Unrecognized packet type %s", i));
+  switch (type) {
+    case PacketType::ProtocolRequest: return make_shared<ProtocolRequestPacket>();
+    case PacketType::ProtocolResponse: return make_shared<ProtocolResponsePacket>();
+    case PacketType::ServerDisconnect: return make_shared<ServerDisconnectPacket>();
+    case PacketType::ConnectSuccess: return make_shared<ConnectSuccessPacket>();
+    case PacketType::ConnectFailure: return make_shared<ConnectFailurePacket>();
+    case PacketType::HandshakeChallenge: return make_shared<HandshakeChallengePacket>();
+    case PacketType::ChatReceive: return make_shared<ChatReceivePacket>();
+    case PacketType::UniverseTimeUpdate: return make_shared<UniverseTimeUpdatePacket>();
+    case PacketType::CelestialResponse: return make_shared<CelestialResponsePacket>();
+    case PacketType::PlayerWarpResult: return make_shared<PlayerWarpResultPacket>();
+    case PacketType::PlanetTypeUpdate: return make_shared<PlanetTypeUpdatePacket>();
+    case PacketType::Pause: return make_shared<PausePacket>();
+    case PacketType::ServerInfo: return make_shared<ServerInfoPacket>();
+    case PacketType::ClientConnect: return make_shared<ClientConnectPacket>();
+    case PacketType::ClientDisconnectRequest: return make_shared<ClientDisconnectRequestPacket>();
+    case PacketType::HandshakeResponse: return make_shared<HandshakeResponsePacket>();
+    case PacketType::PlayerWarp: return make_shared<PlayerWarpPacket>();
+    case PacketType::FlyShip: return make_shared<FlyShipPacket>();
+    case PacketType::ChatSend: return make_shared<ChatSendPacket>();
+    case PacketType::CelestialRequest: return make_shared<CelestialRequestPacket>();
+    case PacketType::ClientContextUpdate: return make_shared<ClientContextUpdatePacket>();
+    case PacketType::WorldStart: return make_shared<WorldStartPacket>();
+    case PacketType::WorldStop: return make_shared<WorldStopPacket>();
+    case PacketType::WorldLayoutUpdate: return make_shared<WorldLayoutUpdatePacket>();
+    case PacketType::WorldParametersUpdate: return make_shared<WorldParametersUpdatePacket>();
+    case PacketType::CentralStructureUpdate: return make_shared<CentralStructureUpdatePacket>();
+    case PacketType::TileArrayUpdate: return make_shared<TileArrayUpdatePacket>();
+    case PacketType::TileUpdate: return make_shared<TileUpdatePacket>();
+    case PacketType::TileLiquidUpdate: return make_shared<TileLiquidUpdatePacket>();
+    case PacketType::TileDamageUpdate: return make_shared<TileDamageUpdatePacket>();
+    case PacketType::TileModificationFailure: return make_shared<TileModificationFailurePacket>();
+    case PacketType::GiveItem: return make_shared<GiveItemPacket>();
+    case PacketType::EnvironmentUpdate: return make_shared<EnvironmentUpdatePacket>();
+    case PacketType::UpdateTileProtection: return make_shared<UpdateTileProtectionPacket>();
+    case PacketType::SetDungeonGravity: return make_shared<SetDungeonGravityPacket>();
+    case PacketType::SetDungeonBreathable: return make_shared<SetDungeonBreathablePacket>();
+    case PacketType::SetPlayerStart: return make_shared<SetPlayerStartPacket>();
+    case PacketType::FindUniqueEntityResponse: return make_shared<FindUniqueEntityResponsePacket>();
+    case PacketType::Pong: return make_shared<PongPacket>();
+    case PacketType::ModifyTileList: return make_shared<ModifyTileListPacket>();
+    case PacketType::DamageTileGroup: return make_shared<DamageTileGroupPacket>();
+    case PacketType::CollectLiquid: return make_shared<CollectLiquidPacket>();
+    case PacketType::RequestDrop: return make_shared<RequestDropPacket>();
+    case PacketType::SpawnEntity: return make_shared<SpawnEntityPacket>();
+    case PacketType::ConnectWire: return make_shared<ConnectWirePacket>();
+    case PacketType::DisconnectAllWires: return make_shared<DisconnectAllWiresPacket>();
+    case PacketType::WorldClientStateUpdate: return make_shared<WorldClientStateUpdatePacket>();
+    case PacketType::FindUniqueEntity: return make_shared<FindUniqueEntityPacket>();
+    case PacketType::WorldStartAcknowledge: return make_shared<WorldStartAcknowledgePacket>();
+    case PacketType::Ping: return make_shared<PingPacket>();
+    case PacketType::EntityCreate: return make_shared<EntityCreatePacket>();
+    case PacketType::EntityUpdateSet: return make_shared<EntityUpdateSetPacket>();
+    case PacketType::EntityDestroy: return make_shared<EntityDestroyPacket>();
+    case PacketType::EntityInteract: return make_shared<EntityInteractPacket>();
+    case PacketType::EntityInteractResult: return make_shared<EntityInteractResultPacket>();
+    case PacketType::HitRequest: return make_shared<HitRequestPacket>();
+    case PacketType::DamageRequest: return make_shared<DamageRequestPacket>();
+    case PacketType::DamageNotification: return make_shared<DamageNotificationPacket>();
+    case PacketType::EntityMessage: return make_shared<EntityMessagePacket>();
+    case PacketType::EntityMessageResponse: return make_shared<EntityMessageResponsePacket>();
+    case PacketType::UpdateWorldProperties: return make_shared<UpdateWorldPropertiesPacket>();
+    case PacketType::StepUpdate: return make_shared<StepUpdatePacket>();
+    case PacketType::SystemWorldStart: return make_shared<SystemWorldStartPacket>();
+    case PacketType::SystemWorldUpdate: return make_shared<SystemWorldUpdatePacket>();
+    case PacketType::SystemObjectCreate: return make_shared<SystemObjectCreatePacket>();
+    case PacketType::SystemObjectDestroy: return make_shared<SystemObjectDestroyPacket>();
+    case PacketType::SystemShipCreate: return make_shared<SystemShipCreatePacket>();
+    case PacketType::SystemShipDestroy: return make_shared<SystemShipDestroyPacket>();
+    case PacketType::SystemObjectSpawn: return make_shared<SystemObjectSpawnPacket>();
+    default:
+      throw StarPacketException(strf("Unrecognized packet type %s", (unsigned int)type));
+  }
 }
 
 ProtocolRequestPacket::ProtocolRequestPacket()

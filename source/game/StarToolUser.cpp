@@ -191,7 +191,7 @@ List<Drawable> ToolUser::renderObjectPreviews(Vec2F aimPosition, Direction walki
     nearWhite.setValue(1 - (1 - nearWhite.value()) / 5);
     nearWhite.setSaturation(nearWhite.saturation() / 5);
     nearWhite.setAlphaF(m_objectPreviewInnerAlpha);
-    ImageOperation op = BorderImageOperation{m_beamGunGlowBorder, nearWhite.toRgba(), favoriteColorTrans, false};
+    ImageOperation op = BorderImageOperation{m_beamGunGlowBorder, nearWhite.toRgba(), favoriteColorTrans, false, false};
 
     for (Drawable& drawable : drawables) {
       if (drawable.isImage())

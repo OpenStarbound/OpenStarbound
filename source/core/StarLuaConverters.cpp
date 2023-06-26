@@ -33,7 +33,7 @@ Maybe<Color> LuaConverter<Color>::to(LuaEngine& engine, LuaValue const& v) {
   } else if (auto s = v.ptr<LuaString>()) {
     try {
       return Color(s->ptr());
-    } catch (ColorException) {}
+    } catch (ColorException const&) {}
   }
 
   return {};

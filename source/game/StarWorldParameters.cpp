@@ -161,6 +161,11 @@ TerrestrialWorldParameters::TerrestrialWorldParameters(Json const& store) : Visi
   coreLayer = loadTerrestrialLayer(store.get("coreLayer"));
 }
 
+TerrestrialWorldParameters &TerrestrialWorldParameters::operator=(TerrestrialWorldParameters const& terrestrialWorldParameters) {
+  *this = terrestrialWorldParameters;
+  return *this;
+}
+
 WorldParametersType TerrestrialWorldParameters::type() const {
   return WorldParametersType::TerrestrialWorldParameters;
 }

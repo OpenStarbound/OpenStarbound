@@ -242,7 +242,7 @@ ImageConstPtr Assets::image(AssetPath const& path) const {
 
 void Assets::queueImages(StringList const& paths) const {
   queueAssets(paths.transformed([](String const& path) {
-    auto components = AssetPath::split(path);
+    const auto components = AssetPath::split(path);
     validatePath(components, true, true);
 
     return AssetId{AssetType::Image, move(components)};
@@ -275,7 +275,7 @@ AudioConstPtr Assets::audio(String const& path) const {
 
 void Assets::queueAudios(StringList const& paths) const {
   queueAssets(paths.transformed([](String const& path) {
-    auto components = AssetPath::split(path);
+    const auto components = AssetPath::split(path);
     validatePath(components, false, false);
 
     return AssetId{AssetType::Audio, move(components)};
@@ -866,7 +866,7 @@ shared_ptr<Assets::AssetData> Assets::loadImage(AssetPath const& path) const {
       auto newData = make_shared<ImageData>();
       Image newImage = *source->image;
       path.directives.forEach([&](auto const& entry, Directives const& directives) {
-        if (auto error = entry.operation.ptr<ErrorImageOperation>())
+        if (auto error = entry.operation.template ptr<ErrorImageOperation>())
           std::rethrow_exception(error->exception);
         else
           processImageOperation(entry.operation, newImage, [&](String const& ref) { return references.get(ref).get(); });

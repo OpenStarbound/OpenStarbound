@@ -154,11 +154,11 @@ size_t Directives::size() const {
   return shared ? shared->entries.size() : 0;
 }
 
-inline bool Directives::empty() const {
+bool Directives::empty() const {
   return !shared || shared->empty();
 }
 
-inline Directives::operator bool() const {
+Directives::operator bool() const {
   return !empty();
 }
 
@@ -172,7 +172,7 @@ DataStream& operator>>(DataStream& ds, Directives& directives) {
   return ds;
 }
 
-DataStream& operator<<(DataStream& ds, Directives const& directives) {
+DataStream& operator<<(DataStream & ds, Directives const& directives) {
   if (directives)
     ds.write(directives.shared->string);
   else
@@ -205,11 +205,11 @@ DirectivesGroup::DirectivesGroup(String&& directives) : m_count(0) {
   }
 }
 
-inline bool DirectivesGroup::empty() const {
+bool DirectivesGroup::empty() const {
   return m_count == 0;
 }
 
-inline DirectivesGroup::operator bool() const {
+DirectivesGroup::operator bool() const {
   return empty();
 }
 
@@ -238,7 +238,7 @@ DirectivesGroup& DirectivesGroup::operator+=(Directives const& other) {
   return *this;
 }
 
-inline String DirectivesGroup::toString() const {
+String DirectivesGroup::toString() const {
   String string;
   addToString(string);
   return string;
@@ -272,7 +272,7 @@ bool DirectivesGroup::forEachAbortable(AbortableDirectivesCallback callback) con
   return true;
 }
 
-inline Image DirectivesGroup::applyNewImage(Image const& image) const {
+Image DirectivesGroup::applyNewImage(Image const& image) const {
   Image result = image;
   applyExistingImage(result);
   return result;
@@ -288,7 +288,7 @@ void DirectivesGroup::applyExistingImage(Image& image) const {
   });
 }
 
-inline size_t DirectivesGroup::hash() const {
+size_t DirectivesGroup::hash() const {
   XXHash3 hasher;
   for (auto& directives : m_directives) {
     size_t hash = directives.hash();

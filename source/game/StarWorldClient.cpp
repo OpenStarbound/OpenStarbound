@@ -358,7 +358,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
 
   const List<Directives>* directives = nullptr;
   if (auto& worldTemplate = m_worldTemplate) {
-    if (auto& parameters = worldTemplate->worldParameters())
+    if (const auto& parameters = worldTemplate->worldParameters())
       if (auto& globalDirectives = m_worldTemplate->worldParameters()->globalDirectives)
         directives = &globalDirectives.get();
   }
@@ -1266,7 +1266,7 @@ void WorldClient::handleDamageNotifications() {
       
       const List<Directives>* directives = nullptr;
       if (auto& worldTemplate = m_worldTemplate) {
-        if (auto& parameters = worldTemplate->worldParameters())
+        if (const auto& parameters = worldTemplate->worldParameters())
           if (auto& globalDirectives = m_worldTemplate->worldParameters()->globalDirectives)
             directives = &globalDirectives.get();
       }
@@ -1336,7 +1336,7 @@ void WorldClient::removeEntity(EntityId entityId, bool andDie) {
 
     const List<Directives>* directives = nullptr;
     if (auto& worldTemplate = m_worldTemplate) {
-      if (auto& parameters = worldTemplate->worldParameters())
+      if (const auto& parameters = worldTemplate->worldParameters())
         if (auto& globalDirectives = m_worldTemplate->worldParameters()->globalDirectives)
           directives = &globalDirectives.get();
     }

@@ -428,7 +428,7 @@ String String::lookupTags(Lookup&& lookup) const {
     }
   }
 
-  return move(finalString);
+  return finalString;
 }
 
 template <typename Lookup>
@@ -466,7 +466,7 @@ Maybe<String> String::maybeLookupTagsView(Lookup&& lookup) const {
   for (auto& view : finalViews)
     finalString += view;
 
-  return move(finalString);
+  return String(finalString);
 }
 
 template <typename Lookup>

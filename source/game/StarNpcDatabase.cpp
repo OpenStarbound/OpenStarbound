@@ -383,7 +383,7 @@ Json NpcDatabase::mergeConfigValues(Json const& base, Json const& merger) const 
         map[entry.first] = mergeConfigValues(map[entry.first], entry.second);
       }
     }
-    return std::move(map);
+    return map;
   } else if (merger.isNull()) {
     return base;
   } else {

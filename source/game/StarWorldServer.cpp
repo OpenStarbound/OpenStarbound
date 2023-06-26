@@ -1747,7 +1747,7 @@ void WorldServer::queueUpdatePackets(ConnectionId clientId) {
           auto pair = make_pair(entityId, *version);
           auto i = m_netStateCache.find(pair);
           if (i == m_netStateCache.end())
-            i = m_netStateCache.insert(pair, move(monitoredEntity->writeNetState(*version))).first;
+            i = m_netStateCache.insert(pair, monitoredEntity->writeNetState(*version)).first;
           const auto& netState = i->second;
           if (!netState.first.empty())
             updateSetPacket->deltas[entityId] = netState.first;

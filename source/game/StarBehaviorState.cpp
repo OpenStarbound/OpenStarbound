@@ -209,7 +209,7 @@ NodeStatus BehaviorState::runAction(ActionNode const& node, NodeState& state) {
     LuaThread thread = nodeLuaThread(node.name);
     try {
       result = thread.resume<ActionReturn>(parameters, blackboardPtr(), id, m_lastDt).value(ActionReturn(NodeStatus::Invalid, LuaNil));
-    } catch (LuaException e) {
+    } catch (LuaException const& e) {
       throw StarException(strf("Lua Exception caught running action node %s in behavior %s: %s", node.name, m_tree->name, outputException(e, false)));
     }
 
@@ -221,7 +221,7 @@ NodeStatus BehaviorState::runAction(ActionNode const& node, NodeState& state) {
 
     try {
       result = thread.resume<ActionReturn>(m_lastDt).value(ActionReturn(NodeStatus::Invalid, LuaNil));
-    } catch (LuaException e) {
+    } catch (LuaException const& e) {
       throw StarException(strf("Lua Exception caught resuming action node %s in behavior %s: %s", node.name, m_tree->name, outputException(e, false)));
     }
 
@@ -245,7 +245,7 @@ NodeStatus BehaviorState::runDecorator(DecoratorNode const& node, NodeState& sta
     LuaThread thread = nodeLuaThread(node.name);
     try {
       status = thread.resume<NodeStatus>(parameters, blackboardPtr(), id).value(NodeStatus::Invalid);
-    } catch (LuaException e) {
+    } catch (LuaException const& e) {
       throw StarException(strf("Lua Exception caught initializing decorator node %s in behavior %s: %s", node.name, m_tree->name, outputException(e, false)));
     }
     if (status == NodeStatus::Success || status == NodeStatus::Failure)
@@ -261,7 +261,7 @@ NodeStatus BehaviorState::runDecorator(DecoratorNode const& node, NodeState& sta
     if (childStatus == NodeStatus::Success || childStatus == NodeStatus::Failure) {
       try {
         status = decorator.thread.resume<NodeStatus>(childStatus).value(NodeStatus::Invalid);
-      } catch (LuaException e) {
+      } catch (LuaException const& e) {
         throw StarException(strf("Lua Exception caught resuming decorator node %s in behavior %s: %s", node.name, m_tree->name, outputException(e, false)));
       }
     } else {

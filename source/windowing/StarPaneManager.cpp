@@ -17,7 +17,7 @@ PaneManager::PaneManager()
 }
 
 void PaneManager::displayPane(PaneLayer paneLayer, PanePtr const& pane, DismissCallback onDismiss) {
-  if (!m_displayedPanes[paneLayer].insertFront(move(pane), move(onDismiss)).second)
+  if (!m_displayedPanes[paneLayer].insertFront(pane, move(onDismiss)).second)
     throw GuiException("Pane displayed twice in PaneManager::displayPane");
 
   if (!pane->hasDisplayed() && pane->anchor() == PaneAnchor::None)

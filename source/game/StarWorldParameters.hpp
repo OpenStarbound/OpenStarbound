@@ -107,6 +107,8 @@ struct TerrestrialWorldParameters : VisitableWorldParameters {
   TerrestrialWorldParameters(TerrestrialWorldParameters const& terrestrialWorldParameters);
   TerrestrialWorldParameters(Json const& store);
 
+  TerrestrialWorldParameters &operator=(TerrestrialWorldParameters const& terrestrialWorldParameters);
+
   virtual WorldParametersType type() const override;
 
   virtual Json store() const override;

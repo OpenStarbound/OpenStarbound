@@ -154,7 +154,7 @@ Json Drawable::toJson() const {
   json.set("color", jsonFromColor(color));
   json.set("fullbright", fullbright);
 
-  return move(json);
+  return json;
 }
 
 void Drawable::translate(Vec2F const& translation) {
@@ -270,13 +270,13 @@ DataStream& operator<<(DataStream& ds, Drawable::PolyPart const& poly) {
 
 // I need to find out if this is for network serialization or not eventually
 DataStream& operator>>(DataStream& ds, Drawable::ImagePart& image) {
-  ds >> AssetPath::join(image.image);
+  ds >> image.image;
   ds >> image.transformation;
   return ds;
 }
 
 DataStream& operator<<(DataStream& ds, Drawable::ImagePart const& image) {
-  ds << AssetPath::join(image.image);
+  ds << image.image;
   ds << image.transformation;
   return ds;
 }

@@ -85,6 +85,7 @@ public:
   // Constructs a stopped timer whose time is up.
   Timer();
   Timer(Timer const& timer);
+  Timer& operator=(Timer const& timer);
 
   // Start the timer with the given time left.
   void restart(double timeLeft);

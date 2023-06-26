@@ -303,7 +303,13 @@ namespace RangeHelper {
 STAR_EXCEPTION(RangeException, StarException);
 
 template <typename Value, typename Diff = int>
-class RangeIterator : public std::iterator<std::random_access_iterator_tag, Value> {
+class RangeIterator {
+  using iterator_category = std::random_access_iterator_tag;
+  using value_type = Value;
+  using difference_type = Diff;
+  using pointer = Value*;
+  using reference = Value&;
+
 public:
   RangeIterator() : m_start(), m_end(), m_diff(1), m_current(), m_stop(true) {}
 
@@ -342,7 +348,7 @@ public:
     return *this;
   }
 
-  RangeIterator operator-=(Diff steps) const {
+  RangeIterator operator-=(Diff steps) {
     m_stop = false;
     sanity();
 

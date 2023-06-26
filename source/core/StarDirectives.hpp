@@ -23,7 +23,7 @@ public:
     size_t length;
 
     ImageOperation const& loadOperation(Shared const& parent) const;
-    inline StringView string(Shared const& parent) const;
+    StringView string(Shared const& parent) const;
     Entry(ImageOperation&& newOperation, size_t begin, size_t end);
     Entry(ImageOperation const& newOperation, size_t begin, size_t end);
     Entry(Entry const& other);

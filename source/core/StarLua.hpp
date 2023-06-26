@@ -109,7 +109,7 @@ namespace LuaDetail {
     LuaHandle& operator=(LuaHandle&& other);
 
     LuaEnginePtr engine;
-    int handleIndex;
+    int handleIndex = 0;
   };
 
   // Not meant to be used directly, exposes a raw interface for wrapped C++

@@ -111,7 +111,7 @@ void defineObjectOrientation(TilesetUpdater& updater,
   List<ImageConstPtr> layers;
   unsigned width = 0, height = 0;
   for (auto const& imageLayer : orientation->imageLayers) {
-    String imageName = imageLayer.imagePart().image.replaceTags(StringMap<String>{}, true, "default");
+    String imageName = AssetPath::join(imageLayer.imagePart().image).replaceTags(StringMap<String>{}, true, "default");
 
     ImageConstPtr image = assets->image(imageName);
     layers.append(image);

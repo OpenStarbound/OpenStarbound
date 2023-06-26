@@ -186,7 +186,7 @@ String hexEncode(char const* data, size_t len) {
   size_t encoded = hexEncode(data, len, &res[0], res.size());
   _unused(encoded);
   starAssert(encoded == res.size());
-  return move(res);
+  return res;
 }
 
 String base64Encode(char const* data, size_t len) {
@@ -195,7 +195,7 @@ String base64Encode(char const* data, size_t len) {
   _unused(encoded);
   starAssert(encoded <= res.size());
   res.resize(encoded);
-  return move(res);
+  return res;
 }
 
 String hexEncode(ByteArray const& data) {

@@ -177,6 +177,11 @@ Timer::Timer() : Clock(false) {
 Timer::Timer(Timer const& timer)
   : Clock(timer) {}
 
+Timer& Timer::operator=(Timer const& timer) {
+  Clock::operator=(timer);
+  return *this;
+}
+
 void Timer::restart(double timeLeft) {
   Clock::setTime(-timeLeft);
   Clock::start();

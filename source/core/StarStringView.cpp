@@ -425,7 +425,7 @@ bool operator<(StringView s1, StringView s2) {
   return s1.m_view < s2.m_view;
 }
 
-std::ostream& operator<<(std::ostream& os, StringView& s) {
+std::ostream& operator<<(std::ostream& os, StringView const& s) {
   os << s.utf8();
   return os;
 }

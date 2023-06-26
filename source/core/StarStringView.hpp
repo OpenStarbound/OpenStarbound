@@ -100,7 +100,7 @@ public:
   friend bool operator!=(StringView s1, StringView s2);
   friend bool operator<(StringView s1, StringView s2);
 
-  friend std::ostream& operator<<(std::ostream& os, StringView& s);
+  friend std::ostream& operator<<(std::ostream& os, StringView const& s);
 
 private:
   int compare(size_t selfOffset,

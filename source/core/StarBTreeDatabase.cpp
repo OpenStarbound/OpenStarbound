@@ -199,7 +199,7 @@ void BTreeDatabase::forAll(function<void(ByteArray, ByteArray)> v) {
 bool BTreeDatabase::insert(ByteArray const& k, ByteArray const& data) {
   WriteLocker writeLocker(m_lock);
   checkKeySize(k);
-  return m_impl.insert(move(k), move(data));
+  return m_impl.insert(k, data);
 }
 
 bool BTreeDatabase::remove(ByteArray const& k) {

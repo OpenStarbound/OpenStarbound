@@ -14,7 +14,7 @@ int64_t const LockFile::MaximumSleepMillis;
 Maybe<LockFile> LockFile::acquireLock(String const& filename, int64_t lockTimeout) {
   LockFile lock(move(filename));
   if (lock.lock(lockTimeout))
-    return move(lock);
+    return lock;
   return {};
 }
 

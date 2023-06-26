@@ -1,6 +1,6 @@
 /*
  * xxHash - Extremely Fast Hash algorithm
- * Copyright (C) 2020 Yann Collet
+ * Copyright (C) 2020-2021 Yann Collet
  *
  * BSD 2-Clause License (https://www.opensource.org/licenses/bsd-license.php)
  *
@@ -36,7 +36,7 @@
 /*!
  * @file xxh_x86dispatch.c
  *
- * Automatic dispatcher code for the @ref xxh3_family on x86-based targets.
+ * Automatic dispatcher code for the @ref XXH3_family on x86-based targets.
  *
  * Optional add-on.
  *
@@ -60,29 +60,28 @@ extern "C" {
  * @def XXH_X86DISPATCH_ALLOW_AVX
  * @brief Disables the AVX sanity check.
  *
- * Don't compile xxh_x86dispatch.c with options like `-mavx*`, `-march=native`,
- * or `/arch:AVX*`. It is intended to be compiled for the minimum target, and
+ * xxh_x86dispatch.c is intended to be compiled for the minimum target, and
  * it selectively enables SSE2, AVX2, and AVX512 when it is needed.
  *
- * Using this option _globally_ allows this feature, and therefore makes it
+ * Compiling with options like `-mavx*`, `-march=native`, or `/arch:AVX*`
+ * _globally_ will always enable this feature, and therefore makes it
  * undefined behavior to execute on any CPU without said feature.
  *
  * Even if the source code isn't directly using AVX intrinsics in a function,
  * the compiler can still generate AVX code from autovectorization and by
  * "upgrading" SSE2 intrinsics to use the VEX prefixes (a.k.a. AVX128).
  *
- * Use the same flags that you use to compile the rest of the program; this
- * file will safely generate SSE2, AVX2, and AVX512 without these flags.
- *
- * Define XXH_X86DISPATCH_ALLOW_AVX to ignore this check, and feel free to open
- * an issue if there is a target in the future where AVX is a default feature.
+ * Define XXH_X86DISPATCH_ALLOW_AVX to ignore this check,
+ * thus accepting that the produced binary will not work correctly
+ * on any CPU with less features than the ones stated at compilation time.
  */
 #ifdef XXH_DOXYGEN
 #  define XXH_X86DISPATCH_ALLOW_AVX
 #endif
 
 #if defined(__AVX__) && !defined(XXH_X86DISPATCH_ALLOW_AVX)
-#  error "Do not compile xxh_x86dispatch.c with AVX enabled! See the comment above."
+#  error "Error: if xxh_x86dispatch.c is compiled with AVX enabled, the resulting binary will crash on sse2-only cpus !! " \
+         "If you nonetheless want to do that, please enable the XXH_X86DISPATCH_ALLOW_AVX build variable"
 #endif
 
 #ifdef __has_include
@@ -207,6 +206,23 @@ extern "C" {
 #define XXH_X86DISPATCH
 #include "xxhash.h"
 
+#ifndef XXH_HAS_ATTRIBUTE
+#  ifdef __has_attribute
+#    define XXH_HAS_ATTRIBUTE(...) __has_attribute(__VA_ARGS__)
+#  else
+#    define XXH_HAS_ATTRIBUTE(...) 0
+#  endif
+#endif
+
+#if XXH_HAS_ATTRIBUTE(constructor)
+#  define XXH_CONSTRUCTOR __attribute__((constructor))
+#  define XXH_DISPATCH_MAYBE_NULL 0
+#else
+#  define XXH_CONSTRUCTOR
+#  define XXH_DISPATCH_MAYBE_NULL 1
+#endif
+
+
 /*
  * Support both AT&T and Intel dialects
  *
@@ -316,7 +332,7 @@ static xxh_u64 XXH_xgetbv(void)
  *
  * Runs various CPUID/XGETBV tests to try and determine the best implementation.
  *
- * @ret The best @ref XXH_VECTOR implementation.
+ * @return The best @ref XXH_VECTOR implementation.
  * @see XXH_VECTOR_TYPES
  */
 static int XXH_featureTest(void)
@@ -455,22 +471,23 @@ static int XXH_featureTest(void)
 /* ===   XXH3, default variants   === */                                      \
                                                                               \
 XXH_NO_INLINE target XXH64_hash_t                                             \
-XXHL64_default_##suffix(const void* XXH_RESTRICT input, size_t len)           \
+XXHL64_default_##suffix(XXH_NOESCAPE const void* XXH_RESTRICT input,          \
+                        size_t len)                                           \
 {                                                                             \
     return XXH3_hashLong_64b_internal(                                        \
                input, len, XXH3_kSecret, sizeof(XXH3_kSecret),                \
-               XXH3_accumulate_512_##suffix, XXH3_scrambleAcc_##suffix        \
+               XXH3_accumulate_##suffix, XXH3_scrambleAcc_##suffix            \
     );                                                                        \
 }                                                                             \
                                                                               \
 /* ===   XXH3, Seeded variants   === */                                       \
                                                                               \
 XXH_NO_INLINE target XXH64_hash_t                                             \
-XXHL64_seed_##suffix(const void* XXH_RESTRICT input, size_t len,              \
+XXHL64_seed_##suffix(XXH_NOESCAPE const void* XXH_RESTRICT input, size_t len, \
                      XXH64_hash_t seed)                                       \
 {                                                                             \
     return XXH3_hashLong_64b_withSeed_internal(                               \
-                    input, len, seed, XXH3_accumulate_512_##suffix,           \
+                    input, len, seed, XXH3_accumulate_##suffix,               \
                     XXH3_scrambleAcc_##suffix, XXH3_initCustomSecret_##suffix \
     );                                                                        \
 }                                                                             \
@@ -478,54 +495,59 @@ XXHL64_seed_##suffix(const void* XXH_RESTRICT input, size_t len,              \
 /* ===   XXH3, Secret variants   === */                                       \
                                                                               \
 XXH_NO_INLINE target XXH64_hash_t                                             \
-XXHL64_secret_##suffix(const void* XXH_RESTRICT input, size_t len,            \
-                       const void* secret, size_t secretLen)                  \
+XXHL64_secret_##suffix(XXH_NOESCAPE const void* XXH_RESTRICT input,           \
+                       size_t len, XXH_NOESCAPE const void* secret,           \
+                       size_t secretLen)                                      \
 {                                                                             \
     return XXH3_hashLong_64b_internal(                                        \
                     input, len, secret, secretLen,                            \
-                    XXH3_accumulate_512_##suffix, XXH3_scrambleAcc_##suffix   \
+                    XXH3_accumulate_##suffix, XXH3_scrambleAcc_##suffix       \
     );                                                                        \
 }                                                                             \
                                                                               \
 /* ===   XXH3 update variants   === */                                        \
                                                                               \
 XXH_NO_INLINE target XXH_errorcode                                            \
-XXH3_update_##suffix(XXH3_state_t* state, const void* input, size_t len)      \
+XXH3_update_##suffix(XXH_NOESCAPE XXH3_state_t* state,                        \
+                     XXH_NOESCAPE const void* input, size_t len)              \
 {                                                                             \
     return XXH3_update(state, (const xxh_u8*)input, len,                      \
-                    XXH3_accumulate_512_##suffix, XXH3_scrambleAcc_##suffix); \
+                    XXH3_accumulate_##suffix, XXH3_scrambleAcc_##suffix);     \
 }                                                                             \
                                                                               \
 /* ===   XXH128 default variants   === */                                     \
                                                                               \
 XXH_NO_INLINE target XXH128_hash_t                                            \
-XXHL128_default_##suffix(const void* XXH_RESTRICT input, size_t len)          \
+XXHL128_default_##suffix(XXH_NOESCAPE  const void* XXH_RESTRICT input,        \
+                         size_t len)                                          \
 {                                                                             \
     return XXH3_hashLong_128b_internal(                                       \
                     input, len, XXH3_kSecret, sizeof(XXH3_kSecret),           \
-                    XXH3_accumulate_512_##suffix, XXH3_scrambleAcc_##suffix   \
+                    XXH3_accumulate_##suffix, XXH3_scrambleAcc_##suffix       \
     );                                                                        \
 }                                                                             \
                                                                               \
 /* ===   XXH128 Secret variants   === */                                      \
                                                                               \
 XXH_NO_INLINE target XXH128_hash_t                                            \
-XXHL128_secret_##suffix(const void* XXH_RESTRICT input, size_t len,           \
-                        const void* XXH_RESTRICT secret, size_t secretLen)    \
+XXHL128_secret_##suffix(XXH_NOESCAPE const void* XXH_RESTRICT input,          \
+                        size_t len,                                           \
+                        XXH_NOESCAPE const void* XXH_RESTRICT secret,         \
+                        size_t secretLen)                                     \
 {                                                                             \
     return XXH3_hashLong_128b_internal(                                       \
                     input, len, (const xxh_u8*)secret, secretLen,             \
-                    XXH3_accumulate_512_##suffix, XXH3_scrambleAcc_##suffix); \
+                    XXH3_accumulate_##suffix, XXH3_scrambleAcc_##suffix);     \
 }                                                                             \
                                                                               \
 /* ===   XXH128 Seeded variants   === */                                      \
                                                                               \
 XXH_NO_INLINE target XXH128_hash_t                                            \
-XXHL128_seed_##suffix(const void* XXH_RESTRICT input, size_t len,             \
+XXHL128_seed_##suffix(XXH_NOESCAPE const void* XXH_RESTRICT input, size_t len,\
                       XXH64_hash_t seed)                                      \
 {                                                                             \
     return XXH3_hashLong_128b_withSeed_internal(input, len, seed,             \
-                    XXH3_accumulate_512_##suffix, XXH3_scrambleAcc_##suffix,  \
+                    XXH3_accumulate_##suffix, XXH3_scrambleAcc_##suffix,      \
                     XXH3_initCustomSecret_##suffix);                          \
 }
 
@@ -545,13 +567,13 @@ XXH_DEFINE_DISPATCH_FUNCS(avx512, XXH_TARGET_AVX512)
 
 /* ====    Dispatchers    ==== */
 
-typedef XXH64_hash_t (*XXH3_dispatchx86_hashLong64_default)(const void* XXH_RESTRICT, size_t);
+typedef XXH64_hash_t (*XXH3_dispatchx86_hashLong64_default)(XXH_NOESCAPE const void* XXH_RESTRICT, size_t);
 
-typedef XXH64_hash_t (*XXH3_dispatchx86_hashLong64_withSeed)(const void* XXH_RESTRICT, size_t, XXH64_hash_t);
+typedef XXH64_hash_t (*XXH3_dispatchx86_hashLong64_withSeed)(XXH_NOESCAPE const void* XXH_RESTRICT, size_t, XXH64_hash_t);
 
-typedef XXH64_hash_t (*XXH3_dispatchx86_hashLong64_withSecret)(const void* XXH_RESTRICT, size_t, const void* XXH_RESTRICT, size_t);
+typedef XXH64_hash_t (*XXH3_dispatchx86_hashLong64_withSecret)(XXH_NOESCAPE const void* XXH_RESTRICT, size_t, XXH_NOESCAPE const void* XXH_RESTRICT, size_t);
 
-typedef XXH_errorcode (*XXH3_dispatchx86_update)(XXH3_state_t*, const void*, size_t);
+typedef XXH_errorcode (*XXH3_dispatchx86_update)(XXH_NOESCAPE XXH3_state_t*, XXH_NOESCAPE const void*, size_t);
 
 typedef struct {
     XXH3_dispatchx86_hashLong64_default    hashLong64_default;
@@ -593,11 +615,11 @@ static const XXH_dispatchFunctions_s XXH_kDispatch[XXH_NB_DISPATCHES] = {
 static XXH_dispatchFunctions_s XXH_g_dispatch = { NULL, NULL, NULL, NULL };
 
 
-typedef XXH128_hash_t (*XXH3_dispatchx86_hashLong128_default)(const void* XXH_RESTRICT, size_t);
+typedef XXH128_hash_t (*XXH3_dispatchx86_hashLong128_default)(XXH_NOESCAPE const void* XXH_RESTRICT, size_t);
 
-typedef XXH128_hash_t (*XXH3_dispatchx86_hashLong128_withSeed)(const void* XXH_RESTRICT, size_t, XXH64_hash_t);
+typedef XXH128_hash_t (*XXH3_dispatchx86_hashLong128_withSeed)(XXH_NOESCAPE const void* XXH_RESTRICT, size_t, XXH64_hash_t);
 
-typedef XXH128_hash_t (*XXH3_dispatchx86_hashLong128_withSecret)(const void* XXH_RESTRICT, size_t, const void* XXH_RESTRICT, size_t);
+typedef XXH128_hash_t (*XXH3_dispatchx86_hashLong128_withSecret)(XXH_NOESCAPE const void* XXH_RESTRICT, size_t, const void* XXH_RESTRICT, size_t);
 
 typedef struct {
     XXH3_dispatchx86_hashLong128_default    hashLong128_default;
@@ -642,7 +664,7 @@ static XXH_dispatch128Functions_s XXH_g_dispatch128 = { NULL, NULL, NULL, NULL }
  * @internal
  * @brief Runs a CPUID check and sets the correct dispatch tables.
  */
-static void XXH_setDispatch(void)
+static XXH_CONSTRUCTOR void XXH_setDispatch(void)
 {
     int vecID = XXH_featureTest();
     XXH_STATIC_ASSERT(XXH_AVX512 == XXH_NB_DISPATCHES-1);
@@ -668,11 +690,12 @@ XXH3_hashLong_64b_defaultSecret_selection(const void* input, size_t len,
                                           XXH64_hash_t seed64, const xxh_u8* secret, size_t secretLen)
 {
     (void)seed64; (void)secret; (void)secretLen;
-    if (XXH_g_dispatch.hashLong64_default == NULL) XXH_setDispatch();
+    if (XXH_DISPATCH_MAYBE_NULL && XXH_g_dispatch.hashLong64_default == NULL)
+        XXH_setDispatch();
     return XXH_g_dispatch.hashLong64_default(input, len);
 }
 
-XXH64_hash_t XXH3_64bits_dispatch(const void* input, size_t len)
+XXH64_hash_t XXH3_64bits_dispatch(XXH_NOESCAPE const void* input, size_t len)
 {
     return XXH3_64bits_internal(input, len, 0, XXH3_kSecret, sizeof(XXH3_kSecret), XXH3_hashLong_64b_defaultSecret_selection);
 }
@@ -682,11 +705,12 @@ XXH3_hashLong_64b_withSeed_selection(const void* input, size_t len,
                                      XXH64_hash_t seed64, const xxh_u8* secret, size_t secretLen)
 {
     (void)secret; (void)secretLen;
-    if (XXH_g_dispatch.hashLong64_seed == NULL) XXH_setDispatch();
+    if (XXH_DISPATCH_MAYBE_NULL && XXH_g_dispatch.hashLong64_seed == NULL)
+        XXH_setDispatch();
     return XXH_g_dispatch.hashLong64_seed(input, len, seed64);
 }
 
-XXH64_hash_t XXH3_64bits_withSeed_dispatch(const void* input, size_t len, XXH64_hash_t seed)
+XXH64_hash_t XXH3_64bits_withSeed_dispatch(XXH_NOESCAPE const void* input, size_t len, XXH64_hash_t seed)
 {
     return XXH3_64bits_internal(input, len, seed, XXH3_kSecret, sizeof(XXH3_kSecret), XXH3_hashLong_64b_withSeed_selection);
 }
@@ -696,19 +720,22 @@ XXH3_hashLong_64b_withSecret_selection(const void* input, size_t len,
                                        XXH64_hash_t seed64, const xxh_u8* secret, size_t secretLen)
 {
     (void)seed64;
-    if (XXH_g_dispatch.hashLong64_secret == NULL) XXH_setDispatch();
+    if (XXH_DISPATCH_MAYBE_NULL && XXH_g_dispatch.hashLong64_secret == NULL)
+        XXH_setDispatch();
     return XXH_g_dispatch.hashLong64_secret(input, len, secret, secretLen);
 }
 
-XXH64_hash_t XXH3_64bits_withSecret_dispatch(const void* input, size_t len, const void* secret, size_t secretLen)
+XXH64_hash_t XXH3_64bits_withSecret_dispatch(XXH_NOESCAPE const void* input, size_t len, XXH_NOESCAPE const void* secret, size_t secretLen)
 {
     return XXH3_64bits_internal(input, len, 0, secret, secretLen, XXH3_hashLong_64b_withSecret_selection);
 }
 
 XXH_errorcode
-XXH3_64bits_update_dispatch(XXH3_state_t* state, const void* input, size_t len)
+XXH3_64bits_update_dispatch(XXH_NOESCAPE XXH3_state_t* state, XXH_NOESCAPE const void* input, size_t len)
 {
-    if (XXH_g_dispatch.update == NULL) XXH_setDispatch();
+    if (XXH_DISPATCH_MAYBE_NULL && XXH_g_dispatch.update == NULL)
+        XXH_setDispatch();
+
     return XXH_g_dispatch.update(state, (const xxh_u8*)input, len);
 }
 
@@ -720,25 +747,27 @@ XXH3_hashLong_128b_defaultSecret_selection(const void* input, size_t len,
                                            XXH64_hash_t seed64, const void* secret, size_t secretLen)
 {
     (void)seed64; (void)secret; (void)secretLen;
-    if (XXH_g_dispatch128.hashLong128_default == NULL) XXH_setDispatch();
+    if (XXH_DISPATCH_MAYBE_NULL && XXH_g_dispatch128.hashLong128_default == NULL)
+        XXH_setDispatch();
     return XXH_g_dispatch128.hashLong128_default(input, len);
 }
 
-XXH128_hash_t XXH3_128bits_dispatch(const void* input, size_t len)
+XXH128_hash_t XXH3_128bits_dispatch(XXH_NOESCAPE const void* input, size_t len)
 {
     return XXH3_128bits_internal(input, len, 0, XXH3_kSecret, sizeof(XXH3_kSecret), XXH3_hashLong_128b_defaultSecret_selection);
 }
 
 static XXH128_hash_t
 XXH3_hashLong_128b_withSeed_selection(const void* input, size_t len,
-                                     XXH64_hash_t seed64, const void* secret, size_t secretLen)
+                                      XXH64_hash_t seed64, const void* secret, size_t secretLen)
 {
     (void)secret; (void)secretLen;
-    if (XXH_g_dispatch128.hashLong128_seed == NULL) XXH_setDispatch();
+    if (XXH_DISPATCH_MAYBE_NULL && XXH_g_dispatch128.hashLong128_seed == NULL)
+        XXH_setDispatch();
     return XXH_g_dispatch128.hashLong128_seed(input, len, seed64);
 }
 
-XXH128_hash_t XXH3_128bits_withSeed_dispatch(const void* input, size_t len, XXH64_hash_t seed)
+XXH128_hash_t XXH3_128bits_withSeed_dispatch(XXH_NOESCAPE const void* input, size_t len, XXH64_hash_t seed)
 {
     return XXH3_128bits_internal(input, len, seed, XXH3_kSecret, sizeof(XXH3_kSecret), XXH3_hashLong_128b_withSeed_selection);
 }
@@ -748,19 +777,21 @@ XXH3_hashLong_128b_withSecret_selection(const void* input, size_t len,
                                         XXH64_hash_t seed64, const void* secret, size_t secretLen)
 {
     (void)seed64;
-    if (XXH_g_dispatch128.hashLong128_secret == NULL) XXH_setDispatch();
+    if (XXH_DISPATCH_MAYBE_NULL && XXH_g_dispatch128.hashLong128_secret == NULL)
+        XXH_setDispatch();
     return XXH_g_dispatch128.hashLong128_secret(input, len, secret, secretLen);
 }
 
-XXH128_hash_t XXH3_128bits_withSecret_dispatch(const void* input, size_t len, const void* secret, size_t secretLen)
+XXH128_hash_t XXH3_128bits_withSecret_dispatch(XXH_NOESCAPE const void* input, size_t len, XXH_NOESCAPE const void* secret, size_t secretLen)
 {
     return XXH3_128bits_internal(input, len, 0, secret, secretLen, XXH3_hashLong_128b_withSecret_selection);
 }
 
 XXH_errorcode
-XXH3_128bits_update_dispatch(XXH3_state_t* state, const void* input, size_t len)
+XXH3_128bits_update_dispatch(XXH_NOESCAPE XXH3_state_t* state, XXH_NOESCAPE const void* input, size_t len)
 {
-    if (XXH_g_dispatch128.update == NULL) XXH_setDispatch();
+    if (XXH_DISPATCH_MAYBE_NULL && XXH_g_dispatch128.update == NULL)
+        XXH_setDispatch();
     return XXH_g_dispatch128.update(state, (const xxh_u8*)input, len);
 }
 

@@ -81,8 +81,9 @@ TEST(FlatHashSet, Random) {
   Random::shuffle(keys);
   for (auto k : keys) {
     auto i = testSet.find(k);
-    if (i != testSet.end())
+    if (i != testSet.end()) {
       ASSERT_TRUE(*i == k);
+    }
   }
 
   Random::shuffle(keys);
@@ -180,8 +181,9 @@ TEST(FlatHashMap, Random) {
   Random::shuffle(values);
   for (auto v : values) {
     auto i = testMap.find(v.first);
-    if (i != testMap.end())
+    if (i != testMap.end()) {
       ASSERT_TRUE(i->second == v.second);
+    }
   }
 
   Random::shuffle(values);

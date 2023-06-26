@@ -13,7 +13,7 @@ JsonRpc::JsonRpc() {
 void JsonRpc::registerHandler(String const& handler, JsonRpcRemoteFunction func) {
   if (m_handlers.contains(handler))
     throw JsonRpcException(strf("Handler by that name already exists '%s'", handler));
-  m_handlers.add(move(handler), move(func));
+  m_handlers.add(handler, move(func));
 }
 
 void JsonRpc::registerHandlers(JsonRpcHandlers const& handlers) {

@@ -550,7 +550,7 @@ StringList Root::scanForAssetSources(StringList const& directories) {
     String path;
     Maybe<String> name;
     float priority;
-    StringList requires;
+    StringList requires_;
     StringList includes;
   };
   List<shared_ptr<AssetSource>> assetSources;
@@ -589,7 +589,7 @@ StringList Root::scanForAssetSources(StringList const& directories) {
       assetSource->path = fileName;
       assetSource->name = metadata.maybe("name").apply(mem_fn(&Json::toString));
       assetSource->priority = metadata.value("priority", 0.0f).toFloat();
-      assetSource->requires = jsonToStringList(metadata.value("requires", JsonArray{}));
+      assetSource->requires_ = jsonToStringList(metadata.value("requires", JsonArray{}));
       assetSource->includes = jsonToStringList(metadata.value("includes", JsonArray{}));
 
       if (assetSource->name) {
@@ -640,7 +640,7 @@ StringList Root::scanForAssetSources(StringList const& directories) {
         dependencySortVisit(*include);
     }
 
-    for (auto const& requirementName : source->requires) {
+    for (auto const& requirementName : source->requires_) {
       if (auto requirement = namedSources.ptr(requirementName))
         dependencySortVisit(*requirement);
       else
