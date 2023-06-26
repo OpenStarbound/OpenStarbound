@@ -681,20 +681,22 @@ private:
 
     auto& entry = m_cursorCache.get(m_currentCursor = { scale, offset, id }, [&](auto const&) {
       auto entry = std::make_shared<CursorEntry>();
-      if (scale != 1) {
-        List<ImageOperation> operations{
-          FlipImageOperation{FlipImageOperation::Mode::FlipY}, // SDL wants an Australian cursor.
-          BorderImageOperation{1, Vec4B(), Vec4B(), false, false}, // Nearest scaling fucks up and clips half off the edges, work around this with border+crop for now.
-          ScaleImageOperation{ScaleImageOperation::Mode::Nearest, Vec2F::filled(scale)},
-          CropImageOperation{RectI::withSize(Vec2I::filled(ceilf((float)scale / 2)), Vec2I(imageSize))}
+      List<ImageOperation> operations;
+      if (scale != 1)
+        operations = {
+          FlipImageOperation{ FlipImageOperation::Mode::FlipY }, // SDL wants an Australian cursor.
+          BorderImageOperation{ 1, Vec4B(), Vec4B(), false, false }, // Nearest scaling fucks up and clips half off the edges, work around this with border+crop for now.
+          ScaleImageOperation{ ScaleImageOperation::Mode::Nearest, Vec2F::filled(scale) },
+          CropImageOperation{ RectI::withSize(Vec2I::filled(ceilf((float)scale / 2)), Vec2I(imageSize)) }
         };
-        auto newImage = std::make_shared<Image>(move(processImageOperations(operations, *image)));
-        // Fix fully transparent pixels inverting the underlying display pixel on Windows (allowing this could be made configurable per cursor later!)
-        newImage->forEachPixel([](unsigned x, unsigned y, Vec4B& pixel) { if (!pixel[3]) pixel[0] = pixel[1] = pixel[2] = 0; });
-        entry->image = move(newImage);
-      }
       else
-        entry->image = image;
+        operations = { FlipImageOperation{ FlipImageOperation::Mode::FlipY } };
+
+      auto newImage = std::make_shared<Image>(move(processImageOperations(operations, *image)));
+      // Fix fully transparent pixels inverting the underlying display pixel on Windows (allowing this could be made configurable per cursor later!)
+      newImage->forEachPixel([](unsigned x, unsigned y, Vec4B& pixel) { if (!pixel[3]) pixel[0] = pixel[1] = pixel[2] = 0; });
+      entry->image = move(newImage);
+      
 
       auto size = entry->image->size();
       uint32_t pixelFormat;
