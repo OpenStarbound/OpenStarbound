@@ -19,6 +19,7 @@ public:
   void setMode(PortraitMode mode);
   void setScale(float scale);
   void setIconMode();
+  void setRenderHumanoid(bool);
   bool sendEvent(InputEvent const& event);
 
 protected:
@@ -35,6 +36,7 @@ private:
   AssetPath m_noEntityImagePart;
   float m_scale;
 
+  bool m_renderHumanoid;
   bool m_iconMode;
   AssetPath m_iconImage;
   Vec2I m_iconOffset;

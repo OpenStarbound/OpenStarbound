@@ -378,6 +378,8 @@ WidgetConstructResult WidgetParser::portraitHandler(String const& name, Json con
 
   if (config.contains("portraitMode"))
     portrait->setMode(PortraitModeNames.getLeft(config.getString("portraitMode")));
+  if (config.contains("renderHumanoid"))
+    portrait->setRenderHumanoid(config.getBool("renderHumanoid"));
 
   portrait->setScale(config.getFloat("scale", 1));
 

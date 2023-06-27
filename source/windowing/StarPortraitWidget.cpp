@@ -17,6 +17,7 @@ PortraitWidget::PortraitWidget() {
   m_entity = {};
   m_portraitMode = PortraitMode::Full;
   m_scale = 1;
+  m_renderHumanoid = false;
   m_iconMode = false;
 
   init();
@@ -37,9 +38,15 @@ void PortraitWidget::renderImpl() {
     context()->drawInterfaceQuad(m_iconImage, Vec2F(screenPosition()), m_scale);
   }
   if (m_entity) {
-    List<Drawable> portrait = m_entity->portrait(m_portraitMode);
+    HumanoidPtr humanoid = nullptr;
+    if (m_renderHumanoid) {
+      if (auto player = as<Player>(m_entity))
+        humanoid = player->humanoid();
+    }
+
+    List<Drawable> portrait = humanoid ? humanoid->render() : m_entity->portrait(m_portraitMode);
     for (auto& i : portrait) {
-      i.scale(m_scale);
+      i.scale(humanoid ? m_scale * 8.0f : m_scale);
       context()->drawInterfaceDrawable(i, Vec2F(screenPosition() + offset));
     }
   } else {
@@ -86,6 +93,10 @@ void PortraitWidget::setScale(float scale) {
 void PortraitWidget::setIconMode() {
   m_iconMode = true;
   updateSize();
+}
+
+void PortraitWidget::setRenderHumanoid(bool renderHumanoid) {
+  m_renderHumanoid = renderHumanoid;
 }
 
 bool PortraitWidget::sendEvent(InputEvent const&) {
