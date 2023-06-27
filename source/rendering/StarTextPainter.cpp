@@ -6,9 +6,9 @@
 namespace Star {
 
 namespace Text {
+  static auto stripEscapeRegex = std::regex(strf("\\{:c}[^;]*{:c}", CmdEsc, EndEsc));
   String stripEscapeCodes(String const& s) {
-    String regex = strf("\\{}[^;]*{}", CmdEsc, EndEsc);
-    return std::regex_replace(s.utf8(), std::regex(regex.utf8()), "");
+    return std::regex_replace(s.utf8(), stripEscapeRegex, "");
   }
 
   String preprocessEscapeCodes(String const& s) {

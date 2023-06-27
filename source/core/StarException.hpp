@@ -1,9 +1,17 @@
 #ifndef STAR_EXCEPTION_HPP
 #define STAR_EXCEPTION_HPP
 
-#include "StarFormat.hpp"
+#include "StarMemory.hpp"
+#include "StarOutputProxy.hpp"
+
+
+#include <string>
+
 
 namespace Star {
+
+template <typename... T>
+std::string strf(fmt::format_string<T...> fmt, T&&... args);
 
 class StarException : public std::exception {
 public:
@@ -68,22 +76,22 @@ void fatalException(std::exception const& e, bool showStackTrace);
   {}
 #endif
 
-#define STAR_EXCEPTION(ClassName, BaseName)                                                                                \
-  class ClassName : public BaseName {                                                                                      \
-  public:                                                                                                                  \
-    template <typename... Args>                                                                                            \
-    static ClassName format(fmt::format_string<Args...> fmt, Args const&... args) {                                        \
-      return ClassName(strf(fmt, args...));                                                                                \
-    }                                                                                                                      \
-    ClassName() : BaseName(#ClassName, std::string()) {}                                                                   \
+#define STAR_EXCEPTION(ClassName, BaseName)                                                                                       \
+  class ClassName : public BaseName {                                                                                             \
+  public:                                                                                                                         \
+    template <typename... Args>                                                                                                   \
+    static ClassName format(fmt::format_string<Args...> fmt, Args const&... args) {                                                               \
+      return ClassName(strf(fmt, args...));                                                                                       \
+    }                                                                                                                             \
+    ClassName() : BaseName(#ClassName, std::string()) {}                                                                          \
     explicit ClassName(std::string message, bool genStackTrace = true) : BaseName(#ClassName, move(message), genStackTrace) {}    \
-    explicit ClassName(std::exception const& cause) : BaseName(#ClassName, std::string(), cause) {}                        \
-    ClassName(std::string message, std::exception const& cause) : BaseName(#ClassName, move(message), cause) {}            \
-                                                                                                                           \
-  protected:                                                                                                               \
+    explicit ClassName(std::exception const& cause) : BaseName(#ClassName, std::string(), cause) {}                               \
+    ClassName(std::string message, std::exception const& cause) : BaseName(#ClassName, move(message), cause) {}                   \
+                                                                                                                                  \
+  protected:                                                                                                                      \
     ClassName(char const* type, std::string message, bool genStackTrace = true) : BaseName(type, move(message), genStackTrace) {} \
-    ClassName(char const* type, std::string message, std::exception const& cause)                                          \
-      : BaseName(type, move(message), cause) {}                                                                            \
+    ClassName(char const* type, std::string message, std::exception const& cause)                                                 \
+      : BaseName(type, move(message), cause) {}                                                                                   \
   }
 
 STAR_EXCEPTION(OutOfRangeException, StarException);

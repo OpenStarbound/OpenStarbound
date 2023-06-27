@@ -32,6 +32,7 @@ WorldClient::WorldClient(PlayerPtr mainPlayer) {
   m_clientConfig = assets->json("/client.config");
 
   m_currentStep = 0;
+  m_currentServerStep = 0.0;
   m_fullBright = false;
   m_worldDimTimer = GameTimer(m_clientConfig.getFloat("worldDimTime"));
   m_worldDimTimer.setDone();
@@ -463,10 +464,15 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
         for (size_t y = 0; y < ySize; ++y) {
           auto& tile = column[y];
 
-          Vec3F light = materialDatabase->radiantLight(tile.foreground, tile.foregroundMod);
-          light += liquidsDatabase->radiantLight(tile.liquid) * tile.liquid.level;
+          Vec3F light;
+          if (tile.foreground != EmptyMaterialId || tile.foregroundMod != NoModId)
+            light += materialDatabase->radiantLight(tile.foreground, tile.foregroundMod);
+
+          if (tile.liquid.liquid != EmptyLiquidId && tile.liquid.level != 0.0f)
+            light += liquidsDatabase->radiantLight(tile.liquid);
           if (tile.foregroundLightTransparent) {
-            light += materialDatabase->radiantLight(tile.background, tile.backgroundMod);
+            if (tile.background != EmptyMaterialId || tile.backgroundMod != NoModId)
+              light += materialDatabase->radiantLight(tile.background, tile.backgroundMod);
             if (tile.backgroundLightTransparent && pos[1] + y > undergroundLevel)
               light += environmentLight;
           }
@@ -758,7 +764,8 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
       tryGiveMainPlayerItem(itemDatabase->item(giveItem->item));
 
     } else if (auto stepUpdate = as<StepUpdatePacket>(packet)) {
-      m_interpolationTracker.receiveStepUpdate(stepUpdate->remoteStep);
+      m_currentServerStep = ((double)stepUpdate->remoteStep * (WorldTimestep / ServerWorldTimestep));
+      m_interpolationTracker.receiveStepUpdate(m_currentServerStep);
 
     } else if (auto environmentUpdatePacket = as<EnvironmentUpdatePacket>(packet)) {
       m_sky->readUpdate(environmentUpdatePacket->skyDelta);
@@ -893,7 +900,8 @@ void WorldClient::update() {
   }
 
   ++m_currentStep;
-  m_interpolationTracker.update(m_currentStep);
+  //m_interpolationTracker.update(m_currentStep);
+  m_interpolationTracker.update(Time::monotonicTime());
 
   List<WorldAction> triggeredActions;
   eraseWhere(m_timers, [&triggeredActions](pair<int, WorldAction>& timer) {
@@ -1464,6 +1472,7 @@ void WorldClient::clearWorld() {
   }
 
   m_currentStep = 0;
+  m_currentServerStep = 0.0;
   m_inWorld = false;
   m_clientId.reset();
 

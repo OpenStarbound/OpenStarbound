@@ -235,6 +235,7 @@ private:
 
   WorldGeometry m_geometry;
   uint64_t m_currentStep;
+  double m_currentServerStep;
   bool m_fullBright;
   CellularLightingCalculator m_lightingCalculator;
   mutable CellularLightIntensityCalculator m_lightIntensityCalculator;

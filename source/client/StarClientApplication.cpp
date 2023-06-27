@@ -558,6 +558,7 @@ void ClientApplication::setError(String const& error) {
 void ClientApplication::setError(String const& error, std::exception const& e) {
   Logger::error("{}\n{}", error, outputException(e, true));
   m_errorScreen->setMessage(strf("{}\n{}", error, outputException(e, false)));
+  changeState(MainAppState::Title);
 }
 
 void ClientApplication::updateMods() {

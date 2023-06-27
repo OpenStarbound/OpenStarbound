@@ -83,6 +83,7 @@ SET (star_core_HEADERS
     StarOptionParser.hpp
     StarOrderedMap.hpp
     StarOrderedSet.hpp
+    StarOutputProxy.hpp
     StarParametricFunction.hpp
     StarPch.hpp
     StarPeriodic.hpp
