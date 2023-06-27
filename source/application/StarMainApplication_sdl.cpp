@@ -329,6 +329,8 @@ public:
 
       bool quit = false;
       while (true) {
+        cleanup();
+
         for (auto const& event : processEvents())
           m_application->processInput(event);
 
@@ -367,8 +369,6 @@ public:
           Logger::info("Application: quitting...");
           break;
         }
-
-        m_cursorCache.cleanup();
 
         int64_t spareMilliseconds = round(m_updateTicker.spareTime() * 1000);
         if (spareMilliseconds > 0)
