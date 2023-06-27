@@ -385,6 +385,7 @@ int GuiContext::stringWidth(String const& s) {
   return textPainter()->stringWidth(s);
 }
 
+//TODO: Make this use StringView
 int GuiContext::stringInterfaceWidth(String const& s) {
   if (interfaceScale()) {
     // font size is already adjusted UP by interfaceScale, so we have to adjust

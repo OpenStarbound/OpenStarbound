@@ -1,5 +1,6 @@
 {
   "password" : {
-    "hidden" : true
+    "hidden" : true,
+    "hAnchor" : "right"
   }
 }

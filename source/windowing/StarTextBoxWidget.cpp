@@ -102,14 +102,26 @@ int TextBoxWidget::getCursorOffset() { // horizontal only
     scale = 0.5;
   } else if (m_hAnchor == HorizontalAnchor::RightAnchor) {
     scale = -1.0;
-    return context()->stringInterfaceWidth(m_text) * scale
-        + context()->stringInterfaceWidth(m_text.substr(m_cursorOffset, m_text.size()));
+    if (m_textHidden) {
+      int width = context()->stringInterfaceWidth("*");
+      size_t chars = m_text.size();
+      return (width * chars) * scale + (width * (chars - m_cursorOffset));
+    } else {
+      return context()->stringInterfaceWidth(m_text) * scale
+           + context()->stringInterfaceWidth(m_text.substr(m_cursorOffset, m_text.size()));
+    }
   } else {
     throw GuiException("Somehow, the value of m_hAnchor became bad");
   }
 
+  if (m_textHidden) {
+    int width = context()->stringInterfaceWidth("*");
+    size_t chars = m_text.size();
+    return (int)std::ceil((width * chars) * scale - (width * (chars - m_cursorOffset)));
+  } else {
   return (int)std::ceil(context()->stringInterfaceWidth(m_text) * scale
-      - context()->stringInterfaceWidth(m_text.substr(m_cursorOffset, m_text.size())));
+                      - context()->stringInterfaceWidth(m_text.substr(m_cursorOffset, m_text.size())));
+  }
 }
 
 void TextBoxWidget::update() {
