@@ -2013,6 +2013,10 @@ void Player::setPersonality(Personality const& personality) {
   m_humanoid->setIdentity(m_identity);
 }
 
+HumanoidPtr Player::humanoid() {
+  return m_humanoid;
+}
+
 List<String> Player::pullQueuedMessages() {
   return take(m_queuedMessages);
 }

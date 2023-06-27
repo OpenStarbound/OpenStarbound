@@ -98,6 +98,7 @@ public:
 
   Humanoid(Json const& config);
   Humanoid(HumanoidIdentity const& identity);
+  Humanoid(Humanoid const&) = default;
 
   struct HumanoidTiming {
     explicit HumanoidTiming(Json config = Json());
@@ -199,9 +200,10 @@ public:
 
   List<Drawable> renderSkull() const;
 
+  static Humanoid makeDummy(Gender gender);
   // Renders to centered drawables (centered on the normal image center for the
   // player graphics), (in pixels, not world space)
-  static List<Drawable> renderDummy(Gender gender, HeadArmor const* head = nullptr, ChestArmor const* chest = nullptr,
+  List<Drawable> renderDummy(Gender gender, HeadArmor const* head = nullptr, ChestArmor const* chest = nullptr,
       LegsArmor const* legs = nullptr, BackArmor const* back = nullptr);
 
   Vec2F primaryHandPosition(Vec2F const& offset) const;

@@ -300,6 +300,8 @@ public:
   void setGender(Gender const& gender);
   void setPersonality(Personality const& personality);
 
+  HumanoidPtr humanoid();
+
   void setAdmin(bool isAdmin);
   bool isAdmin() const override;
 

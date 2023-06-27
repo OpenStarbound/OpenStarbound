@@ -896,7 +896,7 @@ List<Drawable> Humanoid::renderSkull() const {
       Root::singleton().speciesDatabase()->species(m_identity.species)->skull(), 1.0f, true, Vec2F())};
 }
 
-List<Drawable> Humanoid::renderDummy(Gender gender, HeadArmor const* head, ChestArmor const* chest, LegsArmor const* legs, BackArmor const* back) {
+Humanoid Humanoid::makeDummy(Gender gender) {
   auto assets = Root::singleton().assets();
   Humanoid humanoid(assets->json("/humanoid.config"));
 
@@ -906,30 +906,34 @@ List<Drawable> Humanoid::renderDummy(Gender gender, HeadArmor const* head, Chest
   humanoid.m_backArmFrameset = assets->json("/humanoid/any/dummy.config:backArm").toString();
   humanoid.setFacingDirection(DirectionNames.getLeft(assets->json("/humanoid/any/dummy.config:direction").toString()));
 
+  return humanoid;
+}
+
+List<Drawable> Humanoid::renderDummy(Gender gender, HeadArmor const* head, ChestArmor const* chest, LegsArmor const* legs, BackArmor const* back) {
   if (head) {
-    humanoid.setHeadArmorFrameset(head->frameset(gender));
-    humanoid.setHeadArmorDirectives(head->directives());
-    humanoid.setHelmetMaskDirectives(head->maskDirectives());
+    setHeadArmorFrameset(head->frameset(gender));
+    setHeadArmorDirectives(head->directives());
+    setHelmetMaskDirectives(head->maskDirectives());
   }
 
   if (chest) {
-    humanoid.setBackSleeveFrameset(chest->backSleeveFrameset(gender));
-    humanoid.setFrontSleeveFrameset(chest->frontSleeveFrameset(gender));
-    humanoid.setChestArmorFrameset(chest->bodyFrameset(gender));
-    humanoid.setChestArmorDirectives(chest->directives());
+    setBackSleeveFrameset(chest->backSleeveFrameset(gender));
+    setFrontSleeveFrameset(chest->frontSleeveFrameset(gender));
+    setChestArmorFrameset(chest->bodyFrameset(gender));
+    setChestArmorDirectives(chest->directives());
   }
 
   if (legs) {
-    humanoid.setLegsArmorFrameset(legs->frameset(gender));
-    humanoid.setLegsArmorDirectives(legs->directives());
+    setLegsArmorFrameset(legs->frameset(gender));
+    setLegsArmorDirectives(legs->directives());
   }
 
   if (back) {
-    humanoid.setBackArmorFrameset(back->frameset(gender));
-    humanoid.setBackArmorDirectives(back->directives());
+    setBackArmorFrameset(back->frameset(gender));
+    setBackArmorDirectives(back->directives());
   }
 
-  auto drawables = humanoid.render();
+  auto drawables = render();
   Drawable::scaleAll(drawables, TilePixels);
 
   return drawables;

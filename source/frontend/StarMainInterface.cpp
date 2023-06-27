@@ -798,6 +798,8 @@ void MainInterface::renderInWorldElements() {
   if (m_disableHud)
     return;
 
+  m_guiContext->setDefaultFont();
+  m_guiContext->setFontProcessingDirectives("");
   m_guiContext->setFontColor(Vec4B::filled(255));
   m_questIndicatorPainter->render();
   m_nameplatePainter->render();
@@ -808,6 +810,8 @@ void MainInterface::render() {
   if (m_disableHud)
     return;
 
+  m_guiContext->setDefaultFont();
+  m_guiContext->setFontProcessingDirectives("");
   m_guiContext->setFontColor(Vec4B::filled(255));
   renderBreath();
   renderMessages();

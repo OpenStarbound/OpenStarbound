@@ -113,7 +113,9 @@ Directives const& HeadArmor::maskDirectives() const {
 
 List<Drawable> HeadArmor::preview(PlayerPtr const& viewer) const {
   Gender gender = viewer ? viewer->gender() : Gender::Male;
-  return Humanoid::renderDummy(gender, this);
+  Humanoid humanoid = Humanoid::makeDummy(gender);
+  //Humanoid humanoid = viewer ? *viewer->humanoid() : Humanoid::makeDummy(gender);
+  return humanoid.renderDummy(gender, this);
 }
 
 ChestArmor::ChestArmor(Json const& config, String const& directory, Json const& data)
@@ -156,7 +158,9 @@ String const& ChestArmor::backSleeveFrameset(Gender gender) const {
 
 List<Drawable> ChestArmor::preview(PlayerPtr const& viewer) const {
   Gender gender = viewer ? viewer->gender() : Gender::Male;
-  return Humanoid::renderDummy(gender, nullptr, this);
+  Humanoid humanoid = Humanoid::makeDummy(gender);
+  //Humanoid humanoid = viewer ? *viewer->humanoid() : Humanoid::makeDummy(gender);
+  return humanoid.renderDummy(gender, nullptr, this);
 }
 
 LegsArmor::LegsArmor(Json const& config, String const& directory, Json const& data)
@@ -178,7 +182,9 @@ String const& LegsArmor::frameset(Gender gender) const {
 
 List<Drawable> LegsArmor::preview(PlayerPtr const& viewer) const {
   Gender gender = viewer ? viewer->gender() : Gender::Male;
-  return Humanoid::renderDummy(gender, nullptr, nullptr, this);
+  Humanoid humanoid = Humanoid::makeDummy(gender);
+  //Humanoid humanoid = viewer ? *viewer->humanoid() : Humanoid::makeDummy(gender);
+  return humanoid.renderDummy(gender, nullptr, nullptr, this);
 }
 
 BackArmor::BackArmor(Json const& config, String const& directory, Json const& data)
@@ -200,7 +206,9 @@ String const& BackArmor::frameset(Gender gender) const {
 
 List<Drawable> BackArmor::preview(PlayerPtr const& viewer) const {
   Gender gender = viewer ? viewer->gender() : Gender::Male;
-  return Humanoid::renderDummy(gender, nullptr, nullptr, nullptr, this);
+  Humanoid humanoid = Humanoid::makeDummy(gender);
+  //Humanoid humanoid = viewer ? *viewer->humanoid() : Humanoid::makeDummy(gender);
+  return humanoid.renderDummy(gender, nullptr, nullptr, nullptr, this);
 }
 
 }
