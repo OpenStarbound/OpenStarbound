@@ -403,7 +403,6 @@ void ClientApplication::changeState(MainAppState newState) {
   if (oldState > MainAppState::Title && m_state == MainAppState::Title) {
     m_titleScreen->resetState();
     m_mainMixer->setUniverseClient({});
-    m_mainMixer->setWorldPainter({});
   }
   if (oldState >= MainAppState::Title && m_state < MainAppState::Title) {
     m_playerStorage.reset();
@@ -415,7 +414,6 @@ void ClientApplication::changeState(MainAppState newState) {
 
     m_universeClient.reset();
     m_mainMixer->setUniverseClient({});
-    m_mainMixer->setWorldPainter({});
     m_titleScreen.reset();
   }
 
