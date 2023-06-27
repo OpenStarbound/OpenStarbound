@@ -127,6 +127,11 @@ protected:
   String m_text;
   Vec2I m_textOffset;
 
+  StringList m_clickSounds;
+  StringList m_releaseSounds;
+  StringList m_hoverSounds;
+  StringList m_hoverOffSounds;
+
   bool m_sustain;
 
 private:

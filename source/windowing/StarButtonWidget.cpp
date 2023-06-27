@@ -27,6 +27,11 @@ ButtonWidget::ButtonWidget() {
   m_fontSize = interfaceConfig.query("font.buttonSize").toInt();
   m_fontDirectives = interfaceConfig.queryString("font.defaultDirectives", "");
   m_font = interfaceConfig.query("font.defaultFont").toString();
+
+  m_clickSounds = jsonToStringList(assets->json("/interface.config:buttonClickSound"));
+  m_releaseSounds = jsonToStringList(assets->json("/interface.config:buttonReleaseSound"));
+  m_hoverSounds = jsonToStringList(assets->json("/interface.config:buttonHoverSound"));
+  m_hoverOffSounds = jsonToStringList(assets->json("/interface.config:buttonHoverOffSound"));
 }
 
 ButtonWidget::ButtonWidget(WidgetCallbackFunc callback,
@@ -112,7 +117,7 @@ bool ButtonWidget::sendEvent(InputEvent const& event) {
       if (inMember(*context()->mousePosition(event))) {
         if (!isPressed()) {
           auto assets = Root::singleton().assets();
-          auto sound = Random::randValueFrom(assets->json("/interface.config:buttonClickSound").toArray(), "").toString();
+          auto sound = Random::randValueFrom(m_clickSounds, "");
           if (!sound.empty())
             context()->playAudio(sound);
         }
@@ -126,6 +131,12 @@ bool ButtonWidget::sendEvent(InputEvent const& event) {
         return false;
       }
     } else if (event.is<MouseButtonUpEvent>()) {
+      if (isPressed()) {
+        auto assets = Root::singleton().assets();
+        auto sound = Random::randValueFrom(m_releaseSounds, "");
+        if (!sound.empty())
+          context()->playAudio(sound);
+      }
       setPressed(false);
       return false;
     }
@@ -139,7 +150,7 @@ void ButtonWidget::mouseOver() {
   if (!m_disabled) {
     if (!m_hovered) {
       auto assets = Root::singleton().assets();
-      auto sound = Random::randValueFrom(assets->json("/interface.config:buttonHoverSound").toArray(), "").toString();
+      auto sound = Random::randValueFrom(m_hoverSounds);
       if (!sound.empty())
         context()->playAudio(sound);
     }
@@ -149,6 +160,12 @@ void ButtonWidget::mouseOver() {
 
 void ButtonWidget::mouseOut() {
   Widget::mouseOut();
+  if (!m_disabled && m_hovered) {
+    auto assets = Root::singleton().assets();
+    auto sound = Random::randValueFrom(m_hoverOffSounds);
+    if (!sound.empty())
+      context()->playAudio(sound);
+  }
   m_hovered = false;
   m_pressed = false;
 }
