@@ -39,7 +39,7 @@ UniverseServer::UniverseServer(String const& storageDir)
 
   if (auto assetsDigestOverride = configuration->get("serverOverrideAssetsDigest").optString()) {
     m_assetsDigest = hexDecode(*assetsDigestOverride);
-    Logger::info("UniverseServer: Overriding assets digest as '%s'", *assetsDigestOverride);
+    Logger::info("UniverseServer: Overriding assets digest as '{}'", *assetsDigestOverride);
   } else {
     m_assetsDigest = assets->digest();
   }
@@ -449,7 +449,7 @@ bool UniverseServer::updatePlanetType(CelestialCoordinate const& coordinate, Str
 }
 
 void UniverseServer::run() {
-  Logger::info("UniverseServer: Starting UniverseServer with UUID: %s", m_universeSettings->uuid().hex());
+  Logger::info("UniverseServer: Starting UniverseServer with UUID: {}", m_universeSettings->uuid().hex());
 
   int mainWakeupInterval = Root::singleton().assets()->json("/universe_server.config:mainWakeupInterval").toInt();
 
@@ -463,18 +463,18 @@ void UniverseServer::run() {
       HostAddressWithPort bindAddress(configuration->get("gameServerBind").toString(), configuration->get("gameServerPort").toUInt());
       unsigned maxPendingConnections = assets->json("/universe_server.config:maxPendingConnections").toInt();
 
-      Logger::info("UniverseServer: listening for incoming TCP connections on %s", bindAddress);
+      Logger::info("UniverseServer: listening for incoming TCP connections on {}", bindAddress);
 
       tcpServer = make_shared<TcpServer>(bindAddress);
       tcpServer->setAcceptCallback([this, maxPendingConnections](TcpSocketPtr socket) {
           RecursiveMutexLocker locker(m_mainLock);
           if (m_connectionAcceptThreads.size() < maxPendingConnections) {
-            Logger::info("UniverseServer: Connection received from: %s", socket->remoteAddress());
+            Logger::info("UniverseServer: Connection received from: {}", socket->remoteAddress());
             m_connectionAcceptThreads.append(Thread::invoke("UniverseServer::acceptConnection", [this, socket]() {
                   acceptConnection(UniverseConnection(TcpPacketSocket::open(socket)), socket->remoteAddress().address());
                 }));
           } else {
-            Logger::warn("UniverseServer: maximum pending connections, dropping connection from: %s", socket->remoteAddress().address());
+            Logger::warn("UniverseServer: maximum pending connections, dropping connection from: {}", socket->remoteAddress().address());
           }
         });
 
@@ -505,7 +505,7 @@ void UniverseServer::run() {
       shutdownInactiveWorlds();
       doTriggeredStorage();
     } catch (std::exception const& e) {
-      Logger::error("UniverseServer: exception caught: %s", outputException(e, true));
+      Logger::error("UniverseServer: exception caught: {}", outputException(e, true));
     }
 
     Thread::sleep(mainWakeupInterval);
@@ -531,7 +531,7 @@ void UniverseServer::run() {
     m_worlds.clear();
 
   } catch (std::exception const& e) {
-    Logger::error("UniverseServer: exception caught cleaning up: %s", outputException(e, true));
+    Logger::error("UniverseServer: exception caught cleaning up: {}", outputException(e, true));
   }
 }
 
@@ -700,7 +700,7 @@ void UniverseServer::reapConnections() {
         try {
           function.finish();
         } catch (std::exception const& e) {
-          Logger::error("UniverseServer: Exception caught accepting new connection: %s", outputException(e, true));
+          Logger::error("UniverseServer: Exception caught accepting new connection: {}", outputException(e, true));
         }
       }
       return function.isFinished();
@@ -713,11 +713,11 @@ void UniverseServer::reapConnections() {
   for (auto clientId : m_clients.keys()) {
     auto clientContext = m_clients.value(clientId);
     if (!m_connectionServer->connectionIsOpen(clientId)) {
-      Logger::info("UniverseServer: Client %s connection lost", clientContext->descriptiveName());
+      Logger::info("UniverseServer: Client {} connection lost", clientContext->descriptiveName());
       doDisconnection(clientId, String("Disconnected due to connection lost"));
     } else {
       if (clientContext->remoteAddress() && startTime - m_connectionServer->lastActivityTime(clientId) > timeout) {
-        Logger::info("UniverseServer: Kicking client %s due to inactivity", clientContext->descriptiveName());
+        Logger::info("UniverseServer: Kicking client {} due to inactivity", clientContext->descriptiveName());
         doDisconnection(clientId, String("Disconnected due to inactivity"));
       }
     }
@@ -733,7 +733,7 @@ void UniverseServer::reapConnections() {
       return pair.first.isOpen() && startTime - pair.second < timeout;
     });
   if (previousDeadConnections > m_deadConnections.size())
-    Logger::info("UniverseServer: Reaped %s dead connections", previousDeadConnections);
+    Logger::info("UniverseServer: Reaped {} dead connections", previousDeadConnections);
 }
 
 void UniverseServer::processPlanetTypeChanges() {
@@ -765,7 +765,7 @@ void UniverseServer::warpPlayers() {
     WarpToWorld warpToWorld = resolveWarpAction(warpAction, clientId, deploy);
 
     if (auto maybeToWorld = triggerWorldCreation(warpToWorld.world)) {
-      Logger::info("UniverseServer: Warping player %s to %s", clientId, printWarpAction(warpToWorld));
+      Logger::info("UniverseServer: Warping player {} to {}", clientId, printWarpAction(warpToWorld));
       if (auto toWorld = maybeToWorld.value()) {
         if (toWorld->spawnTargetValid(warpToWorld.target)) {
           if (auto currentWorld = clientContext->playerWorld()) {
@@ -795,21 +795,21 @@ void UniverseServer::warpPlayers() {
               }
             }
           } else if (auto returnWarp = clientContext->playerReturnWarp()) {
-            Logger::info("UniverseServer: Warping player %s failed, returning to '%s'", clientId, printWarpAction(returnWarp));
+            Logger::info("UniverseServer: Warping player {} failed, returning to '{}'", clientId, printWarpAction(returnWarp));
             m_pendingPlayerWarps[clientId] = {returnWarp, false};
           } else {
-            Logger::info("UniverseServer: Warping player %s failed, returning to ship", clientId);
+            Logger::info("UniverseServer: Warping player {} failed, returning to ship", clientId);
             m_pendingPlayerWarps[clientId] = {WarpAlias::OwnShip, false};
           }
           m_connectionServer->sendPackets(clientId, {make_shared<PlayerWarpResultPacket>(true, warpAction, false)});
           m_pendingPlayerWarps.remove(clientId);
         } else {
-          Logger::info("UniverseServer: Warping player %s failed, invalid spawn target '%s'", clientId, printSpawnTarget(warpToWorld.target));
+          Logger::info("UniverseServer: Warping player {} failed, invalid spawn target '{}'", clientId, printSpawnTarget(warpToWorld.target));
           m_connectionServer->sendPackets(clientId, {make_shared<PlayerWarpResultPacket>(false, warpAction, true)});
           m_pendingPlayerWarps.remove(clientId);
         }
       } else {
-        Logger::info("UniverseServer: Warping player %s failed, invalid world '%s' or world failed to load", clientId, printWorldId(warpToWorld.world));
+        Logger::info("UniverseServer: Warping player {} failed, invalid world '{}' or world failed to load", clientId, printWorldId(warpToWorld.world));
         m_connectionServer->sendPackets(clientId, {make_shared<PlayerWarpResultPacket>(false, warpAction, false)});
         m_pendingPlayerWarps.remove(clientId);
       }
@@ -888,9 +888,9 @@ void UniverseServer::flyShips() {
       }
 
       if (destination.isNull())
-        Logger::info("Flying ship for player %s to new starter world", clientId);
+        Logger::info("Flying ship for player {} to new starter world", clientId);
       else
-        Logger::info("Flying ship for player %s to %s", clientId, destination);
+        Logger::info("Flying ship for player {} to {}", clientId, destination);
 
       bool startInWarp = system == Vec3I();
       clientShip->executeAction([interstellar, startInWarp](WorldServerThread*, WorldServer* worldServer) {
@@ -946,7 +946,7 @@ void UniverseServer::arriveShips() {
       if (!coordinate.isSystem() && !triggerWorldCreation(CelestialWorldId(coordinate)))
         return false;
 
-      Logger::info("UniverseServer: Arriving ship for player %s at %s", clientId, coordinate);
+      Logger::info("UniverseServer: Arriving ship for player {} at {}", clientId, coordinate);
 
       // world is loaded, ship has arrived
       clientContext->setShipCoordinate(coordinate);
@@ -996,7 +996,7 @@ void UniverseServer::processChat() {
     if (auto clientContext = m_clients.get(p.first)) {
       for (auto const& chat : p.second) {
         if (clientContext->remoteAddress())
-          Logger::info("Chat: <%s> %s", clientContext->playerName(), chat.first);
+          Logger::info("Chat: <{}> {}", clientContext->playerName(), chat.first);
 
         auto team = m_teamManager->getTeam(clientContext->playerUuid());
         if (chat.second == ChatSendMode::Broadcast)
@@ -1017,7 +1017,7 @@ void UniverseServer::clearBrokenWorlds() {
     // Clear out all broken worlds
     eraseWhere(m_worlds, [](auto const& p) {
         if (!p.second.isValid()) {
-          Logger::info("UniverseServer: Clearing broken world %s", p.first);
+          Logger::info("UniverseServer: Clearing broken world {}", p.first);
           return true;
         } else {
           return false;
@@ -1038,7 +1038,7 @@ void UniverseServer::shutdownInactiveWorlds() {
     if (auto world = getWorld(worldId)) {
       if (world->serverErrorOccurred()) {
         world->stop();
-        Logger::error("UniverseServer: World %s has stopped due to an error", worldId);
+        Logger::error("UniverseServer: World {} has stopped due to an error", worldId);
         worldDiedWithError(world->worldId());
       } else if (world->clients().empty()) {
         bool anyPendingWarps = false;
@@ -1049,7 +1049,7 @@ void UniverseServer::shutdownInactiveWorlds() {
           }
         }
         if (!anyPendingWarps) {
-          Logger::info("UniverseServer: Stopping idle world %s", worldId);
+          Logger::info("UniverseServer: Stopping idle world {}", worldId);
           world->stop();
         }
       }
@@ -1057,7 +1057,7 @@ void UniverseServer::shutdownInactiveWorlds() {
       if (world->isJoined()) {
         auto kickClients = world->clients();
         if (!kickClients.empty()) {
-          Logger::info("UniverseServer: World %s shutdown, kicking %s players to their own ships", worldId, world->clients().size());
+          Logger::info("UniverseServer: World {} shutdown, kicking {} players to their own ships", worldId, world->clients().size());
           for (auto clientId : world->clients())
             clientWarpPlayer(clientId, WarpAlias::OwnShip);
         }
@@ -1089,7 +1089,7 @@ void UniverseServer::shutdownInactiveWorlds() {
   eraseWhere(m_tempWorldIndex, [this, systemLocationWorlds](pair<InstanceWorldId, pair<uint64_t, uint64_t>> const& p) {
       String storageFile = tempWorldFile(p.first);
       if (!m_worlds.contains(WorldId(p.first)) && !systemLocationWorlds.contains(p.first) && m_universeClock->milliseconds() > int64_t(p.second.first + p.second.second)) {
-        Logger::info("UniverseServer: Expiring temporary world %s", printWorldId(p.first));
+        Logger::info("UniverseServer: Expiring temporary world {}", printWorldId(p.first));
         if (File::isFile(storageFile))
           File::remove(storageFile);
         return true;
@@ -1117,7 +1117,7 @@ void UniverseServer::doTriggeredStorage() {
         p.second->updateShipChunks(shipWorld->readChunks());
 
       auto versioningDatabase = Root::singleton().versioningDatabase();
-      String clientContextFile = File::relativeTo(m_storageDirectory, strf("%s.clientcontext", p.second->playerUuid().hex()));
+      String clientContextFile = File::relativeTo(m_storageDirectory, strf("{}.clientcontext", p.second->playerUuid().hex()));
       VersionedJson::writeFile(versioningDatabase->makeCurrentVersionedJson("ClientContext", p.second->storeServerData()), clientContextFile);
     }
 
@@ -1153,8 +1153,8 @@ void UniverseServer::loadSettings() {
       m_universeClock = make_shared<Clock>();
       m_universeClock->setTime(settings.getDouble("time"));
     } catch (std::exception const& e) {
-      Logger::error("UniverseServer: Could not load universe settings file, loading defaults %s", outputException(e, false));
-      File::rename(storageFile, strf("%s.%s.fail", storageFile, Time::millisecondsSinceEpoch()));
+      Logger::error("UniverseServer: Could not load universe settings file, loading defaults {}", outputException(e, false));
+      File::rename(storageFile, strf("{}.{}.fail", storageFile, Time::millisecondsSinceEpoch()));
       loadDefaultSettings();
     }
   } else {
@@ -1237,7 +1237,7 @@ Maybe<CelestialCoordinate> UniverseServer::nextStarterWorld() {
           });
 
         if (randomWorld)
-          Logger::info("UniverseServer: Found randomized starter world at %s", *randomWorld);
+          Logger::info("UniverseServer: Found randomized starter world at {}", *randomWorld);
         else
           Logger::error("UniverseServer: Could not find randomized starter world!");
 
@@ -1262,7 +1262,7 @@ void UniverseServer::loadTempWorldIndex() {
       }
     } catch (std::exception const& e) {
       Logger::error("UniverseServer: Could not load temp world index file", outputException(e, false));
-      File::rename(storageFile, strf("%s.%s.fail", storageFile, Time::millisecondsSinceEpoch()));
+      File::rename(storageFile, strf("{}.{}.fail", storageFile, Time::millisecondsSinceEpoch()));
     }
   }
 
@@ -1272,7 +1272,7 @@ void UniverseServer::loadTempWorldIndex() {
     if (p.second == false && p.first.endsWith(".tempworld")) {
       String storageFile = File::relativeTo(m_storageDirectory, p.first);
       if (!tempWorldFiles.contains(storageFile)) {
-        Logger::info("UniverseServer: Removing unindexed temporary world %s", p.first);
+        Logger::info("UniverseServer: Removing unindexed temporary world {}", p.first);
         File::remove(storageFile);
       }
     }
@@ -1293,10 +1293,10 @@ void UniverseServer::saveTempWorldIndex() {
 String UniverseServer::tempWorldFile(InstanceWorldId const& worldId) const {
   String identifier = worldId.instance;
   if (worldId.uuid)
-    identifier = strf("%s-%s", identifier, worldId.uuid->hex());
+    identifier = strf("{}-{}", identifier, worldId.uuid->hex());
   if (worldId.level)
-    identifier = strf("%s-%s", identifier, worldId.level.value());
-  return File::relativeTo(m_storageDirectory, strf("%s.tempworld", identifier));
+    identifier = strf("{}-{}", identifier, worldId.level.value());
+  return File::relativeTo(m_storageDirectory, strf("{}.tempworld", identifier));
 }
 
 Maybe<String> UniverseServer::isBannedUser(Maybe<HostAddress> hostAddress, Uuid playerUuid) const {
@@ -1476,7 +1476,7 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
   }
 
   if (protocolRequest->requestProtocolVersion != StarProtocolVersion) {
-    Logger::warn("UniverseServer: client connection aborted, unsupported protocol version %s, supported version %s",
+    Logger::warn("UniverseServer: client connection aborted, unsupported protocol version {}, supported version {}",
         protocolRequest->requestProtocolVersion, StarProtocolVersion);
     connection.pushSingle(make_shared<ProtocolResponsePacket>(false));
     connection.sendAll(clientWaitLimit);
@@ -1500,11 +1500,11 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
 
   bool administrator = false;
 
-  String accountString = !clientConnect->account.empty() ? strf("'%s'", clientConnect->account) : "<anonymous>";
+  String accountString = !clientConnect->account.empty() ? strf("'{}'", clientConnect->account) : "<anonymous>";
   String remoteAddressString = remoteAddress ? toString(*remoteAddress) : "local";
 
   auto connectionFail = [&](String message) {
-    Logger::warn("UniverseServer: Login attempt failed with account '%s' as player '%s' from address %s, error: %s",
+    Logger::warn("UniverseServer: Login attempt failed with account '{}' as player '{}' from address {}, error: {}",
         accountString, clientConnect->playerName, remoteAddressString, message);
     connection.pushSingle(make_shared<ConnectFailurePacket>(move(message)));
     mainLocker.lock();
@@ -1513,7 +1513,7 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
 
   if (!remoteAddress) {
     administrator = true;
-    Logger::info("UniverseServer: Logged in player '%s' locally", clientConnect->playerName);
+    Logger::info("UniverseServer: Logged in player '{}' locally", clientConnect->playerName);
   } else {
     if (clientConnect->assetsDigest != m_assetsDigest) {
       if (!configuration->get("allowAssetsMismatch").toBool()) {
@@ -1555,7 +1555,7 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
       // prevent account detection, overkill given the overall level of
       // security but hey, why not.
       if (!success) {
-        connectionFail(strf("No such account '%s' or incorrect password", clientConnect->account));
+        connectionFail(strf("No such account '{}' or incorrect password", clientConnect->account));
         return;
       }
     } else {
@@ -1572,7 +1572,7 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
     }
   }
 
-  Logger::info("UniverseServer: Logged in account '%s' as player '%s' from address %s",
+  Logger::info("UniverseServer: Logged in account '{}' as player '{}' from address {}",
       accountString, clientConnect->playerName, remoteAddressString);
 
   mainLocker.lock();
@@ -1599,15 +1599,15 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
 
   clientContext->registerRpcHandlers(m_teamManager->rpcHandlers());
 
-  String clientContextFile = File::relativeTo(m_storageDirectory, strf("%s.clientcontext", clientConnect->playerUuid.hex()));
+  String clientContextFile = File::relativeTo(m_storageDirectory, strf("{}.clientcontext", clientConnect->playerUuid.hex()));
   if (File::isFile(clientContextFile)) {
     try {
       auto contextStore = versioningDatabase->loadVersionedJson(VersionedJson::readFile(clientContextFile), "ClientContext");
       clientContext->loadServerData(contextStore);
     } catch (std::exception const& e) {
-      Logger::error("UniverseServer: Could not load client context file for <User: %s>, ignoring! %s",
+      Logger::error("UniverseServer: Could not load client context file for <User: {}>, ignoring! {}",
           clientConnect->playerName, outputException(e, false));
-      File::rename(clientContextFile, strf("%s.%s.fail", clientContextFile, Time::millisecondsSinceEpoch()));
+      File::rename(clientContextFile, strf("{}.{}.fail", clientContextFile, Time::millisecondsSinceEpoch()));
     }
   }
 
@@ -1637,7 +1637,7 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
   Json introInstance = assets->json("/universe_server.config:introInstance");
   String speciesIntroInstance = introInstance.getString(clientConnect->playerSpecies, introInstance.getString("default", ""));
   if (!speciesIntroInstance.empty() && !clientConnect->introComplete) {
-    Logger::info("UniverseServer: Spawning player in intro instance %s", speciesIntroInstance);
+    Logger::info("UniverseServer: Spawning player in intro instance {}", speciesIntroInstance);
     WarpAction introWarp = WarpToWorld{InstanceWorldId(speciesIntroInstance, clientContext->playerUuid()), {}};
     clientWarpPlayer(clientId, introWarp);
   } else if (auto reviveWarp = clientContext->playerReviveWarp()) {
@@ -1655,7 +1655,7 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
       useReviveWarp = false;
 
     if (useReviveWarp) {
-      Logger::info("UniverseServer: Reviving player at %s", reviveWarp.world);
+      Logger::info("UniverseServer: Reviving player at {}", reviveWarp.world);
       clientWarpPlayer(clientId, reviveWarp);
     } else {
       Logger::info("UniverseServer: Player revive position is expired, spawning back at own ship");
@@ -1667,7 +1667,7 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
   }
 
   clientFlyShip(clientId, clientContext->shipCoordinate().location(), clientContext->shipLocation());
-  Logger::info("UniverseServer: Client %s connected", clientContext->descriptiveName());
+  Logger::info("UniverseServer: Client {} connected", clientContext->descriptiveName());
   
   auto players = static_cast<uint16_t>(m_clients.size());
   for (auto clientId : m_clients.keys()) {
@@ -1763,12 +1763,12 @@ void UniverseServer::doDisconnection(ConnectionId clientId, String const& reason
 
     // Write the final client context.
     auto versioningDatabase = Root::singleton().versioningDatabase();
-    String clientContextFile = File::relativeTo(m_storageDirectory, strf("%s.clientcontext", clientContext->playerUuid().hex()));
+    String clientContextFile = File::relativeTo(m_storageDirectory, strf("{}.clientcontext", clientContext->playerUuid().hex()));
     VersionedJson::writeFile(versioningDatabase->makeCurrentVersionedJson("ClientContext", clientContext->storeServerData()), clientContextFile);
 
     m_clients.remove(clientId);
     m_deadConnections.append({m_connectionServer->removeConnection(clientId), Time::monotonicMilliseconds()});
-    Logger::info("UniverseServer: Client %s disconnected for reason: %s", clientContext->descriptiveName(), reason);
+    Logger::info("UniverseServer: Client {} disconnected for reason: {}", clientContext->descriptiveName(), reason);
     
     auto players = static_cast<uint16_t>(m_clients.size());
     for (auto clientId : m_clients.keys()) {
@@ -1798,7 +1798,7 @@ WorldServerThreadPtr UniverseServer::getWorld(WorldId const& worldId) {
       return maybeWorldPromise->get();
     } catch (std::exception const& e) {
       maybeWorldPromise.reset();
-      Logger::error("UniverseServer: error during world create: %s", outputException(e, true));
+      Logger::error("UniverseServer: error during world create: {}", outputException(e, true));
       worldDiedWithError(worldId);
     }
   }
@@ -1821,7 +1821,7 @@ WorldServerThreadPtr UniverseServer::createWorld(WorldId const& worldId) {
     return maybeWorldPromise->get();
   } catch (std::exception const& e) {
     maybeWorldPromise.reset();
-    Logger::error("UniverseServer: error during world create: %s", outputException(e, true));
+    Logger::error("UniverseServer: error during world create: {}", outputException(e, true));
     worldDiedWithError(worldId);
     return {};
   }
@@ -1849,7 +1849,7 @@ Maybe<WorldServerThreadPtr> UniverseServer::triggerWorldCreation(WorldId const& 
       return maybeWorldPromise->get();
     } catch (std::exception const& e) {
       maybeWorldPromise.reset();
-      Logger::error("UniverseServer: error during world create: %s", outputException(e, true));
+      Logger::error("UniverseServer: error during world create: {}", outputException(e, true));
       worldDiedWithError(worldId);
       return WorldServerThreadPtr();
     }
@@ -1884,16 +1884,16 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::shipWorldPromise(
       auto shipChunks = clientContext->shipChunks();
       if (!shipChunks.empty()) {
         try {
-          Logger::info("UniverseServer: Loading client ship world %s", clientShipWorldId);
+          Logger::info("UniverseServer: Loading client ship world {}", clientShipWorldId);
           shipWorld = make_shared<WorldServer>(shipChunks);
         } catch (std::exception const& e) {
-          Logger::error("UniverseServer: Could not load client ship %s, resetting ship to default state! %s",
+          Logger::error("UniverseServer: Could not load client ship {}, resetting ship to default state! {}",
               clientShipWorldId, outputException(e, false));
         }
       }
 
       if (!shipWorld) {
-        Logger::info("UniverseServer: Creating new client ship world %s", clientShipWorldId);
+        Logger::info("UniverseServer: Creating new client ship world {}", clientShipWorldId);
         shipWorld = make_shared<WorldServer>(Vec2U(2048, 2048), File::ephemeralFile());
         auto shipStructure = WorldStructure(speciesShips.get(clientContext->playerSpecies()).first());
         shipStructure = shipWorld->setCentralStructure(shipStructure);
@@ -1940,20 +1940,20 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::celestialWorldPro
 
   return m_workerPool.addProducer<WorldServerThreadPtr>([this, celestialWorldId, storageDirectory, celestialDatabase, universeClock]() {
       WorldServerPtr worldServer;
-      String storageFile = File::relativeTo(storageDirectory, strf("%s.world", celestialWorldId.filename()));
+      String storageFile = File::relativeTo(storageDirectory, strf("{}.world", celestialWorldId.filename()));
       if (File::isFile(storageFile)) {
         try {
-          Logger::info("UniverseServer: Loading celestial world %s", celestialWorldId);
+          Logger::info("UniverseServer: Loading celestial world {}", celestialWorldId);
           worldServer = make_shared<WorldServer>(File::open(storageFile, IOMode::ReadWrite));
         } catch (std::exception const& e) {
-          Logger::error("UniverseServer: Could not load celestial world %s, removing! Cause: %s",
+          Logger::error("UniverseServer: Could not load celestial world {}, removing! Cause: {}",
               celestialWorldId, outputException(e, false));
-          File::rename(storageFile, strf("%s.%s.fail", storageFile, Time::millisecondsSinceEpoch()));
+          File::rename(storageFile, strf("{}.{}.fail", storageFile, Time::millisecondsSinceEpoch()));
         }
       }
 
       if (!worldServer) {
-        Logger::info("UniverseServer: Creating celestial world %s", celestialWorldId);
+        Logger::info("UniverseServer: Creating celestial world {}", celestialWorldId);
         auto worldTemplate = make_shared<WorldTemplate>(celestialWorldId, celestialDatabase);
         worldServer = make_shared<WorldServer>(worldTemplate, File::open(storageFile, IOMode::ReadWrite | IOMode::Truncate));
       }
@@ -1990,7 +1990,7 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::instanceWorldProm
       else if (worldType.equalsIgnoreCase("FloatingDungeon"))
         worldParameters = generateFloatingDungeonWorldParameters(worldConfig.getString("dungeonWorld"));
       else
-        throw UniverseServerException(strf("Unknown world type: '%s'\n", worldType));
+        throw UniverseServerException(strf("Unknown world type: '{}'\n", worldType));
 
       if (instanceWorldId.level)
         worldParameters->threatLevel = *instanceWorldId.level;
@@ -2013,24 +2013,24 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::instanceWorldProm
       if (persistent) {
         String identifier = instanceWorldId.instance;
         if (instanceWorldId.uuid)
-          identifier = strf("%s-%s", identifier, instanceWorldId.uuid->hex());
+          identifier = strf("{}-{}", identifier, instanceWorldId.uuid->hex());
         if (instanceWorldId.level)
-          identifier = strf("%s-%s", identifier, instanceWorldId.level.value());
-        String storageFile = File::relativeTo(storageDirectory, strf("unique-%s.world", identifier));
+          identifier = strf("{}-{}", identifier, instanceWorldId.level.value());
+        String storageFile = File::relativeTo(storageDirectory, strf("unique-{}.world", identifier));
         if (File::isFile(storageFile)) {
           try {
-            Logger::info("UniverseServer: Loading persistent unique instance world %s", instanceWorldId.instance);
+            Logger::info("UniverseServer: Loading persistent unique instance world {}", instanceWorldId.instance);
             worldServer = make_shared<WorldServer>(File::open(storageFile, IOMode::ReadWrite));
             worldExisted = true;
           } catch (std::exception const& e) {
-            Logger::error("UniverseServer: Could not load persistent unique instance world %s, removing! Cause: %s",
+            Logger::error("UniverseServer: Could not load persistent unique instance world {}, removing! Cause: {}",
                 instanceWorldId.instance, outputException(e, false));
-            File::rename(storageFile, strf("%s.%s.fail", storageFile, Time::millisecondsSinceEpoch()));
+            File::rename(storageFile, strf("{}.{}.fail", storageFile, Time::millisecondsSinceEpoch()));
           }
         }
 
         if (!worldServer) {
-          Logger::info("UniverseServer: Creating persistent unique instance world %s", instanceWorldId.instance);
+          Logger::info("UniverseServer: Creating persistent unique instance world {}", instanceWorldId.instance);
           worldServer = make_shared<WorldServer>(worldTemplate, File::open(storageFile, IOMode::ReadWrite | IOMode::Truncate));
         }
       } else {
@@ -2040,12 +2040,12 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::instanceWorldProm
           if (m_tempWorldIndex.contains(instanceWorldId)) {
             auto file = File::open(storageFile, IOMode::ReadWrite);
             if (file->size() > 0) {
-              Logger::info("UniverseServer: Loading temporary instance world %s from storage", instanceWorldId);
+              Logger::info("UniverseServer: Loading temporary instance world {} from storage", instanceWorldId);
               try {
                 worldServer = make_shared<WorldServer>(file);
                 worldExisted = true;
               } catch (std::exception const& e) {
-                Logger::error("UniverseServer: Could not load temporary instance world '%s', re-creating cause: %s",
+                Logger::error("UniverseServer: Could not load temporary instance world '{}', re-creating cause: {}",
                     instanceWorldId, outputException(e, false));
               }
             }
@@ -2055,7 +2055,7 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::instanceWorldProm
         }
 
         if (!worldServer) {
-          Logger::info("UniverseServer: Creating temporary instance world '%s' with expiry time %s", instanceWorldId, deleteTime);
+          Logger::info("UniverseServer: Creating temporary instance world '{}' with expiry time {}", instanceWorldId, deleteTime);
 
           worldServer = make_shared<WorldServer>(worldTemplate, File::open(storageFile, IOMode::ReadWrite));
           m_tempWorldIndex.set(instanceWorldId, pair<uint64_t, uint64_t>(m_universeClock->milliseconds(), deleteTime));
@@ -2092,10 +2092,10 @@ SystemWorldServerThreadPtr UniverseServer::createSystemWorld(Vec3I const& locati
   if (!m_systemWorlds.contains(location)) {
     SystemWorldServerPtr systemWorld;
 
-    String storageFile = File::relativeTo(m_storageDirectory, strf("%s_%s_%s.system", location[0], location[1], location[2]));
+    String storageFile = File::relativeTo(m_storageDirectory, strf("{}_{}_{}.system", location[0], location[1], location[2]));
     bool loadedFromStorage = false;
     if (File::isFile(storageFile)) {
-      Logger::info("UniverseServer: Loading system world %s from disk storage", location);
+      Logger::info("UniverseServer: Loading system world {} from disk storage", location);
       try {
         auto versioningDatabase = Root::singleton().versioningDatabase();
         VersionedJson versionedStore = VersionedJson::readFile(storageFile);
@@ -2104,14 +2104,14 @@ SystemWorldServerThreadPtr UniverseServer::createSystemWorld(Vec3I const& locati
         systemWorld = make_shared<SystemWorldServer>(store, m_universeClock, m_celestialDatabase);
         loadedFromStorage = true;
       } catch (std::exception const& e) {
-        Logger::error("UniverseServer: Failed to load system %s from disk storage, re-creating. Cause: %s", location, outputException(e, false));
-        File::rename(storageFile, strf("%s.%s.fail", storageFile, Time::millisecondsSinceEpoch()));
+        Logger::error("UniverseServer: Failed to load system {} from disk storage, re-creating. Cause: {}", location, outputException(e, false));
+        File::rename(storageFile, strf("{}.{}.fail", storageFile, Time::millisecondsSinceEpoch()));
         loadedFromStorage = false;
       }
     }
 
     if (!loadedFromStorage) {
-      Logger::info("UniverseServer: Creating new system world at location %s", location);
+      Logger::info("UniverseServer: Creating new system world at location {}", location);
       systemWorld = make_shared<SystemWorldServer>(location, m_universeClock, m_celestialDatabase);
     }
 
@@ -2125,7 +2125,7 @@ SystemWorldServerThreadPtr UniverseServer::createSystemWorld(Vec3I const& locati
 }
 
 bool UniverseServer::instanceWorldStoredOrActive(InstanceWorldId const& worldId) const {
-  String storageFile = File::relativeTo(m_storageDirectory, strf("unique-%s.world", worldId.instance));
+  String storageFile = File::relativeTo(m_storageDirectory, strf("unique-{}.world", worldId.instance));
   return m_worlds.value(worldId).isValid() || m_tempWorldIndex.contains(worldId) || File::isFile(storageFile);
 }
 

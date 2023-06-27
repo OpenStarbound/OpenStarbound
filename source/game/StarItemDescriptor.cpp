@@ -149,7 +149,7 @@ DataStream& operator<<(DataStream& ds, ItemDescriptor const& itemDescriptor) {
 }
 
 std::ostream& operator<<(std::ostream& os, ItemDescriptor const& descriptor) {
-  format(os, "[%s, %s, %s]", descriptor.m_name, descriptor.m_count, descriptor.m_parameters);
+  format(os, "[{}, {}, {}]", descriptor.m_name, descriptor.m_count, descriptor.m_parameters);
   return os;
 }
 

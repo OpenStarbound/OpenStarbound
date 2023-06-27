@@ -17,12 +17,12 @@ StagehandDatabase::StagehandDatabase() {
       String typeName = config.getString("type");
 
       if (m_stagehandTypes.contains(typeName))
-        throw StagehandDatabaseException(strf("Repeat stagehand type name '%s'", typeName));
+        throw StagehandDatabaseException(strf("Repeat stagehand type name '{}'", typeName));
 
       m_stagehandTypes[typeName] = config;
 
     } catch (StarException const& e) {
-      throw StagehandDatabaseException(strf("Error loading stagehand type '%s'", file), e);
+      throw StagehandDatabaseException(strf("Error loading stagehand type '{}'", file), e);
     }
   }
 }

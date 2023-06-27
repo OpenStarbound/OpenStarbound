@@ -56,7 +56,7 @@ void UnlockItem::fireTriggered() {
       for (Json v : playerConfig.get("defaultBlueprints", JsonObject()).getArray(*m_tierRecipesUnlock, JsonArray()))
         blueprints.append(ItemDescriptor(v));
 
-      auto speciesConfig = Root::singleton().assets()->json(strf("/species/%s.species", player->species()));
+      auto speciesConfig = Root::singleton().assets()->json(strf("/species/{}.species", player->species()));
       for (Json v : speciesConfig.get("defaultBlueprints", JsonObject()).getArray(*m_tierRecipesUnlock, JsonArray()))
         blueprints.append(ItemDescriptor(v));
 

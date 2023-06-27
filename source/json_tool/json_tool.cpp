@@ -53,12 +53,12 @@ String Star::reprWithLineEnding(FormattedJson const& json) {
   // unix.
   String repr = json.repr();
   if (repr.contains("\r"))
-    return strf("%s\r\n", repr);
-  return strf("%s\n", repr);
+    return strf("{}\r\n", repr);
+  return strf("{}\n", repr);
 }
 
 void OutputOnSeparateLines::out(FormattedJson const& json) {
-  coutf("%s", reprWithLineEnding(json));
+  coutf("{}", reprWithLineEnding(json));
 }
 
 void OutputOnSeparateLines::flush() {}
@@ -73,7 +73,7 @@ void ArrayOutput::flush() {
   for (FormattedJson const& result : m_results) {
     array = array.append(result);
   }
-  coutf("%s", reprWithLineEnding(array));
+  coutf("{}", reprWithLineEnding(array));
 }
 
 FormattedJson Star::addOrSet(bool add,
@@ -140,7 +140,7 @@ void forEachChild(FormattedJson const& parent, function<void(FormattedJson const
     }
   } else {
     throw JsonPath::TraversalException::format(
-        "Cannot get the children of Json type %s, must be either Array or Object", parent.typeName());
+        "Cannot get the children of Json type {}, must be either Array or Object", parent.typeName());
   }
 }
 
@@ -354,7 +354,7 @@ Maybe<ParsedArgs> parseArgs(int argc, char** argv) {
 
     } else {
       if (!File::exists(arg)) {
-        cerrf("File %s doesn't exist\n", arg);
+        cerrf("File {} doesn't exist\n", arg);
         return {};
       }
       parsed.inputs.append(FileInput{arg});
@@ -415,23 +415,23 @@ int main(int argc, char** argv) {
     Maybe<ParsedArgs> parsedArgs = parseArgs(argc, argv);
 
     if (!parsedArgs) {
-      cerrf("Usage: %s [--get <json-path>] (-j <json> | <json-file>*)\n", argv[0]);
+      cerrf("Usage: {} [--get <json-path>] (-j <json> | <json-file>*)\n", argv[0]);
       cerrf(
-          "Usage: %s --set <json-path> <json> [-i] [(--at (beginning|end) | --before <key> | --after <key>)] (-j "
+          "Usage: {} --set <json-path> <json> [-i] [(--at (beginning|end) | --before <key> | --after <key>)] (-j "
           "<json> | <json-file>*)\n",
           argv[0]);
       cerrf(
-          "Usage: %s --add <json-path> <json> [-i] [(--at (beginning|end) | --before <key> | --after <key>)] (-j "
+          "Usage: {} --add <json-path> <json> [-i] [(--at (beginning|end) | --before <key> | --after <key>)] (-j "
           "<json> | <json-file>*)\n",
           argv[0]);
       cerrf(
-          "Usage: %s --edit <json-path> [(--at (beginning|end) | --before <key> | --after <key>)] [--input "
+          "Usage: {} --edit <json-path> [(--at (beginning|end) | --before <key> | --after <key>)] [--input "
           "(csv|json|string)] <json-file>+\n",
           argv[0]);
       cerrf("\n");
-      cerrf("Example: %s --get /dialog/0/message guard.npctype\n", argv[0]);
-      cerrf("Example: %s --get 'foo[0]' -j '{\"foo\":[0,1,2,3]}'\n", argv[0]);
-      cerrf("Example: %s --edit /tags --input csv --find ../assets/ .object\n", argv[0]);
+      cerrf("Example: {} --get /dialog/0/message guard.npctype\n", argv[0]);
+      cerrf("Example: {} --get 'foo[0]' -j '{\"foo\":[0,1,2,3]}'\n", argv[0]);
+      cerrf("Example: {} --edit /tags --input csv --find ../assets/ .object\n", argv[0]);
       return 1;
     }
 
@@ -457,15 +457,15 @@ int main(int argc, char** argv) {
     return 0;
 
   } catch (JsonParsingException const& e) {
-    cerrf("%s\n", e.what());
+    cerrf("{}\n", e.what());
     return 1;
 
   } catch (JsonException const& e) {
-    cerrf("%s\n", e.what());
+    cerrf("{}\n", e.what());
     return 1;
 
   } catch (std::exception const& e) {
-    cerrf("Exception caught: %s\n", outputException(e, true));
+    cerrf("Exception caught: {}\n", outputException(e, true));
     return 1;
   }
 }

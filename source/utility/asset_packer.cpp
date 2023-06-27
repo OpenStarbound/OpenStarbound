@@ -31,8 +31,8 @@ int main(int argc, char** argv) {
       try {
         configFileContents = File::readFileString(configFile);
       } catch (IOException const& e) {
-        cerrf("Could not open specified configFile: %s\n", configFile);
-        cerrf("For the following reason: %s\n", outputException(e, false));
+        cerrf("Could not open specified configFile: {}\n", configFile);
+        cerrf("For the following reason: {}\n", outputException(e, false));
         return 1;
       }
 
@@ -40,8 +40,8 @@ int main(int argc, char** argv) {
       try {
         configFileJson = Json::parseJson(configFileContents);
       } catch (JsonParsingException const& e) {
-        cerrf("Could not parse the specified configFile: %s\n", configFile);
-        cerrf("For the following reason: %s\n", outputException(e, false));
+        cerrf("Could not parse the specified configFile: {}\n", configFile);
+        cerrf("For the following reason: {}\n", outputException(e, false));
         return 1;
       }
 
@@ -51,8 +51,8 @@ int main(int argc, char** argv) {
           ignoreFiles.appendAll(jsonToStringList(configFileJson.get("serverIgnore", JsonArray())));
         extensionOrdering = jsonToStringList(configFileJson.get("extensionOrdering", JsonArray()));
       } catch (JsonException const& e) {
-        cerrf("Could not read the asset_packer config file %s\n", configFile);
-        cerrf("%s\n", outputException(e, false));
+        cerrf("Could not read the asset_packer config file {}\n", configFile);
+        cerrf("{}\n", outputException(e, false));
         return 1;
       }
     }
@@ -62,18 +62,18 @@ int main(int argc, char** argv) {
     function<void(size_t, size_t, String, String, bool)> BuildProgressCallback;
     auto progressCallback = [verbose](size_t, size_t, String filePath, String assetPath) {
       if (verbose)
-        coutf("Adding file '%s' to the target pak as '%s'\n", filePath, assetPath);
+        coutf("Adding file '{}' to the target pak as '{}'\n", filePath, assetPath);
     };
 
     outputFilename = File::relativeTo(File::fullPath(File::dirName(outputFilename)), File::baseName(outputFilename));
     DirectoryAssetSource directorySource(assetsFolderPath, ignoreFiles);
     PackedAssetSource::build(directorySource, outputFilename, extensionOrdering, progressCallback);
 
-    coutf("Output packed assets to %s in %ss\n", outputFilename, Time::monotonicTime() - startTime);
+    coutf("Output packed assets to {} in {}s\n", outputFilename, Time::monotonicTime() - startTime);
     return 0;
 
   } catch (std::exception const& e) {
-    cerrf("Exception caught: %s\n", outputException(e, true));
+    cerrf("Exception caught: {}\n", outputException(e, true));
     return 1;
   }
 }

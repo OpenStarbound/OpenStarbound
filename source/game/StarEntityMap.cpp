@@ -34,10 +34,10 @@ void EntityMap::addEntity(EntityPtr entity) {
   auto uniqueId = entity->uniqueId();
 
   if (m_spatialMap.contains(entityId))
-    throw EntityMapException::format("Duplicate entity id '%s' in EntityMap::addEntity", entityId);
+    throw EntityMapException::format("Duplicate entity id '{}' in EntityMap::addEntity", entityId);
 
   if (boundBox.isNegative() || boundBox.width() > MaximumEntityBoundBox || boundBox.height() > MaximumEntityBoundBox) {
-    throw EntityMapException::format("Entity id: %s type: %s bound box is negative or beyond the maximum entity bound box size in EntityMap::addEntity",
+    throw EntityMapException::format("Entity id: {} type: {} bound box is negative or beyond the maximum entity bound box size in EntityMap::addEntity",
         entity->entityId(), (int)entity->entityType());
   }
 
@@ -45,7 +45,7 @@ void EntityMap::addEntity(EntityPtr entity) {
     throw EntityMapException::format("Null entity id in EntityMap::addEntity");
 
   if (uniqueId && m_uniqueMap.hasLeftValue(*uniqueId))
-    throw EntityMapException::format("Duplicate entity unique id (%s) on entity id (%s) in EntityMap::addEntity", *uniqueId, entityId);
+    throw EntityMapException::format("Duplicate entity unique id ({}) on entity id ({}) in EntityMap::addEntity", *uniqueId, entityId);
 
   m_spatialMap.set(entityId, m_geometry.splitRect(boundBox, position), move(entity));
   if (uniqueId)
@@ -76,7 +76,7 @@ void EntityMap::updateAllEntities(EntityCallback const& callback, function<bool(
     auto boundBox = entity->metaBoundBox();
 
     if (boundBox.isNegative() || boundBox.width() > MaximumEntityBoundBox || boundBox.height() > MaximumEntityBoundBox) {
-      throw EntityMapException::format("Entity id: %s type: %s bound box is negative or beyond the maximum entity bound box size in EntityMap::addEntity",
+      throw EntityMapException::format("Entity id: {} type: {} bound box is negative or beyond the maximum entity bound box size in EntityMap::addEntity",
           entity->entityId(), (int)entity->entityType());
     }
 
@@ -92,7 +92,7 @@ void EntityMap::updateAllEntities(EntityCallback const& callback, function<bool(
     if (uniqueId) {
       if (auto existingEntityId = m_uniqueMap.maybeRight(*uniqueId)) {
         if (entityId != *existingEntityId)
-          throw EntityMapException::format("Duplicate entity unique id on entity ids (%s) and (%s)", *existingEntityId, entityId);
+          throw EntityMapException::format("Duplicate entity unique id on entity ids ({}) and ({})", *existingEntityId, entityId);
       } else {
         m_uniqueMap.removeRight(entityId);
         m_uniqueMap.add(*uniqueId, entityId);

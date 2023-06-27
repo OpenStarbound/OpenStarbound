@@ -266,7 +266,7 @@ auto NetElementMapWrapper<BaseMap>::insert(key_type k, mapped_type v) -> pair<co
 template <typename BaseMap>
 void NetElementMapWrapper<BaseMap>::add(key_type k, mapped_type v) {
   if (!insert(value_type(move(k), move(v))).second)
-    throw MapException::format("Entry with key '%s' already present.", outputAny(k));
+    throw MapException::format("Entry with key '{}' already present.", outputAny(k));
 }
 
 template <typename BaseMap>
@@ -321,7 +321,7 @@ template <typename BaseMap>
 auto NetElementMapWrapper<BaseMap>::take(key_type const& k) -> mapped_type {
   auto i = BaseMap::find(k);
   if (i == BaseMap::end())
-    throw MapException::format("Key '%s' not found in Map::take()", outputAny(k));
+    throw MapException::format("Key '{}' not found in Map::take()", outputAny(k));
   auto m = move(i->second);
   erase(i);
   return m;

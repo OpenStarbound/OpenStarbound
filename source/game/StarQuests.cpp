@@ -73,7 +73,7 @@ Quest::Quest(QuestArcDescriptor const& questArc, size_t arcPos, Player* player) 
       addReward(rewardParam.detail.get<QuestItem>().descriptor());
     } else {
       if (!rewardParam.detail.is<QuestItemList>())
-        throw StarException::format("Quest parameter %s cannot be used as a reward parameter", rewardParamName);
+        throw StarException::format("Quest parameter {} cannot be used as a reward parameter", rewardParamName);
       for (auto item : rewardParam.detail.get<QuestItemList>())
         addReward(item);
     }

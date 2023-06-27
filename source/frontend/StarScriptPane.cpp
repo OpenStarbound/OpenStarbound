@@ -179,7 +179,7 @@ LuaCallbacks ScriptPane::makePaneCallbacks() {
     });
 
   callbacks.registerCallback("addWidget", [this](Json const& newWidgetConfig, Maybe<String> const& newWidgetName) {
-      String name = newWidgetName.value(strf("%d", Random::randu64()));
+      String name = newWidgetName.value(strf("{}", Random::randu64()));
       WidgetPtr newWidget = m_reader.makeSingle(name, newWidgetConfig);
       this->addChild(name, newWidget);
     });

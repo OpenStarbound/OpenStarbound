@@ -83,7 +83,7 @@ Maybe<String> UniverseClient::connect(UniverseConnection connection, bool allowA
   if (!protocolResponsePacket)
     return String("Join failed! Timeout while establishing connection.");
   else if (!protocolResponsePacket->allowed)
-    return String(strf("Join failed! Server does not support connections with protocol version %s", StarProtocolVersion));
+    return String(strf("Join failed! Server does not support connections with protocol version {}", StarProtocolVersion));
 
   connection.pushSingle(make_shared<ClientConnectPacket>(Root::singleton().assets()->digest(), allowAssetsMismatch, m_mainPlayer->uuid(), m_mainPlayer->name(),
       m_mainPlayer->species(), m_playerStorage->loadShipData(m_mainPlayer->uuid()), ShipUpgrades(m_mainPlayer->shipUpgrades()),
@@ -117,10 +117,10 @@ Maybe<String> UniverseClient::connect(UniverseConnection connection, bool allowA
     m_celestialDatabase = make_shared<CelestialSlaveDatabase>(move(success->celestialInformation));
     m_systemWorldClient = make_shared<SystemWorldClient>(m_universeClock, m_celestialDatabase, m_mainPlayer->universeMap());
 
-    Logger::info("UniverseClient: Joined server as client %s", success->clientId);
+    Logger::info("UniverseClient: Joined server as client {}", success->clientId);
     return {};
   } else if (auto failure = as<ConnectFailurePacket>(packet)) {
-    Logger::error("UniverseClient: Join failed: %s", failure->reason);
+    Logger::error("UniverseClient: Join failed: {}", failure->reason);
     return failure->reason;
   } else {
     Logger::error("UniverseClient: Join failed! No server response received");
@@ -279,12 +279,12 @@ void UniverseClient::update() {
 
   if (auto netStats = m_connection->incomingStats()) {
     LogMap::set("client_incoming_bps", netStats->bytesPerSecond);
-    LogMap::set("client_worst_incoming", strf("%s:%s", PacketTypeNames.getRight(netStats->worstPacketType), netStats->worstPacketSize));
+    LogMap::set("client_worst_incoming", strf("{}:{}", PacketTypeNames.getRight(netStats->worstPacketType), netStats->worstPacketSize));
   }
   if (auto netStats = m_connection->outgoingStats()) {
     LogMap::set("client_outgoing_bps", netStats->bytesPerSecond);
     LogMap::set("client_worst_outgoing",
-        strf("%s:%s", PacketTypeNames.getRight(netStats->worstPacketType), netStats->worstPacketSize));
+        strf("{}:{}", PacketTypeNames.getRight(netStats->worstPacketType), netStats->worstPacketSize));
   }
 }
 

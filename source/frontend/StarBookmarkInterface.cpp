@@ -46,7 +46,7 @@ void EditBookmarkDialog::show() {
   }
 
   auto assets = Root::singleton().assets();
-  fetchChild<ImageWidget>("imgIcon")->setImage(strf("/interface/bookmarks/icons/%s.png", m_bookmark.icon));
+  fetchChild<ImageWidget>("imgIcon")->setImage(strf("/interface/bookmarks/icons/{}.png", m_bookmark.icon));
 
   fetchChild<LabelWidget>("lblPlanetName")->setText(m_bookmark.targetName);
   fetchChild<TextBoxWidget>("name")->setText(m_bookmark.bookmarkName, false);
@@ -75,7 +75,7 @@ void EditBookmarkDialog::close() {
 void setupBookmarkEntry(WidgetPtr const& entry, TeleportBookmark const& bookmark) {
   entry->fetchChild<LabelWidget>("name")->setText(bookmark.bookmarkName);
   entry->fetchChild<LabelWidget>("planetName")->setText(bookmark.targetName);
-  entry->fetchChild<ImageWidget>("icon")->setImage(strf("/interface/bookmarks/icons/%s.png", bookmark.icon));
+  entry->fetchChild<ImageWidget>("icon")->setImage(strf("/interface/bookmarks/icons/{}.png", bookmark.icon));
 }
 
 }

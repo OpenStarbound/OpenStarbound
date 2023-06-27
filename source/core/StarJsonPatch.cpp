@@ -12,7 +12,7 @@ Json jsonPatch(Json const& base, JsonArray const& patch) {
     }
     return res;
   } catch (JsonException const& e) {
-    throw JsonPatchException(strf("Could not apply patch to base. %s", e.what()));
+    throw JsonPatchException(strf("Could not apply patch to base. {}", e.what()));
   }
 }
 
@@ -32,9 +32,9 @@ namespace JsonPatching {
       auto operation = op.getString("op");
       return JsonPatching::functionMap.get(operation)(base, op);
     } catch (JsonException const& e) {
-      throw JsonPatchException(strf("Could not apply operation to base. %s", e.what()));
+      throw JsonPatchException(strf("Could not apply operation to base. {}", e.what()));
     } catch (MapException const&) {
-      throw JsonPatchException(strf("Invalid operation: %s", op.getString("op")));
+      throw JsonPatchException(strf("Invalid operation: {}", op.getString("op")));
     }
   }
 
@@ -49,7 +49,7 @@ namespace JsonPatching {
       auto testValue = pointer.get(base);
       if (!value) {
         if (inverseTest)
-          throw JsonPatchTestFail(strf("Test operation failure, expected %s to be missing.", op.getString("path")));
+          throw JsonPatchTestFail(strf("Test operation failure, expected {} to be missing.", op.getString("path")));
         return base;
       }
 
@@ -57,11 +57,11 @@ namespace JsonPatching {
         return base;
       }
 
-      throw JsonPatchTestFail(strf("Test operation failure, expected %s found %s.", value, testValue));
+      throw JsonPatchTestFail(strf("Test operation failure, expected {} found {}.", value, testValue));
     } catch (JsonPath::TraversalException& e) {
       if (inverseTest)
         return base;
-      throw JsonPatchTestFail(strf("Test operation failure: %s", e.what()));
+      throw JsonPatchTestFail(strf("Test operation failure: {}", e.what()));
     }
   }
 

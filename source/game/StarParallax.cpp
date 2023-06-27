@@ -238,11 +238,11 @@ void Parallax::buildLayer(Json const& layerSettings, String const& kind) {
 
   layer.addImageDirectives(layerSettings.getString("directives", ""));
   if (isFoliage)
-    layer.addImageDirectives(String(strf("hueshift=%s", m_parallaxTreeVariant->foliageHueShift)));
+    layer.addImageDirectives(String(strf("hueshift={}", m_parallaxTreeVariant->foliageHueShift)));
   else if (isStem)
-    layer.addImageDirectives(String(strf("hueshift=%s", m_parallaxTreeVariant->stemHueShift)));
+    layer.addImageDirectives(String(strf("hueshift={}", m_parallaxTreeVariant->stemHueShift)));
   else if (!layerSettings.getBool("nohueshift", false))
-    layer.addImageDirectives(String(strf("hueshift=%s", m_hueShift)));
+    layer.addImageDirectives(String(strf("hueshift={}", m_hueShift)));
 
   layer.fadePercent = layerSettings.getFloat("fadePercent", 0);
 

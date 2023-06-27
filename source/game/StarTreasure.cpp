@@ -22,7 +22,7 @@ TreasureDatabase::TreasureDatabase() {
   for (auto file : treasurePools) {
     for (auto const& pair : assets->json(file).iterateObject()) {
       if (m_treasurePools.contains(pair.first))
-        throw TreasureException(strf("Duplicate TreasurePool config '%s' from file '%s'", pair.first, file));
+        throw TreasureException(strf("Duplicate TreasurePool config '{}' from file '{}'", pair.first, file));
 
       auto& treasurePool = m_treasurePools[pair.first];
       for (auto const& entry : pair.second.iterateArray()) {
@@ -40,18 +40,18 @@ TreasureDatabase::TreasureDatabase() {
           else if (entry.contains("item"))
             itemPool.fill.append(ItemDescriptor(entry.get("item")));
           else
-            throw TreasureException(strf("TreasurePool entry '%s' did not specify a valid 'item' or 'pool'", entry));
+            throw TreasureException(strf("TreasurePool entry '{}' did not specify a valid 'item' or 'pool'", entry));
 
         for (auto const& entry : config.getArray("pool", {})) {
           if (!entry.contains("weight"))
-            throw TreasureException(strf("TreasurePool entry '%s' did not specify a weight", entry));
+            throw TreasureException(strf("TreasurePool entry '{}' did not specify a weight", entry));
 
           if (entry.contains("pool"))
             itemPool.pool.add(entry.getFloat("weight"), entry.getString("pool"));
           else if (entry.contains("item"))
             itemPool.pool.add(entry.getFloat("weight"), ItemDescriptor(entry.get("item")));
           else
-            throw TreasureException(strf("TreasurePool entry '%s' did not specify a valid 'item' or 'pool'", entry));
+            throw TreasureException(strf("TreasurePool entry '{}' did not specify a valid 'item' or 'pool'", entry));
         }
 
         auto poolRounds = config.get("poolRounds", 1);
@@ -73,7 +73,7 @@ TreasureDatabase::TreasureDatabase() {
   for (auto file : treasureChests) {
     for (auto const& pair : assets->json(file).iterateObject()) {
       if (m_treasureChestSets.contains(pair.first))
-        throw TreasureException(strf("Duplicate TreasureChestSet config '%s' from file '%s'", pair.first, file));
+        throw TreasureException(strf("Duplicate TreasureChestSet config '{}' from file '{}'", pair.first, file));
 
       auto& treasureChestSet = m_treasureChestSets[pair.first];
       for (auto const& entry : pair.second.iterateArray()) {
@@ -84,7 +84,7 @@ TreasureDatabase::TreasureDatabase() {
         treasureChest.minimumLevel = entry.getFloat("minimumLevel", 0);
 
         if (!m_treasurePools.contains(treasureChest.treasurePool))
-          throw TreasureException(strf("No such TreasurePool '%s' for TreasureChestSet named '%s' in file '%s'", treasureChest.treasurePool, pair.first, file));
+          throw TreasureException(strf("No such TreasurePool '{}' for TreasureChestSet named '{}' in file '{}'", treasureChest.treasurePool, pair.first, file));
 
         treasureChestSet.append(treasureChest);
       }
@@ -122,10 +122,10 @@ List<ItemPtr> TreasureDatabase::createTreasure(String const& treasurePool, float
 
 List<ItemPtr> TreasureDatabase::createTreasure(String const& treasurePool, float level, uint64_t seed, StringSet visitedPools) const {
   if (!m_treasurePools.contains(treasurePool))
-    throw TreasureException(strf("Unknown treasure pool '%s'", treasurePool));
+    throw TreasureException(strf("Unknown treasure pool '{}'", treasurePool));
 
   if (!visitedPools.add(treasurePool))
-    throw TreasureException(strf("Loop detected in treasure pool generation - set '%s' already contains '%s'", visitedPools, treasurePool));
+    throw TreasureException(strf("Loop detected in treasure pool generation - set '{}' already contains '{}'", visitedPools, treasurePool));
 
   auto itemDatabase = Root::singleton().itemDatabase();
 
@@ -197,7 +197,7 @@ ContainerObjectPtr TreasureDatabase::createTreasureChest(World* world, String co
   auto objectDatabase = Root::singleton().objectDatabase();
 
   if (!m_treasureChestSets.contains(treasureChestSet))
-    throw StarException(strf("Unknown treasure chest set '%s'", treasureChestSet));
+    throw StarException(strf("Unknown treasure chest set '{}'", treasureChestSet));
 
   auto level = world->threatLevel();
   auto boxSet = m_treasureChestSets.get(treasureChestSet);

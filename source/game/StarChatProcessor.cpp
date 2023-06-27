@@ -8,7 +8,7 @@ String ChatProcessor::connectClient(ConnectionId clientId, String nick) {
   RecursiveMutexLocker locker(m_mutex);
 
   if (nick.empty())
-    nick = strf("Player_%s", clientId);
+    nick = strf("Player_{}", clientId);
 
   nick = makeNickUnique(nick);
 
@@ -17,7 +17,7 @@ String ChatProcessor::connectClient(ConnectionId clientId, String nick) {
         {MessageContext::Broadcast},
         ServerConnectionId,
         ServerNick,
-        strf("Player '%s' connected", nick)
+        strf("Player '{}' connected", nick)
       });
   }
 
@@ -41,7 +41,7 @@ List<ChatReceivedMessage> ChatProcessor::disconnectClient(ConnectionId clientId)
         {MessageContext::Broadcast},
         ServerConnectionId,
         ServerNick,
-        strf("Player '%s' disconnected", clientInfo.nick)
+        strf("Player '{}' disconnected", clientInfo.nick)
       });
   }
 
@@ -229,17 +229,17 @@ bool ChatProcessor::handleCommand(ChatReceivedMessage& message) {
 
   if (command == "nick") {
     auto newNick = renick(message.fromConnection, commandLine.trim());
-    response = strf("Nick changed to %s", newNick);
+    response = strf("Nick changed to {}", newNick);
   } else if (command == "w") {
     String target = commandLine.extract();
     if (m_nicks.contains(target))
       whisper(message.fromConnection, m_nicks.get(target), commandLine.trim());
     else
-      response = strf("No such nick %s", target);
+      response = strf("No such nick {}", target);
   } else if (m_commandHandler) {
     response = m_commandHandler(message.fromConnection, command, commandLine);
   } else {
-    response = strf("No such command %s", command);
+    response = strf("No such command {}", command);
   }
 
   if (!response.empty()) {

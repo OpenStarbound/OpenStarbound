@@ -148,7 +148,7 @@ void GraphicsMenu::syncGui() {
   } else {
     resSlider->setVal(m_resList.size() - 1);
   }
-  fetchChild<LabelWidget>("resValueLabel")->setText(strf("%dx%d", res[0], res[1]));
+  fetchChild<LabelWidget>("resValueLabel")->setText(strf("{}x{}", res[0], res[1]));
 
   auto zoomSlider = fetchChild<SliderBarWidget>("zoomSlider");
   auto zoomIt = std::lower_bound(m_zoomList.begin(), m_zoomList.end(), m_localChanges.get("zoomLevel").toFloat());
@@ -159,7 +159,7 @@ void GraphicsMenu::syncGui() {
   } else {
     zoomSlider->setVal(m_zoomList.size() - 1);
   }
-  fetchChild<LabelWidget>("zoomValueLabel")->setText(strf("%dx", m_localChanges.get("zoomLevel").toInt()));
+  fetchChild<LabelWidget>("zoomValueLabel")->setText(strf("{}x", m_localChanges.get("zoomLevel").toInt()));
 
 
   fetchChild<ButtonWidget>("speechBubbleCheckbox")->setChecked(m_localChanges.get("speechBubbles").toBool());

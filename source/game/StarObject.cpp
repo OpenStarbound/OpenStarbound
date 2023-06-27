@@ -483,7 +483,7 @@ void Object::destroy(RenderCallback* renderCallback) {
         }
       }
     } catch (StarException const& e) {
-      Logger::warn("Invalid dropID in entity death. %s", outputException(e, false));
+      Logger::warn("Invalid dropID in entity death. {}", outputException(e, false));
     }
   }
 
@@ -543,7 +543,7 @@ Maybe<String> Object::inspectionLogName() const {
 
 Maybe<String> Object::inspectionDescription(String const& species) const {
   return configValue("inspectionDescription").optString()
-    .orMaybe(configValue(strf("%sDescription", species)).optString())
+    .orMaybe(configValue(strf("{}Description", species)).optString())
     .value(description());
 }
 

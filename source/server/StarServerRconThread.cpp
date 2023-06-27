@@ -55,7 +55,7 @@ void ServerRconThread::run() {
       }
     }
   } catch (std::exception const& e) {
-    Logger::error("ServerRconThread exception caught: %s", e.what());
+    Logger::error("ServerRconThread exception caught: {}", e.what());
   }
 }
 

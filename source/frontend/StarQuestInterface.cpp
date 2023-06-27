@@ -236,7 +236,7 @@ void QuestLogInterface::fetchData() {
   else if (filter.equalsIgnoreCase("completed"))
     showQuests(m_manager->listCompletedQuests());
   else
-    throw StarException(strf("Unknown quest filter '%s'", filter));
+    throw StarException(strf("Unknown quest filter '{}'", filter));
 }
 
 void QuestLogInterface::showQuests(List<QuestPtr> quests) {
@@ -422,7 +422,7 @@ QuestCompleteInterface::QuestCompleteInterface(QuestPtr const& quest, PlayerPtr 
   commonSetup(config, m_quest->completionText(), "QuestComplete");
 
   if (auto moneyLabel = fetchChild<LabelWidget>("lblMoneyAmount"))
-    moneyLabel->setText(strf("%s", m_quest->money()));
+    moneyLabel->setText(strf("{}", m_quest->money()));
   disableScissoring();
 }
 

@@ -150,7 +150,7 @@ UniverseConnectionServer::UniverseConnectionServer(PacketReceiveCallback packetR
               try {
                 m_packetReceiver(this, p.first, move(toReceive));
               } catch (std::exception const& e) {
-                Logger::error("Exception caught handling incoming server packets, disconnecting client '%s' %s", p.first, outputException(e, true));
+                Logger::error("Exception caught handling incoming server packets, disconnecting client '{}' {}", p.first, outputException(e, true));
 
                 connectionLocker.lock();
                 p.second->packetSocket->close();
@@ -162,7 +162,7 @@ UniverseConnectionServer::UniverseConnectionServer(PacketReceiveCallback packetR
             Thread::sleep(PacketSocketPollSleep);
         }
       } catch (std::exception const& e) {
-        Logger::error("Exception caught in UniverseConnectionServer::remoteProcessLoop, closing all remote connections: %s", e.what());
+        Logger::error("Exception caught in UniverseConnectionServer::remoteProcessLoop, closing all remote connections: {}", e.what());
         connectionsLocker.lock();
         for (auto& p : m_connections)
           p.second->packetSocket->close();
@@ -193,7 +193,7 @@ bool UniverseConnectionServer::connectionIsOpen(ConnectionId clientId) const {
     return conn->packetSocket->isOpen();
   }
 
-  throw UniverseConnectionException::format("No such client '%s' in UniverseConnectionServer::connectionIsOpen", clientId);
+  throw UniverseConnectionException::format("No such client '{}' in UniverseConnectionServer::connectionIsOpen", clientId);
 }
 
 int64_t UniverseConnectionServer::lastActivityTime(ConnectionId clientId) const {
@@ -202,13 +202,13 @@ int64_t UniverseConnectionServer::lastActivityTime(ConnectionId clientId) const 
     MutexLocker connectionLocker(conn->mutex);
     return conn->lastActivityTime;
   }
-  throw UniverseConnectionException::format("No such client '%s' in UniverseConnectionServer::lastRemoteActivityTime", clientId);
+  throw UniverseConnectionException::format("No such client '{}' in UniverseConnectionServer::lastRemoteActivityTime", clientId);
 }
 
 void UniverseConnectionServer::addConnection(ConnectionId clientId, UniverseConnection uc) {
   RecursiveMutexLocker connectionsLocker(m_connectionsMutex);
   if (m_connections.contains(clientId))
-    throw UniverseConnectionException::format("Client '%s' already exists in UniverseConnectionServer::addConnection", clientId);
+    throw UniverseConnectionException::format("Client '{}' already exists in UniverseConnectionServer::addConnection", clientId);
 
   auto connection = make_shared<Connection>();
   connection->packetSocket = move(uc.m_packetSocket);
@@ -221,7 +221,7 @@ void UniverseConnectionServer::addConnection(ConnectionId clientId, UniverseConn
 UniverseConnection UniverseConnectionServer::removeConnection(ConnectionId clientId) {
   RecursiveMutexLocker connectionsLocker(m_connectionsMutex);
   if (!m_connections.contains(clientId))
-    throw UniverseConnectionException::format("Client '%s' does not exist in UniverseConnectionServer::removeConnection", clientId);
+    throw UniverseConnectionException::format("Client '{}' does not exist in UniverseConnectionServer::removeConnection", clientId);
 
   auto conn = m_connections.take(clientId);
   MutexLocker connectionLocker(conn->mutex);
@@ -252,7 +252,7 @@ void UniverseConnectionServer::sendPackets(ConnectionId clientId, List<PacketPtr
       conn->packetSocket->writeData();
     }
   } else {
-    throw UniverseConnectionException::format("No such client '%s' in UniverseConnectionServer::sendPackets", clientId);
+    throw UniverseConnectionException::format("No such client '{}' in UniverseConnectionServer::sendPackets", clientId);
   }
 }
 

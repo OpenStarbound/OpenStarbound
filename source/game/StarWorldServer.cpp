@@ -384,10 +384,10 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
 
     } else if (auto entityCreate = as<EntityCreatePacket>(packet)) {
       if (!entityIdInSpace(entityCreate->entityId, clientInfo->clientId)) {
-        throw WorldServerException::format("WorldServer received entity create packet with illegal entity id %s.", entityCreate->entityId);
+        throw WorldServerException::format("WorldServer received entity create packet with illegal entity id {}.", entityCreate->entityId);
       } else {
         if (m_entityMap->entity(entityCreate->entityId)) {
-          Logger::error("WorldServer received duplicate entity create packet from client, deleting old entity %s", entityCreate->entityId);
+          Logger::error("WorldServer received duplicate entity create packet from client, deleting old entity {}", entityCreate->entityId);
           removeEntity(entityCreate->entityId, false);
         }
 
@@ -487,7 +487,7 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
         pair.second->outgoingPackets.append(make_shared<UpdateWorldPropertiesPacket>(updateWorldProperties->updatedProperties));
 
     } else {
-      throw WorldServerException::format("Improper packet type %s received by client", (int)packet->type());
+      throw WorldServerException::format("Improper packet type {} received by client", (int)packet->type());
     }
   }
 }
@@ -610,12 +610,12 @@ void WorldServer::update() {
   for (auto& pair : m_clientInfo)
     pair.second->pendingForward = false;
 
-  LogMap::set(strf("server_%s_entities", m_worldTemplate->worldSeed()), m_entityMap->size());
-  LogMap::set(strf("server_%s_sectors", m_worldTemplate->worldSeed()), strf("%d", m_tileArray->loadedSectorCount()));
-  LogMap::set(strf("server_%s_world_time", m_worldTemplate->worldSeed()), epochTime());
-  LogMap::set(strf("server_%s_active_liquid", m_worldTemplate->worldSeed()), m_liquidEngine->activeCells());
-  LogMap::set(strf("server_%s_day_time", m_worldTemplate->worldSeed()), timeOfDay() / dayLength());
-  LogMap::set(strf("server_%s_lua_mem", m_worldTemplate->worldSeed()), m_luaRoot->luaMemoryUsage());
+  LogMap::set(strf("server_{}_entities", m_worldTemplate->worldSeed()), m_entityMap->size());
+  LogMap::set(strf("server_{}_sectors", m_worldTemplate->worldSeed()), strf("{}", m_tileArray->loadedSectorCount()));
+  LogMap::set(strf("server_{}_world_time", m_worldTemplate->worldSeed()), epochTime());
+  LogMap::set(strf("server_{}_active_liquid", m_worldTemplate->worldSeed()), m_liquidEngine->activeCells());
+  LogMap::set(strf("server_{}_day_time", m_worldTemplate->worldSeed()), timeOfDay() / dayLength());
+  LogMap::set(strf("server_{}_lua_mem", m_worldTemplate->worldSeed()), m_luaRoot->luaMemoryUsage());
 }
 
 WorldGeometry WorldServer::geometry() const {
@@ -1115,7 +1115,7 @@ void WorldServer::setTileProtection(DungeonId dungeonId, bool isProtected) {
       pair.second->outgoingPackets.append(make_shared<UpdateTileProtectionPacket>(dungeonId, isProtected));
   }
 
-  Logger::info("Protected dungeonIds for world set to %s", m_protectedDungeonIds);
+  Logger::info("Protected dungeonIds for world set to {}", m_protectedDungeonIds);
 }
 
 void WorldServer::setTileProtectionEnabled(bool enabled) {
@@ -1212,7 +1212,7 @@ void WorldServer::init(bool firstTime) {
       DungeonId currentDungeonId = 0;
 
       for (auto const& dungeon : m_worldTemplate->dungeons()) {
-        Logger::info("Placing dungeon %s", dungeon.dungeon);
+        Logger::info("Placing dungeon {}", dungeon.dungeon);
         int retryCounter = m_serverConfig.getInt("spawnDungeonRetries");
         while (retryCounter > 0) {
           --retryCounter;

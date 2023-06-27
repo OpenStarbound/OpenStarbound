@@ -64,7 +64,7 @@ ByteArray EntityFactory::netStoreEntity(EntityPtr const& entity) const {
   } else if (auto vehicle = as<Vehicle>(entity)) {
     return m_vehicleDatabase->netStore(vehicle);
   } else {
-    throw EntityFactoryException::format("Don't know how to make net store for entity type '%s'", EntityTypeNames.getRight(entity->entityType()));
+    throw EntityFactoryException::format("Don't know how to make net store for entity type '{}'", EntityTypeNames.getRight(entity->entityType()));
   }
 }
 
@@ -92,7 +92,7 @@ EntityPtr EntityFactory::netLoadEntity(EntityType type, ByteArray const& netStor
   } else if (type == EntityType::Vehicle) {
     return m_vehicleDatabase->netLoad(netStore);
   } else {
-    throw EntityFactoryException::format("Don't know how to create entity type '%s' from net store", EntityTypeNames.getRight(type));
+    throw EntityFactoryException::format("Don't know how to create entity type '{}' from net store", EntityTypeNames.getRight(type));
   }
 }
 
@@ -116,7 +116,7 @@ Json EntityFactory::diskStoreEntity(EntityPtr const& entity) const {
   } else if (auto vehicle = as<Vehicle>(entity)) {
     return m_vehicleDatabase->diskStore(vehicle);
   } else {
-    throw EntityFactoryException::format("Don't know how to make disk store for entity type '%s'", EntityTypeNames.getRight(entity->entityType()));
+    throw EntityFactoryException::format("Don't know how to make disk store for entity type '{}'", EntityTypeNames.getRight(entity->entityType()));
   }
 }
 
@@ -140,7 +140,7 @@ EntityPtr EntityFactory::diskLoadEntity(EntityType type, Json const& diskStore) 
   } else if (type == EntityType::Vehicle) {
     return m_vehicleDatabase->diskLoad(diskStore);
   } else {
-    throw EntityFactoryException::format("Don't know how to create entity type '%s' from disk store", EntityTypeNames.getRight(type));
+    throw EntityFactoryException::format("Don't know how to create entity type '{}' from disk store", EntityTypeNames.getRight(type));
   }
 }
 

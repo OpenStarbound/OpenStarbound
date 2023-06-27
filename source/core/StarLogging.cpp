@@ -24,7 +24,7 @@ LogLevel LogSink::level() {
 
 void StdoutLogSink::log(char const* msg, LogLevel level) {
   MutexLocker locker(m_logMutex);
-  coutf("[%s] %s\n", LogLevelNames.getRight(level), msg);
+  coutf("[{}] {}\n", LogLevelNames.getRight(level), msg);
 }
 
 FileLogSink::FileLogSink(String const& filename, LogLevel level, bool truncate) {
@@ -37,7 +37,7 @@ FileLogSink::FileLogSink(String const& filename, LogLevel level, bool truncate) 
 
 void FileLogSink::log(char const* msg, LogLevel level) {
   MutexLocker locker(m_logMutex);
-  auto line = strf("[%s] [%s] %s\n", Time::printCurrentDateAndTime("<hours>:<minutes>:<seconds>.<millis>"), LogLevelNames.getRight(level), msg);
+  auto line = strf("[{}] [{}] {}\n", Time::printCurrentDateAndTime("<hours>:<minutes>:<seconds>.<millis>"), LogLevelNames.getRight(level), msg);
   m_output->write(line.data(), line.size());
 }
 

@@ -28,19 +28,19 @@ String Time::printDuration(double time) {
 
   if (time >= 3600) {
     int numHours = (int)time / 3600;
-    hours = strf("%d hour%s", numHours, numHours == 1 ? "" : "s");
+    hours = strf("{} hour{}", numHours, numHours == 1 ? "" : "s");
   }
   if (time >= 60) {
     int numMinutes = (int)(time / 60) % 60;
-    minutes = strf("%s minute%s", numMinutes, numMinutes == 1 ? "" : "s");
+    minutes = strf("{} minute{}", numMinutes, numMinutes == 1 ? "" : "s");
   }
   if (time >= 1) {
     int numSeconds = (int)time % 60;
-    seconds = strf("%s second%s", numSeconds, numSeconds == 1 ? "" : "s");
+    seconds = strf("{} second{}", numSeconds, numSeconds == 1 ? "" : "s");
   }
 
   int numMilliseconds = round(time * 1000);
-  milliseconds = strf("%s millisecond%s", numMilliseconds, numMilliseconds == 1 ? "" : "s");
+  milliseconds = strf("{} millisecond{}", numMilliseconds, numMilliseconds == 1 ? "" : "s");
 
   return String::joinWith(", ", hours, minutes, seconds, milliseconds);
 }

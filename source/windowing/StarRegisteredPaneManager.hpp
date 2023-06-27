@@ -50,7 +50,7 @@ template <typename T>
 shared_ptr<T> RegisteredPaneManager<KeyT>::registeredPane(KeyT const& paneId) const {
   if (auto v = m_registeredPanes.ptr(paneId))
     return convert<T>(v->pane);
-  throw GuiException(strf("No pane named '%s' found in RegisteredPaneManager", outputAny(paneId)));
+  throw GuiException(strf("No pane named '{}' found in RegisteredPaneManager", outputAny(paneId)));
 }
 
 template <typename KeyT>
@@ -58,7 +58,7 @@ void RegisteredPaneManager<KeyT>::registerPane(
     KeyT paneId, PaneLayer paneLayer, PanePtr pane, DismissCallback onDismiss) {
   if (!m_registeredPanes.insert(move(paneId), {move(paneLayer), move(pane), move(onDismiss)}).second)
     throw GuiException(
-        strf("Registered pane with name '%s' registered a second time in RegisteredPaneManager::registerPane",
+        strf("Registered pane with name '{}' registered a second time in RegisteredPaneManager::registerPane",
             outputAny(paneId)));
 }
 
@@ -69,7 +69,7 @@ PanePtr RegisteredPaneManager<KeyT>::deregisterPane(KeyT const& paneId) {
       dismissPane(v->pane);
     return v->pane;
   }
-  throw GuiException(strf("No pane named '%s' found in RegisteredPaneManager::deregisterPane", outputAny(paneId)));
+  throw GuiException(strf("No pane named '{}' found in RegisteredPaneManager::deregisterPane", outputAny(paneId)));
 }
 
 template <typename KeyT>
@@ -119,7 +119,7 @@ typename RegisteredPaneManager<KeyT>::PaneInfo const& RegisteredPaneManager<KeyT
     KeyT const& paneId) const {
   if (auto p = m_registeredPanes.ptr(paneId))
     return *p;
-  throw GuiException(strf("No registered pane with name '%s' found in  RegisteredPaneManager", outputAny(paneId)));
+  throw GuiException(strf("No registered pane with name '{}' found in  RegisteredPaneManager", outputAny(paneId)));
 }
 }
 

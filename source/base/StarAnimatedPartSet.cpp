@@ -231,7 +231,7 @@ AnimatedPartSet::AnimationMode AnimatedPartSet::stringToAnimationMode(String con
   } else if (string.equals("transition", String::CaseInsensitive)) {
     return Transition;
   } else {
-    throw AnimatedPartSetException(strf("No such AnimationMode '%s'", string));
+    throw AnimatedPartSetException(strf("No such AnimationMode '{}'", string));
   }
 }
 

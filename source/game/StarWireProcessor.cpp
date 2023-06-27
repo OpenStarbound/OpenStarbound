@@ -50,7 +50,7 @@ void WireProcessor::populateWorking(WireEntity* wireEntity) {
   auto p = m_workingWireEntities.insert(wireEntity->tilePosition(), WireEntityState{nullptr, {}, false});
   if (!p.second) {
     if (p.first->second.wireEntity != wireEntity)
-      Logger::debug("Multiple wire entities share tile position: %s", wireEntity->position());
+      Logger::debug("Multiple wire entities share tile position: {}", wireEntity->position());
     return;
   }
   auto& wes = p.first->second;

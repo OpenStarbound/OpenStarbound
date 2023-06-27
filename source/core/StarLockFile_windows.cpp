@@ -41,7 +41,7 @@ bool LockFile::lock(int64_t timeout) {
     if (handle == INVALID_HANDLE_VALUE) {
       if (GetLastError() == ERROR_SHARING_VIOLATION)
         return {};
-      throw StarException(strf("Could not open lock file %s, error code %s\n", filename, GetLastError()));
+      throw StarException(strf("Could not open lock file {}, error code {}\n", filename, GetLastError()));
     }
 
     return make_shared<HANDLE>(handle);

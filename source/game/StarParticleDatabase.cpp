@@ -28,7 +28,7 @@ ParticleDatabase::ParticleDatabase() {
   for (auto file : files) {
     auto particleConfig = make_shared<ParticleConfig>(assets->json(file));
     if (m_configs.contains(particleConfig->kind()))
-      throw StarException(strf("Duplicate particle asset kind Name %s. configfile %s", particleConfig->kind(), file));
+      throw StarException(strf("Duplicate particle asset kind Name {}. configfile {}", particleConfig->kind(), file));
     m_configs[particleConfig->kind()] = particleConfig;
   }
 }
@@ -36,7 +36,7 @@ ParticleDatabase::ParticleDatabase() {
 ParticleConfigPtr ParticleDatabase::config(String const& kind) const {
   auto k = kind.toLower();
   if (!m_configs.contains(k))
-    throw StarException(strf("Unknown particle definition with kind %s.", kind));
+    throw StarException(strf("Unknown particle definition with kind {}.", kind));
   return m_configs.get(k);
 }
 

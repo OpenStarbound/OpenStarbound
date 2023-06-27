@@ -49,7 +49,7 @@ Maybe<SocketPollResult> Socket::poll(SocketPollQuery const& query, unsigned time
   ret = ::select(0, &readfs, &writefs, &exceptfs, &time);
 
   if (ret < 0)
-    throw NetworkException::format("Error during call to select, '%s'", netErrorString());
+    throw NetworkException::format("Error during call to select, '{}'", netErrorString());
 
   if (ret == 0)
     return {};
@@ -82,7 +82,7 @@ Maybe<SocketPollResult> Socket::poll(SocketPollQuery const& query, unsigned time
   ret = ::poll(pollfds.get(), query.size(), timeout);
 
   if (ret < 0)
-    throw NetworkException::format("Error during call to poll, '%s'", netErrorString());
+    throw NetworkException::format("Error during call to poll, '{}'", netErrorString());
 
   if (ret == 0)
     return {};
@@ -127,18 +127,18 @@ void Socket::bind(HostAddressWithPort const& addressWithPort) {
   m_localAddress = addressWithPort;
   setNativeFromAddress(m_localAddress, &sockAddr, &sockAddrLen);
   if (::bind(m_impl->socketDesc, (struct sockaddr*)&sockAddr, sockAddrLen) < 0)
-    throw NetworkException(strf("Cannot bind socket to %s: %s", m_localAddress, netErrorString()));
+    throw NetworkException(strf("Cannot bind socket to {}: {}", m_localAddress, netErrorString()));
 
   m_socketMode = SocketMode::Bound;
 
-  Logger::debug("bind %s (%d)", addressWithPort, m_impl->socketDesc);
+  Logger::debug("bind {} ({})", addressWithPort, m_impl->socketDesc);
 }
 
 void Socket::listen(int backlog) {
   WriteLocker locker(m_mutex);
 
   if (::listen(m_impl->socketDesc, backlog) != 0)
-    throw NetworkException(strf("Could not listen on socket: '%s'", netErrorString()));
+    throw NetworkException(strf("Could not listen on socket: '{}'", netErrorString()));
 }
 
 void Socket::setTimeout(unsigned timeout) {
@@ -168,14 +168,14 @@ void Socket::setNonBlocking(bool nonBlocking) {
 #ifdef WIN32
   unsigned long mode = nonBlocking ? 1 : 0;
   if (ioctlsocket(m_impl->socketDesc, FIONBIO, &mode) != 0)
-    throw NetworkException::format("Cannot set socket non-blocking mode: %s", netErrorString());
+    throw NetworkException::format("Cannot set socket non-blocking mode: {}", netErrorString());
 #else
   int flags = fcntl(m_impl->socketDesc, F_GETFL, 0);
   if (flags < 0)
-    throw NetworkException::format("fcntl failure getting socket flags: %s", netErrorString());
+    throw NetworkException::format("fcntl failure getting socket flags: {}", netErrorString());
   flags = nonBlocking ? (flags | O_NONBLOCK) : (flags & ~O_NONBLOCK);
   if (fcntl(m_impl->socketDesc, F_SETFL, flags) != 0)
-    throw NetworkException::format("fcntl failure setting non-blocking mode: %s", netErrorString());
+    throw NetworkException::format("fcntl failure setting non-blocking mode: {}", netErrorString());
 #endif
 }
 
@@ -216,7 +216,7 @@ Socket::Socket(SocketType type, NetworkMode networkMode)
     m_impl->socketDesc = ::socket(AF_INET6, type == SocketType::Tcp ? SOCK_STREAM : SOCK_DGRAM, 0);
 
   if (invalidSocketDescriptor(m_impl->socketDesc))
-    throw NetworkException(strf("cannot create socket: %s", netErrorString()));
+    throw NetworkException(strf("cannot create socket: {}", netErrorString()));
 
   m_socketMode = SocketMode::Shutdown;
   setTimeout(60000);
@@ -231,7 +231,7 @@ Socket::Socket(NetworkMode networkMode, SocketImplPtr impl, SocketMode socketMod
 
 void Socket::checkOpen(char const* methodName) const {
   if (m_socketMode == SocketMode::Closed)
-    throw SocketClosedException::format("Socket not open in %s", methodName);
+    throw SocketClosedException::format("Socket not open in {}", methodName);
 }
 
 void Socket::doShutdown() {

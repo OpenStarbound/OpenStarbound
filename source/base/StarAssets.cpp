@@ -22,7 +22,7 @@ namespace Star {
 
 static void validatePath(AssetPath const& components, bool canContainSubPath, bool canContainDirectives) {
   if (components.basePath.empty() || components.basePath[0] != '/')
-    throw AssetException(strf("Path '%s' must be absolute", components.basePath));
+    throw AssetException(strf("Path '{}' must be absolute", components.basePath));
 
   bool first = true;
   bool slashed = true;
@@ -31,19 +31,19 @@ static void validatePath(AssetPath const& components, bool canContainSubPath, bo
     if (c == '/') {
       if (!first) {
         if (slashed)
-          throw AssetException(strf("Path '%s' contains consecutive //, not allowed", components.basePath));
+          throw AssetException(strf("Path '{}' contains consecutive //, not allowed", components.basePath));
         else if (dotted)
-          throw AssetException(strf("Path '%s' '.' and '..' not allowed", components.basePath));
+          throw AssetException(strf("Path '{}' '.' and '..' not allowed", components.basePath));
       }
       slashed = true;
       dotted = false;
     } else if (c == ':') {
       if (slashed)
-        throw AssetException(strf("Path '%s' has ':' after directory", components.basePath));
+        throw AssetException(strf("Path '{}' has ':' after directory", components.basePath));
       break;
     } else if (c == '?') {
       if (slashed)
-        throw AssetException(strf("Path '%s' has '?' after directory", components.basePath));
+        throw AssetException(strf("Path '{}' has '?' after directory", components.basePath));
       break;
     } else {
       slashed = false;
@@ -52,12 +52,12 @@ static void validatePath(AssetPath const& components, bool canContainSubPath, bo
     first = false;
   }
   if (slashed)
-    throw AssetException(strf("Path '%s' cannot be a file", components.basePath));
+    throw AssetException(strf("Path '{}' cannot be a file", components.basePath));
 
   if (!canContainSubPath && components.subPath)
-    throw AssetException::format("Path '%s' cannot contain sub-path", components);
+    throw AssetException::format("Path '{}' cannot contain sub-path", components);
   if (!canContainDirectives && !components.directives.empty())
-    throw AssetException::format("Path '%s' cannot contain directives", components);
+    throw AssetException::format("Path '{}' cannot contain directives", components);
 }
 
 Maybe<RectU> FramesSpecification::getRect(String const& frame) const {
@@ -76,7 +76,7 @@ Assets::Assets(Settings settings, StringList assetSources) {
   m_assetSources = move(assetSources);
 
   for (auto& sourcePath : m_assetSources) {
-    Logger::info("Loading assets from: '%s'", sourcePath);
+    Logger::info("Loading assets from: '{}'", sourcePath);
     AssetSourcePtr source;
     if (File::isDirectory(sourcePath))
       source = make_shared<DirectoryAssetSource>(sourcePath, m_settings.pathIgnore);
@@ -168,7 +168,7 @@ String Assets::assetSource(String const& path) const {
   MutexLocker assetsLocker(m_assetsMutex);
   if (auto p = m_files.ptr(path))
     return m_assetSourcePaths.getLeft(p->source);
-  throw AssetException(strf("No such asset '%s'", path));
+  throw AssetException(strf("No such asset '{}'", path));
 }
 
 StringList Assets::scan(String const& suffix) const {
@@ -384,7 +384,7 @@ FramesSpecification Assets::parseFramesSpecification(Json const& frameConfig, St
       RectU rect = RectU(jsonToRectI(pair.second));
       if (rect.isEmpty())
         throw AssetException(
-            strf("Empty rect in frame specification in image %s frame %s", framesSpecification.framesFile, frameName));
+            strf("Empty rect in frame specification in image {} frame {}", framesSpecification.framesFile, frameName));
       else
         framesSpecification.frames[frameName] = rect;
     }
@@ -398,13 +398,13 @@ FramesSpecification Assets::parseFramesSpecification(Json const& frameConfig, St
     Vec2U dimensions(jsonToVec2I(grid.get("dimensions")));
 
     if (dimensions[0] == 0 || dimensions[1] == 0)
-      throw AssetException(strf("Image %s \"dimensions\" in frameGrid cannot be zero", framesSpecification.framesFile));
+      throw AssetException(strf("Image {} \"dimensions\" in frameGrid cannot be zero", framesSpecification.framesFile));
 
     if (grid.contains("names")) {
       auto nameList = grid.get("names");
       for (size_t y = 0; y < nameList.size(); ++y) {
         if (y >= dimensions[1])
-          throw AssetException(strf("Image %s row %s is out of bounds for y-dimension %s",
+          throw AssetException(strf("Image {} row {} is out of bounds for y-dimension {}",
               framesSpecification.framesFile,
               y + 1,
               dimensions[1]));
@@ -413,7 +413,7 @@ FramesSpecification Assets::parseFramesSpecification(Json const& frameConfig, St
           continue;
         for (unsigned x = 0; x < rowList.size(); ++x) {
           if (x >= dimensions[0])
-            throw AssetException(strf("Image %s column %s is out of bounds for x-dimension %s",
+            throw AssetException(strf("Image {} column {} is out of bounds for x-dimension {}",
                 framesSpecification.framesFile,
                 x + 1,
                 dimensions[0]));
@@ -431,7 +431,7 @@ FramesSpecification Assets::parseFramesSpecification(Json const& frameConfig, St
       // If "names" not specified, use auto naming algorithm
       for (size_t y = 0; y < dimensions[1]; ++y)
         for (size_t x = 0; x < dimensions[0]; ++x)
-          framesSpecification.frames[strf("%s", y * dimensions[0] + x)] =
+          framesSpecification.frames[strf("{}", y * dimensions[0] + x)] =
               RectU::withSize(Vec2U(begin[0] + x * size[0], begin[1] + y * size[1]), size);
     }
   }
@@ -449,7 +449,7 @@ FramesSpecification Assets::parseFramesSpecification(Json const& frameConfig, St
         auto it = aliases->find(value);
         if (it != aliases->end()) {
           if (i == aliases->size())
-            throw AssetException(strf("Infinite alias loop detected for alias '%s'", key));
+            throw AssetException(strf("Infinite alias loop detected for alias '{}'", key));
 
           value = it->second.toString();
         } else {
@@ -458,7 +458,7 @@ FramesSpecification Assets::parseFramesSpecification(Json const& frameConfig, St
       }
 
       if (!framesSpecification.frames.contains(value))
-        throw AssetException(strf("No such frame '%s' found for alias '%s'", value, key));
+        throw AssetException(strf("No such frame '{}' found for alias '{}'", value, key));
       framesSpecification.aliases[key] = move(value);
     }
   }
@@ -493,7 +493,7 @@ shared_ptr<Assets::AssetData> Assets::tryAsset(AssetId const& id) const {
       freshen(i->second);
       return i->second;
     } else {
-      throw AssetException::format("Error loading asset %s", id.path);
+      throw AssetException::format("Error loading asset {}", id.path);
     }
   } else {
     auto j = m_queue.find(id);
@@ -516,7 +516,7 @@ shared_ptr<Assets::AssetData> Assets::getAsset(AssetId const& id) const {
         freshen(asset);
         return asset;
       } else {
-        throw AssetException::format("Error loading asset %s", id.path);
+        throw AssetException::format("Error loading asset {}", id.path);
       }
     } else {
       // Try to load the asset in-thread, if we cannot, then the asset has been
@@ -648,13 +648,13 @@ FramesSpecificationConstPtr Assets::bestFramesSpecification(String const& image)
 IODevicePtr Assets::open(String const& path) const {
   if (auto p = m_files.ptr(path))
     return p->source->open(p->sourceName);
-  throw AssetException(strf("No such asset '%s'", path));
+  throw AssetException(strf("No such asset '{}'", path));
 }
 
 ByteArray Assets::read(String const& path) const {
   if (auto p = m_files.ptr(path))
     return p->source->read(p->sourceName);
-  throw AssetException(strf("No such asset '%s'", path));
+  throw AssetException(strf("No such asset '{}'", path));
 }
 
 Json Assets::readJson(String const& path) const {
@@ -673,21 +673,21 @@ Json Assets::readJson(String const& path) const {
                 try {
                   result = jsonPatch(result, patch.toArray());
                 } catch (JsonPatchTestFail const& e) {
-                  Logger::debug("Patch test failure from file %s in source: %s. Caused by: %s", pair.first, m_assetSourcePaths.getLeft(pair.second), e.what());
+                  Logger::debug("Patch test failure from file {} in source: {}. Caused by: {}", pair.first, m_assetSourcePaths.getLeft(pair.second), e.what());
                 }
               }
             } else if (patchData.at(0).type() == Json::Type::Object) {
               try {
                 result = jsonPatch(result, patchData);
               } catch (JsonPatchTestFail const& e) {
-                Logger::debug("Patch test failure from file %s in source: %s. Caused by: %s", pair.first, m_assetSourcePaths.getLeft(pair.second), e.what());
+                Logger::debug("Patch test failure from file {} in source: {}. Caused by: {}", pair.first, m_assetSourcePaths.getLeft(pair.second), e.what());
               }
             } else {
-              throw JsonPatchException(strf("Patch data is wrong type: %s", Json::typeName(patchData.at(0).type())));
+              throw JsonPatchException(strf("Patch data is wrong type: {}", Json::typeName(patchData.at(0).type())));
             }
           }
         } catch (JsonPatchException const& e) {
-          Logger::error("Could not apply patch from file %s in source: %s.  Caused by: %s", pair.first, m_assetSourcePaths.getLeft(pair.second), e.what());
+          Logger::error("Could not apply patch from file {} in source: {}.  Caused by: {}", pair.first, m_assetSourcePaths.getLeft(pair.second), e.what());
         }
       }
       else if (patchJson.isType(Json::Type::Object)) { //Kae: Do a good ol' json merge instead if the .patch file is a Json object
@@ -697,7 +697,7 @@ Json Assets::readJson(String const& path) const {
     }
     return result;
   } catch (std::exception const& e) {
-    throw JsonParsingException(strf("Cannot parse json file: %s", path), e);
+    throw JsonParsingException(strf("Cannot parse json file: {}", path), e);
   }
 }
 
@@ -707,9 +707,9 @@ bool Assets::doLoad(AssetId const& id) const {
     // data.
     return (bool)loadAsset(id);
   } catch (std::exception const& e) {
-    Logger::error("Exception caught loading asset: %s, %s", id.path, outputException(e, true));
+    Logger::error("Exception caught loading asset: {}, {}", id.path, outputException(e, true));
   } catch (...) {
-    Logger::error("Unknown exception caught loading asset: %s", id.path);
+    Logger::error("Unknown exception caught loading asset: {}", id.path);
   }
 
   // There was an exception, remove the asset from the queue and fill the cache
@@ -727,9 +727,9 @@ bool Assets::doPost(AssetId const& id) const {
     if (id.type == AssetType::Audio)
       assetData = postProcessAudio(assetData);
   } catch (std::exception const& e) {
-    Logger::error("Exception caught post-processing asset: %s, %s", id.path, outputException(e, true));
+    Logger::error("Exception caught post-processing asset: {}, {}", id.path, outputException(e, true));
   } catch (...) {
-    Logger::error("Unknown exception caught post-processing asset: %s", id.path);
+    Logger::error("Unknown exception caught post-processing asset: {}", id.path);
   }
 
   m_queue.remove(id);
@@ -769,10 +769,10 @@ shared_ptr<Assets::AssetData> Assets::loadAsset(AssetId const& id) const {
 
     } catch (StarException const& e) {
       if (id.type == AssetType::Image && m_settings.missingImage) {
-        Logger::error("Could not load image asset '%s', using placeholder default.\n%s", id.path, outputException(e, false));
+        Logger::error("Could not load image asset '{}', using placeholder default.\n{}", id.path, outputException(e, false));
         assetData = loadImage({*m_settings.missingImage, {}, {}});
       } else if (id.type == AssetType::Audio && m_settings.missingAudio) {
-        Logger::error("Could not load audio asset '%s', using placeholder default.\n%s", id.path, outputException(e, false));
+        Logger::error("Could not load audio asset '{}', using placeholder default.\n{}", id.path, outputException(e, false));
         assetData = loadAudio({*m_settings.missingAudio, {}, {}});
       } else {
         throw;
@@ -821,7 +821,7 @@ shared_ptr<Assets::AssetData> Assets::loadJson(AssetPath const& path) const {
       newData->json = topJson->json.query(*path.subPath);
       return newData;
     } catch (StarException const& e) {
-      throw AssetException(strf("Could not read JSON value %s", path), e);
+      throw AssetException(strf("Could not read JSON value {}", path), e);
     }
   } else {
     return unlockDuring([&]() {
@@ -830,7 +830,7 @@ shared_ptr<Assets::AssetData> Assets::loadJson(AssetPath const& path) const {
         newData->json = readJson(path.basePath);
         return newData;
       } catch (StarException const& e) {
-        throw AssetException(strf("Could not read JSON asset %s", path), e);
+        throw AssetException(strf("Could not read JSON asset {}", path), e);
       }
     });
   }
@@ -882,7 +882,7 @@ shared_ptr<Assets::AssetData> Assets::loadImage(AssetPath const& path) const {
 
     // Base image must have frames data associated with it.
     if (!imageData->frames)
-      throw AssetException::format("No associated frames file found for image '%s' while resolving image frame '%s'", path.basePath, path);
+      throw AssetException::format("No associated frames file found for image '{}' while resolving image frame '{}'", path.basePath, path);
 
     if (auto alias = imageData->frames->aliases.ptr(*path.subPath)) {
       imageData = as<ImageData>(loadAsset(AssetId{AssetType::Image, {path.basePath, *alias, path.directives}}));
@@ -897,7 +897,7 @@ shared_ptr<Assets::AssetData> Assets::loadImage(AssetPath const& path) const {
     } else {
       auto frameRect = imageData->frames->frames.ptr(*path.subPath);
       if (!frameRect)
-        throw AssetException(strf("No such frame %s in frames spec %s", *path.subPath, imageData->frames->framesFile));
+        throw AssetException(strf("No such frame {} in frames spec {}", *path.subPath, imageData->frames->framesFile));
 
       return unlockDuring([&]() {
         // Need to flip frame coordinates because frame configs assume top

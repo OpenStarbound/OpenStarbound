@@ -66,7 +66,7 @@ void ServerTile::write(DataStream& ds) const {
 
 void ServerTile::read(DataStream& ds, VersionNumber serializationVersion) {
   if (serializationVersion < 416 || serializationVersion > CurrentSerializationVersion)
-    throw StarException::format("Cannot read ServerTile - serialization version %s incompatible with current version %s\n", serializationVersion, CurrentSerializationVersion);
+    throw StarException::format("Cannot read ServerTile - serialization version {} incompatible with current version {}\n", serializationVersion, CurrentSerializationVersion);
 
   ds.read(foreground);
   ds.read(foregroundHueShift);

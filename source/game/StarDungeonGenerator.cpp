@@ -114,7 +114,7 @@ namespace Dungeon {
     if (key == "doNotCombineWith")
       return as<Rule>(make_shared<const DoNotCombineWithRule>(rule));
 
-    Logger::error("Unknown dungeon rule: %s", key);
+    Logger::error("Unknown dungeon rule: {}", key);
     return Maybe<RuleConstPtr>();
   }
 
@@ -272,7 +272,7 @@ namespace Dungeon {
       return parseWireBrush(brush);
     if (key == "playerstart")
       return as<Brush>(make_shared<PlayerStartBrush>());
-    throw DungeonException::format("Unknown dungeon brush: %s", key);
+    throw DungeonException::format("Unknown dungeon brush: {}", key);
   }
 
   RandomBrush::RandomBrush(Json const& brush) {
@@ -505,7 +505,7 @@ namespace Dungeon {
 
   void InvalidBrush::paint(Vec2I, Phase, DungeonGeneratorWriter*) const {
     if (m_nameHint)
-      Logger::error("Invalid tile '%s'", *m_nameHint);
+      Logger::error("Invalid tile '{}'", *m_nameHint);
     else
       Logger::error("Invalid tile");
   }
@@ -573,7 +573,7 @@ namespace Dungeon {
       return make_shared<const Part>(dungeon, definition, make_shared<ImagePartReader>(*tileset));
     } else if (kind == "tmx")
       return make_shared<const Part>(dungeon, definition, make_shared<TMXPartReader>());
-    throw DungeonException::format("Unknown dungeon part kind: %s", kind);
+    throw DungeonException::format("Unknown dungeon part kind: {}", kind);
   }
 
   Part::Part(DungeonDefinition* dungeon, Json const& part, PartReaderPtr reader) {
@@ -706,7 +706,7 @@ namespace Dungeon {
     m_reader->forEachTile([&result, pos, &places](Vec2I tilePos, Tile const& tile) -> bool {
       if (tile.collidesWithPlaces())
         if (places.contains(pos + tilePos)) {
-          Logger::debug("Tile collided with place at %s", pos + tilePos);
+          Logger::debug("Tile collided with place at {}", pos + tilePos);
           result = true;
           return true;
         }
@@ -759,7 +759,7 @@ namespace Dungeon {
         try {
           tile.place(position, phase, writer);
         } catch (std::exception const&) {
-          Logger::error("Error at map position %s:", tilePos);
+          Logger::error("Error at map position {}:", tilePos);
           throw;
         }
       }
@@ -839,14 +839,14 @@ namespace Dungeon {
             d = pickByNeighbours(position);
           if (d == Direction::Unknown)
             d = pickByEdge(position, m_size);
-          Logger::debug("Found connector on %s at %s group %s direction %s", m_name, position, tile.connector->value, (int)d);
+          Logger::debug("Found connector on {} at {} group {} direction {}", m_name, position, tile.connector->value, (int)d);
           m_connections.append(make_shared<Connector>(this, tile.connector->value, tile.connector->forwardOnly, d, position));
         }
 
         return false;
       });
     } catch (std::exception& e) {
-      throw DungeonException(strf("Exception %s in connector %s", outputException(e, true), m_name));
+      throw DungeonException(strf("Exception {} in connector {}", outputException(e, true), m_name));
     }
   }
 
@@ -879,7 +879,7 @@ namespace Dungeon {
         return false;
       });
     } catch (std::exception& e) {
-      throw DungeonException(strf("Exception %s in part %s", outputException(e, true), m_name));
+      throw DungeonException(strf("Exception {} in part {}", outputException(e, true), m_name));
     }
 
     highestGound = max(highestGound, highestLiquid);
@@ -1321,7 +1321,7 @@ DungeonDefinitionConstPtr DungeonDefinitions::get(String const& name) const {
       [this](String const& name) -> DungeonDefinitionPtr {
         if (auto path = m_paths.maybe(name))
           return readDefinition(*path);
-        throw DungeonException::format("Unknown dungeon: '%s'", name);
+        throw DungeonException::format("Unknown dungeon: '{}'", name);
       });
 }
 
@@ -1335,7 +1335,7 @@ DungeonDefinitionPtr DungeonDefinitions::readDefinition(String const& path) {
     auto assets = Root::singleton().assets();
     return make_shared<DungeonDefinition>(assets->json(path).toObject(), AssetPath::directory(path));
   } catch (std::exception const& e) {
-    throw DungeonException::format("Error loading dungeon '%s': %s", path, outputException(e, false));
+    throw DungeonException::format("Error loading dungeon '{}': {}", path, outputException(e, false));
   }
 }
 
@@ -1362,7 +1362,7 @@ DungeonDefinition::DungeonDefinition(JsonObject const& definition, String const&
   for (auto const& partsDefMap : definition.get("parts").iterateArray()) {
     Dungeon::PartConstPtr part = parsePart(this, partsDefMap, tileset);
     if (m_parts.contains(part->name()))
-      throw DungeonException::format("Duplicate dungeon part name: %s", part->name());
+      throw DungeonException::format("Duplicate dungeon part name: {}", part->name());
     m_parts.insert(part->name(), part);
   }
 
@@ -1434,24 +1434,24 @@ Maybe<pair<List<RectI>, Set<Vec2I>>> DungeonGenerator::generate(DungeonGenerator
   try {
     Dungeon::DungeonGeneratorWriter writer(facade, markSurfaceAndTerrain ? position[1] : Maybe<int>(), m_def->extendSurfaceFreeSpace());
 
-    Logger::debug(forcePlacement ? "Forcing generation of dungeon %s" : "Generating dungeon %s", m_def->name());
+    Logger::debug(forcePlacement ? "Forcing generation of dungeon {}" : "Generating dungeon {}", m_def->name());
 
     Dungeon::PartConstPtr anchor = pickAnchor();
     if (!anchor) {
-      Logger::error("No valid anchor piece found for dungeon at %s", position);
+      Logger::error("No valid anchor piece found for dungeon at {}", position);
       return {};
     }
 
     auto pos = position + Vec2I(0, -anchor->placementLevelConstraint());
     if (forcePlacement || anchor->canPlace(pos, &writer)) {
-      Logger::info("Placing dungeon at %s", position);
+      Logger::info("Placing dungeon at {}", position);
       return buildDungeon(anchor, pos, &writer, forcePlacement);
     } else {
-      Logger::debug("Failed to place a dungeon at %s", position);
+      Logger::debug("Failed to place a dungeon at {}", position);
       return {};
     }
   } catch (std::exception const& e) {
-    throw DungeonException(strf("Error generating dungeon named '%s'", m_def->name()), e);
+    throw DungeonException(strf("Error generating dungeon named '{}'", m_def->name()), e);
   }
 }
 
@@ -1464,7 +1464,7 @@ pair<List<RectI>, Set<Vec2I>> DungeonGenerator::buildDungeon(Dungeon::PartConstP
   Set<Vec2I> preserveTiles;
   int piecesPlaced = 0;
 
-  Logger::debug("Placing dungeon entrance at %s", basePos);
+  Logger::debug("Placing dungeon entrance at {}", basePos);
 
   auto placePart = [&](Dungeon::Part const* part, Vec2I const& placePos) {
       Set<Vec2I> clearTileEntityPositions;
@@ -1497,7 +1497,7 @@ pair<List<RectI>, Set<Vec2I>> DungeonGenerator::buildDungeon(Dungeon::PartConstP
       placementCounter[part->name()]++;
       piecesPlaced++;
 
-      Logger::debug("placed %s", part->name());
+      Logger::debug("placed {}", part->name());
     };
 
   placePart(anchor.get(), basePos);
@@ -1509,7 +1509,7 @@ pair<List<RectI>, Set<Vec2I>> DungeonGenerator::buildDungeon(Dungeon::PartConstP
     Dungeon::Part const* parentPart = openSet.first().first;
     Vec2I parentPos = openSet.first().second;
     openSet.takeFirst();
-    Logger::debug("Trying to add part %s at %s connectors: %s", parentPart->name(), parentPos, parentPart->connections().size());
+    Logger::debug("Trying to add part {} at {} connectors: {}", parentPart->name(), parentPos, parentPart->connections().size());
     for (size_t i = 0; i < parentPart->connections().size(); i++) {
       auto connector = parentPart->connections()[i];
       Vec2I connectorPos = parentPos + connector->offset();
@@ -1518,7 +1518,7 @@ pair<List<RectI>, Set<Vec2I>> DungeonGenerator::buildDungeon(Dungeon::PartConstP
       List<Dungeon::ConnectorConstPtr> options = findConnectablePart(connector);
       while (options.size()) {
         Dungeon::ConnectorConstPtr option = chooseOption(options, m_rand);
-        Logger::debug("Trying part %s", option->part()->name());
+        Logger::debug("Trying part {}", option->part()->name());
         Vec2I partPos = connectorPos - option->offset() + option->positionAdjustment();
         Vec2I optionPos = connectorPos + option->positionAdjustment();
         if (!option->part()->ignoresPartMaximum()) {
@@ -1526,7 +1526,7 @@ pair<List<RectI>, Set<Vec2I>> DungeonGenerator::buildDungeon(Dungeon::PartConstP
             continue;
 
           if ((partPos - origin).magnitude() > m_def->maxRadius()) {
-            Logger::debug("out of range. %s ... %s", partPos, origin);
+            Logger::debug("out of range. {} ... {}", partPos, origin);
             continue;
           }
         }

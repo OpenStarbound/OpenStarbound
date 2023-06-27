@@ -557,7 +557,7 @@ LuaCallbacks Monster::makeMonsterCallbacks() {
     });
 
   callbacks.registerCallback("seed", [this]() {
-      return strf("%d", m_monsterVariant.seed);
+      return strf("{}", m_monsterVariant.seed);
     });
 
   callbacks.registerCallback("uniqueParameters", [this]() {

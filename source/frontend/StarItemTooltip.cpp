@@ -81,7 +81,7 @@ void ItemTooltipBuilder::buildItemDescriptionInner(
     container->fetchChild<ItemSlotWidget>("icon")->setItem(item);
 
   container->setLabel("nameLabel", item->name());
-  container->setLabel("countLabel", strf("%s", item->count()));
+  container->setLabel("countLabel", strf("{}", item->count()));
 
   container->setLabel("rarityLabel", RarityNames.getRight(item->rarity()).titleCase());
 
@@ -90,8 +90,8 @@ void ItemTooltipBuilder::buildItemDescriptionInner(
   else
     container->setLabel("handednessLabel", "1-Handed");
 
-  container->setLabel("countLabel", strf("%s", item->instanceValue("fuelAmount", 0).toUInt() * item->count()));
-  container->setLabel("priceLabel", strf("%s", (int)item->price()));
+  container->setLabel("countLabel", strf("{}", item->instanceValue("fuelAmount", 0).toUInt() * item->count()));
+  container->setLabel("priceLabel", strf("{}", (int)item->price()));
 
   if (auto objectItem = as<ObjectItem>(item)) {
     try {
@@ -103,13 +103,13 @@ void ItemTooltipBuilder::buildItemDescriptionInner(
       }
 
       if (objectItem->tooltipKind() == "container")
-        container->setLabel("slotCountLabel", strf("Holds %s Items", objectItem->instanceValue("slotCount")));
+        container->setLabel("slotCountLabel", strf("Holds {} Items", objectItem->instanceValue("slotCount")));
 
       title = object->shortDescription();
       subTitle = categoryDisplayName(object->category());
       description = object->description();
     } catch (StarException const& e) {
-      Logger::error("Failed to instantiate object for object item tooltip. %s", outputException(e, false));
+      Logger::error("Failed to instantiate object for object item tooltip. {}", outputException(e, false));
     }
   } else {
     if (container->containsChild("objectImage")) {
@@ -137,9 +137,9 @@ void ItemTooltipBuilder::buildItemDescriptionInner(
   }
 
   if (auto fireable = as<FireableItem>(item)) {
-    container->setLabel("cooldownTimeLabel", strf("%.2f", fireable->cooldownTime()));
-    container->setLabel("windupTimeLabel", strf("%.2f", fireable->windupTime()));
-    container->setLabel("speedLabel", strf("%.2f", 1.0f / (fireable->cooldownTime() + fireable->windupTime())));
+    container->setLabel("cooldownTimeLabel", strf("{:.2f}", fireable->cooldownTime()));
+    container->setLabel("windupTimeLabel", strf("{:.2f}", fireable->windupTime()));
+    container->setLabel("speedLabel", strf("{:.2f}", 1.0f / (fireable->cooldownTime() + fireable->windupTime())));
   }
 
   if (container->containsChild("largeImage")) {
@@ -198,21 +198,21 @@ void ItemTooltipBuilder::describePersistentEffect(
         auto listItem = container->addItem();
         listItem->fetchChild<ImageWidget>("statusImage")
             ->setImage(statsConfig.get(baseMultiplier->statName).getString("icon"));
-        listItem->setLabel("statusLabel", strf("%s%%", (baseMultiplier->baseMultiplier - 1) * 100));
+        listItem->setLabel("statusLabel", strf("{}%", (baseMultiplier->baseMultiplier - 1) * 100));
       }
     } else if (auto valueModifier = modifierEffect->ptr<StatValueModifier>()) {
       if (statsConfig.contains(valueModifier->statName)) {
         auto listItem = container->addItem();
         listItem->fetchChild<ImageWidget>("statusImage")
             ->setImage(statsConfig.get(valueModifier->statName).getString("icon"));
-        listItem->setLabel("statusLabel", strf("%s%s", valueModifier->value < 0 ? "-" : "", valueModifier->value));
+        listItem->setLabel("statusLabel", strf("{}{}", valueModifier->value < 0 ? "-" : "", valueModifier->value));
       }
     } else if (auto effectiveMultiplier = modifierEffect->ptr<StatEffectiveMultiplier>()) {
       if (statsConfig.contains(effectiveMultiplier->statName)) {
         auto listItem = container->addItem();
         listItem->fetchChild<ImageWidget>("statusImage")
             ->setImage(statsConfig.get(effectiveMultiplier->statName).getString("icon"));
-        listItem->setLabel("statusLabel", strf("%s%%", (effectiveMultiplier->effectiveMultiplier - 1) * 100));
+        listItem->setLabel("statusLabel", strf("{}%", (effectiveMultiplier->effectiveMultiplier - 1) * 100));
       }
     }
   }

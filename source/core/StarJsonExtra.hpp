@@ -106,7 +106,7 @@ Json jsonFromWeightedPool(WeightedPool<T> const& pool, Converter&& converter);
 template <size_t Size>
 Array<unsigned, Size> jsonToArrayU(Json const& v) {
   if (v.size() != Size)
-    throw JsonException(strf("Json array not of size %d in jsonToArrayU", Size).c_str());
+    throw JsonException(strf("Json array not of size {} in jsonToArrayU", Size).c_str());
 
   Array<unsigned, Size> res;
   for (size_t i = 0; i < Size; i++) {
@@ -119,7 +119,7 @@ Array<unsigned, Size> jsonToArrayU(Json const& v) {
 template <size_t Size>
 Array<size_t, Size> jsonToArrayS(Json const& v) {
   if (v.size() != Size)
-    throw JsonException(strf("Json array not of size %d in jsonToArrayS", Size).c_str());
+    throw JsonException(strf("Json array not of size {} in jsonToArrayS", Size).c_str());
 
   Array<size_t, Size> res;
   for (size_t i = 0; i < Size; i++) {
@@ -132,7 +132,7 @@ Array<size_t, Size> jsonToArrayS(Json const& v) {
 template <size_t Size>
 Array<int, Size> jsonToArrayI(Json const& v) {
   if (v.size() != Size)
-    throw JsonException(strf("Json array not of size %d in jsonToArrayI", Size).c_str());
+    throw JsonException(strf("Json array not of size {} in jsonToArrayI", Size).c_str());
 
   Array<int, Size> res;
   for (size_t i = 0; i < Size; i++) {
@@ -145,7 +145,7 @@ Array<int, Size> jsonToArrayI(Json const& v) {
 template <size_t Size>
 Array<float, Size> jsonToArrayF(Json const& v) {
   if (v.size() != Size)
-    throw JsonException(strf("Json array not of size %d in jsonToArrayF", Size).c_str());
+    throw JsonException(strf("Json array not of size {} in jsonToArrayF", Size).c_str());
 
   Array<float, Size> res;
   for (size_t i = 0; i < Size; i++) {
@@ -158,7 +158,7 @@ Array<float, Size> jsonToArrayF(Json const& v) {
 template <size_t Size>
 Array<double, Size> jsonToArrayD(Json const& v) {
   if (v.size() != Size)
-    throw JsonException(strf("Json array not of size %d in jsonToArrayD", Size).c_str());
+    throw JsonException(strf("Json array not of size {} in jsonToArrayD", Size).c_str());
 
   Array<double, Size> res;
   for (size_t i = 0; i < Size; i++) {
@@ -171,7 +171,7 @@ Array<double, Size> jsonToArrayD(Json const& v) {
 template <size_t Size>
 Array<String, Size> jsonToStringArray(Json const& v) {
   if (v.size() != Size)
-    throw JsonException(strf("Json array not of size %d in jsonToStringArray", Size).c_str());
+    throw JsonException(strf("Json array not of size {} in jsonToStringArray", Size).c_str());
 
   Array<String, Size> res;
   for (size_t i = 0; i < Size; i++) {

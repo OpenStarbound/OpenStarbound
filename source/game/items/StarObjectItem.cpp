@@ -83,7 +83,7 @@ bool ObjectItem::placeInWorld(FireMode, bool shifting) {
       }
     }
   } catch (StarException const& e) {
-    Logger::error("Failed to instantiate object for placement. %s %s : %s",
+    Logger::error("Failed to instantiate object for placement. {} {} : {}",
         objectName(),
         objectParameters().repr(0, true),
         outputException(e, true));

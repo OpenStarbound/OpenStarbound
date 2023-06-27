@@ -425,7 +425,7 @@ void TechController::setupTechModules(List<tuple<String, JsonObject>> const& mod
         moduleAnimator->animator.setPartTag(pair.first, "partImage", pair.second.toString());
       module.animatorId = m_techAnimators.addNetElement(moduleAnimator);
     } else {
-      Logger::warn("Tech module '%s' not found in tech database", get<0>(moduleInit));
+      Logger::warn("Tech module '{}' not found in tech database", get<0>(moduleInit));
     }
   }
 }

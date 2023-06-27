@@ -12,7 +12,7 @@ JsonRpc::JsonRpc() {
 
 void JsonRpc::registerHandler(String const& handler, JsonRpcRemoteFunction func) {
   if (m_handlers.contains(handler))
-    throw JsonRpcException(strf("Handler by that name already exists '%s'", handler));
+    throw JsonRpcException(strf("Handler by that name already exists '{}'", handler));
   m_handlers.add(handler, move(func));
 }
 
@@ -23,7 +23,7 @@ void JsonRpc::registerHandlers(JsonRpcHandlers const& handlers) {
 
 void JsonRpc::removeHandler(String const& handler) {
   if (!m_handlers.contains(handler))
-    throw JsonRpcException(strf("No such handler by the name '%s'", handler));
+    throw JsonRpcException(strf("No such handler by the name '{}'", handler));
 
   m_handlers.remove(handler);
 }
@@ -76,14 +76,14 @@ void JsonRpc::receive(ByteArray const& inbuffer) {
       try {
         auto handlerName = request.getString("handler");
         if (!m_handlers.contains(handlerName))
-          throw JsonRpcException(strf("Unknown handler '%s'", handlerName));
+          throw JsonRpcException(strf("Unknown handler '{}'", handlerName));
         m_pending.append(JsonObject{
             {"command", "response"},
             {"id", request.get("id")},
             {"result", m_handlers[handlerName](request.get("arguments"))}
           });
       } catch (std::exception& e) {
-        Logger::error("Exception while handling variant rpc request handler call. %s", outputException(e, false));
+        Logger::error("Exception while handling variant rpc request handler call. {}", outputException(e, false));
         JsonObject response;
         response["command"] = "fail";
         response["id"] = request.get("id");
@@ -98,7 +98,7 @@ void JsonRpc::receive(ByteArray const& inbuffer) {
         auto responseHandler = m_pendingResponse.take(request.getUInt("id"));
         responseHandler.fulfill(request.get("result"));
       } catch (std::exception& e) {
-        Logger::error("Exception while handling variant rpc response handler call. %s", outputException(e, true));
+        Logger::error("Exception while handling variant rpc response handler call. {}", outputException(e, true));
       }
 
     } else if (request.get("command") == "fail") {
@@ -106,7 +106,7 @@ void JsonRpc::receive(ByteArray const& inbuffer) {
         auto responseHandler = m_pendingResponse.take(request.getUInt("id"));
         responseHandler.fulfill({});
       } catch (std::exception& e) {
-        Logger::error("Exception while handling variant rpc failure handler call. %s", outputException(e, true));
+        Logger::error("Exception while handling variant rpc failure handler call. {}", outputException(e, true));
       }
     }
   }

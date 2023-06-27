@@ -39,17 +39,17 @@ SliderBarWidget::SliderBarWidget(String const& grid, bool showSpinner)
     // TODO: Make spinners a thing already
     Json config = Json::parse(strf(
         R"SPINNER(
-          {
-            "spinner" : {
+          {{
+            "spinner" : {{
               "type" : "spinner",
-              "leftBase" : "%s",
-              "leftHover" : "%s",
-              "rightBase" : "%s",
-              "rightHover" : "%s",
+              "leftBase" : "{}",
+              "leftHover" : "{}",
+              "rightBase" : "{}",
+              "rightHover" : "{}",
               "position" : [0, 0],
-              "upOffset" : %s
-            }
-          }
+              "upOffset" : {}
+            }}
+          }}
         )SPINNER",
         assets->json("/interface.config:slider.leftBase").toString(),
         assets->json("/interface.config:slider.leftHover").toString(),

@@ -5,13 +5,13 @@ namespace Star {
 
 void StatSet::addStat(String statName, float baseValue) {
   if (!m_baseStats.insert(move(statName), baseValue).second)
-    throw StatusException::format("Added duplicate stat named '%s' in StatSet", statName);
+    throw StatusException::format("Added duplicate stat named '{}' in StatSet", statName);
   update(0.0f);
 }
 
 void StatSet::removeStat(String const& statName) {
   if (!m_baseStats.remove(statName))
-    throw StatusException::format("No such base stat '%s' in StatSet", statName);
+    throw StatusException::format("No such base stat '{}' in StatSet", statName);
   update(0.0f);
 }
 
@@ -26,7 +26,7 @@ bool StatSet::isBaseStat(String const& statName) const {
 float StatSet::statBaseValue(String const& statName) const {
   if (auto s = m_baseStats.ptr(statName))
     return *s;
-  throw StatusException::format("No such base stat '%s' in StatSet", statName);
+  throw StatusException::format("No such base stat '{}' in StatSet", statName);
 }
 
 void StatSet::setStatBaseValue(String const& statName, float value) {
@@ -36,7 +36,7 @@ void StatSet::setStatBaseValue(String const& statName, float value) {
       update(0.0f);
     }
   } else {
-    throw StatusException::format("No such base stat '%s' in StatSet", statName);
+    throw StatusException::format("No such base stat '{}' in StatSet", statName);
   }
 }
 
@@ -120,13 +120,13 @@ float StatSet::statEffectiveValue(String const& statName) const {
 void StatSet::addResource(String resourceName, MVariant<String, float> max, MVariant<String, float> delta) {
   auto pair = m_resources.insert({move(resourceName), Resource{move(max), move(delta), false, 0.0f, {}}});
   if (!pair.second)
-    throw StatusException::format("Added duplicate resource named '%s' in StatSet", resourceName);
+    throw StatusException::format("Added duplicate resource named '{}' in StatSet", resourceName);
   update(0.0f);
 }
 
 void StatSet::removeResource(String const& resourceName) {
   if (!m_resources.remove(resourceName))
-    throw StatusException::format("No such resource named '%s' in StatSet", resourceName);
+    throw StatusException::format("No such resource named '{}' in StatSet", resourceName);
 }
 
 StringList StatSet::resourceNames() const {
@@ -199,7 +199,7 @@ Maybe<float> StatSet::resourcePercentage(String const& resourceName) const {
 float StatSet::setResourcePercentage(String const& resourceName, float resourcePercentage) {
   auto& resource = getResource(resourceName);
   if (!resource.maxValue)
-    throw StatusException::format("setResourcePersentage called on resource '%s' which has no maximum", resourceName);
+    throw StatusException::format("setResourcePersentage called on resource '{}' which has no maximum", resourceName);
   return resource.setValue(resourcePercentage * *resource.maxValue);
 }
 
@@ -207,7 +207,7 @@ float StatSet::modifyResourcePercentage(String const& resourceName, float resour
   auto& resource = getResource(resourceName);
   if (!resource.maxValue)
     throw StatusException::format(
-        "modifyResourcePercentage called on resource '%s' which has no maximum", resourceName);
+        "modifyResourcePercentage called on resource '{}' which has no maximum", resourceName);
   return resource.setValue(resource.value + resourcePercentage * *resource.maxValue);
 }
 
@@ -301,18 +301,18 @@ float StatSet::Resource::setValue(float v) {
 StatSet::Resource const& StatSet::getResource(String const& resourceName) const {
   if (auto r = m_resources.ptr(resourceName))
     return *r;
-  throw StatusException::format("No such resource '%s' in StatSet", resourceName);
+  throw StatusException::format("No such resource '{}' in StatSet", resourceName);
 }
 
 StatSet::Resource& StatSet::getResource(String const& resourceName) {
   if (auto r = m_resources.ptr(resourceName))
     return *r;
-  throw StatusException::format("No such resource '%s' in StatSet", resourceName);
+  throw StatusException::format("No such resource '{}' in StatSet", resourceName);
 }
 
 bool StatSet::consumeResourceValue(String const& resourceName, float amount, bool allowOverConsume) {
   if (amount < 0.0f)
-    throw StatusException::format("StatSet, consumeResource called with negative amount '%s' %s", resourceName, amount);
+    throw StatusException::format("StatSet, consumeResource called with negative amount '{}' {}", resourceName, amount);
 
   if (auto r = m_resources.ptr(resourceName)) {
     if (r->locked)

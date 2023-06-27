@@ -132,7 +132,7 @@ FunctionDatabase::FunctionDatabase() {
   for (auto file : functions) {
     for (auto const& functionPair : assets->json(file).iterateObject()) {
       if (m_functions.contains(functionPair.first))
-        throw StarException(strf("Named Function '%s' defined twice, second time from %s", functionPair.first, file));
+        throw StarException(strf("Named Function '{}' defined twice, second time from {}", functionPair.first, file));
       m_functions[functionPair.first] = make_shared<StoredFunction>(parametricFunctionFromConfig(functionPair.second));
     }
   }
@@ -141,7 +141,7 @@ FunctionDatabase::FunctionDatabase() {
     for (auto const& functionPair : assets->json(file).iterateObject()) {
       if (m_functions2.contains(functionPair.first))
         throw StarException(
-            strf("Named 2-ary Function '%s' defined twice, second time from %s", functionPair.first, file));
+            strf("Named 2-ary Function '{}' defined twice, second time from {}", functionPair.first, file));
       m_functions2[functionPair.first] = make_shared<StoredFunction2>(multiTable2DFromConfig(functionPair.second));
     }
   }
@@ -150,7 +150,7 @@ FunctionDatabase::FunctionDatabase() {
     for (auto const& tablePair : assets->json(file).iterateObject()) {
       if (m_configFunctions.contains(tablePair.first))
         throw StarException(
-            strf("Named config function '%s' defined twice, second time from %s", tablePair.first, file));
+            strf("Named config function '{}' defined twice, second time from {}", tablePair.first, file));
       m_configFunctions[tablePair.first] =
           make_shared<StoredConfigFunction>(parametricTableFromConfig(tablePair.second));
     }
@@ -211,7 +211,7 @@ ParametricFunction<double, double> FunctionDatabase::parametricFunctionFromConfi
     } else if (interpolationModeString.equalsIgnoreCase("Cubic")) {
       interpolationMode = InterpolationMode::Cubic;
     } else {
-      throw StoredFunctionException(strf("Unrecognized InterpolationMode '%s'", interpolationModeString));
+      throw StoredFunctionException(strf("Unrecognized InterpolationMode '{}'", interpolationModeString));
     }
 
     BoundMode boundMode;
@@ -222,7 +222,7 @@ ParametricFunction<double, double> FunctionDatabase::parametricFunctionFromConfi
     } else if (boundModeString.equalsIgnoreCase("Wrap")) {
       boundMode = BoundMode::Wrap;
     } else {
-      throw StoredFunctionException(strf("Unrecognized BoundMode '%s'", boundModeString));
+      throw StoredFunctionException(strf("Unrecognized BoundMode '{}'", boundModeString));
     }
 
     return ParametricFunction<double, double>(points, interpolationMode, boundMode);
@@ -284,7 +284,7 @@ MultiTable2D FunctionDatabase::multiTable2DFromConfig(Json descriptor) {
     } else if (interpolationModeString.equalsIgnoreCase("Cubic")) {
       interpolationMode = InterpolationMode::Cubic;
     } else {
-      throw StoredFunctionException(strf("Unrecognized InterpolationMode '%s'", interpolationModeString));
+      throw StoredFunctionException(strf("Unrecognized InterpolationMode '{}'", interpolationModeString));
     }
 
     BoundMode boundMode;
@@ -295,7 +295,7 @@ MultiTable2D FunctionDatabase::multiTable2DFromConfig(Json descriptor) {
     } else if (boundModeString.equalsIgnoreCase("Wrap")) {
       boundMode = BoundMode::Wrap;
     } else {
-      throw StoredFunctionException(strf("Unrecognized BoundMode '%s'", boundModeString));
+      throw StoredFunctionException(strf("Unrecognized BoundMode '{}'", boundModeString));
     }
 
     MultiTable2D table;

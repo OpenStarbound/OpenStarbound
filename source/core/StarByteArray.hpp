@@ -242,7 +242,7 @@ inline char ByteArray::operator[](size_t i) const {
 
 inline char ByteArray::at(size_t i) const {
   if (i >= m_size)
-    throw OutOfRangeException(strf("Out of range in ByteArray::at(%s)", i));
+    throw OutOfRangeException(strf("Out of range in ByteArray::at({})", i));
 
   return m_data[i];
 }

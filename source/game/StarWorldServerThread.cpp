@@ -52,7 +52,7 @@ bool WorldServerThread::spawnTargetValid(SpawnTarget const& spawnTarget) {
     RecursiveMutexLocker locker(m_mutex);
     return m_worldServer->spawnTargetValid(spawnTarget);
   } catch (std::exception const& e) {
-    Logger::error("WorldServerThread exception caught: %s", outputException(e, true));
+    Logger::error("WorldServerThread exception caught: {}", outputException(e, true));
     m_errorOccurred = true;
     return false;
   }
@@ -68,7 +68,7 @@ bool WorldServerThread::addClient(ConnectionId clientId, SpawnTarget const& spaw
 
     return false;
   } catch (std::exception const& e) {
-    Logger::error("WorldServerThread exception caught: %s", outputException(e, true));
+    Logger::error("WorldServerThread exception caught: {}", outputException(e, true));
     m_errorOccurred = true;
     return false;
   }
@@ -92,7 +92,7 @@ List<PacketPtr> WorldServerThread::removeClient(ConnectionId clientId) {
       outgoingPackets.appendAll(m_worldServer->removeClient(clientId));
 
   } catch (std::exception const& e) {
-    Logger::error("WorldServerThread exception caught: %s", outputException(e, true));
+    Logger::error("WorldServerThread exception caught: {}", outputException(e, true));
     m_errorOccurred = true;
   }
 
@@ -135,7 +135,7 @@ Maybe<Vec2F> WorldServerThread::playerRevivePosition(ConnectionId clientId) cons
       return player->position() + player->feetOffset();
     return {};
   } catch (std::exception const& e) {
-    Logger::error("WorldServerThread exception caught: %s", outputException(e, true));
+    Logger::error("WorldServerThread exception caught: {}", outputException(e, true));
     m_errorOccurred = true;
     return {};
   }
@@ -146,7 +146,7 @@ Maybe<pair<String, String>> WorldServerThread::pullNewPlanetType() {
     RecursiveMutexLocker locker(m_mutex);
     return m_worldServer->pullNewPlanetType();
   } catch (std::exception const& e) {
-    Logger::error("WorldServerThread exception caught: %s", outputException(e, true));
+    Logger::error("WorldServerThread exception caught: {}", outputException(e, true));
     m_errorOccurred = true;
     return {};
   }
@@ -167,7 +167,7 @@ WorldChunks WorldServerThread::readChunks() {
     RecursiveMutexLocker locker(m_mutex);
     return m_worldServer->readChunks();
   } catch (std::exception const& e) {
-    Logger::error("WorldServerThread exception caught: %s", outputException(e, true));
+    Logger::error("WorldServerThread exception caught: {}", outputException(e, true));
     m_errorOccurred = true;
     return {};
   }
@@ -194,8 +194,8 @@ void WorldServerThread::run() {
 
     while (!m_stop && !m_errorOccurred) {
       auto fidelity = lockedFidelity.value(automaticFidelity);
-      LogMap::set(strf("server_%s_fidelity", m_worldId), WorldServerFidelityNames.getRight(fidelity));
-      LogMap::set(strf("server_%s_update_fps", m_worldId), tickApproacher.rate());
+      LogMap::set(strf("server_{}_fidelity", m_worldId), WorldServerFidelityNames.getRight(fidelity));
+      LogMap::set(strf("server_{}_update_fps", m_worldId), tickApproacher.rate());
 
       update(fidelity);
       tickApproacher.tick();
@@ -225,7 +225,7 @@ void WorldServerThread::run() {
         Thread::sleepPrecise(spareMilliseconds);
     }
   } catch (std::exception const& e) {
-    Logger::error("WorldServerThread exception caught: %s", outputException(e, true));
+    Logger::error("WorldServerThread exception caught: {}", outputException(e, true));
     m_errorOccurred = true;
   }
 }
@@ -240,7 +240,7 @@ void WorldServerThread::update(WorldServerFidelity fidelity) {
     try {
       m_worldServer->handleIncomingPackets(clientId, move(incomingPackets));
     } catch (std::exception const& e) {
-      Logger::error("WorldServerThread exception caught handling incoming packets for client %s: %s",
+      Logger::error("WorldServerThread exception caught handling incoming packets for client {}: {}",
           clientId, outputException(e, true));
       RecursiveMutexLocker queueLocker(m_queueMutex);
       m_outgoingPacketQueue[clientId].appendAll(m_worldServer->removeClient(clientId));
@@ -264,7 +264,7 @@ void WorldServerThread::update(WorldServerFidelity fidelity) {
 
 void WorldServerThread::sync() {
   RecursiveMutexLocker locker(m_mutex);
-  Logger::debug("WorldServer: periodic sync to disk of world %s", m_worldId);
+  Logger::debug("WorldServer: periodic sync to disk of world {}", m_worldId);
   m_worldServer->sync();
 }
 

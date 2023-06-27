@@ -7,7 +7,7 @@ namespace Star {
 
 namespace Text {
   String stripEscapeCodes(String const& s) {
-    String regex = strf("\\%s[^;]*%s", CmdEsc, EndEsc);
+    String regex = strf("\\{}[^;]*{}", CmdEsc, EndEsc);
     return std::regex_replace(s.utf8(), std::regex(regex.utf8()), "");
   }
 

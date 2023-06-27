@@ -40,12 +40,12 @@ int main(int argc, char** argv) {
     try {
       auto result = context.eval<LuaVariadic<LuaValue>>(code);
       for (auto r : result)
-        coutf("%s\n", r);
+        coutf("{}\n", r);
       continuation = false;
     } catch (LuaIncompleteStatementException const&) {
       continuation = true;
     } catch (std::exception const& e) {
-      coutf("Error: %s\n", outputException(e, false));
+      coutf("Error: {}\n", outputException(e, false));
       continuation = false;
     }
   }

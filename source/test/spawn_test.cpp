@@ -12,7 +12,7 @@ void validateWorld(TestUniverse& testUniverse) {
 
   // Just make sure the test world draws something for now, this will grow to
   // include more than this.
-  EXPECT_GE(testUniverse.currentClientDrawables().size(), 1u) << strf("world: %s", testUniverse.currentPlayerWorld());
+  EXPECT_GE(testUniverse.currentClientDrawables().size(), 1u) << strf("world: {}", testUniverse.currentPlayerWorld());
 
   auto assets = Root::singleton().assets();
   for (auto const& drawable : testUniverse.currentClientDrawables()) {

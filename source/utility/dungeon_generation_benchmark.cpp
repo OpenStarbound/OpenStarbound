@@ -12,9 +12,9 @@ int main(int argc, char** argv) {
     String dungeonWorldName = "outpost";
 
     RootLoader rootLoader({{}, {}, {}, LogLevel::Error, false, {}});
-    rootLoader.addParameter("dungeonWorld", "dungeonWorld", OptionParser::Optional, strf("dungeonWorld to test, default is %s", dungeonWorldName));
-    rootLoader.addParameter("repetitions", "repetitions", OptionParser::Optional, strf("number of times to generate, default %s", repetitions));
-    rootLoader.addParameter("reportevery", "report repetitions", OptionParser::Optional, strf("number of repetitions before each progress report, default %s", reportEvery));
+    rootLoader.addParameter("dungeonWorld", "dungeonWorld", OptionParser::Optional, strf("dungeonWorld to test, default is {}", dungeonWorldName));
+    rootLoader.addParameter("repetitions", "repetitions", OptionParser::Optional, strf("number of times to generate, default {}", repetitions));
+    rootLoader.addParameter("reportevery", "report repetitions", OptionParser::Optional, strf("number of repetitions before each progress report, default {}", reportEvery));
 
     RootUPtr root;
     OptionParser::Options options;
@@ -36,13 +36,13 @@ int main(int argc, char** argv) {
     double start = Time::monotonicTime();
     double lastReport = Time::monotonicTime();
 
-    coutf("testing %s generations of dungeonWorld %s\n", repetitions, dungeonWorldName);
+    coutf("testing {} generations of dungeonWorld {}\n", repetitions, dungeonWorldName);
 
     for (unsigned i = 0; i < repetitions; ++i) {
       if (i > 0 && i % reportEvery == 0) {
         float gps = reportEvery / (Time::monotonicTime() - lastReport);
         lastReport = Time::monotonicTime();
-        coutf("[%s] %ss | Generations Per Second: %s\n", i, Time::monotonicTime() - start, gps);
+        coutf("[{}] {}s | Generations Per Second: {}\n", i, Time::monotonicTime() - start, gps);
       }
 
       VisitableWorldParametersPtr worldParameters = generateFloatingDungeonWorldParameters(dungeonWorldName);
@@ -50,12 +50,12 @@ int main(int argc, char** argv) {
       WorldServer worldServer(move(worldTemplate), File::ephemeralFile());
     }
 
-    coutf("Finished %s generations of dungeonWorld %s in %s seconds", repetitions, dungeonWorldName, Time::monotonicTime() - start);
+    coutf("Finished {} generations of dungeonWorld {} in {} seconds", repetitions, dungeonWorldName, Time::monotonicTime() - start);
 
     return 0;
 
   } catch (std::exception const& e) {
-    cerrf("Exception caught: %s\n", outputException(e, true));
+    cerrf("Exception caught: {}\n", outputException(e, true));
     return 1;
   }
 }

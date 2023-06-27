@@ -36,12 +36,12 @@ String ServerRconClient::handleCommand(String commandLine) {
     return commandLine;
   } else if (command == "broadcast" || command == "say") {
     m_universe->adminBroadcast(commandLine);
-    return strf("OK: said %s", commandLine);
+    return strf("OK: said {}", commandLine);
   } else if (command == "stop") {
     m_universe->stop();
     return "OK: shutting down";
   } else {
-    return m_universe->adminCommand(strf("%s %s", command, commandLine));
+    return m_universe->adminCommand(strf("{} {}", command, commandLine));
   }
 }
 
@@ -118,17 +118,17 @@ void ServerRconClient::processRequest() {
         String command;
         m_packetBuffer >> command;
         try {
-          Logger::info("RCON %s: %s", m_socket->remoteAddress(), command);
+          Logger::info("RCON {}: {}", m_socket->remoteAddress(), command);
           sendCmdResponse(requestId, handleCommand(command));
         } catch (std::exception const& e) {
-          sendCmdResponse(requestId, strf("RCON: Error executing: %s: %s", command, outputException(e, true)));
+          sendCmdResponse(requestId, strf("RCON: Error executing: {}: {}", command, outputException(e, true)));
         }
       } else {
         sendAuthFailure();
       }
       break;
     default:
-      sendCmdResponse(requestId, strf("Unknown request %06x", cmd));
+      sendCmdResponse(requestId, strf("Unknown request {:06x}", cmd));
   }
 }
 
@@ -138,7 +138,7 @@ void ServerRconClient::run() {
       processRequest();
   } catch (NoMoreRequests const&) {
   } catch (std::exception const& e) {
-    Logger::error("ServerRconClient exception caught: %s", outputException(e, false));
+    Logger::error("ServerRconClient exception caught: {}", outputException(e, false));
   }
 }
 

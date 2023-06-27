@@ -187,7 +187,7 @@ bool CaseInsensitiveStringCompare::operator()(String const& lhs, String const& r
 
 String::Char String::at(size_t i) const {
   if (i > size())
-    throw OutOfRangeException(strf("Out of range in String::at(%s)", i));
+    throw OutOfRangeException(strf("Out of range in String::at({})", i));
   return operator[](i);
 }
 
@@ -744,7 +744,7 @@ bool String::equalsIgnoreCase(String const& s) const {
 String String::substr(size_t position, size_t n) const {
   auto len = size();
   if (position > len)
-    throw OutOfRangeException(strf("out of range in String::substr(%s, %s)", position, n));
+    throw OutOfRangeException(strf("out of range in String::substr({}, {})", position, n));
 
   if (position == 0 && n >= len)
     return *this;

@@ -63,14 +63,14 @@ void ListWidget::setSchema(Json const& schema) {
     m_spacing = jsonToVec2I(schema.get("spacing"));
     m_memberSize = jsonToVec2I(schema.get("memberSize"));
   } catch (JsonException const& e) {
-    throw GuiException(strf("Missing required value in map: %s", outputException(e, false)));
+    throw GuiException(strf("Missing required value in map: {}", outputException(e, false)));
   }
   updateSizeAndPosition();
 }
 
 WidgetPtr ListWidget::addItem() {
   auto newItem = constructWidget();
-  addChild(strf("%d", Random::randu64()), newItem);
+  addChild(strf("{}", Random::randu64()), newItem);
   updateSizeAndPosition();
 
   return newItem;
@@ -78,7 +78,7 @@ WidgetPtr ListWidget::addItem() {
 
 WidgetPtr ListWidget::addItem(size_t at) {
   auto newItem = constructWidget();
-  addChildAt(strf("%d", Random::randu64()), newItem, at);
+  addChildAt(strf("{}", Random::randu64()), newItem, at);
   updateSizeAndPosition();
 
   if (m_selectedItem != NPos && at <= m_selectedItem)
@@ -88,7 +88,7 @@ WidgetPtr ListWidget::addItem(size_t at) {
 }
 
 WidgetPtr ListWidget::addItem(WidgetPtr existingItem) {
-  addChild(strf("%d", Random::randu64()), existingItem);
+  addChild(strf("{}", Random::randu64()), existingItem);
   updateSizeAndPosition();
 
   return existingItem;

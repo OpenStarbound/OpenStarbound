@@ -96,15 +96,15 @@ RootLoader::RootLoader(Defaults defaults) {
   addParameter("bootconfig", "bootconfig", Optional,
       strf("Boot time configuration file, defaults to sbinit.config"));
   addParameter("logfile", "logfile", Optional,
-      strf("Log to the given logfile relative to the root directory, defaults to %s",
+      strf("Log to the given logfile relative to the root directory, defaults to {}",
         defaults.logFile ? *defaults.logFile : "no log file"));
   addParameter("loglevel", "level", Optional,
-      strf("Sets the logging level (debug|info|warn|error), defaults to %s",
+      strf("Sets the logging level (debug|info|warn|error), defaults to {}",
         LogLevelNames.getRight(defaults.logLevel)));
-  addSwitch("quiet", strf("Do not log to stdout, defaults to %s", defaults.quiet));
-  addSwitch("verbose", strf("Log to stdout, defaults to %s", !defaults.quiet));
+  addSwitch("quiet", strf("Do not log to stdout, defaults to {}", defaults.quiet));
+  addSwitch("verbose", strf("Log to stdout, defaults to {}", !defaults.quiet));
   addSwitch("runtimeconfig",
-      strf("Sets the path to the runtime configuration storage file relative to root directory, defauts to %s",
+      strf("Sets the path to the runtime configuration storage file relative to root directory, defauts to {}",
         defaults.runtimeConfigFile ? *defaults.runtimeConfigFile : "no storage file"));
   m_defaults = move(defaults);
 }

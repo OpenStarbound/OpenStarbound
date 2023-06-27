@@ -112,8 +112,8 @@ TEST(StringTest, contains) {
 }
 
 TEST(StringTest, format) {
-  EXPECT_EQ(strf("(%s, %s, %s)", 1, "foo", 3.2), "(1, foo, 3.2)");
-  EXPECT_EQ(strf("%s (%s, %s, %s)", String("asdf\0", 5), 1, "foo", 3.2), String("asdf\0 (1, foo, 3.2)", 19));
+  EXPECT_EQ(strf("({}, {}, {})", 1, "foo", 3.2), "(1, foo, 3.2)");
+  EXPECT_EQ(strf("{} ({}, {}, {})", String("asdf\0", 5), 1, "foo", 3.2), String("asdf\0 (1, foo, 3.2)", 19));
 }
 
 TEST(StringTest, append) {

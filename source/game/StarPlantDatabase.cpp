@@ -175,7 +175,7 @@ Maybe<String> PlantDatabase::treeFoliageDirectory(String const& foliageName) con
 TreeVariant PlantDatabase::buildTreeVariant(
     String const& stemName, float stemHueShift, String const& foliageName, float foliageHueShift) const {
   if (!m_treeStemConfigs.contains(stemName) || !m_treeFoliageConfigs.contains(foliageName))
-    throw PlantDatabaseException::format("stemName '%s' or foliageName '%s' not found in plant database", stemName, foliageName);
+    throw PlantDatabaseException::format("stemName '{}' or foliageName '{}' not found in plant database", stemName, foliageName);
 
   TreeVariant treeVariant;
 
@@ -216,7 +216,7 @@ TreeVariant PlantDatabase::buildTreeVariant(
 
 TreeVariant PlantDatabase::buildTreeVariant(String const& stemName, float stemHueShift) const {
   if (!m_treeStemConfigs.contains(stemName))
-    throw PlantDatabaseException(strf("stemName '%s' not found in plant database", stemName));
+    throw PlantDatabaseException(strf("stemName '{}' not found in plant database", stemName));
 
   TreeVariant treeVariant;
 
@@ -260,7 +260,7 @@ StringList PlantDatabase::grassNames(bool ceiling) const {
 
 GrassVariant PlantDatabase::buildGrassVariant(String const& name, float hueShift) const {
   if (!m_grassConfigs.contains(name))
-    throw PlantDatabaseException(strf("grass '%s' not found in plant database", name));
+    throw PlantDatabaseException(strf("grass '{}' not found in plant database", name));
 
   GrassVariant grassVariant;
   auto config = m_grassConfigs.get(name);
@@ -302,7 +302,7 @@ StringList PlantDatabase::bushMods(String const& bushName) const {
 
 BushVariant PlantDatabase::buildBushVariant(String const& bushName, float baseHueShift, String const& modName, float modHueShift) const {
   if (!m_bushConfigs.contains(bushName))
-    throw PlantDatabaseException(strf("bush '%s' not found in plant database", bushName));
+    throw PlantDatabaseException(strf("bush '{}' not found in plant database", bushName));
 
   BushVariant bushVariant;
   auto config = m_bushConfigs.get(bushName);
@@ -342,7 +342,7 @@ PlantPtr PlantDatabase::createPlant(TreeVariant const& treeVariant, uint64_t see
   try {
     return make_shared<Plant>(treeVariant, seed);
   } catch (std::exception const& e) {
-    throw PlantDatabaseException(strf("Error constructing plant from tree variant stem: %s foliage: %s", treeVariant.stemName, treeVariant.foliageName), e);
+    throw PlantDatabaseException(strf("Error constructing plant from tree variant stem: {} foliage: {}", treeVariant.stemName, treeVariant.foliageName), e);
   }
 }
 
@@ -350,7 +350,7 @@ PlantPtr PlantDatabase::createPlant(GrassVariant const& grassVariant, uint64_t s
   try {
     return make_shared<Plant>(grassVariant, seed);
   } catch (std::exception const& e) {
-    throw PlantDatabaseException(strf("Error constructing plant from grass variant name: %s", grassVariant.name), e);
+    throw PlantDatabaseException(strf("Error constructing plant from grass variant name: {}", grassVariant.name), e);
   }
 }
 
@@ -359,7 +359,7 @@ PlantPtr PlantDatabase::createPlant(BushVariant const& bushVariant, uint64_t see
     return make_shared<Plant>(bushVariant, seed);
   } catch (std::exception const& e) {
     throw PlantDatabaseException(
-        strf("Error constructing plant from bush variant name: %s mod: %s", bushVariant.bushName, bushVariant.modName),
+        strf("Error constructing plant from bush variant name: {} mod: {}", bushVariant.bushName, bushVariant.modName),
         e);
   }
 }

@@ -98,7 +98,7 @@ Plant::Plant(TreeVariant const& config, uint64_t seed) : Plant() {
 
     {
       PlantPiece piece;
-      piece.image = strf("%s?hueshift=%s", baseFile, config.stemHueShift);
+      piece.image = strf("{}?hueshift={}", baseFile, config.stemHueShift);
       piece.offset = Vec2F(xOffset, yOffset);
       piece.segmentIdx = segment;
       piece.structuralSegment = true;
@@ -123,7 +123,7 @@ Plant::Plant(TreeVariant const& config, uint64_t seed) : Plant() {
             AssetPath::relativeTo(config.foliageDirectory, baseLeavesSettings.get("image").toString());
 
         PlantPiece piece;
-        piece.image = strf("%s?hueshift=%s", baseLeavesFile, config.foliageHueShift);
+        piece.image = strf("{}?hueshift={}", baseLeavesFile, config.foliageHueShift);
         piece.offset = Vec2F{xOf, yOf};
         piece.segmentIdx = segment;
         piece.structuralSegment = false;
@@ -138,7 +138,7 @@ Plant::Plant(TreeVariant const& config, uint64_t seed) : Plant() {
         String baseLeavesBackFile =
             AssetPath::relativeTo(config.foliageDirectory, baseLeavesSettings.get("backimage").toString());
         PlantPiece piece;
-        piece.image = strf("%s?hueshift=%s", baseLeavesBackFile, config.foliageHueShift);
+        piece.image = strf("{}?hueshift={}", baseLeavesBackFile, config.foliageHueShift);
         piece.offset = Vec2F{xOf, yOf};
         piece.segmentIdx = segment;
         piece.structuralSegment = false;
@@ -184,7 +184,7 @@ Plant::Plant(TreeVariant const& config, uint64_t seed) : Plant() {
 
       {
         PlantPiece piece;
-        piece.image = strf("%s?hueshift=%s", middleFile, config.stemHueShift);
+        piece.image = strf("{}?hueshift={}", middleFile, config.stemHueShift);
         piece.offset = Vec2F(xOffset, yOffset);
         piece.segmentIdx = segment;
         piece.structuralSegment = true;
@@ -208,7 +208,7 @@ Plant::Plant(TreeVariant const& config, uint64_t seed) : Plant() {
           String trunkLeavesFile =
               AssetPath::relativeTo(config.foliageDirectory, trunkLeavesSettings.get("image").toString());
           PlantPiece piece;
-          piece.image = strf("%s?hueshift=%s", trunkLeavesFile, config.foliageHueShift);
+          piece.image = strf("{}?hueshift={}", trunkLeavesFile, config.foliageHueShift);
           piece.offset = Vec2F{xOf, yOf};
           piece.segmentIdx = segment;
           piece.structuralSegment = false;
@@ -223,7 +223,7 @@ Plant::Plant(TreeVariant const& config, uint64_t seed) : Plant() {
           String trunkLeavesBackFile =
               AssetPath::relativeTo(config.foliageDirectory, trunkLeavesSettings.get("backimage").toString());
           PlantPiece piece;
-          piece.image = strf("%s?hueshift=%s", trunkLeavesBackFile, config.foliageHueShift);
+          piece.image = strf("{}?hueshift={}", trunkLeavesBackFile, config.foliageHueShift);
           piece.offset = Vec2F{xOf, yOf};
           piece.segmentIdx = segment;
           piece.structuralSegment = false;
@@ -256,7 +256,7 @@ Plant::Plant(TreeVariant const& config, uint64_t seed) : Plant() {
           String branchFile = AssetPath::relativeTo(config.stemDirectory, branchSettings.get("image").toString());
           {
             PlantPiece piece;
-            piece.image = strf("%s?hueshift=%s", branchFile, config.stemHueShift);
+            piece.image = strf("{}?hueshift={}", branchFile, config.stemHueShift);
             piece.offset = Vec2F{xO, yO};
             piece.segmentIdx = segment;
             piece.structuralSegment = false;
@@ -281,7 +281,7 @@ Plant::Plant(TreeVariant const& config, uint64_t seed) : Plant() {
               String branchLeavesFile =
                   AssetPath::relativeTo(config.foliageDirectory, branchLeavesSettings.get("image").toString());
               PlantPiece piece;
-              piece.image = strf("%s?hueshift=%s", branchLeavesFile, config.foliageHueShift);
+              piece.image = strf("{}?hueshift={}", branchLeavesFile, config.foliageHueShift);
               piece.offset = Vec2F{xOf, yOf};
               piece.segmentIdx = segment;
               piece.structuralSegment = false;
@@ -297,7 +297,7 @@ Plant::Plant(TreeVariant const& config, uint64_t seed) : Plant() {
               String branchLeavesBackFile =
                   AssetPath::relativeTo(config.foliageDirectory, branchLeavesSettings.get("backimage").toString());
               PlantPiece piece;
-              piece.image = strf("%s?hueshift=%s", branchLeavesBackFile, config.foliageHueShift);
+              piece.image = strf("{}?hueshift={}", branchLeavesBackFile, config.foliageHueShift);
               piece.offset = Vec2F{xOf, yOf};
               piece.segmentIdx = segment;
               piece.structuralSegment = false;
@@ -335,7 +335,7 @@ Plant::Plant(TreeVariant const& config, uint64_t seed) : Plant() {
       String crownFile = AssetPath::relativeTo(config.stemDirectory, crownSettings.get("image").toString());
       {
         PlantPiece piece;
-        piece.image = strf("%s?hueshift=%s", crownFile, config.stemHueShift);
+        piece.image = strf("{}?hueshift={}", crownFile, config.stemHueShift);
         piece.offset = Vec2F{xOffset, yOffset};
         piece.segmentIdx = segment;
         piece.structuralSegment = false;
@@ -360,7 +360,7 @@ Plant::Plant(TreeVariant const& config, uint64_t seed) : Plant() {
               AssetPath::relativeTo(config.foliageDirectory, crownLeavesSettings.get("image").toString());
 
           PlantPiece piece;
-          piece.image = strf("%s?hueshift=%s", crownLeavesFile, config.foliageHueShift);
+          piece.image = strf("{}?hueshift={}", crownLeavesFile, config.foliageHueShift);
           piece.offset = Vec2F{xO, yO};
           piece.segmentIdx = segment;
           piece.structuralSegment = false;
@@ -376,7 +376,7 @@ Plant::Plant(TreeVariant const& config, uint64_t seed) : Plant() {
               AssetPath::relativeTo(config.foliageDirectory, crownLeavesSettings.get("backimage").toString());
 
           PlantPiece piece;
-          piece.image = strf("%s?hueshift=%s", crownLeavesBackFile, config.foliageHueShift);
+          piece.image = strf("{}?hueshift={}", crownLeavesBackFile, config.foliageHueShift);
           piece.offset = Vec2F{xO, yO};
           piece.segmentIdx = segment;
           piece.structuralSegment = false;
@@ -455,7 +455,7 @@ Plant::Plant(GrassVariant const& config, uint64_t seed) : Plant() {
   }
 
   PlantPiece piece;
-  piece.image = strf("%s?hueshift=%s", imageName, config.hueShift);
+  piece.image = strf("{}?hueshift={}", imageName, config.hueShift);
   piece.offset = offset;
   piece.segmentIdx = 0;
   piece.structuralSegment = true;
@@ -494,7 +494,7 @@ Plant::Plant(BushVariant const& config, uint64_t seed) : Plant() {
 
   {
     PlantPiece piece;
-    piece.image = strf("%s?hueshift=%s", shapeImageName, config.baseHueShift);
+    piece.image = strf("{}?hueshift={}", shapeImageName, config.baseHueShift);
     piece.offset = offset;
     piece.segmentIdx = 0;
     piece.structuralSegment = true;
@@ -505,7 +505,7 @@ Plant::Plant(BushVariant const& config, uint64_t seed) : Plant() {
   auto mod = rand.randValueFrom(shape.mods);
   if (!mod.empty()) {
     PlantPiece piece;
-    piece.image = strf("%s?hueshift=%s", AssetPath::relativeTo(config.directory, mod), config.modHueShift);
+    piece.image = strf("{}?hueshift={}", AssetPath::relativeTo(config.directory, mod), config.modHueShift);
     piece.offset = offset;
     piece.segmentIdx = 0;
     piece.structuralSegment = false;
@@ -774,7 +774,7 @@ void Plant::render(RenderCallback* renderCallback) {
         auto particle = Root::singleton().particleDatabase()->particle(config);
         particle.color.hueShift(hueshift);
         if (!particle.string.empty()) {
-          particle.string = strf("%s?hueshift=%s", particle.string, hueshift);
+          particle.string = strf("{}?hueshift={}", particle.string, hueshift);
           particle.image = particle.string;
         }
         particle.position = {m_tileDamageX + Random::randf(), m_tileDamageY + Random::randf()};

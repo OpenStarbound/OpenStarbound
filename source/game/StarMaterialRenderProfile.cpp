@@ -30,7 +30,7 @@ MaterialRenderMatchList parseMaterialRenderMatchList(Json const& matchSpec, Rule
       MaterialMatchPoint matchPoint;
       matchPoint.position = jsonToVec2I(matchPointConfig.get(0));
       if (abs(matchPoint.position[0]) > MaterialRenderProfileMaxNeighborDistance || abs(matchPoint.position[1]) > MaterialRenderProfileMaxNeighborDistance)
-        throw MaterialRenderProfileException(strf("Match position %s outside of maximum rule distance %s",
+        throw MaterialRenderProfileException(strf("Match position {} outside of maximum rule distance {}",
             matchPoint.position, MaterialRenderProfileMaxNeighborDistance));
       matchPoint.rule = ruleMap.get(matchPointConfig.getString(1));
       match->matchPoints.append(move(matchPoint));
@@ -62,10 +62,10 @@ String MaterialRenderProfile::pieceImage(String const& pieceName, unsigned varia
 
   String texture = piece->texture;
   if (hueShift != MaterialHue())
-    texture = strf("%s?hueshift=%s", texture, materialHueToDegrees(hueShift));
+    texture = strf("{}?hueshift={}", texture, materialHueToDegrees(hueShift));
 
   auto const& rect = piece->variants.get(colorVariant).wrap(variant);
-  return strf("%s?crop=%s;%s;%s;%s", texture, rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax());
+  return strf("{}?crop={};{};{};{}", texture, rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax());
 }
 
 pair<String, Vec2F> const& MaterialRenderProfile::damageImage(float damageLevel, TileDamageType damageType) const {

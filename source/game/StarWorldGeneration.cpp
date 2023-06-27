@@ -196,7 +196,7 @@ void DungeonGeneratorWorld::markRegion(RectI const& region) {
   if (!m_markForActivation)
     return;
 
-  Logger::debug("Marking %s as dungeon region", region);
+  Logger::debug("Marking {} as dungeon region", region);
 
   m_worldServer->signalRegion(region);
   m_worldServer->activateLiquidRegion(region);
@@ -206,7 +206,7 @@ void DungeonGeneratorWorld::markTerrain(PolyF const& region) {
   if (!m_markForActivation)
     return;
 
-  Logger::debug("Marking poly as dungeon terrain region: %s", region);
+  Logger::debug("Marking poly as dungeon terrain region: {}", region);
   m_worldServer->worldTemplate()->addCustomTerrainRegion(region);
 }
 
@@ -214,7 +214,7 @@ void DungeonGeneratorWorld::markSpace(PolyF const& region) {
   if (!m_markForActivation)
     return;
 
-  Logger::debug("Marking poly as dungeon space region: %s", region);
+  Logger::debug("Marking poly as dungeon space region: {}", region);
   m_worldServer->worldTemplate()->addCustomSpaceRegion(region);
 }
 
@@ -249,7 +249,7 @@ void DungeonGeneratorWorld::placeObject(Vec2I const& pos, String const& objectNa
   if (auto object = objectDatabase->createForPlacement(m_worldServer, objectName, pos, direction, parameters))
     m_worldServer->addEntity(object);
   else
-    Logger::warn("Failed to place dungeon object: %s direction: %s position: %s", objectName, (int)direction, pos);
+    Logger::warn("Failed to place dungeon object: {} direction: {} position: {}", objectName, (int)direction, pos);
 }
 
 void DungeonGeneratorWorld::placeVehicle(Vec2F const& pos, String const& vehicleName, Json const& parameters) {
@@ -421,7 +421,7 @@ void DungeonGeneratorWorld::spawnNpc(Vec2F const& position, Json const& paramete
     monster->setPosition(position);
     m_worldServer->addEntity(monster);
   } else
-    throw StarException(strf("Unknown spawnable kind '%s'", kind));
+    throw StarException(strf("Unknown spawnable kind '{}'", kind));
 }
 
 void DungeonGeneratorWorld::spawnStagehand(Vec2F const& position, Json const& definition) {
@@ -464,7 +464,7 @@ void DungeonGeneratorWorld::connectWireGroup(List<Vec2I> const& wireGroup) {
       }
     }
     if (!found)
-      Logger::warn("Dungeon wire endpoint not found. %s", entry);
+      Logger::warn("Dungeon wire endpoint not found. {}", entry);
   }
 
   if (!outbounds.size() || !inbounds.size()) {
@@ -673,7 +673,7 @@ void WorldGenerator::sectorLoadLevelChanged(WorldStorage* worldStorage, Sector c
 }
 
 void WorldGenerator::terraformSector(WorldStorage* worldStorage, Sector const& sector) {
-  // Logger::info("terraforming sector %s...", sector);
+  // Logger::info("terraforming sector {}...", sector);
   reapplyBiome(worldStorage, sector);
 }
 
@@ -1161,7 +1161,7 @@ void WorldGenerator::reapplyBiome(WorldStorage* worldStorage, ServerTileSectorAr
   auto tileArray = worldStorage->tileArray();
   RectI sectorTiles = tileArray->sectorRegion(sector);
 
-  // Logger::info("Reapplying biome in sector %s...", sectorTiles);
+  // Logger::info("Reapplying biome in sector {}...", sectorTiles);
 
   auto entities = m_worldServer->entityQuery(RectF(sectorTiles.padded(1)));
   List<TileEntityPtr> biomeTileEntities;

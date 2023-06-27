@@ -390,7 +390,7 @@ List<QuestPtr> QuestManager::serverQuests() const {
 
 void QuestManager::startInitialQuests() {
   auto startingQuests =
-      Root::singleton().assets()->json(strf("/quests/quests.config:initialquests.%s", m_player->species())).toArray();
+      Root::singleton().assets()->json(strf("/quests/quests.config:initialquests.{}", m_player->species())).toArray();
   for (auto const& questArcJson : startingQuests) {
     QuestArcDescriptor quest = QuestArcDescriptor::fromJson(questArcJson);
     if (canStart(quest))

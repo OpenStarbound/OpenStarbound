@@ -62,9 +62,9 @@ Json inputUtf8Json(InputIterator begin, InputIterator end, bool fragment) {
   Utf32Input pend = parser.parse(wbegin, wend, fragment);
 
   if (parser.error())
-    throw JsonParsingException(strf("Error parsing json: %s at %s:%s", parser.error(), parser.line(), parser.column()));
+    throw JsonParsingException(strf("Error parsing json: {} at {}:{}", parser.error(), parser.line(), parser.column()));
   else if (pend != wend)
-    throw JsonParsingException(strf("Error extra data at end of input at %s:%s", parser.line(), parser.column()));
+    throw JsonParsingException(strf("Error extra data at end of input at {}:{}", parser.line(), parser.column()));
 
   return stream.takeTop();
 }
@@ -85,9 +85,9 @@ Jsonlike inputUtf32Json(InputIterator begin, InputIterator end, bool fragment) {
   InputIterator pend = parser.parse(begin, end, fragment);
 
   if (parser.error()) {
-    throw JsonParsingException(strf("Error parsing json: %s at %s:%s", parser.error(), parser.line(), parser.column()));
+    throw JsonParsingException(strf("Error parsing json: {} at {}:{}", parser.error(), parser.line(), parser.column()));
   } else if (pend != end) {
-    throw JsonParsingException(strf("Error extra data at end of input at %s:%s", parser.line(), parser.column()));
+    throw JsonParsingException(strf("Error extra data at end of input at {}:{}", parser.line(), parser.column()));
   }
 
   return stream.takeTop();

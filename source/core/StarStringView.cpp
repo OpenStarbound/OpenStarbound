@@ -78,7 +78,7 @@ StringView::Char StringView::operator[](size_t index) const {
 
 StringView::Char StringView::at(size_t i) const {
   if (i > size())
-    throw OutOfRangeException(strf("Out of range in StringView::at(%s)", i));
+    throw OutOfRangeException(strf("Out of range in StringView::at({})", i));
   return operator[](i);
 }
 
@@ -340,7 +340,7 @@ bool StringView::equalsIgnoreCase(StringView s) const {
 StringView StringView::substr(size_t position, size_t n) const {
   auto len = size();
   if (position > len)
-    throw OutOfRangeException(strf("out of range in StringView::substr(%s, %s)", position, n));
+    throw OutOfRangeException(strf("out of range in StringView::substr({}, {})", position, n));
 
   if (position == 0 && n >= len)
     return *this;

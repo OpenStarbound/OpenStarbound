@@ -530,7 +530,7 @@ void Projectile::setFrame(int frame) {
 }
 
 String Projectile::drawableFrame() {
-  return strf("%s:%d%s", m_config->image, m_frame, m_imageDirectives);
+  return strf("{}:{}{}", m_config->image, m_frame, m_imageDirectives);
 }
 
 bool Projectile::ephemeral() const {
@@ -580,7 +580,7 @@ void Projectile::processAction(Json const& action) {
 
     List<Vec2I> openSpaces = world()->findEmptyTiles(m_lastNonCollidingTile, parameters.getInt("radius", 2), totalDrops);
     if (openSpaces.size() < totalDrops)
-      Logger::debug("Couldn't find a place for all the tile drops. %d drops requested, %d spaces found.", totalDrops, openSpaces.size());
+      Logger::debug("Couldn't find a place for all the tile drops. {} drops requested, {} spaces found.", totalDrops, openSpaces.size());
 
     bool allowEntityOverlap = parameters.getBool("allowEntityOverlap", true);
 
@@ -842,7 +842,7 @@ void Projectile::processAction(Json const& action) {
     processAction(Root::singleton().assets()->json(parameters.getString("file")));
 
   } else {
-    throw StarException(strf("Unknown projectile reap command %s", command));
+    throw StarException(strf("Unknown projectile reap command {}", command));
   }
 }
 

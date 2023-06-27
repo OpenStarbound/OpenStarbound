@@ -42,7 +42,7 @@ Maybe<pair<List<RectI>, Set<Vec2I>>> MicroDungeonFactory::generate(RectI const& 
 
     auto anchorPart = dungeonGenerator.pickAnchor();
     if (!anchorPart) {
-      Logger::debug("No valid anchor piece found for microdungeon at %s, skipping", position);
+      Logger::debug("No valid anchor piece found for microdungeon at {}, skipping", position);
       return {};
     }
 
@@ -71,7 +71,7 @@ Maybe<pair<List<RectI>, Set<Vec2I>>> MicroDungeonFactory::generate(RectI const& 
       }
     }
   } catch (std::exception const& e) {
-    throw DungeonException(strf("Error generating microdungeon named '%s'", dungeonGenerator.definition()->name()), e);
+    throw DungeonException(strf("Error generating microdungeon named '{}'", dungeonGenerator.definition()->name()), e);
   }
 
   return {};

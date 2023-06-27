@@ -125,7 +125,7 @@ WorkerPoolHandle WorkerPool::addWork(function<void()> work) {
 }
 
 WorkerPool::WorkerThread::WorkerThread(WorkerPool* parent)
-  : Thread(strf("WorkerThread for WorkerPool '%s'", parent->m_name)),
+  : Thread(strf("WorkerThread for WorkerPool '{}'", parent->m_name)),
     parent(parent),
     shouldStop(false),
     waiting(false) {

@@ -179,7 +179,7 @@ void scanObjects(TilesetUpdater& updater) {
   for (String const& objectName : objects->allObjects()) {
     auto orientations = objects->getOrientations(objectName);
     if (orientations.size() < 1) {
-      Logger::warn("Object %s has no orientations and will not be exported", objectName);
+      Logger::warn("Object {} has no orientations and will not be exported", objectName);
       continue;
     }
 
@@ -244,7 +244,7 @@ int main(int argc, char** argv) {
     TilesetUpdater updater;
 
     for (String source : root->assets()->assetSources()) {
-      Logger::info("Assets source: \"%s\"", source);
+      Logger::info("Assets source: \"{}\"", source);
       updater.defineAssetSource(source);
     }
 
@@ -256,7 +256,7 @@ int main(int argc, char** argv) {
 
     return 0;
   } catch (std::exception const& e) {
-    cerrf("exception caught: %s\n", outputException(e, true));
+    cerrf("exception caught: {}\n", outputException(e, true));
     return 1;
   }
 }

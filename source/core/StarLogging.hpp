@@ -185,7 +185,7 @@ void Logger::error(char const* msg, Args const&... args) {
 
 template <typename T>
 void LogMap::set(String const& key, T const& t) {
-  setValue(key, strf("%s", t));
+  setValue(key, strf("{}", t));
 }
 
 }

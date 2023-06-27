@@ -49,14 +49,14 @@ struct ThreadImpl {
       ptr->function();
     } catch (std::exception const& e) {
       if (ptr->name.empty())
-        Logger::error("Exception caught in Thread: %s", outputException(e, true));
+        Logger::error("Exception caught in Thread: {}", outputException(e, true));
       else
-        Logger::error("Exception caught in Thread %s: %s", ptr->name, outputException(e, true));
+        Logger::error("Exception caught in Thread {}: {}", ptr->name, outputException(e, true));
     } catch (...) {
       if (ptr->name.empty())
         Logger::error("Unknown exception caught in Thread");
       else
-        Logger::error("Unknown exception caught in Thread %s", ptr->name);
+        Logger::error("Unknown exception caught in Thread {}", ptr->name);
     }
     ptr->stopped = true;
     return 0;

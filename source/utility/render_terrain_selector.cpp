@@ -67,7 +67,7 @@ int main(int argc, char** argv) {
       }
     }
 
-    coutf("Generating %s size image for selector with scale %s\n", size, scale);
+    coutf("Generating {} size image for selector with scale {}\n", size, scale);
     auto outputImage = make_shared<Image>(size, PixelFormat::RGB24);
 
     for (size_t x = 0; x < size[0]; ++x) {
@@ -90,7 +90,7 @@ int main(int argc, char** argv) {
     outputImage->writePng(File::open("terrain.png", IOMode::Write));
     return 0;
   } catch (std::exception const& e) {
-    cerrf("exception caught: %s\n", outputException(e, true));
+    cerrf("exception caught: {}\n", outputException(e, true));
     return 1;
   }
 }

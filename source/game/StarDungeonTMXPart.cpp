@@ -180,7 +180,7 @@ namespace Dungeon {
         m_tileData.append(index.toUInt() & ~TileFlip::AllBits);
       }
     } else {
-      throw StarException::format("TMXTileLayer does not support compression mode %s", layer.getString("compression"));
+      throw StarException::format("TMXTileLayer does not support compression mode {}", layer.getString("compression"));
     }
 
     if (m_tileData.count() != width * height)
@@ -208,7 +208,7 @@ namespace Dungeon {
         m_objectGroups.append(group);
 
       } else {
-        throw StarException(strf("Unknown layer type '%s'", layerType.utf8Ptr()));
+        throw StarException(strf("Unknown layer type '{}'", layerType.utf8Ptr()));
       }
     }
   }
@@ -244,7 +244,7 @@ namespace Dungeon {
   TMXTilesets::TMXTilesets(Json const& tmx) {
     for (Json const& tilesetJson : tmx.iterateArray()) {
       if (!tilesetJson.contains("source"))
-        throw StarException::format("Tiled map has embedded tileset %s", tilesetJson.optString("name"));
+        throw StarException::format("Tiled map has embedded tileset {}", tilesetJson.optString("name"));
 
       String sourcePath = tilesetAssetPath(tilesetJson.getString("source"));
       Tiled::TilesetConstPtr tileset = Root::singleton().tilesetDatabase()->get(sourcePath);
@@ -407,7 +407,7 @@ namespace Dungeon {
 
   StarException TMXObject::tmxObjectError(Json const& tmx, String const& msg) {
     Vec2I pos = getPos(tmx);
-    return StarException::format("At %d,%d: %s", pos[0], pos[1], msg);
+    return StarException::format("At {},{}: {}", pos[0], pos[1], msg);
   }
 
   TMXObjectGroup::TMXObjectGroup(Json const& tmx, TMXTilesetsPtr tilesets) {

@@ -38,7 +38,7 @@ Songbook::~Songbook() {
 Songbook::NoteMapping& Songbook::noteMapping(String const& instrument, String const& species, int note) {
   if (!m_noteMapping.contains(instrument)) {
     Map<int, NoteMapping> notemap;
-    auto tuning = Root::singleton().assets()->json(strf("/sfx/instruments/%s/tuning.config", instrument));
+    auto tuning = Root::singleton().assets()->json(strf("/sfx/instruments/{}/tuning.config", instrument));
     for (auto e : tuning.get("mapping").iterateObject()) {
       int keyNumber = lexicalCast<int>(e.first);
       NoteMapping nm;
@@ -95,7 +95,7 @@ void Songbook::update(EntityMode mode, World* world) {
         m_stopped = false;
         m_track.appendAll(parseABC(m_song.getString("abc")));
       } catch (StarException const& e) {
-        Logger::error("Failed to handle abc: %s", outputException(e, true));
+        Logger::error("Failed to handle abc: {}", outputException(e, true));
         m_stopped = true;
       }
     }
@@ -216,7 +216,7 @@ List<Songbook::Note> Songbook::parseABC(String const& abc) {
     auto keys = Root::singleton().assets()->json("/songbook.config:keys");
     while (true) {
       if (!keys.contains(key)) {
-        Logger::info("Failed to find key %s, falling back to C", key);
+        Logger::info("Failed to find key {}, falling back to C", key);
         key = "c";
       }
       auto signature = keys.get(key);
@@ -503,7 +503,7 @@ List<Songbook::Note> Songbook::parseABC(String const& abc) {
               break;
             }
             default:
-              throw StarException(strf("Unrecognized note %s", (char)head));
+              throw StarException(strf("Unrecognized note {}", (char)head));
           }
           if (note != 0) {
             bool accidentalActive = accidentalSpecified;
@@ -556,7 +556,7 @@ List<Songbook::Note> Songbook::parseABC(String const& abc) {
                   break;
                 }
                 default:
-                  throw StarException(strf("Unrecognized note %s", (char)head));
+                  throw StarException(strf("Unrecognized note {}", (char)head));
               }
             }
 

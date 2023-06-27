@@ -19,7 +19,7 @@ TechDatabase::TechDatabase() {
     auto tech = parseTech(assets->json(file), file);
 
     if (m_tech.contains(tech.name))
-      throw TechDatabaseException::format("Duplicate tech named '%s', config file '%s'", tech.name, file);
+      throw TechDatabaseException::format("Duplicate tech named '{}', config file '{}'", tech.name, file);
     m_tech[tech.name] = tech;
   }
 }
@@ -31,7 +31,7 @@ bool TechDatabase::contains(String const& techName) const {
 TechConfig TechDatabase::tech(String const& techName) const {
   if (auto p = m_tech.ptr(techName))
     return *p;
-  throw TechDatabaseException::format("No such tech '%s'", techName);
+  throw TechDatabaseException::format("No such tech '{}'", techName);
 }
 
 TechConfig TechDatabase::parseTech(Json const& config, String const& path) const {
@@ -55,7 +55,7 @@ TechConfig TechDatabase::parseTech(Json const& config, String const& path) const
 
     return tech;
   } catch (std::exception const& e) {
-    throw TechDatabaseException(strf("Error reading tech config %s", path), e);
+    throw TechDatabaseException(strf("Error reading tech config {}", path), e);
   }
 }
 

@@ -126,7 +126,7 @@ void CodexInterface::setupPageText() {
   if (m_currentCodex) {
     m_pageContent->setText(m_currentCodex->page(m_currentPage));
     m_pageLabelWidget->show();
-    m_pageNumberWidget->setText(strf("%d of %d", m_currentPage + 1, m_currentCodex->pageCount()));
+    m_pageNumberWidget->setText(strf("{} of {}", m_currentPage + 1, m_currentCodex->pageCount()));
     m_titleLabel->setText(m_currentCodex->title());
     m_nextPageButton->setEnabled(m_currentPage < m_currentCodex->pageCount() - 1);
     m_prevPageButton->setEnabled(m_currentPage > 0);

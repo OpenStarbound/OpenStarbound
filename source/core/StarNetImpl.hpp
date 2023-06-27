@@ -57,7 +57,7 @@ inline String netErrorString() {
 
   return result;
 #else
-  return strf("%s - %s", errno, strerror(errno));
+  return strf("{} - {}", errno, strerror(errno));
 #endif
 }
 
@@ -144,7 +144,7 @@ struct SocketImpl {
     int ret = ::setsockopt(socketDesc, level, optname, optval, len);
 #endif
     if (ret < 0)
-      throw NetworkException(strf("setSockOpt failed to set %d, %d: %s", level, optname, netErrorString()));
+      throw NetworkException(strf("setSockOpt failed to set {}, {}: {}", level, optname, netErrorString()));
   }
 
 #ifdef STAR_SYSTEM_FAMILY_WINDOWS

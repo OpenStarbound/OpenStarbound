@@ -176,7 +176,7 @@ List<Drawable> BeamItem::beamDrawables(bool canPlace) const {
       if (!endImage.empty()) {
         if (!canPlace) {
           ImageOperation op = HueShiftImageOperation::hueShiftDegrees(120);
-          endImage = strf("%s?%s", endImage, imageOperationToString(op));
+          endImage = strf("{}?{}", endImage, imageOperationToString(op));
         }
 
         Drawable ball = Drawable::makeImage(endImage, 1.0f / TilePixels, true, m_beamCurve.dest());

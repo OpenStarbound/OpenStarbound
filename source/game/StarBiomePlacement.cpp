@@ -23,7 +23,7 @@ BiomeItem variantToBiomeItem(Json const& store) {
   } else if (type == "microDungeon") {
     return MicroDungeonNames(jsonToStringSet(store.get(1)));
   } else {
-    throw BiomeException(strf("Unrecognized biome item type '%s'", type));
+    throw BiomeException(strf("Unrecognized biome item type '{}'", type));
   }
 }
 
@@ -138,7 +138,7 @@ Maybe<BiomeItem> BiomeItemDistribution::createItem(Json const& config, RandomSou
     return BiomeItem{MicroDungeonNames(jsonToStringSet(config.get("microdungeons", JsonArray())))};
 
   } else {
-    throw BiomeException(strf("No such item type '%s' in item distribution", type));
+    throw BiomeException(strf("No such item type '{}' in item distribution", type));
   }
 
   return {};

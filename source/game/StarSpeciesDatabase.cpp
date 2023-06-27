@@ -32,7 +32,7 @@ SpeciesDatabase::SpeciesDatabase() {
   for (auto file : files) {
     auto speciesDefinition = make_shared<SpeciesDefinition>(assets->json(file));
     if (m_species.contains(speciesDefinition->kind()))
-      throw StarException(strf("Duplicate species asset with kind %s. configfile %s", speciesDefinition->kind(), file));
+      throw StarException(strf("Duplicate species asset with kind {}. configfile {}", speciesDefinition->kind(), file));
     auto k = speciesDefinition->kind().toLower();
     m_species[k] = speciesDefinition;
   }
@@ -41,7 +41,7 @@ SpeciesDatabase::SpeciesDatabase() {
 SpeciesDefinitionPtr SpeciesDatabase::species(String const& kind) const {
   auto k = kind.toLower();
   if (!m_species.contains(k))
-    throw StarException(strf("Unknown species kind '%s'.", kind));
+    throw StarException(strf("Unknown species kind '{}'.", kind));
   return m_species.get(k);
 }
 

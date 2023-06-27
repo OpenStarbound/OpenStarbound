@@ -204,7 +204,7 @@ InteractAction ContainerObject::interact(InteractRequest const&) {
 }
 
 Json ContainerObject::containerGuiConfig() const {
-  return Root::singleton().assets()->json(configValue("uiConfig").toString().replace("<slots>", strf("%s", m_items->size())));
+  return Root::singleton().assets()->json(configValue("uiConfig").toString().replace("<slots>", strf("{}", m_items->size())));
 }
 
 String ContainerObject::containerDescription() const {

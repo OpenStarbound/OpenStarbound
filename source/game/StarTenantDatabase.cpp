@@ -21,11 +21,11 @@ TenantDatabase::TenantDatabase() {
     try {
       String name = assets->json(file).getString("name");
       if (m_paths.contains(name))
-        Logger::error("Tenant %s defined twice, second time from %s", name, file);
+        Logger::error("Tenant {} defined twice, second time from {}", name, file);
       else
         m_paths[name] = file;
     } catch (std::exception const& e) {
-      Logger::error("Error loading tenant file %s: %s", file, outputException(e, true));
+      Logger::error("Error loading tenant file {}: {}", file, outputException(e, true));
     }
   }
 }
@@ -41,7 +41,7 @@ TenantPtr TenantDatabase::getTenant(String const& name) const {
       [this](String const& name) -> TenantPtr {
         if (auto path = m_paths.maybe(name))
           return readTenant(*path);
-        throw TenantException::format("No such tenant named '%s'", name);
+        throw TenantException::format("No such tenant named '{}'", name);
       });
 }
 
@@ -96,7 +96,7 @@ TenantPtr TenantDatabase::readTenant(String const& path) {
 
     return make_shared<Tenant>(Tenant{name, priority, colonyTagCriteria, tenants, rent, config});
   } catch (std::exception const& e) {
-    throw TenantException::format("Error loading tenant '%s': %s", path, outputException(e, false));
+    throw TenantException::format("Error loading tenant '{}': {}", path, outputException(e, false));
   }
 }
 

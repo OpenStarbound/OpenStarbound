@@ -148,10 +148,10 @@ List<InstanceWorldId> SystemWorldServer::activeInstanceWorlds() const {
 
 void SystemWorldServer::removeObject(Uuid objectUuid) {
   if (!m_objects.contains(objectUuid))
-    throw StarException(strf("Cannot remove object with uuid '%s', object doesn't exist.", objectUuid.hex()));
+    throw StarException(strf("Cannot remove object with uuid '{}', object doesn't exist.", objectUuid.hex()));
 
   if (m_objects[objectUuid]->permanent())
-    throw StarException(strf("Cannot remove object with uuid '%s', object is marked permanent", objectUuid.hex()));
+    throw StarException(strf("Cannot remove object with uuid '{}', object is marked permanent", objectUuid.hex()));
 
   // already removing it
   if (m_objectDestroyQueue.contains(objectUuid))
@@ -314,7 +314,7 @@ Json SystemWorldServer::diskStore() {
 
 void SystemWorldServer::placeInitialObjects() {
   auto config = Root::singleton().assets()->json("/systemworld.config");
-  RandomSource rand(staticRandomU64("SystemWorldGeneration", strf("%s", m_location)));
+  RandomSource rand(staticRandomU64("SystemWorldGeneration", strf("{}", m_location)));
 
   WeightedPool<JsonArray> spawnPools = jsonToWeightedPool<JsonArray>(config.getArray("initialObjectPools"));
   JsonArray spawn = spawnPools.select(rand);
@@ -429,7 +429,7 @@ SkyParameters SystemWorldServer::locationSkyParameters(SystemLocation const& loc
 
       if (auto visitableParameters = parameters->visitableParameters()) {
         if (is<TerrestrialWorldParameters>(visitableParameters)) {
-          uint64_t seed = staticRandomU64(strf("%s", m_location));
+          uint64_t seed = staticRandomU64(strf("{}", m_location));
           List<CelestialParameters> worlds;
           if (auto planet = m_celestialDatabase->parameters(orbitTarget))
             worlds.append(*planet);

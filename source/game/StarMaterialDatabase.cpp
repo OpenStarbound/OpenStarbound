@@ -34,16 +34,16 @@ MaterialDatabase::MaterialDatabase() {
   for (auto metaMaterial : metaMaterialConfig.iterateArray()) {
     auto matName = "metamaterial:" + metaMaterial.getString("name");
     if (isMaterialName(matName)) {
-      Logger::info("Metamaterial '%s' has duplicate material name!", matName);
+      Logger::info("Metamaterial '{}' has duplicate material name!", matName);
       continue;
     }
 
     MaterialId matId = metaMaterial.getUInt("materialId");
     if (isRealMaterial(matId) || matId >= FirstEngineMetaMaterialId) {
-      Logger::info("Material id %s for metamaterial '%s' does not fall within the valid range!", matId, matName);
+      Logger::info("Material id {} for metamaterial '{}' does not fall within the valid range!", matId, matName);
       continue;
     } else if (containsMetaMaterial(matId)) {
-      Logger::info("Material id %s for metamaterial '%s' conflicts with another metamaterial id!", matId, matName);
+      Logger::info("Material id {} for metamaterial '{}' conflicts with another metamaterial id!", matId, matName);
       continue;
     }
 
@@ -117,13 +117,13 @@ MaterialDatabase::MaterialDatabase() {
       material.blocksLiquidFlow = matConfig.getBool("blocksLiquidFlow", isSolidColliding(material.collisionKind));
 
       if (material.id != materialId || !isRealMaterial(material.id))
-        throw MaterialException(strf("Material id %s does not fall in the valid range\n", materialId));
+        throw MaterialException(strf("Material id {} does not fall in the valid range\n", materialId));
 
       if (containsMaterial(material.id))
-        throw MaterialException(strf("Duplicate material id %s found for material %s", material.id, material.name));
+        throw MaterialException(strf("Duplicate material id {} found for material {}", material.id, material.name));
 
       if (isMaterialName(material.name))
-        throw MaterialException(strf("Duplicate material name '%s' found", material.name));
+        throw MaterialException(strf("Duplicate material name '{}' found", material.name));
 
       setMaterial(material.id, material);
 
@@ -136,7 +136,7 @@ MaterialDatabase::MaterialDatabase() {
         m_liquidMaterialInteractions[{liquidId, material.id}] = interaction;
       }
     } catch (StarException const& e) {
-      throw MaterialException(strf("Error loading material file %s", file), e);
+      throw MaterialException(strf("Error loading material file {}", file), e);
     }
   }
 
@@ -187,13 +187,13 @@ MaterialDatabase::MaterialDatabase() {
               modConfig.optUInt("harvestLevel"));
 
       if (modId != mod.id || !isRealMod(mod.id))
-        throw MaterialException(strf("Mod id %s does not fall in the valid range\n", mod.id));
+        throw MaterialException(strf("Mod id {} does not fall in the valid range\n", mod.id));
 
       if (containsMod(mod.id))
-        throw MaterialException(strf("Duplicate mod id %s found for mod %s", mod.id, mod.name));
+        throw MaterialException(strf("Duplicate mod id {} found for mod {}", mod.id, mod.name));
 
       if (m_modIndex.contains(mod.name) || m_metaModIndex.hasLeftValue(mod.name))
-        throw MaterialException(strf("Duplicate mod name '%s' found", mod.name));
+        throw MaterialException(strf("Duplicate mod name '{}' found", mod.name));
 
       setMod(mod.id, mod);
       m_modIndex[mod.name] = mod.id;
@@ -207,7 +207,7 @@ MaterialDatabase::MaterialDatabase() {
         m_liquidModInteractions[{liquidId, mod.id}] = interaction;
       }
     } catch (StarException const& e) {
-      throw MaterialException(strf("Error loading mod file %s", file), e);
+      throw MaterialException(strf("Error loading mod file {}", file), e);
     }
   }
 
@@ -266,7 +266,7 @@ Maybe<Json> MaterialDatabase::materialConfig(MaterialId materialId) const {
 String MaterialDatabase::materialDescription(MaterialId materialNumber, String const& species) const {
   auto material = m_materials[materialNumber];
   return material->descriptions.getString(
-      strf("%sDescription", species), material->descriptions.getString("description"));
+      strf("{}Description", species), material->descriptions.getString("description"));
 }
 
 String MaterialDatabase::materialDescription(MaterialId materialNumber) const {
@@ -331,7 +331,7 @@ Maybe<Json> MaterialDatabase::modConfig(ModId mod) const {
 
 String MaterialDatabase::modDescription(ModId modId, String const& species) const {
   auto mod = m_mods[modId];
-  return mod->descriptions.getString(strf("%sDescription", species), mod->descriptions.getString("description"));
+  return mod->descriptions.getString(strf("{}Description", species), mod->descriptions.getString("description"));
 }
 
 String MaterialDatabase::modDescription(ModId modId) const {
@@ -554,21 +554,21 @@ void MaterialDatabase::setMod(ModId modId, ModInfo info) {
 
 shared_ptr<MaterialDatabase::MetaMaterialInfo const> const& MaterialDatabase::getMetaMaterialInfo(MaterialId materialId) const {
   if (!containsMetaMaterial(materialId))
-    throw MaterialException(strf("No such metamaterial id: %s\n", materialId));
+    throw MaterialException(strf("No such metamaterial id: {}\n", materialId));
   else
     return m_metaMaterials[metaMaterialIndex(materialId)];
 }
 
 shared_ptr<MaterialDatabase::MaterialInfo const> const& MaterialDatabase::getMaterialInfo(MaterialId materialId) const {
   if (materialId >= m_materials.size() || !m_materials[materialId])
-    throw MaterialException(strf("No such material id: %s\n", materialId));
+    throw MaterialException(strf("No such material id: {}\n", materialId));
   else
     return m_materials[materialId];
 }
 
 shared_ptr<MaterialDatabase::ModInfo const> const& MaterialDatabase::getModInfo(ModId modId) const {
   if (modId >= m_mods.size() || !m_mods[modId])
-    throw MaterialException(strf("No such modId id: %s\n", modId));
+    throw MaterialException(strf("No such modId id: {}\n", modId));
   else
     return m_mods[modId];
 }

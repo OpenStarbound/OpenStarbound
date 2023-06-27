@@ -15,11 +15,11 @@ ProjectileDatabase::ProjectileDatabase() {
     try {
       auto projectileConfig = readConfig(file);
       if (m_configs.contains(projectileConfig->typeName))
-        Logger::error("Duplicate projectile asset typeName %s. configfile %s", projectileConfig->typeName, file);
+        Logger::error("Duplicate projectile asset typeName {}. configfile {}", projectileConfig->typeName, file);
       else
         m_configs[projectileConfig->typeName] = projectileConfig;
     } catch (std::exception const& e) {
-      Logger::error("Could not read projectile '%s', error: %s", file, outputException(e, false));
+      Logger::error("Could not read projectile '{}', error: {}", file, outputException(e, false));
     }
   }
 }
@@ -34,26 +34,26 @@ bool ProjectileDatabase::isProjectile(String const& projectileName) const {
 
 Json ProjectileDatabase::projectileConfig(String const& type) const {
   if (!m_configs.contains(type))
-    throw ProjectileDatabaseException(strf("Unknown projectile with typeName %s.", type));
+    throw ProjectileDatabaseException(strf("Unknown projectile with typeName {}.", type));
   return m_configs.get(type)->config;
 }
 
 ProjectilePtr ProjectileDatabase::createProjectile(String const& type, Json const& parameters) const {
   if (!m_configs.contains(type))
-    throw ProjectileDatabaseException(strf("Unknown projectile with typeName %s.", type));
+    throw ProjectileDatabaseException(strf("Unknown projectile with typeName {}.", type));
   return make_shared<Projectile>(m_configs.get(type), parameters);
 }
 
 String ProjectileDatabase::damageKindImage(String const& type) const {
   if (!m_configs.contains(type))
-    throw ProjectileDatabaseException(strf("Unknown projectile with typeName %s.", type));
+    throw ProjectileDatabaseException(strf("Unknown projectile with typeName {}.", type));
   auto& config = m_configs.get(type);
   return config->damageKindImage;
 }
 
 float ProjectileDatabase::gravityMultiplier(String const& type) const {
   if (!m_configs.contains(type))
-    throw ProjectileDatabaseException(strf("Unknown projectile with typeName %s.", type));
+    throw ProjectileDatabaseException(strf("Unknown projectile with typeName {}.", type));
   auto& config = m_configs.get(type);
   return config->movementSettings.getFloat("gravityMultiplier", 1);
 }
@@ -81,7 +81,7 @@ ProjectileConfigPtr ProjectileDatabase::readConfig(String const& path) {
   auto physicsType = config.getString("physics", "default");
   JsonObject movementSettings = config.getObject("movementSettings", JsonObject());
   projectileConfig->movementSettings =
-      jsonMerge(assets->json(strf("/projectiles/physics.config:%s", physicsType)), movementSettings);
+      jsonMerge(assets->json(strf("/projectiles/physics.config:{}", physicsType)), movementSettings);
 
   projectileConfig->initialSpeed = config.getFloat("speed", 50);
   projectileConfig->acceleration = config.getFloat("acceleration", 0);

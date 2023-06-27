@@ -90,7 +90,7 @@ void Buffer::open(IOMode mode) {
 }
 
 String Buffer::deviceName() const {
-  return strf("Buffer <%s>", (void*)this);
+  return strf("Buffer <{}>", (void*)this);
 }
 
 StreamOffset Buffer::size() {
@@ -244,7 +244,7 @@ size_t ExternalBuffer::writeAbsolute(StreamOffset, char const*, size_t) {
 }
 
 String ExternalBuffer::deviceName() const {
-  return strf("ExternalBuffer <%s>", (void*)this);
+  return strf("ExternalBuffer <{}>", (void*)this);
 }
 
 StreamOffset ExternalBuffer::size() {

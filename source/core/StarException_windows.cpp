@@ -127,9 +127,9 @@ OutputProxy outputStack(StackCapture stack) {
       symbol->MaxNameLen = MAX_SYM_NAME;
 
       DWORD64 displacement = 0;
-      format(os, "[%i] %p", i, stack.first[i]);
+      format(os, "[{}] {}", i, (void*)stack.first[i]);
       if (SymFromAddr(process, stack.first[i], &displacement, symbol))
-        format(os, " %s", symbol->Name);
+        format(os, " {}", symbol->Name);
 
       if (i + 1 < stack.second)
         os << std::endl;
@@ -224,7 +224,7 @@ OutputProxy outputException(std::exception const& e, bool fullStacktrace) {
 }
 
 void printStack(char const* message) {
-  Logger::info("Stack Trace (%s)...\n%s", message, outputStack(captureStack()));
+  Logger::info("Stack Trace ({})...\n{}", message, outputStack(captureStack()));
 }
 
 void fatalError(char const* message, bool showStackTrace) {

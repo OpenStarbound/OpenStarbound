@@ -51,7 +51,7 @@ void RadioMessagePopup::update() {
 
     if (m_popupStage == PopupStage::AnimateIn) {
       int frame = floor((1.0f - m_stageTimer.percent()) * m_animateInFrames);
-      setBG("", strf("%s:%s", m_animateInImage, frame), "");
+      setBG("", strf("{}:{}", m_animateInImage, frame), "");
     } else if (m_popupStage == PopupStage::ScrollText) {
       int frame =
           int((m_stageTimer.timer / m_message.portraitSpeed) * m_message.portraitFrames) % m_message.portraitFrames;
@@ -62,7 +62,7 @@ void RadioMessagePopup::update() {
       // you're cool, just stay cool, cool person
     } else if (m_popupStage == PopupStage::AnimateOut) {
       int frame = floor((1.0f - m_stageTimer.percent()) * m_animateOutFrames);
-      setBG("", strf("%s:%s", m_animateOutImage, frame), "");
+      setBG("", strf("{}:{}", m_animateOutImage, frame), "");
     }
 
     m_slideTimer = min(m_slideTimer + WorldTimestep, m_slideTime);
@@ -128,7 +128,7 @@ void RadioMessagePopup::enterStage(PopupStage newStage) {
   if (m_popupStage == PopupStage::Hidden) {
     m_portraitImage->hide();
     m_messageLabel->hide();
-    setBG("", strf("%s:0", m_animateInImage), "");
+    setBG("", strf("{}:0", m_animateInImage), "");
   } else if (m_popupStage == PopupStage::AnimateIn) {
     m_stageTimer = GameTimer(m_animateInTime);
     m_portraitImage->hide();

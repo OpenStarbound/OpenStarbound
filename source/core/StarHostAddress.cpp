@@ -133,7 +133,7 @@ void HostAddress::set(String const& address) {
     hints.ai_flags = AI_ADDRCONFIG;
 
     if (::getaddrinfo(address.utf8Ptr(), NULL, &hints, &result) != 0)
-      throw NetworkException(strf("Failed to determine address for '%s' (%s)", address, netErrorString()));
+      throw NetworkException(strf("Failed to determine address for '{}' ({})", address, netErrorString()));
 
     for (ptr = result; ptr != NULL; ptr = ptr->ai_next) {
       NetworkMode mode;
@@ -171,12 +171,12 @@ void HostAddress::set(NetworkMode mode, uint8_t const* addr) {
 std::ostream& operator<<(std::ostream& os, HostAddress const& address) {
   switch (address.mode()) {
     case NetworkMode::IPv4:
-      format(os, "%d.%d.%d.%d", address.octet(0), address.octet(1), address.octet(2), address.octet(3));
+      format(os, "{}.{}.{}.{}", address.octet(0), address.octet(1), address.octet(2), address.octet(3));
       break;
 
     case NetworkMode::IPv6:
       format(os,
-          "%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x",
+          "{:02x}{:02x}:{:02x}{:02x}:{:02x}{:02x}:{:02x}{:02x}:{:02x}{:02x}:{:02x}{:02x}:{:02x}{:02x}:{:02x}{:02x}",
           address.octet(0),
           address.octet(1),
           address.octet(2),
@@ -196,7 +196,7 @@ std::ostream& operator<<(std::ostream& os, HostAddress const& address) {
       break;
 
     default:
-      throw NetworkException(strf("Unknown address mode (%d)", (int)address.mode()));
+      throw NetworkException(strf("Unknown address mode ({})", (int)address.mode()));
   }
   return os;
 }
@@ -224,7 +224,7 @@ Either<String, HostAddressWithPort> HostAddressWithPort::lookupWithPort(String c
 
   auto portNum = maybeLexicalCast<uint16_t>(port);
   if (!portNum)
-    return makeLeft(strf("Could not parse port portion of HostAddressWithPort '%s'", port));
+    return makeLeft(strf("Could not parse port portion of HostAddressWithPort '{}'", port));
 
   auto hostAddress = HostAddress::lookup(host);
   if (hostAddress.isLeft())

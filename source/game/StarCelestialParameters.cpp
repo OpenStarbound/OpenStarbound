@@ -97,7 +97,7 @@ Json CelestialParameters::randomizeParameterRange(String const& name, int32_t mi
     JsonArray list = parameter.toArray();
     if (list.size() != 2)
       throw CelestialException(
-          strf("Parameter '%s' does not appear to be a range in CelestialParameters::randomizeRange", name));
+          strf("Parameter '{}' does not appear to be a range in CelestialParameters::randomizeRange", name));
 
     return randomizeParameterRange(list, mix, name);
   }

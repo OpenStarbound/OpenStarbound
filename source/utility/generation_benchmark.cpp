@@ -44,7 +44,7 @@ int main(int argc, char** argv) {
     if (auto reportEveryOption = options.parameters.maybe("reportevery"))
       reportEvery = lexicalCast<unsigned>(reportEveryOption->first());
 
-    coutf("testing generation on coordinate %s\n", coordinate);
+    coutf("testing generation on coordinate {}\n", coordinate);
 
     auto worldParameters = celestialDatabase.parameters(coordinate).take();
     auto worldTemplate = make_shared<WorldTemplate>(worldParameters.visitableParameters(), SkyParameters(), worldParameters.seed());
@@ -57,25 +57,25 @@ int main(int argc, char** argv) {
     double start = Time::monotonicTime();
     double lastReport = Time::monotonicTime();
 
-    coutf("Starting world generation for %s regions\n", regionsToGenerate);
+    coutf("Starting world generation for {} regions\n", regionsToGenerate);
 
     for (unsigned i = 0; i < regionsToGenerate; ++i) {
       if (i != 0 && i % reportEvery == 0) {
         float gps = reportEvery / (Time::monotonicTime() - lastReport);
         lastReport = Time::monotonicTime();
-        coutf("[%s] %ss | Generatons Per Second: %s\n", i, Time::monotonicTime() - start, gps);
+        coutf("[{}] {}s | Generatons Per Second: {}\n", i, Time::monotonicTime() - start, gps);
       }
 
       RectI region = RectI::withCenter(Vec2I(rand.randInt(0, worldSize[0]), rand.randInt(0, worldSize[1])), Vec2I::filled(regionSize));
       worldServer.generateRegion(region);
     }
 
-    coutf("Finished generating %s regions with size %sx%s in world '%s' in %s seconds", regionsToGenerate, regionSize, regionSize, coordinate, Time::monotonicTime() - start);
+    coutf("Finished generating {} regions with size {}x{} in world '{}' in {} seconds", regionsToGenerate, regionSize, regionSize, coordinate, Time::monotonicTime() - start);
 
     return 0;
 
   } catch (std::exception const& e) {
-    cerrf("Exception caught: %s\n", outputException(e, true));
+    cerrf("Exception caught: {}\n", outputException(e, true));
     return 1;
   }
 }

@@ -65,7 +65,7 @@ TerrainDatabase::TerrainDatabase() {
       auto parameters = assets->json(path);
       auto name = parameters.getString("name");
       if (m_terrainSelectors.contains(name))
-        throw TerrainException(strf("Duplicate terrain generator name '%s'", name));
+        throw TerrainException(strf("Duplicate terrain generator name '{}'", name));
       m_terrainSelectors[name] = {type, parameters};
     }
   };
@@ -81,7 +81,7 @@ TerrainDatabase::TerrainDatabase() {
     auto name = parameters.getString("name");
     auto type = parameters.getString("type");
     if (m_terrainSelectors.contains(name))
-      throw TerrainException(strf("Duplicate composed terrain generator name '%s'", name));
+      throw TerrainException(strf("Duplicate composed terrain generator name '{}'", name));
     m_terrainSelectors[name] = {type, parameters};
   }
 }
@@ -90,7 +90,7 @@ TerrainDatabase::Config TerrainDatabase::selectorConfig(String const& name) cons
   if (auto config = m_terrainSelectors.maybe(name))
     return config.take();
   else
-    throw TerrainException(strf("No such terrain selector '%s'", name));
+    throw TerrainException(strf("No such terrain selector '{}'", name));
 }
 
 TerrainSelectorConstPtr TerrainDatabase::createNamedSelector(String const& name, TerrainSelectorParameters const& parameters) const {
@@ -149,7 +149,7 @@ TerrainSelectorConstPtr TerrainDatabase::createSelectorType(String const& type, 
   else if (type == CacheSelector::Name)
     return make_shared<CacheSelector>(config, parameters, this);
   else
-    throw TerrainException(strf("Unknown terrain selector type '%s'", type));
+    throw TerrainException(strf("Unknown terrain selector type '{}'", type));
 }
 
 }

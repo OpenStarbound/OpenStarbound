@@ -24,7 +24,7 @@ DamageDatabase::DamageDatabase() {
     auto config = assets->json(file);
     String name = config.getString("kind");
     if (m_damageKinds.contains(name))
-      throw StarException(strf("Duplicate damage kind Name %s. configfile %s", name, file));
+      throw StarException(strf("Duplicate damage kind Name {}. configfile {}", name, file));
 
     DamageKind kind;
     kind.name = name;
@@ -41,7 +41,7 @@ DamageDatabase::DamageDatabase() {
     }
     kind.elementalType = config.getString("elementalType", "default");
     if (!m_elementalTypes.contains(kind.elementalType))
-      throw StarException(strf("Undefined elemental type %s in damage kind %s", kind.elementalType, name));
+      throw StarException(strf("Undefined elemental type {} in damage kind {}", kind.elementalType, name));
 
     m_damageKinds.set(name, move(kind));
   }
@@ -54,14 +54,14 @@ DamageKind const& DamageDatabase::damageKind(String kind) const {
     kind = kind.toLower();
 
   if (!m_damageKinds.contains(kind))
-    throw StarException(strf("Unknown damage definition with kind '%s'.", kind));
+    throw StarException(strf("Unknown damage definition with kind '{}'.", kind));
 
   return m_damageKinds.get(kind);
 }
 
 ElementalType const& DamageDatabase::elementalType(String const& name) const {
   if (!m_damageKinds.contains(name))
-    throw StarException(strf("Unknown elemental type with name '%s'.", name));
+    throw StarException(strf("Unknown elemental type with name '{}'.", name));
 
   return m_elementalTypes.get(name);
 }

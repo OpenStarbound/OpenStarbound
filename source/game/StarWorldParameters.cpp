@@ -655,7 +655,7 @@ TerrestrialWorldParametersPtr generateTerrestrialWorldParameters(String const& t
   parameters->surfaceLayer = surfaceLayer;
   parameters->subsurfaceLayer = readLayer("subsurface").take();
 
-  while (auto undergroundLayer = readLayer(strf("underground%s", parameters->undergroundLayers.size() + 1)))
+  while (auto undergroundLayer = readLayer(strf("underground{}", parameters->undergroundLayers.size() + 1)))
     parameters->undergroundLayers.append(undergroundLayer.take());
 
   parameters->coreLayer = readLayer("core").take();

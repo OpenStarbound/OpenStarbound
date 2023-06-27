@@ -294,7 +294,7 @@ void CraftingPane::update() {
     updateCraftButtons();
   }
 
-  setLabel("lblPlayerMoney", strf("%s", (int)m_player->currency("money")));
+  setLabel("lblPlayerMoney", strf("{}", (int)m_player->currency("money")));
 
   Pane::update();
 }
@@ -405,7 +405,7 @@ void CraftingPane::setupWidget(WidgetPtr const& widget, ItemRecipe const& recipe
 
   String name = item->friendlyName();
   if (recipe.output.count() > 1)
-    name = strf("%s (x%s)", name, recipe.output.count());
+    name = strf("{} (x{})", name, recipe.output.count());
 
   auto itemName = widget->fetchChild<LabelWidget>("itemName");
   auto notcraftableoverlay = widget->fetchChild<ImageWidget>("notcraftableoverlay");
@@ -421,7 +421,7 @@ void CraftingPane::setupWidget(WidgetPtr const& widget, ItemRecipe const& recipe
   }
 
   if (price > 0) {
-    widget->setLabel("priceLabel", strf("%s", price));
+    widget->setLabel("priceLabel", strf("{}", price));
     if (auto icon = widget->fetchChild<ImageWidget>("moneyIcon"))
       icon->setVisibility(true);
   } else {
@@ -463,7 +463,7 @@ PanePtr CraftingPane::setupTooltip(ItemRecipe const& recipe) {
       auto widget = guiList->addItem();
       widget->fetchChild<LabelWidget>("itemName")->setText(item->friendlyName());
       auto countWidget = widget->fetchChild<LabelWidget>("count");
-      countWidget->setText(strf("%s/%s", availableCount, requiredCount));
+      countWidget->setText(strf("{}/{}", availableCount, requiredCount));
       if (availableCount < requiredCount)
         countWidget->setColor(Color::Red);
       else
@@ -616,7 +616,7 @@ void CraftingPane::countTextChanged() {
 
 void CraftingPane::countChanged() {
   if (m_textBox)
-    m_textBox->setText(strf("x%s", m_count), false);
+    m_textBox->setText(strf("x{}", m_count), false);
 }
 
 List<ItemRecipe> CraftingPane::determineRecipes() {

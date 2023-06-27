@@ -65,7 +65,7 @@ LuaCallbacks& LuaCallbacks::merge(LuaCallbacks const& callbacks) {
     for (auto const& pair : callbacks.m_callbacks)
       m_callbacks.add(pair.first, pair.second);
   } catch (MapException const& e) {
-    throw LuaException(strf("Failed to merge LuaCallbacks: %s", outputException(e, true)));
+    throw LuaException(strf("Failed to merge LuaCallbacks: {}", outputException(e, true)));
   }
 
   return *this;
@@ -481,7 +481,7 @@ void LuaEngine::threadPushFunction(int threadIndex, int functionIndex) {
   int status = lua_status(thread);
   lua_Debug ar;
   if (status != LUA_OK || lua_getstack(thread, 0, &ar) > 0 || lua_gettop(thread) > 0)
-    throw LuaException(strf("Cannot push function to active or errored thread with status %s", status));
+    throw LuaException(strf("Cannot push function to active or errored thread with status {}", status));
 
   pushHandle(thread, functionIndex);
 }
@@ -633,9 +633,9 @@ void LuaEngine::handleError(lua_State* state, int res) {
 
     String error;
     if (lua_isstring(state, -1))
-      error = strf("Error code %s, %s", res, lua_tostring(state, -1));
+      error = strf("Error code {}, {}", res, lua_tostring(state, -1));
     else
-      error = strf("Error code %s, <unknown error>", res);
+      error = strf("Error code {}, <unknown error>", res);
 
     lua_pop(state, 1);
 

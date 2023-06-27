@@ -27,7 +27,7 @@ MonsterDatabase::MonsterDatabase() {
       String typeName = config.getString("type");
 
       if (m_monsterTypes.contains(typeName))
-        throw MonsterException(strf("Repeat monster type name '%s'", typeName));
+        throw MonsterException(strf("Repeat monster type name '{}'", typeName));
 
       MonsterType& monsterType = m_monsterTypes[typeName];
 
@@ -62,7 +62,7 @@ MonsterDatabase::MonsterDatabase() {
       }
 
     } catch (StarException const& e) {
-      throw MonsterException(strf("Error loading monster type '%s'", file), e);
+      throw MonsterException(strf("Error loading monster type '{}'", file), e);
     }
   }
 
@@ -83,11 +83,11 @@ MonsterDatabase::MonsterDatabase() {
       auto& partMap = m_partDirectory[part.category][part.type];
 
       if (partMap.contains(part.name))
-        throw MonsterException(strf("Repeat monster part name '%s' for category '%s'", part.name, part.category));
+        throw MonsterException(strf("Repeat monster part name '{}' for category '{}'", part.name, part.category));
       else
         partMap[part.name] = part;
     } catch (StarException const& e) {
-      throw MonsterException(strf("Error loading monster part '%s'", file), e);
+      throw MonsterException(strf("Error loading monster part '{}'", file), e);
     }
   }
 
@@ -107,11 +107,11 @@ MonsterDatabase::MonsterDatabase() {
       skill.animationParameters = config.get("animationParameters", JsonObject());
 
       if (m_skills.contains(skill.name))
-        throw MonsterException(strf("Repeat monster skill name '%s'", skill.name));
+        throw MonsterException(strf("Repeat monster skill name '{}'", skill.name));
       else
         m_skills[skill.name] = skill;
     } catch (StarException const& e) {
-      throw MonsterException(strf("Error loading monster skill '%s'", file), e);
+      throw MonsterException(strf("Error loading monster skill '{}'", file), e);
     }
   }
 
@@ -123,7 +123,7 @@ MonsterDatabase::MonsterDatabase() {
 
       auto paletteName = config.getString("name");
       if (m_colorSwaps.contains(paletteName))
-        throw MonsterException(strf("Duplicate monster colors name '%s'", paletteName));
+        throw MonsterException(strf("Duplicate monster colors name '{}'", paletteName));
 
       ColorReplaceMap colorSwaps;
       for (auto const& swapSet : config.getArray("swaps")) {
@@ -134,7 +134,7 @@ MonsterDatabase::MonsterDatabase() {
         m_colorSwaps[paletteName].append(colorSwaps);
       }
     } catch (StarException const& e) {
-      throw MonsterException(strf("Error loading monster colors '%s'", file), e);
+      throw MonsterException(strf("Error loading monster colors '{}'", file), e);
     }
   }
 }
@@ -255,7 +255,7 @@ ColorReplaceMap MonsterDatabase::colorSwap(String const& setName, uint64_t seed)
   if (m_colorSwaps.contains(setName))
     return staticRandomFrom(m_colorSwaps.get(setName), seed);
   else {
-    Logger::error("Monster colors '%s' not found!", setName);
+    Logger::error("Monster colors '{}' not found!", setName);
     return staticRandomFrom(m_colorSwaps.get("default"), seed);
   }
 }

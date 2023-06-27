@@ -38,7 +38,7 @@ int main(int argc, char** argv) {
     if (!coordinate)
       throw StarException("Could not find world to generate, try again");
 
-    coutf("Generating world with coordinate %s\n", *coordinate);
+    coutf("Generating world with coordinate {}\n", *coordinate);
 
     WorldTemplate worldTemplate(*coordinate, celestialDatabase);
     auto size = worldTemplate.size();
@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
       size[0] = 1000;
     }
 
-    coutf("Generating %s size image for world of type '%s'\n", size, worldTemplate.worldParameters()->typeName);
+    coutf("Generating {} size image for world of type '{}'\n", size, worldTemplate.worldParameters()->typeName);
     auto outputImage = make_shared<Image>(size, PixelFormat::RGB24);
 
     Color groundColor = Color::rgb(255, 0, 0);
@@ -111,7 +111,7 @@ int main(int argc, char** argv) {
     outputImage->writePng(File::open("mapgen.png", IOMode::Write));
     return 0;
   } catch (std::exception const& e) {
-    cerrf("exception caught: %s\n", outputException(e, true));
+    cerrf("exception caught: {}\n", outputException(e, true));
     return 1;
   }
 }

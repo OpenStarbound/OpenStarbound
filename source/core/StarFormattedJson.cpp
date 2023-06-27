@@ -105,21 +105,21 @@ Json const& FormattedJson::toJson() const {
 
 FormattedJson FormattedJson::get(String const& key) const {
   if (type() != Json::Type::Object)
-    throw JsonException::format("Cannot call get with key on FormattedJson type %s, must be Object type", typeName());
+    throw JsonException::format("Cannot call get with key on FormattedJson type {}, must be Object type", typeName());
 
   Maybe<pair<ElementLocation, ElementLocation>> entry = m_objectEntryLocations.maybe(key);
   if (entry.isNothing())
-    throw JsonException::format("No such key in FormattedJson::get(\"%s\")", key);
+    throw JsonException::format("No such key in FormattedJson::get(\"{}\")", key);
 
   return getFormattedJson(entry->second);
 }
 
 FormattedJson FormattedJson::get(size_t index) const {
   if (type() != Json::Type::Array)
-    throw JsonException::format("Cannot call get with index on FormattedJson type %s, must be Array type", typeName());
+    throw JsonException::format("Cannot call get with index on FormattedJson type {}, must be Array type", typeName());
 
   if (index >= m_arrayElementLocations.size())
-    throw JsonException::format("FormattedJson::get(%s) out of range", index);
+    throw JsonException::format("FormattedJson::get({}) out of range", index);
 
   ElementLocation loc = m_arrayElementLocations.at(index);
   return getFormattedJson(loc);
@@ -263,14 +263,14 @@ FormattedJson FormattedJson::prepend(String const& key, FormattedJson const& val
 
 FormattedJson FormattedJson::insertBefore(String const& key, FormattedJson const& value, String const& beforeKey) const {
   if (!m_objectEntryLocations.contains(beforeKey))
-    throw JsonException::format("Cannot insert before key \"%s\", which does not exist", beforeKey);
+    throw JsonException::format("Cannot insert before key \"{}\", which does not exist", beforeKey);
   ElementLocation loc = m_objectEntryLocations.get(beforeKey).first;
   return objectInsert(key, value, loc);
 }
 
 FormattedJson FormattedJson::insertAfter(String const& key, FormattedJson const& value, String const& afterKey) const {
   if (!m_objectEntryLocations.contains(afterKey))
-    throw JsonException::format("Cannot insert after key \"%s\", which does not exist", afterKey);
+    throw JsonException::format("Cannot insert after key \"{}\", which does not exist", afterKey);
   ElementLocation loc = m_objectEntryLocations.get(afterKey).second;
   return objectInsert(key, value, loc + 1);
 }
@@ -303,7 +303,7 @@ void removeValueFromArray(List<JsonElement>& elements, size_t loc) {
 
 FormattedJson FormattedJson::eraseKey(String const& key) const {
   if (type() != Json::Type::Object)
-    throw JsonException::format("Cannot call erase with key on FormattedJson type %s, must be Object type", typeName());
+    throw JsonException::format("Cannot call erase with key on FormattedJson type {}, must be Object type", typeName());
 
   Maybe<pair<ElementLocation, ElementLocation>> maybeEntry = m_objectEntryLocations.maybe(key);
   if (maybeEntry.isNothing())
@@ -319,10 +319,10 @@ FormattedJson FormattedJson::eraseKey(String const& key) const {
 FormattedJson FormattedJson::insert(size_t index, FormattedJson const& value) const {
   if (type() != Json::Type::Array)
     throw JsonException::format(
-        "Cannot call insert with index on FormattedJson type %s, must be Array type", typeName());
+        "Cannot call insert with index on FormattedJson type {}, must be Array type", typeName());
 
   if (index > m_arrayElementLocations.size())
-    throw JsonException::format("FormattedJson::insert(%s) out of range", index);
+    throw JsonException::format("FormattedJson::insert({}) out of range", index);
 
   ElementList elements = m_elements;
   ElementLocation insertPosition = elements.size();
@@ -335,7 +335,7 @@ FormattedJson FormattedJson::insert(size_t index, FormattedJson const& value) co
 
 FormattedJson FormattedJson::append(FormattedJson const& value) const {
   if (type() != Json::Type::Array)
-    throw JsonException::format("Cannot call append on FormattedJson type %s, must be Array type", typeName());
+    throw JsonException::format("Cannot call append on FormattedJson type {}, must be Array type", typeName());
 
   ElementList elements = m_elements;
   insertWithCommaAndFormatting(elements, elements.size(), true, {ValueElement{value}});
@@ -344,10 +344,10 @@ FormattedJson FormattedJson::append(FormattedJson const& value) const {
 
 FormattedJson FormattedJson::set(size_t index, FormattedJson const& value) const {
   if (type() != Json::Type::Array)
-    throw JsonException::format("Cannot call set with index on FormattedJson type %s, must be Array type", typeName());
+    throw JsonException::format("Cannot call set with index on FormattedJson type {}, must be Array type", typeName());
 
   if (index >= m_arrayElementLocations.size())
-    throw JsonException::format("FormattedJson::set(%s) out of range", index);
+    throw JsonException::format("FormattedJson::set({}) out of range", index);
 
   ElementLocation loc = m_arrayElementLocations.at(index);
   ElementList elements = m_elements;
@@ -357,10 +357,10 @@ FormattedJson FormattedJson::set(size_t index, FormattedJson const& value) const
 
 FormattedJson FormattedJson::eraseIndex(size_t index) const {
   if (type() != Json::Type::Array)
-    throw JsonException::format("Cannot call set with index on FormattedJson type %s, must be Array type", typeName());
+    throw JsonException::format("Cannot call set with index on FormattedJson type {}, must be Array type", typeName());
 
   if (index >= m_arrayElementLocations.size())
-    throw JsonException::format("FormattedJson::eraseIndex(%s) out of range", index);
+    throw JsonException::format("FormattedJson::eraseIndex({}) out of range", index);
 
   ElementLocation loc = m_arrayElementLocations.at(index);
   ElementList elements = m_elements;
@@ -390,7 +390,7 @@ String FormattedJson::typeName() const {
 
 String FormattedJson::toFormattedDouble() const {
   if (!isType(Json::Type::Float))
-    throw JsonException::format("Cannot call toFormattedDouble on Json type %s, must be Float", typeName());
+    throw JsonException::format("Cannot call toFormattedDouble on Json type {}, must be Float", typeName());
   if (m_formatting.isValid())
     return *m_formatting;
   return toJson().repr();
@@ -398,7 +398,7 @@ String FormattedJson::toFormattedDouble() const {
 
 String FormattedJson::toFormattedInt() const {
   if (!isType(Json::Type::Int))
-    throw JsonException::format("Cannot call toFormattedInt on Json type %s, must be Int", typeName());
+    throw JsonException::format("Cannot call toFormattedInt on Json type {}, must be Int", typeName());
   if (m_formatting.isValid())
     return *m_formatting;
   return toJson().repr();
@@ -454,7 +454,7 @@ FormattedJson FormattedJson::array(ElementList const& elements) {
 
 FormattedJson FormattedJson::objectInsert(String const& key, FormattedJson const& value, ElementLocation loc) const {
   if (type() != Json::Type::Object)
-    throw JsonException::format("Cannot call set with key on FormattedJson type %s, must be Object type", typeName());
+    throw JsonException::format("Cannot call set with key on FormattedJson type {}, must be Object type", typeName());
 
   Maybe<pair<ElementLocation, ElementLocation>> maybeEntry = m_objectEntryLocations.maybe(key);
   if (maybeEntry.isValid()) {

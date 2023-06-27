@@ -14,7 +14,7 @@ StatusEffectDatabase::StatusEffectDatabase() {
 
     if (m_uniqueEffects.contains(uniqueEffect.name))
       throw StatusEffectDatabaseException::format(
-          "Duplicate stat effect named '%s', config file '%s'", uniqueEffect.name, file);
+          "Duplicate stat effect named '{}', config file '{}'", uniqueEffect.name, file);
     m_uniqueEffects[uniqueEffect.name] = uniqueEffect;
   }
 }
@@ -26,7 +26,7 @@ bool StatusEffectDatabase::isUniqueEffect(UniqueStatusEffect const& effect) cons
 UniqueStatusEffectConfig StatusEffectDatabase::uniqueEffectConfig(UniqueStatusEffect const& effect) const {
   if (auto uniqueEffect = m_uniqueEffects.maybe(effect))
     return uniqueEffect.take();
-  throw StatusEffectDatabaseException::format("No such unique stat effect '%s'", effect);
+  throw StatusEffectDatabaseException::format("No such unique stat effect '{}'", effect);
 }
 
 UniqueStatusEffectConfig StatusEffectDatabase::parseUniqueEffect(Json const& config, String const& path) const {

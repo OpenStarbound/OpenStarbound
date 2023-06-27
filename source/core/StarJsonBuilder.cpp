@@ -21,7 +21,7 @@ void JsonBuilderStream::endObject() {
       Json v = pop();
       String k = pop().toString();
       if (!object.insert(k, move(v)).second)
-        throw JsonParsingException(strf("Json object contains a duplicate entry for key '%s'", k));
+        throw JsonParsingException(strf("Json object contains a duplicate entry for key '{}'", k));
     }
   }
 }

@@ -62,7 +62,7 @@ AiSpeech AiDatabase::noMissionsSpeech() const {
 }
 
 String AiDatabase::portraitImage(String const& species, String const& frame) const {
-  return strf("/ai/%s:%s", m_speciesParameters.get(species).portraitFrames, frame);
+  return strf("/ai/{}:{}", m_speciesParameters.get(species).portraitFrames, frame);
 }
 
 Animation AiDatabase::animation(String const& species, String const& animationName) const {

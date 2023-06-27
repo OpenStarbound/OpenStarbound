@@ -193,7 +193,7 @@ PhysicsForceRegion jsonToPhysicsForceRegion(Json const& json) {
   else if (type.equalsIgnoreCase("GradientForceRegion"))
     return GradientForceRegion::fromJson(json);
   else
-    throw JsonException::format("No such physics force region type '%s'", type);
+    throw JsonException::format("No such physics force region type '{}'", type);
 }
 
 }

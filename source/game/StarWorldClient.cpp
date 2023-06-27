@@ -641,18 +641,18 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
 
   for (auto const& packet : packets) {
     if (!inWorld() && !is<WorldStartPacket>(packet))
-      Logger::error("WorldClient received packet type %s while not in world", PacketTypeNames.getRight(packet->type()));
+      Logger::error("WorldClient received packet type {} while not in world", PacketTypeNames.getRight(packet->type()));
 
     if (auto worldStartPacket = as<WorldStartPacket>(packet)) {
       initWorld(*worldStartPacket);
 
     } else if (auto worldStopPacket = as<WorldStopPacket>(packet)) {
-      Logger::info("Client received world stop packet, leaving: %s", worldStopPacket->reason);
+      Logger::info("Client received world stop packet, leaving: {}", worldStopPacket->reason);
       clearWorld();
 
     } else if (auto entityCreate = as<EntityCreatePacket>(packet)) {
       if (m_entityMap->entity(entityCreate->entityId)) {
-        Logger::error("WorldClient received entity create packet with duplicate entity id %s, deleting old entity.", entityCreate->entityId);
+        Logger::error("WorldClient received entity create packet with duplicate entity id {}, deleting old entity.", entityCreate->entityId);
         removeEntity(entityCreate->entityId, false);
       }
 
@@ -867,7 +867,7 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
         m_latency = Time::monotonicMilliseconds() - m_pingTime.take();
 
     } else {
-      Logger::error("Improper packet type %s received by client", (int)packet->type());
+      Logger::error("Improper packet type {} received by client", (int)packet->type());
     }
   }
 }
@@ -1031,7 +1031,7 @@ void WorldClient::update() {
     renderCollisionDebug();
 
   LogMap::set("client_entities", m_entityMap->size());
-  LogMap::set("client_sectors", strf("%d", loadedSectors.size()));
+  LogMap::set("client_sectors", strf("{}", loadedSectors.size()));
   LogMap::set("client_lua_mem", m_luaRoot->luaMemoryUsage());
 }
 
@@ -1214,7 +1214,7 @@ void WorldClient::handleDamageNotifications() {
       return;
     Particle particle = Root::singleton().particleDatabase()->particle(damageNumberParticleKind);
     particle.position += position;
-    particle.string = particle.string.replace("$dmg$", strf("%s", displayValue));
+    particle.string = particle.string.replace("$dmg$", strf("{}", displayValue));
     m_particles->add(particle);
   };
 

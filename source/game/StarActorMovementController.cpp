@@ -1084,10 +1084,10 @@ void ActorMovementController::doSetAnchorState(Maybe<EntityAnchorState> anchorSt
   if (anchorState) {
     auto anchorableEntity = as<AnchorableEntity>(world()->entity(anchorState->entityId));
     if (!anchorableEntity)
-      throw ActorMovementControllerException::format("No such anchorable entity id %s in ActorMovementController::setAnchorState", anchorState->entityId);
+      throw ActorMovementControllerException::format("No such anchorable entity id {} in ActorMovementController::setAnchorState", anchorState->entityId);
     entityAnchor = anchorableEntity->anchor(anchorState->positionIndex);
     if (!entityAnchor)
-      throw ActorMovementControllerException::format("Anchor position %s is disabled ActorMovementController::setAnchorState", anchorState->positionIndex);
+      throw ActorMovementControllerException::format("Anchor position {} is disabled ActorMovementController::setAnchorState", anchorState->positionIndex);
   }
 
   if (!entityAnchor && m_entityAnchor && m_entityAnchor->exitBottomPosition) {
@@ -1327,7 +1327,7 @@ Maybe<bool> PathController::move(ActorMovementController& movementController, Ac
       m_edgeIndex++;
       if (m_edgeIndex < m_path->size()) {
         if (!validateEdge(movementController, m_path->at(m_edgeIndex))) {
-          // Logger::info("Path invalidated on %s %s %s", ActionNames.getRight(nextEdge.action), nextEdge.source.position, nextEdge.target.position);
+          // Logger::info("Path invalidated on {} {} {}", ActionNames.getRight(nextEdge.action), nextEdge.source.position, nextEdge.target.position);
           reset();
           return {};
         }
@@ -1351,7 +1351,7 @@ Maybe<bool> PathController::move(ActorMovementController& movementController, Ac
     //     Vec2F velocity = debugEdge.source.velocity.orMaybe(debugEdge.target.velocity).value({ 0.0, 0.0 });
     //     SpatialLogger::logPoint("world", debugEdge.source.position, Color::Yellow.toRgba());
     //     SpatialLogger::logLine("world", debugEdge.source.position, debugEdge.target.position, Color::Yellow.toRgba());
-    //     SpatialLogger::logText("world", strf("%s %s", ActionNames.getRight(debugEdge.action), curVelocity), debugEdge.source.position, Color::Yellow.toRgba());
+    //     SpatialLogger::logText("world", strf("{} {}", ActionNames.getRight(debugEdge.action), curVelocity), debugEdge.source.position, Color::Yellow.toRgba());
     //   }
     // }
 

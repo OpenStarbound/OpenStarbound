@@ -194,7 +194,7 @@ List<PacketPtr> TcpPacketSocket::receivePackets() {
       }
 
       if (packetSize > PacketSizeLimit)
-        throw IOException::format("Packet size %s exceeds maximum allowed packet size!", packetSize);
+        throw IOException::format("Packet size {} exceeds maximum allowed packet size!", packetSize);
 
       if (packetSize > ds.size() - ds.pos())
         break;
@@ -215,7 +215,7 @@ List<PacketPtr> TcpPacketSocket::receivePackets() {
       m_inputBuffer = ds.readBytes(ds.size() - ds.pos());
     }
   } catch (IOException const& e) {
-    Logger::warn("I/O error in TcpPacketSocket::readPackets, closing: %s", outputException(e, false));
+    Logger::warn("I/O error in TcpPacketSocket::readPackets, closing: {}", outputException(e, false));
     m_inputBuffer.clear();
     m_socket->shutdown();
   }
@@ -243,9 +243,9 @@ bool TcpPacketSocket::writeData() {
       m_outputBuffer.trimLeft(writtenAmount);
     }
   } catch (SocketClosedException const& e) {
-    Logger::debug("TcpPacketSocket socket closed: %s", outputException(e, false));
+    Logger::debug("TcpPacketSocket socket closed: {}", outputException(e, false));
   } catch (IOException const& e) {
-    Logger::warn("I/O error in TcpPacketSocket::sendData: %s", outputException(e, false));
+    Logger::warn("I/O error in TcpPacketSocket::sendData: {}", outputException(e, false));
     m_socket->shutdown();
   }
   return dataSent;
@@ -263,9 +263,9 @@ bool TcpPacketSocket::readData() {
       m_inputBuffer.append(readBuffer, readAmount);
     }
   } catch (SocketClosedException const& e) {
-    Logger::debug("TcpPacketSocket socket closed: %s", outputException(e, false));
+    Logger::debug("TcpPacketSocket socket closed: {}", outputException(e, false));
   } catch (IOException const& e) {
-    Logger::warn("I/O error in TcpPacketSocket::receiveData: %s", outputException(e, false));
+    Logger::warn("I/O error in TcpPacketSocket::receiveData: {}", outputException(e, false));
     m_socket->shutdown();
   }
   return dataReceived;
@@ -352,7 +352,7 @@ List<PacketPtr> P2PPacketSocket::receivePackets() {
       } while (!packetStream.atEnd());
     }
   } catch (IOException const& e) {
-    Logger::warn("I/O error in P2PPacketSocket::readPackets, closing: %s", outputException(e, false));
+    Logger::warn("I/O error in P2PPacketSocket::readPackets, closing: {}", outputException(e, false));
     m_socket.reset();
   }
   return packets;

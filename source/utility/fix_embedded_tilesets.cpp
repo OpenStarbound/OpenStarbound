@@ -38,7 +38,7 @@ Maybe<Json> repairTileset(Json tileset, String const& mapPath, String const& til
   String tilesetName = tileset.getString("name");
   String tilesetFileName = File::relativeTo(tilesetPath, tilesetName + ".json");
   if (!File::exists(tilesetFileName))
-    throw StarException::format("Tileset %s does not exist. Can't repair %s", tilesetFileName, mapPath);
+    throw StarException::format("Tileset {} does not exist. Can't repair {}", tilesetFileName, mapPath);
   return {JsonObject{{"firstgid", firstGid}, {"source", createRelativePath(mapPath, tilesetFileName)}}};
 }
 
@@ -71,7 +71,7 @@ void fixEmbeddedTilesets(String const& searchRoot, String const& tilesetPath) {
       if (json.contains("tilesets")) {
         if (Maybe<Json> fixed = repair(json, path, tilesetPath)) {
           File::writeFile(fixed->repr(2, true), path);
-          Logger::info("Repaired %s", path);
+          Logger::info("Repaired {}", path);
         }
       }
     });
@@ -95,7 +95,7 @@ int main(int argc, char* argv[]) {
 
     return 0;
   } catch (std::exception const& e) {
-    cerrf("exception caught: %s\n", outputException(e, true));
+    cerrf("exception caught: {}\n", outputException(e, true));
     return 1;
   }
 }

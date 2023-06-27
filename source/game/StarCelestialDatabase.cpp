@@ -138,7 +138,7 @@ CelestialMasterDatabase::CelestialMasterDatabase(Maybe<String> databaseFile) {
     if (m_database.contentIdentifier() != "Celestial2") {
       Logger::error("CelestialMasterDatabase database content identifier is not 'Celestial2', moving out of the way and recreating");
       m_database.close();
-      File::rename(*databaseFile, strf("%s.%s.fail", *databaseFile, Time::millisecondsSinceEpoch()));
+      File::rename(*databaseFile, strf("{}.{}.fail", *databaseFile, Time::millisecondsSinceEpoch()));
       m_database.setIODevice(File::open(*databaseFile, IOMode::ReadWrite));
       m_database.open();
     }
@@ -453,12 +453,12 @@ Maybe<pair<CelestialParameters, HashMap<int, CelestialPlanet>>> CelestialMasterD
   String mid = m_generationInformation.systemNames.select(random);
   String suffix = m_generationInformation.systemSuffixNames.select(random);
 
-  String systemName = String(strf("%s %s %s", prefix, mid, suffix)).trim();
+  String systemName = String(strf("{} {} {}", prefix, mid, suffix)).trim();
 
-  systemName = systemName.replace("<onedigit>", strf("%01d", random.randu32() % 10));
-  systemName = systemName.replace("<twodigit>", strf("%02d", random.randu32() % 100));
-  systemName = systemName.replace("<threedigit>", strf("%03d", random.randu32() % 1000));
-  systemName = systemName.replace("<fourdigit>", strf("%04d", random.randu32() % 10000));
+  systemName = systemName.replace("<onedigit>", strf("{:01d}", random.randu32() % 10));
+  systemName = systemName.replace("<twodigit>", strf("{:02d}", random.randu32() % 100));
+  systemName = systemName.replace("<threedigit>", strf("{:03d}", random.randu32() % 1000));
+  systemName = systemName.replace("<fourdigit>", strf("{:04d}", random.randu32() % 10000));
 
   CelestialParameters systemParameters = CelestialParameters(systemCoordinate,
       systemSeed,
@@ -485,7 +485,7 @@ Maybe<pair<CelestialParameters, HashMap<int, CelestialPlanet>>> CelestialMasterD
 
       CelestialCoordinate planetCoordinate(location, planetPair.first);
       uint64_t planetarySeed = random.randu64();
-      String planetaryName = strf("%s %s", systemName, m_generationInformation.planetarySuffixes.at(planetPair.second));
+      String planetaryName = strf("{} {}", systemName, m_generationInformation.planetarySuffixes.at(planetPair.second));
 
       CelestialPlanet planet;
       planet.planetParameters =
@@ -510,7 +510,7 @@ Maybe<pair<CelestialParameters, HashMap<int, CelestialPlanet>>> CelestialMasterD
           CelestialCoordinate satelliteCoordinate(location, planetPair.first, satellitePair.first);
           uint64_t satelliteSeed = random.randu64();
           String satelliteName =
-              strf("%s %s", planetaryName, m_generationInformation.satelliteSuffixes.at(satellitePair.second));
+              strf("{} {}", planetaryName, m_generationInformation.satelliteSuffixes.at(satellitePair.second));
 
           planet.satelliteParameters[satellitePair.first] =
               CelestialParameters(satelliteCoordinate, satelliteSeed, satelliteName, satelliteParameters);

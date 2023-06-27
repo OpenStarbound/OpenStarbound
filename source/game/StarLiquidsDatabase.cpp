@@ -41,7 +41,7 @@ LiquidsDatabase::LiquidsDatabase() {
 
       unsigned id = liquidConfig.getUInt("liquidId");
       if (id != (LiquidId)id)
-        throw LiquidException(strf("Liquid id %s does not fall in the valid range, wrapped to %s\n", id, (LiquidId)id));
+        throw LiquidException(strf("Liquid id {} does not fall in the valid range, wrapped to {}\n", id, (LiquidId)id));
 
       auto entry = make_shared<LiquidSettings>();
       entry->id = (LiquidId)id;
@@ -77,7 +77,7 @@ LiquidsDatabase::LiquidsDatabase() {
           interactionResult = makeRight<LiquidId>(*liquidResult);
         else
           throw LiquidException::format(
-              "Neither resultMaterial or resultLiquid specified in liquid interaction of liquid %d", entry->id);
+              "Neither resultMaterial or resultLiquid specified in liquid interaction of liquid {}", entry->id);
 
         entry->interactions[liquid] = interactionResult;
       }
@@ -85,7 +85,7 @@ LiquidsDatabase::LiquidsDatabase() {
       m_settings.set(entry->id, entry);
       m_liquidNames.add(entry->name, entry->id);
     } catch (StarException const& e) {
-      throw LiquidException(strf("Error loading liquid file %s", file), e);
+      throw LiquidException(strf("Error loading liquid file {}", file), e);
     }
   }
 }
@@ -111,7 +111,7 @@ String LiquidsDatabase::liquidName(LiquidId liquidId) const {
     return "empty";
   else if (auto settings = liquidSettings(liquidId))
     return settings->name;
-  throw LiquidException::format("invalid liquid id %d", liquidId);
+  throw LiquidException::format("invalid liquid id {}", liquidId);
 }
 
 String LiquidsDatabase::liquidDescription(LiquidId liquidId, String const& species) const {
@@ -119,8 +119,8 @@ String LiquidsDatabase::liquidDescription(LiquidId liquidId, String const& speci
     return String();
   else if (auto settings = liquidSettings(liquidId))
     return settings->descriptions.getString(
-        strf("%sDescription", species), settings->descriptions.getString("description"));
-  throw LiquidException::format("invalid liquid id %d", liquidId);
+        strf("{}Description", species), settings->descriptions.getString("description"));
+  throw LiquidException::format("invalid liquid id {}", liquidId);
 }
 
 String LiquidsDatabase::liquidDescription(LiquidId liquidId) const {
@@ -128,7 +128,7 @@ String LiquidsDatabase::liquidDescription(LiquidId liquidId) const {
     return String();
   else if (auto settings = liquidSettings(liquidId))
     return settings->descriptions.getString("description");
-  throw LiquidException::format("invalid liquid id %d", liquidId);
+  throw LiquidException::format("invalid liquid id {}", liquidId);
 }
 
 Maybe<String> LiquidsDatabase::liquidPath(LiquidId liquidId) const {

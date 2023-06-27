@@ -140,7 +140,7 @@ IODevicePtr PackedAssetSource::open(String const& path) {
 
   auto p = m_index.ptr(path);
   if (!p)
-    throw AssetSourceException::format("Requested file '%s' does not exist in the packed assets file", path);
+    throw AssetSourceException::format("Requested file '{}' does not exist in the packed assets file", path);
 
   return make_shared<AssetReader>(m_packedFile, p->first, p->second);
 }
@@ -148,7 +148,7 @@ IODevicePtr PackedAssetSource::open(String const& path) {
 ByteArray PackedAssetSource::read(String const& path) {
   auto p = m_index.ptr(path);
   if (!p)
-    throw AssetSourceException::format("Requested file '%s' does not exist in the packed assets file", path);
+    throw AssetSourceException::format("Requested file '{}' does not exist in the packed assets file", path);
 
   ByteArray data(p->second, 0);
   m_packedFile->readFullAbsolute(p->first, data.ptr(), p->second);

@@ -18,13 +18,13 @@ String Time::printDateAndTime(int64_t epochTicks, String format) {
   localtime_r(&requestedTime, &ptm);
 
   return format.replaceTags(StringMap<String>{
-      {"year", strf("%04d", ptm.tm_year + 1900)},
-      {"month", strf("%02d", ptm.tm_mon + 1)},
-      {"day", strf("%02d", ptm.tm_mday)},
-      {"hours", strf("%02d", ptm.tm_hour)},
-      {"minutes", strf("%02d", ptm.tm_min)},
-      {"seconds", strf("%02d", ptm.tm_sec)},
-      {"millis", strf("%03d", (epochTicks % epochTickFrequency()) / (epochTickFrequency() / 1000))}
+      {"year", strf("{:04d}", ptm.tm_year + 1900)},
+      {"month", strf("{:02d}", ptm.tm_mon + 1)},
+      {"day", strf("{:02d}", ptm.tm_mday)},
+      {"hours", strf("{:02d}", ptm.tm_hour)},
+      {"minutes", strf("{:02d}", ptm.tm_min)},
+      {"seconds", strf("{:02d}", ptm.tm_sec)},
+      {"millis", strf("{:03d}", (epochTicks % epochTickFrequency()) / (epochTickFrequency() / 1000))}
     });
 }
 

@@ -199,7 +199,7 @@ ImageOperation imageOperationFromString(StringView string) {
               hexDecode(hexPtr, 8, c, 4);
             }
             else if (!which || (ptr != end && ++ptr != end))
-                throw ImageOperationException(strf("Improper size for hex string '%s' in imageOperationFromString", StringView(hexPtr, hexLen)), false);
+                throw ImageOperationException(strf("Improper size for hex string '{}' in imageOperationFromString", StringView(hexPtr, hexLen)), false);
             else // we're in A of A=B. In vanilla only A=B pairs are evaluated, so only throw an exception if B is also there.
                 return move(operation);
               
@@ -341,7 +341,7 @@ ImageOperation imageOperationFromString(StringView string) {
       return FlipImageOperation{FlipImageOperation::FlipXY};
 
     } else {
-      throw ImageOperationException(strf("Could not recognize ImageOperation type %s", type), false);
+      throw ImageOperationException(strf("Could not recognize ImageOperation type {}", type), false);
     }
   } catch (OutOfRangeException const& e) {
     throw ImageOperationException("Error reading ImageOperation", e);
@@ -352,52 +352,52 @@ ImageOperation imageOperationFromString(StringView string) {
 
 String imageOperationToString(ImageOperation const& operation) {
   if (auto op = operation.ptr<HueShiftImageOperation>()) {
-    return strf("hueshift=%s", op->hueShiftAmount * 360.0f);
+    return strf("hueshift={}", op->hueShiftAmount * 360.0f);
   } else if (auto op = operation.ptr<SaturationShiftImageOperation>()) {
-    return strf("saturation=%s", op->saturationShiftAmount * 100.0f);
+    return strf("saturation={}", op->saturationShiftAmount * 100.0f);
   } else if (auto op = operation.ptr<BrightnessMultiplyImageOperation>()) {
-    return strf("brightness=%s", (op->brightnessMultiply - 1.0f) * 100.0f);
+    return strf("brightness={}", (op->brightnessMultiply - 1.0f) * 100.0f);
   } else if (auto op = operation.ptr<FadeToColorImageOperation>()) {
-    return strf("fade=%s=%s", Color::rgb(op->color).toHex(), op->amount);
+    return strf("fade={}={}", Color::rgb(op->color).toHex(), op->amount);
   } else if (auto op = operation.ptr<ScanLinesImageOperation>()) {
-    return strf("scanlines=%s=%s=%s=%s",
+    return strf("scanlines={}={}={}={}",
         Color::rgb(op->fade1.color).toHex(),
         op->fade1.amount,
         Color::rgb(op->fade2.color).toHex(),
         op->fade2.amount);
   } else if (auto op = operation.ptr<SetColorImageOperation>()) {
-    return strf("setcolor=%s", Color::rgb(op->color).toHex());
+    return strf("setcolor={}", Color::rgb(op->color).toHex());
   } else if (auto op = operation.ptr<ColorReplaceImageOperation>()) {
     String str = "replace";
     for (auto const& pair : op->colorReplaceMap)
-      str += strf(";%s=%s", Color::rgba(pair.first).toHex(), Color::rgba(pair.second).toHex());
+      str += strf(";{}={}", Color::rgba(pair.first).toHex(), Color::rgba(pair.second).toHex());
     return str;
   } else if (auto op = operation.ptr<AlphaMaskImageOperation>()) {
     if (op->mode == AlphaMaskImageOperation::Additive)
-      return strf("addmask=%s;%s;%s", op->maskImages.join("+"), op->offset[0], op->offset[1]);
+      return strf("addmask={};{};{}", op->maskImages.join("+"), op->offset[0], op->offset[1]);
     else if (op->mode == AlphaMaskImageOperation::Subtractive)
-      return strf("submask=%s;%s;%s", op->maskImages.join("+"), op->offset[0], op->offset[1]);
+      return strf("submask={};{};{}", op->maskImages.join("+"), op->offset[0], op->offset[1]);
   } else if (auto op = operation.ptr<BlendImageOperation>()) {
     if (op->mode == BlendImageOperation::Multiply)
-      return strf("blendmult=%s;%s;%s", op->blendImages.join("+"), op->offset[0], op->offset[1]);
+      return strf("blendmult={};{};{}", op->blendImages.join("+"), op->offset[0], op->offset[1]);
     else if (op->mode == BlendImageOperation::Screen)
-      return strf("blendscreen=%s;%s;%s", op->blendImages.join("+"), op->offset[0], op->offset[1]);
+      return strf("blendscreen={};{};{}", op->blendImages.join("+"), op->offset[0], op->offset[1]);
   } else if (auto op = operation.ptr<MultiplyImageOperation>()) {
-    return strf("multiply=%s", Color::rgba(op->color).toHex());
+    return strf("multiply={}", Color::rgba(op->color).toHex());
   } else if (auto op = operation.ptr<BorderImageOperation>()) {
     if (op->outlineOnly)
-      return strf("outline=%d;%s;%s", op->pixels, Color::rgba(op->startColor).toHex(), Color::rgba(op->endColor).toHex());
+      return strf("outline={};{};{}", op->pixels, Color::rgba(op->startColor).toHex(), Color::rgba(op->endColor).toHex());
     else
-      return strf("border=%d;%s;%s", op->pixels, Color::rgba(op->startColor).toHex(), Color::rgba(op->endColor).toHex());
+      return strf("border={};{};{}", op->pixels, Color::rgba(op->startColor).toHex(), Color::rgba(op->endColor).toHex());
   } else if (auto op = operation.ptr<ScaleImageOperation>()) {
     if (op->mode == ScaleImageOperation::Nearest)
-      return strf("scalenearest=%s", op->scale);
+      return strf("scalenearest={}", op->scale);
     else if (op->mode == ScaleImageOperation::Bilinear)
-      return strf("scalebilinear=%s", op->scale);
+      return strf("scalebilinear={}", op->scale);
     else if (op->mode == ScaleImageOperation::Bicubic)
-      return strf("scalebicubic=%s", op->scale);
+      return strf("scalebicubic={}", op->scale);
   } else if (auto op = operation.ptr<CropImageOperation>()) {
-    return strf("crop=%s;%s;%s;%s", op->subset.xMin(), op->subset.xMax(), op->subset.yMin(), op->subset.yMax());
+    return strf("crop={};{};{};{}", op->subset.xMin(), op->subset.xMax(), op->subset.yMin(), op->subset.yMax());
   } else if (auto op = operation.ptr<FlipImageOperation>()) {
     if (op->mode == FlipImageOperation::FlipX)
       return "flipx";

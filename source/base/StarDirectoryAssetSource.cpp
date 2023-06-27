@@ -17,7 +17,7 @@ DirectoryAssetSource::DirectoryAssetSource(String const& baseDirectory, StringLi
         m_metadata = Json::parseJson(File::readFileString(metadataFile)).toObject();
         break;
       } catch (JsonException const& e) {
-        throw AssetSourceException(strf("Could not load metadata file '%s' from assets", metadataFile), e);
+        throw AssetSourceException(strf("Could not load metadata file '{}' from assets", metadataFile), e);
       }
     }
   }
@@ -52,7 +52,7 @@ ByteArray DirectoryAssetSource::read(String const& path) {
 
 String DirectoryAssetSource::toFilesystem(String const& path) const {
   if (!path.beginsWith("/"))
-    throw AssetSourceException::format("Asset path '%s' must be absolute in DirectoryAssetSource::toFilesystem", path);
+    throw AssetSourceException::format("Asset path '{}' must be absolute in DirectoryAssetSource::toFilesystem", path);
   else
     return File::relativeTo(m_baseDirectory, File::convertDirSeparators(path.substr(1)));
 }

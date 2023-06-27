@@ -24,7 +24,7 @@ BiomeDatabase::BiomeDatabase() {
 
       auto name = parameters.getString("name");
       if (map.contains(name))
-        throw BiomeException(strf("Duplicate %s generator name '%s'", type, name));
+        throw BiomeException(strf("Duplicate {} generator name '{}'", type, name));
       map[name] = {path, name, parameters};
     }
   };
@@ -125,20 +125,20 @@ StringList BiomeDatabase::weatherNames() const {
 
 WeatherType BiomeDatabase::weatherType(String const& name) const {
   if (!m_weathers.contains(name))
-    throw BiomeException(strf("No such weather type '%s'", name));
+    throw BiomeException(strf("No such weather type '{}'", name));
 
   auto config = m_weathers.get(name);
 
   try {
     return WeatherType(config.parameters, config.path);
   } catch (MapException const& e) {
-    throw BiomeException(strf("Required key not found in weather config %s", config.path), e);
+    throw BiomeException(strf("Required key not found in weather config {}", config.path), e);
   }
 }
 
 BiomePtr BiomeDatabase::createBiome(String const& biomeName, uint64_t seed, float verticalMidPoint, float threatLevel) const {
   if (!m_biomes.contains(biomeName))
-    throw BiomeException(strf("No such biome '%s'", biomeName));
+    throw BiomeException(strf("No such biome '{}'", biomeName));
 
   auto& root = Root::singleton();
   auto materialDatabase = root.materialDatabase();
@@ -183,7 +183,7 @@ BiomePtr BiomeDatabase::createBiome(String const& biomeName, uint64_t seed, floa
 
     return biome;
   } catch (std::exception const& cause) {
-    throw BiomeException(strf("Failed to parse biome: '%s'", biomeName), cause);
+    throw BiomeException(strf("Failed to parse biome: '{}'", biomeName), cause);
   }
 }
 

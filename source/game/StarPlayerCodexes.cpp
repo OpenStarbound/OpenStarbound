@@ -15,7 +15,7 @@ PlayerCodexes::PlayerCodexes(Json const& variant) {
       if (auto codex = Root::singleton().codexDatabase()->codex(pair.first)) {
         m_codexes[pair.first] = CodexEntry{codex, pair.second};
       } else {
-        Logger::debug("Failed to load missing codex '%s'", pair.first);
+        Logger::debug("Failed to load missing codex '{}'", pair.first);
       }
     }
   }
@@ -72,7 +72,7 @@ bool PlayerCodexes::markCodexUnread(String const& codexId) {
 }
 
 void PlayerCodexes::learnInitialCodexes(String const& playerSpecies) {
-  for (auto codexId : jsonToStringList(Root::singleton().assets()->json(strf("/player.config:defaultCodexes.%s", playerSpecies))))
+  for (auto codexId : jsonToStringList(Root::singleton().assets()->json(strf("/player.config:defaultCodexes.{}", playerSpecies))))
     learnCodex(codexId, true);
 }
 

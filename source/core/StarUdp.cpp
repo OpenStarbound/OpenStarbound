@@ -23,7 +23,7 @@ size_t UdpSocket::receive(HostAddressWithPort* address, char* data, size_t datas
     else if (netErrorInterrupt())
       len = 0;
     else
-      throw NetworkException(strf("udp recv error: %s", netErrorString()));
+      throw NetworkException(strf("udp recv error: {}", netErrorString()));
   }
 
   if (address)
@@ -47,7 +47,7 @@ size_t UdpSocket::send(HostAddressWithPort const& address, char const* data, siz
     else if (netErrorInterrupt())
       len = 0;
     else
-      throw NetworkException(strf("udp send error: %s", netErrorString()));
+      throw NetworkException(strf("udp send error: {}", netErrorString()));
   }
 
   return len;
@@ -57,7 +57,7 @@ UdpServer::UdpServer(HostAddressWithPort const& address)
   : m_hostAddress(address), m_listenSocket(make_shared<UdpSocket>(m_hostAddress.address().mode())) {
   m_listenSocket->setNonBlocking(true);
   m_listenSocket->bind(m_hostAddress);
-  Logger::debug("UdpServer listening on: %s", m_hostAddress);
+  Logger::debug("UdpServer listening on: {}", m_hostAddress);
 }
 
 UdpServer::~UdpServer() {

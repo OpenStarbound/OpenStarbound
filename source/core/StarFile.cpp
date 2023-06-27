@@ -104,8 +104,8 @@ void File::overwriteFileWithRename(String const& data, String const& filename, S
 
 void File::backupFileInSequence(String const& targetFile, unsigned maximumBackups, String const& backupExtensionPrefix) {
   for (unsigned i = maximumBackups; i > 0; --i) {
-    String curExtension = i == 1 ? "" : strf("%s%s", backupExtensionPrefix, i - 1);
-    String nextExtension = strf("%s%s", backupExtensionPrefix, i);
+    String curExtension = i == 1 ? "" : strf("{}{}", backupExtensionPrefix, i - 1);
+    String nextExtension = strf("{}{}", backupExtensionPrefix, i);
 
     if (File::isFile(targetFile + curExtension))
       File::copy(targetFile + curExtension, targetFile + nextExtension);

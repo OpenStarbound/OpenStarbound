@@ -76,7 +76,7 @@ OpenGl20Renderer::OpenGl20Renderer() {
   if (!GLEW_VERSION_2_0)
     throw RendererException("OpenGL 2.0 not available!");
 
-  Logger::info("OpenGL version: '%s' vendor: '%s' renderer: '%s' shader: '%s'",
+  Logger::info("OpenGL version: '{}' vendor: '{}' renderer: '{}' shader: '{}'",
       (const char*)glGetString(GL_VERSION),
       (const char*)glGetString(GL_VENDOR),
       (const char*)glGetString(GL_RENDERER),
@@ -132,7 +132,7 @@ void OpenGl20Renderer::setEffectConfig(Json const& effectConfig, StringMap<Strin
     glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
     if (!status) {
       glGetShaderInfoLog(shader, sizeof(logBuffer), NULL, logBuffer);
-      throw RendererException(strf("Failed to compile %s shader: %s\n", name, logBuffer));
+      throw RendererException(strf("Failed to compile {} shader: {}\n", name, logBuffer));
     }
 
     return shader;
@@ -158,7 +158,7 @@ void OpenGl20Renderer::setEffectConfig(Json const& effectConfig, StringMap<Strin
   if (!status) {
     glGetProgramInfoLog(program, sizeof(logBuffer), NULL, logBuffer);
     glDeleteProgram(program);
-    throw RendererException(strf("Failed to link program: %s\n", logBuffer));
+    throw RendererException(strf("Failed to link program: {}\n", logBuffer));
   }
 
   if (m_program != 0)
@@ -175,8 +175,8 @@ void OpenGl20Renderer::setEffectConfig(Json const& effectConfig, StringMap<Strin
   m_textureUniforms.clear();
   m_textureSizeUniforms.clear();
   for (size_t i = 0; i < MultiTextureCount; ++i) {
-    m_textureUniforms.append(glGetUniformLocation(m_program, strf("texture%s", i).c_str()));
-    m_textureSizeUniforms.append(glGetUniformLocation(m_program, strf("textureSize%s", i).c_str()));
+    m_textureUniforms.append(glGetUniformLocation(m_program, strf("texture{}", i).c_str()));
+    m_textureSizeUniforms.append(glGetUniformLocation(m_program, strf("textureSize{}", i).c_str()));
   }
   m_screenSizeUniform = glGetUniformLocation(m_program, "screenSize");
   m_vertexTransformUniform = glGetUniformLocation(m_program, "vertexTransform");
@@ -193,7 +193,7 @@ void OpenGl20Renderer::setEffectConfig(Json const& effectConfig, StringMap<Strin
 
     effectParameter.parameterUniform = glGetUniformLocation(m_program, p.second.getString("uniform").utf8Ptr());
     if (effectParameter.parameterUniform == -1) {
-      Logger::warn("OpenGL20 effect parameter '%s' has no associated uniform, skipping", p.first);
+      Logger::warn("OpenGL20 effect parameter '{}' has no associated uniform, skipping", p.first);
     } else {
       String type = p.second.getString("type");
       if (type == "bool") {
@@ -209,7 +209,7 @@ void OpenGl20Renderer::setEffectConfig(Json const& effectConfig, StringMap<Strin
       } else if (type == "vec4") {
         effectParameter.parameterType = RenderEffectParameter::typeIndexOf<Vec4F>();
       } else {
-        throw RendererException::format("Unrecognized effect parameter type '%s'", type);
+        throw RendererException::format("Unrecognized effect parameter type '{}'", type);
       }
 
       m_effectParameters[p.first] = effectParameter;
@@ -243,7 +243,7 @@ void OpenGl20Renderer::setEffectConfig(Json const& effectConfig, StringMap<Strin
     EffectTexture effectTexture;
     effectTexture.textureUniform = glGetUniformLocation(m_program, p.second.getString("textureUniform").utf8Ptr());
     if (effectTexture.textureUniform == -1) {
-      Logger::warn("OpenGL20 effect parameter '%s' has no associated uniform, skipping", p.first);
+      Logger::warn("OpenGL20 effect parameter '{}' has no associated uniform, skipping", p.first);
     } else {
         effectTexture.textureUnit = parameterTextureUnit++;
         glUniform1i(effectTexture.textureUniform, effectTexture.textureUnit);
@@ -253,7 +253,7 @@ void OpenGl20Renderer::setEffectConfig(Json const& effectConfig, StringMap<Strin
         if (auto tsu = p.second.optString("textureSizeUniform")) {
           effectTexture.textureSizeUniform = glGetUniformLocation(m_program, tsu->utf8Ptr());
           if (effectTexture.textureSizeUniform == -1)
-            Logger::warn("OpenGL20 effect parameter '%s' has textureSizeUniform '%s' with no associated uniform", p.first, *tsu);
+            Logger::warn("OpenGL20 effect parameter '{}' has textureSizeUniform '{}' with no associated uniform", p.first, *tsu);
         }
 
       m_effectTextures[p.first] = effectTexture;
@@ -270,7 +270,7 @@ void OpenGl20Renderer::setEffectParameter(String const& parameterName, RenderEff
     return;
 
   if (ptr->parameterType != value.typeIndex())
-    throw RendererException::format("OpenGL20Renderer::setEffectParameter '%s' parameter type mismatch", parameterName);
+    throw RendererException::format("OpenGL20Renderer::setEffectParameter '{}' parameter type mismatch", parameterName);
 
   flushImmediatePrimitives();
 
@@ -354,7 +354,7 @@ TextureGroupPtr OpenGl20Renderer::createTextureGroup(TextureGroupSize textureSiz
   else // TextureGroupSize::Small
     atlasNumCells = 64;
 
-  Logger::info("detected supported OpenGL texture size %s, using atlasNumCells %s", maxTextureSize, atlasNumCells);
+  Logger::info("detected supported OpenGL texture size {}, using atlasNumCells {}", maxTextureSize, atlasNumCells);
 
   auto glTextureGroup = make_shared<GlTextureGroup>(atlasNumCells);
   glTextureGroup->textureAtlasSet.textureFiltering = filtering;

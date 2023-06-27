@@ -681,7 +681,7 @@ void MainInterface::update() {
     }
 
     m_messageOverflow++;
-    m_overflowMessage->message = m_config->overflowMessageText.replace("<count>", strf("%s", m_messageOverflow));
+    m_overflowMessage->message = m_config->overflowMessageText.replace("<count>", strf("{}", m_messageOverflow));
     m_overflowMessage->cooldown = m_config->messageTime;
     if (auto oldest = m_messages.sorted([](GuiMessagePtr a, GuiMessagePtr b) { return a->cooldown < b->cooldown; }).maybeFirst())
       m_overflowMessage->cooldown = oldest.value()->cooldown;
@@ -862,11 +862,11 @@ void MainInterface::queueItemPickupText(ItemPtr const& item) {
     auto countMessPair = m_itemDropMessages.get(descriptor.singular());
     auto newCount = item->count() + countMessPair.first;
     auto message = countMessPair.second;
-    message->message = strf("%s - %s", item->friendlyName(), newCount);
+    message->message = strf("{} - {}", item->friendlyName(), newCount);
     message->cooldown = m_config->messageTime;
     m_itemDropMessages[descriptor.singular()] = {newCount, message};
   } else {
-    auto message = make_shared<GuiMessage>(strf("%s - %s", item->friendlyName(), item->count()), m_config->messageTime);
+    auto message = make_shared<GuiMessage>(strf("{} - {}", item->friendlyName(), item->count()), m_config->messageTime);
     m_messages.append(message);
     m_itemDropMessages[descriptor.singular()] = {item->count(), message};
   }
@@ -929,7 +929,7 @@ PanePtr MainInterface::createEscapeDialog() {
     });
 
   escapeDialogReader.construct(assets->json("/interface.config:escapeDialog"), escapeDialogPtr);
-  escapeDialog->fetchChild<LabelWidget>("lblversion")->setText(strf("Starbound - %s (%s)", StarVersionString, StarArchitectureString));
+  escapeDialog->fetchChild<LabelWidget>("lblversion")->setText(strf("Starbound - {} ({})", StarVersionString, StarArchitectureString));
   return escapeDialog;
 }
 
@@ -1268,7 +1268,7 @@ void MainInterface::renderDebug() {
   int counter = 0;
   for (auto const& pair : logMapValues) {
     TextPositioning positioning = {Vec2F(m_config->debugOffset[0], windowHeight() - m_config->debugOffset[1] - m_config->fontSize * interfaceScale() * counter)};
-    m_debugTextRect.combine(m_guiContext->determineTextSize(strf("%s: %s", pair.first, pair.second), positioning).padded(m_config->debugBackgroundPad));
+    m_debugTextRect.combine(m_guiContext->determineTextSize(strf("{}: {}", pair.first, pair.second), positioning).padded(m_config->debugBackgroundPad));
     ++counter;
   }
 
@@ -1281,7 +1281,7 @@ void MainInterface::renderDebug() {
   counter = 0;
   for (auto const& pair : logMapValues) {
     TextPositioning positioning = {Vec2F(m_config->debugOffset[0], windowHeight() - m_config->debugOffset[1] - m_config->fontSize * interfaceScale() * counter)};
-    m_guiContext->renderText(strf("%s: %s", pair.first, pair.second), positioning);
+    m_guiContext->renderText(strf("{}: {}", pair.first, pair.second), positioning);
     ++counter;
   }
   m_guiContext->setFontColor(Vec4B::filled(255));

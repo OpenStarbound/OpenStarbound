@@ -65,7 +65,7 @@ QuestTemplateDatabase::QuestTemplateDatabase() {
   for (auto qt : files) {
     auto questTemplate = make_shared<QuestTemplate>(assets->json(qt));
     if (!m_templates.insert(questTemplate->templateId, questTemplate).second)
-      throw StarException(strf("Duplicate quest template '%s'", questTemplate->templateId));
+      throw StarException(strf("Duplicate quest template '{}'", questTemplate->templateId));
   }
 }
 
@@ -75,7 +75,7 @@ List<String> QuestTemplateDatabase::allQuestTemplateIds() const {
 
 QuestTemplatePtr QuestTemplateDatabase::questTemplate(String const& templateId) const {
   if (!m_templates.contains(templateId)) {
-    Logger::error("No quest template found for id '%s'", templateId);
+    Logger::error("No quest template found for id '{}'", templateId);
     return {};
   }
   return m_templates.get(templateId);

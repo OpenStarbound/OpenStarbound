@@ -19,7 +19,7 @@ MiningTool::MiningTool(Json const& config, String const& directory, Json const& 
   m_frameCycle = instanceValue("animationCycle", 1.0f).toFloat();
   m_frameTiming = 0;
   for (size_t i = 0; i < (size_t)m_frames; i++)
-    m_animationFrame.append(m_image.replace("{frame}", strf("%s", i)));
+    m_animationFrame.append(m_image.replace("{frame}", strf("{}", i)));
   m_idleFrame = m_image.replace("{frame}", "idle");
   m_handPosition = jsonToVec2F(instanceValue("handPosition"));
   m_blockRadius = instanceValue("blockRadius").toFloat();
@@ -154,7 +154,7 @@ HarvestingTool::HarvestingTool(Json const& config, String const& directory, Json
   m_frames = instanceValue("frames", 1).toInt();
   m_frameCycle = instanceValue("animationCycle", 1.0f).toFloat();
   for (size_t i = 0; i < (size_t)m_frames; i++)
-    m_animationFrame.append(m_image.replace("{frame}", strf("%s", i)));
+    m_animationFrame.append(m_image.replace("{frame}", strf("{}", i)));
   m_idleFrame = m_image.replace("{frame}", "idle");
 
   m_handPosition = jsonToVec2F(instanceValue("handPosition"));
@@ -494,7 +494,7 @@ TillingTool::TillingTool(Json const& config, String const& directory, Json const
   m_frames = instanceValue("frames", 1).toInt();
   m_frameCycle = instanceValue("animationCycle", 1.0f).toFloat();
   for (size_t i = 0; i < (size_t)m_frames; i++)
-    m_animationFrame.append(m_image.replace("{frame}", strf("%s", i)));
+    m_animationFrame.append(m_image.replace("{frame}", strf("{}", i)));
   m_idleFrame = m_image.replace("{frame}", "idle");
 
   m_handPosition = jsonToVec2F(instanceValue("handPosition"));

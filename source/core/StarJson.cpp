@@ -24,7 +24,7 @@ Json::Type Json::typeFromName(String const& t) {
   else if (t == "null")
     return Type::Null;
   else
-    throw JsonException(strf("String '%s' is not a valid json type", t));
+    throw JsonException(strf("String '{}' is not a valid json type", t));
 }
 
 String Json::typeName(Type t) {
@@ -180,7 +180,7 @@ double Json::toDouble() const {
   if (type() == Type::Int)
     return (double)m_data.get<int64_t>();
 
-  throw JsonException::format("Improper conversion to double from %s", typeName());
+  throw JsonException::format("Improper conversion to double from {}", typeName());
 }
 
 float Json::toFloat() const {
@@ -189,7 +189,7 @@ float Json::toFloat() const {
 
 bool Json::toBool() const {
   if (type() != Type::Bool)
-    throw JsonException::format("Improper conversion to bool from %s", typeName());
+    throw JsonException::format("Improper conversion to bool from {}", typeName());
   return m_data.get<bool>();
 }
 
@@ -199,7 +199,7 @@ int64_t Json::toInt() const {
   } else if (type() == Type::Int) {
     return m_data.get<int64_t>();
   } else {
-    throw JsonException::format("Improper conversion to int from %s", typeName());
+    throw JsonException::format("Improper conversion to int from {}", typeName());
   }
 }
 
@@ -209,43 +209,43 @@ uint64_t Json::toUInt() const {
   } else if (type() == Type::Int) {
     return (uint64_t)m_data.get<int64_t>();
   } else {
-    throw JsonException::format("Improper conversion to unsigned int from %s", typeName());
+    throw JsonException::format("Improper conversion to unsigned int from {}", typeName());
   }
 }
 
 String Json::toString() const {
   if (type() != Type::String)
-    throw JsonException(strf("Cannot convert from %s to string", typeName()));
+    throw JsonException(strf("Cannot convert from {} to string", typeName()));
   return *m_data.get<StringConstPtr>();
 }
 
 JsonArray Json::toArray() const {
   if (type() != Type::Array)
-    throw JsonException::format("Improper conversion to JsonArray from %s", typeName());
+    throw JsonException::format("Improper conversion to JsonArray from {}", typeName());
   return *m_data.get<JsonArrayConstPtr>();
 }
 
 JsonObject Json::toObject() const {
   if (type() != Type::Object)
-    throw JsonException::format("Improper conversion to JsonObject from %s", typeName());
+    throw JsonException::format("Improper conversion to JsonObject from {}", typeName());
   return *m_data.get<JsonObjectConstPtr>();
 }
 
 StringConstPtr Json::stringPtr() const {
   if (type() != Type::String)
-    throw JsonException(strf("Cannot convert from %s to string", typeName()));
+    throw JsonException(strf("Cannot convert from {} to string", typeName()));
   return m_data.get<StringConstPtr>();
 }
 
 JsonArrayConstPtr Json::arrayPtr() const {
   if (type() != Type::Array)
-    throw JsonException::format("Improper conversion to JsonArray from %s", typeName());
+    throw JsonException::format("Improper conversion to JsonArray from {}", typeName());
   return m_data.get<JsonArrayConstPtr>();
 }
 
 JsonObjectConstPtr Json::objectPtr() const {
   if (type() != Type::Object)
-    throw JsonException::format("Improper conversion to JsonObject from %s", typeName());
+    throw JsonException::format("Improper conversion to JsonObject from {}", typeName());
   return m_data.get<JsonObjectConstPtr>();
 }
 
@@ -330,7 +330,7 @@ bool Json::contains(String const& key) const {
 Json Json::get(size_t index) const {
   if (auto p = ptr(index))
     return *p;
-  throw JsonException(strf("Json::get(%s) out of range", index));
+  throw JsonException(strf("Json::get({}) out of range", index));
 }
 
 double Json::getDouble(size_t index) const {
@@ -422,7 +422,7 @@ JsonObject Json::getObject(size_t index, JsonObject def) const {
 Json Json::get(String const& key) const {
   if (auto p = ptr(key))
     return *p;
-  throw JsonException(strf("No such key in Json::get(\"%s\")", key));
+  throw JsonException(strf("No such key in Json::get(\"{}\")", key));
 }
 
 double Json::getDouble(String const& key) const {
@@ -822,7 +822,7 @@ Json Json::convert(Type u) const {
     case Type::Object:
       return toObject();
     default:
-      throw JsonException::format("Improper conversion to type %s", typeName(u));
+      throw JsonException::format("Improper conversion to type {}", typeName(u));
   }
 }
 
@@ -997,7 +997,7 @@ size_t hash<Json>::operator()(Json const& v) const {
 
 Json const* Json::ptr(size_t index) const {
   if (type() != Type::Array)
-    throw JsonException::format("Cannot call get with index on Json type %s, must be Array type", typeName());
+    throw JsonException::format("Cannot call get with index on Json type {}, must be Array type", typeName());
 
   auto const& list = *m_data.get<JsonArrayConstPtr>();
   if (index >= list.size())
@@ -1007,7 +1007,7 @@ Json const* Json::ptr(size_t index) const {
 
 Json const* Json::ptr(String const& key) const {
   if (type() != Type::Object)
-    throw JsonException::format("Cannot call get with key on Json type %s, must be Object type", typeName());
+    throw JsonException::format("Cannot call get with key on Json type {}, must be Object type", typeName());
   auto const& map = m_data.get<JsonObjectConstPtr>();
 
   auto i = map->find(key);

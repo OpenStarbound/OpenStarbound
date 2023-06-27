@@ -61,11 +61,11 @@ shared_ptr<Type1 const> as(shared_ptr<Type2 const> const& p) {
 template <typename Type, typename Ptr>
 auto convert(Ptr const& p) -> decltype(as<Type>(p)) {
   if (!p)
-    throw PointerConvertException::format("Could not convert from nullptr to %s", typeid(Type).name());
+    throw PointerConvertException::format("Could not convert from nullptr to {}", typeid(Type).name());
   else if (auto a = as<Type>(p))
     return a;
   else
-    throw PointerConvertException::format("Could not convert from %s to %s", typeid(*p).name(), typeid(Type).name());
+    throw PointerConvertException::format("Could not convert from {} to {}", typeid(*p).name(), typeid(Type).name());
 }
 
 template <typename Type1, typename Type2>

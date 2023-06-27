@@ -18,7 +18,7 @@ EffectSourceDatabase::EffectSourceDatabase() {
     auto sourceConfig = make_shared<EffectSourceConfig>(assets->json(file));
     if (m_sourceConfigs.contains(sourceConfig->kind()))
       throw StarException(
-          strf("Duplicate effect source asset kind Name %s. configfile %s", sourceConfig->kind(), file));
+          strf("Duplicate effect source asset kind Name {}. configfile {}", sourceConfig->kind(), file));
     auto k = sourceConfig->kind().toLower();
     m_sourceConfigs[k] = sourceConfig;
   }
@@ -27,7 +27,7 @@ EffectSourceDatabase::EffectSourceDatabase() {
 EffectSourceConfigPtr EffectSourceDatabase::effectSourceConfig(String const& kind) const {
   auto k = kind.toLower();
   if (!m_sourceConfigs.contains(k))
-    throw StarException(strf("Unknown effect source definition with kind '%s'.", kind));
+    throw StarException(strf("Unknown effect source definition with kind '{}'.", kind));
   return m_sourceConfigs.get(k);
 }
 

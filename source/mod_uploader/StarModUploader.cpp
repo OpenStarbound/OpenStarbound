@@ -183,7 +183,7 @@ void ModUploader::loadDirectory() {
   }
 
   String modId = metadata.value("steamContentId", "").toString();
-  m_modIdLabel->setText(toQString(strf("<a href=\"steam://url/CommunityFilePage/%s\">%s</a>", modId, modId)));
+  m_modIdLabel->setText(toQString(strf("<a href=\"steam://url/CommunityFilePage/{}\">{}</a>", modId, modId)));
 
   String previewFile = File::relativeTo(*m_modDirectory, "_previewimage");
   if (File::isFile(previewFile)) {
@@ -303,23 +303,23 @@ void ModUploader::uploadToSteam() {
     }
 
     if (m_steamItemCreateResult->first.m_eResult != k_EResultOK) {
-      QMessageBox::critical(this, "Error", strf("Error creating new Steam UGC Item (%s)", m_steamItemCreateResult->first.m_eResult).c_str());
+      QMessageBox::critical(this, "Error", strf("Error creating new Steam UGC Item ({})", m_steamItemCreateResult->first.m_eResult).c_str());
       return;
     }
 
     modIdString = toString(m_steamItemCreateResult->first.m_nPublishedFileId);
-    String modUrl = strf("steam://url/CommunityFilePage/%s", modIdString);
+    String modUrl = strf("steam://url/CommunityFilePage/{}", modIdString);
 
     metadata.set("steamContentId", modIdString);
     metadata.set("link", modUrl);
     m_assetSource->setMetadata(metadata);
 
-    m_modIdLabel->setText(toQString(strf("<a href=\"%s\">%s</a>", modUrl, modIdString)));
+    m_modIdLabel->setText(toQString(strf("<a href=\"{}\">{}</a>", modUrl, modIdString)));
   }
 
   String steamUploadDir = File::temporaryDirectory();
   auto progressCallback = [&progress](size_t i, size_t total, String, String assetPath) {
-    progress.setLabelText(toQString(strf("Packing '%s'", assetPath)));
+    progress.setLabelText(toQString(strf("Packing '{}'", assetPath)));
     progress.setMaximum(total);
     progress.setValue(i);
     QApplication::processEvents();
@@ -378,7 +378,7 @@ void ModUploader::uploadToSteam() {
   }
 
   if (m_steamItemSubmitResult->first.m_eResult != k_EResultOK) {
-    QMessageBox::critical(this, "Error", strf("Error submitting changes to the Steam UGC item (%s)", m_steamItemSubmitResult->first.m_eResult).c_str());
+    QMessageBox::critical(this, "Error", strf("Error submitting changes to the Steam UGC item ({})", m_steamItemSubmitResult->first.m_eResult).c_str());
     return;
   }
 }

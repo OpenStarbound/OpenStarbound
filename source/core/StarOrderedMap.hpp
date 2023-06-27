@@ -228,7 +228,7 @@ template <template <typename...> class Map, typename Key, typename Value, typena
 auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::get(key_type const& k) -> mapped_type& {
   auto i = m_map.find(k);
   if (i == m_map.end())
-    throw MapException(strf("Key '%s' not found in OrderedMap::get()", outputAny(k)));
+    throw MapException(strf("Key '{}' not found in OrderedMap::get()", outputAny(k)));
 
   return i->second->second;
 }
@@ -308,7 +308,7 @@ auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::keyOf(mapped_typ
     if (i->second == v)
       return i->first;
   }
-  throw MapException(strf("Value '%s' not found in OrderedMap::keyOf()", outputAny(v)));
+  throw MapException(strf("Value '{}' not found in OrderedMap::keyOf()", outputAny(v)));
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
@@ -359,7 +359,7 @@ template <template <typename...> class Map, typename Key, typename Value, typena
 auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::add(key_type k, mapped_type v) -> mapped_type& {
   auto pair = insert(value_type(move(k), move(v)));
   if (!pair.second)
-    throw MapException(strf("Entry with key '%s' already present.", outputAny(k)));
+    throw MapException(strf("Entry with key '{}' already present.", outputAny(k)));
   else
     return pair.first->second;
 }
@@ -405,7 +405,7 @@ auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::take(key_type co
     m_order.erase(i->second);
     return v;
   } else {
-    throw MapException(strf("Key '%s' not found in OrderedMap::take()", outputAny(k)));
+    throw MapException(strf("Key '{}' not found in OrderedMap::take()", outputAny(k)));
   }
 }
 
@@ -509,7 +509,7 @@ auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::indexOf(key_type
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
 auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::keyAt(size_t i) const -> key_type const& {
   if (i >= size())
-    throw MapException(strf("index %s out of range in OrderedMap::at()", i));
+    throw MapException(strf("index {} out of range in OrderedMap::at()", i));
 
   auto it = begin();
   std::advance(it, i);
@@ -524,7 +524,7 @@ auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::valueAt(size_t i
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
 auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::valueAt(size_t i) -> mapped_type& {
   if (i >= size())
-    throw MapException(strf("index %s out of range in OrderedMap::valueAt()", i));
+    throw MapException(strf("index {} out of range in OrderedMap::valueAt()", i));
 
   auto it = m_order.begin();
   std::advance(it, i);
@@ -612,7 +612,7 @@ template <template <typename...> class Map, typename Key, typename Value, typena
 void OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::toBack(key_type const& k) {
   auto i = m_map.find(k);
   if (i == m_map.end())
-    throw MapException(strf("Key not found in OrderedMap::toBack('%s')", outputAny(k)));
+    throw MapException(strf("Key not found in OrderedMap::toBack('{}')", outputAny(k)));
 
   toBack(i->second);
 }
@@ -621,7 +621,7 @@ template <template <typename...> class Map, typename Key, typename Value, typena
 void OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::toFront(key_type const& k) {
   auto i = m_map.find(k);
   if (i == m_map.end())
-    throw MapException(strf("Key not found in OrderedMap::toFront('%s')", outputAny(k)));
+    throw MapException(strf("Key not found in OrderedMap::toFront('{}')", outputAny(k)));
 
   toFront(i->second);
 }

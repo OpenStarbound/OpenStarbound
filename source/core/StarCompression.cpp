@@ -23,7 +23,7 @@ void compressData(ByteArray const& in, ByteArray& out, CompressionLevel compress
   strm.opaque = Z_NULL;
   int deflate_res = deflateInit(&strm, compression);
   if (deflate_res != Z_OK)
-    throw IOException(strf("Failed to initialise deflate (%d)", deflate_res));
+    throw IOException(strf("Failed to initialise deflate ({})", deflate_res));
 
   strm.next_in = (unsigned char*)in.ptr();
   strm.avail_in = in.size();
@@ -40,7 +40,7 @@ void compressData(ByteArray const& in, ByteArray& out, CompressionLevel compress
   deflateEnd(&strm);
 
   if (deflate_res != Z_STREAM_END)
-    throw IOException(strf("Internal error in uncompressData, deflate_res is %s", deflate_res));
+    throw IOException(strf("Internal error in uncompressData, deflate_res is {}", deflate_res));
 
   out.append((char const*)temp_buffer, BUFSIZE - strm.avail_out);
 }
@@ -66,7 +66,7 @@ void uncompressData(ByteArray const& in, ByteArray& out) {
   strm.opaque = Z_NULL;
   int inflate_res = inflateInit(&strm);
   if (inflate_res != Z_OK)
-    throw IOException(strf("Failed to initialise inflate (%d)", inflate_res));
+    throw IOException(strf("Failed to initialise inflate ({})", inflate_res));
 
   strm.next_in = (unsigned char*)in.ptr();
   strm.avail_in = in.size();
@@ -86,7 +86,7 @@ void uncompressData(ByteArray const& in, ByteArray& out) {
   inflateEnd(&strm);
 
   if (inflate_res != Z_STREAM_END)
-    throw IOException(strf("Internal error in uncompressData, inflate_res is %s", inflate_res));
+    throw IOException(strf("Internal error in uncompressData, inflate_res is {}", inflate_res));
 
   out.append((char const*)temp_buffer, BUFSIZE - strm.avail_out);
 }
@@ -134,7 +134,7 @@ void CompressedFile::seek(StreamOffset offset, IOSeek seekMode) {
   StreamOffset endPos = pos();
 
   if (retCode < 0) {
-    throw IOException::format("Seek error: %s", gzerror((gzFile)m_file, 0));
+    throw IOException::format("Seek error: {}", gzerror((gzFile)m_file, 0));
   } else if ((seekMode == IOSeek::Relative && begPos + offset != endPos)
       || (seekMode == IOSeek::Absolute && offset != endPos)) {
     throw EofException("Error, unexpected end of file found");
@@ -153,7 +153,7 @@ size_t CompressedFile::read(char* data, size_t len) {
   if (ret == 0)
     throw EofException("Error, unexpected end of file found");
   else if (ret == -1)
-    throw IOException::format("Read error: %s", gzerror((gzFile)m_file, 0));
+    throw IOException::format("Read error: {}", gzerror((gzFile)m_file, 0));
   else
     return (size_t)ret;
 }
@@ -164,7 +164,7 @@ size_t CompressedFile::write(const char* data, size_t len) {
 
   int ret = gzwrite((gzFile)m_file, data, len);
   if (ret == 0)
-    throw IOException::format("Write error: %s", gzerror((gzFile)m_file, 0));
+    throw IOException::format("Write error: {}", gzerror((gzFile)m_file, 0));
   else
     return (size_t)ret;
 }
@@ -210,7 +210,7 @@ void CompressedFile::open(IOMode mode) {
   m_file = gzopen(m_filename.utf8Ptr(), modeString.utf8Ptr());
 
   if (!m_file)
-    throw IOException::format("Cannot open filename '%s'", m_filename);
+    throw IOException::format("Cannot open filename '{}'", m_filename);
 }
 
 void CompressedFile::close() {

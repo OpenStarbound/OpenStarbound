@@ -23,7 +23,7 @@ VersionedJson VersionedJson::readFile(String const& filename) {
   DataStreamIODevice ds(File::open(filename, IOMode::Read));
 
   if (ds.readBytes(MagicStringSize) != ByteArray(Magic, MagicStringSize))
-    throw IOException(strf("Wrong magic bytes at start of versioned json file, expected '%s'", Magic));
+    throw IOException(strf("Wrong magic bytes at start of versioned json file, expected '{}'", Magic));
 
   return ds.read<VersionedJson>();
 }
@@ -59,7 +59,7 @@ bool VersionedJson::empty() const {
 
 void VersionedJson::expectIdentifier(String const& expectedIdentifier) const {
   if (identifier != expectedIdentifier)
-    throw VersionedJsonException::format("VersionedJson identifier mismatch, expected '%s' but got '%s'", expectedIdentifier, identifier);
+    throw VersionedJsonException::format("VersionedJson identifier mismatch, expected '{}' but got '{}'", expectedIdentifier, identifier);
 }
 
 DataStream& operator>>(DataStream& ds, VersionedJson& versionedJson) {
@@ -91,7 +91,7 @@ VersioningDatabase::VersioningDatabase() {
     try {
       auto scriptParts = File::baseName(scriptFile).splitAny("_.");
       if (scriptParts.size() != 4)
-        throw VersioningDatabaseException::format("Script file '%s' filename not of the form <identifier>_<fromversion>_<toversion>.lua", scriptFile);
+        throw VersioningDatabaseException::format("Script file '{}' filename not of the form <identifier>_<fromversion>_<toversion>.lua", scriptFile);
 
       String identifier = scriptParts.at(0);
       VersionNumber fromVersion = lexicalCast<VersionNumber>(scriptParts.at(1));
@@ -99,7 +99,7 @@ VersioningDatabase::VersioningDatabase() {
 
       m_versionUpdateScripts[identifier.toLower()].append({scriptFile, fromVersion, toVersion});
     } catch (StarException const&) {
-      throw VersioningDatabaseException::format("Error parsing version information from versioning script '%s'", scriptFile);
+      throw VersioningDatabaseException::format("Error parsing version information from versioning script '{}'", scriptFile);
     }
   }
 
@@ -135,7 +135,7 @@ VersionedJson VersioningDatabase::updateVersionedJson(VersionedJson const& versi
   VersionedJson result = versionedJson;
   Maybe<VersionNumber> targetVersion = m_currentVersions.maybe(versionedJson.identifier);
   if (!targetVersion)
-    throw VersioningDatabaseException::format("Versioned JSON has an unregistered identifier '%s'", versionedJson.identifier);
+    throw VersioningDatabaseException::format("Versioned JSON has an unregistered identifier '{}'", versionedJson.identifier);
 
   LuaCallbacks celestialCallbacks;
   celestialCallbacks.registerCallback("parameters", [&celestialDatabase](Json const& coord) {
@@ -158,28 +158,28 @@ VersionedJson VersioningDatabase::updateVersionedJson(VersionedJson const& versi
         result.content = scriptContext.invokePath<Json>("update", result.content);
         if (!result.content) {
           throw VersioningDatabaseException::format(
-              "Could not bring versionedJson with identifier '%s' and version %s forward to current version of %s, conversion script from %s to %s returned null (un-upgradeable)",
+              "Could not bring versionedJson with identifier '{}' and version {} forward to current version of {}, conversion script from {} to {} returned null (un-upgradeable)",
               versionedJson.identifier, result.version, targetVersion, updateScript.fromVersion, updateScript.toVersion);
         }
-        Logger::debug("Brought versionedJson '%s' from version %s to %s",
+        Logger::debug("Brought versionedJson '{}' from version {} to {}",
             versionedJson.identifier, result.version, updateScript.toVersion);
         result.version = updateScript.toVersion;
       }
     }
   } catch (std::exception const& e) {
-    throw VersioningDatabaseException(strf("Could not bring versionedJson with identifier '%s' and version %s forward to current version of %s",
+    throw VersioningDatabaseException(strf("Could not bring versionedJson with identifier '{}' and version {} forward to current version of {}",
             versionedJson.identifier, result.version, targetVersion), e);
   }
 
   if (result.version > *targetVersion) {
     throw VersioningDatabaseException::format(
-        "VersionedJson with identifier '%s' and version %s is newer than current version of %s, cannot load",
+        "VersionedJson with identifier '{}' and version {} is newer than current version of {}, cannot load",
         versionedJson.identifier, result.version, targetVersion);
   }
 
   if (result.version != *targetVersion) {
     throw VersioningDatabaseException::format(
-        "Could not bring VersionedJson with identifier '%s' and version %s forward to current version of %s, best version was %s",
+        "Could not bring VersionedJson with identifier '{}' and version {} forward to current version of {}, best version was {}",
         versionedJson.identifier, result.version, targetVersion, result.version);
   }
 
@@ -208,7 +208,7 @@ LuaCallbacks VersioningDatabase::makeVersioningCallbacks() const {
         return updateVersionedJson(loadedJson).content;
       } catch (IOException const& e) {
         Logger::debug(
-            "Unable to load versioned JSON file %s in versioning script: %s", storagePath, outputException(e, false));
+            "Unable to load versioned JSON file {} in versioning script: {}", storagePath, outputException(e, false));
         return Json();
       }
     });

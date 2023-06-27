@@ -143,24 +143,24 @@ namespace JsonPath {
 
       if (value.type() == Json::Type::Array) {
         if (buffer == "-")
-          throw TraversalException::format("Tried to get key '%s' in non-object type in pathGet(\"%s\")", buffer, path);
+          throw TraversalException::format("Tried to get key '{}' in non-object type in pathGet(\"{}\")", buffer, path);
         Maybe<size_t> i = maybeLexicalCast<size_t>(buffer);
         if (!i)
-          throw TraversalException::format("Cannot parse '%s' as index in pathGet(\"%s\")", buffer, path);
+          throw TraversalException::format("Cannot parse '{}' as index in pathGet(\"{}\")", buffer, path);
 
         if (*i < value.size())
           value = value.get(*i);
         else
-          throw TraversalException::format("Index %s out of range in pathGet(\"%s\")", buffer, path);
+          throw TraversalException::format("Index {} out of range in pathGet(\"{}\")", buffer, path);
 
       } else if (value.type() == Json::Type::Object) {
         if (value.contains(buffer))
           value = value.get(buffer);
         else
-          throw TraversalException::format("No such key '%s' in pathGet(\"%s\")", buffer, path);
+          throw TraversalException::format("No such key '{}' in pathGet(\"{}\")", buffer, path);
 
       } else {
-        throw TraversalException::format("Tried to get key '%s' in non-object type in pathGet(\"%s\")", buffer, path);
+        throw TraversalException::format("Tried to get key '{}' in non-object type in pathGet(\"{}\")", buffer, path);
       }
     }
     return value;
@@ -218,10 +218,10 @@ namespace JsonPath {
       } else {
         Maybe<size_t> i = maybeLexicalCast<size_t>(buffer);
         if (!i)
-          throw TraversalException::format("Cannot parse '%s' as index in pathApply(\"%s\")", buffer, path);
+          throw TraversalException::format("Cannot parse '{}' as index in pathApply(\"{}\")", buffer, path);
 
         if (*i >= value.size())
-          throw TraversalException::format("Index %s out of range in pathApply(\"%s\")", buffer, path);
+          throw TraversalException::format("Index {} out of range in pathApply(\"{}\")", buffer, path);
 
         return value.set(*i, pathApply(buffer, value.get(*i), parser, path, iterator, op));
       }
@@ -232,7 +232,7 @@ namespace JsonPath {
 
       } else {
         if (!value.contains(buffer))
-          throw TraversalException::format("No such key '%s' in pathApply(\"%s\")", buffer, path);
+          throw TraversalException::format("No such key '{}' in pathApply(\"{}\")", buffer, path);
 
         Jsonlike newChild = pathApply(buffer, value.get(buffer), parser, path, iterator, op);
         iterator = current;
@@ -242,7 +242,7 @@ namespace JsonPath {
       }
 
     } else {
-      throw TraversalException::format("Tried to get key '%s' in non-object type in pathApply(\"%s\")", buffer, path);
+      throw TraversalException::format("Tried to get key '{}' in non-object type in pathApply(\"{}\")", buffer, path);
     }
   }
 
@@ -262,16 +262,16 @@ namespace JsonPath {
           return arrayOp(parent, {});
         Maybe<size_t> i = maybeLexicalCast<size_t>(*key);
         if (!i)
-          throw TraversalException::format("Cannot parse '%s' as index in Json path \"%s\"", *key, path);
+          throw TraversalException::format("Cannot parse '{}' as index in Json path \"{}\"", *key, path);
         if (i && *i > parent.size())
-          throw TraversalException::format("Index %s out of range in Json path \"%s\"", *key, path);
+          throw TraversalException::format("Index {} out of range in Json path \"{}\"", *key, path);
         if (i && *i == parent.size())
           i = {};
         return arrayOp(parent, i);
       } else if (parent.type() == Json::Type::Object) {
         return objectOp(parent, *key);
       } else {
-        throw TraversalException::format("Tried to set key '%s' in non-object type in pathSet(\"%s\")", *key, path);
+        throw TraversalException::format("Tried to set key '{}' in non-object type in pathSet(\"{}\")", *key, path);
       }
     };
   }
@@ -297,7 +297,7 @@ namespace JsonPath {
     EmptyPathOp<Jsonlike> emptyPathOp = [](Jsonlike const&) { return Json{}; };
     ObjectOp<Jsonlike> objectOp = [](Jsonlike const& object, String const& key) {
       if (!object.contains(key))
-        throw TraversalException::format("Could not find \"%s\" to remove", key);
+        throw TraversalException::format("Could not find \"{}\" to remove", key);
       return object.eraseKey(key);
     };
     ArrayOp<Jsonlike> arrayOp = [](Jsonlike const& array, Maybe<size_t> i) {

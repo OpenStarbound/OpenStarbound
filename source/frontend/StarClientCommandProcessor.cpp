@@ -92,11 +92,11 @@ StringList ClientCommandProcessor::handleCommand(String const& commandLine) {
     }
     return result;
   } catch (ShellParsingException const& e) {
-    Logger::error("Shell parsing exception: %s", outputException(e, false));
+    Logger::error("Shell parsing exception: {}", outputException(e, false));
     return {"Shell parsing exception"};
   } catch (std::exception const& e) {
-    Logger::error("Exception caught handling client command %s: %s", commandLine, outputException(e, true));
-    return {strf("Exception caught handling client command %s", commandLine)};
+    Logger::error("Exception caught handling client command {}: {}", commandLine, outputException(e, true));
+    return {strf("Exception caught handling client command {}", commandLine)};
   }
 }
 
@@ -114,7 +114,7 @@ String ClientCommandProcessor::reload() {
 }
 
 String ClientCommandProcessor::whoami() {
-  return strf("Client: You are %s. You are %san Admin.",
+  return strf("Client: You are {}. You are {}an Admin.",
       m_universeClient->mainPlayer()->name(), m_universeClient->mainPlayer()->isAdmin() ? "" : "not ");
 }
 
@@ -122,7 +122,7 @@ String ClientCommandProcessor::gravity() {
   if (!adminCommandAllowed())
     return "You must be an admin to use this command.";
 
-  return strf("%s", m_universeClient->worldClient()->gravity(m_universeClient->mainPlayer()->position()));
+  return strf("{}", m_universeClient->worldClient()->gravity(m_universeClient->mainPlayer()->position()));
 }
 
 String ClientCommandProcessor::debug() {
@@ -130,14 +130,14 @@ String ClientCommandProcessor::debug() {
     return "You must be an admin to use this command.";
 
   m_debugDisplayEnabled = !m_debugDisplayEnabled;
-  return strf("Debug display %s", m_debugDisplayEnabled ? "enabled" : "disabled");
+  return strf("Debug display {}", m_debugDisplayEnabled ? "enabled" : "disabled");
 }
 
 String ClientCommandProcessor::boxes() {
   if (!adminCommandAllowed())
     return "You must be an admin to use this command.";
 
-  return strf("Geometry debug display %s",
+  return strf("Geometry debug display {}",
       m_universeClient->worldClient()->toggleCollisionDebug()
       ? "enabled" : "disabled");
 }
@@ -146,7 +146,7 @@ String ClientCommandProcessor::fullbright() {
   if (!adminCommandAllowed())
     return "You must be an admin to use this command.";
 
-  return strf("Fullbright render lighting %s",
+  return strf("Fullbright render lighting {}",
       m_universeClient->worldClient()->toggleFullbright()
       ? "enabled" : "disabled");
 }
@@ -156,7 +156,7 @@ String ClientCommandProcessor::setGravity(StringList const& arguments) {
     return "You must be an admin to use this command.";
 
   m_universeClient->worldClient()->overrideGravity(lexicalCast<float>(arguments.at(0)));
-  return strf("Gravity set to %s, the change is LOCAL ONLY", arguments.at(0));
+  return strf("Gravity set to {}, the change is LOCAL ONLY", arguments.at(0));
 }
 
 String ClientCommandProcessor::resetGravity() {
@@ -172,13 +172,13 @@ String ClientCommandProcessor::fixedCamera() {
     return "You must be an admin to use this command.";
 
   m_fixedCameraEnabled = !m_fixedCameraEnabled;
-  return strf("Fixed camera %s", m_fixedCameraEnabled ? "enabled" : "disabled");
+  return strf("Fixed camera {}", m_fixedCameraEnabled ? "enabled" : "disabled");
 }
 
 String ClientCommandProcessor::monochromeLighting() {
   bool monochrome = !Root::singleton().configuration()->get("monochromeLighting").toBool();
   Root::singleton().configuration()->set("monochromeLighting", monochrome);
-  return strf("Monochrome lighting %s", monochrome ? "enabled" : "disabled");
+  return strf("Monochrome lighting {}", monochrome ? "enabled" : "disabled");
 }
 
 String ClientCommandProcessor::radioMessage(StringList const& arguments) {
@@ -222,7 +222,7 @@ String ClientCommandProcessor::completeQuest(StringList const& arguments) {
     return "You must be an admin to use this command.";
 
   m_universeClient->questManager()->getQuest(arguments.at(0))->complete();
-  return strf("Quest %s complete", arguments.at(0));
+  return strf("Quest {} complete", arguments.at(0));
 }
 
 String ClientCommandProcessor::failQuest(StringList const& arguments) {
@@ -230,7 +230,7 @@ String ClientCommandProcessor::failQuest(StringList const& arguments) {
     return "You must be an admin to use this command.";
 
   m_universeClient->questManager()->getQuest(arguments.at(0))->fail();
-  return strf("Quest %s failed", arguments.at(0));
+  return strf("Quest {} failed", arguments.at(0));
 }
 
 String ClientCommandProcessor::previewNewQuest(StringList const& arguments) {
@@ -269,12 +269,12 @@ String ClientCommandProcessor::clearScannedObjects() {
 }
 
 String ClientCommandProcessor::playTime() {
-  return strf("Total play time: %s", Time::printDuration(m_universeClient->mainPlayer()->log()->playTime()));
+  return strf("Total play time: {}", Time::printDuration(m_universeClient->mainPlayer()->log()->playTime()));
 }
 
 String ClientCommandProcessor::deathCount() {
   auto deaths = m_universeClient->mainPlayer()->log()->deathCount();
-  return strf("Total deaths: %s%s", deaths, deaths == 0 ? ". Well done!" : "");
+  return strf("Total deaths: {}{}", deaths, deaths == 0 ? ". Well done!" : "");
 }
 
 String ClientCommandProcessor::cinema(StringList const& arguments) {
@@ -284,7 +284,7 @@ String ClientCommandProcessor::cinema(StringList const& arguments) {
   m_cinematicOverlay->load(Root::singleton().assets()->json(arguments.at(0)));
   if (arguments.size() > 1)
     m_cinematicOverlay->setTime(lexicalCast<float>(arguments.at(1)));
-  return strf("Started cinematic %s at %s", arguments.at(0), arguments.size() > 1 ? arguments.at(1) : "beginning");
+  return strf("Started cinematic {} at {}", arguments.at(0), arguments.size() > 1 ? arguments.at(1) : "beginning");
 }
 
 String ClientCommandProcessor::suicide() {
@@ -315,7 +315,7 @@ String ClientCommandProcessor::statistic(StringList const& arguments) {
 
   StringList values;
   for (String const& statName : arguments) {
-    values.append(strf("%s = %s", statName, m_universeClient->statistics()->stat(statName)));
+    values.append(strf("{} = {}", statName, m_universeClient->statistics()->stat(statName)));
   }
   return values.join("\n");
 }
@@ -331,9 +331,9 @@ String ClientCommandProcessor::giveEssentialItem(StringList const& arguments) {
     auto item = Root::singleton().itemDatabase()->item(ItemDescriptor(arguments.at(0)));
     auto slot = EssentialItemNames.getLeft(arguments.at(1));
     m_universeClient->mainPlayer()->inventory()->setEssentialItem(slot, item);
-    return strf("Put %s in player slot %s", item->name(), arguments.at(1));
+    return strf("Put {} in player slot {}", item->name(), arguments.at(1));
   } catch (MapException const& e) {
-    return strf("Invalid essential item slot %s.", arguments.at(1));
+    return strf("Invalid essential item slot {}.", arguments.at(1));
   }
 }
 
@@ -345,7 +345,7 @@ String ClientCommandProcessor::makeTechAvailable(StringList const& arguments) {
     return "Not enouch arguments to /maketechavailable";
 
   m_universeClient->mainPlayer()->techs()->makeAvailable(arguments.at(0));
-  return strf("Added %s to player's visible techs", arguments.at(0));
+  return strf("Added {} to player's visible techs", arguments.at(0));
 }
 
 String ClientCommandProcessor::enableTech(StringList const& arguments) {
@@ -357,7 +357,7 @@ String ClientCommandProcessor::enableTech(StringList const& arguments) {
 
   m_universeClient->mainPlayer()->techs()->makeAvailable(arguments.at(0));
   m_universeClient->mainPlayer()->techs()->enable(arguments.at(0));
-  return strf("Player tech %s enabled", arguments.at(0));
+  return strf("Player tech {} enabled", arguments.at(0));
 }
 
 String ClientCommandProcessor::upgradeShip(StringList const& arguments) {

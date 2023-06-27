@@ -43,7 +43,7 @@ bool PlayerTech::isEnabled(String const& techModule) const {
 
 void PlayerTech::enable(String const& techModule) {
   if (!m_availableTechs.contains(techModule))
-    throw PlayerTechException::format("Enabling tech module '%s' when not available", techModule);
+    throw PlayerTechException::format("Enabling tech module '{}' when not available", techModule);
   m_enabledTechs.add(techModule);
 }
 
@@ -62,7 +62,7 @@ bool PlayerTech::isEquipped(String const& techModule) const {
 
 void PlayerTech::equip(String const& techModule) {
   if (!m_enabledTechs.contains(techModule))
-    throw PlayerTechException::format("Equipping tech module '%s' when not enabled", techModule);
+    throw PlayerTechException::format("Equipping tech module '{}' when not enabled", techModule);
 
   auto techDatabase = Root::singleton().techDatabase();
   m_equippedTechs[techDatabase->tech(techModule).type] = techModule;

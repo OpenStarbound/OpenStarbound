@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
         if (json.isNull())
           continue;
 
-        String countKey = wordCountKey ? *wordCountKey : strf(".%s files", type);
+        String countKey = wordCountKey ? *wordCountKey : strf(".{} files", type);
         wordCounts[countKey] += countFunction(json);
       }
     };
@@ -178,14 +178,14 @@ int main(int argc, char** argv) {
 
     int totalWordCount = 0;
     for (auto countPair : wordCounts) {
-      coutf("%d words in %s\n", countPair.second, countPair.first);
+      coutf("{} words in {}\n", countPair.second, countPair.first);
       totalWordCount += countPair.second;
     }
-    coutf("approximately %s words total\n", totalWordCount);
+    coutf("approximately {} words total\n", totalWordCount);
 
     return 0;
   } catch (std::exception const& e) {
-    cerrf("exception caught: %s\n", outputException(e, true));
+    cerrf("exception caught: {}\n", outputException(e, true));
     return 1;
   }
 }

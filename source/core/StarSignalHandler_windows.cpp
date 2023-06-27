@@ -59,19 +59,19 @@ struct SignalHandlerImpl {
       else if (modeFlag == 8)
         mode = "Execute";
       else
-        mode = strf("Mode(%s)", modeFlag);
-      g_sehMessage = strf("Access violation detected at %s (%s of address %s)",
+        mode = strf("Mode({})", modeFlag);
+      g_sehMessage = strf("Access violation detected at {} ({} of address {})",
           ExceptionInfo->ExceptionRecord->ExceptionAddress,
           mode,
           (PVOID)ExceptionInfo->ExceptionRecord->ExceptionInformation[1]);
     } else {
       g_sehMessage = msg;
-      g_sehMessage = strf("%s (%p @ %s)",
+      g_sehMessage = strf("{} (%p @ {})",
           g_sehMessage,
           ExceptionInfo->ExceptionRecord->ExceptionCode,
           ExceptionInfo->ExceptionRecord->ExceptionAddress);
       for (DWORD i = 0; i < ExceptionInfo->ExceptionRecord->NumberParameters; i++)
-        g_sehMessage = strf("%s [%s]", g_sehMessage, (PVOID)ExceptionInfo->ExceptionRecord->ExceptionInformation[i]);
+        g_sehMessage = strf("{} [{}]", g_sehMessage, (PVOID)ExceptionInfo->ExceptionRecord->ExceptionInformation[i]);
     }
 
 // setup a hijack into our own trampoline as if the failure actually was a

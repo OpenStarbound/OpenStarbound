@@ -39,7 +39,7 @@ Type lexicalCast(StringView s, std::ios_base::fmtflags flags = std::ios_base::bo
   if (m)
     return m.take();
   else
-    throw BadLexicalCast(strf("Lexical cast failed on '%s'", s));
+    throw BadLexicalCast(strf("Lexical cast failed on '{}'", s));
 }
 
 template <class Type>

@@ -29,7 +29,7 @@ void LuaBaseComponent::setScripts(StringList scripts) {
 
 void LuaBaseComponent::addCallbacks(String groupName, LuaCallbacks callbacks) {
   if (!m_callbacks.insert(groupName, callbacks).second)
-    throw LuaComponentException::format("Duplicate callbacks named '%s' in LuaBaseComponent", groupName);
+    throw LuaComponentException::format("Duplicate callbacks named '{}' in LuaBaseComponent", groupName);
 
   if (m_context)
     m_context->setCallbacks(groupName, callbacks);
@@ -75,7 +75,7 @@ bool LuaBaseComponent::init() {
   try {
     m_context = m_luaRoot->createContext(m_scripts);
   } catch (LuaException const& e) {
-    Logger::error("Exception while creating lua context for scripts '%s': %s", m_scripts, outputException(e, true));
+    Logger::error("Exception while creating lua context for scripts '{}': {}", m_scripts, outputException(e, true));
     m_error = String(printException(e, false));
     m_context.reset();
     return false;
@@ -86,7 +86,7 @@ bool LuaBaseComponent::init() {
     try {
       m_context->invokePath("init");
     } catch (LuaException const& e) {
-      Logger::error("Exception while calling script init: %s", outputException(e, true));
+      Logger::error("Exception while calling script init: {}", outputException(e, true));
       m_error = String(printException(e, false));
       m_context.reset();
       return false;
@@ -102,7 +102,7 @@ void LuaBaseComponent::uninit() {
       try {
         m_context->invokePath("uninit");
       } catch (LuaException const& e) {
-        Logger::error("Exception while calling script uninit: %s", outputException(e, true));
+        Logger::error("Exception while calling script uninit: {}", outputException(e, true));
         m_error = String(printException(e, false));
       }
     }

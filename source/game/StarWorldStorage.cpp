@@ -157,7 +157,7 @@ void WorldStorage::loadSector(Sector sector) {
   } catch (std::exception const& e) {
     m_db.rollback();
     m_db.close();
-    throw WorldStorageException(strf("Failed to load sector %s", sector), e);
+    throw WorldStorageException(strf("Failed to load sector {}", sector), e);
   }
 }
 
@@ -168,7 +168,7 @@ void WorldStorage::activateSector(Sector sector) {
   } catch (std::exception const& e) {
     m_db.rollback();
     m_db.close();
-    throw WorldStorageException(strf("Failed to load sector %s", sector), e);
+    throw WorldStorageException(strf("Failed to load sector {}", sector), e);
   }
 }
 
@@ -193,12 +193,12 @@ void WorldStorage::triggerTerraformSector(Sector sector) {
 
       p->generationLevel = SectorGenerationLevel::Terraform;
     } else {
-      throw WorldStorageException(strf("Couldn't flag sector %s for terraforming; metadata unavailable", sector));
+      throw WorldStorageException(strf("Couldn't flag sector {} for terraforming; metadata unavailable", sector));
     }
   } catch (std::exception const& e) {
     m_db.rollback();
     m_db.close();
-    throw WorldStorageException(strf("Failed to terraform sector %s", sector), e);
+    throw WorldStorageException(strf("Failed to terraform sector {}", sector), e);
   }
 }
 
@@ -691,7 +691,7 @@ void WorldStorage::loadSectorToLevel(Sector const& sector, SectorLoadLevel targe
           try {
             addedEntities.append(entityFactory->loadVersionedEntity(entityStore));
           } catch (std::exception const& e) {
-            Logger::warn("Failed to deserialize entity: %s", outputException(e, true));
+            Logger::warn("Failed to deserialize entity: {}", outputException(e, true));
           }
         }
       }

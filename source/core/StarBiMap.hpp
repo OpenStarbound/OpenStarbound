@@ -179,7 +179,7 @@ template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT
 BiMap<LeftT, RightT, LeftMapT, RightMapT>::BiMap(std::initializer_list<value_type> list) {
   for (value_type const& v : list) {
     if (!insert(v.first, v.second))
-      throw MapException::format("Repeat pair in BiMap initializer_list construction: (%s, %s)", outputAny(v.first), outputAny(v.second));
+      throw MapException::format("Repeat pair in BiMap initializer_list construction: ({}, {})", outputAny(v.first), outputAny(v.second));
   }
 }
 
@@ -324,10 +324,10 @@ bool BiMap<LeftT, RightT, LeftMapT, RightMapT>::insert(Left const& left, Right c
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
 void BiMap<LeftT, RightT, LeftMapT, RightMapT>::add(Left const& left, Right const& right) {
   if (m_leftMap.contains(left))
-    throw MapException(strf("BiMap already contains left side value '%s'", outputAny(left)));
+    throw MapException(strf("BiMap already contains left side value '{}'", outputAny(left)));
 
   if (m_rightMap.contains(right))
-    throw MapException(strf("BiMap already contains right side value '%s'", outputAny(right)));
+    throw MapException(strf("BiMap already contains right side value '{}'", outputAny(right)));
 
   insert(left, right);
 }

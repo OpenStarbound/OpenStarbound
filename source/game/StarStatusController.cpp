@@ -702,7 +702,7 @@ void StatusController::addUniqueEffect(
     if (m_parentEntity)
       initUniqueEffectScript(uniqueEffect);
   } else {
-    Logger::warn("Unique status effect '%s' not found in status effect database", effect);
+    Logger::warn("Unique status effect '{}' not found in status effect database", effect);
   }
 }
 

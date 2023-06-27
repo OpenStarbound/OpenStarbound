@@ -31,11 +31,11 @@ CelestialCoordinate::CelestialCoordinate(Json const& variant) : CelestialCoordin
           m_satelliteOrbitNumber = lexicalCast<int>(plist.at(4));
 
         if (m_planetaryOrbitNumber <= 0)
-          throw CelestialException(strf("Planetary body number out of range in '%s'", id));
+          throw CelestialException(strf("Planetary body number out of range in '{}'", id));
         if (m_satelliteOrbitNumber < 0)
-          throw CelestialException(strf("Satellite body number out of range in '%s'", id));
+          throw CelestialException(strf("Satellite body number out of range in '{}'", id));
       } catch (StarException const& e) {
-        throw CelestialException(strf("Error parsing CelestialCoordinate from '%s'", id), e);
+        throw CelestialException(strf("Error parsing CelestialCoordinate from '{}'", id), e);
       }
     }
   } else if (variant.isType(Json::Type::Object)) {
@@ -44,7 +44,7 @@ CelestialCoordinate::CelestialCoordinate(Json const& variant) : CelestialCoordin
     m_satelliteOrbitNumber = variant.getInt("satellite", 0);
   } else if (!variant.isNull()) {
     throw CelestialException(
-        strf("Improper variant type %s trying to convert to SystemCoordinate", variant.typeName()));
+        strf("Improper variant type {} trying to convert to SystemCoordinate", variant.typeName()));
   }
 }
 
@@ -153,12 +153,12 @@ std::ostream& operator<<(std::ostream& os, CelestialCoordinate const& coord) {
   if (coord.isNull()) {
     os << "null";
   } else {
-    format(os, "%s:%s:%s", coord.m_location[0], coord.m_location[1], coord.m_location[2]);
+    format(os, "{}:{}:{}", coord.m_location[0], coord.m_location[1], coord.m_location[2]);
 
     if (coord.m_planetaryOrbitNumber) {
-      format(os, ":%s", coord.m_planetaryOrbitNumber);
+      format(os, ":{}", coord.m_planetaryOrbitNumber);
       if (coord.m_satelliteOrbitNumber)
-        format(os, ":%s", coord.m_satelliteOrbitNumber);
+        format(os, ":{}", coord.m_satelliteOrbitNumber);
     }
   }
 

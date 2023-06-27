@@ -188,7 +188,7 @@ bool StaticVector<Element, MaxSize>::empty() const {
 template <typename Element, size_t MaxSize>
 void StaticVector<Element, MaxSize>::resize(size_t size, Element const& e) {
   if (size > MaxSize)
-    throw StaticVectorSizeException::format("StaticVector::resize(%s) out of range %s", m_size + size, MaxSize);
+    throw StaticVectorSizeException::format("StaticVector::resize({}) out of range {}", m_size + size, MaxSize);
 
   for (size_t i = m_size; i > size; --i)
     pop_back();
@@ -199,14 +199,14 @@ void StaticVector<Element, MaxSize>::resize(size_t size, Element const& e) {
 template <typename Element, size_t MaxSize>
 auto StaticVector<Element, MaxSize>::at(size_t i) -> reference {
   if (i >= m_size)
-    throw OutOfRangeException::format("out of range in StaticVector::at(%s)", i);
+    throw OutOfRangeException::format("out of range in StaticVector::at({})", i);
   return ptr()[i];
 }
 
 template <typename Element, size_t MaxSize>
 auto StaticVector<Element, MaxSize>::at(size_t i) const -> const_reference {
   if (i >= m_size)
-    throw OutOfRangeException::format("out of range in StaticVector::at(%s)", i);
+    throw OutOfRangeException::format("out of range in StaticVector::at({})", i);
   return ptr()[i];
 }
 
@@ -329,7 +329,7 @@ template <typename Element, size_t MaxSize>
 template <typename... Args>
 void StaticVector<Element, MaxSize>::emplace_back(Args&&... args) {
   if (m_size + 1 > MaxSize)
-    throw StaticVectorSizeException::format("StaticVector::emplace_back would extend StaticVector beyond size %s", MaxSize);
+    throw StaticVectorSizeException::format("StaticVector::emplace_back would extend StaticVector beyond size {}", MaxSize);
 
   m_size += 1;
   new (ptr() + m_size - 1) Element(forward<Args>(args)...);

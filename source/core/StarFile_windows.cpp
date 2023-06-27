@@ -42,13 +42,13 @@ String File::currentDirectory() {
 
 void File::changeDirectory(const String& dirName) {
   if (!SetCurrentDirectoryW(stringToUtf16(dirName).get()))
-    throw IOException(strf("could not change directory to %s", dirName));
+    throw IOException(strf("could not change directory to {}", dirName));
 }
 
 void File::makeDirectory(String const& dirName) {
   if (CreateDirectoryW(stringToUtf16(dirName).get(), NULL) == 0) {
     auto error = GetLastError();
-    throw IOException(strf("could not create directory '%s', %s", dirName, error));
+    throw IOException(strf("could not create directory '{}', {}", dirName, error));
   }
 }
 
@@ -85,9 +85,9 @@ String File::fullPath(const String& path) {
 
   fullpath_size = GetFullPathNameW(stringToUtf16(path).get(), (DWORD)MAX_PATH, buffer, (WCHAR**)&lpszLastNamePart);
   if (0 == fullpath_size)
-    throw IOException::format("GetFullPathName failed on path: '%s'", path);
+    throw IOException::format("GetFullPathName failed on path: '{}'", path);
   if (fullpath_size >= MAX_PATH)
-    throw IOException::format("GetFullPathName failed on path: '%s'", path);
+    throw IOException::format("GetFullPathName failed on path: '{}'", path);
 
   return utf16ToString(buffer);
 }
@@ -99,7 +99,7 @@ List<std::pair<String, bool>> File::dirList(const String& dirName, bool skipDots
 
   hFind = FindFirstFileW(stringToUtf16(File::relativeTo(dirName, "*")).get(), &findFileData);
   if (hFind == INVALID_HANDLE_VALUE)
-    throw IOException(strf("Invalid file handle in dirList of '%s', error is %u", dirName, GetLastError()));
+    throw IOException(strf("Invalid file handle in dirList of '{}', error is %u", dirName, GetLastError()));
 
   while (true) {
     String entry = utf16ToString(findFileData.cFileName);
@@ -113,7 +113,7 @@ List<std::pair<String, bool>> File::dirList(const String& dirName, bool skipDots
   FindClose(hFind);
 
   if ((dwError != ERROR_NO_MORE_FILES) && (dwError != NO_ERROR))
-    throw IOException(strf("FindNextFile error in dirList of '%s'.  Error is %u", dirName, dwError));
+    throw IOException(strf("FindNextFile error in dirList of '{}'.  Error is %u", dirName, dwError));
 
   return fileList;
 }
@@ -158,10 +158,10 @@ String File::temporaryFileName() {
   WCHAR tempPath[MAX_PATH];
   if (!GetTempPathW(MAX_PATH, tempPath)) {
     auto error = GetLastError();
-    throw IOException(strf("Could not call GetTempPath %s", error));
+    throw IOException(strf("Could not call GetTempPath {}", error));
   }
 
-  return relativeTo(utf16ToString(tempPath), strf("starbound.tmpfile.%s", hexEncode(Random::randBytes(16))));
+  return relativeTo(utf16ToString(tempPath), strf("starbound.tmpfile.{}", hexEncode(Random::randBytes(16))));
 }
 
 FilePtr File::temporaryFile() {
@@ -179,10 +179,10 @@ String File::temporaryDirectory() {
   WCHAR tempPath[MAX_PATH];
   if (!GetTempPathW(MAX_PATH, tempPath)) {
     auto error = GetLastError();
-    throw IOException(strf("Could not call GetTempPath %s", error));
+    throw IOException(strf("Could not call GetTempPath {}", error));
   }
 
-  String dirname = relativeTo(utf16ToString(tempPath), strf("starbound.tmpdir.%s", hexEncode(Random::randBytes(16))));
+  String dirname = relativeTo(utf16ToString(tempPath), strf("starbound.tmpdir.{}", hexEncode(Random::randBytes(16))));
   makeDirectory(dirname);
   return dirname;
 }
@@ -191,11 +191,11 @@ void File::remove(String const& filename) {
   if (isDirectory(filename)) {
     if (!RemoveDirectoryW(stringToUtf16(filename).get())) {
       auto error = GetLastError();
-      throw IOException(strf("Rename error: %s", error));
+      throw IOException(strf("Rename error: {}", error));
     }
   } else if (::_wremove(stringToUtf16(filename).get()) < 0) {
     auto error = errno;
-    throw IOException::format("remove error: %s", strerror(error));
+    throw IOException::format("remove error: {}", strerror(error));
   }
 }
 
@@ -207,22 +207,22 @@ void File::rename(String const& source, String const& target) {
 	  if (!DeleteFileW(stringToUtf16(temp).get())) {
       auto error = GetLastError();
       if (error != ERROR_FILE_NOT_FOUND)
-        throw IOException(strf("error deleting existing temp file: %s", error));
+        throw IOException(strf("error deleting existing temp file: {}", error));
     }
     if (!MoveFileExW(stringToUtf16(target).get(), stringToUtf16(temp).get(), MOVEFILE_COPY_ALLOWED | MOVEFILE_WRITE_THROUGH)) {
       auto error = GetLastError();
-      throw IOException(strf("error temporary file '%s': %s", temp, GetLastError()));
+      throw IOException(strf("error temporary file '{}': {}", temp, GetLastError()));
     }
   }
 
   if (!MoveFileExW(stringToUtf16(source).get(), stringToUtf16(target).get(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_COPY_ALLOWED | MOVEFILE_WRITE_THROUGH)) {
     auto error = GetLastError();
-    throw IOException(strf("Rename error: %s", error));
+    throw IOException(strf("Rename error: {}", error));
   }
 
   if (replace && !DeleteFileW(stringToUtf16(temp).get())) {
     auto error = GetLastError();
-    throw IOException(strf("error deleting temp file '%s': %s", temp, GetLastError()));
+    throw IOException(strf("error deleting temp file '{}': {}", temp, GetLastError()));
   }
 }
 
@@ -266,19 +266,19 @@ void* File::fopen(char const* filename, IOMode mode) {
       creationDisposition, 0, NULL);
 
   if (file == INVALID_HANDLE_VALUE)
-    throw IOException::format("could not open file '%s' %s", filename, GetLastError());
+    throw IOException::format("could not open file '{}' {}", filename, GetLastError());
 
   LARGE_INTEGER szero;
   szero.QuadPart = 0;
   if (!SetFilePointerEx(file, szero, NULL, 0)) {
     CloseHandle(file);
-    throw IOException::format("could not set file pointer in fopen '%s' %s", filename, GetLastError());
+    throw IOException::format("could not set file pointer in fopen '{}' {}", filename, GetLastError());
   }
 
   if (mode & IOMode::Truncate) {
     if (!SetEndOfFile(file)) {
       CloseHandle(file);
-      throw IOException::format("could not set end of file in fopen '%s' %s", filename, GetLastError());
+      throw IOException::format("could not set end of file in fopen '{}' {}", filename, GetLastError());
     }
   }
 
@@ -286,11 +286,11 @@ void* File::fopen(char const* filename, IOMode mode) {
     LARGE_INTEGER size;
     if (GetFileSizeEx(file, &size) == 0) {
       CloseHandle(file);
-      throw IOException::format("could not get file size in fopen '%s' %s", filename, GetLastError());
+      throw IOException::format("could not get file size in fopen '{}' {}", filename, GetLastError());
     }
     if (!SetFilePointerEx(file, size, NULL, 0)) {
       CloseHandle(file);
-      throw IOException::format("could not set file pointer in fopen '%s' %s", filename, GetLastError());
+      throw IOException::format("could not set file pointer in fopen '{}' {}", filename, GetLastError());
     }
   }
 
@@ -331,7 +331,7 @@ size_t File::fread(void* f, char* data, size_t len) {
   if (ret == 0) {
     auto err = GetLastError();
     if (err != ERROR_IO_PENDING)
-      throw IOException::format("read error %s", err);
+      throw IOException::format("read error {}", err);
   }
 
   return numRead;
@@ -348,7 +348,7 @@ size_t File::fwrite(void* f, char const* data, size_t len) {
   if (ret == 0) {
     auto err = GetLastError();
     if (err != ERROR_IO_PENDING)
-      throw IOException::format("write error %s", err);
+      throw IOException::format("write error {}", err);
   }
 
   return numWritten;
@@ -357,7 +357,7 @@ size_t File::fwrite(void* f, char const* data, size_t len) {
 void File::fsync(void* f) {
   HANDLE file = (HANDLE)f;
   if (FlushFileBuffers(file) == 0)
-    throw IOException::format("fsync error %s", GetLastError());
+    throw IOException::format("fsync error {}", GetLastError());
 }
 
 void File::fclose(void* f) {
@@ -369,7 +369,7 @@ StreamOffset File::fsize(void* f) {
   HANDLE file = (HANDLE)f;
   LARGE_INTEGER size;
   if (GetFileSizeEx(file, &size) == 0)
-    throw IOException::format("could not get file size in fsize %s", GetLastError());
+    throw IOException::format("could not get file size in fsize {}", GetLastError());
   return size.QuadPart;
 }
 
@@ -381,7 +381,7 @@ size_t File::pread(void* f, char* data, size_t len, StreamOffset position) {
   if (ret == 0) {
     auto err = GetLastError();
     if (err != ERROR_IO_PENDING)
-      throw IOException::format("pread error %s", err);
+      throw IOException::format("pread error {}", err);
   }
 
   return numRead;
@@ -395,7 +395,7 @@ size_t File::pwrite(void* f, char const* data, size_t len, StreamOffset position
   if (ret == 0) {
     auto err = GetLastError();
     if (err != ERROR_IO_PENDING)
-      throw IOException::format("pwrite error %s", err);
+      throw IOException::format("pwrite error {}", err);
   }
 
   return numWritten;

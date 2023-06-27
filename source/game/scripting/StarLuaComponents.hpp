@@ -184,7 +184,7 @@ Maybe<Ret> LuaBaseComponent::invoke(String const& name, V&&... args) {
       return {};
     return m_context->luaTo<LuaFunction>(move(method)).invoke<Ret>(forward<V>(args)...);
   } catch (LuaException const& e) {
-    Logger::error("Exception while invoking lua function '%s'. %s", name, outputException(e, true));
+    Logger::error("Exception while invoking lua function '{}'. {}", name, outputException(e, true));
     setError(printException(e, false));
     return {};
   }
@@ -198,7 +198,7 @@ Maybe<LuaValue> LuaBaseComponent::eval(String const& code) {
   try {
     return m_context->eval<Ret>(code);
   } catch (LuaException const& e) {
-    Logger::error("Exception while evaluating lua in context: %s", outputException(e, true));
+    Logger::error("Exception while evaluating lua in context: {}", outputException(e, true));
     return {};
   }
 }
@@ -316,7 +316,7 @@ Maybe<Json> LuaMessageHandlingComponent<Base>::handleMessage(
       return handler->template invoke<Json>(message, localMessage, luaUnpack(args));
     } catch (LuaException const& e) {
       Logger::error(
-          "Exception while invoking lua message handler for message '%s'. %s", message, outputException(e, true));
+          "Exception while invoking lua message handler for message '{}'. {}", message, outputException(e, true));
       Base::setError(String(printException(e, false)));
     }
   }

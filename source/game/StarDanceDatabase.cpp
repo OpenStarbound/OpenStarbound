@@ -11,7 +11,7 @@ DanceDatabase::DanceDatabase() {
       DancePtr dance = readDance(file);
       m_dances[dance->name] = dance;
     } catch (std::exception const& e) {
-      Logger::error("Error loading dance file %s: %s", file, outputException(e, true));
+      Logger::error("Error loading dance file {}: {}", file, outputException(e, true));
     }
   }
 }

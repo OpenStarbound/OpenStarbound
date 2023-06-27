@@ -388,7 +388,7 @@ String String::lookupTags(Lookup&& lookup) const {
   auto substrInto = [](std::string const& ref, size_t position, size_t n, std::string& result) {
     auto len = ref.size();
     if (position > len)
-      throw OutOfRangeException(strf("out of range in substrInto: %s", position));
+      throw OutOfRangeException(strf("out of range in substrInto: {}", position));
 
     auto it = ref.begin();
     std::advance(it, position);

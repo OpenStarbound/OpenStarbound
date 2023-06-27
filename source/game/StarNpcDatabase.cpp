@@ -25,12 +25,12 @@ NpcDatabase::NpcDatabase() {
       String typeName = config.getString("type");
 
       if (m_npcTypes.contains(typeName))
-        throw NpcException(strf("Repeat npc type name '%s'", typeName));
+        throw NpcException(strf("Repeat npc type name '{}'", typeName));
 
       m_npcTypes[typeName] = config;
 
     } catch (StarException const& e) {
-      throw NpcException(strf("Error loading npc type '%s'", file), e);
+      throw NpcException(strf("Error loading npc type '{}'", file), e);
     }
   }
 }

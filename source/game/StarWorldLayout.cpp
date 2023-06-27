@@ -540,7 +540,7 @@ void WorldLayout::addBiomeRegion(
 
   auto layerAndCell = findLayerAndCell(position[0], position[1]);
 
-  // Logger::info("inserting biome %s into region with layerIndex %s cellIndex %s", biomeName, layerAndCell.first, layerAndCell.second);
+  // Logger::info("inserting biome {} into region with layerIndex {} cellIndex {}", biomeName, layerAndCell.first, layerAndCell.second);
 
   auto targetLayer = m_layers[layerAndCell.first];
 
@@ -595,7 +595,7 @@ void WorldLayout::addBiomeRegion(
 
   WorldRegionPtr newRegionPtr = make_shared<WorldRegion>(newRegion);
 
-  // Logger::info("boundaries before region insertion are %s", targetLayer.boundaries);
+  // Logger::info("boundaries before region insertion are {}", targetLayer.boundaries);
 
   // handle case where insert x position is exactly at world wrap
   int insertX = position[0] > 0 ? position[0] : 1;
@@ -608,7 +608,7 @@ void WorldLayout::addBiomeRegion(
   targetLayer.boundaries.insertAt(layerAndCell.second, insertX - 1);
   targetLayer.cells.insertAt(layerAndCell.second, targetRegion);
 
-  // Logger::info("boundaries after region insertion are %s", targetLayer.boundaries);
+  // Logger::info("boundaries after region insertion are {}", targetLayer.boundaries);
 
   // expand the cell to the desired size
   auto expandResult = expandRegionInLayer(targetLayer, layerAndCell.second + 1, width);
@@ -656,11 +656,11 @@ pair<WorldLayout::WorldLayer, List<RectI>> WorldLayout::expandRegionInLayer(Worl
   // auto printRegionCells = [](List<RegionCell> const& cells) {
   //   String output = "";
   //   for (auto cell : cells)
-  //     output += strf("[%s %s]  ", cell.lBound, cell.rBound);
+  //     output += strf("[{} {}]  ", cell.lBound, cell.rBound);
   //   return output;
   // };
 
-  // Logger::info("expanding region in layer with cellIndex %s newWidth %s", cellIndex, newWidth);
+  // Logger::info("expanding region in layer with cellIndex {} newWidth {}", cellIndex, newWidth);
 
   List<RectI> regionRects;
 
@@ -669,7 +669,7 @@ pair<WorldLayout::WorldLayer, List<RectI>> WorldLayout::expandRegionInLayer(Worl
     return {targetLayer, regionRects};
   }
 
-  // Logger::info("boundaries before expansion are %s", targetLayer.boundaries);
+  // Logger::info("boundaries before expansion are {}", targetLayer.boundaries);
 
   // TODO: this is a messy way to get the top of the layer, but maybe it's ok
   int layerTop = (int)m_worldSize[1];
@@ -707,7 +707,7 @@ pair<WorldLayout::WorldLayer, List<RectI>> WorldLayout::expandRegionInLayer(Worl
       lastBoundary = nextBoundary;
     }
 
-    // Logger::info("before expansion:\ntarget cells are: %s\nother cells are: %s", printRegionCells(targetCells), printRegionCells(otherCells));
+    // Logger::info("before expansion:\ntarget cells are: {}\nother cells are: {}", printRegionCells(targetCells), printRegionCells(otherCells));
 
     starAssert(targetCells.size() > 0);
     starAssert(targetCells.size() < 3);
@@ -718,7 +718,7 @@ pair<WorldLayout::WorldLayer, List<RectI>> WorldLayout::expandRegionInLayer(Worl
       currentWidth += (regionCell.rBound - regionCell.lBound);
 
     if (currentWidth >= newWidth) {
-      Logger::info("New cell width (%s) must be greater than current cell width %s!", newWidth, currentWidth);
+      Logger::info("New cell width ({}) must be greater than current cell width {}!", newWidth, currentWidth);
       return {targetLayer, regionRects};
     }
 
@@ -734,7 +734,7 @@ pair<WorldLayout::WorldLayer, List<RectI>> WorldLayout::expandRegionInLayer(Worl
     targetCells[0].rBound += expandRight;
     targetCells[targetCells.size() - 1].lBound -= expandLeft;
 
-    // Logger::info("after expansion:\ntarget cells are: %s\nother cells are:  %s", printRegionCells(targetCells), printRegionCells(otherCells));
+    // Logger::info("after expansion:\ntarget cells are: {}\nother cells are:  {}", printRegionCells(targetCells), printRegionCells(otherCells));
 
     // split any target cells that now cross the world wrap
     List<RegionCell> wrappedTargetCells;
@@ -770,7 +770,7 @@ pair<WorldLayout::WorldLayer, List<RectI>> WorldLayout::expandRegionInLayer(Worl
       otherCells = newOtherCells;
     }
 
-    // Logger::info("after de-overlapping:\ntarget cells are: %s\nother cells are:  %s", printRegionCells(targetCells), printRegionCells(otherCells));
+    // Logger::info("after de-overlapping:\ntarget cells are: {}\nother cells are:  {}", printRegionCells(targetCells), printRegionCells(otherCells));
 
     // combine lists and sort
     otherCells.appendAll(targetCells);
@@ -786,7 +786,7 @@ pair<WorldLayout::WorldLayer, List<RectI>> WorldLayout::expandRegionInLayer(Worl
     }
   }
 
-  // Logger::info("boundaries after expansion are %s", targetLayer.boundaries);
+  // Logger::info("boundaries after expansion are {}", targetLayer.boundaries);
 
   return {targetLayer, regionRects};
 }

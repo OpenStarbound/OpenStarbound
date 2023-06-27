@@ -101,7 +101,7 @@ WorldStructure::WorldStructure(String const& configPath) {
         if (blockKey.anchor) {
           if (anchorPosition)
             throw WorldStructureException(
-                strf("Multiple anchor points defined in blockImage, first point is at %s, second at %s",
+                strf("Multiple anchor points defined in blockImage, first point is at {}, second at {}",
                     *anchorPosition,
                     pos));
           anchorPosition = pos;

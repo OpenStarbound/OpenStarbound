@@ -165,7 +165,7 @@ void CharCreationPane::createPlayer() {
       throw CharCreationException("The charPreview portrait has the wrong type.");
     }
   } catch (CharCreationException const& e) {
-    Logger::error("Character Preview portrait was not found in the json specification. %s", outputException(e, false));
+    Logger::error("Character Preview portrait was not found in the json specification. {}", outputException(e, false));
   }
 }
 
@@ -269,15 +269,15 @@ void CharCreationPane::changed() {
   fetchChild<LabelWidget>("labelPortrait")->setText(labels[8]);
   fetchChild<LabelWidget>("labelPersonality")->setText(labels[9]);
 
-  fetchChild<ButtonWidget>(strf("species.%s", m_speciesChoice))->check();
-  fetchChild<ButtonWidget>(strf("gender.%s", genderIdx))->check();
-  auto modeButton = fetchChild<ButtonWidget>(strf("mode.%s", m_modeChoice));
+  fetchChild<ButtonWidget>(strf("species.{}", m_speciesChoice))->check();
+  fetchChild<ButtonWidget>(strf("gender.{}", genderIdx))->check();
+  auto modeButton = fetchChild<ButtonWidget>(strf("mode.{}", m_modeChoice));
   modeButton->check();
   setLabel("labelMode", modeButton->data().getString("description", "fail"));
 
   // Update the gender images for the new species
   for (size_t i = 0; i < species.genderOptions.size(); i++)
-    fetchChild<ButtonWidget>(strf("gender.%s", i))->setOverlayImage(species.genderOptions[i].image);
+    fetchChild<ButtonWidget>(strf("gender.{}", i))->setOverlayImage(species.genderOptions[i].image);
 
   for (auto const& nameDefPair : root.speciesDatabase()->allSpecies()) {
     String name;
@@ -286,7 +286,7 @@ void CharCreationPane::changed() {
     // NOTE: Probably not hot enough to matter, but this contains and indexOf makes this loop
     // O(n^2).  This is less than ideal.
     if (m_speciesList.contains(name)) {
-      auto bw = fetchChild<ButtonWidget>(strf("species.%s", m_speciesList.indexOf(name)));
+      auto bw = fetchChild<ButtonWidget>(strf("species.{}", m_speciesList.indexOf(name)));
       if (bw)
         bw->setOverlayImage(def->options().genderOptions[genderIdx].characterImage);
     }

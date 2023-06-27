@@ -497,7 +497,7 @@ List<Drawable> Humanoid::render() {
   };
 
   auto backArmDrawable = [&](String const& frameSet, Directives const& directives) -> Drawable {
-    String image = strf("%s:%s", frameSet, backHand.backFrame);
+    String image = strf("{}:{}", frameSet, backHand.backFrame);
     Drawable backArm = Drawable::makeImage(move(image), 1.0f / TilePixels, true, backArmFrameOffset);
     backArm.imagePart().addDirectives(directives);
     backArm.rotate(backHand.angle, backArmFrameOffset + m_backArmRotationCenter + m_backArmOffset);
@@ -510,11 +510,11 @@ List<Drawable> Humanoid::render() {
       frameGroup = "runbackwards";
     String image;
     if (dance.isValid() && danceStep->bodyFrame)
-      image = strf("%s:%s", m_backArmorFrameset, *danceStep->bodyFrame);
+      image = strf("{}:{}", m_backArmorFrameset, *danceStep->bodyFrame);
     else if (m_state == Idle)
-      image = strf("%s:%s", m_backArmorFrameset, m_identity.personality.idle);
+      image = strf("{}:{}", m_backArmorFrameset, m_identity.personality.idle);
     else
-      image = strf("%s:%s.%s", m_backArmorFrameset, frameGroup, bodyStateSeq);
+      image = strf("{}:{}.{}", m_backArmorFrameset, frameGroup, bodyStateSeq);
 
     auto drawable = Drawable::makeImage(move(image), 1.0f / TilePixels, true, Vec2F());
     drawable.imagePart().addDirectives(getBackDirectives(), true);
@@ -542,13 +542,13 @@ List<Drawable> Humanoid::render() {
       String image;
       Vec2F position;
       if (dance.isValid() && danceStep->backArmFrame) {
-        image = strf("%s:%s", m_backArmFrameset, *danceStep->backArmFrame);
+        image = strf("{}:{}", m_backArmFrameset, *danceStep->backArmFrame);
         position = danceStep->backArmOffset / TilePixels;
       } else if (m_state == Idle) {
-        image = strf("%s:%s", m_backArmFrameset, m_identity.personality.armIdle);
+        image = strf("{}:{}", m_backArmFrameset, m_identity.personality.armIdle);
         position = m_identity.personality.armOffset / TilePixels;
       } else
-        image = strf("%s:%s.%s", m_backArmFrameset, frameBase(m_state), armStateSeq);
+        image = strf("{}:{}.{}", m_backArmFrameset, frameBase(m_state), armStateSeq);
       auto drawable = Drawable::makeImage(move(image), 1.0f / TilePixels, true, position);
       drawable.imagePart().addDirectives(getBodyDirectives(), true);
       if (dance.isValid())
@@ -559,13 +559,13 @@ List<Drawable> Humanoid::render() {
       String image;
       Vec2F position;
       if (dance.isValid() && danceStep->backArmFrame) {
-        image = strf("%s:%s", m_backSleeveFrameset, *danceStep->backArmFrame);
+        image = strf("{}:{}", m_backSleeveFrameset, *danceStep->backArmFrame);
         position = danceStep->backArmOffset / TilePixels;
       } else if (m_state == Idle) {
-        image = strf("%s:%s", m_backSleeveFrameset, m_identity.personality.armIdle);
+        image = strf("{}:{}", m_backSleeveFrameset, m_identity.personality.armIdle);
         position = m_identity.personality.armOffset / TilePixels;
       } else
-        image = strf("%s:%s.%s", m_backSleeveFrameset, frameBase(m_state), armStateSeq);
+        image = strf("{}:{}.{}", m_backSleeveFrameset, frameBase(m_state), armStateSeq);
       auto drawable = Drawable::makeImage(move(image), 1.0f / TilePixels, true, position);
       drawable.imagePart().addDirectives(getChestDirectives(), true);
       if (dance.isValid())
@@ -591,21 +591,21 @@ List<Drawable> Humanoid::render() {
     headPosition += m_headLayOffset;
 
   if (!m_headFrameset.empty() && !m_bodyHidden) {
-    String image = strf("%s:normal", m_headFrameset);
+    String image = strf("{}:normal", m_headFrameset);
     auto drawable = Drawable::makeImage(move(image), 1.0f / TilePixels, true, headPosition);
     drawable.imagePart().addDirectives(getBodyDirectives(), true);
     addDrawable(move(drawable), m_bodyFullbright);
   }
 
   if (!m_emoteFrameset.empty() && !m_bodyHidden) {
-    String image = strf("%s:%s.%s", m_emoteFrameset, emoteFrameBase(m_emoteState), emoteStateSeq);
+    String image = strf("{}:{}.{}", m_emoteFrameset, emoteFrameBase(m_emoteState), emoteStateSeq);
     auto drawable = Drawable::makeImage(move(image), 1.0f / TilePixels, true, headPosition);
     drawable.imagePart().addDirectives(getEmoteDirectives(), true);
     addDrawable(move(drawable), m_bodyFullbright);
   }
 
   if (!m_hairFrameset.empty() && !m_bodyHidden) {
-    String image = strf("%s:normal", m_hairFrameset);
+    String image = strf("{}:normal", m_hairFrameset);
     auto drawable = Drawable::makeImage(move(image), 1.0f / TilePixels, true, headPosition);
     drawable.imagePart().addDirectives(getHairDirectives(), true).addDirectives(getHelmetMaskDirectives(), true);
     addDrawable(move(drawable), m_bodyFullbright);
@@ -614,11 +614,11 @@ List<Drawable> Humanoid::render() {
   if (!m_bodyFrameset.empty() && !m_bodyHidden) {
     String image;
     if (dance.isValid() && danceStep->bodyFrame)
-      image = strf("%s:%s", m_bodyFrameset, *danceStep->bodyFrame);
+      image = strf("{}:{}", m_bodyFrameset, *danceStep->bodyFrame);
     else if (m_state == Idle)
-      image = strf("%s:%s", m_bodyFrameset, m_identity.personality.idle);
+      image = strf("{}:{}", m_bodyFrameset, m_identity.personality.idle);
     else
-      image = strf("%s:%s.%s", m_bodyFrameset, frameBase(m_state), bodyStateSeq);
+      image = strf("{}:{}.{}", m_bodyFrameset, frameBase(m_state), bodyStateSeq);
     auto drawable = Drawable::makeImage(move(image), 1.0f / TilePixels, true, {});
     drawable.imagePart().addDirectives(getBodyDirectives(), true);
     addDrawable(move(drawable), m_bodyFullbright);
@@ -627,11 +627,11 @@ List<Drawable> Humanoid::render() {
   if (!m_legsArmorFrameset.empty()) {
     String image;
     if (dance.isValid() && danceStep->bodyFrame)
-      image = strf("%s:%s", m_legsArmorFrameset, *danceStep->bodyFrame);
+      image = strf("{}:{}", m_legsArmorFrameset, *danceStep->bodyFrame);
     else if (m_state == Idle)
-      image = strf("%s:%s", m_legsArmorFrameset, m_identity.personality.idle);
+      image = strf("{}:{}", m_legsArmorFrameset, m_identity.personality.idle);
     else
-      image = strf("%s:%s.%s", m_legsArmorFrameset, frameBase(m_state), bodyStateSeq);
+      image = strf("{}:{}.{}", m_legsArmorFrameset, frameBase(m_state), bodyStateSeq);
     auto drawable = Drawable::makeImage(move(image), 1.0f / TilePixels, true, {});
     drawable.imagePart().addDirectives(getLegsDirectives(), true);
     addDrawable(move(drawable));
@@ -641,17 +641,17 @@ List<Drawable> Humanoid::render() {
     String image;
     Vec2F position;
     if (dance.isValid() && danceStep->bodyFrame)
-      image = strf("%s:%s", m_chestArmorFrameset, *danceStep->bodyFrame);
+      image = strf("{}:{}", m_chestArmorFrameset, *danceStep->bodyFrame);
     else if (m_state == Run)
-      image = strf("%s:run", m_chestArmorFrameset);
+      image = strf("{}:run", m_chestArmorFrameset);
     else if (m_state == Idle)
-      image = strf("%s:%s", m_chestArmorFrameset, m_identity.personality.idle);
+      image = strf("{}:{}", m_chestArmorFrameset, m_identity.personality.idle);
     else if (m_state == Duck)
-      image = strf("%s:duck", m_chestArmorFrameset);
+      image = strf("{}:duck", m_chestArmorFrameset);
     else if ((m_state == Swim) || (m_state == SwimIdle))
-      image = strf("%s:swim", m_chestArmorFrameset);
+      image = strf("{}:swim", m_chestArmorFrameset);
     else
-      image = strf("%s:chest.1", m_chestArmorFrameset);
+      image = strf("{}:chest.1", m_chestArmorFrameset);
     if (m_state != Duck)
       position[1] += bobYOffset;
     auto drawable = Drawable::makeImage(move(image), 1.0f / TilePixels, true, position);
@@ -660,28 +660,28 @@ List<Drawable> Humanoid::render() {
   }
 
   if (!m_facialHairFrameset.empty() && !m_bodyHidden) {
-    String image = strf("%s:normal", m_facialHairFrameset);
+    String image = strf("{}:normal", m_facialHairFrameset);
     auto drawable = Drawable::makeImage(move(image), 1.0f / TilePixels, true, headPosition);
     drawable.imagePart().addDirectives(getFacialHairDirectives(), true).addDirectives(getHelmetMaskDirectives(), true);
     addDrawable(move(drawable), m_bodyFullbright);
   }
 
   if (!m_facialMaskFrameset.empty() && !m_bodyHidden) {
-    String image = strf("%s:normal", m_facialMaskFrameset);
+    String image = strf("{}:normal", m_facialMaskFrameset);
     auto drawable = Drawable::makeImage(move(image), 1.0f / TilePixels, true, headPosition);
     drawable.imagePart().addDirectives(getFacialMaskDirectives(), true).addDirectives(getHelmetMaskDirectives(), true);
     addDrawable(move(drawable));
   }
 
   if (!m_headArmorFrameset.empty()) {
-    String image = strf("%s:normal", m_headArmorFrameset);
+    String image = strf("{}:normal", m_headArmorFrameset);
     auto drawable = Drawable::makeImage(move(image), 1.0f / TilePixels, true, headPosition);
     drawable.imagePart().addDirectives(getHeadDirectives(), true);
     addDrawable(move(drawable));
   }
 
   auto frontArmDrawable = [&](String const& frameSet, Directives const& directives) -> Drawable {
-    String image = strf("%s:%s", frameSet, frontHand.frontFrame);
+    String image = strf("{}:{}", frameSet, frontHand.frontFrame);
     Drawable frontArm = Drawable::makeImage(image, 1.0f / TilePixels, true, frontArmFrameOffset);
     frontArm.imagePart().addDirectives(directives);
     frontArm.rotate(frontHand.angle, frontArmFrameOffset + m_frontArmRotationCenter);
@@ -710,13 +710,13 @@ List<Drawable> Humanoid::render() {
       String image;
       Vec2F position;
       if (dance.isValid() && danceStep->frontArmFrame) {
-        image = strf("%s:%s", m_frontArmFrameset, *danceStep->frontArmFrame);
+        image = strf("{}:{}", m_frontArmFrameset, *danceStep->frontArmFrame);
         position = danceStep->frontArmOffset / TilePixels;
       } else if (m_state == Idle) {
-        image = strf("%s:%s", m_frontArmFrameset, m_identity.personality.armIdle);
+        image = strf("{}:{}", m_frontArmFrameset, m_identity.personality.armIdle);
         position = m_identity.personality.armOffset / TilePixels;
       } else
-        image = strf("%s:%s.%s", m_frontArmFrameset, frameBase(m_state), armStateSeq);
+        image = strf("{}:{}.{}", m_frontArmFrameset, frameBase(m_state), armStateSeq);
       auto drawable = Drawable::makeImage(move(image), 1.0f / TilePixels, true, position);
       drawable.imagePart().addDirectives(getBodyDirectives(), true);
       if (dance.isValid())
@@ -728,13 +728,13 @@ List<Drawable> Humanoid::render() {
       String image;
       Vec2F position;
       if (dance.isValid() && danceStep->frontArmFrame) {
-        image = strf("%s:%s", m_frontSleeveFrameset, *danceStep->frontArmFrame);
+        image = strf("{}:{}", m_frontSleeveFrameset, *danceStep->frontArmFrame);
         position = danceStep->frontArmOffset / TilePixels;
       } else if (m_state == Idle) {
-        image = strf("%s:%s", m_frontSleeveFrameset, m_identity.personality.armIdle);
+        image = strf("{}:{}", m_frontSleeveFrameset, m_identity.personality.armIdle);
         position = m_identity.personality.armOffset / TilePixels;
       } else
-        image = strf("%s:%s.%s", m_frontSleeveFrameset, frameBase(m_state), armStateSeq);
+        image = strf("{}:{}.{}", m_frontSleeveFrameset, frameBase(m_state), armStateSeq);
       auto drawable = Drawable::makeImage(image, 1.0f / TilePixels, true, position);
       drawable.imagePart().addDirectives(getChestDirectives(), true);
       if (dance.isValid())
@@ -744,7 +744,7 @@ List<Drawable> Humanoid::render() {
   }
 
   if (m_drawVaporTrail) {
-    auto image = strf("%s:%d",
+    auto image = strf("{}:{}",
         m_vaporTrailFrameset,
         m_timing.genericSeq(m_animationTimer, m_vaporTrailCycle, m_vaporTrailFrames, true));
     addDrawable(Drawable::makeImage(AssetPath::split(image), 1.0f / TilePixels, true, {}));
@@ -786,20 +786,20 @@ List<Drawable> Humanoid::renderPortrait(PortraitMode mode) const {
 
   if (mode != PortraitMode::Head) {
     if (!m_backArmFrameset.empty()) {
-      String image = strf("%s:%s", m_backArmFrameset, personality.armIdle);
+      String image = strf("{}:{}", m_backArmFrameset, personality.armIdle);
       Drawable drawable = Drawable::makeImage(move(image), 1.0f, true, personality.armOffset);
       drawable.imagePart().addDirectives(getBodyDirectives(), true);
       addDrawable(move(drawable));
     }
     if (dressed && !m_backSleeveFrameset.empty()) {
-      String image = strf("%s:%s", m_backSleeveFrameset, personality.armIdle);
+      String image = strf("{}:{}", m_backSleeveFrameset, personality.armIdle);
       Drawable drawable = Drawable::makeImage(move(image), 1.0f, true, personality.armOffset);
       drawable.imagePart().addDirectives(getChestDirectives(), true);
       addDrawable(move(drawable));
     }
     if (mode != PortraitMode::Bust) {
       if (dressed && !m_backArmorFrameset.empty()) {
-        String image = strf("%s:%s", m_backArmorFrameset, personality.idle);
+        String image = strf("{}:{}", m_backArmorFrameset, personality.idle);
         Drawable drawable = Drawable::makeImage(move(image), 1.0f, true, {});
         drawable.imagePart().addDirectives(getBackDirectives(), true);
         addDrawable(move(drawable));
@@ -808,28 +808,28 @@ List<Drawable> Humanoid::renderPortrait(PortraitMode mode) const {
   }
 
   if (!m_headFrameset.empty()) {
-    String image = strf("%s:normal", m_headFrameset);
+    String image = strf("{}:normal", m_headFrameset);
     Drawable drawable = Drawable::makeImage(move(image), 1.0f, true, personality.headOffset);
     drawable.imagePart().addDirectives(getBodyDirectives(), true);
     addDrawable(move(drawable));
   }
 
   if (!m_emoteFrameset.empty()) {
-    String image = strf("%s:%s.%s", m_emoteFrameset, emoteFrameBase(m_emoteState), emoteStateSeq);
+    String image = strf("{}:{}.{}", m_emoteFrameset, emoteFrameBase(m_emoteState), emoteStateSeq);
     Drawable drawable = Drawable::makeImage(move(image), 1.0f, true, personality.headOffset);
     drawable.imagePart().addDirectives(getEmoteDirectives(), true);
     addDrawable(move(drawable));
   }
 
   if (!m_hairFrameset.empty()) {
-    String image = strf("%s:normal", m_hairFrameset);
+    String image = strf("{}:normal", m_hairFrameset);
     Drawable drawable = Drawable::makeImage(move(image), 1.0f, true, personality.headOffset);
     drawable.imagePart().addDirectives(getHairDirectives(), true).addDirectives(helmetMaskDirective, true);
     addDrawable(move(drawable));
   }
 
   if (!m_bodyFrameset.empty()) {
-    String image = strf("%s:%s", m_bodyFrameset, personality.idle);
+    String image = strf("{}:{}", m_bodyFrameset, personality.idle);
     Drawable drawable = Drawable::makeImage(move(image), 1.0f, true, {});
     drawable.imagePart().addDirectives(getBodyDirectives(), true);
     addDrawable(move(drawable));
@@ -837,14 +837,14 @@ List<Drawable> Humanoid::renderPortrait(PortraitMode mode) const {
 
   if (mode != PortraitMode::Head) {
     if (dressed && !m_legsArmorFrameset.empty()) {
-      String image = strf("%s:%s", m_legsArmorFrameset, personality.idle);
+      String image = strf("{}:{}", m_legsArmorFrameset, personality.idle);
       Drawable drawable = Drawable::makeImage(move(image), 1.0f, true, {});
       drawable.imagePart().addDirectives(getLegsDirectives(), true);
       addDrawable(move(drawable));
     }
 
     if (dressed && !m_chestArmorFrameset.empty()) {
-      String image = strf("%s:%s", m_chestArmorFrameset, personality.idle);
+      String image = strf("{}:{}", m_chestArmorFrameset, personality.idle);
       Drawable drawable = Drawable::makeImage(move(image), 1.0f, true, {});
       drawable.imagePart().addDirectives(getChestDirectives(), true);
       addDrawable(move(drawable));
@@ -852,21 +852,21 @@ List<Drawable> Humanoid::renderPortrait(PortraitMode mode) const {
   }
 
   if (!m_facialHairFrameset.empty()) {
-    String image = strf("%s:normal", m_facialHairFrameset);
+    String image = strf("{}:normal", m_facialHairFrameset);
     Drawable drawable = Drawable::makeImage(move(image), 1.0f, true, personality.headOffset);
     drawable.imagePart().addDirectives(getFacialHairDirectives(), true).addDirectives(helmetMaskDirective, true);
     addDrawable(move(drawable));
   }
 
   if (!m_facialMaskFrameset.empty()) {
-    String image = strf("%s:normal", m_facialMaskFrameset);
+    String image = strf("{}:normal", m_facialMaskFrameset);
     Drawable drawable = Drawable::makeImage(move(image), 1.0f, true, personality.headOffset);
     drawable.imagePart().addDirectives(getFacialMaskDirectives(), true).addDirectives(helmetMaskDirective, true);
     addDrawable(move(drawable));
   }
 
   if (dressed && !m_headArmorFrameset.empty()) {
-    String image = strf("%s:normal", m_headArmorFrameset);
+    String image = strf("{}:normal", m_headArmorFrameset);
     Drawable drawable = Drawable::makeImage(move(image), 1.0f, true, personality.headOffset);
     drawable.imagePart().addDirectives(getHeadDirectives(), true);
     addDrawable(move(drawable));
@@ -874,14 +874,14 @@ List<Drawable> Humanoid::renderPortrait(PortraitMode mode) const {
 
   if (mode != PortraitMode::Head) {
     if (!m_frontArmFrameset.empty()) {
-      String image = strf("%s:%s", m_frontArmFrameset, personality.armIdle);
+      String image = strf("{}:{}", m_frontArmFrameset, personality.armIdle);
       Drawable drawable = Drawable::makeImage(move(image), 1.0f, true, personality.armOffset);
       drawable.imagePart().addDirectives(getBodyDirectives(), true);
       addDrawable(move(drawable));
     }
 
     if (dressed && !m_frontSleeveFrameset.empty()) {
-      String image = strf("%s:%s", m_frontSleeveFrameset, personality.armIdle);
+      String image = strf("{}:{}", m_frontSleeveFrameset, personality.armIdle);
       Drawable drawable = Drawable::makeImage(move(image), 1.0f, true, personality.armOffset);
       drawable.imagePart().addDirectives(getChestDirectives(), true);
       addDrawable(move(drawable));
@@ -1025,7 +1025,7 @@ String Humanoid::frameBase(State state) const {
       return "lay";
 
     default:
-      throw StarException(strf("No such state '%s'", StateNames.getRight(state)));
+      throw StarException(strf("No such state '{}'", StateNames.getRight(state)));
   }
 }
 
@@ -1061,30 +1061,30 @@ String Humanoid::emoteFrameBase(HumanoidEmote state) const {
       return "sleep";
 
     default:
-      throw StarException(strf("No such emote state '%s'", HumanoidEmoteNames.getRight(state)));
+      throw StarException(strf("No such emote state '{}'", HumanoidEmoteNames.getRight(state)));
   }
 }
 
 String Humanoid::getHeadFromIdentity() const {
-  return strf("/humanoid/%s/%shead.png",
+  return strf("/humanoid/{}/{}head.png",
       m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
       GenderNames.getRight(m_identity.gender));
 }
 
 String Humanoid::getBodyFromIdentity() const {
-  return strf("/humanoid/%s/%sbody.png",
+  return strf("/humanoid/{}/{}body.png",
       m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
       GenderNames.getRight(m_identity.gender));
 }
 
 String Humanoid::getFacialEmotesFromIdentity() const {
-  return strf("/humanoid/%s/emote.png", m_identity.imagePath ? *m_identity.imagePath : m_identity.species);
+  return strf("/humanoid/{}/emote.png", m_identity.imagePath ? *m_identity.imagePath : m_identity.species);
 }
 
 String Humanoid::getHairFromIdentity() const {
   if (m_identity.hairType.empty())
     return "";
-  return strf("/humanoid/%s/%s/%s.png",
+  return strf("/humanoid/{}/{}/{}.png",
       m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
       m_identity.hairGroup,
       m_identity.hairType);
@@ -1093,7 +1093,7 @@ String Humanoid::getHairFromIdentity() const {
 String Humanoid::getFacialHairFromIdentity() const {
   if (m_identity.facialHairType.empty())
     return "";
-  return strf("/humanoid/%s/%s/%s.png",
+  return strf("/humanoid/{}/{}/{}.png",
       m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
       m_identity.facialHairGroup,
       m_identity.facialHairType);
@@ -1102,18 +1102,18 @@ String Humanoid::getFacialHairFromIdentity() const {
 String Humanoid::getFacialMaskFromIdentity() const {
   if (m_identity.facialMaskType.empty())
     return "";
-  return strf("/humanoid/%s/%s/%s.png",
+  return strf("/humanoid/{}/{}/{}.png",
       m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
       m_identity.facialMaskGroup,
       m_identity.facialMaskType);
 }
 
 String Humanoid::getBackArmFromIdentity() const {
-  return strf("/humanoid/%s/backarm.png", m_identity.imagePath ? *m_identity.imagePath : m_identity.species);
+  return strf("/humanoid/{}/backarm.png", m_identity.imagePath ? *m_identity.imagePath : m_identity.species);
 }
 
 String Humanoid::getFrontArmFromIdentity() const {
-  return strf("/humanoid/%s/frontarm.png", m_identity.imagePath ? *m_identity.imagePath : m_identity.species);
+  return strf("/humanoid/{}/frontarm.png", m_identity.imagePath ? *m_identity.imagePath : m_identity.species);
 }
 
 String Humanoid::getVaporTrailFrameset() const {

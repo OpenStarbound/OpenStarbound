@@ -239,7 +239,7 @@ List<ObjectOrientationPtr> ObjectDatabase::parseOrientations(String const& path,
         for (auto space : orientation->spaces)
           orientation->anchors.append({TileLayer::Background, space, tilled, soil, anchorMaterial});
       } else {
-        throw ObjectException(strf("Unknown anchor type: %s", anchorType));
+        throw ObjectException(strf("Unknown anchor type: {}", anchorType));
       }
     }
 
@@ -315,11 +315,11 @@ ObjectDatabase::ObjectDatabase() {
     try {
       String name = assets->json(file).getString("objectName");
       if (m_paths.contains(name))
-        Logger::error("Object %s defined twice, second time from %s", name, file);
+        Logger::error("Object {} defined twice, second time from {}", name, file);
       else
         m_paths[name] = file;
     } catch (std::exception const& e) {
-      Logger::error("Error loading object file %s: %s", file, outputException(e, true));
+      Logger::error("Error loading object file {}: {}", file, outputException(e, true));
     }
   }
 }
@@ -345,7 +345,7 @@ ObjectConfigPtr ObjectDatabase::getConfig(String const& objectName) const {
       [this](String const& objectName) -> ObjectConfigPtr {
         if (auto path = m_paths.maybe(objectName))
           return readConfig(*path);
-        throw ObjectException(strf("No such object named '%s'", objectName));
+        throw ObjectException(strf("No such object named '{}'", objectName));
       });
 }
 
@@ -369,7 +369,7 @@ ObjectPtr ObjectDatabase::createObject(String const& objectName, Json const& par
   } else if (config->type == "physics") {
     return make_shared<PhysicsObject>(config, parameters);
   } else {
-    throw ObjectException(strf("Unknown objectType '%s' constructing object '%s'", config->type, objectName));
+    throw ObjectException(strf("Unknown objectType '{}' constructing object '{}'", config->type, objectName));
   }
 }
 
@@ -545,7 +545,7 @@ ObjectConfigPtr ObjectDatabase::readConfig(String const& path) {
 
     return objectConfig;
   } catch (std::exception const& e) {
-    throw ObjectException::format("Error loading object '%s': %s", path, outputException(e, false));
+    throw ObjectException::format("Error loading object '{}': {}", path, outputException(e, false));
   }
 }
 

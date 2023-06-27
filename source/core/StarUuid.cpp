@@ -9,7 +9,7 @@ Uuid::Uuid() : Uuid(Random::randBytes(UuidSize)) {}
 
 Uuid::Uuid(ByteArray const& bytes) {
   if (bytes.size() != UuidSize)
-    throw UuidException(strf("Size mismatch in reading Uuid from ByteArray: %s vs %s", bytes.size(), UuidSize));
+    throw UuidException(strf("Size mismatch in reading Uuid from ByteArray: {} vs {}", bytes.size(), UuidSize));
 
   bytes.copyTo(m_data.ptr(), UuidSize);
 }

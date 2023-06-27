@@ -356,7 +356,7 @@ AssetsConstPtr Root::assets() {
       assetDirectories.appendAll(m_modDirectories);
 
       auto assets = make_shared<Assets>(m_settings.assetsSettings, scanForAssetSources(assetDirectories));
-      Logger::info("Assets digest is %s", hexEncode(assets->digest()));
+      Logger::info("Assets digest is {}", hexEncode(assets->digest()));
       return assets;
     });
 }
@@ -380,7 +380,7 @@ ConfigurationPtr Root::configuration() {
 
             currentConfig = config;
           } catch (std::exception const& e) {
-            Logger::warn("Root: Failed to load user configuration file %s, resetting user config: %s", *m_runtimeConfigFile, outputException(e, false));
+            Logger::warn("Root: Failed to load user configuration file {}, resetting user config: {}", *m_runtimeConfigFile, outputException(e, false));
             currentConfig = m_settings.defaultConfiguration;
             File::rename(*m_runtimeConfigFile, *m_runtimeConfigFile + ".old");
           }
@@ -562,23 +562,23 @@ StringList Root::scanForAssetSources(StringList const& directories) {
 
   for (auto const& directory : directories) {
     if (!File::isDirectory(directory)) {
-      Logger::info("Root: Skipping asset directory '%s', directory not found", directory);
+      Logger::info("Root: Skipping asset directory '{}', directory not found", directory);
       continue;
     }
 
-    Logger::info("Root: Scanning for asset sources in directory '%s'", directory);
+    Logger::info("Root: Scanning for asset sources in directory '{}'", directory);
 
     for (auto entry : File::dirList(directory, true).sorted()) {
       AssetSourcePtr source;
       auto fileName = File::relativeTo(directory, entry.first);
       if (entry.first.beginsWith(".") || entry.first.beginsWith("_"))
-        Logger::info("Root: Skipping hidden '%s' in asset directory", entry.first);
+        Logger::info("Root: Skipping hidden '{}' in asset directory", entry.first);
       else if (entry.second)
         source = make_shared<DirectoryAssetSource>(fileName);
       else if (entry.first.endsWith(".pak"))
         source = make_shared<PackedAssetSource>(fileName);
       else
-        Logger::warn("Root: Unrecognized file in asset directory '%s', skipping", entry.first);
+        Logger::warn("Root: Unrecognized file in asset directory '{}', skipping", entry.first);
 
       if (!source)
         continue;
@@ -595,11 +595,11 @@ StringList Root::scanForAssetSources(StringList const& directories) {
       if (assetSource->name) {
         if (auto oldAssetSource = namedSources.value(*assetSource->name)) {
           if (oldAssetSource->priority <= assetSource->priority) {
-            Logger::warn("Root: Overriding duplicate asset source '%s' named '%s' with higher or equal priority source '%s",
+            Logger::warn("Root: Overriding duplicate asset source '{}' named '{}' with higher or equal priority source '{}",
                 oldAssetSource->path, *assetSource->name, assetSource->path);
             *oldAssetSource = *assetSource;
           } else {
-            Logger::warn("Root: Skipping duplicate asset source '%s' named '%s', previous source '%s' has higher priority",
+            Logger::warn("Root: Skipping duplicate asset source '{}' named '{}', previous source '{}' has higher priority",
                 assetSource->path, *assetSource->name, oldAssetSource->priority);
           }
         } else {
@@ -644,7 +644,7 @@ StringList Root::scanForAssetSources(StringList const& directories) {
       if (auto requirement = namedSources.ptr(requirementName))
         dependencySortVisit(*requirement);
       else
-        throw StarException(strf("Asset source '%s' is missing dependency '%s'", *source->name, requirementName));
+        throw StarException(strf("Asset source '{}' is missing dependency '{}'", *source->name, requirementName));
     }
 
     workingSet.remove(source);
@@ -658,9 +658,9 @@ StringList Root::scanForAssetSources(StringList const& directories) {
   StringList sourcePaths;
   for (auto const& source : dependencySortedSources) {
     if (source->name)
-      Logger::info("Root: Detected asset source named '%s' at '%s'", *source->name, source->path);
+      Logger::info("Root: Detected asset source named '{}' at '{}'", *source->name, source->path);
     else
-      Logger::info("Root: Detected unnamed asset source at '%s'", source->path);
+      Logger::info("Root: Detected unnamed asset source at '{}'", source->path);
     sourcePaths.append(source->path);
   }
 
@@ -672,7 +672,7 @@ void Root::writeConfig() {
     auto currentConfig = m_configuration->currentConfiguration();
     if (m_lastRuntimeConfig != currentConfig) {
       if (m_runtimeConfigFile) {
-        Logger::info("Root: Writing runtime configuration to '%s'", *m_runtimeConfigFile);
+        Logger::info("Root: Writing runtime configuration to '{}'", *m_runtimeConfigFile);
         File::overwriteFileWithRename(currentConfig.printJson(2, true), *m_runtimeConfigFile);
       }
       m_lastRuntimeConfig = currentConfig;
@@ -693,7 +693,7 @@ shared_ptr<T> Root::loadMemberFunction(shared_ptr<T>& ptr, Mutex& mutex, char co
   if (!ptr) {
     auto startSeconds = Time::monotonicTime();
     ptr = loadFunction();
-    Logger::info("Root: Loaded %s in %s seconds", name, Time::monotonicTime() - startSeconds);
+    Logger::info("Root: Loaded {} in {} seconds", name, Time::monotonicTime() - startSeconds);
   }
   return ptr;
 }

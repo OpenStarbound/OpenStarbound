@@ -4,8 +4,8 @@
 namespace Star {
 
 void VersionOptionParser::printVersion(std::ostream& os) {
-  format(os, "Starbound Version %s (%s)\n", StarVersionString, StarArchitectureString);
-  format(os, "Source Identifier - %s\n", StarSourceIdentifierString);
+  format(os, "Starbound Version {} ({})\n", StarVersionString, StarArchitectureString);
+  format(os, "Source Identifier - {}\n", StarSourceIdentifierString);
 }
 
 VersionOptionParser::VersionOptionParser() {
@@ -29,7 +29,7 @@ VersionOptionParser::Options VersionOptionParser::parseOrDie(StringList const& c
 
   if (!errors.empty()) {
     for (auto const& err : errors)
-      coutf("Error: %s\n", err);
+      coutf("Error: {}\n", err);
     coutf("\n");
     printHelp(std::cout);
     std::exit(1);

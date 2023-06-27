@@ -43,26 +43,26 @@ PcPlatformServicesState::PcPlatformServicesState()
         discord::User user;
         auto res = discordCore->UserManager().GetCurrentUser(&user);
         if (res != discord::Result::Ok)
-          Logger::error("Could not get current discord user. (err %s)", (int)res);
+          Logger::error("Could not get current discord user. (err {})", (int)res);
         else
           discordCurrentUser = user;
       });
 
   } else {
-    Logger::error("Failed to instantiate discord core (err %s)", (int)res);
+    Logger::error("Failed to instantiate discord core (err {})", (int)res);
   }
 
   if (discordAvailable) {
     MutexLocker locker(discordMutex);
     discordCore->SetLogHook(discord::LogLevel::Info, [](discord::LogLevel level, char const* msg) {
       if (level == discord::LogLevel::Debug)
-        Logger::debug("[DISCORD]: %s", msg);
+        Logger::debug("[DISCORD]: {}", msg);
       else if (level == discord::LogLevel::Error)
-        Logger::debug("[DISCORD]: %s", msg);
+        Logger::debug("[DISCORD]: {}", msg);
       else if (level == discord::LogLevel::Info)
-        Logger::info("[DISCORD]: %s", msg);
+        Logger::info("[DISCORD]: {}", msg);
       else if (level == discord::LogLevel::Warn)
-        Logger::warn("[DISCORD]: %s", msg);
+        Logger::warn("[DISCORD]: {}", msg);
     });
     discordEventShutdown = false;
     discordEventThread = Thread::invoke("PcPlatformServices::discordEventThread", [this]() {
@@ -117,10 +117,10 @@ PcPlatformServicesUPtr PcPlatformServices::create(String const& path, StringList
     auto p2pNetworkingService = make_shared<PcP2PNetworkingService>(services->m_state);
     for (auto& argument : platformArguments) {
       if (argument.beginsWith("+platform:connect:")) {
-        Logger::info("PC platform services joining from command line argument '%s'", argument);
+        Logger::info("PC platform services joining from command line argument '{}'", argument);
         p2pNetworkingService->addPendingJoin(move(argument));
       } else {
-        throw ApplicationException::format("Unrecognized PC platform services command line argument '%s'", argument);
+        throw ApplicationException::format("Unrecognized PC platform services command line argument '{}'", argument);
       }
     }
 
@@ -138,7 +138,7 @@ PcPlatformServicesUPtr PcPlatformServices::create(String const& path, StringList
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
   MutexLocker discordLocker(services->m_state->discordMutex);
   if (services->m_state->discordAvailable) {
-    Logger::debug("Registering starbound to discord at path: %s", path);
+    Logger::debug("Registering starbound to discord at path: {}", path);
     services->m_state->discordCore->ActivityManager().RegisterCommand(path.utf8Ptr());
   }
 #endif

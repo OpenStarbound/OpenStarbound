@@ -61,7 +61,7 @@ std::pair<EntityId, EntityId> connectionEntitySpace(ConnectionId connectionId) {
     EntityId endIdSpace = beginIdSpace + 65535;
     return {beginIdSpace, endIdSpace};
   } else {
-    throw StarException::format("Invalid connection id in clientEntitySpace(%s)", connectionId);
+    throw StarException::format("Invalid connection id in clientEntitySpace({})", connectionId);
   }
 }
 

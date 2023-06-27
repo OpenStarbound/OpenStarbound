@@ -212,7 +212,7 @@ ItemPtr ItemDatabase::item(ItemDescriptor descriptor, Maybe<float> level, Maybe<
   try {
     item = createItem(m_items.get(descriptor.name()).type, itemConfig(descriptor.name(), descriptor.parameters(), level, seed));
   } catch (std::exception const& e) {
-    Logger::error("Could not instantiate item '%s'. %s", descriptor, outputException(e, false));
+    Logger::error("Could not instantiate item '{}'. {}", descriptor, outputException(e, false));
     item = createItem(m_items.get("perfectlygenericitem").type, itemConfig("perfectlygenericitem", {}, {}));
   }
   item->setCount(descriptor.count());
@@ -350,7 +350,7 @@ ItemRecipe ItemDatabase::parseRecipe(Json const& config) const {
     res.matchInputParameters = config.getBool("matchInputParameters", false);
 
   } catch (JsonException const& e) {
-    throw RecipeException(strf("Recipe missing required ingredient: %s", outputException(e, false)));
+    throw RecipeException(strf("Recipe missing required ingredient: {}", outputException(e, false)));
   }
 
   return res;
@@ -476,14 +476,14 @@ ItemPtr ItemDatabase::createItem(ItemType type, ItemConfig const& config) {
   } else if (type == ItemType::AugmentItem) {
     return make_shared<AugmentItem>(config.config, config.directory, config.parameters);
   } else {
-    throw ItemException(strf("Unknown item type %s", (int)type));
+    throw ItemException(strf("Unknown item type {}", (int)type));
   }
 }
 
 ItemDatabase::ItemData const& ItemDatabase::itemData(String const& name) const {
   if (auto p = m_items.ptr(name))
     return *p;
-  throw ItemException::format("No such item '%s'", name);
+  throw ItemException::format("No such item '{}'", name);
 }
 
 ItemRecipe ItemDatabase::makeRecipe(List<ItemDescriptor> inputs, ItemDescriptor output, float duration, StringSet groups) const {
@@ -515,11 +515,11 @@ void ItemDatabase::addItemSet(ItemType type, String const& extension) {
 
       data.agingScripts = data.agingScripts.transformed(bind(&AssetPath::relativeTo, data.directory, _1));
     } catch (std::exception const& e) {
-      throw ItemException(strf("Could not load item asset %s", file), e);
+      throw ItemException(strf("Could not load item asset {}", file), e);
     }
 
     if (m_items.contains(data.name))
-      throw ItemException(strf("Duplicate item name '%s' found", data.name));
+      throw ItemException(strf("Duplicate item name '{}' found", data.name));
 
     m_items[data.name] = data;
   }
@@ -538,7 +538,7 @@ void ItemDatabase::addObjectDropItem(String const& objectPath, Json const& objec
   JsonObject customConfig = objectConfig.toObject();
   if (!customConfig.contains("inventoryIcon")) {
     customConfig["inventoryIcon"] = assets->json("/objects/defaultParameters.config:missingIcon");
-    Logger::warn(strf("Missing inventoryIcon for %s, using default", data.name).c_str());
+    Logger::warn(strf("Missing inventoryIcon for {}, using default", data.name).c_str());
   }
   customConfig["itemName"] = data.name;
   if (!customConfig.contains("tooltipKind"))
@@ -555,7 +555,7 @@ void ItemDatabase::addObjectDropItem(String const& objectPath, Json const& objec
   data.customConfig = move(customConfig);
 
   if (m_items.contains(data.name))
-    throw ItemException(strf("Object drop '%s' shares name with existing item", data.name));
+    throw ItemException(strf("Object drop '{}' shares name with existing item", data.name));
 
   m_items[data.name] = move(data);
 }
@@ -617,7 +617,7 @@ void ItemDatabase::scanRecipes() {
     try {
       m_recipes.add(parseRecipe(assets->json(file)));
     } catch (std::exception const& e) {
-      Logger::error("Could not load recipe %s: %s", file, outputException(e, false));
+      Logger::error("Could not load recipe {}: {}", file, outputException(e, false));
     }
   }
 }
@@ -629,7 +629,7 @@ void ItemDatabase::addBlueprints() {
     auto baseDesc = recipe.output;
     auto baseItem = item(baseDesc);
 
-    String blueprintName = strf("%s-recipe", baseItem->name());
+    String blueprintName = strf("{}-recipe", baseItem->name());
     if (m_items.contains(blueprintName))
       continue;
 
@@ -666,7 +666,7 @@ void ItemDatabase::addBlueprints() {
 
       m_items[blueprintData.name] = blueprintData;
     } catch (std::exception const& e) {
-      Logger::error("Could not create blueprint item from recipe: %s", outputException(e, false));
+      Logger::error("Could not create blueprint item from recipe: {}", outputException(e, false));
     }
   }
 }
@@ -677,9 +677,9 @@ void ItemDatabase::addCodexes() {
 
   auto codexDatabase = Root::singleton().codexDatabase();
   for (auto const& codexPair : codexDatabase->codexes()) {
-    String codexItemName = strf("%s-codex", codexPair.second->id());
+    String codexItemName = strf("{}-codex", codexPair.second->id());
     if (m_items.contains(codexItemName)) {
-      Logger::warn("Couldn't create codex item %s because an item with that name is already defined", codexItemName);
+      Logger::warn("Couldn't create codex item {} because an item with that name is already defined", codexItemName);
       continue;
     }
 
@@ -701,7 +701,7 @@ void ItemDatabase::addCodexes() {
 
       m_items[codexItemName] = codexItemData;
     } catch (std::exception const& e) {
-      Logger::error("Could not create item for codex %s: %s", codexPair.second->id(), outputException(e, false));
+      Logger::error("Could not create item for codex {}: {}", codexPair.second->id(), outputException(e, false));
     }
   }
 }

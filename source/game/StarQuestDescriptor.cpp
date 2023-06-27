@@ -81,7 +81,7 @@ QuestParamDetail questParamDetailFromJson(Json const& json) {
     return {};
 
   } else {
-    throw StarException::format("Invalid QuestParam type %s", type);
+    throw StarException::format("Invalid QuestParam type {}", type);
   }
 }
 
@@ -284,7 +284,7 @@ String questParamText(QuestParam const& parameter) {
   } else if (parameter.detail.is<QuestItemList>()) {
     QuestItemList itemList = parameter.detail.get<QuestItemList>();
     StringList itemStrings = itemList.transformed([&itemDatabase](ItemDescriptor const& itemDesc) -> String {
-      return strf("%s %s", itemDesc.count(), itemDatabase->item(itemDesc)->friendlyName());
+      return strf("{} {}", itemDesc.count(), itemDatabase->item(itemDesc)->friendlyName());
     });
     return itemStrings.join(", ");
 

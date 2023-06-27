@@ -39,7 +39,7 @@ bool LockFile::lock(int64_t timeout) {
   auto doFLock = [](String const& filename, bool block) -> shared_ptr<int> {
     int fd = open(filename.utf8Ptr(), O_RDONLY | O_CREAT, 0644);
     if (fd < 0)
-      throw StarException(strf("Could not open lock file %s, %s\n", filename, strerror(errno)));
+      throw StarException(strf("Could not open lock file {}, {}\n", filename, strerror(errno)));
 
     int ret;
     if (block)
@@ -50,7 +50,7 @@ bool LockFile::lock(int64_t timeout) {
     if (ret != 0) {
       close(fd);
       if (errno != EWOULDBLOCK)
-        throw StarException(strf("Could not lock file %s, %s\n", filename, strerror(errno)));
+        throw StarException(strf("Could not lock file {}, {}\n", filename, strerror(errno)));
       return {};
     }
 

@@ -102,7 +102,7 @@ Player::Player(PlayerConfigPtr config, Uuid uuid) {
   m_techs = make_shared<PlayerTech>();
   m_log = make_shared<PlayerLog>();
 
-  m_description = strf("This %s seems to have nothing to say for %sself.",
+  m_description = strf("This {} seems to have nothing to say for {}self.",
       m_identity.gender == Gender::Male ? "guy" : "gal",
       m_identity.gender == Gender::Male ? "him" : "her");
 
@@ -2239,7 +2239,7 @@ void Player::queueRadioMessage(Json const& messageConfig, float delay) {
     if (!message.portraitImage.empty() && message.portraitImage[0] != '/')
       message.portraitImage = Root::singleton().aiDatabase()->portraitImage(species(), message.portraitImage);
   } catch (RadioMessageDatabaseException const& e) {
-    Logger::error("Couldn't queue radio message '%s': %s", messageConfig, e.what());
+    Logger::error("Couldn't queue radio message '{}': {}", messageConfig, e.what());
     return;
   }
 

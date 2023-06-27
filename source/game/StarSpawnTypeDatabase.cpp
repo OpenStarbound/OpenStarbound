@@ -124,7 +124,7 @@ SpawnTypeDatabase::SpawnTypeDatabase() {
         auto spawnType = spawnTypeFromJson(entry);
 
         if (m_spawnTypes.contains(spawnType.typeName))
-          throw SpawnTypeDatabaseException::format("Duplicate spawnType named '%s' in config file '%s'", spawnType.typeName, file);
+          throw SpawnTypeDatabaseException::format("Duplicate spawnType named '{}' in config file '{}'", spawnType.typeName, file);
 
         if (!entry.contains("seedMix"))
           spawnType.seedMix = ++seedMix;
@@ -132,7 +132,7 @@ SpawnTypeDatabase::SpawnTypeDatabase() {
         m_spawnTypes[spawnType.typeName] = spawnType;
       }
     } catch (std::exception const& e) {
-      throw SpawnTypeDatabaseException(strf("Error reading spawnType config file %s", file), e);
+      throw SpawnTypeDatabaseException(strf("Error reading spawnType config file {}", file), e);
     }
   }
 }
@@ -140,7 +140,7 @@ SpawnTypeDatabase::SpawnTypeDatabase() {
 SpawnType SpawnTypeDatabase::spawnType(String const& typeName) const {
   if (auto spawnType = m_spawnTypes.maybe(typeName))
     return spawnType.take();
-  throw SpawnTypeDatabaseException::format("No such spawnType '%s'", typeName);
+  throw SpawnTypeDatabaseException::format("No such spawnType '{}'", typeName);
 }
 
 }

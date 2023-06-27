@@ -67,7 +67,7 @@ LuaTable Blackboard::parameters(StringMap<NodeParameter> const& parameters, uint
       // dumb special case for allowing a vec2 of blackboard number keys
       if (p.second.first == NodeParameterType::Vec2) {
         if (value.type() != Json::Type::Array)
-          throw StarException(strf("Vec2 parameter not of array type for key %s", p.first, value));
+          throw StarException(strf("Vec2 parameter not of array type for key {}", p.first, value));
         JsonArray vector = value.toArray();
         LuaTable luaVector = m_luaContext.engine().createTable();
         for (int i = 0; i < 2; i++) {
@@ -210,7 +210,7 @@ NodeStatus BehaviorState::runAction(ActionNode const& node, NodeState& state) {
     try {
       result = thread.resume<ActionReturn>(parameters, blackboardPtr(), id, m_lastDt).value(ActionReturn(NodeStatus::Invalid, LuaNil));
     } catch (LuaException const& e) {
-      throw StarException(strf("Lua Exception caught running action node %s in behavior %s: %s", node.name, m_tree->name, outputException(e, false)));
+      throw StarException(strf("Lua Exception caught running action node {} in behavior {}: {}", node.name, m_tree->name, outputException(e, false)));
     }
 
     auto status = get<0>(result);
@@ -222,7 +222,7 @@ NodeStatus BehaviorState::runAction(ActionNode const& node, NodeState& state) {
     try {
       result = thread.resume<ActionReturn>(m_lastDt).value(ActionReturn(NodeStatus::Invalid, LuaNil));
     } catch (LuaException const& e) {
-      throw StarException(strf("Lua Exception caught resuming action node %s in behavior %s: %s", node.name, m_tree->name, outputException(e, false)));
+      throw StarException(strf("Lua Exception caught resuming action node {} in behavior {}: {}", node.name, m_tree->name, outputException(e, false)));
     }
 
     auto status = get<0>(result);
@@ -246,7 +246,7 @@ NodeStatus BehaviorState::runDecorator(DecoratorNode const& node, NodeState& sta
     try {
       status = thread.resume<NodeStatus>(parameters, blackboardPtr(), id).value(NodeStatus::Invalid);
     } catch (LuaException const& e) {
-      throw StarException(strf("Lua Exception caught initializing decorator node %s in behavior %s: %s", node.name, m_tree->name, outputException(e, false)));
+      throw StarException(strf("Lua Exception caught initializing decorator node {} in behavior {}: {}", node.name, m_tree->name, outputException(e, false)));
     }
     if (status == NodeStatus::Success || status == NodeStatus::Failure)
       return status;
@@ -262,7 +262,7 @@ NodeStatus BehaviorState::runDecorator(DecoratorNode const& node, NodeState& sta
       try {
         status = decorator.thread.resume<NodeStatus>(childStatus).value(NodeStatus::Invalid);
       } catch (LuaException const& e) {
-        throw StarException(strf("Lua Exception caught resuming decorator node %s in behavior %s: %s", node.name, m_tree->name, outputException(e, false)));
+        throw StarException(strf("Lua Exception caught resuming decorator node {} in behavior {}: {}", node.name, m_tree->name, outputException(e, false)));
       }
     } else {
       return NodeStatus::Running;
@@ -287,7 +287,7 @@ NodeStatus BehaviorState::runComposite(CompositeNode const& node, NodeState& sta
   else if (node.is<RandomizeNode>())
     status = runRandomize(node.get<RandomizeNode>(), state);
   else
-    throw StarException(strf("Unable to run composite node type with variant type index %s", node.typeIndex()));
+    throw StarException(strf("Unable to run composite node type with variant type index {}", node.typeIndex()));
 
   return status;
 }

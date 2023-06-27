@@ -72,7 +72,7 @@ void Tileset::exportTileset() const {
   String exportDir = tilesetExportDir(sourcePath, sourceName);
   String tilesetPath = unixFileJoin(exportDir, m_name + ".json");
   File::makeDirectoryRecursive(File::dirName(tilesetPath));
-  Logger::info("Updating tileset at %s", tilesetPath);
+  Logger::info("Updating tileset at {}", tilesetPath);
 
   exportTilesetImages(exportDir);
 
@@ -156,7 +156,7 @@ void Tileset::exportTilesetImages(String const& exportDir) const {
     String imageDir = unixFileJoin(imageDirName(exportDir), tile->database);
     File::makeDirectoryRecursive(imageDir);
     String imageName = unixFileJoin(imageDir, tile->name + ".png");
-    Logger::info("Updating image %s", imageName);
+    Logger::info("Updating image {}", imageName);
     tile->image->writePng(File::open(imageName, IOMode::Write));
   }
 }
@@ -166,7 +166,7 @@ Json Tileset::getTilesetJson(String const& tilesetPath) const {
     return Json::parseJson(File::readFileString(tilesetPath));
   } else {
     Logger::warn(
-        "Tileset %s wasn't already present. Creating it from scratch. Any maps already using this tileset may be "
+        "Tileset {} wasn't already present. Creating it from scratch. Any maps already using this tileset may be "
         "broken.",
         tilesetPath);
     return JsonObject{{"margin", 0},
@@ -208,7 +208,7 @@ StringSet Tileset::updateTiles(JsonObject& tileProperties,
     if (existingTiles.contains(tile->name)) {
       id = existingTiles.get(tile->name);
     } else {
-      coutf("Adding '%s' to %s\n", tile->name, tilesetPath);
+      coutf("Adding '{}' to {}\n", tile->name, tilesetPath);
       id = nextId++;
     }
 
@@ -235,7 +235,7 @@ void Tileset::invalidateTiles(StringSet const& invalidTiles,
       tileImages[toString(id)] = tileImageReference(tile->name, tile->database);
     } else {
       if (!tileProperties[toString(id)].contains("invalid"))
-        coutf("Removing '%s' from %s\n", tileName, tilesetPath);
+        coutf("Removing '{}' from {}\n", tileName, tilesetPath);
       tileProperties[toString(id)] = JsonObject{{"//name", tileName}, {"invalid", "true"}};
       tileImages[toString(id)] = imageFileReference(InvalidTileImage);
     }
@@ -254,7 +254,7 @@ void TilesetUpdater::defineAssetSource(String const& source) {
   String tilesetDir = tilesetExportDir(sourcePath, sourceName);
   String imageDir = imageExportDirName(tilesetDir, sourceName);
 
-  Logger::info("Scanning %s for images...", imageDir);
+  Logger::info("Scanning {} for images...", imageDir);
   if (!File::isDirectory(imageDir))
     return;
 
@@ -262,7 +262,7 @@ void TilesetUpdater::defineAssetSource(String const& source) {
     if (entry.second) {
       String databaseName = entry.first;
       String databasePath = unixFileJoin(imageDir, databaseName);
-      Logger::info("Scanning database %s...", databaseName);
+      Logger::info("Scanning database {}...", databaseName);
       for (pair<String, bool> image : File::dirList(databasePath)) {
         starAssert(!image.second);
         starAssert(image.first.endsWith(".png"));
@@ -282,7 +282,7 @@ void TilesetUpdater::exportTilesets() {
   for (auto const& tilesets : m_tilesets) {
     auto parsedAssetSource = parseAssetSource(tilesets.first);
     if (!parsedAssetSource) {
-      Logger::info("Not updating tilesets in %s because it is packed", tilesets.first);
+      Logger::info("Not updating tilesets in {} because it is packed", tilesets.first);
       continue;
     }
     String sourceName;
@@ -302,7 +302,7 @@ void TilesetUpdater::exportTilesets() {
       for (String tileName : unusedImages) {
         String tileImagePath = unixFileJoin(databaseImagePath, tileName + ".png");
         starAssert(File::isFile(tileImagePath));
-        coutf("Removing unused tile image tiled/%s/%s/%s.png\n", sourceName, database->name(), tileName);
+        coutf("Removing unused tile image tiled/{}/{}/{}.png\n", sourceName, database->name(), tileName);
         File::remove(tileImagePath);
       }
       m_preexistingImages[sourceName][database->name()] = database->tileNames();

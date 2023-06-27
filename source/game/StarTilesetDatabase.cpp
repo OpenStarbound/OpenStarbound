@@ -341,7 +341,7 @@ namespace Tiled {
     try {
       return Json::parseJson(propertyValue);
     } catch (JsonParsingException const& e) {
-      throw StarException::format("Error parsing Tiled property as Json: %s", outputException(e, false));
+      throw StarException::format("Error parsing Tiled property as Json: {}", outputException(e, false));
     }
   }
 

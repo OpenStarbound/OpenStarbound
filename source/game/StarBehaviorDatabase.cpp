@@ -92,7 +92,7 @@ NodeParameterValue replaceBehaviorTag(NodeParameterValue const& parameter, Strin
       if (auto replace = treeParameters.maybe(treeKey)) {
         return *replace;
       } else {
-        throw StarException(strf("No parameter specified for tag '%s'", key));
+        throw StarException(strf("No parameter specified for tag '{}'", key));
       }
     }
   }
@@ -110,7 +110,7 @@ Maybe<String> replaceOutputBehaviorTag(Maybe<String> const& output, StringMap<No
         else
           return {};
       } else {
-        throw StarException(strf("No parameter specified for tag '%s'", *out));
+        throw StarException(strf("No parameter specified for tag '{}'", *out));
       }
     }
   }
@@ -170,7 +170,7 @@ BehaviorDatabase::BehaviorDatabase() {
         m_nodeOutput.set(node.first, output);
       }
     } catch (StarException const& e) {
-      throw StarException(strf("Could not load nodes file \'%s\'", file), e);
+      throw StarException(strf("Could not load nodes file \'{}\'", file), e);
     }
   }
 
@@ -182,11 +182,11 @@ BehaviorDatabase::BehaviorDatabase() {
       auto name = config.getString("name");
 
       if (m_configs.contains(name))
-        throw StarException(strf("Duplicate behavior tree \'%s\'", name));
+        throw StarException(strf("Duplicate behavior tree \'{}\'", name));
 
       m_configs[name] = config;
     } catch (StarException const& e) {
-      throw StarException(strf("Could not load behavior file \'%s\'", file), e);
+      throw StarException(strf("Could not load behavior file \'{}\'", file), e);
     }
   }
 
@@ -198,7 +198,7 @@ BehaviorDatabase::BehaviorDatabase() {
 
 BehaviorTreeConstPtr BehaviorDatabase::behaviorTree(String const& name) const {
   if (!m_behaviors.contains(name))
-    throw StarException(strf("No such behavior tree \'%s\'", name));
+    throw StarException(strf("No such behavior tree \'{}\'", name));
 
   return m_behaviors.get(name);
 }
@@ -219,7 +219,7 @@ BehaviorTreeConstPtr BehaviorDatabase::buildTree(Json const& config, StringMap<N
 
 Json BehaviorDatabase::behaviorConfig(String const& name) const {
   if (!m_configs.contains(name))
-    throw StarException(strf("No such behavior tree \'%s\'", name));
+    throw StarException(strf("No such behavior tree \'{}\'", name));
 
   return m_configs.get(name);
 }
@@ -246,7 +246,7 @@ CompositeNode BehaviorDatabase::compositeNode(Json const& config, StringMap<Node
     return RandomizeNode(children);
 
   // above statement needs to be exhaustive
-  throw StarException(strf("Composite node type '%s' could not be created from JSON", CompositeTypeNames.getRight(type)));
+  throw StarException(strf("Composite node type '{}' could not be created from JSON", CompositeTypeNames.getRight(type)));
 }
 
 BehaviorNodeConstPtr BehaviorDatabase::behaviorNode(Json const& json, StringMap<NodeParameterValue> const& treeParameters, BehaviorTree& tree) const {
@@ -292,7 +292,7 @@ BehaviorNodeConstPtr BehaviorDatabase::behaviorNode(Json const& json, StringMap<
   }
 
   // above statement must be exhaustive
-  throw StarException(strf("Behavior node type '%s' could not be created from JSON", BehaviorNodeTypeNames.getRight(type)));
+  throw StarException(strf("Behavior node type '{}' could not be created from JSON", BehaviorNodeTypeNames.getRight(type)));
 }
 
 }

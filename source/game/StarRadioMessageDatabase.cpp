@@ -19,12 +19,12 @@ RadioMessageDatabase::RadioMessageDatabase() {
       Json messages = assets->json(file);
       for (auto pair : messages.iterateObject()) {
         if (m_radioMessages.contains(pair.first))
-          throw RadioMessageDatabaseException(strf("Duplicate radiomessage %s in file %s", pair.first, file));
+          throw RadioMessageDatabaseException(strf("Duplicate radiomessage {} in file {}", pair.first, file));
 
         m_radioMessages[pair.first] = createRadioMessage(pair.second, pair.first);
       }
     } catch (std::exception const& e) {
-      throw RadioMessageDatabaseException(strf("Error loading radiomessages file %s", file), e);
+      throw RadioMessageDatabaseException(strf("Error loading radiomessages file {}", file), e);
     }
   }
 }
@@ -32,7 +32,7 @@ RadioMessageDatabase::RadioMessageDatabase() {
 RadioMessage RadioMessageDatabase::radioMessage(String const& messageName) const {
   if (auto message = m_radioMessages.maybe(messageName))
     return message.take();
-  throw RadioMessageDatabaseException(strf("Unknown radio message %s", messageName));
+  throw RadioMessageDatabaseException(strf("Unknown radio message {}", messageName));
 }
 
 RadioMessage RadioMessageDatabase::createRadioMessage(Json const& config, Maybe<String> const& messageId) const {
@@ -65,7 +65,7 @@ RadioMessage RadioMessageDatabase::createRadioMessage(Json const& config, Maybe<
 
     if (message.portraitFrames <= 0)
       throw RadioMessageDatabaseException(
-          strf("Invalid portraitFrames %s in radio message config!", message.portraitFrames));
+          strf("Invalid portraitFrames {} in radio message config!", message.portraitFrames));
 
     return message;
   } else {

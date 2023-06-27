@@ -14,12 +14,12 @@ PatternedNameGenerator::PatternedNameGenerator() {
       auto sourceConfig = assets->json(file);
 
       if (m_markovSources.contains(sourceConfig.getString("name")))
-        throw NameGeneratorException::format("Duplicate name source '%s', config file '%s'", sourceConfig.getString("name"), file);
+        throw NameGeneratorException::format("Duplicate name source '{}', config file '{}'", sourceConfig.getString("name"), file);
 
       m_markovSources.insert(sourceConfig.getString("name"), makeMarkovSource(sourceConfig.getUInt("prefixSize", 1),
           sourceConfig.getUInt("endSize", 1), jsonToStringList(sourceConfig.get("sourceNames"))));
     } catch (std::exception const& e) {
-      throw NameGeneratorException(strf("Error reading name source config %s", file), e);
+      throw NameGeneratorException(strf("Error reading name source config {}", file), e);
     }
   }
 
@@ -82,7 +82,7 @@ String PatternedNameGenerator::processRule(JsonArray const& rule, RandomSource& 
       result += entry.toString();
   } else if (mode == "markov") {
     if (!m_markovSources.contains(meta.getString("source")))
-      throw NameGeneratorException::format("Unknown name source '%s'", meta.getString("source"));
+      throw NameGeneratorException::format("Unknown name source '{}'", meta.getString("source"));
 
     auto source = m_markovSources.get(meta.getString("source"));
     auto lengthRange = meta.getArray("targetLength");
@@ -104,7 +104,7 @@ String PatternedNameGenerator::processRule(JsonArray const& rule, RandomSource& 
 
     result += piece;
   } else
-    throw StarException::format("Unknown mode: %s", mode);
+    throw StarException::format("Unknown mode: {}", mode);
 
   if (titleCase)
     result = result.titleCase();

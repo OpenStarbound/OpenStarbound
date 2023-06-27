@@ -22,8 +22,8 @@ int main(int argc, char** argv) {
   try {
     return app.exec();
   } catch (std::exception const& e) {
-    QMessageBox::critical(nullptr, "Error", toQString(strf("Exception caught: %s\n", outputException(e, true))));
-    coutf("Exception caught: %s\n", outputException(e, true));
+    QMessageBox::critical(nullptr, "Error", toQString(strf("Exception caught: {}\n", outputException(e, true))));
+    coutf("Exception caught: {}\n", outputException(e, true));
     return 1;
   }
 }

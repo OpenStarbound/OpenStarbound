@@ -7,7 +7,7 @@ namespace Star {
 
 Image Image::readPng(IODevicePtr device) {
   auto logPngError = [](png_structp png_ptr, png_const_charp c) {
-    Logger::debug("PNG error in file: '%s', %s", (char*)png_get_error_ptr(png_ptr), c);
+    Logger::debug("PNG error in file: '{}', {}", (char*)png_get_error_ptr(png_ptr), c);
   };
 
   auto readPngData = [](png_structp pngPtr, png_bytep data, png_size_t length) {
@@ -19,7 +19,7 @@ Image Image::readPng(IODevicePtr device) {
   device->readFull((char*)header, sizeof(header));
 
   if (png_sig_cmp(header, 0, sizeof(header)))
-    throw ImageException(strf("File %s is not a png image!", device->deviceName()));
+    throw ImageException(strf("File {} is not a png image!", device->deviceName()));
 
   png_structp png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
   if (!png_ptr)
@@ -94,7 +94,7 @@ Image Image::readPng(IODevicePtr device) {
 
   if (bitdepth != 8 || (channels != 3 && channels != 4)) {
     png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
-    throw ImageException(strf("Unsupported PNG pixel format in file %s", device->deviceName()));
+    throw ImageException(strf("Unsupported PNG pixel format in file {}", device->deviceName()));
   }
 
   Image image(img_width, img_height, channels == 3 ? PixelFormat::RGB24 : PixelFormat::RGBA32);
@@ -112,7 +112,7 @@ Image Image::readPng(IODevicePtr device) {
 
 tuple<Vec2U, PixelFormat> Image::readPngMetadata(IODevicePtr device) {
   auto logPngError = [](png_structp png_ptr, png_const_charp c) {
-    Logger::debug("PNG error in file: '%s', %s", (char*)png_get_error_ptr(png_ptr), c);
+    Logger::debug("PNG error in file: '{}', {}", (char*)png_get_error_ptr(png_ptr), c);
   };
 
   auto readPngData = [](png_structp pngPtr, png_bytep data, png_size_t length) {
@@ -124,7 +124,7 @@ tuple<Vec2U, PixelFormat> Image::readPngMetadata(IODevicePtr device) {
   device->readFull((char*)header, sizeof(header));
 
   if (png_sig_cmp(header, 0, sizeof(header)))
-    throw ImageException(strf("File %s is not a png image!", device->deviceName()));
+    throw ImageException(strf("File {} is not a png image!", device->deviceName()));
 
   png_structp png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
   if (!png_ptr)
@@ -267,7 +267,7 @@ void Image::reset(unsigned width, unsigned height, Maybe<PixelFormat> pf) {
       newData = (uint8_t*)Star::realloc(m_data, imageSize);
 
     if (!newData)
-      throw MemoryException::format("Could not allocate memory for new Image size %s\n", imageSize);
+      throw MemoryException::format("Could not allocate memory for new Image size {}\n", imageSize);
 
     m_data = newData;
     memset(m_data, 0, imageSize);
@@ -316,7 +316,7 @@ void Image::fillRect(Vec2U const& pos, Vec2U const& size, Vec4B const& c) {
 
 void Image::set(Vec2U const& pos, Vec4B const& c) {
   if (pos[0] >= m_width || pos[1] >= m_height) {
-    throw ImageException(strf("%s out of range in Image::set", pos));
+    throw ImageException(strf("{} out of range in Image::set", pos));
   } else if (bytesPerPixel() == 4) {
     size_t offset = pos[1] * m_width * 4 + pos[0] * 4;
     m_data[offset] = c[0];
@@ -333,7 +333,7 @@ void Image::set(Vec2U const& pos, Vec4B const& c) {
 
 void Image::set(Vec2U const& pos, Vec3B const& c) {
   if (pos[0] >= m_width || pos[1] >= m_height) {
-    throw ImageException(strf("%s out of range in Image::set", pos));
+    throw ImageException(strf("{} out of range in Image::set", pos));
   } else if (bytesPerPixel() == 4) {
     size_t offset = pos[1] * m_width * 4 + pos[0] * 4;
     m_data[offset] = c[0];
@@ -351,7 +351,7 @@ void Image::set(Vec2U const& pos, Vec3B const& c) {
 Vec4B Image::get(Vec2U const& pos) const {
   Vec4B c;
   if (pos[0] >= m_width || pos[1] >= m_height) {
-    throw ImageException(strf("%s out of range in Image::get", pos));
+    throw ImageException(strf("{} out of range in Image::get", pos));
   } else if (bytesPerPixel() == 4) {
     size_t offset = pos[1] * m_width * 4 + pos[0] * 4;
     c[0] = m_data[offset];
@@ -422,7 +422,7 @@ Vec4B Image::clamprgb(Vec2I const& pos) const {
 
 Image Image::subImage(Vec2U const& pos, Vec2U const& size) const {
   if (pos[0] + size[0] > m_width || pos[1] + size[1] > m_height)
-    throw ImageException(strf("call to subImage with pos %s size %s out of image bounds (%s, %s)", pos, size, m_width, m_height));
+    throw ImageException(strf("call to subImage with pos {} size {} out of image bounds ({}, {})", pos, size, m_width, m_height));
 
   Image sub(size[0], size[1], m_pixelFormat);
 

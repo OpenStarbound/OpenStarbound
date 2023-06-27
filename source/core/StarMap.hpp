@@ -163,7 +163,7 @@ template <typename BaseMap>
 auto MapMixin<BaseMap>::take(key_type const& k) -> mapped_type {
   if (auto v = maybeTake(k))
     return v.take();
-  throw MapException(strf("Key '%s' not found in Map::take()", outputAny(k)));
+  throw MapException(strf("Key '{}' not found in Map::take()", outputAny(k)));
 }
 
 template <typename BaseMap>
@@ -182,7 +182,7 @@ template <typename BaseMap>
 auto MapMixin<BaseMap>::get(key_type const& k) -> mapped_type& {
   iterator i = Base::find(k);
   if (i == Base::end())
-    throw MapException(strf("Key '%s' not found in Map::get()", outputAny(k)));
+    throw MapException(strf("Key '{}' not found in Map::get()", outputAny(k)));
   return i->second;
 }
 
@@ -190,7 +190,7 @@ template <typename BaseMap>
 auto MapMixin<BaseMap>::get(key_type const& k) const -> mapped_type const& {
   const_iterator i = Base::find(k);
   if (i == Base::end())
-    throw MapException(strf("Key '%s' not found in Map::get()", outputAny(k)));
+    throw MapException(strf("Key '{}' not found in Map::get()", outputAny(k)));
   return i->second;
 }
 
@@ -236,7 +236,7 @@ auto MapMixin<BaseMap>::keyOf(mapped_type const& v) const -> key_type {
     if (i->second == v)
       return i->first;
   }
-  throw MapException(strf("Value '%s' not found in Map::keyOf()", outputAny(v)));
+  throw MapException(strf("Value '{}' not found in Map::keyOf()", outputAny(v)));
 }
 
 template <typename BaseMap>
@@ -267,7 +267,7 @@ template <typename BaseMap>
 auto MapMixin<BaseMap>::add(key_type k, mapped_type v) -> mapped_type& {
   auto pair = Base::insert(value_type(move(k), move(v)));
   if (!pair.second)
-    throw MapException(strf("Entry with key '%s' already present.", outputAny(k)));
+    throw MapException(strf("Entry with key '{}' already present.", outputAny(k)));
   else
     return pair.first->second;
 }

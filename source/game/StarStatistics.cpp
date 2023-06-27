@@ -68,7 +68,7 @@ bool Statistics::reset() {
 void Statistics::update() {
   if (m_service) {
     if (auto error = m_service->error()) {
-      Logger::error("Statistics platform service error: %s", *error);
+      Logger::error("Statistics platform service error: {}", *error);
       // Service failed. Continue with local stats and achievements only.
       m_service = {};
       m_initialized = true;
@@ -115,7 +115,7 @@ Json Statistics::Stat::toJson() const {
 void Statistics::processEvent(String const& name, Json const& fields) {
   if (m_service)
     m_service->reportEvent(name, fields);
-  Logger::debug("Event %s %s", name, fields);
+  Logger::debug("Event {} {}", name, fields);
 
   auto statisticsDatabase = Root::singleton().statisticsDatabase();
   if (auto const& event = statisticsDatabase->event(name)) {
@@ -124,7 +124,7 @@ void Statistics::processEvent(String const& name, Json const& fields) {
 }
 
 void Statistics::setStat(String const& name, String const& type, Json const& value) {
-  Logger::debug("Stat %s (%s) : %s", name, type, value);
+  Logger::debug("Stat {} ({}) : {}", name, type, value);
   m_stats[name] = Stat { type, value };
   if (m_service)
     m_service->setStat(name, type, value);
@@ -139,7 +139,7 @@ void Statistics::unlockAchievement(String const& name) {
   m_achievements.add(name);
   if (m_service)
     m_service->unlockAchievement(name);
-  Logger::debug("Achievement get %s", name);
+  Logger::debug("Achievement get {}", name);
 }
 
 bool Statistics::checkAchievement(String const& achievementName) {
@@ -166,7 +166,7 @@ void Statistics::readStatistics() {
 
     }
   } catch (std::exception const& e) {
-    Logger::warn("Error loading local player statistics file, resetting: %s", outputException(e, false));
+    Logger::warn("Error loading local player statistics file, resetting: {}", outputException(e, false));
   }
 }
 

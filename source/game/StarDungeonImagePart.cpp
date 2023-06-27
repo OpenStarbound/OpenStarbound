@@ -35,7 +35,7 @@ namespace Dungeon {
             if (exitEarly)
               return;
           } else {
-            throw StarException::format("Dungeon image %s uses unknown tile color: #%02x%02x%02x%02x",
+            throw StarException::format("Dungeon image {} uses unknown tile color: #{:02x}{:02x}{:02x}{:02x}",
                 file,
                 tileColor[0],
                 tileColor[1],
@@ -58,7 +58,7 @@ namespace Dungeon {
         if (exitEarly)
           return;
       } else {
-        throw StarException::format("Dungeon image %s uses unknown tile color: #%02x%02x%02x%02x",
+        throw StarException::format("Dungeon image {} uses unknown tile color: #{:02x}{:02x}{:02x}{:02x}",
             file,
             tileColor[0],
             tileColor[1],
@@ -69,7 +69,7 @@ namespace Dungeon {
   }
 
   String connectorColorValue(Vec4B const& color) {
-    return strf("%d,%d,%d,%d", color[0], color[1], color[2], color[3]);
+    return strf("{},{},{},{}", color[0], color[1], color[2], color[3]);
   }
 
   Tile variantMapToTile(JsonObject const& tile) {

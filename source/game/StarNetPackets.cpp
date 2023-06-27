@@ -151,7 +151,7 @@ PacketPtr createPacket(PacketType type) {
     case PacketType::SystemShipDestroy: return make_shared<SystemShipDestroyPacket>();
     case PacketType::SystemObjectSpawn: return make_shared<SystemObjectSpawnPacket>();
     default:
-      throw StarPacketException(strf("Unrecognized packet type %s", (unsigned int)type));
+      throw StarPacketException(strf("Unrecognized packet type {}", (unsigned int)type));
   }
 }
 

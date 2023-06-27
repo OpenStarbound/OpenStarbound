@@ -87,7 +87,7 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
   for (auto name : bagOrder) {
     auto itemGrid = itemBagConfig.get(name).getString("itemGrid");
     invWindowReader.registerCallback(itemGrid, bind(leftClickCallback, name, _1));
-    invWindowReader.registerCallback(strf("%s.right", itemGrid), bind(bagGridCallback, name, _1));
+    invWindowReader.registerCallback(strf("{}.right", itemGrid), bind(bagGridCallback, name, _1));
   }
 
   invWindowReader.registerCallback("close", [=](Widget*) {
@@ -195,7 +195,7 @@ PanePtr InventoryPane::createTooltip(Vec2I const& screenPosition) {
 
   auto techDatabase = Root::singleton().techDatabase();
   for (auto const& p : TechTypeNames) {
-    if (auto techIcon = fetchChild<ImageWidget>(strf("tech%s", p.second))) {
+    if (auto techIcon = fetchChild<ImageWidget>(strf("tech{}", p.second))) {
       if (techIcon->screenBoundRect().contains(screenPosition)) {
         if (auto techModule = m_player->techs()->equippedTechs().maybe(p.first))
           return SimpleTooltipBuilder::buildTooltip(techDatabase->tech(*techModule).description);
@@ -277,7 +277,7 @@ void InventoryPane::update() {
 
   auto techDatabase = Root::singleton().techDatabase();
   for (auto const& p : TechTypeNames) {
-    if (auto techIcon = fetchChild<ImageWidget>(strf("tech%s", p.second))) {
+    if (auto techIcon = fetchChild<ImageWidget>(strf("tech{}", p.second))) {
       if (auto techModule = m_player->techs()->equippedTechs().maybe(p.first))
         techIcon->setImage(techDatabase->tech(*techModule).icon);
       else
@@ -315,25 +315,25 @@ void InventoryPane::update() {
     techOverlay->setVisibility(m_player->techOverridden());
 
   auto healthLabel = fetchChild<LabelWidget>("healthtext");
-  healthLabel->setText(strf("%d", m_player->maxHealth()));
+  healthLabel->setText(strf("{}", m_player->maxHealth()));
   auto energyLabel = fetchChild<LabelWidget>("energytext");
-  energyLabel->setText(strf("%d", m_player->maxEnergy()));
+  energyLabel->setText(strf("{}", m_player->maxEnergy()));
   auto weaponLabel = fetchChild<LabelWidget>("weapontext");
-  weaponLabel->setText(strf("%d%%", ceil(m_player->powerMultiplier() * 100)));
+  weaponLabel->setText(strf("{}%", ceil(m_player->powerMultiplier() * 100)));
   auto defenseLabel = fetchChild<LabelWidget>("defensetext");
   if (m_player->protection() == 0)
     defenseLabel->setText("--");
   else
-    defenseLabel->setText(strf("%d", ceil(m_player->protection())));
+    defenseLabel->setText(strf("{}", ceil(m_player->protection())));
 
   auto moneyLabel = fetchChild<LabelWidget>("lblMoney");
-  moneyLabel->setText(strf("%d", m_player->currency("money")));
+  moneyLabel->setText(strf("{}", m_player->currency("money")));
 
   if (m_player->currency("essence") > 0) {
     fetchChild<ImageWidget>("imgEssenceIcon")->show();
     auto essenceLabel = fetchChild<LabelWidget>("lblEssence");
     essenceLabel->show();
-    essenceLabel->setText(strf("%d", m_player->currency("essence")));
+    essenceLabel->setText(strf("{}", m_player->currency("essence")));
   } else {
     fetchChild<ImageWidget>("imgEssenceIcon")->hide();
     fetchChild<LabelWidget>("lblEssence")->hide();
@@ -357,14 +357,14 @@ void InventoryPane::update() {
 
     auto attackLabel = fetchChild<LabelWidget>("companionAttackStat");
     if (auto attack = pet->stat("attack")) {
-      attackLabel->setText(strf("%.0f", *attack));
+      attackLabel->setText(strf("{:.0f}", *attack));
     } else {
       attackLabel->setText("");
     }
 
     auto defenseLabel = fetchChild<LabelWidget>("companionDefenseStat");
     if (auto defense = pet->stat("defense")) {
-      defenseLabel->setText(strf("%.0f", *defense));
+      defenseLabel->setText(strf("{:.0f}", *defense));
     } else {
       defenseLabel->setText("");
     }

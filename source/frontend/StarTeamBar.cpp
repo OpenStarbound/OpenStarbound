@@ -159,7 +159,7 @@ void TeamBar::buildTeamBar() {
       continue;
     }
 
-    String cellName = strf("%s", controlIndex);
+    String cellName = strf("{}", controlIndex);
     WidgetPtr cell = list->fetchChild(cellName);
 
     if (!cell) {
@@ -231,7 +231,7 @@ void TeamBar::buildTeamBar() {
   noInviteImage->setVisibility(!couldInvite);
 
   while (true) {
-    String cellName = strf("%s", controlIndex);
+    String cellName = strf("{}", controlIndex);
     WidgetPtr cell = list->fetchChild(cellName);
     if (!cell)
       break;

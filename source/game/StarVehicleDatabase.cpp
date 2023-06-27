@@ -16,11 +16,11 @@ VehicleDatabase::VehicleDatabase() {
       String name = config.getString("name");
 
       if (m_vehicles.contains(name))
-        throw VehicleDatabaseException::format("Repeat vehicle name '%s'", name);
+        throw VehicleDatabaseException::format("Repeat vehicle name '{}'", name);
 
       m_vehicles.add(move(name), make_pair(move(file), move(config)));
     } catch (StarException const& e) {
-      throw VehicleDatabaseException(strf("Error loading vehicle '%s'", file), e);
+      throw VehicleDatabaseException(strf("Error loading vehicle '{}'", file), e);
     }
   }
 }
@@ -28,7 +28,7 @@ VehicleDatabase::VehicleDatabase() {
 VehiclePtr VehicleDatabase::create(String const& vehicleName, Json const& extraConfig) const {
   auto configPair = m_vehicles.ptr(vehicleName);
   if (!configPair)
-    throw VehicleDatabaseException::format("No such vehicle named '%s'", vehicleName);
+    throw VehicleDatabaseException::format("No such vehicle named '{}'", vehicleName);
   return make_shared<Vehicle>(configPair->second, configPair->first, extraConfig);
 }
 

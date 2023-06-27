@@ -98,9 +98,9 @@ String CommandProcessor::admin(ConnectionId connectionId, String const&) {
     m_universe->setAdmin(connectionId, !wasAdmin);
 
     if (!wasAdmin)
-      return strf("Admin privileges now given to player %s", m_universe->clientNick(connectionId));
+      return strf("Admin privileges now given to player {}", m_universe->clientNick(connectionId));
     else
-      return strf("Admin privileges taken away from %s", m_universe->clientNick(connectionId));
+      return strf("Admin privileges taken away from {}", m_universe->clientNick(connectionId));
   } else {
     return "Insufficient privileges to make self admin.";
   }
@@ -110,11 +110,11 @@ String CommandProcessor::pvp(ConnectionId connectionId, String const&) {
   if (!m_universe->isPvp(connectionId)) {
     m_universe->setPvp(connectionId, true);
     if (m_universe->isPvp(connectionId))
-      m_universe->adminBroadcast(strf("Player %s is now PVP", m_universe->clientNick(connectionId)));
+      m_universe->adminBroadcast(strf("Player {} is now PVP", m_universe->clientNick(connectionId)));
   } else {
     m_universe->setPvp(connectionId, false);
     if (!m_universe->isPvp(connectionId))
-      m_universe->adminBroadcast(strf("Player %s is a big wimp and is no longer PVP", m_universe->clientNick(connectionId)));
+      m_universe->adminBroadcast(strf("Player {} is a big wimp and is no longer PVP", m_universe->clientNick(connectionId)));
   }
 
   if (m_universe->isPvp(connectionId))
@@ -124,7 +124,7 @@ String CommandProcessor::pvp(ConnectionId connectionId, String const&) {
 }
 
 String CommandProcessor::whoami(ConnectionId connectionId, String const&) {
-  return strf("Server: You are %s. You are %san Admin",
+  return strf("Server: You are {}. You are {}an Admin",
       m_universe->clientNick(connectionId),
       m_universe->isAdmin(connectionId) ? "" : "not ");
 }
@@ -137,8 +137,8 @@ String CommandProcessor::warp(ConnectionId connectionId, String const& argumentS
     m_universe->clientWarpPlayer(connectionId, parseWarpAction(argumentString));
     return "Lets do the space warp again";
   } catch (StarException const& e) {
-    Logger::warn("Could not parse warp target: %s", outputException(e, false));
-    return strf("Could not parse the argument %s as a warp target", argumentString);
+    Logger::warn("Could not parse warp target: {}", outputException(e, false));
+    return strf("Could not parse the argument {} as a warp target", argumentString);
   }
 }
 
@@ -188,7 +188,7 @@ String CommandProcessor::warpRandom(ConnectionId connectionId, String const& typ
 	}
 
 	m_universe->clientWarpPlayer(connectionId, WarpToWorld(CelestialWorldId(*target)));
-	return strf("warping to %s", *target);
+	return strf("warping to {}", *target);
 }
 
 String CommandProcessor::timewarp(ConnectionId connectionId, String const& argumentString) {
@@ -203,7 +203,7 @@ String CommandProcessor::timewarp(ConnectionId connectionId, String const& argum
     m_universe->universeClock()->adjustTime(time);
     return "It's just a jump to the left...";
   } catch (BadLexicalCast const&) {
-    return strf("Could not parse the argument %s as a time adjustment", argumentString);
+    return strf("Could not parse the argument {} as a time adjustment", argumentString);
   }
 }
 
@@ -299,17 +299,17 @@ String CommandProcessor::spawnItem(ConnectionId connectionId, String const& argu
 
     return done ? "" : "Invalid client state";
   } catch (JsonParsingException const& exception) {
-    Logger::warn("Error while processing /spawnitem '%s' command. Json parse problem: %s", arguments.at(0), outputException(exception, false));
+    Logger::warn("Error while processing /spawnitem '{}' command. Json parse problem: {}", arguments.at(0), outputException(exception, false));
     return "Could not parse item parameters";
   } catch (ItemException const& exception) {
-    Logger::warn("Error while processing /spawnitem '%s' command. Item instantiation problem: %s", arguments.at(0), outputException(exception, false));
-    return strf("Could not load item '%s'", arguments.at(0));
+    Logger::warn("Error while processing /spawnitem '{}' command. Item instantiation problem: {}", arguments.at(0), outputException(exception, false));
+    return strf("Could not load item '{}'", arguments.at(0));
   } catch (BadLexicalCast const& exception) {
-    Logger::warn("Error while processing /spawnitem command. Number expected. Got something else: %s", outputException(exception, false));
-    return strf("Could not load item '%s'", arguments.at(0));
+    Logger::warn("Error while processing /spawnitem command. Number expected. Got something else: {}", outputException(exception, false));
+    return strf("Could not load item '{}'", arguments.at(0));
   } catch (StarException const& exception) {
-    Logger::warn("Error while processing /spawnitem command '%s', exception caught: %s", argumentString, outputException(exception, false));
-    return strf("Could not load item '%s'", arguments.at(0));
+    Logger::warn("Error while processing /spawnitem command '{}', exception caught: {}", argumentString, outputException(exception, false));
+    return strf("Could not load item '{}'", arguments.at(0));
   }
 }
 
@@ -337,17 +337,17 @@ String CommandProcessor::spawnTreasure(ConnectionId connectionId, String const& 
 
     return done ? "" : "Invalid client state";
   } catch (JsonParsingException const& exception) {
-    Logger::warn("Error while processing /spawntreasure '%s' command. Json parse problem: %s", arguments.at(0), outputException(exception, false));
+    Logger::warn("Error while processing /spawntreasure '{}' command. Json parse problem: {}", arguments.at(0), outputException(exception, false));
     return "Could not parse item parameters";
   } catch (ItemException const& exception) {
-    Logger::warn("Error while processing /spawntreasure '%s' command. Item instantiation problem: %s", arguments.at(0), outputException(exception, false));
-    return strf("Could not load item '%s'", arguments.at(0));
+    Logger::warn("Error while processing /spawntreasure '{}' command. Item instantiation problem: {}", arguments.at(0), outputException(exception, false));
+    return strf("Could not load item '{}'", arguments.at(0));
   } catch (BadLexicalCast const& exception) {
-    Logger::warn("Error while processing /spawntreasure command. Number expected. Got something else: %s", outputException(exception, false));
-    return strf("Could not load item '%s'", arguments.at(0));
+    Logger::warn("Error while processing /spawntreasure command. Number expected. Got something else: {}", outputException(exception, false));
+    return strf("Could not load item '{}'", arguments.at(0));
   } catch (StarException const& exception) {
-    Logger::warn("Error while processing /spawntreasure command '%s', exception caught: %s", argumentString, outputException(exception, false));
-    return strf("Could not load item '%s'", arguments.at(0));
+    Logger::warn("Error while processing /spawntreasure command '{}', exception caught: {}", argumentString, outputException(exception, false));
+    return strf("Could not load item '{}'", arguments.at(0));
   }
 }
 
@@ -378,8 +378,8 @@ String CommandProcessor::spawnMonster(ConnectionId connectionId, String const& a
 
     return done ? "" : "Invalid client state";
   } catch (StarException const& exception) {
-    Logger::warn("Could not spawn Monster of type '%s', exception caught: %s", argumentString, outputException(exception, false));
-    return strf("Could not spawn Monster of type '%s'", argumentString);
+    Logger::warn("Could not spawn Monster of type '{}', exception caught: {}", argumentString, outputException(exception, false));
+    return strf("Could not spawn Monster of type '{}'", argumentString);
   }
 }
 
@@ -413,8 +413,8 @@ String CommandProcessor::spawnNpc(ConnectionId connectionId, String const& argum
 
     return done ? "" : "Invalid client state";
   } catch (StarException const& exception) {
-    Logger::warn("Could not spawn NPC of species '%s', exception caught: %s", argumentString, outputException(exception, true));
-    return strf("Could not spawn NPC of species '%s'", argumentString);
+    Logger::warn("Could not spawn NPC of species '{}', exception caught: {}", argumentString, outputException(exception, true));
+    return strf("Could not spawn NPC of species '{}'", argumentString);
   }
 }
 
@@ -443,7 +443,7 @@ String CommandProcessor::spawnVehicle(ConnectionId connectionId, String const& a
 
     return done ? "" : "Invalid client state";
   } catch (StarException const& exception) {
-    Logger::warn("Could not spawn vehicle, exception caught: %s", outputException(exception, false));
+    Logger::warn("Could not spawn vehicle, exception caught: {}", outputException(exception, false));
     return strf("Could not spawn vehicle");
   }
 }
@@ -469,8 +469,8 @@ String CommandProcessor::spawnStagehand(ConnectionId connectionId, String const&
 
     return done ? "" : "Invalid client state";
   } catch (StarException const& exception) {
-    Logger::warn("Could not spawn Stagehand of type '%s', exception caught: %s", argumentString, outputException(exception, false));
-    return strf("Could not spawn Stagehand of type '%s'", argumentString);
+    Logger::warn("Could not spawn Stagehand of type '{}', exception caught: {}", argumentString, outputException(exception, false));
+    return strf("Could not spawn Stagehand of type '{}'", argumentString);
   }
 }
 
@@ -487,7 +487,7 @@ String CommandProcessor::clearStagehand(ConnectionId connectionId, String const&
           ++removed;
         }
       });
-  return done ? strf("Removed %s stagehands", removed) : "Invalid client state";
+  return done ? strf("Removed {} stagehands", removed) : "Invalid client state";
 }
 
 String CommandProcessor::spawnLiquid(ConnectionId connectionId, String const& argumentString) {
@@ -500,7 +500,7 @@ String CommandProcessor::spawnLiquid(ConnectionId connectionId, String const& ar
     auto liquidsDatabase = Root::singleton().liquidsDatabase();
 
     if (!liquidsDatabase->isLiquidName(arguments.at(0)))
-      return strf("No such liquid %d", arguments.at(0));
+      return strf("No such liquid {}", arguments.at(0));
 
     LiquidId liquid = liquidsDatabase->liquidId(arguments.at(0));
 
@@ -509,7 +509,7 @@ String CommandProcessor::spawnLiquid(ConnectionId connectionId, String const& ar
       if (auto maybeQuantity = maybeLexicalCast<float>(arguments.at(1)))
         quantity = *maybeQuantity;
       else
-        return strf("Could not parse quantity value '%s'", arguments.at(1));
+        return strf("Could not parse quantity value '{}'", arguments.at(1));
     }
 
     bool done = m_universe->executeForClient(connectionId, [&](WorldServer* world, PlayerPtr const& player) {
@@ -519,7 +519,7 @@ String CommandProcessor::spawnLiquid(ConnectionId connectionId, String const& ar
 
   } catch (StarException const& exception) {
     Logger::warn(
-        "Could not spawn liquid '%s', exception caught: %s", argumentString, outputException(exception, false));
+        "Could not spawn liquid '{}', exception caught: {}", argumentString, outputException(exception, false));
     return "Could not spawn liquid.";
   }
 }
@@ -535,7 +535,7 @@ String CommandProcessor::kick(ConnectionId connectionId, String const& argumentS
 
   auto toKick = playerCidFromCommand(arguments[0], m_universe);
   if (!toKick)
-    return strf("No user with specifier %s found.", arguments[0]);
+    return strf("No user with specifier {} found.", arguments[0]);
 
   // Like IRC, if only the nick is passed then the nick is used as the reason
   if (arguments.size() == 1)
@@ -543,7 +543,7 @@ String CommandProcessor::kick(ConnectionId connectionId, String const& argumentS
 
   m_universe->disconnectClient(*toKick, arguments[1]);
 
-  return strf("Successfully kicked user with specifier %s. ConnectionId: %s. Reason given: %s",
+  return strf("Successfully kicked user with specifier {}. ConnectionId: {}. Reason given: {}",
       arguments[0],
       toKick,
       arguments[1]);
@@ -560,7 +560,7 @@ String CommandProcessor::ban(ConnectionId connectionId, String const& argumentSt
 
   auto toKick = playerCidFromCommand(arguments[0], m_universe);
   if (!toKick)
-    return strf("No user with specifier %s found.", arguments[0]);
+    return strf("No user with specifier {} found.", arguments[0]);
 
   String reason = arguments[0];
   if (arguments.size() < 2)
@@ -578,7 +578,7 @@ String CommandProcessor::ban(ConnectionId connectionId, String const& argumentSt
     } else if (arguments[2] == "both") {
       type = {true, true};
     } else {
-      return strf("Invalid argument %s passed as ban type to /ban.  Options are ip, uuid, or both.", arguments[2]);
+      return strf("Invalid argument {} passed as ban type to /ban.  Options are ip, uuid, or both.", arguments[2]);
     }
   }
 
@@ -587,13 +587,13 @@ String CommandProcessor::ban(ConnectionId connectionId, String const& argumentSt
     try {
       banTime = lexicalCast<int>(arguments[3]);
     } catch (BadLexicalCast const&) {
-      return strf("Invalid argument %s passed as ban time to /ban.", arguments[3]);
+      return strf("Invalid argument {} passed as ban time to /ban.", arguments[3]);
     }
   }
 
   m_universe->banUser(*toKick, reason, type, banTime);
 
-  return strf("Successfully kicked user with specifier %s. ConnectionId: %s. Reason given: %s",
+  return strf("Successfully kicked user with specifier {}. ConnectionId: {}. Reason given: {}",
       arguments[0], toKick, reason);
 }
 
@@ -609,9 +609,9 @@ String CommandProcessor::unbanIp(ConnectionId connectionId, String const& argume
   bool success = m_universe->unbanIp(arguments[0]);
 
   if (success)
-    return strf("Successfully removed IP %s from ban list", arguments[0]);
+    return strf("Successfully removed IP {} from ban list", arguments[0]);
   else
-    return strf("'%s' is not a valid IP or was not found in the bans list", arguments[0]);
+    return strf("'{}' is not a valid IP or was not found in the bans list", arguments[0]);
 }
 
 String CommandProcessor::unbanUuid(ConnectionId connectionId, String const& argumentString) {
@@ -626,9 +626,9 @@ String CommandProcessor::unbanUuid(ConnectionId connectionId, String const& argu
   bool success = m_universe->unbanUuid(arguments[0]);
 
   if (success)
-    return strf("Successfully removed UUID %s from ban list", arguments[0]);
+    return strf("Successfully removed UUID {} from ban list", arguments[0]);
   else
-    return strf("'%s' is not a valid UUID or was not found in the bans list", arguments[0]);
+    return strf("'{}' is not a valid UUID or was not found in the bans list", arguments[0]);
 }
 
 String CommandProcessor::list(ConnectionId connectionId, String const&) {
@@ -639,7 +639,7 @@ String CommandProcessor::list(ConnectionId connectionId, String const&) {
 
   auto assets = Root::singleton().assets();
   for (auto cid : m_universe->clientIds())
-    res.append(strf("$%s : %s : $$%s", cid, m_universe->clientNick(cid), m_universe->uuidForClient(cid)->hex()));
+    res.append(strf("${} : {} : $${}", cid, m_universe->clientNick(cid), m_universe->uuidForClient(cid)->hex()));
 
   return res.join("\n");
 }
@@ -652,15 +652,15 @@ String CommandProcessor::clientCoordinate(ConnectionId connectionId, String cons
     if (arguments.size() > 0) {
       auto cid = playerCidFromCommand(arguments[0], m_universe);
       if (!cid)
-        return strf("No user with specifier %s found.", arguments[0]);
+        return strf("No user with specifier {} found.", arguments[0]);
       targetClientId = *cid;
-      targetLabel = strf("Client %s's", arguments[0]);
+      targetLabel = strf("Client {}'s", arguments[0]);
     }
   }
 
   if (targetClientId) {
     auto worldId = m_universe->clientWorld(targetClientId);
-    return strf("%s current location is %s", targetLabel, worldId);
+    return strf("{} current location is {}", targetLabel, worldId);
   } else {
     return "";
   }
@@ -796,7 +796,7 @@ String CommandProcessor::addBiomeRegion(ConnectionId connectionId, String const&
         world->addBiomeRegion(Vec2I::floor(player->aimPosition()), biomeName, subBlockSelector, width);
       });
 
-  return done ? strf("added region of biome %s with width %s", biomeName, width) : "failed to add biome region";
+  return done ? strf("added region of biome {} with width {}", biomeName, width) : "failed to add biome region";
 }
 
 String CommandProcessor::expandBiomeRegion(ConnectionId connectionId, String const& argumentString) {
@@ -812,7 +812,7 @@ String CommandProcessor::expandBiomeRegion(ConnectionId connectionId, String con
         world->expandBiomeRegion(Vec2I::floor(player->aimPosition()), newWidth);
       });
 
-  return done ? strf("expanded region to width %s", newWidth) : "failed to expand biome region";
+  return done ? strf("expanded region to width {}", newWidth) : "failed to expand biome region";
 }
 
 String CommandProcessor::updatePlanetType(ConnectionId connectionId, String const& argumentString) {
@@ -827,7 +827,7 @@ String CommandProcessor::updatePlanetType(ConnectionId connectionId, String cons
 
   bool done = m_universe->updatePlanetType(coordinate, newType, weatherBiome);
 
-  return done ? strf("set planet at %s to type %s weatherBiome %s", coordinate, newType, weatherBiome) : "failed to update planet type";
+  return done ? strf("set planet at {} to type {} weatherBiome {}", coordinate, newType, weatherBiome) : "failed to update planet type";
 }
 
 String CommandProcessor::setEnvironmentBiome(ConnectionId connectionId, String const&) {
@@ -982,7 +982,7 @@ String CommandProcessor::handleCommand(ConnectionId connectionId, String const& 
     return toString(*res);
 
   } else {
-    return strf("No such command %s", command);
+    return strf("No such command {}", command);
   }
 }
 
@@ -995,7 +995,7 @@ Maybe<String> CommandProcessor::adminCheck(ConnectionId connectionId, String con
     return {"Admin commands disabled on this server."};
   if (!config->get("allowAdminCommandsFromAnyone").toBool()) {
     if (!m_universe->isAdmin(connectionId))
-      return {strf("Insufficient privileges to %s.", commandDescription)};
+      return {strf("Insufficient privileges to {}.", commandDescription)};
   }
 
   return {};
@@ -1006,7 +1006,7 @@ Maybe<String> CommandProcessor::localCheck(ConnectionId connectionId, String con
     return {};
 
   if (!m_universe->isLocal(connectionId))
-    return {strf("The %s command can only be used locally.", commandDescription)};
+    return {strf("The {} command can only be used locally.", commandDescription)};
 
   return {};
 }

@@ -220,7 +220,7 @@ void ServerQueryThread::run() {
         processPacket(udpAddress, udpData, len);
     } catch (SocketClosedException const&) {
     } catch (std::exception const& e) {
-      Logger::error("ServerQueryThread exception caught: %s", outputException(e, true));
+      Logger::error("ServerQueryThread exception caught: {}", outputException(e, true));
     }
   }
 }

@@ -63,7 +63,7 @@ int main(int argc, char** argv) {
     for (uint64_t i = 0; i < times; ++i) {
       WorldServer worldServer(worldTemplate, File::ephemeralFile());
 
-      coutf("Starting world simulation for %s steps\n", steps);
+      coutf("Starting world simulation for {} steps\n", steps);
       double start = Time::monotonicTime();
       double lastReport = Time::monotonicTime();
       uint64_t entityCount = 0;
@@ -79,23 +79,23 @@ int main(int argc, char** argv) {
         if (reportEvery != 0 && j % reportEvery == 0) {
           float fps = reportEvery / (Time::monotonicTime() - lastReport);
           lastReport = Time::monotonicTime();
-          coutf("[%s] %ss | FPS: %s | Entities: %s\n", j, Time::monotonicTime() - start, fps, entityCount);
+          coutf("[{}] {}s | FPS: {} | Entities: {}\n", j, Time::monotonicTime() - start, fps, entityCount);
         }
         worldServer.update();
       }
       double totalTime = Time::monotonicTime() - start;
-      coutf("Finished run of running dungeon world '%s' with seed %s for %s steps in %s seconds, average FPS: %s\n",
+      coutf("Finished run of running dungeon world '{}' with seed {} for {} steps in {} seconds, average FPS: {}\n",
             dungeon, worldSeed, steps, totalTime, steps / totalTime);
       sumTime += totalTime;
     }
 
     if (times != 1) {
-      coutf("Average of all runs - time: %s, FPS: %s\n", sumTime / times, steps / (sumTime / times));
+      coutf("Average of all runs - time: {}, FPS: {}\n", sumTime / times, steps / (sumTime / times));
     }
 
     return 0;
   } catch (std::exception const& e) {
-    cerrf("Exception caught: %s\n", outputException(e, true));
+    cerrf("Exception caught: {}\n", outputException(e, true));
     return 1;
   }
 }

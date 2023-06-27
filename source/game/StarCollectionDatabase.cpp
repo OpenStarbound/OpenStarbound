@@ -59,7 +59,7 @@ Collection CollectionDatabase::collection(String const& collectionName) const {
   try {
     return m_collections.get(collectionName); 
   } catch (MapException const& e) {
-    throw CollectionDatabaseException(strf("Collection '%s' not found", collectionName), e);
+    throw CollectionDatabaseException(strf("Collection '{}' not found", collectionName), e);
   }
 }
 
@@ -67,7 +67,7 @@ List<Collectable> CollectionDatabase::collectables(String const& collectionName)
   try {
     return m_collectables.get(collectionName).values();
   } catch (MapException const& e) {
-    throw CollectionDatabaseException(strf("Collection '%s' not found", collectionName), e);
+    throw CollectionDatabaseException(strf("Collection '{}' not found", collectionName), e);
   }
 }
 
@@ -75,7 +75,7 @@ Collectable CollectionDatabase::collectable(String const& collectionName, String
   try {
     return m_collectables.get(collectionName).get(collectableName);
   } catch (MapException const& e) {
-    throw CollectionDatabaseException(strf("Collectable '%s' not found in collection '%s'", collectableName, collectionName), e);
+    throw CollectionDatabaseException(strf("Collectable '{}' not found in collection '{}'", collectableName, collectionName), e);
   }
 }
 

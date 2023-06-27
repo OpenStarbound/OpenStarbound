@@ -18,7 +18,7 @@ MaterialItem::MaterialItem(Json const& config, String const& directory, Json con
     auto drawables = iconDrawables();
     for (auto& d : drawables) {
       if (d.isImage()) {
-        String image = strf("?hueshift=%s", materialHueToDegrees(m_materialHueShift));
+        String image = strf("?hueshift={}", materialHueToDegrees(m_materialHueShift));
         d.imagePart().addDirectives(image, false);
       }
     }

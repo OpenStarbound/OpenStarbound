@@ -577,7 +577,7 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
       } else if (effect.type == "directive") {
         baseProcessingDirectives.append(effect.directives);
       } else {
-        throw NetworkedAnimatorException(strf("No such NetworkedAnimator effect type '%s'", effect.type));
+        throw NetworkedAnimatorException(strf("No such NetworkedAnimator effect type '{}'", effect.type));
       }
     }
   }

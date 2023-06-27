@@ -55,7 +55,7 @@ List<pair<String, float>> CelestialGraphics::drawWorld(
       layers.append({move(liquidBaseImage), imageScale});
     } else {
       if (baseCount > 0) {
-        String baseLayer = strf("%s?hueshift=%s", baseImages.replace("<biome>",
+        String baseLayer = strf("{}?hueshift={}", baseImages.replace("<biome>",
             terrestrialParameters->primaryBiome).replace("<num>", toString(baseCount)), terrestrialParameters->hueShift);
         layers.append({move(baseLayer), imageScale});
       }
@@ -68,7 +68,7 @@ List<pair<String, float>> CelestialGraphics::drawWorld(
       if (!dynamicsImages.empty())
         dynamicMaskString = "?addmask=" + dynamicsImages.replace("<num>", toString(celestialParameters.randomizeParameterRange(gfxConfig.getArray("dynamicsRange"), i).toInt()));
       if (terrestrialParameters->hueShift != 0)
-        hueShiftString = strf("?hueshift=%s", terrestrialParameters->hueShift);
+        hueShiftString = strf("?hueshift={}", terrestrialParameters->hueShift);
       String layer = baseImage + hueShiftString + dynamicMaskString;
       layers.append({move(layer), imageScale});
     }
@@ -87,7 +87,7 @@ List<pair<String, float>> CelestialGraphics::drawWorld(
     for (int i = 0; i < maskCount; ++i) {
       String biomeMaskBase = maskImages.replace("<num>", toString(maskCount - i));
       String dynamicMask = dynamicsImages.replace("<num>", toString(celestialParameters.randomizeParameterRange("dynamicsRange", i).toInt()));
-      String layer = strf("%s?addmask=%s", biomeMaskBase, dynamicMask);
+      String layer = strf("{}?addmask={}", biomeMaskBase, dynamicMask);
       layers.append({move(layer), imageScale});
     }
 
@@ -114,14 +114,14 @@ List<pair<String, float>> CelestialGraphics::drawWorld(
 
     float hueShift = celestialParameters.randomizeParameterRange(gfxConfig.getArray("primaryHueShiftRange")).toFloat();
     if (!baseImage.empty())
-      layers.append({strf("%s?hueshift=%s", baseImage, hueShift), imageScale});
+      layers.append({strf("{}?hueshift={}", baseImage, hueShift), imageScale});
 
     if (!overlayImages.empty()) {
       for (int i = 0; i < overlayCount; ++i) {
         hueShift += celestialParameters.randomizeParameterRange(gfxConfig.getArray("hueShiftOffsetRange")).toFloat();
         String maskImage = dynamicsImages.replace("<num>", toString(celestialParameters.randomizeParameterRange(gfxConfig.getArray("dynamicsRange"), i).toInt()));
         String overlayImage = overlayImages.replace("<num>", toString(i));
-        layers.append({strf("%s?hueshift=%s?addmask=%s", overlayImage, hueShift, maskImage), imageScale});
+        layers.append({strf("{}?hueshift={}?addmask={}", overlayImage, hueShift, maskImage), imageScale});
       }
     }
 
@@ -245,7 +245,7 @@ List<pair<String, float>> CelestialGraphics::drawSystemTwinkle(CelestialDatabase
   float twinkleTime = parameters->randomizeParameterRange("twinkleTime").toFloat();
   String twinkleBackground = parameters->getParameter("twinkleBackground").toString();
 
-  String twinkleFrame = strf("%s:%s", twinkleFrameset, (int)(std::fmod<double>(time / twinkleTime, 1.0f) * twinkleFrameCount));
+  String twinkleFrame = strf("{}:{}", twinkleFrameset, (int)(std::fmod<double>(time / twinkleTime, 1.0f) * twinkleFrameCount));
 
   return {{move(twinkleBackground), 1.0f}, {move(twinkleFrame), twinkleScale}};
 }

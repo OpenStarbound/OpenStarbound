@@ -209,7 +209,7 @@ void SmallVector<Element, MaxStackSize>::reserve(size_t newCapacity) {
     newCapacity = max(oldCapacity * 2, newCapacity);
     auto newMem = (Element*)Star::malloc(newCapacity * sizeof(Element));
     if (!newMem)
-      throw MemoryException::format("Could not set new SmallVector capacity %s\n", newCapacity);
+      throw MemoryException::format("Could not set new SmallVector capacity {}\n", newCapacity);
 
     size_t size = m_end - m_begin;
     auto oldMem = m_begin;
@@ -238,14 +238,14 @@ void SmallVector<Element, MaxStackSize>::reserve(size_t newCapacity) {
 template <typename Element, size_t MaxStackSize>
 auto SmallVector<Element, MaxStackSize>::at(size_t i) -> reference {
   if (i >= size())
-    throw OutOfRangeException::format("out of range in SmallVector::at(%s)", i);
+    throw OutOfRangeException::format("out of range in SmallVector::at({})", i);
   return m_begin[i];
 }
 
 template <typename Element, size_t MaxStackSize>
 auto SmallVector<Element, MaxStackSize>::at(size_t i) const -> const_reference {
   if (i >= size())
-    throw OutOfRangeException::format("out of range in SmallVector::at(%s)", i);
+    throw OutOfRangeException::format("out of range in SmallVector::at({})", i);
   return m_begin[i];
 }
 

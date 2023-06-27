@@ -57,12 +57,12 @@ void grepMap(SearchParameters const& search, String file) {
 
   for (auto tileLayer : map->tileLayers())
     grepTileLayer(search, map, tileLayer, [&](String const& tileName, Vec2I const& pos) {
-        coutf("%s: %s: %s @ %s\n", file, tileLayer->name(), tileName, pos);
+        coutf("{}: {}: {} @ {}\n", file, tileLayer->name(), tileName, pos);
       });
 
   for (auto objectGroup : map->objectGroups())
     grepObjectGroup(search, objectGroup, [&](String const& tileName, Vec2I const& pos) {
-        coutf("%s: %s: %s @ %s\n", file, objectGroup->name(), tileName, pos);
+        coutf("{}: {}: {} @ {}\n", file, objectGroup->name(), tileName, pos);
       });
 }
 
@@ -110,7 +110,7 @@ int main(int argc, char* argv[]) {
 
     return 0;
   } catch (std::exception const& e) {
-    cerrf("exception caught: %s\n", outputException(e, true));
+    cerrf("exception caught: {}\n", outputException(e, true));
     return 1;
   }
 }

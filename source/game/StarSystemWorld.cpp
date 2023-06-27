@@ -272,7 +272,7 @@ SystemObjectConfig SystemWorld::systemObjectConfig(String const& name, Uuid cons
 }
 
 Json SystemWorld::systemObjectTypeConfig(String const& name) {
-  return Root::singleton().assets()->json(strf("/system_objects.config:%s", name));
+  return Root::singleton().assets()->json(strf("/system_objects.config:{}", name));
 }
 
 Maybe<Vec2F> SystemWorld::systemLocationPosition(SystemLocation const& location) const {

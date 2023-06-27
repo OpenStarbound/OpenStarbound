@@ -42,7 +42,7 @@ void IODevice::writeFull(char const* data, size_t len) {
 
 void IODevice::open(IOMode mode) {
   if (mode != m_mode)
-    throw IOException::format("Cannot reopen device '%s", deviceName());
+    throw IOException::format("Cannot reopen device '{}", deviceName());
 }
 
 void IODevice::close() {
@@ -52,7 +52,7 @@ void IODevice::close() {
 void IODevice::sync() {}
 
 String IODevice::deviceName() const {
-  return strf("IODevice <%s>", (void*)this);
+  return strf("IODevice <{}>", (void*)this);
 }
 
 bool IODevice::atEnd() {

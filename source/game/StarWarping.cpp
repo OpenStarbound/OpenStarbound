@@ -50,11 +50,11 @@ String printWorldId(WorldId const& worldId) {
 
     String uuidPart = instanceWorldId->uuid ? instanceWorldId->uuid->hex() : "-";
     String levelPart = instanceWorldId->level ? toString(*instanceWorldId->level) : "-";
-    return strf("InstanceWorld:%s:%s:%s", instanceWorldId->instance, uuidPart, levelPart);
+    return strf("InstanceWorld:{}:{}:{}", instanceWorldId->instance, uuidPart, levelPart);
   } else if (auto celestialWorldId = worldId.ptr<CelestialWorldId>()) {
-    return strf("CelestialWorld:%s", *celestialWorldId);
+    return strf("CelestialWorld:{}", *celestialWorldId);
   } else if (auto clientShipWorldId = worldId.ptr<ClientShipWorldId>()) {
-    return strf("ClientShipWorld:%s", clientShipWorldId->hex());
+    return strf("ClientShipWorld:{}", clientShipWorldId->hex());
   } else {
     return "Nowhere";
   }
@@ -98,7 +98,7 @@ WorldId parseWorldId(String const& printedId) {
   } else if (type.equalsIgnoreCase("Nowhere")) {
     return {};
   } else {
-    throw StarException::format("Improper WorldId type '%s'", type);
+    throw StarException::format("Improper WorldId type '{}'", type);
   }
 }
 
@@ -149,7 +149,7 @@ String printSpawnTarget(SpawnTarget spawnTarget) {
   if (auto str = spawnTarget.ptr<SpawnTargetUniqueEntity>())
     return *str;
   else if (auto pos = spawnTarget.ptr<SpawnTargetPosition>())
-    return strf("%s.%s", (*pos)[0], (*pos)[1]);
+    return strf("{}.{}", (*pos)[0], (*pos)[1]);
   else if (auto x = spawnTarget.ptr<SpawnTargetX>())
     return toString(x->t);
   else
@@ -217,11 +217,11 @@ String printWarpAction(WarpAction const& warpAction) {
     else if (*warpAlias == WarpAlias::OwnShip)
       return "OwnShip";
   } else if (auto warpToPlayer = warpAction.ptr<WarpToPlayer>()) {
-    return strf("Player:%s", warpToPlayer->hex());
+    return strf("Player:{}", warpToPlayer->hex());
   } else if (auto warpToWorld = warpAction.ptr<WarpToWorld>()) {
     auto toWorldString = printWorldId(warpToWorld->world);
     if (auto spawnTarget = warpToWorld->target)
-      toWorldString = strf("%s=%s", toWorldString, printSpawnTarget(spawnTarget));
+      toWorldString = strf("{}={}", toWorldString, printSpawnTarget(spawnTarget));
     return toWorldString;
   }
 

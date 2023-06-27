@@ -34,7 +34,7 @@ LuaRoot::~LuaRoot() {
         JsonObject profile;
         profile.set("function", entry.name.value("<function>"));
         profile.set("scope", entry.nameScope.value("?"));
-        profile.set("source", strf("%s:%s", entry.source, entry.sourceLine));
+        profile.set("source", strf("{}:{}", entry.source, entry.sourceLine));
         profile.set("self", entry.selfTime);
         profile.set("total", entry.totalTime);
         List<LuaProfileEntry> calls;
@@ -51,9 +51,9 @@ LuaRoot::~LuaRoot() {
       File::makeDirectory(m_storageDirectory);
     }
 
-    String filename = strf("%s.luaprofile", Time::printCurrentDateAndTime("<year>-<month>-<day>-<hours>-<minutes>-<seconds>-<millis>"));
+    String filename = strf("{}.luaprofile", Time::printCurrentDateAndTime("<year>-<month>-<day>-<hours>-<minutes>-<seconds>-<millis>"));
     String path = File::relativeTo(m_storageDirectory, filename);
-    Logger::info("Writing lua profile %s", filename);
+    Logger::info("Writing lua profile {}", filename);
     File::writeFile(profileSummary, path);
   }
 }

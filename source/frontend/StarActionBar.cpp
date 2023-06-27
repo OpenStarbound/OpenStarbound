@@ -31,15 +31,15 @@ ActionBar::ActionBar(MainInterfacePaneManager* paneManager, PlayerPtr player) {
   GuiReader reader;
 
   for (uint8_t i = 0; i < m_player->inventory()->customBarIndexes(); ++i) {
-    reader.registerCallback(strf("customBar%sL", i + 1), bind(&ActionBar::customBarClick, this, i, true));
-    reader.registerCallback(strf("customBar%sR", i + 1), bind(&ActionBar::customBarClick, this, i, false));
+    reader.registerCallback(strf("customBar{}L", i + 1), bind(&ActionBar::customBarClick, this, i, true));
+    reader.registerCallback(strf("customBar{}R", i + 1), bind(&ActionBar::customBarClick, this, i, false));
 
-    reader.registerCallback(strf("customBar%sL.right", i + 1), bind(&ActionBar::customBarClickRight, this, i, true));
-    reader.registerCallback(strf("customBar%sR.right", i + 1), bind(&ActionBar::customBarClickRight, this, i, false));
+    reader.registerCallback(strf("customBar{}L.right", i + 1), bind(&ActionBar::customBarClickRight, this, i, true));
+    reader.registerCallback(strf("customBar{}R.right", i + 1), bind(&ActionBar::customBarClickRight, this, i, false));
   }
 
   for (uint8_t i = 0; i < EssentialItemCount; ++i)
-    reader.registerCallback(strf("essentialBar%s", i + 1), bind(&ActionBar::essentialBarClick, this, i));
+    reader.registerCallback(strf("essentialBar{}", i + 1), bind(&ActionBar::essentialBarClick, this, i));
 
   reader.registerCallback("pickupToActionBar", [=](Widget* widget) {
       auto button = as<ButtonWidget>(widget);
@@ -53,10 +53,10 @@ ActionBar::ActionBar(MainInterfacePaneManager* paneManager, PlayerPtr player) {
   reader.construct(m_config.get("paneLayout"), this);
 
   for (uint8_t i = 0; i < m_player->inventory()->customBarIndexes(); ++i) {
-    auto customBarLeft = fetchChild<ItemSlotWidget>(strf("customBar%sL", i + 1));
-    auto customBarRight = fetchChild<ItemSlotWidget>(strf("customBar%sR", i + 1));
-    auto customBarLeftOverlay = fetchChild<ImageWidget>(strf("customBar%sLOverlay", i + 1));
-    auto customBarRightOverlay = fetchChild<ImageWidget>(strf("customBar%sROverlay", i + 1));
+    auto customBarLeft = fetchChild<ItemSlotWidget>(strf("customBar{}L", i + 1));
+    auto customBarRight = fetchChild<ItemSlotWidget>(strf("customBar{}R", i + 1));
+    auto customBarLeftOverlay = fetchChild<ImageWidget>(strf("customBar{}LOverlay", i + 1));
+    auto customBarRightOverlay = fetchChild<ImageWidget>(strf("customBar{}ROverlay", i + 1));
 
     TextPositioning countPosition = {jsonToVec2F(m_config.get("countMidAnchor")), HorizontalAnchor::HMidAnchor};
     customBarLeft->setCountPosition(countPosition);
@@ -69,7 +69,7 @@ ActionBar::ActionBar(MainInterfacePaneManager* paneManager, PlayerPtr player) {
   m_customSelectedWidget = fetchChild<ImageWidget>("customSelect");
 
   for (uint8_t i = 0; i < EssentialItemCount; ++i)
-    m_essentialBarWidgets.append(fetchChild<ItemSlotWidget>(strf("essentialBar%s", i + 1)));
+    m_essentialBarWidgets.append(fetchChild<ItemSlotWidget>(strf("essentialBar{}", i + 1)));
   m_essentialSelectedWidget = fetchChild<ImageWidget>("essentialSelect");
 }
 

@@ -147,7 +147,7 @@ RectD jsonToRectD(Json const& v) {
     auto upperRight = jsonToVec2D(v.get(1));
     return RectD(lowerLeft, upperRight);
   } catch (JsonException const& e) {
-    throw JsonException(strf("Inner position not well formed in jsonToRectD: %s", outputException(e, true)));
+    throw JsonException(strf("Inner position not well formed in jsonToRectD: {}", outputException(e, true)));
   }
 }
 
@@ -178,7 +178,7 @@ RectI jsonToRectI(Json const& v) {
     auto upperRight = jsonToVec2I(v.get(1));
     return RectI(lowerLeft, upperRight);
   } catch (JsonException const& e) {
-    throw JsonException(strf("Inner position not well formed in jsonToRectI: %s", outputException(e, true)));
+    throw JsonException(strf("Inner position not well formed in jsonToRectI: {}", outputException(e, true)));
   }
 }
 
@@ -201,7 +201,7 @@ RectU jsonToRectU(Json const& v) {
     auto upperRight = jsonToVec2U(v.get(1));
     return RectU(lowerLeft, upperRight);
   } catch (JsonException const& e) {
-    throw JsonException(strf("Inner position not well formed in jsonToRectU: %s", outputException(e, true)));
+    throw JsonException(strf("Inner position not well formed in jsonToRectU: {}", outputException(e, true)));
   }
 }
 
@@ -226,7 +226,7 @@ Color jsonToColor(Json const& v) {
   } else if (v.type() == Json::Type::String) {
     return Color(v.toString());
   } else {
-    throw JsonException(strf("Json of type %s cannot be converted to color", v.typeName()));
+    throw JsonException(strf("Json of type {} cannot be converted to color", v.typeName()));
   }
 }
 

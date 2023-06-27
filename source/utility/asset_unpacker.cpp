@@ -10,7 +10,7 @@ int main(int argc, char** argv) {
     double startTime = Time::monotonicTime();
 
     if (argc != 3) {
-      cerrf("Usage: %s <assets pak path> <target output directory>\n", argv[0]);
+      cerrf("Usage: {} <assets pak path> <target output directory>\n", argv[0]);
       cerrf("If the target output directory does not exist it will be created\n");
       return 1;
     }
@@ -35,8 +35,8 @@ int main(int argc, char** argv) {
         File::makeDirectoryRecursive(relativeDir);
         File::writeFile(fileData, relativePath);
       } catch (AssetSourceException const& e) {
-        cerrf("Could not open file: %s\n", file);
-        cerrf("Reason: %s\n", outputException(e, false));
+        cerrf("Could not open file: {}\n", file);
+        cerrf("Reason: {}\n", outputException(e, false));
       }
     }
 
@@ -44,10 +44,10 @@ int main(int argc, char** argv) {
     if (!metadata.empty())
       File::writeFile(Json(move(metadata)).printJson(2), "_metadata");
 
-    coutf("Unpacked assets to %s in %ss\n", outputFolderPath, Time::monotonicTime() - startTime);
+    coutf("Unpacked assets to {} in {}s\n", outputFolderPath, Time::monotonicTime() - startTime);
     return 0;
   } catch (std::exception const& e) {
-    cerrf("Exception caught: %s\n", outputException(e, true));
+    cerrf("Exception caught: {}\n", outputException(e, true));
     return 1;
   }
 }

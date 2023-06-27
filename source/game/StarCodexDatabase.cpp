@@ -19,11 +19,11 @@ CodexDatabase::CodexDatabase() {
       auto codex = make_shared<Codex>(codexJson, AssetPath::directory(file));
 
       if (m_codexes.contains(codex->id()))
-        throw CodexDatabaseException::format("Duplicate codex named '%s', config file '%s'", codex->id(), file);
+        throw CodexDatabaseException::format("Duplicate codex named '{}', config file '{}'", codex->id(), file);
 
       m_codexes[codex->id()] = codex;
     } catch (std::exception const& e) {
-      throw CodexDatabaseException(strf("Error reading codex config %s", file), e);
+      throw CodexDatabaseException(strf("Error reading codex config {}", file), e);
     }
   }
 }

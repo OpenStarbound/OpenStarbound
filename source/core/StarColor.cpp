@@ -221,7 +221,7 @@ Color::Color(const String& name) {
     if (i != NamedColors.end())
       *this = i->second;
     else
-      throw ColorException(strf("Named color %s not found", name), false);
+      throw ColorException(strf("Named color {} not found", name), false);
   }
 }
 
@@ -622,7 +622,7 @@ Vec4B Color::hexToVec4B(StringView s) {
   } else if (s.utf8Size() == 8) {
     hexDecode(s.utf8Ptr(), 8, (char*)cbytes.data(), 4);
   } else {
-    throw ColorException(strf("Improper size for hex string '%s' in Color::hexToVec4B", s), false);
+    throw ColorException(strf("Improper size for hex string '{}' in Color::hexToVec4B", s), false);
   }
 
   return Vec4B(move(cbytes));

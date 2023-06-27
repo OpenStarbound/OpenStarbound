@@ -129,7 +129,7 @@ ContainerPane::ContainerPane(WorldClientPtr worldClient, PlayerPtr player, Conta
   m_reader.construct(guiConfig.get("gui"), this);
 
   if (auto countWidget = fetchChild<LabelWidget>("count"))
-    countWidget->setText(countWidget->text().replace("<slots>", strf("%s", container->containerSize())));
+    countWidget->setText(countWidget->text().replace("<slots>", strf("{}", container->containerSize())));
 
   m_itemBag = make_shared<ItemBag>(container->containerSize());
   auto items = container->containerItems();

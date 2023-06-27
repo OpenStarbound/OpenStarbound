@@ -102,7 +102,7 @@ auto IdMapWrapper<BaseMap>::nextId() -> IdType {
 template <typename BaseMap>
 void IdMapWrapper<BaseMap>::add(IdType id, MappedType mappedType) {
   if (!BaseMap::insert(make_pair(move(id), move(mappedType))).second)
-    throw IdMapException::format("IdMapWrapper::add(id, value) called with pre-existing id '%s'", outputAny(id));
+    throw IdMapException::format("IdMapWrapper::add(id, value) called with pre-existing id '{}'", outputAny(id));
 }
 
 template <typename BaseMap>

@@ -668,14 +668,14 @@ size_t RandomAccessListMixin<BaseList>::lastIndexOf(const_reference e, size_t ti
 template <typename BaseList>
 auto RandomAccessListMixin<BaseList>::at(size_t n) const -> const_reference {
   if (n >= Base::size())
-    throw OutOfRangeException(strf("out of range list::at(%s)", n));
+    throw OutOfRangeException(strf("out of range list::at({})", n));
   return operator[](n);
 }
 
 template <typename BaseList>
 auto RandomAccessListMixin<BaseList>::at(size_t n) -> reference {
   if (n >= Base::size())
-    throw OutOfRangeException(strf("out of range list::at(%s)", n));
+    throw OutOfRangeException(strf("out of range list::at({})", n));
   return operator[](n);
 }
 

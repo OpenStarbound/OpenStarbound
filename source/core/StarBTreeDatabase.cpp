@@ -886,7 +886,7 @@ void BTreeDatabase::updateBlock(BlockIndex blockIndex, ByteArray const& block) {
 
 void BTreeDatabase::rawReadBlock(BlockIndex blockIndex, size_t blockOffset, char* block, size_t size) const {
   if (blockOffset > m_blockSize || size > m_blockSize - blockOffset)
-    throw DBException::format("Read past end of block, offset: %s size %s", blockOffset, size);
+    throw DBException::format("Read past end of block, offset: {} size {}", blockOffset, size);
 
   if (size <= 0)
     return;
@@ -896,7 +896,7 @@ void BTreeDatabase::rawReadBlock(BlockIndex blockIndex, size_t blockOffset, char
 
 void BTreeDatabase::rawWriteBlock(BlockIndex blockIndex, size_t blockOffset, char const* block, size_t size) const {
   if (blockOffset > m_blockSize || size > m_blockSize - blockOffset)
-    throw DBException::format("Write past end of block, offset: %s size %s", blockOffset, size);
+    throw DBException::format("Write past end of block, offset: {} size {}", blockOffset, size);
 
   if (size <= 0)
     return;
@@ -910,7 +910,7 @@ auto BTreeDatabase::readFreeIndexBlock(BlockIndex blockIndex) -> FreeIndexBlock 
   ByteArray magic(2, 0);
   rawReadBlock(blockIndex, 0, magic.ptr(), 2);
   if (magic != ByteArray(FreeIndexMagic, 2))
-    throw DBException::format("Internal exception! block %s missing free index block marker!", blockIndex);
+    throw DBException::format("Internal exception! block {} missing free index block marker!", blockIndex);
 
   FreeIndexBlock freeIndexBlock;
   DataStreamBuffer buffer(max(sizeof(BlockIndex), (size_t)4));
@@ -1124,20 +1124,20 @@ void BTreeDatabase::doCommit() {
 
 void BTreeDatabase::checkIfOpen(char const* methodName, bool shouldBeOpen) const {
   if (shouldBeOpen && !m_open)
-    throw DBException::format("BTreeDatabase method '%s' called when not open, must be open.", methodName);
+    throw DBException::format("BTreeDatabase method '{}' called when not open, must be open.", methodName);
   else if (!shouldBeOpen && m_open)
-    throw DBException::format("BTreeDatabase method '%s' called when open, cannot call when open.", methodName);
+    throw DBException::format("BTreeDatabase method '{}' called when open, cannot call when open.", methodName);
 }
 
 void BTreeDatabase::checkBlockIndex(size_t blockIndex) const {
   BlockIndex blockCount = (m_deviceSize - HeaderSize) / m_blockSize;
   if (blockIndex >= blockCount)
-    throw DBException::format("blockIndex: %s out of block range", blockIndex);
+    throw DBException::format("blockIndex: {} out of block range", blockIndex);
 }
 
 void BTreeDatabase::checkKeySize(ByteArray const& k) const {
   if (k.size() != m_keySize)
-    throw DBException::format("Wrong key size %s", k.size());
+    throw DBException::format("Wrong key size {}", k.size());
 }
 
 uint32_t BTreeDatabase::maxFreeIndexLength() const {

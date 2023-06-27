@@ -15,7 +15,7 @@ UniverseFlagAction parseUniverseFlagAction(Json const& json) {
     res.targetPosition = jsonToVec2I(json.get("targetPosition"));
     return res;
   } else {
-    throw StarException(strf("Unsupported universe flag action type %s", actionType));
+    throw StarException(strf("Unsupported universe flag action type {}", actionType));
   }
 }
 
@@ -53,11 +53,11 @@ void UniverseSettings::setFlag(String const& flag) {
   MutexLocker locker(m_lock);
 
   if (m_flags.add(flag)) {
-    Logger::info("Universe flags set to %s", m_flags);
+    Logger::info("Universe flags set to {}", m_flags);
     if (auto flagActions = m_flagActions.maybe(flag))
       m_pendingFlagActions.appendAll(*flagActions);
     else
-      Logger::info("No actions configured for universe flag %s", flag);
+      Logger::info("No actions configured for universe flag {}", flag);
   }
 }
 

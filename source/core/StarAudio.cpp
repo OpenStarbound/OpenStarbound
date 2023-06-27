@@ -59,13 +59,13 @@ namespace {
     uint32_t fileSize = readLEType<uint32_t>(device);
     fileSize += sigLength + sizeof(fileSize);
     if (fileSize != device->size())
-      throw AudioException(strf("Wav file is wrong size, reports %d is actually %d", fileSize, device->size()));
+      throw AudioException(strf("Wav file is wrong size, reports {} is actually {}", fileSize, device->size()));
 
     device->readFull(waveSig.get(), sigLength);
 
     if ((strcmp(riffSig.get(), "RIFF") != 0) || (strcmp(waveSig.get(), "WAVE") != 0)) { // bytes are not magic
       auto p = [](char a) { return isprint(a) ? a : '?'; };
-      throw AudioException(strf("Wav file has wrong magic bytes, got `%c%c%c%c' and `%c%c%c%c' but expected `RIFF' and `WAVE'",
+      throw AudioException(strf("Wav file has wrong magic bytes, got `{}{}{}{}' and `{}{}{}{}' but expected `RIFF' and `WAVE'",
               p(riffSig[0]), p(riffSig[1]), p(riffSig[2]), p(riffSig[3]), p(waveSig[0]), p(waveSig[1]), p(waveSig[2]), p(waveSig[3])));
     }
 
@@ -74,7 +74,7 @@ namespace {
     device->readFull(fmtSig.get(), sigLength);
     if (strcmp(fmtSig.get(), "fmt ") != 0) { // friendship is magic
       auto p = [](char a) { return isprint(a) ? a : '?'; };
-      throw AudioException(strf("Wav file fmt subchunk has wrong magic bytes, got `%c%c%c%c' but expected `fmt '",
+      throw AudioException(strf("Wav file fmt subchunk has wrong magic bytes, got `{}{}{}{}' but expected `fmt '",
           p(fmtSig[0]),
           p(fmtSig[1]),
           p(fmtSig[2]),
@@ -84,7 +84,7 @@ namespace {
     uint32_t fmtSubchunkSize = readLEType<uint32_t>(device);
     fmtSubchunkSize += sigLength;
     if (fmtSubchunkSize < 20)
-      throw AudioException(strf("fmt subchunk is sized wrong, expected 20 got %d.  Is this wav file not PCM?", fmtSubchunkSize));
+      throw AudioException(strf("fmt subchunk is sized wrong, expected 20 got {}.  Is this wav file not PCM?", fmtSubchunkSize));
 
     uint16_t audioFormat = readLEType<uint16_t>(device);
     if (audioFormat != 1)
@@ -110,14 +110,14 @@ namespace {
     device->readFull(dataSig.get(), sigLength);
     if (strcmp(dataSig.get(), "data") != 0) { // magic or more magic?
       auto p = [](char a) { return isprint(a) ? a : '?'; };
-      throw AudioException(strf("Wav file data subchunk has wrong magic bytes, got `%c%c%c%c' but expected `data'",
+      throw AudioException(strf("Wav file data subchunk has wrong magic bytes, got `{}{}{}{}' but expected `data'",
           p(dataSig[0]), p(dataSig[1]), p(dataSig[2]), p(dataSig[3])));
     }
 
     uint32_t wavDataSize = readLEType<uint32_t>(device);
     size_t wavDataOffset = (size_t)device->pos();
     if (wavDataSize + wavDataOffset > (size_t)device->size()) {
-      throw AudioException(strf("Wav file data size reported is inconsistent with file size, got %d but expected %d",
+      throw AudioException(strf("Wav file data size reported is inconsistent with file size, got {} but expected {}",
           device->size(), wavDataSize + wavDataOffset));
     }
 

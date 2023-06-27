@@ -38,10 +38,10 @@ WidgetConstructResult GuiReader::titleHandler(String const&, Json const& config)
         String type = iconConfig.getString("type");
         auto icon = m_constructors.get(type)("icon", iconConfig);
         if (!icon.obj)
-          throw WidgetParserException(strf("Title specified incompatible icon type: %s", type));
+          throw WidgetParserException(strf("Title specified incompatible icon type: {}", type));
         m_pane->setTitle(icon.obj, title, subtitle);
       } catch (JsonException const& e) {
-        throw WidgetParserException(strf("Malformed icon configuration data in title. %s", outputException(e, false)));
+        throw WidgetParserException(strf("Malformed icon configuration data in title. {}", outputException(e, false)));
       }
     }
   } else {
@@ -74,7 +74,7 @@ WidgetConstructResult GuiReader::backgroundHandler(String const&, Json const& co
       footer = config.getString("fileFooter", "");
     } catch (MapException const& e) {
       throw WidgetParserException(
-          strf("Malformed gui json, missing a required value in the map. %s", outputException(e, false)));
+          strf("Malformed gui json, missing a required value in the map. {}", outputException(e, false)));
     }
 
     m_pane->setBG(header, body, footer);

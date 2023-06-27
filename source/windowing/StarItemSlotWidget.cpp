@@ -178,20 +178,20 @@ void ItemSlotWidget::renderImpl() {
     }
 
     int frame = (int)roundf(m_progress * 18); // TODO: Hardcoded lol
-    context()->drawInterfaceQuad(String(strf("/interface/cooldown.png:%d", frame)), Vec2F(screenPosition()));
+    context()->drawInterfaceQuad(String(strf("/interface/cooldown.png:{}", frame)), Vec2F(screenPosition()));
 
     if (m_item->count() > 1 && m_showCount) { // we don't need to tell people that there's only 1 of something
       context()->setFont(m_font);
       context()->setFontSize(m_fontSize);
       context()->setFontColor(m_fontColor.toRgba());
       context()->setFontMode(m_countFontMode);
-      context()->renderInterfaceText(strf("%d", m_item->count()), m_countPosition.translated(Vec2F(screenPosition())));
+      context()->renderInterfaceText(strf("{}", m_item->count()), m_countPosition.translated(Vec2F(screenPosition())));
     }
 
   } else if (m_drawBackingImageWhenEmpty && m_backingImage != "") {
     context()->drawInterfaceQuad(m_backingImage, Vec2F(screenPosition()));
     int frame = (int)roundf(m_progress * 18); // TODO: Hardcoded lol
-    context()->drawInterfaceQuad(String(strf("/interface/cooldown.png:%d", frame)), Vec2F(screenPosition()));
+    context()->drawInterfaceQuad(String(strf("/interface/cooldown.png:{}", frame)), Vec2F(screenPosition()));
   }
 
   if (m_highlightEnabled) {

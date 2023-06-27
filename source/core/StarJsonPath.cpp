@@ -8,21 +8,21 @@ namespace JsonPath {
     buffer.clear();
 
     if (*iterator != '/')
-      throw ParsingException::format("Missing leading '/' in Json pointer \"%s\"", path);
+      throw ParsingException::format("Missing leading '/' in Json pointer \"{}\"", path);
     iterator++;
 
     while (iterator != end && *iterator != '/') {
       if (*iterator == '~') {
         ++iterator;
         if (iterator == end)
-          throw ParsingException::format("Incomplete escape sequence in Json pointer \"%s\"", path);
+          throw ParsingException::format("Incomplete escape sequence in Json pointer \"{}\"", path);
 
         if (*iterator == '0')
           buffer.append('~');
         else if (*iterator == '1')
           buffer.append('/');
         else
-          throw ParsingException::format("Invalid escape sequence in Json pointer \"%s\"", path);
+          throw ParsingException::format("Invalid escape sequence in Json pointer \"{}\"", path);
         ++iterator;
       } else
         buffer.append(*iterator++);
@@ -38,7 +38,7 @@ namespace JsonPath {
     buffer.clear();
 
     if (*iterator == '.') {
-      throw ParsingException::format("Entry starts with '.' in query path \"%s\"", path);
+      throw ParsingException::format("Entry starts with '.' in query path \"{}\"", path);
 
     } else if (*iterator == '[') {
       // Parse array number and ']'
@@ -49,7 +49,7 @@ namespace JsonPath {
         buffer.append(*iterator++);
 
       if (iterator == end || *iterator != ']')
-        throw ParsingException::format("Array has no trailing ']' or has invalid character in query path \"%s\"", path);
+        throw ParsingException::format("Array has no trailing ']' or has invalid character in query path \"{}\"", path);
 
       // Consume trailing ']'
       ++iterator;

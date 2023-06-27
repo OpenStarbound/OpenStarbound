@@ -57,7 +57,7 @@ TeleportDialog::TeleportDialog(UniverseClientPtr client,
     entry->fetchChild<LabelWidget>("planetName")->setText(dest.getString("planetName", ""));
     if (dest.contains("icon"))
       entry->fetchChild<ImageWidget>("icon")->setImage(
-          strf("/interface/bookmarks/icons/%s.png", dest.getString("icon")));
+          strf("/interface/bookmarks/icons/{}.png", dest.getString("icon")));
     entry->fetchChild<ButtonWidget>("editButton")->hide();
 
     if (dest.getBool("mission", false)) {

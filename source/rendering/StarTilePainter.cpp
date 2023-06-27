@@ -310,7 +310,7 @@ bool TilePainter::produceTerrainPrimitives(HashMap<QuadZLevel, List<RenderPrimit
         if (hue == 0)
           texture = piece->texture;
         else
-          texture = strf("%s?hueshift=%s", piece->texture, materialHueToDegrees(hue));
+          texture = strf("{}?hueshift={}", piece->texture, materialHueToDegrees(hue));
 
         return m_textureGroup->create(*assets->image(texture));
       });

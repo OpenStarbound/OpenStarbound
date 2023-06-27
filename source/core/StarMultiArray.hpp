@@ -291,7 +291,7 @@ template <typename Element, size_t Rank>
 Element const& MultiArray<Element, Rank>::at(IndexArray const& index) const {
   for (size_t i = Rank; i != 0; --i) {
     if (index[i - 1] >= m_shape[i - 1])
-      throw MultiArrayException(strf("Out of bounds on MultiArray::at(%s)", index));
+      throw MultiArrayException(strf("Out of bounds on MultiArray::at({})", index));
   }
 
   return m_data[storageIndex(index)];
@@ -301,7 +301,7 @@ template <typename Element, size_t Rank>
 Element& MultiArray<Element, Rank>::at(IndexArray const& index) {
   for (size_t i = Rank; i != 0; --i) {
     if (index[i - 1] >= m_shape[i - 1])
-      throw MultiArrayException(strf("Out of bounds on MultiArray::at(%s)", index));
+      throw MultiArrayException(strf("Out of bounds on MultiArray::at({})", index));
   }
 
   return m_data[storageIndex(index)];
@@ -323,7 +323,7 @@ template <typename Element, size_t Rank>
 void MultiArray<Element, Rank>::set(IndexArray const& index, Element element) {
   for (size_t i = Rank; i != 0; --i) {
     if (index[i - 1] >= m_shape[i - 1])
-      throw MultiArrayException(strf("Out of bounds on MultiArray::set(%s)", index));
+      throw MultiArrayException(strf("Out of bounds on MultiArray::set({})", index));
   }
 
   m_data[storageIndex(index)] = move(element);

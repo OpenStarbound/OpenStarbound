@@ -1717,20 +1717,20 @@ T& LuaUserData::get() const {
 template <typename Function>
 void LuaCallbacks::registerCallback(String name, Function&& func) {
   if (!m_callbacks.insert(name, LuaDetail::wrapFunction(forward<Function>(func))).second)
-    throw LuaException::format("Lua callback '%s' was registered twice", name);
+    throw LuaException::format("Lua callback '{}' was registered twice", name);
 }
 
 template <typename Return, typename... Args, typename Function>
 void LuaCallbacks::registerCallbackWithSignature(String name, Function&& func) {
   if (!m_callbacks.insert(name, LuaDetail::wrapFunctionWithSignature<Return, Args...>(forward<Function>(func))).second)
-    throw LuaException::format("Lua callback '%s' was registered twice", name);
+    throw LuaException::format("Lua callback '{}' was registered twice", name);
 }
 
 template <typename T>
 template <typename Function>
 void LuaMethods<T>::registerMethod(String name, Function&& func) {
   if (!m_methods.insert(name, LuaDetail::wrapMethod(forward<Function>(move(func)))).second)
-    throw LuaException::format("Lua method '%s' was registered twice", name);
+    throw LuaException::format("Lua method '{}' was registered twice", name);
 }
 
 template <typename T>
@@ -1738,7 +1738,7 @@ template <typename Return, typename... Args, typename Function>
 void LuaMethods<T>::registerMethodWithSignature(String name, Function&& func) {
   if (!m_methods.insert(name, LuaDetail::wrapMethodWithSignature<Return, Args...>(forward<Function>(move(func))))
            .second)
-    throw LuaException::format("Lua method '%s' was registered twice", name);
+    throw LuaException::format("Lua method '{}' was registered twice", name);
 }
 
 template <typename T>
@@ -1766,7 +1766,7 @@ Ret LuaContext::invokePath(String const& key, Args const&... args) const {
   auto p = getPath(key);
   if (auto f = p.ptr<LuaFunction>())
     return f->invoke<Ret>(args...);
-  throw LuaException::format("invokePath called on path '%s' which is not function type", key);
+  throw LuaException::format("invokePath called on path '{}' which is not function type", key);
 }
 
 template <typename T>
@@ -1867,14 +1867,14 @@ template <typename T>
 T LuaEngine::luaTo(LuaValue&& v) {
   if (auto res = luaMaybeTo<T>(move(v)))
     return res.take();
-  throw LuaConversionException::format("Error converting LuaValue to type '%s'", typeid(T).name());
+  throw LuaConversionException::format("Error converting LuaValue to type '{}'", typeid(T).name());
 }
 
 template <typename T>
 T LuaEngine::luaTo(LuaValue const& v) {
   if (auto res = luaMaybeTo<T>(v))
     return res.take();
-  throw LuaConversionException::format("Error converting LuaValue to type '%s'", typeid(T).name());
+  throw LuaConversionException::format("Error converting LuaValue to type '{}'", typeid(T).name());
 }
 
 template <typename Container>
@@ -2089,7 +2089,7 @@ template <typename T>
 T* LuaEngine::getUserData(int handleIndex) {
   int typeRef = m_registeredUserDataTypes.value(typeid(T), LUA_NOREF);
   if (typeRef == LUA_NOREF)
-    throw LuaException::format("Cannot convert userdata type of %s, not registered", typeid(T).name());
+    throw LuaException::format("Cannot convert userdata type of {}, not registered", typeid(T).name());
 
   lua_checkstack(m_state, 3);
 
@@ -2103,7 +2103,7 @@ T* LuaEngine::getUserData(int handleIndex) {
   lua_rawgeti(m_state, LUA_REGISTRYINDEX, typeRef);
   if (!lua_rawequal(m_state, -1, -2)) {
     lua_pop(m_state, 3);
-    throw LuaException::format("Improper conversion from userdata to type %s", typeid(T).name());
+    throw LuaException::format("Improper conversion from userdata to type {}", typeid(T).name());
   }
 
   lua_pop(m_state, 3);

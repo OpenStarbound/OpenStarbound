@@ -127,7 +127,7 @@ void ClientApplication::startup(StringList const& cmdLineArgs) {
   RootLoader rootLoader({AdditionalAssetsSettings, AdditionalDefaultConfiguration, String("starbound.log"), LogLevel::Info, false, String("starbound.config")});
   m_root = rootLoader.initOrDie(cmdLineArgs).first;
 
-  Logger::info("Client Version %s (%s) Source ID: %s Protocol: %s", StarVersionString, StarArchitectureString, StarSourceIdentifierString, StarProtocolVersion);
+  Logger::info("Client Version {} ({}) Source ID: {} Protocol: {}", StarVersionString, StarArchitectureString, StarSourceIdentifierString, StarProtocolVersion);
 }
 
 void ClientApplication::shutdown() {
@@ -198,7 +198,7 @@ void ClientApplication::renderInit(RendererPtr renderer) {
   Application::renderInit(renderer);
   auto assets = m_root->assets();
 
-  String rendererConfig = strf("/rendering/%s.config", renderer->rendererId());
+  String rendererConfig = strf("/rendering/{}.config", renderer->rendererId());
   if (assets->assetExists(rendererConfig)) {
     StringMap<String> shaders;
     auto config = assets->json(rendererConfig);
@@ -216,7 +216,7 @@ void ClientApplication::renderInit(RendererPtr renderer) {
     renderer->setEffectConfig(config, shaders);
   }
   else
-    Logger::warn("No rendering config found for renderer with id '%s'", renderer->rendererId());
+    Logger::warn("No rendering config found for renderer with id '{}'", renderer->rendererId());
 
   if (m_root->configuration()->get("limitTextureAtlasSize").optBool().value(false))
     renderer->setSizeLimitEnabled(true);
@@ -489,7 +489,7 @@ void ClientApplication::changeState(MainAppState newState) {
         try {
           packetSocket = TcpPacketSocket::open(TcpSocket::connectTo(*address));
         } catch (StarException const& e) {
-          setError(strf("Join failed! Error connecting to '%s'", *address), e);
+          setError(strf("Join failed! Error connecting to '{}'", *address), e);
           return;
         }
 
@@ -499,7 +499,7 @@ void ClientApplication::changeState(MainAppState newState) {
         if (auto p2pNetworkingService = appController()->p2pNetworkingService()) {
           auto result = p2pNetworkingService->connectToPeer(*p2pPeerId);
           if (result.isLeft()) {
-            setError(strf("Cannot join peer: %s", result.left()));
+            setError(strf("Cannot join peer: {}", result.left()));
             return;
           } else {
             packetSocket = P2PPacketSocket::open(move(result.right()));
@@ -534,7 +534,7 @@ void ClientApplication::changeState(MainAppState newState) {
       }
 
       if (auto errorMessage = m_universeClient->connect(m_universeServer->addLocalClient(), "", "")) {
-        setError(strf("Error connecting locally: %s", *errorMessage));
+        setError(strf("Error connecting locally: {}", *errorMessage));
         return;
       }
     }
@@ -558,8 +558,8 @@ void ClientApplication::setError(String const& error) {
 }
 
 void ClientApplication::setError(String const& error, std::exception const& e) {
-  Logger::error("%s\n%s", error, outputException(e, true));
-  m_errorScreen->setMessage(strf("%s\n%s", error, outputException(e, false)));
+  Logger::error("{}\n{}", error, outputException(e, true));
+  m_errorScreen->setMessage(strf("{}\n{}", error, outputException(e, false)));
 }
 
 void ClientApplication::updateMods() {
@@ -570,10 +570,10 @@ void ClientApplication::updateMods() {
       StringList modDirectories;
       for (auto contentId : ugcService->subscribedContentIds()) {
         if (auto contentDirectory = ugcService->contentDownloadDirectory(contentId)) {
-          Logger::info("Loading mods from user generated content with id '%s' from directory '%s'", contentId, *contentDirectory);
+          Logger::info("Loading mods from user generated content with id '{}' from directory '{}'", contentId, *contentDirectory);
           modDirectories.append(*contentDirectory);
         } else {
-          Logger::warn("User generated content with id '%s' is not available", contentId);
+          Logger::warn("User generated content with id '{}' is not available", contentId);
         }
       }
 
@@ -656,7 +656,7 @@ void ClientApplication::updateTitle() {
           changeState(MainAppState::MultiPlayer);
         }
       } else {
-        setError(strf("invalid port: %s", portString));
+        setError(strf("invalid port: {}", portString));
       }
     } else {
       changeState(MainAppState::MultiPlayer);
@@ -760,7 +760,7 @@ void ClientApplication::updateRunning() {
         m_cinematicOverlay->stop();
         String errMessage;
         if (auto disconnectReason = m_universeClient->disconnectReason())
-          errMessage = strf("You were disconnected from the server for the following reason:\n%s", *disconnectReason);
+          errMessage = strf("You were disconnected from the server for the following reason:\n{}", *disconnectReason);
         else
           errMessage = "Client-server connection no longer valid!";
         setError(errMessage);
@@ -805,12 +805,12 @@ void ClientApplication::updateRunning() {
     Vec2F aimPosition = m_player->aimPosition();
     LogMap::set("render_fps", appController()->renderFps());
     LogMap::set("update_rate", appController()->updateRate());
-    LogMap::set("player_pos", strf("%4.2f %4.2f", m_player->position()[0], m_player->position()[1]));
-    LogMap::set("player_vel", strf("%4.2f %4.2f", m_player->velocity()[0], m_player->velocity()[1]));
-    LogMap::set("player_aim", strf("%4.2f %4.2f", aimPosition[0], aimPosition[1]));
+    LogMap::set("player_pos", strf("{:4.2f} {:4.2f}", m_player->position()[0], m_player->position()[1]));
+    LogMap::set("player_vel", strf("{:4.2f} {:4.2f}", m_player->velocity()[0], m_player->velocity()[1]));
+    LogMap::set("player_aim", strf("{:4.2f} {:4.2f}", aimPosition[0], aimPosition[1]));
     if (m_universeClient->worldClient()) {
-      LogMap::set("liquid_level", strf("%d", m_universeClient->worldClient()->liquidLevel(Vec2I::floor(aimPosition)).level));
-      LogMap::set("dungeonId", strf("%d", m_universeClient->worldClient()->dungeonId(Vec2I::floor(aimPosition))));
+      LogMap::set("liquid_level", strf("{}", m_universeClient->worldClient()->liquidLevel(Vec2I::floor(aimPosition)).level));
+      LogMap::set("dungeonId", strf("{}", m_universeClient->worldClient()->dungeonId(Vec2I::floor(aimPosition))));
     }
 
     if (m_mainInterface->currentState() == MainInterface::ReturnToTitle)

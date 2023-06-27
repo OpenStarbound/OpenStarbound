@@ -15,11 +15,11 @@ StatisticsDatabase::StatisticsDatabase() : m_cacheMutex(), m_eventCache() {
     try {
       String name = assets->json(file).getString("eventName");
       if (m_eventPaths.contains(name))
-        Logger::error("Event %s defined twice, second time from %s", name, file);
+        Logger::error("Event {} defined twice, second time from {}", name, file);
       else
         m_eventPaths[name] = file;
     } catch (std::exception const& e) {
-      Logger::error("Error loading event file %s: %s", file, outputException(e, true));
+      Logger::error("Error loading event file {}: {}", file, outputException(e, true));
     }
   }
 
@@ -28,7 +28,7 @@ StatisticsDatabase::StatisticsDatabase() : m_cacheMutex(), m_eventCache() {
       Json achievement = assets->json(file);
       String name = achievement.getString("name");
       if (m_achievementPaths.contains(name))
-        Logger::error("Achievement %s defined twice, second time from %s", name, file);
+        Logger::error("Achievement {} defined twice, second time from {}", name, file);
       else
         m_achievementPaths[name] = file;
 
@@ -36,7 +36,7 @@ StatisticsDatabase::StatisticsDatabase() : m_cacheMutex(), m_eventCache() {
         m_statAchievements[stat.toString()].append(name);
       }
     } catch (std::exception const& e) {
-      Logger::error("Error loading achievement file %s: %s", file, outputException(e, true));
+      Logger::error("Error loading achievement file {}: {}", file, outputException(e, true));
     }
   }
 }

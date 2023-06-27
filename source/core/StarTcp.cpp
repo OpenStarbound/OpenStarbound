@@ -31,7 +31,7 @@ TcpSocketPtr TcpSocket::accept() {
   if (invalidSocketDescriptor(socketDesc)) {
     if (netErrorInterrupt())
       return {};
-    throw NetworkException(strf("Cannot accept connection: %s", netErrorString()));
+    throw NetworkException(strf("Cannot accept connection: {}", netErrorString()));
   }
 
   auto socketImpl = make_shared<SocketImpl>();
@@ -47,7 +47,7 @@ TcpSocketPtr TcpSocket::accept() {
 
   sockPtr->m_localAddress = m_localAddress;
   setAddressFromNative(sockPtr->m_remoteAddress, m_localAddress.address().mode(), &sockAddr);
-  Logger::debug("accept from %s (%d)", sockPtr->m_remoteAddress, sockPtr->m_impl->socketDesc);
+  Logger::debug("accept from {} ({})", sockPtr->m_remoteAddress, sockPtr->m_impl->socketDesc);
 
   return sockPtr;
 }
@@ -83,7 +83,7 @@ size_t TcpSocket::receive(char* data, size_t size) {
     } else if (netErrorInterrupt()) {
       r = 0;
     } else {
-      throw NetworkException(strf("tcp recv error: %s", netErrorString()));
+      throw NetworkException(strf("tcp recv error: {}", netErrorString()));
     }
   }
 
@@ -113,7 +113,7 @@ size_t TcpSocket::send(char const* data, size_t size) {
     } else if (netErrorInterrupt()) {
       w = 0;
     } else {
-      throw NetworkException(strf("tcp send error: %s", netErrorString()));
+      throw NetworkException(strf("tcp send error: {}", netErrorString()));
     }
   }
 
@@ -145,7 +145,7 @@ void TcpSocket::connect(HostAddressWithPort const& addressWithPort) {
   socklen_t sockAddrLen;
   setNativeFromAddress(addressWithPort, &sockAddr, &sockAddrLen);
   if (::connect(m_impl->socketDesc, (struct sockaddr*)&sockAddr, sockAddrLen) < 0)
-    throw NetworkException(strf("cannot connect to %s: %s", addressWithPort, netErrorString()));
+    throw NetworkException(strf("cannot connect to {}: {}", addressWithPort, netErrorString()));
 
 #if defined STAR_SYSTEM_MACOS || defined STAR_SYSTEM_FREEBSD
   // Don't generate sigpipe
@@ -161,7 +161,7 @@ TcpServer::TcpServer(HostAddressWithPort const& address) : m_hostAddress(address
   m_hostAddress = address;
   m_listenSocket = TcpSocket::listen(address);
   m_listenSocket->setNonBlocking(true);
-  Logger::debug("TcpServer listening on: %s", address);
+  Logger::debug("TcpServer listening on: {}", address);
 }
 
 TcpServer::TcpServer(uint16_t port) : TcpServer(HostAddressWithPort("*", port)) {}
@@ -201,7 +201,7 @@ void TcpServer::setAcceptCallback(AcceptCallback callback, unsigned timeout) {
             try {
               conn = accept(timeout);
             } catch (NetworkException const& e) {
-              Logger::error("TcpServer caught exception accepting connection %s", outputException(e, false));
+              Logger::error("TcpServer caught exception accepting connection {}", outputException(e, false));
             }
 
             if (conn)
@@ -211,7 +211,7 @@ void TcpServer::setAcceptCallback(AcceptCallback callback, unsigned timeout) {
               break;
           }
         } catch (std::exception const& e) {
-          Logger::error("TcpServer will close, listener thread caught exception:  %s", outputException(e, true));
+          Logger::error("TcpServer will close, listener thread caught exception:  {}", outputException(e, true));
           m_listenSocket->close();
         }
       });

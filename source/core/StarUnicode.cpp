@@ -12,7 +12,7 @@ void throwMissingUtf8End() {
 }
 
 void throwInvalidUtf32CodePoint(Utf32Type val) {
-  throw UnicodeException::format("Invalid UTF-32 code point %s encountered while trying to encode UTF-8", (int32_t)val);
+  throw UnicodeException::format("Invalid UTF-32 code point {} encountered while trying to encode UTF-8", (int32_t)val);
 }
 
 size_t utf8Length(const Utf8Type* utf8, size_t remain) {

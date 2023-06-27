@@ -107,10 +107,10 @@ KeyChord inputDescriptorFromJson(Json const& json) {
     } else if (value.canConvert(Json::Type::Int)) {
       key = (Key)value.toUInt();
     } else {
-      throw StarException::format("Improper key value '%s'", value);
+      throw StarException::format("Improper key value '{}'", value);
     }
   } else {
-    throw StarException::format("Improper bindings type '%s'", type);
+    throw StarException::format("Improper bindings type '{}'", type);
   }
 
   KeyMod mods = KeyMod::NoMod;
@@ -156,7 +156,7 @@ KeyBindings::KeyBindings(Json const& json) {
           auto chord = inputDescriptorFromJson(input);
           actions[chord.key].append({chord.mods, action});
         } catch (StarException const& e) {
-          Logger::warn("Could not load keybinding for %s: %s\n",
+          Logger::warn("Could not load keybinding for {}: {}\n",
               InterfaceActionNames.getRight(action),
               outputException(e, false));
         }
@@ -165,7 +165,7 @@ KeyBindings::KeyBindings(Json const& json) {
 
     m_actions = move(actions);
   } catch (StarException const& e) {
-    throw StarException(strf("Could not set keybindings from configuration. %s", outputException(e, false)));
+    throw StarException(strf("Could not set keybindings from configuration. {}", outputException(e, false)));
   }
 }
 

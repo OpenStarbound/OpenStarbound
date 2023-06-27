@@ -52,7 +52,7 @@ bool SteamStatisticsService::reportEvent(String const&, Json const&) {
 
 bool SteamStatisticsService::unlockAchievement(String const& name) {
   if (!SteamUserStats()->SetAchievement(name.utf8Ptr())) {
-    Logger::error("Cannot set Steam achievement %s", name);
+    Logger::error("Cannot set Steam achievement {}", name);
     return false;
   }
   return true;
@@ -94,7 +94,7 @@ void SteamStatisticsService::onUserStatsReceived(UserStatsReceived_t* callback) 
     return;
 
   if (callback->m_eResult != k_EResultOK) {
-    m_error = {strf("Steam RequestCurrentStats failed with code %d", (int)callback->m_eResult)};
+    m_error = {strf("Steam RequestCurrentStats failed with code {}", (int)callback->m_eResult)};
     return;
   }
 
@@ -117,14 +117,14 @@ void SteamStatisticsService::onUserStatsStored(UserStatsStored_t* callback) {
     return;
   }
 
-  m_error = {strf("Steam StoreStats failed with code %d", (int)callback->m_eResult)};
+  m_error = {strf("Steam StoreStats failed with code {}", (int)callback->m_eResult)};
 }
 
 void SteamStatisticsService::onAchievementStored(UserAchievementStored_t* callback) {
   if (callback->m_nGameID != m_appId)
     return;
 
-  Logger::debug("Steam achievement %s stored successfully", callback->m_rgchAchievementName);
+  Logger::debug("Steam achievement {} stored successfully", callback->m_rgchAchievementName);
 }
 
 }

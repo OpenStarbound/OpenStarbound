@@ -66,7 +66,7 @@ void Font::setPixelSize(unsigned pixelSize) {
     return;
 
   if (FT_Set_Pixel_Sizes(m_fontImpl->face, pixelSize, 0))
-    throw FontException(strf("Cannot set font pixel size to: %s", pixelSize));
+    throw FontException(strf("Cannot set font pixel size to: {}", pixelSize));
   m_pixelSize = pixelSize;
 }
 

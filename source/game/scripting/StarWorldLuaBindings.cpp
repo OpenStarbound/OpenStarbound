@@ -175,7 +175,7 @@ namespace LuaBindings {
       } else if (*order == "random") {
         Random::shuffle(entities);
       } else {
-        throw StarException(strf("Unsupported query order %s", order->ptr()));
+        throw StarException(strf("Unsupported query order {}", order->ptr()));
       }
     }
 
@@ -820,7 +820,7 @@ namespace LuaBindings {
         return true;
       }
     } catch (StarException const& exception) {
-      Logger::warn("Could not create placable object of kind '%s', exception caught: %s",
+      Logger::warn("Could not create placable object of kind '{}', exception caught: {}",
           objectType,
           outputException(exception, false));
     }
@@ -860,7 +860,7 @@ namespace LuaBindings {
 
       Logger::warn("Could not spawn item, item empty in WorldCallbacks::spawnItem");
     } catch (StarException const& exception) {
-      Logger::warn("Could not spawn Item of kind '%s', exception caught: %s", itemType, outputException(exception, false));
+      Logger::warn("Could not spawn Item of kind '{}', exception caught: {}", itemType, outputException(exception, false));
     }
 
     return {};
@@ -878,7 +878,7 @@ namespace LuaBindings {
       }
     } catch (StarException const& exception) {
       Logger::warn(
-          "Could not spawn treasure from pool '%s', exception caught: %s", pool, outputException(exception, false));
+          "Could not spawn treasure from pool '{}', exception caught: {}", pool, outputException(exception, false));
     }
     return entities;
   }
@@ -904,7 +904,7 @@ namespace LuaBindings {
       return monster->inWorld() ? monster->entityId() : Maybe<EntityId>();
     } catch (StarException const& exception) {
       Logger::warn(
-          "Could not spawn Monster of type '%s', exception caught: %s", arg1, outputException(exception, false));
+          "Could not spawn Monster of type '{}', exception caught: {}", arg1, outputException(exception, false));
       return {};
     }
   }
@@ -936,7 +936,7 @@ namespace LuaBindings {
       world->addEntity(npc);
       return npc->inWorld() ? npc->entityId() : Maybe<EntityId>();
     } catch (StarException const& exception) {
-      Logger::warn("Could not spawn NPC of species '%s' and type '%s', exception caught: %s",
+      Logger::warn("Could not spawn NPC of species '{}' and type '{}', exception caught: {}",
           arg2,
           typeName,
           outputException(exception, false));
@@ -954,7 +954,7 @@ namespace LuaBindings {
       return stagehand->inWorld() ? stagehand->entityId() : Maybe<EntityId>();
     } catch (StarException const& exception) {
       Logger::warn(
-          "Could not spawn Stagehand of type '%s', exception caught: %s", typeName, outputException(exception, false));
+          "Could not spawn Stagehand of type '{}', exception caught: {}", typeName, outputException(exception, false));
       return {};
     }
   }
@@ -977,7 +977,7 @@ namespace LuaBindings {
       return projectile->inWorld() ? projectile->entityId() : Maybe<EntityId>();
     } catch (StarException const& exception) {
       Logger::warn(
-          "Could not spawn Projectile of type '%s', exception caught: %s", projectileType, outputException(exception, false));
+          "Could not spawn Projectile of type '{}', exception caught: {}", projectileType, outputException(exception, false));
       return {};
     }
   }
@@ -1122,9 +1122,9 @@ namespace LuaBindings {
     else if (auto stagehand = as<Stagehand>(entity.get()))
       stagehand->setUniqueId(uniqueId);
     else if (entity)
-      throw StarException::format("Cannot set unique id on entity of type %s", EntityTypeNames.getRight(entity->entityType()));
+      throw StarException::format("Cannot set unique id on entity of type {}", EntityTypeNames.getRight(entity->entityType()));
     else
-      throw StarException::format("No such entity with id %s", entityId);
+      throw StarException::format("No such entity with id {}", entityId);
   }
 
   Json ServerWorldCallbacks::takeItemDrop(World* world, EntityId entityId, Maybe<EntityId> const& takenBy) {
@@ -1169,7 +1169,7 @@ namespace LuaBindings {
 
   void WorldDebugCallbacks::debugText(LuaEngine& engine, LuaVariadic<LuaValue> const& args) {
     if (args.size() < 3)
-      throw StarException(strf("Too few arguments to debugText: %s", args.size()));
+      throw StarException(strf("Too few arguments to debugText: {}", args.size()));
 
     Vec2F const position = engine.luaTo<Vec2F>(args.at(args.size() - 2));
     Vec4B const color = engine.luaTo<Color>(args.at(args.size() - 1)).toRgba();
@@ -1228,7 +1228,7 @@ namespace LuaBindings {
     else if (orientationName.empty())
       orientation = LoungeOrientation::None;
     else
-      throw StarException(strf("Unsupported loungeableQuery orientation %s", orientationName));
+      throw StarException(strf("Unsupported loungeableQuery orientation {}", orientationName));
 
     auto filter = [orientation](shared_ptr<LoungeableObject> const& entity) -> bool {
       auto loungeable = as<LoungeableEntity>(entity);
@@ -1419,7 +1419,7 @@ namespace LuaBindings {
     } else if (handName == "alt") {
       toolHand = ToolHand::Alt;
     } else {
-      throw StarException(strf("Unknown tool hand %s", handName));
+      throw StarException(strf("Unknown tool hand {}", handName));
     }
 
     if (auto entity = world->get<ToolUserEntity>(entityId)) {
@@ -1438,7 +1438,7 @@ namespace LuaBindings {
     } else if (handName == "alt") {
       toolHand = ToolHand::Alt;
     } else {
-      throw StarException(strf("Unknown tool hand %s", handName));
+      throw StarException(strf("Unknown tool hand {}", handName));
     }
 
     if (auto entity = world->get<ToolUserEntity>(entityId)) {
@@ -1713,7 +1713,7 @@ namespace LuaBindings {
   Maybe<LuaValue> WorldEntityCallbacks::callScriptedEntity(World* world, EntityId entityId, String const& function, LuaVariadic<LuaValue> const& args) {
     auto entity = as<ScriptedEntity>(world->entity(entityId));
     if (!entity || !entity->isMaster())
-      throw StarException::format("Entity %s does not exist or is not a local master scripted entity", entityId);
+      throw StarException::format("Entity {} does not exist or is not a local master scripted entity", entityId);
     return entity->callScript(function, args);
   }
 
@@ -1794,7 +1794,7 @@ namespace LuaBindings {
     } else if (layerName == "background") {
       layer = TileLayer::Background;
     } else {
-      throw StarException(strf("Unsupported material layer %s", layerName));
+      throw StarException(strf("Unsupported material layer {}", layerName));
     }
 
     auto materialId = world->material(Vec2I::floor(position), layer);
@@ -1815,7 +1815,7 @@ namespace LuaBindings {
     } else if (layerName == "background") {
       layer = TileLayer::Background;
     } else {
-      throw StarException(strf("Unsupported mod layer %s", layerName));
+      throw StarException(strf("Unsupported mod layer {}", layerName));
     }
 
     auto modId = world->mod(Vec2I::floor(position), layer);
@@ -1834,7 +1834,7 @@ namespace LuaBindings {
     } else if (layerName == "background") {
       layer = TileLayer::Background;
     } else {
-      throw StarException(strf("Unsupported material layer %s", layerName));
+      throw StarException(strf("Unsupported material layer {}", layerName));
     }
 
     return world->materialHueShift(Vec2I::floor(position), layer);
@@ -1847,7 +1847,7 @@ namespace LuaBindings {
     } else if (layerName == "background") {
       layer = TileLayer::Background;
     } else {
-      throw StarException(strf("Unsupported material layer %s", layerName));
+      throw StarException(strf("Unsupported material layer {}", layerName));
     }
 
     return world->modHueShift(Vec2I::floor(position), layer);
@@ -1860,7 +1860,7 @@ namespace LuaBindings {
     } else if (layerName == "background") {
       layer = TileLayer::Background;
     } else {
-      throw StarException(strf("Unsupported material layer %s", layerName));
+      throw StarException(strf("Unsupported material layer {}", layerName));
     }
 
     return world->colorVariant(Vec2I::floor(position), layer);
@@ -1873,7 +1873,7 @@ namespace LuaBindings {
     } else if (layerName == "background") {
       layer = TileLayer::Background;
     } else {
-      throw StarException(strf("Unsupported material layer %s", layerName));
+      throw StarException(strf("Unsupported material layer {}", layerName));
     }
 
     world->modifyTile(Vec2I::floor(position), PlaceMaterialColor{layer, color}, true);
@@ -1896,7 +1896,7 @@ namespace LuaBindings {
     } else if (layerName == "background") {
       layer = TileLayer::Background;
     } else {
-      throw StarException(strf("Unsupported damageTile layer %s", layerName));
+      throw StarException(strf("Unsupported damageTile layer {}", layerName));
     }
 
     unsigned harvestLevel = 999;
@@ -1932,13 +1932,13 @@ namespace LuaBindings {
     } else if (layerName == "background") {
       placeMaterial.layer = TileLayer::Background;
     } else {
-      throw StarException(strf("Unsupported damageTile layer %s", layerName));
+      throw StarException(strf("Unsupported damageTile layer {}", layerName));
     }
 
     auto materialName = arg3;
     auto materialDatabase = Root::singleton().materialDatabase();
     if (!materialDatabase->materialNames().contains(materialName))
-      throw StarException(strf("Unknown material name %s", materialName));
+      throw StarException(strf("Unknown material name {}", materialName));
     placeMaterial.material = materialDatabase->materialId(materialName);
 
     if (arg4)
@@ -1960,13 +1960,13 @@ namespace LuaBindings {
     } else if (layerName == "background") {
       placeMod.layer = TileLayer::Background;
     } else {
-      throw StarException(strf("Unsupported damageTile layer %s", layerName));
+      throw StarException(strf("Unsupported damageTile layer {}", layerName));
     }
 
     auto modName = arg3;
     auto materialDatabase = Root::singleton().materialDatabase();
     if (!materialDatabase->modNames().contains(modName))
-      throw StarException(strf("Unknown mod name %s", modName));
+      throw StarException(strf("Unknown mod name {}", modName));
     placeMod.mod = materialDatabase->modId(modName);
 
     if (arg4)

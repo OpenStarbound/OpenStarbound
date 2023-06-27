@@ -212,7 +212,7 @@ public:
 
     Logger::info("Application: Initializing SDL");
     if (SDL_Init(0))
-      throw ApplicationException(strf("Couldn't initialize SDL: %s", SDL_GetError()));
+      throw ApplicationException(strf("Couldn't initialize SDL: {}", SDL_GetError()));
 
     if (char* basePath = SDL_GetBasePath()) {
       File::changeDirectory(basePath);
@@ -231,15 +231,15 @@ public:
 
     Logger::info("Application: Initializing SDL Video");
     if (SDL_InitSubSystem(SDL_INIT_VIDEO))
-      throw ApplicationException(strf("Couldn't initialize SDL Video: %s", SDL_GetError()));
+      throw ApplicationException(strf("Couldn't initialize SDL Video: {}", SDL_GetError()));
 
     Logger::info("Application: Initializing SDL Joystick");
     if (SDL_InitSubSystem(SDL_INIT_JOYSTICK))
-      throw ApplicationException(strf("Couldn't initialize SDL Joystick: %s", SDL_GetError()));
+      throw ApplicationException(strf("Couldn't initialize SDL Joystick: {}", SDL_GetError()));
 
     Logger::info("Application: Initializing SDL Sound");
     if (SDL_InitSubSystem(SDL_INIT_AUDIO))
-      throw ApplicationException(strf("Couldn't initialize SDL Sound: %s", SDL_GetError()));
+      throw ApplicationException(strf("Couldn't initialize SDL Sound: {}", SDL_GetError()));
 
     SDL_JoystickEventState(SDL_ENABLE);
 
@@ -251,7 +251,7 @@ public:
     m_sdlWindow = SDL_CreateWindow(m_windowTitle.utf8Ptr(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
         m_windowSize[0], m_windowSize[1], SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
     if (!m_sdlWindow)
-      throw ApplicationException::format("Application: Could not create SDL window: %s", SDL_GetError());
+      throw ApplicationException::format("Application: Could not create SDL window: {}", SDL_GetError());
 
     SDL_ShowWindow(m_sdlWindow);
     SDL_RaiseWindow(m_sdlWindow);
@@ -263,7 +263,7 @@ public:
 
     m_sdlGlContext = SDL_GL_CreateContext(m_sdlWindow);
     if (!m_sdlGlContext)
-      throw ApplicationException::format("Application: Could not create OpenGL context: %s", SDL_GetError());
+      throw ApplicationException::format("Application: Could not create OpenGL context: {}", SDL_GetError());
 
     SDL_GL_SwapWindow(m_sdlWindow);
     setVSyncEnabled(m_windowVSync);
@@ -288,7 +288,7 @@ public:
       SDL_CloseAudioDevice(m_sdlAudioDevice);
       Logger::error("Application: Could not open 44.1khz / 16 bit stereo audio device, no sound available!");
     } else {
-      Logger::info("Application: Opened default audio device with 44.1khz / 16 bit stereo audio, %s sample size buffer", obtained.samples);
+      Logger::info("Application: Opened default audio device with 44.1khz / 16 bit stereo audio, {} sample size buffer", obtained.samples);
       SDL_PauseAudioDevice(m_sdlAudioDevice, 0);
     }
 
@@ -375,14 +375,14 @@ public:
           Thread::sleepPrecise(spareMilliseconds);
       }
     } catch (std::exception const& e) {
-      Logger::error("Application: exception thrown, shutting down: %s", outputException(e, true));
+      Logger::error("Application: exception thrown, shutting down: {}", outputException(e, true));
     }
 
     try {
       Logger::info("Application: shutdown...");
       m_application->shutdown();
     } catch (std::exception const& e) {
-      Logger::error("Application: threw exception during shutdown: %s", outputException(e, true));
+      Logger::error("Application: threw exception during shutdown: {}", outputException(e, true));
     }
 
     SDL_CloseAudioDevice(m_sdlAudioDevice);
@@ -432,10 +432,10 @@ private:
               parent->m_windowMode = WindowMode::Fullscreen;
             SDL_SetWindowFullscreen(parent->m_sdlWindow, SDL_WINDOW_FULLSCREEN);
           } else {
-            Logger::warn("Failed to set resolution %s, %s", (unsigned)requestedDisplayMode.w, (unsigned)requestedDisplayMode.h);
+            Logger::warn("Failed to set resolution {}, {}", (unsigned)requestedDisplayMode.w, (unsigned)requestedDisplayMode.h);
           }
         } else {
-          Logger::warn("Unable to set requested display resolution %s, %s", (int)fullScreenResolution[0], (int)fullScreenResolution[1]);
+          Logger::warn("Unable to set requested display resolution {}, {}", (int)fullScreenResolution[0], (int)fullScreenResolution[1]);
         }
 
         SDL_DisplayMode actualDisplayMode;

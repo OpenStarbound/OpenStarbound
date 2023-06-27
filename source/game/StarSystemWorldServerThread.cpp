@@ -5,7 +5,7 @@
 namespace Star {
 
 SystemWorldServerThread::SystemWorldServerThread(Vec3I const& location, SystemWorldServerPtr systemWorld, String storageFile)
-  : Thread(strf("SystemWorldServer: %s", location)), m_stop(false), m_storageFile(storageFile) {
+  : Thread(strf("SystemWorldServer: {}", location)), m_stop(false), m_storageFile(storageFile) {
   m_systemLocation = location;
   m_systemWorld = move(systemWorld);
 }
@@ -52,7 +52,7 @@ void SystemWorldServerThread::run() {
   TickRateApproacher tickApproacher(1.0 / SystemWorldTimestep, 0.5);
 
   while (!m_stop) {
-    LogMap::set(strf("system_%s_update_fps", m_systemLocation), tickApproacher.rate());
+    LogMap::set(strf("system_{}_update_fps", m_systemLocation), tickApproacher.rate());
 
     update();
 
@@ -166,7 +166,7 @@ void SystemWorldServerThread::store() {
   Json store = m_systemWorld->diskStore();
   locker.unlock();
 
-  Logger::debug("Trigger disk storage for system world %s:%s:%s", m_systemLocation.x(), m_systemLocation.y(), m_systemLocation.z());
+  Logger::debug("Trigger disk storage for system world {}:{}:{}", m_systemLocation.x(), m_systemLocation.y(), m_systemLocation.z());
   auto versioningDatabase = Root::singleton().versioningDatabase();
   auto versionedStore = versioningDatabase->makeCurrentVersionedJson("System", store);
   VersionedJson::writeFile(versionedStore, m_storageFile);

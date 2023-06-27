@@ -31,21 +31,21 @@ struct ThreadImpl {
 #ifdef STAR_SYSTEM_MACOS
       // ensure the name is under the max allowed
       char tname[MAX_THREAD_NAMELEN];
-      snprintf(tname, sizeof(tname), "%s", ptr->name.utf8Ptr());
+      snprintf(tname, sizeof(tname), "{}", ptr->name.utf8Ptr());
 
       pthread_setname_np(tname);
 #endif
       ptr->function();
     } catch (std::exception const& e) {
       if (ptr->name.empty())
-        Logger::error("Exception caught in Thread: %s", outputException(e, true));
+        Logger::error("Exception caught in Thread: {}", outputException(e, true));
       else
-        Logger::error("Exception caught in Thread %s: %s", ptr->name, outputException(e, true));
+        Logger::error("Exception caught in Thread {}: {}", ptr->name, outputException(e, true));
     } catch (...) {
       if (ptr->name.empty())
         Logger::error("Unknown exception caught in Thread");
       else
-        Logger::error("Unknown exception caught in Thread %s", ptr->name);
+        Logger::error("Unknown exception caught in Thread {}", ptr->name);
     }
     ptr->stopped = true;
     return nullptr;
@@ -65,12 +65,12 @@ struct ThreadImpl {
     if (ret != 0) {
       stopped = true;
       joined = true;
-      throw StarException(strf("Failed to create thread, error %s", ret));
+      throw StarException(strf("Failed to create thread, error {}", ret));
     }
 
     // ensure the name is under the max allowed
     char tname[MAX_THREAD_NAMELEN];
-    snprintf(tname, sizeof(tname), "%s", name.utf8Ptr());
+    snprintf(tname, sizeof(tname), "{}", name.utf8Ptr());
 
 #ifdef STAR_SYSTEM_FREEBSD
     pthread_set_name_np(pthread, tname);
@@ -86,7 +86,7 @@ struct ThreadImpl {
       return false;
     int ret = pthread_join(pthread, NULL);
     if (ret != 0)
-      throw StarException(strf("Failed to join thread, error %s", ret));
+      throw StarException(strf("Failed to join thread, error {}", ret));
     joined = true;
     return true;
   }
@@ -242,7 +242,7 @@ void Thread::yield() {
 unsigned Thread::numberOfProcessors() {
   long nprocs = sysconf(_SC_NPROCESSORS_ONLN);
   if (nprocs < 1)
-    throw StarException(strf("Could not determine number of CPUs online: %s\n", strerror(errno)));
+    throw StarException(strf("Could not determine number of CPUs online: {}\n", strerror(errno)));
   return nprocs;
 }
 

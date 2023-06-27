@@ -128,7 +128,7 @@ void KeybindingsMenu::buildListsFromConfig() {
         for (auto const& bindingEntry : bindings.get(actionString).iterateArray())
           inputDesc.append(inputDescriptorFromJson(bindingEntry));
       } catch (StarException const& e) {
-        Logger::warn("Could not load keybinding for %s. %s\n", actionString, e.what());
+        Logger::warn("Could not load keybinding for {}. {}\n", actionString, e.what());
       }
 
       m_childToAction.insert({newListMember->fetchChild<ButtonWidget>("boundKeys").get(), action});

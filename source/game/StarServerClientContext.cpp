@@ -91,7 +91,7 @@ bool ServerClientContext::canBecomeAdmin() const {
 String ServerClientContext::descriptiveName() const {
   RecursiveMutexLocker locker(m_mutex);
   String hostName = m_remoteAddress ? toString(*m_remoteAddress) : "local";
-  return strf("'%s' <%s> (%s)", m_playerName, m_clientId, hostName);
+  return strf("'{}' <{}> ({})", m_playerName, m_clientId, hostName);
 }
 
 void ServerClientContext::registerRpcHandlers(JsonRpcHandlers const& rpcHandlers) {

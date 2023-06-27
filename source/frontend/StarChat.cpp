@@ -183,7 +183,7 @@ void Chat::addMessages(List<ChatReceivedMessage> const& messages, bool showPane)
     guiContext.setFontSize(m_fontSize);
     StringList lines;
     if (message.fromNick != "" && message.portrait == "")
-      lines = guiContext.wrapInterfaceText(strf("<%s> %s", message.fromNick, message.text), wrapWidth);
+      lines = guiContext.wrapInterfaceText(strf("<{}> {}", message.fromNick, message.text), wrapWidth);
     else
       lines = guiContext.wrapInterfaceText(message.text, wrapWidth);
 
@@ -196,9 +196,9 @@ void Chat::addMessages(List<ChatReceivedMessage> const& messages, bool showPane)
     }
 
     if (message.fromNick != "")
-      Logger::info("Chat: <%s> %s", message.fromNick, message.text);
+      Logger::info("Chat: <{}> {}", message.fromNick, message.text);
     else
-      Logger::info("Chat: %s", message.text);
+      Logger::info("Chat: {}", message.text);
   }
 
   if (showPane) {

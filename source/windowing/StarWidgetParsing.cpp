@@ -75,7 +75,7 @@ void WidgetParser::constructImpl(Json const& config, Widget* widget) {
 
 WidgetPtr WidgetParser::makeSingle(String const& name, Json const& config) {
   if (!m_constructors.contains(config.getString("type"))) {
-    throw WidgetParserException(strf("Unknown type in gui json. %s", config.getString("type")));
+    throw WidgetParserException(strf("Unknown type in gui json. {}", config.getString("type")));
   }
 
   auto constructResult = m_constructors.get(config.getString("type"))(name, config);
@@ -94,7 +94,7 @@ List<WidgetConstructResult> WidgetParser::constructor(Json const& config) {
       widgets.appendAll(constructor(Root::singleton().assets()->json(memberConfig.getString("file"))));
     } else {
       if (!m_constructors.contains(type)) {
-        throw WidgetParserException(strf("Unknown type in gui json. %s", type));
+        throw WidgetParserException(strf("Unknown type in gui json. {}", type));
       }
       auto constructResult =
           m_constructors.get(memberConfig.getString("type"))(memberConfig.getString("name"), memberConfig);
@@ -110,7 +110,7 @@ List<WidgetConstructResult> WidgetParser::constructor(Json const& config) {
     for (auto const& elem : config.iterateArray())
       addWidget(elem);
   } else {
-    throw WidgetParserException(strf("Malformed gui json, expected a Map or a List. Instead got %s", config));
+    throw WidgetParserException(strf("Malformed gui json, expected a Map or a List. Instead got {}", config));
   }
 
   return widgets;
@@ -129,7 +129,7 @@ WidgetConstructResult WidgetParser::buttonHandler(String const& name, Json const
       baseImage = config.getString("base");
   } catch (MapException const& e) {
     throw WidgetParserException(
-        strf("Malformed gui json, missing a required value in the map. %s", outputException(e, false)));
+        strf("Malformed gui json, missing a required value in the map. {}", outputException(e, false)));
   }
 
   String hoverImage = config.getString("hover", "");
@@ -144,7 +144,7 @@ WidgetConstructResult WidgetParser::buttonHandler(String const& name, Json const
   String callback = config.getString("callback", name);
 
   if (!m_callbacks.contains(callback))
-    throw WidgetParserException::format("Failed to find callback named: %s", callback);
+    throw WidgetParserException::format("Failed to find callback named: {}", callback);
   WidgetCallbackFunc callbackFunc = m_callbacks.get(callback);
 
   auto button = make_shared<ButtonWidget>(callbackFunc, baseImage, hoverImage, pressedImage, disabledImage);
@@ -177,7 +177,7 @@ WidgetConstructResult WidgetParser::buttonHandler(String const& name, Json const
     button->setTextAlign(HorizontalAnchor::LeftAnchor);
   } else {
     throw WidgetParserException(strf(
-        "Malformed gui json, expected textAlign to be one of \"left\", \"right\", or \"center\", got %s", hAnchor));
+        "Malformed gui json, expected textAlign to be one of \"left\", \"right\", or \"center\", got {}", hAnchor));
   }
 
   if (config.contains("fontSize"))
@@ -251,9 +251,9 @@ WidgetConstructResult WidgetParser::spinnerHandler(String const& name, Json cons
   String callback = config.getString("callback", name);
 
   if (!m_callbacks.contains(callback + ".up"))
-    throw WidgetParserException::format("Failed to find spinner callback named: '%s.up'", name);
+    throw WidgetParserException::format("Failed to find spinner callback named: '{}.up'", name);
   if (!m_callbacks.contains(callback + ".down"))
-    throw WidgetParserException::format("Failed to find spinner callback named: '%s.down'", name);
+    throw WidgetParserException::format("Failed to find spinner callback named: '{}.down'", name);
 
   WidgetCallbackFunc callbackDown = m_callbacks.get(callback + ".down");
   WidgetCallbackFunc callbackUp = m_callbacks.get(callback + ".up");
@@ -301,11 +301,11 @@ WidgetConstructResult WidgetParser::radioGroupHandler(String const& name, Json c
     buttons = config.getArray("buttons");
   } catch (MapException const& e) {
     throw WidgetParserException(
-        strf("Malformed gui json, missing a required value in the map. %s", outputException(e, false)));
+        strf("Malformed gui json, missing a required value in the map. {}", outputException(e, false)));
   }
 
   if (!m_callbacks.contains(callback))
-    throw WidgetParserException::format("Failed to find callback named: '%s'", callback);
+    throw WidgetParserException::format("Failed to find callback named: '{}'", callback);
 
   String baseImage = config.getString("baseImage", "");
   String hoverImage = config.getString("hoverImage", "");
@@ -360,10 +360,10 @@ WidgetConstructResult WidgetParser::radioGroupHandler(String const& name, Json c
 
       common(button, btnConfig);
 
-      buttonGroup->addChild(strf("%d", button->buttonGroupId()), button);
+      buttonGroup->addChild(strf("{}", button->buttonGroupId()), button);
     } catch (MapException const& e) {
       throw WidgetParserException(
-          strf("Malformed gui json, missing a required value in the map. %s", outputException(e, false)));
+          strf("Malformed gui json, missing a required value in the map. {}", outputException(e, false)));
     }
   }
 
@@ -390,7 +390,7 @@ WidgetConstructResult WidgetParser::textboxHandler(String const& name, Json cons
   String callback = config.getString("callback", name);
 
   if (!m_callbacks.contains(callback))
-    throw WidgetParserException::format("Failed to find textbox callback named: '%s'", name);
+    throw WidgetParserException::format("Failed to find textbox callback named: '{}'", name);
 
   WidgetCallbackFunc callbackFunc = m_callbacks.get(callback);
 
@@ -417,7 +417,7 @@ WidgetConstructResult WidgetParser::textboxHandler(String const& name, Json cons
     textbox->setTextAlign(HorizontalAnchor::HMidAnchor);
   } else if (hAnchor != "left") {
     throw WidgetParserException(strf(
-        "Malformed gui json, expected textAlign to be one of \"left\", \"right\", or \"center\", got %s", hAnchor));
+        "Malformed gui json, expected textAlign to be one of \"left\", \"right\", or \"center\", got {}", hAnchor));
   }
 
   if (config.contains("fontSize"))
@@ -477,11 +477,11 @@ WidgetConstructResult WidgetParser::itemSlotHandler(String const& name, Json con
   auto itemSlot = make_shared<ItemSlotWidget>(ItemPtr(), backingImage);
 
   if (!m_callbacks.contains(callback))
-    throw WidgetParserException::format("Failed to find itemSlot callback named: '%s'", callback);
+    throw WidgetParserException::format("Failed to find itemSlot callback named: '{}'", callback);
   itemSlot->setCallback(m_callbacks.get(callback));
 
   if (!m_callbacks.contains(rightClickCallback))
-    throw WidgetParserException::format("Failed to find itemslot rightClickCallback named: '%s'", rightClickCallback);
+    throw WidgetParserException::format("Failed to find itemslot rightClickCallback named: '{}'", rightClickCallback);
 
   itemSlot->setRightClickCallback(m_callbacks.get(rightClickCallback));
   itemSlot->setBackingImageAffinity(config.getBool("showBackingImageWhenFull", false), config.getBool("showBackingImageWhenEmpty", true));
@@ -509,7 +509,7 @@ WidgetConstructResult WidgetParser::itemGridHandler(String const& name, Json con
       columnSpacing = jsonToVec2I(config.get("columnSpacing"));
     }
   } catch (MapException const& e) {
-    throw WidgetParserException::format("Malformed gui json, missing a required value in the map. %s", outputException(e, false));
+    throw WidgetParserException::format("Malformed gui json, missing a required value in the map. {}", outputException(e, false));
   }
 
   String backingImage = config.getString("backingImage", "");
@@ -526,7 +526,7 @@ WidgetConstructResult WidgetParser::itemGridHandler(String const& name, Json con
   auto itemGrid = make_shared<ItemGridWidget>(ItemBagConstPtr(), dimensions, rowSpacing, columnSpacing, backingImage, slotOffset);
 
   if (!m_callbacks.contains(callback))
-    throw WidgetParserException::format("Failed to find itemgrid callback named: '%s'", callback);
+    throw WidgetParserException::format("Failed to find itemgrid callback named: '{}'", callback);
 
   itemGrid->setCallback(m_callbacks.get(callback));
 
@@ -535,7 +535,7 @@ WidgetConstructResult WidgetParser::itemGridHandler(String const& name, Json con
   itemGrid->showDurability(config.getBool("showDurability", false));
 
   if (!m_callbacks.contains(rightClickCallback))
-    throw WidgetParserException::format("Failed to find itemgrid rightClickCallback named: '%s'", rightClickCallback);
+    throw WidgetParserException::format("Failed to find itemgrid rightClickCallback named: '{}'", rightClickCallback);
 
   itemGrid->setRightClickCallback(m_callbacks.get(rightClickCallback));
 
@@ -550,7 +550,7 @@ WidgetConstructResult WidgetParser::listHandler(String const& name, Json const& 
     schema = config.get("schema");
   } catch (MapException const& e) {
     throw WidgetParserException(
-        strf("Malformed gui json, missing a required value in the map. %s", outputException(e, false)));
+        strf("Malformed gui json, missing a required value in the map. {}", outputException(e, false)));
   }
 
   auto list = make_shared<ListWidget>(schema);
@@ -593,7 +593,7 @@ WidgetConstructResult WidgetParser::sliderHandler(String const& name, Json const
     return WidgetConstructResult(slider, name, config.getFloat("zlevel", 0));
   } catch (MapException const& e) {
     throw WidgetParserException::format(
-        "Malformed gui json, missing a required value in the map. %s", outputException(e, false));
+        "Malformed gui json, missing a required value in the map. {}", outputException(e, false));
   }
 }
 
@@ -601,7 +601,7 @@ WidgetConstructResult WidgetParser::largeCharPlateHandler(String const& name, Js
   String callback = config.getString("callback", name);
 
   if (!m_callbacks.contains(callback))
-    throw WidgetParserException::format("Failed to find callback named: '%s'", name);
+    throw WidgetParserException::format("Failed to find callback named: '{}'", name);
 
   auto charPlate = make_shared<LargeCharPlateWidget>(m_callbacks.get(callback));
   common(charPlate, config);
@@ -639,7 +639,7 @@ WidgetConstructResult WidgetParser::tabSetHandler(String const& name, Json const
       tabSet->addTab(entry.getString("tabName"), widget, entry.getString("tabTitle"));
     }
   } catch (JsonException const& e) {
-    throw WidgetParserException(strf("Malformed gui json. %s", outputException(e, false)));
+    throw WidgetParserException(strf("Malformed gui json. {}", outputException(e, false)));
   }
 
   return WidgetConstructResult(tabSet, name, config.getFloat("zlevel", 0));
@@ -673,7 +673,7 @@ WidgetConstructResult WidgetParser::layoutHandler(String const& name, Json const
     try {
       flow->setSpacing(jsonToVec2I(config.get("spacing")));
     } catch (JsonException const& e) {
-      throw WidgetParserException(strf("Parameter \"spacing\" in FlowLayout specification is invalid: %s.", outputException(e, false)));
+      throw WidgetParserException(strf("Parameter \"spacing\" in FlowLayout specification is invalid: {}.", outputException(e, false)));
     }
   } else if (type == "vertical") {
     widget = make_shared<VerticalLayout>();
@@ -685,7 +685,7 @@ WidgetConstructResult WidgetParser::layoutHandler(String const& name, Json const
   } else if (type == "basic") {
     widget = make_shared<Layout>();
   } else {
-    throw WidgetParserException(strf("Invalid layout type \"%s\".  Options are \"basic\", \"flow\", \"vertical\".", type));
+    throw WidgetParserException(strf("Invalid layout type \"{}\".  Options are \"basic\", \"flow\", \"vertical\".", type));
   }
   common(widget, config);
   if (config.contains("children"))
@@ -745,7 +745,7 @@ WidgetConstructResult WidgetParser::stackHandler(String const& name, Json const&
       auto widget = make_shared<Widget>();
       constructImpl(widgetCfg, widget.get());
       widget->determineSizeFromChildren();
-      stack->addChild(strf("%d", stack->numChildren()), widget);
+      stack->addChild(strf("{}", stack->numChildren()), widget);
     }
   }
 
@@ -811,7 +811,7 @@ ImageStretchSet WidgetParser::parseImageStretchSet(Json const& config) {
   } else if (type == "stretch") {
     res.type = ImageStretchSet::ImageStretchType::Stretch;
   } else {
-    throw WidgetParserException(strf("Could not parse Image Stretch Set, unknown type: %s"));
+    throw WidgetParserException(strf("Could not parse Image Stretch Set, unknown type: {}"));
   }
 
   return res;
