@@ -1302,7 +1302,7 @@ Maybe<bool> PathController::move(ActorMovementController& movementController, Ac
           float angleFactor = movementController.velocity().normalized() * delta.normalized();
           float speedAlongAngle = angleFactor * movementController.velocity().magnitude();
           auto acc = parameters.airForce.value(0.0) / movementController.mass();
-          sourceVelocity = delta.normalized() * fmin(parameters.flySpeed.value(0.0), speedAlongAngle + acc * WorldTimestep);;
+          sourceVelocity = delta.normalized() * fmin(parameters.flySpeed.value(0.0), speedAlongAngle + acc * WorldTimestep);
           targetVelocity = sourceVelocity;
         }
         break;

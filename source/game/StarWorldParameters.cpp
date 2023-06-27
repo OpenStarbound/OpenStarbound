@@ -162,7 +162,24 @@ TerrestrialWorldParameters::TerrestrialWorldParameters(Json const& store) : Visi
 }
 
 TerrestrialWorldParameters &TerrestrialWorldParameters::operator=(TerrestrialWorldParameters const& terrestrialWorldParameters) {
-  *this = terrestrialWorldParameters;
+  this->primaryBiome = terrestrialWorldParameters.primaryBiome;
+  this->primarySurfaceLiquid = terrestrialWorldParameters.primarySurfaceLiquid;
+  this->sizeName = terrestrialWorldParameters.sizeName;
+  this->hueShift = terrestrialWorldParameters.hueShift;
+
+  this->skyColoring = terrestrialWorldParameters.skyColoring;
+  this->dayLength = terrestrialWorldParameters.dayLength;
+
+  this->blockNoiseConfig = terrestrialWorldParameters.blockNoiseConfig;
+  this->blendNoiseConfig = terrestrialWorldParameters.blendNoiseConfig;
+  this->blendSize = terrestrialWorldParameters.blendSize;
+
+  this->spaceLayer = terrestrialWorldParameters.spaceLayer;
+  this->atmosphereLayer = terrestrialWorldParameters.atmosphereLayer;
+  this->surfaceLayer = terrestrialWorldParameters.surfaceLayer;
+  this->subsurfaceLayer = terrestrialWorldParameters.subsurfaceLayer;
+  this->undergroundLayers = terrestrialWorldParameters.undergroundLayers;
+  this->coreLayer = terrestrialWorldParameters.coreLayer;
   return *this;
 }
 

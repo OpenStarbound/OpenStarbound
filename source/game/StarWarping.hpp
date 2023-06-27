@@ -44,6 +44,9 @@ String printWorldId(WorldId const& worldId);
 WorldId parseWorldId(String const& printedId);
 
 // Same as outputting printWorldId
+std::ostream& operator<<(std::ostream& os, CelestialWorldId const& worldId);
+std::ostream& operator<<(std::ostream& os, ClientShipWorldId const& worldId);
+std::ostream& operator<<(std::ostream& os, InstanceWorldId const& worldId);
 std::ostream& operator<<(std::ostream& os, WorldId const& worldId);
 
 strong_typedef(String, SpawnTargetUniqueEntity);
@@ -87,5 +90,11 @@ DataStream& operator>>(DataStream& ds, WarpToWorld& warpToWorld);
 DataStream& operator<<(DataStream& ds, WarpToWorld const& warpToWorld);
 
 }
+
+template <> struct fmt::formatter<Star::CelestialWorldId> : ostream_formatter {};
+template <> struct fmt::formatter<Star::ClientShipWorldId> : ostream_formatter {};
+template <> struct fmt::formatter<Star::InstanceWorldId> : ostream_formatter {};
+template <> struct fmt::formatter<Star::WorldId> : ostream_formatter {};
+template <> struct fmt::formatter<Star::WarpToWorld> : ostream_formatter {};
 
 #endif

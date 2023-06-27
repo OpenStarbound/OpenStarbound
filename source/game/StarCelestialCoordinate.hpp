@@ -93,4 +93,6 @@ private:
 
 }
 
+template <> struct fmt::formatter<Star::CelestialCoordinate> : ostream_formatter {};
+
 #endif

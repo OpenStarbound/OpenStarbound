@@ -256,4 +256,6 @@ inline size_t hash<ByteArray>::operator()(ByteArray const& b) const {
 
 }
 
+template <> struct fmt::formatter<Star::ByteArray> : ostream_formatter {};
+
 #endif

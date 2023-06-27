@@ -175,7 +175,7 @@ namespace LuaBindings {
       } else if (*order == "random") {
         Random::shuffle(entities);
       } else {
-        throw StarException(strf("Unsupported query order %s", *order));
+        throw StarException(strf("Unsupported query order %s", order->ptr()));
       }
     }
 

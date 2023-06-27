@@ -77,4 +77,6 @@ struct hash<AssetPath> {
 
 }
 
+template <> struct fmt::formatter<Star::AssetPath> : ostream_formatter {};
+
 #endif

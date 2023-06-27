@@ -1,9 +1,17 @@
 INCLUDE_DIRECTORIES (
     ${STAR_EXTERN_INCLUDES}
+    fmt
     lua
   )
 
 SET (star_extern_HEADERS
+    fmt/core.h
+    fmt/format.h
+    fmt/format-inl.h
+    fmt/ostream.h
+    fmt/printf.h
+    fmt/ranges.h
+    fmt/std.h
     lauxlib.h
     lua.h
     lua.hpp
@@ -15,6 +23,7 @@ SET (star_extern_HEADERS
 
 SET (star_extern_SOURCES
     xxhash.c
+    fmt/format.cc
     lua/lapi.c
     lua/lauxlib.c
     lua/lbaselib.c

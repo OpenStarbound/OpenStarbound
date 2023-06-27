@@ -7,6 +7,7 @@
 #include "StarList.hpp"
 #include "StarMap.hpp"
 #include "StarSet.hpp"
+#include "StarFormat.hpp"
 
 namespace Star {
 
@@ -517,5 +518,9 @@ StringList StringList::sorted(Comparator&& comparator) const {
 }
 
 }
+
+template <> struct fmt::formatter<Star::String> : formatter<std::string> {
+  fmt::v10::appender format(Star::String const& s, format_context& ctx) const;
+};
 
 #endif

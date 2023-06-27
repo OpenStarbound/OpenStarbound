@@ -924,4 +924,7 @@ void MVariant<Types...>::ConstRefCaller<Function>::operator()(T const& t) {
 
 }
 
+template <typename FirstType, typename... RestTypes>
+struct fmt::formatter<Star::Variant<FirstType, RestTypes...>> : ostream_formatter {};
+
 #endif

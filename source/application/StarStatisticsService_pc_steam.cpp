@@ -94,7 +94,7 @@ void SteamStatisticsService::onUserStatsReceived(UserStatsReceived_t* callback) 
     return;
 
   if (callback->m_eResult != k_EResultOK) {
-    m_error = {strf("Steam RequestCurrentStats failed with code %d", callback->m_eResult)};
+    m_error = {strf("Steam RequestCurrentStats failed with code %d", (int)callback->m_eResult)};
     return;
   }
 
@@ -117,7 +117,7 @@ void SteamStatisticsService::onUserStatsStored(UserStatsStored_t* callback) {
     return;
   }
 
-  m_error = {strf("Steam StoreStats failed with code %d", callback->m_eResult)};
+  m_error = {strf("Steam StoreStats failed with code %d", (int)callback->m_eResult)};
 }
 
 void SteamStatisticsService::onAchievementStored(UserAchievementStored_t* callback) {

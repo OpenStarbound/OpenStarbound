@@ -130,4 +130,6 @@ std::ostream& operator<<(std::ostream& os, FormattedJson const& json);
 
 }
 
+template <> struct fmt::formatter<Star::FormattedJson> : ostream_formatter {};
+
 #endif

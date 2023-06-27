@@ -440,7 +440,7 @@ String Widget::toStringImpl(int indentLevel) const {
       leader,
       m_name,
       leader,
-      this,
+      (void*)this,
       leader,
       m_visible ? "true" : "false",
       leader,

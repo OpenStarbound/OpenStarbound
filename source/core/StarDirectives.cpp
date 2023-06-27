@@ -101,6 +101,10 @@ void Directives::parse(String&& directives) {
     return;
 
   shared = std::make_shared<Shared const>(move(newList), move(directives), prefix);
+  if (view.size() < 1000) { // Pre-load short enough directives
+    for (auto& entry : shared->entries)
+      entry.loadOperation(*shared);
+  }
 }
 
 String Directives::string() const {

@@ -503,7 +503,7 @@ List<Songbook::Note> Songbook::parseABC(String const& abc) {
               break;
             }
             default:
-              throw StarException(strf("Unrecognized note %s", head));
+              throw StarException(strf("Unrecognized note %s", (char)head));
           }
           if (note != 0) {
             bool accidentalActive = accidentalSpecified;
@@ -556,7 +556,7 @@ List<Songbook::Note> Songbook::parseABC(String const& abc) {
                   break;
                 }
                 default:
-                  throw StarException(strf("Unrecognized note %s", head));
+                  throw StarException(strf("Unrecognized note %s", (char)head));
               }
             }
 

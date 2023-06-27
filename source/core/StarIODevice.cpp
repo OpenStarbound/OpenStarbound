@@ -52,7 +52,7 @@ void IODevice::close() {
 void IODevice::sync() {}
 
 String IODevice::deviceName() const {
-  return strf("IODevice <%s>", this);
+  return strf("IODevice <%s>", (void*)this);
 }
 
 bool IODevice::atEnd() {

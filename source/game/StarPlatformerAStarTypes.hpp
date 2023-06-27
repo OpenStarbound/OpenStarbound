@@ -147,4 +147,8 @@ inline bool operator!=(Parameters const& lhs, Parameters const& rhs) {
 }
 }
 
+template <> struct fmt::formatter<Star::PlatformerAStar::Node> : ostream_formatter {};
+template <> struct fmt::formatter<Star::PlatformerAStar::Action> : ostream_formatter {};
+template <> struct fmt::formatter<Star::PlatformerAStar::Edge> : ostream_formatter {};
+
 #endif

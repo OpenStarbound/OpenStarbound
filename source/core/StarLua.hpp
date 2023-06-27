@@ -2160,4 +2160,6 @@ size_t LuaEngine::pushArguments(lua_State* state, Args const&... args) {
 
 }
 
+template <> struct fmt::formatter<Star::LuaValue> : ostream_formatter {};
+
 #endif

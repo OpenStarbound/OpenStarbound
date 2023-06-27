@@ -57,4 +57,6 @@ static uint8_t const EssentialItemCount = 4;
 
 }
 
+template <> struct fmt::formatter<Star::InventorySlot> : ostream_formatter {};
+
 #endif

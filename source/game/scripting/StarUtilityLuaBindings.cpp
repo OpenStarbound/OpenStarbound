@@ -124,7 +124,7 @@ String LuaBindings::formatLua(String const& string, List<LuaValue> const& args) 
       else if (*next == 's')
         result += toString(popArg());
       else
-        throw StarException::format("Improper lua log format specifier %%%c", *next);
+        throw StarException::format("Improper lua log format specifier {}", (char)*next);
       ++next;
       stringIt = next;
     } else {

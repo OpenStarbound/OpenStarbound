@@ -102,6 +102,22 @@ WorldId parseWorldId(String const& printedId) {
   }
 }
 
+std::ostream& operator<<(std::ostream& os, CelestialWorldId const& worldId) {
+  os << printWorldId(worldId);
+  return os;
+}
+
+
+std::ostream& operator<<(std::ostream& os, ClientShipWorldId const& worldId) {
+  os << printWorldId(worldId);
+  return os;
+}
+
+std::ostream& operator<<(std::ostream& os, InstanceWorldId const& worldId) {
+  os << printWorldId(worldId);
+  return os;
+}
+
 std::ostream& operator<<(std::ostream& os, WorldId const& worldId) {
   os << printWorldId(worldId);
   return os;
@@ -135,7 +151,7 @@ String printSpawnTarget(SpawnTarget spawnTarget) {
   else if (auto pos = spawnTarget.ptr<SpawnTargetPosition>())
     return strf("%s.%s", (*pos)[0], (*pos)[1]);
   else if (auto x = spawnTarget.ptr<SpawnTargetX>())
-    return toString(*x);
+    return toString(x->t);
   else
     return "";
 }

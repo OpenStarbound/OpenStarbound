@@ -1135,4 +1135,7 @@ typename ListEnumerateTypes<Container>::Result enumerate(Container&& container) 
 
 }
 
+template <typename BaseList>
+struct fmt::formatter<Star::ListMixin<BaseList>> : ostream_formatter {};
+
 #endif

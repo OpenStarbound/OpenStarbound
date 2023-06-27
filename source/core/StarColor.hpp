@@ -3,6 +3,7 @@
 
 #include "StarStringView.hpp"
 #include "StarVector.hpp"
+#include "StarFormat.hpp"
 
 namespace Star {
 
@@ -103,6 +104,8 @@ public:
   Vec4F toRgbaF() const;
   Vec3F toRgbF() const;
 
+  Vec4F const& data() const;
+
   Vec4F toHsva() const;
 
   String toHex() const;
@@ -166,5 +169,7 @@ inline Vec4B Color::v4fToByte(Vec4F const& f, bool doClamp) {
 }
 
 }
+
+template <> struct fmt::formatter<Star::Color> : ostream_formatter {};
 
 #endif

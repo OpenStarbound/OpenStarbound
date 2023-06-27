@@ -3,6 +3,11 @@
 
 #include "StarMemory.hpp"
 
+#include "fmt/core.h"
+#include "fmt/ostream.h"
+#include "fmt/format.h"
+#include "fmt/ranges.h"
+
 namespace Star {
 
 struct FormatException : public std::exception {
@@ -17,15 +22,11 @@ struct FormatException : public std::exception {
 
 }
 
-#define TINYFORMAT_ERROR(reason) throw Star::FormatException(reason)
-
-#include "tinyformat.h"
-
 namespace Star {
 
-template <typename... Args>
-void format(std::ostream& out, char const* fmt, Args const&... args) {
-  tinyformat::format(out, fmt, args...);
+template <typename... T>
+void format(std::ostream& out, fmt::format_string<T...> fmt, T&&... args) {
+  out << fmt::format(fmt, args...);
 }
 
 // Automatically flushes, use format to avoid flushing.
@@ -42,17 +43,20 @@ void cerrf(char const* fmt, Args const&... args) {
   std::cerr.flush();
 }
 
-template <typename... Args>
-std::string strf(char const* fmt, Args const&... args) {
-  std::ostringstream os;
-  format(os, fmt, args...);
-  return os.str();
+template <typename... T>
+std::string strf(fmt::format_string<T...> fmt, T&&... args) {
+  return fmt::format(fmt, args...);
 }
 
 namespace OutputAnyDetail {
   template<typename T, typename CharT, typename Traits>
+  std::basic_string<CharT, Traits> string(T const& t) {
+    return fmt::format("<type {} at address: {}>", typeid(T).name(), (void*)&t);
+  }
+
+  template<typename T, typename CharT, typename Traits>
   std::basic_ostream<CharT, Traits>& output(std::basic_ostream<CharT, Traits>& os, T const& t) {
-    return os << "<type " << typeid(T).name() << " at address: " << &t << ">";
+    return os << string<T, CharT, Traits>(t);
   }
 
   namespace Operator {
@@ -96,5 +100,9 @@ inline std::ostream& operator<<(std::ostream& os, OutputProxy const& p) {
 }
 
 }
+
+template <typename T>
+struct fmt::formatter<Star::OutputAnyDetail::Wrapper<T>> : ostream_formatter {};
+template <> struct fmt::formatter<Star::OutputProxy> : ostream_formatter {};
 
 #endif

@@ -1,6 +1,7 @@
 #ifndef STAR_LEXICAL_CAST_HPP
 #define STAR_LEXICAL_CAST_HPP
 
+#include "StarFormat.hpp"
 #include "StarString.hpp"
 #include "StarStringView.hpp"
 #include "StarMaybe.hpp"
@@ -42,12 +43,8 @@ Type lexicalCast(StringView s, std::ios_base::fmtflags flags = std::ios_base::bo
 }
 
 template <class Type>
-std::string toString(Type const& t, std::ios_base::fmtflags flags = std::ios_base::boolalpha) {
-  std::stringstream ss;
-  ss.flags(flags);
-  ss.imbue(std::locale::classic());
-  ss << t;
-  return ss.str();
+std::string toString(Type const& t) {
+  return fmt::to_string(t);
 }
 
 }

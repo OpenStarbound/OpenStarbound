@@ -8,7 +8,7 @@ namespace Star {
 class StarException : public std::exception {
 public:
   template <typename... Args>
-  static StarException format(char const* fmt, Args const&... args);
+  static StarException format(fmt::format_string<Args...> fmt, Args const&... args);
 
   StarException() noexcept;
   virtual ~StarException() noexcept;
@@ -72,7 +72,7 @@ void fatalException(std::exception const& e, bool showStackTrace);
   class ClassName : public BaseName {                                                                                      \
   public:                                                                                                                  \
     template <typename... Args>                                                                                            \
-    static ClassName format(char const* fmt, Args const&... args) {                                                        \
+    static ClassName format(fmt::format_string<Args...> fmt, Args const&... args) {                                        \
       return ClassName(strf(fmt, args...));                                                                                \
     }                                                                                                                      \
     ClassName() : BaseName(#ClassName, std::string()) {}                                                                   \
@@ -91,7 +91,7 @@ STAR_EXCEPTION(IOException, StarException);
 STAR_EXCEPTION(MemoryException, StarException);
 
 template <typename... Args>
-StarException StarException::format(char const* fmt, Args const&... args) {
+StarException StarException::format(fmt::format_string<Args...> fmt, Args const&... args) {
   return StarException(strf(fmt, args...));
 }
 

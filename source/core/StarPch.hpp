@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <cstddef>
 #include <cstring>
+#include <cassert>
 #include <cmath>
 #include <tuple>
 #include <memory>

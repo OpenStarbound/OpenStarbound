@@ -453,4 +453,7 @@ std::ostream& operator<<(std::ostream& os, Matrix3<T> m) {
 
 }
 
+template <typename T>
+struct fmt::formatter<Star::Matrix3<T>> : ostream_formatter {};
+
 #endif

@@ -77,10 +77,10 @@ OpenGl20Renderer::OpenGl20Renderer() {
     throw RendererException("OpenGL 2.0 not available!");
 
   Logger::info("OpenGL version: '%s' vendor: '%s' renderer: '%s' shader: '%s'",
-      glGetString(GL_VERSION),
-      glGetString(GL_VENDOR),
-      glGetString(GL_RENDERER),
-      glGetString(GL_SHADING_LANGUAGE_VERSION));
+      (const char*)glGetString(GL_VERSION),
+      (const char*)glGetString(GL_VENDOR),
+      (const char*)glGetString(GL_RENDERER),
+      (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 
   glClearColor(0.0, 0.0, 0.0, 1.0);
   glEnable(GL_TEXTURE_2D);

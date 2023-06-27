@@ -507,4 +507,7 @@ std::ostream& operator<<(std::ostream& os, MultiArray<Element, Rank> const& arra
 
 }
 
+template <typename Element, size_t Rank>
+struct fmt::formatter<Star::MultiArray<Element, Rank>> : ostream_formatter {};
+
 #endif

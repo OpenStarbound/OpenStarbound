@@ -1073,4 +1073,7 @@ auto Box<T, N>::nearestCoordTo(Coord const& c) const -> Coord {
 
 }
 
+template <typename T, size_t N>
+struct fmt::formatter<Star::Box<T, N>> : ostream_formatter {};
+
 #endif

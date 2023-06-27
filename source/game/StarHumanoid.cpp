@@ -1025,7 +1025,7 @@ String Humanoid::frameBase(State state) const {
       return "lay";
 
     default:
-      throw StarException(strf("No such state '%s'", state));
+      throw StarException(strf("No such state '%s'", StateNames.getRight(state)));
   }
 }
 
