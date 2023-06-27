@@ -13,5 +13,7 @@
   "cursorTooltip" : {
     "font" : ""
   },
-  "debugFont" : ""
+  "debugFont" : "",
+
+  "planetNameFormatString" : "- {} -"
 }

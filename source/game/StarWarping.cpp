@@ -103,13 +103,13 @@ WorldId parseWorldId(String const& printedId) {
 }
 
 std::ostream& operator<<(std::ostream& os, CelestialWorldId const& worldId) {
-  os << printWorldId(worldId);
+  os << (CelestialCoordinate)worldId;
   return os;
 }
 
 
 std::ostream& operator<<(std::ostream& os, ClientShipWorldId const& worldId) {
-  os << printWorldId(worldId);
+  os << ((Uuid)worldId).hex();
   return os;
 }
 

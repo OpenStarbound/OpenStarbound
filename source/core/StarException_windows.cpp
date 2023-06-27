@@ -233,7 +233,7 @@ void fatalError(char const* message, bool showStackTrace) {
   if (showStackTrace)
     ss << outputStack(captureStack());
 
-  Logger::error(ss.str().c_str());
+  Logger::log(LogLevel::Error, ss.str().c_str());
   MessageBoxW(NULL, stringToUtf16(ss.str()).get(), stringToUtf16("Error").get(), MB_OK | MB_ICONERROR | MB_SYSTEMMODAL);
 
   std::abort();
@@ -245,7 +245,7 @@ void fatalException(std::exception const& e, bool showStackTrace) {
   if (showStackTrace)
     ss << "Caught at:" << std::endl << outputStack(captureStack());
 
-  Logger::error(ss.str().c_str());
+  Logger::log(LogLevel::Error, ss.str().c_str());
   MessageBoxW(NULL, stringToUtf16(ss.str()).get(), stringToUtf16("Error").get(), MB_OK | MB_ICONERROR | MB_SYSTEMMODAL);
 
   std::abort();
