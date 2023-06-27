@@ -8,6 +8,7 @@ namespace Star {
 TextBoxWidget::TextBoxWidget(String const& startingText, String const& hint, WidgetCallbackFunc callback)
   : m_text(startingText), m_hint(hint), m_callback(callback) {
   auto assets = Root::singleton().assets();
+  m_textHidden = false;
   m_regex = ".*";
   m_repeatKeyThreshold = 0;
   m_repeatCode = SpecialRepeatKeyCodes::None;
@@ -61,7 +62,12 @@ void TextBoxWidget::renderImpl() {
     context()->renderInterfaceText(m_hint, {pos, m_hAnchor, m_vAnchor});
   } else {
     context()->setFontColor(m_color.mix(Color::rgbf(0, 0, 1), blueRate).toRgba());
-    context()->renderInterfaceText(m_text, {pos, m_hAnchor, m_vAnchor});
+    if (m_textHidden) {
+      String hiddenText('*', m_text.length());
+      context()->renderInterfaceText(hiddenText, { pos, m_hAnchor, m_vAnchor });
+    }
+    else
+      context()->renderInterfaceText(m_text, { pos, m_hAnchor, m_vAnchor });
   }
   context()->setDefaultFont();
   context()->setFontProcessingDirectives("");
@@ -136,7 +142,7 @@ void TextBoxWidget::update() {
   }
 }
 
-String TextBoxWidget::getText() {
+String TextBoxWidget::getText() const {
   return m_text;
 }
 
@@ -153,6 +159,14 @@ bool TextBoxWidget::setText(String const& text, bool callback) {
   if (callback)
     m_callback(this);
   return true;
+}
+
+bool TextBoxWidget::getHidden() const {
+  return m_textHidden;
+}
+
+void TextBoxWidget::setHidden(bool hidden) {
+  m_textHidden = hidden;
 }
 
 String TextBoxWidget::getRegex() {

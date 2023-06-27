@@ -432,6 +432,8 @@ WidgetConstructResult WidgetParser::textboxHandler(String const& name, Json cons
     textbox->setMaxWidth(config.getInt("maxWidth"));
   if (config.contains("regex"))
     textbox->setRegex(config.getString("regex"));
+  if (config.contains("hidden"))
+    textbox->setHidden(config.getBool("hidden"));
 
   common(textbox, config);
 

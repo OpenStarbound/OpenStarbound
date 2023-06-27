@@ -14,8 +14,11 @@ public:
 
   virtual void update() override;
 
-  String getText();
+  String getText() const;
   bool setText(String const& text, bool callback = true);
+
+  bool getHidden() const;
+  void setHidden(bool hidden);
 
   // Set the regex that the text-box must match.  Defaults to .*
   String getRegex();
@@ -56,6 +59,7 @@ private:
   bool modText(String const& text);
   bool newTextValid(String const& text) const;
 
+  bool m_textHidden;
   String m_text;
   String m_hint;
   String m_regex;
