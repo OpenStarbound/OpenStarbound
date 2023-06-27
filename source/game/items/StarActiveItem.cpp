@@ -137,7 +137,8 @@ void ActiveItem::update(FireMode fireMode, bool shifting, HashSet<MoveControlTyp
     }
   }
 
-  if (world()->isClient()) {
+  bool isClient = world()->isClient();
+  if (isClient) {
     m_itemAnimator.update(WorldTimestep, &m_itemAnimatorDynamicTarget);
     m_scriptedAnimator.update(m_scriptedAnimator.updateDt());
   } else {
@@ -151,14 +152,17 @@ void ActiveItem::update(FireMode fireMode, bool shifting, HashSet<MoveControlTyp
 
   for (auto shieldPoly : shieldPolys()) {
     shieldPoly.translate(owner()->position());
-    SpatialLogger::logPoly("world", shieldPoly, {255, 255, 0, 255});
+    if (isClient)
+      SpatialLogger::logPoly("world", shieldPoly, {255, 255, 0, 255});
   }
 
-  for (auto forceRegion : forceRegions()) {
-    if (auto dfr = forceRegion.ptr<DirectionalForceRegion>())
-      SpatialLogger::logPoly("world", dfr->region, {155, 0, 255, 255});
-    else if (auto rfr = forceRegion.ptr<RadialForceRegion>())
-      SpatialLogger::logPoint("world", rfr->center, {155, 0, 255, 255});
+  if (isClient) {
+    for (auto forceRegion : forceRegions()) {
+      if (auto dfr = forceRegion.ptr<DirectionalForceRegion>())
+        SpatialLogger::logPoly("world", dfr->region, { 155, 0, 255, 255 });
+      else if (auto rfr = forceRegion.ptr<RadialForceRegion>())
+        SpatialLogger::logPoint("world", rfr->center, { 155, 0, 255, 255 });
+    }
   }
 }
 

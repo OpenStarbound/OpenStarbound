@@ -30,6 +30,10 @@ TitleScreen::TitleScreen(PlayerStoragePtr playerStorage, MixerPtr mixer)
   auto randomWorld = m_celestialDatabase->findRandomWorld(10, 50, [this](CelestialCoordinate const& coordinate) {
       return is<TerrestrialWorldParameters>(m_celestialDatabase->parameters(coordinate)->visitableParameters());
     }).take();
+
+  if (auto name = m_celestialDatabase->name(randomWorld))
+    Logger::info("Title world is {} @ CelestialWorld:{}", Text::stripEscapeCodes(*name), randomWorld);
+
   SkyParameters skyParameters(randomWorld, m_celestialDatabase);
   m_skyBackdrop = make_shared<Sky>(skyParameters, true);
 

@@ -179,10 +179,15 @@ Deque<SpatialLogger::LogText> SpatialLogger::getText(char const* space, bool and
 }
 
 void SpatialLogger::clear() {
-  MutexLocker locker(s_mutex);
-  s_lines.clear();
-  s_points.clear();
-  s_logText.clear();
+  decltype(s_lines) lines;
+  decltype(s_points) points;
+  decltype(s_logText) logText;
+  {
+    MutexLocker locker(s_mutex);
+    lines = move(s_lines);
+    points = move(s_points);
+    logText = move(s_logText);
+  } // Move while locked to deallocate contents while unlocked.
 }
 
 Mutex SpatialLogger::s_mutex;

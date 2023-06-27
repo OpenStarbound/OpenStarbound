@@ -814,11 +814,10 @@ void MainInterface::render() {
   renderMonsterHealthBar();
   renderSpecialDamageBar();
   renderMainBar();
+  renderDebug();
 
   renderWindows();
   renderCursor();
-
-  renderDebug();
 }
 
 Vec2F MainInterface::cursorWorldPosition() const {

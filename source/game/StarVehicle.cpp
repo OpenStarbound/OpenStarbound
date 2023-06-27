@@ -315,7 +315,8 @@ void Vehicle::update(uint64_t) {
   if (world()->isClient())
     m_scriptedAnimator.update();
 
-  SpatialLogger::logPoly("world", m_movementController.collisionBody(), {255, 255, 0, 255});
+  if (world()->isClient())
+    SpatialLogger::logPoly("world", m_movementController.collisionBody(), {255, 255, 0, 255});
 }
 
 void Vehicle::render(RenderCallback* renderer) {

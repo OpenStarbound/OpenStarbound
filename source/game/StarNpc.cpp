@@ -442,7 +442,8 @@ void Npc::update(uint64_t) {
     tickShared();
   }
 
-  SpatialLogger::logPoly("world", m_movementController->collisionBody(), {0, 255, 0, 255});
+  if (world()->isClient())
+    SpatialLogger::logPoly("world", m_movementController->collisionBody(), {0, 255, 0, 255});
 }
 
 void Npc::render(RenderCallback* renderCallback) {

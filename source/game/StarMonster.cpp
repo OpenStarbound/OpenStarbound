@@ -479,9 +479,9 @@ void Monster::update(uint64_t) {
     m_networkedAnimatorDynamicTarget.updatePosition(position());
 
     m_scriptedAnimator.update();
-  }
 
-  SpatialLogger::logPoly("world", m_movementController->collisionBody(), {255, 0, 0, 255});
+    SpatialLogger::logPoly("world", m_movementController->collisionBody(), { 255, 0, 0, 255 });
+  }
 }
 
 void Monster::render(RenderCallback* renderCallback) {

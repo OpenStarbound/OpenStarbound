@@ -21,5 +21,7 @@
   "buttonClickSound" : [ "/sfx/interface/button/click.wav" ],
   "buttonReleaseSound" : [ "/sfx/interface/button/release.wav" ],
   "buttonHoverSound" : [ "/sfx/interface/button/hover.wav" ],
-  "buttonHoverOffSound" : [ "/sfx/interface/button/hover_off.wav" ]
+  "buttonHoverOffSound" : [ "/sfx/interface/button/hover_off.wav" ],
+
+  "debugSpatialClearTime" : 0.0
 }

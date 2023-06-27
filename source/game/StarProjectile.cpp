@@ -344,7 +344,8 @@ void Projectile::update(uint64_t) {
     tickShared();
   }
 
-  SpatialLogger::logPoly("world", m_movementController->collisionBody(), Color::Red.toRgba());
+  if (world()->isClient())
+    SpatialLogger::logPoly("world", m_movementController->collisionBody(), Color::Red.toRgba());
 }
 
 void Projectile::render(RenderCallback* renderCallback) {

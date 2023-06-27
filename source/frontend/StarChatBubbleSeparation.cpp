@@ -1,5 +1,5 @@
 #include "StarChatBubbleSeparation.hpp"
-#include "StarLogging.hpp"
+//#include "StarLogging.hpp"
 
 namespace Star {
 

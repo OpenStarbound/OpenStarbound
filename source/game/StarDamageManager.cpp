@@ -80,6 +80,7 @@ void DamageManager::update() {
     for (auto& damageSource : causingEntity->damageSources()) {
       if (damageSource.trackSourceEntity)
         damageSource.translate(causingEntity->position());
+
       if (auto poly = damageSource.damageArea.ptr<PolyF>())
         SpatialLogger::logPoly("world", *poly, Color::Orange.toRgba());
       else if (auto line = damageSource.damageArea.ptr<Line2F>())

@@ -959,7 +959,9 @@ void Player::update(uint64_t) {
   else
     m_humanoid->setDance({});
 
-  m_armor->setupHumanoidClothingDrawables(*m_humanoid, forceNude());
+  bool isClient = world()->isClient();
+  if (isClient)
+    m_armor->setupHumanoidClothingDrawables(*m_humanoid, forceNude());
 
   m_tools->suppressItems(!canUseTool());
   m_tools->tick(m_shifting, m_pendingMoves);
@@ -971,7 +973,9 @@ void Player::update(uint64_t) {
   if (m_movementController->facingDirection() == Direction::Left)
     m_effectsAnimator->scaleTransformationGroup("flip", Vec2F(-1, 1));
 
-  if (world()->isClient()) {
+
+
+  if (isClient) {
     m_effectsAnimator->update(WorldTimestep, &m_effectsAnimatorDynamicTarget);
     m_effectsAnimatorDynamicTarget.updatePosition(position() + m_techController->parentOffset());
   } else {
@@ -1009,7 +1013,8 @@ void Player::update(uint64_t) {
 
   m_pendingMoves.clear();
 
-  SpatialLogger::logPoly("world", m_movementController->collisionBody(), isMaster() ? Color::Orange.toRgba() : Color::Yellow.toRgba());
+  if (isClient)
+    SpatialLogger::logPoly("world", m_movementController->collisionBody(), isMaster() ? Color::Orange.toRgba() : Color::Yellow.toRgba());
 }
 
 float Player::timeSinceLastGaveDamage() const {

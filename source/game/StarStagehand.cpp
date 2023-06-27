@@ -92,8 +92,12 @@ void Stagehand::update(uint64_t) {
   if (isMaster() && m_scripted)
     m_scriptComponent.update(m_scriptComponent.updateDt());
 
-  SpatialLogger::logPoly("world", PolyF(metaBoundBox().translated(position())), {0, 255, 255, 255});
-  SpatialLogger::logPoint("world", position(), {0, 255, 255, 255});
+  if (world()->isClient()) {
+    auto boundBox = metaBoundBox().translated(position());
+    SpatialLogger::logPoly("world", PolyF(boundBox), { 0, 255, 255, 255 });
+    SpatialLogger::logLine("world", boundBox.min(), boundBox.max(), {0, 255, 255, 255});
+    SpatialLogger::logLine("world", { boundBox.xMin(), boundBox.yMax() }, { boundBox.xMax(), boundBox.yMin() }, {0, 255, 255, 255});
+  }
 }
 
 bool Stagehand::shouldDestroy() const {
