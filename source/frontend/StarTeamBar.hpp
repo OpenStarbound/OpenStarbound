@@ -5,6 +5,7 @@
 #include "StarUuid.hpp"
 #include "StarMainInterfaceTypes.hpp"
 #include "StarProgressWidget.hpp"
+#include "StarLabelWidget.hpp"
 
 namespace Star {
 
@@ -102,6 +103,8 @@ private:
   ProgressWidgetPtr m_healthBar;
   ProgressWidgetPtr m_energyBar;
   ProgressWidgetPtr m_foodBar;
+
+  LabelWidgetPtr m_nameLabel;
 
   Color m_energyBarColor;
   Color m_energyBarRegenMixColor;

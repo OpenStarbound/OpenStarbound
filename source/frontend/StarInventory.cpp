@@ -286,10 +286,12 @@ void InventoryPane::update() {
   }
 
   if (ItemPtr swapSlot = inventory->swapSlotItem()) {
-    for (auto pair : m_itemGrids) {
-      if (pair.first != m_selectedTab && PlayerInventory::itemAllowedInBag(swapSlot, pair.first)) {
-        selectTab(pair.first);
-        break;
+    if (!PlayerInventory::itemAllowedInBag(swapSlot, m_selectedTab)) {
+      for (auto& pair : m_itemGrids) {
+        if (pair.first != m_selectedTab && PlayerInventory::itemAllowedInBag(swapSlot, pair.first)) {
+          selectTab(pair.first);
+          break;
+        }
       }
     }
   }
@@ -304,14 +306,14 @@ void InventoryPane::update() {
 
   m_itemGrids[m_selectedTab]->clearChangedSlots();
 
-  for (auto pair : m_newItemMarkers) {
+  for (auto& pair : m_newItemMarkers) {
     if (m_itemGrids[pair.first]->slotsChanged())
       pair.second->show();
     else
       pair.second->hide();
   }
 
-  for (auto techOverlay : m_disabledTechOverlays)
+  for (auto& techOverlay : m_disabledTechOverlays)
     techOverlay->setVisibility(m_player->techOverridden());
 
   auto healthLabel = fetchChild<LabelWidget>("healthtext");
@@ -408,6 +410,8 @@ void InventoryPane::update() {
       context->playAudio(RandomSource().randFrom(m_putDownSounds));
     m_currentSwapSlotItem = {};
   }
+
+  m_title = m_player->name();
 }
 
 void InventoryPane::selectTab(String const& selected) {

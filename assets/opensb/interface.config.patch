@@ -23,5 +23,6 @@
   "buttonHoverSound" : [ "/sfx/interface/button/hover.wav" ],
   "buttonHoverOffSound" : [ "/sfx/interface/button/hover_off.wav" ],
 
-  "debugSpatialClearTime" : 0.0
+  "debugSpatialClearTime" : 0.0,
+  "debugOffset" : [32, 100]
 }

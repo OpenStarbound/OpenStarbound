@@ -40,7 +40,7 @@ TeamBar::TeamBar(MainInterface* mainInterface, UniverseClientPtr client) {
         return;
       auto position = jsonToVec2I(Root::singleton().assets()->json("/interface/windowconfig/teambar.config:selfMenuOffset"));
       position[1] += windowHeight() / m_guiContext->interfaceScale();
-      showMemberMenu(m_client->mainPlayer()->uuid(), position);
+      showMemberMenu(m_client->mainPlayer()->clientContext()->serverUuid(), position);
     });
 
   reader.construct(assets->json("/interface/windowconfig/teambar.config:paneLayout"), this);
@@ -48,6 +48,7 @@ TeamBar::TeamBar(MainInterface* mainInterface, UniverseClientPtr client) {
   m_healthBar = fetchChild<ProgressWidget>("healthBar");
   m_energyBar = fetchChild<ProgressWidget>("energyBar");
   m_foodBar = fetchChild<ProgressWidget>("foodBar");
+  m_nameLabel = fetchChild<LabelWidget>("name");
 
   m_energyBarColor = jsonToColor(assets->json("/interface/windowconfig/teambar.config:energyBarColor"));
   m_energyBarRegenMixColor = jsonToColor(assets->json("/interface/windowconfig/teambar.config:energyBarRegenMixColor"));
@@ -58,8 +59,7 @@ TeamBar::TeamBar(MainInterface* mainInterface, UniverseClientPtr client) {
   auto playerPortrait = fetchChild<PortraitWidget>("portrait");
   playerPortrait->setEntity(as<PortraitEntity>(m_client->mainPlayer()));
 
-  fetchChild<LabelWidget>("name")->setText(m_client->mainPlayer()->name());
-
+  updatePlayerResources();
   disableScissoring();
 }
 
@@ -131,6 +131,8 @@ void TeamBar::updatePlayerResources() {
   } else {
     m_energyBar->setColor(m_energyBarColor.mix(m_energyBarRegenMixColor, player->energyRegenBlockPercent()));
   }
+
+  m_nameLabel->setText(m_client->mainPlayer()->name());
 }
 
 void TeamBar::inviteButton() {
@@ -153,8 +155,9 @@ void TeamBar::buildTeamBar() {
   int memberSize = assets->json("/interface/windowconfig/teambar.config:memberSize").toInt();
   int memberSpacing = assets->json("/interface/windowconfig/teambar.config:memberSpacing").toInt();
 
+  Uuid myUuid = player->clientContext()->serverUuid();
   for (auto member : teamClient->members()) {
-    if (member.uuid == player->uuid()) {
+    if (member.uuid == myUuid) {
       memberIndex++;
       continue;
     }
@@ -357,7 +360,7 @@ void TeamMemberMenu::update() {
 
 void TeamMemberMenu::updateWidgets() {
   bool isLeader = m_owner->m_client->teamClient()->isTeamLeader();
-  bool isSelf = m_owner->m_client->mainPlayer()->uuid() == m_memberUuid;
+  bool isSelf = m_owner->m_client->mainPlayer()->clientContext()->serverUuid() == m_memberUuid;
 
   fetchChild<ButtonWidget>("beamToShip")->setEnabled(m_canBeam);
   fetchChild<ButtonWidget>("makeLeader")->setEnabled(isLeader && !isSelf);
