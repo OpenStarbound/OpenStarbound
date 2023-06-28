@@ -333,21 +333,22 @@ bool TextBoxWidget::innerSendEvent(InputEvent const& event) {
       }
     }
 
-    int rightSteps = 1;
-    int leftSteps = 1;
-    if ((keyDown->mods & (KeyMod::LCtrl | KeyMod::RCtrl)) != KeyMod::NoMod || (keyDown->mods & (KeyMod::LAlt | KeyMod::RAlt)) != KeyMod::NoMod) {
-      rightSteps = m_text.findNextBoundary(m_cursorOffset) - m_cursorOffset;
-      leftSteps = m_cursorOffset - m_text.findNextBoundary(m_cursorOffset, true);
+    auto calculateSteps = [&](bool dir) {
+      if ((keyDown->mods & (KeyMod::LCtrl | KeyMod::RCtrl)) != KeyMod::NoMod || (keyDown->mods & (KeyMod::LAlt | KeyMod::RAlt)) != KeyMod::NoMod) {
+        int steps;
+        if (dir) // right
+         steps = m_text.findNextBoundary(m_cursorOffset) - m_cursorOffset;
+        else // left
+        steps = m_cursorOffset - m_text.findNextBoundary(m_cursorOffset, true);
 
-      if (rightSteps < 1)
-        rightSteps = 1;
-      if (leftSteps < 1)
-        leftSteps = 1;
-    }
+        return steps < 1 ? 1 : steps;
+      }
+    };
 
     if (keyDown->key == Key::Backspace) {
+      int steps = calculateSteps(false);
       m_repeatCode = SpecialRepeatKeyCodes::Backspace;
-      for (int i = 0; i < leftSteps; i++) {
+      for (int i = 0; i < steps; i++) {
         if (m_cursorOffset > 0) {
           if (modText(m_text.substr(0, m_cursorOffset - 1) + m_text.substr(m_cursorOffset)))
             m_cursorOffset -= 1;
@@ -356,16 +357,18 @@ bool TextBoxWidget::innerSendEvent(InputEvent const& event) {
       return true;
     }
     if (keyDown->key == Key::Delete) {
+      int steps = calculateSteps(true);
       m_repeatCode = SpecialRepeatKeyCodes::Delete;
-      for (int i = 0; i < rightSteps; i++) {
+      for (int i = 0; i < steps; i++) {
         if (m_cursorOffset < (int)m_text.size())
           modText(m_text.substr(0, m_cursorOffset) + m_text.substr(m_cursorOffset + 1));
       }
       return true;
     }
     if (keyDown->key == Key::Left) {
+      int steps = calculateSteps(false);
       m_repeatCode = SpecialRepeatKeyCodes::Left;
-      for (int i = 0; i < leftSteps; i++) {
+      for (int i = 0; i < steps; i++) {
         m_cursorOffset--;
         if (m_cursorOffset < 0)
           m_cursorOffset = 0;
@@ -373,8 +376,9 @@ bool TextBoxWidget::innerSendEvent(InputEvent const& event) {
       return true;
     }
     if (keyDown->key == Key::Right) {
+      int steps = calculateSteps(true);
       m_repeatCode = SpecialRepeatKeyCodes::Right;
-      for (int i = 0; i < rightSteps; i++) {
+      for (int i = 0; i < steps; i++) {
         m_cursorOffset++;
         if (m_cursorOffset > (int)m_text.size())
           m_cursorOffset = m_text.size();
