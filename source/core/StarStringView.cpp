@@ -426,3 +426,7 @@ std::ostream& operator<<(std::ostream& os, StringView const& s) {
 }
 
 }
+
+fmt::appender fmt::formatter<Star::StringView>::format(Star::StringView const& s, format_context& ctx) const {
+  return formatter<std::string_view>::format(s.utf8(), ctx);
+};

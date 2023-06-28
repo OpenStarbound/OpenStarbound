@@ -520,11 +520,7 @@ StringList StringList::sorted(Comparator&& comparator) const {
 }
 
 template <> struct fmt::formatter<Star::String> : formatter<std::string> {
-  auto format(Star::String const& s, format_context& ctx) const;
-};
-
-auto fmt::formatter<Star::String>::format(Star::String const& s, format_context& ctx) const {
-  return formatter<std::string>::format(s.utf8(), ctx);
+  fmt::appender format(Star::String const& s, format_context& ctx) const;
 };
 
 #endif
