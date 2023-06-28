@@ -43,7 +43,8 @@ Personality& parsePersonality(Personality& personality, Json const& config) {
 }
 
 Personality parsePersonality(Json const& config) {
-  return parsePersonality(Personality(), config);
+  Personality personality;
+  return parsePersonality(personality, config);
 }
 
 Json jsonFromPersonality(Personality const& personality) {
