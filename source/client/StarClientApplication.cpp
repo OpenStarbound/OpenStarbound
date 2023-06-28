@@ -168,7 +168,6 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
 
   m_guiContext = make_shared<GuiContext>(m_mainMixer->mixer(), appController);
 
-  appController->setTargetUpdateRate(1.0f / WorldTimestep);
 
   auto configuration = m_root->configuration();
   bool vsync = configuration->get("vsync").toBool();
@@ -178,6 +177,16 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
   bool borderless = configuration->get("borderless").toBool();
   bool maximized = configuration->get("maximized").toBool();
 
+  float updateRate = 1.0f / WorldTimestep;
+  if (auto jUpdateRate = configuration->get("updateRate")) {
+    updateRate = jUpdateRate.toFloat();
+    WorldTimestep = 1.0f / updateRate;
+  }
+
+  if (auto jServerUpdateRate = configuration->get("serverUpdateRate"))
+    ServerWorldTimestep = 1.0f / jServerUpdateRate.toFloat();
+
+  appController->setTargetUpdateRate(updateRate);
   appController->setApplicationTitle(assets->json("/client.config:windowTitle").toString());
   appController->setVSyncEnabled(vsync);
 
