@@ -258,7 +258,6 @@ void ClientApplication::windowChanged(WindowMode windowMode, Vec2U screenSize) {
     config->set("maximized", true);
     config->set("fullscreen", false);
     config->set("borderless", false);
-    config->set("windowedResolution", jsonFromVec2U(screenSize));
   } else {
     config->set("maximized", false);
     config->set("fullscreen", false);

@@ -445,8 +445,12 @@ private:
           if (SDL_SetWindowDisplayMode(parent->m_sdlWindow, &requestedDisplayMode) == 0) {
             if (parent->m_windowMode == WindowMode::Fullscreen)
               SDL_SetWindowFullscreen(parent->m_sdlWindow, 0);
-            else
-              parent->m_windowMode = WindowMode::Fullscreen;
+            else if (parent->m_windowMode == WindowMode::Borderless)
+              SDL_SetWindowBordered(parent->m_sdlWindow, SDL_TRUE);
+            else if (parent->m_windowMode == WindowMode::Maximized)
+              SDL_RestoreWindow(parent->m_sdlWindow);
+            
+            parent->m_windowMode = WindowMode::Fullscreen;
             SDL_SetWindowFullscreen(parent->m_sdlWindow, SDL_WINDOW_FULLSCREEN);
           } else {
             Logger::warn("Failed to set resolution {}, {}", (unsigned)requestedDisplayMode.w, (unsigned)requestedDisplayMode.h);
@@ -469,16 +473,18 @@ private:
     }
 
     void setNormalWindow(Vec2U windowSize) override {
+      auto window = parent->m_sdlWindow;
       if (parent->m_windowMode != WindowMode::Normal || parent->m_windowSize != windowSize) {
-        if (parent->m_windowMode == WindowMode::Fullscreen || parent->m_windowMode == WindowMode::Borderless) {
-          SDL_SetWindowFullscreen(parent->m_sdlWindow, 0);
-          SDL_SetWindowBordered(parent->m_sdlWindow, SDL_TRUE);
-        }
+        if (parent->m_windowMode == WindowMode::Fullscreen)
+          SDL_SetWindowFullscreen(window, 0);
+        else if (parent->m_windowMode == WindowMode::Borderless)
+          SDL_SetWindowBordered(window, SDL_TRUE);
         else if (parent->m_windowMode == WindowMode::Maximized)
-          SDL_RestoreWindow(parent->m_sdlWindow);
+          SDL_RestoreWindow(window);
 
-        SDL_SetWindowSize(parent->m_sdlWindow, windowSize[0], windowSize[1]);
-        SDL_SetWindowPosition(parent->m_sdlWindow, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
+        SDL_SetWindowBordered(window, SDL_TRUE);
+        SDL_SetWindowSize(window, windowSize[0], windowSize[1]);
+        SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
 
         parent->m_windowMode = WindowMode::Normal;
         parent->m_windowSize = windowSize;
@@ -487,11 +493,12 @@ private:
 
     void setMaximizedWindow() override {
       if (parent->m_windowMode != WindowMode::Maximized) {
-        if (parent->m_windowMode == WindowMode::Fullscreen || parent->m_windowMode == WindowMode::Borderless) {
+        if (parent->m_windowMode == WindowMode::Fullscreen)
           SDL_SetWindowFullscreen(parent->m_sdlWindow, 0);
+        else if (parent->m_windowMode == WindowMode::Borderless)
           SDL_SetWindowBordered(parent->m_sdlWindow, SDL_TRUE);
-        }
 
+        SDL_RestoreWindow(parent->m_sdlWindow);
         SDL_MaximizeWindow(parent->m_sdlWindow);
         parent->m_windowMode = WindowMode::Maximized;
       }
@@ -499,19 +506,24 @@ private:
 
     void setBorderlessWindow() override {
       if (parent->m_windowMode != WindowMode::Borderless) {
-        SDL_SetWindowFullscreen(parent->m_sdlWindow, 0);
+        if (parent->m_windowMode == WindowMode::Fullscreen)
+          SDL_SetWindowFullscreen(parent->m_sdlWindow, 0);
+        else if (parent->m_windowMode == WindowMode::Maximized)
+          SDL_RestoreWindow(parent->m_sdlWindow);
+
         SDL_SetWindowBordered(parent->m_sdlWindow, SDL_FALSE);
-        SDL_MaximizeWindow(parent->m_sdlWindow);
         parent->m_windowMode = WindowMode::Borderless;
 
         SDL_DisplayMode actualDisplayMode;
-        if (SDL_GetWindowDisplayMode(parent->m_sdlWindow, &actualDisplayMode) == 0) {
+        if (SDL_GetDesktopDisplayMode(SDL_GetWindowDisplayIndex(parent->m_sdlWindow), &actualDisplayMode) == 0) {
           parent->m_windowSize = {(unsigned)actualDisplayMode.w, (unsigned)actualDisplayMode.h};
 
+          SDL_SetWindowPosition(parent->m_sdlWindow, 0, 0);
+          SDL_SetWindowSize(parent->m_sdlWindow, parent->m_windowSize[0], parent->m_windowSize[1]);
           parent->m_renderer->setScreenSize(parent->m_windowSize);
           parent->m_application->windowChanged(parent->m_windowMode, parent->m_windowSize);
         } else {
-          Logger::error("Couldn't get window display mode!");
+          Logger::error("Couldn't get desktop display mode!");
         }
       }
     }
@@ -607,14 +619,14 @@ private:
         if (event.window.event == SDL_WINDOWEVENT_MAXIMIZED || event.window.event == SDL_WINDOWEVENT_RESTORED) {
           auto windowFlags = SDL_GetWindowFlags(m_sdlWindow);
 
-          if (windowFlags & SDL_WINDOW_MAXIMIZED) {
+          if (windowFlags & SDL_WINDOW_MAXIMIZED)
             m_windowMode = WindowMode::Maximized;
-          } else if (windowFlags & SDL_WINDOW_FULLSCREEN || windowFlags & SDL_WINDOW_FULLSCREEN_DESKTOP) {
-            if (m_windowMode != WindowMode::Fullscreen && m_windowMode != WindowMode::Borderless)
-              m_windowMode = WindowMode::Fullscreen;
-          } else {
+          else if (windowFlags & SDL_WINDOW_FULLSCREEN)
+            m_windowMode = WindowMode::Fullscreen;
+          else if (windowFlags & SDL_WINDOW_BORDERLESS)
+            m_windowMode = WindowMode::Borderless;
+          else
             m_windowMode = WindowMode::Normal;
-          }
 
           m_application->windowChanged(m_windowMode, m_windowSize);
 
