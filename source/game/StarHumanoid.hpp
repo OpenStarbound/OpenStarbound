@@ -192,7 +192,7 @@ public:
 
   // Renders to centered drawables (centered on the normal image center for the
   // player graphics), (in world space, not pixels)
-  List<Drawable> render();
+  List<Drawable> render(bool withItems = true, bool withRotation = true);
 
   // Renders to centered drawables (centered on the normal image center for the
   // player graphics), (in pixels, not world space)

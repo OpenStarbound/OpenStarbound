@@ -8,6 +8,7 @@ namespace Star {
 
 PortraitWidget::PortraitWidget(PortraitEntityPtr entity, PortraitMode mode) : m_entity(entity), m_portraitMode(mode) {
   m_scale = 1;
+  m_renderHumanoid = false;
   m_iconMode = false;
 
   init();
@@ -44,7 +45,7 @@ void PortraitWidget::renderImpl() {
         humanoid = player->humanoid();
     }
 
-    List<Drawable> portrait = humanoid ? humanoid->render() : m_entity->portrait(m_portraitMode);
+    List<Drawable> portrait = humanoid ? humanoid->render(false, false) : m_entity->portrait(m_portraitMode);
     for (auto& i : portrait) {
       i.scale(humanoid ? m_scale * 8.0f : m_scale);
       context()->drawInterfaceDrawable(i, Vec2F(screenPosition() + offset));

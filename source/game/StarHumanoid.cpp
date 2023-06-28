@@ -463,7 +463,7 @@ void Humanoid::resetAnimation() {
   m_danceTimer = 0.0f;
 }
 
-List<Drawable> Humanoid::render() {
+List<Drawable> Humanoid::render(bool withItems, bool withRotation) {
   List<Drawable> drawables;
 
   int armStateSeq = getArmStateSequence();
@@ -521,9 +521,9 @@ List<Drawable> Humanoid::render() {
     addDrawable(move(drawable));
   }
 
-  if (backHand.holdingItem && !dance.isValid()) {
+  if (backHand.holdingItem && !dance.isValid() && withItems) {
     auto drawItem = [&]() {
-      for (auto backHandItem : backHand.itemDrawables) {
+      for (auto& backHandItem : backHand.itemDrawables) {
         backHandItem.translate(m_frontHandPosition + backArmFrameOffset + m_backArmOffset);
         backHandItem.rotate(backHand.itemAngle, backArmFrameOffset + m_backArmRotationCenter + m_backArmOffset);
         addDrawable(move(backHandItem));
@@ -688,10 +688,9 @@ List<Drawable> Humanoid::render() {
     return frontArm;
   };
 
-  if (frontHand.holdingItem && !dance.isValid()) {
+  if (frontHand.holdingItem && !dance.isValid() && withItems) {
     auto drawItem = [&]() {
-      for (size_t i = 0; i < frontHand.itemDrawables.size(); i++) {
-        Drawable frontHandItem = frontHand.itemDrawables[i];
+      for (auto& frontHandItem : frontHand.itemDrawables) {
         frontHandItem.translate(m_frontHandPosition + frontArmFrameOffset);
         frontHandItem.rotate(frontHand.itemAngle, frontArmFrameOffset + m_frontArmRotationCenter);
         addDrawable(frontHandItem);
@@ -755,7 +754,9 @@ List<Drawable> Humanoid::render() {
   if (m_altHand.nonRotatedDrawables.size())
     drawables.insertAllAt(0, m_altHand.nonRotatedDrawables);
 
-  Drawable::rotateAll(drawables, m_rotation);
+  if (withRotation)
+    Drawable::rotateAll(drawables, m_rotation);
+
   Drawable::translateAll(drawables, m_globalOffset);
   Drawable::rebaseAll(drawables);
 
@@ -1296,7 +1297,7 @@ List<Particle> Humanoid::particles(String const& name) const {
   auto particleDatabase = Root::singleton().particleDatabase();
   List<Particle> res;
   Json particles = m_particleEmitters.get(name).get("particles", {});
-  for (auto particle : particles.toArray()) {
+  for (auto& particle : particles.toArray()) {
     auto particleSpec = particle.get("particle", {});
     res.push_back(particleDatabase->particle(particleSpec));
   }
