@@ -464,6 +464,7 @@ void ClientApplication::changeState(MainAppState newState) {
       }
     }
 
+    m_mainMixer->setUniverseClient(m_universeClient);
     m_universeClient->setMainPlayer(m_player);
     m_cinematicOverlay->setPlayer(m_player);
 
