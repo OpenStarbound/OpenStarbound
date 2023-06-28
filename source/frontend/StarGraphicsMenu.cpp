@@ -159,7 +159,7 @@ void GraphicsMenu::syncGui() {
   } else {
     zoomSlider->setVal(m_zoomList.size() - 1);
   }
-  fetchChild<LabelWidget>("zoomValueLabel")->setText(strf("{}x", m_localChanges.get("zoomLevel").toInt()));
+  fetchChild<LabelWidget>("zoomValueLabel")->setText(strf("{}x", m_localChanges.get("zoomLevel").toFloat()));
 
 
   fetchChild<ButtonWidget>("speechBubbleCheckbox")->setChecked(m_localChanges.get("speechBubbles").toBool());

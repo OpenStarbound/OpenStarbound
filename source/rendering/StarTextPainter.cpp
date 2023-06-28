@@ -530,6 +530,7 @@ RectF TextPainter::doRenderLine(StringView text, TextPositioning const& position
     return true;
   };
 
+  m_fontTextureGroup.switchFont(m_renderSettings.font);
   Text::processText(text, textCallback, commandsCallback);
 
   return bounds;
@@ -538,7 +539,7 @@ RectF TextPainter::doRenderLine(StringView text, TextPositioning const& position
 RectF TextPainter::doRenderGlyph(String::Char c, TextPositioning const& position, bool reallyRender) {
   if (m_nonRenderedCharacters.find(String(c)) != NPos)
     return RectF();
-  m_fontTextureGroup.switchFont(m_renderSettings.font);
+
   int width = glyphWidth(c);
   // Offset left by width if right anchored.
   float hOffset = 0;

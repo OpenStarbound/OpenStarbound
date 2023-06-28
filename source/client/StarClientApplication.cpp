@@ -866,11 +866,13 @@ void ClientApplication::updateCamera() {
   if (!m_universeClient->worldClient())
     return;
 
+  WorldCamera& camera = m_worldPainter->camera();
+  camera.update(WorldTimestep);
+
   if (m_mainInterface->fixedCamera())
     return;
 
   auto assets = m_root->assets();
-  auto camera = m_worldPainter->camera();
 
   const float triggerRadius = 100.0f;
   const float deadzone = 0.1f;
@@ -934,7 +936,6 @@ void ClientApplication::updateCamera() {
 
   m_worldPainter->setCameraPosition(m_universeClient->worldClient()->geometry(), baseCamera + (smoothDelta + m_cameraSmoothDelta) * 0.5f);
   m_cameraSmoothDelta = smoothDelta;
-  camera = m_worldPainter->camera();
 
   m_universeClient->worldClient()->setClientWindow(camera.worldTileRect());
 }

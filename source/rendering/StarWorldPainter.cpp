@@ -41,13 +41,13 @@ void WorldPainter::setCameraPosition(WorldGeometry const& geometry, Vec2F const&
   m_camera.setCenterWorldPosition(position);
 }
 
-WorldCamera const& WorldPainter::camera() const {
+WorldCamera& WorldPainter::camera() {
   return m_camera;
 }
 
 void WorldPainter::render(WorldRenderData& renderData) {
   m_camera.setScreenSize(m_renderer->screenSize());
-  m_camera.setPixelRatio(Root::singleton().configuration()->get("zoomLevel").toFloat());
+  m_camera.setTargetPixelRatio(Root::singleton().configuration()->get("zoomLevel").toFloat());
 
   m_assets = Root::singleton().assets();
 
@@ -159,10 +159,10 @@ void WorldPainter::renderParticles(WorldRenderData& renderData, Particle::Layer 
     if (!particleRenderWindow.contains(position))
       continue;
 
-    Vec2I size = Vec2I::filled(particle.size * m_camera.pixelRatio());
+    Vec2F size = Vec2F::filled(particle.size * m_camera.pixelRatio());
 
     if (particle.type == Particle::Type::Ember) {
-      m_renderer->render(renderFlatRect(RectF(position - Vec2F(size) / 2, position + Vec2F(size) / 2), particle.color.toRgba(), particle.fullbright ? 0.0f : 1.0f));
+      m_renderer->render(renderFlatRect(RectF(position - size / 2, position + size / 2), particle.color.toRgba(), particle.fullbright ? 0.0f : 1.0f));
 
     } else if (particle.type == Particle::Type::Streak) {
       // Draw a rotated quad streaking in the direction the particle is coming from.
@@ -199,7 +199,7 @@ void WorldPainter::renderParticles(WorldRenderData& renderData, Particle::Layer 
 
     } else if (particle.type == Particle::Type::Text) {
       Vec2F position = m_camera.worldToScreen(particle.position);
-      unsigned size = textParticleFontSize * m_camera.pixelRatio() * particle.size;
+      unsigned size = round((float)textParticleFontSize * m_camera.pixelRatio() * particle.size);
       if (size > 0) {
         m_textPainter->setFontSize(size);
         m_textPainter->setFontColor(particle.color.toRgba());

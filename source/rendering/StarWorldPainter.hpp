@@ -21,7 +21,7 @@ public:
 
   void setCameraPosition(WorldGeometry const& worldGeometry, Vec2F const& position);
 
-  WorldCamera const& camera() const;
+  WorldCamera& camera();
 
   void render(WorldRenderData& renderData);
 

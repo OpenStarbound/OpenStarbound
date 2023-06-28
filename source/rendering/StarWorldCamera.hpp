@@ -3,6 +3,7 @@
 
 #include "StarWorldGeometry.hpp"
 #include "StarGameTypes.hpp"
+#include "StarInterpolation.hpp"
 
 namespace Star {
 
@@ -11,8 +12,9 @@ public:
   void setScreenSize(Vec2U screenSize);
   Vec2U screenSize() const;
 
-  void setPixelRatio(unsigned pixelRatio);
-  unsigned pixelRatio() const;
+  void setTargetPixelRatio(float targetPixelRatio);
+  void setPixelRatio(float pixelRatio);
+  float pixelRatio() const;
 
   void setWorldGeometry(WorldGeometry geometry);
   WorldGeometry worldGeometry() const;
@@ -42,10 +44,13 @@ public:
   // worldTileRect, in screen coordinates.
   Vec2F tileMinScreen() const;
 
+  void update(float dt);
+
 private:
   WorldGeometry m_worldGeometry;
   Vec2U m_screenSize;
-  unsigned m_pixelRatio = 1;
+  float m_pixelRatio = 1.0f;
+  float m_targetPixelRatio = 1.0f;
   Vec2F m_worldCenter;
 };
 
@@ -57,11 +62,15 @@ inline Vec2U WorldCamera::screenSize() const {
   return m_screenSize;
 }
 
-inline void WorldCamera::setPixelRatio(unsigned pixelRatio) {
-  m_pixelRatio = pixelRatio;
+inline void WorldCamera::setTargetPixelRatio(float targetPixelRatio) {
+  m_targetPixelRatio = targetPixelRatio;
 }
 
-inline unsigned WorldCamera::pixelRatio() const {
+inline void WorldCamera::setPixelRatio(float pixelRatio) {
+  m_pixelRatio = m_targetPixelRatio = pixelRatio;
+}
+
+inline float WorldCamera::pixelRatio() const {
   return m_pixelRatio;
 }
 
@@ -110,6 +119,10 @@ inline Vec2F WorldCamera::tileMinScreen() const {
   RectF screenRect = worldScreenRect();
   RectI tileRect = worldTileRect();
   return (Vec2F(tileRect.min()) - screenRect.min()) * (TilePixels * m_pixelRatio);
+}
+
+inline void WorldCamera::update(float dt) {
+  m_pixelRatio = lerp(exp(-20.0f * dt), m_targetPixelRatio, m_pixelRatio);
 }
 
 }

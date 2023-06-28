@@ -73,7 +73,7 @@ void ChatBubbleManager::setCamera(WorldCamera const& camera) {
         actions.append(SayChatAction{bubble.entity, bubble.text, state.idealDestination, bubble.config});
       });
     m_bubbles.clear();
-    for (auto portraitBubble : m_portraitBubbles)
+    for (auto& portraitBubble : m_portraitBubbles)
       actions.append(PortraitChatAction{
           portraitBubble.entity,
           portraitBubble.portrait,
