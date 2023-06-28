@@ -17,11 +17,94 @@ namespace Star {
 LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
   LuaCallbacks callbacks;
 
-  callbacks.registerCallback("id", [player]() { return player->entityId(); });
+  callbacks.registerCallback("humanoidIdentity",    [player]()         { return player->humanoid()->identity().toJson();  });
+  callbacks.registerCallback("setHumanoidIdentity", [player](Json const& id) { player->setIdentity(HumanoidIdentity(id)); });
+
+  callbacks.registerCallback("bodyDirectives",    [player]()       { return player->identity().bodyDirectives;  });
+  callbacks.registerCallback("setBodyDirectives", [player](String const& str) { player->setBodyDirectives(str); });
+
+  callbacks.registerCallback("emoteDirectives",    [player]() { return player->identity().emoteDirectives;        });
+  callbacks.registerCallback("setEmoteDirectives", [player](String const& str) { player->setEmoteDirectives(str); });
+
+  callbacks.registerCallback("hairGroup",         [player]() { return player->identity().hairGroup;        });
+  callbacks.registerCallback("setHairGroup",      [player](String const& str) { player->setHairGroup(str); });
+  callbacks.registerCallback("hairType",          [player]() { return player->identity().hairType;        });
+  callbacks.registerCallback("setHairType",       [player](String const& str) { player->setHairType(str); });
+  callbacks.registerCallback("hairDirectives",    [player]()       { return player->identity().hairDirectives;  });
+  callbacks.registerCallback("setHairDirectives", [player](String const& str) { player->setHairDirectives(str); });
+
+  callbacks.registerCallback("facialHairGroup",         [player]() { return player->identity().facialHairGroup;        });
+  callbacks.registerCallback("setFacialHairGroup",      [player](String const& str) { player->setFacialHairGroup(str); });
+  callbacks.registerCallback("facialHairType",          [player]() { return player->identity().facialHairType;        });
+  callbacks.registerCallback("setFacialHairType",       [player](String const& str) { player->setFacialHairType(str); });
+  callbacks.registerCallback("facialHairDirectives",    [player]()       { return player->identity().facialHairDirectives;  });
+  callbacks.registerCallback("setFacialHairDirectives", [player](String const& str) { player->setFacialHairDirectives(str); });
+
+  callbacks.registerCallback("hair", [player]() {
+    HumanoidIdentity const& identity = player->identity();
+    return luaTupleReturn(identity.hairGroup, identity.hairType, identity.hairDirectives);
+  });
+
+  callbacks.registerCallback("facialHair", [player]() {
+    HumanoidIdentity const& identity = player->identity();
+    return luaTupleReturn(identity.facialHairGroup, identity.facialHairType, identity.facialHairDirectives);
+  });
+
+  callbacks.registerCallback("facialMask", [player]() {
+    HumanoidIdentity const& identity = player->identity();
+    return luaTupleReturn(identity.facialMaskGroup, identity.facialMaskType, identity.facialMaskDirectives);
+  });
+
+  callbacks.registerCallback("setFacialHair", [player](Maybe<String> const& group, Maybe<String> const& type, Maybe<String> const& directives) {
+    if (group && type && directives)
+      player->setFacialHair(*group, *type, *directives);
+    else {
+      if (group)      player->setFacialHairGroup(*group);
+      if (type)       player->setFacialHairType(*type);
+      if (directives) player->setFacialHairDirectives(*directives);
+    }
+  });
+
+  callbacks.registerCallback("setFacialMask", [player](Maybe<String> const& group, Maybe<String> const& type, Maybe<String> const& directives) {
+    if (group && type && directives)
+      player->setFacialMask(*group, *type, *directives);
+    else {
+      if (group)      player->setFacialMaskGroup(*group);
+      if (type)       player->setFacialMaskType(*type);
+      if (directives) player->setFacialMaskDirectives(*directives);
+    }
+  });
+
+  callbacks.registerCallback("setHair", [player](Maybe<String> const& group, Maybe<String> const& type, Maybe<String> const& directives) {
+    if (group && type && directives)
+      player->setHair(*group, *type, *directives);
+    else {
+      if (group)      player->setHairGroup(*group);
+      if (type)       player->setHairType(*type);
+      if (directives) player->setHairDirectives(*directives);
+    }
+  });
+
+  callbacks.registerCallback("species",    [player]()                      { return player->species();    });
+  callbacks.registerCallback("setSpecies", [player](String const& species) { player->setSpecies(species); });
+
+  callbacks.registerCallback("imagePath",    [player]()                        { return player->identity().imagePath;    });
+  callbacks.registerCallback("setImagePath", [player](Maybe<String> const& imagePath) { player->setImagePath(imagePath); });
+
+  callbacks.registerCallback("gender",    [player]()                     { return GenderNames.getRight(player->gender());  });
+  callbacks.registerCallback("setGender", [player](String const& gender) { player->setGender(GenderNames.getLeft(gender)); });
+
+  callbacks.registerCallback("personality",    [player]() { return jsonFromPersonality(player->identity().personality); });
+  callbacks.registerCallback("setPersonality", [player](Json const& personalityConfig) {
+    Personality const& oldPersonality = player->identity().personality;
+    player->setPersonality(parsePersonality(Personality(oldPersonality), personalityConfig));
+  });
+
+  void setPersonality(Personality const& personality);
+
+  callbacks.registerCallback("id",       [player]() { return player->entityId(); });
   callbacks.registerCallback("uniqueId", [player]() { return player->uniqueId(); });
-  callbacks.registerCallback("species", [player]() { return player->species(); });
-  callbacks.registerCallback("gender", [player]() { return GenderNames.getRight(player->gender()); });
-  callbacks.registerCallback("isAdmin", [player]() { return player->isAdmin(); });
+  callbacks.registerCallback("isAdmin",  [player]() { return player->isAdmin();  });
 
   callbacks.registerCallback("interact", [player](String const& type, Json const& configData, Maybe<EntityId> const& sourceEntityId) {
       player->interact(InteractAction(type, sourceEntityId.value(NullEntityId), configData));

@@ -1843,8 +1843,7 @@ bool Player::isAdmin() const {
 
 void Player::setFavoriteColor(Vec4B color) {
   m_identity.color = color;
-  m_identityUpdated = true;
-  m_humanoid->setIdentity(m_identity);
+  updateIdentity();
 }
 
 Vec4B Player::favoriteColor() const {
@@ -1951,8 +1950,7 @@ String Player::name() const {
 
 void Player::setName(String const& name) {
   m_identity.name = name;
-  m_identityUpdated = true;
-  m_humanoid->setIdentity(m_identity);
+  updateIdentity();
 }
 
 Maybe<String> Player::statusText() const {
@@ -1972,51 +1970,66 @@ Vec2F Player::nametagOrigin() const {
   return mouthPosition(false);
 }
 
-void Player::setBodyDirectives(String const& directives) {
-  m_identity.bodyDirectives = directives;
-  m_identityUpdated = true;
-  m_humanoid->setIdentity(m_identity);
-}
+void Player::updateIdentity()
+{ m_identityUpdated = true; m_humanoid->setIdentity(m_identity); }
 
-void Player::setHairType(String const& group, String const& type) {
+void Player::setBodyDirectives(String const& directives)
+{ m_identity.bodyDirectives = directives; updateIdentity(); }
+
+void Player::setEmoteDirectives(String const& directives)
+{ m_identity.emoteDirectives = directives; updateIdentity(); }
+
+void Player::setHairGroup(String const& group)
+{ m_identity.hairGroup = group; updateIdentity(); }
+
+void Player::setHairType(String const& type)
+{ m_identity.hairType = type; updateIdentity(); }
+
+void Player::setHairDirectives(String const& directives)
+{ m_identity.hairDirectives = directives; updateIdentity(); }
+
+void Player::setFacialHairGroup(String const& group)
+{ m_identity.facialHairGroup = group; updateIdentity(); }
+
+void Player::setFacialHairType(String const& type)
+{ m_identity.facialHairType = type; updateIdentity(); }
+
+void Player::setFacialHairDirectives(String const& directives)
+{ m_identity.facialHairDirectives = directives; updateIdentity(); }
+
+void Player::setFacialMaskGroup(String const& group)
+{ m_identity.facialMaskGroup = group; updateIdentity(); }
+
+void Player::setFacialMaskType(String const& type)
+{ m_identity.facialMaskType = type; updateIdentity(); }
+
+void Player::setFacialMaskDirectives(String const& directives)
+{ m_identity.facialMaskDirectives = directives; updateIdentity(); }
+
+void Player::setHair(String const& group, String const& type, String const& directives) {
   m_identity.hairGroup = group;
   m_identity.hairType = type;
-  m_identityUpdated = true;
-  m_humanoid->setIdentity(m_identity);
+  m_identity.hairDirectives = directives;
+  updateIdentity();
 }
 
 void Player::setFacialHair(String const& group, String const& type, String const& directives) {
   m_identity.facialHairGroup = group;
   m_identity.facialHairType = type;
   m_identity.facialHairDirectives = directives;
-  m_identityUpdated = true;
-  m_humanoid->setIdentity(m_identity);
+  updateIdentity();
 }
 
 void Player::setFacialMask(String const& group, String const& type, String const& directives) {
   m_identity.facialMaskGroup = group;
   m_identity.facialMaskType = type;
   m_identity.facialMaskDirectives = directives;
-  m_identityUpdated = true;
-  m_humanoid->setIdentity(m_identity);
-}
-
-void Player::setHairDirectives(String const& directives) {
-  m_identity.hairDirectives = directives;
-  m_identityUpdated = true;
-  m_humanoid->setIdentity(m_identity);
-}
-
-void Player::setEmoteDirectives(String const& directives) {
-  m_identity.emoteDirectives = directives;
-  m_identityUpdated = true;
-  m_humanoid->setIdentity(m_identity);
+  updateIdentity();
 }
 
 void Player::setSpecies(String const& species) {
   m_identity.species = species;
-  m_identityUpdated = true;
-  m_humanoid->setIdentity(m_identity);
+  updateIdentity();
 }
 
 Gender Player::gender() const {
@@ -2025,8 +2038,7 @@ Gender Player::gender() const {
 
 void Player::setGender(Gender const& gender) {
   m_identity.gender = gender;
-  m_identityUpdated = true;
-  m_humanoid->setIdentity(m_identity);
+  updateIdentity();
 }
 
 String Player::species() const {
@@ -2035,12 +2047,25 @@ String Player::species() const {
 
 void Player::setPersonality(Personality const& personality) {
   m_identity.personality = personality;
-  m_identityUpdated = true;
-  m_humanoid->setIdentity(m_identity);
+  updateIdentity();
+}
+
+void Player::setImagePath(Maybe<String> const& imagePath) {
+  m_identity.imagePath = imagePath;
+  updateIdentity();
 }
 
 HumanoidPtr Player::humanoid() {
   return m_humanoid;
+}
+
+HumanoidIdentity const& Player::identity() const {
+  return m_identity;
+}
+
+void Player::setIdentity(HumanoidIdentity identity) {
+  m_identity = move(identity);
+  updateIdentity();
 }
 
 List<String> Player::pullQueuedMessages() {

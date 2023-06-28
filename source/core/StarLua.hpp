@@ -9,6 +9,7 @@
 #include "StarString.hpp"
 #include "StarJson.hpp"
 #include "StarRefPtr.hpp"
+#include "StarDirectives.hpp"
 
 namespace Star {
 
@@ -822,6 +823,16 @@ template <size_t s>
 struct LuaConverter<char[s]> {
   static LuaValue from(LuaEngine& engine, char const v[s]) {
     return engine.createString(v);
+  }
+};
+
+template <>
+struct LuaConverter<Directives> {
+  static LuaValue from(LuaEngine& engine, Directives const& v) {
+    if (String const* ptr = v.stringPtr())
+      return engine.createString(*ptr);
+    else
+      return engine.createString("");
   }
 };
 

@@ -354,7 +354,8 @@ void CharCreationPane::changed() {
 
   m_previewPlayer->setGender(GenderNames.getLeft(gender.name));
 
-  m_previewPlayer->setHairType(gender.hairGroup, hair);
+  m_previewPlayer->setHairGroup(gender.hairGroup);
+  m_previewPlayer->setHairType(hair);
   m_previewPlayer->setHairDirectives(hairColor);
 
   m_previewPlayer->setEmoteDirectives(bodyColor + altColor);

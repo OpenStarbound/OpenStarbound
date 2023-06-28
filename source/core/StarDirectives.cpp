@@ -162,10 +162,7 @@ bool Directives::empty() const {
   return !shared || shared->empty();
 }
 
-Directives::operator bool() const {
-  return !empty();
-}
-
+Directives::operator bool() const { return !empty(); }
 
 DataStream& operator>>(DataStream& ds, Directives& directives) {
   String string;

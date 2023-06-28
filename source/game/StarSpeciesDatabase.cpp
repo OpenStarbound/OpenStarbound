@@ -72,7 +72,7 @@ SpeciesDefinition::SpeciesDefinition(Json const& config) {
 
   auto personalities = humanoidConfig().getArray("personalities");
   for (auto personality : personalities) {
-    m_personalities.push_back(parsePersonality(personality));
+    m_personalities.push_back(parsePersonalityArray(personality));
   }
 
   m_statusEffects = config.getArray("statusEffects", {}).transformed(jsonToPersistentStatusEffect);

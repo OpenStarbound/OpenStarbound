@@ -288,10 +288,24 @@ public:
   Vec3B nametagColor() const override;
   Vec2F nametagOrigin() const override;
 
+  void updateIdentity();
+
   void setBodyDirectives(String const& directives);
-  void setHairType(String const& group, String const& type);
-  void setHairDirectives(String const& directives);
   void setEmoteDirectives(String const& directives);
+
+  void setHairGroup(String const& group);
+  void setHairType(String const& type);
+  void setHairDirectives(String const& directives);
+
+  void setFacialHairGroup(String const& group);
+  void setFacialHairType(String const& type);
+  void setFacialHairDirectives(String const& directives);
+
+  void setFacialMaskGroup(String const& group);
+  void setFacialMaskType(String const& type);
+  void setFacialMaskDirectives(String const& directives);
+
+  void setHair      (String const& group, String const& type, String const& directives);
   void setFacialHair(String const& group, String const& type, String const& directives);
   void setFacialMask(String const& group, String const& type, String const& directives);
 
@@ -300,8 +314,12 @@ public:
   Gender gender() const;
   void setGender(Gender const& gender);
   void setPersonality(Personality const& personality);
+  void setImagePath(Maybe<String> const& imagePath);
 
   HumanoidPtr humanoid();
+  HumanoidIdentity const& identity() const;
+
+  void setIdentity(HumanoidIdentity identity);
 
   void setAdmin(bool isAdmin);
   bool isAdmin() const override;

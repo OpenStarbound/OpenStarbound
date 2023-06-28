@@ -75,7 +75,7 @@ NpcVariant NpcDatabase::generateNpcVariant(
         jsonToStringList(config.get("nameGen"))[(int)identity.gender], randSource);
   }
 
-  identity.personality = parsePersonality(randSource.randFrom(variant.humanoidConfig.getArray("personalities")));
+  identity.personality = parsePersonalityArray(randSource.randFrom(variant.humanoidConfig.getArray("personalities")));
 
   if (config.contains("identity"))
     identity = HumanoidIdentity(jsonMerge(identity.toJson(), config.get("identity")));

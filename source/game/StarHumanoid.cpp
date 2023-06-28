@@ -27,8 +27,32 @@ extern EnumMap<HumanoidEmote> const HumanoidEmoteNames{
   {HumanoidEmote::Sleep, "Sleep"}
 };
 
-Personality parsePersonality(Json const& config) {
+Personality parsePersonalityArray(Json const& config) {
   return Personality{config.getString(0), config.getString(1), jsonToVec2F(config.get(2)), jsonToVec2F(config.get(3))};
+}
+
+Personality& parsePersonality(Personality& personality, Json const& config) {
+  if (auto idle = config.get("idle"))
+    personality.idle = idle.toString();
+  if (auto armIdle = config.get("armIdle"))
+    personality.idle = armIdle.toString();
+  if (auto headOffset = config.get("headOffset"))
+    personality.headOffset = jsonToVec2F(headOffset);
+  if (auto armOffset = config.get("armOffset"))
+    personality.armOffset = jsonToVec2F(armOffset);
+}
+
+Personality parsePersonality(Json const& config) {
+  return parsePersonality(Personality(), config);
+}
+
+Json jsonFromPersonality(Personality const& personality) {
+  return JsonObject{
+    { "idle", personality.idle },
+    { "armIdle", personality.armIdle },
+    { "headOffset", jsonFromVec2F(personality.headOffset) },
+    { "armOffset", jsonFromVec2F(personality.armOffset)   }
+  };
 }
 
 HumanoidIdentity::HumanoidIdentity(Json config) {

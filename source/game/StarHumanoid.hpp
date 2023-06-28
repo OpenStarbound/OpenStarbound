@@ -38,13 +38,18 @@ extern EnumMap<HumanoidEmote> const HumanoidEmoteNames;
 size_t const EmoteSize = 14;
 
 struct Personality {
-  String idle;
-  String armIdle;
-  Vec2F headOffset;
-  Vec2F armOffset;
+  String idle = "idle.1";
+  String armIdle = "idle.1";
+  Vec2F headOffset = Vec2F();
+  Vec2F armOffset = Vec2F();
 };
 
+Personality parsePersonalityArray(Json const& config);
+
+Personality& parsePersonality(Personality& personality, Json const& config);
 Personality parsePersonality(Json const& config);
+
+Json jsonFromPersonality(Personality const& personality);
 
 struct HumanoidIdentity {
   explicit HumanoidIdentity(Json config = Json());
