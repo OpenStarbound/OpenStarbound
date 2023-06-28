@@ -1685,7 +1685,7 @@ void Player::processStateChanges() {
       }
     }
 
-    if (m_moveVector.x() != 0.0f && (m_state == State::Run || m_state == State::Walk))
+    if (m_moveVector.x() != 0.0f && (m_state == State::Run))
         m_state = abs(m_moveVector.x()) > 0.5f ? State::Run : State::Walk;
 
     if (m_state == State::Jump && (oldState == State::Idle || oldState == State::Run || oldState == State::Walk || oldState == State::Crouch))
