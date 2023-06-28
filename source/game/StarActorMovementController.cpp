@@ -446,6 +446,7 @@ ActorMovementController::ActorMovementController(ActorMovementParameters const& 
   m_lastControlJump = false;
   m_lastControlDown = false;
   m_targetHorizontalAmbulatingVelocity = 0.0f;
+  m_moveSpeedMultiplier = 1.0f;
 
   resetBaseParameters(parameters);
 }
@@ -694,6 +695,10 @@ Maybe<pair<Vec2F, bool>> ActorMovementController::controlPathMove(Vec2F const& p
     m_controlPathMove = pair<Vec2F, bool>(position, run);
 
   return result;
+}
+
+void ActorMovementController::setMoveSpeedMultiplier(float scale) {
+  m_moveSpeedMultiplier = scale;
 }
 
 void ActorMovementController::clearControls() {
@@ -951,6 +956,8 @@ void ActorMovementController::tickMaster() {
                             : *activeParameters.walkSpeed * activeModifiers.speedModifier);
       }
 
+      m_targetHorizontalAmbulatingVelocity *= m_moveSpeedMultiplier;
+
       if (m_liquidMovement.get())
         m_targetHorizontalAmbulatingVelocity *= (1.0f - liquidImpedance);
 
@@ -1102,7 +1109,7 @@ void ActorMovementController::doSetAnchorState(Maybe<EntityAnchorState> anchorSt
   if (m_entityAnchor)
     setPosition(m_entityAnchor->position);
 }
-
+  
 
 PathController::PathController(World* world)
   : m_world(world), m_edgeTimer(0.0) { }

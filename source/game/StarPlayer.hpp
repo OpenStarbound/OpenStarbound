@@ -132,6 +132,7 @@ public:
   void setShifting(bool shifting);
   void special(int specialKey);
 
+  void setMoveVector(Vec2F const& vec);
   void moveLeft();
   void moveRight();
   void moveUp();
@@ -505,6 +506,7 @@ private:
   Vec2F m_blinkInterval;
 
   HashSet<MoveControlType> m_pendingMoves;
+  Vec2F m_moveVector;
   bool m_shifting;
   ActorMovementParameters m_zeroGMovementParameters;
 

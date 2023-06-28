@@ -151,45 +151,56 @@ Maybe<Key> keyFromSdlKeyCode(SDL_Keycode sym) {
 }
 
 KeyMod keyModsFromSdlKeyMods(uint16_t mod) {
-  KeyMod keyMod = KeyMod::NoMod;
-
-  if (mod & KMOD_LSHIFT)
-    keyMod |= KeyMod::LShift;
-  if (mod & KMOD_RSHIFT)
-    keyMod |= KeyMod::RShift;
-  if (mod & KMOD_LCTRL)
-    keyMod |= KeyMod::LCtrl;
-  if (mod & KMOD_RCTRL)
-    keyMod |= KeyMod::RCtrl;
-  if (mod & KMOD_LALT)
-    keyMod |= KeyMod::LAlt;
-  if (mod & KMOD_RALT)
-    keyMod |= KeyMod::RAlt;
-  if (mod & KMOD_LGUI)
-    keyMod |= KeyMod::LGui;
-  if (mod & KMOD_RGUI)
-    keyMod |= KeyMod::RGui;
-  if (mod & KMOD_NUM)
-    keyMod |= KeyMod::Num;
-  if (mod & KMOD_CAPS)
-    keyMod |= KeyMod::Caps;
-  if (mod & KMOD_MODE)
-    keyMod |= KeyMod::AltGr;
-
-  return keyMod;
+  return static_cast<KeyMod>(mod);
 }
 
 MouseButton mouseButtonFromSdlMouseButton(uint8_t button) {
-  if (button == SDL_BUTTON_LEFT)
-    return MouseButton::Left;
-  else if (button == SDL_BUTTON_MIDDLE)
-    return MouseButton::Middle;
-  else if (button == SDL_BUTTON_RIGHT)
-    return MouseButton::Right;
-  else if (button == SDL_BUTTON_X1)
-    return MouseButton::FourthButton;
-  else
-    return MouseButton::FifthButton;
+  switch (button) {
+    case SDL_BUTTON_LEFT: return MouseButton::Left;
+    case SDL_BUTTON_MIDDLE: return MouseButton::Middle;
+    case SDL_BUTTON_RIGHT: return MouseButton::Right;
+    case SDL_BUTTON_X1: return MouseButton::FourthButton;
+    default: return MouseButton::FifthButton;
+  }
+}
+
+ControllerAxis controllerAxisFromSdlControllerAxis(uint8_t axis) {
+  switch (axis) {
+    case SDL_CONTROLLER_AXIS_LEFTX: return ControllerAxis::LeftX;
+    case SDL_CONTROLLER_AXIS_LEFTY: return ControllerAxis::LeftY;
+    case SDL_CONTROLLER_AXIS_RIGHTX: return ControllerAxis::RightX;
+    case SDL_CONTROLLER_AXIS_RIGHTY: return ControllerAxis::RightY;
+    case SDL_CONTROLLER_AXIS_TRIGGERLEFT: return ControllerAxis::TriggerLeft;
+    case SDL_CONTROLLER_AXIS_TRIGGERRIGHT: return ControllerAxis::TriggerRight;
+    default: return ControllerAxis::Invalid;
+  }
+}
+
+ControllerButton controllerButtonFromSdlControllerButton(uint8_t button) {
+  switch (button) {
+    case SDL_CONTROLLER_BUTTON_A: return ControllerButton::A;
+    case SDL_CONTROLLER_BUTTON_B: return ControllerButton::B;
+    case SDL_CONTROLLER_BUTTON_X: return ControllerButton::X;
+    case SDL_CONTROLLER_BUTTON_Y: return ControllerButton::Y;
+    case SDL_CONTROLLER_BUTTON_BACK: return ControllerButton::Back;
+    case SDL_CONTROLLER_BUTTON_GUIDE: return ControllerButton::Guide;
+    case SDL_CONTROLLER_BUTTON_START: return ControllerButton::Start;
+    case SDL_CONTROLLER_BUTTON_LEFTSTICK: return ControllerButton::LeftStick;
+    case SDL_CONTROLLER_BUTTON_RIGHTSTICK: return ControllerButton::RightStick;
+    case SDL_CONTROLLER_BUTTON_LEFTSHOULDER: return ControllerButton::LeftShoulder;
+    case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER: return ControllerButton::RightShoulder;
+    case SDL_CONTROLLER_BUTTON_DPAD_UP: return ControllerButton::DPadUp;
+    case SDL_CONTROLLER_BUTTON_DPAD_DOWN: return ControllerButton::DPadDown;
+    case SDL_CONTROLLER_BUTTON_DPAD_LEFT: return ControllerButton::DPadLeft;
+    case SDL_CONTROLLER_BUTTON_DPAD_RIGHT: return ControllerButton::DPadRight;
+    case SDL_CONTROLLER_BUTTON_MISC1: return ControllerButton::Misc1;
+    case SDL_CONTROLLER_BUTTON_PADDLE1: return ControllerButton::Paddle1;
+    case SDL_CONTROLLER_BUTTON_PADDLE2: return ControllerButton::Paddle2;
+    case SDL_CONTROLLER_BUTTON_PADDLE3: return ControllerButton::Paddle3;
+    case SDL_CONTROLLER_BUTTON_PADDLE4: return ControllerButton::Paddle4;
+    case SDL_CONTROLLER_BUTTON_TOUCHPAD: return ControllerButton::Touchpad;
+    default: return ControllerButton::Invalid;
+  }
 }
 
 class SdlPlatform {
@@ -233,9 +244,9 @@ public:
     if (SDL_InitSubSystem(SDL_INIT_VIDEO))
       throw ApplicationException(strf("Couldn't initialize SDL Video: {}", SDL_GetError()));
 
-    Logger::info("Application: Initializing SDL Joystick");
-    if (SDL_InitSubSystem(SDL_INIT_JOYSTICK))
-      throw ApplicationException(strf("Couldn't initialize SDL Joystick: {}", SDL_GetError()));
+    Logger::info("Application: Initializing SDL Controller");
+    if (SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER))
+      throw ApplicationException(strf("Couldn't initialize SDL Controller: {}", SDL_GetError()));
 
     Logger::info("Application: Initializing SDL Sound");
     if (SDL_InitSubSystem(SDL_INIT_AUDIO))
@@ -585,7 +596,8 @@ private:
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
       Maybe<InputEvent> starEvent;
-      if (event.type == SDL_WINDOWEVENT) {
+      switch (event.type) {
+      case SDL_WINDOWEVENT:
         if (event.window.event == SDL_WINDOWEVENT_MAXIMIZED || event.window.event == SDL_WINDOWEVENT_RESTORED) {
           auto windowFlags = SDL_GetWindowFlags(m_sdlWindow);
 
@@ -605,40 +617,71 @@ private:
           m_renderer->setScreenSize(m_windowSize);
           m_application->windowChanged(m_windowMode, m_windowSize);
         }
-
-      } else if (event.type == SDL_KEYDOWN) {
+        break;
+      case SDL_KEYDOWN:
         if (!event.key.repeat) {
           if (auto key = keyFromSdlKeyCode(event.key.keysym.sym))
             starEvent.set(KeyDownEvent{*key, keyModsFromSdlKeyMods(event.key.keysym.mod)});
         }
-
-      } else if (event.type == SDL_KEYUP) {
+        break;
+      case SDL_KEYUP:
         if (auto key = keyFromSdlKeyCode(event.key.keysym.sym))
           starEvent.set(KeyUpEvent{*key});
-
-      } else if (event.type == SDL_TEXTINPUT) {
+        break;
+      case SDL_TEXTINPUT:
         starEvent.set(TextInputEvent{String(event.text.text)});
-
-      } else if (event.type == SDL_MOUSEMOTION) {
+        break;
+      case SDL_MOUSEMOTION:
         starEvent.set(MouseMoveEvent{
             {event.motion.xrel, -event.motion.yrel}, {event.motion.x, (int)m_windowSize[1] - event.motion.y}});
-
-      } else if (event.type == SDL_MOUSEBUTTONDOWN) {
+        break;
+      case SDL_MOUSEBUTTONDOWN:
         starEvent.set(MouseButtonDownEvent{mouseButtonFromSdlMouseButton(event.button.button),
             {event.button.x, (int)m_windowSize[1] - event.button.y}});
-
-      } else if (event.type == SDL_MOUSEBUTTONUP) {
+        break;
+      case SDL_MOUSEBUTTONUP:
         starEvent.set(MouseButtonUpEvent{mouseButtonFromSdlMouseButton(event.button.button),
             {event.button.x, (int)m_windowSize[1] - event.button.y}});
-
-      } else if (event.type == SDL_MOUSEWHEEL) {
+        break;
+      case SDL_MOUSEWHEEL:
         int x, y;
         SDL_GetMouseState(&x, &y);
         starEvent.set(MouseWheelEvent{event.wheel.y < 0 ? MouseWheel::Down : MouseWheel::Up, {x, (int)m_windowSize[1] - y}});
-
-      } else if (event.type == SDL_QUIT) {
+        break;
+      case SDL_CONTROLLERAXISMOTION:
+        starEvent.set(ControllerAxisEvent{
+          (ControllerId)event.caxis.which,
+          controllerAxisFromSdlControllerAxis(event.caxis.axis),
+          (float)event.caxis.value / 32768.0f
+        });
+        break;
+      case SDL_CONTROLLERBUTTONDOWN:
+        starEvent.set(ControllerButtonDownEvent{ (ControllerId)event.cbutton.which, controllerButtonFromSdlControllerButton(event.cbutton.button) });
+        break;
+      case SDL_CONTROLLERBUTTONUP:
+        starEvent.set(ControllerButtonUpEvent{ (ControllerId)event.cbutton.which, controllerButtonFromSdlControllerButton(event.cbutton.button) });
+        break;
+      case SDL_CONTROLLERDEVICEADDED:
+        {
+          auto insertion = m_SdlControllers.insert_or_assign(event.cdevice.which, SDLGameControllerUPtr(SDL_GameControllerOpen(event.cdevice.which), SDL_GameControllerClose));
+          if (SDL_GameController* controller = insertion.first->second.get())
+            Logger::info("Controller device '{}' added", SDL_GameControllerName(controller));
+        }
+        break;
+      case SDL_CONTROLLERDEVICEREMOVED:
+        {
+          auto find = m_SdlControllers.find(event.cdevice.which);
+          if (find != m_SdlControllers.end()) {
+            if (SDL_GameController* controller = find->second.get())
+              Logger::info("Controller device '{}' removed", SDL_GameControllerName(controller));
+            m_SdlControllers.erase(event.cdevice.which);
+          }
+        }
+        break;
+      case SDL_QUIT:
         m_quitRequested = true;
         starEvent.reset();
+        break;
       }
 
       if (starEvent)
@@ -743,6 +786,9 @@ private:
   SDL_Window* m_sdlWindow = nullptr;
   SDL_GLContext m_sdlGlContext = nullptr;
   SDL_AudioDeviceID m_sdlAudioDevice = 0;
+
+  typedef std::unique_ptr<SDL_GameController, decltype(&SDL_GameControllerClose)> SDLGameControllerUPtr;
+  StableHashMap<int, SDLGameControllerUPtr> m_SdlControllers;
 
   typedef std::unique_ptr<SDL_Surface, decltype(&SDL_FreeSurface)> SDLSurfaceUPtr;
   typedef std::unique_ptr<SDL_Cursor, decltype(&SDL_FreeCursor)> SDLCursorUPtr;

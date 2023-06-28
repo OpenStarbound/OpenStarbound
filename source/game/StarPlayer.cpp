@@ -669,6 +669,10 @@ void Player::special(int specialKey) {
   m_techController->special(specialKey);
 }
 
+void Player::setMoveVector(Vec2F const& vec) {
+  m_moveVector = vec;
+}
+
 void Player::moveLeft() {
   m_pendingMoves.add(MoveControlType::Left);
 }
@@ -1543,6 +1547,24 @@ void Player::disableInterpolation() {
 
 void Player::processControls() {
   bool run = !m_shifting && !m_statusController->statPositive("encumberance");
+
+  bool useMoveVector = m_moveVector.x() != 0.0f;
+  if (useMoveVector) {
+    for (auto move : m_pendingMoves) {
+      if (move == MoveControlType::Left || move == MoveControlType::Right) {
+        useMoveVector = false;
+        break;
+      }
+    }
+  }
+
+  if (useMoveVector) {
+    m_pendingMoves.insert(signbit(m_moveVector.x()) ? MoveControlType::Left : MoveControlType::Right);
+    m_movementController->setMoveSpeedMultiplier(clamp(abs(m_moveVector.x()), 0.0f, 1.0f));
+  }
+  else
+    m_movementController->setMoveSpeedMultiplier(1.0f);
+
   if (auto fireableMain = as<FireableItem>(m_tools->primaryHandItem())) {
     if (fireableMain->inUse() && fireableMain->walkWhileFiring())
       run = false;
@@ -1621,6 +1643,7 @@ void Player::processControls() {
 
 void Player::processStateChanges() {
   if (isMaster()) {
+
     // Set the current player state based on what movement controller tells us
     // we're doing and do some state transition logic
     State oldState = m_state;
@@ -1661,6 +1684,9 @@ void Player::processStateChanges() {
         }
       }
     }
+
+    if (m_moveVector.x() != 0.0f && (m_state == State::Run || m_state == State::Walk))
+        m_state = abs(m_moveVector.x()) > 0.5f ? State::Run : State::Walk;
 
     if (m_state == State::Jump && (oldState == State::Idle || oldState == State::Run || oldState == State::Walk || oldState == State::Crouch))
       m_effectsAnimator->burstParticleEmitter("jump");

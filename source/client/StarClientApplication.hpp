@@ -105,6 +105,8 @@ private:
   int m_maxInterfaceScale = 3;
   Vec2F m_crossoverRes;
 
+  Vec2F m_controllerLeftStick;
+  Vec2F m_controllerRightStick;
   List<KeyDownEvent> m_heldKeyEvents;
   List<KeyDownEvent> m_edgeKeyEvents;
 

@@ -163,4 +163,38 @@ EnumMap<MouseWheel> const MouseWheelNames{
   {MouseWheel::Down, "MouseWheelDown"}
 };
 
+EnumMap<ControllerAxis> const ControllerAxisNames{
+  {ControllerAxis::LeftX, "LeftX"},
+  {ControllerAxis::LeftY, "LeftY"},
+  {ControllerAxis::RightX, "RightX"},
+  {ControllerAxis::RightY, "RightY"},
+  {ControllerAxis::TriggerLeft, "TriggerLeft"},
+  {ControllerAxis::TriggerRight, "TriggerRight"},
+};
+
+EnumMap<ControllerButton> const ControllerButtonNames{
+  {ControllerButton::A, "A"},
+  {ControllerButton::B, "B"},
+  {ControllerButton::X, "X"},
+  {ControllerButton::Y, "Y"},
+  {ControllerButton::Back, "Back"},
+  {ControllerButton::Guide, "Guide"},
+  {ControllerButton::Start, "Start"},
+  {ControllerButton::LeftStick, "LeftStick"},
+  {ControllerButton::RightStick, "RightStick"},
+  {ControllerButton::LeftShoulder, "LeftShoulder"},
+  {ControllerButton::RightShoulder, "RightShoulder"},
+  {ControllerButton::DPadUp, "DPadUp"},
+  {ControllerButton::DPadDown, "DPadDown"},
+  {ControllerButton::DPadLeft, "DPadLeft"},
+  {ControllerButton::DPadRight, "DPadRight"},
+  {ControllerButton::Misc1, "Misc1"},
+  {ControllerButton::Paddle1, "Paddle1"},
+  {ControllerButton::Paddle2, "Paddle2"},
+  {ControllerButton::Paddle3, "Paddle3"},
+  {ControllerButton::Paddle4, "Paddle4"},
+  {ControllerButton::Touchpad, "Touchpad"},
+  {ControllerButton::Invalid, "Invalid"}
+};
+
 }

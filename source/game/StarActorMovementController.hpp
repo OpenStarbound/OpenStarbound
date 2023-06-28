@@ -239,6 +239,9 @@ public:
   Maybe<pair<Vec2F, bool>> pathMove(Vec2F const& pathPosition, bool run = false, Maybe<PlatformerAStar::Parameters> const& parameters = {});
   Maybe<pair<Vec2F, bool>> controlPathMove(Vec2F const& pathPosition, bool run = false, Maybe<PlatformerAStar::Parameters> const& parameters = {});
 
+  // Used for user controller input.
+  void setMoveSpeedMultiplier(float multiplier = 1.0f);
+
   // Clears all control data.
   void clearControls();
 
@@ -247,6 +250,7 @@ public:
   void tickMaster();
 
   void tickSlave();
+
 
 private:
   struct ApproachVelocityCommand {
@@ -313,6 +317,7 @@ private:
   int m_fallThroughSustain;
   bool m_lastControlJump;
   bool m_lastControlDown;
+  float m_moveSpeedMultiplier;
 
   GameTimer m_reJumpTimer;
   Maybe<GameTimer> m_jumpHoldTimer;

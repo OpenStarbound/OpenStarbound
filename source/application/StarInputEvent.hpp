@@ -154,7 +154,8 @@ enum class KeyMod : uint16_t {
   RGui = 0x0800,
   Num = 0x1000,
   Caps = 0x2000,
-  AltGr = 0x4000
+  AltGr = 0x4000,
+  Scroll = 0x8000
 };
 extern EnumMap<KeyMod> const KeyModNames;
 
@@ -180,6 +181,43 @@ enum class MouseWheel : uint8_t {
 extern EnumMap<MouseWheel> const MouseWheelNames;
 
 typedef uint32_t ControllerId;
+
+enum class ControllerAxis : uint8_t {
+  LeftX,
+  LeftY,
+  RightX,
+  RightY,
+  TriggerLeft,
+  TriggerRight,
+  Invalid = 255
+};
+extern EnumMap<ControllerAxis> const ControllerAxisNames;
+
+enum class ControllerButton : uint8_t {
+  A,
+  B,
+  X,
+  Y,
+  Back,
+  Guide,
+  Start,
+  LeftStick,
+  RightStick,
+  LeftShoulder,
+  RightShoulder,
+  DPadUp,
+  DPadDown,
+  DPadLeft,
+  DPadRight,
+  Misc1,
+  Paddle1,
+  Paddle2,
+  Paddle3,
+  Paddle4,
+  Touchpad,
+  Invalid = 255
+};
+extern EnumMap<ControllerButton> const ControllerButtonNames;
 
 struct KeyDownEvent {
   Key key;
@@ -216,18 +254,18 @@ struct MouseWheelEvent {
 
 struct ControllerAxisEvent {
   ControllerId controller;
-  unsigned controllerAxis;
+  ControllerAxis controllerAxis;
   float controllerAxisValue;
 };
 
 struct ControllerButtonDownEvent {
   ControllerId controller;
-  unsigned controllerButton;
+  ControllerButton controllerButton;
 };
 
 struct ControllerButtonUpEvent {
   ControllerId controller;
-  unsigned controllerButton;
+  ControllerButton controllerButton;
 };
 
 typedef Variant<

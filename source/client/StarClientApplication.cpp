@@ -273,6 +273,16 @@ void ClientApplication::processInput(InputEvent const& event) {
         return KeyDownEvent{keyEvent.key, keyEvent.mods & ~*modKey};
       });
   }
+  else if (auto cAxis = event.ptr<ControllerAxisEvent>()) {
+    if (cAxis->controllerAxis == ControllerAxis::LeftX)
+      m_controllerLeftStick[0] = cAxis->controllerAxisValue;
+    else if (cAxis->controllerAxis == ControllerAxis::LeftY)
+      m_controllerLeftStick[1] = cAxis->controllerAxisValue;
+    else if (cAxis->controllerAxis == ControllerAxis::RightX)
+      m_controllerRightStick[0] = cAxis->controllerAxisValue;
+    else if (cAxis->controllerAxis == ControllerAxis::RightY)
+      m_controllerRightStick[1] = cAxis->controllerAxisValue;
+  }
 
   if (!m_errorScreen->accepted() && m_errorScreen->handleInputEvent(event))
     return;
@@ -754,6 +764,11 @@ void ClientApplication::updateRunning() {
       if (isActionTakenEdge(InterfaceAction::EmoteSleep))
         m_player->addEmote(HumanoidEmote::Sleep);
     }
+
+    if (m_controllerLeftStick.magnitudeSquared() > 0.001f)
+      m_player->setMoveVector(m_controllerLeftStick);
+    else
+      m_player->setMoveVector(Vec2F());
 
     auto checkDisconnection = [this]() {
       if (!m_universeClient->isConnected()) {
