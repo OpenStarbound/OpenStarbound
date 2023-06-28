@@ -4,9 +4,8 @@
 #include "StarMemory.hpp"
 #include "StarOutputProxy.hpp"
 
-
 #include <string>
-
+#include <sstream>
 
 namespace Star {
 

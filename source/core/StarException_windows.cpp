@@ -5,7 +5,6 @@
 #include "StarString_windows.hpp"
 
 #include <DbgHelp.h>
-#include <sstream>
 
 namespace Star {
 

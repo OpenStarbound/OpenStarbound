@@ -116,7 +116,11 @@ private:
 }
 
 template <> struct fmt::formatter<Star::StringView> : formatter<std::string_view> {
-  fmt::v10::appender format(Star::StringView const& s, format_context& ctx) const;
+  auto format(Star::StringView const& s, format_context& ctx) const;
+};
+
+auto fmt::formatter<Star::StringView>::format(Star::StringView const& s, format_context& ctx) const {
+  return formatter<std::string_view>::format(s.utf8(), ctx);
 };
 
 #endif
