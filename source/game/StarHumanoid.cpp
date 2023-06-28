@@ -749,10 +749,12 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotation) {
     addDrawable(Drawable::makeImage(AssetPath::split(image), 1.0f / TilePixels, true, {}));
   }
 
-  if (m_primaryHand.nonRotatedDrawables.size())
-    drawables.insertAllAt(0, m_primaryHand.nonRotatedDrawables);
-  if (m_altHand.nonRotatedDrawables.size())
-    drawables.insertAllAt(0, m_altHand.nonRotatedDrawables);
+  if (withItems) {
+    if (m_primaryHand.nonRotatedDrawables.size())
+      drawables.insertAllAt(0, m_primaryHand.nonRotatedDrawables);
+    if (m_altHand.nonRotatedDrawables.size())
+      drawables.insertAllAt(0, m_altHand.nonRotatedDrawables);
+  }
 
   if (withRotation)
     Drawable::rotateAll(drawables, m_rotation);
