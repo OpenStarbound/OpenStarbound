@@ -502,7 +502,7 @@ RectF TextPainter::doRenderLine(StringView text, TextPositioning const& position
     pos.hAnchor = HorizontalAnchor::LeftAnchor;
   } else if (pos.hAnchor == HorizontalAnchor::HMidAnchor) {
     StringView trimmedString = charLimit ? text.substr(0, *charLimit) : text;
-    pos.pos[0] -= std::floorf((float)stringWidth(trimmedString) / 2);
+    pos.pos[0] -= floor((float)stringWidth(trimmedString) / 2);
     pos.hAnchor = HorizontalAnchor::LeftAnchor;
   }
 
@@ -545,11 +545,11 @@ RectF TextPainter::doRenderGlyph(String::Char c, TextPositioning const& position
   if (position.hAnchor == HorizontalAnchor::RightAnchor)
     hOffset = -width;
   else if (position.hAnchor == HorizontalAnchor::HMidAnchor)
-    hOffset = -std::floorf((float)width / 2);
+    hOffset = -floor((float)width / 2);
 
   float vOffset = 0;
   if (position.vAnchor == VerticalAnchor::VMidAnchor)
-    vOffset = -std::floorf((float)m_fontSize / 2);
+    vOffset = -floor((float)m_fontSize / 2);
   else if (position.vAnchor == VerticalAnchor::TopAnchor)
     vOffset = -(float)m_fontSize;
 
