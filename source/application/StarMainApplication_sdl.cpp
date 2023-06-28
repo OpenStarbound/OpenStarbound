@@ -310,6 +310,7 @@ public:
   }
 
   ~SdlPlatform() {
+
     SDL_CloseAudioDevice(m_sdlAudioDevice);
 
     m_renderer.reset();
@@ -397,6 +398,11 @@ public:
     }
 
     SDL_CloseAudioDevice(m_sdlAudioDevice);
+    m_SdlControllers.clear();
+
+    SDL_SetCursor(NULL);
+    m_cursorCache.clear();
+
     m_application.reset();
   }
 
