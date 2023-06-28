@@ -4,6 +4,7 @@
 #include "StarFontTextureGroup.hpp"
 #include "StarAnchorTypes.hpp"
 #include "StarRoot.hpp"
+#include "StarStringView.hpp"
 
 namespace Star {
 
@@ -54,18 +55,24 @@ class TextPainter {
 public:
   TextPainter(RendererPtr renderer, TextureGroupPtr textureGroup);
 
-  RectF renderText(String const& s, TextPositioning const& position);
-  RectF renderLine(String const& s, TextPositioning const& position);
+  RectF renderText(StringView s, TextPositioning const& position);
+  RectF renderLine(StringView s, TextPositioning const& position);
   RectF renderGlyph(String::Char c, TextPositioning const& position);
 
-  RectF determineTextSize(String const& s, TextPositioning const& position);
-  RectF determineLineSize(String const& s, TextPositioning const& position);
+  RectF determineTextSize(StringView s, TextPositioning const& position);
+  RectF determineLineSize(StringView s, TextPositioning const& position);
   RectF determineGlyphSize(String::Char c, TextPositioning const& position);
 
   int glyphWidth(String::Char c);
-  int stringWidth(String const& s);
+  int stringWidth(StringView s);
 
-  StringList wrapText(String const& s, Maybe<unsigned> wrapWidth);
+    
+  typedef function<bool(StringView text, int line)> WrapTextCallback;
+  typedef function<bool(StringView command)> WrapCommandsCallback;
+  void processWrapText(StringView s, Maybe<unsigned> wrapWidth, WrapTextCallback textFunc, WrapCommandsCallback commandFunc = WrapCommandsCallback(), bool includeCommandSides = false);
+
+  List<StringView> wrapTextViews(StringView s, Maybe<unsigned> wrapWidth);
+  StringList wrapText(StringView s, Maybe<unsigned> wrapWidth);
 
   unsigned fontSize() const;
   void setFontSize(unsigned size);
@@ -79,7 +86,7 @@ public:
   void reloadFonts();
 
   void cleanup(int64_t textureTimeout);
-  void applyCommands(String const& unsplitCommands);
+  void applyCommands(StringView unsplitCommands);
 private:
   struct RenderSettings {
     FontMode mode;
@@ -88,8 +95,8 @@ private:
     String directives;
   };
 
-  RectF doRenderText(String const& s, TextPositioning const& position, bool reallyRender, unsigned* charLimit);
-  RectF doRenderLine(String const& s, TextPositioning const& position, bool reallyRender, unsigned* charLimit);
+  RectF doRenderText(StringView s, TextPositioning const& position, bool reallyRender, unsigned* charLimit);
+  RectF doRenderLine(StringView s, TextPositioning const& position, bool reallyRender, unsigned* charLimit);
   RectF doRenderGlyph(String::Char c, TextPositioning const& position, bool reallyRender);
 
   void renderGlyph(String::Char c, Vec2F const& screenPos, unsigned fontSize, float scale, Vec4B const& color, String const& processingDirectives);

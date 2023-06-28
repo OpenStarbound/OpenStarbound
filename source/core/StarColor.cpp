@@ -213,11 +213,11 @@ Color Color::gray(uint8_t g) {
 
 Color::Color() {}
 
-Color::Color(const String& name) {
+Color::Color(StringView name) {
   if (name.beginsWith("#"))
     *this = fromHex(name.substr(1));
   else {
-    auto i = NamedColors.find(name.toLower());
+    auto i = NamedColors.find(String(name).toLower());
     if (i != NamedColors.end())
       *this = i->second;
     else
@@ -622,7 +622,7 @@ Vec4B Color::hexToVec4B(StringView s) {
   } else if (s.utf8Size() == 8) {
     hexDecode(s.utf8Ptr(), 8, (char*)cbytes.data(), 4);
   } else {
-    throw ColorException(strf("Improper size for hex string '{}' in Color::hexToVec4B", s), false);
+    throw ColorException(strf("Improper size {} for hex string '{}' in Color::hexToVec4B", s.utf8Size(), s), false);
   }
 
   return Vec4B(move(cbytes));

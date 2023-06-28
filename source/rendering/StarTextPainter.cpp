@@ -11,14 +11,55 @@ namespace Text {
     return std::regex_replace(s.utf8(), stripEscapeRegex, "");
   }
 
+  inline bool isEscapeCode(char c) {
+    return c == CmdEsc || c == StartEsc;
+  }
+
+  static std::string escapeChars = strf("{:c}{:c}", CmdEsc, StartEsc);
+
+  typedef function<bool(StringView text)> TextCallback;
+  typedef function<bool(StringView commands)> CommandsCallback;
+  void processText(StringView text, TextCallback textFunc, CommandsCallback commandsFunc = CommandsCallback(), bool includeCommandSides = false) {
+    std::string_view escChars(escapeChars);
+
+    std::string_view str = text.utf8();
+    while (true) {
+      size_t escape = str.find_first_of(escChars);
+      if (escape != NPos) {
+        escape = str.find_first_not_of(escChars, escape) - 1; // jump to the last ^
+
+        size_t end = str.find_first_of(EndEsc, escape);
+        if (end != NPos) {
+          if (escape != end && !textFunc(str.substr(0, escape)))
+            break;
+          if (commandsFunc) {
+            StringView commands = includeCommandSides
+              ? str.substr(escape, end - escape + 1)
+              : str.substr(escape + 1, end - escape - 1);
+            if (!commands.empty() && !commandsFunc(commands))
+              break;
+          }
+          str = str.substr(end + 1);
+          continue;
+        }
+      }
+
+      if (!str.empty())
+        textFunc(str);
+
+      break;
+    }
+  }
+
+  // The below two functions aren't used anymore, not bothering with StringView for them
   String preprocessEscapeCodes(String const& s) {
     bool escape = false;
-    auto result = s.utf8();
+    std::string result = s.utf8();
 
     size_t escapeStartIdx = 0;
     for (size_t i = 0; i < result.size(); i++) {
       auto& c = result[i];
-      if (c == CmdEsc || c == StartEsc) {
+      if (isEscapeCode(c)) {
         escape = true;
         escapeStartIdx = i;
       }
@@ -97,7 +138,7 @@ TextPainter::TextPainter(RendererPtr renderer, TextureGroupPtr textureGroup)
   Root::singleton().registerReloadListener(m_reloadTracker);
 }
 
-RectF TextPainter::renderText(String const& s, TextPositioning const& position) {
+RectF TextPainter::renderText(StringView s, TextPositioning const& position) {
   if (position.charLimit) {
     unsigned charLimit = *position.charLimit;
     return doRenderText(s, position, true, &charLimit);
@@ -106,7 +147,7 @@ RectF TextPainter::renderText(String const& s, TextPositioning const& position) 
   }
 }
 
-RectF TextPainter::renderLine(String const& s, TextPositioning const& position) {
+RectF TextPainter::renderLine(StringView s, TextPositioning const& position) {
   if (position.charLimit) {
     unsigned charLimit = *position.charLimit;
     return doRenderLine(s, position, true, &charLimit);
@@ -119,11 +160,11 @@ RectF TextPainter::renderGlyph(String::Char c, TextPositioning const& position) 
   return doRenderGlyph(c, position, true);
 }
 
-RectF TextPainter::determineTextSize(String const& s, TextPositioning const& position) {
+RectF TextPainter::determineTextSize(StringView s, TextPositioning const& position) {
   return doRenderText(s, position, false, nullptr);
 }
 
-RectF TextPainter::determineLineSize(String const& s, TextPositioning const& position) {
+RectF TextPainter::determineLineSize(StringView s, TextPositioning const& position) {
   return doRenderLine(s, position, false, nullptr);
 }
 
@@ -135,88 +176,81 @@ int TextPainter::glyphWidth(String::Char c) {
   return m_fontTextureGroup.glyphWidth(c, m_fontSize);
 }
 
-int TextPainter::stringWidth(String const& s) {
+int TextPainter::stringWidth(StringView s) {
+  if (s.empty())
+    return 0;
+
   String font = m_renderSettings.font, setFont = font;
   m_fontTextureGroup.switchFont(font);
+
   int width = 0;
-  bool escape = false;
 
-  String escapeCode;
-  for (String::Char c : Text::preprocessEscapeCodes(s)) {
-    if (c == Text::StartEsc)
-      escape = true;
+  Text::CommandsCallback commandsCallback = [&](StringView commands) {
+    commands.forEachSplitView(",", [&](StringView command, size_t, size_t) {
+      if (command == "reset")
+        m_fontTextureGroup.switchFont(font = setFont);
+      else if (command == "set")
+        setFont = font;
+      else if (command.beginsWith("font="))
+        m_fontTextureGroup.switchFont(font = command.substr(5));
+    });
+    return true;
+  };
 
-    if (!escape)
+  Text::TextCallback textCallback = [&](StringView text) {
+    for (String::Char c : text)
       width += glyphWidth(c);
-    else if (c == Text::EndEsc) {
-      auto commands = escapeCode.split(',');
-      for (auto& command : commands) {
-        if (command == "reset")
-          m_fontTextureGroup.switchFont(font = setFont);
-        else if (command == "set")
-          setFont = font;
-        else if (command.beginsWith("font="))
-          m_fontTextureGroup.switchFont(font = command.substr(5));
-      }
-      escape = false;
-      escapeCode = "";
-    }
-    if (escape && (c != Text::StartEsc))
-      escapeCode.append(c);
-  }
+
+    return true;
+  };
+
+  Text::processText(s, textCallback, commandsCallback);
 
   return width;
 }
 
-StringList TextPainter::wrapText(String const& s, Maybe<unsigned> wrapWidth) {
+void TextPainter::processWrapText(StringView s, Maybe<unsigned> wrapWidth, WrapTextCallback textFunc, WrapCommandsCallback commandsFunc, bool includeCommandSides) {
   String font = m_renderSettings.font, setFont = font;
   m_fontTextureGroup.switchFont(font);
-  String text = Text::preprocessEscapeCodes(s);
 
-  unsigned lineStart = 0; // Where does this line start ?
-  unsigned lineCharSize = 0; // how many characters in this line ?
   unsigned linePixelWidth = 0; // How wide is this line so far
 
-  bool inEscapeSequence = false;
-  String escapeCode;
+  int lines = 0;
 
-  unsigned splitPos = 0; // Where did we last see a place to split the string ?
-  unsigned splitWidth = 0; // How wide was the string there ?
+  StringView splitIgnore(m_splitIgnore);
+  StringView splitForce(m_splitForce);
 
-  StringList lines; // list of renderable string lines
+  Text::CommandsCallback commandsCallback = [&](StringView commands) {
+    StringView inner = commands.utf8().substr(1, commands.utf8Size() - 1);
+    inner.forEachSplitView(",", [&](StringView command, size_t, size_t) {
+      if (command == "reset")
+        m_fontTextureGroup.switchFont(font = setFont);
+      else if (command == "set")
+        setFont = font;
+      else if (command.beginsWith("font="))
+        m_fontTextureGroup.switchFont(font = command.substr(5));
+    });
+    if (commandsFunc)
+      if (!commandsFunc(includeCommandSides ? commands : inner))
+        return false;
 
-  // loop through every character in the string
+    return true;
+  };
 
-  for (auto character : text) {
-    // this up here to deal with the (common) occurance that the first charcter
-    // is an escape initiator
-    if (character == Text::StartEsc)
-      inEscapeSequence = true;
-
-    if (inEscapeSequence) {
-      lineCharSize++; // just jump straight to the next character, we don't care what it is.
-      if (character == Text::EndEsc) {
-        auto commands = escapeCode.split(',');
-        for (auto& command : commands) {
-          if (command == "reset")
-            m_fontTextureGroup.switchFont(font = setFont);
-          else if (command == "set")
-            setFont = font;
-          else if (command.beginsWith("font="))
-            m_fontTextureGroup.switchFont(font = command.substr(5));
-        }
-        inEscapeSequence = false;
-        escapeCode = "";
-      }
-      if (character != Text::StartEsc)
-        escapeCode.append(character);
-    } else {
+  Text::TextCallback textCallback = [&](StringView text) {
+    unsigned lineCharSize = 0; // how many characters in this line ?
+    unsigned lineStart = 0; // Where does this line start ?
+    unsigned splitPos = 0; // Where did we last see a place to split the string ?
+    unsigned splitWidth = 0; // How wide was the string there ?
+    
+    for (auto character : text) {
       lineCharSize++; // assume at least one character if we get here.
 
       // is this a linefeed / cr / whatever that forces a line split ?
-      if (m_splitForce.find(String(character)) != NPos) {
+      if (splitForce.find(character) != NPos) {
         // knock one off the end because we don't render the CR
-        lines.push_back(text.substr(lineStart, lineCharSize - 1));
+        if (!textFunc(text.substr(lineStart, lineCharSize - 1), lines++))
+          return false;
 
         lineStart += lineCharSize; // next line starts after the CR
         lineCharSize = 0; // with no characters in it.
@@ -226,7 +260,7 @@ StringList TextPainter::wrapText(String const& s, Maybe<unsigned> wrapWidth) {
         int charWidth = glyphWidth(character);
 
         // is it a place where we might want to split the line ?
-        if (m_splitIgnore.find(String(character)) != NPos) {
+        if (splitIgnore.find(character) != NPos) {
           splitPos = lineStart + lineCharSize; // this is the character after the space.
           splitWidth = linePixelWidth + charWidth; // the width of the string at
           // the split point, i.e. after the space.
@@ -236,7 +270,8 @@ StringList TextPainter::wrapText(String const& s, Maybe<unsigned> wrapWidth) {
         if (wrapWidth && (linePixelWidth + charWidth) > *wrapWidth) {
           // did we find somewhere to split the line ?
           if (splitPos) {
-            lines.push_back(text.substr(lineStart, (splitPos - lineStart) - 1));
+            if (!textFunc(text.substr(lineStart, (splitPos - lineStart) - 1), lines++))
+              return false;
 
             unsigned stringEnd = lineStart + lineCharSize;
             lineCharSize = stringEnd - splitPos; // next line has the characters after the space.
@@ -247,12 +282,12 @@ StringList TextPainter::wrapText(String const& s, Maybe<unsigned> wrapWidth) {
             lineStart = splitPos; // next line starts after the space
             splitPos = 0; // split is used up.
           } else {
-            // don't draw the last character that puts us over the edge
-            lines.push_back(text.substr(lineStart, lineCharSize - 1));
+            if (!textFunc(text.substr(lineStart, lineCharSize - 1), lines++))
+              return false;
 
             lineStart += lineCharSize - 1; // skip back by one to include that
-            // character on the next line.
-            lineCharSize = 1; // next line has that character in
+                                           // character on the next line.
+            lineCharSize = 1;           // next line has that character in
             linePixelWidth = charWidth; // and is as wide as that character
           }
         } else {
@@ -260,14 +295,84 @@ StringList TextPainter::wrapText(String const& s, Maybe<unsigned> wrapWidth) {
         }
       }
     }
-  }
 
-  // if we hit the end of the string before hitting the end of the line.
-  if (lineCharSize > 0)
-    lines.push_back(text.substr(lineStart, lineCharSize));
+    // if we hit the end of the string before hitting the end of the line.
+    if (lineCharSize > 0 && !textFunc(text.substr(lineStart, lineCharSize), lines))
+      return false;
 
-  return lines;
+    return true;
+  };
+
+  Text::processText(s, textCallback, commandsCallback, true);
 }
+
+List<StringView> TextPainter::wrapTextViews(StringView s, Maybe<unsigned> wrapWidth) {
+  List<StringView> views = {};
+
+  bool active = false;
+  StringView current;
+  int lastLine = 0;
+
+  auto addText = [&active, &current](StringView text) {
+    // Merge views if they are adjacent
+    if (active && current.utf8Ptr() + current.utf8Size() == text.utf8Ptr())
+      current = StringView(current.utf8Ptr(), current.utf8Size() + text.utf8Size());
+    else
+      current = text;
+    active = true;
+  };
+
+  TextPainter::WrapTextCallback textCallback = [&](StringView text, int line) {
+    if (lastLine != line) {
+      views.push_back(current);
+      lastLine = line;
+      active = false;
+    }
+
+    addText(text);
+    return true;
+  };
+
+  TextPainter::WrapCommandsCallback commandsCallback = [&](StringView commands) {
+    addText(commands);
+    return true;
+  };
+
+  processWrapText(s, wrapWidth, textCallback, commandsCallback, true);
+
+  if (active)
+    views.push_back(current);
+
+  return views;
+}
+
+StringList TextPainter::wrapText(StringView s, Maybe<unsigned> wrapWidth) {
+  StringList result;
+
+  String current;
+  int lastLine = 0;
+  TextPainter::WrapTextCallback textCallback = [&](StringView text, int line) {
+    if (lastLine != line) {
+      result.append(move(current));
+      lastLine = line;
+    }
+
+    current += text;
+    return true;
+  };
+
+  TextPainter::WrapCommandsCallback commandsCallback = [&](StringView commands) {
+    current += commands;
+    return true;
+  };
+
+  processWrapText(s, wrapWidth, textCallback, commandsCallback, true);
+
+  if (!current.empty())
+    result.append(move(current));
+
+  return result;
+};
 
 unsigned TextPainter::fontSize() const {
   return m_fontSize;
@@ -325,9 +430,8 @@ void TextPainter::cleanup(int64_t timeout) {
   m_fontTextureGroup.cleanup(timeout);
 }
 
-void TextPainter::applyCommands(String const& unsplitCommands) {
-  auto commands = unsplitCommands.split(',');
-  for (auto& command : commands) {
+void TextPainter::applyCommands(StringView unsplitCommands) {
+  unsplitCommands.forEachSplitView(",", [&](StringView command, size_t, size_t) {
     try {
       if (command == "reset") {
         m_renderSettings = m_savedRenderSettings;
@@ -345,19 +449,22 @@ void TextPainter::applyCommands(String const& unsplitCommands) {
         m_renderSettings.directives = command.substr(11);
       } else {
         // expects both #... sequences and plain old color names.
-        Color c = jsonToColor(command);
+        Color c = Color(command);
         c.setAlphaF(c.alphaF() * ((float)m_savedRenderSettings.color[3]) / 255);
         m_renderSettings.color = c.toRgba();
       }
     } catch (JsonException&) {
     } catch (ColorException&) {
     }
-  }
+  });
 }
 
-RectF TextPainter::doRenderText(String const& s, TextPositioning const& position, bool reallyRender, unsigned* charLimit) {
+RectF TextPainter::doRenderText(StringView s, TextPositioning const& position, bool reallyRender, unsigned* charLimit) {
   Vec2F pos = position.pos;
-  StringList lines = wrapText(s, position.wrapWidth);
+  if (s.empty())
+    return RectF(pos, pos);
+
+  List<StringView> lines = wrapTextViews(s, position.wrapWidth);
 
   int height = (lines.size() - 1) * m_lineSpacing * m_fontSize + m_fontSize;
 
@@ -370,7 +477,7 @@ RectF TextPainter::doRenderText(String const& s, TextPositioning const& position
     pos[1] += (height - m_fontSize) / 2;
 
   RectF bounds = RectF::withSize(pos, Vec2F());
-  for (auto i : lines) {
+  for (auto& i : lines) {
     bounds.combine(doRenderLine(i, { pos, position.hAnchor, position.vAnchor }, reallyRender, charLimit));
     pos[1] -= m_fontSize * m_lineSpacing;
 
@@ -383,53 +490,47 @@ RectF TextPainter::doRenderText(String const& s, TextPositioning const& position
   return bounds;
 }
 
-RectF TextPainter::doRenderLine(String const& s, TextPositioning const& position, bool reallyRender, unsigned* charLimit) {
+RectF TextPainter::doRenderLine(StringView text, TextPositioning const& position, bool reallyRender, unsigned* charLimit) {
   if (m_reloadTracker->pullTriggered())
     reloadFonts();
-  String text = s;
   TextPositioning pos = position;
 
 
   if (pos.hAnchor == HorizontalAnchor::RightAnchor) {
-    auto trimmedString = s;
-    if (charLimit)
-      trimmedString = s.slice(0, *charLimit);
+    StringView trimmedString = charLimit ? text.substr(0, *charLimit) : text;
     pos.pos[0] -= stringWidth(trimmedString);
     pos.hAnchor = HorizontalAnchor::LeftAnchor;
   } else if (pos.hAnchor == HorizontalAnchor::HMidAnchor) {
-    auto trimmedString = s;
-    if (charLimit)
-      trimmedString = s.slice(0, *charLimit);
-    unsigned width = stringWidth(trimmedString);
-    pos.pos[0] -= std::floor(width / 2);
+    StringView trimmedString = charLimit ? text.substr(0, *charLimit) : text;
+    pos.pos[0] -= std::floorf((float)stringWidth(trimmedString) / 2);
     pos.hAnchor = HorizontalAnchor::LeftAnchor;
   }
 
   bool escape = false;
   String escapeCode;
   RectF bounds = RectF::withSize(pos.pos, Vec2F());
-  for (String::Char c : text) {
-    if (c == Text::StartEsc)
-      escape = true;
-
-    if (!escape) {
+  Text::TextCallback textCallback = [&](StringView text) {
+    for (String::Char c : text) {
       if (charLimit) {
         if (*charLimit == 0)
-          break;
+          return false;
         else
-          --*charLimit;
+          --* charLimit;
       }
+
       RectF glyphBounds = doRenderGlyph(c, pos, reallyRender);
       bounds.combine(glyphBounds);
       pos.pos[0] += glyphBounds.width();
-    } else if (c == Text::EndEsc) {
-      applyCommands(escapeCode);
-      escape = false;
-      escapeCode = "";
     }
-    if (escape && (c != Text::StartEsc))
-      escapeCode.append(c);
-  }
+    return true;
+  };
+
+  Text::CommandsCallback commandsCallback = [&](StringView commands) {
+    applyCommands(commands);
+    return true;
+  };
+
+  Text::processText(text, textCallback, commandsCallback);
 
   return bounds;
 }
@@ -444,11 +545,11 @@ RectF TextPainter::doRenderGlyph(String::Char c, TextPositioning const& position
   if (position.hAnchor == HorizontalAnchor::RightAnchor)
     hOffset = -width;
   else if (position.hAnchor == HorizontalAnchor::HMidAnchor)
-    hOffset = -std::floor(width / 2);
+    hOffset = -std::floorf((float)width / 2);
 
   float vOffset = 0;
   if (position.vAnchor == VerticalAnchor::VMidAnchor)
-    vOffset = -std::floor((float)m_fontSize / 2);
+    vOffset = -std::floorf((float)m_fontSize / 2);
   else if (position.vAnchor == VerticalAnchor::TopAnchor)
     vOffset = -(float)m_fontSize;
 

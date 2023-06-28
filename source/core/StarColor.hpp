@@ -72,7 +72,7 @@ public:
   // Black
   Color();
 
-  explicit Color(String const& name);
+  explicit Color(StringView name);
 
   uint8_t red() const;
   uint8_t green() const;
