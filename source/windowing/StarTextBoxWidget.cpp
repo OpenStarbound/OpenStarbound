@@ -334,15 +334,16 @@ bool TextBoxWidget::innerSendEvent(InputEvent const& event) {
     }
 
     auto calculateSteps = [&](bool dir) {
+      int steps = 1;
       if ((keyDown->mods & (KeyMod::LCtrl | KeyMod::RCtrl)) != KeyMod::NoMod || (keyDown->mods & (KeyMod::LAlt | KeyMod::RAlt)) != KeyMod::NoMod) {
-        int steps;
         if (dir) // right
-         steps = m_text.findNextBoundary(m_cursorOffset) - m_cursorOffset;
+          steps = m_text.findNextBoundary(m_cursorOffset) - m_cursorOffset;
         else // left
-        steps = m_cursorOffset - m_text.findNextBoundary(m_cursorOffset, true);
+          steps = m_cursorOffset - m_text.findNextBoundary(m_cursorOffset, true);
 
         return steps < 1 ? 1 : steps;
       }
+      return steps;
     };
 
     if (keyDown->key == Key::Backspace) {
