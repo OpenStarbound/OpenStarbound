@@ -49,6 +49,10 @@ public:
 
   U8ToU32Iterator(BaseIterator b) : m_position(b), m_value(pending_read) {}
 
+  BaseIterator const& base() const {
+    return m_position;
+  }
+
   U32Type const& operator*() const {
     if (m_value == pending_read)
       extract_current();

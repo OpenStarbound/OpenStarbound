@@ -338,27 +338,22 @@ bool StringView::equalsIgnoreCase(StringView s) const {
 }
 
 StringView StringView::substr(size_t position, size_t n) const {
-  auto len = size();
-  if (position > len)
-    throw OutOfRangeException(strf("out of range in StringView::substr({}, {})", position, n));
-
-  if (position == 0 && n >= len)
-    return *this;
-
-  String ret;
-  ret.reserve(std::min(n, len - position));
-
+  StringView ret;
+  auto it_end = end();
   auto it = begin();
-  std::advance(it, position);
-
-  for (size_t i = 0; i < n; ++i) {
-    if (it == end())
-      break;
-    ret.append(*it);
-    ++it;
+  for (size_t i = 0; i != position; ++i) {
+    if (++it == it_end)
+      throw OutOfRangeException(strf("out of range in StringView::substr({}, {})", position, n));
   }
 
-  return ret;
+  const char* start = &*it.base();
+
+  for (size_t i = 0; i != n; ++i) {
+    if (it++ == it_end)
+      return StringView(start, &*it.base() - start - 1);
+  }
+
+  return StringView(start, &*it.base() - start);
 }
 
 int StringView::compare(size_t selfOffset, size_t selfLen, StringView other,
