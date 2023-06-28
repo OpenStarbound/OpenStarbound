@@ -284,7 +284,7 @@ public:
     SDL_AudioSpec desired = {};
     desired.freq = 44100;
     desired.format = AUDIO_S16SYS;
-    desired.samples = 2048;
+    desired.samples = 1024;
     desired.channels = 2;
     desired.userdata = this;
     desired.callback = [](void* userdata, Uint8* stream, int len) {
