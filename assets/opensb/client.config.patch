@@ -1,0 +1,11 @@
+{
+  // Disables scissoring and letterboxing on vanilla and modded warp cinematics
+  "warpCinematicBase" : {
+    "scissor" : false,
+    "letterbox" : false
+  },
+  "deployCinematicBase" : {
+    "scissor" : false,
+    "letterbox" : false
+  }
+}

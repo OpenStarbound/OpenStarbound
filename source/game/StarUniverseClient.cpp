@@ -183,13 +183,14 @@ void UniverseClient::update() {
       m_warpDelay.reset();
       if (m_warping) {
         m_warpCinemaCancelTimer = GameTimer(assets->json("/client.config:playerWarpCinemaMinimumTime").toFloat());
-        String cinematic;
-        if (m_mainPlayer->isDeploying())
-          cinematic = assets->json("/client.config:deployCinematic").toString();
-        else
-          cinematic = assets->json("/client.config:warpCinematic").toString();
-        cinematic = cinematic.replaceTags(StringMap<String>{{"species", m_mainPlayer->species()}});
-        m_mainPlayer->setPendingCinematic(Json(move(cinematic)));
+
+        bool isDeploying = m_mainPlayer->isDeploying();
+        String cinematicJsonPath = isDeploying ? "/client.config:deployCinematic" : "/client.config:warpCinematic";
+        String cinematicAssetPath = assets->json(cinematicJsonPath).toString()
+        .replaceTags(StringMap<String>{{"species", m_mainPlayer->species()}});
+
+        Json cinematic = jsonMerge(assets->json(cinematicJsonPath + "Base"), assets->json(cinematicAssetPath));
+        m_mainPlayer->setPendingCinematic(cinematic);
       }
     }
   }
