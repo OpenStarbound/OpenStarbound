@@ -97,7 +97,8 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
   callbacks.registerCallback("personality",    [player]() { return jsonFromPersonality(player->identity().personality); });
   callbacks.registerCallback("setPersonality", [player](Json const& personalityConfig) {
     Personality const& oldPersonality = player->identity().personality;
-    player->setPersonality(parsePersonality(Personality(oldPersonality), personalityConfig));
+    Personality newPersonality = oldPersonality;
+    player->setPersonality(parsePersonality(newPersonality, personalityConfig));
   });
 
   void setPersonality(Personality const& personality);
