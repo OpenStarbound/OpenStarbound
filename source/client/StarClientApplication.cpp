@@ -402,6 +402,7 @@ void ClientApplication::changeState(MainAppState newState) {
 
   if (oldState > MainAppState::Title && m_state == MainAppState::Title) {
     m_titleScreen->resetState();
+    m_mainMixer->setUniverseClient({});
   }
   if (oldState >= MainAppState::Title && m_state < MainAppState::Title) {
     m_playerStorage.reset();
