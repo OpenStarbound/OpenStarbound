@@ -232,7 +232,7 @@ shared_ptr<TilePainter::TerrainChunk const> TilePainter::getTerrainChunk(WorldRe
       for (auto& layerPair : terrainPrimitives) {
         for (auto& zLevelPair : layerPair.second) {
           auto rb = m_renderer->createRenderBuffer();
-          rb->set(move(zLevelPair.second));
+          rb->set(LevelPair.second);
           (*chunk)[layerPair.first][zLevelPair.first] = move(rb);
         }
       }
@@ -256,7 +256,7 @@ shared_ptr<TilePainter::LiquidChunk const> TilePainter::getLiquidChunk(WorldRend
 
       for (auto& p : liquidPrimitives) {
         auto rb = m_renderer->createRenderBuffer();
-        rb->set(move(p.second));
+        rb->set(p.second);
         chunk->set(p.first, move(rb));
       }
 
