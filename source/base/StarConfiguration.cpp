@@ -12,6 +12,7 @@ Json Configuration::defaultConfiguration() const {
 }
 
 Json Configuration::currentConfiguration() const {
+  MutexLocker locker(m_mutex);
   return m_currentConfig;
 }
 
