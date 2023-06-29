@@ -31,7 +31,7 @@ struct ThreadImpl {
 #ifdef STAR_SYSTEM_MACOS
       // ensure the name is under the max allowed
       char tname[MAX_THREAD_NAMELEN];
-      snprintf(tname, sizeof(tname), "{}", ptr->name.utf8Ptr());
+      snprintf(tname, sizeof(tname), "%s", ptr->name.utf8Ptr());
 
       pthread_setname_np(tname);
 #endif
@@ -70,7 +70,7 @@ struct ThreadImpl {
 
     // ensure the name is under the max allowed
     char tname[MAX_THREAD_NAMELEN];
-    snprintf(tname, sizeof(tname), "{}", name.utf8Ptr());
+    snprintf(tname, sizeof(tname), "%s", name.utf8Ptr());
 
 #ifdef STAR_SYSTEM_FREEBSD
     pthread_set_name_np(pthread, tname);
