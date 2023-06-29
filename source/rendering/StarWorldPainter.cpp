@@ -57,12 +57,17 @@ void WorldPainter::render(WorldRenderData& renderData, function<void()> lightWai
 
   // Stars, Debris Fields, Sky, and Orbiters
 
-  m_environmentPainter->renderStars(m_camera.pixelRatio(), Vec2F(m_camera.screenSize()), renderData.skyRenderData);
-  m_environmentPainter->renderDebrisFields(m_camera.pixelRatio(), Vec2F(m_camera.screenSize()), renderData.skyRenderData);
-  m_environmentPainter->renderBackOrbiters(m_camera.pixelRatio(), Vec2F(m_camera.screenSize()), renderData.skyRenderData);
-  m_environmentPainter->renderPlanetHorizon(m_camera.pixelRatio(), Vec2F(m_camera.screenSize()), renderData.skyRenderData);
+  // Use a fixed pixel ratio for certain things.
+  float pixelRatioBasis = m_camera.screenSize()[1] / 1080.0f;
+  float starAndDebrisRatio = lerp(0.0625f, pixelRatioBasis * 2.0f, m_camera.pixelRatio());
+  float orbiterAndPlanetRatio = lerp(0.125f, pixelRatioBasis * 3.0f, m_camera.pixelRatio());
+
+  m_environmentPainter->renderStars(starAndDebrisRatio, Vec2F(m_camera.screenSize()), renderData.skyRenderData);
+  m_environmentPainter->renderDebrisFields(starAndDebrisRatio, Vec2F(m_camera.screenSize()), renderData.skyRenderData);
+  m_environmentPainter->renderBackOrbiters(orbiterAndPlanetRatio, Vec2F(m_camera.screenSize()), renderData.skyRenderData);
+  m_environmentPainter->renderPlanetHorizon(orbiterAndPlanetRatio, Vec2F(m_camera.screenSize()), renderData.skyRenderData);
   m_environmentPainter->renderSky(Vec2F(m_camera.screenSize()), renderData.skyRenderData);
-  m_environmentPainter->renderFrontOrbiters(m_camera.pixelRatio(), Vec2F(m_camera.screenSize()), renderData.skyRenderData);
+  m_environmentPainter->renderFrontOrbiters(orbiterAndPlanetRatio, Vec2F(m_camera.screenSize()), renderData.skyRenderData);
 
   if (lightWaiter) {
     int64_t start = Time::monotonicMilliseconds();

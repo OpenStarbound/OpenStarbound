@@ -60,12 +60,17 @@ void TitleScreen::render() {
   float pixelRatio = m_guiContext->interfaceScale();
   Vec2F screenSize = Vec2F(m_guiContext->windowSize());
   auto skyRenderData = m_skyBackdrop->renderData();
-  m_environmentPainter->renderStars(pixelRatio, screenSize, skyRenderData);
-  m_environmentPainter->renderDebrisFields(pixelRatio, screenSize, skyRenderData);
-  m_environmentPainter->renderBackOrbiters(pixelRatio, screenSize, skyRenderData);
-  m_environmentPainter->renderPlanetHorizon(pixelRatio, screenSize, skyRenderData);
-  m_environmentPainter->renderFrontOrbiters(pixelRatio, screenSize, skyRenderData);
+
+  float pixelRatioBasis = screenSize[1] / 1080.0f;
+  float starAndDebrisRatio = lerp(0.0625f, pixelRatioBasis * 2.0f, pixelRatio);
+  float orbiterAndPlanetRatio = lerp(0.125f, pixelRatioBasis * 3.0f, pixelRatio);
+
+  m_environmentPainter->renderStars(starAndDebrisRatio, screenSize, skyRenderData);
+  m_environmentPainter->renderDebrisFields(starAndDebrisRatio, screenSize, skyRenderData);
+  m_environmentPainter->renderBackOrbiters(orbiterAndPlanetRatio, screenSize, skyRenderData);
+  m_environmentPainter->renderPlanetHorizon(orbiterAndPlanetRatio, screenSize, skyRenderData);
   m_environmentPainter->renderSky(screenSize, skyRenderData);
+  m_environmentPainter->renderFrontOrbiters(orbiterAndPlanetRatio, screenSize, skyRenderData);
 
   m_renderer->flush();
 

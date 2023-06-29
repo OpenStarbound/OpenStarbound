@@ -14,7 +14,7 @@ float const EnvironmentPainter::SunFadeRate = 0.07f;
 float const EnvironmentPainter::MaxFade = 0.3f;
 float const EnvironmentPainter::RayPerlinFrequency = 0.005f; // Arbitrary, part of using the Perlin as a PRNG
 float const EnvironmentPainter::RayPerlinAmplitude = 2;
-int const EnvironmentPainter::RayCount = 60;
+int   const EnvironmentPainter::RayCount = 60;
 float const EnvironmentPainter::RayMinWidth = 0.8f; // % of its sector
 float const EnvironmentPainter::RayWidthVariance = 5.0265f; // % of its sector
 float const EnvironmentPainter::RayAngleVariance = 6.2832f; // Radians
@@ -125,7 +125,7 @@ void EnvironmentPainter::renderDebrisFields(float pixelRatio, Vec2F const& scree
         biggest = biggest.piecewiseMax(texture->size());
       }
 
-      float screenBuffer = ceil((float)biggest.max() * (float)Constants::sqrt2) * 2.0f;
+      float screenBuffer = ceil((float)biggest.max() * (float)Constants::sqrt2);
       PolyF field = PolyF(RectF::withSize(viewMin + velocityOffset, viewSize).padded(screenBuffer));
 
       Vec2F debrisAngularVelocityRange = jsonToVec2F(debrisField.query("angularVelocityRange"));
@@ -400,7 +400,20 @@ void EnvironmentPainter::drawRay(float pixelRatio,
 
 void EnvironmentPainter::drawOrbiter(float pixelRatio, Vec2F const& screenSize, SkyRenderData const& sky, SkyOrbiter const& orbiter) {
   float alpha = 1.0f;
-  Vec2F position = orbiter.position * pixelRatio;
+  Vec2F position;
+
+  // The way Starbound positions these is weird.
+  // It's a random point on a 400 by 400 area from the bottom left of the screen.
+  // That origin point is then multiplied by the zoom level.
+  // This does not intuitively scale with higher-resolution monitors, so lets fix that.
+  if (orbiter.type == SkyOrbiterType::Moon) {
+    const Vec2F correctionOrigin = { 320, 180 }; 
+    // correctionOrigin is 1920x1080 / default zoom level / 2, the most likely dev setup at the time.
+    Vec2F offset = orbiter.position - correctionOrigin;
+    position = (screenSize / 2) + offset * pixelRatio;
+  }
+  else
+    position = orbiter.position * pixelRatio;
 
   if (orbiter.type == SkyOrbiterType::Sun) {
     alpha = sky.dayLevel;
