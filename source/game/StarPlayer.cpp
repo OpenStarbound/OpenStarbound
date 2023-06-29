@@ -1562,7 +1562,7 @@ void Player::processControls() {
   }
 
   if (useMoveVector) {
-    m_pendingMoves.insert(signbit(m_moveVector.x()) ? MoveControlType::Left : MoveControlType::Right);
+    m_pendingMoves.insert(m_moveVector.x() < 0.0f ? MoveControlType::Left : MoveControlType::Right);
     m_movementController->setMoveSpeedMultiplier(clamp(abs(m_moveVector.x()), 0.0f, 1.0f));
   }
   else
