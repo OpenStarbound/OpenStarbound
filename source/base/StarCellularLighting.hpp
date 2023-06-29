@@ -46,8 +46,6 @@ public:
   void calculate(Image& output);
 
   void setupImage(Image& image, PixelFormat format = PixelFormat::RGB24) const;
-
-  ThreadFunction<Image> calculateAsync();
 private:
   Json m_config;
   bool m_monochrome;

@@ -101,32 +101,6 @@ void CellularLightingCalculator::setupImage(Image& image, PixelFormat format) co
   image.reset(arrayMax[0] - arrayMin[0], arrayMax[1] - arrayMin[1], format);
 }
 
-ThreadFunction<Image> CellularLightingCalculator::calculateAsync() {
-  return ThreadFunction<Image>([this]() {
-    Vec2S arrayMin = Vec2S(m_queryRegion.min() - m_calculationRegion.min());
-    Vec2S arrayMax = Vec2S(m_queryRegion.max() - m_calculationRegion.min());
-
-    if (m_monochrome)
-      m_lightArray.right().calculate(arrayMin[0], arrayMin[1], arrayMax[0], arrayMax[1]);
-    else
-      m_lightArray.left().calculate(arrayMin[0], arrayMin[1], arrayMax[0], arrayMax[1]);
-
-    Image output;
-    setupImage(output, PixelFormat::RGB24);
-
-    for (size_t x = arrayMin[0]; x < arrayMax[0]; ++x) {
-      for (size_t y = arrayMin[1]; y < arrayMax[1]; ++y) {
-        if (m_monochrome)
-          output.set24(x - arrayMin[0], y - arrayMin[1], Color::grayf(m_lightArray.right().getLight(x, y)).toRgb());
-        else
-          output.set24(x - arrayMin[0], y - arrayMin[1], Color::v3fToByte(m_lightArray.left().getLight(x, y)));
-      }
-    }
-
-    return output;
-  }, "CellularLightingCalculator Thread");
-}
-
 void CellularLightIntensityCalculator::setParameters(Json const& config) {
   m_lightArray.setParameters(
       config.getInt("spreadPasses"),
