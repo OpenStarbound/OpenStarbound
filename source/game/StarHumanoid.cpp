@@ -40,6 +40,8 @@ Personality& parsePersonality(Personality& personality, Json const& config) {
     personality.headOffset = jsonToVec2F(headOffset);
   if (auto armOffset = config.get("armOffset"))
     personality.armOffset = jsonToVec2F(armOffset);
+
+  return personality;
 }
 
 Personality parsePersonality(Json const& config) {
