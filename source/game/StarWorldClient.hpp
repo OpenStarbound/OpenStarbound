@@ -252,7 +252,7 @@ private:
   mutable Mutex m_lightingMutex;
   mutable ConditionVariable m_lightingCond;
   mutable WorldRenderData* m_renderData;
-  bool m_stopLightingThread;
+  atomic<bool> m_stopLightingThread;
 
   SkyPtr m_sky;
 

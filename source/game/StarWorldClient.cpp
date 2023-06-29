@@ -92,6 +92,7 @@ WorldClient::~WorldClient() {
     m_lightingCond.broadcast();
   }
 
+  m_lightingThread.finish();
   clearWorld();
 }
 
@@ -1446,10 +1447,9 @@ void WorldClient::lightingTileGather() {
 
 void WorldClient::lightingMain() {
   while (true) {
+    MutexLocker locker(m_lightingMutex);
     if (m_stopLightingThread)
       return;
-
-    MutexLocker locker(m_lightingMutex);
 
     if (m_renderData) {
       int64_t start = Time::monotonicMilliseconds();
