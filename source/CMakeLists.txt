@@ -15,6 +15,7 @@ PROJECT (starbound)
 SET (CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../cmake)
 
 SET (CMAKE_CONFIGURATION_TYPES Debug RelWithAsserts RelWithDebInfo Release)
+SET (CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "")
 SET (CMAKE_EXE_LINKER_FLAGS_RELWITHASSERTS "" CACHE STRING "" FORCE)
 # Update the docstring on CMAKE_BUILD_TYPE to show what options we actually
 # allow
