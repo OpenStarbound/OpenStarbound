@@ -103,6 +103,7 @@ void EnvironmentPainter::renderDebrisFields(float pixelRatio, Vec2F const& scree
   if (sky.type == SkyType::Orbital || sky.type == SkyType::Warp) {
     Vec2F viewSize = screenSize / pixelRatio;
     Vec2F viewCenter = viewSize / 2;
+    Vec2F viewMin = sky.starOffset - viewCenter;
 
     Mat3F rotMatrix = Mat3F::rotation(sky.starRotation, viewCenter);
 
@@ -125,7 +126,7 @@ void EnvironmentPainter::renderDebrisFields(float pixelRatio, Vec2F const& scree
       }
 
       float screenBuffer = ceil((float)biggest.max() * (float)Constants::sqrt2) * 2.0f;
-      PolyF field = PolyF(RectF::withSize(sky.starOffset, viewSize).padded(screenBuffer).translated(velocityOffset));
+      PolyF field = PolyF(RectF::withSize(viewMin + velocityOffset, viewSize).padded(screenBuffer));
 
       Vec2F debrisAngularVelocityRange = jsonToVec2F(debrisField.query("angularVelocityRange"));
 
@@ -137,10 +138,10 @@ void EnvironmentPainter::renderDebrisFields(float pixelRatio, Vec2F const& scree
             return pair<StringView, float>(debrisImage, debrisAngularVelocity);
           });
 
-      Vec2F debrisPositionOffset = -(sky.starOffset + velocityOffset);
+      Vec2F debrisPositionOffset = viewMin + velocityOffset;
 
       for (auto& debrisItem : debrisItems) {
-        Vec2F debrisPosition = rotMatrix.transformVec2(debrisItem.first + debrisPositionOffset);
+        Vec2F debrisPosition = rotMatrix.transformVec2(debrisItem.first - debrisPositionOffset);
         float debrisAngle = fmod(Constants::deg2rad * debrisItem.second.second * sky.epochTime, Constants::pi * 2) + sky.starRotation;
         drawOrbiter(pixelRatio, screenSize, sky, {SkyOrbiterType::SpaceDebris, 1.0f, debrisAngle, debrisItem.second.first, debrisPosition});
       }
@@ -399,8 +400,7 @@ void EnvironmentPainter::drawRay(float pixelRatio,
 
 void EnvironmentPainter::drawOrbiter(float pixelRatio, Vec2F const& screenSize, SkyRenderData const& sky, SkyOrbiter const& orbiter) {
   float alpha = 1.0f;
-  Vec2F screenCenter = screenSize / 2;
-  Vec2F position = screenCenter + (orbiter.position - screenCenter) * pixelRatio;
+  Vec2F position = orbiter.position * pixelRatio;
 
   if (orbiter.type == SkyOrbiterType::Sun) {
     alpha = sky.dayLevel;
@@ -415,10 +415,11 @@ void EnvironmentPainter::drawOrbiter(float pixelRatio, Vec2F const& screenSize, 
   Vec4B renderColor = Vec4B(255, 255, 255, 255 * alpha);
 
   m_renderer->immediatePrimitives().emplace_back(std::in_place_type_t<RenderQuad>(), move(texture),
-      RenderVertex{renderMatrix.transformVec2(renderRect.min()), Vec2F(0, 0), renderColor, 0.0f},
-      RenderVertex{renderMatrix.transformVec2(Vec2F{renderRect.xMax(), renderRect.yMin()}), Vec2F(texSize[0], 0), renderColor, 0.0f},
-      RenderVertex{renderMatrix.transformVec2(renderRect.max()), Vec2F(texSize[0], texSize[1]), renderColor, 0.0f},
-      RenderVertex{renderMatrix.transformVec2(Vec2F{renderRect.xMin(), renderRect.yMax()}), Vec2F(0, texSize[1]), renderColor, 0.0f});
+      renderMatrix.transformVec2(renderRect.min()), Vec2F(0, 0),
+      renderMatrix.transformVec2(Vec2F{renderRect.xMax(), renderRect.yMin()}), Vec2F(texSize[0], 0),
+      renderMatrix.transformVec2(renderRect.max()), Vec2F(texSize[0], texSize[1]),
+      renderMatrix.transformVec2(Vec2F{renderRect.xMin(), renderRect.yMax()}), Vec2F(0, texSize[1]),
+    renderColor, 0.0f);
 }
 
 uint64_t EnvironmentPainter::starsHash(SkyRenderData const& sky, Vec2F const& viewSize) const {
