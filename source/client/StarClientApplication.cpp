@@ -207,25 +207,31 @@ void ClientApplication::renderInit(RendererPtr renderer) {
   Application::renderInit(renderer);
   auto assets = m_root->assets();
 
-  String rendererConfig = strf("/rendering/{}.config", renderer->rendererId());
-  if (assets->assetExists(rendererConfig)) {
-    StringMap<String> shaders;
-    auto config = assets->json(rendererConfig);
-    auto shaderConfig = config.getObject("effectShaders");
-    for (auto& entry : shaderConfig) {
-      if (entry.second.isType(Json::Type::String)) {
-        String shader = entry.second.toString();
-        if (!shader.hasChar('\n')) {
-          auto shaderBytes = assets->bytes(AssetPath::relativeTo(rendererConfig, shader));
-          shader = std::string(shaderBytes->ptr(), shaderBytes->size());
+  auto loadConfig = [&](String const& name) {
+    String path = strf("/rendering/{}.config", name);
+    if (assets->assetExists(path)) {
+      StringMap<String> shaders;
+      auto config = assets->json(path);
+      auto shaderConfig = config.getObject("effectShaders");
+      for (auto& entry : shaderConfig) {
+        if (entry.second.isType(Json::Type::String)) {
+          String shader = entry.second.toString();
+          if (!shader.hasChar('\n')) {
+            auto shaderBytes = assets->bytes(AssetPath::relativeTo(path, shader));
+            shader = std::string(shaderBytes->ptr(), shaderBytes->size());
+          }
+          shaders[entry.first] = shader;
         }
-        shaders[entry.first] = shader;
       }
+
+      renderer->loadEffectConfig(name, config, shaders);
     }
-    renderer->setEffectConfig(config, shaders);
-  }
-  else
-    Logger::warn("No rendering config found for renderer with id '{}'", renderer->rendererId());
+    else
+      Logger::warn("No rendering config found for renderer with id '{}'", renderer->rendererId());
+  };
+
+  loadConfig("world");
+  loadConfig("default");
 
   if (m_root->configuration()->get("limitTextureAtlasSize").optBool().value(false))
     renderer->setSizeLimitEnabled(true);
@@ -365,13 +371,13 @@ void ClientApplication::render() {
     RendererPtr renderer = Application::renderer();
     if (worldClient) {
       int64_t start = Time::monotonicMilliseconds();
-      if (renderer)
-        renderer->setEffectParameter("lightMapEnabled", true);
+
+      renderer->switchEffectConfig("world");
       worldClient->render(m_renderData, TilePainter::BorderTileSize);
       m_worldPainter->render(m_renderData, [&]() { worldClient->waitForLighting(); });
       m_mainInterface->renderInWorldElements();
-      if (renderer)
-        renderer->setEffectParameter("lightMapEnabled", false);
+      renderer->switchEffectConfig("default");
+
       LogMap::set("render_world", strf("{}ms", Time::monotonicMilliseconds() - start));
     }
     int64_t start = Time::monotonicMilliseconds();

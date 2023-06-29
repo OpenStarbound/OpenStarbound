@@ -135,12 +135,14 @@ public:
   // specific to each type of renderer, so it will be necessary to key the
   // configuration off of the renderId string.  This should not be called every
   // frame, because it will result in a recompile of the underlying shader set.
-  virtual void setEffectConfig(Json const& effectConfig, StringMap<String> const& shaders) = 0;
+  virtual void loadEffectConfig(String const& name, Json const& effectConfig, StringMap<String> const& shaders) = 0;
 
   // The effect config will specify named parameters and textures which can be
   // set here.
   virtual void setEffectParameter(String const& parameterName, RenderEffectParameter const& parameter) = 0;
   virtual void setEffectTexture(String const& textureName, Image const& image) = 0;
+
+  virtual bool switchEffectConfig(String const& name) = 0;
 
   // Any further rendering will be scissored based on this rect, specified in
   // pixels

@@ -20,11 +20,14 @@ public:
   String rendererId() const override;
   Vec2U screenSize() const override;
 
-  void setEffectConfig(Json const& effectConfig, StringMap<String> const& shaders) override;
+  void loadEffectConfig(String const& name, Json const& effectConfig, StringMap<String> const& shaders) override;
+
   void setEffectParameter(String const& parameterName, RenderEffectParameter const& parameter) override;
   void setEffectTexture(String const& textureName, Image const& image) override;
 
   void setScissorRect(Maybe<RectI> const& scissorRect) override;
+
+  bool switchEffectConfig(String const& name) override;
 
   TexturePtr createTexture(Image const& texture, TextureAddressing addressing, TextureFiltering filtering) override;
   void setSizeLimitEnabled(bool enabled) override;
@@ -155,6 +158,13 @@ private:
     RefPtr<GlLoneTexture> textureValue;
   };
 
+  struct Effect {
+    GLuint program;
+    Json config;
+    StringMap<EffectParameter> parameters;
+    StringMap<EffectTexture> textures;
+  };
+
   static void logGlErrorSummary(String prefix);
   static void uploadTextureImage(PixelFormat pixelFormat, Vec2U size, uint8_t const* data);
 
@@ -165,6 +175,8 @@ private:
   void flushImmediatePrimitives();
 
   void renderGlBuffer(GlRenderBuffer const& renderBuffer, Mat3F const& transformation);
+
+  void setupGlUniforms(GLuint program);
 
   Vec2U m_screenSize;
 
@@ -181,10 +193,11 @@ private:
   GLint m_screenSizeUniform = -1;
   GLint m_vertexTransformUniform = -1;
 
+  StringMap<Effect> m_effects;
+  Effect* m_currentEffect;
+
   RefPtr<GlTexture> m_whiteTexture;
 
-  StringMap<EffectParameter> m_effectParameters;
-  StringMap<EffectTexture> m_effectTextures;
   Maybe<RectI> m_scissorRect;
 
   bool m_limitTextureGroupSize;

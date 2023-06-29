@@ -231,6 +231,7 @@ void EnvironmentPainter::renderSky(Vec2F const& screenSize, SkyRenderData const&
   m_renderer->flush();
 }
 
+// TODO: Fix this to work with decimal zoom levels. Currently, the clouds shake rapidly when interpolating between zoom levels.
 void EnvironmentPainter::renderParallaxLayers(
     Vec2F parallaxWorldPosition, WorldCamera const& camera, ParallaxLayers const& layers, SkyRenderData const& sky) {
 
