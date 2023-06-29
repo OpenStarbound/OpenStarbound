@@ -64,6 +64,25 @@ void WorldPainter::render(WorldRenderData& renderData, function<void()> lightWai
   m_environmentPainter->renderSky(Vec2F(m_camera.screenSize()), renderData.skyRenderData);
   m_environmentPainter->renderFrontOrbiters(m_camera.pixelRatio(), Vec2F(m_camera.screenSize()), renderData.skyRenderData);
 
+  if (lightWaiter) {
+    int64_t start = Time::monotonicMilliseconds();
+    lightWaiter();
+    LogMap::set("render_light_wait", strf("{}ms", Time::monotonicMilliseconds() - start));
+  }
+
+  if (renderData.isFullbright) {
+    m_renderer->setEffectTexture("lightMap", Image::filled(Vec2U(1, 1), { 255, 255, 255, 255 }, PixelFormat::RGB24));
+    m_renderer->setEffectTexture("tileLightMap", Image::filled(Vec2U(1, 1), { 0, 0, 0, 0 }, PixelFormat::RGBA32));
+    m_renderer->setEffectParameter("lightMapMultiplier", 1.0f);
+  } else {
+    adjustLighting(renderData);
+    m_renderer->setEffectParameter("lightMapMultiplier", m_assets->json("/rendering.config:lightMapMultiplier").toFloat());
+    m_renderer->setEffectParameter("lightMapScale", Vec2F::filled(TilePixels * m_camera.pixelRatio()));
+    m_renderer->setEffectParameter("lightMapOffset", m_camera.worldToScreen(Vec2F(renderData.lightMinPosition)));
+    m_renderer->setEffectTexture("lightMap", renderData.lightMap);
+    m_renderer->setEffectTexture("tileLightMap", renderData.tileLightMap);
+  }
+
   // Parallax layers
 
   auto parallaxDelta = m_camera.worldGeometry().diff(m_camera.centerWorldPosition(), m_previousCameraCenter);

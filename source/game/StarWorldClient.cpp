@@ -1447,8 +1447,10 @@ void WorldClient::lightingMain() {
     MutexLocker locker(m_lightingMutex);
 
     if (m_renderData) {
+      int64_t start = Time::monotonicMilliseconds();
       m_lightingCalculator.calculate(m_renderData->lightMap);
       m_renderData = nullptr;
+      LogMap::set("render_light_calc", strf("{}ms", Time::monotonicMilliseconds() - start));
     }
 
     m_lightingCond.wait(m_lightingMutex);

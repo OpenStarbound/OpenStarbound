@@ -364,38 +364,20 @@ void ClientApplication::render() {
     WorldClientPtr worldClient = m_universeClient->worldClient();
     RendererPtr renderer = Application::renderer();
     if (worldClient) {
+      int64_t start = Time::monotonicMilliseconds();
       if (renderer)
         renderer->setEffectParameter("lightMapEnabled", true);
       worldClient->render(m_renderData, TilePainter::BorderTileSize);
-      // Might have to move lightmap adjustment code back into worldPainter->render
-      // eventually, can't be bothered to remove the passed lambda yet
       m_worldPainter->render(m_renderData, [&]() { worldClient->waitForLighting(); });
       m_mainInterface->renderInWorldElements();
       if (renderer)
         renderer->setEffectParameter("lightMapEnabled", false);
+      LogMap::set("render_world", strf("{}ms", Time::monotonicMilliseconds() - start));
     }
+    int64_t start = Time::monotonicMilliseconds();
     m_mainInterface->render();
     m_cinematicOverlay->render();
-
-    if (worldClient && renderer) {
-      worldClient->waitForLighting();
-
-      if (m_renderData.isFullbright) {
-        renderer->setEffectTexture("lightMap", Image::filled(Vec2U(1, 1), { 255, 255, 255, 255 }, PixelFormat::RGB24));
-        renderer->setEffectTexture("tileLightMap", Image::filled(Vec2U(1, 1), { 0, 0, 0, 0 }, PixelFormat::RGBA32));
-        renderer->setEffectParameter("lightMapMultiplier", 1.0f);
-      }
-      else {
-        m_worldPainter->adjustLighting(m_renderData);
-
-        WorldCamera const& camera = m_worldPainter->camera();
-        renderer->setEffectParameter("lightMapMultiplier", assets->json("/rendering.config:lightMapMultiplier").toFloat());
-        renderer->setEffectParameter("lightMapScale", Vec2F::filled(TilePixels * camera.pixelRatio()));
-        renderer->setEffectParameter("lightMapOffset", camera.worldToScreen(Vec2F(m_renderData.lightMinPosition)));
-        renderer->setEffectTexture("lightMap", m_renderData.lightMap);
-        renderer->setEffectTexture("tileLightMap", m_renderData.tileLightMap);
-      }
-    }
+    LogMap::set("render_ui", strf("{}ms", Time::monotonicMilliseconds() - start));
   }
 
   if (!m_errorScreen->accepted())
