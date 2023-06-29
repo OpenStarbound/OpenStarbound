@@ -245,15 +245,17 @@ void Cinematic::render() {
 
 void Cinematic::drawDrawable(Drawable const& drawable, float drawableScale, Vec2F const& drawableTranslation) {
   auto& guiContext = GuiContext::singleton();
-  auto renderer = guiContext.renderer();
-  auto textureGroup = guiContext.assetTextureGroup();
+  auto& renderer = guiContext.renderer();
+  auto& textureGroup = guiContext.assetTextureGroup();
+
+  auto& primitives = renderer->immediatePrimitives();
 
   if (drawable.isImage()) {
     auto const& imagePart = drawable.imagePart();
     auto texture = textureGroup->loadTexture(imagePart.image);
-    auto textureSize = Vec2F(texture->size());
+    auto size = Vec2F(texture->size());
 
-    RectF imageRect(Vec2F(), textureSize);
+    RectF imageRect(Vec2F(), size);
 
     Vec2F screenTranslation = drawable.position * drawableScale + drawableTranslation;
 
@@ -272,11 +274,12 @@ void Cinematic::drawDrawable(Drawable const& drawable, float drawableScale, Vec2
 
     Vec4B drawableColor = drawable.color.toRgba();
 
-    renderer->render(RenderQuad{move(texture),
-        RenderVertex{lowerLeft, Vec2F(0, 0), drawableColor, 0.0f},
-        RenderVertex{lowerRight, Vec2F(textureSize[0], 0), drawableColor, 0.0f},
-        RenderVertex{upperRight, Vec2F(textureSize[0], textureSize[1]), drawableColor, 0.0f},
-        RenderVertex{upperLeft, Vec2F(0, textureSize[1]), drawableColor, 0.0f}});
+    primitives.emplace_back(std::in_place_type_t<RenderQuad>(), move(texture),
+        lowerLeft,  Vec2F{0, 0},
+        lowerRight, Vec2F{size[0], 0},
+        upperRight, Vec2F{size[0], size[1]},
+        upperLeft,  Vec2F{0, size[1]},
+        drawableColor, 0.0f);
   } else {
     starAssert(drawable.part.empty());
   }

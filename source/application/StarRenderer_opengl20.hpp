@@ -32,6 +32,7 @@ public:
   TextureGroupPtr createTextureGroup(TextureGroupSize size, TextureFiltering filtering) override;
   RenderBufferPtr createRenderBuffer() override;
 
+  List<RenderPrimitive>& immediatePrimitives() override;
   void render(RenderPrimitive primitive) override;
   void renderBuffer(RenderBufferPtr const& renderBuffer, Mat3F const& transformation) override;
 
@@ -128,7 +129,7 @@ private:
 
     ~GlRenderBuffer();
 
-    void set(List<RenderPrimitive> primitives) override;
+    void set(List<RenderPrimitive>& primitives) override;
 
     RefPtr<GlTexture> whiteTexture;
     ByteArray accumulationBuffer;

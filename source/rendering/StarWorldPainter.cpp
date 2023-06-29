@@ -173,7 +173,10 @@ void WorldPainter::renderParticles(WorldRenderData& renderData, Particle::Layer 
     Vec2F size = Vec2F::filled(particle.size * m_camera.pixelRatio());
 
     if (particle.type == Particle::Type::Ember) {
-      m_renderer->render(renderFlatRect(RectF(position - size / 2, position + size / 2), particle.color.toRgba(), particle.fullbright ? 0.0f : 1.0f));
+      m_renderer->immediatePrimitives().emplace_back(std::in_place_type_t<RenderQuad>(),
+        RectF(position - size / 2, position + size / 2),
+        particle.color.toRgba(),
+        particle.fullbright ? 0.0f : 1.0f);
 
     } else if (particle.type == Particle::Type::Streak) {
       // Draw a rotated quad streaking in the direction the particle is coming from.
@@ -183,12 +186,12 @@ void WorldPainter::renderParticles(WorldRenderData& renderData, Particle::Layer 
       float length = particle.length * m_camera.pixelRatio();
       Vec4B color = particle.color.toRgba();
       float lightMapMultiplier = particle.fullbright ? 0.0f : 1.0f;
-      m_renderer->render(RenderQuad{{},
-          {position - sideHalf, {}, color, lightMapMultiplier},
-          {position + sideHalf, {}, color, lightMapMultiplier},
-          {position - dir * length + sideHalf, {}, color, lightMapMultiplier},
-          {position - dir * length - sideHalf, {}, color, lightMapMultiplier}
-        });
+      m_renderer->immediatePrimitives().emplace_back(std::in_place_type_t<RenderQuad>(),
+        position - sideHalf,
+        position + sideHalf,
+        position - dir * length + sideHalf,
+        position - dir * length - sideHalf,
+        color, lightMapMultiplier);
 
     } else if (particle.type == Particle::Type::Textured || particle.type == Particle::Type::Animated) {
       Drawable drawable;

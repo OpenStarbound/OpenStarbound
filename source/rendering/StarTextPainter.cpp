@@ -539,6 +539,7 @@ RectF TextPainter::doRenderLine(StringView text, TextPositioning const& position
 RectF TextPainter::doRenderGlyph(String::Char c, TextPositioning const& position, bool reallyRender) {
   if (m_nonRenderedCharacters.find(String(c)) != NPos)
     return RectF();
+  m_fontTextureGroup.switchFont(m_renderSettings.font);
 
   int width = glyphWidth(c);
   // Offset left by width if right anchored.
@@ -581,8 +582,8 @@ void TextPainter::renderGlyph(String::Char c, Vec2F const& screenPos, unsigned f
     return;
 
   const FontTextureGroup::GlyphTexture& glyphTexture = m_fontTextureGroup.glyphTexture(c, fontSize, processingDirectives);
-  Vec2F offset = glyphTexture.processingOffset * (scale * 0.5f); //Kae: Re-center the glyph if the image scale was changed by the directives (it is positioned from the bottom left) 
-  m_renderer->render(renderTexturedRect(glyphTexture.texture, Vec2F(screenPos) + offset, scale, color, 0.0f));
+  Vec2F offset = glyphTexture.processingOffset * (scale * 0.5f);
+  m_renderer->immediatePrimitives().emplace_back(std::in_place_type_t<RenderQuad>(), glyphTexture.texture, screenPos + offset, scale, color, 0.0f);
 }
 
 }

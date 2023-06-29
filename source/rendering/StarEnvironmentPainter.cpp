@@ -3,6 +3,8 @@
 #include "StarTime.hpp"
 #include "StarXXHash.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarLogging.hpp"
+#include "StarMathCommon.hpp"
 
 namespace Star {
 
@@ -80,12 +82,14 @@ void EnvironmentPainter::renderStars(float pixelRatio, Vec2F const& screenSize, 
 
   RectF viewRect = RectF::withSize(Vec2F(), viewSize).padded(screenBuffer);
 
+  auto& primitives = m_renderer->immediatePrimitives();
+
   for (auto& star : stars) {
     Vec2F screenPos = transform.transformVec2(star.first);
     if (viewRect.contains(screenPos)) {
       size_t starFrame = (size_t)(sky.epochTime + star.second.second) % sky.starFrames;
       auto const& texture = m_starTextures[star.second.first * sky.starFrames + starFrame];
-      m_renderer->render(renderTexturedRect(texture, screenPos * pixelRatio - Vec2F(texture->size()) / 2, 1.0, color, 0.0f));
+      primitives.emplace_back(std::in_place_type_t<RenderQuad>(), texture, screenPos * pixelRatio - Vec2F(texture->size()) / 2, 1.0, color, 0.0f);
     }
   }
 
@@ -99,7 +103,6 @@ void EnvironmentPainter::renderDebrisFields(float pixelRatio, Vec2F const& scree
   if (sky.type == SkyType::Orbital || sky.type == SkyType::Warp) {
     Vec2F viewSize = screenSize / pixelRatio;
     Vec2F viewCenter = viewSize / 2;
-    Vec2F viewMin = sky.starOffset - viewCenter;
 
     Mat3F rotMatrix = Mat3F::rotation(sky.starRotation, viewCenter);
 
@@ -114,23 +117,29 @@ void EnvironmentPainter::renderDebrisFields(float pixelRatio, Vec2F const& scree
       // Translate the entire field to make the debris seem as though they are moving
       Vec2F velocityOffset = -Vec2F(debrisXVel, debrisYVel) * sky.epochTime;
 
-      float screenBuffer = debrisField.queryFloat("screenBuffer");
-      PolyF field = PolyF(RectF::withSize(viewMin, viewSize).padded(screenBuffer).translated(velocityOffset));
+      JsonArray imageOptions = debrisField.query("list").toArray();
+      Vec2U biggest = Vec2U();
+      for (Json const& json : imageOptions) {
+        TexturePtr texture = m_textureGroup->loadTexture(*json.stringPtr());
+        biggest = biggest.piecewiseMax(texture->size());
+      }
+
+      float screenBuffer = ceil((float)biggest.max() * (float)Constants::sqrt2) * 2.0f;
+      PolyF field = PolyF(RectF::withSize(sky.starOffset, viewSize).padded(screenBuffer).translated(velocityOffset));
 
       Vec2F debrisAngularVelocityRange = jsonToVec2F(debrisField.query("angularVelocityRange"));
-      JsonArray imageOptions = debrisField.query("list").toArray();
 
       auto debrisItems = m_debrisGenerators[i]->generate(field,
           [&](RandomSource& rand) {
-            String debrisImage = rand.randFrom(imageOptions).toString();
+            StringView debrisImage = *rand.randFrom(imageOptions).stringPtr();
             float debrisAngularVelocity = rand.randf(debrisAngularVelocityRange[0], debrisAngularVelocityRange[1]);
 
-            return pair<String, float>(debrisImage, debrisAngularVelocity);
+            return pair<StringView, float>(debrisImage, debrisAngularVelocity);
           });
 
-      Vec2F debrisPositionOffset = -(sky.starOffset + velocityOffset + viewCenter);
+      Vec2F debrisPositionOffset = -(sky.starOffset + velocityOffset);
 
-      for (auto debrisItem : debrisItems) {
+      for (auto& debrisItem : debrisItems) {
         Vec2F debrisPosition = rotMatrix.transformVec2(debrisItem.first + debrisPositionOffset);
         float debrisAngle = fmod(Constants::deg2rad * debrisItem.second.second * sky.epochTime, Constants::pi * 2) + sky.starRotation;
         drawOrbiter(pixelRatio, screenSize, sky, {SkyOrbiterType::SpaceDebris, 1.0f, debrisAngle, debrisItem.second.first, debrisPosition});
@@ -166,6 +175,8 @@ void EnvironmentPainter::renderPlanetHorizon(float pixelRatio, Vec2F const& scre
   float planetPixelRatio = pixelRatio * planetHorizon.scale;
   Vec2F center = planetHorizon.center * pixelRatio;
 
+  auto& primitives = m_renderer->immediatePrimitives();
+
   for (auto const& layer : planetHorizon.layers) {
     TexturePtr leftTexture = m_textureGroup->loadTexture(layer.first);
     Vec2F leftTextureSize(leftTexture->size());
@@ -182,17 +193,17 @@ void EnvironmentPainter::renderPlanetHorizon(float pixelRatio, Vec2F const& scre
     PolyF rightImage = PolyF(rightRect);
     rightImage.rotate(planetHorizon.rotation, center);
 
-    m_renderer->render(RenderQuad{move(leftTexture),
-        {leftImage[0], Vec2F(0, 0), {255, 255, 255, 255}, 0.0f},
-        {leftImage[1], Vec2F(leftTextureSize[0], 0), {255, 255, 255, 255}, 0.0f},
-        {leftImage[2], Vec2F(leftTextureSize[0], leftTextureSize[1]), {255, 255, 255, 255}, 0.0f},
-        {leftImage[3], Vec2F(0, leftTextureSize[1]), {255, 255, 255, 255}, 0.0f}});
+    primitives.emplace_back(std::in_place_type_t<RenderQuad>(), move(leftTexture),
+        leftImage[0], Vec2F(0, 0),
+        leftImage[1], Vec2F(leftTextureSize[0], 0),
+        leftImage[2], Vec2F(leftTextureSize[0], leftTextureSize[1]),
+        leftImage[3], Vec2F(0, leftTextureSize[1]), Vec4B::filled(255), 0.0f);
 
-    m_renderer->render(RenderQuad{move(rightTexture),
-        {rightImage[0], Vec2F(0, 0), {255, 255, 255, 255}, 0.0f},
-        {rightImage[1], Vec2F(rightTextureSize[0], 0), {255, 255, 255, 255}, 0.0f},
-        {rightImage[2], Vec2F(rightTextureSize[0], rightTextureSize[1]), {255, 255, 255, 255}, 0.0f},
-        {rightImage[3], Vec2F(0, rightTextureSize[1]), {255, 255, 255, 255}, 0.0f}});
+    primitives.emplace_back(std::in_place_type_t<RenderQuad>(), move(rightTexture),
+        rightImage[0], Vec2F(0, 0),
+        rightImage[1], Vec2F(rightTextureSize[0], 0),
+        rightImage[2], Vec2F(rightTextureSize[0], rightTextureSize[1]),
+        rightImage[3], Vec2F(0, rightTextureSize[1]), Vec4B::filled(255), 0.0f);
   }
 
   m_renderer->flush();
@@ -206,15 +217,16 @@ void EnvironmentPainter::renderFrontOrbiters(float pixelRatio, Vec2F const& scre
 }
 
 void EnvironmentPainter::renderSky(Vec2F const& screenSize, SkyRenderData const& sky) {
-  m_renderer->render(RenderQuad{{},
-      {Vec2F(0, 0), Vec2F(), sky.bottomRectColor.toRgba(), 0.0f},
-      {Vec2F(screenSize[0], 0), Vec2F(), sky.bottomRectColor.toRgba(), 0.0f},
-      {screenSize, Vec2F(), sky.topRectColor.toRgba(), 0.0f},
-      {Vec2F(0, screenSize[1]), Vec2F(), sky.topRectColor.toRgba(), 0.0f}});
+  auto& primitives = m_renderer->immediatePrimitives();
+  primitives.emplace_back(std::in_place_type_t<RenderQuad>(), TexturePtr(),
+      RenderVertex{Vec2F(0, 0), Vec2F(), sky.bottomRectColor.toRgba(), 0.0f},
+      RenderVertex{Vec2F(screenSize[0], 0), Vec2F(), sky.bottomRectColor.toRgba(), 0.0f},
+      RenderVertex{screenSize, Vec2F(), sky.topRectColor.toRgba(), 0.0f},
+      RenderVertex{Vec2F(0, screenSize[1]), Vec2F(), sky.topRectColor.toRgba(), 0.0f});
 
   // Flash overlay for Interstellar travel
   Vec4B flashColor = sky.flashColor.toRgba();
-  m_renderer->render(renderFlatRect(RectF(Vec2F(), screenSize), flashColor, 0.0f));
+  primitives.emplace_back(std::in_place_type_t<RenderQuad>(), RectF(Vec2F(), screenSize), flashColor, 0.0f);
 
   m_renderer->flush();
 }
@@ -223,6 +235,8 @@ void EnvironmentPainter::renderParallaxLayers(
     Vec2F parallaxWorldPosition, WorldCamera const& camera, ParallaxLayers const& layers, SkyRenderData const& sky) {
 
   // Note: the "parallax space" referenced below is a grid where the scale of each cell is the size of the parallax image
+
+  auto& primitives = m_renderer->immediatePrimitives();
 
   for (auto& layer : layers) {
     if (layer.alpha == 0)
@@ -307,11 +321,11 @@ void EnvironmentPainter::renderParallaxLayers(
           withDirectives.directives += layer.directives;
           if (auto texture = m_textureGroup->tryTexture(withDirectives)) {
             RectF drawRect = RectF::withSize(anchorPoint, subImage.size() * camera.pixelRatio());
-            m_renderer->render(RenderQuad{move(texture),
-                {{drawRect.xMin(), drawRect.yMin()}, {subImage.xMin(), subImage.yMin()}, drawColor, lightMapMultiplier},
-                {{drawRect.xMax(), drawRect.yMin()}, {subImage.xMax(), subImage.yMin()}, drawColor, lightMapMultiplier},
-                {{drawRect.xMax(), drawRect.yMax()}, {subImage.xMax(), subImage.yMax()}, drawColor, lightMapMultiplier},
-                {{drawRect.xMin(), drawRect.yMax()}, {subImage.xMin(), subImage.yMax()}, drawColor, lightMapMultiplier}});
+            primitives.emplace_back(std::in_place_type_t<RenderQuad>(), move(texture),
+                RenderVertex{drawRect.min(), subImage.min(), drawColor, lightMapMultiplier},
+                RenderVertex{{drawRect.xMax(), drawRect.yMin()}, {subImage.xMax(), subImage.yMin()}, drawColor, lightMapMultiplier},
+                RenderVertex{drawRect.max(), subImage.max(), drawColor, lightMapMultiplier},
+                RenderVertex{{drawRect.xMin(), drawRect.yMax()}, {subImage.xMin(), subImage.yMax()}, drawColor, lightMapMultiplier});
           }
         }
       }
@@ -365,26 +379,27 @@ void EnvironmentPainter::drawRay(float pixelRatio,
   // Sum is used to vary the ray intensity based on sky color
   // Rays show up more on darker backgrounds, so this scales to remove that
   float sum = std::pow((color[0] + color[1]) * RayColorDependenceScale, RayColorDependenceLevel);
-  m_renderer->render(RenderQuad{{},
-      {start + Vec2F(std::cos(angle + width), std::sin(angle + width)) * length, {}, Vec4B(RayColor, 0), 0.0f},
-      {start + Vec2F(std::cos(angle + width), std::sin(angle + width)) * SunRadius * pixelRatio,
+  m_renderer->immediatePrimitives().emplace_back(std::in_place_type_t<RenderQuad>(), TexturePtr(),
+      RenderVertex{start + Vec2F(std::cos(angle + width), std::sin(angle + width)) * length, {}, Vec4B(RayColor, 0), 0.0f},
+      RenderVertex{start + Vec2F(std::cos(angle + width), std::sin(angle + width)) * SunRadius * pixelRatio,
           {},
           Vec4B(RayColor,
               (int)(RayMinUnscaledAlpha + std::abs(m_rayPerlin.get(angle * 896 + time * 30) * RayUnscaledAlphaVariance))
                   * sum
                   * alpha), 0.0f},
-      {start + Vec2F(std::cos(angle), std::sin(angle)) * SunRadius * pixelRatio,
+      RenderVertex{start + Vec2F(std::cos(angle), std::sin(angle)) * SunRadius * pixelRatio,
           {},
           Vec4B(RayColor,
               (int)(RayMinUnscaledAlpha + std::abs(m_rayPerlin.get(angle * 626 + time * 30) * RayUnscaledAlphaVariance))
                   * sum
                   * alpha), 0.0f},
-      {start + Vec2F(std::cos(angle), std::sin(angle)) * length, {}, Vec4B(RayColor, 0), 0.0f}});
+      RenderVertex{start + Vec2F(std::cos(angle), std::sin(angle)) * length, {}, Vec4B(RayColor, 0), 0.0f});
 }
 
 void EnvironmentPainter::drawOrbiter(float pixelRatio, Vec2F const& screenSize, SkyRenderData const& sky, SkyOrbiter const& orbiter) {
   float alpha = 1.0f;
-  Vec2F position = orbiter.position * pixelRatio;
+  Vec2F screenCenter = screenSize / 2;
+  Vec2F position = screenCenter + (orbiter.position - screenCenter) * pixelRatio;
 
   if (orbiter.type == SkyOrbiterType::Sun) {
     alpha = sky.dayLevel;
@@ -398,11 +413,11 @@ void EnvironmentPainter::drawOrbiter(float pixelRatio, Vec2F const& screenSize, 
   RectF renderRect = RectF::withCenter(position, texSize * orbiter.scale * pixelRatio);
   Vec4B renderColor = Vec4B(255, 255, 255, 255 * alpha);
 
-  m_renderer->render(RenderQuad{move(texture),
-      {renderMatrix.transformVec2(renderRect.min()), Vec2F(0, 0), renderColor, 0.0f},
-      {renderMatrix.transformVec2(Vec2F{renderRect.xMax(), renderRect.yMin()}), Vec2F(texSize[0], 0), renderColor, 0.0f},
-      {renderMatrix.transformVec2(renderRect.max()), Vec2F(texSize[0], texSize[1]), renderColor, 0.0f},
-      {renderMatrix.transformVec2(Vec2F{renderRect.xMin(), renderRect.yMax()}), Vec2F(0, texSize[1]), renderColor, 0.0f}});
+  m_renderer->immediatePrimitives().emplace_back(std::in_place_type_t<RenderQuad>(), move(texture),
+      RenderVertex{renderMatrix.transformVec2(renderRect.min()), Vec2F(0, 0), renderColor, 0.0f},
+      RenderVertex{renderMatrix.transformVec2(Vec2F{renderRect.xMax(), renderRect.yMin()}), Vec2F(texSize[0], 0), renderColor, 0.0f},
+      RenderVertex{renderMatrix.transformVec2(renderRect.max()), Vec2F(texSize[0], texSize[1]), renderColor, 0.0f},
+      RenderVertex{renderMatrix.transformVec2(Vec2F{renderRect.xMin(), renderRect.yMax()}), Vec2F(0, texSize[1]), renderColor, 0.0f});
 }
 
 uint64_t EnvironmentPainter::starsHash(SkyRenderData const& sky, Vec2F const& viewSize) const {

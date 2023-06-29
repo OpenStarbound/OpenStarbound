@@ -384,32 +384,8 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
   } else {
     m_lightingCalculator.begin(lightRange);
 
-    Vec3F environmentLight = m_sky->environmentLight().toRgbF();
-    float undergroundLevel = m_worldTemplate->undergroundLevel();
-    auto liquidsDatabase = Root::singleton().liquidsDatabase();
-    auto materialDatabase = Root::singleton().materialDatabase();
-
-    // Each column in tileEvalColumns is guaranteed to be no larger than the sector size.
-    m_tileArray->tileEvalColumns(m_lightingCalculator.calculationRegion(), [&](Vec2I const& pos, ClientTile const* column, size_t ySize) {
-        size_t baseIndex = m_lightingCalculator.baseIndexFor(pos);
-        for (size_t y = 0; y < ySize; ++y) {
-          auto& tile = column[y];
-
-          Vec3F light;
-          if (tile.foreground != EmptyMaterialId || tile.foregroundMod != NoModId)
-            light += materialDatabase->radiantLight(tile.foreground, tile.foregroundMod);
-
-          if (tile.liquid.liquid != EmptyLiquidId && tile.liquid.level != 0.0f)
-            light += liquidsDatabase->radiantLight(tile.liquid);
-          if (tile.foregroundLightTransparent) {
-            if (tile.background != EmptyMaterialId || tile.backgroundMod != NoModId)
-              light += materialDatabase->radiantLight(tile.background, tile.backgroundMod);
-            if (tile.backgroundLightTransparent && pos[1] + y > undergroundLevel)
-              light += environmentLight;
-          }
-          m_lightingCalculator.setCellIndex(baseIndex + y, move(light), !tile.foregroundLightTransparent);
-        }
-      });
+    if (!m_asyncLighting)
+      lightingTileGather();
 
     for (auto const& light : renderLightSources) {
       Vec2F position = m_geometry.nearestTo(Vec2F(m_lightingCalculator.calculationRegion().min()), light.position);
@@ -1439,6 +1415,35 @@ RpcPromise<InteractAction> WorldClient::interact(InteractRequest const& request)
   return pair.first;
 }
 
+void WorldClient::lightingTileGather() {
+  Vec3F environmentLight = m_sky->environmentLight().toRgbF();
+  float undergroundLevel = m_worldTemplate->undergroundLevel();
+  auto liquidsDatabase = Root::singleton().liquidsDatabase();
+  auto materialDatabase = Root::singleton().materialDatabase();
+
+  // Each column in tileEvalColumns is guaranteed to be no larger than the sector size.
+  m_tileArray->tileEvalColumns(m_lightingCalculator.calculationRegion(), [&](Vec2I const& pos, ClientTile const* column, size_t ySize) {
+    size_t baseIndex = m_lightingCalculator.baseIndexFor(pos);
+    for (size_t y = 0; y < ySize; ++y) {
+      auto& tile = column[y];
+
+      Vec3F light;
+      if (tile.foreground != EmptyMaterialId || tile.foregroundMod != NoModId)
+        light += materialDatabase->radiantLight(tile.foreground, tile.foregroundMod);
+
+      if (tile.liquid.liquid != EmptyLiquidId && tile.liquid.level != 0.0f)
+        light += liquidsDatabase->radiantLight(tile.liquid);
+      if (tile.foregroundLightTransparent) {
+        if (tile.background != EmptyMaterialId || tile.backgroundMod != NoModId)
+          light += materialDatabase->radiantLight(tile.background, tile.backgroundMod);
+        if (tile.backgroundLightTransparent && pos[1] + y > undergroundLevel)
+          light += environmentLight;
+      }
+      m_lightingCalculator.setCellIndex(baseIndex + y, move(light), !tile.foregroundLightTransparent);
+    }
+  });
+}
+
 void WorldClient::lightingMain() {
   while (true) {
     if (m_stopLightingThread)
@@ -1448,6 +1453,9 @@ void WorldClient::lightingMain() {
 
     if (m_renderData) {
       int64_t start = Time::monotonicMilliseconds();
+
+      lightingTileGather();
+
       m_lightingCalculator.calculate(m_renderData->lightMap);
       m_renderData = nullptr;
       LogMap::set("render_light_calc", strf("{}ms", Time::monotonicMilliseconds() - start));

@@ -140,23 +140,24 @@ Vec2U GuiContext::textureSize(AssetPath const& texName) {
 }
 
 void GuiContext::drawQuad(RectF const& screenCoords, Vec4B const& color) {
-  renderer()->render(renderFlatRect(screenCoords, color, 0.0f));
+  renderer()->immediatePrimitives().emplace_back(std::in_place_type_t<RenderQuad>(), screenCoords, color, 0.0f);
 }
 
 void GuiContext::drawQuad(AssetPath const& texName, RectF const& screenCoords, Vec4B const& color) {
-  renderer()->render(renderTexturedRect(assetTextureGroup()->loadTexture(texName), screenCoords, color, 0.0f));
+  renderer()->immediatePrimitives().emplace_back(std::in_place_type_t<RenderQuad>(), assetTextureGroup()->loadTexture(texName), screenCoords, color, 0.0f);
 }
 
 void GuiContext::drawQuad(AssetPath const& texName, Vec2F const& screenPos, int pixelRatio, Vec4B const& color) {
-  renderer()->render(renderTexturedRect(assetTextureGroup()->loadTexture(texName), screenPos, pixelRatio, color, 0.0f));
+  renderer()->immediatePrimitives().emplace_back(std::in_place_type_t<RenderQuad>(), assetTextureGroup()->loadTexture(texName), screenPos, pixelRatio, color, 0.0f);
 }
 
 void GuiContext::drawQuad(AssetPath const& texName, RectF const& texCoords, RectF const& screenCoords, Vec4B const& color) {
-  renderer()->render(RenderQuad{assetTextureGroup()->loadTexture(texName),
-      RenderVertex{Vec2F(screenCoords.xMin(), screenCoords.yMin()), Vec2F(texCoords.xMin(), texCoords.yMin()), color, 0.0f},
-      RenderVertex{Vec2F(screenCoords.xMax(), screenCoords.yMin()), Vec2F(texCoords.xMax(), texCoords.yMin()), color, 0.0f},
-      RenderVertex{Vec2F(screenCoords.xMax(), screenCoords.yMax()), Vec2F(texCoords.xMax(), texCoords.yMax()), color, 0.0f},
-      RenderVertex{Vec2F(screenCoords.xMin(), screenCoords.yMax()), Vec2F(texCoords.xMin(), texCoords.yMax()), color, 0.0f}});
+  renderer()->immediatePrimitives().emplace_back(std::in_place_type_t<RenderQuad>(), assetTextureGroup()->loadTexture(texName),
+      screenCoords.min(), texCoords.min(),
+      Vec2F(screenCoords.xMax(), screenCoords.yMin()), Vec2F(texCoords.xMax(), texCoords.yMin()),
+      screenCoords.max(), texCoords.max(),
+      Vec2F(screenCoords.xMin(), screenCoords.yMax()), Vec2F(texCoords.xMin(), texCoords.yMax()),
+    color, 0.0f);
 }
 
 void GuiContext::drawDrawable(Drawable drawable, Vec2F const& screenPos, int pixelRatio, Vec4B const& color) {
@@ -171,11 +172,12 @@ void GuiContext::drawDrawable(Drawable drawable, Vec2F const& screenPos, int pix
 
 void GuiContext::drawLine(Vec2F const& begin, Vec2F const end, Vec4B const& color, float lineWidth) {
   Vec2F left = vnorm(Vec2F(end) - Vec2F(begin)).rot90() * lineWidth / 2.0f;
-  renderer()->render(RenderQuad{{},
-      RenderVertex{Vec2F(begin) + left, Vec2F(), color, 0.0f},
-      RenderVertex{Vec2F(begin) - left, Vec2F(), color, 0.0f},
-      RenderVertex{Vec2F(end) - left, Vec2F(), color, 0.0f},
-      RenderVertex{Vec2F(end) + left, Vec2F(), color, 0.0f}});
+  renderer()->immediatePrimitives().emplace_back(std::in_place_type_t<RenderQuad>(),
+    begin + left,
+    begin - left,
+    end - left,
+    end + left,
+    color, 0.0f);
 }
 
 void GuiContext::drawPolyLines(PolyF const& poly, Vec4B const& color, float lineWidth) {
@@ -184,11 +186,9 @@ void GuiContext::drawPolyLines(PolyF const& poly, Vec4B const& color, float line
 }
 
 void GuiContext::drawTriangles(List<tuple<Vec2F, Vec2F, Vec2F>> const& triangles, Vec4B const& color) {
-  for (auto poly : triangles) {
-    renderer()->render(RenderTriangle{{},
-        RenderVertex{get<0>(poly), Vec2F(), color, 0.0f},
-        RenderVertex{get<1>(poly), Vec2F(), color, 0.0f},
-        RenderVertex{get<2>(poly), Vec2F(), color, 0.0f}});
+  for (auto& poly : triangles) {
+    renderer()->immediatePrimitives().emplace_back(std::in_place_type_t<RenderTriangle>(),
+      get<0>(poly), get<1>(poly), get<2>(poly), color, 0.0f);
   }
 }
 

@@ -55,9 +55,6 @@ void TilePainter::adjustLighting(WorldRenderData& renderData) const {
 }
 
 void TilePainter::setup(WorldCamera const& camera, WorldRenderData& renderData) {
-  m_pendingTerrainChunks.clear();
-  m_pendingLiquidChunks.clear();
-
   auto cameraCenter = camera.centerWorldPosition();
   if (m_lastCameraCenter)
     m_cameraPan = renderData.geometry.diff(cameraCenter, *m_lastCameraCenter);
@@ -66,10 +63,16 @@ void TilePainter::setup(WorldCamera const& camera, WorldRenderData& renderData) 
   //Kae: Padded by one to fix culling issues with certain tile pieces at chunk borders, such as grass.
   RectI chunkRange = RectI::integral(RectF(camera.worldTileRect().padded(1)).scaled(1.0f / RenderChunkSize));
 
+  size_t chunks = chunkRange.volume();
+  m_pendingTerrainChunks.resize(chunks);
+  m_pendingLiquidChunks.resize(chunks);
+
+  size_t i = 0;
   for (int x = chunkRange.xMin(); x < chunkRange.xMax(); ++x) {
     for (int y = chunkRange.yMin(); y < chunkRange.yMax(); ++y) {
-      m_pendingTerrainChunks.append(getTerrainChunk(renderData, {x, y}));
-      m_pendingLiquidChunks.append(getLiquidChunk(renderData, {x, y}));
+      size_t index = i++;
+      m_pendingTerrainChunks[index] = getTerrainChunk(renderData, {x, y});
+      m_pendingLiquidChunks [index] =  getLiquidChunk(renderData, {x, y});
     }
   }
 }
@@ -117,7 +120,7 @@ size_t TilePainter::TextureKeyHash::operator()(TextureKey const& key) const {
 }
 
 TilePainter::ChunkHash TilePainter::terrainChunkHash(WorldRenderData& renderData, Vec2I chunkIndex) {
-  XXHash64 hasher;
+  XXHash3 hasher;
   RectI tileRange = RectI::withSize(chunkIndex * RenderChunkSize, Vec2I::filled(RenderChunkSize)).padded(MaterialRenderProfileMaxNeighborDistance);
 
   forEachRenderTile(renderData, tileRange, [&](Vec2I const&, RenderTile const& renderTile) {
@@ -128,7 +131,7 @@ TilePainter::ChunkHash TilePainter::terrainChunkHash(WorldRenderData& renderData
 }
 
 TilePainter::ChunkHash TilePainter::liquidChunkHash(WorldRenderData& renderData, Vec2I chunkIndex) {
-  XXHash64 hasher;
+  XXHash3 hasher;
   RectI tileRange = RectI::withSize(chunkIndex * RenderChunkSize, Vec2I::filled(RenderChunkSize)).padded(MaterialRenderProfileMaxNeighborDistance);
 
   forEachRenderTile(renderData, tileRange, [&](Vec2I const&, RenderTile const& renderTile) {
@@ -334,13 +337,16 @@ bool TilePainter::produceTerrainPrimitives(HashMap<QuadZLevel, List<RenderPrimit
       TexturePtr texture = getPieceTexture(material, piecePair.first, materialHue, false);
       RectF textureCoords = piecePair.first->variants.get(materialColorVariant).wrap(variance);
       RectF worldCoords = RectF::withSize(piecePair.second / TilePixels + Vec2F(pos), textureCoords.size() / TilePixels);
-      quadList.append(RenderQuad{
-          move(texture),
-          RenderVertex{Vec2F(worldCoords.xMin(), worldCoords.yMin()), Vec2F(textureCoords.xMin(), textureCoords.yMin()), color, 1.0f},
-          RenderVertex{Vec2F(worldCoords.xMax(), worldCoords.yMin()), Vec2F(textureCoords.xMax(), textureCoords.yMin()), color, 1.0f},
-          RenderVertex{Vec2F(worldCoords.xMax(), worldCoords.yMax()), Vec2F(textureCoords.xMax(), textureCoords.yMax()), color, 1.0f},
-          RenderVertex{Vec2F(worldCoords.xMin(), worldCoords.yMax()), Vec2F(textureCoords.xMin(), textureCoords.yMax()), color, 1.0f}
-        });
+      quadList.emplace_back(std::in_place_type_t<RenderQuad>(), move(texture),
+          worldCoords  .min(),
+          textureCoords.min(),
+          Vec2F(  worldCoords.xMax(),   worldCoords.yMin()),
+          Vec2F(textureCoords.xMax(), textureCoords.yMin()),
+          worldCoords  .max(),
+          textureCoords.max(),
+          Vec2F(  worldCoords.xMin(),   worldCoords.yMax()),
+          Vec2F(textureCoords.xMin(), textureCoords.yMax()),
+          color, 1.0f);
     }
   }
 
@@ -354,15 +360,14 @@ bool TilePainter::produceTerrainPrimitives(HashMap<QuadZLevel, List<RenderPrimit
         terrainLayer == TerrainLayer::Background ? TileLayer::Background : TileLayer::Foreground, true);
     for (auto const& piecePair : pieces) {
       auto texture = getPieceTexture(mod, piecePair.first, modHue, true);
-      auto textureCoords = piecePair.first->variants.get(modColorVariant).wrap(variance);
+      auto& textureCoords = piecePair.first->variants.get(modColorVariant).wrap(variance);
       RectF worldCoords = RectF::withSize(piecePair.second / TilePixels + Vec2F(pos), textureCoords.size() / TilePixels);
-      quadList.append(RenderQuad{
-          move(texture),
-          RenderVertex{Vec2F(worldCoords.xMin(), worldCoords.yMin()), Vec2F(textureCoords.xMin(), textureCoords.yMin()), color, 1.0f},
-          RenderVertex{Vec2F(worldCoords.xMax(), worldCoords.yMin()), Vec2F(textureCoords.xMax(), textureCoords.yMin()), color, 1.0f},
-          RenderVertex{Vec2F(worldCoords.xMax(), worldCoords.yMax()), Vec2F(textureCoords.xMax(), textureCoords.yMax()), color, 1.0f},
-          RenderVertex{Vec2F(worldCoords.xMin(), worldCoords.yMax()), Vec2F(textureCoords.xMin(), textureCoords.yMax()), color, 1.0f}
-        });
+      quadList.emplace_back(std::in_place_type_t<RenderQuad>(), move(texture),
+          worldCoords.min(), textureCoords.min(),
+          Vec2F(worldCoords.xMax(), worldCoords.yMin()), Vec2F(textureCoords.xMax(), textureCoords.yMin()),
+          worldCoords.max(), textureCoords.max(),
+          Vec2F(worldCoords.xMin(), worldCoords.yMax()), Vec2F(textureCoords.xMin(), textureCoords.yMax()),
+        color, 1.0f);
     }
   }
 
@@ -377,13 +382,12 @@ bool TilePainter::produceTerrainPrimitives(HashMap<QuadZLevel, List<RenderPrimit
     RectF textureCoords = RectF::withSize(Vec2F(), textureSize);
     RectF worldCoords = RectF::withSize(crackingImage.second / TilePixels + Vec2F(pos), textureCoords.size() / TilePixels);
 
-    quadList.append(RenderQuad{
-        move(texture),
-        RenderVertex{Vec2F(worldCoords.xMin(), worldCoords.yMin()), Vec2F(textureCoords.xMin(), textureCoords.yMin()), color, 1.0f},
-        RenderVertex{Vec2F(worldCoords.xMax(), worldCoords.yMin()), Vec2F(textureCoords.xMax(), textureCoords.yMin()), color, 1.0f},
-        RenderVertex{Vec2F(worldCoords.xMax(), worldCoords.yMax()), Vec2F(textureCoords.xMax(), textureCoords.yMax()), color, 1.0f},
-        RenderVertex{Vec2F(worldCoords.xMin(), worldCoords.yMax()), Vec2F(textureCoords.xMin(), textureCoords.yMax()), color, 1.0f}
-      });
+    quadList.emplace_back(std::in_place_type_t<RenderQuad>(), move(texture),
+        worldCoords.min(), textureCoords.min(),
+        Vec2F(worldCoords.xMax(), worldCoords.yMin()), Vec2F(textureCoords.xMax(), textureCoords.yMin()),
+        worldCoords.max(), textureCoords.max(),
+        Vec2F(worldCoords.xMin(), worldCoords.yMax()), Vec2F(textureCoords.xMin(), textureCoords.yMax()),
+      color, 1.0f);
   }
 
   return occlude;
@@ -408,13 +412,12 @@ void TilePainter::produceLiquidPrimitives(HashMap<LiquidId, List<RenderPrimitive
   auto texRect = worldRect.scaled(TilePixels);
 
   auto const& liquid = m_liquids[tile.liquidId];
-  primitives[tile.liquidId].append(RenderQuad{
-      liquid.texture,
-      RenderVertex{Vec2F(worldRect.xMin(), worldRect.yMin()), Vec2F(texRect.xMin(), texRect.yMin()), liquid.color, 1.0f},
-      RenderVertex{Vec2F(worldRect.xMax(), worldRect.yMin()), Vec2F(texRect.xMax(), texRect.yMin()), liquid.color, 1.0f},
-      RenderVertex{Vec2F(worldRect.xMax(), worldRect.yMax()), Vec2F(texRect.xMax(), texRect.yMax()), liquid.color, 1.0f},
-      RenderVertex{Vec2F(worldRect.xMin(), worldRect.yMax()), Vec2F(texRect.xMin(), texRect.yMax()), liquid.color, 1.0f}
-    });
+  primitives[tile.liquidId].emplace_back(std::in_place_type_t<RenderQuad>(), move(liquid.texture),
+      worldRect.min(), texRect.min(),
+      Vec2F(worldRect.xMax(), worldRect.yMin()), Vec2F(texRect.xMax(), texRect.yMin()),
+      worldRect.max(), texRect.max(),
+      Vec2F(worldRect.xMin(), worldRect.yMax()), Vec2F(texRect.xMin(), texRect.yMax()),
+    liquid.color, 1.0f);
 }
 
 bool TilePainter::determineMatchingPieces(MaterialPieceResultList& resultList, bool* occlude, MaterialDatabaseConstPtr const& materialDb, MaterialRenderMatchList const& matchList,

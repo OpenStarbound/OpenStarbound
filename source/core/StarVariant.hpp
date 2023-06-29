@@ -3,6 +3,7 @@
 
 #include <type_traits>
 #include <utility>
+#include <initializer_list>
 
 #include "StarAlgorithm.hpp"
 #include "StarMaybe.hpp"
@@ -69,6 +70,22 @@ public:
   Variant(T const& x);
   template <typename T, typename = ValidateType<T>>
   Variant(T&& x);
+
+  template <typename T, typename = ValidateType<T>, typename... Args,
+    typename std::enable_if< std::is_constructible<T, Args...>::value, int >::type = 0
+  >
+  Variant(std::in_place_type_t<T>, Args&&... args) {
+    new (&m_buffer) T(forward<Args>(args)...);
+    m_typeIndex = TypeIndex<T>::value;
+  }
+
+  template <typename T, typename U, typename = ValidateType<T>, typename... Args,
+    typename std::enable_if< std::is_constructible<T, std::initializer_list<U>&, Args...>::value, int >::type = 0
+  >
+  Variant(std::in_place_type_t<T>, std::initializer_list<U> il, Args&&... args) {
+    new (&m_buffer) T(il, forward<Args>(args)...);
+    m_typeIndex = TypeIndex<T>::value;
+  }
 
   Variant(Variant const& x);
   Variant(Variant&& x) noexcept(detail::IsNothrowMoveConstructible<FirstType, RestTypes...>::value);

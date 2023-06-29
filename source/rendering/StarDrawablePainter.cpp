@@ -9,24 +9,25 @@ DrawablePainter::DrawablePainter(RendererPtr renderer, AssetTextureGroupPtr text
 
 void DrawablePainter::drawDrawable(Drawable const& drawable) {
   Vec4B color = drawable.color.toRgba();
+  auto& primitives = m_renderer->immediatePrimitives();
 
   if (auto linePart = drawable.part.ptr<Drawable::LinePart>()) {
     auto line = linePart->line;
     line.translate(drawable.position);
-
     Vec2F left = Vec2F(vnorm(line.diff())).rot90() * linePart->width / 2.0f;
-    m_renderer->render(RenderQuad{{},
-        RenderVertex{Vec2F(line.min()) + left, Vec2F(), color, drawable.fullbright ? 0.0f : 1.0f},
-        RenderVertex{Vec2F(line.min()) - left, Vec2F(), color, drawable.fullbright ? 0.0f : 1.0f},
-        RenderVertex{Vec2F(line.max()) - left, Vec2F(), color, drawable.fullbright ? 0.0f : 1.0f},
-        RenderVertex{Vec2F(line.max()) + left, Vec2F(), color, drawable.fullbright ? 0.0f : 1.0f}
-      });
-
+    
+    float fullbright = drawable.fullbright ? 0.0f : 1.0f;
+    primitives.emplace_back(std::in_place_type_t<RenderQuad>(),
+      line.min() + left,
+      line.min() - left,
+      line.max() - left,
+      line.max() + left,
+      color, fullbright);
   } else if (auto polyPart = drawable.part.ptr<Drawable::PolyPart>()) {
-    auto poly = polyPart->poly;
+    PolyF poly = polyPart->poly;
     poly.translate(drawable.position);
 
-    m_renderer->render(renderFlatPoly(poly, color, 0.0f));
+    primitives.emplace_back(std::in_place_type_t<RenderPoly>(), poly.vertexes(), color, 0.0f);
 
   } else if (auto imagePart = drawable.part.ptr<Drawable::ImagePart>()) {
     TexturePtr texture = m_textureGroup->loadTexture(imagePart->image);
@@ -41,12 +42,14 @@ void DrawablePainter::drawDrawable(Drawable const& drawable) {
     Vec2F upperRight = transformation.transformVec2(Vec2F(imageRect.xMax(), imageRect.yMax()));
     Vec2F upperLeft = transformation.transformVec2(Vec2F(imageRect.xMin(), imageRect.yMax()));
 
-    m_renderer->render(RenderQuad{move(texture),
-        {lowerLeft, {0, 0}, color, drawable.fullbright ? 0.0f : 1.0f},
-        {lowerRight, {textureSize[0], 0}, color, drawable.fullbright ? 0.0f : 1.0f},
-        {upperRight, {textureSize[0], textureSize[1]}, color, drawable.fullbright ? 0.0f : 1.0f},
-        {upperLeft, {0, textureSize[1]}, color, drawable.fullbright ? 0.0f : 1.0f}
-      });
+    float param1 = drawable.fullbright ? 0.0f : 1.0f;
+
+    primitives.emplace_back(std::in_place_type_t<RenderQuad>(), move(texture),
+        lowerLeft,  Vec2F{0, 0},
+        lowerRight, Vec2F{textureSize[0], 0},
+        upperRight, Vec2F{textureSize[0], textureSize[1]},
+        upperLeft,  Vec2F{0, textureSize[1]},
+      color, param1);
   }
 }
 

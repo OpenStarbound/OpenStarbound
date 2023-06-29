@@ -366,6 +366,10 @@ RenderBufferPtr OpenGl20Renderer::createRenderBuffer() {
   return createGlRenderBuffer();
 }
 
+List<RenderPrimitive>& OpenGl20Renderer::immediatePrimitives() {
+  return m_immediatePrimitives;
+}
+
 void OpenGl20Renderer::render(RenderPrimitive primitive) {
   m_immediatePrimitives.append(move(primitive));
 }
@@ -399,7 +403,8 @@ void OpenGl20Renderer::finishFrame() {
   flushImmediatePrimitives();
   // Make sure that the immediate render buffer doesn't needlessly lock texutres
   // from being compressed.
-  m_immediateRenderBuffer->set({});
+  List<RenderPrimitive> empty;
+  m_immediateRenderBuffer->set(empty);
 
   filter(m_liveTextureGroups, [](auto const& p) {
         unsigned const CompressionsPerFrame = 1;
@@ -569,7 +574,7 @@ OpenGl20Renderer::GlRenderBuffer::~GlRenderBuffer() {
     glDeleteBuffers(1, &vb.vertexBuffer);
 }
 
-void OpenGl20Renderer::GlRenderBuffer::set(List<RenderPrimitive> primitives) {
+void OpenGl20Renderer::GlRenderBuffer::set(List<RenderPrimitive>& primitives) {
   for (auto const& texture : usedTextures) {
     if (auto gt = as<GlGroupedTexture>(texture.get()))
       gt->decrementBufferUseCount();
@@ -637,7 +642,7 @@ void OpenGl20Renderer::GlRenderBuffer::set(List<RenderPrimitive> primitives) {
     return {float(textureIndex), Vec2F(glTexture->glTextureCoordinateOffset())};
   };
 
-  auto appendBufferVertex = [&](RenderVertex v, float textureIndex, Vec2F textureCoordinateOffset) {
+  auto appendBufferVertex = [&](RenderVertex const& v, float textureIndex, Vec2F textureCoordinateOffset) {
     GlRenderVertex glv {
       v.screenCoordinate,
       v.textureCoordinate + textureCoordinateOffset,
@@ -682,6 +687,7 @@ void OpenGl20Renderer::GlRenderBuffer::set(List<RenderPrimitive> primitives) {
     }
   }
 
+  vertexBuffers.reserve(primitives.size() * 6);
   finishCurrentBuffer();
 
   for (auto const& vb : oldVertexBuffers)
@@ -733,7 +739,8 @@ void OpenGl20Renderer::flushImmediatePrimitives() {
   if (m_immediatePrimitives.empty())
     return;
 
-  m_immediateRenderBuffer->set(take(m_immediatePrimitives));
+  m_immediateRenderBuffer->set(m_immediatePrimitives);
+  m_immediatePrimitives.resize(0);
   renderGlBuffer(*m_immediateRenderBuffer, Mat3F::identity());
 }
 

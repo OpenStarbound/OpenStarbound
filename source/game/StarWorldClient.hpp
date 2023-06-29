@@ -190,6 +190,7 @@ private:
     bool operator<(DamageNumberKey const& other) const;
   };
 
+  void lightingTileGather();
   void lightingMain();
 
   void initWorld(WorldStartPacket const& packet);
