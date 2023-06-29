@@ -8,6 +8,7 @@
 #include "StarColor.hpp"
 #include "StarInterpolation.hpp"
 #include "StarCellularLightArray.hpp"
+#include "StarThread.hpp"
 
 namespace Star {
 
@@ -44,6 +45,9 @@ public:
   // the call to 'begin', and formatted as RGB24.
   void calculate(Image& output);
 
+  void setupImage(Image& image, PixelFormat format = PixelFormat::RGB24) const;
+
+  ThreadFunction<Image> calculateAsync();
 private:
   Json m_config;
   bool m_monochrome;

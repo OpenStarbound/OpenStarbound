@@ -45,7 +45,7 @@ WorldCamera& WorldPainter::camera() {
   return m_camera;
 }
 
-void WorldPainter::render(WorldRenderData& renderData) {
+void WorldPainter::render(WorldRenderData& renderData, function<void()> lightWaiter) {
   m_camera.setScreenSize(m_renderer->screenSize());
   m_camera.setTargetPixelRatio(Root::singleton().configuration()->get("zoomLevel").toFloat());
 
@@ -54,18 +54,6 @@ void WorldPainter::render(WorldRenderData& renderData) {
   m_environmentPainter->update();
 
   m_tilePainter->setup(m_camera, renderData);
-
-  if (renderData.isFullbright) {
-    m_renderer->setEffectTexture("lightMap", Image::filled(Vec2U(1, 1), {255, 255, 255, 255}, PixelFormat::RGB24));
-    m_renderer->setEffectParameter("lightMapMultiplier", 1.0f);
-  } else {
-    m_tilePainter->adjustLighting(renderData);
-
-    m_renderer->setEffectParameter("lightMapMultiplier", m_assets->json("/rendering.config:lightMapMultiplier").toFloat());
-    m_renderer->setEffectParameter("lightMapScale", Vec2F::filled(TilePixels * m_camera.pixelRatio()));
-    m_renderer->setEffectParameter("lightMapOffset", m_camera.worldToScreen(Vec2F(renderData.lightMinPosition)));
-    m_renderer->setEffectTexture("lightMap", renderData.lightMap);
-  }
 
   // Stars, Debris Fields, Sky, and Orbiters
 
@@ -144,6 +132,10 @@ void WorldPainter::render(WorldRenderData& renderData) {
   m_drawablePainter->cleanup(textureTimeout);
   m_environmentPainter->cleanup(textureTimeout);
   m_tilePainter->cleanup();
+}
+
+void WorldPainter::adjustLighting(WorldRenderData& renderData) {
+  m_tilePainter->adjustLighting(renderData);
 }
 
 void WorldPainter::renderParticles(WorldRenderData& renderData, Particle::Layer layer) {

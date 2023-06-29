@@ -94,6 +94,8 @@ public:
 
   void render(RenderCallback* renderCallback) override;
 
+  void renderLightSources(RenderCallback* renderCallback) override;
+
   void setPosition(Vec2F const& pos);
 
   float maxHealth() const override;

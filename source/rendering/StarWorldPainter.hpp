@@ -23,7 +23,8 @@ public:
 
   WorldCamera& camera();
 
-  void render(WorldRenderData& renderData);
+  void render(WorldRenderData& renderData, function<void()> lightWaiter);
+  void adjustLighting(WorldRenderData& renderData);
 
 private:
   void renderParticles(WorldRenderData& renderData, Particle::Layer layer);

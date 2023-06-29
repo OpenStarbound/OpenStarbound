@@ -189,6 +189,7 @@ void EntityMap::forAllEntities(EntityCallback const& callback, function<bool(Ent
   // Even if there is no sort order, we still copy pointers to a temporary
   // list, so that it is safe to call addEntity from the callback.
   List<EntityPtr const*> allEntities;
+  allEntities.reserve(m_spatialMap.size());
   for (auto const& entry : m_spatialMap.entries())
     allEntities.append(&entry.second.value);
 

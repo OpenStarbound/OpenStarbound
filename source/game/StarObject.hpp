@@ -66,6 +66,8 @@ public:
 
   virtual void render(RenderCallback* renderCallback) override;
 
+  virtual void renderLightSources(RenderCallback* renderCallback) override;
+
   virtual bool checkBroken() override;
 
   virtual Vec2I tilePosition() const override;

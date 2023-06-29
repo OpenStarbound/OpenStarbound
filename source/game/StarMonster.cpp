@@ -494,10 +494,7 @@ void Monster::render(RenderCallback* renderCallback) {
   renderCallback->addAudios(m_networkedAnimatorDynamicTarget.pullNewAudios());
   renderCallback->addParticles(m_networkedAnimatorDynamicTarget.pullNewParticles());
 
-  renderCallback->addLightSources(m_networkedAnimator.lightSources(position()));
-
   renderCallback->addDrawables(m_statusController->drawables(), m_monsterVariant.renderLayer);
-  renderCallback->addLightSources(m_statusController->lightSources());
   renderCallback->addParticles(m_statusController->pullNewParticles());
   renderCallback->addAudios(m_statusController->pullNewAudios());
 
@@ -505,9 +502,14 @@ void Monster::render(RenderCallback* renderCallback) {
 
   for (auto drawablePair : m_scriptedAnimator.drawables())
     renderCallback->addDrawable(drawablePair.first, drawablePair.second.value(m_monsterVariant.renderLayer));
-  renderCallback->addLightSources(m_scriptedAnimator.lightSources());
   renderCallback->addAudios(m_scriptedAnimator.pullNewAudios());
   renderCallback->addParticles(m_scriptedAnimator.pullNewParticles());
+}
+
+void Monster::renderLightSources(RenderCallback* renderCallback) {
+  renderCallback->addLightSources(m_networkedAnimator.lightSources(position()));
+  renderCallback->addLightSources(m_statusController->lightSources());
+  renderCallback->addLightSources(m_scriptedAnimator.lightSources());
 }
 
 void Monster::setPosition(Vec2F const& pos) {

@@ -464,13 +464,16 @@ void Npc::render(RenderCallback* renderCallback) {
   renderCallback->addAudios(m_statusController->pullNewAudios());
 
   renderCallback->addParticles(m_npcVariant.splashConfig.doSplash(position(), m_movementController->velocity(), world()));
-  renderCallback->addLightSources(lightSources());
 
   m_tools->render(renderCallback, inToolRange(), m_shifting.get(), renderLayer);
 
   renderCallback->addDrawables(m_tools->renderObjectPreviews(aimPosition(), walkingDirection(), inToolRange(), favoriteColor()), renderLayer);
 
   m_effectEmitter->render(renderCallback);
+}
+
+void Npc::renderLightSources(RenderCallback* renderCallback) {
+  renderCallback->addLightSources(lightSources());
 }
 
 void Npc::setPosition(Vec2F const& pos) {

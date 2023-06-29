@@ -361,18 +361,41 @@ void ClientApplication::render() {
     m_cinematicOverlay->render();
 
   } else if (m_state > MainAppState::Title) {
-    if (auto worldClient = m_universeClient->worldClient()) {
-      if (auto renderer = Application::renderer())
+    WorldClientPtr worldClient = m_universeClient->worldClient();
+    RendererPtr renderer = Application::renderer();
+    if (worldClient) {
+      if (renderer)
         renderer->setEffectParameter("lightMapEnabled", true);
       worldClient->render(m_renderData, TilePainter::BorderTileSize);
-      m_worldPainter->render(m_renderData);
+      // Might have to move lightmap adjustment code back into worldPainter->render
+      // eventually, can't be bothered to remove the passed lambda yet
+      m_worldPainter->render(m_renderData, [&]() { worldClient->waitForLighting(); });
       m_mainInterface->renderInWorldElements();
-      if (auto renderer = Application::renderer())
+      if (renderer)
         renderer->setEffectParameter("lightMapEnabled", false);
     }
     m_mainInterface->render();
     m_cinematicOverlay->render();
 
+    if (worldClient && renderer) {
+      worldClient->waitForLighting();
+
+      if (m_renderData.isFullbright) {
+        renderer->setEffectTexture("lightMap", Image::filled(Vec2U(1, 1), { 255, 255, 255, 255 }, PixelFormat::RGB24));
+        renderer->setEffectTexture("tileLightMap", Image::filled(Vec2U(1, 1), { 0, 0, 0, 0 }, PixelFormat::RGBA32));
+        renderer->setEffectParameter("lightMapMultiplier", 1.0f);
+      }
+      else {
+        m_worldPainter->adjustLighting(m_renderData);
+
+        WorldCamera const& camera = m_worldPainter->camera();
+        renderer->setEffectParameter("lightMapMultiplier", assets->json("/rendering.config:lightMapMultiplier").toFloat());
+        renderer->setEffectParameter("lightMapScale", Vec2F::filled(TilePixels * camera.pixelRatio()));
+        renderer->setEffectParameter("lightMapOffset", camera.worldToScreen(Vec2F(m_renderData.lightMinPosition)));
+        renderer->setEffectTexture("lightMap", m_renderData.lightMap);
+        renderer->setEffectTexture("tileLightMap", m_renderData.tileLightMap);
+      }
+    }
   }
 
   if (!m_errorScreen->accepted())

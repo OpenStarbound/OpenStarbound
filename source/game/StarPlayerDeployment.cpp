@@ -89,12 +89,15 @@ void PlayerDeployment::render(RenderCallback* renderCallback, Vec2F const& posit
     drawablePair.first.translate(position);
     renderCallback->addDrawable(drawablePair.first, drawablePair.second.value(RenderLayerPlayer));
   }
-  renderCallback->addLightSources(m_scriptComponent.lightSources());
   renderCallback->addParticles(m_scriptComponent.pullNewParticles());
   for (auto audio : m_scriptComponent.pullNewAudios()) {
     audio->setPosition(position);
     renderCallback->addAudio(audio);
   }
+}
+
+void PlayerDeployment::renderLightSources(RenderCallback* renderCallback) {
+  renderCallback->addLightSources(m_scriptComponent.lightSources());
 }
 
 }

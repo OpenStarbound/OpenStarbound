@@ -32,6 +32,7 @@ public:
 
   void render(RenderCallback* renderCallback, Vec2F const& position);
 
+  void renderLightSources(RenderCallback* renderCallback);
 private:
   World* m_world;
   Json m_config;

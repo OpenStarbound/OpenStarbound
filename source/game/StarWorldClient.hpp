@@ -120,6 +120,8 @@ public:
 
   // Disable normal client-side lighting algorithm, everything full brightness.
   bool toggleFullbright();
+  // Disable asynchronous client-side lighting algorithm, run on main thread.
+  bool toggleAsyncLighting();
   // Spatial log generated collision geometry.
   bool toggleCollisionDebug();
 
@@ -153,6 +155,8 @@ public:
 
   void collectLiquid(List<Vec2I> const& tilePositions, LiquidId liquidId);
 
+  void waitForLighting();
+
 private:
   static const float DropDist;
 
@@ -185,6 +189,8 @@ private:
 
     bool operator<(DamageNumberKey const& other) const;
   };
+
+  void lightingMain();
 
   void initWorld(WorldStartPacket const& packet);
   void clearWorld();
@@ -237,8 +243,16 @@ private:
   uint64_t m_currentStep;
   double m_currentServerStep;
   bool m_fullBright;
+  bool m_asyncLighting;
   CellularLightingCalculator m_lightingCalculator;
   mutable CellularLightIntensityCalculator m_lightIntensityCalculator;
+  ThreadFunction<void> m_lightingThread;
+
+  mutable Mutex m_lightingMutex;
+  mutable ConditionVariable m_lightingCond;
+  mutable WorldRenderData* m_renderData;
+  bool m_stopLightingThread;
+
   SkyPtr m_sky;
 
   CollisionGenerator m_collisionGenerator;

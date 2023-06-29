@@ -329,13 +329,16 @@ void Vehicle::render(RenderCallback* renderer) {
 
   renderer->addAudios(m_networkedAnimatorDynamicTarget.pullNewAudios());
   renderer->addParticles(m_networkedAnimatorDynamicTarget.pullNewParticles());
-  renderer->addLightSources(m_networkedAnimator.lightSources(position()));
 
   for (auto drawablePair : m_scriptedAnimator.drawables())
     renderer->addDrawable(drawablePair.first, drawablePair.second.value(renderLayer(VehicleLayer::Front)));
-  renderer->addLightSources(m_scriptedAnimator.lightSources());
   renderer->addAudios(m_scriptedAnimator.pullNewAudios());
   renderer->addParticles(m_scriptedAnimator.pullNewParticles());
+}
+
+void Vehicle::renderLightSources(RenderCallback* renderer) {
+  renderer->addLightSources(m_networkedAnimator.lightSources(position()));
+  renderer->addLightSources(m_scriptedAnimator.lightSources());
 }
 
 List<LightSource> Vehicle::lightSources() const {

@@ -34,6 +34,7 @@ WorldClient::WorldClient(PlayerPtr mainPlayer) {
   m_currentStep = 0;
   m_currentServerStep = 0.0;
   m_fullBright = false;
+  m_asyncLighting = true;
   m_worldDimTimer = GameTimer(m_clientConfig.getFloat("worldDimTime"));
   m_worldDimTimer.setDone();
   m_worldDimLevel = 0.0f;
@@ -77,10 +78,20 @@ WorldClient::WorldClient(PlayerPtr mainPlayer) {
   m_altMusicTrack.setVolume(0, 0, 0);
   m_altMusicActive = false;
 
+  m_stopLightingThread = false;
+  m_lightingThread = Thread::invoke("WorldClient::lightingMain", mem_fn(&WorldClient::lightingMain), this);
+  m_renderData = nullptr;
+
   clearWorld();
 }
 
 WorldClient::~WorldClient() {
+  m_stopLightingThread = true;
+  {
+    MutexLocker locker(m_lightingMutex);
+    m_lightingCond.broadcast();
+  }
+
   clearWorld();
 }
 
@@ -344,75 +355,15 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
 
   renderData.geometry = m_geometry;
 
-  float pulseAmount = Root::singleton().assets()->json("/highlights.config:interactivePulseAmount").toFloat();
-  float pulseRate = Root::singleton().assets()->json("/highlights.config:interactivePulseRate").toFloat();
-  float pulseLevel = 1 - pulseAmount * 0.5 * (sin(2 * Constants::pi * pulseRate * Time::monotonicMilliseconds() / 1000.0) + 1);
-
-  bool inspecting = m_mainPlayer->inspecting();
-  float inspectionFlickerMultiplier = Random::randf(1 - Root::singleton().assets()->json("/highlights.config:inspectionFlickerAmount").toFloat(), 1);
-
-  EntityId playerAimInteractive = NullEntityId;
-  if (Root::singleton().configuration()->get("interactiveHighlight").toBool()) {
-    if (auto entity = m_mainPlayer->bestInteractionEntity(false))
-      playerAimInteractive = entity->entityId();
-  }
-
-  const List<Directives>* directives = nullptr;
-  if (auto& worldTemplate = m_worldTemplate) {
-    if (const auto& parameters = worldTemplate->worldParameters())
-      if (auto& globalDirectives = m_worldTemplate->worldParameters()->globalDirectives)
-        directives = &globalDirectives.get();
-  }
+  ClientRenderCallback lightingRenderCallback;
   m_entityMap->forAllEntities([&](EntityPtr const& entity) {
-      if (m_startupHiddenEntities.contains(entity->entityId()))
-        return;
+    if (m_startupHiddenEntities.contains(entity->entityId()))
+      return;
 
-      ClientRenderCallback renderCallback;
-      entity->render(&renderCallback);
+    entity->renderLightSources(&lightingRenderCallback);
+  });
 
-      EntityDrawables ed;
-      for (auto& p : renderCallback.drawables) {
-        if (directives) {
-          int directiveIndex = unsigned(entity->entityId()) % directives->size();
-          for (auto& d : p.second) {
-            if (d.isImage())
-              d.imagePart().addDirectives(directives->at(directiveIndex), true);
-          }
-        }
-        ed.layers[p.first] = move(p.second); 
-      }
-
-      if (m_interactiveHighlightMode || (!inspecting && entity->entityId() == playerAimInteractive)) {
-        if (auto interactive = as<InteractiveEntity>(entity)) {
-          if (interactive->isInteractive()) {
-            ed.highlightEffect.type = EntityHighlightEffectType::Interactive;
-            ed.highlightEffect.level = pulseLevel;
-          }
-        }
-      } else if (inspecting) {
-        if (auto inspectable = as<InspectableEntity>(entity)) {
-          ed.highlightEffect = m_mainPlayer->inspectionHighlight(inspectable);
-          ed.highlightEffect.level *= inspectionFlickerMultiplier;
-        }
-      }
-      renderData.entityDrawables.append(move(ed));
-
-      renderLightSources.appendAll(move(renderCallback.lightSources));
-
-      if (directives) {
-        int directiveIndex = unsigned(entity->entityId()) % directives->size();
-        for (auto& p : renderCallback.particles)
-          p.directives.append(directives->get(directiveIndex));
-      }
-      
-      m_particles->addParticles(move(renderCallback.particles));
-      m_samples.appendAll(move(renderCallback.audios));
-      previewTiles.appendAll(move(renderCallback.previewTiles));
-      renderData.overheadBars.appendAll(move(renderCallback.overheadBars));
-
-    }, [](EntityPtr const& a, EntityPtr const& b) {
-      return a->entityId() < b->entityId();
-    });
+  renderLightSources = move(lightingRenderCallback.lightSources);
 
   RectI window = m_clientState.window();
   RectI tileRange = window.padded(bufferTiles);
@@ -422,30 +373,10 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
   renderData.tileMinPosition = tileRange.min();
   renderData.lightMinPosition = lightRange.min();
 
-  m_tileArray->tileEachTo(renderData.tiles, tileRange, [](RenderTile& renderTile, Vec2I const&, ClientTile const& clientTile) {
-      renderTile.foreground = clientTile.foreground;
-      renderTile.foregroundMod = clientTile.foregroundMod;
-
-      renderTile.background = clientTile.background;
-      renderTile.backgroundMod = clientTile.backgroundMod;
-
-      renderTile.foregroundHueShift = clientTile.foregroundHueShift;
-      renderTile.foregroundModHueShift = clientTile.foregroundModHueShift;
-      renderTile.foregroundColorVariant = clientTile.foregroundColorVariant;
-      renderTile.foregroundDamageType = clientTile.foregroundDamage.damageType();
-      renderTile.foregroundDamageLevel = floatToByte(clientTile.foregroundDamage.damageEffectPercentage());
-
-      renderTile.backgroundHueShift = clientTile.backgroundHueShift;
-      renderTile.backgroundModHueShift = clientTile.backgroundModHueShift;
-      renderTile.backgroundColorVariant = clientTile.backgroundColorVariant;
-      renderTile.backgroundDamageType = clientTile.backgroundDamage.damageType();
-      renderTile.backgroundDamageLevel = floatToByte(clientTile.backgroundDamage.damageEffectPercentage());
-
-      renderTile.liquidId = clientTile.liquid.liquid;
-      renderTile.liquidLevel = floatToByte(clientTile.liquid.level);
-    });
-
   Vec2U lightSize(lightRange.size());
+
+  renderData.tileLightMap.reset(lightSize, PixelFormat::RGBA32);
+  renderData.tileLightMap.fill(Vec4B::filled(0));
 
   if (m_fullBright) {
     renderData.lightMap.reset(lightSize, PixelFormat::RGB24);
@@ -493,8 +424,106 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
       m_lightingCalculator.addSpreadLight(position, Color::v3bToFloat(lightPair.second));
     }
 
-    m_lightingCalculator.calculate(renderData.lightMap);
+    if (m_asyncLighting) {
+      m_renderData = &renderData;
+      m_lightingCond.signal();
+    }
+    else {
+      m_lightingCalculator.calculate(renderData.lightMap);
+    }
   }
+
+  float pulseAmount = Root::singleton().assets()->json("/highlights.config:interactivePulseAmount").toFloat();
+  float pulseRate = Root::singleton().assets()->json("/highlights.config:interactivePulseRate").toFloat();
+  float pulseLevel = 1 - pulseAmount * 0.5 * (sin(2 * Constants::pi * pulseRate * Time::monotonicMilliseconds() / 1000.0) + 1);
+
+  bool inspecting = m_mainPlayer->inspecting();
+  float inspectionFlickerMultiplier = Random::randf(1 - Root::singleton().assets()->json("/highlights.config:inspectionFlickerAmount").toFloat(), 1);
+
+  EntityId playerAimInteractive = NullEntityId;
+  if (Root::singleton().configuration()->get("interactiveHighlight").toBool()) {
+    if (auto entity = m_mainPlayer->bestInteractionEntity(false))
+      playerAimInteractive = entity->entityId();
+  }
+
+  const List<Directives>* directives = nullptr;
+  if (auto& worldTemplate = m_worldTemplate) {
+    if (const auto& parameters = worldTemplate->worldParameters())
+      if (auto& globalDirectives = m_worldTemplate->worldParameters()->globalDirectives)
+        directives = &globalDirectives.get();
+  }
+  m_entityMap->forAllEntities([&](EntityPtr const& entity) {
+      if (m_startupHiddenEntities.contains(entity->entityId()))
+        return;
+
+      ClientRenderCallback renderCallback;
+
+      entity->render(&renderCallback);
+
+      EntityDrawables ed;
+      for (auto& p : renderCallback.drawables) {
+        if (directives) {
+          int directiveIndex = unsigned(entity->entityId()) % directives->size();
+          for (auto& d : p.second) {
+            if (d.isImage())
+              d.imagePart().addDirectives(directives->at(directiveIndex), true);
+          }
+        }
+        ed.layers[p.first] = move(p.second); 
+      }
+
+      if (m_interactiveHighlightMode || (!inspecting && entity->entityId() == playerAimInteractive)) {
+        if (auto interactive = as<InteractiveEntity>(entity)) {
+          if (interactive->isInteractive()) {
+            ed.highlightEffect.type = EntityHighlightEffectType::Interactive;
+            ed.highlightEffect.level = pulseLevel;
+          }
+        }
+      } else if (inspecting) {
+        if (auto inspectable = as<InspectableEntity>(entity)) {
+          ed.highlightEffect = m_mainPlayer->inspectionHighlight(inspectable);
+          ed.highlightEffect.level *= inspectionFlickerMultiplier;
+        }
+      }
+      renderData.entityDrawables.append(move(ed));
+
+      if (directives) {
+        int directiveIndex = unsigned(entity->entityId()) % directives->size();
+        for (auto& p : renderCallback.particles)
+          p.directives.append(directives->get(directiveIndex));
+      }
+      
+      m_particles->addParticles(move(renderCallback.particles));
+      m_samples.appendAll(move(renderCallback.audios));
+      previewTiles.appendAll(move(renderCallback.previewTiles));
+      renderData.overheadBars.appendAll(move(renderCallback.overheadBars));
+
+    }, [](EntityPtr const& a, EntityPtr const& b) {
+      return a->entityId() < b->entityId();
+    });
+
+  m_tileArray->tileEachTo(renderData.tiles, tileRange, [](RenderTile& renderTile, Vec2I const&, ClientTile const& clientTile) {
+      renderTile.foreground = clientTile.foreground;
+      renderTile.foregroundMod = clientTile.foregroundMod;
+
+      renderTile.background = clientTile.background;
+      renderTile.backgroundMod = clientTile.backgroundMod;
+
+      renderTile.foregroundHueShift = clientTile.foregroundHueShift;
+      renderTile.foregroundModHueShift = clientTile.foregroundModHueShift;
+      renderTile.foregroundColorVariant = clientTile.foregroundColorVariant;
+      renderTile.foregroundDamageType = clientTile.foregroundDamage.damageType();
+      renderTile.foregroundDamageLevel = floatToByte(clientTile.foregroundDamage.damageEffectPercentage());
+
+      renderTile.backgroundHueShift = clientTile.backgroundHueShift;
+      renderTile.backgroundModHueShift = clientTile.backgroundModHueShift;
+      renderTile.backgroundColorVariant = clientTile.backgroundColorVariant;
+      renderTile.backgroundDamageType = clientTile.backgroundDamage.damageType();
+      renderTile.backgroundDamageLevel = floatToByte(clientTile.backgroundDamage.damageEffectPercentage());
+
+      renderTile.liquidId = clientTile.liquid.liquid;
+      renderTile.liquidLevel = floatToByte(clientTile.liquid.level);
+    });
 
   for (auto const& previewTile : previewTiles) {
     Vec2I tileArrayPos = m_geometry.diff(previewTile.position, renderData.tileMinPosition);
@@ -524,8 +553,8 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
 
     if (previewTile.updateLight) {
       Vec2I lightArrayPos = m_geometry.diff(previewTile.position, renderData.lightMinPosition);
-      if (lightArrayPos[0] >= 0 && lightArrayPos[0] < (int)renderData.lightMap.width() && lightArrayPos[1] >= 0 && lightArrayPos[1] < (int)renderData.lightMap.height())
-        renderData.lightMap.set(Vec2U(lightArrayPos), previewTile.light);
+      if (lightArrayPos[0] >= 0 && lightArrayPos[0] < (int)renderData.tileLightMap.width() && lightArrayPos[1] >= 0 && lightArrayPos[1] < (int)renderData.tileLightMap.height())
+        renderData.tileLightMap.set(Vec2U(lightArrayPos), previewTile.light);
     }
   }
 
@@ -632,6 +661,11 @@ void WorldClient::resetGravity() {
 bool WorldClient::toggleFullbright() {
   m_fullBright = !m_fullBright;
   return m_fullBright;
+}
+
+bool WorldClient::toggleAsyncLighting() {
+  m_asyncLighting = !m_asyncLighting;
+  return m_asyncLighting;
 }
 
 bool WorldClient::toggleCollisionDebug() {
@@ -1154,6 +1188,10 @@ void WorldClient::collectLiquid(List<Vec2I> const& tilePositions, LiquidId liqui
   m_outgoingPackets.append(make_shared<CollectLiquidPacket>(tilePositions, liquidId));
 }
 
+void WorldClient::waitForLighting() {
+  MutexLocker lock(m_lightingMutex);
+}
+
 bool WorldClient::isTileProtected(Vec2I const& pos) const {
   if (!inWorld())
     return true;
@@ -1399,6 +1437,26 @@ RpcPromise<InteractAction> WorldClient::interact(InteractRequest const& request)
   m_outgoingPackets.append(make_shared<EntityInteractPacket>(request, requestId));
 
   return pair.first;
+}
+
+void WorldClient::lightingMain() {
+  while (true) {
+    if (m_stopLightingThread)
+      return;
+
+    MutexLocker locker(m_lightingMutex);
+
+    if (m_renderData) {
+      m_lightingCalculator.calculate(m_renderData->lightMap);
+      m_renderData = nullptr;
+    }
+
+    m_lightingCond.wait(m_lightingMutex);
+    continue;
+
+    locker.unlock();
+    Thread::yield();
+  }
 }
 
 void WorldClient::initWorld(WorldStartPacket const& startPacket) {

@@ -394,7 +394,6 @@ void Object::update(uint64_t) {
 
 void Object::render(RenderCallback* renderCallback) {
   renderParticles(renderCallback);
-  renderLights(renderCallback);
   renderSounds(renderCallback);
 
   for (auto const& imageKeyPair : m_imageKeys)
@@ -412,9 +411,13 @@ void Object::render(RenderCallback* renderCallback) {
 
   for (auto drawablePair : m_scriptedAnimator.drawables())
     renderCallback->addDrawable(drawablePair.first, drawablePair.second.value(renderLayer()));
-  renderCallback->addLightSources(m_scriptedAnimator.lightSources());
   renderCallback->addParticles(m_scriptedAnimator.pullNewParticles());
   renderCallback->addAudios(m_scriptedAnimator.pullNewAudios());
+}
+
+void Object::renderLightSources(RenderCallback* renderCallback) {
+  renderLights(renderCallback);
+  renderCallback->addLightSources(m_scriptedAnimator.lightSources());
 }
 
 bool Object::damageTiles(List<Vec2I> const&, Vec2F const&, TileDamage const& tileDamage) {

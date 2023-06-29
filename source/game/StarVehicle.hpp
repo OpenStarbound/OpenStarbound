@@ -55,6 +55,8 @@ public:
 
   void render(RenderCallback* renderer) override;
 
+  void renderLightSources(RenderCallback* renderer) override;
+
   List<LightSource> lightSources() const override;
 
   bool shouldDestroy() const override;

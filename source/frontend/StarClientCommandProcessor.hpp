@@ -31,6 +31,7 @@ private:
   String debug();
   String boxes();
   String fullbright();
+  String asyncLighting();
   String setGravity(StringList const& arguments);
   String resetGravity();
   String fixedCamera();

@@ -184,6 +184,8 @@ public:
 
   void render(RenderCallback* renderCallback) override;
 
+  void renderLightSources(RenderCallback* renderCallback) override;
+
   Json getGenericProperty(String const& name, Json const& defaultValue = Json()) const;
   void setGenericProperty(String const& name, Json const& value);
 

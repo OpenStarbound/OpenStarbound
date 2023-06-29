@@ -24,6 +24,7 @@ ClientCommandProcessor::ClientCommandProcessor(UniverseClientPtr universeClient,
     {"debug", bind(&ClientCommandProcessor::debug, this)},
     {"boxes", bind(&ClientCommandProcessor::boxes, this)},
     {"fullbright", bind(&ClientCommandProcessor::fullbright, this)},
+    {"asyncLighting", bind(&ClientCommandProcessor::asyncLighting, this)},
     {"setGravity", bind(&ClientCommandProcessor::setGravity, this, _1)},
     {"resetGravity", bind(&ClientCommandProcessor::resetGravity, this)},
     {"fixedCamera", bind(&ClientCommandProcessor::fixedCamera, this)},
@@ -149,6 +150,12 @@ String ClientCommandProcessor::fullbright() {
   return strf("Fullbright render lighting {}",
       m_universeClient->worldClient()->toggleFullbright()
       ? "enabled" : "disabled");
+}
+
+String ClientCommandProcessor::asyncLighting() {
+  return strf("Asynchronous render lighting {}",
+    m_universeClient->worldClient()->toggleAsyncLighting()
+    ? "enabled" : "disabled");
 }
 
 String ClientCommandProcessor::setGravity(StringList const& arguments) {

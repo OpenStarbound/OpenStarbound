@@ -9,6 +9,7 @@
 #include "StarParticle.hpp"
 #include "StarWeatherTypes.hpp"
 #include "StarEntity.hpp"
+#include "StarThread.hpp"
 
 namespace Star {
 
@@ -26,6 +27,7 @@ struct WorldRenderData {
   RenderTileArray tiles;
   Vec2I lightMinPosition;
   Image lightMap;
+  Image tileLightMap;
 
   List<EntityDrawables> entityDrawables;
   List<Particle> particles;

@@ -58,6 +58,7 @@ public:
 
   void update(uint64_t currentStep) override;
   void render(RenderCallback* renderCallback) override;
+  void renderLightSources(RenderCallback* renderCallback) override;
 
   Maybe<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
 

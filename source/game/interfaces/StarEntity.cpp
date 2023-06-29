@@ -115,6 +115,8 @@ void Entity::update(uint64_t) {}
 
 void Entity::render(RenderCallback*) {}
 
+void Entity::renderLightSources(RenderCallback*) {}
+
 EntityId Entity::entityId() const {
   return m_entityId;
 }

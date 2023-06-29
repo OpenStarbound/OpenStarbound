@@ -92,6 +92,8 @@ public:
 
   void render(RenderCallback* renderCallback) override;
 
+  void renderLightSources(RenderCallback* renderCallback) override;
+
   void setPosition(Vec2F const& pos);
 
   Maybe<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;

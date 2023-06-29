@@ -1085,7 +1085,6 @@ void Player::render(RenderCallback* renderCallback) {
   if (!isTeleporting())
     renderCallback->addOverheadBars(bars(), position());
   renderCallback->addParticles(particles());
-  renderCallback->addLightSources(lightSources());
 
   m_tools->render(renderCallback, inToolRange(), m_shifting, renderLayer);
 
@@ -1094,6 +1093,10 @@ void Player::render(RenderCallback* renderCallback) {
 
   if (isMaster())
     m_deployment->render(renderCallback, position());
+}
+
+void Player::renderLightSources(RenderCallback* renderCallback) {
+  renderCallback->addLightSources(lightSources());
 }
 
 Json Player::getGenericProperty(String const& name, Json const& defaultValue) const {

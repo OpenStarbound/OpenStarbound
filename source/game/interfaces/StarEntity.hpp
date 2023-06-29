@@ -153,6 +153,8 @@ public:
 
   virtual void render(RenderCallback* renderer);
 
+  virtual void renderLightSources(RenderCallback* renderer);
+
   EntityId entityId() const;
 
   EntityDamageTeam getTeam() const;

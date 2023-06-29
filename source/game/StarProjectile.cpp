@@ -368,8 +368,14 @@ void Projectile::render(RenderCallback* renderCallback) {
   drawable.fullbright = m_config->fullbright;
   drawable.translate(position());
   renderCallback->addDrawable(move(drawable), m_config->renderLayer);
+}
 
-  renderCallback->addLightSource({position(), m_config->lightColor, m_config->pointLight, 0.0f, 0.0f, 0.0f});
+void Projectile::renderLightSources(RenderCallback* renderCallback) {
+  for (auto renderable : m_pendingRenderables) {
+    if (renderable.is<LightSource>())
+      renderCallback->addLightSource(renderable.get<LightSource>());
+  }
+  renderCallback->addLightSource({ position(), m_config->lightColor, m_config->pointLight, 0.0f, 0.0f, 0.0f });
 }
 
 Maybe<Json> Projectile::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
@@ -981,8 +987,6 @@ void Projectile::renderPendingRenderables(RenderCallback* renderCallback) {
       renderCallback->addAudio(renderable.get<AudioInstancePtr>());
     else if (renderable.is<Particle>())
       renderCallback->addParticle(renderable.get<Particle>());
-    else if (renderable.is<LightSource>())
-      renderCallback->addLightSource(renderable.get<LightSource>());
   }
   m_pendingRenderables.clear();
 }
