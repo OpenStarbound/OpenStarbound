@@ -980,6 +980,9 @@ MovementController::CollisionResult MovementController::collisionMove(List<Colli
 
 MovementController::CollisionSeparation MovementController::collisionSeparate(List<CollisionPoly>& collisionPolys, PolyF const& poly,
     bool ignorePlatforms, float maximumPlatformCorrection, Vec2F const& sortCenter, bool upward, float separationTolerance) {
+
+  maximumPlatformCorrection *= WorldTimestep * 60.0f;
+
   CollisionSeparation separation = {};
   separation.collisionKind = CollisionKind::None;
   bool intersects = false;
