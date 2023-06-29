@@ -232,7 +232,7 @@ shared_ptr<TilePainter::TerrainChunk const> TilePainter::getTerrainChunk(WorldRe
       for (auto& layerPair : terrainPrimitives) {
         for (auto& zLevelPair : layerPair.second) {
           auto rb = m_renderer->createRenderBuffer();
-          rb->set(LevelPair.second);
+          rb->set(zLevelPair.second);
           (*chunk)[layerPair.first][zLevelPair.first] = move(rb);
         }
       }
