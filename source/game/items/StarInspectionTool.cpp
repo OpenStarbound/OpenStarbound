@@ -132,7 +132,7 @@ InspectionTool::InspectionResult InspectionTool::inspect(Vec2F const& position) 
 
 
   WorldGeometry geometry = world()->geometry();
-  for (auto& entity : world()->query<InspectableEntity>(RectF::withCenter(position, Vec2F::filled(FLT_EPSILON)), [&](InspectableEntityPtr const& entity) {
+  for (auto& entity : world()->query<InspectableEntity>(RectF::withCenter(position, Vec2F()), [&](InspectableEntityPtr const& entity) {
     if (entity->entityType() == EntityType::Object)
       return false;
     else if (!geometry.rectContains(entity->metaBoundBox().translated(entity->position()), position))
