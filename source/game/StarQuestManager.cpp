@@ -276,12 +276,11 @@ Maybe<QuestPtr> QuestManager::trackedQuest() const {
 Maybe<QuestIndicator> QuestManager::getQuestIndicator(EntityPtr const& entity) const {
   Maybe<String> indicatorType;
   Vec2F indicatorPos = entity->position() + Vec2F(0, 2.75);
+  auto questGiver = as<InteractiveEntity>(entity);
 
-  if (auto questGiver = as<InteractiveEntity>(entity)) {
-    indicatorPos = questGiver->questIndicatorPosition();
-
+  if (questGiver) {
     if (!indicatorType) {
-      for (auto questId : questGiver->turnInQuests()) {
+      for (auto& questId : questGiver->turnInQuests()) {
         if (!isActive(questId))
           continue;
         auto quest = getQuest(questId);
@@ -294,9 +293,9 @@ Maybe<QuestIndicator> QuestManager::getQuestIndicator(EntityPtr const& entity) c
 
     if (!indicatorType) {
       auto questTemplateDatabase = Root::singleton().questTemplateDatabase();
-      for (auto questArc : questGiver->offeredQuests()) {
+      for (auto& questArc : questGiver->offeredQuests()) {
         if (canStart(questArc) && questArc.quests.size() > 0) {
-          auto questDesc = questArc.quests[0];
+          auto& questDesc = questArc.quests[0];
           auto questTemplate = questTemplateDatabase->questTemplate(questDesc.templateId);
           indicatorType = questTemplate->questGiverIndicator;
           break;
@@ -308,13 +307,18 @@ Maybe<QuestIndicator> QuestManager::getQuestIndicator(EntityPtr const& entity) c
   if (indicatorType) {
     Json indicators = Root::singleton().assets()->json("/quests/quests.config:indicators");
     String indicatorImage = indicators.get(*indicatorType).getString("image");
+    if (questGiver)
+      indicatorPos = questGiver->questIndicatorPosition();
     return QuestIndicator{indicatorImage, indicatorPos};
   }
 
   for (auto& pair : m_quests) {
     if (pair.second->state() == QuestState::Active) {
-      if (auto indicatorImage = pair.second->customIndicator(entity))
+      if (auto indicatorImage = pair.second->customIndicator(entity)) {
+        if (questGiver)
+          indicatorPos = questGiver->questIndicatorPosition();
         return QuestIndicator{ *indicatorImage, indicatorPos };
+      }
     }
   }
 
