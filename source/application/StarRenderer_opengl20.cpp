@@ -692,10 +692,9 @@ void OpenGl20Renderer::GlRenderBuffer::set(List<RenderPrimitive>& primitives) {
     glDeleteBuffers(1, &vb.vertexBuffer);
 }
 
-void OpenGl20Renderer::logGlErrorSummary(String prefix) {
+bool OpenGl20Renderer::logGlErrorSummary(String prefix) {
   if (GLenum error = glGetError()) {
-    prefix += ": ";
-    Logger::error(prefix.utf8Ptr());
+    Logger::error("{}: ", prefix);
     do {
       if (error == GL_INVALID_ENUM) {
         Logger::error("GL_INVALID_ENUM");
@@ -714,8 +713,10 @@ void OpenGl20Renderer::logGlErrorSummary(String prefix) {
       } else {
         Logger::error("<UNRECOGNIZED GL ERROR>");
       }
-    } while ((error = glGetError()));
+    } while (error = glGetError());
+    return true;
   }
+  return false;
 }
 
 void OpenGl20Renderer::uploadTextureImage(PixelFormat pixelFormat, Vec2U size, uint8_t const* data) {
@@ -809,14 +810,17 @@ void OpenGl20Renderer::renderGlBuffer(GlRenderBuffer const& renderBuffer, Mat3F 
     glEnableVertexAttribArray(m_texCoordAttribute);
     glEnableVertexAttribArray(m_texIndexAttribute);
     glEnableVertexAttribArray(m_colorAttribute);
-    glEnableVertexAttribArray(m_param1Attribute);
 
     glVertexAttribPointer(m_positionAttribute, 2, GL_FLOAT, GL_FALSE, sizeof(GlRenderVertex), (GLvoid*)offsetof(GlRenderVertex, screenCoordinate));
     glVertexAttribPointer(m_texCoordAttribute, 2, GL_FLOAT, GL_FALSE, sizeof(GlRenderVertex), (GLvoid*)offsetof(GlRenderVertex, textureCoordinate));
     glVertexAttribPointer(m_texIndexAttribute, 1, GL_FLOAT, GL_FALSE, sizeof(GlRenderVertex), (GLvoid*)offsetof(GlRenderVertex, textureIndex));
     glVertexAttribPointer(m_colorAttribute, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(GlRenderVertex), (GLvoid*)offsetof(GlRenderVertex, color));
-    glVertexAttribPointer(m_param1Attribute, 1, GL_FLOAT, GL_FALSE, sizeof(GlRenderVertex), (GLvoid*)offsetof(GlRenderVertex, param1));
-    
+
+    if (m_param1Attribute != -1) {
+      glEnableVertexAttribArray(m_param1Attribute);
+      glVertexAttribPointer(m_param1Attribute, 1, GL_FLOAT, GL_FALSE, sizeof(GlRenderVertex), (GLvoid*)offsetof(GlRenderVertex, param1));
+    }
+
     glDrawArrays(GL_TRIANGLES, 0, vb.vertexCount);
   }
 }

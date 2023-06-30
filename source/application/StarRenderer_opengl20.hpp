@@ -165,7 +165,7 @@ private:
     StringMap<EffectTexture> textures;
   };
 
-  static void logGlErrorSummary(String prefix);
+  static bool logGlErrorSummary(String prefix);
   static void uploadTextureImage(PixelFormat pixelFormat, Vec2U size, uint8_t const* data);
 
   static RefPtr<GlLoneTexture> createGlTexture(Image const& texture, TextureAddressing addressing, TextureFiltering filtering);

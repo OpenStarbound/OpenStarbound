@@ -11,7 +11,6 @@ attribute vec2 vertexPosition;
 attribute vec2 vertexTextureCoordinate;
 attribute float vertexTextureIndex;
 attribute vec4 vertexColor;
-attribute float vertexParam1;
 
 varying vec2 fragmentTextureCoordinate;
 varying float fragmentTextureIndex;
