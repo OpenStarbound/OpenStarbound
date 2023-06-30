@@ -126,7 +126,9 @@ void TitleScreen::update() {
 
   if (!finishedState()) {
     if (auto audioSample = m_musicTrackManager.updateAmbient(m_musicTrack, m_skyBackdrop->isDayTime())) {
+      m_currentMusicTrack = audioSample;
       audioSample->setMixerGroup(MixerGroup::Music);
+      audioSample->setLoops(0);
       m_mixer->play(audioSample);
     }
   }
@@ -153,6 +155,8 @@ bool TitleScreen::finishedState() const {
 
 void TitleScreen::resetState() {
   switchState(TitleState::Main);
+  if (m_currentMusicTrack)
+    m_currentMusicTrack->setVolume(1.0f, 4.0f);
 }
 
 void TitleScreen::goToMultiPlayerSelectCharacter(bool skipConnection) {
@@ -161,7 +165,8 @@ void TitleScreen::goToMultiPlayerSelectCharacter(bool skipConnection) {
 }
 
 void TitleScreen::stopMusic() {
-  m_musicTrackManager.cancelAll();
+  if (m_currentMusicTrack)
+    m_currentMusicTrack->stop(8.0f);
 }
 
 PlayerPtr TitleScreen::currentlySelectedPlayer() const {

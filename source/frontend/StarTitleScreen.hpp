@@ -124,6 +124,7 @@ private:
   SkyPtr m_skyBackdrop;
 
   AmbientNoisesDescriptionPtr m_musicTrack;
+  AudioInstancePtr m_currentMusicTrack;
   AmbientManager m_musicTrackManager;
 };
 
