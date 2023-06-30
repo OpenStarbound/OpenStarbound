@@ -158,11 +158,18 @@ private:
     RefPtr<GlLoneTexture> textureValue;
   };
 
-  struct Effect {
+  class Effect {
+  public:
     GLuint program;
     Json config;
     StringMap<EffectParameter> parameters;
     StringMap<EffectTexture> textures;
+
+    StringMap<GLuint> attributes;
+    StringMap<GLuint> uniforms;
+
+    GLuint getAttribute(String const& name);
+    GLuint getUniform(String const& name);
   };
 
   static bool logGlErrorSummary(String prefix);
@@ -176,7 +183,7 @@ private:
 
   void renderGlBuffer(GlRenderBuffer const& renderBuffer, Mat3F const& transformation);
 
-  void setupGlUniforms(GLuint program);
+  void setupGlUniforms(Effect& effect);
 
   Vec2U m_screenSize;
 

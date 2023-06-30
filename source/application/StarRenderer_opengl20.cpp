@@ -168,10 +168,12 @@ void OpenGl20Renderer::loadEffectConfig(String const& name, Json const& effectCo
   }
 
   glUseProgram(m_program = program);
-  setupGlUniforms(m_program);
 
-  auto& effect = m_effects.emplace(name, Effect{ program, effectConfig, {}, {} }).first->second;
+  auto& effect = m_effects.emplace(name, Effect()).first->second;
+  effect.program = m_program;
+  effect.config = effectConfig;
   m_currentEffect = &effect;
+  setupGlUniforms(effect);
 
   for (auto const& p : effectConfig.getObject("effectParameters", {})) {
     EffectParameter effectParameter;
@@ -303,7 +305,7 @@ bool OpenGl20Renderer::switchEffectConfig(String const& name) {
   Effect& effect = find->second;
 
   glUseProgram(m_program = effect.program);
-  setupGlUniforms(m_program);
+  setupGlUniforms(effect);
   m_currentEffect = &effect;
 
   return true;
@@ -825,26 +827,50 @@ void OpenGl20Renderer::renderGlBuffer(GlRenderBuffer const& renderBuffer, Mat3F 
   }
 }
 
-void OpenGl20Renderer::setupGlUniforms(GLuint program) {
-  m_positionAttribute = glGetAttribLocation(program, "vertexPosition");
-  m_texCoordAttribute = glGetAttribLocation(program, "vertexTextureCoordinate");
-  m_texIndexAttribute = glGetAttribLocation(program, "vertexTextureIndex");
-  m_colorAttribute = glGetAttribLocation(program, "vertexColor");
-  m_param1Attribute = glGetAttribLocation(program, "vertexParam1");
+//Assumes the passed effect program is currently in use.
+void OpenGl20Renderer::setupGlUniforms(Effect& effect) {
+  GLuint program = effect.program;
+
+  m_positionAttribute = effect.getAttribute("vertexPosition");
+  m_texCoordAttribute = effect.getAttribute("vertexTextureCoordinate");
+  m_texIndexAttribute = effect.getAttribute("vertexTextureIndex");
+  m_colorAttribute = effect.getAttribute("vertexColor");
+  m_param1Attribute = effect.getAttribute("vertexParam1");
 
   m_textureUniforms.clear();
   m_textureSizeUniforms.clear();
   for (size_t i = 0; i < MultiTextureCount; ++i) {
-    m_textureUniforms.append(glGetUniformLocation(program, strf("texture{}", i).c_str()));
-    m_textureSizeUniforms.append(glGetUniformLocation(program, strf("textureSize{}", i).c_str()));
+    m_textureUniforms.append(effect.getUniform(strf("texture{}", i).c_str()));
+    m_textureSizeUniforms.append(effect.getUniform(strf("textureSize{}", i).c_str()));
   }
-  m_screenSizeUniform = glGetUniformLocation(program, "screenSize");
-  m_vertexTransformUniform = glGetUniformLocation(program, "vertexTransform");
+  m_screenSizeUniform = effect.getUniform("screenSize");
+  m_vertexTransformUniform = effect.getUniform("vertexTransform");
 
   for (size_t i = 0; i < MultiTextureCount; ++i)
     glUniform1i(m_textureUniforms[i], i);
 
   glUniform2f(m_screenSizeUniform, m_screenSize[0], m_screenSize[1]);
 }
+
+GLuint OpenGl20Renderer::Effect::getAttribute(String const& name) {
+  auto find = attributes.find(name);
+  if (find == attributes.end()) {
+    GLuint attrib = glGetAttribLocation(program, name.utf8Ptr());
+    attributes[name] = attrib;
+    return attrib;
+  }
+  return find->second;
+}
+
+GLuint OpenGl20Renderer::Effect::getUniform(String const& name) {
+  auto find = uniforms.find(name);
+  if (find == uniforms.end()) {
+    GLuint uniform = glGetUniformLocation(program, name.utf8Ptr());
+    uniforms[name] = uniform;
+    return uniform;
+  }
+  return find->second;
+}
+
 
 }
