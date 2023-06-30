@@ -69,7 +69,7 @@ void NameplatePainter::update(WorldClientPtr const& world, WorldCamera const& ca
     }
   });
 
-  m_entitiesWithNametags = foundEntities;
+  m_entitiesWithNametags = move(foundEntities);
   m_nametags.update();
 }
 
