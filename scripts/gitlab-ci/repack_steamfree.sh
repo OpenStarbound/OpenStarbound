@@ -1,14 +1,13 @@
 #!/bin/sh -e
 
-mkdir client_win32_win64
+mkdir client_win64
 cp -r \
   client_distribution/assets \
   client_distribution/doc \
   client_distribution/mods \
   client_distribution/tiled \
-  client_distribution/win32 \
   client_distribution/win64 \
-  client_win32_win64
+  client_win64
 
 mkdir client_linux
 cp -r \

@@ -1,6 +1,6 @@
-cd windows64_binaries
+cd windows_binaries
 
-set PATH="%PATH%;..\lib\windows64"
+set PATH="%PATH%;..\lib\windows"
 
 copy ..\scripts\windows\sbinit.config .
 
