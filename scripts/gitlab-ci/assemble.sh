@@ -16,31 +16,17 @@ touch client_distribution/mods/mods_go_here
 
 mkdir client_distribution/win64
 cp -r \
-  windows64_binaries/starbound.exe \
-  windows64_binaries/starbound.pdb \
-  windows64_binaries/starbound_server.exe \
-  windows64_binaries/mod_uploader.exe \
-  windows64_binaries/*.dll \
-  windows64_binaries/iconengines \
-  windows64_binaries/imageformats \
-  windows64_binaries/platforms \
-  windows64_binaries/translations \
-  scripts/gitlab-ci/windows64/sbinit.config \
+  windows_binaries/starbound.exe \
+  windows_binaries/starbound.pdb \
+  windows_binaries/starbound_server.exe \
+  windows_binaries/mod_uploader.exe \
+  windows_binaries/*.dll \
+  windows_binaries/iconengines \
+  windows_binaries/imageformats \
+  windows_binaries/platforms \
+  windows_binaries/translations \
+  scripts/gitlab-ci/windows/sbinit.config \
   client_distribution/win64/
-
-mkdir client_distribution/win32
-cp \
-  windows32_binaries/starbound.exe \
-  windows32_binaries/starbound.pdb \
-  windows32_binaries/starbound_server.exe \
-  windows32_binaries/asset_packer.exe \
-  windows32_binaries/asset_unpacker.exe \
-  windows32_binaries/dump_versioned_json.exe \
-  windows32_binaries/make_versioned_json.exe \
-  windows32_binaries/planet_mapgen.exe \
-  windows32_binaries/*.dll \
-  scripts/gitlab-ci/windows32/sbinit.config \
-  client_distribution/win32/
 
 mkdir client_distribution/osx
 cp -LR scripts/gitlab-ci/macos/Starbound.app client_distribution/osx/
@@ -92,7 +78,7 @@ cp \
   server_distribution/linux/
 
 cp \
-  windows64_binaries/starbound_server.exe \
-  windows64_binaries/*.dll \
-  scripts/gitlab-ci/windows64/sbinit.config \
+  windows_binaries/starbound_server.exe \
+  windows_binaries/*.dll \
+  scripts/gitlab-ci/windows/sbinit.config \
   server_distribution/win64/

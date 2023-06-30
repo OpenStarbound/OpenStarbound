@@ -7,7 +7,7 @@
       "inheritEnvironments": [ "msvc_x64_x64" ],
       "buildRoot": "${projectDir}\\..\\build",
       "installRoot": "${projectDir}\\..\\out\\install\\${name}",
-      "cmakeCommandArgs": "-DCMAKE_INCLUDE_PATH=\"..\\lib\\windows64\\include\" -DCMAKE_LIBRARY_PATH=\"..\\lib\\windows64\"",
+      "cmakeCommandArgs": "-DCMAKE_INCLUDE_PATH=\"..\\lib\\windows\\include\" -DCMAKE_LIBRARY_PATH=\"..\\lib\\windows\"",
       "variables": [
         {
           "name": "STAR_ENABLE_STEAM_INTEGRATION",
@@ -27,7 +27,7 @@
       "configurationType": "Release",
       "buildRoot": "${projectDir}\\..\\build",
       "installRoot": "${projectDir}\\..\\out\\install\\${name}",
-      "cmakeCommandArgs": "-DCMAKE_INCLUDE_PATH=\"..\\lib\\windows64\\include\" -DCMAKE_LIBRARY_PATH=\"..\\lib\\windows64\"",
+      "cmakeCommandArgs": "-DCMAKE_INCLUDE_PATH=\"..\\lib\\windows\\include\" -DCMAKE_LIBRARY_PATH=\"..\\lib\\windows\"",
       "inheritEnvironments": [ "msvc_x64_x64" ],
       "variables": [
         {
