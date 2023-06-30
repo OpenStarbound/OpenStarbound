@@ -79,17 +79,16 @@ void TitleScreen::render() {
 
   m_renderer->flush();
 
-  for (auto backdropImage : assets->json("/interface/windowconfig/title.config:backdropImages").toArray()) {
+  for (auto& backdropImage : assets->json("/interface/windowconfig/title.config:backdropImages").toArray()) {
     Vec2F offset = jsonToVec2F(backdropImage.get(0)) * interfaceScale();
     String image = backdropImage.getString(1);
     float scale = backdropImage.getFloat(2);
+    Vec2F origin = jsonToVec2F(backdropImage.getArray(3, { 0.5f, 1.0f }));
     Vec2F imageSize = Vec2F(m_guiContext->textureSize(image)) * interfaceScale() * scale;
 
-    Vec2F lowerLeft = Vec2F(windowWidth() / 2.0f, windowHeight());
-    lowerLeft[0] -= imageSize[0] / 2;
-    lowerLeft[1] -= imageSize[1];
-    lowerLeft += offset;
-    RectF screenCoords(lowerLeft, lowerLeft + imageSize);
+    Vec2F position = Vec2F(m_guiContext->windowSize()).piecewiseMultiply(origin);
+    position += offset - imageSize.piecewiseMultiply(origin);
+    RectF screenCoords(position, position + imageSize);
     m_guiContext->drawQuad(image, screenCoords);
   }
 
