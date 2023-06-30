@@ -77,19 +77,23 @@ float InspectionTool::inspectionLevel(InspectableEntityPtr const& inspectable) c
   if (!initialized() || !inspectable->inspectable())
     return 0;
 
-  float totalLevel = 0;
+  if (auto tileEntity = as<TileEntity>(inspectable)) {
+    float totalLevel = 0;
 
-  // convert spaces to a set of world positions
-  Set<Vec2I> spaceSet;
-  for (auto space : inspectable->spaces())
-    spaceSet.add(inspectable->tilePosition() + space);
+    // convert spaces to a set of world positions
+    Set<Vec2I> spaceSet;
+    for (auto space : tileEntity->spaces())
+      spaceSet.add(tileEntity->tilePosition() + space);
 
-  for (auto space : spaceSet) {
-    float pointLevel = pointInspectionLevel(centerOfTile(space));
-    if (pointLevel > 0 && hasLineOfSight(space, spaceSet))
-      totalLevel += pointLevel;
+    for (auto space : spaceSet) {
+      float pointLevel = pointInspectionLevel(centerOfTile(space));
+      if (pointLevel > 0 && hasLineOfSight(space, spaceSet))
+        totalLevel += pointLevel;
+    }
+    return clamp(totalLevel / min(spaceSet.size(), m_fullInspectionSpaces), 0.0f, 1.0f);
   }
-  return clamp(totalLevel / min(spaceSet.size(), m_fullInspectionSpaces), 0.0f, 1.0f);
+  else
+    return pointInspectionLevel(inspectable->position());
 }
 
 float InspectionTool::pointInspectionLevel(Vec2F const& position) const {
@@ -116,13 +120,35 @@ InspectionTool::InspectionResult InspectionTool::inspect(Vec2F const& position) 
 
   // if there's a candidate InspectableEntity at the position, make sure that entity's total inspection level
   // is above the minimum threshold
-  for (auto entity : world()->atTile<InspectableEntity>(Vec2I::floor(position))) {
+  auto check = [&](InspectableEntityPtr entity) -> Maybe<InspectionTool::InspectionResult> {
     if (entity->inspectable() && inspectionLevel(entity) >= m_minimumInspectionLevel) {
       if (m_allowScanning)
-        return {entity->inspectionDescription(species).value(), entity->inspectionLogName(), entity->entityId()};
+        return { { entity->inspectionDescription(species).value(), entity->inspectionLogName(), entity->entityId() } };
       else
-        return {entity->inspectionDescription(species).value(), {}, {}};
+        return { { entity->inspectionDescription(species).value(), {}, {} } };
     }
+    return {};
+  };
+
+
+  WorldGeometry geometry = world()->geometry();
+  for (auto& entity : world()->query<InspectableEntity>(RectF::withCenter(position, Vec2F::filled(FLT_EPSILON)), [&](InspectableEntityPtr const& entity) {
+    if (entity->entityType() == EntityType::Object)
+      return false;
+    else if (!geometry.rectContains(entity->metaBoundBox().translated(entity->position()), position))
+      return false;
+    else {
+      auto hitPoly = entity->hitPoly();
+      return hitPoly && geometry.polyContains(*hitPoly, position);
+    }
+  })) {
+    if (auto result = check(entity))
+      return *result;
+  }
+
+  for (auto& entity : world()->atTile<InspectableEntity>(Vec2I::floor(position))) {
+    if (auto result = check(entity))
+      return *result;
   }
 
   // check the inspection level at the selected tile

@@ -53,6 +53,7 @@ class Player :
   public virtual ToolUserEntity,
   public virtual LoungingEntity,
   public virtual ChattyEntity,
+  public virtual InspectableEntity,
   public virtual DamageBarEntity,
   public virtual PortraitEntity,
   public virtual NametagEntity,
@@ -172,6 +173,7 @@ public:
   bool forceNude() const;
 
   String description() const override;
+  void setDescription(String const& description);
 
   List<LightSource> lightSources() const override;
 
@@ -376,6 +378,9 @@ public:
   void addEmote(HumanoidEmote const& emote);
 
   List<ChatAction> pullPendingChatActions() override;
+
+  Maybe<String> inspectionLogName() const override;
+  Maybe<String> inspectionDescription(String const& species) const override;
 
   float beamGunRadius() const override;
 

@@ -1,4 +1,5 @@
 #include "StarPlayer.hpp"
+#include "StarEncode.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
 #include "StarSongbook.hpp"
@@ -101,10 +102,6 @@ Player::Player(PlayerConfigPtr config, Uuid uuid) {
   m_codexes = make_shared<PlayerCodexes>();
   m_techs = make_shared<PlayerTech>();
   m_log = make_shared<PlayerLog>();
-
-  m_description = strf("This {} seems to have nothing to say for {}self.",
-      m_identity.gender == Gender::Male ? "guy" : "gal",
-      m_identity.gender == Gender::Male ? "him" : "her");
 
   setModeType(PlayerMode::Casual);
 
@@ -1524,6 +1521,10 @@ String Player::description() const {
   return m_description;
 }
 
+void Player::setDescription(String const& description) {
+  m_description = description;
+}
+
 Direction Player::walkingDirection() const {
   return m_movementController->movingDirection();
 }
@@ -2107,6 +2108,19 @@ List<ChatAction> Player::pullPendingChatActions() {
   return take(m_pendingChatActions);
 }
 
+Maybe<String> Player::inspectionLogName() const {
+  auto identifier = uniqueId();
+  if (String* str = identifier.ptr()) {
+    auto hash = XXH3_128bits(str->utf8Ptr(), str->utf8Size());
+    return String("Player #") + hexEncode((const char*)&hash, sizeof(hash));
+  }
+  return identifier;
+}
+
+Maybe<String> Player::inspectionDescription(String const& species) const {
+  return m_description;
+}
+
 float Player::beamGunRadius() const {
   return m_tools->beamGunRadius();
 }
@@ -2228,6 +2242,10 @@ void Player::finalizeCreation() {
   m_statusController->resetAllResources();
 
   m_effectEmitter->reset();
+
+  m_description = strf("This {} seems to have nothing to say for {}self.",
+    m_identity.gender == Gender::Male ? "guy" : "gal",
+    m_identity.gender == Gender::Male ? "him" : "her");
 }
 
 bool Player::invisible() const {

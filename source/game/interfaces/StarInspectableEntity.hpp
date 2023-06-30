@@ -1,13 +1,13 @@
 #ifndef STAR_INSPECTABLE_ENTITY_HPP
 #define STAR_INSPECTABLE_ENTITY_HPP
 
-#include "StarTileEntity.hpp"
+#include "StarEntity.hpp"
 
 namespace Star {
 
 STAR_CLASS(InspectableEntity);
 
-class InspectableEntity : public virtual TileEntity {
+class InspectableEntity : public virtual Entity {
 public:
   // Default implementation returns true
   virtual bool inspectable() const;
