@@ -57,7 +57,7 @@ namespace Star {
 
 namespace {
   unsigned const RootMaintenanceSleep = 5000;
-  unsigned const RootLoadThreads = 8;
+  unsigned const RootLoadThreads = 4;
 }
 
 atomic<Root*> Root::s_singleton;
@@ -292,48 +292,53 @@ void Root::fullyLoad() {
   auto workerPool = WorkerPool("Root::fullyLoad", RootLoadThreads);
   List<WorkerPoolHandle> loaders;
 
+  loaders.reserve(40);
+
   loaders.append(workerPool.addWork(swallow(bind(&Root::assets, this))));
   loaders.append(workerPool.addWork(swallow(bind(&Root::configuration, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::nameGenerator, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::objectDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::plantDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::projectileDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::monsterDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::npcDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::stagehandDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::vehicleDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::playerFactory, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::entityFactory, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::itemDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::materialDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::terrainDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::biomeDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::liquidsDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::statusEffectDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::damageDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::particleDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::effectSourceDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::functionDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::treasureDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::dungeonDefinitions, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::tilesetDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::statisticsDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::emoteProcessor, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::speciesDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::imageMetadataDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::versioningDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::questTemplateDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::aiDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::techDatabase, this))));
   loaders.append(workerPool.addWork(swallow(bind(&Root::codexDatabase, this))));
   loaders.append(workerPool.addWork(swallow(bind(&Root::behaviorDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(bind(&Root::techDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(bind(&Root::aiDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(bind(&Root::questTemplateDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(bind(&Root::emoteProcessor, this))));
+  loaders.append(workerPool.addWork(swallow(bind(&Root::terrainDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(bind(&Root::particleDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(bind(&Root::versioningDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(bind(&Root::functionDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(bind(&Root::imageMetadataDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(bind(&Root::tenantDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(bind(&Root::nameGenerator, this))));
   loaders.append(workerPool.addWork(swallow(bind(&Root::danceDatabase, this))));
   loaders.append(workerPool.addWork(swallow(bind(&Root::spawnTypeDatabase, this))));
   loaders.append(workerPool.addWork(swallow(bind(&Root::radioMessageDatabase, this))));
   loaders.append(workerPool.addWork(swallow(bind(&Root::collectionDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(bind(&Root::statisticsDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(bind(&Root::speciesDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(bind(&Root::projectileDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(bind(&Root::stagehandDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(bind(&Root::damageDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(bind(&Root::effectSourceDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(bind(&Root::statusEffectDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(bind(&Root::treasureDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(bind(&Root::materialDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(bind(&Root::objectDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(bind(&Root::npcDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(bind(&Root::plantDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(bind(&Root::itemDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(bind(&Root::monsterDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(bind(&Root::vehicleDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(bind(&Root::playerFactory, this))));
+  loaders.append(workerPool.addWork(swallow(bind(&Root::entityFactory, this))));
+  loaders.append(workerPool.addWork(swallow(bind(&Root::biomeDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(bind(&Root::liquidsDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(bind(&Root::dungeonDefinitions, this))));
+  loaders.append(workerPool.addWork(swallow(bind(&Root::tilesetDatabase, this))));
 
+  auto startSeconds = Time::monotonicTime();
   for (auto& loader : loaders)
     loader.finish();
+  Logger::info("Root: Loaded everything in {} seconds", Time::monotonicTime() - startSeconds);
 
   {
     MutexLocker locker(m_assetsMutex);
