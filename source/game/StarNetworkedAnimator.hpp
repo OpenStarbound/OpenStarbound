@@ -44,13 +44,13 @@ public:
     void clearFinishedAudio();
 
     struct PersistentSound {
-      String file;
+      Json sound;
       AudioInstancePtr audio;
       float stopRampTime;
     };
 
     struct ImmediateSound {
-      String file;
+      Json sound;
       AudioInstancePtr audio;
     };
 
