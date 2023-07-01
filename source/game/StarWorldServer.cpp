@@ -482,7 +482,13 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
       clientInfo->outgoingPackets.append(make_shared<PongPacket>());
 
     } else if (auto updateWorldProperties = as<UpdateWorldPropertiesPacket>(packet)) {
-      m_worldProperties.merge(updateWorldProperties->updatedProperties, true);
+      // Kae: Properties set to null (nil from Lua) should be erased instead of lingering around
+      for (auto& pair : updateWorldProperties->updatedProperties) {
+        if (pair.second.isNull())
+          m_worldProperties.erase(pair.first);
+        else
+          m_worldProperties[pair.first] = pair.second;
+      }
       for (auto const& pair : m_clientInfo)
         pair.second->outgoingPackets.append(make_shared<UpdateWorldPropertiesPacket>(updateWorldProperties->updatedProperties));
 
