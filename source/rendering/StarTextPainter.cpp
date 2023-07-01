@@ -206,7 +206,7 @@ int TextPainter::stringWidth(StringView s) {
   return width;
 }
 
-bool TextPainter::processWrapText(StringView text, Maybe<unsigned> wrapWidth, WrapTextCallback textFunc) {
+bool TextPainter::processWrapText(StringView text, unsigned* wrapWidth, WrapTextCallback textFunc) {
   String font = m_renderSettings.font, setFont = font;
   m_fontTextureGroup.switchFont(font);
   int lines = 0;
@@ -351,7 +351,7 @@ List<StringView> TextPainter::wrapTextViews(StringView s, Maybe<unsigned> wrapWi
     return true;
   };
 
-  processWrapText(s, wrapWidth, textCallback);
+  processWrapText(s, wrapWidth.ptr(), textCallback);
 
   if (active)
     views.push_back(current);
@@ -374,7 +374,7 @@ StringList TextPainter::wrapText(StringView s, Maybe<unsigned> wrapWidth) {
     return true;
   };
 
-  processWrapText(s, wrapWidth, textCallback);
+  processWrapText(s, wrapWidth.ptr(), textCallback);
 
   if (!current.empty())
     result.append(move(current));

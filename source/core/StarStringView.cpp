@@ -295,6 +295,7 @@ size_t StringView::findFirstNotOf(StringView pattern, size_t beg) const {
 }
 
 size_t StringView::findNextBoundary(size_t index, bool backwards) const {
+  //TODO: Make this faster.
   size_t mySize = size();
   starAssert(index <= mySize);
   if (!backwards && (index == mySize))
