@@ -1,0 +1,16 @@
+{
+  "opensb": {
+    "name": "OpenStarbound",
+    "bannerName" : "Open^#ebd74a;Starbound",
+    "binds": {
+      "test": {
+        "default": [{
+          "type": "key",
+          "value": "C",
+          "mods": ["LShift"]
+        }],
+        "name": "Test Bind"
+      }
+    }
+  }
+}

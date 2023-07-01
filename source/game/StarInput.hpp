@@ -20,12 +20,6 @@ namespace Star {
 
   class Input {
   public:
-    struct NoBind {
-      String error;
-
-      NoBind(String err);
-    };
-
     struct KeyBind {
       Key key = Key::Zero;
       KeyMod mods = KeyMod::NoMod;
@@ -51,27 +45,27 @@ namespace Star {
       ControllerButton button = ControllerButton::Invalid;
     };
 
-    typedef Variant<NoBind, KeyBind, MouseBind, ControllerBind> Bind;
+    typedef MVariant<KeyBind, MouseBind, ControllerBind> Bind;
 
     static Bind bindFromJson(Json const& json);
     static Json bindToJson(Bind const& bind);
 
-    struct Category;
+    struct BindCategory;
 
     struct BindEntry {
       // The internal ID of this entry.
       String id;
-      // The category this entry belongs to.
-      String category;
       // The user-facing name of this entry.
       String name;
+      // The category this entry belongs to.
+      BindCategory const* category;
 
       // The default binds.
       List<Bind> defaultBinds;
       // The user-configured binds.
       List<Bind> customBinds;
 
-      BindEntry(Json const& config, Category const& category);
+      BindEntry(String entryId, Json const& config, BindCategory const& parentCategory);
     };
 
     struct BindRef {
@@ -91,11 +85,11 @@ namespace Star {
     struct BindCategory {
       String id;
       String name;
-      Json meta;
+      Json config;
 
       StringMap<BindEntry> entries;
 
-      BindCategory(Json const& data);
+      BindCategory(String categoryId, Json const& categoryConfig);
     };
 
     struct InputState {
