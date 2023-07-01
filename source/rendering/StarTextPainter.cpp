@@ -209,79 +209,88 @@ int TextPainter::stringWidth(StringView s) {
   return width;
 }
 
-void TextPainter::processWrapText(StringView text, Maybe<unsigned> wrapWidth, WrapTextCallback textFunc, WrapCommandsCallback commandsFunc, bool includeCommandSides) {
+bool TextPainter::processWrapText(StringView text, Maybe<unsigned> wrapWidth, WrapTextCallback textFunc) {
   String font = m_renderSettings.font, setFont = font;
   m_fontTextureGroup.switchFont(font);
-
-  unsigned linePixelWidth = 0; // How wide is this line so far
-  unsigned lineCharSize = 0; // how many characters in this line ?
-  unsigned lineStart = 0; // Where does this line start ?
-  unsigned splitPos = 0; // Where did we last see a place to split the string ?
-  unsigned splitWidth = 0; // How wide was the string there ?
-
   int lines = 0;
 
   StringView splitIgnore(m_splitIgnore);
   StringView splitForce(m_splitForce);
 
-  Text::CommandsCallback splitCommandsCallback = [&](StringView commands) {
-    StringView inner = commands.utf8().substr(1, commands.utf8Size() - 1);
-    inner.forEachSplitView(",", [&](StringView command, size_t, size_t) {
-      if (command == "reset")
-        m_fontTextureGroup.switchFont(font = setFont);
-      else if (command == "set")
-        setFont = font;
-      else if (command.beginsWith("font="))
-        m_fontTextureGroup.switchFont(font = command.substr(5));
-    });
-    if (commandsFunc)
-      if (!commandsFunc(includeCommandSides ? commands : inner, lines))
-        return false;
+  size_t i = 0;
+  auto it = text.begin();
+  auto end = text.end();
+  auto prevIt = it;
 
-    return true;
+  unsigned lineStart = 0; // Where does this line start ?
+  unsigned linePixelWidth = 0; // How wide is this line so far
+  unsigned lineCharSize = 0; // how many characters in this line ?
+
+  auto escIt = end;
+
+  unsigned splitPos = 0; // Where did we last see a place to split the string ?
+  unsigned splitWidth = 0; // How wide was the string there ?
+
+  auto lineStartIt = it; // Where does this line start ?
+  auto splitIt = end;
+
+  auto slice = [](StringView::const_iterator a, StringView::const_iterator b) -> StringView {
+    const char* aPtr = &*a.base();
+    return StringView(aPtr, &*b.base() - aPtr);
   };
 
-  Text::TextCallback splitTextCallback = [&](StringView sub) {
-    return textFunc(sub, lines);
-  };
+  while (it != end) {
+    auto character = *it;
 
-  Text::CommandsCallback commandsCallback = [&](StringView commands) {
-    lineCharSize += commands.size();
-    return true;
-  };
+    if (Text::isEscapeCode(character))
+      escIt = it;
+    ++i;
+   
 
-  Text::TextCallback textCallback = [&](StringView sub) {
-    for (auto character : sub) {
+    if (escIt != end) {
+      if (character == Text::EndEsc) {
+        StringView inner = slice(escIt, it);
+        inner.forEachSplitView(",", [&](StringView command, size_t, size_t) {
+          if (command == "reset")
+            m_fontTextureGroup.switchFont(font = setFont);
+          else if (command == "set")
+            setFont = font;
+          else if (command.beginsWith("font="))
+            m_fontTextureGroup.switchFont(font = command.substr(5));
+        });
+        escIt = end;
+      }
+      lineCharSize++;
+    } else {
       lineCharSize++; // assume at least one character if we get here.
 
       // is this a linefeed / cr / whatever that forces a line split ?
       if (splitForce.find(character) != NPos) {
         // knock one off the end because we don't render the CR
-        if (!Text::processText(text.substr(lineStart, lineCharSize - 1), splitTextCallback, splitCommandsCallback, true))
+        if (!textFunc(slice(lineStartIt, it), lines++))
           return false;
-        ++lines;
 
-        lineStart += lineCharSize; // next line starts after the CR
-        lineCharSize = 0; // with no characters in it.
-        linePixelWidth = 0; // No width
-        splitPos = 0; // and no known splits.
+        lineStart += lineCharSize; 
+        lineStartIt = it;
+        ++lineStartIt; // next line starts after the CR...
+        lineCharSize = linePixelWidth = splitPos = 0; // ...with no characters in it and no known splits.
       } else {
         int charWidth = glyphWidth(character);
 
         // is it a place where we might want to split the line ?
         if (splitIgnore.find(character) != NPos) {
-          splitPos = lineStart + lineCharSize; // this is the character after the space.
+          splitPos = lineStart + lineCharSize;
           splitWidth = linePixelWidth + charWidth; // the width of the string at
+          splitIt = it;
           // the split point, i.e. after the space.
         }
 
         // would the line be too long if we render this next character ?
         if (wrapWidth && (linePixelWidth + charWidth) > *wrapWidth) {
           // did we find somewhere to split the line ?
-          if (splitPos) {
-            if (!Text::processText(text.substr(lineStart, (splitPos - lineStart) - 1), splitTextCallback, splitCommandsCallback, true))
+          if (splitIt != end) {
+            if (!textFunc(slice(lineStartIt, splitIt), lines++))
               return false;
-            ++lines;
 
             unsigned stringEnd = lineStart + lineCharSize;
             lineCharSize = stringEnd - splitPos; // next line has the characters after the space.
@@ -289,15 +298,19 @@ void TextPainter::processWrapText(StringView text, Maybe<unsigned> wrapWidth, Wr
             unsigned stringWidth = (linePixelWidth - splitWidth);
             linePixelWidth = stringWidth + charWidth; // and is as wide as the bit after the space.
 
-            lineStart = splitPos; // next line starts after the space
-            splitPos = 0; // split is used up.
+            lineStart = splitPos;
+            lineStartIt = splitIt;
+            splitIt = end;
+            splitPos = 0;
           } else {
-            if (!Text::processText(text.substr(lineStart, lineCharSize - 1), splitTextCallback, splitCommandsCallback, true))
+            if (!textFunc(slice(lineStartIt, it), lines++))
               return false;
-            ++lines;
 
             lineStart += lineCharSize - 1; // skip back by one to include that
-                                           // character on the next line.
+                                            // character on the next line.
+            lineStartIt = it;
+            --lineStartIt;
+
             lineCharSize = 1;           // next line has that character in
             linePixelWidth = charWidth; // and is as wide as that character
           }
@@ -307,15 +320,14 @@ void TextPainter::processWrapText(StringView text, Maybe<unsigned> wrapWidth, Wr
       }
     }
 
-    return true;
+    prevIt = it++;
   };
-
-  if (!Text::processText(text, textCallback, commandsCallback, true))
-    return;
 
   // if we hit the end of the string before hitting the end of the line.
   if (lineCharSize > 0)
-    Text::processText(text.substr(lineStart, lineCharSize), splitTextCallback, splitCommandsCallback, true);
+    return textFunc(slice(lineStartIt, end), lines);
+
+  return true;
 }
 
 List<StringView> TextPainter::wrapTextViews(StringView s, Maybe<unsigned> wrapWidth) {
@@ -345,18 +357,7 @@ List<StringView> TextPainter::wrapTextViews(StringView s, Maybe<unsigned> wrapWi
     return true;
   };
 
-  TextPainter::WrapCommandsCallback commandsCallback = [&](StringView commands, int line) {
-    if (lastLine != line) {
-      views.push_back(current);
-      lastLine = line;
-      active = false;
-    }
-
-    addText(commands);
-    return true;
-  };
-
-  processWrapText(s, wrapWidth, textCallback, commandsCallback, true);
+  processWrapText(s, wrapWidth, textCallback);
 
   if (active)
     views.push_back(current);
@@ -379,17 +380,7 @@ StringList TextPainter::wrapText(StringView s, Maybe<unsigned> wrapWidth) {
     return true;
   };
 
-  TextPainter::WrapCommandsCallback commandsCallback = [&](StringView commands, int line) {
-    if (lastLine != line) {
-      result.append(move(current));
-      lastLine = line;
-    }
-
-    current += commands;
-    return true;
-  };
-
-  processWrapText(s, wrapWidth, textCallback, commandsCallback, true);
+  processWrapText(s, wrapWidth, textCallback);
 
   if (!current.empty())
     result.append(move(current));

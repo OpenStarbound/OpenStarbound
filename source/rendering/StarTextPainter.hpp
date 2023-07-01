@@ -68,8 +68,7 @@ public:
 
     
   typedef function<bool(StringView, int)> WrapTextCallback;
-  typedef function<bool(StringView, int)> WrapCommandsCallback;
-  void processWrapText(StringView s, Maybe<unsigned> wrapWidth, WrapTextCallback textFunc, WrapCommandsCallback commandFunc = WrapCommandsCallback(), bool includeCommandSides = false);
+  bool processWrapText(StringView s, Maybe<unsigned> wrapWidth, WrapTextCallback textFunc);
 
   List<StringView> wrapTextViews(StringView s, Maybe<unsigned> wrapWidth);
   StringList wrapText(StringView s, Maybe<unsigned> wrapWidth);

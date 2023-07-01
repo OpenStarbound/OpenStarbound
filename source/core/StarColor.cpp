@@ -214,7 +214,7 @@ Color Color::gray(uint8_t g) {
 Color::Color() {}
 
 Color::Color(StringView name) {
-  if (name.beginsWith("#"))
+  if (name.beginsWith('#'))
     *this = fromHex(name.substr(1));
   else {
     auto i = NamedColors.find(String(name).toLower());

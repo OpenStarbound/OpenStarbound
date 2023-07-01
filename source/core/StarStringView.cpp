@@ -76,10 +76,15 @@ StringView::Char StringView::operator[](size_t index) const {
   return *it;
 }
 
-StringView::Char StringView::at(size_t i) const {
-  if (i > size())
-    throw OutOfRangeException(strf("Out of range in StringView::at({})", i));
-  return operator[](i);
+StringView::Char StringView::at(size_t index) const {
+  auto it = begin();
+  auto itEnd = end();
+  for (size_t i = 0; i < index; ++i) {
+    ++it;
+    if (it == itEnd)
+      throw OutOfRangeException(strf("Out of range in StringView::at({})", i));
+  }
+  return *it;
 }
 
 bool StringView::endsWith(StringView end, CaseSensitivity cs) const {
@@ -94,26 +99,28 @@ bool StringView::endsWith(StringView end, CaseSensitivity cs) const {
   return compare(mysize - endsize, NPos, end, 0, NPos, cs) == 0;
 }
 bool StringView::endsWith(Char end, CaseSensitivity cs) const {
-  if (size() == 0)
+  if (m_view.empty())
     return false;
 
   return String::charEqual(end, operator[](size() - 1), cs);
 }
 
 bool StringView::beginsWith(StringView beg, CaseSensitivity cs) const {
-  auto begSize = beg.size();
-  if (begSize == 0)
+  if (beg.m_view.empty())
     return true;
 
-  auto mysize = size();
-  if (begSize > mysize)
-    return false;
+  size_t begSize = beg.size();
+  auto it = begin();
+  auto itEnd = end();
+  for (size_t i = 0; i != begSize; ++i)
+    if (it++ == itEnd)
+      return false;
 
   return compare(0, begSize, beg, 0, NPos, cs) == 0;
 }
 
 bool StringView::beginsWith(Char beg, CaseSensitivity cs) const {
-  if (size() == 0)
+  if (m_view.empty())
     return false;
 
   return String::charEqual(beg, operator[](0), cs);
@@ -288,8 +295,9 @@ size_t StringView::findFirstNotOf(StringView pattern, size_t beg) const {
 }
 
 size_t StringView::findNextBoundary(size_t index, bool backwards) const {
-  starAssert(index <= size());
-  if (!backwards && (index == size()))
+  size_t mySize = size();
+  starAssert(index <= mySize);
+  if (!backwards && (index == mySize))
     return index;
   if (backwards) {
     if (index == 0)
@@ -301,19 +309,19 @@ size_t StringView::findNextBoundary(size_t index, bool backwards) const {
     if (backwards && (index == 0))
       return 0;
     index += backwards ? -1 : 1;
-    if (index == size())
-      return size();
+    if (index == mySize)
+      return mySize;
     c = this->at(index);
   }
   while (String::isSpace(c)) {
     if (backwards && (index == 0))
       return 0;
     index += backwards ? -1 : 1;
-    if (index == size())
-      return size();
+    if (index == mySize)
+      return mySize;
     c = this->at(index);
   }
-  if (backwards && !(index == size()))
+  if (backwards && !(index == mySize))
     return index + 1;
   return index;
 }
@@ -339,17 +347,18 @@ bool StringView::equalsIgnoreCase(StringView s) const {
 
 StringView StringView::substr(size_t position, size_t n) const {
   StringView ret;
-  auto it_end = end();
+  auto itEnd = end();
   auto it = begin();
+
   for (size_t i = 0; i != position; ++i) {
-    if (++it == it_end)
+    if (it++ == itEnd)
       throw OutOfRangeException(strf("out of range in StringView::substr({}, {})", position, n));
   }
 
   const char* start = &*it.base();
 
   for (size_t i = 0; i != n; ++i) {
-    if (it++ == it_end)
+    if (it++ == itEnd)
       return StringView(start, &*it.base() - start - 1);
   }
 
