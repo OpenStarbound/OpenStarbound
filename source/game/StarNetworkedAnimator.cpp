@@ -726,7 +726,14 @@ void NetworkedAnimator::update(float dt, DynamicTarget* dynamicTarget) {
       if (dynamicTarget) {
         dynamicTarget->clearFinishedAudio();
 
-        String persistentSoundFile = activeState.properties.value("persistentSound", "").toString();
+        Json jPersistentSound = activeState.properties.value("persistentSound", "");
+        String persistentSoundFile;
+
+        if (jPersistentSound.isType(Json::Type::String))
+          persistentSoundFile = jPersistentSound.toString();
+        else if (jPersistentSound.isType(Json::Type::Array))
+          persistentSoundFile = Random::randValueFrom(jPersistentSound.toArray(), "").toString();
+
         if (!persistentSoundFile.empty())
           persistentSoundFile = AssetPath::relativeTo(m_relativePath, persistentSoundFile);
 
@@ -748,7 +755,14 @@ void NetworkedAnimator::update(float dt, DynamicTarget* dynamicTarget) {
           }
         }
 
-        String immediateSoundFile = activeState.properties.value("immediateSound", "").toString();
+        Json jImmediateSound = activeState.properties.value("immediateSound", "");
+        String immediateSoundFile = "";
+
+        if (jImmediateSound.isType(Json::Type::String))
+          immediateSoundFile = jImmediateSound.toString();
+        else if (jImmediateSound.isType(Json::Type::Array))
+          immediateSoundFile = Random::randValueFrom(jImmediateSound.toArray(), "").toString();
+
         if (!immediateSoundFile.empty())
           immediateSoundFile = AssetPath::relativeTo(m_relativePath, immediateSoundFile);
 
