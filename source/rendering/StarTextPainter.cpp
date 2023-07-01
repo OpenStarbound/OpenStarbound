@@ -129,10 +129,7 @@ TextPainter::TextPainter(RendererPtr renderer, TextureGroupPtr textureGroup)
     m_fontTextureGroup(textureGroup),
     m_fontSize(8),
     m_lineSpacing(1.30f),
-    m_renderSettings({FontMode::Normal, Vec4B::filled(255), "hobo", ""}),
-    m_splitIgnore(" \t"),
-    m_splitForce("\n\v"),
-    m_nonRenderedCharacters("\n\v\r") {
+    m_renderSettings({FontMode::Normal, Vec4B::filled(255), "hobo", ""}) {
   reloadFonts();
   m_reloadTracker = make_shared<TrackerListener>();
   Root::singleton().registerReloadListener(m_reloadTracker);
@@ -214,13 +211,9 @@ bool TextPainter::processWrapText(StringView text, Maybe<unsigned> wrapWidth, Wr
   m_fontTextureGroup.switchFont(font);
   int lines = 0;
 
-  StringView splitIgnore(m_splitIgnore);
-  StringView splitForce(m_splitForce);
-
   size_t i = 0;
   auto it = text.begin();
   auto end = text.end();
-  auto prevIt = it;
 
   unsigned lineStart = 0; // Where does this line start ?
   unsigned linePixelWidth = 0; // How wide is this line so far
@@ -265,30 +258,32 @@ bool TextPainter::processWrapText(StringView text, Maybe<unsigned> wrapWidth, Wr
       lineCharSize++; // assume at least one character if we get here.
 
       // is this a linefeed / cr / whatever that forces a line split ?
-      if (splitForce.find(character) != NPos) {
+      if (character == '\n' || character == '\v') {
         // knock one off the end because we don't render the CR
         if (!textFunc(slice(lineStartIt, it), lines++))
           return false;
 
         lineStart += lineCharSize; 
         lineStartIt = it;
-        ++lineStartIt; // next line starts after the CR...
+        ++lineStartIt;
+
         lineCharSize = linePixelWidth = splitPos = 0; // ...with no characters in it and no known splits.
       } else {
         int charWidth = glyphWidth(character);
 
         // is it a place where we might want to split the line ?
-        if (splitIgnore.find(character) != NPos) {
-          splitPos = lineStart + lineCharSize;
+        if (character == ' ' || character == '\t') {
+          splitPos = lineStart + lineCharSize; // this is the character after the space.
           splitWidth = linePixelWidth + charWidth; // the width of the string at
           splitIt = it;
+          ++splitIt;
           // the split point, i.e. after the space.
         }
 
         // would the line be too long if we render this next character ?
         if (wrapWidth && (linePixelWidth + charWidth) > *wrapWidth) {
           // did we find somewhere to split the line ?
-          if (splitIt != end) {
+          if (splitPos) {
             if (!textFunc(slice(lineStartIt, splitIt), lines++))
               return false;
 
@@ -300,16 +295,15 @@ bool TextPainter::processWrapText(StringView text, Maybe<unsigned> wrapWidth, Wr
 
             lineStart = splitPos;
             lineStartIt = splitIt;
-            splitIt = end;
+
             splitPos = 0;
           } else {
             if (!textFunc(slice(lineStartIt, it), lines++))
               return false;
 
-            lineStart += lineCharSize - 1; // skip back by one to include that
-                                            // character on the next line.
-            lineStartIt = it;
-            --lineStartIt;
+            lineStart += lineCharSize - 1;
+            lineStartIt = it; // include that character on the next line.
+            
 
             lineCharSize = 1;           // next line has that character in
             linePixelWidth = charWidth; // and is as wide as that character
@@ -320,7 +314,7 @@ bool TextPainter::processWrapText(StringView text, Maybe<unsigned> wrapWidth, Wr
       }
     }
 
-    prevIt = it++;
+    ++it;
   };
 
   // if we hit the end of the string before hitting the end of the line.
@@ -402,10 +396,6 @@ void TextPainter::setLineSpacing(float lineSpacing) {
 
 void TextPainter::setMode(FontMode mode) {
   m_renderSettings.mode = mode;
-}
-
-void TextPainter::setSplitIgnore(String const& splitIgnore) {
-  m_splitIgnore = splitIgnore;
 }
 
 void TextPainter::setFontColor(Vec4B color) {
@@ -551,7 +541,7 @@ RectF TextPainter::doRenderLine(StringView text, TextPositioning const& position
 }
 
 RectF TextPainter::doRenderGlyph(String::Char c, TextPositioning const& position, bool reallyRender) {
-  if (m_nonRenderedCharacters.find(String(c)) != NPos)
+  if (c == '\n' || c == '\v' || c == '\r')
     return RectF();
   m_fontTextureGroup.switchFont(m_renderSettings.font);
 

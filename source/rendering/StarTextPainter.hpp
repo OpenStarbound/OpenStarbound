@@ -77,7 +77,6 @@ public:
   void setFontSize(unsigned size);
   void setLineSpacing(float lineSpacing);
   void setMode(FontMode mode);
-  void setSplitIgnore(String const& splitIgnore);
   void setFontColor(Vec4B color);
   void setProcessingDirectives(String directives);
   void setFont(String const& font);
@@ -109,8 +108,6 @@ private:
   RenderSettings m_renderSettings;
   RenderSettings m_savedRenderSettings;
 
-  String m_splitIgnore;
-  String m_splitForce;
   String m_nonRenderedCharacters;
 
   TrackerListenerPtr m_reloadTracker;
