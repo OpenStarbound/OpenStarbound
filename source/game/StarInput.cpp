@@ -30,7 +30,7 @@ KeyMod keyModsFromJson(Json const& json, uint8_t* priority = nullptr) {
     return mod;
 
   for (Json const& jMod : json.toArray()) {
-    if (priority && mod != (mod |= KeyModNames.getLeft(jMod.toString())))
+    if (mod != (mod |= KeyModNames.getLeft(jMod.toString())) && priority)
       ++*priority;
   }
 
