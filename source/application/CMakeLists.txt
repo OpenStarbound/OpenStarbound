@@ -9,13 +9,11 @@ SET (star_application_HEADERS
     StarApplication.hpp
     StarApplicationController.hpp
     StarMainApplication.hpp
-    StarInputEvent.hpp
     StarRenderer.hpp
   )
 
 SET (star_application_SOURCES
     StarApplication.cpp
-    StarInputEvent.cpp
     StarRenderer.cpp
   )
 

@@ -11,6 +11,7 @@
 #include "StarErrorScreen.hpp"
 #include "StarCinematic.hpp"
 #include "StarKeyBindings.hpp"
+#include "StarInput.hpp"
 #include "StarMainApplication.hpp"
 
 namespace Star {
@@ -74,6 +75,7 @@ private:
   // Valid after applicationInit is called
   MainMixerPtr m_mainMixer;
   GuiContextPtr m_guiContext;
+  InputPtr m_input;
 
   // Valid after renderInit is called the first time
   CinematicPtr m_cinematicOverlay;

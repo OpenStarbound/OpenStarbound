@@ -56,6 +56,7 @@ SET (star_game_HEADERS
     StarGameTypes.hpp
     StarHumanoid.hpp
     StarImageMetadataDatabase.hpp
+    StarInput.hpp
     StarInteractionTypes.hpp
     StarInterpolationTracker.hpp
     StarInventoryTypes.hpp
@@ -314,6 +315,7 @@ SET (star_game_SOURCES
     StarGameTypes.cpp
     StarHumanoid.cpp
     StarImageMetadataDatabase.cpp
+    StarInput.cpp
     StarInteractionTypes.cpp
     StarInterpolationTracker.cpp
     StarInventoryTypes.cpp

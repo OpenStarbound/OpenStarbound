@@ -40,6 +40,7 @@ SET (star_core_HEADERS
     StarIdMap.hpp
     StarImage.hpp
     StarImageProcessing.hpp
+    StarInputEvent.hpp
     StarInterpolation.hpp
     StarRefPtr.hpp
     StarIterator.hpp
@@ -142,6 +143,7 @@ SET (star_core_SOURCES
     StarIODevice.cpp
     StarImage.cpp
     StarImageProcessing.cpp
+    StarInputEvent.cpp
     StarJson.cpp
     StarJsonBuilder.cpp
     StarJsonExtra.cpp

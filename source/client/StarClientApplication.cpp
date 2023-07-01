@@ -167,7 +167,7 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
   m_mainMixer->setVolume(0.5);
 
   m_guiContext = make_shared<GuiContext>(m_mainMixer->mixer(), appController);
-
+  m_input = make_shared<Input>();
 
   auto configuration = m_root->configuration();
   bool vsync = configuration->get("vsync").toBool();
