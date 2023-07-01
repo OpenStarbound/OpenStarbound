@@ -242,7 +242,7 @@ ImageConstPtr Assets::image(AssetPath const& path) const {
 
 void Assets::queueImages(StringList const& paths) const {
   queueAssets(paths.transformed([](String const& path) {
-    const auto components = AssetPath::split(path);
+    auto components = AssetPath::split(path);
     validatePath(components, true, true);
 
     return AssetId{AssetType::Image, move(components)};

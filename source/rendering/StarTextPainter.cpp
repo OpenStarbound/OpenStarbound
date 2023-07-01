@@ -19,7 +19,7 @@ namespace Text {
 
   typedef function<bool(StringView text)> TextCallback;
   typedef function<bool(StringView commands)> CommandsCallback;
-  void processText(StringView text, TextCallback textFunc, CommandsCallback commandsFunc = CommandsCallback(), bool includeCommandSides = false) {
+  bool processText(StringView text, TextCallback textFunc, CommandsCallback commandsFunc = CommandsCallback(), bool includeCommandSides = false) {
     std::string_view escChars(escapeChars);
 
     std::string_view str = text.utf8();
@@ -30,14 +30,14 @@ namespace Text {
 
         size_t end = str.find_first_of(EndEsc, escape);
         if (end != NPos) {
-          if (escape != end && !textFunc(str.substr(0, escape)))
-            break;
+          if (escape && !textFunc(str.substr(0, escape)))
+            return false;
           if (commandsFunc) {
             StringView commands = includeCommandSides
               ? str.substr(escape, end - escape + 1)
               : str.substr(escape + 1, end - escape - 1);
             if (!commands.empty() && !commandsFunc(commands))
-              break;
+              return false;
           }
           str = str.substr(end + 1);
           continue;
@@ -45,9 +45,9 @@ namespace Text {
       }
 
       if (!str.empty())
-        textFunc(str);
+        return textFunc(str);
 
-      break;
+      return true;
     }
   }
 
@@ -209,18 +209,22 @@ int TextPainter::stringWidth(StringView s) {
   return width;
 }
 
-void TextPainter::processWrapText(StringView s, Maybe<unsigned> wrapWidth, WrapTextCallback textFunc, WrapCommandsCallback commandsFunc, bool includeCommandSides) {
+void TextPainter::processWrapText(StringView text, Maybe<unsigned> wrapWidth, WrapTextCallback textFunc, WrapCommandsCallback commandsFunc, bool includeCommandSides) {
   String font = m_renderSettings.font, setFont = font;
   m_fontTextureGroup.switchFont(font);
 
   unsigned linePixelWidth = 0; // How wide is this line so far
+  unsigned lineCharSize = 0; // how many characters in this line ?
+  unsigned lineStart = 0; // Where does this line start ?
+  unsigned splitPos = 0; // Where did we last see a place to split the string ?
+  unsigned splitWidth = 0; // How wide was the string there ?
 
   int lines = 0;
 
   StringView splitIgnore(m_splitIgnore);
   StringView splitForce(m_splitForce);
 
-  Text::CommandsCallback commandsCallback = [&](StringView commands) {
+  Text::CommandsCallback splitCommandsCallback = [&](StringView commands) {
     StringView inner = commands.utf8().substr(1, commands.utf8Size() - 1);
     inner.forEachSplitView(",", [&](StringView command, size_t, size_t) {
       if (command == "reset")
@@ -231,26 +235,31 @@ void TextPainter::processWrapText(StringView s, Maybe<unsigned> wrapWidth, WrapT
         m_fontTextureGroup.switchFont(font = command.substr(5));
     });
     if (commandsFunc)
-      if (!commandsFunc(includeCommandSides ? commands : inner))
+      if (!commandsFunc(includeCommandSides ? commands : inner, lines))
         return false;
 
     return true;
   };
 
-  Text::TextCallback textCallback = [&](StringView text) {
-    unsigned lineCharSize = 0; // how many characters in this line ?
-    unsigned lineStart = 0; // Where does this line start ?
-    unsigned splitPos = 0; // Where did we last see a place to split the string ?
-    unsigned splitWidth = 0; // How wide was the string there ?
-    
-    for (auto character : text) {
+  Text::TextCallback splitTextCallback = [&](StringView sub) {
+    return textFunc(sub, lines);
+  };
+
+  Text::CommandsCallback commandsCallback = [&](StringView commands) {
+    lineCharSize += commands.size();
+    return true;
+  };
+
+  Text::TextCallback textCallback = [&](StringView sub) {
+    for (auto character : sub) {
       lineCharSize++; // assume at least one character if we get here.
 
       // is this a linefeed / cr / whatever that forces a line split ?
       if (splitForce.find(character) != NPos) {
         // knock one off the end because we don't render the CR
-        if (!textFunc(text.substr(lineStart, lineCharSize - 1), lines++))
+        if (!Text::processText(text.substr(lineStart, lineCharSize - 1), splitTextCallback, splitCommandsCallback, true))
           return false;
+        ++lines;
 
         lineStart += lineCharSize; // next line starts after the CR
         lineCharSize = 0; // with no characters in it.
@@ -270,8 +279,9 @@ void TextPainter::processWrapText(StringView s, Maybe<unsigned> wrapWidth, WrapT
         if (wrapWidth && (linePixelWidth + charWidth) > *wrapWidth) {
           // did we find somewhere to split the line ?
           if (splitPos) {
-            if (!textFunc(text.substr(lineStart, (splitPos - lineStart) - 1), lines++))
+            if (!Text::processText(text.substr(lineStart, (splitPos - lineStart) - 1), splitTextCallback, splitCommandsCallback, true))
               return false;
+            ++lines;
 
             unsigned stringEnd = lineStart + lineCharSize;
             lineCharSize = stringEnd - splitPos; // next line has the characters after the space.
@@ -282,8 +292,9 @@ void TextPainter::processWrapText(StringView s, Maybe<unsigned> wrapWidth, WrapT
             lineStart = splitPos; // next line starts after the space
             splitPos = 0; // split is used up.
           } else {
-            if (!textFunc(text.substr(lineStart, lineCharSize - 1), lines++))
+            if (!Text::processText(text.substr(lineStart, lineCharSize - 1), splitTextCallback, splitCommandsCallback, true))
               return false;
+            ++lines;
 
             lineStart += lineCharSize - 1; // skip back by one to include that
                                            // character on the next line.
@@ -296,14 +307,15 @@ void TextPainter::processWrapText(StringView s, Maybe<unsigned> wrapWidth, WrapT
       }
     }
 
-    // if we hit the end of the string before hitting the end of the line.
-    if (lineCharSize > 0 && !textFunc(text.substr(lineStart, lineCharSize), lines))
-      return false;
-
     return true;
   };
 
-  Text::processText(s, textCallback, commandsCallback, true);
+  if (!Text::processText(text, textCallback, commandsCallback, true))
+    return;
+
+  // if we hit the end of the string before hitting the end of the line.
+  if (lineCharSize > 0)
+    Text::processText(text.substr(lineStart, lineCharSize), splitTextCallback, splitCommandsCallback, true);
 }
 
 List<StringView> TextPainter::wrapTextViews(StringView s, Maybe<unsigned> wrapWidth) {
@@ -333,7 +345,13 @@ List<StringView> TextPainter::wrapTextViews(StringView s, Maybe<unsigned> wrapWi
     return true;
   };
 
-  TextPainter::WrapCommandsCallback commandsCallback = [&](StringView commands) {
+  TextPainter::WrapCommandsCallback commandsCallback = [&](StringView commands, int line) {
+    if (lastLine != line) {
+      views.push_back(current);
+      lastLine = line;
+      active = false;
+    }
+
     addText(commands);
     return true;
   };
@@ -361,7 +379,12 @@ StringList TextPainter::wrapText(StringView s, Maybe<unsigned> wrapWidth) {
     return true;
   };
 
-  TextPainter::WrapCommandsCallback commandsCallback = [&](StringView commands) {
+  TextPainter::WrapCommandsCallback commandsCallback = [&](StringView commands, int line) {
+    if (lastLine != line) {
+      result.append(move(current));
+      lastLine = line;
+    }
+
     current += commands;
     return true;
   };
