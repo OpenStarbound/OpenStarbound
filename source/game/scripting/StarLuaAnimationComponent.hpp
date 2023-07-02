@@ -66,6 +66,9 @@ LuaAnimationComponent<Base>::LuaAnimationComponent() {
       if (renderLayerName)
         renderLayer = parseRenderLayer(*renderLayerName);
 
+      if (auto image = drawable.part.ptr<Drawable::ImagePart>())
+        image->transformation.scale(0.125f);
+
       m_drawables.append({move(drawable), renderLayer});
     });
   animationCallbacks.registerCallback("clearLightSources", [this]() {

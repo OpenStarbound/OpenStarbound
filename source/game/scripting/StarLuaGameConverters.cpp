@@ -449,12 +449,7 @@ Maybe<Drawable> LuaConverter<Drawable>::to(LuaEngine& engine, LuaValue const& v)
     else if (auto poly = table->get<Maybe<PolyF>>("poly"))
       drawable = Drawable::makePoly(poly.take(), color);
     else if (auto image = table->get<Maybe<String>>("image"))
-      drawable = Drawable::makeImage(
-        image.take(),
-        table->get<Maybe<bool>>("screenSpace").value(false) ? 1.0f : 1.0f / TilePixels,
-        table->get<Maybe<bool>>("centered").value(true),
-        Vec2F(),
-        color);
+      drawable = Drawable::makeImage(image.take(), 1.0f, table->get<Maybe<bool>>("centered").value(true), Vec2F(), color);
     else
       return {}; // throw LuaAnimationComponentException("Drawable table must have 'line', 'poly', or 'image'");
 
