@@ -66,7 +66,6 @@ LuaAnimationComponent<Base>::LuaAnimationComponent() {
       if (renderLayerName)
         renderLayer = parseRenderLayer(*renderLayerName);
 
-      drawable.scale(1.0f / TilePixels);
       m_drawables.append({move(drawable), renderLayer});
     });
   animationCallbacks.registerCallback("clearLightSources", [this]() {
