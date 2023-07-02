@@ -1,8 +1,26 @@
 {
   "opensb": {
-    "name": "OpenStarbound",
-    "bannerName" : "Open^#ebd74a;Starbound",
+    "groups": {
+      "camera": { "name": "Camera" }
+    },
+    "name": "Open^#ebd74a;Starbound",
     "binds": {
+      "zoomIn": {
+        "default": [{
+          "type": "key",
+          "value": "="
+        }],
+        "group" : "camera",
+        "name": "Zoom In"
+      },
+      "zoomOut": {
+        "default": [{
+          "type": "key",
+          "value": "-"
+        }],
+        "group" : "camera",
+        "name": "Zoom Out"
+      },
       "test": {
         "default": [{
           "type": "key",
