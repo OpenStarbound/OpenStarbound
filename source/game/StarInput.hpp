@@ -77,9 +77,9 @@ namespace Star {
       uint8_t priority = 0;  
       BindEntry* entry = nullptr; // Invalidated on reload, careful!
 
-      struct BindRef(BindEntry& bindEntry, KeyBind& keyBind);
-      struct BindRef(BindEntry& bindEntry, MouseBind& mouseBind);
-      struct BindRef(BindEntry& bindEntry);
+      BindRef(BindEntry& bindEntry, KeyBind& keyBind);
+      BindRef(BindEntry& bindEntry, MouseBind& mouseBind);
+      BindRef(BindEntry& bindEntry);
     };
 
     struct BindCategory {
