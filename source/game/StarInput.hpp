@@ -69,20 +69,17 @@ namespace Star {
       List<Bind> customBinds;
 
       BindEntry(String entryId, Json const& config, BindCategory const& parentCategory);
+      void updated();
     };
 
     struct BindRef {
       KeyMod mods;
-      uint8_t priority;
+      uint8_t priority = 0;  
+      BindEntry* entry = nullptr; // Invalidated on reload, careful!
 
-      // Invalidated on reload, careful!
-      BindEntry* entry;
-    };
-
-    struct BindRefSorter {
-      inline bool operator() (BindRef const& a, BindRef const& b) {
-        return a.priority > b.priority;
-      }
+      struct BindRef(BindEntry& bindEntry, KeyBind& keyBind);
+      struct BindRef(BindEntry& bindEntry, MouseBind& mouseBind);
+      struct BindRef(BindEntry& bindEntry);
     };
 
     struct BindCategory {
@@ -90,14 +87,17 @@ namespace Star {
       String name;
       Json config;
 
-      StringMap<BindEntry> entries;
+      StableHashMap<String, BindEntry> entries;
 
       BindCategory(String categoryId, Json const& categoryConfig);
     };
 
     struct InputState {
-      size_t presses = 0;
-      size_t releases = 0;
+      unsigned presses = 0;
+      unsigned releases = 0;
+      bool pressed = false;
+      bool held = false;
+      bool released = false;
 
       // Calls the passed functions for each press and release.
       template <typename PressFunction, typename ReleaseFunction>
@@ -108,9 +108,13 @@ namespace Star {
         }
       }
 
-      constexpr bool held() {
-        return presses < releases;
+      inline void reset() {
+        presses = releases = 0;
+        pressed = released = false;
       }
+
+      inline void press() { pressed = ++presses; held = true; }
+      inline void release() { released = ++releases; held = false; }
     };
 
     // Get pointer to the singleton root instance, if it exists.  Otherwise,
@@ -141,13 +145,30 @@ namespace Star {
 
     // Loads input categories and their binds from Assets.
     void reload();
+
+    void setTextInputActive(bool active);
+
+    Maybe<unsigned> bindDown(String const& categoryId, String const& bindId);
+    bool            bindHeld(String const& categoryId, String const& bindId);
+    Maybe<unsigned> bindUp  (String const& categoryId, String const& bindId);
+
+    void resetBinds(String const& categoryId, String const& bindId);
+    void setBinds(String const& categoryId, String const& bindId, Json const& binds);
+    Json getDefaultBinds(String const& categoryId, String const& bindId); 
+    Json getBinds(String const& categoryId, String const& bindId);
   private:
     List<BindEntry*> filterBindEntries(List<BindRef> const& binds, KeyMod mods) const;
+
+    BindEntry* bindEntryPtr(String const& categoryId, String const& bindId);
+    BindEntry& bindEntry(String const& categoryId, String const& bindId);
+
+    InputState* bindStatePtr(String const& categoryId, String const& bindId);
+    InputState* inputStatePtr(InputVariant key);
 
     static Input* s_singleton;
 
     // Regenerated on reload.
-    StringMap<BindCategory> m_bindCategories;
+    StableHashMap<String, BindCategory> m_bindCategories;
     // Contains raw pointers to bind entries in categories, so also regenerated on reload.
     HashMap<InputVariant, List<BindRef>> m_bindMappings;
 
@@ -160,7 +181,10 @@ namespace Star {
     //Input states
     HashMap<InputVariant, InputState> m_inputStates;
     //Bind states
-    HashMap<BindEntry*, InputState> m_bindStates;
+    HashMap<BindEntry const*, InputState> m_bindStates;
+
+    KeyMod m_pressedMods;
+    bool m_textInputActive;
   };
 }
 

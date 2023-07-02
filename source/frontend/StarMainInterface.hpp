@@ -135,7 +135,7 @@ private:
 
   bool overButton(PolyI buttonPoly, Vec2I const& mousePos) const;
 
-  void overlayClick(Vec2I const& mousePos, MouseButton mouseButton);
+  bool overlayClick(Vec2I const& mousePos, MouseButton mouseButton);
 
   GuiContext* m_guiContext;
   MainInterfaceConfigConstPtr m_config;

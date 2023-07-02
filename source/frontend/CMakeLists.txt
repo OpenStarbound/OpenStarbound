@@ -13,6 +13,8 @@ INCLUDE_DIRECTORIES (
 SET (star_frontend_HEADERS
     StarActionBar.hpp
     StarAiInterface.hpp
+    StarBaseScriptPane.hpp
+    StarBindingsMenu.hpp
     StarBookmarkInterface.hpp
     StarChat.hpp
     StarCharCreation.hpp
@@ -59,6 +61,8 @@ SET (star_frontend_HEADERS
 SET (star_frontend_SOURCES
     StarActionBar.cpp
     StarAiInterface.cpp
+    StarBaseScriptPane.cpp
+    StarBindingsMenu.cpp
     StarBookmarkInterface.cpp
     StarChat.cpp
     StarCharCreation.cpp

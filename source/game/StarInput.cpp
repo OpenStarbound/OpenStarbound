@@ -5,6 +5,21 @@
 
 namespace Star {
 
+const char* InputBindingConfigRoot = "modBindings";
+
+BiMap<Key, KeyMod> const KeysToMods{
+  {Key::LShift, KeyMod::LShift},
+  {Key::RShift, KeyMod::RShift},
+  {Key::LCtrl, KeyMod::LCtrl},
+  {Key::RCtrl, KeyMod::RCtrl},
+  {Key::LAlt, KeyMod::LAlt},
+  {Key::RAlt, KeyMod::RAlt},
+  {Key::LGui, KeyMod::LGui},
+  {Key::RGui, KeyMod::RGui},
+  {Key::AltGr, KeyMod::AltGr},
+  {Key::ScrollLock, KeyMod::Scroll}
+};
+
 const KeyMod KeyModOptional = KeyMod::Num | KeyMod::Caps | KeyMod::Scroll;
 
 inline bool compareKeyModLenient(KeyMod input, KeyMod test) {
@@ -33,7 +48,7 @@ Json keyModsToJson(KeyMod mod) {
   if ((bool)(mod & KeyMod::AltGr )) array.emplace_back("AltGr" );
   if ((bool)(mod & KeyMod::Scroll)) array.emplace_back("Scroll");
 
-  return move(array);
+  return array.empty() ? Json() : move(array);
 }
 
 // Optional pointer argument to output calculated priority
@@ -115,6 +130,8 @@ Json Input::inputEventToJson(InputEvent const& input) {
 
 Input::Bind Input::bindFromJson(Json const& json) {
   Bind bind;
+  if (json.isNull())
+    return bind;
 
   String type = json.getString("type");
   Json value = json.get("value", {});
@@ -143,18 +160,22 @@ Input::Bind Input::bindFromJson(Json const& json) {
 
 Json Input::bindToJson(Bind const& bind) {
   if (auto keyBind = bind.ptr<KeyBind>()) {
-    return JsonObject{
+    auto obj = JsonObject{
       {"type", "key"},
-      {"value", KeyNames.getRight(keyBind->key)},
-      {"mods", keyModsToJson(keyBind->mods)}
-    };
+      {"value", KeyNames.getRight(keyBind->key)}
+    }; // don't want empty mods to exist as null entry
+    if (auto mods = keyModsToJson(keyBind->mods))
+      obj.emplace("mods", move(mods));
+    return move(obj);
   }
   else if (auto mouseBind = bind.ptr<MouseBind>()) {
-    return JsonObject{
+    auto obj = JsonObject{
       {"type", "mouse"},
-      {"value", MouseButtonNames.getRight(mouseBind->button)},
-      {"mods", keyModsToJson(mouseBind->mods)}
+      {"value", MouseButtonNames.getRight(mouseBind->button)}
     };
+    if (auto mods = keyModsToJson(mouseBind->mods))
+      obj.emplace("mods", move(mods));
+    return move(obj);
   }
   else if (auto controllerBind = bind.ptr<ControllerBind>()) {
     return JsonObject{
@@ -168,7 +189,7 @@ Json Input::bindToJson(Bind const& bind) {
 
 Input::BindEntry::BindEntry(String entryId, Json const& config, BindCategory const& parentCategory) {
   category = &parentCategory;
-  id = move(entryId);
+  id = entryId;
   name = config.getString("name", id);
 
   for (Json const& jBind : config.getArray("default", {})) {
@@ -179,13 +200,55 @@ Input::BindEntry::BindEntry(String entryId, Json const& config, BindCategory con
   }
 }
 
+void Input::BindEntry::updated() {
+  auto config = Root::singleton().configuration();
+
+  JsonArray array;
+  for (auto const& bind : customBinds)
+    array.emplace_back(bindToJson(bind));
+
+  if (!config->get(InputBindingConfigRoot).isType(Json::Type::Object))
+    config->set(InputBindingConfigRoot, JsonObject());
+
+  String path = strf("{}.{}", InputBindingConfigRoot, category->id);
+  if (!config->getPath(path).isType(Json::Type::Object)) {
+    config->setPath(path, JsonObject{
+      { id, move(array) }
+    });
+  }
+  else {
+    path = strf("{}.{}", path, id);
+    config->setPath(path, array);
+  }
+
+  Input::singleton().rebuildMappings();
+}
+
+Input::BindRef::BindRef(BindEntry& bindEntry, KeyBind& keyBind) {
+  entry = &bindEntry;
+  priority = keyBind.priority;
+  mods = keyBind.mods;
+}
+
+Input::BindRef::BindRef(BindEntry& bindEntry, MouseBind& mouseBind) {
+  entry = &bindEntry;
+  priority = mouseBind.priority;
+  mods = mouseBind.mods;
+}
+
+Input::BindRef::BindRef(BindEntry& bindEntry) {
+  entry = &bindEntry;
+  priority = 0;
+  mods = KeyMod::NoMod;
+}
+
 Input::BindCategory::BindCategory(String categoryId, Json const& categoryConfig) {
-  id = move(categoryId);
+  id = categoryId;
   config = categoryConfig;
   name = config.getString("name", id);
 
   ConfigurationPtr userConfig = Root::singletonPtr()->configuration();
-  auto userBindings = userConfig->get("modBindings");
+  auto userBindings = userConfig->get(InputBindingConfigRoot);
 
   for (auto& pair : config.getObject("binds", {})) {
     String const& bindId = pair.first;
@@ -193,7 +256,7 @@ Input::BindCategory::BindCategory(String categoryId, Json const& categoryConfig)
     if (!bindConfig.isType(Json::Type::Object))
       continue;
 
-    BindEntry& entry = entries.insert(bindId, BindEntry(bindId, bindConfig, *this)).first->second;
+    BindEntry& entry = entries.try_emplace(bindId, bindId, bindConfig, *this).first->second;
 
     if (userBindings.isType(Json::Type::Object)) {
       for (auto& jBind : userBindings.queryArray(strf("{}.{}", id, bindId), {})) {
@@ -203,6 +266,9 @@ Input::BindCategory::BindCategory(String categoryId, Json const& categoryConfig)
           { Logger::error("Binds: Error loading user bind in {}.{}: {}", id, bindId, e.what()); }
       }
     }
+
+    if (entry.customBinds.empty())
+      entry.customBinds = entry.defaultBinds;
   }
 }
 
@@ -218,6 +284,34 @@ List<Input::BindEntry*> Input::filterBindEntries(List<Input::BindRef> const& bin
     }
   }
   return result;
+}
+
+Input::BindEntry* Input::bindEntryPtr(String const& categoryId, String const& bindId) {
+  if (auto category = m_bindCategories.ptr(categoryId)) {
+    if (auto entry = category->entries.ptr(bindId)) {
+      return entry;
+    }
+  }
+  
+  return nullptr;
+}
+
+Input::BindEntry& Input::bindEntry(String const& categoryId, String const& bindId) {
+  if (auto ptr = bindEntryPtr(categoryId, bindId))
+    return *ptr;
+  else
+    throw InputException::format("Could not find bind entry {}.{}", categoryId, bindId);
+}
+
+Input::InputState* Input::bindStatePtr(String const& categoryId, String const& bindId) {
+  if (auto ptr = bindEntryPtr(categoryId, bindId))
+    return m_bindStates.ptr(ptr);
+  else
+    return nullptr;
+}
+
+Input::InputState* Input::inputStatePtr(InputVariant key) {
+  return m_inputStates.ptr(key);
 }
 
 Input* Input::s_singleton;
@@ -239,6 +333,8 @@ Input::Input() {
 
   s_singleton = this;
 
+  m_pressedMods = KeyMod::NoMod;
+
   reload();
 
   m_rootReloadListener = make_shared<CallbackListener>([&]() {
@@ -256,10 +352,31 @@ List<std::pair<InputEvent, bool>> const& Input::inputEventsThisFrame() const {
   return m_inputEvents;
 }
 
+
+
 void Input::reset() {
   m_inputEvents.resize(0); // keeps reserved memory
-  m_inputStates.clear();
-  m_bindStates.clear();
+  {
+    auto it = m_inputStates.begin();
+    while (it != m_inputStates.end()) {
+      if (it->second.held) {
+        it->second.reset();
+        ++it;
+      }
+      else it = m_inputStates.erase(it);
+    }
+  }
+
+  {
+    auto it = m_bindStates.begin();
+    while (it != m_bindStates.end()) {
+      if (it->second.held) {
+        it->second.reset();
+        ++it;
+      }
+      else it = m_bindStates.erase(it);
+    }
+  }
 }
 
 void Input::update() {
@@ -268,17 +385,83 @@ void Input::update() {
 
 bool Input::handleInput(InputEvent const& input, bool gameProcessed) {
   m_inputEvents.emplace_back(input, gameProcessed);
+  if (auto keyDown = input.ptr<KeyDownEvent>()) {
+    auto keyToMod = KeysToMods.rightPtr(keyDown->key);
+    if (keyToMod)
+      m_pressedMods |= *keyToMod;
 
+    if (!gameProcessed && !m_textInputActive) {
+      m_inputStates[keyDown->key].press();
+      
+      if (auto binds = m_bindMappings.ptr(keyDown->key)) {
+        for (auto bind : filterBindEntries(*binds, keyDown->mods))
+          m_bindStates[bind].press();
+      }
+    }
+  } else if (auto keyUp = input.ptr<KeyUpEvent>()) {
+    auto keyToMod = KeysToMods.rightPtr(keyUp->key);
+    if (keyToMod)
+      m_pressedMods &= ~*keyToMod;
+
+    // We need to be able to release input even when gameProcessed is true, but only if it's already down.
+    if (auto state = m_inputStates.ptr(keyUp->key))
+      state->release();
+
+    if (auto binds = m_bindMappings.ptr(keyUp->key)) {
+      for (auto& bind : *binds) {
+        if (auto state = m_bindStates.ptr(bind.entry))
+          state->release();
+      }
+    }
+  } else if (auto mouseDown = input.ptr<MouseButtonDownEvent>()) {
+    if (!gameProcessed) {
+      m_inputStates[mouseDown->mouseButton].press();
+
+      if (auto binds = m_bindMappings.ptr(mouseDown->mouseButton)) {
+        for (auto bind : filterBindEntries(*binds, m_pressedMods))
+          m_bindStates[bind].press();
+      }
+    }
+  } else if (auto mouseUp = input.ptr<MouseButtonUpEvent>()) {
+    if (auto state = m_inputStates.ptr(mouseUp->mouseButton))
+      state->release();
+
+    if (auto binds = m_bindMappings.ptr(mouseUp->mouseButton)) {
+      for (auto& bind : *binds) {
+        if (auto state = m_bindStates.ptr(bind.entry))
+          state->release();
+      }
+    }
+  }
 
   return false;
 }
 
 void Input::rebuildMappings() {
+  reset();
   m_bindMappings.clear();
+
+  for (auto& category : m_bindCategories) {
+    for (auto& pair : category.second.entries) {
+      auto& entry = pair.second;
+      for (auto& bind : entry.customBinds) {
+        if (auto keyBind = bind.ptr<KeyBind>())
+          m_bindMappings[keyBind->key].emplace_back(entry, *keyBind);
+        if (auto mouseBind = bind.ptr<MouseBind>())
+          m_bindMappings[mouseBind->button].emplace_back(entry, *mouseBind);
+        if (auto controllerBind = bind.ptr<ControllerBind>())
+          m_bindMappings[controllerBind->button].emplace_back(entry);
+      }
+    }
+  }
+
+  for (auto& pair : m_bindMappings) {
+    pair.second.sort([](BindRef const& a, BindRef const& b)
+      { return a.priority > b.priority; });
+  }
 }
 
-void Input::reload() {
-  reset();
+void Input::reload() {;
   m_bindCategories.clear();
 
   auto assets = Root::singleton().assets();
@@ -290,7 +473,7 @@ void Input::reload() {
       if (!categoryConfig.isType(Json::Type::Object))
         continue;
 
-      m_bindCategories.insert(categoryId, BindCategory(categoryId, categoryConfig));
+      m_bindCategories.try_emplace(categoryId, categoryId, categoryConfig);
     }
   }
 
@@ -301,6 +484,67 @@ void Input::reload() {
   Logger::info("Binds: Loaded {} bind{}", count, count == 1 ? "" : "s");
 
   rebuildMappings();
+}
+
+void Input::setTextInputActive(bool active) {
+  m_textInputActive = active;
+}
+
+Maybe<unsigned> Input::bindDown(String const& categoryId, String const& bindId) {
+  if (auto state = bindStatePtr(categoryId, bindId))
+    if (state->presses)
+      return state->presses;
+
+  return {};
+}
+
+bool Input::bindHeld(String const& categoryId, String const& bindId) {
+  if (auto state = bindStatePtr(categoryId, bindId))
+    return state->held;
+  else
+    return false;
+}
+
+Maybe<unsigned> Input::bindUp(String const& categoryId, String const& bindId) {
+  if (auto state = bindStatePtr(categoryId, bindId))
+    if (state->releases)
+      return state->releases;
+
+  return {};
+}
+
+void Input::resetBinds(String const& categoryId, String const& bindId) {
+  auto& entry = bindEntry(categoryId, bindId);
+
+  entry.customBinds = entry.defaultBinds;
+  entry.updated();
+}
+
+Json Input::getDefaultBinds(String const& categoryId, String const& bindId) {
+  JsonArray array;
+  for (Bind const& bind : bindEntry(categoryId, bindId).defaultBinds)
+    array.emplace_back(bindToJson(bind));
+
+  return move(array);
+}
+
+Json Input::getBinds(String const& categoryId, String const& bindId) {
+  JsonArray array;
+  for (Bind const& bind : bindEntry(categoryId, bindId).customBinds)
+    array.emplace_back(bindToJson(bind));
+
+  return move(array);
+}
+
+void Input::setBinds(String const& categoryId, String const& bindId, Json const& jBinds) {
+  auto& entry = bindEntry(categoryId, bindId);
+
+  List<Bind> binds;
+  for (Json const& jBind : jBinds.toArray())
+    binds.emplace_back(bindFromJson(jBind));
+
+  entry.customBinds = move(binds);
+  entry.updated();
 }
 
 }

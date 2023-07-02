@@ -357,7 +357,7 @@ bool MainInterface::handleInputEvent(InputEvent const& event) {
   } else if (auto mouseDown = event.ptr<MouseButtonDownEvent>()) {
     if (mouseDown->mouseButton == MouseButton::Left || mouseDown->mouseButton == MouseButton::Right
         || mouseDown->mouseButton == MouseButton::Middle)
-      overlayClick(mouseDown->mousePosition, mouseDown->mouseButton);
+      return overlayClick(mouseDown->mousePosition, mouseDown->mouseButton);
 
   } else if (auto mouseUp = event.ptr<MouseButtonUpEvent>()) {
     if (mouseUp->mouseButton == MouseButton::Left)
@@ -1428,7 +1428,7 @@ bool MainInterface::overButton(PolyI buttonPoly, Vec2I const& mousePos) const {
   return buttonPoly.contains(mousePos);
 }
 
-void MainInterface::overlayClick(Vec2I const& mousePos, MouseButton mouseButton) {
+bool MainInterface::overlayClick(Vec2I const& mousePos, MouseButton mouseButton) {
   PolyI mainBarPoly = m_config->mainBarPoly;
   Vec2I barPos = mainBarPosition();
   mainBarPoly.translate(barPos);
@@ -1436,17 +1436,17 @@ void MainInterface::overlayClick(Vec2I const& mousePos, MouseButton mouseButton)
 
   if (overButton(m_config->mainBarInventoryButtonPoly, mousePos)) {
     m_paneManager.toggleRegisteredPane(MainInterfacePanes::Inventory);
-    return;
+    return true;
   }
 
   if (overButton(m_config->mainBarCraftButtonPoly, mousePos)) {
     togglePlainCraftingWindow();
-    return;
+    return true;
   }
 
   if (overButton(m_config->mainBarCodexButtonPoly, mousePos)) {
     m_paneManager.toggleRegisteredPane(MainInterfacePanes::Codex);
-    return;
+    return true;
   }
 
   if (overButton(m_config->mainBarDeployButtonPoly, mousePos)) {
@@ -1454,29 +1454,29 @@ void MainInterface::overlayClick(Vec2I const& mousePos, MouseButton mouseButton)
       warpToOrbitedWorld(true);
     else if (m_client->canBeamUp())
       warpToOwnShip();
-    return;
+    return true;
   }
 
   if (overButton(m_config->mainBarBeamButtonPoly, mousePos)) {
     if (m_client->canBeamDown())
       warpToOrbitedWorld();
-    return;
+    return true;
   }
 
   if (overButton(m_config->mainBarQuestLogButtonPoly, mousePos)) {
     m_paneManager.toggleRegisteredPane(MainInterfacePanes::QuestLog);
-    return;
+    return true;
   }
 
   if (overButton(m_config->mainBarMmUpgradeButtonPoly, mousePos)) {
     if (m_client->mainPlayer()->inventory()->essentialItem(EssentialItem::BeamAxe))
       m_paneManager.toggleRegisteredPane(MainInterfacePanes::MmUpgrade);
-    return;
+    return true;
   }
 
   if (overButton(m_config->mainBarCollectionsButtonPoly, mousePos)) {
     m_paneManager.toggleRegisteredPane(MainInterfacePanes::Collections);
-    return;
+    return true;
   }
 
   if (mouseButton == MouseButton::Left)
@@ -1485,6 +1485,8 @@ void MainInterface::overlayClick(Vec2I const& mousePos, MouseButton mouseButton)
     m_client->mainPlayer()->beginAltFire();
   if (mouseButton == MouseButton::Middle)
     m_client->mainPlayer()->beginTrigger();
+
+  return false;
 }
 
 }

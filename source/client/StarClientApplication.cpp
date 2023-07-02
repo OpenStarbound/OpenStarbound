@@ -207,7 +207,7 @@ void ClientApplication::renderInit(RendererPtr renderer) {
   Application::renderInit(renderer);
   auto assets = m_root->assets();
 
-  auto loadConfig = [&](String const& name) {
+  auto loadEffectConfig = [&](String const& name) {
     String path = strf("/rendering/{}.config", name);
     if (assets->assetExists(path)) {
       StringMap<String> shaders;
@@ -230,8 +230,8 @@ void ClientApplication::renderInit(RendererPtr renderer) {
       Logger::warn("No rendering config found for renderer with id '{}'", renderer->rendererId());
   };
 
-  loadConfig("world");
-  loadConfig("default");
+  loadEffectConfig("world");
+  loadEffectConfig("default");
 
   if (m_root->configuration()->get("limitTextureAtlasSize").optBool().value(false))
     renderer->setSizeLimitEnabled(true);
@@ -301,17 +301,20 @@ void ClientApplication::processInput(InputEvent const& event) {
   if (!m_errorScreen->accepted() && m_errorScreen->handleInputEvent(event))
     return;
 
-  if (m_state == MainAppState::Splash) {
-    m_cinematicOverlay->handleInputEvent(event);
+  bool processed = false;
 
+  if (m_state == MainAppState::Splash) {
+    processed = m_cinematicOverlay->handleInputEvent(event);
   } else if (m_state == MainAppState::Title) {
-    if (!m_cinematicOverlay->handleInputEvent(event))
-      m_titleScreen->handleInputEvent(event);
+    if (!(processed = m_cinematicOverlay->handleInputEvent(event)))
+      processed = m_titleScreen->handleInputEvent(event);
 
   } else if (m_state == MainAppState::SinglePlayer || m_state == MainAppState::MultiPlayer) {
-    if (!m_cinematicOverlay->handleInputEvent(event))
-      m_mainInterface->handleInputEvent(event);
+    if (!(processed = m_cinematicOverlay->handleInputEvent(event)))
+      processed = m_mainInterface->handleInputEvent(event);
   }
+
+  m_input->handleInput(event, processed);
 }
 
 void ClientApplication::update() {
@@ -348,6 +351,7 @@ void ClientApplication::update() {
 
   m_guiContext->cleanup();
   m_edgeKeyEvents.clear();
+  m_input->reset();
 }
 
 void ClientApplication::render() {
@@ -822,7 +826,9 @@ void ClientApplication::updateRunning() {
     m_mainInterface->update();
     m_mainMixer->update(m_cinematicOverlay->muteSfx(), m_cinematicOverlay->muteMusic());
 
-    appController()->setAcceptingTextInput(m_mainInterface->textInputActive());
+    bool inputActive = m_mainInterface->textInputActive();
+    appController()->setAcceptingTextInput(inputActive);
+    m_input->setTextInputActive(inputActive);
 
     for (auto const& interactAction : m_player->pullInteractActions())
       m_mainInterface->handleInteractAction(interactAction);

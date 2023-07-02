@@ -1,0 +1,25 @@
+{
+  "paneLayout" : {
+    "showKeybindings" : {
+      "type" : "button",
+      "position" : [150, 95],
+      "caption" : "Game Binds",
+      "base" : "/interface/optionsmenu/controlsbutton.png",
+      "hover" : "/interface/optionsmenu/controlsbuttonhover.png"
+    },
+    "showModBindings" : {
+      "type" : "button",
+      "position" : [87, 95],
+      "caption" : "Mod Binds",
+      "base" : "/interface/optionsmenu/controlsbutton.png",
+      "hover" : "/interface/optionsmenu/controlsbuttonhover.png"
+    },
+    "showGraphics" : {
+      "type" : "button",
+      "position" : [24, 95],
+      "caption" : "Graphics",
+      "base" : "/interface/optionsmenu/controlsbutton.png",
+      "hover" : "/interface/optionsmenu/controlsbuttonhover.png"
+    }
+  }
+}

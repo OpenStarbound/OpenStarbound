@@ -234,6 +234,7 @@ SET (star_game_HEADERS
     scripting/StarConfigLuaBindings.hpp
     scripting/StarEntityLuaBindings.hpp
     scripting/StarFireableItemLuaBindings.hpp
+    scripting/StarInputLuaBindings.hpp
     scripting/StarItemLuaBindings.hpp
     scripting/StarLuaActorMovementComponent.hpp
     scripting/StarLuaAnimationComponent.hpp
@@ -472,6 +473,7 @@ SET (star_game_SOURCES
     scripting/StarConfigLuaBindings.cpp
     scripting/StarEntityLuaBindings.cpp
     scripting/StarFireableItemLuaBindings.cpp
+    scripting/StarInputLuaBindings.cpp
     scripting/StarItemLuaBindings.cpp
     scripting/StarLuaComponents.cpp
     scripting/StarLuaGameConverters.cpp

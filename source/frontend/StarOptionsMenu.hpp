@@ -12,7 +12,7 @@ STAR_CLASS(ButtonWidget);
 STAR_CLASS(LabelWidget);
 STAR_CLASS(KeybindingsMenu);
 STAR_CLASS(GraphicsMenu);
-
+STAR_CLASS(BindingsMenu);
 STAR_CLASS(OptionsMenu);
 
 class OptionsMenu : public Pane {
@@ -38,6 +38,7 @@ private:
   void syncGuiToConf();
 
   void displayControls();
+  void displayModBindings();
   void displayGraphics();
 
   SliderBarWidgetPtr m_sfxSlider;
@@ -58,6 +59,7 @@ private:
   JsonObject m_origConfig;
   JsonObject m_localChanges;
 
+  BindingsMenuPtr m_modBindingsMenu;
   KeybindingsMenuPtr m_keybindingsMenu;
   GraphicsMenuPtr m_graphicsMenu;
   PaneManager* m_paneManager;
