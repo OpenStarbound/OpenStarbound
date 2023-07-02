@@ -417,6 +417,60 @@ Maybe<LiquidLevel> LuaConverter<LiquidLevel>::to(LuaEngine& engine, LuaValue con
   return {};
 }
 
+LuaValue LuaConverter<Drawable>::from(LuaEngine& engine, Drawable const& v) {
+  auto table = engine.createTable();
+  if (auto line = v.part.ptr<Drawable::LinePart>()) {
+    table.set("line", line->line);
+    table.set("width", line->width);
+  } else if (auto poly = v.part.ptr<Drawable::PolyPart>()) {
+    table.set("poly", poly->poly);
+  } else if (auto image = v.part.ptr<Drawable::ImagePart>()) {
+    table.set("image", AssetPath::join(image->image));
+    table.set("transformation", image->transformation);
+  }
+
+  table.set("position", v.position);
+  table.set("color", v.color);
+  table.set("fullbright", v.fullbright);
+
+  return table;
+}
+
+Maybe<Drawable> LuaConverter<Drawable>::to(LuaEngine& engine, LuaValue const& v) {
+  if (auto table = v.ptr<LuaTable>()) {
+    Maybe<Drawable> result;
+    result.emplace();
+    Drawable& drawable = result.get();
+
+    Color color = table->get<Maybe<Color>>("color").value(Color::White);
+
+    if (auto line = table->get<Maybe<Line2F>>("line"))
+      drawable = Drawable::makeLine(line.take(), table->get<float>("width"), color);
+    else if (auto poly = table->get<Maybe<PolyF>>("poly"))
+      drawable = Drawable::makePoly(poly.take(), color);
+    else if (auto image = table->get<Maybe<String>>("image"))
+      drawable = Drawable::makeImage(image.take(), 1.0f, table->get<Maybe<bool>>("centered").value(true), Vec2F(), color);
+    else
+      return {}; // throw LuaAnimationComponentException("Drawable table must have 'line', 'poly', or 'image'");
+
+    if (auto transformation = table->get<Maybe<Mat3F>>("transformation"))
+      drawable.transform(*transformation);
+    if (auto rotation = table->get<Maybe<float>>("rotation"))
+      drawable.rotate(*rotation);
+    if (table->get<bool>("mirrored"))
+      drawable.scale(Vec2F(-1, 1));
+    if (auto scale = table->get<Maybe<float>>("scale"))
+      drawable.scale(*scale);
+    if (auto position = table->get<Maybe<Vec2F>>("position"))
+      drawable.translate(*position);
+
+    drawable.fullbright = table->get<bool>("fullbright");
+
+    return result;
+  }
+  return {};
+}
+
 LuaValue LuaConverter<Collection>::from(LuaEngine& engine, Collection const& c) {
   auto table = engine.createTable();
   table.set("name", c.name);

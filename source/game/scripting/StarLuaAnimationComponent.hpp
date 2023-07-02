@@ -61,36 +61,12 @@ LuaAnimationComponent<Base>::LuaAnimationComponent() {
   animationCallbacks.registerCallback("clearDrawables", [this]() {
       m_drawables.clear();
     });
-  animationCallbacks.registerCallback("addDrawable", [this](LuaTable const& drawableTable, Maybe<String> renderLayerName) {
+  animationCallbacks.registerCallback("addDrawable", [this](Drawable drawable, Maybe<String> renderLayerName) {
       Maybe<EntityRenderLayer> renderLayer;
       if (renderLayerName)
         renderLayer = parseRenderLayer(*renderLayerName);
 
-      Color color = drawableTable.get<Maybe<Color>>("color").value(Color::White);
-
-      Drawable drawable;
-      if (auto line = drawableTable.get<Maybe<Line2F>>("line"))
-        drawable = Drawable::makeLine(line.take(), drawableTable.get<float>("width"), color);
-      else if (auto poly = drawableTable.get<Maybe<PolyF>>("poly"))
-        drawable = Drawable::makePoly(poly.take(), color);
-      else if (auto image = drawableTable.get<Maybe<String>>("image"))
-        drawable = Drawable::makeImage(image.take(), 1.0f / TilePixels, drawableTable.get<Maybe<bool>>("centered").value(true), Vec2F(), color);
-      else
-        throw LuaAnimationComponentException("Drawable table must have 'line', 'poly', or 'image'");
-
-      if (auto transformation = drawableTable.get<Maybe<Mat3F>>("transformation"))
-        drawable.transform(*transformation);
-      if (auto rotation = drawableTable.get<Maybe<float>>("rotation"))
-        drawable.rotate(*rotation);
-      if (drawableTable.get<bool>("mirrored"))
-        drawable.scale(Vec2F(-1, 1));
-      if (auto scale = drawableTable.get<Maybe<float>>("scale"))
-        drawable.scale(*scale);
-      if (auto position = drawableTable.get<Maybe<Vec2F>>("position"))
-        drawable.translate(*position);
-
-      drawable.fullbright = drawableTable.get<bool>("fullbright");
-
+      drawable.scale(1.0f / TilePixels);
       m_drawables.append({move(drawable), renderLayer});
     });
   animationCallbacks.registerCallback("clearLightSources", [this]() {

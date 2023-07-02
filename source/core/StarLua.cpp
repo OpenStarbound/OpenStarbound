@@ -464,10 +464,10 @@ LuaString LuaEngine::createString(char const* str) {
   return LuaString(LuaDetail::LuaHandle(RefPtr<LuaEngine>(this), popHandle(m_state)));
 }
 
-LuaTable LuaEngine::createTable() {
+LuaTable LuaEngine::createTable(int narr, int nrec) {
   lua_checkstack(m_state, 1);
 
-  lua_newtable(m_state);
+  lua_createtable(m_state, narr, nrec);
   return LuaTable(LuaDetail::LuaHandle(RefPtr<LuaEngine>(this), popHandle(m_state)));
 }
 

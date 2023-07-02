@@ -212,7 +212,6 @@ public:
   template <size_t P = N>
   Enable4DOrHigher<P> setW(T const& t);
 
-private:
   using Base::size;
   using Base::empty;
 };

@@ -505,7 +505,7 @@ public:
   LuaString createString(String const& str);
   LuaString createString(char const* str);
 
-  LuaTable createTable();
+  LuaTable createTable(int narr = 0, int nrec = 0);
 
   template <typename Container>
   LuaTable createTable(Container const& map);
@@ -1890,7 +1890,7 @@ T LuaEngine::luaTo(LuaValue const& v) {
 
 template <typename Container>
 LuaTable LuaEngine::createTable(Container const& map) {
-  auto table = createTable();
+  auto table = createTable(0, map.size());
   for (auto const& p : map)
     table.set(p.first, p.second);
   return table;
@@ -1898,7 +1898,7 @@ LuaTable LuaEngine::createTable(Container const& map) {
 
 template <typename Container>
 LuaTable LuaEngine::createArrayTable(Container const& array) {
-  auto table = createTable();
+  auto table = createTable(array.size(), 0);
   int i = 1;
   for (auto const& elem : array) {
     table.set(LuaInt(i), elem);

@@ -9,6 +9,7 @@
 #include "StarCollectionDatabase.hpp"
 #include "StarBehaviorState.hpp"
 #include "StarSystemWorld.hpp"
+#include "StarDrawable.hpp"
 
 namespace Star {
 
@@ -96,6 +97,12 @@ template <>
 struct LuaConverter<LiquidLevel> {
   static LuaValue from(LuaEngine& engine, LiquidLevel const& v);
   static Maybe<LiquidLevel> to(LuaEngine& engine, LuaValue const& v);
+};
+
+template <>
+struct LuaConverter<Drawable> {
+  static LuaValue from(LuaEngine& engine, Drawable const& v);
+  static Maybe<Drawable> to(LuaEngine& engine, LuaValue const& v);
 };
 
 template <typename T>

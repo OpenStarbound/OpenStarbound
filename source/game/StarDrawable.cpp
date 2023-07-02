@@ -95,7 +95,8 @@ Drawable Drawable::makeImage(AssetPath image, float pixelSize, bool centered, Ve
     transformation.translate(-imageSize / 2);
   }
 
-  transformation.scale(pixelSize);
+  if (pixelSize != 1.0f)
+    transformation.scale(pixelSize);
 
   drawable.part = ImagePart{move(image), move(transformation)};
   drawable.position = position;

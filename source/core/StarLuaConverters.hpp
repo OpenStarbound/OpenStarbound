@@ -63,10 +63,10 @@ struct LuaConverter<Vector<T, N>> {
 template <typename T>
 struct LuaConverter<Matrix3<T>> {
   static LuaValue from(LuaEngine& engine, Matrix3<T> const& m) {
-    auto table = engine.createTable();
-    table.set(1, luaFrom(engine, m.row1));
-    table.set(2, luaFrom(engine, m.row2));
-    table.set(3, luaFrom(engine, m.row3));
+    auto table = engine.createTable(3, 0);
+    table.set(1, m[0]);
+    table.set(2, m[1]);
+    table.set(3, m[2]);
     return table;
   }
 
