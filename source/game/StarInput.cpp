@@ -1,8 +1,21 @@
 #include "StarInput.hpp"
 #include "StarAssets.hpp"
 #include "StarRoot.hpp"
+#include "StarJsonExtra.hpp"
 
 namespace Star {
+
+const KeyMod KeyModOptional = KeyMod::Num | KeyMod::Caps | KeyMod::Scroll;
+
+inline bool compareKeyModLenient(KeyMod input, KeyMod test) {
+	input |= KeyModOptional;
+	test |= KeyModOptional;
+	return (test & input) == test;
+}
+
+inline bool compareKeyMod(KeyMod input, KeyMod test) {
+	return (input | (KeyModOptional & ~test)) == (test | KeyModOptional);
+}
 
 Json keyModsToJson(KeyMod mod) {
   JsonArray array;
@@ -49,11 +62,62 @@ size_t hash<InputVariant>::operator()(InputVariant const& v) const {
   return indexHash;
 }
 
+Json Input::inputEventToJson(InputEvent const& input) {
+  String type;
+  Json data;
+
+  if (auto keyDown = input.ptr<KeyDownEvent>()) {
+    type = "KeyDown";
+    data = JsonObject{
+      {"key", KeyNames.getRight(keyDown->key)},
+      {"mods", keyModsToJson(keyDown->mods)}
+    };
+  } else if (auto keyUp = input.ptr<KeyUpEvent>()) {
+    type = "KeyUp";
+    data = JsonObject{
+      {"key", KeyNames.getRight(keyUp->key)}
+    };
+  } else if (auto mouseDown = input.ptr<MouseButtonDownEvent>()) {
+    type = "MouseButtonDown";
+    data = JsonObject{
+      {"mouseButton", MouseButtonNames.getRight(mouseDown->mouseButton)},
+      {"mousePosition", jsonFromVec2I(mouseDown->mousePosition)}
+    };
+  } else if (auto mouseUp = input.ptr<MouseButtonUpEvent>()) {
+    type = "MouseButtonUp";
+    data = JsonObject{
+      {"mouseButton", MouseButtonNames.getRight(mouseUp->mouseButton)},
+      {"mousePosition", jsonFromVec2I(mouseUp->mousePosition)}
+    };
+  } else if (auto mouseWheel = input.ptr<MouseWheelEvent>()) {
+    type = "MouseWheel";
+    data = JsonObject{
+      {"mouseWheel", MouseWheelNames.getRight(mouseWheel->mouseWheel)},
+      {"mousePosition", jsonFromVec2I(mouseWheel->mousePosition)}
+    };
+  } else if (auto mouseMove = input.ptr<MouseMoveEvent>()) {
+    type = "MouseMove";
+    data = JsonObject{
+      {"mouseMove", jsonFromVec2I(mouseMove->mouseMove)},
+      {"mousePosition", jsonFromVec2I(mouseMove->mousePosition)}
+    };
+  }
+
+  if (data) {
+    return JsonObject{
+      {"type", type},
+      {"data", data}
+    };
+  }
+
+  return data;
+}
+
 Input::Bind Input::bindFromJson(Json const& json) {
   Bind bind;
 
   String type = json.getString("type");
-  Json value = json.get("value");
+  Json value = json.get("value", {});
 
   if (type == "key") {
     KeyBind keyBind;
@@ -117,8 +181,8 @@ Input::BindEntry::BindEntry(String entryId, Json const& config, BindCategory con
 
 Input::BindCategory::BindCategory(String categoryId, Json const& categoryConfig) {
   id = move(categoryId);
-  name = config.getString("name", id);
   config = categoryConfig;
+  name = config.getString("name", id);
 
   ConfigurationPtr userConfig = Root::singletonPtr()->configuration();
   auto userBindings = userConfig->get("modBindings");
@@ -140,6 +204,20 @@ Input::BindCategory::BindCategory(String categoryId, Json const& categoryConfig)
       }
     }
   }
+}
+
+List<Input::BindEntry*> Input::filterBindEntries(List<Input::BindRef> const& binds, KeyMod mods) const {
+  uint8_t maxPriority = 0;
+  List<BindEntry*> result{};
+  for (const BindRef& bind : binds) {
+    if (bind.priority < maxPriority)
+      break;
+    else if (compareKeyModLenient(mods, bind.mods)) {
+      maxPriority = bind.priority;
+      result.emplace_back(bind.entry);
+    }
+  }
+  return result;
 }
 
 Input* Input::s_singleton;
@@ -174,15 +252,34 @@ Input::~Input() {
   s_singleton = nullptr;
 }
 
+List<std::pair<InputEvent, bool>> const& Input::inputEventsThisFrame() const {
+  return m_inputEvents;
+}
+
 void Input::reset() {
+  m_inputEvents.resize(0); // keeps reserved memory
   m_inputStates.clear();
   m_bindStates.clear();
+}
+
+void Input::update() {
+  reset();
+}
+
+bool Input::handleInput(InputEvent const& input, bool gameProcessed) {
+  m_inputEvents.emplace_back(input, gameProcessed);
+
+
+  return false;
+}
+
+void Input::rebuildMappings() {
+  m_bindMappings.clear();
 }
 
 void Input::reload() {
   reset();
   m_bindCategories.clear();
-  m_inputsToBinds.clear();
 
   auto assets = Root::singleton().assets();
 
@@ -202,6 +299,8 @@ void Input::reload() {
     count += pair.second.entries.size();
 
   Logger::info("Binds: Loaded {} bind{}", count, count == 1 ? "" : "s");
+
+  rebuildMappings();
 }
 
 }

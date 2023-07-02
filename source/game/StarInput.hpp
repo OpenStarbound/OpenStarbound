@@ -20,6 +20,9 @@ namespace Star {
 
   class Input {
   public:
+
+    static Json inputEventToJson(InputEvent const& event);
+
     struct KeyBind {
       Key key = Key::Zero;
       KeyMod mods = KeyMod::NoMod;
@@ -124,29 +127,39 @@ namespace Star {
     Input(Input const&) = delete;
     Input& operator=(Input const&) = delete;
 
-    // Clears input state. Should be done at the end of the client loop.
+    List<std::pair<InputEvent, bool>> const& inputEventsThisFrame() const;
+
+    // Clears input state. Should be done at the very start or end of the client loop.
     void reset();
 
+    void update();
+
     // Handles an input event.
-    bool handleInput(InputEvent const& event);
+    bool handleInput(InputEvent const& input, bool gameProcessed);
+
+    void rebuildMappings();
 
     // Loads input categories and their binds from Assets.
     void reload();
   private:
+    List<BindEntry*> filterBindEntries(List<BindRef> const& binds, KeyMod mods) const;
+
     static Input* s_singleton;
 
     // Regenerated on reload.
     StringMap<BindCategory> m_bindCategories;
     // Contains raw pointers to bind entries in categories, so also regenerated on reload.
-    HashMap<InputVariant, List<BindRef>> m_inputsToBinds;
+    HashMap<InputVariant, List<BindRef>> m_bindMappings;
 
     ListenerPtr m_rootReloadListener;
 
-    // Per-frame input state maps.
+    // Per-frame input event storage for Lua.
+    List<std::pair<InputEvent, bool>> m_inputEvents;
 
-    //Raw input state
+    // Per-frame input state maps.
+    //Input states
     HashMap<InputVariant, InputState> m_inputStates;
-    //Bind input state
+    //Bind states
     HashMap<BindEntry*, InputState> m_bindStates;
   };
 }

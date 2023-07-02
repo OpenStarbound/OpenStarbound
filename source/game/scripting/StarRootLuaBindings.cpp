@@ -30,6 +30,8 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
 
   auto root = Root::singletonPtr();
 
+  callbacks.registerCallbackWithSignature<StringList, String>("assetsByExtension", bind(RootCallbacks::assetsByExtension, root, _1));
+  callbacks.registerCallbackWithSignature<String, String>("assetData", bind(RootCallbacks::assetData, root, _1));
   callbacks.registerCallbackWithSignature<Json, String>("assetJson", bind(RootCallbacks::assetJson, root, _1));
   callbacks.registerCallbackWithSignature<Json, String, Json>("makeCurrentVersionedJson", bind(RootCallbacks::makeCurrentVersionedJson, root, _1, _2));
   callbacks.registerCallbackWithSignature<Json, Json, String>("loadVersionedJson", bind(RootCallbacks::loadVersionedJson, root, _1, _2));
@@ -168,6 +170,15 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
     });
 
   return callbacks;
+}
+
+StringList LuaBindings::RootCallbacks::assetsByExtension(Root* root, String const& extension) {
+  return root->assets()->scanExtension(extension);
+}
+
+String LuaBindings::RootCallbacks::assetData(Root* root, String const& path) {
+  auto bytes = root->assets()->bytes(path);
+  return String(bytes->ptr(), bytes->size());
 }
 
 Json LuaBindings::RootCallbacks::assetJson(Root* root, String const& path) {

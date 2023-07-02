@@ -85,6 +85,9 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
     }
   });
 
+  callbacks.registerCallback("name",    [player]()                   { return player->name(); });
+  callbacks.registerCallback("setName", [player](String const& name) { player->setName(name); });
+
   callbacks.registerCallback("species",    [player]()                      { return player->species();    });
   callbacks.registerCallback("setSpecies", [player](String const& species) { player->setSpecies(species); });
 
@@ -100,8 +103,6 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
     Personality newPersonality = oldPersonality;
     player->setPersonality(parsePersonality(newPersonality, personalityConfig));
   });
-
-  void setPersonality(Personality const& personality);
 
   callbacks.registerCallback("id",       [player]() { return player->entityId(); });
   callbacks.registerCallback("uniqueId", [player]() { return player->uniqueId(); });

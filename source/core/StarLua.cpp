@@ -125,7 +125,7 @@ LuaValue LuaConverter<Json>::from(LuaEngine& engine, Json const& v) {
   } else if (v.isType(Json::Type::Int)) {
     return LuaInt(v.toInt());
   } else if (v.isType(Json::Type::String)) {
-    return engine.createString(v.stringPtr()->utf8Ptr());
+    return engine.createString(*v.stringPtr());
   } else {
     return LuaDetail::jsonContainerToTable(engine, v);
   }
@@ -451,7 +451,10 @@ ByteArray LuaEngine::compile(ByteArray const& contents, String const& name) {
 }
 
 LuaString LuaEngine::createString(String const& str) {
-  return createString(str.utf8Ptr());
+  lua_checkstack(m_state, 1);
+
+  lua_pushlstring(m_state, str.utf8Ptr(), str.utf8Size());
+  return LuaString(LuaDetail::LuaHandle(RefPtr<LuaEngine>(this), popHandle(m_state)));
 }
 
 LuaString LuaEngine::createString(char const* str) {
