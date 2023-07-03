@@ -535,8 +535,8 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
     }
   }
 
-  renderData.particles = m_particles->particles();
-  LogMap::set("active_particles", renderData.particles.size());
+  renderData.particles = &m_particles->particles();
+  LogMap::set("client_render_particle_count", renderData.particles->size());
 
   renderData.skyRenderData = m_sky->renderData();
 
@@ -569,9 +569,10 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
     }
   }
 
+  auto functionDatabase = Root::singleton().functionDatabase();
   for (auto& layer : renderData.parallaxLayers) {
     if (!layer.timeOfDayCorrelation.empty())
-      layer.alpha *= clamp((float)Root::singleton().functionDatabase()->function(layer.timeOfDayCorrelation)->evaluate(m_sky->timeOfDay() / m_sky->dayLength()), 0.0f, 1.0f);
+      layer.alpha *= clamp((float)functionDatabase->function(layer.timeOfDayCorrelation)->evaluate(m_sky->timeOfDay() / m_sky->dayLength()), 0.0f, 1.0f);
   }
 
   stableSort(renderData.parallaxLayers, [](ParallaxLayer const& a, ParallaxLayer const& b) {
@@ -1458,7 +1459,7 @@ void WorldClient::lightingMain() {
 
       m_lightingCalculator.calculate(m_renderData->lightMap);
       m_renderData = nullptr;
-      LogMap::set("render_world_async_lighting_calc_time", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
+      LogMap::set("client_render_world_async_light_calc", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
     }
 
     m_lightingCond.wait(m_lightingMutex);

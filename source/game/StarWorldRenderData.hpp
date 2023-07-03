@@ -30,7 +30,7 @@ struct WorldRenderData {
   Image tileLightMap;
 
   List<EntityDrawables> entityDrawables;
-  List<Particle> particles;
+  List<Particle> const* particles;
 
   List<OverheadBar> overheadBars;
   List<Drawable> nametags;
@@ -48,10 +48,10 @@ struct WorldRenderData {
 };
 
 inline void WorldRenderData::clear() {
-  tiles.clear();
+  tiles.resize({0, 0}); // keep reserved
 
   entityDrawables.clear();
-  particles.clear();
+  particles = nullptr;
   overheadBars.clear();
   nametags.clear();
   backgroundOverlays.clear();

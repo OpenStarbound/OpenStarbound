@@ -72,7 +72,7 @@ void WorldPainter::render(WorldRenderData& renderData, function<void()> lightWai
   if (lightWaiter) {
     auto start = Time::monotonicMicroseconds();
     lightWaiter();
-    LogMap::set("render_world_async_lighting_wait_time", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
+    LogMap::set("client_render_world_async_light_wait", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
   }
 
   if (renderData.isFullbright) {
@@ -166,7 +166,10 @@ void WorldPainter::renderParticles(WorldRenderData& renderData, Particle::Layer 
   const int textParticleFontSize = m_assets->json("/rendering.config:textParticleFontSize").toInt();
   const RectF particleRenderWindow = RectF::withSize(Vec2F(), Vec2F(m_camera.screenSize())).padded(m_assets->json("/rendering.config:particleRenderWindowPadding").toInt());
 
-  for (Particle const& particle : renderData.particles) {
+  if (!renderData.particles)
+    return;
+
+  for (Particle const& particle : *renderData.particles) {
     if (layer != particle.layer)
       continue;
 
@@ -218,7 +221,7 @@ void WorldPainter::renderParticles(WorldRenderData& renderData, Particle::Layer 
 
     } else if (particle.type == Particle::Type::Text) {
       Vec2F position = m_camera.worldToScreen(particle.position);
-      unsigned size = round((float)textParticleFontSize * m_camera.pixelRatio() * particle.size);
+      int size = min(128.0f, round((float)textParticleFontSize * m_camera.pixelRatio() * particle.size));
       if (size > 0) {
         m_textPainter->setFontSize(size);
         m_textPainter->setFontColor(particle.color.toRgba());

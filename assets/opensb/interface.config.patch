@@ -16,7 +16,7 @@
 
   "debugFont" : "mono",
   "debugFontSize" : 7,
-  "debugFontDirectives" : "?border=1;0007;0000",
+  "debugFontDirectives" : "?border=1;2224;0000",
 
   // Change planet name to support the new internal string formatting.
   "planetNameFormatString" : "- {} -",

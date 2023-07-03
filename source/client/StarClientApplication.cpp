@@ -389,23 +389,23 @@ void ClientApplication::render() {
       auto start = Time::monotonicMicroseconds();
       renderer->switchEffectConfig("world");
       worldClient->render(m_renderData, TilePainter::BorderTileSize);
-      LogMap::set("render_world_client", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
+      LogMap::set("client_render_world_client", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
 
       start = Time::monotonicMicroseconds();
       m_worldPainter->render(m_renderData, [&]() { worldClient->waitForLighting(); });
-      LogMap::set("render_world_painter", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
+      LogMap::set("client_render_world_painter", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
 
       start = Time::monotonicMicroseconds();
       m_mainInterface->renderInWorldElements();
-      LogMap::set("render_world_elements", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
+      LogMap::set("client_render_world_elements", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
       renderer->switchEffectConfig("default");
 
-      LogMap::set("render_world_total", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
+      LogMap::set("client_render_world_total", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
     }
     auto start = Time::monotonicMicroseconds();
     m_mainInterface->render();
     m_cinematicOverlay->render();
-    LogMap::set("render_interface", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
+    LogMap::set("client_render_interface", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
   }
 
   if (!m_errorScreen->accepted())
@@ -862,14 +862,14 @@ void ClientApplication::updateRunning() {
 
     Vec2F aimPosition = m_player->aimPosition();
     float fps = appController()->renderFps();
-    LogMap::set("render_rate", strf("{:4.2f} FPS ({:4.2f}ms)", fps, (1.0f / appController()->renderFps()) * 1000.0f));
-    LogMap::set("update_rate", strf("{:4.2f}Hz", appController()->updateRate()));
+    LogMap::set("client_render_rate", strf("{:4.2f} FPS ({:4.2f}ms)", fps, (1.0f / appController()->renderFps()) * 1000.0f));
+    LogMap::set("client_update_rate", strf("{:4.2f}Hz", appController()->updateRate()));
     LogMap::set("player_pos", strf("[ ^#f45;{:4.2f}^reset;, ^#49f;{:4.2f}^reset; ]", m_player->position()[0], m_player->position()[1]));
     LogMap::set("player_vel", strf("[ ^#f45;{:4.2f}^reset;, ^#49f;{:4.2f}^reset; ]", m_player->velocity()[0], m_player->velocity()[1]));
     LogMap::set("player_aim", strf("[ ^#f45;{:4.2f}^reset;, ^#49f;{:4.2f}^reset; ]", aimPosition[0], aimPosition[1]));
     if (m_universeClient->worldClient()) {
-      LogMap::set("liquid_level", strf("{}", m_universeClient->worldClient()->liquidLevel(Vec2I::floor(aimPosition)).level));
-      LogMap::set("dungeon_id", strf("{}", m_universeClient->worldClient()->dungeonId(Vec2I::floor(aimPosition))));
+      LogMap::set("tile_liquid_level", strf("{}", m_universeClient->worldClient()->liquidLevel(Vec2I::floor(aimPosition)).level));
+      LogMap::set("tile_dungeon_id", strf("{}", m_universeClient->worldClient()->dungeonId(Vec2I::floor(aimPosition))));
     }
 
     if (m_mainInterface->currentState() == MainInterface::ReturnToTitle)
