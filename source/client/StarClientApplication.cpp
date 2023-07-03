@@ -415,7 +415,8 @@ void ClientApplication::render() {
 }
 
 void ClientApplication::getAudioData(int16_t* sampleData, size_t frameCount) {
-  m_mainMixer->read(sampleData, frameCount);
+  if (m_mainMixer)
+    m_mainMixer->read(sampleData, frameCount);
 }
 
 void ClientApplication::changeState(MainAppState newState) {
