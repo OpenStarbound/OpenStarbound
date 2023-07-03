@@ -40,6 +40,7 @@ WorldServer::WorldServer(WorldTemplatePtr const& worldTemplate, IODevicePtr stor
   m_respawnInWorld = false;
   m_tileProtectionEnabled = true;
   m_universeSettings = make_shared<UniverseSettings>();
+  m_worldId = worldTemplate->worldName();
 
   init(true);
   writeMetadata();
@@ -52,6 +53,7 @@ WorldServer::WorldServer(IODevicePtr const& storage) {
   m_worldStorage = make_shared<WorldStorage>(storage, make_shared<WorldGenerator>(this));
   m_tileProtectionEnabled = true;
   m_universeSettings = make_shared<UniverseSettings>();
+  m_worldId = "Nowhere";
 
   readMetadata();
   init(false);
@@ -61,6 +63,7 @@ WorldServer::WorldServer(WorldChunks const& chunks) {
   m_worldStorage = make_shared<WorldStorage>(chunks, make_shared<WorldGenerator>(this));
   m_tileProtectionEnabled = true;
   m_universeSettings = make_shared<UniverseSettings>();
+  m_worldId = "Nowhere";
 
   readMetadata();
   init(false);
@@ -70,6 +73,14 @@ WorldServer::~WorldServer() {
   m_spawner.uninit();
   writeMetadata();
   m_worldStorage->unloadAll(true);
+}
+
+void WorldServer::setWorldId(String worldId) {
+  m_worldId = move(worldId);
+}
+
+String const& WorldServer::worldId() const {
+  return m_worldId;
 }
 
 void WorldServer::setUniverseSettings(UniverseSettingsPtr universeSettings) {
@@ -616,12 +627,10 @@ void WorldServer::update() {
   for (auto& pair : m_clientInfo)
     pair.second->pendingForward = false;
 
-  LogMap::set(strf("server_{}_entities", m_worldTemplate->worldSeed()), m_entityMap->size());
-  LogMap::set(strf("server_{}_sectors", m_worldTemplate->worldSeed()), strf("{}", m_tileArray->loadedSectorCount()));
-  LogMap::set(strf("server_{}_world_time", m_worldTemplate->worldSeed()), epochTime());
-  LogMap::set(strf("server_{}_active_liquid", m_worldTemplate->worldSeed()), m_liquidEngine->activeCells());
-  LogMap::set(strf("server_{}_day_time", m_worldTemplate->worldSeed()), timeOfDay() / dayLength());
-  LogMap::set(strf("server_{}_lua_mem", m_worldTemplate->worldSeed()), m_luaRoot->luaMemoryUsage());
+  LogMap::set(strf("server_{}_entities", m_worldId), strf("{} in {} sectors", m_entityMap->size(), m_tileArray->loadedSectorCount()));
+  LogMap::set(strf("server_{}_time", m_worldId), strf("age = {:4.2f}, day = {:4.2f}/{:4.2f}s", epochTime(), timeOfDay(), dayLength()));
+  LogMap::set(strf("server_{}_active_liquid", m_worldId), m_liquidEngine->activeCells());
+  LogMap::set(strf("server_{}_lua_mem", m_worldId), m_luaRoot->luaMemoryUsage());
 }
 
 WorldGeometry WorldServer::geometry() const {

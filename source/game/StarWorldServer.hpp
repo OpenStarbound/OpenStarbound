@@ -57,6 +57,9 @@ public:
   // Load an existing world from an in-memory representation
   ~WorldServer();
 
+  void setWorldId(String worldId);
+  String const& worldId() const;
+
   void setUniverseSettings(UniverseSettingsPtr universeSettings);
   UniverseSettingsPtr universeSettings() const;
 
@@ -374,6 +377,8 @@ private:
   HashMap<Uuid, pair<ConnectionId, MVariant<ConnectionId, RpcPromiseKeeper<Json>>>> m_entityMessageResponses;
 
   List<PhysicsForceRegion> m_forceRegions;
+
+  String m_worldId;
 };
 
 }

@@ -13,7 +13,10 @@ WorldServerThread::WorldServerThread(WorldServerPtr server, WorldId worldId)
     m_worldServer(move(server)),
     m_worldId(move(worldId)),
     m_stop(false),
-    m_errorOccurred(false) {}
+    m_errorOccurred(false) {
+  if (m_worldServer)
+    m_worldServer->setWorldId(printWorldId(m_worldId));
+}
 
 WorldServerThread::~WorldServerThread() {
   m_stop = true;
@@ -195,7 +198,7 @@ void WorldServerThread::run() {
     while (!m_stop && !m_errorOccurred) {
       auto fidelity = lockedFidelity.value(automaticFidelity);
       LogMap::set(strf("server_{}_fidelity", m_worldId), WorldServerFidelityNames.getRight(fidelity));
-      LogMap::set(strf("server_{}_update_fps", m_worldId), tickApproacher.rate());
+      LogMap::set(strf("server_{}_update", m_worldId), strf("{:4.2f}Hz", tickApproacher.rate()));
 
       update(fidelity);
       tickApproacher.tick();

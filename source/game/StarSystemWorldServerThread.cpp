@@ -52,7 +52,7 @@ void SystemWorldServerThread::run() {
   TickRateApproacher tickApproacher(1.0 / SystemWorldTimestep, 0.5);
 
   while (!m_stop) {
-    LogMap::set(strf("system_{}_update_fps", m_systemLocation), tickApproacher.rate());
+    LogMap::set(strf("system_{}_update_rate", m_systemLocation), strf("{:4.2f}Hz", tickApproacher.rate()));
 
     update();
 
