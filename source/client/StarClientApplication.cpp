@@ -389,23 +389,23 @@ void ClientApplication::render() {
       auto start = Time::monotonicMicroseconds();
       renderer->switchEffectConfig("world");
       worldClient->render(m_renderData, TilePainter::BorderTileSize);
-      LogMap::set("render_world_client", strf(u8"{:05d}탎", Time::monotonicMicroseconds() - start));
+      LogMap::set("render_world_client", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
 
       start = Time::monotonicMicroseconds();
       m_worldPainter->render(m_renderData, [&]() { worldClient->waitForLighting(); });
-      LogMap::set("render_world_painter", strf(u8"{:05d}탎", Time::monotonicMicroseconds() - start));
+      LogMap::set("render_world_painter", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
 
       start = Time::monotonicMicroseconds();
       m_mainInterface->renderInWorldElements();
-      LogMap::set("render_world_elements", strf(u8"{:05d}탎", Time::monotonicMicroseconds() - start));
+      LogMap::set("render_world_elements", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
       renderer->switchEffectConfig("default");
 
-      LogMap::set("render_world_total", strf(u8"{:05d}탎", Time::monotonicMicroseconds() - start));
+      LogMap::set("render_world_total", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
     }
     auto start = Time::monotonicMicroseconds();
     m_mainInterface->render();
     m_cinematicOverlay->render();
-    LogMap::set("render_interface", strf(u8"{:05d}탎", Time::monotonicMicroseconds() - start));
+    LogMap::set("render_interface", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
   }
 
   if (!m_errorScreen->accepted())

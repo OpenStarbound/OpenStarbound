@@ -72,7 +72,7 @@ void WorldPainter::render(WorldRenderData& renderData, function<void()> lightWai
   if (lightWaiter) {
     auto start = Time::monotonicMicroseconds();
     lightWaiter();
-    LogMap::set("render_world_async_lighting_wait_time", strf(u8"{:05d}µs", Time::monotonicMicroseconds() - start));
+    LogMap::set("render_world_async_lighting_wait_time", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
   }
 
   if (renderData.isFullbright) {

@@ -1458,7 +1458,7 @@ void WorldClient::lightingMain() {
 
       m_lightingCalculator.calculate(m_renderData->lightMap);
       m_renderData = nullptr;
-      LogMap::set("render_world_async_lighting_calc_time", strf(u8"{:05d}µs", Time::monotonicMicroseconds() - start));
+      LogMap::set("render_world_async_lighting_calc_time", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
     }
 
     m_lightingCond.wait(m_lightingMutex);
