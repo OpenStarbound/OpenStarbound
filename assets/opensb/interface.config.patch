@@ -14,7 +14,7 @@
     "font" : ""
   },
 
-  "debugFont" : "mono",
+  "debugFont" : "iosevka-extrabold",
   "debugFontSize" : 7,
   "debugFontDirectives" : "?border=1;2224;0000",
 

@@ -67,7 +67,7 @@ const FontTextureGroup::GlyphTexture& FontTextureGroup::glyphTexture(String::Cha
     else
       res.first->second.offset = Vec2F();
 
-    res.first->second.offset[1] += pair.second;
+    res.first->second.offset += Vec2F(pair.second);
     res.first->second.texture = m_textureGroup->create(image);
   }
 

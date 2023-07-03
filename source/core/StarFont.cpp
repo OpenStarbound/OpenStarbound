@@ -86,7 +86,7 @@ unsigned Font::width(String::Char c) {
 }
 
 
-std::pair<Image, int> Font::render(String::Char c) {
+std::pair<Image, Vec2I> Font::render(String::Char c) {
   if (!m_fontImpl)
     throw FontException("Font::render called on uninitialized font.");
 
@@ -117,7 +117,7 @@ std::pair<Image, int> Font::render(String::Char c) {
     }
   }
 
-  return { move(image), (slot->bitmap_top - (int)height) + m_pixelSize / 4 };
+  return { move(image), {slot->bitmap_left, (slot->bitmap_top - (int)height) + m_pixelSize / 4} };
 }
 
 }
