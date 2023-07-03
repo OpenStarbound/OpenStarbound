@@ -1261,6 +1261,7 @@ void MainInterface::renderDebug() {
   auto assets = Root::singleton().assets();
   m_guiContext->setFontSize(m_config->debugFontSize);
   m_guiContext->setFont(m_config->debugFont);
+  m_guiContext->setLineSpacing(0.5f);
   m_guiContext->setFontProcessingDirectives(m_config->debugFontDirectives);
   m_guiContext->setFontColor(Color::Green.toRgba());
   m_guiContext->setFontMode(FontMode::Normal);
@@ -1297,6 +1298,7 @@ void MainInterface::renderDebug() {
   }
   m_guiContext->setFontSize(8);
   m_guiContext->setDefaultFont();
+  m_guiContext->setDefaultLineSpacing();
   m_guiContext->setFontColor(Vec4B::filled(255));
   m_guiContext->setFontProcessingDirectives("");
 
