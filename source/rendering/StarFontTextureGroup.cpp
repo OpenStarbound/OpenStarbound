@@ -39,23 +39,21 @@ void FontTextureGroup::clearFonts() {
   m_font = m_defaultFont;
 }
 
-const FontTextureGroup::GlyphTexture& FontTextureGroup::glyphTexture(String::Char c, unsigned size, String const& processingDirectives)
+const FontTextureGroup::GlyphTexture& FontTextureGroup::glyphTexture(String::Char c, unsigned size, Directives const* processingDirectives)
 {
-  auto res = m_glyphs.insert(GlyphDescriptor{c, size, processingDirectives, m_font.get() }, GlyphTexture());
+  auto res = m_glyphs.insert(GlyphDescriptor{c, size, processingDirectives ? processingDirectives->hash() : 0, m_font.get()}, GlyphTexture());
 
   if (res.second) {
     m_font->setPixelSize(size);
     auto pair = m_font->render(c);
     Image& image = pair.first;
-    if (!processingDirectives.empty()) {
+    if (processingDirectives && *processingDirectives) {
       try {
         Vec2F preSize = Vec2F(image.size());
-        auto imageOperations = parseImageOperations(processingDirectives);
-        for (auto& imageOp : imageOperations) {
-          if (auto border = imageOp.ptr<BorderImageOperation>())
-            border->includeTransparent = true;
-        }
-        image = processImageOperations(imageOperations, image);
+
+        for (auto& entry : processingDirectives->shared->entries)
+          processImageOperation(entry.operation, image);
+
         res.first->second.offset = (preSize - Vec2F(image.size())) / 2;
       }
       catch (StarException&) {
@@ -76,10 +74,10 @@ const FontTextureGroup::GlyphTexture& FontTextureGroup::glyphTexture(String::Cha
 }
 
 TexturePtr FontTextureGroup::glyphTexturePtr(String::Char c, unsigned size) {
-  return glyphTexture(c, size, "").texture;
+  return glyphTexture(c, size, nullptr).texture;
 }
 
-TexturePtr FontTextureGroup::glyphTexturePtr(String::Char c, unsigned size, String const& processingDirectives) {
+TexturePtr FontTextureGroup::glyphTexturePtr(String::Char c, unsigned size, Directives const* processingDirectives) {
   return glyphTexture(c, size, processingDirectives).texture;
 }
 

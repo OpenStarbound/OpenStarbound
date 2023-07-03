@@ -402,8 +402,15 @@ void TextPainter::setFontColor(Vec4B color) {
   m_renderSettings.color = move(color);
 }
 
-void TextPainter::setProcessingDirectives(String directives) {
-  m_renderSettings.directives = move(directives);
+void TextPainter::setProcessingDirectives(StringView directives) {
+  m_renderSettings.directives = String(directives);
+  if (m_renderSettings.directives) {
+    m_renderSettings.directives.loadOperations();
+    for (auto& entry : m_renderSettings.directives.shared->entries) {
+      if (auto border = entry.operation.ptr<BorderImageOperation>())
+        border->includeTransparent = true;
+    }
+  }
 }
 
 void TextPainter::setFont(String const& font) {
@@ -450,7 +457,7 @@ void TextPainter::applyCommands(StringView unsplitCommands) {
       } else if (command.beginsWith("directives=")) {
         // Honestly this is really stupid but I just couldn't help myself
         // Should probably limit in the future
-        m_renderSettings.directives = command.substr(11);
+        setProcessingDirectives(command.substr(11));
       } else {
         // expects both #... sequences and plain old color names.
         Color c = Color(command);
@@ -559,6 +566,8 @@ RectF TextPainter::doRenderGlyph(String::Char c, TextPositioning const& position
   else if (position.vAnchor == VerticalAnchor::TopAnchor)
     vOffset = -(float)m_fontSize;
 
+  Directives* directives = m_renderSettings.directives ? &m_renderSettings.directives : nullptr;
+
   if (reallyRender) {
     if ((int)m_renderSettings.mode & (int)FontMode::Shadow) {
       Color shadow = Color::Black;
@@ -571,17 +580,17 @@ RectF TextPainter::doRenderGlyph(String::Char c, TextPositioning const& position
         shadow.setAlpha(alphaU);
 
       //Kae: Draw only one shadow glyph instead of stacking two, alpha modified to appear perceptually the same as vanilla
-      renderGlyph(c, position.pos + Vec2F(hOffset, vOffset - 2), m_fontSize, 1, shadow.toRgba(), m_renderSettings.directives);
+      renderGlyph(c, position.pos + Vec2F(hOffset, vOffset - 2), m_fontSize, 1, shadow.toRgba(), directives);
     }
 
-    renderGlyph(c, position.pos + Vec2F(hOffset, vOffset), m_fontSize, 1, m_renderSettings.color, m_renderSettings.directives);
+    renderGlyph(c, position.pos + Vec2F(hOffset, vOffset), m_fontSize, 1, m_renderSettings.color, directives);
   }
 
   return RectF::withSize(position.pos + Vec2F(hOffset, vOffset), {(float)width, (int)m_fontSize});
 }
 
 void TextPainter::renderGlyph(String::Char c, Vec2F const& screenPos, unsigned fontSize,
-    float scale, Vec4B const& color, String const& processingDirectives) {
+    float scale, Vec4B const& color, Directives const* processingDirectives) {
   if (!fontSize)
     return;
 

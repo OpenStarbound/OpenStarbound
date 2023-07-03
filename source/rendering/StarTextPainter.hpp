@@ -78,7 +78,7 @@ public:
   void setLineSpacing(float lineSpacing);
   void setMode(FontMode mode);
   void setFontColor(Vec4B color);
-  void setProcessingDirectives(String directives);
+  void setProcessingDirectives(StringView directives);
   void setFont(String const& font);
   void addFont(FontPtr const& font, String const& name);
   void reloadFonts();
@@ -90,14 +90,14 @@ private:
     FontMode mode;
     Vec4B color;
     String font;
-    String directives;
+    Directives directives;
   };
 
   RectF doRenderText(StringView s, TextPositioning const& position, bool reallyRender, unsigned* charLimit);
   RectF doRenderLine(StringView s, TextPositioning const& position, bool reallyRender, unsigned* charLimit);
   RectF doRenderGlyph(String::Char c, TextPositioning const& position, bool reallyRender);
 
-  void renderGlyph(String::Char c, Vec2F const& screenPos, unsigned fontSize, float scale, Vec4B const& color, String const& processingDirectives);
+  void renderGlyph(String::Char c, Vec2F const& screenPos, unsigned fontSize, float scale, Vec4B const& color, Directives const* processingDirectives = nullptr);
 
   RendererPtr m_renderer;
   FontTextureGroup m_fontTextureGroup;

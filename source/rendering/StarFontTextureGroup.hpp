@@ -4,6 +4,7 @@
 #include "StarColor.hpp"
 #include "StarFont.hpp"
 #include "StarRenderer.hpp"
+#include "StarDirectives.hpp"
 
 namespace Star {
 
@@ -12,7 +13,7 @@ STAR_CLASS(FontTextureGroup);
 class FontTextureGroup {
 public:
   // Font* is only included for key uniqueness and should not be dereferenced
-  typedef tuple<String::Char, unsigned, String, Font*> GlyphDescriptor;
+  typedef tuple<String::Char, unsigned, size_t, Font*> GlyphDescriptor;
 
   struct GlyphTexture {
     TexturePtr texture;
@@ -22,10 +23,10 @@ public:
 
   FontTextureGroup(TextureGroupPtr textureGroup);
 
-  const GlyphTexture& glyphTexture(String::Char, unsigned fontSize, String const& processingDirectives);
+  const GlyphTexture& glyphTexture(String::Char, unsigned fontSize, Directives const* processingDirectives = nullptr);
 
   TexturePtr glyphTexturePtr(String::Char, unsigned fontSize);
-  TexturePtr glyphTexturePtr(String::Char, unsigned fontSize, String const& processingDirectives);
+  TexturePtr glyphTexturePtr(String::Char, unsigned fontSize, Directives const* processingDirectives = nullptr);
 
   unsigned glyphWidth(String::Char c, unsigned fontSize);
 
