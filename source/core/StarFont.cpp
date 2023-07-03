@@ -101,23 +101,26 @@ std::pair<Image, Vec2I> Font::render(String::Char c) {
 
   FT_GlyphSlot slot = face->glyph;
 
-  unsigned int width = slot->bitmap.width;
-  unsigned int height = slot->bitmap.rows;
+  unsigned width = slot->bitmap.width;
+  unsigned height = slot->bitmap.rows;
 
-  Image image(width, height, PixelFormat::RGBA32);
-  for (int y = 0; y < height; ++y) {
-    unsigned char* p = slot->bitmap.buffer + y * slot->bitmap.pitch;
-    for (int x = 0; x < width; ++x) {
+  Image image(width + 2, height + 2, PixelFormat::RGBA32);
+  Vec4B white(255, 255, 255, 0);
+  image.fill(white);
+
+  for (unsigned y = 0; y != height; ++y) {
+    uint8_t* p = slot->bitmap.buffer + y * slot->bitmap.pitch;
+    for (unsigned x = 0; x != width; ++x) {
       if (x >= 0 && y >= 0 && x < width && y < height) {
-        unsigned char val = *(p + x);
-        image.set(x, height - y - 1, Vec4B(255, 255, 255, val));
-      } else {
-        image.set(x, height - y - 1, Vec4B(255, 255, 255, 0));
+        if (uint8_t val = *(p + x)) {
+          white.setW(val);
+          image.set(x + 1, height - y, white);
+        }
       }
     }
   }
 
-  return { move(image), {slot->bitmap_left, (slot->bitmap_top - (int)height) + m_pixelSize / 4} };
+  return { move(image), {slot->bitmap_left - 1, (slot->bitmap_top - height) + (m_pixelSize / 4) - 1} };
 }
 
 }
