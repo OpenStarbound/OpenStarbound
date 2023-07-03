@@ -24,6 +24,7 @@ EnumMap<Plant::RotationType> const Plant::RotationTypeNames{
 
 Plant::PlantPiece::PlantPiece() {
   image = "";
+  imagePath = AssetPath();
   offset = {};
   segmentIdx = 0;
   structuralSegment = 0;
@@ -746,7 +747,7 @@ void Plant::render(RenderCallback* renderCallback) {
     if ((m_ceiling && offset[1] <= m_tileDamageY) || (!m_ceiling && offset[1] + size[1] >= m_tileDamageY))
       offset[0] += damageXOffset;
 
-    auto drawable = Drawable::makeImage(plantPiece.image, 1.0f / TilePixels, false, offset);
+    auto drawable = Drawable::makeImage(plantPiece.imagePath, 1.0f / TilePixels, false, offset);
     if (plantPiece.flip)
       drawable.scale(Vec2F(-1, 1));
 
@@ -864,6 +865,8 @@ Json Plant::writePiecesToJson() const {
 }
 
 void Plant::validatePieces() {
+  for (auto& piece : m_pieces)
+    piece.imagePath = piece.image;
   if (!m_piecesScanned) {
     scanSpacesAndRoots();
     calcBoundBox();

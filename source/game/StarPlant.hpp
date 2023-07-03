@@ -6,6 +6,7 @@
 #include "StarTileEntity.hpp"
 #include "StarPlantDatabase.hpp"
 #include "StarInspectableEntity.hpp"
+#include "StarAssetPath.hpp"
 
 namespace Star {
 
@@ -38,6 +39,7 @@ public:
 
   struct PlantPiece {
     PlantPiece();
+    AssetPath imagePath;
     String image;
     Vec2U imageSize;
     Vec2F offset;
