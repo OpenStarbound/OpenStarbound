@@ -366,6 +366,8 @@ LuaEnginePtr LuaEngine::create(bool safe) {
   self->setGlobal("jremove", self->createFunction(&LuaDetail::jcontRemove));
   self->setGlobal("jsize", self->createFunction(&LuaDetail::jcontSize));
   self->setGlobal("jresize", self->createFunction(&LuaDetail::jcontResize));
+
+  self->setGlobal("shared", self->createTable());
   return self;
 }
 
