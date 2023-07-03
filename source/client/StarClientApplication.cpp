@@ -855,14 +855,15 @@ void ClientApplication::updateRunning() {
     }
 
     Vec2F aimPosition = m_player->aimPosition();
-    LogMap::set("render_fps", appController()->renderFps());
-    LogMap::set("update_rate", appController()->updateRate());
-    LogMap::set("player_pos", strf("{:4.2f} {:4.2f}", m_player->position()[0], m_player->position()[1]));
-    LogMap::set("player_vel", strf("{:4.2f} {:4.2f}", m_player->velocity()[0], m_player->velocity()[1]));
-    LogMap::set("player_aim", strf("{:4.2f} {:4.2f}", aimPosition[0], aimPosition[1]));
+    float fps = appController()->renderFps();
+    LogMap::set("render_rate", strf("{:4.2f} FPS ({:4.2f}ms)", fps, (1.0f / appController()->renderFps()) * 1000.0f));
+    LogMap::set("update_rate", strf("{:4.2f}Hz", appController()->updateRate()));
+    LogMap::set("player_pos", strf("[ ^#f45;{:4.2f}^reset;, ^#49f;{:4.2f}^reset; ]", m_player->position()[0], m_player->position()[1]));
+    LogMap::set("player_vel", strf("[ ^#f45;{:4.2f}^reset;, ^#49f;{:4.2f}^reset; ]", m_player->velocity()[0], m_player->velocity()[1]));
+    LogMap::set("player_aim", strf("[ ^#f45;{:4.2f}^reset;, ^#49f;{:4.2f}^reset; ]", aimPosition[0], aimPosition[1]));
     if (m_universeClient->worldClient()) {
       LogMap::set("liquid_level", strf("{}", m_universeClient->worldClient()->liquidLevel(Vec2I::floor(aimPosition)).level));
-      LogMap::set("dungeonId", strf("{}", m_universeClient->worldClient()->dungeonId(Vec2I::floor(aimPosition))));
+      LogMap::set("dungeon_id", strf("{}", m_universeClient->worldClient()->dungeonId(Vec2I::floor(aimPosition))));
     }
 
     if (m_mainInterface->currentState() == MainInterface::ReturnToTitle)

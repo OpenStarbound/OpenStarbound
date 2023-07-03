@@ -17,7 +17,7 @@ public:
   struct GlyphTexture {
     TexturePtr texture;
     int64_t time;
-    Vec2F processingOffset;
+    Vec2F offset;
   };
 
   FontTextureGroup(TextureGroupPtr textureGroup);

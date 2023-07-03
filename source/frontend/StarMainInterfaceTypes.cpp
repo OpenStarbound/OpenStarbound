@@ -114,6 +114,7 @@ MainInterfaceConfigPtr MainInterfaceConfig::loadFromAssets() {
   config->debugOffset = jsonToVec2I(assets->json("/interface.config:debugOffset"));
   config->debugFontSize = assets->json("/interface.config:debugFontSize").toUInt();
   config->debugFont = assets->json("/interface.config:debugFont").toString();
+  config->debugFontDirectives = assets->json("/interface.config:debugFontDirectives").toString();
   config->debugSpatialClearTime = assets->json("/interface.config:debugSpatialClearTime").toFloat();
   config->debugMapClearTime = assets->json("/interface.config:debugMapClearTime").toFloat();
   config->debugBackgroundColor = jsonToColor(assets->json("/interface.config:debugBackgroundColor"));

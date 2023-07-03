@@ -145,6 +145,7 @@ struct MainInterfaceConfig {
   Vec2I debugOffset;
   unsigned debugFontSize;
   String debugFont;
+  String debugFontDirectives;
   float debugSpatialClearTime;
   float debugMapClearTime;
   Color debugBackgroundColor;

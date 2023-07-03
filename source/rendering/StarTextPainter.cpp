@@ -586,7 +586,7 @@ void TextPainter::renderGlyph(String::Char c, Vec2F const& screenPos, unsigned f
     return;
 
   const FontTextureGroup::GlyphTexture& glyphTexture = m_fontTextureGroup.glyphTexture(c, fontSize, processingDirectives);
-  Vec2F offset = glyphTexture.processingOffset * (scale * 0.5f);
+  Vec2F offset = glyphTexture.offset * scale;
   m_renderer->immediatePrimitives().emplace_back(std::in_place_type_t<RenderQuad>(), glyphTexture.texture, screenPos + offset, scale, color, 0.0f);
 }
 

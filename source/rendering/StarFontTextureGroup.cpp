@@ -45,7 +45,8 @@ const FontTextureGroup::GlyphTexture& FontTextureGroup::glyphTexture(String::Cha
 
   if (res.second) {
     m_font->setPixelSize(size);
-    Image image = m_font->render(c);
+    auto pair = m_font->render(c);
+    Image& image = pair.first;
     if (!processingDirectives.empty()) {
       try {
         Vec2F preSize = Vec2F(image.size());
@@ -55,7 +56,7 @@ const FontTextureGroup::GlyphTexture& FontTextureGroup::glyphTexture(String::Cha
             border->includeTransparent = true;
         }
         image = processImageOperations(imageOperations, image);
-        res.first->second.processingOffset = preSize - Vec2F(image.size());
+        res.first->second.offset = (preSize - Vec2F(image.size())) / 2;
       }
       catch (StarException&) {
         image.forEachPixel([](unsigned x, unsigned y, Vec4B& pixel) {
@@ -64,8 +65,9 @@ const FontTextureGroup::GlyphTexture& FontTextureGroup::glyphTexture(String::Cha
       }
     }
     else
-      res.first->second.processingOffset = Vec2F();
+      res.first->second.offset = Vec2F();
 
+    res.first->second.offset[1] += pair.second;
     res.first->second.texture = m_textureGroup->create(image);
   }
 
