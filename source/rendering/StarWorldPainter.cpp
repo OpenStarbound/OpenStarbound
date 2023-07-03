@@ -70,9 +70,9 @@ void WorldPainter::render(WorldRenderData& renderData, function<void()> lightWai
   m_environmentPainter->renderFrontOrbiters(orbiterAndPlanetRatio, Vec2F(m_camera.screenSize()), renderData.skyRenderData);
 
   if (lightWaiter) {
-    int64_t start = Time::monotonicMilliseconds();
+    auto start = Time::monotonicMicroseconds();
     lightWaiter();
-    LogMap::set("render_light_wait", strf("{}ms", Time::monotonicMilliseconds() - start));
+    LogMap::set("render_world_async_lighting_wait_time", strf(u8"{:05d}µs", Time::monotonicMicroseconds() - start));
   }
 
   if (renderData.isFullbright) {

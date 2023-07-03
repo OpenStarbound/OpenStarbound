@@ -14,6 +14,7 @@ namespace Time {
 
   double monotonicTime();
   int64_t monotonicMilliseconds();
+  int64_t monotonicMicroseconds();
 
   // Pretty print a duration of time (In days, hours, minutes, seconds, and milliseconds)
   String printDuration(double time);
@@ -34,8 +35,10 @@ namespace Time {
 
   double ticksToSeconds(int64_t ticks, int64_t tickFrequency);
   int64_t ticksToMilliseconds(int64_t ticks, int64_t tickFrequency);
+  int64_t ticksToMicroseconds(int64_t ticks, int64_t tickFrequency);
   int64_t secondsToTicks(double seconds, int64_t tickFrequency);
   int64_t millisecondsToTicks(int64_t milliseconds, int64_t tickFrequency);
+  int64_t microsecondsToTicks(int64_t microseconds, int64_t tickFrequency);
 }
 
 // Keeps track of elapsed real time since a given moment.  Guaranteed

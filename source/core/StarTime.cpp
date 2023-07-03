@@ -20,6 +20,10 @@ int64_t Time::monotonicMilliseconds() {
   return ticksToMilliseconds(monotonicTicks(), monotonicTickFrequency());
 }
 
+int64_t Time::monotonicMicroseconds() {
+  return ticksToMicroseconds(monotonicTicks(), monotonicTickFrequency());
+}
+
 String Time::printDuration(double time) {
   String hours;
   String minutes;
@@ -58,12 +62,21 @@ int64_t Time::ticksToMilliseconds(int64_t ticks, int64_t tickFrequency) {
   return (ticks + ticksPerMs / 2) / ticksPerMs;
 }
 
+int64_t Time::ticksToMicroseconds(int64_t ticks, int64_t tickFrequency) {
+  int64_t ticksPerUs = (tickFrequency + 500000) / 1000000;
+  return (ticks + ticksPerUs / 2) / ticksPerUs;
+}
+
 int64_t Time::secondsToTicks(double seconds, int64_t tickFrequency) {
   return round(seconds * tickFrequency);
 }
 
 int64_t Time::millisecondsToTicks(int64_t milliseconds, int64_t tickFrequency) {
   return milliseconds * ((tickFrequency + 500) / 1000);
+}
+
+int64_t Time::microsecondsToTicks(int64_t microseconds, int64_t tickFrequency) {
+  return microseconds * ((tickFrequency + 500000) / 1000000);
 }
 
 Clock::Clock(bool start) {
