@@ -55,10 +55,14 @@ vec4 bicubicSample(sampler2D texture, vec2 texcoord, vec2 texscale) {
     mix(sample1, sample0, sx), sy);
 }
 
-vec4 sampleLightMap(vec2 texcoord, vec2 texscale) {
-  vec4 a = bicubicSample(lightMap, texcoord, texscale);
+vec3 sampleLightMap(vec2 texcoord, vec2 texscale) {
   vec4 b = bicubicSample(tileLightMap, texcoord, texscale);
-  return mix(a, b, b.z);
+  vec4 a = bicubicSample(lightMap, texcoord, texscale);
+
+  if (b.z <= 0.0)
+    return a.rgb;
+
+  return mix(a.rgb, b.rgb / b.z, b.z);
 }
 
 void main() {
@@ -80,6 +84,6 @@ void main() {
   if (texColor.a == 0.99607843137)
     finalColor.a = fragmentColor.a;
   else if (lightMapEnabled && finalLightMapMultiplier > 0.0)
-    finalColor.rgb *= sampleLightMap(fragmentLightMapCoordinate, 1.0 / lightMapSize).rgb * finalLightMapMultiplier;
+    finalColor.rgb *= sampleLightMap(fragmentLightMapCoordinate, 1.0 / lightMapSize) * finalLightMapMultiplier;
   gl_FragColor = finalColor;
 }
