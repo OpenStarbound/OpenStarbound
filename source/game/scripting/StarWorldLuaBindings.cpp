@@ -357,6 +357,16 @@ namespace LuaBindings {
     
     if (auto clientWorld = as<WorldClient>(world)) {
       callbacks.registerCallbackWithSignature<RectI>("clientWindow", bind(ClientWorldCallbacks::clientWindow, clientWorld));
+      callbacks.registerCallback("players", [clientWorld]() {
+        List<EntityId> playerIds;
+
+        clientWorld->forAllEntities([&](EntityPtr const& entity) {
+          if (entity->entityType() == EntityType::Player)
+            playerIds.emplace_back(entity->entityId());
+        });
+
+        return playerIds;
+      });
     }
 
     if (auto serverWorld = as<WorldServer>(world)) {
