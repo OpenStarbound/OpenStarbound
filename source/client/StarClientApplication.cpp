@@ -386,7 +386,9 @@ void ClientApplication::render() {
     WorldClientPtr worldClient = m_universeClient->worldClient();
     RendererPtr renderer = Application::renderer();
     if (worldClient) {
-      auto start = Time::monotonicMicroseconds();
+      auto totalStart = Time::monotonicMicroseconds();
+      auto start = totalStart;
+
       renderer->switchEffectConfig("world");
       worldClient->render(m_renderData, TilePainter::BorderTileSize);
       LogMap::set("client_render_world_client", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
@@ -400,7 +402,7 @@ void ClientApplication::render() {
       LogMap::set("client_render_world_elements", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
       renderer->switchEffectConfig("default");
 
-      LogMap::set("client_render_world_total", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
+      LogMap::set("client_render_world_total", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - totalStart));
     }
     auto start = Time::monotonicMicroseconds();
     m_mainInterface->render();
