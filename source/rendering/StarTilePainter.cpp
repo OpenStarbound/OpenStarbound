@@ -17,7 +17,11 @@ TilePainter::TilePainter(RendererPtr renderer) {
   auto assets = root.assets();
 
   m_terrainChunkCache.setTimeToLive(assets->json("/rendering.config:chunkCacheTimeout").toInt());
+  m_terrainChunkCache.setTimeSmear(m_terrainChunkCache.timeToLive() / 4);
+
   m_liquidChunkCache.setTimeToLive(assets->json("/rendering.config:chunkCacheTimeout").toInt());
+  m_liquidChunkCache.setTimeSmear(m_liquidChunkCache.timeToLive() / 4);
+
   m_textureCache.setTimeToLive(assets->json("/rendering.config:textureTimeout").toInt());
 
   m_backgroundLayerColor = jsonToColor(assets->json("/rendering.config:backgroundLayerColor")).toRgba();
