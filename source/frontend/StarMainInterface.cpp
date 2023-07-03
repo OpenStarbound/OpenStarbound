@@ -1257,50 +1257,52 @@ void MainInterface::renderDebug() {
     LogMap::clear();
     return;
   }
+  
+  if (m_clientCommandProcessor->debugHudEnabled()) {
+    auto assets = Root::singleton().assets();
+    m_guiContext->setFontSize(m_config->debugFontSize);
+    m_guiContext->setFont(m_config->debugFont);
+    m_guiContext->setLineSpacing(0.5f);
+    m_guiContext->setFontProcessingDirectives(m_config->debugFontDirectives);
+    m_guiContext->setFontColor(Color::White.toRgba());
+    m_guiContext->setFontMode(FontMode::Normal);
 
-  auto assets = Root::singleton().assets();
-  m_guiContext->setFontSize(m_config->debugFontSize);
-  m_guiContext->setFont(m_config->debugFont);
-  m_guiContext->setLineSpacing(0.5f);
-  m_guiContext->setFontProcessingDirectives(m_config->debugFontDirectives);
-  m_guiContext->setFontColor(Color::White.toRgba());
-  m_guiContext->setFontMode(FontMode::Normal);
+    bool clearMap = m_debugMapClearTimer.wrapTick();
+    auto logMapValues = LogMap::getValues();
+    if (clearMap)
+      LogMap::clear();
 
-  bool clearMap = m_debugMapClearTimer.wrapTick();
-  auto logMapValues = LogMap::getValues();
-  if (clearMap)
-    LogMap::clear();
+    List<String> formatted;
+    formatted.reserve(logMapValues.size());
 
-  List<String> formatted;
-  formatted.reserve(logMapValues.size());
+    int counter = 0;
+    for (auto const& pair : logMapValues) {
+      TextPositioning positioning = { Vec2F(m_config->debugOffset[0], windowHeight() - m_config->debugOffset[1] - m_config->fontSize * interfaceScale() * counter++) };
+      String& text = formatted.emplace_back(strf("{}^lightgray;:^green,set; {}", pair.first, pair.second));
+      m_debugTextRect.combine(m_guiContext->determineTextSize(text, positioning).padded(m_config->debugBackgroundPad));
+    }
 
-  int counter = 0;
-  for (auto const& pair : logMapValues) {
-    TextPositioning positioning = {Vec2F(m_config->debugOffset[0], windowHeight() - m_config->debugOffset[1] - m_config->fontSize * interfaceScale() * counter++)};
-    String& text = formatted.emplace_back(strf("{}^lightgray;:^green,set; {}", pair.first, pair.second));
-    m_debugTextRect.combine(m_guiContext->determineTextSize(text, positioning).padded(m_config->debugBackgroundPad));
+    if (!m_debugTextRect.isNull()) {
+      RenderQuad& quad = m_guiContext->renderer()->immediatePrimitives()
+        .emplace_back(std::in_place_type_t<RenderQuad>(), m_debugTextRect, m_config->debugBackgroundColor.toRgba(), 0.0f).get<RenderQuad>();
+
+      quad.b.color[3] = quad.c.color[3] = 0;
+    };
+
+    m_debugTextRect = RectF::null();
+
+    counter = 0;
+    for (auto const& pair : logMapValues) {
+      TextPositioning positioning = { Vec2F(m_config->debugOffset[0], windowHeight() - m_config->debugOffset[1] - m_config->fontSize * interfaceScale() * counter) };
+      m_guiContext->renderText(formatted[counter], positioning);
+      ++counter;
+    }
+    m_guiContext->setFontSize(8);
+    m_guiContext->setDefaultFont();
+    m_guiContext->setDefaultLineSpacing();
+    m_guiContext->setFontColor(Vec4B::filled(255));
+    m_guiContext->setFontProcessingDirectives("");
   }
-
-  if (!m_debugTextRect.isNull()) {
-    RenderQuad& quad = m_guiContext->renderer()->immediatePrimitives()
-      .emplace_back(std::in_place_type_t<RenderQuad>(), m_debugTextRect, m_config->debugBackgroundColor.toRgba(), 0.0f).get<RenderQuad>();
-
-    quad.b.color[3] = quad.c.color[3] = 0;
-  };
-
-  m_debugTextRect = RectF::null();
-
-  counter = 0;
-  for (auto const& pair : logMapValues) {
-    TextPositioning positioning = {Vec2F(m_config->debugOffset[0], windowHeight() - m_config->debugOffset[1] - m_config->fontSize * interfaceScale() * counter)};
-    m_guiContext->renderText(formatted[counter], positioning);
-    ++counter;
-  }
-  m_guiContext->setFontSize(8);
-  m_guiContext->setDefaultFont();
-  m_guiContext->setDefaultLineSpacing();
-  m_guiContext->setFontColor(Vec4B::filled(255));
-  m_guiContext->setFontProcessingDirectives("");
 
   auto const& camera = m_worldPainter->camera();
 

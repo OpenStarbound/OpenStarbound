@@ -21,7 +21,7 @@ ClientCommandProcessor::ClientCommandProcessor(UniverseClientPtr universeClient,
     {"reload", bind(&ClientCommandProcessor::reload, this)},
     {"whoami", bind(&ClientCommandProcessor::whoami, this)},
     {"gravity", bind(&ClientCommandProcessor::gravity, this)},
-    {"debug", bind(&ClientCommandProcessor::debug, this)},
+    {"debug", bind(&ClientCommandProcessor::debug, this, _1)},
     {"boxes", bind(&ClientCommandProcessor::boxes, this)},
     {"fullbright", bind(&ClientCommandProcessor::fullbright, this)},
     {"asyncLighting", bind(&ClientCommandProcessor::asyncLighting, this)},
@@ -105,6 +105,10 @@ bool ClientCommandProcessor::debugDisplayEnabled() const {
   return m_debugDisplayEnabled;
 }
 
+bool ClientCommandProcessor::debugHudEnabled() const {
+  return m_debugHudEnabled;
+}
+
 bool ClientCommandProcessor::fixedCameraEnabled() const {
   return m_fixedCameraEnabled;
 }
@@ -126,12 +130,18 @@ String ClientCommandProcessor::gravity() {
   return strf("{}", m_universeClient->worldClient()->gravity(m_universeClient->mainPlayer()->position()));
 }
 
-String ClientCommandProcessor::debug() {
+String ClientCommandProcessor::debug(StringList const& arguments) {
   if (!adminCommandAllowed())
     return "You must be an admin to use this command.";
 
-  m_debugDisplayEnabled = !m_debugDisplayEnabled;
-  return strf("Debug display {}", m_debugDisplayEnabled ? "enabled" : "disabled");
+  if (!arguments.empty() && arguments.at(0).equalsIgnoreCase("hud")) {
+    m_debugHudEnabled = !m_debugHudEnabled;
+    return strf("Debug HUD {}", m_debugHudEnabled ? "enabled" : "disabled");
+  }
+  else {
+    m_debugDisplayEnabled = !m_debugDisplayEnabled;
+    return strf("Debug display {}", m_debugDisplayEnabled ? "enabled" : "disabled");
+  }
 }
 
 String ClientCommandProcessor::boxes() {

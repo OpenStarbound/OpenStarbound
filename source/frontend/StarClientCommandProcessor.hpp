@@ -19,6 +19,7 @@ public:
   StringList handleCommand(String const& commandLine);
 
   bool debugDisplayEnabled() const;
+  bool debugHudEnabled() const;
   bool fixedCameraEnabled() const;
 
 private:
@@ -28,7 +29,7 @@ private:
   String reload();
   String whoami();
   String gravity();
-  String debug();
+  String debug(StringList const& arguments);
   String boxes();
   String fullbright();
   String asyncLighting();
@@ -66,6 +67,7 @@ private:
   ShellParser m_parser;
   LuaBaseComponent m_scriptComponent;
   bool m_debugDisplayEnabled = false;
+  bool m_debugHudEnabled = true;
   bool m_fixedCameraEnabled = false;
 };
 
