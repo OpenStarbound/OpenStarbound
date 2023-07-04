@@ -259,6 +259,12 @@ struct LuaConverter<Color> {
   static Maybe<Color> to(LuaEngine& engine, LuaValue const& v);
 };
 
+template <>
+struct LuaConverter<LuaCallbacks> {
+  static LuaValue from(LuaEngine& engine, LuaCallbacks const& c);
+  static Maybe<LuaCallbacks> to(LuaEngine& engine, LuaValue const& v);
+};
+
 }
 
 #endif

@@ -48,25 +48,10 @@ void ScriptPane::dismissed() {
 }
 
 void ScriptPane::tick() {
-  BaseScriptPane::tick();
-
   if (m_sourceEntityId != NullEntityId && !m_client->worldClient()->playerCanReachEntity(m_sourceEntityId))
     dismiss();
 
-  for (auto p : m_canvasClickCallbacks) {
-    for (auto const& clickEvent : p.first->pullClickEvents())
-      m_script.invoke(p.second, jsonFromVec2I(clickEvent.position), (uint8_t)clickEvent.button, clickEvent.buttonDown);
-  }
-  for (auto p : m_canvasKeyCallbacks) {
-    for (auto const& keyEvent : p.first->pullKeyEvents())
-      m_script.invoke(p.second, (int)keyEvent.key, keyEvent.keyDown);
-  }
-
-  m_playingSounds.filter([](pair<String, AudioInstancePtr> const& p) {
-      return p.second->finished() == false;
-    });
-
-  m_script.update(m_script.updateDt());
+  BaseScriptPane::tick();
 }
 
 PanePtr ScriptPane::createTooltip(Vec2I const& screenPosition) {
@@ -76,7 +61,7 @@ PanePtr ScriptPane::createTooltip(Vec2I const& screenPosition) {
       return SimpleTooltipBuilder::buildTooltip(result->toString());
     } else {
       PanePtr tooltip = make_shared<Pane>();
-      m_reader.construct(*result, tooltip.get());
+      m_reader->construct(*result, tooltip.get());
       return tooltip;
     }
   } else {

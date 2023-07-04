@@ -22,9 +22,8 @@ public:
 
   bool openWithInventory() const;
 
-private:
   LuaCallbacks makePaneCallbacks() override;
-
+private:
   UniverseClientPtr m_client;
   EntityId m_sourceEntityId;
 };

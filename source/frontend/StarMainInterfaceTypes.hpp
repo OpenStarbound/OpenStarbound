@@ -37,6 +37,8 @@ enum class MainInterfacePanes {
   Collections
 };
 
+extern EnumMap<MainInterfacePanes> const MainInterfacePanesNames;
+
 typedef RegisteredPaneManager<MainInterfacePanes> MainInterfacePaneManager;
 
 struct MainInterfaceConfig {

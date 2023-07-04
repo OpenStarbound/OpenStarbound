@@ -7,6 +7,9 @@
 namespace Star {
 
 STAR_CLASS(Pane);
+STAR_CLASS(LuaCallbacks);
+STAR_CLASS(AudioInstance);
+STAR_CLASS(GuiReader);
 
 enum class PaneAnchor {
   None,
@@ -89,7 +92,9 @@ public:
   virtual PanePtr createTooltip(Vec2I const& screenPosition);
   virtual Maybe<String> cursorOverride(Vec2I const& screenPosition);
 
+  virtual LuaCallbacks makePaneCallbacks();
 protected:
+  virtual GuiReaderPtr reader();
   virtual void renderImpl();
 
   String m_bgHeader;
@@ -124,6 +129,8 @@ protected:
   PaneAnchor m_anchor;
   Vec2I m_anchorOffset;
   bool m_hasDisplayed;
+
+  List<pair<String, AudioInstancePtr>> m_playingSounds;
 };
 
 }

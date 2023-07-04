@@ -6,7 +6,6 @@
 
 namespace Star {
 
-STAR_CLASS(GuiReader);
 STAR_CLASS(ListWidget);
 
 class ListWidget : public Widget {

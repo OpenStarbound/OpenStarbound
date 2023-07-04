@@ -89,7 +89,10 @@ LuaMethods<CanvasWidgetPtr> LuaUserDataMethods<CanvasWidgetPtr>::make() {
   return methods;
 }
 
-LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget* parentWidget, GuiReader* reader) {
+LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr reader) {
+  if (!reader)
+    reader = make_shared<GuiReader>();
+  
   LuaCallbacks callbacks;
 
   // a bit miscellaneous, but put this here since widgets have access to gui context

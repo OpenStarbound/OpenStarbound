@@ -6,6 +6,7 @@
 namespace Star {
 
 STAR_EXCEPTION(GUIBuilderException, StarException);
+STAR_CLASS(GuiReader);
 
 class GuiReader : public WidgetParser {
 public:

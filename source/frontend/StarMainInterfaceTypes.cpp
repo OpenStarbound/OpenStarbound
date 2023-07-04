@@ -6,6 +6,32 @@
 
 namespace Star {
 
+EnumMap<MainInterfacePanes> const MainInterfacePanesNames{
+  {MainInterfacePanes::EscapeDialog, "EscapeDialog"},
+  {MainInterfacePanes::Inventory, "Inventory"},
+  {MainInterfacePanes::Codex, "Codex"},
+  {MainInterfacePanes::Cockpit, "Cockpit"},
+  {MainInterfacePanes::Tech, "Tech"},
+  {MainInterfacePanes::Songbook, "Songbook"},
+  {MainInterfacePanes::Ai, "Ai"},
+  {MainInterfacePanes::Popup, "Popup"},
+  {MainInterfacePanes::Confirmation, "Confirmation"},
+  {MainInterfacePanes::JoinRequest, "JoinRequest"},
+  {MainInterfacePanes::Options, "Options"},
+  {MainInterfacePanes::QuestLog, "QuestLog"},
+  {MainInterfacePanes::ActionBar, "ActionBar"},
+  {MainInterfacePanes::TeamBar, "TeamBar"},
+  {MainInterfacePanes::StatusPane, "StatusPane"},
+  {MainInterfacePanes::Chat, "Chat"},
+  {MainInterfacePanes::WireInterface, "WireInterface"},
+  {MainInterfacePanes::PlanetText, "PlanetText"},
+  {MainInterfacePanes::RadioMessagePopup, "RadioMessagePopup"},
+  {MainInterfacePanes::CraftingPlain, "CraftingPlain"},
+  {MainInterfacePanes::QuestTracker, "QuestTracker"},
+  {MainInterfacePanes::MmUpgrade, "MmUpgrade"},
+  {MainInterfacePanes::Collections, "Collections"}
+};
+
 MainInterfaceConfigPtr MainInterfaceConfig::loadFromAssets() {
   auto& root = Root::singleton();
   auto assets = root.assets();

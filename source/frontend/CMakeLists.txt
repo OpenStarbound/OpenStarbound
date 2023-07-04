@@ -55,7 +55,6 @@ SET (star_frontend_HEADERS
     StarSongbookInterface.hpp
     StarStatusPane.hpp
     StarTeleportDialog.hpp
-    StarWidgetLuaBindings.hpp
     StarWireInterface.hpp
   )
 
@@ -104,7 +103,6 @@ SET (star_frontend_SOURCES
     StarSongbookInterface.cpp
     StarStatusPane.cpp
     StarTeleportDialog.cpp
-    StarWidgetLuaBindings.cpp
     StarWireInterface.cpp
   )
 

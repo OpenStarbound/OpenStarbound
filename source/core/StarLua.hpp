@@ -526,6 +526,10 @@ public:
   template <typename Return, typename... Args, typename Function>
   LuaFunction createFunctionWithSignature(Function&& func);
 
+  LuaFunction createWrappedFunction(LuaDetail::LuaWrappedFunction function);
+
+  LuaFunction createRawFunction(lua_CFunction func);
+
   LuaThread createThread();
 
   template <typename T>
@@ -638,9 +642,6 @@ private:
   void destroyHandle(int handleIndex);
 
   int placeHandle();
-
-  LuaFunction createWrappedFunction(LuaDetail::LuaWrappedFunction function);
-  LuaFunction createRawFunction(lua_CFunction func);
 
   void pushLuaValue(lua_State* state, LuaValue const& luaValue);
   LuaValue popLuaValue(lua_State* state);

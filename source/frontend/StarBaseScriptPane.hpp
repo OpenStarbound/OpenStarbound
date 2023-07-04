@@ -12,6 +12,8 @@ STAR_CLASS(BaseScriptPane);
 
 // A more 'raw' script pane that doesn't depend on a world being present.
 // Requires a derived class to provide a Lua root.
+// Should maybe move into windowing?
+
 class BaseScriptPane : public Pane {
 public:
   BaseScriptPane(Json config);
@@ -27,17 +29,16 @@ public:
   PanePtr createTooltip(Vec2I const& screenPosition) override;
   Maybe<String> cursorOverride(Vec2I const& screenPosition) override;
 protected:
-  virtual LuaCallbacks makePaneCallbacks();
+  virtual GuiReaderPtr reader();
   Json m_config;
 
-  GuiReader m_reader;
+  GuiReaderPtr m_reader;
 
   Map<CanvasWidgetPtr, String> m_canvasClickCallbacks;
   Map<CanvasWidgetPtr, String> m_canvasKeyCallbacks;
 
   bool m_callbacksAdded;
   LuaUpdatableComponent<LuaBaseComponent> m_script;
-  List<pair<String, AudioInstancePtr>> m_playingSounds;
 };
 
 }

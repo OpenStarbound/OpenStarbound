@@ -24,15 +24,17 @@ BaseScriptPane::BaseScriptPane(Json config) : Pane() {
   } else {
     m_config = assets->fetchJson(config);
   }
-  m_reader.registerCallback("close", [this](Widget*) { dismiss(); });
+
+  m_reader = make_shared<GuiReader>();
+  m_reader->registerCallback("close", [this](Widget*) { dismiss(); });
 
   for (auto const& callbackName : jsonToStringList(m_config.get("scriptWidgetCallbacks", JsonArray{}))) {
-    m_reader.registerCallback(callbackName, [this, callbackName](Widget* widget) {
+    m_reader->registerCallback(callbackName, [this, callbackName](Widget* widget) {
       m_script.invoke(callbackName, widget->name(), widget->data());
     });
   }
 
-  m_reader.construct(assets->fetchJson(m_config.get("gui")), this);
+  m_reader->construct(assets->fetchJson(m_config.get("gui")), this);
 
   for (auto pair : m_config.getObject("canvasClickCallbacks", {}))
     m_canvasClickCallbacks.set(findChild<CanvasWidget>(pair.first), pair.second.toString());
@@ -53,7 +55,7 @@ void BaseScriptPane::displayed() {
   Pane::displayed();
   if (!m_callbacksAdded) {
     m_script.addCallbacks("pane", makePaneCallbacks());
-    m_script.addCallbacks("widget", LuaBindings::makeWidgetCallbacks(this, &m_reader));
+    m_script.addCallbacks("widget", LuaBindings::makeWidgetCallbacks(this, m_reader));
     m_script.addCallbacks("config", LuaBindings::makeConfigCallbacks( [this](String const& name, Json const& def) {
       return m_config.query(name, def);
     }));
@@ -81,10 +83,6 @@ void BaseScriptPane::tick() {
       m_script.invoke(p.second, (int)keyEvent.key, keyEvent.keyDown);
   }
 
-  m_playingSounds.filter([](pair<String, AudioInstancePtr> const& p) {
-      return p.second->finished() == false;
-    });
-
   m_script.update(m_script.updateDt());
 }
 
@@ -106,7 +104,7 @@ PanePtr BaseScriptPane::createTooltip(Vec2I const& screenPosition) {
       return SimpleTooltipBuilder::buildTooltip(result->toString());
     } else {
       PanePtr tooltip = make_shared<Pane>();
-      m_reader.construct(*result, tooltip.get());
+      m_reader->construct(*result, tooltip.get());
       return tooltip;
     }
   } else {
@@ -131,53 +129,8 @@ Maybe<String> BaseScriptPane::cursorOverride(Vec2I const& screenPosition) {
     return {};
 }
 
-LuaCallbacks BaseScriptPane::makePaneCallbacks() {
-  LuaCallbacks callbacks;
-
-  callbacks.registerCallback("dismiss", [this]() { dismiss(); });
-
-  callbacks.registerCallback("playSound",
-    [this](String const& audio, Maybe<int> loops, Maybe<float> volume) {
-      auto assets = Root::singleton().assets();
-      auto config = Root::singleton().configuration();
-      auto audioInstance = make_shared<AudioInstance>(*assets->audio(audio));
-      audioInstance->setVolume(volume.value(1.0));
-      audioInstance->setLoops(loops.value(0));
-      auto& guiContext = GuiContext::singleton();
-      guiContext.playAudio(audioInstance);
-      m_playingSounds.append({audio, move(audioInstance)});
-    });
-
-  callbacks.registerCallback("stopAllSounds", [this](String const& audio) {
-      m_playingSounds.filter([audio](pair<String, AudioInstancePtr> const& p) {
-        if (p.first == audio) {
-          p.second->stop();
-          return false;
-        }
-        return true;
-      });
-    });
-
-  callbacks.registerCallback("setTitle", [this](String const& title, String const& subTitle) {
-      setTitleString(title, subTitle);
-    });
-
-  callbacks.registerCallback("setTitleIcon", [this](String const& image) {
-      if (auto icon = as<ImageWidget>(titleIcon()))
-        icon->setImage(image);
-    });
-
-  callbacks.registerCallback("addWidget", [this](Json const& newWidgetConfig, Maybe<String> const& newWidgetName) {
-      String name = newWidgetName.value(strf("{}", Random::randu64()));
-      WidgetPtr newWidget = m_reader.makeSingle(name, newWidgetConfig);
-      this->addChild(name, newWidget);
-    });
-
-  callbacks.registerCallback("removeWidget", [this](String const& widgetName) {
-      this->removeChild(widgetName);
-    });
-
-  return callbacks;
+GuiReaderPtr BaseScriptPane::reader() {
+  return m_reader;
 }
 
 }

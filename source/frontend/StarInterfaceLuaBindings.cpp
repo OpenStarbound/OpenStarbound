@@ -3,6 +3,7 @@
 #include "StarJsonExtra.hpp"
 #include "StarLuaGameConverters.hpp"
 #include "StarMainInterface.hpp"
+#include "StarGuiContext.hpp"
 
 namespace Star {
 
@@ -13,6 +14,17 @@ LuaCallbacks LuaBindings::makeInterfaceCallbacks(MainInterface* mainInterface) {
     if (auto canvas = mainInterface->fetchCanvas(canvasName))
       return canvas;
     return {};
+  });
+
+  
+  callbacks.registerCallback("bindRegisteredPane", [mainInterface](String const& registeredPaneName) -> Maybe<LuaCallbacks> {
+    if (auto pane = mainInterface->paneManager()->maybeRegisteredPane(MainInterfacePanesNames.getLeft(registeredPaneName)))
+      return pane->makePaneCallbacks();
+    return {};
+  });
+
+  callbacks.registerCallback("scale", [mainInterface]() -> int {
+    return GuiContext::singleton().interfaceScale();
   });
 
   return callbacks;

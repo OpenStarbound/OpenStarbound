@@ -39,4 +39,16 @@ Maybe<Color> LuaConverter<Color>::to(LuaEngine& engine, LuaValue const& v) {
   return {};
 }
 
+LuaValue LuaConverter<LuaCallbacks>::from(LuaEngine& engine, LuaCallbacks const& c) {
+  auto table = engine.createTable(0, c.callbacks().size());
+  for (auto& callback : c.callbacks())
+    table.set(callback.first, engine.createWrappedFunction(callback.second));
+
+  return table;
+}
+
+Maybe<LuaCallbacks> LuaConverter<LuaCallbacks>::to(LuaEngine& engine, LuaValue const& v) {
+  return {};
+}
+
 }

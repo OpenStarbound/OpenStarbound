@@ -2,6 +2,10 @@
 #include "StarRoot.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarAssets.hpp"
+#include "StarWidgetLuaBindings.hpp"
+#include "StarLuaConverters.hpp"
+#include "StarImageWidget.hpp"
+#include "StarGuiReader.hpp"
 
 namespace Star {
 
@@ -187,35 +191,6 @@ Pane* Pane::window() {
   return this;
 }
 
-void Pane::renderImpl() {
-  if (m_bgFooter != "")
-    m_context->drawInterfaceQuad(m_bgFooter, Vec2F(position()));
-
-  if (m_bgBody != "")
-    m_context->drawInterfaceQuad(m_bgBody, Vec2F(position()) + Vec2F(0, m_footerSize[1]));
-
-  if (m_bgHeader != "") {
-    auto headerPos = Vec2F(position()) + Vec2F(0, m_footerSize[1] + m_bodySize[1]);
-    m_context->drawInterfaceQuad(m_bgHeader, headerPos);
-
-    if (m_icon) {
-      m_icon->setPosition(Vec2I(0, m_footerSize[1] + m_bodySize[1]) + m_iconOffset);
-      m_icon->render(m_drawingArea);
-      m_context->resetInterfaceScissorRect();
-    }
-
-    m_context->setFont(m_font);
-    m_context->setFontSize(m_fontSize);
-    m_context->setFontColor(m_titleColor.toRgba());
-    m_context->setFontMode(FontMode::Shadow);
-    m_context->renderInterfaceText(m_title, {headerPos + Vec2F(m_titleOffset)});
-    m_context->setFontColor(m_subTitleColor.toRgba());
-    m_context->renderInterfaceText(m_subTitle, {headerPos + Vec2F(m_subTitleOffset)});
-    m_context->setFontMode(FontMode::Normal);
-    m_context->setDefaultFont();
-  }
-}
-
 void Pane::update() {
   if (m_visible) {
     for (auto const& widget : m_members) {
@@ -228,7 +203,11 @@ void Pane::update() {
   }
 }
 
-void Pane::tick() {}
+void Pane::tick() {
+  m_playingSounds.filter([](pair<String, AudioInstancePtr> const& p) {
+    return p.second->finished() == false;
+  });
+}
 
 bool Pane::dragActive() const {
   return m_dragActive;
@@ -367,6 +346,98 @@ PanePtr Pane::createTooltip(Vec2I const&) {
 
 Maybe<String> Pane::cursorOverride(Vec2I const&) {
   return {};
+}
+
+LuaCallbacks Pane::makePaneCallbacks() {
+  LuaCallbacks callbacks;
+
+  callbacks.registerCallback("toWidget", [this]() -> LuaCallbacks {
+    return LuaBindings::makeWidgetCallbacks(this, reader());
+  });
+
+  callbacks.registerCallback("dismiss", [this]() { dismiss(); });
+
+  callbacks.registerCallback("playSound",
+    [this](String const& audio, Maybe<int> loops, Maybe<float> volume) {
+      auto assets = Root::singleton().assets();
+      auto config = Root::singleton().configuration();
+      auto audioInstance = make_shared<AudioInstance>(*assets->audio(audio));
+      audioInstance->setVolume(volume.value(1.0));
+      audioInstance->setLoops(loops.value(0));
+      auto& guiContext = GuiContext::singleton();
+      guiContext.playAudio(audioInstance);
+      m_playingSounds.append({audio, move(audioInstance)});
+    });
+
+  callbacks.registerCallback("stopAllSounds", [this](Maybe<String> const& audio) {
+      m_playingSounds.filter([audio](pair<String, AudioInstancePtr> const& p) {
+        if (!audio || p.first == *audio) {
+          p.second->stop();
+          return false;
+        }
+        return true;
+      });
+    });
+
+  callbacks.registerCallback("setTitle", [this](String const& title, String const& subTitle) {
+      setTitleString(title, subTitle);
+    });
+
+  callbacks.registerCallback("setTitleIcon", [this](String const& image) {
+      if (auto icon = as<ImageWidget>(titleIcon()))
+        icon->setImage(image);
+    });
+
+  callbacks.registerCallback("getPosition", [this]() -> Vec2I          { return relativePosition(); });
+  callbacks.registerCallback("setPosition", [this](Vec2I const& position) { setPosition(position);  });
+  callbacks.registerCallback("getSize", [this]() -> Vec2I         {  return size();  });
+  callbacks.registerCallback("setSize", [this](Vec2I const& size) { setSize(size);   });
+
+  callbacks.registerCallback("addWidget", [this](Json const& newWidgetConfig, Maybe<String> const& newWidgetName) -> LuaCallbacks {
+      String name = newWidgetName.value(toString(Random::randu64()));
+      WidgetPtr newWidget = reader()->makeSingle(name, newWidgetConfig);
+      this->addChild(name, newWidget);
+      return LuaBindings::makeWidgetCallbacks(newWidget.get(), reader());
+    });
+
+  callbacks.registerCallback("removeWidget", [this](String const& widgetName) -> bool {
+      return this->removeChild(widgetName);
+    });
+
+  return callbacks;
+}
+
+GuiReaderPtr Pane::reader() {
+  return make_shared<GuiReader>();
+}
+
+void Pane::renderImpl() {
+  if (m_bgFooter != "")
+    m_context->drawInterfaceQuad(m_bgFooter, Vec2F(position()));
+
+  if (m_bgBody != "")
+    m_context->drawInterfaceQuad(m_bgBody, Vec2F(position()) + Vec2F(0, m_footerSize[1]));
+
+  if (m_bgHeader != "") {
+    auto headerPos = Vec2F(position()) + Vec2F(0, m_footerSize[1] + m_bodySize[1]);
+    m_context->drawInterfaceQuad(m_bgHeader, headerPos);
+
+    if (m_icon) {
+      m_icon->setPosition(Vec2I(0, m_footerSize[1] + m_bodySize[1]) + m_iconOffset);
+      m_icon->render(m_drawingArea);
+      m_context->resetInterfaceScissorRect();
+    }
+
+    m_context->setFont(m_font);
+    m_context->setFontSize(m_fontSize);
+    m_context->setFontColor(m_titleColor.toRgba());
+    m_context->setFontMode(FontMode::Shadow);
+    m_context->renderInterfaceText(m_title, {headerPos + Vec2F(m_titleOffset)});
+    m_context->setFontColor(m_subTitleColor.toRgba());
+    m_context->renderInterfaceText(m_subTitle, {headerPos + Vec2F(m_subTitleOffset)});
+    m_context->setFontMode(FontMode::Normal);
+    m_context->setDefaultFont();
+  }
 }
 
 }

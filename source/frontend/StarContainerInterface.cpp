@@ -34,7 +34,7 @@ ContainerPane::ContainerPane(WorldClientPtr worldClient, PlayerPtr player, Conta
       m_script.emplace();
       m_script->setScripts(*scripts);
     }
-    m_script->addCallbacks("widget", LuaBindings::makeWidgetCallbacks(this, &m_reader));
+    m_script->addCallbacks("widget", LuaBindings::makeWidgetCallbacks(this));
     m_script->addCallbacks("config", LuaBindings::makeConfigCallbacks( [guiConfig](String const& name, Json const& def) {
         return guiConfig.query(name, def);
       }));

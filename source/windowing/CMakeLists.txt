@@ -38,6 +38,7 @@ SET (star_windowing_HEADERS
         StarTextBoxWidget.hpp
         StarVerticalLayout.hpp
         StarWidget.hpp
+        StarWidgetLuaBindings.hpp
         StarWidgetParsing.hpp
     )
 
@@ -70,6 +71,7 @@ SET (star_windowing_SOURCES
         StarTextBoxWidget.cpp
         StarVerticalLayout.cpp
         StarWidget.cpp
+        StarWidgetLuaBindings.cpp
         StarWidgetParsing.cpp
     )
 
