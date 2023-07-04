@@ -283,11 +283,6 @@ void LuaWorldComponent<Base>::init(World* world) {
 
   Base::setLuaRoot(world->luaRoot());
   Base::addCallbacks("world", LuaBindings::makeWorldCallbacks(world));
-
-  if (world->isClient()) {
-    Base::addCallbacks("input", LuaBindings::makeInputCallbacks());
-  }
-
   Base::init();
 }
 
@@ -295,8 +290,6 @@ template <typename Base>
 void LuaWorldComponent<Base>::uninit() {
   Base::uninit();
   Base::removeCallbacks("world");
-
-  Base::removeCallbacks("input");
 }
 
 template <typename Base>

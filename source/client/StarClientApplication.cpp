@@ -16,6 +16,7 @@
 #include "StarRootLoader.hpp"
 
 #include "StarInterfaceLuaBindings.hpp"
+#include "StarInputLuaBindings.hpp"
 
 namespace Star {
 
@@ -483,6 +484,7 @@ void ClientApplication::changeState(MainAppState newState) {
     m_playerStorage = make_shared<PlayerStorage>(m_root->toStoragePath("player"));
     m_statistics = make_shared<Statistics>(m_root->toStoragePath("player"), appController()->statisticsService());
     m_universeClient = make_shared<UniverseClient>(m_playerStorage, m_statistics);
+    m_universeClient->setLuaCallbacks("input", LuaBindings::makeInputCallbacks());
 
     m_mainMixer->setUniverseClient(m_universeClient);
     m_titleScreen = make_shared<TitleScreen>(m_playerStorage, m_mainMixer->mixer());
@@ -601,6 +603,7 @@ void ClientApplication::changeState(MainAppState newState) {
     m_worldPainter = make_shared<WorldPainter>();
     m_mainInterface = make_shared<MainInterface>(m_universeClient, m_worldPainter, m_cinematicOverlay);
     m_universeClient->setLuaCallbacks("interface", LuaBindings::makeInterfaceCallbacks(m_mainInterface.get()));
+
     m_mainMixer->setWorldPainter(m_worldPainter);
 
     if (auto renderer = Application::renderer()) {
