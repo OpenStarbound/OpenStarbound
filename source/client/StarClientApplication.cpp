@@ -15,6 +15,8 @@
 #include "StarWorldClient.hpp"
 #include "StarRootLoader.hpp"
 
+#include "StarInterfaceLuaBindings.hpp"
+
 namespace Star {
 
 Json const AdditionalAssetsSettings = Json::parseJson(R"JSON(
@@ -384,6 +386,7 @@ void ClientApplication::render() {
 
   } else if (m_state > MainAppState::Title) {
     WorldClientPtr worldClient = m_universeClient->worldClient();
+
     RendererPtr renderer = Application::renderer();
     if (worldClient) {
       auto totalStart = Time::monotonicMicroseconds();
@@ -480,6 +483,7 @@ void ClientApplication::changeState(MainAppState newState) {
     m_playerStorage = make_shared<PlayerStorage>(m_root->toStoragePath("player"));
     m_statistics = make_shared<Statistics>(m_root->toStoragePath("player"), appController()->statisticsService());
     m_universeClient = make_shared<UniverseClient>(m_playerStorage, m_statistics);
+
     m_mainMixer->setUniverseClient(m_universeClient);
     m_titleScreen = make_shared<TitleScreen>(m_playerStorage, m_mainMixer->mixer());
     if (auto renderer = Application::renderer())
@@ -596,6 +600,7 @@ void ClientApplication::changeState(MainAppState newState) {
 
     m_worldPainter = make_shared<WorldPainter>();
     m_mainInterface = make_shared<MainInterface>(m_universeClient, m_worldPainter, m_cinematicOverlay);
+    m_universeClient->setLuaCallbacks("interface", LuaBindings::makeInterfaceCallbacks(m_mainInterface.get()));
     m_mainMixer->setWorldPainter(m_worldPainter);
 
     if (auto renderer = Application::renderer()) {

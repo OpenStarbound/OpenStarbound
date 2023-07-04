@@ -5,15 +5,9 @@ namespace Star {
 
 LuaRoot::LuaRoot() {
   auto& root = Root::singleton();
-
-  m_luaEngine = LuaEngine::create(root.configuration()->get("safeScripts").toBool());
-
-  m_luaEngine->setRecursionLimit(root.configuration()->get("scriptRecursionLimit").toUInt());
-  m_luaEngine->setInstructionLimit(root.configuration()->get("scriptInstructionLimit").toUInt());
-  m_luaEngine->setProfilingEnabled(root.configuration()->get("scriptProfilingEnabled").toBool());
-  m_luaEngine->setInstructionMeasureInterval(root.configuration()->get("scriptInstructionMeasureInterval").toUInt());
-
   m_scriptCache = make_shared<ScriptCache>();
+
+  restart();
 
   m_rootReloadListener = make_shared<CallbackListener>([cache = m_scriptCache]() {
       cache->clear();
@@ -24,6 +18,40 @@ LuaRoot::LuaRoot() {
 }
 
 LuaRoot::~LuaRoot() {
+  shutdown();
+}
+
+void LuaRoot::loadScript(String const& assetPath) {
+  m_scriptCache->loadScript(*m_luaEngine, assetPath);
+}
+
+bool LuaRoot::scriptLoaded(String const& assetPath) const {
+  return m_scriptCache->scriptLoaded(assetPath);
+}
+
+void LuaRoot::unloadScript(String const& assetPath) {
+  m_scriptCache->unloadScript(assetPath);
+}
+
+void LuaRoot::restart() {
+  shutdown();
+
+  auto& root = Root::singleton();
+
+  m_luaEngine = LuaEngine::create(root.configuration()->get("safeScripts").toBool());
+
+  m_luaEngine->setRecursionLimit(root.configuration()->get("scriptRecursionLimit").toUInt());
+  m_luaEngine->setInstructionLimit(root.configuration()->get("scriptInstructionLimit").toUInt());
+  m_luaEngine->setProfilingEnabled(root.configuration()->get("scriptProfilingEnabled").toBool());
+  m_luaEngine->setInstructionMeasureInterval(root.configuration()->get("scriptInstructionMeasureInterval").toUInt());
+}
+
+void LuaRoot::shutdown() {
+  clearScriptCache();
+
+  if (!m_luaEngine)
+    return;
+
   auto profile = m_luaEngine->getProfile();
   if (!profile.empty()) {
     profile.sort([](auto const& a, auto const& b) {
@@ -56,18 +84,8 @@ LuaRoot::~LuaRoot() {
     Logger::info("Writing lua profile {}", filename);
     File::writeFile(profileSummary, path);
   }
-}
 
-void LuaRoot::loadScript(String const& assetPath) {
-  m_scriptCache->loadScript(*m_luaEngine, assetPath);
-}
-
-bool LuaRoot::scriptLoaded(String const& assetPath) const {
-  return m_scriptCache->scriptLoaded(assetPath);
-}
-
-void LuaRoot::unloadScript(String const& assetPath) {
-  m_scriptCache->unloadScript(assetPath);
+  m_luaEngine.reset();
 }
 
 LuaContext LuaRoot::createContext(String const& script) {
@@ -91,31 +109,41 @@ LuaContext LuaRoot::createContext(StringList const& scriptPaths) {
   for (auto const& scriptPath : scriptPaths)
     cache->loadContextScript(newContext, scriptPath);
 
+  for (auto const& callbackPair : m_luaCallbacks)
+    newContext.setCallbacks(callbackPair.first, callbackPair.second);
+
   return newContext;
 }
 
 void LuaRoot::collectGarbage(Maybe<unsigned> steps) {
-  m_luaEngine->collectGarbage(steps);
+  if (m_luaEngine)
+    m_luaEngine->collectGarbage(steps);
 }
 
 void LuaRoot::setAutoGarbageCollection(bool autoGarbageColleciton) {
-  m_luaEngine->setAutoGarbageCollection(autoGarbageColleciton);
+  if (m_luaEngine)
+    m_luaEngine->setAutoGarbageCollection(autoGarbageColleciton);
 }
 
 void LuaRoot::tuneAutoGarbageCollection(float pause, float stepMultiplier) {
-  m_luaEngine->tuneAutoGarbageCollection(pause, stepMultiplier);
+  if (m_luaEngine)
+    m_luaEngine->tuneAutoGarbageCollection(pause, stepMultiplier);
 }
 
 size_t LuaRoot::luaMemoryUsage() const {
-  return m_luaEngine->memoryUsage();
+  return m_luaEngine ? m_luaEngine->memoryUsage() : 0;
 }
 
 size_t LuaRoot::scriptCacheMemoryUsage() const {
-  return m_scriptCache->memoryUsage();
+  return m_luaEngine ? m_scriptCache->memoryUsage() : 0;
 }
 
 void LuaRoot::clearScriptCache() const {
   return m_scriptCache->clear();
+}
+
+void LuaRoot::addCallbacks(String const& groupName, LuaCallbacks const& callbacks) {
+  m_luaCallbacks[groupName] = callbacks;
 }
 
 LuaEngine& LuaRoot::luaEngine() const {

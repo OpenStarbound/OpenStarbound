@@ -12,6 +12,7 @@
 #include "StarPlayer.hpp"
 #include "StarUniverseClient.hpp"
 #include "StarWidgetLuaBindings.hpp"
+#include "StarInterfaceLuaBindings.hpp"
 #include "StarCanvasWidget.hpp"
 #include "StarItemTooltip.hpp"
 #include "StarItemGridWidget.hpp"

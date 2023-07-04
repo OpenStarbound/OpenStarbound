@@ -127,6 +127,9 @@ public:
 
   void handleIncomingPackets(List<PacketPtr> const& packets);
   List<PacketPtr> getOutgoingPackets();
+  
+  // Sets default callbacks in the LuaRoot.
+  void setLuaCallbacks(String const& groupName, LuaCallbacks const& callbacks);
 
   // Set the rendering window for this client.
   void setClientWindow(RectI window);

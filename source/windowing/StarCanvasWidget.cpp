@@ -3,8 +3,7 @@
 namespace Star {
 
 CanvasWidget::CanvasWidget() {
-  m_captureKeyboard = false;
-  m_captureMouse = false;
+  m_ignoreInterfaceScale = m_captureKeyboard = m_captureMouse = false;
 }
 
 void CanvasWidget::setCaptureMouseEvents(bool captureMouse) {
@@ -13,6 +12,10 @@ void CanvasWidget::setCaptureMouseEvents(bool captureMouse) {
 
 void CanvasWidget::setCaptureKeyboardEvents(bool captureKeyboard) {
   m_captureKeyboard = captureKeyboard;
+}
+
+void CanvasWidget::setIgnoreInterfaceScale(bool ignoreInterfaceScale) {
+  m_ignoreInterfaceScale = ignoreInterfaceScale;
 }
 
 void CanvasWidget::clear() {
@@ -144,24 +147,33 @@ void CanvasWidget::renderImpl() {
 void CanvasWidget::renderImage(Vec2F const& renderingOffset, String const& texName, Vec2F const& position, float scale, Vec4B const& color, bool centered) {
   auto& context = GuiContext::singleton();
   auto texSize = Vec2F(context.textureSize(texName));
-  if (centered) {
-    auto screenCoords = RectF::withSize(renderingOffset * context.interfaceScale() + (position - scale * texSize / 2.0f) * context.interfaceScale(), texSize * scale * context.interfaceScale());
-    context.drawQuad(texName, screenCoords, color);
-  } else {
-    auto screenCoords = RectF::withSize(renderingOffset * context.interfaceScale() + position * context.interfaceScale(), texSize * scale * context.interfaceScale());
-    context.drawQuad(texName, screenCoords, color);
-  }
+  Vec2F pos = centered ? (position - scale * texSize / 2.0f) : position;
+
+  RectF screenCoords;
+  if (m_ignoreInterfaceScale)
+    screenCoords = RectF::withSize(renderingOffset + pos, texSize * scale);
+  else
+    screenCoords = RectF::withSize(renderingOffset * context.interfaceScale() + pos * context.interfaceScale(), texSize * scale * context.interfaceScale());
+
+  context.drawQuad(texName, screenCoords, color);
 }
 
 void CanvasWidget::renderImageRect(Vec2F const& renderingOffset, String const& texName, RectF const& texCoords, RectF const& screenCoords, Vec4B const& color) {
   auto& context = GuiContext::singleton();
-  context.drawQuad(texName, texCoords, screenCoords.scaled(context.interfaceScale()).translated(renderingOffset * context.interfaceScale()), color);
+  if (m_ignoreInterfaceScale)
+    context.drawQuad(texName, texCoords, screenCoords.translated(renderingOffset), color);
+  else
+    context.drawQuad(texName, texCoords, screenCoords.scaled(context.interfaceScale()).translated(renderingOffset * context.interfaceScale()), color);
 }
 
 void CanvasWidget::renderDrawable(Vec2F const& renderingOffset, Drawable drawable, Vec2F const& screenPos) {
   auto& context = GuiContext::singleton();
-  drawable.scale(context.interfaceScale());
-  context.drawDrawable(move(drawable), renderingOffset * context.interfaceScale() + screenPos * context.interfaceScale(), 1);
+  if (m_ignoreInterfaceScale)
+    context.drawDrawable(move(drawable), renderingOffset + screenPos, 1);
+  else {
+    drawable.scale(context.interfaceScale());
+    context.drawDrawable(move(drawable), renderingOffset * context.interfaceScale() + screenPos * context.interfaceScale(), 1);
+  }
 }
 
 void CanvasWidget::renderTiledImage(Vec2F const& renderingOffset, String const& texName, float textureScale, Vec2D const& offset, RectF const& screenCoords, Vec4B const& color) {
@@ -188,28 +200,42 @@ void CanvasWidget::renderTiledImage(Vec2F const& renderingOffset, String const& 
       if (limitedScreenRect.isEmpty())
         continue;
 
-      context.drawQuad(texName, limitedTexRect, limitedScreenRect.translated(renderingOffset).scaled(context.interfaceScale()), color);
+      if (m_ignoreInterfaceScale)
+        context.drawQuad(texName, limitedTexRect, limitedScreenRect.translated(renderingOffset), color);
+      else
+        context.drawQuad(texName, limitedTexRect, limitedScreenRect.translated(renderingOffset).scaled(context.interfaceScale()), color);
     }
   }
 }
 
 void CanvasWidget::renderLine(Vec2F const& renderingOffset, Vec2F const& begin, Vec2F const end, Vec4B const& color, float lineWidth) {
   auto& context = GuiContext::singleton();
-  context.drawLine(
+  if (m_ignoreInterfaceScale)
+    context.drawLine(renderingOffset + begin, renderingOffset + end, color, lineWidth);
+  else {
+    context.drawLine(
       renderingOffset * context.interfaceScale() + begin * context.interfaceScale(),
       renderingOffset * context.interfaceScale() + end * context.interfaceScale(),
       color, lineWidth);
+  }
 }
 
 void CanvasWidget::renderRect(Vec2F const& renderingOffset, RectF const& coords, Vec4B const& color) {
   auto& context = GuiContext::singleton();
-  context.drawQuad(coords.scaled(context.interfaceScale()).translated(renderingOffset * context.interfaceScale()), color);
+
+  if (m_ignoreInterfaceScale)
+    context.drawQuad(coords.translated(renderingOffset), color);
+  else
+    context.drawQuad(coords.scaled(context.interfaceScale()).translated(renderingOffset * context.interfaceScale()), color);
 }
 
 void CanvasWidget::renderPoly(Vec2F const& renderingOffset, PolyF poly, Vec4B const& color, float lineWidth) {
   auto& context = GuiContext::singleton();
   poly.translate(renderingOffset);
-  context.drawInterfacePolyLines(poly, color, lineWidth);
+  if (m_ignoreInterfaceScale)
+    context.drawPolyLines(poly, color, lineWidth);
+  else
+    context.drawInterfacePolyLines(poly, color, lineWidth);
 }
 
 void CanvasWidget::renderTriangles(Vec2F const& renderingOffset, List<tuple<Vec2F, Vec2F, Vec2F>> const& triangles, Vec4B const& color) {
@@ -219,7 +245,10 @@ void CanvasWidget::renderTriangles(Vec2F const& renderingOffset, List<tuple<Vec2
         get<1>(poly) + renderingOffset,
         get<2>(poly) + renderingOffset);
     });
-  context.drawInterfaceTriangles(translated, color);
+  if (m_ignoreInterfaceScale)
+    context.drawTriangles(translated, color);
+  else
+    context.drawInterfaceTriangles(translated, color);
 }
 
 void CanvasWidget::renderText(Vec2F const& renderingOffset, String const& s, TextPositioning const& position, unsigned fontSize, Vec4B const& color, FontMode mode, float lineSpacing, String const& font, String const& directives) {
@@ -233,7 +262,10 @@ void CanvasWidget::renderText(Vec2F const& renderingOffset, String const& s, Tex
 
   TextPositioning translatedPosition = position;
   translatedPosition.pos += renderingOffset;
-  context.renderInterfaceText(s, translatedPosition);
+  if (m_ignoreInterfaceScale)
+    context.renderText(s, translatedPosition);
+  else
+    context.renderInterfaceText(s, translatedPosition);
 
   context.setDefaultLineSpacing();
   context.setDefaultFont();

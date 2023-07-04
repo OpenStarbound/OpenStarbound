@@ -112,6 +112,8 @@ Maybe<String> UniverseClient::connect(UniverseConnection connection, bool allowA
     m_mainPlayer->setClientContext(m_clientContext);
     m_mainPlayer->setStatistics(m_statistics);
     m_worldClient = make_shared<WorldClient>(m_mainPlayer);
+    for (auto& pair : m_luaCallbacks)
+      m_worldClient->setLuaCallbacks(pair.first, pair.second);
 
     m_connection = move(connection);
     m_celestialDatabase = make_shared<CelestialSlaveDatabase>(move(success->celestialInformation));
@@ -434,6 +436,12 @@ uint16_t UniverseClient::players() {
 
 uint16_t UniverseClient::maxPlayers() {
   return m_serverInfo.apply([](auto const& info) { return info.maxPlayers; }).value(1);
+}
+
+void UniverseClient::setLuaCallbacks(String const& groupName, LuaCallbacks const& callbacks) {
+  m_luaCallbacks[groupName] = callbacks;
+  if (m_worldClient)
+    m_worldClient->setLuaCallbacks(groupName, callbacks);
 }
 
 ClockConstPtr UniverseClient::universeClock() const {

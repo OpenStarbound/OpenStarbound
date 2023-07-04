@@ -24,6 +24,7 @@
 #include "StarWireInterface.hpp"
 #include "StarTeamBar.hpp"
 #include "StarStatusPane.hpp"
+#include "StarCanvasWidget.hpp"
 #include "StarLabelWidget.hpp"
 #include "StarItemSlotWidget.hpp"
 #include "StarPlayer.hpp"
@@ -792,6 +793,12 @@ void MainInterface::update() {
     m_client->mainPlayer()->setBusyState(PlayerBusyState::Chatting);
   else
     m_client->mainPlayer()->setBusyState(PlayerBusyState::None);
+
+  for (auto& pair : m_canvases) {
+    pair.second->setPosition(Vec2I());
+    pair.second->setSize(Vec2I(m_guiContext->windowSize()));
+    pair.second->update();
+  }
 }
 
 void MainInterface::renderInWorldElements() {
@@ -819,6 +826,10 @@ void MainInterface::render() {
   renderSpecialDamageBar();
   renderMainBar();
   renderDebug();
+
+  RectI screenRect = RectI::withSize(Vec2I(), Vec2I(m_guiContext->windowSize()));
+  for (auto& pair : m_canvases)
+    pair.second->render(screenRect);
 
   renderWindows();
   renderCursor();
@@ -909,6 +920,18 @@ void MainInterface::warpTo(WarpAction const& warpAction) {
       }, [](Widget*) {});
   } else {
     m_client->warpPlayer(warpAction, true, "beam");
+  }
+}
+
+CanvasWidgetPtr MainInterface::fetchCanvas(String const& canvasName) {
+  if (auto canvasPtr = m_canvases.ptr(canvasName))
+    return *canvasPtr;
+  else {
+    CanvasWidgetPtr canvas = m_canvases.emplace(canvasName, make_shared<CanvasWidget>()).first->second;
+    canvas->setPosition(Vec2I());
+    canvas->setSize(Vec2I(m_guiContext->windowSize()));
+    canvas->setIgnoreInterfaceScale(true);
+    return canvas;
   }
 }
 

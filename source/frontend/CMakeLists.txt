@@ -32,6 +32,7 @@ SET (star_frontend_HEADERS
     StarGraphicsMenu.hpp
     StarInventory.hpp
     StarInterfaceCursor.hpp
+    StarInterfaceLuaBindings.hpp
     StarItemTooltip.hpp
     StarJoinRequestDialog.hpp
     StarKeybindingsMenu.hpp
@@ -80,6 +81,7 @@ SET (star_frontend_SOURCES
     StarGraphicsMenu.cpp
     StarInventory.cpp
     StarInterfaceCursor.cpp
+    StarInterfaceLuaBindings.cpp
     StarItemTooltip.cpp
     StarJoinRequestDialog.cpp
     StarKeybindingsMenu.cpp

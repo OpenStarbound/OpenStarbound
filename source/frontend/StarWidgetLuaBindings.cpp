@@ -17,74 +17,77 @@
 
 namespace Star {
 
-template <>
-struct LuaConverter<CanvasWidgetPtr> : LuaUserDataConverter<CanvasWidgetPtr> {};
+LuaMethods<CanvasWidgetPtr> LuaUserDataMethods<CanvasWidgetPtr>::make() {
+  LuaMethods<CanvasWidgetPtr> methods;
 
-template <>
-struct LuaUserDataMethods<CanvasWidgetPtr> {
-  static LuaMethods<CanvasWidgetPtr> make() {
-    LuaMethods<CanvasWidgetPtr> methods;
+  methods.registerMethodWithSignature<Vec2I, CanvasWidgetPtr>("size", mem_fn(&CanvasWidget::size));
+  methods.registerMethodWithSignature<Vec2I, CanvasWidgetPtr>("mousePosition", mem_fn(&CanvasWidget::mousePosition));
 
-    methods.registerMethodWithSignature<Vec2I, CanvasWidgetPtr>("size", mem_fn(&CanvasWidget::size));
-    methods.registerMethodWithSignature<Vec2I, CanvasWidgetPtr>("mousePosition", mem_fn(&CanvasWidget::mousePosition));
+  methods.registerMethodWithSignature<void, CanvasWidgetPtr>("clear", mem_fn(&CanvasWidget::clear));
 
-    methods.registerMethodWithSignature<void, CanvasWidgetPtr>("clear", mem_fn(&CanvasWidget::clear));
+  methods.registerMethod("drawDrawable", [](CanvasWidgetPtr canvasWidget, Drawable drawable) {
+    canvasWidget->drawDrawable(move(drawable), Vec2F());
+  });
 
-    methods.registerMethod("drawImage",
-        [](CanvasWidgetPtr canvasWidget, String image, Vec2F position, Maybe<float> scale, Maybe<Color> color, Maybe<bool> centered) {
-          if (centered && *centered)
-            canvasWidget->drawImageCentered(image, position, scale.value(1.0f), color.value(Color::White).toRgba());
-          else
-            canvasWidget->drawImage(image, position, scale.value(1.0f), color.value(Color::White).toRgba());
-        });
-    methods.registerMethod("drawImageDrawable",
-        [](CanvasWidgetPtr canvasWidget, String image, Vec2F position, MVariant<Vec2F, float> scale, Maybe<Color> color, Maybe<float> rotation) {
-          auto drawable = Drawable::makeImage(image, 1.0, true, {0.0, 0.0}, color.value(Color::White));
-          if (auto s = scale.maybe<Vec2F>())
-            drawable.transform(Mat3F::scaling(*s));
-          else if(auto s = scale.maybe<float>())
-            drawable.transform(Mat3F::scaling(*s));
-          if (rotation)
-            drawable.rotate(*rotation);
-          canvasWidget->drawDrawable(drawable, position);
-        });
-    methods.registerMethod("drawImageRect",
-        [](CanvasWidgetPtr canvasWidget, String image, RectF texCoords, RectF screenCoords, Maybe<Color> color) {
-          canvasWidget->drawImageRect(image, texCoords, screenCoords, color.value(Color::White).toRgba());
-        });
-    methods.registerMethod("drawTiledImage",
-        [](CanvasWidgetPtr canvasWidget, String image, Vec2D offset, RectF screenCoords, Maybe<float> scale, Maybe<Color> color) {
-          canvasWidget->drawTiledImage(image, scale.value(1.0f), offset, screenCoords, color.value(Color::White).toRgba());
-        });
-    methods.registerMethod("drawLine",
-        [](CanvasWidgetPtr canvasWidget, Vec2F begin, Vec2F end, Maybe<Color> color, Maybe<float> lineWidth) {
-          canvasWidget->drawLine(begin, end, color.value(Color::White).toRgba(), lineWidth.value(1.0f));
-        });
-    methods.registerMethod("drawRect",
-        [](CanvasWidgetPtr canvasWidget, RectF rect, Maybe<Color> color) {
-          canvasWidget->drawRect(rect, color.value(Color::White).toRgba());
-        });
-    methods.registerMethod("drawPoly",
-        [](CanvasWidgetPtr canvasWidget, PolyF poly, Maybe<Color> color, Maybe<float> lineWidth) {
-          canvasWidget->drawPoly(poly, color.value(Color::White).toRgba(), lineWidth.value(1.0f));
-        });
-    methods.registerMethod("drawTriangles",
-        [](CanvasWidgetPtr canvasWidget, List<PolyF> triangles, Maybe<Color> color) {
-          auto tris = triangles.transformed([](PolyF const& poly) {
-              if (poly.sides() != 3)
-                throw StarException("Triangle must have exactly 3 sides");
-              return tuple<Vec2F, Vec2F, Vec2F>(poly.vertex(0), poly.vertex(1), poly.vertex(2));
-            });
-          canvasWidget->drawTriangles(tris, color.value(Color::White).toRgba());
-        });
-    methods.registerMethod("drawText",
-        [](CanvasWidgetPtr canvasWidget, String text, Json tp, unsigned fontSize, Maybe<Color> color, Maybe<float> lineSpacing, Maybe<String> font, Maybe<String> directives) {
-          canvasWidget->drawText(text, TextPositioning(tp), fontSize, color.value(Color::White).toRgba(), FontMode::Normal, lineSpacing.value(DefaultLineSpacing), font.value(""), directives.value(""));
-        });
+  methods.registerMethod("drawDrawables", [](CanvasWidgetPtr canvasWidget, List<Drawable> drawables) {
+    for (auto& drawable : drawables)
+      canvasWidget->drawDrawable(move(drawable), Vec2F());
+  });
 
-    return methods;
-  }
-};
+  methods.registerMethod("drawImage",
+      [](CanvasWidgetPtr canvasWidget, String image, Vec2F position, Maybe<float> scale, Maybe<Color> color, Maybe<bool> centered) {
+        if (centered && *centered)
+          canvasWidget->drawImageCentered(image, position, scale.value(1.0f), color.value(Color::White).toRgba());
+        else
+          canvasWidget->drawImage(image, position, scale.value(1.0f), color.value(Color::White).toRgba());
+      });
+  methods.registerMethod("drawImageDrawable",
+      [](CanvasWidgetPtr canvasWidget, String image, Vec2F position, MVariant<Vec2F, float> scale, Maybe<Color> color, Maybe<float> rotation) {
+        auto drawable = Drawable::makeImage(image, 1.0, true, {0.0, 0.0}, color.value(Color::White));
+        if (auto s = scale.maybe<Vec2F>())
+          drawable.transform(Mat3F::scaling(*s));
+        else if(auto s = scale.maybe<float>())
+          drawable.transform(Mat3F::scaling(*s));
+        if (rotation)
+          drawable.rotate(*rotation);
+        canvasWidget->drawDrawable(drawable, position);
+      });
+  methods.registerMethod("drawImageRect",
+      [](CanvasWidgetPtr canvasWidget, String image, RectF texCoords, RectF screenCoords, Maybe<Color> color) {
+        canvasWidget->drawImageRect(image, texCoords, screenCoords, color.value(Color::White).toRgba());
+      });
+  methods.registerMethod("drawTiledImage",
+      [](CanvasWidgetPtr canvasWidget, String image, Vec2D offset, RectF screenCoords, Maybe<float> scale, Maybe<Color> color) {
+        canvasWidget->drawTiledImage(image, scale.value(1.0f), offset, screenCoords, color.value(Color::White).toRgba());
+      });
+  methods.registerMethod("drawLine",
+      [](CanvasWidgetPtr canvasWidget, Vec2F begin, Vec2F end, Maybe<Color> color, Maybe<float> lineWidth) {
+        canvasWidget->drawLine(begin, end, color.value(Color::White).toRgba(), lineWidth.value(1.0f));
+      });
+  methods.registerMethod("drawRect",
+      [](CanvasWidgetPtr canvasWidget, RectF rect, Maybe<Color> color) {
+        canvasWidget->drawRect(rect, color.value(Color::White).toRgba());
+      });
+  methods.registerMethod("drawPoly",
+      [](CanvasWidgetPtr canvasWidget, PolyF poly, Maybe<Color> color, Maybe<float> lineWidth) {
+        canvasWidget->drawPoly(poly, color.value(Color::White).toRgba(), lineWidth.value(1.0f));
+      });
+  methods.registerMethod("drawTriangles",
+      [](CanvasWidgetPtr canvasWidget, List<PolyF> triangles, Maybe<Color> color) {
+        auto tris = triangles.transformed([](PolyF const& poly) {
+            if (poly.sides() != 3)
+              throw StarException("Triangle must have exactly 3 sides");
+            return tuple<Vec2F, Vec2F, Vec2F>(poly.vertex(0), poly.vertex(1), poly.vertex(2));
+          });
+        canvasWidget->drawTriangles(tris, color.value(Color::White).toRgba());
+      });
+  methods.registerMethod("drawText",
+      [](CanvasWidgetPtr canvasWidget, String text, Json tp, unsigned fontSize, Maybe<Color> color, Maybe<float> lineSpacing, Maybe<String> font, Maybe<String> directives) {
+        canvasWidget->drawText(text, TextPositioning(tp), fontSize, color.value(Color::White).toRgba(), FontMode::Normal, lineSpacing.value(DefaultLineSpacing), font.value(""), directives.value(""));
+      });
+
+  return methods;
+}
 
 LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget* parentWidget, GuiReader* reader) {
   LuaCallbacks callbacks;

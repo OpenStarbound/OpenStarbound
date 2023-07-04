@@ -42,6 +42,7 @@ STAR_CLASS(QuestTrackerPane);
 STAR_CLASS(ContainerInteractor);
 STAR_CLASS(ScriptPane);
 STAR_CLASS(ChatBubbleManager);
+STAR_CLASS(CanvasWidget);
 
 STAR_STRUCT(GuiMessage);
 STAR_CLASS(MainInterface);
@@ -114,6 +115,8 @@ public:
   void warpToOwnShip();
   void warpTo(WarpAction const& warpAction);
 
+  CanvasWidgetPtr fetchCanvas(String const& canvasName);
+
 private:
   PanePtr createEscapeDialog();
 
@@ -166,6 +169,8 @@ private:
   ScriptPanePtr m_mmUpgrade;
   ScriptPanePtr m_collections;
   Map<EntityId, PanePtr> m_interactionScriptPanes;
+
+  StringMap<CanvasWidgetPtr> m_canvases;
 
   ChatPtr m_chat;
   ClientCommandProcessorPtr m_clientCommandProcessor;

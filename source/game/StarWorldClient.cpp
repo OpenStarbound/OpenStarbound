@@ -45,6 +45,8 @@ WorldClient::WorldClient(PlayerPtr mainPlayer) {
   m_collisionDebug = false;
   m_inWorld = false;
 
+  m_luaRoot = make_shared<LuaRoot>();
+
   m_mainPlayer = mainPlayer;
 
   centerClientWindowOnPlayer(Vec2U(100, 100));
@@ -895,6 +897,10 @@ List<PacketPtr> WorldClient::getOutgoingPackets() {
   return std::move(m_outgoingPackets);
 }
 
+void WorldClient::setLuaCallbacks(String const& groupName, LuaCallbacks const& callbacks) {
+  m_luaRoot->addCallbacks(groupName, callbacks);
+}
+
 void WorldClient::update() {
   if (!inWorld())
     return;
@@ -1486,7 +1492,7 @@ void WorldClient::initWorld(WorldStartPacket const& startPacket) {
   m_entityMap = make_shared<EntityMap>(m_worldTemplate->size(), entitySpace.first, entitySpace.second);
   m_tileArray = make_shared<ClientTileSectorArray>(m_worldTemplate->size());
   m_damageManager = make_shared<DamageManager>(this, startPacket.clientId);
-  m_luaRoot = make_shared<LuaRoot>();
+  m_luaRoot->restart();
   m_luaRoot->tuneAutoGarbageCollection(m_clientConfig.getFloat("luaGcPause"), m_clientConfig.getFloat("luaGcStepMultiplier"));
   m_playerStart = startPacket.playerRespawn;
   m_respawnInWorld = startPacket.respawnInWorld;
@@ -1559,7 +1565,8 @@ void WorldClient::clearWorld() {
   m_tileArray.reset();
 
   m_damageManager.reset();
-  m_luaRoot.reset();
+
+  m_luaRoot->shutdown();
 
   m_particles.reset();
 

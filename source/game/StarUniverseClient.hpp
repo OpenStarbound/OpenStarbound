@@ -85,6 +85,8 @@ public:
   uint16_t players();
   uint16_t maxPlayers();
 
+  void setLuaCallbacks(String const& groupName, LuaCallbacks const& callbacks);
+
   ClockConstPtr universeClock() const;
   CelestialLogConstPtr celestialLog() const;
   JsonRpcInterfacePtr rpcInterface() const;
@@ -117,6 +119,8 @@ private:
   SystemWorldClientPtr m_systemWorldClient;
   Maybe<UniverseConnection> m_connection;
   Maybe<ServerInfo> m_serverInfo;
+  
+  StringMap<LuaCallbacks> m_luaCallbacks;
 
   CelestialSlaveDatabasePtr m_celestialDatabase;
   ClientContextPtr m_clientContext;

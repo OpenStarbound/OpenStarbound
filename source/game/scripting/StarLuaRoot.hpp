@@ -21,6 +21,9 @@ public:
   bool scriptLoaded(String const& assetPath) const;
   void unloadScript(String const& assetPath);
 
+  void restart();
+  void shutdown();
+
   // A script context can be created from the combination of several scripts,
   // the functions / data in each script will be loaded in order, so that later
   // specified scripts will overwrite previous ones.
@@ -39,8 +42,9 @@ public:
   size_t scriptCacheMemoryUsage() const;
   void clearScriptCache() const;
 
-  LuaEngine& luaEngine() const;
+  void addCallbacks(String const& groupName, LuaCallbacks const& callbacks);
 
+  LuaEngine& luaEngine() const;
 private:
   class ScriptCache {
   public:
@@ -57,7 +61,9 @@ private:
   };
 
   LuaEnginePtr m_luaEngine;
+  StringMap<LuaCallbacks> m_luaCallbacks;
   shared_ptr<ScriptCache> m_scriptCache;
+
   ListenerPtr m_rootReloadListener;
 
   String m_storageDirectory;
