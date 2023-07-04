@@ -57,10 +57,16 @@ KeyMod keyModsFromJson(Json const& json, uint8_t* priority = nullptr) {
   if (!json.isType(Json::Type::Array))
     return mod;
 
+  uint8_t modPriority = 0;
   for (Json const& jMod : json.toArray()) {
-    if (mod != (mod |= KeyModNames.getLeft(jMod.toString())) && priority)
-      ++*priority;
+    KeyMod changedMod = mod | KeyModNames.getLeft(jMod.toString());
+    if (mod != changedMod) {
+      mod = changedMod;
+      ++modPriority;
+    }
   }
+  if (priority)
+    *priority = modPriority;
 
   return mod;
 }
