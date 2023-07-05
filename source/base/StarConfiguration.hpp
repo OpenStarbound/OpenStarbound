@@ -17,6 +17,7 @@ public:
 
   Json defaultConfiguration() const;
   Json currentConfiguration() const;
+  String printConfiguration() const;
 
   Json get(String const& key) const;
   Json getPath(String const& path) const;

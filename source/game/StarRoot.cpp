@@ -678,7 +678,7 @@ void Root::writeConfig() {
     if (m_lastRuntimeConfig != currentConfig) {
       if (m_runtimeConfigFile) {
         Logger::info("Root: Writing runtime configuration to '{}'", *m_runtimeConfigFile);
-        File::overwriteFileWithRename(currentConfig.printJson(2, true), *m_runtimeConfigFile);
+        File::overwriteFileWithRename(m_configuration->printConfiguration(), *m_runtimeConfigFile);
       }
       m_lastRuntimeConfig = currentConfig;
     }

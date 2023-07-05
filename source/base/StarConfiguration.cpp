@@ -16,6 +16,11 @@ Json Configuration::currentConfiguration() const {
   return m_currentConfig;
 }
 
+String Configuration::printConfiguration() const {
+  MutexLocker locker(m_mutex);
+  return m_currentConfig.printJson(2, true);
+}
+
 Json Configuration::get(String const& key) const {
   MutexLocker locker(m_mutex);
   return m_currentConfig.get(key, {});
