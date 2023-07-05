@@ -796,7 +796,10 @@ void MainInterface::update() {
 
   for (auto& pair : m_canvases) {
     pair.second->setPosition(Vec2I());
-    pair.second->setSize(Vec2I(m_guiContext->windowSize()));
+    if (pair.second->ignoreInterfaceScale())
+      pair.second->setSize(Vec2I(m_guiContext->windowSize()));
+    else
+      pair.second->setSize(Vec2I(m_guiContext->windowInterfaceSize()));
     pair.second->update();
   }
 }
@@ -923,14 +926,17 @@ void MainInterface::warpTo(WarpAction const& warpAction) {
   }
 }
 
-CanvasWidgetPtr MainInterface::fetchCanvas(String const& canvasName) {
+CanvasWidgetPtr MainInterface::fetchCanvas(String const& canvasName, bool ignoreInterfaceScale) {
   if (auto canvasPtr = m_canvases.ptr(canvasName))
     return *canvasPtr;
   else {
     CanvasWidgetPtr canvas = m_canvases.emplace(canvasName, make_shared<CanvasWidget>()).first->second;
     canvas->setPosition(Vec2I());
-    canvas->setSize(Vec2I(m_guiContext->windowSize()));
-    canvas->setIgnoreInterfaceScale(true);
+    if (ignoreInterfaceScale)
+      canvas->setSize(Vec2I(m_guiContext->windowSize()));
+    else
+      canvas->setSize(Vec2I(m_guiContext->windowInterfaceSize()));
+    canvas->setIgnoreInterfaceScale(ignoreInterfaceScale);
     return canvas;
   }
 }

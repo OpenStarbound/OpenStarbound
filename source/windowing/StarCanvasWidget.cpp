@@ -18,6 +18,10 @@ void CanvasWidget::setIgnoreInterfaceScale(bool ignoreInterfaceScale) {
   m_ignoreInterfaceScale = ignoreInterfaceScale;
 }
 
+bool CanvasWidget::ignoreInterfaceScale() const {
+  return m_ignoreInterfaceScale;
+}
+
 void CanvasWidget::clear() {
   m_renderOps.clear();
 }

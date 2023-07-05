@@ -115,7 +115,7 @@ public:
   void warpToOwnShip();
   void warpTo(WarpAction const& warpAction);
 
-  CanvasWidgetPtr fetchCanvas(String const& canvasName);
+  CanvasWidgetPtr fetchCanvas(String const& canvasName, bool ignoreInterfaceScale = false);
 
 private:
   PanePtr createEscapeDialog();

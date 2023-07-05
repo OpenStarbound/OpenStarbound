@@ -10,8 +10,8 @@ namespace Star {
 LuaCallbacks LuaBindings::makeInterfaceCallbacks(MainInterface* mainInterface) {
   LuaCallbacks callbacks;
 
-  callbacks.registerCallback("bindCanvas", [mainInterface](String const& canvasName) -> Maybe<CanvasWidgetPtr> {
-    if (auto canvas = mainInterface->fetchCanvas(canvasName))
+  callbacks.registerCallback("bindCanvas", [mainInterface](String const& canvasName, Maybe<bool> ignoreInterfaceScale) -> Maybe<CanvasWidgetPtr> {
+    if (auto canvas = mainInterface->fetchCanvas(canvasName, ignoreInterfaceScale.value(false)))
       return canvas;
     return {};
   });

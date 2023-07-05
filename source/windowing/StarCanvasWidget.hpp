@@ -32,6 +32,7 @@ public:
   void setCaptureMouseEvents(bool captureMouse);
   void setCaptureKeyboardEvents(bool captureKeyboard);
   void setIgnoreInterfaceScale(bool ignoreInterfaceScale);
+  bool ignoreInterfaceScale() const;
 
   // Returns mouse position relative to the lower left of the drawing region.
   Vec2I mousePosition() const;
