@@ -22,9 +22,9 @@ WirePane::WirePane(WorldClientPtr worldClient, PlayerPtr player, WorldPainterPtr
   GuiReader reader;
   reader.construct(assets->json("/interface/wires/wires.config:gui"), this);
 
-  m_insize = Vec2F(context()->textureSize("/interface/wires/inbound.png")) / TilePixels;
-  m_outsize = Vec2F(context()->textureSize("/interface/wires/outbound.png")) / TilePixels;
-  m_nodesize = Vec2F(1.8f, 1.8f);
+  m_inSize = Vec2F(context()->textureSize("/interface/wires/inbound.png")) / TilePixels;
+  m_outSize = Vec2F(context()->textureSize("/interface/wires/outbound.png")) / TilePixels;
+  m_nodeSize = Vec2F(1.8f, 1.8f);
 
   setTitle({}, "", "Wire you looking at me like that?");
   disableScissoring();
@@ -76,13 +76,13 @@ void WirePane::renderWire(Vec2F from, Vec2F to, Color baseColor) {
   float m_secondStripeThickness;
 
   auto assets = Root::singleton().assets();
-  JsonObject config = assets->json("/player.config:beamGunConfig").toObject();
-  m_minBeamWidth = config.get("minBeamWidth").toFloat();
-  m_maxBeamWidth = config.get("maxBeamWidth").toFloat();
-  m_beamWidthDev = config.value("beamWidthDev", (m_maxBeamWidth - m_minBeamWidth) / 3).toFloat();
-  m_minBeamTrans = config.get("minBeamTrans").toFloat();
-  m_maxBeamTrans = config.get("maxBeamTrans").toFloat();
-  m_beamTransDev = config.value("beamTransDev", (m_maxBeamTrans - m_minBeamTrans) / 3).toFloat();
+  JsonObject config = assets->json("/player.config:wireConfig").toObject();
+  m_minBeamWidth = config.get("minWireWidth").toFloat();
+  m_maxBeamWidth = config.get("maxWireWidth").toFloat();
+  m_beamWidthDev = config.value("wireWidthDev", (m_maxBeamWidth - m_minBeamWidth) / 3).toFloat();
+  m_minBeamTrans = config.get("minWireTrans").toFloat();
+  m_maxBeamTrans = config.get("maxWireTrans").toFloat();
+  m_beamTransDev = config.value("wireTransDev", (m_maxBeamTrans - m_minBeamTrans) / 3).toFloat();
   m_innerBrightnessScale = config.get("innerBrightnessScale").toFloat();
   m_firstStripeThickness = config.get("firstStripeThickness").toFloat();
   m_secondStripeThickness = config.get("secondStripeThickness").toFloat();
@@ -121,7 +121,7 @@ void WirePane::renderImpl() {
       Vec2I position = entity->tilePosition() + entity->nodePosition({WireDirection::Input, i});
       if (!m_worldClient->isTileProtected(position)) {
         context()->drawQuad("/interface/wires/inbound.png",
-            camera.worldToScreen(centerOfTile(position) - (m_insize / 2.0f)),
+            camera.worldToScreen(centerOfTile(position) - (m_inSize / 2.0f)),
             camera.pixelRatio(), white);
       }
     }
@@ -130,7 +130,7 @@ void WirePane::renderImpl() {
       Vec2I position = entity->tilePosition() + entity->nodePosition({WireDirection::Output, i});
       if (!m_worldClient->isTileProtected(position)) {
         context()->drawQuad("/interface/wires/outbound.png",
-            camera.worldToScreen(centerOfTile(position) - (m_outsize / 2.0f)),
+            camera.worldToScreen(centerOfTile(position) - (m_outSize / 2.0f)),
             camera.pixelRatio(), white);
       }
     }
@@ -216,7 +216,7 @@ WireConnector::SwingResult WirePane::swing(WorldGeometry const& geometry, Vec2F 
     float bestDist = 10000;
     for (auto entity : m_worldClient->query<WireEntity>(bounds)) {
       for (size_t i = 0; i < entity->nodeCount(WireDirection::Input); ++i) {
-        RectF inbounds = RectF::withSize(centerOfTile(entity->tilePosition() + entity->nodePosition({WireDirection::Input, i})) - (m_nodesize / 2.0f), m_nodesize);
+        RectF inbounds = RectF::withSize(centerOfTile(entity->tilePosition() + entity->nodePosition({WireDirection::Input, i})) - (m_nodeSize / 2.0f), m_nodeSize);
         if (geometry.rectContains(inbounds, pos)) {
           if (!matchNode) {
             matchNode = WireConnection{entity->tilePosition(), i};
@@ -234,7 +234,7 @@ WireConnector::SwingResult WirePane::swing(WorldGeometry const& geometry, Vec2F 
       }
 
       for (size_t i = 0; i < entity->nodeCount(WireDirection::Output); ++i) {
-        RectF outbounds = RectF::withSize(centerOfTile(entity->tilePosition() + entity->nodePosition({WireDirection::Output, i})) - (m_nodesize / 2.0f), m_nodesize);
+        RectF outbounds = RectF::withSize(centerOfTile(entity->tilePosition() + entity->nodePosition({WireDirection::Output, i})) - (m_nodeSize / 2.0f), m_nodeSize);
         if (geometry.rectContains(outbounds, pos)) {
           if (!matchNode) {
             matchNode = WireConnection{entity->tilePosition(), i};
@@ -281,7 +281,7 @@ WireConnector::SwingResult WirePane::swing(WorldGeometry const& geometry, Vec2F 
     float bestDist = 10000;
     for (auto entity : m_worldClient->query<WireEntity>(bounds)) {
       for (size_t i = 0; i < entity->nodeCount(WireDirection::Input); ++i) {
-        RectF inbounds = RectF::withSize(centerOfTile(entity->tilePosition() + entity->nodePosition({WireDirection::Input, i})) - (m_nodesize / 2.0f), m_nodesize);
+        RectF inbounds = RectF::withSize(centerOfTile(entity->tilePosition() + entity->nodePosition({WireDirection::Input, i})) - (m_nodeSize / 2.0f), m_nodeSize);
         if (geometry.rectContains(inbounds, pos) && entity->connectionsForNode({WireDirection::Input, i}).size() > 0) {
           if (!matchNode) {
             matchPosition = entity->tilePosition();
@@ -299,7 +299,7 @@ WireConnector::SwingResult WirePane::swing(WorldGeometry const& geometry, Vec2F 
       }
 
       for (size_t i = 0; i < entity->nodeCount(WireDirection::Output); ++i) {
-        RectF outbounds = RectF::withSize(centerOfTile(entity->tilePosition() + entity->nodePosition({WireDirection::Output, i})) - (m_nodesize / 2.0f), m_nodesize);
+        RectF outbounds = RectF::withSize(centerOfTile(entity->tilePosition() + entity->nodePosition({WireDirection::Output, i})) - (m_nodeSize / 2.0f), m_nodeSize);
         if (geometry.rectContains(outbounds, pos) && entity->connectionsForNode({WireDirection::Output, i}).size() > 0) {
           if (!matchNode) {
             matchPosition = entity->tilePosition();

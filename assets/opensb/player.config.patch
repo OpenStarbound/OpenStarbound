@@ -1,0 +1,13 @@
+{
+  "wireConfig" : {
+    "innerBrightnessScale" : 20,
+    "firstStripeThickness" : 0.6,
+    "secondStripeThickness" : 0.2,
+    "minWireWidth" : 0.5,
+    "maxWireWidth" : 1,
+    "maxWireJitter" : 0.06,
+    "minWireJitter" : 0.0,
+    "minWireTrans" : 0.1,
+    "maxWireTrans" : 0.4
+  }
+}

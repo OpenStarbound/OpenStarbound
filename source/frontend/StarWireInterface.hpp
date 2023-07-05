@@ -38,9 +38,9 @@ private:
   WireDirection m_sourceDirection;
   WireConnection m_sourceConnector;
 
-  Vec2F m_insize;
-  Vec2F m_outsize;
-  Vec2F m_nodesize;
+  Vec2F m_inSize;
+  Vec2F m_outSize;
+  Vec2F m_nodeSize;
 };
 
 }

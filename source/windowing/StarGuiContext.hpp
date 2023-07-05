@@ -66,10 +66,10 @@ public:
 
   void drawQuad(RectF const& screenCoords, Vec4B const& color = Vec4B::filled(255));
   void drawQuad(AssetPath const& texName, RectF const& screenCoords, Vec4B const& color = Vec4B::filled(255));
-  void drawQuad(AssetPath const& texName, Vec2F const& screenPos, int pixelRatio, Vec4B const& color = Vec4B::filled(255));
+  void drawQuad(AssetPath const& texName, Vec2F const& screenPos, float pixelRatio, Vec4B const& color = Vec4B::filled(255));
   void drawQuad(AssetPath const& texName, RectF const& texCoords, RectF const& screenCoords, Vec4B const& color = Vec4B::filled(255));
 
-  void drawDrawable(Drawable drawable, Vec2F const& screenPos, int pixelRatio, Vec4B const& color = Vec4B::filled(255));
+  void drawDrawable(Drawable drawable, Vec2F const& screenPos, float pixelRatio, Vec4B const& color = Vec4B::filled(255));
 
   void drawLine(Vec2F const& begin, Vec2F const end, Vec4B const& color, float lineWidth = 1);
   void drawPolyLines(PolyF const& poly, Vec4B const& color, float lineWidth = 1);

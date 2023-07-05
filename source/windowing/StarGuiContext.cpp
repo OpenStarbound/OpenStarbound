@@ -147,7 +147,7 @@ void GuiContext::drawQuad(AssetPath const& texName, RectF const& screenCoords, V
   renderer()->immediatePrimitives().emplace_back(std::in_place_type_t<RenderQuad>(), assetTextureGroup()->loadTexture(texName), screenCoords, color, 0.0f);
 }
 
-void GuiContext::drawQuad(AssetPath const& texName, Vec2F const& screenPos, int pixelRatio, Vec4B const& color) {
+void GuiContext::drawQuad(AssetPath const& texName, Vec2F const& screenPos, float pixelRatio, Vec4B const& color) {
   renderer()->immediatePrimitives().emplace_back(std::in_place_type_t<RenderQuad>(), assetTextureGroup()->loadTexture(texName), screenPos, pixelRatio, color, 0.0f);
 }
 
@@ -160,7 +160,7 @@ void GuiContext::drawQuad(AssetPath const& texName, RectF const& texCoords, Rect
     color, 0.0f);
 }
 
-void GuiContext::drawDrawable(Drawable drawable, Vec2F const& screenPos, int pixelRatio, Vec4B const& color) {
+void GuiContext::drawDrawable(Drawable drawable, Vec2F const& screenPos, float pixelRatio, Vec4B const& color) {
   if (drawable.isLine())
     drawable.linePart().width *= pixelRatio;
 
