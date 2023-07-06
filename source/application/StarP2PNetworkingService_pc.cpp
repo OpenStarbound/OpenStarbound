@@ -108,7 +108,7 @@ void Star::PcP2PNetworkingService::setActivityData(String const& title, Maybe<pa
       }
   
       if (auto lobby = m_discordServerLobby)
-        activity.GetParty().SetId(strf("{}", lobby->first).c_str());
+        activity.GetParty().SetId(toString(lobby->first).c_str());
 
       if (m_joinLocation.is<JoinLocal>()) {
         if (auto lobby = m_discordServerLobby) {
@@ -117,7 +117,7 @@ void Star::PcP2PNetworkingService::setActivityData(String const& title, Maybe<pa
           activity.GetSecrets().SetJoin(joinSecret.utf8Ptr());
         }
       } else if (m_joinLocation.is<JoinRemote>()) {
-        String address = strf("{}", (HostAddressWithPort)m_joinLocation.get<JoinRemote>());
+        String address = toString((HostAddressWithPort)m_joinLocation.get<JoinRemote>());
         String joinSecret = strf("connect:address_{}", address);
         Logger::info("Setting discord join secret as {}", joinSecret);
         activity.GetSecrets().SetJoin(joinSecret.utf8Ptr());

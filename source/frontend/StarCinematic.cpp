@@ -189,7 +189,7 @@ void Cinematic::render() {
       m_completable = true;
     if (!values.alpha)
       continue;
-    auto frame = strf("{}", ((int)values.frame) % panel->animationFrames);
+    auto frame = toString(((int)values.frame) % panel->animationFrames);
     auto alphaColor = Color::rgbaf(1.0f, 1.0f, 1.0f, values.alpha);
     for (auto const& d : panel->drawables) {
       Drawable drawable = Drawable(d.set("image", d.getString("image").replaceTags(StringMap<String>{{"species", playerSpecies}, {"frame", frame}})));

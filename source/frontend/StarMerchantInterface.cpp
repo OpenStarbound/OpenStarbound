@@ -242,7 +242,7 @@ void MerchantPane::setupWidget(WidgetPtr const& widget, Json const& itemConfig) 
   itemName->setText(name);
 
   unsigned price = ceil(itemConfig.getInt("price", item->price()) * m_buyFactor);
-  widget->setLabel("priceLabel", strf("{}", price));
+  widget->setLabel("priceLabel", toString(price));
   widget->setData(price);
 
   bool unavailable = price > m_player->currency("money");
@@ -287,7 +287,7 @@ void MerchantPane::updateBuyTotal() {
   else
     m_buyTotal = 0;
 
-  m_buyTotalLabel->setText(strf("{}", m_buyTotal));
+  m_buyTotalLabel->setText(toString(m_buyTotal));
 
   if (m_selectedIndex != NPos && m_buyCount > 0)
     m_buyButton->enable();
@@ -332,7 +332,7 @@ void MerchantPane::updateSellTotal() {
     if (item)
       m_sellTotal += round(item->price() * m_sellFactor);
   }
-  m_sellTotalLabel->setText(strf("{}", m_sellTotal));
+  m_sellTotalLabel->setText(toString(m_sellTotal));
   if (m_sellTotal > 0)
     m_sellButton->enable();
   else

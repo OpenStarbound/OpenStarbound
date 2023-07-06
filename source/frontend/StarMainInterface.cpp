@@ -682,7 +682,7 @@ void MainInterface::update() {
     }
 
     m_messageOverflow++;
-    m_overflowMessage->message = m_config->overflowMessageText.replace("<count>", strf("{}", m_messageOverflow));
+    m_overflowMessage->message = m_config->overflowMessageText.replace("<count>", toString(m_messageOverflow));
     m_overflowMessage->cooldown = m_config->messageTime;
     if (auto oldest = m_messages.sorted([](GuiMessagePtr a, GuiMessagePtr b) { return a->cooldown < b->cooldown; }).maybeFirst())
       m_overflowMessage->cooldown = oldest.value()->cooldown;

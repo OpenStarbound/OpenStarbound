@@ -70,7 +70,7 @@ void ListWidget::setSchema(Json const& schema) {
 
 WidgetPtr ListWidget::addItem() {
   auto newItem = constructWidget();
-  addChild(strf("{}", Random::randu64()), newItem);
+  addChild(toString(Random::randu64()), newItem);
   updateSizeAndPosition();
 
   return newItem;
@@ -78,7 +78,7 @@ WidgetPtr ListWidget::addItem() {
 
 WidgetPtr ListWidget::addItem(size_t at) {
   auto newItem = constructWidget();
-  addChildAt(strf("{}", Random::randu64()), newItem, at);
+  addChildAt(toString(Random::randu64()), newItem, at);
   updateSizeAndPosition();
 
   if (m_selectedItem != NPos && at <= m_selectedItem)
@@ -88,7 +88,7 @@ WidgetPtr ListWidget::addItem(size_t at) {
 }
 
 WidgetPtr ListWidget::addItem(WidgetPtr existingItem) {
-  addChild(strf("{}", Random::randu64()), existingItem);
+  addChild(toString(Random::randu64()), existingItem);
   updateSizeAndPosition();
 
   return existingItem;

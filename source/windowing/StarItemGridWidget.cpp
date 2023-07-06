@@ -155,7 +155,7 @@ void ItemGridWidget::setItemBag(ItemBagConstPtr bag) {
   m_slots.clear();
   for (size_t i = 0; i < m_bag->size() - m_bagOffset && i < (unsigned)m_dimensions[0] * m_dimensions[1]; ++i) {
     auto itemSlot = make_shared<ItemSlotWidget>(m_bag->at(i), m_backingImage);
-    addChild(strf("{}", i), itemSlot);
+    addChild(toString(i), itemSlot);
     m_slots.append(itemSlot);
     itemSlot->setBackingImageAffinity(m_drawBackingImageWhenFull, m_drawBackingImageWhenEmpty);
     itemSlot->setProgress(m_progress);

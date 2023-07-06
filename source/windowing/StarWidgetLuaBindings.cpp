@@ -186,7 +186,7 @@ LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr
 
   callbacks.registerCallback("addChild", [parentWidget, reader](String const& widgetName, Json const& newChildConfig, Maybe<String> const& newChildName) {
       if (auto widget = parentWidget->fetchChild<Widget>(widgetName)) {
-        String name = newChildName.value(strf("{}", Random::randu64()));
+        String name = newChildName.value(toString(Random::randu64()));
         WidgetPtr newChild = reader->makeSingle(name, newChildConfig);
         widget->addChild(name, newChild);
       }

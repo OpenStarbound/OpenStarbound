@@ -42,11 +42,6 @@ Type lexicalCast(StringView s, std::ios_base::fmtflags flags = std::ios_base::bo
     throw BadLexicalCast(strf("Lexical cast failed on '{}'", s));
 }
 
-template <class Type>
-std::string toString(Type const& t) {
-  return fmt::to_string(t);
-}
-
 }
 
 #endif

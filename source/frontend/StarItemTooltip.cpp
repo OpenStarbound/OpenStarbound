@@ -81,7 +81,7 @@ void ItemTooltipBuilder::buildItemDescriptionInner(
     container->fetchChild<ItemSlotWidget>("icon")->setItem(item);
 
   container->setLabel("nameLabel", item->name());
-  container->setLabel("countLabel", strf("{}", item->count()));
+  container->setLabel("countLabel", toString(item->count()));
 
   container->setLabel("rarityLabel", RarityNames.getRight(item->rarity()).titleCase());
 
@@ -90,8 +90,8 @@ void ItemTooltipBuilder::buildItemDescriptionInner(
   else
     container->setLabel("handednessLabel", "1-Handed");
 
-  container->setLabel("countLabel", strf("{}", item->instanceValue("fuelAmount", 0).toUInt() * item->count()));
-  container->setLabel("priceLabel", strf("{}", (int)item->price()));
+  container->setLabel("countLabel", toString(item->instanceValue("fuelAmount", 0).toUInt() * item->count()));
+  container->setLabel("priceLabel", toString((int)item->price()));
 
   if (auto objectItem = as<ObjectItem>(item)) {
     try {

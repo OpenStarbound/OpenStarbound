@@ -234,7 +234,7 @@ void ClientApplication::renderInit(RendererPtr renderer) {
   };
 
   loadEffectConfig("world");
-  loadEffectConfig("default");
+  loadEffectConfig("interface");
 
   if (m_root->configuration()->get("limitTextureAtlasSize").optBool().value(false))
     renderer->setSizeLimitEnabled(true);
@@ -389,11 +389,11 @@ void ClientApplication::render() {
     WorldClientPtr worldClient = m_universeClient->worldClient();
 
     RendererPtr renderer = Application::renderer();
+    renderer->switchEffectConfig("world");
     if (worldClient) {
       auto totalStart = Time::monotonicMicroseconds();
       auto start = totalStart;
 
-      renderer->switchEffectConfig("world");
       worldClient->render(m_renderData, TilePainter::BorderTileSize);
       LogMap::set("client_render_world_client", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
 
@@ -404,10 +404,10 @@ void ClientApplication::render() {
       start = Time::monotonicMicroseconds();
       m_mainInterface->renderInWorldElements();
       LogMap::set("client_render_world_elements", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
-      renderer->switchEffectConfig("default");
 
       LogMap::set("client_render_world_total", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - totalStart));
     }
+    renderer->switchEffectConfig("interface");
     auto start = Time::monotonicMicroseconds();
     m_mainInterface->render();
     m_cinematicOverlay->render();
@@ -879,8 +879,8 @@ void ClientApplication::updateRunning() {
     LogMap::set("player_vel", strf("[ ^#f45;{:4.2f}^reset;, ^#49f;{:4.2f}^reset; ]", m_player->velocity()[0], m_player->velocity()[1]));
     LogMap::set("player_aim", strf("[ ^#f45;{:4.2f}^reset;, ^#49f;{:4.2f}^reset; ]", aimPosition[0], aimPosition[1]));
     if (m_universeClient->worldClient()) {
-      LogMap::set("tile_liquid_level", strf("{}", m_universeClient->worldClient()->liquidLevel(Vec2I::floor(aimPosition)).level));
-      LogMap::set("tile_dungeon_id", strf("{}", m_universeClient->worldClient()->dungeonId(Vec2I::floor(aimPosition))));
+      LogMap::set("tile_liquid_level", toString(m_universeClient->worldClient()->liquidLevel(Vec2I::floor(aimPosition)).level));
+      LogMap::set("tile_dungeon_id", toString(m_universeClient->worldClient()->dungeonId(Vec2I::floor(aimPosition))));
     }
 
     if (m_mainInterface->currentState() == MainInterface::ReturnToTitle)

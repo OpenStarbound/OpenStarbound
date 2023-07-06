@@ -422,7 +422,7 @@ QuestCompleteInterface::QuestCompleteInterface(QuestPtr const& quest, PlayerPtr 
   commonSetup(config, m_quest->completionText(), "QuestComplete");
 
   if (auto moneyLabel = fetchChild<LabelWidget>("lblMoneyAmount"))
-    moneyLabel->setText(strf("{}", m_quest->money()));
+    moneyLabel->setText(toString(m_quest->money()));
   disableScissoring();
 }
 

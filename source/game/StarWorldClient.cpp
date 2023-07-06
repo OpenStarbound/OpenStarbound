@@ -1057,7 +1057,7 @@ void WorldClient::update() {
     renderCollisionDebug();
 
   LogMap::set("client_entities", m_entityMap->size());
-  LogMap::set("client_sectors", strf("{}", loadedSectors.size()));
+  LogMap::set("client_sectors", toString(loadedSectors.size()));
   LogMap::set("client_lua_mem", m_luaRoot->luaMemoryUsage());
 }
 
@@ -1244,7 +1244,7 @@ void WorldClient::handleDamageNotifications() {
       return;
     Particle particle = Root::singleton().particleDatabase()->particle(damageNumberParticleKind);
     particle.position += position;
-    particle.string = particle.string.replace("$dmg$", strf("{}", displayValue));
+    particle.string = particle.string.replace("$dmg$", toString(displayValue));
     m_particles->add(particle);
   };
 

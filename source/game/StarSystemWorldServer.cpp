@@ -314,7 +314,7 @@ Json SystemWorldServer::diskStore() {
 
 void SystemWorldServer::placeInitialObjects() {
   auto config = Root::singleton().assets()->json("/systemworld.config");
-  RandomSource rand(staticRandomU64("SystemWorldGeneration", strf("{}", m_location)));
+  RandomSource rand(staticRandomU64("SystemWorldGeneration", toString(m_location)));
 
   WeightedPool<JsonArray> spawnPools = jsonToWeightedPool<JsonArray>(config.getArray("initialObjectPools"));
   JsonArray spawn = spawnPools.select(rand);
@@ -429,7 +429,7 @@ SkyParameters SystemWorldServer::locationSkyParameters(SystemLocation const& loc
 
       if (auto visitableParameters = parameters->visitableParameters()) {
         if (is<TerrestrialWorldParameters>(visitableParameters)) {
-          uint64_t seed = staticRandomU64(strf("{}", m_location));
+          uint64_t seed = staticRandomU64(toString(m_location));
           List<CelestialParameters> worlds;
           if (auto planet = m_celestialDatabase->parameters(orbitTarget))
             worlds.append(*planet);

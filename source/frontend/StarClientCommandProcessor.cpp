@@ -127,7 +127,7 @@ String ClientCommandProcessor::gravity() {
   if (!adminCommandAllowed())
     return "You must be an admin to use this command.";
 
-  return strf("{}", m_universeClient->worldClient()->gravity(m_universeClient->mainPlayer()->position()));
+  return toString(m_universeClient->worldClient()->gravity(m_universeClient->mainPlayer()->position()));
 }
 
 String ClientCommandProcessor::debug(StringList const& arguments) {

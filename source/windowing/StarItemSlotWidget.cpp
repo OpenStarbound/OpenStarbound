@@ -185,7 +185,7 @@ void ItemSlotWidget::renderImpl() {
       context()->setFontSize(m_fontSize);
       context()->setFontColor(m_fontColor.toRgba());
       context()->setFontMode(m_countFontMode);
-      context()->renderInterfaceText(strf("{}", m_item->count()), m_countPosition.translated(Vec2F(screenPosition())));
+      context()->renderInterfaceText(toString(m_item->count()), m_countPosition.translated(Vec2F(screenPosition())));
     }
 
   } else if (m_drawBackingImageWhenEmpty && m_backingImage != "") {

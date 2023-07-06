@@ -360,7 +360,7 @@ WidgetConstructResult WidgetParser::radioGroupHandler(String const& name, Json c
 
       common(button, btnConfig);
 
-      buttonGroup->addChild(strf("{}", button->buttonGroupId()), button);
+      buttonGroup->addChild(toString(button->buttonGroupId()), button);
     } catch (MapException const& e) {
       throw WidgetParserException(
           strf("Malformed gui json, missing a required value in the map. {}", outputException(e, false)));
@@ -749,7 +749,7 @@ WidgetConstructResult WidgetParser::stackHandler(String const& name, Json const&
       auto widget = make_shared<Widget>();
       constructImpl(widgetCfg, widget.get());
       widget->determineSizeFromChildren();
-      stack->addChild(strf("{}", stack->numChildren()), widget);
+      stack->addChild(toString(stack->numChildren()), widget);
     }
   }
 

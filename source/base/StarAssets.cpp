@@ -431,7 +431,7 @@ FramesSpecification Assets::parseFramesSpecification(Json const& frameConfig, St
       // If "names" not specified, use auto naming algorithm
       for (size_t y = 0; y < dimensions[1]; ++y)
         for (size_t x = 0; x < dimensions[0]; ++x)
-          framesSpecification.frames[strf("{}", y * dimensions[0] + x)] =
+          framesSpecification.frames[toString(y * dimensions[0] + x)] =
               RectU::withSize(Vec2U(begin[0] + x * size[0], begin[1] + y * size[1]), size);
     }
   }

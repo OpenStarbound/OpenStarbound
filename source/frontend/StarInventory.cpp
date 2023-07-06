@@ -317,25 +317,25 @@ void InventoryPane::update() {
     techOverlay->setVisibility(m_player->techOverridden());
 
   auto healthLabel = fetchChild<LabelWidget>("healthtext");
-  healthLabel->setText(strf("{}", m_player->maxHealth()));
+  healthLabel->setText(toString(m_player->maxHealth()));
   auto energyLabel = fetchChild<LabelWidget>("energytext");
-  energyLabel->setText(strf("{}", m_player->maxEnergy()));
+  energyLabel->setText(toString(m_player->maxEnergy()));
   auto weaponLabel = fetchChild<LabelWidget>("weapontext");
   weaponLabel->setText(strf("{}%", ceil(m_player->powerMultiplier() * 100)));
   auto defenseLabel = fetchChild<LabelWidget>("defensetext");
   if (m_player->protection() == 0)
     defenseLabel->setText("--");
   else
-    defenseLabel->setText(strf("{}", ceil(m_player->protection())));
+    defenseLabel->setText(toString(ceil(m_player->protection())));
 
   auto moneyLabel = fetchChild<LabelWidget>("lblMoney");
-  moneyLabel->setText(strf("{}", m_player->currency("money")));
+  moneyLabel->setText(toString(m_player->currency("money")));
 
   if (m_player->currency("essence") > 0) {
     fetchChild<ImageWidget>("imgEssenceIcon")->show();
     auto essenceLabel = fetchChild<LabelWidget>("lblEssence");
     essenceLabel->show();
-    essenceLabel->setText(strf("{}", m_player->currency("essence")));
+    essenceLabel->setText(toString(m_player->currency("essence")));
   } else {
     fetchChild<ImageWidget>("imgEssenceIcon")->hide();
     fetchChild<LabelWidget>("lblEssence")->hide();

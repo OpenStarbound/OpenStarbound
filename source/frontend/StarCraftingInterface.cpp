@@ -294,7 +294,7 @@ void CraftingPane::update() {
     updateCraftButtons();
   }
 
-  setLabel("lblPlayerMoney", strf("{}", (int)m_player->currency("money")));
+  setLabel("lblPlayerMoney", toString((int)m_player->currency("money")));
 
   Pane::update();
 }
@@ -421,7 +421,7 @@ void CraftingPane::setupWidget(WidgetPtr const& widget, ItemRecipe const& recipe
   }
 
   if (price > 0) {
-    widget->setLabel("priceLabel", strf("{}", price));
+    widget->setLabel("priceLabel", toString(price));
     if (auto icon = widget->fetchChild<ImageWidget>("moneyIcon"))
       icon->setVisibility(true);
   } else {

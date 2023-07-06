@@ -40,6 +40,11 @@ void cerrf(char const* fmt, Args const&... args) {
   std::cerr.flush();
 }
 
+template <class Type>
+inline std::string toString(Type const& t) {
+  return fmt::to_string(t);
+}
+
 }
 
 #endif
