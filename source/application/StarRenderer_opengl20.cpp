@@ -105,6 +105,7 @@ OpenGl20Renderer::~OpenGl20Renderer() {
   for (auto& effect : m_effects)
     glDeleteProgram(effect.second.program);
 
+  m_frameBuffers.clear();
   logGlErrorSummary("OpenGL errors during shutdown");
 }
 
@@ -114,6 +115,38 @@ String OpenGl20Renderer::rendererId() const {
 
 Vec2U OpenGl20Renderer::screenSize() const {
   return m_screenSize;
+}
+
+OpenGl20Renderer::GlFrameBuffer::GlFrameBuffer(Json const& fbConfig) : config(fbConfig) {
+  texture = createGlTexture(Image(), TextureAddressing::Clamp, TextureFiltering::Nearest);
+  glBindTexture(GL_TEXTURE_2D, texture->glTextureId());
+
+  Vec2U size = jsonToVec2U(config.getArray("size", { 256, 256 }));
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, size[0] , size[1], 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+
+  glGenFramebuffers(1, &id);
+  if (!id)
+    throw RendererException("Failed to create OpenGL framebuffer");
+
+  glBindFramebuffer(GL_FRAMEBUFFER, id);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture->glTextureId(), 0);
+
+  auto framebufferStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+  if (framebufferStatus != GL_FRAMEBUFFER_COMPLETE)
+    throw RendererException("OpenGL framebuffer is not complete!");
+}
+
+
+OpenGl20Renderer::GlFrameBuffer::~GlFrameBuffer() {
+  glDeleteFramebuffers(1, &id);
+  texture.reset();
+}
+
+void OpenGl20Renderer::loadConfig(Json const& config) {
+  m_frameBuffers.clear();
+
+  for (auto& pair : config.getObject("frameBuffers", {}))
+    m_frameBuffers[pair.first] = make_ref<GlFrameBuffer>(pair.second);
 }
 
 void OpenGl20Renderer::loadEffectConfig(String const& name, Json const& effectConfig, StringMap<String> const& shaders) {
@@ -303,6 +336,18 @@ bool OpenGl20Renderer::switchEffectConfig(String const& name) {
     return false;
 
   Effect& effect = find->second;
+  if (m_currentEffect == &effect)
+    return true;
+
+  if (auto blitFrameBufferId = effect.config.optString("blitFrameBuffer"))
+    blitGlFrameBuffer(getGlFrameBuffer(*blitFrameBufferId));
+
+  if (auto frameBufferId = effect.config.optString("frameBuffer"))
+    switchGlFrameBuffer(getGlFrameBuffer(*frameBufferId));
+  else {
+    m_currentFrameBuffer.reset();
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+  }
 
   glUseProgram(m_program = effect.program);
   setupGlUniforms(effect);
@@ -387,11 +432,24 @@ void OpenGl20Renderer::setScreenSize(Vec2U screenSize) {
   m_screenSize = screenSize;
   glViewport(0, 0, m_screenSize[0], m_screenSize[1]);
   glUniform2f(m_screenSizeUniform, m_screenSize[0], m_screenSize[1]);
+
+  for (auto& frameBuffer : m_frameBuffers) {
+    glBindTexture(GL_TEXTURE_2D, frameBuffer.second->texture->glTextureId());
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_screenSize[0], m_screenSize[1], 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+  }
 }
 
 void OpenGl20Renderer::startFrame() {
   if (m_scissorRect)
     glDisable(GL_SCISSOR_TEST);
+  
+  for (auto& frameBuffer : m_frameBuffers) {
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, frameBuffer.second->id);
+    glClear(GL_COLOR_BUFFER_BIT);
+    frameBuffer.second->blitted = false;
+  }
+
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
   glClear(GL_COLOR_BUFFER_BIT);
 
@@ -416,6 +474,9 @@ void OpenGl20Renderer::finishFrame() {
 
         return false;
       });
+
+  // Blit if another shader hasn't
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
   if (DebugEnabled)
     logGlErrorSummary("OpenGL errors this frame");
@@ -456,17 +517,20 @@ void OpenGl20Renderer::GlTextureAtlasSet::copyAtlasPixels(
   glBindTexture(GL_TEXTURE_2D, glTexture);
 
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-  if (image.pixelFormat() == PixelFormat::RGB24) {
-    glTexSubImage2D(GL_TEXTURE_2D, 0, bottomLeft[0], bottomLeft[1], image.width(), image.height(), GL_RGB, GL_UNSIGNED_BYTE, image.data());
-  } else if (image.pixelFormat() == PixelFormat::RGBA32) {
-    glTexSubImage2D(GL_TEXTURE_2D, 0, bottomLeft[0], bottomLeft[1], image.width(), image.height(), GL_RGBA, GL_UNSIGNED_BYTE, image.data());
-  } else if (image.pixelFormat() == PixelFormat::BGR24) {
-    glTexSubImage2D(GL_TEXTURE_2D, 0, bottomLeft[0], bottomLeft[1], image.width(), image.height(), GL_BGR, GL_UNSIGNED_BYTE, image.data());
-  } else if (image.pixelFormat() == PixelFormat::BGRA32) {
-    glTexSubImage2D(GL_TEXTURE_2D, 0, bottomLeft[0], bottomLeft[1], image.width(), image.height(), GL_BGRA, GL_UNSIGNED_BYTE, image.data());
-  } else {
+  GLenum format;
+  auto pixelFormat = image.pixelFormat();
+  if (pixelFormat == PixelFormat::RGB24)
+    format = GL_RGB;
+  else if (pixelFormat == PixelFormat::RGBA32)
+    format = GL_RGBA;
+  else if (pixelFormat == PixelFormat::BGR24)
+    format = GL_BGR;
+  else if (pixelFormat == PixelFormat::BGRA32)
+    format = GL_BGRA;
+  else
     throw RendererException("Unsupported texture format in OpenGL20Renderer::TextureGroup::copyAtlasPixels");
-  }
+
+  glTexSubImage2D(GL_TEXTURE_2D, 0, bottomLeft[0], bottomLeft[1], image.width(), image.height(), format, GL_UNSIGNED_BYTE, image.data());
 }
 
 OpenGl20Renderer::GlTextureGroup::GlTextureGroup(unsigned atlasNumCells)
@@ -608,7 +672,7 @@ void OpenGl20Renderer::GlRenderBuffer::set(List<RenderPrimitive>& primitives) {
         glBufferData(GL_ARRAY_BUFFER, accumulationBuffer.size(), accumulationBuffer.ptr(), GL_STREAM_DRAW);
       }
 
-      vertexBuffers.append(vb);
+      vertexBuffers.emplace_back(move(vb));
 
       currentTextures.clear();
       currentTextureSizes.clear();
@@ -654,9 +718,10 @@ void OpenGl20Renderer::GlRenderBuffer::set(List<RenderPrimitive>& primitives) {
     ++currentVertexCount;
   };
 
+  float textureIndex = 0.0f;
+  Vec2F textureOffset = {};
+  Texture* lastTexture = nullptr;
   for (auto& primitive : primitives) {
-    float textureIndex;
-    Vec2F textureOffset;
     if (auto tri = primitive.ptr<RenderTriangle>()) {
       tie(textureIndex, textureOffset) = addCurrentTexture(move(tri->texture));
 
@@ -678,6 +743,7 @@ void OpenGl20Renderer::GlRenderBuffer::set(List<RenderPrimitive>& primitives) {
     } else if (auto poly = primitive.ptr<RenderPoly>()) {
       if (poly->vertexes.size() > 2) {
         tie(textureIndex, textureOffset) = addCurrentTexture(move(poly->texture));
+
         for (size_t i = 1; i < poly->vertexes.size() - 1; ++i) {
           appendBufferVertex(poly->vertexes[0], textureIndex, textureOffset);
           appendBufferVertex(poly->vertexes[i], textureIndex, textureOffset);
@@ -723,17 +789,20 @@ bool OpenGl20Renderer::logGlErrorSummary(String prefix) {
 
 void OpenGl20Renderer::uploadTextureImage(PixelFormat pixelFormat, Vec2U size, uint8_t const* data) {
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-  if (pixelFormat == PixelFormat::RGB24) {
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, size[0], size[1], 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-  } else if (pixelFormat == PixelFormat::RGBA32) {
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size[0], size[1], 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-  } else if (pixelFormat == PixelFormat::BGR24) {
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_BGR, size[0], size[1], 0, GL_BGR, GL_UNSIGNED_BYTE, data);
-  } else if (pixelFormat == PixelFormat::BGRA32) {
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_BGRA, size[0], size[1], 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-  } else {
-    starAssert(false);
-  }
+
+  GLenum format;
+  if (pixelFormat == PixelFormat::RGB24)
+    format = GL_RGB;
+  else if (pixelFormat == PixelFormat::RGBA32)
+    format = GL_RGBA;
+  else if (pixelFormat == PixelFormat::BGR24)
+    format = GL_BGR;
+  else if (pixelFormat == PixelFormat::BGRA32)
+    format = GL_BGRA;
+  else
+    throw RendererException("Unsupported texture format in OpenGL20Renderer::uploadTextureImage");
+
+  glTexImage2D(GL_TEXTURE_2D, 0, format, size[0], size[1], 0, format, GL_UNSIGNED_BYTE, data);
 }
 
 void OpenGl20Renderer::flushImmediatePrimitives() {
@@ -751,9 +820,6 @@ auto OpenGl20Renderer::createGlTexture(Image const& image, TextureAddressing add
   glLoneTexture->textureFiltering = filtering;
   glLoneTexture->textureAddressing = addressing;
   glLoneTexture->textureSize = image.size();
-
-  if (image.empty())
-    return glLoneTexture;
 
   glGenTextures(1, &glLoneTexture->textureId);
   if (glLoneTexture->textureId == 0)
@@ -777,7 +843,9 @@ auto OpenGl20Renderer::createGlTexture(Image const& image, TextureAddressing add
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   }
 
-  uploadTextureImage(image.pixelFormat(), image.size(), image.data());
+
+  if (!image.empty())
+    uploadTextureImage(image.pixelFormat(), image.size(), image.data());
 
   return glLoneTexture;
 }
@@ -850,6 +918,37 @@ void OpenGl20Renderer::setupGlUniforms(Effect& effect) {
     glUniform1i(m_textureUniforms[i], i);
 
   glUniform2f(m_screenSizeUniform, m_screenSize[0], m_screenSize[1]);
+}
+
+RefPtr<OpenGl20Renderer::GlFrameBuffer> OpenGl20Renderer::getGlFrameBuffer(String const& id) {
+  if (auto ptr = m_frameBuffers.ptr(id))
+    return *ptr;
+  else
+    throw RendererException::format("Frame buffer '{}' does not exist", id);
+}
+
+void OpenGl20Renderer::blitGlFrameBuffer(RefPtr<GlFrameBuffer> const& frameBuffer) {
+  if (frameBuffer->blitted)
+    return;
+
+  auto& size = m_screenSize;
+  glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+  glBindFramebuffer(GL_READ_FRAMEBUFFER, frameBuffer->id);
+  glBlitFramebuffer(
+    0, 0, size[0], size[1],
+    0, 0, size[0], size[1],
+    GL_COLOR_BUFFER_BIT, GL_NEAREST
+  );
+
+  frameBuffer->blitted = true;
+}
+
+void OpenGl20Renderer::switchGlFrameBuffer(RefPtr<GlFrameBuffer> const& frameBuffer) {
+  if (m_currentFrameBuffer == frameBuffer)
+    return;
+
+  glBindFramebuffer(GL_DRAW_FRAMEBUFFER, frameBuffer->id);
+  m_currentFrameBuffer = frameBuffer;
 }
 
 GLuint OpenGl20Renderer::Effect::getAttribute(String const& name) {

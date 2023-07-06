@@ -10,6 +10,8 @@ namespace Star {
 
 STAR_CLASS(OpenGl20Renderer);
 
+constexpr size_t FrameBufferCount = 1;
+
 // OpenGL 2.0 implementation of Renderer.  OpenGL context must be created and
 // active during construction, destruction, and all method calls.
 class OpenGl20Renderer : public Renderer {
@@ -20,6 +22,7 @@ public:
   String rendererId() const override;
   Vec2U screenSize() const override;
 
+  void loadConfig(Json const& config) override;
   void loadEffectConfig(String const& name, Json const& effectConfig, StringMap<String> const& shaders) override;
 
   void setEffectParameter(String const& parameterName, RenderEffectParameter const& parameter) override;
@@ -145,22 +148,33 @@ private:
 
   struct EffectParameter {
     GLint parameterUniform = -1;
-    VariantTypeIndex parameterType;
+    VariantTypeIndex parameterType = 0;
     Maybe<RenderEffectParameter> parameterValue;
   };
 
   struct EffectTexture {
     GLint textureUniform = -1;
-    unsigned textureUnit;
+    unsigned textureUnit = 0;
     TextureAddressing textureAddressing = TextureAddressing::Clamp;
     TextureFiltering textureFiltering = TextureFiltering::Linear;
     GLint textureSizeUniform = -1;
     RefPtr<GlLoneTexture> textureValue;
   };
+  
+  struct GlFrameBuffer : RefCounter {
+    GLuint id = 0;
+    RefPtr<GlLoneTexture> texture;
+
+    Json config;
+    bool blitted = false;
+
+    GlFrameBuffer(Json const& config);
+    ~GlFrameBuffer();
+  };
 
   class Effect {
   public:
-    GLuint program;
+    GLuint program = 0;
     Json config;
     StringMap<EffectParameter> parameters;
     StringMap<EffectTexture> textures;
@@ -185,6 +199,10 @@ private:
 
   void setupGlUniforms(Effect& effect);
 
+  RefPtr<OpenGl20Renderer::GlFrameBuffer> getGlFrameBuffer(String const& id);
+  void blitGlFrameBuffer(RefPtr<OpenGl20Renderer::GlFrameBuffer> const& frameBuffer);
+  void switchGlFrameBuffer(RefPtr<OpenGl20Renderer::GlFrameBuffer> const& frameBuffer);
+
   Vec2U m_screenSize;
 
   GLuint m_program = 0;
@@ -202,6 +220,9 @@ private:
 
   StringMap<Effect> m_effects;
   Effect* m_currentEffect;
+
+  StringMap<RefPtr<GlFrameBuffer>> m_frameBuffers;
+  RefPtr<GlFrameBuffer> m_currentFrameBuffer;
 
   RefPtr<GlTexture> m_whiteTexture;
 

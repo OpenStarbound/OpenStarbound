@@ -124,25 +124,32 @@ size_t TilePainter::TextureKeyHash::operator()(TextureKey const& key) const {
 }
 
 TilePainter::ChunkHash TilePainter::terrainChunkHash(WorldRenderData& renderData, Vec2I chunkIndex) {
-  XXHash3 hasher;
+  //XXHash3 hasher;
+  static ByteArray buffer;
+  buffer.clear();
   RectI tileRange = RectI::withSize(chunkIndex * RenderChunkSize, Vec2I::filled(RenderChunkSize)).padded(MaterialRenderProfileMaxNeighborDistance);
-
   forEachRenderTile(renderData, tileRange, [&](Vec2I const&, RenderTile const& renderTile) {
-      renderTile.hashPushTerrain(hasher);
-    });
+    //renderTile.hashPushTerrain(hasher);
+    buffer.append((char*)&renderTile, offsetof(RenderTile, liquidId));
+  });
 
-  return hasher.digest();
+  //return hasher.digest();
+  return XXH3_64bits(buffer.ptr(), buffer.size());
 }
 
 TilePainter::ChunkHash TilePainter::liquidChunkHash(WorldRenderData& renderData, Vec2I chunkIndex) {
-  XXHash3 hasher;
+  ///XXHash3 hasher;
   RectI tileRange = RectI::withSize(chunkIndex * RenderChunkSize, Vec2I::filled(RenderChunkSize)).padded(MaterialRenderProfileMaxNeighborDistance);
+  static ByteArray buffer;
+  buffer.clear();
 
   forEachRenderTile(renderData, tileRange, [&](Vec2I const&, RenderTile const& renderTile) {
-      renderTile.hashPushLiquid(hasher);
-    });
+    //renderTile.hashPushLiquid(hasher);
+    buffer.append((char*)&renderTile.liquidId, sizeof(LiquidId) + sizeof(LiquidLevel));
+  });
 
-  return hasher.digest();
+  //return hasher.digest();
+  return XXH3_64bits(buffer.ptr(), buffer.size());
 }
 
 TilePainter::QuadZLevel TilePainter::materialZLevel(uint32_t zLevel, MaterialId material, MaterialHue hue, MaterialColorVariant colorVariant) {

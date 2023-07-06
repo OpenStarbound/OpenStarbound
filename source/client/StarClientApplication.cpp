@@ -211,7 +211,7 @@ void ClientApplication::renderInit(RendererPtr renderer) {
   auto assets = m_root->assets();
 
   auto loadEffectConfig = [&](String const& name) {
-    String path = strf("/rendering/{}.config", name);
+    String path = strf("/rendering/effects/{}.config", name);
     if (assets->assetExists(path)) {
       StringMap<String> shaders;
       auto config = assets->json(path);
@@ -232,6 +232,8 @@ void ClientApplication::renderInit(RendererPtr renderer) {
     else
       Logger::warn("No rendering config found for renderer with id '{}'", renderer->rendererId());
   };
+
+  renderer->loadConfig(assets->json("/rendering/opengl20.config"));
 
   loadEffectConfig("world");
   loadEffectConfig("interface");
@@ -372,6 +374,9 @@ void ClientApplication::update() {
 void ClientApplication::render() {
   auto config = m_root->configuration();
   auto assets = m_root->assets();
+  auto& renderer = Application::renderer();
+
+  renderer->switchEffectConfig("interface");
 
   if (m_guiContext->windowWidth() >= m_crossoverRes[0] && m_guiContext->windowHeight() >= m_crossoverRes[1])
     m_guiContext->setInterfaceScale(m_maxInterfaceScale);
@@ -387,28 +392,21 @@ void ClientApplication::render() {
 
   } else if (m_state > MainAppState::Title) {
     WorldClientPtr worldClient = m_universeClient->worldClient();
-
-    RendererPtr renderer = Application::renderer();
-    renderer->switchEffectConfig("world");
     if (worldClient) {
       auto totalStart = Time::monotonicMicroseconds();
-      auto start = totalStart;
-
+      renderer->switchEffectConfig("world");
+      auto clientStart = totalStart;
       worldClient->render(m_renderData, TilePainter::BorderTileSize);
-      LogMap::set("client_render_world_client", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
+      LogMap::set("client_render_world_client", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - clientStart));
 
-      start = Time::monotonicMicroseconds();
+      auto paintStart = Time::monotonicMicroseconds();
       m_worldPainter->render(m_renderData, [&]() { worldClient->waitForLighting(); });
-      LogMap::set("client_render_world_painter", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
-
-      start = Time::monotonicMicroseconds();
-      m_mainInterface->renderInWorldElements();
-      LogMap::set("client_render_world_elements", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
-
+      LogMap::set("client_render_world_painter", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - paintStart));
       LogMap::set("client_render_world_total", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - totalStart));
     }
     renderer->switchEffectConfig("interface");
     auto start = Time::monotonicMicroseconds();
+    m_mainInterface->renderInWorldElements();
     m_mainInterface->render();
     m_cinematicOverlay->render();
     LogMap::set("client_render_interface", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));

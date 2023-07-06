@@ -127,7 +127,6 @@ void JsonStreamer<Json>::toJsonStream(Json const& val, JsonStream& stream, bool 
     stream.endArray();
   } else if (type == Json::Type::Object) {
     stream.beginObject();
-    List<String::Char> chars;
     if (sort) {
       auto objectPtr = val.objectPtr();
       List<JsonObject::const_iterator> iterators;
@@ -142,10 +141,8 @@ void JsonStreamer<Json>::toJsonStream(Json const& val, JsonStream& stream, bool 
         if (!first)
           stream.putComma();
         first = false;
-        chars.clear();
-        for (auto const& c : i->first)
-          chars.push_back(c);
-        stream.objectKey(chars.ptr(), chars.size());
+        auto ws = i->first.wideString();
+        stream.objectKey(ws.c_str(), ws.length());
         stream.putColon();
         toJsonStream(i->second, stream, sort);
       }

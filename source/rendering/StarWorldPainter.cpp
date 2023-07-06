@@ -69,6 +69,8 @@ void WorldPainter::render(WorldRenderData& renderData, function<void()> lightWai
   m_environmentPainter->renderSky(Vec2F(m_camera.screenSize()), renderData.skyRenderData);
   m_environmentPainter->renderFrontOrbiters(orbiterAndPlanetRatio, Vec2F(m_camera.screenSize()), renderData.skyRenderData);
 
+  m_renderer->flush();
+
   if (lightWaiter) {
     auto start = Time::monotonicMicroseconds();
     lightWaiter();
