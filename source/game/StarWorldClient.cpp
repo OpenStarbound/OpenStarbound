@@ -1455,20 +1455,21 @@ void WorldClient::lightingTileGather() {
 void WorldClient::lightingMain() {
   while (true) {
     MutexLocker locker(m_lightingMutex);
+
+    m_lightingCond.wait(m_lightingMutex);
     if (m_stopLightingThread)
       return;
 
-    if (m_renderData) {
+    if (WorldRenderData* renderData = m_renderData) {
       int64_t start = Time::monotonicMicroseconds();
 
       lightingTileGather();
 
-      m_lightingCalculator.calculate(m_renderData->lightMap);
+      m_lightingCalculator.calculate(renderData->lightMap);
       m_renderData = nullptr;
       LogMap::set("client_render_world_async_light_calc", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
     }
 
-    m_lightingCond.wait(m_lightingMutex);
     continue;
 
     locker.unlock();
@@ -1545,6 +1546,8 @@ void WorldClient::clearWorld() {
         removeEntity(entityId, false);
     }
   }
+
+  waitForLighting();
 
   m_currentStep = 0;
   m_currentServerStep = 0.0;
