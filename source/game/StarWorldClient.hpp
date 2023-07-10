@@ -252,9 +252,9 @@ private:
   mutable CellularLightIntensityCalculator m_lightIntensityCalculator;
   ThreadFunction<void> m_lightingThread;
 
-  mutable Mutex m_lightingMutex;
-  mutable ConditionVariable m_lightingCond;
-  mutable WorldRenderData* m_renderData;
+  Mutex m_lightingMutex;
+  ConditionVariable m_lightingCond;
+  atomic<WorldRenderData*> m_renderData;
   atomic<bool> m_stopLightingThread;
 
   SkyPtr m_sky;
