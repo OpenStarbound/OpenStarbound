@@ -3,17 +3,19 @@ SET (OPUS_INSTALL_CMAKE_CONFIG_MODULE OFF)
 SET (OPUS_X86_MAY_HAVE_AVX OFF)
 SET (OPUS_X86_MAY_HAVE_SSE4_1 OFF)
 SET (OPUS_STACK_PROTECTOR OFF)
-
 ADD_SUBDIRECTORY (opus)
 
 INCLUDE_DIRECTORIES (
     ${STAR_EXTERN_INCLUDES}
-    opus
+    opus/include
     fmt
     lua
   )
 
 SET (star_extern_HEADERS
+    curve25519/include/curve25519_dh.h
+    curve25519/include/ed25519_signature.h
+    curve25519/include/external_calls.h
     fmt/core.h
     fmt/format.h
     fmt/format-inl.h
@@ -31,6 +33,14 @@ SET (star_extern_HEADERS
   )
 
 SET (star_extern_SOURCES
+    curve25519/source/sha512.c
+    curve25519/source/curve25519_dh.c
+    curve25519/source/curve25519_mehdi.c
+    curve25519/source/curve25519_order.c
+    curve25519/source/curve25519_utils.c
+    curve25519/source/custom_blind.c
+    curve25519/source/ed25519_sign.c
+    curve25519/source/ed25519_verify.c
     xxhash.c
     fmt/format.cc
     lua/lapi.c

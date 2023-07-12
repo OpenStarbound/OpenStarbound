@@ -21,6 +21,7 @@ SET (star_core_HEADERS
     StarColor.hpp
     StarCompression.hpp
     StarConfig.hpp
+    StarCurve25519.hpp
     StarDataStream.hpp
     StarDataStreamDevices.hpp
     StarDataStreamExtra.hpp
@@ -133,6 +134,7 @@ SET (star_core_SOURCES
     StarByteArray.cpp
     StarColor.cpp
     StarCompression.cpp
+    StarCurve25519.cpp
     StarDataStream.cpp
     StarDataStreamDevices.cpp
     StarDirectives.cpp
