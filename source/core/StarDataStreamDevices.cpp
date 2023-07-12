@@ -164,4 +164,11 @@ void DataStreamExternalBuffer::reset(char const* externalData, size_t len) {
   m_buffer.reset(externalData, len);
 }
 
+void DataStreamExternalBuffer::readData(char* data, size_t len) {
+  m_buffer.readFull(data, len);
+}
+void DataStreamExternalBuffer::writeData(char const* data, size_t len) {
+  m_buffer.writeFull(data, len);
+}
+
 }

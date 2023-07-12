@@ -383,6 +383,15 @@ void NetworkedAnimator::setGlobalTag(String tagName, String tagValue) {
   m_globalTags.set(move(tagName), move(tagValue));
 }
 
+void NetworkedAnimator::removeGlobalTag(String const& tagName) {
+  m_globalTags.remove(tagName);
+}
+
+String const* NetworkedAnimator::globalTagPtr(String const& tagName) const {
+  return m_globalTags.ptr(tagName);
+}
+
+
 void NetworkedAnimator::setPartTag(String const& partType, String tagName, String tagValue) {
   m_partTags[partType].set(move(tagName), move(tagValue));
 }

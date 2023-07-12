@@ -127,8 +127,8 @@ void MainMixer::setVolume(float volume, float rampTime) {
   m_mixer->setVolume(volume, rampTime);
 }
 
-void MainMixer::read(int16_t* sampleData, size_t frameCount) {
-  m_mixer->read(sampleData, frameCount);
+void MainMixer::read(int16_t* sampleData, size_t frameCount, Mixer::ExtraMixFunction extraMixFunction) {
+  m_mixer->read(sampleData, frameCount, extraMixFunction);
 }
 
 }

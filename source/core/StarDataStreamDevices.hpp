@@ -140,6 +140,9 @@ public:
 
   void reset(char const* externalData, size_t len);
 
+  void readData(char* data, size_t len) override;
+  void writeData(char const* data, size_t len) override;
+
 private:
   ExternalBuffer m_buffer;
 };

@@ -205,7 +205,7 @@ size_t DataStream::readVlqU(uint64_t& i) {
   size_t bytesRead = Star::readVlqU(i, makeFunctionInputIterator([this]() { return this->read<uint8_t>(); }));
 
   if (bytesRead == NPos)
-    throw DataStreamException("Error reading VLQ encoded intenger!");
+    throw DataStreamException("Error reading VLQ encoded integer!");
 
   return bytesRead;
 }
@@ -214,7 +214,7 @@ size_t DataStream::readVlqI(int64_t& i) {
   size_t bytesRead = Star::readVlqI(i, makeFunctionInputIterator([this]() { return this->read<uint8_t>(); }));
 
   if (bytesRead == NPos)
-    throw DataStreamException("Error reading VLQ encoded intenger!");
+    throw DataStreamException("Error reading VLQ encoded integer!");
 
   return bytesRead;
 }

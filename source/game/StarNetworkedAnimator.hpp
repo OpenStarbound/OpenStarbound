@@ -115,6 +115,8 @@ public:
   // Drawables can also have a <frame> tag which will be set to whatever the
   // current state frame is (1 indexed, so the first frame is 1).
   void setGlobalTag(String tagName, String tagValue);
+  void removeGlobalTag(String const& tagName);
+  String const* globalTagPtr(String const& tagName) const;
   void setPartTag(String const& partType, String tagName, String tagValue);
 
   void setProcessingDirectives(Directives const& directives);

@@ -447,6 +447,28 @@ public:
 
   using Entity::setTeam;
 
+  NetworkedAnimatorPtr effectsAnimator();
+
+  // We need to store ephemeral/large/always-changing networked properties that other clients can read. Candidates:
+  // genericProperties:
+  //   Non-starter, is not networked.
+  // statusProperties:
+  //   Nope! Changes to the status properties aren't networked efficiently - one change resends the whole map.
+  //   We can't fix that because it would break compatibility with vanilla servers.
+  // effectsAnimator's globalTags:
+  //   Cursed, but viable.
+  //   Efficient networking due to using a NetElementMapWrapper.
+  //   Unfortunately values are Strings, so to work with Json we need to serialize/deserialize. Whatever.
+  //   Additionally, this is compatible with vanilla networking.
+  // I call this a 'secret property'.
+  
+  // If the secret property exists as a serialized Json string, returns a view to it without deserializing.
+  Maybe<StringView> getSecretPropertyView(String const& name) const;
+  // Gets a secret Json property. It will be de-serialized.
+  Json getSecretProperty(String const& name, Json defaultValue = Json()) const;
+  // Sets a secret Json property. It will be serialized.
+  void setSecretProperty(String const& name, Json const& value);
+
 private:
   enum class State {
     Idle,

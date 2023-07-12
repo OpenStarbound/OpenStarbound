@@ -14,6 +14,9 @@
 #include "StarWorldTemplate.hpp"
 #include "StarWorldClient.hpp"
 #include "StarRootLoader.hpp"
+#include "StarInput.hpp"
+#include "StarVoice.hpp"
+
 
 #include "StarInterfaceLuaBindings.hpp"
 #include "StarInputLuaBindings.hpp"
@@ -171,6 +174,7 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
 
   m_guiContext = make_shared<GuiContext>(m_mainMixer->mixer(), appController);
   m_input = make_shared<Input>();
+  m_voice = make_shared<Voice>();
 
   auto configuration = m_root->configuration();
   bool vsync = configuration->get("vsync").toBool();
@@ -417,8 +421,12 @@ void ClientApplication::render() {
 }
 
 void ClientApplication::getAudioData(int16_t* sampleData, size_t frameCount) {
-  if (m_mainMixer)
-    m_mainMixer->read(sampleData, frameCount);
+  if (m_mainMixer) {
+    m_mainMixer->read(sampleData, frameCount, [&](int16_t* buffer, size_t frames, unsigned channels) {
+      if (m_voice)
+        m_voice->mix(buffer, frames, channels);
+    });
+  }
 }
 
 void ClientApplication::changeState(MainAppState newState) {

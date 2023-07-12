@@ -2464,4 +2464,53 @@ Vec2F Player::cameraPosition() {
   return position();
 }
 
+NetworkedAnimatorPtr Player::effectsAnimator() {
+  return m_effectsAnimator;
+}
+
+const String secretProprefix = strf("{:c}JsonProperty{:c}", 0, 0);
+
+Maybe<StringView> Player::getSecretPropertyView(String const& name) const {
+  if (auto tag = m_effectsAnimator->globalTagPtr(secretProprefix + name)) {
+    auto& view = tag->utf8();
+    DataStreamExternalBuffer buffer(view.data(), view.size());
+    try {
+      uint8_t typeIndex = buffer.read<uint8_t>() - 1;
+      if ((Json::Type)typeIndex == Json::Type::String) {
+        size_t len = buffer.readVlqU();
+        size_t pos = buffer.pos();
+        if (pos + len == buffer.size())
+          return StringView(buffer.ptr() + pos, len);
+      }
+    }
+    catch (StarException const& e) {}
+  }
+
+  return {};
+}
+
+Json Player::getSecretProperty(String const& name, Json defaultValue) const {
+  if (auto tag = m_effectsAnimator->globalTagPtr(secretProprefix + name)) {
+    DataStreamExternalBuffer buffer(tag->utf8Ptr(), tag->utf8Size());
+    try
+      { return buffer.read<Json>(); }
+    catch (StarException const& e)
+      { Logger::error("Exception reading secret player property '{}': {}", name, e.what()); }
+  }
+
+  return move(defaultValue);
+}
+
+void Player::setSecretProperty(String const& name, Json const& value) {
+  if (value) {
+    DataStreamBuffer ds;
+    ds.write(value);
+    auto& data = ds.data();
+    m_effectsAnimator->setGlobalTag(secretProprefix + name, String(data.ptr(), data.size()));
+  } 
+  else
+    m_effectsAnimator->removeGlobalTag(secretProprefix + name);
+}
+
+
 }
