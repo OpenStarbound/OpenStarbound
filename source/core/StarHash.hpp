@@ -73,7 +73,7 @@ public:
 };
 
 template <typename EnumType>
-class hash<EnumType, typename std::enable_if<std::is_enum<EnumType>::value>::type> {
+struct hash<EnumType, typename std::enable_if<std::is_enum<EnumType>::value>::type> {
 private:
   typedef typename std::underlying_type<EnumType>::type UnderlyingType;
 
