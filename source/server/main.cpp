@@ -47,6 +47,13 @@ int main(int argc, char** argv) {
     {
       Logger::info("Server Version {} ({}) Source ID: {} Protocol: {}", StarVersionString, StarArchitectureString, StarSourceIdentifierString, StarProtocolVersion);
 
+      float updateRate = 1.0f / WorldTimestep;
+      if (auto jUpdateRate = configuration->get("updateRate")) {
+        updateRate = jUpdateRate.toFloat();
+        WorldTimestep = 1.0f / updateRate;
+        Logger::info("Configured tickrate is {:4.2f}hz", updateRate);
+      }
+
       UniverseServerUPtr server = make_unique<UniverseServer>(root->toStoragePath("universe"));
       server->setListeningTcp(true);
       server->start();
