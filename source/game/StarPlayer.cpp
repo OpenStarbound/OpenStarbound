@@ -2468,7 +2468,7 @@ NetworkedAnimatorPtr Player::effectsAnimator() {
   return m_effectsAnimator;
 }
 
-const String secretProprefix = strf("{:c}JsonProperty{:c}", 0, 0);
+const String secretProprefix = "\0JsonProperty\0"s;
 
 Maybe<StringView> Player::getSecretPropertyView(String const& name) const {
   if (auto tag = m_effectsAnimator->globalTagPtr(secretProprefix + name)) {

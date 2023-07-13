@@ -44,6 +44,7 @@ using std::mem_fn;
 using std::ref;
 using std::cref;
 using namespace std::placeholders;
+using namespace std::string_literals;
 
 using std::prev;
 // using std::next;

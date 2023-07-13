@@ -150,6 +150,12 @@ public:
   void disconnectAllWires(Vec2I wireEntityPosition, WireNode const& node);
   void connectWire(WireConnection const& output, WireConnection const& input);
 
+  // Functions for sending broadcast messages to other players that can receive them,
+  // on completely vanilla servers by smuggling it through a DamageNotification.
+  // It's cursed as fuck, but it works.
+  bool sendSecretBroadcast(StringView broadcast, bool raw = false);
+  bool handleSecretBroadcast(PlayerPtr player, StringView broadcast);
+
   List<ChatAction> pullPendingChatActions();
 
   WorldStructure const& centralStructure() const;
