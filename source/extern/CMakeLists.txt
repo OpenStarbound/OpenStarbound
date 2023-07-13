@@ -79,4 +79,4 @@ SET (star_extern_SOURCES
   )
 
 ADD_LIBRARY (star_extern OBJECT ${star_extern_SOURCES} ${star_extern_HEADERS})
-TARGET_LINK_LIBRARIES(star_extern opus)
+TARGET_LINK_LIBRARIES(star_extern PUBLIC opus)
