@@ -19,7 +19,7 @@ struct KeySet {
     secret[31] &= 127;
     secret[31] |= 64;
 
-    ed25519_CreateKeyPair(privateKey.data(), publicKey.data(), nullptr, secret.data());
+    ed25519_CreateKeyPair(publicKey.data(), privateKey.data(), nullptr, secret.data());
 
     Logger::info("Generated Curve25519 key-pair");
   }
