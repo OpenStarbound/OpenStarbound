@@ -208,6 +208,11 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
 
   appController->setMaxFrameSkip(assets->json("/client.config:maxFrameSkip").toUInt());
   appController->setUpdateTrackWindow(assets->json("/client.config:updateTrackWindow").toFloat());
+
+  if (auto jVoice = configuration->get("voice"))
+    m_voice->loadJson(jVoice.toObject());
+
+  m_voice->init();
 }
 
 void ClientApplication::renderInit(RendererPtr renderer) {

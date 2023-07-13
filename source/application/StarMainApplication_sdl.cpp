@@ -248,9 +248,15 @@ public:
     if (SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER))
       throw ApplicationException(strf("Couldn't initialize SDL Controller: {}", SDL_GetError()));
 
-    Logger::info("Application: Initializing SDL Sound");
+#ifdef STAR_SYSTEM_WINDOWS // Newer SDL is defaulting to xaudio2, which does not support audio capture
+    SDL_setenv("SDL_AUDIODRIVER", "directsound", 1);
+#endif
+
+    Logger::info("Application: Initializing SDL Audio");
     if (SDL_InitSubSystem(SDL_INIT_AUDIO))
-      throw ApplicationException(strf("Couldn't initialize SDL Sound: {}", SDL_GetError()));
+      throw ApplicationException(strf("Couldn't initialize SDL Audio: {}", SDL_GetError()));
+
+    Logger::info("Application: using Audio Driver '{}'", SDL_GetCurrentAudioDriver());
 
     SDL_JoystickEventState(SDL_ENABLE);
 
@@ -336,17 +342,23 @@ public:
     closeAudioInputDevice();
 
     SDL_AudioSpec obtained = {};
-    return (m_sdlAudioInputDevice = SDL_OpenAudioDevice(name, 1, &desired, &obtained, 0)) != 0;
+    m_sdlAudioInputDevice = SDL_OpenAudioDevice(name, 1, &desired, &obtained, 0);
+
+    if (m_sdlAudioInputDevice)
+      Logger::info("Opened audio input device '{}'", SDL_GetAudioDeviceName(m_sdlAudioInputDevice, 1));
+    else
+      Logger::info("Failed to open audio input device: {}", SDL_GetError());
+
+    return m_sdlAudioInputDevice != 0;
   }
 
   bool closeAudioInputDevice() {
     if (m_sdlAudioInputDevice) {
+      Logger::info("Closing audio input device '{}'", SDL_GetAudioDeviceName(m_sdlAudioInputDevice, 1));
       SDL_CloseAudioDevice(m_sdlAudioInputDevice);
       m_sdlAudioInputDevice = 0;
-
       return true;
     }
-
     return false;
   }
 
