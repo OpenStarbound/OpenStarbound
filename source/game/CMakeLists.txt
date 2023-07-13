@@ -156,7 +156,6 @@ SET (star_game_HEADERS
     StarVehicle.hpp
     StarVehicleDatabase.hpp
     StarVersioningDatabase.hpp
-    StarVoice.hpp
     StarWarping.hpp
     StarWeather.hpp
     StarWeatherTypes.hpp
@@ -415,7 +414,6 @@ SET (star_game_SOURCES
     StarVehicle.cpp
     StarVehicleDatabase.cpp
     StarVersioningDatabase.cpp
-    StarVoice.cpp
     StarWarping.cpp
     StarWeather.cpp
     StarWeatherTypes.cpp

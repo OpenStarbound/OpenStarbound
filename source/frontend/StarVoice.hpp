@@ -2,8 +2,10 @@
 #define STAR_VOICE_HPP
 #include "StarJson.hpp"
 #include "StarBiMap.hpp"
-#include "StarGameTypes.hpp"
 #include "StarException.hpp"
+#include "StarGameTypes.hpp"
+#include "StarMaybe.hpp"
+#include "StarApplicationController.hpp"
 
 struct OpusDecoder;
 typedef std::unique_ptr<OpusDecoder, void(*)(OpusDecoder*)> OpusDecoderPtr;
@@ -14,13 +16,14 @@ namespace Star {
 
 STAR_EXCEPTION(VoiceException, StarException);
 
-enum class VoiceTriggerMode : uint8_t { VoiceActivity, PushToTalk };
-extern EnumMap<VoiceTriggerMode> const VoiceTriggerModeNames;
+enum class VoiceInputMode : uint8_t { VoiceActivity, PushToTalk };
+extern EnumMap<VoiceInputMode> const VoiceInputModeNames;
 
 enum class VoiceChannelMode: uint8_t { Mono = 1, Stereo = 2 };
 extern EnumMap<VoiceChannelMode> const VoiceChannelModeNames;
 
 STAR_CLASS(Voice);
+STAR_CLASS(ApplicationController);
 
 class Voice {
 public:
@@ -30,6 +33,7 @@ public:
   struct Speaker {
     SpeakerId speakerId = 0;
     EntityId entityId = 0;
+
     Vec2F position = Vec2F();
     String name = "Unnamed";
 
@@ -53,7 +57,7 @@ public:
   // is not initialized.
   static Voice& singleton();
 
-  Voice();
+  Voice(ApplicationControllerPtr appController);
   ~Voice();
 
   Voice(Voice const&) = delete;
@@ -81,6 +85,8 @@ private:
   static OpusDecoder* createDecoder(int channels);
   static OpusEncoder* createEncoder(int channels);
   void resetEncoder();
+  void openDevice();
+  void closeDevice();
 
   SpeakerId m_speakerId = 0;
   SpeakerPtr m_clientSpeaker;
@@ -90,8 +96,12 @@ private:
 
   OpusEncoderPtr m_encoder;
 
-  VoiceTriggerMode m_triggerMode;
+  bool m_deviceOpen = false;
+  Maybe<String> m_deviceName;
+  VoiceInputMode m_inputMode;
   VoiceChannelMode m_channelMode;
+
+  ApplicationControllerPtr m_applicationController;
 };
   
 }

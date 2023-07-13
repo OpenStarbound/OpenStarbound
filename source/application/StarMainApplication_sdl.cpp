@@ -292,15 +292,15 @@ public:
     };
 
     SDL_AudioSpec obtained = {};
-    m_sdlAudioDevice = SDL_OpenAudioDevice(NULL, 0, &desired, &obtained, 0);
-    if (!m_sdlAudioDevice) {
+    m_sdlAudioOutputDevice = SDL_OpenAudioDevice(NULL, 0, &desired, &obtained, 0);
+    if (!m_sdlAudioOutputDevice) {
       Logger::error("Application: Could not open audio device, no sound available!");
     } else if (obtained.freq != desired.freq || obtained.channels != desired.channels || obtained.format != desired.format) {
-      SDL_CloseAudioDevice(m_sdlAudioDevice);
+      SDL_CloseAudioDevice(m_sdlAudioOutputDevice);
       Logger::error("Application: Could not open 44.1khz / 16 bit stereo audio device, no sound available!");
     } else {
       Logger::info("Application: Opened default audio device with 44.1khz / 16 bit stereo audio, {} sample size buffer", obtained.samples);
-      SDL_PauseAudioDevice(m_sdlAudioDevice, 0);
+      SDL_PauseAudioDevice(m_sdlAudioOutputDevice, 0);
     }
 
     m_renderer = make_shared<OpenGl20Renderer>();
@@ -311,7 +311,10 @@ public:
 
   ~SdlPlatform() {
 
-    SDL_CloseAudioDevice(m_sdlAudioDevice);
+    if (m_sdlAudioOutputDevice)
+      SDL_CloseAudioDevice(m_sdlAudioOutputDevice);
+
+    closeAudioInputDevice();
 
     m_renderer.reset();
 
@@ -319,6 +322,32 @@ public:
     SDL_DestroyWindow(m_sdlWindow);
 
     SDL_Quit();
+  }
+
+  bool openAudioInputDevice(const char* name, int freq, int channels, void* userdata, SDL_AudioCallback callback) {
+    SDL_AudioSpec desired = {};
+    desired.freq = freq;
+    desired.format = AUDIO_S16SYS;
+    desired.samples = 1024;
+    desired.channels = channels;
+    desired.userdata = userdata;
+    desired.callback = callback;
+
+    closeAudioInputDevice();
+
+    SDL_AudioSpec obtained = {};
+    return (m_sdlAudioInputDevice = SDL_OpenAudioDevice(name, 1, &desired, &obtained, 0)) != 0;
+  }
+
+  bool closeAudioInputDevice() {
+    if (m_sdlAudioInputDevice) {
+      SDL_CloseAudioDevice(m_sdlAudioInputDevice);
+      m_sdlAudioInputDevice = 0;
+
+      return true;
+    }
+
+    return false;
   }
 
   void cleanup() {
@@ -397,7 +426,7 @@ public:
       Logger::error("Application: threw exception during shutdown: {}", outputException(e, true));
     }
 
-    SDL_CloseAudioDevice(m_sdlAudioDevice);
+    SDL_CloseAudioDevice(m_sdlAudioOutputDevice);
     m_SdlControllers.clear();
 
     SDL_SetCursor(NULL);
@@ -568,6 +597,14 @@ private:
       parent->m_audioEnabled = false;
       SDL_PauseAudio(true);
     }
+
+    bool openAudioInputDevice(const char* name, int freq, int channels, void* userdata, AudioCallback callback) override {
+      return parent->openAudioInputDevice(name, freq, channels, userdata, callback);
+    };
+
+    bool closeAudioInputDevice() override {
+      return parent->closeAudioInputDevice();
+    };
 
     float updateRate() const override {
       return parent->m_updateRate;
@@ -803,7 +840,8 @@ private:
 
   SDL_Window* m_sdlWindow = nullptr;
   SDL_GLContext m_sdlGlContext = nullptr;
-  SDL_AudioDeviceID m_sdlAudioDevice = 0;
+  SDL_AudioDeviceID m_sdlAudioOutputDevice = 0;
+  SDL_AudioDeviceID m_sdlAudioInputDevice = 0;
 
   typedef std::unique_ptr<SDL_GameController, decltype(&SDL_GameControllerClose)> SDLGameControllerUPtr;
   StableHashMap<int, SDLGameControllerUPtr> m_SdlControllers;

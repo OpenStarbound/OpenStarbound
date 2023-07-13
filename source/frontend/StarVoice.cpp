@@ -1,22 +1,9 @@
 #include "StarVoice.hpp"
 #include "StarFormat.hpp"
+#include "StarApplicationController.hpp"
 #include "opus/include/opus.h"
 
 #include "SDL.h"
-
-namespace Star {
-
-EnumMap<VoiceTriggerMode> const VoiceTriggerModeNames{
-  {VoiceTriggerMode::VoiceActivity, "VoiceActivity"},
-  {VoiceTriggerMode::PushToTalk, "PushToTalk"}
-};
-
-EnumMap<VoiceChannelMode> const VoiceChannelModeNames{
-  {VoiceChannelMode::Mono, "Mono"},
-  {VoiceChannelMode::Stereo, "Stereo"}
-};
-
-static SDL_AudioDeviceID sdlInputDevice = 0;
 
 constexpr int VOICE_SAMPLE_RATE = 48000;
 constexpr int VOICE_FRAME_SIZE = 960;
@@ -25,6 +12,18 @@ constexpr int VOICE_MAX_FRAME_SIZE = 6 * VOICE_FRAME_SIZE;
 constexpr int VOICE_MAX_PACKET_SIZE = 3 * 1276;
 
 constexpr uint16_t VOICE_VERSION = 1;
+
+namespace Star {
+
+EnumMap<VoiceInputMode> const VoiceInputModeNames{
+  {VoiceInputMode::VoiceActivity, "VoiceActivity"},
+  {VoiceInputMode::PushToTalk, "PushToTalk"}
+};
+
+EnumMap<VoiceChannelMode> const VoiceChannelModeNames{
+  {VoiceChannelMode::Mono, "Mono"},
+  {VoiceChannelMode::Stereo, "Stereo"}
+};
 
 Voice::Speaker::Speaker(SpeakerId id)
   : decoderMono  (createDecoder(1), opus_decoder_destroy)
@@ -45,13 +44,14 @@ Voice& Voice::singleton() {
     return *s_singleton;
 }
 
-Voice::Voice() : m_encoder(nullptr, opus_encoder_destroy) {
+Voice::Voice(ApplicationControllerPtr appController) : m_encoder(nullptr, opus_encoder_destroy) {
   if (s_singleton)
     throw VoiceException("Singleton Voice has been constructed twice");
 
   m_clientSpeaker = make_shared<Speaker>(m_speakerId);
-  m_triggerMode = VoiceTriggerMode::PushToTalk;
+  m_inputMode = VoiceInputMode::PushToTalk;
   m_channelMode = VoiceChannelMode::Mono;
+  m_applicationController = appController;
 
   resetEncoder();
   s_singleton = this;
@@ -126,6 +126,21 @@ void Voice::resetEncoder() {
   int channels = encoderChannels();
   m_encoder.reset(createEncoder(channels));
   opus_encoder_ctl(m_encoder.get(), OPUS_SET_BITRATE(channels == 2 ? 50000 : 24000));
+}
+
+void Voice::openDevice() {
+  closeDevice();
+
+  m_deviceOpen = true;
+}
+
+void Voice::closeDevice() {
+  if (!m_deviceOpen)
+    return;
+
+  m_applicationController->closeAudioInputDevice();
+
+  m_deviceOpen = false;
 }
 
 }
