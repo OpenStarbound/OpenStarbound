@@ -375,6 +375,14 @@ void ClientApplication::update() {
   else if (m_state > MainAppState::Title)
     updateRunning();
 
+  { // testing
+    m_voice->setLocalSpeaker(0);
+    m_voice->setInput(m_input->bindHeld("opensb", "pushToTalk"));
+    DataStreamBuffer data;
+    if (m_voice->send(data, 5000))
+      m_voice->receive(m_voice->speaker(0), std::string_view(data.ptr(), data.size()));
+  }
+
   m_guiContext->cleanup();
   m_edgeKeyEvents.clear();
   m_input->reset();

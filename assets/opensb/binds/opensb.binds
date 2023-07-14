@@ -1,7 +1,8 @@
 {
   "opensb": {
     "groups": {
-      "camera": { "name": "Camera" }
+      "camera": { "name": "Camera" },
+      "voice": { "name": "Voice" }
     },
     "name": "Open^#ebd74a;Starbound",
     "binds": {
@@ -21,13 +22,10 @@
         "group" : "camera",
         "name": "Zoom Out"
       },
-      "test": {
-        "default": [{
-          "type": "key",
-          "value": "C",
-          "mods": ["LShift"]
-        }],
-        "name": "Test Bind"
+      "pushToTalk": {
+        "default": [],
+        "group" : "voice",
+        "name": "Push To Talk"
       }
     }
   }

@@ -344,8 +344,10 @@ public:
     SDL_AudioSpec obtained = {};
     m_sdlAudioInputDevice = SDL_OpenAudioDevice(name, 1, &desired, &obtained, 0);
 
-    if (m_sdlAudioInputDevice)
+    if (m_sdlAudioInputDevice) {
       Logger::info("Opened audio input device '{}'", SDL_GetAudioDeviceName(m_sdlAudioInputDevice, 1));
+      SDL_PauseAudioDevice(m_sdlAudioInputDevice, 0);
+    }
     else
       Logger::info("Failed to open audio input device: {}", SDL_GetError());
 
