@@ -358,22 +358,15 @@ TEST(LuaJsonTest, CustomArrayType2) {
 
         function arrayLogic2()
           l = {}
-          l["1"] = "foo"
-          l["2"] = "bar"
+          l[1] = "foo"
+          l[2.1] = "bar"
           return l
         end
 
         function arrayLogic3()
-          l = {}
-          l["1"] = "foo"
-          l["2.1"] = "bar"
-          return l
-        end
-
-        function arrayLogic4()
           l = jarray()
-          l["1"] = "foo"
-          l["2"] = "bar"
+          l[1] = "foo"
+          l[2] = "bar"
           return l
         end
       )SCRIPT");
@@ -387,15 +380,11 @@ TEST(LuaJsonTest, CustomArrayType2) {
   EXPECT_EQ(arrayTest1, arrayComp1);
 
   Json arrayTest2 = context.invokePath<Json>("arrayLogic2");
-  Json arrayComp2 = JsonArray{"foo", "bar"};
+  Json arrayComp2 = JsonObject{{"1", "foo"}, {"2.1", "bar"}};
   EXPECT_EQ(arrayTest2, arrayComp2);
 
   Json arrayTest3 = context.invokePath<Json>("arrayLogic3");
-  Json arrayComp3 = JsonObject{{"1", "foo"}, {"2.1", "bar"}};
-  EXPECT_EQ(arrayTest2, arrayComp2);
-
-  Json arrayTest4 = context.invokePath<Json>("arrayLogic4");
-  Json arrayComp4 = JsonArray{"foo", "bar"};
+  Json arrayComp3 = JsonArray{"foo", "bar"};
   EXPECT_EQ(arrayTest3, arrayComp3);
 }
 
