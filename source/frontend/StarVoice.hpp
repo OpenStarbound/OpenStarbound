@@ -134,16 +134,18 @@ public:
   void setInput(bool input = true);
 
   inline int encoderChannels() const { return (int)m_channelMode; }
-private:
-  static Voice* s_singleton;
 
   static OpusDecoder* createDecoder(int channels);
   static OpusEncoder* createEncoder(int channels);
+private:
+  static Voice* s_singleton;
   void resetEncoder();
   void openDevice();
   void closeDevice();
 
   bool playSpeaker(SpeakerPtr const& speaker, int channels);
+
+  void thread();
 
   SpeakerId m_speakerId = 0;
   SpeakerPtr m_clientSpeaker;
@@ -151,6 +153,8 @@ private:
 
   Mutex m_activeSpeakersMutex;
   HashSet<SpeakerPtr> m_activeSpeakers;
+
+
 
   OpusEncoderPtr m_encoder;
 
@@ -171,6 +175,11 @@ private:
   VoiceInputMode m_inputMode;
   VoiceChannelMode m_channelMode;
 
+  ThreadFunction<void> m_thread;
+  Mutex m_threadMutex;
+  ConditionVariable m_threadCond;
+  atomic<bool> m_stopThread;
+
   ApplicationControllerPtr m_applicationController;
 
   struct EncodedChunk {
@@ -183,13 +192,13 @@ private:
     }
   };
 
+  Mutex m_encodeMutex;
   std::vector<ByteArray> m_encodedChunks;
   size_t m_encodedChunksLength = 0;
 
+  Mutex m_captureMutex;
   std::queue<VoiceAudioChunk> m_capturedChunks;
   size_t m_capturedChunksFrames = 0;
-
-  Mutex m_captureMutex;
 };
   
 }

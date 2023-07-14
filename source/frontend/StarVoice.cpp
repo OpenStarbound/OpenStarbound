@@ -140,10 +140,22 @@ Voice::Voice(ApplicationControllerPtr appController) : m_encoder(nullptr, opus_e
   m_channelMode = VoiceChannelMode::Mono;
   m_applicationController = appController;
 
+	m_stopThread = false;
+	m_thread = Thread::invoke("Voice::thread", mem_fn(&Voice::thread), this);
+
   s_singleton = this;
 }
 
 Voice::~Voice() {
+	m_stopThread = true;
+
+	{
+		MutexLocker locker(m_threadMutex);
+		m_threadCond.broadcast();
+	}
+
+	m_thread.finish();
+
   save();
 	closeDevice();
 
@@ -232,14 +244,18 @@ void Voice::readAudioData(uint8_t* stream, int len) {
 	if (m_inputMode == VoiceInputMode::VoiceActivity) {
 		if (decibels > m_threshold)
 			m_lastThresholdTime = now;
-		active = now - m_lastThresholdTime < 50; 
+		active = now - m_lastThresholdTime < 50;
 	}
 
+	bool added = false;
+
+	MutexLocker captureLock(m_captureMutex);
 	if (active) {
 		m_capturedChunksFrames += sampleCount / m_deviceChannels;
 		auto data = (opus_int16*)malloc(len);
 		memcpy(data, stream, len);
 		m_capturedChunks.emplace(data, sampleCount); // takes ownership
+		added = true;
 	}
 	else { // Clear out any residual data so they don't manifest at the start of the next encode, whenever that is
 		while (!m_capturedChunks.empty())
@@ -248,46 +264,8 @@ void Voice::readAudioData(uint8_t* stream, int len) {
 		m_capturedChunksFrames = 0;
 	}
 
-	ByteArray encoded(VOICE_MAX_PACKET_SIZE, 0);
-	size_t frameSamples = VOICE_FRAME_SIZE * (size_t)m_deviceChannels;
-	while (m_capturedChunksFrames >= VOICE_FRAME_SIZE) {
-		std::vector<opus_int16> samples;
-		samples.reserve(frameSamples);
-		size_t samplesLeft = frameSamples;
-		while (samplesLeft && !m_capturedChunks.empty()) {
-			auto& front = m_capturedChunks.front();
-			if (front.exhausted())
-				m_capturedChunks.pop();
-			else
-				samplesLeft -= front.takeSamples(samples, samplesLeft);
-		}
-		m_capturedChunksFrames -= VOICE_FRAME_SIZE; 
-
-		if (m_inputVolume != 1.0f) {
-			for (size_t i = 0; i != samples.size(); ++i)
-				samples[i] *= m_inputVolume;
-		}
-
-		if (int encodedSize = opus_encode(m_encoder.get(), samples.data(), VOICE_FRAME_SIZE, (unsigned char*)encoded.ptr(), encoded.size())) {
-			if (encodedSize == 1)
-				continue;
-
-			encoded.resize(encodedSize);
-
-			{
-				MutexLocker lock(m_captureMutex);
-				m_encodedChunks.emplace_back(move(encoded)); // reset takes ownership of data buffer
-				m_encodedChunksLength += encodedSize;
-
-				encoded = ByteArray(VOICE_MAX_PACKET_SIZE, 0);
-			}
-
-			Logger::info("Voice: encoded Opus chunk {} bytes big", encodedSize);
-		}
-		else if (encodedSize < 0)
-			Logger::error("Voice: Opus encode error {}", opus_strerror(encodedSize));
-
-	}
+	if (added)
+		m_threadCond.signal();
 }
 
 void Voice::mix(int16_t* buffer, size_t frameCount, unsigned channels) {
@@ -368,15 +346,17 @@ void Voice::setDeviceName(Maybe<String> deviceName) {
 int Voice::send(DataStreamBuffer& out, size_t budget) {
 	out.setByteOrder(ByteOrder::LittleEndian);
 	out.write<uint16_t>(VOICE_VERSION);
-	MutexLocker captureLock(m_captureMutex);
 
-	if (m_capturedChunks.empty())
+	MutexLocker encodeLock(m_encodeMutex);
+
+	if (m_encodedChunks.empty())
 		return 0;
 
 	std::vector<ByteArray> encodedChunks = move(m_encodedChunks);
 	size_t encodedChunksLength = m_encodedChunksLength;
 	m_encodedChunksLength = 0;
-	captureLock.unlock();
+
+	encodeLock.unlock();
 
 	for (auto& chunk : encodedChunks) {
 		out.write<uint32_t>(chunk.size());
@@ -516,6 +496,65 @@ bool Voice::playSpeaker(SpeakerPtr const& speaker, int channels) {
 	MutexLocker lock(m_activeSpeakersMutex);
 	m_activeSpeakers.insert(speaker);
 	return true;
+}
+
+void Voice::thread() {
+	while (true) {
+		MutexLocker locker(m_threadMutex);
+
+		m_threadCond.wait(m_threadMutex);
+		if (m_stopThread)
+			return;
+
+		{
+			MutexLocker locker(m_captureMutex);
+		  ByteArray encoded(VOICE_MAX_PACKET_SIZE, 0);
+			size_t frameSamples = VOICE_FRAME_SIZE * (size_t)m_deviceChannels;
+			while (m_capturedChunksFrames >= VOICE_FRAME_SIZE) {
+				std::vector<opus_int16> samples;
+				samples.reserve(frameSamples);
+				size_t samplesLeft = frameSamples;
+				while (samplesLeft && !m_capturedChunks.empty()) {
+					auto& front = m_capturedChunks.front();
+					if (front.exhausted())
+						m_capturedChunks.pop();
+					else
+						samplesLeft -= front.takeSamples(samples, samplesLeft);
+				}
+				m_capturedChunksFrames -= VOICE_FRAME_SIZE;
+
+				if (m_inputVolume != 1.0f) {
+					for (size_t i = 0; i != samples.size(); ++i)
+						samples[i] *= m_inputVolume;
+				}
+
+				if (int encodedSize = opus_encode(m_encoder.get(), samples.data(), VOICE_FRAME_SIZE, (unsigned char*)encoded.ptr(), encoded.size())) {
+					if (encodedSize == 1)
+						continue;
+
+					encoded.resize(encodedSize);
+
+					{
+						MutexLocker lock(m_encodeMutex);
+						m_encodedChunks.emplace_back(move(encoded)); // reset takes ownership of data buffer
+						m_encodedChunksLength += encodedSize;
+
+						encoded = ByteArray(VOICE_MAX_PACKET_SIZE, 0);
+					}
+
+					Logger::info("Voice: encoded Opus chunk {} bytes big", encodedSize);
+				}
+				else if (encodedSize < 0)
+					Logger::error("Voice: Opus encode error {}", opus_strerror(encodedSize));
+			}
+		}
+
+		continue;
+
+		locker.unlock();
+		Thread::yield();
+	}
+	return;
 }
 
 }
