@@ -349,7 +349,7 @@ void Mixer::read(int16_t* outBuffer, size_t frameCount, ExtraMixFunction extraMi
   }
 
   if (extraMixFunction)
-    extraMixFunction(outBuffer, bufferSize, channels);
+    extraMixFunction(outBuffer, frameCount, channels);
 
   {
     MutexLocker locker(m_effectsMutex);

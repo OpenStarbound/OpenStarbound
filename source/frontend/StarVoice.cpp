@@ -145,6 +145,7 @@ Voice::Voice(ApplicationControllerPtr appController) : m_encoder(nullptr, opus_e
 
 Voice::~Voice() {
   save();
+	closeDevice();
 
   s_singleton = nullptr;
 }
@@ -162,8 +163,8 @@ void Voice::loadJson(Json const& config) {
   m_threshold    = config.getFloat("threshold", m_threshold);
   m_inputVolume  = config.getFloat("inputVolume", m_inputVolume);
   m_outputVolume = config.getFloat("outputVolume",   m_outputVolume);
-  m_inputMode    = VoiceInputModeNames.getLeft(config.getString("inputMode", "pushToTalk"));
-  m_channelMode  = VoiceChannelModeNames.getLeft(config.getString("channelMode", "mono"));
+  m_inputMode    = VoiceInputModeNames.getLeft(config.getString("inputMode", "PushToTalk"));
+  m_channelMode  = VoiceChannelModeNames.getLeft(config.getString("channelMode", "Mono"));
 }
 
 
@@ -239,7 +240,7 @@ void Voice::readAudioData(uint8_t* stream, int len) {
 		m_capturedChunksFrames += samples / m_deviceChannels;
 		auto data = (opus_int16*)malloc(len);
 		memcpy(data, stream, len);
-		m_capturedChunks.emplace(data, samples);
+		m_capturedChunks.emplace(data, samples); // takes ownership
 	}
 	else { // Clear out any residual data so they don't manifest at the start of the next encode, whenever that is
 		while (!m_capturedChunks.empty())
@@ -248,46 +249,47 @@ void Voice::readAudioData(uint8_t* stream, int len) {
 		m_capturedChunksFrames = 0;
 	}
 
-	std::vector<opus_int16> takenSamples;
 	while (m_capturedChunksFrames >= VOICE_FRAME_SIZE) {
-		takenSamples.clear();
 		size_t samplesToTake = VOICE_FRAME_SIZE * (size_t)m_deviceChannels;
+		std::vector<opus_int16> takenSamples;
 		takenSamples.reserve(samplesToTake);
 
 		while (!m_capturedChunks.empty()) {
 			auto& front = m_capturedChunks.front();
 			if (front.exhausted())
 				m_capturedChunks.pop();
-			else if ((samplesToTake -= front.takeSamples(takenSamples, samplesToTake)) == 0)
-				break;
+			else {
+				samplesToTake -= front.takeSamples(takenSamples, samplesToTake);
+			  if (samplesToTake == 0)
+				  break;
+			}
 		}
 		m_capturedChunksFrames -= VOICE_FRAME_SIZE;
 
-		ByteArray encodedData(VOICE_MAX_PACKET_SIZE, 0);
 		float vol = m_inputVolume;
 		if (m_inputVolume != 1.0f) {
 			for (size_t i = 0; i != takenSamples.size(); ++i)
 				takenSamples[i] *= m_inputVolume;
 		}
-		
-
-		if (opus_int32 size = opus_encode(m_encoder.get(), takenSamples.data(), VOICE_FRAME_SIZE, (unsigned char*)encodedData.ptr(), VOICE_MAX_PACKET_SIZE)) {
-			if (size == 1)
-				continue;
-
-			encodedData.resize(size);
+		ByteArray encodedData(VOICE_MAX_FRAME_SIZE, 0);
+		opus_int32 encodedSize = opus_encode(m_encoder.get(), takenSamples.data(), VOICE_FRAME_SIZE, (unsigned char*)encodedData.ptr(), encodedData.size());
+		if (encodedSize == 1)
+			continue;
+		else if (encodedSize < 0)
+			Logger::error("Voice: Opus encode error {}", opus_strerror(encodedSize));
+		else {
+			encodedData.resize(encodedSize);
 			MutexLocker lock(m_captureMutex);
 			m_encodedChunks.emplace_back(move(encodedData)); // reset takes ownership of data buffer
-			m_encodedChunksLength += size;
-			Logger::info("Voice: encoded Opus chunk {} bytes big", size);
+			m_encodedChunksLength += encodedSize;
+			Logger::info("Voice: encoded Opus chunk {} bytes big", encodedSize);
 		}
-		else if (size < 0) {
-			Logger::error("Voice: Opus encode error {}", opus_strerror(size));
-		}
+
 	}
 }
 
-void Voice::mix(int16_t* buffer, size_t samples, unsigned channels) {
+void Voice::mix(int16_t* buffer, size_t frameCount, unsigned channels) {
+	size_t samples = frameCount * channels;
 	static std::vector<int16_t> finalMixBuffer{};
 	static std::vector<int32_t> voiceMixBuffer{};
 	finalMixBuffer.resize(samples);
@@ -326,7 +328,7 @@ void Voice::mix(int16_t* buffer, size_t samples, unsigned channels) {
 
 		float vol = m_outputVolume;
 		for (size_t i = 0; i != samples; ++i)
-			finBuf[i] = (int16_t)std::clamp<int>(mixBuf[i] * vol, INT16_MIN, INT16_MAX);
+			finBuf[i] = (int16_t)clamp<int>(mixBuf[i] * vol, INT16_MIN, INT16_MAX);
 
 		SDL_MixAudioFormat((Uint8*)buffer, (Uint8*)finBuf, AUDIO_S16, samples * sizeof(int16_t), SDL_MIX_MAXVOLUME);
 	}
@@ -344,7 +346,7 @@ void Voice::update(PositionalAttenuationFunction positionalAttenuationFunction) 
     }
   }
 
-  if (Time::monotonicMilliseconds() > m_nextSaveTime) {
+  if (m_nextSaveTime && Time::monotonicMilliseconds() > m_nextSaveTime) {
 		m_nextSaveTime = 0;
     save();
   }
@@ -365,7 +367,7 @@ int Voice::send(DataStreamBuffer& out, size_t budget) {
 	out.write<uint16_t>(VOICE_VERSION);
 	MutexLocker captureLock(m_captureMutex);
 
-	if (!m_encoder || m_capturedChunks.empty())
+	if (m_capturedChunks.empty())
 		return 0;
 
 	std::vector<ByteArray> encodedChunks = move(m_encodedChunks);
@@ -419,6 +421,8 @@ bool Voice::receive(SpeakerPtr speaker, std::string_view view) {
 				free(decodeBuffer);
 				throw VoiceException(strf("Decoder error: {}", opus_strerror(samples)), false);
 			}
+
+			Logger::info("Voice: decoded Opus chunk {} bytes big", opusLength);
 
 			static auto getCVT = [](int channels) -> SDL_AudioCVT {
 				SDL_AudioCVT cvt;
@@ -477,8 +481,6 @@ void Voice::resetEncoder() {
 
 void Voice::openDevice() {
   closeDevice();
-
-	
 
   m_applicationController->openAudioInputDevice(
 		m_deviceName ? m_deviceName->utf8Ptr() : nullptr,

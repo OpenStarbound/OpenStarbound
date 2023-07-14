@@ -42,7 +42,7 @@ struct VoiceAudioChunk {
   }
 
   inline size_t takeSamples(std::vector<int16_t>& out, size_t count) {
-    size_t toRead = std::min<size_t>(count, remaining);
+    size_t toRead = min<size_t>(count, remaining);
     int16_t* start = data.get() + offset;
     out.insert(out.end(), start, start + toRead);
     offset += toRead;
@@ -133,9 +133,7 @@ public:
   // Must be called every frame with input state, expires after 1s.
   void setInput(bool input = true);
 
-  inline int encoderChannels() const {
-    return m_channelMode == VoiceChannelMode::Mono ? 1 : 2;
-  }
+  inline int encoderChannels() const { return (int)m_channelMode; }
 private:
   static Voice* s_singleton;
 
