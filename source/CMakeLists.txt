@@ -437,7 +437,7 @@ SET (STAR_EXT_LIBS ${STAR_EXT_LIBS}
     ${FREETYPE_LIBRARY}
     ${PNG_LIBRARY}
     ${ZLIB_LIBRARY}
-    "extern/opus/opus"
+    opus
   )
 
 IF (STAR_BUILD_GUI)

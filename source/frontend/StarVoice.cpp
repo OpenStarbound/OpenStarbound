@@ -250,9 +250,9 @@ void Voice::readAudioData(uint8_t* stream, int len) {
 
 	ByteArray encoded(VOICE_MAX_PACKET_SIZE, 0);
 	size_t frameSamples = VOICE_FRAME_SIZE * (size_t)m_deviceChannels;
-	std::vector<opus_int16> samples;
-	samples.reserve(frameSamples);
 	while (m_capturedChunksFrames >= VOICE_FRAME_SIZE) {
+		std::vector<opus_int16> samples;
+		samples.reserve(frameSamples);
 		size_t samplesLeft = frameSamples;
 		while (samplesLeft && !m_capturedChunks.empty()) {
 			auto& front = m_capturedChunks.front();
