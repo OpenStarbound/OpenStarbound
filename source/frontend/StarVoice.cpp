@@ -380,7 +380,15 @@ bool Voice::receive(SpeakerPtr speaker, std::string_view view) {
 			{
 				MutexLocker lock(speaker->audioStream->mutex);
 				auto& samples = speaker->audioStream->samples;
-				samples.insert(samples.end(), decodeBuffer, decodeBuffer + decodedSamples);
+				if (mono) {
+					size_t prevSize = samples.size();
+					samples.resize(prevSize + (size_t)decodedSamples * 2);
+					int16_t* data = samples.data() + prevSize;
+					for (int i = 0; i != decodedSamples; ++i)
+						*data++ = *data++ = decodeBuffer[i];
+				}
+				else
+					samples.insert(samples.end(), decodeBuffer, decodeBuffer + decodedSamples);
 			}
 			playSpeaker(speaker, channels);
 		}
