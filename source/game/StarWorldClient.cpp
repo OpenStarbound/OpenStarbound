@@ -1212,6 +1212,10 @@ void WorldClient::waitForLighting() {
   MutexLocker lock(m_lightingMutex);
 }
 
+WorldClient::BroadcastCallback& WorldClient::broadcastCallback() {
+  return m_broadcastCallback;
+}
+
 bool WorldClient::isTileProtected(Vec2I const& pos) const {
   if (!inWorld())
     return true;
@@ -1905,8 +1909,10 @@ bool WorldClient::sendSecretBroadcast(StringView broadcast, bool raw) {
 }
 
 bool WorldClient::handleSecretBroadcast(PlayerPtr player, StringView broadcast) {
-  Logger::info("Received broadcast '{}'", broadcast);
-  return true;
+  if (m_broadcastCallback)
+    return m_broadcastCallback(player, broadcast);
+  else
+    return false;
 }
 
 

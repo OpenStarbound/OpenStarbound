@@ -166,6 +166,8 @@ public:
 
   void waitForLighting();
 
+  typedef std::function<bool(PlayerPtr, StringView)> BroadcastCallback;
+  BroadcastCallback& broadcastCallback();
 private:
   static const float DropDist;
 
@@ -345,6 +347,8 @@ private:
   HashMap<Uuid, RpcPromiseKeeper<InteractAction>> m_entityInteractionResponses;
 
   List<PhysicsForceRegion> m_forceRegions;
+
+  BroadcastCallback m_broadcastCallback;
 };
 
 }

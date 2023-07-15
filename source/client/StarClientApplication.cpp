@@ -375,14 +375,6 @@ void ClientApplication::update() {
   else if (m_state > MainAppState::Title)
     updateRunning();
 
-  { // testing
-    m_voice->setLocalSpeaker(0);
-    m_voice->setInput(m_input->bindHeld("opensb", "pushToTalk"));
-    DataStreamBuffer data;
-    if (m_voice->send(data, 5000))
-      m_voice->receive(m_voice->speaker(0), std::string_view(data.ptr(), data.size()));
-  }
-
   m_guiContext->cleanup();
   m_edgeKeyEvents.clear();
   m_input->reset();
@@ -860,13 +852,41 @@ void ClientApplication::updateRunning() {
     if (checkDisconnection())
       return;
 
+    m_voice->setInput(m_input->bindHeld("opensb", "pushToTalk"));
+    DataStreamBuffer voiceData;
+    voiceData.setByteOrder(ByteOrder::LittleEndian);
+    voiceData.writeBytes(VoiceBroadcastPrefix.utf8Bytes());
+    bool needstoSendVoice = m_voice->send(voiceData, 5000);
+
     m_universeClient->update();
 
     if (checkDisconnection())
       return;
 
-    if (auto worldClient = m_universeClient->worldClient())
+    if (auto worldClient = m_universeClient->worldClient()) {
+      auto& broadcastCallback = worldClient->broadcastCallback();
+      if (!broadcastCallback) {
+        broadcastCallback = [&](PlayerPtr player, StringView broadcast) -> bool {
+          auto& view = broadcast.utf8();
+          if (view.rfind(VoiceBroadcastPrefix.utf8(), 0) != NPos) {
+            auto entityId = player->entityId();
+            auto speaker = m_voice->speaker(connectionForEntity(entityId));
+            speaker->entityId = entityId;
+            speaker->name = player->name();
+            speaker->position = player->mouthPosition();
+            m_voice->receive(speaker, view.substr(VoiceBroadcastPrefix.utf8Size()));
+          }
+          return true;
+        };
+      }
+
+      if (worldClient->inWorld()) {
+        if (needstoSendVoice)
+          worldClient->sendSecretBroadcast(StringView(voiceData.ptr(), voiceData.size()));
+        m_voice->setLocalSpeaker(worldClient->connection());
+      }
       worldClient->setInteractiveHighlightMode(isActionTaken(InterfaceAction::ShowLabels));
+    }
 
     updateCamera();
 

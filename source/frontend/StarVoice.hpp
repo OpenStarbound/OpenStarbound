@@ -18,6 +18,8 @@ typedef std::unique_ptr<OpusEncoder, void(*)(OpusEncoder*)> OpusEncoderPtr;
 
 namespace Star {
 
+String const VoiceBroadcastPrefix = "Voice\0"s;
+
 STAR_EXCEPTION(VoiceException, StarException);
 
 enum class VoiceInputMode : uint8_t { VoiceActivity, PushToTalk };

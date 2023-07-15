@@ -241,6 +241,7 @@ void Voice::mix(int16_t* buffer, size_t frameCount, unsigned channels) {
 			if (!audio->samples.empty()) {
 				std::vector<int16_t> samples = move(audio->samples);
 				audioLock.unlock();
+				speaker->decibelLevel = getAudioLoudness(samples.data(), samples.size());
 				if (!speaker->muted) {
 					mix = true;
 					if (voiceBuffer.size() < samples.size())
@@ -286,8 +287,8 @@ void Voice::update(PositionalAttenuationFunction positionalAttenuationFunction) 
     for (auto& entry : m_speakers) {
       if (SpeakerPtr& speaker = entry.second) {
         speaker->channelVolumes = {
-          positionalAttenuationFunction(0, speaker->position, 1.0f),
-          positionalAttenuationFunction(1, speaker->position, 1.0f)
+          1.0f - positionalAttenuationFunction(0, speaker->position, 1.0f),
+					1.0f - positionalAttenuationFunction(1, speaker->position, 1.0f)
         };
       }
     }
@@ -376,7 +377,6 @@ bool Voice::receive(SpeakerPtr speaker, std::string_view view) {
 			decodedSamples *= channels;
 			//Logger::info("Voice: decoded Opus chunk {} bytes -> {} samples", opusLength, decodedSamples);
 
-			speaker->decibelLevel = getAudioLoudness(decodeBuffer, decodedSamples);
 			{
 				MutexLocker lock(speaker->audioStream->mutex);
 				auto& samples = speaker->audioStream->samples;
