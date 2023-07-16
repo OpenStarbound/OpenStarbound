@@ -80,6 +80,8 @@ public:
     VoiceAudioStreamPtr audioStream;
     Mutex mutex;
 
+    int64_t lastReceiveTime = 0;
+
     atomic<bool> muted = false;
     atomic<bool> playing = false;
     atomic<float> decibelLevel = 0.0f;

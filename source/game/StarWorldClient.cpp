@@ -795,20 +795,18 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
       m_damageManager->pushRemoteDamageRequest(damage->remoteDamageRequest);
 
     } else if (auto damage = as<DamageNotificationPacket>(packet)) {
-      auto& materialKind = damage->remoteDamageNotification.damageNotification.targetMaterialKind.utf8();
-      const size_t prefixSize = SECRET_BROADCAST_PREFIX.size();
-      const size_t signatureSize = Curve25519::SignatureSize;
-      const size_t dataSize = prefixSize + signatureSize;
+      std::string_view view(damage->remoteDamageNotification.damageNotification.targetMaterialKind.utf8());
+      static const size_t FULL_SIZE = SECRET_BROADCAST_PREFIX.size() + Curve25519::SignatureSize;
+      static const std::string LEGACY_VOICE_PREFIX = "data\0voice\0"s;
 
-      if (materialKind.size() >= dataSize && materialKind.rfind(SECRET_BROADCAST_PREFIX, 0) != NPos) {
+      if (view.size() >= FULL_SIZE && view.rfind(SECRET_BROADCAST_PREFIX, 0) != NPos) {
         // this is actually a secret broadcast!!
         if (auto player = m_entityMap->get<Player>(damage->remoteDamageNotification.sourceEntityId)) {
           if (auto publicKey = player->getSecretPropertyView(SECRET_BROADCAST_PUBLIC_KEY)) {
             if (publicKey->utf8Size() == Curve25519::PublicKeySize) {
-              std::string_view broadcast(materialKind);
-              auto signature = broadcast.substr(prefixSize, signatureSize);
+              auto signature = view.substr(SECRET_BROADCAST_PREFIX.size(), Curve25519::SignatureSize);
 
-              auto rawBroadcast = broadcast.substr(dataSize);
+              auto rawBroadcast = view.substr(FULL_SIZE);
               if (Curve25519::verify(
                 (uint8_t const*)signature.data(),
                 (uint8_t const*)publicKey->utf8Ptr(),
@@ -817,6 +815,23 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
               )) {
                 handleSecretBroadcast(player, rawBroadcast);
               }
+            }
+          }
+        }
+      }
+      else if (view.size() > 75 && view.rfind(LEGACY_VOICE_PREFIX, 0) != NPos) {
+        // this is a StarExtensions voice packet
+        // (remove this and stop transmitting like this once most SE features are ported over)
+        if (auto player = m_entityMap->get<Player>(damage->remoteDamageNotification.sourceEntityId)) {
+          if (auto publicKey = player->effectsAnimator()->globalTagPtr("\0SE_VOICE_SIGNING_KEY"s)) {
+            auto rawData = view.substr(75);
+            if (m_broadcastCallback && Curve25519::verify(
+              (uint8_t const*)view.data() + LEGACY_VOICE_PREFIX.size(),
+              (uint8_t const*)publicKey->utf8Ptr(),
+              (void*)rawData.data(),
+                     rawData.size()
+            )) {
+              m_broadcastCallback(player, "Voice\0"s + rawData);
             }
           }
         }
