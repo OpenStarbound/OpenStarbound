@@ -345,7 +345,10 @@ public:
     m_sdlAudioInputDevice = SDL_OpenAudioDevice(name, 1, &desired, &obtained, 0);
 
     if (m_sdlAudioInputDevice) {
-      Logger::info("Opened audio input device '{}'", SDL_GetAudioDeviceName(m_sdlAudioInputDevice, 1));
+      if (name)
+        Logger::info("Opened audio input device '{}'", name);
+      else
+        Logger::info("Opened default audio input device");
       SDL_PauseAudioDevice(m_sdlAudioInputDevice, 0);
     }
     else
@@ -356,7 +359,7 @@ public:
 
   bool closeAudioInputDevice() {
     if (m_sdlAudioInputDevice) {
-      Logger::info("Closing audio input device '{}'", SDL_GetAudioDeviceName(m_sdlAudioInputDevice, 1));
+      Logger::info("Closing audio input device");
       SDL_CloseAudioDevice(m_sdlAudioInputDevice);
       m_sdlAudioInputDevice = 0;
       return true;

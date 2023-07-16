@@ -269,7 +269,6 @@ void Voice::mix(int16_t* buffer, size_t frameCount, unsigned channels) {
 
 					speaker->decibelLevel = getAudioLoudness(speakerBuffer.data(), samples);
 					auto channelVolumes = speaker->channelVolumes.load();
-
 					for (size_t i = 0; i != samples; ++i)
 						sharedBuffer[i] += (int32_t)(speakerBuffer[i]) * channelVolumes[i % 2];
 				}
@@ -366,6 +365,8 @@ bool Voice::receive(SpeakerPtr speaker, std::string_view view) {
 		uint32_t opusLength = 0;
 		while (!reader.atEnd()) {
 			reader >> opusLength;
+			if (reader.pos() + opusLength > reader.size())
+				throw VoiceException("Opus packet length goes past end of buffer"s, false);
 			auto opusData = (unsigned char*)reader.ptr() + reader.pos();
 			reader.seek(opusLength, IOSeek::Relative);
 
@@ -536,7 +537,7 @@ void Voice::thread() {
 
 					{
 						MutexLocker lock(m_encodeMutex);
-						m_encodedChunks.emplace_back(move(encoded)); // reset takes ownership of data buffer
+						m_encodedChunks.emplace_back(move(encoded));
 						m_encodedChunksLength += encodedSize;
 
 						encoded = ByteArray(VOICE_MAX_PACKET_SIZE, 0);

@@ -171,7 +171,7 @@ private:
   int64_t m_lastThresholdTime = 0;
   int64_t m_nextSaveTime = 0;
   bool m_enabled = true;
-  bool m_inputEnabled = true;
+  bool m_inputEnabled = false;
 
   int m_deviceChannels = 1;
   bool m_deviceOpen = false;

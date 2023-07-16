@@ -966,7 +966,10 @@ void WorldClient::update() {
   // Secret broadcasts are transmitted through DamageNotifications for vanilla server compatibility.
   // Because DamageNotification packets are spoofable, we have to sign the data so other clients can validate that it is legitimate.
   auto& publicKey = Curve25519::publicKey();
-  m_mainPlayer->setSecretProperty(SECRET_BROADCAST_PUBLIC_KEY, String((const char*)publicKey.data(), publicKey.size()));
+  String publicKeyString((const char*)publicKey.data(), publicKey.size());
+  m_mainPlayer->setSecretProperty(SECRET_BROADCAST_PUBLIC_KEY, publicKeyString);
+  // Temporary: Backwards compatibility with StarExtensions
+  m_mainPlayer->effectsAnimator()->setGlobalTag("\0SE_VOICE_SIGNING_KEY"s, publicKeyString);
 
   ++m_currentStep;
   //m_interpolationTracker.update(m_currentStep);

@@ -16,7 +16,7 @@
 #include "StarRootLoader.hpp"
 #include "StarInput.hpp"
 #include "StarVoice.hpp"
-
+#include "StarCurve25519.hpp"
 
 #include "StarInterfaceLuaBindings.hpp"
 #include "StarInputLuaBindings.hpp"
@@ -855,9 +855,8 @@ void ClientApplication::updateRunning() {
     m_voice->setInput(m_input->bindHeld("opensb", "pushToTalk"));
     DataStreamBuffer voiceData;
     voiceData.setByteOrder(ByteOrder::LittleEndian);
-    voiceData.writeBytes(VoiceBroadcastPrefix.utf8Bytes());
+    //voiceData.writeBytes(VoiceBroadcastPrefix.utf8Bytes()); transmitting with SE compat for now
     bool needstoSendVoice = m_voice->send(voiceData, 5000);
-
     m_universeClient->update();
 
     if (checkDisconnection())
@@ -881,8 +880,13 @@ void ClientApplication::updateRunning() {
       }
 
       if (worldClient->inWorld()) {
-        if (needstoSendVoice)
-          worldClient->sendSecretBroadcast(StringView(voiceData.ptr(), voiceData.size()));
+        if (needstoSendVoice) {
+          auto signature = Curve25519::sign(voiceData.ptr(), voiceData.size());
+          std::string_view signatureView((char*)signature.data(), signature.size());
+          std::string_view audioDataView(voiceData.ptr(), voiceData.size());
+          auto broadcast = strf("data\0voice\0{}{}"s, signatureView, audioDataView);
+          worldClient->sendSecretBroadcast(broadcast, true);
+        }
         m_voice->setLocalSpeaker(worldClient->connection());
       }
       worldClient->setInteractiveHighlightMode(isActionTaken(InterfaceAction::ShowLabels));
