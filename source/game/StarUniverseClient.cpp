@@ -30,6 +30,7 @@ UniverseClient::UniverseClient(PlayerStoragePtr playerStorage, StatisticsPtr sta
   m_playerStorage = move(playerStorage);
   m_statistics = move(statistics);
   m_pause = false;
+  m_luaRoot = make_shared<LuaRoot>();
   reset();
 }
 
@@ -86,7 +87,7 @@ Maybe<String> UniverseClient::connect(UniverseConnection connection, bool allowA
     return String(strf("Join failed! Server does not support connections with protocol version {}", StarProtocolVersion));
 
   connection.pushSingle(make_shared<ClientConnectPacket>(Root::singleton().assets()->digest(), allowAssetsMismatch, m_mainPlayer->uuid(), m_mainPlayer->name(),
-      m_mainPlayer->species(), m_playerStorage->loadShipData(m_mainPlayer->uuid()), ShipUpgrades(m_mainPlayer->shipUpgrades()),
+      m_mainPlayer->species(), m_playerStorage->loadShipData(m_mainPlayer->uuid()), m_mainPlayer->shipUpgrades(),
       m_mainPlayer->log()->introComplete(), account));
   connection.sendAll(timeout);
 
@@ -219,8 +220,11 @@ void UniverseClient::update() {
 
   m_statistics->update();
 
-  if (!m_pause)
+  if (!m_pause) {
     m_worldClient->update();
+    for (auto& p : m_scriptContexts)
+      p.second->update();
+  }
   m_connection->push(m_worldClient->getOutgoingPackets());
 
   if (!m_pause)
@@ -444,6 +448,28 @@ void UniverseClient::setLuaCallbacks(String const& groupName, LuaCallbacks const
     m_worldClient->setLuaCallbacks(groupName, callbacks);
 }
 
+void UniverseClient::startLua() {
+  auto assets = Root::singleton().assets();
+  for (auto& p : assets->json("/client.config:universeScriptContexts").toObject()) {
+    auto scriptComponent = make_shared<ScriptComponent>();
+    scriptComponent->setLuaRoot(m_luaRoot);
+    scriptComponent->setScripts(jsonToStringList(p.second.toArray()));
+
+    for (auto& pair : m_luaCallbacks)
+      scriptComponent->addCallbacks(pair.first, pair.second);
+
+    m_scriptContexts.set(p.first, scriptComponent);
+    scriptComponent->init();
+  }
+}
+
+void UniverseClient::stopLua() {
+  for (auto& p : m_scriptContexts)
+    p.second->uninit();
+
+  m_scriptContexts.clear();
+}
+
 ClockConstPtr UniverseClient::universeClock() const {
   return m_universeClock;
 }
@@ -539,6 +565,8 @@ void UniverseClient::handlePackets(List<PacketPtr> const& packets) {
 }
 
 void UniverseClient::reset() {
+  stopLua();
+
   m_universeClock.reset();
   m_worldClient.reset();
   m_celestialDatabase.reset();

@@ -614,6 +614,7 @@ void ClientApplication::changeState(MainAppState newState) {
     m_worldPainter = make_shared<WorldPainter>();
     m_mainInterface = make_shared<MainInterface>(m_universeClient, m_worldPainter, m_cinematicOverlay);
     m_universeClient->setLuaCallbacks("interface", LuaBindings::makeInterfaceCallbacks(m_mainInterface.get()));
+    m_universeClient->startLua();
 
     m_mainMixer->setWorldPainter(m_worldPainter);
 

@@ -62,8 +62,8 @@ namespace Star {
 
 GuiMessage::GuiMessage() : message(), cooldown(), springState() {}
 
-GuiMessage::GuiMessage(String const& message, float cooldown)
-  : message(message), cooldown(cooldown), springState(0) {}
+GuiMessage::GuiMessage(String const& message, float cooldown, float spring)
+  : message(message), cooldown(cooldown), springState(spring) {}
 
 MainInterface::MainInterface(UniverseClientPtr client, WorldPainterPtr painter, CinematicPtr cinematicOverlay) {
   m_state = Running;
@@ -368,6 +368,9 @@ bool MainInterface::handleInputEvent(InputEvent const& event) {
     if (mouseUp->mouseButton == MouseButton::Middle)
       player->endTrigger();
   }
+
+  for (auto& pair : m_canvases)
+    pair.second->sendEvent(event);
 
   return true;
 }
@@ -863,9 +866,13 @@ void MainInterface::doChat(String const& chat, bool addToHistory) {
     m_chat->addHistory(chat);
 }
 
-void MainInterface::queueMessage(String const& message) {
-  auto guiMessage = make_shared<GuiMessage>(message, m_config->messageTime);
+void MainInterface::queueMessage(String const& message, Maybe<float> cooldown, float spring) {
+  auto guiMessage = make_shared<GuiMessage>(message, cooldown.value(m_config->messageTime), spring);
   m_messages.append(guiMessage);
+}
+
+void MainInterface::queueMessage(String const& message) {
+  queueMessage(message, m_config->messageTime, 0.0f);
 }
 
 void MainInterface::queueJoinRequest(pair<String, RpcPromiseKeeper<P2PJoinRequestReply>> request)
@@ -927,18 +934,21 @@ void MainInterface::warpTo(WarpAction const& warpAction) {
 }
 
 CanvasWidgetPtr MainInterface::fetchCanvas(String const& canvasName, bool ignoreInterfaceScale) {
+  CanvasWidgetPtr canvas;
+
   if (auto canvasPtr = m_canvases.ptr(canvasName))
-    return *canvasPtr;
+    canvas = *canvasPtr;
   else {
-    CanvasWidgetPtr canvas = m_canvases.emplace(canvasName, make_shared<CanvasWidget>()).first->second;
+    m_canvases.emplace(canvasName, canvas = make_shared<CanvasWidget>());
     canvas->setPosition(Vec2I());
     if (ignoreInterfaceScale)
       canvas->setSize(Vec2I(m_guiContext->windowSize()));
     else
       canvas->setSize(Vec2I(m_guiContext->windowInterfaceSize()));
-    canvas->setIgnoreInterfaceScale(ignoreInterfaceScale);
-    return canvas;
   }
+
+  canvas->setIgnoreInterfaceScale(ignoreInterfaceScale);
+  return canvas;
 }
 
 PanePtr MainInterface::createEscapeDialog() {

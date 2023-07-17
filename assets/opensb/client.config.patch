@@ -1,4 +1,6 @@
 {
+  "universeScriptContexts" : { "opensb" : ["/scripts/universeClient/opensb.lua"] },
+
   // Disables scissoring and letterboxing on vanilla and modded warp cinematics
   "warpCinematicBase" : {
     "scissor" : false,

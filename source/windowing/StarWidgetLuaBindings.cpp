@@ -25,13 +25,14 @@ LuaMethods<CanvasWidgetPtr> LuaUserDataMethods<CanvasWidgetPtr>::make() {
 
   methods.registerMethodWithSignature<void, CanvasWidgetPtr>("clear", mem_fn(&CanvasWidget::clear));
 
-  methods.registerMethod("drawDrawable", [](CanvasWidgetPtr canvasWidget, Drawable drawable) {
-    canvasWidget->drawDrawable(move(drawable), Vec2F());
+  methods.registerMethod("drawDrawable", [](CanvasWidgetPtr canvasWidget, Drawable drawable, Maybe<Vec2F> screenPos) {
+    canvasWidget->drawDrawable(move(drawable), screenPos.value(Vec2F()));
   });
 
-  methods.registerMethod("drawDrawables", [](CanvasWidgetPtr canvasWidget, List<Drawable> drawables) {
+  methods.registerMethod("drawDrawables", [](CanvasWidgetPtr canvasWidget, List<Drawable> drawables, Maybe<Vec2F> screenPos) {
+    Vec2F pos = screenPos.value(Vec2F());
     for (auto& drawable : drawables)
-      canvasWidget->drawDrawable(move(drawable), Vec2F());
+      canvasWidget->drawDrawable(move(drawable), pos);
   });
 
   methods.registerMethod("drawImage",

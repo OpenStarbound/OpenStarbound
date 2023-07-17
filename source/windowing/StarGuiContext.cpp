@@ -98,9 +98,9 @@ void GuiContext::setInterfaceScale(int interfaceScale) {
   m_interfaceScale = interfaceScale;
 }
 
-Maybe<Vec2I> GuiContext::mousePosition(InputEvent const& event) const {
-  auto getInterfacePosition = [this](Vec2I pos) {
-    return Vec2I(pos) / interfaceScale();
+Maybe<Vec2I> GuiContext::mousePosition(InputEvent const& event, int pixelRatio) const {
+  auto getInterfacePosition = [pixelRatio](Vec2I pos) {
+    return Vec2I(pos) / pixelRatio;
   };
 
   if (auto mouseMoveEvent = event.ptr<MouseMoveEvent>())
@@ -113,6 +113,10 @@ Maybe<Vec2I> GuiContext::mousePosition(InputEvent const& event) const {
     return getInterfacePosition(mouseWheelEvent->mousePosition);
   else
     return {};
+}
+
+Maybe<Vec2I> GuiContext::mousePosition(InputEvent const& event) const {
+  return mousePosition(event, interfaceScale());
 }
 
 Set<InterfaceAction> GuiContext::actions(InputEvent const& event) const {
