@@ -147,8 +147,10 @@ public:
 private:
   static Voice* s_singleton;
   void resetEncoder();
+  void resetDevice();
   void openDevice();
   void closeDevice();
+  inline bool shouldEnableInput() const { return m_enabled && m_inputEnabled; }
 
   bool playSpeaker(SpeakerPtr const& speaker, int channels);
 

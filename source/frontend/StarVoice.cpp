@@ -140,20 +140,39 @@ Voice::~Voice() {
 }
 
 void Voice::init() {
-  resetEncoder();
-  if (m_inputEnabled)
-    openDevice();
+	resetEncoder();
+	resetDevice();
+}
+
+
+template <typename T>
+inline bool change(T& value, T newValue) {
+	bool changed = value != newValue;
+	value = move(newValue);
+	return changed;
 }
 
 void Voice::loadJson(Json const& config) {
-  m_enabled      = config.getBool("enabled",         m_enabled);
-  m_inputEnabled = config.getBool("inputEnabled",    m_inputEnabled);
-  m_deviceName   = config.optQueryString("inputDevice");
+	{
+		bool enabled = shouldEnableInput();
+		m_enabled      = config.getBool("enabled", m_enabled);
+		m_inputEnabled = config.getBool("inputEnabled", m_inputEnabled);
+		if (shouldEnableInput() != enabled)
+			resetDevice();
+	}
+
+	if (change(m_deviceName, config.optQueryString("inputDevice")))
+		resetDevice();
+
   m_threshold    = config.getFloat("threshold", m_threshold);
   m_inputVolume  = config.getFloat("inputVolume", m_inputVolume);
   m_outputVolume = config.getFloat("outputVolume",   m_outputVolume);
-  m_inputMode    = VoiceInputModeNames.getLeft(config.getString("inputMode", "PushToTalk"));
-  m_channelMode  = VoiceChannelModeNames.getLeft(config.getString("channelMode", "Mono"));
+
+  if (change(m_inputMode, VoiceInputModeNames.getLeft(config.getString("inputMode", "PushToTalk"))))
+		m_lastInputTime = 0;
+
+	if (change(m_channelMode, VoiceChannelModeNames.getLeft(config.getString("channelMode", "Mono"))))
+		resetEncoder();
 }
 
 
@@ -478,7 +497,7 @@ bool Voice::receive(SpeakerPtr speaker, std::string_view view) {
 }
 
 void Voice::setInput(bool input) {
-  m_lastInputTime = input ? Time::monotonicMilliseconds() + 1000 : 0;
+  m_lastInputTime = (m_deviceOpen && input) ? Time::monotonicMilliseconds() + 1000 : 0;
 }
 
 OpusDecoder* Voice::createDecoder(int channels) {
@@ -503,6 +522,13 @@ void Voice::resetEncoder() {
   int channels = encoderChannels();
   m_encoder.reset(createEncoder(channels));
   opus_encoder_ctl(m_encoder.get(), OPUS_SET_BITRATE(channels == 2 ? 50000 : 24000));
+}
+
+void Voice::resetDevice() {
+	if (shouldEnableInput())
+		openDevice();
+	else
+		closeDevice();
 }
 
 void Voice::openDevice() {
