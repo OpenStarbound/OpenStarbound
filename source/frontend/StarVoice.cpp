@@ -288,9 +288,31 @@ void Voice::mix(int16_t* buffer, size_t frameCount, unsigned channels) {
 						speakerBuffer[i] = audio->take();
 
 					speaker->decibelLevel = getAudioLoudness(speakerBuffer.data(), samples);
-					auto channelVolumes = speaker->channelVolumes.load();
+
+					auto levels = speaker->channelVolumes.load();
 					for (size_t i = 0; i != samples; ++i)
-						sharedBuffer[i] += (int32_t)(speakerBuffer[i]) * channelVolumes[i % 2];
+						sharedBuffer[i] += (int32_t)(speakerBuffer[i]) * levels[i % 2];
+					//Blends the weaker channel into the stronger one,
+					/* unused, is a bit too strong on stereo music.
+					float maxLevel = max(levels[0], levels[1]);
+					float leftToRight = maxLevel != 0.0f ? 1.0f - (levels[0] / maxLevel) : 0.0f;
+					float rightToLeft = maxLevel != 0.0f ? 1.0f - (levels[1] / maxLevel) : 0.0f;
+
+					int16_t* speakerData = speakerBuffer.data();
+					int32_t* sharedData  = sharedBuffer.data();
+					for (size_t i = 0; i != frameCount; ++i) {
+						auto leftSample  = (float)*speakerData++;
+						auto rightSample = (float)*speakerData++;
+						
+					  if (rightToLeft != 0.0f)
+							leftSample  = ( leftSample + rightSample * rightToLeft) / (1.0f + rightToLeft);
+						if (leftToRight != 0.0f)
+						  rightSample = (rightSample +  leftSample * leftToRight) / (1.0f + leftToRight);
+
+						*sharedData++ += (int32_t)leftSample  * levels[0];
+						*sharedData++ += (int32_t)rightSample * levels[1];
+					}
+					//*/
 				}
 				else {
 					for (size_t i = 0; i != samples; ++i)
