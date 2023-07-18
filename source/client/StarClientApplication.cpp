@@ -20,6 +20,7 @@
 
 #include "StarInterfaceLuaBindings.hpp"
 #include "StarInputLuaBindings.hpp"
+#include "StarVoiceLuaBindings.hpp"
 
 namespace Star {
 
@@ -496,6 +497,7 @@ void ClientApplication::changeState(MainAppState newState) {
     m_statistics = make_shared<Statistics>(m_root->toStoragePath("player"), appController()->statisticsService());
     m_universeClient = make_shared<UniverseClient>(m_playerStorage, m_statistics);
     m_universeClient->setLuaCallbacks("input", LuaBindings::makeInputCallbacks());
+    m_universeClient->setLuaCallbacks("voice", LuaBindings::makeVoiceCallbacks(m_voice.get()));
 
     m_mainMixer->setUniverseClient(m_universeClient);
     m_titleScreen = make_shared<TitleScreen>(m_playerStorage, m_mainMixer->mixer());
@@ -887,6 +889,11 @@ void ClientApplication::updateRunning() {
           std::string_view audioDataView(voiceData.ptr(), voiceData.size());
           auto broadcast = strf("data\0voice\0{}{}"s, signatureView, audioDataView);
           worldClient->sendSecretBroadcast(broadcast, true);
+        }
+        if (auto mainPlayer = m_universeClient->mainPlayer()) {
+          auto localSpeaker = m_voice->localSpeaker();
+          localSpeaker->entityId = mainPlayer->entityId();
+          localSpeaker->name = mainPlayer->name();
         }
         m_voice->setLocalSpeaker(worldClient->connection());
       }

@@ -81,9 +81,10 @@ public:
     Mutex mutex;
 
     int64_t lastReceiveTime = 0;
+    int64_t lastPlayTime = 0;
 
     atomic<bool> muted = false;
-    atomic<bool> playing = false;
+    atomic<bool> playing = 0;
     atomic<float> decibelLevel = 0.0f;
     atomic<Array<float, 2>> channelVolumes = Array<float, 2>::filled(1.0f);
 
@@ -118,7 +119,9 @@ public:
 
   // Sets the local speaker ID and returns the local speaker. Must be called upon loading into a world.
   SpeakerPtr setLocalSpeaker(SpeakerId speakerId);
+  SpeakerPtr localSpeaker();
   SpeakerPtr speaker(SpeakerId speakerId);
+  List<Voice::SpeakerPtr> speakers(bool onlyPlaying);
 
   // Called when receiving input audio data from SDL, on its own thread.
   void readAudioData(uint8_t* stream, int len);

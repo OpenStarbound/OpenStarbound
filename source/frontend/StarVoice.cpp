@@ -28,13 +28,13 @@ EnumMap<VoiceChannelMode> const VoiceChannelModeNames{
   {VoiceChannelMode::Stereo, "Stereo"}
 };
 
-float getAudioChunkLoudness(int16_t* data, size_t samples) {
+inline float getAudioChunkLoudness(int16_t* data, size_t samples, float volume) {
 	if (!samples)
 		return 0.f;
 
 	double rms = 0.;
 	for (size_t i = 0; i != samples; ++i) {
-		float sample = (float)data[i] / 32767.f;
+		float sample = ((float)data[i] / 32767.f) * volume;
 		rms += (double)(sample * sample);
 	}
 
@@ -46,12 +46,12 @@ float getAudioChunkLoudness(int16_t* data, size_t samples) {
 		return -127.f;
 }
 
-float getAudioLoudness(int16_t* data, size_t samples) {
+float getAudioLoudness(int16_t* data, size_t samples, float volume = 1.0f) {
 	constexpr size_t CHUNK_SIZE = 50;
 
 	float highest = -127.f;
 	for (size_t i = 0; i < samples; i += CHUNK_SIZE) {
-		float level = getAudioChunkLoudness(data + i, std::min<size_t>(i + CHUNK_SIZE, samples) - i);
+		float level = getAudioChunkLoudness(data + i, std::min<size_t>(i + CHUNK_SIZE, samples) - i, volume);
 		if (level > highest)
       highest = level;
 	}
@@ -192,6 +192,10 @@ Voice::SpeakerPtr Voice::setLocalSpeaker(SpeakerId speakerId) {
   return m_speakers.insert(m_speakerId, m_clientSpeaker).first->second;
 }
 
+Voice::SpeakerPtr Voice::localSpeaker() {
+	return m_clientSpeaker;
+}
+
 Voice::SpeakerPtr Voice::speaker(SpeakerId speakerId) {
   if (m_speakerId == speakerId)
     return m_clientSpeaker;
@@ -203,28 +207,47 @@ Voice::SpeakerPtr Voice::speaker(SpeakerId speakerId) {
   }
 }
 
-void Voice::readAudioData(uint8_t* stream, int len) {
-	auto now = Time::monotonicMilliseconds();
-	if (!m_encoder || m_inputMode == VoiceInputMode::PushToTalk && now > m_lastInputTime)
-		return;
+List<Voice::SpeakerPtr> Voice::speakers(bool onlyPlaying) {
+	List<SpeakerPtr> result;
 
-	// Stop encoding if 2048 bytes have been encoded and not taken by the game thread yet
-	if (m_encodedChunksLength > 2048)
-		return;
+	auto sorter = [](SpeakerPtr const& a, SpeakerPtr const& b) -> bool {
+		if (a->lastPlayTime != b->lastPlayTime)
+			return a->lastPlayTime < b->lastPlayTime;
+		else
+			return a->speakerId < b->speakerId;
+	};
 
-	size_t sampleCount = len / 2;
-	float decibels = getAudioLoudness((int16_t*)stream, sampleCount);
-	m_clientSpeaker->decibelLevel = decibels;
-
-	bool active = true;
-
-	if (m_inputMode == VoiceInputMode::VoiceActivity) {
-		if (decibels > m_threshold)
-			m_lastThresholdTime = now;
-		active = now - m_lastThresholdTime < 50;
+	for (auto& p : m_speakers) {
+		if (!onlyPlaying || p.second->playing)
+			result.insertSorted(p.second, sorter);
 	}
 
-	bool added = false;
+	return result;
+}
+
+void Voice::readAudioData(uint8_t* stream, int len) {
+	auto now = Time::monotonicMilliseconds();
+	bool active = m_encoder && m_encodedChunksLength < 2048
+       && (m_inputMode == VoiceInputMode::VoiceActivity || now < m_lastInputTime);
+
+	size_t sampleCount = len / 2;
+
+	if (active) {
+		float volume = m_inputVolume;
+		float decibels = getAudioLoudness((int16_t*)stream, sampleCount);
+
+		if (m_inputMode == VoiceInputMode::VoiceActivity) {
+			if (decibels > m_threshold)
+				m_lastThresholdTime = now;
+			active = now - m_lastThresholdTime < 50;
+		}
+	}
+
+	if (active && !m_clientSpeaker->playing)
+		m_clientSpeaker->lastPlayTime = now;
+
+	if (!(m_clientSpeaker->playing = active))
+		return;
 
 	MutexLocker captureLock(m_captureMutex);
 	if (active) {
@@ -232,7 +255,7 @@ void Voice::readAudioData(uint8_t* stream, int len) {
 		auto data = (opus_int16*)malloc(len);
 		memcpy(data, stream, len);
 		m_capturedChunks.emplace(data, sampleCount); // takes ownership
-		added = true;
+		m_threadCond.signal();
 	}
 	else { // Clear out any residual data so they don't manifest at the start of the next encode, whenever that is
 		while (!m_capturedChunks.empty())
@@ -240,9 +263,6 @@ void Voice::readAudioData(uint8_t* stream, int len) {
 
 		m_capturedChunksFrames = 0;
 	}
-
-	if (added)
-		m_threadCond.signal();
 }
 
 void Voice::mix(int16_t* buffer, size_t frameCount, unsigned channels) {
@@ -493,9 +513,12 @@ bool Voice::playSpeaker(SpeakerPtr const& speaker, int channels) {
 	if (speaker->playing || speaker->audioStream->samples.size() < minSamples)
 		return false;
 
-	speaker->playing = true;
-	MutexLocker lock(m_activeSpeakersMutex);
-	m_activeSpeakers.insert(speaker);
+	if (!speaker->playing) {
+		speaker->lastPlayTime = Time::monotonicMilliseconds();
+		speaker->playing = true;
+		MutexLocker lock(m_activeSpeakersMutex);
+		m_activeSpeakers.insert(speaker);
+	}
 	return true;
 }
 
@@ -528,6 +551,8 @@ void Voice::thread() {
 					for (size_t i = 0; i != samples.size(); ++i)
 						samples[i] *= m_inputVolume;
 				}
+
+				m_clientSpeaker->decibelLevel = getAudioLoudness(samples.data(), samples.size());
 
 				if (int encodedSize = opus_encode(m_encoder.get(), samples.data(), VOICE_FRAME_SIZE, (unsigned char*)encoded.ptr(), encoded.size())) {
 					if (encodedSize == 1)

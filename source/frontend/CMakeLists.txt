@@ -57,6 +57,7 @@ SET (star_frontend_HEADERS
     StarTeleportDialog.hpp
     StarWireInterface.hpp
     StarVoice.hpp
+    StarVoiceLuaBindings.hpp
   )
 
 SET (star_frontend_SOURCES
@@ -106,6 +107,7 @@ SET (star_frontend_SOURCES
     StarTeleportDialog.cpp
     StarWireInterface.cpp
     StarVoice.cpp
+    StarVoiceLuaBindings.cpp
   )
 
 ADD_LIBRARY (star_frontend OBJECT ${star_frontend_SOURCES} ${star_frontend_HEADERS})

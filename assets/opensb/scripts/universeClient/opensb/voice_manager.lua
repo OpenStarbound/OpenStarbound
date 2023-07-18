@@ -107,7 +107,6 @@ local function drawSpeakerBar(mouse, pos, speaker, i)
 		--end
 	end
 end
-local speakersTime = {}
 
 local function simulateSpeakers()
 	local speakers = {}
@@ -127,11 +126,10 @@ local function drawIndicators()
 	canvas:clear()
 	local screenSize = canvas:size()
 	local mousePosition = canvas:mousePosition()
-	sb.setLogMap("mousePosition", sb.printJson(mousePosition))
 	local basePos = {screenSize[1] - 350, 50}
 
 	-- sort it ourselves for now
-	local speakersRemaining, speakersSorted = {}, {}
+	local speakersRemaining, speakers = {}, {}
 	local hoveredSpeakerId = nil
 	if hoveredSpeaker then
 		if not mouseOverSpeaker(mousePosition, hoveredSpeakerPosition, 16) then
@@ -141,63 +139,32 @@ local function drawIndicators()
 		end
 	end
 
-	--local speakers = voice.speakers()
-	local speakers = { -- just testing before implementing voice lua functions
-		{
-			speakerId = 1,
-			entityId = -65536,
-			loudness = -96 + math.random() * 96,
-			muted = false,
-			name = "theres a pipe bomb up my ass"
-		}
-	}
-
-	local sortI = 0
+	local speakerCount = 0
 	local now = os.clock()
-	for i, speaker in pairs(speakers) do
+	for i, speaker in pairs(voice.speakers()) do
 		local speakerId = speaker.speakerId
 		speakersRemaining[speakerId] = true
-		local t = speakersTime[speakerId]
-		if not t then
-			t = now
-			speakersTime[speakerId] = t
-		end
-		speaker.startTime = t
 		if speakerId == hoveredSpeakerId then
 			hoveredSpeaker = speaker
 		else
-			sortI = sortI + 1
-			speakersSorted[sortI] = speaker
+			speakerCount = speakerCount + 1
+			speakers[speakerCount] = speaker
 		end
 	end
-
-	for i, v in pairs(speakersTime) do
-		if not speakersRemaining[i] then
-			speakersTime[i] = nil
-		end
-	end
-
-	table.sort(speakersSorted, function(a, b)
-		if a.startTime == b.startTime then
-			return a.speakerId < b.speakerId
-		else
-			return a.startTime < b.startTime
-		end
-	end)
 
 	if hoveredSpeaker then
-		local len = #speakersSorted
+		local len = #speakers
 		if hoveredSpeakerIndex > len then
 			for i = len + 1, hoveredSpeakerIndex - 1 do
-				speakersSorted[i] = false
+				speakers[i] = false
 			end
-			speakersSorted[hoveredSpeakerIndex] = hoveredSpeaker
+			speakers[hoveredSpeakerIndex] = hoveredSpeaker
 		else
-			table.insert(speakersSorted, hoveredSpeakerIndex, hoveredSpeaker)
+			table.insert(speakers, hoveredSpeakerIndex, hoveredSpeaker)
 		end
 	end
 
-	for i, v in pairs(speakersSorted) do
+	for i, v in pairs(speakers) do
 		if v then
 			local entityId = v.entityId
 			local loudness = v.loudness
