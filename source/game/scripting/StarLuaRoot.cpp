@@ -106,6 +106,11 @@ LuaContext LuaRoot::createContext(StringList const& scriptPaths) {
     }
   });
 
+  newContext.set("loadstring", m_luaEngine->createFunction([newContext](String const& source, Maybe<String> const& name, Maybe<LuaValue> const& env) -> LuaFunction {
+    String functionName = name ? strf("loadstring: {}", name) : "loadstring";
+    return newContext.engine().createFunctionFromSource(newContext.handleIndex(), source.utf8Ptr(), source.utf8Size(), functionName.utf8Ptr());
+  }));
+
   for (auto const& scriptPath : scriptPaths)
     cache->loadContextScript(newContext, scriptPath);
 

@@ -310,6 +310,7 @@ public:
   using LuaTable::contains;
   using LuaTable::remove;
   using LuaTable::engine;
+  using LuaTable::handleIndex;
 
   // Splits the path by '.' character, so can get / set values in tables inside
   // other tables.  If any table in the path is not a table but is accessed as
@@ -529,6 +530,8 @@ public:
   LuaFunction createWrappedFunction(LuaDetail::LuaWrappedFunction function);
 
   LuaFunction createRawFunction(lua_CFunction func);
+
+  LuaFunction createFunctionFromSource(int handleIndex, char const* contents, size_t size, char const* name);
 
   LuaThread createThread();
 

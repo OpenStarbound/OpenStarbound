@@ -1,5 +1,5 @@
 {
-  "universeScriptContexts" : { "opensb" : ["/scripts/universeClient/opensb.lua"] },
+  "universeScriptContexts" : { "OpenStarbound" : ["/scripts/opensb/universeclient/universeclient.lua"] },
 
   // Disables scissoring and letterboxing on vanilla and modded warp cinematics
   "warpCinematicBase" : {

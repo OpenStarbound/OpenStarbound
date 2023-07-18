@@ -4,7 +4,7 @@ local fmt = string.format
 local sqrt = math.sqrt
 
 local module = {}
-submodules.voice_manager = module
+modules.voice_manager = module
 
 --constants
 local INDICATOR_PATH = "/interface/voicechat/indicator/"
@@ -19,52 +19,35 @@ local LINE_COLOR = {50, 210, 255, 255}
 local FONT_DIRECTIVES = "?border=1;333;3337?border=1;333;3330"
 local NAME_PREFIX = "^noshadow,white,set;"
 
-local canvas
-
-local linePaddingDrawable = {
-	image = BACK_INDICATOR_IMAGE,
-	position = {0, 0},
-	color = LINE_COLOR,
-	centered = false
-}
-
-local function getLinePadding(a, b)
-	linePaddingDrawable.image = BACK_INDICATOR_IMAGE .. fmt("?crop=%i;%i;%i;%i?fade=fff;1", a, 0, b, INDICATOR_SIZE[2])
-	linePaddingDrawable.position[1] = a
-	return linePaddingDrawable;
+local linePaddingDrawable
+do
+  local drawable = { image = BACK_INDICATOR_IMAGE, position = {0, 0}, color = LINE_COLOR, centered = false }
+	function linePaddingDrawable(a, b)
+		drawable.image = BACK_INDICATOR_IMAGE .. fmt("?crop=%i;%i;%i;%i?fade=fff;1", a, 0, b, INDICATOR_SIZE[2])
+		drawable.position[1] = a
+		return drawable;
+	end
 end
 
-local lineDrawable = {
-	line = {{LINE_PADDING, 24}, {10, 24}},
-	width = 48,
-	color = LINE_COLOR
-}
-
-local function drawTheLine(pos, value)
+local function line(pos, value)
 	local width = math.floor((LINE_WIDTH * value) + 0.5)
 	LINE_COLOR[4] = 255 * math.min(1, sqrt(width / 350))
 	if width > 0 then
-		canvas:drawDrawable(getLinePadding(0, math.min(12, width)), pos)
+		canvas:drawDrawable(linePaddingDrawable(0, math.min(12, width)), pos)
 		if width > 12 then
 			lineDrawable.line[2][1] = math.min(width, LINE_WIDTH_PADDED)
 			canvas:drawDrawable(lineDrawable, pos)
 			if width > LINE_WIDTH_PADDED then
-				canvas:drawDrawable(getLinePadding(LINE_WIDTH_PADDED, width), pos)
+				canvas:drawDrawable(linePaddingDrawable(LINE_WIDTH_PADDED, width), pos)
 			end
 		end
 	end
 end
 
-local drawable = {
-	image = BACK_INDICATOR_IMAGE,
-	centered = false
-}
+local canvas
 
-local textPositioning = {
-	position = {0, 0},
-	horizontalAnchor = "left",
-	verticalAnchor = "mid"
-}
+local drawable = { image = BACK_INDICATOR_IMAGE, centered = false }
+local textPositioning = { position = {0, 0}, horizontalAnchor = "left", verticalAnchor = "mid" }
 
 local hoveredSpeaker = nil
 local hoveredSpeakerIndex = 1
@@ -78,7 +61,7 @@ end
 local function drawSpeakerBar(mouse, pos, speaker, i)
 	drawable.image = BACK_INDICATOR_IMAGE
 	canvas:drawDrawable(drawable, pos)
-	drawTheLine(pos, 1 - math.sqrt(math.min(1, math.max(0, speaker.loudness / -50))))
+	line(pos, 1 - sqrt(math.min(1, math.max(0, speaker.loudness / -50))))
 	local hovering = not speaker.isLocal and mouseOverSpeaker(mouse, pos)
 
 	textPositioning.position = {pos[1] + 49, pos[2] + 24}
@@ -128,7 +111,6 @@ local function drawIndicators()
 	local mousePosition = canvas:mousePosition()
 	local basePos = {screenSize[1] - 350, 50}
 
-	-- sort it ourselves for now
 	local speakersRemaining, speakers = {}, {}
 	local hoveredSpeakerId = nil
 	if hoveredSpeaker then
@@ -140,7 +122,6 @@ local function drawIndicators()
 	end
 
 	local speakerCount = 0
-	local now = os.clock()
 	for i, speaker in pairs(voice.speakers()) do
 		local speakerId = speaker.speakerId
 		speakersRemaining[speakerId] = true

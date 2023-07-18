@@ -10,6 +10,7 @@
 #include "StarAiInterface.hpp"
 #include "StarQuestInterface.hpp"
 #include "StarStatistics.hpp"
+#include "StarInterfaceLuaBindings.hpp"
 
 namespace Star {
 
@@ -76,11 +77,10 @@ StringList ClientCommandProcessor::handleCommand(String const& commandLine) {
 
     String allArguments = commandLine.substr(1);
     String command = allArguments.extract();
-    auto arguments = m_parser.tokenizeToStringList(allArguments);
 
     StringList result;
     if (auto builtinCommand = m_builtinCommands.maybe(command)) {
-      result.append((*builtinCommand)(arguments));
+      result.append((*builtinCommand)(allArguments));
     } else if (auto macroCommand = m_macroCommands.maybe(command)) {
       for (auto const& c : *macroCommand) {
         if (c.beginsWith("/"))
@@ -89,7 +89,11 @@ StringList ClientCommandProcessor::handleCommand(String const& commandLine) {
           result.append(c);
       }
     } else {
-      m_universeClient->sendChat(commandLine, ChatSendMode::Broadcast);
+      auto player = m_universeClient->mainPlayer();
+      if (auto messageResult = player->receiveMessage(connectionForEntity(player->entityId()), strf("/{}", command), { allArguments }))
+        result.append(messageResult->isType(Json::Type::String) ? *messageResult->stringPtr() : messageResult->repr(1, true));
+      else
+        m_universeClient->sendChat(commandLine, ChatSendMode::Broadcast);
     }
     return result;
   } catch (ShellParsingException const& e) {
@@ -130,7 +134,8 @@ String ClientCommandProcessor::gravity() {
   return toString(m_universeClient->worldClient()->gravity(m_universeClient->mainPlayer()->position()));
 }
 
-String ClientCommandProcessor::debug(StringList const& arguments) {
+String ClientCommandProcessor::debug(String const& argumentsString) {
+  auto arguments = m_parser.tokenizeToStringList(argumentsString);
   if (!adminCommandAllowed())
     return "You must be an admin to use this command.";
 
@@ -168,7 +173,8 @@ String ClientCommandProcessor::asyncLighting() {
     ? "enabled" : "disabled");
 }
 
-String ClientCommandProcessor::setGravity(StringList const& arguments) {
+String ClientCommandProcessor::setGravity(String const& argumentsString) {
+  auto arguments = m_parser.tokenizeToStringList(argumentsString);
   if (!adminCommandAllowed())
     return "You must be an admin to use this command.";
 
@@ -198,7 +204,8 @@ String ClientCommandProcessor::monochromeLighting() {
   return strf("Monochrome lighting {}", monochrome ? "enabled" : "disabled");
 }
 
-String ClientCommandProcessor::radioMessage(StringList const& arguments) {
+String ClientCommandProcessor::radioMessage(String const& argumentsString) {
+  auto arguments = m_parser.tokenizeToStringList(argumentsString);
   if (!adminCommandAllowed())
     return "You must be an admin to use this command.";
 
@@ -225,7 +232,8 @@ String ClientCommandProcessor::clearCinematics() {
   return "Player cinematic records cleared!";
 }
 
-String ClientCommandProcessor::startQuest(StringList const& arguments) {
+String ClientCommandProcessor::startQuest(String const& argumentsString) {
+  auto arguments = m_parser.tokenizeToStringList(argumentsString);
   if (!adminCommandAllowed())
     return "You must be an admin to use this command.";
 
@@ -234,7 +242,8 @@ String ClientCommandProcessor::startQuest(StringList const& arguments) {
   return "Quest started";
 }
 
-String ClientCommandProcessor::completeQuest(StringList const& arguments) {
+String ClientCommandProcessor::completeQuest(String const& argumentsString) {
+  auto arguments = m_parser.tokenizeToStringList(argumentsString);
   if (!adminCommandAllowed())
     return "You must be an admin to use this command.";
 
@@ -242,7 +251,8 @@ String ClientCommandProcessor::completeQuest(StringList const& arguments) {
   return strf("Quest {} complete", arguments.at(0));
 }
 
-String ClientCommandProcessor::failQuest(StringList const& arguments) {
+String ClientCommandProcessor::failQuest(String const& argumentsString) {
+  auto arguments = m_parser.tokenizeToStringList(argumentsString);
   if (!adminCommandAllowed())
     return "You must be an admin to use this command.";
 
@@ -250,7 +260,8 @@ String ClientCommandProcessor::failQuest(StringList const& arguments) {
   return strf("Quest {} failed", arguments.at(0));
 }
 
-String ClientCommandProcessor::previewNewQuest(StringList const& arguments) {
+String ClientCommandProcessor::previewNewQuest(String const& argumentsString) {
+  auto arguments = m_parser.tokenizeToStringList(argumentsString);
   if (!adminCommandAllowed())
     return "You must be an admin to use this command.";
 
@@ -259,7 +270,8 @@ String ClientCommandProcessor::previewNewQuest(StringList const& arguments) {
     });
 }
 
-String ClientCommandProcessor::previewQuestComplete(StringList const& arguments) {
+String ClientCommandProcessor::previewQuestComplete(String const& argumentsString) {
+  auto arguments = m_parser.tokenizeToStringList(argumentsString);
   if (!adminCommandAllowed())
     return "You must be an admin to use this command.";
 
@@ -268,7 +280,8 @@ String ClientCommandProcessor::previewQuestComplete(StringList const& arguments)
     });
 }
 
-String ClientCommandProcessor::previewQuestFailed(StringList const& arguments) {
+String ClientCommandProcessor::previewQuestFailed(String const& argumentsString) {
+  auto arguments = m_parser.tokenizeToStringList(argumentsString);
   if (!adminCommandAllowed())
     return "You must be an admin to use this command.";
 
@@ -294,7 +307,8 @@ String ClientCommandProcessor::deathCount() {
   return strf("Total deaths: {}{}", deaths, deaths == 0 ? ". Well done!" : "");
 }
 
-String ClientCommandProcessor::cinema(StringList const& arguments) {
+String ClientCommandProcessor::cinema(String const& argumentsString) {
+  auto arguments = m_parser.tokenizeToStringList(argumentsString);
   if (!adminCommandAllowed())
     return "You must be an admin to use this command.";
 
@@ -326,7 +340,8 @@ String ClientCommandProcessor::resetAchievements() {
   return "Unable to reset achievements";
 }
 
-String ClientCommandProcessor::statistic(StringList const& arguments) {
+String ClientCommandProcessor::statistic(String const& argumentsString) {
+  auto arguments = m_parser.tokenizeToStringList(argumentsString);
   if (!adminCommandAllowed())
     return "You must be an admin to use this command.";
 
@@ -337,7 +352,8 @@ String ClientCommandProcessor::statistic(StringList const& arguments) {
   return values.join("\n");
 }
 
-String ClientCommandProcessor::giveEssentialItem(StringList const& arguments) {
+String ClientCommandProcessor::giveEssentialItem(String const& argumentsString) {
+  auto arguments = m_parser.tokenizeToStringList(argumentsString);
   if (!adminCommandAllowed())
     return "You must be an admin to use this command.";
 
@@ -354,7 +370,8 @@ String ClientCommandProcessor::giveEssentialItem(StringList const& arguments) {
   }
 }
 
-String ClientCommandProcessor::makeTechAvailable(StringList const& arguments) {
+String ClientCommandProcessor::makeTechAvailable(String const& argumentsString) {
+  auto arguments = m_parser.tokenizeToStringList(argumentsString);
   if (!adminCommandAllowed())
     return "You must be an admin to use this command.";
 
@@ -365,7 +382,8 @@ String ClientCommandProcessor::makeTechAvailable(StringList const& arguments) {
   return strf("Added {} to player's visible techs", arguments.at(0));
 }
 
-String ClientCommandProcessor::enableTech(StringList const& arguments) {
+String ClientCommandProcessor::enableTech(String const& argumentsString) {
+  auto arguments = m_parser.tokenizeToStringList(argumentsString);
   if (!adminCommandAllowed())
     return "You must be an admin to use this command.";
 
@@ -377,7 +395,8 @@ String ClientCommandProcessor::enableTech(StringList const& arguments) {
   return strf("Player tech {} enabled", arguments.at(0));
 }
 
-String ClientCommandProcessor::upgradeShip(StringList const& arguments) {
+String ClientCommandProcessor::upgradeShip(String const& argumentsString) {
+  auto arguments = m_parser.tokenizeToStringList(argumentsString);
   if (!adminCommandAllowed())
     return "You must be an admin to use this command.";
 
