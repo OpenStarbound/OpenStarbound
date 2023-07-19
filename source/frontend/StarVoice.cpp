@@ -63,11 +63,17 @@ float getAudioLoudness(int16_t* data, size_t samples, float volume = 1.0f) {
 struct VoiceAudioStream {
   // TODO: This should really be a ring buffer instead.
   std::queue<int16_t> samples;
-	SDL_AudioStream* sdlAudioStream;
+	SDL_AudioStream* sdlAudioStreamMono;
+	SDL_AudioStream* sdlAudioStreamStereo;
   Mutex mutex;
 
-	VoiceAudioStream() : sdlAudioStream(SDL_NewAudioStream(AUDIO_S16, 2, 48000, AUDIO_S16SYS, 2, 44100)) {};
-	~VoiceAudioStream() { SDL_FreeAudioStream(sdlAudioStream); }
+	VoiceAudioStream()
+		: sdlAudioStreamMono  (SDL_NewAudioStream(AUDIO_S16, 1, 48000, AUDIO_S16SYS, 1, 44100))
+	  , sdlAudioStreamStereo(SDL_NewAudioStream(AUDIO_S16, 2, 48000, AUDIO_S16SYS, 2, 44100)) {};
+	~VoiceAudioStream() {
+		SDL_FreeAudioStream(sdlAudioStreamMono);
+		SDL_FreeAudioStream(sdlAudioStreamStereo);
+	}
 
 	inline int16_t take() {
 		int16_t sample = 0;
@@ -78,11 +84,12 @@ struct VoiceAudioStream {
 		return sample;
 	}
 
-	size_t resample(int16_t* in, size_t inSamples, std::vector<int16_t>& out) {
-		SDL_AudioStreamPut(sdlAudioStream, in, inSamples * sizeof(int16_t));
-		if (int available = SDL_AudioStreamAvailable(sdlAudioStream)) {
+	size_t resample(int16_t* in, size_t inSamples, std::vector<int16_t>& out, bool mono) {
+		SDL_AudioStream* stream = mono ? sdlAudioStreamMono : sdlAudioStreamStereo;
+		SDL_AudioStreamPut(stream, in, inSamples * sizeof(int16_t));
+		if (int available = SDL_AudioStreamAvailable(stream)) {
 			out.resize(available / 2);
-			SDL_AudioStreamGet(sdlAudioStream, out.data(), available);
+			SDL_AudioStreamGet(stream, out.data(), available);
 			return available;
 		}
 		return 0;
@@ -171,6 +178,9 @@ void Voice::loadJson(Json const& config) {
   m_threshold    = config.getFloat("threshold", m_threshold);
   m_inputVolume  = config.getFloat("inputVolume", m_inputVolume);
   m_outputVolume = config.getFloat("outputVolume",   m_outputVolume);
+	
+	if (change(m_loopBack, config.getBool("loopBack", m_loopBack)))
+		m_clientSpeaker->playing = false;
 
 	if (auto inputMode = config.optString("inputMode")) {
 		if (change(m_inputMode, VoiceInputModeNames.getLeft(*inputMode)))
@@ -273,10 +283,14 @@ void Voice::readAudioData(uint8_t* stream, int len) {
 		}
 	}
 
-	if (active && !m_clientSpeaker->playing)
-		m_clientSpeaker->lastPlayTime = now;
+	if (!m_loopBack) {
+		if (active && !m_clientSpeaker->playing)
+			m_clientSpeaker->lastPlayTime = now;
 
-	if (!(m_clientSpeaker->playing = active))
+		m_clientSpeaker->playing = active;
+	}
+
+	if (!active)
 		return;
 
 	MutexLocker captureLock(m_captureMutex);
@@ -311,7 +325,6 @@ void Voice::mix(int16_t* buffer, size_t frameCount, unsigned channels) {
 			VoiceAudioStream* audio = speaker->audioStream.get();
 			MutexLocker audioLock(audio->mutex);
 			if (!audio->samples.empty()) {
-				SDL_AudioStream* sdlStream = audio->sdlAudioStream;
 				if (!speaker->muted) {
 					mix = true;
 					for (size_t i = 0; i != samples; ++i)
@@ -440,6 +453,8 @@ int Voice::send(DataStreamBuffer& out, size_t budget) {
 	}
 
 	m_lastSentTime = Time::monotonicMilliseconds();
+	if (m_loopBack)
+		receive(m_clientSpeaker, { out.ptr(), out.size() });
 	return 1;
 }
 
@@ -472,30 +487,26 @@ bool Voice::receive(SpeakerPtr speaker, std::string_view view) {
 			if (samples < 0)
 				throw VoiceException(strf("Decoder error: {}", opus_strerror(samples)), false);
 
-			size_t decodeBufferSize = samples * sizeof(opus_int16) * (size_t)channels;
-			opus_int16* decodeBuffer = (opus_int16*)malloc(decodeBufferSize);
+			m_decodeBuffer.resize(samples * (size_t)channels);
 
-			int decodedSamples = opus_decode(decoder, opusData, opusLength, decodeBuffer, decodeBufferSize, 0);
+			int decodedSamples = opus_decode(decoder, opusData, opusLength, m_decodeBuffer.data(), m_decodeBuffer.size() * sizeof(int16_t), 0);
 			if (decodedSamples <= 0) {
-				free(decodeBuffer);
 				if (decodedSamples < 0)
 				  throw VoiceException(strf("Decoder error: {}", opus_strerror(samples)), false);
 				return true;
 			}
 
-			decodedSamples *= channels;
-			//Logger::info("Voice: decoded Opus chunk {} bytes -> {} samples", opusLength, decodedSamples);
+			//Logger::info("Voice: decoded Opus chunk {} bytes -> {} samples", opusLength, decodedSamples * channels);
+
+			speaker->audioStream->resample(m_decodeBuffer.data(), (size_t)decodedSamples * channels, m_resampleBuffer, mono);
 
 			{
-				std::vector<int16_t> resamBuffer(decodedSamples, 0);
-				speaker->audioStream->resample(decodeBuffer, decodedSamples, resamBuffer);
-
 			  MutexLocker lock(speaker->audioStream->mutex);
 				auto& samples = speaker->audioStream->samples;
 
 				auto now = Time::monotonicMilliseconds();
 				if (now - speaker->lastReceiveTime < 1000) {
-					auto limit = ((size_t)speaker->minimumPlaySamples + 22050) * (size_t)channels;
+					auto limit = (size_t)speaker->minimumPlaySamples + 22050;
 					if (samples.size() > limit) { // skip ahead if we're getting too far
 						for (size_t i = samples.size(); i >= limit; --i)
 							samples.pop();
@@ -507,13 +518,13 @@ bool Voice::receive(SpeakerPtr speaker, std::string_view view) {
 				speaker->lastReceiveTime = now;
 
 				if (mono) {
-					for (int16_t sample : resamBuffer) {
+					for (int16_t sample : m_resampleBuffer) {
 						samples.push(sample);
 						samples.push(sample);
 					}
 				}
 				else {
-					for (int16_t sample : resamBuffer)
+					for (int16_t sample : m_resampleBuffer)
 						samples.push(sample);
 				}
 			}
@@ -589,8 +600,7 @@ void Voice::closeDevice() {
 }
 
 bool Voice::playSpeaker(SpeakerPtr const& speaker, int channels) {
-	unsigned int minSamples = speaker->minimumPlaySamples * channels;
-	if (speaker->playing || speaker->audioStream->samples.size() < minSamples)
+	if (speaker->playing || speaker->audioStream->samples.size() < speaker->minimumPlaySamples)
 		return false;
 
 	if (!speaker->playing) {
@@ -632,7 +642,8 @@ void Voice::thread() {
 						samples[i] *= m_inputVolume;
 				}
 
-				m_clientSpeaker->decibelLevel = getAudioLoudness(samples.data(), samples.size());
+				if (!m_loopBack)
+				  m_clientSpeaker->decibelLevel = getAudioLoudness(samples.data(), samples.size());
 
 				if (int encodedSize = opus_encode(m_encoder.get(), samples.data(), VOICE_FRAME_SIZE, (unsigned char*)encoded.ptr(), encoded.size())) {
 					if (encodedSize == 1)

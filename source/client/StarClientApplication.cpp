@@ -892,6 +892,7 @@ void ClientApplication::updateRunning() {
         }
         if (auto mainPlayer = m_universeClient->mainPlayer()) {
           auto localSpeaker = m_voice->localSpeaker();
+          localSpeaker->position = mainPlayer->position();
           localSpeaker->entityId = mainPlayer->entityId();
           localSpeaker->name = mainPlayer->name();
         }

@@ -19,7 +19,7 @@ local LINE_COLOR = {50, 210, 255, 255}
 local FONT_DIRECTIVES = "?border=1;333;3337?border=1;333;3330"
 local NAME_PREFIX = "^noshadow,white,set;"
 
-local function dbToLoudness(db) return 2 ^ (db / 6) end
+local function dbToLoudness(db) return 2 ^ (db / 8) end
 
 local canvas
 

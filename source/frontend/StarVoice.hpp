@@ -180,6 +180,7 @@ private:
   int64_t m_nextSaveTime = 0;
   bool m_enabled = true;
   bool m_inputEnabled = false;
+  bool m_loopBack = false;
 
   int m_deviceChannels = 1;
   bool m_deviceOpen = false;
@@ -191,6 +192,9 @@ private:
   Mutex m_threadMutex;
   ConditionVariable m_threadCond;
   atomic<bool> m_stopThread;
+
+  std::vector<int16_t> m_decodeBuffer;
+  std::vector<int16_t> m_resampleBuffer;
 
   ApplicationControllerPtr m_applicationController;
 
