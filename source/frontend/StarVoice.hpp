@@ -113,7 +113,7 @@ public:
 
   void init();
 
-  void loadJson(Json const& config);
+  void loadJson(Json const& config, bool skipSave = false);
   Json saveJson() const;
 
   void save() const;

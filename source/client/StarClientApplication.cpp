@@ -211,7 +211,7 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
   appController->setUpdateTrackWindow(assets->json("/client.config:updateTrackWindow").toFloat());
 
   if (auto jVoice = configuration->get("voice"))
-    m_voice->loadJson(jVoice.toObject());
+    m_voice->loadJson(jVoice.toObject(), true);
 
   m_voice->init();
 }

@@ -141,7 +141,9 @@ Voice::~Voice() {
 
 	m_thread.finish();
 
-  save();
+	if (m_nextSaveTime)
+		save();
+
 	closeDevice();
 
   s_singleton = nullptr;
@@ -154,46 +156,54 @@ void Voice::init() {
 
 
 template <typename T>
-inline bool change(T& value, T newValue) {
+inline bool change(T& value, T newValue, bool& out) {
 	bool changed = value != newValue;
+	out |= changed;
 	value = move(newValue);
 	return changed;
 }
 
-void Voice::loadJson(Json const& config) {
+void Voice::loadJson(Json const& config, bool skipSave) {
   // Not all keys are required
+
+	bool changed = false;
 
 	{
 		bool enabled = shouldEnableInput();
 		m_enabled      = config.getBool("enabled", m_enabled);
 		m_inputEnabled = config.getBool("inputEnabled", m_inputEnabled);
-		if (shouldEnableInput() != enabled)
+		if (shouldEnableInput() != enabled) {
+			changed = true;
 			resetDevice();
+		}
 	}
 
 	if (config.contains("deviceName") // Make sure null-type key exists
-	&& change(m_deviceName, config.optString("deviceName")))
+	&& change(m_deviceName, config.optString("deviceName"), changed))
 		resetDevice();
 
   m_threshold    = config.getFloat("threshold", m_threshold);
   m_inputVolume  = config.getFloat("inputVolume", m_inputVolume);
   m_outputVolume = config.getFloat("outputVolume",   m_outputVolume);
 	
-	if (change(m_loopBack, config.getBool("loopBack", m_loopBack)))
+	if (change(m_loopBack, config.getBool("loopBack", m_loopBack), changed))
 		m_clientSpeaker->playing = false;
 
 	if (auto inputMode = config.optString("inputMode")) {
-		if (change(m_inputMode, VoiceInputModeNames.getLeft(*inputMode)))
+		if (change(m_inputMode, VoiceInputModeNames.getLeft(*inputMode), changed))
 			m_lastInputTime = 0;
 	}
 
 	if (auto channelMode = config.optString("channelMode")) {
-		if (change(m_channelMode, VoiceChannelModeNames.getLeft(*channelMode))) {
+		if (change(m_channelMode, VoiceChannelModeNames.getLeft(*channelMode), changed)) {
 			closeDevice();
 			resetEncoder();
 			resetDevice();
 		}
 	}
+
+	if (changed && !skipSave)
+		scheduleSave();
 }
 
 
