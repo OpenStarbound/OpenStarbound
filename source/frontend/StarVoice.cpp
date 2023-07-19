@@ -186,7 +186,7 @@ void Voice::loadJson(Json const& config, bool skipSave) {
   m_inputVolume  = config.getFloat("inputVolume", m_inputVolume);
   m_outputVolume = config.getFloat("outputVolume",   m_outputVolume);
 	
-	if (change(m_loopBack, config.getBool("loopBack", m_loopBack), changed))
+	if (change(m_loopback, config.getBool("loopback", m_loopback), changed))
 		m_clientSpeaker->playing = false;
 
 	if (auto inputMode = config.optString("inputMode")) {
@@ -218,6 +218,7 @@ Json Voice::saveJson() const {
     {"outputVolume", m_outputVolume},
     {"inputMode",    VoiceInputModeNames.getRight(m_inputMode)},
     {"channelMode",  VoiceChannelModeNames.getRight(m_channelMode)},
+		{"loopback",     m_loopback},
     {"version",      1}
   };
 }
@@ -293,7 +294,7 @@ void Voice::readAudioData(uint8_t* stream, int len) {
 		}
 	}
 
-	if (!m_loopBack) {
+	if (!m_loopback) {
 		if (active && !m_clientSpeaker->playing)
 			m_clientSpeaker->lastPlayTime = now;
 
@@ -463,7 +464,7 @@ int Voice::send(DataStreamBuffer& out, size_t budget) {
 	}
 
 	m_lastSentTime = Time::monotonicMilliseconds();
-	if (m_loopBack)
+	if (m_loopback)
 		receive(m_clientSpeaker, { out.ptr(), out.size() });
 	return 1;
 }
@@ -652,7 +653,7 @@ void Voice::thread() {
 						samples[i] *= m_inputVolume;
 				}
 
-				if (!m_loopBack)
+				if (!m_loopback)
 				  m_clientSpeaker->decibelLevel = getAudioLoudness(samples.data(), samples.size());
 
 				if (int encodedSize = opus_encode(m_encoder.get(), samples.data(), VOICE_FRAME_SIZE, (unsigned char*)encoded.ptr(), encoded.size())) {

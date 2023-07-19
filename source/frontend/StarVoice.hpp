@@ -180,7 +180,7 @@ private:
   int64_t m_nextSaveTime = 0;
   bool m_enabled = true;
   bool m_inputEnabled = false;
-  bool m_loopBack = false;
+  bool m_loopback = false;
 
   int m_deviceChannels = 1;
   bool m_deviceOpen = false;
