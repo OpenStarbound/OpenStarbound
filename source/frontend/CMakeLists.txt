@@ -58,6 +58,7 @@ SET (star_frontend_HEADERS
     StarWireInterface.hpp
     StarVoice.hpp
     StarVoiceLuaBindings.hpp
+    StarVoiceSettingsMenu.hpp
   )
 
 SET (star_frontend_SOURCES
@@ -108,6 +109,7 @@ SET (star_frontend_SOURCES
     StarWireInterface.cpp
     StarVoice.cpp
     StarVoiceLuaBindings.cpp
+    StarVoiceSettingsMenu.cpp
   )
 
 ADD_LIBRARY (star_frontend OBJECT ${star_frontend_SOURCES} ${star_frontend_HEADERS})

@@ -10,6 +10,7 @@ namespace Star {
 STAR_CLASS(SliderBarWidget);
 STAR_CLASS(ButtonWidget);
 STAR_CLASS(LabelWidget);
+STAR_CLASS(VoiceSettingsMenu);
 STAR_CLASS(KeybindingsMenu);
 STAR_CLASS(GraphicsMenu);
 STAR_CLASS(BindingsMenu);
@@ -38,6 +39,7 @@ private:
   void syncGuiToConf();
 
   void displayControls();
+  void displayVoiceSettings();
   void displayModBindings();
   void displayGraphics();
 
@@ -59,6 +61,7 @@ private:
   JsonObject m_origConfig;
   JsonObject m_localChanges;
 
+  VoiceSettingsMenuPtr m_voiceSettingsMenu;
   BindingsMenuPtr m_modBindingsMenu;
   KeybindingsMenuPtr m_keybindingsMenu;
   GraphicsMenuPtr m_graphicsMenu;

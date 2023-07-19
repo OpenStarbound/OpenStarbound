@@ -8,7 +8,7 @@ namespace Star {
 STAR_CLASS(Voice);
 
 namespace LuaBindings {
-  LuaCallbacks makeVoiceCallbacks(Voice* voice);
+  LuaCallbacks makeVoiceCallbacks();
 }
 
 }

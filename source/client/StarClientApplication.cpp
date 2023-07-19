@@ -376,6 +376,13 @@ void ClientApplication::update() {
   else if (m_state > MainAppState::Title)
     updateRunning();
 
+  // swallow leftover encoded data incase we aren't in-game yet to allow mic read to continue.
+  // TODO: directly disable encoding at menu so we don't have to do this
+  {
+    DataStreamBuffer ext;
+    m_voice->send(ext);
+  }
+
   m_guiContext->cleanup();
   m_edgeKeyEvents.clear();
   m_input->reset();
@@ -499,7 +506,7 @@ void ClientApplication::changeState(MainAppState newState) {
     m_statistics = make_shared<Statistics>(m_root->toStoragePath("player"), appController()->statisticsService());
     m_universeClient = make_shared<UniverseClient>(m_playerStorage, m_statistics);
     m_universeClient->setLuaCallbacks("input", LuaBindings::makeInputCallbacks());
-    m_universeClient->setLuaCallbacks("voice", LuaBindings::makeVoiceCallbacks(m_voice.get()));
+    m_universeClient->setLuaCallbacks("voice", LuaBindings::makeVoiceCallbacks());
 
     m_mainMixer->setUniverseClient(m_universeClient);
     m_titleScreen = make_shared<TitleScreen>(m_playerStorage, m_mainMixer->mixer());

@@ -7,7 +7,7 @@ local module = {}
 modules.voice_manager = module
 
 --constants
-local INDICATOR_PATH = "/interface/voicechat/indicator/"
+local INDICATOR_PATH = "/interface/opensb/voicechat/indicator/"
 local BACK_INDICATOR_IMAGE = INDICATOR_PATH .. "back.png"
 local FRONT_INDICATOR_IMAGE = INDICATOR_PATH .. "front.png"
 local FRONT_MUTED_INDICATOR_IMAGE = INDICATOR_PATH .. "front_muted.png"

@@ -121,6 +121,9 @@ void MainMixer::update(bool muteSfx, bool muteMusic) {
     if (m_mixer->hasEffect("echo"))
       m_mixer->removeEffect("echo", 0);
 
+    if (Voice* voice = Voice::singletonPtr())
+      voice->update();
+
     m_mixer->update();
   }
 }

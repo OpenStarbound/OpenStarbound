@@ -7,6 +7,7 @@
 #include "StarLabelWidget.hpp"
 #include "StarAssets.hpp"
 #include "StarKeybindingsMenu.hpp"
+#include "StarVoiceSettingsMenu.hpp"
 #include "StarBindingsMenu.hpp"
 #include "StarGraphicsMenu.hpp"
 
@@ -49,8 +50,14 @@ OptionsMenu::OptionsMenu(PaneManager* manager)
   reader.registerCallback("showKeybindings", [=](Widget*) {
       displayControls();
     });
+  reader.registerCallback("showVoiceSettings", [=](Widget*) {
+      displayVoiceSettings();
+    });
+  reader.registerCallback("showVoicePlayers", [=](Widget*) {
+
+    });
   reader.registerCallback("showModBindings", [=](Widget*) {
-    displayModBindings();
+      displayModBindings();
     });
   reader.registerCallback("showGraphics", [=](Widget*) {
       displayGraphics();
@@ -74,6 +81,7 @@ OptionsMenu::OptionsMenu(PaneManager* manager)
   m_sfxSlider->setRange(m_sfxRange, assets->json("/interface/optionsmenu/optionsmenu.config:sfxDelta").toInt());
   m_musicSlider->setRange(m_musicRange, assets->json("/interface/optionsmenu/optionsmenu.config:musicDelta").toInt());
 
+  m_voiceSettingsMenu = make_shared<VoiceSettingsMenu>(assets->json(config.getString("voiceSettingsPanePath", "/interface/opensb/voicechat/voicechat.config")));
   m_modBindingsMenu = make_shared<BindingsMenu>(assets->json(config.getString("bindingsPanePath", "/interface/opensb/bindings/bindings.config")));
   m_keybindingsMenu = make_shared<KeybindingsMenu>();
   m_graphicsMenu = make_shared<GraphicsMenu>();
@@ -167,6 +175,10 @@ void OptionsMenu::syncGuiToConf() {
 
 void OptionsMenu::displayControls() {
   m_paneManager->displayPane(PaneLayer::ModalWindow, m_keybindingsMenu);
+}
+
+void OptionsMenu::displayVoiceSettings() {
+  m_paneManager->displayPane(PaneLayer::ModalWindow, m_voiceSettingsMenu);
 }
 
 void OptionsMenu::displayModBindings() {

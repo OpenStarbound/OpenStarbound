@@ -312,8 +312,10 @@ void Voice::readAudioData(uint8_t* stream, int len) {
 	size_t sampleCount = len / 2;
 
 	if (active) {
-		float volume = m_inputVolume;
 		float decibels = getAudioLoudness((int16_t*)stream, sampleCount);
+
+		if (!m_loopback)
+			m_clientSpeaker->decibelLevel = getAudioLoudness((int16_t*)stream, sampleCount, m_inputVolume);
 
 		if (m_inputMode == VoiceInputMode::VoiceActivity) {
 			if (decibels > m_threshold)
@@ -321,6 +323,8 @@ void Voice::readAudioData(uint8_t* stream, int len) {
 			active = now - m_lastThresholdTime < 50;
 		}
 	}
+	else if (!m_loopback)
+		m_clientSpeaker->decibelLevel = -96.0f;
 
 	if (!m_loopback) {
 		if (active && !m_clientSpeaker->playing)
@@ -405,6 +409,7 @@ void Voice::mix(int16_t* buffer, size_t frameCount, unsigned channels) {
 			}
 			else {
 				speaker->playing = false;
+				speaker->decibelLevel = -96.0f;
 				it = m_activeSpeakers.erase(it);
 			}
 		}
@@ -423,23 +428,25 @@ void Voice::mix(int16_t* buffer, size_t frameCount, unsigned channels) {
 }
 
 void Voice::update(PositionalAttenuationFunction positionalAttenuationFunction) {
-  if (positionalAttenuationFunction) {
-    for (auto& entry : m_speakers) {
-      if (SpeakerPtr& speaker = entry.second) {
-        speaker->channelVolumes = {
-          1.0f - positionalAttenuationFunction(0, speaker->position, 1.0f),
+  for (auto& entry : m_speakers) {
+    if (SpeakerPtr& speaker = entry.second) {
+			if (positionalAttenuationFunction) {
+				speaker->channelVolumes = {
+					1.0f - positionalAttenuationFunction(0, speaker->position, 1.0f),
 					1.0f - positionalAttenuationFunction(1, speaker->position, 1.0f)
-        };
+				};
+			}
+			else
+				speaker->channelVolumes = Vec2F::filled(1.0f);
 				
-				auto& dbHistory = speaker->dbHistory;
-				memcpy(&dbHistory[1], &dbHistory[0], (dbHistory.size() - 1) * sizeof(float));
-				dbHistory[0] = speaker->decibelLevel;
-				float smoothDb = 0.0f;
-				for (float dB : dbHistory)
-					smoothDb += dB;
+			auto& dbHistory = speaker->dbHistory;
+			memcpy(&dbHistory[1], &dbHistory[0], (dbHistory.size() - 1) * sizeof(float));
+			dbHistory[0] = speaker->decibelLevel;
+			float smoothDb = 0.0f;
+			for (float dB : dbHistory)
+				smoothDb += dB;
 
-				speaker->smoothDb = smoothDb / dbHistory.size();
-      }
+			speaker->smoothDb = smoothDb / dbHistory.size();
     }
   }
 
@@ -467,6 +474,7 @@ StringList Voice::availableDevices() {
 		for (size_t i = 0; i != devices; ++i)
 			deviceList.emplace_back(SDL_GetAudioDeviceName(i, 1));
 	}
+	deviceList.sort();
 	return deviceList;
 }
 
@@ -488,7 +496,7 @@ int Voice::send(DataStreamBuffer& out, size_t budget) {
 	for (auto& chunk : encodedChunks) {
 		out.write<uint32_t>(chunk.size());
 		out.writeBytes(chunk);
-		if ((budget -= min<size_t>(budget, chunk.size())) == 0)
+		if (budget && (budget -= min<size_t>(budget, chunk.size())) == 0)
 			break;
 	}
 
@@ -499,7 +507,7 @@ int Voice::send(DataStreamBuffer& out, size_t budget) {
 }
 
 bool Voice::receive(SpeakerPtr speaker, std::string_view view) {
-	if (!speaker || view.empty())
+	if (!m_enabled || !speaker || view.empty())
 		return false;
 
 	try {
@@ -635,9 +643,8 @@ void Voice::closeDevice() {
     return;
 
   m_applicationController->closeAudioInputDevice();
-	if (!m_loopback)
-		m_clientSpeaker->playing = false;
-
+	m_clientSpeaker->playing = false;
+	m_clientSpeaker->decibelLevel = -96.0f;
   m_deviceOpen = false;
 }
 
@@ -683,9 +690,6 @@ void Voice::thread() {
 					for (size_t i = 0; i != samples.size(); ++i)
 						samples[i] *= m_inputVolume;
 				}
-
-				if (!m_loopback)
-				  m_clientSpeaker->decibelLevel = getAudioLoudness(samples.data(), samples.size());
 
 				if (int encodedSize = opus_encode(m_encoder.get(), samples.data(), VOICE_FRAME_SIZE, (unsigned char*)encoded.ptr(), encoded.size())) {
 					if (encodedSize == 1)

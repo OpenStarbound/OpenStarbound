@@ -141,7 +141,7 @@ public:
   void setDeviceName(Maybe<String> device);
   StringList availableDevices();
 
-  int send(DataStreamBuffer& out, size_t budget);
+  int send(DataStreamBuffer& out, size_t budget = 0);
   bool receive(SpeakerPtr speaker, std::string_view view);
 
   // Must be called every frame with input state, expires after 1s.

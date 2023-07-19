@@ -6,8 +6,10 @@
 namespace Star {
 
 typedef Voice::SpeakerId SpeakerId;
-LuaCallbacks LuaBindings::makeVoiceCallbacks(Voice* voice) {
+LuaCallbacks LuaBindings::makeVoiceCallbacks() {
   LuaCallbacks callbacks;
+
+  auto voice = Voice::singletonPtr();
 
   callbacks.registerCallbackWithSignature<StringList>("devices", bind(&Voice::availableDevices, voice));
   callbacks.registerCallback(  "getSettings", [voice]() -> Json      { return voice->saveJson();         });
@@ -21,7 +23,13 @@ LuaCallbacks LuaBindings::makeVoiceCallbacks(Voice* voice) {
 
   callbacks.registerCallback("speakerPosition", [voice](SpeakerId speakerId) { return voice->speaker(speakerId)->position; });
 
-  callbacks.registerCallback("speaker", [voice](SpeakerId speakerId) { return voice->speaker(speakerId)->toJson(); });
+  callbacks.registerCallback("speaker",  [voice](Maybe<SpeakerId> speakerId) {
+    if (speakerId)
+      return voice->speaker(*speakerId)->toJson();
+    else
+      return voice->localSpeaker()->toJson();
+  });
+
   callbacks.registerCallback("speakers", [voice](Maybe<bool> onlyPlaying) -> List<Json> {
     List<Json> list;
 
