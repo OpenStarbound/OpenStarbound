@@ -321,11 +321,12 @@ void Voice::readAudioData(uint8_t* stream, int len) {
 		}
 	}
 
+	m_clientSpeaker->decibelLevel = getAudioLoudness((int16_t*)stream, sampleCount, m_inputVolume);
+
 	if (!m_loopback) {
 		if (active && !m_clientSpeaker->playing)
 			m_clientSpeaker->lastPlayTime = now;
 
-		m_clientSpeaker->decibelLevel = getAudioLoudness((int16_t*)stream, sampleCount, m_inputVolume);
 		m_clientSpeaker->playing = active;
 	}
 
@@ -366,7 +367,8 @@ void Voice::mix(int16_t* buffer, size_t frameCount, unsigned channels) {
 					for (size_t i = 0; i != samples; ++i)
 						speakerBuffer[i] = audio->take();
 
-					speaker->decibelLevel = getAudioLoudness(speakerBuffer.data(), samples);
+					if (speaker != m_clientSpeaker)
+					  speaker->decibelLevel = getAudioLoudness(speakerBuffer.data(), samples);
 
 					float volume = speaker->volume;
 					Array2F levels = speaker->channelVolumes;
@@ -402,7 +404,8 @@ void Voice::mix(int16_t* buffer, size_t frameCount, unsigned channels) {
 			}
 			else {
 				speaker->playing = false;
-				speaker->decibelLevel = -96.0f;
+				if (speaker != m_clientSpeaker)
+					speaker->decibelLevel = -96.0f;
 				it = m_activeSpeakers.erase(it);
 			}
 		}
