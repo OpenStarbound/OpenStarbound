@@ -214,6 +214,7 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
     m_voice->loadJson(jVoice.toObject(), true);
 
   m_voice->init();
+  m_voice->setLocalSpeaker(0);
 }
 
 void ClientApplication::renderInit(RendererPtr renderer) {
@@ -375,13 +376,12 @@ void ClientApplication::update() {
     updateTitle();
   else if (m_state > MainAppState::Title)
     updateRunning();
-
-  // swallow leftover encoded data incase we aren't in-game yet to allow mic read to continue.
-  // TODO: directly disable encoding at menu so we don't have to do this
-  {
+  
+  // Swallow leftover encoded voice data if we aren't in-game to allow mic read to continue for settings.
+  if (m_state <= MainAppState::Title) {
     DataStreamBuffer ext;
     m_voice->send(ext);
-  }
+  } // TODO: directly disable encoding at menu so we don't have to do this
 
   m_guiContext->cleanup();
   m_edgeKeyEvents.clear();

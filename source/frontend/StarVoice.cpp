@@ -314,22 +314,18 @@ void Voice::readAudioData(uint8_t* stream, int len) {
 	if (active) {
 		float decibels = getAudioLoudness((int16_t*)stream, sampleCount);
 
-		if (!m_loopback)
-			m_clientSpeaker->decibelLevel = getAudioLoudness((int16_t*)stream, sampleCount, m_inputVolume);
-
 		if (m_inputMode == VoiceInputMode::VoiceActivity) {
 			if (decibels > m_threshold)
 				m_lastThresholdTime = now;
 			active = now - m_lastThresholdTime < 50;
 		}
 	}
-	else if (!m_loopback)
-		m_clientSpeaker->decibelLevel = -96.0f;
 
 	if (!m_loopback) {
 		if (active && !m_clientSpeaker->playing)
 			m_clientSpeaker->lastPlayTime = now;
 
+		m_clientSpeaker->decibelLevel = getAudioLoudness((int16_t*)stream, sampleCount, m_inputVolume);
 		m_clientSpeaker->playing = active;
 	}
 
