@@ -1,5 +1,6 @@
 #include "StarVoice.hpp"
 #include "StarFormat.hpp"
+#include "StarJsonExtra.hpp"
 #include "StarApplicationController.hpp"
 #include "StarTime.hpp"
 #include "StarRoot.hpp"
@@ -101,6 +102,19 @@ Voice::Speaker::Speaker(SpeakerId id)
   , decoderStereo(createDecoder(2), opus_decoder_destroy) {
   speakerId = id;
   audioStream = make_shared<VoiceAudioStream>();
+}
+
+Json Voice::Speaker::toJson() const {
+	return JsonObject{
+		{"speakerId",      speakerId},
+		{"entityId",       entityId },
+		{"name",           name     },
+		{"playing",        (bool)playing},
+		{"muted",          (bool)muted  },
+		{"decibels",       (float)decibelLevel},
+		{"smoothDecibels", (float)smoothDb    },
+		{"position",       jsonFromVec2F(position)}
+	};
 }
 
 Voice* Voice::s_singleton;
@@ -258,7 +272,11 @@ Voice::SpeakerPtr Voice::speaker(SpeakerId speakerId) {
   }
 }
 
-List<Voice::SpeakerPtr> Voice::speakers(bool onlyPlaying) {
+HashMap<Voice::SpeakerId, Voice::SpeakerPtr>& Voice::speakers() {
+	return m_speakers;
+}
+
+List<Voice::SpeakerPtr> Voice::sortedSpeakers(bool onlyPlaying) {
 	List<SpeakerPtr> result;
 
 	auto sorter = [](SpeakerPtr const& a, SpeakerPtr const& b) -> bool {
@@ -274,6 +292,16 @@ List<Voice::SpeakerPtr> Voice::speakers(bool onlyPlaying) {
 	}
 
 	return result;
+}
+
+void Voice::clearSpeakers() {
+	auto it = m_speakers.begin();
+	while (it != m_speakers.end()) {
+		if (it->second == m_clientSpeaker)
+			it = ++it;
+		else
+			it = m_speakers.erase(it);
+	}
 }
 
 void Voice::readAudioData(uint8_t* stream, int len) {
@@ -335,7 +363,7 @@ void Voice::mix(int16_t* buffer, size_t frameCount, unsigned channels) {
 			SpeakerPtr const& speaker = *it;
 			VoiceAudioStream* audio = speaker->audioStream.get();
 			MutexLocker audioLock(audio->mutex);
-			if (!audio->samples.empty()) {
+			if (speaker->playing && !audio->samples.empty()) {
 				if (!speaker->muted) {
 					mix = true;
 					for (size_t i = 0; i != samples; ++i)
@@ -343,9 +371,10 @@ void Voice::mix(int16_t* buffer, size_t frameCount, unsigned channels) {
 
 					speaker->decibelLevel = getAudioLoudness(speakerBuffer.data(), samples);
 
-					auto levels = speaker->channelVolumes.load();
+					float volume = speaker->volume;
+					Array2F levels = speaker->channelVolumes;
 					for (size_t i = 0; i != samples; ++i)
-						sharedBuffer[i] += (int32_t)(speakerBuffer[i]) * levels[i % 2];
+						sharedBuffer[i] += (int32_t)(speakerBuffer[i]) * levels[i % 2] * volume;
 					//Blends the weaker channel into the stronger one,
 					/* unused, is a bit too strong on stereo music.
 					float maxLevel = max(levels[0], levels[1]);
@@ -606,6 +635,8 @@ void Voice::closeDevice() {
     return;
 
   m_applicationController->closeAudioInputDevice();
+	if (!m_loopback)
+		m_clientSpeaker->playing = false;
 
   m_deviceOpen = false;
 }

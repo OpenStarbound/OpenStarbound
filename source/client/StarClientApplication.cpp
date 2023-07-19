@@ -464,6 +464,8 @@ void ClientApplication::changeState(MainAppState newState) {
     }
     m_cinematicOverlay->stop();
 
+    m_voice->clearSpeakers();
+
     if (auto p2pNetworkingService = appController()->p2pNetworkingService()) {
       p2pNetworkingService->setJoinUnavailable();
       p2pNetworkingService->setAcceptingP2PConnections(false);

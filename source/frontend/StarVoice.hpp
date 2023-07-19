@@ -88,11 +88,13 @@ public:
     atomic<bool> muted = false;
     atomic<bool> playing = 0;
     atomic<float> decibelLevel = -96.0f;
+    atomic<float> volume = 1.0f;
     atomic<Array<float, 2>> channelVolumes = Array<float, 2>::filled(1);
 
     unsigned int minimumPlaySamples = 4096;
 
     Speaker(SpeakerId speakerId);
+    Json toJson() const;
   };
 
   typedef std::shared_ptr<Speaker> SpeakerPtr;
@@ -123,7 +125,9 @@ public:
   SpeakerPtr setLocalSpeaker(SpeakerId speakerId);
   SpeakerPtr localSpeaker();
   SpeakerPtr speaker(SpeakerId speakerId);
-  List<Voice::SpeakerPtr> speakers(bool onlyPlaying);
+  HashMap<SpeakerId, SpeakerPtr>& speakers();
+  List<Voice::SpeakerPtr> sortedSpeakers(bool onlyPlaying);
+  void clearSpeakers();
 
   // Called when receiving input audio data from SDL, on its own thread.
   void readAudioData(uint8_t* stream, int len);
