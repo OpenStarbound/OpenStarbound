@@ -329,9 +329,6 @@ void Voice::readAudioData(uint8_t* stream, int len) {
 		m_clientSpeaker->playing = active;
 	}
 
-	if (!active)
-		return;
-
 	MutexLocker captureLock(m_captureMutex);
 	if (active) {
 		m_capturedChunksFrames += sampleCount / m_deviceChannels;
