@@ -4,6 +4,7 @@
 #include "StarTime.hpp"
 #include "StarRoot.hpp"
 #include "StarLogging.hpp"
+#include "StarInterpolation.hpp"
 #include "opus/include/opus.h"
 
 #include "SDL.h"
@@ -153,6 +154,8 @@ inline bool change(T& value, T newValue) {
 }
 
 void Voice::loadJson(Json const& config) {
+  // Not all keys are required
+
 	{
 		bool enabled = shouldEnableInput();
 		m_enabled      = config.getBool("enabled", m_enabled);
@@ -161,18 +164,26 @@ void Voice::loadJson(Json const& config) {
 			resetDevice();
 	}
 
-	if (change(m_deviceName, config.optQueryString("inputDevice")))
+	if (config.contains("deviceName") // Make sure null-type key exists
+	&& change(m_deviceName, config.optString("deviceName")))
 		resetDevice();
 
   m_threshold    = config.getFloat("threshold", m_threshold);
   m_inputVolume  = config.getFloat("inputVolume", m_inputVolume);
   m_outputVolume = config.getFloat("outputVolume",   m_outputVolume);
 
-  if (change(m_inputMode, VoiceInputModeNames.getLeft(config.getString("inputMode", "PushToTalk"))))
-		m_lastInputTime = 0;
+	if (auto inputMode = config.optString("inputMode")) {
+		if (change(m_inputMode, VoiceInputModeNames.getLeft(*inputMode)))
+			m_lastInputTime = 0;
+	}
 
-	if (change(m_channelMode, VoiceChannelModeNames.getLeft(config.getString("channelMode", "Mono"))))
-		resetEncoder();
+	if (auto channelMode = config.optString("channelMode")) {
+		if (change(m_channelMode, VoiceChannelModeNames.getLeft(*channelMode))) {
+			closeDevice();
+			resetEncoder();
+			resetDevice();
+		}
+	}
 }
 
 
@@ -366,6 +377,15 @@ void Voice::update(PositionalAttenuationFunction positionalAttenuationFunction) 
           1.0f - positionalAttenuationFunction(0, speaker->position, 1.0f),
 					1.0f - positionalAttenuationFunction(1, speaker->position, 1.0f)
         };
+				
+				auto& dbHistory = speaker->dbHistory;
+				memcpy(&dbHistory[1], &dbHistory[0], (dbHistory.size() - 1) * sizeof(float));
+				dbHistory[0] = speaker->decibelLevel;
+				float smoothDb = 0.0f;
+				for (float dB : dbHistory)
+					smoothDb += dB;
+
+				speaker->smoothDb = smoothDb / dbHistory.size();
       }
     }
   }
@@ -384,6 +404,17 @@ void Voice::setDeviceName(Maybe<String> deviceName) {
   m_deviceName = deviceName;
   if (m_deviceOpen)
     openDevice();
+}
+
+StringList Voice::availableDevices() {
+	int devices = SDL_GetNumAudioDevices(1);
+	StringList deviceList;
+	if (devices > 0) {
+		deviceList.reserve(devices);
+		for (size_t i = 0; i != devices; ++i)
+			deviceList.emplace_back(SDL_GetAudioDeviceName(i, 1));
+	}
+	return deviceList;
 }
 
 int Voice::send(DataStreamBuffer& out, size_t budget) {
@@ -520,6 +551,7 @@ OpusEncoder* Voice::createEncoder(int channels) {
 
 void Voice::resetEncoder() {
   int channels = encoderChannels();
+	MutexLocker locker(m_threadMutex);
   m_encoder.reset(createEncoder(channels));
   opus_encoder_ctl(m_encoder.get(), OPUS_SET_BITRATE(channels == 2 ? 50000 : 24000));
 }

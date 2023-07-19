@@ -82,11 +82,13 @@ public:
 
     int64_t lastReceiveTime = 0;
     int64_t lastPlayTime = 0;
+    float smoothDb = -96.0f;
+    Array<float, 10> dbHistory = Array<float, 10>::filled(0);
 
     atomic<bool> muted = false;
     atomic<bool> playing = 0;
-    atomic<float> decibelLevel = 0.0f;
-    atomic<Array<float, 2>> channelVolumes = Array<float, 2>::filled(1.0f);
+    atomic<float> decibelLevel = -96.0f;
+    atomic<Array<float, 2>> channelVolumes = Array<float, 2>::filled(1);
 
     unsigned int minimumPlaySamples = 4096;
 
@@ -133,6 +135,7 @@ public:
   void update(PositionalAttenuationFunction positionalAttenuationFunction = {});
 
   void setDeviceName(Maybe<String> device);
+  StringList availableDevices();
 
   int send(DataStreamBuffer& out, size_t budget);
   bool receive(SpeakerPtr speaker, std::string_view view);

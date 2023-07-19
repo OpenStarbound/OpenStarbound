@@ -1,7 +1,7 @@
 -- Manages the voice HUD indicators and click-to-mute/unmute.
 
 local fmt = string.format
-local sqrt = math.sqrt
+local sqrt, min, max = math.sqrt, math.min, math.max
 
 local module = {}
 modules.voice_manager = module
@@ -19,6 +19,10 @@ local LINE_COLOR = {50, 210, 255, 255}
 local FONT_DIRECTIVES = "?border=1;333;3337?border=1;333;3330"
 local NAME_PREFIX = "^noshadow,white,set;"
 
+local function dbToLoudness(db) return 2 ^ (db / 6) end
+
+local canvas
+
 local linePaddingDrawable
 do
   local drawable = { image = BACK_INDICATOR_IMAGE, position = {0, 0}, color = LINE_COLOR, centered = false }
@@ -29,6 +33,7 @@ do
 	end
 end
 
+local lineDrawable = { line = {{LINE_PADDING, 24}, {10, 24}}, width = 48, color = LINE_COLOR }
 local function line(pos, value)
 	local width = math.floor((LINE_WIDTH * value) + 0.5)
 	LINE_COLOR[4] = 255 * math.min(1, sqrt(width / 350))
@@ -43,8 +48,6 @@ local function line(pos, value)
 		end
 	end
 end
-
-local canvas
 
 local drawable = { image = BACK_INDICATOR_IMAGE, centered = false }
 local textPositioning = { position = {0, 0}, horizontalAnchor = "left", verticalAnchor = "mid" }
@@ -61,7 +64,7 @@ end
 local function drawSpeakerBar(mouse, pos, speaker, i)
 	drawable.image = BACK_INDICATOR_IMAGE
 	canvas:drawDrawable(drawable, pos)
-	line(pos, 1 - sqrt(math.min(1, math.max(0, speaker.loudness / -50))))
+	line(pos, dbToLoudness(speaker.smoothDecibels))
 	local hovering = not speaker.isLocal and mouseOverSpeaker(mouse, pos)
 
 	textPositioning.position = {pos[1] + 49, pos[2] + 24}
@@ -94,11 +97,13 @@ end
 local function simulateSpeakers()
 	local speakers = {}
 	for i = 2, 5 + math.floor((math.sin(os.clock()) * 4) + .5) do
+		local dB = -48 + 48 * math.sin(os.clock() + (i * 0.5))
 		speakers[i] = {
 			speakerId = i,
 			entityId = -65536 * i,
 			name = "Player " .. i,
-			loudness = -48 + 48 * math.sin(os.clock() + (i * 0.5)),
+			decibels = dB,
+			smoothDecibels = dB,
 			muted = false
 		}
 	end
@@ -147,8 +152,6 @@ local function drawIndicators()
 
 	for i, v in pairs(speakers) do
 		if v then
-			local entityId = v.entityId
-			local loudness = v.loudness
 			local pos = {basePos[1], basePos[2] + (i - 1) * 52}
 			drawSpeakerBar(mousePosition, pos, v, i)
 		end
