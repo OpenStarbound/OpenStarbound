@@ -18,7 +18,7 @@ public:
 
 protected:
   virtual void renderImpl() override;
-  virtual void update() override;
+  virtual void update(float dt) override;
 
 private:
   struct StatusEffectIndicator {

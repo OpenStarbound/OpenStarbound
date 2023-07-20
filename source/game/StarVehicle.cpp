@@ -258,19 +258,19 @@ void Vehicle::disableInterpolation() {
   m_netGroup.disableNetInterpolation();
 }
 
-void Vehicle::update(uint64_t) {
+void Vehicle::update(float dt, uint64_t) {
   setTeam(m_damageTeam.get());
 
   if (world()->isClient()) {
-    m_networkedAnimator.update(WorldTimestep, &m_networkedAnimatorDynamicTarget);
+    m_networkedAnimator.update(dt, &m_networkedAnimatorDynamicTarget);
     m_networkedAnimatorDynamicTarget.updatePosition(position());
   } else {
-    m_networkedAnimator.update(WorldTimestep, nullptr);
+    m_networkedAnimator.update(dt, nullptr);
   }
 
   if (isMaster()) {
-    m_movementController.tickMaster();
-    m_scriptComponent.update(m_scriptComponent.updateDt());
+    m_movementController.tickMaster(dt);
+    m_scriptComponent.update(m_scriptComponent.updateDt(dt));
 
     eraseWhere(m_aliveMasterConnections, [](auto& p) {
         return p.second.tick(WorldTimestep);
@@ -287,7 +287,7 @@ void Vehicle::update(uint64_t) {
   } else {
     m_netGroup.tickNetInterpolation(WorldTimestep);
 
-    m_movementController.tickSlave();
+    m_movementController.tickSlave(dt);
 
     bool heartbeat = m_slaveHeartbeatTimer.wrapTick();
 

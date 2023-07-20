@@ -36,7 +36,7 @@ public:
   
   // handles flying and warp state transitions
   void stateUpdate();
-  void update();
+  void update(double dt);
 
   void setType(SkyType type);
   SkyType type() const;

@@ -114,15 +114,17 @@ bool TitleScreen::handleInputEvent(InputEvent const& event) {
   return m_paneManager.sendInputEvent(event);
 }
 
-void TitleScreen::update() {
+void TitleScreen::update(float dt) {
+  m_cursor.update(dt);
+
   for (auto p : m_rightAnchoredButtons)
     p.first->setPosition(Vec2I(m_guiContext->windowWidth() / m_guiContext->interfaceScale(), 0) + p.second);
   m_mainMenu->determineSizeFromChildren();
 
-  m_skyBackdrop->update();
-  m_environmentPainter->update();
+  m_skyBackdrop->update(dt);
+  m_environmentPainter->update(dt);
 
-  m_paneManager.update();
+  m_paneManager.update(dt);
 
   if (!finishedState()) {
     if (auto audioSample = m_musicTrackManager.updateAmbient(m_musicTrack, m_skyBackdrop->isDayTime())) {
@@ -423,7 +425,6 @@ void TitleScreen::back() {
 void TitleScreen::renderCursor() {
   auto assets = Root::singleton().assets();
 
-  m_cursor.update(WorldTimestep);
   Vec2I cursorPos = m_cursorScreenPos;
   Vec2I cursorSize = m_cursor.size();
   Vec2I cursorOffset = m_cursor.offset();

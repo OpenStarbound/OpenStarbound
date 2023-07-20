@@ -16,7 +16,7 @@ public:
   void init(World* world, EntityId entityId, EntityMode mode) override;
   void uninit() override;
 
-  void update(uint64_t currentStep) override;
+  void update(float dt, uint64_t currentStep) override;
 
   RectF metaBoundBox() const override;
 

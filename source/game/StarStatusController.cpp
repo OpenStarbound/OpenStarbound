@@ -452,8 +452,8 @@ void StatusController::blankNetDelta(float interpolationTime) {
   m_netGroup.blankNetDelta(interpolationTime);
 }
 
-void StatusController::tickMaster() {
-  m_statCollection.tickMaster();
+void StatusController::tickMaster(float dt) {
+  m_statCollection.tickMaster(dt);
 
   m_recentHitsGiven.tick(1);
   m_recentDamageGiven.tick(1);
@@ -492,12 +492,12 @@ void StatusController::tickMaster() {
       addEphemeralEffects(m_parentEntity->world()->weatherStatusEffects(m_parentEntity->position()).transformed(jsonToEphemeralStatusEffect));
   }
 
-  m_primaryScript.update(m_primaryScript.updateDt());
+  m_primaryScript.update(m_primaryScript.updateDt(dt));
   for (auto& p : m_uniqueEffects) {
-    p.second.script.update(p.second.script.updateDt());
+    p.second.script.update(p.second.script.updateDt(dt));
     auto metadata = m_uniqueEffectMetadata.getNetElement(p.second.metadataId);
     if (metadata->duration)
-      *metadata->duration -= WorldTimestep;
+      *metadata->duration -= dt;
   }
 
   for (auto const& key : m_uniqueEffects.keys()) {
@@ -516,12 +516,12 @@ void StatusController::tickMaster() {
 
   m_parentDirectives.set(move(parentDirectives));
 
-  updateAnimators();
+  updateAnimators(dt);
 }
 
-void StatusController::tickSlave() {
-  m_statCollection.tickSlave();
-  updateAnimators();
+void StatusController::tickSlave(float dt) {
+  m_statCollection.tickSlave(dt);
+  updateAnimators(dt);
 }
 
 const DirectivesGroup& StatusController::parentDirectives() const {
@@ -637,12 +637,12 @@ void StatusController::UniqueEffectMetadata::netElementsNeedStore() {
   durationNetState.set(duration ? *duration : -1.0f);
 }
 
-void StatusController::updateAnimators() {
+void StatusController::updateAnimators(float dt) {
   for (auto const& animator : m_effectAnimators.netElements()) {
     if (m_parentEntity->world()->isServer()) {
-      animator->animator.update(WorldTimestep, nullptr);
+      animator->animator.update(dt, nullptr);
     } else {
-      animator->animator.update(WorldTimestep, &animator->dynamicTarget);
+      animator->animator.update(dt, &animator->dynamicTarget);
       animator->dynamicTarget.updatePosition(m_movementController->position());
     }
   }

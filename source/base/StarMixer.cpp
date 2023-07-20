@@ -172,6 +172,8 @@ Mixer::Mixer(unsigned sampleRate, unsigned channels) {
   m_groupVolumes[MixerGroup::Effects] = {1.0f, 1.0f, 0};
   m_groupVolumes[MixerGroup::Music] = {1.0f, 1.0f, 0};
   m_groupVolumes[MixerGroup::Cinematic] = {1.0f, 1.0f, 0};
+
+  m_speed = 1.0f;
 }
 
 unsigned Mixer::sampleRate() const {
@@ -201,6 +203,10 @@ StringList Mixer::currentEffects() {
 bool Mixer::hasEffect(String const& effectName) {
   MutexLocker locker(m_effectsMutex);
   return m_effects.contains(effectName);
+}
+
+void Mixer::setSpeed(float speed) {
+  m_speed = speed;
 }
 
 void Mixer::setVolume(float volume, float rampTime) {
@@ -259,6 +265,8 @@ void Mixer::read(int16_t* outBuffer, size_t frameCount, ExtraMixFunction extraMi
   for (size_t i = 0; i < bufferSize; ++i)
     outBuffer[i] = 0;
 
+  float speed = m_speed;
+
   {
     MutexLocker locker(m_queueMutex);
     // Mix all active sounds
@@ -287,6 +295,9 @@ void Mixer::read(int16_t* outBuffer, size_t frameCount, ExtraMixFunction extraMi
       float pitchMultiplier = (audioInstance->m_pitchMultiplierVelocity > 0)
           ? approach(audioInstance->m_pitchMultiplierTarget, audioInstance->m_pitchMultiplier, audioInstance->m_pitchMultiplierVelocity * time)
           : audioInstance->m_pitchMultiplier;
+
+      if (audioInstance->m_mixerGroup == MixerGroup::Effects)
+        pitchMultiplier *= speed;
 
       if (audioStopVolEnd == 0.0f && audioInstance->m_stopping)
         finished = true;
@@ -461,7 +472,7 @@ void Mixer::setGroupVolume(MixerGroup group, float targetValue, float rampTime) 
   }
 }
 
-void Mixer::update(PositionalAttenuationFunction positionalAttenuationFunction) {
+void Mixer::update(float dt, PositionalAttenuationFunction positionalAttenuationFunction) {
   {
     MutexLocker locker(m_queueMutex);
     eraseWhere(m_audios, [&](auto& p) {

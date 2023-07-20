@@ -523,7 +523,7 @@ void WorldServer::setFidelity(WorldServerFidelity fidelity) {
   m_fidelityConfig = m_serverConfig.get("fidelitySettings").get(WorldServerFidelityNames.getRight(m_fidelity));
 }
 
-void WorldServer::update() {
+void WorldServer::update(float dt) {
   ++m_currentStep;
   for (auto const& pair : m_clientInfo)
     pair.second->interpolationTracker.update(m_currentStep);
@@ -539,7 +539,7 @@ void WorldServer::update() {
   for (auto const& action : triggeredActions)
     action(this);
 
-  m_spawner.update();
+  m_spawner.update(dt);
 
   bool doBreakChecks = m_tileEntityBreakCheckTimer.wrapTick(m_currentStep) && m_needsGlobalBreakCheck;
   if (doBreakChecks)
@@ -547,7 +547,7 @@ void WorldServer::update() {
 
   List<EntityId> toRemove;
   m_entityMap->updateAllEntities([&](EntityPtr const& entity) {
-      entity->update(m_currentStep);
+      entity->update(dt, m_currentStep);
 
       if (auto tileEntity = as<TileEntity>(entity)) {
         // Only do break checks on objects if all sectors the object touches
@@ -564,11 +564,11 @@ void WorldServer::update() {
       return a->entityType() < b->entityType();
     });
 
-  updateDamage();
+  updateDamage(dt);
   if (shouldRunThisStep("wiringUpdate"))
     m_wireProcessor->process();
 
-  m_sky->update();
+  m_sky->update(dt);
 
   List<RectI> clientWindows;
   List<RectI> clientMonitoringRegions;
@@ -579,7 +579,7 @@ void WorldServer::update() {
   }
 
   m_weather.setClientVisibleRegions(clientWindows);
-  m_weather.update();
+  m_weather.update(dt);
   for (auto projectile : m_weather.pullNewProjectiles())
     addEntity(move(projectile));
 
@@ -1782,8 +1782,8 @@ void WorldServer::queueUpdatePackets(ConnectionId clientId) {
     clientInfo->outgoingPackets.append(move(p.second));
 }
 
-void WorldServer::updateDamage() {
-  m_damageManager->update();
+void WorldServer::updateDamage(float dt) {
+  m_damageManager->update(dt);
 
   // Do nothing with damage notifications at the moment.
   m_damageManager->pullPendingNotifications();

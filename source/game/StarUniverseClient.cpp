@@ -170,7 +170,7 @@ SystemWorldClientPtr UniverseClient::systemWorldClient() const {
   return m_systemWorldClient;
 }
 
-void UniverseClient::update() {
+void UniverseClient::update(float dt) {
   auto assets = Root::singleton().assets();
 
   if (!isConnected())
@@ -182,7 +182,7 @@ void UniverseClient::update() {
   }
 
   if (m_pendingWarp) {
-    if ((m_warping && !m_mainPlayer->isTeleportingOut()) || (!m_warping && m_warpDelay.tick())) {
+    if ((m_warping && !m_mainPlayer->isTeleportingOut()) || (!m_warping && m_warpDelay.tick(dt))) {
       m_connection->pushSingle(make_shared<PlayerWarpPacket>(take(m_pendingWarp), m_mainPlayer->isDeploying()));
       m_warpDelay.reset();
       if (m_warping) {
@@ -222,14 +222,14 @@ void UniverseClient::update() {
   m_statistics->update();
 
   if (!m_pause) {
-    m_worldClient->update();
+    m_worldClient->update(dt);
     for (auto& p : m_scriptContexts)
       p.second->update();
   }
   m_connection->push(m_worldClient->getOutgoingPackets());
 
   if (!m_pause)
-    m_systemWorldClient->update();
+    m_systemWorldClient->update(dt);
   m_connection->push(m_systemWorldClient->pullOutgoingPackets());
 
   m_teamClient->update();
@@ -260,7 +260,7 @@ void UniverseClient::update() {
         m_respawning = false;
       }
     } else {
-      if (m_respawnTimer.tick()) {
+      if (m_respawnTimer.tick(dt)) {
         String cinematic = assets->json("/client.config:respawnCinematic").toString();
         cinematic = cinematic.replaceTags(StringMap<String>{
             {"species", m_mainPlayer->species()},

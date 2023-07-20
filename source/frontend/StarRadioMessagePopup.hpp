@@ -16,7 +16,7 @@ class RadioMessagePopup : public Pane {
 public:
   RadioMessagePopup();
 
-  void update() override;
+  void update(float dt) override;
   void dismissed() override;
 
   bool messageActive();

@@ -29,16 +29,13 @@ EnvironmentPainter::EnvironmentPainter(RendererPtr renderer) {
   m_renderer = move(renderer);
   m_textureGroup = make_shared<AssetTextureGroup>(m_renderer->createTextureGroup(TextureGroupSize::Large));
   m_timer = 0;
-  m_lastTime = 0;
   m_rayPerlin = PerlinF(1, RayPerlinFrequency, RayPerlinAmplitude, 0, 2.0f, 2.0f, Random::randu64());
 }
 
-void EnvironmentPainter::update() {
+void EnvironmentPainter::update(float dt) {
   // Allows the rays to change alpha with time.
-  int64_t currentTime = Time::monotonicMilliseconds();
-  m_timer += (currentTime - m_lastTime) / 1000.0;
+  m_timer += dt;
   m_timer = std::fmod(m_timer, Constants::pi * 100000.0);
-  m_lastTime = currentTime;
 }
 
 void EnvironmentPainter::renderStars(float pixelRatio, Vec2F const& screenSize, SkyRenderData const& sky) {

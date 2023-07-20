@@ -80,8 +80,8 @@ void TeamBar::acceptInvitation(Uuid const& inviterUuid) {
   m_client->teamClient()->acceptInvitation(inviterUuid);
 }
 
-void TeamBar::update() {
-  Pane::update();
+void TeamBar::update(float dt) {
+  Pane::update(dt);
 
   updatePlayerResources();
 
@@ -338,7 +338,7 @@ void TeamMemberMenu::open(Uuid memberUuid, Vec2I position) {
   Pane::show();
 }
 
-void TeamMemberMenu::update() {
+void TeamMemberMenu::update(float dt) {
   auto stillValid = false;
   auto members = m_owner->m_client->teamClient()->members();
   for (auto member : members) {
@@ -355,7 +355,7 @@ void TeamMemberMenu::update() {
 
   updateWidgets();
 
-  Pane::update();
+  Pane::update(dt);
 }
 
 void TeamMemberMenu::updateWidgets() {

@@ -173,7 +173,7 @@ bool ActionBar::sendEvent(InputEvent const& event) {
   return false;
 }
 
-void ActionBar::update() {
+void ActionBar::update(float dt) {
   auto inventory = m_player->inventory();
   auto abl = inventory->selectedActionBarLocation();
   if (abl.is<CustomBarIndex>()) {

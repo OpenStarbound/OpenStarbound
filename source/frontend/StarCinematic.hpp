@@ -22,7 +22,7 @@ public:
 
   void setPlayer(PlayerPtr player);
 
-  void update();
+  void update(float dt);
   void render();
 
   bool completed() const;

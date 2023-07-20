@@ -52,7 +52,7 @@ public:
 
   void open(Uuid memberUuid, Vec2I position);
 
-  virtual void update() override;
+  virtual void update(float dt) override;
 
 private:
   void updateWidgets();
@@ -77,7 +77,7 @@ public:
   void acceptInvitation(Uuid const& inviterUuid);
 
 protected:
-  virtual void update() override;
+  virtual void update(float dt) override;
 
 private:
   void updatePlayerResources();

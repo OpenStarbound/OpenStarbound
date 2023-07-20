@@ -15,7 +15,7 @@ class NameplatePainter {
 public:
   NameplatePainter();
 
-  void update(WorldClientPtr const& world, WorldCamera const& camera, bool inspectionMode);
+  void update(float dt, WorldClientPtr const& world, WorldCamera const& camera, bool inspectionMode);
   void render();
 
 private:

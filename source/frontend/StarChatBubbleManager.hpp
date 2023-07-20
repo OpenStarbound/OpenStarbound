@@ -22,7 +22,7 @@ public:
 
   void addChatActions(List<ChatAction> chatActions, bool silent = false);
 
-  void update(WorldClientPtr world);
+  void update(float dt, WorldClientPtr world);
   void render();
 
 private:

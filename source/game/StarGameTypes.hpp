@@ -93,6 +93,7 @@ extern EnumMap<Rarity> const RarityNames;
 // distance (one tile).
 unsigned const TilePixels = 8;
 
+extern float GlobalTimescale;
 extern float WorldTimestep;
 extern float ServerWorldTimestep;
 float const SystemWorldTimestep = 1.0f / 20.0f;

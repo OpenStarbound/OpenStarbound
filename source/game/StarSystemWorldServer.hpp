@@ -37,7 +37,7 @@ public:
   void removeObject(Uuid objectUuid);
   bool addObject(SystemObjectPtr object, bool doRangeCheck = false);
 
-  void update();
+  void update(float dt);
 
   List<SystemObjectPtr> objects() const override;
   SystemObjectPtr getObject(Uuid const& uuid) const override;

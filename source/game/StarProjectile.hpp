@@ -56,7 +56,7 @@ public:
   List<DamageSource> damageSources() const override;
   void hitOther(EntityId targetEntityId, DamageRequest const& dr) override;
 
-  void update(uint64_t currentStep) override;
+  void update(float dt, uint64_t currentStep) override;
   void render(RenderCallback* renderCallback) override;
   void renderLightSources(RenderCallback* renderCallback) override;
 
@@ -117,7 +117,7 @@ private:
   String drawableFrame();
 
   void processAction(Json const& action);
-  void tickShared();
+  void tickShared(float dt);
 
   void setup();
 

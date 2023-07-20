@@ -120,7 +120,7 @@ TeleportDialog::TeleportDialog(UniverseClientPtr client,
   fetchChild<ButtonWidget>("btnTeleport")->setEnabled(destList->selectedItem() != NPos);
 }
 
-void TeleportDialog::tick() {
+void TeleportDialog::tick(float dt) {
   if (!m_client->worldClient()->playerCanReachEntity(m_sourceEntityId))
     dismiss();
 }

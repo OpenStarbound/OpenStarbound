@@ -47,7 +47,7 @@ public:
   void render();
 
   bool handleInputEvent(InputEvent const& event);
-  void update();
+  void update(float dt);
 
   bool textInputActive() const;
 

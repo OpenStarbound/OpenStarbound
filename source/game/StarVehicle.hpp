@@ -51,7 +51,7 @@ public:
   void enableInterpolation(float extrapolationHint) override;
   void disableInterpolation() override;
 
-  void update(uint64_t currentStep) override;
+  void update(float dt, uint64_t currentStep) override;
 
   void render(RenderCallback* renderer) override;
 

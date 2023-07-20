@@ -165,15 +165,15 @@ bool FireableItem::windup() const {
   return fireTimer() > cooldownTime();
 }
 
-void FireableItem::update(FireMode fireMode, bool shifting, HashSet<MoveControlType> const&) {
+void FireableItem::update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const&) {
   if (m_scriptComponent)
-    m_scriptComponent->invoke("update", WorldTimestep, FireModeNames.getRight(fireMode), shifting);
+    m_scriptComponent->invoke("update", dt, FireModeNames.getRight(fireMode), shifting);
 
   if (m_attemptedFire) {
     if (m_startTimingFire) {
-      m_timeFiring += WorldTimestep;
+      m_timeFiring += dt;
       if (m_scriptComponent)
-        m_scriptComponent->invoke("continueFire", WorldTimestep);
+        m_scriptComponent->invoke("continueFire", dt);
     }
   } else {
     m_timeFiring = 0.0f;
@@ -183,7 +183,7 @@ void FireableItem::update(FireMode fireMode, bool shifting, HashSet<MoveControlT
 
   if (entityMode() == EntityMode::Master) {
     if (fireTimer() > 0.0f) {
-      setFireTimer(fireTimer() - WorldTimestep);
+      setFireTimer(fireTimer() - dt);
       if (fireTimer() < 0.0f) {
         setFireTimer(0.0f);
         m_inUse = false;

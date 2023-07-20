@@ -226,7 +226,7 @@ size_t CraftingPane::itemCount(List<ItemPtr> const& store, ItemDescriptor const&
   return itemDb->getCountOfItem(store, item);
 }
 
-void CraftingPane::update() {
+void CraftingPane::update(float dt) {
   // shut down if we can't reach the table anymore.
   if (m_sourceEntityId != NullEntityId) {
     auto sourceEntity = as<TileEntity>(m_worldClient->entity(m_sourceEntityId));
@@ -296,7 +296,7 @@ void CraftingPane::update() {
 
   setLabel("lblPlayerMoney", toString((int)m_player->currency("money")));
 
-  Pane::update();
+  Pane::update(dt);
 }
 
 void CraftingPane::updateCraftButtons() {

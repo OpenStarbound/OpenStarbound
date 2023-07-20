@@ -420,7 +420,7 @@ void Voice::mix(int16_t* buffer, size_t frameCount, unsigned channels) {
 	}
 }
 
-void Voice::update(PositionalAttenuationFunction positionalAttenuationFunction) {
+void Voice::update(float dt, PositionalAttenuationFunction positionalAttenuationFunction) {
   for (auto& entry : m_speakers) {
     if (SpeakerPtr& speaker = entry.second) {
 			if (positionalAttenuationFunction) {

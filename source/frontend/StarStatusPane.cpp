@@ -58,8 +58,8 @@ void StatusPane::renderImpl() {
   }
 }
 
-void StatusPane::update() {
-  Pane::update();
+void StatusPane::update(float dt) {
+  Pane::update(dt);
 
   auto assets = Root::singleton().assets();
   auto interfaceScale = m_guiContext->interfaceScale();

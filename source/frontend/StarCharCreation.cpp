@@ -183,13 +183,13 @@ void CharCreationPane::randomize() {
   changed();
 }
 
-void CharCreationPane::tick() {
-  Pane::tick();
+void CharCreationPane::tick(float dt) {
+  Pane::tick(dt);
   if (!active())
     return;
   if (!m_previewPlayer)
     return;
-  m_previewPlayer->animatePortrait();
+  m_previewPlayer->animatePortrait(dt);
 }
 
 bool CharCreationPane::sendEvent(InputEvent const& event) {

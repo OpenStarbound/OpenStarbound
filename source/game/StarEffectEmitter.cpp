@@ -30,7 +30,7 @@ void EffectEmitter::setBaseVelocity(Vec2F const& velocity) {
   m_baseVelocity = velocity;
 }
 
-void EffectEmitter::tick(EntityMode mode) {
+void EffectEmitter::tick(float dt, EntityMode mode) {
   if (mode == EntityMode::Master) {
     m_activeSources.set(move(m_newSources));
     m_newSources.clear();
@@ -42,7 +42,7 @@ void EffectEmitter::tick(EntityMode mode) {
     eraseWhere(m_sources, [](EffectSourcePtr const& source) { return source->expired(); });
 
     for (auto& ps : m_sources)
-      ps->tick();
+      ps->tick(dt);
 
     Set<pair<String, String>> current;
     for (auto& ps : m_sources) {

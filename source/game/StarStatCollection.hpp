@@ -49,8 +49,8 @@ public:
   void removeStatModifierGroup(StatModifierGroupId modifierGroupId);
   void clearStatModifiers();
 
-  void tickMaster();
-  void tickSlave();
+  void tickMaster(float dt);
+  void tickSlave(float dt);
 
 private:
   void netElementsNeedLoad(bool full) override;

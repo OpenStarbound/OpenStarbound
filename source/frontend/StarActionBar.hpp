@@ -22,7 +22,7 @@ public:
   PanePtr createTooltip(Vec2I const& screenPosition) override;
   bool sendEvent(InputEvent const& event) override;
 
-  void update() override;
+  void update(float dt) override;
 
   Maybe<String> cursorOverride(Vec2I const& screenPosition) override;
 

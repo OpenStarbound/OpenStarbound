@@ -96,7 +96,7 @@ public:
   // Root blocks for this plant.
   List<Vec2I> roots() const override;
 
-  void update(uint64_t currentStep) override;
+  void update(float dt, uint64_t currentStep) override;
 
   void render(RenderCallback* renderCallback) override;
 

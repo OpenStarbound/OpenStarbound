@@ -191,7 +191,7 @@ void WorldServerThread::run() {
     double storageInterval = root.assets()->json("/universe_server.config:worldStorageInterval").toDouble() / 1000.0;
     Timer storageTimer = Timer::withTime(storageInterval);
 
-    TickRateApproacher tickApproacher(1.0 / WorldTimestep, updateMeasureWindow);
+    TickRateApproacher tickApproacher(1.0 / ServerWorldTimestep, updateMeasureWindow);
     double fidelityScore = 0.0;
     WorldServerFidelity automaticFidelity = WorldServerFidelity::Medium;
 
@@ -251,9 +251,10 @@ void WorldServerThread::update(WorldServerFidelity fidelity) {
     }
   }
 
+  float dt = ServerWorldTimestep * GlobalTimescale;
   m_worldServer->setFidelity(fidelity);
   if (!m_pause || *m_pause == false)
-    m_worldServer->update();
+    m_worldServer->update(dt);
 
   for (auto& clientId : unerroredClientIds) {
     auto outgoingPackets = m_worldServer->getOutgoingPackets(clientId);

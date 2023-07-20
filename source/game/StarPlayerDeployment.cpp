@@ -80,8 +80,8 @@ Maybe<Json> PlayerDeployment::receiveMessage(String const& message, bool localMe
   return m_scriptComponent.handleMessage(message, localMessage, args);
 }
 
-void PlayerDeployment::update() {
-  m_scriptComponent.update(m_scriptComponent.updateDt());
+void PlayerDeployment::update(float dt) {
+  m_scriptComponent.update(m_scriptComponent.updateDt(dt));
 }
 
 void PlayerDeployment::render(RenderCallback* renderCallback, Vec2F const& position) {

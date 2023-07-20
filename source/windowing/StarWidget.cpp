@@ -20,9 +20,9 @@ Widget::~Widget() {
   removeAllChildren();
 }
 
-void Widget::update() {
-  for (auto widget : m_members)
-    widget->update();
+void Widget::update(float dt) {
+  for (auto& widget : m_members)
+    widget->update(dt);
 }
 
 GuiContext* Widget::context() const {

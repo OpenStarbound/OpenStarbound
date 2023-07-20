@@ -17,7 +17,7 @@ class EnvironmentPainter {
 public:
   EnvironmentPainter(RendererPtr renderer);
 
-  void update();
+  void update(float dt);
 
   void renderStars(float pixelRatio, Vec2F const& screenSize, SkyRenderData const& sky);
   void renderDebrisFields(float pixelRatio, Vec2F const& screenSize, SkyRenderData const& sky);
@@ -67,7 +67,6 @@ private:
   AssetTextureGroupPtr m_textureGroup;
 
   double m_timer;
-  int64_t m_lastTime;
   PerlinF m_rayPerlin;
 
   uint64_t m_starsHash;

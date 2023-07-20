@@ -138,7 +138,7 @@ public:
   void centerClientWindowOnPlayer();
   RectI clientWindow() const;
 
-  void update();
+  void update(float dt);
   // borderTiles here should extend the client window for border tile
   // calculations.  It is not necessary on the light array.
   void render(WorldRenderData& renderData, unsigned borderTiles);

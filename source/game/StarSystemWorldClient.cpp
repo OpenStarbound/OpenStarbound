@@ -41,11 +41,11 @@ bool SystemWorldClient::flying() const {
   return true;
 }
 
-void SystemWorldClient::update() {
+void SystemWorldClient::update(float dt) {
   if (!m_ship)
     return;
 
-  m_ship->clientUpdate(WorldTimestep);
+  m_ship->clientUpdate(dt);
 
   auto location = m_ship->systemLocation();
   if (auto uuid = location.maybe<Uuid>()) {
@@ -66,9 +66,9 @@ void SystemWorldClient::update() {
   }
 
   for (auto p : m_clientShips)
-    p.second->clientUpdate(WorldTimestep);
+    p.second->clientUpdate(dt);
   for (auto p : m_objects)
-    p.second->clientUpdate(WorldTimestep);
+    p.second->clientUpdate(dt);
 
   if (currentSystem().isNull()) {
     m_objects.clear();

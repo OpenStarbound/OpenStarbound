@@ -22,7 +22,7 @@ public:
   void displayed() override;
   void dismissed() override;
 
-  void tick() override;
+  void tick(float dt) override;
 
   bool sendEvent(InputEvent const& event) override;
 

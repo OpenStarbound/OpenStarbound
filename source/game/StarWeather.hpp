@@ -32,7 +32,7 @@ public:
 
   pair<ByteArray, uint64_t> writeUpdate(uint64_t fromVersion = 0);
 
-  void update();
+  void update(double dt);
 
   float wind() const;
   float weatherIntensity() const;
@@ -85,7 +85,7 @@ public:
 
   void setVisibleRegion(RectI visibleRegion);
 
-  void update();
+  void update(double dt);
 
   float wind() const;
   float weatherIntensity() const;

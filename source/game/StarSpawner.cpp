@@ -73,7 +73,7 @@ void Spawner::activateEmptyRegion(RectF region) {
     m_activeSpawnCells[cell] = m_spawnCellLifetime;
 }
 
-void Spawner::update() {
+void Spawner::update(float dt) {
   if (!m_facade)
     return;
 
@@ -82,10 +82,9 @@ void Spawner::update() {
       activateRegion(window.padded(m_windowActivationBorder));
   }
 
-  eraseWhere(m_activeSpawnCells, [](auto& p) {
-      p.second -= WorldTimestep;
-      return p.second < 0.0f;
-    });
+  eraseWhere(m_activeSpawnCells, [dt](auto& p) {
+    return (p.second -= dt) < 0.0f;
+  });
 
   eraseWhere(m_spawnedEntities, [this](EntityId entityId) {
       auto entity = m_facade->getEntity(entityId);

@@ -115,6 +115,9 @@ public:
   StringList currentEffects();
   bool hasEffect(String const& effectName);
 
+  // Global speed
+  void setSpeed(float speed);
+
   // Global volume
   void setVolume(float volume, float rampTime);
 
@@ -131,7 +134,7 @@ public:
 
   // Call within the main loop of the program using Mixer, calculates
   // positional attenuation of audio and does cleanup.
-  void update(PositionalAttenuationFunction positionalAttenuationFunction = {});
+  void update(float dt, PositionalAttenuationFunction positionalAttenuationFunction = {});
 
 private:
   struct EffectInfo {
@@ -161,6 +164,7 @@ private:
   List<int16_t> m_mixBuffer;
 
   Map<MixerGroup, RampedValue> m_groupVolumes;
+  atomic<float> m_speed;
 };
 
 }

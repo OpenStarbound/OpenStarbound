@@ -28,9 +28,9 @@ void ObjectItem::init(ToolUserEntity* owner, ToolHand hand) {
   BeamItem::init(owner, hand);
 }
 
-void ObjectItem::update(FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) {
-  FireableItem::update(fireMode, shifting, moves);
-  BeamItem::update(fireMode, shifting, moves);
+void ObjectItem::update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) {
+  FireableItem::update(dt, fireMode, shifting, moves);
+  BeamItem::update(dt, fireMode, shifting, moves);
   setEnd(BeamItem::EndType::Object);
   m_shifting = shifting;
 }

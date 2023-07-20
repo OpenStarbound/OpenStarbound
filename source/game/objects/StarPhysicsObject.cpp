@@ -76,8 +76,8 @@ void PhysicsObject::uninit() {
   Object::uninit();
 }
 
-void PhysicsObject::update(uint64_t currentStep) {
-  Object::update(currentStep);
+void PhysicsObject::update(float dt, uint64_t currentStep) {
+  Object::update(dt, currentStep);
   if (isSlave())
     m_netGroup.tickNetInterpolation(WorldTimestep);
 }

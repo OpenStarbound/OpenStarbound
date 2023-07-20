@@ -245,11 +245,11 @@ public:
   // Clears all control data.
   void clearControls();
 
-  // Integrates the ActorMovementController one WorldTimestep and applies all
+  // Integrates the ActorMovementController and applies all
   // the control data and clears it for the next step.
-  void tickMaster();
+  void tickMaster(float dt);
 
-  void tickSlave();
+  void tickSlave(float dt);
 
 
 private:

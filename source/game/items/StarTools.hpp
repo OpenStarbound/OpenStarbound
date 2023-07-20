@@ -34,7 +34,7 @@ public:
   // In pixels, offset from image center
   Vec2F handPosition() const override;
   void fire(FireMode mode, bool shifting, bool edgeTriggered) override;
-  void update(FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
+  void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
 
   float durabilityStatus() override;
 
@@ -72,7 +72,7 @@ public:
   // In pixels, offset from image center
   Vec2F handPosition() const override;
   void fire(FireMode mode, bool shifting, bool edgeTriggered) override;
-  void update(FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
+  void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
   float getAngle(float aimAngle) override;
 
 private:
@@ -117,7 +117,7 @@ public:
   ItemPtr clone() const override;
 
   void init(ToolUserEntity* owner, ToolHand hand) override;
-  void update(FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
+  void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
 
   List<Drawable> drawables() const override;
   List<Drawable> nonRotatedDrawables() const override;
@@ -157,7 +157,7 @@ public:
   float getAngle(float angle) override;
 
   void init(ToolUserEntity* owner, ToolHand hand) override;
-  void update(FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
+  void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
 
   List<PersistentStatusEffect> statusEffects() const override;
 
@@ -186,7 +186,7 @@ public:
   // In pixels, offset from image center
   Vec2F handPosition() const override;
   void fire(FireMode mode, bool shifting, bool edgeTriggered) override;
-  void update(FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
+  void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
   float getAngle(float aimAngle) override;
 
 private:
@@ -218,7 +218,7 @@ public:
   List<Drawable> drawables() const override;
 
   void setEnd(EndType type) override;
-  void update(FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
+  void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
   List<PreviewTile> preview(bool shifting) const override;
   void init(ToolUserEntity* owner, ToolHand hand) override;
   List<Drawable> nonRotatedDrawables() const override;

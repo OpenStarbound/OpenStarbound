@@ -58,7 +58,7 @@ DataStream& operator>>(DataStream& ds, RemoteDamageNotification& damageNotificat
 
 DamageManager::DamageManager(World* world, ConnectionId connectionId) : m_world(world), m_connectionId(connectionId) {}
 
-void DamageManager::update() {
+void DamageManager::update(float dt) {
   float const DefaultDamageTimeout = 1.0f;
 
   auto damageIt = makeSMutableMapIterator(m_recentEntityDamages);
@@ -67,7 +67,7 @@ void DamageManager::update() {
     auto eventIt = makeSMutableIterator(events);
     while (eventIt.hasNext()) {
       auto& event = eventIt.next();
-      event.timeout -= WorldTimestep;
+      event.timeout -= dt;
       auto entityIdTimeoutGroup = event.timeoutGroup.maybe<EntityId>();
       if (event.timeout <= 0.0f || (entityIdTimeoutGroup && !m_world->entity(*entityIdTimeoutGroup)))
         eventIt.remove();

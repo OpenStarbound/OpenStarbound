@@ -191,10 +191,10 @@ Pane* Pane::window() {
   return this;
 }
 
-void Pane::update() {
+void Pane::update(float dt) {
   if (m_visible) {
     for (auto const& widget : m_members) {
-      widget->update();
+      widget->update(dt);
       if ((m_focusWidget == widget) != widget->hasFocus()) {
         m_focusWidget.reset();
         widget->blur();
@@ -203,7 +203,7 @@ void Pane::update() {
   }
 }
 
-void Pane::tick() {
+void Pane::tick(float dt) {
   m_playingSounds.filter([](pair<String, AudioInstancePtr> const& p) {
     return p.second->finished() == false;
   });

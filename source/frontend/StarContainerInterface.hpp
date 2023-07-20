@@ -27,7 +27,7 @@ public:
   bool giveContainerResult(ContainerResult result);
 
 protected:
-  void update() override;
+  void update(float dt) override;
 
 private:
   enum class ExpectingSwap {

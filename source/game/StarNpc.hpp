@@ -90,7 +90,7 @@ public:
   bool shouldDestroy() const override;
   void destroy(RenderCallback* renderCallback) override;
 
-  void update(uint64_t currentVersion) override;
+  void update(float dt, uint64_t currentVersion) override;
 
   void render(RenderCallback* renderCallback) override;
 
@@ -177,7 +177,7 @@ public:
 private:
   Vec2F getAbsolutePosition(Vec2F relativePosition) const;
 
-  void tickShared();
+  void tickShared(float dt);
   LuaCallbacks makeNpcCallbacks();
 
   void setupNetStates();

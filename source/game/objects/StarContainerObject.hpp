@@ -17,7 +17,7 @@ public:
 
   void init(World* world, EntityId entityId, EntityMode mode) override;
 
-  void update(uint64_t currentStep) override;
+  void update(float dt, uint64_t currentStep) override;
   void render(RenderCallback* renderCallback) override;
 
   void destroy(RenderCallback* renderCallback) override;
@@ -62,7 +62,7 @@ private:
   typedef std::function<void(ContainerObject*)> ContainerCallback;
 
   ItemRecipe recipeForMaterials(List<ItemPtr> const& inputItems);
-  void tickCrafting();
+  void tickCrafting(float dt);
 
   ItemPtr doAddItems(ItemPtr const& items);
   ItemPtr doStackItems(ItemPtr const& items);

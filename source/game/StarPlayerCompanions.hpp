@@ -48,7 +48,7 @@ public:
   void dismissCompanion(String const& category, Uuid const& podUuid);
 
   Maybe<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
-  void update();
+  void update(float dt);
 
 private:
   LuaCallbacks makeCompanionsCallbacks();

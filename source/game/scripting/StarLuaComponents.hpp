@@ -130,6 +130,7 @@ public:
   LuaUpdatableComponent();
 
   unsigned updateDelta() const;
+  float updateDt(float dt) const;
   float updateDt() const;
   void setUpdateDelta(unsigned updateDelta);
 
@@ -142,6 +143,7 @@ public:
 
 private:
   Periodic m_updatePeriodic;
+  mutable float m_lastDt;
 };
 
 // Wraps a basic lua component so that world callbacks are added on init, and
@@ -253,9 +255,16 @@ unsigned LuaUpdatableComponent<Base>::updateDelta() const {
 }
 
 template <typename Base>
-float LuaUpdatableComponent<Base>::updateDt() const {
-  return m_updatePeriodic.stepCount() * WorldTimestep;
+float LuaUpdatableComponent<Base>::updateDt(float dt) const {
+  m_lastDt = dt;
+  return m_updatePeriodic.stepCount() * dt;
 }
+
+template <typename Base>
+float LuaUpdatableComponent<Base>::updateDt() const {
+  return m_updatePeriodic.stepCount() * m_lastDt;
+}
+
 
 template <typename Base>
 void LuaUpdatableComponent<Base>::setUpdateDelta(unsigned updateDelta) {

@@ -250,9 +250,11 @@ void Projectile::hitOther(EntityId entity, DamageRequest const&) {
   m_scriptComponent.invoke("hit", entity);
 }
 
-void Projectile::update(uint64_t) {
+void Projectile::update(float dt, uint64_t) {
+  m_movementController->setTimestep(dt);
+
   if (isMaster()) {
-    m_timeToLive -= WorldTimestep;
+    m_timeToLive -= dt;
     if (m_timeToLive < 0)
       m_timeToLive = 0;
 
@@ -261,17 +263,17 @@ void Projectile::update(uint64_t) {
     if (m_referenceVelocity)
       m_movementController->setVelocity(m_movementController->velocity() - *m_referenceVelocity);
 
-    m_scriptComponent.update(m_scriptComponent.updateDt());
+    m_scriptComponent.update(m_scriptComponent.updateDt(dt));
     m_movementController->accelerate(m_movementController->velocity().normalized() * m_acceleration);
 
     if (m_referenceVelocity)
       m_movementController->setVelocity(m_movementController->velocity() + *m_referenceVelocity);
 
-    m_movementController->tickMaster();
+    m_movementController->tickMaster(dt);
     m_travelLine.min() = m_travelLine.max();
     m_travelLine.max() = m_movementController->position();
 
-    tickShared();
+    tickShared(dt);
 
     if (m_trackSourceEntity) {
       if (auto sourceEntity = world()->entity(m_sourceEntity)) {
@@ -335,13 +337,13 @@ void Projectile::update(uint64_t) {
     }
   } else {
     m_netGroup.tickNetInterpolation(WorldTimestep);
-    m_movementController->tickSlave();
+    m_movementController->tickSlave(dt);
     m_travelLine.min() = m_travelLine.max();
     m_travelLine.max() = m_movementController->position();
 
-    m_timeToLive -= WorldTimestep;
+    m_timeToLive -= dt;
 
-    tickShared();
+    tickShared(dt);
   }
 
   if (world()->isClient())
@@ -853,19 +855,19 @@ void Projectile::processAction(Json const& action) {
   }
 }
 
-void Projectile::tickShared() {
+void Projectile::tickShared(float dt) {
   if (!m_config->orientationLocked && !m_movementController->stickingDirection()) {
     auto apparentVelocity = m_movementController->velocity() - m_referenceVelocity.value();
     if (apparentVelocity != Vec2F())
       m_movementController->setRotation(apparentVelocity.angle());
   }
 
-  m_animationTimer += WorldTimestep;
+  m_animationTimer += dt;
   setFrame(getFrame());
 
   m_effectEmitter->setSourcePosition("normal", position());
   m_effectEmitter->setDirection(getAngleSide(m_movementController->rotation(), true).second);
-  m_effectEmitter->tick(*entityMode());
+  m_effectEmitter->tick(dt, *entityMode());
 
   if (m_collisionEvent.pullOccurred()) {
     for (auto const& action : m_parameters.getArray("actionOnCollide", m_config->actionOnCollide))
@@ -879,7 +881,7 @@ void Projectile::tickShared() {
       if (get<0>(periodicAction).wrapTick())
         processAction(get<2>(periodicAction));
     } else {
-      if (get<0>(periodicAction).tick()) {
+      if (get<0>(periodicAction).tick(dt)) {
         processAction(get<2>(periodicAction));
         periodicActionIt.remove();
       }

@@ -50,7 +50,7 @@ int main(int argc, char** argv) {
       float updateRate = 1.0f / WorldTimestep;
       if (auto jUpdateRate = configuration->get("updateRate")) {
         updateRate = jUpdateRate.toFloat();
-        WorldTimestep = 1.0f / updateRate;
+        ServerWorldTimestep = WorldTimestep = 1.0f / updateRate;
         Logger::info("Configured tickrate is {:4.2f}hz", updateRate);
       }
 

@@ -52,7 +52,7 @@ public:
 
   RectF collisionArea() const override;
 
-  void update(uint64_t currentStep) override;
+  void update(float dt, uint64_t currentStep) override;
 
   bool shouldDestroy() const override;
 

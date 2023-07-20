@@ -93,12 +93,12 @@ void QuestLogInterface::pollDialog(PaneManager* paneManager) {
 
 void QuestLogInterface::displayed() {
   Pane::displayed();
-  tick();
+  tick(0);
   fetchData();
 }
 
-void QuestLogInterface::tick() {
-  Pane::tick();
+void QuestLogInterface::tick(float dt) {
+  Pane::tick(dt);
   auto selected = getSelected();
   if (selected && m_manager->hasQuest(selected->data().toString())) {
     auto quest = m_manager->getQuest(selected->data().toString());
@@ -284,7 +284,7 @@ void QuestLogInterface::showQuests(List<QuestPtr> quests) {
   }
 
   auto verticalLayout = fetchChild<VerticalLayout>("scrollArea.verticalLayout");
-  verticalLayout->update();
+  verticalLayout->update(0);
 }
 
 QuestPane::QuestPane(QuestPtr const& quest, PlayerPtr player) : Pane(), m_quest(quest), m_player(move(player)) {}

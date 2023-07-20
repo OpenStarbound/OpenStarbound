@@ -520,8 +520,9 @@ void MainInterface::handleInteractAction(InteractAction interactAction) {
   }
 }
 
-void MainInterface::update() {
-  m_paneManager.update();
+void MainInterface::update(float dt) {
+  m_paneManager.update(dt);
+  m_cursor.update(dt);
 
   m_questLogInterface->pollDialog(&m_paneManager);
 
@@ -544,7 +545,7 @@ void MainInterface::update() {
 
   // update mouseover target
   EntityId newMouseOverTarget = NullEntityId;
-  m_stickyTargetingTimer.tick();
+  m_stickyTargetingTimer.tick(dt);
   auto mouseoverEntities = m_client->worldClient()->query<DamageBarEntity>(RectF::withCenter(cursorWorldPos, Vec2F(1, 1)), [=](shared_ptr<DamageBarEntity> const& entity) {
       return entity != player
         && entity->damageBar() == DamageBarType::Default
@@ -578,10 +579,10 @@ void MainInterface::update() {
     if (damageBarEntity && damageBarEntity->damageBar() == DamageBarType::Special) {
       float targetHealth = damageBarEntity->health() / damageBarEntity->maxHealth();
       float fillSpeed = 1.0f / Root::singleton().assets()->json("/interface.config:specialDamageBar.fillTime").toFloat();
-      if (abs(targetHealth - m_specialDamageBarValue) < fillSpeed * WorldTimestep)
+      if (abs(targetHealth - m_specialDamageBarValue) < fillSpeed * dt)
         m_specialDamageBarValue = targetHealth;
       else
-        m_specialDamageBarValue += copysign(1.0f, targetHealth - m_specialDamageBarValue) * fillSpeed * WorldTimestep;
+        m_specialDamageBarValue += copysign(1.0f, targetHealth - m_specialDamageBarValue) * fillSpeed * dt;
     } else {
       m_specialDamageBarTarget = NullEntityId;
     }
@@ -696,7 +697,7 @@ void MainInterface::update() {
 
   for (auto it = m_messages.begin(); it != m_messages.end();) {
     auto& message = *it;
-    message->cooldown -= WorldTimestep;
+    message->cooldown -= dt;
     if (message->cooldown < 0)
       it = m_messages.erase(it);
     else
@@ -713,7 +714,7 @@ void MainInterface::update() {
 
   auto worldId = m_client->playerWorld();
   if (worldId.is<CelestialWorldId>()) {
-    if (m_planetNameTimer.tick())
+    if (m_planetNameTimer.tick(dt))
       m_paneManager.dismissRegisteredPane(MainInterfacePanes::PlanetText);
     else
       m_paneManager.displayRegisteredPane(MainInterfacePanes::PlanetText);
@@ -755,8 +756,8 @@ void MainInterface::update() {
 
   updateCursor();
 
-  m_nameplatePainter->update(m_client->worldClient(), m_worldPainter->camera(), m_client->worldClient()->interactiveHighlightMode());
-  m_questIndicatorPainter->update(m_client->worldClient(), m_worldPainter->camera());
+  m_nameplatePainter->update(dt, m_client->worldClient(), m_worldPainter->camera(), m_client->worldClient()->interactiveHighlightMode());
+  m_questIndicatorPainter->update(dt, m_client->worldClient(), m_worldPainter->camera());
 
   m_chatBubbleManager->setCamera(m_worldPainter->camera());
   if (auto worldClient = m_client->worldClient()) {
@@ -781,7 +782,7 @@ void MainInterface::update() {
     }
 
     m_chatBubbleManager->addChatActions(chatActions);
-    m_chatBubbleManager->update(worldClient);
+    m_chatBubbleManager->update(dt, worldClient);
   }
 
   if (auto container = m_client->worldClient()->get<ContainerEntity>(m_containerInteractor->openContainerId())) {
@@ -803,7 +804,7 @@ void MainInterface::update() {
       pair.second->setSize(Vec2I(m_guiContext->windowSize()));
     else
       pair.second->setSize(Vec2I(m_guiContext->windowInterfaceSize()));
-    pair.second->update();
+    pair.second->update(dt);
   }
 }
 
@@ -1426,8 +1427,6 @@ void MainInterface::renderCursor() {
   // if we're currently playing a cinematic, we should not render the mouse.
   if (m_cinematicOverlay && !m_cinematicOverlay->completed())
     return m_guiContext->applicationController()->setCursorVisible(false);
-
-  m_cursor.update(WorldTimestep);
 
   Vec2I cursorPos = m_cursorScreenPos;
   Vec2I cursorSize = m_cursor.size();

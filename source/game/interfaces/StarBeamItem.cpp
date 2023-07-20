@@ -57,9 +57,9 @@ void BeamItem::init(ToolUserEntity* owner, ToolHand hand) {
   throw ItemException("BeamItem::init: Beam Gun not init'd properly, or user not recognized as Tool User.");
 }
 
-void BeamItem::update(FireMode, bool, HashSet<MoveControlType> const&) {
+void BeamItem::update(float dt, FireMode, bool, HashSet<MoveControlType> const&) {
   if (m_particleGenerateCooldown >= 0)
-    m_particleGenerateCooldown -= WorldTimestep;
+    m_particleGenerateCooldown -= dt;
 
   if (!initialized())
     throw ItemException("BeamItem::update: Beam Gun not init'd properly, or user not recognized as Tool User.");

@@ -21,9 +21,8 @@ FuelWidget::FuelWidget() {
   disableScissoring();
 }
 
-void FuelWidget::update() {
-  m_pingTimeout -= WorldTimestep;
-  if (m_pingTimeout < 0)
+void FuelWidget::update(float dt) {
+  if ((m_pingTimeout -= dt) < 0)
     m_pingTimeout = 0;
 }
 

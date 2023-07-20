@@ -124,8 +124,8 @@ int TextBoxWidget::getCursorOffset() { // horizontal only
   }
 }
 
-void TextBoxWidget::update() {
-  Widget::update();
+void TextBoxWidget::update(float dt) {
+  Widget::update(dt);
   if (m_repeatCode != SpecialRepeatKeyCodes::None) {
     if (Time::monotonicMilliseconds() >= m_repeatKeyThreshold) {
       m_repeatKeyThreshold += 50;

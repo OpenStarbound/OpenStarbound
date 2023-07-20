@@ -24,7 +24,7 @@ public:
 
   void setCallback(WidgetCallbackFunc callback);
 
-  virtual void update() override;
+  virtual void update(float dt) override;
 
   virtual bool sendEvent(InputEvent const& event) override;
 

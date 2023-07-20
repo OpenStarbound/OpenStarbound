@@ -64,8 +64,8 @@ public:
 
   void setAimPosition(Vec2F const& aimPosition);
 
-  void tickMaster();
-  void tickSlave();
+  void tickMaster(float dt);
+  void tickSlave(float dt);
 
   Maybe<ParentState> parentState() const;
   DirectivesGroup const& parentDirectives() const;
@@ -133,7 +133,7 @@ private:
   void initializeModules();
 
   void resetMoves();
-  void updateAnimators();
+  void updateAnimators(float dt);
 
   LuaCallbacks makeTechCallbacks(TechModule& techModule);
 

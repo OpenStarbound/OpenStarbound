@@ -86,9 +86,9 @@ void ChatBubbleManager::setCamera(WorldCamera const& camera) {
   }
 }
 
-void ChatBubbleManager::update(WorldClientPtr world) {
-  m_bubbles.forEach([this, &world](BubbleState<Bubble>& bubbleState, Bubble& bubble) {
-    bubble.age += WorldTimestep;
+void ChatBubbleManager::update(float dt, WorldClientPtr world) {
+  m_bubbles.forEach([this, dt, &world](BubbleState<Bubble>& bubbleState, Bubble& bubble) {
+    bubble.age += dt;
     if (auto entity = world->get<ChattyEntity>(bubble.entity)) {
       bubble.onscreen = m_camera.worldGeometry().rectIntersectsRect(
           m_camera.worldScreenRect(), entity->metaBoundBox().translated(entity->position()));
@@ -97,7 +97,7 @@ void ChatBubbleManager::update(WorldClientPtr world) {
   });
 
   for (auto& portraitBubble : m_portraitBubbles) {
-    portraitBubble.age += WorldTimestep;
+    portraitBubble.age += dt;
     if (auto entity = world->entity(portraitBubble.entity)) {
       portraitBubble.onscreen = m_camera.worldGeometry().rectIntersectsRect(m_camera.worldScreenRect(), entity->metaBoundBox().translated(entity->position()));
       if (auto chatter = as<ChattyEntity>(entity))
@@ -125,7 +125,7 @@ void ChatBubbleManager::update(WorldClientPtr world) {
       return false;
     });
 
-  m_bubbles.update();
+  m_bubbles.update(dt);
 }
 
 uint8_t ChatBubbleManager::calcDistanceFadeAlpha(Vec2F bubbleScreenPosition, StoredFunctionPtr fadeFunction) const {

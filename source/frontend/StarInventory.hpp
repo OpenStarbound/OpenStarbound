@@ -35,7 +35,7 @@ public:
   bool containsNewItems() const;
 
 protected:
-  virtual void update() override;
+  virtual void update(float dt) override;
   void selectTab(String const& selected);
 
 private:

@@ -19,7 +19,7 @@ public:
   virtual ~QuestLogInterface() {}
 
   virtual void displayed() override;
-  virtual void tick() override;
+  virtual void tick(float dt) override;
   virtual PanePtr createTooltip(Vec2I const& screenPosition) override;
 
   void fetchData();

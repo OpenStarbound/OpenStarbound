@@ -33,8 +33,8 @@ FarmableObject::FarmableObject(ObjectConfigConstPtr config, Json const& paramete
   m_consumeSoilMoisture = configValue("consumeSoilMoisture", true).toBool();
 }
 
-void FarmableObject::update(uint64_t currentStep) {
-  Object::update(currentStep);
+void FarmableObject::update(float dt, uint64_t currentStep) {
+  Object::update(dt, currentStep);
 
   if (isMaster()) {
     if (m_nextStageTime == 0) {

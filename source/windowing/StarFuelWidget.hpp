@@ -12,7 +12,7 @@ public:
   FuelWidget();
   virtual ~FuelWidget() {}
 
-  virtual void update();
+  virtual void update(float dt);
 
   void setCurrentFuelLevel(float amount);
   void setMaxFuelLevel(float amount);

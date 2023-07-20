@@ -71,8 +71,8 @@ void BaseScriptPane::dismissed() {
   m_script.uninit();
 }
 
-void BaseScriptPane::tick() {
-  Pane::tick();
+void BaseScriptPane::tick(float dt) {
+  Pane::tick(dt);
 
   for (auto p : m_canvasClickCallbacks) {
     for (auto const& clickEvent : p.first->pullClickEvents())
@@ -83,7 +83,7 @@ void BaseScriptPane::tick() {
       m_script.invoke(p.second, (int)keyEvent.key, keyEvent.keyDown);
   }
 
-  m_script.update(m_script.updateDt());
+  m_script.update(m_script.updateDt(dt));
 }
 
 bool BaseScriptPane::sendEvent(InputEvent const& event) {

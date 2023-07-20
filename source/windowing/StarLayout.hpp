@@ -8,7 +8,7 @@ namespace Star {
 class Layout : public Widget {
 public:
   Layout();
-  virtual void update() override;
+  virtual void update(float dt) override;
 };
 
 }

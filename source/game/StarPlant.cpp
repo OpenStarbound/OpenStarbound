@@ -718,18 +718,18 @@ float Plant::branchRotation(float xPos, float rotoffset) const {
   return copysign(0.00117f, m_windLevel) * (std::sin(m_windTime + rotoffset + xPos / 10.0f) * intensity - intensity / 300.0f);
 }
 
-void Plant::update(uint64_t) {
-  m_windTime += WorldTimestep;
+void Plant::update(float dt, uint64_t) {
+  m_windTime += dt;
   m_windTime = std::fmod(m_windTime, 628.32f);
   m_windLevel = world()->windLevel(Vec2F(m_tilePosition));
 
   if (isMaster()) {
     if (m_tileDamageStatus.damaged())
-      m_tileDamageStatus.recover(m_tileDamageParameters, WorldTimestep);
+      m_tileDamageStatus.recover(m_tileDamageParameters, dt);
   } else {
     if (m_tileDamageStatus.damaged() && !m_tileDamageStatus.damageProtected()) {
       float damageEffectPercentage = m_tileDamageStatus.damageEffectPercentage();
-      m_windTime += damageEffectPercentage * 10 * WorldTimestep;
+      m_windTime += damageEffectPercentage * 10 * dt;
       m_windLevel += damageEffectPercentage * 20;
     }
 

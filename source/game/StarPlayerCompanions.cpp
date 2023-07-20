@@ -114,8 +114,8 @@ Maybe<Json> PlayerCompanions::receiveMessage(String const& message, bool localMe
   return m_scriptComponent.handleMessage(message, localMessage, args);
 }
 
-void PlayerCompanions::update() {
-  m_scriptComponent.update(m_scriptComponent.updateDt());
+void PlayerCompanions::update(float dt) {
+  m_scriptComponent.update(m_scriptComponent.updateDt(dt));
 }
 
 LuaCallbacks PlayerCompanions::makeCompanionsCallbacks() {

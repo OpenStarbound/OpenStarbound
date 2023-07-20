@@ -30,7 +30,7 @@ public:
   ItemPtr addItems(ItemPtr const& items);
 
 protected:
-  void update() override;
+  void update(float dt) override;
 
 private:
   void swapSlot();

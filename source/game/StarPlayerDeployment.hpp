@@ -28,7 +28,7 @@ public:
 
   void teleportOut();
   Maybe<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
-  void update();
+  void update(float dt);
 
   void render(RenderCallback* renderCallback, Vec2F const& position);
 

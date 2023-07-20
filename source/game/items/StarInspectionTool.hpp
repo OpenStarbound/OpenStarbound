@@ -27,7 +27,7 @@ public:
 
   ItemPtr clone() const override;
 
-  void update(FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
+  void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
 
   List<Drawable> drawables() const override;
 

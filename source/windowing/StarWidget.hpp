@@ -30,7 +30,7 @@ public:
   Widget& operator=(Widget const&) = delete;
 
   virtual void render(RectI const& region) final;
-  virtual void update();
+  virtual void update(float dt);
 
   GuiContext* context() const;
 

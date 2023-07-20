@@ -153,11 +153,11 @@ void StatCollection::clearStatModifiers() {
   m_stats.clearStatModifiers();
 }
 
-void StatCollection::tickMaster() {
-  m_stats.update(WorldTimestep);
+void StatCollection::tickMaster(float dt) {
+  m_stats.update(dt);
 }
 
-void StatCollection::tickSlave() {
+void StatCollection::tickSlave(float dt) {
   m_stats.update(0.0f);
 }
 

@@ -118,11 +118,11 @@ void MiningTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
   }
 }
 
-void MiningTool::update(FireMode mode, bool shifting, HashSet<MoveControlType> const& moves) {
-  SwingableItem::update(mode, shifting, moves);
+void MiningTool::update(float dt, FireMode mode, bool shifting, HashSet<MoveControlType> const& moves) {
+  SwingableItem::update(dt, mode, shifting, moves);
 
   if (!ready() && !coolingDown())
-    m_frameTiming = std::fmod((m_frameTiming + WorldTimestep), m_frameCycle);
+    m_frameTiming = std::fmod((m_frameTiming + dt), m_frameCycle);
   else
     m_frameTiming = 0;
 }
@@ -200,11 +200,11 @@ void HarvestingTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
   }
 }
 
-void HarvestingTool::update(FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) {
-  SwingableItem::update(fireMode, shifting, moves);
+void HarvestingTool::update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) {
+  SwingableItem::update(dt, fireMode, shifting, moves);
 
   if (!ready() && !coolingDown())
-    m_frameTiming = std::fmod((m_frameTiming + WorldTimestep), m_frameCycle);
+    m_frameTiming = std::fmod((m_frameTiming + dt), m_frameCycle);
   else
     m_frameTiming = 0;
 }
@@ -269,9 +269,9 @@ void WireTool::init(ToolUserEntity* owner, ToolHand hand) {
   m_wireConnector = 0;
 }
 
-void WireTool::update(FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) {
-  FireableItem::update(fireMode, shifting, moves);
-  BeamItem::update(fireMode, shifting, moves);
+void WireTool::update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) {
+  FireableItem::update(dt, fireMode, shifting, moves);
+  BeamItem::update(dt, fireMode, shifting, moves);
 }
 
 List<Drawable> WireTool::drawables() const {
@@ -378,9 +378,9 @@ void BeamMiningTool::init(ToolUserEntity* owner, ToolHand hand) {
   BeamItem::init(owner, hand);
 }
 
-void BeamMiningTool::update(FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) {
-  FireableItem::update(fireMode, shifting, moves);
-  BeamItem::update(fireMode, shifting, moves);
+void BeamMiningTool::update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) {
+  FireableItem::update(dt, fireMode, shifting, moves);
+  BeamItem::update(dt, fireMode, shifting, moves);
 }
 
 List<PersistentStatusEffect> BeamMiningTool::statusEffects() const {
@@ -567,11 +567,11 @@ void TillingTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
   }
 }
 
-void TillingTool::update(FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) {
-  SwingableItem::update(fireMode, shifting, moves);
+void TillingTool::update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) {
+  SwingableItem::update(dt, fireMode, shifting, moves);
 
   if (!ready() && !coolingDown())
-    m_frameTiming = std::fmod((m_frameTiming + WorldTimestep), m_frameCycle);
+    m_frameTiming = std::fmod((m_frameTiming + dt), m_frameCycle);
   else
     m_frameTiming = 0;
 }
@@ -620,9 +620,9 @@ void PaintingBeamTool::setEnd(EndType type) {
   m_endType = EndType::Object;
 }
 
-void PaintingBeamTool::update(FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) {
-  BeamItem::update(fireMode, shifting, moves);
-  FireableItem::update(fireMode, shifting, moves);
+void PaintingBeamTool::update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) {
+  BeamItem::update(dt, fireMode, shifting, moves);
+  FireableItem::update(dt, fireMode, shifting, moves);
 }
 
 List<PreviewTile> PaintingBeamTool::preview(bool shifting) const {

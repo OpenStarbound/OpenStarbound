@@ -11,7 +11,7 @@ STAR_CLASS(FlowLayout);
 class FlowLayout : public Layout {
 public:
   FlowLayout();
-  virtual void update() override;
+  virtual void update(float dt) override;
   void setSpacing(Vec2I const& spacing);
   void setWrapping(bool wrap);
 

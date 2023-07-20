@@ -38,10 +38,11 @@ ToolUser::ToolUser()
   addNetElement(&m_primaryItemActiveNetState);
   addNetElement(&m_altItemActiveNetState);
 
-  m_primaryFireTimerNetState.setFixedPointBase(WorldTimestep);
-  m_altFireTimerNetState.setFixedPointBase(WorldTimestep);
-  m_primaryTimeFiringNetState.setFixedPointBase(WorldTimestep);
-  m_altTimeFiringNetState.setFixedPointBase(WorldTimestep);
+  float fixedPointBase = 1.f / 60.f;
+  m_primaryFireTimerNetState.setFixedPointBase(fixedPointBase);
+  m_altFireTimerNetState.setFixedPointBase(fixedPointBase);
+  m_primaryTimeFiringNetState.setFixedPointBase(fixedPointBase);
+  m_altTimeFiringNetState.setFixedPointBase(fixedPointBase);
 
   auto interpolateTimer = [](double offset, double min, double max) -> double {
     if (max > min)
@@ -369,7 +370,7 @@ bool ToolUser::queryShieldHit(DamageSource const& source) const {
   return false;
 }
 
-void ToolUser::tick(bool shifting, HashSet<MoveControlType> const& moves) {
+void ToolUser::tick(float dt, bool shifting, HashSet<MoveControlType> const& moves) {
   if (auto toolUserItem = as<ToolUserItem>(m_primaryHandItem.get())) {
     FireMode fireMode = FireMode::None;
     if (!m_suppress.get()) {
@@ -378,7 +379,7 @@ void ToolUser::tick(bool shifting, HashSet<MoveControlType> const& moves) {
       else if (m_fireAlt && m_primaryHandItem.get()->twoHanded())
         fireMode = FireMode::Alt;
     }
-    toolUserItem->update(fireMode, shifting, moves);
+    toolUserItem->update(dt, fireMode, shifting, moves);
   }
 
   if (!m_primaryHandItem.get() || !m_primaryHandItem.get()->twoHanded()) {
@@ -386,7 +387,7 @@ void ToolUser::tick(bool shifting, HashSet<MoveControlType> const& moves) {
       FireMode fireMode = FireMode::None;
       if (!m_suppress.get() && m_fireAlt)
         fireMode = FireMode::Primary;
-      toolUserItem->update(fireMode, shifting, moves);
+      toolUserItem->update(dt, fireMode, shifting, moves);
     }
   }
 

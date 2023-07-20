@@ -26,7 +26,7 @@ public:
   void render(bool useBackdrop = false);
 
   bool handleInputEvent(InputEvent const& event);
-  void update();
+  void update(float dt);
 
 private:
   void renderCursor();

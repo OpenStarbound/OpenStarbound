@@ -13,7 +13,7 @@ class QuestIndicatorPainter {
 public:
   QuestIndicatorPainter(UniverseClientPtr const& client);
 
-  void update(WorldClientPtr const& world, WorldCamera const& camera);
+  void update(float dt, WorldClientPtr const& world, WorldCamera const& camera);
   void render();
 
 private:

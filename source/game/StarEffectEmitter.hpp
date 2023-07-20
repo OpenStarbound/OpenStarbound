@@ -19,7 +19,7 @@ public:
   void setDirection(Direction direction);
   void setBaseVelocity(Vec2F const& velocity);
 
-  void tick(EntityMode mode);
+  void tick(float dt, EntityMode mode);
   void reset();
 
   void render(RenderCallback* renderCallback);

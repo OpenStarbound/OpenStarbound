@@ -51,8 +51,8 @@ ModsMenu::ModsMenu() {
   copyLinkLabel->setVisibility(!hasDesktopService);
 }
 
-void ModsMenu::update() {
-  Pane::update();
+void ModsMenu::update(float dt) {
+  Pane::update(dt);
 
   size_t selectedItem = m_modList->selectedItem();
   if (selectedItem == NPos) {

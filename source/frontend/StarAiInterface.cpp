@@ -98,21 +98,21 @@ AiInterface::AiInterface(UniverseClientPtr client, CinematicPtr cinematic, MainI
   m_defaultRecruitDescription = assets->json("/interface/ai/ai.config:defaultRecruitDescription").toString();
 }
 
-void AiInterface::update() {
+void AiInterface::update(float dt) {
   if (!m_client->playerOnOwnShip())
     dismiss();
 
-  Pane::update();
+  Pane::update(dt);
 
   m_showCrewButton->setVisibility(m_currentPage == AiPages::StatusPage);
   m_showMissionsButton->setVisibility(m_currentPage == AiPages::StatusPage);
   m_backButton->setVisibility(m_currentPage != AiPages::StatusPage);
 
-  m_staticAnimation.update(WorldTimestep);
-  m_scanlineAnimation.update(WorldTimestep);
+  m_staticAnimation.update(dt);
+  m_scanlineAnimation.update(dt);
 
   if (m_currentSpeech) {
-    m_textLength += m_currentSpeech->speedModifier * m_aiDatabase->charactersPerSecond() * WorldTimestep;
+    m_textLength += m_currentSpeech->speedModifier * m_aiDatabase->charactersPerSecond() * dt;
     m_currentTextWidget->setText(m_currentSpeech->text);
     m_currentTextWidget->setTextCharLimit(min(m_textMaxLength, floor(m_textLength)));
 
@@ -129,10 +129,10 @@ void AiInterface::update() {
       if (m_chatterSound)
         m_chatterSound->stop();
     }
-    m_faceAnimation.second.update(WorldTimestep * m_currentSpeech->speedModifier);
+    m_faceAnimation.second.update(dt * m_currentSpeech->speedModifier);
   } else {
     setFaceAnimation("idle");
-    m_faceAnimation.second.update(WorldTimestep);
+    m_faceAnimation.second.update(dt);
     if (m_chatterSound)
       m_chatterSound->stop();
   }

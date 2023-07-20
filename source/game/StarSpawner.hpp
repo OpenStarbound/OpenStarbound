@@ -60,7 +60,7 @@ public:
   // nothing if they are already active.
   void activateEmptyRegion(RectF region);
 
-  void update();
+  void update(float dt);
 
 private:
   struct SpawnCellDebugInfo {

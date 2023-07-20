@@ -19,7 +19,7 @@ public:
       EntityId sourceEntityId,
       TeleportBookmark currentLocation);
 
-  void tick() override;
+  void tick(float dt) override;
 
   void selectDestination();
   void teleport();

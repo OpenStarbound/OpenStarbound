@@ -44,9 +44,9 @@ RadioMessagePopup::RadioMessagePopup() {
   enterStage(PopupStage::Hidden);
 }
 
-void RadioMessagePopup::update() {
+void RadioMessagePopup::update(float dt) {
   if (messageActive()) {
-    if (m_stageTimer.tick())
+    if (m_stageTimer.tick(dt))
       nextPopupStage();
 
     if (m_popupStage == PopupStage::AnimateIn) {
@@ -65,11 +65,11 @@ void RadioMessagePopup::update() {
       setBG("", strf("{}:{}", m_animateOutImage, frame), "");
     }
 
-    m_slideTimer = min(m_slideTimer + WorldTimestep, m_slideTime);
+    m_slideTimer = min(m_slideTimer + dt, m_slideTime);
     updateAnchorOffset();
   }
 
-  Pane::update();
+  Pane::update(dt);
 }
 
 void RadioMessagePopup::dismissed() {

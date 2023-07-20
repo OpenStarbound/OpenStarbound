@@ -71,7 +71,7 @@ bool QuestTrackerPane::sendEvent(InputEvent const& event) {
   return false;
 }
 
-void QuestTrackerPane::update() {
+void QuestTrackerPane::update(float dt) {
   if (m_currentQuest) {
     if (auto objectiveList = m_currentQuest->objectiveList()) {
       if (objectiveList->size() == 0) {
@@ -172,7 +172,7 @@ void QuestTrackerPane::update() {
     }
   }
 
-  Pane::update();
+  Pane::update(dt);
 }
 
 void QuestTrackerPane::setQuest(QuestPtr const& quest) {

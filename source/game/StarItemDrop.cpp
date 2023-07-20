@@ -176,7 +176,7 @@ RectF ItemDrop::collisionArea() const {
   return m_boundBox;
 }
 
-void ItemDrop::update(uint64_t) {
+void ItemDrop::update(float dt, uint64_t) {
   if (isMaster()) {
     if (m_owningEntity.get() != NullEntityId) {
       auto owningEntity = world()->entity(m_owningEntity.get());
@@ -228,9 +228,9 @@ void ItemDrop::update(uint64_t) {
       m_movementController.applyParameters(parameters);
     }
 
-    m_movementController.tickMaster();
+    m_movementController.tickMaster(dt);
 
-    m_intangibleTimer.tick(WorldTimestep);
+    m_intangibleTimer.tick(dt);
     m_dropAge.update(world()->epochTime());
     m_ageItemsTimer.update(world()->epochTime());
 
@@ -252,7 +252,7 @@ void ItemDrop::update(uint64_t) {
   } else {
     m_netGroup.tickNetInterpolation(WorldTimestep);
     Root::singleton().itemDatabase()->loadItem(m_itemDescriptor.get(), m_item);
-    m_movementController.tickSlave();
+    m_movementController.tickSlave(dt);
   }
 }
 

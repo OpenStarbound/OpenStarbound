@@ -21,7 +21,7 @@ public:
   CodexInterface(PlayerPtr player);
 
   virtual void show() override;
-  virtual void tick() override;
+  virtual void tick(float dt) override;
 
   void showTitles();
   void showSelectedContents();

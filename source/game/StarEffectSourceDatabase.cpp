@@ -72,8 +72,8 @@ void EffectSource::stop() {
   m_stop = true;
 }
 
-void EffectSource::tick() {
-  m_timer -= WorldTimestep;
+void EffectSource::tick(float dt) {
+  m_timer -= dt;
   if ((m_timer <= 0) && m_loops) {
     m_timer = m_loopDuration + m_durationVariance * Random::randf(-0.5f, 0.5f);
     m_loopTick = true;

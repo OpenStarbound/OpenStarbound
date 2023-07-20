@@ -180,13 +180,16 @@ public:
   void init(World* world);
   void uninit();
 
+  // Stores dt value for Lua calls.
+  void setTimestep(float dt);
+
   // Integrates the ActorMovementController one WorldTimestep and applies all
   // forces.
-  void tickMaster();
+  void tickMaster(float dt);
 
   // Does not integrate, only tracks master state and updates non-networked
   // fields based on local data
-  void tickSlave();
+  void tickSlave(float dt);
 
   void setIgnorePhysicsEntities(Set<EntityId> ignorePhysicsEntities);
   // iterate over all physics entity collision polys in the region, iteration stops if the callback returns false
@@ -194,7 +197,7 @@ public:
 
 protected:
   // forces the movement controller onGround status, used when manually controlling movement outside the movement controller
-  void updateForceRegions();
+  void updateForceRegions(float dt);
   void updateLiquidPercentage();
   void setOnGround(bool onGround);
 
@@ -239,7 +242,7 @@ private:
 
   static CollisionKind maxOrNullCollision(CollisionKind a, CollisionKind b);
   static CollisionResult collisionMove(List<CollisionPoly>& collisionPolys, PolyF const& body, Vec2F const& movement,
-      bool ignorePlatforms, bool enableSurfaceSlopeCorrection, float maximumCorrection, float maximumPlatformCorrection, Vec2F sortCenter);
+      bool ignorePlatforms, bool enableSurfaceSlopeCorrection, float maximumCorrection, float maximumPlatformCorrection, Vec2F sortCenter, float dt);
   static CollisionSeparation collisionSeparate(List<CollisionPoly>& collisionPolys, PolyF const& poly,
       bool ignorePlatforms, float maximumPlatformCorrection, Vec2F const& sortCenter, bool upward, float separationTolerance);
 
@@ -287,6 +290,7 @@ private:
 
   bool m_resting;
   int m_restTicks;
+  float m_timeStep;
 
   List<CollisionPoly> m_workingCollisions;
   List<PolyF> m_collisionBuffers;

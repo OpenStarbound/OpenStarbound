@@ -136,7 +136,7 @@ public:
   void mix(int16_t* buffer, size_t frames, unsigned channels);
 
   typedef function<float(unsigned, Vec2F, float)> PositionalAttenuationFunction;
-  void update(PositionalAttenuationFunction positionalAttenuationFunction = {});
+  void update(float dt, PositionalAttenuationFunction positionalAttenuationFunction = {});
 
   void setDeviceName(Maybe<String> device);
   StringList availableDevices();

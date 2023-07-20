@@ -16,7 +16,7 @@ public:
   QuestTrackerPane();
 
   bool sendEvent(InputEvent const& event) override;
-  void update() override;
+  void update(float dt) override;
 
   void setQuest(QuestPtr const& quest);
 

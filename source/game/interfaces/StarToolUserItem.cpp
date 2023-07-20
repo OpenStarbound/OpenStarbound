@@ -14,7 +14,7 @@ void ToolUserItem::uninit() {
   m_hand = {};
 }
 
-void ToolUserItem::update(FireMode, bool, HashSet<MoveControlType> const&) {}
+void ToolUserItem::update(float dt, FireMode, bool, HashSet<MoveControlType> const&) {}
 
 bool ToolUserItem::initialized() const {
   return (bool)m_owner;

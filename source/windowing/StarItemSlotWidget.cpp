@@ -56,8 +56,12 @@ ItemSlotWidget::ItemSlotWidget(ItemPtr const& item, String const& backingImage)
   disableScissoring();
 }
 
-void ItemSlotWidget::update() {
-  Widget::update();
+void ItemSlotWidget::update(float dt) {
+  if (m_item)
+    m_newItemIndicator.update(dt);
+  if (m_highlightEnabled)
+    m_highlightAnimation.update(dt);
+  Widget::update(dt);
 }
 
 bool ItemSlotWidget::sendEvent(InputEvent const& event) {
@@ -159,7 +163,6 @@ void ItemSlotWidget::renderImpl() {
     for (auto i : iconDrawables)
       context()->drawInterfaceDrawable(i, Vec2F(screenPosition() + size() / 2));
 
-    m_newItemIndicator.update(WorldTimestep);
     if (!m_newItemIndicator.isComplete())
       context()->drawInterfaceDrawable(m_newItemIndicator.drawable(1.0), Vec2F(screenPosition() + size() / 2), Color::White.toRgba());
 
@@ -195,7 +198,6 @@ void ItemSlotWidget::renderImpl() {
   }
 
   if (m_highlightEnabled) {
-    m_highlightAnimation.update(WorldTimestep);
     context()->drawInterfaceDrawable(m_highlightAnimation.drawable(1.0), Vec2F(screenPosition() + size() / 2), Color::White.toRgba());
   }
 

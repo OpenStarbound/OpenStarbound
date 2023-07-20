@@ -47,11 +47,11 @@ void ScriptPane::dismissed() {
   m_script.removeCallbacks("world");
 }
 
-void ScriptPane::tick() {
+void ScriptPane::tick(float dt) {
   if (m_sourceEntityId != NullEntityId && !m_client->worldClient()->playerCanReachEntity(m_sourceEntityId))
     dismiss();
 
-  BaseScriptPane::tick();
+  BaseScriptPane::tick(dt);
 }
 
 PanePtr ScriptPane::createTooltip(Vec2I const& screenPosition) {

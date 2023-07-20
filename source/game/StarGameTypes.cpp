@@ -2,9 +2,8 @@
 
 namespace Star {
 
+float GlobalTimescale = 1.0f;
 float WorldTimestep = 1.0f / 60.0f;
-
-// This is used to correct interpolation. It must match the timestep of the server you are connected to.
 float ServerWorldTimestep = 1.0f / 60.0f;
 
 EnumMap<Direction> const DirectionNames{

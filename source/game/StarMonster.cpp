@@ -441,41 +441,43 @@ void Monster::damagedOther(DamageNotification const& damage) {
     m_statusController->damagedOther(damage);
 }
 
-void Monster::update(uint64_t) {
+void Monster::update(float dt, uint64_t) {
   if (!inWorld())
     return;
+
+  m_movementController->setTimestep(dt);
 
   if (isMaster()) {
     m_networkedAnimator.setFlipped((m_movementController->facingDirection() == Direction::Left) != m_monsterVariant.reversed);
 
     if (m_knockedOut) {
-      m_knockoutTimer -= WorldTimestep;
+      m_knockoutTimer -= dt;
     } else {
       if (m_scriptComponent.updateReady())
         m_physicsForces.set({});
-      m_scriptComponent.update(m_scriptComponent.updateDt());
+      m_scriptComponent.update(m_scriptComponent.updateDt(dt));
 
       if (shouldDie())
         knockout();
     }
 
-    m_movementController->tickMaster();
+    m_movementController->tickMaster(dt);
 
-    m_statusController->tickMaster();
-    updateStatus();
+    m_statusController->tickMaster(dt);
+    updateStatus(dt);
   } else {
     m_netGroup.tickNetInterpolation(WorldTimestep);
 
-    m_statusController->tickSlave();
-    updateStatus();
+    m_statusController->tickSlave(dt);
+    updateStatus(dt);
 
-    m_movementController->tickSlave();
+    m_movementController->tickSlave(dt);
   }
 
   if (world()->isServer()) {
-    m_networkedAnimator.update(WorldTimestep, nullptr);
+    m_networkedAnimator.update(dt, nullptr);
   } else {
-    m_networkedAnimator.update(WorldTimestep, &m_networkedAnimatorDynamicTarget);
+    m_networkedAnimator.update(dt, &m_networkedAnimatorDynamicTarget);
     m_networkedAnimatorDynamicTarget.updatePosition(position());
 
     m_scriptedAnimator.update();
@@ -543,12 +545,12 @@ Vec2F Monster::getAbsolutePosition(Vec2F relativePosition) const {
   return m_movementController->position() + relativePosition;
 }
 
-void Monster::updateStatus() {
+void Monster::updateStatus(float dt) {
   m_effectEmitter.setSourcePosition("normal", position());
   m_effectEmitter.setSourcePosition("mouth", position() + mouthOffset());
   m_effectEmitter.setSourcePosition("feet", position() + feetOffset());
   m_effectEmitter.setDirection(m_movementController->facingDirection());
-  m_effectEmitter.tick(*entityMode());
+  m_effectEmitter.tick(dt, *entityMode());
 }
 
 LuaCallbacks Monster::makeMonsterCallbacks() {

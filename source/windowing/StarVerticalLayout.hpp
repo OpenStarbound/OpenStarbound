@@ -11,7 +11,7 @@ class VerticalLayout : public Layout {
 public:
   VerticalLayout(VerticalAnchor verticalAnchor = VerticalAnchor::TopAnchor, int verticalSpacing = 0);
 
-  void update() override;
+  void update(float dt) override;
   Vec2I size() const override;
   RectI relativeBoundRect() const override;
 

@@ -9,7 +9,7 @@ VerticalLayout::VerticalLayout(VerticalAnchor verticalAnchor, int verticalSpacin
   disableScissoring();
 }
 
-void VerticalLayout::update() {
+void VerticalLayout::update(float dt) {
   m_size = Vec2I(0, 0);
 
   if (m_members.empty())
@@ -64,22 +64,22 @@ RectI VerticalLayout::relativeBoundRect() const {
 
 void VerticalLayout::setHorizontalAnchor(HorizontalAnchor horizontalAnchor) {
   m_horizontalAnchor = horizontalAnchor;
-  update();
+  update(0);
 }
 
 void VerticalLayout::setVerticalAnchor(VerticalAnchor verticalAnchor) {
   m_verticalAnchor = verticalAnchor;
-  update();
+  update(0);
 }
 
 void VerticalLayout::setVerticalSpacing(int verticalSpacing) {
   m_verticalSpacing = verticalSpacing;
-  update();
+  update(0);
 }
 
 void VerticalLayout::setFillDown(bool fillDown) {
   m_fillDown = fillDown;
-  update();
+  update(0);
 }
 
 RectI VerticalLayout::contentBoundRect() const {

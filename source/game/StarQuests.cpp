@@ -216,10 +216,10 @@ Maybe<Json> Quest::receiveMessage(String const& message, bool localMessage, Json
   return m_scriptComponent.handleMessage(message, localMessage, args);
 }
 
-void Quest::update() {
+void Quest::update(float dt) {
   if (!m_inited)
     return;
-  m_scriptComponent.update(m_scriptComponent.updateDt());
+  m_scriptComponent.update(m_scriptComponent.updateDt(dt));
 }
 
 void Quest::offer() {

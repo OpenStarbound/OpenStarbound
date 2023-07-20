@@ -694,7 +694,7 @@ WidgetConstructResult WidgetParser::layoutHandler(String const& name, Json const
   common(widget, config);
   if (config.contains("children"))
     constructImpl(config.get("children"), widget.get());
-  widget->update();
+  widget->update(0);
 
   return WidgetConstructResult(widget, name, config.getFloat("zlevel", 0));
 }

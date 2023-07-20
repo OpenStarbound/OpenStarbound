@@ -58,17 +58,17 @@ private:
   void setError(String const& error);
   void setError(String const& error, std::exception const& e);
 
-  void updateMods();
-  void updateModsWarning();
-  void updateSplash();
-  void updateError();
-  void updateTitle();
-  void updateRunning();
+  void updateMods(float dt);
+  void updateModsWarning(float dt);
+  void updateSplash(float dt);
+  void updateError(float dt);
+  void updateTitle(float dt);
+  void updateRunning(float dt);
 
   bool isActionTaken(InterfaceAction action) const;
   bool isActionTakenEdge(InterfaceAction action) const;
 
-  void updateCamera();
+  void updateCamera(float dt);
 
   RootUPtr m_root;
   ThreadFunction<void> m_rootLoader;

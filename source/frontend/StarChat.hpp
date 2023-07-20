@@ -26,7 +26,7 @@ public:
   virtual void renderImpl() override;
   virtual void hide() override;
 
-  virtual void update() override;
+  virtual void update(float dt) override;
 
   void addLine(String const& text, bool showPane = true);
   void addMessages(List<ChatReceivedMessage> const& messages, bool showPane = true);

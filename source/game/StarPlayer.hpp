@@ -182,7 +182,7 @@ public:
 
   Maybe<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args = {}) override;
 
-  void update(uint64_t currentStep) override;
+  void update(float dt, uint64_t currentStep) override;
 
   void render(RenderCallback* renderCallback) override;
 
@@ -404,7 +404,7 @@ public:
 
   bool invisible() const;
 
-  void animatePortrait();
+  void animatePortrait(float dt);
 
   bool isOutside();
 
@@ -494,7 +494,7 @@ private:
   void processControls();
 
   // state changes and effect animations (master and slave) that happen AFTER movement/tech controller updates
-  void processStateChanges();
+  void processStateChanges(float dt);
 
   void getNetStates(bool initial);
   void setNetStates();
@@ -504,7 +504,7 @@ private:
   List<Particle> particles();
   String getFootstepSound(Vec2I const& sensor) const;
 
-  void tickShared();
+  void tickShared(float dt);
 
   HumanoidEmote detectEmotes(String const& chatter);
 
@@ -544,6 +544,7 @@ private:
   float m_footstepVolumeVariance;
   float m_landingVolume;
   bool m_landingNoisePending;
+  bool m_footstepPending;
 
   String m_teleportAnimationType;
   NetworkedAnimatorPtr m_effectsAnimator;

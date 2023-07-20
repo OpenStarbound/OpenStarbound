@@ -72,7 +72,7 @@ public:
   bool sendInputEvent(InputEvent const& event);
 
   void render();
-  void update();
+  void update(float dt);
 
 private:
   Vec2I windowSize() const;

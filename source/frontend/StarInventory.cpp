@@ -236,7 +236,7 @@ bool InventoryPane::containsNewItems() const {
   return false;
 }
 
-void InventoryPane::update() {
+void InventoryPane::update(float dt) {
   auto inventory = m_player->inventory();
   auto context = Widget::context();
 
@@ -255,7 +255,7 @@ void InventoryPane::update() {
   m_trashSlot->setItem(inventory->itemsAt(TrashSlot()));
   m_trashSlot->showLinkIndicator(customBarItems.contains(m_trashSlot->item()));
   if (auto trashItem = m_trashSlot->item()) {
-    if (m_trashBurn.tick() && trashItem->count() > 0) {
+    if (m_trashBurn.tick(dt) && trashItem->count() > 0) {
       m_player->statistics()->recordEvent("trashItem", JsonObject{
           {"itemName", trashItem->name()},
           {"count", trashItem->count()},

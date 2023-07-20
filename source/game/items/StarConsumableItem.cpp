@@ -35,8 +35,8 @@ List<Drawable> ConsumableItem::drawables() const {
   return drawables;
 }
 
-void ConsumableItem::update(FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) {
-  SwingableItem::update(fireMode, shifting, moves);
+void ConsumableItem::update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) {
+  SwingableItem::update(dt, fireMode, shifting, moves);
 
   if (entityMode() == EntityMode::Master) {
     if (m_consuming)

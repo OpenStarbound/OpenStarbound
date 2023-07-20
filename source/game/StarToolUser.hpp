@@ -54,7 +54,7 @@ public:
   Vec2F handPosition(ToolHand hand, Humanoid const& humanoid, Vec2F const& handOffset) const;
   bool queryShieldHit(DamageSource const& source) const;
 
-  void tick(bool shifting, HashSet<MoveControlType> const& moves);
+  void tick(float dt, bool shifting, HashSet<MoveControlType> const& moves);
 
   void beginPrimaryFire();
   void beginAltFire();

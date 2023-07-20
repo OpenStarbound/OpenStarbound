@@ -53,7 +53,7 @@ public:
 
   // Updates internal world client in addition to handling universe level
   // commands.
-  void update();
+  void update(float dt);
 
   Maybe<BeamUpRule> beamUpRule() const;
   bool canBeamUp() const;

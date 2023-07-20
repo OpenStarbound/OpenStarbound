@@ -22,7 +22,7 @@ public:
   virtual ~BeamItem() = default;
 
   virtual void init(ToolUserEntity* owner, ToolHand hand) override;
-  virtual void update(FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
+  virtual void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
 
   virtual List<Drawable> nonRotatedDrawables() const override;
 

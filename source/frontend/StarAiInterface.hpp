@@ -34,7 +34,7 @@ class AiInterface : public Pane {
 public:
   AiInterface(UniverseClientPtr client, CinematicPtr cinematic, MainInterfacePaneManager* paneManager);
 
-  void update() override;
+  void update(float dt) override;
 
   void displayed() override;
   void dismissed() override;

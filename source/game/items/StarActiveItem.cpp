@@ -119,7 +119,7 @@ void ActiveItem::uninit() {
   m_activeAudio.clear();
 }
 
-void ActiveItem::update(FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) {
+void ActiveItem::update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) {
   StringMap<bool> moveMap;
   for (auto m : moves)
     moveMap[MoveControlTypeNames.getRight(m)] = true;
@@ -130,7 +130,7 @@ void ActiveItem::update(FireMode fireMode, bool shifting, HashSet<MoveControlTyp
       if (fireMode != FireMode::None)
         m_script.invoke("activate", FireModeNames.getRight(fireMode), shifting, moveMap);
     }
-    m_script.update(m_script.updateDt(), FireModeNames.getRight(fireMode), shifting, moveMap);
+    m_script.update(m_script.updateDt(dt), FireModeNames.getRight(fireMode), shifting, moveMap);
 
     if (instanceValue("retainScriptStorageInItem", false).toBool()) {
       setInstanceValue("scriptStorage", m_script.getScriptStorage());
@@ -139,10 +139,10 @@ void ActiveItem::update(FireMode fireMode, bool shifting, HashSet<MoveControlTyp
 
   bool isClient = world()->isClient();
   if (isClient) {
-    m_itemAnimator.update(WorldTimestep, &m_itemAnimatorDynamicTarget);
-    m_scriptedAnimator.update(m_scriptedAnimator.updateDt());
+    m_itemAnimator.update(dt, &m_itemAnimatorDynamicTarget);
+    m_scriptedAnimator.update(m_scriptedAnimator.updateDt(dt));
   } else {
-    m_itemAnimator.update(WorldTimestep, nullptr);
+    m_itemAnimator.update(dt, nullptr);
   }
 
   eraseWhere(m_activeAudio, [this](pair<AudioInstancePtr const, Vec2F> const& a) {

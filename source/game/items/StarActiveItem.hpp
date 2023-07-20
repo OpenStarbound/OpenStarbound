@@ -30,7 +30,7 @@ public:
   void init(ToolUserEntity* owner, ToolHand hand) override;
   void uninit() override;
 
-  void update(FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
+  void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
 
   List<DamageSource> damageSources() const override;
   List<PolyF> shieldPolys() const override;

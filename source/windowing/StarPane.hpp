@@ -52,8 +52,8 @@ public:
   virtual void removeFocus(Widget const* focus);
   virtual void removeFocus();
 
-  virtual void update();
-  virtual void tick();
+  virtual void update(float dt);
+  virtual void tick(float dt);
 
   bool dragActive() const;
   Vec2I dragMouseOrigin() const;

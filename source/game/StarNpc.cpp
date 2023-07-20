@@ -345,12 +345,14 @@ void Npc::damagedOther(DamageNotification const& damage) {
     m_statusController->damagedOther(damage);
 }
 
-void Npc::update(uint64_t) {
+void Npc::update(float dt, uint64_t) {
   if (!inWorld())
     return;
 
+  m_movementController->setTimestep(dt);
+
   if (isMaster()) {
-    m_scriptComponent.update(m_scriptComponent.updateDt());
+    m_scriptComponent.update(m_scriptComponent.updateDt(dt));
 
     if (inConflictingLoungeAnchor())
       m_movementController->resetAnchorState();
@@ -385,10 +387,10 @@ void Npc::update(uint64_t) {
       m_statusController->setPersistentEffects("armor", m_armor->statusEffects());
     m_statusController->setPersistentEffects("tools", m_tools->statusEffects());
 
-    m_movementController->tickMaster();
-    m_statusController->tickMaster();
+    m_movementController->tickMaster(dt);
+    m_statusController->tickMaster(dt);
 
-    tickShared();
+    tickShared(dt);
 
     if (!is<LoungeAnchor>(m_movementController->entityAnchor())) {
       if (m_movementController->groundMovement()) {
@@ -413,9 +415,9 @@ void Npc::update(uint64_t) {
       }
     }
 
-    if (m_emoteCooldownTimer.tick())
+    if (m_emoteCooldownTimer.tick(dt))
       m_emoteState = HumanoidEmote::Idle;
-    if (m_danceCooldownTimer.tick())
+    if (m_danceCooldownTimer.tick(dt))
       m_dance = {};
 
     if (m_chatMessageUpdated) {
@@ -425,7 +427,7 @@ void Npc::update(uint64_t) {
       m_chatMessageUpdated = false;
     }
 
-    if (m_blinkCooldownTimer.tick()) {
+    if (m_blinkCooldownTimer.tick(dt)) {
       m_blinkCooldownTimer = GameTimer(Random::randf(m_blinkInterval[0], m_blinkInterval[1]));
       if (m_emoteState == HumanoidEmote::Idle)
         addEmote(HumanoidEmote::Blink);
@@ -436,10 +438,10 @@ void Npc::update(uint64_t) {
 
   } else {
     m_netGroup.tickNetInterpolation(WorldTimestep);
-    m_movementController->tickSlave();
-    m_statusController->tickSlave();
+    m_movementController->tickSlave(dt);
+    m_statusController->tickSlave(dt);
 
-    tickShared();
+    tickShared(dt);
   }
 
   if (world()->isClient())
@@ -534,7 +536,7 @@ Vec2F Npc::getAbsolutePosition(Vec2F relativePosition) const {
   return m_movementController->position() + relativePosition;
 }
 
-void Npc::tickShared() {
+void Npc::tickShared(float dt) {
   if (m_hitDamageNotificationLimiter)
     m_hitDamageNotificationLimiter--;
 
@@ -547,7 +549,7 @@ void Npc::tickShared() {
   m_effectEmitter->setSourcePosition("backArmor", backArmorOffset() + position());
 
   m_effectEmitter->setDirection(m_humanoid.facingDirection());
-  m_effectEmitter->tick(*entityMode());
+  m_effectEmitter->tick(dt, *entityMode());
 
   m_humanoid.setMovingBackwards(m_movementController->movingDirection() != m_movementController->facingDirection());
   m_humanoid.setFacingDirection(m_movementController->facingDirection());
@@ -575,12 +577,12 @@ void Npc::tickShared() {
   m_armor->setupHumanoidClothingDrawables(m_humanoid, false);
 
   m_tools->suppressItems(!canUseTool());
-  m_tools->tick(m_shifting.get(), {});
+  m_tools->tick(dt, m_shifting.get(), {});
 
   if (auto overrideDirection = m_tools->setupHumanoidHandItems(m_humanoid, position(), aimPosition()))
     m_movementController->controlFace(*overrideDirection);
 
-  m_humanoid.animate(WorldTimestep);
+  m_humanoid.animate(dt);
 }
 
 LuaCallbacks Npc::makeNpcCallbacks() {

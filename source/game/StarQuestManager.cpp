@@ -342,7 +342,7 @@ Maybe<Json> QuestManager::receiveMessage(String const& message, bool localMessag
   return result;
 }
 
-void QuestManager::update() {
+void QuestManager::update(float dt) {
   startInitialQuests();
 
   if (m_trackedQuestId && !isActive(*m_trackedQuestId))
@@ -381,7 +381,7 @@ void QuestManager::update() {
     }
   }
 
-  serverQuests().exec([](QuestPtr const& quest) { quest->update(); });
+  serverQuests().exec([dt](QuestPtr const& quest) { quest->update(dt); });
 }
 
 List<QuestPtr> QuestManager::serverQuests() const {

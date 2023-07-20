@@ -28,7 +28,7 @@ NameplatePainter::NameplatePainter() {
   m_nametags.setMovementThreshold(nametagConfig.getFloat("movementThreshold"));
 }
 
-void NameplatePainter::update(WorldClientPtr const& world, WorldCamera const& camera, bool inspectionMode) {
+void NameplatePainter::update(float dt, WorldClientPtr const& world, WorldCamera const& camera, bool inspectionMode) {
   m_camera = camera;
 
   Set<EntityId> foundEntities;
@@ -70,7 +70,7 @@ void NameplatePainter::update(WorldClientPtr const& world, WorldCamera const& ca
   });
 
   m_entitiesWithNametags = move(foundEntities);
-  m_nametags.update();
+  m_nametags.update(dt);
 }
 
 void NameplatePainter::render() {

@@ -23,7 +23,7 @@ public:
   virtual void uninit();
 
   // Default implementation does nothing
-  virtual void update(FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves);
+  virtual void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves);
 
   // Default implementations return empty list
   virtual List<DamageSource> damageSources() const;

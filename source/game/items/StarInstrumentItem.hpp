@@ -29,7 +29,7 @@ public:
   List<PersistentStatusEffect> statusEffects() const override;
   StringSet effectSources() const override;
 
-  void update(FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
+  void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
 
   bool active() const override;
   void setActive(bool active) override;

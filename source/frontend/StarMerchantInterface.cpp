@@ -138,8 +138,8 @@ PanePtr MerchantPane::createTooltip(Vec2I const& screenPosition) {
   return {};
 }
 
-void MerchantPane::update() {
-  Pane::update();
+void MerchantPane::update(float dt) {
+  Pane::update(dt);
 
   if (!m_worldClient->playerCanReachEntity(m_sourceEntityId))
     dismiss();

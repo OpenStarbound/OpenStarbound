@@ -15,7 +15,7 @@ public:
 
   List<Drawable> drawables() const override;
 
-  void update(FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
+  void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
   void fire(FireMode mode, bool shifting, bool edgeTriggered) override;
   void fireTriggered() override;
   void uninit() override;

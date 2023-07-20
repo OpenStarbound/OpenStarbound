@@ -17,7 +17,7 @@ class EffectSource {
 public:
   EffectSource(String const& kind, String suggestedSpawnLocation, Json const& definition);
   String const& kind() const;
-  void tick();
+  void tick(float dt);
   bool expired() const;
   void stop();
   List<String> particles();

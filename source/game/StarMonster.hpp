@@ -88,7 +88,7 @@ public:
   bool shouldDestroy() const override;
   void destroy(RenderCallback* renderCallback) override;
 
-  void update(uint64_t currentStep) override;
+  void update(float dt, uint64_t currentStep) override;
 
   void render(RenderCallback* renderCallback) override;
 
@@ -137,7 +137,7 @@ public:
 private:
   Vec2F getAbsolutePosition(Vec2F relativePosition) const;
 
-  void updateStatus();
+  void updateStatus(float dt);
   LuaCallbacks makeMonsterCallbacks();
 
   void addChatMessage(String const& message, String const& portrait = "");

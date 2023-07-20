@@ -12,7 +12,7 @@ class TextBoxWidget : public Widget {
 public:
   TextBoxWidget(String const& startingText, String const& hint, WidgetCallbackFunc callback);
 
-  virtual void update() override;
+  virtual void update(float dt) override;
 
   String getText() const;
   bool setText(String const& text, bool callback = true);

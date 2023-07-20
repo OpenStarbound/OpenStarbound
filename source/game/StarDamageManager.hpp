@@ -48,7 +48,7 @@ public:
 
   // Notify entities that they have caused damage, apply damage to master
   // entities, produce damage notifications, and run down damage timeouts.
-  void update();
+  void update(float dt);
 
   // Incoming RemoteHitRequest and RemoteDamageRequest must have the
   // destinationConnection equal to the DamageManager's connectionId

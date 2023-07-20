@@ -85,12 +85,12 @@ void Stagehand::readNetState(ByteArray data, float) {
   m_netGroup.readNetState(move(data));
 }
 
-void Stagehand::update(uint64_t) {
+void Stagehand::update(float dt, uint64_t) {
   if (!inWorld())
     return;
 
   if (isMaster() && m_scripted)
-    m_scriptComponent.update(m_scriptComponent.updateDt());
+    m_scriptComponent.update(m_scriptComponent.updateDt(dt));
 
   if (world()->isClient()) {
     auto boundBox = metaBoundBox().translated(position());

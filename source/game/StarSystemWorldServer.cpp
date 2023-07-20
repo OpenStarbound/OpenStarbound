@@ -208,12 +208,12 @@ bool SystemWorldServer::addObject(SystemObjectPtr object, bool doRangeCheck) {
   return true;
 }
 
-void SystemWorldServer::update() {
+void SystemWorldServer::update(float dt) {
   for (auto p : m_ships)
-    p.second->serverUpdate(this, SystemWorldTimestep);
+    p.second->serverUpdate(this, dt);
 
   for (auto p : m_objects) {
-    p.second->serverUpdate(this, SystemWorldTimestep);
+    p.second->serverUpdate(this, dt);
 
     // don't destroy objects that still have players at them
     if (p.second->shouldDestroy() && shipsAtLocation(p.first).size() == 0)

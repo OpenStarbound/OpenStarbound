@@ -169,7 +169,9 @@ DataStream& operator<<(DataStream& ds, MovementParameters const& movementParamet
 
 MovementController::MovementController(MovementParameters const& parameters) {
   m_resting = false;
-  
+
+  m_timeStep = WorldTimestep;
+
   m_liquidPercentage = 0.0f;
   m_liquidId = EmptyLiquidId;
 
@@ -392,15 +394,15 @@ void MovementController::rotate(float rotationRate) {
     return;
 
   m_resting = false;
-  m_rotation.set(fmod(rotation() + rotationRate * WorldTimestep, 2 * Constants::pi));
+  m_rotation.set(fmod(rotation() + rotationRate * m_timeStep, 2 * Constants::pi));
 }
 
 void MovementController::accelerate(Vec2F const& acceleration) {
-  setVelocity(velocity() + acceleration * WorldTimestep);
+  setVelocity(velocity() + acceleration * m_timeStep);
 }
 
 void MovementController::force(Vec2F const& force) {
-  setVelocity(velocity() + force / mass() * WorldTimestep);
+  setVelocity(velocity() + force / mass() * m_timeStep);
 }
 
 void MovementController::approachVelocity(Vec2F const& targetVelocity, float maxControlForce) {
@@ -414,7 +416,7 @@ void MovementController::approachVelocity(Vec2F const& targetVelocity, float max
   if (diffMagnitude == 0.0f)
     return;
 
-  float maximumAcceleration = maxControlForce / mass() * WorldTimestep;
+  float maximumAcceleration = maxControlForce / mass() * m_timeStep;
   float clampedMagnitude = clamp(diffMagnitude, 0.0f, maximumAcceleration);
 
   setVelocity(velocity() + diff * (clampedMagnitude / diffMagnitude));
@@ -437,7 +439,7 @@ void MovementController::approachVelocityAlongAngle(float angle, float targetVel
   if (positiveOnly && diff < 0)
     return;
 
-  float maximumAcceleration = maxControlForce / mass() * WorldTimestep;
+  float maximumAcceleration = maxControlForce / mass() * m_timeStep;
 
   float diffMagnitude = std::fabs(diff);
   float clampedMagnitude = clamp(diffMagnitude, 0.0f, maximumAcceleration);
@@ -464,7 +466,12 @@ void MovementController::uninit() {
   updatePositionInterpolators();
 }
 
-void MovementController::tickMaster() {
+void MovementController::setTimestep(float dt) {
+  m_timeStep = dt;
+}
+
+void MovementController::tickMaster(float dt) {
+  setTimestep(dt);
   auto geometry = world()->geometry();
 
   m_zeroG.set(!*m_parameters.gravityEnabled || *m_parameters.gravityMultiplier == 0 || world()->gravity(position()) == 0);
@@ -478,7 +485,7 @@ void MovementController::tickMaster() {
   if (surfaceCollision) {
     Vec2F surfacePositionDelta = geometry.diff(surfaceCollision->position, m_surfaceMovingCollisionPosition);
     setPosition(position() + surfacePositionDelta);
-    Vec2F newSurfaceVelocity = surfacePositionDelta / WorldTimestep;
+    Vec2F newSurfaceVelocity = surfacePositionDelta / dt;
     setVelocity(velocity() - m_surfaceVelocity + newSurfaceVelocity);
     m_surfaceVelocity = newSurfaceVelocity;
   } else {
@@ -496,7 +503,7 @@ void MovementController::tickMaster() {
 
   // don't integrate velocity when resting
   Vec2F relativeVelocity = m_resting ? Vec2F() : velocity();
-  Vec2F originalMovement = relativeVelocity * WorldTimestep;
+  Vec2F originalMovement = relativeVelocity * dt;
   if (surfaceCollision)
     relativeVelocity -= m_surfaceVelocity;
 
@@ -507,7 +514,7 @@ void MovementController::tickMaster() {
   unsigned steps;
   float maxMovementPerStep = *m_parameters.maxMovementPerStep;
   if (maxMovementPerStep > 0.0f)
-    steps = std::floor(vmag(relativeVelocity) * WorldTimestep / maxMovementPerStep) + 1;
+    steps = std::floor(vmag(relativeVelocity) * dt / maxMovementPerStep) + 1;
   else
     steps = 1;
 
@@ -516,8 +523,8 @@ void MovementController::tickMaster() {
     steps = 0;
 
   for (unsigned i = 0; i < steps; ++i) {
-    float dt = WorldTimestep / steps;
-    Vec2F movement = relativeVelocity * dt;
+    float dtSteps = dt / steps;
+    Vec2F movement = relativeVelocity * dtSteps;
 
     if (!*m_parameters.collisionEnabled || collisionPoly().isNull()) {
       setPosition(position() + movement);
@@ -546,7 +553,7 @@ void MovementController::tickMaster() {
       queryBounds.combine(queryBounds.translated(movement));
       queryCollisions(queryBounds);
       auto result = collisionMove(m_workingCollisions, body, movement, ignorePlatforms, *m_parameters.enableSurfaceSlopeCorrection && !zeroG(),
-          maximumCorrection, maximumPlatformCorrection, bodyCenter);
+          maximumCorrection, maximumPlatformCorrection, bodyCenter, dtSteps);
 
       setPosition(position() + result.movement);
 
@@ -572,7 +579,7 @@ void MovementController::tickMaster() {
         if (*m_parameters.stickyCollision && result.collisionKind != CollisionKind::Slippery) {
           // When sticking, cancel all velocity and apply stickyForce in the
           // opposite of the direction of collision correction.
-          relativeVelocity = -normCorrection * *m_parameters.stickyForce / mass() * dt;
+          relativeVelocity = -normCorrection * *m_parameters.stickyForce / mass() * dtSteps;
           m_stickingDirection.set(-normCorrection.angle());
           break;
         } else {
@@ -597,14 +604,14 @@ void MovementController::tickMaster() {
             // independently).
 
             if (relativeVelocity[0] < 0 && correction[0] > 0)
-              relativeVelocity[0] = min(0.0f, relativeVelocity[0] + correction[0] / WorldTimestep);
+              relativeVelocity[0] = min(0.0f, relativeVelocity[0] + correction[0] / dt);
             else if (relativeVelocity[0] > 0 && correction[0] < 0)
-              relativeVelocity[0] = max(0.0f, relativeVelocity[0] + correction[0] / WorldTimestep);
+              relativeVelocity[0] = max(0.0f, relativeVelocity[0] + correction[0] / dt);
 
             if (relativeVelocity[1] < 0 && correction[1] > 0)
-              relativeVelocity[1] = min(0.0f, relativeVelocity[1] + correction[1] / WorldTimestep);
+              relativeVelocity[1] = min(0.0f, relativeVelocity[1] + correction[1] / dt);
             else if (relativeVelocity[1] > 0 && correction[1] < 0)
-              relativeVelocity[1] = max(0.0f, relativeVelocity[1] + correction[1] / WorldTimestep);
+              relativeVelocity[1] = max(0.0f, relativeVelocity[1] + correction[1] / dt);
           }
         }
       }
@@ -641,7 +648,7 @@ void MovementController::tickMaster() {
     float buoyancy = *m_parameters.liquidBuoyancy * m_liquidPercentage + *m_parameters.airBuoyancy * (1.0f - liquidPercentage());
     float gravity = world()->gravity(position()) * *m_parameters.gravityMultiplier * (1.0f - buoyancy);
     Vec2F environmentVelocity;
-    environmentVelocity[1] -= gravity * WorldTimestep;
+    environmentVelocity[1] -= gravity * dt;
 
     if (onGround() && *m_parameters.slopeSlidingFactor != 0 && m_surfaceSlope[1] != 0)
       environmentVelocity += -m_surfaceSlope * (m_surfaceSlope[0] * m_surfaceSlope[1]) * *m_parameters.slopeSlidingFactor;
@@ -673,16 +680,17 @@ void MovementController::tickMaster() {
     // but it is applied here as a multiplicitave factor from [0, 1] so it does
     // not induce oscillation at very high friction and so it cannot be
     // negative.
-    float frictionFactor = clamp(friction / mass() * WorldTimestep, 0.0f, 1.0f);
+    float frictionFactor = clamp(friction / mass() * dt, 0.0f, 1.0f);
     newVelocity = lerp(frictionFactor, newVelocity, refVel);
   }
   
   setVelocity(newVelocity);
 
-  updateForceRegions();
+  updateForceRegions(dt);
 }
 
-void MovementController::tickSlave() {
+void MovementController::tickSlave(float dt) {
+  setTimestep(dt);
   if (auto movingCollisionId = m_surfaceMovingCollision.get()) {
     if (auto physicsEntity = world()->get<PhysicsEntity>(movingCollisionId->physicsEntityId)) {
       if (auto collision = physicsEntity->movingCollision(movingCollisionId->collisionIndex)) {
@@ -724,7 +732,7 @@ void MovementController::forEachMovingCollision(RectF const& region, function<bo
   }
 }
 
-void MovementController::updateForceRegions() {
+void MovementController::updateForceRegions(float dt) {
   auto geometry = world()->geometry();
   auto pos = position();
   auto body = collisionBody();
@@ -841,11 +849,12 @@ CollisionKind MovementController::maxOrNullCollision(CollisionKind a, CollisionK
 }
 
 MovementController::CollisionResult MovementController::collisionMove(List<CollisionPoly>& collisionPolys, PolyF const& body, Vec2F const& movement,
-    bool ignorePlatforms, bool enableSurfaceSlopeCorrection, float maximumCorrection, float maximumPlatformCorrection, Vec2F sortCenter) {
+    bool ignorePlatforms, bool enableSurfaceSlopeCorrection, float maximumCorrection, float maximumPlatformCorrection, Vec2F sortCenter, float dt) {
   unsigned const MaximumSeparationLoops = 3;
   float const SlideAngle = Constants::pi / 3;
   float const SlideCorrectionLimit = 0.2f;
-  float const SeparationTolerance = 0.001f;
+  float separationTolerance = 0.001f * (dt * 60.f);
+  maximumPlatformCorrection *= (dt * 60.f);
 
   if (body.isNull())
     return {movement, Vec2F(), {}, false, false, Vec2F(1, 0), CollisionKind::None};
@@ -861,7 +870,7 @@ MovementController::CollisionResult MovementController::collisionMove(List<Colli
 
   if (enableSurfaceSlopeCorrection) {
     // First try separating with our ground sliding cheat.
-    separation = collisionSeparate(collisionPolys, checkBody, ignorePlatforms, maximumPlatformCorrection, sortCenter, true, SeparationTolerance);
+    separation = collisionSeparate(collisionPolys, checkBody, ignorePlatforms, maximumPlatformCorrection, sortCenter, true, separationTolerance);
     totalCorrection += separation.correction;
     checkBody.translate(separation.correction);
     maxCollided = maxOrNullCollision(maxCollided, separation.collisionKind);
@@ -889,7 +898,7 @@ MovementController::CollisionResult MovementController::collisionMove(List<Colli
     totalCorrection = Vec2F();
     for (size_t i = 0; i < MaximumSeparationLoops; ++i) {
       separation = collisionSeparate(collisionPolys, checkBody, ignorePlatforms,
-          maximumPlatformCorrection, sortCenter, false, SeparationTolerance);
+          maximumPlatformCorrection, sortCenter, false, separationTolerance);
       totalCorrection += separation.correction;
       checkBody.translate(separation.correction);
       maxCollided = maxOrNullCollision(maxCollided, separation.collisionKind);
@@ -911,7 +920,7 @@ MovementController::CollisionResult MovementController::collisionMove(List<Colli
     checkBody = body;
     totalCorrection = -movement;
     for (size_t i = 0; i < MaximumSeparationLoops; ++i) {
-      separation = collisionSeparate(collisionPolys, checkBody, true, maximumPlatformCorrection, sortCenter, false, SeparationTolerance);
+      separation = collisionSeparate(collisionPolys, checkBody, true, maximumPlatformCorrection, sortCenter, false, separationTolerance);
       totalCorrection += separation.correction;
       checkBody.translate(separation.correction);
       maxCollided = maxOrNullCollision(maxCollided, separation.collisionKind);
@@ -931,7 +940,7 @@ MovementController::CollisionResult MovementController::collisionMove(List<Colli
     result.movement = movement + totalCorrection;
     result.correction = totalCorrection;
     result.isStuck = false;
-    result.onGround = result.correction[1] > SeparationTolerance;
+    result.onGround = result.correction[1] > separationTolerance;
     result.surfaceMovingCollisionId = surfaceMovingCollisionId;
     result.collisionKind = maxCollided;
     result.groundSlope = Vec2F(1, 0);
@@ -944,7 +953,7 @@ MovementController::CollisionResult MovementController::collisionMove(List<Colli
       // geometry, rather than off to the side.
       float maxSideHorizontalOverlap = 0.0f;
       RectF touchingBounds = checkBody.boundBox();
-      touchingBounds.pad(SeparationTolerance);
+      touchingBounds.pad(separationTolerance);
       for (auto const& cp : collisionPolys) {
         if (!cp.polyBounds.intersects(touchingBounds))
           continue;
@@ -959,7 +968,7 @@ MovementController::CollisionResult MovementController::collisionMove(List<Colli
               float t = clamp(side.lineProjection(bodyVertex), 0.0f, 1.0f);
               Vec2F nearPoint = side.eval(t);
               if (nearPoint[1] > cp.sortPosition[1]) {
-                if (vmagSquared(bodyVertex - nearPoint) <= square(SeparationTolerance)) {
+                if (vmagSquared(bodyVertex - nearPoint) <= square(separationTolerance)) {
                   maxSideHorizontalOverlap = thisSideHorizontalOverlap;
                   result.groundSlope = side.diff().normalized();
                   if (result.groundSlope[0] < 0)
@@ -980,8 +989,6 @@ MovementController::CollisionResult MovementController::collisionMove(List<Colli
 
 MovementController::CollisionSeparation MovementController::collisionSeparate(List<CollisionPoly>& collisionPolys, PolyF const& poly,
     bool ignorePlatforms, float maximumPlatformCorrection, Vec2F const& sortCenter, bool upward, float separationTolerance) {
-
-  maximumPlatformCorrection *= WorldTimestep * 60.0f;
 
   CollisionSeparation separation = {};
   separation.collisionKind = CollisionKind::None;

@@ -16,7 +16,7 @@ public:
   WirePane(WorldClientPtr worldClient, PlayerPtr player, WorldPainterPtr worldPainter);
   virtual ~WirePane() {}
 
-  virtual void update() override;
+  virtual void update(float dt) override;
   virtual bool sendEvent(InputEvent const& event) override;
 
   virtual SwingResult swing(WorldGeometry const& geometry, Vec2F position, FireMode mode) override;

@@ -62,7 +62,7 @@ public:
   virtual bool shouldDestroy() const override;
   virtual void destroy(RenderCallback* renderCallback) override;
 
-  virtual void update(uint64_t currentStep) override;
+  virtual void update(float dt, uint64_t currentStep) override;
 
   virtual void render(RenderCallback* renderCallback) override;
 

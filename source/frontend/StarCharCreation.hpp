@@ -23,7 +23,7 @@ public:
   void randomize();
   void randomizeName();
 
-  virtual void tick() override;
+  virtual void tick(float dt) override;
   virtual bool sendEvent(InputEvent const& event) override;
 
   virtual PanePtr createTooltip(Vec2I const&) override;

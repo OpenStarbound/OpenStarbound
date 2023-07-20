@@ -45,13 +45,15 @@ WorldCamera& WorldPainter::camera() {
   return m_camera;
 }
 
+void WorldPainter::update(float dt) {
+  m_environmentPainter->update(dt);
+}
+
 void WorldPainter::render(WorldRenderData& renderData, function<void()> lightWaiter) {
   m_camera.setScreenSize(m_renderer->screenSize());
   m_camera.setTargetPixelRatio(Root::singleton().configuration()->get("zoomLevel").toFloat());
 
   m_assets = Root::singleton().assets();
-
-  m_environmentPainter->update();
 
   m_tilePainter->setup(m_camera, renderData);
 

@@ -17,10 +17,11 @@ public:
   void setUniverseClient(UniverseClientPtr universeClient);
   void setWorldPainter(WorldPainterPtr worldPainter);
 
-  void update(bool muteSfx = false, bool muteMusic = false);
+  void update(float dt, bool muteSfx = false, bool muteMusic = false);
 
   MixerPtr mixer() const;
 
+  void setSpeed(float speed);
   void setVolume(float volume, float rampTime = 0.0f);
   void read(int16_t* sampleData, size_t frameCount, Mixer::ExtraMixFunction = {});
 

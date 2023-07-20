@@ -91,7 +91,7 @@ public:
   void handleInteractAction(InteractAction interactAction);
 
   // Handles incoming client messages, aims main player, etc.
-  void update();
+  void update(float dt);
 
   // Render things e.g. quest indicators that should be drawn in the world
   // behind interface e.g. chat bubbles

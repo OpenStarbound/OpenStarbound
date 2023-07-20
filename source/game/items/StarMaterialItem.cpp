@@ -44,9 +44,9 @@ void MaterialItem::init(ToolUserEntity* owner, ToolHand hand) {
   BeamItem::init(owner, hand);
 }
 
-void MaterialItem::update(FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) {
-  FireableItem::update(fireMode, shifting, moves);
-  BeamItem::update(fireMode, shifting, moves);
+void MaterialItem::update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) {
+  FireableItem::update(dt, fireMode, shifting, moves);
+  BeamItem::update(dt, fireMode, shifting, moves);
   if (shifting || !multiplaceEnabled())
     setEnd(BeamItem::EndType::Tile);
   else

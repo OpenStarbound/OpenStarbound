@@ -6,8 +6,8 @@ Layout::Layout() {
   markAsContainer();
 }
 
-void Layout::update() {
-  Widget::update();
+void Layout::update(float dt) {
+  Widget::update(dt);
 }
 
 }

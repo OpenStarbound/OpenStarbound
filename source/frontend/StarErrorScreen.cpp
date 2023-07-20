@@ -70,12 +70,12 @@ bool ErrorScreen::handleInputEvent(InputEvent const& event) {
   return m_paneManager->sendInputEvent(event);
 }
 
-void ErrorScreen::update() {
-  m_paneManager->update();
+void ErrorScreen::update(float dt) {
+  m_paneManager->update(dt);
+  m_cursor.update(dt);
 }
 
 void ErrorScreen::renderCursor() {
-  m_cursor.update(WorldTimestep);
   Vec2I cursorPos = m_cursorScreenPos;
   Vec2I cursorSize = m_cursor.size();
   Vec2I cursorOffset = m_cursor.offset();

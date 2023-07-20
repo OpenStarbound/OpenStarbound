@@ -352,12 +352,12 @@ List<Vec2I> Object::roots() const {
   return {};
 }
 
-void Object::update(uint64_t) {
+void Object::update(float dt, uint64_t) {
   if (!inWorld())
     return;
 
   if (isMaster()) {
-    m_tileDamageStatus->recover(m_config->tileDamageParameters, WorldTimestep);
+    m_tileDamageStatus->recover(m_config->tileDamageParameters, dt);
 
     if (m_liquidCheckTimer.wrapTick())
       checkLiquidBroken();
@@ -369,24 +369,24 @@ void Object::update(uint64_t) {
         setImageKey("frame", toString(frame));
       }
 
-      m_animationTimer = std::fmod(m_animationTimer + WorldTimestep, orientation->animationCycle);
+      m_animationTimer = std::fmod(m_animationTimer + dt, orientation->animationCycle);
     }
 
-    m_networkedAnimator->update(WorldTimestep, nullptr);
+    m_networkedAnimator->update(dt, nullptr);
     m_networkedAnimator->setFlipped(direction() == Direction::Left, m_animationCenterLine);
 
-    m_scriptComponent.update(m_scriptComponent.updateDt());
+    m_scriptComponent.update(m_scriptComponent.updateDt(dt));
 
   } else {
-    m_networkedAnimator->update(WorldTimestep, &m_networkedAnimatorDynamicTarget);
+    m_networkedAnimator->update(dt, &m_networkedAnimatorDynamicTarget);
     m_networkedAnimatorDynamicTarget.updatePosition(position() + m_animationPosition);
   }
 
   if (m_lightFlickering)
-    m_lightFlickering->update(WorldTimestep);
+    m_lightFlickering->update(dt);
 
   for (auto& timer : m_emissionTimers)
-    timer.tick();
+    timer.tick(dt);
 
   if (world()->isClient())
     m_scriptedAnimator.update();

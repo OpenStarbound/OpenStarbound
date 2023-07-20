@@ -60,10 +60,9 @@ pair<ByteArray, uint64_t> ServerWeather::writeUpdate(uint64_t fromVersion) {
   return m_netGroup.writeNetState(fromVersion);
 }
 
-void ServerWeather::update() {
-  spawnWeatherProjectiles(WorldTimestep);
+void ServerWeather::update(double dt) {
+  spawnWeatherProjectiles(dt);
 
-  double dt = WorldTimestep;
   if (m_referenceClock) {
     double clockTime = m_referenceClock->time();
     if (!m_clockTrackingTime) {
@@ -275,8 +274,8 @@ void ClientWeather::setVisibleRegion(RectI visibleRegion) {
   m_visibleRegion = visibleRegion;
 }
 
-void ClientWeather::update() {
-  m_currentTime += WorldTimestep;
+void ClientWeather::update(double dt) {
+  m_currentTime += dt;
 
   if (m_currentWeatherIndex == NPos) {
     m_currentWeatherType = {};
@@ -288,7 +287,7 @@ void ClientWeather::update() {
   }
 
   if (m_currentWeatherType)
-    spawnWeatherParticles(RectF(m_visibleRegion), WorldTimestep);
+    spawnWeatherParticles(RectF(m_visibleRegion), dt);
 }
 
 float ClientWeather::wind() const {

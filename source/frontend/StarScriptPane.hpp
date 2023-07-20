@@ -16,7 +16,7 @@ public:
   void displayed() override;
   void dismissed() override;
 
-  void tick() override;
+  void tick(float dt) override;
 
   PanePtr createTooltip(Vec2I const& screenPosition) override;
 

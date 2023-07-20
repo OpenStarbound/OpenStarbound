@@ -126,7 +126,7 @@ void SliderBarWidget::setCallback(WidgetCallbackFunc callback) {
   m_callback = callback;
 }
 
-void SliderBarWidget::update() {
+void SliderBarWidget::update(float dt) {
   float gridLow = m_grid->position()[0];
   float gridHigh = gridLow + m_grid->size()[0];
 
@@ -145,7 +145,7 @@ void SliderBarWidget::update() {
     m_updateJog = false;
   }
 
-  Widget::update();
+  Widget::update(dt);
 }
 
 bool SliderBarWidget::sendEvent(InputEvent const& event) {

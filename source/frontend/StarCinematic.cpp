@@ -103,7 +103,7 @@ void Cinematic::setPlayer(PlayerPtr player) {
   m_player = player;
 }
 
-void Cinematic::update() {
+void Cinematic::update(float dt) {
   m_currentTimeSkip = {};
   for (auto timeSkip : m_timeSkips) {
     if (currentTimecode() >= timeSkip.availableTime && currentTimecode() < timeSkip.skipToTime)

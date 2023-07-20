@@ -720,7 +720,7 @@ void ActorMovementController::clearControls() {
   m_controlModifiers = ActorMovementModifiers();
 }
 
-void ActorMovementController::tickMaster() {
+void ActorMovementController::tickMaster(float dt) {
   EntityAnchorConstPtr newAnchor;
   if (auto anchorState = m_anchorState.get()) {
     if (auto anchorableEntity = as<AnchorableEntity>(world()->entity(anchorState->entityId)))
@@ -743,8 +743,8 @@ void ActorMovementController::tickMaster() {
     m_groundMovement.set(false);
     m_liquidMovement.set(false);
 
-    setVelocity((m_entityAnchor->position - MovementController::position()) / WorldTimestep);
-    MovementController::tickMaster();
+    setVelocity((m_entityAnchor->position - MovementController::position()) / dt);
+    MovementController::tickMaster(dt);
     setPosition(m_entityAnchor->position);
   } else {
     auto activeParameters = m_baseParameters.merge(m_controlParameters);
@@ -775,7 +775,7 @@ void ActorMovementController::tickMaster() {
       if (appliedForceRegion()) {
         m_pathController->reset();
       } else if (!m_pathController->pathfinding()) {
-        m_pathMoveResult = m_pathController->move(*this, activeParameters, activeModifiers, m_controlPathMove->second, WorldTimestep)
+        m_pathMoveResult = m_pathController->move(*this, activeParameters, activeModifiers, m_controlPathMove->second, dt)
           .apply([this](bool result) { return pair<Vec2F, bool>(m_controlPathMove->first, result); });
 
         auto action = m_pathController->curAction();
@@ -811,7 +811,7 @@ void ActorMovementController::tickMaster() {
 
         // MovementController still handles updating liquid percentage and updating force regions
         updateLiquidPercentage();
-        updateForceRegions();
+        updateForceRegions(dt);
         // onGround flag needs to be manually set, won't be set by MovementController::tickMaster
         setOnGround(onGround);
         clearControls();
@@ -894,7 +894,7 @@ void ActorMovementController::tickMaster() {
       float minGroundSustain = *activeParameters.groundMovementMinimumSustain;
       float maxGroundSustain = *activeParameters.groundMovementMaximumSustain;
       float groundCheckDistance = *activeParameters.groundMovementCheckDistance;
-      m_groundMovementSustainTimer.tick();
+      m_groundMovementSustainTimer.tick(dt);
       if (onGround()) {
         m_groundMovementSustainTimer = GameTimer(maxGroundSustain);
       } else if (!m_groundMovementSustainTimer.ready() && groundCheckDistance > 0.0f && maxGroundSustain - m_groundMovementSustainTimer.timer > minGroundSustain) {
@@ -933,15 +933,15 @@ void ActorMovementController::tickMaster() {
         m_groundMovementSustainTimer = GameTimer(0);
 
       } else if (holdJump) {
-        m_reJumpTimer.tick();
+        m_reJumpTimer.tick(dt);
         if (m_jumpHoldTimer)
-          m_jumpHoldTimer->tick();
+          m_jumpHoldTimer->tick(dt);
 
         approachYVelocity(*jumpProfile.jumpSpeed * jumpModifier, *jumpProfile.jumpControlForce * jumpModifier);
 
       } else {
         m_jumping.set(false);
-        m_reJumpTimer.tick();
+        m_reJumpTimer.tick(dt);
       }
 
       if (m_controlMove == Direction::Left) {
@@ -1003,7 +1003,7 @@ void ActorMovementController::tickMaster() {
     bool falling = (yVelocity() < *activeParameters.fallStatusSpeedMin) && !m_groundMovement.get();
     m_falling.set(falling);
 
-    MovementController::tickMaster();
+    MovementController::tickMaster(dt);
 
     m_lastControlJump = m_controlJump;
     m_lastControlDown = m_controlDown;
@@ -1017,8 +1017,8 @@ void ActorMovementController::tickMaster() {
   clearControls();
 }
 
-void ActorMovementController::tickSlave() {
-  MovementController::tickSlave();
+void ActorMovementController::tickSlave(float dt) {
+  MovementController::tickSlave(dt);
 
   m_entityAnchor.reset();
   if (auto anchorState = m_anchorState.get()) {
@@ -1309,7 +1309,7 @@ Maybe<bool> PathController::move(ActorMovementController& movementController, Ac
           float angleFactor = movementController.velocity().normalized() * delta.normalized();
           float speedAlongAngle = angleFactor * movementController.velocity().magnitude();
           auto acc = parameters.airForce.value(0.0) / movementController.mass();
-          sourceVelocity = delta.normalized() * fmin(parameters.flySpeed.value(0.0), speedAlongAngle + acc * WorldTimestep);
+          sourceVelocity = delta.normalized() * fmin(parameters.flySpeed.value(0.0), speedAlongAngle + acc * dt);
           targetVelocity = sourceVelocity;
         }
         break;

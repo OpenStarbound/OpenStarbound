@@ -115,8 +115,7 @@ void Sky::stateUpdate() {
   m_lastWarpPhase = m_warpPhase;
 }
 
-void Sky::update() {
-  double dt = WorldTimestep;
+void Sky::update(double dt) {
   if (m_referenceClock) {
     m_time = m_referenceClock->time();
     if (!m_clockTrackingTime) {

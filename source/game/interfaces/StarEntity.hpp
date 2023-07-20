@@ -149,7 +149,7 @@ public:
   // This will only ever be called on master entities.
   virtual Maybe<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args);
 
-  virtual void update(uint64_t currentStep);
+  virtual void update(float dt, uint64_t currentStep);
 
   virtual void render(RenderCallback* renderer);
 

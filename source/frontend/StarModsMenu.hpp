@@ -13,7 +13,7 @@ class ModsMenu : public Pane {
 public:
   ModsMenu();
 
-  void update() override;
+  void update(float dt) override;
 
 private:
   static String bestModName(JsonObject const& metadata, String const& sourcePath);

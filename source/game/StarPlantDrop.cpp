@@ -176,9 +176,10 @@ RectF PlantDrop::collisionRect() const {
   return shape.boundBox();
 }
 
-void PlantDrop::update(uint64_t) {
-  m_time -= WorldTimestep;
+void PlantDrop::update(float dt, uint64_t) {
+  m_time -= dt;
 
+  m_movementController.setTimestep(dt);
   if (isMaster()) {
     if (m_spawnedDropEffects && !m_spawnedDrops.get())
       m_spawnedDropEffects = false; // false positive assumption over already having done the effect
@@ -187,7 +188,7 @@ void PlantDrop::update(uint64_t) {
       m_firstTick = false;
 
     // think up a better curve then sin
-    auto rotationAcceleration = 0.01f * world()->gravity(position()) * copysign(1.0f, m_rotationRate) * WorldTimestep;
+    auto rotationAcceleration = 0.01f * world()->gravity(position()) * copysign(1.0f, m_rotationRate) * dt;
     if (abs(m_movementController.rotation()) > m_rotationCap)
       m_rotationRate -= rotationAcceleration;
     else if (std::fabs(m_movementController.rotation()) < m_rotationFallThreshold)
@@ -203,7 +204,7 @@ void PlantDrop::update(uint64_t) {
       parameters.gravityEnabled = std::fabs(m_movementController.rotation()) >= m_rotationFallThreshold;
       m_movementController.applyParameters(parameters);
 
-      m_movementController.tickMaster();
+      m_movementController.tickMaster(dt);
       if (m_movementController.onGround())
         m_time = 0;
     }
@@ -243,7 +244,7 @@ void PlantDrop::update(uint64_t) {
     if (m_spawnedDrops.get())
       m_firstTick = false;
 
-    m_movementController.tickSlave();
+    m_movementController.tickSlave(dt);
   }
 }
 

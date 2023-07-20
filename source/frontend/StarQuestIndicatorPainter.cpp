@@ -16,7 +16,7 @@ AnimationPtr indicatorAnimation(String indicatorPath) {
   return make_shared<Animation>(assets->json(indicatorPath), indicatorPath);
 }
 
-void QuestIndicatorPainter::update(WorldClientPtr const& world, WorldCamera const& camera) {
+void QuestIndicatorPainter::update(float dt, WorldClientPtr const& world, WorldCamera const& camera) {
   m_camera = camera;
 
   Set<EntityId> foundIndicators;
@@ -30,7 +30,7 @@ void QuestIndicatorPainter::update(WorldClientPtr const& world, WorldCamera cons
     if (auto currentIndicator = m_indicators.ptr(entity->entityId())) {
       currentIndicator->screenPos = screenPos;
       if (currentIndicator->indicatorName == indicator->indicatorImage) {
-        currentIndicator->animation->update(WorldTimestep);
+        currentIndicator->animation->update(dt);
       } else {
         currentIndicator->indicatorName = indicator->indicatorImage;
         currentIndicator->animation = indicatorAnimation(indicator->indicatorImage);

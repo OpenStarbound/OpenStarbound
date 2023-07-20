@@ -100,7 +100,7 @@ public:
   void setVerticalScroll(bool vertical);
 
   virtual bool sendEvent(InputEvent const& event) override;
-  virtual void update() override;
+  virtual void update(float dt) override;
 
 protected:
   void drawChildren() override;

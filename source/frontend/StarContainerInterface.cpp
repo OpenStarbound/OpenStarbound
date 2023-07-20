@@ -258,11 +258,11 @@ void ContainerPane::burn() {
   m_containerInteractor->burnContainer();
 }
 
-void ContainerPane::update() {
-  Pane::update();
+void ContainerPane::update(float dt) {
+  Pane::update(dt);
 
   if (m_script)
-    m_script->update(m_script->updateDt());
+    m_script->update(m_script->updateDt(dt));
 
   m_itemBag->clearItems();
 

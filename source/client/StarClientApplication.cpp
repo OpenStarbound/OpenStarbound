@@ -346,6 +346,7 @@ void ClientApplication::processInput(InputEvent const& event) {
 }
 
 void ClientApplication::update() {
+  float dt = WorldTimestep * GlobalTimescale;
   if (m_state >= MainAppState::Title) {
     if (auto p2pNetworkingService = appController()->p2pNetworkingService()) {
       if (auto join = p2pNetworkingService->pullPendingJoin()) {
@@ -361,21 +362,21 @@ void ClientApplication::update() {
   }
 
   if (!m_errorScreen->accepted())
-    m_errorScreen->update();
+    m_errorScreen->update(dt);
 
   if (m_state == MainAppState::Mods)
-    updateMods();
+    updateMods(dt);
   else if (m_state == MainAppState::ModsWarning)
-    updateModsWarning();
+    updateModsWarning(dt);
 
   if (m_state == MainAppState::Splash)
-    updateSplash();
+    updateSplash(dt);
   else if (m_state == MainAppState::Error)
-    updateError();
+    updateError(dt);
   else if (m_state == MainAppState::Title)
-    updateTitle();
+    updateTitle(dt);
   else if (m_state > MainAppState::Title)
-    updateRunning();
+    updateRunning(dt);
   
   // Swallow leftover encoded voice data if we aren't in-game to allow mic read to continue for settings.
   if (m_state <= MainAppState::Title) {
@@ -647,8 +648,8 @@ void ClientApplication::setError(String const& error, std::exception const& e) {
   changeState(MainAppState::Title);
 }
 
-void ClientApplication::updateMods() {
-  m_cinematicOverlay->update();
+void ClientApplication::updateMods(float dt) {
+  m_cinematicOverlay->update(dt);
   auto ugcService = appController()->userGeneratedContentService();
   if (ugcService) {
     if (ugcService->triggerContentDownload()) {
@@ -686,27 +687,28 @@ void ClientApplication::updateMods() {
   }
 }
 
-void ClientApplication::updateModsWarning() {
+void ClientApplication::updateModsWarning(float dt) {
   if (m_errorScreen->accepted())
     changeState(MainAppState::Splash);
 }
 
-void ClientApplication::updateSplash() {
-  m_cinematicOverlay->update();
+void ClientApplication::updateSplash(float dt) {
+  m_cinematicOverlay->update(dt);
   if (!m_rootLoader.isRunning() && (m_cinematicOverlay->completable() || m_cinematicOverlay->completed()))
     changeState(MainAppState::Title);
 }
 
-void ClientApplication::updateError() {
+void ClientApplication::updateError(float dt) {
   if (m_errorScreen->accepted())
     changeState(MainAppState::Title);
 }
 
-void ClientApplication::updateTitle() {
-  m_cinematicOverlay->update();
+void ClientApplication::updateTitle(float dt) {
+  m_cinematicOverlay->update(dt);
 
-  m_titleScreen->update();
-  m_mainMixer->update();
+  m_titleScreen->update(dt);
+  m_mainMixer->update(dt);
+  m_mainMixer->setSpeed(GlobalTimescale);
 
   appController()->setAcceptingTextInput(m_titleScreen->textInputActive());
 
@@ -752,7 +754,7 @@ void ClientApplication::updateTitle() {
   }
 }
 
-void ClientApplication::updateRunning() {
+void ClientApplication::updateRunning(float dt) {
   try {
     auto p2pNetworkingService = appController()->p2pNetworkingService();
     bool clientIPJoinable = m_root->configuration()->get("clientIPJoinable").toBool();
@@ -869,12 +871,13 @@ void ClientApplication::updateRunning() {
     voiceData.setByteOrder(ByteOrder::LittleEndian);
     //voiceData.writeBytes(VoiceBroadcastPrefix.utf8Bytes()); transmitting with SE compat for now
     bool needstoSendVoice = m_voice->send(voiceData, 5000);
-    m_universeClient->update();
+    m_universeClient->update(dt);
 
     if (checkDisconnection())
       return;
 
     if (auto worldClient = m_universeClient->worldClient()) {
+      m_worldPainter->update(dt);
       auto& broadcastCallback = worldClient->broadcastCallback();
       if (!broadcastCallback) {
         broadcastCallback = [&](PlayerPtr player, StringView broadcast) -> bool {
@@ -909,12 +912,12 @@ void ClientApplication::updateRunning() {
       }
       worldClient->setInteractiveHighlightMode(isActionTaken(InterfaceAction::ShowLabels));
     }
+    updateCamera(dt);
 
-    updateCamera();
-
-    m_cinematicOverlay->update();
-    m_mainInterface->update();
-    m_mainMixer->update(m_cinematicOverlay->muteSfx(), m_cinematicOverlay->muteMusic());
+    m_cinematicOverlay->update(dt);
+    m_mainInterface->update(dt);
+    m_mainMixer->update(dt, m_cinematicOverlay->muteSfx(), m_cinematicOverlay->muteMusic());
+    m_mainMixer->setSpeed(GlobalTimescale);
 
     bool inputActive = m_mainInterface->textInputActive();
     appController()->setAcceptingTextInput(inputActive);
@@ -970,12 +973,12 @@ bool ClientApplication::isActionTakenEdge(InterfaceAction action) const {
   return false;
 }
 
-void ClientApplication::updateCamera() {
+void ClientApplication::updateCamera(float dt) {
   if (!m_universeClient->worldClient())
     return;
 
   WorldCamera& camera = m_worldPainter->camera();
-  camera.update(WorldTimestep);
+  camera.update(dt);
 
   if (m_mainInterface->fixedCamera())
     return;

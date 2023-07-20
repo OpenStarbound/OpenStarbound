@@ -64,15 +64,15 @@ void ContainerObject::init(World* world, EntityId entityId, EntityMode mode) {
   }
 }
 
-void ContainerObject::update(uint64_t currentStep) {
-  Object::update(currentStep);
+void ContainerObject::update(float dt, uint64_t currentStep) {
+  Object::update(dt, currentStep);
 
   if (isMaster()) {
     for (auto const& drop : take(m_lostItems))
       world()->addEntity(ItemDrop::createRandomizedDrop(drop, position()));
 
     if (m_crafting.get())
-      tickCrafting();
+      tickCrafting(dt);
 
     if (m_autoCloseCooldown > 0) {
       m_autoCloseCooldown -= 1;
@@ -453,7 +453,7 @@ ItemRecipe ContainerObject::recipeForMaterials(List<ItemPtr> const& inputItems) 
   return itemDatabase->parseRecipe(*result);
 }
 
-void ContainerObject::tickCrafting() {
+void ContainerObject::tickCrafting(float dt) {
   if (!m_crafting.get())
     return;
 
@@ -477,7 +477,7 @@ void ContainerObject::tickCrafting() {
     return;
   }
   if (m_goalRecipe.duration > 0)
-    m_craftingProgress.set(m_craftingProgress.get() + WorldTimestep / m_goalRecipe.duration);
+    m_craftingProgress.set(m_craftingProgress.get() + dt / m_goalRecipe.duration);
   else
     m_craftingProgress.set(1.0f);
   if (m_craftingProgress.get() >= 1.0f) {

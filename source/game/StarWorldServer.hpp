@@ -106,7 +106,7 @@ public:
   WorldServerFidelity fidelity() const;
   void setFidelity(WorldServerFidelity fidelity);
 
-  void update();
+  void update(float dt);
 
   ConnectionId connection() const override;
   WorldGeometry geometry() const override;
@@ -292,7 +292,7 @@ private:
 
   // Queues pending (step based) updates to the given player
   void queueUpdatePackets(ConnectionId clientId);
-  void updateDamage();
+  void updateDamage(float dt);
 
   void updateDamagedBlocks(float dt);
 

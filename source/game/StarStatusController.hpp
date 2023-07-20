@@ -115,8 +115,8 @@ public:
   void readNetDelta(DataStream& ds, float interpolationTime = 0.0) override;
   void blankNetDelta(float interpolationTime) override;
 
-  void tickMaster();
-  void tickSlave();
+  void tickMaster(float dt);
+  void tickSlave(float dt);
 
   const DirectivesGroup& parentDirectives() const;
   List<Drawable> drawables() const;
@@ -187,7 +187,7 @@ private:
     EffectAnimatorGroup::ElementId animatorId;
   };
 
-  void updateAnimators();
+  void updateAnimators(float dt);
   void updatePersistentUniqueEffects();
 
   float defaultUniqueEffectDuration(UniqueStatusEffect const& name) const;

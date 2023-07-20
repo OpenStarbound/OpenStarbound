@@ -25,7 +25,7 @@ public:
   SystemLocation shipDestination() const;
   bool flying() const;
 
-  void update();
+  void update(float dt);
 
   List<SystemObjectPtr> objects() const override;
   SystemObjectPtr getObject(Uuid const& uuid) const override;

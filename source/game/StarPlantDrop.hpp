@@ -44,7 +44,7 @@ public:
 
   RectF collisionRect() const;
 
-  void update(uint64_t currentStep) override;
+  void update(float dt, uint64_t currentStep) override;
 
   void render(RenderCallback* renderCallback) override;
 

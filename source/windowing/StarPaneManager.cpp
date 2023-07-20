@@ -244,7 +244,7 @@ void PaneManager::render() {
   m_prevInterfaceScale = m_context->interfaceScale();
 }
 
-void PaneManager::update() {
+void PaneManager::update(float dt) {
   m_tooltipShowTimer -= WorldTimestep;
   if (m_tooltipShowTimer < 0 && !m_activeTooltip) {
     if (auto parentPane = getPaneAt(m_tooltipLastMousePos)) {
@@ -287,9 +287,9 @@ void PaneManager::update() {
 
   for (auto const& layerPair : reverseIterate(m_displayedPanes)) {
     for (auto const& panePair : reverseIterate(layerPair.second)) {
-      panePair.first->tick();
+      panePair.first->tick(dt);
       if (panePair.first->active())
-        panePair.first->update();
+        panePair.first->update(dt);
     }
   }
 }

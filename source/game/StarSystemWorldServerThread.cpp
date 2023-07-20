@@ -89,7 +89,7 @@ void SystemWorldServerThread::update() {
     p.second(m_systemWorld->clientShip(p.first).get());
 
   if (!m_pause || *m_pause == false)
-    m_systemWorld->update();
+    m_systemWorld->update(SystemWorldTimestep);
   m_triggerStorage = m_systemWorld->triggeredStorage();
 
   // important to set destinations before getting locations

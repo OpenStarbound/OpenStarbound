@@ -4,8 +4,8 @@ namespace Star {
 
 FlowLayout::FlowLayout() : m_wrap(true) {}
 
-void FlowLayout::update() {
-  Layout::update();
+void FlowLayout::update(float dt) {
+  Layout::update(dt);
 
   int consumedWidth = 0;
   int rowHeight = 0;

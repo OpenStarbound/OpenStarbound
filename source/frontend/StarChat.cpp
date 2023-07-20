@@ -95,8 +95,8 @@ Chat::Chat(UniverseClientPtr client) : m_client(client) {
   updateSize();
 }
 
-void Chat::update() {
-  Pane::update();
+void Chat::update(float dt) {
+  Pane::update(dt);
 
   auto team = m_client->teamClient()->currentTeam();
   for (auto button : fetchChild<ButtonGroup>("filterGroup")->buttons()) {

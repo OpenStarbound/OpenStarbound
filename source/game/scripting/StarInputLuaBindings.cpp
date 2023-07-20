@@ -13,7 +13,7 @@ LuaCallbacks LuaBindings::makeInputCallbacks() {
   callbacks.registerCallbackWithSignature<bool,            String, String>("bindHeld", bind(mem_fn(&Input::bindHeld), input, _1, _2));
   callbacks.registerCallbackWithSignature<Maybe<unsigned>, String, String>("bindUp",   bind(mem_fn(&Input::bindUp),   input, _1, _2));
 
-  callbacks.registerCallback("keyDown", [input](String const& keyName, Maybe<StringList>& const modNames) -> Maybe<unsigned> {
+  callbacks.registerCallback("keyDown", [input](String const& keyName, Maybe<StringList> const& modNames) -> Maybe<unsigned> {
     Key key = KeyNames.getLeft(keyName);
     Maybe<KeyMod> mod;
     if (modNames) {

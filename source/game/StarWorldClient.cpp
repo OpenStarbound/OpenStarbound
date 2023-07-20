@@ -947,7 +947,7 @@ void WorldClient::setLuaCallbacks(String const& groupName, LuaCallbacks const& c
   m_luaRoot->addCallbacks(groupName, callbacks);
 }
 
-void WorldClient::update() {
+void WorldClient::update(float dt) {
   if (!inWorld())
     return;
 
@@ -989,7 +989,7 @@ void WorldClient::update() {
   List<EntityId> toRemove;
   List<EntityId> clientPresenceEntities{m_mainPlayer->entityId()};
   m_entityMap->updateAllEntities([&](EntityPtr const& entity) {
-      entity->update(m_currentStep);
+      entity->update(dt, m_currentStep);
 
       if (entity->shouldDestroy() && entity->entityMode() == EntityMode::Master)
         toRemove.append(entity->entityId());
@@ -1002,16 +1002,16 @@ void WorldClient::update() {
   m_clientState.setPlayer(m_mainPlayer->entityId());
   m_clientState.setClientPresenceEntities(move(clientPresenceEntities));
 
-  m_damageManager->update();
+  m_damageManager->update(dt);
   handleDamageNotifications();
 
   m_sky->setAltitude(m_clientState.windowCenter()[1]);
-  m_sky->update();
+  m_sky->update(dt);
 
   RectI particleRegion = m_clientState.window().padded(m_clientConfig.getInt("particleRegionPadding"));
 
   m_weather.setVisibleRegion(particleRegion);
-  m_weather.update();
+  m_weather.update(dt);
 
   if (!m_mainPlayer->isDead()) {
     // Clear m_requestedDrops every so often in case of entity id reuse or
@@ -1038,7 +1038,7 @@ void WorldClient::update() {
   sparkDamagedBlocks();
 
   m_particles->addParticles(m_weather.pullNewParticles());
-  m_particles->update(WorldTimestep, RectF(particleRegion), m_weather.wind());
+  m_particles->update(dt, RectF(particleRegion), m_weather.wind());
 
   if (auto audioSample = m_ambientSounds.updateAmbient(currentAmbientNoises(), m_sky->isDayTime()))
     m_samples.append(audioSample);

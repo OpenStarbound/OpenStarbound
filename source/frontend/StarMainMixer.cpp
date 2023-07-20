@@ -23,7 +23,7 @@ void MainMixer::setWorldPainter(WorldPainterPtr worldPainter) {
   m_worldPainter = move(worldPainter);
 }
 
-void MainMixer::update(bool muteSfx, bool muteMusic) {
+void MainMixer::update(float dt, bool muteSfx, bool muteMusic) {
   auto assets = Root::singleton().assets();
 
   auto updateGroupVolume = [&](MixerGroup group, bool muted, String const& settingName) {
@@ -111,9 +111,9 @@ void MainMixer::update(bool muteSfx, bool muteMusic) {
     };
 
     if (Voice* voice = Voice::singletonPtr())
-      voice->update(attenuationFunction);
+      voice->update(dt, attenuationFunction);
 
-    m_mixer->update(attenuationFunction);
+    m_mixer->update(dt, attenuationFunction);
 
   } else {
     if (m_mixer->hasEffect("lowpass"))
@@ -122,14 +122,18 @@ void MainMixer::update(bool muteSfx, bool muteMusic) {
       m_mixer->removeEffect("echo", 0);
 
     if (Voice* voice = Voice::singletonPtr())
-      voice->update();
+      voice->update(dt);
 
-    m_mixer->update();
+    m_mixer->update(dt);
   }
 }
 
 MixerPtr MainMixer::mixer() const {
   return m_mixer;
+}
+
+void MainMixer::setSpeed(float speed) {
+  m_mixer->setSpeed(max(speed, 0.0f));
 }
 
 void MainMixer::setVolume(float volume, float rampTime) {

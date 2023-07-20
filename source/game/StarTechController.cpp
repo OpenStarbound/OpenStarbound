@@ -190,7 +190,7 @@ void TechController::setAimPosition(Vec2F const& aimPosition) {
   m_aimPosition = aimPosition;
 }
 
-void TechController::tickMaster() {
+void TechController::tickMaster(float dt) {
   // if there's no gravity, fly instead of walking
   if (m_movementController->zeroG()) {
     if (m_moveRight || m_moveLeft || m_moveUp || m_moveDown) {
@@ -235,16 +235,16 @@ void TechController::tickMaster() {
       {"special3", m_moveSpecial3}
     };
 
-    module.scriptComponent.update(JsonObject{{"moves", moves}, {"dt", WorldTimestep}});
+    module.scriptComponent.update(JsonObject{{"moves", moves}, {"dt", dt}});
   }
 
   resetMoves();
-  updateAnimators();
+  updateAnimators(dt);
 }
 
-void TechController::tickSlave() {
+void TechController::tickSlave(float dt) {
   resetMoves();
-  updateAnimators();
+  updateAnimators(dt);
 }
 
 Maybe<TechController::ParentState> TechController::parentState() const {
@@ -467,15 +467,15 @@ void TechController::resetMoves() {
   m_moveSpecial3 = false;
 }
 
-void TechController::updateAnimators() {
+void TechController::updateAnimators(float dt) {
   for (auto const& module : m_techModules)
     m_techAnimators.getNetElement(module.animatorId)->setVisible(module.visible);
 
   for (auto const& animator : m_techAnimators.netElements()) {
     if (m_parentEntity->world()->isServer() || !animator->isVisible()) {
-      animator->animator.update(WorldTimestep, nullptr);
+      animator->animator.update(dt, nullptr);
     } else {
-      animator->animator.update(WorldTimestep, &animator->dynamicTarget);
+      animator->animator.update(dt, &animator->dynamicTarget);
       animator->dynamicTarget.updatePosition(m_movementController->position());
     }
   }

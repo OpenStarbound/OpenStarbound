@@ -34,7 +34,7 @@ private:
 
   List<ItemRecipe> determineRecipes();
 
-  virtual void update() override;
+  virtual void update(float dt) override;
   void updateCraftButtons();
   void updateAvailableRecipes();
   bool consumeIngredients(ItemRecipe& recipe, int count);

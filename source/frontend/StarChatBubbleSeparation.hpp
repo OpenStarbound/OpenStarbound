@@ -52,7 +52,7 @@ public:
   List<Bubble> filtered(function<bool(Bubble const&, T const&)> func);
   void forEach(function<void(Bubble&, T&)> func);
 
-  void update();
+  void update(float dt);
   void clear();
   bool empty() const;
 
@@ -170,7 +170,7 @@ void BubbleSeparator<T>::forEach(function<void(Bubble&, T&)> func) {
 }
 
 template <typename T>
-void BubbleSeparator<T>::update() {
+void BubbleSeparator<T>::update(float dt) {
   m_bubbles.exec([this](Bubble& bubble) {
     Vec2F delta = bubble.seperatedOffset - bubble.currentOffset;
     bubble.currentOffset += m_tweenFactor * delta;

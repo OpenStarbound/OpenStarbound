@@ -35,7 +35,7 @@ public:
   pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0) override;
   void readNetState(ByteArray data, float interpolationTime = 0.0f) override;
 
-  void update(uint64_t currentStep) override;
+  void update(float dt, uint64_t currentStep) override;
 
   bool shouldDestroy() const override;
 

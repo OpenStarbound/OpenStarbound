@@ -153,6 +153,7 @@ Player::Player(PlayerConfigPtr config, Uuid uuid) {
   m_statusController->resetAllResources();
 
   m_landingNoisePending = false;
+  m_footstepPending = false;
 
   setKeepAlive(true);
 
@@ -776,10 +777,12 @@ Maybe<Json> Player::receiveMessage(ConnectionId fromConnection, String const& me
   return {};
 }
 
-void Player::update(uint64_t) {
+void Player::update(float dt, uint64_t) {
+  m_movementController->setTimestep(dt);
+
   if (isMaster()) {
     if (m_emoteCooldownTimer) {
-      m_emoteCooldownTimer -= WorldTimestep;
+      m_emoteCooldownTimer -= dt;
       if (m_emoteCooldownTimer <= 0) {
         m_emoteCooldownTimer = 0;
         m_emoteState = HumanoidEmote::Idle;
@@ -793,7 +796,7 @@ void Player::update(uint64_t) {
       m_chatMessageUpdated = false;
     }
 
-    m_blinkCooldownTimer -= WorldTimestep;
+    m_blinkCooldownTimer -= dt;
     if (m_blinkCooldownTimer <= 0) {
       m_blinkCooldownTimer = Random::randf(m_blinkInterval[0], m_blinkInterval[1]);
       auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor());
@@ -801,13 +804,13 @@ void Player::update(uint64_t) {
         addEmote(HumanoidEmote::Blink);
     }
 
-    m_lastDamagedOtherTimer += WorldTimestep;
+    m_lastDamagedOtherTimer += dt;
 
     if (m_movementController->zeroG())
       m_movementController->controlParameters(m_zeroGMovementParameters);
 
     if (isTeleporting()) {
-      m_teleportTimer -= WorldTimestep;
+      m_teleportTimer -= dt;
       if (m_teleportTimer <= 0 && m_state == State::TeleportIn) {
         m_state = State::Idle;
         m_effectsAnimator->burstParticleEmitter(m_teleportAnimationType + "Burst");
@@ -817,9 +820,9 @@ void Player::update(uint64_t) {
     if (!isTeleporting()) {
       processControls();
 
-      m_questManager->update();
-      m_companions->update();
-      m_deployment->update();
+      m_questManager->update(dt);
+      m_companions->update(dt);
+      m_deployment->update(dt);
 
       bool edgeTriggeredUse = take(m_edgeTriggeredUse);
 
@@ -871,12 +874,12 @@ void Player::update(uint64_t) {
 
       m_tools->effects(*m_effectEmitter);
 
-      m_movementController->tickMaster();
+      m_movementController->tickMaster(dt);
 
-      m_techController->tickMaster();
+      m_techController->tickMaster(dt);
 
       for (auto& p : m_genericScriptContexts)
-        p.second->update(WorldTimestep * p.second->updateDelta());
+        p.second->update(p.second->updateDt(dt));
 
       if (edgeTriggeredUse) {
         auto anchor = as<LoungeAnchor>(m_movementController->entityAnchor());
@@ -896,7 +899,7 @@ void Player::update(uint64_t) {
         m_techController->setLoadedTech(m_techs->equippedTechs().values());
 
       if (!isDead())
-        m_statusController->tickMaster();
+        m_statusController->tickMaster(dt);
 
       if (!modeConfig().hunger)
         m_statusController->resetResource("food");
@@ -909,7 +912,7 @@ void Player::update(uint64_t) {
         m_statusController->setPersistentEffects("hunger", {});
 
       for (auto& pair : m_delayedRadioMessages) {
-        if (pair.first.tick())
+        if (pair.first.tick(dt))
           queueRadioMessage(pair.second);
       }
       m_delayedRadioMessages.filter([](pair<GameTimer, RadioMessage>& pair) { return !pair.first.ready(); });
@@ -924,7 +927,7 @@ void Player::update(uint64_t) {
 
     m_log->addPlayTime(WorldTimestep);
 
-    if (m_ageItemsTimer.wrapTick(WorldTimestep)) {
+    if (m_ageItemsTimer.wrapTick(dt)) {
       auto itemDatabase = Root::singleton().itemDatabase();
       m_inventory->forEveryItem([&](InventorySlot const&, ItemPtr& item) {
           itemDatabase->ageItem(item, m_ageItemsTimer.time);
@@ -948,9 +951,9 @@ void Player::update(uint64_t) {
 
   } else {
     m_netGroup.tickNetInterpolation(WorldTimestep);
-    m_movementController->tickSlave();
-    m_techController->tickSlave();
-    m_statusController->tickSlave();
+    m_movementController->tickSlave(dt);
+    m_techController->tickSlave(dt);
+    m_statusController->tickSlave(dt);
   }
 
   m_humanoid->setMovingBackwards(false);
@@ -967,7 +970,7 @@ void Player::update(uint64_t) {
     m_armor->setupHumanoidClothingDrawables(*m_humanoid, forceNude());
 
   m_tools->suppressItems(!canUseTool());
-  m_tools->tick(m_shifting, m_pendingMoves);
+  m_tools->tick(dt, m_shifting, m_pendingMoves);
 
   if (auto overrideFacingDirection = m_tools->setupHumanoidHandItems(*m_humanoid, position(), aimPosition()))
     m_movementController->controlFace(*overrideFacingDirection);
@@ -976,17 +979,22 @@ void Player::update(uint64_t) {
   if (m_movementController->facingDirection() == Direction::Left)
     m_effectsAnimator->scaleTransformationGroup("flip", Vec2F(-1, 1));
 
-
+  if (m_state == State::Walk || m_state == State::Run) {
+    if ((m_footstepTimer += dt) > m_config->footstepTiming) {
+      m_footstepPending = true;
+      m_footstepTimer = 0.0;
+    }
+  }
 
   if (isClient) {
-    m_effectsAnimator->update(WorldTimestep, &m_effectsAnimatorDynamicTarget);
+    m_effectsAnimator->update(dt, &m_effectsAnimatorDynamicTarget);
     m_effectsAnimatorDynamicTarget.updatePosition(position() + m_techController->parentOffset());
   } else {
-    m_effectsAnimator->update(WorldTimestep, nullptr);
+    m_effectsAnimator->update(dt, nullptr);
   }
 
   if (!isTeleporting())
-    processStateChanges();
+    processStateChanges(dt);
 
   m_damageSources = m_tools->damageSources();
   for (auto& damageSource : m_damageSources) {
@@ -1009,7 +1017,7 @@ void Player::update(uint64_t) {
 
   m_effectEmitter->setDirection(facingDirection());
 
-  m_effectEmitter->tick(*entityMode());
+  m_effectEmitter->tick(dt, *entityMode());
 
   m_humanoid->setFacingDirection(m_movementController->facingDirection());
   m_humanoid->setMovingBackwards(m_movementController->facingDirection() != m_movementController->movingDirection());
@@ -1049,19 +1057,16 @@ void Player::render(RenderCallback* renderCallback) {
       renderCallback->addAudio(move(landingNoise));
     }
 
-    if (m_state == State::Walk || m_state == State::Run) {
-      m_footstepTimer += WorldTimestep;
-      if (m_footstepTimer > m_config->footstepTiming) {
-        auto stepNoise = make_shared<AudioInstance>(*footstepAudio);
-        stepNoise->setPosition(position() + feetOffset());
-        stepNoise->setVolume(1 - Random::randf(0, m_footstepVolumeVariance));
-        renderCallback->addAudio(move(stepNoise));
-        m_footstepTimer = 0.0;
-      }
+    if (m_footstepPending) {
+      auto stepNoise = make_shared<AudioInstance>(*footstepAudio);
+      stepNoise->setPosition(position() + feetOffset());
+      stepNoise->setVolume(1 - Random::randf(0, m_footstepVolumeVariance));
+      renderCallback->addAudio(move(stepNoise));
     }
   } else {
     m_footstepTimer = m_config->footstepTiming;
   }
+  m_footstepPending = false;
   m_landingNoisePending = false;
 
   renderCallback->addAudios(m_effectsAnimatorDynamicTarget.pullNewAudios());
@@ -1653,7 +1658,7 @@ void Player::processControls() {
     stopLounging();
 }
 
-void Player::processStateChanges() {
+void Player::processStateChanges(float dt) {
   if (isMaster()) {
 
     // Set the current player state based on what movement controller tells us
@@ -1713,7 +1718,7 @@ void Player::processStateChanges() {
     }
   }
 
-  m_humanoid->animate(WorldTimestep);
+  m_humanoid->animate(dt);
 
   if (auto techState = m_techController->parentState()) {
     if (techState == TechController::ParentState::Stand) {
@@ -2260,10 +2265,10 @@ bool Player::invisible() const {
   return m_statusController->statPositive("invisible");
 }
 
-void Player::animatePortrait() {
-  m_humanoid->animate(WorldTimestep);
+void Player::animatePortrait(float dt) {
+  m_humanoid->animate(dt);
   if (m_emoteCooldownTimer) {
-    m_emoteCooldownTimer -= WorldTimestep;
+    m_emoteCooldownTimer -= dt;
     if (m_emoteCooldownTimer <= 0) {
       m_emoteCooldownTimer = 0;
       m_emoteState = HumanoidEmote::Idle;
