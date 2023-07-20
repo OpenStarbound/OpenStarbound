@@ -101,7 +101,12 @@ void SystemWorldServerThread::update() {
 
   for (auto clientId : m_clients) {
     m_outgoingPacketQueue[clientId].appendAll(m_systemWorld->pullOutgoingPackets(clientId));
-    m_clientShipLocations.set(clientId, {m_systemWorld->clientShipLocation(clientId), m_systemWorld->clientSkyParameters(clientId)});
+    auto shipSystemLocation = m_systemWorld->clientShipLocation(clientId);
+    auto& shipLocation = m_clientShipLocations[clientId];
+    if (shipLocation.first != shipSystemLocation) {
+      shipLocation.first = shipSystemLocation;
+      shipLocation.second = m_systemWorld->clientSkyParameters(clientId);
+    }
     if (auto warpAction = m_systemWorld->clientWarpAction(clientId))
       m_clientWarpActions.set(clientId, *warpAction);
     else if (m_clientWarpActions.contains(clientId))

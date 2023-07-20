@@ -206,9 +206,6 @@ bool CelestialMasterDatabase::coordinateValid(CelestialCoordinate const& coordin
 
 Maybe<CelestialCoordinate> CelestialMasterDatabase::findRandomWorld(unsigned tries, unsigned trySpatialRange,
     function<bool(CelestialCoordinate)> filter, Maybe<uint64_t> seed) {
-  //RecursiveMutexLocker locker(m_mutex);
-  // We don't need this lock, the other calls are locking anyway.
-  // Having this here is just stopping other threads from having a go in here until we've found a world.
   RandomSource randSource;
   if (seed)
     randSource.init(*seed);
@@ -299,7 +296,12 @@ List<CelestialCoordinate> CelestialMasterDatabase::scanSystems(RectI const& regi
 
   List<CelestialCoordinate> systems;
   for (auto const& chunkLocation : chunkIndexesFor(region)) {
-    auto const& chunkData = getChunk(chunkLocation);
+    auto const& chunkData = getChunk(chunkLocation, [&](std::function<void()>&& func) {
+      locker.unlock();
+      func();
+      locker.lock();
+    });
+    locker.unlock();
     for (auto const& pair : chunkData.systemParameters) {
       Vec3I systemLocation = pair.first;
       if (region.contains(systemLocation.vec2())) {
@@ -311,6 +313,7 @@ List<CelestialCoordinate> CelestialMasterDatabase::scanSystems(RectI const& regi
         systems.append(CelestialCoordinate(systemLocation));
       }
     }
+    locker.lock();
   }
   return systems;
 }
@@ -378,8 +381,8 @@ Maybe<CelestialOrbitRegion> CelestialMasterDatabase::orbitRegion(
   return {};
 }
 
-CelestialChunk const& CelestialMasterDatabase::getChunk(Vec2I const& chunkIndex) {
-  return m_chunkCache.get(chunkIndex, [this](Vec2I const& chunkIndex) -> CelestialChunk {
+CelestialChunk const& CelestialMasterDatabase::getChunk(Vec2I const& chunkIndex, UnlockDuringFunction unlockDuring) {
+  return m_chunkCache.get(chunkIndex, [&](Vec2I const& chunkIndex) -> CelestialChunk {
       auto versioningDatabase = Root::singleton().versioningDatabase();
 
       if (m_database.isOpen()) {
@@ -394,7 +397,12 @@ CelestialChunk const& CelestialMasterDatabase::getChunk(Vec2I const& chunkIndex)
         }
       }
 
-      auto newChunk = produceChunk(chunkIndex);
+      CelestialChunk newChunk;
+      auto producer = [&]() { newChunk = produceChunk(chunkIndex); };
+      if (unlockDuring)
+        unlockDuring(producer);
+      else
+        producer();
       if (m_database.isOpen()) {
         auto versionedChunk = versioningDatabase->makeCurrentVersionedJson("CelestialChunk", newChunk.toJson());
         m_database.insert(DataStreamBuffer::serialize(chunkIndex),

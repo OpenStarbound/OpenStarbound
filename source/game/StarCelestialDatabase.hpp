@@ -162,7 +162,8 @@ protected:
   static Maybe<CelestialOrbitRegion> orbitRegion(
       List<CelestialOrbitRegion> const& orbitRegions, int planetaryOrbitNumber);
 
-  CelestialChunk const& getChunk(Vec2I const& chunkLocation);
+  typedef std::function<void(std::function<void()>&&)>&& UnlockDuringFunction;
+  CelestialChunk const& getChunk(Vec2I const& chunkLocation, UnlockDuringFunction unlockDuring = {});
 
   CelestialChunk produceChunk(Vec2I const& chunkLocation) const;
   Maybe<pair<CelestialParameters, HashMap<int, CelestialPlanet>>> produceSystem(
