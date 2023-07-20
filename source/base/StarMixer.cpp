@@ -221,7 +221,7 @@ void Mixer::stopAll(float rampTime) {
     p.first->stop(vel);
 }
 
-void Mixer::read(int16_t* outBuffer, size_t frameCount) {
+void Mixer::read(int16_t* outBuffer, size_t frameCount, ExtraMixFunction extraMixFunction) {
   // Make this method as least locky as possible by copying all the needed
   // member data before the expensive audio / effect stuff.
   unsigned sampleRate;
@@ -326,7 +326,7 @@ void Mixer::read(int16_t* outBuffer, size_t frameCount) {
                 m_mixBuffer[s * channels + c] = 0;
             } else {
               for (size_t c = 0; c < channels; ++c)
-                m_mixBuffer[s * channels + c] = m_mixBuffer[s * channels + c] * volume;
+                m_mixBuffer[s * channels + c] *= volume;
             }
           }
         }
@@ -338,7 +338,8 @@ void Mixer::read(int16_t* outBuffer, size_t frameCount) {
         float vol = lerp((float)s / frameCount, beginVolume * groupVolume * audioStopVolBegin, endVolume * groupEndVolume * audioStopVolEnd);
         for (size_t c = 0; c < channels; ++c) {
           float sample = m_mixBuffer[s * channels + c] * vol * audioState.positionalChannelVolumes[c] * audioInstance->m_volume.value;
-          outBuffer[s * channels + c] = clamp(sample + outBuffer[s * channels + c], -32767.0f, 32767.0f);
+          int16_t& outSample = outBuffer[s * channels + c];
+          outSample = clamp(sample + outSample, -32767.0f, 32767.0f);
         }
       }
 
@@ -346,6 +347,9 @@ void Mixer::read(int16_t* outBuffer, size_t frameCount) {
       audioInstance->m_finished = finished;
     }
   }
+
+  if (extraMixFunction)
+    extraMixFunction(outBuffer, frameCount, channels);
 
   {
     MutexLocker locker(m_effectsMutex);

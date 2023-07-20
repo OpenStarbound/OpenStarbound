@@ -11,10 +11,12 @@
 #include "StarErrorScreen.hpp"
 #include "StarCinematic.hpp"
 #include "StarKeyBindings.hpp"
-#include "StarInput.hpp"
 #include "StarMainApplication.hpp"
 
 namespace Star {
+
+STAR_CLASS(Input);
+STAR_CLASS(Voice);
 
 class ClientApplication : public Application {
 protected:
@@ -76,6 +78,7 @@ private:
   MainMixerPtr m_mainMixer;
   GuiContextPtr m_guiContext;
   InputPtr m_input;
+  VoicePtr m_voice;
 
   // Valid after renderInit is called the first time
   CinematicPtr m_cinematicOverlay;

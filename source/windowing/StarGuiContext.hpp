@@ -50,6 +50,7 @@ public:
   int interfaceScale() const;
   void setInterfaceScale(int interfaceScale);
 
+  Maybe<Vec2I> mousePosition(InputEvent const& event, int pixelRatio) const;
   Maybe<Vec2I> mousePosition(InputEvent const& event) const;
 
   Set<InterfaceAction> actions(InputEvent const& event) const;

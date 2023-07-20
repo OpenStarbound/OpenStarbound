@@ -49,7 +49,7 @@ STAR_CLASS(MainInterface);
 
 struct GuiMessage {
   GuiMessage();
-  GuiMessage(String const& message, float cooldown);
+  GuiMessage(String const& message, float cooldown, float spring = 0);
 
   String message;
   float cooldown;
@@ -105,7 +105,9 @@ public:
 
   void doChat(String const& chat, bool addToHistory);
 
+  void queueMessage(String const& message, Maybe<float> cooldown, float spring);
   void queueMessage(String const& message);
+
   void queueItemPickupText(ItemPtr const& item);
   void queueJoinRequest(pair<String, RpcPromiseKeeper<P2PJoinRequestReply>> request);
 

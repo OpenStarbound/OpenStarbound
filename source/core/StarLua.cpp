@@ -1095,6 +1095,17 @@ LuaFunction LuaEngine::createRawFunction(lua_CFunction function) {
   return LuaFunction(LuaDetail::LuaHandle(RefPtr<LuaEngine>(this), popHandle(m_state)));
 }
 
+LuaFunction LuaEngine::createFunctionFromSource(int handleIndex, char const* contents, size_t size, char const* name) {
+  lua_checkstack(m_state, 2);
+
+  handleError(m_state, luaL_loadbuffer(m_state, contents, size, name));
+
+  pushHandle(m_state, handleIndex);
+  lua_setupvalue(m_state, -2, 1);
+
+  return LuaFunction(LuaDetail::LuaHandle(RefPtr<LuaEngine>(this), popHandle(m_state)));
+}
+
 void LuaEngine::pushLuaValue(lua_State* state, LuaValue const& luaValue) {
   lua_checkstack(state, 1);
 

@@ -7,6 +7,7 @@
 #include "StarAssets.hpp"
 #include "StarWorldClient.hpp"
 #include "StarWorldPainter.hpp"
+#include "StarVoice.hpp"
 
 namespace Star {
 
@@ -80,40 +81,48 @@ void MainMixer::update(bool muteSfx, bool muteMusic) {
     auto cameraPos = m_worldPainter->camera().centerWorldPosition();
     auto worldGeometry = currentWorld->geometry();
 
-    m_mixer->update([&](unsigned channel, Vec2F pos, float rangeMultiplier) {
-        Vec2F playerDiff = worldGeometry.diff(pos, playerPos);
-        Vec2F cameraDiff = worldGeometry.diff(pos, cameraPos);
-        float playerMagSq = playerDiff.magnitudeSquared();
-        float cameraMagSq = cameraDiff.magnitudeSquared();
+    Mixer::PositionalAttenuationFunction attenuationFunction = [&](unsigned channel, Vec2F pos, float rangeMultiplier) {
+      Vec2F playerDiff = worldGeometry.diff(pos, playerPos);
+      Vec2F cameraDiff = worldGeometry.diff(pos, cameraPos);
+      float playerMagSq = playerDiff.magnitudeSquared();
+      float cameraMagSq = cameraDiff.magnitudeSquared();
 
-        Vec2F diff;
-        float diffMagnitude;
-        if (playerMagSq < cameraMagSq) {
-          diff = playerDiff;
-          diffMagnitude = sqrt(playerMagSq);
-        }
-        else {
-          diff = cameraDiff;
-          diffMagnitude = sqrt(cameraMagSq);
-        }
+      Vec2F diff;
+      float diffMagnitude;
+      if (playerMagSq < cameraMagSq) {
+        diff = playerDiff;
+        diffMagnitude = sqrt(playerMagSq);
+      }
+      else {
+        diff = cameraDiff;
+        diffMagnitude = sqrt(cameraMagSq);
+      }
 
-        if (diffMagnitude == 0.0f)
-          return 0.0f;
+      if (diffMagnitude == 0.0f)
+        return 0.0f;
 
-        Vec2F diffNorm = diff / diffMagnitude;
+      Vec2F diffNorm = diff / diffMagnitude;
 
-        float stereoIncidence = channel == 0 ? -diffNorm[0] : diffNorm[0];
+      float stereoIncidence = channel == 0 ? -diffNorm[0] : diffNorm[0];
 
-        float maxDistance = baseMaxDistance * rangeMultiplier * lerp((stereoIncidence + 1.0f) / 2.0f, stereoAdjustmentRange[0], stereoAdjustmentRange[1]);
+      float maxDistance = baseMaxDistance * rangeMultiplier * lerp((stereoIncidence + 1.0f) / 2.0f, stereoAdjustmentRange[0], stereoAdjustmentRange[1]);
 
-        return pow(clamp(diffMagnitude / maxDistance, 0.0f, 1.0f), 1.0f / attenuationGamma);
-      });
+      return pow(clamp(diffMagnitude / maxDistance, 0.0f, 1.0f), 1.0f / attenuationGamma);
+    };
+
+    if (Voice* voice = Voice::singletonPtr())
+      voice->update(attenuationFunction);
+
+    m_mixer->update(attenuationFunction);
 
   } else {
     if (m_mixer->hasEffect("lowpass"))
       m_mixer->removeEffect("lowpass", 0);
     if (m_mixer->hasEffect("echo"))
       m_mixer->removeEffect("echo", 0);
+
+    if (Voice* voice = Voice::singletonPtr())
+      voice->update();
 
     m_mixer->update();
   }
@@ -127,8 +136,8 @@ void MainMixer::setVolume(float volume, float rampTime) {
   m_mixer->setVolume(volume, rampTime);
 }
 
-void MainMixer::read(int16_t* sampleData, size_t frameCount) {
-  m_mixer->read(sampleData, frameCount);
+void MainMixer::read(int16_t* sampleData, size_t frameCount, Mixer::ExtraMixFunction extraMixFunction) {
+  m_mixer->read(sampleData, frameCount, extraMixFunction);
 }
 
 }

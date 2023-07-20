@@ -14,9 +14,13 @@
 #include "StarWorldTemplate.hpp"
 #include "StarWorldClient.hpp"
 #include "StarRootLoader.hpp"
+#include "StarInput.hpp"
+#include "StarVoice.hpp"
+#include "StarCurve25519.hpp"
 
 #include "StarInterfaceLuaBindings.hpp"
 #include "StarInputLuaBindings.hpp"
+#include "StarVoiceLuaBindings.hpp"
 
 namespace Star {
 
@@ -171,6 +175,7 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
 
   m_guiContext = make_shared<GuiContext>(m_mainMixer->mixer(), appController);
   m_input = make_shared<Input>();
+  m_voice = make_shared<Voice>(appController);
 
   auto configuration = m_root->configuration();
   bool vsync = configuration->get("vsync").toBool();
@@ -204,6 +209,12 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
 
   appController->setMaxFrameSkip(assets->json("/client.config:maxFrameSkip").toUInt());
   appController->setUpdateTrackWindow(assets->json("/client.config:updateTrackWindow").toFloat());
+
+  if (auto jVoice = configuration->get("voice"))
+    m_voice->loadJson(jVoice.toObject(), true);
+
+  m_voice->init();
+  m_voice->setLocalSpeaker(0);
 }
 
 void ClientApplication::renderInit(RendererPtr renderer) {
@@ -365,6 +376,12 @@ void ClientApplication::update() {
     updateTitle();
   else if (m_state > MainAppState::Title)
     updateRunning();
+  
+  // Swallow leftover encoded voice data if we aren't in-game to allow mic read to continue for settings.
+  if (m_state <= MainAppState::Title) {
+    DataStreamBuffer ext;
+    m_voice->send(ext);
+  } // TODO: directly disable encoding at menu so we don't have to do this
 
   m_guiContext->cleanup();
   m_edgeKeyEvents.clear();
@@ -417,8 +434,12 @@ void ClientApplication::render() {
 }
 
 void ClientApplication::getAudioData(int16_t* sampleData, size_t frameCount) {
-  if (m_mainMixer)
-    m_mainMixer->read(sampleData, frameCount);
+  if (m_mainMixer) {
+    m_mainMixer->read(sampleData, frameCount, [&](int16_t* buffer, size_t frames, unsigned channels) {
+      if (m_voice)
+        m_voice->mix(buffer, frames, channels);
+    });
+  }
 }
 
 void ClientApplication::changeState(MainAppState newState) {
@@ -449,6 +470,8 @@ void ClientApplication::changeState(MainAppState newState) {
       m_universeServer.reset();
     }
     m_cinematicOverlay->stop();
+
+    m_voice->clearSpeakers();
 
     if (auto p2pNetworkingService = appController()->p2pNetworkingService()) {
       p2pNetworkingService->setJoinUnavailable();
@@ -483,6 +506,7 @@ void ClientApplication::changeState(MainAppState newState) {
     m_statistics = make_shared<Statistics>(m_root->toStoragePath("player"), appController()->statisticsService());
     m_universeClient = make_shared<UniverseClient>(m_playerStorage, m_statistics);
     m_universeClient->setLuaCallbacks("input", LuaBindings::makeInputCallbacks());
+    m_universeClient->setLuaCallbacks("voice", LuaBindings::makeVoiceCallbacks());
 
     m_mainMixer->setUniverseClient(m_universeClient);
     m_titleScreen = make_shared<TitleScreen>(m_playerStorage, m_mainMixer->mixer());
@@ -601,6 +625,7 @@ void ClientApplication::changeState(MainAppState newState) {
     m_worldPainter = make_shared<WorldPainter>();
     m_mainInterface = make_shared<MainInterface>(m_universeClient, m_worldPainter, m_cinematicOverlay);
     m_universeClient->setLuaCallbacks("interface", LuaBindings::makeInterfaceCallbacks(m_mainInterface.get()));
+    m_universeClient->startLua();
 
     m_mainMixer->setWorldPainter(m_worldPainter);
 
@@ -839,13 +864,51 @@ void ClientApplication::updateRunning() {
     if (checkDisconnection())
       return;
 
+    m_voice->setInput(m_input->bindHeld("opensb", "pushToTalk"));
+    DataStreamBuffer voiceData;
+    voiceData.setByteOrder(ByteOrder::LittleEndian);
+    //voiceData.writeBytes(VoiceBroadcastPrefix.utf8Bytes()); transmitting with SE compat for now
+    bool needstoSendVoice = m_voice->send(voiceData, 5000);
     m_universeClient->update();
 
     if (checkDisconnection())
       return;
 
-    if (auto worldClient = m_universeClient->worldClient())
+    if (auto worldClient = m_universeClient->worldClient()) {
+      auto& broadcastCallback = worldClient->broadcastCallback();
+      if (!broadcastCallback) {
+        broadcastCallback = [&](PlayerPtr player, StringView broadcast) -> bool {
+          auto& view = broadcast.utf8();
+          if (view.rfind(VoiceBroadcastPrefix.utf8(), 0) != NPos) {
+            auto entityId = player->entityId();
+            auto speaker = m_voice->speaker(connectionForEntity(entityId));
+            speaker->entityId = entityId;
+            speaker->name = player->name();
+            speaker->position = player->mouthPosition();
+            m_voice->receive(speaker, view.substr(VoiceBroadcastPrefix.utf8Size()));
+          }
+          return true;
+        };
+      }
+
+      if (worldClient->inWorld()) {
+        if (needstoSendVoice) {
+          auto signature = Curve25519::sign(voiceData.ptr(), voiceData.size());
+          std::string_view signatureView((char*)signature.data(), signature.size());
+          std::string_view audioDataView(voiceData.ptr(), voiceData.size());
+          auto broadcast = strf("data\0voice\0{}{}"s, signatureView, audioDataView);
+          worldClient->sendSecretBroadcast(broadcast, true);
+        }
+        if (auto mainPlayer = m_universeClient->mainPlayer()) {
+          auto localSpeaker = m_voice->localSpeaker();
+          localSpeaker->position = mainPlayer->position();
+          localSpeaker->entityId = mainPlayer->entityId();
+          localSpeaker->name = mainPlayer->name();
+        }
+        m_voice->setLocalSpeaker(worldClient->connection());
+      }
       worldClient->setInteractiveHighlightMode(isActionTaken(InterfaceAction::ShowLabels));
+    }
 
     updateCamera();
 

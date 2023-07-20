@@ -27,6 +27,11 @@ LuaCallbacks LuaBindings::makeInterfaceCallbacks(MainInterface* mainInterface) {
     return GuiContext::singleton().interfaceScale();
   });
 
+  callbacks.registerCallback("queueMessage", [mainInterface](String const& message, Maybe<float> cooldown, Maybe<float> springState) {
+    mainInterface->queueMessage(message, cooldown, springState.value(0));
+  });
+
+
   return callbacks;
 }
 

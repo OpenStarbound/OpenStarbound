@@ -150,6 +150,12 @@ public:
   void disconnectAllWires(Vec2I wireEntityPosition, WireNode const& node);
   void connectWire(WireConnection const& output, WireConnection const& input);
 
+  // Functions for sending broadcast messages to other players that can receive them,
+  // on completely vanilla servers by smuggling it through a DamageNotification.
+  // It's cursed as fuck, but it works.
+  bool sendSecretBroadcast(StringView broadcast, bool raw = false);
+  bool handleSecretBroadcast(PlayerPtr player, StringView broadcast);
+
   List<ChatAction> pullPendingChatActions();
 
   WorldStructure const& centralStructure() const;
@@ -160,6 +166,8 @@ public:
 
   void waitForLighting();
 
+  typedef std::function<bool(PlayerPtr, StringView)> BroadcastCallback;
+  BroadcastCallback& broadcastCallback();
 private:
   static const float DropDist;
 
@@ -339,6 +347,8 @@ private:
   HashMap<Uuid, RpcPromiseKeeper<InteractAction>> m_entityInteractionResponses;
 
   List<PhysicsForceRegion> m_forceRegions;
+
+  BroadcastCallback m_broadcastCallback;
 };
 
 }

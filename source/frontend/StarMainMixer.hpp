@@ -22,7 +22,7 @@ public:
   MixerPtr mixer() const;
 
   void setVolume(float volume, float rampTime = 0.0f);
-  void read(int16_t* sampleData, size_t frameCount);
+  void read(int16_t* sampleData, size_t frameCount, Mixer::ExtraMixFunction = {});
 
 private:
   UniverseClientPtr m_universeClient;

@@ -1,4 +1,5 @@
 {
+	"genericScriptContexts" : { "OpenStarbound" : "/scripts/opensb/player/player.lua" },
   "wireConfig" : {
     "innerBrightnessScale" : 20,
     "firstStripeThickness" : 0.6,

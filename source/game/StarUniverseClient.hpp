@@ -10,6 +10,7 @@
 #include "StarAiTypes.hpp"
 #include "StarSky.hpp"
 #include "StarUniverseConnection.hpp"
+#include "StarLuaComponents.hpp"
 
 namespace Star {
 
@@ -29,8 +30,8 @@ STAR_CLASS(CelestialDatabase);
 STAR_CLASS(JsonRpcInterface);
 STAR_CLASS(TeamClient);
 STAR_CLASS(QuestManager);
-
 STAR_CLASS(UniverseClient);
+STAR_CLASS(LuaRoot);
 
 class UniverseClient {
 public:
@@ -86,6 +87,8 @@ public:
   uint16_t maxPlayers();
 
   void setLuaCallbacks(String const& groupName, LuaCallbacks const& callbacks);
+  void startLua();
+  void stopLua();
 
   ClockConstPtr universeClock() const;
   CelestialLogConstPtr celestialLog() const;
@@ -141,6 +144,12 @@ private:
   List<ChatReceivedMessage> m_pendingMessages;
 
   Maybe<String> m_disconnectReason;
+
+  LuaRootPtr m_luaRoot;
+
+  typedef LuaUpdatableComponent<LuaBaseComponent> ScriptComponent;
+  typedef shared_ptr<ScriptComponent> ScriptComponentPtr;
+  StringMap<ScriptComponentPtr> m_scriptContexts;
 };
 
 }

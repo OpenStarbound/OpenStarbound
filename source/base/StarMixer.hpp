@@ -95,6 +95,7 @@ private:
 // Thread safe mixer class with basic effects support.
 class Mixer {
 public:
+  typedef function<void(int16_t* buffer, size_t frames, unsigned channels)> ExtraMixFunction;
   typedef function<void(int16_t* buffer, size_t frames, unsigned channels)> EffectFunction;
   typedef function<float(unsigned, Vec2F, float)> PositionalAttenuationFunction;
 
@@ -126,7 +127,7 @@ public:
 
   // Reads pending audio data.  This is thread safe with the other Mixer
   // methods, but only one call to read may be active at a time.
-  void read(int16_t* samples, size_t frameCount);
+  void read(int16_t* samples, size_t frameCount, ExtraMixFunction extraMixFunction = {});
 
   // Call within the main loop of the program using Mixer, calculates
   // positional attenuation of audio and does cleanup.

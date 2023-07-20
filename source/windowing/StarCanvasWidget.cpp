@@ -88,20 +88,21 @@ bool CanvasWidget::sendEvent(InputEvent const& event) {
     return false;
 
   auto& context = GuiContext::singleton();
+  int interfaceScale = m_ignoreInterfaceScale ? 1 : context.interfaceScale();
   if (auto mouseButtonDown = event.ptr<MouseButtonDownEvent>()) {
-    if (inMember(*context.mousePosition(event)) && m_captureMouse) {
-      m_clickEvents.append({*context.mousePosition(event) - screenPosition(), mouseButtonDown->mouseButton, true});
+    if (inMember(*context.mousePosition(event, interfaceScale)) && m_captureMouse) {
+      m_clickEvents.append({*context.mousePosition(event, interfaceScale) - screenPosition(), mouseButtonDown->mouseButton, true});
       m_clickEvents.limitSizeBack(MaximumEventBuffer);
       return true;
     }
   } else if (auto mouseButtonUp = event.ptr<MouseButtonUpEvent>()) {
     if (m_captureMouse) {
-      m_clickEvents.append({*context.mousePosition(event) - screenPosition(), mouseButtonUp->mouseButton, false});
+      m_clickEvents.append({*context.mousePosition(event, interfaceScale) - screenPosition(), mouseButtonUp->mouseButton, false});
       m_clickEvents.limitSizeBack(MaximumEventBuffer);
       return true;
     }
   } else if (event.is<MouseMoveEvent>()) {
-    m_mousePosition = *context.mousePosition(event) - screenPosition();
+    m_mousePosition = *context.mousePosition(event, interfaceScale) - screenPosition();
     return false;
   } else if (auto keyDown = event.ptr<KeyDownEvent>()) {
     if (m_captureKeyboard) {
@@ -258,7 +259,7 @@ void CanvasWidget::renderTriangles(Vec2F const& renderingOffset, List<tuple<Vec2
 void CanvasWidget::renderText(Vec2F const& renderingOffset, String const& s, TextPositioning const& position, unsigned fontSize, Vec4B const& color, FontMode mode, float lineSpacing, String const& font, String const& directives) {
   auto& context = GuiContext::singleton();
   context.setFontProcessingDirectives(directives);
-  context.setFontSize(fontSize);
+  context.setFontSize(fontSize, m_ignoreInterfaceScale ? 1 : context.interfaceScale());
   context.setFontColor(color);
   context.setFontMode(mode);
   context.setFont(font);

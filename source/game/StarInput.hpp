@@ -117,6 +117,17 @@ public:
     inline void release() { released = ++releases; held = false; }
   };
 
+  struct KeyInputState : InputState {
+    KeyMod mods = KeyMod::NoMod;
+  };
+
+  struct MouseInputState : InputState {
+    List<Vec2I> pressPositions;
+    List<Vec2I> releasePositions;
+  };
+
+  typedef InputState ControllerInputState;
+
   // Get pointer to the singleton Input instance, if it exists.  Otherwise,
   // returns nullptr.
   static Input* singletonPtr();
@@ -152,6 +163,14 @@ public:
   bool            bindHeld(String const& categoryId, String const& bindId);
   Maybe<unsigned> bindUp  (String const& categoryId, String const& bindId);
 
+  Maybe<unsigned> keyDown(Key key, Maybe<KeyMod> keyMod);
+  bool            keyHeld(Key key);
+  Maybe<unsigned> keyUp  (Key key);
+
+  Maybe<List<Vec2I>> mouseDown(MouseButton button);
+  bool               mouseHeld(MouseButton button);
+  Maybe<List<Vec2I>> mouseUp  (MouseButton button);
+
   void resetBinds(String const& categoryId, String const& bindId);
   void setBinds(String const& categoryId, String const& bindId, Json const& binds);
   Json getDefaultBinds(String const& categoryId, String const& bindId); 
@@ -163,7 +182,6 @@ private:
   BindEntry& bindEntry(String const& categoryId, String const& bindId);
 
   InputState* bindStatePtr(String const& categoryId, String const& bindId);
-  InputState* inputStatePtr(InputVariant key);
 
   static Input* s_singleton;
 
@@ -179,7 +197,9 @@ private:
 
   // Per-frame input state maps.
   //Input states
-  HashMap<InputVariant, InputState> m_inputStates;
+  HashMap<Key, KeyInputState> m_keyStates;
+  HashMap<MouseButton, MouseInputState> m_mouseStates;
+  HashMap<ControllerButton, ControllerInputState> m_controllerStates;
   //Bind states
   HashMap<BindEntry const*, InputState> m_bindStates;
 

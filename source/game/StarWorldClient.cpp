@@ -20,11 +20,14 @@
 #include "StarWorldTemplate.hpp"
 #include "StarStoredFunctions.hpp"
 #include "StarInspectableEntity.hpp"
+#include "StarCurve25519.hpp"
 
 namespace Star {
 
-const float WorldClient::DropDist = 6.0f;
+const std::string SECRET_BROADCAST_PUBLIC_KEY = "SecretBroadcastPublicKey";
+const std::string SECRET_BROADCAST_PREFIX = "\0Broadcast\0"s;
 
+const float WorldClient::DropDist = 6.0f;
 WorldClient::WorldClient(PlayerPtr mainPlayer) {
   auto& root = Root::singleton();
   auto assets = root.assets();
@@ -792,7 +795,50 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
       m_damageManager->pushRemoteDamageRequest(damage->remoteDamageRequest);
 
     } else if (auto damage = as<DamageNotificationPacket>(packet)) {
-      m_damageManager->pushRemoteDamageNotification(damage->remoteDamageNotification);
+      std::string_view view(damage->remoteDamageNotification.damageNotification.targetMaterialKind.utf8());
+      static const size_t FULL_SIZE = SECRET_BROADCAST_PREFIX.size() + Curve25519::SignatureSize;
+      static const std::string LEGACY_VOICE_PREFIX = "data\0voice\0"s;
+
+      if (view.size() >= FULL_SIZE && view.rfind(SECRET_BROADCAST_PREFIX, 0) != NPos) {
+        // this is actually a secret broadcast!!
+        if (auto player = m_entityMap->get<Player>(damage->remoteDamageNotification.sourceEntityId)) {
+          if (auto publicKey = player->getSecretPropertyView(SECRET_BROADCAST_PUBLIC_KEY)) {
+            if (publicKey->utf8Size() == Curve25519::PublicKeySize) {
+              auto signature = view.substr(SECRET_BROADCAST_PREFIX.size(), Curve25519::SignatureSize);
+
+              auto rawBroadcast = view.substr(FULL_SIZE);
+              if (Curve25519::verify(
+                (uint8_t const*)signature.data(),
+                (uint8_t const*)publicKey->utf8Ptr(),
+                (void*)rawBroadcast.data(),
+                       rawBroadcast.size()
+              )) {
+                handleSecretBroadcast(player, rawBroadcast);
+              }
+            }
+          }
+        }
+      }
+      else if (view.size() > 75 && view.rfind(LEGACY_VOICE_PREFIX, 0) != NPos) {
+        // this is a StarExtensions voice packet
+        // (remove this and stop transmitting like this once most SE features are ported over)
+        if (auto player = m_entityMap->get<Player>(damage->remoteDamageNotification.sourceEntityId)) {
+          if (auto publicKey = player->effectsAnimator()->globalTagPtr("\0SE_VOICE_SIGNING_KEY"s)) {
+            auto rawData = view.substr(75);
+            if (m_broadcastCallback && Curve25519::verify(
+              (uint8_t const*)view.data() + LEGACY_VOICE_PREFIX.size(),
+              (uint8_t const*)publicKey->utf8Ptr(),
+              (void*)rawData.data(),
+                     rawData.size()
+            )) {
+              m_broadcastCallback(player, "Voice\0"s + rawData);
+            }
+          }
+        }
+      }
+      else {
+        m_damageManager->pushRemoteDamageNotification(damage->remoteDamageNotification);
+      }
 
     } else if (auto entityMessagePacket = as<EntityMessagePacket>(packet)) {
       EntityPtr entity;
@@ -916,6 +962,14 @@ void WorldClient::update() {
       predictedTilesIt.remove();
     }
   }
+
+  // Secret broadcasts are transmitted through DamageNotifications for vanilla server compatibility.
+  // Because DamageNotification packets are spoofable, we have to sign the data so other clients can validate that it is legitimate.
+  auto& publicKey = Curve25519::publicKey();
+  String publicKeyString((const char*)publicKey.data(), publicKey.size());
+  m_mainPlayer->setSecretProperty(SECRET_BROADCAST_PUBLIC_KEY, publicKeyString);
+  // Temporary: Backwards compatibility with StarExtensions
+  m_mainPlayer->effectsAnimator()->setGlobalTag("\0SE_VOICE_SIGNING_KEY"s, publicKeyString);
 
   ++m_currentStep;
   //m_interpolationTracker.update(m_currentStep);
@@ -1174,6 +1228,10 @@ void WorldClient::collectLiquid(List<Vec2I> const& tilePositions, LiquidId liqui
 
 void WorldClient::waitForLighting() {
   MutexLocker lock(m_lightingMutex);
+}
+
+WorldClient::BroadcastCallback& WorldClient::broadcastCallback() {
+  return m_broadcastCallback;
 }
 
 bool WorldClient::isTileProtected(Vec2I const& pos) const {
@@ -1846,6 +1904,35 @@ void WorldClient::disconnectAllWires(Vec2I wireEntityPosition, WireNode const& n
 void WorldClient::connectWire(WireConnection const& output, WireConnection const& input) {
   m_outgoingPackets.append(make_shared<ConnectWirePacket>(output, input));
 }
+
+bool WorldClient::sendSecretBroadcast(StringView broadcast, bool raw) {
+  if (!inWorld() || !m_mainPlayer || !m_mainPlayer->getSecretPropertyView(SECRET_BROADCAST_PUBLIC_KEY))
+    return false;
+
+  auto signature = Curve25519::sign((void*)broadcast.utf8Ptr(), broadcast.utf8Size());
+
+  auto damageNotification = make_shared<DamageNotificationPacket>();
+  auto& remDmg = damageNotification->remoteDamageNotification;
+  auto& dmg = remDmg.damageNotification;
+
+  dmg.targetEntityId = dmg.sourceEntityId = remDmg.sourceEntityId = m_mainPlayer->entityId();
+  dmg.damageDealt = dmg.healthLost = 0.0f;
+  dmg.hitType = HitType::Hit;
+  dmg.damageSourceKind = "nodamage";
+  dmg.targetMaterialKind = raw ? broadcast : strf("{}{}{}", SECRET_BROADCAST_PREFIX, StringView((char*)&signature, sizeof(signature)), broadcast);
+  dmg.position = m_mainPlayer->position();
+
+  m_outgoingPackets.emplace_back(move(damageNotification));
+  return true;
+}
+
+bool WorldClient::handleSecretBroadcast(PlayerPtr player, StringView broadcast) {
+  if (m_broadcastCallback)
+    return m_broadcastCallback(player, broadcast);
+  else
+    return false;
+}
+
 
 void WorldClient::ClientRenderCallback::addDrawable(Drawable drawable, EntityRenderLayer renderLayer) {
   drawables[renderLayer].append(move(drawable));
