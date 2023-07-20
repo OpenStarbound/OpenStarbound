@@ -316,10 +316,6 @@ Input::InputState* Input::bindStatePtr(String const& categoryId, String const& b
     return nullptr;
 }
 
-Input::InputState* Input::inputStatePtr(InputVariant key) {
-  return m_inputStates.ptr(key);
-}
-
 Input* Input::s_singleton;
 
 Input* Input::singletonPtr() {
@@ -361,28 +357,17 @@ List<std::pair<InputEvent, bool>> const& Input::inputEventsThisFrame() const {
 
 
 void Input::reset() {
-  m_inputEvents.resize(0); // keeps reserved memory
-  {
-    auto it = m_inputStates.begin();
-    while (it != m_inputStates.end()) {
-      if (it->second.held) {
-        it->second.reset();
-        ++it;
-      }
-      else it = m_inputStates.erase(it);
-    }
-  }
+  m_inputEvents.clear();
+  auto eraseCond = [](auto& p) {
+    if (p.second.held)
+      p.second.reset();
+    return !p.second.held;
+  };
 
-  {
-    auto it = m_bindStates.begin();
-    while (it != m_bindStates.end()) {
-      if (it->second.held) {
-        it->second.reset();
-        ++it;
-      }
-      else it = m_bindStates.erase(it);
-    }
-  }
+  eraseWhere(m_keyStates,        eraseCond);
+  eraseWhere(m_mouseStates,      eraseCond);
+  eraseWhere(m_controllerStates, eraseCond);
+  eraseWhere(m_bindStates,       eraseCond);
 }
 
 void Input::update() {
@@ -397,7 +382,10 @@ bool Input::handleInput(InputEvent const& input, bool gameProcessed) {
       m_pressedMods |= *keyToMod;
 
     if (!gameProcessed && !m_textInputActive) {
-      m_inputStates[keyDown->key].press();
+      auto& state = m_keyStates[keyDown->key];
+      if (keyToMod)
+        state.mods |= *keyToMod;
+      state.press();
       
       if (auto binds = m_bindMappings.ptr(keyDown->key)) {
         for (auto bind : filterBindEntries(*binds, keyDown->mods))
@@ -410,8 +398,11 @@ bool Input::handleInput(InputEvent const& input, bool gameProcessed) {
       m_pressedMods &= ~*keyToMod;
 
     // We need to be able to release input even when gameProcessed is true, but only if it's already down.
-    if (auto state = m_inputStates.ptr(keyUp->key))
+    if (auto state = m_keyStates.ptr(keyUp->key)) {
+      if (keyToMod)
+        state->mods &= ~*keyToMod;
       state->release();
+    }
 
     if (auto binds = m_bindMappings.ptr(keyUp->key)) {
       for (auto& bind : *binds) {
@@ -421,7 +412,9 @@ bool Input::handleInput(InputEvent const& input, bool gameProcessed) {
     }
   } else if (auto mouseDown = input.ptr<MouseButtonDownEvent>()) {
     if (!gameProcessed) {
-      m_inputStates[mouseDown->mouseButton].press();
+      auto& state = m_mouseStates[mouseDown->mouseButton];
+      state.pressPositions.append(mouseDown->mousePosition);
+      state.press();
 
       if (auto binds = m_bindMappings.ptr(mouseDown->mouseButton)) {
         for (auto bind : filterBindEntries(*binds, m_pressedMods))
@@ -429,8 +422,10 @@ bool Input::handleInput(InputEvent const& input, bool gameProcessed) {
       }
     }
   } else if (auto mouseUp = input.ptr<MouseButtonUpEvent>()) {
-    if (auto state = m_inputStates.ptr(mouseUp->mouseButton))
+    if (auto state = m_mouseStates.ptr(mouseUp->mouseButton)) {
+      state->releasePositions.append(mouseUp->mousePosition);
       state->release();
+    }
 
     if (auto binds = m_bindMappings.ptr(mouseUp->mouseButton)) {
       for (auto& bind : *binds) {
@@ -497,10 +492,10 @@ void Input::setTextInputActive(bool active) {
 }
 
 Maybe<unsigned> Input::bindDown(String const& categoryId, String const& bindId) {
-  if (auto state = bindStatePtr(categoryId, bindId))
+  if (auto state = bindStatePtr(categoryId, bindId)) {
     if (state->presses)
       return state->presses;
-
+  }
   return {};
 }
 
@@ -512,10 +507,52 @@ bool Input::bindHeld(String const& categoryId, String const& bindId) {
 }
 
 Maybe<unsigned> Input::bindUp(String const& categoryId, String const& bindId) {
-  if (auto state = bindStatePtr(categoryId, bindId))
+  if (auto state = bindStatePtr(categoryId, bindId)) {
     if (state->releases)
       return state->releases;
+  }
+  return {};
+}
 
+Maybe<unsigned> Input::keyDown(Key key, Maybe<KeyMod> keyMod) {
+  if (auto state = m_keyStates.ptr(key)) {
+    if (state->presses && (!keyMod || compareKeyMod(*keyMod, state->mods)))
+      return state->presses;
+  }
+  return {};
+}
+
+bool Input::keyHeld(Key key) {
+  auto state = m_keyStates.ptr(key);
+  return state && state->held;
+}
+
+Maybe<unsigned> Input::keyUp(Key key) {
+  if (auto state = m_keyStates.ptr(key)) {
+    if (state->releases)
+      return state->releases;
+  }
+  return {};
+}
+
+Maybe<List<Vec2I>> Input::mouseDown(MouseButton button) {
+  if (auto state = m_mouseStates.ptr(button)) {
+    if (state->presses)
+      return state->pressPositions;
+  }
+  return {};
+}
+
+bool Input::mouseHeld(MouseButton button) {
+  auto state = m_mouseStates.ptr(button);
+  return state && state->held;
+}
+
+Maybe<List<Vec2I>> Input::mouseUp(MouseButton button) {
+  if (auto state = m_mouseStates.ptr(button)) {
+    if (state->releases)
+      return state->releasePositions;
+  }
   return {};
 }
 

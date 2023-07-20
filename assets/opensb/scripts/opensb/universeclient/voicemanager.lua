@@ -80,17 +80,18 @@ local function drawSpeakerBar(mouse, pos, speaker, i)
 		hoveredSpeaker = speaker
 		hoveredSpeakerIndex = i
 		hoveredSpeakerPosition = pos
-		--if input.key("LShift") then
-		--	textPositioning.position = {pos[1] + 288, pos[2] + 24}
-		--	textPositioning.horizontalAnchor = "right"
-		--	canvas:drawText("^#fff7;" .. tostring(speaker.speakerId), textPositioning, 16, nil, nil, nil, FONT_DIRECTIVES)
-		--end
---
-		--if input.mouseDown("MouseLeft") then
-		--	local muted = not voice.muted(speaker.speakerId)
-		--	interface.queueMessage((muted and "^#f43030;Muted^reset; " or "^#31d2f7;Unmuted^reset; ") .. speaker.name, 4, 0.5)
-		--	voice.setMuted(speaker.speakerId, muted)
-		--end
+		if input.keyHeld("LShift") then
+			textPositioning.position = {pos[1] + 288, pos[2] + 24}
+			textPositioning.horizontalAnchor = "right"
+			canvas:drawText("^#fff7,font=iosevka-semibold;" .. tostring(speaker.speakerId), textPositioning, 16, nil, nil, nil, FONT_DIRECTIVES)
+		end
+
+		if input.mouseDown("MouseLeft") then
+			local muted = not voice.speakerMuted(speaker.speakerId)
+			interface.queueMessage((muted and "^#f43030;Muted^reset; " or "^#31d2f7;Unmuted^reset; ") .. speaker.name, 4, 0.5)
+			voice.setSpeakerMuted(speaker.speakerId, muted)
+			speaker.muted = muted
+		end
 	end
 end
 
