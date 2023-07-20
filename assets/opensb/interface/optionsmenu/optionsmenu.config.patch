@@ -42,6 +42,7 @@
       "base" : "/interface/optionsmenu/tricontrolsbutton.png",
       "hover" : "/interface/optionsmenu/tricontrolsbuttonhover.png"
     },
-    "sfxValueLabel" : { "position" : [192, 142] } // this is 2px too low in vanilla lol
+    "sfxValueLabel" : { "position" : [192, 142] }, // this is 2px too low in vanilla lol
+    "musicSlider" : { "position" : [62, 126] }
   }
 }

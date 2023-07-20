@@ -362,13 +362,14 @@ void Voice::mix(int16_t* buffer, size_t frameCount, unsigned channels) {
 			VoiceAudioStream* audio = speaker->audioStream.get();
 			MutexLocker audioLock(audio->mutex);
 			if (speaker->playing && !audio->samples.empty()) {
+				for (size_t i = 0; i != samples; ++i)
+					speakerBuffer[i] = audio->take();
+
+				if (speaker != m_clientSpeaker)
+					speaker->decibelLevel = getAudioLoudness(speakerBuffer.data(), samples);
+
 				if (!speaker->muted) {
 					mix = true;
-					for (size_t i = 0; i != samples; ++i)
-						speakerBuffer[i] = audio->take();
-
-					if (speaker != m_clientSpeaker)
-					  speaker->decibelLevel = getAudioLoudness(speakerBuffer.data(), samples);
 
 					float volume = speaker->volume;
 					Array2F levels = speaker->channelVolumes;
@@ -395,10 +396,6 @@ void Voice::mix(int16_t* buffer, size_t frameCount, unsigned channels) {
 						*sharedData++ += (int32_t)rightSample * levels[1];
 					}
 					//*/
-				}
-				else {
-					for (size_t i = 0; i != samples; ++i)
-						audio->take();
 				}
 				++it;
 			}

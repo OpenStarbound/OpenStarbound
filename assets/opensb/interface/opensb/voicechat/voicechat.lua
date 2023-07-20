@@ -223,5 +223,6 @@ end
 
 function voiceToggle()
   set("enabled", not settings.enabled)
+  widget.playSound(fmt("/sfx/interface/voice_%s.ogg", settings.enabled and "on" or "off"), 0)
 	updateVoiceButton()
 end
