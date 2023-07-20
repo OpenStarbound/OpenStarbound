@@ -22,6 +22,7 @@
 #include "StarQuestManager.hpp"
 #include "StarPlayerUniverseMap.hpp"
 #include "StarWorldTemplate.hpp"
+#include "StarCelestialLuaBindings.hpp"
 
 namespace Star {
 
@@ -449,6 +450,8 @@ void UniverseClient::setLuaCallbacks(String const& groupName, LuaCallbacks const
 }
 
 void UniverseClient::startLua() {
+  setLuaCallbacks("celestial", LuaBindings::makeCelestialCallbacks(this));
+
   auto assets = Root::singleton().assets();
   for (auto& p : assets->json("/client.config:universeScriptContexts").toObject()) {
     auto scriptComponent = make_shared<ScriptComponent>();

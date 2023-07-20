@@ -207,7 +207,7 @@ bool CelestialMasterDatabase::coordinateValid(CelestialCoordinate const& coordin
 Maybe<CelestialCoordinate> CelestialMasterDatabase::findRandomWorld(unsigned tries, unsigned trySpatialRange,
     function<bool(CelestialCoordinate)> filter, Maybe<uint64_t> seed) {
   //RecursiveMutexLocker locker(m_mutex);
-  // We don't need this mutex, the other calls are locking anyway.
+  // We don't need this lock, the other calls are locking anyway.
   // Having this here is just stopping other threads from having a go in here until we've found a world.
   RandomSource randSource;
   if (seed)
