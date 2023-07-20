@@ -96,6 +96,7 @@ private:
     Maybe<Vec2F> exitBottomOffset;
     JsonObject armorCosmeticOverrides;
     Maybe<String> cursorOverride;
+    bool suppressTools;
     bool cameraFocus;
 
     NetElementBool enabled;

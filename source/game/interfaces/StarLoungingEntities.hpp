@@ -31,6 +31,7 @@ struct LoungeAnchor : EntityAnchor {
   Maybe<Directives> directives;
   JsonObject armorCosmeticOverrides;
   Maybe<String> cursorOverride;
+  bool suppressTools;
   bool cameraFocus;
 };
 

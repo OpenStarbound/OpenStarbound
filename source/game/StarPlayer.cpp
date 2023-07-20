@@ -879,11 +879,13 @@ void Player::update(uint64_t) {
         p.second->update(WorldTimestep * p.second->updateDelta());
 
       if (edgeTriggeredUse) {
-        if (canUseTool()) {
+        auto anchor = as<LoungeAnchor>(m_movementController->entityAnchor());
+        bool useTool = canUseTool();
+        if (anchor && (!useTool || anchor->controllable))
+          m_movementController->resetAnchorState();
+        else if (useTool) {
           if (auto ie = bestInteractionEntity(true))
             interactWithEntity(ie);
-        } else if (loungingIn()) {
-          m_movementController->resetAnchorState();
         }
       }
 
@@ -1393,7 +1395,13 @@ void Player::playEmote(HumanoidEmote emote) {
 }
 
 bool Player::canUseTool() const {
-  return !isDead() && !isTeleporting() && !m_techController->toolUsageSuppressed() && m_state != State::Lounge;
+  bool canUse = !isDead() && !isTeleporting() && !m_techController->toolUsageSuppressed();
+  if (canUse) {
+    if (auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor()))
+      if (loungeAnchor->suppressTools)
+        return false;
+  }
+  return canUse;
 }
 
 void Player::beginPrimaryFire() {

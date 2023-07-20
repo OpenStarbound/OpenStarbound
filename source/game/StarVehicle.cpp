@@ -46,6 +46,7 @@ Vehicle::Vehicle(Json baseConfig, String path, Json dynamicConfig)
     loungePosition.dance.set(pair.second.optString("dance"));
     loungePosition.directives.set(pair.second.optString("directives"));
     loungePosition.statusEffects.set(pair.second.getArray("statusEffects", {}).transformed(jsonToPersistentStatusEffect));
+    loungePosition.suppressTools = pair.second.getBool("suppressTools", false);
   }
 
   for (auto const& pair : configValue("physicsCollisions", JsonObject()).iterateObject()) {
@@ -465,6 +466,7 @@ LoungeAnchorConstPtr Vehicle::loungeAnchor(size_t positionIndex) const {
   loungePosition->armorCosmeticOverrides = positionConfig.armorCosmeticOverrides;
   loungePosition->cursorOverride = positionConfig.cursorOverride;
   loungePosition->cameraFocus = positionConfig.cameraFocus;
+  loungePosition->suppressTools = positionConfig.suppressTools;
   return loungePosition;
 }
 
