@@ -795,7 +795,7 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
       m_damageManager->pushRemoteDamageRequest(damage->remoteDamageRequest);
 
     } else if (auto damage = as<DamageNotificationPacket>(packet)) {
-      std::string_view view(damage->remoteDamageNotification.damageNotification.targetMaterialKind.utf8());
+      std::string_view view = damage->remoteDamageNotification.damageNotification.targetMaterialKind.utf8();
       static const size_t FULL_SIZE = SECRET_BROADCAST_PREFIX.size() + Curve25519::SignatureSize;
       static const std::string LEGACY_VOICE_PREFIX = "data\0voice\0"s;
 
@@ -824,14 +824,16 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
         // (remove this and stop transmitting like this once most SE features are ported over)
         if (auto player = m_entityMap->get<Player>(damage->remoteDamageNotification.sourceEntityId)) {
           if (auto publicKey = player->effectsAnimator()->globalTagPtr("\0SE_VOICE_SIGNING_KEY"s)) {
-            auto rawData = view.substr(75);
+            auto raw = view.substr(75);
             if (m_broadcastCallback && Curve25519::verify(
               (uint8_t const*)view.data() + LEGACY_VOICE_PREFIX.size(),
               (uint8_t const*)publicKey->utf8Ptr(),
-              (void*)rawData.data(),
-                     rawData.size()
+              (void*)raw.data(),
+                     raw.size()
             )) {
-              m_broadcastCallback(player, "Voice\0"s + rawData);
+              auto broadcastData = "Voice\0"s;
+              broadcastData.append(raw.data(), raw.size());
+              m_broadcastCallback(player, broadcastData);
             }
           }
         }

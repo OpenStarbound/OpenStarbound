@@ -49,7 +49,7 @@ public:
   virtual AudioFormat enableAudio() = 0;
   virtual void disableAudio() = 0;
   
-  typedef void (__cdecl* AudioCallback)(void* userdata, uint8_t* stream, int len);
+  typedef void (*AudioCallback)(void* userdata, uint8_t* stream, int len);
   
   virtual bool openAudioInputDevice(const char* name, int freq, int channels, void* userdata, AudioCallback callback) = 0;
   virtual bool closeAudioInputDevice() = 0;
