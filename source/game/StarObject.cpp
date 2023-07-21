@@ -144,13 +144,22 @@ void Object::init(World* world, EntityId entityId, EntityMode mode) {
   m_orientationDrawablesCache.reset();
 
   // This is stupid and we should only have to deal with the new directives parameter, but blah blah backwards compatibility.
-  auto colorName = configValue("color", "default").toString();
+  auto colorName = configValue("color", "default").toString().takeUtf8();
   auto colorEnd = colorName.find('?');
   if (colorEnd != NPos) {
-    m_colorDirectives = colorName.substr(colorEnd);
+    size_t suffixBegin = colorName.rfind('?');
+    String colorDirectives;
+    std::string colorSuffix = suffixBegin == NPos ? "" : colorName.substr(suffixBegin);
+    if (colorSuffix.empty() && colorSuffix.rfind("?replace", 0) != 0)
+      colorDirectives = colorName.substr(colorEnd);
+    else
+      colorDirectives = colorName.substr(colorEnd, suffixBegin - colorEnd);
+
+    m_colorSuffix = move(colorSuffix);
+    m_colorDirectives = move(colorDirectives);
   }
   else
-    m_colorDirectives = "";
+    m_colorDirectives = m_colorSuffix = "";
 
   m_directives = "";
   if (auto directives = configValue("")) {
@@ -1234,11 +1243,21 @@ List<Drawable> Object::orientationDrawables(size_t orientationIndex) const {
         String& color = m_imageKeys.find("color")->second;
         String backup = move(color);
         color = backup.substr(0, backup.find('?'));
-        imagePart.image = imagePath.replaceTags(m_imageKeys, true, "default");
+
+        // backwards compatibility for this is really annoying, need to append text after the <color> tag to the last directive for a rare use-case
+        auto& image = imagePath.utf8();
+        size_t suffix = NPos;
+        if (!m_colorSuffix.empty() && (suffix = image.rfind("<color>")) != NPos)
+          imagePart.image = String(image.substr(0, (suffix += 7))).replaceTags(m_imageKeys, true, "default");
+        else
+          imagePart.image = imagePath.replaceTags(m_imageKeys, true, "default");
+
         color = move(backup);
 
         imagePart.image.directives = layer.imagePart().image.directives;
         imagePart.addDirectives(m_colorDirectives);
+        if (suffix != NPos)
+          imagePart.addDirectives(m_colorSuffix + String(image.substr(suffix)).replaceTags(m_imageKeys, true, "default"));
       }
       else {
         imagePart.image = imagePath.replaceTags(m_imageKeys, true, "default");

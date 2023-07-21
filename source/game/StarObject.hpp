@@ -223,6 +223,7 @@ private:
 
   Directives m_directives;
   Directives m_colorDirectives;
+  String m_colorSuffix;
 
   Maybe<PeriodicFunction<float>> m_lightFlickering;
 
