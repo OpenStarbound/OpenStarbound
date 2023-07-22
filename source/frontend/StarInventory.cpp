@@ -412,6 +412,8 @@ void InventoryPane::update(float dt) {
   }
 
   m_title = m_player->name();
+
+  Pane::update(dt);
 }
 
 void InventoryPane::selectTab(String const& selected) {
