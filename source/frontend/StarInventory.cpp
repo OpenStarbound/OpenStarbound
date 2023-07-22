@@ -210,7 +210,7 @@ bool InventoryPane::giveContainerResult(ContainerResult result) {
   if (!m_expectingSwap)
     return false;
 
-  for (auto item : result) {
+  for (auto& item : result) {
     auto inv = m_player->inventory();
     m_player->triggerPickupEvents(item);
 
@@ -224,16 +224,23 @@ bool InventoryPane::giveContainerResult(ContainerResult result) {
 }
 
 void InventoryPane::updateItems() {
-  for (auto p : m_itemGrids)
+  for (auto& p : m_itemGrids)
     p.second->updateItemState();
 }
 
 bool InventoryPane::containsNewItems() const {
-  for (auto p : m_itemGrids) {
+  for (auto& p : m_itemGrids) {
     if (p.second->slotsChanged())
       return true;
   }
   return false;
+}
+
+void InventoryPane::clearChangedSlots() {
+  for (auto& p : m_itemGrids) {
+    p.second->updateItemState();
+    p.second->clearChangedSlots();
+  }
 }
 
 void InventoryPane::update(float dt) {

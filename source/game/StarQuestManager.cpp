@@ -110,7 +110,7 @@ bool QuestManager::canStart(QuestArcDescriptor const& questArc) const {
       if (!m_player->inventory()->hasItem(item))
         return false;
     if (questTemplate->requiredShipLevel) {
-      if (m_player->clientContext()->shipUpgrades().shipLevel < *questTemplate->requiredShipLevel)
+      if (m_player->shipUpgrades().shipLevel < *questTemplate->requiredShipLevel)
         return false;
     }
   }

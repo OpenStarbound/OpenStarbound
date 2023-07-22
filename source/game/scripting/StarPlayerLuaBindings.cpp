@@ -112,11 +112,8 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
       player->interact(InteractAction(type, sourceEntityId.value(NullEntityId), configData));
     });
 
-  callbacks.registerCallback("shipUpgrades", [player]() { return player->clientContext()->shipUpgrades().toJson(); });
-
-  callbacks.registerCallback("upgradeShip", [player](Json const& upgrades) {
-      player->clientContext()->rpcInterface()->invokeRemote("ship.applyShipUpgrades", upgrades);
-    });
+  callbacks.registerCallback("shipUpgrades", [player]() { return player->shipUpgrades().toJson(); });
+  callbacks.registerCallback("upgradeShip", [player](Json const& upgrades) { player->applyShipUpgrades(upgrades); });
 
   callbacks.registerCallback("setUniverseFlag", [player](String const& flagName) {
       player->clientContext()->rpcInterface()->invokeRemote("universe.setFlag", flagName);

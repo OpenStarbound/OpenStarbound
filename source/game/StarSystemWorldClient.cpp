@@ -82,6 +82,10 @@ List<SystemObjectPtr> SystemWorldClient::objects() const {
   return m_objects.values();
 }
 
+List<Uuid> SystemWorldClient::objectKeys() const {
+  return m_objects.keys();
+}
+
 SystemObjectPtr SystemWorldClient::getObject(Uuid const& uuid) const {
   return m_objects.maybe(uuid).value({});
 }

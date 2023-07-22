@@ -136,6 +136,40 @@ bool WorldClient::respawnInWorld() const {
   return m_respawnInWorld;
 }
 
+void WorldClient::removeEntity(EntityId entityId, bool andDie) {
+  auto entity = m_entityMap->entity(entityId);
+  if (!entity)
+    return;
+
+  if (andDie) {
+    ClientRenderCallback renderCallback;
+    entity->destroy(&renderCallback);
+
+    const List<Directives>* directives = nullptr;
+    if (auto& worldTemplate = m_worldTemplate) {
+      if (const auto& parameters = worldTemplate->worldParameters())
+        if (auto& globalDirectives = m_worldTemplate->worldParameters()->globalDirectives)
+          directives = &globalDirectives.get();
+    }
+    if (directives) {
+      int directiveIndex = unsigned(entity->entityId()) % directives->size();
+      for (auto& p : renderCallback.particles)
+        p.directives.append(directives->get(directiveIndex));
+    }
+
+    m_particles->addParticles(move(renderCallback.particles));
+    m_samples.appendAll(move(renderCallback.audios));
+  }
+
+  if (auto version = m_masterEntitiesNetVersion.maybeTake(entity->entityId())) {
+    ByteArray finalNetState = entity->writeNetState(*version).first;
+    m_outgoingPackets.append(make_shared<EntityDestroyPacket>(entity->entityId(), move(finalNetState), andDie));
+  }
+
+  m_entityMap->removeEntity(entityId);
+  entity->uninit();
+}
+
 WorldTemplateConstPtr WorldClient::currentTemplate() const {
   return m_worldTemplate;
 }
@@ -989,7 +1023,7 @@ void WorldClient::update(float dt) {
     action(this);
 
   List<EntityId> toRemove;
-  List<EntityId> clientPresenceEntities{m_mainPlayer->entityId()};
+  List<EntityId> clientPresenceEntities;
   m_entityMap->updateAllEntities([&](EntityPtr const& entity) {
       entity->update(dt, m_currentStep);
 
@@ -1413,40 +1447,6 @@ void WorldClient::sparkDamagedBlocks() {
       }
     }
   }
-}
-
-void WorldClient::removeEntity(EntityId entityId, bool andDie) {
-  auto entity = m_entityMap->entity(entityId);
-  if (!entity)
-    return;
-
-  if (andDie) {
-    ClientRenderCallback renderCallback;
-    entity->destroy(&renderCallback);
-
-    const List<Directives>* directives = nullptr;
-    if (auto& worldTemplate = m_worldTemplate) {
-      if (const auto& parameters = worldTemplate->worldParameters())
-        if (auto& globalDirectives = m_worldTemplate->worldParameters()->globalDirectives)
-          directives = &globalDirectives.get();
-    }
-    if (directives) {
-      int directiveIndex = unsigned(entity->entityId()) % directives->size();
-      for (auto& p : renderCallback.particles)
-        p.directives.append(directives->get(directiveIndex));
-    }
-
-    m_particles->addParticles(move(renderCallback.particles));
-    m_samples.appendAll(move(renderCallback.audios));
-  }
-
-  if (auto version = m_masterEntitiesNetVersion.maybeTake(entity->entityId())) {
-    ByteArray finalNetState = entity->writeNetState(*version).first;
-    m_outgoingPackets.append(make_shared<EntityDestroyPacket>(entity->entityId(), move(finalNetState), andDie));
-  }
-
-  m_entityMap->removeEntity(entityId);
-  entity->uninit();
 }
 
 InteractiveEntityPtr WorldClient::getInteractiveInRange(Vec2F const& targetPosition, Vec2F const& sourcePosition, float maxRange) const {

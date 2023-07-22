@@ -33,6 +33,7 @@ public:
   // this is a little hacky and should probably be checked in the player inventory instead
   void updateItems();
   bool containsNewItems() const;
+  void clearChangedSlots();
 
 protected:
   virtual void update(float dt) override;

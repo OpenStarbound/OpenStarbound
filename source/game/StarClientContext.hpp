@@ -17,9 +17,12 @@ STAR_CLASS(ClientContext);
 
 class ClientContext {
 public:
-  ClientContext(Uuid serverUuid);
+  ClientContext(Uuid serverUuid, Uuid playerUuid);
 
   Uuid serverUuid() const;
+  // The player Uuid can differ from the mainPlayer's Uuid
+  //  if the player has swapped character - use this for ship saving.
+  Uuid playerUuid() const;
 
   // The coordinate for the world which the player's ship is currently
   // orbiting.
@@ -43,6 +46,8 @@ public:
 
 private:
   Uuid m_serverUuid;
+  Uuid m_playerUuid;
+
   JsonRpcPtr m_rpc;
 
   NetElementTopGroup m_netGroup;

@@ -109,7 +109,7 @@ Maybe<String> UniverseClient::connect(UniverseConnection connection, bool allowA
 
   if (auto success = as<ConnectSuccessPacket>(packet)) {
     m_universeClock = make_shared<Clock>();
-    m_clientContext = make_shared<ClientContext>(success->serverUuid);
+    m_clientContext = make_shared<ClientContext>(success->serverUuid, m_mainPlayer->uuid());
     m_teamClient = make_shared<TeamClient>(m_mainPlayer, m_clientContext);
     m_mainPlayer->setClientContext(m_clientContext);
     m_mainPlayer->setStatistics(m_statistics);
@@ -397,6 +397,10 @@ bool UniverseClient::playerOnOwnShip() const {
   return playerWorld().is<ClientShipWorldId>() && playerWorld().get<ClientShipWorldId>() == mainPlayer()->uuid();
 }
 
+bool UniverseClient::playerIsOriginal() const {
+  return m_clientContext->playerUuid() == mainPlayer()->uuid();
+}
+
 WorldId UniverseClient::playerWorld() const {
   return m_clientContext->playerWorldId();
 }
@@ -473,6 +477,80 @@ void UniverseClient::stopLua() {
   m_scriptContexts.clear();
 }
 
+bool UniverseClient::reloadPlayer(Json const& data, Uuid const& uuid) {
+  auto player = mainPlayer();
+  auto world = worldClient();
+  bool inWorld = player->inWorld();
+  EntityId entityId = player->entityId();
+
+  if (m_playerReloadPreCallback)
+    m_playerReloadPreCallback();
+
+  if (inWorld)
+    world->removeEntity(entityId, false);
+  else {
+    m_respawning = false;
+    m_respawnTimer.reset();
+  }
+
+  Json originalData = m_playerStorage->savePlayer(player);
+  std::exception_ptr exception;
+
+  try {
+    auto newData = data.set("movementController", originalData.get("movementController"));
+    player->diskLoad(newData);
+  }
+  catch (std::exception const& e) {
+    player->diskLoad(originalData);
+    exception = std::current_exception();
+  }
+
+  world->addEntity(player);
+
+  CelestialCoordinate coordinate = m_systemWorldClient->location();
+  player->universeMap()->addMappedCoordinate(coordinate);
+  player->universeMap()->filterMappedObjects(coordinate, m_systemWorldClient->objectKeys());
+
+  if (m_playerReloadCallback)
+    m_playerReloadCallback();
+
+  if (exception)
+    std::rethrow_exception(exception);
+
+  return true;
+}
+
+bool UniverseClient::switchPlayer(Uuid const& uuid) {
+  if (uuid == mainPlayer()->uuid())
+    return false;
+  else if (auto data = m_playerStorage->maybeGetPlayerData(uuid))
+    return reloadPlayer(*data, uuid);
+  else
+    return false;
+}
+
+bool UniverseClient::switchPlayer(size_t index) {
+  if (auto uuid = m_playerStorage->playerUuidAt(index))
+    return switchPlayer(*uuid);
+  else
+    return false;
+}
+
+bool UniverseClient::switchPlayer(String const& name) {
+  if (auto uuid = m_playerStorage->playerUuidByName(name))
+    return switchPlayer(*uuid);
+  else
+    return false;
+}
+
+UniverseClient::Callback& UniverseClient::playerReloadPreCallback() {
+  return m_playerReloadPreCallback;
+}
+
+UniverseClient::Callback& UniverseClient::playerReloadCallback() {
+  return m_playerReloadCallback;
+}
+
 ClockConstPtr UniverseClient::universeClock() const {
   return m_universeClock;
 }
@@ -518,10 +596,14 @@ void UniverseClient::handlePackets(List<PacketPtr> const& packets) {
   for (auto const& packet : packets) {
     if (auto clientContextUpdate = as<ClientContextUpdatePacket>(packet)) {
       m_clientContext->readUpdate(clientContextUpdate->updateData);
-      m_playerStorage->applyShipUpdates(m_mainPlayer->uuid(), m_clientContext->newShipUpdates());
-      m_mainPlayer->setShipUpgrades(m_clientContext->shipUpgrades());
+      m_playerStorage->applyShipUpdates(m_clientContext->playerUuid(), m_clientContext->newShipUpdates());
+
+      if (playerIsOriginal())
+        m_mainPlayer->setShipUpgrades(m_clientContext->shipUpgrades());
+
       m_mainPlayer->setAdmin(m_clientContext->isAdmin());
       m_mainPlayer->setTeam(m_clientContext->team());
+
     } else if (auto chatReceivePacket = as<ChatReceivePacket>(packet)) {
       m_pendingMessages.append(chatReceivePacket->receivedMessage);
 

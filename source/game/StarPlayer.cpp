@@ -56,6 +56,7 @@ Player::Player(PlayerConfigPtr config, Uuid uuid) {
   auto assets = Root::singleton().assets();
 
   m_config = config;
+  m_client = nullptr;
 
   m_state = State::Idle;
   m_emoteState = HumanoidEmote::Idle;
@@ -186,13 +187,35 @@ Player::Player(PlayerConfigPtr config, Uuid uuid) {
   m_netGroup.setNeedsStoreCallback(bind(&Player::setNetStates, this));
 }
 
+Player::Player(PlayerConfigPtr config, ByteArray const& netStore) : Player(config) {
+  DataStreamBuffer ds(netStore);
+
+  setUniqueId(ds.read<String>());
+
+  ds.read(m_description);
+  ds.read(m_modeType);
+  ds.read(m_identity);
+
+  m_humanoid = make_shared<Humanoid>(Root::singleton().speciesDatabase()->species(m_identity.species)->humanoidConfig());
+  m_humanoid->setIdentity(m_identity);
+  m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(m_humanoid->defaultMovementParameters(), m_config->movementParameters)));
+}
+
+
 Player::Player(PlayerConfigPtr config, Json const& diskStore) : Player(config) {
+  diskLoad(diskStore);
+}
+
+void Player::diskLoad(Json const& diskStore) {
   setUniqueId(diskStore.getString("uuid"));
   m_description = diskStore.getString("description");
   setModeType(PlayerModeNames.getLeft(diskStore.getString("modeType")));
   m_shipUpgrades = ShipUpgrades(diskStore.get("shipUpgrades"));
   m_blueprints = make_shared<PlayerBlueprints>(diskStore.get("blueprints"));
   m_universeMap = make_shared<PlayerUniverseMap>(diskStore.get("universeMap"));
+  if (m_clientContext)
+    m_universeMap->setServerUuid(m_clientContext->serverUuid());
+
   m_codexes = make_shared<PlayerCodexes>(diskStore.get("codexes"));
   m_techs = make_shared<PlayerTech>(diskStore.get("techs"));
   m_identity = HumanoidIdentity(diskStore.get("identity"));
@@ -208,48 +231,39 @@ Player::Player(PlayerConfigPtr config, Json const& diskStore) : Player(config) {
 
   m_log = make_shared<PlayerLog>(diskStore.get("log"));
 
-  m_codexes->learnInitialCodexes(species());
-
-  // Make sure to merge the stored player blueprints with what a new player
-  // would get as default.
-  for (auto const& descriptor : m_config->defaultBlueprints)
-    m_blueprints->add(descriptor);
-  for (auto const& descriptor : Root::singleton().speciesDatabase()->species(m_identity.species)->defaultBlueprints())
-    m_blueprints->add(descriptor);
+  auto speciesDef = Root::singleton().speciesDatabase()->species(m_identity.species);
 
   m_questManager->diskLoad(diskStore.get("quests", JsonObject{}));
   m_companions->diskLoad(diskStore.get("companions", JsonObject{}));
   m_deployment->diskLoad(diskStore.get("deployment", JsonObject{}));
-  m_humanoid = make_shared<Humanoid>(Root::singleton().speciesDatabase()->species(m_identity.species)->humanoidConfig());
+  m_humanoid = make_shared<Humanoid>(speciesDef->humanoidConfig());
   m_humanoid->setIdentity(m_identity);
   m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(m_humanoid->defaultMovementParameters(), m_config->movementParameters)));
-  m_effectsAnimator->setGlobalTag("effectDirectives", Root::singleton().speciesDatabase()->species(m_identity.species)->effectDirectives());
+  m_effectsAnimator->setGlobalTag("effectDirectives", speciesDef->effectDirectives());
 
   m_genericProperties = diskStore.getObject("genericProperties");
 
   refreshEquipment();
 
+  m_codexes->learnInitialCodexes(species());
+
   m_aiState = AiState(diskStore.get("aiState", JsonObject{}));
+
+  for (auto& script : m_genericScriptContexts)
+    script.second->setScriptStorage({});
 
   for (auto& p : diskStore.get("genericScriptStorage", JsonObject{}).toObject()) {
     if (auto script = m_genericScriptContexts.maybe(p.first).value({})) {
       script->setScriptStorage(p.second.toObject());
     }
   }
-}
 
-Player::Player(PlayerConfigPtr config, ByteArray const& netStore) : Player(config) {
-  DataStreamBuffer ds(netStore);
-
-  setUniqueId(ds.read<String>());
-
-  ds.read(m_description);
-  ds.read(m_modeType);
-  ds.read(m_identity);
-
-  m_humanoid = make_shared<Humanoid>(Root::singleton().speciesDatabase()->species(m_identity.species)->humanoidConfig());
-  m_humanoid->setIdentity(m_identity);
-  m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(m_humanoid->defaultMovementParameters(), m_config->movementParameters)));
+  // Make sure to merge the stored player blueprints with what a new player
+  // would get as default.
+  for (auto const& descriptor : m_config->defaultBlueprints)
+    m_blueprints->add(descriptor);
+  for (auto const& descriptor : speciesDef->defaultBlueprints())
+    m_blueprints->add(descriptor);
 }
 
 ClientContextPtr Player::clientContext() const {
@@ -277,6 +291,10 @@ void Player::setUniverseClient(UniverseClient* client) {
 
 EntityType Player::entityType() const {
   return EntityType::Player;
+}
+
+ClientEntityMode Player::clientEntityMode() const {
+  return ClientEntityMode::ClientPresenceMaster;
 }
 
 void Player::init(World* world, EntityId entityId, EntityMode mode) {
@@ -1961,6 +1979,13 @@ void Player::setShipUpgrades(ShipUpgrades shipUpgrades) {
   m_shipUpgrades = move(shipUpgrades);
 }
 
+void Player::applyShipUpgrades(Json const& upgrades) {
+  if (m_clientContext->playerUuid() == uuid())
+    m_clientContext->rpcInterface()->invokeRemote("ship.applyShipUpgrades", upgrades);
+  else
+    m_shipUpgrades.apply(upgrades);
+}
+
 String Player::name() const {
   return m_identity.name;
 }
@@ -2174,6 +2199,19 @@ StatusController* Player::statusController() {
 
 List<PhysicsForceRegion> Player::forceRegions() const {
   return m_tools->forceRegions();
+}
+
+
+StatusControllerPtr Player::statusControllerPtr() {
+  return m_statusController;
+}
+
+ActorMovementControllerPtr Player::movementControllerPtr() {
+  return m_movementController;
+}
+
+PlayerConfigPtr Player::config() {
+  return m_config;
 }
 
 SongbookPtr Player::songbook() const {

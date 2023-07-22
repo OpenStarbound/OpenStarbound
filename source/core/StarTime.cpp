@@ -43,7 +43,7 @@ String Time::printDuration(double time) {
     seconds = strf("{} second{}", numSeconds, numSeconds == 1 ? "" : "s");
   }
 
-  int numMilliseconds = round(time * 1000);
+  int numMilliseconds = round(fmod(time, 1.0) * 1000);
   milliseconds = strf("{} millisecond{}", numMilliseconds, numMilliseconds == 1 ? "" : "s");
 
   return String::joinWith(", ", hours, minutes, seconds, milliseconds);

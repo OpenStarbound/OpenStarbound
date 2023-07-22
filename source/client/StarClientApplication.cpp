@@ -506,8 +506,16 @@ void ClientApplication::changeState(MainAppState newState) {
     m_playerStorage = make_shared<PlayerStorage>(m_root->toStoragePath("player"));
     m_statistics = make_shared<Statistics>(m_root->toStoragePath("player"), appController()->statisticsService());
     m_universeClient = make_shared<UniverseClient>(m_playerStorage, m_statistics);
+
     m_universeClient->setLuaCallbacks("input", LuaBindings::makeInputCallbacks());
     m_universeClient->setLuaCallbacks("voice", LuaBindings::makeVoiceCallbacks());
+
+    m_universeClient->playerReloadCallback() = [&]() {
+      if (auto paneManager = m_mainInterface->paneManager()) {
+        if (auto inventory = paneManager->registeredPane<InventoryPane>(MainInterfacePanes::Inventory))
+          inventory->clearChangedSlots();
+      }
+    };
 
     m_mainMixer->setUniverseClient(m_universeClient);
     m_titleScreen = make_shared<TitleScreen>(m_playerStorage, m_mainMixer->mixer());

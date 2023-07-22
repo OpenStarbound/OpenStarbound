@@ -40,7 +40,7 @@ void UnlockItem::fireTriggered() {
 
     if (auto clientContext = player->clientContext()) {
       if (m_shipUpgrade)
-        clientContext->rpcInterface()->invokeRemote("ship.applyShipUpgrades", JsonObject{{"shipLevel", *m_shipUpgrade}});
+        player->applyShipUpgrades(JsonObject{ {"shipLevel", *m_shipUpgrade} });
     }
 
     if (!m_unlockMessage.empty()) {

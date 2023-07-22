@@ -108,6 +108,8 @@ public:
   void reviveMainPlayer();
   bool respawnInWorld() const;
 
+  void removeEntity(EntityId entityId, bool andDie);
+
   WorldTemplateConstPtr currentTemplate() const;
   SkyConstPtr currentSky() const;
 
@@ -213,8 +215,6 @@ private:
   void handleDamageNotifications();
 
   void sparkDamagedBlocks();
-
-  void removeEntity(EntityId entityId, bool andDie);
 
   Vec2I environmentBiomeTrackPosition() const;
   AmbientNoisesDescriptionPtr currentAmbientNoises() const;

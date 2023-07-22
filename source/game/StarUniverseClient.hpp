@@ -69,6 +69,7 @@ public:
   CelestialCoordinate shipCoordinate() const;
 
   bool playerOnOwnShip() const;
+  bool playerIsOriginal() const;
 
   WorldId playerWorld() const;
   bool isAdmin() const;
@@ -89,6 +90,15 @@ public:
   void setLuaCallbacks(String const& groupName, LuaCallbacks const& callbacks);
   void startLua();
   void stopLua();
+
+  bool reloadPlayer(Json const& data, Uuid const& uuid);
+  bool switchPlayer(Uuid const& uuid);
+  bool switchPlayer(size_t index);
+  bool switchPlayer(String const& name);
+
+  typedef std::function<void()> Callback;
+  Callback& playerReloadPreCallback();
+  Callback& playerReloadCallback();
 
   ClockConstPtr universeClock() const;
   CelestialLogConstPtr celestialLog() const;
@@ -150,6 +160,9 @@ private:
   typedef LuaUpdatableComponent<LuaBaseComponent> ScriptComponent;
   typedef shared_ptr<ScriptComponent> ScriptComponentPtr;
   StringMap<ScriptComponentPtr> m_scriptContexts;
+
+  Callback m_playerReloadPreCallback;
+  Callback m_playerReloadCallback;
 };
 
 }

@@ -18,8 +18,14 @@ public:
   size_t playerCount() const;
   // Returns nothing if index is out of bounds.
   Maybe<Uuid> playerUuidAt(size_t index);
+  // Returns nothing if name doesn't match a player.
+  Maybe<Uuid> playerUuidByName(String const& name);
 
-  void savePlayer(PlayerPtr const& player);
+  // Also returns the diskStore Json if needed.
+  Json savePlayer(PlayerPtr const& player);
+
+  Maybe<Json> maybeGetPlayerData(Uuid const& uuid);
+  Json getPlayerData(Uuid const& uuid);
   PlayerPtr loadPlayer(Uuid const& uuid);
   void deletePlayer(Uuid const& uuid);
 

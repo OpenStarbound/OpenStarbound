@@ -198,12 +198,9 @@ void ItemGridWidget::updateItemState() {
   updateAllItemSlots();
   auto newState = slotItemNames();
   for (size_t i = 0; i < newState.size(); ++i) {
-    if (newState[i].empty()) {
+    if (newState[i].empty())
       m_changedSlots.remove(i);
-      continue;
-    }
-
-    if (newState[i].compare(m_itemNames[i]) != 0)
+    else if (newState[i].compare(m_itemNames[i]) != 0)
       m_changedSlots.insert(i);
   }
   m_itemNames = newState;

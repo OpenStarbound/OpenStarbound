@@ -27,6 +27,25 @@ EntityId EntityMap::reserveEntityId() {
   return id;
 }
 
+Maybe<EntityId> EntityMap::maybeReserveEntityId(EntityId entityId) {
+  if (m_spatialMap.size() >= (size_t)(m_endIdSpace - m_beginIdSpace))
+    throw EntityMapException("No more entity id space in EntityMap::reserveEntityId");
+
+  if (m_spatialMap.contains(entityId))
+    return {};
+  else
+    return entityId;
+}
+
+EntityId EntityMap::reserveEntityId(EntityId entityId) {
+  if (auto reserved = maybeReserveEntityId(entityId))
+    return *reserved;
+
+  m_nextId = entityId;
+  return reserveEntityId();
+}
+
+
 void EntityMap::addEntity(EntityPtr entity) {
   auto position = entity->position();
   auto boundBox = entity->metaBoundBox();

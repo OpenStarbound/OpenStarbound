@@ -247,6 +247,10 @@ List<SystemObjectPtr> SystemWorldServer::objects() const {
   return m_objects.values();
 }
 
+List<Uuid> SystemWorldServer::objectKeys() const {
+  return m_objects.keys();
+}
+
 SystemObjectPtr SystemWorldServer::getObject(Uuid const& uuid) const {
   return m_objects.maybe(uuid).value({});
 }

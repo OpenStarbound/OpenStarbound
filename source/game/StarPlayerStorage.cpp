@@ -8,6 +8,7 @@
 #include "StarAssets.hpp"
 #include "StarEntityFactory.hpp"
 #include "StarRoot.hpp"
+#include "StarText.hpp"
 
 namespace Star {
 
@@ -98,7 +99,28 @@ Maybe<Uuid> PlayerStorage::playerUuidAt(size_t index) {
     return {};
 }
 
-void PlayerStorage::savePlayer(PlayerPtr const& player) {
+Maybe<Uuid> PlayerStorage::playerUuidByName(String const& name) {
+  String cleanMatch = Text::stripEscapeCodes(name).toLower();
+  Maybe<Uuid> uuid;
+
+  RecursiveMutexLocker locker(m_mutex);
+
+  size_t longest = SIZE_MAX;
+  for (auto& cache : m_savedPlayersCache) {
+    if (auto name = cache.second.optQueryString("identity.name")) {
+      auto cleanName = Text::stripEscapeCodes(*name).toLower();
+      auto len = cleanName.size();
+      if (len < longest && cleanName.utf8().rfind(cleanMatch.utf8()) == 0) {
+        longest = len;
+        uuid = cache.first;
+      }
+    }
+  }
+
+  return uuid;
+}
+
+Json PlayerStorage::savePlayer(PlayerPtr const& player) {
   auto entityFactory = Root::singleton().entityFactory();
   auto versioningDatabase = Root::singleton().versioningDatabase();
 
@@ -113,15 +135,28 @@ void PlayerStorage::savePlayer(PlayerPtr const& player) {
     VersionedJson versionedJson = entityFactory->storeVersionedJson(EntityType::Player, playerCacheData);
     VersionedJson::writeFile(versionedJson, File::relativeTo(m_storageDirectory, strf("{}.player", uuid.hex())));
   }
+  return newPlayerData;
+}
+
+Maybe<Json> PlayerStorage::maybeGetPlayerData(Uuid const& uuid) {
+  RecursiveMutexLocker locker(m_mutex);
+  if (auto cache = m_savedPlayersCache.ptr(uuid))
+    return *cache;
+  else
+    return {};
+}
+
+Json PlayerStorage::getPlayerData(Uuid const& uuid) {
+  auto data = maybeGetPlayerData(uuid);
+  if (!data)
+    throw PlayerException(strf("No such stored player with uuid '{}'", uuid.hex()));
+  else
+    return *data;
 }
 
 PlayerPtr PlayerStorage::loadPlayer(Uuid const& uuid) {
-  RecursiveMutexLocker locker(m_mutex);
-  if (!m_savedPlayersCache.contains(uuid))
-    throw PlayerException(strf("No such stored player with uuid '{}'", uuid.hex()));
-
+  auto playerCacheData = getPlayerData(uuid);
   auto entityFactory = Root::singleton().entityFactory();
-  auto const& playerCacheData = m_savedPlayersCache.get(uuid);
   try {
     auto player = convert<Player>(entityFactory->diskLoadEntity(EntityType::Player, playerCacheData));
     if (player->uuid() != uuid)
@@ -129,6 +164,7 @@ PlayerPtr PlayerStorage::loadPlayer(Uuid const& uuid) {
     return player;
   } catch (std::exception const& e) {
     Logger::error("Error loading player file, ignoring! {}", outputException(e, false));
+    RecursiveMutexLocker locker(m_mutex);
     m_savedPlayersCache.remove(uuid);
     return {};
   }

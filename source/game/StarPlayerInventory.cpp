@@ -755,9 +755,18 @@ void PlayerInventory::load(Json const& store) {
   m_equipment[EquipmentSlot::LegsCosmetic] = itemDatabase->diskLoad(store.get("legsCosmeticSlot"));
   m_equipment[EquipmentSlot::BackCosmetic] = itemDatabase->diskLoad(store.get("backCosmeticSlot"));
 
-  auto itemBags = store.get("itemBags");
-  for (String const& bagType : itemBags.toObject().keys())
-    m_bags[bagType] = make_shared<ItemBag>(ItemBag::loadStore(itemBags.get(bagType)));
+  //reuse ItemBags so the Inventory pane still works after load()'ing into the same PlayerInventory again (from swap)
+  auto itemBags = store.get("itemBags").toObject();
+  eraseWhere(m_bags, [&](auto const& p) { return !itemBags.contains(p.first); });
+  for (auto const& p : itemBags) {
+    auto& bagType = p.first;
+    auto newBag = ItemBag::loadStore(p.second);
+    auto& bagPtr = m_bags[bagType];
+    if (bagPtr)
+      *bagPtr = move(newBag);
+    else
+      bagPtr = make_shared<ItemBag>(move(newBag));
+  }
 
   m_swapSlot = itemDatabase->diskLoad(store.get("swapSlot"));
   m_trashSlot = itemDatabase->diskLoad(store.get("trashSlot"));
@@ -778,6 +787,7 @@ void PlayerInventory::load(Json const& store) {
 
   m_selectedActionBar = jsonToSelectedActionBarLocation(store.get("selectedActionBar"));
 
+  m_essential.clear();
   m_essential[EssentialItem::BeamAxe] = itemDatabase->diskLoad(store.get("beamAxe"));
   m_essential[EssentialItem::WireTool] = itemDatabase->diskLoad(store.get("wireTool"));
   m_essential[EssentialItem::PaintTool] = itemDatabase->diskLoad(store.get("paintTool"));

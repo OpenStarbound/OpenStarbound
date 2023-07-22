@@ -112,6 +112,7 @@ SET (star_core_HEADERS
     StarStringView.hpp
     StarStrongTypedef.hpp
     StarTcp.hpp
+    StarText.hpp
     StarThread.hpp
     StarTickRateMonitor.hpp
     StarTime.hpp
@@ -171,6 +172,7 @@ SET (star_core_SOURCES
     StarString.cpp
     StarStringView.cpp
     StarTcp.cpp
+    StarText.cpp
     StarThread.cpp
     StarTime.cpp
     StarTickRateMonitor.cpp

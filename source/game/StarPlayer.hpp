@@ -62,8 +62,10 @@ class Player :
 
 public:
   Player(PlayerConfigPtr config, Uuid uuid = Uuid());
-  Player(PlayerConfigPtr config, Json const& diskStore);
   Player(PlayerConfigPtr config, ByteArray const& netStore);
+  Player(PlayerConfigPtr config, Json const& diskStore);
+
+  void diskLoad(Json const& diskStore);
 
   ClientContextPtr clientContext() const;
   void setClientContext(ClientContextPtr clientContext);
@@ -79,6 +81,7 @@ public:
   ByteArray netStore();
 
   EntityType entityType() const override;
+  ClientEntityMode clientEntityMode() const override;
 
   void init(World* world, EntityId entityId, EntityMode mode) override;
   void uninit() override;
@@ -283,6 +286,7 @@ public:
 
   ShipUpgrades shipUpgrades();
   void setShipUpgrades(ShipUpgrades shipUpgrades);
+  void applyShipUpgrades(Json const& upgrades);
 
   String name() const override;
   void setName(String const& name);
@@ -394,6 +398,11 @@ public:
   StatusController* statusController() override;
 
   List<PhysicsForceRegion> forceRegions() const override;
+
+  StatusControllerPtr statusControllerPtr();
+  ActorMovementControllerPtr movementControllerPtr();
+
+  PlayerConfigPtr config();
 
   SongbookPtr songbook() const;
 

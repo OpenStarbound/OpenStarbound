@@ -5,6 +5,7 @@
 #include "StarCasting.hpp"
 #include "StarInputEvent.hpp"
 #include "StarGuiContext.hpp"
+#include "StarText.hpp"
 
 namespace Star {
 

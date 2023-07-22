@@ -94,6 +94,7 @@ public:
   Maybe<WarpAction> objectWarpAction(Uuid const& uuid) const;
 
   virtual List<SystemObjectPtr> objects() const = 0;
+  virtual List<Uuid> objectKeys() const = 0;
   virtual SystemObjectPtr getObject(Uuid const& uuid) const = 0;
 
   SystemObjectConfig systemObjectConfig(String const& name, Uuid const& uuid) const;

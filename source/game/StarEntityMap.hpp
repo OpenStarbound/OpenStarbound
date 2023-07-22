@@ -30,6 +30,10 @@ public:
 
   // Get the next free id in the entity id space.
   EntityId reserveEntityId();
+  // Or a specific one, can fail.
+  Maybe<EntityId> maybeReserveEntityId(EntityId entityId);
+  // If it doesn't matter that we don't get the one want
+  EntityId reserveEntityId(EntityId entityId);
 
   // Add an entity to this EntityMap.  The entity must already be initialized
   // and have a unique EntityId returned by reserveEntityId.

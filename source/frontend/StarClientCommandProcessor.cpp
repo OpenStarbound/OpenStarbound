@@ -50,7 +50,8 @@ ClientCommandProcessor::ClientCommandProcessor(UniverseClientPtr universeClient,
     {"giveessentialitem", bind(&ClientCommandProcessor::giveEssentialItem, this, _1)},
     {"maketechavailable", bind(&ClientCommandProcessor::makeTechAvailable, this, _1)},
     {"enabletech", bind(&ClientCommandProcessor::enableTech, this, _1)},
-    {"upgradeship", bind(&ClientCommandProcessor::upgradeShip, this, _1)}
+    {"upgradeship", bind(&ClientCommandProcessor::upgradeShip, this, _1)},
+    {"swap", bind(&ClientCommandProcessor::swap, this, _1)}
   };
 }
 
@@ -304,7 +305,7 @@ String ClientCommandProcessor::playTime() {
 
 String ClientCommandProcessor::deathCount() {
   auto deaths = m_universeClient->mainPlayer()->log()->deathCount();
-  return strf("Total deaths: {}{}", deaths, deaths == 0 ? ". Well done!" : "");
+  return deaths ? strf("Total deaths: {}", deaths) : "Total deaths: 0. Well done!";
 }
 
 String ClientCommandProcessor::cinema(String const& argumentsString) {
@@ -406,6 +407,18 @@ String ClientCommandProcessor::upgradeShip(String const& argumentsString) {
   auto shipUpgrades = Json::parseJson(arguments.at(0));
   m_universeClient->rpcInterface()->invokeRemote("ship.applyShipUpgrades", shipUpgrades);
   return strf("Upgraded ship");
+}
+
+String ClientCommandProcessor::swap(String const& argumentsString) {
+  auto arguments = m_parser.tokenizeToStringList(argumentsString);
+
+  if (arguments.size() == 0)
+    return "Not enouch arguments to /swap";
+
+  if (m_universeClient->switchPlayer(arguments[0]))
+    return "Successfully swapped player";
+  else
+    return "Failed to swap player";
 }
 
 }

@@ -40,6 +40,7 @@ public:
   void update(float dt);
 
   List<SystemObjectPtr> objects() const override;
+  List<Uuid> objectKeys() const override;
   SystemObjectPtr getObject(Uuid const& uuid) const override;
 
   List<ConnectionId> pullShipFlights();

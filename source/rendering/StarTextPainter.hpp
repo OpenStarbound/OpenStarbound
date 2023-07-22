@@ -10,17 +10,6 @@ namespace Star {
 
 STAR_CLASS(TextPainter);
 
-namespace Text {
-  unsigned char const StartEsc = '\x1b';
-  unsigned char const EndEsc = ';';
-  unsigned char const CmdEsc = '^';
-  unsigned char const SpecialCharLimit = ' ';
-
-  String stripEscapeCodes(String const& s);
-  String preprocessEscapeCodes(String const& s);
-  String extractCodes(String const& s);
-}
-
 enum class FontMode {
   Normal,
   Shadow
