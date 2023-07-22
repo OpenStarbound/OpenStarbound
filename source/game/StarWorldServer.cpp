@@ -41,6 +41,7 @@ WorldServer::WorldServer(WorldTemplatePtr const& worldTemplate, IODevicePtr stor
   m_tileProtectionEnabled = true;
   m_universeSettings = make_shared<UniverseSettings>();
   m_worldId = worldTemplate->worldName();
+  m_expiryTimer = GameTimer(0.0f);
 
   init(true);
   writeMetadata();
@@ -514,6 +515,10 @@ List<PacketPtr> WorldServer::getOutgoingPackets(ConnectionId clientId) {
   return move(clientInfo->outgoingPackets);
 }
 
+Maybe<Json> WorldServer::receiveMessage(ConnectionId fromConnection, String const& message, JsonArray const& args) {
+  return "what a wonderful world";
+}
+
 WorldServerFidelity WorldServer::fidelity() const {
   return m_fidelity;
 }
@@ -521,6 +526,19 @@ WorldServerFidelity WorldServer::fidelity() const {
 void WorldServer::setFidelity(WorldServerFidelity fidelity) {
   m_fidelity = fidelity;
   m_fidelityConfig = m_serverConfig.get("fidelitySettings").get(WorldServerFidelityNames.getRight(m_fidelity));
+}
+
+bool WorldServer::shouldExpire() {
+  if (!m_clientInfo.empty()) {
+    m_expiryTimer.reset();
+    return false;
+  }
+
+  return m_expiryTimer.ready();
+}
+
+void WorldServer::setExpiryTime(float expiryTime) {
+  m_expiryTimer = GameTimer(expiryTime);
 }
 
 void WorldServer::update(float dt) {
@@ -626,6 +644,8 @@ void WorldServer::update(float dt) {
 
   for (auto& pair : m_clientInfo)
     pair.second->pendingForward = false;
+
+  m_expiryTimer.tick(dt);
 
   LogMap::set(strf("server_{}_entities", m_worldId), strf("{} in {} sectors", m_entityMap->size(), m_tileArray->loadedSectorCount()));
   LogMap::set(strf("server_{}_time", m_worldId), strf("age = {:4.2f}, day = {:4.2f}/{:4.2f}s", epochTime(), timeOfDay(), dayLength()));

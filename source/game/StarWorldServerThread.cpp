@@ -13,7 +13,8 @@ WorldServerThread::WorldServerThread(WorldServerPtr server, WorldId worldId)
     m_worldServer(move(server)),
     m_worldId(move(worldId)),
     m_stop(false),
-    m_errorOccurred(false) {
+    m_errorOccurred(false),
+    m_shouldExpire(true) {
   if (m_worldServer)
     m_worldServer->setWorldId(printWorldId(m_worldId));
 }
@@ -48,6 +49,10 @@ void WorldServerThread::setPause(shared_ptr<const atomic<bool>> pause) {
 
 bool WorldServerThread::serverErrorOccurred() {
   return m_errorOccurred;
+}
+
+bool WorldServerThread::shouldExpire() {
+  return m_shouldExpire;
 }
 
 bool WorldServerThread::spawnTargetValid(SpawnTarget const& spawnTarget) {
@@ -115,6 +120,12 @@ bool WorldServerThread::hasClient(ConnectionId clientId) const {
   return m_clients.contains(clientId);
 }
 
+bool WorldServerThread::noClients() const {
+  RecursiveMutexLocker locker(m_mutex);
+  return m_clients.empty();
+}
+
+
 List<ConnectionId> WorldServerThread::erroredClients() const {
   RecursiveMutexLocker locker(m_mutex);
   auto unerroredClients = HashSet<ConnectionId>::from(m_worldServer->clientIds());
@@ -163,6 +174,11 @@ void WorldServerThread::executeAction(WorldServerAction action) {
 void WorldServerThread::setUpdateAction(WorldServerAction updateAction) {
   RecursiveMutexLocker locker(m_mutex);
   m_updateAction = updateAction;
+}
+
+void WorldServerThread::passMessages(List<Message>&& messages) {
+  RecursiveMutexLocker locker(m_messageMutex);
+  m_messages.appendAll(move(messages));
 }
 
 WorldChunks WorldServerThread::readChunks() {
@@ -256,11 +272,25 @@ void WorldServerThread::update(WorldServerFidelity fidelity) {
   if (!m_pause || *m_pause == false)
     m_worldServer->update(dt);
 
+  List<Message> messages;
+  {
+    RecursiveMutexLocker locker(m_messageMutex);
+    messages = move(m_messages);
+  }
+  for (auto& message : messages) {
+    if (auto resp = m_worldServer->receiveMessage(ServerConnectionId, message.message, message.args))
+      message.promise.fulfill(*resp);
+    else
+      message.promise.fail("Message not handled by world");
+  }
+
   for (auto& clientId : unerroredClientIds) {
     auto outgoingPackets = m_worldServer->getOutgoingPackets(clientId);
     RecursiveMutexLocker queueLocker(m_queueMutex);
     m_outgoingPacketQueue[clientId].appendAll(move(outgoingPackets));
   }
+
+  m_shouldExpire = m_worldServer->shouldExpire();
 
   if (m_updateAction)
     m_updateAction(this, m_worldServer.get());

@@ -18,6 +18,7 @@ LuaCallbacks LuaBindings::makeUniverseServerCallbacks(UniverseServer* universe) 
   callbacks.registerCallbackWithSignature<bool, ConnectionId>("isAdmin", bind(UniverseServerCallbacks::isAdmin, universe, _1));
   callbacks.registerCallbackWithSignature<bool, ConnectionId>("isPvp", bind(UniverseServerCallbacks::isPvp, universe, _1));
   callbacks.registerCallbackWithSignature<void, ConnectionId, bool>("setPvp", bind(UniverseServerCallbacks::setPvp, universe, _1, _2));
+  callbacks.registerCallbackWithSignature<RpcThreadPromise<Json>, LuaEngine&, String, String, LuaVariadic<Json>>("sendWorldMessage", bind(UniverseServerCallbacks::sendWorldMessage, universe, _1, _2, _3, _4));
 
   return callbacks;
 }
@@ -105,6 +106,10 @@ void LuaBindings::UniverseServerCallbacks::setPvp(UniverseServer* universe, Conn
   ConnectionId client = arg1;
   bool setPvpTo = arg2.value(true);
   universe->setPvp(client, setPvpTo);
+}
+
+RpcThreadPromise<Json> LuaBindings::UniverseServerCallbacks::sendWorldMessage(UniverseServer* universe, LuaEngine& engine, String const& worldId, String const& message, LuaVariadic<Json> args) {
+  return universe->sendWorldMessage(parseWorldId(worldId), message, JsonArray::from(move(args)));
 }
 
 }

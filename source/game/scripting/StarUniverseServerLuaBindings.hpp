@@ -3,6 +3,7 @@
 
 #include "StarLua.hpp"
 #include "StarGameTypes.hpp"
+#include "StarRpcThreadPromise.hpp"
 
 namespace Star {
 
@@ -22,6 +23,7 @@ namespace LuaBindings {
     bool isAdmin(UniverseServer* universe, ConnectionId arg1);
     bool isPvp(UniverseServer* universe, ConnectionId arg1);
     void setPvp(UniverseServer* universe, ConnectionId arg1, Maybe<bool> arg2);
+    RpcThreadPromise<Json> sendWorldMessage(UniverseServer* universe, LuaEngine& engine, String const& worldId, String const& message, LuaVariadic<Json> args);
   }
 }
 }

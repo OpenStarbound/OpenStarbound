@@ -78,6 +78,8 @@ public:
   bool isPvp(ConnectionId clientId) const;
   void setPvp(ConnectionId clientId, bool pvp);
 
+  RpcThreadPromise<Json> sendWorldMessage(WorldId const& worldId, String const& message, JsonArray const& args = {});
+
   void clientWarpPlayer(ConnectionId clientId, WarpAction action, bool deploy = false);
   void clientFlyShip(ConnectionId clientId, Vec3I const& system, SystemLocation const& location);
   WorldId clientWorld(ConnectionId clientId) const;
@@ -127,6 +129,7 @@ private:
   void respondToCelestialRequests();
   void processChat();
   void clearBrokenWorlds();
+  void handleWorldMessages();
   void shutdownInactiveWorlds();
   void doTriggeredStorage();
 
@@ -242,6 +245,7 @@ private:
   List<pair<WorldId, UniverseFlagAction>> m_pendingFlagActions;
   HashMap<ConnectionId, List<pair<String, ChatSendMode>>> m_pendingChat;
   Maybe<WorkerPoolPromise<CelestialCoordinate>> m_nextRandomizedStarterWorld;
+  Map<WorldId, List<WorldServerThread::Message>> m_pendingWorldMessages;
 
   List<TimeoutBan> m_tempBans;
 };

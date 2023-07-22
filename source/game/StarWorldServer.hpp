@@ -14,6 +14,7 @@
 #include "StarLuaRoot.hpp"
 #include "StarWorldRenderData.hpp"
 #include "StarWarping.hpp"
+#include "StarRpcThreadPromise.hpp"
 
 namespace Star {
 
@@ -98,6 +99,8 @@ public:
   void handleIncomingPackets(ConnectionId clientId, List<PacketPtr> const& packets);
   List<PacketPtr> getOutgoingPackets(ConnectionId clientId);
 
+  Maybe<Json> receiveMessage(ConnectionId fromConnection, String const& message, JsonArray const& args);
+
   void startFlyingSky(bool enterHyperspace, bool startInWarp);
   void stopFlyingSkyAt(SkyParameters const& destination);
   void setOrbitalSky(SkyParameters const& destination);
@@ -105,6 +108,9 @@ public:
   // Defaults to Medium
   WorldServerFidelity fidelity() const;
   void setFidelity(WorldServerFidelity fidelity);
+
+  bool shouldExpire();
+  void setExpiryTime(float expiryTime);
 
   void update(float dt);
 
@@ -379,6 +385,8 @@ private:
   List<PhysicsForceRegion> m_forceRegions;
 
   String m_worldId;
+
+  GameTimer m_expiryTimer;
 };
 
 }

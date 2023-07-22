@@ -3,6 +3,7 @@
 
 #include "StarWorldServer.hpp"
 #include "StarThread.hpp"
+#include "StarRpcThreadPromise.hpp"
 
 namespace Star {
 
@@ -13,6 +14,12 @@ STAR_CLASS(WorldServerThread);
 // the error and trigger the WorldServerThread error state.
 class WorldServerThread : public Thread {
 public:
+  struct Message {
+    String message;
+    JsonArray args;
+    RpcThreadPromiseKeeper<Json> promise;
+  };
+
   typedef function<void(WorldServerThread*, WorldServer*)> WorldServerAction;
 
   WorldServerThread(WorldServerPtr server, WorldId worldId);
@@ -28,6 +35,7 @@ public:
   // An exception occurred from the actual WorldServer itself and the
   // WorldServerThread has stopped running.
   bool serverErrorOccurred();
+  bool shouldExpire();
 
   bool spawnTargetValid(SpawnTarget const& spawnTarget);
 
@@ -37,6 +45,7 @@ public:
 
   List<ConnectionId> clients() const;
   bool hasClient(ConnectionId clientId) const;
+  bool noClients() const;
 
   // Clients that have caused an error with incoming packets are removed from
   // the world and no further packets are handled from them.  They are still
@@ -61,6 +70,9 @@ public:
   // also in a thread safe context.
   void setUpdateAction(WorldServerAction updateAction);
 
+  // 
+  void passMessages(List<Message>&& messages);
+
   // Syncs all active sectors to disk and reads the full content of the world
   // into memory, useful for the ship.
   WorldChunks readChunks();
@@ -84,9 +96,13 @@ private:
   Map<ConnectionId, List<PacketPtr>> m_incomingPacketQueue;
   Map<ConnectionId, List<PacketPtr>> m_outgoingPacketQueue;
 
+  mutable RecursiveMutex m_messageMutex;
+  List<Message> m_messages;
+
   atomic<bool> m_stop;
   shared_ptr<const atomic<bool>> m_pause;
   mutable atomic<bool> m_errorOccurred;
+  mutable atomic<bool> m_shouldExpire;
 };
 
 }

@@ -258,6 +258,13 @@ void UniverseServer::setPvp(ConnectionId clientId, bool pvp) {
   }
 }
 
+RpcThreadPromise<Json> UniverseServer::sendWorldMessage(WorldId const& worldId, String const& message, JsonArray const& args) {
+  auto pair = RpcThreadPromise<Json>::createPair();
+  RecursiveMutexLocker locker(m_mainLock);
+  m_pendingWorldMessages[worldId].push_back({ message, args, pair.second });
+  return pair.first;
+}
+
 void UniverseServer::clientWarpPlayer(ConnectionId clientId, WarpAction action, bool deploy) {
   RecursiveMutexLocker locker(m_mainLock);
   m_pendingPlayerWarps[clientId] = pair<WarpAction, bool>(move(action), move(deploy));
@@ -502,6 +509,7 @@ void UniverseServer::run() {
       sendClientContextUpdates();
       respondToCelestialRequests();
       clearBrokenWorlds();
+      handleWorldMessages();
       shutdownInactiveWorlds();
       doTriggeredStorage();
     } catch (std::exception const& e) {
@@ -1029,6 +1037,23 @@ void UniverseServer::clearBrokenWorlds() {
   }
 }
 
+void UniverseServer::handleWorldMessages() {
+  RecursiveMutexLocker locker(m_mainLock);
+  ReadLocker clientsLocker(m_clientsLock);
+
+  auto it = m_pendingWorldMessages.begin();
+  while (it != m_pendingWorldMessages.end()) {
+    auto& worldId = it->first;
+    if (auto worldPtr = triggerWorldCreation(worldId).value()) {
+      worldPtr->passMessages(move(it->second));
+      it = m_pendingWorldMessages.erase(it);
+    }
+    else
+      ++it;
+
+  }
+}
+
 void UniverseServer::shutdownInactiveWorlds() {
   RecursiveMutexLocker locker(m_mainLock);
   ReadLocker clientsLocker(m_clientsLock);
@@ -1040,7 +1065,7 @@ void UniverseServer::shutdownInactiveWorlds() {
         world->stop();
         Logger::error("UniverseServer: World {} has stopped due to an error", worldId);
         worldDiedWithError(world->worldId());
-      } else if (world->clients().empty()) {
+      } else if (world->noClients()) {
         bool anyPendingWarps = false;
         for (auto const& p : m_pendingPlayerWarps) {
           if (resolveWarpAction(p.second.first, p.first, p.second.second).world == world->worldId()) {
@@ -1048,7 +1073,8 @@ void UniverseServer::shutdownInactiveWorlds() {
             break;
           }
         }
-        if (!anyPendingWarps) {
+
+        if (!anyPendingWarps && world->shouldExpire()) {
           Logger::info("UniverseServer: Stopping idle world {}", worldId);
           world->stop();
         }
