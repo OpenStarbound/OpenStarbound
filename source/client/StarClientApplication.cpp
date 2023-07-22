@@ -942,9 +942,10 @@ void ClientApplication::updateRunning(float dt) {
     LogMap::set("player_pos", strf("[ ^#f45;{:4.2f}^reset;, ^#49f;{:4.2f}^reset; ]", m_player->position()[0], m_player->position()[1]));
     LogMap::set("player_vel", strf("[ ^#f45;{:4.2f}^reset;, ^#49f;{:4.2f}^reset; ]", m_player->velocity()[0], m_player->velocity()[1]));
     LogMap::set("player_aim", strf("[ ^#f45;{:4.2f}^reset;, ^#49f;{:4.2f}^reset; ]", aimPosition[0], aimPosition[1]));
-    if (m_universeClient->worldClient()) {
-      LogMap::set("tile_liquid_level", toString(m_universeClient->worldClient()->liquidLevel(Vec2I::floor(aimPosition)).level));
-      LogMap::set("tile_dungeon_id", toString(m_universeClient->worldClient()->dungeonId(Vec2I::floor(aimPosition))));
+    if (auto world = m_universeClient->worldClient()) {
+      auto aim = Vec2I::floor(aimPosition);
+      LogMap::set("tile_liquid_level", toString(world->liquidLevel(aim).level));
+      LogMap::set("tile_dungeon_id", world->isTileProtected(aim) ? strf("^red;{}", world->dungeonId(aim)) : toString(world->dungeonId(aim)));
     }
 
     if (m_mainInterface->currentState() == MainInterface::ReturnToTitle)
