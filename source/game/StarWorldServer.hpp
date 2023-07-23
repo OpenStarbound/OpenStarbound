@@ -12,6 +12,7 @@
 #include "StarInterpolationTracker.hpp"
 #include "StarWorldStructure.hpp"
 #include "StarLuaRoot.hpp"
+#include "StarLuaComponents.hpp"
 #include "StarWorldRenderData.hpp"
 #include "StarWarping.hpp"
 #include "StarRpcThreadPromise.hpp"
@@ -31,6 +32,7 @@ STAR_CLASS(DungeonDefinition);
 STAR_CLASS(WorldServer);
 STAR_CLASS(TileEntity);
 STAR_CLASS(UniverseSettings);
+STAR_CLASS(UniverseServer);
 
 STAR_EXCEPTION(WorldServerException, StarException);
 
@@ -65,6 +67,8 @@ public:
   UniverseSettingsPtr universeSettings() const;
 
   void setReferenceClock(ClockPtr clock);
+
+  void initLua(UniverseServer* universe);
 
   // Give this world a central structure.  If there is a previous central
   // structure it is removed first.  Returns the structure with transformed
@@ -345,6 +349,10 @@ private:
   DamageManagerPtr m_damageManager;
   WireProcessorPtr m_wireProcessor;
   LuaRootPtr m_luaRoot;
+
+  typedef LuaMessageHandlingComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> ScriptComponent;
+  typedef shared_ptr<ScriptComponent> ScriptComponentPtr;
+  StringMap<ScriptComponentPtr> m_scriptContexts;
 
   WorldGeometry m_geometry;
   uint64_t m_currentStep;

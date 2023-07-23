@@ -23,6 +23,7 @@
 #include "StarFallingBlocksAgent.hpp"
 #include "StarWarpTargetEntity.hpp"
 #include "StarUniverseSettings.hpp"
+#include "StarUniverseServerLuaBindings.hpp"
 
 namespace Star {
 
@@ -71,6 +72,10 @@ WorldServer::WorldServer(WorldChunks const& chunks) {
 }
 
 WorldServer::~WorldServer() {
+  for (auto& p : m_scriptContexts)
+    p.second->uninit();
+
+  m_scriptContexts.clear();
   m_spawner.uninit();
   writeMetadata();
   m_worldStorage->unloadAll(true);
@@ -95,6 +100,18 @@ UniverseSettingsPtr WorldServer::universeSettings() const {
 void WorldServer::setReferenceClock(ClockPtr clock) {
   m_weather.setReferenceClock(clock);
   m_sky->setReferenceClock(clock);
+}
+
+void WorldServer::initLua(UniverseServer* universe) {
+  auto assets = Root::singleton().assets();
+  for (auto& p : assets->json("/worldserver.config:scriptContexts").toObject()) {
+    auto scriptComponent = make_shared<ScriptComponent>();
+    scriptComponent->setScripts(jsonToStringList(p.second.toArray()));
+    scriptComponent->addCallbacks("universe", LuaBindings::makeUniverseServerCallbacks(universe));
+
+    m_scriptContexts.set(p.first, scriptComponent);
+    scriptComponent->init(this);
+  }
 }
 
 WorldStructure WorldServer::setCentralStructure(WorldStructure centralStructure) {
@@ -516,7 +533,12 @@ List<PacketPtr> WorldServer::getOutgoingPackets(ConnectionId clientId) {
 }
 
 Maybe<Json> WorldServer::receiveMessage(ConnectionId fromConnection, String const& message, JsonArray const& args) {
-  return "what a wonderful world";
+  Maybe<Json> result;
+  for (auto& p : m_scriptContexts) {
+    if (result = p.second->handleMessage(message, fromConnection == ServerConnectionId, args))
+      break;
+  }
+  return result;
 }
 
 WorldServerFidelity WorldServer::fidelity() const {
@@ -581,6 +603,9 @@ void WorldServer::update(float dt) {
     }, [](EntityPtr const& a, EntityPtr const& b) {
       return a->entityType() < b->entityType();
     });
+
+  for (auto& pair : m_scriptContexts)
+    pair.second->update(pair.second->updateDt(dt));
 
   updateDamage(dt);
   if (shouldRunThisStep("wiringUpdate"))

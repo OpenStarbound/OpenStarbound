@@ -1,0 +1,3 @@
+{
+  "scriptContexts" : { "OpenStarbound" : ["/scripts/opensb/worldserver/worldserver.lua"] }
+}

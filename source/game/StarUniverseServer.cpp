@@ -18,6 +18,7 @@
 #include "StarSky.hpp"
 #include "StarAiDatabase.hpp"
 #include "StarBiomeDatabase.hpp"
+#include "StarUniverseServerLuaBindings.hpp"
 
 namespace Star {
 
@@ -1946,6 +1947,8 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::shipWorldPromise(
       else
         shipWorld->setOrbitalSky(celestialSkyParameters(clientContext->shipCoordinate()));
 
+      shipWorld->initLua(this);
+
       auto shipWorldThread = make_shared<WorldServerThread>(shipWorld, ClientShipWorldId(clientShipWorldId));
       shipWorldThread->setPause(m_pause);
       clientContext->updateShipChunks(shipWorldThread->readChunks());
@@ -1986,6 +1989,8 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::celestialWorldPro
 
       worldServer->setUniverseSettings(m_universeSettings);
       worldServer->setReferenceClock(universeClock);
+      worldServer->initLua(this);
+
       auto worldThread = make_shared<WorldServerThread>(worldServer, celestialWorldId);
       worldThread->setPause(m_pause);
       worldThread->start();
@@ -2104,6 +2109,8 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::instanceWorldProm
           }
         }
       }
+
+      worldServer->initLua(this);
 
       auto worldThread = make_shared<WorldServerThread>(worldServer, instanceWorldId);
       worldThread->setPause(m_pause);
