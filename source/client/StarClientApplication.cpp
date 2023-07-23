@@ -461,7 +461,6 @@ void ClientApplication::changeState(MainAppState newState) {
   }
 
   if (oldState > MainAppState::Title && m_state <= MainAppState::Title) {
-    m_mainInterface.reset();
     if (m_universeClient)
       m_universeClient->disconnect();
 
@@ -471,6 +470,7 @@ void ClientApplication::changeState(MainAppState newState) {
       m_universeServer.reset();
     }
     m_cinematicOverlay->stop();
+    m_mainInterface.reset();
 
     m_voice->clearSpeakers();
 
