@@ -142,7 +142,7 @@ ContainerPane::ContainerPane(WorldClientPtr worldClient, PlayerPtr player, Conta
 
   if (container->iconItem()) {
     auto itemDatabase = Root::singleton().itemDatabase();
-    auto iconItem = itemDatabase->item(container->iconItem());
+    auto iconItem = itemDatabase->itemShared(container->iconItem());
     auto icon = make_shared<ItemSlotWidget>(iconItem, "/interface/inventory/portrait.png");
     icon->showDurability(false);
     icon->showRarity(false);

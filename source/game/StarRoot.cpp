@@ -106,23 +106,38 @@ Root::Root(Settings settings) {
 
         {
           MutexLocker locker(m_objectDatabaseMutex);
-          if (m_objectDatabase)
-            m_objectDatabase->cleanup();
+          if (ObjectDatabasePtr objectDb = m_objectDatabase) {
+            locker.unlock();
+            objectDb->cleanup();
+          }
+        }
+        {
+          MutexLocker locker(m_itemDatabaseMutex);
+          if (ItemDatabasePtr itemDb = m_itemDatabase) {
+            locker.unlock();
+            itemDb->cleanup();
+          }
         }
         {
           MutexLocker locker(m_monsterDatabaseMutex);
-          if (m_monsterDatabase)
-            m_monsterDatabase->cleanup();
+          if (MonsterDatabasePtr monsterDb = m_monsterDatabase) {
+            locker.unlock();
+            monsterDb->cleanup();
+          }
         }
         {
           MutexLocker locker(m_assetsMutex);
-          if (m_assets)
-            m_assets->cleanup();
+          if (AssetsPtr assets = m_assets) {
+            locker.unlock();
+            assets->cleanup();
+          }
         }
         {
           MutexLocker locker(m_tenantDatabaseMutex);
-          if (m_tenantDatabase)
-            m_tenantDatabase->cleanup();
+          if (TenantDatabasePtr tenantDb = m_tenantDatabase) {
+            locker.unlock();
+            tenantDb->cleanup();
+          }
         }
 
         Random::addEntropy();

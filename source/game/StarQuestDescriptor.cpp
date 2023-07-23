@@ -279,12 +279,12 @@ String questParamText(QuestParam const& parameter) {
 
   if (parameter.detail.is<QuestItem>()) {
     QuestItem item = parameter.detail.get<QuestItem>();
-    return itemDatabase->item(item.descriptor())->friendlyName();
+    return itemDatabase->itemShared(item.descriptor())->friendlyName();
 
   } else if (parameter.detail.is<QuestItemList>()) {
     QuestItemList itemList = parameter.detail.get<QuestItemList>();
     StringList itemStrings = itemList.transformed([&itemDatabase](ItemDescriptor const& itemDesc) -> String {
-      return strf("{} {}", itemDesc.count(), itemDatabase->item(itemDesc)->friendlyName());
+      return strf("{} {}", itemDesc.count(), itemDatabase->itemShared(itemDesc)->friendlyName());
     });
     return itemStrings.join(", ");
 

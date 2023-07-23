@@ -1151,7 +1151,7 @@ ItemPtr Player::pickupItems(ItemPtr const& items) {
     m_effectsAnimator->playSound("pickup");
   }
   auto itemDb = Root::singleton().itemDatabase();
-  queueItemPickupMessage(itemDb->item(items->descriptor()));
+  queueItemPickupMessage(itemDb->itemShared(items->descriptor()));
   return m_inventory->addItems(items);
 }
 

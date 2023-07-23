@@ -6,6 +6,7 @@
 #include "StarItem.hpp"
 #include "StarCasting.hpp"
 #include "StarLuaRoot.hpp"
+#include "StarTtlCache.hpp"
 
 namespace Star {
 
@@ -75,6 +76,8 @@ public:
 
   ItemDatabase();
 
+  void cleanup();
+
   // Load an item based on item descriptor.  If loadItem is called with a
   // live ptr, and the ptr matches the descriptor read, then no new item is
   // constructed.  If ItemT is some other type than Item, then loadItem will
@@ -112,7 +115,11 @@ public:
   // from the appropriate factory.  If there is a problem instantiating the
   // item, will return a default item instead.  If item is passed a null
   // ItemDescriptor, it will return a null pointer.
+  // The returned item pointer will be shared. Either call ->clone() or use item() instead for a copy.
+  ItemPtr itemShared(ItemDescriptor descriptor, Maybe<float> level = {}, Maybe<uint64_t> seed = {}) const;
+  // Same as itemShared, but makes a copy instead. Does not cache.
   ItemPtr item(ItemDescriptor descriptor, Maybe<float> level = {}, Maybe<uint64_t> seed = {}) const;
+
 
   bool hasRecipeToMake(ItemDescriptor const& item) const;
   bool hasRecipeToMake(ItemDescriptor const& item, StringSet const& allowedTypes) const;
@@ -153,6 +160,7 @@ private:
   };
 
   static ItemPtr createItem(ItemType type, ItemConfig const& config);
+  ItemPtr tryCreateItem(ItemDescriptor const& descriptor, Maybe<float> level = {}, Maybe<uint64_t> seed = {}) const;
 
   ItemData const& itemData(String const& name) const;
   ItemRecipe makeRecipe(List<ItemDescriptor> inputs, ItemDescriptor output, float duration, StringSet groups) const;
@@ -171,6 +179,11 @@ private:
 
   mutable RecursiveMutex m_luaMutex;
   LuaRootPtr m_luaRoot;
+
+  typedef tuple<ItemDescriptor, Maybe<float>, Maybe<uint64_t>> ItemCacheEntry;
+
+  mutable Mutex m_cacheMutex;
+  mutable HashTtlCache<ItemCacheEntry, ItemPtr> m_itemCache;
 };
 
 template <typename ItemT>

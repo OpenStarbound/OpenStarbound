@@ -109,7 +109,7 @@ Collectable CollectionDatabase::parseMonsterCollectable(String const& name, Json
 Collectable CollectionDatabase::parseItemCollectable(String const& name, Json const& config) const {
   Collectable collectable = parseGenericCollectable(name, config);
   auto itemDatabase = Root::singleton().itemDatabase();
-  auto item = itemDatabase->item(ItemDescriptor(config.getString("item")));
+  auto item = itemDatabase->itemShared(ItemDescriptor(config.getString("item")));
 
   collectable.title = item->friendlyName();
   collectable.description = item->description();

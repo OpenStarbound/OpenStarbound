@@ -127,7 +127,7 @@ CraftingPane::CraftingPane(WorldClientPtr worldClient, PlayerPtr player, Json co
     if (auto container = as<ContainerEntity>(entity)) {
       if (container->iconItem()) {
         auto itemDatabase = Root::singleton().itemDatabase();
-        auto iconItem = itemDatabase->item(container->iconItem());
+        auto iconItem = itemDatabase->itemShared(container->iconItem());
         auto icon = make_shared<ItemSlotWidget>(iconItem, "/interface/inventory/portrait.png");
         String title = this->title();
         if (title.empty())
@@ -259,7 +259,7 @@ void CraftingPane::update(float dt) {
       auto description = fetchChild<Widget>("description");
       description->removeAllChildren();
 
-      auto item = Root::singleton().itemDatabase()->item(recipe.output);
+      auto item = Root::singleton().itemDatabase()->itemShared(recipe.output);
       ItemTooltipBuilder::buildItemDescription(description, item);
     }
   }
@@ -383,7 +383,7 @@ void CraftingPane::setupWidget(WidgetPtr const& widget, ItemRecipe const& recipe
   auto single = recipe.output.singular();
   ItemPtr item = m_itemCache[single];
   if (!item) {
-    item = root.itemDatabase()->item(single);
+    item = root.itemDatabase()->itemShared(single);
     m_itemCache[single] = item;
   }
 
@@ -475,13 +475,13 @@ PanePtr CraftingPane::setupTooltip(ItemRecipe const& recipe) {
   auto currenciesConfig = root.assets()->json("/currencies.config");
   for (auto const& p : recipe.currencyInputs) {
     if (p.second > 0) {
-      auto currencyItem = root.itemDatabase()->item(ItemDescriptor(currenciesConfig.get(p.first).getString("representativeItem")));
+      auto currencyItem = root.itemDatabase()->itemShared(ItemDescriptor(currenciesConfig.get(p.first).getString("representativeItem")));
       addIngredient(currencyItem, m_player->currency(p.first), p.second);
     }
   }
 
   for (auto const& input : recipe.inputs) {
-    auto item = root.itemDatabase()->item(input.singular());
+    auto item = root.itemDatabase()->itemShared(input.singular());
     size_t itemCount = itemDb->getCountOfItem(normalizedBag, input, recipe.matchInputParameters);
     addIngredient(item, itemCount, input.count());
   }
@@ -576,7 +576,7 @@ void CraftingPane::craft(int count) {
       remainingItemCount -= craftedItem->count();
       m_player->giveItem(craftedItem);
 
-      for (auto collectable : recipe.collectables)
+      for (auto& collectable : recipe.collectables)
         m_player->addCollectable(collectable.first, collectable.second);
     }
 
@@ -666,10 +666,10 @@ List<ItemRecipe> CraftingPane::determineRecipes() {
 
     float printTime = m_settings.getFloat("printTime", 0);
     float printFactor = m_settings.getFloat("printCostFactor", 1.0);
-    for (auto itemName : itemList) {
+    for (auto& itemName : itemList) {
       ItemRecipe recipe;
       recipe.output = ItemDescriptor(itemName, 1);
-      auto recipeItem = itemDb->item(recipe.output);
+      auto recipeItem = itemDb->itemShared(recipe.output);
       int itemPrice = int(recipeItem->price() * printFactor);
       recipe.currencyInputs["money"] = itemPrice;
       recipe.outputRarity = recipeItem->rarity();
@@ -679,7 +679,7 @@ List<ItemRecipe> CraftingPane::determineRecipes() {
       recipes.add(recipe);
     }
   } else if (m_settings.contains("recipes")) {
-    for (auto entry : m_settings.getArray("recipes")) {
+    for (auto& entry : m_settings.getArray("recipes")) {
       if (entry.type() == Json::Type::String)
         recipes.addAll(itemDb->recipesForOutputItem(entry.toString()));
       else

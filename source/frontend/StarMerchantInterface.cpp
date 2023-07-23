@@ -127,7 +127,7 @@ PanePtr MerchantPane::createTooltip(Vec2I const& screenPosition) {
       auto entry = m_itemGuiList->itemAt(i);
       if (entry->getChildAt(screenPosition)) {
         auto itemConfig = m_itemList.get(i);
-        ItemPtr item = Root::singleton().itemDatabase()->item(ItemDescriptor(itemConfig.get("item")));
+        ItemPtr item = Root::singleton().itemDatabase()->itemShared(ItemDescriptor(itemConfig.get("item")));
         return ItemTooltipBuilder::buildItemTooltip(item, m_player);
       }
     }
@@ -232,7 +232,7 @@ void MerchantPane::buildItemList() {
 void MerchantPane::setupWidget(WidgetPtr const& widget, Json const& itemConfig) {
   auto& root = Root::singleton();
   auto assets = root.assets();
-  ItemPtr item = root.itemDatabase()->item(ItemDescriptor(itemConfig.get("item")));
+  ItemPtr item = root.itemDatabase()->itemShared(ItemDescriptor(itemConfig.get("item")));
 
   String name = item->friendlyName();
   if (item->count() > 1)
@@ -265,7 +265,7 @@ void MerchantPane::updateSelection() {
 
     if (m_selectedIndex != NPos) {
       auto itemConfig = m_itemList.get(m_selectedIndex);
-      m_selectedItem = Root::singleton().itemDatabase()->item(ItemDescriptor(itemConfig.get("item")));
+      m_selectedItem = Root::singleton().itemDatabase()->itemShared(ItemDescriptor(itemConfig.get("item")));
       findChild<ButtonWidget>("spinCount.up")->enable();
       findChild<ButtonWidget>("spinCount.down")->enable();
       m_countTextBox->setColor(Color::White);

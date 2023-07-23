@@ -140,6 +140,15 @@ ItemDatabase::ItemDatabase()
   addBlueprints();
 }
 
+void ItemDatabase::cleanup() {
+  {
+    MutexLocker locker(m_cacheMutex);
+    m_itemCache.cleanup([](ItemCacheEntry const&, ItemPtr const& item) {
+      return !item.unique();
+    });
+  }
+}
+
 ItemPtr ItemDatabase::diskLoad(Json const& diskStore) const {
   if (diskStore) {
     return item(ItemDescriptor::loadStore(diskStore));
@@ -204,20 +213,30 @@ ItemDatabase::ItemConfig ItemDatabase::itemConfig(String const& itemName, Json p
   return itemConfig;
 }
 
-ItemPtr ItemDatabase::item(ItemDescriptor descriptor, Maybe<float> level, Maybe<uint64_t> seed) const {
+ItemPtr ItemDatabase::itemShared(ItemDescriptor descriptor, Maybe<float> level, Maybe<uint64_t> seed) const {
   if (!descriptor)
     return {};
 
-  ItemPtr item;
-  try {
-    item = createItem(m_items.get(descriptor.name()).type, itemConfig(descriptor.name(), descriptor.parameters(), level, seed));
-  } catch (std::exception const& e) {
-    Logger::error("Could not instantiate item '{}'. {}", descriptor, outputException(e, false));
-    item = createItem(m_items.get("perfectlygenericitem").type, itemConfig("perfectlygenericitem", {}, {}));
-  }
-  item->setCount(descriptor.count());
+  ItemCacheEntry entry{ descriptor, level, seed };
+  MutexLocker locker(m_cacheMutex);
+  if (ItemPtr* cached = m_itemCache.ptr(entry))
+    return *cached;
+  else {
+    locker.unlock();
 
-  return item;
+    ItemPtr item = tryCreateItem(descriptor, level, seed);
+    get<2>(entry) = item->parameters().optUInt("seed"); // Seed could've been changed by the buildscript
+
+    locker.lock();
+    return m_itemCache.get(entry, [&](ItemCacheEntry const&) -> ItemPtr { return move(item); });
+  }
+}
+
+ItemPtr ItemDatabase::item(ItemDescriptor descriptor, Maybe<float> level, Maybe<uint64_t> seed) const {
+  if (!descriptor)
+    return {};
+  else
+    return tryCreateItem(descriptor, level, seed);
 }
 
 bool ItemDatabase::hasRecipeToMake(ItemDescriptor const& item) const {
@@ -332,7 +351,7 @@ ItemRecipe ItemDatabase::parseRecipe(Json const& config) const {
     for (auto input : config.getArray("input")) {
       auto id = ItemDescriptor(input);
       if (itemType(id.name()) == ItemType::CurrencyItem) {
-        auto currencyItem = as<CurrencyItem>(item(id));
+        auto currencyItem = as<CurrencyItem>(itemShared(id));
         res.currencyInputs[currencyItem->currencyType()] += currencyItem->totalValue();
       } else {
         res.inputs.push_back(id);
@@ -342,7 +361,7 @@ ItemRecipe ItemDatabase::parseRecipe(Json const& config) const {
     res.output = ItemDescriptor(config.get("output"));
     res.duration = config.getFloat("duration", Root::singleton().assets()->json("/items/defaultParameters.config:defaultCraftDuration").toFloat());
     res.groups = StringSet::from(jsonToStringList(config.get("groups", JsonArray())));
-    if (auto item = ItemDatabase::item(res.output)) {
+    if (auto item = ItemDatabase::itemShared(res.output)) {
       res.outputRarity = item->rarity();
       res.guiFilterString = guiFilterString(item);
     }
@@ -480,6 +499,20 @@ ItemPtr ItemDatabase::createItem(ItemType type, ItemConfig const& config) {
   }
 }
 
+ItemPtr ItemDatabase::tryCreateItem(ItemDescriptor const& descriptor, Maybe<float> level, Maybe<uint64_t> seed) const {
+  ItemPtr result;
+  try {
+    result = createItem(m_items.get(descriptor.name()).type, itemConfig(descriptor.name(), descriptor.parameters(), level, seed));
+  }
+  catch (std::exception const& e) {
+    Logger::error("Could not instantiate item '{}'. {}", descriptor, outputException(e, false));
+    result = createItem(m_items.get("perfectlygenericitem").type, itemConfig("perfectlygenericitem", {}, {}));
+  }
+  result->setCount(descriptor.count());
+
+  return result;
+}
+
 ItemDatabase::ItemData const& ItemDatabase::itemData(String const& name) const {
   if (auto p = m_items.ptr(name))
     return *p;
@@ -492,7 +525,7 @@ ItemRecipe ItemDatabase::makeRecipe(List<ItemDescriptor> inputs, ItemDescriptor 
   res.output = move(output);
   res.duration = duration;
   res.groups = move(groups);
-  if (auto item = ItemDatabase::item(res.output)) {
+  if (auto item = ItemDatabase::itemShared(res.output)) {
     res.outputRarity = item->rarity();
     res.guiFilterString = guiFilterString(item);
   }
@@ -627,7 +660,7 @@ void ItemDatabase::addBlueprints() {
 
   for (auto const& recipe : m_recipes) {
     auto baseDesc = recipe.output;
-    auto baseItem = item(baseDesc);
+    auto baseItem = itemShared(baseDesc);
 
     String blueprintName = strf("{}-recipe", baseItem->name());
     if (m_items.contains(blueprintName))
