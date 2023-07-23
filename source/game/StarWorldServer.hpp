@@ -49,6 +49,9 @@ extern EnumMap<WorldServerFidelity> const WorldServerFidelityNames;
 
 class WorldServer : public World {
 public:
+  typedef LuaMessageHandlingComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> ScriptComponent;
+  typedef shared_ptr<ScriptComponent> ScriptComponentPtr;
+
   // Create a new world with the given template, writing new storage file.
   WorldServer(WorldTemplatePtr const& worldTemplate, IODevicePtr storage);
   // Synonym for WorldServer(make_shared<WorldTemplate>(size), storage);
@@ -192,6 +195,8 @@ public:
   void generateRegion(RectI const& region);
   // Returns true if a region is fully active without signaling it.
   bool regionActive(RectI const& region);
+
+  ScriptComponentPtr scriptContext(String const& contextName);
 
   // Queues a microdungeon for placement
   RpcPromise<Vec2I> enqueuePlacement(List<BiomeItemDistribution> distributions, Maybe<DungeonId> id);
@@ -350,8 +355,6 @@ private:
   WireProcessorPtr m_wireProcessor;
   LuaRootPtr m_luaRoot;
 
-  typedef LuaMessageHandlingComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> ScriptComponent;
-  typedef shared_ptr<ScriptComponent> ScriptComponentPtr;
   StringMap<ScriptComponentPtr> m_scriptContexts;
 
   WorldGeometry m_geometry;

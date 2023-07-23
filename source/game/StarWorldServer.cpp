@@ -1578,6 +1578,13 @@ bool WorldServer::regionActive(RectI const& region) {
   return true;
 }
 
+WorldServer::ScriptComponentPtr WorldServer::scriptContext(String const& contextName) {
+  if (auto context = m_scriptContexts.ptr(contextName))
+    return *context;
+  else
+    return nullptr;
+}
+
 RpcPromise<Vec2I> WorldServer::enqueuePlacement(List<BiomeItemDistribution> distributions, Maybe<DungeonId> id) {
   return m_worldStorage->enqueuePlacement(move(distributions), id);
 }

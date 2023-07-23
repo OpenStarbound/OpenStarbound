@@ -86,6 +86,7 @@ namespace LuaBindings {
     void setPlayerStart(World* world, Vec2F const& playerStart, Maybe<bool> respawnInWorld);
     List<EntityId> players(World* world);
     LuaString fidelity(World* world, LuaEngine& engine);
+    Maybe<LuaValue> callScriptContext(World* world, String const& contextName, String const& function, LuaVariadic<LuaValue> const& args);
   }
 
   namespace WorldDebugCallbacks {

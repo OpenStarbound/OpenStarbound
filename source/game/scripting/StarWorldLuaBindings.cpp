@@ -383,6 +383,7 @@ namespace LuaBindings {
       callbacks.registerCallbackWithSignature<void, Vec2F, Maybe<bool>>("setPlayerStart", bind(ServerWorldCallbacks::setPlayerStart, world, _1, _2));
       callbacks.registerCallbackWithSignature<List<EntityId>>("players", bind(ServerWorldCallbacks::players, world));
       callbacks.registerCallbackWithSignature<LuaString, LuaEngine&>("fidelity", bind(ServerWorldCallbacks::fidelity, world, _1));
+      callbacks.registerCallbackWithSignature<Maybe<LuaValue>, String, String, LuaVariadic<LuaValue>>("callScriptContext", bind(ServerWorldCallbacks::callScriptContext, world, _1, _2, _3));
 
       callbacks.registerCallbackWithSignature<double>("skyTime", [serverWorld]() {
           return serverWorld->sky()->epochTime();
@@ -1166,6 +1167,13 @@ namespace LuaBindings {
 
   LuaString ServerWorldCallbacks::fidelity(World* world, LuaEngine& engine) {
     return engine.createString(WorldServerFidelityNames.getRight(as<WorldServer>(world)->fidelity()));
+  }
+
+  Maybe<LuaValue> ServerWorldCallbacks::callScriptContext(World* world, String const& contextName, String const& function, LuaVariadic<LuaValue> const& args) {
+    auto context = as<WorldServer>(world)->scriptContext(contextName);
+    if (!context)
+      throw StarException::format("Context {} does not exist", contextName);
+    return context->invoke(function, args);
   }
 
   void WorldDebugCallbacks::debugPoint(Vec2F const& arg1, Color const& arg2) {
