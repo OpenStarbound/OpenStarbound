@@ -2,7 +2,7 @@
   "paneLayout" : {
     "voiceLabel" : {
       "type" : "label",
-      "position" : [119, 185],
+      "position" : [119, 187],
       "hAnchor" : "mid",
       "value" : "VOICE"
     },
