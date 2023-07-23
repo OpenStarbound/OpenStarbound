@@ -1,0 +1,11 @@
+{
+  "name" : "assetmissing",
+  "states" : ["idle","sit"],
+  "cycle" : 0.5,
+  "cyclic" : true,
+  "duration" : 1.0,
+  "steps" : [
+    // body, frontArm, backArm, headOffset, frontArmOffset, backArmOffset
+    [ "idle.1", "rotation?flipx", "rotation", [0, 0], [-6, 0], [0, 0] ]
+  ]
+}

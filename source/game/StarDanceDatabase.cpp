@@ -17,7 +17,12 @@ DanceDatabase::DanceDatabase() {
 }
 
 DancePtr DanceDatabase::getDance(String const& name) const {
-  return m_dances.get(name);
+  if (auto dance = m_dances.ptr(name))
+    return *dance;
+  else {
+    Logger::error("Invalid dance '{}', using default", name);
+    return m_dances.get("assetmissing");
+  }
 }
 
 DancePtr DanceDatabase::readDance(String const& path) {
