@@ -24,6 +24,7 @@ struct LuaConverter<LuaNullTermWrapper<T>> : LuaConverter<T> {
   }
 
   static LuaNullTermWrapper<T> to(LuaEngine& engine, LuaValue const& v) {
+    auto enforcer = engine.nullTerminate();
     return LuaConverter<T>::to(engine, v);
   }
 };
