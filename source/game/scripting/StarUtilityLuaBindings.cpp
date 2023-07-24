@@ -18,59 +18,28 @@ struct LuaUserDataMethods<RandomSource> {
   static LuaMethods<RandomSource> make() {
     LuaMethods<RandomSource> methods;
 
-    methods.registerMethod("init",
-        [](RandomSource& randomSource, Maybe<uint64_t> seed) {
-          if (seed)
-            randomSource.init(*seed);
-          else
-            randomSource.init();
-        });
-
-    methods.registerMethod("addEntropy",
-        [](RandomSource& randomSource, Maybe<uint64_t> seed) {
-          if (seed)
-            randomSource.addEntropy(*seed);
-          else
-            randomSource.addEntropy();
-        });
+    methods.registerMethod("init", [](RandomSource& randomSource, Maybe<uint64_t> seed)
+      { seed ? randomSource.init(*seed) : randomSource.init(); });
+    methods.registerMethod("addEntropy", [](RandomSource& randomSource, Maybe<uint64_t> seed)
+      { seed ? randomSource.addEntropy(*seed) : randomSource.addEntropy(); });
 
     methods.registerMethodWithSignature<uint32_t, RandomSource&>("randu32", mem_fn(&RandomSource::randu32));
     methods.registerMethodWithSignature<uint64_t, RandomSource&>("randu64", mem_fn(&RandomSource::randu64));
     methods.registerMethodWithSignature<int32_t, RandomSource&>("randi32", mem_fn(&RandomSource::randi32));
     methods.registerMethodWithSignature<int64_t, RandomSource&>("randi64", mem_fn(&RandomSource::randi64));
 
-    methods.registerMethod("randf",
-        [](RandomSource& randomSource, Maybe<float> arg1, Maybe<float> arg2) {
-          if (arg1 && arg2)
-            return randomSource.randf(*arg1, *arg2);
-          else
-            return randomSource.randf();
-        });
-    methods.registerMethod("randd",
-        [](RandomSource& randomSource, Maybe<double> arg1, Maybe<double> arg2) {
-          if (arg1 && arg2)
-            return randomSource.randd(*arg1, *arg2);
-          else
-            return randomSource.randd();
-        });
+    methods.registerMethod("randf", [](RandomSource& randomSource, Maybe<float> arg1, Maybe<float> arg2)
+      { return (arg1 && arg2) ? randomSource.randf(*arg1, *arg2) : randomSource.randf(); });
+    methods.registerMethod("randd", [](RandomSource& randomSource, Maybe<double> arg1, Maybe<double> arg2)
+      { return (arg1 && arg2) ? randomSource.randd(*arg1, *arg2) : randomSource.randd(); });
 
     methods.registerMethodWithSignature<bool, RandomSource&>("randb", mem_fn(&RandomSource::randb));
 
-    methods.registerMethod("randInt",
-        [](RandomSource& randomSource, int64_t arg1, Maybe<int64_t> arg2) {
-          if (arg2)
-            return randomSource.randInt(arg1, *arg2);
-          else
-            return randomSource.randInt(arg1);
-        });
+    methods.registerMethod("randInt", [](RandomSource& randomSource, int64_t arg1, Maybe<int64_t> arg2)
+      { return arg2 ? randomSource.randInt(arg1, *arg2) : randomSource.randInt(arg1); });
 
-    methods.registerMethod("randUInt",
-        [](RandomSource& randomSource, uint64_t arg1, Maybe<uint64_t> arg2) {
-          if (arg2)
-            return randomSource.randUInt(arg1, *arg2);
-          else
-            return randomSource.randUInt(arg1);
-        });
+    methods.registerMethod("randUInt", [](RandomSource& randomSource, uint64_t arg1, Maybe<uint64_t> arg2)
+      { return arg2 ? randomSource.randUInt(arg1, *arg2) : randomSource.randUInt(arg1); });
 
     return methods;
   }
@@ -148,15 +117,10 @@ LuaCallbacks LuaBindings::makeUtilityCallbacks() {
   callbacks.registerCallback("print", UtilityCallbacks::print);
   callbacks.registerCallback("interpolateSinEase", UtilityCallbacks::interpolateSinEase);
   callbacks.registerCallback("replaceTags", UtilityCallbacks::replaceTags);
+  callbacks.registerCallback("jsonParse", [](String const& json) { return Json::parse(json); });
   callbacks.registerCallback("jsonMerge", [](Json const& a, Json const& b) { return jsonMerge(a, b); });
   callbacks.registerCallback("jsonQuery", [](Json const& json, String const& path, Json const& def) { return json.query(path, def); });
-  callbacks.registerCallback("makeRandomSource",
-      [](Maybe<uint64_t> seed) {
-        if (seed)
-          return RandomSource(*seed);
-        else
-          return RandomSource();
-      });
+  callbacks.registerCallback("makeRandomSource", [](Maybe<uint64_t> seed) { return seed ? RandomSource(*seed) : RandomSource(); });
   callbacks.registerCallback("makePerlinSource", [](Json const& config) { return PerlinF(config); });
 
   auto hash64LuaValues = [](LuaVariadic<LuaValue> const& values) -> uint64_t {
