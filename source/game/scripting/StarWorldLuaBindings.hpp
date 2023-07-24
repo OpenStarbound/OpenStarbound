@@ -5,6 +5,7 @@
 #include "StarRect.hpp"
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
+#include "StarDrawable.hpp"
 #include "StarGameTypes.hpp"
 #include "StarCollisionBlock.hpp"
 #include "StarLua.hpp"
@@ -122,7 +123,7 @@ namespace LuaBindings {
     Maybe<String> entityGender(World* world, EntityId entityId);
     Maybe<String> entityName(World* world, EntityId entityId);
     Maybe<String> entityDescription(World* world, EntityId entityId, Maybe<String> const& species);
-    LuaNullTermWrapper<Maybe<JsonArray>> entityPortrait(World* world, EntityId entityId, String const& portraitMode);
+    LuaNullTermWrapper<Maybe<List<Drawable>>> entityPortrait(World* world, EntityId entityId, String const& portraitMode);
     Maybe<String> entityHandItem(World* world, EntityId entityId, String const& handName);
     Json entityHandItemDescriptor(World* world, EntityId entityId, String const& handName);
     LuaNullTermWrapper<Maybe<String>> entityUniqueId(World* world, EntityId entityId);

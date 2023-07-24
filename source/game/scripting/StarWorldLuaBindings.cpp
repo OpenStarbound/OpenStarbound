@@ -491,10 +491,10 @@ namespace LuaBindings {
     callbacks.registerCallbackWithSignature<Maybe<String>, EntityId>("entityGender", bind(WorldEntityCallbacks::entityGender, world, _1));
     callbacks.registerCallbackWithSignature<Maybe<String>, EntityId>("entityName", bind(WorldEntityCallbacks::entityName, world, _1));
     callbacks.registerCallbackWithSignature<Maybe<String>, EntityId, Maybe<String>>("entityDescription", bind(WorldEntityCallbacks::entityDescription, world, _1, _2));
-    callbacks.registerCallbackWithSignature<Maybe<JsonArray>, EntityId, String>("entityPortrait", bind(WorldEntityCallbacks::entityPortrait, world, _1, _2));
+    callbacks.registerCallbackWithSignature<LuaNullTermWrapper<Maybe<List<Drawable>>>, EntityId, String>("entityPortrait", bind(WorldEntityCallbacks::entityPortrait, world, _1, _2));
     callbacks.registerCallbackWithSignature<Maybe<String>, EntityId, String>("entityHandItem", bind(WorldEntityCallbacks::entityHandItem, world, _1, _2));
     callbacks.registerCallbackWithSignature<Json, EntityId, String>("entityHandItemDescriptor", bind(WorldEntityCallbacks::entityHandItemDescriptor, world, _1, _2));
-    callbacks.registerCallbackWithSignature<Maybe<String>, EntityId>("entityUniqueId", bind(WorldEntityCallbacks::entityUniqueId, world, _1));
+    callbacks.registerCallbackWithSignature<LuaNullTermWrapper<Maybe<String>>, EntityId>("entityUniqueId", bind(WorldEntityCallbacks::entityUniqueId, world, _1));
     callbacks.registerCallbackWithSignature<Json, EntityId, String, Maybe<Json>>("getObjectParameter", bind(WorldEntityCallbacks::getObjectParameter, world, _1, _2, _3));
     callbacks.registerCallbackWithSignature<Json, EntityId, String, Maybe<Json>>("getNpcScriptParameter", bind(WorldEntityCallbacks::getNpcScriptParameter, world, _1, _2, _3));
     callbacks.registerCallbackWithSignature<List<Vec2I>, EntityId>("objectSpaces", bind(WorldEntityCallbacks::objectSpaces, world, _1));
@@ -1421,14 +1421,9 @@ namespace LuaBindings {
     return {};
   }
 
-  LuaNullTermWrapper<Maybe<JsonArray>> WorldEntityCallbacks::entityPortrait(World* world, EntityId entityId, String const& portraitMode) {
-    auto entity = world->entity(entityId);
-
-    if (auto portraitEntity = as<PortraitEntity>(entity)) {
-      PortraitMode mode = PortraitModeNames.getLeft(portraitMode);
-      auto drawables = portraitEntity->portrait(mode);
-      return drawables.transformed(mem_fn(&Drawable::toJson));
-    }
+  LuaNullTermWrapper<Maybe<List<Drawable>>> WorldEntityCallbacks::entityPortrait(World* world, EntityId entityId, String const& portraitMode) {
+    if (auto portraitEntity = as<PortraitEntity>(world->entity(entityId)))
+      return portraitEntity->portrait(PortraitModeNames.getLeft(portraitMode));
 
     return {};
   }

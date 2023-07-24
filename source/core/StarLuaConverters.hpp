@@ -15,16 +15,16 @@ template <typename T>
 struct LuaConverter<LuaNullTermWrapper<T>> : LuaConverter<T> {
   static LuaValue from(LuaEngine& engine, LuaNullTermWrapper<T>&& v) {
     auto enforcer = engine.nullTerminate();
-    return LuaConverter<T>::from(std::forward<T>(v));
+    return LuaConverter<T>::from(engine, std::forward<T>(v));
   }
 
   static LuaValue from(LuaEngine& engine, LuaNullTermWrapper<T> const& v) {
     auto enforcer = engine.nullTerminate();
-    return LuaConverter<T>::from(v);
+    return LuaConverter<T>::from(engine, v);
   }
 
   static LuaNullTermWrapper<T> to(LuaEngine& engine, LuaValue const& v) {
-    return LuaConverter<T>::to(v);
+    return LuaConverter<T>::to(engine, v);
   }
 };
 

@@ -461,7 +461,7 @@ ByteArray LuaEngine::compile(ByteArray const& contents, String const& name) {
 LuaString LuaEngine::createString(String const& str) {
   lua_checkstack(m_state, 1);
 
-  if (m_nullTerminated)
+  if (m_nullTerminated > 0)
     lua_pushstring(m_state, str.utf8Ptr());
   else
     lua_pushlstring(m_state, str.utf8Ptr(), str.utf8Size());
@@ -554,6 +554,10 @@ size_t LuaEngine::memoryUsage() const {
 
 LuaNullEnforcer LuaEngine::nullTerminate() {
   return LuaNullEnforcer(*this);
+}
+
+void LuaEngine::setNullTerminated(bool nullTerminated) {
+  m_nullTerminated = nullTerminated ? 0 : INT_MIN;
 }
 
 LuaEngine* LuaEngine::luaEnginePtr(lua_State* state) {
@@ -723,7 +727,7 @@ char const* LuaEngine::stringPtr(int handleIndex) {
 }
 
 size_t LuaEngine::stringLength(int handleIndex) {
-  if (m_nullTerminated)
+  if (m_nullTerminated > 0)
     return strlen(lua_tostring(m_handleThread, handleIndex));
   else {
     size_t len = 0;
@@ -733,7 +737,7 @@ size_t LuaEngine::stringLength(int handleIndex) {
 }
 
 String LuaEngine::string(int handleIndex) {
-  if (m_nullTerminated)
+  if (m_nullTerminated > 0)
     return String(lua_tostring(m_handleThread, handleIndex));
   else {
     size_t len = 0;
@@ -743,7 +747,7 @@ String LuaEngine::string(int handleIndex) {
 }
 
 StringView LuaEngine::stringView(int handleIndex) {
-  if (m_nullTerminated)
+  if (m_nullTerminated > 0)
     return StringView(lua_tostring(m_handleThread, handleIndex));
   else {
     size_t len = 0;

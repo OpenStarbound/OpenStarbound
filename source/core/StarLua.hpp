@@ -600,6 +600,8 @@ public:
 
   // Enforce null-terminated string conversion as long as the returned enforcer object is in scope.
   LuaNullEnforcer nullTerminate();
+  // Disables null-termination enforcement
+  void setNullTerminated(bool nullTerminated);
 
 private:
   friend struct LuaDetail::LuaHandle;
@@ -729,7 +731,7 @@ private:
   uint64_t m_instructionCount;
   unsigned m_recursionLevel;
   unsigned m_recursionLimit;
-  unsigned m_nullTerminated;
+  int m_nullTerminated;
   HashMap<tuple<String, unsigned>, shared_ptr<LuaProfileEntry>> m_profileEntries;
 };
 

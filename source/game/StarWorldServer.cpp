@@ -1238,6 +1238,7 @@ void WorldServer::init(bool firstTime) {
   m_damageManager = make_shared<DamageManager>(this, ServerConnectionId);
   m_wireProcessor = make_shared<WireProcessor>(m_worldStorage);
   m_luaRoot = make_shared<LuaRoot>();
+  m_luaRoot->luaEngine().setNullTerminated(false);
   m_luaRoot->tuneAutoGarbageCollection(m_serverConfig.getFloat("luaGcPause"), m_serverConfig.getFloat("luaGcStepMultiplier"));
 
   m_sky = make_shared<Sky>(m_worldTemplate->skyParameters(), false);
