@@ -1,3 +1,5 @@
+-- Small helper to organize code for the same context into different Lua scripts without having to "hook" previously defined.
+
 modules = setmetatable({}, {__call = function(this, path, names)
 	for i, name in pairs(names) do
 		require(path .. name .. ".lua")

@@ -51,6 +51,7 @@ public:
   void setPause(bool pause);
 
   List<WorldId> activeWorlds() const;
+  bool isWorldActive(WorldId const& worldId) const;
 
   List<ConnectionId> clientIds() const;
   size_t numberOfClients() const;

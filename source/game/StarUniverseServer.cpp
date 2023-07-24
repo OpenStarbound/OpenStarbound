@@ -151,6 +151,11 @@ List<WorldId> UniverseServer::activeWorlds() const {
   return m_worlds.keys();
 }
 
+bool UniverseServer::isWorldActive(WorldId const& worldId) const {
+  RecursiveMutexLocker locker(m_mainLock);
+  return m_worlds.contains(worldId);
+}
+
 List<ConnectionId> UniverseServer::clientIds() const {
   ReadLocker clientsLocker(m_clientsLock);
   return m_clients.keys();
@@ -1045,8 +1050,14 @@ void UniverseServer::handleWorldMessages() {
   auto it = m_pendingWorldMessages.begin();
   while (it != m_pendingWorldMessages.end()) {
     auto& worldId = it->first;
-    if (auto worldPtr = triggerWorldCreation(worldId).value()) {
-      worldPtr->passMessages(move(it->second));
+    if (auto worldResult = triggerWorldCreation(worldId)) {
+      auto& world = *worldResult;
+
+      if (world)
+        world->passMessages(move(it->second));
+      else for (auto& message : it->second)
+        message.promise.fail("Error creating world");
+
       it = m_pendingWorldMessages.erase(it);
     }
     else
