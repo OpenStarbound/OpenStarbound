@@ -1,0 +1,10 @@
+// Default config for all crafting interfaces, vanilla and modded.
+
+{ "default" : {
+  // Disables the crafting timer if true.
+  "disableTimer" : false,
+
+   // This is only used if the crafting timer is enabled.
+   // This is how many crafts are ran when the crafting timer wraps.
+  "craftCount" : 1
+} }

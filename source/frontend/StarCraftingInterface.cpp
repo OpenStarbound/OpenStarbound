@@ -38,7 +38,9 @@ CraftingPane::CraftingPane(WorldClientPtr worldClient, PlayerPtr player, Json co
   auto assets = Root::singleton().assets();
   // get the config data for this crafting pane, default to "bare hands" crafting
   auto baseConfig = settings.get("config", "/interface/windowconfig/crafting.config");
-  m_settings = jsonMerge(assets->fetchJson(baseConfig), settings);
+  m_settings = jsonMerge(assets->json("/interface/windowconfig/crafting.config:default"), 
+               jsonMerge(assets->fetchJson(baseConfig), settings));
+
   m_filter = StringSet::from(jsonToStringList(m_settings.get("filter", JsonArray())));
 
   GuiReader reader;
@@ -266,7 +268,7 @@ void CraftingPane::update(float dt) {
 
   // crafters gonna craft
   while (m_crafting && m_craftTimer.wrapTick()) {
-    craft(1);
+    craft(min(m_count, (int)m_settings.getInt("craftCount", 1)));
   }
 
   // update crafting icon, progress and buttons
