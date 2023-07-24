@@ -225,8 +225,8 @@ void Voice::loadJson(Json const& config, bool skipSave) {
 Json Voice::saveJson() const {
   return JsonObject{
     {"enabled",      m_enabled},
+		{"deviceName",  m_deviceName ? *m_deviceName : Json()},
     {"inputEnabled", m_inputEnabled},
-    {"inputDevice",  m_deviceName ? *m_deviceName : Json()},
     {"threshold",    m_threshold},
     {"inputVolume",  m_inputVolume},
     {"outputVolume", m_outputVolume},
