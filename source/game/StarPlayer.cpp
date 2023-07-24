@@ -243,7 +243,7 @@ void Player::diskLoad(Json const& diskStore) {
 
   m_genericProperties = diskStore.getObject("genericProperties");
 
-  refreshEquipment();
+  refreshArmor();
 
   m_codexes->learnInitialCodexes(species());
 
@@ -1228,7 +1228,14 @@ void Player::clearSwap() {
   endTrigger();
 }
 
-void Player::refreshEquipment() {
+void Player::refreshItems() {
+  if (isSlave())
+    return;
+
+  m_tools->setItems(m_inventory->primaryHeldItem(), m_inventory->secondaryHeldItem());
+}
+
+void Player::refreshArmor() {
   if (isSlave())
     return;
 
@@ -1240,8 +1247,11 @@ void Player::refreshEquipment() {
   m_armor->setLegsCosmeticItem(m_inventory->legsCosmetic());
   m_armor->setBackItem(m_inventory->backArmor());
   m_armor->setBackCosmeticItem(m_inventory->backCosmetic());
+}
 
-  m_tools->setItems(m_inventory->primaryHeldItem(), m_inventory->secondaryHeldItem());
+void Player::refreshEquipment() {
+  refreshArmor();
+  refreshItems();
 }
 
 PlayerBlueprintsPtr Player::blueprints() const {

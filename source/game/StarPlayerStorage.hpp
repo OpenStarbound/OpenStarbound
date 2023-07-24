@@ -19,7 +19,7 @@ public:
   // Returns nothing if index is out of bounds.
   Maybe<Uuid> playerUuidAt(size_t index);
   // Returns nothing if name doesn't match a player.
-  Maybe<Uuid> playerUuidByName(String const& name);
+  Maybe<Uuid> playerUuidByName(String const& name, Maybe<Uuid> except = {});
 
   // Also returns the diskStore Json if needed.
   Json savePlayer(PlayerPtr const& player);

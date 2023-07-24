@@ -99,7 +99,7 @@ Maybe<Uuid> PlayerStorage::playerUuidAt(size_t index) {
     return {};
 }
 
-Maybe<Uuid> PlayerStorage::playerUuidByName(String const& name) {
+Maybe<Uuid> PlayerStorage::playerUuidByName(String const& name, Maybe<Uuid> except) {
   String cleanMatch = Text::stripEscapeCodes(name).toLower();
   Maybe<Uuid> uuid;
 
@@ -107,7 +107,9 @@ Maybe<Uuid> PlayerStorage::playerUuidByName(String const& name) {
 
   size_t longest = SIZE_MAX;
   for (auto& cache : m_savedPlayersCache) {
-    if (auto name = cache.second.optQueryString("identity.name")) {
+    if (except && *except == cache.first)
+      continue;
+    else if (auto name = cache.second.optQueryString("identity.name")) {
       auto cleanName = Text::stripEscapeCodes(*name).toLower();
       auto len = cleanName.size();
       if (len < longest && cleanName.utf8().rfind(cleanMatch.utf8()) == 0) {
