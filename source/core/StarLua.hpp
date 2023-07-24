@@ -156,6 +156,7 @@ public:
   size_t length() const;
 
   String toString() const;
+  StringView view() const;
 };
 
 bool operator==(LuaString const& s1, LuaString const& s2);
@@ -383,6 +384,38 @@ public:
   LuaUserData createUserData(T t);
 };
 
+template <typename T>
+struct LuaNullTermWrapper : T {
+  LuaNullTermWrapper() : T() {}
+  LuaNullTermWrapper(LuaNullTermWrapper const& nt) : T(nt) {}
+  LuaNullTermWrapper(LuaNullTermWrapper&& nt) : T(std::move(nt)) {}
+  LuaNullTermWrapper(T const& bt) : T(bt) {}
+  LuaNullTermWrapper(T&& bt) : T(std::move(bt)) {}
+
+  LuaNullTermWrapper& operator=(LuaNullTermWrapper const& rhs) {
+    T::operator=(rhs);
+    return *this;
+  }
+
+  LuaNullTermWrapper& operator=(LuaNullTermWrapper&& rhs) {
+    T::operator=(std::move(rhs));
+    return *this;
+  }
+
+  LuaNullTermWrapper& operator=(T&& other) {
+    T::operator=(std::forward<T>(other));
+    return *this;
+  }
+};
+
+class LuaNullEnforcer {
+public:
+  LuaNullEnforcer(LuaEngine& engine);
+  ~LuaNullEnforcer();
+private:
+  LuaEngine* m_engine;
+};
+
 // Types that want to participate in automatic lua conversion should specialize
 // this template and provide static to and from methods on it.  The method
 // signatures will be called like:
@@ -565,6 +598,9 @@ public:
   // Bytes in use by lua
   size_t memoryUsage() const;
 
+  // Enforce null-terminated string conversion as long as the returned enforcer object is in scope.
+  LuaNullEnforcer nullTerminate();
+
 private:
   friend struct LuaDetail::LuaHandle;
   friend class LuaReference;
@@ -574,6 +610,7 @@ private:
   friend class LuaThread;
   friend class LuaUserData;
   friend class LuaContext;
+  friend class LuaNullEnforcer;
 
   LuaEngine() = default;
 
@@ -599,6 +636,8 @@ private:
 
   char const* stringPtr(int handleIndex);
   size_t stringLength(int handleIndex);
+  String string(int handleIndex);
+  StringView stringView(int handleIndex);
 
   LuaValue tableGet(bool raw, int handleIndex, LuaValue const& key);
   LuaValue tableGet(bool raw, int handleIndex, char const* key);
@@ -690,6 +729,7 @@ private:
   uint64_t m_instructionCount;
   unsigned m_recursionLevel;
   unsigned m_recursionLimit;
+  unsigned m_nullTerminated;
   HashMap<tuple<String, unsigned>, shared_ptr<LuaProfileEntry>> m_profileEntries;
 };
 
@@ -796,7 +836,7 @@ struct LuaConverter<String> {
 
   static Maybe<String> to(LuaEngine&, LuaValue const& v) {
     if (v.is<LuaString>())
-      return String(v.get<LuaString>().ptr());
+      return v.get<LuaString>().toString();
     if (v.is<LuaInt>())
       return String(toString(v.get<LuaInt>()));
     if (v.is<LuaFloat>())
@@ -1579,35 +1619,39 @@ inline size_t LuaString::length() const {
 }
 
 inline String LuaString::toString() const {
-  return String(ptr());
+  return engine().string(handleIndex());
+}
+
+inline StringView LuaString::view() const {
+  return engine().stringView(handleIndex());
 }
 
 inline bool operator==(LuaString const& s1, LuaString const& s2) {
-  return std::strcmp(s1.ptr(), s2.ptr()) == 0;
+  return s1.view() == s2.view();
 }
 
 inline bool operator==(LuaString const& s1, char const* s2) {
-  return std::strcmp(s1.ptr(), s2) == 0;
+  return s1.view() == s2;
 }
 
 inline bool operator==(LuaString const& s1, std::string const& s2) {
-  return s1.ptr() == s2;
+  return s1.view() == s2;
 }
 
 inline bool operator==(LuaString const& s1, String const& s2) {
-  return s1.ptr() == s2;
+  return s1.view() == s2;
 }
 
 inline bool operator==(char const* s1, LuaString const& s2) {
-  return std::strcmp(s1, s2.ptr()) == 0;
+  return s2.view() == s1;
 }
 
 inline bool operator==(std::string const& s1, LuaString const& s2) {
-  return s1 == s2.ptr();
+  return s2.view() == s1;
 }
 
 inline bool operator==(String const& s1, LuaString const& s2) {
-  return s1 == s2.ptr();
+  return s2.view() == s1;
 }
 
 inline bool operator!=(LuaString const& s1, LuaString const& s2) {

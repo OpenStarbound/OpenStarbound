@@ -115,6 +115,11 @@ LuaTable LuaContext::createTable() {
   return engine().createTable();
 }
 
+LuaNullEnforcer::LuaNullEnforcer(LuaEngine& engine)
+  : m_engine(&engine) { ++m_engine->m_nullTerminated; };
+
+LuaNullEnforcer::~LuaNullEnforcer() { --m_engine->m_nullTerminated; };
+
 LuaValue LuaConverter<Json>::from(LuaEngine& engine, Json const& v) {
   if (v.isType(Json::Type::Null)) {
     return LuaNil;
@@ -202,6 +207,7 @@ LuaEnginePtr LuaEngine::create(bool safe) {
   self->m_instructionCount = 0;
   self->m_recursionLevel = 0;
   self->m_recursionLimit = 0;
+  self->m_nullTerminated = 0;
 
   if (!self->m_state)
     throw LuaException("Failed to initialize Lua");
@@ -455,7 +461,10 @@ ByteArray LuaEngine::compile(ByteArray const& contents, String const& name) {
 LuaString LuaEngine::createString(String const& str) {
   lua_checkstack(m_state, 1);
 
-  lua_pushlstring(m_state, str.utf8Ptr(), str.utf8Size());
+  if (m_nullTerminated)
+    lua_pushstring(m_state, str.utf8Ptr());
+  else
+    lua_pushlstring(m_state, str.utf8Ptr(), str.utf8Size());
   return LuaString(LuaDetail::LuaHandle(RefPtr<LuaEngine>(this), popHandle(m_state)));
 }
 
@@ -541,6 +550,10 @@ void LuaEngine::tuneAutoGarbageCollection(float pause, float stepMultiplier) {
 
 size_t LuaEngine::memoryUsage() const {
   return (size_t)lua_gc(m_state, LUA_GCCOUNT, 0) * 1024 + lua_gc(m_state, LUA_GCCOUNTB, 0);
+}
+
+LuaNullEnforcer LuaEngine::nullTerminate() {
+  return LuaNullEnforcer(*this);
 }
 
 LuaEngine* LuaEngine::luaEnginePtr(lua_State* state) {
@@ -710,9 +723,33 @@ char const* LuaEngine::stringPtr(int handleIndex) {
 }
 
 size_t LuaEngine::stringLength(int handleIndex) {
-  size_t len = 0;
-  lua_tolstring(m_handleThread, handleIndex, &len);
-  return len;
+  if (m_nullTerminated)
+    return strlen(lua_tostring(m_handleThread, handleIndex));
+  else {
+    size_t len = 0;
+    lua_tolstring(m_handleThread, handleIndex, &len);
+    return len;
+  }
+}
+
+String LuaEngine::string(int handleIndex) {
+  if (m_nullTerminated)
+    return String(lua_tostring(m_handleThread, handleIndex));
+  else {
+    size_t len = 0;
+    const char* data = lua_tolstring(m_handleThread, handleIndex, &len);
+    return String(data, len);
+  }
+}
+
+StringView LuaEngine::stringView(int handleIndex) {
+  if (m_nullTerminated)
+    return StringView(lua_tostring(m_handleThread, handleIndex));
+  else {
+    size_t len = 0;
+    const char* data = lua_tolstring(m_handleThread, handleIndex, &len);
+    return StringView(data, len);
+  }
 }
 
 LuaValue LuaEngine::tableGet(bool raw, int handleIndex, LuaValue const& key) {

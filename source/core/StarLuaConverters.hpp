@@ -11,6 +11,23 @@
 
 namespace Star {
 
+template <typename T>
+struct LuaConverter<LuaNullTermWrapper<T>> : LuaConverter<T> {
+  static LuaValue from(LuaEngine& engine, LuaNullTermWrapper<T>&& v) {
+    auto enforcer = engine.nullTerminate();
+    return LuaConverter<T>::from(std::forward<T>(v));
+  }
+
+  static LuaValue from(LuaEngine& engine, LuaNullTermWrapper<T> const& v) {
+    auto enforcer = engine.nullTerminate();
+    return LuaConverter<T>::from(v);
+  }
+
+  static LuaNullTermWrapper<T> to(LuaEngine& engine, LuaValue const& v) {
+    return LuaConverter<T>::to(v);
+  }
+};
+
 template <typename T1, typename T2>
 struct LuaConverter<pair<T1, T2>> {
   static LuaValue from(LuaEngine& engine, pair<T1, T2>&& v) {

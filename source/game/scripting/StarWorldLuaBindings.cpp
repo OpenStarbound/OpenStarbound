@@ -1421,7 +1421,7 @@ namespace LuaBindings {
     return {};
   }
 
-  Maybe<JsonArray> WorldEntityCallbacks::entityPortrait(World* world, EntityId entityId, String const& portraitMode) {
+  LuaNullTermWrapper<Maybe<JsonArray>> WorldEntityCallbacks::entityPortrait(World* world, EntityId entityId, String const& portraitMode) {
     auto entity = world->entity(entityId);
 
     if (auto portraitEntity = as<PortraitEntity>(entity)) {
@@ -1471,7 +1471,7 @@ namespace LuaBindings {
     return Json();
   }
 
-  Maybe<String> WorldEntityCallbacks::entityUniqueId(World* world, EntityId entityId) {
+  LuaNullTermWrapper<Maybe<String>> WorldEntityCallbacks::entityUniqueId(World* world, EntityId entityId) {
     if (auto entity = world->entity(entityId))
       return entity->uniqueId();
     return {};

@@ -122,10 +122,10 @@ namespace LuaBindings {
     Maybe<String> entityGender(World* world, EntityId entityId);
     Maybe<String> entityName(World* world, EntityId entityId);
     Maybe<String> entityDescription(World* world, EntityId entityId, Maybe<String> const& species);
-    Maybe<JsonArray> entityPortrait(World* world, EntityId entityId, String const& portraitMode);
+    LuaNullTermWrapper<Maybe<JsonArray>> entityPortrait(World* world, EntityId entityId, String const& portraitMode);
     Maybe<String> entityHandItem(World* world, EntityId entityId, String const& handName);
     Json entityHandItemDescriptor(World* world, EntityId entityId, String const& handName);
-    Maybe<String> entityUniqueId(World* world, EntityId entityId);
+    LuaNullTermWrapper<Maybe<String>> entityUniqueId(World* world, EntityId entityId);
     Json getObjectParameter(World* world, EntityId entityId, String const& parameterName, Maybe<Json> const& defaultValue);
     Json getNpcScriptParameter(World* world, EntityId entityId, String const& parameterName, Maybe<Json> const& defaultValue);
     List<Vec2I> objectSpaces(World* world, EntityId entityId);
