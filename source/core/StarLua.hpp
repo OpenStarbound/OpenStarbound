@@ -392,6 +392,8 @@ struct LuaNullTermWrapper : T {
   LuaNullTermWrapper(T const& bt) : T(bt) {}
   LuaNullTermWrapper(T&& bt) : T(std::move(bt)) {}
 
+  using T::T;
+
   LuaNullTermWrapper& operator=(LuaNullTermWrapper const& rhs) {
     T::operator=(rhs);
     return *this;
