@@ -79,7 +79,7 @@ TeleportDialog::TeleportDialog(UniverseClientPtr client,
   if (config.getBool("includePartyMembers", false)) {
     auto teamClient = m_client->teamClient();
     for (auto member : teamClient->members()) {
-      if (member.uuid == m_client->mainPlayer()->uuid() || member.warpMode == WarpMode::None)
+      if (member.uuid == m_client->clientContext()->playerUuid() || member.warpMode == WarpMode::None)
         continue;
 
       auto entry = destList->addItem();

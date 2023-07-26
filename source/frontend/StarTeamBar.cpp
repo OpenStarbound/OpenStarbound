@@ -132,7 +132,7 @@ void TeamBar::updatePlayerResources() {
     m_energyBar->setColor(m_energyBarColor.mix(m_energyBarRegenMixColor, player->energyRegenBlockPercent()));
   }
 
-  m_nameLabel->setText(m_client->mainPlayer()->name());
+  m_nameLabel->setText(player->name());
 }
 
 void TeamBar::inviteButton() {

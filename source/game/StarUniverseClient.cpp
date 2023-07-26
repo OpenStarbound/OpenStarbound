@@ -394,7 +394,7 @@ CelestialCoordinate UniverseClient::shipCoordinate() const {
 }
 
 bool UniverseClient::playerOnOwnShip() const {
-  return playerWorld().is<ClientShipWorldId>() && playerWorld().get<ClientShipWorldId>() == mainPlayer()->uuid();
+  return playerWorld().is<ClientShipWorldId>() && playerWorld().get<ClientShipWorldId>() == m_clientContext->playerUuid();
 }
 
 bool UniverseClient::playerIsOriginal() const {
@@ -412,7 +412,7 @@ bool UniverseClient::isAdmin() const {
 Uuid UniverseClient::teamUuid() const {
   if (auto team = m_teamClient->currentTeam())
     return *team;
-  return m_mainPlayer->uuid();
+  return m_clientContext->playerUuid();
 }
 
 WorldTemplateConstPtr UniverseClient::currentTemplate() const {
