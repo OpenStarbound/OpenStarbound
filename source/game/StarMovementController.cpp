@@ -246,6 +246,10 @@ PolyF const& MovementController::collisionPoly() const {
   return m_collisionPoly.get();
 }
 
+void MovementController::setCollisionPoly(PolyF const& poly) {
+  m_collisionPoly.set(poly);
+}
+
 Vec2F MovementController::position() const {
   return {m_xPosition.get(), m_yPosition.get()};
 }

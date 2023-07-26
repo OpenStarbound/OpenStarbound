@@ -97,6 +97,7 @@ public:
 
   // Currently active collisionPoly parameter
   PolyF const& collisionPoly() const;
+  void setCollisionPoly(PolyF const& poly);
 
   Vec2F position() const;
   float xPosition() const;

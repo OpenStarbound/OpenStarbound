@@ -50,6 +50,7 @@ public:
   ByteArray netStore();
 
   EntityType entityType() const override;
+  ClientEntityMode clientEntityMode() const override;
 
   void init(World* world, EntityId entityId, EntityMode mode) override;
   void uninit() override;
@@ -200,6 +201,8 @@ private:
 
   NetElementData<Maybe<String>> m_uniqueIdNetState;
   NetElementData<EntityDamageTeam> m_teamNetState;
+
+  ClientEntityMode m_clientEntityMode;
 
   Humanoid m_humanoid;
   NetElementEnum<Humanoid::State> m_humanoidStateNetState;

@@ -46,6 +46,8 @@ Npc::Npc(NpcVariant const& npcVariant)
 
   m_questIndicatorOffset = jsonToVec2F(assets->json("/quests/quests.config:defaultIndicatorOffset"));
 
+  m_clientEntityMode = ClientEntityModeNames.getLeft(npcVariant.overrides.getString("clientEntityMode", "ClientSlaveOnly"));
+
   m_isInteractive.set(false);
 
   m_shifting.set(false);
@@ -157,6 +159,10 @@ EntityType Npc::entityType() const {
   return EntityType::Npc;
 }
 
+ClientEntityMode Npc::clientEntityMode() const {
+  return m_clientEntityMode;
+}
+
 void Npc::init(World* world, EntityId entityId, EntityMode mode) {
   Entity::init(world, entityId, mode);
   m_movementController->init(world);
@@ -246,6 +252,18 @@ RectF Npc::collisionArea() const {
 }
 
 pair<ByteArray, uint64_t> Npc::writeNetState(uint64_t fromVersion) {
+  // client-side npcs error nearby vanilla NPC scripts because callScriptedEntity
+  // for now, scrungle the collision poly to avoid their queries. hacky :(
+  if (auto mode = entityMode()) {
+    if (*mode == EntityMode::Master && connectionForEntity(entityId()) != ServerConnectionId) {
+      PolyF poly = m_movementController->collisionPoly();
+      m_movementController->setCollisionPoly({});
+      auto result = m_netGroup.writeNetState(fromVersion);
+      m_movementController->setCollisionPoly(poly);
+      return result;
+    }
+  }
+
   return m_netGroup.writeNetState(fromVersion);
 }
 
