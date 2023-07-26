@@ -70,7 +70,7 @@ UniverseServer::UniverseServer(String const& storageDir)
   loadTempWorldIndex();
   m_lastClockUpdateSent = 0.0;
   m_stop = false;
-  m_listenTcp = false;
+  m_tcpState = TcpState::No;
   m_storageTriggerDeadline = 0;
   m_clearBrokenWorldsDeadline = 0;
   
@@ -104,7 +104,8 @@ UniverseServer::~UniverseServer() {
 }
 
 void UniverseServer::setListeningTcp(bool listenTcp) {
-  m_listenTcp = listenTcp;
+  if (!listenTcp || m_tcpState != TcpState::Fuck)
+    m_tcpState = listenTcp ? TcpState::Yes : TcpState::No;
 }
 
 void UniverseServer::addClient(UniverseConnection remoteConnection) {
@@ -469,7 +470,7 @@ void UniverseServer::run() {
   TcpServerPtr tcpServer;
 
   while (!m_stop) {
-    if (m_listenTcp && !tcpServer) {
+    if (m_tcpState == TcpState::Yes && !tcpServer) {
       auto& root = Root::singleton();
       auto configuration = root.configuration();
       auto assets = root.assets();
@@ -478,20 +479,27 @@ void UniverseServer::run() {
 
       Logger::info("UniverseServer: listening for incoming TCP connections on {}", bindAddress);
 
-      tcpServer = make_shared<TcpServer>(bindAddress);
-      tcpServer->setAcceptCallback([this, maxPendingConnections](TcpSocketPtr socket) {
+      try {
+        tcpServer = make_shared<TcpServer>(bindAddress);
+        tcpServer->setAcceptCallback([this, maxPendingConnections](TcpSocketPtr socket) {
           RecursiveMutexLocker locker(m_mainLock);
           if (m_connectionAcceptThreads.size() < maxPendingConnections) {
             Logger::info("UniverseServer: Connection received from: {}", socket->remoteAddress());
             m_connectionAcceptThreads.append(Thread::invoke("UniverseServer::acceptConnection", [this, socket]() {
-                  acceptConnection(UniverseConnection(TcpPacketSocket::open(socket)), socket->remoteAddress().address());
-                }));
-          } else {
+              acceptConnection(UniverseConnection(TcpPacketSocket::open(socket)), socket->remoteAddress().address());
+              }));
+          }
+          else {
             Logger::warn("UniverseServer: maximum pending connections, dropping connection from: {}", socket->remoteAddress().address());
           }
-        });
-
-    } else if (!m_listenTcp && tcpServer) {
+          });
+      }
+      catch (StarException const& e) {
+        Logger::error("UniverseServer: Error setting up TCP, cannot accept connections: {}", e.what());
+        m_tcpState = TcpState::Fuck;
+        tcpServer.reset();
+      }
+    } else if (m_tcpState == TcpState::No && tcpServer) {
       Logger::info("UniverseServer: Not listening for incoming TCP connections");
       tcpServer.reset();
     }

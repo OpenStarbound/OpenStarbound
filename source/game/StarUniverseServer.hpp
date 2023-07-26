@@ -114,6 +114,8 @@ private:
     Maybe<Uuid> uuid;
   };
 
+  enum class TcpState : uint8_t { No, Yes, Fuck };
+
   void processUniverseFlags();
   void sendPendingChat();
   void updateTeams();
@@ -218,7 +220,7 @@ private:
   int64_t m_clearBrokenWorldsDeadline;
   int64_t m_lastClockUpdateSent;
   atomic<bool> m_stop;
-  atomic<bool> m_listenTcp;
+  atomic<TcpState> m_tcpState;
 
   mutable ReadersWriterMutex m_clientsLock;
   unsigned m_maxPlayers;
