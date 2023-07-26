@@ -257,7 +257,7 @@ pair<ByteArray, uint64_t> Npc::writeNetState(uint64_t fromVersion) {
   if (auto mode = entityMode()) {
     if (*mode == EntityMode::Master && connectionForEntity(entityId()) != ServerConnectionId) {
       PolyF poly = m_movementController->collisionPoly();
-      m_movementController->setCollisionPoly({});
+      m_movementController->setCollisionPoly({ { 0.0f, -FLT_MAX } });
       auto result = m_netGroup.writeNetState(fromVersion);
       m_movementController->setCollisionPoly(poly);
       return result;
