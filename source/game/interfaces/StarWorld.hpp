@@ -55,7 +55,7 @@ public:
   // passed in pointer directly and initialize it, and entity will have a valid
   // id in this world and be ready for use.  This is always the case on the
   // server, but not *always* the case on the client.
-  virtual void addEntity(EntityPtr const& entity) = 0;
+  virtual void addEntity(EntityPtr const& entity, EntityId entityId = NullEntityId) = 0;
 
   virtual EntityPtr closestEntity(Vec2F const& center, float radius, EntityFilter selector = {}) const = 0;
 

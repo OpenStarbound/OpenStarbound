@@ -135,7 +135,7 @@ public:
   TileModificationList validTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap) const override;
   TileModificationList applyTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap) override;
   EntityPtr entity(EntityId entityId) const override;
-  void addEntity(EntityPtr const& entity) override;
+  void addEntity(EntityPtr const& entity, EntityId entityId = NullEntityId) override;
   EntityPtr closestEntity(Vec2F const& center, float radius, EntityFilter selector = EntityFilter()) const override;
   void forAllEntities(EntityCallback entityCallback) const override;
   void forEachEntity(RectF const& boundBox, EntityCallback callback) const override;

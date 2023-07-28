@@ -713,11 +713,11 @@ EntityPtr WorldServer::entity(EntityId entityId) const {
   return m_entityMap->entity(entityId);
 }
 
-void WorldServer::addEntity(EntityPtr const& entity) {
+void WorldServer::addEntity(EntityPtr const& entity, EntityId entityId) {
   if (!entity)
     return;
 
-  entity->init(this, m_entityMap->reserveEntityId(), EntityMode::Master);
+  entity->init(this, m_entityMap->reserveEntityId(entityId), EntityMode::Master);
   m_entityMap->addEntity(entity);
 
   if (auto tileEntity = as<TileEntity>(entity))

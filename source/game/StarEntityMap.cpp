@@ -31,13 +31,15 @@ Maybe<EntityId> EntityMap::maybeReserveEntityId(EntityId entityId) {
   if (m_spatialMap.size() >= (size_t)(m_endIdSpace - m_beginIdSpace))
     throw EntityMapException("No more entity id space in EntityMap::reserveEntityId");
 
-  if (m_spatialMap.contains(entityId))
+  if (entityId == NullEntityId || m_spatialMap.contains(entityId))
     return {};
   else
     return entityId;
 }
 
 EntityId EntityMap::reserveEntityId(EntityId entityId) {
+  if (entityId == NullEntityId)
+    return reserveEntityId();
   if (auto reserved = maybeReserveEntityId(entityId))
     return *reserved;
 

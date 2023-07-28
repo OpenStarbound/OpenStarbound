@@ -479,16 +479,19 @@ void UniverseClient::stopLua() {
 
 bool UniverseClient::reloadPlayer(Json const& data, Uuid const& uuid) {
   auto player = mainPlayer();
-  auto world = worldClient();
-  bool inWorld = player->inWorld();
-  EntityId entityId = player->entityId();
+  bool playerInWorld = player->inWorld();
+  auto world = as<WorldClient>(player->world());
+
+  EntityId entityId = (playerInWorld || !world->inWorld())
+    ? player->entityId()
+    : connectionEntitySpace(world->connection()).first;
 
   if (m_playerReloadPreCallback)
     m_playerReloadPreCallback();
 
-  if (inWorld)
-    world->removeEntity(entityId, false);
-  else {
+  if (playerInWorld) {
+    world->removeEntity(player->entityId(), false);
+  } else {
     m_respawning = false;
     m_respawnTimer.reset();
   }
@@ -505,7 +508,7 @@ bool UniverseClient::reloadPlayer(Json const& data, Uuid const& uuid) {
     exception = std::current_exception();
   }
 
-  world->addEntity(player);
+  world->addEntity(player, entityId);
 
   CelestialCoordinate coordinate = m_systemWorldClient->location();
   player->universeMap()->addMappedCoordinate(coordinate);

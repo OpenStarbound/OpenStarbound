@@ -1203,7 +1203,7 @@ EntityPtr WorldClient::entity(EntityId entityId) const {
   return m_entityMap->entity(entityId);
 }
 
-void WorldClient::addEntity(EntityPtr const& entity) {
+void WorldClient::addEntity(EntityPtr const& entity, EntityId entityId) {
   if (!entity)
     return;
 
@@ -1211,7 +1211,7 @@ void WorldClient::addEntity(EntityPtr const& entity) {
     return;
 
   if (entity->clientEntityMode() != ClientEntityMode::ClientSlaveOnly) {
-    entity->init(this, m_entityMap->reserveEntityId(), EntityMode::Master);
+    entity->init(this, m_entityMap->reserveEntityId(entityId), EntityMode::Master);
     m_entityMap->addEntity(entity);
   } else {
     auto entityFactory = Root::singleton().entityFactory();
