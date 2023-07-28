@@ -58,6 +58,7 @@ public:
 
   virtual void show();
   virtual void hide();
+  virtual bool visibility() const;
   virtual void toggleVisibility();
   virtual void setVisibility(bool visibility);
 

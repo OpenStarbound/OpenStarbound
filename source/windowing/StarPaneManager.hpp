@@ -63,6 +63,8 @@ public:
 
   void setBackgroundWidget(WidgetPtr bg);
 
+  void dismissWhere(function<bool(PanePtr const&)> func);
+
   // Returns the pane that has captured the keyboard, if any.
   PanePtr keyboardCapturedPane() const;
   // Returns true if the current pane that has captured the keyboard is

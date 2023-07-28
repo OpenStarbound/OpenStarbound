@@ -88,4 +88,8 @@ bool ScriptPane::openWithInventory() const {
   return m_config.getBool("openWithInventory", false);
 }
 
+EntityId ScriptPane::sourceEntityId() const {
+  return m_sourceEntityId;
+}
+
 }

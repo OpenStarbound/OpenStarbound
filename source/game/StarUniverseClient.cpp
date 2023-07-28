@@ -477,7 +477,7 @@ void UniverseClient::stopLua() {
   m_scriptContexts.clear();
 }
 
-bool UniverseClient::reloadPlayer(Json const& data, Uuid const& uuid) {
+bool UniverseClient::reloadPlayer(Json const& data, Uuid const& uuid, bool resetInterfaces) {
   auto player = mainPlayer();
   bool playerInWorld = player->inWorld();
   auto world = as<WorldClient>(player->world());
@@ -487,7 +487,7 @@ bool UniverseClient::reloadPlayer(Json const& data, Uuid const& uuid) {
     : connectionEntitySpace(world->connection()).first;
 
   if (m_playerReloadPreCallback)
-    m_playerReloadPreCallback();
+    m_playerReloadPreCallback(resetInterfaces);
 
   if (playerInWorld) {
     world->removeEntity(player->entityId(), false);
@@ -515,7 +515,7 @@ bool UniverseClient::reloadPlayer(Json const& data, Uuid const& uuid) {
   player->universeMap()->filterMappedObjects(coordinate, m_systemWorldClient->objectKeys());
 
   if (m_playerReloadCallback)
-    m_playerReloadCallback();
+    m_playerReloadCallback(resetInterfaces);
 
   if (exception)
     std::rethrow_exception(exception);
@@ -527,7 +527,7 @@ bool UniverseClient::switchPlayer(Uuid const& uuid) {
   if (uuid == mainPlayer()->uuid())
     return false;
   else if (auto data = m_playerStorage->maybeGetPlayerData(uuid))
-    return reloadPlayer(*data, uuid);
+    return reloadPlayer(*data, uuid, true);
   else
     return false;
 }
@@ -546,11 +546,11 @@ bool UniverseClient::switchPlayer(String const& name) {
     return false;
 }
 
-UniverseClient::Callback& UniverseClient::playerReloadPreCallback() {
+UniverseClient::ReloadPlayerCallback& UniverseClient::playerReloadPreCallback() {
   return m_playerReloadPreCallback;
 }
 
-UniverseClient::Callback& UniverseClient::playerReloadCallback() {
+UniverseClient::ReloadPlayerCallback& UniverseClient::playerReloadCallback() {
   return m_playerReloadCallback;
 }
 

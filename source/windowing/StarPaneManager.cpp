@@ -128,6 +128,23 @@ void PaneManager::setBackgroundWidget(WidgetPtr bg) {
   m_backgroundWidget = bg;
 }
 
+void PaneManager::dismissWhere(function<bool(PanePtr const&)> func) {
+  if (!func)
+    return;
+
+  for (auto& layerPair : m_displayedPanes) {
+    eraseWhere(layerPair.second, [&](auto& panePair) {
+      if (func(panePair.first)) {
+        panePair.first->dismissed();
+        if (panePair.second)
+          panePair.second(panePair.first);
+        return true;
+      }
+      return false;
+    });
+  }
+}
+
 PanePtr PaneManager::keyboardCapturedPane() const {
   for (auto const& layerPair : m_displayedPanes) {
     for (auto const& panePair : layerPair.second) {

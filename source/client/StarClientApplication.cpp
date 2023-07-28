@@ -510,10 +510,23 @@ void ClientApplication::changeState(MainAppState newState) {
     m_universeClient->setLuaCallbacks("input", LuaBindings::makeInputCallbacks());
     m_universeClient->setLuaCallbacks("voice", LuaBindings::makeVoiceCallbacks());
 
-    m_universeClient->playerReloadCallback() = [&]() {
-      if (auto paneManager = m_mainInterface->paneManager()) {
-        if (auto inventory = paneManager->registeredPane<InventoryPane>(MainInterfacePanes::Inventory))
-          inventory->clearChangedSlots();
+    auto heldScriptPanes = make_shared<List<MainInterface::ScriptPaneInfo>>();
+
+    m_universeClient->playerReloadPreCallback() = [&, heldScriptPanes](bool resetInterface) {
+      if (!resetInterface)
+        return;
+
+      m_mainInterface->takeScriptPanes(*heldScriptPanes);
+    };
+
+    m_universeClient->playerReloadCallback() = [&, heldScriptPanes](bool resetInterface) {
+      auto paneManager = m_mainInterface->paneManager();
+      if (auto inventory = paneManager->registeredPane<InventoryPane>(MainInterfacePanes::Inventory))
+        inventory->clearChangedSlots();
+
+      if (resetInterface) {
+        m_mainInterface->reviveScriptPanes(*heldScriptPanes);
+        heldScriptPanes->clear();
       }
     };
 

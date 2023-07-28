@@ -498,22 +498,8 @@ void MainInterface::handleInteractAction(InteractAction interactAction) {
       m_paneManager.dismissPane(m_interactionScriptPanes[sourceEntity]);
 
     ScriptPanePtr scriptPane = make_shared<ScriptPane>(m_client, interactAction.data, sourceEntity);
-    // keep any number of script panes open with null source entities
-    if (sourceEntity != NullEntityId)
-      m_interactionScriptPanes[sourceEntity] = scriptPane;
+    displayScriptPane(scriptPane, sourceEntity);
 
-    if (scriptPane->openWithInventory()) {
-      m_paneManager.displayPane(PaneLayer::Window, scriptPane, [this](PanePtr const&) {
-        if (auto player = m_client->mainPlayer())
-          player->clearSwap();
-        m_paneManager.dismissRegisteredPane(MainInterfacePanes::Inventory);
-      });
-      m_paneManager.displayRegisteredPane(MainInterfacePanes::Inventory);
-      m_paneManager.bringPaneAdjacent(m_paneManager.registeredPane(MainInterfacePanes::Inventory),
-          scriptPane, Root::singleton().assets()->json("/interface.config:bringAdjacentWindowGap").toFloat());
-    } else {
-      m_paneManager.displayPane(PaneLayer::Window, scriptPane);
-    }
   } else if (interactAction.type == InteractActionType::Message) {
     m_client->mainPlayer()->receiveMessage(connectionForEntity(interactAction.entityId),
         interactAction.data.getString("messageType"), interactAction.data.getArray("messageArgs"));
@@ -950,6 +936,38 @@ CanvasWidgetPtr MainInterface::fetchCanvas(String const& canvasName, bool ignore
 
   canvas->setIgnoreInterfaceScale(ignoreInterfaceScale);
   return canvas;
+}
+
+// For when the player swaps characters. We need to completely reload ScriptPanes,
+// because a lot of ScriptPanes do not expect the character to suddenly change and may break or spill data over.
+void MainInterface::takeScriptPanes(List<ScriptPaneInfo>& out) {
+  m_paneManager.dismissWhere([&](PanePtr const& pane) {
+    if (auto scriptPane = as<ScriptPane>(pane)) {
+      if (scriptPane->isDismissed())
+        return false;
+      auto sourceEntityId = scriptPane->sourceEntityId();
+      m_interactionScriptPanes.remove(sourceEntityId);
+      auto& info = out.emplaceAppend();
+      info.scriptPane = scriptPane;
+      info.config = scriptPane->rawConfig();
+      info.sourceEntityId = sourceEntityId;
+      info.visible = scriptPane->visibility();
+      info.position = scriptPane->relativePosition();
+
+      return true;
+    }
+    return false;
+  });
+}
+
+void MainInterface::reviveScriptPanes(List<ScriptPaneInfo>& panes) {
+  for (auto& info : panes) { // this is evil and stupid
+    info.scriptPane->~ScriptPane();
+    new(info.scriptPane.get()) ScriptPane(m_client, info.config, info.sourceEntityId);
+    info.scriptPane->setVisibility(info.visible);
+    displayScriptPane(info.scriptPane, info.sourceEntityId);
+    info.scriptPane->setPosition(info.position);
+  }
 }
 
 PanePtr MainInterface::createEscapeDialog() {
@@ -1540,6 +1558,25 @@ bool MainInterface::overlayClick(Vec2I const& mousePos, MouseButton mouseButton)
     m_client->mainPlayer()->beginTrigger();
 
   return false;
+}
+
+void MainInterface::displayScriptPane(ScriptPanePtr& scriptPane, EntityId sourceEntity) {
+ // keep any number of script panes open with null source entities
+  if (sourceEntity != NullEntityId)
+    m_interactionScriptPanes[sourceEntity] = scriptPane;
+
+  if (scriptPane->openWithInventory()) {
+    m_paneManager.displayPane(PaneLayer::Window, scriptPane, [this](PanePtr const&) {
+      if (auto player = m_client->mainPlayer())
+        player->clearSwap();
+      m_paneManager.dismissRegisteredPane(MainInterfacePanes::Inventory);
+    });
+    m_paneManager.displayRegisteredPane(MainInterfacePanes::Inventory);
+    m_paneManager.bringPaneAdjacent(m_paneManager.registeredPane(MainInterfacePanes::Inventory),
+        scriptPane, Root::singleton().assets()->json("/interface.config:bringAdjacentWindowGap").toFloat());
+  } else {
+    m_paneManager.displayPane(PaneLayer::Window, scriptPane);
+  }
 }
 
 }

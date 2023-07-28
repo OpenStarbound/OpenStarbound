@@ -91,14 +91,15 @@ public:
   void startLua();
   void stopLua();
 
-  bool reloadPlayer(Json const& data, Uuid const& uuid);
+  bool reloadPlayer(Json const& data, Uuid const& uuid, bool resetInterfaces = false);
   bool switchPlayer(Uuid const& uuid);
   bool switchPlayer(size_t index);
   bool switchPlayer(String const& name);
 
   typedef std::function<void()> Callback;
-  Callback& playerReloadPreCallback();
-  Callback& playerReloadCallback();
+  typedef std::function<void(bool)> ReloadPlayerCallback;
+  ReloadPlayerCallback& playerReloadPreCallback();
+  ReloadPlayerCallback& playerReloadCallback();
 
   ClockConstPtr universeClock() const;
   CelestialLogConstPtr celestialLog() const;
@@ -161,8 +162,8 @@ private:
   typedef shared_ptr<ScriptComponent> ScriptComponentPtr;
   StringMap<ScriptComponentPtr> m_scriptContexts;
 
-  Callback m_playerReloadPreCallback;
-  Callback m_playerReloadCallback;
+  ReloadPlayerCallback m_playerReloadPreCallback;
+  ReloadPlayerCallback m_playerReloadCallback;
 };
 
 }

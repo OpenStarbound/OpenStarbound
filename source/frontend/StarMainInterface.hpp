@@ -119,6 +119,16 @@ public:
 
   CanvasWidgetPtr fetchCanvas(String const& canvasName, bool ignoreInterfaceScale = false);
 
+  struct ScriptPaneInfo {
+    ScriptPanePtr scriptPane;
+    Json config;
+    EntityId sourceEntityId;
+    bool visible;
+    Vec2I position;
+  };
+
+  void takeScriptPanes(List<ScriptPaneInfo>& out);
+  void reviveScriptPanes(List<ScriptPaneInfo>& panes);
 private:
   PanePtr createEscapeDialog();
 
@@ -141,6 +151,8 @@ private:
   bool overButton(PolyI buttonPoly, Vec2I const& mousePos) const;
 
   bool overlayClick(Vec2I const& mousePos, MouseButton mouseButton);
+
+  void displayScriptPane(ScriptPanePtr& scriptPane, EntityId sourceEntity);
 
   GuiContext* m_guiContext;
   MainInterfaceConfigConstPtr m_config;

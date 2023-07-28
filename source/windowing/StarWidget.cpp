@@ -219,6 +219,10 @@ void Widget::hide() {
   m_visible = false;
 }
 
+bool Widget::visibility() const {
+  return m_visible;
+}
+
 void Widget::toggleVisibility() {
   m_visible = !m_visible;
 }

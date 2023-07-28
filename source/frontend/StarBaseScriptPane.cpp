@@ -14,7 +14,7 @@
 
 namespace Star {
 
-BaseScriptPane::BaseScriptPane(Json config) : Pane() {
+BaseScriptPane::BaseScriptPane(Json config) : Pane(), m_rawConfig(config) {
   auto& root = Root::singleton();
   auto assets = root.assets();
 
@@ -96,6 +96,9 @@ bool BaseScriptPane::sendEvent(InputEvent const& event) {
 
   return Pane::sendEvent(event);
 }
+
+Json const& BaseScriptPane::config() const { return m_config; }
+Json const& BaseScriptPane::rawConfig() const { return m_rawConfig; }
 
 PanePtr BaseScriptPane::createTooltip(Vec2I const& screenPosition) {
   auto result = m_script.invoke<Json>("createTooltip", screenPosition);

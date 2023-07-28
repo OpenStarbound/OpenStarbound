@@ -25,12 +25,16 @@ public:
   void tick(float dt) override;
 
   bool sendEvent(InputEvent const& event) override;
+  
+  Json const& config() const;
+  Json const& rawConfig() const;
 
   PanePtr createTooltip(Vec2I const& screenPosition) override;
   Maybe<String> cursorOverride(Vec2I const& screenPosition) override;
 protected:
   virtual GuiReaderPtr reader();
   Json m_config;
+  Json m_rawConfig;
 
   GuiReaderPtr m_reader;
 
