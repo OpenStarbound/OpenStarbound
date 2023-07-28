@@ -254,13 +254,15 @@ RectF Npc::collisionArea() const {
 pair<ByteArray, uint64_t> Npc::writeNetState(uint64_t fromVersion) {
   // client-side npcs error nearby vanilla NPC scripts because callScriptedEntity
   // for now, scrungle the collision poly to avoid their queries. hacky :(
-  if (auto mode = entityMode()) {
-    if (*mode == EntityMode::Master && connectionForEntity(entityId()) != ServerConnectionId) {
-      PolyF poly = m_movementController->collisionPoly();
-      m_movementController->setCollisionPoly({ { 0.0f, -FLT_MAX } });
-      auto result = m_netGroup.writeNetState(fromVersion);
-      m_movementController->setCollisionPoly(poly);
-      return result;
+  if (m_npcVariant.overrides.getBool("overrideNetPoly", false)) {
+    if (auto mode = entityMode()) {
+      if (*mode == EntityMode::Master && connectionForEntity(entityId()) != ServerConnectionId) {
+        PolyF poly = m_movementController->collisionPoly();
+        m_movementController->setCollisionPoly({ { 0.0f, -FLT_MAX } });
+        auto result = m_netGroup.writeNetState(fromVersion);
+        m_movementController->setCollisionPoly(poly);
+        return result;
+      }
     }
   }
 
