@@ -219,6 +219,8 @@ void Player::diskLoad(Json const& diskStore) {
   m_codexes = make_shared<PlayerCodexes>(diskStore.get("codexes"));
   m_techs = make_shared<PlayerTech>(diskStore.get("techs"));
   m_identity = HumanoidIdentity(diskStore.get("identity"));
+  m_identityUpdated = true;
+
   setTeam(EntityDamageTeam(diskStore.get("team")));
 
   m_state = State::Idle;
