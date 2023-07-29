@@ -29,6 +29,8 @@ public:
   Json const& config() const;
   Json const& rawConfig() const;
 
+  bool interactive() const override;
+
   PanePtr createTooltip(Vec2I const& screenPosition) override;
   Maybe<String> cursorOverride(Vec2I const& screenPosition) override;
 protected:
@@ -40,6 +42,8 @@ protected:
 
   Map<CanvasWidgetPtr, String> m_canvasClickCallbacks;
   Map<CanvasWidgetPtr, String> m_canvasKeyCallbacks;
+
+  bool m_interactive;
 
   bool m_callbacksAdded;
   LuaUpdatableComponent<LuaBaseComponent> m_script;

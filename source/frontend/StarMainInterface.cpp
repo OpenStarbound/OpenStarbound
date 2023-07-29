@@ -1565,8 +1565,12 @@ void MainInterface::displayScriptPane(ScriptPanePtr& scriptPane, EntityId source
   if (sourceEntity != NullEntityId)
     m_interactionScriptPanes[sourceEntity] = scriptPane;
 
+  PaneLayer layer = PaneLayer::Window;
+  if (auto layerName = scriptPane->config().optString("paneLayer"))
+    layer = PaneLayerNames.getLeft(*layerName);
+
   if (scriptPane->openWithInventory()) {
-    m_paneManager.displayPane(PaneLayer::Window, scriptPane, [this](PanePtr const&) {
+    m_paneManager.displayPane(layer, scriptPane, [this](PanePtr const&) {
       if (auto player = m_client->mainPlayer())
         player->clearSwap();
       m_paneManager.dismissRegisteredPane(MainInterfacePanes::Inventory);
@@ -1575,7 +1579,7 @@ void MainInterface::displayScriptPane(ScriptPanePtr& scriptPane, EntityId source
     m_paneManager.bringPaneAdjacent(m_paneManager.registeredPane(MainInterfacePanes::Inventory),
         scriptPane, Root::singleton().assets()->json("/interface.config:bringAdjacentWindowGap").toFloat());
   } else {
-    m_paneManager.displayPane(PaneLayer::Window, scriptPane);
+    m_paneManager.displayPane(layer, scriptPane);
   }
 }
 

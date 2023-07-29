@@ -9,7 +9,7 @@
 
 namespace Star {
 
-JoinRequestDialog::JoinRequestDialog() {}
+JoinRequestDialog::JoinRequestDialog() : m_confirmed(false) {}
 
 void JoinRequestDialog::displayRequest(String const& userName, function<void(P2PJoinRequestReply)> callback) {
   auto assets = Root::singleton().assets();

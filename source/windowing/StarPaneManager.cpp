@@ -6,6 +6,14 @@
 
 namespace Star {
 
+EnumMap<PaneLayer> const PaneLayerNames{
+  {PaneLayer::Tooltip, "Tooltip"},
+  {PaneLayer::ModalWindow, "ModalWindow"},
+  {PaneLayer::Window, "Window"},
+  {PaneLayer::Hud, "Hud"},
+  {PaneLayer::World, "World"}
+};
+
 PaneManager::PaneManager()
   : m_context(GuiContext::singletonPtr()), m_prevInterfaceScale(1) {
   auto assets = Root::singleton().assets();
@@ -350,24 +358,34 @@ Vec2I PaneManager::calculateNewInterfacePosition(PanePtr const& pane, float inte
   switch (pane->anchor()) {
     case PaneAnchor::None:
       scale = Mat3F::scaling(interfaceScaleRatio, Vec2F(windowSize()) / 2);
+      break;
     case PaneAnchor::BottomLeft:
       scale = Mat3F::scaling(interfaceScaleRatio);
+      break;
     case PaneAnchor::BottomRight:
       scale = Mat3F::scaling(interfaceScaleRatio, {size[0], 0});
+      break;
     case PaneAnchor::TopLeft:
       scale = Mat3F::scaling(interfaceScaleRatio, {0, size[1]});
+      break;
     case PaneAnchor::TopRight:
       scale = Mat3F::scaling(interfaceScaleRatio, size);
+      break;
     case PaneAnchor::CenterTop:
       scale = Mat3F::scaling(interfaceScaleRatio, {size[0] / 2, size[1]});
+      break;
     case PaneAnchor::CenterBottom:
       scale = Mat3F::scaling(interfaceScaleRatio, {size[0] / 2, 0});
+      break;
     case PaneAnchor::CenterLeft:
       scale = Mat3F::scaling(interfaceScaleRatio, {0, size[1] / 2});
+      break;
     case PaneAnchor::CenterRight:
       scale = Mat3F::scaling(interfaceScaleRatio, {size[0], size[1] / 2});
+      break;
     case PaneAnchor::Center:
       scale = Mat3F::scaling(interfaceScaleRatio, size / 2);
+      break;
     default:
       scale = Mat3F::scaling(interfaceScaleRatio, Vec2F(windowSize()) / 2);
   }

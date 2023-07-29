@@ -24,7 +24,8 @@ BaseScriptPane::BaseScriptPane(Json config) : Pane(), m_rawConfig(config) {
   } else {
     m_config = assets->fetchJson(config);
   }
-
+  
+  m_interactive = config.getBool("interactive", true);
   m_reader = make_shared<GuiReader>();
   m_reader->registerCallback("close", [this](Widget*) { dismiss(); });
 
@@ -99,6 +100,8 @@ bool BaseScriptPane::sendEvent(InputEvent const& event) {
 
 Json const& BaseScriptPane::config() const { return m_config; }
 Json const& BaseScriptPane::rawConfig() const { return m_rawConfig; }
+
+bool BaseScriptPane::interactive() const { return m_interactive; }
 
 PanePtr BaseScriptPane::createTooltip(Vec2I const& screenPosition) {
   auto result = m_script.invoke<Json>("createTooltip", screenPosition);

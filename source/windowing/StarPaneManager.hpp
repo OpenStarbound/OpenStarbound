@@ -3,6 +3,7 @@
 
 #include "StarPane.hpp"
 #include "StarOrderedMap.hpp"
+#include "StarBiMap.hpp"
 
 namespace Star {
 
@@ -25,6 +26,8 @@ enum class PaneLayer {
   // handled by GUI panes (such as wires)
   World
 };
+extern EnumMap<PaneLayer> const PaneLayerNames;
+
 
 // This class handles a set of panes to be drawn as a collective windowing
 // interface.  It is a set of panes on separate distinct layers, where each
