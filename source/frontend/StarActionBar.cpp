@@ -12,6 +12,7 @@
 #include "StarPlayer.hpp"
 #include "StarPlayerInventory.hpp"
 #include "StarAssets.hpp"
+#include "StarImageMetadataDatabase.hpp"
 #include "StarItem.hpp"
 #include "StarMerchantInterface.hpp"
 
@@ -50,7 +51,29 @@ ActionBar::ActionBar(MainInterfacePaneManager* paneManager, PlayerPtr player) {
       swapCustomBar();
     });
 
+  auto configuration = Root::singleton().configuration();
+  bool bottomBar = configuration->getPath("inventory.bottomActionBar").optBool().value(false);
+  if (bottomBar)
+    m_config = jsonMerge(m_config, assets->json("/interface/windowconfig/actionbarbottom.config"));
+
   reader.construct(m_config.get("paneLayout"), this);
+  if (bottomBar) {
+    setAnchor(PaneAnchor::CenterBottom);
+    m_anchorOffset[1] *= -1;
+
+    if (!m_bgBody.empty())
+      m_bgBody += "?flipy";
+    if (!m_bgHeader.empty())
+      m_bgHeader += "?flipy";
+    if (!m_bgFooter.empty())
+      m_bgFooter += "?flipy";
+    swap(m_bgHeader, m_bgFooter);
+
+    for (auto& child : m_members) {
+      auto position = child->relativePosition();
+      child->setPosition({position[0], m_bodySize[1] - position[1] - child->size()[1] + 1});
+    }
+  }
 
   for (uint8_t i = 0; i < m_player->inventory()->customBarIndexes(); ++i) {
     auto customBarLeft = fetchChild<ItemSlotWidget>(strf("customBar{}L", i + 1));
