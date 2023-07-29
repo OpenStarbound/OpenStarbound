@@ -25,7 +25,7 @@ BaseScriptPane::BaseScriptPane(Json config) : Pane(), m_rawConfig(config) {
     m_config = assets->fetchJson(config);
   }
   
-  m_interactive = config.getBool("interactive", true);
+  m_interactive = m_config.getBool("interactive", true);
   m_reader = make_shared<GuiReader>();
   m_reader->registerCallback("close", [this](Widget*) { dismiss(); });
 
