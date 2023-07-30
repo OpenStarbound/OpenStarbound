@@ -313,8 +313,8 @@ TileModificationList WorldClient::validTileModifications(TileModificationList co
   if (!inWorld())
     return {};
 
-  return WorldImpl::splitTileModifications(m_tileArray, m_entityMap, modificationList, allowEntityOverlap, [this](Vec2I pos, TileModification) {
-      return !m_predictedTiles.contains(pos) && !isTileProtected(pos);
+  return WorldImpl::splitTileModifications(m_entityMap, modificationList, allowEntityOverlap, m_tileGetterFunction, [this](Vec2I pos, TileModification) {
+      return !isTileProtected(pos);
     }).first;
 }
 
@@ -322,14 +322,13 @@ TileModificationList WorldClient::applyTileModifications(TileModificationList co
   if (!inWorld())
     return {};
 
-  auto result = WorldImpl::splitTileModifications(m_tileArray, m_entityMap, modificationList, allowEntityOverlap, [this](Vec2I pos, TileModification) {
-      return !m_predictedTiles.contains(pos) && !isTileProtected(pos);
+  auto result = WorldImpl::splitTileModifications(m_entityMap, modificationList, allowEntityOverlap, m_tileGetterFunction, [this](Vec2I pos, TileModification) {
+      return !isTileProtected(pos);
     });
 
   if (!result.first.empty()) {
-    for (auto entry : result.first)
-      m_predictedTiles[entry.first] = 0;
-    m_outgoingPackets.append(make_shared<ModifyTileListPacket>(result.first, allowEntityOverlap));
+    informTilePredictions(result.first);
+    m_outgoingPackets.append(make_shared<ModifyTileListPacket>(result.first, true));
   }
 
   return result.second;
@@ -518,7 +517,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
       return a->entityId() < b->entityId();
     });
 
-  m_tileArray->tileEachTo(renderData.tiles, tileRange, [](RenderTile& renderTile, Vec2I const&, ClientTile const& clientTile) {
+  m_tileArray->tileEachTo(renderData.tiles, tileRange, [&](RenderTile& renderTile, Vec2I const& position, ClientTile const& clientTile) {
       renderTile.foreground = clientTile.foreground;
       renderTile.foregroundMod = clientTile.foregroundMod;
 
@@ -539,6 +538,22 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
 
       renderTile.liquidId = clientTile.liquid.liquid;
       renderTile.liquidLevel = floatToByte(clientTile.liquid.level);
+
+      if (!m_predictedTiles.empty()) {
+        if (auto p = m_predictedTiles.ptr(position)) {
+          if (p->liquid) {
+            auto& liquid = *p->liquid;
+            if (liquid.liquid == renderTile.liquidId)
+              renderTile.liquidLevel = floatToByte(clientTile.liquid.level + liquid.level, true);
+            else {
+              renderTile.liquidId = liquid.liquid;
+              renderTile.liquidLevel = floatToByte(liquid.level, true);
+            }
+          }
+
+          p->apply(renderTile);
+        }
+      }
     });
 
   for (auto const& previewTile : previewTiles) {
@@ -991,13 +1006,8 @@ void WorldClient::update(float dt) {
 
   m_lightingCalculator.setMonochrome(Root::singleton().configuration()->get("monochromeLighting").toBool());
 
-  auto predictedTilesIt = makeSMutableMapIterator(m_predictedTiles);
-  while (predictedTilesIt.hasNext()) {
-    auto& entry = predictedTilesIt.next();
-    if (entry.second++ > m_modifiedTilePredictionTimeout) {
-      predictedTilesIt.remove();
-    }
-  }
+  auto expiry = Time::monotonicMilliseconds() + min<int64_t>(m_latency + 100, 2000);
+  eraseWhere(m_predictedTiles, [expiry](auto& pair){ return pair.second.time > expiry; });
 
   // Secret broadcasts are transmitted through DamageNotifications for vanilla server compatibility.
   // Because DamageNotification packets are spoofable, we have to sign the data so other clients can validate that it is legitimate.
@@ -1145,6 +1155,11 @@ void WorldClient::update(float dt) {
 
   if (m_collisionDebug)
     renderCollisionDebug();
+
+  for (auto const& prediction : m_predictedTiles) {
+    auto poly = PolyF(RectF::withCenter(Vec2F(prediction.first) + Vec2F::filled(0.5f), Vec2F::filled(0.875f)));
+    SpatialLogger::logPoly("world", poly, Color::Cyan.toRgba());
+  }
 
   LogMap::set("client_entities", m_entityMap->size());
   LogMap::set("client_sectors", toString(loadedSectors.size()));
@@ -1490,6 +1505,7 @@ void WorldClient::lightingTileGather() {
   auto materialDatabase = Root::singleton().materialDatabase();
 
   // Each column in tileEvalColumns is guaranteed to be no larger than the sector size.
+
   m_tileArray->tileEvalColumns(m_lightingCalculator.calculationRegion(), [&](Vec2I const& pos, ClientTile const* column, size_t ySize) {
     size_t baseIndex = m_lightingCalculator.baseIndexFor(pos);
     for (size_t y = 0; y < ySize; ++y) {
@@ -1552,6 +1568,23 @@ void WorldClient::initWorld(WorldStartPacket const& startPacket) {
   m_worldTemplate = make_shared<WorldTemplate>(startPacket.templateData);
   m_entityMap = make_shared<EntityMap>(m_worldTemplate->size(), entitySpace.first, entitySpace.second);
   m_tileArray = make_shared<ClientTileSectorArray>(m_worldTemplate->size());
+  m_tileGetterFunction = [&, tile = ClientTile()](Vec2I pos) mutable -> ClientTile const& {
+    if (!m_predictedTiles.empty()) {
+      if (auto p = m_predictedTiles.ptr(pos)) {
+        p->apply(tile = m_tileArray->tile(pos));
+        if (p->liquid) {
+          if (p->liquid->liquid == tile.liquid.liquid)
+            tile.liquid.level += p->liquid->level;
+          else {
+            tile.liquid.liquid = p->liquid->liquid;
+            tile.liquid.level = p->liquid->level;
+          }
+        }
+        return tile;
+      }
+    }
+    return m_tileArray->tile(pos);
+  };
   m_damageManager = make_shared<DamageManager>(this, startPacket.clientId);
   m_luaRoot->restart();
   m_luaRoot->tuneAutoGarbageCollection(m_clientConfig.getFloat("luaGcPause"), m_clientConfig.getFloat("luaGcStepMultiplier"));
@@ -1735,7 +1768,33 @@ bool WorldClient::readNetTile(Vec2I const& pos, NetTile const& netTile) {
   if (!tile)
     return false;
 
-  m_predictedTiles.remove(pos);
+  if (!m_predictedTiles.empty()) {
+    auto findPrediction = m_predictedTiles.find(pos);
+    if (findPrediction != m_predictedTiles.end()) {
+      auto& p = findPrediction->second;
+
+      if (p.foreground && *p.foreground == netTile.foreground)
+        p.foreground.reset();
+      if (p.foregroundMod && *p.foregroundMod == netTile.foregroundMod)
+        p.foregroundMod.reset();
+      if (p.foregroundHueShift && *p.foregroundHueShift == netTile.foregroundHueShift)
+        p.foregroundHueShift.reset();
+      if (p.foregroundModHueShift && *p.foregroundModHueShift == netTile.foregroundModHueShift)
+        p.foregroundModHueShift.reset();
+
+      if (p.background && *p.background == netTile.background)
+        p.background.reset();
+      if (p.backgroundMod && *p.backgroundMod == netTile.backgroundMod)
+        p.backgroundMod.reset();
+      if (p.backgroundHueShift && *p.backgroundHueShift == netTile.backgroundHueShift)
+        p.backgroundHueShift.reset();
+      if (p.backgroundModHueShift && *p.backgroundModHueShift == netTile.backgroundModHueShift)
+        p.backgroundModHueShift.reset();
+
+      if (!p)
+        m_predictedTiles.erase(findPrediction);
+    }
+  }
 
   tile->background = netTile.background;
   tile->backgroundHueShift = netTile.backgroundHueShift;
@@ -2075,6 +2134,41 @@ void WorldClient::renderCollisionDebug() {
       if (auto pmc = physics->movingCollision(i)) {
         logPoly(pmc->collision, pmc->position, 1.0f, 1.0f, 1.0f);
       }
+    }
+  }
+}
+
+void WorldClient::informTilePredictions(TileModificationList const& modifications) {
+  auto now = Time::monotonicMilliseconds();
+  for (auto& pair : modifications) {
+    auto& p = m_predictedTiles[pair.first];
+    p.time = now;
+    if (auto placeMaterial = pair.second.ptr<PlaceMaterial>()) {
+      if (placeMaterial->layer == TileLayer::Foreground) {
+        p.foreground = placeMaterial->material;
+        p.foregroundHueShift = placeMaterial->materialHueShift;
+      } else {
+        p.background = placeMaterial->material;
+        p.backgroundHueShift = placeMaterial->materialHueShift;
+      }
+    }
+    else if (auto placeMod = pair.second.ptr<PlaceMod>()) {
+      if (placeMod->layer == TileLayer::Foreground)
+        p.foregroundMod = placeMod->mod;
+      else
+        p.backgroundMod = placeMod->mod;
+    }
+    else if (auto placeColor = pair.second.ptr<PlaceMaterialColor>()) {
+      if (placeColor->layer == TileLayer::Foreground)
+        p.foregroundColorVariant = placeColor->color;
+      else
+        p.backgroundColorVariant = placeColor->color;
+    }
+    else if (auto placeLiquid = pair.second.ptr<PlaceLiquid>()) {
+      if (!p.liquid || p.liquid->liquid != placeLiquid->liquid)
+        p.liquid = LiquidLevel(placeLiquid->liquid, placeLiquid->liquidLevel);
+      else
+        p.liquid->level += placeLiquid->liquidLevel;
     }
   }
 }

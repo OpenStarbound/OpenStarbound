@@ -343,10 +343,10 @@ void TileSectorArray<Tile, SectorSize>::tileEachTo(MultiArray& results, RectI co
           size_t arrayColumnIndex = (x + split.xOffset + xArrayOffset) * results.size(1) + y + yArrayOffset;
           if (column) {
             for (size_t i = 0; i < columnSize; ++i)
-              function(results.atIndex(arrayColumnIndex + i), Vec2I((int)x + split.xOffset, y), column[i]);
+              function(results.atIndex(arrayColumnIndex + i), Vec2I((int)x + split.xOffset, y + i), column[i]);
           } else {
             for (size_t i = 0; i < columnSize; ++i)
-              function(results.atIndex(arrayColumnIndex + i), Vec2I((int)x + split.xOffset, y), m_default);
+              function(results.atIndex(arrayColumnIndex + i), Vec2I((int)x + split.xOffset, y + i), m_default);
           }
           return true;
         }, true);

@@ -203,6 +203,8 @@ private:
     bool operator<(DamageNumberKey const& other) const;
   };
 
+  typedef function<ClientTile const& (Vec2I)> ClientTileGetter;
+
   void lightingTileGather();
   void lightingMain();
 
@@ -234,6 +236,8 @@ private:
   void freshenCollision(RectI const& region);
   void renderCollisionDebug();
 
+  void informTilePredictions(TileModificationList const& modifications);
+
   void setTileProtection(DungeonId dungeonId, bool isProtected);
 
   void setupForceRegions();
@@ -247,7 +251,7 @@ private:
 
   EntityMapPtr m_entityMap;
   ClientTileSectorArrayPtr m_tileArray;
-
+  ClientTileGetter m_tileGetterFunction;
   DamageManagerPtr m_damageManager;
   LuaRootPtr m_luaRoot;
 
@@ -335,7 +339,7 @@ private:
   bool m_altMusicActive;
 
   int m_modifiedTilePredictionTimeout;
-  HashMap<Vec2I, int> m_predictedTiles;
+  HashMap<Vec2I, PredictedTile> m_predictedTiles;
   HashSet<EntityId> m_startupHiddenEntities;
 
   HashMap<DungeonId, float> m_dungeonIdGravity;

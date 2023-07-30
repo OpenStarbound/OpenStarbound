@@ -109,6 +109,22 @@ bool ServerTile::updateCollision(CollisionKind kind) {
   return false;
 }
 
+PredictedTile::operator bool() const {
+  return
+     background
+  || backgroundHueShift
+  || backgroundColorVariant
+  || backgroundMod
+  || backgroundModHueShift
+  || foreground
+  || foregroundHueShift
+  || foregroundColorVariant
+  || foregroundMod
+  || foregroundModHueShift
+  || liquid
+  || collision;
+}
+
 DataStream& operator>>(DataStream& ds, NetTile& tile) {
   ds.read(tile.background);
   if (tile.background == 0) {

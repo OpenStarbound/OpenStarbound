@@ -296,6 +296,8 @@ private:
     List<Vec2I> roots;
   };
 
+  typedef function<ServerTile const& (Vec2I)> ServerTileGetter;
+
   void init(bool firstTime);
 
   // Returns nothing if the processing defined by the given configuration entry
@@ -346,6 +348,7 @@ private:
 
   EntityMapPtr m_entityMap;
   ServerTileSectorArrayPtr m_tileArray;
+  ServerTileGetter m_tileGetterFunction;
   WorldStoragePtr m_worldStorage;
   WorldServerFidelity m_fidelity;
   Json m_fidelityConfig;

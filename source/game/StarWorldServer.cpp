@@ -822,7 +822,7 @@ void WorldServer::setSpawningEnabled(bool spawningEnabled) {
 }
 
 TileModificationList WorldServer::validTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap) const {
-  return WorldImpl::splitTileModifications(m_tileArray, m_entityMap, modificationList, allowEntityOverlap, [this](Vec2I pos, TileModification) {
+  return WorldImpl::splitTileModifications(m_entityMap, modificationList, allowEntityOverlap, m_tileGetterFunction, [this](Vec2I pos, TileModification) {
       return !isTileProtected(pos);
     }).first;
 }
@@ -1235,6 +1235,7 @@ void WorldServer::init(bool firstTime) {
   m_geometry = WorldGeometry(m_worldTemplate->size());
   m_entityMap = m_worldStorage->entityMap();
   m_tileArray = m_worldStorage->tileArray();
+  m_tileGetterFunction = [&](Vec2I pos) -> ServerTile const& { return m_tileArray->tile(pos); };
   m_damageManager = make_shared<DamageManager>(this, ServerConnectionId);
   m_wireProcessor = make_shared<WireProcessor>(m_worldStorage);
   m_luaRoot = make_shared<LuaRoot>();
@@ -1347,7 +1348,7 @@ TileModificationList WorldServer::doApplyTileModifications(TileModificationList 
       continue;
 
     if (auto placeMaterial = modification.ptr<PlaceMaterial>()) {
-      if (!WorldImpl::canPlaceMaterial(m_tileArray, m_entityMap, pos, placeMaterial->layer, placeMaterial->material, allowEntityOverlap))
+      if (!WorldImpl::canPlaceMaterial(m_entityMap, pos, placeMaterial->layer, placeMaterial->material, allowEntityOverlap, m_tileGetterFunction))
         continue;
 
       ServerTile* tile = m_tileArray->modifyTile(pos);
@@ -1396,7 +1397,7 @@ TileModificationList WorldServer::doApplyTileModifications(TileModificationList 
       queueTileUpdates(pos);
 
     } else if (auto placeMod = modification.ptr<PlaceMod>()) {
-      if (!WorldImpl::canPlaceMod(m_tileArray, pos, placeMod->layer, placeMod->mod))
+      if (!WorldImpl::canPlaceMod(pos, placeMod->layer, placeMod->mod, m_tileGetterFunction))
         continue;
 
       ServerTile* tile = m_tileArray->modifyTile(pos);
@@ -1421,7 +1422,7 @@ TileModificationList WorldServer::doApplyTileModifications(TileModificationList 
       queueTileUpdates(pos);
 
     } else if (auto placeMaterialColor = modification.ptr<PlaceMaterialColor>()) {
-      if (!WorldImpl::canPlaceMaterialColorVariant(m_tileArray, pos, placeMaterialColor->layer, placeMaterialColor->color))
+      if (!WorldImpl::canPlaceMaterialColorVariant(pos, placeMaterialColor->layer, placeMaterialColor->color, m_tileGetterFunction))
         continue;
 
       WorldTile* tile = m_tileArray->modifyTile(pos);

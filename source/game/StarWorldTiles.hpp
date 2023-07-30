@@ -119,6 +119,37 @@ struct NetTile {
 DataStream& operator>>(DataStream& ds, NetTile& tile);
 DataStream& operator<<(DataStream& ds, NetTile const& tile);
 
+// For storing predicted tile state.
+struct PredictedTile {
+  int64_t time;
+  Maybe<MaterialId> background;
+  Maybe<MaterialHue> backgroundHueShift;
+  Maybe<MaterialColorVariant> backgroundColorVariant;
+  Maybe<ModId> backgroundMod;
+  Maybe<MaterialHue> backgroundModHueShift;
+  Maybe<MaterialId> foreground;
+  Maybe<MaterialHue> foregroundHueShift;
+  Maybe<MaterialColorVariant> foregroundColorVariant;
+  Maybe<ModId> foregroundMod;
+  Maybe<MaterialHue> foregroundModHueShift;
+  Maybe<LiquidLevel> liquid;
+  Maybe<CollisionKind> collision;
+
+  operator bool() const;
+  template <typename Tile>
+  void apply(Tile& tile) {
+    if (foreground) tile.foreground = *foreground;
+    if (foregroundMod) tile.foregroundMod = *foregroundMod;
+    if (foregroundHueShift) tile.foregroundHueShift = *foregroundHueShift;
+    if (foregroundModHueShift) tile.foregroundModHueShift = *foregroundModHueShift;
+
+    if (background) tile.background = *background;
+    if (backgroundMod) tile.backgroundMod = *backgroundMod;
+    if (backgroundHueShift) tile.backgroundHueShift = *backgroundHueShift;
+    if (backgroundModHueShift) tile.backgroundModHueShift = *backgroundModHueShift;
+  }
+};
+
 // Just the parts of a tile that are used to render.  The members here are laid
 // out specifically to avoid padding bytes so that a fast path can be taken
 // when hashing for chunk render caching.
