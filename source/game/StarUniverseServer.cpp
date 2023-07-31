@@ -1520,19 +1520,29 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
     Logger::warn("UniverseServer: client connection aborted, expected ProtocolRequestPacket");
     return;
   }
+  
+  bool legacyClient = protocolRequest->compressionMode() != PacketCompressionMode::Enabled;
+  connection.setLegacy(legacyClient);
 
+  auto protocolResponse = make_shared<ProtocolResponsePacket>();
+  protocolResponse->setCompressionMode(PacketCompressionMode::Enabled); // Signal that we're OpenStarbound
   if (protocolRequest->requestProtocolVersion != StarProtocolVersion) {
     Logger::warn("UniverseServer: client connection aborted, unsupported protocol version {}, supported version {}",
         protocolRequest->requestProtocolVersion, StarProtocolVersion);
-    connection.pushSingle(make_shared<ProtocolResponsePacket>(false));
+    protocolResponse->allowed = false;
+    connection.pushSingle(protocolResponse);
     connection.sendAll(clientWaitLimit);
     mainLocker.lock();
     m_deadConnections.append({move(connection), Time::monotonicMilliseconds()});
     return;
   }
 
-  connection.pushSingle(make_shared<ProtocolResponsePacket>(true));
+  protocolResponse->allowed = true;
+  connection.pushSingle(protocolResponse);
   connection.sendAll(clientWaitLimit);
+
+  String remoteAddressString = remoteAddress ? toString(*remoteAddress) : "local";
+  Logger::info("UniverseServer: Awaiting connection info from {}, {} client", remoteAddressString, legacyClient ? "Starbound" : "OpenStarbound");
 
   connection.receiveAny(clientWaitLimit);
   auto clientConnect = as<ClientConnectPacket>(connection.pullSingle());
@@ -1547,7 +1557,6 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
   bool administrator = false;
 
   String accountString = !clientConnect->account.empty() ? strf("'{}'", clientConnect->account) : "<anonymous>";
-  String remoteAddressString = remoteAddress ? toString(*remoteAddress) : "local";
 
   auto connectionFail = [&](String message) {
     Logger::warn("UniverseServer: Login attempt failed with account '{}' as player '{}' from address {}, error: {}",

@@ -117,6 +117,12 @@ enum class PacketType : uint8_t {
 };
 extern EnumMap<PacketType> const PacketTypeNames;
 
+enum class PacketCompressionMode : uint8_t {
+  Disabled,
+  Enabled,
+  Automatic
+};
+
 struct Packet {
   virtual ~Packet();
 
@@ -124,6 +130,14 @@ struct Packet {
 
   virtual void read(DataStream& ds) = 0;
   virtual void write(DataStream& ds) const = 0;
+
+  virtual void readLegacy(DataStream& ds);
+  virtual void writeLegacy(DataStream& ds) const;
+
+  PacketCompressionMode compressionMode() const;
+  void setCompressionMode(PacketCompressionMode compressionMode);
+
+  PacketCompressionMode m_compressionMode = PacketCompressionMode::Automatic;
 };
 
 PacketPtr createPacket(PacketType type);
@@ -132,9 +146,7 @@ template <PacketType PacketT>
 struct PacketBase : public Packet {
   static PacketType const Type = PacketT;
 
-  PacketType type() const override {
-    return Type;
-  }
+  PacketType type() const override { return Type; }
 };
 
 struct ProtocolRequestPacket : PacketBase<PacketType::ProtocolRequest> {

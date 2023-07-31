@@ -107,6 +107,10 @@ bool UniverseConnection::receiveAny(unsigned timeout) {
   }
 }
 
+void UniverseConnection::setLegacy(bool legacy) {
+  m_packetSocket->setLegacy(legacy);
+}
+
 Maybe<PacketStats> UniverseConnection::incomingStats() const {
   MutexLocker locker(m_mutex);
   return m_packetSocket->incomingStats();

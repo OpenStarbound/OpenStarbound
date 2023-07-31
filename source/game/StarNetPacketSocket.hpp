@@ -72,6 +72,11 @@ public:
   // Default implementations return nothing.
   virtual Maybe<PacketStats> incomingStats() const;
   virtual Maybe<PacketStats> outgoingStats() const;
+
+  void setLegacy(bool legacy);
+  bool legacy() const;
+private:
+  bool m_legacy = false;
 };
 
 // PacketSocket for local communication.

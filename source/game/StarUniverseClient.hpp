@@ -127,6 +127,7 @@ private:
   StatisticsPtr m_statistics;
   PlayerPtr m_mainPlayer;
 
+  bool m_legacyServer;
   bool m_pause;
   ClockPtr m_universeClock;
   WorldClientPtr m_worldClient;

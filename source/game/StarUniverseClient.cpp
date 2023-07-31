@@ -77,7 +77,13 @@ Maybe<String> UniverseClient::connect(UniverseConnection connection, bool allowA
 
   unsigned timeout = assets->json("/client.config:serverConnectTimeout").toUInt();
 
-  connection.pushSingle(make_shared<ProtocolRequestPacket>(StarProtocolVersion));
+  {
+    auto protocolRequest = make_shared<ProtocolRequestPacket>(StarProtocolVersion);
+    protocolRequest->setCompressionMode(PacketCompressionMode::Enabled);
+    // Signal that we're OpenStarbound. Vanilla Starbound only compresses packets above 64 bytes - by forcing it we can communicate this.
+    // If you know a less cursed way, please let me know.
+    connection.pushSingle(protocolRequest);
+  }
   connection.sendAll(timeout);
   connection.receiveAny(timeout);
 
@@ -87,6 +93,8 @@ Maybe<String> UniverseClient::connect(UniverseConnection connection, bool allowA
   else if (!protocolResponsePacket->allowed)
     return String(strf("Join failed! Server does not support connections with protocol version {}", StarProtocolVersion));
 
+  m_legacyServer = protocolResponsePacket->compressionMode() != PacketCompressionMode::Enabled; // True if server is vanilla
+  connection.setLegacy(m_legacyServer);
   connection.pushSingle(make_shared<ClientConnectPacket>(Root::singleton().assets()->digest(), allowAssetsMismatch, m_mainPlayer->uuid(), m_mainPlayer->name(),
       m_mainPlayer->species(), m_playerStorage->loadShipData(m_mainPlayer->uuid()), m_mainPlayer->shipUpgrades(),
       m_mainPlayer->log()->introComplete(), account));
@@ -121,7 +129,7 @@ Maybe<String> UniverseClient::connect(UniverseConnection connection, bool allowA
     m_celestialDatabase = make_shared<CelestialSlaveDatabase>(move(success->celestialInformation));
     m_systemWorldClient = make_shared<SystemWorldClient>(m_universeClock, m_celestialDatabase, m_mainPlayer->universeMap());
 
-    Logger::info("UniverseClient: Joined server as client {}", success->clientId);
+    Logger::info("UniverseClient: Joined {} server as client {}", m_legacyServer ? "Starbound" : "OpenStarbound", success->clientId);
     return {};
   } else if (auto failure = as<ConnectFailurePacket>(packet)) {
     Logger::error("UniverseClient: Join failed: {}", failure->reason);

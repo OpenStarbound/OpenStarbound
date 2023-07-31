@@ -79,6 +79,18 @@ EnumMap<PacketType> const PacketTypeNames{
 
 Packet::~Packet() {}
 
+void Packet::readLegacy(DataStream& ds) {
+  read(ds);
+}
+void Packet::writeLegacy(DataStream& ds) const {
+  write(ds);
+}
+
+PacketCompressionMode Packet::compressionMode() const
+  { return m_compressionMode; }
+void Packet::setCompressionMode(PacketCompressionMode compressionMode)
+  { m_compressionMode = compressionMode; }
+
 PacketPtr createPacket(PacketType type) {
   switch (type) {
     case PacketType::ProtocolRequest: return make_shared<ProtocolRequestPacket>();
