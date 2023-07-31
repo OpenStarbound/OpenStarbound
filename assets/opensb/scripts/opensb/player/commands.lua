@@ -25,6 +25,18 @@ command("run", function(src)
     return "^#f00;compile error: " .. result
   else
     local success, result = pcall(result)
-    return not success and "^#f00;error: " .. result or sb.printJson(result)
+    if not success then
+      return "^#f00;error: " .. result
+    else
+      local success, printed = pcall(sb.printJson, result)
+      if not success then
+        success, printed = pcall(sb.print, result)
+      end
+      if not success then
+        return "^#f00;could not print return value: " .. printed
+      else
+        return printed
+      end
+    end
   end
 end)
