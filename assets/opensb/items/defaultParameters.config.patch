@@ -1,0 +1,3 @@
+{
+  "materialItems" : { "cooldown" : 0 } // tile prediction makes a cooldown pointless
+}

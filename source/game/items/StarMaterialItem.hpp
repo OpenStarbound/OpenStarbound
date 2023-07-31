@@ -23,6 +23,7 @@ public:
   List<Drawable> nonRotatedDrawables() const override;
 
   void fire(FireMode mode, bool shifting, bool edgeTriggered) override;
+  void endFire(FireMode mode, bool shifting) override;
 
   MaterialId materialId() const;
   MaterialHue materialHueShift() const;
@@ -43,6 +44,7 @@ private:
   float m_altBlockRadius;
   bool m_shifting;
   bool m_multiplace;
+  Maybe<Vec2F> m_lastAimPosition;
 };
 
 }

@@ -27,9 +27,10 @@ MaterialItem::MaterialItem(Json const& config, String const& directory, Json con
 
   setTwoHanded(config.getBool("twoHanded", true));
 
-  setCooldownTime(Root::singleton().assets()->json("/items/defaultParameters.config:materialItems.cooldown").toFloat());
-  m_blockRadius = Root::singleton().assets()->json("/items/defaultParameters.config:blockRadius").toFloat();
-  m_altBlockRadius = Root::singleton().assets()->json("/items/defaultParameters.config:altBlockRadius").toFloat();
+  auto defaultParameters = Root::singleton().assets()->json("/items/defaultParameters.config");
+  setCooldownTime(config.queryFloat("materialItems.cooldown", defaultParameters.queryFloat("materialItems.cooldown")));
+  m_blockRadius = config.getFloat("blockRadius", defaultParameters.getFloat("blockRadius"));
+  m_altBlockRadius = config.getFloat("altBlockRadius", defaultParameters.getFloat("altBlockRadius"));
   m_multiplace = config.getBool("allowMultiplace", BlockCollisionSet.contains(Root::singleton().materialDatabase()->materialCollisionKind(m_material)));
 
   m_shifting = false;
@@ -75,17 +76,48 @@ void MaterialItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
   if (!multiplaceEnabled())
     radius = 1;
 
-  for (auto pos : tileAreaBrush(radius, owner()->aimPosition(), true))
-    modifications.append({pos, PlaceMaterial{layer, materialId(), placementHueShift(pos)}});
+  auto geo = world()->geometry();
+  auto aimPosition = owner()->aimPosition();
+  if (!m_lastAimPosition)
+    m_lastAimPosition = aimPosition;
 
-  // Make sure not to make any more modifications than we have consumables.
-  if (modifications.size() > count())
-    modifications.resize(count());
-  size_t failed = world()->applyTileModifications(modifications, false).size();
-  if (failed < modifications.size()) {
-    FireableItem::fire(mode, shifting, edgeTriggered);
-    consume(modifications.size() - failed);
+  unsigned steps = 1;
+  Vec2F diff = {};
+  if (*m_lastAimPosition != aimPosition) {
+    diff = geo.diff(*m_lastAimPosition, aimPosition);
+    float magnitude = diff.magnitude();
+    if (magnitude > 32) {
+      m_lastAimPosition = aimPosition + diff.normalized() * 32;
+      magnitude = 32;
+    }
+
+    steps = (int)ceil(magnitude);
   }
+
+  bool fail = true;
+  for (int i = 0; i != steps; ++i) {
+    auto placementOrigin = aimPosition + diff * ((float)i / steps);
+    for (Vec2I pos : tileAreaBrush(radius, placementOrigin, true))
+      modifications.append({ pos, PlaceMaterial{layer, materialId(), placementHueShift(pos)} });
+
+    // Make sure not to make any more modifications than we have consumables.
+    if (modifications.size() > count())
+      modifications.resize(count());
+    size_t failed = world()->applyTileModifications(modifications, false).size();
+    if (failed < modifications.size()) {
+      fail = false;
+      consume(modifications.size() - failed);
+    }
+  }
+
+  if (!fail)
+    FireableItem::fire(mode, shifting, edgeTriggered);
+
+  m_lastAimPosition = aimPosition;
+}
+
+void MaterialItem::endFire(FireMode mode, bool shifting) {
+  m_lastAimPosition.reset();
 }
 
 MaterialId MaterialItem::materialId() const {

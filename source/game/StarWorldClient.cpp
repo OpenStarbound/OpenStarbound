@@ -321,17 +321,24 @@ TileModificationList WorldClient::validTileModifications(TileModificationList co
 TileModificationList WorldClient::applyTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap) {
   if (!inWorld())
     return {};
+  
+  auto extraCheck = [this](Vec2I pos, TileModification) {
+    return !isTileProtected(pos);
+  };
 
-  auto result = WorldImpl::splitTileModifications(m_entityMap, modificationList, allowEntityOverlap, m_tileGetterFunction, [this](Vec2I pos, TileModification) {
-      return !isTileProtected(pos);
-    });
+  // thanks to new prediction: do it aggressively until no changes occur
+  auto result = WorldImpl::splitTileModifications(m_entityMap, modificationList, allowEntityOverlap, m_tileGetterFunction, extraCheck);
+  while (true) {
+    if (!result.first.empty()) {
+      informTilePredictions(result.first);
+      m_outgoingPackets.append(make_shared<ModifyTileListPacket>(result.first, true));
 
-  if (!result.first.empty()) {
-    informTilePredictions(result.first);
-    m_outgoingPackets.append(make_shared<ModifyTileListPacket>(result.first, true));
+      auto list = move(result.second);
+      result = WorldImpl::splitTileModifications(m_entityMap, list, allowEntityOverlap, m_tileGetterFunction, extraCheck);
+    }
+    else
+      return result.second;
   }
-
-  return result.second;
 }
 
 float WorldClient::gravity(Vec2F const& pos) const {
