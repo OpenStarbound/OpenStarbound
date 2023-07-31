@@ -1006,8 +1006,16 @@ void WorldClient::update(float dt) {
 
   m_lightingCalculator.setMonochrome(Root::singleton().configuration()->get("monochromeLighting").toBool());
 
-  auto expiry = Time::monotonicMilliseconds() + min<int64_t>(m_latency + 100, 2000);
-  eraseWhere(m_predictedTiles, [expiry](auto& pair){ return pair.second.time > expiry; });
+  float expireTime = min((float)m_latency + 100, 2000.f);
+  auto now = Time::monotonicMilliseconds();
+  eraseWhere(m_predictedTiles, [now, expireTime](auto& pair) {
+    float expiry = (float)(now - pair.second.time) / expireTime;
+    auto center = Vec2F(pair.first) + Vec2F::filled(0.5f);
+    auto size = Vec2F::filled(0.875f - expiry * 0.875f);
+    auto poly = PolyF(RectF::withCenter(center, size));
+    SpatialLogger::logPoly("world", poly, Color::Cyan.mix(Color::Red, expiry).toRgba());
+    return expiry >= 1.0f;
+  });
 
   // Secret broadcasts are transmitted through DamageNotifications for vanilla server compatibility.
   // Because DamageNotification packets are spoofable, we have to sign the data so other clients can validate that it is legitimate.
@@ -1155,11 +1163,6 @@ void WorldClient::update(float dt) {
 
   if (m_collisionDebug)
     renderCollisionDebug();
-
-  for (auto const& prediction : m_predictedTiles) {
-    auto poly = PolyF(RectF::withCenter(Vec2F(prediction.first) + Vec2F::filled(0.5f), Vec2F::filled(0.875f)));
-    SpatialLogger::logPoly("world", poly, Color::Cyan.toRgba());
-  }
 
   LogMap::set("client_entities", m_entityMap->size());
   LogMap::set("client_sectors", toString(loadedSectors.size()));
