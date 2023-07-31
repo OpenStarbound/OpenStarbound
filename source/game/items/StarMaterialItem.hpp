@@ -18,6 +18,7 @@ public:
   ItemPtr clone() const override;
 
   void init(ToolUserEntity* owner, ToolHand hand) override;
+  void uninit() override;
   void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
 
   List<Drawable> nonRotatedDrawables() const override;

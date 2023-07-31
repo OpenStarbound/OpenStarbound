@@ -45,6 +45,10 @@ void MaterialItem::init(ToolUserEntity* owner, ToolHand hand) {
   BeamItem::init(owner, hand);
 }
 
+void MaterialItem::uninit() {
+  m_lastAimPosition.reset();
+}
+
 void MaterialItem::update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) {
   FireableItem::update(dt, fireMode, shifting, moves);
   BeamItem::update(dt, fireMode, shifting, moves);
