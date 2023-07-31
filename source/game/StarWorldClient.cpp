@@ -322,23 +322,27 @@ TileModificationList WorldClient::applyTileModifications(TileModificationList co
   if (!inWorld())
     return {};
   
-  auto extraCheck = [this](Vec2I pos, TileModification) {
-    return !isTileProtected(pos);
-  };
+  // thanks to new prediction: do each one by one so that previous modifications affect placeability
+  
+  TileModificationList success;
+  TileModificationList failures;
+  for (auto const& pair : modificationList) {
+    if (!isTileProtected(pair.first)) {
+      auto result = WorldImpl::validateTileModification(m_entityMap, pair.first, pair.second, allowEntityOverlap, m_tileGetterFunction);
 
-  // thanks to new prediction: do it aggressively until no changes occur
-  auto result = WorldImpl::splitTileModifications(m_entityMap, modificationList, allowEntityOverlap, m_tileGetterFunction, extraCheck);
-  while (true) {
-    if (!result.first.empty()) {
-      informTilePredictions(result.first);
-      m_outgoingPackets.append(make_shared<ModifyTileListPacket>(result.first, true));
-
-      auto list = move(result.second);
-      result = WorldImpl::splitTileModifications(m_entityMap, list, allowEntityOverlap, m_tileGetterFunction, extraCheck);
+      if (result.first) {
+        informTilePrediction(pair.first, pair.second);
+        success.append(pair);
+        continue;
+      }
     }
-    else
-      return result.second;
+    failures.append(pair);
   }
+
+  if (!success.empty())
+    m_outgoingPackets.append(make_shared<ModifyTileListPacket>(move(success), true));
+
+  return failures;
 }
 
 float WorldClient::gravity(Vec2F const& pos) const {
@@ -817,8 +821,41 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
       // player, but this may not be true in the future.  In the future, there
       // may be context hints with tile modifications to figure out what to do
       // with failures.
-      for (auto modification : tileModificationFailure->modifications) {
-        m_predictedTiles.remove(modification.first);
+      for (auto& modification : tileModificationFailure->modifications) {
+        auto findPrediction = m_predictedTiles.find(modification.first);
+        if (findPrediction != m_predictedTiles.end()) {
+          auto& p = findPrediction->second;
+          if (auto placeMaterial = modification.second.ptr<PlaceMaterial>()) {
+            if (placeMaterial->layer == TileLayer::Foreground) {
+              p.foreground.reset();
+              p.foregroundHueShift.reset();
+            }
+            else {
+              p.background.reset();
+              p.backgroundHueShift.reset();
+            }
+          } else if (auto placeMod = modification.second.ptr<PlaceMod>()) {
+            if (placeMod->layer == TileLayer::Foreground) {
+              p.foregroundMod.reset();
+              p.foregroundModHueShift.reset();
+            }
+            else {
+              p.backgroundMod.reset();
+              p.backgroundModHueShift.reset();
+            }
+          } else if (auto placeColor = modification.second.ptr<PlaceMaterialColor>()) {
+            if (placeColor->layer == TileLayer::Foreground)
+              p.foregroundColorVariant.reset();
+            else
+              p.backgroundColorVariant.reset();
+          } else if (auto placeLiquid = modification.second.ptr<PlaceLiquid>()) {
+            p.liquid.reset();
+          }
+
+          if (!p)
+            m_predictedTiles.erase(findPrediction);
+        }
+
         if (auto placeMaterial = modification.second.ptr<PlaceMaterial>()) {
           auto stack = materialDatabase->materialItemDrop(placeMaterial->material);
           tryGiveMainPlayerItem(itemDatabase->item(stack));
@@ -2148,38 +2185,36 @@ void WorldClient::renderCollisionDebug() {
   }
 }
 
-void WorldClient::informTilePredictions(TileModificationList const& modifications) {
+void WorldClient::informTilePrediction(Vec2I const& pos, TileModification const& modification) {
   auto now = Time::monotonicMilliseconds();
-  for (auto& pair : modifications) {
-    auto& p = m_predictedTiles[pair.first];
-    p.time = now;
-    if (auto placeMaterial = pair.second.ptr<PlaceMaterial>()) {
-      if (placeMaterial->layer == TileLayer::Foreground) {
-        p.foreground = placeMaterial->material;
-        p.foregroundHueShift = placeMaterial->materialHueShift;
-      } else {
-        p.background = placeMaterial->material;
-        p.backgroundHueShift = placeMaterial->materialHueShift;
-      }
+  auto& p = m_predictedTiles[pos];
+  p.time = now;
+  if (auto placeMaterial = modification.ptr<PlaceMaterial>()) {
+    if (placeMaterial->layer == TileLayer::Foreground) {
+      p.foreground = placeMaterial->material;
+      p.foregroundHueShift = placeMaterial->materialHueShift;
+    } else {
+      p.background = placeMaterial->material;
+      p.backgroundHueShift = placeMaterial->materialHueShift;
     }
-    else if (auto placeMod = pair.second.ptr<PlaceMod>()) {
-      if (placeMod->layer == TileLayer::Foreground)
-        p.foregroundMod = placeMod->mod;
-      else
-        p.backgroundMod = placeMod->mod;
-    }
-    else if (auto placeColor = pair.second.ptr<PlaceMaterialColor>()) {
-      if (placeColor->layer == TileLayer::Foreground)
-        p.foregroundColorVariant = placeColor->color;
-      else
-        p.backgroundColorVariant = placeColor->color;
-    }
-    else if (auto placeLiquid = pair.second.ptr<PlaceLiquid>()) {
-      if (!p.liquid || p.liquid->liquid != placeLiquid->liquid)
-        p.liquid = LiquidLevel(placeLiquid->liquid, placeLiquid->liquidLevel);
-      else
-        p.liquid->level += placeLiquid->liquidLevel;
-    }
+  }
+  else if (auto placeMod = modification.ptr<PlaceMod>()) {
+    if (placeMod->layer == TileLayer::Foreground)
+      p.foregroundMod = placeMod->mod;
+    else
+      p.backgroundMod = placeMod->mod;
+  }
+  else if (auto placeColor = modification.ptr<PlaceMaterialColor>()) {
+    if (placeColor->layer == TileLayer::Foreground)
+      p.foregroundColorVariant = placeColor->color;
+    else
+      p.backgroundColorVariant = placeColor->color;
+  }
+  else if (auto placeLiquid = modification.ptr<PlaceLiquid>()) {
+    if (!p.liquid || p.liquid->liquid != placeLiquid->liquid)
+      p.liquid = LiquidLevel(placeLiquid->liquid, placeLiquid->liquidLevel);
+    else
+      p.liquid->level += placeLiquid->liquidLevel;
   }
 }
 

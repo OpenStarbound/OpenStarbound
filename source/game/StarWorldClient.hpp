@@ -236,7 +236,7 @@ private:
   void freshenCollision(RectI const& region);
   void renderCollisionDebug();
 
-  void informTilePredictions(TileModificationList const& modifications);
+  void informTilePrediction(Vec2I const& pos, TileModification const& modification);
 
   void setTileProtection(DungeonId dungeonId, bool isProtected);
 

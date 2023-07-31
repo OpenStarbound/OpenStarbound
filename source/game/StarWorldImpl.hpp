@@ -49,10 +49,12 @@ namespace WorldImpl {
   bool canPlaceMaterialColorVariant(Vec2I const& pos, TileLayer layer, MaterialColorVariant color, GetTileFunction& getTile);
   template <typename GetTileFunction>
   bool canPlaceMod(Vec2I const& pos, TileLayer layer, ModId mod, GetTileFunction& getTile);
+  template <typename GetTileFunction>
+  pair<bool, bool> validateTileModification(EntityMapPtr const& entityMap, Vec2I const& pos, TileModification const& modification, bool allowEntityOverlap, GetTileFunction& getTile);
   // Split modification list into good and bad
   template <typename GetTileFunction>
   pair<TileModificationList, TileModificationList> splitTileModifications(EntityMapPtr const& entityMap, TileModificationList const& modificationList,
-    bool allowEntityOverlap, function<bool(Vec2I pos, GetTileFunction& getTile, TileModification modification)> extraCheck = {});
+    bool allowEntityOverlap, GetTileFunction& getTile, function<bool(Vec2I pos, TileModification modification)> extraCheck = {});
 
   template <typename TileSectorArray>
   float windLevel(shared_ptr<TileSectorArray> const& tileSectorArray, Vec2F const& position, float weatherWindLevel);
@@ -314,33 +316,38 @@ namespace WorldImpl {
   }
 
   template <typename GetTileFunction>
-  pair<TileModificationList, TileModificationList> splitTileModifications(EntityMapPtr const& entityMap,
-      TileModificationList const& modificationList, bool allowEntityOverlap, GetTileFunction& getTile, function<bool(Vec2I pos, TileModification modification)> extraCheck) {
+  pair<bool, bool> validateTileModification(EntityMapPtr const& entityMap, Vec2I const& pos, TileModification const& modification, bool allowEntityOverlap, GetTileFunction& getTile) {
+    bool good = false;
+    bool perhaps = false;
+    
+    if (auto placeMaterial = modification.ptr<PlaceMaterial>()) {
+      perhaps = WorldImpl::perhapsCanPlaceMaterial(entityMap, pos, placeMaterial->layer, placeMaterial->material, allowEntityOverlap, getTile);
+      if (perhaps)
+        good = WorldImpl::canPlaceMaterial(entityMap, pos, placeMaterial->layer, placeMaterial->material, allowEntityOverlap, getTile);
+    } else if (auto placeMod = modification.ptr<PlaceMod>()) {
+      good = WorldImpl::canPlaceMod(pos, placeMod->layer, placeMod->mod, getTile);
+    } else if (auto placeMaterialColor = modification.ptr<PlaceMaterialColor>()) {
+      good = WorldImpl::canPlaceMaterialColorVariant(pos, placeMaterialColor->layer, placeMaterialColor->color, getTile);
+    } else if (modification.is<PlaceLiquid>()) {
+      good = getTile(pos).collision == CollisionKind::None;
+    } else {
+      good = false;
+    }
+
+    return { good, perhaps };
+  }
+
+  template <typename GetTileFunction>
+  pair<TileModificationList, TileModificationList> splitTileModifications(EntityMapPtr const& entityMap, TileModificationList const& modificationList,
+    bool allowEntityOverlap, GetTileFunction& getTile, function<bool(Vec2I pos, TileModification modification)> extraCheck) {
     TileModificationList success;
     TileModificationList unknown;
     TileModificationList failures;
     for (auto const& pair : modificationList) {
-      Vec2I pos;
-      TileModification modification;
-      std::tie(pos, modification) = pair;
 
-      bool good = false;
-      bool perhaps = false;
-      if (extraCheck && !extraCheck(pos, modification)) {
-        good = false;
-      } else if (auto placeMaterial = modification.ptr<PlaceMaterial>()) {
-        perhaps = WorldImpl::perhapsCanPlaceMaterial(entityMap, pos, placeMaterial->layer, placeMaterial->material, allowEntityOverlap, getTile);
-        if (perhaps)
-          good = WorldImpl::canPlaceMaterial(entityMap, pos, placeMaterial->layer, placeMaterial->material, allowEntityOverlap, getTile);
-      } else if (auto placeMod = modification.ptr<PlaceMod>()) {
-        good = WorldImpl::canPlaceMod(pos, placeMod->layer, placeMod->mod, getTile);
-      } else if (auto placeMaterialColor = modification.ptr<PlaceMaterialColor>()) {
-        good = WorldImpl::canPlaceMaterialColorVariant(pos, placeMaterialColor->layer, placeMaterialColor->color, getTile);
-      } else if (modification.is<PlaceLiquid>()) {
-        good = getTile(pos).collision == CollisionKind::None;
-      } else {
-        good = false;
-      }
+      bool good = false, perhaps = false;
+      if (!extraCheck || extraCheck(pair.first, pair.second))
+        std::tie(good, perhaps) = validateTileModification(entityMap, pair.first, pair.second, allowEntityOverlap, getTile);
 
       if (good)
         success.append(pair);
