@@ -578,7 +578,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
 
       if (previewTile.liqId != EmptyLiquidId) {
         renderTile.liquidId = previewTile.liqId;
-        renderTile.liquidLevel = 1.0f;
+        renderTile.liquidLevel = 255;
       }
     }
 
