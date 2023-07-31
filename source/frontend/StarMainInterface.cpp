@@ -1042,11 +1042,20 @@ void MainInterface::renderBreath() {
 }
 
 void MainInterface::renderMessages() {
+  if (m_messages.empty())
+    return;
+
   Vec2F totalOffset = {};
   auto imgMetadata = Root::singleton().imageMetadataDatabase();
+  unsigned bottomOffset = Root::singleton().configuration()->getPath("inventory.bottomActionBar").optBool().value(false) ? 32 : 0;
   for (auto& message : m_messages) {
     Vec2F hiddenOffset = Vec2F(m_config->messageHiddenOffset);
-    Vec2F messageOffset = lerp(message->springState, Vec2F(), Vec2F(m_config->messageActiveOffset) - hiddenOffset);
+    Vec2F activeOffset = Vec2F(m_config->messageActiveOffset);
+    if (bottomOffset) {
+      activeOffset[1] += bottomOffset;
+      bottomOffset = 0;
+    }
+    Vec2F messageOffset = lerp(message->springState, Vec2F(), activeOffset - hiddenOffset);
     totalOffset += messageOffset;
     messageOffset = totalOffset + hiddenOffset;
 
