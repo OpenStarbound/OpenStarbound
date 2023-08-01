@@ -227,8 +227,8 @@ ENDIF ()
 # Set C/C++ compiler flags based on build environment...
 
 IF (STAR_COMPILER_GNU)
-  SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wno-unused -Wno-implicit-fallthrough -no-pie")
-  SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -Wall -Wextra -Wno-unused -Wno-implicit-fallthrough -no-pie")
+  SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -rdynamic -Wall -Wextra -Wno-unused -Wno-implicit-fallthrough -no-pie")
+  SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -rdynamic -Wall -Wextra -Wno-unused -Wno-implicit-fallthrough -no-pie")
 
   IF (STAR_SYSTEM_FAMILY_WINDOWS)
     SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mthreads")
@@ -261,8 +261,8 @@ IF (STAR_COMPILER_GNU)
   SET (CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -Ofast")
 
 ELSEIF (STAR_COMPILER_CLANG)
-  SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wuninitialized -Wno-parentheses-equality -Wno-deprecated-declarations")
-  SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -Wall -Wextra -Wuninitialized -Wno-parentheses-equality -Wno-deprecated-declarations")
+  SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wl,-export_dynamic -Wall -Wextra -Wuninitialized -Wno-parentheses-equality -Wno-deprecated-declarations")
+  SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -Wl,-export_dynamic -Wall -Wextra -Wuninitialized -Wno-parentheses-equality -Wno-deprecated-declarations")
 
   IF (STAR_SYSTEM_MACOS)
     SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
