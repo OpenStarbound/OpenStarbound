@@ -5,16 +5,19 @@
 
 namespace Star {
 
+void logPngError(png_structp png_ptr, png_const_charp c) {
+  Logger::debug("PNG error in file: '{}', {}", ((IODevice*)png_get_error_ptr(png_ptr))->deviceName(), c);
+};
+
+void logPngWarning(png_structp png_ptr, png_const_charp c) {
+  Logger::debug("PNG warning in file: '{}', {}", ((IODevice*)png_get_error_ptr(png_ptr))->deviceName(), c);
+};
+
+void readPngData(png_structp pngPtr, png_bytep data, png_size_t length) {
+  ((IODevice*)png_get_io_ptr(pngPtr))->readFull((char*)data, length);
+};
+
 Image Image::readPng(IODevicePtr device) {
-  auto logPngError = [](png_structp png_ptr, png_const_charp c) {
-    Logger::debug("PNG error in file: '{}', {}", (char*)png_get_error_ptr(png_ptr), c);
-  };
-
-  auto readPngData = [](png_structp pngPtr, png_bytep data, png_size_t length) {
-    IODevice* device = (IODevice*)png_get_io_ptr(pngPtr);
-    device->readFull((char*)data, length);
-  };
-
   png_byte header[8];
   device->readFull((char*)header, sizeof(header));
 
@@ -26,7 +29,7 @@ Image Image::readPng(IODevicePtr device) {
     throw ImageException("Internal libPNG error");
 
   // Use custom warning function to suppress cerr warnings
-  png_set_error_fn(png_ptr, (png_voidp)device->deviceName().utf8Ptr(), logPngError, logPngError);
+  png_set_error_fn(png_ptr, (png_voidp)device.get(), logPngError, logPngWarning);
 
   png_infop info_ptr = png_create_info_struct(png_ptr);
   if (!info_ptr) {
@@ -111,15 +114,6 @@ Image Image::readPng(IODevicePtr device) {
 }
 
 tuple<Vec2U, PixelFormat> Image::readPngMetadata(IODevicePtr device) {
-  auto logPngError = [](png_structp png_ptr, png_const_charp c) {
-    Logger::debug("PNG error in file: '{}', {}", (char*)png_get_error_ptr(png_ptr), c);
-  };
-
-  auto readPngData = [](png_structp pngPtr, png_bytep data, png_size_t length) {
-    IODevice* device = (IODevice*)png_get_io_ptr(pngPtr);
-    device->readFull((char*)data, length);
-  };
-
   png_byte header[8];
   device->readFull((char*)header, sizeof(header));
 
@@ -131,7 +125,7 @@ tuple<Vec2U, PixelFormat> Image::readPngMetadata(IODevicePtr device) {
     throw ImageException("Internal libPNG error");
 
   // Use custom warning function to suppress cerr warnings
-  png_set_error_fn(png_ptr, (png_voidp)device->deviceName().utf8Ptr(), logPngError, logPngError);
+  png_set_error_fn(png_ptr, (png_voidp)device.get(), logPngError, logPngWarning);
 
   png_infop info_ptr = png_create_info_struct(png_ptr);
   if (!info_ptr) {

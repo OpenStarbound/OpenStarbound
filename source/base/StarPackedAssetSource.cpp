@@ -95,8 +95,8 @@ StringList PackedAssetSource::assetPaths() const {
 
 IODevicePtr PackedAssetSource::open(String const& path) {
   struct AssetReader : public IODevice {
-    AssetReader(FilePtr file, StreamOffset offset, StreamOffset size)
-      : file(file), fileOffset(offset), assetSize(size), assetPos(0) {
+    AssetReader(FilePtr file, String path, StreamOffset offset, StreamOffset size)
+      : file(file), path(path), fileOffset(offset), assetSize(size), assetPos(0) {
       setMode(IOMode::Read);
     }
 
@@ -119,6 +119,10 @@ IODevicePtr PackedAssetSource::open(String const& path) {
       return assetPos;
     }
 
+    String deviceName() const override {
+      return strf("{}:{}", file->deviceName(), path);
+    }
+
     bool atEnd() override {
       return assetPos >= assetSize;
     }
@@ -133,6 +137,7 @@ IODevicePtr PackedAssetSource::open(String const& path) {
     }
 
     FilePtr file;
+    String path;
     StreamOffset fileOffset;
     StreamOffset assetSize;
     StreamOffset assetPos;
@@ -142,7 +147,7 @@ IODevicePtr PackedAssetSource::open(String const& path) {
   if (!p)
     throw AssetSourceException::format("Requested file '{}' does not exist in the packed assets file", path);
 
-  return make_shared<AssetReader>(m_packedFile, p->first, p->second);
+  return make_shared<AssetReader>(m_packedFile, path, p->first, p->second);
 }
 
 ByteArray PackedAssetSource::read(String const& path) {
