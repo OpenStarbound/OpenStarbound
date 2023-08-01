@@ -46,7 +46,8 @@ Npc::Npc(NpcVariant const& npcVariant)
 
   m_questIndicatorOffset = jsonToVec2F(assets->json("/quests/quests.config:defaultIndicatorOffset"));
 
-  m_clientEntityMode = ClientEntityModeNames.getLeft(npcVariant.overrides.getString("clientEntityMode", "ClientSlaveOnly"));
+  if (npcVariant.overrides)
+    m_clientEntityMode = ClientEntityModeNames.getLeft(npcVariant.overrides.getString("clientEntityMode", "ClientSlaveOnly"));
 
   m_isInteractive.set(false);
 
