@@ -16,6 +16,7 @@ LogSink::~LogSink() {}
 
 void LogSink::setLevel(LogLevel level) {
   m_level = level;
+  Logger::refreshLoggable();
 }
 
 LogLevel LogSink::level() {
@@ -44,11 +45,13 @@ void FileLogSink::log(char const* msg, LogLevel level) {
 void Logger::addSink(LogSinkPtr s) {
   MutexLocker locker(s_mutex);
   s_sinks.insert(s);
+  refreshLoggable();
 }
 
 void Logger::removeSink(LogSinkPtr s) {
   MutexLocker locker(s_mutex);
   s_sinks.erase(s);
+  refreshLoggable();
 }
 
 LogSinkPtr Logger::stdoutSink() {
@@ -59,19 +62,36 @@ LogSinkPtr Logger::stdoutSink() {
 void Logger::removeStdoutSink() {
   MutexLocker locker(s_mutex);
   s_sinks.erase(s_stdoutSink);
+  refreshLoggable();
 }
 
 void Logger::log(LogLevel level, char const* msg) {
-  MutexLocker locker(s_mutex);
-
-  for (auto const& l : s_sinks) {
-    if (l->level() <= level)
-      l->log(msg, level);
+  if (loggable(level)) {
+    MutexLocker locker(s_mutex);
+    for (auto const& l : s_sinks) {
+      if (l->level() <= level)
+        l->log(msg, level);
+    }
   }
+}
+
+bool Logger::loggable(LogLevel level) {
+  return s_loggable[(int)level];
+}
+
+void Logger::refreshLoggable() {
+  Array<bool, 4> loggable;
+  for (auto const& l : s_sinks) {
+    for (auto i = (size_t)l->level(); i != loggable.size(); ++i)
+      loggable[i] = true;
+  }
+  MutexLocker locker(s_mutex);
+  s_loggable = loggable;
 }
 
 shared_ptr<StdoutLogSink> Logger::s_stdoutSink = make_shared<StdoutLogSink>();
 HashSet<LogSinkPtr> Logger::s_sinks{s_stdoutSink};
+Array<bool, 4> Logger::s_loggable = Array<bool, 4>::filled(false);
 Mutex Logger::s_mutex;
 
 String LogMap::getValue(String const& key) {

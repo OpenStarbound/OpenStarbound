@@ -81,9 +81,13 @@ public:
   template <typename... Args>
   static void error(char const* msg, Args const&... args);
 
+  static bool loggable(LogLevel level);
+  static void refreshLoggable();
 private:
+
   static shared_ptr<StdoutLogSink> s_stdoutSink;
   static HashSet<LogSinkPtr> s_sinks;
+  static Array<bool, 4> s_loggable;
   static Mutex s_mutex;
 };
 
@@ -152,13 +156,13 @@ private:
 
 template <typename... Args>
 void Logger::logf(LogLevel level, char const* msg, Args const&... args) {
-  MutexLocker locker(s_mutex);
-  Maybe<std::string> output;
-  for (auto const& l : s_sinks) {
-    if (l->level() <= level) {
-      if (!output)
-        output = strf(msg, args...);
-      l->log(output->c_str(), level);
+  if (loggable(level)) {
+    std::string output = strf(msg, args...);
+    MutexLocker locker(s_mutex);
+    for (auto const& l : s_sinks) {
+      if (l->level() <= level) {
+        l->log(output.c_str(), level);
+      }
     }
   }
 }
