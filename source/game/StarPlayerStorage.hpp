@@ -44,11 +44,13 @@ public:
   Json getMetadata(String const& key);
 
 private:
+  String const& uuidFileName(Uuid const& uuid) const;
   void writeMetadata();
 
   mutable RecursiveMutex m_mutex;
   String m_storageDirectory;
   OrderedHashMap<Uuid, Json> m_savedPlayersCache;
+  BiMap<Uuid, String> m_playerFileNames;
   JsonObject m_metadata;
 };
 

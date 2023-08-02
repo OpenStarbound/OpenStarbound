@@ -39,9 +39,11 @@ PlayerStorage::PlayerStorage(String const& storageDir) {
       String filename = File::relativeTo(m_storageDirectory, file.first);
       if (filename.endsWith(".player")) {
         try {
-          Uuid uuid(file.first.rsplit('.').at(0));
+          auto json = VersionedJson::readFile(filename);
+          Uuid uuid(json.content.getString("uuid"));
           auto& playerCacheData = m_savedPlayersCache[uuid];
-          playerCacheData = entityFactory->loadVersionedJson(VersionedJson::readFile(filename), EntityType::Player);
+          playerCacheData = entityFactory->loadVersionedJson(json, EntityType::Player);
+          m_playerFileNames.insert(uuid, file.first.rsplit('.').at(0));
         } catch (std::exception const& e) {
           Logger::error("Error loading player file, ignoring! {} : {}", filename, outputException(e, false));
         }
@@ -131,11 +133,13 @@ Json PlayerStorage::savePlayer(PlayerPtr const& player) {
   auto uuid = player->uuid();
 
   auto& playerCacheData = m_savedPlayersCache[uuid];
+  if (!m_playerFileNames.hasLeftValue(uuid))
+    m_playerFileNames.insert(uuid, uuid.hex());
   auto newPlayerData = player->diskStore();
   if (playerCacheData != newPlayerData) {
     playerCacheData = newPlayerData;
     VersionedJson versionedJson = entityFactory->storeVersionedJson(EntityType::Player, playerCacheData);
-    VersionedJson::writeFile(versionedJson, File::relativeTo(m_storageDirectory, strf("{}.player", uuid.hex())));
+    VersionedJson::writeFile(versionedJson, File::relativeTo(m_storageDirectory, strf("{}.player", uuidFileName(uuid))));
   }
   return newPlayerData;
 }
@@ -204,7 +208,7 @@ WorldChunks PlayerStorage::loadShipData(Uuid const& uuid) {
   if (!m_savedPlayersCache.contains(uuid))
     throw PlayerException(strf("No such stored player with uuid '{}'", uuid.hex()));
 
-  String filename = File::relativeTo(m_storageDirectory, strf("{}.shipworld", uuid.hex()));
+  String filename = File::relativeTo(m_storageDirectory, strf("{}.shipworld", uuidFileName(uuid)));
   try {
     if (File::exists(filename))
       return WorldStorage::getWorldChunksFromFile(filename);
@@ -223,9 +227,8 @@ void PlayerStorage::applyShipUpdates(Uuid const& uuid, WorldChunks const& update
 
   if (updates.empty())
     return;
-
-  String filename = File::relativeTo(m_storageDirectory, strf("{}.shipworld", uuid.hex()));
-  WorldStorage::applyWorldChunksUpdateToFile(filename, updates);
+  String filePath = File::relativeTo(m_storageDirectory, strf("{}.shipworld", uuidFileName(uuid)));
+  WorldStorage::applyWorldChunksUpdateToFile(filePath, updates);
 }
 
 void PlayerStorage::moveToFront(Uuid const& uuid) {
@@ -238,10 +241,11 @@ void PlayerStorage::backupCycle(Uuid const& uuid) {
 
   auto configuration = Root::singleton().configuration();
   unsigned playerBackupFileCount = configuration->get("playerBackupFileCount").toUInt();
+  auto& fileName = uuidFileName(uuid);
 
-  File::backupFileInSequence(File::relativeTo(m_storageDirectory, strf("{}.player", uuid.hex())), playerBackupFileCount, ".bak");
-  File::backupFileInSequence(File::relativeTo(m_storageDirectory, strf("{}.shipworld", uuid.hex())), playerBackupFileCount, ".bak");
-  File::backupFileInSequence(File::relativeTo(m_storageDirectory, strf("{}.metadata", uuid.hex())), playerBackupFileCount, ".bak");
+  File::backupFileInSequence(File::relativeTo(m_storageDirectory, strf("{}.player", fileName)), playerBackupFileCount, ".bak");
+  File::backupFileInSequence(File::relativeTo(m_storageDirectory, strf("{}.shipworld", fileName)), playerBackupFileCount, ".bak");
+  File::backupFileInSequence(File::relativeTo(m_storageDirectory, strf("{}.metadata", fileName)), playerBackupFileCount, ".bak");
 }
 
 void PlayerStorage::setMetadata(String key, Json value) {
@@ -254,6 +258,13 @@ void PlayerStorage::setMetadata(String key, Json value) {
 
 Json PlayerStorage::getMetadata(String const& key) {
   return m_metadata.value(key);
+}
+
+String const& PlayerStorage::uuidFileName(Uuid const& uuid) const {
+  if (auto fileName = m_playerFileNames.rightPtr(uuid))
+    return *fileName;
+  else
+    throw PlayerException::format("No matching filename for uuid '{}'", uuid.hex());
 }
 
 void PlayerStorage::writeMetadata() {
