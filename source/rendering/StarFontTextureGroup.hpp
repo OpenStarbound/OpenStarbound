@@ -39,7 +39,7 @@ public:
   void addFont(FontPtr const& font, String const& name, bool isDefault = false);
   void clearFonts();
 private:
-  StringMap<FontPtr> m_fonts;
+  CaseInsensitiveStringMap<FontPtr> m_fonts;
   String m_fontName;
   FontPtr m_font;
   FontPtr m_defaultFont;
