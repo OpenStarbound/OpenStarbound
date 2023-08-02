@@ -921,7 +921,7 @@ void ClientApplication::updateRunning(float dt) {
           std::string_view signatureView((char*)signature.data(), signature.size());
           std::string_view audioDataView(voiceData.ptr(), voiceData.size());
           auto broadcast = strf("data\0voice\0{}{}"s, signatureView, audioDataView);
-          worldClient->sendSecretBroadcast(broadcast, true);
+          worldClient->sendSecretBroadcast(broadcast, true, false); // Already compressed by Opus.
         }
         if (auto mainPlayer = m_universeClient->mainPlayer()) {
           auto localSpeaker = m_voice->localSpeaker();

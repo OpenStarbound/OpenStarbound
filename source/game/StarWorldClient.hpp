@@ -155,7 +155,7 @@ public:
   // Functions for sending broadcast messages to other players that can receive them,
   // on completely vanilla servers by smuggling it through a DamageNotification.
   // It's cursed as fuck, but it works.
-  bool sendSecretBroadcast(StringView broadcast, bool raw = false);
+  bool sendSecretBroadcast(StringView broadcast, bool raw = false, bool compress = true);
   bool handleSecretBroadcast(PlayerPtr player, StringView broadcast);
 
   List<ChatAction> pullPendingChatActions();

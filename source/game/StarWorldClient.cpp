@@ -2013,7 +2013,7 @@ void WorldClient::connectWire(WireConnection const& output, WireConnection const
   m_outgoingPackets.append(make_shared<ConnectWirePacket>(output, input));
 }
 
-bool WorldClient::sendSecretBroadcast(StringView broadcast, bool raw) {
+bool WorldClient::sendSecretBroadcast(StringView broadcast, bool raw, bool compress) {
   if (!inWorld() || !m_mainPlayer || !m_mainPlayer->getSecretPropertyView(SECRET_BROADCAST_PUBLIC_KEY))
     return false;
 
@@ -2029,6 +2029,9 @@ bool WorldClient::sendSecretBroadcast(StringView broadcast, bool raw) {
   dmg.damageSourceKind = "nodamage";
   dmg.targetMaterialKind = raw ? broadcast : strf("{}{}{}", SECRET_BROADCAST_PREFIX, StringView((char*)&signature, sizeof(signature)), broadcast);
   dmg.position = m_mainPlayer->position();
+
+  if (!compress)
+    damageNotification->setCompressionMode(PacketCompressionMode::Disabled);
 
   m_outgoingPackets.emplace_back(move(damageNotification));
   return true;
