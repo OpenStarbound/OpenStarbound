@@ -14,7 +14,7 @@ namespace Star {
 
 PlayerStorage::PlayerStorage(String const& storageDir) {
   m_storageDirectory = storageDir;
-
+  m_backupDirectory = File::relativeTo(m_storageDirectory, File::convertDirSeparators("backup"));
   if (!File::isDirectory(m_storageDirectory)) {
     Logger::info("Creating player storage directory");
     File::makeDirectory(m_storageDirectory);
@@ -183,23 +183,25 @@ void PlayerStorage::deletePlayer(Uuid const& uuid) {
 
   m_savedPlayersCache.remove(uuid);
 
-  auto filePrefix = File::relativeTo(m_storageDirectory, uuid.hex());
+  auto uuidHex = uuid.hex();
+  auto storagePrefix = File::relativeTo(m_storageDirectory, uuidHex);
+  auto backupPrefix = File::relativeTo(m_backupDirectory, uuidHex);
 
-  auto removeIfExists = [&filePrefix](String suffix) {
-    if (File::exists(filePrefix + suffix)) {
-      File::remove(filePrefix + suffix);
+  auto removeIfExists = [](String const& prefix, String const& suffix) {
+    if (File::exists(prefix + suffix)) {
+      File::remove(prefix + suffix);
     }
   };
 
-  removeIfExists(".player");
-  removeIfExists(".shipworld");
+  removeIfExists(storagePrefix, ".player");
+  removeIfExists(storagePrefix, ".shipworld");
 
   auto configuration = Root::singleton().configuration();
   unsigned playerBackupFileCount = configuration->get("playerBackupFileCount").toUInt();
 
   for (unsigned i = 1; i <= playerBackupFileCount; ++i) {
-    removeIfExists(strf(".player.bak{}", i));
-    removeIfExists(strf(".shipworld.bak{}", i));
+    removeIfExists(backupPrefix, strf(".player.bak{}", i));
+    removeIfExists(backupPrefix, strf(".shipworld.bak{}", i));
   }
 }
 
@@ -243,9 +245,19 @@ void PlayerStorage::backupCycle(Uuid const& uuid) {
   unsigned playerBackupFileCount = configuration->get("playerBackupFileCount").toUInt();
   auto& fileName = uuidFileName(uuid);
 
-  File::backupFileInSequence(File::relativeTo(m_storageDirectory, strf("{}.player", fileName)), playerBackupFileCount, ".bak");
-  File::backupFileInSequence(File::relativeTo(m_storageDirectory, strf("{}.shipworld", fileName)), playerBackupFileCount, ".bak");
-  File::backupFileInSequence(File::relativeTo(m_storageDirectory, strf("{}.metadata", fileName)), playerBackupFileCount, ".bak");
+  auto path = [&](String const& dir, String const& extension) {
+    return File::relativeTo(dir, strf("{}.{}", fileName, extension));
+  };
+
+  if (!File::isDirectory(m_backupDirectory)) {
+    Logger::info("Creating player backup directory");
+    File::makeDirectory(m_backupDirectory);
+    return;
+  }
+
+  File::backupFileInSequence(path(m_storageDirectory, "player"), path(m_backupDirectory, "player"), playerBackupFileCount, ".bak");
+  File::backupFileInSequence(path(m_storageDirectory, "shipworld"), path(m_backupDirectory, "shipworld"), playerBackupFileCount, ".bak");
+  File::backupFileInSequence(path(m_storageDirectory, "metadata"), path(m_backupDirectory, "metadata"), playerBackupFileCount, ".bak");
 }
 
 void PlayerStorage::setMetadata(String key, Json value) {

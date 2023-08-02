@@ -91,6 +91,7 @@ public:
   static void overwriteFileWithRename(ByteArray const& data, String const& filename, String const& newSuffix = ".new");
   static void overwriteFileWithRename(String const& data, String const& filename, String const& newSuffix = ".new");
 
+  static void backupFileInSequence(String const& initialFile, String const& targetFile, unsigned maximumBackups, String const& backupExtensionPrefix = ".");
   static void backupFileInSequence(String const& targetFile, unsigned maximumBackups, String const& backupExtensionPrefix = ".");
 
   static FilePtr open(String const& filename, IOMode mode);

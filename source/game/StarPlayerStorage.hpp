@@ -49,6 +49,7 @@ private:
 
   mutable RecursiveMutex m_mutex;
   String m_storageDirectory;
+  String m_backupDirectory;
   OrderedHashMap<Uuid, Json> m_savedPlayersCache;
   BiMap<Uuid, String> m_playerFileNames;
   JsonObject m_metadata;

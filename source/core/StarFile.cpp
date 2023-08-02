@@ -102,14 +102,20 @@ void File::overwriteFileWithRename(String const& data, String const& filename, S
   overwriteFileWithRename(data.utf8Ptr(), data.utf8Size(), filename, newSuffix);
 }
 
-void File::backupFileInSequence(String const& targetFile, unsigned maximumBackups, String const& backupExtensionPrefix) {
+void File::backupFileInSequence(String const& initialFile, String const& targetFile, unsigned maximumBackups, String const& backupExtensionPrefix) {
   for (unsigned i = maximumBackups; i > 0; --i) {
-    String curExtension = i == 1 ? "" : strf("{}{}", backupExtensionPrefix, i - 1);
+    bool initial = i == 1;
+    String const& sourceFile = initial ? initialFile : targetFile;
+    String curExtension = initial ? "" : strf("{}{}", backupExtensionPrefix, i - 1);
     String nextExtension = strf("{}{}", backupExtensionPrefix, i);
 
-    if (File::isFile(targetFile + curExtension))
-      File::copy(targetFile + curExtension, targetFile + nextExtension);
+    if (File::isFile(sourceFile + curExtension))
+      File::copy(sourceFile + curExtension, targetFile + nextExtension);
   }
+}
+
+void File::backupFileInSequence(String const& targetFile, unsigned maximumBackups, String const& backupExtensionPrefix) {
+  backupFileInSequence(targetFile, targetFile, maximumBackups, backupExtensionPrefix);
 }
 
 File::File()
