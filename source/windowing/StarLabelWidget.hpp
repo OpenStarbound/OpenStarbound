@@ -19,6 +19,7 @@ public:
   Maybe<unsigned> getTextCharLimit() const;
   void setText(String newText);
   void setFontSize(int fontSize);
+  void setFontMode(FontMode fontMode);
   void setColor(Color newColor);
   void setAnchor(HorizontalAnchor hAnchor, VerticalAnchor vAnchor);
   void setWrapWidth(Maybe<unsigned> wrapWidth);
@@ -37,6 +38,7 @@ private:
 
   String m_text;
   int m_fontSize;
+  FontMode m_fontMode;
   Color m_color;
   HorizontalAnchor m_hAnchor;
   VerticalAnchor m_vAnchor;

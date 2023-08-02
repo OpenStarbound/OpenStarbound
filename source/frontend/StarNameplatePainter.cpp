@@ -87,7 +87,7 @@ void NameplatePainter::render() {
     auto color = Color::rgb(nametag.color);
     color.setAlphaF(nametag.opacity);
     context.setFontColor(color.toRgba());
-    context.setFontMode(FontMode::Shadow);
+    context.setFontMode(FontMode::Normal);
 
     context.renderText(nametag.name, namePosition(bubble.currentPosition));
 

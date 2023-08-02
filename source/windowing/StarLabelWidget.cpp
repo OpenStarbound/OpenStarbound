@@ -41,6 +41,10 @@ void LabelWidget::setFontSize(int fontSize) {
   updateTextRegion();
 }
 
+void LabelWidget::setFontMode(FontMode fontMode) {
+  m_fontMode = fontMode;
+}
+
 void LabelWidget::setColor(Color newColor) {
   m_color = move(newColor);
 }
@@ -82,6 +86,7 @@ RectI LabelWidget::getScissorRect() const {
 void LabelWidget::renderImpl() {
   context()->setFont(m_font);
   context()->setFontSize(m_fontSize);
+  context()->setFontMode(m_fontMode);
   context()->setFontColor(m_color.toRgba());
   context()->setFontProcessingDirectives(m_processingDirectives);
 
@@ -93,6 +98,7 @@ void LabelWidget::renderImpl() {
   context()->renderInterfaceText(m_text, {Vec2F(screenPosition()), m_hAnchor, m_vAnchor, m_wrapWidth, m_textCharLimit});
 
   context()->setDefaultFont();
+  context()->setFontMode(FontMode::Normal);
   context()->setFontProcessingDirectives("");
   context()->setDefaultLineSpacing();
 }

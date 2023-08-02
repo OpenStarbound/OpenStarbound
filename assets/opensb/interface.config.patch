@@ -20,7 +20,8 @@
 
   // Change planet name to support the new internal string formatting.
   "planetNameFormatString" : "- {} -",
-
+  "planetNameDirectives" : "?border=4;000;000",
+  
   "buttonClickSound" : [ "/sfx/interface/button/click.wav" ],
   "buttonReleaseSound" : [ "/sfx/interface/button/release.wav" ],
   "buttonHoverSound" : [ "/sfx/interface/button/hover.wav" ],

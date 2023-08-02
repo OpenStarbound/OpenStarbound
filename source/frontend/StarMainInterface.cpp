@@ -173,6 +173,7 @@ MainInterface::MainInterface(UniverseClientPtr client, WorldPainterPtr painter, 
   auto planetName = make_shared<Pane>();
   m_planetText = make_shared<LabelWidget>();
   m_planetText->setFontSize(m_config->planetNameFontSize);
+  m_planetText->setFontMode(FontMode::Normal);
   m_planetText->setAnchor(HorizontalAnchor::HMidAnchor, VerticalAnchor::VMidAnchor);
   m_planetText->setDirectives(m_config->planetNameDirectives);
   planetName->disableScissoring();
@@ -698,29 +699,35 @@ void MainInterface::update(float dt) {
       it++;
   }
 
-  auto worldId = m_client->playerWorld();
-  if (worldId.is<CelestialWorldId>()) {
-    if (m_planetNameTimer.tick(dt))
+  bool playerInWorld = m_client->mainPlayer()->inWorld();
+  if (m_cinematicOverlay->completed()) {
+    if (m_planetNameTimer.tick(dt)) {
       m_paneManager.dismissRegisteredPane(MainInterfacePanes::PlanetText);
-    else
-      m_paneManager.displayRegisteredPane(MainInterfacePanes::PlanetText);
+    } else {
+      if (playerInWorld) {
+        String worldName;
+        if (auto worldTemplate = m_client->worldClient()->currentTemplate())
+          worldName = worldTemplate->worldName();
 
-    if (auto parameters = m_client->celestialDatabase()->parameters(worldId.get<CelestialWorldId>()))
-      m_planetText->setText(strf(m_config->planetNameFormatString.utf8Ptr(), parameters->name()));
+        if (!worldName.empty()) {
+          m_planetText->setText(strf(m_config->planetNameFormatString.utf8Ptr(), worldName));
+          m_paneManager.displayRegisteredPane(MainInterfacePanes::PlanetText);
+        }
+      }
 
-    Color textColor = Color::White; // probably need to make this jsonable
-    float fadeTimer = m_planetNameTimer.percent();
-    if (fadeTimer < m_config->planetNameFadeTime)
-      textColor.setAlphaF(fadeTimer / m_config->planetNameFadeTime);
+      Color textColor = Color::White; // probably need to make this jsonable
+      float fadeTimer = m_planetNameTimer.timer;
+      if (fadeTimer < m_config->planetNameFadeTime)
+        textColor.setAlphaF(fadeTimer / m_config->planetNameFadeTime);
 
-    m_planetText->setColor(textColor);
-
-  } else {
-    m_paneManager.dismissRegisteredPane(MainInterfacePanes::PlanetText);
+      m_planetText->setColor(textColor);
+    }
+  } else if (!playerInWorld) {
     m_planetNameTimer.reset();
+    m_paneManager.dismissRegisteredPane(MainInterfacePanes::PlanetText);
   }
 
-  for (auto containerResult : m_containerInteractor->pullContainerResults()) {
+  for (auto& containerResult : m_containerInteractor->pullContainerResults()) {
     if (!m_containerPane || !m_containerPane->giveContainerResult(containerResult)) {
       if (!m_inventoryWindow->giveContainerResult(containerResult)) {
         for (auto item : containerResult) {
