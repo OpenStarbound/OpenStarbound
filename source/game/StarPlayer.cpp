@@ -1334,7 +1334,7 @@ InteractiveEntityPtr Player::bestInteractionEntity(bool includeNearby) {
     return {};
 
   InteractiveEntityPtr interactiveEntity;
-  if (auto entity = world()->getInteractiveInRange(m_aimPosition, position(), m_interactRadius)) {
+  if (auto entity = world()->getInteractiveInRange(m_aimPosition, isAdmin() ? m_aimPosition : position(), m_interactRadius)) {
     interactiveEntity = entity;
   } else if (includeNearby) {
     Vec2F interactBias = m_walkIntoInteractBias;
@@ -1346,7 +1346,7 @@ InteractiveEntityPtr Player::bestInteractionEntity(bool includeNearby) {
       interactiveEntity = entity;
   }
 
-  if (interactiveEntity && world()->canReachEntity(position(), interactRadius(), interactiveEntity->entityId()))
+  if (interactiveEntity && (isAdmin() || world()->canReachEntity(position(), interactRadius(), interactiveEntity->entityId())))
     return interactiveEntity;
   return {};
 }
@@ -1478,6 +1478,10 @@ float Player::toolRadius() const {
 
 float Player::interactRadius() const {
   return m_interactRadius;
+}
+
+void Player::setInteractRadius(float interactRadius) {
+  m_interactRadius = interactRadius;
 }
 
 List<InteractAction> Player::pullInteractActions() {
@@ -1822,7 +1826,7 @@ bool Player::inInteractionRange() const {
 }
 
 bool Player::inInteractionRange(Vec2F aimPos) const {
-  return world()->geometry().diff(aimPos, position()).magnitude() < interactRadius();
+  return isAdmin() || world()->geometry().diff(aimPos, position()).magnitude() < interactRadius();
 }
 
 bool Player::inToolRange() const {
@@ -1830,7 +1834,7 @@ bool Player::inToolRange() const {
 }
 
 bool Player::inToolRange(Vec2F const& aimPos) const {
-  return world()->geometry().diff(aimPos, position()).magnitude() < toolRadius();
+  return isAdmin() || world()->geometry().diff(aimPos, position()).magnitude() < toolRadius();
 }
 
 void Player::getNetStates(bool initial) {

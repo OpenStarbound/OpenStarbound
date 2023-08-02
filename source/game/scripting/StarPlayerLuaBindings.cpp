@@ -17,27 +17,27 @@ namespace Star {
 LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
   LuaCallbacks callbacks;
 
-  callbacks.registerCallback("humanoidIdentity",    [player]()         { return player->humanoid()->identity().toJson();  });
+  callbacks.registerCallback(   "humanoidIdentity", [player]()         { return player->humanoid()->identity().toJson();  });
   callbacks.registerCallback("setHumanoidIdentity", [player](Json const& id) { player->setIdentity(HumanoidIdentity(id)); });
 
-  callbacks.registerCallback("bodyDirectives",    [player]()       { return player->identity().bodyDirectives;  });
+  callbacks.registerCallback(   "bodyDirectives", [player]()   { return player->identity().bodyDirectives;      });
   callbacks.registerCallback("setBodyDirectives", [player](String const& str) { player->setBodyDirectives(str); });
 
-  callbacks.registerCallback("emoteDirectives",    [player]() { return player->identity().emoteDirectives;        });
+  callbacks.registerCallback(   "emoteDirectives", [player]()   { return player->identity().emoteDirectives;      });
   callbacks.registerCallback("setEmoteDirectives", [player](String const& str) { player->setEmoteDirectives(str); });
 
-  callbacks.registerCallback("hairGroup",         [player]() { return player->identity().hairGroup;        });
+  callbacks.registerCallback(   "hairGroup",      [player]()   { return player->identity().hairGroup;      });
   callbacks.registerCallback("setHairGroup",      [player](String const& str) { player->setHairGroup(str); });
-  callbacks.registerCallback("hairType",          [player]() { return player->identity().hairType;        });
+  callbacks.registerCallback(   "hairType",       [player]()   { return player->identity().hairType;      });
   callbacks.registerCallback("setHairType",       [player](String const& str) { player->setHairType(str); });
-  callbacks.registerCallback("hairDirectives",    [player]()       { return player->identity().hairDirectives;  });
+  callbacks.registerCallback(   "hairDirectives", [player]()   { return player->identity().hairDirectives;     });
   callbacks.registerCallback("setHairDirectives", [player](String const& str) { player->setHairDirectives(str); });
 
-  callbacks.registerCallback("facialHairGroup",         [player]() { return player->identity().facialHairGroup;        });
+  callbacks.registerCallback(   "facialHairGroup",      [player]()   { return player->identity().facialHairGroup;      });
   callbacks.registerCallback("setFacialHairGroup",      [player](String const& str) { player->setFacialHairGroup(str); });
-  callbacks.registerCallback("facialHairType",          [player]() { return player->identity().facialHairType;        });
+  callbacks.registerCallback(   "facialHairType",       [player]()   { return player->identity().facialHairType;      });
   callbacks.registerCallback("setFacialHairType",       [player](String const& str) { player->setFacialHairType(str); });
-  callbacks.registerCallback("facialHairDirectives",    [player]()       { return player->identity().facialHairDirectives;  });
+  callbacks.registerCallback(   "facialHairDirectives", [player]()   { return player->identity().facialHairDirectives;      });
   callbacks.registerCallback("setFacialHairDirectives", [player](String const& str) { player->setFacialHairDirectives(str); });
 
   callbacks.registerCallback("hair", [player]() {
@@ -85,24 +85,27 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
     }
   });
 
-  callbacks.registerCallback("name",    [player]()                   { return player->name(); });
+  callbacks.registerCallback(   "name", [player]()                   { return player->name(); });
   callbacks.registerCallback("setName", [player](String const& name) { player->setName(name); });
 
-  callbacks.registerCallback("species",    [player]()                      { return player->species();    });
+  callbacks.registerCallback(   "species", [player]()                      { return player->species();    });
   callbacks.registerCallback("setSpecies", [player](String const& species) { player->setSpecies(species); });
 
-  callbacks.registerCallback("imagePath",    [player]()                        { return player->identity().imagePath;    });
+  callbacks.registerCallback(   "imagePath", [player]()                        { return player->identity().imagePath;    });
   callbacks.registerCallback("setImagePath", [player](Maybe<String> const& imagePath) { player->setImagePath(imagePath); });
 
-  callbacks.registerCallback("gender",    [player]()                     { return GenderNames.getRight(player->gender());  });
+  callbacks.registerCallback(   "gender", [player]()                     { return GenderNames.getRight(player->gender());  });
   callbacks.registerCallback("setGender", [player](String const& gender) { player->setGender(GenderNames.getLeft(gender)); });
 
-  callbacks.registerCallback("personality",    [player]() { return jsonFromPersonality(player->identity().personality); });
+  callbacks.registerCallback(   "personality", [player]() { return jsonFromPersonality(player->identity().personality); });
   callbacks.registerCallback("setPersonality", [player](Json const& personalityConfig) {
     Personality const& oldPersonality = player->identity().personality;
     Personality newPersonality = oldPersonality;
     player->setPersonality(parsePersonality(newPersonality, personalityConfig));
   });
+
+  callbacks.registerCallback(   "interactRadius", [player]()         { return player->interactRadius();       });
+  callbacks.registerCallback("setInteractRadius", [player](float radius) { player->setInteractRadius(radius); });
 
   callbacks.registerCallback("id",       [player]() { return player->entityId(); });
   callbacks.registerCallback("uniqueId", [player]() { return player->uniqueId(); });

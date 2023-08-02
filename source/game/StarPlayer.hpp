@@ -147,6 +147,7 @@ public:
 
   float toolRadius() const;
   float interactRadius() const override;
+  void setInteractRadius(float interactRadius);
   List<InteractAction> pullInteractActions();
 
   uint64_t currency(String const& currencyType) const;
