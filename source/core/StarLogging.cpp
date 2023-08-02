@@ -85,7 +85,6 @@ void Logger::refreshLoggable() {
     for (auto i = (size_t)l->level(); i != loggable.size(); ++i)
       loggable[i] = true;
   }
-  MutexLocker locker(s_mutex);
   s_loggable = loggable;
 }
 
