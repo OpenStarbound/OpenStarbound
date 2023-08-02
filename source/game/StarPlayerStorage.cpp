@@ -43,7 +43,7 @@ PlayerStorage::PlayerStorage(String const& storageDir) {
           Uuid uuid(json.content.getString("uuid"));
           auto& playerCacheData = m_savedPlayersCache[uuid];
           playerCacheData = entityFactory->loadVersionedJson(json, EntityType::Player);
-          m_playerFileNames.insert(uuid, file.first.rsplit('.').at(0));
+          m_playerFileNames.insert(uuid, file.first.rsplit('.', 1).at(0));
         } catch (std::exception const& e) {
           Logger::error("Error loading player file, ignoring! {} : {}", filename, outputException(e, false));
         }
