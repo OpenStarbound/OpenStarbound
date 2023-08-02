@@ -1,0 +1,34 @@
+{
+  "projectileName" : "opensb:playerloading",
+  "image" : "/projectiles/invisibleprojectile/invisibleprojectile.png",
+  "processing" : "?crop=0;0;1;1?multiply=0000?replace;0000=fff?scalenearest=15?blendmult=/animations/chatting/menu.png:1;0;0?multiply=fffffffe",
+  "damageTeam" : { "type" : "ghostly" },
+  "damageKind" : "default",
+  "power" : 0,
+  "acceleration" : 0,
+  "speed" : 0,
+  "timeToLive" : 0,
+
+  "periodicActions" : [
+    {
+      "time" : 0.00,
+      "repeat" : false,
+      "action" : "sound",
+      "options" : [ "/sfx/objects/mannequin_open.ogg" ]
+    }
+  ],
+
+  "actionOnReap" : [
+    {
+      "action" : "sound",
+      "options" : [ "/sfx/objects/mannequin_close.ogg" ]
+    }
+  ],
+
+  "movementSettings" : {
+    "collisionEnabled" : true,
+    "gravityEnabled" : false,
+    "physicsEffectCategories" : [],
+    "collisionPoly" : []
+  }
+}

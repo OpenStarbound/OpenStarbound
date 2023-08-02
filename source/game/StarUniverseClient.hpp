@@ -91,7 +91,7 @@ public:
   void startLua();
   void stopLua();
 
-  bool reloadPlayer(Json const& data, Uuid const& uuid, bool resetInterfaces = false);
+  bool reloadPlayer(Json const& data, Uuid const& uuid, bool resetInterfaces = false, bool showIndicator = false);
   bool switchPlayer(Uuid const& uuid);
   bool switchPlayer(size_t index);
   bool switchPlayer(String const& name);

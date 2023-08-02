@@ -212,6 +212,8 @@ private:
   void clearWorld();
   void tryGiveMainPlayerItem(ItemPtr item);
 
+  void notifyEntityCreate(EntityPtr const& entity);
+
   // Queues pending (step based) updates to server,
   void queueUpdatePackets();
   void handleDamageNotifications();

@@ -526,7 +526,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotation) {
   auto backArmDrawable = [&](String const& frameSet, Directives const& directives) -> Drawable {
     String image = strf("{}:{}", frameSet, backHand.backFrame);
     Drawable backArm = Drawable::makeImage(move(image), 1.0f / TilePixels, true, backArmFrameOffset);
-    backArm.imagePart().addDirectives(directives);
+    backArm.imagePart().addDirectives(directives, true);
     backArm.rotate(backHand.angle, backArmFrameOffset + m_backArmRotationCenter + m_backArmOffset);
     return backArm;
   };
@@ -710,7 +710,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotation) {
   auto frontArmDrawable = [&](String const& frameSet, Directives const& directives) -> Drawable {
     String image = strf("{}:{}", frameSet, frontHand.frontFrame);
     Drawable frontArm = Drawable::makeImage(image, 1.0f / TilePixels, true, frontArmFrameOffset);
-    frontArm.imagePart().addDirectives(directives);
+    frontArm.imagePart().addDirectives(directives, true);
     frontArm.rotate(frontHand.angle, frontArmFrameOffset + m_frontArmRotationCenter);
     return frontArm;
   };

@@ -137,7 +137,8 @@ private:
   float m_initialSpeed;
   float m_power;
   float m_powerMultiplier;
-  String m_imageDirectives;
+  Directives m_imageDirectives;
+  String m_imageSuffix;
   Json m_damageTeam;
   String m_damageKind;
   DamageType m_damageType;

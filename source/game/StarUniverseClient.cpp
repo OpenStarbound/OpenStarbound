@@ -5,6 +5,7 @@
 #include "StarVersion.hpp"
 #include "StarRoot.hpp"
 #include "StarConfiguration.hpp"
+#include "StarProjectileDatabase.hpp"
 #include "StarPlayerStorage.hpp"
 #include "StarPlayer.hpp"
 #include "StarPlayerLog.hpp"
@@ -485,7 +486,7 @@ void UniverseClient::stopLua() {
   m_scriptContexts.clear();
 }
 
-bool UniverseClient::reloadPlayer(Json const& data, Uuid const& uuid, bool resetInterfaces) {
+bool UniverseClient::reloadPlayer(Json const& data, Uuid const& uuid, bool resetInterfaces, bool showIndicator) {
   auto player = mainPlayer();
   bool playerInWorld = player->inWorld();
   auto world = as<WorldClient>(player->world());
@@ -497,7 +498,20 @@ bool UniverseClient::reloadPlayer(Json const& data, Uuid const& uuid, bool reset
   if (m_playerReloadPreCallback)
     m_playerReloadPreCallback(resetInterfaces);
 
+  ProjectilePtr indicator;
+
   if (playerInWorld) {
+    if (showIndicator) {
+      // EntityCreatePacket for player entities can be pretty big.
+      // We can show a loading projectile to other players while the create packet uploads.
+      auto projectileDb = Root::singleton().projectileDatabase();
+      auto config = projectileDb->projectileConfig("opensb:playerloading");
+      indicator = projectileDb->createProjectile("stationpartsound", config);
+      indicator->setInitialPosition(player->position());
+      indicator->setInitialDirection({ 1.0f, 0.0f });
+      world->addEntity(indicator);
+    }
+
     world->removeEntity(player->entityId(), false);
   } else {
     m_respawning = false;
@@ -518,6 +532,9 @@ bool UniverseClient::reloadPlayer(Json const& data, Uuid const& uuid, bool reset
 
   world->addEntity(player, entityId);
 
+  if (indicator && indicator->inWorld())
+    world->removeEntity(indicator->entityId(), false);
+
   CelestialCoordinate coordinate = m_systemWorldClient->location();
   player->universeMap()->addMappedCoordinate(coordinate);
   player->universeMap()->filterMappedObjects(coordinate, m_systemWorldClient->objectKeys());
@@ -535,7 +552,7 @@ bool UniverseClient::switchPlayer(Uuid const& uuid) {
   if (uuid == mainPlayer()->uuid())
     return false;
   else if (auto data = m_playerStorage->maybeGetPlayerData(uuid))
-    return reloadPlayer(*data, uuid, true);
+    return reloadPlayer(*data, uuid, true, true);
   else
     return false;
 }

@@ -358,7 +358,9 @@ void Projectile::render(RenderCallback* renderCallback) {
 
   m_effectEmitter->render(renderCallback);
 
-  Drawable drawable = Drawable::makeImage(drawableFrame(), 1.0f / TilePixels, true, Vec2F());
+  String image = strf("{}:{}{}", m_config->image, m_frame, m_imageSuffix);
+  Drawable drawable = Drawable::makeImage(image, 1.0f / TilePixels, true, Vec2F());
+  drawable.imagePart().addDirectives(m_imageDirectives, true);
   if (m_config->flippable) {
     auto angleSide = getAngleSide(m_movementController->rotation(), true);
     if (angleSide.second == Direction::Left)
@@ -539,7 +541,8 @@ void Projectile::setFrame(int frame) {
 }
 
 String Projectile::drawableFrame() {
-  return strf("{}:{}{}", m_config->image, m_frame, m_imageDirectives);
+  String str = strf("{}:{}{}", m_config->image, m_frame, m_imageSuffix);
+  return m_imageDirectives.addToString(str);
 }
 
 bool Projectile::ephemeral() const {
@@ -896,7 +899,22 @@ void Projectile::setup() {
   m_acceleration = m_parameters.getFloat("acceleration", m_config->acceleration);
   m_power = m_parameters.getFloat("power", m_config->power);
   m_powerMultiplier = m_parameters.getFloat("powerMultiplier", 1.0f);
-  m_imageDirectives = m_parameters.getString("processing", "");
+  { // it is possible to shove a frame name in processing. I hope nobody actually does this but account for it...
+    String processing = m_parameters.getString("processing", "");
+    auto begin = processing.utf8().find_first_of('?');
+    if (begin == NPos) {
+      m_imageDirectives = "";
+      m_imageSuffix = move(processing);
+    }
+    else if (begin == 0) {
+      m_imageDirectives = move(processing);
+      m_imageSuffix = "";
+    }
+    else {
+      m_imageDirectives = (String)processing.utf8().substr(begin);
+      m_imageSuffix = processing.utf8().substr(0, begin);
+    }
+  }
   m_persistentAudioFile = m_parameters.getString("persistentAudio", m_config->persistentAudio);
 
   m_damageKind = m_parameters.getString("damageKind", m_config->damageKind);

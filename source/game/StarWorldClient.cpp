@@ -1275,6 +1275,7 @@ void WorldClient::addEntity(EntityPtr const& entity, EntityId entityId) {
   if (entity->clientEntityMode() != ClientEntityMode::ClientSlaveOnly) {
     entity->init(this, m_entityMap->reserveEntityId(entityId), EntityMode::Master);
     m_entityMap->addEntity(entity);
+    notifyEntityCreate(entity);
   } else {
     auto entityFactory = Root::singleton().entityFactory();
     m_outgoingPackets.append(make_shared<SpawnEntityPacket>(entity->entityType(), entityFactory->netStoreEntity(entity), entity->writeNetState().first));
@@ -1358,15 +1359,7 @@ void WorldClient::queueUpdatePackets() {
   if (m_currentStep % m_clientConfig.getInt("worldClientStateUpdateDelta") == 0)
     m_outgoingPackets.append(make_shared<WorldClientStateUpdatePacket>(m_clientState.writeDelta()));
 
-  m_entityMap->forAllEntities([&](EntityPtr const& entity) {
-      if (entity->isMaster() && !m_masterEntitiesNetVersion.contains(entity->entityId())) {
-        // Server was unaware of this entity until now
-        auto firstNetState = entity->writeNetState();
-        m_masterEntitiesNetVersion[entity->entityId()] = firstNetState.second;
-        m_outgoingPackets.append(make_shared<EntityCreatePacket>(entity->entityType(),
-              entityFactory->netStoreEntity(entity), move(firstNetState.first), entity->entityId()));
-      }
-    });
+  m_entityMap->forAllEntities([&](EntityPtr const& entity) { notifyEntityCreate(entity); });
 
   if (m_currentStep % m_interpolationTracker.entityUpdateDelta() == 0) {
     auto entityUpdateSet = make_shared<EntityUpdateSetPacket>();
@@ -1740,6 +1733,16 @@ void WorldClient::clearWorld() {
 void WorldClient::tryGiveMainPlayerItem(ItemPtr item) {
   if (auto spill = m_mainPlayer->pickupItems(item))
     addEntity(ItemDrop::createRandomizedDrop(spill->descriptor(), m_mainPlayer->position()));
+}
+
+void WorldClient::notifyEntityCreate(EntityPtr const& entity) {
+  if (entity->isMaster() && !m_masterEntitiesNetVersion.contains(entity->entityId())) {
+    // Server was unaware of this entity until now
+    auto firstNetState = entity->writeNetState();
+    m_masterEntitiesNetVersion[entity->entityId()] = firstNetState.second;
+    m_outgoingPackets.append(make_shared<EntityCreatePacket>(entity->entityType(),
+      Root::singleton().entityFactory()->netStoreEntity(entity), move(firstNetState.first), entity->entityId()));
+  }
 }
 
 Vec2I WorldClient::environmentBiomeTrackPosition() const {
