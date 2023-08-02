@@ -22,21 +22,21 @@ struct ThreadSupport {
     initializeConditionVariable = (InitializeConditionVariablePtr)GetProcAddress(kernel_dll, "InitializeConditionVariable");
     wakeAllConditionVariable = (WakeAllConditionVariablePtr)GetProcAddress(kernel_dll, "WakeAllConditionVariable");
     wakeConditionVariable = (WakeConditionVariablePtr)GetProcAddress(kernel_dll, "WakeConditionVariable");
-    sleepConditionVariableCS = (SleepConditionVariableCSPtr)GetProcAddress(kernel_dll, "SleepConditionVariableCS");
+    sleepConditionVariableSRW = (SleepConditionVariableSRWPtr)GetProcAddress(kernel_dll, "SleepConditionVariableSRW");
 
-    nativeConditionVariables = initializeConditionVariable && wakeAllConditionVariable && wakeConditionVariable && sleepConditionVariableCS;
+    nativeConditionVariables = initializeConditionVariable && wakeAllConditionVariable && wakeConditionVariable && sleepConditionVariableSRW;
   }
 
   typedef void(WINAPI* InitializeConditionVariablePtr)(CONDITIONAL_VARIABLE* cond);
   typedef void(WINAPI* WakeAllConditionVariablePtr)(CONDITIONAL_VARIABLE* cond);
   typedef void(WINAPI* WakeConditionVariablePtr)(CONDITIONAL_VARIABLE* cond);
-  typedef BOOL(WINAPI* SleepConditionVariableCSPtr)(CONDITIONAL_VARIABLE* cond, CRITICAL_SECTION* mutex, DWORD milliseconds);
+  typedef BOOL(WINAPI* SleepConditionVariableSRWPtr)(CONDITIONAL_VARIABLE* cond, PSRWLOCK SRWLock, DWORD milliseconds, ULONG flags);
 
   // function pointers to conditional variable API on windows 6.0+ kernels
   InitializeConditionVariablePtr initializeConditionVariable;
   WakeAllConditionVariablePtr wakeAllConditionVariable;
   WakeConditionVariablePtr wakeConditionVariable;
-  SleepConditionVariableCSPtr sleepConditionVariableCS;
+  SleepConditionVariableSRWPtr sleepConditionVariableSRW;
 
   bool nativeConditionVariables;
 };
@@ -123,26 +123,24 @@ struct ThreadFunctionImpl : ThreadImpl {
 
 struct MutexImpl {
   MutexImpl() {
-    InitializeCriticalSection(&criticalSection);
+    InitializeSRWLock(&srwLock);
   }
 
-  ~MutexImpl() {
-    DeleteCriticalSection(&criticalSection);
-  }
+  ~MutexImpl() {}
 
   void lock() {
-    EnterCriticalSection(&criticalSection);
+    AcquireSRWLockExclusive(&srwLock);
   }
 
   void unlock() {
-    LeaveCriticalSection(&criticalSection);
+    ReleaseSRWLockExclusive(&srwLock);
   }
 
   bool tryLock() {
-    return TryEnterCriticalSection(&criticalSection);
+    return TryAcquireSRWLockExclusive(&srwLock);
   }
 
-  CRITICAL_SECTION criticalSection;
+  SRWLOCK srwLock;
 };
 
 struct ConditionVariableImpl {
@@ -186,11 +184,11 @@ private:
     }
 
     void wait(Mutex& mutex) override {
-      g_threadSupport.sleepConditionVariableCS(&conditionVariable, &mutex.m_impl->criticalSection, INFINITE);
+      g_threadSupport.sleepConditionVariableSRW(&conditionVariable, &mutex.m_impl->srwLock, INFINITE, 0);
     }
 
     void wait(Mutex& mutex, unsigned millis) override {
-      g_threadSupport.sleepConditionVariableCS(&conditionVariable, &mutex.m_impl->criticalSection, millis);
+      g_threadSupport.sleepConditionVariableSRW(&conditionVariable, &mutex.m_impl->srwLock, millis, 0);
     }
 
     void signal() override {
@@ -213,7 +211,7 @@ private:
           0x7fffffff, // max count
           NULL); // unnamed
 
-      InitializeCriticalSection(&numThreadsConditionMutex);
+      InitializeSRWLock(&numThreadsConditionLock);
 
       broadcastDone = CreateEvent(NULL, // no security
           FALSE, // auto-reset
@@ -224,22 +222,21 @@ private:
     virtual ~EmulatedImpl() {
       CloseHandle(threadSemaphore);
       CloseHandle(broadcastDone);
-      DeleteCriticalSection(&numThreadsConditionMutex);
     }
 
     void wait(Mutex& mutex) override {
       // Avoid race conditions.
-      EnterCriticalSection(&numThreadsConditionMutex);
+      AcquireSRWLockExclusive(&numThreadsConditionLock);
       numThreads++;
-      LeaveCriticalSection(&numThreadsConditionMutex);
+      ReleaseSRWLockExclusive(&numThreadsConditionLock);
 
       // Release the mutex and waits on the semaphore until signal or broadcast
       // are called by another thread.
-      LeaveCriticalSection(&mutex.m_impl->criticalSection);
+      ReleaseSRWLockExclusive(&mutex.m_impl->srwLock);
       WaitForSingleObject(threadSemaphore, INFINITE);
 
       // Reacquire lock to avoid race conditions.
-      EnterCriticalSection(&numThreadsConditionMutex);
+      AcquireSRWLockExclusive(&numThreadsConditionLock);
 
       // We're no longer waiting...
       numThreads--;
@@ -247,28 +244,28 @@ private:
       // Check to see if we're the last waiter after broadcast
       bool last_waiter = isBroadcasting && numThreads == 0;
 
-      LeaveCriticalSection(&numThreadsConditionMutex);
+      ReleaseSRWLockExclusive(&numThreadsConditionLock);
 
       // If we're the last waiter thread during this particular broadcast
       // then let all the other threads proceed.
       if (last_waiter)
         SetEvent(broadcastDone);
-      EnterCriticalSection(&mutex.m_impl->criticalSection);
+      AcquireSRWLockExclusive(&mutex.m_impl->srwLock);
     }
 
     void wait(Mutex& mutex, unsigned millis) override {
       // Avoid race conditions.
-      EnterCriticalSection(&numThreadsConditionMutex);
+      AcquireSRWLockExclusive(&numThreadsConditionLock);
       numThreads++;
-      LeaveCriticalSection(&numThreadsConditionMutex);
+      ReleaseSRWLockExclusive(&numThreadsConditionLock);
 
       // Release the mutex and waits on the semaphore until signal or broadcast
       // are called by another thread.
-      LeaveCriticalSection(&mutex.m_impl->criticalSection);
+      ReleaseSRWLockExclusive(&mutex.m_impl->srwLock);
       WaitForSingleObject(threadSemaphore, millis);
 
       // Reacquire lock to avoid race conditions.
-      EnterCriticalSection(&numThreadsConditionMutex);
+      AcquireSRWLockExclusive(&numThreadsConditionLock);
 
       // We're no longer waiting...
       numThreads--;
@@ -276,19 +273,19 @@ private:
       // Check to see if we're the last waiter after broadcast
       bool last_waiter = isBroadcasting && numThreads == 0;
 
-      LeaveCriticalSection(&numThreadsConditionMutex);
+      ReleaseSRWLockExclusive(&numThreadsConditionLock);
 
       // If we're the last waiter thread during this particular broadcast
       // then let all the other threads proceed.
       if (last_waiter)
         SetEvent(broadcastDone);
-      EnterCriticalSection(&mutex.m_impl->criticalSection);
+      AcquireSRWLockExclusive(&mutex.m_impl->srwLock);
     }
 
     void signal() override {
-      EnterCriticalSection(&numThreadsConditionMutex);
+      AcquireSRWLockExclusive(&numThreadsConditionLock);
       bool have_waiters = numThreads > 0;
-      LeaveCriticalSection(&numThreadsConditionMutex);
+      ReleaseSRWLockExclusive(&numThreadsConditionLock);
 
       // If there aren't any waiters, then this is a no-op.
       if (have_waiters)
@@ -298,7 +295,7 @@ private:
     void broadcast() override {
       // This is needed to ensure that <numThreads> and <isBroadcasting> are
       // consistent relative to each other.
-      EnterCriticalSection(&numThreadsConditionMutex);
+      AcquireSRWLockExclusive(&numThreadsConditionLock);
       bool have_waiters = 0;
 
       if (numThreads > 0) {
@@ -312,7 +309,7 @@ private:
         // Wake up all the waiters atomically.
         ReleaseSemaphore(threadSemaphore, numThreads, 0);
 
-        LeaveCriticalSection(&numThreadsConditionMutex);
+        ReleaseSRWLockExclusive(&numThreadsConditionLock);
 
         // Wait for all the awakened threads to acquire the counting
         // semaphore.
@@ -322,7 +319,7 @@ private:
         // because no other waiter threads can wake up to access it.
         isBroadcasting = 0;
       } else {
-        LeaveCriticalSection(&numThreadsConditionMutex);
+        ReleaseSRWLockExclusive(&numThreadsConditionLock);
       }
     }
 
@@ -330,7 +327,7 @@ private:
     int numThreads;
 
     // Serialize access to <numThreads>.
-    CRITICAL_SECTION numThreadsConditionMutex;
+    SRWLOCK numThreadsConditionLock;
 
     // Semaphore used to queue up threads waiting for the condition to
     // become signaled.

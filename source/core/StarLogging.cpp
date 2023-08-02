@@ -80,12 +80,11 @@ bool Logger::loggable(LogLevel level) {
 }
 
 void Logger::refreshLoggable() {
-  Array<bool, 4> loggable;
+  s_loggable = Array<bool, 4>::filled(false);
   for (auto const& l : s_sinks) {
-    for (auto i = (size_t)l->level(); i != loggable.size(); ++i)
-      loggable[i] = true;
+    for (auto i = (size_t)l->level(); i != s_loggable.size(); ++i)
+      s_loggable[i] = true;
   }
-  s_loggable = loggable;
 }
 
 shared_ptr<StdoutLogSink> Logger::s_stdoutSink = make_shared<StdoutLogSink>();
