@@ -1773,6 +1773,8 @@ void Player::processStateChanges(float dt) {
       m_humanoid->setState(Humanoid::Run);
     } else if (techState == TechController::ParentState::Swim) {
       m_humanoid->setState(Humanoid::Swim);
+    } else if (techState == TechController::ParentState::SwimIdle) {
+      m_humanoid->setState(Humanoid::SwimIdle);
     }
   } else {
     auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor());

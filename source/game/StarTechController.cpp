@@ -25,7 +25,8 @@ EnumMap<TechController::ParentState> const TechController::ParentStateNames{
   {TechController::ParentState::Duck, "Duck"},
   {TechController::ParentState::Walk, "Walk"},
   {TechController::ParentState::Run, "Run"},
-  {TechController::ParentState::Swim, "Swim"}
+  {TechController::ParentState::Swim, "Swim"},
+  {TechController::ParentState::SwimIdle, "SwimIdle"}
 };
 
 TechController::TechController() {

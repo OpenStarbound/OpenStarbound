@@ -28,7 +28,8 @@ public:
     Duck,
     Walk,
     Run,
-    Swim
+    Swim,
+    SwimIdle
   };
   static EnumMap<ParentState> const ParentStateNames;
 
