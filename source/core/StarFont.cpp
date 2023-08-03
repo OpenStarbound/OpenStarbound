@@ -79,7 +79,7 @@ unsigned Font::width(String::Char c) {
     return *width;
   } else {
     FT_Load_Char(m_fontImpl->face, c, FontLoadFlags);
-    unsigned newWidth = (m_fontImpl->face->glyph->advance.x + 32) / 64;
+    unsigned newWidth = (m_fontImpl->face->glyph->linearHoriAdvance + 32768) / 65536;
     m_widthCache.insert({c, m_pixelSize}, newWidth);
     return newWidth;
   }

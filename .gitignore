@@ -2,7 +2,7 @@ build/
 dist/
 enc_temp_folder/
 .cache/
-attic/
+attic/chucklefish/
 tiled/
 assets/user/
 assets/devel/
