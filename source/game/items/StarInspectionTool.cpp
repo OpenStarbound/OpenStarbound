@@ -170,7 +170,7 @@ InspectionTool::InspectionResult InspectionTool::inspect(Vec2F const& position) 
   auto liquidLevel = world()->liquidLevel(Vec2I::floor(position));
   auto liquidsDatabase = Root::singleton().liquidsDatabase();
   if (liquidLevel.liquid != EmptyLiquidId)
-    return {liquidsDatabase->liquidDescription(liquidLevel.liquid), {}};
+    return {liquidsDatabase->liquidDescription(liquidLevel.liquid, species), {}};
 
   // check the tile for background mod or material
   MaterialId bgMaterial = world()->material(Vec2I::floor(position), TileLayer::Background);
