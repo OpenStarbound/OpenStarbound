@@ -111,8 +111,14 @@ LuaContext LuaRoot::createContext(StringList const& scriptPaths) {
     return newContext.engine().createFunctionFromSource(newContext.handleIndex(), source.utf8Ptr(), source.utf8Size(), functionName.utf8Ptr());
   }));
 
-  for (auto const& scriptPath : scriptPaths)
-    cache->loadContextScript(newContext, scriptPath);
+  auto assets = Root::singleton().assets();
+
+  for (auto const& scriptPath : scriptPaths) {
+    if (assets->assetExists(scriptPath))
+      cache->loadContextScript(newContext, scriptPath);
+    else
+      Logger::error("Script '{}' does not exist", scriptPath);
+  }
 
   for (auto const& callbackPair : m_luaCallbacks)
     newContext.setCallbacks(callbackPair.first, callbackPair.second);
