@@ -338,16 +338,18 @@ void TextPainter::reloadFonts() {
   m_fontTextureGroup.clearFonts();
   m_fontTextureGroup.cleanup(0);
   auto assets = Root::singleton().assets();
-  auto defaultFont = assets->font("/hobo.ttf");
+  String defaultName = "hobo";
+  auto defaultFont = loadFont("/hobo.ttf", defaultName);
   for (auto& fontPath : assets->scanExtension("ttf")) {
     auto font = assets->font(fontPath);
     if (font == defaultFont)
       continue;
 
-    auto fileName = AssetPath::filename(fontPath);
-    addFont(font->clone(), fileName.substr(0, fileName.findLast(".")));
+    auto name = AssetPath::filename(fontPath);
+    name = name.substr(0, name.findLast("."));
+    addFont(loadFont(fontPath, name), name);
   }
-  m_fontTextureGroup.addFont(defaultFont->clone(), "hobo", true);
+  m_fontTextureGroup.addFont(defaultFont, defaultName, true);
 }
 
 void TextPainter::cleanup(int64_t timeout) {
@@ -512,4 +514,18 @@ void TextPainter::renderGlyph(String::Char c, Vec2F const& screenPos, unsigned f
   m_renderer->immediatePrimitives().emplace_back(std::in_place_type_t<RenderQuad>(), glyphTexture.texture, Vec2F::round(screenPos + offset), scale, color, 0.0f);
 }
 
+FontPtr TextPainter::loadFont(String const& fontPath, Maybe<String> fontName) {
+  if (!fontName) {
+    auto name = AssetPath::filename(fontPath);
+    fontName.emplace(name.substr(0, name.findLast(".")));
+  }
+
+  auto assets = Root::singleton().assets();
+
+  auto font = assets->font(fontPath)->clone();
+  if (auto fontConfig = assets->json("/interface.config:font").opt(*fontName)) {
+    font->setAlphaThreshold(fontConfig->getUInt("alphaThreshold", 0));
+  }
+  return font;
+}
 }

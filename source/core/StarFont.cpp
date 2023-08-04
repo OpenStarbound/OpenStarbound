@@ -51,7 +51,7 @@ FontPtr Font::loadTrueTypeFont(ByteArrayConstPtr const& bytes, unsigned pixelSiz
   return font;
 }
 
-Font::Font() : m_pixelSize(0) {}
+Font::Font() : m_pixelSize(0), m_alphaThreshold(0) {}
 
 FontPtr Font::clone() const {
   return Font::loadTrueTypeFont(m_fontBuffer, m_pixelSize);
@@ -68,6 +68,10 @@ void Font::setPixelSize(unsigned pixelSize) {
   if (FT_Set_Pixel_Sizes(m_fontImpl->face, pixelSize, 0))
     throw FontException(strf("Cannot set font pixel size to: {}", pixelSize));
   m_pixelSize = pixelSize;
+}
+
+void Font::setAlphaThreshold(uint8_t alphaThreshold) {
+  m_alphaThreshold = alphaThreshold;
 }
 
 unsigned Font::height() const {
@@ -112,8 +116,14 @@ std::pair<Image, Vec2I> Font::render(String::Char c) {
     uint8_t* p = slot->bitmap.buffer + y * slot->bitmap.pitch;
     for (unsigned x = 0; x != width; ++x) {
       if (x >= 0 && y >= 0 && x < width && y < height) {
-        if (uint8_t val = *(p + x)) {
-          white.setW(val);
+        uint8_t value = *(p + x);
+        if (m_alphaThreshold) {
+          if (value >= m_alphaThreshold) {
+            white[3] = 255;
+            image.set(x + 1, height - y, white);
+          }
+        } else if (value) {
+          white[3] = value;
           image.set(x + 1, height - y, white);
         }
       }

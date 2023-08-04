@@ -27,6 +27,7 @@ public:
   FontPtr clone() const;
 
   void setPixelSize(unsigned pixelSize);
+  void setAlphaThreshold(uint8_t alphaThreshold = 0);
 
   unsigned height() const;
   unsigned width(String::Char c);
@@ -40,6 +41,7 @@ private:
   FontImplPtr m_fontImpl;
   ByteArrayConstPtr m_fontBuffer;
   unsigned m_pixelSize;
+  uint8_t m_alphaThreshold;
 
   HashMap<pair<String::Char, unsigned>, unsigned> m_widthCache;
 };

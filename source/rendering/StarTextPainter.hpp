@@ -87,6 +87,7 @@ private:
   RectF doRenderGlyph(String::Char c, TextPositioning const& position, bool reallyRender);
 
   void renderGlyph(String::Char c, Vec2F const& screenPos, unsigned fontSize, float scale, Vec4B const& color, Directives const* processingDirectives = nullptr);
+  static FontPtr loadFont(String const& fontPath, Maybe<String> fontName = {});
 
   RendererPtr m_renderer;
   FontTextureGroup m_fontTextureGroup;
