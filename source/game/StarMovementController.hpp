@@ -184,7 +184,7 @@ public:
   // Stores dt value for Lua calls.
   void setTimestep(float dt);
 
-  // Integrates the ActorMovementController one WorldTimestep and applies all
+  // Integrates the ActorMovementController one GlobalTimestep and applies all
   // forces.
   void tickMaster(float dt);
 

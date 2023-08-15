@@ -185,14 +185,14 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
   bool borderless = configuration->get("borderless").toBool();
   bool maximized = configuration->get("maximized").toBool();
 
-  float updateRate = 1.0f / WorldTimestep;
+  float updateRate = 1.0f / GlobalTimestep;
   if (auto jUpdateRate = configuration->get("updateRate")) {
     updateRate = jUpdateRate.toFloat();
-    WorldTimestep = 1.0f / updateRate;
+    GlobalTimestep = 1.0f / updateRate;
   }
 
   if (auto jServerUpdateRate = configuration->get("serverUpdateRate"))
-    ServerWorldTimestep = 1.0f / jServerUpdateRate.toFloat();
+    ServerGlobalTimestep = 1.0f / jServerUpdateRate.toFloat();
 
   appController->setTargetUpdateRate(updateRate);
   appController->setApplicationTitle(assets->json("/client.config:windowTitle").toString());
@@ -346,7 +346,7 @@ void ClientApplication::processInput(InputEvent const& event) {
 }
 
 void ClientApplication::update() {
-  float dt = WorldTimestep * GlobalTimescale;
+  float dt = GlobalTimestep * GlobalTimescale;
   if (m_state >= MainAppState::Title) {
     if (auto p2pNetworkingService = appController()->p2pNetworkingService()) {
       if (auto join = p2pNetworkingService->pullPendingJoin()) {

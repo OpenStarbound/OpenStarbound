@@ -94,8 +94,8 @@ extern EnumMap<Rarity> const RarityNames;
 unsigned const TilePixels = 8;
 
 extern float GlobalTimescale;
-extern float WorldTimestep;
-extern float ServerWorldTimestep;
+extern float GlobalTimestep;
+extern float ServerGlobalTimestep;
 float const SystemWorldTimestep = 1.0f / 20.0f;
 
 size_t const WorldSectorSize = 32;

@@ -945,7 +945,7 @@ void Player::update(float dt, uint64_t) {
       m_statusController->resetResource("breath");
     }
 
-    m_log->addPlayTime(WorldTimestep);
+    m_log->addPlayTime(GlobalTimestep);
 
     if (m_ageItemsTimer.wrapTick(dt)) {
       auto itemDatabase = Root::singleton().itemDatabase();
@@ -970,7 +970,7 @@ void Player::update(float dt, uint64_t) {
     m_interestingObjects = m_questManager->interestingObjects();
 
   } else {
-    m_netGroup.tickNetInterpolation(WorldTimestep);
+    m_netGroup.tickNetInterpolation(GlobalTimestep);
     m_movementController->tickSlave(dt);
     m_techController->tickSlave(dt);
     m_statusController->tickSlave(dt);

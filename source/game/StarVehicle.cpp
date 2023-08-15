@@ -273,7 +273,7 @@ void Vehicle::update(float dt, uint64_t) {
     m_scriptComponent.update(m_scriptComponent.updateDt(dt));
 
     eraseWhere(m_aliveMasterConnections, [](auto& p) {
-        return p.second.tick(WorldTimestep);
+        return p.second.tick(GlobalTimestep);
       });
 
     for (auto& loungePositionPair : m_loungePositions) {
@@ -285,7 +285,7 @@ void Vehicle::update(float dt, uint64_t) {
       }
     }
   } else {
-    m_netGroup.tickNetInterpolation(WorldTimestep);
+    m_netGroup.tickNetInterpolation(GlobalTimestep);
 
     m_movementController.tickSlave(dt);
 

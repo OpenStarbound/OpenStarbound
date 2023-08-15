@@ -170,7 +170,7 @@ DataStream& operator<<(DataStream& ds, MovementParameters const& movementParamet
 MovementController::MovementController(MovementParameters const& parameters) {
   m_resting = false;
 
-  m_timeStep = WorldTimestep;
+  m_timeStep = GlobalTimestep;
 
   m_liquidPercentage = 0.0f;
   m_liquidId = EmptyLiquidId;

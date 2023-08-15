@@ -430,7 +430,7 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
       }
 
     } else if (auto entityUpdateSet = as<EntityUpdateSetPacket>(packet)) {
-      float interpolationLeadTime = clientInfo->interpolationTracker.interpolationLeadSteps() * WorldTimestep;
+      float interpolationLeadTime = clientInfo->interpolationTracker.interpolationLeadSteps() * GlobalTimestep;
       m_entityMap->forAllEntities([&](EntityPtr const& entity) {
           EntityId entityId = entity->entityId();
           if (connectionForEntity(entityId) == clientId) {
@@ -442,7 +442,7 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
 
     } else if (auto entityDestroy = as<EntityDestroyPacket>(packet)) {
       if (auto entity = m_entityMap->entity(entityDestroy->entityId)) {
-        entity->readNetState(entityDestroy->finalNetState, clientInfo->interpolationTracker.interpolationLeadSteps() * WorldTimestep);
+        entity->readNetState(entityDestroy->finalNetState, clientInfo->interpolationTracker.interpolationLeadSteps() * GlobalTimestep);
         // Before destroying the entity, we should make sure that the entity is
         // using the absolute latest data, so we disable interpolation.
         entity->disableInterpolation();
@@ -636,10 +636,10 @@ void WorldServer::update(float dt) {
     m_fallingBlocksAgent->update();
 
   if (auto delta = shouldRunThisStep("blockDamageUpdate"))
-    updateDamagedBlocks(*delta * WorldTimestep);
+    updateDamagedBlocks(*delta * GlobalTimestep);
 
   if (auto delta = shouldRunThisStep("worldStorageTick"))
-    m_worldStorage->tick(*delta * WorldTimestep);
+    m_worldStorage->tick(*delta * GlobalTimestep);
 
   if (auto delta = shouldRunThisStep("worldStorageGenerate")) {
     m_worldStorage->generateQueue(m_fidelityConfig.optUInt("worldStorageGenerationLevelLimit"), [this](WorldStorage::Sector a, WorldStorage::Sector b) {

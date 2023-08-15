@@ -58,7 +58,7 @@ WorldClient::WorldClient(PlayerPtr mainPlayer) {
       return m_tileArray->tile({x, y}).collision;
     });
 
-  m_modifiedTilePredictionTimeout = (int)round(m_clientConfig.getFloat("modifiedTilePredictionTimeout") / WorldTimestep);
+  m_modifiedTilePredictionTimeout = (int)round(m_clientConfig.getFloat("modifiedTilePredictionTimeout") / GlobalTimestep);
 
   m_latency = 0.0;
 
@@ -756,7 +756,7 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
       }
 
     } else if (auto entityUpdateSet = as<EntityUpdateSetPacket>(packet)) {
-      float interpolationLeadTime = m_interpolationTracker.interpolationLeadSteps() * WorldTimestep;
+      float interpolationLeadTime = m_interpolationTracker.interpolationLeadSteps() * GlobalTimestep;
       m_entityMap->forAllEntities([&](EntityPtr const& entity) {
           EntityId entityId = entity->entityId();
           if (connectionForEntity(entityId) == entityUpdateSet->forConnection) {
@@ -767,7 +767,7 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
 
     } else if (auto entityDestroy = as<EntityDestroyPacket>(packet)) {
       if (auto entity = m_entityMap->entity(entityDestroy->entityId)) {
-        entity->readNetState(entityDestroy->finalNetState, m_interpolationTracker.interpolationLeadSteps() * WorldTimestep);
+        entity->readNetState(entityDestroy->finalNetState, m_interpolationTracker.interpolationLeadSteps() * GlobalTimestep);
 
         // Before destroying the entity, we should make sure that the entity is
         // using the absolute latest data, so we disable interpolation.
@@ -874,7 +874,7 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
       tryGiveMainPlayerItem(itemDatabase->item(giveItem->item));
 
     } else if (auto stepUpdate = as<StepUpdatePacket>(packet)) {
-      m_currentServerStep = ((double)stepUpdate->remoteStep * (WorldTimestep / ServerWorldTimestep));
+      m_currentServerStep = ((double)stepUpdate->remoteStep * (GlobalTimestep / ServerGlobalTimestep));
       m_interpolationTracker.receiveStepUpdate(m_currentServerStep);
 
     } else if (auto environmentUpdatePacket = as<EnvironmentUpdatePacket>(packet)) {

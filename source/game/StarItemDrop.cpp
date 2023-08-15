@@ -250,7 +250,7 @@ void ItemDrop::update(float dt, uint64_t) {
       m_ageItemsTimer.setElapsedTime(0.0);
     }
   } else {
-    m_netGroup.tickNetInterpolation(WorldTimestep);
+    m_netGroup.tickNetInterpolation(GlobalTimestep);
     Root::singleton().itemDatabase()->loadItem(m_itemDescriptor.get(), m_item);
     m_movementController.tickSlave(dt);
   }

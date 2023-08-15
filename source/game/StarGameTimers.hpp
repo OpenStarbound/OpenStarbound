@@ -13,8 +13,8 @@ struct GameTimer {
   float time;
   float timer;
 
-  bool tick(float dt = WorldTimestep); // returns true if time is up
-  bool wrapTick(float dt = WorldTimestep); // auto resets
+  bool tick(float dt = GlobalTimestep); // returns true if time is up
+  bool wrapTick(float dt = GlobalTimestep); // auto resets
   void reset();
   void setDone();
   void invert();

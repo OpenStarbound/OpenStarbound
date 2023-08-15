@@ -47,10 +47,10 @@ int main(int argc, char** argv) {
     {
       Logger::info("Server Version {} ({}) Source ID: {} Protocol: {}", StarVersionString, StarArchitectureString, StarSourceIdentifierString, StarProtocolVersion);
 
-      float updateRate = 1.0f / WorldTimestep;
+      float updateRate = 1.0f / GlobalTimestep;
       if (auto jUpdateRate = configuration->get("updateRate")) {
         updateRate = jUpdateRate.toFloat();
-        ServerWorldTimestep = WorldTimestep = 1.0f / updateRate;
+        ServerGlobalTimestep = GlobalTimestep = 1.0f / updateRate;
         Logger::info("Configured tickrate is {:4.2f}hz", updateRate);
       }
 

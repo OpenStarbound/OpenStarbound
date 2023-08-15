@@ -270,7 +270,7 @@ void PaneManager::render() {
 }
 
 void PaneManager::update(float dt) {
-  m_tooltipShowTimer -= WorldTimestep;
+  m_tooltipShowTimer -= GlobalTimestep;
   if (m_tooltipShowTimer < 0 && !m_activeTooltip) {
     if (auto parentPane = getPaneAt(m_tooltipLastMousePos)) {
       if (auto tooltip = parentPane->createTooltip(m_tooltipLastMousePos)) {

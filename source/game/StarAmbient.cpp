@@ -105,7 +105,7 @@ AudioInstancePtr AmbientManager::updateAmbient(AmbientNoisesDescriptionPtr curre
   }
   if (m_volumeChanged) {
     if (m_delay > 0)
-      m_delay -= WorldTimestep;
+      m_delay -= GlobalTimestep;
     else {
       m_volumeChanged = false;
       if (m_currentTrack) {
