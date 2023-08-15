@@ -8,13 +8,7 @@ end
 
 function module.init()
   for name, func in pairs(commands) do
-    message.setHandler("/" .. name, function(_, isLocal, ...)
-      if not isLocal then
-        return
-      else
-        return func(...)
-      end
-    end)
+    message.setHandler({name = "/" .. name, localOnly = true}, func)
   end
 end
 

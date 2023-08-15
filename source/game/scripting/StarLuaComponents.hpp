@@ -173,7 +173,14 @@ protected:
   virtual void contextShutdown() override;
 
 private:
-  StringMap<LuaFunction> m_messageHandlers;
+  struct MessageHandler {
+    Maybe<LuaFunction> function;
+    String name;
+    bool passName = true;
+    bool localOnly = false;
+  };
+
+  StringMap<MessageHandler> m_messageHandlers;
 };
 
 template <typename Ret, typename... V>
@@ -304,13 +311,26 @@ void LuaWorldComponent<Base>::uninit() {
 template <typename Base>
 LuaMessageHandlingComponent<Base>::LuaMessageHandlingComponent() {
   LuaCallbacks scriptCallbacks;
-  scriptCallbacks.registerCallback("setHandler",
-      [this](String message, Maybe<LuaFunction> handler) {
-        if (handler)
-          m_messageHandlers.set(move(message), handler.take());
-        else
-          m_messageHandlers.remove(message);
-      });
+  scriptCallbacks.registerCallback("setHandler", [this](Variant<String, Json> message, Maybe<LuaFunction> handler) {
+      MessageHandler handlerInfo = {};
+
+      if (Json* config = message.ptr<Json>()) {
+        handlerInfo.passName = config->getBool("passName", false);
+        handlerInfo.localOnly = config->getBool("localOnly", false);
+        handlerInfo.name = config->getString("name");
+      } else {
+        handlerInfo.passName = true;
+        handlerInfo.localOnly = false;
+        handlerInfo.name = message.get<String>();
+      }
+
+      if (handler) {
+        handlerInfo.function.emplace(handler.take());
+        m_messageHandlers.set(handlerInfo.name, handlerInfo);
+      }
+      else
+        m_messageHandlers.remove(handlerInfo.name);
+    });
 
   Base::addCallbacks("message", move(scriptCallbacks));
 }
@@ -323,7 +343,18 @@ Maybe<Json> LuaMessageHandlingComponent<Base>::handleMessage(
 
   if (auto handler = m_messageHandlers.ptr(message)) {
     try {
-      return handler->template invoke<Json>(message, localMessage, luaUnpack(args));
+      if (handler->localOnly) {
+        if (!localMessage)
+          return {};
+        else if (handler->passName)
+          return handler->function->template invoke<Json>(message, luaUnpack(args));
+        else
+          return handler->function->template invoke<Json>(luaUnpack(args));
+      }
+      else if (handler->passName)
+        return handler->function->template invoke<Json>(message, localMessage, luaUnpack(args));
+      else
+        return handler->function->template invoke<Json>(localMessage, luaUnpack(args));
     } catch (LuaException const& e) {
       Logger::error(
           "Exception while invoking lua message handler for message '{}'. {}", message, outputException(e, true));
