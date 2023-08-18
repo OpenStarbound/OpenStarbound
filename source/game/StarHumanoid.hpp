@@ -208,8 +208,8 @@ public:
   static Humanoid makeDummy(Gender gender);
   // Renders to centered drawables (centered on the normal image center for the
   // player graphics), (in pixels, not world space)
-  List<Drawable> renderDummy(Gender gender, HeadArmor const* head = nullptr, ChestArmor const* chest = nullptr,
-      LegsArmor const* legs = nullptr, BackArmor const* back = nullptr);
+  List<Drawable> renderDummy(Gender gender, Maybe<HeadArmor const*> head = {}, Maybe<ChestArmor const*> chest = {},
+      Maybe<LegsArmor const*> legs = {}, Maybe<BackArmor const*> back = {});
 
   Vec2F primaryHandPosition(Vec2F const& offset) const;
   Vec2F altHandPosition(Vec2F const& offset) const;

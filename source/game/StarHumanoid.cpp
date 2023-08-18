@@ -939,28 +939,55 @@ Humanoid Humanoid::makeDummy(Gender gender) {
   return humanoid;
 }
 
-List<Drawable> Humanoid::renderDummy(Gender gender, HeadArmor const* head, ChestArmor const* chest, LegsArmor const* legs, BackArmor const* back) {
+List<Drawable> Humanoid::renderDummy(Gender gender, Maybe<HeadArmor const*> head, Maybe<ChestArmor const*> chest, Maybe<LegsArmor const*> legs, Maybe<BackArmor const*> back) {
   if (head) {
-    setHeadArmorFrameset(head->frameset(gender));
-    setHeadArmorDirectives(head->directives());
-    setHelmetMaskDirectives(head->maskDirectives());
+    if (auto headPtr = *head) {
+      setHeadArmorFrameset(headPtr->frameset(gender));
+      setHeadArmorDirectives(headPtr->directives());
+      setHelmetMaskDirectives(headPtr->maskDirectives());
+    }
+    else {
+      setHeadArmorFrameset("");
+      setHeadArmorDirectives("");
+      setHelmetMaskDirectives("");
+    }
   }
 
   if (chest) {
-    setBackSleeveFrameset(chest->backSleeveFrameset(gender));
-    setFrontSleeveFrameset(chest->frontSleeveFrameset(gender));
-    setChestArmorFrameset(chest->bodyFrameset(gender));
-    setChestArmorDirectives(chest->directives());
+    if (auto chestPtr = *chest) {
+      setBackSleeveFrameset(chestPtr->backSleeveFrameset(gender));
+      setFrontSleeveFrameset(chestPtr->frontSleeveFrameset(gender));
+      setChestArmorFrameset(chestPtr->bodyFrameset(gender));
+      setChestArmorDirectives(chestPtr->directives());
+    }
+    else {
+      setBackSleeveFrameset("");
+      setFrontSleeveFrameset("");
+      setChestArmorFrameset("");
+      setChestArmorDirectives("");
+    }
   }
 
   if (legs) {
-    setLegsArmorFrameset(legs->frameset(gender));
-    setLegsArmorDirectives(legs->directives());
+    if (auto legsPtr = *legs) {
+      setLegsArmorFrameset(legsPtr->frameset(gender));
+      setLegsArmorDirectives(legsPtr->directives());
+    }
+    else {
+      setLegsArmorFrameset("");
+      setLegsArmorDirectives("");
+    }
   }
 
   if (back) {
-    setBackArmorFrameset(back->frameset(gender));
-    setBackArmorDirectives(back->directives());
+    if (auto backPtr = *back) {
+      setBackArmorFrameset(backPtr->frameset(gender));
+      setBackArmorDirectives(backPtr->directives());
+    }
+    else {
+      setBackArmorFrameset("");
+      setBackArmorDirectives("");
+    }
   }
 
   auto drawables = render();

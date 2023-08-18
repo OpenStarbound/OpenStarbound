@@ -382,7 +382,7 @@ void ItemDrop::updateTaken(bool master) {
       targetPosition += m_overheadOffset;
       auto rect = owningEntity->collisionArea();
       if (!rect.isNull())
-        targetPosition[1] += rect.yMax() + 1.5;
+        targetPosition[1] += rect.yMax() + 1.5f;
       else
         targetPosition[1] += 1.5f;
     }

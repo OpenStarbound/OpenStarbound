@@ -6,7 +6,7 @@
 #include "StarStatusEffectItem.hpp"
 #include "StarEffectSourceItem.hpp"
 #include "StarPreviewableItem.hpp"
-
+#include "StarSwingableItem.hpp"
 namespace Star {
 
 STAR_CLASS(ArmorItem);
@@ -15,13 +15,20 @@ STAR_CLASS(ChestArmor);
 STAR_CLASS(LegsArmor);
 STAR_CLASS(BackArmor);
 
-class ArmorItem : public Item, public StatusEffectItem, public EffectSourceItem {
+class ArmorItem : public Item, public EffectSourceItem, public SwingableItem {
 public:
   ArmorItem(Json const& config, String const& directory, Json const& data);
   virtual ~ArmorItem() {}
 
   virtual List<PersistentStatusEffect> statusEffects() const override;
   virtual StringSet effectSources() const override;
+
+  virtual List<Drawable> drawables() const override;
+
+  virtual float getAngle(float aimAngle) override;
+
+  virtual void fire(FireMode mode, bool shifting, bool edgeTriggered) override;
+  virtual void fireTriggered() override;
 
   List<String> const& colorOptions();
 

@@ -10,7 +10,7 @@
 
 namespace Star {
 
-ArmorItem::ArmorItem(Json const& config, String const& directory, Json const& data) : Item(config, directory, data) {
+ArmorItem::ArmorItem(Json const& config, String const& directory, Json const& data) : Item(config, directory, data), SwingableItem(config) {
   refreshStatusEffects();
   m_effectSources = jsonToStringSet(instanceValue("effectSources", JsonArray()));
   m_techModule = instanceValue("techModule", "").toString();
@@ -35,6 +35,20 @@ List<PersistentStatusEffect> ArmorItem::statusEffects() const {
 StringSet ArmorItem::effectSources() const {
   return m_effectSources;
 }
+
+List<Drawable> ArmorItem::drawables() const {
+  auto drawables = iconDrawables();
+  Drawable::scaleAll(drawables, 1.0f / TilePixels);
+  Drawable::translateAll(drawables, -handPosition() / TilePixels);
+  return drawables;
+}
+
+float ArmorItem::getAngle(float aimAngle) {
+  return -25.0f * Constants::deg2rad;
+}
+
+void ArmorItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {}
+void ArmorItem::fireTriggered() {}
 
 List<String> const& ArmorItem::colorOptions() {
   return m_colorOptions;
@@ -113,9 +127,9 @@ Directives const& HeadArmor::maskDirectives() const {
 
 List<Drawable> HeadArmor::preview(PlayerPtr const& viewer) const {
   Gender gender = viewer ? viewer->gender() : Gender::Male;
-  Humanoid humanoid = Humanoid::makeDummy(gender);
-  //Humanoid humanoid = viewer ? *viewer->humanoid() : Humanoid::makeDummy(gender);
-  return humanoid.renderDummy(gender, this);
+  //Humanoid humanoid = Humanoid::makeDummy(gender);
+  Humanoid humanoid = viewer ? *viewer->humanoid() : Humanoid::makeDummy(gender);
+  return humanoid.renderDummy(gender, this, nullptr, nullptr, nullptr);
 }
 
 ChestArmor::ChestArmor(Json const& config, String const& directory, Json const& data)
@@ -158,9 +172,9 @@ String const& ChestArmor::backSleeveFrameset(Gender gender) const {
 
 List<Drawable> ChestArmor::preview(PlayerPtr const& viewer) const {
   Gender gender = viewer ? viewer->gender() : Gender::Male;
-  Humanoid humanoid = Humanoid::makeDummy(gender);
-  //Humanoid humanoid = viewer ? *viewer->humanoid() : Humanoid::makeDummy(gender);
-  return humanoid.renderDummy(gender, nullptr, this);
+  //Humanoid humanoid = Humanoid::makeDummy(gender);
+  Humanoid humanoid = viewer ? *viewer->humanoid() : Humanoid::makeDummy(gender);
+  return humanoid.renderDummy(gender, nullptr, this, nullptr, nullptr);
 }
 
 LegsArmor::LegsArmor(Json const& config, String const& directory, Json const& data)
@@ -182,9 +196,9 @@ String const& LegsArmor::frameset(Gender gender) const {
 
 List<Drawable> LegsArmor::preview(PlayerPtr const& viewer) const {
   Gender gender = viewer ? viewer->gender() : Gender::Male;
-  Humanoid humanoid = Humanoid::makeDummy(gender);
-  //Humanoid humanoid = viewer ? *viewer->humanoid() : Humanoid::makeDummy(gender);
-  return humanoid.renderDummy(gender, nullptr, nullptr, this);
+  //Humanoid humanoid = Humanoid::makeDummy(gender);
+  Humanoid humanoid = viewer ? *viewer->humanoid() : Humanoid::makeDummy(gender);
+  return humanoid.renderDummy(gender, nullptr, nullptr, this, nullptr);
 }
 
 BackArmor::BackArmor(Json const& config, String const& directory, Json const& data)
@@ -206,8 +220,8 @@ String const& BackArmor::frameset(Gender gender) const {
 
 List<Drawable> BackArmor::preview(PlayerPtr const& viewer) const {
   Gender gender = viewer ? viewer->gender() : Gender::Male;
-  Humanoid humanoid = Humanoid::makeDummy(gender);
-  //Humanoid humanoid = viewer ? *viewer->humanoid() : Humanoid::makeDummy(gender);
+  //Humanoid humanoid = Humanoid::makeDummy(gender);
+  Humanoid humanoid = viewer ? *viewer->humanoid() : Humanoid::makeDummy(gender);
   return humanoid.renderDummy(gender, nullptr, nullptr, nullptr, this);
 }
 

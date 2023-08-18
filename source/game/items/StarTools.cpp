@@ -337,6 +337,14 @@ BeamMiningTool::BeamMiningTool(Json const& config, String const& directory, Json
   m_blockVolume = assets->json("/sfx.config:miningBlockVolume").toFloat();
   m_endType = EndType::Object;
 
+  if (auto jRate = instanceValue("scaleRate")) {
+    if (jRate.canConvert(Json::Type::Float)) {
+      float rate = jRate.toFloat();
+      m_tileDamage /= rate;
+      m_cooldownTime /= rate;
+    }
+  }
+
   m_inhandStatusEffects = instanceValue("inhandStatusEffects", JsonArray()).toArray().transformed(jsonToPersistentStatusEffect);
 }
 
@@ -359,7 +367,10 @@ List<PreviewTile> BeamMiningTool::preview(bool shifting) const {
 
   if (ownerp && worldp) {
     if (ownerp->isAdmin() || ownerp->inToolRange()) {
-      Vec3B light = Color::rgba(ownerp->favoriteColor()).toRgb();
+      Color lightColor = Color::rgba(ownerp->favoriteColor());
+      if (!ready())
+        lightColor *= Color::rgbaf(0.75f, 0.75f, 0.75f, 1.0f);
+      Vec3B light = lightColor.toRgb();
       int radius = !shifting ? m_blockRadius : m_altBlockRadius;
       for (auto pos : tileAreaBrush(radius, ownerp->aimPosition(), true)) {
         if (worldp->tileIsOccupied(pos, TileLayer::Foreground, true)) {
