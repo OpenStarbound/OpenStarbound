@@ -70,7 +70,7 @@ public:
 
   // Mark this drop as taken by the given entity.  The drop will animate
   // towards them for a while and then disappear.
-  ItemPtr takeBy(EntityId entityId);
+  ItemPtr takeBy(EntityId entityId, float timeOffset = 0.0f);
 
   // Mark this drop as taken, but do not animate it towards a player simply
   // disappear next step.

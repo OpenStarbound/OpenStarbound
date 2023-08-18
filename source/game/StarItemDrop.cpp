@@ -300,10 +300,10 @@ bool ItemDrop::canTake() const {
   return m_mode.get() == Mode::Available && m_owningEntity.get() == NullEntityId && !m_item->empty();
 }
 
-ItemPtr ItemDrop::takeBy(EntityId entityId) {
+ItemPtr ItemDrop::takeBy(EntityId entityId, float timeOffset) {
   if (canTake()) {
     m_owningEntity.set(entityId);
-    m_dropAge.setElapsedTime(0.0);
+    m_dropAge.setElapsedTime(timeOffset);
     m_mode.set(Mode::Taken);
     setPersistent(false);
 
