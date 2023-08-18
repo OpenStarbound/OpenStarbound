@@ -1,5 +1,6 @@
 #include "StarMaterialItem.hpp"
 #include "StarJson.hpp"
+#include "StarJsonExtra.hpp"
 #include "StarMaterialDatabase.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
@@ -31,8 +32,20 @@ MaterialItem::MaterialItem(Json const& config, String const& directory, Json con
   setCooldownTime(config.queryFloat("materialItems.cooldown", defaultParameters.queryFloat("materialItems.cooldown")));
   m_blockRadius = config.getFloat("blockRadius", defaultParameters.getFloat("blockRadius"));
   m_altBlockRadius = config.getFloat("altBlockRadius", defaultParameters.getFloat("altBlockRadius"));
-  m_multiplace = config.getBool("allowMultiplace", BlockCollisionSet.contains(Root::singleton().materialDatabase()->materialCollisionKind(m_material)));
 
+  auto materialDatabase = Root::singleton().materialDatabase();
+  m_multiplace = config.getBool("allowMultiplace", BlockCollisionSet.contains(materialDatabase->materialCollisionKind(m_material)));
+  m_placeSounds = jsonToStringList(config.get("placeSounds", JsonArray()));
+  if (m_placeSounds.empty()) {
+    auto miningSound = materialDatabase->miningSound(m_material);
+    if (!miningSound.empty())
+      m_placeSounds.append(move(miningSound));
+    auto stepSound = materialDatabase->footstepSound(m_material);
+    if (!stepSound.empty())
+      m_placeSounds.append(move(stepSound));
+    else if (m_placeSounds.empty())
+      m_placeSounds.append(materialDatabase->defaultFootstepSound());
+  }
   m_shifting = false;
 }
 
@@ -98,6 +111,7 @@ void MaterialItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
     steps = (int)ceil(magnitude);
   }
 
+  unsigned total = 0;
   bool fail = true;
   for (int i = 0; i != steps; ++i) {
     auto placementOrigin = aimPosition + diff * ((float)i / steps);
@@ -110,12 +124,20 @@ void MaterialItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
     size_t failed = world()->applyTileModifications(modifications, false).size();
     if (failed < modifications.size()) {
       fail = false;
-      consume(modifications.size() - failed);
+      unsigned placed = modifications.size() - failed;
+      consume(placed);
+      total += placed;
     }
   }
 
-  if (!fail)
+  if (!fail) {
+    auto sound = Random::randValueFrom(m_placeSounds, "");
+    if (total && !sound.empty()) {
+      float intensity = clamp((float)total / 20, 0.0f, 1.0f);
+      owner()->addSound(sound, 1.0f + intensity, (1.25f - intensity * 0.75f) * Random::randf(0.9f, 1.1f));
+    }
     FireableItem::fire(mode, shifting, edgeTriggered);
+  }
 
   m_lastAimPosition = aimPosition;
 }

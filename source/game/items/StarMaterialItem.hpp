@@ -45,6 +45,7 @@ private:
   float m_altBlockRadius;
   bool m_shifting;
   bool m_multiplace;
+  StringList m_placeSounds;
   Maybe<Vec2F> m_lastAimPosition;
 };
 

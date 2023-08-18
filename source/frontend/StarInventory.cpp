@@ -35,27 +35,29 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
     auto itemGrid = convert<ItemGridWidget>(widget);
     InventorySlot inventorySlot = BagSlot(bagType, itemGrid->selectedIndex());
 
+    auto inventory = m_player->inventory();
     if (context()->shiftHeld()) {
       if (auto sourceItem = itemGrid->selectedItem()) {
         if (auto activeMerchantPane = m_parent->activeMerchantPane()) {
-          auto remainder = activeMerchantPane->addItems(m_player->inventory()->takeSlot(inventorySlot));
+          auto remainder = activeMerchantPane->addItems(inventory->takeSlot(inventorySlot));
           if (remainder && !remainder->empty())
-            m_player->inventory()->setItem(inventorySlot, remainder);
+            inventory->setItem(inventorySlot, remainder);
         } else if (m_containerInteractor->containerOpen()) {
-          m_player->inventory()->takeSlot(inventorySlot);
+          inventory->takeSlot(inventorySlot);
           m_containerInteractor->addToContainer(sourceItem);
           m_containerSource = inventorySlot;
           m_expectingSwap = true;
         }
       }
     } else {
-      m_player->inventory()->shiftSwap(inventorySlot);
+      inventory->shiftSwap(inventorySlot);
     }
   };
 
   auto rightClickCallback = [this](InventorySlot slot) {
-    if (ItemPtr slotItem = m_player->inventory()->itemsAt(slot)) {
-      auto swapItem = m_player->inventory()->swapSlotItem();
+    auto inventory = m_player->inventory();
+    if (ItemPtr slotItem = inventory->itemsAt(slot)) {
+      auto swapItem = inventory->swapSlotItem();
       if (!swapItem || swapItem->empty() || swapItem->couldStack(slotItem)) {
         uint64_t count = swapItem ? swapItem->couldStack(slotItem) : slotItem->maxStack();
         if (context()->shiftHeld())
@@ -67,14 +69,27 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
           if (swapItem)
             swapItem->stackWith(taken);
           else
-            m_player->inventory()->setSwapSlotItem(taken);
+            inventory->setSwapSlotItem(taken);
         }
       } else if (auto augment = as<AugmentItem>(swapItem)) {
         if (auto augmented = augment->applyTo(slotItem))
-          m_player->inventory()->setItem(slot, augmented);
+          inventory->setItem(slot, augmented);
+      }
+    }
+    else {
+      auto swapSlot = inventory->swapSlotItem();
+      if (auto es = slot.ptr<EquipmentSlot>()) {
+        if (inventory->itemAllowedAsEquipment(swapSlot, *es))
+          inventory->setItem(slot, swapSlot->take(1));
+      } else if (slot.is<TrashSlot>()) {
+        inventory->setItem(slot, swapSlot->take(1));
+      } else if (auto bs = slot.ptr<BagSlot>()) {
+        if (inventory->itemAllowedInBag(swapSlot, bs->first))
+          inventory->setItem(slot, swapSlot->take(1));
       }
     }
   };
+
   auto bagGridCallback = [rightClickCallback](String const& bagType, Widget* widget) {
     auto slot = BagSlot(bagType, convert<ItemGridWidget>(widget)->selectedIndex());
     rightClickCallback(slot);
@@ -163,6 +178,8 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
     m_currentSwapSlotItem = item->descriptor();
   m_pickUpSounds = jsonToStringList(config.get("sounds").get("pickup"));
   m_putDownSounds = jsonToStringList(config.get("sounds").get("putdown"));
+  m_someUpSounds = jsonToStringList(config.get("sounds").get("someup"));
+  m_someDownSounds = jsonToStringList(config.get("sounds").get("somedown"));
 }
 
 void InventoryPane::displayed() {
@@ -406,10 +423,12 @@ void InventoryPane::update(float dt) {
   }
 
   if (auto item = inventory->swapSlotItem()) {
-    if (!m_currentSwapSlotItem || !item->matches(*m_currentSwapSlotItem, true) || item->count() > m_currentSwapSlotItem->count())
+    if (!m_currentSwapSlotItem || !item->matches(*m_currentSwapSlotItem, true))
       context->playAudio(RandomSource().randFrom(m_pickUpSounds));
+    else if (item->count() > m_currentSwapSlotItem->count())
+      context->playAudio(RandomSource().randFrom(m_someUpSounds));
     else if (item->count() < m_currentSwapSlotItem->count())
-      context->playAudio(RandomSource().randFrom(m_putDownSounds));
+      context->playAudio(RandomSource().randFrom(m_someDownSounds));
 
     m_currentSwapSlotItem = item->descriptor();
   } else {

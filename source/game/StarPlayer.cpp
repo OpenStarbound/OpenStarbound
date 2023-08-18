@@ -412,8 +412,8 @@ void Player::addParticles(List<Particle> const& particles) {
   m_callbackParticles.appendAll(particles);
 }
 
-void Player::addSound(String const& sound, float volume) {
-  m_callbackSounds.append({sound, volume});
+void Player::addSound(String const& sound, float volume, float pitch) {
+  m_callbackSounds.emplaceAppend(sound, volume, pitch);
 }
 
 void Player::addEphemeralStatusEffects(List<EphemeralStatusEffect> const& statusEffects) {
@@ -1100,8 +1100,9 @@ void Player::render(RenderCallback* renderCallback) {
   renderCallback->addAudios(m_statusController->pullNewAudios());
 
   for (auto const& p : take(m_callbackSounds)) {
-    auto audio = make_shared<AudioInstance>(*Root::singleton().assets()->audio(p.first));
-    audio->setVolume(p.second);
+    auto audio = make_shared<AudioInstance>(*Root::singleton().assets()->audio(get<0>(p)));
+    audio->setVolume(get<1>(p));
+    audio->setPitchMultiplier(get<2>(p));
     audio->setPosition(position());
     renderCallback->addAudio(move(audio));
   }

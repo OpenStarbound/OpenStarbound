@@ -342,7 +342,7 @@ public:
   bool inInteractionRange(Vec2F aimPos) const;
 
   void addParticles(List<Particle> const& particles) override;
-  void addSound(String const& sound, float volume = 1.0f) override;
+  void addSound(String const& sound, float volume = 1.0f, float pitch = 1.0f) override;
 
   bool wireToolInUse() const;
   void setWireConnector(WireConnector* wireConnector) const;
@@ -611,7 +611,7 @@ private:
   List<RpcPromise<InteractAction>> m_pendingInteractActions;
 
   List<Particle> m_callbackParticles;
-  List<pair<String, float>> m_callbackSounds;
+  List<tuple<String, float, float>> m_callbackSounds;
 
   List<String> m_queuedMessages;
   List<ItemPtr> m_queuedItemPickups;

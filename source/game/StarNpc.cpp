@@ -1024,7 +1024,7 @@ float Npc::beamGunRadius() const {
 
 void Npc::addParticles(List<Particle> const&) {}
 
-void Npc::addSound(String const&, float) {}
+void Npc::addSound(String const&, float, float) {}
 
 bool Npc::inToolRange() const {
   return true;

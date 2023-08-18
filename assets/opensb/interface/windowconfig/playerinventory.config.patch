@@ -1,7 +1,8 @@
 {
-  "paneLayout" : {
-    "portrait" : {
-      "renderHumanoid" : true
-    }
+  "paneLayout" : { "portrait" : { "renderHumanoid" : true } },
+
+  "sounds" : {
+    "someup" : [ "/sfx/interface/inventory_someup.ogg" ],
+    "somedown" : [ "/sfx/interface/inventory_somedown.ogg" ]
   }
 }

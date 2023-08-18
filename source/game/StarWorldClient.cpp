@@ -1126,6 +1126,7 @@ void WorldClient::update(float dt) {
       if (itemDrop->canTake() && !m_requestedDrops.contains(itemDrop->entityId()) && distSquared < square(DropDist)) {
         m_requestedDrops.add(itemDrop->entityId());
         if (m_mainPlayer->itemsCanHold(itemDrop->item()) != 0) {
+          m_startupHiddenEntities.erase(itemDrop->entityId());
           itemDrop->takeBy(m_mainPlayer->entityId(), (float)m_latency / 1000);
           m_outgoingPackets.append(make_shared<RequestDropPacket>(itemDrop->entityId()));
         }

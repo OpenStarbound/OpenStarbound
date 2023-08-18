@@ -94,7 +94,7 @@ public:
   // FIXME: This is a dumb way of getting limited animation support
   virtual void addEffectEmitters(StringSet const& emitters) = 0;
   virtual void addParticles(List<Particle> const& particles) = 0;
-  virtual void addSound(String const& sound, float volume = 1.0f) = 0;
+  virtual void addSound(String const& sound, float volume = 1.0f, float pitch = 1.0f) = 0;
 
   virtual void setCameraFocusEntity(Maybe<EntityId> const& cameraFocusEntity) = 0;
 };

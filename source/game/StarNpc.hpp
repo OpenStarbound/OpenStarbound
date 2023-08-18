@@ -147,7 +147,7 @@ public:
   Vec4B favoriteColor() const override;
   float beamGunRadius() const override;
   void addParticles(List<Particle> const& particles) override;
-  void addSound(String const& sound, float volume = 1.0f) override;
+  void addSound(String const& sound, float volume = 1.0f, float pitch = 1.0f) override;
   bool inToolRange() const override;
   bool inToolRange(Vec2F const& position) const override;
   void addEphemeralStatusEffects(List<EphemeralStatusEffect> const& statusEffects) override;
