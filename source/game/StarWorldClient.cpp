@@ -324,19 +324,30 @@ TileModificationList WorldClient::applyTileModifications(TileModificationList co
   
   // thanks to new prediction: do each one by one so that previous modifications affect placeability
   
-  TileModificationList success;
-  TileModificationList failures;
-  for (auto const& pair : modificationList) {
-    if (!isTileProtected(pair.first)) {
-      auto result = WorldImpl::validateTileModification(m_entityMap, pair.first, pair.second, allowEntityOverlap, m_tileGetterFunction);
+  TileModificationList success, failures, temp;
+  TileModificationList const* list = &modificationList;
 
-      if (result.first) {
-        informTilePrediction(pair.first, pair.second);
-        success.append(pair);
-        continue;
+  while (true) {
+    bool yay = false;
+    for (size_t i = 0; i != list->size(); ++i) {
+      auto& pair = list->at(i);
+      if (!isTileProtected(pair.first)) {
+        auto result = WorldImpl::validateTileModification(m_entityMap, pair.first, pair.second, allowEntityOverlap, m_tileGetterFunction);
+
+        if (result.first) {
+          informTilePrediction(pair.first, pair.second);
+          success.append(pair);
+          yay = true;
+          continue;
+        }
       }
+      failures.append(pair);
     }
-    failures.append(pair);
+    if (yay) {
+      list = &(temp = move(failures));
+      continue;
+    }
+    else break;
   }
 
   if (!success.empty())

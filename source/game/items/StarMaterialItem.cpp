@@ -103,9 +103,10 @@ void MaterialItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
   if (*m_lastAimPosition != aimPosition) {
     diff = geo.diff(*m_lastAimPosition, aimPosition);
     float magnitude = diff.magnitude();
-    if (magnitude > 32) {
-      m_lastAimPosition = aimPosition + diff.normalized() * 32;
-      magnitude = 32;
+    float limit = max(4.f, 64.f / radius);
+    if (magnitude > limit) {
+      m_lastAimPosition = aimPosition + diff.normalized() * limit;
+      magnitude = limit;
     }
 
     steps = (int)ceil(magnitude * (Constants::pi / 2));
@@ -133,8 +134,8 @@ void MaterialItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
   if (!fail) {
     auto sound = Random::randValueFrom(m_placeSounds, "");
     if (total && !sound.empty()) {
-      float intensity = clamp((float)total / 20, 0.0f, 1.0f);
-      owner()->addSound(sound, 1.0f + intensity, (1.25f - intensity * 0.75f) * Random::randf(0.9f, 1.1f));
+      float intensity = clamp((float)total / 96, 0.0f, 1.0f);
+      owner()->addSound(sound, 1.0f + intensity, (1.125f - intensity * 0.75f) * Random::randf(0.9f, 1.1f));
     }
     FireableItem::fire(mode, shifting, edgeTriggered);
   }
