@@ -38,7 +38,7 @@ ItemDropPtr ItemDrop::createRandomizedDrop(ItemDescriptor const& descriptor, Vec
   return itemDrop;
 }
 
-ItemDropPtr ItemDrop::throwDrop(ItemPtr const& item, Vec2F const& position, Vec2F const& direction, bool eternal) {
+ItemDropPtr ItemDrop::throwDrop(ItemPtr const& item, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal) {
   if (!item)
     return {};
 
@@ -47,7 +47,7 @@ ItemDropPtr ItemDrop::throwDrop(ItemPtr const& item, Vec2F const& position, Vec2
   ItemDropPtr itemDrop = make_shared<ItemDrop>(item);
   itemDrop->setPosition(position);
   if (direction != Vec2F())
-    itemDrop->setVelocity(vnorm(direction) * idconfig.getFloat("throwSpeed"));
+    itemDrop->setVelocity(velocity + vnorm(direction) * idconfig.getFloat("throwSpeed"));
 
   itemDrop->setEternal(eternal);
   itemDrop->setIntangibleTime(idconfig.getFloat("throwIntangibleTime"));
@@ -55,12 +55,12 @@ ItemDropPtr ItemDrop::throwDrop(ItemPtr const& item, Vec2F const& position, Vec2
   return itemDrop;
 }
 
-ItemDropPtr ItemDrop::throwDrop(ItemDescriptor const& itemDescriptor, Vec2F const& position, Vec2F const& direction, bool eternal) {
+ItemDropPtr ItemDrop::throwDrop(ItemDescriptor const& itemDescriptor, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal) {
   if (!itemDescriptor || itemDescriptor.isEmpty())
     return {};
 
   auto itemDatabase = Root::singleton().itemDatabase();
-  auto itemDrop = throwDrop(itemDatabase->item(itemDescriptor), position, direction);
+  auto itemDrop = throwDrop(itemDatabase->item(itemDescriptor), position, velocity, direction);
   itemDrop->setEternal(eternal);
 
   return itemDrop;

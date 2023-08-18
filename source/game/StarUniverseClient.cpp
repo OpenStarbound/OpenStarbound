@@ -551,10 +551,16 @@ bool UniverseClient::reloadPlayer(Json const& data, Uuid const& uuid, bool reset
 bool UniverseClient::switchPlayer(Uuid const& uuid) {
   if (uuid == mainPlayer()->uuid())
     return false;
-  else if (auto data = m_playerStorage->maybeGetPlayerData(uuid))
-    return reloadPlayer(*data, uuid, true, true);
-  else
-    return false;
+  else if (auto data = m_playerStorage->maybeGetPlayerData(uuid)) {
+    if (reloadPlayer(*data, uuid, true, true)) {
+      auto dance = Root::singleton().assets()->json("/player.config:swapDance");
+      if (dance.isType(Json::Type::String))
+        m_mainPlayer->humanoid()->setDance(dance.toString());
+      return true;
+    }
+  }
+
+  return false;
 }
 
 bool UniverseClient::switchPlayer(size_t index) {

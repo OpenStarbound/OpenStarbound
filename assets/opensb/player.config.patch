@@ -10,5 +10,7 @@
     "minWireJitter" : 0.0,
     "minWireTrans" : 0.1,
     "maxWireTrans" : 0.4
-  }
+  },
+
+  "swapDance" : null // Set this to a valid dance to trigger on character swap.
 }

@@ -717,10 +717,11 @@ void Player::dropItem() {
   if (!canUseTool())
     return;
 
-  for (auto throwSlot : {m_inventory->primaryHeldSlot(), m_inventory->secondaryHeldSlot()}) {
+  Vec2F throwDirection = world()->geometry().diff(aimPosition(), position());
+  for (auto& throwSlot : {m_inventory->primaryHeldSlot(), m_inventory->secondaryHeldSlot()}) {
     if (throwSlot) {
       if (auto drop = m_inventory->takeSlot(*throwSlot)) {
-        world()->addEntity(ItemDrop::throwDrop(drop, position(), world()->geometry().diff(aimPosition(), position())));
+        world()->addEntity(ItemDrop::throwDrop(drop, position(), velocity(), throwDirection));
         break;
       }
     }
@@ -979,17 +980,20 @@ void Player::update(float dt, uint64_t) {
   m_humanoid->setMovingBackwards(false);
   m_humanoid->setRotation(m_movementController->rotation());
 
+  bool suppressedItems = !canUseTool();
+
   auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor());
   if (loungeAnchor && loungeAnchor->dance)
     m_humanoid->setDance(*loungeAnchor->dance);
-  else
+  else if ((!suppressedItems && (m_tools->primaryHandItem() || m_tools->altHandItem()))
+    || m_humanoid->danceCyclicOrEnded() || m_movementController->running())
     m_humanoid->setDance({});
 
   bool isClient = world()->isClient();
   if (isClient)
     m_armor->setupHumanoidClothingDrawables(*m_humanoid, forceNude());
 
-  m_tools->suppressItems(!canUseTool());
+  m_tools->suppressItems(suppressedItems);
   m_tools->tick(dt, m_shifting, m_pendingMoves);
 
   if (auto overrideFacingDirection = m_tools->setupHumanoidHandItems(*m_humanoid, position(), aimPosition()))
@@ -2348,7 +2352,7 @@ void Player::dropSelectedItems(function<bool(ItemPtr)> filter) {
 
   m_inventory->forEveryItem([&](InventorySlot const&, ItemPtr& item) {
       if (item && (!filter || filter(item)))
-        world()->addEntity(ItemDrop::throwDrop(take(item), position(), Vec2F::withAngle(Random::randf(-Constants::pi, Constants::pi)), true));
+        world()->addEntity(ItemDrop::throwDrop(take(item), position(), velocity(), Vec2F::withAngle(Random::randf(-Constants::pi, Constants::pi)), true));
     });
 }
 

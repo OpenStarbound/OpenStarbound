@@ -23,8 +23,8 @@ public:
   // Create a drop and throw in the given direction with a hard-coded initial
   // throw velocity (unrelated to magnitude of direction, direction is
   // normalized first).  Initially intangible for 1 second.
-  static ItemDropPtr throwDrop(ItemPtr const& item, Vec2F const& position, Vec2F const& direction, bool eternal = false);
-  static ItemDropPtr throwDrop(ItemDescriptor const& itemDescriptor, Vec2F const& position, Vec2F const& direction, bool eternal = false);
+  static ItemDropPtr throwDrop(ItemPtr const& item, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal = false);
+  static ItemDropPtr throwDrop(ItemDescriptor const& itemDescriptor, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal = false);
 
   ItemDrop(ItemPtr item);
   ItemDrop(Json const& diskStore);

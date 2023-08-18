@@ -169,6 +169,7 @@ public:
   State state() const;
   HumanoidEmote emoteState() const;
   Maybe<String> dance() const;
+  bool danceCyclicOrEnded() const;
   Direction facingDirection() const;
   bool movingBackwards() const;
 

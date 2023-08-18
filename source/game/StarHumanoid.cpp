@@ -425,6 +425,15 @@ Maybe<String> Humanoid::dance() const {
   return m_dance;
 }
 
+bool Humanoid::danceCyclicOrEnded() const {
+  if (!m_dance)
+    return false;
+
+  auto danceDatabase = Root::singleton().danceDatabase();
+  auto dance = danceDatabase->getDance(*m_dance);
+  return dance->cyclic || m_danceTimer > dance->duration;
+}
+
 Direction Humanoid::facingDirection() const {
   return m_facingDirection;
 }
