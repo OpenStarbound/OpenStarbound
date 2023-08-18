@@ -252,6 +252,12 @@ void ItemDrop::update(float dt, uint64_t) {
       m_movementController.tickSlave(dt);
     }
   }
+
+  if (world()->isClient()) {
+    SpatialLogger::logPoly("world",
+      m_movementController.collisionBody(),
+      (canTake() ? Color::Green : Color::Red).toRgba());
+  }
 }
 
 bool ItemDrop::shouldDestroy() const {
@@ -270,9 +276,9 @@ void ItemDrop::render(RenderCallback* renderCallback) {
   }
   EntityRenderLayer renderLayer = m_mode.get() == Mode::Taken ? RenderLayerForegroundTile : RenderLayerItemDrop;
   Vec2F dropPosition = position();
-  for (auto& drawable : *m_drawables) {
-    drawable.position = dropPosition;
-    renderCallback->addDrawable(drawable, renderLayer);
+  for (Drawable drawable : *m_drawables) {
+    drawable.position += dropPosition;
+    renderCallback->addDrawable(move(drawable), renderLayer);
   }
 }
 
