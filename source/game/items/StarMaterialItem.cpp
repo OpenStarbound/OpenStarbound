@@ -108,13 +108,13 @@ void MaterialItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
       magnitude = 32;
     }
 
-    steps = (int)ceil(magnitude);
+    steps = (int)ceil(magnitude * (Constants::pi / 2));
   }
 
   unsigned total = 0;
   bool fail = true;
   for (int i = 0; i != steps; ++i) {
-    auto placementOrigin = aimPosition + diff * ((float)i / steps);
+    auto placementOrigin = aimPosition + diff * (1.0f - ((float)i / steps));
     for (Vec2I pos : tileAreaBrush(radius, placementOrigin, true))
       modifications.append({ pos, PlaceMaterial{layer, materialId(), placementHueShift(pos)} });
 
