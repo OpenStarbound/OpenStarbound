@@ -155,6 +155,8 @@ void ItemDrop::readNetState(ByteArray data, float interpolationTime) {
 
 void ItemDrop::enableInterpolation(float extrapolationHint) {
   m_netGroup.enableNetInterpolation(extrapolationHint);
+  m_mode.disableNetInterpolation();
+  m_owningEntity.disableNetInterpolation();
 }
 
 void ItemDrop::disableInterpolation() {
@@ -180,36 +182,7 @@ RectF ItemDrop::collisionArea() const {
 void ItemDrop::update(float dt, uint64_t) {
   if (isMaster()) {
     if (m_owningEntity.get() != NullEntityId) {
-      if (auto owningEntity = world()->entity(m_owningEntity.get())) {
-        Vec2F position = m_movementController.position();
-        bool overhead = m_dropAge.elapsedTime() < m_overheadTime;
-        Vec2F targetPosition = owningEntity->position();
-        if (overhead) {
-          targetPosition += m_overheadOffset;
-          auto rect = owningEntity->collisionArea();
-          if (!rect.isNull())
-            targetPosition[1] += rect.yMax() + 1.5;
-          else
-            targetPosition[1] += 1.5f;
-        }
-        Vec2F diff = world()->geometry().diff(targetPosition, position);
-        float magnitude = diff.magnitude();
-        Vec2F velocity = diff.normalized() * m_velocity * min(1.0f, magnitude);
-        if (auto playerEntity = as<Player>(owningEntity))
-          velocity += playerEntity->velocity();
-        m_movementController.approachVelocity(velocity, overhead ? m_overheadApproach : m_velocityApproach);
-        if (!overhead && magnitude < m_pickupDistance)
-          m_mode.set(Mode::Dead);
-
-      } else {
-        // Our owning entity left, disappear quickly
-        m_mode.set(Mode::Dead);
-      }
-
-      MovementParameters parameters;
-      parameters.collisionEnabled = false;
-      parameters.gravityEnabled = false;
-      m_movementController.applyParameters(parameters);
+      updateTaken(true);
     } else {
       // Rarely, check for other drops near us and combine with them if possible.
       if (canTake() && m_mode.get() == Mode::Available && Random::randf() < m_combineChance) {
@@ -263,9 +236,16 @@ void ItemDrop::update(float dt, uint64_t) {
       m_ageItemsTimer.setElapsedTime(0.0);
     }
   } else {
+    if (m_itemDescriptor.pullUpdated())
+      Root::singleton().itemDatabase()->loadItem(m_itemDescriptor.get(), m_item);
     m_netGroup.tickNetInterpolation(GlobalTimestep);
-    Root::singleton().itemDatabase()->loadItem(m_itemDescriptor.get(), m_item);
-    m_movementController.tickSlave(dt);
+    if (m_owningEntity.get() != NullEntityId) {
+      updateTaken(false);
+      m_movementController.tickMaster(dt);
+    }
+    else {
+      m_movementController.tickSlave(dt);
+    }
   }
 }
 
@@ -324,7 +304,7 @@ ItemPtr ItemDrop::takeBy(EntityId entityId) {
 
 ItemPtr ItemDrop::take() {
   if (canTake()) {
-    m_mode.set(Mode::Dead);
+    m_mode.set(Mode::Taken);
     return m_item->take();
   } else {
     return {};
@@ -343,7 +323,8 @@ void ItemDrop::setVelocity(Vec2F const& velocity) {
   m_movementController.setVelocity(velocity);
 }
 
-EnumMap<ItemDrop::Mode> const ItemDrop::ModeNames{{ItemDrop::Mode::Intangible, "Intangible"},
+EnumMap<ItemDrop::Mode> const ItemDrop::ModeNames{
+    {ItemDrop::Mode::Intangible, "Intangible"},
     {ItemDrop::Mode::Available, "Available"},
     {ItemDrop::Mode::Taken, "Taken"},
     {ItemDrop::Mode::Dead, "Dead"}};
@@ -383,6 +364,41 @@ void ItemDrop::updateCollisionPoly() {
   m_boundBox.rangeSetIfEmpty(RectF{-0.5, -0.5, 0.5, 0.5});
   MovementParameters parameters;
   parameters.collisionPoly = PolyF(collisionArea());
+  m_movementController.applyParameters(parameters);
+}
+
+
+void ItemDrop::updateTaken(bool master) {
+  if (auto owningEntity = world()->entity(m_owningEntity.get())) {
+    Vec2F position = m_movementController.position();
+    bool overhead = m_dropAge.elapsedTime() < m_overheadTime;
+    Vec2F targetPosition = owningEntity->position();
+    if (overhead) {
+      targetPosition += m_overheadOffset;
+      auto rect = owningEntity->collisionArea();
+      if (!rect.isNull())
+        targetPosition[1] += rect.yMax() + 1.5;
+      else
+        targetPosition[1] += 1.5f;
+    }
+    Vec2F diff = world()->geometry().diff(targetPosition, position);
+    float magnitude = diff.magnitude();
+    Vec2F velocity = diff.normalized() * m_velocity * min(1.0f, magnitude);
+    if (auto playerEntity = as<Player>(owningEntity))
+      velocity += playerEntity->velocity();
+    m_movementController.approachVelocity(velocity, overhead ? m_overheadApproach : m_velocityApproach);
+    if (master && !overhead && magnitude < m_pickupDistance)
+      m_mode.set(Mode::Dead);
+
+  } else if (master) {
+    // Our owning entity left, disappear quickly
+    m_mode.set(Mode::Dead);
+  }
+
+  MovementParameters parameters;
+  parameters.maxMovementPerStep = 1000.0f;
+  parameters.collisionEnabled = false;
+  parameters.gravityEnabled = false;
   m_movementController.applyParameters(parameters);
 }
 

@@ -94,6 +94,8 @@ private:
   // item drop drawables
   void updateCollisionPoly();
 
+  void updateTaken(bool master);
+
   Json m_config;
   ItemPtr m_item;
   RectF m_boundBox;
