@@ -14,7 +14,8 @@ LabelWidget::LabelWidget(String text,
     m_hAnchor(hAnchor),
     m_vAnchor(vAnchor),
     m_wrapWidth(move(wrapWidth)),
-    m_lineSpacing(move(lineSpacing)) {
+    m_lineSpacing(move(lineSpacing)),
+    m_fontMode(FontMode::Normal) {
   auto assets = Root::singleton().assets();
   auto fontConfig = assets->json("/interface.config:font");
   m_fontSize = fontConfig.getInt("baseSize");

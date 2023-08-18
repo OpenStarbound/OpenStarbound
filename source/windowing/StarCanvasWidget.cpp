@@ -274,6 +274,7 @@ void CanvasWidget::renderText(Vec2F const& renderingOffset, String const& s, Tex
 
   context.setDefaultLineSpacing();
   context.setDefaultFont();
+  context.setFontMode(FontMode::Normal);
   context.setFontProcessingDirectives("");
 }
 
