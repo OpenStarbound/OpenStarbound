@@ -7,6 +7,7 @@
 #include "StarEntityRendering.hpp"
 #include "StarWorld.hpp"
 #include "StarDataStreamExtra.hpp"
+#include "StarPlayer.hpp"
 
 namespace Star {
 
@@ -179,13 +180,25 @@ RectF ItemDrop::collisionArea() const {
 void ItemDrop::update(float dt, uint64_t) {
   if (isMaster()) {
     if (m_owningEntity.get() != NullEntityId) {
-      auto owningEntity = world()->entity(m_owningEntity.get());
-      if (owningEntity) {
+      if (auto owningEntity = world()->entity(m_owningEntity.get())) {
         Vec2F position = m_movementController.position();
-        Vec2F diff = world()->geometry().diff(owningEntity->position(), position);
+        bool overhead = m_dropAge.elapsedTime() < m_overheadTime;
+        Vec2F targetPosition = owningEntity->position();
+        if (overhead) {
+          targetPosition += m_overheadOffset;
+          auto rect = owningEntity->collisionArea();
+          if (!rect.isNull())
+            targetPosition[1] += rect.yMax() + 1.5;
+          else
+            targetPosition[1] += 1.5f;
+        }
+        Vec2F diff = world()->geometry().diff(targetPosition, position);
         float magnitude = diff.magnitude();
-        m_movementController.approachVelocity(diff.normalized() * m_config.getFloat("velocity"), m_config.getFloat("velocityApproach"));
-        if (magnitude < m_config.getFloat("pickupDistance"))
+        Vec2F velocity = diff.normalized() * m_velocity * min(1.0f, magnitude);
+        if (auto playerEntity = as<Player>(owningEntity))
+          velocity += playerEntity->velocity();
+        m_movementController.approachVelocity(velocity, overhead ? m_overheadApproach : m_velocityApproach);
+        if (!overhead && magnitude < m_pickupDistance)
           m_mode.set(Mode::Dead);
 
       } else {
@@ -199,12 +212,12 @@ void ItemDrop::update(float dt, uint64_t) {
       m_movementController.applyParameters(parameters);
     } else {
       // Rarely, check for other drops near us and combine with them if possible.
-      if (canTake() && m_mode.get() == Mode::Available && Random::randf() < m_config.getFloat("combineChance")) {
-        world()->findEntity(RectF::withCenter(position(), Vec2F::filled(m_config.getFloat("combineRadius"))), [&](EntityPtr const& entity) {
+      if (canTake() && m_mode.get() == Mode::Available && Random::randf() < m_combineChance) {
+        world()->findEntity(RectF::withCenter(position(), Vec2F::filled(m_combineRadius)), [&](EntityPtr const& entity) {
             if (auto closeDrop = as<ItemDrop>(entity)) {
               // Make sure not to try to merge with ourselves here.
               if (closeDrop.get() != this && closeDrop->canTake()
-                  && vmag(position() - closeDrop->position()) < m_config.getFloat("combineRadius")) {
+                  && vmag(position() - closeDrop->position()) < m_combineRadius) {
                 if (m_item->couldStack(closeDrop->item()) == closeDrop->item()->count()) {
                   m_item->stackWith(closeDrop->take());
                   m_dropAge.setElapsedTime(min(m_dropAge.elapsedTime(), closeDrop->m_dropAge.elapsedTime()));
@@ -240,10 +253,10 @@ void ItemDrop::update(float dt, uint64_t) {
       m_mode.set(Mode::Available);
     if (!m_eternal && m_mode.get() == Mode::Available && m_dropAge.elapsedTime() > m_item->timeToLive())
       m_mode.set(Mode::Dead);
-    if (m_mode.get() == Mode::Taken && m_dropAge.elapsedTime() > m_config.getFloat("afterTakenLife"))
+    if (m_mode.get() == Mode::Taken && m_dropAge.elapsedTime() > m_afterTakenLife)
       m_mode.set(Mode::Dead);
 
-    if (m_mode.get() <= Mode::Available && m_ageItemsTimer.elapsedTime() > m_config.getDouble("ageItemsEvery", 10)) {
+    if (m_mode.get() <= Mode::Available && m_ageItemsTimer.elapsedTime() > m_ageItemsEvery) {
       Root::singleton().itemDatabase()->ageItem(m_item, m_ageItemsTimer.elapsedTime());
       m_itemDescriptor.set(m_item->descriptor());
       updateCollisionPoly();
@@ -261,9 +274,20 @@ bool ItemDrop::shouldDestroy() const {
 }
 
 void ItemDrop::render(RenderCallback* renderCallback) {
-  for (auto& drawable : m_item->dropDrawables()) {
-    drawable.translate(position());
-    renderCallback->addDrawable(move(drawable), RenderLayerItemDrop);
+  if (!m_drawables) {
+    m_drawables = m_item->dropDrawables();
+    if (Directives dropDirectives = m_config.getString("directives", "")) {
+      for (auto& drawable : *m_drawables) {
+        if (drawable.isImage())
+          drawable.imagePart().addDirectives(dropDirectives, true);
+      }
+    }
+  }
+  EntityRenderLayer renderLayer = m_mode.get() == Mode::Taken ? RenderLayerForegroundTile : RenderLayerItemDrop;
+  Vec2F dropPosition = position();
+  for (auto& drawable : *m_drawables) {
+    drawable.position = dropPosition;
+    renderCallback->addDrawable(drawable, renderLayer);
   }
 }
 
@@ -338,6 +362,18 @@ ItemDrop::ItemDrop() {
   m_netGroup.addNetElement(&m_owningEntity);
   m_netGroup.addNetElement(&m_movementController);
   m_netGroup.addNetElement(&m_itemDescriptor);
+
+  m_afterTakenLife = m_config.getFloat("afterTakenLife");
+  m_overheadTime = m_config.getFloat("overheadTime");
+  m_pickupDistance = m_config.getFloat("pickupDistance");
+  m_velocity = m_config.getFloat("velocity");
+  m_velocityApproach = m_config.getFloat("velocityApproach");
+  m_overheadApproach = m_config.getFloat("overheadApproach");
+  m_overheadOffset = Vec2F(m_config.getFloat("overheadRandomizedDistance"), 0).rotate(Constants::pi * 2.0 * Random::randf());
+
+  m_combineChance = m_config.getFloat("combineChance");
+  m_combineRadius = m_config.getFloat("combineRadius");
+  m_ageItemsEvery = m_config.getDouble("ageItemsEvery", 10);
 
   m_eternal = false;
 }

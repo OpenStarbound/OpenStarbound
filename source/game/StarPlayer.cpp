@@ -1150,6 +1150,8 @@ ItemPtr Player::pickupItems(ItemPtr const& items) {
 
   if (items->pickupSound().size()) {
     m_effectsAnimator->setSoundPool("pickup", {items->pickupSound()});
+    float pitch = 1.f - ((float)items->count() / (float)items->maxStack()) * 0.5f;
+    m_effectsAnimator->setSoundPitchMultiplier("pickup", clamp(pitch * Random::randf(0.9f, 1.1f), 0.f, 2.f));
     m_effectsAnimator->playSound("pickup");
   }
   auto itemDb = Root::singleton().itemDatabase();

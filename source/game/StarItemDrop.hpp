@@ -6,6 +6,7 @@
 #include "StarItemDescriptor.hpp"
 #include "StarGameTimers.hpp"
 #include "StarEntity.hpp"
+#include "StarDrawable.hpp"
 
 namespace Star {
 
@@ -96,6 +97,17 @@ private:
   Json m_config;
   ItemPtr m_item;
   RectF m_boundBox;
+  float m_afterTakenLife;
+  float m_overheadTime;
+  float m_pickupDistance;
+  float m_velocity;
+  float m_velocityApproach;
+  float m_overheadApproach;
+  Vec2F m_overheadOffset;
+
+  float m_combineChance;
+  float m_combineRadius;
+  double m_ageItemsEvery;
 
   NetElementTopGroup m_netGroup;
   NetElementEnum<Mode> m_mode;
@@ -108,6 +120,8 @@ private:
   EpochTimer m_dropAge;
   GameTimer m_intangibleTimer;
   EpochTimer m_ageItemsTimer;
+
+  Maybe<List<Drawable>> m_drawables;
 };
 
 }
