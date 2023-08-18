@@ -240,8 +240,13 @@ void ItemDrop::update(float dt, uint64_t) {
       Root::singleton().itemDatabase()->loadItem(m_itemDescriptor.get(), m_item);
     m_netGroup.tickNetInterpolation(GlobalTimestep);
     if (m_owningEntity.get() != NullEntityId) {
-      updateTaken(false);
-      m_movementController.tickMaster(dt);
+      m_dropAge.update(world()->epochTime());
+      if (!isMaster() && m_dropAge.elapsedTime() > 1.0f)
+        m_owningEntity.set(NullEntityId);
+      else {
+        updateTaken(false);
+        m_movementController.tickMaster(dt);
+      }
     }
     else {
       m_movementController.tickSlave(dt);

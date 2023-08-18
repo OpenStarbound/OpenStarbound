@@ -1125,8 +1125,10 @@ void WorldClient::update(float dt) {
       // If the drop is within DropDist and not owned, request it.
       if (itemDrop->canTake() && !m_requestedDrops.contains(itemDrop->entityId()) && distSquared < square(DropDist)) {
         m_requestedDrops.add(itemDrop->entityId());
-        if (m_mainPlayer->itemsCanHold(itemDrop->item()) != 0)
+        if (m_mainPlayer->itemsCanHold(itemDrop->item()) != 0) {
+          itemDrop->takeBy(m_mainPlayer->entityId());
           m_outgoingPackets.append(make_shared<RequestDropPacket>(itemDrop->entityId()));
+        }
       }
     }
   } else {
