@@ -198,7 +198,7 @@ private:
 
   void number() {
     std::basic_string<char32_t> buffer;
-    bool hasDot = false;
+    bool isDouble = false;
 
     if (m_char == '-') {
       buffer += '-';
@@ -218,7 +218,7 @@ private:
     }
 
     if (m_char == '.') {
-      hasDot = true;
+      isDouble = true;
       buffer += '.';
       next();
       while (m_char >= '0' && m_char <= '9') {
@@ -228,6 +228,7 @@ private:
     }
 
     if (m_char == 'e' || m_char == 'E') {
+      isDouble = true;
       buffer += m_char;
       next();
       if (m_char == '-' || m_char == '+') {
@@ -240,7 +241,7 @@ private:
       }
     }
 
-    if (hasDot) {
+    if (isDouble) {
       try {
         m_stream.putDouble(buffer.c_str(), buffer.length());
       } catch (std::exception const& e) {
