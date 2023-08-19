@@ -1344,6 +1344,10 @@ void WorldClient::collectLiquid(List<Vec2I> const& tilePositions, LiquidId liqui
   if (!inWorld())
     return;
 
+  TileModification modification = PlaceLiquid{ EmptyLiquidId, 0.0f };
+  for (auto& pos : tilePositions)
+    informTilePrediction(pos, modification);
+
   m_outgoingPackets.append(make_shared<CollectLiquidPacket>(tilePositions, liquidId));
 }
 
