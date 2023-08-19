@@ -43,7 +43,7 @@ public:
   List<PreviewTile> preview(bool shifting) const override;
 private:
   float calcRadius(bool shifting) const;
-  List<Vec2I>& tileArea(float radius) const;
+  List<Vec2I>& tileArea(float radius, Vec2F const& position) const;
   MaterialHue placementHueShift(Vec2I const& position) const;
 
   MaterialId m_material;
@@ -57,6 +57,7 @@ private:
   Maybe<Vec2F> m_lastAimPosition;
   TileCollisionOverride m_collisionOverride;
 
+  mutable Vec2F m_lastTileAreaOriginCache;
   mutable float m_lastTileAreaRadiusCache;
   mutable List<Vec2I> m_tileAreasCache;
 };

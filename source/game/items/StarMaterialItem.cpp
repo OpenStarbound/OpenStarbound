@@ -99,7 +99,7 @@ void MaterialItem::render(RenderCallback* renderCallback, EntityRenderLayer rend
       auto indicator = Drawable::makeImage(path, 1.0f / TilePixels, true, basePosition);
       indicator.fullbright = true;
       indicator.color = color;
-      for (auto& tilePos : tileArea(calcRadius(m_shifting))) {
+      for (auto& tilePos : tileArea(calcRadius(m_shifting), owner()->aimPosition())) {
         indicator.position = basePosition + Vec2F(tilePos);
         renderCallback->addDrawable(indicator, RenderLayerForegroundTile);
       }
@@ -129,7 +129,6 @@ void MaterialItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
 
   auto geo = world()->geometry();
   auto aimPosition = owner()->aimPosition();
-  auto& tilePositions = tileArea(radius);
 
   if (!m_lastAimPosition)
     m_lastAimPosition = aimPosition;
@@ -145,14 +144,14 @@ void MaterialItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
       magnitude = limit;
     }
 
-    steps = (int)ceil(magnitude * (Constants::pi / 2));
+    steps = (unsigned)ceil(magnitude * (Constants::pi / 2));
   }
 
   size_t total = 0;
   for (int i = 0; i != steps; ++i) {
     auto placementOrigin = aimPosition + diff * (1.0f - ((float)i / steps));
-    for (Vec2I& pos : tilePositions)
-      modifications.append({ pos, PlaceMaterial{layer, materialId(), placementHueShift(pos), m_collisionOverride} });
+    for (Vec2I& pos : tileArea(radius, placementOrigin))
+      modifications.emplaceAppend(pos, PlaceMaterial{layer, materialId(), placementHueShift(pos), m_collisionOverride});
 
     // Make sure not to make any more modifications than we have consumables.
     if (modifications.size() > count())
@@ -166,7 +165,7 @@ void MaterialItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
   }
 
   if (total) {
-    float intensity = clamp((float)total / 96, 0.0f, 1.0f);
+    float intensity = clamp(sqrt((float)total) / 16, 0.0f, 1.0f);
     owner()->addSound(Random::randValueFrom(m_placeSounds), 1.0f + intensity, (1.125f - intensity * 0.75f) * Random::randf(0.9f, 1.1f));
     FireableItem::fire(mode, shifting, edgeTriggered);
   }
@@ -189,11 +188,11 @@ float MaterialItem::calcRadius(bool shifting) const {
     return !shifting ? m_blockRadius : m_altBlockRadius;
 }
 
-List<Vec2I>& MaterialItem::tileArea(float radius) const {
-  auto aimPosition = owner()->aimPosition();
-  if (!m_lastAimPosition || *m_lastAimPosition != aimPosition || m_lastTileAreaRadiusCache != radius) {
+List<Vec2I>& MaterialItem::tileArea(float radius, Vec2F const& position) const {
+  if (m_lastTileAreaOriginCache != position || m_lastTileAreaRadiusCache != radius) {
+    m_lastTileAreaOriginCache = position;
     m_lastTileAreaRadiusCache = radius;
-    m_tileAreasCache = tileAreaBrush(radius, owner()->aimPosition(), true);
+    m_tileAreasCache = tileAreaBrush(radius, position, true);
   }
   return m_tileAreasCache;
 }
@@ -208,7 +207,7 @@ bool MaterialItem::canPlace(bool shifting) const {
 
     float radius = calcRadius(shifting);
 
-    for (auto& pos : tileArea(radius)) {
+    for (auto& pos : tileArea(radius, owner()->aimPosition())) {
       MaterialHue hueShift = placementHueShift(pos);
       if (world()->canModifyTile(pos, PlaceMaterial{TileLayer::Foreground, material, hueShift}, false)
           || world()->canModifyTile(pos, PlaceMaterial{TileLayer::Background, material, hueShift}, false))
@@ -244,7 +243,7 @@ List<PreviewTile> MaterialItem::preview(bool shifting) const {
     auto color = DefaultMaterialColorVariant;
 
     size_t c = 0;
-    for (auto& pos : tileArea(calcRadius(shifting))) {
+    for (auto& pos : tileArea(calcRadius(shifting), owner()->aimPosition())) {
       MaterialHue hueShift = placementHueShift(pos);
       if (c >= count())
         break;

@@ -351,6 +351,7 @@ TileModificationList WorldClient::applyTileModifications(TileModificationList co
     }
     if (yay) {
       list = &(temp = move(failures));
+      failures = {};
       continue;
     }
     else break;
