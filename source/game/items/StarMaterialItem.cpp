@@ -7,6 +7,7 @@
 #include "StarWorld.hpp"
 #include "StarWorldClient.hpp"
 #include "StarWorldTemplate.hpp"
+#include "StarInput.hpp"
 
 namespace Star {
 
@@ -47,6 +48,8 @@ MaterialItem::MaterialItem(Json const& config, String const& directory, Json con
       m_placeSounds.append(materialDatabase->defaultFootstepSound());
   }
   m_shifting = false;
+  m_lastTileAreaRadiusCache = 0.0f;
+  m_collisionOverride = TileCollisionOverride::None;
 }
 
 ItemPtr MaterialItem::clone() const {
@@ -56,7 +59,7 @@ ItemPtr MaterialItem::clone() const {
 void MaterialItem::init(ToolUserEntity* owner, ToolHand hand) {
   FireableItem::init(owner, hand);
   BeamItem::init(owner, hand);
-  owner->addSound(Random::randValueFrom(m_placeSounds), 0.8f, 2.0f);
+  owner->addSound(Random::randValueFrom(m_placeSounds), 1.0f, 2.0f);
 }
 
 void MaterialItem::uninit() {
@@ -71,6 +74,44 @@ void MaterialItem::update(float dt, FireMode fireMode, bool shifting, HashSet<Mo
   else
     setEnd(BeamItem::EndType::TileGroup);
   m_shifting = shifting;
+
+  if (auto presses = Input::singleton().bindDown("opensb", "materialCycleCollision")) {
+    CollisionKind baseKind = Root::singleton().materialDatabase()->materialCollisionKind(m_material);
+    for (size_t i = 0; i != *presses; ++i) {
+      constexpr auto limit = (uint8_t)TileCollisionOverride::Block + 1;
+      while (true) {
+        m_collisionOverride = (TileCollisionOverride)(((uint8_t)m_collisionOverride + 1) % limit);
+        if (collisionKindFromOverride(m_collisionOverride) != baseKind)
+          break;
+      }
+    }
+    owner()->addSound("/sfx/tools/cyclematcollision.ogg", 1.0f, Random::randf(0.9f, 1.1f));
+  }
+}
+
+void MaterialItem::render(RenderCallback* renderCallback, EntityRenderLayer renderLayer) {
+  if (m_collisionOverride != TileCollisionOverride::None) {
+    float pulseLevel = 1.f - 0.3f * 0.5f * ((float)sin(2 * Constants::pi * 4.0 * Time::monotonicTime()) + 1.f);
+    Color color = Color::rgba(owner()->favoriteColor()).mix(Color::White);
+    color.setAlphaF(color.alphaF() * pulseLevel * 0.95f);
+    auto addIndicator = [&](String const& path) {
+      Vec2F basePosition = Vec2F(0.5f, 0.5f);
+      auto indicator = Drawable::makeImage(path, 1.0f / TilePixels, true, basePosition);
+      indicator.fullbright = true;
+      indicator.color = color;
+      for (auto& tilePos : tileArea(calcRadius(m_shifting))) {
+        indicator.position = basePosition + Vec2F(tilePos);
+        renderCallback->addDrawable(indicator, RenderLayerForegroundTile);
+      }
+    };
+
+    if (m_collisionOverride == TileCollisionOverride::Empty)
+      addIndicator("/interface/building/collisionempty.png");
+    else if (m_collisionOverride == TileCollisionOverride::Platform)
+      addIndicator("/interface/building/collisionplatform.png");
+    else if (m_collisionOverride == TileCollisionOverride::Block)
+      addIndicator("/interface/building/collisionblock.png");
+  }
 }
 
 List<Drawable> MaterialItem::nonRotatedDrawables() const {
@@ -84,18 +125,12 @@ void MaterialItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
   auto layer = (mode == FireMode::Primary || !twoHanded() ? TileLayer::Foreground : TileLayer::Background);
   TileModificationList modifications;
 
-  float radius;
-
-  if (!shifting)
-    radius = m_blockRadius;
-  else
-    radius = m_altBlockRadius;
-
-  if (!multiplaceEnabled())
-    radius = 1;
+  float radius = calcRadius(shifting);
 
   auto geo = world()->geometry();
   auto aimPosition = owner()->aimPosition();
+  auto& tilePositions = tileArea(radius);
+
   if (!m_lastAimPosition)
     m_lastAimPosition = aimPosition;
 
@@ -106,7 +141,7 @@ void MaterialItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
     float magnitude = diff.magnitude();
     float limit = max(4.f, 64.f / radius);
     if (magnitude > limit) {
-      m_lastAimPosition = aimPosition + diff.normalized() * limit;
+      diff = diff.normalized() * limit;
       magnitude = limit;
     }
 
@@ -116,8 +151,8 @@ void MaterialItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
   size_t total = 0;
   for (int i = 0; i != steps; ++i) {
     auto placementOrigin = aimPosition + diff * (1.0f - ((float)i / steps));
-    for (Vec2I pos : tileAreaBrush(radius, placementOrigin, true))
-      modifications.append({ pos, PlaceMaterial{layer, materialId(), placementHueShift(pos)} });
+    for (Vec2I& pos : tilePositions)
+      modifications.append({ pos, PlaceMaterial{layer, materialId(), placementHueShift(pos), m_collisionOverride} });
 
     // Make sure not to make any more modifications than we have consumables.
     if (modifications.size() > count())
@@ -147,6 +182,22 @@ MaterialId MaterialItem::materialId() const {
   return m_material;
 }
 
+float MaterialItem::calcRadius(bool shifting) const {
+  if (!multiplaceEnabled())
+    return 1;
+  else
+    return !shifting ? m_blockRadius : m_altBlockRadius;
+}
+
+List<Vec2I>& MaterialItem::tileArea(float radius) const {
+  auto aimPosition = owner()->aimPosition();
+  if (!m_lastAimPosition || *m_lastAimPosition != aimPosition || m_lastTileAreaRadiusCache != radius) {
+    m_lastTileAreaRadiusCache = radius;
+    m_tileAreasCache = tileAreaBrush(radius, owner()->aimPosition(), true);
+  }
+  return m_tileAreasCache;
+}
+
 MaterialHue MaterialItem::materialHueShift() const {
   return m_materialHueShift;
 }
@@ -155,16 +206,9 @@ bool MaterialItem::canPlace(bool shifting) const {
   if (initialized()) {
     MaterialId material = materialId();
 
-    float radius;
-    if (!shifting)
-      radius = m_blockRadius;
-    else
-      radius = m_altBlockRadius;
+    float radius = calcRadius(shifting);
 
-    if (!multiplaceEnabled())
-      radius = 1;
-
-    for (auto pos : tileAreaBrush(radius, owner()->aimPosition(), true)) {
+    for (auto& pos : tileArea(radius)) {
       MaterialHue hueShift = placementHueShift(pos);
       if (world()->canModifyTile(pos, PlaceMaterial{TileLayer::Foreground, material, hueShift}, false)
           || world()->canModifyTile(pos, PlaceMaterial{TileLayer::Background, material, hueShift}, false))
@@ -178,6 +222,18 @@ bool MaterialItem::multiplaceEnabled() const {
   return m_multiplace && count() > 1;
 }
 
+float& MaterialItem::blockRadius() {
+  return m_blockRadius;
+}
+
+float& MaterialItem::altBlockRadius() {
+  return m_altBlockRadius;
+}
+
+TileCollisionOverride& MaterialItem::collisionOverride() {
+  return m_collisionOverride;
+}
+
 List<PreviewTile> MaterialItem::preview(bool shifting) const {
   List<PreviewTile> result;
   if (initialized()) {
@@ -187,19 +243,8 @@ List<PreviewTile> MaterialItem::preview(bool shifting) const {
     auto material = materialId();
     auto color = DefaultMaterialColorVariant;
 
-    float radius;
-
-    if (!shifting)
-      radius = m_blockRadius;
-    else
-      radius = m_altBlockRadius;
-
-    if (!multiplaceEnabled())
-      radius = 1;
-
     size_t c = 0;
-
-    for (auto pos : tileAreaBrush(radius, owner()->aimPosition(), true)) {
+    for (auto& pos : tileArea(calcRadius(shifting))) {
       MaterialHue hueShift = placementHueShift(pos);
       if (c >= count())
         break;

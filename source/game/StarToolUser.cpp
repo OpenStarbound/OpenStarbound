@@ -535,20 +535,15 @@ void ToolUser::render(RenderCallback* renderCallback, bool inToolRange, bool shi
     return;
   }
 
-  // FIXME: Why isn't material item a PreviewTileTool, why is inToolRange
-  // passed in again, what is the difference here between the owner's tool
-  // range, can't MaterialItem figure this out?
-  if (inToolRange) {
-    if (auto materialItem = as<MaterialItem>(m_primaryHandItem.get()))
-      renderCallback->addTilePreviews(materialItem->preview(shifting));
-    else if (auto liquidItem = as<LiquidItem>(m_primaryHandItem.get()))
-      renderCallback->addTilePreviews(liquidItem->preview(shifting));
-  }
-
   if (auto pri = as<PreviewTileTool>(m_primaryHandItem.get()))
     renderCallback->addTilePreviews(pri->preview(shifting));
   else if (auto alt = as<PreviewTileTool>(m_altHandItem.get()))
     renderCallback->addTilePreviews(alt->preview(shifting));
+
+  if (auto ren = as<RenderableItem>(m_primaryHandItem.get()))
+    ren->render(renderCallback, renderLayer);
+  if (auto ren = as<RenderableItem>(m_altHandItem.get()))
+    ren->render(renderCallback, renderLayer);
 
   for (auto item : {m_primaryHandItem.get(), m_altHandItem.get()}) {
     if (auto activeItem = as<ActiveItem>(item)) {

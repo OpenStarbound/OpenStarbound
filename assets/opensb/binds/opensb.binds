@@ -2,7 +2,8 @@
   "opensb": {
     "groups": {
       "camera": { "name": "Camera" },
-      "voice": { "name": "Voice" }
+      "voice": { "name": "Voice" },
+      "building": { "name": "Building" }
     },
     "name": "Open^#ebd74a;Starbound",
     "binds": {
@@ -11,7 +12,7 @@
           "type": "key",
           "value": "="
         }],
-        "group" : "camera",
+        "group": "camera",
         "name": "Zoom In"
       },
       "zoomOut": {
@@ -19,13 +20,18 @@
           "type": "key",
           "value": "-"
         }],
-        "group" : "camera",
+        "group": "camera",
         "name": "Zoom Out"
       },
       "pushToTalk": {
         "default": [],
-        "group" : "voice",
+        "group": "voice",
         "name": "Push To Talk"
+      },
+      "materialCycleCollision": {
+        "default": [],
+        "group": "building",
+        "name": "Cycle Material Collision"
       }
     }
   }

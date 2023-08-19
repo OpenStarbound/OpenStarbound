@@ -196,6 +196,7 @@ SET (star_game_HEADERS
     interfaces/StarPointableItem.hpp
     interfaces/StarPortraitEntity.hpp
     interfaces/StarPreviewableItem.hpp
+    interfaces/StarRenderableItem.hpp
     interfaces/StarScriptedEntity.hpp
     interfaces/StarStatusEffectEntity.hpp
     interfaces/StarStatusEffectItem.hpp

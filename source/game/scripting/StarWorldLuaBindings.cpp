@@ -1949,8 +1949,8 @@ namespace LuaBindings {
       layerName = layerName.substr(0, split);
       if (overrideName == "empty" || overrideName == "none")
         placeMaterial.collisionOverride = TileCollisionOverride::Empty;
-      else if (overrideName == "dynamic" || overrideName == "block")
-        placeMaterial.collisionOverride = TileCollisionOverride::Dynamic;
+      else if (overrideName == "block")
+        placeMaterial.collisionOverride = TileCollisionOverride::Block;
       else if (overrideName == "platform")
         placeMaterial.collisionOverride = TileCollisionOverride::Platform;
       else

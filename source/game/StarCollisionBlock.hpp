@@ -22,7 +22,7 @@ enum class TileCollisionOverride : uint8_t {
   None,
   Empty,
   Platform,
-  Dynamic
+  Block
 };
 
 inline CollisionKind collisionKindFromOverride(TileCollisionOverride const& over) {
@@ -31,8 +31,8 @@ inline CollisionKind collisionKindFromOverride(TileCollisionOverride const& over
       return CollisionKind::None;
     case TileCollisionOverride::Platform:
       return CollisionKind::Platform;
-    case TileCollisionOverride::Dynamic:
-      return CollisionKind::Dynamic;
+    case TileCollisionOverride::Block:
+      return CollisionKind::Block;
     default:
       return CollisionKind::Null;
   }
