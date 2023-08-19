@@ -55,8 +55,14 @@ WorldClient::WorldClient(PlayerPtr mainPlayer) {
   centerClientWindowOnPlayer(Vec2U(100, 100));
 
   m_collisionGenerator.init([this](int x, int y) {
-      return m_tileArray->tile({x, y}).collision;
-    });
+    if (!m_predictedTiles.empty()) {
+      if (auto p = m_predictedTiles.ptr({x, y})) {
+        if (p->collision)
+          return *p->collision;
+      }
+    }
+    return m_tileArray->tile({x, y}).collision;
+  });
 
   m_modifiedTilePredictionTimeout = (int)round(m_clientConfig.getFloat("modifiedTilePredictionTimeout") / GlobalTimestep);
 
@@ -811,8 +817,9 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
 
       for (int x = tileRegion.xMin(); x < tileRegion.xMax(); ++x) {
         for (int y = tileRegion.yMin(); y < tileRegion.yMax(); ++y)
-          readNetTile({x, y}, tileArrayUpdate->array(x - tileRegion.xMin(), y - tileRegion.yMin()));
+          readNetTile({x, y}, tileArrayUpdate->array(x - tileRegion.xMin(), y - tileRegion.yMin()), false);
       }
+      dirtyCollision(tileRegion);
 
     } else if (auto tileUpdate = as<TileUpdatePacket>(packet)) {
       readNetTile(tileUpdate->position, tileUpdate->tile);
@@ -840,6 +847,7 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
             if (placeMaterial->layer == TileLayer::Foreground) {
               p.foreground.reset();
               p.foregroundHueShift.reset();
+              p.collision.reset();
             }
             else {
               p.background.reset();
@@ -1827,7 +1835,7 @@ BiomeConstPtr WorldClient::mainEnvironmentBiome() const {
   return m_worldTemplate->environmentBiome(pos[0], pos[1]);
 }
 
-bool WorldClient::readNetTile(Vec2I const& pos, NetTile const& netTile) {
+bool WorldClient::readNetTile(Vec2I const& pos, NetTile const& netTile, bool updateCollision) {
   ClientTile* tile = m_tileArray->modifyTile(pos);
   if (!tile)
     return false;
@@ -1837,6 +1845,8 @@ bool WorldClient::readNetTile(Vec2I const& pos, NetTile const& netTile) {
     if (findPrediction != m_predictedTiles.end()) {
       auto& p = findPrediction->second;
 
+      if (p.collision && *p.collision == netTile.collision)
+        p.collision.reset();
       if (p.foreground && *p.foreground == netTile.foreground)
         p.foreground.reset();
       if (p.foregroundMod && *p.foregroundMod == netTile.foregroundMod)
@@ -1881,7 +1891,8 @@ bool WorldClient::readNetTile(Vec2I const& pos, NetTile const& netTile) {
   tile->foregroundLightTransparent =
       materialDatabase->foregroundLightTransparent(tile->foreground) && tile->collision != CollisionKind::Dynamic;
 
-  dirtyCollision(RectI::withSize(pos, {1, 1}));
+  if (updateCollision)
+    dirtyCollision(RectI::withSize(pos, {1, 1}));
 
   return true;
 }
@@ -1923,7 +1934,7 @@ void WorldClient::freshenCollision(RectI const& region) {
       }
     }
 
-    for (auto collisionBlock : m_collisionGenerator.getBlocks(freshenRegion)) {
+    for (auto& collisionBlock : m_collisionGenerator.getBlocks(freshenRegion)) {
       if (auto tile = m_tileArray->modifyTile(collisionBlock.space))
         tile->collisionCache.append(move(collisionBlock));
     }
@@ -2213,6 +2224,8 @@ void WorldClient::informTilePrediction(Vec2I const& pos, TileModification const&
     if (placeMaterial->layer == TileLayer::Foreground) {
       p.foreground = placeMaterial->material;
       p.foregroundHueShift = placeMaterial->materialHueShift;
+      p.collision = Root::singleton().materialDatabase()->materialCollisionKind(placeMaterial->material);
+      dirtyCollision(RectI::withSize(pos, { 1, 1 }));
     } else {
       p.background = placeMaterial->material;
       p.backgroundHueShift = placeMaterial->materialHueShift;

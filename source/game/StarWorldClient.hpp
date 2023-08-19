@@ -233,7 +233,7 @@ private:
 
   // Populates foregroundTransparent / backgroundTransparent flag on ClientTile
   // based on transparency rules.
-  bool readNetTile(Vec2I const& pos, NetTile const& netTile);
+  bool readNetTile(Vec2I const& pos, NetTile const& netTile, bool updateCollision = true);
   void dirtyCollision(RectI const& region);
   void freshenCollision(RectI const& region);
   void renderCollisionDebug();
