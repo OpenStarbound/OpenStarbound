@@ -198,7 +198,7 @@ public:
   PlayerInventoryPtr inventory() const;
   // Returns the number of items from this stack that could be
   // picked up from the world, using inventory tab filtering
-  size_t itemsCanHold(ItemPtr const& items) const;
+  uint64_t itemsCanHold(ItemPtr const& items) const;
   // Adds items to the inventory, returning the overflow.
   // The items parameter is invalid after use.
   ItemPtr pickupItems(ItemPtr const& items);
@@ -209,7 +209,7 @@ public:
   void triggerPickupEvents(ItemPtr const& item);
 
   bool hasItem(ItemDescriptor const& descriptor, bool exactMatch = false) const;
-  size_t hasCountOfItem(ItemDescriptor const& descriptor, bool exactMatch = false) const;
+  uint64_t hasCountOfItem(ItemDescriptor const& descriptor, bool exactMatch = false) const;
   // altough multiple entries may match, they might have different
   // serializations
   ItemDescriptor takeItem(ItemDescriptor const& descriptor, bool consumePartial = false, bool exactMatch = false);

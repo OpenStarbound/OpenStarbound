@@ -1143,7 +1143,7 @@ PlayerInventoryPtr Player::inventory() const {
   return m_inventory;
 }
 
-size_t Player::itemsCanHold(ItemPtr const& items) const {
+uint64_t Player::itemsCanHold(ItemPtr const& items) const {
   return m_inventory->itemsCanFit(items);
 }
 
@@ -1211,7 +1211,7 @@ bool Player::hasItem(ItemDescriptor const& descriptor, bool exactMatch) const {
   return m_inventory->hasItem(descriptor, exactMatch);
 }
 
-size_t Player::hasCountOfItem(ItemDescriptor const& descriptor, bool exactMatch) const {
+uint64_t Player::hasCountOfItem(ItemDescriptor const& descriptor, bool exactMatch) const {
   return m_inventory->hasCountOfItem(descriptor, exactMatch);
 }
 
