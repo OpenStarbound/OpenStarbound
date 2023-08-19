@@ -1344,9 +1344,36 @@ void WorldClient::collectLiquid(List<Vec2I> const& tilePositions, LiquidId liqui
   if (!inWorld())
     return;
 
-  TileModification modification = PlaceLiquid{ EmptyLiquidId, 0.0f };
-  for (auto& pos : tilePositions)
-    informTilePrediction(pos, modification);
+  float bucketSize = Root::singleton().assets()->json("/items/defaultParameters.config:liquidItems.bucketSize").toFloat();
+  unsigned drainedUnits = 0;
+  float nextUnit = bucketSize;
+  List<Vec2I> maybeDrainTiles;
+
+  for (auto& pos : tilePositions) {
+    if (isTileProtected(pos))
+      continue;
+    auto& p = m_predictedTiles[pos];
+    auto const& tile = m_tileArray->tile(pos);
+    if ((p.liquid ? p.liquid->liquid : tile.liquid.liquid) == liquidId) {
+      if (!p.liquid)
+        p.liquid.emplace(tile.liquid.liquid, tile.liquid.level);
+      auto& liquid = *p.liquid;
+      if (liquid.level >= nextUnit) {
+        liquid.take(nextUnit);
+        nextUnit = bucketSize;
+
+        for (auto& previousTile : maybeDrainTiles)
+          m_predictedTiles[pos].liquid.emplace(EmptyLiquidId, 0.0f);
+
+        maybeDrainTiles.clear();
+      }
+
+      if (liquid.level > 0) {
+        nextUnit -= liquid.level;
+        maybeDrainTiles.append(pos);
+      }
+    }
+  }
 
   m_outgoingPackets.append(make_shared<CollectLiquidPacket>(tilePositions, liquidId));
 }
