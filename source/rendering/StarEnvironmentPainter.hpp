@@ -72,7 +72,7 @@ private:
   uint64_t m_starsHash;
   List<TexturePtr> m_starTextures;
   shared_ptr<Random2dPointGenerator<pair<size_t, float>>> m_starGenerator;
-  List<shared_ptr<Random2dPointGenerator<pair<String, float>>>> m_debrisGenerators;
+  List<shared_ptr<Random2dPointGenerator<pair<String, float>, double>>> m_debrisGenerators;
 };
 
 }

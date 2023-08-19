@@ -100,7 +100,7 @@ void EnvironmentPainter::renderDebrisFields(float pixelRatio, Vec2F const& scree
   if (sky.type == SkyType::Orbital || sky.type == SkyType::Warp) {
     Vec2F viewSize = screenSize / pixelRatio;
     Vec2F viewCenter = viewSize / 2;
-    Vec2F viewMin = sky.starOffset - viewCenter;
+    Vec2D viewMin = Vec2D(sky.starOffset - viewCenter);
 
     Mat3F rotMatrix = Mat3F::rotation(sky.starRotation, viewCenter);
 
@@ -113,7 +113,7 @@ void EnvironmentPainter::renderDebrisFields(float pixelRatio, Vec2F const& scree
       float debrisYVel = staticRandomFloatRange(spaceDebrisVelocityRange[0], spaceDebrisVelocityRange[1], sky.skyParameters.seed, i, "DebrisFieldYVel");
 
       // Translate the entire field to make the debris seem as though they are moving
-      Vec2F velocityOffset = -Vec2F(debrisXVel, debrisYVel) * sky.epochTime;
+      Vec2D velocityOffset = -Vec2D(debrisXVel, debrisYVel) * sky.epochTime;
 
       JsonArray imageOptions = debrisField.query("list").toArray();
       Vec2U biggest = Vec2U();
@@ -123,10 +123,8 @@ void EnvironmentPainter::renderDebrisFields(float pixelRatio, Vec2F const& scree
       }
 
       float screenBuffer = ceil((float)biggest.max() * (float)Constants::sqrt2);
-      PolyF field = PolyF(RectF::withSize(viewMin + velocityOffset, viewSize).padded(screenBuffer));
-
+      PolyD field = PolyD(RectD::withSize(viewMin + velocityOffset, Vec2D(viewSize)).padded(screenBuffer));
       Vec2F debrisAngularVelocityRange = jsonToVec2F(debrisField.query("angularVelocityRange"));
-
       auto debrisItems = m_debrisGenerators[i]->generate(field,
           [&](RandomSource& rand) {
             StringView debrisImage = *rand.randFrom(imageOptions).stringPtr();
@@ -135,10 +133,10 @@ void EnvironmentPainter::renderDebrisFields(float pixelRatio, Vec2F const& scree
             return pair<StringView, float>(debrisImage, debrisAngularVelocity);
           });
 
-      Vec2F debrisPositionOffset = viewMin + velocityOffset;
+      Vec2D debrisPositionOffset = viewMin + velocityOffset;
 
       for (auto& debrisItem : debrisItems) {
-        Vec2F debrisPosition = rotMatrix.transformVec2(debrisItem.first - debrisPositionOffset);
+        Vec2F debrisPosition = rotMatrix.transformVec2(Vec2F(debrisItem.first - debrisPositionOffset));
         float debrisAngle = fmod(Constants::deg2rad * debrisItem.second.second * sky.epochTime, Constants::pi * 2) + sky.starRotation;
         drawOrbiter(pixelRatio, screenSize, sky, {SkyOrbiterType::SpaceDebris, 1.0f, debrisAngle, debrisItem.second.first, debrisPosition});
       }
@@ -259,8 +257,8 @@ void EnvironmentPainter::renderParallaxLayers(
     // texture offset in *screen pixel space*
     Vec2F parallaxOffset = layer.parallaxOffset * camera.pixelRatio();
     if (layer.speed != 0) {
-      double drift = fmod((double)layer.speed * (sky.epochTime / (double)sky.dayLength) * camera.pixelRatio(), (double)parallaxPixels[0]);
-      parallaxOffset[0] = fmod(parallaxOffset[0] + drift, parallaxPixels[0]);
+      double drift = fmod((double)layer.speed * (sky.epochTime / (double)sky.dayLength), (double)parallaxSize[0]);
+      parallaxOffset[0] = fmod(parallaxOffset[0] + drift * camera.pixelRatio(), parallaxPixels[0]);
     }
 
     // parallax camera world position in *parallax space*
@@ -467,7 +465,7 @@ void EnvironmentPainter::setupStars(SkyRenderData const& sky) {
     int debrisCellSize = debrisFields[i].getInt("cellSize");
     Vec2I debrisCountRange = jsonToVec2I(debrisFields[i].get("cellCountRange"));
     uint64_t debrisSeed = staticRandomU64(sky.skyParameters.seed, i, "DebrisFieldSeed");
-    m_debrisGenerators[i] = make_shared<Random2dPointGenerator<pair<String, float>>>(debrisSeed, debrisCellSize, debrisCountRange);
+    m_debrisGenerators[i] = make_shared<Random2dPointGenerator<pair<String, float>, double>>(debrisSeed, debrisCellSize, debrisCountRange);
   }
 }
 
