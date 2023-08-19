@@ -56,6 +56,7 @@ ItemPtr MaterialItem::clone() const {
 void MaterialItem::init(ToolUserEntity* owner, ToolHand hand) {
   FireableItem::init(owner, hand);
   BeamItem::init(owner, hand);
+  owner->addSound(Random::randValueFrom(m_placeSounds), 0.8f, 2.0f);
 }
 
 void MaterialItem::uninit() {
@@ -112,8 +113,7 @@ void MaterialItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
     steps = (int)ceil(magnitude * (Constants::pi / 2));
   }
 
-  unsigned total = 0;
-  bool fail = true;
+  size_t total = 0;
   for (int i = 0; i != steps; ++i) {
     auto placementOrigin = aimPosition + diff * (1.0f - ((float)i / steps));
     for (Vec2I pos : tileAreaBrush(radius, placementOrigin, true))
@@ -124,19 +124,15 @@ void MaterialItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
       modifications.resize(count());
     size_t failed = world()->applyTileModifications(modifications, false).size();
     if (failed < modifications.size()) {
-      fail = false;
-      unsigned placed = modifications.size() - failed;
+      size_t placed = modifications.size() - failed;
       consume(placed);
       total += placed;
     }
   }
 
-  if (!fail) {
-    auto sound = Random::randValueFrom(m_placeSounds, "");
-    if (total && !sound.empty()) {
-      float intensity = clamp((float)total / 96, 0.0f, 1.0f);
-      owner()->addSound(sound, 1.0f + intensity, (1.125f - intensity * 0.75f) * Random::randf(0.9f, 1.1f));
-    }
+  if (total) {
+    float intensity = clamp((float)total / 96, 0.0f, 1.0f);
+    owner()->addSound(Random::randValueFrom(m_placeSounds), 1.0f + intensity, (1.125f - intensity * 0.75f) * Random::randf(0.9f, 1.1f));
     FireableItem::fire(mode, shifting, edgeTriggered);
   }
 
