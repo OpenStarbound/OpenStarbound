@@ -1912,7 +1912,7 @@ namespace LuaBindings {
     } else if (layerName == "background") {
       layer = TileLayer::Background;
     } else {
-      throw StarException(strf("Unsupported damageTile layer {}", layerName));
+      throw StarException(strf("Unsupported tile layer {}", layerName));
     }
 
     unsigned harvestLevel = 999;
@@ -1942,14 +1942,27 @@ namespace LuaBindings {
 
     PlaceMaterial placeMaterial;
 
-    auto layerName = arg2;
-    if (layerName == "foreground") {
-      placeMaterial.layer = TileLayer::Foreground;
-    } else if (layerName == "background") {
-      placeMaterial.layer = TileLayer::Background;
-    } else {
-      throw StarException(strf("Unsupported damageTile layer {}", layerName));
+    std::string layerName = arg2.utf8();
+    auto split = layerName.find_first_of('+');
+    if (split != NPos) {
+      auto overrideName = layerName.substr(split + 1);
+      layerName = layerName.substr(0, split);
+      if (overrideName == "empty" || overrideName == "none")
+        placeMaterial.collisionOverride = TileCollisionOverride::Empty;
+      else if (overrideName == "dynamic" || overrideName == "block")
+        placeMaterial.collisionOverride = TileCollisionOverride::Dynamic;
+      else if (overrideName == "platform")
+        placeMaterial.collisionOverride = TileCollisionOverride::Platform;
+      else
+        throw StarException(strf("Unsupported collision override {}", overrideName));
     }
+
+    if (layerName == "foreground")
+      placeMaterial.layer = TileLayer::Foreground;
+    else if (layerName == "background")
+      placeMaterial.layer = TileLayer::Background;
+    else
+      throw StarException(strf("Unsupported tile layer {}", layerName));
 
     auto materialName = arg3;
     auto materialDatabase = Root::singleton().materialDatabase();
@@ -1976,7 +1989,7 @@ namespace LuaBindings {
     } else if (layerName == "background") {
       placeMod.layer = TileLayer::Background;
     } else {
-      throw StarException(strf("Unsupported damageTile layer {}", layerName));
+      throw StarException(strf("Unsupported tile layer {}", layerName));
     }
 
     auto modName = arg3;

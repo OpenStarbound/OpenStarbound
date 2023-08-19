@@ -4,16 +4,17 @@
 #include "StarDataStream.hpp"
 #include "StarVariant.hpp"
 #include "StarGameTypes.hpp"
+#include "StarCollisionBlock.hpp"
 
 namespace Star {
 
 struct PlaceMaterial {
   TileLayer layer;
   MaterialId material;
-
   // If the material hue shift is not set it will get the natural hue shift for
   // the environment.
   Maybe<MaterialHue> materialHueShift;
+  TileCollisionOverride collisionOverride = TileCollisionOverride::None;
 };
 DataStream& operator>>(DataStream& ds, PlaceMaterial& tileMaterialPlacement);
 DataStream& operator<<(DataStream& ds, PlaceMaterial const& tileMaterialPlacement);

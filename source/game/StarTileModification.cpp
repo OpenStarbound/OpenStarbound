@@ -4,7 +4,17 @@
 namespace Star {
 
 DataStream& operator>>(DataStream& ds, PlaceMaterial& tileMaterialPlacement) {
-  ds.read(tileMaterialPlacement.layer);
+  uint8_t layer;
+  ds.read(layer);
+  if (layer > 1) {
+    tileMaterialPlacement.layer = TileLayer::Foreground;
+    tileMaterialPlacement.collisionOverride = (TileCollisionOverride)(layer - 1);
+  }
+  else {
+    tileMaterialPlacement.layer = (TileLayer)layer;
+    tileMaterialPlacement.collisionOverride = TileCollisionOverride::None;
+  }
+
   ds.read(tileMaterialPlacement.material);
   ds.read(tileMaterialPlacement.materialHueShift);
 
@@ -12,7 +22,14 @@ DataStream& operator>>(DataStream& ds, PlaceMaterial& tileMaterialPlacement) {
 }
 
 DataStream& operator<<(DataStream& ds, PlaceMaterial const& tileMaterialPlacement) {
-  ds.write(tileMaterialPlacement.layer);
+  if (tileMaterialPlacement.collisionOverride != TileCollisionOverride::None
+    && tileMaterialPlacement.layer == TileLayer::Foreground) {
+    uint8_t layer = (uint8_t)tileMaterialPlacement.collisionOverride;
+    ds.write(++layer);
+  }
+  else
+    ds.write(tileMaterialPlacement.layer);
+
   ds.write(tileMaterialPlacement.material);
   ds.write(tileMaterialPlacement.materialHueShift);
 

@@ -2224,7 +2224,10 @@ void WorldClient::informTilePrediction(Vec2I const& pos, TileModification const&
     if (placeMaterial->layer == TileLayer::Foreground) {
       p.foreground = placeMaterial->material;
       p.foregroundHueShift = placeMaterial->materialHueShift;
-      p.collision = Root::singleton().materialDatabase()->materialCollisionKind(placeMaterial->material);
+      if (placeMaterial->collisionOverride != TileCollisionOverride::None)
+        p.collision = collisionKindFromOverride(placeMaterial->collisionOverride);
+      else
+        p.collision = Root::singleton().materialDatabase()->materialCollisionKind(placeMaterial->material);
       dirtyCollision(RectI::withSize(pos, { 1, 1 }));
     } else {
       p.background = placeMaterial->material;

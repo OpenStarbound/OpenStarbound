@@ -1378,7 +1378,10 @@ TileModificationList WorldServer::doApplyTileModifications(TileModificationList 
           tile->foregroundHueShift = m_worldTemplate->biomeMaterialHueShift(tile->blockBiomeIndex, placeMaterial->material);
 
         tile->foregroundColorVariant = DefaultMaterialColorVariant;
-        tile->updateCollision(materialDatabase->materialCollisionKind(tile->foreground));
+        if (placeMaterial->collisionOverride != TileCollisionOverride::None)
+          tile->updateCollision(collisionKindFromOverride(placeMaterial->collisionOverride));
+        else
+          tile->updateCollision(materialDatabase->materialCollisionKind(tile->foreground));
         if (tile->foreground == EmptyMaterialId) {
           // Remove the foreground mod if removing the foreground.
           tile->foregroundMod = NoModId;
