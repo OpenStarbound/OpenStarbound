@@ -25,9 +25,13 @@ Item::Item(Json config, String directory, Json parameters) {
   if (inventoryIcon.type() == Json::Type::Array) {
     List<Drawable> iconDrawables;
     for (auto const& drawable : inventoryIcon.toArray()) {
-      auto image = AssetPath::relativeTo(m_directory, drawable.getString("image"));
-      Vec2F position = jsonToVec2F(drawable.getArray("position", {0, 0}));
-      iconDrawables.append(Drawable::makeImage(image, 1.0f, true, position));
+      if (auto image = drawable.optString("image")) {
+        auto changed = drawable.set("image", AssetPath::relativeTo(m_directory, *image));
+        iconDrawables.emplaceAppend(changed);
+      }
+      else {
+        iconDrawables.emplaceAppend(drawable);
+      }
     }
     setIconDrawables(move(iconDrawables));
   } else {
