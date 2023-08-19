@@ -119,7 +119,7 @@ List<Drawable> MaterialItem::nonRotatedDrawables() const {
 }
 
 void MaterialItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
-  if (!initialized() || !ready() || !owner()->inToolRange())
+  if (!initialized() || !ready())
     return;
 
   auto layer = (mode == FireMode::Primary || !twoHanded() ? TileLayer::Foreground : TileLayer::Background);
@@ -150,6 +150,9 @@ void MaterialItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
   size_t total = 0;
   for (int i = 0; i != steps; ++i) {
     auto placementOrigin = aimPosition + diff * (1.0f - ((float)i / steps));
+    if (!owner()->inToolRange(placementOrigin))
+      continue;
+
     for (Vec2I& pos : tileArea(radius, placementOrigin))
       modifications.emplaceAppend(pos, PlaceMaterial{layer, materialId(), placementHueShift(pos), m_collisionOverride});
 

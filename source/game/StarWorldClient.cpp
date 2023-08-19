@@ -1072,13 +1072,18 @@ void WorldClient::update(float dt) {
 
   float expireTime = min((float)m_latency + 100, 2000.f);
   auto now = Time::monotonicMilliseconds();
-  eraseWhere(m_predictedTiles, [now, expireTime](auto& pair) {
+  eraseWhere(m_predictedTiles, [&](auto& pair) {
     float expiry = (float)(now - pair.second.time) / expireTime;
     auto center = Vec2F(pair.first) + Vec2F::filled(0.5f);
     auto size = Vec2F::filled(0.875f - expiry * 0.875f);
     auto poly = PolyF(RectF::withCenter(center, size));
     SpatialLogger::logPoly("world", poly, Color::Cyan.mix(Color::Red, expiry).toRgba());
-    return expiry >= 1.0f;
+    if (expiry >= 1.0f) {
+      dirtyCollision(RectI::withSize(pair.first, { 1, 1 }));
+      return true;
+    } else {
+      return false;
+    }
   });
 
   // Secret broadcasts are transmitted through DamageNotifications for vanilla server compatibility.
