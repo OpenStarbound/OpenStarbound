@@ -6,6 +6,8 @@
 #include "StarWorldLuaBindings.hpp"
 #include "StarConfigLuaBindings.hpp"
 #include "StarEntityLuaBindings.hpp"
+#include "StarPlayerLuaBindings.hpp"
+#include "StarPlayer.hpp"
 #include "StarNetworkedAnimatorLuaBindings.hpp"
 #include "StarStatusControllerLuaBindings.hpp"
 #include "StarRoot.hpp"
@@ -438,6 +440,7 @@ void TechController::unloadModule(TechModule& techModule) {
   techModule.scriptComponent.removeCallbacks("entity");
   techModule.scriptComponent.removeCallbacks("animator");
   techModule.scriptComponent.removeCallbacks("status");
+  techModule.scriptComponent.removeCallbacks("player");
   techModule.scriptComponent.removeActorMovementCallbacks();
 }
 
@@ -450,6 +453,8 @@ void TechController::initializeModules() {
     module.scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(m_parentEntity));
     module.scriptComponent.addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(&m_techAnimators.getNetElement(module.animatorId)->animator));
     module.scriptComponent.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(m_statusController));
+    if (auto player = as<Player>(m_parentEntity))
+      module.scriptComponent.addCallbacks("player", LuaBindings::makePlayerCallbacks(player));
     module.scriptComponent.addActorMovementCallbacks(m_movementController);
 
     module.scriptComponent.init(m_parentEntity->world());
