@@ -263,7 +263,7 @@ void ItemDrop::update(float dt, uint64_t) {
 }
 
 bool ItemDrop::shouldDestroy() const {
-  return m_mode.get() == Mode::Dead || (m_item->empty() && m_mode.get() != Mode::Taken);
+  return m_mode.get() == Mode::Dead || (m_item->empty() && m_owningEntity.get() == NullEntityId);
 }
 
 void ItemDrop::render(RenderCallback* renderCallback) {
