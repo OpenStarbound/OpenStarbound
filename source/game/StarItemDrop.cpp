@@ -285,10 +285,12 @@ void ItemDrop::render(RenderCallback* renderCallback) {
     }
 
     beamColor.setAlphaF(0.8f);
-    auto line = Drawable::makeLine({ Vec2F(), Vec2F(0.0f, 1.5f) }, 2.0f, beamColor, position());
-    (line.linePart().endColor = beamColor)->setAlphaF(0.0f);
-    line.fullbright = true;
-    renderCallback->addDrawable(move(line), RenderLayerItemDrop);
+    Line2F line = { Vec2F(), Vec2F(0.0f, 1.0f + m_boundBox.height() / 2) };
+    float width = min(2.0f, m_boundBox.width() * TilePixels);
+    auto drawable = Drawable::makeLine(line, width, beamColor, position());
+    (drawable.linePart().endColor = beamColor)->setAlphaF(0.0f);
+    drawable.fullbright = true;
+    renderCallback->addDrawable(move(drawable), RenderLayerItemDrop);
   }
 
   if (!m_drawables) {
