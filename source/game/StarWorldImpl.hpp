@@ -21,7 +21,11 @@ namespace Star {
 namespace WorldImpl {
   template <typename TileSectorArray>
   bool tileIsOccupied(shared_ptr<TileSectorArray> const& tileSectorArray, EntityMapPtr const& entityMap,
-      Vec2I const& pos, TileLayer layer, bool includeEphemeral);
+      Vec2I const& pos, TileLayer layer, bool includeEphemeral, bool checkCollision = false);
+
+  template <typename TileSectorArray>
+  CollisionKind tileCollisionKind(shared_ptr<TileSectorArray> const& tileSectorArray, EntityMapPtr const& entityMap,
+    Vec2I const& pos);
 
   template <typename TileSectorArray>
   bool rectTileCollision(shared_ptr<TileSectorArray> const& tileSectorArray, RectI const& region, bool solidCollision);
@@ -38,13 +42,13 @@ namespace WorldImpl {
 
   template <typename GetTileFunction>
   bool canPlaceMaterial(EntityMapPtr const& entityMap,
-      Vec2I const& pos, TileLayer layer, MaterialId material, bool allowEntityOverlap, GetTileFunction& getTile);
+      Vec2I const& pos, TileLayer layer, MaterialId material, bool allowEntityOverlap, bool allowTileOverlap, GetTileFunction& getTile);
   // returns true if this material could be placed if in the same batch other
   // tiles can be placed
   // that connect to it
   template <typename GetTileFunction>
   bool perhapsCanPlaceMaterial(EntityMapPtr const& entityMap,
-      Vec2I const& pos, TileLayer layer, MaterialId material, bool allowEntityOverlap, GetTileFunction& getTile);
+      Vec2I const& pos, TileLayer layer, MaterialId material, bool allowEntityOverlap, bool allowTileOverlap, GetTileFunction& getTile);
   template <typename GetTileFunction>
   bool canPlaceMaterialColorVariant(Vec2I const& pos, TileLayer layer, MaterialColorVariant color, GetTileFunction& getTile);
   template <typename GetTileFunction>
@@ -80,11 +84,18 @@ namespace WorldImpl {
 
   template <typename TileSectorArray>
   bool tileIsOccupied(shared_ptr<TileSectorArray> const& tileSectorArray, EntityMapPtr const& entityMap,
-      Vec2I const& pos, TileLayer layer, bool includeEphemeral) {
+      Vec2I const& pos, TileLayer layer, bool includeEphemeral, bool checkCollision) {
+    auto& tile = tileSectorArray->tile(pos);
     if (layer == TileLayer::Foreground)
-      return tileSectorArray->tile(pos).foreground != EmptyMaterialId || entityMap->tileIsOccupied(pos, includeEphemeral);
+      return (checkCollision ? tile.collision >= CollisionKind::Dynamic : tile.foreground != EmptyMaterialId) || entityMap->tileIsOccupied(pos, includeEphemeral);
     else
-      return tileSectorArray->tile(pos).background != EmptyMaterialId;
+      return tile.background != EmptyMaterialId;
+  }
+
+  template <typename TileSectorArray>
+  CollisionKind tileCollisionKind(shared_ptr<TileSectorArray> const& tileSectorArray, EntityMapPtr const& entityMap,
+    Vec2I const& pos) {
+    return tileSectorArray->tile(pos).collision;
   }
 
   template <typename TileSectorArray>
@@ -210,7 +221,7 @@ namespace WorldImpl {
 
   template <typename GetTileFunction>
   bool canPlaceMaterial(EntityMapPtr const& entityMap,
-      Vec2I const& pos, TileLayer layer, MaterialId material, bool allowEntityOverlap, GetTileFunction& getTile) {
+      Vec2I const& pos, TileLayer layer, MaterialId material, bool allowEntityOverlap, bool allowTileOverlap, GetTileFunction& getTile) {
     auto materialDatabase = Root::singleton().materialDatabase();
 
     if (!isRealMaterial(material))
@@ -239,26 +250,26 @@ namespace WorldImpl {
     if (!materialDatabase->canPlaceInLayer(material, layer))
       return false;
 
+    auto& tile = getTile(pos);
     if (layer == TileLayer::Background) {
-      if (getTile(pos).background != EmptyMaterialId)
+      if (tile.background != EmptyMaterialId && tile.background != ObjectPlatformMaterialId)
         return false;
 
       // Can attach background blocks to other background blocks, *or* the
       // foreground block in front of it.
-      if (!isAdjacentToConnectable(pos, 1, false)
-          && !isConnectableMaterial(getTile({pos[0], pos[1]}).foreground))
+      if (!isAdjacentToConnectable(pos, 1, false) && !isConnectableMaterial(tile.foreground))
         return false;
     } else {
-      if (getTile(pos).foreground != EmptyMaterialId)
+      if (tile.foreground != EmptyMaterialId && tile.foreground != ObjectPlatformMaterialId)
         return false;
 
-      if (entityMap->tileIsOccupied(pos))
+      if (!allowTileOverlap && entityMap->tileIsOccupied(pos))
         return false;
 
-      if (!allowEntityOverlap && entityMap->spaceIsOccupied(RectF::withSize(Vec2F(pos), Vec2F(1, 1))))
+      if (!allowEntityOverlap && entityMap->spaceIsOccupied(RectF::withSize(Vec2F(pos), Vec2F(0.999f, 0.999f))))
         return false;
 
-      if (!isAdjacentToConnectable(pos, 1, true) && !isConnectableMaterial(getTile({pos[0], pos[1]}).background))
+      if (!isAdjacentToConnectable(pos, 1, true) && !isConnectableMaterial(tile.background))
         return false;
     }
 
@@ -267,7 +278,7 @@ namespace WorldImpl {
 
   template <typename GetTileFunction>
   bool perhapsCanPlaceMaterial(EntityMapPtr const& entityMap,
-      Vec2I const& pos, TileLayer layer, MaterialId material, bool allowEntityOverlap, GetTileFunction& getTile) {
+      Vec2I const& pos, TileLayer layer, MaterialId material, bool allowEntityOverlap, bool allowTileOverlap, GetTileFunction& getTile) {
     auto materialDatabase = Root::singleton().materialDatabase();
 
     if (!isRealMaterial(material))
@@ -276,17 +287,18 @@ namespace WorldImpl {
     if (!materialDatabase->canPlaceInLayer(material, layer))
       return false;
 
+    auto& tile = getTile(pos);
     if (layer == TileLayer::Background) {
-      if (getTile(pos).background != EmptyMaterialId)
+      if (tile.background != EmptyMaterialId && tile.background != ObjectPlatformMaterialId)
         return false;
     } else {
-      if (getTile(pos).foreground != EmptyMaterialId)
+      if (tile.foreground != EmptyMaterialId && tile.foreground != ObjectPlatformMaterialId)
         return false;
 
-      if (entityMap->tileIsOccupied(pos))
+      if (!allowTileOverlap && entityMap->tileIsOccupied(pos))
         return false;
 
-      if (!allowEntityOverlap && entityMap->spaceIsOccupied(RectF::withSize(Vec2F(pos), Vec2F(1, 1))))
+      if (!allowEntityOverlap && entityMap->spaceIsOccupied(RectF::withSize(Vec2F(pos), Vec2F(0.999f, 0.999f))))
         return false;
     }
 
@@ -321,9 +333,10 @@ namespace WorldImpl {
     bool perhaps = false;
     
     if (auto placeMaterial = modification.ptr<PlaceMaterial>()) {
-      perhaps = WorldImpl::perhapsCanPlaceMaterial(entityMap, pos, placeMaterial->layer, placeMaterial->material, allowEntityOverlap, getTile);
+      bool allowTileOverlap = placeMaterial->collisionOverride != TileCollisionOverride::None && collisionKindFromOverride(placeMaterial->collisionOverride) < CollisionKind::Dynamic;
+      perhaps = WorldImpl::perhapsCanPlaceMaterial(entityMap, pos, placeMaterial->layer, placeMaterial->material, allowEntityOverlap, allowTileOverlap, getTile);
       if (perhaps)
-        good = WorldImpl::canPlaceMaterial(entityMap, pos, placeMaterial->layer, placeMaterial->material, allowEntityOverlap, getTile);
+        good = WorldImpl::canPlaceMaterial(entityMap, pos, placeMaterial->layer, placeMaterial->material, allowEntityOverlap, allowTileOverlap, getTile);
     } else if (auto placeMod = modification.ptr<PlaceMod>()) {
       good = WorldImpl::canPlaceMod(pos, placeMod->layer, placeMod->mod, getTile);
     } else if (auto placeMaterialColor = modification.ptr<PlaceMaterialColor>()) {

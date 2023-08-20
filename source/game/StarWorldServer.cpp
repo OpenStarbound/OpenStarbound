@@ -756,9 +756,14 @@ EntityPtr WorldServer::findEntityAtTile(Vec2I const& pos, EntityFilterOf<TileEnt
   return m_entityMap->findEntityAtTile(pos, entityFilter);
 }
 
-bool WorldServer::tileIsOccupied(Vec2I const& pos, TileLayer layer, bool includeEphemeral) const {
-  return WorldImpl::tileIsOccupied(m_tileArray, m_entityMap, pos, layer, includeEphemeral);
+bool WorldServer::tileIsOccupied(Vec2I const& pos, TileLayer layer, bool includeEphemeral, bool checkCollision) const {
+  return WorldImpl::tileIsOccupied(m_tileArray, m_entityMap, pos, layer, includeEphemeral, checkCollision);
 }
+
+CollisionKind WorldServer::tileCollisionKind(Vec2I const& pos) const {
+  return WorldImpl::tileCollisionKind(m_tileArray, m_entityMap, pos);
+}
+
 
 void WorldServer::forEachCollisionBlock(RectI const& region, function<void(CollisionBlock const&)> const& iterator) const {
   const_cast<WorldServer*>(this)->freshenCollision(region);
@@ -1348,7 +1353,8 @@ TileModificationList WorldServer::doApplyTileModifications(TileModificationList 
       continue;
 
     if (auto placeMaterial = modification.ptr<PlaceMaterial>()) {
-      if (!WorldImpl::canPlaceMaterial(m_entityMap, pos, placeMaterial->layer, placeMaterial->material, allowEntityOverlap, m_tileGetterFunction))
+      bool allowTileOverlap = placeMaterial->collisionOverride != TileCollisionOverride::None && collisionKindFromOverride(placeMaterial->collisionOverride) < CollisionKind::Dynamic;
+      if (!WorldImpl::canPlaceMaterial(m_entityMap, pos, placeMaterial->layer, placeMaterial->material, allowEntityOverlap, allowTileOverlap, m_tileGetterFunction))
         continue;
 
       ServerTile* tile = m_tileArray->modifyTile(pos);
@@ -1498,15 +1504,22 @@ void WorldServer::updateTileEntityTiles(TileEntityPtr const& entity, bool removi
 
     ServerTile* tile = m_tileArray->modifyTile(pos);
     if (tile) {
-      tile->foreground = EmptyMaterialId;
-      tile->foregroundMod = NoModId;
-      tile->rootSource = {};
-      if (tile->updateCollision(materialDatabase->materialCollisionKind(tile->foreground))) {
+      bool updated = false;
+      if (tile->foreground == materialSpace.material) {
+        tile->foreground = EmptyMaterialId;
+        tile->foregroundMod = NoModId;
+        tile->rootSource = {};
+        updated = true;
+      }
+      if (tile->collision == materialDatabase->materialCollisionKind(materialSpace.material)
+        && tile->updateCollision(materialSpace.prevCollision.value(CollisionKind::None))) {
         m_liquidEngine->visitLocation(pos);
         m_fallingBlocksAgent->visitLocation(pos);
-        dirtyCollision(RectI::withSize(pos, {1, 1}));
+        dirtyCollision(RectI::withSize(pos, { 1, 1 }));
+        updated = true;
       }
-      queueTileUpdates(pos);
+      if (updated)
+        queueTileUpdates(pos);
     }
   }
 
@@ -1515,24 +1528,37 @@ void WorldServer::updateTileEntityTiles(TileEntityPtr const& entity, bool removi
 
   } else {
     // add new material spaces and update the known material spaces entry
+    List<MaterialSpace> passedSpaces;
     for (auto const& materialSpace : newMaterialSpaces) {
       Vec2I pos = materialSpace.space + entity->tilePosition();
 
+      bool updated = false;
+      bool updatedCollision = false;
       ServerTile* tile = m_tileArray->modifyTile(pos);
-      if (tile) {
+      if (tile && (tile->foreground == EmptyMaterialId || tile->foreground == materialSpace.material)) {
         tile->foreground = materialSpace.material;
         tile->foregroundMod = NoModId;
         if (isRealMaterial(materialSpace.material))
           tile->rootSource = entity->tilePosition();
-        if (tile->updateCollision(materialDatabase->materialCollisionKind(tile->foreground))) {
-          m_liquidEngine->visitLocation(pos);
-          m_fallingBlocksAgent->visitLocation(pos);
-          dirtyCollision(RectI::withSize(pos, {1, 1}));
-        }
-        queueTileUpdates(pos);
+        passedSpaces.emplaceAppend(materialSpace).prevCollision.emplace(tile->collision);
+        updatedCollision = tile->updateCollision(materialDatabase->materialCollisionKind(tile->foreground));
+        updated = true;
+        passedSpaces.emplaceAppend(materialSpace);
       }
+      else if (tile && tile->collision < CollisionKind::Dynamic) {
+        passedSpaces.emplaceAppend(materialSpace).prevCollision.emplace(tile->collision);
+        updatedCollision = tile->updateCollision(materialDatabase->materialCollisionKind(materialSpace.material));
+        updated = true;
+      }
+      if (updatedCollision) {
+        m_liquidEngine->visitLocation(pos);
+        m_fallingBlocksAgent->visitLocation(pos);
+        dirtyCollision(RectI::withSize(pos, { 1, 1 }));
+      }
+      if (updated)
+        queueTileUpdates(pos);
     }
-    spaces.materials = move(newMaterialSpaces);
+    spaces.materials = move(passedSpaces);
 
     // add new roots and update known roots entry
     for (auto const& rootPos : newRoots) {

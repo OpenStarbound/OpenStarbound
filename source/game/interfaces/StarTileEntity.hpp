@@ -4,6 +4,7 @@
 #include "StarEntity.hpp"
 #include "StarTileDamage.hpp"
 #include "StarInteractiveEntity.hpp"
+#include "StarCollisionBlock.hpp"
 
 namespace Star {
 
@@ -17,6 +18,7 @@ struct MaterialSpace {
 
   Vec2I space;
   MaterialId material;
+  Maybe<CollisionKind> prevCollision;
 };
 
 DataStream& operator<<(DataStream& ds, MaterialSpace const& materialSpace);
@@ -89,7 +91,9 @@ inline MaterialSpace::MaterialSpace(Vec2I space, MaterialId material)
   : space(space), material(material) {}
 
 inline bool MaterialSpace::operator==(MaterialSpace const& rhs) const {
-  return tie(space, material) == tie(rhs.space, rhs.material);
+  return space         == rhs.space
+      && material      == rhs.material
+      && prevCollision == rhs.prevCollision;
 }
 
 }

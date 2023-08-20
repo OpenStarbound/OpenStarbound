@@ -63,7 +63,8 @@ public:
   EntityPtr findEntity(RectF const& boundBox, EntityFilter entityFilter) const override;
   EntityPtr findEntityLine(Vec2F const& begin, Vec2F const& end, EntityFilter entityFilter) const override;
   EntityPtr findEntityAtTile(Vec2I const& pos, EntityFilterOf<TileEntity> entityFilter) const override;
-  bool tileIsOccupied(Vec2I const& pos, TileLayer layer, bool includeEphemeral = false) const override;
+  bool tileIsOccupied(Vec2I const& pos, TileLayer layer, bool includeEphemeral = false, bool checkCollision = false) const override;
+  CollisionKind tileCollisionKind(Vec2I const& pos) const override;
   void forEachCollisionBlock(RectI const& region, function<void(CollisionBlock const&)> const& iterator) const override;
   bool isTileConnectable(Vec2I const& pos, TileLayer layer, bool tilesOnly = false) const override;
   bool pointTileCollision(Vec2F const& point, CollisionSet const& collisionSet = DefaultCollisionSet) const override;

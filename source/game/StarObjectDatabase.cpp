@@ -32,9 +32,9 @@ bool ObjectOrientation::placementValid(World const* world, Vec2I const& position
   if (!world)
     return false;
 
-  for (auto space : spaces) {
+  for (Vec2I space : spaces) {
     space += position;
-    if (world->tileIsOccupied(space, TileLayer::Foreground) || world->isTileProtected(space))
+    if (world->tileIsOccupied(space, TileLayer::Foreground, false, true) || world->isTileProtected(space))
       return false;
   }
   return true;

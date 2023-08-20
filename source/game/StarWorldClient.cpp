@@ -238,10 +238,16 @@ EntityPtr WorldClient::findEntityAtTile(Vec2I const& pos, EntityFilterOf<TileEnt
   return m_entityMap->findEntityAtTile(pos, entityFilter);
 }
 
-bool WorldClient::tileIsOccupied(Vec2I const& pos, TileLayer layer, bool includeEphemeral) const {
+bool WorldClient::tileIsOccupied(Vec2I const& pos, TileLayer layer, bool includeEphemeral, bool checkCollision) const {
   if (!inWorld())
     return false;
-  return WorldImpl::tileIsOccupied(m_tileArray, m_entityMap, pos, layer, includeEphemeral);
+  return WorldImpl::tileIsOccupied(m_tileArray, m_entityMap, pos, layer, includeEphemeral, checkCollision);
+}
+
+CollisionKind WorldClient::tileCollisionKind(Vec2I const& pos) const {
+  if (!inWorld())
+    return CollisionKind::Null;
+  return WorldImpl::tileCollisionKind(m_tileArray, m_entityMap, pos);
 }
 
 void WorldClient::forEachCollisionBlock(RectI const& region, function<void(CollisionBlock const&)> const& iterator) const {

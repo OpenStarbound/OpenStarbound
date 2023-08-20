@@ -76,7 +76,10 @@ public:
   virtual EntityPtr findEntityAtTile(Vec2I const& pos, EntityFilterOf<TileEntity> entityFilter) const = 0;
 
   // Is the given tile layer and position occupied by an entity or block?
-  virtual bool tileIsOccupied(Vec2I const& pos, TileLayer layer, bool includeEphemeral = false) const = 0;
+  virtual bool tileIsOccupied(Vec2I const& pos, TileLayer layer, bool includeEphemeral = false, bool checkCollision = false) const = 0;
+
+  // Returns the collision kind of a tile.
+  virtual CollisionKind tileCollisionKind(Vec2I const& pos) const = 0;
 
   // Iterate over the collision block for each tile in the region.  Collision
   // polys for tiles can extend to a maximum of 1 tile outside of the natural
