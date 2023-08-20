@@ -51,7 +51,8 @@ ClientCommandProcessor::ClientCommandProcessor(UniverseClientPtr universeClient,
     {"maketechavailable", bind(&ClientCommandProcessor::makeTechAvailable, this, _1)},
     {"enabletech", bind(&ClientCommandProcessor::enableTech, this, _1)},
     {"upgradeship", bind(&ClientCommandProcessor::upgradeShip, this, _1)},
-    {"swap", bind(&ClientCommandProcessor::swap, this, _1)}
+    {"swap", bind(&ClientCommandProcessor::swap, this, _1)},
+    {"timescale", bind(&ClientCommandProcessor::timeScale, this, _1)}
   };
 }
 
@@ -419,6 +420,16 @@ String ClientCommandProcessor::swap(String const& argumentsString) {
     return "Successfully swapped player";
   else
     return "Failed to swap player";
+}
+
+String ClientCommandProcessor::timeScale(String const& argumentsString) {
+  auto arguments = m_parser.tokenizeToStringList(argumentsString);
+
+  if (arguments.size() == 0)
+    return "Not enouch arguments to /timescale";
+
+  GlobalTimescale = clamp(lexicalCast<float>(arguments[0]), 0.001f, 256.0f);
+  return strf("Set application timescale to {:6.6f}x", GlobalTimescale);
 }
 
 }
