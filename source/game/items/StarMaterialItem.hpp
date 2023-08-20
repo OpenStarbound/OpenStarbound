@@ -7,13 +7,15 @@
 #include "StarEntityRendering.hpp"
 #include "StarPreviewTileTool.hpp"
 #include "StarRenderableItem.hpp"
+#include "StarPreviewableItem.hpp"
 #include "StarCollisionBlock.hpp"
 
 namespace Star {
 
 STAR_CLASS(MaterialItem);
+STAR_CLASS(Player);
 
-class MaterialItem : public Item, public FireableItem, public PreviewTileTool, public RenderableItem, public BeamItem {
+class MaterialItem : public Item, public FireableItem, public PreviewTileTool, public RenderableItem, public PreviewableItem, public BeamItem {
 public:
   MaterialItem(Json const& config, String const& directory, Json const& settings);
   virtual ~MaterialItem() {}
@@ -25,6 +27,8 @@ public:
   void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
   void render(RenderCallback* renderCallback, EntityRenderLayer renderLayer) override;
 
+  virtual List<Drawable> preview(PlayerPtr const& viewer = {}) const override;
+  virtual List<Drawable> dropDrawables() const override;
   List<Drawable> nonRotatedDrawables() const override;
 
   void fire(FireMode mode, bool shifting, bool edgeTriggered) override;
@@ -40,7 +44,8 @@ public:
   float& altBlockRadius();
   TileCollisionOverride& collisionOverride();
 
-  List<PreviewTile> preview(bool shifting) const override;
+  List<PreviewTile> previewTiles(bool shifting) const override;
+  List<Drawable> const& generatedPreview(Vec2I position = {}) const;
 private:
   float calcRadius(bool shifting) const;
   List<Vec2I>& tileArea(float radius, Vec2F const& position) const;
@@ -60,6 +65,8 @@ private:
   mutable Vec2F m_lastTileAreaOriginCache;
   mutable float m_lastTileAreaRadiusCache;
   mutable List<Vec2I> m_tileAreasCache;
+
+  mutable Maybe<List<Drawable>> m_generatedPreviewCache;
 };
 
 }

@@ -28,7 +28,7 @@ public:
   LiquidId liquidId() const;
   float liquidQuantity() const;
 
-  List<PreviewTile> preview(bool shifting) const override;
+  List<PreviewTile> previewTiles(bool shifting) const override;
 
   bool canPlace(bool shifting) const;
   bool canPlaceAtTile(Vec2I pos) const;

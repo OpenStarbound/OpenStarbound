@@ -8,6 +8,7 @@
 #include "StarWorld.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarPlayer.hpp"
+#include "StarMaterialItem.hpp"
 
 namespace Star {
 
@@ -231,9 +232,10 @@ void ItemDrop::update(float dt, uint64_t) {
       m_mode.set(Mode::Dead);
 
     if (m_mode.get() <= Mode::Available && m_ageItemsTimer.elapsedTime() > m_ageItemsEvery) {
-      Root::singleton().itemDatabase()->ageItem(m_item, m_ageItemsTimer.elapsedTime());
-      m_itemDescriptor.set(m_item->descriptor());
-      updateCollisionPoly();
+      if (Root::singleton().itemDatabase()->ageItem(m_item, m_ageItemsTimer.elapsedTime())) {
+        m_itemDescriptor.set(m_item->descriptor());
+        updateCollisionPoly();
+      }
       m_ageItemsTimer.setElapsedTime(0.0);
     }
   } else {
@@ -261,7 +263,7 @@ void ItemDrop::update(float dt, uint64_t) {
 }
 
 bool ItemDrop::shouldDestroy() const {
-  return m_mode.get() == Mode::Dead;
+  return m_mode.get() == Mode::Dead || m_item->empty();
 }
 
 void ItemDrop::render(RenderCallback* renderCallback) {
@@ -294,7 +296,13 @@ void ItemDrop::render(RenderCallback* renderCallback) {
   }
 
   if (!m_drawables) {
-    m_drawables = m_item->dropDrawables();
+    if (auto mat = as<MaterialItem>(m_item.get())) {
+      m_drawables = mat->generatedPreview(Vec2I(position().floor()));
+      m_overForeground = true;
+    }
+    else
+      m_drawables = m_item->dropDrawables();
+
     if (Directives dropDirectives = m_config.getString("directives", "")) {
       for (auto& drawable : *m_drawables) {
         if (drawable.isImage())
@@ -302,7 +310,7 @@ void ItemDrop::render(RenderCallback* renderCallback) {
       }
     }
   }
-  EntityRenderLayer renderLayer = m_mode.get() == Mode::Taken ? RenderLayerForegroundTile : RenderLayerItemDrop;
+  EntityRenderLayer renderLayer = m_mode.get() == Mode::Taken || m_overForeground ? RenderLayerForegroundTile : RenderLayerItemDrop;
   Vec2F dropPosition = position();
   for (Drawable drawable : *m_drawables) {
     drawable.position += dropPosition;
@@ -405,11 +413,16 @@ ItemDrop::ItemDrop() {
   m_ageItemsEvery = m_config.getDouble("ageItemsEvery", 10);
 
   m_eternal = false;
+  m_overForeground = false;
 }
 
 void ItemDrop::updateCollisionPoly() {
-  m_boundBox = Drawable::boundBoxAll(m_item->dropDrawables(), true);
-  m_boundBox.rangeSetIfEmpty(RectF{-0.5, -0.5, 0.5, 0.5});
+  if (auto mat = as<MaterialItem>(m_item.get()))
+    m_boundBox = RectF{ -0.5, -0.5, 0.5, 0.5 };
+  else {
+    m_boundBox = Drawable::boundBoxAll(m_item->dropDrawables(), true);
+    m_boundBox.rangeSetIfEmpty(RectF{ -0.5, -0.5, 0.5, 0.5 });
+  }
   MovementParameters parameters;
   parameters.collisionPoly = PolyF(collisionArea());
   m_movementController.applyParameters(parameters);

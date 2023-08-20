@@ -170,9 +170,9 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
 
   AudioFormat audioFormat = appController->enableAudio();
   m_mainMixer = make_shared<MainMixer>(audioFormat.sampleRate, audioFormat.channels);
-
   m_mainMixer->setVolume(0.5);
 
+  m_worldPainter = make_shared<WorldPainter>();
   m_guiContext = make_shared<GuiContext>(m_mainMixer->mixer(), appController);
   m_input = make_shared<Input>();
   m_voice = make_shared<Voice>(appController);
@@ -644,7 +644,6 @@ void ClientApplication::changeState(MainAppState newState) {
 
     m_titleScreen->stopMusic();
 
-    m_worldPainter = make_shared<WorldPainter>();
     m_mainInterface = make_shared<MainInterface>(m_universeClient, m_worldPainter, m_cinematicOverlay);
     m_universeClient->setLuaCallbacks("interface", LuaBindings::makeInterfaceCallbacks(m_mainInterface.get()));
     m_universeClient->startLua();

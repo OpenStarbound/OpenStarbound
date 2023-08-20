@@ -8,6 +8,7 @@
 #include "StarWorldClient.hpp"
 #include "StarWorldTemplate.hpp"
 #include "StarInput.hpp"
+#include "StarTileDrawer.hpp"
 
 namespace Star {
 
@@ -17,6 +18,7 @@ MaterialItem::MaterialItem(Json const& config, String const& directory, Json con
   : Item(config, directory, settings), FireableItem(config), BeamItem(config) {
   m_material = config.getInt("materialId");
   m_materialHueShift = materialHueFromDegrees(instanceValue("materialHueShift", 0).toFloat());
+  auto materialDatabase = Root::singleton().materialDatabase();
 
   if (materialHueShift() != MaterialHue()) {
     auto drawables = iconDrawables();
@@ -36,7 +38,6 @@ MaterialItem::MaterialItem(Json const& config, String const& directory, Json con
   m_blockRadius = instanceValue("blockRadius", defaultParameters.getFloat("blockRadius")).toFloat();
   m_altBlockRadius = instanceValue("altBlockRadius", defaultParameters.getFloat("altBlockRadius")).toFloat();
 
-  auto materialDatabase = Root::singleton().materialDatabase();
   auto multiplace = instanceValue("allowMultiplace", BlockCollisionSet.contains(materialDatabase->materialCollisionKind(m_material)));
   if (multiplace.isType(Json::Type::Bool))
     m_multiplace = multiplace.toBool();
@@ -96,16 +97,16 @@ void MaterialItem::update(float dt, FireMode fireMode, bool shifting, HashSet<Mo
       owner()->addSound("/sfx/tools/cyclematcollision.ogg", 1.0f, Random::randf(0.9f, 1.1f));
     }
 
-    if (auto presses = input.bindDown("opensb", "materialRadiusGrow")) {
+    if (auto presses = input.bindDown("opensb", "buildingRadiusGrow")) {
       m_blockRadius = min(BlockRadiusLimit, int(m_blockRadius + *presses));
       setInstanceValue("blockRadius", m_blockRadius);
-      owner()->addSound("/sfx/tools/matradiusgrow.wav", 1.0f, 1.0f + m_blockRadius / BlockRadiusLimit);
+      owner()->addSound("/sfx/tools/buildradiusgrow.wav", 1.0f, 1.0f + m_blockRadius / BlockRadiusLimit);
     }
 
-    if (auto presses = input.bindDown("opensb", "materialRadiusShrink")) {
+    if (auto presses = input.bindDown("opensb", "buildingRadiusShrink")) {
       m_blockRadius = max(1, int(m_blockRadius - *presses));
       setInstanceValue("blockRadius", m_blockRadius);
-      owner()->addSound("/sfx/tools/matradiusshrink.wav", 1.0f, 1.0f + m_blockRadius / BlockRadiusLimit);
+      owner()->addSound("/sfx/tools/buildradiusshrink.wav", 1.0f, 1.0f + m_blockRadius / BlockRadiusLimit);
     }
   }
   else {
@@ -146,6 +147,14 @@ void MaterialItem::render(RenderCallback* renderCallback, EntityRenderLayer rend
     else if (m_collisionOverride == TileCollisionOverride::Block)
       addIndicator("/interface/building/collisionblock.png");
   }
+}
+
+List<Drawable> MaterialItem::preview(PlayerPtr const&) const {
+  return generatedPreview();
+}
+
+List<Drawable> MaterialItem::dropDrawables() const {
+  return generatedPreview();
 }
 
 List<Drawable> MaterialItem::nonRotatedDrawables() const {
@@ -218,6 +227,47 @@ MaterialId MaterialItem::materialId() const {
   return m_material;
 }
 
+List<Drawable> const& MaterialItem::generatedPreview(Vec2I position) const {
+  if (!m_generatedPreviewCache) {
+    if (TileDrawer* tileDrawer = TileDrawer::singletonPtr()) {
+      auto locker = tileDrawer->lockRenderData();
+      WorldRenderData& renderData = tileDrawer->renderData();
+      renderData.geometry = WorldGeometry(3, 3);
+      renderData.tiles.resize({ 3, 3 });
+      renderData.tiles.fill(TileDrawer::DefaultRenderTile);
+      renderData.tileMinPosition = { 0, 0 };
+      RenderTile& tile = renderData.tiles.at({ 1, 1 });
+      tile.foreground = m_material;
+      tile.foregroundHueShift = m_materialHueShift;
+      tile.foregroundColorVariant = 0;
+
+      List<Drawable> drawables;
+      TileDrawer::Drawables tileDrawables;
+      bool isBlock = BlockCollisionSet.contains(Root::singleton().materialDatabase()->materialCollisionKind(m_material));
+      TileDrawer::TerrainLayer layer = isBlock ? TileDrawer::TerrainLayer::Foreground : TileDrawer::TerrainLayer::Midground;
+      for (int x = 0; x != 3; ++x) {
+        for (int y = 0; y != 3; ++y)
+          tileDrawer->produceTerrainDrawables(tileDrawables, layer, { x, y }, renderData, 1.0f / TilePixels, position - Vec2I(1, 1));
+      }
+
+      locker.unlock();
+      for (auto& index : tileDrawables.keys())
+        drawables.appendAll(tileDrawables.take(index));
+
+      auto boundBox = Drawable::boundBoxAll(drawables, true);
+      if (!boundBox.isEmpty()) {
+        for (auto& drawable : drawables)
+          drawable.translate(-boundBox.center());
+      }
+
+      m_generatedPreviewCache.emplace(move(drawables));
+    }
+    else
+      m_generatedPreviewCache.emplace(iconDrawables());
+  }
+  return *m_generatedPreviewCache;
+}
+
 float MaterialItem::calcRadius(bool shifting) const {
   if (!multiplaceEnabled())
     return 1;
@@ -270,7 +320,7 @@ TileCollisionOverride& MaterialItem::collisionOverride() {
   return m_collisionOverride;
 }
 
-List<PreviewTile> MaterialItem::preview(bool shifting) const {
+List<PreviewTile> MaterialItem::previewTiles(bool shifting) const {
   List<PreviewTile> result;
   if (initialized()) {
     Color lightColor = Color::rgba(owner()->favoriteColor());

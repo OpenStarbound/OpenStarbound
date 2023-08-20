@@ -360,7 +360,7 @@ void BeamMiningTool::setEnd(EndType) {
   m_endType = EndType::Object;
 }
 
-List<PreviewTile> BeamMiningTool::preview(bool shifting) const {
+List<PreviewTile> BeamMiningTool::previewTiles(bool shifting) const {
   List<PreviewTile> result;
   auto ownerp = owner();
   auto worldp = world();
@@ -636,7 +636,7 @@ void PaintingBeamTool::update(float dt, FireMode fireMode, bool shifting, HashSe
   FireableItem::update(dt, fireMode, shifting, moves);
 }
 
-List<PreviewTile> PaintingBeamTool::preview(bool shifting) const {
+List<PreviewTile> PaintingBeamTool::previewTiles(bool shifting) const {
   List<PreviewTile> result;
   auto ownerp = owner();
   auto worldp = world();

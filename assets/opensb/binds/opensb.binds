@@ -33,15 +33,15 @@
         "group": "building",
         "name": "Cycle Material Collision"
       },
-      "materialRadiusGrow": {
+      "buildingRadiusGrow": {
         "default": [],
         "group": "building",
-        "name": "Grow Material Radius"
+        "name": "Grow Building Radius"
       },
-      "materialRadiusShrink": {
+      "buildingRadiusShrink": {
         "default": [],
         "group": "building",
-        "name": "Shrink Material Radius"
+        "name": "Shrink Building Radius"
       }
     }
   }

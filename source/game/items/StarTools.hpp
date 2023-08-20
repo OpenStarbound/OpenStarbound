@@ -150,7 +150,7 @@ public:
   List<Drawable> drawables() const override;
 
   virtual void setEnd(EndType type) override;
-  virtual List<PreviewTile> preview(bool shifting) const override;
+  virtual List<PreviewTile> previewTiles(bool shifting) const override;
   virtual List<Drawable> nonRotatedDrawables() const override;
   virtual void fire(FireMode mode, bool shifting, bool edgeTriggered) override;
 
@@ -219,7 +219,7 @@ public:
 
   void setEnd(EndType type) override;
   void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
-  List<PreviewTile> preview(bool shifting) const override;
+  List<PreviewTile> previewTiles(bool shifting) const override;
   void init(ToolUserEntity* owner, ToolHand hand) override;
   List<Drawable> nonRotatedDrawables() const override;
   void fire(FireMode mode, bool shifting, bool edgeTriggered) override;

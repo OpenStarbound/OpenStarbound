@@ -144,6 +144,7 @@ SET (star_game_HEADERS
     StarTenantDatabase.hpp
     StarTerrainDatabase.hpp
     StarTileDamage.hpp
+    StarTileDrawer.hpp
     StarTileModification.hpp
     StarTileSectorArray.hpp
     StarTilesetDatabase.hpp
@@ -404,6 +405,7 @@ SET (star_game_SOURCES
     StarTenantDatabase.cpp
     StarTerrainDatabase.cpp
     StarTileDamage.cpp
+    StarTileDrawer.cpp
     StarTileModification.cpp
     StarTilesetDatabase.cpp
     StarToolUser.cpp

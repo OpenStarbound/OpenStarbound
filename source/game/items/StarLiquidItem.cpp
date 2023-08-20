@@ -85,7 +85,7 @@ float LiquidItem::liquidQuantity() const {
   return m_quantity;
 }
 
-List<PreviewTile> LiquidItem::preview(bool shifting) const {
+List<PreviewTile> LiquidItem::previewTiles(bool shifting) const {
   List<PreviewTile> result;
   if (initialized()) {
     auto liquid = liquidId();

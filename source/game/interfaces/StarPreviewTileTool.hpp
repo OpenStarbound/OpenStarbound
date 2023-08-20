@@ -12,7 +12,7 @@ namespace Star {
 class PreviewTileTool {
 public:
   virtual ~PreviewTileTool() {}
-  virtual List<PreviewTile> preview(bool shifting) const = 0;
+  virtual List<PreviewTile> previewTiles(bool shifting) const = 0;
 };
 
 }

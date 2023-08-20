@@ -6,10 +6,11 @@
 #include "StarLiquidsDatabase.hpp"
 #include "StarAssets.hpp"
 #include "StarRoot.hpp"
+#include "StarTileDrawer.hpp"
 
 namespace Star {
 
-TilePainter::TilePainter(RendererPtr renderer) {
+TilePainter::TilePainter(RendererPtr renderer) : TileDrawer() {
   m_renderer = move(renderer);
   m_textureGroup = m_renderer->createTextureGroup(TextureGroupSize::Large);
 
@@ -23,10 +24,6 @@ TilePainter::TilePainter(RendererPtr renderer) {
   m_liquidChunkCache.setTimeSmear(m_liquidChunkCache.timeToLive() / 4);
 
   m_textureCache.setTimeToLive(assets->json("/rendering.config:textureTimeout").toInt());
-
-  m_backgroundLayerColor = jsonToColor(assets->json("/rendering.config:backgroundLayerColor")).toRgba();
-  m_foregroundLayerColor = jsonToColor(assets->json("/rendering.config:foregroundLayerColor")).toRgba();
-  m_liquidDrawLevels = jsonToVec2F(assets->json("/rendering.config:liquidDrawLevels"));
 
   for (auto const& liquid : root.liquidsDatabase()->allLiquidSettings()) {
     m_liquids.set(liquid->id, LiquidInfo{
@@ -152,57 +149,6 @@ TilePainter::ChunkHash TilePainter::liquidChunkHash(WorldRenderData& renderData,
   return XXH3_64bits(buffer.ptr(), buffer.size());
 }
 
-TilePainter::QuadZLevel TilePainter::materialZLevel(uint32_t zLevel, MaterialId material, MaterialHue hue, MaterialColorVariant colorVariant) {
-  QuadZLevel quadZLevel = 0;
-  quadZLevel |= (uint64_t)colorVariant;
-  quadZLevel |= (uint64_t)hue << 8;
-  quadZLevel |= (uint64_t)material << 16;
-  quadZLevel |= (uint64_t)zLevel << 32;
-  return quadZLevel;
-}
-
-TilePainter::QuadZLevel TilePainter::modZLevel(uint32_t zLevel, ModId mod, MaterialHue hue, MaterialColorVariant colorVariant) {
-  QuadZLevel quadZLevel = 0;
-  quadZLevel |= (uint64_t)colorVariant;
-  quadZLevel |= (uint64_t)hue << 8;
-  quadZLevel |= (uint64_t)mod << 16;
-  quadZLevel |= (uint64_t)zLevel << 32;
-  quadZLevel |= (uint64_t)1 << 63;
-  return quadZLevel;
-}
-
-TilePainter::QuadZLevel TilePainter::damageZLevel() {
-  return (uint64_t)(-1);
-}
-
-RenderTile const& TilePainter::getRenderTile(WorldRenderData const& renderData, Vec2I const& worldPos) {
-  Vec2I arrayPos = renderData.geometry.diff(worldPos, renderData.tileMinPosition);
-
-  Vec2I size = Vec2I(renderData.tiles.size());
-  if (arrayPos[0] >= 0 && arrayPos[1] >= 0 && arrayPos[0] < size[0] && arrayPos[1] < size[1])
-    return renderData.tiles(Vec2S(arrayPos));
-
-  static RenderTile defaultRenderTile = {
-    NullMaterialId,
-    NoModId,
-    NullMaterialId,
-    NoModId,
-    0,
-    0,
-    DefaultMaterialColorVariant,
-    TileDamageType::Protected,
-    0,
-    0,
-    0,
-    DefaultMaterialColorVariant,
-    TileDamageType::Protected,
-    0,
-    EmptyLiquidId,
-    0
-  };
-  return defaultRenderTile;
-}
-
 void TilePainter::renderTerrainChunks(WorldCamera const& camera, TerrainLayer terrainLayer) {
   Map<QuadZLevel, List<RenderBufferPtr>> zOrderBuffers;
   for (auto const& chunk : m_pendingTerrainChunks) {
@@ -285,7 +231,7 @@ bool TilePainter::produceTerrainPrimitives(HashMap<QuadZLevel, List<RenderPrimit
 
   MaterialId material = EmptyMaterialId;
   MaterialHue materialHue = 0;
-  MaterialHue materialColorVariant = 0;
+  MaterialColorVariant materialColorVariant = 0;
   ModId mod = NoModId;
   MaterialHue modHue = 0;
   float damageLevel = 0.0f;
@@ -316,7 +262,7 @@ bool TilePainter::produceTerrainPrimitives(HashMap<QuadZLevel, List<RenderPrimit
 
   // render non-block colliding things in the midground
   bool isBlock = BlockCollisionSet.contains(materialDatabase->materialCollisionKind(material));
-  if ((isBlock && terrainLayer == TerrainLayer::Midground) || (!isBlock && terrainLayer == TerrainLayer::Foreground))
+  if (terrainLayer == (isBlock ? TerrainLayer::Midground : TerrainLayer::Foreground))
     return false;
 
   auto getPieceTexture = [this, assets](MaterialId material, MaterialRenderPieceConstPtr const& piece, MaterialHue hue, bool mod) {
@@ -423,129 +369,12 @@ void TilePainter::produceLiquidPrimitives(HashMap<LiquidId, List<RenderPrimitive
   auto texRect = worldRect.scaled(TilePixels);
 
   auto const& liquid = m_liquids[tile.liquidId];
-  primitives[tile.liquidId].emplace_back(std::in_place_type_t<RenderQuad>(), move(liquid.texture),
+  primitives[tile.liquidId].emplace_back(std::in_place_type_t<RenderQuad>(), liquid.texture,
       worldRect.min(), texRect.min(),
       Vec2F(worldRect.xMax(), worldRect.yMin()), Vec2F(texRect.xMax(), texRect.yMin()),
       worldRect.max(), texRect.max(),
       Vec2F(worldRect.xMin(), worldRect.yMax()), Vec2F(texRect.xMin(), texRect.yMax()),
     liquid.color, 1.0f);
-}
-
-bool TilePainter::determineMatchingPieces(MaterialPieceResultList& resultList, bool* occlude, MaterialDatabaseConstPtr const& materialDb, MaterialRenderMatchList const& matchList,
-    WorldRenderData const& renderData, Vec2I const& basePos, TileLayer layer, bool isMod) {
-  RenderTile const& tile = getRenderTile(renderData, basePos);
-
-  auto matchSetMatches = [&](MaterialRenderMatchConstPtr const& match) -> bool {
-    if (match->requiredLayer && *match->requiredLayer != layer)
-      return false;
-
-    if (match->matchPoints.empty())
-      return true;
-
-    bool matchValid = match->matchJoin == MaterialJoinType::All;
-    for (auto const& matchPoint : match->matchPoints) {
-      auto const& neighborTile = getRenderTile(renderData, basePos + matchPoint.position);
-
-      bool neighborShadowing = false;
-      if (layer == TileLayer::Background) {
-        if (auto profile = materialDb->materialRenderProfile(neighborTile.foreground))
-          neighborShadowing = !profile->foregroundLightTransparent;
-      }
-
-      MaterialHue baseHue = layer == TileLayer::Foreground ? tile.foregroundHueShift : tile.backgroundHueShift;
-      MaterialHue neighborHue = layer == TileLayer::Foreground ? neighborTile.foregroundHueShift : neighborTile.backgroundHueShift;
-      MaterialHue baseModHue = layer == TileLayer::Foreground ? tile.foregroundModHueShift : tile.backgroundModHueShift;
-      MaterialHue neighborModHue = layer == TileLayer::Foreground ? neighborTile.foregroundModHueShift : neighborTile.backgroundModHueShift;
-      MaterialId baseMaterial = layer == TileLayer::Foreground ? tile.foreground : tile.background;
-      MaterialId neighborMaterial = layer == TileLayer::Foreground ? neighborTile.foreground : neighborTile.background;
-      ModId baseMod = layer == TileLayer::Foreground ? tile.foregroundMod : tile.backgroundMod;
-      ModId neighborMod = layer == TileLayer::Foreground ? neighborTile.foregroundMod : neighborTile.backgroundMod;
-
-      bool rulesValid = matchPoint.rule->join == MaterialJoinType::All;
-      for (auto const& ruleEntry : matchPoint.rule->entries) {
-        bool valid = true;
-        if (isMod) {
-          if (ruleEntry.rule.is<MaterialRule::RuleEmpty>()) {
-            valid = neighborMod == NoModId;
-          } else if (ruleEntry.rule.is<MaterialRule::RuleConnects>()) {
-            valid = isConnectableMaterial(neighborMaterial);
-          } else if (ruleEntry.rule.is<MaterialRule::RuleShadows>()) {
-            valid = neighborShadowing;
-          } else if (auto equalsSelf = ruleEntry.rule.ptr<MaterialRule::RuleEqualsSelf>()) {
-            valid = neighborMod == baseMod;
-            if (equalsSelf->matchHue)
-              valid = valid && baseModHue == neighborModHue;
-          } else if (auto equalsId = ruleEntry.rule.ptr<MaterialRule::RuleEqualsId>()) {
-            valid = neighborMod == equalsId->id;
-          } else if (auto propertyEquals = ruleEntry.rule.ptr<MaterialRule::RulePropertyEquals>()) {
-            if (auto profile = materialDb->modRenderProfile(neighborMod))
-              valid = profile->ruleProperties.get(propertyEquals->propertyName, Json()) == propertyEquals->compare;
-            else
-              valid = false;
-          }
-        } else {
-          if (ruleEntry.rule.is<MaterialRule::RuleEmpty>()) {
-            valid = neighborMaterial == EmptyMaterialId;
-          } else if (ruleEntry.rule.is<MaterialRule::RuleConnects>()) {
-            valid = isConnectableMaterial(neighborMaterial);
-          } else if (ruleEntry.rule.is<MaterialRule::RuleShadows>()) {
-            valid = neighborShadowing;
-          } else if (auto equalsSelf = ruleEntry.rule.ptr<MaterialRule::RuleEqualsSelf>()) {
-            valid = neighborMaterial == baseMaterial;
-            if (equalsSelf->matchHue)
-              valid = valid && baseHue == neighborHue;
-          } else if (auto equalsId = ruleEntry.rule.ptr<MaterialRule::RuleEqualsId>()) {
-            valid = neighborMaterial == equalsId->id;
-          } else if (auto propertyEquals = ruleEntry.rule.ptr<MaterialRule::RulePropertyEquals>()) {
-            if (auto profile = materialDb->materialRenderProfile(neighborMaterial))
-              valid = profile->ruleProperties.get(propertyEquals->propertyName) == propertyEquals->compare;
-            else
-              valid = false;
-          }
-        }
-        if (ruleEntry.inverse)
-          valid = !valid;
-
-        if (matchPoint.rule->join == MaterialJoinType::All) {
-          rulesValid = valid && rulesValid;
-          if (!rulesValid)
-            break;
-        } else {
-          rulesValid = valid || rulesValid;
-        }
-      }
-
-      if (match->matchJoin == MaterialJoinType::All) {
-        matchValid = matchValid && rulesValid;
-        if (!matchValid)
-          return matchValid;
-      } else {
-        matchValid = matchValid || rulesValid;
-      }
-    }
-    return matchValid;
-  };
-
-  bool subMatchResult = false;
-  for (auto const& match : matchList) {
-    if (matchSetMatches(match)) {
-      if (match->occlude)
-        *occlude = match->occlude.get();
-
-      subMatchResult = true;
-
-      for (auto const& piecePair : match->resultingPieces)
-        resultList.append({piecePair.first, piecePair.second});
-
-      if (determineMatchingPieces(resultList, occlude, materialDb, match->subMatches, renderData, basePos, layer, isMod) && match->haltOnSubMatch)
-        break;
-
-      if (match->haltOnMatch)
-        break;
-    }
-  }
-
-  return subMatchResult;
 }
 
 float TilePainter::liquidDrawLevel(float liquidLevel) const {

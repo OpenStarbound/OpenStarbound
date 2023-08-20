@@ -536,9 +536,9 @@ void ToolUser::render(RenderCallback* renderCallback, bool inToolRange, bool shi
   }
 
   if (auto pri = as<PreviewTileTool>(m_primaryHandItem.get()))
-    renderCallback->addTilePreviews(pri->preview(shifting));
+    renderCallback->addTilePreviews(pri->previewTiles(shifting));
   else if (auto alt = as<PreviewTileTool>(m_altHandItem.get()))
-    renderCallback->addTilePreviews(alt->preview(shifting));
+    renderCallback->addTilePreviews(alt->previewTiles(shifting));
 
   if (auto ren = as<RenderableItem>(m_primaryHandItem.get()))
     ren->render(renderCallback, renderLayer);
