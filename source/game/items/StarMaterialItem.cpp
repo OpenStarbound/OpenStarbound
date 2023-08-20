@@ -190,6 +190,10 @@ void MaterialItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
     steps = (unsigned)ceil(magnitude * (Constants::pi / 2));
   }
 
+  CollisionKind collisionKind = m_collisionOverride != TileCollisionOverride::None
+    ? collisionKindFromOverride(m_collisionOverride)
+    : Root::singleton().materialDatabase()->materialCollisionKind(m_material);
+
   size_t total = 0;
   for (int i = 0; i != steps; ++i) {
     auto placementOrigin = aimPosition + diff * (1.0f - ((float)i / steps));
@@ -202,7 +206,7 @@ void MaterialItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
     // Make sure not to make any more modifications than we have consumables.
     if (modifications.size() > count())
       modifications.resize(count());
-    size_t failed = world()->applyTileModifications(modifications, false).size();
+    size_t failed = world()->applyTileModifications(modifications, collisionKind <= CollisionKind::Platform).size();
     if (failed < modifications.size()) {
       size_t placed = modifications.size() - failed;
       consume(placed);
