@@ -59,6 +59,8 @@ CollisionSet const DefaultCollisionSet({CollisionKind::Null, CollisionKind::Slip
 // Defines what can be "blocks" e.g. for tile rendering: Block and Slippery
 CollisionSet const BlockCollisionSet({CollisionKind::Block, CollisionKind::Slippery});
 
+extern EnumMap<TileCollisionOverride> const TileCollisionOverrideNames;
+
 extern EnumMap<CollisionKind> const CollisionKindNames;
 
 bool isColliding(CollisionKind kind, CollisionSet const& collisionSet);

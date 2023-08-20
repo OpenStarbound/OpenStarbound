@@ -28,10 +28,20 @@
         "group": "voice",
         "name": "Push To Talk"
       },
-      "materialCycleCollision": {
+      "materialCollisionCycle": {
         "default": [],
         "group": "building",
         "name": "Cycle Material Collision"
+      },
+      "materialRadiusGrow": {
+        "default": [],
+        "group": "building",
+        "name": "Grow Material Radius"
+      },
+      "materialRadiusShrink": {
+        "default": [],
+        "group": "building",
+        "name": "Shrink Material Radius"
       }
     }
   }
