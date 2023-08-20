@@ -265,6 +265,32 @@ bool ItemDrop::shouldDestroy() const {
 }
 
 void ItemDrop::render(RenderCallback* renderCallback) {
+  if (m_mode.get() != Mode::Taken) {
+    Color beamColor;
+    switch (m_item->rarity()) {
+    case Rarity::Uncommon:
+      beamColor = Color::rgb(87, 255, 81);
+      break;
+    case Rarity::Rare:
+      beamColor = Color::rgb(87, 220, 255);
+      break;
+    case Rarity::Legendary:
+      beamColor = Color::rgb(176, 81, 255);
+      break;
+    case Rarity::Essential:
+      beamColor = Color::rgb(255, 255, 81);
+      break;
+    default:
+      beamColor = Color::White;
+    }
+
+    beamColor.setAlphaF(0.8f);
+    auto line = Drawable::makeLine({ Vec2F(), Vec2F(0.0f, 1.5f) }, 2.0f, beamColor, position());
+    (line.linePart().endColor = beamColor)->setAlphaF(0.0f);
+    line.fullbright = true;
+    renderCallback->addDrawable(move(line), RenderLayerItemDrop);
+  }
+
   if (!m_drawables) {
     m_drawables = m_item->dropDrawables();
     if (Directives dropDirectives = m_config.getString("directives", "")) {
@@ -281,6 +307,15 @@ void ItemDrop::render(RenderCallback* renderCallback) {
     renderCallback->addDrawable(move(drawable), renderLayer);
   }
 }
+
+void ItemDrop::renderLightSources(RenderCallback* renderCallback) {
+  LightSource light;
+  light.pointLight = false;
+  light.color = Vec3B::filled(20);
+  light.position = position();
+  renderCallback->addLightSource(move(light));
+}
+
 
 ItemPtr ItemDrop::item() const {
   return m_item;

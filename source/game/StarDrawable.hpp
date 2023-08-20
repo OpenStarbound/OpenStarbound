@@ -14,6 +14,7 @@ struct Drawable {
   struct LinePart {
     Line2F line;
     float width;
+    Maybe<Color> endColor;
   };
 
   struct PolyPart {
