@@ -1239,7 +1239,7 @@ List<Drawable> Object::orientationDrawables(size_t orientationIndex) const {
       auto& imagePart = drawable.imagePart();
       imagePart.image.directives.clear();
       String imagePath = AssetPath::join(imagePart.image);
-      if (m_colorDirectives && m_imageKeys.contains("color")) { // We had to leave color untouched despite separating its directives for server-side compatibility reasons, temporarily substr it in the image key
+      if ((m_colorDirectives || !m_colorSuffix.empty()) && m_imageKeys.contains("color")) { // We had to leave color untouched despite separating its directives for server-side compatibility reasons, temporarily substr it in the image key
         String& color = m_imageKeys.find("color")->second;
         String backup = move(color);
         color = backup.substr(0, backup.find('?'));
@@ -1255,7 +1255,8 @@ List<Drawable> Object::orientationDrawables(size_t orientationIndex) const {
         color = move(backup);
 
         imagePart.image.directives = layer.imagePart().image.directives;
-        imagePart.addDirectives(m_colorDirectives);
+        if (m_colorDirectives)
+          imagePart.addDirectives(m_colorDirectives);
         if (suffix != NPos)
           imagePart.addDirectives(m_colorSuffix + String(image.substr(suffix)).replaceTags(m_imageKeys, true, "default"));
       }
