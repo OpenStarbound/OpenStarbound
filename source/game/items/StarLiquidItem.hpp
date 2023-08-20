@@ -5,12 +5,13 @@
 #include "StarFireableItem.hpp"
 #include "StarBeamItem.hpp"
 #include "StarEntityRendering.hpp"
+#include "StarPreviewTileTool.hpp"
 
 namespace Star {
 
 STAR_CLASS(LiquidItem);
 
-class LiquidItem : public Item, public FireableItem, public BeamItem {
+class LiquidItem : public Item, public FireableItem, public PreviewTileTool, public BeamItem {
 public:
   LiquidItem(Json const& config, String const& directory, Json const& settings);
   virtual ~LiquidItem() {}
@@ -27,7 +28,7 @@ public:
   LiquidId liquidId() const;
   float liquidQuantity() const;
 
-  List<PreviewTile> preview(bool shifting) const;
+  List<PreviewTile> preview(bool shifting) const override;
 
   bool canPlace(bool shifting) const;
   bool canPlaceAtTile(Vec2I pos) const;
