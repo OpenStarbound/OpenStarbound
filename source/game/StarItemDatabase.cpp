@@ -506,7 +506,7 @@ ItemPtr ItemDatabase::tryCreateItem(ItemDescriptor const& descriptor, Maybe<floa
   }
   catch (std::exception const& e) {
     Logger::error("Could not instantiate item '{}'. {}", descriptor, outputException(e, false));
-    result = createItem(m_items.get("perfectlygenericitem").type, itemConfig("perfectlygenericitem", {}, {}));
+    result = createItem(m_items.get("perfectlygenericitem").type, itemConfig("perfectlygenericitem", JsonObject(), {}, {}));
   }
   result->setCount(descriptor.count());
 
