@@ -107,6 +107,8 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
   callbacks.registerCallback(   "interactRadius", [player]()         { return player->interactRadius();       });
   callbacks.registerCallback("setInteractRadius", [player](float radius) { player->setInteractRadius(radius); });
 
+  callbacks.registerCallback("aimPosition", [player]() { return player->aimPosition(); });
+
   callbacks.registerCallback("id",       [player]() { return player->entityId(); });
   callbacks.registerCallback("uniqueId", [player]() { return player->uniqueId(); });
   callbacks.registerCallback("isAdmin",  [player]() { return player->isAdmin();  });
