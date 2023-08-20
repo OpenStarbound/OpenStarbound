@@ -1070,7 +1070,7 @@ void WorldClient::update(float dt) {
 
   m_lightingCalculator.setMonochrome(Root::singleton().configuration()->get("monochromeLighting").toBool());
 
-  float expireTime = min((float)m_latency + 100, 2000.f);
+  float expireTime = min(float(m_latency + 800), 2000.f);
   auto now = Time::monotonicMilliseconds();
   eraseWhere(m_predictedTiles, [&](auto& pair) {
     float expiry = (float)(now - pair.second.time) / expireTime;
