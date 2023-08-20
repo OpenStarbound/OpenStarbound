@@ -263,7 +263,7 @@ void ItemDrop::update(float dt, uint64_t) {
 }
 
 bool ItemDrop::shouldDestroy() const {
-  return m_mode.get() == Mode::Dead || m_item->empty();
+  return m_mode.get() == Mode::Dead || (m_item->empty() && m_mode.get() != Mode::Taken);
 }
 
 void ItemDrop::render(RenderCallback* renderCallback) {
@@ -417,11 +417,12 @@ ItemDrop::ItemDrop() {
 }
 
 void ItemDrop::updateCollisionPoly() {
+  RectF fallback = RectF{ -0.499, -0.499, 0.499, 0.499 };
   if (auto mat = as<MaterialItem>(m_item.get()))
-    m_boundBox = RectF{ -0.5, -0.5, 0.5, 0.5 };
+    m_boundBox = fallback;
   else {
     m_boundBox = Drawable::boundBoxAll(m_item->dropDrawables(), true);
-    m_boundBox.rangeSetIfEmpty(RectF{ -0.5, -0.5, 0.5, 0.5 });
+    m_boundBox.rangeSetIfEmpty(fallback);
   }
   MovementParameters parameters;
   parameters.collisionPoly = PolyF(collisionArea());
