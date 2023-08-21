@@ -47,6 +47,7 @@ public:
   List<PreviewTile> previewTiles(bool shifting) const override;
   List<Drawable> const& generatedPreview(Vec2I position = {}) const;
 private:
+  void updateProperties();
   float calcRadius(bool shifting) const;
   List<Vec2I>& tileArea(float radius, Vec2F const& position) const;
   MaterialHue placementHueShift(Vec2I const& position) const;
