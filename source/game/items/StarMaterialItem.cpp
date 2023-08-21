@@ -35,12 +35,12 @@ MaterialItem::MaterialItem(Json const& config, String const& directory, Json con
 
   auto defaultParameters = Root::singleton().assets()->json("/items/defaultParameters.config");
   setCooldownTime(config.queryFloat("materialItems.cooldown", defaultParameters.queryFloat("materialItems.cooldown")));
-  m_blockRadius = instanceValue("blockRadius", defaultParameters.getFloat("blockRadius")).toFloat();
-  m_altBlockRadius = instanceValue("altBlockRadius", defaultParameters.getFloat("altBlockRadius")).toFloat();
+  m_blockRadius = config.getFloat("blockRadius", defaultParameters.getFloat("blockRadius"));
+  m_altBlockRadius = config.getFloat("altBlockRadius", defaultParameters.getFloat("altBlockRadius"));
+  m_collisionOverride = TileCollisionOverrideNames.maybeLeft(config.getString("collisionOverride", "None")).value(TileCollisionOverride::None);
+  //TODO: Work out a vanilla-compatible way to network the 3 above for visual reasons without storing as a parameter, because that prevents stacking.
 
-  auto multiplace = instanceValue("allowMultiplace", BlockCollisionSet.contains(materialDatabase->materialCollisionKind(m_material)));
-  if (multiplace.isType(Json::Type::Bool))
-    m_multiplace = multiplace.toBool();
+  m_multiplace = config.getBool("allowMultiplace", BlockCollisionSet.contains(materialDatabase->materialCollisionKind(m_material)));
   m_placeSounds = jsonToStringList(config.get("placeSounds", JsonArray()));
   if (m_placeSounds.empty()) {
     auto miningSound = materialDatabase->miningSound(m_material);
@@ -54,7 +54,6 @@ MaterialItem::MaterialItem(Json const& config, String const& directory, Json con
   }
   m_shifting = false;
   m_lastTileAreaRadiusCache = 0.0f;
-  m_collisionOverride = TileCollisionOverrideNames.maybeLeft(instanceValue("collisionOverride", "None").toString()).value(TileCollisionOverride::None);
 }
 
 ItemPtr MaterialItem::clone() const {
@@ -89,7 +88,6 @@ void MaterialItem::update(float dt, FireMode fireMode, bool shifting, HashSet<Mo
         constexpr auto limit = (uint8_t)TileCollisionOverride::Block + 1;
         while (true) {
           m_collisionOverride = TileCollisionOverride(((uint8_t)m_collisionOverride + 1) % limit);
-          setInstanceValue("collisionOverride", TileCollisionOverrideNames.getRight(m_collisionOverride));
           if (collisionKindFromOverride(m_collisionOverride) != baseKind)
             break;
         }
@@ -99,13 +97,11 @@ void MaterialItem::update(float dt, FireMode fireMode, bool shifting, HashSet<Mo
 
     if (auto presses = input.bindDown("opensb", "buildingRadiusGrow")) {
       m_blockRadius = min(BlockRadiusLimit, int(m_blockRadius + *presses));
-      setInstanceValue("blockRadius", m_blockRadius);
       owner()->addSound("/sfx/tools/buildradiusgrow.wav", 1.0f, 1.0f + m_blockRadius / BlockRadiusLimit);
     }
 
     if (auto presses = input.bindDown("opensb", "buildingRadiusShrink")) {
       m_blockRadius = max(1, int(m_blockRadius - *presses));
-      setInstanceValue("blockRadius", m_blockRadius);
       owner()->addSound("/sfx/tools/buildradiusshrink.wav", 1.0f, 1.0f + m_blockRadius / BlockRadiusLimit);
     }
   }
