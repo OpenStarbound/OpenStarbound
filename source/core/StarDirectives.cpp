@@ -62,6 +62,32 @@ Directives::Directives(const char* directives) {
   parse(directives);
 }
 
+Directives& Directives::operator=(String const& directives) {
+  if (shared && shared->string == directives)
+    return *this;
+
+  parse(String(directives));
+  return *this;
+}
+
+Directives& Directives::operator=(String&& directives) {
+  if (shared && shared->string == directives) {
+    directives.clear();
+    return *this;
+  }
+
+  parse(move(directives));
+  return *this;
+}
+
+Directives& Directives::operator=(const char* directives) {
+  if (shared && shared->string.utf8().compare(directives) == 0)
+    return *this;
+
+  parse(directives);
+  return *this;
+}
+
 void Directives::loadOperations() const {
   if (!shared)
     return;

@@ -45,6 +45,10 @@ public:
   Directives(String&& directives);
   Directives(const char* directives);
 
+  Directives& operator=(String const& s);
+  Directives& operator=(String&& s);
+  Directives& operator=(const char* s);
+
   void loadOperations() const;
   void parse(String&& directives);
   String string() const;
