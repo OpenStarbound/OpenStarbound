@@ -854,7 +854,10 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
             if (placeMaterial->layer == TileLayer::Foreground) {
               p.foreground.reset();
               p.foregroundHueShift.reset();
-              p.collision.reset();
+              if (p.collision) {
+                p.collision.reset();
+                dirtyCollision(RectI::withSize(modification.first, { 1, 1 }));
+              }
             }
             else {
               p.background.reset();
