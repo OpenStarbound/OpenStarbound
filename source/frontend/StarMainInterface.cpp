@@ -1329,8 +1329,10 @@ void MainInterface::renderDebug() {
     SpatialLogger::clear();
     m_debugTextRect = RectF::null();
     LogMap::clear();
+    SpatialLogger::setObserved(false);
     return;
   }
+  SpatialLogger::setObserved(true);
   
   if (m_clientCommandProcessor->debugHudEnabled()) {
     auto assets = Root::singleton().assets();

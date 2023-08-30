@@ -147,11 +147,15 @@ public:
 
   static void clear();
 
+  static bool observed();
+  static void setObserved(bool observed);
+
 private:
   static Mutex s_mutex;
   static StringMap<Deque<Line>> s_lines;
   static StringMap<Deque<Point>> s_points;
   static StringMap<Deque<LogText>> s_logText;
+  static bool s_observed;
 };
 
 template <typename... Args>

@@ -120,6 +120,8 @@ size_t const SpatialLogger::MaximumPoints;
 size_t const SpatialLogger::MaximumText;
 
 void SpatialLogger::logPoly(char const* space, PolyF const& poly, Vec4B const& color) {
+  if (!observed()) return;
+
   MutexLocker locker(s_mutex);
   auto& lines = s_lines[space];
 
@@ -133,6 +135,8 @@ void SpatialLogger::logPoly(char const* space, PolyF const& poly, Vec4B const& c
 }
 
 void SpatialLogger::logLine(char const* space, Line2F const& line, Vec4B const& color) {
+  if (!observed()) return;
+
   MutexLocker locker(s_mutex);
   auto& lines = s_lines[space];
 
@@ -143,6 +147,8 @@ void SpatialLogger::logLine(char const* space, Line2F const& line, Vec4B const& 
 }
 
 void SpatialLogger::logLine(char const* space, Vec2F const& begin, Vec2F const& end, Vec4B const& color) {
+  if (!observed()) return;
+
   MutexLocker locker(s_mutex);
   auto& lines = s_lines[space];
 
@@ -153,6 +159,8 @@ void SpatialLogger::logLine(char const* space, Vec2F const& begin, Vec2F const& 
 }
 
 void SpatialLogger::logPoint(char const* space, Vec2F const& position, Vec4B const& color) {
+  if (!observed()) return;
+
   MutexLocker locker(s_mutex);
   auto& points = s_points[space];
 
@@ -163,6 +171,8 @@ void SpatialLogger::logPoint(char const* space, Vec2F const& position, Vec4B con
 }
 
 void SpatialLogger::logText(char const* space, String text, Vec2F const& position, Vec4B const& color) {
+  if (!observed()) return;
+
   MutexLocker locker(s_mutex);
   auto& texts = s_logText[space];
 
@@ -208,8 +218,18 @@ void SpatialLogger::clear() {
   } // Move while locked to deallocate contents while unlocked.
 }
 
+bool SpatialLogger::observed() {
+  return s_observed;
+}
+
+void SpatialLogger::setObserved(bool observed) {
+  s_observed = observed;
+}
+
+
 Mutex SpatialLogger::s_mutex;
 StringMap<Deque<SpatialLogger::Line>> SpatialLogger::s_lines;
 StringMap<Deque<SpatialLogger::Point>> SpatialLogger::s_points;
 StringMap<Deque<SpatialLogger::LogText>> SpatialLogger::s_logText;
+bool SpatialLogger::s_observed = false;
 }
