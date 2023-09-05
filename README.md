@@ -3,7 +3,9 @@
 This is a fork of Starbound.
 You **must** own a copy of Starbound to use it. Base game assets are not provided for obvious reasons.
 
-It is **work-in-progress**, so compiled builds are not yet available. GitHub Actions will likely be set up to provide compiled builds in the future.
+It is **work-in-progress**, so up-to-date compiled builds for all platforms are not yet available. GitHub Actions will likely be set up to provide compiled builds in the future.
+
+However, a manually compiled client build (5/09/2023) is available [here](https://files.catbox.moe/bpq211.7z). Extract it to a new `win_opensb` folder in your Starbound installation, adjacent to the win32 & win64 folders.
 
 If you do decide to compile it anyways, you must also make sure it loads the game assets in `/assets/opensb/`.
 
