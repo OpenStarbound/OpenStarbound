@@ -113,10 +113,13 @@ String PatternedNameGenerator::processRule(JsonArray const& rule, RandomSource& 
 }
 
 bool PatternedNameGenerator::isProfane(String const& name) const {
-  auto matchName = name.toLower().rot13();
-  for (auto naughtyWord : m_profanityFilter) {
-    if (matchName.contains(naughtyWord))
-      return true;
+  auto matchNames = name.toLower().rot13().splitAny(" -");
+  for (auto& naughtyWord : m_profanityFilter) {
+    for (auto& matchName : matchNames) {
+      auto find = matchName.find(naughtyWord);
+      if (find != NPos && (find == 0 || naughtyWord.size() + 1 >= matchName.size()))
+        return true;
+    }
   }
   return false;
 }
