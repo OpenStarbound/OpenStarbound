@@ -98,8 +98,10 @@ void Directives::loadOperations() const {
 }
 
 void Directives::parse(String&& directives) {
-  if (directives.empty())
+  if (directives.empty()) {
+    shared.reset();
     return;
+  }
 
   List<Entry> newList;
   StringView view(directives);
@@ -123,8 +125,10 @@ void Directives::parse(String&& directives) {
     }
   });
 
-  if (newList.empty() && !prefix.empty())
+  if (newList.empty() && !prefix.empty()) {
+    shared.reset();
     return;
+  }
 
   shared = std::make_shared<Shared const>(move(newList), move(directives), prefix);
   if (view.size() < 1000) { // Pre-load short enough directives
