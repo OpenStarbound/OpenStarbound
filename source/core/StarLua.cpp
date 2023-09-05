@@ -97,6 +97,9 @@ void LuaContext::setRequireFunction(RequireFunction requireFunction) {
 
 void LuaContext::setCallbacks(String const& tableName, LuaCallbacks const& callbacks) const {
   auto& eng = engine();
+  if (LuaContext::contains(tableName))
+    return;
+
   auto callbackTable = eng.createTable();
   for (auto const& p : callbacks.callbacks())
     callbackTable.set(p.first, eng.createWrappedFunction(p.second));
