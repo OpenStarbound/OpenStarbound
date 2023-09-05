@@ -1,6 +1,6 @@
 # OpenStarbound
 
-This is a fork of Starbound.
+This is a fork of Starbound. Contributions are welcome!
 You **must** own a copy of Starbound to use it. Base game assets are not provided for obvious reasons.
 
 It is **work-in-progress**, so up-to-date compiled builds for all platforms are not yet available. GitHub Actions will likely be set up to provide compiled builds in the future.
