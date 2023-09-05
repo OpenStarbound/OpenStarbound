@@ -24,3 +24,5 @@ Changes:
   * Additionally, objects can be placed under non-solid foreground tiles.
 
 * Some minor polish to UI
+
+[Discord](https://discord.gg/D4QqtBNmAY)
