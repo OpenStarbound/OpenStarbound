@@ -17,7 +17,7 @@ Changes:
 * Positional Voice Chat that works on completely vanilla servers, uses Opus for crisp, HD audio (rewrite from StarExtensions)
   * Both menus are made available in the options menu in this fork rather than as a chat command.
 * Multiple font support (switch fonts inline with `^font=name;`, .ttf assets are auto-detected)
-* Per-thread world lightmap generation moved off the main thread
+* World lightmap generation has been moved off the main thread
 * Experimental changes to the storage of directives in memory to greatly reduce their impact on frametimes
   * Works well when extremely long directives are used for "vanilla multiplayer-compatible" creations, like [generated clothing](https://silverfeelin.github.io/Starbound-NgOutfitGenerator/).
 
