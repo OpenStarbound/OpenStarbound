@@ -12,6 +12,7 @@ If you do decide to compile it anyways, you must also make sure it loads the gam
 Changes:
 * You can now make .patch files that are just merged in. That's why the patch files in here are unusually simple.
 * Some Lua functions like getters and setters for player identity values, but not every function from [StarExtensions](https://github.com/StarExtensions/StarExtensions) has been ported yet.
+* Character swapping (rewrite from StarExtensions, currently command-only: `/swap name` case-insensitive, only substring required)
 * Custom user input support with a keybindings menu (rewrite from StarExtensions)
 * Positional Voice Chat that works on completely vanilla servers, uses Opus for crisp, HD audio (rewrite from StarExtensions)
   * Both menus are made available in the options menu in this fork rather than as a chat command.
