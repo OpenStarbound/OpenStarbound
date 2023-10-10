@@ -46,7 +46,7 @@ Vehicle::Vehicle(Json baseConfig, String path, Json dynamicConfig)
     loungePosition.dance.set(pair.second.optString("dance"));
     loungePosition.directives.set(pair.second.optString("directives"));
     loungePosition.statusEffects.set(pair.second.getArray("statusEffects", {}).transformed(jsonToPersistentStatusEffect));
-    loungePosition.suppressTools = pair.second.getBool("suppressTools", false);
+    loungePosition.suppressTools = pair.second.optBool("suppressTools");
   }
 
   for (auto const& pair : configValue("physicsCollisions", JsonObject()).iterateObject()) {

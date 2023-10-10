@@ -1440,7 +1440,7 @@ bool Player::canUseTool() const {
   bool canUse = !isDead() && !isTeleporting() && !m_techController->toolUsageSuppressed();
   if (canUse) {
     if (auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor()))
-      if (loungeAnchor->suppressTools)
+      if (loungeAnchor->suppressTools.value(loungeAnchor->controllable))
         return false;
   }
   return canUse;
