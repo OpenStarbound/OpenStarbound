@@ -31,7 +31,7 @@ struct ParallaxLayer {
   float zLevel;
   Vec2F parallaxOffset;
   String timeOfDayCorrelation;
-  float speed;
+  Vec2F speed;
   bool unlit;
   bool lightMapped;
   float fadePercent;

@@ -13,7 +13,7 @@ ParallaxLayer::ParallaxLayer() {
   timeOfDayCorrelation = "";
   zLevel = 0;
   verticalOrigin = 0;
-  speed = 0;
+  speed = { 0, 0 };
   unlit = false;
   lightMapped = false;
   fadePercent = 0;
@@ -32,7 +32,7 @@ ParallaxLayer::ParallaxLayer(Json const& store) : ParallaxLayer() {
   zLevel = store.getFloat("zLevel");
   parallaxOffset = jsonToVec2F(store.get("parallaxOffset"));
   timeOfDayCorrelation = store.getString("timeOfDayCorrelation");
-  speed = store.getFloat("speed");
+  speed = { store.getFloat("speed"), store.getFloat("speedY", 0.0f) };
   unlit = store.getBool("unlit");
   lightMapped = store.getBool("lightMapped");
   fadePercent = store.getFloat("fadePercent");
@@ -50,7 +50,8 @@ Json ParallaxLayer::store() const {
       {"zLevel", zLevel},
       {"parallaxOffset", jsonFromVec2F(parallaxOffset)},
       {"timeOfDayCorrelation", timeOfDayCorrelation},
-      {"speed", speed},
+      {"speed",  speed[0]},
+      {"speedY", speed[1]},
       {"unlit", unlit},
       {"lightMapped", lightMapped},
       {"fadePercent", fadePercent}};
@@ -227,12 +228,19 @@ void Parallax::buildLayer(Json const& layerSettings, String const& kind) {
 
   layer.verticalOrigin = m_verticalOrigin;
   layer.zLevel = layer.parallaxValue.sum();
-  layer.parallaxOffset = {layerSettings.getArray("offset", {0, 0})[0].toFloat(),
-      layerSettings.getArray("offset", {0, 0})[1].toFloat()}; // shift from bottom left to horizon level in the image
+  auto offset = layerSettings.getArray("offset", { 0, 0 });
+  layer.parallaxOffset = { offset[0].toFloat(), offset[1].toFloat() }; // shift from bottom left to horizon level in the image
   if (!layerSettings.getBool("noRandomOffset", false))
     layer.parallaxOffset[0] += rnd.randInt(imgMetadata->imageSize(layer.textures[0])[0]);
   layer.timeOfDayCorrelation = layerSettings.getString("timeOfDayCorrelation", "");
-  layer.speed = rnd.randf(layerSettings.getFloat("minSpeed", 0), layerSettings.getFloat("maxSpeed", 0));
+  auto minSpeed = layerSettings.get("minSpeed", 0.0f);
+  auto maxSpeed = layerSettings.get("maxSpeed", 0.0f);
+  if (!minSpeed.isType(Json::Type::Array))
+    minSpeed = JsonArray{ minSpeed, 0.0f };
+  if (!maxSpeed.isType(Json::Type::Array))
+    maxSpeed = JsonArray{ maxSpeed, 0.0f };
+  layer.speed = { rnd.randf(minSpeed.getFloat(0), maxSpeed.getFloat(0)),
+                  rnd.randf(minSpeed.getFloat(1), maxSpeed.getFloat(1)) };
   layer.unlit = layerSettings.getBool("unlit", false);
   layer.lightMapped = layerSettings.getBool("lightMapped", false);
 

@@ -256,9 +256,13 @@ void EnvironmentPainter::renderParallaxLayers(
 
     // texture offset in *screen pixel space*
     Vec2F parallaxOffset = layer.parallaxOffset * camera.pixelRatio();
-    if (layer.speed != 0) {
-      double drift = fmod((double)layer.speed * (sky.epochTime / (double)sky.dayLength), (double)parallaxSize[0]);
+    if (layer.speed[0] != 0) {
+      double drift = fmod((double)layer.speed[0] * (sky.epochTime / (double)sky.dayLength), (double)parallaxSize[0]);
       parallaxOffset[0] = fmod(parallaxOffset[0] + drift * camera.pixelRatio(), parallaxPixels[0]);
+    }
+    if (layer.speed[1] != 0) {
+      double drift = fmod((double)layer.speed[1] * (sky.epochTime / (double)sky.dayLength), (double)parallaxSize[1]);
+      parallaxOffset[1] = fmod(parallaxOffset[1] + drift * camera.pixelRatio(), parallaxPixels[1]);
     }
 
     // parallax camera world position in *parallax space*
