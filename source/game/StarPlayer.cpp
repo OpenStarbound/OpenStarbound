@@ -1126,6 +1126,7 @@ void Player::render(RenderCallback* renderCallback) {
 
 void Player::renderLightSources(RenderCallback* renderCallback) {
   renderCallback->addLightSources(lightSources());
+  m_deployment->renderLightSources(renderCallback);
 }
 
 Json Player::getGenericProperty(String const& name, Json const& defaultValue) const {
