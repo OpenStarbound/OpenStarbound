@@ -16,6 +16,11 @@ ADD_EXECUTABLE (asset_unpacker
   asset_unpacker.cpp)
 TARGET_LINK_LIBRARIES (asset_unpacker ${STAR_EXT_LIBS})
 
+ADD_EXECUTABLE (btree_repacker
+  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base>
+  btree_repacker.cpp)
+TARGET_LINK_LIBRARIES (btree_repacker ${STAR_EXT_LIBS})
+
 ADD_EXECUTABLE (dump_versioned_json
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
   dump_versioned_json.cpp)
