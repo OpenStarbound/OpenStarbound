@@ -34,7 +34,7 @@ int main(int argc, char** argv) {
 
     newDb.setIODevice(std::move(File::open(outputFilename, IOMode::ReadWrite | IOMode::Truncate)));
     newDb.open();
-    coutf("Repacking %s...\n", bTreePath);
+    coutf("Repacking {}...\n", bTreePath);
     //copy the data over
     unsigned count = 0;
     db.forAll([&count, &newDb](ByteArray key, ByteArray data) {
@@ -48,11 +48,11 @@ int main(int argc, char** argv) {
     newDb.commit();
     newDb.close();
 
-    coutf("Repacked BTree to %s in %ss\n", outputFilename, Time::monotonicTime() - startTime);
+    coutf("Repacked BTree to {} in {}s\n", outputFilename, Time::monotonicTime() - startTime);
     return 0;
 
   } catch (std::exception const& e) {
-    cerrf("Exception caught: %s\n", outputException(e, true));
+    cerrf("Exception caught: {}\n", outputException(e, true));
     return 1;
   }
 }
