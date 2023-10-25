@@ -17,6 +17,16 @@ namespace Star {
 LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
   LuaCallbacks callbacks;
 
+  callbacks.registerCallback("save", [player]() { return player->diskStore(); });
+  callbacks.registerCallback("load", [player](Json const& data) {
+    auto saved = player->diskStore();
+    try { player->diskLoad(data); }
+    catch (StarException const&) {
+      player->diskLoad(saved);
+      throw;
+    }
+  });
+
   callbacks.registerCallback(   "humanoidIdentity", [player]()         { return player->humanoid()->identity().toJson();  });
   callbacks.registerCallback("setHumanoidIdentity", [player](Json const& id) { player->setIdentity(HumanoidIdentity(id)); });
 
@@ -85,6 +95,9 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
     }
   });
 
+  callbacks.registerCallback("   description", [player]()                          { return player->description(); });
+  callbacks.registerCallback("setDescription", [player](String const& description) { player->setDescription(description); });
+
   callbacks.registerCallback(   "name", [player]()                   { return player->name(); });
   callbacks.registerCallback("setName", [player](String const& name) { player->setName(name); });
 
@@ -106,6 +119,54 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
 
   callbacks.registerCallback(   "interactRadius", [player]()         { return player->interactRadius();       });
   callbacks.registerCallback("setInteractRadius", [player](float radius) { player->setInteractRadius(radius); });
+
+  callbacks.registerCallback("actionBarGroup", [player]() {
+    return luaTupleReturn(player->inventory()->customBarGroup() + 1, player->inventory()->customBarGroups());
+  });
+
+  callbacks.registerCallback("setActionBarGroup", [player](int group) {
+    player->inventory()->setCustomBarGroup((group - 1) % (unsigned)player->inventory()->customBarGroups());
+  });
+
+  callbacks.registerCallback("selectedActionBarSlot", [player](LuaEngine& engine) -> Maybe<LuaValue> {
+    if (auto barLocation = player->inventory()->selectedActionBarLocation()) {
+      if (auto index = barLocation.ptr<CustomBarIndex>())
+        return engine.luaFrom<CustomBarIndex>(*index + 1);
+      else
+        return engine.luaFrom<String>(EssentialItemNames.getRight(barLocation.get<EssentialItem>()));
+    }
+    else {
+      return {};
+    }
+  });
+
+  callbacks.registerCallback("setSelectedActionBarSlot", [player](MVariant<int, String> const& slot) {
+    auto inventory = player->inventory();
+    if (!slot)
+      inventory->selectActionBarLocation(SelectedActionBarLocation());
+    else if (auto index = slot.ptr<int>()) { 
+      CustomBarIndex wrapped = (*index - 1) % (unsigned)inventory->customBarIndexes();
+      inventory->selectActionBarLocation(SelectedActionBarLocation(wrapped));
+    } else {
+      EssentialItem const& item = EssentialItemNames.getLeft(slot.get<String>());
+      inventory->selectActionBarLocation(SelectedActionBarLocation(item));
+    }
+  });
+
+  callbacks.registerCallback("setDamageTeam", [player](String const& typeName, Maybe<uint16_t> teamNumber) {
+    player->setTeam(EntityDamageTeam(TeamTypeNames.getLeft(typeName), teamNumber.value(0)));
+  });
+
+  callbacks.registerCallback("say", [player](String const& message) { player->addChatMessage(message); });
+
+  callbacks.registerCallback("emote", [player](String const& emote, Maybe<float> cooldown) {
+    player->addEmote(HumanoidEmoteNames.getLeft(emote), cooldown);
+  });
+
+  callbacks.registerCallback("currentEmote", [player]() {
+    auto currentEmote = player->currentEmote();
+    return luaTupleReturn(HumanoidEmoteNames.getRight(currentEmote.first), currentEmote.second);
+  });
 
   callbacks.registerCallback("aimPosition", [player]() { return player->aimPosition(); });
 

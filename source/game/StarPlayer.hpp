@@ -383,7 +383,8 @@ public:
   void queueItemPickupMessage(ItemPtr const& item);
 
   void addChatMessage(String const& message);
-  void addEmote(HumanoidEmote const& emote);
+  void addEmote(HumanoidEmote const& emote, Maybe<float> emoteCooldown = {});
+  pair<HumanoidEmote, float> currentEmote() const;
 
   List<ChatAction> pullPendingChatActions() override;
 

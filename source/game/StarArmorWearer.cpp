@@ -26,7 +26,7 @@ ArmorWearer::ArmorWearer() : m_lastNude(true) {
   addNetElement(&m_legsCosmeticItemDataNetState);
   addNetElement(&m_backCosmeticItemDataNetState);
 
-  m_headNeedsSync = m_chestNeedsSync = m_legsNeedsSync = m_backNeedsSync = true;
+  reset();
 }
 
 void ArmorWearer::setupHumanoidClothingDrawables(Humanoid& humanoid, bool forceNude) {
@@ -138,6 +138,18 @@ void ArmorWearer::effects(EffectEmitter& effectEmitter) {
     effectEmitter.addEffectSources("backArmor", item->effectSources());
   else if (auto item = as<EffectSourceItem>(m_backItem))
     effectEmitter.addEffectSources("backArmor", item->effectSources());
+}
+
+void ArmorWearer::reset() {
+  m_headNeedsSync = m_chestNeedsSync = m_legsNeedsSync = m_backNeedsSync = true;
+  m_headItem .reset();
+  m_chestItem.reset();
+  m_legsItem .reset();
+  m_backItem .reset();
+  m_headCosmeticItem .reset();
+  m_chestCosmeticItem.reset();
+  m_legsCosmeticItem .reset();
+  m_backCosmeticItem .reset();
 }
 
 Json ArmorWearer::diskStore() const {

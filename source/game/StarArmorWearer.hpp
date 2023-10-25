@@ -30,6 +30,8 @@ public:
   void effects(EffectEmitter& effectEmitter);
   List<PersistentStatusEffect> statusEffects() const;
 
+  void reset();
+
   Json diskStore() const;
   void diskLoad(Json const& diskStore);
 

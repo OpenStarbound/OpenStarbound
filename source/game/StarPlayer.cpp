@@ -245,6 +245,7 @@ void Player::diskLoad(Json const& diskStore) {
 
   m_genericProperties = diskStore.getObject("genericProperties");
 
+  m_armor->reset();
   refreshArmor();
 
   m_codexes->learnInitialCodexes(species());
@@ -2162,10 +2163,14 @@ void Player::addChatMessage(String const& message) {
   m_pendingChatActions.append(SayChatAction{entityId(), message, mouthPosition()});
 }
 
-void Player::addEmote(HumanoidEmote const& emote) {
+void Player::addEmote(HumanoidEmote const& emote, Maybe<float> emoteCooldown) {
   starAssert(!isSlave());
   m_emoteState = emote;
-  m_emoteCooldownTimer = m_emoteCooldown;
+  m_emoteCooldownTimer = emoteCooldown.value(m_emoteCooldown);
+}
+
+pair<HumanoidEmote, float> Player::currentEmote() const {
+  return make_pair(m_emoteState, m_emoteCooldownTimer);
 }
 
 List<ChatAction> Player::pullPendingChatActions() {
