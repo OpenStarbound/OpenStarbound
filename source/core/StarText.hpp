@@ -12,7 +12,7 @@ namespace Text {
   unsigned char const SpecialCharLimit = ' ';
 
   String stripEscapeCodes(String const& s);
-  inline bool isEscapeCode(char c) { return c == CmdEsc || c == StartEsc; }
+  inline bool isEscapeCode(Utf32Type c) { return c == CmdEsc || c == StartEsc; }
 
   typedef function<bool(StringView text)> TextCallback;
   typedef function<bool(StringView commands)> CommandsCallback;
