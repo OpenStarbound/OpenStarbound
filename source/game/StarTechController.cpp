@@ -238,7 +238,7 @@ void TechController::tickMaster(float dt) {
       {"special3", m_moveSpecial3}
     };
 
-    module.scriptComponent.update(JsonObject{{"moves", moves}, {"dt", dt}});
+    module.scriptComponent.update(JsonObject{{"moves", moves}, {"dt", module.scriptComponent.updateDt(dt)}});
   }
 
   resetMoves();
