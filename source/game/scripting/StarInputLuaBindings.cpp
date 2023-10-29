@@ -11,6 +11,7 @@ LuaCallbacks LuaBindings::makeInputCallbacks() {
 
   callbacks.registerCallbackWithSignature<Maybe<unsigned>, String, String>("bindDown", bind(mem_fn(&Input::bindDown), input, _1, _2));
   callbacks.registerCallbackWithSignature<bool,            String, String>("bindHeld", bind(mem_fn(&Input::bindHeld), input, _1, _2));
+  callbacks.registerCallbackWithSignature<bool,            String, String>("bind",     bind(mem_fn(&Input::bindHeld), input, _1, _2));
   callbacks.registerCallbackWithSignature<Maybe<unsigned>, String, String>("bindUp",   bind(mem_fn(&Input::bindUp),   input, _1, _2));
 
   callbacks.registerCallback("keyDown", [input](String const& keyName, Maybe<StringList> const& modNames) -> Maybe<unsigned> {
@@ -23,11 +24,17 @@ LuaCallbacks LuaBindings::makeInputCallbacks() {
     }
     return input->keyDown(key, mod);
   });
-  callbacks.registerCallback("keyHeld", [input](String const& keyName) ->            bool { return input->keyHeld(KeyNames.getLeft(keyName)); });
+  auto keyHeld = [input](String const& keyName) -> bool { return input->keyHeld(KeyNames.getLeft(keyName)); };
+  callbacks.registerCallback("keyHeld", keyHeld);
+  callbacks.registerCallback("key",     keyHeld);
   callbacks.registerCallback("keyUp",   [input](String const& keyName) -> Maybe<unsigned> { return input->keyUp(  KeyNames.getLeft(keyName)); });
 
   callbacks.registerCallback("mouseDown", [input](String const& buttonName) -> Maybe<List<Vec2I>> { return input->mouseDown(MouseButtonNames.getLeft(buttonName)); });
-  callbacks.registerCallback("mouseHeld", [input](String const& buttonName) ->               bool { return input->mouseHeld(MouseButtonNames.getLeft(buttonName)); });
+  
+  auto mouseHeld = [input](String const& buttonName) -> bool { return input->mouseHeld(MouseButtonNames.getLeft(buttonName)); };
+  callbacks.registerCallback("mouseHeld", mouseHeld);
+  callbacks.registerCallback("mouse",     mouseHeld);
+
   callbacks.registerCallback("mouseUp",   [input](String const& buttonName) -> Maybe<List<Vec2I>> { return input->mouseUp(  MouseButtonNames.getLeft(buttonName)); });
 
   callbacks.registerCallbackWithSignature<void, String, String>("resetBinds",      bind(mem_fn(&Input::resetBinds),      input, _1, _2));
