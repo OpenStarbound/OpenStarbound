@@ -153,81 +153,59 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
     }
   });
   
-  callbacks.registerCallback("actionBarItem", [player](MVariant<int, String> const& slot, Maybe<bool> offHand) -> Json {
+  callbacks.registerCallback("actionBarSlotLink", [player](int slot, String const& handName) {
     auto inventory = player->inventory();
-    if (!slot) return {};
-    else if (auto index = slot.ptr<int>()) {
-      CustomBarIndex wrapped = (*index - 1) % (unsigned)inventory->customBarIndexes();
-      Maybe<InventorySlot> s;
-      if (offHand.value(false)) s = inventory->customBarSecondarySlot(wrapped);
-      else s = inventory->customBarPrimarySlot(wrapped);
-      if (s.isNothing()) return {};
-      return itemSafeDescriptor(inventory->itemsAt(s.value())).toJson();
-    } else {
-      return itemSafeDescriptor(inventory->essentialItem(EssentialItemNames.getLeft(slot.get<String>()))).toJson();
-    }
+    CustomBarIndex wrapped = (slot - 1) % (unsigned)inventory->customBarIndexes();
+    if (handName == "primary")
+      return inventory->customBarPrimarySlot(wrapped);
+    else if (handName == "alt")
+      return inventory->customBarSecondarySlot(wrapped);
+    else
+      throw StarException(strf("Unknown tool hand {}", handName));
+  });
+
+  callbacks.registerCallback("setActionBarSlotLink", [player](int slot, String const& handName, Maybe<InventorySlot> inventorySlot) {
+    auto inventory = player->inventory();
+    CustomBarIndex wrapped = (slot - 1) % (unsigned)inventory->customBarIndexes();
+    if (inventorySlot && !inventory->slotValid(*inventorySlot))
+      inventorySlot.reset();
+
+    if (handName == "primary")
+      inventory->setCustomBarPrimarySlot(wrapped, inventorySlot);
+    else if (handName == "alt")
+      inventory->setCustomBarSecondarySlot(wrapped, inventorySlot);
+    else
+      throw StarException(strf("Unknown tool hand {}", handName));
   });
   
-  callbacks.registerCallback("setActionBarItem", [player](MVariant<int, String> const& slot, bool offHand, Json const& item) {
+  callbacks.registerCallback("itemBagSize", [player](String const& bagName) -> Maybe<unsigned> {
+    if (auto bag = player->inventory()->bagContents(bagName))
+      return (unsigned)bag->size();
+    else
+      return {};
+  });
+  
+  callbacks.registerCallback("itemAllowedInBag", [player](String const& bagName, Json const& item) {
     auto inventory = player->inventory();
     auto itemDatabase = Root::singleton().itemDatabase();
-    
-    if (!slot) return;
-    else if (auto index = slot.ptr<int>()) {
-      CustomBarIndex wrapped = (*index - 1) % (unsigned)inventory->customBarIndexes();
-      
-      if (item.type() == Json::Type::Object && item.contains("name")) {
-        auto itm = itemDatabase->item(ItemDescriptor(item));
-        
-        Maybe<InventorySlot> found;
-        inventory->forEveryItem([player, &found, &itm](InventorySlot const& slot, ItemPtr const& item){
-          if (!found.isNothing()) return;
-          if (item->matches(itm, true)) found = slot;
-        });
-        if (!found.isNothing()) {
-          if (offHand) inventory->setCustomBarSecondarySlot(wrapped, found.value());
-          else inventory->setCustomBarPrimarySlot(wrapped, found.value());
-        }
-      } else {
-        if (offHand) inventory->setCustomBarSecondarySlot(wrapped, {});
-        else inventory->setCustomBarPrimarySlot(wrapped, {});
-      }
-      
-    } else {
-      // place into essential item slot
-      //if (item.isNothing()) inventory->setEssentialItem(EssentialItemNames.getLeft(slot.get<String>()), {});
-      inventory->setEssentialItem(EssentialItemNames.getLeft(slot.get<String>()), itemDatabase->item(ItemDescriptor(item)));
-      // TODO: why does this always clear the slot. it's literally the same code as giveEssentialItem
-    }
+    if (!inventory->bagContents(bagName))
+      return false;
+    else
+      return inventory->itemAllowedInBag(itemDatabase->item(ItemDescriptor(item)), bagName);
   });
   
-  callbacks.registerCallback("itemBagSize", [player](String const& bag) {
-    auto inventory = player->inventory();
-    auto b = inventory->bagContents(bag);
-    if (!b) return 0;
-    return (int)b->size();
+  callbacks.registerCallback("item", [player](InventorySlot const& slot) -> Maybe<Json> {
+    if (!player->inventory()->slotValid(slot)) return {};
+    if (auto item = player->inventory()->itemsAt(slot))
+      return itemSafeDescriptor(item).toJson();
+    else
+      return {};
   });
   
-  callbacks.registerCallback("itemAllowedInBag", [player](String const& bag, Json const& item) {
-    auto inventory = player->inventory();
+  callbacks.registerCallback("setItem", [player](InventorySlot const& slot, Json const& item) {
+    if (!player->inventory()->slotValid(slot)) return;
     auto itemDatabase = Root::singleton().itemDatabase();
-    if (!inventory->bagContents(bag)) return false;
-    return inventory->itemAllowedInBag(itemDatabase->item(ItemDescriptor(item)), bag);
-  });
-  
-  callbacks.registerCallback("itemBagItem", [player](String const& bag, int slot) -> Json {
-    auto inventory = player->inventory();
-    auto b = inventory->bagContents(bag);
-    if (!b || slot <= 0 || slot > (int)b->size()) return {};
-    return itemSafeDescriptor(b->at(slot - 1)).toJson();
-  });
-  
-  callbacks.registerCallback("setItemBagItem", [player](String const& bag, int slot, Json const& item) {
-    auto inventory = player->inventory();
-    auto itemDatabase = Root::singleton().itemDatabase();
-    auto b = const_pointer_cast<ItemBag>(inventory->bagContents(bag)); // bit of a Naughty Access Cheat here, but
-    if (!b || slot <= 0 || slot > (int)b->size()) return;
-    b->setItem(slot - 1, itemDatabase->item(ItemDescriptor(item)));
+    player->inventory()->setItem(slot, itemDatabase->item(ItemDescriptor(item)));
   });
 
   callbacks.registerCallback("setDamageTeam", [player](String const& typeName, Maybe<uint16_t> teamNumber) {

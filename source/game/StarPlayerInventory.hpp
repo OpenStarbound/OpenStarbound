@@ -64,6 +64,8 @@ public:
 
   bool consumeSlot(InventorySlot const& slot, uint64_t count = 1);
 
+  bool slotValid(InventorySlot const& slot) const;
+
   // Adds items to any slot except the trash or swap slots, returns stack left
   // over.
   ItemPtr addItems(ItemPtr items);

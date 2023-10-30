@@ -2,6 +2,7 @@
 #define STAR_LUA_GAME_CONVERTERS_HPP
 
 #include "StarLuaConverters.hpp"
+#include "StarInventoryTypes.hpp"
 #include "StarCollisionBlock.hpp"
 #include "StarPlatformerAStar.hpp"
 #include "StarActorMovementController.hpp"
@@ -13,6 +14,12 @@
 #include "StarRpcThreadPromise.hpp"
 
 namespace Star {
+
+template <>
+struct LuaConverter<InventorySlot> {
+  static LuaValue from(LuaEngine& engine, InventorySlot k);
+  static Maybe<InventorySlot> to(LuaEngine& engine, LuaValue const& v);
+};
 
 template <>
 struct LuaConverter<CollisionKind> {

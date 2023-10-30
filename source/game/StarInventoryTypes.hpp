@@ -19,7 +19,7 @@ enum class EquipmentSlot : uint8_t {
 };
 extern EnumMap<EquipmentSlot> const EquipmentSlotNames;
 
-typedef pair<String, uint8_t> BagSlot;
+typedef pair<String, unsigned> BagSlot;
 
 strong_typedef(Empty, SwapSlot);
 strong_typedef(Empty, TrashSlot);

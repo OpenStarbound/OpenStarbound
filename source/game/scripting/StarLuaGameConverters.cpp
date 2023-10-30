@@ -2,6 +2,39 @@
 
 namespace Star {
 
+LuaValue LuaConverter<InventorySlot>::from(LuaEngine& engine, InventorySlot k) {
+  if (auto equipment = k.ptr<EquipmentSlot>())
+    return engine.createString(EquipmentSlotNames.getRight(*equipment));
+  else if (auto bag = k.ptr<BagSlot>()) {
+    auto table = engine.createTable(2, 0);
+    table.set(1, bag->first);
+    table.set(2, bag->second);
+    return table;
+  }
+  else if (k.is<SwapSlot>())
+    return engine.createString("Swap");
+  else if (k.is<TrashSlot>())
+    return engine.createString("Trash");
+}
+
+Maybe<InventorySlot> LuaConverter<InventorySlot>::to(LuaEngine&, LuaValue const& v) {
+  if (auto str = v.ptr<LuaString>()) {
+    auto string = str->toString();
+    if (string.equalsIgnoreCase("Swap"))
+      return SwapSlot();
+    else if (string.equalsIgnoreCase("Trash"))
+      return TrashSlot();
+    else if (auto equipment = EquipmentSlotNames.leftPtr(str->toString()))
+      return *equipment;
+    else
+      return {};
+  }
+  else if (auto table = v.ptr<LuaTable>())
+    return BagSlot(table->get<LuaString>(1).toString(), table->get<unsigned>(2));
+  else
+    return {};
+}
+
 LuaValue LuaConverter<CollisionKind>::from(LuaEngine& engine, CollisionKind k) {
   return engine.createString(CollisionKindNames.getRight(k));
 }
