@@ -95,7 +95,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
     }
   });
 
-  callbacks.registerCallback("   description", [player]()                          { return player->description(); });
+  callbacks.registerCallback(   "description", [player]()                          { return player->description(); });
   callbacks.registerCallback("setDescription", [player](String const& description) { player->setDescription(description); });
 
   callbacks.registerCallback(   "name", [player]()                   { return player->name(); });
