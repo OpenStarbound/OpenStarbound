@@ -2268,12 +2268,16 @@ void WorldClient::informTilePrediction(Vec2I const& pos, TileModification const&
   p.time = now;
   if (auto placeMaterial = modification.ptr<PlaceMaterial>()) {
     if (placeMaterial->layer == TileLayer::Foreground) {
-      p.foreground = placeMaterial->material;
-      p.foregroundHueShift = placeMaterial->materialHueShift;
+      auto materialDatabase = Root::singleton().materialDatabase();
+      if (!materialDatabase->isCascadingFallingMaterial(placeMaterial->material)
+       && !materialDatabase->         isFallingMaterial(placeMaterial->material)) {
+        p.foreground = placeMaterial->material;
+        p.foregroundHueShift = placeMaterial->materialHueShift;
+      }
       if (placeMaterial->collisionOverride != TileCollisionOverride::None)
         p.collision = collisionKindFromOverride(placeMaterial->collisionOverride);
       else
-        p.collision = Root::singleton().materialDatabase()->materialCollisionKind(placeMaterial->material);
+        p.collision = materialDatabase->materialCollisionKind(placeMaterial->material);
       dirtyCollision(RectI::withSize(pos, { 1, 1 }));
     } else {
       p.background = placeMaterial->material;
