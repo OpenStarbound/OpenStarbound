@@ -31,7 +31,7 @@ Maybe<InventorySlot> LuaConverter<InventorySlot>::to(LuaEngine&, LuaValue const&
       return {};
   }
   else if (auto table = v.ptr<LuaTable>())
-    return {BagSlot(table->get<LuaString>(1).toString(), table->get<unsigned>(2))};
+    return {BagSlot(table->get<LuaString>(1).toString(), (uint8_t)table->get<unsigned>(2))};
   else
     return {};
 }
