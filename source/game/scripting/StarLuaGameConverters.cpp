@@ -12,17 +12,17 @@ LuaValue LuaConverter<InventorySlot>::from(LuaEngine& engine, InventorySlot k) {
     return table;
   }
   else if (k.is<SwapSlot>())
-    return engine.createString("Swap");
+    return engine.createString("swap");
   else if (k.is<TrashSlot>())
-    return engine.createString("Trash");
+    return engine.createString("trash");
 }
 
 Maybe<InventorySlot> LuaConverter<InventorySlot>::to(LuaEngine&, LuaValue const& v) {
   if (auto str = v.ptr<LuaString>()) {
     auto string = str->toString();
-    if (string.equalsIgnoreCase("Swap"))
+    if (string.equalsIgnoreCase("swap"))
       return SwapSlot();
-    else if (string.equalsIgnoreCase("Trash"))
+    else if (string.equalsIgnoreCase("trash"))
       return TrashSlot();
     else if (auto equipment = EquipmentSlotNames.leftPtr(str->toString()))
       return *equipment;
