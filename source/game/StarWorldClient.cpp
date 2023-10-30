@@ -1893,7 +1893,7 @@ bool WorldClient::readNetTile(Vec2I const& pos, NetTile const& netTile, bool upd
 
       if (p.collision && *p.collision == netTile.collision)
         p.collision.reset();
-      if (p.foreground && *p.foreground == netTile.foreground)
+      if (p.foreground && (*p.foreground == StructureMaterialId || *p.foreground == netTile.foreground))
         p.foreground.reset();
       if (p.foregroundMod && *p.foregroundMod == netTile.foregroundMod)
         p.foregroundMod.reset();
@@ -2274,6 +2274,8 @@ void WorldClient::informTilePrediction(Vec2I const& pos, TileModification const&
         p.foreground = placeMaterial->material;
         p.foregroundHueShift = placeMaterial->materialHueShift;
       }
+      else
+        p.foreground = StructureMaterialId;
       if (placeMaterial->collisionOverride != TileCollisionOverride::None)
         p.collision = collisionKindFromOverride(placeMaterial->collisionOverride);
       else
