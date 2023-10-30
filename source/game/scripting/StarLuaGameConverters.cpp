@@ -21,16 +21,16 @@ Maybe<InventorySlot> LuaConverter<InventorySlot>::to(LuaEngine&, LuaValue const&
   if (auto str = v.ptr<LuaString>()) {
     auto string = str->toString();
     if (string.equalsIgnoreCase("swap"))
-      return SwapSlot();
+      return {SwapSlot()};
     else if (string.equalsIgnoreCase("trash"))
-      return TrashSlot();
+      return {TrashSlot()};
     else if (auto equipment = EquipmentSlotNames.leftPtr(str->toString()))
-      return *equipment;
+      return {*equipment};
     else
       return {};
   }
   else if (auto table = v.ptr<LuaTable>())
-    return BagSlot(table->get<LuaString>(1).toString(), table->get<unsigned>(2));
+    return {BagSlot(table->get<LuaString>(1).toString(), table->get<unsigned>(2))};
   else
     return {};
 }
