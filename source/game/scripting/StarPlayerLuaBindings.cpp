@@ -200,6 +200,32 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
       // TODO: why does this always clear the slot. it's literally the same code as giveEssentialItem
     }
   });
+  
+  callbacks.registerCallback("itemBagSize", [player](String const& bag) {
+    auto inventory = player->inventory();
+    auto b = inventory->bagContents(bag);
+    return b->size();
+  });
+  
+  callbacks.registerCallback("itemAllowedInBag", [player](String const& bag, Json const& item) {
+    auto inventory = player->inventory();
+    auto itemDatabase = Root::singleton().itemDatabase();
+    return inventory->itemAllowedInBag(itemDatabase->item(ItemDescriptor(item)), bag);
+  });
+  
+  callbacks.registerCallback("itemBagItem", [player](String const& bag, int slot) -> Json {
+    auto inventory = player->inventory();
+    auto b = inventory->bagContents(bag);
+    //if (b.get() == nullptr) return {};
+    return itemSafeDescriptor(b->at(slot - 1)).toJson();
+  });
+  
+  callbacks.registerCallback("setItemBagItem", [player](String const& bag, int slot, Json const& item) {
+    auto inventory = player->inventory();
+    auto itemDatabase = Root::singleton().itemDatabase();
+    auto b = const_pointer_cast<ItemBag>(inventory->bagContents(bag)); // bit of a Naughty Access Cheat here, but
+    b->setItem(slot - 1, itemDatabase->item(ItemDescriptor(item)));
+  });
 
   callbacks.registerCallback("setDamageTeam", [player](String const& typeName, Maybe<uint16_t> teamNumber) {
     player->setTeam(EntityDamageTeam(TeamTypeNames.getLeft(typeName), teamNumber.value(0)));
