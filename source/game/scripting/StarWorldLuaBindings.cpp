@@ -354,8 +354,10 @@ namespace LuaBindings {
           return as<WorldClient>(world)->dungeonId(position);
         }
       });
-    
+
     if (auto clientWorld = as<WorldClient>(world)) {
+      callbacks.registerCallback("isClient", []() { return true;  });
+      callbacks.registerCallback("isServer", []() { return false; });
       callbacks.registerCallbackWithSignature<RectI>("clientWindow", bind(ClientWorldCallbacks::clientWindow, clientWorld));
       callbacks.registerCallback("players", [clientWorld]() {
         List<EntityId> playerIds;
@@ -370,6 +372,9 @@ namespace LuaBindings {
     }
 
     if (auto serverWorld = as<WorldServer>(world)) {
+      callbacks.registerCallback("isClient", []() { return false; });
+      callbacks.registerCallback("isServer", []() { return true;  });
+
       callbacks.registerCallbackWithSignature<bool, EntityId, bool>("breakObject", bind(ServerWorldCallbacks::breakObject, serverWorld, _1, _2));
       callbacks.registerCallbackWithSignature<bool, RectF>("isVisibleToPlayer", bind(ServerWorldCallbacks::isVisibleToPlayer, serverWorld, _1));
       callbacks.registerCallbackWithSignature<bool, RectF>("loadRegion", bind(ServerWorldCallbacks::loadRegion, serverWorld, _1));
