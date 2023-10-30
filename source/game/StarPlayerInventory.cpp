@@ -188,7 +188,7 @@ bool PlayerInventory::slotValid(InventorySlot const& slot) const {
     if (auto bag = bagContents(bagSlot->first)) {
       if ((size_t)bagSlot->second >= bag->size())
         return false;
-    } 
+    }
     else return false;
   }
   return true;
