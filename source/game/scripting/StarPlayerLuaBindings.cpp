@@ -204,19 +204,21 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
   callbacks.registerCallback("itemBagSize", [player](String const& bag) {
     auto inventory = player->inventory();
     auto b = inventory->bagContents(bag);
-    return b->size();
+    if (!b) return 0;
+    return (int)b->size();
   });
   
   callbacks.registerCallback("itemAllowedInBag", [player](String const& bag, Json const& item) {
     auto inventory = player->inventory();
     auto itemDatabase = Root::singleton().itemDatabase();
+    if (!inventory->bagContents(bag)) return false;
     return inventory->itemAllowedInBag(itemDatabase->item(ItemDescriptor(item)), bag);
   });
   
   callbacks.registerCallback("itemBagItem", [player](String const& bag, int slot) -> Json {
     auto inventory = player->inventory();
     auto b = inventory->bagContents(bag);
-    //if (b.get() == nullptr) return {};
+    if (!b || slot <= 0 || slot > (int)b->size()) return {};
     return itemSafeDescriptor(b->at(slot - 1)).toJson();
   });
   
@@ -224,6 +226,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
     auto inventory = player->inventory();
     auto itemDatabase = Root::singleton().itemDatabase();
     auto b = const_pointer_cast<ItemBag>(inventory->bagContents(bag)); // bit of a Naughty Access Cheat here, but
+    if (!b || slot <= 0 || slot > (int)b->size()) return;
     b->setItem(slot - 1, itemDatabase->item(ItemDescriptor(item)));
   });
 

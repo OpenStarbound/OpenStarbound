@@ -424,6 +424,7 @@ BackArmorPtr PlayerInventory::backCosmetic() const {
 }
 
 ItemBagConstPtr PlayerInventory::bagContents(String const& type) const {
+  if (!m_bags.contains(type)) return nullptr;
   return m_bags.get(type);
 }
 
