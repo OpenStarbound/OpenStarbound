@@ -152,6 +152,54 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
       inventory->selectActionBarLocation(SelectedActionBarLocation(item));
     }
   });
+  
+  callbacks.registerCallback("actionBarItem", [player](MVariant<int, String> const& slot, Maybe<bool> offHand) -> Json {
+    auto inventory = player->inventory();
+    if (!slot) return {};
+    else if (auto index = slot.ptr<int>()) {
+      CustomBarIndex wrapped = (*index - 1) % (unsigned)inventory->customBarIndexes();
+      Maybe<InventorySlot> s;
+      if (offHand.value(false)) s = inventory->customBarSecondarySlot(wrapped);
+      else s = inventory->customBarPrimarySlot(wrapped);
+      if (s.isNothing()) return {};
+      return itemSafeDescriptor(inventory->itemsAt(s.value())).toJson();
+    } else {
+      return itemSafeDescriptor(inventory->essentialItem(EssentialItemNames.getLeft(slot.get<String>()))).toJson();
+    }
+  });
+  
+  callbacks.registerCallback("setActionBarItem", [player](MVariant<int, String> const& slot, bool offHand, Json const& item) {
+    auto inventory = player->inventory();
+    auto itemDatabase = Root::singleton().itemDatabase();
+    
+    if (!slot) return;
+    else if (auto index = slot.ptr<int>()) {
+      CustomBarIndex wrapped = (*index - 1) % (unsigned)inventory->customBarIndexes();
+      
+      if (item.type() == Json::Type::Object && item.contains("name")) {
+        auto itm = itemDatabase->item(ItemDescriptor(item));
+        
+        Maybe<InventorySlot> found;
+        inventory->forEveryItem([player, &found, &itm](InventorySlot const& slot, ItemPtr const& item){
+          if (!found.isNothing()) return;
+          if (item->matches(itm, true)) found = slot;
+        });
+        if (!found.isNothing()) {
+          if (offHand) inventory->setCustomBarSecondarySlot(wrapped, found.value());
+          else inventory->setCustomBarPrimarySlot(wrapped, found.value());
+        }
+      } else {
+        if (offHand) inventory->setCustomBarSecondarySlot(wrapped, {});
+        else inventory->setCustomBarPrimarySlot(wrapped, {});
+      }
+      
+    } else {
+      // place into essential item slot
+      //if (item.isNothing()) inventory->setEssentialItem(EssentialItemNames.getLeft(slot.get<String>()), {});
+      inventory->setEssentialItem(EssentialItemNames.getLeft(slot.get<String>()), itemDatabase->item(ItemDescriptor(item)));
+      // TODO: why does this always clear the slot. it's literally the same code as giveEssentialItem
+    }
+  });
 
   callbacks.registerCallback("setDamageTeam", [player](String const& typeName, Maybe<uint16_t> teamNumber) {
     player->setTeam(EntityDamageTeam(TeamTypeNames.getLeft(typeName), teamNumber.value(0)));
