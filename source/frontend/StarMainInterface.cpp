@@ -997,7 +997,7 @@ PanePtr MainInterface::createEscapeDialog() {
     });
 
   escapeDialogReader.construct(assets->json("/interface.config:escapeDialog"), escapeDialogPtr);
-  escapeDialog->fetchChild<LabelWidget>("lblversion")->setText(strf("Starbound - {} ({})", StarVersionString, StarArchitectureString));
+  escapeDialog->fetchChild<LabelWidget>("lblversion")->setText(strf("OpenStarbound - {} ({})", StarVersionString, StarArchitectureString));
   return escapeDialog;
 }
 
