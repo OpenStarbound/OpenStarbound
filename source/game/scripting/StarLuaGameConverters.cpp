@@ -15,6 +15,7 @@ LuaValue LuaConverter<InventorySlot>::from(LuaEngine& engine, InventorySlot k) {
     return engine.createString("swap");
   else if (k.is<TrashSlot>())
     return engine.createString("trash");
+  else return {}; // avoid UB if every accounted-for case fails
 }
 
 Maybe<InventorySlot> LuaConverter<InventorySlot>::to(LuaEngine&, LuaValue const& v) {
