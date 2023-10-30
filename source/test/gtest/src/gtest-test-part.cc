@@ -33,7 +33,7 @@
 #include "gtest/gtest-test-part.h"
 
 #include "gtest/internal/gtest-port.h"
-#include "src/gtest-internal-inl.h"
+#include "gtest/src/gtest-internal-inl.h"
 
 namespace testing {
 
