@@ -22,6 +22,13 @@ LuaCallbacks LuaBindings::makeInterfaceCallbacks(MainInterface* mainInterface) {
       return pane->makePaneCallbacks();
     return {};
   });
+  
+  callbacks.registerCallback("displayRegisteredPane", [mainInterface](String const& registeredPaneName) {
+    auto pane = MainInterfacePanesNames.getLeft(registeredPaneName);
+    auto paneManager = mainInterface->paneManager();
+    if (paneManager->maybeRegisteredPane(pane))
+      paneManager->displayRegisteredPane(pane);
+  });
 
   callbacks.registerCallback("scale", [mainInterface]() -> int {
     return GuiContext::singleton().interfaceScale();
