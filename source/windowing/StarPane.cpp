@@ -407,6 +407,10 @@ LuaCallbacks Pane::makePaneCallbacks() {
   callbacks.registerCallback("scale", []() -> int {
       return GuiContext::singleton().interfaceScale();
     });
+  
+  callbacks.registerCallback("isDisplayed", [this]() {
+    return isDisplayed();
+  });
 
   return callbacks;
 }
