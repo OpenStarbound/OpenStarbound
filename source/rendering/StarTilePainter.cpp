@@ -292,7 +292,9 @@ bool TilePainter::produceTerrainPrimitives(HashMap<QuadZLevel, List<RenderPrimit
         terrainLayer == TerrainLayer::Background ? TileLayer::Background : TileLayer::Foreground, false);
     for (auto const& piecePair : pieces) {
       TexturePtr texture = getPieceTexture(material, piecePair.first, materialHue, false);
-      RectF textureCoords = piecePair.first->variants.get(materialColorVariant).wrap(variance);
+      auto variant = piecePair.first->variants.ptr(materialColorVariant);
+      if (!variant) continue;
+      RectF textureCoords = variant->wrap(variance);
       RectF worldCoords = RectF::withSize(piecePair.second / TilePixels + Vec2F(pos), textureCoords.size() / TilePixels);
       quadList.emplace_back(std::in_place_type_t<RenderQuad>(), move(texture),
           worldCoords  .min(),
@@ -317,7 +319,9 @@ bool TilePainter::produceTerrainPrimitives(HashMap<QuadZLevel, List<RenderPrimit
         terrainLayer == TerrainLayer::Background ? TileLayer::Background : TileLayer::Foreground, true);
     for (auto const& piecePair : pieces) {
       auto texture = getPieceTexture(mod, piecePair.first, modHue, true);
-      auto& textureCoords = piecePair.first->variants.get(modColorVariant).wrap(variance);
+      auto variant = piecePair.first->variants.ptr(modColorVariant);
+      if (!variant) continue;
+      auto& textureCoords = variant->wrap(variance);
       RectF worldCoords = RectF::withSize(piecePair.second / TilePixels + Vec2F(pos), textureCoords.size() / TilePixels);
       quadList.emplace_back(std::in_place_type_t<RenderQuad>(), move(texture),
           worldCoords.min(), textureCoords.min(),
