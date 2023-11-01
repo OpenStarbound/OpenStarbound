@@ -6,7 +6,6 @@
 #include "StarListener.hpp"
 #include "StarWorld.hpp"
 #include "StarWorldLuaBindings.hpp"
-#include "StarInputLuaBindings.hpp"
 
 namespace Star {
 

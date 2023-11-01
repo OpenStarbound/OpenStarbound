@@ -171,6 +171,8 @@ public:
   bool               mouseHeld(MouseButton button);
   Maybe<List<Vec2I>> mouseUp  (MouseButton button);
 
+  Vec2I mousePosition() const;
+
   void resetBinds(String const& categoryId, String const& bindId);
   void setBinds(String const& categoryId, String const& bindId, Json const& binds);
   Json getDefaultBinds(String const& categoryId, String const& bindId); 
@@ -205,6 +207,7 @@ private:
 
   KeyMod m_pressedMods;
   bool m_textInputActive;
+  Vec2I m_mousePosition;
 };
 
 }

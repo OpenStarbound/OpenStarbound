@@ -589,6 +589,10 @@ private:
       parent->m_cursorVisible = cursorVisible;
     }
 
+    void setCursorPosition(Vec2I cursorPosition) override {
+      SDL_WarpMouseInWindow(parent->m_sdlWindow, cursorPosition[0], cursorPosition[1]);
+    }
+
     bool setCursorImage(const String& id, const ImageConstPtr& image, unsigned scale, const Vec2I& offset) override {
       return parent->setCursorImage(id, image, scale, offset);
     }

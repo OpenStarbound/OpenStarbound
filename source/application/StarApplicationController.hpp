@@ -41,6 +41,7 @@ public:
   virtual void setBorderlessWindow() = 0;
   virtual void setVSyncEnabled(bool vSync) = 0;
   virtual void setCursorVisible(bool cursorVisible) = 0;
+  virtual void setCursorPosition(Vec2I cursorPosition) = 0;
   virtual bool setCursorImage(const String& id, const ImageConstPtr& image, unsigned scale, const Vec2I& offset) = 0;
   virtual void setAcceptingTextInput(bool acceptingTextInput) = 0;
 

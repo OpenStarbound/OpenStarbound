@@ -1,5 +1,5 @@
 #include "StarInputLuaBindings.hpp"
-#include "StarLuaGameConverters.hpp"
+#include "StarLuaConverters.hpp"
 #include "StarInput.hpp"
 
 namespace Star {
@@ -34,7 +34,6 @@ LuaCallbacks LuaBindings::makeInputCallbacks() {
   auto mouseHeld = [input](String const& buttonName) -> bool { return input->mouseHeld(MouseButtonNames.getLeft(buttonName)); };
   callbacks.registerCallback("mouseHeld", mouseHeld);
   callbacks.registerCallback("mouse",     mouseHeld);
-
   callbacks.registerCallback("mouseUp",   [input](String const& buttonName) -> Maybe<List<Vec2I>> { return input->mouseUp(  MouseButtonNames.getLeft(buttonName)); });
 
   callbacks.registerCallbackWithSignature<void, String, String>("resetBinds",      bind(mem_fn(&Input::resetBinds),      input, _1, _2));
@@ -52,6 +51,8 @@ LuaCallbacks LuaBindings::makeInputCallbacks() {
 
     return move(result);
   });
+
+  callbacks.registerCallbackWithSignature<Vec2I>("mousePosition", bind(mem_fn(&Input::mousePosition), input));
 
   return callbacks;
 }

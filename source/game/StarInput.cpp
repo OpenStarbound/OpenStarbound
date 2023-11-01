@@ -411,6 +411,7 @@ bool Input::handleInput(InputEvent const& input, bool gameProcessed) {
       }
     }
   } else if (auto mouseDown = input.ptr<MouseButtonDownEvent>()) {
+    m_mousePosition = mouseDown->mousePosition;
     if (!gameProcessed) {
       auto& state = m_mouseStates[mouseDown->mouseButton];
       state.pressPositions.append(mouseDown->mousePosition);
@@ -422,6 +423,7 @@ bool Input::handleInput(InputEvent const& input, bool gameProcessed) {
       }
     }
   } else if (auto mouseUp = input.ptr<MouseButtonUpEvent>()) {
+    m_mousePosition = mouseUp->mousePosition;
     if (auto state = m_mouseStates.ptr(mouseUp->mouseButton)) {
       state->releasePositions.append(mouseUp->mousePosition);
       state->release();
@@ -433,6 +435,9 @@ bool Input::handleInput(InputEvent const& input, bool gameProcessed) {
           state->release();
       }
     }
+  }
+  else if (auto mouseMove = input.ptr<MouseMoveEvent>()) {
+    m_mousePosition = mouseMove->mousePosition;
   }
 
   return false;
@@ -554,6 +559,10 @@ Maybe<List<Vec2I>> Input::mouseUp(MouseButton button) {
       return state->releasePositions;
   }
   return {};
+}
+
+Vec2I Input::mousePosition() const {
+  return m_mousePosition;
 }
 
 void Input::resetBinds(String const& categoryId, String const& bindId) {
