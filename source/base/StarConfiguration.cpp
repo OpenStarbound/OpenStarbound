@@ -46,7 +46,10 @@ void Configuration::set(String const& key, Json const& value) {
   if (key == "configurationVersion")
     throw ConfigurationException("cannot set configurationVersion");
 
-  m_currentConfig = m_currentConfig.set(key, value);
+  if (value)
+    m_currentConfig = m_currentConfig.set(key, value);
+  else
+    m_currentConfig = m_currentConfig.eraseKey(key);
 }
 
 void Configuration::setPath(String const& path, Json const& value) {
@@ -54,7 +57,10 @@ void Configuration::setPath(String const& path, Json const& value) {
   if (path.splitAny("[].").get(0) == "configurationVersion")
     throw ConfigurationException("cannot set configurationVersion");
 
-  m_currentConfig = m_currentConfig.setPath(path, value);
+  if (value)
+    m_currentConfig = m_currentConfig.setPath(path, value);
+  else
+    m_currentConfig = m_currentConfig.erasePath(path);
 }
 
 }

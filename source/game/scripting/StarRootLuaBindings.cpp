@@ -177,7 +177,7 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
     });
 
   callbacks.registerCallback("setConfiguration", [root](String const& key, Json const& value) {
-    if (key == "safeScripts" || key == "configurationVersion")
+    if (key == "safeScripts")
       throw StarException(strf("Cannot set {}", key));
     else
       root->configuration()->set(key, value);
@@ -186,14 +186,14 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
   
   callbacks.registerCallback("getConfigurationPath", [root](String const& path) -> Json {
     if (path.beginsWith("title"))
-      throw StarException(strf("Cannot get {}", path));
+      throw ConfigurationException(strf("cannot get {}", path));
     else
       return root->configuration()->getPath(path);
     });
 
   callbacks.registerCallback("setConfigurationPath", [root](String const& path, Json const& value) {
-    if (path.beginsWith("safeScripts") || path.beginsWith("configurationVersion"))
-      throw StarException(strf("Cannot set {}", path));
+    if (path.beginsWith("safeScripts"))
+      throw ConfigurationException(strf("cannot set {}", path));
     else
       root->configuration()->setPath(path, value);
     });
