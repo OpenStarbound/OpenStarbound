@@ -76,8 +76,7 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
           inventory->setItem(slot, augmented);
       }
     }
-    else {
-      auto swapSlot = inventory->swapSlotItem();
+    else if (auto swapSlot = inventory->swapSlotItem()) {
       if (auto es = slot.ptr<EquipmentSlot>()) {
         if (inventory->itemAllowedAsEquipment(swapSlot, *es))
           inventory->setItem(slot, swapSlot->take(1));
