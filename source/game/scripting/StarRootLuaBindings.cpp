@@ -63,6 +63,46 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
   callbacks.registerCallbackWithSignature<Maybe<String>, String, Maybe<String>>("materialMiningSound", bind(RootCallbacks::materialMiningSound, root, _1, _2));
   callbacks.registerCallbackWithSignature<Maybe<String>, String, Maybe<String>>("materialFootstepSound", bind(RootCallbacks::materialFootstepSound, root, _1, _2));
 
+  callbacks.registerCallback("assetOrigin", [root](String const& path) {
+      auto assets = root->assets();
+      if (auto descriptor = assets->assetDescriptor(path))
+        return assets->assetSourcePath(descriptor->source);
+    });
+
+  callbacks.registerCallback("assetPatches", [root](LuaEngine& engine, String const& path) -> Maybe<LuaTable> {
+      auto assets = root->assets();
+      if (auto descriptor = assets->assetDescriptor(path)) {
+        auto& patches = descriptor->patchSources;
+        auto table = engine.createTable(patches.size(), 0);
+        for (size_t i = 0; i != patches.size(); ++i) {
+          auto& patch = patches.at(i);
+          auto patchTable = engine.createTable(2, 0);
+          if (auto sourcePath = assets->assetSourcePath(patch.second))
+            patchTable.set(1, *sourcePath);
+          patchTable.set(2, patch.first);
+          table.set(i + 1, patchTable);
+        }
+        return table;
+      }
+      return {};
+    });
+
+  callbacks.registerCallback("assetSourcePaths", [root](LuaEngine& engine, Maybe<bool> withMetadata) -> LuaTable {
+      auto assets = root->assets();
+      auto assetSources = assets->assetSources();
+      auto table = engine.createTable(assetSources.size(), 0);
+      if (withMetadata.value()) {
+        for (auto& assetSource : assetSources)
+          table.set(assetSource, assets->assetSourceMetadata(assetSource));
+      }
+      else {
+        size_t i = 0;
+        for (auto& assetSource : assetSources)
+          table.set(++i, assetSource);
+      }
+      return table;
+    });
+
   callbacks.registerCallback("materialConfig", [root](String const& materialName) -> Json {
       auto materialId = root->materialDatabase()->materialId(materialName);
       if (auto path = root->materialDatabase()->materialPath(materialId))

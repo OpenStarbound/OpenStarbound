@@ -68,95 +68,7 @@ public:
     StringList digestIgnore;
   };
 
-  Assets(Settings settings, StringList assetSources);
-  ~Assets();
-
-  // Returns a list of all the asset source paths used by Assets in load order.
-  StringList assetSources() const;
-
-  // Return metadata for the given loaded asset source path
-  JsonObject assetSourceMetadata(String const& sourcePath) const;
-
-  // An imperfect sha256 digest of the contents of all combined asset sources.
-  // Useful for detecting if there are mismatched assets between a client and
-  // server or if assets sources have changed from a previous load.
-  ByteArray digest() const;
-
-  // Is there an asset associated with the given path?  Path must not contain
-  // sub-paths or directives.
-  bool assetExists(String const& path) const;
-
-  // The name of the asset source within which the path exists.
-  String assetSource(String const& path) const;
-
-  // Scans for all assets with the given suffix in any directory.
-  StringList scan(String const& suffix) const;
-  // Scans for all assets matching both prefix and suffix (prefix may be, for
-  // example, a directory)
-  StringList scan(String const& prefix, String const& suffix) const;
-  // Scans all assets for files with the given extension, which is specially
-  // indexed and much faster than a normal scan.  Extension may contain leading
-  // '.' character or it may be omitted.
-  StringList scanExtension(String const& extension) const;
-
-  // Get json asset with an optional sub-path.  The sub-path portion of the
-  // path refers to a key in the top-level object, and may use dot notation
-  // for deeper field access and [] notation for array access.  Example:
-  // "/path/to/json:key1.key2.key3[4]".
-  Json json(String const& path) const;
-
-  // Either returns the json v, or, if v is a string type, returns the json
-  // pointed to by interpreting v as a string path.
-  Json fetchJson(Json const& v, String const& dir = "/") const;
-
-  // Load all the given jsons using background processing.
-  void queueJsons(StringList const& paths) const;
-
-  // Returns *either* an image asset or a sub-frame.  Frame files are JSON
-  // descriptor files that reference a particular image and label separate
-  // sub-rects of the image.  If the given path has a ':' sub-path, then the
-  // assets system will look for an associated .frames named either
-  // <full-path-minus-extension>.frames or default.frames, going up to assets
-  // root.  May return the same ImageConstPtr for different paths if the paths
-  // are equivalent or they are aliases of other image paths.
-  ImageConstPtr image(AssetPath const& path) const;
-  // Load images using background processing
-  void queueImages(StringList const& paths) const;
-  // Return the given image *if* it is already loaded, otherwise queue it for
-  // loading.
-  ImageConstPtr tryImage(AssetPath const& path) const;
-
-  // Returns the best associated FramesSpecification for a given image path, if
-  // it exists.  The given path must not contain sub-paths or directives, and
-  // this function may return nullptr if no frames file is associated with the
-  // given image path.
-  FramesSpecificationConstPtr imageFrames(String const& path) const;
-
-  // Returns a pointer to a shared audio asset;
-  AudioConstPtr audio(String const& path) const;
-  // Load audios using background processing
-  void queueAudios(StringList const& paths) const;
-  // Return the given audio *if* it is already loaded, otherwise queue it for
-  // loading.
-  AudioConstPtr tryAudio(String const& path) const;
-
-  // Returns pointer to shared font asset
-  FontConstPtr font(String const& path) const;
-
-  // Returns a bytes asset (Reads asset as an opaque binary blob)
-  ByteArrayConstPtr bytes(String const& path) const;
-
-  // Bypass asset caching and open an asset file directly.
-  IODevicePtr openFile(String const& basePath) const;
-
-  // Clear all cached assets that are not queued, persistent, or broken.
-  void clearCache();
-
-  // Run a cleanup pass and remove any assets past their time to live.
-  void cleanup();
-
-private:
-  enum class AssetType {
+    enum class AssetType {
     Json,
     Image,
     Audio,
@@ -243,6 +155,98 @@ private:
     List<pair<String, AssetSourcePtr>> patchSources;
   };
 
+  Assets(Settings settings, StringList assetSources);
+  ~Assets();
+
+  // Returns a list of all the asset source paths used by Assets in load order.
+  StringList assetSources() const;
+
+  // Return metadata for the given loaded asset source path
+  JsonObject assetSourceMetadata(String const& sourcePath) const;
+
+  // An imperfect sha256 digest of the contents of all combined asset sources.
+  // Useful for detecting if there are mismatched assets between a client and
+  // server or if assets sources have changed from a previous load.
+  ByteArray digest() const;
+
+  // Is there an asset associated with the given path?  Path must not contain
+  // sub-paths or directives.
+  bool assetExists(String const& path) const;
+
+  Maybe<AssetFileDescriptor> assetDescriptor(String const& path) const;
+
+  // The name of the asset source within which the path exists.
+  String assetSource(String const& path) const;
+
+  Maybe<String> assetSourcePath(AssetSourcePtr const& source) const;
+
+  // Scans for all assets with the given suffix in any directory.
+  StringList scan(String const& suffix) const;
+  // Scans for all assets matching both prefix and suffix (prefix may be, for
+  // example, a directory)
+  StringList scan(String const& prefix, String const& suffix) const;
+  // Scans all assets for files with the given extension, which is specially
+  // indexed and much faster than a normal scan.  Extension may contain leading
+  // '.' character or it may be omitted.
+  StringList scanExtension(String const& extension) const;
+
+  // Get json asset with an optional sub-path.  The sub-path portion of the
+  // path refers to a key in the top-level object, and may use dot notation
+  // for deeper field access and [] notation for array access.  Example:
+  // "/path/to/json:key1.key2.key3[4]".
+  Json json(String const& path) const;
+
+  // Either returns the json v, or, if v is a string type, returns the json
+  // pointed to by interpreting v as a string path.
+  Json fetchJson(Json const& v, String const& dir = "/") const;
+
+  // Load all the given jsons using background processing.
+  void queueJsons(StringList const& paths) const;
+
+  // Returns *either* an image asset or a sub-frame.  Frame files are JSON
+  // descriptor files that reference a particular image and label separate
+  // sub-rects of the image.  If the given path has a ':' sub-path, then the
+  // assets system will look for an associated .frames named either
+  // <full-path-minus-extension>.frames or default.frames, going up to assets
+  // root.  May return the same ImageConstPtr for different paths if the paths
+  // are equivalent or they are aliases of other image paths.
+  ImageConstPtr image(AssetPath const& path) const;
+  // Load images using background processing
+  void queueImages(StringList const& paths) const;
+  // Return the given image *if* it is already loaded, otherwise queue it for
+  // loading.
+  ImageConstPtr tryImage(AssetPath const& path) const;
+
+  // Returns the best associated FramesSpecification for a given image path, if
+  // it exists.  The given path must not contain sub-paths or directives, and
+  // this function may return nullptr if no frames file is associated with the
+  // given image path.
+  FramesSpecificationConstPtr imageFrames(String const& path) const;
+
+  // Returns a pointer to a shared audio asset;
+  AudioConstPtr audio(String const& path) const;
+  // Load audios using background processing
+  void queueAudios(StringList const& paths) const;
+  // Return the given audio *if* it is already loaded, otherwise queue it for
+  // loading.
+  AudioConstPtr tryAudio(String const& path) const;
+
+  // Returns pointer to shared font asset
+  FontConstPtr font(String const& path) const;
+
+  // Returns a bytes asset (Reads asset as an opaque binary blob)
+  ByteArrayConstPtr bytes(String const& path) const;
+
+  // Bypass asset caching and open an asset file directly.
+  IODevicePtr openFile(String const& basePath) const;
+
+  // Clear all cached assets that are not queued, persistent, or broken.
+  void clearCache();
+
+  // Run a cleanup pass and remove any assets past their time to live.
+  void cleanup();
+
+private:
   static FramesSpecification parseFramesSpecification(Json const& frameConfig, String path);
 
   void queueAssets(List<AssetId> const& assetIds) const;

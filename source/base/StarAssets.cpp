@@ -164,11 +164,21 @@ bool Assets::assetExists(String const& path) const {
   return m_files.contains(path);
 }
 
+Maybe<Assets::AssetFileDescriptor> Assets::assetDescriptor(String const& path) const {
+  MutexLocker assetsLocker(m_assetsMutex);
+  return m_files.maybe(path);
+}
+
 String Assets::assetSource(String const& path) const {
   MutexLocker assetsLocker(m_assetsMutex);
   if (auto p = m_files.ptr(path))
     return m_assetSourcePaths.getLeft(p->source);
   throw AssetException(strf("No such asset '{}'", path));
+}
+
+Maybe<String> Assets::assetSourcePath(AssetSourcePtr const& source) const {
+  MutexLocker assetsLocker(m_assetsMutex);
+  return m_assetSourcePaths.maybeLeft(source);
 }
 
 StringList Assets::scan(String const& suffix) const {
