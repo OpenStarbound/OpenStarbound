@@ -539,7 +539,8 @@ void PlayerInventory::shiftSwap(InventorySlot const& slot) {
   } else if (auto bs = slot.ptr<BagSlot>()) {
     if (itemAllowedInBag(m_swapSlot, bs->first)) {
       m_swapSlot = m_bags[bs->first]->swapItems(bs->second, m_swapSlot);
-      swapCustomBarLinks(SwapSlot(), slot);
+      if (m_swapSlot && !m_swapSlot->empty())
+        swapCustomBarLinks(SwapSlot(), slot);
     }
   }
 
