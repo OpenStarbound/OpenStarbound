@@ -20,27 +20,6 @@
           "type": "BOOL"
         }
       ]
-    },
-    {
-      "name": "x64-Release",
-      "generator": "Ninja",
-      "configurationType": "Release",
-      "buildRoot": "${projectDir}\\..\\build",
-      "installRoot": "${projectDir}\\..\\out\\install\\${name}",
-      "cmakeCommandArgs": "-DCMAKE_INCLUDE_PATH=\"..\\lib\\windows\\include\" -DCMAKE_LIBRARY_PATH=\"..\\lib\\windows\"",
-      "inheritEnvironments": [ "msvc_x64_x64" ],
-      "variables": [
-        {
-          "name": "STAR_ENABLE_STEAM_INTEGRATION",
-          "value": "True",
-          "type": "BOOL"
-        },
-        {
-          "name": "STAR_ENABLE_DISCORD_INTEGRATION",
-          "value": "True",
-          "type": "BOOL"
-        }
-      ]
     }
   ]
 }
