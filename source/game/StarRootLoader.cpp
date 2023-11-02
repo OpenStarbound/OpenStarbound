@@ -154,8 +154,17 @@ Root::Settings RootLoader::rootSettingsForOptions(Options const& options) const 
 
     rootSettings.assetDirectories = jsonToStringList(bootConfig.get("assetDirectories"));
 
+#ifdef STAR_SYSTEM_WINDOWS
+    rootSettings.defaultConfiguration = BaseDefaultConfiguration
+      .set("gameServerBind", "*")
+      .set("queryServerBind", "*")
+      .set("rconServerBind", "*");
+#else
+    rootSettings.defaultConfiguration = BaseDefaultConfiguration;
+#endif
+
     rootSettings.defaultConfiguration = jsonMerge(
-        BaseDefaultConfiguration,
+        rootSettings.defaultConfiguration,
         m_defaults.additionalDefaultConfiguration,
         bootConfig.get("defaultConfiguration", {})
       );
