@@ -252,6 +252,7 @@ LuaUpdatableComponent<Base>::LuaUpdatableComponent() {
       setUpdateDelta(d);
     });
 
+  m_lastDt = GlobalTimestep * GlobalTimescale;
   Base::addCallbacks("script", move(scriptCallbacks));
 }
 
