@@ -272,11 +272,13 @@ Json PlayerStorage::getMetadata(String const& key) {
   return m_metadata.value(key);
 }
 
-String const& PlayerStorage::uuidFileName(Uuid const& uuid) const {
+String const& PlayerStorage::uuidFileName(Uuid const& uuid) {
   if (auto fileName = m_playerFileNames.rightPtr(uuid))
     return *fileName;
-  else
-    throw PlayerException::format("No matching filename for uuid '{}'", uuid.hex());
+  else {
+    m_playerFileNames.insert(uuid, uuid.hex());
+    return *m_playerFileNames.rightPtr(uuid);
+  }
 }
 
 void PlayerStorage::writeMetadata() {

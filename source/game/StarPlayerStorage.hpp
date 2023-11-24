@@ -44,7 +44,7 @@ public:
   Json getMetadata(String const& key);
 
 private:
-  String const& uuidFileName(Uuid const& uuid) const;
+  String const& uuidFileName(Uuid const& uuid);
   void writeMetadata();
 
   mutable RecursiveMutex m_mutex;
