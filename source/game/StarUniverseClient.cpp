@@ -123,6 +123,7 @@ Maybe<String> UniverseClient::connect(UniverseConnection connection, bool allowA
     m_mainPlayer->setClientContext(m_clientContext);
     m_mainPlayer->setStatistics(m_statistics);
     m_worldClient = make_shared<WorldClient>(m_mainPlayer);
+    m_worldClient->setAsyncLighting(true);
     for (auto& pair : m_luaCallbacks)
       m_worldClient->setLuaCallbacks(pair.first, pair.second);
 

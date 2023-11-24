@@ -122,11 +122,14 @@ public:
   void resetGravity();
 
   // Disable normal client-side lighting algorithm, everything full brightness.
-  bool toggleFullbright();
+  bool fullBright() const;
+  void setFullBright(bool fullBright);
   // Disable asynchronous client-side lighting algorithm, run on main thread.
-  bool toggleAsyncLighting();
+  bool asyncLighting() const;
+  void setAsyncLighting(bool asyncLighting);
   // Spatial log generated collision geometry.
-  bool toggleCollisionDebug();
+  bool collisionDebug() const;
+  void setCollisionDebug(bool collisionDebug);
 
   void handleIncomingPackets(List<PacketPtr> const& packets);
   List<PacketPtr> getOutgoingPackets();
@@ -167,7 +170,7 @@ public:
 
   void collectLiquid(List<Vec2I> const& tilePositions, LiquidId liquidId);
 
-  void waitForLighting();
+  void waitForLighting(Image* out = nullptr);
 
   typedef std::function<bool(PlayerPtr, StringView)> BroadcastCallback;
   BroadcastCallback& broadcastCallback();
@@ -269,7 +272,7 @@ private:
 
   Mutex m_lightingMutex;
   ConditionVariable m_lightingCond;
-  atomic<WorldRenderData*> m_renderData;
+  Image m_lightMap;
   atomic<bool> m_stopLightingThread;
 
   SkyPtr m_sky;

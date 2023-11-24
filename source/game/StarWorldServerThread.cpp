@@ -269,7 +269,7 @@ void WorldServerThread::update(WorldServerFidelity fidelity) {
 
   float dt = ServerGlobalTimestep * GlobalTimescale;
   m_worldServer->setFidelity(fidelity);
-  if (!m_pause || *m_pause == false)
+  if (dt > 0.0f && (!m_pause || *m_pause == false))
     m_worldServer->update(dt);
 
   List<Message> messages;

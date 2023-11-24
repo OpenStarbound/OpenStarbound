@@ -155,24 +155,27 @@ String ClientCommandProcessor::boxes() {
   if (!adminCommandAllowed())
     return "You must be an admin to use this command.";
 
-  return strf("Geometry debug display {}",
-      m_universeClient->worldClient()->toggleCollisionDebug()
-      ? "enabled" : "disabled");
+  auto worldClient = m_universeClient->worldClient();
+  bool state = !worldClient->collisionDebug();
+  worldClient->setCollisionDebug(state);
+  return strf("Geometry debug display {}", state ? "enabled" : "disabled");
 }
 
 String ClientCommandProcessor::fullbright() {
   if (!adminCommandAllowed())
     return "You must be an admin to use this command.";
 
-  return strf("Fullbright render lighting {}",
-      m_universeClient->worldClient()->toggleFullbright()
-      ? "enabled" : "disabled");
+  auto worldClient = m_universeClient->worldClient();
+  bool state = !worldClient->fullBright();
+  worldClient->setFullBright(state);
+  return strf("Fullbright render lighting {}", state ? "enabled" : "disabled");
 }
 
 String ClientCommandProcessor::asyncLighting() {
-  return strf("Asynchronous render lighting {}",
-    m_universeClient->worldClient()->toggleAsyncLighting()
-    ? "enabled" : "disabled");
+  auto worldClient = m_universeClient->worldClient();
+  bool state = !worldClient->asyncLighting();
+  worldClient->setAsyncLighting(state);
+  return strf("Asynchronous render lighting {}", state ? "enabled" : "disabled");
 }
 
 String ClientCommandProcessor::setGravity(String const& argumentsString) {

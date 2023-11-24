@@ -37,7 +37,7 @@ WorldClient::WorldClient(PlayerPtr mainPlayer) {
   m_currentStep = 0;
   m_currentServerStep = 0.0;
   m_fullBright = false;
-  m_asyncLighting = true;
+  m_asyncLighting = false;
   m_worldDimTimer = GameTimer(m_clientConfig.getFloat("worldDimTime"));
   m_worldDimTimer.setDone();
   m_worldDimLevel = 0.0f;
@@ -90,20 +90,20 @@ WorldClient::WorldClient(PlayerPtr mainPlayer) {
   m_altMusicActive = false;
 
   m_stopLightingThread = false;
-  m_lightingThread = Thread::invoke("WorldClient::lightingMain", mem_fn(&WorldClient::lightingMain), this);
-  m_renderData = nullptr;
 
   clearWorld();
 }
 
 WorldClient::~WorldClient() {
-  m_stopLightingThread = true;
-  {
-    MutexLocker locker(m_lightingMutex);
-    m_lightingCond.broadcast();
-  }
+  if (m_lightingThread) {
+    m_stopLightingThread = true;
+    {
+      MutexLocker locker(m_lightingMutex);
+      m_lightingCond.broadcast();
+    }
 
-  m_lightingThread.finish();
+    m_lightingThread.finish();
+  }
   clearWorld();
 }
 
@@ -404,6 +404,9 @@ RectI WorldClient::clientWindow() const {
 }
 
 void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
+  if (!m_lightingThread && m_asyncLighting)
+    m_lightingThread = Thread::invoke("WorldClient::lightingMain", mem_fn(&WorldClient::lightingMain), this);
+
   renderData.clear();
   if (!inWorld())
     return;
@@ -474,13 +477,10 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
       m_lightingCalculator.addSpreadLight(position, Color::v3bToFloat(lightPair.second));
     }
 
-    if (m_asyncLighting) {
-      m_renderData = &renderData;
+    if (m_asyncLighting)
       m_lightingCond.signal();
-    }
-    else {
-      m_lightingCalculator.calculate(renderData.lightMap);
-    }
+    else
+      m_lightingCalculator.calculate(m_lightMap);
   }
 
   float pulseAmount = Root::singleton().assets()->json("/highlights.config:interactivePulseAmount").toFloat();
@@ -725,19 +725,28 @@ void WorldClient::resetGravity() {
   m_overrideGravity = {};
 }
 
-bool WorldClient::toggleFullbright() {
-  m_fullBright = !m_fullBright;
+bool WorldClient::fullBright() const {
   return m_fullBright;
 }
 
-bool WorldClient::toggleAsyncLighting() {
-  m_asyncLighting = !m_asyncLighting;
+void WorldClient::setFullBright(bool fullBright) {
+  m_fullBright = fullBright;
+}
+
+bool WorldClient::asyncLighting() const {
   return m_asyncLighting;
 }
 
-bool WorldClient::toggleCollisionDebug() {
-  m_collisionDebug = !m_collisionDebug;
+void WorldClient::setAsyncLighting(bool asyncLighting) {
+  m_asyncLighting = asyncLighting;
+}
+
+bool WorldClient::collisionDebug() const {
   return m_collisionDebug;
+}
+
+void WorldClient::setCollisionDebug(bool collisionDebug) {
+  m_collisionDebug = collisionDebug;
 }
 
 void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
@@ -1393,8 +1402,10 @@ void WorldClient::collectLiquid(List<Vec2I> const& tilePositions, LiquidId liqui
   m_outgoingPackets.append(make_shared<CollectLiquidPacket>(tilePositions, liquidId));
 }
 
-void WorldClient::waitForLighting() {
+void WorldClient::waitForLighting(Image* out) {
   MutexLocker lock(m_lightingMutex);
+  if (out)
+    *out = move(m_lightMap);
 }
 
 WorldClient::BroadcastCallback& WorldClient::broadcastCallback() {
@@ -1644,15 +1655,10 @@ void WorldClient::lightingMain() {
     if (m_stopLightingThread)
       return;
 
-    if (WorldRenderData* renderData = m_renderData) {
-      int64_t start = Time::monotonicMicroseconds();
-
-      lightingTileGather();
-
-      m_lightingCalculator.calculate(renderData->lightMap);
-      m_renderData = nullptr;
-      LogMap::set("client_render_world_async_light_calc", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
-    }
+    int64_t start = Time::monotonicMicroseconds();
+    lightingTileGather();
+    m_lightingCalculator.calculate(m_lightMap);
+    LogMap::set("client_render_world_async_light_calc", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
 
     continue;
 

@@ -42,7 +42,7 @@ TestUniverse::~TestUniverse() {
 void TestUniverse::warpPlayer(WorldId worldId) {
   m_client->warpPlayer(WarpToWorld(worldId), true);
   while (m_mainPlayer->isTeleporting() || m_client->playerWorld().empty()) {
-    m_client->update();
+    m_client->update(0.016f);
     Thread::sleep(16);
   }
 }
@@ -53,7 +53,7 @@ WorldId TestUniverse::currentPlayerWorld() const {
 
 void TestUniverse::update(unsigned times) {
   for (unsigned i = 0; i < times; ++i) {
-    m_client->update();
+    m_client->update(0.016f);
     Thread::sleep(16);
   }
 }
