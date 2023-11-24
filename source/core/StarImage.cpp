@@ -230,9 +230,9 @@ Image& Image::operator=(Image&& image) {
   reset(0, 0, m_pixelFormat);
 
   m_data = take(image.m_data);
-  m_width = image.m_width;
-  m_height = image.m_height;
-  m_pixelFormat = image.m_pixelFormat;
+  m_width = take(image.m_width);
+  m_height = take(image.m_height);
+  m_pixelFormat = take(image.m_pixelFormat);
   return *this;
 }
 
