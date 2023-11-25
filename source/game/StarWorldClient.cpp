@@ -1403,7 +1403,7 @@ void WorldClient::collectLiquid(List<Vec2I> const& tilePositions, LiquidId liqui
 }
 
 void WorldClient::waitForLighting(Image* out) {
-  MutexLocker lock(m_lightingMutex);
+  MutexLocker lock(m_lightMapMutex);
   if (out)
     *out = move(m_lightMap);
 }
@@ -1648,22 +1648,18 @@ void WorldClient::lightingTileGather() {
 }
 
 void WorldClient::lightingMain() {
+  MutexLocker condLocker(m_lightingMutex);
   while (true) {
-    MutexLocker locker(m_lightingMutex);
-
     m_lightingCond.wait(m_lightingMutex);
     if (m_stopLightingThread)
       return;
 
+    MutexLocker mapLocker(m_lightMapMutex);
     int64_t start = Time::monotonicMicroseconds();
     lightingTileGather();
     m_lightingCalculator.calculate(m_lightMap);
+    mapLocker.unlock();
     LogMap::set("client_render_world_async_light_calc", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
-
-    continue;
-
-    locker.unlock();
-    Thread::yield();
   }
 }
 

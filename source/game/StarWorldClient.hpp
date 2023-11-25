@@ -269,9 +269,10 @@ private:
   CellularLightingCalculator m_lightingCalculator;
   mutable CellularLightIntensityCalculator m_lightIntensityCalculator;
   ThreadFunction<void> m_lightingThread;
-
+  
   Mutex m_lightingMutex;
   ConditionVariable m_lightingCond;
+  Mutex m_lightMapMutex;
   Image m_lightMap;
   atomic<bool> m_stopLightingThread;
 
