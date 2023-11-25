@@ -60,14 +60,16 @@ Json ParallaxLayer::store() const {
 void ParallaxLayer::addImageDirectives(Directives const& newDirectives) {
   if (newDirectives) { // TODO: Move to Directives +=
     if (directives) {
-      String newString;
+      String dirString = directives.string();
 
-      for (auto const& entry : newDirectives.shared->entries) {
-        newString += "+";
-        newString += entry.string(*newDirectives.shared);
+      auto& newString = newDirectives.shared->string;
+      if (!newString.empty()) {
+        if (newString.utf8().front() != '?')
+          dirString += "?";
+        dirString += newString;
       }
 
-      directives = move(newString);
+      directives = move(dirString);
     }
     else
       directives = newDirectives;

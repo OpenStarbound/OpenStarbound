@@ -277,8 +277,14 @@ String DirectivesGroup::toString() const {
 
 void DirectivesGroup::addToString(String& string) const {
   for (auto& directives : m_directives)
-    if (directives.shared)
-      string += directives.shared->string;
+    if (directives.shared) {
+      auto& dirString = directives.shared->string;
+      if (!dirString.empty()) {
+        if (dirString.utf8().front() != '?')
+          string += "?";
+        string += dirString;
+      }
+    }
 }
 
 void DirectivesGroup::forEach(DirectivesCallback callback) const {
