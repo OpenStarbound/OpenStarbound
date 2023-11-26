@@ -1,4 +1,5 @@
 build/
+build_linux/
 dist/
 enc_temp_folder/
 .cache/
