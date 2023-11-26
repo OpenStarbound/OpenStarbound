@@ -64,7 +64,12 @@ PlayerStorage::PlayerStorage(String const& storageDir) {
           if (player->uuid() != entry.first)
             throw PlayerException(strf("Uuid mismatch in loaded player with filename uuid '{}'", entry.first.hex()));
         } catch (StarException const& e) {
-          Logger::error("Failed to valid player with uuid {} : {}", entry.first.hex(), outputException(e, true));
+          auto& fileName = uuidFileName(entry.first);
+          String uuidHex = entry.first.hex();
+          if (uuidHex == fileName)
+            Logger::error("Failed to validate player with uuid {} : {}", uuidHex, outputException(e, true));
+          else
+            Logger::error("Failed to validate player with uuid {} ({}.player) : {}", uuidHex, fileName, outputException(e, true));
           it.remove();
         }
       }
@@ -76,8 +81,11 @@ PlayerStorage::PlayerStorage(String const& storageDir) {
     m_metadata = Json::parseJson(File::readFileString(filename)).toObject();
 
     if (auto order = m_metadata.value("order")) {
-      for (auto const& uuid : order.iterateArray())
-        m_savedPlayersCache.toBack(Uuid(uuid.toString()));
+      for (auto const& jUuid : order.iterateArray()) {
+        auto entry = m_savedPlayersCache.find(Uuid(jUuid.toString()));
+        if (entry != m_savedPlayersCache.end())
+          m_savedPlayersCache.toBack(entry);
+      }
     }
   } catch (std::exception const& e) {
     Logger::warn("Error loading player storage metadata file, resetting: {}", outputException(e, false));
