@@ -51,6 +51,7 @@ Json const AdditionalDefaultConfiguration = Json::parseJson(R"JSON(
       "borderless" : false,
       "maximized" : true,
       "zoomLevel" : 3.0,
+      "cameraSpeedFactor" : 1.0,
       "speechBubbles" : true,
 
       "title" : {
@@ -1008,8 +1009,8 @@ void ClientApplication::updateCamera(float dt) {
 
   const float triggerRadius = 100.0f;
   const float deadzone = 0.1f;
-  const float smoothFactor = 30.0f;
   const float panFactor = 1.5f;
+  float cameraSpeedFactor = 30.0f / m_root->configuration()->get("cameraSpeedFactor").toFloat();
 
   auto playerCameraPosition = m_player->cameraPosition();
 
@@ -1027,15 +1028,15 @@ void ClientApplication::updateCamera(float dt) {
         magnitude = 1;
       cameraXOffset *= magnitude * 0.5f * camera.pixelRatio() * panFactor;
       cameraYOffset *= magnitude * 0.5f * camera.pixelRatio() * panFactor;
-      m_cameraXOffset = (m_cameraXOffset * (smoothFactor - 1.0) + cameraXOffset) / smoothFactor;
-      m_cameraYOffset = (m_cameraYOffset * (smoothFactor - 1.0) + cameraYOffset) / smoothFactor;
+      m_cameraXOffset = (m_cameraXOffset * (cameraSpeedFactor - 1.0) + cameraXOffset) / cameraSpeedFactor;
+      m_cameraYOffset = (m_cameraYOffset * (cameraSpeedFactor - 1.0) + cameraYOffset) / cameraSpeedFactor;
     }
   } else {
     if ((m_cameraOffsetDownTicks > 0) && (m_cameraOffsetDownTicks < 20))
       m_snapBackCameraOffset = true;
     if (m_snapBackCameraOffset) {
-      m_cameraXOffset = (m_cameraXOffset * (smoothFactor - 1.0)) / smoothFactor;
-      m_cameraYOffset = (m_cameraYOffset * (smoothFactor - 1.0)) / smoothFactor;
+      m_cameraXOffset = (m_cameraXOffset * (cameraSpeedFactor - 1.0)) / cameraSpeedFactor;
+      m_cameraYOffset = (m_cameraYOffset * (cameraSpeedFactor - 1.0)) / cameraSpeedFactor;
     }
     m_cameraOffsetDownTicks = 0;
   }
