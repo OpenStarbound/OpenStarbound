@@ -391,12 +391,18 @@ ConfigurationPtr Root::configuration() {
           currentConfig = m_settings.defaultConfiguration;
         } else {
           try {
-            Json config = Json::parseJson(File::readFileString(*m_runtimeConfigFile));
-            if (!config.isType(Json::Type::Object))
+            Json jConfig = Json::parseJson(File::readFileString(*m_runtimeConfigFile));
+            if (!jConfig.isType(Json::Type::Object))
               throw ConfigurationException("User config is not of JSON type Object");
 
-            if (config.get("configurationVersion", {}) != m_settings.defaultConfiguration.get("configurationVersion", {}))
+            if (jConfig.get("configurationVersion", {}) != m_settings.defaultConfiguration.get("configurationVersion", {}))
               throw ConfigurationException("User config version does not match default config version");
+
+            auto config = jConfig.toObject();
+            for (auto& entry : *m_settings.defaultConfiguration.objectPtr()) {
+              if (!config.contains(entry.first))
+                config.insert(entry.first, entry.second);
+            }
 
             currentConfig = config;
           } catch (std::exception const& e) {
