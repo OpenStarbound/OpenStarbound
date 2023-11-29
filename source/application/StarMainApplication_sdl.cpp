@@ -460,9 +460,9 @@ private:
     Maybe<String> getClipboard() override {
       Maybe<String> string;
       if (SDL_HasClipboardText()) {
-        auto text = SDL_GetClipboardText();
-        if (text && *text != NULL) {
-          string.emplace(text);
+        if (auto text = SDL_GetClipboardText()) {
+          if (*text != NULL)
+            string.emplace(text);
           SDL_free(text);
         }
       }
