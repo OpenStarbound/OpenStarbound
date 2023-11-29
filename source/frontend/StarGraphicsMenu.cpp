@@ -29,9 +29,15 @@ GraphicsMenu::GraphicsMenu() {
       syncGui();
     });
   reader.registerCallback("zoomSlider", [=](Widget*) {
-      auto slider = fetchChild<SliderBarWidget>("zoomSlider");
-      m_localChanges.set("zoomLevel", m_zoomList[slider->val()]);
-      Root::singleton().configuration()->set("zoomLevel", m_zoomList[slider->val()]);
+      auto zoomSlider = fetchChild<SliderBarWidget>("zoomSlider");
+      m_localChanges.set("zoomLevel", m_zoomList[zoomSlider->val()]);
+      Root::singleton().configuration()->set("zoomLevel", m_zoomList[zoomSlider->val()]);
+      syncGui();
+    });
+  reader.registerCallback("cameraSpeedSlider", [=](Widget*) {
+      auto cameraSpeedSlider = fetchChild<SliderBarWidget>("cameraSpeedSlider");
+      m_localChanges.set("cameraSpeedFactor", m_cameraSpeedList[cameraSpeedSlider->val()]);
+      Root::singleton().configuration()->set("cameraSpeedFactor", m_cameraSpeedList[cameraSpeedSlider->val()]);
       syncGui();
     });
   reader.registerCallback("speechBubbleCheckbox", [=](Widget*) {
@@ -81,11 +87,13 @@ GraphicsMenu::GraphicsMenu() {
 
   m_resList = jsonToVec2UList(assets->json("/interface/windowconfig/graphicsmenu.config:resolutionList"));
   m_zoomList = jsonToFloatList(assets->json("/interface/windowconfig/graphicsmenu.config:zoomList"));
+  m_cameraSpeedList = jsonToFloatList(assets->json("/interface/windowconfig/graphicsmenu.config:cameraSpeedList"));
 
   reader.construct(paneLayout, this);
 
   fetchChild<SliderBarWidget>("resSlider")->setRange(0, m_resList.size() - 1, 1);
   fetchChild<SliderBarWidget>("zoomSlider")->setRange(0, m_zoomList.size() - 1, 1);
+  fetchChild<SliderBarWidget>("cameraSpeedSlider")->setRange(0, m_cameraSpeedList.size() - 1, 1);
 
   initConfig();
   syncGui();
@@ -118,6 +126,7 @@ void GraphicsMenu::toggleFullscreen() {
 StringList const GraphicsMenu::ConfigKeys = {
   "fullscreenResolution",
   "zoomLevel",
+  "cameraSpeedFactor",
   "speechBubbles",
   "interactiveHighlight",
   "fullscreen",
@@ -154,13 +163,23 @@ void GraphicsMenu::syncGui() {
   auto zoomIt = std::lower_bound(m_zoomList.begin(), m_zoomList.end(), m_localChanges.get("zoomLevel").toFloat());
   if (zoomIt != m_zoomList.end()) {
     size_t zoomIndex = zoomIt - m_zoomList.begin();
-    zoomIndex = std::min(zoomIndex, m_resList.size() - 1);
+    zoomIndex = std::min(zoomIndex, m_zoomList.size() - 1);
     zoomSlider->setVal(zoomIndex, false);
   } else {
     zoomSlider->setVal(m_zoomList.size() - 1);
   }
   fetchChild<LabelWidget>("zoomValueLabel")->setText(strf("{}x", m_localChanges.get("zoomLevel").toFloat()));
 
+  auto cameraSpeedSlider = fetchChild<SliderBarWidget>("cameraSpeedSlider");
+  auto speedIt = std::lower_bound(m_cameraSpeedList.begin(), m_cameraSpeedList.end(), m_localChanges.get("cameraSpeedFactor").toFloat());
+  if (speedIt != m_cameraSpeedList.end()) {
+    size_t speedIndex = speedIt - m_cameraSpeedList.begin();
+    speedIndex = std::min(speedIndex, m_cameraSpeedList.size() - 1);
+    cameraSpeedSlider->setVal(speedIndex, false);
+  } else {
+    cameraSpeedSlider->setVal(m_cameraSpeedList.size() - 1);
+  }
+  fetchChild<LabelWidget>("cameraSpeedValueLabel")->setText(strf("{}x", m_localChanges.get("cameraSpeedFactor").toFloat()));
 
   fetchChild<ButtonWidget>("speechBubbleCheckbox")->setChecked(m_localChanges.get("speechBubbles").toBool());
   fetchChild<ButtonWidget>("interactiveHighlightCheckbox")->setChecked(m_localChanges.get("interactiveHighlight").toBool());
