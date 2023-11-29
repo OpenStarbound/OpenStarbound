@@ -458,9 +458,15 @@ private:
       : parent(parent) {}
 
     Maybe<String> getClipboard() override {
-      if (SDL_HasClipboardText())
-        return String(SDL_GetClipboardText());
-      return {};
+      Maybe<String> string;
+      if (SDL_HasClipboardText()) {
+        auto text = SDL_GetClipboardText();
+        if (text && *text != NULL) {
+          string.emplace(text);
+          SDL_free(text);
+        }
+      }
+      return string;
     }
 
     void setClipboard(String text) override {
