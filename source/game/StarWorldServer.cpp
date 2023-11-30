@@ -1538,15 +1538,20 @@ void WorldServer::updateTileEntityTiles(TileEntityPtr const& entity, bool removi
       if (tile && (tile->foreground == EmptyMaterialId || tile->foreground == materialSpace.material)) {
         tile->foreground = materialSpace.material;
         tile->foregroundMod = NoModId;
+        bool hadRoot = tile->rootSource.isValid();
         if (isRealMaterial(materialSpace.material))
           tile->rootSource = entity->tilePosition();
-        passedSpaces.emplaceAppend(materialSpace).prevCollision.emplace(tile->collision);
+        auto& space = passedSpaces.emplaceAppend(materialSpace);
+        if (hadRoot)
+          space.prevCollision.emplace(tile->collision);
         updatedCollision = tile->updateCollision(materialDatabase->materialCollisionKind(tile->foreground));
         updated = true;
-        passedSpaces.emplaceAppend(materialSpace);
       }
       else if (tile && tile->collision < CollisionKind::Dynamic) {
-        passedSpaces.emplaceAppend(materialSpace).prevCollision.emplace(tile->collision);
+        bool hadRoot = tile->rootSource.isValid();
+        auto& space = passedSpaces.emplaceAppend(materialSpace);
+        if (hadRoot)
+          space.prevCollision.emplace(tile->collision);
         updatedCollision = tile->updateCollision(materialDatabase->materialCollisionKind(materialSpace.material));
         updated = true;
       }
