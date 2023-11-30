@@ -63,10 +63,11 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
   callbacks.registerCallbackWithSignature<Maybe<String>, String, Maybe<String>>("materialMiningSound", bind(RootCallbacks::materialMiningSound, root, _1, _2));
   callbacks.registerCallbackWithSignature<Maybe<String>, String, Maybe<String>>("materialFootstepSound", bind(RootCallbacks::materialFootstepSound, root, _1, _2));
 
-  callbacks.registerCallback("assetOrigin", [root](String const& path) {
+  callbacks.registerCallback("assetOrigin", [root](String const& path) -> Maybe<String> {
       auto assets = root->assets();
       if (auto descriptor = assets->assetDescriptor(path))
         return assets->assetSourcePath(descriptor->source);
+      return {};
     });
 
   callbacks.registerCallback("assetPatches", [root](LuaEngine& engine, String const& path) -> Maybe<LuaTable> {
