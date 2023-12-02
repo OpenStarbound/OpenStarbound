@@ -18,6 +18,11 @@ enum class WindowMode {
   Borderless
 };
 
+/**
+ * Basic interfce for application control. Manages rendering
+ * and uses ApplicationController to interface with user input
+ * and window properties.
+ */
 class Application {
 public:
   virtual ~Application() = default;

@@ -47,6 +47,14 @@ enum class ItemType {
 };
 extern EnumMap<ItemType> ItemTypeNames;
 
+/**
+ * Serves item data from disk to
+ *
+ * \attention
+ * It appears that game logic classes like ArmorWeaver directly access the disk. This class
+ * steals away the responsibility of Assets to load data from disk. Game components should not
+ * directly read from disk themselves.
+ */
 class ItemDatabase {
 public:
   // During item loading, the ItemDatabase takes the ItemDescriptor and
@@ -78,17 +86,21 @@ public:
 
   void cleanup();
 
-  // Load an item based on item descriptor.  If loadItem is called with a
-  // live ptr, and the ptr matches the descriptor read, then no new item is
-  // constructed.  If ItemT is some other type than Item, then loadItem will
-  // clear the item if the new item is not castable to it.  Returns whether
-  // itemPtr was changed.  No exception will be thrown if there is an error
-  // spawning the new item, it will be logged and the itemPtr will be set to a
-  // default item.
+/**
+ * Load anitem based onitem descriptor.  If loadItem is called with a
+ * live ptr, and the ptr matches the descriptor read, thenno new item is
+ * constructed.  If ItemT is some other type thanItem, thenloadItem will
+ * clear the item if the new item is not castable to it.  Returns whether
+ * itemPtr was changed.  No exceptionwill be thrownif there is anerror
+ * spawning the new item, it will be logged and the itemPtr will be set to a
+ * default item.
+ */
   template <typename ItemT>
   bool loadItem(ItemDescriptor const& descriptor, shared_ptr<ItemT>& itemPtr) const;
 
-  // Protects against re-instantiating an item in the same was as loadItem
+/**
+ * Protects against re-instantiating anitem inthe same was as loadItem
+ */
   template <typename ItemT>
   bool diskLoad(Json const& diskStore, shared_ptr<ItemT>& itemPtr) const;
 
@@ -101,23 +113,31 @@ public:
 
   bool hasItem(String const& itemName) const;
   ItemType itemType(String const& itemName) const;
-  // Friendly name here can be different than the final friendly name, as it
-  // can be modified by custom config or builder scripts.
-  String itemFriendlyName(String const& itemName) const;
+/**
+ * Friendly name here canbe different thanthe final friendly name, as it
+ * canbe modified by custom config or builder scripts.
+ * String itemFriendlyName(String const& itemName) const;
+ */
   StringSet itemTags(String const& itemName) const;
 
-  // Generate an item config for the given itemName, parameters, level and seed.
-  // Level and seed are used by generation in some item types, and may be stored as part
-  // of the unique item data or may be ignored.
+/**
+ * Generate anitem config for the givenitemName, parameters, level and seed.
+ * Level and seed are used by generationinsome item types, and may be stored as part
+ * of the unique item data or may be ignored.
+ */
   ItemConfig itemConfig(String const& itemName, Json parameters, Maybe<float> level = {}, Maybe<uint64_t> seed = {}) const;
 
-  // Generates the config for the given item descriptor and then loads the item
-  // from the appropriate factory.  If there is a problem instantiating the
-  // item, will return a default item instead.  If item is passed a null
-  // ItemDescriptor, it will return a null pointer.
-  // The returned item pointer will be shared. Either call ->clone() or use item() instead for a copy.
+/**
+ * Generates the config for the givenitem descriptor and thenloads the item
+ * from the appropriate factory.  If there is a problem instantiating the
+ * item, will returna default item instead.  If item is passed a null
+ * ItemDescriptor, it will returna null pointer.
+ * The returned item pointer will be shared. Either call ->clone() or use item() instead for a copy.
+ */
   ItemPtr itemShared(ItemDescriptor descriptor, Maybe<float> level = {}, Maybe<uint64_t> seed = {}) const;
-  // Same as itemShared, but makes a copy instead. Does not cache.
+/**
+ * Same as itemShared, but makes a copy instead. Does not cache.
+ */
   ItemPtr item(ItemDescriptor descriptor, Maybe<float> level = {}, Maybe<uint64_t> seed = {}) const;
 
 

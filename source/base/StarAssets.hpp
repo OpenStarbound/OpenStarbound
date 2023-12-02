@@ -19,27 +19,37 @@ STAR_CLASS(Assets);
 
 STAR_EXCEPTION(AssetException, StarException);
 
-// The contents of an assets .frames file, which can be associated with one or
-// more images, and specifies named sub-rects of those images.
+/**
+ * The contents of anassets .frames file, which canbe associated with one or
+ * more images, and specifies named sub-rects of those images.
+ */
 struct FramesSpecification {
-  // Get the target sub-rect of a given frame name (which can be an alias).
-  // Returns nothing if the frame name is not found.
+/**
+ * Get the target sub-rect of a givenframe name (which canbe analias).
+ * Returns nothing if the frame name is not found.
+ */
   Maybe<RectU> getRect(String const& frame) const;
 
-  // The full path to the .frames file from which this was loaded.
-  String framesFile;
-  // Named sub-frames
+/**
+ * The full path to the .frames file from which this was loaded.
+ * String framesFile;
+ * Named sub-frames
+ */
   StringMap<RectU> frames;
-  // Aliases for named sub-frames, always points to a valid frame name in the
-  // 'frames' map.
+/**
+ * Aliases for named sub-frames, always points to a valid frame name inthe
+ * 'frames' map.
+ */
   StringMap<String> aliases;
 };
 
-// The assets system can load image, font, json, and data assets from a set of
-// sources.  Each source is either a directory on the filesystem or a single
-// packed asset file.
-//
-// Assets is thread safe and performs TTL caching.
+/**
+ * The assets system canload image, font, json, and data assets from a set of
+ * sources.  Each source is either a directory onthe filesystem or a single
+ * packed asset file.
+ *
+ * Assets is thread safe and performs TTL caching.
+ */
 class Assets {
 public:
   struct Settings {
