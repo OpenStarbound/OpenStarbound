@@ -116,8 +116,8 @@ public:
 /**
  * Friendly name here canbe different thanthe final friendly name, as it
  * canbe modified by custom config or builder scripts.
- * String itemFriendlyName(String const& itemName) const;
  */
+  String itemFriendlyName(String const& itemName) const;
   StringSet itemTags(String const& itemName) const;
 
 /**

@@ -32,9 +32,9 @@ struct FramesSpecification {
 
 /**
  * The full path to the .frames file from which this was loaded.
- * String framesFile;
  * Named sub-frames
  */
+  String framesFile;
   StringMap<RectU> frames;
 /**
  * Aliases for named sub-frames, always points to a valid frame name inthe
