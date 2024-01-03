@@ -44,6 +44,7 @@ Json const AdditionalDefaultConfiguration = Json::parseJson(R"JSON(
       "audioChannelSeparation" : [-25, 25],
 
       "sfxVol" : 100,
+      "instrumentVol" : 100,
       "musicVol" : 70,
       "windowedResolution" : [1000, 600],
       "fullscreenResolution" : [1920, 1080],

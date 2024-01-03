@@ -172,6 +172,7 @@ Mixer::Mixer(unsigned sampleRate, unsigned channels) {
   m_groupVolumes[MixerGroup::Effects] = {1.0f, 1.0f, 0};
   m_groupVolumes[MixerGroup::Music] = {1.0f, 1.0f, 0};
   m_groupVolumes[MixerGroup::Cinematic] = {1.0f, 1.0f, 0};
+  m_groupVolumes[MixerGroup::Instruments] = {1.0f, 1.0f, 0};
 
   m_speed = 1.0f;
 }
@@ -296,7 +297,7 @@ void Mixer::read(int16_t* outBuffer, size_t frameCount, ExtraMixFunction extraMi
           ? approach(audioInstance->m_pitchMultiplierTarget, audioInstance->m_pitchMultiplier, audioInstance->m_pitchMultiplierVelocity * time)
           : audioInstance->m_pitchMultiplier;
 
-      if (audioInstance->m_mixerGroup == MixerGroup::Effects)
+      if (audioInstance->m_mixerGroup == MixerGroup::Effects || audioInstance->m_mixerGroup == MixerGroup::Instruments)
         pitchMultiplier *= speed;
 
       if (audioStopVolEnd == 0.0f && audioInstance->m_stopping)

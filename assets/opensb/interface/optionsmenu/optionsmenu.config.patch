@@ -2,13 +2,13 @@
   "paneLayout" : {
     "voiceLabel" : {
       "type" : "label",
-      "position" : [119, 186],
+      "position" : [119, 202],
       "hAnchor" : "mid",
       "value" : "VOICE"
     },
     "showVoiceSettings" : {
       "type" : "button",
-      "position" : [30, 169],
+      "position" : [30, 185],
       "caption" : "Settings",
       "base" : "/interface/optionsmenu/duocontrolsbutton.png",
       "hover" : "/interface/optionsmenu/duocontrolsbuttonhover.png"
@@ -16,7 +16,7 @@
     "showVoicePlayers" : {
       "type" : "button",
       "disabled" : true,
-      "position" : [133, 169],
+      "position" : [133, 185],
       "caption" : "^#a0a000,font=iosevka-semiboldoblique;TODO^#aa7;:^reset; Players",
       "base" : "/interface/optionsmenu/duocontrolsbutton.png",
       "hover" : "/interface/optionsmenu/duocontrolsbuttonhover.png"
@@ -42,7 +42,15 @@
       "base" : "/interface/optionsmenu/tricontrolsbutton.png",
       "hover" : "/interface/optionsmenu/tricontrolsbuttonhover.png"
     },
-    "sfxValueLabel" : { "position" : [192, 142] }, // this is 2px too low in vanilla lol
-    "musicSlider" : { "position" : [62, 126] }
+
+    "volumeLabel" : { "position" : [119, 173] },
+    "musicSlider" : { "position" : [62, 126] },
+    
+    "sfxLabel" : { "position" : [32, 142], "value" : "Sound" },
+    "sfxValueLabel" : { "position" : [192, 142] },
+
+    "instrumentSlider" : { "type" : "slider", "position" : [62, 158], "gridImage" : "/interface/optionsmenu/largeselection.png" },
+    "instrumentLabel" : { "type" : "label", "position" : [32, 158], "value" : "Tunes" },
+    "instrumentValueLabel" : { "type" : "label", "position" : [192, 158], "hAnchor" : "mid", "value" : "Replace Me" }
   }
 }

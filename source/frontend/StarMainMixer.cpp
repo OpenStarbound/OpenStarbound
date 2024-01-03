@@ -47,16 +47,16 @@ void MainMixer::update(float dt, bool muteSfx, bool muteMusic) {
   updateGroupVolume(MixerGroup::Effects, muteSfx, "sfxVol");
   updateGroupVolume(MixerGroup::Music, muteMusic, "musicVol");
   updateGroupVolume(MixerGroup::Cinematic, false, "sfxVol");
+  updateGroupVolume(MixerGroup::Instruments, muteSfx, "instrumentVol");
 
   WorldClientPtr currentWorld;
   if (m_universeClient)
     currentWorld = m_universeClient->worldClient();
 
   if (currentWorld) {
-    for (auto audioInstance : currentWorld->pullPendingAudio()) {
-      audioInstance->setMixerGroup(MixerGroup::Effects);
+    for (auto audioInstance : currentWorld->pullPendingAudio())
       m_mixer->play(audioInstance);
-    }
+
     for (auto audioInstance : currentWorld->pullPendingMusic()) {
       audioInstance->setMixerGroup(MixerGroup::Music);
       m_mixer->play(audioInstance);

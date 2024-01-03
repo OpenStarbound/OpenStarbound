@@ -20,6 +20,9 @@ OptionsMenu::OptionsMenu(PaneManager* manager)
 
   GuiReader reader;
 
+  reader.registerCallback("instrumentSlider", [=](Widget*) {
+    updateInstrumentVol();
+    });
   reader.registerCallback("sfxSlider", [=](Widget*) {
       updateSFXVol();
     });
@@ -67,6 +70,7 @@ OptionsMenu::OptionsMenu(PaneManager* manager)
 
   reader.construct(config.get("paneLayout"), this);
 
+  m_instrumentSlider = fetchChild<SliderBarWidget>("instrumentSlider");
   m_sfxSlider = fetchChild<SliderBarWidget>("sfxSlider");
   m_musicSlider = fetchChild<SliderBarWidget>("musicSlider");
   m_tutorialMessagesButton = fetchChild<ButtonWidget>("tutorialMessagesCheckbox");
@@ -74,10 +78,12 @@ OptionsMenu::OptionsMenu(PaneManager* manager)
   m_clientP2PJoinableButton = fetchChild<ButtonWidget>("clientP2PJoinableCheckbox");
   m_allowAssetsMismatchButton = fetchChild<ButtonWidget>("allowAssetsMismatchCheckbox");
 
+  m_instrumentLabel = fetchChild<LabelWidget>("instrumentValueLabel");
   m_sfxLabel = fetchChild<LabelWidget>("sfxValueLabel");
   m_musicLabel = fetchChild<LabelWidget>("musicValueLabel");
   m_p2pJoinableLabel = fetchChild<LabelWidget>("clientP2PJoinableLabel");
 
+  m_instrumentSlider->setRange(m_sfxRange, assets->json("/interface/optionsmenu/optionsmenu.config:sfxDelta").toInt());
   m_sfxSlider->setRange(m_sfxRange, assets->json("/interface/optionsmenu/optionsmenu.config:sfxDelta").toInt());
   m_musicSlider->setRange(m_musicRange, assets->json("/interface/optionsmenu/optionsmenu.config:musicDelta").toInt());
 
@@ -103,6 +109,7 @@ void OptionsMenu::toggleFullscreen() {
 }
 
 StringList const OptionsMenu::ConfigKeys = {
+  "instrumentVol",
   "sfxVol",
   "musicVol",
   "tutorialMessages",
@@ -118,6 +125,12 @@ void OptionsMenu::initConfig() {
     m_origConfig[k] = configuration->get(k);
     m_localChanges[k] = configuration->get(k);
   }
+}
+
+void OptionsMenu::updateInstrumentVol() {
+  m_localChanges.set("instrumentVol", m_instrumentSlider->val());
+  Root::singleton().configuration()->set("instrumentVol", m_instrumentSlider->val());
+  m_instrumentLabel->setText(toString(m_instrumentSlider->val()));
 }
 
 void OptionsMenu::updateSFXVol() {
@@ -154,6 +167,9 @@ void OptionsMenu::updateAllowAssetsMismatch() {
 }
 
 void OptionsMenu::syncGuiToConf() {
+  m_instrumentSlider->setVal(m_localChanges.get("instrumentVol").toInt(), false);
+  m_instrumentLabel->setText(toString(m_instrumentSlider->val()));
+
   m_sfxSlider->setVal(m_localChanges.get("sfxVol").toInt(), false);
   m_sfxLabel->setText(toString(m_sfxSlider->val()));
 
