@@ -23,7 +23,8 @@ struct RampedValue {
 enum class MixerGroup : uint8_t {
   Effects,
   Music,
-  Cinematic
+  Cinematic,
+  Instruments
 };
 
 class AudioInstance {

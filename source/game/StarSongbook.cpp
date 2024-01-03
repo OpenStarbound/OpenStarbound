@@ -153,7 +153,7 @@ void Songbook::playback() {
 
 void Songbook::render(RenderCallback* renderCallback) {
   for (auto& a : m_pendingAudio)
-    renderCallback->addAudio(a);
+    renderCallback->addInstrumentAudio(a);
   m_pendingAudio.clear();
 }
 
