@@ -8,6 +8,7 @@ tiled/
 assets/user/
 assets/devel/
 assets/packed.pak
+doc/html
 mods/*.pak
 mods/*
 */.vs/
