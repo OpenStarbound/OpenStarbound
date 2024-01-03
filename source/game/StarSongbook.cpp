@@ -138,6 +138,7 @@ void Songbook::playback() {
     }
 
     AudioInstancePtr audioInstance = make_shared<AudioInstance>(*m_uncompressedSamples[note.file]);
+    audioInstance->setMixerGroup(MixerGroup::Instruments);
     audioInstance->setPitchMultiplier(note.velocity);
 
     auto start = m_timeSourceInstance->epoch + (int64_t)(note.timecode * 1000.0);
@@ -153,7 +154,7 @@ void Songbook::playback() {
 
 void Songbook::render(RenderCallback* renderCallback) {
   for (auto& a : m_pendingAudio)
-    renderCallback->addInstrumentAudio(a);
+    renderCallback->addAudio(a);
   m_pendingAudio.clear();
 }
 

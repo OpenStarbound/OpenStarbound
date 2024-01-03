@@ -165,7 +165,6 @@ void WorldClient::removeEntity(EntityId entityId, bool andDie) {
 
     m_particles->addParticles(move(renderCallback.particles));
     m_samples.appendAll(move(renderCallback.audios));
-    m_instrumentSamples.appendAll(move(renderCallback.instrumentAudios));
   }
 
   if (auto version = m_masterEntitiesNetVersion.maybeTake(entity->entityId())) {
@@ -546,7 +545,6 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
       
       m_particles->addParticles(move(renderCallback.particles));
       m_samples.appendAll(move(renderCallback.audios));
-      m_instrumentSamples.appendAll(move(renderCallback.instrumentAudios));
       previewTiles.appendAll(move(renderCallback.previewTiles));
       renderData.overheadBars.appendAll(move(renderCallback.overheadBars));
 
@@ -686,9 +684,6 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
 
 List<AudioInstancePtr> WorldClient::pullPendingAudio() {
   return take(m_samples);
-}
-List<AudioInstancePtr> WorldClient::pullPendingInstrumentAudio() {
-  return take(m_instrumentSamples);
 }
 
 List<AudioInstancePtr> WorldClient::pullPendingMusic() {
@@ -2140,10 +2135,6 @@ void WorldClient::ClientRenderCallback::addParticle(Particle particle) {
 
 void WorldClient::ClientRenderCallback::addAudio(AudioInstancePtr audio) {
   audios.append(move(audio));
-}
-
-void WorldClient::ClientRenderCallback::addInstrumentAudio(AudioInstancePtr audio) {
-  instrumentAudios.append(move(audio));
 }
 
 void WorldClient::ClientRenderCallback::addTilePreview(PreviewTile preview) {
