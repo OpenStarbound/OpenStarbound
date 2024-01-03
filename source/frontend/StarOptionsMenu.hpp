@@ -29,6 +29,7 @@ private:
 
   void initConfig();
 
+  void updateInstrumentVol();
   void updateSFXVol();
   void updateMusicVol();
   void updateTutorialMessages();
@@ -43,6 +44,7 @@ private:
   void displayModBindings();
   void displayGraphics();
 
+  SliderBarWidgetPtr m_instrumentSlider;
   SliderBarWidgetPtr m_sfxSlider;
   SliderBarWidgetPtr m_musicSlider;
   ButtonWidgetPtr m_tutorialMessagesButton;
@@ -51,10 +53,12 @@ private:
   ButtonWidgetPtr m_clientP2PJoinableButton;
   ButtonWidgetPtr m_allowAssetsMismatchButton;
 
+  LabelWidgetPtr m_instrumentLabel;
   LabelWidgetPtr m_sfxLabel;
   LabelWidgetPtr m_musicLabel;
   LabelWidgetPtr m_p2pJoinableLabel;
 
+  //TODO: add instrument range (or just use one range for all 3, it's kinda silly.)
   Vec2I m_sfxRange;
   Vec2I m_musicRange;
 
