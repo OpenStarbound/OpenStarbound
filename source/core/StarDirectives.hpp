@@ -44,10 +44,15 @@ public:
   Directives(String const& directives);
   Directives(String&& directives);
   Directives(const char* directives);
+  Directives(Directives const& directives);
+  Directives(Directives&& directives);
+  ~Directives();
 
   Directives& operator=(String const& s);
   Directives& operator=(String&& s);
   Directives& operator=(const char* s);
+  Directives& operator=(Directives&& other);
+  Directives& operator=(Directives const& other);
 
   void loadOperations() const;
   void parse(String&& directives);

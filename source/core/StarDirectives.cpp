@@ -50,6 +50,7 @@ Directives::Shared::Shared(List<Entry>&& givenEntries, String&& givenString, Str
 }
 
 Directives::Directives() {}
+
 Directives::Directives(String const& directives) {
   parse(String(directives));
 }
@@ -62,29 +63,49 @@ Directives::Directives(const char* directives) {
   parse(directives);
 }
 
-Directives& Directives::operator=(String const& directives) {
-  if (shared && shared->string == directives)
+Directives::Directives(Directives&& directives) {
+  *this = move(directives);
+}
+
+Directives::Directives(Directives const& directives) {
+  *this = directives;
+}
+
+Directives::~Directives() {}
+
+Directives& Directives::operator=(String const& s) {
+  if (shared && shared->string == s)
     return *this;
 
-  parse(String(directives));
+  parse(String(s));
   return *this;
 }
 
-Directives& Directives::operator=(String&& directives) {
-  if (shared && shared->string == directives) {
-    directives.clear();
+Directives& Directives::operator=(String&& s) {
+  if (shared && shared->string == s) {
+    s.clear();
     return *this;
   }
 
-  parse(move(directives));
+  parse(move(s));
   return *this;
 }
 
-Directives& Directives::operator=(const char* directives) {
-  if (shared && shared->string.utf8().compare(directives) == 0)
+Directives& Directives::operator=(const char* s) {
+  if (shared && shared->string.utf8().compare(s) == 0)
     return *this;
 
-  parse(directives);
+  parse(s);
+  return *this;
+}
+
+Directives& Directives::operator=(Directives&& other) {
+  shared = move(other.shared);
+  return *this;
+}
+
+Directives& Directives::operator=(Directives const& other) {
+  shared = other.shared;
   return *this;
 }
 
