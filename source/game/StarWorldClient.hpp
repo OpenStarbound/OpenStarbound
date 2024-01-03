@@ -149,6 +149,7 @@ public:
   // calculations.  It is not necessary on the light array.
   void render(WorldRenderData& renderData, unsigned borderTiles);
   List<AudioInstancePtr> pullPendingAudio();
+  List<AudioInstancePtr> pullPendingInstrumentAudio();
   List<AudioInstancePtr> pullPendingMusic();
 
   bool playerCanReachEntity(EntityId entityId, bool preferInteractive = true) const;
@@ -182,6 +183,7 @@ private:
     void addLightSource(LightSource lightSource) override;
     void addParticle(Particle particle) override;
     void addAudio(AudioInstancePtr audio) override;
+    void addInstrumentAudio(AudioInstancePtr audio) override;
     void addTilePreview(PreviewTile preview) override;
     void addOverheadBar(OverheadBar bar) override;
 
@@ -189,6 +191,7 @@ private:
     List<LightSource> lightSources;
     List<Particle> particles;
     List<AudioInstancePtr> audios;
+    List<AudioInstancePtr> instrumentAudios;
     List<PreviewTile> previewTiles;
     List<OverheadBar> overheadBars;
   };
@@ -308,6 +311,7 @@ private:
   ParticleManagerPtr m_particles;
 
   List<AudioInstancePtr> m_samples;
+  List<AudioInstancePtr> m_instrumentSamples;
   List<AudioInstancePtr> m_music;
 
   HashMap<EntityId, uint64_t> m_masterEntitiesNetVersion;
