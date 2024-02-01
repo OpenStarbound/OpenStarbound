@@ -2,11 +2,11 @@
   "configurations": [
     {
       "name": "x64-RelWithDebInfo",
-      "generator": "Ninja",
+      "generator": "Visual Studio 17 2022 Win64",
       "configurationType": "RelWithDebInfo",
       "inheritEnvironments": [ "msvc_x64_x64" ],
-      "buildRoot": "${projectDir}\\..\\build",
-      "installRoot": "${projectDir}\\..\\out\\install\\${name}",
+      "buildRoot": "${projectDir}\\..\\build\\${name}",
+      "installRoot": "${projectDir}\\..\\dist\\install\\${name}",
       "cmakeCommandArgs": "-DCMAKE_INCLUDE_PATH=\"..\\lib\\windows\\include\" -DCMAKE_LIBRARY_PATH=\"..\\lib\\windows\"",
       "variables": [
         {
@@ -18,8 +18,19 @@
           "name": "STAR_ENABLE_DISCORD_INTEGRATION",
           "value": "True",
           "type": "BOOL"
+        },
+        {
+          "name": "STAR_USE_JEMALLOC",
+          "value": "True",
+          "type": "BOOL"
+        },
+        {
+          "name": "CMAKE_CONFIGURATION_TYPES",
+          "value": "RelWithAsserts",
+          "type": "STRING"
         }
-      ]
+      ],
+      "cmakeExecutable": "C:/Program Files/CMake/bin/cmake.exe"
     }
   ]
 }

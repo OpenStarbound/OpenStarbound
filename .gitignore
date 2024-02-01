@@ -5,9 +5,8 @@ enc_temp_folder/
 .cache/
 attic/chucklefish/
 tiled/
-assets/user/
-assets/devel/
-assets/packed.pak
+assets/*
+!assets/opensb
 mods/*.pak
 mods/*
 */.vs/
