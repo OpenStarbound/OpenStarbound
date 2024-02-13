@@ -1,36 +1,34 @@
 ﻿{
   "configurations": [
     {
-      "name": "x64-RelWithDebInfo",
+      "name": "x64-RelWithAsserts",
       "generator": "Visual Studio 17 2022 Win64",
-      "configurationType": "RelWithDebInfo",
+      "configurationType": "RelWithAsserts",
       "inheritEnvironments": [ "msvc_x64_x64" ],
       "buildRoot": "${projectDir}\\..\\build\\${name}",
       "installRoot": "${projectDir}\\..\\dist\\install\\${name}",
       "cmakeCommandArgs": "-DCMAKE_INCLUDE_PATH=\"..\\lib\\windows\\include\" -DCMAKE_LIBRARY_PATH=\"..\\lib\\windows\"",
-      "variables": [
-        {
-          "name": "STAR_ENABLE_STEAM_INTEGRATION",
-          "value": "True",
-          "type": "BOOL"
-        },
-        {
-          "name": "STAR_ENABLE_DISCORD_INTEGRATION",
-          "value": "True",
-          "type": "BOOL"
-        },
-        {
-          "name": "STAR_USE_JEMALLOC",
-          "value": "True",
-          "type": "BOOL"
-        },
-        {
-          "name": "CMAKE_CONFIGURATION_TYPES",
-          "value": "RelWithAsserts",
-          "type": "STRING"
-        }
-      ],
       "cmakeExecutable": "C:/Program Files/CMake/bin/cmake.exe"
+    },
+    {
+      "name": "x64-Debug",
+      "generator": "Visual Studio 17 2022 Win64",
+      "configurationType": "Debug",
+      "buildRoot": "${projectDir}\\..\\build\\${name}",
+      "installRoot": "${projectDir}\\..\\dist\\install\\${name}",
+      "cmakeExecutable": "C:/Program Files/CMake/bin/cmake.exe",
+      "cmakeCommandArgs": "-DCMAKE_INCLUDE_PATH=\"..\\lib\\windows\\include\" -DCMAKE_LIBRARY_PATH=\"..\\lib\\windows\"",
+      "inheritEnvironments": [ "msvc_x64_x64" ]
+    },
+    {
+      "name": "x64-RelWithDebInfo",
+      "generator": "Visual Studio 17 2022 Win64",
+      "configurationType": "RelWithDebInfo",
+      "buildRoot": "${projectDir}\\..\\build\\${name}",
+      "installRoot": "${projectDir}\\..\\dist\\install\\${name}",
+      "cmakeExecutable": "C:/Program Files/CMake/bin/cmake.exe",
+      "cmakeCommandArgs": "-DCMAKE_INCLUDE_PATH=\"..\\lib\\windows\\include\" -DCMAKE_LIBRARY_PATH=\"..\\lib\\windows\"",
+      "inheritEnvironments": [ "msvc_x64_x64" ]
     }
   ]
 }
