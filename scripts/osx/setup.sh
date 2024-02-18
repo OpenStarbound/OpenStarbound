@@ -21,7 +21,7 @@ fi
 
 CC=clang CXX=clang++ cmake \
   -DCMAKE_EXPORT_COMPILE_COMMANDS=true \
-  -DCMAKE_BUILD_TYPE=RelWithAsserts \
+  -DCMAKE_BUILD_TYPE=Release \
   -DSTAR_BUILD_QT_TOOLS=$BUILD_QT_TOOLS \
   -DSTAR_USE_JEMALLOC=ON \
   -DCMAKE_INCLUDE_PATH=../lib/osx/include \
