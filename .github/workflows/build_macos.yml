@@ -1,0 +1,85 @@
+name: macOS
+
+on:
+  push:
+    branches:
+      - "*"
+    tags:
+      - "*"
+
+  pull_request:
+    branches:
+      - "*"
+
+jobs:
+  build-intel:
+    name: OpenStarbound macOS x86_64
+    runs-on: macos-13
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Install Packages
+        run: brew install sdl2 glew libvorbis lzlib libpng freetype ninja
+
+      - name: Configure Test Build
+        run: cmake -G "Ninja" -S "${{ github.workspace }}/source" -B "${{ github.workspace }}/cmake-build-debug" -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install" -DCMAKE_VERBOSE_MAKEFILE=YES -DBUILD_TESTING=YES -DCMAKE_BUILD_TYPE=Debug
+
+      - name: Build Debug
+        run: cmake --build "${{ github.workspace }}/cmake-build-debug" --parallel
+
+      - name: Run Unit Tests
+        run: ctest --test-dir "${{ github.workspace }}/cmake-build-debug" -L 'NoAssets' --verbose
+
+      - name: Cleanup Test Build
+        run: rm -Rf "${{ github.workspace }}/cmake-build-debug" "${{ github.workspace }}/dist"
+
+      - name: Configure Release Build
+        run: cmake -G "Ninja" -S "${{ github.workspace }}/source" -B "${{ github.workspace }}/cmake-build-release" -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install" -DCMAKE_VERBOSE_MAKEFILE=YES -DBUILD_TESTING=NO -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build Release
+        run: cmake --build "${{ github.workspace }}/cmake-build-release" --parallel
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenStarbound-Dev-macOS-Intel
+          path: dist/*
+
+  build-arm:
+    name: OpenStarbound macOS arm64
+    runs-on: macos-14
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Install Packages
+        run: brew install sdl2 glew libvorbis lzlib libpng freetype ninja
+
+      - name: Configure Test Build
+        run: cmake -G "Ninja" -S "${{ github.workspace }}/source" -B "${{ github.workspace }}/cmake-build-debug" -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install" -DCMAKE_VERBOSE_MAKEFILE=YES -DBUILD_TESTING=YES -DCMAKE_BUILD_TYPE=Debug
+
+      - name: Build Debug
+        run: cmake --build "${{ github.workspace }}/cmake-build-debug" --config "Debug" --parallel
+
+      - name: Run Unit Tests
+        run: ctest --test-dir "${{ github.workspace }}/cmake-build-debug" -L 'NoAssets' --verbose --build-config "Debug"
+
+      - name: Cleanup Test Build
+        run: rm -Rf "${{ github.workspace }}/cmake-build-debug" "${{ github.workspace }}/dist"
+
+      - name: Configure Release Build
+        run: cmake -G "Ninja" -S "${{ github.workspace }}/source" -B "${{ github.workspace }}/cmake-build-release" -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install" -DCMAKE_VERBOSE_MAKEFILE=YES -DBUILD_TESTING=YES -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build Release
+        run: cmake --build "${{ github.workspace }}/cmake-build-release" --parallel
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenStarbound-Dev-macOS-Silicon
+          path: dist/*

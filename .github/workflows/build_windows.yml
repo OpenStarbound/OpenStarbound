@@ -1,0 +1,48 @@
+name: Windows
+
+on:
+  push:
+    branches:
+      - "*"
+    tags:
+      - "*"
+
+  pull_request:
+    branches:
+      - "*"
+
+jobs:
+  build:
+    name: OpenStarbound Windows x86_64
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Configure Test Build
+        run: cmake -G "Visual Studio 17 2022" -A "X64" -S "${{ github.workspace }}/source" -B "${{ github.workspace }}/cmake-build-debug" -DCMAKE_TOOLCHAIN_FILE="${Env:VCPKG_INSTALLATION_ROOT}/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Debug>:Debug>DLL" -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install" -DCMAKE_VERBOSE_MAKEFILE=YES -DBUILD_TESTING=YES
+
+      - name: Build Debug
+        run: cmake --build "${{ github.workspace }}/cmake-build-debug" --config "Debug" --parallel
+
+      - name: Run Unit Tests
+        run: ctest --test-dir "${{ github.workspace }}/cmake-build-debug" -L 'NoAssets' --verbose --build-config "Debug"
+
+      - name: Cleanup Test Build
+        run: |
+          Remove-Item "${{ github.workspace }}\cmake-build-debug" -Recurse
+          Remove-Item "${{ github.workspace }}\dist" -Recurse
+
+      - name: Configure Release Build
+        run: cmake -G "Visual Studio 17 2022" -A "X64" -S "${{ github.workspace }}/source" -B "${{ github.workspace }}/cmake-build-release" -DCMAKE_TOOLCHAIN_FILE="${Env:VCPKG_INSTALLATION_ROOT}/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Debug>:Debug>DLL" -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install" -DCMAKE_VERBOSE_MAKEFILE=YES -DBUILD_TESTING=YES
+
+      - name: Build Release
+        run: cmake --build "${{ github.workspace }}/cmake-build-release" --config "Release" --parallel
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenStarbound-Dev-Windows-x64
+          path: dist/*

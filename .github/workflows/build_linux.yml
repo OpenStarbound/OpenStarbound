@@ -1,0 +1,51 @@
+name: Ubuntu Linux
+
+on:
+  push:
+    branches:
+      - "*"
+    tags:
+      - "*"
+
+  pull_request:
+    branches:
+      - "*"
+
+jobs:
+  build:
+    name: OpenStarbound Linux x86_64
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Install Packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgl1-mesa-dev mesa-common-dev libsdl2-dev libglew-dev libvorbis-dev libogg-dev libz3-dev libpng-dev libfreetype-dev libgtest-dev libgmock-dev ninja-build
+
+      - name: Configure Test Build
+        run: cmake -G "Ninja" -S "${{ github.workspace }}/source" -B "${{ github.workspace }}/cmake-build-debug" -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install" -DCMAKE_VERBOSE_MAKEFILE=YES -DBUILD_TESTING=YES -DCMAKE_BUILD_TYPE=Debug
+
+      - name: Build Debug
+        run: cmake --build "${{ github.workspace }}/cmake-build-debug" --parallel
+
+      - name: Run Unit Tests
+        run: ctest --test-dir "${{ github.workspace }}/cmake-build-debug" -L 'NoAssets' --verbose
+
+      - name: Cleanup Test Build
+        run: rm -Rf "${{ github.workspace }}/cmake-build-debug" "${{ github.workspace }}/dist"
+
+      - name: Configure Release Build
+        run: cmake -G "Ninja" -S "${{ github.workspace }}/source" -B "${{ github.workspace }}/cmake-build-release" -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install" -DCMAKE_VERBOSE_MAKEFILE=YES -DBUILD_TESTING=NO -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build Release
+        run: cmake --build "${{ github.workspace }}/cmake-build-release" --parallel
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenStarbound-Dev-Linux-x86_64
+          path: dist/*
