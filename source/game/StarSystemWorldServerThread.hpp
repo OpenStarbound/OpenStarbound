@@ -48,9 +48,9 @@ private:
   Vec3I m_systemLocation;
   SystemWorldServerPtr m_systemWorld;
 
-  atomic<bool> m_stop;
-  float m_periodicStorage;
-  bool m_triggerStorage;
+  atomic<bool> m_stop{false};
+  float m_periodicStorage{300.0f};
+  bool m_triggerStorage{ false};
   String m_storageFile;
 
   shared_ptr<const atomic<bool>> m_pause;

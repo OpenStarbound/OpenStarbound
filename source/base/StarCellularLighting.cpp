@@ -2,8 +2,13 @@
 
 namespace Star {
 
-CellularLightingCalculator::CellularLightingCalculator(bool monochrome) {
-  setMonochrome(monochrome);
+CellularLightingCalculator::CellularLightingCalculator(bool monochrome)
+    : m_monochrome(monochrome)
+{
+    if (monochrome)
+        m_lightArray.setRight(ScalarCellularLightArray());
+    else
+        m_lightArray.setLeft(ColoredCellularLightArray());
 }
 
 void CellularLightingCalculator::setMonochrome(bool monochrome) {

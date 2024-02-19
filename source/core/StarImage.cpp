@@ -184,6 +184,8 @@ tuple<Vec2U, PixelFormat> Image::readPngMetadata(IODevicePtr device) {
     channels += 1;
   }
 
+  png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
+
   Vec2U imageSize{img_width, img_height};
   PixelFormat pixelFormat = channels == 3 ? PixelFormat::RGB24 : PixelFormat::RGBA32;
 

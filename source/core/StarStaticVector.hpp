@@ -2,6 +2,7 @@
 #define STAR_STATIC_VECTOR_HPP
 
 #include "StarException.hpp"
+#include "StarFormat.hpp"
 
 namespace Star {
 

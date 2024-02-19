@@ -362,7 +362,7 @@ private:
   StringMap<ScriptComponentPtr> m_scriptContexts;
 
   WorldGeometry m_geometry;
-  uint64_t m_currentStep;
+  uint64_t m_currentStep{};
   mutable CellularLightIntensityCalculator m_lightIntensityCalculator;
   SkyPtr m_sky;
 

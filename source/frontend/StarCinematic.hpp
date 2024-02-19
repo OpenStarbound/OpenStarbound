@@ -109,33 +109,33 @@ private:
 
   // these include the time for background fades so they may not reflect the completion timecode
   Clock m_timer;
-  float m_completionTime;
+  float m_completionTime{};
 
   Maybe<Vec4B> m_backgroundColor;
-  float m_backgroundFadeTime;
+  float m_backgroundFadeTime{};
 
-  float m_cameraZoom;
-  Vec2F m_cameraPan;
+  float m_cameraZoom{1.0f};
+  Vec2F m_cameraPan{};
 
-  float m_drawableScale;
-  Vec2F m_drawableTranslation;
-  Vec2F m_windowSize;
-  RectI m_scissorRect;
+  float m_drawableScale{1.0f};
+  Vec2F m_drawableTranslation{};
+  Vec2F m_windowSize{};
+  RectI m_scissorRect{};
 
-  bool m_scissor;
-  bool m_letterbox;
+  bool m_scissor{true};
+  bool m_letterbox{true};
 
   PlayerPtr m_player;
 
-  Vec2F m_offset;
+  Vec2F m_offset{};
 
-  bool m_skippable;
-  bool m_suppressInput;
+  bool m_skippable{true};
+  bool m_suppressInput{false};
 
-  bool m_muteSfx;
-  bool m_muteMusic;
+  bool m_muteSfx{false};
+  bool m_muteMusic{false};
 
-  bool m_completable;
+  bool m_completable{false};
 };
 
 }

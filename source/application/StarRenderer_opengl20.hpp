@@ -143,7 +143,7 @@ private:
     HashSet<TexturePtr> usedTextures;
     List<GlVertexBuffer> vertexBuffers;
 
-    bool useMultiTexturing;
+    bool useMultiTexturing{true};
   };
 
   struct EffectParameter {

@@ -5,9 +5,11 @@
 namespace Star {
 
 SystemWorldServerThread::SystemWorldServerThread(Vec3I const& location, SystemWorldServerPtr systemWorld, String storageFile)
-  : Thread(strf("SystemWorldServer: {}", location)), m_stop(false), m_storageFile(storageFile) {
-  m_systemLocation = location;
-  m_systemWorld = std::move(systemWorld);
+  : Thread(strf("SystemWorldServer: {}", location))
+  , m_systemLocation(location)
+  , m_systemWorld(move(systemWorld))
+  , m_storageFile(storageFile)
+{
 }
 
 SystemWorldServerThread::~SystemWorldServerThread() {

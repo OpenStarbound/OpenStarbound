@@ -434,7 +434,7 @@ void Voice::update(float dt, PositionalAttenuationFunction positionalAttenuation
 				speaker->channelVolumes = Vec2F::filled(1.0f);
 				
 			auto& dbHistory = speaker->dbHistory;
-			memcpy(&dbHistory[1], &dbHistory[0], (dbHistory.size() - 1) * sizeof(float));
+			memmove(&dbHistory[1], &dbHistory[0], (dbHistory.size() - 1) * sizeof(float));
 			dbHistory[0] = speaker->decibelLevel;
 			float smoothDb = 0.0f;
 			for (float dB : dbHistory)
