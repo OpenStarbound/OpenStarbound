@@ -12,7 +12,6 @@ const float vWidth = 960.0f;
 const float vHeight = 540.0f;
 
 Cinematic::Cinematic() {
-  m_completionTime = 0;
   m_completable = false;
   m_suppressInput = false;
 }
@@ -342,7 +341,7 @@ float Cinematic::currentTimecode() const {
 Cinematic::PanelValues Cinematic::determinePanelValues(PanelPtr panel, float timecode) {
   if (panel->endTime != 0) {
     if (timecode > panel->endTime) {
-      Cinematic::PanelValues result;
+      Cinematic::PanelValues result{};
       result.alpha = 0;
       return result;
     }
@@ -350,7 +349,7 @@ Cinematic::PanelValues Cinematic::determinePanelValues(PanelPtr panel, float tim
 
   if (panel->startTime != 0) {
     if (timecode < panel->startTime) {
-      Cinematic::PanelValues result;
+      Cinematic::PanelValues result{};
       result.alpha = 0;
       return result;
     } else {

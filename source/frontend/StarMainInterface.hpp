@@ -154,11 +154,11 @@ private:
 
   void displayScriptPane(ScriptPanePtr& scriptPane, EntityId sourceEntity);
 
-  GuiContext* m_guiContext;
+  GuiContext* m_guiContext{nullptr};
   MainInterfaceConfigConstPtr m_config;
   InterfaceCursor m_cursor;
 
-  RunningState m_state;
+  RunningState m_state{Running};
 
   UniverseClientPtr m_client;
   WorldPainterPtr m_worldPainter;
@@ -192,7 +192,7 @@ private:
   WirePanePtr m_wireInterface;
 
   ActionBarPtr m_actionBar;
-  Vec2I m_cursorScreenPos;
+  Vec2I m_cursorScreenPos{};
   ItemSlotWidgetPtr m_cursorItem;
   Maybe<String> m_cursorTooltip;
 
@@ -201,29 +201,29 @@ private:
 
   GameTimer m_debugSpatialClearTimer;
   GameTimer m_debugMapClearTimer;
-  RectF m_debugTextRect;
+  RectF m_debugTextRect{RectF::null()};
 
   NameplatePainterPtr m_nameplatePainter;
   QuestIndicatorPainterPtr m_questIndicatorPainter;
   ChatBubbleManagerPtr m_chatBubbleManager;
 
-  bool m_disableHud;
+  bool m_disableHud{false};
 
   String m_lastCommand;
 
   LinkedList<GuiMessagePtr> m_messages;
   HashMap<ItemDescriptor, std::pair<size_t, GuiMessagePtr>> m_itemDropMessages;
-  unsigned m_messageOverflow;
+  unsigned m_messageOverflow{};
   GuiMessagePtr m_overflowMessage;
 
   List<pair<String, RpcPromiseKeeper<P2PJoinRequestReply>>> m_queuedJoinRequests;
 
-  EntityId m_lastMouseoverTarget;
+  EntityId m_lastMouseoverTarget{NullEntityId};
   GameTimer m_stickyTargetingTimer;
-  int m_portraitScale;
+  int m_portraitScale{};
 
-  EntityId m_specialDamageBarTarget;
-  float m_specialDamageBarValue;
+  EntityId m_specialDamageBarTarget{NullEntityId};
+  float m_specialDamageBarValue{};
 
   ContainerInteractorPtr m_containerInteractor;
 };

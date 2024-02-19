@@ -17,7 +17,7 @@ namespace Star {
 // individually.
 class CellularLightingCalculator {
 public:
-  CellularLightingCalculator(bool monochrome = false);
+  explicit CellularLightingCalculator(bool monochrome = false);
 
   typedef ColoredCellularLightArray::Cell Cell;
 

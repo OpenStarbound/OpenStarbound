@@ -65,24 +65,14 @@ GuiMessage::GuiMessage() : message(), cooldown(), springState() {}
 GuiMessage::GuiMessage(String const& message, float cooldown, float spring)
   : message(message), cooldown(cooldown), springState(spring) {}
 
-MainInterface::MainInterface(UniverseClientPtr client, WorldPainterPtr painter, CinematicPtr cinematicOverlay) {
-  m_state = Running;
-
-  m_guiContext = GuiContext::singletonPtr();
-
-  m_client = client;
-  m_worldPainter = painter;
-  m_cinematicOverlay = cinematicOverlay;
-
-  m_disableHud = false;
-
-  m_cursorScreenPos = Vec2I();
-  m_state = Running;
-
-  m_config = MainInterfaceConfig::loadFromAssets();
-
-  m_containerInteractor = make_shared<ContainerInteractor>();
-
+MainInterface::MainInterface(UniverseClientPtr client, WorldPainterPtr painter, CinematicPtr cinematicOverlay)
+  : m_guiContext(GuiContext::singletonPtr())
+  , m_config(MainInterfaceConfig::loadFromAssets())
+  , m_client(std::move(client))
+  , m_worldPainter(std::move(painter))
+  , m_cinematicOverlay(std::move(cinematicOverlay))
+  , m_containerInteractor(make_shared<ContainerInteractor>())
+{
   GuiReader itemSlotReader;
   m_cursorItem = convert<ItemSlotWidget>(itemSlotReader.makeSingle("cursorItemSlot", m_config->cursorItemSlot));
 
@@ -90,9 +80,7 @@ MainInterface::MainInterface(UniverseClientPtr client, WorldPainterPtr painter, 
 
   m_debugSpatialClearTimer = GameTimer(m_config->debugSpatialClearTime);
   m_debugMapClearTimer = GameTimer(m_config->debugMapClearTime);
-  m_debugTextRect = RectF::null();
 
-  m_lastMouseoverTarget = NullEntityId;
   m_stickyTargetingTimer = GameTimer(m_config->monsterHealthBarTime);
 
   m_inventoryWindow = make_shared<InventoryPane>(this, m_client->mainPlayer(), m_containerInteractor);
@@ -183,7 +171,7 @@ MainInterface::MainInterface(UniverseClientPtr client, WorldPainterPtr painter, 
   m_paneManager.registerPane(MainInterfacePanes::PlanetText, PaneLayer::Hud, planetName);
 
   m_nameplatePainter = make_shared<NameplatePainter>();
-  m_questIndicatorPainter = make_shared<QuestIndicatorPainter>(client);
+  m_questIndicatorPainter = make_shared<QuestIndicatorPainter>(m_client);
   m_chatBubbleManager = make_shared<ChatBubbleManager>();
 
   m_paneManager.displayRegisteredPane(MainInterfacePanes::ActionBar);
