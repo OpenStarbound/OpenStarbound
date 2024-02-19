@@ -242,7 +242,7 @@ template <template <typename...> class Map, typename Key, typename Value, typena
 auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::value(key_type const& k, mapped_type d) const -> mapped_type {
   auto i = m_map.find(k);
   if (i == m_map.end())
-    return std::move(d);
+    return d;
   else
     return i->second->second;
 }

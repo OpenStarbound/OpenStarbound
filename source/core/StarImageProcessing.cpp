@@ -201,7 +201,7 @@ ImageOperation imageOperationFromString(StringView string) {
             else if (!which || (ptr != end && ++ptr != end))
                 throw ImageOperationException(strf("Improper size for hex string '{}' in imageOperationFromString", StringView(hexPtr, hexLen)), false);
             else // we're in A of A=B. In vanilla only A=B pairs are evaluated, so only throw an exception if B is also there.
-                return std::move(operation);
+                return operation;
               
 
             which = !which;

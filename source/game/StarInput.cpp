@@ -172,7 +172,7 @@ Json Input::bindToJson(Bind const& bind) {
     }; // don't want empty mods to exist as null entry
     if (auto mods = keyModsToJson(keyBind->mods))
       obj.emplace("mods", std::move(mods));
-    return std::move(obj);
+    return obj;
   }
   else if (auto mouseBind = bind.ptr<MouseBind>()) {
     auto obj = JsonObject{
@@ -181,7 +181,7 @@ Json Input::bindToJson(Bind const& bind) {
     };
     if (auto mods = keyModsToJson(mouseBind->mods))
       obj.emplace("mods", std::move(mods));
-    return std::move(obj);
+    return obj;
   }
   else if (auto controllerBind = bind.ptr<ControllerBind>()) {
     return JsonObject{
@@ -577,7 +577,7 @@ Json Input::getDefaultBinds(String const& categoryId, String const& bindId) {
   for (Bind const& bind : bindEntry(categoryId, bindId).defaultBinds)
     array.emplace_back(bindToJson(bind));
 
-  return std::move(array);
+  return array;
 }
 
 Json Input::getBinds(String const& categoryId, String const& bindId) {
@@ -585,7 +585,7 @@ Json Input::getBinds(String const& categoryId, String const& bindId) {
   for (Bind const& bind : bindEntry(categoryId, bindId).customBinds)
     array.emplace_back(bindToJson(bind));
 
-  return std::move(array);
+  return array;
 }
 
 void Input::setBinds(String const& categoryId, String const& bindId, Json const& jBinds) {

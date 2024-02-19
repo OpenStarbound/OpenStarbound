@@ -172,7 +172,7 @@ auto MapMixin<BaseMap>::maybeTake(key_type const& k) -> Maybe<mapped_type> {
   if (i != Base::end()) {
     mapped_type v = std::move(i->second);
     Base::erase(i);
-    return std::move(v);
+    return v;
   }
 
   return {};
@@ -198,7 +198,7 @@ template <typename BaseMap>
 auto MapMixin<BaseMap>::value(key_type const& k, mapped_type d) const -> mapped_type {
   const_iterator i = Base::find(k);
   if (i == Base::end())
-    return std::move(d);
+    return d;
   else
     return i->second;
 }

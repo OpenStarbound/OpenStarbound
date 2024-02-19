@@ -235,7 +235,7 @@ typename SectorArray2D<ElementT, SectorSize>::ArrayPtr SectorArray2D<ElementT, S
   ArrayPtr ret;
   m_loadedSectors.remove(id);
   std::swap(m_sectors(id[0], id[1]), ret);
-  return std::move(ret);
+  return ret;
 }
 
 template <typename ElementT, size_t SectorSize>
