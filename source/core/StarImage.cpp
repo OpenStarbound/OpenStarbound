@@ -246,7 +246,7 @@ void Image::reset(unsigned width, unsigned height, Maybe<PixelFormat> pf) {
   if (!pf)
     pf = m_pixelFormat;
 
-  if (m_data && m_width == width && m_height == height && m_pixelFormat == *pf)
+  if (m_width == width && m_height == height && m_pixelFormat == *pf)
     return;
 
   size_t imageSize = width * height * Star::bytesPerPixel(*pf);
