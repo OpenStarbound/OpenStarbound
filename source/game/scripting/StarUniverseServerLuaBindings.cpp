@@ -123,7 +123,7 @@ StringList LuaBindings::UniverseServerCallbacks::activeWorlds(UniverseServer* un
 }
 
 RpcThreadPromise<Json> LuaBindings::UniverseServerCallbacks::sendWorldMessage(UniverseServer* universe, String const& worldId, String const& message, LuaVariadic<Json> args) {
-  return universe->sendWorldMessage(parseWorldId(worldId), message, JsonArray::from(move(args)));
+  return universe->sendWorldMessage(parseWorldId(worldId), message, JsonArray::from(std::move(args)));
 }
 
 }

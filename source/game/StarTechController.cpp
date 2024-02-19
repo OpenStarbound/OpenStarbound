@@ -277,7 +277,7 @@ List<Drawable> TechController::backDrawables() {
     if (animator->isVisible()) {
       for (auto& piece : animator->animator.drawablesWithZLevel(m_movementController->position())) {
         if (piece.second < 0.0f)
-          drawables.append(move(piece.first));
+          drawables.append(std::move(piece.first));
       }
     }
   }
@@ -292,7 +292,7 @@ List<Drawable> TechController::frontDrawables() {
     if (animator->isVisible()) {
       for (auto& piece : animator->animator.drawablesWithZLevel(m_movementController->position())) {
         if (piece.second >= 0.0f)
-          drawables.append(move(piece.first));
+          drawables.append(std::move(piece.first));
       }
     }
   }
@@ -346,7 +346,7 @@ Maybe<Json> TechController::receiveMessage(String const& message, bool localMess
 }
 
 TechController::TechAnimator::TechAnimator(Maybe<String> ac) {
-  animationConfig = move(ac);
+  animationConfig = std::move(ac);
   animator = animationConfig ? NetworkedAnimator(*animationConfig) : NetworkedAnimator();
   netGroup.addNetElement(&animator);
   netGroup.addNetElement(&visible);
@@ -511,7 +511,7 @@ LuaCallbacks TechController::makeTechCallbacks(TechModule& techModule) {
       DirectivesGroup newParentDirectives;
       for (auto& module : m_techModules)
         newParentDirectives.append(module.parentDirectives);
-      m_parentDirectives.set(move(newParentDirectives));
+      m_parentDirectives.set(std::move(newParentDirectives));
     });
 
   callbacks.registerCallback("setParentHidden", [this](bool hidden) {

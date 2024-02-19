@@ -1142,7 +1142,7 @@ void MainInterface::renderMonsterHealthBar() {
     Drawable::scaleAll(portrait, 1.0f / m_portraitScale);
 
     for (auto drawable : portrait)
-      m_guiContext->drawDrawable(move(drawable), backgroundCenterPos + portraitOffset, portraitScale);
+      m_guiContext->drawDrawable(std::move(drawable), backgroundCenterPos + portraitOffset, portraitScale);
 
     m_guiContext->resetInterfaceScissorRect();
   }

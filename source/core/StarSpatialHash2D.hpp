@@ -239,19 +239,19 @@ void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::set(Key con
 
 template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
 void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::set(Key const& key, Coord const& pos, Value value) {
-  set(key, {Rect(pos, pos)}, move(value));
+  set(key, {Rect(pos, pos)}, std::move(value));
 }
 
 template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
 void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::set(Key const& key, Rect const& rect, Value value) {
-  set(key, {rect}, move(value));
+  set(key, {rect}, std::move(value));
 }
 
 template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
 template <typename RectCollection>
 void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::set(Key const& key, RectCollection const& rects, Value value) {
   Entry& entry = m_entryMap[key];
-  entry.value = move(value);
+  entry.value = std::move(value);
   updateSpatial(&entry, rects);
 }
 
@@ -262,7 +262,7 @@ auto SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::remove(Key 
     return {};
 
   removeSpatial(&iter->second);
-  Maybe<Value> val = move(iter->second.value);
+  Maybe<Value> val = std::move(iter->second.value);
   m_entryMap.erase(iter);
   return val;
 }

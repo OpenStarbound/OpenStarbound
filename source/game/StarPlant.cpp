@@ -591,7 +591,7 @@ pair<ByteArray, uint64_t> Plant::writeNetState(uint64_t fromVersion) {
 }
 
 void Plant::readNetState(ByteArray data, float interpolationTime) {
-  m_netGroup.readNetState(move(data), interpolationTime);
+  m_netGroup.readNetState(std::move(data), interpolationTime);
 }
 
 void Plant::enableInterpolation(float extrapolationHint) {
@@ -758,7 +758,7 @@ void Plant::render(RenderCallback* renderCallback) {
       drawable.rotate(branchRotation(m_tilePosition[0], plantPiece.rotationOffset * 1.4f), plantPiece.offset + Vec2F(size) / 2.0f);
     }
     drawable.translate(position());
-    renderCallback->addDrawable(move(drawable), RenderLayerPlant);
+    renderCallback->addDrawable(std::move(drawable), RenderLayerPlant);
   }
 
   if (m_tileDamageEvent) {
@@ -780,7 +780,7 @@ void Plant::render(RenderCallback* renderCallback) {
         }
         particle.position = {m_tileDamageX + Random::randf(), m_tileDamageY + Random::randf()};
         particle.translate(position());
-        renderCallback->addParticle(move(particle));
+        renderCallback->addParticle(std::move(particle));
       }
       JsonArray damageTreeSoundOptions = m_stemDropConfig.get("sounds", JsonObject()).getArray("damageTree", JsonArray());
       if (damageTreeSoundOptions.size()) {
@@ -790,7 +790,7 @@ void Plant::render(RenderCallback* renderCallback) {
         auto audioInstance = make_shared<AudioInstance>(*assets->audio(sound.getString("file")));
         audioInstance->setPosition(pos);
         audioInstance->setVolume(sound.getFloat("volume", 1.0f));
-        renderCallback->addAudio(move(audioInstance));
+        renderCallback->addAudio(std::move(audioInstance));
       }
     }
   }
@@ -798,7 +798,7 @@ void Plant::render(RenderCallback* renderCallback) {
 
 void Plant::readPieces(ByteArray pieces) {
   if (!pieces.empty()) {
-    DataStreamBuffer ds(move(pieces));
+    DataStreamBuffer ds(std::move(pieces));
     ds.readContainer(m_pieces, [](DataStream& ds, PlantPiece& piece) {
         ds.read(piece.image);
         ds.read(piece.offset[0]);

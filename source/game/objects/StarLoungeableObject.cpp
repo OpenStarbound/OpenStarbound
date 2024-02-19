@@ -19,7 +19,7 @@ void LoungeableObject::render(RenderCallback* renderCallback) {
             Drawable::makeImage(m_sitCoverImage, 1.0f / TilePixels, false, position() + orientation->imagePosition);
         if (m_flipImages)
           drawable.scale(Vec2F(-1, 1), drawable.boundBox(false).center());
-        renderCallback->addDrawable(move(drawable), RenderLayerObject + 2);
+        renderCallback->addDrawable(std::move(drawable), RenderLayerObject + 2);
       }
     }
   }

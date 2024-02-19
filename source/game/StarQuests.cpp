@@ -370,7 +370,7 @@ void Quest::setWorldId(Maybe<WorldId> worldId) {
 }
 
 void Quest::setLocation(Maybe<pair<Vec3I, SystemLocation>> location) {
-  m_location = move(location);
+  m_location = std::move(location);
 }
 
 void Quest::setServerUuid(Maybe<Uuid> serverUuid) {

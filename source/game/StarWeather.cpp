@@ -44,7 +44,7 @@ void ServerWeather::setup(WeatherPool weatherPool, float undergroundLevel, World
 }
 
 void ServerWeather::setReferenceClock(ClockConstPtr referenceClock) {
-  m_referenceClock = move(referenceClock);
+  m_referenceClock = std::move(referenceClock);
   if (m_referenceClock)
     m_clockTrackingTime = m_referenceClock->time();
   else
@@ -52,7 +52,7 @@ void ServerWeather::setReferenceClock(ClockConstPtr referenceClock) {
 }
 
 void ServerWeather::setClientVisibleRegions(List<RectI> regions) {
-  m_clientVisibleRegions = move(regions);
+  m_clientVisibleRegions = std::move(regions);
 }
 
 pair<ByteArray, uint64_t> ServerWeather::writeUpdate(uint64_t fromVersion) {
@@ -265,7 +265,7 @@ void ClientWeather::setup(WorldGeometry worldGeometry, WeatherEffectsActiveQuery
 
 void ClientWeather::readUpdate(ByteArray data) {
   if (!data.empty()) {
-    m_netGroup.readNetState(move(data));
+    m_netGroup.readNetState(std::move(data));
     getNetStates();
   }
 }
@@ -352,7 +352,7 @@ void ClientWeather::spawnWeatherParticles(RectF newClientRegion, float dt) {
         if (y > m_undergroundLevel && (!m_weatherEffectsActiveQuery || m_weatherEffectsActiveQuery(Vec2I::floor(newParticle.position)))) {
           if (particleConfig.autoRotate)
             newParticle.rotation += angleChange;
-          m_particles.append(move(newParticle));
+          m_particles.append(std::move(newParticle));
         }
       }
     }

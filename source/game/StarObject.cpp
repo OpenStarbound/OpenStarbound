@@ -155,8 +155,8 @@ void Object::init(World* world, EntityId entityId, EntityMode mode) {
     else
       colorDirectives = colorName.substr(colorEnd, suffixBegin - colorEnd);
 
-    m_colorSuffix = move(colorSuffix);
-    m_colorDirectives = move(colorDirectives);
+    m_colorSuffix = std::move(colorSuffix);
+    m_colorDirectives = std::move(colorDirectives);
   }
   else
     m_colorDirectives = m_colorSuffix = "";
@@ -293,7 +293,7 @@ pair<ByteArray, uint64_t> Object::writeNetState(uint64_t fromVersion) {
 }
 
 void Object::readNetState(ByteArray delta, float interpolationTime) {
-  m_netGroup.readNetState(move(delta), interpolationTime);
+  m_netGroup.readNetState(std::move(delta), interpolationTime);
 }
 
 Vec2I Object::tilePosition() const {
@@ -501,7 +501,7 @@ void Object::destroy(RenderCallback* renderCallback) {
 
   if (renderCallback && doSmash && !m_config->smashSoundOptions.empty()) {
     auto audio = make_shared<AudioInstance>(*Root::singleton().assets()->audio(Random::randFrom(m_config->smashSoundOptions)));
-    renderCallback->addAudios({move(audio)}, position());
+    renderCallback->addAudios({std::move(audio)}, position());
   }
 
   if (renderCallback && doSmash && !m_config->smashParticles.empty()) {
@@ -523,7 +523,7 @@ void Object::destroy(RenderCallback* renderCallback) {
           particle.flip = !particle.flip;
         }
         particle.translate(position() + volume().center());
-        particles.append(move(particle));
+        particles.append(std::move(particle));
       }
     }
     renderCallback->addParticles(particles);
@@ -680,7 +680,7 @@ void Object::readStoredData(Json const& diskStore) {
       List<WireConnection> connections;
       for (auto const& conn : inputNodes[i].getArray("connections"))
         connections.append(WireConnection{jsonToVec2I(conn.get(0)), (size_t)conn.get(1).toUInt()});
-      in.connections.set(move(connections));
+      in.connections.set(std::move(connections));
       in.state.set(inputNodes[i].getBool("state"));
     }
   }
@@ -692,7 +692,7 @@ void Object::readStoredData(Json const& diskStore) {
       List<WireConnection> connections;
       for (auto const& conn : outputNodes[i].getArray("connections"))
         connections.append(WireConnection{jsonToVec2I(conn.get(0)), (size_t)conn.get(1).toUInt()});
-      in.connections.set(move(connections));
+      in.connections.set(std::move(connections));
       in.state.set(outputNodes[i].getBool("state"));
     }
   }
@@ -707,7 +707,7 @@ Json Object::writeStoredData() const {
       connections.append(JsonArray{jsonFromVec2I(node.entityLocation), node.nodeIndex});
 
     inputNodes.append(JsonObject{
-        {"connections", move(connections)},
+        {"connections", std::move(connections)},
         {"state", in.state.get()}
       });
   }
@@ -720,7 +720,7 @@ Json Object::writeStoredData() const {
       connections.append(JsonArray{jsonFromVec2I(node.entityLocation), node.nodeIndex});
 
     outputNodes.append(JsonObject{
-        {"connections", move(connections)},
+        {"connections", std::move(connections)},
         {"state", in.state.get()}
       });
   }
@@ -732,8 +732,8 @@ Json Object::writeStoredData() const {
     {"direction", DirectionNames.getRight(m_direction.get())},
     {"scriptStorage", m_scriptComponent.getScriptStorage()},
     {"interactive", m_interactive.get()},
-    {"inputWireNodes", move(inputNodes)},
-    {"outputWireNodes", move(outputNodes)}
+    {"inputWireNodes", std::move(inputNodes)},
+    {"outputWireNodes", std::move(outputNodes)}
   };
 }
 
@@ -1028,11 +1028,11 @@ LuaCallbacks Object::makeObjectCallbacks() {
     });
 
   callbacks.registerCallback("setConfigParameter", [this](String key, Json value) {
-      m_parameters.set(move(key), move(value));
+      m_parameters.set(std::move(key), std::move(value));
     });
 
   callbacks.registerCallback("setAnimationParameter", [this](String key, Json value) {
-      m_scriptedAnimationParameters.set(move(key), move(value));
+      m_scriptedAnimationParameters.set(std::move(key), std::move(value));
     });
 
   callbacks.registerCallback("setMaterialSpaces", [this](Maybe<JsonArray> const& newSpaces) {
@@ -1241,7 +1241,7 @@ List<Drawable> Object::orientationDrawables(size_t orientationIndex) const {
       String imagePath = AssetPath::join(imagePart.image);
       if ((m_colorDirectives || !m_colorSuffix.empty()) && m_imageKeys.contains("color")) { // We had to leave color untouched despite separating its directives for server-side compatibility reasons, temporarily substr it in the image key
         String& color = m_imageKeys.find("color")->second;
-        String backup = move(color);
+        String backup = std::move(color);
         color = backup.substr(0, backup.find('?'));
 
         // backwards compatibility for this is really annoying, need to append text after the <color> tag to the last directive for a rare use-case
@@ -1252,7 +1252,7 @@ List<Drawable> Object::orientationDrawables(size_t orientationIndex) const {
         else
           imagePart.image = imagePath.replaceTags(m_imageKeys, true, "default");
 
-        color = move(backup);
+        color = std::move(backup);
 
         imagePart.image.directives = layer.imagePart().image.directives;
         if (m_colorDirectives)
@@ -1270,7 +1270,7 @@ List<Drawable> Object::orientationDrawables(size_t orientationIndex) const {
       if (orientation->flipImages)
         drawable.scale(Vec2F(-1, 1), drawable.boundBox(false).center() - drawable.position);
 
-      m_orientationDrawablesCache->second.append(move(drawable));
+      m_orientationDrawablesCache->second.append(std::move(drawable));
     }
   }
 
@@ -1311,7 +1311,7 @@ void Object::renderParticles(RenderCallback* renderCallback) {
         if (particleEmitter.placeInSpaces)
           particle.translate(Vec2F(Random::randFrom(orientation->spaces)) + Vec2F(0.5, 0.5));
         particle.translate(position());
-        renderCallback->addParticle(move(particle));
+        renderCallback->addParticle(std::move(particle));
         timer = GameTimer(1.0f / (particleEmitter.particleEmissionRate + Random::randf(-particleEmitter.particleEmissionRateVariance, particleEmitter.particleEmissionRateVariance)));
       }
     }

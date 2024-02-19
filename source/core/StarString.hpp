@@ -473,7 +473,7 @@ Maybe<String> String::maybeLookupTagsView(Lookup&& lookup) const {
 template <typename Lookup>
 String String::lookupTagsView(Lookup&& lookup) const {
   auto result = maybeLookupTagsView(lookup);
-  return result ? move(result.take()) : String();
+  return result ? std::move(result.take()) : String();
 }
 
 template <typename MapType>

@@ -146,7 +146,7 @@ TileSectorArray<Tile, SectorSize>::TileSectorArray() {}
 
 template <typename Tile, unsigned SectorSize>
 TileSectorArray<Tile, SectorSize>::TileSectorArray(Vec2U const& size, Tile defaultTile) {
-  init(size, move(defaultTile));
+  init(size, std::move(defaultTile));
 }
 
 template <typename Tile, unsigned SectorSize>
@@ -154,7 +154,7 @@ void TileSectorArray<Tile, SectorSize>::init(Vec2U const& size, Tile defaultTile
   m_worldSize = size;
   // Initialize to enough sectors to fit world size at least.
   m_tileSectors.init((size[0] + SectorSize - 1) / SectorSize, (size[1] + SectorSize - 1) / SectorSize);
-  m_default = move(defaultTile);
+  m_default = std::move(defaultTile);
 }
 
 template <typename Tile, unsigned SectorSize>
@@ -210,13 +210,13 @@ auto TileSectorArray<Tile, SectorSize>::adjacentSector(Sector const& sector, Vec
 template <typename Tile, unsigned SectorSize>
 void TileSectorArray<Tile, SectorSize>::loadSector(Sector const& sector, ArrayPtr tile) {
   if (sectorValid(sector))
-    m_tileSectors.loadSector(sector, move(tile));
+    m_tileSectors.loadSector(sector, std::move(tile));
 }
 
 template <typename Tile, unsigned SectorSize>
 void TileSectorArray<Tile, SectorSize>::loadDefaultSector(Sector const& sector) {
   if (sectorValid(sector))
-    m_tileSectors.loadSector(sector, make_unique<Array>(m_default));
+    m_tileSectors.loadSector(sector, std::make_unique<Array>(m_default));
 }
 
 template <typename Tile, unsigned SectorSize>

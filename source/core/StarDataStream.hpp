@@ -358,7 +358,7 @@ void DataStream::readMapContainer(Container& map, ReadFunction function) {
     typename Container::key_type key;
     typename Container::mapped_type mapped;
     function(*this, key, mapped);
-    map.insert(make_pair(move(key), move(mapped)));
+    map.insert(make_pair(std::move(key), std::move(mapped)));
   }
 }
 

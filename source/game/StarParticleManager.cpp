@@ -8,11 +8,11 @@ ParticleManager::ParticleManager(WorldGeometry const& worldGeometry, ClientTileS
   : m_worldGeometry(worldGeometry), m_undergroundLevel(0.0f), m_tileSectorArray(tileSectorArray) {}
 
 void ParticleManager::add(Particle particle) {
-  m_particles.push_back(move(particle));
+  m_particles.push_back(std::move(particle));
 }
 
 void ParticleManager::addParticles(List<Particle> particles) {
-  m_particles.appendAll(move(particles));
+  m_particles.appendAll(std::move(particles));
 }
 
 size_t ParticleManager::count() const {
@@ -88,11 +88,11 @@ void ParticleManager::update(float dt, RectF const& cullRegion, float wind) {
       trail.trail = false;
       trail.timeToLive = 0;
       trail.velocity = {};
-      m_nextParticles.append(move(trail));
+      m_nextParticles.append(std::move(trail));
     }
 
     if (!particle.dead())
-      m_nextParticles.append(move(particle));
+      m_nextParticles.append(std::move(particle));
   }
 
   m_particles.clear();

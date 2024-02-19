@@ -245,7 +245,7 @@ List<LightSource> Flashlight::lightSources() const {
   lightSource.pointBeam = m_beamWidth;
   lightSource.beamAngle = angle;
   lightSource.beamAmbience = m_ambientFactor;
-  return {move(lightSource)};
+  return {std::move(lightSource)};
 }
 
 WireTool::WireTool(Json const& config, String const& directory, Json const& parameters)

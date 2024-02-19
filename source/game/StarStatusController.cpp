@@ -75,10 +75,10 @@ Json StatusController::diskStore() const {
 
   return JsonObject{
       {"statusProperties", m_statusProperties.get()},
-      {"persistentEffectCategories", move(persistentEffectCategories)},
-      {"ephemeralEffects", move(ephemeralEffects)},
-      {"resourceValues", move(resourceValues)},
-      {"resourcesLocked", move(resourcesLocked)},
+      {"persistentEffectCategories", std::move(persistentEffectCategories)},
+      {"ephemeralEffects", std::move(ephemeralEffects)},
+      {"resourceValues", std::move(resourceValues)},
+      {"resourcesLocked", std::move(resourcesLocked)},
   };
 }
 
@@ -111,7 +111,7 @@ Json StatusController::statusProperty(String const& name, Json const& def) const
 void StatusController::setStatusProperty(String const& name, Json value) {
   m_statusProperties.update([&](JsonObject& statusProperties) {
     if (statusProperties[name] != value) {
-      statusProperties[name] = move(value);
+      statusProperties[name] = std::move(value);
       return true;
     }
     return false;
@@ -355,11 +355,11 @@ List<DamageNotification> StatusController::applyDamageRequest(DamageRequest cons
 }
 
 void StatusController::hitOther(EntityId targetEntityId, DamageRequest damageRequest) {
-  m_recentHitsGiven.add({targetEntityId, move(damageRequest)});
+  m_recentHitsGiven.add({targetEntityId, std::move(damageRequest)});
 }
 
 void StatusController::damagedOther(DamageNotification damageNotification) {
-  m_recentDamageGiven.add(move(damageNotification));
+  m_recentDamageGiven.add(std::move(damageNotification));
 }
 
 List<DamageNotification> StatusController::pullSelfDamageNotifications() {
@@ -367,10 +367,10 @@ List<DamageNotification> StatusController::pullSelfDamageNotifications() {
 }
 
 void StatusController::applySelfDamageRequest(DamageRequest dr) {
-  auto damageNotifications = applyDamageRequest(move(dr));
+  auto damageNotifications = applyDamageRequest(std::move(dr));
   for (auto const& dn : damageNotifications)
     m_recentDamageTaken.add(dn);
-  m_pendingSelfDamageNotifications.appendAll(move(damageNotifications));
+  m_pendingSelfDamageNotifications.appendAll(std::move(damageNotifications));
 }
 
 pair<List<DamageNotification>, uint64_t> StatusController::damageTakenSince(uint64_t since) const {
@@ -514,7 +514,7 @@ void StatusController::tickMaster(float dt) {
   for (auto const& pair : m_uniqueEffects)
     parentDirectives.append(pair.second.parentDirectives);
 
-  m_parentDirectives.set(move(parentDirectives));
+  m_parentDirectives.set(std::move(parentDirectives));
 
   updateAnimators(dt);
 }
@@ -570,7 +570,7 @@ Maybe<Json> StatusController::receiveMessage(String const& message, bool localMe
 }
 
 StatusController::EffectAnimator::EffectAnimator(Maybe<String> config) {
-  animationConfig = move(config);
+  animationConfig = std::move(config);
   animator = animationConfig ? NetworkedAnimator(*animationConfig) : NetworkedAnimator();
 }
 
@@ -623,8 +623,8 @@ StatusController::UniqueEffectMetadata::UniqueEffectMetadata() {
 
 StatusController::UniqueEffectMetadata::UniqueEffectMetadata(UniqueStatusEffect effect, Maybe<float> duration, Maybe<EntityId> sourceEntityId)
   : UniqueEffectMetadata() {
-  this->effect = move(effect);
-  this->duration = move(duration);
+  this->effect = std::move(effect);
+  this->duration = std::move(duration);
   this->maxDuration.set(this->duration.value());
   this->sourceEntityId.set(sourceEntityId);
 }

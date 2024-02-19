@@ -22,7 +22,7 @@ public:
   Root::Settings settings;
 
   TestEnvironment(Root::Settings settings)
-    : settings(move(settings)) {}
+    : settings(std::move(settings)) {}
 
   virtual void SetUp() {
     Logger::addSink(make_shared<ErrorLogSink>());

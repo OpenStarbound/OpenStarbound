@@ -702,7 +702,7 @@ bool WorldGenerator::entityPersistent(WorldStorage*, EntityPtr const& entity) co
 RpcPromise<Vec2I> WorldGenerator::enqueuePlacement(List<BiomeItemDistribution> distributions, Maybe<DungeonId> id) {
   auto promise = RpcPromise<Vec2I>::createPair();
   m_queuedPlacements.append(QueuedPlacement {
-    move(distributions),
+    std::move(distributions),
     id,
     promise.second,
     false,
@@ -829,7 +829,7 @@ void WorldGenerator::generateMicroDungeons(WorldStorage* worldStorage, ServerTil
         m_worldServer->worldTemplate()->addPotentialBiomeItems(x, y, queuedItems, p.distributions, BiomePlacementArea::Surface);
         m_worldServer->worldTemplate()->addPotentialBiomeItems(x, y, queuedItems, p.distributions, BiomePlacementArea::Underground);
         for (auto placement : m_worldServer->worldTemplate()->validBiomeItems(x, y, queuedItems))
-          placementQueue.append({move(placement), &p});
+          placementQueue.append({std::move(placement), &p});
       }
     }
   }

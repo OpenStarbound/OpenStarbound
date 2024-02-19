@@ -195,7 +195,7 @@ void TeamBar::buildTeamBar() {
 
     List<Drawable> drawables = member.portrait;
     Drawable::scaleAll(drawables, portraitScale);
-    cell->fetchChild<ImageWidget>("portrait")->setDrawables(move(drawables));
+    cell->fetchChild<ImageWidget>("portrait")->setDrawables(std::move(drawables));
 
     if (member.world == m_client->playerWorld() && m_client->worldClient()) {
       auto mpos = member.position;

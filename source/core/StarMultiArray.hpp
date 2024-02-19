@@ -326,14 +326,14 @@ void MultiArray<Element, Rank>::set(IndexArray const& index, Element element) {
       throw MultiArrayException(strf("Out of bounds on MultiArray::set({})", index));
   }
 
-  m_data[storageIndex(index)] = move(element);
+  m_data[storageIndex(index)] = std::move(element);
 }
 
 template <typename Element, size_t Rank>
 Element MultiArray<Element, Rank>::get(IndexArray const& index, Element def) {
   for (size_t i = Rank; i != 0; --i) {
     if (index[i - 1] >= m_shape[i - 1])
-      return move(def);
+      return std::move(def);
   }
 
   return m_data[storageIndex(index)];
@@ -346,7 +346,7 @@ void MultiArray<Element, Rank>::setResize(IndexArray const& index, Element eleme
     newShape[i] = std::max(m_shape[i], index[i] + 1);
   resize(newShape);
 
-  m_data[storageIndex(index)] = move(element);
+  m_data[storageIndex(index)] = std::move(element);
 }
 
 template <typename Element, size_t Rank>
@@ -369,26 +369,26 @@ template <typename Element, size_t Rank>
 template <typename OpType>
 void MultiArray<Element, Rank>::forEach(IndexArray const& min, SizeArray const& size, OpType&& op) {
   IndexArray index;
-  subForEach(min, size, forward<OpType>(op), index, 0, 0);
+  subForEach(min, size, std::forward<OpType>(op), index, 0, 0);
 }
 
 template <typename Element, size_t Rank>
 template <typename OpType>
 void MultiArray<Element, Rank>::forEach(IndexArray const& min, SizeArray const& size, OpType&& op) const {
   IndexArray index;
-  subForEach(min, size, forward<OpType>(op), index, 0, 0);
+  subForEach(min, size, std::forward<OpType>(op), index, 0, 0);
 }
 
 template <typename Element, size_t Rank>
 template <typename OpType>
 void MultiArray<Element, Rank>::forEach(OpType&& op) {
-  forEach(IndexArray::filled(0), size(), forward<OpType>(op));
+  forEach(IndexArray::filled(0), size(), std::forward<OpType>(op));
 }
 
 template <typename Element, size_t Rank>
 template <typename OpType>
 void MultiArray<Element, Rank>::forEach(OpType&& op) const {
-  forEach(IndexArray::filled(0), size(), forward<OpType>(op));
+  forEach(IndexArray::filled(0), size(), std::forward<OpType>(op));
 }
 
 template <typename Element, size_t Rank>
@@ -461,7 +461,7 @@ void MultiArray<Element, Rank>::subForEach(IndexArray const& min, SizeArray cons
     if (dim == Rank - 1)
       op(index, m_data[offset + i]);
     else
-      subForEach(min, size, forward<OpType>(op), index, (offset + i) * m_shape[dim + 1], dim + 1);
+      subForEach(min, size, std::forward<OpType>(op), index, (offset + i) * m_shape[dim + 1], dim + 1);
   }
 }
 
@@ -475,7 +475,7 @@ void MultiArray<Element, Rank>::subForEach(IndexArray const& min, SizeArray cons
     if (dim == Rank - 1)
       op(index, m_data[offset + i]);
     else
-      subForEach(min, size, forward<OpType>(op), index, (offset + i) * m_shape[dim + 1], dim + 1);
+      subForEach(min, size, std::forward<OpType>(op), index, (offset + i) * m_shape[dim + 1], dim + 1);
   }
 }
 

@@ -15,7 +15,7 @@ EnumMap<WarpMode> WarpModeNames {
 InstanceWorldId::InstanceWorldId() {}
 
 InstanceWorldId::InstanceWorldId(String instance, Maybe<Uuid> uuid, Maybe<float> level)
-  : instance(move(instance)), uuid(move(uuid)), level(move(level)) {}
+  : instance(std::move(instance)), uuid(std::move(uuid)), level(std::move(level)) {}
 
 bool InstanceWorldId::operator==(InstanceWorldId const& rhs) const {
   return tie(instance, uuid, level) == tie(rhs.instance, rhs.uuid, rhs.level);
@@ -158,7 +158,7 @@ String printSpawnTarget(SpawnTarget spawnTarget) {
 
 WarpToWorld::WarpToWorld() {}
 
-WarpToWorld::WarpToWorld(WorldId world, SpawnTarget target) : world(move(world)), target(move(target)) {}
+WarpToWorld::WarpToWorld(WorldId world, SpawnTarget target) : world(std::move(world)), target(std::move(target)) {}
 
 WarpToWorld::WarpToWorld(Json v) {
   if (v) {

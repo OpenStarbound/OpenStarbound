@@ -17,7 +17,7 @@ Buffer::Buffer(size_t initialSize)
 
 Buffer::Buffer(ByteArray b)
   : Buffer() {
-  reset(move(b));
+  reset(std::move(b));
 }
 
 Buffer::Buffer(Buffer const& buffer)
@@ -27,7 +27,7 @@ Buffer::Buffer(Buffer const& buffer)
 
 Buffer::Buffer(Buffer&& buffer)
   : Buffer() {
-  operator=(move(buffer));
+  operator=(std::move(buffer));
 }
 
 StreamOffset Buffer::pos() {
@@ -106,7 +106,7 @@ ByteArray const& Buffer::data() const {
 }
 
 ByteArray Buffer::takeData() {
-  ByteArray ret = move(m_bytes);
+  ByteArray ret = std::move(m_bytes);
   reset(0);
   return ret;
 }
@@ -143,7 +143,7 @@ void Buffer::reset(size_t newSize) {
 
 void Buffer::reset(ByteArray b) {
   m_pos = 0;
-  m_bytes = move(b);
+  m_bytes = std::move(b);
 }
 
 Buffer& Buffer::operator=(Buffer const& buffer) {
@@ -156,7 +156,7 @@ Buffer& Buffer::operator=(Buffer const& buffer) {
 Buffer& Buffer::operator=(Buffer&& buffer) {
   IODevice::operator=(buffer);
   m_pos = buffer.m_pos;
-  m_bytes = move(buffer.m_bytes);
+  m_bytes = std::move(buffer.m_bytes);
 
   buffer.m_pos = 0;
   buffer.m_bytes = ByteArray();

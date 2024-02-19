@@ -182,7 +182,7 @@ List<shared_ptr<EntityT>> EntityMap::atTile(Vec2I const& pos) const {
   List<shared_ptr<EntityT>> list;
   forEachEntityAtTile(pos, [&](TileEntityPtr const& entity) {
       if (auto e = as<EntityT>(entity))
-        list.append(move(e));
+        list.append(std::move(e));
       return false;
     });
   return list;

@@ -117,7 +117,7 @@ inline StackCapture captureStack() {
 }
 
 OutputProxy outputStack(StackCapture stack) {
-  return OutputProxy([stack = move(stack)](std::ostream & os) {
+  return OutputProxy([stack = std::move(stack)](std::ostream & os) {
     HANDLE process = GetCurrentProcess();
     g_dbgHelpLock.lock();
     for (size_t i = 0; i < stack.second; ++i) {
@@ -146,13 +146,13 @@ StarException::StarException() noexcept : StarException(std::string("StarExcepti
 
 StarException::~StarException() noexcept {}
 
-StarException::StarException(std::string message, bool genStackTrace) noexcept : StarException("StarException", move(message), genStackTrace) {}
+StarException::StarException(std::string message, bool genStackTrace) noexcept : StarException("StarException", std::move(message), genStackTrace) {}
 
 StarException::StarException(std::exception const& cause) noexcept
     : StarException("StarException", std::string(), cause) {}
 
 StarException::StarException(std::string message, std::exception const& cause) noexcept
-    : StarException("StarException", move(message), cause) {}
+    : StarException("StarException", std::move(message), cause) {}
 
 const char* StarException::what() const throw() {
   if (m_whatBuffer.empty()) {
@@ -176,11 +176,11 @@ StarException::StarException(char const* type, std::string message, bool genStac
     }
   };
 
-  m_printException = bind(printException, _1, _2, type, move(message), genStackTrace ? captureStack() : Maybe<StackCapture>());
+  m_printException = bind(printException, _1, _2, type, std::move(message), genStackTrace ? captureStack() : Maybe<StackCapture>());
 }
 
 StarException::StarException(char const* type, std::string message, std::exception const& cause) noexcept
-    : StarException(type, move(message)) {
+    : StarException(type, std::move(message)) {
   auto printException = [](std::ostream& os,
       bool fullStacktrace,
       function<void(std::ostream&, bool)> self,
@@ -199,7 +199,7 @@ StarException::StarException(char const* type, std::string message, std::excepti
     }, _1, _2, std::string(cause.what()));
   }
 
-  m_printException = bind(printException, _1, _2, m_printException, move(printCause));
+  m_printException = bind(printException, _1, _2, m_printException, std::move(printCause));
 }
 
 std::string printException(std::exception const& e, bool fullStacktrace) {

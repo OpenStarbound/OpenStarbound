@@ -11,7 +11,7 @@
 namespace Star {
 
 TilePainter::TilePainter(RendererPtr renderer) : TileDrawer() {
-  m_renderer = move(renderer);
+  m_renderer = std::move(renderer);
   m_textureGroup = m_renderer->createTextureGroup(TextureGroupSize::Large);
 
   auto& root = Root::singleton();
@@ -190,7 +190,7 @@ shared_ptr<TilePainter::TerrainChunk const> TilePainter::getTerrainChunk(WorldRe
         for (auto& zLevelPair : layerPair.second) {
           auto rb = m_renderer->createRenderBuffer();
           rb->set(zLevelPair.second);
-          (*chunk)[layerPair.first][zLevelPair.first] = move(rb);
+          (*chunk)[layerPair.first][zLevelPair.first] = std::move(rb);
         }
       }
 
@@ -214,7 +214,7 @@ shared_ptr<TilePainter::LiquidChunk const> TilePainter::getLiquidChunk(WorldRend
       for (auto& p : liquidPrimitives) {
         auto rb = m_renderer->createRenderBuffer();
         rb->set(p.second);
-        chunk->set(p.first, move(rb));
+        chunk->set(p.first, std::move(rb));
       }
 
       return chunk;
@@ -296,7 +296,7 @@ bool TilePainter::produceTerrainPrimitives(HashMap<QuadZLevel, List<RenderPrimit
       if (!variant) continue;
       RectF textureCoords = variant->wrap(variance);
       RectF worldCoords = RectF::withSize(piecePair.second / TilePixels + Vec2F(pos), textureCoords.size() / TilePixels);
-      quadList.emplace_back(std::in_place_type_t<RenderQuad>(), move(texture),
+      quadList.emplace_back(std::in_place_type_t<RenderQuad>(), std::move(texture),
           worldCoords  .min(),
           textureCoords.min(),
           Vec2F(  worldCoords.xMax(),   worldCoords.yMin()),
@@ -323,7 +323,7 @@ bool TilePainter::produceTerrainPrimitives(HashMap<QuadZLevel, List<RenderPrimit
       if (!variant) continue;
       auto& textureCoords = variant->wrap(variance);
       RectF worldCoords = RectF::withSize(piecePair.second / TilePixels + Vec2F(pos), textureCoords.size() / TilePixels);
-      quadList.emplace_back(std::in_place_type_t<RenderQuad>(), move(texture),
+      quadList.emplace_back(std::in_place_type_t<RenderQuad>(), std::move(texture),
           worldCoords.min(), textureCoords.min(),
           Vec2F(worldCoords.xMax(), worldCoords.yMin()), Vec2F(textureCoords.xMax(), textureCoords.yMin()),
           worldCoords.max(), textureCoords.max(),
@@ -343,7 +343,7 @@ bool TilePainter::produceTerrainPrimitives(HashMap<QuadZLevel, List<RenderPrimit
     RectF textureCoords = RectF::withSize(Vec2F(), textureSize);
     RectF worldCoords = RectF::withSize(crackingImage.second / TilePixels + Vec2F(pos), textureCoords.size() / TilePixels);
 
-    quadList.emplace_back(std::in_place_type_t<RenderQuad>(), move(texture),
+    quadList.emplace_back(std::in_place_type_t<RenderQuad>(), std::move(texture),
         worldCoords.min(), textureCoords.min(),
         Vec2F(worldCoords.xMax(), worldCoords.yMin()), Vec2F(textureCoords.xMax(), textureCoords.yMin()),
         worldCoords.max(), textureCoords.max(),

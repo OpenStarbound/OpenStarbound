@@ -33,7 +33,7 @@ MaterialRenderMatchList parseMaterialRenderMatchList(Json const& matchSpec, Rule
         throw MaterialRenderProfileException(strf("Match position {} outside of maximum rule distance {}",
             matchPoint.position, MaterialRenderProfileMaxNeighborDistance));
       matchPoint.rule = ruleMap.get(matchPointConfig.getString(1));
-      match->matchPoints.append(move(matchPoint));
+      match->matchPoints.append(std::move(matchPoint));
     }
 
     for (auto const& piece : matchConfig.getArray("pieces", {}))
@@ -105,7 +105,7 @@ MaterialRenderProfile parseMaterialRenderProfile(Json const& spec, String const&
         rule->entries.append({MaterialRule::RulePropertyEquals{ruleEntry.getString("propertyName"), ruleEntry.get("propertyValue")}, inverse});
       }
     }
-    profile.rules[pair.first] = move(rule);
+    profile.rules[pair.first] = std::move(rule);
   }
 
   for (auto const& pair : spec.get("pieces").iterateObject()) {
@@ -137,7 +137,7 @@ MaterialRenderProfile parseMaterialRenderProfile(Json const& spec, String const&
       }
     }
 
-    profile.pieces[pair.first] = move(renderPiece);
+    profile.pieces[pair.first] = std::move(renderPiece);
   }
 
   for (auto const& pair : spec.get("matches").iterateArray())

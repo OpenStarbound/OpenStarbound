@@ -52,12 +52,12 @@ List<pair<String, float>> CelestialGraphics::drawWorld(
     // base layer, otherwise use the bottom most mask image.
     if (terrestrialParameters->primarySurfaceLiquid != EmptyLiquidId && !liquidImages.empty()) {
       String liquidBaseImage = liquidImages.replace("<liquid>", liquidsDatabase->liquidName(terrestrialParameters->primarySurfaceLiquid));
-      layers.append({move(liquidBaseImage), imageScale});
+      layers.append({std::move(liquidBaseImage), imageScale});
     } else {
       if (baseCount > 0) {
         String baseLayer = strf("{}?hueshift={}", baseImages.replace("<biome>",
             terrestrialParameters->primaryBiome).replace("<num>", toString(baseCount)), terrestrialParameters->hueShift);
-        layers.append({move(baseLayer), imageScale});
+        layers.append({std::move(baseLayer), imageScale});
       }
     }
 
@@ -70,12 +70,12 @@ List<pair<String, float>> CelestialGraphics::drawWorld(
       if (terrestrialParameters->hueShift != 0)
         hueShiftString = strf("?hueshift={}", terrestrialParameters->hueShift);
       String layer = baseImage + hueShiftString + dynamicMaskString;
-      layers.append({move(layer), imageScale});
+      layers.append({std::move(layer), imageScale});
     }
 
     if (!shadowImages.empty()) {
       String shadow = shadowImages.replace("<num>", toString(shadowParameters.randomizeParameterRange(gfxConfig.getArray("shadowNumber")).toInt()));
-      layers.append({move(shadow), imageScale});
+      layers.append({std::move(shadow), imageScale});
     }
 
   } else if (type == "Asteroids") {
@@ -88,18 +88,18 @@ List<pair<String, float>> CelestialGraphics::drawWorld(
       String biomeMaskBase = maskImages.replace("<num>", toString(maskCount - i));
       String dynamicMask = dynamicsImages.replace("<num>", toString(celestialParameters.randomizeParameterRange("dynamicsRange", i).toInt()));
       String layer = strf("{}?addmask={}", biomeMaskBase, dynamicMask);
-      layers.append({move(layer), imageScale});
+      layers.append({std::move(layer), imageScale});
     }
 
   } else if (type == "FloatingDungeon") {
     String image = celestialParameters.getParameter("image").toString();
     float imageScale = celestialParameters.getParameter("imageScale", 1.0f).toFloat();
-    layers.append({move(image), imageScale});
+    layers.append({std::move(image), imageScale});
 
     if (!celestialParameters.getParameter("dynamicsImages").toString().empty()) {
       String dynamicsImages = celestialParameters.getParameter("dynamicsImages", "").toString();
       String dynamicsImage = dynamicsImages.replace("<num>", toString(celestialParameters.randomizeParameterRange("dynamicsRange").toInt()));
-      layers.append({move(dynamicsImage), imageScale});
+      layers.append({std::move(dynamicsImage), imageScale});
     }
 
   } else if (type == "GasGiant") {
@@ -127,7 +127,7 @@ List<pair<String, float>> CelestialGraphics::drawWorld(
 
     if (!shadowImages.empty()) {
       String shadow = shadowImages.replace("<num>", toString(shadowParameters.randomizeParameterRange(gfxConfig.getArray("shadowNumber")).toInt()));
-      layers.append({move(shadow), imageScale});
+      layers.append({std::move(shadow), imageScale});
     }
   }
 
@@ -247,7 +247,7 @@ List<pair<String, float>> CelestialGraphics::drawSystemTwinkle(CelestialDatabase
 
   String twinkleFrame = strf("{}:{}", twinkleFrameset, (int)(std::fmod<double>(time / twinkleTime, 1.0f) * twinkleFrameCount));
 
-  return {{move(twinkleBackground), 1.0f}, {move(twinkleFrame), twinkleScale}};
+  return {{std::move(twinkleBackground), 1.0f}, {std::move(twinkleFrame), twinkleScale}};
 }
 
 List<pair<String, float>> CelestialGraphics::drawSystemPlanetaryObject(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate) {

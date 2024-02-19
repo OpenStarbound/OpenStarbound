@@ -269,9 +269,9 @@ void PlayerStorage::backupCycle(Uuid const& uuid) {
 }
 
 void PlayerStorage::setMetadata(String key, Json value) {
-  auto& val = m_metadata[move(key)];
+  auto& val = m_metadata[std::move(key)];
   if (val != value) {
-    val = move(value);
+    val = std::move(value);
     writeMetadata();
   }
 }
@@ -294,7 +294,7 @@ void PlayerStorage::writeMetadata() {
   for (auto const& p : m_savedPlayersCache)
     order.append(p.first.hex());
 
-  m_metadata["order"] = move(order);
+  m_metadata["order"] = std::move(order);
 
   String filename = File::relativeTo(m_storageDirectory, "metadata");
   File::overwriteFileWithRename(Json(m_metadata).printJson(0), filename);

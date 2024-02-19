@@ -67,7 +67,7 @@ TEST(IntrusivePtr, All) {
     EXPECT_NE(p3, p5);
 
     p5 = p2;
-    p2 = move(p5);
+    p2 = std::move(p5);
     EXPECT_TRUE(is<Test2>(p2));
 
     RefPtr<Test1> p6 = as<Test1>(p1);

@@ -33,6 +33,8 @@ public:
 
   TextureAtlasSet(unsigned cellSize, unsigned atlasNumCells);
 
+  virtual ~TextureAtlasSet() = default;
+
   // The constant square size of all atlas textures
   Vec2U atlasTextureSize() const;
 
@@ -88,6 +90,8 @@ private:
   };
 
   struct TextureEntry : Texture {
+    virtual ~TextureEntry() = default;
+
     Vec2U imageSize() const override;
 
     AtlasTextureHandle const& atlasTexture() const override;
@@ -168,7 +172,7 @@ auto TextureAtlasSet<AtlasTextureHandle>::addTexture(Image const& image, bool bo
       return nullptr;
 
     auto textureEntry = make_shared<TextureEntry>();
-    textureEntry->textureImage = move(finalImage);
+    textureEntry->textureImage = std::move(finalImage);
     textureEntry->atlasPlacement = *placement;
 
     m_textures.add(textureEntry);

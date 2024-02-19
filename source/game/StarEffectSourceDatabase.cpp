@@ -183,7 +183,7 @@ List<AudioInstancePtr> soundsFromDefinition(Json const& config, Vec2F const& pos
       sample->setRangeMultiplier(entry.getFloat("audioRangeMultiplier", 1.0f));
       sample->setPosition(position);
 
-      result.append(move(sample));
+      result.append(std::move(sample));
     }
     return result;
   }

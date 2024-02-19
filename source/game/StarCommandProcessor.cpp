@@ -440,7 +440,7 @@ String CommandProcessor::spawnVehicle(ConnectionId connectionId, String const& a
     bool done = m_universe->executeForClient(connectionId,
         [&](WorldServer* world, PlayerPtr const& player) {
           vehicle->setPosition(player->aimPosition());
-          world->addEntity(move(vehicle));
+          world->addEntity(std::move(vehicle));
         });
 
     return done ? "" : "Invalid client state";

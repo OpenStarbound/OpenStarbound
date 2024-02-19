@@ -5,15 +5,15 @@
 namespace Star {
 
 PhysicsCategoryFilter PhysicsCategoryFilter::whitelist(StringSet categories) {
-  return PhysicsCategoryFilter(Whitelist, move(categories));
+  return PhysicsCategoryFilter(Whitelist, std::move(categories));
 }
 
 PhysicsCategoryFilter PhysicsCategoryFilter::blacklist(StringSet categories) {
-  return PhysicsCategoryFilter(Blacklist, move(categories));
+  return PhysicsCategoryFilter(Blacklist, std::move(categories));
 }
 
 PhysicsCategoryFilter::PhysicsCategoryFilter(Type type, StringSet categories)
-  : type(type), categories(move(categories)) {}
+  : type(type), categories(std::move(categories)) {}
 
 bool PhysicsCategoryFilter::check(StringSet const& otherCategories) const {
   bool intersection = categories.hasIntersection(otherCategories);

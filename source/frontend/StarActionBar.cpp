@@ -20,7 +20,7 @@ namespace Star {
 
 ActionBar::ActionBar(MainInterfacePaneManager* paneManager, PlayerPtr player) {
   m_paneManager = paneManager;
-  m_player = move(player);
+  m_player = std::move(player);
 
   auto assets = Root::singleton().assets();
 

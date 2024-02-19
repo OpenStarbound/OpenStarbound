@@ -52,7 +52,7 @@ List<EntityId> const& WorldClientState::clientPresenceEntities() const {
 }
 
 void WorldClientState::setClientPresenceEntities(List<EntityId> entities) {
-  m_clientPresenceEntities.set(move(entities));
+  m_clientPresenceEntities.set(std::move(entities));
 }
 
 List<RectI> WorldClientState::monitoringRegions(function<Maybe<RectI>(EntityId)> entityBounds) const {
@@ -84,7 +84,7 @@ ByteArray WorldClientState::writeDelta() {
 }
 
 void WorldClientState::readDelta(ByteArray delta) {
-  m_netGroup.readNetState(move(delta));
+  m_netGroup.readNetState(std::move(delta));
 }
 
 void WorldClientState::reset() {

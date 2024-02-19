@@ -599,7 +599,7 @@ template <typename ResultContainer, typename Iterable>
 ResultContainer enumerateConstruct(Iterable&& list) {
   ResultContainer res;
   for (auto el : enumerateIterator(list))
-    res.push_back(move(el));
+    res.push_back(std::move(el));
 
   return res;
 }

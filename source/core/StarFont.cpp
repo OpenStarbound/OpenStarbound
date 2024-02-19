@@ -130,7 +130,7 @@ std::pair<Image, Vec2I> Font::render(String::Char c) {
     }
   }
 
-  return { move(image), {slot->bitmap_left - 1, (slot->bitmap_top - height) + (m_pixelSize / 4) - 1} };
+  return { std::move(image), {slot->bitmap_left - 1, (slot->bitmap_top - height) + (m_pixelSize / 4) - 1} };
 }
 
 }

@@ -278,7 +278,7 @@ RefPtr<Type1 const> as(RefPtr<Type2 const> const& p) {
 
 template <typename T, typename... Args>
 RefPtr<T> make_ref(Args&&... args) {
-  return RefPtr<T>(new T(forward<Args>(args)...));
+  return RefPtr<T>(new T(std::forward<Args>(args)...));
 }
 
 template <typename T>

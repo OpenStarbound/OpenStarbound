@@ -136,7 +136,7 @@ AssetPath ImageMetadataDatabase::filterProcessing(AssetPath const& path) {
     }
     });
 
-  newPath.directives = move(filtered);
+  newPath.directives = std::move(filtered);
   return newPath;
 }
 

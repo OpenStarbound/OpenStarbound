@@ -26,8 +26,8 @@ GuiContext::GuiContext(MixerPtr mixer, ApplicationControllerPtr appController) {
 
   s_singleton = this;
 
-  m_mixer = move(mixer);
-  m_applicationController = move(appController);
+  m_mixer = std::move(mixer);
+  m_applicationController = std::move(appController);
 
   m_interfaceScale = 1;
 
@@ -41,7 +41,7 @@ GuiContext::~GuiContext() {
 }
 
 void GuiContext::renderInit(RendererPtr renderer) {
-  m_renderer = move(renderer);
+  m_renderer = std::move(renderer);
   auto textureGroup = m_renderer->createTextureGroup();
   m_textureCollection = make_shared<AssetTextureGroup>(textureGroup);
   m_drawablePainter = make_shared<DrawablePainter>(m_renderer, m_textureCollection);
@@ -197,7 +197,7 @@ void GuiContext::drawTriangles(List<tuple<Vec2F, Vec2F, Vec2F>> const& triangles
 }
 
 void GuiContext::drawInterfaceDrawable(Drawable drawable, Vec2F const& screenPos, Vec4B const& color) {
-  drawDrawable(move(drawable), screenPos * interfaceScale(), (float)interfaceScale(), color);
+  drawDrawable(std::move(drawable), screenPos * interfaceScale(), (float)interfaceScale(), color);
 }
 
 void GuiContext::drawInterfaceLine(Vec2F const& begin, Vec2F const end, Vec4B const& color, float lineWidth) {
@@ -428,7 +428,7 @@ void GuiContext::playAudio(String const& audioAsset, int loops, float volume, fl
   audioInstance->setVolume(volume);
   audioInstance->setPitchMultiplier(pitch);
   audioInstance->setLoops(loops);
-  m_mixer->play(move(audioInstance));
+  m_mixer->play(std::move(audioInstance));
 }
 
 String GuiContext::getClipboard() const {
@@ -436,7 +436,7 @@ String GuiContext::getClipboard() const {
 }
 
 void GuiContext::setClipboard(String text) {
-  m_applicationController->setClipboard(move(text));
+  m_applicationController->setClipboard(std::move(text));
 }
 
 void GuiContext::cleanup() {

@@ -15,12 +15,12 @@ void JsonBuilderStream::endObject() {
   JsonObject object;
   while (true) {
     if (isSentry()) {
-      set(Json(move(object)));
+      set(Json(std::move(object)));
       return;
     } else {
       Json v = pop();
       String k = pop().toString();
-      if (!object.insert(k, move(v)).second)
+      if (!object.insert(k, std::move(v)).second)
         throw JsonParsingException(strf("Json object contains a duplicate entry for key '{}'", k));
     }
   }
@@ -35,7 +35,7 @@ void JsonBuilderStream::endArray() {
   while (true) {
     if (isSentry()) {
       array.reverse();
-      set(Json(move(array)));
+      set(Json(std::move(array)));
       return;
     } else {
       array.append(pop());
@@ -81,7 +81,7 @@ Json JsonBuilderStream::takeTop() {
 }
 
 void JsonBuilderStream::push(Json v) {
-  m_stack.append(move(v));
+  m_stack.append(std::move(v));
 }
 
 Json JsonBuilderStream::pop() {
@@ -89,7 +89,7 @@ Json JsonBuilderStream::pop() {
 }
 
 void JsonBuilderStream::set(Json v) {
-  m_stack.last() = move(v);
+  m_stack.last() = std::move(v);
 }
 
 void JsonBuilderStream::pushSentry() {

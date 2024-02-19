@@ -300,7 +300,7 @@ List<ObjectOrientationPtr> ObjectDatabase::parseOrientations(String const& path,
 
     orientation->touchDamageConfig = parseTouchDamage(path, orientationSettings);
 
-    res.append(move(orientation));
+    res.append(std::move(orientation));
   }
 
   return res;
@@ -584,7 +584,7 @@ List<Drawable> ObjectDatabase::cursorHintDrawables(World const* world, String co
       image = AssetPath::join(image).replaceTags(StringMap<String>(), true, "default");
       if (orientation->flipImages)
         drawable.scale(Vec2F(-1, 1), drawable.boundBox(false).center() - drawable.position);
-      drawables.append(move(drawable));
+      drawables.append(std::move(drawable));
     }
     Drawable::translateAll(drawables, Vec2F(position) + orientation->imagePosition);
   }

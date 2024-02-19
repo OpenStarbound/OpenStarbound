@@ -3,7 +3,7 @@
 namespace Star {
 
 DataStreamFunctions::DataStreamFunctions(function<size_t(char*, size_t)> reader, function<size_t(char const*, size_t)> writer)
-  : m_reader(move(reader)), m_writer(move(writer)) {}
+  : m_reader(std::move(reader)), m_writer(std::move(writer)) {}
 
 void DataStreamFunctions::readData(char* data, size_t len) {
   if (!m_reader)
@@ -18,7 +18,7 @@ void DataStreamFunctions::writeData(char const* data, size_t len) {
 }
 
 DataStreamIODevice::DataStreamIODevice(IODevicePtr device)
-  : m_device(move(device)) {}
+  : m_device(std::move(device)) {}
 
 IODevicePtr const& DataStreamIODevice::device() const {
   return m_device;
@@ -119,7 +119,7 @@ void DataStreamBuffer::reset(size_t newSize) {
 }
 
 void DataStreamBuffer::reset(ByteArray b) {
-  m_buffer->reset(move(b));
+  m_buffer->reset(std::move(b));
 }
 
 void DataStreamBuffer::readData(char* data, size_t len) {

@@ -16,11 +16,11 @@ MainMixer::MainMixer(unsigned sampleRate, unsigned channels) {
 }
 
 void MainMixer::setUniverseClient(UniverseClientPtr universeClient) {
-  m_universeClient = move(universeClient);
+  m_universeClient = std::move(universeClient);
 }
 
 void MainMixer::setWorldPainter(WorldPainterPtr worldPainter) {
-  m_worldPainter = move(worldPainter);
+  m_worldPainter = std::move(worldPainter);
 }
 
 void MainMixer::update(float dt, bool muteSfx, bool muteMusic) {

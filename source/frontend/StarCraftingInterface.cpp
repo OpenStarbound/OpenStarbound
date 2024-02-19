@@ -29,8 +29,8 @@
 namespace Star {
 
 CraftingPane::CraftingPane(WorldClientPtr worldClient, PlayerPtr player, Json const& settings, EntityId sourceEntityId) {
-  m_worldClient = move(worldClient);
-  m_player = move(player);
+  m_worldClient = std::move(worldClient);
+  m_player = std::move(player);
   m_blueprints = m_player->blueprints();
   m_recipeAutorefreshCooldown = 0;
   m_sourceEntityId = sourceEntityId;

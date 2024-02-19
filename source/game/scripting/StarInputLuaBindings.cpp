@@ -49,7 +49,7 @@ LuaCallbacks LuaBindings::makeInputCallbacks() {
         result.emplace_back(jEvent.set("processed", pair.second));
     }
 
-    return move(result);
+    return std::move(result);
   });
 
   callbacks.registerCallbackWithSignature<Vec2I>("mousePosition", bind(mem_fn(&Input::mousePosition), input));

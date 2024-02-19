@@ -369,7 +369,7 @@ Maybe<Ret> LuaActorMovementComponent<Base>::update(V&&... args) {
     if (m_autoClearControls)
       clearControls();
   }
-  Maybe<Ret> ret = Base::template update<Ret>(forward<V>(args)...);
+  Maybe<Ret> ret = Base::template update<Ret>(std::forward<V>(args)...);
   performControls();
   return ret;
 }

@@ -47,7 +47,7 @@ ParticleVariantCreator ParticleDatabase::particleCreator(Json const& kindOrConfi
   } else {
     Particle particle(kindOrConfig.toObject(), relativePath);
     Particle variance(kindOrConfig.getObject("variance", {}), relativePath);
-    return makeParticleVariantCreator(move(particle), move(variance));
+    return makeParticleVariantCreator(std::move(particle), std::move(variance));
   }
 }
 

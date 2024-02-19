@@ -172,7 +172,7 @@ auto MapMixin<BaseMap>::maybeTake(key_type const& k) -> Maybe<mapped_type> {
   if (i != Base::end()) {
     mapped_type v = std::move(i->second);
     Base::erase(i);
-    return move(v);
+    return std::move(v);
   }
 
   return {};
@@ -260,12 +260,12 @@ auto MapMixin<BaseMap>::hasValue(mapped_type const& v) const -> bool {
 
 template <typename BaseMap>
 auto MapMixin<BaseMap>::insert(key_type k, mapped_type v) -> pair<iterator, bool> {
-  return Base::insert(value_type(move(k), move(v)));
+  return Base::insert(value_type(std::move(k), std::move(v)));
 }
 
 template <typename BaseMap>
 auto MapMixin<BaseMap>::add(key_type k, mapped_type v) -> mapped_type& {
-  auto pair = Base::insert(value_type(move(k), move(v)));
+  auto pair = Base::insert(value_type(std::move(k), std::move(v)));
   if (!pair.second)
     throw MapException(strf("Entry with key '{}' already present.", outputAny(k)));
   else
@@ -276,10 +276,10 @@ template <typename BaseMap>
 auto MapMixin<BaseMap>::set(key_type k, mapped_type v) -> mapped_type& {
   auto i = Base::find(k);
   if (i != Base::end()) {
-    i->second = move(v);
+    i->second = std::move(v);
     return i->second;
   } else {
-    return Base::insert(value_type(move(k), move(v))).first->second;
+    return Base::insert(value_type(std::move(k), std::move(v))).first->second;
   }
 }
 

@@ -96,7 +96,7 @@ Maybe<SocketPollResult> Socket::poll(SocketPollQuery const& query, unsigned time
       pr.exception = pfd.revents & POLLHUP || pfd.revents & POLLNVAL || pfd.revents & POLLERR;
       if (pfd.revents & POLLHUP)
         p.first.first->doShutdown();
-      result.add(p.first.first, move(pr));
+      result.add(p.first.first, std::move(pr));
     }
   }
 #endif

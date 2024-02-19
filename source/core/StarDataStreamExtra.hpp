@@ -293,7 +293,7 @@ void readMaybe(DataStream& ds, Maybe<T>& maybe, ReadFunction&& readFunction) {
   if (set) {
     T t;
     readFunction(ds, t);
-    maybe = move(t);
+    maybe = std::move(t);
   } else {
     maybe.reset();
   }

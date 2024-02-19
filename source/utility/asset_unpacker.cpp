@@ -42,7 +42,7 @@ int main(int argc, char** argv) {
 
     auto metadata = assetsPack.metadata();
     if (!metadata.empty())
-      File::writeFile(Json(move(metadata)).printJson(2), "_metadata");
+      File::writeFile(Json(std::move(metadata)).printJson(2), "_metadata");
 
     coutf("Unpacked assets to {} in {}s\n", outputFolderPath, Time::monotonicTime() - startTime);
     return 0;

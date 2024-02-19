@@ -197,7 +197,7 @@ void Cinematic::render() {
       drawable.scale(values.zoom);
       drawable.translate(values.position);
       drawable.color *= alphaColor;
-      drawDrawable(move(drawable), drawableScale, drawableTranslation);
+      drawDrawable(std::move(drawable), drawableScale, drawableTranslation);
     }
     if (!panel->avatar.empty() && m_player) {
       for (auto drawable : m_player->portrait(PortraitModeNames.getLeft(panel->avatar))) {
@@ -205,7 +205,7 @@ void Cinematic::render() {
         drawable.scale(values.zoom);
         drawable.translate(values.position);
         drawable.color *= alphaColor;
-        drawDrawable(move(drawable), drawableScale, drawableTranslation);
+        drawDrawable(std::move(drawable), drawableScale, drawableTranslation);
       }
     }
     if (!panel->text.empty()) {
@@ -274,7 +274,7 @@ void Cinematic::drawDrawable(Drawable const& drawable, float drawableScale, Vec2
 
     Vec4B drawableColor = drawable.color.toRgba();
 
-    primitives.emplace_back(std::in_place_type_t<RenderQuad>(), move(texture),
+    primitives.emplace_back(std::in_place_type_t<RenderQuad>(), std::move(texture),
         lowerLeft,  Vec2F{0, 0},
         lowerRight, Vec2F{size[0], 0},
         upperRight, Vec2F{size[0], size[1]},

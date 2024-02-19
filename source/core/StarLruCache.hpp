@@ -105,9 +105,9 @@ template <typename OrderedMapType>
 void LruCacheBase<OrderedMapType>::set(Key const& key, Value value) {
   auto i = m_map.find(key);
   if (i == m_map.end()) {
-    m_map.add(key, move(value));
+    m_map.add(key, std::move(value));
   } else {
-    i->second = move(value);
+    i->second = std::move(value);
     m_map.toBack(i);
   }
 }

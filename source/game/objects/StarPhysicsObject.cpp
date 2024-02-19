@@ -7,7 +7,7 @@
 
 namespace Star {
 
-PhysicsObject::PhysicsObject(ObjectConfigConstPtr config, Json const& parameters) : Object(move(config), parameters) {
+PhysicsObject::PhysicsObject(ObjectConfigConstPtr config, Json const& parameters) : Object(std::move(config), parameters) {
   for (auto const& p : configValue("physicsForces", JsonObject()).iterateObject()) {
     auto& forceConfig = m_physicsForces[p.first];
 
@@ -60,7 +60,7 @@ void PhysicsObject::init(World* world, EntityId entityId, EntityMode mode) {
         auto& collisionConfig = m_physicsCollisions.get(collision);
         collisionConfig.enabled.set(enabled);
       });
-    m_scriptComponent.addCallbacks("physics", move(physicsCallbacks));
+    m_scriptComponent.addCallbacks("physics", std::move(physicsCallbacks));
   }
   Object::init(world, entityId, mode);
   m_metaBoundBox = Object::metaBoundBox();
@@ -92,7 +92,7 @@ List<PhysicsForceRegion> PhysicsObject::forceRegions() const {
     if (p.second.enabled.get()) {
       PhysicsForceRegion forceRegion = p.second.forceRegion;
       forceRegion.call([pos = position()](auto& fr) { fr.translate(pos); });
-      forces.append(move(forceRegion));
+      forces.append(std::move(forceRegion));
     }
   }
   return forces;

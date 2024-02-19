@@ -62,7 +62,7 @@ void DirectoryAssetSource::setMetadata(JsonObject metadata) {
     if (!m_metadataFile)
       m_metadataFile = String("/_metadata");
 
-    m_metadata = move(metadata);
+    m_metadata = std::move(metadata);
 
     if (m_metadata.empty())
       File::remove(toFilesystem(*m_metadataFile));
@@ -88,7 +88,7 @@ void DirectoryAssetSource::scanAll(String const& assetDirectory, StringList& out
       scanAll(assetPath + "/", output);
     } else {
       if (!shouldIgnore(assetPath))
-        output.append(move(assetPath));
+        output.append(std::move(assetPath));
     }
   }
 }

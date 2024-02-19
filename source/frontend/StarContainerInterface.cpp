@@ -24,7 +24,7 @@ namespace Star {
 ContainerPane::ContainerPane(WorldClientPtr worldClient, PlayerPtr player, ContainerInteractorPtr containerInteractor) {
   m_worldClient = worldClient;
   m_player = player;
-  m_containerInteractor = move(containerInteractor);
+  m_containerInteractor = std::move(containerInteractor);
 
   auto container = m_containerInteractor->openContainer();
   auto guiConfig = container->containerGuiConfig();

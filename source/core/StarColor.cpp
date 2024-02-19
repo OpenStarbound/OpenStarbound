@@ -625,7 +625,7 @@ Vec4B Color::hexToVec4B(StringView s) {
     throw ColorException(strf("Improper size {} for hex string '{}' in Color::hexToVec4B", s.utf8Size(), s), false);
   }
 
-  return Vec4B(move(cbytes));
+  return Vec4B(std::move(cbytes));
 }
 
 }

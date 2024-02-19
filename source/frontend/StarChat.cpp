@@ -191,7 +191,7 @@ void Chat::addMessages(List<ChatReceivedMessage> const& messages, bool showPane)
       m_receivedMessages.prepend({
           message.context.mode,
           message.portrait,
-          move(lines[i])
+          std::move(lines[i])
         });
     }
 

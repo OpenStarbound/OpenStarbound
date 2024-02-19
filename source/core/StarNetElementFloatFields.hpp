@@ -92,7 +92,7 @@ void NetElementFloating<T>::setFixedPointBase(Maybe<T> fixedPointBase) {
 
 template <typename T>
 void NetElementFloating<T>::setInterpolator(function<T(T, T, T)> interpolator) {
-  m_interpolator = move(interpolator);
+  m_interpolator = std::move(interpolator);
 }
 
 template <typename T>

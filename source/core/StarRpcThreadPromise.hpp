@@ -66,12 +66,12 @@ private:
 
 template <typename Result, typename Error>
 void RpcThreadPromiseKeeper<Result, Error>::fulfill(Result result) {
-  m_fulfill(move(result));
+  m_fulfill(std::move(result));
 }
 
 template <typename Result, typename Error>
 void RpcThreadPromiseKeeper<Result, Error>::fail(Error error) {
-  m_fail(move(error));
+  m_fail(std::move(error));
 }
 
 template <typename Result, typename Error>
@@ -88,22 +88,22 @@ pair<RpcThreadPromise<Result, Error>, RpcThreadPromiseKeeper<Result, Error>> Rpc
     MutexLocker lock(valuePtr->mutex);
     if (valuePtr->result || valuePtr->error)
       throw RpcThreadPromiseException("fulfill called on already finished RpcThreadPromise");
-    valuePtr->result = move(result);
+    valuePtr->result = std::move(result);
   };
   keeper.m_fail = [valuePtr](Error error) {
     MutexLocker lock(valuePtr->mutex);
     if (valuePtr->result || valuePtr->error)
       throw RpcThreadPromiseException("fail called on already finished RpcThreadPromise");
-    valuePtr->error = move(error);
+    valuePtr->error = std::move(error);
   };
 
-  return {move(promise), move(keeper)};
+  return {std::move(promise), std::move(keeper)};
 }
 
 template <typename Result, typename Error>
 RpcThreadPromise<Result, Error> RpcThreadPromise<Result, Error>::createFulfilled(Result result) {
   auto valuePtr = make_shared<Value>();
-  valuePtr->result = move(result);
+  valuePtr->result = std::move(result);
 
   RpcThreadPromise<Result, Error> promise;
   promise.m_getValue = [valuePtr]() {
@@ -115,7 +115,7 @@ RpcThreadPromise<Result, Error> RpcThreadPromise<Result, Error>::createFulfilled
 template <typename Result, typename Error>
 RpcThreadPromise<Result, Error> RpcThreadPromise<Result, Error>::createFailed(Error error) {
   auto valuePtr = make_shared<Value>();
-  valuePtr->error = move(error);
+  valuePtr->error = std::move(error);
 
   RpcThreadPromise<Result, Error> promise;
   promise.m_getValue = [valuePtr]() {

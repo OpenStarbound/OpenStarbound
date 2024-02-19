@@ -721,7 +721,7 @@ void MovementController::forEachMovingCollision(RectF const& region, function<bo
     for (size_t i = 0; i < physicsEntity->movingCollisionCount(); ++i) {
       if (auto mc = physicsEntity->movingCollision(i)) {
         if (mc->categoryFilter.check(m_parameters.physicsEffectCategories.value())) {
-          PolyF poly = move(mc->collision);
+          PolyF poly = std::move(mc->collision);
           poly.translate(geometry.nearestTo(region.min(), mc->position));
           RectF polyBounds = poly.boundBox();
 
@@ -1055,7 +1055,7 @@ MovementController::CollisionSeparation MovementController::collisionSeparate(Li
 }
 
 void MovementController::updateParameters(MovementParameters parameters) {
-  m_parameters = move(parameters);
+  m_parameters = std::move(parameters);
   m_collisionPoly.set(*m_parameters.collisionPoly);
   m_mass.set(*m_parameters.mass);
   updatePositionInterpolators();
@@ -1106,7 +1106,7 @@ void MovementController::queryCollisions(RectF const& region) {
 
   forEachMovingCollision(region, [&](MovingCollisionId id, PhysicsMovingCollision mc, PolyF poly, RectF bounds) {
     CollisionPoly& collisionPoly = newCollisionPoly();
-    collisionPoly.poly = move(poly);
+    collisionPoly.poly = std::move(poly);
     collisionPoly.polyBounds = bounds;
     collisionPoly.sortPosition = collisionPoly.poly.center();
     collisionPoly.movingCollisionId = id;

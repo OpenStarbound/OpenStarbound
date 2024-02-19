@@ -607,7 +607,7 @@ void ClientApplication::changeState(MainAppState newState) {
             setError(strf("Cannot join peer: {}", result.left()));
             return;
           } else {
-            packetSocket = P2PPacketSocket::open(move(result.right()));
+            packetSocket = P2PPacketSocket::open(std::move(result.right()));
           }
         } else {
           setError("Internal error, no p2p networking service when joining p2p networking peer");
@@ -616,7 +616,7 @@ void ClientApplication::changeState(MainAppState newState) {
       }
 
       bool allowAssetsMismatch = m_root->configuration()->get("allowAssetsMismatch").toBool();
-      if (auto errorMessage = m_universeClient->connect(UniverseConnection(move(packetSocket)), allowAssetsMismatch,
+      if (auto errorMessage = m_universeClient->connect(UniverseConnection(std::move(packetSocket)), allowAssetsMismatch,
             multiPlayerConnection.account, multiPlayerConnection.password)) {
         setError(*errorMessage);
         return;
@@ -951,7 +951,7 @@ void ClientApplication::updateRunning(float dt) {
     if (m_universeServer) {
       if (auto p2pNetworkingService = appController()->p2pNetworkingService()) {
         for (auto& p2pClient : p2pNetworkingService->acceptP2PConnections())
-          m_universeServer->addClient(UniverseConnection(P2PPacketSocket::open(move(p2pClient))));
+          m_universeServer->addClient(UniverseConnection(P2PPacketSocket::open(std::move(p2pClient))));
       }
 
       m_universeServer->setPause(m_mainInterface->escapeDialogOpen());

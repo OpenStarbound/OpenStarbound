@@ -160,11 +160,11 @@ CelestialResponse CelestialMasterDatabase::respondToRequest(CelestialRequest con
     auto chunk = getChunk(*chunkLocation);
     // System objects are sent by separate system requests.
     chunk.systemObjects.clear();
-    return makeLeft(move(chunk));
+    return makeLeft(std::move(chunk));
   } else if (auto systemLocation = request.maybeRight()) {
     auto const& chunk = getChunk(chunkIndexFor(*systemLocation));
     CelestialSystemObjects systemObjects = {*systemLocation, chunk.systemObjects.get(*systemLocation)};
-    return makeRight(move(systemObjects));
+    return makeRight(std::move(systemObjects));
   } else {
     return CelestialResponse();
   }
@@ -435,7 +435,7 @@ CelestialChunk CelestialMasterDatabase::produceChunk(Vec2I const& chunkIndex) co
   for (auto const& systemLocation : systemLocations) {
     if (auto systemInformation = produceSystem(random, systemLocation)) {
       chunkData.systemParameters[systemLocation] = systemInformation.get().first;
-      chunkData.systemObjects[systemLocation] = move(systemInformation.get().second);
+      chunkData.systemObjects[systemLocation] = std::move(systemInformation.get().second);
 
       if (systemInformation.get().first.getParameter("magnitude").toFloat()
           >= m_generationInformation.minimumConstellationMagnitude)
@@ -527,11 +527,11 @@ Maybe<pair<CelestialParameters, HashMap<int, CelestialPlanet>>> CelestialMasterD
         }
       }
 
-      systemObjects[planetPair.first] = move(planet);
+      systemObjects[planetPair.first] = std::move(planet);
     }
   }
 
-  return pair<CelestialParameters, HashMap<int, CelestialPlanet>>{move(systemParameters), move(systemObjects)};
+  return pair<CelestialParameters, HashMap<int, CelestialPlanet>>{std::move(systemParameters), std::move(systemObjects)};
 }
 
 List<CelestialConstellation> CelestialMasterDatabase::produceConstellations(
@@ -619,7 +619,7 @@ List<CelestialConstellation> CelestialMasterDatabase::produceConstellations(
 CelestialSlaveDatabase::CelestialSlaveDatabase(CelestialBaseInformation baseInformation) {
   auto config = Root::singleton().assets()->json("/celestial.config");
 
-  m_baseInformation = move(baseInformation);
+  m_baseInformation = std::move(baseInformation);
   m_requestTimeout = config.getFloat("requestTimeout");
 }
 
@@ -679,12 +679,12 @@ void CelestialSlaveDatabase::pushResponses(List<CelestialResponse> responses) {
   for (auto& response : responses) {
     if (auto celestialChunk = response.leftPtr()) {
       m_pendingChunkRequests.remove(celestialChunk->chunkIndex);
-      m_chunkCache.set(celestialChunk->chunkIndex, move(*celestialChunk));
+      m_chunkCache.set(celestialChunk->chunkIndex, std::move(*celestialChunk));
     } else if (auto celestialSystemObjects = response.rightPtr()) {
       m_pendingSystemRequests.remove(celestialSystemObjects->systemLocation);
       auto chunkLocation = chunkIndexFor(celestialSystemObjects->systemLocation);
       if (auto chunk = m_chunkCache.ptr(chunkLocation))
-        chunk->systemObjects[celestialSystemObjects->systemLocation] = move(celestialSystemObjects->planets);
+        chunk->systemObjects[celestialSystemObjects->systemLocation] = std::move(celestialSystemObjects->planets);
     }
   }
 }

@@ -218,7 +218,7 @@ void Mixer::setVolume(float volume, float rampTime) {
 
 void Mixer::play(AudioInstancePtr sample) {
   MutexLocker locker(m_queueMutex);
-  m_audios.add(move(sample), AudioState{List<float>(m_channels, 1.0f)});
+  m_audios.add(std::move(sample), AudioState{List<float>(m_channels, 1.0f)});
 }
 
 void Mixer::stopAll(float rampTime) {

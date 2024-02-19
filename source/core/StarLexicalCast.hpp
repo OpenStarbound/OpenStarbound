@@ -30,7 +30,7 @@ Maybe<Type> maybeLexicalCast(StringView s, std::ios_base::fmtflags flags = std::
   if (stream >> ch)
     return {};
 
-  return move(result);
+  return std::move(result);
 }
 
 template <typename Type>

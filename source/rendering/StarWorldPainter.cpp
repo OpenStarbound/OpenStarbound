@@ -28,7 +28,7 @@ WorldPainter::WorldPainter() {
 void WorldPainter::renderInit(RendererPtr renderer) {
   m_assets = Root::singleton().assets();
 
-  m_renderer = move(renderer);
+  m_renderer = std::move(renderer);
   auto textureGroup = m_renderer->createTextureGroup(TextureGroupSize::Large);
   m_textPainter = make_shared<TextPainter>(m_renderer, textureGroup);
   m_tilePainter = make_shared<TilePainter>(m_renderer);
@@ -110,7 +110,7 @@ void WorldPainter::render(WorldRenderData& renderData, function<void()> lightWai
   Map<EntityRenderLayer, List<pair<EntityHighlightEffect, List<Drawable>>>> entityDrawables;
   for (auto& ed : renderData.entityDrawables) {
     for (auto& p : ed.layers)
-      entityDrawables[p.first].append({ed.highlightEffect, move(p.second)});
+      entityDrawables[p.first].append({ed.highlightEffect, std::move(p.second)});
   }
 
   auto entityDrawableIterator = entityDrawables.begin();
@@ -121,7 +121,7 @@ void WorldPainter::render(WorldRenderData& renderData, function<void()> lightWai
       if (until && entityDrawableIterator->first >= *until)
         break;
       for (auto& edl : entityDrawableIterator->second)
-        drawEntityLayer(move(edl.second), edl.first);
+        drawEntityLayer(std::move(edl.second), edl.first);
       ++entityDrawableIterator;
     }
 
@@ -221,7 +221,7 @@ void WorldPainter::renderParticles(WorldRenderData& renderData, Particle::Layer 
       drawable.rotate(particle.rotation);
       drawable.scale(particle.size);
       drawable.translate(particle.position);
-      drawDrawable(move(drawable));
+      drawDrawable(std::move(drawable));
 
     } else if (particle.type == Particle::Type::Text) {
       Vec2F position = m_camera.worldToScreen(particle.position);
@@ -275,7 +275,7 @@ void WorldPainter::drawEntityLayer(List<Drawable> drawables, EntityHighlightEffe
           underlayDrawable.fullbright = true;
           underlayDrawable.color = Color::rgbaf(1, 1, 1, highlightEffect.level);
           underlayDrawable.imagePart().addDirectives(underlayDirectives, true);
-          drawDrawable(move(underlayDrawable));
+          drawDrawable(std::move(underlayDrawable));
         }
       }
     }
@@ -289,12 +289,12 @@ void WorldPainter::drawEntityLayer(List<Drawable> drawables, EntityHighlightEffe
         overlayDrawable.fullbright = true;
         overlayDrawable.color = Color::rgbaf(1, 1, 1, highlightEffect.level);
         overlayDrawable.imagePart().addDirectives(overlayDirectives, true);
-        drawDrawable(move(overlayDrawable));
+        drawDrawable(std::move(overlayDrawable));
       }
     }
   } else {
     for (auto& d : drawables)
-      drawDrawable(move(d));
+      drawDrawable(std::move(d));
   }
 }
 
@@ -316,7 +316,7 @@ void WorldPainter::drawDrawable(Drawable drawable) {
 
 void WorldPainter::drawDrawableSet(List<Drawable>& drawables) {
   for (Drawable& drawable : drawables)
-    drawDrawable(move(drawable));
+    drawDrawable(std::move(drawable));
 
   m_renderer->flush();
 }
