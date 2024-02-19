@@ -36,10 +36,10 @@ jobs:
           Remove-Item "${{ github.workspace }}\dist" -Recurse
 
       - name: Configure Release Build
-        run: cmake -G "Visual Studio 17 2022" -A "X64" -S "${{ github.workspace }}/source" -B "${{ github.workspace }}/cmake-build-release" -DCMAKE_TOOLCHAIN_FILE="${Env:VCPKG_INSTALLATION_ROOT}/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Debug>:Debug>DLL" -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install" -DCMAKE_VERBOSE_MAKEFILE=YES -DBUILD_TESTING=YES
+        run: cmake -G "Visual Studio 17 2022" -A "X64" -S "${{ github.workspace }}/source" -B "${{ github.workspace }}/cmake-build-relwithdebinfo" -DCMAKE_TOOLCHAIN_FILE="${Env:VCPKG_INSTALLATION_ROOT}/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Debug>:Debug>DLL" -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install" -DCMAKE_VERBOSE_MAKEFILE=YES -DBUILD_TESTING=YES
 
       - name: Build Release
-        run: cmake --build "${{ github.workspace }}/cmake-build-release" --config "Release" --parallel
+        run: cmake --build "${{ github.workspace }}/cmake-build-relwithdebinfo" --config "RelWithDebInfo" --parallel
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
