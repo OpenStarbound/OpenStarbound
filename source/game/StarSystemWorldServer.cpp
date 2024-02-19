@@ -10,8 +10,8 @@
 namespace Star {
 
 SystemWorldServer::SystemWorldServer(Vec3I location, ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase)
-  : SystemWorld(move(universeClock), move(celestialDatabase)) {
-  m_location = move(location);
+  : SystemWorld(std::move(universeClock), std::move(celestialDatabase)) {
+  m_location = std::move(location);
 
   placeInitialObjects();
 
@@ -21,7 +21,7 @@ SystemWorldServer::SystemWorldServer(Vec3I location, ClockConstPtr universeClock
 }
 
 SystemWorldServer::SystemWorldServer(Json const& diskStore, ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase)
-  : SystemWorld(move(universeClock), move(celestialDatabase)) {
+  : SystemWorld(std::move(universeClock), std::move(celestialDatabase)) {
   m_location = jsonToVec3I(diskStore.get("location"));
 
   for (auto objectStore : diskStore.getArray("objects")) {

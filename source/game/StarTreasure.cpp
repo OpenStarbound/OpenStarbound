@@ -65,7 +65,7 @@ TreasureDatabase::TreasureDatabase() {
         itemPool.levelVariance = jsonToVec2F(config.get("levelVariance", JsonArray{0, 0}));
         itemPool.allowDuplication = config.getBool("allowDuplication", true);
 
-        treasurePool.addPoint(startLevel, move(itemPool));
+        treasurePool.addPoint(startLevel, std::move(itemPool));
       }
     }
   }

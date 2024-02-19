@@ -58,7 +58,7 @@ String BTreeDatabase::contentIdentifier() const {
 void BTreeDatabase::setContentIdentifier(String contentIdentifier) {
   WriteLocker writeLocker(m_lock);
   checkIfOpen("setContentIdentifier", false);
-  m_contentIdentifier = move(contentIdentifier);
+  m_contentIdentifier = std::move(contentIdentifier);
 }
 
 uint32_t BTreeDatabase::indexCacheSize() const {
@@ -91,7 +91,7 @@ IODevicePtr BTreeDatabase::ioDevice() const {
 void BTreeDatabase::setIODevice(IODevicePtr device) {
   WriteLocker writeLocker(m_lock);
   checkIfOpen("setIODevice", false);
-  m_device = move(device);
+  m_device = std::move(device);
 }
 
 bool BTreeDatabase::isOpen() const {
@@ -188,12 +188,12 @@ void BTreeDatabase::forEach(ByteArray const& lower, ByteArray const& upper, func
   ReadLocker readLocker(m_lock);
   checkKeySize(lower);
   checkKeySize(upper);
-  m_impl.forEach(lower, upper, move(v));
+  m_impl.forEach(lower, upper, std::move(v));
 }
 
 void BTreeDatabase::forAll(function<void(ByteArray, ByteArray)> v) {
   ReadLocker readLocker(m_lock);
-  m_impl.forAll(move(v));
+  m_impl.forAll(std::move(v));
 }
 
 bool BTreeDatabase::insert(ByteArray const& k, ByteArray const& data) {
@@ -445,7 +445,7 @@ ByteArray const& BTreeDatabase::LeafNode::data(size_t i) const {
 }
 
 void BTreeDatabase::LeafNode::insert(size_t i, ByteArray k, ByteArray d) {
-  elements.insertAt(i, Element{move(k), move(d)});
+  elements.insertAt(i, Element{std::move(k), std::move(d)});
 }
 
 void BTreeDatabase::LeafNode::remove(size_t i) {
@@ -855,7 +855,7 @@ auto BTreeDatabase::BTreeImpl::leafData(Leaf const& leaf, size_t i) -> Data {
 }
 
 void BTreeDatabase::BTreeImpl::leafInsert(Leaf& leaf, size_t i, Key k, Data d) {
-  leaf->insert(i, move(k), move(d));
+  leaf->insert(i, std::move(k), std::move(d));
 }
 
 void BTreeDatabase::BTreeImpl::leafRemove(Leaf& leaf, size_t i) {

@@ -343,7 +343,7 @@ StringList String::splitAny(String const& chars, size_t maxSplit) const {
     }
   }
   if (!next.empty())
-    ret.append(move(next));
+    ret.append(std::move(next));
   return ret;
 }
 
@@ -661,43 +661,43 @@ void String::append(Char c) {
 void String::prepend(String const& s) {
   auto ns = s;
   ns.append(*this);
-  *this = move(ns);
+  *this = std::move(ns);
 }
 
 void String::prepend(std::string const& s) {
   auto ns = String(s);
   ns.append(*this);
-  *this = move(ns);
+  *this = std::move(ns);
 }
 
 void String::prepend(Char const* s) {
   auto ns = String(s);
   ns.append(*this);
-  *this = move(ns);
+  *this = std::move(ns);
 }
 
 void String::prepend(Char const* s, size_t n) {
   auto ns = String(s, n);
   ns.append(*this);
-  *this = move(ns);
+  *this = std::move(ns);
 }
 
 void String::prepend(char const* s) {
   auto ns = String(s);
   ns.append(*this);
-  *this = move(ns);
+  *this = std::move(ns);
 }
 
 void String::prepend(char const* s, size_t n) {
   auto ns = String(s, n);
   ns.append(*this);
-  *this = move(ns);
+  *this = std::move(ns);
 }
 
 void String::prepend(Char c) {
   auto ns = String(c, 1);
   ns.append(*this);
-  *this = move(ns);
+  *this = std::move(ns);
 }
 
 void String::push_back(Char c) {
@@ -809,7 +809,7 @@ String& String::operator=(String const& s) {
 }
 
 String& String::operator=(String&& s) {
-  m_string = move(s.m_string);
+  m_string = std::move(s.m_string);
   return *this;
 }
 

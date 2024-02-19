@@ -125,8 +125,8 @@ ParametricTable<IndexType, ValueType>::ParametricTable(PairContainer indexValueP
       });
 
   for (auto const& pair : indexValuePairs) {
-    m_indexes.push_back(move(std::get<0>(pair)));
-    m_values.push_back(move(std::get<1>(pair)));
+    m_indexes.push_back(std::move(std::get<0>(pair)));
+    m_values.push_back(std::move(std::get<1>(pair)));
   }
 
   for (size_t i = 0; i < size() - 1; ++i) {
@@ -138,8 +138,8 @@ ParametricTable<IndexType, ValueType>::ParametricTable(PairContainer indexValueP
 template <typename IndexType, typename ValueType>
 size_t ParametricTable<IndexType, ValueType>::addPoint(IndexType index, ValueType value) {
   size_t insertLocation = std::distance(m_indexes.begin(), std::upper_bound(m_indexes.begin(), m_indexes.end(), index));
-  m_indexes.insert(m_indexes.begin() + insertLocation, move(index));
-  m_values.insert(m_values.begin() + insertLocation, move(value));
+  m_indexes.insert(m_indexes.begin() + insertLocation, std::move(index));
+  m_values.insert(m_values.begin() + insertLocation, std::move(value));
   return insertLocation;
 }
 

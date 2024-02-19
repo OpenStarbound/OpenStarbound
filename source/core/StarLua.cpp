@@ -76,7 +76,7 @@ StringMap<LuaDetail::LuaWrappedFunction> const& LuaCallbacks::callbacks() const 
 }
 
 bool LuaContext::containsPath(String path) const {
-  return engine().contextGetPath(handleIndex(), move(path)) != LuaNil;
+  return engine().contextGetPath(handleIndex(), std::move(path)) != LuaNil;
 }
 
 void LuaContext::load(char const* contents, size_t size, char const* name) {
@@ -92,7 +92,7 @@ void LuaContext::load(ByteArray const& contents, String const& name) {
 }
 
 void LuaContext::setRequireFunction(RequireFunction requireFunction) {
-  engine().setContextRequire(handleIndex(), move(requireFunction));
+  engine().setContextRequire(handleIndex(), std::move(requireFunction));
 }
 
 void LuaContext::setCallbacks(String const& tableName, LuaCallbacks const& callbacks) const {
@@ -162,11 +162,11 @@ Maybe<Json> LuaConverter<Json>::to(LuaEngine&, LuaValue const& v) {
 }
 
 LuaValue LuaConverter<JsonObject>::from(LuaEngine& engine, JsonObject v) {
-  return engine.luaFrom<Json>(Json(move(v)));
+  return engine.luaFrom<Json>(Json(std::move(v)));
 }
 
 Maybe<JsonObject> LuaConverter<JsonObject>::to(LuaEngine& engine, LuaValue v) {
-  auto j = engine.luaTo<Json>(move(v));
+  auto j = engine.luaTo<Json>(std::move(v));
   if (j.type() == Json::Type::Object) {
     return j.toObject();
   } else if (j.type() == Json::Type::Array) {
@@ -179,11 +179,11 @@ Maybe<JsonObject> LuaConverter<JsonObject>::to(LuaEngine& engine, LuaValue v) {
 }
 
 LuaValue LuaConverter<JsonArray>::from(LuaEngine& engine, JsonArray v) {
-  return engine.luaFrom<Json>(Json(move(v)));
+  return engine.luaFrom<Json>(Json(std::move(v)));
 }
 
 Maybe<JsonArray> LuaConverter<JsonArray>::to(LuaEngine& engine, LuaValue v) {
-  auto j = engine.luaTo<Json>(move(v));
+  auto j = engine.luaTo<Json>(std::move(v));
   if (j.type() == Json::Type::Array) {
     return j.toArray();
   } else if (j.type() == Json::Type::Object) {
@@ -839,7 +839,7 @@ void LuaEngine::tableIterate(int handleIndex, function<bool(LuaValue key, LuaVal
     LuaValue value = popLuaValue(m_state);
     bool cont = false;
     try {
-      cont = iterator(move(key), move(value));
+      cont = iterator(std::move(key), std::move(value));
     } catch (...) {
       lua_pop(m_state, 2);
       throw;
@@ -881,7 +881,7 @@ void LuaEngine::setContextRequire(int handleIndex, LuaContext::RequireFunction r
   pushHandle(m_state, handleIndex);
 
   auto funcUserdata = (LuaContext::RequireFunction*)lua_newuserdata(m_state, sizeof(LuaContext::RequireFunction));
-  new (funcUserdata) LuaContext::RequireFunction(move(requireFunction));
+  new (funcUserdata) LuaContext::RequireFunction(std::move(requireFunction));
   lua_rawgeti(m_state, LUA_REGISTRYINDEX, m_requireFunctionMetatableRegistryId);
   lua_setmetatable(m_state, -2);
 
@@ -1076,7 +1076,7 @@ LuaFunction LuaEngine::createWrappedFunction(LuaDetail::LuaWrappedFunction funct
   lua_checkstack(m_state, 2);
 
   auto funcUserdata = (LuaDetail::LuaWrappedFunction*)lua_newuserdata(m_state, sizeof(LuaDetail::LuaWrappedFunction));
-  new (funcUserdata) LuaDetail::LuaWrappedFunction(move(function));
+  new (funcUserdata) LuaDetail::LuaWrappedFunction(std::move(function));
 
   lua_rawgeti(m_state, LUA_REGISTRYINDEX, m_wrappedFunctionMetatableRegistryId);
   lua_setmetatable(m_state, -2);
@@ -1400,7 +1400,7 @@ Maybe<Json> LuaDetail::tableToJsonContainer(LuaTable const& table) {
       if (auto i = asInteger(key)) {
         intEntries[*i] = jsonValue.take();
       } else {
-        auto stringKey = table.engine().luaMaybeTo<String>(move(key));
+        auto stringKey = table.engine().luaMaybeTo<String>(std::move(key));
         if (!stringKey) {
           failedConversion = true;
           return false;
@@ -1420,12 +1420,12 @@ Maybe<Json> LuaDetail::tableToJsonContainer(LuaTable const& table) {
   if (interpretAsList) {
     JsonArray list;
     for (auto& p : intEntries)
-      list.set(p.first - 1, move(p.second));
-    return Json(move(list));
+      list.set(p.first - 1, std::move(p.second));
+    return Json(std::move(list));
   } else {
     for (auto& p : intEntries)
-      stringEntries[toString(p.first)] = move(p.second);
-    return Json(move(stringEntries));
+      stringEntries[toString(p.first)] = std::move(p.second);
+    return Json(std::move(stringEntries));
   }
 }
 

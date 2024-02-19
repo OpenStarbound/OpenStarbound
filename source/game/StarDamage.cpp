@@ -61,18 +61,18 @@ DamageSource::DamageSource(DamageType damageType,
     List<EphemeralStatusEffect> statusEffects,
     Knockback knockback,
     bool rayCheck)
-  : damageType(move(damageType)),
-    damageArea(move(damageArea)),
-    damage(move(damage)),
-    trackSourceEntity(move(trackSourceEntity)),
-    sourceEntityId(move(sourceEntityId)),
-    team(move(team)),
-    damageRepeatGroup(move(damageRepeatGroup)),
-    damageRepeatTimeout(move(damageRepeatTimeout)),
-    damageSourceKind(move(damageSourceKind)),
-    statusEffects(move(statusEffects)),
-    knockback(move(knockback)),
-    rayCheck(move(rayCheck)) {}
+  : damageType(std::move(damageType)),
+    damageArea(std::move(damageArea)),
+    damage(std::move(damage)),
+    trackSourceEntity(std::move(trackSourceEntity)),
+    sourceEntityId(std::move(sourceEntityId)),
+    team(std::move(team)),
+    damageRepeatGroup(std::move(damageRepeatGroup)),
+    damageRepeatTimeout(std::move(damageRepeatTimeout)),
+    damageSourceKind(std::move(damageSourceKind)),
+    statusEffects(std::move(statusEffects)),
+    knockback(std::move(knockback)),
+    rayCheck(std::move(rayCheck)) {}
 
 Json DamageSource::toJson() const {
   Json damageAreaJson;
@@ -266,8 +266,8 @@ DamageNotification::DamageNotification(EntityId sourceEntityId,
     damageDealt(damageDealt),
     healthLost(healthLost),
     hitType(hitType),
-    damageSourceKind(move(damageSourceKind)),
-    targetMaterialKind(move(targetMaterialKind)) {}
+    damageSourceKind(std::move(damageSourceKind)),
+    targetMaterialKind(std::move(targetMaterialKind)) {}
 
 Json DamageNotification::toJson() const {
   return JsonObject{{"sourceEntityId", sourceEntityId},

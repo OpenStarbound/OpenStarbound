@@ -210,7 +210,7 @@ Perlin<Float>::Perlin(Perlin const& perlin) {
 
 template <typename Float>
 Perlin<Float>::Perlin(Perlin&& perlin) {
-  *this = move(perlin);
+  *this = std::move(perlin);
 }
 
 template <typename Float>
@@ -261,10 +261,10 @@ Perlin<Float>& Perlin<Float>::operator=(Perlin&& perlin) {
   m_offset = perlin.m_offset;
   m_gain = perlin.m_gain;
 
-  p = move(perlin.p);
-  g3 = move(perlin.g3);
-  g2 = move(perlin.g2);
-  g1 = move(perlin.g1);
+  p = std::move(perlin.p);
+  g3 = std::move(perlin.g3);
+  g2 = std::move(perlin.g2);
+  g1 = std::move(perlin.g1);
 
   return *this;
 }

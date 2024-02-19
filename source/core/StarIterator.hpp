@@ -137,7 +137,7 @@ public:
   }
 
   void insert(value_type v) {
-    curr = ++cont.insert(curr, move(v));
+    curr = ++cont.insert(curr, std::move(v));
     direction = -1;
   }
 
@@ -178,7 +178,7 @@ public:
   }
 
   void setValue(value_type v) const {
-    value() = move(v);
+    value() = std::move(v);
   }
 
   value_ref next() {

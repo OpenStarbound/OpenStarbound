@@ -114,7 +114,7 @@ OverheadBar::OverheadBar(Json const& json) {
 }
 
 OverheadBar::OverheadBar(Maybe<String> icon, float percentage, Color color, bool detailOnly)
-  : icon(move(icon)), percentage(percentage), color(move(color)), detailOnly(detailOnly) {}
+  : icon(std::move(icon)), percentage(percentage), color(std::move(color)), detailOnly(detailOnly) {}
 
 EnumMap<EntityHighlightEffectType> const EntityHighlightEffectTypeNames{
   {EntityHighlightEffectType::None, "none"},

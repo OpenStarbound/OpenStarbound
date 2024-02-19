@@ -215,7 +215,7 @@ pair<ByteArray, uint64_t> Monster::writeNetState(uint64_t fromVersion) {
 }
 
 void Monster::readNetState(ByteArray data, float interpolationTime) {
-  m_netGroup.readNetState(move(data), interpolationTime);
+  m_netGroup.readNetState(std::move(data), interpolationTime);
 }
 
 void Monster::enableInterpolation(float extrapolationHint) {
@@ -490,7 +490,7 @@ void Monster::render(RenderCallback* renderCallback) {
   for (auto& drawable : m_networkedAnimator.drawables(position())) {
     if (drawable.isImage())
       drawable.imagePart().addDirectivesGroup(m_statusController->parentDirectives(), true);
-    renderCallback->addDrawable(move(drawable), m_monsterVariant.renderLayer);
+    renderCallback->addDrawable(std::move(drawable), m_monsterVariant.renderLayer);
   }
 
   renderCallback->addAudios(m_networkedAnimatorDynamicTarget.pullNewAudios());
@@ -593,7 +593,7 @@ LuaCallbacks Monster::makeMonsterCallbacks() {
     });
 
   callbacks.registerCallback("setDropPool", [this](Json dropPool) {
-      m_dropPool = move(dropPool);
+      m_dropPool = std::move(dropPool);
     });
 
   callbacks.registerCallback("toAbsolutePosition", [this](Vec2F const& p) {
@@ -671,7 +671,7 @@ LuaCallbacks Monster::makeMonsterCallbacks() {
     });
 
   callbacks.registerCallback("setAnimationParameter", [this](String name, Json value) {
-      m_scriptedAnimationParameters.set(move(name), move(value));
+      m_scriptedAnimationParameters.set(std::move(name), std::move(value));
     });
 
   return callbacks;

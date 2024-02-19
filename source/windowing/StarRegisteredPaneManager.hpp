@@ -66,7 +66,7 @@ shared_ptr<T> RegisteredPaneManager<KeyT>::maybeRegisteredPane(KeyT const& paneI
 template <typename KeyT>
 void RegisteredPaneManager<KeyT>::registerPane(
     KeyT paneId, PaneLayer paneLayer, PanePtr pane, DismissCallback onDismiss) {
-  if (!m_registeredPanes.insert(move(paneId), {move(paneLayer), move(pane), move(onDismiss)}).second)
+  if (!m_registeredPanes.insert(std::move(paneId), {std::move(paneLayer), std::move(pane), std::move(onDismiss)}).second)
     throw GuiException(
         strf("Registered pane with name '{}' registered a second time in RegisteredPaneManager::registerPane",
             outputAny(paneId)));

@@ -20,7 +20,7 @@ Either<String, HostAddress> HostAddress::lookup(String const& address) {
   try {
     HostAddress ha;
     ha.set(address);
-    return makeRight(move(ha));
+    return makeRight(std::move(ha));
   } catch (NetworkException const& e) {
     return makeLeft(String(e.what()));
   }
@@ -35,7 +35,7 @@ HostAddress::HostAddress(String const& address) {
   if (a.isLeft())
     throw NetworkException(a.left().takeUtf8());
   else
-    *this = move(a.right());
+    *this = std::move(a.right());
 }
 
 NetworkMode HostAddress::mode() const {
@@ -211,9 +211,9 @@ size_t hash<HostAddress>::operator()(HostAddress const& address) const {
 Either<String, HostAddressWithPort> HostAddressWithPort::lookup(String const& address, uint16_t port) {
   auto hostAddress = HostAddress::lookup(address);
   if (hostAddress.isLeft())
-    return makeLeft(move(hostAddress.left()));
+    return makeLeft(std::move(hostAddress.left()));
   else
-    return makeRight(HostAddressWithPort(move(hostAddress.right()), port));
+    return makeRight(HostAddressWithPort(std::move(hostAddress.right()), port));
 }
 
 Either<String, HostAddressWithPort> HostAddressWithPort::lookupWithPort(String const& address) {
@@ -228,9 +228,9 @@ Either<String, HostAddressWithPort> HostAddressWithPort::lookupWithPort(String c
 
   auto hostAddress = HostAddress::lookup(host);
   if (hostAddress.isLeft())
-    return makeLeft(move(hostAddress.left()));
+    return makeLeft(std::move(hostAddress.left()));
 
-  return makeRight(HostAddressWithPort(move(hostAddress.right()), *portNum));
+  return makeRight(HostAddressWithPort(std::move(hostAddress.right()), *portNum));
 }
 
 HostAddressWithPort::HostAddressWithPort() : m_port(0) {}
@@ -247,14 +247,14 @@ HostAddressWithPort::HostAddressWithPort(String const& address, uint16_t port) {
   auto a = lookup(address, port);
   if (a.isLeft())
     throw NetworkException(a.left().takeUtf8());
-  *this = move(a.right());
+  *this = std::move(a.right());
 }
 
 HostAddressWithPort::HostAddressWithPort(String const& address) {
   auto a = lookupWithPort(address);
   if (a.isLeft())
     throw NetworkException(a.left().takeUtf8());
-  *this = move(a.right());
+  *this = std::move(a.right());
 }
 
 HostAddress HostAddressWithPort::address() const {

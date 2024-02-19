@@ -129,7 +129,7 @@ bool SetMixin<BaseSet>::add(value_type const& v) {
 template <typename BaseSet>
 bool SetMixin<BaseSet>::replace(value_type v) {
   bool replaced = remove(v);
-  Base::insert(move(v));
+  Base::insert(std::move(v));
   return replaced;
 }
 
@@ -170,7 +170,7 @@ auto SetMixin<BaseSet>::takeFirst() -> value_type {
   if (Base::empty())
     throw SetException("takeFirst called on empty set");
   auto i = Base::begin();
-  value_type v = move(*i);
+  value_type v = std::move(*i);
   Base::erase(i);
   return v;
 }
@@ -180,9 +180,9 @@ auto SetMixin<BaseSet>::maybeTakeFirst() -> Maybe<value_type> {
   if (Base::empty())
     return {};
   auto i = Base::begin();
-  value_type v = move(*i);
+  value_type v = std::move(*i);
   Base::erase(i);
-  return move(v);
+  return std::move(v);
 }
 
 template <typename BaseSet>
@@ -204,7 +204,7 @@ auto SetMixin<BaseSet>::takeLast() -> value_type {
   if (Base::empty())
     throw SetException("takeLast called on empty set");
   auto i = prev(Base::end());
-  value_type v = move(*i);
+  value_type v = std::move(*i);
   Base::erase(i);
   return v;
 }
@@ -214,9 +214,9 @@ auto SetMixin<BaseSet>::maybeTakeLast() -> Maybe<value_type> {
   if (Base::empty())
     return {};
   auto i = prev(Base::end());
-  value_type v = move(*i);
+  value_type v = std::move(*i);
   Base::erase(i);
-  return move(v);
+  return std::move(v);
 }
 
 template <typename BaseSet>

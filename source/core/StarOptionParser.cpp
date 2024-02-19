@@ -4,29 +4,29 @@
 namespace Star {
 
 void OptionParser::setCommandName(String commandName) {
-  m_commandName = move(commandName);
+  m_commandName = std::move(commandName);
 }
 
 void OptionParser::setSummary(String summary) {
-  m_summary = move(summary);
+  m_summary = std::move(summary);
 }
 
 void OptionParser::setAdditionalHelp(String help) {
-  m_additionalHelp = move(help);
+  m_additionalHelp = std::move(help);
 }
 
 void OptionParser::addSwitch(String const& flag, String description) {
-  if (!m_options.insert(flag, Switch{flag, move(description)}).second)
+  if (!m_options.insert(flag, Switch{flag, std::move(description)}).second)
     throw OptionParserException::format("Duplicate switch '-{}' added", flag);
 }
 
 void OptionParser::addParameter(String const& flag, String argument, RequirementMode requirementMode, String description) {
-  if (!m_options.insert(flag, Parameter{flag, move(argument), requirementMode, move(description)}).second)
+  if (!m_options.insert(flag, Parameter{flag, std::move(argument), requirementMode, std::move(description)}).second)
     throw OptionParserException::format("Duplicate flag '-{}' added", flag);
 }
 
 void OptionParser::addArgument(String argument, RequirementMode requirementMode, String description) {
-  m_arguments.append(Argument{move(argument), requirementMode, move(description)});
+  m_arguments.append(Argument{std::move(argument), requirementMode, std::move(description)});
 }
 
 pair<OptionParser::Options, StringList> OptionParser::parseOptions(StringList const& arguments) const {
@@ -51,7 +51,7 @@ pair<OptionParser::Options, StringList> OptionParser::parseOptions(StringList co
       }
 
       if (option->is<Switch>()) {
-        result.switches.add(move(flag));
+        result.switches.add(std::move(flag));
       } else {
         auto const& parameter = option->get<Parameter>();
         if (!it.hasNext()) {
@@ -63,7 +63,7 @@ pair<OptionParser::Options, StringList> OptionParser::parseOptions(StringList co
           errors.append(strf("Option with argument '-{}' specified multiple times", flag));
           continue;
         }
-        result.parameters[move(flag)].append(move(val));
+        result.parameters[std::move(flag)].append(std::move(val));
       }
 
     } else {
@@ -96,7 +96,7 @@ pair<OptionParser::Options, StringList> OptionParser::parseOptions(StringList co
     errors.append(strf(
         "Too many positional arguments given, expected at most {} got {}", maximumArguments, result.arguments.size()));
 
-  return {move(result), move(errors)};
+  return {std::move(result), std::move(errors)};
 }
 
 void OptionParser::printHelp(std::ostream& os) const {

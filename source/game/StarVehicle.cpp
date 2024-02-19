@@ -13,7 +13,7 @@
 namespace Star {
 
 Vehicle::Vehicle(Json baseConfig, String path, Json dynamicConfig)
-  : m_baseConfig(move(baseConfig)), m_path(move(path)), m_dynamicConfig(move(dynamicConfig)) {
+  : m_baseConfig(std::move(baseConfig)), m_path(std::move(path)), m_dynamicConfig(std::move(dynamicConfig)) {
 
   m_typeName = m_baseConfig.getString("name");
 
@@ -247,7 +247,7 @@ pair<ByteArray, uint64_t> Vehicle::writeNetState(uint64_t fromVersion) {
 }
 
 void Vehicle::readNetState(ByteArray data, float interpolationTime) {
-  m_netGroup.readNetState(move(data), interpolationTime);
+  m_netGroup.readNetState(std::move(data), interpolationTime);
 }
 
 void Vehicle::enableInterpolation(float extrapolationHint) {
@@ -296,7 +296,7 @@ void Vehicle::update(float dt, uint64_t) {
         JsonArray allControlsHeld = transform<JsonArray>(p.second.slaveNewControls, [](LoungeControl control) {
             return LoungeControlNames.getRight(control);
           });
-        world()->sendEntityMessage(entityId(), "control_all", {*m_loungePositions.indexOf(p.first), move(allControlsHeld)});
+        world()->sendEntityMessage(entityId(), "control_all", {*m_loungePositions.indexOf(p.first), std::move(allControlsHeld)});
       } else {
         for (auto control : p.second.slaveNewControls.difference(p.second.slaveOldControls))
           world()->sendEntityMessage(entityId(), "control_on", {*m_loungePositions.indexOf(p.first), LoungeControlNames.getRight(control)});
@@ -323,9 +323,9 @@ void Vehicle::update(float dt, uint64_t) {
 void Vehicle::render(RenderCallback* renderer) {
   for (auto& drawable : m_networkedAnimator.drawablesWithZLevel(position())) {
     if (drawable.second < 0.0f)
-      renderer->addDrawable(move(drawable.first), renderLayer(VehicleLayer::Back));
+      renderer->addDrawable(std::move(drawable.first), renderLayer(VehicleLayer::Back));
     else
-      renderer->addDrawable(move(drawable.first), renderLayer(VehicleLayer::Front));
+      renderer->addDrawable(std::move(drawable.first), renderLayer(VehicleLayer::Front));
   }
 
   renderer->addAudios(m_networkedAnimatorDynamicTarget.pullNewAudios());
@@ -500,7 +500,7 @@ List<PhysicsForceRegion> Vehicle::forceRegions() const {
       }
 
       forceRegion.call([translatePos](auto& fr) { fr.translate(translatePos); });
-      forces.append(move(forceRegion));
+      forces.append(std::move(forceRegion));
     }
   }
   return forces;
@@ -520,7 +520,7 @@ List<DamageSource> Vehicle::damageSources() const {
       damageSource.team = m_damageTeam.get();
       damageSource.sourceEntityId = entityId();
 
-      sources.append(move(damageSource));
+      sources.append(std::move(damageSource));
     }
   }
   return sources;
@@ -597,15 +597,15 @@ LuaCallbacks Vehicle::makeVehicleCallbacks() {
     });
 
   callbacks.registerCallback("setLoungeEmote", [this](String const& name, Maybe<String> emote) {
-      m_loungePositions.get(name).emote.set(move(emote));
+      m_loungePositions.get(name).emote.set(std::move(emote));
     });
 
   callbacks.registerCallback("setLoungeDance", [this](String const& name, Maybe<String> dance) {
-      m_loungePositions.get(name).dance.set(move(dance));
+      m_loungePositions.get(name).dance.set(std::move(dance));
     });
 
   callbacks.registerCallback("setLoungeDirectives", [this](String const& name, Maybe<String> directives) {
-      m_loungePositions.get(name).directives.set(move(directives));
+      m_loungePositions.get(name).directives.set(std::move(directives));
     });
 
   callbacks.registerCallback("setLoungeStatusEffects", [this](String const& name, JsonArray const& statusEffects) {
@@ -641,14 +641,14 @@ LuaCallbacks Vehicle::makeVehicleCallbacks() {
     });
 
   callbacks.registerCallback("setAnimationParameter", [this](String name, Json value) {
-      m_scriptedAnimationParameters.set(move(name), move(value));
+      m_scriptedAnimationParameters.set(std::move(name), std::move(value));
     });
 
   return callbacks;
 }
 
 Json Vehicle::configValue(String const& name, Json def) const {
-  return jsonMergeQueryDef(name, move(def), m_baseConfig, m_dynamicConfig);
+  return jsonMergeQueryDef(name, std::move(def), m_baseConfig, m_dynamicConfig);
 }
 
 }

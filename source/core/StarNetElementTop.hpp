@@ -68,7 +68,7 @@ void NetElementTop<BaseNetElement>::readNetState(ByteArray data, float interpola
     BaseNetElement::blankNetDelta(interpolationTime);
 
   } else {
-    DataStreamBuffer ds(move(data));
+    DataStreamBuffer ds(std::move(data));
 
     if (ds.read<bool>())
       BaseNetElement::netLoad(ds);

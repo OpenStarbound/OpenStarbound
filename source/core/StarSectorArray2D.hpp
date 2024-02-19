@@ -213,7 +213,7 @@ auto SectorArray2D<ElementT, SectorSize>::sector(Sector const& id) const -> Arra
 template <typename ElementT, size_t SectorSize>
 void SectorArray2D<ElementT, SectorSize>::loadSector(Sector const& id, ArrayPtr array) {
   auto& data = m_sectors(id[0], id[1]);
-  data = move(array);
+  data = std::move(array);
   if (data)
     m_loadedSectors.add(id);
   else
@@ -224,7 +224,7 @@ template <typename ElementT, size_t SectorSize>
 typename SectorArray2D<ElementT, SectorSize>::ArrayPtr SectorArray2D<ElementT, SectorSize>::copySector(
     Sector const& id) {
   if (auto const& array = m_sectors(id))
-    return make_unique<Array>(*array);
+    return std::make_unique<Array>(*array);
   else
     return {};
 }
@@ -235,7 +235,7 @@ typename SectorArray2D<ElementT, SectorSize>::ArrayPtr SectorArray2D<ElementT, S
   ArrayPtr ret;
   m_loadedSectors.remove(id);
   std::swap(m_sectors(id[0], id[1]), ret);
-  return move(ret);
+  return ret;
 }
 
 template <typename ElementT, size_t SectorSize>
@@ -268,14 +268,14 @@ template <typename ElementT, size_t SectorSize>
 template <typename Function>
 bool SectorArray2D<ElementT, SectorSize>::eval(
     size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty) const {
-  return const_cast<SectorArray2D*>(this)->evalPriv(minX, minY, width, height, forward<Function>(function), evalEmpty);
+  return const_cast<SectorArray2D*>(this)->evalPriv(minX, minY, width, height, std::forward<Function>(function), evalEmpty);
 }
 
 template <typename ElementT, size_t SectorSize>
 template <typename Function>
 bool SectorArray2D<ElementT, SectorSize>::eval(
     size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty) {
-  return evalPriv(minX, minY, width, height, forward<Function>(function), evalEmpty);
+  return evalPriv(minX, minY, width, height, std::forward<Function>(function), evalEmpty);
 }
 
 template <typename ElementT, size_t SectorSize>
@@ -283,14 +283,14 @@ template <typename Function>
 bool SectorArray2D<ElementT, SectorSize>::evalColumns(
     size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty) const {
   return const_cast<SectorArray2D*>(this)->evalColumnsPriv(
-      minX, minY, width, height, forward<Function>(function), evalEmpty);
+      minX, minY, width, height, std::forward<Function>(function), evalEmpty);
 }
 
 template <typename ElementT, size_t SectorSize>
 template <typename Function>
 bool SectorArray2D<ElementT, SectorSize>::evalColumns(
     size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty) {
-  return evalColumnsPriv(minX, minY, width, height, forward<Function>(function), evalEmpty);
+  return evalColumnsPriv(minX, minY, width, height, std::forward<Function>(function), evalEmpty);
 }
 
 template <typename ElementT, size_t SectorSize>

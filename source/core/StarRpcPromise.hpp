@@ -70,17 +70,17 @@ private:
 
 template <typename Result, typename Error>
 void RpcPromiseKeeper<Result, Error>::fulfill(Result result) {
-  m_fulfill(move(result));
+  m_fulfill(std::move(result));
 }
 
 template <typename Result, typename Error>
 void RpcPromiseKeeper<Result, Error>::fail(Error error) {
-  m_fail(move(error));
+  m_fail(std::move(error));
 }
 
 template <typename Result, typename Error>
 pair<RpcPromise<Result, Error>, RpcPromiseKeeper<Result, Error>> RpcPromise<Result, Error>::createPair() {
-  auto valuePtr = make_shared<Value>();
+  auto valuePtr = std::make_shared<Value>();
 
   RpcPromise promise;
   promise.m_getValue = [valuePtr]() {
@@ -91,21 +91,21 @@ pair<RpcPromise<Result, Error>, RpcPromiseKeeper<Result, Error>> RpcPromise<Resu
   keeper.m_fulfill = [valuePtr](Result result) {
     if (valuePtr->result || valuePtr->error)
       throw RpcPromiseException("fulfill called on already finished RpcPromise");
-    valuePtr->result = move(result);
+    valuePtr->result = std::move(result);
   };
   keeper.m_fail = [valuePtr](Error error) {
     if (valuePtr->result || valuePtr->error)
       throw RpcPromiseException("fail called on already finished RpcPromise");
-    valuePtr->error = move(error);
+    valuePtr->error = std::move(error);
   };
 
-  return {move(promise), move(keeper)};
+  return {std::move(promise), std::move(keeper)};
 }
 
 template <typename Result, typename Error>
 RpcPromise<Result, Error> RpcPromise<Result, Error>::createFulfilled(Result result) {
-  auto valuePtr = make_shared<Value>();
-  valuePtr->result = move(result);
+  auto valuePtr = std::make_shared<Value>();
+  valuePtr->result = std::move(result);
 
   RpcPromise<Result, Error> promise;
   promise.m_getValue = [valuePtr]() {
@@ -116,8 +116,8 @@ RpcPromise<Result, Error> RpcPromise<Result, Error>::createFulfilled(Result resu
 
 template <typename Result, typename Error>
 RpcPromise<Result, Error> RpcPromise<Result, Error>::createFailed(Error error) {
-  auto valuePtr = make_shared<Value>();
-  valuePtr->error = move(error);
+  auto valuePtr = std::make_shared<Value>();
+  valuePtr->error = std::move(error);
 
   RpcPromise<Result, Error> promise;
   promise.m_getValue = [valuePtr]() {
@@ -157,7 +157,7 @@ template <typename Function>
 decltype(auto) RpcPromise<Result, Error>::wrap(Function function) {
   typedef RpcPromise<typename std::decay<decltype(function(std::declval<Result>()))>::type, Error> WrappedPromise;
   WrappedPromise wrappedPromise;
-  wrappedPromise.m_getValue = [wrapper = move(function), valuePtr = make_shared<typename WrappedPromise::Value>(), otherGetValue = m_getValue]() {
+  wrappedPromise.m_getValue = [wrapper = std::move(function), valuePtr = std::make_shared<typename WrappedPromise::Value>(), otherGetValue = m_getValue]() {
     if (!valuePtr->result && !valuePtr->error) {
       auto otherValue = otherGetValue();
       if (otherValue->result)

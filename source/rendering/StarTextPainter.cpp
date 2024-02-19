@@ -279,7 +279,7 @@ StringList TextPainter::wrapText(StringView s, Maybe<unsigned> wrapWidth) {
   int lastLine = 0;
   TextPainter::WrapTextCallback textCallback = [&](StringView text, int line) {
     if (lastLine != line) {
-      result.append(move(current));
+      result.append(std::move(current));
       lastLine = line;
     }
 
@@ -290,7 +290,7 @@ StringList TextPainter::wrapText(StringView s, Maybe<unsigned> wrapWidth) {
   processWrapText(s, wrapWidth.ptr(), textCallback);
 
   if (!current.empty())
-    result.append(move(current));
+    result.append(std::move(current));
 
   return result;
 };
@@ -312,7 +312,7 @@ void TextPainter::setMode(FontMode mode) {
 }
 
 void TextPainter::setFontColor(Vec4B color) {
-  m_renderSettings.color = move(color);
+  m_renderSettings.color = std::move(color);
 }
 
 void TextPainter::setProcessingDirectives(StringView directives) {
@@ -411,7 +411,7 @@ RectF TextPainter::doRenderText(StringView s, TextPositioning const& position, b
       break;
   }
 
-  m_renderSettings = move(backupRenderSettings);
+  m_renderSettings = std::move(backupRenderSettings);
 
   return bounds;
 }

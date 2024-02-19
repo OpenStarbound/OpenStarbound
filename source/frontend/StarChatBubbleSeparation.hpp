@@ -112,7 +112,7 @@ void BubbleSeparator<T>::addBubble(Vec2F position, RectF boundBox, T contents, u
   Vec2F separatedOffset = separated.min() - boundBox.min();
   Vec2F separatedPosition = position + separatedOffset;
   Bubble bubble = Bubble{ contents, position, position, boundBox, separatedOffset, separated, separatedOffset, separatedPosition };
-  m_bubbles.insertSorted(move(bubble), &BubbleSeparator<T>::compareBubbleY);
+  m_bubbles.insertSorted(std::move(bubble), &BubbleSeparator<T>::compareBubbleY);
 }
 
 template <typename T>
@@ -136,8 +136,8 @@ template <typename T>
 void BubbleSeparator<T>::forEach(function<void(Bubble&, T&)> func) {
   bool anyMoved = false;
   
-  List<Box<float, 2>> leftEdges = move(m_sortedLeftEdges);
-  List<Box<float, 2>> rightEdges = move(m_sortedRightEdges);
+  List<Box<float, 2>> leftEdges = std::move(m_sortedLeftEdges);
+  List<Box<float, 2>> rightEdges = std::move(m_sortedRightEdges);
 
   m_bubbles.exec([this, func, &anyMoved, &leftEdges, &rightEdges](Bubble& bubble) {
     RectF oldBoundBox = bubble.boundBox;

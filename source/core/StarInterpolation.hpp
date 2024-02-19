@@ -369,7 +369,7 @@ Pos inverseLinearInterpolateLower(Iterator begin, Iterator end, Pos t, Comp&& co
   if (begin == end || std::next(begin) == end)
     return Pos();
 
-  Iterator i = std::lower_bound(std::next(begin), std::prev(end), t, forward<Comp>(comp));
+  Iterator i = std::lower_bound(std::next(begin), std::prev(end), t, std::forward<Comp>(comp));
 
   --i;
   Pos min = posGetter(*i);
@@ -396,7 +396,7 @@ Pos inverseLinearInterpolateUpper(Iterator begin, Iterator end, Pos t, Comp&& co
   if (begin == end || std::next(begin) == end)
     return Pos();
 
-  Iterator i = std::upper_bound(std::next(begin), std::prev(end), t, forward<Comp>(comp));
+  Iterator i = std::upper_bound(std::next(begin), std::prev(end), t, std::forward<Comp>(comp));
 
   --i;
   Pos min = posGetter(*i);

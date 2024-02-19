@@ -25,7 +25,7 @@ PaneManager::PaneManager()
 }
 
 void PaneManager::displayPane(PaneLayer paneLayer, PanePtr const& pane, DismissCallback onDismiss) {
-  if (!m_displayedPanes[paneLayer].insertFront(pane, move(onDismiss)).second)
+  if (!m_displayedPanes[paneLayer].insertFront(pane, std::move(onDismiss)).second)
     throw GuiException("Pane displayed twice in PaneManager::displayPane");
 
   if (!pane->hasDisplayed() && pane->anchor() == PaneAnchor::None)
@@ -274,8 +274,8 @@ void PaneManager::update(float dt) {
   if (m_tooltipShowTimer < 0 && !m_activeTooltip) {
     if (auto parentPane = getPaneAt(m_tooltipLastMousePos)) {
       if (auto tooltip = parentPane->createTooltip(m_tooltipLastMousePos)) {
-        m_activeTooltip = move(tooltip);
-        m_tooltipParentPane = move(parentPane);
+        m_activeTooltip = std::move(tooltip);
+        m_tooltipParentPane = std::move(parentPane);
         m_tooltipInitialPosition = m_tooltipLastMousePos;
         displayPane(PaneLayer::Tooltip, m_activeTooltip);
 

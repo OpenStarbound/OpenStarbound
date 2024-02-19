@@ -85,12 +85,12 @@ private:
 
 template <typename Value>
 EitherLeftValue<Value> makeLeft(Value value) {
-  return {move(value)};
+  return {std::move(value)};
 }
 
 template <typename Value>
 EitherRightValue<Value> makeRight(Value value) {
-  return {move(value)};
+  return {std::move(value)};
 }
 
 template <typename Left, typename Right>
@@ -98,21 +98,21 @@ Either<Left, Right>::Either() {}
 
 template <typename Left, typename Right>
 Either<Left, Right>::Either(EitherLeftValue<Left> left)
-  : m_value(move(left)) {}
+  : m_value(std::move(left)) {}
 
 template <typename Left, typename Right>
 Either<Left, Right>::Either(EitherRightValue<Right> right)
-  : m_value(move(right)) {}
+  : m_value(std::move(right)) {}
 
 template <typename Left, typename Right>
 template <typename T>
 Either<Left, Right>::Either(EitherLeftValue<T> left)
-  : Either(LeftType{move(left.value)}) {}
+  : Either(LeftType{std::move(left.value)}) {}
 
 template <typename Left, typename Right>
 template <typename T>
 Either<Left, Right>::Either(EitherRightValue<T> right)
-  : Either(RightType{move(right.value)}) {}
+  : Either(RightType{std::move(right.value)}) {}
 
 template <typename Left, typename Right>
 Either<Left, Right>::Either(Either const& rhs)
@@ -120,7 +120,7 @@ Either<Left, Right>::Either(Either const& rhs)
 
 template <typename Left, typename Right>
 Either<Left, Right>::Either(Either&& rhs)
-  : m_value(move(rhs.m_value)) {}
+  : m_value(std::move(rhs.m_value)) {}
 
 template <typename Left, typename Right>
 Either<Left, Right>& Either<Left, Right>::operator=(Either const& rhs) {
@@ -130,21 +130,21 @@ Either<Left, Right>& Either<Left, Right>::operator=(Either const& rhs) {
 
 template <typename Left, typename Right>
 Either<Left, Right>& Either<Left, Right>::operator=(Either&& rhs) {
-  m_value = move(rhs.m_value);
+  m_value = std::move(rhs.m_value);
   return *this;
 }
 
 template <typename Left, typename Right>
 template <typename T>
 Either<Left, Right>& Either<Left, Right>::operator=(EitherLeftValue<T> left) {
-  m_value = LeftType{move(left.value)};
+  m_value = LeftType{std::move(left.value)};
   return *this;
 }
 
 template <typename Left, typename Right>
 template <typename T>
 Either<Left, Right>& Either<Left, Right>::operator=(EitherRightValue<T> right) {
-  m_value = RightType{move(right.value)};
+  m_value = RightType{std::move(right.value)};
   return *this;
 }
 
@@ -160,12 +160,12 @@ bool Either<Left, Right>::isRight() const {
 
 template <typename Left, typename Right>
 void Either<Left, Right>::setLeft(Left left) {
-  m_value = LeftType{move(left)};
+  m_value = LeftType{std::move(left)};
 }
 
 template <typename Left, typename Right>
 void Either<Left, Right>::setRight(Right right) {
-  m_value = RightType{move(right)};
+  m_value = RightType{std::move(right)};
 }
 
 template <typename Left, typename Right>

@@ -124,7 +124,7 @@ void parseNodeParameters(JsonObject& parameters) {
 }
 
 ActionNode::ActionNode(String name, StringMap<NodeParameter> parameters, StringMap<NodeOutput> output)
-  : name(move(name)), parameters(move(parameters)), output(move(output)) { }
+  : name(std::move(name)), parameters(std::move(parameters)), output(std::move(output)) { }
 
 DecoratorNode::DecoratorNode(String const& name, StringMap<NodeParameter> parameters, BehaviorNodeConstPtr child)
   : name(name), parameters(parameters), child(child) { }
@@ -214,7 +214,7 @@ BehaviorTreeConstPtr BehaviorDatabase::buildTree(Json const& config, StringMap<N
     parameters.set(p.first, p.second);
   BehaviorNodeConstPtr root = behaviorNode(config.get("root"), parameters, tree);
   tree.root = root;
-  return make_shared<BehaviorTree>(move(tree));
+  return std::make_shared<BehaviorTree>(std::move(tree));
 }
 
 Json BehaviorDatabase::behaviorConfig(String const& name) const {

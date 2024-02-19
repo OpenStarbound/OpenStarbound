@@ -25,8 +25,8 @@ namespace Star {
 
 InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerInteractorPtr containerInteractor) {
   m_parent = parent;
-  m_player = move(player);
-  m_containerInteractor = move(containerInteractor);
+  m_player = std::move(player);
+  m_containerInteractor = std::move(containerInteractor);
 
   GuiReader invWindowReader;
   auto config = Root::singleton().assets()->json("/interface/windowconfig/playerinventory.config");

@@ -372,7 +372,7 @@ List<Color> jsonToColorList(Json const& v) {
 List<Directives> jsonToDirectivesList(Json const& v) {
   List<Directives> result;
   for (auto const& entry : v.iterateArray())
-    result.append(move(entry.toString()));
+    result.append(entry.toString());
   return result;
 }
 

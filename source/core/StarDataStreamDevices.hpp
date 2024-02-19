@@ -184,66 +184,66 @@ ByteArray DataStreamBuffer::serializeMapContainer(T const& t, WriteFunction writ
 
 template <typename T>
 void DataStreamBuffer::deserialize(T& t, ByteArray data) {
-  DataStreamBuffer ds(move(data));
+  DataStreamBuffer ds(std::move(data));
   ds.read(t);
 }
 
 template <typename T>
 void DataStreamBuffer::deserializeContainer(T& t, ByteArray data) {
-  DataStreamBuffer ds(move(data));
+  DataStreamBuffer ds(std::move(data));
   ds.readContainer(t);
 }
 
 template <typename T, typename ReadFunction>
 void DataStreamBuffer::deserializeContainer(T& t, ByteArray data, ReadFunction readFunction) {
-  DataStreamBuffer ds(move(data));
+  DataStreamBuffer ds(std::move(data));
   ds.readContainer(t, readFunction);
 }
 
 template <typename T>
 void DataStreamBuffer::deserializeMapContainer(T& t, ByteArray data) {
-  DataStreamBuffer ds(move(data));
+  DataStreamBuffer ds(std::move(data));
   ds.readMapContainer(t);
 }
 
 template <typename T, typename ReadFunction>
 void DataStreamBuffer::deserializeMapContainer(T& t, ByteArray data, ReadFunction readFunction) {
-  DataStreamBuffer ds(move(data));
+  DataStreamBuffer ds(std::move(data));
   ds.readMapContainer(t, readFunction);
 }
 
 template <typename T>
 T DataStreamBuffer::deserialize(ByteArray data) {
   T t;
-  deserialize(t, move(data));
+  deserialize(t, std::move(data));
   return t;
 }
 
 template <typename T>
 T DataStreamBuffer::deserializeContainer(ByteArray data) {
   T t;
-  deserializeContainer(t, move(data));
+  deserializeContainer(t, std::move(data));
   return t;
 }
 
 template <typename T, typename ReadFunction>
 T DataStreamBuffer::deserializeContainer(ByteArray data, ReadFunction readFunction) {
   T t;
-  deserializeContainer(t, move(data), readFunction);
+  deserializeContainer(t, std::move(data), readFunction);
   return t;
 }
 
 template <typename T>
 T DataStreamBuffer::deserializeMapContainer(ByteArray data) {
   T t;
-  deserializeMapContainer(t, move(data));
+  deserializeMapContainer(t, std::move(data));
   return t;
 }
 
 template <typename T, typename ReadFunction>
 T DataStreamBuffer::deserializeMapContainer(ByteArray data, ReadFunction readFunction) {
   T t;
-  deserializeMapContainer(t, move(data), readFunction);
+  deserializeMapContainer(t, std::move(data), readFunction);
   return t;
 }
 

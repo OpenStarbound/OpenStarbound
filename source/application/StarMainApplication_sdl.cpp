@@ -206,7 +206,7 @@ ControllerButton controllerButtonFromSdlControllerButton(uint8_t button) {
 class SdlPlatform {
 public:
   SdlPlatform(ApplicationUPtr application, StringList cmdLineArgs) {
-    m_application = move(application);
+    m_application = std::move(application);
 
     // extract application path from command line args
     String applicationPath = cmdLineArgs.first();
@@ -215,7 +215,7 @@ public:
     StringList platformArguments;
     eraseWhere(cmdLineArgs, [&platformArguments](String& argument) {
         if (argument.beginsWith("+platform")) {
-          platformArguments.append(move(argument));
+          platformArguments.append(std::move(argument));
           return true;
         }
         return false;
@@ -461,7 +461,7 @@ private:
       Maybe<String> string;
       if (SDL_HasClipboardText()) {
         if (auto text = SDL_GetClipboardText()) {
-          if (*text != NULL)
+          if (*text != '\0')
             string.emplace(text);
           SDL_free(text);
         }
@@ -482,7 +482,7 @@ private:
     }
 
     void setApplicationTitle(String title) override {
-      parent->m_windowTitle = move(title);
+      parent->m_windowTitle = std::move(title);
       if (parent->m_sdlWindow)
         SDL_SetWindowTitle(parent->m_sdlWindow, parent->m_windowTitle.utf8Ptr());
     }
@@ -817,10 +817,10 @@ private:
       else
         operations = { FlipImageOperation{ FlipImageOperation::Mode::FlipY } };
 
-      auto newImage = std::make_shared<Image>(move(processImageOperations(operations, *image)));
+      auto newImage = std::make_shared<Image>(processImageOperations(operations, *image));
       // Fix fully transparent pixels inverting the underlying display pixel on Windows (allowing this could be made configurable per cursor later!)
       newImage->forEachPixel([](unsigned x, unsigned y, Vec4B& pixel) { if (!pixel[3]) pixel[0] = pixel[1] = pixel[2] = 0; });
-      entry->image = move(newImage);
+      entry->image = std::move(newImage);
       
 
       auto size = entry->image->size();
@@ -907,7 +907,7 @@ private:
 int runMainApplication(ApplicationUPtr application, StringList cmdLineArgs) {
   try {
     {
-      SdlPlatform platform(move(application), move(cmdLineArgs));
+      SdlPlatform platform(std::move(application), std::move(cmdLineArgs));
       platform.run();
     }
     Logger::info("Application: stopped gracefully");

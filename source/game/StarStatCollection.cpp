@@ -166,7 +166,7 @@ void StatCollection::netElementsNeedLoad(bool) {
     StatModifierGroupMap allModifiers;
     for (auto const& p : m_statModifiersNetState)
       allModifiers.add(p.first, p.second);
-    m_stats.setAllStatModifierGroups(move(allModifiers));
+    m_stats.setAllStatModifierGroups(std::move(allModifiers));
   }
 
   for (auto const& pair : m_resourceValuesNetStates)

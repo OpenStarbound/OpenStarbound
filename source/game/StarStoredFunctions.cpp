@@ -10,7 +10,7 @@ StoredFunction::StoredFunction(ParametricFunction<double, double> data) {
   if (data.empty())
     throw StoredFunctionException("StoredFunction constructor called on function with no data points");
 
-  m_function = move(data);
+  m_function = std::move(data);
 
   // Determine whether the function is monotonically increasing, monotonically
   // decreasing, totally flat (technically both monotonically increasing and
@@ -104,14 +104,14 @@ StoredFunction::SearchResult StoredFunction::search(double targetValue, double v
   return result;
 }
 
-StoredFunction2::StoredFunction2(MultiTable2D table) : table(move(table)) {}
+StoredFunction2::StoredFunction2(MultiTable2D table) : table(std::move(table)) {}
 
 double StoredFunction2::evaluate(double x, double y) const {
   return table.interpolate({x, y});
 }
 
 StoredConfigFunction::StoredConfigFunction(ParametricTable<int, Json> data) {
-  m_data = move(data);
+  m_data = std::move(data);
 }
 
 Json StoredConfigFunction::get(double value) const {

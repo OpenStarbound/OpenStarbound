@@ -122,7 +122,7 @@ template <typename Element, size_t MaxStackSize>
 SmallVector<Element, MaxStackSize>::SmallVector(SmallVector&& other)
   : SmallVector() {
     for (auto& e : other)
-      emplace_back(move(e));
+      emplace_back(std::move(e));
 }
 
 template <typename Element, size_t MaxStackSize>
@@ -169,7 +169,7 @@ template <typename Element, size_t MaxStackSize>
 auto SmallVector<Element, MaxStackSize>::operator=(SmallVector&& other) -> SmallVector& {
   resize(other.size());
   for (size_t i = 0; i < size(); ++i)
-    operator[](i) = move(other[i]);
+    operator[](i) = std::move(other[i]);
 
   return *this;
 }
@@ -178,7 +178,7 @@ template <typename Element, size_t MaxStackSize>
 auto SmallVector<Element, MaxStackSize>::operator=(std::initializer_list<Element> list) -> SmallVector& {
   resize(list.size());
   for (size_t i = 0; i < size(); ++i)
-    operator[](i) = move(list[i]);
+    operator[](i) = std::move(list[i]);
   return *this;
 }
 
@@ -217,7 +217,7 @@ void SmallVector<Element, MaxStackSize>::reserve(size_t newCapacity) {
 
     // We assume that move constructors can never throw.
     for (size_t i = 0; i < size; ++i) {
-      new (&newMem[i]) Element(move(oldMem[i]));
+      new (&newMem[i]) Element(std::move(oldMem[i]));
     }
 
     m_begin = newMem;
@@ -313,7 +313,7 @@ Element* SmallVector<Element, MaxStackSize>::ptr() {
 
 template <typename Element, size_t MaxStackSize>
 void SmallVector<Element, MaxStackSize>::push_back(Element e) {
-  emplace_back(move(e));
+  emplace_back(std::move(e));
 }
 
 template <typename Element, size_t MaxStackSize>
@@ -326,7 +326,7 @@ void SmallVector<Element, MaxStackSize>::pop_back() {
 
 template <typename Element, size_t MaxStackSize>
 auto SmallVector<Element, MaxStackSize>::insert(iterator pos, Element e) -> iterator {
-  emplace(pos, move(e));
+  emplace(pos, std::move(e));
   return pos;
 }
 
@@ -341,7 +341,7 @@ auto SmallVector<Element, MaxStackSize>::insert(iterator pos, Iterator begin, It
   resize(size() + toAdd);
 
   for (size_t i = toShift; i != 0; --i)
-    operator[](endIndex + i - 1) = move(operator[](startIndex + i - 1));
+    operator[](endIndex + i - 1) = std::move(operator[](startIndex + i - 1));
 
   for (size_t i = 0; i != toAdd; ++i)
     operator[](startIndex + i) = *begin++;
@@ -360,8 +360,8 @@ void SmallVector<Element, MaxStackSize>::emplace(iterator pos, Args&&... args) {
   size_t index = pos - m_begin;
   emplace_back(Element());
   for (size_t i = size() - 1; i != index; --i)
-    operator[](i) = move(operator[](i - 1));
-  operator[](index) = Element(forward<Args>(args)...);
+    operator[](i) = std::move(operator[](i - 1));
+  operator[](index) = Element(std::forward<Args>(args)...);
 }
 
 template <typename Element, size_t MaxStackSize>
@@ -369,7 +369,7 @@ template <typename... Args>
 void SmallVector<Element, MaxStackSize>::emplace_back(Args&&... args) {
   if (m_end == m_capacity)
     reserve(size() + 1);
-  new (m_end) Element(forward<Args>(args)...);
+  new (m_end) Element(std::forward<Args>(args)...);
   ++m_end;
 }
 
@@ -383,7 +383,7 @@ template <typename Element, size_t MaxStackSize>
 auto SmallVector<Element, MaxStackSize>::erase(iterator pos) -> iterator {
   size_t index = pos - ptr();
   for (size_t i = index; i < size() - 1; ++i)
-    operator[](i) = move(operator[](i + 1));
+    operator[](i) = std::move(operator[](i + 1));
   pop_back();
   return pos;
 }
@@ -394,7 +394,7 @@ auto SmallVector<Element, MaxStackSize>::erase(iterator begin, iterator end) -> 
   size_t endIndex = end - ptr();
   size_t toRemove = endIndex - startIndex;
   for (size_t i = endIndex; i < size(); ++i)
-    operator[](startIndex + (i - endIndex)) = move(operator[](i));
+    operator[](startIndex + (i - endIndex)) = std::move(operator[](i));
   resize(size() - toRemove);
   return begin;
 }

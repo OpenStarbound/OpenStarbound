@@ -43,7 +43,7 @@ ByteArray::ByteArray(ByteArray const& b)
 
 ByteArray::ByteArray(ByteArray&& b) noexcept
   : ByteArray() {
-  operator=(move(b));
+  operator=(std::move(b));
 }
 
 ByteArray::~ByteArray() {

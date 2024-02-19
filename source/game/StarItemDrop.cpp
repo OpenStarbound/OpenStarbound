@@ -69,7 +69,7 @@ ItemDropPtr ItemDrop::throwDrop(ItemDescriptor const& itemDescriptor, Vec2F cons
 
 ItemDrop::ItemDrop(ItemPtr item)
   : ItemDrop() {
-  m_item = move(item);
+  m_item = std::move(item);
 
   updateCollisionPoly();
 
@@ -94,7 +94,7 @@ ItemDrop::ItemDrop(Json const& diskStore)
 
 ItemDrop::ItemDrop(ByteArray store)
   : ItemDrop() {
-  DataStreamBuffer ds(move(store));
+  DataStreamBuffer ds(std::move(store));
 
   Root::singleton().itemDatabase()->loadItem(ds.read<ItemDescriptor>(), m_item);
   ds.read(m_eternal);
@@ -151,7 +151,7 @@ pair<ByteArray, uint64_t> ItemDrop::writeNetState(uint64_t fromVersion) {
 }
 
 void ItemDrop::readNetState(ByteArray data, float interpolationTime) {
-  m_netGroup.readNetState(move(data), interpolationTime);
+  m_netGroup.readNetState(std::move(data), interpolationTime);
 }
 
 void ItemDrop::enableInterpolation(float extrapolationHint) {
@@ -292,7 +292,7 @@ void ItemDrop::render(RenderCallback* renderCallback) {
     auto drawable = Drawable::makeLine(line, width, beamColor, position());
     (drawable.linePart().endColor = beamColor)->setAlphaF(0.0f);
     drawable.fullbright = true;
-    renderCallback->addDrawable(move(drawable), RenderLayerItemDrop);
+    renderCallback->addDrawable(std::move(drawable), RenderLayerItemDrop);
   }
 
   if (!m_drawables) {
@@ -314,7 +314,7 @@ void ItemDrop::render(RenderCallback* renderCallback) {
   Vec2F dropPosition = position();
   for (Drawable drawable : *m_drawables) {
     drawable.position += dropPosition;
-    renderCallback->addDrawable(move(drawable), renderLayer);
+    renderCallback->addDrawable(std::move(drawable), renderLayer);
   }
 }
 
@@ -323,7 +323,7 @@ void ItemDrop::renderLightSources(RenderCallback* renderCallback) {
   light.pointLight = false;
   light.color = Vec3B::filled(20);
   light.position = position();
-  renderCallback->addLightSource(move(light));
+  renderCallback->addLightSource(std::move(light));
 }
 
 

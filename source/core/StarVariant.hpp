@@ -75,7 +75,7 @@ public:
     typename std::enable_if< std::is_constructible<T, Args...>::value, int >::type = 0
   >
   Variant(std::in_place_type_t<T>, Args&&... args) {
-    new (&m_buffer) T(forward<Args>(args)...);
+    new (&m_buffer) T(std::forward<Args>(args)...);
     m_typeIndex = TypeIndex<T>::value;
   }
 
@@ -83,7 +83,7 @@ public:
     typename std::enable_if< std::is_constructible<T, std::initializer_list<U>&, Args...>::value, int >::type = 0
   >
   Variant(std::in_place_type_t<T>, std::initializer_list<U> il, Args&&... args) {
-    new (&m_buffer) T(il, forward<Args>(args)...);
+    new (&m_buffer) T(il, std::forward<Args>(args)...);
     m_typeIndex = TypeIndex<T>::value;
   }
 
@@ -373,12 +373,12 @@ Variant<FirstType, RestTypes...>::Variant(T const& x) {
 template <typename FirstType, typename... RestTypes>
 template <typename T, typename>
 Variant<FirstType, RestTypes...>::Variant(T&& x) {
-  assign(forward<T>(x));
+  assign(std::forward<T>(x));
 }
 
 template <typename FirstType, typename... RestTypes>
 Variant<FirstType, RestTypes...>::Variant(Variant const& x) {
-  x.call([this](auto const& t) {
+  x.call([&](auto const& t) {
       assign(t);
     });
 }
@@ -386,8 +386,8 @@ Variant<FirstType, RestTypes...>::Variant(Variant const& x) {
 template <typename FirstType, typename... RestTypes>
 Variant<FirstType, RestTypes...>::Variant(Variant&& x)
   noexcept(detail::IsNothrowMoveConstructible<FirstType, RestTypes...>::value) {
-  x.call([this](auto& t) {
-      assign(move(t));
+  x.call([&](auto& t) {
+      assign(std::move(t));
     });
 }
 
@@ -401,7 +401,7 @@ Variant<FirstType, RestTypes...>& Variant<FirstType, RestTypes...>::operator=(Va
   if (&x == this)
     return *this;
 
-  x.call([this](auto const& t) {
+  x.call([&](auto const& t) {
       assign(t);
     });
 
@@ -414,8 +414,8 @@ Variant<FirstType, RestTypes...>& Variant<FirstType, RestTypes...>::operator=(Va
   if (&x == this)
     return *this;
 
-  x.call([this](auto& t) {
-      assign(move(t));
+  x.call([&](auto& t) {
+      assign(std::move(t));
     });
 
   return *this;
@@ -431,7 +431,7 @@ Variant<FirstType, RestTypes...>& Variant<FirstType, RestTypes...>::operator=(T 
 template <typename FirstType, typename... RestTypes>
 template <typename T, typename>
 Variant<FirstType, RestTypes...>& Variant<FirstType, RestTypes...>::operator=(T&& x) {
-  assign(forward<T>(x));
+  assign(std::forward<T>(x));
   return *this;
 }
 
@@ -484,13 +484,13 @@ bool Variant<FirstType, RestTypes...>::is() const {
 template <typename FirstType, typename... RestTypes>
 template <typename Function>
 decltype(auto) Variant<FirstType, RestTypes...>::call(Function&& function) {
-  return doCall<Function, FirstType, RestTypes...>(forward<Function>(function));
+  return doCall<Function, FirstType, RestTypes...>(std::forward<Function>(function));
 }
 
 template <typename FirstType, typename... RestTypes>
 template <typename Function>
 decltype(auto) Variant<FirstType, RestTypes...>::call(Function&& function) const {
-  return doCall<Function, FirstType, RestTypes...>(forward<Function>(function));
+  return doCall<Function, FirstType, RestTypes...>(std::forward<Function>(function));
 }
 
 template <typename FirstType, typename... RestTypes>
@@ -588,10 +588,10 @@ template <typename T>
 void Variant<FirstType, RestTypes...>::assign(T&& x) {
   typedef typename std::decay<T>::type AssignType;
   if (auto p = ptr<AssignType>()) {
-    *p = forward<T>(x);
+    *p = std::forward<T>(x);
   } else {
     destruct();
-    new (&m_buffer) AssignType(forward<T>(x));
+    new (&m_buffer) AssignType(std::forward<T>(x));
     m_typeIndex = TypeIndex<AssignType>::value;
   }
 }
@@ -611,7 +611,7 @@ decltype(auto) Variant<FirstType, RestTypes...>::doCall(Function&& function) {
   if (T1* p = ptr<T1>())
     return function(*p);
   else
-    return doCall<Function, T2, TL...>(forward<Function>(function));
+    return doCall<Function, T2, TL...>(std::forward<Function>(function));
 }
 
 template <typename FirstType, typename... RestTypes>
@@ -629,7 +629,7 @@ decltype(auto) Variant<FirstType, RestTypes...>::doCall(Function&& function) con
   if (T1 const* p = ptr<T1>())
     return function(*p);
   else
-    return doCall<Function, T2, TL...>(forward<Function>(function));
+    return doCall<Function, T2, TL...>(std::forward<Function>(function));
 }
 
 template <typename FirstType, typename... RestTypes>
@@ -665,7 +665,7 @@ MVariant<Types...>::MVariant(MVariant const& x)
 
 template <typename... Types>
 MVariant<Types...>::MVariant(MVariant&& x) {
-  m_variant = move(x.m_variant);
+  m_variant = std::move(x.m_variant);
   x.m_variant = MVariantEmpty();
 }
 
@@ -676,7 +676,7 @@ MVariant<Types...>::MVariant(Variant<Types...> const& x) {
 
 template <typename... Types>
 MVariant<Types...>::MVariant(Variant<Types...>&& x) {
-  operator=(move(x));
+  operator=(std::move(x));
 }
 
 template <typename... Types>
@@ -687,7 +687,7 @@ MVariant<Types...>::MVariant(T const& x)
 template <typename... Types>
 template <typename T, typename>
 MVariant<Types...>::MVariant(T&& x)
-  : m_variant(forward<T>(x)) {}
+  : m_variant(std::forward<T>(x)) {}
 
 template <typename... Types>
 MVariant<Types...>::~MVariant() {}
@@ -707,7 +707,7 @@ MVariant<Types...>& MVariant<Types...>::operator=(MVariant const& x) {
 template <typename... Types>
 MVariant<Types...>& MVariant<Types...>::operator=(MVariant&& x) {
   try {
-    m_variant = move(x.m_variant);
+    m_variant = std::move(x.m_variant);
   } catch (...) {
     if (m_variant.invalid())
       m_variant = MVariantEmpty();
@@ -733,7 +733,7 @@ template <typename... Types>
 template <typename T, typename>
 MVariant<Types...>& MVariant<Types...>::operator=(T&& x) {
   try {
-    m_variant = forward<T>(x);
+    m_variant = std::forward<T>(x);
   } catch (...) {
     if (m_variant.invalid())
       m_variant = MVariantEmpty();
@@ -753,7 +753,7 @@ MVariant<Types...>& MVariant<Types...>::operator=(Variant<Types...> const& x) {
 template <typename... Types>
 MVariant<Types...>& MVariant<Types...>::operator=(Variant<Types...>&& x) {
   x.call([this](auto& t) {
-      *this = move(t);
+      *this = std::move(t);
     });
   return *this;
 }
@@ -830,7 +830,7 @@ bool MVariant<Types...>::is() const {
 template <typename... Types>
 template <typename T, typename>
 T MVariant<Types...>::take() {
-  T t = move(m_variant.template get<T>());
+  T t = std::move(m_variant.template get<T>());
   m_variant = MVariantEmpty();
   return t;
 }
@@ -854,7 +854,7 @@ Variant<Types...> MVariant<Types...>::takeValue() {
 
   Variant<Types...> r;
   call([&r](auto& v) {
-      r = move(v);
+      r = std::move(v);
     });
   m_variant = MVariantEmpty();
   return r;
@@ -878,13 +878,13 @@ MVariant<Types...>::operator bool() const {
 template <typename... Types>
 template <typename Function>
 void MVariant<Types...>::call(Function&& function) {
-  m_variant.call(RefCaller<Function>(forward<Function>(function)));
+  m_variant.call(RefCaller<Function>(std::forward<Function>(function)));
 }
 
 template <typename... Types>
 template <typename Function>
 void MVariant<Types...>::call(Function&& function) const {
-  m_variant.call(ConstRefCaller<Function>(forward<Function>(function)));
+  m_variant.call(ConstRefCaller<Function>(std::forward<Function>(function)));
 }
 
 template <typename... Types>
@@ -910,7 +910,7 @@ bool MVariant<Types...>::MVariantEmpty::operator<(MVariantEmpty const&) const {
 template <typename... Types>
 template <typename Function>
 MVariant<Types...>::RefCaller<Function>::RefCaller(Function&& function)
-  : function(forward<Function>(function)) {}
+  : function(std::forward<Function>(function)) {}
 
 template <typename... Types>
 template <typename Function>
@@ -926,7 +926,7 @@ void MVariant<Types...>::RefCaller<Function>::operator()(T& t) {
 template <typename... Types>
 template <typename Function>
 MVariant<Types...>::ConstRefCaller<Function>::ConstRefCaller(Function&& function)
-  : function(forward<Function>(function)) {}
+  : function(std::forward<Function>(function)) {}
 
 template <typename... Types>
 template <typename Function>

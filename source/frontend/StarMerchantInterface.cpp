@@ -23,8 +23,8 @@ namespace Star {
 
 MerchantPane::MerchantPane(
     WorldClientPtr worldClient, PlayerPtr player, Json const& settings, EntityId sourceEntityId) {
-  m_worldClient = move(worldClient);
-  m_player = move(player);
+  m_worldClient = std::move(worldClient);
+  m_player = std::move(player);
   m_sourceEntityId = sourceEntityId;
 
   auto assets = Root::singleton().assets();

@@ -262,7 +262,7 @@ MapType jsonToMapK(Json const& v, KeyConverter&& keyConvert) {
 
 template <typename MapType, typename ValueConverter>
 MapType jsonToMapV(Json const& v, ValueConverter&& valueConvert) {
-  return jsonToMapKV<MapType>(v, construct<typename MapType::key_type>(), forward<ValueConverter>(valueConvert));
+  return jsonToMapKV<MapType>(v, construct<typename MapType::key_type>(), std::forward<ValueConverter>(valueConvert));
 }
 
 template <typename MapType>
@@ -281,12 +281,12 @@ Json jsonFromMapKV(MapType const& map, KeyConverter&& keyConvert, ValueConverter
 
 template <typename MapType, typename KeyConverter>
 Json jsonFromMapK(MapType const& map, KeyConverter&& keyConvert) {
-  return jsonFromMapKV<MapType>(map, forward<KeyConverter>(keyConvert), construct<Json>());
+  return jsonFromMapKV<MapType>(map, std::forward<KeyConverter>(keyConvert), construct<Json>());
 }
 
 template <typename MapType, typename ValueConverter>
 Json jsonFromMapV(MapType const& map, ValueConverter&& valueConvert) {
-  return jsonFromMapKV<MapType>(map, construct<String>(), forward<ValueConverter>(valueConvert));
+  return jsonFromMapKV<MapType>(map, construct<String>(), std::forward<ValueConverter>(valueConvert));
 }
 
 template <typename MapType>

@@ -18,7 +18,7 @@ void JoinRequestDialog::displayRequest(String const& userName, function<void(P2P
 
   GuiReader reader;
 
-  m_callback = move(callback);
+  m_callback = std::move(callback);
 
   reader.registerCallback("yes", [this](Widget*){ reply(P2PJoinRequestReply::Yes); });
   reader.registerCallback("no", [this](Widget*){ reply(P2PJoinRequestReply::No); });

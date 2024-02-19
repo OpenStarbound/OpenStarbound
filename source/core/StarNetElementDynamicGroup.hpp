@@ -91,7 +91,7 @@ auto NetElementDynamicGroup<Element>::addNetElement(ElementPtr element) -> Eleme
   readyElement(element);
   DataStreamBuffer storeBuffer;
   element->netStore(storeBuffer);
-  auto id = m_idMap.add(move(element));
+  auto id = m_idMap.add(std::move(element));
 
   addChangeData(ElementAddition(id, storeBuffer.takeData()));
 
@@ -192,7 +192,7 @@ void NetElementDynamicGroup<Element>::netLoad(DataStream& ds) {
     element->netLoad(storeBuffer);
     readyElement(element);
 
-    m_idMap.add(id, move(element));
+    m_idMap.add(id, std::move(element));
     addChangeData(ElementAddition(id, storeBuffer.takeData()));
   }
 }
@@ -256,10 +256,10 @@ void NetElementDynamicGroup<Element>::readNetDelta(DataStream& ds, float interpo
           m_idMap.clear();
         } else if (auto addition = changeUpdate.template ptr<ElementAddition>()) {
           ElementPtr element = make_shared<Element>();
-          DataStreamBuffer storeBuffer(move(get<1>(*addition)));
+          DataStreamBuffer storeBuffer(std::move(get<1>(*addition)));
           element->netLoad(storeBuffer);
           readyElement(element);
-          m_idMap.add(get<0>(*addition), move(element));
+          m_idMap.add(get<0>(*addition), std::move(element));
         } else if (auto removal = changeUpdate.template ptr<ElementRemoval>()) {
           m_idMap.remove(*removal);
         }
@@ -296,7 +296,7 @@ void NetElementDynamicGroup<Element>::addChangeData(ElementChange change) {
   uint64_t currentVersion = m_netVersion ? m_netVersion->current() : 0;
   starAssert(m_changeData.empty() || m_changeData.last().first <= currentVersion);
 
-  m_changeData.append({currentVersion, move(change)});
+  m_changeData.append({currentVersion, std::move(change)});
 
   m_changeDataLastVersion = max<int64_t>((int64_t)currentVersion - MaxChangeDataVersions, 0);
   while (!m_changeData.empty() && m_changeData.first().first < m_changeDataLastVersion)

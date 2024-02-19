@@ -16,8 +16,8 @@ namespace Star {
 
 ClientCommandProcessor::ClientCommandProcessor(UniverseClientPtr universeClient, CinematicPtr cinematicOverlay,
     MainInterfacePaneManager* paneManager, StringMap<StringList> macroCommands)
-  : m_universeClient(move(universeClient)), m_cinematicOverlay(move(cinematicOverlay)),
-    m_paneManager(paneManager), m_macroCommands(move(macroCommands)) {
+  : m_universeClient(std::move(universeClient)), m_cinematicOverlay(std::move(cinematicOverlay)),
+    m_paneManager(paneManager), m_macroCommands(std::move(macroCommands)) {
   m_builtinCommands = {
     {"reload", bind(&ClientCommandProcessor::reload, this)},
     {"whoami", bind(&ClientCommandProcessor::whoami, this)},

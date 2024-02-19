@@ -15,7 +15,7 @@ DamageDatabase::DamageDatabase() {
     for (auto particle : p.second.getObject("damageNumberParticles")) {
       type.damageNumberParticles.set(HitTypeNames.getLeft(particle.first), particle.second.toString());
     }
-    m_elementalTypes.set(p.first, move(type));
+    m_elementalTypes.set(p.first, std::move(type));
   }
 
   auto files = assets->scanExtension("damage");
@@ -43,7 +43,7 @@ DamageDatabase::DamageDatabase() {
     if (!m_elementalTypes.contains(kind.elementalType))
       throw StarException(strf("Undefined elemental type {} in damage kind {}", kind.elementalType, name));
 
-    m_damageKinds.set(name, move(kind));
+    m_damageKinds.set(name, std::move(kind));
   }
 }
 

@@ -19,7 +19,7 @@ unsigned const SyncWaitMillis = 10000;
 class ASyncClientThread : public Thread {
 public:
   ASyncClientThread(UniverseConnection conn)
-    : Thread("UniverseConnectionTestClientThread"), m_connection(move(conn)) {
+    : Thread("UniverseConnectionTestClientThread"), m_connection(std::move(conn)) {
     start();
   }
 
@@ -66,7 +66,7 @@ private:
 class SyncClientThread : public Thread {
 public:
   SyncClientThread(UniverseConnection conn)
-    : Thread("UniverseConnectionTestClientThread"), m_connection(move(conn)) {
+    : Thread("UniverseConnectionTestClientThread"), m_connection(std::move(conn)) {
     start();
   }
 
@@ -104,36 +104,36 @@ TEST(UniverseConnections, All) {
   TcpServer tcpServer(HostAddressWithPort(HostAddress::localhost(), ServerPort));
   tcpServer.setAcceptCallback([&server, &clientId](TcpSocketPtr socket) {
       socket->setNonBlocking(true);
-      auto conn = UniverseConnection(TcpPacketSocket::open(move(socket)));
-      server.addConnection(++clientId, move(conn));
+      auto conn = UniverseConnection(TcpPacketSocket::open(std::move(socket)));
+      server.addConnection(++clientId, std::move(conn));
     });
 
   LinkedList<ASyncClientThread> localASyncClients;
   for (unsigned i = 0; i < NumLocalASyncConnections; ++i) {
     auto pair = LocalPacketSocket::openPair();
-    server.addConnection(++clientId, UniverseConnection(move(pair.first)));
-    localASyncClients.emplaceAppend(UniverseConnection(move(pair.second)));
+    server.addConnection(++clientId, UniverseConnection(std::move(pair.first)));
+    localASyncClients.emplaceAppend(UniverseConnection(std::move(pair.second)));
   }
 
   LinkedList<SyncClientThread> localSyncClients;
   for (unsigned i = 0; i < NumLocalSyncConnections; ++i) {
     auto pair = LocalPacketSocket::openPair();
-    server.addConnection(++clientId, UniverseConnection(move(pair.first)));
-    localSyncClients.emplaceAppend(UniverseConnection(move(pair.second)));
+    server.addConnection(++clientId, UniverseConnection(std::move(pair.first)));
+    localSyncClients.emplaceAppend(UniverseConnection(std::move(pair.second)));
   }
 
   LinkedList<ASyncClientThread> remoteASyncClients;
   for (unsigned i = 0; i < NumRemoteASyncConnections; ++i) {
     auto socket = TcpSocket::connectTo({HostAddress::localhost(), ServerPort});
     socket->setNonBlocking(true);
-    remoteASyncClients.emplaceAppend(UniverseConnection(TcpPacketSocket::open(move(socket))));
+    remoteASyncClients.emplaceAppend(UniverseConnection(TcpPacketSocket::open(std::move(socket))));
   }
 
   LinkedList<SyncClientThread> remoteSyncClients;
   for (unsigned i = 0; i < NumRemoteSyncConnections; ++i) {
     auto socket = TcpSocket::connectTo({HostAddress::localhost(), ServerPort});
     socket->setNonBlocking(true);
-    remoteSyncClients.emplaceAppend(UniverseConnection(TcpPacketSocket::open(move(socket))));
+    remoteSyncClients.emplaceAppend(UniverseConnection(TcpPacketSocket::open(std::move(socket))));
   }
 
   for (auto& c : localASyncClients)

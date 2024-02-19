@@ -25,7 +25,7 @@ ScriptPane::ScriptPane(UniverseClientPtr client, Json config, EntityId sourceEnt
   auto& root = Root::singleton();
   auto assets = root.assets();
 
-  m_client = move(client);
+  m_client = std::move(client);
   m_sourceEntityId = sourceEntityId;
 
   m_script.addCallbacks("player", LuaBindings::makePlayerCallbacks(m_client->mainPlayer().get()));

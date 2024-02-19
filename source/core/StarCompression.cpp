@@ -108,7 +108,7 @@ CompressedFile::CompressedFile()
 
 CompressedFile::CompressedFile(String filename)
   : IODevice(IOMode::Closed), m_file(0), m_compression(MediumCompression) {
-  setFilename(move(filename));
+  setFilename(std::move(filename));
 }
 
 CompressedFile::~CompressedFile() {
@@ -172,7 +172,7 @@ size_t CompressedFile::write(const char* data, size_t len) {
 void CompressedFile::setFilename(String filename) {
   if (isOpen())
     throw IOException("Cannot call setFilename while CompressedFile is open");
-  m_filename = move(filename);
+  m_filename = std::move(filename);
 }
 
 void CompressedFile::setCompression(CompressionLevel compression) {

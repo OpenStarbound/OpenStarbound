@@ -1104,7 +1104,7 @@ void ActorMovementController::doSetAnchorState(Maybe<EntityAnchorState> anchorSt
   }
 
   m_anchorState.set(anchorState);
-  m_entityAnchor = move(entityAnchor);
+  m_entityAnchor = std::move(entityAnchor);
 
   if (m_entityAnchor)
     setPosition(m_entityAnchor->position);

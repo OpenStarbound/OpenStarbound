@@ -101,10 +101,10 @@ struct ThreadImpl {
 
 struct ThreadFunctionImpl : ThreadImpl {
   ThreadFunctionImpl(std::function<void()> function, String name)
-    : ThreadImpl(wrapFunction(move(function)), move(name)) {}
+    : ThreadImpl(wrapFunction(std::move(function)), std::move(name)) {}
 
   std::function<void()> wrapFunction(std::function<void()> function) {
-    return [function = move(function), this]() {
+    return [function = std::move(function), this]() {
       try {
         function();
       } catch (...) {
@@ -283,7 +283,7 @@ ThreadFunction<void>::ThreadFunction() {}
 ThreadFunction<void>::ThreadFunction(ThreadFunction&&) = default;
 
 ThreadFunction<void>::ThreadFunction(function<void()> function, String const& name) {
-  m_impl.reset(new ThreadFunctionImpl(move(function), name));
+  m_impl.reset(new ThreadFunctionImpl(std::move(function), name));
   m_impl->start();
 }
 

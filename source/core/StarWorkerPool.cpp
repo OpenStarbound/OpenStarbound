@@ -39,11 +39,11 @@ void WorkerPoolHandle::finish() const {
 
 WorkerPoolHandle::Impl::Impl() : done(false) {}
 
-WorkerPoolHandle::WorkerPoolHandle(shared_ptr<Impl> impl) : m_impl(move(impl)) {}
+WorkerPoolHandle::WorkerPoolHandle(shared_ptr<Impl> impl) : m_impl(std::move(impl)) {}
 
-WorkerPool::WorkerPool(String name) : m_name(move(name)) {}
+WorkerPool::WorkerPool(String name) : m_name(std::move(name)) {}
 
-WorkerPool::WorkerPool(String name, unsigned threadCount) : WorkerPool(move(name)) {
+WorkerPool::WorkerPool(String name, unsigned threadCount) : WorkerPool(std::move(name)) {
   start(threadCount);
 }
 
@@ -159,7 +159,7 @@ void WorkerPool::WorkerThread::run() {
 
 void WorkerPool::queueWork(function<void()> work) {
   MutexLocker workLock(m_workMutex);
-  m_pendingWork.append(move(work));
+  m_pendingWork.append(std::move(work));
   m_workCondition.signal();
 }
 

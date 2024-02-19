@@ -50,7 +50,7 @@ TerrainSelectorParameters TerrainSelectorParameters::withCommonality(float commo
 }
 
 TerrainSelector::TerrainSelector(String type, Json config, TerrainSelectorParameters parameters)
-  : type(move(type)), config(move(config)), parameters(move(parameters)) {}
+  : type(std::move(type)), config(std::move(config)), parameters(std::move(parameters)) {}
 
 TerrainSelector::~TerrainSelector() {}
 

@@ -9,9 +9,9 @@
 namespace Star {
 
 Item::Item(Json config, String directory, Json parameters) {
-  m_config = move(config);
-  m_directory = move(directory);
-  m_parameters = move(parameters);
+  m_config = std::move(config);
+  m_directory = std::move(directory);
+  m_parameters = std::move(parameters);
   m_name = m_config.getString("itemName");
   m_count = 1;
 
@@ -33,7 +33,7 @@ Item::Item(Json config, String directory, Json parameters) {
         iconDrawables.emplaceAppend(drawable);
       }
     }
-    setIconDrawables(move(iconDrawables));
+    setIconDrawables(std::move(iconDrawables));
   } else {
     auto image = AssetPath::relativeTo(m_directory, inventoryIcon.toString());
     setIconDrawables({Drawable::makeImage(image, 1.0f, true, Vec2F())});
@@ -214,7 +214,7 @@ void Item::setPrice(uint64_t price) {
 }
 
 void Item::setIconDrawables(List<Drawable> drawables) {
-  m_iconDrawables = move(drawables);
+  m_iconDrawables = std::move(drawables);
   auto boundBox = Drawable::boundBoxAll(m_iconDrawables, true);
   if (!boundBox.isEmpty()) {
     for (auto& drawable : m_iconDrawables)

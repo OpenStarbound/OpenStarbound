@@ -86,7 +86,7 @@ size_t TabSetWidget::selectedTab() const {
 }
 
 void TabSetWidget::setCallback(WidgetCallbackFunc callback) {
-  m_callback = move(callback);
+  m_callback = std::move(callback);
 }
 
 }

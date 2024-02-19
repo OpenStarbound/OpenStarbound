@@ -163,7 +163,7 @@ KeyBindings::KeyBindings(Json const& json) {
       }
     }
 
-    m_actions = move(actions);
+    m_actions = std::move(actions);
   } catch (StarException const& e) {
     throw StarException(strf("Could not set keybindings from configuration. {}", outputException(e, false)));
   }

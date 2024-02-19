@@ -134,7 +134,7 @@ NpcVariant NpcDatabase::generateNpcVariant(
             }
           }
 
-          variant.items[itemSlotConfig.first] = move(item);
+          variant.items[itemSlotConfig.first] = std::move(item);
         }
       }
     }

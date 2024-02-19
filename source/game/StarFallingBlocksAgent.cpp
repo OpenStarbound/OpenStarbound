@@ -5,7 +5,7 @@
 namespace Star {
 
 FallingBlocksAgent::FallingBlocksAgent(FallingBlocksFacadePtr worldFacade)
-  : m_facade(move(worldFacade)) {
+  : m_facade(std::move(worldFacade)) {
   m_immediateUpwardPropagateProbability = Root::singleton().assets()->json("/worldserver.config:fallingBlocksImmediateUpwardPropogateProbability").toFloat();
 }
 

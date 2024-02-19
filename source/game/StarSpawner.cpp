@@ -41,7 +41,7 @@ Spawner::Spawner() {
 }
 
 void Spawner::init(SpawnerFacadePtr facade) {
-  m_facade = move(facade);
+  m_facade = std::move(facade);
 }
 
 void Spawner::uninit() {

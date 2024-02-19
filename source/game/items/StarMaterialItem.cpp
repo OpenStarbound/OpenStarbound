@@ -32,7 +32,7 @@ MaterialItem::MaterialItem(Json const& config, String const& directory, Json con
         d.imagePart().addDirectives(image, false);
       }
     }
-    setIconDrawables(move(drawables));
+    setIconDrawables(std::move(drawables));
   }
 
   setTwoHanded(config.getBool("twoHanded", true));
@@ -48,10 +48,10 @@ MaterialItem::MaterialItem(Json const& config, String const& directory, Json con
   if (m_placeSounds.empty()) {
     auto miningSound = materialDatabase->miningSound(m_material);
     if (!miningSound.empty())
-      m_placeSounds.append(move(miningSound));
+      m_placeSounds.append(std::move(miningSound));
     auto stepSound = materialDatabase->footstepSound(m_material);
     if (!stepSound.empty())
-      m_placeSounds.append(move(stepSound));
+      m_placeSounds.append(std::move(stepSound));
     else if (m_placeSounds.empty())
       m_placeSounds.append(materialDatabase->defaultFootstepSound());
   }
@@ -259,7 +259,7 @@ List<Drawable> const& MaterialItem::generatedPreview(Vec2I position) const {
           drawable.translate(-boundBox.center());
       }
 
-      m_generatedPreviewCache.emplace(move(drawables));
+      m_generatedPreviewCache.emplace(std::move(drawables));
     }
     else
       m_generatedPreviewCache.emplace(iconDrawables());

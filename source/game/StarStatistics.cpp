@@ -8,7 +8,7 @@
 namespace Star {
 
 Statistics::Statistics(String const& storageDirectory, StatisticsServicePtr service) {
-  m_service = move(service);
+  m_service = std::move(service);
   m_initialized = !m_service;
   m_storageDirectory = storageDirectory;
   readStatistics();

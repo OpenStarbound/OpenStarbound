@@ -108,7 +108,7 @@ NetworkedAnimator::NetworkedAnimator(Json config, String relativePath) : Network
   for (auto const& pair : config.get("rotationGroups", JsonObject()).iterateObject()) {
     String rotationGroupName = pair.first;
     Json rotationGroupConfig = pair.second;
-    RotationGroup& rotationGroup = m_rotationGroups[move(rotationGroupName)];
+    RotationGroup& rotationGroup = m_rotationGroups[std::move(rotationGroupName)];
     rotationGroup.angularVelocity = rotationGroupConfig.getFloat("angularVelocity", 0.0f);
     rotationGroup.rotationCenter = jsonToVec2F(rotationGroupConfig.get("rotationCenter", JsonArray{0, 0}));
   }
@@ -117,7 +117,7 @@ NetworkedAnimator::NetworkedAnimator(Json config, String relativePath) : Network
     String particleEmitterName = pair.first;
     Json particleEmitterConfig = pair.second;
 
-    ParticleEmitter& emitter = m_particleEmitters[move(particleEmitterName)];
+    ParticleEmitter& emitter = m_particleEmitters[std::move(particleEmitterName)];
     emitter.emissionRate.set(particleEmitterConfig.getFloat("emissionRate", 1.0f));
     emitter.emissionRateVariance = particleEmitterConfig.getFloat("emissionRateVariance", 0.0f);
     emitter.offsetRegion.set(particleEmitterConfig.opt("offsetRegion").apply(jsonToRectF).value(RectF::null()));
@@ -147,7 +147,7 @@ NetworkedAnimator::NetworkedAnimator(Json config, String relativePath) : Network
     String lightName = pair.first;
     Json lightConfig = pair.second;
 
-    Light& light = m_lights[move(lightName)];
+    Light& light = m_lights[std::move(lightName)];
     light.active.set(lightConfig.getBool("active", true));
     auto lightPosition = lightConfig.opt("position").apply(jsonToVec2F).value();
     light.xPosition.set(lightPosition[0]);
@@ -177,7 +177,7 @@ NetworkedAnimator::NetworkedAnimator(Json config, String relativePath) : Network
   for (auto const& pair : config.get("sounds", JsonObject()).iterateObject()) {
     String soundName = pair.first;
     Json soundConfig = pair.second;
-    Sound& sound = m_sounds[move(soundName)];
+    Sound& sound = m_sounds[std::move(soundName)];
     if (soundConfig.isType(Json::Type::Array)) {
       sound.rangeMultiplier = 1.0f;
       sound.soundPool.set(jsonToStringList(soundConfig).transformed(bind(&AssetPath::relativeTo, m_relativePath, _1)));
@@ -231,7 +231,7 @@ NetworkedAnimator::NetworkedAnimator(Json config, String relativePath) : Network
 }
 
 NetworkedAnimator::NetworkedAnimator(NetworkedAnimator&& animator) {
-  operator=(move(animator));
+  operator=(std::move(animator));
 }
 
 NetworkedAnimator::NetworkedAnimator(NetworkedAnimator const& animator) {
@@ -239,23 +239,23 @@ NetworkedAnimator::NetworkedAnimator(NetworkedAnimator const& animator) {
 }
 
 NetworkedAnimator& NetworkedAnimator::operator=(NetworkedAnimator&& animator) {
-  m_relativePath = move(animator.m_relativePath);
-  m_animatedParts = move(animator.m_animatedParts);
-  m_stateInfo = move(animator.m_stateInfo);
-  m_transformationGroups = move(animator.m_transformationGroups);
-  m_rotationGroups = move(animator.m_rotationGroups);
-  m_particleEmitters = move(animator.m_particleEmitters);
-  m_lights = move(animator.m_lights);
-  m_sounds = move(animator.m_sounds);
-  m_effects = move(animator.m_effects);
-  m_processingDirectives = move(animator.m_processingDirectives);
-  m_zoom = move(animator.m_zoom);
-  m_flipped = move(animator.m_flipped);
-  m_flippedRelativeCenterLine = move(animator.m_flippedRelativeCenterLine);
-  m_animationRate = move(animator.m_animationRate);
-  m_globalTags = move(animator.m_globalTags);
-  m_partTags = move(animator.m_partTags);
-  m_cachedPartDrawables = move(animator.m_cachedPartDrawables);
+  m_relativePath = std::move(animator.m_relativePath);
+  m_animatedParts = std::move(animator.m_animatedParts);
+  m_stateInfo = std::move(animator.m_stateInfo);
+  m_transformationGroups = std::move(animator.m_transformationGroups);
+  m_rotationGroups = std::move(animator.m_rotationGroups);
+  m_particleEmitters = std::move(animator.m_particleEmitters);
+  m_lights = std::move(animator.m_lights);
+  m_sounds = std::move(animator.m_sounds);
+  m_effects = std::move(animator.m_effects);
+  m_processingDirectives = std::move(animator.m_processingDirectives);
+  m_zoom = std::move(animator.m_zoom);
+  m_flipped = std::move(animator.m_flipped);
+  m_flippedRelativeCenterLine = std::move(animator.m_flippedRelativeCenterLine);
+  m_animationRate = std::move(animator.m_animationRate);
+  m_globalTags = std::move(animator.m_globalTags);
+  m_partTags = std::move(animator.m_partTags);
+  m_cachedPartDrawables = std::move(animator.m_cachedPartDrawables);
 
   setupNetStates();
 
@@ -380,7 +380,7 @@ Maybe<PolyF> NetworkedAnimator::partPoly(String const& partName, String const& p
 }
 
 void NetworkedAnimator::setGlobalTag(String tagName, String tagValue) {
-  m_globalTags.set(move(tagName), move(tagValue));
+  m_globalTags.set(std::move(tagName), std::move(tagValue));
 }
 
 void NetworkedAnimator::removeGlobalTag(String const& tagName) {
@@ -393,7 +393,7 @@ String const* NetworkedAnimator::globalTagPtr(String const& tagName) const {
 
 
 void NetworkedAnimator::setPartTag(String const& partType, String tagName, String tagValue) {
-  m_partTags[partType].set(move(tagName), move(tagValue));
+  m_partTags[partType].set(std::move(tagName), std::move(tagValue));
 }
 
 void NetworkedAnimator::setProcessingDirectives(Directives const& directives) {
@@ -528,7 +528,7 @@ bool NetworkedAnimator::hasSound(String const& soundName) const {
 }
 
 void NetworkedAnimator::setSoundPool(String const& soundName, StringList soundPool) {
-  m_sounds.get(soundName).soundPool.set(move(soundPool));
+  m_sounds.get(soundName).soundPool.set(std::move(soundPool));
 }
 
 void NetworkedAnimator::setSoundPosition(String const& soundName, Vec2F const& position) {
@@ -568,7 +568,7 @@ void NetworkedAnimator::setEffectEnabled(String const& effect, bool enabled) {
 List<Drawable> NetworkedAnimator::drawables(Vec2F const& position) const {
   List<Drawable> drawables;
   for (auto& p : drawablesWithZLevel(position))
-    drawables.append(move(p.first));
+    drawables.append(std::move(p.first));
   return drawables;
 }
 
@@ -655,10 +655,10 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
 
           Drawable drawable = Drawable::makeImage(!relativeImage.empty() ? relativeImage : usedImage, 1.0f / TilePixels, centered, Vec2F());
           if (find == m_cachedPartDrawables.end())
-            find = m_cachedPartDrawables.emplace(partName, std::pair{ hash, move(drawable) }).first;
+            find = m_cachedPartDrawables.emplace(partName, std::pair{ hash, std::move(drawable) }).first;
           else {
             find->second.first = hash;
-            find->second.second = move(drawable);
+            find->second.second = std::move(drawable);
           }
         }
 
@@ -671,7 +671,7 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
         drawable.fullbright = fullbright;
         drawable.translate(position);
 
-        drawables.append({move(drawable), zLevel});
+        drawables.append({std::move(drawable), zLevel});
       }
         
       baseProcessingDirectives.resize(originalDirectivesSize);
@@ -750,7 +750,7 @@ void NetworkedAnimator::update(float dt, DynamicTarget* dynamicTarget) {
 
         bool changedPersistentSound = persistentSound != activePersistentSound.sound;
         if (changedPersistentSound || !activePersistentSound.audio) {
-          activePersistentSound.sound = move(persistentSound);
+          activePersistentSound.sound = std::move(persistentSound);
           if (activePersistentSound.audio)
             activePersistentSound.audio->stop(activePersistentSound.stopRampTime);
 
@@ -781,7 +781,7 @@ void NetworkedAnimator::update(float dt, DynamicTarget* dynamicTarget) {
 
         bool changedImmediateSound = immediateSound != activeImmediateSound.sound;
         if (changedImmediateSound) {
-          activeImmediateSound.sound = move(immediateSound);
+          activeImmediateSound.sound = std::move(immediateSound);
           if (!immediateSoundFile.empty()) {
             activeImmediateSound.audio = make_shared<AudioInstance>(*Root::singleton().assets()->audio(immediateSoundFile));
             activeImmediateSound.audio->setRangeMultiplier(activeState.properties.value("immediateSoundRangeMultiplier", 1.0f).toFloat());
@@ -843,7 +843,7 @@ void NetworkedAnimator::update(float dt, DynamicTarget* dynamicTarget) {
           particle.rotation += Constants::pi;
         }
 
-        dynamicTarget->pendingParticles.append(move(particle));
+        dynamicTarget->pendingParticles.append(std::move(particle));
       }
     };
 
@@ -916,7 +916,7 @@ void NetworkedAnimator::update(float dt, DynamicTarget* dynamicTarget) {
             sound->setVolume(soundEntry.volumeTarget.get(), soundEntry.volumeRampTime.get());
             sound->setPitchMultiplier(soundEntry.pitchMultiplierTarget.get(), soundEntry.pitchMultiplierRampTime.get());
             dynamicTarget->independentSounds[soundName].append(sound);
-            dynamicTarget->pendingAudios.append(move(sound));
+            dynamicTarget->pendingAudios.append(std::move(sound));
           }
         }
       }

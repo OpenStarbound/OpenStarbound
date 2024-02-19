@@ -50,7 +50,7 @@ TitleScreen::TitleScreen(PlayerStoragePtr playerStorage, MixerPtr mixer)
 }
 
 void TitleScreen::renderInit(RendererPtr renderer) {
-  m_renderer = move(renderer);
+  m_renderer = std::move(renderer);
   m_environmentPainter = make_shared<EnvironmentPainter>(m_renderer);
 }
 
@@ -181,7 +181,7 @@ String TitleScreen::multiPlayerAddress() const {
 
 void TitleScreen::setMultiPlayerAddress(String address) {
   m_multiPlayerMenu->fetchChild<TextBoxWidget>("address")->setText(address);
-  m_connectionAddress = move(address);
+  m_connectionAddress = std::move(address);
 }
 
 String TitleScreen::multiPlayerPort() const {
@@ -190,7 +190,7 @@ String TitleScreen::multiPlayerPort() const {
 
 void TitleScreen::setMultiPlayerPort(String port) {
   m_multiPlayerMenu->fetchChild<TextBoxWidget>("port")->setText(port);
-  m_connectionPort = move(port);
+  m_connectionPort = std::move(port);
 }
 
 String TitleScreen::multiPlayerAccount() const {
@@ -199,7 +199,7 @@ String TitleScreen::multiPlayerAccount() const {
 
 void TitleScreen::setMultiPlayerAccount(String account) {
   m_multiPlayerMenu->fetchChild<TextBoxWidget>("account")->setText(account);
-  m_account = move(account);
+  m_account = std::move(account);
 }
 
 String TitleScreen::multiPlayerPassword() const {
@@ -208,7 +208,7 @@ String TitleScreen::multiPlayerPassword() const {
 
 void TitleScreen::setMultiPlayerPassword(String password) {
   m_multiPlayerMenu->fetchChild<TextBoxWidget>("password")->setText(password);
-  m_password = move(password);
+  m_password = std::move(password);
 }
 
 void TitleScreen::initMainMenu() {

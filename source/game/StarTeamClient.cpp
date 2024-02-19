@@ -192,7 +192,7 @@ void TeamClient::forceUpdate() {
 
 void TeamClient::invokeRemote(String const& method, Json const& args, function<void(Json const&)> responseFunction) {
   auto promise = m_clientContext->rpcInterface()->invokeRemote(method, args);
-  m_pendingResponses.append({move(promise), move(responseFunction)});
+  m_pendingResponses.append({std::move(promise), std::move(responseFunction)});
 }
 
 void TeamClient::handleRpcResponses() {
@@ -205,7 +205,7 @@ void TeamClient::handleRpcResponses() {
           handler.second(*res);
       }
     } else {
-      stillPendingResponses.append(move(handler));
+      stillPendingResponses.append(std::move(handler));
     }
   }
   m_pendingResponses = stillPendingResponses;

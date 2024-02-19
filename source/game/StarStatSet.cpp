@@ -4,7 +4,7 @@
 namespace Star {
 
 void StatSet::addStat(String statName, float baseValue) {
-  if (!m_baseStats.insert(move(statName), baseValue).second)
+  if (!m_baseStats.insert(std::move(statName), baseValue).second)
     throw StatusException::format("Added duplicate stat named '{}' in StatSet", statName);
   update(0.0f);
 }
@@ -42,7 +42,7 @@ void StatSet::setStatBaseValue(String const& statName, float value) {
 
 StatModifierGroupId StatSet::addStatModifierGroup(List<StatModifier> modifiers) {
   bool empty = modifiers.empty();
-  auto id = m_statModifierGroups.add(move(modifiers));
+  auto id = m_statModifierGroups.add(std::move(modifiers));
   if (!empty)
     update(0.0f);
   return id;
@@ -58,7 +58,7 @@ List<StatModifier> StatSet::statModifierGroup(StatModifierGroupId modifierGroupI
 
 void StatSet::addStatModifierGroup(StatModifierGroupId groupId, List<StatModifier> modifiers) {
   bool empty = modifiers.empty();
-  m_statModifierGroups.add(groupId, move(modifiers));
+  m_statModifierGroups.add(groupId, std::move(modifiers));
   if (!empty)
     update(0.0f);
 }
@@ -66,7 +66,7 @@ void StatSet::addStatModifierGroup(StatModifierGroupId groupId, List<StatModifie
 bool StatSet::setStatModifierGroup(StatModifierGroupId groupId, List<StatModifier> modifiers) {
   auto& list = m_statModifierGroups.get(groupId);
   if (list != modifiers) {
-    list = move(modifiers);
+    list = std::move(modifiers);
     update(0.0f);
     return true;
   }
@@ -95,7 +95,7 @@ StatModifierGroupMap const& StatSet::allStatModifierGroups() const {
 
 void StatSet::setAllStatModifierGroups(StatModifierGroupMap map) {
   if (m_statModifierGroups != map) {
-    m_statModifierGroups = move(map);
+    m_statModifierGroups = std::move(map);
     update(0.0f);
   }
 }
@@ -118,7 +118,7 @@ float StatSet::statEffectiveValue(String const& statName) const {
 }
 
 void StatSet::addResource(String resourceName, MVariant<String, float> max, MVariant<String, float> delta) {
-  auto pair = m_resources.insert({move(resourceName), Resource{move(max), move(delta), false, 0.0f, {}}});
+  auto pair = m_resources.insert({std::move(resourceName), Resource{std::move(max), std::move(delta), false, 0.0f, {}}});
   if (!pair.second)
     throw StatusException::format("Added duplicate resource named '{}' in StatSet", resourceName);
   update(0.0f);

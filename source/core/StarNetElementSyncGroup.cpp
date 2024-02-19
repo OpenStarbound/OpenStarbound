@@ -68,11 +68,11 @@ void NetElementSyncGroup::netElementsNeedLoad(bool) {}
 void NetElementSyncGroup::netElementsNeedStore() {}
 
 void NetElementCallbackGroup::setNeedsLoadCallback(function<void(bool)> needsLoadCallback) {
-  m_netElementsNeedLoad = move(needsLoadCallback);
+  m_netElementsNeedLoad = std::move(needsLoadCallback);
 }
 
 void NetElementCallbackGroup::setNeedsStoreCallback(function<void()> needsStoreCallback) {
-  m_netElementsNeedStore = move(needsStoreCallback);
+  m_netElementsNeedStore = std::move(needsStoreCallback);
 }
 
 void NetElementCallbackGroup::netElementsNeedLoad(bool load) {
