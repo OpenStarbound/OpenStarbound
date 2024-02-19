@@ -10,7 +10,7 @@
 namespace Star {
 
 SongbookInterface::SongbookInterface(PlayerPtr player) {
-  m_player = move(player);
+  m_player = std::move(player);
 
   auto assets = Root::singleton().assets();
 

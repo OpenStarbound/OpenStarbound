@@ -33,9 +33,9 @@ void CollisionGenerator::getBlocksPlatforms(List<CollisionBlock>& list, RectI co
           CollisionBlock block;
           block.space = Vec2I(x, y);
           block.kind = kind;
-          block.poly = PolyF(move(vertices));
+          block.poly = PolyF(std::move(vertices));
           block.polyBounds = block.poly.boundBox();
-          list.append(move(block));
+          list.append(std::move(block));
         };
 
         // This was once simple and elegant and made sense but then I made it
@@ -151,7 +151,7 @@ void CollisionGenerator::getBlocksMarchingSquares(List<CollisionBlock>& list, Re
     }
     block.polyBounds = block.poly.boundBox();
     block.kind = std::max({collisionKind(x, y), collisionKind(x + 1, y), collisionKind(x, y + 1), collisionKind(x + 1, y + 1)});
-    list.append(move(block));
+    list.append(std::move(block));
   };
 
   int xMin = region.xMin();

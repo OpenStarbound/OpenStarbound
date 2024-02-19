@@ -71,7 +71,7 @@ pair<ByteArray, uint64_t> Sky::writeUpdate(uint64_t fromVersion) {
 }
 
 void Sky::readUpdate(ByteArray data) {
-  m_netGroup.readNetState(move(data));
+  m_netGroup.readNetState(std::move(data));
 }
 
 void Sky::stateUpdate() {

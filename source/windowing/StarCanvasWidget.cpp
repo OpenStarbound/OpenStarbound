@@ -27,28 +27,28 @@ void CanvasWidget::clear() {
 }
 
 void CanvasWidget::drawImage(String texName, Vec2F const& position, float scale, Vec4B const& color) {
-  m_renderOps.append(make_tuple(move(texName), position, scale, color, false));
+  m_renderOps.append(make_tuple(std::move(texName), position, scale, color, false));
 }
 
 void CanvasWidget::drawImageCentered(String texName, Vec2F const& position, float scale, Vec4B const& color) {
-  m_renderOps.append(make_tuple(move(texName), position, scale, color, true));
+  m_renderOps.append(make_tuple(std::move(texName), position, scale, color, true));
 }
 
 void CanvasWidget::drawImageRect(String texName, RectF const& texCoords, RectF const& screenCoords, Vec4B const& color) {
-  m_renderOps.append(make_tuple(move(texName), texCoords, screenCoords, color));
+  m_renderOps.append(make_tuple(std::move(texName), texCoords, screenCoords, color));
 }
 
 void CanvasWidget::drawDrawable(Drawable drawable, Vec2F const& screenPos) {
-  m_renderOps.append(make_tuple(move(drawable), screenPos));
+  m_renderOps.append(make_tuple(std::move(drawable), screenPos));
 }
 
 void CanvasWidget::drawDrawables(List<Drawable> drawables, Vec2F const& screenPos) {
   for (auto& drawable : drawables)
-    drawDrawable(move(drawable), screenPos);
+    drawDrawable(std::move(drawable), screenPos);
 }
 
 void CanvasWidget::drawTiledImage(String texName, float textureScale, Vec2D const& offset, RectF const& screenCoords, Vec4B const& color) {
-  m_renderOps.append(make_tuple(move(texName), textureScale, offset, screenCoords, color));
+  m_renderOps.append(make_tuple(std::move(texName), textureScale, offset, screenCoords, color));
 }
 
 void CanvasWidget::drawLine(Vec2F const& begin, Vec2F const end, Vec4B const& color, float lineWidth) {
@@ -68,7 +68,7 @@ void CanvasWidget::drawTriangles(List<tuple<Vec2F, Vec2F, Vec2F>> const& triangl
 }
 
 void CanvasWidget::drawText(String s, TextPositioning position, unsigned fontSize, Vec4B const& color, FontMode mode, float lineSpacing, String font, String processingDirectives) {
-  m_renderOps.append(make_tuple(move(s), move(position), fontSize, color, mode, lineSpacing, move(font), move(processingDirectives)));
+  m_renderOps.append(make_tuple(std::move(s), std::move(position), fontSize, color, mode, lineSpacing, std::move(font), std::move(processingDirectives)));
 }
 
 Vec2I CanvasWidget::mousePosition() const {
@@ -174,10 +174,10 @@ void CanvasWidget::renderImageRect(Vec2F const& renderingOffset, String const& t
 void CanvasWidget::renderDrawable(Vec2F const& renderingOffset, Drawable drawable, Vec2F const& screenPos) {
   auto& context = GuiContext::singleton();
   if (m_ignoreInterfaceScale)
-    context.drawDrawable(move(drawable), renderingOffset + screenPos, 1);
+    context.drawDrawable(std::move(drawable), renderingOffset + screenPos, 1);
   else {
     drawable.scale(context.interfaceScale());
-    context.drawDrawable(move(drawable), renderingOffset * context.interfaceScale() + screenPos * context.interfaceScale(), 1);
+    context.drawDrawable(std::move(drawable), renderingOffset * context.interfaceScale() + screenPos * context.interfaceScale(), 1);
   }
 }
 

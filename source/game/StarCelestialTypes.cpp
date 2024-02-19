@@ -49,7 +49,7 @@ CelestialChunk::CelestialChunk(Json const& store) {
     CelestialConstellation constellation;
     for (auto const& l : lines.toArray())
       constellation.append({jsonToVec2I(l.get(0)), jsonToVec2I(l.get(1))});
-    constellations.append(move(constellation));
+    constellations.append(std::move(constellation));
   }
 
   for (auto const& p : store.getArray("systemParameters"))
@@ -62,10 +62,10 @@ CelestialChunk::CelestialChunk(Json const& store) {
       planet.planetParameters = CelestialParameters(planetPair.get(1).get("parameters"));
       for (auto const& satellitePair : planetPair.get(1).getArray("satellites"))
         planet.satelliteParameters.add(satellitePair.getInt(0), CelestialParameters(satellitePair.get(1)));
-      celestialSystemObjects.add(planetPair.getInt(0), move(planet));
+      celestialSystemObjects.add(planetPair.getInt(0), std::move(planet));
     }
 
-    systemObjects[jsonToVec3I(p.get(0))] = move(celestialSystemObjects);
+    systemObjects[jsonToVec3I(p.get(0))] = std::move(celestialSystemObjects);
   }
 }
 
@@ -92,9 +92,9 @@ Json CelestialChunk::toJson() const {
 
       planetsStore.append(JsonArray{planetPair.first,
           JsonObject{
-              {"parameters", planetPair.second.planetParameters.diskStore()}, {"satellites", move(satellitesStore)}}});
+              {"parameters", planetPair.second.planetParameters.diskStore()}, {"satellites", std::move(satellitesStore)}}});
     }
-    systemObjectsStore.append(JsonArray{jsonFromVec3I(systemObjectPair.first), move(planetsStore)});
+    systemObjectsStore.append(JsonArray{jsonFromVec3I(systemObjectPair.first), std::move(planetsStore)});
   }
 
   return JsonObject{{"chunkIndex", jsonFromVec2I(chunkIndex)},

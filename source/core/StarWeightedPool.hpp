@@ -69,7 +69,7 @@ void WeightedPool<Item>::add(double weight, Item item) {
   if (weight <= 0.0)
     return;
 
-  m_items.append({weight, move(item)});
+  m_items.append({weight, std::move(item)});
   m_totalWeight += weight;
 }
 

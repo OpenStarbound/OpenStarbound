@@ -76,6 +76,8 @@ class SystemWorld {
 public:
   SystemWorld(ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase);
 
+  virtual ~SystemWorld() = default;
+
   SystemWorldConfig const& systemConfig() const;
   double time() const;
   Vec3I location() const;

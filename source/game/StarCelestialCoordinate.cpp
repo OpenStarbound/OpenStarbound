@@ -10,7 +10,7 @@ namespace Star {
 CelestialCoordinate::CelestialCoordinate() : m_planetaryOrbitNumber(0), m_satelliteOrbitNumber(0) {}
 
 CelestialCoordinate::CelestialCoordinate(Vec3I location, int planetaryOrbitNumber, int satelliteOrbitNumber)
-  : m_location(move(location)),
+  : m_location(std::move(location)),
     m_planetaryOrbitNumber(planetaryOrbitNumber),
     m_satelliteOrbitNumber(satelliteOrbitNumber) {}
 

@@ -449,7 +449,7 @@ namespace LuaBindings {
           auto distributions = distributionConfigs.transformed([](Json const& config) {
             return BiomeItemDistribution(config, Random::randu64());
           });
-          return serverWorld->enqueuePlacement(move(distributions), id);
+          return serverWorld->enqueuePlacement(std::move(distributions), id);
         });
     }
 
@@ -1069,7 +1069,7 @@ namespace LuaBindings {
       Vec2F const& end,
       ActorMovementParameters actorMovementParameters,
       PlatformerAStar::Parameters searchParameters) {
-    PlatformerAStar::PathFinder pathFinder(world, start, end, move(actorMovementParameters), move(searchParameters));
+    PlatformerAStar::PathFinder pathFinder(world, start, end, std::move(actorMovementParameters), std::move(searchParameters));
     pathFinder.explore({});
     return pathFinder.result();
   }
@@ -1079,7 +1079,7 @@ namespace LuaBindings {
       Vec2F const& end,
       ActorMovementParameters actorMovementParameters,
       PlatformerAStar::Parameters searchParameters) {
-    return PlatformerAStar::PathFinder(world, start, end, move(actorMovementParameters), move(searchParameters));
+    return PlatformerAStar::PathFinder(world, start, end, std::move(actorMovementParameters), std::move(searchParameters));
   }
 
   RectI ClientWorldCallbacks::clientWindow(WorldClient* world) {
@@ -1205,15 +1205,15 @@ namespace LuaBindings {
   }
 
   LuaTable WorldEntityCallbacks::entityQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, Maybe<LuaTable> options) {
-    return LuaBindings::entityQuery<Entity>(world, engine, pos1, pos2, move(options));
+    return LuaBindings::entityQuery<Entity>(world, engine, pos1, pos2, std::move(options));
   }
 
   LuaTable WorldEntityCallbacks::monsterQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, Maybe<LuaTable> options) {
-    return LuaBindings::entityQuery<Monster>(world, engine, pos1, pos2, move(options));
+    return LuaBindings::entityQuery<Monster>(world, engine, pos1, pos2, std::move(options));
   }
 
   LuaTable WorldEntityCallbacks::npcQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, Maybe<LuaTable> options) {
-    return LuaBindings::entityQuery<Npc>(world, engine, pos1, pos2, move(options));
+    return LuaBindings::entityQuery<Npc>(world, engine, pos1, pos2, std::move(options));
   }
 
   LuaTable WorldEntityCallbacks::objectQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, Maybe<LuaTable> options) {
@@ -1225,18 +1225,18 @@ namespace LuaBindings {
         engine,
         pos1,
         pos2,
-        move(options),
+        std::move(options),
         [&objectName](shared_ptr<Object> const& entity) -> bool {
           return objectName.empty() || entity->name() == objectName;
         });
   }
 
   LuaTable WorldEntityCallbacks::itemDropQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, Maybe<LuaTable> options) {
-    return LuaBindings::entityQuery<ItemDrop>(world, engine, pos1, pos2, move(options));
+    return LuaBindings::entityQuery<ItemDrop>(world, engine, pos1, pos2, std::move(options));
   }
 
   LuaTable WorldEntityCallbacks::playerQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, Maybe<LuaTable> options) {
-    return LuaBindings::entityQuery<Player>(world, engine, pos1, pos2, move(options));
+    return LuaBindings::entityQuery<Player>(world, engine, pos1, pos2, std::move(options));
   }
 
   LuaTable WorldEntityCallbacks::loungeableQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, Maybe<LuaTable> options) {
@@ -1267,19 +1267,19 @@ namespace LuaBindings {
       return pos && pos->orientation == orientation;
     };
 
-    return LuaBindings::entityQuery<LoungeableObject>(world, engine, pos1, pos2, move(options), filter);
+    return LuaBindings::entityQuery<LoungeableObject>(world, engine, pos1, pos2, std::move(options), filter);
   }
 
   LuaTable WorldEntityCallbacks::entityLineQuery(World* world, LuaEngine& engine, Vec2F const& point1, Vec2F const& point2, Maybe<LuaTable> options) {
-    return LuaBindings::entityLineQuery<Entity>(world, engine, point1, point2, move(options));
+    return LuaBindings::entityLineQuery<Entity>(world, engine, point1, point2, std::move(options));
   }
 
   LuaTable WorldEntityCallbacks::objectLineQuery(World* world, LuaEngine& engine, Vec2F const& point1, Vec2F const& point2, Maybe<LuaTable> options) {
-    return LuaBindings::entityLineQuery<Object>(world, engine, point1, point2, move(options));
+    return LuaBindings::entityLineQuery<Object>(world, engine, point1, point2, std::move(options));
   }
 
   LuaTable WorldEntityCallbacks::npcLineQuery(World* world, LuaEngine& engine, Vec2F const& point1, Vec2F const& point2, Maybe<LuaTable> options) {
-    return LuaBindings::entityLineQuery<Npc>(world, engine, point1, point2, move(options));
+    return LuaBindings::entityLineQuery<Npc>(world, engine, point1, point2, std::move(options));
   }
 
   bool WorldEntityCallbacks::entityExists(World* world, EntityId entityId) {
@@ -1744,9 +1744,9 @@ namespace LuaBindings {
 
   RpcPromise<Json> WorldEntityCallbacks::sendEntityMessage(World* world, LuaEngine& engine, LuaValue entityId, String const& message, LuaVariadic<Json> args) {
     if (entityId.is<LuaString>())
-      return world->sendEntityMessage(engine.luaTo<String>(entityId), message, JsonArray::from(move(args)));
+      return world->sendEntityMessage(engine.luaTo<String>(entityId), message, JsonArray::from(std::move(args)));
     else
-      return world->sendEntityMessage(engine.luaTo<EntityId>(entityId), message, JsonArray::from(move(args)));
+      return world->sendEntityMessage(engine.luaTo<EntityId>(entityId), message, JsonArray::from(std::move(args)));
   }
 
   Maybe<bool> WorldEntityCallbacks::loungeableOccupied(World* world, EntityId entityId) {

@@ -745,7 +745,7 @@ Maybe<JsonObject> Json::optQueryObject(String const& path) const {
 
 Json Json::set(String key, Json value) const {
   auto map = toObject();
-  map[move(key)] = move(value);
+  map[std::move(key)] = std::move(value);
   return map;
 }
 
@@ -760,31 +760,31 @@ Json Json::erasePath(String path) const {
 Json Json::setAll(JsonObject values) const {
   auto map = toObject();
   for (auto& p : values)
-    map[move(p.first)] = move(p.second);
+    map[std::move(p.first)] = std::move(p.second);
   return map;
 }
 
 Json Json::eraseKey(String key) const {
   auto map = toObject();
-  map.erase(move(key));
+  map.erase(std::move(key));
   return map;
 }
 
 Json Json::set(size_t index, Json value) const {
   auto array = toArray();
-  array[index] = move(value);
+  array[index] = std::move(value);
   return array;
 }
 
 Json Json::insert(size_t index, Json value) const {
   auto array = toArray();
-  array.insertAt(index, move(value));
+  array.insertAt(index, std::move(value));
   return array;
 }
 
 Json Json::append(Json value) const {
   auto array = toArray();
-  array.append(move(value));
+  array.append(std::move(value));
   return array;
 }
 
@@ -927,7 +927,7 @@ DataStream& operator>>(DataStream& os, Json& v) {
     for (size_t i = 0; i < s; ++i)
       l.append(os.read<Json>());
 
-    v = move(l);
+    v = std::move(l);
   } else if (type == Json::Type::Object) {
     JsonObject m;
     size_t s = os.readVlqU();
@@ -936,7 +936,7 @@ DataStream& operator>>(DataStream& os, Json& v) {
       m[k] = os.read<Json>();
     }
 
-    v = move(m);
+    v = std::move(m);
   }
 
   return os;

@@ -133,18 +133,18 @@ bool AssetPath::operator==(AssetPath const& rhs) const {
 }
 
 AssetPath::AssetPath(const char* path) {
-  *this = move(AssetPath::split(path));
+  *this = AssetPath::split(path);
 }
 
 
 AssetPath::AssetPath(String const& path) {
-  *this = move(AssetPath::split(path));
+  *this = AssetPath::split(path);
 }
 
 AssetPath::AssetPath(String&& basePath, Maybe<String>&& subPath, DirectivesGroup&& directives) {
-  this->basePath = move(basePath);
-  this->subPath = move(subPath);
-  this->directives = move(directives);
+  this->basePath = std::move(basePath);
+  this->subPath = std::move(subPath);
+  this->directives = std::move(directives);
 }
 
 AssetPath::AssetPath(String const& basePath, Maybe<String> const& subPath, DirectivesGroup const& directives) {
@@ -176,7 +176,7 @@ DataStream& operator>>(DataStream& ds, AssetPath& path) {
   String string;
   ds.read(string);
 
-  path = move(string);
+  path = std::move(string);
 
   return ds;
 }

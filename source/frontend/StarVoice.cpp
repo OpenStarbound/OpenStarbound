@@ -61,7 +61,8 @@ float getAudioLoudness(int16_t* data, size_t samples, float volume = 1.0f) {
 	return highest;
 }
 
-struct VoiceAudioStream {
+class VoiceAudioStream {
+public:
   // TODO: This should really be a ring buffer instead.
   std::queue<int16_t> samples;
 	SDL_AudioStream* sdlAudioStreamMono;
@@ -173,7 +174,7 @@ template <typename T>
 inline bool change(T& value, T newValue, bool& out) {
 	bool changed = value != newValue;
 	out |= changed;
-	value = move(newValue);
+	value = std::move(newValue);
 	return changed;
 }
 
@@ -480,7 +481,7 @@ int Voice::send(DataStreamBuffer& out, size_t budget) {
 	if (m_encodedChunks.empty())
 		return 0;
 
-	std::vector<ByteArray> encodedChunks = move(m_encodedChunks);
+	std::vector<ByteArray> encodedChunks = std::move(m_encodedChunks);
 	size_t encodedChunksLength = m_encodedChunksLength;
 	m_encodedChunksLength = 0;
 
@@ -692,7 +693,7 @@ void Voice::thread() {
 
 					{
 						MutexLocker lock(m_encodeMutex);
-						m_encodedChunks.emplace_back(move(encoded));
+						m_encodedChunks.emplace_back(std::move(encoded));
 						m_encodedChunksLength += encodedSize;
 
 						encoded = ByteArray(VOICE_MAX_PACKET_SIZE, 0);

@@ -220,7 +220,7 @@ Data const& SimpleBTreeLeaf<Key, Data, Pointer>::data(size_t i) const {
 
 template <typename Key, typename Data, typename Pointer>
 void SimpleBTreeLeaf<Key, Data, Pointer>::insert(size_t i, Key k, Data d) {
-  elements.insertAt(i, Element{move(k), move(d)});
+  elements.insertAt(i, Element{std::move(k), std::move(d)});
 }
 
 template <typename Key, typename Data, typename Pointer>
@@ -272,7 +272,7 @@ Maybe<Pointer> SimpleBTreeLeaf<Key, Data, Pointer>::nextLeaf() const {
 
 template <typename Key, typename Data, typename Pointer>
 void SimpleBTreeLeaf<Key, Data, Pointer>::setNextLeaf(Maybe<Pointer> n) {
-  next = move(n);
+  next = std::move(n);
 }
 
 // Testing BTree class that simulates storage by storing in-memory copies of

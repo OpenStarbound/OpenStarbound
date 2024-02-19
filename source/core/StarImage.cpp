@@ -219,7 +219,7 @@ Image::Image(Image const& image) : Image() {
 }
 
 Image::Image(Image&& image) : Image() {
-  operator=(move(image));
+  operator=(std::move(image));
 }
 
 Image& Image::operator=(Image const& image) {

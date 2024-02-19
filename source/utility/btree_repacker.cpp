@@ -22,7 +22,7 @@ int main(int argc, char** argv) {
     outputFilename = File::relativeTo(File::fullPath(File::dirName(outputFilename)), File::baseName(outputFilename));
     //open the old db
     BTreeDatabase db;
-    db.setIODevice(std::move(File::open(bTreePath, IOMode::Read)));
+    db.setIODevice(File::open(bTreePath, IOMode::Read));
     db.open();
 
     //make a new db
@@ -32,7 +32,7 @@ int main(int argc, char** argv) {
     newDb.setKeySize(db.keySize());
     newDb.setAutoCommit(false);
 
-    newDb.setIODevice(std::move(File::open(outputFilename, IOMode::ReadWrite | IOMode::Truncate)));
+    newDb.setIODevice(File::open(outputFilename, IOMode::ReadWrite | IOMode::Truncate));
     newDb.open();
     coutf("Repacking {}...\n", bTreePath);
     //copy the data over

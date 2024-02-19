@@ -116,7 +116,7 @@ SystemWorldConfig SystemWorldConfig::fromJson(Json const& json) {
 }
 
 SystemWorld::SystemWorld(ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase)
-  : m_celestialDatabase(move(celestialDatabase)), m_universeClock(move(universeClock)) {
+  : m_celestialDatabase(std::move(celestialDatabase)), m_universeClock(std::move(universeClock)) {
   m_config = SystemWorldConfig::fromJson(Root::singleton().assets()->json("/systemworld.config"));
 }
 
@@ -317,13 +317,13 @@ Maybe<WarpAction> SystemWorld::objectWarpAction(Uuid const& uuid) const {
 }
 
 SystemObject::SystemObject(SystemObjectConfig config, Uuid uuid, Vec2F const& position, JsonObject parameters)
-  : m_config(move(config)), m_uuid(move(uuid)), m_spawnTime(0.0f), m_parameters(move(parameters)) {
+  : m_config(std::move(config)), m_uuid(std::move(uuid)), m_spawnTime(0.0f), m_parameters(std::move(parameters)) {
   setPosition(position);
   init();
 }
 
 SystemObject::SystemObject(SystemObjectConfig config, Uuid uuid, Vec2F const& position, double spawnTime, JsonObject parameters)
-  : m_config(move(config)), m_uuid(move(uuid)), m_spawnTime(move(spawnTime)), m_parameters(move(parameters)) {
+  : m_config(std::move(config)), m_uuid(std::move(uuid)), m_spawnTime(std::move(spawnTime)), m_parameters(std::move(parameters)) {
   setPosition(position);
   for (auto p : m_config.generatedParameters) {
     if (!m_parameters.contains(p.first))
@@ -458,7 +458,7 @@ pair<ByteArray, uint64_t> SystemObject::writeNetState(uint64_t fromVersion) {
 }
 
 void SystemObject::readNetState(ByteArray data, float interpolationTime) {
-  m_netGroup.readNetState(move(data), interpolationTime);
+  m_netGroup.readNetState(std::move(data), interpolationTime);
 }
 
 ByteArray SystemObject::netStore() const {
@@ -489,7 +489,7 @@ void SystemObject::setPosition(Vec2F const& position) {
 }
 
 SystemClientShip::SystemClientShip(SystemWorld* system, Uuid uuid, float speed, SystemLocation const& location)
-  : m_uuid(move(uuid)) {
+  : m_uuid(std::move(uuid)) {
   m_systemLocation.set(location);
   setPosition(system->systemLocationPosition(location).value({}));
 
@@ -620,7 +620,7 @@ pair<ByteArray, uint64_t> SystemClientShip::writeNetState(uint64_t fromVersion) 
 }
 
 void SystemClientShip::readNetState(ByteArray data, float interpolationTime) {
-  m_netGroup.readNetState(move(data), interpolationTime);
+  m_netGroup.readNetState(std::move(data), interpolationTime);
 }
 
 ByteArray SystemClientShip::netStore() const {

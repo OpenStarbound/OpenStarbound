@@ -17,13 +17,13 @@ String& String::operator+=(std::string_view s) {
 
 StringView::StringView() {}
 StringView::StringView(StringView const& s) : m_view(s.m_view) {}
-StringView::StringView(StringView&& s) noexcept : m_view(move(s.m_view)) {};
+StringView::StringView(StringView&& s) noexcept : m_view(std::move(s.m_view)) {};
 StringView::StringView(String const& s) : m_view(s.utf8()) {};
 StringView::StringView(char const* s) : m_view(s) {};
 StringView::StringView(char const* s, size_t n) : m_view(s, n) {};
 
 StringView::StringView(std::string_view const& s) : m_view(s) {};
-StringView::StringView(std::string_view&& s) noexcept : m_view(move(s)) {};
+StringView::StringView(std::string_view&& s) noexcept : m_view(std::move(s)) {};
 StringView::StringView(std::string const& s) : m_view(s) {}
 
 StringView::StringView(Char const* s) : m_view((char const*)s, sizeof(*s)) {}

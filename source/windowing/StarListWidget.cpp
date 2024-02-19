@@ -29,7 +29,7 @@ RectI ListWidget::relativeBoundRect() const {
 }
 
 void ListWidget::setCallback(WidgetCallbackFunc callback) {
-  m_callback = move(callback);
+  m_callback = std::move(callback);
 }
 
 bool ListWidget::sendEvent(InputEvent const& event) {

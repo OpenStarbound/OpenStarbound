@@ -118,7 +118,7 @@ PcPlatformServicesUPtr PcPlatformServices::create(String const& path, StringList
     for (auto& argument : platformArguments) {
       if (argument.beginsWith("+platform:connect:")) {
         Logger::info("PC platform services joining from command line argument '{}'", argument);
-        p2pNetworkingService->addPendingJoin(move(argument));
+        p2pNetworkingService->addPendingJoin(std::move(argument));
       } else {
         throw ApplicationException::format("Unrecognized PC platform services command line argument '{}'", argument);
       }

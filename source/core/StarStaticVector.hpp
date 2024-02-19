@@ -116,7 +116,7 @@ template <typename Element, size_t MaxSize>
 StaticVector<Element, MaxSize>::StaticVector(StaticVector&& other)
   : StaticVector() {
   for (auto& e : other)
-    emplace_back(move(e));
+    emplace_back(std::move(e));
 }
 
 template <typename Element, size_t MaxSize>
@@ -163,7 +163,7 @@ template <typename Element, size_t MaxSize>
 auto StaticVector<Element, MaxSize>::operator=(StaticVector&& other) -> StaticVector& {
   resize(other.size());
   for (size_t i = 0; i < m_size; ++i)
-    operator[](i) = move(other[i]);
+    operator[](i) = std::move(other[i]);
 
   return *this;
 }
@@ -172,7 +172,7 @@ template <typename Element, size_t MaxSize>
 auto StaticVector<Element, MaxSize>::operator=(std::initializer_list<Element> list) -> StaticVector& {
   resize(list.size());
   for (size_t i = 0; i < m_size; ++i)
-    operator[](i) = move(list[i]);
+    operator[](i) = std::move(list[i]);
   return *this;
 }
 
@@ -275,7 +275,7 @@ Element* StaticVector<Element, MaxSize>::ptr() {
 
 template <typename Element, size_t MaxSize>
 void StaticVector<Element, MaxSize>::push_back(Element e) {
-  emplace_back(move(e));
+  emplace_back(std::move(e));
 }
 
 template <typename Element, size_t MaxSize>
@@ -288,7 +288,7 @@ void StaticVector<Element, MaxSize>::pop_back() {
 
 template <typename Element, size_t MaxSize>
 auto StaticVector<Element, MaxSize>::insert(iterator pos, Element e) -> iterator {
-  emplace(pos, move(e));
+  emplace(pos, std::move(e));
   return pos;
 }
 
@@ -303,7 +303,7 @@ auto StaticVector<Element, MaxSize>::insert(iterator pos, Iterator begin, Iterat
   resize(m_size + toAdd);
 
   for (size_t i = toShift; i != 0; --i)
-    operator[](endIndex + i - 1) = move(operator[](startIndex + i - 1));
+    operator[](endIndex + i - 1) = std::move(operator[](startIndex + i - 1));
 
   for (size_t i = 0; i != toAdd; ++i)
     operator[](startIndex + i) = *begin++;
@@ -322,8 +322,8 @@ void StaticVector<Element, MaxSize>::emplace(iterator pos, Args&&... args) {
   size_t index = pos - ptr();
   resize(m_size + 1);
   for (size_t i = m_size - 1; i != index; --i)
-    operator[](i) = move(operator[](i - 1));
-  operator[](index) = Element(forward<Args>(args)...);
+    operator[](i) = std::move(operator[](i - 1));
+  operator[](index) = Element(std::forward<Args>(args)...);
 }
 
 template <typename Element, size_t MaxSize>
@@ -333,7 +333,7 @@ void StaticVector<Element, MaxSize>::emplace_back(Args&&... args) {
     throw StaticVectorSizeException::format("StaticVector::emplace_back would extend StaticVector beyond size {}", MaxSize);
 
   m_size += 1;
-  new (ptr() + m_size - 1) Element(forward<Args>(args)...);
+  new (ptr() + m_size - 1) Element(std::forward<Args>(args)...);
 }
 
 template <typename Element, size_t MaxSize>
@@ -346,7 +346,7 @@ template <typename Element, size_t MaxSize>
 auto StaticVector<Element, MaxSize>::erase(iterator pos) -> iterator {
   size_t index = pos - ptr();
   for (size_t i = index; i < m_size - 1; ++i)
-    operator[](i) = move(operator[](i + 1));
+    operator[](i) = std::move(operator[](i + 1));
   resize(m_size - 1);
   return pos;
 }
@@ -357,7 +357,7 @@ auto StaticVector<Element, MaxSize>::erase(iterator begin, iterator end) -> iter
   size_t endIndex = end - ptr();
   size_t toRemove = endIndex - startIndex;
   for (size_t i = endIndex; i < m_size; ++i)
-    operator[](startIndex + (i - endIndex)) = move(operator[](i));
+    operator[](startIndex + (i - endIndex)) = std::move(operator[](i));
   resize(m_size - toRemove);
   return begin;
 }

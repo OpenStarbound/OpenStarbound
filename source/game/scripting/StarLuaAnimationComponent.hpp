@@ -69,7 +69,7 @@ LuaAnimationComponent<Base>::LuaAnimationComponent() {
       if (auto image = drawable.part.ptr<Drawable::ImagePart>())
         image->transformation.scale(0.125f);
 
-      m_drawables.append({move(drawable), renderLayer});
+      m_drawables.append({std::move(drawable), renderLayer});
     });
   animationCallbacks.registerCallback("clearLightSources", [this]() {
       m_lightSources.clear();
@@ -84,7 +84,7 @@ LuaAnimationComponent<Base>::LuaAnimationComponent() {
           lightSourceTable.get<Maybe<float>>("beamAmbience").value()
         });
     });
-  Base::addCallbacks("localAnimator", move(animationCallbacks));
+  Base::addCallbacks("localAnimator", std::move(animationCallbacks));
 }
 
 template <typename Base>

@@ -277,12 +277,12 @@ FlatHashSet<Key, Hash, Equals, Allocator>::FlatHashSet(FlatHashSet const& other,
 
 template <typename Key, typename Hash, typename Equals, typename Allocator>
 FlatHashSet<Key, Hash, Equals, Allocator>::FlatHashSet(FlatHashSet&& other)
-  : FlatHashSet(move(other), other.m_table.getAllocator()) {}
+  : FlatHashSet(std::move(other), other.m_table.getAllocator()) {}
 
 template <typename Key, typename Hash, typename Equals, typename Allocator>
 FlatHashSet<Key, Hash, Equals, Allocator>::FlatHashSet(FlatHashSet&& other, allocator_type const& alloc)
   : FlatHashSet(alloc) {
-  operator=(move(other));
+  operator=(std::move(other));
 }
 
 template <typename Key, typename Hash, typename Equals, typename Allocator>
@@ -312,7 +312,7 @@ FlatHashSet<Key, Hash, Equals, Allocator>& FlatHashSet<Key, Hash, Equals, Alloca
 
 template <typename Key, typename Hash, typename Equals, typename Allocator>
 FlatHashSet<Key, Hash, Equals, Allocator>& FlatHashSet<Key, Hash, Equals, Allocator>::operator=(FlatHashSet&& other) {
-  m_table = move(other.m_table);
+  m_table = std::move(other.m_table);
   return *this;
 }
 
@@ -376,7 +376,7 @@ auto FlatHashSet<Key, Hash, Equals, Allocator>::insert(value_type const& value) 
 
 template <typename Key, typename Hash, typename Equals, typename Allocator>
 auto FlatHashSet<Key, Hash, Equals, Allocator>::insert(value_type&& value) -> pair<iterator, bool> {
-  auto res = m_table.insert(move(value));
+  auto res = m_table.insert(std::move(value));
   return {iterator{res.first}, res.second};
 }
 
@@ -387,7 +387,7 @@ auto FlatHashSet<Key, Hash, Equals, Allocator>::insert(const_iterator i, value_t
 
 template <typename Key, typename Hash, typename Equals, typename Allocator>
 auto FlatHashSet<Key, Hash, Equals, Allocator>::insert(const_iterator, value_type&& value) -> iterator {
-  return insert(move(value)).first;
+  return insert(std::move(value)).first;
 }
 
 template <typename Key, typename Hash, typename Equals, typename Allocator>

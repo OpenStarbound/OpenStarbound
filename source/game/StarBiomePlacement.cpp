@@ -55,7 +55,7 @@ EnumMap<BiomePlacementMode> const BiomePlacementModeNames{
 };
 
 BiomeItemPlacement::BiomeItemPlacement(BiomeItem item, Vec2I position, float priority)
-  : item(move(item)), position(position), priority(priority) {}
+  : item(std::move(item)), position(position), priority(priority) {}
 
 bool BiomeItemPlacement::operator<(BiomeItemPlacement const& rhs) const {
   return priority < rhs.priority;

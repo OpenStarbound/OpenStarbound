@@ -13,7 +13,7 @@ AmbientTrackGroup::AmbientTrackGroup() {
   tracks = {};
 }
 
-AmbientTrackGroup::AmbientTrackGroup(StringList tracks) : tracks(move(tracks)) {}
+AmbientTrackGroup::AmbientTrackGroup(StringList tracks) : tracks(std::move(tracks)) {}
 
 AmbientTrackGroup::AmbientTrackGroup(Json const& config, String const& directory) {
   for (auto track : jsonToStringList(config.get("tracks", JsonArray())))
@@ -27,7 +27,7 @@ Json AmbientTrackGroup::toJson() const {
 AmbientNoisesDescription::AmbientNoisesDescription() {}
 
 AmbientNoisesDescription::AmbientNoisesDescription(AmbientTrackGroup day, AmbientTrackGroup night)
-  : daySounds(move(day)), nightSounds(move(night)) {}
+  : daySounds(std::move(day)), nightSounds(std::move(night)) {}
 
 AmbientNoisesDescription::AmbientNoisesDescription(Json const& config, String const& directory) {
   if (auto day = config.opt("day"))

@@ -118,7 +118,7 @@ Maybe<T>::Maybe(T const& t)
 template <typename T>
 Maybe<T>::Maybe(T&& t)
   : Maybe() {
-  new (&m_data) T(forward<T>(t));
+  new (&m_data) T(std::forward<T>(t));
   m_initialized = true;
 }
 
@@ -135,7 +135,7 @@ template <typename T>
 Maybe<T>::Maybe(Maybe&& rhs)
   : Maybe() {
   if (rhs.m_initialized) {
-    new (&m_data) T(move(rhs.m_data));
+    new (&m_data) T(std::move(rhs.m_data));
     m_initialized = true;
     rhs.reset();
   }
@@ -308,7 +308,7 @@ T Maybe<T>::take() {
   if (!m_initialized)
     throw InvalidMaybeAccessException();
 
-  T val(move(m_data));
+  T val(std::move(m_data));
 
   reset();
 
@@ -318,7 +318,7 @@ T Maybe<T>::take() {
 template <typename T>
 bool Maybe<T>::put(T& t) {
   if (m_initialized) {
-    t = move(m_data);
+    t = std::move(m_data);
 
     reset();
 
@@ -335,7 +335,7 @@ void Maybe<T>::set(T const& t) {
 
 template <typename T>
 void Maybe<T>::set(T&& t) {
-  emplace(forward<T>(t));
+  emplace(std::forward<T>(t));
 }
 
 template <typename T>
@@ -343,7 +343,7 @@ template <typename... Args>
 void Maybe<T>::emplace(Args&&... t) {
   reset();
 
-  new (&m_data) T(forward<Args>(t)...);
+  new (&m_data) T(std::forward<Args>(t)...);
   m_initialized = true;
 }
 

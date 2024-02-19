@@ -163,13 +163,13 @@ void WorldClient::removeEntity(EntityId entityId, bool andDie) {
         p.directives.append(directives->get(directiveIndex));
     }
 
-    m_particles->addParticles(move(renderCallback.particles));
-    m_samples.appendAll(move(renderCallback.audios));
+    m_particles->addParticles(std::move(renderCallback.particles));
+    m_samples.appendAll(std::move(renderCallback.audios));
   }
 
   if (auto version = m_masterEntitiesNetVersion.maybeTake(entity->entityId())) {
     ByteArray finalNetState = entity->writeNetState(*version).first;
-    m_outgoingPackets.append(make_shared<EntityDestroyPacket>(entity->entityId(), move(finalNetState), andDie));
+    m_outgoingPackets.append(make_shared<EntityDestroyPacket>(entity->entityId(), std::move(finalNetState), andDie));
   }
 
   m_entityMap->removeEntity(entityId);
@@ -356,7 +356,7 @@ TileModificationList WorldClient::applyTileModifications(TileModificationList co
       failures.append(pair);
     }
     if (yay) {
-      list = &(temp = move(failures));
+      list = &(temp = std::move(failures));
       failures = {};
       continue;
     }
@@ -364,7 +364,7 @@ TileModificationList WorldClient::applyTileModifications(TileModificationList co
   }
 
   if (!success.empty())
-    m_outgoingPackets.append(make_shared<ModifyTileListPacket>(move(success), true));
+    m_outgoingPackets.append(make_shared<ModifyTileListPacket>(std::move(success), true));
 
   return failures;
 }
@@ -440,7 +440,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
     entity->renderLightSources(&lightingRenderCallback);
   });
 
-  renderLightSources = move(lightingRenderCallback.lightSources);
+  renderLightSources = std::move(lightingRenderCallback.lightSources);
 
   RectI window = m_clientState.window();
   RectI tileRange = window.padded(bufferTiles);
@@ -519,7 +519,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
               d.imagePart().addDirectives(directives->at(directiveIndex), true);
           }
         }
-        ed.layers[p.first] = move(p.second); 
+        ed.layers[p.first] = std::move(p.second);
       }
 
       if (m_interactiveHighlightMode || (!inspecting && entity->entityId() == playerAimInteractive)) {
@@ -535,7 +535,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
           ed.highlightEffect.level *= inspectionFlickerMultiplier;
         }
       }
-      renderData.entityDrawables.append(move(ed));
+      renderData.entityDrawables.append(std::move(ed));
 
       if (directives) {
         int directiveIndex = unsigned(entity->entityId()) % directives->size();
@@ -543,10 +543,10 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
           p.directives.append(directives->get(directiveIndex));
       }
       
-      m_particles->addParticles(move(renderCallback.particles));
-      m_samples.appendAll(move(renderCallback.audios));
-      previewTiles.appendAll(move(renderCallback.previewTiles));
-      renderData.overheadBars.appendAll(move(renderCallback.overheadBars));
+      m_particles->addParticles(std::move(renderCallback.particles));
+      m_samples.appendAll(std::move(renderCallback.audios));
+      previewTiles.appendAll(std::move(renderCallback.previewTiles));
+      renderData.overheadBars.appendAll(std::move(renderCallback.overheadBars));
 
     }, [](EntityPtr const& a, EntityPtr const& b) {
       return a->entityId() < b->entityId();
@@ -1141,7 +1141,7 @@ void WorldClient::update(float dt) {
     });
 
   m_clientState.setPlayer(m_mainPlayer->entityId());
-  m_clientState.setClientPresenceEntities(move(clientPresenceEntities));
+  m_clientState.setClientPresenceEntities(std::move(clientPresenceEntities));
 
   m_damageManager->update(dt);
   handleDamageNotifications();
@@ -1345,12 +1345,12 @@ TileDamageResult WorldClient::damageTiles(List<Vec2I> const& pos, TileLayer laye
   if (toDing.size()) {
     auto dingDamage = tileDamage;
     dingDamage.type = TileDamageType::Protected;
-    m_outgoingPackets.append(make_shared<DamageTileGroupPacket>(move(toDing), layer, sourcePosition, dingDamage, Maybe<EntityId>()));
+    m_outgoingPackets.append(make_shared<DamageTileGroupPacket>(std::move(toDing), layer, sourcePosition, dingDamage, Maybe<EntityId>()));
     res = TileDamageResult::Protected;
   }
 
   if (toDamage.size()) {
-    m_outgoingPackets.append(make_shared<DamageTileGroupPacket>(move(toDamage), layer, sourcePosition, tileDamage, sourceEntity));
+    m_outgoingPackets.append(make_shared<DamageTileGroupPacket>(std::move(toDamage), layer, sourcePosition, tileDamage, sourceEntity));
     res = TileDamageResult::Normal;
   }
 
@@ -1405,7 +1405,7 @@ void WorldClient::collectLiquid(List<Vec2I> const& tilePositions, LiquidId liqui
 void WorldClient::waitForLighting(Image* out) {
   MutexLocker lock(m_lightMapMutex);
   if (out)
-    *out = move(m_lightMap);
+    *out = std::move(m_lightMap);
 }
 
 WorldClient::BroadcastCallback& WorldClient::broadcastCallback() {
@@ -1447,19 +1447,19 @@ void WorldClient::queueUpdatePackets() {
         if (auto version = m_masterEntitiesNetVersion.ptr(entity->entityId())) {
           auto updateAndVersion = entity->writeNetState(*version);
           if (!updateAndVersion.first.empty())
-            entityUpdateSet->deltas[entity->entityId()] = move(updateAndVersion.first);
+            entityUpdateSet->deltas[entity->entityId()] = std::move(updateAndVersion.first);
           *version = updateAndVersion.second;
         }
       });
-    m_outgoingPackets.append(move(entityUpdateSet));
+    m_outgoingPackets.append(std::move(entityUpdateSet));
   }
 
   for (auto& remoteHitRequest : m_damageManager->pullRemoteHitRequests())
-    m_outgoingPackets.append(make_shared<HitRequestPacket>(move(remoteHitRequest)));
+    m_outgoingPackets.append(make_shared<HitRequestPacket>(std::move(remoteHitRequest)));
   for (auto& remoteDamageRequest : m_damageManager->pullRemoteDamageRequests())
-    m_outgoingPackets.append(make_shared<DamageRequestPacket>(move(remoteDamageRequest)));
+    m_outgoingPackets.append(make_shared<DamageRequestPacket>(std::move(remoteDamageRequest)));
   for (auto& remoteDamageNotification : m_damageManager->pullRemoteDamageNotifications())
-    m_outgoingPackets.append(make_shared<DamageNotificationPacket>(move(remoteDamageNotification)));
+    m_outgoingPackets.append(make_shared<DamageNotificationPacket>(std::move(remoteDamageNotification)));
 }
 
 void WorldClient::handleDamageNotifications() {
@@ -1642,7 +1642,7 @@ void WorldClient::lightingTileGather() {
         if (tile.backgroundLightTransparent && pos[1] + y > undergroundLevel)
           light += environmentLight;
       }
-      m_lightingCalculator.setCellIndex(baseIndex + y, move(light), !tile.foregroundLightTransparent);
+      m_lightingCalculator.setCellIndex(baseIndex + y, std::move(light), !tile.foregroundLightTransparent);
     }
   });
 }
@@ -1811,7 +1811,7 @@ void WorldClient::notifyEntityCreate(EntityPtr const& entity) {
     auto firstNetState = entity->writeNetState();
     m_masterEntitiesNetVersion[entity->entityId()] = firstNetState.second;
     m_outgoingPackets.append(make_shared<EntityCreatePacket>(entity->entityType(),
-      Root::singleton().entityFactory()->netStoreEntity(entity), move(firstNetState.first), entity->entityId()));
+      Root::singleton().entityFactory()->netStoreEntity(entity), std::move(firstNetState.first), entity->entityId()));
   }
 }
 
@@ -1839,7 +1839,7 @@ WeatherNoisesDescriptionPtr WorldClient::currentWeatherNoises() const {
   if (trackOptions.empty())
     return {};
   else
-    return make_shared<WeatherNoisesDescription>(move(trackOptions));
+    return make_shared<WeatherNoisesDescription>(std::move(trackOptions));
 }
 
 AmbientNoisesDescriptionPtr WorldClient::currentMusicTrack() const {
@@ -1984,7 +1984,7 @@ void WorldClient::freshenCollision(RectI const& region) {
 
     for (auto& collisionBlock : m_collisionGenerator.getBlocks(freshenRegion)) {
       if (auto tile = m_tileArray->modifyTile(collisionBlock.space))
-        tile->collisionCache.append(move(collisionBlock));
+        tile->collisionCache.append(std::move(collisionBlock));
     }
   }
 }
@@ -2109,7 +2109,7 @@ bool WorldClient::sendSecretBroadcast(StringView broadcast, bool raw, bool compr
   if (!compress)
     damageNotification->setCompressionMode(PacketCompressionMode::Disabled);
 
-  m_outgoingPackets.emplace_back(move(damageNotification));
+  m_outgoingPackets.emplace_back(std::move(damageNotification));
   return true;
 }
 
@@ -2122,27 +2122,27 @@ bool WorldClient::handleSecretBroadcast(PlayerPtr player, StringView broadcast) 
 
 
 void WorldClient::ClientRenderCallback::addDrawable(Drawable drawable, EntityRenderLayer renderLayer) {
-  drawables[renderLayer].append(move(drawable));
+  drawables[renderLayer].append(std::move(drawable));
 }
 
 void WorldClient::ClientRenderCallback::addLightSource(LightSource lightSource) {
-  lightSources.append(move(lightSource));
+  lightSources.append(std::move(lightSource));
 }
 
 void WorldClient::ClientRenderCallback::addParticle(Particle particle) {
-  particles.append(move(particle));
+  particles.append(std::move(particle));
 }
 
 void WorldClient::ClientRenderCallback::addAudio(AudioInstancePtr audio) {
-  audios.append(move(audio));
+  audios.append(std::move(audio));
 }
 
 void WorldClient::ClientRenderCallback::addTilePreview(PreviewTile preview) {
-  previewTiles.append(move(preview));
+  previewTiles.append(std::move(preview));
 }
 
 void WorldClient::ClientRenderCallback::addOverheadBar(OverheadBar bar) {
-  overheadBars.append(move(bar));
+  overheadBars.append(std::move(bar));
 }
 
 double WorldClient::epochTime() const {

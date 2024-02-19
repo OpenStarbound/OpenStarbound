@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
 
     auto rand = RandomSource(worldTemplate->worldSeed());
 
-    WorldServer worldServer(move(worldTemplate), File::ephemeralFile());
+    WorldServer worldServer(std::move(worldTemplate), File::ephemeralFile());
     Vec2U worldSize = worldServer.geometry().size();
 
     double start = Time::monotonicTime();

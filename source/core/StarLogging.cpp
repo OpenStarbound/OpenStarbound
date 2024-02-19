@@ -212,9 +212,9 @@ void SpatialLogger::clear() {
   decltype(s_logText) logText;
   {
     MutexLocker locker(s_mutex);
-    lines = move(s_lines);
-    points = move(s_points);
-    logText = move(s_logText);
+    lines = std::move(s_lines);
+    points = std::move(s_points);
+    logText = std::move(s_logText);
   } // Move while locked to deallocate contents while unlocked.
 }
 

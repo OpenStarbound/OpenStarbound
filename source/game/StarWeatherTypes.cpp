@@ -24,7 +24,7 @@ WeatherType::WeatherType(Json config, String path) {
     config.particle = Particle(v.get("particle"), path);
     config.density = v.getFloat("density");
     config.autoRotate = v.getBool("autoRotate", false);
-    particles.append(move(config));
+    particles.append(std::move(config));
   }
 
   for (auto v : config.getArray("projectiles", JsonArray())) {
@@ -36,7 +36,7 @@ WeatherType::WeatherType(Json config, String path) {
     config.spawnAboveRegion = v.getInt("spawnAboveRegion");
     config.spawnHorizontalPad = v.getInt("spawnHorizontalPad");
     config.windAffectAmount = v.getFloat("windAffectAmount", 0.0f);
-    projectiles.append(move(config));
+    projectiles.append(std::move(config));
   }
 
   maximumWind = config.getFloat("maximumWind", 0.0f);

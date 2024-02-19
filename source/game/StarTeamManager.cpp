@@ -24,7 +24,7 @@ JsonRpcHandlers TeamManager::rpcHandlers() {
 }
 
 void TeamManager::setConnectedPlayers(StringMap<List<Uuid>> const& connectedPlayers) {
-  m_connectedPlayers = move(connectedPlayers);
+  m_connectedPlayers = std::move(connectedPlayers);
 }
 
 void TeamManager::playerDisconnected(Uuid const& playerUuid) {

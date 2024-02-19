@@ -167,7 +167,7 @@ template <template <typename...> class Map, typename Value, typename Allocator, 
 auto OrderedSetWrapper<Map, Value, Allocator, Args...>::values() const -> List<value_type> {
   List<value_type> values;
   for (auto p : *this)
-    values.append(move(p));
+    values.append(std::move(p));
   return values;
 }
 

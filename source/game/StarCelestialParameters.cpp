@@ -12,7 +12,7 @@ namespace Star {
 CelestialParameters::CelestialParameters() : m_seed(0) {}
 
 CelestialParameters::CelestialParameters(CelestialCoordinate coordinate, uint64_t seed, String name, Json parameters)
-  : m_coordinate(move(coordinate)), m_seed(seed), m_name(move(name)), m_parameters(move(parameters)) {
+  : m_coordinate(std::move(coordinate)), m_seed(seed), m_name(std::move(name)), m_parameters(std::move(parameters)) {
   if (auto worldType = getParameter("worldType").optString()) {
     if (worldType->equalsIgnoreCase("Terrestrial")) {
       auto worldSize = getParameter("worldSize").toString();
@@ -27,7 +27,7 @@ CelestialParameters::CelestialParameters(CelestialCoordinate coordinate, uint64_
 }
 
 CelestialParameters::CelestialParameters(ByteArray netStore) {
-  DataStreamBuffer ds(move(netStore));
+  DataStreamBuffer ds(std::move(netStore));
   ds >> m_coordinate;
   ds >> m_seed;
   ds >> m_name;
@@ -79,7 +79,7 @@ Json CelestialParameters::parameters() const {
 }
 
 Json CelestialParameters::getParameter(String const& name, Json def) const {
-  return m_parameters.get(name, move(def));
+  return m_parameters.get(name, std::move(def));
 }
 
 Json CelestialParameters::randomizeParameterList(String const& name, int32_t mix) const {

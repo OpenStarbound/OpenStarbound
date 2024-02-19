@@ -112,15 +112,15 @@ void UniverseServer::addClient(UniverseConnection remoteConnection) {
   RecursiveMutexLocker locker(m_mainLock);
   // Binding requires us to make the given lambda copy constructible, so the
   // make_shared is requried here.
-  m_connectionAcceptThreads.append(Thread::invoke("UniverseServer::acceptConnection", [this, conn = make_shared<UniverseConnection>(move(remoteConnection))]() {
-      acceptConnection(move(*conn), {});
+  m_connectionAcceptThreads.append(Thread::invoke("UniverseServer::acceptConnection", [this, conn = make_shared<UniverseConnection>(std::move(remoteConnection))]() {
+      acceptConnection(std::move(*conn), {});
     }));
 }
 
 UniverseConnection UniverseServer::addLocalClient() {
   auto pair = LocalPacketSocket::openPair();
-  addClient(UniverseConnection(move(pair.first)));
-  return UniverseConnection(move(pair.second));
+  addClient(UniverseConnection(std::move(pair.first)));
+  return UniverseConnection(std::move(pair.second));
 }
 
 void UniverseServer::stop() {
@@ -274,7 +274,7 @@ RpcThreadPromise<Json> UniverseServer::sendWorldMessage(WorldId const& worldId, 
 
 void UniverseServer::clientWarpPlayer(ConnectionId clientId, WarpAction action, bool deploy) {
   RecursiveMutexLocker locker(m_mainLock);
-  m_pendingPlayerWarps[clientId] = pair<WarpAction, bool>(move(action), move(deploy));
+  m_pendingPlayerWarps[clientId] = pair<WarpAction, bool>(std::move(action), std::move(deploy));
 }
 
 void UniverseServer::clientFlyShip(ConnectionId clientId, Vec3I const& system, SystemLocation const& location) {
@@ -402,7 +402,7 @@ bool UniverseServer::unbanIp(String const& addressString) {
   if (addressLookup.isLeft()) {
     return false;
   } else {
-    HostAddress address = move(addressLookup.right());
+    HostAddress address = std::move(addressLookup.right());
     String cleanAddressString = toString(address);
 
     bool entryFound = false;
@@ -1003,7 +1003,7 @@ void UniverseServer::respondToCelestialRequests() {
         return false;
       });
     if (m_clients.contains(p.first))
-      m_connectionServer->sendPackets(p.first, {make_shared<CelestialResponsePacket>(move(responses))});
+      m_connectionServer->sendPackets(p.first, {make_shared<CelestialResponsePacket>(std::move(responses))});
   }
   eraseWhere(m_pendingCelestialRequests, [](auto const& p) {
       return p.second.empty();
@@ -1062,7 +1062,7 @@ void UniverseServer::handleWorldMessages() {
       auto& world = *worldResult;
 
       if (world)
-        world->passMessages(move(it->second));
+        world->passMessages(std::move(it->second));
       else for (auto& message : it->second)
         message.promise.fail("Error creating world");
 
@@ -1455,14 +1455,14 @@ void UniverseServer::addCelestialRequests(ConnectionId clientId, List<CelestialR
 void UniverseServer::worldUpdated(WorldServerThread* server) {
   for (auto clientId : server->clients()) {
     auto packets = server->pullOutgoingPackets(clientId);
-    m_connectionServer->sendPackets(clientId, move(packets));
+    m_connectionServer->sendPackets(clientId, std::move(packets));
   }
 }
 
 void UniverseServer::systemWorldUpdated(SystemWorldServerThread* systemWorldServer) {
   for (auto clientId : systemWorldServer->clients()) {
     auto packets = systemWorldServer->pullOutgoingPackets(clientId);
-    m_connectionServer->sendPackets(clientId, move(packets));
+    m_connectionServer->sendPackets(clientId, std::move(packets));
   }
 }
 
@@ -1480,23 +1480,23 @@ void UniverseServer::packetsReceived(UniverseConnectionServer*, ConnectionId cli
 
       } else if (auto chatSend = as<ChatSendPacket>(packet)) {
         RecursiveMutexLocker locker(m_mainLock);
-        m_pendingChat[clientId].append({move(chatSend->text), chatSend->sendMode});
+        m_pendingChat[clientId].append({std::move(chatSend->text), chatSend->sendMode});
 
       } else if (auto clientContextUpdatePacket = as<ClientContextUpdatePacket>(packet)) {
-        clientContext->readUpdate(move(clientContextUpdatePacket->updateData));
+        clientContext->readUpdate(std::move(clientContextUpdatePacket->updateData));
 
       } else if (auto clientDisconnectPacket = as<ClientDisconnectRequestPacket>(packet)) {
         disconnectClient(clientId, String());
 
       } else if (auto celestialRequest = as<CelestialRequestPacket>(packet)) {
-        addCelestialRequests(clientId, move(celestialRequest->requests));
+        addCelestialRequests(clientId, std::move(celestialRequest->requests));
 
       } else if (is<SystemObjectSpawnPacket>(packet)) {
         if (auto currentSystem = clientContext->systemWorld())
-          currentSystem->pushIncomingPacket(clientId, move(packet));
+          currentSystem->pushIncomingPacket(clientId, std::move(packet));
       } else {
         if (auto currentWorld = clientContext->playerWorld())
-          currentWorld->pushIncomingPackets(clientId, {move(packet)});
+          currentWorld->pushIncomingPackets(clientId, {std::move(packet)});
       }
     }
   }
@@ -1533,7 +1533,7 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
     connection.pushSingle(protocolResponse);
     connection.sendAll(clientWaitLimit);
     mainLocker.lock();
-    m_deadConnections.append({move(connection), Time::monotonicMilliseconds()});
+    m_deadConnections.append({std::move(connection), Time::monotonicMilliseconds()});
     return;
   }
 
@@ -1550,7 +1550,7 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
     Logger::warn("UniverseServer: client connection aborted");
     connection.pushSingle(make_shared<ConnectFailurePacket>("connect timeout"));
     mainLocker.lock();
-    m_deadConnections.append({move(connection), Time::monotonicMilliseconds()});
+    m_deadConnections.append({std::move(connection), Time::monotonicMilliseconds()});
     return;
   }
 
@@ -1561,9 +1561,9 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
   auto connectionFail = [&](String message) {
     Logger::warn("UniverseServer: Login attempt failed with account '{}' as player '{}' from address {}, error: {}",
         accountString, clientConnect->playerName, remoteAddressString, message);
-    connection.pushSingle(make_shared<ConnectFailurePacket>(move(message)));
+    connection.pushSingle(make_shared<ConnectFailurePacket>(std::move(message)));
     mainLocker.lock();
-    m_deadConnections.append({move(connection), Time::monotonicMilliseconds()});
+    m_deadConnections.append({std::move(connection), Time::monotonicMilliseconds()});
   };
 
   if (!remoteAddress) {
@@ -1672,7 +1672,7 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
 
   clientContext->setShipUpgrades(clientConnect->shipUpgrades);
 
-  m_connectionServer->addConnection(clientId, move(connection));
+  m_connectionServer->addConnection(clientId, std::move(connection));
   m_chatProcessor->connectClient(clientId, clientConnect->playerName);
 
   m_connectionServer->sendPackets(clientId, {

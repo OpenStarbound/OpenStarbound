@@ -19,9 +19,9 @@ PcP2PNetworkingService::PcP2PNetworkingService(PcPlatformServicesStatePtr state)
   : m_callbackConnectionFailure(this, &PcP2PNetworkingService::steamOnConnectionFailure),
     m_callbackJoinRequested(this, &PcP2PNetworkingService::steamOnJoinRequested),
     m_callbackSessionRequest(this, &PcP2PNetworkingService::steamOnSessionRequest),
-    m_state(move(state)) {
+    m_state(std::move(state)) {
 #else
-  : m_state(move(state)) {
+  : m_state(std::move(state)) {
 #endif
 
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
@@ -224,7 +224,7 @@ Either<String, P2PSocketUPtr> PcP2PNetworkingService::connectToPeer(P2PNetworkin
     if (type == "discord") {
       auto remoteUserId = lexicalCast<discord::UserId>(peerId.extract("_"));
       auto lobbyId = lexicalCast<discord::LobbyId>(peerId.extract("_"));
-      String lobbySecret = move(peerId);
+      String lobbySecret = std::move(peerId);
       return makeRight(discordConnectRemote(remoteUserId, lobbyId, lobbySecret));
     }
   }
@@ -242,7 +242,7 @@ void PcP2PNetworkingService::addPendingJoin(String connectionString) {
   if (connectionString.extract(":") != "connect")
     throw ApplicationException::format("malformed connection string '{}'", connectionString);
 
-  String target = move(connectionString);
+  String target = std::move(connectionString);
   String targetType = target.extract("_");
 
   if (targetType == "address")
@@ -357,7 +357,7 @@ void PcP2PNetworkingService::steamReceiveAll() {
     SteamNetworking()->ReadP2PPacket(data.ptr(), messageSize, &messageSize, &messageRemoteUser);
     if (auto openSocket = m_steamOpenSockets.value(messageRemoteUser.ConvertToUint64())) {
       MutexLocker socketLocker(openSocket->mutex);
-      openSocket->incoming.append(move(data));
+      openSocket->incoming.append(std::move(data));
     }
   }
 }
@@ -474,7 +474,7 @@ P2PSocketUPtr PcP2PNetworkingService::discordConnectRemote(discord::UserId remot
       }
     });
 
-  return unique_ptr<P2PSocket>(move(socket));
+  return unique_ptr<P2PSocket>(std::move(socket));
 }
 
 void PcP2PNetworkingService::discordOnReceiveMessage(discord::LobbyId lobbyId, discord::UserId userId, discord::NetworkChannelId channel, uint8_t* data, uint32_t size) {
@@ -507,7 +507,7 @@ void PcP2PNetworkingService::discordOnLobbyMemberConnect(discord::LobbyId lobbyI
       socket->mode = DiscordSocketMode::Connected;
 
       m_discordOpenSockets[userId] = socket.get();
-      m_pendingIncomingConnections.append(move(socket));
+      m_pendingIncomingConnections.append(std::move(socket));
       Logger::info("Accepted new discord connection from remote user {}", userId);
     }
   }

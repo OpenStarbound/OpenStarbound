@@ -67,7 +67,7 @@ List<Drawable> TestUniverse::currentClientDrawables() {
   List<Drawable> drawables;
   for (auto& ed : renderData.entityDrawables) {
     for (auto& p : ed.layers)
-      drawables.appendAll(move(p.second));
+      drawables.appendAll(std::move(p.second));
   }
 
   return drawables;

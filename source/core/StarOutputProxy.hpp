@@ -49,7 +49,7 @@ struct OutputProxy {
   typedef function<void(std::ostream&)> PrintFunction;
 
   OutputProxy(PrintFunction p)
-    : print(move(p)) {}
+    : print(std::move(p)) {}
 
   PrintFunction print;
 };

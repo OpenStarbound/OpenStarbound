@@ -538,19 +538,19 @@ List<BiomeItemPlacement> WorldTemplate::validBiomeItems(int x, int y, PotentialB
   auto blockBelow = getBlockInfo(x, y - 1);
 
   if (!blockBelow.biomeTransition && blockBelow.terrain && !block.terrain && !blockBelow.foregroundCave)
-    biomeItems.appendAll(move(potentialBiomeItems.surfaceBiomeItems));
+    biomeItems.appendAll(std::move(potentialBiomeItems.surfaceBiomeItems));
 
   if (!blockBelow.biomeTransition && blockBelow.terrain && block.terrain && !blockBelow.foregroundCave && block.foregroundCave)
-    biomeItems.appendAll(move(potentialBiomeItems.caveSurfaceBiomeItems));
+    biomeItems.appendAll(std::move(potentialBiomeItems.caveSurfaceBiomeItems));
 
   if (!blockAbove.biomeTransition && blockAbove.terrain && block.terrain && !blockAbove.foregroundCave && block.foregroundCave)
-    biomeItems.appendAll(move(potentialBiomeItems.caveCeilingBiomeItems));
+    biomeItems.appendAll(std::move(potentialBiomeItems.caveCeilingBiomeItems));
 
   if (block.terrain && block.foregroundCave && !block.backgroundCave)
-    biomeItems.appendAll(move(potentialBiomeItems.caveBackgroundBiomeItems));
+    biomeItems.appendAll(std::move(potentialBiomeItems.caveBackgroundBiomeItems));
 
   if (block.oceanLiquid != EmptyLiquidId && y == block.oceanLiquidLevel)
-    biomeItems.appendAll(move(potentialBiomeItems.oceanItems));
+    biomeItems.appendAll(std::move(potentialBiomeItems.oceanItems));
 
   return biomeItems;
 }

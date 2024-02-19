@@ -22,7 +22,7 @@ int main(int argc, char** argv) {
     auto getline = [](std::istream& stream) -> String {
       std::string line;
       std::getline(stream, line);
-      return String(move(line));
+      return String(std::move(line));
     };
 
     if (continuation) {

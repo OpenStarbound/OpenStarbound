@@ -138,7 +138,7 @@ template <typename Value, typename Key, typename GetKey, typename Hash, typename
 FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::Bucket::Bucket(Bucket&& rhs) {
   this->hash = rhs.hash;
   if (auto o = rhs.valuePtr())
-    new (&this->value) Value(move(*o));
+    new (&this->value) Value(std::move(*o));
 }
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
@@ -160,9 +160,9 @@ template <typename Value, typename Key, typename GetKey, typename Hash, typename
 auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::Bucket::operator=(Bucket&& rhs) -> Bucket& {
   if (auto o = rhs.valuePtr()) {
     if (auto s = valuePtr())
-      *s = move(*o);
+      *s = std::move(*o);
     else
-      new (&this->value) Value(move(*o));
+      new (&this->value) Value(std::move(*o));
   } else {
     if (auto s = valuePtr())
       s->~Value();
@@ -174,9 +174,9 @@ auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::Bucket::operato
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
 void FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::Bucket::setFilled(size_t hash, Value value) {
   if (auto s = valuePtr())
-    *s = move(value);
+    *s = std::move(value);
   else
-    new (&this->value) Value(move(value));
+    new (&this->value) Value(std::move(value));
   this->hash = hash | FilledHashBit;
 }
 
@@ -370,7 +370,7 @@ auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::insert(Value va
       currentBucket = hashBucket(currentBucket + 1);
 
     } else {
-      target.setFilled(hash, move(value));
+      target.setFilled(hash, std::move(value));
       ++m_filledCount;
       if (insertedBucket == NPos)
         insertedBucket = currentBucket;
@@ -392,7 +392,7 @@ auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::erase(const_ite
     if (auto nextPtr = nextBucket->valuePtr()) {
       if (bucketError(nextBucketIndex, nextBucket->hash) > 0) {
         currentBucket->hash = nextBucket->hash;
-        *currentBucket->valuePtr() = move(*nextPtr);
+        *currentBucket->valuePtr() = std::move(*nextPtr);
         currentBucketIndex = nextBucketIndex;
         currentBucket = nextBucket;
       } else {
@@ -548,7 +548,7 @@ void FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::checkCapacity(s
 
   for (auto& entry : oldBuckets) {
     if (auto ptr = entry.valuePtr())
-      insert(move(*ptr));
+      insert(std::move(*ptr));
   }
 }
 

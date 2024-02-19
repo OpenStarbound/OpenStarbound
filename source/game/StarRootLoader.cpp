@@ -106,7 +106,7 @@ RootLoader::RootLoader(Defaults defaults) {
   addSwitch("runtimeconfig",
       strf("Sets the path to the runtime configuration storage file relative to root directory, defauts to {}",
         defaults.runtimeConfigFile ? *defaults.runtimeConfigFile : "no storage file"));
-  m_defaults = move(defaults);
+  m_defaults = std::move(defaults);
 }
 
 pair<Root::Settings, RootLoader::Options> RootLoader::parseOrDie(
@@ -118,7 +118,7 @@ pair<Root::Settings, RootLoader::Options> RootLoader::parseOrDie(
 pair<RootUPtr, RootLoader::Options> RootLoader::initOrDie(StringList const& cmdLineArguments) const {
   auto p = parseOrDie(cmdLineArguments);
   auto root = make_unique<Root>(p.first);
-  return {move(root), p.second};
+  return {std::move(root), p.second};
 }
 
 pair<Root::Settings, RootLoader::Options> RootLoader::commandParseOrDie(int argc, char** argv) {
@@ -129,7 +129,7 @@ pair<Root::Settings, RootLoader::Options> RootLoader::commandParseOrDie(int argc
 pair<RootUPtr, RootLoader::Options> RootLoader::commandInitOrDie(int argc, char** argv) {
   auto p = commandParseOrDie(argc, argv);
   auto root = make_unique<Root>(p.first);
-  return {move(root), p.second};
+  return {std::move(root), p.second};
 }
 
 Root::Settings RootLoader::rootSettingsForOptions(Options const& options) const {

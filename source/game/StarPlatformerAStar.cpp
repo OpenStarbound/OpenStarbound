@@ -48,8 +48,8 @@ namespace PlatformerAStar {
     : m_world(world),
       m_searchFrom(searchFrom),
       m_searchTo(searchTo),
-      m_movementParams(move(movementParameters)),
-      m_searchParams(move(searchParameters)) {
+      m_movementParams(std::move(movementParameters)),
+      m_searchParams(std::move(searchParameters)) {
     initAStar();
   }
 

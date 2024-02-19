@@ -15,11 +15,11 @@ EffectEmitter::EffectEmitter() {
 
 void EffectEmitter::addEffectSources(String const& position, StringSet effectSources) {
   for (auto& e : effectSources)
-    m_newSources.add({position, move(e)});
+    m_newSources.add({position, std::move(e)});
 }
 
 void EffectEmitter::setSourcePosition(String name, Vec2F const& position) {
-  m_positions[move(name)] = position;
+  m_positions[std::move(name)] = position;
 }
 
 void EffectEmitter::setDirection(Direction direction) {
@@ -32,7 +32,7 @@ void EffectEmitter::setBaseVelocity(Vec2F const& velocity) {
 
 void EffectEmitter::tick(float dt, EntityMode mode) {
   if (mode == EntityMode::Master) {
-    m_activeSources.set(move(m_newSources));
+    m_activeSources.set(std::move(m_newSources));
     m_newSources.clear();
   } else {
     if (!m_newSources.empty())

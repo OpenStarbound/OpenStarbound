@@ -29,8 +29,8 @@ namespace Star {
 
 UniverseClient::UniverseClient(PlayerStoragePtr playerStorage, StatisticsPtr statistics) {
   m_storageTriggerDeadline = 0;
-  m_playerStorage = move(playerStorage);
-  m_statistics = move(statistics);
+  m_playerStorage = std::move(playerStorage);
+  m_statistics = std::move(statistics);
   m_pause = false;
   m_luaRoot = make_shared<LuaRoot>();
   reset();
@@ -127,8 +127,8 @@ Maybe<String> UniverseClient::connect(UniverseConnection connection, bool allowA
     for (auto& pair : m_luaCallbacks)
       m_worldClient->setLuaCallbacks(pair.first, pair.second);
 
-    m_connection = move(connection);
-    m_celestialDatabase = make_shared<CelestialSlaveDatabase>(move(success->celestialInformation));
+    m_connection = std::move(connection);
+    m_celestialDatabase = make_shared<CelestialSlaveDatabase>(std::move(success->celestialInformation));
     m_systemWorldClient = make_shared<SystemWorldClient>(m_universeClock, m_celestialDatabase, m_mainPlayer->universeMap());
 
     Logger::info("UniverseClient: Joined {} server as client {}", m_legacyServer ? "Starbound" : "OpenStarbound", success->clientId);
@@ -246,11 +246,11 @@ void UniverseClient::update(float dt) {
 
   auto contextUpdate = m_clientContext->writeUpdate();
   if (!contextUpdate.empty())
-    m_connection->pushSingle(make_shared<ClientContextUpdatePacket>(move(contextUpdate)));
+    m_connection->pushSingle(make_shared<ClientContextUpdatePacket>(std::move(contextUpdate)));
 
   auto celestialRequests = m_celestialDatabase->pullRequests();
   if (!celestialRequests.empty())
-    m_connection->pushSingle(make_shared<CelestialRequestPacket>(move(celestialRequests)));
+    m_connection->pushSingle(make_shared<CelestialRequestPacket>(std::move(celestialRequests)));
 
   m_connection->send();
 
@@ -276,7 +276,7 @@ void UniverseClient::update(float dt) {
             {"species", m_mainPlayer->species()},
             {"mode", PlayerModeNames.getRight(m_mainPlayer->modeType())}
           });
-        m_mainPlayer->setPendingCinematic(Json(move(cinematic)));
+        m_mainPlayer->setPendingCinematic(Json(std::move(cinematic)));
         if (!m_worldClient->respawnInWorld())
           m_pendingWarp = WarpAlias::OwnShip;
         m_warpDelay.reset();
@@ -651,7 +651,7 @@ void UniverseClient::handlePackets(List<PacketPtr> const& packets) {
       break; // Stop handling other packets
 
     } else if (auto celestialResponse = as<CelestialResponsePacket>(packet)) {
-      m_celestialDatabase->pushResponses(move(celestialResponse->responses));
+      m_celestialDatabase->pushResponses(std::move(celestialResponse->responses));
 
     } else if (auto warpResult = as<PlayerWarpResultPacket>(packet)) {
       if (m_mainPlayer->isDeploying() && m_warping && m_warping->is<WarpToPlayer>()) {

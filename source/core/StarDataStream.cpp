@@ -294,7 +294,7 @@ DataStream& DataStream::operator>>(ByteArray& d) {
 DataStream& DataStream::operator>>(String& s) {
   std::string string;
   operator>>(string);
-  s = move(string);
+  s = std::move(string);
   return *this;
 }
 

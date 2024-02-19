@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
 
       VisitableWorldParametersPtr worldParameters = generateFloatingDungeonWorldParameters(dungeonWorldName);
       auto worldTemplate = make_shared<WorldTemplate>(worldParameters, SkyParameters(), 1234);
-      WorldServer worldServer(move(worldTemplate), File::ephemeralFile());
+      WorldServer worldServer(std::move(worldTemplate), File::ephemeralFile());
     }
 
     coutf("Finished {} generations of dungeonWorld {} in {} seconds", repetitions, dungeonWorldName, Time::monotonicTime() - start);

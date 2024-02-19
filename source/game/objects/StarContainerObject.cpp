@@ -119,7 +119,7 @@ void ContainerObject::render(RenderCallback* renderCallback) {
           auto audio = make_shared<AudioInstance>(*assets->audio(Random::randValueFrom(configValue("openSounds").toArray()).toString()));
           audio->setPosition(position());
           audio->setRangeMultiplier(config()->soundEffectRangeMultiplier);
-          renderCallback->addAudio(move(audio));
+          renderCallback->addAudio(std::move(audio));
         }
       }
       if (m_currentState == configValue("openFrameIndex", 2).toInt()) {
@@ -128,7 +128,7 @@ void ContainerObject::render(RenderCallback* renderCallback) {
           auto audio = make_shared<AudioInstance>(*assets->audio(Random::randValueFrom(configValue("closeSounds").toArray()).toString()));
           audio->setPosition(position());
           audio->setRangeMultiplier(config()->soundEffectRangeMultiplier);
-          renderCallback->addAudio(move(audio));
+          renderCallback->addAudio(std::move(audio));
         }
       }
       if (m_opened.get() < m_currentState) {

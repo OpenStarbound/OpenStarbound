@@ -82,7 +82,7 @@ pair<ByteArray, uint64_t> Stagehand::writeNetState(uint64_t fromVersion) {
 }
 
 void Stagehand::readNetState(ByteArray data, float) {
-  m_netGroup.readNetState(move(data));
+  m_netGroup.readNetState(std::move(data));
 }
 
 void Stagehand::update(float dt, uint64_t) {

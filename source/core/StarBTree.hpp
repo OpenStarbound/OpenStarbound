@@ -284,18 +284,18 @@ template <typename Base>
 template <typename Visitor>
 void BTreeMixin<Base>::forEach(Key const& lower, Key const& upper, Visitor&& visitor) {
   if (Base::rootIsLeaf())
-    forEach(Base::loadLeaf(Base::rootPointer()), lower, upper, forward<Visitor>(visitor));
+    forEach(Base::loadLeaf(Base::rootPointer()), lower, upper, std::forward<Visitor>(visitor));
   else
-    forEach(Base::loadIndex(Base::rootPointer()), lower, upper, forward<Visitor>(visitor));
+    forEach(Base::loadIndex(Base::rootPointer()), lower, upper, std::forward<Visitor>(visitor));
 }
 
 template <typename Base>
 template <typename Visitor>
 void BTreeMixin<Base>::forAll(Visitor&& visitor) {
   if (Base::rootIsLeaf())
-    forAll(Base::loadLeaf(Base::rootPointer()), forward<Visitor>(visitor));
+    forAll(Base::loadLeaf(Base::rootPointer()), std::forward<Visitor>(visitor));
   else
-    forAll(Base::loadIndex(Base::rootPointer()), forward<Visitor>(visitor));
+    forAll(Base::loadIndex(Base::rootPointer()), std::forward<Visitor>(visitor));
 }
 
 template <typename Base>
@@ -303,9 +303,9 @@ template <typename Visitor, typename ErrorHandler>
 void BTreeMixin<Base>::recoverAll(Visitor&& visitor, ErrorHandler&& error) {
   try {
     if (Base::rootIsLeaf())
-      recoverAll(Base::loadLeaf(Base::rootPointer()), forward<Visitor>(visitor), forward<ErrorHandler>(error));
+      recoverAll(Base::loadLeaf(Base::rootPointer()), std::forward<Visitor>(visitor), std::forward<ErrorHandler>(error));
     else
-      recoverAll(Base::loadIndex(Base::rootPointer()), forward<Visitor>(visitor), forward<ErrorHandler>(error));
+      recoverAll(Base::loadIndex(Base::rootPointer()), std::forward<Visitor>(visitor), std::forward<ErrorHandler>(error));
   } catch (std::exception const& e) {
     error("Error loading root index or leaf node", e);
   }
@@ -317,17 +317,17 @@ void BTreeMixin<Base>::forAllNodes(Visitor&& visitor) {
   if (Base::rootIsLeaf())
     visitor(Base::loadLeaf(Base::rootPointer()));
   else
-    forAllNodes(Base::loadIndex(Base::rootPointer()), forward<Visitor>(visitor));
+    forAllNodes(Base::loadIndex(Base::rootPointer()), std::forward<Visitor>(visitor));
 }
 
 template <typename Base>
 bool BTreeMixin<Base>::insert(Key k, Data data) {
-  return modify(DataElement{move(k), move(data)}, InsertAction);
+  return modify(DataElement{std::move(k), std::move(data)}, InsertAction);
 }
 
 template <typename Base>
 bool BTreeMixin<Base>::remove(Key k) {
-  return modify(DataElement{move(k), Data()}, RemoveAction);
+  return modify(DataElement{std::move(k), Data()}, RemoveAction);
 }
 
 template <typename Base>
@@ -422,7 +422,7 @@ bool BTreeMixin<Base>::LeafCounter::operator()(Leaf const&) {
 
 template <typename Base>
 BTreeMixin<Base>::ModifyInfo::ModifyInfo(ModifyAction a, DataElement e)
-  : targetElement(move(e)), action(a) {
+  : targetElement(std::move(e)), action(a) {
   found = false;
   state = Done;
 }
@@ -466,9 +466,9 @@ auto BTreeMixin<Base>::forEach(Index const& index, Key const& lower, Key const& 
   Key lastKey;
 
   if (Base::indexLevel(index) == 0)
-    lastKey = forEach(Base::loadLeaf(Base::indexPointer(index, i)), lower, upper, forward<Visitor>(o));
+    lastKey = forEach(Base::loadLeaf(Base::indexPointer(index, i)), lower, upper, std::forward<Visitor>(o));
   else
-    lastKey = forEach(Base::loadIndex(Base::indexPointer(index, i)), lower, upper, forward<Visitor>(o));
+    lastKey = forEach(Base::loadIndex(Base::indexPointer(index, i)), lower, upper, std::forward<Visitor>(o));
 
   if (!(lastKey < upper))
     return lastKey;
@@ -483,9 +483,9 @@ auto BTreeMixin<Base>::forEach(Index const& index, Key const& lower, Key const& 
       continue;
 
     if (Base::indexLevel(index) == 0)
-      lastKey = forEach(Base::loadLeaf(Base::indexPointer(index, i)), lower, upper, forward<Visitor>(o));
+      lastKey = forEach(Base::loadLeaf(Base::indexPointer(index, i)), lower, upper, std::forward<Visitor>(o));
     else
-      lastKey = forEach(Base::loadIndex(Base::indexPointer(index, i)), lower, upper, forward<Visitor>(o));
+      lastKey = forEach(Base::loadIndex(Base::indexPointer(index, i)), lower, upper, std::forward<Visitor>(o));
 
     if (!(lastKey < upper))
       break;
@@ -530,9 +530,9 @@ auto BTreeMixin<Base>::forAll(Index const& index, Visitor&& o) -> Key {
       continue;
 
     if (Base::indexLevel(index) == 0)
-      lastKey = forAll(Base::loadLeaf(Base::indexPointer(index, i)), forward<Visitor>(o));
+      lastKey = forAll(Base::loadLeaf(Base::indexPointer(index, i)), std::forward<Visitor>(o));
     else
-      lastKey = forAll(Base::loadIndex(Base::indexPointer(index, i)), forward<Visitor>(o));
+      lastKey = forAll(Base::loadIndex(Base::indexPointer(index, i)), std::forward<Visitor>(o));
   }
 
   return lastKey;
@@ -550,7 +550,7 @@ auto BTreeMixin<Base>::forAll(Leaf const& leaf, Visitor&& o) -> Key {
   }
 
   if (auto nextLeafPointer = Base::nextLeaf(leaf))
-    return forAll(Base::loadLeaf(*nextLeafPointer), forward<Visitor>(o));
+    return forAll(Base::loadLeaf(*nextLeafPointer), std::forward<Visitor>(o));
   else
     return Base::leafKey(leaf, Base::leafElementCount(leaf) - 1);
 }
@@ -562,13 +562,13 @@ void BTreeMixin<Base>::recoverAll(Index const& index, Visitor&& visitor, ErrorHa
     for (size_t i = 0; i < Base::indexPointerCount(index); ++i) {
       if (Base::indexLevel(index) == 0) {
         try {
-          recoverAll(Base::loadLeaf(Base::indexPointer(index, i)), forward<Visitor>(visitor), forward<ErrorHandler>(error));
+          recoverAll(Base::loadLeaf(Base::indexPointer(index, i)), std::forward<Visitor>(visitor), std::forward<ErrorHandler>(error));
         } catch (std::exception const& e) {
           error("Error loading leaf node", e);
         }
       } else {
         try {
-          recoverAll(Base::loadIndex(Base::indexPointer(index, i)), forward<Visitor>(visitor), forward<ErrorHandler>(error));
+          recoverAll(Base::loadIndex(Base::indexPointer(index, i)), std::forward<Visitor>(visitor), std::forward<ErrorHandler>(error));
         } catch (std::exception const& e) {
           error("Error loading index node", e);
         }
@@ -608,7 +608,7 @@ void BTreeMixin<Base>::modify(Leaf& leafNode, ModifyInfo& info) {
     return;
 
   if (info.action == InsertAction)
-    Base::leafInsert(leafNode, i, info.targetElement.key, move(info.targetElement.data));
+    Base::leafInsert(leafNode, i, info.targetElement.key, std::move(info.targetElement.data));
 
   auto splitResult = Base::leafSplit(leafNode);
   if (splitResult) {
@@ -677,26 +677,26 @@ void BTreeMixin<Base>::modify(Index& indexNode, ModifyInfo& info) {
       } else if (Base::leafElementCount(rightLeaf) == 0) {
         // Leaves merged.
         Base::setNextLeaf(leftLeaf, Base::nextLeaf(rightLeaf));
-        Base::deleteLeaf(move(rightLeaf));
+        Base::deleteLeaf(std::move(rightLeaf));
 
         // Replace two sibling pointer elements with one pointing to merged
         // leaf.
         if (left != 0)
           Base::indexUpdateKeyBefore(indexNode, left, Base::leafKey(leftLeaf, 0));
 
-        Base::indexUpdatePointer(indexNode, left, Base::storeLeaf(move(leftLeaf)));
+        Base::indexUpdatePointer(indexNode, left, Base::storeLeaf(std::move(leftLeaf)));
         Base::indexRemoveBefore(indexNode, right);
 
         selfUpdated = true;
       } else {
         // Leaves shifted.
-        Base::indexUpdatePointer(indexNode, left, Base::storeLeaf(move(leftLeaf)));
+        Base::indexUpdatePointer(indexNode, left, Base::storeLeaf(std::move(leftLeaf)));
 
         // Right leaf first key changes on shift, so always need to update
         // left index node.
         Base::indexUpdateKeyBefore(indexNode, right, Base::leafKey(rightLeaf, 0));
 
-        Base::indexUpdatePointer(indexNode, right, Base::storeLeaf(move(rightLeaf)));
+        Base::indexUpdatePointer(indexNode, right, Base::storeLeaf(std::move(rightLeaf)));
 
         selfUpdated = true;
       }
@@ -725,25 +725,25 @@ void BTreeMixin<Base>::modify(Index& indexNode, ModifyInfo& info) {
 
       } else if (Base::indexPointerCount(rightIndex) == 0) {
         // Indexes merged.
-        Base::deleteIndex(move(rightIndex));
+        Base::deleteIndex(std::move(rightIndex));
 
         // Replace two sibling pointer elements with one pointing to merged
         // index.
         if (left != 0)
           Base::indexUpdateKeyBefore(indexNode, left, getLeftKey(leftIndex));
 
-        Base::indexUpdatePointer(indexNode, left, Base::storeIndex(move(leftIndex)));
+        Base::indexUpdatePointer(indexNode, left, Base::storeIndex(std::move(leftIndex)));
         Base::indexRemoveBefore(indexNode, right);
 
         selfUpdated = true;
       } else {
         // Indexes shifted.
-        Base::indexUpdatePointer(indexNode, left, Base::storeIndex(move(leftIndex)));
+        Base::indexUpdatePointer(indexNode, left, Base::storeIndex(std::move(leftIndex)));
 
         // Right index first key changes on shift, so always need to update
         // right index node.
         Key keyForRight = getLeftKey(rightIndex);
-        Base::indexUpdatePointer(indexNode, right, Base::storeIndex(move(rightIndex)));
+        Base::indexUpdatePointer(indexNode, right, Base::storeIndex(std::move(rightIndex)));
         Base::indexUpdateKeyBefore(indexNode, right, keyForRight);
 
         selfUpdated = true;
@@ -752,19 +752,19 @@ void BTreeMixin<Base>::modify(Index& indexNode, ModifyInfo& info) {
   }
 
   if (info.state == LeafSplit) {
-    Base::indexUpdatePointer(indexNode, i, Base::storeLeaf(move(lowerLeaf)));
+    Base::indexUpdatePointer(indexNode, i, Base::storeLeaf(std::move(lowerLeaf)));
     Base::indexInsertAfter(indexNode, i, info.newKey, info.newPointer);
     selfUpdated = true;
   }
 
   if (info.state == IndexSplit) {
-    Base::indexUpdatePointer(indexNode, i, Base::storeIndex(move(lowerIndex)));
+    Base::indexUpdatePointer(indexNode, i, Base::storeIndex(std::move(lowerIndex)));
     Base::indexInsertAfter(indexNode, i, info.newKey, info.newPointer);
     selfUpdated = true;
   }
 
   if (info.state == LeafNeedsUpdate) {
-    Pointer lowerLeafPointer = Base::storeLeaf(move(lowerLeaf));
+    Pointer lowerLeafPointer = Base::storeLeaf(std::move(lowerLeaf));
     if (lowerLeafPointer != Base::indexPointer(indexNode, i)) {
       Base::indexUpdatePointer(indexNode, i, lowerLeafPointer);
       selfUpdated = true;
@@ -772,7 +772,7 @@ void BTreeMixin<Base>::modify(Index& indexNode, ModifyInfo& info) {
   }
 
   if (info.state == IndexNeedsUpdate) {
-    Pointer lowerIndexPointer = Base::storeIndex(move(lowerIndex));
+    Pointer lowerIndexPointer = Base::storeIndex(std::move(lowerIndex));
     if (lowerIndexPointer != Base::indexPointer(indexNode, i)) {
       Base::indexUpdatePointer(indexNode, i, lowerIndexPointer);
       selfUpdated = true;
@@ -796,7 +796,7 @@ void BTreeMixin<Base>::modify(Index& indexNode, ModifyInfo& info) {
 
 template <typename Base>
 bool BTreeMixin<Base>::modify(DataElement e, ModifyAction action) {
-  ModifyInfo info(action, move(e));
+  ModifyInfo info(action, std::move(e));
 
   Leaf lowerLeaf;
   Index lowerIndex;
@@ -816,7 +816,7 @@ bool BTreeMixin<Base>::modify(DataElement e, ModifyAction action) {
       // removes until setNewRoot)
       Pointer pointer = Base::indexPointer(lowerIndex, 0);
       size_t level = Base::indexLevel(lowerIndex);
-      Base::deleteIndex(move(lowerIndex));
+      Base::deleteIndex(std::move(lowerIndex));
       Base::setNewRoot(pointer, level == 0);
     } else {
       // Else just update.
@@ -833,24 +833,24 @@ bool BTreeMixin<Base>::modify(DataElement e, ModifyAction action) {
     Index newRoot;
     if (info.state == IndexSplit) {
       auto rootIndexLevel = Base::indexLevel(lowerIndex) + 1;
-      newRoot = Base::createIndex(Base::storeIndex(move(lowerIndex)));
+      newRoot = Base::createIndex(Base::storeIndex(std::move(lowerIndex)));
       Base::setIndexLevel(newRoot, rootIndexLevel);
     } else {
-      newRoot = Base::createIndex(Base::storeLeaf(move(lowerLeaf)));
+      newRoot = Base::createIndex(Base::storeLeaf(std::move(lowerLeaf)));
       Base::setIndexLevel(newRoot, 0);
     }
     Base::indexInsertAfter(newRoot, 0, info.newKey, info.newPointer);
-    Base::setNewRoot(Base::storeIndex(move(newRoot)), false);
+    Base::setNewRoot(Base::storeIndex(std::move(newRoot)), false);
   }
 
   if (info.state == IndexNeedsUpdate) {
-    Pointer newRootPointer = Base::storeIndex(move(lowerIndex));
+    Pointer newRootPointer = Base::storeIndex(std::move(lowerIndex));
     if (newRootPointer != Base::rootPointer())
       Base::setNewRoot(newRootPointer, false);
   }
 
   if (info.state == LeafNeedsUpdate) {
-    Pointer newRootPointer = Base::storeLeaf(move(lowerLeaf));
+    Pointer newRootPointer = Base::storeLeaf(std::move(lowerLeaf));
     if (newRootPointer != Base::rootPointer())
       Base::setNewRoot(newRootPointer, true);
   }
@@ -876,7 +876,7 @@ void BTreeMixin<Base>::forAllNodes(Index const& index, Visitor&& visitor) {
 
   for (size_t i = 0; i < Base::indexPointerCount(index); ++i) {
     if (Base::indexLevel(index) != 0) {
-      forAllNodes(Base::loadIndex(Base::indexPointer(index, i)), forward<Visitor>(visitor));
+      forAllNodes(Base::loadIndex(Base::indexPointer(index, i)), std::forward<Visitor>(visitor));
     } else {
       if (!visitor(Base::loadLeaf(Base::indexPointer(index, i))))
         return;

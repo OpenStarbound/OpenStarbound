@@ -194,7 +194,7 @@ ResultType const& WorkerPoolPromise<ResultType>::get() const {
 
 template <typename ResultType>
 WorkerPoolPromise<ResultType>::WorkerPoolPromise(shared_ptr<Impl> impl)
-  : m_impl(move(impl)) {}
+  : m_impl(std::move(impl)) {}
 
 template <typename ResultType>
 WorkerPoolPromise<ResultType> WorkerPool::addProducer(function<ResultType()> producer) {
@@ -205,7 +205,7 @@ WorkerPoolPromise<ResultType> WorkerPool::addProducer(function<ResultType()> pro
     try {
       auto result = producer();
       MutexLocker promiseLocker(workerPoolPromiseImpl->mutex);
-      workerPoolPromiseImpl->result = move(result);
+      workerPoolPromiseImpl->result = std::move(result);
       workerPoolPromiseImpl->condition.broadcast();
     } catch (...) {
       MutexLocker promiseLocker(workerPoolPromiseImpl->mutex);

@@ -186,7 +186,7 @@ Polygon<DataType> Polygon<DataType>::convexHull(VertexList points) {
   upper.removeLast();
   lower.removeLast();
   lower.appendAll(take(upper));
-  return Polygon<DataType>(move(lower));
+  return Polygon<DataType>(std::move(lower));
 }
 
 template <typename DataType>
@@ -218,7 +218,7 @@ Polygon<DataType> Polygon<DataType>::clip(Polygon inputPoly, Polygon convexClipP
     }
   }
 
-  return Polygon(move(outputVertexes));
+  return Polygon(std::move(outputVertexes));
 }
 
 template <typename DataType>
@@ -230,7 +230,7 @@ Polygon<DataType>::Polygon(Polygon const& rhs)
 
 template <typename DataType>
 Polygon<DataType>::Polygon(Polygon&& rhs)
-  : m_vertexes(move(rhs.m_vertexes)) {}
+  : m_vertexes(std::move(rhs.m_vertexes)) {}
 
 template <typename DataType>
 template <typename DataType2>
@@ -303,7 +303,7 @@ void Polygon<DataType>::deduplicateVertexes(float maxDistance) {
   if (vmagSquared(newVertexes.first() - newVertexes.last()) <= distSquared)
     newVertexes.removeLast();
 
-  m_vertexes = move(newVertexes);
+  m_vertexes = std::move(newVertexes);
 }
 
 template <typename DataType>
@@ -426,7 +426,7 @@ Polygon<DataType>& Polygon<DataType>::operator=(Polygon const& rhs) {
 
 template <typename DataType>
 Polygon<DataType>& Polygon<DataType>::operator=(Polygon&& rhs) {
-  m_vertexes = move(rhs.m_vertexes);
+  m_vertexes = std::move(rhs.m_vertexes);
   return *this;
 }
 

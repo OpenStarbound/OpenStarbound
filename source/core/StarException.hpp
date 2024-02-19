@@ -79,18 +79,18 @@ void fatalException(std::exception const& e, bool showStackTrace);
   class ClassName : public BaseName {                                                                                             \
   public:                                                                                                                         \
     template <typename... Args>                                                                                                   \
-    static ClassName format(fmt::format_string<Args...> fmt, Args const&... args) {                                                               \
+    static ClassName format(fmt::format_string<Args...> fmt, Args const&... args) {                                               \
       return ClassName(strf(fmt, args...));                                                                                       \
     }                                                                                                                             \
     ClassName() : BaseName(#ClassName, std::string()) {}                                                                          \
-    explicit ClassName(std::string message, bool genStackTrace = true) : BaseName(#ClassName, move(message), genStackTrace) {}    \
+    explicit ClassName(std::string message, bool genStackTrace = true) : BaseName(#ClassName, std::move(message), genStackTrace) {} \
     explicit ClassName(std::exception const& cause) : BaseName(#ClassName, std::string(), cause) {}                               \
-    ClassName(std::string message, std::exception const& cause) : BaseName(#ClassName, move(message), cause) {}                   \
+    ClassName(std::string message, std::exception const& cause) : BaseName(#ClassName, std::move(message), cause) {}              \
                                                                                                                                   \
   protected:                                                                                                                      \
-    ClassName(char const* type, std::string message, bool genStackTrace = true) : BaseName(type, move(message), genStackTrace) {} \
+    ClassName(char const* type, std::string message, bool genStackTrace = true) : BaseName(type, std::move(message), genStackTrace) {} \
     ClassName(char const* type, std::string message, std::exception const& cause)                                                 \
-      : BaseName(type, move(message), cause) {}                                                                                   \
+      : BaseName(type, std::move(message), cause) {}                                                                              \
   }
 
 STAR_EXCEPTION(OutOfRangeException, StarException);

@@ -5,7 +5,7 @@ namespace Star {
 void ContainerInteractor::openContainer(ContainerEntityPtr containerEntity) {
   if (m_openContainer && m_openContainer->inWorld())
     m_openContainer->containerClose();
-  m_openContainer = move(containerEntity);
+  m_openContainer = std::move(containerEntity);
   if (m_openContainer) {
     starAssert(m_openContainer->inWorld());
     m_openContainer->containerOpen();

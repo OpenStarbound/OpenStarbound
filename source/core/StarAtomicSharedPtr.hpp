@@ -47,11 +47,11 @@ AtomicSharedPtr<T>::AtomicSharedPtr(AtomicSharedPtr const& p)
 
 template <typename T>
 AtomicSharedPtr<T>::AtomicSharedPtr(AtomicSharedPtr&& p)
-  : m_ptr(move(p.m_ptr)) {}
+  : m_ptr(std::move(p.m_ptr)) {}
 
 template <typename T>
 AtomicSharedPtr<T>::AtomicSharedPtr(SharedPtr p)
-  : m_ptr(move(p)) {}
+  : m_ptr(std::move(p)) {}
 
 template <typename T>
 auto AtomicSharedPtr<T>::load() const -> SharedPtr {
@@ -68,7 +68,7 @@ auto AtomicSharedPtr<T>::weak() const -> WeakPtr {
 template <typename T>
 void AtomicSharedPtr<T>::store(SharedPtr p) {
   SpinLocker locker(m_lock);
-  m_ptr = move(p);
+  m_ptr = std::move(p);
 }
 
 template <typename T>
@@ -105,14 +105,14 @@ AtomicSharedPtr<T>& AtomicSharedPtr<T>::operator=(AtomicSharedPtr const& p) {
 template <typename T>
 AtomicSharedPtr<T>& AtomicSharedPtr<T>::operator=(AtomicSharedPtr&& p) {
   SpinLocker locker(m_lock);
-  m_ptr = move(p.m_ptr);
+  m_ptr = std::move(p.m_ptr);
   return *this;
 }
 
 template <typename T>
 AtomicSharedPtr<T>& AtomicSharedPtr<T>::operator=(SharedPtr p) {
   SpinLocker locker(m_lock);
-  m_ptr = move(p);
+  m_ptr = std::move(p);
   return *this;
 }
 

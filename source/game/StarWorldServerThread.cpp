@@ -10,8 +10,8 @@ namespace Star {
 
 WorldServerThread::WorldServerThread(WorldServerPtr server, WorldId worldId)
   : Thread("WorldServerThread: " + printWorldId(worldId)),
-    m_worldServer(move(server)),
-    m_worldId(move(worldId)),
+    m_worldServer(std::move(server)),
+    m_worldId(std::move(worldId)),
     m_stop(false),
     m_errorOccurred(false),
     m_shouldExpire(true) {
@@ -93,7 +93,7 @@ List<PacketPtr> WorldServerThread::removeClient(ConnectionId clientId) {
   try {
     auto incomingPackets = take(m_incomingPacketQueue[clientId]);
     if (m_worldServer->hasClient(clientId))
-      m_worldServer->handleIncomingPackets(clientId, move(incomingPackets));
+      m_worldServer->handleIncomingPackets(clientId, std::move(incomingPackets));
 
     outgoingPackets = take(m_outgoingPacketQueue[clientId]);
     if (m_worldServer->hasClient(clientId))
@@ -134,7 +134,7 @@ List<ConnectionId> WorldServerThread::erroredClients() const {
 
 void WorldServerThread::pushIncomingPackets(ConnectionId clientId, List<PacketPtr> packets) {
   RecursiveMutexLocker queueLocker(m_queueMutex);
-  m_incomingPacketQueue[clientId].appendAll(move(packets));
+  m_incomingPacketQueue[clientId].appendAll(std::move(packets));
 }
 
 List<PacketPtr> WorldServerThread::pullOutgoingPackets(ConnectionId clientId) {
@@ -178,7 +178,7 @@ void WorldServerThread::setUpdateAction(WorldServerAction updateAction) {
 
 void WorldServerThread::passMessages(List<Message>&& messages) {
   RecursiveMutexLocker locker(m_messageMutex);
-  m_messages.appendAll(move(messages));
+  m_messages.appendAll(std::move(messages));
 }
 
 WorldChunks WorldServerThread::readChunks() {
@@ -257,7 +257,7 @@ void WorldServerThread::update(WorldServerFidelity fidelity) {
     auto incomingPackets = take(m_incomingPacketQueue[clientId]);
     queueLocker.unlock();
     try {
-      m_worldServer->handleIncomingPackets(clientId, move(incomingPackets));
+      m_worldServer->handleIncomingPackets(clientId, std::move(incomingPackets));
     } catch (std::exception const& e) {
       Logger::error("WorldServerThread exception caught handling incoming packets for client {}: {}",
           clientId, outputException(e, true));
@@ -275,7 +275,7 @@ void WorldServerThread::update(WorldServerFidelity fidelity) {
   List<Message> messages;
   {
     RecursiveMutexLocker locker(m_messageMutex);
-    messages = move(m_messages);
+    messages = std::move(m_messages);
   }
   for (auto& message : messages) {
     if (auto resp = m_worldServer->receiveMessage(ServerConnectionId, message.message, message.args))
@@ -287,7 +287,7 @@ void WorldServerThread::update(WorldServerFidelity fidelity) {
   for (auto& clientId : unerroredClientIds) {
     auto outgoingPackets = m_worldServer->getOutgoingPackets(clientId);
     RecursiveMutexLocker queueLocker(m_queueMutex);
-    m_outgoingPacketQueue[clientId].appendAll(move(outgoingPackets));
+    m_outgoingPacketQueue[clientId].appendAll(std::move(outgoingPackets));
   }
 
   m_shouldExpire = m_worldServer->shouldExpire();

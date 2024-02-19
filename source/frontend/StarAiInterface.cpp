@@ -388,7 +388,7 @@ void AiInterface::setFaceAnimation(String const& name) {
 }
 
 void AiInterface::setCurrentSpeech(String const& textWidget, AiSpeech speech) {;
-  m_currentSpeech = move(speech);
+  m_currentSpeech = std::move(speech);
   m_textLength = 0.0;
   m_textMaxLength = Text::stripEscapeCodes(m_currentSpeech->text).size();
   m_currentTextWidget = findChild<LabelWidget>(textWidget);

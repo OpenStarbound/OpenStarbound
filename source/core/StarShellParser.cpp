@@ -21,7 +21,7 @@ StringList ShellParser::tokenizeToStringList(String const& command) {
   StringList res;
   for (auto token : tokenize(command)) {
     if (token.type == TokenType::Word) {
-      res.append(move(token.token));
+      res.append(std::move(token.token));
     }
   }
 

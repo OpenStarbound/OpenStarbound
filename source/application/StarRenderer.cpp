@@ -19,7 +19,7 @@ RenderQuad::RenderQuad(Vec2F posA, Vec2F posB, Vec2F posC, Vec2F posD, Vec4B col
   d = { posD, { 0, 0 }, color, param1 };
 }
 
-RenderQuad::RenderQuad(TexturePtr tex, Vec2F minPosition, float textureScale, Vec4B color, float param1) : texture(move(tex)) {
+RenderQuad::RenderQuad(TexturePtr tex, Vec2F minPosition, float textureScale, Vec4B color, float param1) : texture(std::move(tex)) {
   Vec2F size = Vec2F(texture->size());
   a = { minPosition, { 0, 0 }, color, param1};
   b = { { (minPosition[0] + size[0] * textureScale), minPosition[1] }, { size[0], 0 }, color, param1 };
@@ -27,7 +27,7 @@ RenderQuad::RenderQuad(TexturePtr tex, Vec2F minPosition, float textureScale, Ve
   d = { { minPosition[0], (minPosition[1] + size[1] * textureScale) }, { 0, size[1] }, color, param1 };
 }
 
-RenderQuad::RenderQuad(TexturePtr tex, RectF const& screenCoords, Vec4B color, float param1) : texture(move(tex)) {
+RenderQuad::RenderQuad(TexturePtr tex, RectF const& screenCoords, Vec4B color, float param1) : texture(std::move(tex)) {
   Vec2F size = Vec2F(texture->size());
   a = { screenCoords.min(), { 0, 0 }, color, param1 };
   b = { { screenCoords.xMax(), screenCoords.yMin(), }, { size[0], 0.f }, color, param1 };
@@ -35,7 +35,7 @@ RenderQuad::RenderQuad(TexturePtr tex, RectF const& screenCoords, Vec4B color, f
   d = { { screenCoords.xMin(), screenCoords.yMax(), }, { 0.f, size[1] }, color, param1 };
 }
 
-RenderQuad::RenderQuad(TexturePtr tex, Vec2F posA, Vec2F uvA, Vec2F posB, Vec2F uvB, Vec2F posC, Vec2F uvC, Vec2F posD, Vec2F uvD, Vec4B color, float param1) : texture(move(tex)) {
+RenderQuad::RenderQuad(TexturePtr tex, Vec2F posA, Vec2F uvA, Vec2F posB, Vec2F uvB, Vec2F posC, Vec2F uvC, Vec2F posD, Vec2F uvD, Vec4B color, float param1) : texture(std::move(tex)) {
   a = { posA, uvA, color, param1 };
   b = { posB, uvB, color, param1 };
   c = { posC, uvC, color, param1 };
@@ -43,7 +43,7 @@ RenderQuad::RenderQuad(TexturePtr tex, Vec2F posA, Vec2F uvA, Vec2F posB, Vec2F 
 }
 
 RenderQuad::RenderQuad(TexturePtr tex, RenderVertex vA, RenderVertex vB, RenderVertex vC, RenderVertex vD)
-  : texture(move(tex)), a(move(vA)), b(move(vB)), c(move(vC)), d(move(vD)) {}
+  : texture(std::move(tex)), a(std::move(vA)), b(std::move(vB)), c(std::move(vC)), d(std::move(vD)) {}
 
 RenderQuad::RenderQuad(RectF const& rect, Vec4B color, float param1)
   : a{ rect.min(), {}, color, param1 }
@@ -64,18 +64,18 @@ RenderTriangle::RenderTriangle(Vec2F posA, Vec2F posB, Vec2F posC, Vec4B color, 
   c = { posC, { 0, 0 }, color, param1 };
 }
 
-RenderTriangle::RenderTriangle(TexturePtr tex, Vec2F posA, Vec2F uvA, Vec2F posB, Vec2F uvB, Vec2F posC, Vec2F uvC, Vec4B color, float param1) : texture(move(tex)) {
+RenderTriangle::RenderTriangle(TexturePtr tex, Vec2F posA, Vec2F uvA, Vec2F posB, Vec2F uvB, Vec2F posC, Vec2F uvC, Vec4B color, float param1) : texture(std::move(tex)) {
   a = { posA, uvA, color, param1 };
   b = { posB, uvB, color, param1 };
   c = { posC, uvC, color, param1 };
 }
 
 RenderQuad renderTexturedRect(TexturePtr texture, Vec2F minPosition, float textureScale, Vec4B color, float param1) {
-  return RenderQuad(move(texture), minPosition, textureScale, color, param1);
+  return RenderQuad(std::move(texture), minPosition, textureScale, color, param1);
 }
 
 RenderQuad renderTexturedRect(TexturePtr texture, RectF const& screenCoords, Vec4B color, float param1) {
-  return RenderQuad(move(texture), screenCoords, color, param1);
+  return RenderQuad(std::move(texture), screenCoords, color, param1);
 }
 
 RenderQuad renderFlatRect(RectF const& rect, Vec4B color, float param1) {

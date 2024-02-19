@@ -74,7 +74,7 @@ WorldStructure::WorldStructure(String const& configPath) {
         blockKeyConfig.getObject("objectParameters", JsonObject()),
         blockKeyConfig.getBool("objectResidual", false),
         jsonToStringList(blockKeyConfig.get("flags", JsonArray()))};
-    blockKeys[jsonToColor(blockKeyConfig.get("value")).toRgba()] = move(blockKey);
+    blockKeys[jsonToColor(blockKeyConfig.get("value")).toRgba()] = std::move(blockKey);
   }
 
   Maybe<Vec2I> anchorPosition;

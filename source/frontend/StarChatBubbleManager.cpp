@@ -265,12 +265,12 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
       RectF boundBox = fold(backgroundImages, RectF::null(), [pos, this](RectF const& boundBox, BubbleImage const& bubbleImage) {
           return boundBox.combined(bubbleImageRect(pos, bubbleImage, m_zoom));
         });
-      Bubble bubble = {sayAction.entity, sayAction.text, sayAction.config, 0, move(backgroundImages), move(bubbleTexts), false};
+      Bubble bubble = {sayAction.entity, sayAction.text, sayAction.config, 0, std::move(backgroundImages), std::move(bubbleTexts), false};
       List<BubbleState<Bubble>> oldBubbles = m_bubbles.filtered([&sayAction](BubbleState<Bubble> const&, Bubble const& bubble) {
           return bubble.entity == sayAction.entity;
         });
       m_bubbles.filter([&sayAction](BubbleState<Bubble> const&, Bubble const& bubble) { return bubble.entity != sayAction.entity; });
-      m_bubbles.addBubble(pos, boundBox, move(bubble), m_interBubbleMargin * m_zoom);
+      m_bubbles.addBubble(pos, boundBox, std::move(bubble), m_interBubbleMargin * m_zoom);
       oldBubbles.sort([](BubbleState<Bubble> const& a, BubbleState<Bubble> const& b) { return a.contents.age < b.contents.age; });
       for (auto bubble : oldBubbles.slice(0, m_maxMessagePerEntity - 1))
         m_bubbles.addBubble(bubble.idealDestination, bubble.boundBox, bubble.contents, 0);
@@ -300,8 +300,8 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
           portraitAction.position,
           portraitAction.config,
           0,
-          move(backgroundImages),
-          move(bubbleTexts),
+          std::move(backgroundImages),
+          std::move(bubbleTexts),
           false
         });
     }

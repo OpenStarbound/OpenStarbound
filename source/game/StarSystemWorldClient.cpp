@@ -7,7 +7,7 @@
 namespace Star {
 
 SystemWorldClient::SystemWorldClient(ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase, PlayerUniverseMapPtr universeMap)
-  : SystemWorld(universeClock, celestialDatabase), m_universeMap(move(universeMap)) {}
+  : SystemWorld(universeClock, celestialDatabase), m_universeMap(std::move(universeMap)) {}
 
 CelestialCoordinate SystemWorldClient::currentSystem() const {
   return CelestialCoordinate(m_location);
@@ -102,7 +102,7 @@ SystemClientShipPtr SystemWorldClient::getShip(Uuid const & uuid) const
 
 Uuid SystemWorldClient::spawnObject(String typeName, Maybe<Vec2F> position, Maybe<Uuid> const& uuid, JsonObject overrides) {
   Uuid objectUuid = uuid.value(Uuid());
-  m_outgoingPackets.append(make_shared<SystemObjectSpawnPacket>(move(typeName), objectUuid, move(position), move(overrides)));
+  m_outgoingPackets.append(make_shared<SystemObjectSpawnPacket>(std::move(typeName), objectUuid, std::move(position), std::move(overrides)));
   return objectUuid;
 }
 
@@ -165,7 +165,7 @@ List<PacketPtr> SystemWorldClient::pullOutgoingPackets() {
 }
 
 SystemObjectPtr SystemWorldClient::netLoadObject(ByteArray netStore) {
-  DataStreamBuffer ds(move(netStore));
+  DataStreamBuffer ds(std::move(netStore));
   Uuid uuid = ds.read<Uuid>();
 
   String name = ds.read<String>();
@@ -179,7 +179,7 @@ SystemObjectPtr SystemWorldClient::netLoadObject(ByteArray netStore) {
 
 SystemClientShipPtr SystemWorldClient::netLoadShip(ByteArray netStore)
 {
-  DataStreamBuffer ds(move(netStore));
+  DataStreamBuffer ds(std::move(netStore));
   Uuid uuid = ds.read<Uuid>();
   SystemLocation location = ds.read<SystemLocation>();
   return make_shared<SystemClientShip>(this, uuid, location);

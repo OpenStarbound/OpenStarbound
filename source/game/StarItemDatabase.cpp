@@ -228,7 +228,7 @@ ItemPtr ItemDatabase::itemShared(ItemDescriptor descriptor, Maybe<float> level, 
     get<2>(entry) = item->parameters().optUInt("seed"); // Seed could've been changed by the buildscript
 
     locker.lock();
-    return m_itemCache.get(entry, [&](ItemCacheEntry const&) -> ItemPtr { return move(item); });
+    return m_itemCache.get(entry, [&](ItemCacheEntry const&) -> ItemPtr { return std::move(item); });
   }
 }
 
@@ -521,10 +521,10 @@ ItemDatabase::ItemData const& ItemDatabase::itemData(String const& name) const {
 
 ItemRecipe ItemDatabase::makeRecipe(List<ItemDescriptor> inputs, ItemDescriptor output, float duration, StringSet groups) const {
   ItemRecipe res;
-  res.inputs = move(inputs);
-  res.output = move(output);
+  res.inputs = std::move(inputs);
+  res.output = std::move(output);
   res.duration = duration;
-  res.groups = move(groups);
+  res.groups = std::move(groups);
   if (auto item = ItemDatabase::itemShared(res.output)) {
     res.outputRarity = item->rarity();
     res.guiFilterString = guiFilterString(item);
@@ -585,12 +585,12 @@ void ItemDatabase::addObjectDropItem(String const& objectPath, Json const& objec
   // execute scripts intended for objects
   customConfig.remove("scripts");
 
-  data.customConfig = move(customConfig);
+  data.customConfig = std::move(customConfig);
 
   if (m_items.contains(data.name))
     throw ItemException(strf("Object drop '{}' shares name with existing item", data.name));
 
-  m_items[data.name] = move(data);
+  m_items[data.name] = std::move(data);
 }
 
 void ItemDatabase::scanItems() {
@@ -694,7 +694,7 @@ void ItemDatabase::addBlueprints() {
 
       configInfo["price"] = baseItem->price();
 
-      blueprintData.customConfig = move(configInfo);
+      blueprintData.customConfig = std::move(configInfo);
       blueprintData.directory = itemData(baseDesc.name()).directory;
 
       m_items[blueprintData.name] = blueprintData;

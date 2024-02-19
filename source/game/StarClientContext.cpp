@@ -25,9 +25,9 @@ DataStream& operator<<(DataStream& ds, ShipUpgrades const& upgrades) {
 }
 
 ClientContext::ClientContext(Uuid serverUuid, Uuid playerUuid) {
-  m_serverUuid = move(serverUuid);
-  m_playerUuid = move(playerUuid);
-  m_rpc = make_shared<JsonRpc>();
+  m_serverUuid = std::move(serverUuid);
+  m_playerUuid = std::move(playerUuid);
+  m_rpc = std::make_shared<JsonRpc>();
 
   m_netGroup.addNetElement(&m_orbitWarpActionNetState);
   m_netGroup.addNetElement(&m_playerWorldIdNetState);
@@ -81,13 +81,13 @@ void ClientContext::readUpdate(ByteArray data) {
   if (data.empty())
     return;
 
-  DataStreamBuffer ds(move(data));
+  DataStreamBuffer ds(std::move(data));
 
   m_rpc->receive(ds.read<ByteArray>());
 
   auto shipUpdates = ds.read<ByteArray>();
   if (!shipUpdates.empty())
-    m_newShipUpdates.merge(DataStreamBuffer::deserialize<WorldChunks>(move(shipUpdates)), true);
+    m_newShipUpdates.merge(DataStreamBuffer::deserialize<WorldChunks>(std::move(shipUpdates)), true);
 
   m_netGroup.readNetState(ds.read<ByteArray>());
 }

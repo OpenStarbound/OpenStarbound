@@ -34,7 +34,7 @@ public:
   PanePtr createTooltip(Vec2I const& screenPosition) override;
   Maybe<String> cursorOverride(Vec2I const& screenPosition) override;
 protected:
-  virtual GuiReaderPtr reader();
+  virtual GuiReaderPtr reader() override;
   Json m_config;
   Json m_rawConfig;
 

@@ -121,7 +121,7 @@ namespace AStar {
 
   template <class Edge, class Node>
   void Search<Edge, Node>::start(Node startNode, Node goalNode) {
-    m_goal = move(goalNode);
+    m_goal = std::move(goalNode);
     m_nodeMeta.clear();
     m_openQueue = std::priority_queue<ScoredNode>();
     m_openSet.clear();
@@ -137,7 +137,7 @@ namespace AStar {
     m_nodeMeta[startNode].score = startScore;
 
     m_openSet.insert(startNode);
-    m_openQueue.push(ScoredNode{startScore, move(startNode)});
+    m_openQueue.push(ScoredNode{startScore, std::move(startNode)});
   }
 
   template <class Edge, class Node>
@@ -251,7 +251,7 @@ namespace AStar {
 
   template <class Edge, class Node>
   Maybe<Path<Edge>> const& Search<Edge, Node>::findPath(Node startNode, Node goalNode) {
-    start(move(startNode), move(goalNode));
+    start(std::move(startNode), std::move(goalNode));
     explore();
     return result();
   }

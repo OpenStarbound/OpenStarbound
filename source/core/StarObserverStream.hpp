@@ -61,7 +61,7 @@ void ObserverStream<T>::setHistoryLimit(uint64_t historyLimit) {
 
 template <typename T>
 void ObserverStream<T>::add(T value) {
-  m_values.append({m_nextStep, move(value)});
+  m_values.append({m_nextStep, std::move(value)});
   tick(1);
 }
 

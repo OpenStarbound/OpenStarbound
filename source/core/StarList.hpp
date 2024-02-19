@@ -451,7 +451,7 @@ void ListMixin<BaseList>::appendAll(Container&& list) {
 template <typename BaseList>
 template <class... Args>
 auto ListMixin<BaseList>::emplaceAppend(Args&&... args) -> reference {
-  Base::emplace_back(forward<Args>(args)...);
+  Base::emplace_back(std::forward<Args>(args)...);
   return *prev(Base::end());
 }
 
@@ -558,13 +558,13 @@ size_t ListMixin<BaseList>::remove(const_reference e) {
 template <typename BaseList>
 template <typename Filter>
 void ListMixin<BaseList>::filter(Filter&& filter) {
-  Star::filter(*this, forward<Filter>(filter));
+  Star::filter(*this, std::forward<Filter>(filter));
 }
 
 template <typename BaseList>
 template <typename Comparator>
 void ListMixin<BaseList>::insertSorted(value_type e, Comparator&& comparator) {
-  auto i = std::upper_bound(Base::begin(), Base::end(), e, forward<Comparator>(comparator));
+  auto i = std::upper_bound(Base::begin(), Base::end(), e, std::forward<Comparator>(comparator));
   Base::insert(i, std::move(e));
 }
 
@@ -577,7 +577,7 @@ void ListMixin<BaseList>::insertSorted(value_type e) {
 template <typename BaseList>
 template <typename Comparator>
 bool ListMixin<BaseList>::containsSorted(value_type const& e, Comparator&& comparator) {
-  auto range = std::equal_range(Base::begin(), Base::end(), e, forward<Comparator>(comparator));
+  auto range = std::equal_range(Base::begin(), Base::end(), e, std::forward<Comparator>(comparator));
   return range.first != range.second;
 }
 
@@ -611,7 +611,7 @@ void ListMixin<BaseList>::transform(Function&& function) {
 template <typename BaseList>
 template <typename Function>
 bool ListMixin<BaseList>::any(Function&& function) const {
-  return Star::any(*this, forward<Function>(function));
+  return Star::any(*this, std::forward<Function>(function));
 }
 
 template <typename BaseList>
@@ -622,7 +622,7 @@ bool ListMixin<BaseList>::any() const {
 template <typename BaseList>
 template <typename Function>
 bool ListMixin<BaseList>::all(Function&& function) const {
-  return Star::all(*this, forward<Function>(function));
+  return Star::all(*this, std::forward<Function>(function));
 }
 
 template <typename BaseList>
@@ -633,7 +633,7 @@ bool ListMixin<BaseList>::all() const {
 template <typename BaseList>
 template <typename Comparator>
 void RandomAccessListMixin<BaseList>::sort(Comparator&& comparator) {
-  Star::sort(*this, forward<Comparator>(comparator));
+  Star::sort(*this, std::forward<Comparator>(comparator));
 }
 
 template <typename BaseList>
@@ -790,7 +790,7 @@ void FrontModifyingListMixin<BaseList>::prependAll(Container&& list) {
 template <typename BaseList>
 template <class... Args>
 auto FrontModifyingListMixin<BaseList>::emplacePrepend(Args&&... args) -> reference {
-  Base::emplace_front(forward<Args>(args)...);
+  Base::emplace_front(std::forward<Args>(args)...);
   return *Base::begin();
 }
 
@@ -839,7 +839,7 @@ template <typename Element, typename Allocator>
 template <typename Filter>
 auto List<Element, Allocator>::filtered(Filter&& filter) const -> List {
   List list(*this);
-  list.filter(forward<Filter>(filter));
+  list.filter(std::forward<Filter>(filter));
   return list;
 }
 
@@ -847,7 +847,7 @@ template <typename Element, typename Allocator>
 template <typename Comparator>
 auto List<Element, Allocator>::sorted(Comparator&& comparator) const -> List {
   List list(*this);
-  list.sort(forward<Comparator>(comparator));
+  list.sort(std::forward<Comparator>(comparator));
   return list;
 }
 
@@ -863,7 +863,7 @@ template <typename Function>
 auto List<Element, Allocator>::transformed(Function&& function) {
   List<typename std::decay<decltype(std::declval<Function>()(std::declval<reference>()))>::type> res;
   res.reserve(Base::size());
-  transformInto(res, *this, forward<Function>(function));
+  transformInto(res, *this, std::forward<Function>(function));
   return res;
 }
 
@@ -872,7 +872,7 @@ template <typename Function>
 auto List<Element, Allocator>::transformed(Function&& function) const {
   List<typename std::decay<decltype(std::declval<Function>()(std::declval<const_reference>()))>::type> res;
   res.reserve(Base::size());
-  transformInto(res, *this, forward<Function>(function));
+  transformInto(res, *this, std::forward<Function>(function));
   return res;
 }
 
@@ -899,7 +899,7 @@ template <typename Element, size_t MaxSize>
 template <typename Comparator>
 auto StaticList<Element, MaxSize>::sorted(Comparator&& comparator) const -> StaticList {
   StaticList list(*this);
-  list.sort(forward<Comparator>(comparator));
+  list.sort(std::forward<Comparator>(comparator));
   return list;
 }
 
@@ -914,7 +914,7 @@ template <typename Element, size_t MaxSize>
 template <typename Function>
 auto StaticList<Element, MaxSize>::transformed(Function&& function) {
   StaticList<typename std::decay<decltype(std::declval<Function>()(std::declval<reference>()))>::type, MaxSize> res;
-  transformInto(res, *this, forward<Function>(function));
+  transformInto(res, *this, std::forward<Function>(function));
   return res;
 }
 
@@ -922,7 +922,7 @@ template <typename Element, size_t MaxSize>
 template <typename Function>
 auto StaticList<Element, MaxSize>::transformed(Function&& function) const {
   StaticList<typename std::decay<decltype(std::declval<Function>()(std::declval<const_reference>()))>::type, MaxSize> res;
-  transformInto(res, *this, forward<Function>(function));
+  transformInto(res, *this, std::forward<Function>(function));
   return res;
 }
 
@@ -941,7 +941,7 @@ template <typename Element, size_t MaxStackSize>
 template <typename Filter>
 auto SmallList<Element, MaxStackSize>::filtered(Filter&& filter) const -> SmallList {
   SmallList list(*this);
-  list.filter(forward<Filter>(filter));
+  list.filter(std::forward<Filter>(filter));
   return list;
 }
 
@@ -949,7 +949,7 @@ template <typename Element, size_t MaxStackSize>
 template <typename Comparator>
 auto SmallList<Element, MaxStackSize>::sorted(Comparator&& comparator) const -> SmallList {
   SmallList list(*this);
-  list.sort(forward<Comparator>(comparator));
+  list.sort(std::forward<Comparator>(comparator));
   return list;
 }
 
@@ -964,7 +964,7 @@ template <typename Element, size_t MaxStackSize>
 template <typename Function>
 auto SmallList<Element, MaxStackSize>::transformed(Function&& function) {
   SmallList<typename std::decay<decltype(std::declval<Function>()(std::declval<reference>()))>::type, MaxStackSize> res;
-  transformInto(res, *this, forward<Function>(function));
+  transformInto(res, *this, std::forward<Function>(function));
   return res;
 }
 
@@ -972,7 +972,7 @@ template <typename Element, size_t MaxStackSize>
 template <typename Function>
 auto SmallList<Element, MaxStackSize>::transformed(Function&& function) const {
   SmallList<typename std::decay<decltype(std::declval<Function>()(std::declval<const_reference>()))>::type, MaxStackSize> res;
-  transformInto(res, *this, forward<Function>(function));
+  transformInto(res, *this, std::forward<Function>(function));
   return res;
 }
 
@@ -991,7 +991,7 @@ template <typename Element, typename Allocator>
 template <typename Filter>
 Deque<Element, Allocator> Deque<Element, Allocator>::filtered(Filter&& filter) const {
   Deque l(*this);
-  l.filter(forward<Filter>(filter));
+  l.filter(std::forward<Filter>(filter));
   return l;
 }
 
@@ -999,7 +999,7 @@ template <typename Element, typename Allocator>
 template <typename Comparator>
 Deque<Element, Allocator> Deque<Element, Allocator>::sorted(Comparator&& comparator) const {
   Deque l(*this);
-  l.sort(forward<Comparator>(comparator));
+  l.sort(std::forward<Comparator>(comparator));
   return l;
 }
 
@@ -1013,13 +1013,13 @@ Deque<Element, Allocator> Deque<Element, Allocator>::sorted() const {
 template <typename Element, typename Allocator>
 template <typename Function>
 auto Deque<Element, Allocator>::transformed(Function&& function) {
-  return Star::transform<Deque<decltype(std::declval<Function>()(std::declval<reference>()))>>(*this, forward<Function>(function));
+  return Star::transform<Deque<decltype(std::declval<Function>()(std::declval<reference>()))>>(*this, std::forward<Function>(function));
 }
 
 template <typename Element, typename Allocator>
 template <typename Function>
 auto Deque<Element, Allocator>::transformed(Function&& function) const {
-  return Star::transform<Deque<decltype(std::declval<Function>()(std::declval<const_reference>()))>>(*this, forward<Function>(function));
+  return Star::transform<Deque<decltype(std::declval<Function>()(std::declval<const_reference>()))>>(*this, std::forward<Function>(function));
 }
 
 template <typename Element, typename Allocator>
@@ -1064,7 +1064,7 @@ template <typename Element, typename Allocator>
 template <typename Filter>
 LinkedList<Element, Allocator> LinkedList<Element, Allocator>::filtered(Filter&& filter) const {
   LinkedList list(*this);
-  list.filter(forward<Filter>(filter));
+  list.filter(std::forward<Filter>(filter));
   return list;
 }
 
@@ -1072,7 +1072,7 @@ template <typename Element, typename Allocator>
 template <typename Comparator>
 LinkedList<Element, Allocator> LinkedList<Element, Allocator>::sorted(Comparator&& comparator) const {
   LinkedList l(*this);
-  l.sort(forward<Comparator>(comparator));
+  l.sort(std::forward<Comparator>(comparator));
   return l;
 }
 
@@ -1086,13 +1086,13 @@ LinkedList<Element, Allocator> LinkedList<Element, Allocator>::sorted() const {
 template <typename Element, typename Allocator>
 template <typename Function>
 auto LinkedList<Element, Allocator>::transformed(Function&& function) {
-  return Star::transform<LinkedList<decltype(std::declval<Function>()(std::declval<reference>()))>>(*this, forward<Function>(function));
+  return Star::transform<LinkedList<decltype(std::declval<Function>()(std::declval<reference>()))>>(*this, std::forward<Function>(function));
 }
 
 template <typename Element, typename Allocator>
 template <typename Function>
 auto LinkedList<Element, Allocator>::transformed(Function&& function) const {
-  return Star::transform<LinkedList<decltype(std::declval<Function>()(std::declval<const_reference>()))>>(*this, forward<Function>(function));
+  return Star::transform<LinkedList<decltype(std::declval<Function>()(std::declval<const_reference>()))>>(*this, std::forward<Function>(function));
 }
 
 template <typename BaseList>

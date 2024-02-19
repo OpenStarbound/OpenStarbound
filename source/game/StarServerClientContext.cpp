@@ -18,7 +18,7 @@ ServerClientContext::ServerClientContext(ConnectionId clientId, Maybe<HostAddres
     m_playerName(playerName),
     m_playerSpecies(playerSpecies),
     m_canBecomeAdmin(canBecomeAdmin),
-    m_shipChunks(move(initialShipChunks)) {
+    m_shipChunks(std::move(initialShipChunks)) {
   m_rpc.registerHandler("ship.applyShipUpgrades", [this](Json const& args) -> Json {
       RecursiveMutexLocker locker(m_mutex);
       setShipUpgrades(shipUpgrades().apply(args));
@@ -166,7 +166,7 @@ WorldChunks ServerClientContext::shipChunks() const {
 void ServerClientContext::updateShipChunks(WorldChunks newShipChunks) {
   RecursiveMutexLocker locker(m_mutex);
   m_shipChunksUpdate.merge(WorldStorage::getWorldChunksUpdate(m_shipChunks, newShipChunks), true);
-  m_shipChunks = move(newShipChunks);
+  m_shipChunks = std::move(newShipChunks);
 }
 
 void ServerClientContext::readUpdate(ByteArray data) {
@@ -202,7 +202,7 @@ void ServerClientContext::setSystemWorld(SystemWorldServerThreadPtr systemWorldT
   if (m_systemWorldThread == systemWorldThread)
     return;
 
-  m_systemWorldThread = move(systemWorldThread);
+  m_systemWorldThread = std::move(systemWorldThread);
 }
 
 SystemWorldServerThreadPtr ServerClientContext::systemWorld() const {
@@ -220,7 +220,7 @@ void ServerClientContext::setPlayerWorld(WorldServerThreadPtr worldThread) {
   if (m_worldThread == worldThread)
     return;
 
-  m_worldThread = move(worldThread);
+  m_worldThread = std::move(worldThread);
   if (m_worldThread)
     m_playerWorldIdNetState.set(m_worldThread->worldId());
   else
@@ -248,7 +248,7 @@ WarpToWorld ServerClientContext::playerReturnWarp() const {
 
 void ServerClientContext::setPlayerReturnWarp(WarpToWorld warp) {
   RecursiveMutexLocker locker(m_mutex);
-  m_returnWarp = move(warp);
+  m_returnWarp = std::move(warp);
 }
 
 WarpToWorld ServerClientContext::playerReviveWarp() const {
@@ -258,7 +258,7 @@ WarpToWorld ServerClientContext::playerReviveWarp() const {
 
 void ServerClientContext::setPlayerReviveWarp(WarpToWorld warp) {
   RecursiveMutexLocker locker(m_mutex);
-  m_reviveWarp = move(warp);
+  m_reviveWarp = std::move(warp);
 }
 
 void ServerClientContext::loadServerData(Json const& store) {

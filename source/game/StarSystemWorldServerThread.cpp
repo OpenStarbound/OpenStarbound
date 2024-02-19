@@ -47,7 +47,7 @@ void SystemWorldServerThread::removeClient(ConnectionId clientId) {
 }
 
 void SystemWorldServerThread::setPause(shared_ptr<const atomic<bool>> pause) {
-  m_pause = move(pause);
+  m_pause = std::move(pause);
 }
 
 void SystemWorldServerThread::run() {
@@ -127,7 +127,7 @@ void SystemWorldServerThread::setClientDestination(ConnectionId clientId, System
 
 void SystemWorldServerThread::executeClientShipAction(ConnectionId clientId, ClientShipAction action) {
   WriteLocker locker(m_queueMutex);
-  m_clientShipActions.append({clientId, move(action)});
+  m_clientShipActions.append({clientId, std::move(action)});
 }
 
 SystemLocation SystemWorldServerThread::clientShipLocation(ConnectionId clientId) {
@@ -160,7 +160,7 @@ void SystemWorldServerThread::setUpdateAction(function<void(SystemWorldServerThr
 
 void SystemWorldServerThread::pushIncomingPacket(ConnectionId clientId, PacketPtr packet) {
   WriteLocker locker(m_queueMutex);
-  m_incomingPacketQueue.append({move(clientId), move(packet)});
+  m_incomingPacketQueue.append({std::move(clientId), std::move(packet)});
 }
 
 List<PacketPtr> SystemWorldServerThread::pullOutgoingPackets(ConnectionId clientId) {

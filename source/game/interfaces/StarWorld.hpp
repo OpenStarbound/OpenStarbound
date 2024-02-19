@@ -216,7 +216,7 @@ List<shared_ptr<EntityT>> World::query(RectF const& boundBox, EntityFilterOf<Ent
   forEachEntity(boundBox, [&](EntityPtr const& entity) {
       if (auto e = as<EntityT>(entity)) {
         if (!selector || selector(e))
-          list.append(move(e));
+          list.append(std::move(e));
       }
     });
 
@@ -239,9 +239,9 @@ List<shared_ptr<EntityT>> World::lineQuery(
     Vec2F const& begin, Vec2F const& end, EntityFilterOf<EntityT> selector) const {
   List<shared_ptr<EntityT>> list;
   forEachEntityLine(begin, end, [&](EntityPtr entity) {
-      if (auto e = as<EntityT>(move(entity))) {
+      if (auto e = as<EntityT>(std::move(entity))) {
         if (!selector || selector(e))
-          list.append(move(e));
+          list.append(std::move(e));
       }
     });
 
@@ -253,7 +253,7 @@ List<shared_ptr<EntityT>> World::atTile(Vec2I const& pos) const {
   List<shared_ptr<EntityT>> list;
   forEachEntityAtTile(pos, [&](TileEntityPtr const& entity) {
       if (auto e = as<EntityT>(entity))
-        list.append(move(e));
+        list.append(std::move(e));
     });
   return list;
 }

@@ -3,8 +3,8 @@
 namespace Star {
 
 DrawablePainter::DrawablePainter(RendererPtr renderer, AssetTextureGroupPtr textureGroup) {
-  m_renderer = move(renderer);
-  m_textureGroup = move(textureGroup);
+  m_renderer = std::move(renderer);
+  m_textureGroup = std::move(textureGroup);
 }
 
 void DrawablePainter::drawDrawable(Drawable const& drawable) {
@@ -48,7 +48,7 @@ void DrawablePainter::drawDrawable(Drawable const& drawable) {
 
     float param1 = drawable.fullbright ? 0.0f : 1.0f;
 
-    primitives.emplace_back(std::in_place_type_t<RenderQuad>(), move(texture),
+    primitives.emplace_back(std::in_place_type_t<RenderQuad>(), std::move(texture),
         lowerLeft,  Vec2F{0, 0},
         lowerRight, Vec2F{textureSize[0], 0},
         upperRight, Vec2F{textureSize[0], textureSize[1]},

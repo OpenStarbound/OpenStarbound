@@ -60,7 +60,7 @@ List<LightSource> InspectionTool::lightSources() const {
   lightSource.pointBeam = m_beamWidth;
   lightSource.beamAngle = angle;
   lightSource.beamAmbience = m_ambientFactor;
-  return {move(lightSource)};
+  return {std::move(lightSource)};
 }
 
 float InspectionTool::inspectionHighlightLevel(InspectableEntityPtr const& inspectable) const {

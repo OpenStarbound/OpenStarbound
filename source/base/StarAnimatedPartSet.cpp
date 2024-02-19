@@ -27,7 +27,7 @@ AnimatedPartSet::AnimatedPartSet(Json config) {
       newState->transitionState = stateConfig.getString("transition", "");
       newState->stateProperties = stateConfig.getObject("properties", {});
       newState->stateFrameProperties = stateConfig.getObject("frameProperties", {});
-      newStateType.states[stateName] = move(newState);
+      newStateType.states[stateName] = std::move(newState);
     }
 
     newStateType.states.sortByKey();
@@ -38,7 +38,7 @@ AnimatedPartSet::AnimatedPartSet(Json config) {
     if (newStateType.defaultState.empty() && !newStateType.states.empty())
       newStateType.defaultState = newStateType.states.firstKey();
 
-    m_stateTypes[stateTypeName] = move(newStateType);
+    m_stateTypes[stateTypeName] = std::move(newStateType);
   }
 
   // Sort state types by decreasing priority.
@@ -61,13 +61,13 @@ AnimatedPartSet::AnimatedPartSet(Json config) {
         auto const& stateConfig = partStatePair.second;
 
         PartState partState = {stateConfig.getObject("properties", {}), stateConfig.getObject("frameProperties", {})};
-        newPart.partStates[stateTypeName][stateName] = move(partState);
+        newPart.partStates[stateTypeName][stateName] = std::move(partState);
       }
     }
     newPart.activePart.partName = partPair.first;
     newPart.activePartDirty = true;
 
-    m_parts[partName] = move(newPart);
+    m_parts[partName] = std::move(newPart);
   }
 
   for (auto const& pair : m_stateTypes)

@@ -287,7 +287,7 @@ void QuestLogInterface::showQuests(List<QuestPtr> quests) {
   verticalLayout->update(0);
 }
 
-QuestPane::QuestPane(QuestPtr const& quest, PlayerPtr player) : Pane(), m_quest(quest), m_player(move(player)) {}
+QuestPane::QuestPane(QuestPtr const& quest, PlayerPtr player) : Pane(), m_quest(quest), m_player(std::move(player)) {}
 
 void QuestPane::commonSetup(Json config, String bodyText, String const& portraitName) {
   GuiReader reader;
@@ -348,7 +348,7 @@ PanePtr QuestPane::createTooltip(Vec2I const& screenPosition) {
 }
 
 NewQuestInterface::NewQuestInterface(QuestManagerPtr const& manager, QuestPtr const& quest, PlayerPtr player)
-  : QuestPane(quest, move(player)), m_manager(manager), m_declined(false) {
+  : QuestPane(quest, std::move(player)), m_manager(manager), m_declined(false) {
   auto assets = Root::singleton().assets();
 
   List<Drawable> objectivePortrait = m_quest->portrait("Objective").value({});
@@ -436,7 +436,7 @@ void QuestCompleteInterface::close() {
   dismiss();
 }
 
-QuestFailedInterface::QuestFailedInterface(QuestPtr const& quest, PlayerPtr player) : QuestPane(quest, move(player)) {
+QuestFailedInterface::QuestFailedInterface(QuestPtr const& quest, PlayerPtr player) : QuestPane(quest, std::move(player)) {
   auto assets = Root::singleton().assets();
   String configFile = m_quest->getTemplate()->questFailedGuiConfig.value(assets->json("/quests/quests.config:defaultGuiConfigs.questFailed").toString());
   Json config = assets->json(configFile);

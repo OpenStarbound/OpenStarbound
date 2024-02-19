@@ -155,7 +155,7 @@ void NetElementBasicField<T>::set(T const& value) {
 
 template <typename T>
 void NetElementBasicField<T>::push(T value) {
-  m_value = move(value);
+  m_value = std::move(value);
   updated();
   m_latestUpdateVersion = m_netVersion ? m_netVersion->current() : 0;
   if (m_pendingInterpolatedValues)
@@ -251,14 +251,14 @@ void NetElementBasicField<T>::readNetDelta(DataStream& ds, float interpolationTi
     // case, this is an error or the step tracking is wildly off, so just clear
     // any other incoming values.
     if (interpolationTime > 0.0f && (m_pendingInterpolatedValues->empty() || interpolationTime >= m_pendingInterpolatedValues->last().first)) {
-      m_pendingInterpolatedValues->append({interpolationTime, move(t)});
+      m_pendingInterpolatedValues->append({interpolationTime, std::move(t)});
     } else {
-      m_value = move(t);
+      m_value = std::move(t);
       m_pendingInterpolatedValues->clear();
       updated();
     }
   } else {
-    m_value = move(t);
+    m_value = std::move(t);
     updated();
   }
 }
@@ -314,7 +314,7 @@ NetElementData<T>::NetElementData()
 
 template <typename T>
 NetElementData<T>::NetElementData(function<void(DataStream&, T&)> reader, function<void(DataStream&, T const&)> writer)
-  : m_reader(move(reader)), m_writer(move(writer)) {}
+  : m_reader(std::move(reader)), m_writer(std::move(writer)) {}
 
 template <typename T>
 void NetElementData<T>::readData(DataStream& ds, T& v) const {

@@ -83,7 +83,7 @@ SpawnProfile::SpawnProfile(Json const& config) {
 }
 
 SpawnProfile::SpawnProfile(StringSet spawnTypes, Json monsterParameters)
-  : spawnTypes(move(spawnTypes)), monsterParameters(move(monsterParameters)) {}
+  : spawnTypes(std::move(spawnTypes)), monsterParameters(std::move(monsterParameters)) {}
 
 Json SpawnProfile::toJson() const {
   return JsonObject{

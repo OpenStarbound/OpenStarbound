@@ -285,18 +285,18 @@ void ToolUser::setupHumanoidHandItemDrawables(Humanoid& humanoid) const {
     auto setRotated = [&](String const& backFrameOverride, String const& frontFrameOverride, List<Drawable> drawables, bool twoHanded) {
       if (primary || twoHanded) {
         humanoid.setPrimaryHandFrameOverrides(backFrameOverride, frontFrameOverride);
-        humanoid.setPrimaryHandDrawables(move(drawables));
+        humanoid.setPrimaryHandDrawables(std::move(drawables));
       } else {
         humanoid.setAltHandFrameOverrides(backFrameOverride, frontFrameOverride);
-        humanoid.setAltHandDrawables(move(drawables));
+        humanoid.setAltHandDrawables(std::move(drawables));
       }
     };
 
     auto setNonRotated = [&](List<Drawable> drawables) {
       if (primary)
-        humanoid.setPrimaryHandNonRotatedDrawables(move(drawables));
+        humanoid.setPrimaryHandNonRotatedDrawables(std::move(drawables));
       else
-        humanoid.setAltHandNonRotatedDrawables(move(drawables));
+        humanoid.setAltHandNonRotatedDrawables(std::move(drawables));
     };
 
     ItemPtr handItem = primary ? m_primaryHandItem.get() : m_altHandItem.get();
@@ -584,8 +584,8 @@ void ToolUser::setItems(ItemPtr newPrimaryHandItem, ItemPtr newAltHandItem) {
   if (m_altHandItem.get() != newAltHandItem)
     m_fireAlt = false;
 
-  m_primaryHandItem.set(move(newPrimaryHandItem));
-  m_altHandItem.set(move(newAltHandItem));
+  m_primaryHandItem.set(std::move(newPrimaryHandItem));
+  m_altHandItem.set(std::move(newAltHandItem));
 
   initPrimaryHandItem();
   initAltHandItem();
@@ -737,7 +737,7 @@ ItemPtr const& ToolUser::NetItem::get() const {
 
 void ToolUser::NetItem::set(ItemPtr item) {
   if (m_item != item) {
-    m_item = move(item);
+    m_item = std::move(item);
     m_newItem = true;
     if (auto netItem = as<NetElement>(m_item.get())) {
       netItem->initNetVersion(m_netVersion);

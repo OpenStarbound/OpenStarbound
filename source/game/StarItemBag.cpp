@@ -100,7 +100,7 @@ List<ItemPtr> ItemBag::takeAll() {
   List<ItemPtr> taken;
   for (size_t i = 0; i < size(); ++i) {
     if (auto& item = at(i))
-      taken.append(move(item));
+      taken.append(std::move(item));
   }
   return taken;
 }
@@ -271,7 +271,7 @@ ItemPtr ItemBag::addItems(ItemPtr items) {
       if (items->empty())
         return {};
     } else {
-      storedItem = move(items);
+      storedItem = std::move(items);
       return {};
     }
   }
@@ -292,7 +292,7 @@ ItemPtr ItemBag::stackItems(ItemPtr items) {
       if (items->empty())
         return {};
     } else {
-      storedItem = move(items);
+      storedItem = std::move(items);
       return {};
     }
   }

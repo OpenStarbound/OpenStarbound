@@ -75,7 +75,7 @@ void PlayerUniverseMap::addOrbitBookmark(CelestialCoordinate const& system, Orbi
   if (system.isNull())
     throw StarException("Cannot add orbit bookmark to null system");
 
-  m_universeMaps[*m_serverUuid].systems[system.location()].bookmarks.add(move(bookmark));
+  m_universeMaps[*m_serverUuid].systems[system.location()].bookmarks.add(std::move(bookmark));
 }
 
 void PlayerUniverseMap::removeOrbitBookmark(CelestialCoordinate const& system, OrbitBookmark const& bookmark) {
@@ -90,7 +90,7 @@ List<TeleportBookmark> PlayerUniverseMap::teleportBookmarks() const {
 }
 
 void PlayerUniverseMap::addTeleportBookmark(TeleportBookmark bookmark) {
-  m_universeMaps[*m_serverUuid].teleportBookmarks.add(move(bookmark));
+  m_universeMaps[*m_serverUuid].teleportBookmarks.add(std::move(bookmark));
 }
 
 void PlayerUniverseMap::removeTeleportBookmark(TeleportBookmark const& bookmark) {
@@ -192,7 +192,7 @@ void PlayerUniverseMap::filterMappedObjects(CelestialCoordinate const& system, L
 }
 
 void PlayerUniverseMap::setServerUuid(Maybe<Uuid> serverUuid) {
-  m_serverUuid = move(serverUuid);
+  m_serverUuid = std::move(serverUuid);
   if (m_serverUuid && !m_universeMaps.contains(*m_serverUuid))
     m_universeMaps.set(*m_serverUuid, UniverseMap());
 }

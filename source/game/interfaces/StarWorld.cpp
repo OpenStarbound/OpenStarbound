@@ -33,7 +33,7 @@ List<TileEntityPtr> World::entitiesAtTile(Vec2I const& pos, EntityFilter selecto
   List<TileEntityPtr> list;
   forEachEntityAtTile(pos, [&](TileEntityPtr entity) {
       if (!selector || selector(entity))
-        list.append(move(entity));
+        list.append(std::move(entity));
     });
   return list;
 }

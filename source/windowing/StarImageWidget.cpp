@@ -48,7 +48,7 @@ String ImageWidget::image() const {
 }
 
 void ImageWidget::setDrawables(List<Drawable> drawables) {
-  m_baseDrawables = move(drawables);
+  m_baseDrawables = std::move(drawables);
 
   transformDrawables();
 }

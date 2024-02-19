@@ -195,7 +195,7 @@ void ButtonWidget::setButtonGroup(ButtonGroupPtr newGroup, int id) {
     if (m_buttonGroup)
       m_buttonGroup->removeButton(this);
 
-    m_buttonGroup = move(newGroup);
+    m_buttonGroup = std::move(newGroup);
 
     if (m_buttonGroup) {
       setCheckable(true);

@@ -12,16 +12,16 @@ namespace Star {
 int64_t const LockFile::MaximumSleepMillis;
 
 Maybe<LockFile> LockFile::acquireLock(String const& filename, int64_t lockTimeout) {
-  LockFile lock(move(filename));
+  LockFile lock(std::move(filename));
   if (lock.lock(lockTimeout))
     return lock;
   return {};
 }
 
-LockFile::LockFile(String const& filename) : m_filename(move(filename)) {}
+LockFile::LockFile(String const& filename) : m_filename(std::move(filename)) {}
 
 LockFile::LockFile(LockFile&& lockFile) {
-  operator=(move(lockFile));
+  operator=(std::move(lockFile));
 }
 
 LockFile::~LockFile() {
@@ -29,8 +29,8 @@ LockFile::~LockFile() {
 }
 
 LockFile& LockFile::operator=(LockFile&& lockFile) {
-  m_filename = move(lockFile.m_filename);
-  m_handle = move(lockFile.m_handle);
+  m_filename = std::move(lockFile.m_filename);
+  m_handle = std::move(lockFile.m_handle);
 
   return *this;
 }
