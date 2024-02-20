@@ -431,6 +431,14 @@ INCLUDE_DIRECTORIES (SYSTEM
     ${OGGVORBIS_INCLUDE_DIR}
   )
 
+IF (TARGET freetype AND NOT TARGET Freetype::Freetype)
+  add_library(Freetype::Freetype ALIAS freetype)
+ELSEIF (TARGET Freetype::Freetype AND NOT TARGET freetype)
+  add_library(freetype ALIAS Freetype::Freetype)
+ELSE ()
+  MESSAGE (FATAL_ERROR "Could not find Freetype")
+ENDIF ()
+
 SET (STAR_EXT_LIBS ${STAR_EXT_LIBS}
     ZLIB::ZLIB
     PNG::PNG
