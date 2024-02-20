@@ -22,7 +22,14 @@ jobs:
           submodules: 'recursive'
 
       - name: Configure Test Build
-        run: cmake -G "Visual Studio 17 2022" -A "X64" -S "${{ github.workspace }}/source" -B "${{ github.workspace }}/cmake-build-debug" -DCMAKE_TOOLCHAIN_FILE="${Env:VCPKG_INSTALLATION_ROOT}/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Debug>:Debug>DLL" -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install" -DCMAKE_VERBOSE_MAKEFILE=YES -DBUILD_TESTING=YES
+        run: >
+          cmake -G "Visual Studio 17 2022" -A "X64" -S "${{ github.workspace }}/source" -B "${{ github.workspace }}/cmake-build-debug"
+          -DCMAKE_TOOLCHAIN_FILE="${Env:VCPKG_INSTALLATION_ROOT}/scripts/buildsystems/vcpkg.cmake"
+          -DVCPKG_TARGET_TRIPLET=x64-windows-mixed-md
+          -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Debug>:Debug>DLL"
+          -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install"
+          -DCMAKE_VERBOSE_MAKEFILE=YES
+          -DBUILD_TESTING=YES
 
       - name: Build Debug
         run: cmake --build "${{ github.workspace }}/cmake-build-debug" --config "Debug" --parallel
@@ -39,14 +46,16 @@ jobs:
         run: >
           cmake -G "Visual Studio 17 2022" -A "X64" -S "${{ github.workspace }}/source" -B "${{ github.workspace }}/cmake-build-relwithdebinfo"
           -DCMAKE_TOOLCHAIN_FILE="${Env:VCPKG_INSTALLATION_ROOT}/scripts/buildsystems/vcpkg.cmake"
-          -DVCPKG_TARGET_TRIPLET=x64-windows -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Debug>:Debug>DLL"
+          -DVCPKG_OVERLAY_TRIPLETS="${{ github.workspace }}\triplets"
+          -DVCPKG_TARGET_TRIPLET=x64-windows-mixed-md
+          -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Debug>:Debug>DLL"
           -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install"
           -DCMAKE_VERBOSE_MAKEFILE=YES
           -DBUILD_TESTING=OFF
           -DSTAR_ENABLE_STEAM_INTEGRATION=ON
           -DSTAR_ENABLE_DISCORD_INTEGRATION=ON
-          -DCMAKE_INCLUDE_PATH="..\lib\windows\include"
-          -DCMAKE_LIBRARY_PATH="..\lib\windows"
+          -DCMAKE_INCLUDE_PATH="${{ github.workspace }}\lib\windows\include"
+          -DCMAKE_LIBRARY_PATH="${{ github.workspace }}\lib\windows"
 
       - name: Build Release
         run: cmake --build "${{ github.workspace }}/cmake-build-relwithdebinfo" --config "RelWithDebInfo" --parallel
