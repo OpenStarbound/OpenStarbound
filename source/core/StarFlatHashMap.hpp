@@ -31,7 +31,7 @@ private:
     key_type const& operator()(TableValue const& value) const;
   };
 
-  typedef FlatHashTable<TableValue, key_type, GetKey, Hash, Equals, typename Allocator::template rebind<TableValue>::other> Table;
+  typedef FlatHashTable<TableValue, key_type, GetKey, Hash, Equals, typename std::allocator_traits<Allocator>::template rebind_alloc<TableValue>> Table;
 
 public:
   struct const_iterator {

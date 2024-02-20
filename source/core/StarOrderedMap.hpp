@@ -17,7 +17,7 @@ public:
   typedef LinkedList<value_type, Allocator> OrderType;
   typedef Map<
       std::reference_wrapper<key_type const>, typename OrderType::iterator, MapArgs...,
-      typename Allocator::template rebind<pair<std::reference_wrapper<key_type const> const, typename OrderType::iterator>>::other
+      typename std::allocator_traits<Allocator>::template rebind_alloc<pair<std::reference_wrapper<key_type const> const, typename OrderType::iterator>>
     > MapType;
 
   typedef typename OrderType::iterator iterator;

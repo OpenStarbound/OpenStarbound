@@ -14,10 +14,10 @@ class OrderedSetWrapper {
 public:
   typedef Value value_type;
 
-  typedef LinkedList<value_type, typename Allocator::template rebind<value_type>::other> OrderType;
+  typedef LinkedList<value_type, typename std::allocator_traits<Allocator>::template rebind_alloc<value_type>> OrderType;
   typedef Map<
       std::reference_wrapper<value_type const>, typename OrderType::const_iterator, Args...,
-      typename Allocator::template rebind<pair<std::reference_wrapper<value_type const> const, typename OrderType::const_iterator>>::other
+      typename std::allocator_traits<Allocator>::template rebind_alloc<pair<std::reference_wrapper<value_type const> const, typename OrderType::const_iterator>>
     > MapType;
 
   typedef typename OrderType::const_iterator const_iterator;

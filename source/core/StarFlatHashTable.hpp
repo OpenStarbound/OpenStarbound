@@ -39,7 +39,7 @@ private:
     size_t hash;
   };
 
-  typedef std::vector<Bucket, typename Allocator::template rebind<Bucket>::other> Buckets;
+  typedef std::vector<Bucket, typename std::allocator_traits<Allocator>::template rebind_alloc<Bucket>> Buckets;
 
 public:
   struct const_iterator {
