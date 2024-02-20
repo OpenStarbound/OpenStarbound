@@ -428,13 +428,16 @@ FIND_PACKAGE (Freetype REQUIRED)
 FIND_PACKAGE (OggVorbis REQUIRED)
 
 INCLUDE_DIRECTORIES (SYSTEM
+    ${FREETYPE_INCLUDE_DIRS}
     ${OGGVORBIS_INCLUDE_DIR}
   )
 
 IF (TARGET freetype AND NOT TARGET Freetype::Freetype)
   add_library(Freetype::Freetype ALIAS freetype)
+  MESSAGE(STATUS "Freetype target name is freetype")
 ELSEIF (TARGET Freetype::Freetype AND NOT TARGET freetype)
   add_library(freetype ALIAS Freetype::Freetype)
+  MESSAGE(STATUS "Freetype target name is Freetype::Freetype")
 ELSE ()
   MESSAGE (FATAL_ERROR "Could not find Freetype")
 ENDIF ()
