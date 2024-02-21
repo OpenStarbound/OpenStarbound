@@ -37,8 +37,23 @@ find_package_handle_standard_args(JeMalloc DEFAULT_MSG
     JEMALLOC_INCLUDE_DIR
 )
 
+# Check if the JeMalloc library was compiled with the "je_" prefix.
+include(CheckSymbolExists)
+set(CMAKE_REQUIRED_INCLUDES ${JEMALLOC_INCLUDE_DIR})
+set(CMAKE_REQUIRED_LIBRARIES ${JEMALLOC_LIBRARY})
+check_symbol_exists("je_malloc" "jemalloc/jemalloc.h" _jemalloc_is_prefixed)
+unset(CMAKE_REQUIRED_INCLUDES)
+unset(CMAKE_REQUIRED_LIBRARIES)
+
+if(_jemalloc_is_prefixed)
+    set(JEMALLOC_IS_PREFIXED TRUE)
+endif()
+
+unset(_jemalloc_is_prefixed)
+
 mark_as_advanced(
     JEMALLOC_ROOT_DIR
     JEMALLOC_LIBRARY
     JEMALLOC_INCLUDE_DIR
+    JEMALLOC_IS_PREFIXED
 )
