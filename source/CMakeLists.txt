@@ -446,7 +446,9 @@ SET (STAR_EXT_LIBS ${STAR_EXT_LIBS}
     ZLIB::ZLIB
     PNG::PNG
     Freetype::Freetype
-    ${OGGVORBIS_LIBRARIES}
+    ${VORBISFILE_LIBRARY}
+    ${VORBIS_LIBRARY}
+    ${OGG_LIBRARY}
     opus # Currently a submodule from extern
   )
 
