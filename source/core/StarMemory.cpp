@@ -7,6 +7,7 @@
 namespace Star {
 
 #ifdef STAR_USE_JEMALLOC
+#ifdef STAR_JEMALLOC_IS_PREFIXED
   void* malloc(size_t size) {
     return je_malloc(size);
   }
@@ -23,6 +24,24 @@ namespace Star {
     if (ptr)
       je_sdallocx(ptr, size, 0);
   }
+#else
+  void* malloc(size_t size) {
+    return ::malloc(size);
+  }
+
+  void* realloc(void* ptr, size_t size) {
+    return ::realloc(ptr, size);
+  }
+
+  void free(void* ptr) {
+    ::free(ptr);
+  }
+
+  void free(void* ptr, size_t size) {
+    if (ptr)
+      ::sdallocx(ptr, size, 0);
+  }
+#endif
 #else
   void* malloc(size_t size) {
     return ::malloc(size);
