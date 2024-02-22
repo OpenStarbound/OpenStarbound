@@ -345,12 +345,18 @@ bool MainInterface::handleInputEvent(InputEvent const& event) {
     return false;
 
   } else if (auto mouseDown = event.ptr<MouseButtonDownEvent>()) {
-    if (mouseDown->mouseButton == MouseButton::Left || mouseDown->mouseButton == MouseButton::Right
-        || mouseDown->mouseButton == MouseButton::Middle)
-      return overlayClick(mouseDown->mousePosition, mouseDown->mouseButton);
-    else
-      return false;
-
+    auto mouseButton = mouseDown->mouseButton;
+    if (mouseButton >= MouseButton::Left && mouseButton <= MouseButton::Right
+    && overlayClick(mouseDown->mousePosition, mouseDown->mouseButton)) {
+      return true;
+    } else {
+      if (mouseButton == MouseButton::Left)
+        player->beginPrimaryFire();
+      if (mouseButton == MouseButton::Right)
+        player->beginAltFire();
+      if (mouseButton == MouseButton::Middle)
+        player->beginTrigger();
+    }
   } else if (auto mouseUp = event.ptr<MouseButtonUpEvent>()) {
     if (mouseUp->mouseButton == MouseButton::Left)
       player->endPrimaryFire();
@@ -360,10 +366,12 @@ bool MainInterface::handleInputEvent(InputEvent const& event) {
       player->endTrigger();
   }
 
-  for (auto& pair : m_canvases)
-    pair.second->sendEvent(event);
+  bool captured = false;
 
-  return true;
+  for (auto& pair : m_canvases)
+    captured |= pair.second->sendEvent(event);
+
+  return captured;
 }
 
 bool MainInterface::inputFocus() const {
@@ -1557,13 +1565,6 @@ bool MainInterface::overlayClick(Vec2I const& mousePos, MouseButton mouseButton)
     m_paneManager.toggleRegisteredPane(MainInterfacePanes::Collections);
     return true;
   }
-
-  if (mouseButton == MouseButton::Left)
-    m_client->mainPlayer()->beginPrimaryFire();
-  if (mouseButton == MouseButton::Right)
-    m_client->mainPlayer()->beginAltFire();
-  if (mouseButton == MouseButton::Middle)
-    m_client->mainPlayer()->beginTrigger();
 
   return false;
 }
