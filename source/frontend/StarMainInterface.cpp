@@ -348,6 +348,8 @@ bool MainInterface::handleInputEvent(InputEvent const& event) {
     if (mouseDown->mouseButton == MouseButton::Left || mouseDown->mouseButton == MouseButton::Right
         || mouseDown->mouseButton == MouseButton::Middle)
       return overlayClick(mouseDown->mousePosition, mouseDown->mouseButton);
+    else
+      return false;
 
   } else if (auto mouseUp = event.ptr<MouseButtonUpEvent>()) {
     if (mouseUp->mouseButton == MouseButton::Left)
