@@ -1142,7 +1142,7 @@ LuaFunction LuaEngine::createRawFunction(lua_CFunction function) {
 LuaFunction LuaEngine::createFunctionFromSource(int handleIndex, char const* contents, size_t size, char const* name) {
   lua_checkstack(m_state, 2);
 
-  handleError(m_state, luaL_loadbuffer(m_state, contents, size, name));
+  handleError(m_state, luaL_loadbufferx(m_state, contents, size, name, "t"));
 
   pushHandle(m_state, handleIndex);
   lua_setupvalue(m_state, -2, 1);

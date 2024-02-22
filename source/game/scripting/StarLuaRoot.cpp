@@ -108,9 +108,9 @@ LuaContext LuaRoot::createContext(StringList const& scriptPaths) {
 
   auto handleIndex = newContext.handleIndex();
   auto engine = m_luaEngine.get();
-  newContext.set("loadstring", m_luaEngine->createFunction([engine,handleIndex](String const& source, Maybe<String> const& name, Maybe<LuaValue> const& env) -> LuaFunction {
+  newContext.set("loadstring", m_luaEngine->createFunction([engine, handleIndex](String const& source, Maybe<String> const& name, Maybe<LuaTable> const& env) -> LuaFunction {
     String functionName = name ? strf("loadstring: {}", *name) : "loadstring";
-    return engine->createFunctionFromSource(handleIndex, source.utf8Ptr(), source.utf8Size(), functionName.utf8Ptr());
+    return engine->createFunctionFromSource(env ? env->handleIndex() : handleIndex, source.utf8Ptr(), source.utf8Size(), functionName.utf8Ptr());
   }));
 
   auto assets = Root::singleton().assets();
