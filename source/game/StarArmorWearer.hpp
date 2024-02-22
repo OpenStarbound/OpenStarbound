@@ -21,7 +21,9 @@ STAR_CLASS(Item);
 STAR_CLASS(World);
 
 STAR_CLASS(ArmorWearer);
-
+/**
+ * Armor weaver game logic
+ */
 class ArmorWearer : public NetElementSyncGroup {
 public:
   ArmorWearer();
@@ -32,6 +34,11 @@ public:
 
   void reset();
 
+    /**
+     * \attention
+     * This is a dependency violation because disk operations are the
+     * job of database
+     */
   Json diskStore() const;
   void diskLoad(Json const& diskStore);
 

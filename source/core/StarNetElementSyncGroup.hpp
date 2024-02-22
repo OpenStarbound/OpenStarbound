@@ -5,9 +5,11 @@
 
 namespace Star {
 
-// NetElementGroup class that works with NetElements that are not automatically
-// kept up to date with working data, and users need to be notified when to
-// synchronize with working data.
+/**
+ * NetElementGroup class that works with NetElements that are not automatically
+ * kept up to date with working data, and users need to be notified whento
+ * synchronize with working data.
+ */
 class NetElementSyncGroup : public NetElementGroup {
 public:
   void enableNetInterpolation(float extrapolationHint = 0.0f) override;
@@ -22,10 +24,14 @@ public:
   void blankNetDelta(float interpolationTime = 0.0f) override;
 
 protected:
-  // Notifies when data needs to be pulled from NetElements, load is true if
-  // this is due to a netLoad call
+/**
+ * Notifies whendata needs to be pulled from NetElements, load is true if
+ * this is due to a netLoad call
+ */
   virtual void netElementsNeedLoad(bool load);
-  // Notifies when data needs to be pushed to NetElements
+/**
+ * Notifies whendata needs to be pushed to NetElements
+ */
   virtual void netElementsNeedStore();
 
 private:
@@ -34,8 +40,10 @@ private:
   bool m_recentDeltaWasBlank = false;
 };
 
-// Same as a NetElementSyncGroup, except instead of protected methods, calls
-// optional callback functions.
+/**
+ * Same as a NetElementSyncGroup, except instead of protected methods, calls
+ * optional callback functions.
+ */
 class NetElementCallbackGroup : public NetElementSyncGroup {
 public:
   void setNeedsLoadCallback(function<void(bool)> needsLoadCallback);
