@@ -1,5 +1,4 @@
-#ifndef STAR_WORLD_CLIENT_DATA_HPP
-#define STAR_WORLD_CLIENT_DATA_HPP
+#pragma once
 
 #include "StarImage.hpp"
 #include "StarWorldTiles.hpp"
@@ -60,5 +59,3 @@ inline void WorldRenderData::clear() {
 }
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_FLAT_HASH_MAP_HPP
-#define STAR_FLAT_HASH_MAP_HPP
+#pragma once
 
 #include <type_traits>
 
@@ -541,5 +540,3 @@ bool FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::operator!=(FlatHashMap c
 }
 
 }
-
-#endif

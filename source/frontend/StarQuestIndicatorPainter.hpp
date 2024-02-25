@@ -1,5 +1,4 @@
-#ifndef STAR_QUEST_INDICATOR_PAINTER_HPP
-#define STAR_QUEST_INDICATOR_PAINTER_HPP
+#pragma once
 
 #include "StarWorldCamera.hpp"
 #include "StarWorldClient.hpp"
@@ -32,5 +31,3 @@ private:
 };
 
 }
-
-#endif

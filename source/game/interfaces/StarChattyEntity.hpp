@@ -1,5 +1,4 @@
-#ifndef STAR_CHATTY_ENTITY_HPP
-#define STAR_CHATTY_ENTITY_HPP
+#pragma once
 
 #include "StarChatAction.hpp"
 #include "StarEntity.hpp"
@@ -16,5 +15,3 @@ public:
 };
 
 }
-
-#endif

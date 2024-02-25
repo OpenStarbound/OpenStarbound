@@ -1,5 +1,4 @@
-#ifndef STAR_CONFIG_HPP
-#define STAR_CONFIG_HPP
+#pragma once
 
 #include "StarPch.hpp"
 
@@ -75,25 +74,23 @@ typedef int64_t StreamOffset;
 
 #define STAR_CLASS(ClassName)                                     \
   class ClassName;                                                \
-  typedef std::shared_ptr<ClassName> ClassName##Ptr;              \
-  typedef std::shared_ptr<const ClassName> ClassName##ConstPtr;   \
-  typedef std::weak_ptr<ClassName> ClassName##WeakPtr;            \
-  typedef std::weak_ptr<const ClassName> ClassName##ConstWeakPtr; \
-  typedef std::unique_ptr<ClassName> ClassName##UPtr;             \
-  typedef std::unique_ptr<const ClassName> ClassName##ConstUPtr
+  using ClassName##Ptr = std::shared_ptr<ClassName>;              \
+  using ClassName##ConstPtr = std::shared_ptr<const ClassName>;   \
+  using ClassName##WeakPtr = std::weak_ptr<ClassName>;            \
+  using ClassName##ConstWeakPtr = std::weak_ptr<const ClassName>; \
+  using ClassName##UPtr = std::unique_ptr<ClassName>;             \
+  using ClassName##ConstUPtr = std::unique_ptr<const ClassName>
 
 #define STAR_STRUCT(StructName)                                     \
   struct StructName;                                                \
-  typedef std::shared_ptr<StructName> StructName##Ptr;              \
-  typedef std::shared_ptr<const StructName> StructName##ConstPtr;   \
-  typedef std::weak_ptr<StructName> StructName##WeakPtr;            \
-  typedef std::weak_ptr<const StructName> StructName##ConstWeakPtr; \
-  typedef std::unique_ptr<StructName> StructName##UPtr;             \
-  typedef std::unique_ptr<const StructName> StructName##ConstUPtr
+  using StructName##Ptr = std::shared_ptr<StructName>;              \
+  using StructName##ConstPtr = std::shared_ptr<const StructName>;   \
+  using StructName##WeakPtr = std::weak_ptr<StructName>;            \
+  using StructName##ConstWeakPtr = std::weak_ptr<const StructName>; \
+  using StructName##UPtr = std::unique_ptr<StructName>;             \
+  using StructName##ConstUPtr = std::unique_ptr<const StructName>
 
 #define STAR_QUOTE(name) #name
 #define STAR_STR(macro) STAR_QUOTE(macro)
 
 }
-
-#endif

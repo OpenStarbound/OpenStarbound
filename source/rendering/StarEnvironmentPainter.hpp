@@ -1,5 +1,4 @@
-#ifndef STAR_ENVIRONMENT_PAINTER_HPP
-#define STAR_ENVIRONMENT_PAINTER_HPP
+#pragma once
 
 #include "StarParallax.hpp"
 #include "StarWorldRenderData.hpp"
@@ -76,5 +75,3 @@ private:
 };
 
 }
-
-#endif

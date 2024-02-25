@@ -1,5 +1,4 @@
-#ifndef STAR_DAMAGE_HPP
-#define STAR_DAMAGE_HPP
+#pragma once
 
 #include "StarDamageTypes.hpp"
 #include "StarWorldGeometry.hpp"
@@ -120,5 +119,3 @@ struct DamageNotification {
 DataStream& operator<<(DataStream& ds, DamageNotification const& damageNotification);
 DataStream& operator>>(DataStream& ds, DamageNotification& damageNotification);
 }
-
-#endif

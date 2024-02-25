@@ -1,5 +1,4 @@
-#ifndef STAR_QUEST_MANAGER_HPP
-#define STAR_QUEST_MANAGER_HPP
+#pragma once
 
 #include "StarQuests.hpp"
 
@@ -77,5 +76,3 @@ private:
 };
 
 }
-
-#endif

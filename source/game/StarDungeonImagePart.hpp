@@ -1,5 +1,4 @@
-#ifndef STAR_DUNGEON_IMAGE_PART_HPP
-#define STAR_DUNGEON_IMAGE_PART_HPP
+#pragma once
 
 #include "StarDungeonGenerator.hpp"
 
@@ -38,5 +37,3 @@ namespace Dungeon {
   };
 }
 }
-
-#endif

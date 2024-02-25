@@ -1,5 +1,4 @@
-#ifndef STAR_THROWN_ITEM_HPP
-#define STAR_THROWN_ITEM_HPP
+#pragma once
 
 #include "StarItem.hpp"
 #include "StarDrawable.hpp"
@@ -28,5 +27,3 @@ private:
 };
 
 }
-
-#endif

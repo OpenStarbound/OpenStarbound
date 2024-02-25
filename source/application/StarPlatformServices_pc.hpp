@@ -1,5 +1,4 @@
-#ifndef STAR_PLATFORM_SERVICES_PC_HPP
-#define STAR_PLATFORM_SERVICES_PC_HPP
+#pragma once
 
 #include "StarThread.hpp"
 #include "StarApplication.hpp"
@@ -79,5 +78,3 @@ private:
 };
 
 }
-
-#endif

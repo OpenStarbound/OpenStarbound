@@ -1,5 +1,4 @@
-#ifndef STAR_STAGEHAND_HPP
-#define STAR_STAGEHAND_HPP
+#pragma once
 
 #include "StarEntity.hpp"
 #include "StarLuaComponents.hpp"
@@ -75,5 +74,3 @@ private:
 };
 
 }
-
-#endif

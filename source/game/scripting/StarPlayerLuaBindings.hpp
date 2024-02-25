@@ -1,5 +1,4 @@
-#ifndef STAR_PLAYER_LUA_BINDINGS_HPP
-#define STAR_PLAYER_LUA_BINDINGS_HPP
+#pragma once
 
 #include "StarLua.hpp"
 
@@ -11,5 +10,3 @@ namespace LuaBindings {
   LuaCallbacks makePlayerCallbacks(Player* player);
 }
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_LIST_HPP
-#define STAR_LIST_HPP
+#pragma once
 
 #include <vector>
 #include <deque>
@@ -1137,5 +1136,3 @@ typename ListEnumerateTypes<Container>::Result enumerate(Container&& container) 
 
 template <typename BaseList>
 struct fmt::formatter<Star::ListMixin<BaseList>> : ostream_formatter {};
-
-#endif

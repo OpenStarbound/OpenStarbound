@@ -1,5 +1,4 @@
-#ifndef STAR_BEAM_ITEM_HPP
-#define STAR_BEAM_ITEM_HPP
+#pragma once
 
 #include "StarSpline.hpp"
 #include "StarGameTypes.hpp"
@@ -74,5 +73,3 @@ protected:
 };
 
 }
-
-#endif

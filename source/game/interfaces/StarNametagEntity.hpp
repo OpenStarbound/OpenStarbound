@@ -1,5 +1,4 @@
-#ifndef STAR_NAMETAG_ENTITY_HPP
-#define STAR_NAMETAG_ENTITY_HPP
+#pragma once
 
 #include "StarEntity.hpp"
 
@@ -17,5 +16,3 @@ public:
 };
 
 }
-
-#endif

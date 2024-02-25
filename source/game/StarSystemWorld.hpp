@@ -1,5 +1,4 @@
-#ifndef STAR_SYSTEM_WORLD_HPP
-#define STAR_SYSTEM_WORLD_HPP
+#pragma once
 
 #include "StarCelestialParameters.hpp"
 #include "StarCelestialCoordinate.hpp"
@@ -228,5 +227,3 @@ private:
 };
 
 }
-
-#endif

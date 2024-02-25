@@ -1,5 +1,4 @@
-#ifndef STAR_BYTE_ARRAY_H
-#define STAR_BYTE_ARRAY_H
+#pragma once
 
 #include "StarHash.hpp"
 #include "StarException.hpp"
@@ -257,5 +256,3 @@ inline size_t hash<ByteArray>::operator()(ByteArray const& b) const {
 }
 
 template <> struct fmt::formatter<Star::ByteArray> : ostream_formatter {};
-
-#endif

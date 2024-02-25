@@ -1,5 +1,4 @@
-#ifndef STAR_COLLISION_BLOCK_HPP
-#define STAR_COLLISION_BLOCK_HPP
+#pragma once
 
 #include "StarPoly.hpp"
 #include "StarList.hpp"
@@ -133,5 +132,3 @@ inline CollisionBlock CollisionBlock::nullBlock(Vec2I const& space) {
 }
 
 }
-
-#endif

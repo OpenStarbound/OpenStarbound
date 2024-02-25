@@ -1,5 +1,4 @@
-#ifndef STAR_NPC_DATABASE_HPP
-#define STAR_NPC_DATABASE_HPP
+#pragma once
 
 #include "StarThread.hpp"
 #include "StarHumanoid.hpp"
@@ -82,5 +81,3 @@ private:
 };
 
 }
-
-#endif

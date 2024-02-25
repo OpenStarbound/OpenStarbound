@@ -1,5 +1,4 @@
-#ifndef STAR_PARTICLE_HPP
-#define STAR_PARTICLE_HPP
+#pragma once
 
 #include "StarJson.hpp"
 #include "StarColor.hpp"
@@ -123,5 +122,3 @@ typedef function<Particle()> ParticleVariantCreator;
 ParticleVariantCreator makeParticleVariantCreator(Particle particle, Particle variance);
 
 }
-
-#endif

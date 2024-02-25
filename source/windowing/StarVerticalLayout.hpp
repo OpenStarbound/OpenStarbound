@@ -1,5 +1,4 @@
-#ifndef STAR_VERTICAL_LAYOUT_HPP
-#define STAR_VERTICAL_LAYOUT_HPP
+#pragma once
 
 #include "StarLayout.hpp"
 
@@ -31,5 +30,3 @@ private:
 };
 
 }
-
-#endif

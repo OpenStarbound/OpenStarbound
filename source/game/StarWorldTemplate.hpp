@@ -1,5 +1,4 @@
-#ifndef STAR_WORLD_TEMPLATE_HPP
-#define STAR_WORLD_TEMPLATE_HPP
+#pragma once
 
 #include "StarOrderedMap.hpp"
 #include "StarLruCache.hpp"
@@ -203,5 +202,3 @@ private:
 };
 
 }
-
-#endif

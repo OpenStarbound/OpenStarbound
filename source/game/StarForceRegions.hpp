@@ -1,5 +1,4 @@
-#ifndef STAR_FORCE_REGIONS_HPP
-#define STAR_FORCE_REGIONS_HPP
+#pragma once
 
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
@@ -91,5 +90,3 @@ typedef Variant<DirectionalForceRegion, RadialForceRegion, GradientForceRegion> 
 PhysicsForceRegion jsonToPhysicsForceRegion(Json const& json);
 
 }
-
-#endif

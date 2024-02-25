@@ -1,5 +1,4 @@
-#ifndef STAR_NET_ELEMENT_GROUP_HPP
-#define STAR_NET_ELEMENT_GROUP_HPP
+#pragma once
 
 #include "StarSet.hpp"
 #include "StarNetElement.hpp"
@@ -62,5 +61,3 @@ inline float NetElementGroup::netExtrapolationHint() const {
 }
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_INTERACTION_TYPES_HPP
-#define STAR_INTERACTION_TYPES_HPP
+#pragma once
 
 #include "StarGameTypes.hpp"
 #include "StarJson.hpp"
@@ -50,5 +49,3 @@ DataStream& operator>>(DataStream& ds, InteractAction& ir);
 DataStream& operator<<(DataStream& ds, InteractAction const& ir);
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_INTERFACE_CURSOR_HPP
-#define STAR_INTERFACE_CURSOR_HPP
+#pragma once
 
 #include "StarJson.hpp"
 #include "StarAnimation.hpp"
@@ -33,5 +32,3 @@ private:
 };
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_PERLIN_SELECTOR_HPP
-#define STAR_PERLIN_SELECTOR_HPP
+#pragma once
 
 #include "StarTerrainDatabase.hpp"
 #include "StarPerlin.hpp"
@@ -20,5 +19,3 @@ struct PerlinSelector : TerrainSelector {
 };
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_SONGBOOK_INTERFACE_HPP
-#define STAR_SONGBOOK_INTERFACE_HPP
+#pragma once
 
 #include "StarSongbook.hpp"
 #include "StarPane.hpp"
@@ -20,5 +19,3 @@ private:
 };
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_RADIO_MESSAGE_DATABASE_HPP
-#define STAR_RADIO_MESSAGE_DATABASE_HPP
+#pragma once
 
 #include "StarBiMap.hpp"
 #include "StarJson.hpp"
@@ -40,5 +39,3 @@ private:
 };
 
 }
-
-#endif

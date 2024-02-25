@@ -1,5 +1,4 @@
-#ifndef STAR_USER_GENERATED_CONTENT_SERVICE_HPP
-#define STAR_USER_GENERATED_CONTENT_SERVICE_HPP
+#pragma once
 
 namespace Star {
 
@@ -22,5 +21,3 @@ public:
 };
 
 }
-
-#endif

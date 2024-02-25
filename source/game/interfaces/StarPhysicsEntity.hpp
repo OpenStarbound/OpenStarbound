@@ -1,5 +1,4 @@
-#ifndef STAR_PHYSICS_ENTITY_HPP
-#define STAR_PHYSICS_ENTITY_HPP
+#pragma once
 
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
@@ -57,5 +56,3 @@ public:
 };
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_LIQUIDS_DATABASE_HPP
-#define STAR_LIQUIDS_DATABASE_HPP
+#pragma once
 
 #include "StarJson.hpp"
 #include "StarEither.hpp"
@@ -101,5 +100,3 @@ inline Vec3F LiquidsDatabase::radiantLight(LiquidLevel level) const {
 }
 
 }
-
-#endif

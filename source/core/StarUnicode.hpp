@@ -1,5 +1,4 @@
-#ifndef STAR_UTF8_HPP
-#define STAR_UTF8_HPP
+#pragma once
 
 #include "StarByteArray.hpp"
 #include "StarMaybe.hpp"
@@ -229,5 +228,3 @@ private:
 };
 
 }
-
-#endif

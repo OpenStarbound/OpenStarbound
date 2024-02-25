@@ -1,5 +1,4 @@
-#ifndef STAR_ANCHORABLE_ENTITY_HPP
-#define STAR_ANCHORABLE_ENTITY_HPP
+#pragma once
 
 #include "StarEntity.hpp"
 
@@ -35,5 +34,3 @@ public:
 };
 
 }
-
-#endif

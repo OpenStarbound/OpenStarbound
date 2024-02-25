@@ -1,5 +1,4 @@
-#ifndef STAR_PLAYER_CODEXES_HPP
-#define STAR_PLAYER_CODEXES_HPP
+#pragma once
 
 #include "StarUuid.hpp"
 #include "StarJson.hpp"
@@ -37,5 +36,3 @@ private:
 
 typedef shared_ptr<PlayerCodexes> PlayerCodexesPtr;
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_DATA_STREAM_EXTRA_HPP
-#define STAR_DATA_STREAM_EXTRA_HPP
+#pragma once
 
 #include "StarDataStream.hpp"
 #include "StarMultiArray.hpp"
@@ -389,5 +388,3 @@ DataStream& operator<<(DataStream& ds, tuple<T...> const& t) {
 }
 
 }
-
-#endif

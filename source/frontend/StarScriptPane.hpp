@@ -1,5 +1,4 @@
-#ifndef STAR_SCRIPT_PANE_HPP
-#define STAR_SCRIPT_PANE_HPP
+#pragma once
 
 #include "StarBaseScriptPane.hpp"
 
@@ -31,5 +30,3 @@ private:
 };
 
 }
-
-#endif

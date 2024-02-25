@@ -1,5 +1,4 @@
-#ifndef STAR_TITLE_HPP
-#define STAR_TITLE_HPP
+#pragma once
 
 #include "StarSky.hpp"
 #include "StarAmbient.hpp"
@@ -129,5 +128,3 @@ private:
 };
 
 }
-
-#endif

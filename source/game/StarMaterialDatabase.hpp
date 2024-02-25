@@ -1,5 +1,4 @@
-#ifndef STAR_MATERIAL_DATABASE_HPP
-#define STAR_MATERIAL_DATABASE_HPP
+#pragma once
 
 #include "StarColor.hpp"
 #include "StarCollisionBlock.hpp"
@@ -268,5 +267,3 @@ inline Maybe<LiquidModInteraction> MaterialDatabase::liquidModInteraction(Liquid
   return m_liquidModInteractions.maybe({liquid, modId});
 }
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_PLANT_DATABASE_HPP
-#define STAR_PLANT_DATABASE_HPP
+#pragma once
 
 #include "StarJson.hpp"
 #include "StarThread.hpp"
@@ -133,5 +132,3 @@ private:
 };
 
 }
-
-#endif

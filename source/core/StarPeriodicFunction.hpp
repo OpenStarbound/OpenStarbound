@@ -1,5 +1,4 @@
-#ifndef STAR_PERIODIC_FUNCTION_HPP
-#define STAR_PERIODIC_FUNCTION_HPP
+#pragma once
 
 #include "StarInterpolation.hpp"
 #include "StarRandom.hpp"
@@ -78,5 +77,3 @@ Float PeriodicFunction<Float>::value(WeightOperator weightOperator) const {
 }
 
 }
-
-#endif

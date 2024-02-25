@@ -1,5 +1,4 @@
-#ifndef STAR_IMAGE_METADATA_DATABASE_HPP
-#define STAR_IMAGE_METADATA_DATABASE_HPP
+#pragma once
 
 #include "StarRect.hpp"
 #include "StarMap.hpp"
@@ -37,5 +36,3 @@ private:
 };
 
 }
-
-#endif

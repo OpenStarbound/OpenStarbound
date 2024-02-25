@@ -1,5 +1,4 @@
-#ifndef STAR_ROTATE_SELECTOR_HPP
-#define STAR_ROTATE_SELECTOR_HPP
+#pragma once
 
 #include "StarTerrainDatabase.hpp"
 #include "StarVector.hpp"
@@ -20,5 +19,3 @@ struct RotateSelector : TerrainSelector {
 };
 
 }
-
-#endif

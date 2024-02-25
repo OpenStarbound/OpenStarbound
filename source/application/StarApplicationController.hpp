@@ -1,5 +1,4 @@
-#ifndef STAR_APPLICATION_CONTROLLER_HPP
-#define STAR_APPLICATION_CONTROLLER_HPP
+#pragma once
 
 #include "StarApplication.hpp"
 #include "StarStatisticsService.hpp"
@@ -73,5 +72,3 @@ public:
 };
 
 }
-
-#endif

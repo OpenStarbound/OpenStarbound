@@ -1,5 +1,4 @@
-#ifndef STAR_WORLD_GEOMETRY_HPP
-#define STAR_WORLD_GEOMETRY_HPP
+#pragma once
 
 #include "StarPoly.hpp"
 
@@ -259,5 +258,3 @@ inline Vec2F WorldGeometry::nearestTo(Vec2F const& source, Vec2F const& target) 
 }
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_RENDERABLE_ITEM_HPP
-#define STAR_RENDERABLE_ITEM_HPP
+#pragma once
 
 #include "StarEntityRendering.hpp"
 
@@ -15,5 +14,3 @@ namespace Star {
   };
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_BUTTON_WIDGET_HPP
-#define STAR_BUTTON_WIDGET_HPP
+#pragma once
 
 #include "StarButtonGroup.hpp"
 
@@ -142,5 +141,3 @@ private:
 };
 
 }
-
-#endif

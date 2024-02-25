@@ -1,5 +1,4 @@
-#ifndef STAR_BASE_SCRIPT_PANE_HPP
-#define STAR_BASE_SCRIPT_PANE_HPP
+#pragma once
 
 #include "StarPane.hpp"
 #include "StarLuaComponents.hpp"
@@ -50,5 +49,3 @@ protected:
 };
 
 }
-
-#endif

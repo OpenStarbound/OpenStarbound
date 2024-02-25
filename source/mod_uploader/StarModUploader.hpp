@@ -1,5 +1,4 @@
-#ifndef STAR_MOD_UPLOADER
-#define STAR_MOD_UPLOADER
+#pragma once
 
 #include <QMainWindow>
 #include <QLabel>
@@ -55,5 +54,3 @@ private:
 };
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_BLOCKS_ALONG_LINE_HPP
-#define STAR_BLOCKS_ALONG_LINE_HPP
+#pragma once
 
 #include "StarVector.hpp"
 
@@ -104,5 +103,3 @@ bool forBlocksAlongLine(Vector<Scalar, 2> origin, Vector<Scalar, 2> const& dxdy,
 }
 
 }
-
-#endif

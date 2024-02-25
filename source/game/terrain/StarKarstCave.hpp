@@ -1,5 +1,4 @@
-#ifndef STAR_KARST_CAVE_HPP
-#define STAR_KARST_CAVE_HPP
+#pragma once
 
 #include "StarTerrainDatabase.hpp"
 #include "StarLruCache.hpp"
@@ -60,5 +59,3 @@ private:
 };
 
 }
-
-#endif

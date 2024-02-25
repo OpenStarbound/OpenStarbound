@@ -1,5 +1,4 @@
-#ifndef STAR_PLAYER_FACTORY_HPP
-#define STAR_PLAYER_FACTORY_HPP
+#pragma once
 
 #include "StarItemDescriptor.hpp"
 #include "StarHumanoid.hpp"
@@ -68,5 +67,3 @@ private:
 };
 
 }
-
-#endif

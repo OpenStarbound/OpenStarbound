@@ -1,5 +1,4 @@
-#ifndef STAR_PERIODIC_HPP
-#define STAR_PERIODIC_HPP
+#pragma once
 
 #include "StarMathCommon.hpp"
 #include "StarRandom.hpp"
@@ -94,5 +93,3 @@ private:
 };
 
 }
-
-#endif

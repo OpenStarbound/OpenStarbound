@@ -1,5 +1,4 @@
-#ifndef STAR_OBSERVER_STREAM_HPP
-#define STAR_OBSERVER_STREAM_HPP
+#pragma once
 
 #include "StarList.hpp"
 
@@ -94,5 +93,3 @@ void ObserverStream<T>::reset() {
 }
 
 }
-
-#endif

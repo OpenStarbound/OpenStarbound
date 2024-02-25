@@ -1,5 +1,4 @@
-#ifndef STAR_NET_PACKET_SOCKET_HPP
-#define STAR_NET_PACKET_SOCKET_HPP
+#pragma once
 
 #include "StarTcp.hpp"
 #include "StarAtomicSharedPtr.hpp"
@@ -170,5 +169,3 @@ private:
 };
 
 }
-
-#endif

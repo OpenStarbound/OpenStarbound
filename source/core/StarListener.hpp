@@ -1,5 +1,4 @@
-#ifndef STAR_LISTENER_HPP
-#define STAR_LISTENER_HPP
+#pragma once
 
 #include "StarThread.hpp"
 
@@ -63,5 +62,3 @@ inline void TrackerListener::trigger() {
 }
 
 }
-
-#endif

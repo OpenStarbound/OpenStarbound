@@ -1,5 +1,4 @@
-#ifndef STAR_INSPECTION_TOOL_HPP
-#define STAR_INSPECTION_TOOL_HPP
+#pragma once
 
 #include "StarItem.hpp"
 #include "StarPointableItem.hpp"
@@ -70,5 +69,3 @@ private:
 };
 
 }
-
-#endif

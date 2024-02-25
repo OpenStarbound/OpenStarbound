@@ -1,5 +1,4 @@
-#ifndef STAR_MAYBE_HPP
-#define STAR_MAYBE_HPP
+#pragma once
 
 #include "StarException.hpp"
 #include "StarHash.hpp"
@@ -399,5 +398,3 @@ size_t hash<Maybe<T>>::operator()(Maybe<T> const& m) const {
 
 template <typename T>
 struct fmt::formatter<Star::Maybe<T>> : ostream_formatter {};
-
-#endif

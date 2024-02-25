@@ -1,5 +1,4 @@
-#ifndef STAR_TAB_SET_HPP
-#define STAR_TAB_SET_HPP
+#pragma once
 
 #include "StarButtonGroup.hpp"
 
@@ -47,5 +46,3 @@ private:
 };
 
 }
-
-#endif

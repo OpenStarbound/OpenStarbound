@@ -1,5 +1,4 @@
-#ifndef STAR_WEATHER_LEVELS_HPP
-#define STAR_WEATHER_LEVELS_HPP
+#pragma once
 
 #include "StarWeightedPool.hpp"
 #include "StarParticle.hpp"
@@ -44,5 +43,3 @@ typedef WeightedPool<String> WeatherPool;
 DataStream& operator>>(DataStream& ds, WeatherType& weatherType);
 DataStream& operator<<(DataStream& ds, WeatherType const& weatherType);
 }
-
-#endif

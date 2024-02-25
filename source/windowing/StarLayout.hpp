@@ -1,5 +1,5 @@
-#ifndef STAR_LAYOUT_HPP
-#define STAR_LAYOUT_HPP
+#pragma once
+
 #include "StarWidget.hpp"
 
 namespace Star {
@@ -12,5 +12,3 @@ public:
 };
 
 }
-
-#endif

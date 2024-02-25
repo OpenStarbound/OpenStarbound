@@ -1,5 +1,5 @@
-#ifndef STAR_TEXT_HPP
-#define STAR_TEXT_HPP
+#pragma once
+
 #include "StarString.hpp"
 #include "StarStringView.hpp"
 
@@ -22,5 +22,3 @@ namespace Text {
 }
 
 }
-
-#endif

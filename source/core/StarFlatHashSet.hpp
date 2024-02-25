@@ -1,5 +1,4 @@
-#ifndef STAR_FLAT_HASH_SET_HPP
-#define STAR_FLAT_HASH_SET_HPP
+#pragma once
 
 #include "StarFlatHashTable.hpp"
 #include "StarHash.hpp"
@@ -493,5 +492,3 @@ bool FlatHashSet<Key, Hash, Equals, Allocator>::operator!=(FlatHashSet const& rh
 }
 
 }
-
-#endif

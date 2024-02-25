@@ -1,5 +1,4 @@
-#ifndef STAR_UNIVERSE_SETTINGS_HPP
-#define STAR_UNIVERSE_SETTINGS_HPP
+#pragma once
 
 #include "StarThread.hpp"
 #include "StarJson.hpp"
@@ -48,5 +47,3 @@ private:
 };
 
 }
-
-#endif

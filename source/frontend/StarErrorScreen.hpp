@@ -1,5 +1,4 @@
-#ifndef STAR_ERROR_SCREEN_HPP
-#define STAR_ERROR_SCREEN_HPP
+#pragma once
 
 #include "StarVector.hpp"
 #include "StarString.hpp"
@@ -45,5 +44,3 @@ private:
 };
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_PANE_MANAGER_HPP
-#define STAR_PANE_MANAGER_HPP
+#pragma once
 
 #include "StarPane.hpp"
 #include "StarOrderedMap.hpp"
@@ -105,5 +104,3 @@ private:
 };
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_TOOL_USER_HPP
-#define STAR_TOOL_USER_HPP
+#pragma once
 
 #include "StarHumanoid.hpp"
 #include "StarNetElementSystem.hpp"
@@ -145,5 +144,3 @@ private:
 };
 
 }
-
-#endif

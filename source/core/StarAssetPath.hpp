@@ -1,5 +1,4 @@
-#ifndef STAR_ASSET_PATH_HPP
-#define STAR_ASSET_PATH_HPP
+#pragma once
 
 #include "StarDirectives.hpp"
 #include "StarHash.hpp"
@@ -78,5 +77,3 @@ struct hash<AssetPath> {
 }
 
 template <> struct fmt::formatter<Star::AssetPath> : ostream_formatter {};
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_RENDERER_OPENGL_HPP
-#define STAR_RENDERER_OPENGL_HPP
+#pragma once
 
 #include "StarTextureAtlas.hpp"
 #include "StarRenderer.hpp"
@@ -237,5 +236,3 @@ private:
 };
 
 }
-
-#endif

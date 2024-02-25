@@ -1,5 +1,4 @@
-#ifndef STAR_RPC_PROMISE_HPP
-#define STAR_RPC_PROMISE_HPP
+#pragma once
 
 #include "StarEither.hpp"
 #include "StarString.hpp"
@@ -171,5 +170,3 @@ decltype(auto) RpcPromise<Result, Error>::wrap(Function function) {
 }
 
 }
-
-#endif

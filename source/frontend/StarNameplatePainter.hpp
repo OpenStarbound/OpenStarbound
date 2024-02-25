@@ -1,5 +1,4 @@
-#ifndef STAR_NAMEPLATE_PAINTER_HPP
-#define STAR_NAMEPLATE_PAINTER_HPP
+#pragma once
 
 #include "StarWorldClient.hpp"
 #include "StarWorldCamera.hpp"
@@ -52,5 +51,3 @@ private:
 };
 
 }
-
-#endif

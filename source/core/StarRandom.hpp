@@ -1,5 +1,4 @@
-#ifndef STAR_RANDOM_HPP
-#define STAR_RANDOM_HPP
+#pragma once
 
 #include "StarStaticRandom.hpp"
 #include "StarByteArray.hpp"
@@ -214,5 +213,3 @@ void Random::shuffle(Container& container) {
 }
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_CONSUMABLE_ITEM_HPP
-#define STAR_CONSUMABLE_ITEM_HPP
+#pragma once
 
 #include "StarItem.hpp"
 #include "StarGameTypes.hpp"
@@ -34,5 +33,3 @@ private:
 };
 
 }
-
-#endif

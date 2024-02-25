@@ -1,5 +1,4 @@
-#ifndef STAR_INPUT_HPP
-#define STAR_INPUT_HPP
+#pragma once
 
 #include "StarInputEvent.hpp"
 #include "StarJson.hpp"
@@ -211,5 +210,3 @@ private:
 };
 
 }
-
-#endif

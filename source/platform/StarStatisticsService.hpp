@@ -1,5 +1,4 @@
-#ifndef STAR_STATS_BACKEND_HPP
-#define STAR_STATS_BACKEND_HPP
+#pragma once
 
 #include "StarJson.hpp"
 
@@ -36,5 +35,3 @@ public:
 };
 
 }
-
-#endif

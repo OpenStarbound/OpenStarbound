@@ -1,5 +1,4 @@
-#ifndef STAR_FALLING_BLOCKS_AGENT_HPP
-#define STAR_FALLING_BLOCKS_AGENT_HPP
+#pragma once
 
 #include "StarVector.hpp"
 #include "StarSet.hpp"
@@ -46,5 +45,3 @@ private:
 };
 
 }
-
-#endif

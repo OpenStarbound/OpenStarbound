@@ -1,5 +1,4 @@
-#ifndef STAR_DATA_STREAM_BUFFER_HPP
-#define STAR_DATA_STREAM_BUFFER_HPP
+#pragma once
 
 #include "StarBuffer.hpp"
 #include "StarDataStream.hpp"
@@ -248,5 +247,3 @@ T DataStreamBuffer::deserializeMapContainer(ByteArray data, ReadFunction readFun
 }
 
 }
-
-#endif

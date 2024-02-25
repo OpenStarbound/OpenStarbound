@@ -1,5 +1,4 @@
-#ifndef STAR_INTERPOLATE_BASE
-#define STAR_INTERPOLATE_BASE
+#pragma once
 
 #include "StarMathCommon.hpp"
 #include "StarArray.hpp"
@@ -450,5 +449,3 @@ typename YContainer::value_type parametricInterpolate4(XContainer const& xvals,
 }
 
 }
-
-#endif

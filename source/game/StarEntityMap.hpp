@@ -1,5 +1,4 @@
-#ifndef STAR_ENTITY_MAP_HPP
-#define STAR_ENTITY_MAP_HPP
+#pragma once
 
 #include "StarSpatialHash2D.hpp"
 #include "StarEntity.hpp"
@@ -189,5 +188,3 @@ List<shared_ptr<EntityT>> EntityMap::atTile(Vec2I const& pos) const {
 }
 
 }
-
-#endif

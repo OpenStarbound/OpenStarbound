@@ -1,5 +1,4 @@
-#ifndef STAR_PORTRAIT_ENTITY_HPP
-#define STAR_PORTRAIT_ENTITY_HPP
+#pragma once
 
 #include "StarDrawable.hpp"
 #include "StarEntity.hpp"
@@ -15,5 +14,3 @@ public:
 };
 
 }
-
-#endif

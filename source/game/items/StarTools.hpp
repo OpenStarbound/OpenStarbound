@@ -1,5 +1,4 @@
-#ifndef STAR_TOOLS_HPP
-#define STAR_TOOLS_HPP
+#pragma once
 
 #include "StarItem.hpp"
 #include "StarBeamItem.hpp"
@@ -240,5 +239,3 @@ private:
 };
 
 }
-
-#endif

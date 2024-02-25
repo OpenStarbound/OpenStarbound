@@ -1,5 +1,4 @@
-#ifndef STAR_PLAYER_DEPLOYMENT_HPP
-#define STAR_PLAYER_DEPLOYMENT_HPP
+#pragma once
 
 #include "StarLuaComponents.hpp"
 #include "StarLuaAnimationComponent.hpp"
@@ -43,5 +42,3 @@ private:
 };
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_LUA_GAME_CONVERTERS_HPP
-#define STAR_LUA_GAME_CONVERTERS_HPP
+#pragma once
 
 #include "StarLuaConverters.hpp"
 #include "StarInventoryTypes.hpp"
@@ -180,5 +179,3 @@ struct LuaUserDataMethods<BlackboardWeakPtr> {
 };
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_MAIN_INTERFACE_CONFIG_HPP
-#define STAR_MAIN_INTERFACE_CONFIG_HPP
+#pragma once
 
 #include "StarJson.hpp"
 #include "StarPoly.hpp"
@@ -157,5 +156,3 @@ struct MainInterfaceConfig {
 };
 
 }
-
-#endif

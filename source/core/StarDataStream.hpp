@@ -1,5 +1,4 @@
-#ifndef STAR_DATA_STREAM_HPP
-#define STAR_DATA_STREAM_HPP
+#pragma once
 
 #include "StarString.hpp"
 
@@ -389,5 +388,3 @@ void DataStream::readMapContainer(Container& container) {
 }
 
 }
-
-#endif

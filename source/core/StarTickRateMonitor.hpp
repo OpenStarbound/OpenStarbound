@@ -1,5 +1,4 @@
-#ifndef STAR_TICK_RATE_MONITOR_HPP
-#define STAR_TICK_RATE_MONITOR_HPP
+#pragma once
 
 #include "StarList.hpp"
 
@@ -74,5 +73,3 @@ private:
 };
 
 };
-
-#endif

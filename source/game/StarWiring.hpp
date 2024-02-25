@@ -1,5 +1,4 @@
-#ifndef STAR_WIRING_HPP
-#define STAR_WIRING_HPP
+#pragma once
 
 #include "StarGameTypes.hpp"
 #include "StarWorldGeometry.hpp"
@@ -67,5 +66,3 @@ public:
 };
 
 }
-
-#endif

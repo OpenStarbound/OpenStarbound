@@ -1,5 +1,4 @@
-#ifndef STAR_POLY_HPP
-#define STAR_POLY_HPP
+#pragma once
 
 #include <numeric>
 
@@ -746,5 +745,3 @@ std::ostream& operator<<(std::ostream& os, Polygon<DataType> const& poly) {
 }
 
 }
-
-#endif

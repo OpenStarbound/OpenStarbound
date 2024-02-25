@@ -1,5 +1,4 @@
-#ifndef STAR_WARPING_HPP
-#define STAR_WARPING_HPP
+#pragma once
 
 #include "StarStrongTypedef.hpp"
 #include "StarUuid.hpp"
@@ -96,5 +95,3 @@ template <> struct fmt::formatter<Star::ClientShipWorldId> : ostream_formatter {
 template <> struct fmt::formatter<Star::InstanceWorldId> : ostream_formatter {};
 template <> struct fmt::formatter<Star::WorldId> : ostream_formatter {};
 template <> struct fmt::formatter<Star::WarpToWorld> : ostream_formatter {};
-
-#endif

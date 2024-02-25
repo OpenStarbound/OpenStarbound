@@ -1,5 +1,4 @@
-#ifndef STAR_PANE_OBJECT_PARSING_HPP
-#define STAR_PANE_OBJECT_PARSING_HPP
+#pragma once
 
 #include "StarWidget.hpp"
 
@@ -72,5 +71,3 @@ protected:
 };
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_UNIVERSE_CLIENT_HPP
-#define STAR_UNIVERSE_CLIENT_HPP
+#pragma once
 
 #include "StarMaybe.hpp"
 #include "StarHostAddress.hpp"
@@ -168,5 +167,3 @@ private:
 };
 
 }
-
-#endif

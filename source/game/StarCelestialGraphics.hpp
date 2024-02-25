@@ -1,5 +1,4 @@
-#ifndef STAR_CELESTIAL_GENERATION_HPP
-#define STAR_CELESTIAL_GENERATION_HPP
+#pragma once
 
 #include "StarCelestialDatabase.hpp"
 
@@ -56,5 +55,3 @@ private:
 };
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_SERVER_RCON_THREAD_HPP
-#define STAR_SERVER_RCON_THREAD_HPP
+#pragma once
 
 #include "StarThread.hpp"
 #include "StarTcp.hpp"
@@ -32,5 +31,3 @@ private:
 };
 
 }
-
-#endif

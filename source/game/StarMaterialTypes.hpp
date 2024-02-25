@@ -1,5 +1,4 @@
-#ifndef STAR_MATERIAL_TYPES_HPP
-#define STAR_MATERIAL_TYPES_HPP
+#pragma once
 
 namespace Star {
 
@@ -96,5 +95,3 @@ inline bool isBiomeMod(ModId mod) {
   return mod == BiomeModId || mod == UndergroundBiomeModId;
 }
 }
-
-#endif

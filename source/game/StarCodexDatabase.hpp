@@ -1,5 +1,4 @@
-#ifndef STAR_CODEX_DATABASE_HPP
-#define STAR_CODEX_DATABASE_HPP
+#pragma once
 
 #include "StarJson.hpp"
 #include "StarCodex.hpp"
@@ -22,5 +21,3 @@ private:
 };
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_PYTHONIC_HPP
-#define STAR_PYTHONIC_HPP
+#pragma once
 
 #include "StarAlgorithm.hpp"
 
@@ -605,5 +604,3 @@ ResultContainer enumerateConstruct(Iterable&& list) {
 }
 
 }
-
-#endif

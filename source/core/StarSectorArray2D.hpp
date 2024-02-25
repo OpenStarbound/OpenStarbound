@@ -1,5 +1,4 @@
-#ifndef STAR_SECTOR_SET_HPP
-#define STAR_SECTOR_SET_HPP
+#pragma once
 
 #include "StarMultiArray.hpp"
 #include "StarSet.hpp"
@@ -374,5 +373,3 @@ bool SectorArray2D<ElementT, SectorSize>::evalColumnsPriv(
 }
 
 }
-
-#endif

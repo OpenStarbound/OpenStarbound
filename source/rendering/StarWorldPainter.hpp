@@ -1,5 +1,4 @@
-#ifndef STAR_WORLD_PAINTER_HPP
-#define STAR_WORLD_PAINTER_HPP
+#pragma once
 
 #include "StarWorldRenderData.hpp"
 #include "StarTilePainter.hpp"
@@ -65,5 +64,3 @@ private:
 };
 
 }
-
-#endif

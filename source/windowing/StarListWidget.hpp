@@ -1,5 +1,4 @@
-#ifndef STAR_LIST_WIDGET_HPP
-#define STAR_LIST_WIDGET_HPP
+#pragma once
 
 #include "StarWidget.hpp"
 #include "StarGuiReader.hpp"
@@ -65,5 +64,3 @@ private:
 };
 
 }
-
-#endif

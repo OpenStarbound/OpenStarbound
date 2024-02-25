@@ -1,5 +1,4 @@
-#ifndef STAR_BOOKMARK_INTERFACE_HPP
-#define STAR_BOOKMARK_INTERFACE_HPP
+#pragma once
 
 #include "StarPlayerUniverseMap.hpp"
 #include "StarPane.hpp"
@@ -29,5 +28,3 @@ private:
 
 void setupBookmarkEntry(WidgetPtr const& entry, TeleportBookmark const& bookmark);
 }
-
-#endif

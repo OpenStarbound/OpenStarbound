@@ -1,5 +1,4 @@
-#ifndef STAR_ACTOR_MOVEMENT_CONTROLLER_HPP
-#define STAR_ACTOR_MOVEMENT_CONTROLLER_HPP
+#pragma once
 
 #include "StarMovementController.hpp"
 #include "StarPlatformerAStarTypes.hpp"
@@ -364,5 +363,3 @@ private:
 };
 
 }
-
-#endif

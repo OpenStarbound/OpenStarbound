@@ -1,5 +1,4 @@
-#ifndef STAR_PLAYER_STORAGE_HPP
-#define STAR_PLAYER_STORAGE_HPP
+#pragma once
 
 #include "StarOrderedMap.hpp"
 #include "StarUuid.hpp"
@@ -56,5 +55,3 @@ private:
 };
 
 }
-
-#endif

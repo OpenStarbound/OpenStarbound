@@ -1,5 +1,4 @@
-#ifndef STAR_CONTAINER_OBJECT_HPP
-#define STAR_CONTAINER_OBJECT_HPP
+#pragma once
 
 #include "StarItemBag.hpp"
 #include "StarObject.hpp"
@@ -108,5 +107,3 @@ private:
 };
 
 }
-
-#endif

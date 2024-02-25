@@ -1,5 +1,4 @@
-#ifndef STAR_REF_PTR_HPP
-#define STAR_REF_PTR_HPP
+#pragma once
 
 #include "StarException.hpp"
 #include "StarHash.hpp"
@@ -299,5 +298,3 @@ inline RefCounter::RefCounter()
   : m_refCounter(0) {}
 
 }
-
-#endif

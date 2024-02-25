@@ -1,5 +1,4 @@
-#ifndef STAR_PROJECTILE_DATABASE_HPP
-#define STAR_PROJECTILE_DATABASE_HPP
+#pragma once
 
 #include "StarSet.hpp"
 #include "StarThread.hpp"
@@ -121,5 +120,3 @@ private:
 };
 
 }
-
-#endif

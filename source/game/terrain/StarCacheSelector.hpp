@@ -1,5 +1,4 @@
-#ifndef STAR_CACHE_SELECTOR_HPP
-#define STAR_CACHE_SELECTOR_HPP
+#pragma once
 
 #include "StarTerrainDatabase.hpp"
 #include "StarLruCache.hpp"
@@ -19,5 +18,3 @@ struct CacheSelector : TerrainSelector {
 };
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_FILE_HPP
-#define STAR_FILE_HPP
+#pragma once
 
 #include "StarIODevice.hpp"
 #include "StarString.hpp"
@@ -146,5 +145,3 @@ private:
 };
 
 }
-
-#endif

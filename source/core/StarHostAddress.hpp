@@ -1,5 +1,4 @@
-#ifndef STAR_HOST_ADDRESS_HPP
-#define STAR_HOST_ADDRESS_HPP
+#pragma once
 
 #include "StarString.hpp"
 #include "StarEither.hpp"
@@ -88,5 +87,3 @@ struct hash<HostAddressWithPort> {
 
 template <> struct fmt::formatter<Star::HostAddress> : ostream_formatter {};
 template <> struct fmt::formatter<Star::HostAddressWithPort> : ostream_formatter {};
-
-#endif

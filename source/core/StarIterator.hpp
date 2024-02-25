@@ -1,5 +1,4 @@
-#ifndef STAR_ITERATOR_H
-#define STAR_ITERATOR_H
+#pragma once
 
 #include <algorithm>
 
@@ -433,5 +432,3 @@ SMutableMapIterator<Container> makeSMutableMapIterator(Container& c) {
 }
 
 }
-
-#endif

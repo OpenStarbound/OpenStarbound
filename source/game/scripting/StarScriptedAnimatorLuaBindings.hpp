@@ -1,5 +1,4 @@
-#ifndef STAR_SCRIPTED_ANIMATOR_LUA_BINDINGS_HPP
-#define STAR_SCRIPTED_ANIMATOR_LUA_BINDINGS_HPP
+#pragma once
 
 #include "StarLua.hpp"
 #include "StarNetworkedAnimator.hpp"
@@ -10,5 +9,3 @@ namespace LuaBindings {
   LuaCallbacks makeScriptedAnimatorCallbacks(const NetworkedAnimator* animator, function<Json(String const&, Json const&)> getParameter);
 }
 }
-
-#endif

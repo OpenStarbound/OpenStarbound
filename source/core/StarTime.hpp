@@ -1,5 +1,4 @@
-#ifndef STAR_TIME_HPP
-#define STAR_TIME_HPP
+#pragma once
 
 #include "StarThread.hpp"
 
@@ -108,5 +107,3 @@ public:
 };
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_MOVEMENT_CONTROLLER_HPP
-#define STAR_MOVEMENT_CONTROLLER_HPP
+#pragma once
 
 #include "StarJson.hpp"
 #include "StarMaybe.hpp"
@@ -298,5 +297,3 @@ private:
 };
 
 }
-
-#endif

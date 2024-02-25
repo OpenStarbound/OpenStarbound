@@ -1,5 +1,4 @@
-#ifndef STAR_SYSTEM_WORLD_SERVER_HPP
-#define STAR_SYSTEM_WORLD_SERVER_HPP
+#pragma once
 
 #include "StarSystemWorld.hpp"
 #include "StarUuid.hpp"
@@ -90,5 +89,3 @@ private:
 
 
 }
-
-#endif

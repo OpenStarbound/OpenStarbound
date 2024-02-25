@@ -1,5 +1,4 @@
-#ifndef STAR_NET_ELEMENT_SYNC_GROUP_HPP
-#define STAR_NET_ELEMENT_SYNC_GROUP_HPP
+#pragma once
 
 #include "StarNetElementGroup.hpp"
 
@@ -50,5 +49,3 @@ private:
 };
 
 }
-
-#endif

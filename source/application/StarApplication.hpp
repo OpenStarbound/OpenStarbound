@@ -1,5 +1,4 @@
-#ifndef STAR_APPLICATION_HPP
-#define STAR_APPLICATION_HPP
+#pragma once
 
 #include "StarInputEvent.hpp"
 
@@ -72,5 +71,3 @@ inline RendererPtr const& Application::renderer() const {
 }
 
 }
-
-#endif

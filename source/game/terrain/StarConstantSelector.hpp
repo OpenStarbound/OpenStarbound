@@ -1,5 +1,4 @@
-#ifndef STAR_SOLID_SELECTOR_HPP
-#define STAR_SOLID_SELECTOR_HPP
+#pragma once
 
 #include "StarTerrainDatabase.hpp"
 
@@ -16,5 +15,3 @@ struct ConstantSelector : TerrainSelector {
 };
 
 }
-
-#endif

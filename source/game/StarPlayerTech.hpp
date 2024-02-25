@@ -1,5 +1,4 @@
-#ifndef STAR_PLAYER_TECH_HPP
-#define STAR_PLAYER_TECH_HPP
+#pragma once
 
 #include "StarTechDatabase.hpp"
 
@@ -42,5 +41,3 @@ private:
 };
 
 }
-
-#endif

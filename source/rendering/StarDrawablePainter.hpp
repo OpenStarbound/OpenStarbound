@@ -1,5 +1,4 @@
-#ifndef STAR_DRAWABLE_PAINTER_HPP
-#define STAR_DRAWABLE_PAINTER_HPP
+#pragma once
 
 #include "StarDrawable.hpp"
 #include "StarRenderer.hpp"
@@ -23,5 +22,3 @@ private:
 };
 
 }
-
-#endif

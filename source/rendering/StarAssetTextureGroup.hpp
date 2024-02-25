@@ -1,5 +1,4 @@
-#ifndef STAR_ASSET_TEXTURE_GROUP_HPP
-#define STAR_ASSET_TEXTURE_GROUP_HPP
+#pragma once
 
 #include "StarMaybe.hpp"
 #include "StarString.hpp"
@@ -47,5 +46,3 @@ private:
 };
 
 }
-
-#endif

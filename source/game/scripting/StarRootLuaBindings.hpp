@@ -1,5 +1,4 @@
-#ifndef STAR_ROOT_LUA_BINDINGS_HPP
-#define STAR_ROOT_LUA_BINDINGS_HPP
+#pragma once
 
 #include "StarRect.hpp"
 #include "StarGameTypes.hpp"
@@ -58,5 +57,3 @@ namespace LuaBindings {
   }
 }
 }
-
-#endif

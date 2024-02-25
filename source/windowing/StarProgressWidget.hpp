@@ -1,5 +1,4 @@
-#ifndef STAR_PROGRESS_WIDGET_HPP
-#define STAR_PROGRESS_WIDGET_HPP
+#pragma once
 
 #include "StarWidget.hpp"
 
@@ -38,5 +37,3 @@ private:
 };
 
 }
-
-#endif

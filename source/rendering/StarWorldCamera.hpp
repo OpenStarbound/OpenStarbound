@@ -1,5 +1,4 @@
-#ifndef STAR_WORLD_CAMERA_HPP
-#define STAR_WORLD_CAMERA_HPP
+#pragma once
 
 #include "StarWorldGeometry.hpp"
 #include "StarGameTypes.hpp"
@@ -126,5 +125,3 @@ inline void WorldCamera::update(float dt) {
 }
 
 }
-
-#endif

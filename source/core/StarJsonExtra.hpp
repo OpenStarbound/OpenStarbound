@@ -1,5 +1,4 @@
-#ifndef STAR_JSON_EXTRA_HPP
-#define STAR_JSON_EXTRA_HPP
+#pragma once
 
 #include "StarJson.hpp"
 #include "StarPoly.hpp"
@@ -383,5 +382,3 @@ Polygon<Float> fixInsideOutPoly(Polygon<Float> p) {
 }
 
 }
-
-#endif

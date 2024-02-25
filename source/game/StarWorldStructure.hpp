@@ -1,5 +1,4 @@
-#ifndef STAR_WORLD_STRUCTURE_HPP
-#define STAR_WORLD_STRUCTURE_HPP
+#pragma once
 
 #include "StarJson.hpp"
 #include "StarRect.hpp"
@@ -92,5 +91,3 @@ private:
 };
 
 }
-
-#endif

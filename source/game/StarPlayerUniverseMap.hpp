@@ -1,5 +1,4 @@
-#ifndef STAR_PLAYER_BOOKMARKS_HPP
-#define STAR_PLAYER_BOOKMARKS_HPP
+#pragma once
 
 #include "StarJson.hpp"
 #include "StarWarping.hpp"
@@ -116,5 +115,3 @@ bool Bookmark<T>::operator<(Bookmark<T> const& rhs) const {
 }
 
 }
-
-#endif

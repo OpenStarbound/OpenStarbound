@@ -1,5 +1,4 @@
-#ifndef STAR_LOCK_FILE_HPP
-#define STAR_LOCK_FILE_HPP
+#pragma once
 
 #include "StarMaybe.hpp"
 #include "StarString.hpp"
@@ -38,5 +37,3 @@ private:
 };
 
 }
-
-#endif

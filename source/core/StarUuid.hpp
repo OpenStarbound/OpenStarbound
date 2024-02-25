@@ -1,5 +1,4 @@
-#ifndef STAR_UUID_HPP
-#define STAR_UUID_HPP
+#pragma once
 
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"
@@ -40,5 +39,3 @@ DataStream& operator>>(DataStream& ds, Uuid& uuid);
 DataStream& operator<<(DataStream& ds, Uuid const& uuid);
 
 }
-
-#endif

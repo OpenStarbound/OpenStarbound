@@ -1,5 +1,4 @@
-#ifndef STAR_VLQ_ENCODING_HPP
-#define STAR_VLQ_ENCODING_HPP
+#pragma once
 
 #include "StarMemory.hpp"
 
@@ -102,5 +101,3 @@ size_t readVlqI(int64_t& v, InputIterator in, size_t maxBytes = 10) {
 }
 
 }
-
-#endif

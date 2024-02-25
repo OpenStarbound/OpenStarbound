@@ -1,5 +1,4 @@
-#ifndef _STAR_CHAR_CREATION_H_
-#define _STAR_CHAR_CREATION_H_
+#pragma once
 
 #include "StarPane.hpp"
 #include "StarImageProcessing.hpp"
@@ -57,5 +56,3 @@ private:
 };
 
 }
-
-#endif

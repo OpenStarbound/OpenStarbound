@@ -1,5 +1,4 @@
-#ifndef STAR_WORLD_GENERATION_HPP
-#define STAR_WORLD_GENERATION_HPP
+#pragma once
 
 #include "StarDungeonGenerator.hpp"
 #include "StarFallingBlocksAgent.hpp"
@@ -160,5 +159,3 @@ private:
 };
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_STAT_CONTROLLER_HPP
-#define STAR_STAT_CONTROLLER_HPP
+#pragma once
 
 #include "StarObserverStream.hpp"
 #include "StarNetElementSystem.hpp"
@@ -237,5 +236,3 @@ private:
 };
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_ARRAY_H
-#define STAR_ARRAY_H
+#pragma once
 
 #include <array>
 
@@ -250,5 +249,3 @@ size_t hash<Array<DataT, SizeT>>::operator()(Array<DataT, SizeT> const& a) const
 }
 
 }
-
-#endif

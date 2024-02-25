@@ -1,5 +1,4 @@
-#ifndef STAR_SERVER_QUERY_THREAD_HPP
-#define STAR_SERVER_QUERY_THREAD_HPP
+#pragma once
 
 #include "StarThread.hpp"
 #include "StarHostAddress.hpp"
@@ -104,5 +103,3 @@ private:
 };
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_REGISTERED_PANE_MANAGER_HPP
-#define STAR_REGISTERED_PANE_MANAGER_HPP
+#pragma once
 
 #include "StarPaneManager.hpp"
 
@@ -132,5 +131,3 @@ typename RegisteredPaneManager<KeyT>::PaneInfo const& RegisteredPaneManager<KeyT
   throw GuiException(strf("No registered pane with name '{}' found in  RegisteredPaneManager", outputAny(paneId)));
 }
 }
-
-#endif

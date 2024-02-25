@@ -1,5 +1,4 @@
-#ifndef STAR_DAMAGE_MANAGER_HPP
-#define STAR_DAMAGE_MANAGER_HPP
+#pragma once
 
 #include "StarDamage.hpp"
 #include "StarDamageTypes.hpp"
@@ -95,5 +94,3 @@ private:
 };
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_JSON_COMMENTS_HPP
-#define STAR_JSON_COMMENTS_HPP
+#pragma once
 
 #include <list>
 
@@ -131,5 +130,3 @@ std::ostream& operator<<(std::ostream& os, FormattedJson const& json);
 }
 
 template <> struct fmt::formatter<Star::FormattedJson> : ostream_formatter {};
-
-#endif

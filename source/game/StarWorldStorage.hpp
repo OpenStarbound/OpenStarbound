@@ -1,5 +1,4 @@
-#ifndef STAR_WORLD_STORAGE_HPP
-#define STAR_WORLD_STORAGE_HPP
+#pragma once
 
 #include "StarBTreeDatabase.hpp"
 #include "StarVersioningDatabase.hpp"
@@ -304,5 +303,3 @@ private:
 };
 
 }
-
-#endif

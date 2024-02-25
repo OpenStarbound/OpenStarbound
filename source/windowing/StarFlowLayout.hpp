@@ -1,5 +1,4 @@
-#ifndef STAR_FLOW_LAYOUT_HPP
-#define STAR_FLOW_LAYOUT_HPP
+#pragma once
 
 #include "StarLayout.hpp"
 
@@ -21,5 +20,3 @@ private:
 };
 
 }
-
-#endif

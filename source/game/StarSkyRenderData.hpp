@@ -1,5 +1,4 @@
-#ifndef STAR_SKY_RENDER_DATA_HPP
-#define STAR_SKY_RENDER_DATA_HPP
+#pragma once
 
 #include "StarSkyParameters.hpp"
 
@@ -45,5 +44,3 @@ struct SkyRenderData {
 DataStream& operator>>(DataStream& ds, SkyRenderData& skyRenderData);
 DataStream& operator<<(DataStream& ds, SkyRenderData const& skyRenderData);
 }
-
-#endif

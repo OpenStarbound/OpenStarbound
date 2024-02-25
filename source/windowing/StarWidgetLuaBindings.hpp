@@ -1,5 +1,4 @@
-#ifndef STAR_WIDGET_LUA_BINDINGS_HPP
-#define STAR_WIDGET_LUA_BINDINGS_HPP
+#pragma once
 
 #include "StarLua.hpp"
 #include "StarGuiReader.hpp"
@@ -22,5 +21,3 @@ namespace LuaBindings {
 }
 
 }
-
-#endif

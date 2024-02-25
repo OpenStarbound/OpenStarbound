@@ -1,5 +1,4 @@
-#ifndef STAR_WARP_TARGET_ENTITY_HPP
-#define STAR_WARP_TARGET_ENTITY_HPP
+#pragma once
 
 #include "StarWarping.hpp"
 #include "StarTileEntity.hpp"
@@ -16,5 +15,3 @@ public:
 };
 
 }
-
-#endif

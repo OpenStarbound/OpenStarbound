@@ -1,5 +1,4 @@
-#ifndef STAR_UNIVERSE_SERVER_HPP
-#define STAR_UNIVERSE_SERVER_HPP
+#pragma once
 
 #include "StarLockFile.hpp"
 #include "StarIdMap.hpp"
@@ -254,5 +253,3 @@ private:
 };
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_AI_TYPES_HPP
-#define STAR_AI_TYPES_HPP
+#pragma once
 
 #include "StarOrderedSet.hpp"
 #include "StarItemDescriptor.hpp"
@@ -42,5 +41,3 @@ struct AiMission {
 };
 
 }
-
-#endif

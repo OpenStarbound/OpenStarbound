@@ -1,3 +1,5 @@
+#pragma once
+
 #include "StarWarpTargetEntity.hpp"
 #include "StarObject.hpp"
 

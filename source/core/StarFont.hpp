@@ -1,5 +1,4 @@
-#ifndef STAR_FONT_HPP
-#define STAR_FONT_HPP
+#pragma once
 
 #include "StarString.hpp"
 #include "StarImage.hpp"
@@ -47,5 +46,3 @@ private:
 };
 
 }
-
-#endif

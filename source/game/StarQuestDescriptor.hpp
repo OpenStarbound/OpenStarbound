@@ -1,5 +1,4 @@
-#ifndef STAR_QUESTDESCRIPTOR_HPP
-#define STAR_QUESTDESCRIPTOR_HPP
+#pragma once
 
 #include "StarJson.hpp"
 #include "StarPoly.hpp"
@@ -140,5 +139,3 @@ DataStream& operator<<(DataStream& ds, QuestDescriptor const& quest);
 DataStream& operator>>(DataStream& ds, QuestArcDescriptor& questArc);
 DataStream& operator<<(DataStream& ds, QuestArcDescriptor const& questArc);
 }
-
-#endif

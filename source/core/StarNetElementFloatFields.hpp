@@ -1,5 +1,4 @@
-#ifndef STAR_NET_ELEMENT_FLOAT_FIELDS_HPP
-#define STAR_NET_ELEMENT_FLOAT_FIELDS_HPP
+#pragma once
 
 #include <type_traits>
 
@@ -242,5 +241,3 @@ T NetElementFloating<T>::interpolate() const {
 }
 
 }
-
-#endif

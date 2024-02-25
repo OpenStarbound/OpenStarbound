@@ -1,5 +1,4 @@
-#ifndef STAR_FARMABLE_OBJECT_HPP
-#define STAR_FARMABLE_OBJECT_HPP
+#pragma once
 
 #include "StarObject.hpp"
 
@@ -40,5 +39,3 @@ private:
 };
 
 }
-
-#endif

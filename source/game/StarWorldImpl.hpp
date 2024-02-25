@@ -1,5 +1,4 @@
-#ifndef STAR_WORLD_IMPL_HPP
-#define STAR_WORLD_IMPL_HPP
+#pragma once
 
 #include "StarIterator.hpp"
 #include "StarEntityMap.hpp"
@@ -535,5 +534,3 @@ namespace WorldImpl {
 }
 
 }
-
-#endif

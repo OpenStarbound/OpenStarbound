@@ -1,5 +1,5 @@
-#ifndef STAR_VOICE_HPP
-#define STAR_VOICE_HPP
+#pragma once
+
 #include "StarJson.hpp"
 #include "StarBiMap.hpp"
 #include "StarException.hpp"
@@ -222,5 +222,3 @@ private:
 };
   
 }
-
-#endif

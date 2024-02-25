@@ -1,5 +1,4 @@
-#ifndef STAR_PLATFORMER_ASTAR_HPP
-#define STAR_PLATFORMER_ASTAR_HPP
+#pragma once
 
 #include "StarBiMap.hpp"
 #include "StarAStar.hpp"
@@ -76,5 +75,3 @@ namespace PlatformerAStar {
   };
 }
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_GAME_TIMERS_HPP
-#define STAR_GAME_TIMERS_HPP
+#pragma once
 
 #include "StarGameTypes.hpp"
 #include "StarJson.hpp"
@@ -73,5 +72,3 @@ private:
 };
 
 }
-
-#endif

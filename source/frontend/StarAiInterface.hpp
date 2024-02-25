@@ -1,5 +1,4 @@
-#ifndef STAR_AI_INTERFACE_HPP
-#define STAR_AI_INTERFACE_HPP
+#pragma once
 
 #include "StarAiTypes.hpp"
 #include "StarGameTimers.hpp"
@@ -141,5 +140,3 @@ private:
 };
 
 }
-
-#endif

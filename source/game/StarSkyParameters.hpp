@@ -1,5 +1,4 @@
-#ifndef STAR_SKY_PARAMETERS_HPP
-#define STAR_SKY_PARAMETERS_HPP
+#pragma once
 
 #include "StarSkyTypes.hpp"
 #include "StarEither.hpp"
@@ -50,5 +49,3 @@ struct SkyParameters {
 DataStream& operator>>(DataStream& ds, SkyParameters& sky);
 DataStream& operator<<(DataStream& ds, SkyParameters const& sky);
 }
-
-#endif
