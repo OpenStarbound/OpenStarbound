@@ -1,5 +1,5 @@
-#ifndef STAR_STACK_WIDGET_HPP
-#define STAR_STACK_WIDGET_HPP
+#pragma once
+
 #include "StarWidget.hpp"
 #include "StarEither.hpp"
 
@@ -21,5 +21,3 @@ private:
 };
 
 }
-
-#endif

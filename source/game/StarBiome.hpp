@@ -1,5 +1,4 @@
-#ifndef STAR_BIOME_HPP
-#define STAR_BIOME_HPP
+#pragma once
 
 #include "StarBiomePlacement.hpp"
 #include "StarSpawner.hpp"
@@ -58,5 +57,3 @@ struct Biome {
 };
 
 }
-
-#endif

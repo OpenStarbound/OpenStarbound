@@ -1,5 +1,4 @@
-#ifndef STAR_VERSION_OPTION_PARSER_HPP
-#define STAR_VERSION_OPTION_PARSER_HPP
+#pragma once
 
 #include "StarOptionParser.hpp"
 #include "StarVersion.hpp"
@@ -23,5 +22,3 @@ public:
 };
 
 }
-
-#endif

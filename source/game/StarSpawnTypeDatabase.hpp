@@ -1,5 +1,4 @@
-#ifndef STAR_SPAWNTYPE_DATABASE_HPP
-#define STAR_SPAWNTYPE_DATABASE_HPP
+#pragma once
 
 #include "StarJson.hpp"
 #include "StarVector.hpp"
@@ -90,5 +89,3 @@ private:
 };
 
 }
-
-#endif

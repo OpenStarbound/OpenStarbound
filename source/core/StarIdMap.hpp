@@ -1,5 +1,4 @@
-#ifndef STAR_ID_MAP_HPP
-#define STAR_ID_MAP_HPP
+#pragma once
 
 #include "StarMap.hpp"
 #include "StarMathCommon.hpp"
@@ -147,5 +146,3 @@ DataStream& operator<<(DataStream& ds, IdMapWrapper<BaseMap> const& map) {
 }
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_CLIENT_CONTEXT_HPP
-#define STAR_CLIENT_CONTEXT_HPP
+#pragma once
 
 #include "StarNetElementSystem.hpp"
 #include "StarJsonRpc.hpp"
@@ -62,5 +61,3 @@ private:
 };
 
 }
-
-#endif

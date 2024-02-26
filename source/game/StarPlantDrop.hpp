@@ -1,5 +1,4 @@
-#ifndef STAR_PLANT_DROP_HPP
-#define STAR_PLANT_DROP_HPP
+#pragma once
 
 #include "StarNetElementSystem.hpp"
 #include "StarMovementController.hpp"
@@ -80,5 +79,3 @@ private:
 };
 
 }
-
-#endif

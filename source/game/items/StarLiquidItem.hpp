@@ -1,5 +1,4 @@
-#ifndef STAR_LIQUID_ITEM_HPP
-#define STAR_LIQUID_ITEM_HPP
+#pragma once
 
 #include "StarItem.hpp"
 #include "StarFireableItem.hpp"
@@ -44,5 +43,3 @@ private:
 };
 
 }
-
-#endif

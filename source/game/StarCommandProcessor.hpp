@@ -1,5 +1,4 @@
-#ifndef STAR_COMMAND_PROCESSOR_HPP
-#define STAR_COMMAND_PROCESSOR_HPP
+#pragma once
 
 #include "StarGameTypes.hpp"
 #include "StarShellParser.hpp"
@@ -73,5 +72,3 @@ private:
 };
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_STATISTICS_SERVICE_PC_STEAM_HPP
-#define STAR_STATISTICS_SERVICE_PC_STEAM_HPP
+#pragma once
 
 #include "StarPlatformServices_pc.hpp"
 
@@ -37,5 +36,3 @@ private:
 };
 
 }
-
-#endif

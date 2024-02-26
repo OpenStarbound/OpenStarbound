@@ -1,5 +1,4 @@
-#ifndef STAR_BIOME_DATABASE_HPP
-#define STAR_BIOME_DATABASE_HPP
+#pragma once
 
 #include "StarBiome.hpp"
 #include "StarWeatherTypes.hpp"
@@ -46,5 +45,3 @@ private:
 };
 
 }
-
-#endif

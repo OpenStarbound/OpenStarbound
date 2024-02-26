@@ -1,5 +1,4 @@
-#ifndef JSON_TOOL_HPP
-#define JSON_TOOL_HPP
+#pragma once
 
 #include "StarFormattedJson.hpp"
 #include "StarJsonPath.hpp"
@@ -146,5 +145,3 @@ String reprWithLineEnding(FormattedJson const& json);
 StringList findFiles(FindInput const& findArgs);
 
 }
-
-#endif

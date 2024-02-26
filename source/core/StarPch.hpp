@@ -1,5 +1,4 @@
-#ifndef STAR_PCH_HPP
-#define STAR_PCH_HPP
+#pragma once
 
 #include <cstdint>
 #include <cstdlib>
@@ -21,6 +20,3 @@
 #include <iterator>
 #include <type_traits>
 #include <vector>
-
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_DUNGEON_TMX_PART_HPP
-#define STAR_DUNGEON_TMX_PART_HPP
+#pragma once
 
 #include "StarRect.hpp"
 #include "StarDungeonGenerator.hpp"
@@ -211,5 +210,3 @@ namespace Dungeon {
 }
 
 }
-
-#endif

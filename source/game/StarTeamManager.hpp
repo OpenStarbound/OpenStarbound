@@ -1,5 +1,4 @@
-#ifndef STAR_TEAMMANAGER_HPP
-#define STAR_TEAMMANAGER_HPP
+#pragma once
 
 #include "StarDrawable.hpp"
 #include "StarUuid.hpp"
@@ -78,5 +77,3 @@ private:
 };
 
 }
-
-#endif

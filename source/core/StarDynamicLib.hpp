@@ -1,5 +1,4 @@
-#ifndef STAR_PLATFORM_HPP
-#define STAR_PLATFORM_HPP
+#pragma once
 
 #include "StarString.hpp"
 
@@ -34,5 +33,3 @@ inline DynamicLibUPtr DynamicLib::loadLibraryBase(String const& baseName) {
 }
 
 }
-
-#endif

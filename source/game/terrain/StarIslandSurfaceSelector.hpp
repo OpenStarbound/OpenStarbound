@@ -1,5 +1,4 @@
-#ifndef STAR_ISLAND_SURFACE_SELECTOR_HPP
-#define STAR_ISLAND_SURFACE_SELECTOR_HPP
+#pragma once
 
 #include "StarLruCache.hpp"
 #include "StarPerlin.hpp"
@@ -35,5 +34,3 @@ struct IslandSurfaceSelector : TerrainSelector {
 };
 
 }
-
-#endif

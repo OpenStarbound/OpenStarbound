@@ -1,5 +1,4 @@
-#ifndef STAR_LOUNGING_ENTITIES_HPP
-#define STAR_LOUNGING_ENTITIES_HPP
+#pragma once
 
 #include "StarDrawable.hpp"
 #include "StarAnchorableEntity.hpp"
@@ -68,5 +67,3 @@ public:
 };
 
 }
-
-#endif

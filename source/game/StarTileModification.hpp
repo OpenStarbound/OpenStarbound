@@ -1,5 +1,4 @@
-#ifndef STAR_TILE_MODIFICATION_HPP
-#define STAR_TILE_MODIFICATION_HPP
+#pragma once
 
 #include "StarDataStream.hpp"
 #include "StarVariant.hpp"
@@ -48,5 +47,3 @@ typedef MVariant<PlaceMaterial, PlaceMod, PlaceMaterialColor, PlaceLiquid> TileM
 typedef List<pair<Vec2I, TileModification>> TileModificationList;
 
 }
-
-#endif

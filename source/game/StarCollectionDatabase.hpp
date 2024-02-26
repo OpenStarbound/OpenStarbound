@@ -1,5 +1,4 @@
-#ifndef STAR_COLLECTION_DATABASE_HPP
-#define STAR_COLLECTION_DATABASE_HPP
+#pragma once
 
 #include "StarGameTypes.hpp"
 #include "StarJson.hpp"
@@ -59,4 +58,3 @@ private:
 
 
 }
-#endif

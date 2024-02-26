@@ -1,5 +1,4 @@
-#ifndef STAR_VECTOR_HPP
-#define STAR_VECTOR_HPP
+#pragma once
 
 #include "StarArray.hpp"
 #include "StarMathCommon.hpp"
@@ -920,5 +919,3 @@ T operator^(Vector<T, 2> const& v1, Vector<T, 2> const& v2) {
 }
 
 }
-
-#endif

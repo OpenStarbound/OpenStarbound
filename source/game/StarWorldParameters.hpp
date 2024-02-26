@@ -1,5 +1,4 @@
-#ifndef STAR_WORLD_PARAMTERS_HPP
-#define STAR_WORLD_PARAMTERS_HPP
+#pragma once
 
 #include "StarGameTypes.hpp"
 #include "StarSkyTypes.hpp"
@@ -188,5 +187,3 @@ AsteroidsWorldParametersPtr generateAsteroidsWorldParameters(uint64_t seed);
 FloatingDungeonWorldParametersPtr generateFloatingDungeonWorldParameters(String const& dungeonWorldName);
 
 }
-
-#endif

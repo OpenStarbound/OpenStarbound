@@ -1,5 +1,4 @@
-#ifndef STAR_SPECIES_DATABASE_HPP
-#define STAR_SPECIES_DATABASE_HPP
+#pragma once
 
 #include "StarThread.hpp"
 #include "StarItemDescriptor.hpp"
@@ -105,5 +104,3 @@ private:
 };
 
 }
-
-#endif

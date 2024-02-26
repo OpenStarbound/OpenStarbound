@@ -1,5 +1,4 @@
-#ifndef STAR_LUA_ROOT_HPP
-#define STAR_LUA_ROOT_HPP
+#pragma once
 
 #include "StarThread.hpp"
 #include "StarLua.hpp"
@@ -70,5 +69,3 @@ private:
 };
 
 }
-
-#endif

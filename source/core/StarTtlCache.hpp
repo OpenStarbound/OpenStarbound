@@ -1,5 +1,4 @@
-#ifndef STAR_TTL_CACHE_HPP
-#define STAR_TTL_CACHE_HPP
+#pragma once
 
 #include "StarLruCache.hpp"
 #include "StarTime.hpp"
@@ -199,5 +198,3 @@ void TtlCacheBase<LruCacheType>::cleanup(function<bool(Key const&, Value const&)
 }
 
 }
-
-#endif

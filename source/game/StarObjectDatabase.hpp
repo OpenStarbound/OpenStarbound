@@ -1,5 +1,4 @@
-#ifndef STAR_OBJECT_DATABASE_HPP
-#define STAR_OBJECT_DATABASE_HPP
+#pragma once
 
 #include "StarPeriodicFunction.hpp"
 #include "StarTtlCache.hpp"
@@ -220,5 +219,3 @@ private:
 };
 
 }
-
-#endif

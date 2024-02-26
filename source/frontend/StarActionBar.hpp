@@ -1,5 +1,4 @@
-#ifndef STAR_ACTIONBAR_HPP
-#define STAR_ACTIONBAR_HPP
+#pragma once
 
 #include "StarInventoryTypes.hpp"
 #include "StarMainInterfaceTypes.hpp"
@@ -57,5 +56,3 @@ private:
 };
 
 }
-
-#endif

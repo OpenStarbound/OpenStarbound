@@ -1,5 +1,4 @@
-#ifndef STAR_STRING_CONVERSION
-#define STAR_STRING_CONVERSION
+#pragma once
 
 #include <QString>
 
@@ -16,5 +15,3 @@ inline QString toQString(String const& str) {
 }
 
 }
-
-#endif

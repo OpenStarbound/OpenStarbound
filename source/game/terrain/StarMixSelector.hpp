@@ -1,5 +1,4 @@
-#ifndef STAR_MIX_SELECTOR_HPP
-#define STAR_MIX_SELECTOR_HPP
+#pragma once
 
 #include "StarTerrainDatabase.hpp"
 
@@ -18,5 +17,3 @@ struct MixSelector : TerrainSelector {
 };
 
 }
-
-#endif

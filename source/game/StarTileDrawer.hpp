@@ -1,5 +1,4 @@
-#ifndef STAR_TILE_DRAWER_HPP
-#define STAR_TILE_DRAWER_HPP
+#pragma once
 
 #include "StarTtlCache.hpp"
 #include "StarWorldRenderData.hpp"
@@ -73,5 +72,3 @@ void TileDrawer::forEachRenderTile(WorldRenderData const& renderData, RectI cons
 }
 
 }
-
-#endif

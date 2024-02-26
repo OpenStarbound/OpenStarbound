@@ -1,5 +1,4 @@
-#ifndef STAR_STATISTICS_DATABASE_HPP
-#define STAR_STATISTICS_DATABASE_HPP
+#pragma once
 
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
@@ -47,5 +46,3 @@ private:
 };
 
 }
-
-#endif

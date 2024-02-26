@@ -1,5 +1,4 @@
-#ifndef STAR_SECURE_RANDOM_HPP
-#define STAR_SECURE_RANDOM_HPP
+#pragma once
 
 #include "StarByteArray.hpp"
 
@@ -10,5 +9,3 @@ namespace Star {
 ByteArray secureRandomBytes(size_t size);
 
 }
-
-#endif

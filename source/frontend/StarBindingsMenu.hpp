@@ -1,5 +1,4 @@
-#ifndef STAR_BINDINGS_MENU_HPP
-#define STAR_BINDINGS_MENU_HPP
+#pragma once
 
 #include "StarBaseScriptPane.hpp"
 
@@ -20,5 +19,3 @@ private:
 };
 
 }
-
-#endif

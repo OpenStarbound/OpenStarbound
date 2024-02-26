@@ -1,5 +1,4 @@
-#ifndef STAR_CELESTIAL_ITEM_HPP
-#define STAR_CELESTIAL_ITEM_HPP
+#pragma once
 
 #include "StarItem.hpp"
 #include "StarWorld.hpp"
@@ -31,5 +30,3 @@ private:
 };
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_OPTIONS_MENU_HPP
-#define STAR_OPTIONS_MENU_HPP
+#pragma once
 
 #include "StarPane.hpp"
 #include "StarConfiguration.hpp"
@@ -73,5 +72,3 @@ private:
 };
 
 }
-
-#endif

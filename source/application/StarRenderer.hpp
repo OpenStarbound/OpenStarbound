@@ -1,5 +1,4 @@
-#ifndef STAR_RENDERER_HPP
-#define STAR_RENDERER_HPP
+#pragma once
 
 #include "StarVariant.hpp"
 #include "StarImage.hpp"
@@ -166,5 +165,3 @@ public:
 };
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_GUI_READER_HPP
-#define STAR_GUI_READER_HPP
+#pragma once
 
 #include "StarWidgetParsing.hpp"
 
@@ -19,5 +18,3 @@ protected:
 };
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_TECH_CONTROLLER_HPP
-#define STAR_TECH_CONTROLLER_HPP
+#pragma once
 
 #include "StarNetElementSystem.hpp"
 #include "StarNetworkedAnimator.hpp"
@@ -169,5 +168,3 @@ private:
 };
 
 }
-
-#endif

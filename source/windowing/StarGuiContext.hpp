@@ -1,5 +1,4 @@
-#ifndef STAR_GUI_CONTEXT_HPP
-#define STAR_GUI_CONTEXT_HPP
+#pragma once
 
 #include "StarApplicationController.hpp"
 #include "StarTextPainter.hpp"
@@ -147,5 +146,3 @@ private:
 };
 
 }
-
-#endif

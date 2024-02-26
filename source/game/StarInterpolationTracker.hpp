@@ -1,5 +1,4 @@
-#ifndef STAR_WORLD_INTERPOLATION_TRACKER_HPP
-#define STAR_WORLD_INTERPOLATION_TRACKER_HPP
+#pragma once
 
 #include "StarJson.hpp"
 
@@ -38,5 +37,3 @@ private:
 };
 
 }
-
-#endif

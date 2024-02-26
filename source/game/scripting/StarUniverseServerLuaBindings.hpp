@@ -1,5 +1,4 @@
-#ifndef STAR_UNIVERSE_SERVER_LUA_BINDINGS_HPP
-#define STAR_UNIVERSE_SERVER_LUA_BINDINGS_HPP
+#pragma once
 
 #include "StarLua.hpp"
 #include "StarGameTypes.hpp"
@@ -29,5 +28,3 @@ namespace LuaBindings {
   }
 }
 }
-
-#endif

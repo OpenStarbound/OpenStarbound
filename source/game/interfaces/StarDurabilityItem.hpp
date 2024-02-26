@@ -1,5 +1,4 @@
-#ifndef STAR_DURABILITY_ITEM_HPP
-#define STAR_DURABILITY_ITEM_HPP
+#pragma once
 
 #include "StarConfig.hpp"
 
@@ -14,5 +13,3 @@ public:
 };
 
 }
-
-#endif

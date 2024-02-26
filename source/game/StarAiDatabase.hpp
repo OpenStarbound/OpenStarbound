@@ -1,5 +1,4 @@
-#ifndef STAR_AI_DATABASE_HPP
-#define STAR_AI_DATABASE_HPP
+#pragma once
 
 #include "StarAiTypes.hpp"
 
@@ -58,5 +57,3 @@ private:
 };
 
 }
-
-#endif

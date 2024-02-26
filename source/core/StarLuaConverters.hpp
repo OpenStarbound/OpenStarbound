@@ -1,5 +1,4 @@
-#ifndef STAR_LUA_CONVERTERS_HPP
-#define STAR_LUA_CONVERTERS_HPP
+#pragma once
 
 #include "StarRect.hpp"
 #include "StarVector.hpp"
@@ -284,5 +283,3 @@ struct LuaConverter<LuaCallbacks> {
 };
 
 }
-
-#endif

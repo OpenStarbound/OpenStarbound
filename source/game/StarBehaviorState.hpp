@@ -1,5 +1,4 @@
-#ifndef STAR_BEHAVIOR_STATE_HPP
-#define STAR_BEHAVIOR_STATE_HPP
+#pragma once
 
 #include "StarBehaviorDatabase.hpp"
 #include "StarLua.hpp"
@@ -116,4 +115,3 @@ private:
 };
 
 }
-#endif

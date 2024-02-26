@@ -1,5 +1,4 @@
-#ifndef STAR_TEXT_PAINTER_HPP
-#define STAR_TEXT_PAINTER_HPP
+#pragma once
 
 #include "StarFontTextureGroup.hpp"
 #include "StarAnchorTypes.hpp"
@@ -104,5 +103,3 @@ private:
 };
 
 }
-
-#endif

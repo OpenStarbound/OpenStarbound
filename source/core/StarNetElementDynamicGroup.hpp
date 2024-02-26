@@ -1,5 +1,4 @@
-#ifndef STAR_NET_ELEMENT_DYNAMIC_GROUP_HPP
-#define STAR_NET_ELEMENT_DYNAMIC_GROUP_HPP
+#pragma once
 
 #include "StarNetElement.hpp"
 #include "StarIdMap.hpp"
@@ -313,5 +312,3 @@ void NetElementDynamicGroup<Element>::readyElement(ElementPtr const& element) {
 }
 
 }
-
-#endif

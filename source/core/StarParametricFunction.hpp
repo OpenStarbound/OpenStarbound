@@ -1,5 +1,4 @@
-#ifndef STAR_PARAMETRIC_FUNCTION_HPP
-#define STAR_PARAMETRIC_FUNCTION_HPP
+#pragma once
 
 #include "StarInterpolation.hpp"
 
@@ -284,5 +283,3 @@ ValueType ParametricFunction<IndexType, ValueType>::operator()(IndexType index) 
 }
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_RENDERING_HPP
-#define STAR_RENDERING_HPP
+#pragma once
 
 #include "StarMixer.hpp"
 #include "StarEntityRenderingTypes.hpp"
@@ -37,5 +36,3 @@ public:
 };
 
 }
-
-#endif

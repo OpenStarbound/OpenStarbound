@@ -1,5 +1,4 @@
-#ifndef STAR_OUTPUT_PROXY_HPP
-#define STAR_OUTPUT_PROXY_HPP
+#pragma once
 
 #include "StarMemory.hpp"
 
@@ -64,5 +63,3 @@ inline std::ostream& operator<<(std::ostream& os, OutputProxy const& p) {
 template <typename T>
 struct fmt::formatter<Star::OutputAnyDetail::Wrapper<T>> : ostream_formatter {};
 template <> struct fmt::formatter<Star::OutputProxy> : ostream_formatter {};
-
-#endif

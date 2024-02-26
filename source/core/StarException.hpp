@@ -1,5 +1,4 @@
-#ifndef STAR_EXCEPTION_HPP
-#define STAR_EXCEPTION_HPP
+#pragma once
 
 #include "StarMemory.hpp"
 #include "StarOutputProxy.hpp"
@@ -103,5 +102,3 @@ StarException StarException::format(fmt::format_string<Args...> fmt, Args const&
 }
 
 }
-
-#endif

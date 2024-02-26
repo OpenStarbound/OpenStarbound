@@ -1,5 +1,4 @@
-#ifndef STAR_PREVIEWABLE_ITEM
-#define STAR_PREVIEWABLE_ITEM
+#pragma once
 
 #include "StarDrawable.hpp"
 
@@ -15,5 +14,3 @@ public:
 };
 
 }
-
-#endif

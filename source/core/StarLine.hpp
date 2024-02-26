@@ -1,5 +1,4 @@
-#ifndef STAR_LINE_HPP
-#define STAR_LINE_HPP
+#pragma once
 
 #include "StarMatrix3.hpp"
 
@@ -288,5 +287,3 @@ struct hash<Line<T, N>> {
 
 template <typename T, size_t N>
 struct fmt::formatter<Star::Line<T, N>> : ostream_formatter {};
-
-#endif

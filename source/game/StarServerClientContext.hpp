@@ -1,5 +1,4 @@
-#ifndef STAR_CLIENT_CONTEXT_SERVER_HPP
-#define STAR_CLIENT_CONTEXT_SERVER_HPP
+#pragma once
 
 #include "StarNetElementSystem.hpp"
 #include "StarThread.hpp"
@@ -118,5 +117,3 @@ private:
 };
 
 }
-
-#endif

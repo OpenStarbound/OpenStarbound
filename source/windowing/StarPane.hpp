@@ -1,5 +1,4 @@
-#ifndef STAR_PANE_HPP
-#define STAR_PANE_HPP
+#pragma once
 
 #include "StarWidget.hpp"
 #include "StarBiMap.hpp"
@@ -134,5 +133,3 @@ protected:
 };
 
 }
-
-#endif

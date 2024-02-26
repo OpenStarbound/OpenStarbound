@@ -1,5 +1,4 @@
-#ifndef STAR_STAT_EFFECT_DATABASE_HPP
-#define STAR_STAT_EFFECT_DATABASE_HPP
+#pragma once
 
 #include "StarThread.hpp"
 #include "StarStatusTypes.hpp"
@@ -40,5 +39,3 @@ private:
 };
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_WIRE_INTERFACE_HPP
-#define STAR_WIRE_INTERFACE_HPP
+#pragma once
 
 #include "StarPane.hpp"
 #include "StarWiring.hpp"
@@ -44,5 +43,3 @@ private:
 };
 
 }
-
-#endif

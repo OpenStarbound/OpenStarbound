@@ -1,5 +1,4 @@
-#ifndef EDITOR_GUI_HPP
-#define EDITOR_GUI_HPP
+#pragma once
 
 #include <QErrorMessage>
 #include <QLabel>
@@ -52,5 +51,3 @@ private:
 int edit(int argc, char* argv[], JsonPath::PathPtr const& path, Options const& options, List<Input> const& inputs);
 
 }
-
-#endif

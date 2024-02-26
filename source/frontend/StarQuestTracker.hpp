@@ -1,5 +1,4 @@
-#ifndef STAR_QUEST_TRACKER_HPP
-#define STAR_QUEST_TRACKER_HPP
+#pragma once
 
 #include "StarPane.hpp"
 
@@ -56,5 +55,3 @@ private:
 };
 
 }
-
-#endif

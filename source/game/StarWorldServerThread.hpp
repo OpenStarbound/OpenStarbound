@@ -1,5 +1,4 @@
-#ifndef STAR_WORLD_SERVER_THREAD_HPP
-#define STAR_WORLD_SERVER_THREAD_HPP
+#pragma once
 
 #include "StarWorldServer.hpp"
 #include "StarThread.hpp"
@@ -106,5 +105,3 @@ private:
 };
 
 }
-
-#endif

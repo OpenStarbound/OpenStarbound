@@ -1,5 +1,4 @@
-#ifndef STAR_LUA_COMPONENT_HPP
-#define STAR_LUA_COMPONENT_HPP
+#pragma once
 
 #include "StarPeriodic.hpp"
 #include "StarLogging.hpp"
@@ -370,5 +369,3 @@ void LuaMessageHandlingComponent<Base>::contextShutdown() {
   Base::contextShutdown();
 }
 }
-
-#endif

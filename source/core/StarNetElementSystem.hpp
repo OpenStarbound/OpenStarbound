@@ -1,5 +1,4 @@
-#ifndef STAR_NET_ELEMENT_SYSTEM_HPP
-#define STAR_NET_ELEMENT_SYSTEM_HPP
+#pragma once
 
 #include "StarNetElementBasicFields.hpp"
 #include "StarNetElementFloatFields.hpp"
@@ -15,5 +14,3 @@ namespace Star {
 typedef NetElementTop<NetElementCallbackGroup> NetElementTopGroup;
 
 }
-
-#endif

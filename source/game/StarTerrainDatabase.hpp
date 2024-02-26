@@ -1,5 +1,4 @@
-#ifndef STAR_TERRAIN_DATABASE_HPP
-#define STAR_TERRAIN_DATABASE_HPP
+#pragma once
 
 #include "StarJson.hpp"
 #include "StarThread.hpp"
@@ -62,5 +61,3 @@ private:
 };
 
 }
-
-#endif

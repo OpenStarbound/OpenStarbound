@@ -1,5 +1,4 @@
-#ifndef STAR_MAP_HPP
-#define STAR_MAP_HPP
+#pragma once
 
 #include <map>
 #include <unordered_map>
@@ -317,5 +316,3 @@ std::ostream& operator<<(std::ostream& os, MapMixin<BaseMap> const& m) {
 
 template <typename BaseMap>
 struct fmt::formatter<Star::MapMixin<BaseMap>> : ostream_formatter {};
-
-#endif

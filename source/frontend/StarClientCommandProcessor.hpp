@@ -1,5 +1,4 @@
-#ifndef STAR_CLIENT_COMMAND_PROCESSOR_HPP
-#define STAR_CLIENT_COMMAND_PROCESSOR_HPP
+#pragma once
 
 #include "StarShellParser.hpp"
 #include "StarLuaComponents.hpp"
@@ -74,5 +73,3 @@ private:
 };
 
 }
-
-#endif

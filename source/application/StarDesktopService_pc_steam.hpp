@@ -1,5 +1,4 @@
-#ifndef STAR_DESKTOP_SERVICE_PC_STEAM_HPP
-#define STAR_DESKTOP_SERVICE_PC_STEAM_HPP
+#pragma once
 
 #include "StarPlatformServices_pc.hpp"
 
@@ -15,5 +14,3 @@ public:
 };
 
 }
-
-#endif

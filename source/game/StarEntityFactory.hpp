@@ -1,5 +1,4 @@
-#ifndef STAR_ENTITY_FACTORY_HPP
-#define STAR_ENTITY_FACTORY_HPP
+#pragma once
 
 #include "StarVersioningDatabase.hpp"
 #include "StarEntity.hpp"
@@ -51,5 +50,3 @@ private:
 };
 
 }
-
-#endif

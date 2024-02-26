@@ -1,5 +1,4 @@
-#ifndef STAR_QUEST_INTERFACE_HPP
-#define STAR_QUEST_INTERFACE_HPP
+#pragma once
 
 #include "StarQuests.hpp"
 #include "StarPane.hpp"
@@ -91,5 +90,3 @@ public:
 };
 
 }
-
-#endif

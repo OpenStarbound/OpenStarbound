@@ -1,5 +1,4 @@
-#ifndef STAR_INVENTORY_TYPES_HPP
-#define STAR_INVENTORY_TYPES_HPP
+#pragma once
 
 #include "StarJson.hpp"
 #include "StarBiMap.hpp"
@@ -58,5 +57,3 @@ static uint8_t const EssentialItemCount = 4;
 }
 
 template <> struct fmt::formatter<Star::InventorySlot> : ostream_formatter {};
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_DIRECTIVES_HPP
-#define STAR_DIRECTIVES_HPP
+#pragma once
 
 #include "StarImageProcessing.hpp"
 #include "StarHash.hpp"
@@ -122,5 +121,3 @@ struct hash<DirectivesGroup> {
 typedef DirectivesGroup ImageDirectives;
 
 }
-
-#endif

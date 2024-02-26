@@ -1,5 +1,4 @@
-#ifndef STAR_NPC_HPP
-#define STAR_NPC_HPP
+#pragma once
 
 #include "StarNpcDatabase.hpp"
 #include "StarEntity.hpp"
@@ -260,5 +259,3 @@ private:
 };
 
 }
-
-#endif

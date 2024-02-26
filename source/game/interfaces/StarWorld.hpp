@@ -1,5 +1,4 @@
-#ifndef STAR_WORLD_HPP
-#define STAR_WORLD_HPP
+#pragma once
 
 #include "StarTileEntity.hpp"
 #include "StarInteractionTypes.hpp"
@@ -258,5 +257,3 @@ List<shared_ptr<EntityT>> World::atTile(Vec2I const& pos) const {
   return list;
 }
 }
-
-#endif

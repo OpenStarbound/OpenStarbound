@@ -1,5 +1,4 @@
-#ifndef STAR_A_STAR_HPP
-#define STAR_A_STAR_HPP
+#pragma once
 
 #include <queue>
 
@@ -272,5 +271,3 @@ namespace AStar {
 }
 
 }
-
-#endif

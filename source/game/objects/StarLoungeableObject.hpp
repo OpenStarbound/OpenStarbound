@@ -1,5 +1,4 @@
-#ifndef STAR_INTERACTABLE_OBJECT_HPP
-#define STAR_INTERACTABLE_OBJECT_HPP
+#pragma once
 
 #include "StarObject.hpp"
 #include "StarLoungingEntities.hpp"
@@ -36,5 +35,3 @@ private:
 };
 
 }
-
-#endif

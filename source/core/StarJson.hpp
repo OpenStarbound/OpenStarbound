@@ -1,5 +1,4 @@
-#ifndef STAR_JSON_HPP
-#define STAR_JSON_HPP
+#pragma once
 
 #include "StarDataStream.hpp"
 #include "StarVariant.hpp"
@@ -360,5 +359,3 @@ Json jsonMergeQueryDef(String const& key, Json def, Json const& first, T const&.
 
 template <> struct fmt::formatter<Star::Json> : ostream_formatter {};
 template <> struct fmt::formatter<Star::JsonObject> : ostream_formatter {};
-
-#endif

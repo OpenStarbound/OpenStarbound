@@ -1,5 +1,4 @@
-#ifndef STAR_NETWORKED_ANIMATOR_HPP
-#define STAR_NETWORKED_ANIMATOR_HPP
+#pragma once
 
 #include "StarPeriodicFunction.hpp"
 #include "StarAnimatedPartSet.hpp"
@@ -330,5 +329,3 @@ private:
 };
 
 }
-
-#endif

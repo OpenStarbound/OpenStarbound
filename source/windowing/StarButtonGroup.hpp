@@ -1,5 +1,4 @@
-#ifndef STAR_BUTTON_GROUP_HPP
-#define STAR_BUTTON_GROUP_HPP
+#pragma once
 
 #include "StarWidget.hpp"
 
@@ -55,5 +54,3 @@ private:
 
 class ButtonGroupWidget : public ButtonGroup, public Widget {};
 }
-
-#endif

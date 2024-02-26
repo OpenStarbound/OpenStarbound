@@ -1,5 +1,4 @@
-#ifndef STAR_CONTAINER_INTERACTION_HPP
-#define STAR_CONTAINER_INTERACTION_HPP
+#pragma once
 
 #include "StarContainerEntity.hpp"
 
@@ -42,5 +41,3 @@ private:
 };
 
 }
-
-#endif

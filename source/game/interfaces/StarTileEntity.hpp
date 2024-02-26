@@ -1,5 +1,4 @@
-#ifndef STAR_TILE_ENTITY_HPP
-#define STAR_TILE_ENTITY_HPP
+#pragma once
 
 #include "StarEntity.hpp"
 #include "StarTileDamage.hpp"
@@ -96,5 +95,3 @@ inline bool MaterialSpace::operator==(MaterialSpace const& rhs) const {
 }
 
 }
-
-#endif

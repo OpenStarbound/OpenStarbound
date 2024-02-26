@@ -1,5 +1,4 @@
-#ifndef STAR_EMOTE_ENTITY_HPP
-#define STAR_EMOTE_ENTITY_HPP
+#pragma once
 
 #include "StarHumanoid.hpp"
 #include "StarEntity.hpp"
@@ -14,5 +13,3 @@ public:
 };
 
 }
-
-#endif

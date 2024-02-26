@@ -1,5 +1,4 @@
-#ifndef STAR_DUNGEON_GENERATOR_HPP
-#define STAR_DUNGEON_GENERATOR_HPP
+#pragma once
 
 #include "StarImage.hpp"
 #include "StarItemDescriptor.hpp"
@@ -710,5 +709,3 @@ private:
 };
 
 }
-
-#endif

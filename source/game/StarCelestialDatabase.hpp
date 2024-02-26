@@ -1,5 +1,4 @@
-#ifndef STAR_CELESTIAL_DATABASE_HPP
-#define STAR_CELESTIAL_DATABASE_HPP
+#pragma once
 
 #include "StarRect.hpp"
 #include "StarTtlCache.hpp"
@@ -225,5 +224,3 @@ private:
 };
 
 }
-
-#endif

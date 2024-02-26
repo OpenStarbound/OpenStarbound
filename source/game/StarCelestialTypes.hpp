@@ -1,5 +1,4 @@
-#ifndef STAR_CELESTIAL_TYPES_HPP
-#define STAR_CELESTIAL_TYPES_HPP
+#pragma once
 
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
@@ -67,5 +66,3 @@ struct CelestialBaseInformation {
 DataStream& operator>>(DataStream& ds, CelestialBaseInformation& celestialInformation);
 DataStream& operator<<(DataStream& ds, CelestialBaseInformation const& celestialInformation);
 }
-
-#endif

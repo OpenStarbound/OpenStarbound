@@ -1,5 +1,4 @@
-#ifndef STAR_ACTOR_MOVEMENT_COMPONENT_HPP
-#define STAR_ACTOR_MOVEMENT_COMPONENT_HPP
+#pragma once
 
 #include "StarActorMovementController.hpp"
 #include "StarLuaGameConverters.hpp"
@@ -436,5 +435,3 @@ void LuaActorMovementComponent<Base>::clearControls() {
   m_controlPathMove = {};
 }
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_ACTIVE_ITEM_HPP
-#define STAR_ACTIVE_ITEM_HPP
+#pragma once
 
 #include "StarNetElementBasicFields.hpp"
 #include "StarNetElementFloatFields.hpp"
@@ -97,5 +96,3 @@ private:
 };
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_WORLD_CLIENT_HPP
-#define STAR_WORLD_CLIENT_HPP
+#pragma once
 
 #include "StarWorldClientState.hpp"
 #include "StarNetPackets.hpp"
@@ -363,5 +362,3 @@ private:
 };
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_NETWORKED_ANIMATOR_LUA_BINDINGS_HPP
-#define STAR_NETWORKED_ANIMATOR_LUA_BINDINGS_HPP
+#pragma once
 
 #include "StarLua.hpp"
 #include "StarPoly.hpp"
@@ -14,5 +13,3 @@ namespace LuaBindings {
 }
 
 }
-
-#endif

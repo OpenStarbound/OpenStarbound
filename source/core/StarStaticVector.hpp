@@ -1,5 +1,4 @@
-#ifndef STAR_STATIC_VECTOR_HPP
-#define STAR_STATIC_VECTOR_HPP
+#pragma once
 
 #include "StarException.hpp"
 #include "StarFormat.hpp"
@@ -400,5 +399,3 @@ bool StaticVector<Element, MaxSize>::operator<(StaticVector const& other) const 
 }
 
 }
-
-#endif

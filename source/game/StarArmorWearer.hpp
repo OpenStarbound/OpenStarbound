@@ -1,5 +1,4 @@
-#ifndef STAR_ARMOR_WEARER_HPP
-#define STAR_ARMOR_WEARER_HPP
+#pragma once
 
 #include "StarHumanoid.hpp"
 #include "StarNetElementSystem.hpp"
@@ -93,5 +92,3 @@ private:
 };
 
 }
-
-#endif

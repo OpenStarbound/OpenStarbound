@@ -1,5 +1,4 @@
-#ifndef STAR_IMAGE_PROCESSING_HPP
-#define STAR_IMAGE_PROCESSING_HPP
+#pragma once
 
 #include "StarList.hpp"
 #include "StarRect.hpp"
@@ -164,5 +163,3 @@ void processImageOperation(ImageOperation const& operation, Image& input, ImageR
 Image processImageOperations(List<ImageOperation> const& operations, Image input, ImageReferenceCallback refCallback = {});
 
 }
-
-#endif

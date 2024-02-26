@@ -1,5 +1,4 @@
-#ifndef STAR_WIRE_PROCESSOR_HPP
-#define STAR_WIRE_PROCESSOR_HPP
+#pragma once
 
 #include "StarWiring.hpp"
 
@@ -40,5 +39,3 @@ private:
 };
 
 }
-
-#endif

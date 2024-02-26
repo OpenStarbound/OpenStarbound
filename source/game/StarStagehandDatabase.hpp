@@ -1,5 +1,4 @@
-#ifndef STAR_STAGEHAND_DATABASE_HPP
-#define STAR_STAGEHAND_DATABASE_HPP
+#pragma once
 
 #include "StarJson.hpp"
 
@@ -22,5 +21,3 @@ private:
 };
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_AMBIENT_HPP
-#define STAR_AMBIENT_HPP
+#pragma once
 
 #include "StarJson.hpp"
 
@@ -67,5 +66,3 @@ private:
 };
 
 }
-
-#endif

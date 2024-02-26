@@ -1,5 +1,4 @@
-#ifndef STAR_SOCKET_HPP
-#define STAR_SOCKET_HPP
+#pragma once
 
 #include "StarHostAddress.hpp"
 #include "StarThread.hpp"
@@ -94,5 +93,3 @@ protected:
 };
 
 }
-
-#endif

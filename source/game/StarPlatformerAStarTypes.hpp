@@ -1,5 +1,4 @@
-#ifndef STAR_PLATFORMER_ASTAR_TYPES_HPP
-#define STAR_PLATFORMER_ASTAR_TYPES_HPP
+#pragma once
 
 #include "StarVector.hpp"
 #include "StarRect.hpp"
@@ -150,5 +149,3 @@ inline bool operator!=(Parameters const& lhs, Parameters const& rhs) {
 template <> struct fmt::formatter<Star::PlatformerAStar::Node> : ostream_formatter {};
 template <> struct fmt::formatter<Star::PlatformerAStar::Action> : ostream_formatter {};
 template <> struct fmt::formatter<Star::PlatformerAStar::Edge> : ostream_formatter {};
-
-#endif

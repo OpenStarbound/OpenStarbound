@@ -1,5 +1,4 @@
-#ifndef STAR_LABEL_WIDGET_HPP
-#define STAR_LABEL_WIDGET_HPP
+#pragma once
 
 #include "StarWidget.hpp"
 
@@ -51,5 +50,3 @@ private:
 };
 
 }
-
-#endif

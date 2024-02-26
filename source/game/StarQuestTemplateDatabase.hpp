@@ -1,5 +1,4 @@
-#ifndef STAR_QUEST_TEMPLATE_DATABASE_HPP
-#define STAR_QUEST_TEMPLATE_DATABASE_HPP
+#pragma once
 
 #include "StarItemDescriptor.hpp"
 #include "StarThread.hpp"
@@ -79,5 +78,3 @@ private:
 };
 
 }
-
-#endif

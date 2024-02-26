@@ -1,5 +1,4 @@
-#ifndef STAR_LEXICAL_CAST_HPP
-#define STAR_LEXICAL_CAST_HPP
+#pragma once
 
 #include "StarFormat.hpp"
 #include "StarString.hpp"
@@ -43,5 +42,3 @@ Type lexicalCast(StringView s, std::ios_base::fmtflags flags = std::ios_base::bo
 }
 
 }
-
-#endif

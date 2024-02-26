@@ -1,5 +1,4 @@
-#ifndef STAR_PARALLAX_HPP
-#define STAR_PARALLAX_HPP
+#pragma once
 
 #include "StarMaybe.hpp"
 #include "StarColor.hpp"
@@ -71,5 +70,3 @@ private:
 };
 
 }
-
-#endif

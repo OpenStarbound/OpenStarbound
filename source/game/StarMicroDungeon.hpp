@@ -1,5 +1,4 @@
-#ifndef STAR_MICRO_DUNGEON_HPP
-#define STAR_MICRO_DUNGEON_HPP
+#pragma once
 
 #include "StarRect.hpp"
 #include "StarString.hpp"
@@ -27,5 +26,3 @@ private:
 };
 
 }
-
-#endif

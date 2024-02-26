@@ -1,5 +1,4 @@
-#ifndef STAR_ALGORITHM_HPP
-#define STAR_ALGORITHM_HPP
+#pragma once
 
 #include "StarException.hpp"
 
@@ -654,5 +653,3 @@ template <typename T>
 struct FunctionTraits<T const&&> : public FunctionTraits<T> {};
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_WEATHER_HPP
-#define STAR_WEATHER_HPP
+#pragma once
 
 #include "StarNetElementSystem.hpp"
 #include "StarWeatherTypes.hpp"
@@ -125,5 +124,3 @@ private:
 };
 
 }
-
-#endif

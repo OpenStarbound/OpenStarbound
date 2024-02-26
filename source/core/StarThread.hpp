@@ -1,5 +1,4 @@
-#ifndef STAR_THREAD_HPP
-#define STAR_THREAD_HPP
+#pragma once
 
 #include "StarException.hpp"
 #include "StarString.hpp"
@@ -421,5 +420,3 @@ inline bool SpinLock::tryLock() {
 }
 
 }
-
-#endif

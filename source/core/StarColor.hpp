@@ -1,5 +1,4 @@
-#ifndef STAR_COLOR_HPP
-#define STAR_COLOR_HPP
+#pragma once
 
 #include "StarStringView.hpp"
 #include "StarVector.hpp"
@@ -171,5 +170,3 @@ inline Vec4B Color::v4fToByte(Vec4F const& f, bool doClamp) {
 }
 
 template <> struct fmt::formatter<Star::Color> : ostream_formatter {};
-
-#endif

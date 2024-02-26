@@ -1,5 +1,4 @@
-#ifndef STAR_RANDOM_POINT_HPP
-#define STAR_RANDOM_POINT_HPP
+#pragma once
 
 #include "StarRandom.hpp"
 #include "StarPoly.hpp"
@@ -76,5 +75,3 @@ auto Random2dPointGenerator<PointData, DataType>::generate(Poly const& area, Poi
 }
 
 }
-
-#endif

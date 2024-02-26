@@ -1,5 +1,4 @@
-#ifndef STAR_STAT_CONTROLLER_LUA_BINDINGS_HPP
-#define STAR_STAT_CONTROLLER_LUA_BINDINGS_HPP
+#pragma once
 
 #include "StarLua.hpp"
 #include "StarEntity.hpp"
@@ -55,5 +54,3 @@ namespace LuaBindings {
   }
 }
 }
-
-#endif

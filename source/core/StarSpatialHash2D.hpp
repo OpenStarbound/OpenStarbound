@@ -1,5 +1,4 @@
-#ifndef STAR_SPATIAL_HASH_2D_HPP
-#define STAR_SPATIAL_HASH_2D_HPP
+#pragma once
 
 #include "StarRect.hpp"
 #include "StarMap.hpp"
@@ -333,5 +332,3 @@ void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::updateSpati
 }
 
 }
-
-#endif

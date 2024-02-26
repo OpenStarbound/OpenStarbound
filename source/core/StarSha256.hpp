@@ -1,5 +1,4 @@
-#ifndef STAR_SHA_256_HPP
-#define STAR_SHA_256_HPP
+#pragma once
 
 #include "StarString.hpp"
 #include "StarByteArray.hpp"
@@ -40,5 +39,3 @@ ByteArray sha256(ByteArray const& in);
 ByteArray sha256(String const& in);
 
 }
-
-#endif

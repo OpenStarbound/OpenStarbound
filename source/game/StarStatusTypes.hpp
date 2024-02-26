@@ -1,5 +1,4 @@
-#ifndef STAR_STATUS_TYPES_HPP
-#define STAR_STATUS_TYPES_HPP
+#pragma once
 
 #include "StarJson.hpp"
 #include "StarStrongTypedef.hpp"
@@ -88,5 +87,3 @@ EphemeralStatusEffect jsonToEphemeralStatusEffect(Json const& config);
 Json jsonFromEphemeralStatusEffect(EphemeralStatusEffect const& effect);
 
 }
-
-#endif

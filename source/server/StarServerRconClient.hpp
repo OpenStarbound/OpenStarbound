@@ -1,5 +1,4 @@
-#ifndef STAR_SERVER_RCON_CLIENT_HPP
-#define STAR_SERVER_RCON_CLIENT_HPP
+#pragma once
 
 #include "StarThread.hpp"
 #include "StarTcp.hpp"
@@ -47,5 +46,3 @@ private:
 };
 typedef shared_ptr<ServerRconClient> ServerRconClientPtr;
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_RPC_THREAD_PROMISE_HPP
-#define STAR_RPC_THREAD_PROMISE_HPP
+#pragma once
 
 #include "StarEither.hpp"
 #include "StarString.hpp"
@@ -160,5 +159,3 @@ Maybe<Error> RpcThreadPromise<Result, Error>::error() const {
 }
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_BTREE_DATABASE_HPP
-#define STAR_BTREE_DATABASE_HPP
+#pragma once
 
 #include "StarSet.hpp"
 #include "StarBTree.hpp"
@@ -340,5 +339,3 @@ public:
 };
 
 }
-
-#endif

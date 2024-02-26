@@ -1,5 +1,4 @@
-#ifndef STAR_DESKTOP_SERVICE_HPP
-#define STAR_DESKTOP_SERVICE_HPP
+#pragma once
 
 namespace Star {
 
@@ -13,5 +12,3 @@ public:
 };
 
 }
-
-#endif

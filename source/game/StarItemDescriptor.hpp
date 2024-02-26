@@ -1,5 +1,4 @@
-#ifndef STAR_ITEM_DESCRIPTOR_HPP
-#define STAR_ITEM_DESCRIPTOR_HPP
+#pragma once
 
 #include "StarJson.hpp"
 #include "StarDataStream.hpp"
@@ -80,5 +79,3 @@ struct hash<ItemDescriptor> {
 }
 
 template <> struct fmt::formatter<Star::ItemDescriptor> : ostream_formatter {};
-
-#endif

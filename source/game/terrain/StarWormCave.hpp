@@ -1,5 +1,4 @@
-#ifndef STAR_WORM_CAVE_HPP
-#define STAR_WORM_CAVE_HPP
+#pragma once
 
 #include "StarTerrainDatabase.hpp"
 #include "StarLruCache.hpp"
@@ -38,5 +37,3 @@ private:
 };
 
 }
-
-#endif

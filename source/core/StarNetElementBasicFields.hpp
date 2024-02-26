@@ -1,5 +1,4 @@
-#ifndef STAR_NET_STEP_STATES_HPP
-#define STAR_NET_STEP_STATES_HPP
+#pragma once
 
 #include <type_traits>
 
@@ -327,5 +326,3 @@ void NetElementData<T>::writeData(DataStream& ds, T const& v) const {
 }
 
 }
-
-#endif

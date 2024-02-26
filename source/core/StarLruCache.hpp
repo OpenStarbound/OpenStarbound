@@ -1,5 +1,4 @@
-#ifndef STAR_LRU_CACHE_HPP
-#define STAR_LRU_CACHE_HPP
+#pragma once
 
 #include "StarOrderedMap.hpp"
 #include "StarBlockAllocator.hpp"
@@ -145,5 +144,3 @@ void LruCacheBase<OrderedMapType>::clear() {
 }
 
 }
-
-#endif

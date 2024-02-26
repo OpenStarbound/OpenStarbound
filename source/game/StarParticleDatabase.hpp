@@ -1,5 +1,4 @@
-#ifndef STAR_PARTICLE_DATABASE_HPP
-#define STAR_PARTICLE_DATABASE_HPP
+#pragma once
 
 #include "StarJson.hpp"
 #include "StarThread.hpp"
@@ -43,5 +42,3 @@ private:
 };
 
 }
-
-#endif

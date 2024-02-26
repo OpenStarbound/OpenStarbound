@@ -1,5 +1,4 @@
-#ifndef STAR_XXHASH_HPP
-#define STAR_XXHASH_HPP
+#pragma once
 
 #include "StarString.hpp"
 #include "StarByteArray.hpp"
@@ -204,5 +203,3 @@ inline uint64_t xxHash3(String const& in) {
   return xxHash3(in.utf8Ptr(), in.utf8Size());
 }
 }
-
-#endif

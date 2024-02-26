@@ -1,5 +1,4 @@
-#ifndef STAR_DAMAGE_BAR_ENTITY_HPP
-#define STAR_DAMAGE_BAR_ENTITY_HPP
+#pragma once
 
 #include "StarPortraitEntity.hpp"
 
@@ -23,5 +22,3 @@ public:
 };
 
 }
-
-#endif

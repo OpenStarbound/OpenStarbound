@@ -1,5 +1,4 @@
-#ifndef STAR_TILE_DAMAGE_HPP
-#define STAR_TILE_DAMAGE_HPP
+#pragma once
 
 #include "StarJson.hpp"
 #include "StarVector.hpp"
@@ -152,5 +151,3 @@ inline TileDamageType TileDamageStatus::damageType() const {
 }
 
 }
-
-#endif

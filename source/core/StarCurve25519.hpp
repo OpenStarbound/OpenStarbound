@@ -1,5 +1,5 @@
-#ifndef STAR_CURVE_25519_HPP
-#define STAR_CURVE_25519_HPP
+#pragma once
+
 #include "StarEncode.hpp"
 #include "StarByteArray.hpp"
 #include "StarArray.hpp"
@@ -21,5 +21,3 @@ Signature sign(void* data, size_t len);
 bool verify(uint8_t const* signature, uint8_t const* publicKey, void* data, size_t len);
 
 }
-
-#endif

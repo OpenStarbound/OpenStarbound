@@ -1,5 +1,4 @@
-#ifndef STAR_PROJECTILE_HPP
-#define STAR_PROJECTILE_HPP
+#pragma once
 
 #include "StarOrderedMap.hpp"
 #include "StarEntity.hpp"
@@ -189,5 +188,3 @@ private:
 };
 
 }
-
-#endif

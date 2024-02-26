@@ -1,5 +1,4 @@
-#ifndef STAR_DAMAGE_TYPES_HPP
-#define STAR_DAMAGE_TYPES_HPP
+#pragma once
 
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
@@ -57,5 +56,3 @@ DataStream& operator>>(DataStream& ds, EntityDamageTeam& team);
 
 TeamNumber soloPvpTeam(ConnectionId clientId);
 }
-
-#endif

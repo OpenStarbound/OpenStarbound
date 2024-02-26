@@ -1,5 +1,4 @@
-#ifndef STAR_CONFIG_LUA_BINDINGS_HPP
-#define STAR_CONFIG_LUA_BINDINGS_HPP
+#pragma once
 
 #include "StarLua.hpp"
 
@@ -9,5 +8,3 @@ namespace LuaBindings {
   LuaCallbacks makeConfigCallbacks(function<Json(String const&, Json const&)> getParameter);
 }
 }
-
-#endif

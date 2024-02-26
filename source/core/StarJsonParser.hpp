@@ -1,5 +1,4 @@
-#ifndef STAR_JSON_PARSER_HPP
-#define STAR_JSON_PARSER_HPP
+#pragma once
 
 #include <vector>
 
@@ -730,5 +729,3 @@ private:
 };
 
 }
-
-#endif

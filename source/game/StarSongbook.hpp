@@ -1,5 +1,4 @@
-#ifndef STAR_SONGBOOK_HPP
-#define STAR_SONGBOOK_HPP
+#pragma once
 
 #include "StarThread.hpp"
 #include "StarJson.hpp"
@@ -111,5 +110,3 @@ private:
 };
 
 }
-
-#endif

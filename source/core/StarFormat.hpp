@@ -1,5 +1,4 @@
-#ifndef STAR_FORMAT_HPP
-#define STAR_FORMAT_HPP
+#pragma once
 
 #include "StarMemory.hpp"
 #include "StarException.hpp"
@@ -46,5 +45,3 @@ inline std::string toString(Type const& t) {
 }
 
 }
-
-#endif

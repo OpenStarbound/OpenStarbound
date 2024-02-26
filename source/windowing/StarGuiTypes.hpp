@@ -1,5 +1,4 @@
-#ifndef STAR_WIDGET_UTILITIES_HPP
-#define STAR_WIDGET_UTILITIES_HPP
+#pragma once
 
 #include "StarString.hpp"
 #include "StarVector.hpp"
@@ -47,5 +46,3 @@ T& directionalValueFromVector(GuiDirection direction, Vector<T, 2> const& vec) {
 }
 
 }
-
-#endif

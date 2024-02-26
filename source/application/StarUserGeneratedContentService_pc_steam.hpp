@@ -1,5 +1,4 @@
-#ifndef STAR_USER_GENERATED_CONTENT_SERVICE_PC_STEAM_HPP
-#define STAR_USER_GENERATED_CONTENT_SERVICE_PC_STEAM_HPP
+#pragma once
 
 #include "StarPlatformServices_pc.hpp"
 
@@ -22,5 +21,3 @@ private:
 };
 
 }
-
-#endif

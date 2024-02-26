@@ -1,5 +1,4 @@
-#ifndef STAR_ROOT_HPP
-#define STAR_ROOT_HPP
+#pragma once
 
 #include "StarJson.hpp"
 #include "StarLogging.hpp"
@@ -328,5 +327,3 @@ private:
 };
 
 }
-
-#endif

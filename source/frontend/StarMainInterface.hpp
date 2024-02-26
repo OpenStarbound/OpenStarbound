@@ -1,5 +1,4 @@
-#ifndef STAR_MAIN_INTERFACE_HPP
-#define STAR_MAIN_INTERFACE_HPP
+#pragma once
 
 #include "StarInventory.hpp"
 #include "StarInteractionTypes.hpp"
@@ -229,5 +228,3 @@ private:
 };
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_STRING_VIEW_HPP
-#define STAR_STRING_VIEW_HPP
+#pragma once
 
 #include "StarString.hpp"
 
@@ -120,5 +119,3 @@ private:
 template <> struct fmt::formatter<Star::StringView> : formatter<std::string_view> {
   fmt::appender format(Star::StringView const& s, format_context& ctx) const;
 };
-
-#endif

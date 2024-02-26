@@ -1,5 +1,4 @@
-#ifndef STAR_FONT_TEXTURE_GROUP_HPP
-#define STAR_FONT_TEXTURE_GROUP_HPP
+#pragma once
 
 #include "StarColor.hpp"
 #include "StarFont.hpp"
@@ -49,5 +48,3 @@ private:
 };
 
 }
-
-#endif

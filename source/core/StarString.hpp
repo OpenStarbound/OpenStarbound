@@ -1,5 +1,4 @@
-#ifndef STAR_STRING_HPP
-#define STAR_STRING_HPP
+#pragma once
 
 #include "StarUnicode.hpp"
 #include "StarHash.hpp"
@@ -522,5 +521,3 @@ StringList StringList::sorted(Comparator&& comparator) const {
 template <> struct fmt::formatter<Star::String> : formatter<std::string> {
   fmt::appender format(Star::String const& s, format_context& ctx) const;
 };
-
-#endif

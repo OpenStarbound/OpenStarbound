@@ -1,5 +1,4 @@
-#ifndef STAR_JOIN_REQUEST_DIALOG_HPP
-#define STAR_JOIN_REQUEST_DIALOG_HPP
+#pragma once
 
 #include "StarPane.hpp"
 #include "StarRpcPromise.hpp"
@@ -26,5 +25,3 @@ private:
 };
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_ITEM_RECIPE_HPP
-#define STAR_ITEM_RECIPE_HPP
+#pragma once
 
 #include "StarItemDescriptor.hpp"
 #include "StarGameTypes.hpp"
@@ -36,5 +35,3 @@ std::ostream& operator<<(std::ostream& os, ItemRecipe const& recipe);
 }
 
 template <> struct fmt::formatter<Star::ItemRecipe> : ostream_formatter {};
-
-#endif

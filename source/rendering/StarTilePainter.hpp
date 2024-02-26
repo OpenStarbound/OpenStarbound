@@ -1,5 +1,4 @@
-#ifndef STAR_NEW_TILE_PAINTER_HPP
-#define STAR_NEW_TILE_PAINTER_HPP
+#pragma once
 
 #include "StarTtlCache.hpp"
 #include "StarWorldRenderData.hpp"
@@ -106,5 +105,3 @@ private:
 };
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_STATUS_EFFECT_ENTITY_HPP
-#define STAR_STATUS_EFFECT_ENTITY_HPP
+#pragma once
 
 #include "StarEntity.hpp"
 
@@ -14,5 +13,3 @@ public:
 };
 
 }
-
-#endif

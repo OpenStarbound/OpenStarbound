@@ -1,5 +1,4 @@
-#ifndef STAR_QUESTS_HPP
-#define STAR_QUESTS_HPP
+#pragma once
 
 #include "StarSet.hpp"
 #include "StarJsonRpc.hpp"
@@ -195,5 +194,3 @@ private:
 QuestPtr createPreviewQuest(
     String const& templateId, String const& position, String const& questGiverSpecies, Player* player);
 }
-
-#endif

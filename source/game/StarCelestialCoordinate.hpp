@@ -1,5 +1,4 @@
-#ifndef STAR_CELESTIAL_COORDINATE_HPP
-#define STAR_CELESTIAL_COORDINATE_HPP
+#pragma once
 
 #include "StarJson.hpp"
 #include "StarVector.hpp"
@@ -94,5 +93,3 @@ private:
 }
 
 template <> struct fmt::formatter<Star::CelestialCoordinate> : ostream_formatter {};
-
-#endif

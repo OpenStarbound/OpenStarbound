@@ -1,5 +1,4 @@
-#ifndef STAR_CHAT_TYPES_HPP
-#define STAR_CHAT_TYPES_HPP
+#pragma once
 
 #include "StarDataStream.hpp"
 #include "StarGameTypes.hpp"
@@ -58,5 +57,3 @@ DataStream& operator>>(DataStream& ds, ChatReceivedMessage& receivedMessage);
 DataStream& operator<<(DataStream& ds, ChatReceivedMessage const& receivedMessage);
 
 };
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_RECT_HPP
-#define STAR_RECT_HPP
+#pragma once
 
 #include "StarLine.hpp"
 #include "StarList.hpp"
@@ -1075,5 +1074,3 @@ auto Box<T, N>::nearestCoordTo(Coord const& c) const -> Coord {
 
 template <typename T, size_t N>
 struct fmt::formatter<Star::Box<T, N>> : ostream_formatter {};
-
-#endif

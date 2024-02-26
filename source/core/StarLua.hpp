@@ -1,5 +1,4 @@
-#ifndef STAR_LUA_HPP
-#define STAR_LUA_HPP
+#pragma once
 
 #include <typeindex>
 #include <type_traits>
@@ -2224,5 +2223,3 @@ size_t LuaEngine::pushArguments(lua_State* state, Args const&... args) {
 }
 
 template <> struct fmt::formatter<Star::LuaValue> : ostream_formatter {};
-
-#endif

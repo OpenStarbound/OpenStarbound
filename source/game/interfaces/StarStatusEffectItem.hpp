@@ -1,5 +1,4 @@
-#ifndef STAR_STATUS_EFFECT_ITEM_HPP
-#define STAR_STATUS_EFFECT_ITEM_HPP
+#pragma once
 
 #include "StarStatusTypes.hpp"
 
@@ -14,5 +13,3 @@ public:
 };
 
 }
-
-#endif

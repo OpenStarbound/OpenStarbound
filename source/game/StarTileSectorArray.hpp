@@ -1,5 +1,4 @@
-#ifndef STAR_TILE_SECTOR_ARRAY_HPP
-#define STAR_TILE_SECTOR_ARRAY_HPP
+#pragma once
 
 #include "StarRect.hpp"
 #include "StarSectorArray2D.hpp"
@@ -485,5 +484,3 @@ RectI TileSectorArray<Tile, SectorSize>::yClampRect(RectI const& r) const {
 }
 
 }
-
-#endif

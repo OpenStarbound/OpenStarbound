@@ -1,5 +1,4 @@
-#ifndef STAR_MAIN_APPLICATION_HPP
-#define STAR_MAIN_APPLICATION_HPP
+#pragma once
 
 #include "StarApplication.hpp"
 #include "StarApplicationController.hpp"
@@ -28,7 +27,5 @@ namespace Star {
   int main(int argc, char** argv) {                                                                               \
     return Star::runMainApplication(Star::make_unique<ApplicationClass>(), Star::StringList(argc, argv)); \
   }
-
-#endif
 
 #endif

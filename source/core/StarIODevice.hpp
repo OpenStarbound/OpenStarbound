@@ -1,5 +1,4 @@
-#ifndef STAR_IO_DEVICE_H
-#define STAR_IO_DEVICE_H
+#pragma once
 
 #include "StarByteArray.hpp"
 #include "StarString.hpp"
@@ -129,5 +128,3 @@ inline bool IODevice::isWritable() const {
 }
 
 }
-
-#endif

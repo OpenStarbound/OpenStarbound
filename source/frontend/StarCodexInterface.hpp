@@ -1,5 +1,4 @@
-#ifndef STAR_CODEX_INTERFACE_HPP
-#define STAR_CODEX_INTERFACE_HPP
+#pragma once
 
 #include "StarPane.hpp"
 #include "StarPlayerCodexes.hpp"
@@ -63,5 +62,3 @@ private:
 };
 
 }
-
-#endif

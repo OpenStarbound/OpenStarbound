@@ -1,5 +1,4 @@
-#ifndef STAR_EFFECT_SOURCE_DATABASE_HPP
-#define STAR_EFFECT_SOURCE_DATABASE_HPP
+#pragma once
 
 #include "StarVector.hpp"
 #include "StarJson.hpp"
@@ -70,5 +69,3 @@ List<Particle> particlesFromDefinition(Json const& config, Vec2F const& position
 List<AudioInstancePtr> soundsFromDefinition(Json const& config, Vec2F const& position = Vec2F());
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_TCP_HPP
-#define STAR_TCP_HPP
+#pragma once
 
 #include "StarIODevice.hpp"
 #include "StarSocket.hpp"
@@ -71,5 +70,3 @@ private:
 };
 
 }
-
-#endif

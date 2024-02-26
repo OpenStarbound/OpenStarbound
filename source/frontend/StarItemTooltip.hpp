@@ -1,5 +1,4 @@
-#ifndef STAR_ITEM_TOOLTIP_HPP
-#define STAR_ITEM_TOOLTIP_HPP
+#pragma once
 
 #include "StarString.hpp"
 #include "StarStatusTypes.hpp"
@@ -24,5 +23,3 @@ namespace ItemTooltipBuilder {
 };
 
 }
-
-#endif

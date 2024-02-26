@@ -1,5 +1,4 @@
-#ifndef STAR_P2P_NETWORKING_SERVICE_HPP
-#define STAR_P2P_NETWORKING_SERVICE_HPP
+#pragma once
 
 #include "StarEither.hpp"
 #include "StarHostAddress.hpp"
@@ -61,5 +60,3 @@ public:
 };
 
 };
-
-#endif

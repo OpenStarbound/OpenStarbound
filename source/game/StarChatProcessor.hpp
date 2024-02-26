@@ -1,5 +1,4 @@
-#ifndef STAR_CHAT_PROCESSOR_HPP
-#define STAR_CHAT_PROCESSOR_HPP
+#pragma once
 
 #include "StarChatTypes.hpp"
 #include "StarSet.hpp"
@@ -82,5 +81,3 @@ private:
 };
 
 }
-
-#endif

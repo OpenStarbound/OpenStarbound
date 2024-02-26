@@ -1,5 +1,4 @@
-#ifndef STAR_ANIMATION_HPP
-#define STAR_ANIMATION_HPP
+#pragma once
 
 #include "StarDrawable.hpp"
 #include "StarBiMap.hpp"
@@ -55,5 +54,3 @@ private:
 };
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef STAR_ITEMSLOT_WIDGET_HPP
-#define STAR_ITEMSLOT_WIDGET_HPP
+#pragma once
 
 #include "StarWidget.hpp"
 #include "StarProgressWidget.hpp"
@@ -73,5 +72,3 @@ private:
 };
 
 }
-
-#endif

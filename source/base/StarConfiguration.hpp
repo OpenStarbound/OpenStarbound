@@ -1,5 +1,4 @@
-#ifndef STAR_CONFIGURATION_HPP
-#define STAR_CONFIGURATION_HPP
+#pragma once
 
 #include "StarJson.hpp"
 #include "StarThread.hpp"
@@ -36,5 +35,3 @@ private:
 };
 
 }
-
-#endif

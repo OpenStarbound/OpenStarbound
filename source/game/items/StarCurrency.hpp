@@ -1,5 +1,4 @@
-#ifndef STAR_CURRENCY_HPP
-#define STAR_CURRENCY_HPP
+#pragma once
 
 #include "StarItem.hpp"
 
@@ -29,5 +28,3 @@ private:
 };
 
 }
-
-#endif

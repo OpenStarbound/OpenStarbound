@@ -1,5 +1,4 @@
-#ifndef STAR_EFFECT_EMITTER_HPP
-#define STAR_EFFECT_EMITTER_HPP
+#pragma once
 
 #include "StarNetElementSystem.hpp"
 #include "StarEffectSourceDatabase.hpp"
@@ -40,5 +39,3 @@ private:
 };
 
 }
-
-#endif

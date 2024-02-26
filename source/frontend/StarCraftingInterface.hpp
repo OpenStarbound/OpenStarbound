@@ -1,5 +1,4 @@
-#ifndef STAR_CRAFTING_INTERFACE_HPP
-#define STAR_CRAFTING_INTERFACE_HPP
+#pragma once
 
 #include "StarWorldPainter.hpp"
 #include "StarWorldClient.hpp"
@@ -81,5 +80,3 @@ private:
 };
 
 }
-
-#endif

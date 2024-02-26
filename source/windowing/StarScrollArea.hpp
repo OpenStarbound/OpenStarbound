@@ -1,5 +1,4 @@
-#ifndef _STAR_SCROLL_AREA_HPP_
-#define _STAR_SCROLL_AREA_HPP_
+#pragma once
 
 #include "StarWidget.hpp"
 #include "StarButtonWidget.hpp"
@@ -128,5 +127,3 @@ private:
 };
 typedef shared_ptr<ScrollArea> ScrollAreaPtr;
 }
-
-#endif

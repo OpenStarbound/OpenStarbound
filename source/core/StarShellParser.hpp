@@ -1,5 +1,4 @@
-#ifndef STAR_SHELL_PARSER_HPP
-#define STAR_SHELL_PARSER_HPP
+#pragma once
 
 #include "StarString.hpp"
 #include "StarEncode.hpp"
@@ -62,5 +61,3 @@ private:
 };
 
 }
-
-#endif

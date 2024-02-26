@@ -1,5 +1,4 @@
-#ifndef STAR_SPAWNER_HPP
-#define STAR_SPAWNER_HPP
+#pragma once
 
 #include "StarPeriodic.hpp"
 #include "StarIdMap.hpp"
@@ -115,5 +114,3 @@ private:
 };
 
 }
-
-#endif

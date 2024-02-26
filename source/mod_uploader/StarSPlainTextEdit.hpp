@@ -1,5 +1,4 @@
-#ifndef STAR_SPLAIN_TEXT_EDIT_HPP
-#define STAR_SPLAIN_TEXT_EDIT_HPP
+#pragma once
 
 #include <QPlainTextEdit>
 
@@ -24,5 +23,3 @@ private:
 };
 
 }
-
-#endif
