@@ -819,7 +819,7 @@ private:
 
       auto newImage = std::make_shared<Image>(processImageOperations(operations, *image));
       // Fix fully transparent pixels inverting the underlying display pixel on Windows (allowing this could be made configurable per cursor later!)
-      newImage->forEachPixel([](unsigned x, unsigned y, Vec4B& pixel) { if (!pixel[3]) pixel[0] = pixel[1] = pixel[2] = 0; });
+      newImage->forEachPixel([](unsigned /*x*/, unsigned /*y*/, Vec4B& pixel) { if (!pixel[3]) pixel[0] = pixel[1] = pixel[2] = 0; });
       entry->image = std::move(newImage);
       
 

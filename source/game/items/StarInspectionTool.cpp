@@ -31,7 +31,7 @@ ItemPtr InspectionTool::clone() const {
   return make_shared<InspectionTool>(*this);
 }
 
-void InspectionTool::update(float dt, FireMode fireMode, bool, HashSet<MoveControlType> const&) {
+void InspectionTool::update(float, FireMode fireMode, bool, HashSet<MoveControlType> const&) {
   m_currentAngle = world()->geometry().diff(owner()->aimPosition(), owner()->position()).angle();
   m_currentPosition = owner()->position() + owner()->handPosition(hand(), m_lightPosition - m_handPosition);
   SpatialLogger::logPoint("world", m_currentPosition, {0, 0, 255, 255});

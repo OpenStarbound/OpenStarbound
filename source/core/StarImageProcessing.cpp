@@ -182,7 +182,7 @@ ImageOperation imageOperationFromString(StringView string) {
               c[0] |= (c[0] << 4);
               c[1] |= (c[1] << 4);
               c[2] |= (c[2] << 4);
-              c[3] = 255;
+              c[3] = static_cast<char>(255);
             }
             else if (hexLen == 4) {
               nibbleDecode(hexPtr, 4, c, 4);
@@ -193,7 +193,7 @@ ImageOperation imageOperationFromString(StringView string) {
             }
             else if (hexLen == 6) {
               hexDecode(hexPtr, 6, c, 4);
-              c[3] = 255;
+              c[3] = static_cast<char>(255);
             }
             else if (hexLen == 8) {
               hexDecode(hexPtr, 8, c, 4);

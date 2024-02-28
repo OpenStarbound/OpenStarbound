@@ -624,9 +624,7 @@ void MovementController::tickMaster(float dt) {
   
   Vec2F newVelocity = relativeVelocity + m_surfaceVelocity;
 
-  Vec2F pos = position();
   PolyF body = collisionBody();
-  RectF boundBox = body.boundBox();
 
   updateLiquidPercentage();
 
@@ -736,7 +734,7 @@ void MovementController::forEachMovingCollision(RectF const& region, function<bo
   }
 }
 
-void MovementController::updateForceRegions(float dt) {
+void MovementController::updateForceRegions(float) {
   auto geometry = world()->geometry();
   auto pos = position();
   auto body = collisionBody();
@@ -804,7 +802,6 @@ void MovementController::updateForceRegions(float dt) {
 }
 
 void MovementController::updateLiquidPercentage() {
-  auto geometry = world()->geometry();
   auto pos = position();
   auto body = collisionBody();
   RectF boundBox = body.boundBox();

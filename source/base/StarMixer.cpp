@@ -473,7 +473,7 @@ void Mixer::setGroupVolume(MixerGroup group, float targetValue, float rampTime) 
   }
 }
 
-void Mixer::update(float dt, PositionalAttenuationFunction positionalAttenuationFunction) {
+void Mixer::update(float, PositionalAttenuationFunction positionalAttenuationFunction) {
   {
     MutexLocker locker(m_queueMutex);
     eraseWhere(m_audios, [&](auto& p) {

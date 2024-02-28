@@ -1365,11 +1365,9 @@ void MainInterface::renderDebug() {
 
     m_debugTextRect = RectF::null();
 
-    counter = 0;
-    for (auto const& pair : logMapValues) {
+    for (size_t index = 0; index < logMapValues.size(); ++index) {
       TextPositioning positioning = { Vec2F(m_config->debugOffset[0], windowHeight() - m_config->debugOffset[1] - m_config->fontSize * interfaceScale() * counter) };
-      m_guiContext->renderText(formatted[counter], positioning);
-      ++counter;
+      m_guiContext->renderText(formatted[index], positioning);
     }
     m_guiContext->setFontSize(8);
     m_guiContext->setDefaultFont();
@@ -1515,7 +1513,7 @@ bool MainInterface::overButton(PolyI buttonPoly, Vec2I const& mousePos) const {
   return buttonPoly.contains(mousePos);
 }
 
-bool MainInterface::overlayClick(Vec2I const& mousePos, MouseButton mouseButton) {
+bool MainInterface::overlayClick(Vec2I const& mousePos, MouseButton) {
   PolyI mainBarPoly = m_config->mainBarPoly;
   Vec2I barPos = mainBarPosition();
   mainBarPoly.translate(barPos);

@@ -149,7 +149,6 @@ void TeamBar::buildTeamBar() {
 
   Vec2I offset;
   size_t controlIndex = 0;
-  size_t memberIndex = 0;
 
   float portraitScale = assets->json("/interface/windowconfig/teambar.config:memberPortraitScale").toFloat();
   int memberSize = assets->json("/interface/windowconfig/teambar.config:memberSize").toInt();
@@ -158,7 +157,6 @@ void TeamBar::buildTeamBar() {
   Uuid myUuid = player->clientContext()->playerUuid();
   for (auto member : teamClient->members()) {
     if (member.uuid == myUuid) {
-      memberIndex++;
       continue;
     }
 
@@ -217,7 +215,6 @@ void TeamBar::buildTeamBar() {
 
     offset[1] -= memberSpacing;
     controlIndex++;
-    memberIndex++;
   }
 
   auto inviteButton = fetchChild<ButtonWidget>("inviteButton");

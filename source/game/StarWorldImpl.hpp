@@ -92,7 +92,7 @@ namespace WorldImpl {
   }
 
   template <typename TileSectorArray>
-  CollisionKind tileCollisionKind(shared_ptr<TileSectorArray> const& tileSectorArray, EntityMapPtr const& entityMap,
+  CollisionKind tileCollisionKind(shared_ptr<TileSectorArray> const& tileSectorArray, EntityMapPtr const&,
     Vec2I const& pos) {
     return tileSectorArray->tile(pos).collision;
   }
@@ -226,7 +226,7 @@ namespace WorldImpl {
     if (!isRealMaterial(material))
       return false;
 
-    auto isAdjacentToConnectable = [&](Vec2I const& pos, unsigned distance, bool foreground) {
+    auto isAdjacentToConnectable = [&](Vec2I const& pos, int distance, bool foreground) {
       if (pos.y() - distance < 0)
         return true;
 
@@ -237,7 +237,7 @@ namespace WorldImpl {
         for (int x = pos.x() - distance; x != maxX; ++x) {
           tPos[0] = x;
           if (tPos != pos) {
-            auto& tile = getTile(tPos);
+            const auto& tile = getTile(tPos);
             if (isConnectableMaterial(foreground ? tile.foreground : tile.background))
               return true;
           }
@@ -286,7 +286,7 @@ namespace WorldImpl {
     if (!materialDatabase->canPlaceInLayer(material, layer))
       return false;
 
-    auto& tile = getTile(pos);
+    const auto& tile = getTile(pos);
     if (layer == TileLayer::Background) {
       if (tile.background != EmptyMaterialId && tile.background != ObjectPlatformMaterialId)
         return false;

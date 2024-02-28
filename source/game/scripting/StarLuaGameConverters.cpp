@@ -470,7 +470,7 @@ LuaValue LuaConverter<Drawable>::from(LuaEngine& engine, Drawable const& v) {
   return table;
 }
 
-Maybe<Drawable> LuaConverter<Drawable>::to(LuaEngine& engine, LuaValue const& v) {
+Maybe<Drawable> LuaConverter<Drawable>::to(LuaEngine&, LuaValue const& v) {
   if (auto table = v.ptr<LuaTable>()) {
     Maybe<Drawable> result;
     result.emplace();

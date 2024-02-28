@@ -256,7 +256,6 @@ void WorldStorage::generateQueue(Maybe<size_t> sectorGenerationLevelLimit, funct
         });
     }
 
-    unsigned total = 0;
     while (!m_generationQueue.empty()) {
       if (sectorGenerationLevelLimit && *sectorGenerationLevelLimit == 0)
         break;
@@ -266,7 +265,6 @@ void WorldStorage::generateQueue(Maybe<size_t> sectorGenerationLevelLimit, funct
         m_generationQueue.removeFirst();
       if (sectorGenerationLevelLimit)
         *sectorGenerationLevelLimit -= p.second;
-      total += p.second;
     }
   } catch (std::exception const& e) {
     m_db.rollback();

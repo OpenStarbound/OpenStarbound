@@ -238,7 +238,7 @@ Vec2U ImageMetadataDatabase::calculateImageSize(AssetPath const& path) const {
   for (auto& directives : path.directives.list())
     directives.loadOperations();
 
-  bool complete = path.directives.forEachAbortable([&](auto const& entry, Directives const& directives) -> bool {
+  bool complete = path.directives.forEachAbortable([&](auto const& entry, Directives const&) -> bool {
     entry.operation.call(osa);
     return !osa.hasError;
   });

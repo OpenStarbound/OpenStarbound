@@ -169,11 +169,10 @@ void BubbleSeparator<T>::forEach(function<void(Bubble&, T&)> func) {
 }
 
 template <typename T>
-void BubbleSeparator<T>::update(float dt) {
+void BubbleSeparator<T>::update(float) {
   m_bubbles.exec([this](Bubble& bubble) {
     Vec2F delta = bubble.seperatedOffset - bubble.currentOffset;
     bubble.currentOffset += m_tweenFactor * delta;
-
     bubble.currentPosition = bubble.currentDestination + bubble.currentOffset;
   });
 }

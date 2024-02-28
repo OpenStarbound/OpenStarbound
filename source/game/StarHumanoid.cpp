@@ -935,7 +935,7 @@ List<Drawable> Humanoid::renderSkull() const {
       Root::singleton().speciesDatabase()->species(m_identity.species)->skull(), 1.0f, true, Vec2F())};
 }
 
-Humanoid Humanoid::makeDummy(Gender gender) {
+Humanoid Humanoid::makeDummy(Gender) {
   auto assets = Root::singleton().assets();
   Humanoid humanoid(assets->json("/humanoid.config"));
 

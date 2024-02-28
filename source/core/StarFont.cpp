@@ -115,7 +115,7 @@ std::pair<Image, Vec2I> Font::render(String::Char c) {
   for (unsigned y = 0; y != height; ++y) {
     uint8_t* p = slot->bitmap.buffer + y * slot->bitmap.pitch;
     for (unsigned x = 0; x != width; ++x) {
-      if (x >= 0 && y >= 0 && x < width && y < height) {
+      if (x < width && y < height) {
         uint8_t value = *(p + x);
         if (m_alphaThreshold) {
           if (value >= m_alphaThreshold) {

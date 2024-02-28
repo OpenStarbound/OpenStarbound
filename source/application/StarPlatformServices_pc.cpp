@@ -98,7 +98,7 @@ void PcPlatformServicesState::onGameOverlayActivated(GameOverlayActivated_t* cal
 }
 #endif
 
-PcPlatformServicesUPtr PcPlatformServices::create(String const& path, StringList platformArguments) {
+PcPlatformServicesUPtr PcPlatformServices::create(String const&, StringList platformArguments) {
   auto services = unique_ptr<PcPlatformServices>(new PcPlatformServices);
 
   services->m_state = make_shared<PcPlatformServicesState>();

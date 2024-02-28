@@ -858,7 +858,7 @@ shared_ptr<Assets::AssetData> Assets::loadImage(AssetPath const& path) const {
     for (auto& directives : path.directives.list())
       directives.loadOperations();
 
-    path.directives.forEach([&](auto const& entry, Directives const& directives) {
+    path.directives.forEach([&](auto const& entry, Directives const&) {
       addImageOperationReferences(entry.operation, referencePaths);
     }); // TODO: This can definitely be better, was changed quickly to support the new Directives.
 
@@ -875,7 +875,7 @@ shared_ptr<Assets::AssetData> Assets::loadImage(AssetPath const& path) const {
     return unlockDuring([&]() {
       auto newData = make_shared<ImageData>();
       Image newImage = *source->image;
-      path.directives.forEach([&](auto const& entry, Directives const& directives) {
+      path.directives.forEach([&](auto const& entry, Directives const&) {
         if (auto error = entry.operation.template ptr<ErrorImageOperation>())
           std::rethrow_exception(error->exception);
         else

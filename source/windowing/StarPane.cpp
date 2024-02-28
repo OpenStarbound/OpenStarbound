@@ -203,7 +203,7 @@ void Pane::update(float dt) {
   }
 }
 
-void Pane::tick(float dt) {
+void Pane::tick(float) {
   m_playingSounds.filter([](pair<String, AudioInstancePtr> const& p) {
     return p.second->finished() == false;
   });

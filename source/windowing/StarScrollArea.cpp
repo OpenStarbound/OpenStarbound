@@ -384,7 +384,7 @@ bool ScrollArea::sendEvent(InputEvent const& event) {
   return true;
 }
 
-void ScrollArea::update(float dt) {
+void ScrollArea::update(float) {
   if (!m_visible)
     return;
   

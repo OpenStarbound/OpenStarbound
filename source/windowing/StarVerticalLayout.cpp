@@ -9,7 +9,7 @@ VerticalLayout::VerticalLayout(VerticalAnchor verticalAnchor, int verticalSpacin
   disableScissoring();
 }
 
-void VerticalLayout::update(float dt) {
+void VerticalLayout::update(float) {
   m_size = Vec2I(0, 0);
 
   if (m_members.empty())

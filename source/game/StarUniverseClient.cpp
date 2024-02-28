@@ -487,7 +487,7 @@ void UniverseClient::stopLua() {
   m_scriptContexts.clear();
 }
 
-bool UniverseClient::reloadPlayer(Json const& data, Uuid const& uuid, bool resetInterfaces, bool showIndicator) {
+bool UniverseClient::reloadPlayer(Json const& data, Uuid const&, bool resetInterfaces, bool showIndicator) {
   auto player = mainPlayer();
   bool playerInWorld = player->inWorld();
   auto world = as<WorldClient>(player->world());

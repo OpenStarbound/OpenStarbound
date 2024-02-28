@@ -524,7 +524,7 @@ List<PhysicsForceRegion> ToolUser::forceRegions() const {
   return ds;
 }
 
-void ToolUser::render(RenderCallback* renderCallback, bool inToolRange, bool shifting, EntityRenderLayer renderLayer) {
+void ToolUser::render(RenderCallback* renderCallback, bool, bool shifting, EntityRenderLayer renderLayer) {
   if (m_suppress.get()) {
     for (auto item : {m_primaryHandItem.get(), m_altHandItem.get()}) {
       if (auto activeItem = as<ActiveItem>(item)) {

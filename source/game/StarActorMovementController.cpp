@@ -664,7 +664,7 @@ void ActorMovementController::controlFly(Vec2F const& velocity) {
   m_controlFly = velocity;
 }
 
-Maybe<pair<Vec2F, bool>> ActorMovementController::pathMove(Vec2F const& position, bool run, Maybe<PlatformerAStar::Parameters> const& parameters) {
+Maybe<pair<Vec2F, bool>> ActorMovementController::pathMove(Vec2F const& position, bool, Maybe<PlatformerAStar::Parameters> const& parameters) {
   if (!m_pathController)
     m_pathController = make_shared<PathController>(world());
 
@@ -1214,7 +1214,7 @@ Maybe<bool> PathController::findPath(ActorMovementController& movementController
           if (!merged) {
             // try to splice the new path onto the current path
             auto& newPathStart = path.at(0);
-            for (size_t i = m_edgeIndex; i < m_path->size(); ++i) {
+            for (size_t i = m_edgeIndex; i < m_path->size(); i += 2) {
               auto& edge = m_path->at(i);
               if (edge.target.position == newPathStart.source.position) {
                 // splice the new path onto our current path up to this index
@@ -1228,7 +1228,6 @@ Maybe<bool> PathController::findPath(ActorMovementController& movementController
                 merged = true;
                 break;
               }
-              i++;
             }
           }
         }
@@ -1456,7 +1455,7 @@ bool PathController::validateEdge(ActorMovementController& movementController, P
 
 bool PathController::movingCollision(ActorMovementController& movementController, PolyF const& collisionPoly) {
   bool collided = false;
-  movementController.forEachMovingCollision(collisionPoly.boundBox(), [&](MovingCollisionId id, PhysicsMovingCollision mc, PolyF poly, RectF bounds) {
+  movementController.forEachMovingCollision(collisionPoly.boundBox(), [&](MovingCollisionId, PhysicsMovingCollision, PolyF poly, RectF) {
       if (poly.intersects(collisionPoly)) {
         // set collided and stop iterating
         collided = true;
