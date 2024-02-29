@@ -124,7 +124,7 @@ void Directives::parse(String&& directives) {
     return;
   }
 
-  List<Entry> newList;
+  List<Entry> entries;
   StringView view(directives);
   StringView prefix = "";
   view.forEachSplitView("?", [&](StringView split, size_t beg, size_t end) {
@@ -132,7 +132,7 @@ void Directives::parse(String&& directives) {
       if (beg == 0) {
         try {
           ImageOperation operation = imageOperationFromString(split);
-          newList.emplace_back(std::move(operation), beg, end);
+          entries.emplace_back(std::move(operation), beg, end);
         }
         catch (StarException const& e) {
           prefix = split;
@@ -141,18 +141,18 @@ void Directives::parse(String&& directives) {
       }
       else {
         ImageOperation operation = NullImageOperation();
-        newList.emplace_back(std::move(operation), beg, end);
+        entries.emplace_back(std::move(operation), beg, end);
       }
     }
-  });
+    });
 
-  if (newList.empty() && !prefix.empty()) {
+  if (entries.empty() && !prefix.empty()) {
     shared.reset();
     return;
   }
 
-  shared = std::make_shared<Shared const>(std::move(newList), std::move(directives), prefix);
-  if (view.size() < 1000) { // Pre-load short enough directives
+  shared = std::make_shared<Shared const>(std::move(entries), std::move(directives), prefix);
+  if (view.utf8().size() < 1000) { // Pre-load short enough directives
     for (auto& entry : shared->entries)
       entry.loadOperation(*shared);
   }

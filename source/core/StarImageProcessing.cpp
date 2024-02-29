@@ -230,7 +230,7 @@ ImageOperation imageOperationFromString(StringView string) {
         bits.emplace_back(split);
     });
 
-    String type = bits.at(0);
+    StringView const& type = bits.at(0);
 
     if (type == "hueshift") {
       return HueShiftImageOperation::hueShiftDegrees(lexicalCast<float>(bits.at(1)));
