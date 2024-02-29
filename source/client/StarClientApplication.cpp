@@ -333,7 +333,6 @@ void ClientApplication::processInput(InputEvent const& event) {
   }
 
   m_input->handleInput(event, processed);
-  WorldCamera& camera = m_worldPainter->camera();
 
   auto config = m_root->configuration();
   int zoomOffset = 0;
@@ -709,7 +708,7 @@ void ClientApplication::updateMods(float dt) {
   }
 }
 
-void ClientApplication::updateModsWarning(float dt) {
+void ClientApplication::updateModsWarning(float) {
   if (m_errorScreen->accepted())
     changeState(MainAppState::Splash);
 }
@@ -720,7 +719,7 @@ void ClientApplication::updateSplash(float dt) {
     changeState(MainAppState::Title);
 }
 
-void ClientApplication::updateError(float dt) {
+void ClientApplication::updateError(float) {
   if (m_errorScreen->accepted())
     changeState(MainAppState::Title);
 }

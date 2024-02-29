@@ -720,7 +720,6 @@ void OpenGl20Renderer::GlRenderBuffer::set(List<RenderPrimitive>& primitives) {
 
   float textureIndex = 0.0f;
   Vec2F textureOffset = {};
-  Texture* lastTexture = nullptr;
   for (auto& primitive : primitives) {
     if (auto tri = primitive.ptr<RenderTriangle>()) {
       tie(textureIndex, textureOffset) = addCurrentTexture(std::move(tri->texture));
@@ -781,7 +780,7 @@ bool OpenGl20Renderer::logGlErrorSummary(String prefix) {
       } else {
         Logger::error("<UNRECOGNIZED GL ERROR>");
       }
-    } while (error = glGetError());
+    } while ((error = glGetError()));
     return true;
   }
   return false;
@@ -897,8 +896,6 @@ void OpenGl20Renderer::renderGlBuffer(GlRenderBuffer const& renderBuffer, Mat3F 
 
 //Assumes the passed effect program is currently in use.
 void OpenGl20Renderer::setupGlUniforms(Effect& effect) {
-  GLuint program = effect.program;
-
   m_positionAttribute = effect.getAttribute("vertexPosition");
   m_texCoordAttribute = effect.getAttribute("vertexTextureCoordinate");
   m_texIndexAttribute = effect.getAttribute("vertexTextureIndex");

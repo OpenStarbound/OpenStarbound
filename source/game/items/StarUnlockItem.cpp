@@ -24,7 +24,7 @@ List<Drawable> UnlockItem::drawables() const {
   return m_drawables;
 }
 
-List<Drawable> UnlockItem::preview(PlayerPtr const& viewer) const {
+List<Drawable> UnlockItem::preview(PlayerPtr const&) const {
   return iconDrawables();
 }
 

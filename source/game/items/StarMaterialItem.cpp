@@ -119,7 +119,7 @@ void MaterialItem::update(float dt, FireMode fireMode, bool shifting, HashSet<Mo
   }
 }
 
-void MaterialItem::render(RenderCallback* renderCallback, EntityRenderLayer renderLayer) {
+void MaterialItem::render(RenderCallback* renderCallback, EntityRenderLayer) {
   if (m_collisionOverride != TileCollisionOverride::None) {
     float pulseLevel = 1.f - 0.3f * 0.5f * ((float)sin(2 * Constants::pi * 4.0 * Time::monotonicTime()) + 1.f);
     Color color = Color::rgba(owner()->favoriteColor()).mix(Color::White);
@@ -190,8 +190,8 @@ void MaterialItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
     : Root::singleton().materialDatabase()->materialCollisionKind(m_material);
 
   size_t total = 0;
-  for (int i = 0; i != steps; ++i) {
-    auto placementOrigin = aimPosition + diff * (1.0f - ((float)i / steps));
+  for (unsigned i = 0; i != steps; ++i) {
+    auto placementOrigin = aimPosition + diff * (1.0f - (static_cast<float>(i) / steps));
     if (!owner()->inToolRange(placementOrigin))
       continue;
 
@@ -218,7 +218,7 @@ void MaterialItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
   m_lastAimPosition = aimPosition;
 }
 
-void MaterialItem::endFire(FireMode mode, bool shifting) {
+void MaterialItem::endFire(FireMode, bool) {
   m_lastAimPosition.reset();
 }
 

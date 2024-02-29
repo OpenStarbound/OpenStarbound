@@ -25,19 +25,6 @@ EnumMap<WorldEdgeForceRegionType> const WorldEdgeForceRegionTypeNames{
   {WorldEdgeForceRegionType::Bottom, "Bottom"},
   {WorldEdgeForceRegionType::TopAndBottom, "TopAndBottom"}};
 
-VisitableWorldParameters::VisitableWorldParameters() {
-  threatLevel = 0;
-  gravity = 0;
-  airless = false;
-  disableDeathDrops = false;
-  terraformed = false;
-  worldEdgeForceRegions = WorldEdgeForceRegionType::None;
-}
-
-VisitableWorldParameters::VisitableWorldParameters(VisitableWorldParameters const& visitableWorldParameters) {
-  *this = visitableWorldParameters;
-}
-
 VisitableWorldParameters::VisitableWorldParameters(Json const& store) {
   typeName = store.getString("typeName", "");
   threatLevel = store.getFloat("threatLevel");
@@ -53,8 +40,6 @@ VisitableWorldParameters::VisitableWorldParameters(Json const& store) {
   terraformed = store.getBool("terraformed", false);
   worldEdgeForceRegions = WorldEdgeForceRegionTypeNames.getLeft(store.getString("worldEdgeForceRegions", "None"));
 }
-
-VisitableWorldParameters::~VisitableWorldParameters() {}
 
 Json VisitableWorldParameters::store() const {
   return JsonObject{{"typeName", typeName},
@@ -104,15 +89,6 @@ void VisitableWorldParameters::write(DataStream& ds) const {
   ds << worldEdgeForceRegions;
 }
 
-TerrestrialWorldParameters::TerrestrialWorldParameters() {
-  blendSize = 0;
-  dayLength = 0;
-}
-
-TerrestrialWorldParameters::TerrestrialWorldParameters(TerrestrialWorldParameters const& terrestrialWorldParameters) {
-  *this = terrestrialWorldParameters;
-}
-
 TerrestrialWorldParameters::TerrestrialWorldParameters(Json const& store) : VisitableWorldParameters(store) {
   auto loadTerrestrialRegion = [](Json const& config) {
     return TerrestrialRegion{config.getString("biome"),
@@ -122,19 +98,19 @@ TerrestrialWorldParameters::TerrestrialWorldParameters(Json const& store) : Visi
         config.getString("fgOreSelector"),
         config.getString("bgOreSelector"),
         config.getString("subBlockSelector"),
-        (LiquidId)config.getUInt("caveLiquid"),
+        static_cast<LiquidId>(config.getUInt("caveLiquid")),
         config.getFloat("caveLiquidSeedDensity"),
-        (LiquidId)config.getUInt("oceanLiquid"),
-        (int)config.getInt("oceanLiquidLevel"),
-        (bool)config.getBool("encloseLiquids"),
-        (bool)config.getBool("fillMicrodungeons")};
+        static_cast<LiquidId>(config.getUInt("oceanLiquid")),
+        static_cast<int>(config.getInt("oceanLiquidLevel")),
+        config.getBool("encloseLiquids"),
+        config.getBool("fillMicrodungeons")};
   };
 
   auto loadTerrestrialLayer = [loadTerrestrialRegion](Json const& config) {
-    return TerrestrialLayer{(int)config.getInt("layerMinHeight"),
-        (int)config.getInt("layerBaseHeight"),
+    return TerrestrialLayer{static_cast<int>(config.getInt("layerMinHeight")),
+        static_cast<int>(config.getInt("layerBaseHeight")),
         jsonToStringList(config.get("dungeons")),
-        (int)config.getInt("dungeonXVariance"),
+        static_cast<int>(config.getInt("dungeonXVariance")),
         loadTerrestrialRegion(config.get("primaryRegion")),
         loadTerrestrialRegion(config.get("primarySubRegion")),
         config.getArray("secondaryRegions").transformed(loadTerrestrialRegion),
@@ -333,14 +309,11 @@ void TerrestrialWorldParameters::write(DataStream& ds) const {
 
 AsteroidsWorldParameters::AsteroidsWorldParameters() {
   airless = true;
-  asteroidTopLevel = 0;
-  asteroidBottomLevel = 0;
-  blendSize = 0;
 }
 
 AsteroidsWorldParameters::AsteroidsWorldParameters(Json const& store) : VisitableWorldParameters(store) {
-  asteroidTopLevel = store.getInt("asteroidTopLevel");
-  asteroidBottomLevel = store.getInt("asteroidBottomLevel");
+  asteroidTopLevel = static_cast<int>(store.getInt("asteroidTopLevel"));
+  asteroidBottomLevel = static_cast<int>(store.getInt("asteroidBottomLevel"));
   blendSize = store.getFloat("blendSize");
   asteroidBiome = store.getString("asteroidBiome");
   ambientLightLevel = jsonToColor(store.get("ambientLightLevel"));
@@ -376,12 +349,10 @@ void AsteroidsWorldParameters::write(DataStream& ds) const {
   ds << ambientLightLevel;
 }
 
-FloatingDungeonWorldParameters::FloatingDungeonWorldParameters() {}
-
 FloatingDungeonWorldParameters::FloatingDungeonWorldParameters(Json const& store) : VisitableWorldParameters(store) {
-  dungeonBaseHeight = store.getInt("dungeonBaseHeight");
-  dungeonSurfaceHeight = store.getInt("dungeonSurfaceHeight");
-  dungeonUndergroundLevel = store.getInt("dungeonUndergroundLevel");
+  dungeonBaseHeight = static_cast<int>(store.getInt("dungeonBaseHeight"));
+  dungeonSurfaceHeight = static_cast<int>(store.getInt("dungeonSurfaceHeight"));
+  dungeonUndergroundLevel = static_cast<int>(store.getInt("dungeonUndergroundLevel"));
   primaryDungeon = store.getString("primaryDungeon");
   biome = store.optString("biome");
   ambientLightLevel = jsonToColor(store.get("ambientLightLevel"));
@@ -438,7 +409,7 @@ void FloatingDungeonWorldParameters::write(DataStream& ds) const {
 
 Json diskStoreVisitableWorldParameters(VisitableWorldParametersConstPtr const& parameters) {
   if (!parameters)
-    return Json();
+    return {};
 
   return parameters->store().setAll({{"type", WorldParametersTypeNames.getRight(parameters->type())}});
 }
@@ -459,7 +430,7 @@ VisitableWorldParametersPtr diskLoadVisitableWorldParameters(Json const& store) 
 
 ByteArray netStoreVisitableWorldParameters(VisitableWorldParametersConstPtr const& parameters) {
   if (!parameters)
-    return ByteArray();
+    return {};
 
   DataStreamBuffer ds;
   ds.write(parameters->type());
@@ -509,7 +480,7 @@ TerrestrialWorldParametersPtr generateTerrestrialWorldParameters(String const& t
   auto dayLengthRange = jsonToVec2F(config.get("dayLengthRange"));
   auto threatLevelRange = jsonToVec2F(config.query("threatRange"));
 
-  float threatLevel = staticRandomDouble(seed, "ThreatLevel") * (threatLevelRange[1] - threatLevelRange[0]) + threatLevelRange[0];
+  auto threatLevel = static_cast<float>(staticRandomDouble(seed, "ThreatLevel") * (threatLevelRange[1] - threatLevelRange[0]) + threatLevelRange[0]);
   auto surfaceBiomeSeed = staticRandomU64(seed, "SurfaceBiomeSeed");
 
   auto readRegion = [liquidsDatabase, threatLevel, seed](Json const& regionConfig, String const& layerName, int layerBaseHeight) {
@@ -539,7 +510,7 @@ TerrestrialWorldParametersPtr generateTerrestrialWorldParameters(String const& t
 
     if (auto oceanLiquid = staticRandomValueFrom(regionConfig.getArray("oceanLiquid", {}), seed, "oceanLiquid", layerName.utf8Ptr()).optString()) {
       region.oceanLiquid = liquidsDatabase->liquidId(*oceanLiquid);
-      region.oceanLiquidLevel = regionConfig.getInt("oceanLevelOffset", 0) + layerBaseHeight;
+      region.oceanLiquidLevel = static_cast<int>(regionConfig.getInt("oceanLevelOffset", 0) + layerBaseHeight);
     } else {
       region.oceanLiquid = EmptyLiquidId;
       region.oceanLiquidLevel = 0;
@@ -561,30 +532,32 @@ TerrestrialWorldParametersPtr generateTerrestrialWorldParameters(String const& t
 
     TerrestrialWorldParameters::TerrestrialLayer layer;
 
-    layer.layerMinHeight = layerConfig.getFloat("layerLevel");
-    layer.layerBaseHeight = layerConfig.getFloat("baseHeight");
+    layer.layerMinHeight = static_cast<int>(layerConfig.getFloat("layerLevel"));
+    layer.layerBaseHeight = static_cast<int>(layerConfig.getFloat("baseHeight"));
 
     auto primaryRegionList = layerConfig.getArray("primaryRegion");
     auto primaryRegionConfigName = staticRandomFrom(primaryRegionList, seed, layerName.utf8Ptr(), "PrimaryRegionSelection").toString();
     Json primaryRegionConfig = jsonMerge(regionDefaults, regionTypes.get(primaryRegionConfigName));
     layer.primaryRegion = readRegion(primaryRegionConfig, layerName, layer.layerBaseHeight);
 
-    auto subRegionList = primaryRegionConfig.getArray("subRegion");
-    Json subRegionConfig;
-    if (subRegionList.size() > 0) {
-      String subRegionName = staticRandomFrom(subRegionList, seed, layerName, primaryRegionConfigName).toString();
-      subRegionConfig = jsonMerge(regionDefaults, regionTypes.get(subRegionName));
-    } else {
-      subRegionConfig = primaryRegionConfig;
+    {
+      auto subRegionList = primaryRegionConfig.getArray("subRegion");
+      Json subRegionConfig;
+      if (!subRegionList.empty()) {
+        String subRegionName = staticRandomFrom(subRegionList, seed, layerName, primaryRegionConfigName).toString();
+        subRegionConfig = jsonMerge(regionDefaults, regionTypes.get(subRegionName));
+      } else {
+        subRegionConfig = primaryRegionConfig;
+      }
+      layer.primarySubRegion = readRegion(subRegionConfig, layerName, layer.layerBaseHeight);
     }
-    layer.primarySubRegion = readRegion(subRegionConfig, layerName, layer.layerBaseHeight);
 
     Vec2U secondaryRegionCountRange = jsonToVec2U(layerConfig.get("secondaryRegionCount"));
-    int secondaryRegionCount = staticRandomI32Range(secondaryRegionCountRange[0], secondaryRegionCountRange[1], seed, layerName, "SecondaryRegionCount");
+    int secondaryRegionCount = staticRandomI32Range(static_cast<int>(secondaryRegionCountRange[0]), static_cast<int>(secondaryRegionCountRange[1]), seed, layerName, "SecondaryRegionCount");
     auto secondaryRegionList = layerConfig.getArray("secondaryRegions");
-    if (secondaryRegionList.size() > 0) {
+    if (!secondaryRegionList.empty()) {
       staticRandomShuffle(secondaryRegionList, seed, layerName, "SecondaryRegionShuffle");
-      for (auto regionName : secondaryRegionList) {
+      for (const auto& regionName : secondaryRegionList) {
         if (secondaryRegionCount <= 0)
           break;
         Json secondaryRegionConfig = jsonMerge(regionDefaults, regionTypes.get(regionName.toString()));
@@ -592,7 +565,7 @@ TerrestrialWorldParametersPtr generateTerrestrialWorldParameters(String const& t
 
         auto subRegionList = secondaryRegionConfig.getArray("subRegion");
         Json subRegionConfig;
-        if (subRegionList.size() > 0) {
+        if (!subRegionList.empty()) {
           String subRegionName = staticRandomFrom(subRegionList, seed, layerName, regionName.toString()).toString();
           subRegionConfig = jsonMerge(regionDefaults, regionTypes.get(subRegionName));
         } else {
@@ -611,7 +584,7 @@ TerrestrialWorldParametersPtr generateTerrestrialWorldParameters(String const& t
     Vec2U dungeonCountRange = layerConfig.opt("dungeonCountRange").apply(jsonToVec2U).value();
     unsigned dungeonCount = staticRandomU32Range(dungeonCountRange[0], dungeonCountRange[1], seed, layerName, "DungeonCount");
     layer.dungeons.appendAll(dungeonPool.selectUniques(dungeonCount, staticRandomHash64(seed, layerName, "DungeonChoice")));
-    layer.dungeonXVariance = layerConfig.getInt("dungeonXVariance", 0);
+    layer.dungeonXVariance = static_cast<int>(layerConfig.getInt("dungeonXVariance", 0));
 
     return layer;
   };
@@ -674,7 +647,7 @@ AsteroidsWorldParametersPtr generateAsteroidsWorldParameters(uint64_t seed) {
   auto gravityRange = jsonToVec2F(asteroidsConfig.get("gravityRange"));
 
   auto threatLevelRange = jsonToVec2F(asteroidsConfig.get("threatRange"));
-  parameters->threatLevel = staticRandomDouble(seed, "ThreatLevel") * (threatLevelRange[1] - threatLevelRange[0]) + threatLevelRange[0];
+  parameters->threatLevel = static_cast<float>(staticRandomDouble(seed, "ThreatLevel") * (threatLevelRange[1] - threatLevelRange[0]) + threatLevelRange[0]);
   parameters->typeName = "asteroids";
   parameters->worldSize = jsonToVec2U(asteroidsConfig.get("worldSize"));
   parameters->gravity = staticRandomFloatRange(gravityRange[0], gravityRange[1], seed, "WorldGravity");
@@ -685,8 +658,8 @@ AsteroidsWorldParametersPtr generateAsteroidsWorldParameters(uint64_t seed) {
   parameters->disableDeathDrops = asteroidsConfig.getBool("disableDeathDrops", false);
   parameters->worldEdgeForceRegions = WorldEdgeForceRegionTypeNames.getLeft(asteroidsConfig.getString("worldEdgeForceRegions", "TopAndBottom"));
 
-  parameters->asteroidTopLevel = asteroidsConfig.getInt("asteroidsTop");
-  parameters->asteroidBottomLevel = asteroidsConfig.getInt("asteroidsBottom");
+  parameters->asteroidTopLevel = static_cast<int>(asteroidsConfig.getInt("asteroidsTop"));
+  parameters->asteroidBottomLevel = static_cast<int>(asteroidsConfig.getInt("asteroidsBottom"));
   parameters->blendSize = asteroidsConfig.getFloat("blendSize");
   parameters->asteroidBiome = biome;
   parameters->ambientLightLevel = jsonToColor(asteroidsConfig.get("ambientLightLevel"));
@@ -716,9 +689,9 @@ FloatingDungeonWorldParametersPtr generateFloatingDungeonWorldParameters(String 
   parameters->disableDeathDrops = worldConfig.getBool("disableDeathDrops", false);
   parameters->worldEdgeForceRegions = WorldEdgeForceRegionTypeNames.getLeft(worldConfig.getString("worldEdgeForceRegions", "Top"));
 
-  parameters->dungeonBaseHeight = worldConfig.getInt("dungeonBaseHeight");
-  parameters->dungeonSurfaceHeight = worldConfig.getInt("dungeonSurfaceHeight", parameters->dungeonBaseHeight);
-  parameters->dungeonUndergroundLevel = worldConfig.getInt("dungeonUndergroundLevel", 0);
+  parameters->dungeonBaseHeight = static_cast<int>(worldConfig.getInt("dungeonBaseHeight"));
+  parameters->dungeonSurfaceHeight = static_cast<int>(worldConfig.getInt("dungeonSurfaceHeight", parameters->dungeonBaseHeight));
+  parameters->dungeonUndergroundLevel = static_cast<int>(worldConfig.getInt("dungeonUndergroundLevel", 0));
   parameters->primaryDungeon = worldConfig.getString("primaryDungeon");
   parameters->biome = worldConfig.optString("biome");
   parameters->ambientLightLevel = jsonToColor(worldConfig.get("ambientLightLevel"));

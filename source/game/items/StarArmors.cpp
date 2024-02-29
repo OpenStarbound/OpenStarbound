@@ -43,11 +43,11 @@ List<Drawable> ArmorItem::drawables() const {
   return drawables;
 }
 
-float ArmorItem::getAngle(float aimAngle) {
+float ArmorItem::getAngle(float) {
   return -25.0f * Constants::deg2rad;
 }
 
-void ArmorItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {}
+void ArmorItem::fire(FireMode, bool, bool) {}
 void ArmorItem::fireTriggered() {}
 
 List<String> const& ArmorItem::colorOptions() {

@@ -35,7 +35,7 @@ void WirePane::reset() {
   m_connecting = false;
 }
 
-void WirePane::update(float dt) {
+void WirePane::update(float) {
   if (!active())
     return;
   if (!m_worldClient->inWorld()) {

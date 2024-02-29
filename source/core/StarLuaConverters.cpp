@@ -47,7 +47,7 @@ LuaValue LuaConverter<LuaCallbacks>::from(LuaEngine& engine, LuaCallbacks const&
   return table;
 }
 
-Maybe<LuaCallbacks> LuaConverter<LuaCallbacks>::to(LuaEngine& engine, LuaValue const& v) {
+Maybe<LuaCallbacks> LuaConverter<LuaCallbacks>::to(LuaEngine&, LuaValue const&) {
   return {};
 }
 

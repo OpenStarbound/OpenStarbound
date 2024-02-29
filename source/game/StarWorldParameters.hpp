@@ -36,11 +36,11 @@ STAR_STRUCT(AsteroidsWorldParameters);
 STAR_STRUCT(FloatingDungeonWorldParameters);
 
 struct VisitableWorldParameters {
-  VisitableWorldParameters();
-  VisitableWorldParameters(VisitableWorldParameters const& visitableWorldParameters);
-  VisitableWorldParameters(Json const& store);
+  VisitableWorldParameters() = default;
+  VisitableWorldParameters(VisitableWorldParameters const& visitableWorldParameters) = default;
+  explicit VisitableWorldParameters(Json const& store);
 
-  virtual ~VisitableWorldParameters();
+  virtual ~VisitableWorldParameters() = default;
 
   virtual WorldParametersType type() const = 0;
 
@@ -50,18 +50,18 @@ struct VisitableWorldParameters {
   virtual void write(DataStream& ds) const;
 
   String typeName;
-  float threatLevel;
+  float threatLevel{};
   Vec2U worldSize;
-  float gravity;
-  bool airless;
+  float gravity{};
+  bool airless{false};
   WeatherPool weatherPool;
   StringList environmentStatusEffects;
   Maybe<StringList> overrideTech;
   Maybe<List<Directives>> globalDirectives;
   BeamUpRule beamUpRule;
-  bool disableDeathDrops;
-  bool terraformed;
-  WorldEdgeForceRegionType worldEdgeForceRegions;
+  bool disableDeathDrops{false};
+  bool terraformed{false};
+  WorldEdgeForceRegionType worldEdgeForceRegions{WorldEdgeForceRegionType::None};
 };
 
 struct TerrestrialWorldParameters : VisitableWorldParameters {
@@ -75,14 +75,14 @@ struct TerrestrialWorldParameters : VisitableWorldParameters {
     String bgOreSelector;
     String subBlockSelector;
 
-    LiquidId caveLiquid;
-    float caveLiquidSeedDensity;
+    LiquidId caveLiquid{};
+    float caveLiquidSeedDensity{};
 
-    LiquidId oceanLiquid;
-    int oceanLiquidLevel;
+    LiquidId oceanLiquid{};
+    int oceanLiquidLevel{};
 
-    bool encloseLiquids;
-    bool fillMicrodungeons;
+    bool encloseLiquids{false};
+    bool fillMicrodungeons{false};
   };
 
   struct TerrestrialLayer {
@@ -102,67 +102,67 @@ struct TerrestrialWorldParameters : VisitableWorldParameters {
     Vec2F subRegionSizeRange;
   };
 
-  TerrestrialWorldParameters();
-  TerrestrialWorldParameters(TerrestrialWorldParameters const& terrestrialWorldParameters);
-  TerrestrialWorldParameters(Json const& store);
+  TerrestrialWorldParameters() = default;
+  TerrestrialWorldParameters(TerrestrialWorldParameters const& terrestrialWorldParameters) = default;
+  explicit TerrestrialWorldParameters(Json const& store);
 
   TerrestrialWorldParameters &operator=(TerrestrialWorldParameters const& terrestrialWorldParameters);
 
-  virtual WorldParametersType type() const override;
+  WorldParametersType type() const override;
 
-  virtual Json store() const override;
+  Json store() const override;
 
-  virtual void read(DataStream& ds) override;
-  virtual void write(DataStream& ds) const override;
+  void read(DataStream& ds) override;
+  void write(DataStream& ds) const override;
 
   String primaryBiome;
-  LiquidId primarySurfaceLiquid;
+  LiquidId primarySurfaceLiquid{};
   String sizeName;
-  float hueShift;
+  float hueShift{};
 
   SkyColoring skyColoring;
-  float dayLength;
+  float dayLength{};
 
   Json blockNoiseConfig;
   Json blendNoiseConfig;
-  float blendSize;
+  float blendSize{};
 
-  TerrestrialLayer spaceLayer;
-  TerrestrialLayer atmosphereLayer;
-  TerrestrialLayer surfaceLayer;
-  TerrestrialLayer subsurfaceLayer;
+  TerrestrialLayer spaceLayer{};
+  TerrestrialLayer atmosphereLayer{};
+  TerrestrialLayer surfaceLayer{};
+  TerrestrialLayer subsurfaceLayer{};
   List<TerrestrialLayer> undergroundLayers;
-  TerrestrialLayer coreLayer;
+  TerrestrialLayer coreLayer{};
 };
 
 struct AsteroidsWorldParameters : VisitableWorldParameters {
   AsteroidsWorldParameters();
-  AsteroidsWorldParameters(Json const& store);
+  explicit AsteroidsWorldParameters(Json const& store);
 
-  virtual WorldParametersType type() const override;
+  WorldParametersType type() const override;
 
-  virtual Json store() const override;
+  Json store() const override;
 
-  virtual void read(DataStream& ds) override;
-  virtual void write(DataStream& ds) const override;
+  void read(DataStream& ds) override;
+  void write(DataStream& ds) const override;
 
-  int asteroidTopLevel;
-  int asteroidBottomLevel;
-  float blendSize;
+  int asteroidTopLevel{};
+  int asteroidBottomLevel{};
+  float blendSize{};
   String asteroidBiome;
   Color ambientLightLevel;
 };
 
 struct FloatingDungeonWorldParameters : VisitableWorldParameters {
-  FloatingDungeonWorldParameters();
-  FloatingDungeonWorldParameters(Json const& store);
+  FloatingDungeonWorldParameters() = default;
+  explicit FloatingDungeonWorldParameters(Json const& store);
 
-  virtual WorldParametersType type() const override;
+  WorldParametersType type() const override;
 
-  virtual Json store() const override;
+  Json store() const override;
 
-  virtual void read(DataStream& ds) override;
-  virtual void write(DataStream& ds) const override;
+  void read(DataStream& ds) override;
+  void write(DataStream& ds) const override;
 
   int dungeonBaseHeight;
   int dungeonSurfaceHeight;

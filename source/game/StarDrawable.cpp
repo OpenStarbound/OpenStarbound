@@ -70,7 +70,7 @@ Drawable::ImagePart& Drawable::ImagePart::removeDirectives(bool keepImageCenterP
 
 Drawable Drawable::makeLine(Line2F const& line, float lineWidth, Color const& color, Vec2F const& position) {
   Drawable drawable;
-  drawable.part = LinePart{std::move(line), lineWidth};
+  drawable.part = LinePart{std::move(line), lineWidth, {}};
   drawable.color = color;
   drawable.position = position;
 
@@ -110,7 +110,7 @@ Drawable::Drawable()
 
 Drawable::Drawable(Json const& json) {
   if (auto line = json.opt("line")) {
-    part = LinePart{jsonToLine2F(*line), json.getFloat("width")};
+    part = LinePart{jsonToLine2F(*line), json.getFloat("width"), {}};
   } else if (auto poly = json.opt("poly")) {
     part = PolyPart{jsonToPolyF(*poly)};
   } else if (auto image = json.opt("image")) {

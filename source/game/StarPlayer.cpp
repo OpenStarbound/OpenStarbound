@@ -2186,7 +2186,7 @@ Maybe<String> Player::inspectionLogName() const {
   return identifier;
 }
 
-Maybe<String> Player::inspectionDescription(String const& species) const {
+Maybe<String> Player::inspectionDescription(String const&) const {
   return m_description;
 }
 

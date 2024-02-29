@@ -13,7 +13,6 @@
 constexpr int VOICE_SAMPLE_RATE = 48000;
 constexpr int VOICE_FRAME_SIZE = 960;
 
-constexpr int VOICE_MAX_FRAME_SIZE = 6 * VOICE_FRAME_SIZE;
 constexpr int VOICE_MAX_PACKET_SIZE = 3 * 1276;
 
 constexpr uint16_t VOICE_VERSION = 1;
@@ -421,7 +420,7 @@ void Voice::mix(int16_t* buffer, size_t frameCount, unsigned channels) {
 	}
 }
 
-void Voice::update(float dt, PositionalAttenuationFunction positionalAttenuationFunction) {
+void Voice::update(float, PositionalAttenuationFunction positionalAttenuationFunction) {
   for (auto& entry : m_speakers) {
     if (SpeakerPtr& speaker = entry.second) {
 			if (positionalAttenuationFunction) {
@@ -465,7 +464,7 @@ StringList Voice::availableDevices() {
 	StringList deviceList;
 	if (devices > 0) {
 		deviceList.reserve(devices);
-		for (size_t i = 0; i != devices; ++i)
+		for (int i = 0; i != devices; ++i)
 			deviceList.emplace_back(SDL_GetAudioDeviceName(i, 1));
 	}
 	deviceList.sort();
@@ -482,7 +481,6 @@ int Voice::send(DataStreamBuffer& out, size_t budget) {
 		return 0;
 
 	std::vector<ByteArray> encodedChunks = std::move(m_encodedChunks);
-	size_t encodedChunksLength = m_encodedChunksLength;
 	m_encodedChunksLength = 0;
 
 	encodeLock.unlock();
@@ -642,7 +640,7 @@ void Voice::closeDevice() {
   m_deviceOpen = false;
 }
 
-bool Voice::playSpeaker(SpeakerPtr const& speaker, int channels) {
+bool Voice::playSpeaker(SpeakerPtr const& speaker, int) {
 	if (speaker->playing || speaker->audioStream->samples.size() < speaker->minimumPlaySamples)
 		return false;
 

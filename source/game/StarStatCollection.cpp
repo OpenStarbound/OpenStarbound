@@ -157,7 +157,7 @@ void StatCollection::tickMaster(float dt) {
   m_stats.update(dt);
 }
 
-void StatCollection::tickSlave(float dt) {
+void StatCollection::tickSlave(float) {
   m_stats.update(0.0f);
 }
 

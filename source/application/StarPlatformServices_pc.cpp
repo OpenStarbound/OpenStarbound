@@ -43,26 +43,26 @@ PcPlatformServicesState::PcPlatformServicesState()
         discord::User user;
         auto res = discordCore->UserManager().GetCurrentUser(&user);
         if (res != discord::Result::Ok)
-          Logger::error("Could not get current discord user. (err {})", (int)res);
+          Logger::error("Could not get current Discord user. (err {})", (int)res);
         else
           discordCurrentUser = user;
       });
 
   } else {
-    Logger::error("Failed to instantiate discord core (err {})", (int)res);
+    Logger::error("Failed to instantiate Discord core (err {})", (int)res);
   }
 
   if (discordAvailable) {
     MutexLocker locker(discordMutex);
     discordCore->SetLogHook(discord::LogLevel::Info, [](discord::LogLevel level, char const* msg) {
       if (level == discord::LogLevel::Debug)
-        Logger::debug("[DISCORD]: {}", msg);
+        Logger::debug("[Discord]: {}", msg);
       else if (level == discord::LogLevel::Error)
-        Logger::debug("[DISCORD]: {}", msg);
+        Logger::debug("[Discord]: {}", msg);
       else if (level == discord::LogLevel::Info)
-        Logger::info("[DISCORD]: {}", msg);
+        Logger::info("[Discord]: {}", msg);
       else if (level == discord::LogLevel::Warn)
-        Logger::warn("[DISCORD]: {}", msg);
+        Logger::warn("[Discord]: {}", msg);
     });
     discordEventShutdown = false;
     discordEventThread = Thread::invoke("PcPlatformServices::discordEventThread", [this]() {
@@ -98,7 +98,7 @@ void PcPlatformServicesState::onGameOverlayActivated(GameOverlayActivated_t* cal
 }
 #endif
 
-PcPlatformServicesUPtr PcPlatformServices::create(String const& path, StringList platformArguments) {
+PcPlatformServicesUPtr PcPlatformServices::create([[maybe_unused]] String const& path, StringList platformArguments) {
   auto services = unique_ptr<PcPlatformServices>(new PcPlatformServices);
 
   services->m_state = make_shared<PcPlatformServicesState>();
@@ -138,7 +138,7 @@ PcPlatformServicesUPtr PcPlatformServices::create(String const& path, StringList
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
   MutexLocker discordLocker(services->m_state->discordMutex);
   if (services->m_state->discordAvailable) {
-    Logger::debug("Registering starbound to discord at path: {}", path);
+    Logger::debug("Registering Starbound to Discord at path: {}", path);
     services->m_state->discordCore->ActivityManager().RegisterCommand(path.utf8Ptr());
   }
 #endif

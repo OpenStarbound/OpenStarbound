@@ -629,7 +629,7 @@ void WorldLayout::expandBiomeRegion(Vec2I const& position, int newWidth) {
 
 pair<size_t, size_t> WorldLayout::findLayerAndCell(int x, int y) const {
   // find the target layer
-  size_t targetLayerIndex;
+  size_t targetLayerIndex{};
   for (size_t i = 0; i < m_layers.size(); ++i) {
     if (m_layers[i].yStart < y)
       targetLayerIndex = i;

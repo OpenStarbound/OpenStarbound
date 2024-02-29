@@ -535,7 +535,8 @@ List<PacketPtr> WorldServer::getOutgoingPackets(ConnectionId clientId) {
 Maybe<Json> WorldServer::receiveMessage(ConnectionId fromConnection, String const& message, JsonArray const& args) {
   Maybe<Json> result;
   for (auto& p : m_scriptContexts) {
-    if (result = p.second->handleMessage(message, fromConnection == ServerConnectionId, args))
+    result = p.second->handleMessage(message, fromConnection == ServerConnectionId, args);
+    if (result)
       break;
   }
   return result;

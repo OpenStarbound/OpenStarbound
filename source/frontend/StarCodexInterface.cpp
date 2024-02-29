@@ -50,7 +50,7 @@ void CodexInterface::show() {
   updateCodexList();
 }
 
-void CodexInterface::tick(float dt) {
+void CodexInterface::tick(float) {
   updateCodexList();
 }
 

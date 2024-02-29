@@ -42,7 +42,7 @@ StringSet InstrumentItem::effectSources() const {
   return m_inactiveEffectSources;
 }
 
-void InstrumentItem::update(float dt, FireMode, bool, HashSet<MoveControlType> const&) {
+void InstrumentItem::update(float, FireMode, bool, HashSet<MoveControlType> const&) {
   if (entityMode() == EntityMode::Master) {
     if (active()) {
       m_activeCooldown--;

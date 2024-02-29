@@ -35,7 +35,7 @@ bool QuestNpcType::operator==(QuestNpcType const& rhs) const {
 }
 
 bool QuestCoordinate::operator==(QuestCoordinate const& rhs) const {
-  return coordinate == coordinate;
+  return coordinate == rhs.coordinate;
 }
 
 QuestParamDetail questParamDetailFromJson(Json const& json) {

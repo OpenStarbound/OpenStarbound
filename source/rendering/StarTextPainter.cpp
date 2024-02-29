@@ -124,7 +124,6 @@ bool TextPainter::processWrapText(StringView text, unsigned* wrapWidth, WrapText
   m_fontTextureGroup.switchFont(font);
   int lines = 0;
 
-  size_t i = 0;
   auto it = text.begin();
   auto end = text.end();
 
@@ -150,8 +149,6 @@ bool TextPainter::processWrapText(StringView text, unsigned* wrapWidth, WrapText
 
     if (Text::isEscapeCode(character))
       escIt = it;
-    ++i;
-   
 
     if (escIt != end) {
       if (character == Text::EndEsc) {
@@ -432,7 +429,6 @@ RectF TextPainter::doRenderLine(StringView text, TextPositioning const& position
     pos.hAnchor = HorizontalAnchor::LeftAnchor;
   }
 
-  bool escape = false;
   String escapeCode;
   RectF bounds = RectF::withSize(pos.pos, Vec2F());
   Text::TextCallback textCallback = [&](StringView text) {

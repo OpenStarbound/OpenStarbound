@@ -111,7 +111,7 @@ Maybe<Json> Entity::receiveMessage(ConnectionId, String const&, JsonArray const&
   return {};
 }
 
-void Entity::update(float dt, uint64_t) {}
+void Entity::update(float, uint64_t) {}
 
 void Entity::render(RenderCallback*) {}
 

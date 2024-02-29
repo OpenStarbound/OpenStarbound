@@ -1369,7 +1369,6 @@ void WorldClient::collectLiquid(List<Vec2I> const& tilePositions, LiquidId liqui
     return;
 
   float bucketSize = Root::singleton().assets()->json("/items/defaultParameters.config:liquidItems.bucketSize").toFloat();
-  unsigned drainedUnits = 0;
   float nextUnit = bucketSize;
   List<Vec2I> maybeDrainTiles;
 
@@ -1386,7 +1385,7 @@ void WorldClient::collectLiquid(List<Vec2I> const& tilePositions, LiquidId liqui
         liquid.take(nextUnit);
         nextUnit = bucketSize;
 
-        for (auto& previousTile : maybeDrainTiles)
+        for (size_t i = 0; i < maybeDrainTiles.size(); ++i)
           m_predictedTiles[pos].liquid.emplace(EmptyLiquidId, 0.0f);
 
         maybeDrainTiles.clear();
