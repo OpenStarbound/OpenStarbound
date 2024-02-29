@@ -1365,10 +1365,11 @@ void MainInterface::renderDebug() {
 
     m_debugTextRect = RectF::null();
 
-    for (size_t index = 0; index < logMapValues.size(); ++index) {
-      TextPositioning positioning = { Vec2F(m_config->debugOffset[0], windowHeight() - m_config->debugOffset[1] - m_config->fontSize * interfaceScale() * counter) };
+    for (size_t index = 0; index != formatted.size(); ++index) {
+      TextPositioning positioning = { Vec2F(m_config->debugOffset[0], windowHeight() - m_config->debugOffset[1] - m_config->fontSize * interfaceScale() * index) };
       m_guiContext->renderText(formatted[index], positioning);
     }
+
     m_guiContext->setFontSize(8);
     m_guiContext->setDefaultFont();
     m_guiContext->setDefaultLineSpacing();
