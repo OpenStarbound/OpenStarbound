@@ -81,7 +81,7 @@ void PcP2PNetworkingService::setJoinRemote(HostAddressWithPort location) {
   setJoinLocation(JoinRemote(location));
 }
 
-void Star::PcP2PNetworkingService::setActivityData(String const&, Maybe<pair<uint16_t, uint16_t>>) {
+void Star::PcP2PNetworkingService::setActivityData([[maybe_unused]] String const& title, [[maybe_unused]] Maybe<pair<uint16_t, uint16_t>> party) {
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
   MutexLocker discordLocker(m_state->discordMutex);
 #endif
