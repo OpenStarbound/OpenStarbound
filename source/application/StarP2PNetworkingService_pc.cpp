@@ -32,7 +32,7 @@ PcP2PNetworkingService::PcP2PNetworkingService(PcPlatformServicesStatePtr state)
 
     m_discordOnActivityJoinToken = m_state->discordCore->ActivityManager().OnActivityJoin.Connect([this](char const* peerId) {
         MutexLocker serviceLocker(m_mutex);
-        Logger::info("Joining discord peer at '{}'", peerId);
+        Logger::info("Joining Discord peer at '{}'", peerId);
         addPendingJoin(strf("+platform:{}", peerId));
       });
     m_discordOnActivityRequestToken = m_state->discordCore->ActivityManager().OnActivityJoinRequest.Connect([this](discord::User const& user) {
@@ -54,9 +54,9 @@ PcP2PNetworkingService::~PcP2PNetworkingService() {
   if (m_state->discordAvailable) {
     MutexLocker discordLocker(m_state->discordMutex);
     if (m_discordServerLobby) {
-      Logger::info("Deleting discord server lobby {}", m_discordServerLobby->first);
+      Logger::info("Deleting Discord server lobby {}", m_discordServerLobby->first);
       m_state->discordCore->LobbyManager().DeleteLobby(m_discordServerLobby->first, [](discord::Result res) {
-          Logger::error("Could not connect delete server lobby (err {})", (int)res);
+          Logger::error("Could not delete Discord server lobby (err {})", (int)res);
         });
     }
 
@@ -113,13 +113,13 @@ void Star::PcP2PNetworkingService::setActivityData([[maybe_unused]] String const
       if (m_joinLocation.is<JoinLocal>()) {
         if (auto lobby = m_discordServerLobby) {
           String joinSecret = strf("connect:discord_{}_{}_{}", m_state->discordCurrentUser->GetId(), lobby->first, lobby->second);
-          Logger::info("Setting discord join secret as {}", joinSecret);
+          Logger::info("Setting Discord join secret as {}", joinSecret);
           activity.GetSecrets().SetJoin(joinSecret.utf8Ptr());
         }
       } else if (m_joinLocation.is<JoinRemote>()) {
         String address = toString((HostAddressWithPort)m_joinLocation.get<JoinRemote>());
         String joinSecret = strf("connect:address_{}", address);
-        Logger::info("Setting discord join secret as {}", joinSecret);
+        Logger::info("Setting Discord join secret as {}", joinSecret);
         activity.GetSecrets().SetJoin(joinSecret.utf8Ptr());
       
         activity.GetParty().SetId(address.utf8Ptr());
@@ -128,7 +128,7 @@ void Star::PcP2PNetworkingService::setActivityData([[maybe_unused]] String const
       m_discordUpdatingActivity = true;
       m_state->discordCore->ActivityManager().UpdateActivity(activity, [this](discord::Result res) {
           if (res != discord::Result::Ok)
-            Logger::error("failed to set discord activity (err {})", (int)res);
+            Logger::error("Failed to set Discord activity (err {})", (int)res);
         
           MutexLocker serviceLocker(m_mutex);
           m_discordUpdatingActivity = false;
@@ -193,7 +193,7 @@ void Star::PcP2PNetworkingService::update() {
 
       m_state->discordCore->ActivityManager().SendRequestReply(p.first, reply, [](discord::Result res) {
           if (res != discord::Result::Ok)
-            Logger::error("Could not send discord activity join response (err {})", (int)res);
+            Logger::error("Could not send Discord activity join response (err {})", (int)res);
         });
     }
   }
@@ -312,7 +312,7 @@ auto PcP2PNetworkingService::createSteamP2PSocket(CSteamID steamId) -> unique_pt
 
 void PcP2PNetworkingService::steamOnConnectionFailure(P2PSessionConnectFail_t* callback) {
   MutexLocker serviceLocker(m_mutex);
-  Logger::warn("Connection with steam user {} failed", callback->m_steamIDRemote.ConvertToUint64());
+  Logger::warn("Connection with Steam user {} failed", callback->m_steamIDRemote.ConvertToUint64());
   if (auto socket = m_steamOpenSockets.value(callback->m_steamIDRemote.ConvertToUint64())) {
     MutexLocker socketLocker(socket->mutex);
     steamCloseSocket(socket);
@@ -320,7 +320,7 @@ void PcP2PNetworkingService::steamOnConnectionFailure(P2PSessionConnectFail_t* c
 }
 
 void PcP2PNetworkingService::steamOnJoinRequested(GameRichPresenceJoinRequested_t* callback) {
-  Logger::info("Queueing join request with steam friend id {} to address {}", callback->m_steamIDFriend.ConvertToUint64(), callback->m_rgchConnect);
+  Logger::info("Enqueueing join request with Steam friend id {} to address {}", callback->m_steamIDFriend.ConvertToUint64(), callback->m_rgchConnect);
   addPendingJoin(callback->m_rgchConnect);
 }
 
@@ -330,19 +330,19 @@ void PcP2PNetworkingService::steamOnSessionRequest(P2PSessionRequest_t* callback
   // non-friends can even initiate P2P sessions.
   if (m_acceptingP2PConnections && SteamFriends()->HasFriend(callback->m_steamIDRemote, k_EFriendFlagImmediate)) {
     if (SteamNetworking()->AcceptP2PSessionWithUser(callback->m_steamIDRemote)) {
-      Logger::info("Accepted steam p2p connection with user {}", callback->m_steamIDRemote.ConvertToUint64());
+      Logger::info("Accepted Steam P2P connection with user {}", callback->m_steamIDRemote.ConvertToUint64());
       m_pendingIncomingConnections.append(createSteamP2PSocket(callback->m_steamIDRemote));
     } else {
-      Logger::error("Accepting steam p2p connection from user {} failed!", callback->m_steamIDRemote.ConvertToUint64());
+      Logger::error("Accepting Steam P2P connection from user {} failed!", callback->m_steamIDRemote.ConvertToUint64());
     }
   } else {
-    Logger::error("Ignoring steam p2p connection from user {}", callback->m_steamIDRemote.ConvertToUint64());
+    Logger::error("Ignoring Steam P2P connection from user {}", callback->m_steamIDRemote.ConvertToUint64());
   }
 }
 
 void PcP2PNetworkingService::steamCloseSocket(SteamP2PSocket* socket) {
   if (socket->connected) {
-    Logger::info("Closing p2p connection with steam user {}", socket->steamId.ConvertToUint64());
+    Logger::info("Closing P2P connection with Steam user {}", socket->steamId.ConvertToUint64());
     m_steamOpenSockets.remove(socket->steamId.ConvertToUint64());
     socket->connected = false;
   }
@@ -407,13 +407,13 @@ void PcP2PNetworkingService::discordCloseSocket(DiscordP2PSocket* socket) {
       if (!m_joinLocation.is<JoinLocal>() && m_discordOpenSockets.empty()) {
         auto res = m_state->discordCore->LobbyManager().DisconnectNetwork(socket->lobbyId);
         if (res != discord::Result::Ok)
-          Logger::error("failed to leave network for lobby {} (err {})", socket->lobbyId, (int)res);
+          Logger::error("Failed to leave network for lobby {} (err {})", socket->lobbyId, (int)res);
 
         m_state->discordCore->LobbyManager().DisconnectLobby(socket->lobbyId, [this, lobbyId = socket->lobbyId](discord::Result res) {
             if (res != discord::Result::Ok)
-              Logger::error("failed to leave discord lobby {}", lobbyId);
+              Logger::error("Failed to leave Discord lobby {}", lobbyId);
 
-            Logger::info("Left discord lobby {}", lobbyId);
+            Logger::info("Left Discord lobby {}", lobbyId);
             MutexLocker serviceLocker(m_mutex);
             m_discordServerLobby = {};
             m_discordForceUpdateActivity = true;
@@ -438,7 +438,7 @@ P2PSocketUPtr PcP2PNetworkingService::discordConnectRemote(discord::UserId remot
   socket->lobbyId = lobbyId;
   m_discordOpenSockets[remoteUserId] = socket.get();
 
-  Logger::info("Connect to discord lobby {}", lobbyId);
+  Logger::info("Connecting to Discord lobby {}", lobbyId);
   m_state->discordCore->LobbyManager().ConnectLobby(lobbyId, lobbySecret.utf8Ptr(), [this, remoteUserId, lobbyId](discord::Result res, discord::Lobby const& lobby) {
       MutexLocker serviceLocker(m_mutex);
       if (res == discord::Result::Ok) {
@@ -448,17 +448,17 @@ P2PSocketUPtr PcP2PNetworkingService::discordConnectRemote(discord::UserId remot
           res = m_state->discordCore->LobbyManager().ConnectNetwork(lobbyId);
           if (res != discord::Result::Ok) {
             discordCloseSocket(socket);
-            return Logger::error("Could not connect to discord lobby network (err {})", (int)res);
+            return Logger::error("Could not connect to Discord lobby network (err {})", (int)res);
           }
           
           res = m_state->discordCore->LobbyManager().OpenNetworkChannel(lobbyId, DiscordMainNetworkChannel, true);
           if (res != discord::Result::Ok) {
             discordCloseSocket(socket);
-            return Logger::error("Could not open discord main network channel (err {})", (int)res);
+            return Logger::error("Could not open Discord main network channel (err {})", (int)res);
           }
 
               socket->mode = DiscordSocketMode::Connected;
-              Logger::info("Discord p2p connection opened to remote user {} via lobby {}", remoteUserId, lobbyId);
+              Logger::info("Discord P2P connection opened to remote user {} via lobby {}", remoteUserId, lobbyId);
 
               m_discordServerLobby = make_pair(lobbyId, String());
               m_discordForceUpdateActivity = true;
@@ -466,7 +466,7 @@ P2PSocketUPtr PcP2PNetworkingService::discordConnectRemote(discord::UserId remot
           Logger::error("discord::Lobbies::Connect callback no matching remoteUserId {} found", remoteUserId);
         }
       } else {
-        Logger::error("failed to connect to remote lobby (err {})", (int)res);
+        Logger::error("Failed to connect to remote lobby (err {})", (int)res);
         if (auto socket = m_discordOpenSockets.value(remoteUserId)) {
           MutexLocker socketLocker(socket->mutex);
           discordCloseSocket(socket);
@@ -488,10 +488,10 @@ void PcP2PNetworkingService::discordOnReceiveMessage(discord::LobbyId lobbyId, d
         MutexLocker socketLocker(socket->mutex);
         socket->incoming.append(ByteArray((char const*)data, size));
       } else {
-        Logger::error("Received discord message on unexpected channel {}, ignoring", channel);
+        Logger::error("Received Discord message on unexpected channel {}, ignoring", channel);
       }
     } else {
-    Logger::error("Could not find associated discord socket for user id {}", userId);
+    Logger::error("Could not find associated Discord socket for user id {}", userId);
     }
   }
 
@@ -508,7 +508,7 @@ void PcP2PNetworkingService::discordOnLobbyMemberConnect(discord::LobbyId lobbyI
 
       m_discordOpenSockets[userId] = socket.get();
       m_pendingIncomingConnections.append(std::move(socket));
-      Logger::info("Accepted new discord connection from remote user {}", userId);
+      Logger::info("Accepted new Discord connection from remote user {}", userId);
     }
   }
 }
@@ -543,17 +543,17 @@ void PcP2PNetworkingService::setJoinLocation(JoinLocation location) {
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
   if (m_state->steamAvailable) {
     if (m_joinLocation.is<JoinUnavailable>()) {
-      Logger::info("Clearing steam rich presence connection");
+      Logger::info("Clearing Steam rich presence connection");
       SteamFriends()->SetRichPresence("connect", "");
 
     } else if (m_joinLocation.is<JoinLocal>()) {
       auto steamId = SteamUser()->GetSteamID().ConvertToUint64();
-      Logger::info("Setting steam rich presence connection as steamid_{}", steamId);
+      Logger::info("Setting Steam rich presence connection as steamid_{}", steamId);
       SteamFriends()->SetRichPresence("connect", strf("+platform:connect:steamid_{}", steamId).c_str());
 
     } else if (m_joinLocation.is<JoinRemote>()) {
       auto address = (HostAddressWithPort)location.get<JoinRemote>();
-      Logger::info("Setting steam rich presence connection as address_{}", address);
+      Logger::info("Setting Steam rich presence connection as address_{}", address);
       SteamFriends()->SetRichPresence("connect", strf("+platform:connect:address_{}", address).c_str());
     }
   }
@@ -562,9 +562,9 @@ void PcP2PNetworkingService::setJoinLocation(JoinLocation location) {
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
   if (m_state->discordAvailable && m_state->discordCurrentUser) {
     if (m_discordServerLobby) {
-      Logger::info("Deleting discord server lobby {}", m_discordServerLobby->first);
+      Logger::info("Deleting Discord server lobby {}", m_discordServerLobby->first);
       m_state->discordCore->LobbyManager().DeleteLobby(m_discordServerLobby->first, [](discord::Result res) {
-          Logger::error("Could not connect delete server lobby (err {})", (int)res);
+          Logger::error("Could not delete Discord server lobby (err {})", (int)res);
         });
     }
 
@@ -591,21 +591,21 @@ void PcP2PNetworkingService::setJoinLocation(JoinLocation location) {
                 // successfully joined lobby network
                 return;
               } else {
-                Logger::error("Failed to open discord main network channel (err {})", (int)res);
+                Logger::error("Failed to open Discord main network channel (err {})", (int)res);
               }
             } else {
-              Logger::error("Failed to join discord lobby network (err {})", (int)res);
+              Logger::error("Failed to join Discord lobby network (err {})", (int)res);
             }
 
             // Created lobby but failed to join the lobby network, delete lobby
-            Logger::error("Failed to join discord lobby network (err {})", (int)res);
+            Logger::error("Failed to join Discord lobby network (err {})", (int)res);
 
-            Logger::info("Deleting discord lobby {}", lobbyId);
+            Logger::info("Deleting Discord lobby {}", lobbyId);
             m_state->discordCore->LobbyManager().DeleteLobby(lobbyId, [lobbyId](discord::Result res) {
-                Logger::error("failed to delete lobby {} (err {})", lobbyId, (int)res);
+                Logger::error("Failed to delete Discord lobby {} (err {})", lobbyId, (int)res);
               });
           } else {
-            Logger::error("failed to create discord lobby (err {})", (int)res);
+            Logger::error("Failed to create Discord lobby (err {})", (int)res);
           }
         });
     }
