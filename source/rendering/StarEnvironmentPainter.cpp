@@ -380,21 +380,27 @@ void EnvironmentPainter::drawRay(float pixelRatio,
   // Sum is used to vary the ray intensity based on sky color
   // Rays show up more on darker backgrounds, so this scales to remove that
   float sum = std::pow((color[0] + color[1]) * RayColorDependenceScale, RayColorDependenceLevel);
+  Vec3B rayColor;
+  if (sky.settings.queryBool("sun.dynamicImage.enabled", false) && !sky.skyParameters.sunType.empty())
+    rayColor = jsonToVec3B(sky.settings.query("sun.dynamicImage.rayColors." + sky.skyParameters.sunType, sky.settings.query("sun.rayColor", JsonArray{RayColor[0], RayColor[1], RayColor[2]})));
+  else
+    rayColor = jsonToVec3B(sky.settings.query("sun.rayColor", JsonArray{RayColor[0], RayColor[1], RayColor[2]}));
+  float sunScale = sky.settings.queryFloat("sun.scale", 1.0f);
   m_renderer->immediatePrimitives().emplace_back(std::in_place_type_t<RenderQuad>(), TexturePtr(),
-      RenderVertex{start + Vec2F(std::cos(angle + width), std::sin(angle + width)) * length, {}, Vec4B(RayColor, 0), 0.0f},
-      RenderVertex{start + Vec2F(std::cos(angle + width), std::sin(angle + width)) * SunRadius * pixelRatio,
+      RenderVertex{start + Vec2F(std::cos(angle + width), std::sin(angle + width)) * length, {}, Vec4B(rayColor, 0), 0.0f},
+      RenderVertex{start + Vec2F(std::cos(angle + width), std::sin(angle + width)) * SunRadius * sunScale * pixelRatio,
           {},
-          Vec4B(RayColor,
+          Vec4B(rayColor,
               (int)(RayMinUnscaledAlpha + std::abs(m_rayPerlin.get(angle * 896 + time * 30) * RayUnscaledAlphaVariance))
                   * sum
                   * alpha), 0.0f},
-      RenderVertex{start + Vec2F(std::cos(angle), std::sin(angle)) * SunRadius * pixelRatio,
+      RenderVertex{start + Vec2F(std::cos(angle), std::sin(angle)) * SunRadius * sunScale * pixelRatio,
           {},
-          Vec4B(RayColor,
+          Vec4B(rayColor,
               (int)(RayMinUnscaledAlpha + std::abs(m_rayPerlin.get(angle * 626 + time * 30) * RayUnscaledAlphaVariance))
                   * sum
                   * alpha), 0.0f},
-      RenderVertex{start + Vec2F(std::cos(angle), std::sin(angle)) * length, {}, Vec4B(RayColor, 0), 0.0f});
+      RenderVertex{start + Vec2F(std::cos(angle), std::sin(angle)) * length, {}, Vec4B(rayColor, 0), 0.0f});
 }
 
 void EnvironmentPainter::drawOrbiter(float pixelRatio, Vec2F const& screenSize, SkyRenderData const& sky, SkyOrbiter const& orbiter) {
