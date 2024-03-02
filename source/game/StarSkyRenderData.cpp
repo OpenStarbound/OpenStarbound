@@ -95,10 +95,15 @@ List<SkyOrbiter> SkyRenderData::frontOrbiters(Vec2F const& viewSize) const {
 
   List<SkyOrbiter> orbiters;
   if (type == SkyType::Atmospheric || type == SkyType::Atmosphereless) {
+    String image;
+    if (settings.queryBool("sun.dynamicImage.enabled", false) && !skyParameters.sunType.empty())
+      image = settings.queryString("sun.dynamicImage.images." + skyParameters.sunType, settings.queryString("sun.image"));
+    else
+      image = settings.queryString("sun.image");
     orbiters.append({SkyOrbiterType::Sun,
-        1.0f,
+        settings.queryFloat("sun.scale", 1.0f),
         0.0f,
-        settings.queryString("sun.image"),
+        image,
         Vec2F::withAngle(orbitAngle, settings.queryFloat("sun.radius")) + viewSize / 2});
   } else if (type == SkyType::Orbital) {
     auto planetCenter = Vec2F(viewSize[0] / 2, 0)

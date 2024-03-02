@@ -1,0 +1,23 @@
+{
+  "sun" : {
+    "rayColor" : [255, 255, 200],
+    "scale" : 0.7, // base scale, dynamic scaling aplies after it (sun image appears to have a higher scale in osb client?)
+    "dynamicImage" : {
+      "enabled" : true,
+      "images" : {
+        "whitestar" : "/sky/orbitals/whitestar.png",
+        "orangestar" : "/sky/orbitals/orangestar.png",
+        "yellowstar" : "/sky/orbitals/yellowstar.png",
+        "bluestar" : "/sky/orbitals/bluestar.png",
+        "redstar" : "/sky/orbitals/redstar.png"
+      },
+      "rayColors" : {
+        "whitestar" : [199, 245, 255],
+        "orangestar" : [255, 227, 199],
+        "yellowstar" : [245, 255, 199],
+        "bluestar" : [199, 199, 255],
+        "redstar" : [255, 213, 199]
+      }
+    }
+  }
+}
