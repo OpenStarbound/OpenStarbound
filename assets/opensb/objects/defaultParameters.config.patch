@@ -1,0 +1,4 @@
+{
+  "pointLight" : true,
+  "disableParticleLights" : true // removes flashing from some objects caused by particle lights, recommended to set to true if pointLight is true
+}

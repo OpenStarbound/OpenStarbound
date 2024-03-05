@@ -114,6 +114,7 @@ Json ObjectDatabase::parseTouchDamage(String const& path, Json const& config) {
 List<ObjectOrientationPtr> ObjectDatabase::parseOrientations(String const& path, Json const& configList) {
   auto& root = Root::singleton();
   auto materialDatabase = root.materialDatabase();
+  auto assets = root.assets();
   List<ObjectOrientationPtr> res;
   JsonArray configs = configList.toArray();
 
@@ -495,7 +496,7 @@ ObjectConfigPtr ObjectDatabase::readConfig(String const& path) {
         objectConfig->lightColors[pair.first] = jsonToColor(pair.second);
     }
 
-    objectConfig->pointLight = config.getBool("pointLight", false);
+    objectConfig->pointLight = config.getBool("pointLight", assets->json("/objects/defaultParameters.config:pointLight").toBool());
     objectConfig->pointBeam = config.getFloat("pointBeam", 0.0f);
     objectConfig->beamAmbience = config.getFloat("beamAmbience", 0.0f);
 
@@ -519,8 +520,26 @@ ObjectConfigPtr ObjectDatabase::readConfig(String const& path) {
 
     objectConfig->health = config.getFloat("health", 1);
 
+    // disable particle lights if object emits light (prevents flashing)
+    bool particleLightsDisabled = config.get("disableParticleLights", assets->json("/objects/defaultParameters.config:disableParticleLights")).toBool()
+      && ((config.contains("lightColor") && jsonToColor(config.get("lightColor")) != Color::Black) || config.contains("lightColors"));
+
     if (auto animationConfig = config.get("animation", {})) {
-      objectConfig->animationConfig = assets->fetchJson(animationConfig, path);
+      Json animationData = assets->fetchJson(animationConfig, path);
+      if (particleLightsDisabled && animationData.contains("particleEmitters")) {
+        auto particleEmitters = animationData.get("particleEmitters").toObject();
+        for (auto& emitter : particleEmitters) {
+          auto particles = emitter.second.get("particles").toArray();
+          for (auto& particle : particles) {
+            Json innerParticle = particle.get("particle");
+            if (innerParticle.type() == Json::Type::Object && innerParticle.contains("light"))
+              particle = particle.setPath("particle.light", jsonFromColor(Color::Clear));
+          }
+          emitter.second = emitter.second.setPath("particles", Json(particles));
+        }
+        animationData = animationData.setPath("particleEmitters", Json(particleEmitters));
+      }
+      objectConfig->animationConfig = animationData;
       if (auto customConfig = config.get("animationCustom", {}))
         objectConfig->animationConfig = jsonMerge(objectConfig->animationConfig, assets->fetchJson(customConfig, path));
     }
@@ -531,10 +550,21 @@ ObjectConfigPtr ObjectDatabase::readConfig(String const& path) {
     // well as in individual orientations.
 
     List<ObjectOrientation::ParticleEmissionEntry> particleEmitters;
-    if (config.contains("particleEmitter"))
-      particleEmitters.append(ObjectOrientation::parseParticleEmitter(path, config.get("particleEmitter")));
-    for (auto particleEmitterConfig : config.getArray("particleEmitters", {}))
-      particleEmitters.append(ObjectOrientation::parseParticleEmitter(path, particleEmitterConfig));
+    if (config.contains("particleEmitter")) {
+      Json particleEmitterConfig = config.get("particleEmitter");
+      Json particle = particleEmitterConfig.get("particle");
+      if (particleLightsDisabled && particle.type() == Json::Type::Object && particle.contains("light"))
+        particleEmitters.append(ObjectOrientation::parseParticleEmitter(path, particleEmitterConfig.setPath("particle.light", jsonFromColor(Color::Clear))));
+      else
+        particleEmitters.append(ObjectOrientation::parseParticleEmitter(path, particleEmitterConfig));
+    }
+    for (auto particleEmitterConfig : config.getArray("particleEmitters", {})) {
+      Json particle = particleEmitterConfig.get("particle");
+      if (particleLightsDisabled && particle.type() == Json::Type::Object && particle.contains("light"))
+        particleEmitters.append(ObjectOrientation::parseParticleEmitter(path, particleEmitterConfig.setPath("particle.light", jsonFromColor(Color::Clear))));
+      else
+        particleEmitters.append(ObjectOrientation::parseParticleEmitter(path, particleEmitterConfig));
+    }
 
     for (auto orientation : objectConfig->orientations)
       orientation->particleEmitters.appendAll(particleEmitters);
