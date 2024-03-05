@@ -22,6 +22,12 @@
 #include "StarInputLuaBindings.hpp"
 #include "StarVoiceLuaBindings.hpp"
 
+#if defined STAR_SYSTEM_WINDOWS
+#include <windows.h>
+extern "C" __declspec(dllexport) DWORD NvOptimusEnablement = 1;
+extern "C" __declspec(dllexport) DWORD AmdPowerXpressRequestHighPerformance = 1;
+#endif // graphics driver is told by these exports to default to the dedicated GPU
+
 namespace Star {
 
 Json const AdditionalAssetsSettings = Json::parseJson(R"JSON(
