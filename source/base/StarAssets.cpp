@@ -86,10 +86,21 @@ Assets::Assets(Settings settings, StringList assetSources) {
     m_assetSourcePaths.add(sourcePath, source);
 
     for (auto const& filename : source->assetPaths()) {
-      if (filename.endsWith(AssetsPatchSuffix, String::CaseInsensitive)) {
-        auto targetPatchFile = filename.substr(0, filename.size() - strlen(AssetsPatchSuffix));
-        if (auto p = m_files.ptr(targetPatchFile))
-          p->patchSources.append({filename, source});
+      if (filename.contains(AssetsPatchSuffix, String::CaseInsensitive)) {
+        if (filename.endsWith(AssetsPatchSuffix, String::CaseInsensitive)) {
+          auto targetPatchFile = filename.substr(0, filename.size() - strlen(AssetsPatchSuffix));
+          if (auto p = m_files.ptr(targetPatchFile))
+            p->patchSources.append({filename, source});
+        } else {
+          for (int i = 0; i < 10; i++) {
+            if (filename.endsWith(AssetsPatchSuffix + toString(i), String::CaseInsensitive)) {
+              auto targetPatchFile = filename.substr(0, filename.size() - strlen(AssetsPatchSuffix) + 1);
+              if (auto p = m_files.ptr(targetPatchFile))
+                p->patchSources.append({filename, source});
+              break;
+            }
+          }
+        }
       }
       auto& descriptor = m_files[filename];
       descriptor.sourceName = filename;
