@@ -25,6 +25,7 @@ namespace JsonPatching {
       {"replace", std::bind(applyReplaceOperation, _1, _2)},
       {"move", std::bind(applyMoveOperation, _1, _2)},
       {"copy", std::bind(applyCopyOperation, _1, _2)},
+      {"merge", std::bind(applyMergeOperation, _1, _2)},
   };
 
   Json applyOperation(Json const& base, Json const& op) {
@@ -50,8 +51,8 @@ namespace JsonPatching {
         Json searchValue = op.get("search");
         if (searchArray.type() == Json::Type::Array) {
           bool found = false;
-          for(auto& e : searchArray.toArray()) {
-            if (jsonCompare(e, searchValue)) {
+          for(auto& v : searchArray.toArray()) {
+            if (jsonCompare(v, searchValue)) {
               found = true;
               break;
             }
@@ -99,8 +100,8 @@ namespace JsonPatching {
       if (searchArray.type() == Json::Type::Array) {
         size_t index = 0;
         bool found = false;
-        for (auto& e : searchArray.toArray()) {
-          if (jsonCompare(e, searchValue)) {
+        for (auto& v : searchArray.toArray()) {
+          if (jsonCompare(v, searchValue)) {
             found = true;
             break;
           }
@@ -126,8 +127,8 @@ namespace JsonPatching {
       Json searchValue = op.get("search");
       if (searchArray.type() == Json::Type::Array) {
         bool found = false;
-        for (auto& e : searchArray.toArray()) {
-          if (jsonCompare(e, searchValue)) {
+        for (auto& v : searchArray.toArray()) {
+          if (jsonCompare(v, searchValue)) {
             found = true;
             break;
           }
@@ -144,17 +145,18 @@ namespace JsonPatching {
   }
 
   Json applyReplaceOperation(Json const& base, Json const& op) {
+    String path = op.getString("path");
+    auto pointer = JsonPath::Pointer(op.getString("path"));
+
     if (op.contains("search")) {
       Json value = op.get("value");
-      String path = op.getString("path");
-      auto pointer = JsonPath::Pointer(path);
       Json searchArray = pointer.get(base);
       Json searchValue = op.get("search");
       if (searchArray.type() == Json::Type::Array) {
         size_t index = 0;
         bool found = false;
-        for (auto& e : searchArray.toArray()) {
-          if (jsonCompare(e, searchValue)) {
+        for (auto& v : searchArray.toArray()) {
+          if (jsonCompare(v, searchValue)) {
             found = true;
             break;
           }
@@ -167,24 +169,102 @@ namespace JsonPatching {
         throw JsonPatchException(strf("Search operation failure, value at {} is not an array.", path));
       }
     } else {
-      auto pointer = JsonPath::Pointer(op.getString("path"));
       return pointer.add(pointer.remove(base), op.get("value"));
     }
   }
 
   Json applyMoveOperation(Json const& base, Json const& op) {
+    String path = op.getString("path");
+    auto toPointer = JsonPath::Pointer(path);
     auto fromPointer = JsonPath::Pointer(op.getString("from"));
-    auto toPointer = JsonPath::Pointer(op.getString("path"));
 
-    Json value = fromPointer.get(base);
-    return toPointer.add(fromPointer.remove(base), value);
+    if (op.contains("search")) {
+      Json value = op.get("value");
+      Json searchArray = fromPointer.get(base);
+      Json searchValue = op.get("search");
+      if (searchArray.type() == Json::Type::Array) {
+        size_t index = 0;
+        bool found = false;
+        for (auto& v : searchArray.toArray()) {
+          if (jsonCompare(v, searchValue)) {
+            found = true;
+            break;
+          }
+          index++;
+        }
+        if (found) {
+          toPointer.add(toPointer.remove(base), searchArray.get(index));
+          searchArray = searchArray.eraseIndex(index);
+          fromPointer.add(fromPointer.remove(base), searchArray);
+        }
+        return toPointer.get(base);
+      } else {
+        throw JsonPatchException(strf("Search operation failure, value at {} is not an array.", path));
+      }
+    } else {
+      Json value = fromPointer.get(base);
+      return toPointer.add(fromPointer.remove(base), value);
+    }
   }
 
   Json applyCopyOperation(Json const& base, Json const& op) {
+    String path = op.getString("path");
+    auto toPointer = JsonPath::Pointer(path);
     auto fromPointer = JsonPath::Pointer(op.getString("from"));
-    auto toPointer = JsonPath::Pointer(op.getString("path"));
 
-    return toPointer.add(base, fromPointer.get(base));
+    if (op.contains("search")) {
+      Json value = op.get("value");
+      Json searchArray = fromPointer.get(base);
+      Json searchValue = op.get("search");
+      if (searchArray.type() == Json::Type::Array) {
+        size_t index = 0;
+        bool found = false;
+        for (auto& v : searchArray.toArray()) {
+          if (jsonCompare(v, searchValue)) {
+            found = true;
+            break;
+          }
+          index++;
+        }
+        if (found)
+          toPointer.add(base, searchArray.get(index));
+        return toPointer.get(base);
+      } else {
+        throw JsonPatchException(strf("Search operation failure, value at {} is not an array.", path));
+      }
+    } else {
+      Json value = fromPointer.get(base);
+      return toPointer.add(base, fromPointer.get(base));
+    }
+  }
+
+  Json applyMergeOperation(Json const& base, Json const& op) {
+    String path = op.getString("path");
+    auto pointer = JsonPath::Pointer(op.getString("path"));
+
+    if (op.contains("search")) {
+      Json value = op.get("value");
+      Json searchArray = pointer.get(base);
+      Json searchValue = op.get("search");
+      if (searchArray.type() == Json::Type::Array) {
+        size_t index = 0;
+        bool found = false;
+        for (auto& v : searchArray.toArray()) {
+          if (jsonCompare(v, searchValue)) {
+            found = true;
+            break;
+          }
+          index++;
+        }
+        if (found)
+          searchArray = searchArray.set(index, jsonMerge(searchArray.get(index), op.get("value")));
+        return pointer.add(pointer.remove(base), searchArray);
+      } else {
+        throw JsonPatchException(strf("Search operation failure, value at {} is not an array.", path));
+      }
+    } else {
+      return pointer.add(pointer.remove(base), jsonMerge(pointer.get(base), op.get("value")));
+    }
   }
 }
 
