@@ -443,7 +443,7 @@ void PlayerInventory::condenseBagStacks(String const& bagType) {\
   auto bag = m_bags[bagType];
 
   bag->condenseStacks();
-  
+
   m_customBar.forEach([&](auto const&, CustomBarLink& link) {
       if (link.first) {
         if (auto bs = link.first->ptr<BagSlot>()) {
@@ -756,6 +756,12 @@ Maybe<InventorySlot> PlayerInventory::secondaryHeldSlot() const {
   return {};
 }
 
+List<ItemPtr> PlayerInventory::clearOverflow(){
+  auto list = m_inventoryLoadOverflow;
+  m_inventoryLoadOverflow.clear();
+  return list;
+}
+
 void PlayerInventory::load(Json const& store) {
   auto itemDatabase = Root::singleton().itemDatabase();
 
@@ -771,14 +777,21 @@ void PlayerInventory::load(Json const& store) {
   //reuse ItemBags so the Inventory pane still works after load()'ing into the same PlayerInventory again (from swap)
   auto itemBags = store.get("itemBags").toObject();
   eraseWhere(m_bags, [&](auto const& p) { return !itemBags.contains(p.first); });
+  m_inventoryLoadOverflow.clear();
   for (auto const& p : itemBags) {
     auto& bagType = p.first;
     auto newBag = ItemBag::loadStore(p.second);
-    auto& bagPtr = m_bags[bagType];
-    if (bagPtr)
-      *bagPtr = std::move(newBag);
-    else
-      bagPtr = make_shared<ItemBag>(std::move(newBag));
+    if (m_bags.keys().contains(bagType)) {
+      auto& bagPtr = m_bags[bagType];
+      auto size = bagPtr.get()->size();
+      if (bagPtr)
+        *bagPtr = std::move(newBag);
+      else
+        bagPtr = make_shared<ItemBag>(std::move(newBag));
+      m_inventoryLoadOverflow.appendAll(bagPtr.get()->resize(size));
+    } else {
+      m_inventoryLoadOverflow.appendAll(ItemBag(newBag).items());
+    }
   }
 
   m_swapSlot = itemDatabase->diskLoad(store.get("swapSlot"));
@@ -790,10 +803,17 @@ void PlayerInventory::load(Json const& store) {
 
   for (size_t i = 0; i < m_customBar.size(0); ++i) {
     for (size_t j = 0; j < m_customBar.size(1); ++j) {
-      Json cbl = store.get("customBar").get(i).get(j);
+      Json cbl = store.get("customBar").get(i,JsonArray()).get(j,JsonArray());
+      auto validateLink = [this](Json link) -> Json {
+        if ((link.isType(Json::Type::Object))
+        && (m_bags.keys().contains(link.getString("type")))
+        && (m_bags[link.getString("type")].get()->size() > link.getUInt("location")))
+          return link;
+        return Json();
+      };
       m_customBar.at(i, j) = CustomBarLink{
-        jsonToMaybe<InventorySlot>(cbl.get(0, {}), jsonToInventorySlot),
-        jsonToMaybe<InventorySlot>(cbl.get(1, {}), jsonToInventorySlot)
+        jsonToMaybe<InventorySlot>(validateLink(cbl.get(0, Json())), jsonToInventorySlot),
+        jsonToMaybe<InventorySlot>(validateLink(cbl.get(1, Json())), jsonToInventorySlot)
       };
     }
   }
