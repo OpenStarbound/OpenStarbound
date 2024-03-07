@@ -516,7 +516,7 @@ set(STAR_GAME_INCLUDES
     ${PROJECT_SOURCE_DIR}/game/items
     ${PROJECT_SOURCE_DIR}/game/objects
     ${PROJECT_SOURCE_DIR}/game/scripting
-    ${PROJECT_SOURCE_DIR}/game/terrai
+    ${PROJECT_SOURCE_DIR}/game/terrain
   )
 add_subdirectory(game)
 
