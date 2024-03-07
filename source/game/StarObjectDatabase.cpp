@@ -114,7 +114,6 @@ Json ObjectDatabase::parseTouchDamage(String const& path, Json const& config) {
 List<ObjectOrientationPtr> ObjectDatabase::parseOrientations(String const& path, Json const& configList) {
   auto& root = Root::singleton();
   auto materialDatabase = root.materialDatabase();
-  auto assets = root.assets();
   List<ObjectOrientationPtr> res;
   JsonArray configs = configList.toArray();
 
