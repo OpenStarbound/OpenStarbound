@@ -676,9 +676,9 @@ Json Assets::checkPatchArray(String const& path, AssetSourcePtr const& source, J
         try {
           newResult = checkPatchArray(path, source, newResult, patch.toArray(), externalRef);
         } catch (JsonPatchTestFail const& e) {
-          Logger::debug("Patch test failure from file %s in source: '%s' at '%s'. Caused by: %s", path, source->metadata().value("name", ""), m_assetSourcePaths.getLeft(source), e.what());
+          Logger::debug("Patch test failure from file {} in source: '{}' at '{}'. Caused by: {}", path, source->metadata().value("name", ""), m_assetSourcePaths.getLeft(source), e.what());
         } catch (JsonPatchException const& e) {
-          Logger::error("Could not apply patch from file %s in source: '%s' at '%s'.  Caused by: %s", path, source->metadata().value("name", ""), m_assetSourcePaths.getLeft(source), e.what());
+          Logger::error("Could not apply patch from file {} in source: '{}' at '{}'.  Caused by: {}", path, source->metadata().value("name", ""), m_assetSourcePaths.getLeft(source), e.what());
         }
         break;
       case Json::Type::Object: // if its an object, check for operations, or for if an external file is needed for patches to reference
@@ -688,11 +688,11 @@ Json Assets::checkPatchArray(String const& path, AssetSourcePtr const& source, J
         try {
           externalRef = json(patch.toString());
         } catch (...) {
-          throw JsonPatchTestFail(strf("Unable to load reference asset: %s", patch.toString()));
+          throw JsonPatchTestFail(strf("Unable to load reference asset: {}", patch.toString()));
         }
         break;
       default:
-        throw JsonPatchException(strf("Patch data is wrong type: %s", Json::typeName(patch.type())));
+        throw JsonPatchException(strf("Patch data is wrong type: {}", Json::typeName(patch.type())));
         break;
     }
   }
@@ -711,9 +711,9 @@ Json Assets::readJson(String const& path) const {
         try {
           result = checkPatchArray(pair.first, pair.second, result, patchData, {});
         } catch (JsonPatchTestFail const& e) {
-          Logger::debug("Patch test failure from file %s in source: '%s' at '%s'. Caused by: %s", pair.first, pair.second->metadata().value("name", ""), m_assetSourcePaths.getLeft(pair.second), e.what());
+          Logger::debug("Patch test failure from file {} in source: '{}' at '{}'. Caused by: {}", pair.first, pair.second->metadata().value("name", ""), m_assetSourcePaths.getLeft(pair.second), e.what());
         } catch (JsonPatchException const& e) {
-          Logger::error("Could not apply patch from file %s in source: '%s' at '%s'.  Caused by: %s", pair.first, pair.second->metadata().value("name", ""), m_assetSourcePaths.getLeft(pair.second), e.what());
+          Logger::error("Could not apply patch from file {} in source: '{}' at '{}'.  Caused by: {}", pair.first, pair.second->metadata().value("name", ""), m_assetSourcePaths.getLeft(pair.second), e.what());
         }
       } else if (patchJson.isType(Json::Type::Object)) { //Kae: Do a good ol' json merge instead if the .patch file is a Json object
         auto patchData = patchJson.toObject();
@@ -722,7 +722,7 @@ Json Assets::readJson(String const& path) const {
     }
     return result;
   } catch (std::exception const& e) {
-    throw JsonParsingException(strf("Cannot parse json file: %s", path), e);
+    throw JsonParsingException(strf("Cannot parse json file: {}", path), e);
   }
 }
 
