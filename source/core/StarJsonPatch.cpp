@@ -27,7 +27,7 @@ namespace JsonPatching {
       {"copy", std::bind(applyCopyOperation, _1, _2)},
   };
 
-  Json applyOperation(Json const& base, Json const& op) {
+  Json applyOperation(Json const& base, Json const& op, Maybe<Json> const& external) {
     try {
       auto operation = op.getString("op");
       return JsonPatching::functionMap.get(operation)(base, op);

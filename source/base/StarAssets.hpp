@@ -269,6 +269,7 @@ private:
   ByteArray read(String const& basePath) const;
 
   Json readJson(String const& basePath) const;
+  Json checkPatchArray(String const& path, AssetSourcePtr const& source, Json const result, JsonArray const patchData, Maybe<Json> const external) const;
 
   // Load / post process an asset and log any exception.  Returns true if the
   // work was performed (whether successful or not), false if the work is
