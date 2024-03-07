@@ -66,7 +66,30 @@ namespace JsonPatching {
   }
 
   Json applyRemoveOperation(Json const& base, Json const& op) {
-    return JsonPath::Pointer(op.getString("path")).remove(base);
+    if (op.contains("search")) {
+      String path = op.getString("path");
+      auto pointer = JsonPath::Pointer(path);
+      Json searchArray = pointer.get(base);
+      Json searchValue = op.get("search");
+      if (searchArray.type() == Json::Type::Array) {
+        size_t index = 0;
+        bool found = false;
+        for (auto& e : searchArray.toArray()) {
+          if (jsonCompare(e, searchValue)) {
+            found = true;
+            break;
+          }
+          index++;
+        }
+        if (found)
+          searchArray = searchArray.eraseIndex(index);
+        return pointer.add(pointer.remove(base), searchArray);
+      } else {
+        throw JsonPatchException(strf("Search operation failure, value at {} is not an array.", path));
+      }
+    } else {
+      return JsonPath::Pointer(op.getString("path")).remove(base);
+    }
   }
 
   Json applyAddOperation(Json const& base, Json const& op) {
