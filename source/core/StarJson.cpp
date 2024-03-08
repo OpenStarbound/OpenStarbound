@@ -1035,4 +1035,34 @@ Json jsonMerge(Json const& base, Json const& merger) {
   }
 }
 
+bool jsonCompare(Json const& base, Json const& compare) {
+  if (base == compare) {
+    return true;
+  } else {
+    if (base.type() == Json::Type::Object && compare.type() == Json::Type::Object) {
+      for (auto const& c : compare.toObject()) {
+        if (!base.contains(c.first) || !jsonCompare(base.get(c.first), c.second))
+          return false;
+      }
+      return true;
+    }
+    if (base.type() == Json::Type::Array && compare.type() == Json::Type::Array) {
+      for (auto const& c : compare.toArray()) {
+        bool similar = false;
+        for (auto const& b : base.toArray()) {
+          if (jsonCompare(c, b)) {
+            similar = true;
+            break;
+          }
+        }
+        if (!similar)
+          return false;
+      }
+      return true;
+    }
+
+    return false;
+  }
+}
+
 }
