@@ -16,8 +16,6 @@
         "CMAKE_INSTALL_PREFIX": "${sourceParentDir}/install",
         "VCPKG_OVERLAY_TRIPLETS": "${sourceParentDir}/triplets",
         "CMAKE_VERBOSE_MAKEFILE": true,
-        "CMAKE_C_COMPILER_LAUNCHER": "sccache",
-        "CMAKE_CXX_COMPILER_LAUNCHER": "sccache",
         "BUILD_TESTING": true,
         "STAR_ENABLE_STEAM_INTEGRATION": true,
         "STAR_ENABLE_DISCORD_INTEGRATION": true
