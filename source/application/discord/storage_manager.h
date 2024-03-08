@@ -28,6 +28,7 @@ public:
     void Count(std::int32_t* count);
     Result Stat(char const* name, FileStat* stat);
     Result StatAt(std::int32_t index, FileStat* stat);
+    Result GetPath(char path[4096]);
 
 private:
     friend class Core;

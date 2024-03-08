@@ -145,4 +145,14 @@ Result StorageManager::StatAt(std::int32_t index, FileStat* stat)
     return static_cast<Result>(result);
 }
 
+Result StorageManager::GetPath(char path[4096])
+{
+    if (!path) {
+        return Result::InternalError;
+    }
+
+    auto result = internal_->get_path(internal_, reinterpret_cast<DiscordPath*>(path));
+    return static_cast<Result>(result);
+}
+
 } // namespace discord

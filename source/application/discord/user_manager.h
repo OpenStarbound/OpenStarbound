@@ -10,6 +10,8 @@ public:
 
     Result GetCurrentUser(User* currentUser);
     void GetUser(UserId userId, std::function<void(Result, User const&)> callback);
+    Result GetCurrentUserPremiumType(PremiumType* premiumType);
+    Result CurrentUserHasFlag(UserFlag flag, bool* hasFlag);
 
     Event<> OnCurrentUserUpdate;
 

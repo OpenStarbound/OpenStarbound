@@ -13,56 +13,65 @@ on:
 
 jobs:
   build:
-    name: OpenStarbound Windows x86_64
+    name: Build OpenStarbound Windows x64
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           submodules: 'recursive'
 
-      - name: Configure Test Build
-        run: >
-          cmake -G "Visual Studio 17 2022" -A "X64" -S "${{ github.workspace }}/source" -B "${{ github.workspace }}/cmake-build-debug"
-          -DCMAKE_TOOLCHAIN_FILE="${Env:VCPKG_INSTALLATION_ROOT}/scripts/buildsystems/vcpkg.cmake"
-          -DVCPKG_OVERLAY_TRIPLETS="${{ github.workspace }}\triplets"
-          -DVCPKG_TARGET_TRIPLET=x64-windows-mixed-md
-          -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Debug>:Debug>DLL"
-          -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install"
-          -DCMAKE_VERBOSE_MAKEFILE=YES
-          -DBUILD_TESTING=YES
-
-      - name: Build Debug
-        run: cmake --build "${{ github.workspace }}/cmake-build-debug" --config "Debug" --parallel
-
-      - name: Run Unit Tests
-        run: ctest --test-dir "${{ github.workspace }}/cmake-build-debug" -L 'NoAssets' --verbose --build-config "Debug"
-
-      - name: Cleanup Test Build
+      - name: Hire a Ninja
         run: |
-          Remove-Item "${{ github.workspace }}\cmake-build-debug" -Recurse
-          Remove-Item "${{ github.workspace }}\dist" -Recurse
+          choco install ninja
+          ninja.exe --version
 
-      - name: Configure Release Build
-        run: >
-          cmake -G "Visual Studio 17 2022" -A "X64" -S "${{ github.workspace }}/source" -B "${{ github.workspace }}/cmake-build-relwithdebinfo"
-          -DCMAKE_TOOLCHAIN_FILE="${Env:VCPKG_INSTALLATION_ROOT}/scripts/buildsystems/vcpkg.cmake"
-          -DVCPKG_OVERLAY_TRIPLETS="${{ github.workspace }}\triplets"
-          -DVCPKG_TARGET_TRIPLET=x64-windows-mixed-md
-          -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Debug>:Debug>DLL"
-          -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install"
-          -DCMAKE_VERBOSE_MAKEFILE=YES
-          -DBUILD_TESTING=OFF
-          -DSTAR_ENABLE_STEAM_INTEGRATION=ON
-          -DSTAR_ENABLE_DISCORD_INTEGRATION=ON
-          -DCMAKE_INCLUDE_PATH="${{ github.workspace }}\lib\windows\include"
-          -DCMAKE_LIBRARY_PATH="${{ github.workspace }}\lib\windows"
+      - name: sccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          variant: sccache
+          key: ${{ github.job }}-${{ runner.os }}
+          max-size: 2500M
 
-      - name: Build Release
-        run: cmake --build "${{ github.workspace }}/cmake-build-relwithdebinfo" --config "RelWithDebInfo" --parallel
+      - uses: ilammy/msvc-dev-cmd@v1
+
+      - name: vcpkg
+        uses: lukka/run-vcpkg@v11
+        id: runvcpkg
+        with:
+          vcpkgJsonGlob: '**/source/vcpkg.json'
+          vcpkgConfigurationJsonGlob: '**/source/vcpkg-configuration.json'
+
+      - name: Run CMake
+        uses: lukka/run-cmake@v10
+        with:
+          cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
+          configurePreset: 'windows-release'
+          buildPreset: 'windows-release'
+          testPreset: 'windows-release'
+
+      - name: Tidy Artifacts
+        working-directory: ${{ github.workspace }}
+        run: scripts\ci\windows\tidy.bat
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: OpenStarbound-Dev-Windows-x64
           path: dist/*
+
+      - name: Assemble Install Files
+        working-directory: ${{ github.workspace }}
+        run: scripts\ci\windows\assemble.bat
+
+      - name: Create Installer
+        working-directory: ${{ github.workspace }}
+        run: |
+          & "C:\Program Files (x86)\Inno Setup 6\iscc.exe" /Oinstaller scripts\inno\setup.iss
+
+      - name: Upload Installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: Installer
+          path: installer/*

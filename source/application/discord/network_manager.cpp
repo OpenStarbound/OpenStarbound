@@ -13,11 +13,11 @@ namespace discord {
 
 class NetworkEvents final {
 public:
-    static void OnMessage(void* callbackData,
-                          DiscordNetworkPeerId peerId,
-                          DiscordNetworkChannelId channelId,
-                          uint8_t* data,
-                          uint32_t dataLength)
+    static void DISCORD_CALLBACK OnMessage(void* callbackData,
+                                           DiscordNetworkPeerId peerId,
+                                           DiscordNetworkChannelId channelId,
+                                           uint8_t* data,
+                                           uint32_t dataLength)
     {
         auto* core = reinterpret_cast<Core*>(callbackData);
         if (!core) {
@@ -28,7 +28,7 @@ public:
         module.OnMessage(peerId, channelId, data, dataLength);
     }
 
-    static void OnRouteUpdate(void* callbackData, char const* routeData)
+    static void DISCORD_CALLBACK OnRouteUpdate(void* callbackData, char const* routeData)
     {
         auto* core = reinterpret_cast<Core*>(callbackData);
         if (!core) {

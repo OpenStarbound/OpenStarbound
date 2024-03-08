@@ -1,15 +1,24 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.23)
 
 # Find CCache
-find_program(CCACHE_PATH ccache)
-if(CCACHE_PATH)
-  set(CMAKE_C_COMPILER_LAUNCHER "${CCACHE_PATH}")
-  set(CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_PATH}")
-  message(STATUS "Using CCache")
-else()
-  message(STATUS "Not using CCache")
+if (NOT CMAKE_CXX_COMPILER_LAUNCHER MATCHES "ccache")
+  find_program(CCACHE_PATH ccache)
+  if(CCACHE_PATH)
+    set(CMAKE_C_COMPILER_LAUNCHER "${CCACHE_PATH}")
+    set(CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_PATH}")
+    message(STATUS "Using CCache")
+  else()
+    message(STATUS "Not using CCache")
+  endif()
 endif()
 
+if(CMAKE_CXX_COMPILER_LAUNCHER MATCHES "ccache")
+  set(STAR_CCACHE TRUE)
+  set(STAR_PRECOMPILED_HEADERS FALSE)
+else()
+  set(STAR_CCACHE FALSE)
+  set(STAR_PRECOMPILED_HEADERS TRUE)
+endif()
 
 project(starbound)
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../cmake)
@@ -299,6 +308,7 @@ elseif(STAR_COMPILER_MSVC)
   # /fp:fast - Equivalent to -ffast-math
   # /GS-     - Disable buffers security check
   # /Zi      - Generates debugging information without Edit and Continue
+  # /Z7      - Like the above, but debugging information is stored per-object
   # /Gy      - Use function-level linking
   # /wd4996  - Disable warnings about unsafe C functions
   # /wd4351  - Disable warnings about new behavior of default initialization of
@@ -317,22 +327,22 @@ elseif(STAR_COMPILER_MSVC)
   # /wd4624  - Silence implicitly deleted destructor warnings that show up when
   #            using unions in interesting ways.
 
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MP /EHsc /bigobj /wd4996 /wd4351 /wd4800 /wd4244 /wd4305 /wd4267 /wd4456 /wd4503 /wd4250 /wd4624")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17 /MP /EHsc /bigobj /wd4996 /wd4351 /wd4800 /wd4244 /wd4305 /wd4267 /wd4456 /wd4503 /wd4250 /wd4624")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /nologo /MP /EHsc /bigobj /wd4996 /wd4351 /wd4800 /wd4244 /wd4305 /wd4267 /wd4456 /wd4503 /wd4250 /wd4624")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /nologo /std:c++17 /MP /EHsc /bigobj /wd4996 /wd4351 /wd4800 /wd4244 /wd4305 /wd4267 /wd4456 /wd4503 /wd4250 /wd4624")
 
   if(STAR_ENABLE_STATIC_MSVC_RUNTIME)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MT")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MT")
   endif()
 
-  set(CMAKE_C_FLAGS_DEBUG "/Zi /Od")
-  set(CMAKE_CXX_FLAGS_DEBUG "/Zi /Od")
+  set(CMAKE_C_FLAGS_DEBUG "/Z7 /Od")
+  set(CMAKE_CXX_FLAGS_DEBUG "/Z7 /Od")
 
-  set(CMAKE_C_FLAGS_RELWITHASSERTS "/Ox /fp:fast /GA /GS- /Zi /Gy")
-  set(CMAKE_CXX_FLAGS_RELWITHASSERTS "/Ox /fp:fast /GA /GS- /Zi /Gy")
+  set(CMAKE_C_FLAGS_RELWITHASSERTS "/Ox /fp:fast /GA /GS- /Z7 /Gy")
+  set(CMAKE_CXX_FLAGS_RELWITHASSERTS "/Ox /fp:fast /GA /GS- /Z7 /Gy")
 
-  set(CMAKE_C_FLAGS_RELWITHDEBINFO "/Ox /fp:fast /GA /GS- /Zi /Gy /DNDEBUG")
-  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "/Ox /fp:fast /GA /GS- /Zi /Gy /DNDEBUG")
+  set(CMAKE_C_FLAGS_RELWITHDEBINFO "/Ox /fp:fast /GA /GS- /Z7 /Gy /DNDEBUG")
+  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "/Ox /fp:fast /GA /GS- /Z7 /Gy /DNDEBUG")
 
   set(CMAKE_C_FLAGS_RELEASE "/Ox /fp:fast /GA /GS- /Gy /DNDEBUG")
   set(CMAKE_CXX_FLAGS_RELEASE "/Ox /fp:fast /GA /GS- /Gy /DNDEBUG")
@@ -425,6 +435,7 @@ endif()
 find_package(ZLIB REQUIRED)
 find_package(PNG REQUIRED)
 find_package(Freetype REQUIRED)
+find_package(Opus CONFIG REQUIRED)
 find_package(OggVorbis REQUIRED)
 
 include_directories(SYSTEM
@@ -432,48 +443,42 @@ include_directories(SYSTEM
     ${OGGVORBIS_INCLUDE_DIR}
 )
 
-if(TARGET freetype AND NOT TARGET Freetype::Freetype)
-  add_library(Freetype::Freetype ALIAS freetype)
-  message(STATUS "Freetype target name is freetype")
-elseif(TARGET Freetype::Freetype AND NOT TARGET freetype)
-  add_library(freetype ALIAS Freetype::Freetype)
-  message(STATUS "Freetype target name is Freetype::Freetype")
-else()
-  message(FATAL_ERROR "Could not find Freetype")
-endif()
-
 set(STAR_EXT_LIBS ${STAR_EXT_LIBS}
     ZLIB::ZLIB
     PNG::PNG
-    Freetype::Freetype
+    $<IF:$<TARGET_EXISTS:Freetype::Freetype>,Freetype::Freetype,freetype>
+    Opus::opus
     ${VORBISFILE_LIBRARY}
     ${VORBIS_LIBRARY}
     ${OGG_LIBRARY}
-    opus # Currently a submodule from extern
 )
 
 if(STAR_BUILD_GUI)
-  find_package(SDL2 REQUIRED)
-  include_directories(SYSTEM ${SDL2_INCLUDE_DIR})
-  set(STAR_EXT_GUI_LIBS ${SDL2_LIBRARY})
+  find_package(SDL2 CONFIG REQUIRED)
+
+  set(STAR_EXT_GUI_LIBS
+    $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main>
+    $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
+  )
 
   find_package(OpenGL REQUIRED)
   find_package(GLEW REQUIRED)
 
-  include_directories(SYSTEM ${GLEW_INCLUDE_DIR} ${SDL2_INCLUDE_DIR})
+  include_directories(SYSTEM ${GLEW_INCLUDE_DIR})
   set(STAR_EXT_GUI_LIBS ${STAR_EXT_GUI_LIBS} ${OPENGL_LIBRARY} ${GLEW_LIBRARY})
+
+  if(STAR_SYSTEM_MACOS)
+    set(STAR_EXT_GUI_LIBS ${STAR_EXT_GUI_LIBS} "-framework CoreAudio")
+  endif()
 
   if(STAR_ENABLE_STEAM_INTEGRATION)
     find_package(SteamApi REQUIRED)
-
     include_directories(SYSTEM ${STEAM_API_INCLUDE_DIR})
     set(STAR_EXT_GUI_LIBS ${STAR_EXT_GUI_LIBS} ${STEAM_API_LIBRARY})
   endif()
 
   if(STAR_ENABLE_DISCORD_INTEGRATION)
     find_package(DiscordApi REQUIRED)
-
-    include_directories(SYSTEM ${DISCORD_API_INCLUDE_DIR})
     set(STAR_EXT_GUI_LIBS ${STAR_EXT_GUI_LIBS} ${DISCORD_API_LIBRARY})
   endif()
 endif()

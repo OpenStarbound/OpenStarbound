@@ -7,7 +7,7 @@
 #include "StarImage.hpp"
 #include "StarImageProcessing.hpp"
 
-#include "SDL.h"
+#include "SDL2/SDL.h"
 #include "StarPlatformServices_pc.hpp"
 
 namespace Star {

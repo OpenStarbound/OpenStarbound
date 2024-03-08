@@ -33,4 +33,7 @@ SET (star_rendering_SOURCES
     )
 
 ADD_LIBRARY (star_rendering OBJECT ${star_rendering_SOURCES} ${star_rendering_HEADERS})
-TARGET_PRECOMPILE_HEADERS (star_rendering REUSE_FROM star_core)
+
+IF(STAR_PRECOMPILED_HEADERS)
+  TARGET_PRECOMPILE_HEADERS (star_rendering REUSE_FROM star_core)
+ENDIF()

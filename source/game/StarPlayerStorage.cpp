@@ -14,7 +14,7 @@ namespace Star {
 
 PlayerStorage::PlayerStorage(String const& storageDir) {
   m_storageDirectory = storageDir;
-  m_backupDirectory = File::relativeTo(m_storageDirectory, File::convertDirSeparators("backup"));
+  m_backupDirectory = File::relativeTo(m_storageDirectory, "backup");
   if (!File::isDirectory(m_storageDirectory)) {
     Logger::info("Creating player storage directory");
     File::makeDirectory(m_storageDirectory);
@@ -257,11 +257,8 @@ void PlayerStorage::backupCycle(Uuid const& uuid) {
     return File::relativeTo(dir, strf("{}.{}", fileName, extension));
   };
 
-  if (!File::isDirectory(m_backupDirectory)) {
-    Logger::info("Creating player backup directory");
+  if (!File::isDirectory(m_backupDirectory))
     File::makeDirectory(m_backupDirectory);
-    return;
-  }
 
   File::backupFileInSequence(path(m_storageDirectory, "player"), path(m_backupDirectory, "player"), playerBackupFileCount, ".bak");
   File::backupFileInSequence(path(m_storageDirectory, "shipworld"), path(m_backupDirectory, "shipworld"), playerBackupFileCount, ".bak");

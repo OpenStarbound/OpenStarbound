@@ -13,7 +13,7 @@ namespace discord {
 
 class RelationshipEvents final {
 public:
-    static void OnRefresh(void* callbackData)
+    static void DISCORD_CALLBACK OnRefresh(void* callbackData)
     {
         auto* core = reinterpret_cast<Core*>(callbackData);
         if (!core) {
@@ -24,7 +24,8 @@ public:
         module.OnRefresh();
     }
 
-    static void OnRelationshipUpdate(void* callbackData, DiscordRelationship* relationship)
+    static void DISCORD_CALLBACK OnRelationshipUpdate(void* callbackData,
+                                                      DiscordRelationship* relationship)
     {
         auto* core = reinterpret_cast<Core*>(callbackData);
         if (!core) {

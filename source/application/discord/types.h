@@ -2,40 +2,61 @@
 
 #include "ffi.h"
 #include "event.h"
+#ifdef _WIN32
+#include <Windows.h>
+#include <dxgi.h>
+#endif
+
+#include <cstdint>
 
 namespace discord {
 
 enum class Result {
-    Ok,
-    ServiceUnavailable,
-    InvalidVersion,
-    LockFailed,
-    InternalError,
-    InvalidPayload,
-    InvalidCommand,
-    InvalidPermissions,
-    NotFetched,
-    NotFound,
-    Conflict,
-    InvalidSecret,
-    InvalidJoinSecret,
-    NoEligibleActivity,
-    InvalidInvite,
-    NotAuthenticated,
-    InvalidAccessToken,
-    ApplicationMismatch,
-    InvalidDataUrl,
-    InvalidBase64,
-    NotFiltered,
-    LobbyFull,
-    InvalidLobbySecret,
-    InvalidFilename,
-    InvalidFileSize,
-    InvalidEntitlement,
-    NotInstalled,
-    NotRunning,
-    InsufficientBuffer,
-    PurchaseCanceled,
+    Ok = 0,
+    ServiceUnavailable = 1,
+    InvalidVersion = 2,
+    LockFailed = 3,
+    InternalError = 4,
+    InvalidPayload = 5,
+    InvalidCommand = 6,
+    InvalidPermissions = 7,
+    NotFetched = 8,
+    NotFound = 9,
+    Conflict = 10,
+    InvalidSecret = 11,
+    InvalidJoinSecret = 12,
+    NoEligibleActivity = 13,
+    InvalidInvite = 14,
+    NotAuthenticated = 15,
+    InvalidAccessToken = 16,
+    ApplicationMismatch = 17,
+    InvalidDataUrl = 18,
+    InvalidBase64 = 19,
+    NotFiltered = 20,
+    LobbyFull = 21,
+    InvalidLobbySecret = 22,
+    InvalidFilename = 23,
+    InvalidFileSize = 24,
+    InvalidEntitlement = 25,
+    NotInstalled = 26,
+    NotRunning = 27,
+    InsufficientBuffer = 28,
+    PurchaseCanceled = 29,
+    InvalidGuild = 30,
+    InvalidEvent = 31,
+    InvalidChannel = 32,
+    InvalidOrigin = 33,
+    RateLimited = 34,
+    OAuth2Error = 35,
+    SelectChannelTimeout = 36,
+    GetGuildTimeout = 37,
+    SelectVoiceForceRequired = 38,
+    CaptureShortcutAlreadyListening = 39,
+    UnauthorizedForAchievement = 40,
+    InvalidGiftCode = 41,
+    PurchaseError = 42,
+    TransactionAborted = 43,
+    DrawingInitFailed = 44,
 };
 
 enum class CreateFlags {
@@ -50,8 +71,27 @@ enum class LogLevel {
     Debug,
 };
 
+enum class UserFlag {
+    Partner = 2,
+    HypeSquadEvents = 4,
+    HypeSquadHouse1 = 64,
+    HypeSquadHouse2 = 128,
+    HypeSquadHouse3 = 256,
+};
+
+enum class PremiumType {
+    None = 0,
+    Tier1 = 1,
+    Tier2 = 2,
+};
+
 enum class ImageType {
     User,
+};
+
+enum class ActivityPartyPrivacy {
+    Private = 0,
+    Public = 1,
 };
 
 enum class ActivityType {
@@ -64,6 +104,12 @@ enum class ActivityType {
 enum class ActivityActionType {
     Join = 1,
     Spectate,
+};
+
+enum class ActivitySupportedPlatformFlags {
+    Desktop = 1,
+    Android = 2,
+    iOS = 4,
 };
 
 enum class ActivityJoinRequestReply {
@@ -114,10 +160,26 @@ enum class LobbySearchDistance {
     Global,
 };
 
+enum class KeyVariant {
+    Normal,
+    Right,
+    Left,
+};
+
+enum class MouseButton {
+    Left,
+    Middle,
+    Right,
+};
+
 enum class EntitlementType {
     Purchase = 1,
     PremiumSubscription,
     DeveloperGift,
+    TestModePurchase,
+    FreePurchase,
+    UserGift,
+    PremiumPurchase,
 };
 
 enum class SkuType {
@@ -125,6 +187,11 @@ enum class SkuType {
     DLC,
     Consumable,
     Bundle,
+};
+
+enum class InputModeType {
+    VoiceActivity = 0,
+    PushToTalk,
 };
 
 using ClientId = std::int64_t;
@@ -140,6 +207,20 @@ using MetadataKey = char const*;
 using MetadataValue = char const*;
 using NetworkPeerId = std::uint64_t;
 using NetworkChannelId = std::uint8_t;
+#ifdef __APPLE__
+using IDXGISwapChain = void;
+#endif
+#ifdef __linux__
+using IDXGISwapChain = void;
+#endif
+#ifdef __APPLE__
+using MSG = void;
+#endif
+#ifdef __linux__
+using MSG = void;
+#endif
+using Path = char const*;
+using DateTime = char const*;
 
 class User final {
 public:
@@ -238,6 +319,8 @@ public:
     char const* GetId() const;
     PartySize& GetSize();
     PartySize const& GetSize() const;
+    void SetPrivacy(ActivityPartyPrivacy privacy);
+    ActivityPartyPrivacy GetPrivacy() const;
 
 private:
     DiscordActivityParty internal_;
@@ -278,6 +361,8 @@ public:
     ActivitySecrets const& GetSecrets() const;
     void SetInstance(bool instance);
     bool GetInstance() const;
+    void SetSupportedPlatforms(std::uint32_t supportedPlatforms);
+    std::uint32_t GetSupportedPlatforms() const;
 
 private:
     DiscordActivity internal_;
@@ -324,6 +409,38 @@ public:
 
 private:
     DiscordLobby internal_;
+};
+
+class ImeUnderline final {
+public:
+    void SetFrom(std::int32_t from);
+    std::int32_t GetFrom() const;
+    void SetTo(std::int32_t to);
+    std::int32_t GetTo() const;
+    void SetColor(std::uint32_t color);
+    std::uint32_t GetColor() const;
+    void SetBackgroundColor(std::uint32_t backgroundColor);
+    std::uint32_t GetBackgroundColor() const;
+    void SetThick(bool thick);
+    bool GetThick() const;
+
+private:
+    DiscordImeUnderline internal_;
+};
+
+class Rect final {
+public:
+    void SetLeft(std::int32_t left);
+    std::int32_t GetLeft() const;
+    void SetTop(std::int32_t top);
+    std::int32_t GetTop() const;
+    void SetRight(std::int32_t right);
+    std::int32_t GetRight() const;
+    void SetBottom(std::int32_t bottom);
+    std::int32_t GetBottom() const;
+
+private:
+    DiscordRect internal_;
 };
 
 class FileStat final {
@@ -376,6 +493,32 @@ public:
 
 private:
     DiscordSku internal_;
+};
+
+class InputMode final {
+public:
+    void SetType(InputModeType type);
+    InputModeType GetType() const;
+    void SetShortcut(char const* shortcut);
+    char const* GetShortcut() const;
+
+private:
+    DiscordInputMode internal_;
+};
+
+class UserAchievement final {
+public:
+    void SetUserId(Snowflake userId);
+    Snowflake GetUserId() const;
+    void SetAchievementId(Snowflake achievementId);
+    Snowflake GetAchievementId() const;
+    void SetPercentComplete(std::uint8_t percentComplete);
+    std::uint8_t GetPercentComplete() const;
+    void SetUnlockedAt(DateTime unlockedAt);
+    DateTime GetUnlockedAt() const;
+
+private:
+    DiscordUserAchievement internal_;
 };
 
 class LobbyTransaction final {

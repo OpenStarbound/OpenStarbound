@@ -66,6 +66,9 @@ public:
     // Asset sources are scanned for in the given directories, in order.
     StringList assetDirectories;
 
+    // Just raw asset source paths.
+    StringList assetSources;
+
     Json defaultConfiguration;
 
     // Top-level storage directory under which all game data is saved
@@ -179,7 +182,7 @@ public:
   CollectionDatabaseConstPtr collectionDatabase();
 
 private:
-  static StringList scanForAssetSources(StringList const& directories);
+  static StringList scanForAssetSources(StringList const& directories, StringList const& manual = {});
   template <typename T, typename... Params>
   static shared_ptr<T> loadMember(shared_ptr<T>& ptr, Mutex& mutex, char const* name, Params&&... params);
   template <typename T>

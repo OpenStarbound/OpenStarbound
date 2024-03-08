@@ -12,6 +12,7 @@ public:
     void GetCurrentLocale(char locale[128]);
     void GetCurrentBranch(char branch[4096]);
     void GetOAuth2Token(std::function<void(Result, OAuth2Token const&)> callback);
+    void GetTicket(std::function<void(Result, char const*)> callback);
 
 private:
     friend class Core;
