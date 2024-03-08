@@ -507,4 +507,7 @@ SET (star_game_SOURCES
   )
 
 ADD_LIBRARY (star_game OBJECT ${star_game_SOURCES} ${star_game_HEADERS})
-TARGET_PRECOMPILE_HEADERS (star_game REUSE_FROM star_core)
+
+IF(STAR_PRECOMPILED_HEADERS)
+  TARGET_PRECOMPILE_HEADERS (star_game REUSE_FROM star_core)
+ENDIF()

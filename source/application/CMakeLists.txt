@@ -45,8 +45,6 @@ ENDIF ()
 
 IF (STAR_ENABLE_DISCORD_INTEGRATION)
   SET (star_application_SOURCES ${star_application_SOURCES}
-      discord/activity_manager.cpp
-      discord/application_manager.cpp
       discord/core.cpp
       discord/image_manager.cpp
       discord/lobby_manager.cpp
@@ -57,8 +55,15 @@ IF (STAR_ENABLE_DISCORD_INTEGRATION)
       discord/store_manager.cpp
       discord/types.cpp
       discord/user_manager.cpp
+      discord/voice_manager.cpp
+      discord/achievement_manager.cpp
+      discord/activity_manager.cpp
+      discord/application_manager.cpp
     )
 ENDIF ()
 
 ADD_LIBRARY (star_application OBJECT ${star_application_SOURCES} ${star_application_HEADERS})
-TARGET_PRECOMPILE_HEADERS (star_application REUSE_FROM star_core)
+
+IF(STAR_PRECOMPILED_HEADERS)
+  TARGET_PRECOMPILE_HEADERS (star_application REUSE_FROM star_core)
+ENDIF()

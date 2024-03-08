@@ -88,7 +88,11 @@ Root::Root(Settings settings) {
 
   if (m_settings.logFile) {
     String logFile = toStoragePath(*m_settings.logFile);
-    File::backupFileInSequence(logFile, m_settings.logFileBackups);
+    String logDirectory = File::relativeTo(m_settings.storageDirectory, "logs");
+    if (!File::isDirectory(logDirectory))
+      File::makeDirectory(logDirectory);
+
+    File::backupFileInSequence(logFile, File::relativeTo(logDirectory, *m_settings.logFile), m_settings.logFileBackups);
     Logger::addSink(make_shared<FileLogSink>(logFile, m_settings.logLevel, true));
   }
   Logger::stdoutSink()->setLevel(m_settings.logLevel);
@@ -96,7 +100,7 @@ Root::Root(Settings settings) {
   if (m_settings.quiet)
     Logger::removeStdoutSink();
 
-  Logger::info("Root: Preparing Root...");
+  Logger::info("Root: Preparing...");
 
   m_stopMaintenanceThread = false;
   m_maintenanceThread = Thread::invoke("Root::maintenanceMain", [this]() {
@@ -374,8 +378,9 @@ AssetsConstPtr Root::assets() {
   return loadMemberFunction<Assets>(m_assets, m_assetsMutex, "Assets", [this]() {
       StringList assetDirectories = m_settings.assetDirectories;
       assetDirectories.appendAll(m_modDirectories);
+      StringList assetSources = scanForAssetSources(assetDirectories, m_settings.assetSources);
 
-      auto assets = make_shared<Assets>(m_settings.assetsSettings, scanForAssetSources(assetDirectories));
+      auto assets = make_shared<Assets>(m_settings.assetsSettings, assetSources);
       Logger::info("Assets digest is {}", hexEncode(assets->digest()));
       return assets;
     });
@@ -571,7 +576,7 @@ CollectionDatabaseConstPtr Root::collectionDatabase() {
   return loadMember(m_collectionDatabase, m_collectionDatabaseMutex, "CollectionDatabase");
 }
 
-StringList Root::scanForAssetSources(StringList const& directories) {
+StringList Root::scanForAssetSources(StringList const& directories, StringList const& manual) {
   struct AssetSource {
     String path;
     Maybe<String> name;
@@ -581,6 +586,51 @@ StringList Root::scanForAssetSources(StringList const& directories) {
   };
   List<shared_ptr<AssetSource>> assetSources;
   StringMap<shared_ptr<AssetSource>> namedSources;
+
+  auto processEntry = [&](String const& sourcePath, bool isDirectory) -> bool {
+    AssetSourcePtr source;
+    auto name = File::baseName(sourcePath);
+    if (name.beginsWith(".") || name.beginsWith("_"))
+      Logger::info("Root: Skipping hidden '{}' in asset directory", name);
+    else if (isDirectory)
+      source = make_shared<DirectoryAssetSource>(sourcePath);
+    else if (sourcePath.endsWith(".pak"))
+      source = make_shared<PackedAssetSource>(sourcePath);
+    else
+      Logger::warn("Root: Unrecognized file in asset directory '{}', skipping", name);
+
+    if (!source)
+      return false;
+
+    auto metadata = source->metadata();
+
+    auto assetSource = make_shared<AssetSource>();
+    assetSource->path = sourcePath;
+    assetSource->name = metadata.maybe("name").apply(mem_fn(&Json::toString));
+    assetSource->priority = metadata.value("priority", 0.0f).toFloat();
+    assetSource->requires_ = jsonToStringList(metadata.value("requires", JsonArray{}));
+    assetSource->includes = jsonToStringList(metadata.value("includes", JsonArray{}));
+
+    if (assetSource->name) {
+      if (auto oldAssetSource = namedSources.value(*assetSource->name)) {
+        if (oldAssetSource->priority <= assetSource->priority) {
+          Logger::warn("Root: Overriding duplicate asset source '{}' named '{}' with higher or equal priority source '{}",
+              oldAssetSource->path, *assetSource->name, assetSource->path);
+          *oldAssetSource = *assetSource;
+        } else {
+          Logger::warn("Root: Skipping duplicate asset source '{}' named '{}', previous source '{}' has higher priority",
+              assetSource->path, *assetSource->name, oldAssetSource->priority);
+        }
+      } else {
+        namedSources[*assetSource->name] = assetSource;
+        assetSources.append(std::move(assetSource));
+      }
+    } else {
+      assetSources.append(std::move(assetSource));
+    }
+
+    return true;
+  };
 
   // Scan for assets in each given directory, the first-level ordering of asset
   // sources comes from the scanning order here, and then alphabetically by the
@@ -593,50 +643,14 @@ StringList Root::scanForAssetSources(StringList const& directories) {
     }
 
     Logger::info("Root: Scanning for asset sources in directory '{}'", directory);
-
-    for (auto entry : File::dirList(directory, true).sorted()) {
-      AssetSourcePtr source;
-      auto fileName = File::relativeTo(directory, entry.first);
-      if (entry.first.beginsWith(".") || entry.first.beginsWith("_"))
-        Logger::info("Root: Skipping hidden '{}' in asset directory", entry.first);
-      else if (entry.second)
-        source = make_shared<DirectoryAssetSource>(fileName);
-      else if (entry.first.endsWith(".pak"))
-        source = make_shared<PackedAssetSource>(fileName);
-      else
-        Logger::warn("Root: Unrecognized file in asset directory '{}', skipping", entry.first);
-
-      if (!source)
-        continue;
-
-      auto metadata = source->metadata();
-
-      auto assetSource = make_shared<AssetSource>();
-      assetSource->path = fileName;
-      assetSource->name = metadata.maybe("name").apply(mem_fn(&Json::toString));
-      assetSource->priority = metadata.value("priority", 0.0f).toFloat();
-      assetSource->requires_ = jsonToStringList(metadata.value("requires", JsonArray{}));
-      assetSource->includes = jsonToStringList(metadata.value("includes", JsonArray{}));
-
-      if (assetSource->name) {
-        if (auto oldAssetSource = namedSources.value(*assetSource->name)) {
-          if (oldAssetSource->priority <= assetSource->priority) {
-            Logger::warn("Root: Overriding duplicate asset source '{}' named '{}' with higher or equal priority source '{}",
-                oldAssetSource->path, *assetSource->name, assetSource->path);
-            *oldAssetSource = *assetSource;
-          } else {
-            Logger::warn("Root: Skipping duplicate asset source '{}' named '{}', previous source '{}' has higher priority",
-                assetSource->path, *assetSource->name, oldAssetSource->priority);
-          }
-        } else {
-          namedSources[*assetSource->name] = assetSource;
-          assetSources.append(std::move(assetSource));
-        }
-      } else {
-        assetSources.append(std::move(assetSource));
-      }
-    }
+    for (auto& entry : File::dirList(directory, true).sorted())
+      processEntry(File::relativeTo(directory, entry.first), entry.second);
   }
+
+  // Take in any manual asset source paths
+
+  for (auto& path : manual)
+    processEntry(path, File::isDirectory(path));
 
   // Then, order asset sources so that lower priority assets come before higher
   // priority ones

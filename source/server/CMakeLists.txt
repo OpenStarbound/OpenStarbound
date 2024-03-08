@@ -22,5 +22,9 @@ SET (star_server_SOURCES
 ADD_EXECUTABLE (starbound_server
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
   ${star_server_HEADERS} ${star_server_SOURCES})
-TARGET_PRECOMPILE_HEADERS (starbound_server REUSE_FROM star_core)
+
+IF(STAR_PRECOMPILED_HEADERS)
+  TARGET_PRECOMPILE_HEADERS (starbound_server REUSE_FROM star_core)
+ENDIF()
+
 TARGET_LINK_LIBRARIES (starbound_server ${STAR_EXT_LIBS})

@@ -21,26 +21,30 @@ jobs:
         with:
           submodules: 'recursive'
 
-      - name: Install Packages
-        run: brew install sdl2 glew libvorbis lzlib libpng freetype ninja
+      - name: Hire a Ninja
+        run: brew install ninja
 
-      - name: Configure Test Build
-        run: cmake -G "Ninja" -S "${{ github.workspace }}/source" -B "${{ github.workspace }}/cmake-build-debug" -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install" -DCMAKE_VERBOSE_MAKEFILE=YES -DBUILD_TESTING=YES -DCMAKE_BUILD_TYPE=Debug
+      - name: sccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          variant: sccache
+          key: ${{ github.job }}-Intel-${{ runner.os }}
+          max-size: 2500M
 
-      - name: Build Debug
-        run: cmake --build "${{ github.workspace }}/cmake-build-debug" --parallel
+      - name: vcpkg
+        uses: lukka/run-vcpkg@v11
+        id: runvcpkg
+        with:
+          vcpkgJsonGlob: '**/source/vcpkg.json'
+          vcpkgConfigurationJsonGlob: '**/source/vcpkg-configuration.json'
 
-      - name: Run Unit Tests
-        run: ctest --test-dir "${{ github.workspace }}/cmake-build-debug" -L 'NoAssets' --verbose
-
-      - name: Cleanup Test Build
-        run: rm -Rf "${{ github.workspace }}/cmake-build-debug" "${{ github.workspace }}/dist"
-
-      - name: Configure Release Build
-        run: cmake -G "Ninja" -S "${{ github.workspace }}/source" -B "${{ github.workspace }}/cmake-build-release" -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install" -DCMAKE_VERBOSE_MAKEFILE=YES -DBUILD_TESTING=NO -DCMAKE_BUILD_TYPE=Release
-
-      - name: Build Release
-        run: cmake --build "${{ github.workspace }}/cmake-build-release" --parallel
+      - name: Run CMake
+        uses: lukka/run-cmake@v10
+        with:
+          cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
+          configurePreset: 'macos-release'
+          buildPreset: 'macos-release'
+          testPreset: 'macos-release'
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
@@ -57,26 +61,30 @@ jobs:
         with:
           submodules: 'recursive'
 
-      - name: Install Packages
-        run: brew install sdl2 glew libvorbis lzlib libpng freetype ninja
+      - name: Hire a Ninja
+        run: brew install ninja
 
-      - name: Configure Test Build
-        run: cmake -G "Ninja" -S "${{ github.workspace }}/source" -B "${{ github.workspace }}/cmake-build-debug" -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install" -DCMAKE_VERBOSE_MAKEFILE=YES -DBUILD_TESTING=YES -DCMAKE_BUILD_TYPE=Debug
+      - name: sccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          variant: sccache
+          key: ${{ github.job }}-ARM-${{ runner.os }}
+          max-size: 2500M
 
-      - name: Build Debug
-        run: cmake --build "${{ github.workspace }}/cmake-build-debug" --config "Debug" --parallel
+      - name: vcpkg
+        uses: lukka/run-vcpkg@v11
+        id: runvcpkg
+        with:
+          vcpkgJsonGlob: '**/source/vcpkg.json'
+          vcpkgConfigurationJsonGlob: '**/source/vcpkg-configuration.json'
 
-      - name: Run Unit Tests
-        run: ctest --test-dir "${{ github.workspace }}/cmake-build-debug" -L 'NoAssets' --verbose --build-config "Debug"
-
-      - name: Cleanup Test Build
-        run: rm -Rf "${{ github.workspace }}/cmake-build-debug" "${{ github.workspace }}/dist"
-
-      - name: Configure Release Build
-        run: cmake -G "Ninja" -S "${{ github.workspace }}/source" -B "${{ github.workspace }}/cmake-build-release" -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install" -DCMAKE_VERBOSE_MAKEFILE=YES -DBUILD_TESTING=YES -DCMAKE_BUILD_TYPE=Release
-
-      - name: Build Release
-        run: cmake --build "${{ github.workspace }}/cmake-build-release" --parallel
+      - name: Run CMake
+        uses: lukka/run-cmake@v10
+        with:
+          cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
+          configurePreset: 'macos-arm-release'
+          buildPreset: 'macos-arm-release'
+          testPreset: 'macos-arm-release'
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4

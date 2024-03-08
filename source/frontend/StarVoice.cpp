@@ -6,9 +6,9 @@
 #include "StarRoot.hpp"
 #include "StarLogging.hpp"
 #include "StarInterpolation.hpp"
-#include "opus/include/opus.h"
+#include "opus/opus.h"
 
-#include "SDL.h"
+#include "SDL2/SDL.h"
 
 constexpr int VOICE_SAMPLE_RATE = 48000;
 constexpr int VOICE_FRAME_SIZE = 960;

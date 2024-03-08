@@ -62,6 +62,7 @@ enum EHTTPStatusCode
 	k_EHTTPStatusCode305UseProxy =				305,
 	//k_EHTTPStatusCode306Unused =				306, (used in old HTTP spec, now unused in 1.1)
 	k_EHTTPStatusCode307TemporaryRedirect =		307,
+	k_EHTTPStatusCode308PermanentRedirect =		308,
 
 	// Error codes
 	k_EHTTPStatusCode400BadRequest =			400,
@@ -84,6 +85,7 @@ enum EHTTPStatusCode
 	k_EHTTPStatusCode417ExpectationFailed =		417,
 	k_EHTTPStatusCode4xxUnknown = 				418, // 418 is reserved, so we'll use it to mean unknown
 	k_EHTTPStatusCode429TooManyRequests	=		429,
+	k_EHTTPStatusCode444ConnectionClosed =		444, // nginx only?
 
 	// Server error codes
 	k_EHTTPStatusCode500InternalServerError =	500,
@@ -94,5 +96,10 @@ enum EHTTPStatusCode
 	k_EHTTPStatusCode505HTTPVersionNotSupported = 505,
 	k_EHTTPStatusCode5xxUnknown =				599,
 };
+
+inline bool BIsHTTPStatusSuccess( EHTTPStatusCode eStatus )
+{
+	return eStatus >= 200 && eStatus <= 299;
+}
 
 #endif // STEAMHTTPENUMS_H

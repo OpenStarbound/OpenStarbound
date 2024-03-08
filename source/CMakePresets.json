@@ -1,0 +1,125 @@
+{
+  "version": 5,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 23,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "architecture": { "value": "x64", "strategy": "external" },
+      "generator": "Ninja",
+      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+      "cacheVariables": {
+        "CMAKE_INSTALL_PREFIX": "${sourceParentDir}/install",
+        "VCPKG_OVERLAY_TRIPLETS": "${sourceParentDir}/triplets",
+        "CMAKE_VERBOSE_MAKEFILE": true,
+        "CMAKE_C_COMPILER_LAUNCHER": "sccache",
+        "CMAKE_CXX_COMPILER_LAUNCHER": "sccache",
+        "BUILD_TESTING": true,
+        "STAR_ENABLE_STEAM_INTEGRATION": true,
+        "STAR_ENABLE_DISCORD_INTEGRATION": true
+      }
+    },
+    {
+      "inherits": "base",
+      "name": "windows-release",
+      "displayName": "Windows x64",
+      "binaryDir": "${sourceParentDir}/build/windows-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "VCPKG_TARGET_TRIPLET": "x64-windows-mixed-md",
+        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL",
+        "CMAKE_INCLUDE_PATH": "${sourceParentDir}/lib/windows/include",
+        "CMAKE_LIBRARY_PATH": "${sourceParentDir}/lib/windows"
+      },
+      "vendor": {
+        "microsoft.com/VisualStudioSettings/CMake/1.0": {
+          "hostOS": [ "Windows" ]
+        }
+      }
+    },
+    {
+      "inherits": "base",
+      "name": "linux-release",
+      "displayName": "Linux x64",
+      "binaryDir": "${sourceParentDir}/build/linux-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "VCPKG_TARGET_TRIPLET": "x64-linux-mixed",
+        "CMAKE_INCLUDE_PATH": "${sourceParentDir}/lib/linux/include",
+        "CMAKE_LIBRARY_PATH": "${sourceParentDir}/lib/linux"
+      },
+      "vendor": {
+        "microsoft.com/VisualStudioSettings/CMake/1.0": {
+          "hostOS": [ "Linux" ]
+        }
+      }
+    },
+    {
+      "inherits": "base",
+      "name": "macos-release",
+      "displayName": "macOS x64",
+      "binaryDir": "${sourceParentDir}/build/macos-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "VCPKG_TARGET_TRIPLET": "x64-osx-mixed",
+        "CMAKE_INCLUDE_PATH": "${sourceParentDir}/lib/osx/include",
+        "CMAKE_LIBRARY_PATH": "${sourceParentDir}/lib/osx/x64;${sourceParentDir}/lib/osx"
+      }
+    },
+    {
+      "inherits": "macos-release",
+      "name": "macos-arm-release",
+      "displayName": "macOS ARM",
+      "binaryDir": "${sourceParentDir}/build/macos-arm-release",
+      "architecture": { "value": "arm64", "strategy": "external" },
+      "cacheVariables": {
+        "VCPKG_TARGET_TRIPLET": "arm64-osx-mixed",
+        "CMAKE_LIBRARY_PATH": "${sourceParentDir}/lib/osx/arm64;${sourceParentDir}/lib/osx"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "windows-release",
+      "configurePreset": "windows-release"
+    },
+    {
+      "name": "linux-release",
+      "configurePreset": "linux-release"
+    },
+    {
+      "name": "macos-release",
+      "configurePreset": "macos-release"
+    },
+    {
+      "name": "macos-arm-release",
+      "configurePreset": "macos-arm-release"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "windows-release",
+      "configurePreset": "windows-release",
+      "filter": { "include": { "label": "NoAssets" } }
+    },
+    {
+      "name": "linux-release",
+      "configurePreset": "linux-release",
+      "filter": { "include": { "label": "NoAssets" } }
+    },
+    {
+      "name": "macos-release",
+      "configurePreset": "macos-release",
+      "filter": { "include": { "label": "NoAssets" } }
+    },
+    {
+      "name": "macos-arm-release",
+      "configurePreset": "macos-arm-release",
+      "filter": { "include": { "label": "NoAssets" } }
+    }
+  ]
+}

@@ -1,3 +1,0 @@
-[submodule "source/extern/opus"]
-	path = source/extern/opus
-	url = https://github.com/xiph/opus

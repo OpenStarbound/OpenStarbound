@@ -13,7 +13,7 @@ namespace discord {
 
 class LobbyEvents final {
 public:
-    static void OnLobbyUpdate(void* callbackData, int64_t lobbyId)
+    static void DISCORD_CALLBACK OnLobbyUpdate(void* callbackData, int64_t lobbyId)
     {
         auto* core = reinterpret_cast<Core*>(callbackData);
         if (!core) {
@@ -24,7 +24,7 @@ public:
         module.OnLobbyUpdate(lobbyId);
     }
 
-    static void OnLobbyDelete(void* callbackData, int64_t lobbyId, uint32_t reason)
+    static void DISCORD_CALLBACK OnLobbyDelete(void* callbackData, int64_t lobbyId, uint32_t reason)
     {
         auto* core = reinterpret_cast<Core*>(callbackData);
         if (!core) {
@@ -35,7 +35,9 @@ public:
         module.OnLobbyDelete(lobbyId, reason);
     }
 
-    static void OnMemberConnect(void* callbackData, int64_t lobbyId, int64_t userId)
+    static void DISCORD_CALLBACK OnMemberConnect(void* callbackData,
+                                                 int64_t lobbyId,
+                                                 int64_t userId)
     {
         auto* core = reinterpret_cast<Core*>(callbackData);
         if (!core) {
@@ -46,7 +48,7 @@ public:
         module.OnMemberConnect(lobbyId, userId);
     }
 
-    static void OnMemberUpdate(void* callbackData, int64_t lobbyId, int64_t userId)
+    static void DISCORD_CALLBACK OnMemberUpdate(void* callbackData, int64_t lobbyId, int64_t userId)
     {
         auto* core = reinterpret_cast<Core*>(callbackData);
         if (!core) {
@@ -57,7 +59,9 @@ public:
         module.OnMemberUpdate(lobbyId, userId);
     }
 
-    static void OnMemberDisconnect(void* callbackData, int64_t lobbyId, int64_t userId)
+    static void DISCORD_CALLBACK OnMemberDisconnect(void* callbackData,
+                                                    int64_t lobbyId,
+                                                    int64_t userId)
     {
         auto* core = reinterpret_cast<Core*>(callbackData);
         if (!core) {
@@ -68,11 +72,11 @@ public:
         module.OnMemberDisconnect(lobbyId, userId);
     }
 
-    static void OnLobbyMessage(void* callbackData,
-                               int64_t lobbyId,
-                               int64_t userId,
-                               uint8_t* data,
-                               uint32_t dataLength)
+    static void DISCORD_CALLBACK OnLobbyMessage(void* callbackData,
+                                                int64_t lobbyId,
+                                                int64_t userId,
+                                                uint8_t* data,
+                                                uint32_t dataLength)
     {
         auto* core = reinterpret_cast<Core*>(callbackData);
         if (!core) {
@@ -83,7 +87,10 @@ public:
         module.OnLobbyMessage(lobbyId, userId, data, dataLength);
     }
 
-    static void OnSpeaking(void* callbackData, int64_t lobbyId, int64_t userId, bool speaking)
+    static void DISCORD_CALLBACK OnSpeaking(void* callbackData,
+                                            int64_t lobbyId,
+                                            int64_t userId,
+                                            bool speaking)
     {
         auto* core = reinterpret_cast<Core*>(callbackData);
         if (!core) {
@@ -94,12 +101,12 @@ public:
         module.OnSpeaking(lobbyId, userId, (speaking != 0));
     }
 
-    static void OnNetworkMessage(void* callbackData,
-                                 int64_t lobbyId,
-                                 int64_t userId,
-                                 uint8_t channelId,
-                                 uint8_t* data,
-                                 uint32_t dataLength)
+    static void DISCORD_CALLBACK OnNetworkMessage(void* callbackData,
+                                                  int64_t lobbyId,
+                                                  int64_t userId,
+                                                  uint8_t channelId,
+                                                  uint8_t* data,
+                                                  uint32_t dataLength)
     {
         auto* core = reinterpret_cast<Core*>(callbackData);
         if (!core) {

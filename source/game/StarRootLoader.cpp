@@ -41,8 +41,19 @@ Json const BaseDefaultConfiguration = Json::parseJson(R"JSON(
       },
 
       "gameServerPort" : 21025,
+)JSON"
+#ifdef STAR_SYSTEM_WINDOWS
+                                                      R"JSON(
+      "gameServerBind" : "*",
+      "queryServerBind" : "*",
+      "rconServerBind" : "*",
+)JSON"
+#else
+                                                      R"JSON(
       "gameServerBind" : "::",
-
+)JSON"
+#endif
+R"JSON(
       "serverUsers" : {},
       "allowAnonymousConnections" : true,
 
@@ -152,19 +163,11 @@ Root::Settings RootLoader::rootSettingsForOptions(Options const& options) const 
     rootSettings.assetsSettings.pathIgnore = jsonToStringList(assetsSettings.get("pathIgnore"));
     rootSettings.assetsSettings.digestIgnore = jsonToStringList(assetsSettings.get("digestIgnore"));
 
-    rootSettings.assetDirectories = jsonToStringList(bootConfig.get("assetDirectories"));
-
-#ifdef STAR_SYSTEM_WINDOWS
-    rootSettings.defaultConfiguration = BaseDefaultConfiguration
-      .set("gameServerBind", "*")
-      .set("queryServerBind", "*")
-      .set("rconServerBind", "*");
-#else
-    rootSettings.defaultConfiguration = BaseDefaultConfiguration;
-#endif
+    rootSettings.assetDirectories = jsonToStringList(bootConfig.get("assetDirectories", JsonArray()));
+    rootSettings.assetSources     = jsonToStringList(bootConfig.get("assetSources",     JsonArray()));
 
     rootSettings.defaultConfiguration = jsonMerge(
-        rootSettings.defaultConfiguration,
+        BaseDefaultConfiguration,
         m_defaults.additionalDefaultConfiguration,
         bootConfig.get("defaultConfiguration", {})
       );
@@ -172,7 +175,7 @@ Root::Settings RootLoader::rootSettingsForOptions(Options const& options) const 
     rootSettings.storageDirectory = bootConfig.getString("storageDirectory");
 
     rootSettings.logFile = options.parameters.value("logfile").maybeFirst().orMaybe(m_defaults.logFile);
-    rootSettings.logFileBackups = bootConfig.getUInt("logFileBackups", 5);
+    rootSettings.logFileBackups = bootConfig.getUInt("logFileBackups", 10);
 
     if (auto ll = options.parameters.value("loglevel").maybeFirst())
       rootSettings.logLevel = LogLevelNames.getLeft(*ll);

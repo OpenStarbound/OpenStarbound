@@ -249,6 +249,16 @@ PartySize const& ActivityParty::GetSize() const
     return reinterpret_cast<PartySize const&>(internal_.size);
 }
 
+void ActivityParty::SetPrivacy(ActivityPartyPrivacy privacy)
+{
+    internal_.privacy = static_cast<EDiscordActivityPartyPrivacy>(privacy);
+}
+
+ActivityPartyPrivacy ActivityParty::GetPrivacy() const
+{
+    return static_cast<ActivityPartyPrivacy>(internal_.privacy);
+}
+
 void ActivitySecrets::SetMatch(char const* match)
 {
     strncpy(internal_.match, match, 128);
@@ -385,6 +395,16 @@ bool Activity::GetInstance() const
     return internal_.instance != 0;
 }
 
+void Activity::SetSupportedPlatforms(std::uint32_t supportedPlatforms)
+{
+    internal_.supported_platforms = supportedPlatforms;
+}
+
+std::uint32_t Activity::GetSupportedPlatforms() const
+{
+    return internal_.supported_platforms;
+}
+
 void Presence::SetStatus(Status status)
 {
     internal_.status = static_cast<EDiscordStatus>(status);
@@ -494,6 +514,96 @@ void Lobby::SetLocked(bool locked)
 bool Lobby::GetLocked() const
 {
     return internal_.locked != 0;
+}
+
+void ImeUnderline::SetFrom(std::int32_t from)
+{
+    internal_.from = from;
+}
+
+std::int32_t ImeUnderline::GetFrom() const
+{
+    return internal_.from;
+}
+
+void ImeUnderline::SetTo(std::int32_t to)
+{
+    internal_.to = to;
+}
+
+std::int32_t ImeUnderline::GetTo() const
+{
+    return internal_.to;
+}
+
+void ImeUnderline::SetColor(std::uint32_t color)
+{
+    internal_.color = color;
+}
+
+std::uint32_t ImeUnderline::GetColor() const
+{
+    return internal_.color;
+}
+
+void ImeUnderline::SetBackgroundColor(std::uint32_t backgroundColor)
+{
+    internal_.background_color = backgroundColor;
+}
+
+std::uint32_t ImeUnderline::GetBackgroundColor() const
+{
+    return internal_.background_color;
+}
+
+void ImeUnderline::SetThick(bool thick)
+{
+    internal_.thick = thick;
+}
+
+bool ImeUnderline::GetThick() const
+{
+    return internal_.thick != 0;
+}
+
+void Rect::SetLeft(std::int32_t left)
+{
+    internal_.left = left;
+}
+
+std::int32_t Rect::GetLeft() const
+{
+    return internal_.left;
+}
+
+void Rect::SetTop(std::int32_t top)
+{
+    internal_.top = top;
+}
+
+std::int32_t Rect::GetTop() const
+{
+    return internal_.top;
+}
+
+void Rect::SetRight(std::int32_t right)
+{
+    internal_.right = right;
+}
+
+std::int32_t Rect::GetRight() const
+{
+    return internal_.right;
+}
+
+void Rect::SetBottom(std::int32_t bottom)
+{
+    internal_.bottom = bottom;
+}
+
+std::int32_t Rect::GetBottom() const
+{
+    return internal_.bottom;
 }
 
 void FileStat::SetFilename(char const* filename)
@@ -617,6 +727,68 @@ SkuPrice& Sku::GetPrice()
 SkuPrice const& Sku::GetPrice() const
 {
     return reinterpret_cast<SkuPrice const&>(internal_.price);
+}
+
+void InputMode::SetType(InputModeType type)
+{
+    internal_.type = static_cast<EDiscordInputModeType>(type);
+}
+
+InputModeType InputMode::GetType() const
+{
+    return static_cast<InputModeType>(internal_.type);
+}
+
+void InputMode::SetShortcut(char const* shortcut)
+{
+    strncpy(internal_.shortcut, shortcut, 256);
+    internal_.shortcut[256 - 1] = '\0';
+}
+
+char const* InputMode::GetShortcut() const
+{
+    return internal_.shortcut;
+}
+
+void UserAchievement::SetUserId(Snowflake userId)
+{
+    internal_.user_id = userId;
+}
+
+Snowflake UserAchievement::GetUserId() const
+{
+    return internal_.user_id;
+}
+
+void UserAchievement::SetAchievementId(Snowflake achievementId)
+{
+    internal_.achievement_id = achievementId;
+}
+
+Snowflake UserAchievement::GetAchievementId() const
+{
+    return internal_.achievement_id;
+}
+
+void UserAchievement::SetPercentComplete(std::uint8_t percentComplete)
+{
+    internal_.percent_complete = percentComplete;
+}
+
+std::uint8_t UserAchievement::GetPercentComplete() const
+{
+    return internal_.percent_complete;
+}
+
+void UserAchievement::SetUnlockedAt(DateTime unlockedAt)
+{
+    strncpy(internal_.unlocked_at, unlockedAt, 64);
+    internal_.unlocked_at[64 - 1] = '\0';
+}
+
+DateTime UserAchievement::GetUnlockedAt() const
+{
+    return internal_.unlocked_at;
 }
 
 Result LobbyTransaction::SetType(LobbyType type)

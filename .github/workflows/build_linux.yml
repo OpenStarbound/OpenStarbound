@@ -17,32 +17,37 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Install Packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config ninja-build \
+              libxmu-dev libxi-dev libgl-dev libglu1-mesa-dev libsdl2-dev
+
       - uses: actions/checkout@v4
         with:
           submodules: 'recursive'
 
-      - name: Install Packages
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgl1-mesa-dev mesa-common-dev libsdl2-dev libglew-dev libvorbis-dev libogg-dev libz3-dev libpng-dev libfreetype-dev libgtest-dev libgmock-dev ninja-build
+      - name: sccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          variant: sccache
+          key: ${{ github.job }}-${{ runner.os }}
+          max-size: 2500M
 
-      - name: Configure Test Build
-        run: cmake -G "Ninja" -S "${{ github.workspace }}/source" -B "${{ github.workspace }}/cmake-build-debug" -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install" -DCMAKE_VERBOSE_MAKEFILE=YES -DBUILD_TESTING=YES -DCMAKE_BUILD_TYPE=Debug
+      - name: vcpkg
+        uses: lukka/run-vcpkg@v11
+        id: runvcpkg
+        with:
+          vcpkgJsonGlob: '**/source/vcpkg.json'
+          vcpkgConfigurationJsonGlob: '**/source/vcpkg-configuration.json'
 
-      - name: Build Debug
-        run: cmake --build "${{ github.workspace }}/cmake-build-debug" --parallel
-
-      - name: Run Unit Tests
-        run: ctest --test-dir "${{ github.workspace }}/cmake-build-debug" -L 'NoAssets' --verbose
-
-      - name: Cleanup Test Build
-        run: rm -Rf "${{ github.workspace }}/cmake-build-debug" "${{ github.workspace }}/dist"
-
-      - name: Configure Release Build
-        run: cmake -G "Ninja" -S "${{ github.workspace }}/source" -B "${{ github.workspace }}/cmake-build-release" -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install" -DCMAKE_VERBOSE_MAKEFILE=YES -DBUILD_TESTING=NO -DCMAKE_BUILD_TYPE=Release
-
-      - name: Build Release
-        run: cmake --build "${{ github.workspace }}/cmake-build-release" --parallel
+      - name: Run CMake
+        uses: lukka/run-cmake@v10
+        with:
+          cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
+          configurePreset: 'linux-release'
+          buildPreset: 'linux-release'
+          testPreset: 'linux-release'
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4

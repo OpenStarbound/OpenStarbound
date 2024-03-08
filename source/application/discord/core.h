@@ -11,6 +11,8 @@
 #include "overlay_manager.h"
 #include "storage_manager.h"
 #include "store_manager.h"
+#include "voice_manager.h"
+#include "achievement_manager.h"
 
 namespace discord {
 
@@ -33,6 +35,8 @@ public:
     discord::OverlayManager& OverlayManager();
     discord::StorageManager& StorageManager();
     discord::StoreManager& StoreManager();
+    discord::VoiceManager& VoiceManager();
+    discord::AchievementManager& AchievementManager();
 
 private:
     Core() = default;
@@ -53,6 +57,8 @@ private:
     discord::OverlayManager overlayManager_;
     discord::StorageManager storageManager_;
     discord::StoreManager storeManager_;
+    discord::VoiceManager voiceManager_;
+    discord::AchievementManager achievementManager_;
 };
 
 } // namespace discord

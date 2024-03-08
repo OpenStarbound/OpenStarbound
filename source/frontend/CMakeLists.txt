@@ -113,4 +113,7 @@ SET (star_frontend_SOURCES
   )
 
 ADD_LIBRARY (star_frontend OBJECT ${star_frontend_SOURCES} ${star_frontend_HEADERS})
-TARGET_PRECOMPILE_HEADERS (star_frontend REUSE_FROM star_core)
+
+IF(STAR_PRECOMPILED_HEADERS)
+  TARGET_PRECOMPILE_HEADERS (star_frontend REUSE_FROM star_core)
+ENDIF()
