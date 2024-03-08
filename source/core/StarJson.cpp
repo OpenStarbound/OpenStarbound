@@ -1035,13 +1035,13 @@ Json jsonMerge(Json const& base, Json const& merger) {
   }
 }
 
-bool jsonCompare(Json const& base, Json const& compare) {
+bool jsonPartialMatch(Json const& base, Json const& compare) {
   if (base == compare) {
     return true;
   } else {
     if (base.type() == Json::Type::Object && compare.type() == Json::Type::Object) {
       for (auto const& c : compare.toObject()) {
-        if (!base.contains(c.first) || !jsonCompare(base.get(c.first), c.second))
+        if (!base.contains(c.first) || !jsonPartialMatch(base.get(c.first), c.second))
           return false;
       }
       return true;
@@ -1050,7 +1050,7 @@ bool jsonCompare(Json const& base, Json const& compare) {
       for (auto const& c : compare.toArray()) {
         bool similar = false;
         for (auto const& b : base.toArray()) {
-          if (jsonCompare(c, b)) {
+          if (jsonPartialMatch(c, b)) {
             similar = true;
             break;
           }

@@ -355,21 +355,13 @@ Json jsonMergeQueryDef(String const& key, Json def, Json const& first, T const&.
   return def;
 }
 
-// Compares the two given json values and returns a boolean, by the following
-// rules (applied in order): If both values are identical, return true. If both
-// values are not equal, check if they are objects. If they are objects,
-// iterate through every pair in the comparing object and check if the key is
-// in the base object. If the key is in the base object, then jsonCompare is
-// called recursively on both values. If the base object does not contain the
-// key, or the recursion fails, return false. Otherwise, return true. If they
-// are not objects, check if they are arrays. If they are arrays, iterate
-// through every value in the comparing object and then recursively call
-// jsonCompare on every value in the base object until a match is found. If a
-// match is found, break and move on to the next value in the comparing array.
-// If a match is found for every value in the comparing array, return true.
-// Otherwise, return false. If both values are not identical, and are not
-// objects or arrays, return false.
-bool jsonCompare(Json const& base, Json const& compare);
+// Compares two JSON values to see if the second is a subset of the first.
+// For objects, each key in the second object must exist in the first
+// object and the values are recursively compared the same way. For arrays,
+// each element in the second array must successfully compare with some
+// element of the first array, regardless of order or duplication.
+// For all other types, the values must be equal.
+bool jsonPartialMatch(Json const& base, Json const& compare);
 
 }
 
