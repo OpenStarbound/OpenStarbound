@@ -330,6 +330,9 @@ void Player::init(World* world, EntityId entityId, EntityMode mode) {
         p.second->addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(m_client));
       p.second->init(world);
     }
+    for (auto& p : m_inventory->clearOverflow()) {
+      world->addEntity(ItemDrop::createRandomizedDrop(p,m_movementController->position(),true));
+    }
   }
 
   m_xAimPositionNetState.setInterpolator(world->geometry().xLerpFunction());
@@ -346,7 +349,7 @@ void Player::uninit() {
     m_questManager->uninit();
     m_companions->uninit();
     m_deployment->uninit();
-    
+
     for (auto& p : m_genericScriptContexts) {
       p.second->uninit();
       p.second->removeCallbacks("entity");
@@ -2589,7 +2592,7 @@ void Player::setSecretProperty(String const& name, Json const& value) {
     ds.write(value);
     auto& data = ds.data();
     m_effectsAnimator->setGlobalTag(secretProprefix + name, String(data.ptr(), data.size()));
-  } 
+  }
   else
     m_effectsAnimator->removeGlobalTag(secretProprefix + name);
 }

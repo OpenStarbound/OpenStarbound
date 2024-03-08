@@ -168,6 +168,8 @@ public:
   Maybe<InventorySlot> primaryHeldSlot() const;
   Maybe<InventorySlot> secondaryHeldSlot() const;
 
+  List<ItemPtr> clearOverflow();
+
   void load(Json const& store);
   Json store() const;
 
@@ -219,6 +221,8 @@ private:
   NetElementUInt m_customBarGroupNetState;
   MultiArray<NetElementData<CustomBarLink>, 2> m_customBarNetState;
   NetElementData<SelectedActionBarLocation> m_selectedActionBarNetState;
+
+  List<ItemPtr> m_inventoryLoadOverflow;
 };
 
 }
