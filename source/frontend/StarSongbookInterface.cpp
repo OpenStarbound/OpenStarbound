@@ -23,21 +23,52 @@ SongbookInterface::SongbookInterface(PlayerPtr player) {
           dismiss();
       });
   reader.registerCallback("group", [=](Widget*) {});
+  reader.registerCallback("search", [=](Widget*) {});
 
   reader.construct(assets->json("/interface/windowconfig/songbook.config:paneLayout"), this);
 
   auto songList = fetchChild<ListWidget>("songs.list");
+  auto search = fetchChild<TextBoxWidget>("search")->getText();
 
-  StringList files = assets->scan(".abc");
-  sort(files, [](String const& a, String const& b) -> bool { return b.compare(a, String::CaseInsensitive) > 0; });
-  for (auto s : files) {
+  if (m_searchValue != search)
+    m_searchValue = search; 
+
+  m_files = assets->scan(".abc");
+  sort(m_files, [](String const& a, String const& b) -> bool { return b.compare(a, String::CaseInsensitive) > 0; });
+  for (auto s : m_files) {
     auto song = s.substr(7, s.length() - (7 + 4));
-    auto widget = songList->addItem();
-    widget->setData(s);
-    auto songName = widget->fetchChild<LabelWidget>("songName");
-    songName->setText(song);
+    if (song.contains(m_searchValue, String::CaseInsensitive)) {
+      auto widget = songList->addItem();
+      widget->setData(s);
+      auto songName = widget->fetchChild<LabelWidget>("songName");
+      songName->setText(song);
 
-    widget->show();
+      widget->show();
+    }
+  }
+}
+
+void SongbookInterface::update(float dt) {
+  Pane::update(dt);
+
+  auto search = fetchChild<TextBoxWidget>("search")->getText();
+  if (m_searchValue != search) {
+    m_searchValue = search;
+
+    auto songList = fetchChild<ListWidget>("songs.list");
+    songList->clear();
+
+    for (auto s : m_files) {
+      auto song = s.substr(7, s.length() - (7 + 4));
+      if (song.contains(m_searchValue, String::CaseInsensitive)) {
+        auto widget = songList->addItem();
+        widget->setData(s);
+        auto songName = widget->fetchChild<LabelWidget>("songName");
+        songName->setText(song);
+
+        widget->show();
+      }
+    }
   }
 }
 
