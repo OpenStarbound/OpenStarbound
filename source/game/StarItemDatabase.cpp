@@ -232,11 +232,11 @@ ItemPtr ItemDatabase::itemShared(ItemDescriptor descriptor, Maybe<float> level, 
   }
 }
 
-ItemPtr ItemDatabase::item(ItemDescriptor descriptor, Maybe<float> level, Maybe<uint64_t> seed) const {
+ItemPtr ItemDatabase::item(ItemDescriptor descriptor, Maybe<float> level, Maybe<uint64_t> seed, bool ignoreInvalid) const {
   if (!descriptor)
     return {};
   else
-    return tryCreateItem(descriptor, level, seed);
+    return tryCreateItem(descriptor, level, seed, ignoreInvalid);
 }
 
 bool ItemDatabase::hasRecipeToMake(ItemDescriptor const& item) const {
@@ -499,14 +499,32 @@ ItemPtr ItemDatabase::createItem(ItemType type, ItemConfig const& config) {
   }
 }
 
-ItemPtr ItemDatabase::tryCreateItem(ItemDescriptor const& descriptor, Maybe<float> level, Maybe<uint64_t> seed) const {
+ItemPtr ItemDatabase::tryCreateItem(ItemDescriptor const& descriptor, Maybe<float> level, Maybe<uint64_t> seed, bool ignoreInvalid) const {
   ItemPtr result;
+  String name = descriptor.name();
+  Json parameters = descriptor.parameters();
+
   try {
-    result = createItem(m_items.get(descriptor.name()).type, itemConfig(descriptor.name(), descriptor.parameters(), level, seed));
+    if ((name == "perfectlygenericitem") && parameters.contains("genericItemStorage")) {
+      Json storage = parameters.get("genericItemStorage");
+      name = storage.getString("name");
+      parameters = storage.get("parameters");
+    }
+	  result = createItem(m_items.get(name).type, itemConfig(name, parameters, level, seed));
   }
   catch (std::exception const& e) {
-    Logger::error("Could not instantiate item '{}'. {}", descriptor, outputException(e, false));
-    result = createItem(m_items.get("perfectlygenericitem").type, itemConfig("perfectlygenericitem", JsonObject(), {}, {}));
+    if (descriptor.name() == "perfectlygenericitem") {
+      Logger::error("Could not re-instantiate item '{}'. {}", descriptor, outputException(e, false));
+		  result = createItem(m_items.get("perfectlygenericitem").type, itemConfig("perfectlygenericitem", descriptor.parameters(), level, seed));
+    } else if (!ignoreInvalid) {
+      Logger::error("Could not instantiate item '{}'. {}", descriptor, outputException(e, false));
+      result = createItem(m_items.get("perfectlygenericitem").type, itemConfig("perfectlygenericitem", JsonObject({
+        {"genericItemStorage", descriptor.toJson()},
+        {"shortdescription", descriptor.name()},
+        {"description", "Reinstall the parent mod to return this item to normal\n^red;(to retain data, do not place as object)"}
+      }), {}, {}));
+    } else
+      throw e;
   }
   result->setCount(descriptor.count());
 
