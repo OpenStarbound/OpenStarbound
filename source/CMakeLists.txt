@@ -465,7 +465,10 @@ if(STAR_BUILD_GUI)
   find_package(GLEW REQUIRED)
 
   include_directories(SYSTEM ${GLEW_INCLUDE_DIR})
-  set(STAR_EXT_GUI_LIBS ${STAR_EXT_GUI_LIBS} ${OPENGL_LIBRARY} ${GLEW_LIBRARY})
+  set(STAR_EXT_GUI_LIBS ${STAR_EXT_GUI_LIBS}
+      ${OPENGL_LIBRARY}
+      GLEW::glew_s
+  )
 
   if(STAR_SYSTEM_MACOS)
     set(STAR_EXT_GUI_LIBS ${STAR_EXT_GUI_LIBS} "-framework CoreAudio")
