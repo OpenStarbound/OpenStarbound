@@ -183,7 +183,7 @@ String CommandProcessor::warpRandom(ConnectionId connectionId, String const& typ
 				}
 			}
 		}
-			
+
 		if (size.magnitude() > 1024)
 			return "could not find a matching world";
 		size *= 2;
@@ -296,7 +296,7 @@ String CommandProcessor::spawnItem(ConnectionId connectionId, String const& argu
 
     bool done = m_universe->executeForClient(connectionId, [&](WorldServer* world, PlayerPtr const& player) {
         auto itemDatabase = Root::singleton().itemDatabase();
-        world->addEntity(ItemDrop::createRandomizedDrop(itemDatabase->item(ItemDescriptor(kind, amount, parameters), level, seed), player->aimPosition()));
+        world->addEntity(ItemDrop::createRandomizedDrop(itemDatabase->item(ItemDescriptor(kind, amount, parameters), level, seed, true), player->aimPosition()));
       });
 
     return done ? "" : "Invalid client state";
