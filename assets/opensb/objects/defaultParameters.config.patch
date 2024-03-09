@@ -1,4 +1,4 @@
 {
-  "pointLight" : true,
-  "disableParticleLights" : true // removes flashing from some objects caused by particle lights, recommended to set to true if pointLight is true
+  "pointLight" : false, // if true, makes light sources emit dynamic lighting
+  "disableParticleLights" : false // removes flashing from some light emitting objects caused by particle lights, recommended to set to true if pointLight is true
 }
