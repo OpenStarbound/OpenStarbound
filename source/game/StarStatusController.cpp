@@ -709,7 +709,7 @@ bool StatusController::addUniqueEffect(
     return true;
   } else {
     Logger::warn("Unique status effect '{}' not found in status effect database", effect);
-    return false
+    return false;
   }
 }
 
