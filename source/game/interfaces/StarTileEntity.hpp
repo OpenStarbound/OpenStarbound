@@ -17,7 +17,6 @@ struct MaterialSpace {
 
   Vec2I space;
   MaterialId material;
-  Maybe<CollisionKind> prevCollision; //exclude from ==
 };
 
 DataStream& operator<<(DataStream& ds, MaterialSpace const& materialSpace);

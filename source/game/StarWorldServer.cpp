@@ -1255,7 +1255,7 @@ void WorldServer::init(bool firstTime) {
   m_entityMessageResponses = {};
 
   m_collisionGenerator.init([=](int x, int y) {
-      return m_tileArray->tile({x, y}).collision;
+      return m_tileArray->tile({x, y}).getCollision();
     });
 
   m_tileEntityBreakCheckTimer = GameTimer(m_serverConfig.getFloat("tileEntityBreakCheckInterval"));
@@ -1505,21 +1505,20 @@ void WorldServer::updateTileEntityTiles(TileEntityPtr const& entity, bool removi
 
     ServerTile* tile = m_tileArray->modifyTile(pos);
     if (tile) {
-      bool updated = false;
+      tile->rootSource = {};
+      bool updatedTile = false;
       if (tile->foreground == materialSpace.material) {
         tile->foreground = EmptyMaterialId;
         tile->foregroundMod = NoModId;
-        tile->rootSource = {};
-        updated = true;
+        updatedTile = true;
       }
-      if (tile->collision == materialDatabase->materialCollisionKind(materialSpace.material)
-        && tile->updateCollision(materialSpace.prevCollision.value(CollisionKind::None))) {
+      if (tile->updateObjectCollision(CollisionKind::None)) {
         m_liquidEngine->visitLocation(pos);
         m_fallingBlocksAgent->visitLocation(pos);
         dirtyCollision(RectI::withSize(pos, { 1, 1 }));
-        updated = true;
+        updatedTile = true;
       }
-      if (updated)
+      if (updatedTile)
         queueTileUpdates(pos);
     }
   }
@@ -1533,35 +1532,27 @@ void WorldServer::updateTileEntityTiles(TileEntityPtr const& entity, bool removi
     for (auto const& materialSpace : newMaterialSpaces) {
       Vec2I pos = materialSpace.space + entity->tilePosition();
 
-      bool updated = false;
+      bool updatedTile = false;
       bool updatedCollision = false;
       ServerTile* tile = m_tileArray->modifyTile(pos);
-      if (tile && (tile->foreground == EmptyMaterialId || tile->foreground == materialSpace.material)) {
-        tile->foreground = materialSpace.material;
-        tile->foregroundMod = NoModId;
+      if (tile) {
+        if (tile->foreground == EmptyMaterialId) {
+          tile->foreground = materialSpace.material;
+          tile->foregroundMod = NoModId;
+          updatedTile = true;
+        }
         bool hadRoot = tile->rootSource.isValid();
         if (isRealMaterial(materialSpace.material))
           tile->rootSource = entity->tilePosition();
         auto& space = passedSpaces.emplaceAppend(materialSpace);
-        if (hadRoot)
-          space.prevCollision.emplace(tile->collision);
-        updatedCollision = tile->updateCollision(materialDatabase->materialCollisionKind(tile->foreground));
-        updated = true;
-      }
-      else if (tile && tile->collision < CollisionKind::Dynamic) {
-        bool hadRoot = tile->rootSource.isValid();
-        auto& space = passedSpaces.emplaceAppend(materialSpace);
-        if (hadRoot)
-          space.prevCollision.emplace(tile->collision);
-        updatedCollision = tile->updateCollision(materialDatabase->materialCollisionKind(materialSpace.material));
-        updated = true;
+        updatedTile |= updatedCollision = tile->updateObjectCollision(materialDatabase->materialCollisionKind(materialSpace.material));
       }
       if (updatedCollision) {
         m_liquidEngine->visitLocation(pos);
         m_fallingBlocksAgent->visitLocation(pos);
         dirtyCollision(RectI::withSize(pos, { 1, 1 }));
       }
-      if (updated)
+      if (updatedTile)
         queueTileUpdates(pos);
     }
     spaces.materials = std::move(passedSpaces);
@@ -1997,7 +1988,7 @@ void WorldServer::writeNetTile(Vec2I const& pos, NetTile& netTile) const {
   netTile.backgroundMod = tile.backgroundMod;
   netTile.backgroundModHueShift = tile.backgroundModHueShift;
   netTile.liquid = tile.liquid.netUpdate();
-  netTile.collision = tile.collision;
+  netTile.collision = tile.getCollision();
   netTile.blockBiomeIndex = tile.blockBiomeIndex;
   netTile.environmentBiomeIndex = tile.environmentBiomeIndex;
   netTile.dungeonId = tile.dungeonId;

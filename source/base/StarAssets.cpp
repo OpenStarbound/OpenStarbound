@@ -681,7 +681,7 @@ ByteArray Assets::read(String const& path) const {
 Json Assets::checkPatchArray(String const& path, AssetSourcePtr const& source, Json const result, JsonArray const patchData, Maybe<Json> const external) const {
   auto externalRef = external.value();
   auto newResult = result;
-  for (auto const patch : patchData) {
+  for (auto const& patch : patchData) {
     switch(patch.type()) {
       case Json::Type::Array: // if the patch is an array, go down recursively until we get objects
         try {
