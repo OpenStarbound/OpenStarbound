@@ -330,8 +330,9 @@ void Player::init(World* world, EntityId entityId, EntityMode mode) {
         p.second->addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(m_client));
       p.second->init(world);
     }
-    for (auto& p : m_inventory->clearOverflow()) {
-      world->addEntity(ItemDrop::createRandomizedDrop(p,m_movementController->position(),true));
+
+    for (auto& p : m_inventory->pullOverflow()) {
+      world->addEntity(ItemDrop::createRandomizedDrop(p, m_movementController->position(), true));
     }
   }
 

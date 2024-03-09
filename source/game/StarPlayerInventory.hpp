@@ -168,7 +168,7 @@ public:
   Maybe<InventorySlot> primaryHeldSlot() const;
   Maybe<InventorySlot> secondaryHeldSlot() const;
 
-  List<ItemPtr> clearOverflow();
+  List<ItemPtr> pullOverflow();
 
   void load(Json const& store);
   Json store() const;

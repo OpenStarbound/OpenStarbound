@@ -756,10 +756,8 @@ Maybe<InventorySlot> PlayerInventory::secondaryHeldSlot() const {
   return {};
 }
 
-List<ItemPtr> PlayerInventory::clearOverflow(){
-  auto list = m_inventoryLoadOverflow;
-  m_inventoryLoadOverflow.clear();
-  return list;
+List<ItemPtr> PlayerInventory::pullOverflow() {
+  return std::move(m_inventoryLoadOverflow);
 }
 
 void PlayerInventory::load(Json const& store) {
@@ -781,16 +779,16 @@ void PlayerInventory::load(Json const& store) {
   for (auto const& p : itemBags) {
     auto& bagType = p.first;
     auto newBag = ItemBag::loadStore(p.second);
-    if (m_bags.keys().contains(bagType)) {
-      auto& bagPtr = m_bags[bagType];
-      auto size = bagPtr.get()->size();
-      if (bagPtr)
-        *bagPtr = std::move(newBag);
+    if (m_bags.contains(bagType)) {
+      auto& bag = m_bags[bagType];
+      auto size = bag->size();
+      if (bag)
+        *bag = std::move(newBag);
       else
-        bagPtr = make_shared<ItemBag>(std::move(newBag));
-      m_inventoryLoadOverflow.appendAll(bagPtr.get()->resize(size));
+        bag = make_shared<ItemBag>(std::move(newBag));
+      m_inventoryLoadOverflow.appendAll(bag->resize(size));
     } else {
-      m_inventoryLoadOverflow.appendAll(ItemBag(newBag).items());
+      m_inventoryLoadOverflow.appendAll(newBag.items());
     }
   }
 
@@ -803,17 +801,20 @@ void PlayerInventory::load(Json const& store) {
 
   for (size_t i = 0; i < m_customBar.size(0); ++i) {
     for (size_t j = 0; j < m_customBar.size(1); ++j) {
-      Json cbl = store.get("customBar").get(i,JsonArray()).get(j,JsonArray());
-      auto validateLink = [this](Json link) -> Json {
-        if ((link.isType(Json::Type::Object))
-        && (m_bags.keys().contains(link.getString("type")))
-        && (m_bags[link.getString("type")].get()->size() > link.getUInt("location")))
-          return link;
-        return Json();
+      Json cbl = store.get("customBar").get(i, JsonArray()).get(j, JsonArray());
+      auto validateLink = [this](Maybe<InventorySlot> link) -> Maybe<InventorySlot> {
+        if (link && link->is<BagSlot>()) {
+          auto& slot = link->get<BagSlot>();
+          if (m_bags.contains(slot.first) && size_t(slot.second) < m_bags[slot.first]->size())
+            return link;
+          else
+            return {};
+        }
+        return link;
       };
       m_customBar.at(i, j) = CustomBarLink{
-        jsonToMaybe<InventorySlot>(validateLink(cbl.get(0, Json())), jsonToInventorySlot),
-        jsonToMaybe<InventorySlot>(validateLink(cbl.get(1, Json())), jsonToInventorySlot)
+        validateLink(jsonToMaybe<InventorySlot>(cbl.get(0, {}), jsonToInventorySlot)),
+        validateLink(jsonToMaybe<InventorySlot>(cbl.get(1, {}), jsonToInventorySlot))
       };
     }
   }

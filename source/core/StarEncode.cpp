@@ -204,7 +204,7 @@ String hexEncode(ByteArray const& data) {
 
 ByteArray hexDecode(String const& encodedData) {
   ByteArray res(encodedData.size() / 2, 0);
-  size_t decoded = hexDecode(encodedData.utf8Ptr(), encodedData.size(), res.ptr(), res.size());
+  size_t decoded = hexDecode(encodedData.utf8Ptr(), encodedData.utf8Size(), res.ptr(), res.size());
   _unused(decoded);
   starAssert(decoded == res.size());
   return res;
@@ -216,7 +216,7 @@ String base64Encode(ByteArray const& data) {
 
 ByteArray base64Decode(String const& encodedData) {
   ByteArray res(encodedData.size() * 3 / 4, 0);
-  size_t decoded = base64Decode(encodedData.utf8Ptr(), encodedData.size(), res.ptr(), res.size());
+  size_t decoded = base64Decode(encodedData.utf8Ptr(), encodedData.utf8Size(), res.ptr(), res.size());
   _unused(decoded);
   starAssert(decoded <= res.size());
   res.resize(decoded);

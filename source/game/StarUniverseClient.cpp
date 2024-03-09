@@ -574,8 +574,10 @@ bool UniverseClient::switchPlayer(size_t index) {
 bool UniverseClient::switchPlayer(String const& name) {
   if (auto uuid = m_playerStorage->playerUuidByName(name, mainPlayer()->uuid()))
     return switchPlayer(*uuid);
-  else
+  else if (name.utf8Size() == UuidSize * 2)
     return switchPlayer(Uuid(name));
+  else
+    return false;
 }
 
 UniverseClient::ReloadPlayerCallback& UniverseClient::playerReloadPreCallback() {
