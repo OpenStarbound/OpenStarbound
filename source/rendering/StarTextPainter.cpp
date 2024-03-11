@@ -173,7 +173,7 @@ bool TextPainter::processWrapText(StringView text, unsigned* wrapWidth, WrapText
         if (!textFunc(slice(lineStartIt, it), lines++))
           return false;
 
-        lineStart += lineCharSize; 
+        lineStart += lineCharSize;
         lineStartIt = it;
         ++lineStartIt;
 
@@ -213,7 +213,7 @@ bool TextPainter::processWrapText(StringView text, unsigned* wrapWidth, WrapText
 
             lineStart += lineCharSize - 1;
             lineStartIt = it; // include that character on the next line.
-            
+
 
             lineCharSize = 1;           // next line has that character in
             linePixelWidth = charWidth; // and is as wide as that character
@@ -370,7 +370,10 @@ void TextPainter::applyCommands(StringView unsplitCommands) {
         // Honestly this is really stupid but I just couldn't help myself
         // Should probably limit in the future
         setProcessingDirectives(command.substr(11));
+      } else if (command == "rainbow") {
+        m_renderSettings.mode = (FontMode)((int)m_renderSettings.mode | (int)FontMode::Rainbow);
       } else {
+        m_renderSettings.mode = (FontMode)((int)m_renderSettings.mode & (-1 ^ (int)FontMode::Rainbow));
         // expects both #... sequences and plain old color names.
         Color c = Color(command);
         c.setAlphaF(c.alphaF() * ((float)m_savedRenderSettings.color[3]) / 255);
@@ -431,6 +434,7 @@ RectF TextPainter::doRenderLine(StringView text, TextPositioning const& position
 
   String escapeCode;
   RectF bounds = RectF::withSize(pos.pos, Vec2F());
+  int rainbowPos = 0;
   Text::TextCallback textCallback = [&](StringView text) {
     for (String::Char c : text) {
       if (charLimit) {
@@ -439,8 +443,11 @@ RectF TextPainter::doRenderLine(StringView text, TextPositioning const& position
         else
           --* charLimit;
       }
-
+      if ((int)m_renderSettings.mode & (int)FontMode::Rainbow) {
+        m_renderSettings.color = Color::RainbowSequence.wrap(rainbowPos).toRgba();
+      }
       RectF glyphBounds = doRenderGlyph(c, pos, reallyRender);
+      rainbowPos++;
       bounds.combine(glyphBounds);
       pos.pos[0] += glyphBounds.width();
     }
