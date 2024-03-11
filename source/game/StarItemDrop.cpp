@@ -241,7 +241,7 @@ void ItemDrop::update(float dt, uint64_t) {
   } else {
     if (m_itemDescriptor.pullUpdated())
       Root::singleton().itemDatabase()->loadItem(m_itemDescriptor.get(), m_item);
-    m_netGroup.tickNetInterpolation(GlobalTimestep);
+    m_netGroup.tickNetInterpolation(dt);
     if (m_owningEntity.get() != NullEntityId) {
       if (!isMaster() && m_dropAge.elapsedTime() > 1.0f)
         m_owningEntity.set(NullEntityId);

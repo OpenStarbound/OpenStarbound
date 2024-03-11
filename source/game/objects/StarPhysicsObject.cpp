@@ -79,7 +79,7 @@ void PhysicsObject::uninit() {
 void PhysicsObject::update(float dt, uint64_t currentStep) {
   Object::update(dt, currentStep);
   if (isSlave())
-    m_netGroup.tickNetInterpolation(GlobalTimestep);
+    m_netGroup.tickNetInterpolation(dt);
 }
 
 RectF PhysicsObject::metaBoundBox() const {

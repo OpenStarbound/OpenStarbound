@@ -466,7 +466,7 @@ void Monster::update(float dt, uint64_t) {
     m_statusController->tickMaster(dt);
     updateStatus(dt);
   } else {
-    m_netGroup.tickNetInterpolation(GlobalTimestep);
+    m_netGroup.tickNetInterpolation(dt);
 
     m_statusController->tickSlave(dt);
     updateStatus(dt);

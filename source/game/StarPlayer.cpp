@@ -976,7 +976,7 @@ void Player::update(float dt, uint64_t) {
     m_interestingObjects = m_questManager->interestingObjects();
 
   } else {
-    m_netGroup.tickNetInterpolation(GlobalTimestep);
+    m_netGroup.tickNetInterpolation(dt);
     m_movementController->tickSlave(dt);
     m_techController->tickSlave(dt);
     m_statusController->tickSlave(dt);

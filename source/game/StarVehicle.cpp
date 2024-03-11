@@ -285,7 +285,7 @@ void Vehicle::update(float dt, uint64_t) {
       }
     }
   } else {
-    m_netGroup.tickNetInterpolation(GlobalTimestep);
+    m_netGroup.tickNetInterpolation(dt);
 
     m_movementController.tickSlave(dt);
 

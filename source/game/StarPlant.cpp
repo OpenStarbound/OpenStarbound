@@ -733,7 +733,7 @@ void Plant::update(float dt, uint64_t) {
       m_windLevel += damageEffectPercentage * 20;
     }
 
-    m_netGroup.tickNetInterpolation(GlobalTimestep);
+    m_netGroup.tickNetInterpolation(dt);
   }
 }
 

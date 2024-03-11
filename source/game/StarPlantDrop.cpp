@@ -236,7 +236,7 @@ void PlantDrop::update(float dt, uint64_t) {
       }
     }
   } else {
-    m_netGroup.tickNetInterpolation(GlobalTimestep);
+    m_netGroup.tickNetInterpolation(dt);
 
     if (m_spawnedDropEffects && !m_spawnedDrops.get())
       m_spawnedDropEffects = false; // false positive assumption over already having done the effect

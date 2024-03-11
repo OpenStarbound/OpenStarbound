@@ -336,7 +336,7 @@ void Projectile::update(float dt, uint64_t) {
       }
     }
   } else {
-    m_netGroup.tickNetInterpolation(GlobalTimestep);
+    m_netGroup.tickNetInterpolation(dt);
     m_movementController->tickSlave(dt);
     m_travelLine.min() = m_travelLine.max();
     m_travelLine.max() = m_movementController->position();

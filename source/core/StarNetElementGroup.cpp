@@ -17,24 +17,24 @@ void NetElementGroup::clearNetElements() {
 
 void NetElementGroup::initNetVersion(NetElementVersion const* version) {
   m_version = version;
-  for (auto p : m_elements)
+  for (auto& p : m_elements)
     p.first->initNetVersion(m_version);
 }
 
 void NetElementGroup::netStore(DataStream& ds) const {
-  for (auto p : m_elements)
+  for (auto& p : m_elements)
     p.first->netStore(ds);
 }
 
 void NetElementGroup::netLoad(DataStream& ds) {
-  for (auto p : m_elements)
+  for (auto& p : m_elements)
     p.first->netLoad(ds);
 }
 
 void NetElementGroup::enableNetInterpolation(float extrapolationHint) {
   m_interpolationEnabled = true;
   m_extrapolationHint = extrapolationHint;
-  for (auto p : m_elements) {
+  for (auto& p : m_elements) {
     if (p.second)
       p.first->enableNetInterpolation(extrapolationHint);
   }
@@ -43,7 +43,7 @@ void NetElementGroup::enableNetInterpolation(float extrapolationHint) {
 void NetElementGroup::disableNetInterpolation() {
   m_interpolationEnabled = false;
   m_extrapolationHint = 0;
-  for (auto p : m_elements) {
+  for (auto& p : m_elements) {
     if (p.second)
       p.first->disableNetInterpolation();
   }
@@ -51,7 +51,7 @@ void NetElementGroup::disableNetInterpolation() {
 
 void NetElementGroup::tickNetInterpolation(float dt) {
   if (m_interpolationEnabled) {
-    for (auto p : m_elements)
+    for (auto& p : m_elements)
       p.first->tickNetInterpolation(dt);
   }
 }
@@ -100,7 +100,7 @@ void NetElementGroup::readNetDelta(DataStream& ds, float interpolationTime) {
 
 void NetElementGroup::blankNetDelta(float interpolationTime) {
   if (m_interpolationEnabled) {
-    for (auto p : m_elements)
+    for (auto& p : m_elements)
       p.first->blankNetDelta(interpolationTime);
   }
 }

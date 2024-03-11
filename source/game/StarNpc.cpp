@@ -458,7 +458,7 @@ void Npc::update(float dt, uint64_t) {
     m_humanoid.setDance(m_dance);
 
   } else {
-    m_netGroup.tickNetInterpolation(GlobalTimestep);
+    m_netGroup.tickNetInterpolation(dt);
     m_movementController->tickSlave(dt);
     m_statusController->tickSlave(dt);
 
