@@ -66,6 +66,11 @@
         "VCPKG_TARGET_TRIPLET": "x64-osx-mixed",
         "CMAKE_INCLUDE_PATH": "${sourceParentDir}/lib/osx/include",
         "CMAKE_LIBRARY_PATH": "${sourceParentDir}/lib/osx/x64;${sourceParentDir}/lib/osx"
+      },
+      "vendor": {
+        "microsoft.com/VisualStudioSettings/CMake/1.0": {
+          "hostOS": [ "macOS" ]
+        }
       }
     },
     {
