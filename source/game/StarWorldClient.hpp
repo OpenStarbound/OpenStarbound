@@ -213,7 +213,7 @@ private:
 
   void initWorld(WorldStartPacket const& packet);
   void clearWorld();
-  void tryGiveMainPlayerItem(ItemPtr item);
+  void tryGiveMainPlayerItem(ItemPtr item, bool silent = false);
 
   void notifyEntityCreate(EntityPtr const& entity);
 

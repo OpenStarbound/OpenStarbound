@@ -214,6 +214,14 @@ ItemPtr PlayerInventory::addItems(ItemPtr items) {
   if (is<BackArmor>(items) && !backArmor())
     m_equipment[EquipmentSlot::Back] = items->take(1);
 
+  if (is<MaterialItem>(items)) {
+    if (auto primary = primaryHeldItem()) {
+      primary->stackWith(items);
+      if (items->empty())
+        return {};
+    }
+  }
+
   // Then, finally the bags
   return addToBags(std::move(items));
 }

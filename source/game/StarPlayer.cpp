@@ -1153,20 +1153,23 @@ uint64_t Player::itemsCanHold(ItemPtr const& items) const {
   return m_inventory->itemsCanFit(items);
 }
 
-ItemPtr Player::pickupItems(ItemPtr const& items) {
+ItemPtr Player::pickupItems(ItemPtr const& items, bool silent) {
   if (isDead() || !items || m_inventory->itemsCanFit(items) == 0)
     return items;
 
   triggerPickupEvents(items);
 
-  if (items->pickupSound().size()) {
-    m_effectsAnimator->setSoundPool("pickup", {items->pickupSound()});
-    float pitch = 1.f - ((float)items->count() / (float)items->maxStack()) * 0.5f;
-    m_effectsAnimator->setSoundPitchMultiplier("pickup", clamp(pitch * Random::randf(0.8f, 1.2f), 0.f, 2.f));
-    m_effectsAnimator->playSound("pickup");
+  if (!silent) {
+    if (items->pickupSound().size()) {
+      m_effectsAnimator->setSoundPool("pickup", {items->pickupSound()});
+      float pitch = 1.f - ((float)items->count() / (float)items->maxStack()) * 0.5f;
+      m_effectsAnimator->setSoundPitchMultiplier("pickup", clamp(pitch * Random::randf(0.8f, 1.2f), 0.f, 2.f));
+      m_effectsAnimator->playSound("pickup");
+    }
+    auto itemDb = Root::singleton().itemDatabase();
+    queueItemPickupMessage(itemDb->itemShared(items->descriptor()));
   }
-  auto itemDb = Root::singleton().itemDatabase();
-  queueItemPickupMessage(itemDb->itemShared(items->descriptor()));
+
   return m_inventory->addItems(items);
 }
 

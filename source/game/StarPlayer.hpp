@@ -200,7 +200,7 @@ public:
   uint64_t itemsCanHold(ItemPtr const& items) const;
   // Adds items to the inventory, returning the overflow.
   // The items parameter is invalid after use.
-  ItemPtr pickupItems(ItemPtr const& items);
+  ItemPtr pickupItems(ItemPtr const& items, bool silent = false);
   // Pick up all of the given items as possible, dropping the overflow.
   // The item parameter is invalid after use.
   void giveItem(ItemPtr const& item);

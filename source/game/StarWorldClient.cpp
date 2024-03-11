@@ -573,23 +573,28 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
 
       renderTile.liquidId = clientTile.liquid.liquid;
       renderTile.liquidLevel = floatToByte(clientTile.liquid.level);
+    });
 
-      if (!m_predictedTiles.empty()) {
-        if (auto p = m_predictedTiles.ptr(position)) {
-          if (p->liquid) {
-            auto& liquid = *p->liquid;
-            if (liquid.liquid == renderTile.liquidId)
-              renderTile.liquidLevel = floatToByte(clientTile.liquid.level + liquid.level, true);
-            else {
-              renderTile.liquidId = liquid.liquid;
-              renderTile.liquidLevel = floatToByte(liquid.level, true);
-            }
-          }
-
-          p->apply(renderTile);
+  for (auto& pair : m_predictedTiles) {
+    Vec2I tileArrayPos = m_geometry.diff(pair.first, renderData.tileMinPosition);
+    if (tileArrayPos[0] >= 0 && tileArrayPos[0] < (int)renderData.tiles.size(0) && tileArrayPos[1] >= 0 && tileArrayPos[1] < (int)renderData.tiles.size(1)) {
+      RenderTile& renderTile = renderData.tiles(tileArrayPos[0], tileArrayPos[1]);
+      PredictedTile& p = pair.second;
+      if (p.liquid) {
+        auto& liquid = *p.liquid;
+        if (liquid.liquid == renderTile.liquidId) {
+          uint8_t added = floatToByte(liquid.level, true);
+          renderTile.liquidLevel = (renderTile.liquidLevel > 255 - added) ? 255 : renderTile.liquidLevel + added;
+        }
+        else {
+          renderTile.liquidId = liquid.liquid;
+          renderTile.liquidLevel = floatToByte(liquid.level, true);
         }
       }
-    });
+
+      pair.second.apply(renderTile);
+    }
+  }
 
   for (auto const& previewTile : previewTiles) {
     Vec2I tileArrayPos = m_geometry.diff(previewTile.position, renderData.tileMinPosition);
@@ -896,10 +901,10 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
 
         if (auto placeMaterial = modification.second.ptr<PlaceMaterial>()) {
           auto stack = materialDatabase->materialItemDrop(placeMaterial->material);
-          tryGiveMainPlayerItem(itemDatabase->item(stack));
+          tryGiveMainPlayerItem(itemDatabase->item(stack), true);
         } else if (auto placeMod = modification.second.ptr<PlaceMod>()) {
           auto stack = materialDatabase->modItemDrop(placeMod->mod);
-          tryGiveMainPlayerItem(itemDatabase->item(stack));
+          tryGiveMainPlayerItem(itemDatabase->item(stack), true);
         }
       }
 
@@ -1799,8 +1804,8 @@ void WorldClient::clearWorld() {
   m_forceRegions.clear();
 }
 
-void WorldClient::tryGiveMainPlayerItem(ItemPtr item) {
-  if (auto spill = m_mainPlayer->pickupItems(item))
+void WorldClient::tryGiveMainPlayerItem(ItemPtr item, bool silent) {
+  if (auto spill = m_mainPlayer->pickupItems(item, silent))
     addEntity(ItemDrop::createRandomizedDrop(spill->descriptor(), m_mainPlayer->position()));
 }
 
