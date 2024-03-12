@@ -22,7 +22,7 @@ LuaCallbacks LuaBindings::makeClipboardCallbacks() {
     return text;
   });
 
-  callbacks.registerCallback("setText", [](String& const text) -> Maybe<String> {
+  callbacks.registerCallback("setText", [](String const& text) -> Maybe<String> {
     int errorCode = SDL_SetClipboardText(text.utf8().c_str());
     if (errorCode != 0) {
       return "SDL_SetClipboardText failed: " + String(SDL_GetError());
