@@ -1,32 +1,32 @@
 #include "StarClientApplication.hpp"
-#include "StarConfiguration.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarFile.hpp"
-#include "StarEncode.hpp"
-#include "StarLogging.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarRoot.hpp"
-#include "StarVersion.hpp"
-#include "StarPlayer.hpp"
-#include "StarPlayerStorage.hpp"
-#include "StarPlayerLog.hpp"
 #include "StarAssets.hpp"
-#include "StarWorldTemplate.hpp"
-#include "StarWorldClient.hpp"
-#include "StarRootLoader.hpp"
-#include "StarInput.hpp"
-#include "StarVoice.hpp"
+#include "StarConfiguration.hpp"
 #include "StarCurve25519.hpp"
+#include "StarEncode.hpp"
+#include "StarFile.hpp"
+#include "StarInput.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarLogging.hpp"
+#include "StarPlayer.hpp"
+#include "StarPlayerLog.hpp"
+#include "StarPlayerStorage.hpp"
+#include "StarRoot.hpp"
+#include "StarRootLoader.hpp"
+#include "StarVersion.hpp"
+#include "StarVoice.hpp"
+#include "StarWorldClient.hpp"
+#include "StarWorldTemplate.hpp"
 
-#include "StarInterfaceLuaBindings.hpp"
+#include "StarClipboardLuaBindings.hpp"
 #include "StarInputLuaBindings.hpp"
+#include "StarInterfaceLuaBindings.hpp"
 #include "StarVoiceLuaBindings.hpp"
 
 #if defined STAR_SYSTEM_WINDOWS
 #include <windows.h>
 extern "C" __declspec(dllexport) DWORD NvOptimusEnablement = 1;
 extern "C" __declspec(dllexport) DWORD AmdPowerXpressRequestHighPerformance = 1;
-#endif // graphics driver is told by these exports to default to the dedicated GPU
+#endif// graphics driver is told by these exports to default to the dedicated GPU
 
 namespace Star {
 
@@ -247,8 +247,7 @@ void ClientApplication::renderInit(RendererPtr renderer) {
       }
 
       renderer->loadEffectConfig(name, config, shaders);
-    }
-    else
+    } else
       Logger::warn("No rendering config found for renderer with id '{}'", renderer->rendererId());
   };
 
@@ -310,8 +309,7 @@ void ClientApplication::processInput(InputEvent const& event) {
       m_heldKeyEvents.transform([&](auto& keyEvent) {
         return KeyDownEvent{keyEvent.key, keyEvent.mods & ~*modKey};
       });
-  }
-  else if (auto cAxis = event.ptr<ControllerAxisEvent>()) {
+  } else if (auto cAxis = event.ptr<ControllerAxisEvent>()) {
     if (cAxis->controllerAxis == ControllerAxis::LeftX)
       m_controllerLeftStick[0] = cAxis->controllerAxisValue;
     else if (cAxis->controllerAxis == ControllerAxis::LeftY)
@@ -360,7 +358,7 @@ void ClientApplication::update() {
         m_pendingMultiPlayerConnection = PendingMultiPlayerConnection{join.takeValue(), {}, {}};
         changeState(MainAppState::Title);
       }
-      
+
       if (auto req = p2pNetworkingService->pullJoinRequest())
         m_mainInterface->queueJoinRequest(*req);
 
@@ -384,12 +382,12 @@ void ClientApplication::update() {
     updateTitle(dt);
   else if (m_state > MainAppState::Title)
     updateRunning(dt);
-  
+
   // Swallow leftover encoded voice data if we aren't in-game to allow mic read to continue for settings.
   if (m_state <= MainAppState::Title) {
     DataStreamBuffer ext;
     m_voice->send(ext);
-  } // TODO: directly disable encoding at menu so we don't have to do this
+  }// TODO: directly disable encoding at menu so we don't have to do this
 
   m_guiContext->cleanup();
   m_edgeKeyEvents.clear();
@@ -463,8 +461,8 @@ void ClientApplication::changeState(MainAppState newState) {
   if (newState == MainAppState::Splash) {
     m_cinematicOverlay->load(m_root->assets()->json("/cinematics/splash.cinematic"));
     m_rootLoader = Thread::invoke("Async root loader", [this]() {
-        m_root->fullyLoad();
-      });
+      m_root->fullyLoad();
+    });
   }
 
   if (oldState > MainAppState::Title && m_state <= MainAppState::Title) {
@@ -516,6 +514,7 @@ void ClientApplication::changeState(MainAppState newState) {
 
     m_universeClient->setLuaCallbacks("input", LuaBindings::makeInputCallbacks());
     m_universeClient->setLuaCallbacks("voice", LuaBindings::makeVoiceCallbacks());
+    m_universeClient->setLuaCallbacks("clipboard", LuaBindings::makeClipboardCallbacks());
 
     auto heldScriptPanes = make_shared<List<MainInterface::ScriptPaneInfo>>();
 
@@ -622,7 +621,7 @@ void ClientApplication::changeState(MainAppState newState) {
 
       bool allowAssetsMismatch = m_root->configuration()->get("allowAssetsMismatch").toBool();
       if (auto errorMessage = m_universeClient->connect(UniverseConnection(std::move(packetSocket)), allowAssetsMismatch,
-            multiPlayerConnection.account, multiPlayerConnection.password)) {
+                                                        multiPlayerConnection.account, multiPlayerConnection.password)) {
         setError(*errorMessage);
         return;
       }
@@ -759,8 +758,7 @@ void ClientApplication::updateTitle(float dt) {
           m_pendingMultiPlayerConnection = PendingMultiPlayerConnection{
             address.right(),
             m_titleScreen->multiPlayerAccount(),
-            m_titleScreen->multiPlayerPassword()
-          };
+            m_titleScreen->multiPlayerPassword()};
 
           auto configuration = m_root->configuration();
           configuration->setPath("title.multiPlayerAddress", m_titleScreen->multiPlayerAddress());
@@ -808,7 +806,7 @@ void ClientApplication::updateRunning(float dt) {
         }
       }
     }
-    
+
     if (p2pNetworkingService)
       p2pNetworkingService->setActivityData("In Game", party);
 
@@ -927,7 +925,7 @@ void ClientApplication::updateRunning(float dt) {
           std::string_view signatureView((char*)signature.data(), signature.size());
           std::string_view audioDataView(voiceData.ptr(), voiceData.size());
           auto broadcast = strf("data\0voice\0{}{}"s, signatureView, audioDataView);
-          worldClient->sendSecretBroadcast(broadcast, true, false); // Already compressed by Opus.
+          worldClient->sendSecretBroadcast(broadcast, true, false);// Already compressed by Opus.
         }
         if (auto mainPlayer = m_universeClient->mainPlayer()) {
           auto localSpeaker = m_voice->localSpeaker();
@@ -1079,6 +1077,6 @@ void ClientApplication::updateCamera(float dt) {
   m_universeClient->worldClient()->setClientWindow(camera.worldTileRect());
 }
 
-}
+}// namespace Star
 
 STAR_MAIN_APPLICATION(Star::ClientApplication);

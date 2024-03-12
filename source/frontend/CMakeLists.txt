@@ -23,6 +23,7 @@ SET (star_frontend_HEADERS
     StarChatBubbleManager.hpp
     StarCinematic.hpp
     StarClientCommandProcessor.hpp
+    StarClipboardLuaBindings.hpp
     StarCodexInterface.hpp
     StarConfirmationDialog.hpp
     StarContainerInterface.hpp
@@ -74,6 +75,7 @@ SET (star_frontend_SOURCES
     StarChatBubbleManager.cpp
     StarCinematic.cpp
     StarClientCommandProcessor.cpp
+    StarClipboardLuaBindings.cpp
     StarCodexInterface.cpp
     StarConfirmationDialog.cpp
     StarContainerInterface.cpp
