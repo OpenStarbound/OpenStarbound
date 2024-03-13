@@ -5,29 +5,17 @@
 
 namespace Star {
 
-LuaCallbacks LuaBindings::makeClipboardCallbacks() {
+LuaCallbacks LuaBindings::makeClipboardCallbacks(ApplicationControllerPtr appController) {
   LuaCallbacks callbacks;
 
-  callbacks.registerCallback("hasText", []() -> bool { return SDL_HasClipboardText() == SDL_TRUE; });
+  callbacks.registerCallback("hasText", []() -> bool { return SDL_HasClipboardText() == SDL_TRUE;});
 
-  callbacks.registerCallback("getText", []() -> Maybe<String> {
-    if (SDL_HasClipboardText() == SDL_FALSE)
-      return {};
-
-    char* clipText = SDL_GetClipboardText();
-    String text(clipText);
-
-    SDL_free(clipText);
-
-    return text;
+  callbacks.registerCallback("getText", [appController]() -> Maybe<String> {
+    return appController->getClipboard();
   });
 
-  callbacks.registerCallback("setText", [](String const& text) -> Maybe<String> {
-    int errorCode = SDL_SetClipboardText(text.utf8().c_str());
-    if (errorCode != 0) {
-      return "SDL_SetClipboardText failed: " + String(SDL_GetError());
-    }
-    return {};
+  callbacks.registerCallback("setText", [appController](String const& text) {
+    appController->setClipboard(text);
   });
 
   return callbacks;
