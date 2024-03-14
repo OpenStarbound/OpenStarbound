@@ -15,9 +15,9 @@ void compressData(ByteArray const& in, ByteArray& out, CompressionLevel compress
     return;
 
   const size_t BUFSIZE = 32 * 1024;
-  unsigned char temp_buffer[BUFSIZE];
+  auto tempBuffer = std::make_unique<unsigned char[]>(BUFSIZE);
 
-  z_stream strm;
+  z_stream strm{};
   strm.zalloc = Z_NULL;
   strm.zfree = Z_NULL;
   strm.opaque = Z_NULL;
@@ -27,13 +27,13 @@ void compressData(ByteArray const& in, ByteArray& out, CompressionLevel compress
 
   strm.next_in = (unsigned char*)in.ptr();
   strm.avail_in = in.size();
-  strm.next_out = temp_buffer;
+  strm.next_out = tempBuffer.get();
   strm.avail_out = BUFSIZE;
   while (deflate_res == Z_OK) {
     deflate_res = deflate(&strm, Z_FINISH);
     if (strm.avail_out == 0) {
-      out.append((char const*)temp_buffer, BUFSIZE);
-      strm.next_out = temp_buffer;
+      out.append((char const*)tempBuffer.get(), BUFSIZE);
+      strm.next_out = tempBuffer.get();
       strm.avail_out = BUFSIZE;
     }
   }
@@ -42,7 +42,7 @@ void compressData(ByteArray const& in, ByteArray& out, CompressionLevel compress
   if (deflate_res != Z_STREAM_END)
     throw IOException(strf("Internal error in uncompressData, deflate_res is {}", deflate_res));
 
-  out.append((char const*)temp_buffer, BUFSIZE - strm.avail_out);
+  out.append((char const*)tempBuffer.get(), BUFSIZE - strm.avail_out);
 }
 
 ByteArray compressData(ByteArray const& in, CompressionLevel compression) {
@@ -51,16 +51,16 @@ ByteArray compressData(ByteArray const& in, CompressionLevel compression) {
   return out;
 }
 
-void uncompressData(ByteArray const& in, ByteArray& out) {
+void uncompressData(const char* in, size_t inLen, ByteArray& out, size_t limit) {
   out.clear();
 
-  if (in.empty())
+  if (!inLen)
     return;
 
   const size_t BUFSIZE = 32 * 1024;
-  unsigned char temp_buffer[BUFSIZE];
+  auto tempBuffer = std::make_unique<unsigned char[]>(BUFSIZE);
 
-  z_stream strm;
+  z_stream strm{};
   strm.zalloc = Z_NULL;
   strm.zfree = Z_NULL;
   strm.opaque = Z_NULL;
@@ -68,17 +68,22 @@ void uncompressData(ByteArray const& in, ByteArray& out) {
   if (inflate_res != Z_OK)
     throw IOException(strf("Failed to initialise inflate ({})", inflate_res));
 
-  strm.next_in = (unsigned char*)in.ptr();
-  strm.avail_in = in.size();
-  strm.next_out = temp_buffer;
+  strm.next_in = (unsigned char*)in;
+  strm.avail_in = inLen;
+  strm.next_out = tempBuffer.get();
   strm.avail_out = BUFSIZE;
 
   while (inflate_res == Z_OK || inflate_res == Z_BUF_ERROR) {
     inflate_res = inflate(&strm, Z_FINISH);
     if (strm.avail_out == 0) {
-      out.append((char const*)temp_buffer, BUFSIZE);
-      strm.next_out = temp_buffer;
+      out.append((char const*)tempBuffer.get(), BUFSIZE);
+      strm.next_out = tempBuffer.get();
       strm.avail_out = BUFSIZE;
+      if (limit && out.size() >= limit) {
+        inflateEnd(&strm);
+        throw IOException(strf("hit uncompressData limit of {} bytes", limit));
+        break;
+      }
     } else if (inflate_res == Z_BUF_ERROR) {
       break;
     }
@@ -88,13 +93,21 @@ void uncompressData(ByteArray const& in, ByteArray& out) {
   if (inflate_res != Z_STREAM_END)
     throw IOException(strf("Internal error in uncompressData, inflate_res is {}", inflate_res));
 
-  out.append((char const*)temp_buffer, BUFSIZE - strm.avail_out);
+  out.append((char const*)tempBuffer.get(), BUFSIZE - strm.avail_out);
 }
 
-ByteArray uncompressData(ByteArray const& in) {
-  ByteArray out = ByteArray::withReserve(in.size());
-  uncompressData(in, out);
+ByteArray uncompressData(const char* in, size_t inLen, size_t limit) {
+  ByteArray out = ByteArray::withReserve(inLen);
+  uncompressData(in, inLen, out, limit);
   return out;
+}
+
+void uncompressData(ByteArray const& in, ByteArray& out, size_t limit) {
+  uncompressData(in.ptr(), in.size(), out, limit);
+}
+
+ByteArray uncompressData(ByteArray const& in, size_t limit) {
+  return uncompressData(in.ptr(), in.size(), limit);
 }
 
 CompressedFilePtr CompressedFile::open(String const& filename, IOMode mode, CompressionLevel comp) {

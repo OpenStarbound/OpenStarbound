@@ -443,6 +443,7 @@ find_package(PNG REQUIRED)
 find_package(Freetype REQUIRED)
 find_package(Opus CONFIG REQUIRED)
 find_package(OggVorbis REQUIRED)
+find_package(zstd CONFIG REQUIRED)
 
 include_directories(SYSTEM
     ${FREETYPE_INCLUDE_DIRS}
@@ -453,6 +454,7 @@ set(STAR_EXT_LIBS ${STAR_EXT_LIBS}
     ZLIB::ZLIB
     PNG::PNG
     $<IF:$<TARGET_EXISTS:Freetype::Freetype>,Freetype::Freetype,freetype>
+    $<IF:$<TARGET_EXISTS:zstd::libzstd_shared>,zstd::libzstd_shared,zstd::libzstd_static>
     Opus::opus
     ${VORBISFILE_LIBRARY}
     ${VORBIS_LIBRARY}

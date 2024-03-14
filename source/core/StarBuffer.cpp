@@ -263,6 +263,10 @@ bool ExternalBuffer::empty() const {
   return m_size == 0;
 }
 
+ExternalBuffer::operator bool() const {
+  return m_size == 0;
+}
+
 void ExternalBuffer::reset(char const* externalData, size_t len) {
   m_pos = 0;
   m_bytes = externalData;

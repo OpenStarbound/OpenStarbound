@@ -126,6 +126,7 @@ SET (star_core_HEADERS
     StarWeightedPool.hpp
     StarWorkerPool.hpp
     StarXXHash.hpp
+    StarZSTDCompression.hpp
   )
 
 SET (star_core_SOURCES
@@ -181,6 +182,7 @@ SET (star_core_SOURCES
     StarUnicode.cpp
     StarUuid.cpp
     StarWorkerPool.cpp
+    StarZSTDCompression.cpp
   )
 
 IF (STAR_SYSTEM_FAMILY_UNIX)
