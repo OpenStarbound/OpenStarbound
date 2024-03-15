@@ -132,6 +132,8 @@ void DataStreamBuffer::writeData(char const* data, size_t len) {
 
 DataStreamExternalBuffer::DataStreamExternalBuffer() : m_buffer() {}
 
+DataStreamExternalBuffer::DataStreamExternalBuffer(ByteArray const& byteArray) : DataStreamExternalBuffer(byteArray.ptr(), byteArray.size()) {}
+
 DataStreamExternalBuffer::DataStreamExternalBuffer(DataStreamBuffer const& buffer) : DataStreamExternalBuffer(buffer.ptr(), buffer.size()) {}
 
 DataStreamExternalBuffer::DataStreamExternalBuffer(char const* externalData, size_t len) : DataStreamExternalBuffer() {

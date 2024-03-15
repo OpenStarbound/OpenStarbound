@@ -212,8 +212,8 @@ List<PacketPtr> TcpPacketSocket::receivePackets() {
   uint64_t const PacketBatchLimit = 131072;
   List<PacketPtr> packets;
   try {
-    DataStreamExternalBuffer ds(m_inputBuffer.ptr(), m_inputBuffer.size());
-    bool atLeastOne = false;
+    DataStreamExternalBuffer ds(m_inputBuffer);
+    size_t trimPos = 0;
     while (!ds.atEnd()) {
       PacketType packetType;
       uint64_t packetSize = 0;
@@ -233,19 +233,19 @@ List<PacketPtr> TcpPacketSocket::receivePackets() {
       if (packetSize > PacketSizeLimit)
         throw IOException::format("{} bytes large {} exceeds max size!", packetSize, PacketTypeNames.getRight(packetType));
 
-      if (packetSize > ds.size() - ds.pos())
+      if (packetSize > ds.remaining())
         break;
 
-      atLeastOne = true;
       m_incomingStats.mix(packetType, packetSize, !m_useCompressionStream);
 
       DataStreamExternalBuffer packetStream(ds.ptr() + ds.pos(), packetSize);
       ByteArray uncompressed;
       if (packetCompressed) {
-        uncompressed = uncompressData(packetStream.ptr() + packetStream.pos(), packetSize, PacketSizeLimit);
+        uncompressed = uncompressData(packetStream.ptr(), packetSize, PacketSizeLimit);
         packetStream.reset(uncompressed.ptr(), uncompressed.size());
       }
       ds.seek(packetSize, IOSeek::Relative);
+      trimPos = ds.pos();
 
       size_t count = 0;
       do {
@@ -262,10 +262,10 @@ List<PacketPtr> TcpPacketSocket::receivePackets() {
         packets.append(std::move(packet));
       } while (!packetStream.atEnd());
     }
-    if (atLeastOne)
-      m_inputBuffer.trimLeft(ds.pos());
+    if (trimPos)
+      m_inputBuffer.trimLeft(trimPos);
   } catch (IOException const& e) {
-    Logger::warn("I/O error in TcpPacketSocket::readPackets, closing: {}", outputException(e, false));
+    Logger::warn("I/O error in TcpPacketSocket::receivePackets, closing: {}", outputException(e, false));
     m_inputBuffer.clear();
     m_socket->shutdown();
   }
@@ -282,30 +282,32 @@ bool TcpPacketSocket::writeData() {
 
   bool dataSent = false;
   try {
-    if (m_useCompressionStream) {
-      auto compressed = m_compressionStream.compress(m_outputBuffer);
-      m_outputBuffer.clear();
+    if (!m_outputBuffer.empty()) {
+      if (m_useCompressionStream) {
+        auto compressed = m_compressionStream.compress(m_outputBuffer);
+        m_outputBuffer.clear();
 
-      m_compressedBuffer.append(compressed.ptr(), compressed.size());
-      size_t written = m_socket->send(m_compressedBuffer.ptr(), m_compressedBuffer.size());
-      if (written > 0) {
-        dataSent = true;
-        m_compressedBuffer.trimLeft(written);
-        m_outgoingStats.mix(written);
-      }
-    } else {
-      while (!m_outputBuffer.empty()) {
-        size_t written = m_socket->send(m_outputBuffer.ptr(), m_outputBuffer.size());
-        if (written == 0)
-          break;
-        dataSent = true;
-        m_outputBuffer.trimLeft(written);
+        m_compressedBuffer.append(compressed.ptr(), compressed.size());
+        size_t written = m_socket->send(m_compressedBuffer.ptr(), m_compressedBuffer.size());
+        if (written > 0) {
+          dataSent = true;
+          m_compressedBuffer.trimLeft(written);
+          m_outgoingStats.mix(written);
+        }
+      } else {
+        do {
+          size_t written = m_socket->send(m_outputBuffer.ptr(), m_outputBuffer.size());
+          if (written == 0)
+            break;
+          dataSent = true;
+          m_outputBuffer.trimLeft(written);
+        } while (!m_outputBuffer.empty());
       }
     }
   } catch (SocketClosedException const& e) {
     Logger::debug("TcpPacketSocket socket closed: {}", outputException(e, false));
   } catch (IOException const& e) {
-    Logger::warn("I/O error in TcpPacketSocket::sendData: {}", outputException(e, false));
+    Logger::warn("I/O error in TcpPacketSocket::writeData: {}", outputException(e, false));
     m_socket->shutdown();
   }
   return dataSent;
@@ -320,8 +322,8 @@ bool TcpPacketSocket::readData() {
       if (readAmount == 0)
         break;
       dataReceived = true;
-      m_incomingStats.mix(readAmount);
       if (m_useCompressionStream) {
+        m_incomingStats.mix(readAmount);
         auto decompressed = m_decompressionStream.decompress(readBuffer, readAmount);
         m_inputBuffer.append(decompressed.ptr(), decompressed.size());
       } else {
@@ -435,7 +437,7 @@ List<PacketPtr> P2PPacketSocket::receivePackets() {
       } while (!packetStream.atEnd());
     }
   } catch (IOException const& e) {
-    Logger::warn("I/O error in P2PPacketSocket::readPackets, closing: {}", outputException(e, false));
+    Logger::warn("I/O error in P2PPacketSocket::receivePackets, closing: {}", outputException(e, false));
     m_socket.reset();
   }
   return packets;

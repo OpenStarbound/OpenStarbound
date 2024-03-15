@@ -19,6 +19,7 @@ public:
 
 private:
   ZSTD_CStream* m_cStream;
+  ByteArray m_output;
 };
 
 inline ByteArray CompressionStream::compress(ByteArray const& in) {
@@ -35,6 +36,7 @@ public:
 
 private:
   ZSTD_DStream* m_dStream;
+  ByteArray m_output;
 };
 
 inline ByteArray DecompressionStream::decompress(ByteArray const& in) {
