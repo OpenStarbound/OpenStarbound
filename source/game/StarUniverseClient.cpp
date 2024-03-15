@@ -296,13 +296,12 @@ void UniverseClient::update(float dt) {
   m_celestialDatabase->cleanup();
 
   if (auto netStats = m_connection->incomingStats()) {
-    LogMap::set("net_incoming_bps", netStats->bytesPerSecond);
-    LogMap::set("net_worst_incoming", strf("{}:{}", PacketTypeNames.getRight(netStats->worstPacketType), netStats->worstPacketSize));
+    LogMap::set("net_total_incoming", strf("{:4.3f} kB/s", netStats->bytesPerSecond / 1000.f));
+    LogMap::set("net_worst_incoming", strf("^cyan;{}^reset; ({:4.3f} kB/s)", PacketTypeNames.getRight(netStats->worstPacketType), (float)netStats->worstPacketSize / 1000.f));
   }
   if (auto netStats = m_connection->outgoingStats()) {
-    LogMap::set("net_outgoing_bps", netStats->bytesPerSecond);
-    LogMap::set("net_worst_outgoing",
-        strf("{}:{}", PacketTypeNames.getRight(netStats->worstPacketType), netStats->worstPacketSize));
+    LogMap::set("net_total_outgoing", strf("{:4.3f} kB/s", netStats->bytesPerSecond / 1000.f));
+    LogMap::set("net_worst_outgoing", strf("^cyan;{}^reset; ({:4.3f} kB/s)", PacketTypeNames.getRight(netStats->worstPacketType), (float)netStats->worstPacketSize / 1000.f));
   }
 }
 

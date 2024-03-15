@@ -341,7 +341,7 @@ ClientConnectPacket::ClientConnectPacket(ByteArray assetsDigest, bool allowAsset
     playerName(std::move(playerName)), playerSpecies(std::move(playerSpecies)), shipChunks(std::move(shipChunks)),
     shipUpgrades(std::move(shipUpgrades)), introComplete(std::move(introComplete)), account(std::move(account)) {}
 
-void ClientConnectPacket::read(DataStream& ds) {
+void ClientConnectPacket::readLegacy(DataStream& ds) {
   ds.read(assetsDigest);
   ds.read(allowAssetsMismatch);
   ds.read(playerUuid);
@@ -353,7 +353,12 @@ void ClientConnectPacket::read(DataStream& ds) {
   ds.read(account);
 }
 
-void ClientConnectPacket::write(DataStream& ds) const {
+void ClientConnectPacket::read(DataStream& ds) {
+  readLegacy(ds);
+  ds.read(info);
+}
+
+void ClientConnectPacket::writeLegacy(DataStream& ds) const {
   ds.write(assetsDigest);
   ds.write(allowAssetsMismatch);
   ds.write(playerUuid);
@@ -363,6 +368,11 @@ void ClientConnectPacket::write(DataStream& ds) const {
   ds.write(shipUpgrades);
   ds.write(introComplete);
   ds.write(account);
+}
+
+void ClientConnectPacket::write(DataStream& ds) const {
+  writeLegacy(ds);
+  ds.write(info);
 }
 
 ClientDisconnectRequestPacket::ClientDisconnectRequestPacket() {}

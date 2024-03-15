@@ -126,6 +126,10 @@ private:
 class DataStreamExternalBuffer : public DataStream {
 public:
   DataStreamExternalBuffer();
+  explicit DataStreamExternalBuffer(ByteArray const& byteArray);
+  explicit DataStreamExternalBuffer(DataStreamBuffer const& buffer);
+
+  DataStreamExternalBuffer(DataStreamExternalBuffer const& buffer) = default;
   DataStreamExternalBuffer(char const* externalData, size_t len);
 
   char const* ptr() const;
@@ -136,6 +140,7 @@ public:
   void seek(size_t pos, IOSeek mode = IOSeek::Absolute);
   bool atEnd();
   size_t pos();
+  size_t remaining();
 
   void reset(char const* externalData, size_t len);
 

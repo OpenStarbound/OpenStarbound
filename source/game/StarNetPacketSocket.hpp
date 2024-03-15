@@ -4,6 +4,7 @@
 #include "StarAtomicSharedPtr.hpp"
 #include "StarP2PNetworkingService.hpp"
 #include "StarNetPackets.hpp"
+#include "StarZSTDCompression.hpp"
 
 namespace Star {
 
@@ -24,10 +25,11 @@ class PacketStatCollector {
 public:
   PacketStatCollector(float calculationWindow = 1.0f);
 
-  void mix(PacketType type, size_t size);
-  void mix(HashMap<PacketType, size_t> const& sizes);
+  void mix(size_t size);
+  void mix(PacketType type, size_t size, bool addToTotal = true);
+  void mix(HashMap<PacketType, size_t> const& sizes, bool addToTotal = true);
 
-  // Should always return packet staticstics for the most recent completed
+  // Should always return packet statistics for the most recent completed
   // window of time
   PacketStats stats() const;
 
@@ -37,6 +39,7 @@ private:
   float m_calculationWindow;
   PacketStats m_stats;
   Map<PacketType, float> m_unmixed;
+  size_t m_totalBytes;
   int64_t m_lastMixTime;
 };
 
@@ -72,10 +75,10 @@ public:
   virtual Maybe<PacketStats> incomingStats() const;
   virtual Maybe<PacketStats> outgoingStats() const;
 
-  void setLegacy(bool legacy);
-  bool legacy() const;
+  virtual void setLegacy(bool legacy);
+  virtual bool legacy() const;
 private:
-  bool m_legacy = false;
+  bool m_legacy = true;
 };
 
 // PacketSocket for local communication.
@@ -127,6 +130,7 @@ public:
   Maybe<PacketStats> incomingStats() const override;
   Maybe<PacketStats> outgoingStats() const override;
 
+  void setLegacy(bool legacy) override;
 private:
   TcpPacketSocket(TcpSocketPtr socket);
 
@@ -136,6 +140,10 @@ private:
   PacketStatCollector m_outgoingStats;
   ByteArray m_outputBuffer;
   ByteArray m_inputBuffer;
+  bool m_useCompressionStream = false;
+  ByteArray m_compressedBuffer;
+  CompressionStream m_compressionStream;
+  DecompressionStream m_decompressionStream;
 };
 
 // Wraps a P2PSocket into a PacketSocket

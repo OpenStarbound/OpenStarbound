@@ -900,7 +900,9 @@ void Player::update(float dt, uint64_t) {
 
       m_tools->effects(*m_effectEmitter);
 
+      auto aimRelative = world()->geometry().diff(m_aimPosition, position()); // dumb, but due to how things are ordered
       m_movementController->tickMaster(dt);
+      m_aimPosition = position() + aimRelative;                               // it's gonna have to be like this for now
 
       m_techController->tickMaster(dt);
 

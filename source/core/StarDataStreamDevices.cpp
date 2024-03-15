@@ -130,7 +130,11 @@ void DataStreamBuffer::writeData(char const* data, size_t len) {
   m_buffer->writeFull(data, len);
 }
 
-DataStreamExternalBuffer::DataStreamExternalBuffer() {}
+DataStreamExternalBuffer::DataStreamExternalBuffer() : m_buffer() {}
+
+DataStreamExternalBuffer::DataStreamExternalBuffer(ByteArray const& byteArray) : DataStreamExternalBuffer(byteArray.ptr(), byteArray.size()) {}
+
+DataStreamExternalBuffer::DataStreamExternalBuffer(DataStreamBuffer const& buffer) : DataStreamExternalBuffer(buffer.ptr(), buffer.size()) {}
 
 DataStreamExternalBuffer::DataStreamExternalBuffer(char const* externalData, size_t len) : DataStreamExternalBuffer() {
   reset(externalData, len);
@@ -158,6 +162,10 @@ bool DataStreamExternalBuffer::atEnd() {
 
 size_t DataStreamExternalBuffer::pos() {
   return m_buffer.pos();
+}
+
+size_t DataStreamExternalBuffer::remaining() {
+  return m_buffer.dataSize() - m_buffer.pos();
 }
 
 void DataStreamExternalBuffer::reset(char const* externalData, size_t len) {

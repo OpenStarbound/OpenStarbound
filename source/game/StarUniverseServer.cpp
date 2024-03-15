@@ -1522,7 +1522,6 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
   }
   
   bool legacyClient = protocolRequest->compressionMode() != PacketCompressionMode::Enabled;
-  connection.setLegacy(legacyClient);
 
   auto protocolResponse = make_shared<ProtocolResponsePacket>();
   protocolResponse->setCompressionMode(PacketCompressionMode::Enabled); // Signal that we're OpenStarbound
@@ -1540,6 +1539,7 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
   protocolResponse->allowed = true;
   connection.pushSingle(protocolResponse);
   connection.sendAll(clientWaitLimit);
+  connection.setLegacy(legacyClient);
 
   String remoteAddressString = remoteAddress ? toString(*remoteAddress) : "local";
   Logger::info("UniverseServer: Awaiting connection info from {}, {} client", remoteAddressString, legacyClient ? "Starbound" : "OpenStarbound");

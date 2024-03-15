@@ -127,11 +127,10 @@ struct Packet {
 
   virtual PacketType type() const = 0;
 
-  virtual void read(DataStream& ds) = 0;
-  virtual void write(DataStream& ds) const = 0;
-
   virtual void readLegacy(DataStream& ds);
+  virtual void read(DataStream& ds) = 0;
   virtual void writeLegacy(DataStream& ds) const;
+  virtual void write(DataStream& ds) const = 0;
 
   PacketCompressionMode compressionMode() const;
   void setCompressionMode(PacketCompressionMode compressionMode);
@@ -288,7 +287,9 @@ struct ClientConnectPacket : PacketBase<PacketType::ClientConnect> {
       String playerSpecies, WorldChunks shipChunks, ShipUpgrades shipUpgrades, bool introComplete,
       String account);
 
+  void readLegacy(DataStream& ds) override;
   void read(DataStream& ds) override;
+  void writeLegacy(DataStream& ds) const override;
   void write(DataStream& ds) const override;
 
   ByteArray assetsDigest;
@@ -300,6 +301,7 @@ struct ClientConnectPacket : PacketBase<PacketType::ClientConnect> {
   ShipUpgrades shipUpgrades;
   bool introComplete;
   String account;
+  Json info;
 };
 
 struct ClientDisconnectRequestPacket : PacketBase<PacketType::ClientDisconnectRequest> {

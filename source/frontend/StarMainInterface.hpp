@@ -89,6 +89,7 @@ public:
 
   void handleInteractAction(InteractAction interactAction);
 
+  void preUpdate(float dt);
   // Handles incoming client messages, aims main player, etc.
   void update(float dt);
 
