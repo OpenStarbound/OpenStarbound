@@ -14,6 +14,7 @@ SET (star_base_HEADERS
     StarCellularLiquid.hpp
     StarConfiguration.hpp
     StarDirectoryAssetSource.hpp
+    StarMemoryAssetSource.hpp
     StarMixer.hpp
     StarPackedAssetSource.hpp
     StarVersion.hpp
@@ -27,6 +28,7 @@ SET (star_base_SOURCES
     StarCellularLighting.cpp
     StarConfiguration.cpp
     StarDirectoryAssetSource.cpp
+    StarMemoryAssetSource.cpp
     StarMixer.cpp
     StarPackedAssetSource.cpp
     StarVersionOptionParser.cpp

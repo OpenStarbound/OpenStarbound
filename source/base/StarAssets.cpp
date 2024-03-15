@@ -4,6 +4,7 @@
 #include "StarTime.hpp"
 #include "StarDirectoryAssetSource.hpp"
 #include "StarPackedAssetSource.hpp"
+#include "StarMemoryAssetSource.hpp"
 #include "StarJsonBuilder.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarJsonPatch.hpp"
@@ -108,18 +109,54 @@ Assets::Assets(Settings settings, StringList assetSources) {
   m_assetSources = std::move(assetSources);
 
   auto luaEngine = LuaEngine::create();
-  auto decorateLuaContext = [this](LuaContext& context) {
+  auto decorateLuaContext = [this](LuaContext& context, MemoryAssetSourcePtr mySource) {
     context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
     LuaCallbacks callbacks;
     callbacks.registerCallbackWithSignature<StringSet, String>("byExtension", bind(&Assets::scanExtension, this, _1));
     callbacks.registerCallbackWithSignature<Json, String>("json", bind(&Assets::json, this, _1));
+
     callbacks.registerCallback("bytes", [this](String const& path) -> String {
       auto assetBytes = bytes(path);
       return String(assetBytes->ptr(), assetBytes->size());
     });
+
     callbacks.registerCallback("scan", [this](Maybe<String> const& a, Maybe<String> const& b) -> StringList {
       return b ? scan(a.value(), *b) : scan(a.value());
     });
+
+    callbacks.registerCallback("add", [this, &mySource](LuaEngine& engine, String const& path, LuaValue const& data) -> bool {
+      ByteArray bytes;
+      if (auto str = engine.luaMaybeTo<String>(data))
+        bytes = ByteArray(str->utf8Ptr(), str->utf8Size());
+      else {
+        auto json = engine.luaTo<Json>(data).repr();
+        bytes = ByteArray(json.utf8Ptr(), json.utf8Size());
+      }
+      return mySource->set(path, bytes);
+    });
+
+    callbacks.registerCallback("patch", [this, &mySource](String const& path, String const& patchPath) -> bool {
+      if (auto file = m_files.ptr(path)) {
+        if (mySource->contains(patchPath)) {
+          file->patchSources.append(make_pair(patchPath, mySource));
+          return true;
+        } else {
+          if (auto asset = m_files.ptr(patchPath)) {
+            file->patchSources.append(make_pair(patchPath, asset->source));
+            return true;
+          }
+        }
+      }
+      return false;
+    });
+
+    callbacks.registerCallback("erase", [this, &mySource](String const& path) -> bool {
+      bool erased = m_files.erase(path);
+      if (erased)
+        m_filesByExtension[AssetPath::extension(path).toLower()].erase(path);
+      return erased;
+    });
+
     context.setCallbacks("assets", callbacks);
   };
 
@@ -131,37 +168,46 @@ Assets::Assets(Settings settings, StringList assetSources) {
     else
       source = std::make_shared<PackedAssetSource>(sourcePath);
 
-    m_assetSourcePaths.add(sourcePath, source);
+    auto addSource = [&](String const& sourcePath, AssetSourcePtr source) {
+      m_assetSourcePaths.add(sourcePath, source);
 
-    for (auto const& filename : source->assetPaths()) {
-      if (filename.contains(AssetsPatchSuffix, String::CaseInsensitive)) {
-        if (filename.endsWith(AssetsPatchSuffix, String::CaseInsensitive)) {
-          auto targetPatchFile = filename.substr(0, filename.size() - strlen(AssetsPatchSuffix));
-          if (auto p = m_files.ptr(targetPatchFile))
-            p->patchSources.append({filename, source});
-        } else {
-          for (int i = 0; i < 10; i++) {
-            if (filename.endsWith(AssetsPatchSuffix + toString(i), String::CaseInsensitive)) {
-              auto targetPatchFile = filename.substr(0, filename.size() - strlen(AssetsPatchSuffix) + 1);
-              if (auto p = m_files.ptr(targetPatchFile))
-                p->patchSources.append({filename, source});
-              break;
+      for (auto const& filename : source->assetPaths()) {
+        if (filename.contains(AssetsPatchSuffix, String::CaseInsensitive)) {
+          if (filename.endsWith(AssetsPatchSuffix, String::CaseInsensitive)) {
+            auto targetPatchFile = filename.substr(0, filename.size() - strlen(AssetsPatchSuffix));
+            if (auto p = m_files.ptr(targetPatchFile))
+              p->patchSources.append({filename, source});
+          } else {
+            for (int i = 0; i < 10; i++) {
+              if (filename.endsWith(AssetsPatchSuffix + toString(i), String::CaseInsensitive)) {
+                auto targetPatchFile = filename.substr(0, filename.size() - strlen(AssetsPatchSuffix) + 1);
+                if (auto p = m_files.ptr(targetPatchFile))
+                  p->patchSources.append({filename, source});
+                break;
+              }
             }
           }
         }
+
+        auto& descriptor = m_files[filename];
+        descriptor.sourceName = filename;
+        descriptor.source = source;
+        m_filesByExtension[AssetPath::extension(filename).toLower()].insert(filename);
       }
-      auto& descriptor = m_files[filename];
-      descriptor.sourceName = filename;
-      descriptor.source = source;
-      m_filesByExtension[AssetPath::extension(filename).toLower()].insert(filename);
-    }
+    };
+    addSource(sourcePath, source);
+
     auto metadata = source->metadata();
     if (auto scripts = metadata.ptr("scripts")) {
       if (auto onLoad = scripts->optArray("onLoad")) {
+        JsonObject memoryMetadata{
+          {"name", strf("{}.onLoad", metadata.value("name", File::baseName(sourcePath)))}
+        };
+        auto memoryAssets = make_shared<MemoryAssetSource>(memoryMetadata);
         Logger::info("Running onLoad scripts {}", *onLoad);
         try {
           auto context = luaEngine->createContext();
-          decorateLuaContext(context);
+          decorateLuaContext(context, memoryAssets);
           for (auto& jPath : *onLoad) {
             auto path = jPath.toString();
             auto script = source->read(path);
@@ -171,6 +217,8 @@ Assets::Assets(Settings settings, StringList assetSources) {
         catch (LuaException const& e) {
           Logger::error("Exception while running onLoad scripts from asset source '{}': {}", sourcePath, e.what());
         }
+        if (!memoryAssets->empty())
+          addSource(memoryMetadata.get("name").toString(), memoryAssets);
       }
     }
   }
