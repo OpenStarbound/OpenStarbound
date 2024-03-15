@@ -41,9 +41,6 @@ void PacketStatCollector::calculate() {
     m_lastMixTime = currentTime;
     m_stats.worstPacketSize = 0;
 
-    if (abs(elapsedTime) - m_calculationWindow < 0.0125f)
-      elapsedTime = m_calculationWindow;
-
     for (auto& pair : m_unmixed) {
       if (pair.second > m_stats.worstPacketSize) {
         m_stats.worstPacketType = pair.first;
