@@ -697,11 +697,12 @@ StringList Root::scanForAssetSources(StringList const& directories, StringList c
 
   StringList sourcePaths;
   for (auto const& source : dependencySortedSources) {
+    auto path = File::convertDirSeparators(source->path);
     if (source->name)
-      Logger::info("Root: Detected asset source named '{}' at '{}'", *source->name, source->path);
+      Logger::info("Root: Detected asset source named '{}' at '{}'", *source->name, path);
     else
-      Logger::info("Root: Detected unnamed asset source at '{}'", source->path);
-    sourcePaths.append(source->path);
+      Logger::info("Root: Detected unnamed asset source at '{}'", path);
+    sourcePaths.append(path);
   }
 
   return sourcePaths;

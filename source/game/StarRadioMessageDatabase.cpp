@@ -13,8 +13,8 @@ EnumMap<RadioMessageType> const RadioMessageTypeNames{
 
 RadioMessageDatabase::RadioMessageDatabase() {
   auto assets = Root::singleton().assets();
-  auto files = assets->scanExtension("radiomessages");
-  for (auto file : files) {
+  auto& files = assets->scanExtension("radiomessages");
+  for (auto& file : files) {
     try {
       Json messages = assets->json(file);
       for (auto pair : messages.iterateObject()) {

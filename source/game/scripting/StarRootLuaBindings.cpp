@@ -30,7 +30,6 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
 
   auto root = Root::singletonPtr();
 
-  callbacks.registerCallbackWithSignature<StringList, String>("assetsByExtension", bind(RootCallbacks::assetsByExtension, root, _1));
   callbacks.registerCallbackWithSignature<String, String>("assetData", bind(RootCallbacks::assetData, root, _1));
   callbacks.registerCallbackWithSignature<Json, String>("assetJson", bind(RootCallbacks::assetJson, root, _1));
   callbacks.registerCallbackWithSignature<Json, String, Json>("makeCurrentVersionedJson", bind(RootCallbacks::makeCurrentVersionedJson, root, _1, _2));
@@ -62,6 +61,15 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
 
   callbacks.registerCallbackWithSignature<Maybe<String>, String, Maybe<String>>("materialMiningSound", bind(RootCallbacks::materialMiningSound, root, _1, _2));
   callbacks.registerCallbackWithSignature<Maybe<String>, String, Maybe<String>>("materialFootstepSound", bind(RootCallbacks::materialFootstepSound, root, _1, _2));
+
+  callbacks.registerCallback("assetsByExtension", [root](LuaEngine& engine, String const& extension) -> LuaTable {
+    auto& extensions = root->assets()->scanExtension(extension);
+    auto table = engine.createTable(extensions.size(), 0);
+    size_t i = 0;
+    for (auto& file : extensions)
+      table.set(++i, file);
+    return table;
+  });
 
   callbacks.registerCallback("assetOrigin", [root](String const& path) -> Maybe<String> {
       auto assets = root->assets();
@@ -240,10 +248,6 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
     });
 
   return callbacks;
-}
-
-StringList LuaBindings::RootCallbacks::assetsByExtension(Root* root, String const& extension) {
-  return root->assets()->scanExtension(extension);
 }
 
 String LuaBindings::RootCallbacks::assetData(Root* root, String const& path) {

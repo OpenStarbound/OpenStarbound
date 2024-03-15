@@ -151,12 +151,12 @@ BehaviorTree::BehaviorTree(String const& name, StringSet scripts, JsonObject con
 BehaviorDatabase::BehaviorDatabase() {
   auto assets = Root::singleton().assets();
 
-  StringList nodeFiles = assets->scanExtension("nodes");
+  auto& nodeFiles = assets->scanExtension("nodes");
   assets->queueJsons(nodeFiles);
   for (String const& file : nodeFiles) {
     try {
       Json nodes = assets->json(file);
-      for (auto node : nodes.toObject()) {
+      for (auto& node : nodes.toObject()) {
         StringMap<NodeParameter> parameters;
         for (auto p : node.second.getObject("properties", {}))
           parameters.set(p.first, jsonToNodeParameter(p.second));
@@ -174,7 +174,7 @@ BehaviorDatabase::BehaviorDatabase() {
     }
   }
 
-  auto behaviorFiles = assets->scanExtension("behavior");
+  auto& behaviorFiles = assets->scanExtension("behavior");
   assets->queueJsons(behaviorFiles);
   for (auto const& file : behaviorFiles) {
     try {
@@ -190,7 +190,7 @@ BehaviorDatabase::BehaviorDatabase() {
     }
   }
 
-  for (auto pair : m_configs) {
+  for (auto& pair : m_configs) {
     if (!m_behaviors.contains(pair.first))
       loadTree(pair.first);
   }

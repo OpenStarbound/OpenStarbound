@@ -41,7 +41,7 @@ AssetPath AssetPath::split(String const& path) {
   if (str[end] == ':') {
     size_t beg = end + 1;
     if (beg != str.size()) {
-      end = str.find_first_of("?", beg);
+      end = str.find_first_of('?', beg);
       if (end == NPos && beg + 1 != str.size())
         components.subPath.emplace(str.substr(beg));
       else if (size_t len = end - beg)

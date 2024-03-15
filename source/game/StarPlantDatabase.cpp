@@ -104,10 +104,10 @@ Json BushVariant::toJson() const {
 PlantDatabase::PlantDatabase() {
   auto assets = Root::singleton().assets();
 
-  auto stems = assets->scanExtension("modularstem");
-  auto foliages = assets->scanExtension("modularfoliage");
-  auto grasses = assets->scanExtension("grass");
-  auto bushes = assets->scanExtension("bush");
+  auto& stems = assets->scanExtension("modularstem");
+  auto& foliages = assets->scanExtension("modularfoliage");
+  auto& grasses = assets->scanExtension("grass");
+  auto& bushes = assets->scanExtension("bush");
 
   assets->queueJsons(stems);
   assets->queueJsons(foliages);
@@ -115,22 +115,22 @@ PlantDatabase::PlantDatabase() {
   assets->queueJsons(bushes);
 
   try {
-    for (auto file : stems) {
+    for (auto& file : stems) {
       auto config = assets->json(file);
       m_treeStemConfigs.insert(config.getString("name"), Config{AssetPath::directory(file), config.toObject()});
     }
 
-    for (auto file : foliages) {
+    for (auto& file : foliages) {
       auto config = assets->json(file);
       m_treeFoliageConfigs.insert(config.getString("name"), Config{AssetPath::directory(file), config.toObject()});
     }
 
-    for (auto file : grasses) {
+    for (auto& file : grasses) {
       auto config = assets->json(file);
       m_grassConfigs.insert(config.getString("name"), Config{AssetPath::directory(file), config.toObject()});
     }
 
-    for (auto file : bushes) {
+    for (auto& file : bushes) {
       auto config = assets->json(file);
       m_bushConfigs.insert(config.getString("name"), Config{AssetPath::directory(file), config.toObject()});
     }

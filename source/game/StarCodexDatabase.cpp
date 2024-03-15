@@ -7,10 +7,10 @@ namespace Star {
 
 CodexDatabase::CodexDatabase() {
   auto assets = Root::singleton().assets();
-  auto files = assets->scanExtension("codex");
+  auto& files = assets->scanExtension("codex");
   auto codexConfig = assets->json("/codex.config");
   assets->queueJsons(files);
-  for (auto const& file : files) {
+  for (auto& file : files) {
     try {
       auto codexJson = assets->json(file);
       codexJson = codexJson.set("icon",

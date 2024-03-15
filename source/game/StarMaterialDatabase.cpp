@@ -54,13 +54,13 @@ MaterialDatabase::MaterialDatabase() {
     setMetaMaterial(matId, MaterialDatabase::MetaMaterialInfo{matName, matId, matCollisionKind, blocksLiquidFlow});
   }
 
-  auto materials = assets->scanExtension("material");
-  auto mods = assets->scanExtension("matmod");
+  auto& materials = assets->scanExtension("material");
+  auto& mods = assets->scanExtension("matmod");
 
   assets->queueJsons(materials);
   assets->queueJsons(mods);
 
-  for (auto file : materials) {
+  for (auto& file : materials) {
     try {
       auto matConfig = assets->json(file);
 
@@ -140,7 +140,7 @@ MaterialDatabase::MaterialDatabase() {
     }
   }
 
-  for (auto file : mods) {
+  for (auto& file : mods) {
     try {
       auto modConfig = assets->json(file);
 

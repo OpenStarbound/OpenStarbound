@@ -7,9 +7,9 @@ namespace Star {
 
 PatternedNameGenerator::PatternedNameGenerator() {
   auto assets = Root::singleton().assets();
-  auto files = assets->scanExtension("namesource");
+  auto &files = assets->scanExtension("namesource");
   assets->queueJsons(files);
-  for (auto file : files) {
+  for (auto& file : files) {
     try {
       auto sourceConfig = assets->json(file);
 
@@ -24,7 +24,7 @@ PatternedNameGenerator::PatternedNameGenerator() {
   }
 
   auto profanityFilter = assets->json("/names/profanityfilter.config").toArray();
-  for (auto naughtyWord : profanityFilter)
+  for (auto& naughtyWord : profanityFilter)
     m_profanityFilter.add(naughtyWord.toString().toLower());
 }
 

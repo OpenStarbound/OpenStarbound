@@ -148,7 +148,7 @@ public:
   // whitespace.
   bool hasCharOrWhitespace(Char c) const;
 
-  String replace(String const& rplc, String const& val) const;
+  String replace(String const& rplc, String const& val, CaseSensitivity cs = CaseSensitive) const;
 
   String trimEnd(String const& chars = "") const;
   String trimBeg(String const& chars = "") const;

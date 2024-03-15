@@ -9,9 +9,9 @@ namespace Star {
 ProjectileDatabase::ProjectileDatabase() {
   auto assets = Root::singleton().assets();
 
-  auto files = assets->scanExtension("projectile");
+  auto& files = assets->scanExtension("projectile");
   assets->queueJsons(files);
-  for (auto file : files) {
+  for (auto& file : files) {
     try {
       auto projectileConfig = readConfig(file);
       if (m_configs.contains(projectileConfig->typeName))

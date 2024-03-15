@@ -1309,7 +1309,7 @@ namespace Dungeon {
 DungeonDefinitions::DungeonDefinitions() : m_paths(), m_cacheMutex(), m_definitionCache(DefinitionsCacheSize) {
   auto assets = Root::singleton().assets();
 
-  for (auto file : assets->scan(".dungeon")) {
+  for (auto& file : assets->scan(".dungeon")) {
     Json dungeon = assets->json(file);
     m_paths.insert(dungeon.get("metadata").getString("name"), file);
   }

@@ -1,12 +1,12 @@
 #include "StarUtilityLuaBindings.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarLuaGameConverters.hpp"
 #include "StarUuid.hpp"
 #include "StarRandom.hpp"
 #include "StarPerlin.hpp"
 #include "StarXXHash.hpp"
 #include "StarLogging.hpp"
 #include "StarInterpolation.hpp"
+#include "StarLuaConverters.hpp"
 
 namespace Star {
 

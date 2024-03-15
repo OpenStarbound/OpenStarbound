@@ -5,8 +5,8 @@ namespace Star {
 
 DanceDatabase::DanceDatabase() {
   auto assets = Root::singleton().assets();
-  auto files = assets->scanExtension("dance");
-  for (auto file : files) {
+  auto& files = assets->scanExtension("dance");
+  for (auto& file : files) {
     try {
       DancePtr dance = readDance(file);
       m_dances[dance->name] = dance;

@@ -10,7 +10,7 @@ AiDatabase::AiDatabase() {
   auto assets = Root::singleton().assets();
   auto config = assets->json("/ai/ai.config");
 
-  auto missions = assets->scanExtension("aimission");
+  auto& missions = assets->scanExtension("aimission");
   assets->queueJsons(missions);
 
   for (auto const& file : missions) {

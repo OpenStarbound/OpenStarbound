@@ -6,12 +6,12 @@ namespace Star {
 StatisticsDatabase::StatisticsDatabase() : m_cacheMutex(), m_eventCache() {
   auto assets = Root::singleton().assets();
 
-  auto eventFiles = assets->scanExtension("event");
+  auto& eventFiles = assets->scanExtension("event");
   assets->queueJsons(eventFiles);
-  auto achievementFiles = assets->scanExtension("achievement");
+  auto& achievementFiles = assets->scanExtension("achievement");
   assets->queueJsons(achievementFiles);
 
-  for (auto file : eventFiles) {
+  for (auto& file : eventFiles) {
     try {
       String name = assets->json(file).getString("eventName");
       if (m_eventPaths.contains(name))
@@ -23,7 +23,7 @@ StatisticsDatabase::StatisticsDatabase() : m_cacheMutex(), m_eventCache() {
     }
   }
 
-  for (auto file : achievementFiles) {
+  for (auto& file : achievementFiles) {
     try {
       Json achievement = assets->json(file);
       String name = achievement.getString("name");

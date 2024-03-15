@@ -552,7 +552,7 @@ ItemRecipe ItemDatabase::makeRecipe(List<ItemDescriptor> inputs, ItemDescriptor 
 
 void ItemDatabase::addItemSet(ItemType type, String const& extension) {
   auto assets = Root::singleton().assets();
-  for (auto file : assets->scanExtension(extension)) {
+  for (auto& file : assets->scanExtension(extension)) {
     ItemData data;
     try {
       auto config = assets->json(file);
@@ -662,9 +662,9 @@ void ItemDatabase::addObjectItems() {
 void ItemDatabase::scanRecipes() {
   auto assets = Root::singleton().assets();
 
-  auto files = assets->scanExtension("recipe");
+  auto& files = assets->scanExtension("recipe");
   assets->queueJsons(files);
-  for (auto file : files) {
+  for (auto& file : files) {
     try {
       m_recipes.add(parseRecipe(assets->json(file)));
     } catch (std::exception const& e) {

@@ -11,10 +11,10 @@ namespace Star {
 MonsterDatabase::MonsterDatabase() {
   auto assets = Root::singleton().assets();
 
-  auto monsterTypes = assets->scanExtension("monstertype");
-  auto monsterParts = assets->scanExtension("monsterpart");
-  auto monsterSkills = assets->scanExtension("monsterskill");
-  auto monsterColors = assets->scanExtension("monstercolors");
+  auto& monsterTypes = assets->scanExtension("monstertype");
+  auto& monsterParts = assets->scanExtension("monsterpart");
+  auto& monsterSkills = assets->scanExtension("monsterskill");
+  auto& monsterColors = assets->scanExtension("monstercolors");
 
   assets->queueJsons(monsterTypes);
   assets->queueJsons(monsterParts);
@@ -66,7 +66,7 @@ MonsterDatabase::MonsterDatabase() {
     }
   }
 
-  for (auto file : monsterParts) {
+  for (auto const& file : monsterParts) {
     try {
       auto config = assets->json(file);
       if (config.isNull())
@@ -91,7 +91,7 @@ MonsterDatabase::MonsterDatabase() {
     }
   }
 
-  for (auto file : monsterSkills) {
+  for (auto const& file : monsterSkills) {
     try {
       auto config = assets->json(file);
       if (config.isNull())
@@ -115,7 +115,7 @@ MonsterDatabase::MonsterDatabase() {
     }
   }
 
-  for (auto file : monsterColors) {
+  for (auto const& file : monsterColors) {
     try {
       auto config = assets->json(file);
       if (config.isNull())

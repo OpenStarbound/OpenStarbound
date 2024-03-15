@@ -13,9 +13,9 @@ EnumMap<TechType> const TechTypeNames{
 
 TechDatabase::TechDatabase() {
   auto assets = Root::singleton().assets();
-  auto files = assets->scanExtension("tech");
+  auto& files = assets->scanExtension("tech");
   assets->queueJsons(files);
-  for (auto file : files) {
+  for (auto& file : files) {
     auto tech = parseTech(assets->json(file), file);
 
     if (m_tech.contains(tech.name))

@@ -23,9 +23,9 @@ Collectable::Collectable(String const& name, int order, String const& title, Str
 
 CollectionDatabase::CollectionDatabase() {
   auto assets = Root::singleton().assets();
-  auto files = assets->scanExtension("collection");
+  auto& files = assets->scanExtension("collection");
   assets->queueJsons(files);
-  for (auto file : files) {
+  for (auto& file : files) {
     auto config = assets->json(file);
 
     Collection collection;

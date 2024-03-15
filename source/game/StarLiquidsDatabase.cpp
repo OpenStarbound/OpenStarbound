@@ -32,10 +32,10 @@ LiquidsDatabase::LiquidsDatabase() {
 
   m_liquidNames["empty"] = EmptyLiquidId;
 
-  auto liquids = assets->scanExtension("liquid");
+  auto& liquids = assets->scanExtension("liquid");
   assets->queueJsons(liquids);
 
-  for (auto file : liquids) {
+  for (auto& file : liquids) {
     try {
       auto liquidConfig = assets->json(file);
 

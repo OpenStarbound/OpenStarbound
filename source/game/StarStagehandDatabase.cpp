@@ -8,9 +8,9 @@ namespace Star {
 
 StagehandDatabase::StagehandDatabase() {
   auto assets = Root::singleton().assets();
-  auto files = assets->scanExtension("stagehand");
+  auto& files = assets->scanExtension("stagehand");
   assets->queueJsons(files);
-  for (auto file : files) {
+  for (auto& file : files) {
     try {
       auto config = assets->json(file);
 
