@@ -1,23 +1,22 @@
 {
-    "paneLayout" : {
-        "group" : {
-            "position" : [8, 71]
-        },
-        "search" : {
-            "type" : "textbox",
-            "position" : [86, 71],
-            "hint" : "Search",
-            "maxWidth" : 50
-        },
-
-        "lblBandInput" : {
-            "position" : [3, 68]
-        },
-        "lblSearchInput" : {
-            "type" : "image",
-            "file" : "/interface/songbook/band.png",
-            "position" : [81, 68],
-            "zlevel" : -3
-        }
+  "paneLayout" : {
+    "group" : {
+      "position" : [8, 71]
+    },
+    "search" : {
+      "type" : "textbox",
+      "position" : [86, 71],
+      "hint" : "Search",
+      "maxWidth" : 50
+    },
+    "lblBandInput" : {
+      "position" : [3, 68]
+    },
+    "lblSearchInput" : {
+      "type" : "image",
+      "file" : "/interface/songbook/band.png",
+      "position" : [81, 68],
+      "zlevel" : -3
     }
+  }
 }
