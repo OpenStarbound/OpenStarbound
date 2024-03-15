@@ -109,7 +109,7 @@ Assets::Assets(Settings settings, StringList assetSources) {
   m_assetSources = std::move(assetSources);
 
   auto luaEngine = LuaEngine::create();
-  auto decorateLuaContext = [this](LuaContext& context, MemoryAssetSourcePtr mySource) {
+  auto decorateLuaContext = [this](LuaContext& context, MemoryAssetSourcePtr newFiles) {
     context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
     LuaCallbacks callbacks;
     callbacks.registerCallbackWithSignature<StringSet, String>("byExtension", bind(&Assets::scanExtension, this, _1));
@@ -124,7 +124,7 @@ Assets::Assets(Settings settings, StringList assetSources) {
       return b ? scan(a.value(), *b) : scan(a.value());
     });
 
-    callbacks.registerCallback("add", [this, &mySource](LuaEngine& engine, String const& path, LuaValue const& data) -> bool {
+    callbacks.registerCallback("add", [this, &newFiles](LuaEngine& engine, String const& path, LuaValue const& data) {
       ByteArray bytes;
       if (auto str = engine.luaMaybeTo<String>(data))
         bytes = ByteArray(str->utf8Ptr(), str->utf8Size());
@@ -132,13 +132,13 @@ Assets::Assets(Settings settings, StringList assetSources) {
         auto json = engine.luaTo<Json>(data).repr();
         bytes = ByteArray(json.utf8Ptr(), json.utf8Size());
       }
-      return mySource->set(path, bytes);
+      newFiles->set(path, bytes);
     });
 
-    callbacks.registerCallback("patch", [this, &mySource](String const& path, String const& patchPath) -> bool {
+    callbacks.registerCallback("patch", [this, &newFiles](String const& path, String const& patchPath) -> bool {
       if (auto file = m_files.ptr(path)) {
-        if (mySource->contains(patchPath)) {
-          file->patchSources.append(make_pair(patchPath, mySource));
+        if (newFiles->contains(patchPath)) {
+          file->patchSources.append(make_pair(patchPath, newFiles));
           return true;
         } else {
           if (auto asset = m_files.ptr(patchPath)) {
@@ -150,7 +150,7 @@ Assets::Assets(Settings settings, StringList assetSources) {
       return false;
     });
 
-    callbacks.registerCallback("erase", [this, &mySource](String const& path) -> bool {
+    callbacks.registerCallback("erase", [this](String const& path) -> bool {
       bool erased = m_files.erase(path);
       if (erased)
         m_filesByExtension[AssetPath::extension(path).toLower()].erase(path);
@@ -160,6 +160,61 @@ Assets::Assets(Settings settings, StringList assetSources) {
     context.setCallbacks("assets", callbacks);
   };
 
+  auto addSource = [&](String const& sourcePath, AssetSourcePtr source) {
+    m_assetSourcePaths.add(sourcePath, source);
+
+    for (auto const& filename : source->assetPaths()) {
+      if (filename.contains(AssetsPatchSuffix, String::CaseInsensitive)) {
+        if (filename.endsWith(AssetsPatchSuffix, String::CaseInsensitive)) {
+          auto targetPatchFile = filename.substr(0, filename.size() - strlen(AssetsPatchSuffix));
+          if (auto p = m_files.ptr(targetPatchFile))
+            p->patchSources.append({filename, source});
+        } else {
+          for (int i = 0; i < 10; i++) {
+            if (filename.endsWith(AssetsPatchSuffix + toString(i), String::CaseInsensitive)) {
+              auto targetPatchFile = filename.substr(0, filename.size() - strlen(AssetsPatchSuffix) + 1);
+              if (auto p = m_files.ptr(targetPatchFile))
+                p->patchSources.append({filename, source});
+              break;
+            }
+          }
+        }
+      }
+
+      auto& descriptor = m_files[filename];
+      descriptor.sourceName = filename;
+      descriptor.source = source;
+      m_filesByExtension[AssetPath::extension(filename).toLower()].insert(filename);
+    }
+  };
+
+  auto runLoadScripts = [&](String const& groupName, String const& sourcePath, AssetSourcePtr source) {
+    auto metadata = source->metadata();
+    if (auto scripts = metadata.ptr("scripts")) {
+      if (auto scriptGroup = scripts->optArray(groupName)) {
+        auto memoryName = strf("{}::{}", metadata.value("name", File::baseName(sourcePath)), groupName);
+        JsonObject memoryMetadata{ {"name", memoryName} };
+        auto memoryAssets = make_shared<MemoryAssetSource>(memoryName, memoryMetadata);
+        Logger::info("Running {} scripts {}", groupName, *scriptGroup);
+        try {
+          auto context = luaEngine->createContext();
+          decorateLuaContext(context, memoryAssets);
+          for (auto& jPath : *scriptGroup) {
+            auto path = jPath.toString();
+            auto script = source->read(path);
+            context.load(script, path);
+          }
+        } catch (LuaException const& e) {
+          Logger::error("Exception while running {} scripts from asset source '{}': {}", groupName, sourcePath, e.what());
+        }
+        if (!memoryAssets->empty())
+          addSource(strf("{}::{}", sourcePath, groupName), memoryAssets);
+      }
+    }
+  };
+
+  List<pair<String, AssetSourcePtr>> sources;
+
   for (auto& sourcePath : m_assetSources) {
     Logger::info("Loading assets from: '{}'", sourcePath);
     AssetSourcePtr source;
@@ -168,60 +223,14 @@ Assets::Assets(Settings settings, StringList assetSources) {
     else
       source = std::make_shared<PackedAssetSource>(sourcePath);
 
-    auto addSource = [&](String const& sourcePath, AssetSourcePtr source) {
-      m_assetSourcePaths.add(sourcePath, source);
-
-      for (auto const& filename : source->assetPaths()) {
-        if (filename.contains(AssetsPatchSuffix, String::CaseInsensitive)) {
-          if (filename.endsWith(AssetsPatchSuffix, String::CaseInsensitive)) {
-            auto targetPatchFile = filename.substr(0, filename.size() - strlen(AssetsPatchSuffix));
-            if (auto p = m_files.ptr(targetPatchFile))
-              p->patchSources.append({filename, source});
-          } else {
-            for (int i = 0; i < 10; i++) {
-              if (filename.endsWith(AssetsPatchSuffix + toString(i), String::CaseInsensitive)) {
-                auto targetPatchFile = filename.substr(0, filename.size() - strlen(AssetsPatchSuffix) + 1);
-                if (auto p = m_files.ptr(targetPatchFile))
-                  p->patchSources.append({filename, source});
-                break;
-              }
-            }
-          }
-        }
-
-        auto& descriptor = m_files[filename];
-        descriptor.sourceName = filename;
-        descriptor.source = source;
-        m_filesByExtension[AssetPath::extension(filename).toLower()].insert(filename);
-      }
-    };
     addSource(sourcePath, source);
+    sources.append(make_pair(sourcePath, source));
 
-    auto metadata = source->metadata();
-    if (auto scripts = metadata.ptr("scripts")) {
-      if (auto onLoad = scripts->optArray("onLoad")) {
-        JsonObject memoryMetadata{
-          {"name", strf("{}.onLoad", metadata.value("name", File::baseName(sourcePath)))}
-        };
-        auto memoryAssets = make_shared<MemoryAssetSource>(memoryMetadata);
-        Logger::info("Running onLoad scripts {}", *onLoad);
-        try {
-          auto context = luaEngine->createContext();
-          decorateLuaContext(context, memoryAssets);
-          for (auto& jPath : *onLoad) {
-            auto path = jPath.toString();
-            auto script = source->read(path);
-            context.load(script, path);
-          }
-        }
-        catch (LuaException const& e) {
-          Logger::error("Exception while running onLoad scripts from asset source '{}': {}", sourcePath, e.what());
-        }
-        if (!memoryAssets->empty())
-          addSource(memoryMetadata.get("name").toString(), memoryAssets);
-      }
-    }
+    runLoadScripts("onLoad", sourcePath, source);
   }
+
+  for (auto& pair : sources)
+    runLoadScripts("postLoad", pair.first, pair.second);
 
   Sha256Hasher digest;
 

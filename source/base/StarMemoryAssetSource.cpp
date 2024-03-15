@@ -5,7 +5,11 @@
 
 namespace Star {
 
-MemoryAssetSource::MemoryAssetSource(JsonObject metadata) : m_metadata(metadata) {}
+MemoryAssetSource::MemoryAssetSource(String const& name, JsonObject metadata) : m_name(name), m_metadata(metadata) {}
+
+String MemoryAssetSource::name() const {
+  return m_name;
+}
 
 JsonObject MemoryAssetSource::metadata() const {
   return m_metadata;
@@ -71,8 +75,8 @@ bool MemoryAssetSource::erase(String const& path) {
   return m_files.erase(path) != 0;
 }
 
-bool MemoryAssetSource::set(String const& path, ByteArray data) {
-  return m_files.emplace(path, make_shared<ByteArray>(std::move(data))).second;
+void MemoryAssetSource::set(String const& path, ByteArray data) {
+  m_files[path] = make_shared<ByteArray>(std::move(data));
 }
 
 ByteArray MemoryAssetSource::read(String const& path) {
