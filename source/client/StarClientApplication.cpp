@@ -874,6 +874,12 @@ void ClientApplication::updateRunning(float dt) {
     else
       m_player->setMoveVector(Vec2F());
 
+    m_voice->setInput(m_input->bindHeld("opensb", "pushToTalk"));
+    DataStreamBuffer voiceData;
+    voiceData.setByteOrder(ByteOrder::LittleEndian);
+    //voiceData.writeBytes(VoiceBroadcastPrefix.utf8Bytes()); transmitting with SE compat for now
+    bool needstoSendVoice = m_voice->send(voiceData, 5000);
+
     auto checkDisconnection = [this]() {
       if (!m_universeClient->isConnected()) {
         m_cinematicOverlay->stop();
@@ -893,11 +899,7 @@ void ClientApplication::updateRunning(float dt) {
     if (checkDisconnection())
       return;
 
-    m_voice->setInput(m_input->bindHeld("opensb", "pushToTalk"));
-    DataStreamBuffer voiceData;
-    voiceData.setByteOrder(ByteOrder::LittleEndian);
-    //voiceData.writeBytes(VoiceBroadcastPrefix.utf8Bytes()); transmitting with SE compat for now
-    bool needstoSendVoice = m_voice->send(voiceData, 5000);
+    m_mainInterface->preUpdate(dt);
     m_universeClient->update(dt);
 
     if (checkDisconnection())

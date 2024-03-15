@@ -505,6 +505,12 @@ void MainInterface::handleInteractAction(InteractAction interactAction) {
   }
 }
 
+void MainInterface::preUpdate(float dt) {
+  auto player = m_client->mainPlayer();
+  if (!m_client->paused())
+    player->aim(cursorWorldPosition());
+}
+
 void MainInterface::update(float dt) {
   m_paneManager.update(dt);
   m_cursor.update(dt);
@@ -516,8 +522,6 @@ void MainInterface::update(float dt) {
 
   auto player = m_client->mainPlayer();
   auto cursorWorldPos = cursorWorldPosition();
-  if (!m_client->paused())
-    player->aim(cursorWorldPos);
   if (player->wireToolInUse()) {
     m_paneManager.displayRegisteredPane(MainInterfacePanes::WireInterface);
     player->setWireConnector(m_wireInterface.get());
