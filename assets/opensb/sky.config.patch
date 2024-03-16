@@ -1,7 +1,7 @@
 {
   "sun" : {
     "rayColor" : [255, 255, 200],
-    "scale" : 0.7, // base scale, dynamic scaling aplies after it (sun image appears to have a higher scale in osb client?)
+    "scale" : 0.7, // sun image appears to have a higher scale in osb client?
     "dynamicImage" : {
       "enabled" : true,
       "images" : {
