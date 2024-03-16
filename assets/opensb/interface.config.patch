@@ -17,6 +17,8 @@
   "debugFont" : "iosevka-semibold",
   "debugFontSize" : 7,
   "debugFontDirectives" : "?border=1;111a;1114",
+  "debugSpatialClearTime" : 0.0,
+  "debugOffset" : [80, 130],
 
   // Change planet name to support the new internal string formatting.
   "planetNameFormatString" : "- {} -",
@@ -25,8 +27,5 @@
   "buttonClickSound" : [ "/sfx/interface/button/click.wav" ],
   "buttonReleaseSound" : [ "/sfx/interface/button/release.wav" ],
   "buttonHoverSound" : [ "/sfx/interface/button/hover.wav" ],
-  "buttonHoverOffSound" : [ "/sfx/interface/button/hover_off.wav" ],
-
-  "debugSpatialClearTime" : 0.0,
-  "debugOffset" : [80, 80]
+  "buttonHoverOffSound" : [ "/sfx/interface/button/hover_off.wav" ]
 }
