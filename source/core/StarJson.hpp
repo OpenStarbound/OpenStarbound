@@ -291,6 +291,8 @@ DataStream& operator>>(DataStream& ds, JsonObject& m);
 // is the combination of both objects, but for each repeated key jsonMerge is
 // called recursively on both values to determine the result.
 Json jsonMerge(Json const& base, Json const& merger);
+// Same as above, but applies null mergers.
+Json jsonMergeNulling(Json const& base, Json const& merger);
 
 template <typename... T>
 Json jsonMerge(Json const& base, Json const& merger, T const&... rest);

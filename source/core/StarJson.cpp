@@ -1026,13 +1026,25 @@ Json jsonMerge(Json const& base, Json const& merger) {
         res.first->second = jsonMerge(res.first->second, p.second);
     }
     return merged;
-
-  } else if (merger.type() == Json::Type::Null) {
-    return base;
-
-  } else {
-    return merger;
   }
+  return merger.type() == Json::Type::Null ? base : merger;
+}
+
+Json jsonMergeNulling(Json const& base, Json const& merger) {
+  if (base.type() == Json::Type::Object && merger.type() == Json::Type::Object) {
+    JsonObject merged = base.toObject();
+    for (auto const& p : merger.toObject()) {
+      if (p.second.isNull())
+        merged.erase(p.first);
+      else {
+        auto res = merged.insert(p);
+        if (!res.second)
+          res.first->second = jsonMergeNulling(res.first->second, p.second);
+      }
+    }
+    return merged;
+  }
+  return merger;
 }
 
 bool jsonPartialMatch(Json const& base, Json const& compare) {

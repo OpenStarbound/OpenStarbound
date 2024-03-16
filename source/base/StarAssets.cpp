@@ -19,6 +19,7 @@
 #include "StarSha256.hpp"
 #include "StarDataStreamDevices.hpp"
 #include "StarLua.hpp"
+#include "StarImageLuaBindings.hpp"
 #include "StarUtilityLuaBindings.hpp"
 
 namespace Star {
@@ -120,6 +121,14 @@ Assets::Assets(Settings settings, StringList assetSources) {
       return String(assetBytes->ptr(), assetBytes->size());
     });
 
+    callbacks.registerCallback("image", [this](String const& path) -> Image {
+      auto assetImage = image(path);
+      if (assetImage->bytesPerPixel() == 3)
+        return assetImage->convert(PixelFormat::RGBA32); 
+      else
+        return *assetImage;
+    });
+
     callbacks.registerCallback("scan", [this](Maybe<String> const& a, Maybe<String> const& b) -> StringList {
       return b ? scan(a.value(), *b) : scan(a.value());
     });
@@ -211,6 +220,9 @@ Assets::Assets(Settings settings, StringList assetSources) {
           addSource(strf("{}::{}", sourcePath, groupName), memoryAssets);
       }
     }
+    // clear any caching that may have been trigered by load scripts as they may no longer be valid
+    m_framesSpecifications.clear();
+    m_assetsCache.clear();
   };
 
   List<pair<String, AssetSourcePtr>> sources;
@@ -884,7 +896,7 @@ Json Assets::readJson(String const& path) const {
         }
       } else if (patchJson.isType(Json::Type::Object)) { //Kae: Do a good ol' json merge instead if the .patch file is a Json object
         auto patchData = patchJson.toObject();
-        result = jsonMerge(result, patchData);
+        result = jsonMergeNulling(result, patchData);
       }
     }
     return result;

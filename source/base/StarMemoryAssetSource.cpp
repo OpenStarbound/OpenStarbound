@@ -52,7 +52,7 @@ IODevicePtr MemoryAssetSource::open(String const& path) {
     }
 
     ByteArrayPtr assetData;
-    StreamOffset assetPos;
+    StreamOffset assetPos = 0;
     String name;
   };
 

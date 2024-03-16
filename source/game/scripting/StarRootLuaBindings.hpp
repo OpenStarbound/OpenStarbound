@@ -7,12 +7,14 @@
 namespace Star {
 
 STAR_CLASS(Root);
+STAR_CLASS(Image);
 
 namespace LuaBindings {
   LuaCallbacks makeRootCallbacks();
 
   namespace RootCallbacks {
     String assetData(Root* root, String const& path);
+    Image assetImage(Root* root, String const& path);
     Json assetJson(Root* root, String const& path);
     Json makeCurrentVersionedJson(Root* root, String const& identifier, Json const& content);
     Json loadVersionedJson(Root* root, Json const& versionedJson, String const& expectedIdentifier);

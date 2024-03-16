@@ -127,6 +127,7 @@ SET (star_core_HEADERS
     StarWorkerPool.hpp
     StarXXHash.hpp
     StarZSTDCompression.hpp
+    scripting/StarImageLuaBindings.hpp
     scripting/StarUtilityLuaBindings.hpp
   )
 
@@ -184,6 +185,7 @@ SET (star_core_SOURCES
     StarUuid.cpp
     StarWorkerPool.cpp
     StarZSTDCompression.cpp
+    scripting/StarImageLuaBindings.cpp
     scripting/StarUtilityLuaBindings.cpp
   )
 

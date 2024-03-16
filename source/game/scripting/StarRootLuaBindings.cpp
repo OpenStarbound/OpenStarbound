@@ -22,6 +22,7 @@
 #include "StarBehaviorDatabase.hpp"
 #include "StarDamageDatabase.hpp"
 #include "StarDungeonGenerator.hpp"
+#include "StarImageLuaBindings.hpp"
 
 namespace Star {
 
@@ -31,6 +32,7 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
   auto root = Root::singletonPtr();
 
   callbacks.registerCallbackWithSignature<String, String>("assetData", bind(RootCallbacks::assetData, root, _1));
+  callbacks.registerCallbackWithSignature<Image, String>("assetImage", bind(RootCallbacks::assetImage, root, _1));
   callbacks.registerCallbackWithSignature<Json, String>("assetJson", bind(RootCallbacks::assetJson, root, _1));
   callbacks.registerCallbackWithSignature<Json, String, Json>("makeCurrentVersionedJson", bind(RootCallbacks::makeCurrentVersionedJson, root, _1, _2));
   callbacks.registerCallbackWithSignature<Json, Json, String>("loadVersionedJson", bind(RootCallbacks::loadVersionedJson, root, _1, _2));
@@ -253,6 +255,10 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
 String LuaBindings::RootCallbacks::assetData(Root* root, String const& path) {
   auto bytes = root->assets()->bytes(path);
   return String(bytes->ptr(), bytes->size());
+}
+
+Image LuaBindings::RootCallbacks::assetImage(Root* root, String const& path) {
+  return *root->assets()->image(path);
 }
 
 Json LuaBindings::RootCallbacks::assetJson(Root* root, String const& path) {
