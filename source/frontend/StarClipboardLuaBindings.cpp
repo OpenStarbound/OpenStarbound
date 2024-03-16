@@ -1,14 +1,14 @@
 #include "StarClipboardLuaBindings.hpp"
 #include "StarLuaConverters.hpp"
 
-#include "SDL2/SDL.h"
-
 namespace Star {
 
 LuaCallbacks LuaBindings::makeClipboardCallbacks(ApplicationControllerPtr appController) {
   LuaCallbacks callbacks;
 
-  callbacks.registerCallback("hasText", []() -> bool { return SDL_HasClipboardText() == SDL_TRUE;});
+  callbacks.registerCallback("hasText", [appController]() -> bool {
+    return appController->hasClipboard();
+  });
 
   callbacks.registerCallback("getText", [appController]() -> Maybe<String> {
     return appController->getClipboard();
@@ -21,4 +21,4 @@ LuaCallbacks LuaBindings::makeClipboardCallbacks(ApplicationControllerPtr appCon
   return callbacks;
 };
 
-}// namespace Star
+}

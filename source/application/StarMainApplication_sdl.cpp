@@ -481,6 +481,10 @@ private:
     Controller(SdlPlatform* parent)
       : parent(parent) {}
 
+    bool hasClipboard() override {
+      return SDL_HasClipboardText();
+    }
+
     Maybe<String> getClipboard() override {
       Maybe<String> string;
       if (SDL_HasClipboardText()) {

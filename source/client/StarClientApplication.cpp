@@ -517,7 +517,7 @@ void ClientApplication::changeState(MainAppState newState) {
 
     m_universeClient->setLuaCallbacks("input", LuaBindings::makeInputCallbacks());
     m_universeClient->setLuaCallbacks("voice", LuaBindings::makeVoiceCallbacks());
-    if(!m_root->configuration()->get("safeScripts").toBool())
+    if (!m_root->configuration()->get("safeScripts").toBool())
       m_universeClient->setLuaCallbacks("clipboard", LuaBindings::makeClipboardCallbacks(appController()));
 
     auto heldScriptPanes = make_shared<List<MainInterface::ScriptPaneInfo>>();

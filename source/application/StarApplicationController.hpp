@@ -54,6 +54,7 @@ public:
   virtual bool openAudioInputDevice(const char* name, int freq, int channels, void* userdata, AudioCallback callback) = 0;
   virtual bool closeAudioInputDevice() = 0;
 
+  virtual bool hasClipboard() = 0;
   virtual void setClipboard(String text) = 0;
   virtual Maybe<String> getClipboard() = 0;
 
