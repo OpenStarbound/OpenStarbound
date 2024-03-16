@@ -1467,6 +1467,8 @@ namespace LuaDetail {
   // index.
   void shallowCopy(lua_State* state, int sourceIndex, int targetIndex);
 
+  LuaTable insertJsonMetatable(LuaEngine& engine, LuaTable const& table, Json::Type type);
+
   // Creates a custom lua table from a JsonArray or JsonObject that has
   // slightly different behavior than a standard lua table.  The table
   // remembers nil entries, as well as whether it was initially constructed
@@ -1489,9 +1491,13 @@ namespace LuaDetail {
 
   // Create a JsonList container table
   Json jarrayCreate();
-
   // Create a JsonMap container table
   Json jobjectCreate();
+
+  // Adds the Json array metatable to a Lua table or creates one.
+  LuaTable jarray(LuaEngine& engine, Maybe<LuaTable> table);
+  // Adds the Json object metatable to a Lua table or creates one.
+  LuaTable jobject(LuaEngine& engine, Maybe<LuaTable> table);
 
   // *Really* remove an entry from a JsonList or JsonMap container table,
   // including removing it from the __nils table.  If the given table is not a

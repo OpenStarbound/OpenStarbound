@@ -370,8 +370,8 @@ LuaEnginePtr LuaEngine::create(bool safe) {
   self->m_scriptDefaultEnvRegistryId = luaL_ref(self->m_state, LUA_REGISTRYINDEX);
   lua_pop(self->m_state, 1);
 
-  self->setGlobal("jarray", self->createFunction(&LuaDetail::jarrayCreate));
-  self->setGlobal("jobject", self->createFunction(&LuaDetail::jobjectCreate));
+  self->setGlobal("jarray", self->createFunction(&LuaDetail::jarray));
+  self->setGlobal("jobject", self->createFunction(&LuaDetail::jobject));
   self->setGlobal("jremove", self->createFunction(&LuaDetail::jcontRemove));
   self->setGlobal("jsize", self->createFunction(&LuaDetail::jcontSize));
   self->setGlobal("jresize", self->createFunction(&LuaDetail::jcontResize));
@@ -1308,10 +1308,7 @@ void LuaDetail::shallowCopy(lua_State* state, int sourceIndex, int targetIndex) 
   }
 }
 
-LuaTable LuaDetail::jsonContainerToTable(LuaEngine& engine, Json const& container) {
-  if (!container.isType(Json::Type::Array) && !container.isType(Json::Type::Object))
-    throw LuaException("jsonContainerToTable called on improper json type");
-
+LuaTable LuaDetail::insertJsonMetatable(LuaEngine& engine, LuaTable const& table, Json::Type type) {
   auto newIndexMetaMethod = [](LuaTable const& table, LuaValue const& key, LuaValue const& value) {
     auto mt = table.getMetatable();
     auto nils = mt->rawGet<LuaTable>("__nils");
@@ -1330,13 +1327,16 @@ LuaTable LuaDetail::jsonContainerToTable(LuaEngine& engine, Json const& containe
   auto nils = engine.createTable();
   mt.rawSet("__nils", nils);
   mt.rawSet("__newindex", engine.createFunction(newIndexMetaMethod));
-  if (container.isType(Json::Type::Array))
-    mt.rawSet("__typehint", 1);
-  else
-    mt.rawSet("__typehint", 2);
+  mt.rawSet("__typehint", type == Json::Type::Array ? 1 : 2);
+  return nils;
+}
+
+LuaTable LuaDetail::jsonContainerToTable(LuaEngine& engine, Json const& container) {
+  if (!container.isType(Json::Type::Array) && !container.isType(Json::Type::Object))
+    throw LuaException("jsonContainerToTable called on improper json type");
 
   auto table = engine.createTable();
-  table.setMetatable(mt);
+  auto nils = insertJsonMetatable(engine, table, container.type());
 
   if (container.isType(Json::Type::Array)) {
     auto vlist = container.arrayPtr();
@@ -1436,6 +1436,25 @@ Json LuaDetail::jarrayCreate() {
 Json LuaDetail::jobjectCreate() {
   return JsonObject();
 }
+
+LuaTable LuaDetail::jarray(LuaEngine& engine, Maybe<LuaTable> table) {
+  if (auto t = table.ptr()) {
+    insertJsonMetatable(engine, *t, Json::Type::Array);
+    return *t;
+  } else {
+    return jsonContainerToTable(engine, JsonArray());
+  }
+}
+
+LuaTable LuaDetail::jobject(LuaEngine& engine, Maybe<LuaTable> table) {
+  if (auto t = table.ptr()) {
+    insertJsonMetatable(engine, *t, Json::Type::Object);
+    return *t;
+  } else {
+    return jsonContainerToTable(engine, JsonObject());
+  }
+}
+
 
 void LuaDetail::jcontRemove(LuaTable const& table, LuaValue const& key) {
   if (auto mt = table.getMetatable()) {
