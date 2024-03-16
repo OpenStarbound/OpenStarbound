@@ -22,7 +22,7 @@ int main(int argc, char** argv) {
     auto assets = Root::singleton().assets();
 
     auto countWordsInType = [&](String const& type, function<int(Json const&)> countFunction, Maybe<function<bool(String const&)>> filterFunction = {}, Maybe<String> wordCountKey = {}) {
-      auto& files = assets->scanExtension(type).values();
+      auto files = assets->scanExtension(type).values();
       if (filterFunction)
         files.filter(*filterFunction);
       assets->queueJsons(files);
