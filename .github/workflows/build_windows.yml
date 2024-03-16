@@ -51,9 +51,9 @@ jobs:
           buildPreset: 'windows-release'
           testPreset: 'windows-release'
 
-      - name: Tidy Artifacts
+      - name: Run Post-Build Task
         working-directory: ${{ github.workspace }}
-        run: scripts\ci\windows\tidy.bat
+        run: scripts\ci\windows\post_build.bat
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
