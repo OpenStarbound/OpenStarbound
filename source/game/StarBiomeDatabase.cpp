@@ -15,9 +15,9 @@ BiomeDatabase::BiomeDatabase() {
 
   // 'type' here is the extension of the file, and determines the selector type
   auto scanFiles = [=](String const& type, ConfigMap& map) {
-    auto files = assets->scanExtension(type);
+    auto& files = assets->scanExtension(type);
     assets->queueJsons(files);
-    for (auto path : files) {
+    for (auto& path : files) {
       auto parameters = assets->json(path);
       if (parameters.isNull())
         continue;

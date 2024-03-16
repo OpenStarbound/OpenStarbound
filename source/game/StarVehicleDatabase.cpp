@@ -8,9 +8,9 @@ namespace Star {
 
 VehicleDatabase::VehicleDatabase() {
   auto assets = Root::singleton().assets();
-  auto files = assets->scanExtension("vehicle");
+  auto& files = assets->scanExtension("vehicle");
   assets->queueJsons(files);
-  for (auto file : files) {
+  for (auto& file : files) {
     try {
       auto config = assets->json(file);
       String name = config.getString("name");

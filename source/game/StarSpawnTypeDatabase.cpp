@@ -113,7 +113,7 @@ SpawnProfile constructSpawnProfile(Json const& config, uint64_t seed) {
 
 SpawnTypeDatabase::SpawnTypeDatabase() {
   auto assets = Root::singleton().assets();
-  auto files = assets->scanExtension("spawntypes");
+  auto& files = assets->scanExtension("spawntypes");
   assets->queueJsons(files);
   uint64_t seedMix = 0;
   for (auto const& file : files) {

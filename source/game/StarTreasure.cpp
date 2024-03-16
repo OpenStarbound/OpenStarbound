@@ -13,13 +13,13 @@ namespace Star {
 TreasureDatabase::TreasureDatabase() {
   auto assets = Root::singleton().assets();
 
-  auto treasurePools = assets->scanExtension("treasurepools");
-  auto treasureChests = assets->scanExtension("treasurechests");
+  auto& treasurePools = assets->scanExtension("treasurepools");
+  auto& treasureChests = assets->scanExtension("treasurechests");
 
   assets->queueJsons(treasurePools);
   assets->queueJsons(treasureChests);
 
-  for (auto file : treasurePools) {
+  for (auto& file : treasurePools) {
     for (auto const& pair : assets->json(file).iterateObject()) {
       if (m_treasurePools.contains(pair.first))
         throw TreasureException(strf("Duplicate TreasurePool config '{}' from file '{}'", pair.first, file));
@@ -70,7 +70,7 @@ TreasureDatabase::TreasureDatabase() {
     }
   }
 
-  for (auto file : treasureChests) {
+  for (auto& file : treasureChests) {
     for (auto const& pair : assets->json(file).iterateObject()) {
       if (m_treasureChestSets.contains(pair.first))
         throw TreasureException(strf("Duplicate TreasureChestSet config '{}' from file '{}'", pair.first, file));

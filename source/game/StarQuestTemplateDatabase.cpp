@@ -60,9 +60,9 @@ QuestTemplate::QuestTemplate(Json const& config) {
 
 QuestTemplateDatabase::QuestTemplateDatabase() {
   auto assets = Root::singleton().assets();
-  auto files = assets->scanExtension("questtemplate");
+  auto& files = assets->scanExtension("questtemplate");
   assets->queueJsons(files);
-  for (auto qt : files) {
+  for (auto& qt : files) {
     auto questTemplate = make_shared<QuestTemplate>(assets->json(qt));
     if (!m_templates.insert(questTemplate->templateId, questTemplate).second)
       throw StarException(strf("Duplicate quest template '{}'", questTemplate->templateId));

@@ -251,7 +251,6 @@ SET (star_game_HEADERS
     scripting/StarStatusControllerLuaBindings.hpp
     scripting/StarWorldLuaBindings.hpp
     scripting/StarUniverseServerLuaBindings.hpp
-    scripting/StarUtilityLuaBindings.hpp
 
     terrain/StarCacheSelector.hpp
     terrain/StarConstantSelector.hpp
@@ -489,7 +488,6 @@ SET (star_game_SOURCES
     scripting/StarStatusControllerLuaBindings.cpp
     scripting/StarWorldLuaBindings.cpp
     scripting/StarUniverseServerLuaBindings.cpp
-    scripting/StarUtilityLuaBindings.cpp
 
     terrain/StarCacheSelector.cpp
     terrain/StarConstantSelector.cpp

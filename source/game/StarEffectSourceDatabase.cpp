@@ -12,7 +12,7 @@ namespace Star {
 EffectSourceDatabase::EffectSourceDatabase() {
   auto assets = Root::singleton().assets();
 
-  auto files = assets->scanExtension("effectsource");
+  auto& files = assets->scanExtension("effectsource");
   assets->queueJsons(files);
   for (auto const& file : files) {
     auto sourceConfig = make_shared<EffectSourceConfig>(assets->json(file));

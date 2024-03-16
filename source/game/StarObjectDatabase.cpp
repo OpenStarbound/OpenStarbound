@@ -309,9 +309,9 @@ List<ObjectOrientationPtr> ObjectDatabase::parseOrientations(String const& path,
 ObjectDatabase::ObjectDatabase() {
   auto assets = Root::singleton().assets();
 
-  auto files = assets->scanExtension("object");
+  auto& files = assets->scanExtension("object");
   assets->queueJsons(files);
-  for (auto file : files) {
+  for (auto& file : files) {
     try {
       String name = assets->json(file).getString("objectName");
       if (m_paths.contains(name))

@@ -7,9 +7,9 @@ namespace Star {
 
 StatusEffectDatabase::StatusEffectDatabase() {
   auto assets = Root::singleton().assets();
-  auto files = assets->scanExtension("statuseffect");
+  auto& files = assets->scanExtension("statuseffect");
   assets->queueJsons(files);
-  for (auto file : files) {
+  for (auto& file : files) {
     auto uniqueEffect = parseUniqueEffect(assets->json(file), file);
 
     if (m_uniqueEffects.contains(uniqueEffect.name))

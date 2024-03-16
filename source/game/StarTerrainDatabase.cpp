@@ -59,9 +59,9 @@ TerrainDatabase::TerrainDatabase() {
 
   // 'type' here is the extension of the file, and determines the selector type
   auto scanFiles = [this, assets](String const& type) {
-    auto files = assets->scanExtension(type);
+    auto& files = assets->scanExtension(type);
     assets->queueJsons(files);
-    for (auto path : files) {
+    for (auto& path : files) {
       auto parameters = assets->json(path);
       auto name = parameters.getString("name");
       if (m_terrainSelectors.contains(name))
@@ -74,9 +74,9 @@ TerrainDatabase::TerrainDatabase() {
   scanFiles(WormCaveSelector::Name);
   scanFiles(RidgeBlocksSelector::Name);
 
-  auto files = assets->scanExtension("terrain");
+  auto& files = assets->scanExtension("terrain");
   assets->queueJsons(files);
-  for (auto path : files) {
+  for (auto& path : files) {
     auto parameters = assets->json(path);
     auto name = parameters.getString("name");
     auto type = parameters.getString("type");

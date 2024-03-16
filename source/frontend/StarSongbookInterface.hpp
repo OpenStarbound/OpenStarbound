@@ -2,6 +2,7 @@
 
 #include "StarSongbook.hpp"
 #include "StarPane.hpp"
+#include "StarListener.hpp"
 
 namespace Star {
 
@@ -18,8 +19,10 @@ public:
 private:
   PlayerPtr m_player;
   StringList m_files;
-  String m_searchValue;
+  String m_lastSearch;
+  CallbackListenerPtr m_reloadListener;
   bool play();
+  void refresh(bool reloadFiles = false);
 };
 
 }

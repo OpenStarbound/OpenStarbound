@@ -18,9 +18,9 @@ DamageDatabase::DamageDatabase() {
     m_elementalTypes.set(p.first, std::move(type));
   }
 
-  auto files = assets->scanExtension("damage");
+  auto& files = assets->scanExtension("damage");
   assets->queueJsons(files);
-  for (auto file : files) {
+  for (auto& file : files) {
     auto config = assets->json(file);
     String name = config.getString("kind");
     if (m_damageKinds.contains(name))

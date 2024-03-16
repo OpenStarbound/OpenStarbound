@@ -275,6 +275,8 @@ if(STAR_COMPILER_GNU)
   set(CMAKE_C_FLAGS_RELEASE "-DNDEBUG -Ofast")
   set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -Ofast")
 
+  set(BUILD_RPATH_USE_ORIGIN TRUE)
+
 elseif(STAR_COMPILER_CLANG)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wuninitialized -Wno-parentheses-equality -Wno-deprecated-declarations")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -Wall -Wextra -Wuninitialized -Wno-parentheses-equality -Wno-deprecated-declarations")
@@ -303,6 +305,8 @@ elseif(STAR_COMPILER_CLANG)
 
   set(CMAKE_C_FLAGS_RELEASE "-DNDEBUG -Ofast")
   set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -Ofast")
+
+  set(BUILD_RPATH_USE_ORIGIN TRUE)
 
 elseif(STAR_COMPILER_MSVC)
   # /MP      - Multi-processor building
@@ -513,7 +517,10 @@ set(STAR_EXTERN_INCLUDES ${PROJECT_SOURCE_DIR}/extern)
 add_subdirectory(extern)
 
 # Core support code, not specific to starbound.
-set(STAR_CORE_INCLUDES ${PROJECT_SOURCE_DIR}/core)
+set(STAR_CORE_INCLUDES
+    ${PROJECT_SOURCE_DIR}/core
+    ${PROJECT_SOURCE_DIR}/core/scripting
+)
 add_subdirectory(core)
 
 # Less general purpose code than core that is available to both the game and

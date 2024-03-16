@@ -121,15 +121,15 @@ Json StoredConfigFunction::get(double value) const {
 FunctionDatabase::FunctionDatabase() {
   auto assets = Root::singleton().assets();
 
-  auto functions = assets->scanExtension("functions");
-  auto sndFunctions = assets->scanExtension("2functions");
-  auto configFunctions = assets->scanExtension("configfunctions");
+  auto& functions = assets->scanExtension("functions");
+  auto& sndFunctions = assets->scanExtension("2functions");
+  auto& configFunctions = assets->scanExtension("configfunctions");
 
   assets->queueJsons(functions);
   assets->queueJsons(sndFunctions);
   assets->queueJsons(configFunctions);
 
-  for (auto file : functions) {
+  for (auto& file : functions) {
     for (auto const& functionPair : assets->json(file).iterateObject()) {
       if (m_functions.contains(functionPair.first))
         throw StarException(strf("Named Function '{}' defined twice, second time from {}", functionPair.first, file));
@@ -137,7 +137,7 @@ FunctionDatabase::FunctionDatabase() {
     }
   }
 
-  for (auto file : sndFunctions) {
+  for (auto& file : sndFunctions) {
     for (auto const& functionPair : assets->json(file).iterateObject()) {
       if (m_functions2.contains(functionPair.first))
         throw StarException(
@@ -146,7 +146,7 @@ FunctionDatabase::FunctionDatabase() {
     }
   }
 
-  for (auto file : configFunctions) {
+  for (auto& file : configFunctions) {
     for (auto const& tablePair : assets->json(file).iterateObject()) {
       if (m_configFunctions.contains(tablePair.first))
         throw StarException(

@@ -17,9 +17,9 @@ namespace Star {
 NpcDatabase::NpcDatabase() {
   auto assets = Root::singleton().assets();
 
-  auto files = assets->scanExtension("npctype");
+  auto& files = assets->scanExtension("npctype");
   assets->queueJsons(files);
-  for (auto file : files) {
+  for (auto& file : files) {
     try {
       auto config = assets->json(file);
       String typeName = config.getString("type");

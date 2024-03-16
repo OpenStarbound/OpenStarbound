@@ -22,11 +22,11 @@ int main(int argc, char** argv) {
     auto assets = Root::singleton().assets();
 
     auto countWordsInType = [&](String const& type, function<int(Json const&)> countFunction, Maybe<function<bool(String const&)>> filterFunction = {}, Maybe<String> wordCountKey = {}) {
-      auto files = assets->scanExtension(type);
+      auto files = assets->scanExtension(type).values();
       if (filterFunction)
         files.filter(*filterFunction);
       assets->queueJsons(files);
-      for (auto path : files) {
+      for (auto& path : files) {
         auto json = assets->json(path);
         if (json.isNull())
           continue;
@@ -62,7 +62,7 @@ int main(int argc, char** argv) {
         "activeitem",
         "augment" };
 
-    for (auto itemFileType : itemFileTypes) {
+    for (auto& itemFileType : itemFileTypes) {
       countWordsInType(itemFileType, [](Json const& json) {
           int wordCount = 0;
           wordCount += json.getString("shortdescription", "").split(" ").count();

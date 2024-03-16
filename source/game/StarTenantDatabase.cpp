@@ -15,9 +15,9 @@ bool Tenant::criteriaSatisfied(StringMap<unsigned> const& colonyTags) const {
 TenantDatabase::TenantDatabase() {
   auto assets = Root::singleton().assets();
 
-  auto files = assets->scanExtension("tenant");
+  auto& files = assets->scanExtension("tenant");
   assets->queueJsons(files);
-  for (auto file : files) {
+  for (auto& file : files) {
     try {
       String name = assets->json(file).getString("name");
       if (m_paths.contains(name))

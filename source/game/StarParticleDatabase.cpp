@@ -23,9 +23,9 @@ Particle ParticleConfig::instance() {
 
 ParticleDatabase::ParticleDatabase() {
   auto assets = Root::singleton().assets();
-  auto files = assets->scanExtension("particle");
+  auto& files = assets->scanExtension("particle");
   assets->queueJsons(files);
-  for (auto file : files) {
+  for (auto& file : files) {
     auto particleConfig = make_shared<ParticleConfig>(assets->json(file));
     if (m_configs.contains(particleConfig->kind()))
       throw StarException(strf("Duplicate particle asset kind Name {}. configfile {}", particleConfig->kind(), file));

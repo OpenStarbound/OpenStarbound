@@ -407,7 +407,7 @@ bool String::hasCharOrWhitespace(Char c) const {
     return hasChar(c);
 }
 
-String String::replace(String const& rplc, String const& val) const {
+String String::replace(String const& rplc, String const& val, CaseSensitivity cs) const {
   size_t index;
   size_t sz = size();
   size_t rsz = rplc.size();
@@ -417,7 +417,7 @@ String String::replace(String const& rplc, String const& val) const {
   if (rplc.empty())
     return *this;
 
-  index = find(rplc);
+  index = find(rplc, 0, cs);
   if (index == NPos)
     return *this;
 
@@ -431,7 +431,7 @@ String String::replace(String const& rplc, String const& val) const {
     for (size_t i = 0; i < rsz; ++i)
       ++it;
 
-    size_t nindex = find(rplc, index);
+    size_t nindex = find(rplc, index, cs);
     for (size_t i = index; i < nindex && i < sz; ++i)
       ret.append(*it++);
 

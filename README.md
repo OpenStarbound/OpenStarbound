@@ -23,5 +23,6 @@ Changes:
   * Additionally, objects can be placed under non-solid foreground tiles.
 
 * Some minor polish to UI
+* Skybox sun now matches the system type you're currently in. Previously generated planets will not have this feature and will display the default sun. Modded system types require a patch to display their custom sun. Additionally, you can also access now skybox sun scale and its default ray colors. For more details see [sky.config.patch](https://github.com/OpenStarbound/OpenStarbound/blob/main/assets/opensb/sky.config.patch).
 
 [Discord](https://discord.gg/D4QqtBNmAY)
