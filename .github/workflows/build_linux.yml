@@ -49,8 +49,24 @@ jobs:
           buildPreset: 'linux-release'
           testPreset: 'linux-release'
 
+      - name: Assemble Files
+        working-directory: ${{ github.workspace }}
+        run: scripts/ci/linux/assemble.sh
+
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: OpenStarbound-Dev-Linux-x86_64
-          path: dist/*
+          name: OpenStarbound-Linux
+          path: dist.tar
+
+      - name: Upload Client Files
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenStarbound-Linux-Client
+          path: client.tar
+
+      - name: Upload Server Files
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenStarbound-Linux-Server
+          path: server.tar
