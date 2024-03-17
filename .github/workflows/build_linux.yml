@@ -32,7 +32,8 @@ jobs:
         with:
           variant: sccache
           key: ${{ github.job }}-${{ runner.os }}
-          max-size: 2500M
+          max-size: ${{ vars.SCCACHE_MAX_SIZE }}
+          restore: ${{ vars.SCCACHE_RESTORE }}
 
       - name: vcpkg
         uses: lukka/run-vcpkg@v11
