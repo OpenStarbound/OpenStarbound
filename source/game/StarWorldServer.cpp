@@ -1510,6 +1510,8 @@ void WorldServer::updateTileEntityTiles(TileEntityPtr const& entity, bool removi
       if (tile->foreground == materialSpace.material) {
         tile->foreground = EmptyMaterialId;
         tile->foregroundMod = NoModId;
+        if (!isRealMaterial(tile->foreground)) // if the world is old the materialSpace's collision may still be in the tile
+          tile->updateCollision(CollisionKind::None);
         updatedTile = true;
       }
       if (tile->updateObjectCollision(CollisionKind::None)) {

@@ -275,7 +275,7 @@ if(STAR_COMPILER_GNU)
   set(CMAKE_C_FLAGS_RELEASE "-DNDEBUG -Ofast")
   set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -Ofast")
 
-  set(BUILD_RPATH_USE_ORIGIN TRUE)
+  set(CMAKE_BUILD_RPATH_USE_ORIGIN TRUE)
 
 elseif(STAR_COMPILER_CLANG)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wuninitialized -Wno-parentheses-equality -Wno-deprecated-declarations")
@@ -306,7 +306,7 @@ elseif(STAR_COMPILER_CLANG)
   set(CMAKE_C_FLAGS_RELEASE "-DNDEBUG -Ofast")
   set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -Ofast")
 
-  set(BUILD_RPATH_USE_ORIGIN TRUE)
+  set(CMAKE_BUILD_RPATH_USE_ORIGIN TRUE)
 
 elseif(STAR_COMPILER_MSVC)
   # /MP      - Multi-processor building
