@@ -33,4 +33,8 @@ IF(STAR_PRECOMPILED_HEADERS)
   TARGET_PRECOMPILE_HEADERS (starbound REUSE_FROM star_core)
 ENDIF()
 
+IF(UNIX)
+  set_target_properties (starbound PROPERTIES LINK_FLAGS "-Wl,-rpath,'$ORIGIN'")
+ENDIF()
+
 TARGET_LINK_LIBRARIES (starbound ${STAR_EXT_LIBS} ${STAR_EXT_GUI_LIBS})
