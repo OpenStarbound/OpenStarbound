@@ -1,18 +1,27 @@
 @echo off
-set dst=windows
+set client=client_distribution
+if exist %client% rmdir %client% /S /Q
 
-if exist %dst% rmdir %dst% /S /Q
+mkdir %client%
+mkdir %client%\storage
+mkdir %client%\mods
+mkdir %client%\assets
+mkdir %client%\win
 
-mkdir %dst%
-mkdir %dst%\storage
-mkdir %dst%\mods
-mkdir %dst%\assets
+.\dist\asset_packer.exe -c scripts\packing.config assets\opensb %client%\assets\opensb.pak
 
-set bin=%dst%\win
-mkdir %bin%
+set server=server_distribution
+if exist %server% rmdir %server% /S /Q
+xcopy %client% %server% /E /I
 
-.\dist\asset_packer.exe -c scripts\packing.config assets\opensb %dst%\assets\opensb.pak
-
-for /f "delims=" %%f in (scripts\ci\windows\files.txt) do (
-    xcopy "%%f" "%bin%\" /Y
+for /f "delims=" %%f in (scripts\ci\windows\files_client.txt) do (
+    xcopy "%%f" "%client%\win\" /Y
 )
+
+for /f "delims=" %%f in (scripts\ci\windows\files_server.txt) do (
+    xcopy "%%f" "%server%\win\" /Y
+)
+
+set win=windows
+xcopy %client% %win% /E /I /Y
+xcopy %server% %win% /E /I /Y

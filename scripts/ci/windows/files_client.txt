@@ -5,8 +5,6 @@ dist\asset_unpacker.exe
 dist\asset_packer.exe
 dist\starbound.exe
 dist\starbound.pdb
-dist\starbound_server.exe
-dist\starbound_server.pdb
 dist\*.dll
 lib\windows\discord_game_sdk.dll
 lib\windows\steam_api64.dll

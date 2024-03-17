@@ -55,15 +55,27 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: scripts\ci\windows\post_build.bat
 
+      - name: Assemble Files
+        working-directory: ${{ github.workspace }}
+        run: scripts\ci\windows\assemble.bat
+
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: OpenStarbound-Dev-Windows-x64
+          name: OpenStarbound-Windows
           path: dist/*
 
-      - name: Assemble Install Files
-        working-directory: ${{ github.workspace }}
-        run: scripts\ci\windows\assemble.bat
+      - name: Upload Client
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenStarbound-Windows-Client
+          path: client_distribution/*
+
+      - name: Upload Server
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenStarbound-Windows-Server
+          path: server_distribution/*
 
       - name: Create Installer
         working-directory: ${{ github.workspace }}

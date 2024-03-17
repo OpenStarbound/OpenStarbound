@@ -6,6 +6,8 @@
 /mac/
 /dist/
 /installer/
+/client_distribution/
+/server_distribution/
 enc_temp_folder/
 .cache/
 /attic/user/

@@ -1,0 +1,4 @@
+dist\btree_repacker.exe
+dist\starbound_server.exe
+dist\starbound_server.pdb
+scripts\ci\windows\sbinit.config

@@ -2,9 +2,9 @@
 
 mkdir client_distribution
 mkdir client_distribution/assets
+mkdir client_distribution/assets/user
 
 ./dist/asset_packer -c scripts/packing.config assets/opensb client_distribution/assets/opensb.pak
-cp -r assets/user client_distribution/assets/
 
 mkdir client_distribution/mods
 touch client_distribution/mods/mods_go_here
