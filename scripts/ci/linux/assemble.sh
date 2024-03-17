@@ -12,16 +12,15 @@ touch client_distribution/mods/mods_go_here
 mkdir client_distribution/linux
 cp \
   dist/starbound \
-  dist/starbound_server \
   dist/btree_repacker \
   dist/asset_packer \
   dist/asset_unpacker \
   dist/dump_versioned_json \
   dist/make_versioned_json \
-  dist/*.so \
+  lib/linux/libdiscord_game_sdk.so \
+  lib/linux/libsteam_api.so \
   scripts/ci/linux/sbinit.config \
   scripts/ci/linux/run-client.sh \
-  scripts/ci/linux/run-server.sh \
   client_distribution/linux/
 
 mkdir server_distribution
@@ -37,7 +36,6 @@ mkdir server_distribution/linux
 cp \
   dist/starbound_server \
   dist/btree_repacker \
-  dist/*.so \
   scripts/ci/linux/run-server.sh \
   scripts/ci/linux/sbinit.config \
   server_distribution/linux/

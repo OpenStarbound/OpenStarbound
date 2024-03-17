@@ -8,15 +8,17 @@ mkdir %client%\mods
 mkdir %client%\assets
 mkdir %client%\win
 
-.\dist\asset_packer.exe -c scripts\packing.config assets\opensb %client%\assets\opensb.pak
-
 set server=server_distribution
 if exist %server% rmdir %server% /S /Q
 xcopy %client% %server% /E /I
 
+.\dist\asset_packer.exe -c scripts\packing.config assets\opensb %client%\assets\opensb.pak
+
 for /f "delims=" %%f in (scripts\ci\windows\files_client.txt) do (
     xcopy "%%f" "%client%\win\" /Y
 )
+
+.\dist\asset_packer.exe -c scripts\packing.config -s assets\opensb %server%\assets\opensb.pak
 
 for /f "delims=" %%f in (scripts\ci\windows\files_server.txt) do (
     xcopy "%%f" "%server%\win\" /Y
