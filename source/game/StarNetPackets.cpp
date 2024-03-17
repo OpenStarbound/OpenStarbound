@@ -1113,7 +1113,7 @@ void StepUpdatePacket::readLegacy(DataStream& ds) {
 }
 
 void StepUpdatePacket::read(DataStream& ds) {
-  ds.write(remoteTime);
+  ds.read(remoteTime);
 }
 
 void StepUpdatePacket::writeLegacy(DataStream& ds) const {
