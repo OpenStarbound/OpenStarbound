@@ -275,7 +275,7 @@ if(STAR_COMPILER_GNU)
   set(CMAKE_C_FLAGS_RELEASE "-DNDEBUG -Ofast")
   set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -Ofast")
 
-  set(CMAKE_BUILD_RPATH_USE_ORIGIN TRUE)
+  set(CMAKE_SKIP_BUILD_RPATH TRUE)
 
 elseif(STAR_COMPILER_CLANG)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wuninitialized -Wno-parentheses-equality -Wno-deprecated-declarations")
@@ -290,8 +290,8 @@ elseif(STAR_COMPILER_CLANG)
   elseif()
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread -D_REENTRANT")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -D_REENTRANT")
-    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--export_dynamic")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--export_dynamic")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--export_dynamic,-rpath,$ORIGIN")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--export_dynamic-rpath,$ORIGIN")
   endif()
 
   set(CMAKE_C_FLAGS_DEBUG "-g")
@@ -306,7 +306,7 @@ elseif(STAR_COMPILER_CLANG)
   set(CMAKE_C_FLAGS_RELEASE "-DNDEBUG -Ofast")
   set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -Ofast")
 
-  set(CMAKE_BUILD_RPATH_USE_ORIGIN TRUE)
+  set(CMAKE_SKIP_BUILD_RPATH TRUE)
 
 elseif(STAR_COMPILER_MSVC)
   # /MP      - Multi-processor building
