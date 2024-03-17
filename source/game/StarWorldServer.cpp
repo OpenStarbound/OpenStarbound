@@ -567,6 +567,7 @@ void WorldServer::setExpiryTime(float expiryTime) {
 
 void WorldServer::update(float dt) {
   m_currentTime += dt;
+  ++m_currentStep;
   for (auto const& pair : m_clientInfo)
     pair.second->interpolationTracker.update(m_currentTime);
 
