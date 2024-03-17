@@ -1328,6 +1328,7 @@ LuaTable LuaDetail::insertJsonMetatable(LuaEngine& engine, LuaTable const& table
   mt.rawSet("__nils", nils);
   mt.rawSet("__newindex", engine.createFunction(newIndexMetaMethod));
   mt.rawSet("__typehint", type == Json::Type::Array ? 1 : 2);
+  table.setMetatable(mt);
   return nils;
 }
 
