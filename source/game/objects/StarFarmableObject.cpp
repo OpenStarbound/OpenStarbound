@@ -131,7 +131,7 @@ void FarmableObject::enterStage(int newStage) {
     if (anySpacesOccupied(plant->spaces()) || !allSpacesOccupied(plant->roots())) {
       newStage = 0;
     } else {
-      world()->timer(2, [plant](World* world) {
+      world()->timer(2.f / 60.f, [plant](World* world) {
         world->addEntity(plant);
       });
 

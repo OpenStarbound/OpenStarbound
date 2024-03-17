@@ -820,12 +820,14 @@ struct UpdateWorldPropertiesPacket : PacketBase<PacketType::UpdateWorldPropertie
 
 struct StepUpdatePacket : PacketBase<PacketType::StepUpdate> {
   StepUpdatePacket();
-  StepUpdatePacket(uint64_t remoteStep);
+  StepUpdatePacket(double remoteTime);
 
+  void readLegacy(DataStream& ds) override;
   void read(DataStream& ds) override;
+  void writeLegacy(DataStream& ds) const override;
   void write(DataStream& ds) const override;
 
-  uint64_t remoteStep;
+  double remoteTime;
 };
 
 struct SystemWorldStartPacket : PacketBase<PacketType::SystemWorldStart> {

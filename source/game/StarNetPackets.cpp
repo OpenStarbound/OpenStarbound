@@ -1103,16 +1103,25 @@ void PongPacket::write(DataStream& ds) const {
   ds.write<bool>(false);
 }
 
-StepUpdatePacket::StepUpdatePacket() : remoteStep(0) {}
+StepUpdatePacket::StepUpdatePacket() : remoteTime(0.0) {}
 
-StepUpdatePacket::StepUpdatePacket(uint64_t remoteStep) : remoteStep(remoteStep) {}
+StepUpdatePacket::StepUpdatePacket(double remoteStep) : remoteTime(remoteTime) {}
+
+void StepUpdatePacket::readLegacy(DataStream& ds) {
+  auto steps = ds.readVlqU();
+  remoteTime = double(steps) / 60.0;
+}
 
 void StepUpdatePacket::read(DataStream& ds) {
-  ds.vuread(remoteStep);
+  ds.write(remoteTime);
+}
+
+void StepUpdatePacket::writeLegacy(DataStream& ds) const {
+  ds.writeVlqU((uint64_t)round(remoteTime * 60.0));
 }
 
 void StepUpdatePacket::write(DataStream& ds) const {
-  ds.vuwrite(remoteStep);
+  ds.write(remoteTime);
 }
 
 SystemWorldStartPacket::SystemWorldStartPacket() {}

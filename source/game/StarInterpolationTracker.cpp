@@ -4,6 +4,8 @@
 
 namespace Star {
 
+constexpr double VanillaStepsPerSecond = 60.0;
+
 InterpolationTracker::InterpolationTracker(Json config) {
   if (config.isNull()) {
     config = JsonObject();
@@ -13,13 +15,13 @@ InterpolationTracker::InterpolationTracker(Json config) {
   }
 
   m_interpolationEnabled = config.getBool("interpolationEnabled", false);
-  m_entityUpdateDelta = config.getUInt("entityUpdateDelta", 3);
-  m_stepLead = config.getUInt("stepLead", 0);
+  m_entityUpdateDelta = config.getDouble("entityUpdateDelta", 3) / VanillaStepsPerSecond;
+  m_timeLead = config.getDouble("stepLead", 0) / VanillaStepsPerSecond;
   m_extrapolationHint = config.getUInt("extrapolationHint", 0);
-  m_stepTrackFactor = config.getDouble("stepTrackFactor", 1.0);
-  m_stepMaxDistance = config.getDouble("stepMaxDistance", 0.0);
+  m_timeTrackFactor = config.getDouble("stepTrackFactor", 1.0);
+  m_timeMaxDistance = config.getDouble("stepMaxDistance", 0.0) / VanillaStepsPerSecond;
 
-  m_currentStep = 0.0;
+  m_currentTime = 0.0;
 }
 
 bool InterpolationTracker::interpolationEnabled() const {
@@ -33,31 +35,31 @@ unsigned InterpolationTracker::extrapolationHint() const {
     return 0;
 }
 
-unsigned InterpolationTracker::entityUpdateDelta() const {
+float InterpolationTracker::entityUpdateDelta() const {
   return m_entityUpdateDelta;
 }
 
-void InterpolationTracker::receiveStepUpdate(double remoteStep) {
-  m_lastStepUpdate = remoteStep;
+void InterpolationTracker::receiveTimeUpdate(double remoteStep) {
+  m_lastTimeUpdate = remoteStep;
 }
 
-void InterpolationTracker::update(double newLocalStep) {
-  double dt = newLocalStep - m_currentStep;
-  m_currentStep = newLocalStep;
-  if (!m_predictedStep || !m_lastStepUpdate || dt < 0.0f) {
-    m_predictedStep = m_lastStepUpdate;
+void InterpolationTracker::update(double newLocalTime) {
+  double dt = newLocalTime - m_currentTime;
+  m_currentTime = newLocalTime;
+  if (!m_predictedTime || !m_lastTimeUpdate || dt < 0.0f) {
+    m_predictedTime = m_lastTimeUpdate;
   } else {
-    *m_lastStepUpdate += dt;
-    *m_predictedStep += dt;
-    *m_predictedStep += (*m_lastStepUpdate - *m_predictedStep) * m_stepTrackFactor;
-    m_predictedStep = clamp<double>(*m_predictedStep, *m_lastStepUpdate - m_stepMaxDistance, *m_lastStepUpdate + m_stepMaxDistance);
+    *m_lastTimeUpdate += dt;
+    *m_predictedTime += dt;
+    *m_predictedTime += (*m_lastTimeUpdate - *m_predictedTime) * m_timeTrackFactor;
+    m_predictedTime = clamp<double>(*m_predictedTime, *m_lastTimeUpdate - m_timeMaxDistance, *m_lastTimeUpdate + m_timeMaxDistance);
   }
 }
 
-float InterpolationTracker::interpolationLeadSteps() const {
-  if (!m_interpolationEnabled || !m_predictedStep || !m_lastStepUpdate)
+float InterpolationTracker::interpolationLeadTime() const {
+  if (!m_interpolationEnabled || !m_predictedTime || !m_lastTimeUpdate)
     return 0.0f;
-  return *m_lastStepUpdate - *m_predictedStep + m_stepLead;
+  return *m_lastTimeUpdate - *m_predictedTime + m_timeLead;
 }
 
 }

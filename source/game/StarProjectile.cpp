@@ -572,7 +572,7 @@ void Projectile::processAction(Json const& action) {
     if (stepsDelay == 0)
       function(world());
     else
-      world()->timer(stepsDelay, function);
+      world()->timer((float)stepsDelay / 60.f, function);
   };
 
   if (command == "tile") {

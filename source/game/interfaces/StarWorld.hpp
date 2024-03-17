@@ -130,7 +130,7 @@ public:
   virtual Json getProperty(String const& propertyName, Json const& def = {}) const = 0;
   virtual void setProperty(String const& propertyName, Json const& property) = 0;
 
-  virtual void timer(int stepsDelay, WorldAction worldAction) = 0;
+  virtual void timer(float delay, WorldAction worldAction) = 0;
   virtual double epochTime() const = 0;
   virtual uint32_t day() const = 0;
   virtual float dayLength() const = 0;

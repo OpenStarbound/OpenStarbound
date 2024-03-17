@@ -169,7 +169,7 @@ public:
   List<PhysicsForceRegion> forceRegions() const override;
   Json getProperty(String const& propertyName, Json const& def = Json()) const override;
   void setProperty(String const& propertyName, Json const& property) override;
-  void timer(int stepsDelay, WorldAction worldAction) override;
+  void timer(float delay, WorldAction worldAction) override;
   double epochTime() const override;
   uint32_t day() const override;
   float dayLength() const override;
@@ -275,6 +275,7 @@ private:
     WorldClientState clientState;
     bool pendingForward;
     bool started;
+    bool local;
 
     List<PacketPtr> outgoingPackets;
 
@@ -308,7 +309,7 @@ private:
   TileModificationList doApplyTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap, bool ignoreTileProtection = false);
 
   // Queues pending (step based) updates to the given player
-  void queueUpdatePackets(ConnectionId clientId);
+  void queueUpdatePackets(ConnectionId clientId, bool sendRemoteUpdates);
   void updateDamage(float dt);
 
   void updateDamagedBlocks(float dt);
@@ -361,7 +362,8 @@ private:
   StringMap<ScriptComponentPtr> m_scriptContexts;
 
   WorldGeometry m_geometry;
-  uint64_t m_currentStep{};
+  double m_currentTime;
+  uint64_t m_currentStep;
   mutable CellularLightIntensityCalculator m_lightIntensityCalculator;
   SkyPtr m_sky;
 
@@ -373,6 +375,7 @@ private:
   HashMap<pair<EntityId, uint64_t>, pair<ByteArray, uint64_t>> m_netStateCache;
   OrderedHashMap<ConnectionId, shared_ptr<ClientInfo>> m_clientInfo;
 
+  GameTimer m_entityUpdateTimer;
   GameTimer m_tileEntityBreakCheckTimer;
 
   shared_ptr<LiquidCellEngine<LiquidId>> m_liquidEngine;
@@ -384,7 +387,7 @@ private:
   // is removed / uninitialized
   HashMap<EntityId, TileEntitySpaces> m_tileEntitySpaces;
 
-  List<pair<int, WorldAction>> m_timers;
+  List<pair<float, WorldAction>> m_timers;
 
   bool m_needsGlobalBreakCheck;
 

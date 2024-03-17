@@ -14,6 +14,7 @@
 #include "StarWorld.hpp"
 #include "StarGameTimers.hpp"
 #include "StarLuaRoot.hpp"
+#include "StarTickRateMonitor.hpp"
 
 namespace Star {
 
@@ -88,7 +89,7 @@ public:
   List<PhysicsForceRegion> forceRegions() const override;
   Json getProperty(String const& propertyName, Json const& def = Json()) const override;
   void setProperty(String const& propertyName, Json const& property) override;
-  void timer(int stepsDelay, WorldAction worldAction) override;
+  void timer(float delay, WorldAction worldAction) override;
   double epochTime() const override;
   uint32_t day() const override;
   float dayLength() const override;
@@ -218,7 +219,7 @@ private:
   void notifyEntityCreate(EntityPtr const& entity);
 
   // Queues pending (step based) updates to server,
-  void queueUpdatePackets();
+  void queueUpdatePackets(bool sendEntityUpdates);
   void handleDamageNotifications();
 
   void sparkDamagedBlocks();
@@ -262,7 +263,7 @@ private:
 
   WorldGeometry m_geometry;
   uint64_t m_currentStep;
-  double m_currentServerStep;
+  double m_currentTime;
   bool m_fullBright;
   bool m_asyncLighting;
   CellularLightingCalculator m_lightingCalculator;
@@ -312,6 +313,7 @@ private:
   HashMap<EntityId, uint64_t> m_masterEntitiesNetVersion;
 
   InterpolationTracker m_interpolationTracker;
+  GameTimer m_entityUpdateTimer;
 
   List<PacketPtr> m_outgoingPackets;
   Maybe<int64_t> m_pingTime;
@@ -333,7 +335,7 @@ private:
   AmbientManager m_musicTrack;
   AmbientManager m_altMusicTrack;
 
-  List<pair<int, WorldAction>> m_timers;
+  List<pair<float, WorldAction>> m_timers;
 
   Map<DamageNumberKey, DamageNumber> m_damageNumbers;
   float m_damageNotificationBatchDuration;

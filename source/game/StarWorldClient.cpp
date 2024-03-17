@@ -35,7 +35,7 @@ WorldClient::WorldClient(PlayerPtr mainPlayer) {
   m_clientConfig = assets->json("/client.config");
 
   m_currentStep = 0;
-  m_currentServerStep = 0.0;
+  m_currentTime = 0;
   m_fullBright = false;
   m_asyncLighting = false;
   m_worldDimTimer = GameTimer(m_clientConfig.getFloat("worldDimTime"));
@@ -184,11 +184,11 @@ SkyConstPtr WorldClient::currentSky() const {
   return m_sky;
 }
 
-void WorldClient::timer(int stepsDelay, WorldAction worldAction) {
+void WorldClient::timer(float delay, WorldAction worldAction) {
   if (!inWorld())
     return;
 
-  m_timers.append({stepsDelay, worldAction});
+  m_timers.append({delay, worldAction});
 }
 
 EntityPtr WorldClient::closestEntity(Vec2F const& center, float radius, EntityFilter selector) const {
@@ -788,13 +788,13 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
         // Delay appearance of new slaved entities to match with interplation
         // state.
         m_startupHiddenEntities.add(entityCreate->entityId);
-        timer(round(m_interpolationTracker.interpolationLeadSteps()), [this, entityId = entityCreate->entityId](World*) {
+        timer(m_interpolationTracker.interpolationLeadTime(), [this, entityId = entityCreate->entityId](World*) {
             m_startupHiddenEntities.remove(entityId);
           });
       }
 
     } else if (auto entityUpdateSet = as<EntityUpdateSetPacket>(packet)) {
-      float interpolationLeadTime = m_interpolationTracker.interpolationLeadSteps() * GlobalTimestep;
+      float interpolationLeadTime = m_interpolationTracker.interpolationLeadTime();
       m_entityMap->forAllEntities([&](EntityPtr const& entity) {
           EntityId entityId = entity->entityId();
           if (connectionForEntity(entityId) == entityUpdateSet->forConnection) {
@@ -805,7 +805,7 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
 
     } else if (auto entityDestroy = as<EntityDestroyPacket>(packet)) {
       if (auto entity = m_entityMap->entity(entityDestroy->entityId)) {
-        entity->readNetState(entityDestroy->finalNetState, m_interpolationTracker.interpolationLeadSteps() * GlobalTimestep);
+        entity->readNetState(entityDestroy->finalNetState, m_interpolationTracker.interpolationLeadTime());
 
         // Before destroying the entity, we should make sure that the entity is
         // using the absolute latest data, so we disable interpolation.
@@ -813,7 +813,7 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
         if (m_interpolationTracker.interpolationEnabled() && entityDestroy->death) {
           // Delay death packets by the interpolation step to give time for
           // interpolation to catch up.
-          timer(round(m_interpolationTracker.interpolationLeadSteps()), [this, entity, entityDestroy](World*) {
+          timer(m_interpolationTracker.interpolationLeadTime(), [this, entity, entityDestroy](World*) {
               entity->disableInterpolation();
               removeEntity(entityDestroy->entityId, entityDestroy->death);
             });
@@ -917,8 +917,7 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
       tryGiveMainPlayerItem(itemDatabase->item(giveItem->item));
 
     } else if (auto stepUpdate = as<StepUpdatePacket>(packet)) {
-      m_currentServerStep = ((double)stepUpdate->remoteStep * (GlobalTimestep / ServerGlobalTimestep));
-      m_interpolationTracker.receiveStepUpdate(m_currentServerStep);
+      m_interpolationTracker.receiveTimeUpdate(stepUpdate->remoteTime);
 
     } else if (auto environmentUpdatePacket = as<EnvironmentUpdatePacket>(packet)) {
       m_sky->readUpdate(environmentUpdatePacket->skyDelta);
@@ -1118,17 +1117,18 @@ void WorldClient::update(float dt) {
   m_mainPlayer->effectsAnimator()->setGlobalTag("\0SE_VOICE_SIGNING_KEY"s, publicKeyString);
 
   ++m_currentStep;
-  //m_interpolationTracker.update(m_currentStep);
-  m_interpolationTracker.update(Time::monotonicTime());
+  m_currentTime += dt;
+  m_interpolationTracker.update(m_currentTime);
 
   List<WorldAction> triggeredActions;
-  eraseWhere(m_timers, [&triggeredActions](pair<int, WorldAction>& timer) {
-      if (--timer.first <= 0) {
+  eraseWhere(m_timers, [&triggeredActions, dt](pair<float, WorldAction>& timer) {
+      if ((timer.first -= dt) <= 0) {
         triggeredActions.append(timer.second);
         return true;
       }
       return false;
     });
+
   for (auto const& action : triggeredActions)
     action(this);
 
@@ -1232,7 +1232,7 @@ void WorldClient::update(float dt) {
   for (EntityId entityId : toRemove)
     removeEntity(entityId, true);
 
-  queueUpdatePackets();
+  queueUpdatePackets(m_entityUpdateTimer.wrapTick(dt));
 
   if (m_pingTime.isNothing()) {
     m_pingTime = Time::monotonicMilliseconds();
@@ -1432,7 +1432,7 @@ void WorldClient::setTileProtection(DungeonId dungeonId, bool isProtected) {
   }
 }
 
-void WorldClient::queueUpdatePackets() {
+void WorldClient::queueUpdatePackets(bool sendEntityUpdates) {
   auto& root = Root::singleton();
   auto assets = root.assets();
   auto entityFactory = root.entityFactory();
@@ -1444,7 +1444,7 @@ void WorldClient::queueUpdatePackets() {
 
   m_entityMap->forAllEntities([&](EntityPtr const& entity) { notifyEntityCreate(entity); });
 
-  if (m_currentStep % m_interpolationTracker.entityUpdateDelta() == 0) {
+  if (sendEntityUpdates) {
     auto entityUpdateSet = make_shared<EntityUpdateSetPacket>();
     entityUpdateSet->forConnection = *m_clientId;
     m_entityMap->forAllEntities([&](EntityPtr const& entity) {
@@ -1677,6 +1677,8 @@ void WorldClient::initWorld(WorldStartPacket const& startPacket) {
   else
     m_interpolationTracker = InterpolationTracker(m_clientConfig.query("interpolationSettings.normal"));
 
+  m_entityUpdateTimer = GameTimer(m_interpolationTracker.entityUpdateDelta());
+
   m_clientId = startPacket.clientId;
   auto entitySpace = connectionEntitySpace(startPacket.clientId);
   m_worldTemplate = make_shared<WorldTemplate>(startPacket.templateData);
@@ -1757,7 +1759,7 @@ void WorldClient::clearWorld() {
   waitForLighting();
 
   m_currentStep = 0;
-  m_currentServerStep = 0.0;
+  m_currentTime = 0;
   m_inWorld = false;
   m_clientId.reset();
 

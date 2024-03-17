@@ -241,9 +241,10 @@ bool WorldServer::addClient(ConnectionId clientId, SpawnTarget const& spawnTarge
   else
     tracker = InterpolationTracker(m_serverConfig.query("interpolationSettings.normal"));
 
-  tracker.update(m_currentStep);
+  tracker.update(m_currentTime);
 
-  auto clientInfo = m_clientInfo.add(clientId, make_shared<ClientInfo>(clientId, tracker));
+  auto& clientInfo = m_clientInfo.add(clientId, make_shared<ClientInfo>(clientId, tracker));
+  clientInfo->local = isLocal;
 
   auto worldStartPacket = make_shared<WorldStartPacket>();
   worldStartPacket->templateData = m_worldTemplate->store();
@@ -340,7 +341,7 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
       continue;
 
     } else if (auto heartbeat = as<StepUpdatePacket>(packet)) {
-      clientInfo->interpolationTracker.receiveStepUpdate(heartbeat->remoteStep);
+      clientInfo->interpolationTracker.receiveTimeUpdate(heartbeat->remoteTime);
 
     } else if (auto wcsPacket = as<WorldClientStateUpdatePacket>(packet)) {
       clientInfo->clientState.readDelta(wcsPacket->worldClientStateDelta);
@@ -430,7 +431,7 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
       }
 
     } else if (auto entityUpdateSet = as<EntityUpdateSetPacket>(packet)) {
-      float interpolationLeadTime = clientInfo->interpolationTracker.interpolationLeadSteps() * GlobalTimestep;
+      float interpolationLeadTime = clientInfo->interpolationTracker.interpolationLeadTime();
       m_entityMap->forAllEntities([&](EntityPtr const& entity) {
           EntityId entityId = entity->entityId();
           if (connectionForEntity(entityId) == clientId) {
@@ -442,7 +443,7 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
 
     } else if (auto entityDestroy = as<EntityDestroyPacket>(packet)) {
       if (auto entity = m_entityMap->entity(entityDestroy->entityId)) {
-        entity->readNetState(entityDestroy->finalNetState, clientInfo->interpolationTracker.interpolationLeadSteps() * GlobalTimestep);
+        entity->readNetState(entityDestroy->finalNetState, clientInfo->interpolationTracker.interpolationLeadTime());
         // Before destroying the entity, we should make sure that the entity is
         // using the absolute latest data, so we disable interpolation.
         entity->disableInterpolation();
@@ -565,13 +566,13 @@ void WorldServer::setExpiryTime(float expiryTime) {
 }
 
 void WorldServer::update(float dt) {
-  ++m_currentStep;
+  m_currentTime += dt;
   for (auto const& pair : m_clientInfo)
-    pair.second->interpolationTracker.update(m_currentStep);
+    pair.second->interpolationTracker.update(m_currentTime);
 
   List<WorldAction> triggeredActions;
-  eraseWhere(m_timers, [&triggeredActions](pair<int, WorldAction>& timer) {
-      if (--timer.first <= 0) {
+  eraseWhere(m_timers, [&triggeredActions, dt](pair<float, WorldAction>& timer) {
+      if ((timer.first -= dt) <= 0) {
         triggeredActions.append(timer.second);
         return true;
       }
@@ -582,7 +583,7 @@ void WorldServer::update(float dt) {
 
   m_spawner.update(dt);
 
-  bool doBreakChecks = m_tileEntityBreakCheckTimer.wrapTick(m_currentStep) && m_needsGlobalBreakCheck;
+  bool doBreakChecks = m_tileEntityBreakCheckTimer.wrapTick(m_currentTime) && m_needsGlobalBreakCheck;
   if (doBreakChecks)
     m_needsGlobalBreakCheck = false;
 
@@ -661,10 +662,11 @@ void WorldServer::update(float dt) {
   for (EntityId entityId : toRemove)
     removeEntity(entityId, true);
 
+  bool sendRemoteUpdates = m_entityUpdateTimer.wrapTick(dt);
   for (auto const& pair : m_clientInfo) {
     for (auto const& monitoredRegion : pair.second->monitoringRegions(m_entityMap))
       signalRegion(monitoredRegion.padded(jsonToVec2I(m_serverConfig.get("playerActiveRegionPad"))));
-    queueUpdatePackets(pair.first);
+    queueUpdatePackets(pair.first, sendRemoteUpdates);
   }
   m_netStateCache.clear();
 
@@ -1236,6 +1238,7 @@ void WorldServer::init(bool firstTime) {
 
   m_worldStorage->setFloatingDungeonWorld(isFloatingDungeonWorld());
 
+  m_currentTime = 0;
   m_currentStep = 0;
   m_generatingDungeon = false;
   m_geometry = WorldGeometry(m_worldTemplate->size());
@@ -1258,6 +1261,7 @@ void WorldServer::init(bool firstTime) {
       return m_tileArray->tile({x, y}).getCollision();
     });
 
+  m_entityUpdateTimer = GameTimer(m_serverConfig.query("interpolationSettings.normal").getFloat("entityUpdateDelta") / 60.f);
   m_tileEntityBreakCheckTimer = GameTimer(m_serverConfig.getFloat("tileEntityBreakCheckInterval"));
 
   m_liquidEngine = make_shared<LiquidCellEngine<LiquidId>>(liquidsDatabase->liquidEngineParameters(), make_shared<LiquidWorld>(this));
@@ -1756,9 +1760,9 @@ List<ItemDescriptor> WorldServer::destroyBlock(TileLayer layer, Vec2I const& pos
   return drops;
 }
 
-void WorldServer::queueUpdatePackets(ConnectionId clientId) {
+void WorldServer::queueUpdatePackets(ConnectionId clientId, bool sendRemoteUpdates) {
   auto const& clientInfo = m_clientInfo.get(clientId);
-  clientInfo->outgoingPackets.append(make_shared<StepUpdatePacket>(m_currentStep));
+  clientInfo->outgoingPackets.append(make_shared<StepUpdatePacket>(m_currentTime));
 
   if (shouldRunThisStep("environmentUpdate")) {
     ByteArray skyDelta;
@@ -1828,7 +1832,7 @@ void WorldServer::queueUpdatePackets(ConnectionId clientId) {
   }
 
   HashMap<ConnectionId, shared_ptr<EntityUpdateSetPacket>> updateSetPackets;
-  if (m_currentStep % clientInfo->interpolationTracker.entityUpdateDelta() == 0)
+  if (sendRemoteUpdates || clientInfo->local)
     updateSetPackets.add(ServerConnectionId, make_shared<EntityUpdateSetPacket>(ServerConnectionId));
   for (auto const& p : m_clientInfo) {
     if (p.first != clientId && p.second->pendingForward)
@@ -2149,8 +2153,8 @@ void WorldServer::setProperty(String const& propertyName, Json const& property) 
   }
 }
 
-void WorldServer::timer(int stepsDelay, WorldAction worldAction) {
-  m_timers.append({stepsDelay, worldAction});
+void WorldServer::timer(float delay, WorldAction worldAction) {
+  m_timers.append({delay, worldAction});
 }
 
 void WorldServer::startFlyingSky(bool enterHyperspace, bool startInWarp) {

@@ -13,27 +13,27 @@ public:
   bool interpolationEnabled() const;
   unsigned extrapolationHint() const;
 
-  // Steps in between entity updates
-  unsigned entityUpdateDelta() const;
+  // Time in-between entity updates
+  float entityUpdateDelta() const;
 
-  void receiveStepUpdate(double remoteStep);
-  void update(double newLocalStep);
+  void receiveTimeUpdate(double remoteTime);
+  void update(double newLocalTime);
 
-  // Lead steps that incoming interpolated data as of this moment should be
+  // Lead time that incoming interpolated data as of this moment should be
   // marked for.  If interpolation is disabled, this is always 0.0
-  float interpolationLeadSteps() const;
+  float interpolationLeadTime() const;
 
 private:
   bool m_interpolationEnabled;
-  unsigned m_entityUpdateDelta;
-  unsigned m_stepLead;
+  float m_entityUpdateDelta;
+  double m_timeLead;
   unsigned m_extrapolationHint;
-  double m_stepTrackFactor;
-  double m_stepMaxDistance;
+  double m_timeTrackFactor;
+  double m_timeMaxDistance;
 
-  double m_currentStep;
-  Maybe<double> m_lastStepUpdate;
-  Maybe<double> m_predictedStep;
+  double m_currentTime;
+  Maybe<double> m_lastTimeUpdate;
+  Maybe<double> m_predictedTime;
 };
 
 }
