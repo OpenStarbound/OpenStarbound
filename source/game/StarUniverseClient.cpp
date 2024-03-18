@@ -553,9 +553,8 @@ bool UniverseClient::switchPlayer(Uuid const& uuid) {
     return false;
   else if (auto data = m_playerStorage->maybeGetPlayerData(uuid)) {
     if (reloadPlayer(*data, uuid, true, true)) {
-      auto dance = Root::singleton().assets()->json("/player.config:swapDance");
-      if (dance.isType(Json::Type::String))
-        m_mainPlayer->humanoid()->setDance(dance.toString());
+      if (auto dance = Root::singleton().assets()->json("/player.config").optString("swapDance"))
+        m_mainPlayer->humanoid()->setDance(*dance);
       return true;
     }
   }
