@@ -149,11 +149,13 @@ HashMap<Uuid, PlayerUniverseMap::MappedObject> PlayerUniverseMap::mappedObjects(
 }
 
 void PlayerUniverseMap::addMappedCoordinate(CelestialCoordinate const& coordinate) {
-  if (coordinate.isNull() || coordinate.isSystem())
+  if (coordinate.isNull())
     return;
 
   auto& universeMap = m_universeMaps[*m_serverUuid];
-  universeMap.systems[coordinate.location()].mappedPlanets.add(coordinate.planet());
+  auto& systemMap = universeMap.systems[coordinate.location()];
+  if (!coordinate.isSystem())
+    systemMap.mappedPlanets.add(coordinate.planet());
 }
 
 void PlayerUniverseMap::addMappedObject(CelestialCoordinate const& system, Uuid const& uuid, String const& typeName, Maybe<CelestialOrbit> const& orbit, JsonObject parameters) {
