@@ -1105,7 +1105,7 @@ void PongPacket::write(DataStream& ds) const {
 
 StepUpdatePacket::StepUpdatePacket() : remoteTime(0.0) {}
 
-StepUpdatePacket::StepUpdatePacket(double remoteStep) : remoteTime(remoteTime) {}
+StepUpdatePacket::StepUpdatePacket(double remoteTime) : remoteTime(remoteTime) {}
 
 void StepUpdatePacket::readLegacy(DataStream& ds) {
   auto steps = ds.readVlqU();

@@ -1437,7 +1437,7 @@ void WorldClient::queueUpdatePackets(bool sendEntityUpdates) {
   auto assets = root.assets();
   auto entityFactory = root.entityFactory();
 
-  m_outgoingPackets.append(make_shared<StepUpdatePacket>(m_currentStep));
+  m_outgoingPackets.append(make_shared<StepUpdatePacket>(m_currentTime));
 
   if (m_currentStep % m_clientConfig.getInt("worldClientStateUpdateDelta") == 0)
     m_outgoingPackets.append(make_shared<WorldClientStateUpdatePacket>(m_clientState.writeDelta()));
