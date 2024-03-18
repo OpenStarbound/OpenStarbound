@@ -103,23 +103,30 @@ void PlayerUniverseMap::invalidateWarpAction(WarpAction const& warpAction) {
 }
 
 Maybe<OrbitBookmark> PlayerUniverseMap::worldBookmark(CelestialCoordinate const& world) const {
-  for (auto bookmark : universeMap().systems.get(world.location()).bookmarks) {
-    if (bookmark.target == world)
-      return bookmark;
+  if (auto systemMap = universeMap().systems.ptr(world.location())) {
+    for (auto& bookmark : systemMap->bookmarks) {
+      if (bookmark.target == world)
+        return bookmark;
+    }
   }
   return {};
 }
 
 List<OrbitBookmark> PlayerUniverseMap::systemBookmarks(CelestialCoordinate const& system) const {
-  return universeMap().systems.get(system.location()).bookmarks.values();
+  if (auto systemMap = universeMap().systems.ptr(system.location()))
+    return systemMap->bookmarks.values();
+  return {};
 }
 
 List<OrbitBookmark> PlayerUniverseMap::planetBookmarks(CelestialCoordinate const& planet) const {
-  return universeMap().systems.get(planet.location()).bookmarks.values().filtered([planet] (OrbitBookmark const& bookmark) {
+  if (auto systemMap = universeMap().systems.ptr(planet.location())) {
+    return systemMap->bookmarks.values().filtered([planet](OrbitBookmark const& bookmark) {
       if (auto coordinate = bookmark.target.maybe<CelestialCoordinate>())
         return coordinate->planet().orbitNumber() == planet.planet().orbitNumber();
       return false;
     });
+  }
+  return {};
 }
 
 bool PlayerUniverseMap::isMapped(CelestialCoordinate const& coordinate) {
@@ -127,67 +134,52 @@ bool PlayerUniverseMap::isMapped(CelestialCoordinate const& coordinate) {
     return false;
 
   auto& universeMap = m_universeMaps[*m_serverUuid];
-  if (!universeMap.systems.contains(coordinate.location()))
+  if (auto systemMap = universeMap.systems.ptr(coordinate.location()))
+    return coordinate.isSystem() || systemMap->mappedPlanets.contains(coordinate.planet());
+  else
     return false;
-
-  if (coordinate.isSystem())
-    return true;
-
-  return universeMap.systems[coordinate.location()].mappedPlanets.contains(coordinate.planet());
 }
 
 HashMap<Uuid, PlayerUniverseMap::MappedObject> PlayerUniverseMap::mappedObjects(CelestialCoordinate const& system) {
   auto& universeMap = m_universeMaps[*m_serverUuid];
-  if (!universeMap.systems.contains(system.location()))
+  if (auto systemMap = universeMap.systems.ptr(system.location()))
+    return systemMap->mappedObjects;
+  else
     return {};
-
-  return universeMap.systems[system.location()].mappedObjects;
 }
 
 void PlayerUniverseMap::addMappedCoordinate(CelestialCoordinate const& coordinate) {
-  if (coordinate.isNull())
+  if (coordinate.isNull() || coordinate.isSystem())
     return;
 
   auto& universeMap = m_universeMaps[*m_serverUuid];
-  if (!universeMap.systems.contains(coordinate.location()))
-    universeMap.systems.set(coordinate.location(), SystemMap());
-
-  if (coordinate.isSystem())
-    return;
-
   universeMap.systems[coordinate.location()].mappedPlanets.add(coordinate.planet());
 }
 
 void PlayerUniverseMap::addMappedObject(CelestialCoordinate const& system, Uuid const& uuid, String const& typeName, Maybe<CelestialOrbit> const& orbit, JsonObject parameters) {
-  auto& universeMap = m_universeMaps[*m_serverUuid];
-  if (!universeMap.systems.contains(system.location()))
-    universeMap.systems.set(system.location(), SystemMap());
-
   MappedObject object {
     typeName,
     orbit,
     parameters
   };
+  auto& universeMap = m_universeMaps[*m_serverUuid];
   universeMap.systems[system.location()].mappedObjects.set(uuid, object);
 }
 
 void PlayerUniverseMap::removeMappedObject(CelestialCoordinate const& system, Uuid const& uuid) {
   auto& universeMap = m_universeMaps[*m_serverUuid];
-  if (!universeMap.systems.contains(system.location()))
-    return;
-
-  universeMap.systems[system.location()].mappedObjects.remove(uuid);
+  if (auto systemMap = universeMap.systems.ptr(system.location()))
+    systemMap->mappedObjects.remove(uuid);
 }
 
 void PlayerUniverseMap::filterMappedObjects(CelestialCoordinate const& system, List<Uuid> const& allowed) {
   auto& universeMap = m_universeMaps[*m_serverUuid];
-  if (!universeMap.systems.contains(system.location()))
-    return;
-
-  auto& objects = universeMap.systems[system.location()].mappedObjects;
-  for (auto uuid : objects.keys()) {
-    if (!allowed.contains(uuid))
-      objects.remove(uuid);
+  if (auto systemMap = universeMap.systems.ptr(system.location())) {
+    auto& objects = systemMap->mappedObjects;
+    for (auto& uuid : objects.keys()) {
+      if (!allowed.contains(uuid))
+        objects.remove(uuid);
+    }
   }
 }
 
