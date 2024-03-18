@@ -247,7 +247,12 @@ bool WorldServer::addClient(ConnectionId clientId, SpawnTarget const& spawnTarge
   clientInfo->local = isLocal;
 
   auto worldStartPacket = make_shared<WorldStartPacket>();
-  worldStartPacket->templateData = m_worldTemplate->store();
+  auto& templateData = worldStartPacket->templateData = m_worldTemplate->store();
+  // this makes it possible to use custom InstanceWorlds without clients having the mod that adds their dungeon:
+  if (templateData.optQueryString("worldParameters.primaryDungeon")
+    && Root::singletonPtr()->configuration()->getPath("compatibility.customDungeonWorld").optBool().value(false))
+    worldStartPacket->templateData = worldStartPacket->templateData.setPath("worldParameters.primaryDungeon", "testarena");
+
   tie(worldStartPacket->skyData, clientInfo->skyNetVersion) = m_sky->writeUpdate();
   tie(worldStartPacket->weatherData, clientInfo->weatherNetVersion) = m_weather.writeUpdate();
   worldStartPacket->playerStart = playerStart;
