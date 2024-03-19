@@ -139,7 +139,7 @@ struct Packet {
 };
 
 PacketPtr createPacket(PacketType type);
-PacketPtr createPacket(PacketType type, JsonArray const& args);
+PacketPtr createPacket(PacketType type, Maybe<Json> const& args);
 
 template <PacketType PacketT>
 struct PacketBase : public Packet {
