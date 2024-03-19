@@ -21,6 +21,7 @@ LuaCallbacks LuaBindings::makeUniverseServerCallbacks(UniverseServer* universe) 
   callbacks.registerCallbackWithSignature<bool, String>("isWorldActive", bind(UniverseServerCallbacks::isWorldActive, universe, _1));
   callbacks.registerCallbackWithSignature<StringList>("activeWorlds", bind(UniverseServerCallbacks::activeWorlds, universe));
   callbacks.registerCallbackWithSignature<RpcThreadPromise<Json>, String, String, LuaVariadic<Json>>("sendWorldMessage", bind(UniverseServerCallbacks::sendWorldMessage, universe, _1, _2, _3));
+  callbacks.registerCallbackWithSignature<void, ConnectionId, String, Json>("sendPacket", bind(UniverseServerCallbacks::sendPacket, universe, _1, _2, _3));
 
   return callbacks;
 }
@@ -124,6 +125,12 @@ StringList LuaBindings::UniverseServerCallbacks::activeWorlds(UniverseServer* un
 
 RpcThreadPromise<Json> LuaBindings::UniverseServerCallbacks::sendWorldMessage(UniverseServer* universe, String const& worldId, String const& message, LuaVariadic<Json> args) {
   return universe->sendWorldMessage(parseWorldId(worldId), message, JsonArray::from(std::move(args)));
+}
+
+void LuaBindings::UniverseServerCallbacks::sendPacket(UniverseServer* universe, ConnectionId clientId, String const& packetTypeName, Json const& args) {
+  auto packetType = PacketTypeNames.getLeft(packetTypeName);
+  auto packet = createPacket(packetType, args.toArray());
+  universe->sendPacket(clientId, packet);
 }
 
 }

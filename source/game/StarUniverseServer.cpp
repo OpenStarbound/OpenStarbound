@@ -473,6 +473,11 @@ bool UniverseServer::updatePlanetType(CelestialCoordinate const& coordinate, Str
   return false;
 }
 
+void UniverseServer::sendPacket(ConnectionId clientId, PacketPtr packet) {
+  RecursiveMutexLocker locker(m_mainLock);
+  m_connectionServer->sendPackets(clientId, {packet});
+}
+
 void UniverseServer::run() {
   Logger::info("UniverseServer: Starting UniverseServer with UUID: {}", m_universeSettings->uuid().hex());
 

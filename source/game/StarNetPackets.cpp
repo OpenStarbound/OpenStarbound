@@ -167,6 +167,22 @@ PacketPtr createPacket(PacketType type) {
   }
 }
 
+PacketPtr createPacket(PacketType type, JsonArray const& args) {
+  switch (type) {
+    case PacketType::Pause: return make_shared<PausePacket>(args[0].toBool());
+    case PacketType::ServerInfo: return make_shared<ServerInfoPacket>(args[0].toUInt(), args[1].toUInt());
+    case PacketType::GiveItem: return make_shared<GiveItemPacket>(ItemDescriptor(args[0]));
+    case PacketType::UpdateTileProtection: return make_shared<UpdateTileProtectionPacket>(args[0].toUInt(), args[1].toBool());
+    case PacketType::SetDungeonGravity: return make_shared<SetDungeonGravityPacket>(args[0].toUInt(), args[0].toFloat());
+    case PacketType::SetDungeonBreathable: return make_shared<SetDungeonBreathablePacket>(args[0].toUInt(), args[0].toBool());
+    case PacketType::SetPlayerStart: return make_shared<SetPlayerStartPacket>(Vec2F{args[0].toArray()[0].toFloat(), args[0].toArray()[0].toFloat()}, args[1].toBool());
+    case PacketType::EntityMessage: return make_shared<EntityMessagePacket>(EntityId(args[0].toUInt()), args[1].toString(), args[2].toArray(), Uuid(args[3].toString()));
+    case PacketType::UpdateWorldProperties: return make_shared<UpdateWorldPropertiesPacket>(args[0].toObject());
+    default:
+      throw StarPacketException(strf("Unrecognized packet type {}", (unsigned int)type));
+  }
+}
+
 ProtocolRequestPacket::ProtocolRequestPacket()
   : requestProtocolVersion(0) {}
 
