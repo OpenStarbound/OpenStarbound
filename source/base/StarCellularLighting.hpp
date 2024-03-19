@@ -11,6 +11,93 @@
 
 namespace Star {
 
+STAR_EXCEPTION(LightmapException, StarException);
+
+class Lightmap {
+public:
+  Lightmap();
+  Lightmap(unsigned width, unsigned height);
+  Lightmap(Lightmap const& lightMap);
+  Lightmap(Lightmap&& lightMap) noexcept;
+  
+  Lightmap& operator=(Lightmap const& lightMap);
+  Lightmap& operator=(Lightmap&& lightMap) noexcept;
+
+  operator ImageView();
+
+  void set(unsigned x, unsigned y, float v);
+  void set(unsigned x, unsigned y, Vec3F const& v);
+  Vec3F get(unsigned x, unsigned y) const;
+
+  bool empty() const;
+
+  Vec2U size() const;
+  unsigned width() const;
+  unsigned height() const;
+  float* data();
+
+private:
+  size_t len() const;
+
+  std::unique_ptr<float[]> m_data;
+  unsigned m_width;
+  unsigned m_height;
+};
+
+inline void Lightmap::set(unsigned x, unsigned y, float v) {
+  if (x >= m_width || y >= m_height) {
+    throw LightmapException(strf("[{}, {}] out of range in Lightmap::set", x, y));
+    return;
+  }
+  float* ptr = m_data.get() + (y * m_width * 3 + x * 3);
+  ptr[0] = ptr[1] = ptr[2] = v;
+}
+
+inline void Lightmap::set(unsigned x, unsigned y, Vec3F const& v) {
+  if (x >= m_width || y >= m_height) {
+    throw LightmapException(strf("[{}, {}] out of range in Lightmap::set", x, y));
+    return;
+  }
+  float* ptr = m_data.get() + (y * m_width * 3 + x * 3);
+  ptr[0] = v.x();
+  ptr[1] = v.y();
+  ptr[2] = v.z();
+}
+
+
+inline Vec3F Lightmap::get(unsigned x, unsigned y) const {
+  if (x >= m_width || y >= m_height) {
+    throw LightmapException(strf("[{}, {}] out of range in Lightmap::get", x, y));
+    return Vec3F();
+  }
+  float* ptr = m_data.get() + (y * m_width * 3 + x * 3);
+  return Vec3F(ptr[0], ptr[1], ptr[2]);
+}
+
+inline bool Lightmap::empty() const {
+  return m_width == 0 || m_height == 0;
+}
+
+inline Vec2U Lightmap::size() const {
+  return { m_width, m_height };
+}
+
+inline unsigned Lightmap::width() const {
+  return m_width;
+}
+
+inline unsigned Lightmap::height() const {
+  return m_height;
+}
+
+inline float* Lightmap::data() {
+  return m_data.get();
+}
+
+inline size_t Lightmap::len() const {
+  return m_width * m_height * 3;
+}
+
 // Produce lighting values from an integral cellular grid.  Allows for floating
 // positional point and cellular light sources, as well as pre-lighting cells
 // individually.
@@ -43,6 +130,8 @@ public:
   // output image.  The image will be reset to the size of the region given in
   // the call to 'begin', and formatted as RGB24.
   void calculate(Image& output);
+  // Same as above, but the color data in a float buffer instead.
+  void calculate(Lightmap& output);
 
   void setupImage(Image& image, PixelFormat format = PixelFormat::RGB24) const;
 private:

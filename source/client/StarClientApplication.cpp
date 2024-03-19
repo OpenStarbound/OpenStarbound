@@ -228,35 +228,8 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
 
 void ClientApplication::renderInit(RendererPtr renderer) {
   Application::renderInit(renderer);
-  auto assets = m_root->assets();
-
-  auto loadEffectConfig = [&](String const& name) {
-    String path = strf("/rendering/effects/{}.config", name);
-    if (assets->assetExists(path)) {
-      StringMap<String> shaders;
-      auto config = assets->json(path);
-      auto shaderConfig = config.getObject("effectShaders");
-      for (auto& entry : shaderConfig) {
-        if (entry.second.isType(Json::Type::String)) {
-          String shader = entry.second.toString();
-          if (!shader.hasChar('\n')) {
-            auto shaderBytes = assets->bytes(AssetPath::relativeTo(path, shader));
-            shader = std::string(shaderBytes->ptr(), shaderBytes->size());
-          }
-          shaders[entry.first] = shader;
-        }
-      }
-
-      renderer->loadEffectConfig(name, config, shaders);
-    }
-    else
-      Logger::warn("No rendering config found for renderer with id '{}'", renderer->rendererId());
-  };
-
-  renderer->loadConfig(assets->json("/rendering/opengl20.config"));
-
-  loadEffectConfig("world");
-  loadEffectConfig("interface");
+  renderReload();
+  m_root->registerReloadListener(m_reloadListener = make_shared<CallbackListener>([this]() { renderReload(); }));
 
   if (m_root->configuration()->get("limitTextureAtlasSize").optBool().value(false))
     renderer->setSizeLimitEnabled(true);
@@ -427,12 +400,7 @@ void ClientApplication::render() {
 
       auto paintStart = Time::monotonicMicroseconds();
       m_worldPainter->render(m_renderData, [&]() -> bool {
-        if (auto newMinPosition = worldClient->waitForLighting(&m_renderData.lightMap)) {
-          m_renderData.lightMinPosition = *newMinPosition;
-          return true;
-        } else {
-          return false;
-        }
+        return worldClient->waitForLighting(&m_renderData);
       });
       LogMap::set("client_render_world_painter", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - paintStart));
       LogMap::set("client_render_world_total", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - totalStart));
@@ -456,6 +424,38 @@ void ClientApplication::getAudioData(int16_t* sampleData, size_t frameCount) {
         m_voice->mix(buffer, frames, channels);
     });
   }
+}
+
+void ClientApplication::renderReload() {
+  auto assets = m_root->assets();
+  auto renderer = Application::renderer();
+
+  auto loadEffectConfig = [&](String const& name) {
+    String path = strf("/rendering/effects/{}.config", name);
+    if (assets->assetExists(path)) {
+      StringMap<String> shaders;
+      auto config = assets->json(path);
+      auto shaderConfig = config.getObject("effectShaders");
+      for (auto& entry : shaderConfig) {
+        if (entry.second.isType(Json::Type::String)) {
+          String shader = entry.second.toString();
+          if (!shader.hasChar('\n')) {
+            auto shaderBytes = assets->bytes(AssetPath::relativeTo(path, shader));
+            shader = std::string(shaderBytes->ptr(), shaderBytes->size());
+          }
+          shaders[entry.first] = shader;
+        }
+      }
+
+      renderer->loadEffectConfig(name, config, shaders);
+    } else
+      Logger::warn("No rendering config found for renderer with id '{}'", renderer->rendererId());
+  };
+
+  renderer->loadConfig(assets->json("/rendering/opengl20.config"));
+
+  loadEffectConfig("world");
+  loadEffectConfig("interface");
 }
 
 void ClientApplication::changeState(MainAppState newState) {

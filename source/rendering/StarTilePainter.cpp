@@ -44,14 +44,14 @@ void TilePainter::adjustLighting(WorldRenderData& renderData) const {
         return;
 
       auto lightIndex = Vec2U(pos - renderData.lightMinPosition);
-      auto lightValue = renderData.lightMap.get(lightIndex).vec3();
+      auto lightValue = renderData.lightMap.get(lightIndex.x(), lightIndex.y());
 
       auto const& liquid = m_liquids[tile.liquidId];
       Vec3F tileLight = Vec3F(lightValue);
-      float darknessLevel = (1 - tileLight.sum() / (3.0f * 255.0f)) * drawLevel;
-      lightValue = Vec3B(tileLight.piecewiseMultiply(Vec3F::filled(1 - darknessLevel) + liquid.bottomLightMix * darknessLevel));
+      float darknessLevel = (1.f - tileLight.sum() / 3.0f) * drawLevel;
+      lightValue = tileLight.piecewiseMultiply(Vec3F::filled(1.f - darknessLevel) + liquid.bottomLightMix * darknessLevel);
 
-      renderData.lightMap.set(lightIndex, lightValue);
+      renderData.lightMap.set(lightIndex.x(), lightIndex.y(), lightValue);
     });
 }
 

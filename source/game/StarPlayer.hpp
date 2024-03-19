@@ -354,8 +354,8 @@ public:
   bool isDead() const;
   void kill();
 
-  void setFavoriteColor(Vec4B color);
-  Vec4B favoriteColor() const override;
+  void setFavoriteColor(Color color);
+  Color favoriteColor() const override;
 
   // Starts the teleport animation sequence, locking player movement and
   // preventing some update code

@@ -7,7 +7,7 @@ namespace Star {
 
 struct LightSource {
   Vec2F position;
-  Vec3B color;
+  Vec3F color;
 
   bool pointLight;
   // pointBeam of 0.0 means light has no beam component, as pointBeam goes up,

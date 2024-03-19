@@ -24,7 +24,7 @@ public:
   void update(float dt, RectF const& cullRegion, float wind);
 
   List<Particle> const& particles() const;
-  List<pair<Vec2F, Vec3B>> lightSources() const;
+  List<pair<Vec2F, Vec3F>> lightSources() const;
 
 private:
   enum class TileType { Colliding, Water, Empty };

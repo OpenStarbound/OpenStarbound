@@ -446,9 +446,9 @@ namespace WorldImpl {
       for (auto const& light : entity->lightSources()) {
         Vec2F position = worldGeometry.nearestTo(Vec2F(lighting.calculationRegion().min()), light.position);
         if (light.pointLight)
-          lighting.addPointLight(position, Color::v3bToFloat(light.color).sum() / 3.0f, light.pointBeam, light.beamAngle, light.beamAmbience);
+          lighting.addPointLight(position, light.color.sum() / 3.0f, light.pointBeam, light.beamAngle, light.beamAmbience);
         else
-          lighting.addSpreadLight(position, Color::v3bToFloat(light.color).sum() / 3.0f);
+          lighting.addSpreadLight(position, light.color.sum() / 3.0f);
       }
     }
 

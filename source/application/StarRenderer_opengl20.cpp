@@ -118,7 +118,7 @@ Vec2U OpenGl20Renderer::screenSize() const {
 }
 
 OpenGl20Renderer::GlFrameBuffer::GlFrameBuffer(Json const& fbConfig) : config(fbConfig) {
-  texture = createGlTexture(Image(), TextureAddressing::Clamp, TextureFiltering::Nearest);
+  texture = createGlTexture(ImageView(), TextureAddressing::Clamp, TextureFiltering::Nearest);
   glBindTexture(GL_TEXTURE_2D, texture->glTextureId());
 
   Vec2U size = jsonToVec2U(config.getArray("size", { 256, 256 }));
@@ -147,13 +147,15 @@ void OpenGl20Renderer::loadConfig(Json const& config) {
 
   for (auto& pair : config.getObject("frameBuffers", {}))
     m_frameBuffers[pair.first] = make_ref<GlFrameBuffer>(pair.second);
+
+  setScreenSize(m_screenSize);
 }
 
 void OpenGl20Renderer::loadEffectConfig(String const& name, Json const& effectConfig, StringMap<String> const& shaders) {
-  if (m_effects.contains(name)) {
-    Logger::warn("OpenGL effect {} already exists", name);
-    switchEffectConfig(name);
-    return;
+  if (auto effect = m_effects.ptr(name)) {
+    Logger::info("Reloading OpenGL effect {}", name);
+    glDeleteProgram(effect->program);
+    m_effects.erase(name);
   }
 
   GLint status = 0;
@@ -177,8 +179,18 @@ void OpenGl20Renderer::loadEffectConfig(String const& name, Json const& effectCo
     return shader;
   };
 
-  GLuint vertexShader = compileShader(GL_VERTEX_SHADER, "vertex");
-  GLuint fragmentShader = compileShader(GL_FRAGMENT_SHADER, "fragment");
+  GLuint vertexShader = 0, fragmentShader = 0;
+  try {
+    vertexShader = compileShader(GL_VERTEX_SHADER, "vertex");
+    fragmentShader = compileShader(GL_FRAGMENT_SHADER, "fragment");
+  }
+  catch (RendererException const& e) {
+    Logger::error("Shader compile error, using default: {}", e.what());
+    if (vertexShader) glDeleteShader(vertexShader);
+    if (fragmentShader) glDeleteShader(fragmentShader);
+    vertexShader = compileShader(GL_VERTEX_SHADER, DefaultVertexShader);
+    fragmentShader = compileShader(GL_FRAGMENT_SHADER, DefaultFragmentShader);
+  }
 
   GLuint program = glCreateProgram();
 
@@ -308,7 +320,7 @@ void OpenGl20Renderer::setEffectParameter(String const& parameterName, RenderEff
   ptr->parameterValue = value;
 }
 
-void OpenGl20Renderer::setEffectTexture(String const& textureName, Image const& image) {
+void OpenGl20Renderer::setEffectTexture(String const& textureName, ImageView const& image) {
   auto ptr = m_currentEffect->textures.ptr(textureName);
   if (!ptr)
     return;
@@ -319,8 +331,8 @@ void OpenGl20Renderer::setEffectTexture(String const& textureName, Image const& 
     ptr->textureValue = createGlTexture(image, ptr->textureAddressing, ptr->textureFiltering);
   } else {
     glBindTexture(GL_TEXTURE_2D, ptr->textureValue->textureId);
-    ptr->textureValue->textureSize = image.size();
-    uploadTextureImage(image.pixelFormat(), image.size(), image.data());
+    ptr->textureValue->textureSize = image.size;
+    uploadTextureImage(image.format, image.size, image.data);
   }
 
   if (ptr->textureSizeUniform != -1) {
@@ -789,7 +801,9 @@ bool OpenGl20Renderer::logGlErrorSummary(String prefix) {
 void OpenGl20Renderer::uploadTextureImage(PixelFormat pixelFormat, Vec2U size, uint8_t const* data) {
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
+  Maybe<GLenum> internalFormat;
   GLenum format;
+  GLenum type = GL_UNSIGNED_BYTE;
   if (pixelFormat == PixelFormat::RGB24)
     format = GL_RGB;
   else if (pixelFormat == PixelFormat::RGBA32)
@@ -798,10 +812,19 @@ void OpenGl20Renderer::uploadTextureImage(PixelFormat pixelFormat, Vec2U size, u
     format = GL_BGR;
   else if (pixelFormat == PixelFormat::BGRA32)
     format = GL_BGRA;
-  else
-    throw RendererException("Unsupported texture format in OpenGL20Renderer::uploadTextureImage");
+  else {
+    type = GL_FLOAT;
+    if (pixelFormat == PixelFormat::RGB_F) {
+      internalFormat = GL_RGB32F;
+      format = GL_RGB;
+    } else if (pixelFormat == PixelFormat::RGBA_F) {
+      internalFormat = GL_RGBA32F;
+      format = GL_RGBA;
+    } else
+      throw RendererException("Unsupported texture format in OpenGL20Renderer::uploadTextureImage");
+  }
 
-  glTexImage2D(GL_TEXTURE_2D, 0, format, size[0], size[1], 0, format, GL_UNSIGNED_BYTE, data);
+  glTexImage2D(GL_TEXTURE_2D, 0, internalFormat.value(format), size[0], size[1], 0, format, type, data);
 }
 
 void OpenGl20Renderer::flushImmediatePrimitives() {
@@ -813,12 +836,12 @@ void OpenGl20Renderer::flushImmediatePrimitives() {
   renderGlBuffer(*m_immediateRenderBuffer, Mat3F::identity());
 }
 
-auto OpenGl20Renderer::createGlTexture(Image const& image, TextureAddressing addressing, TextureFiltering filtering)
-    -> RefPtr<GlLoneTexture> {
+auto OpenGl20Renderer::createGlTexture(ImageView const& image, TextureAddressing addressing, TextureFiltering filtering)
+    ->RefPtr<GlLoneTexture> {
   auto glLoneTexture = make_ref<GlLoneTexture>();
   glLoneTexture->textureFiltering = filtering;
   glLoneTexture->textureAddressing = addressing;
-  glLoneTexture->textureSize = image.size();
+  glLoneTexture->textureSize = image.size;
 
   glGenTextures(1, &glLoneTexture->textureId);
   if (glLoneTexture->textureId == 0)
@@ -844,7 +867,7 @@ auto OpenGl20Renderer::createGlTexture(Image const& image, TextureAddressing add
 
 
   if (!image.empty())
-    uploadTextureImage(image.pixelFormat(), image.size(), image.data());
+    uploadTextureImage(image.format, image.size, image.data);
 
   return glLoneTexture;
 }

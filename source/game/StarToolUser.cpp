@@ -165,7 +165,7 @@ Maybe<float> ToolUser::toolRadius() const {
   return {};
 }
 
-List<Drawable> ToolUser::renderObjectPreviews(Vec2F aimPosition, Direction walkingDirection, bool inToolRange, Vec4B favoriteColor) const {
+List<Drawable> ToolUser::renderObjectPreviews(Vec2F aimPosition, Direction walkingDirection, bool inToolRange, Color favoriteColor) const {
   if (m_suppress.get() || !m_user)
     return {};
 
@@ -178,21 +178,16 @@ List<Drawable> ToolUser::renderObjectPreviews(Vec2F aimPosition, Direction walki
 
     Color opacityMask = Color::White;
     opacityMask.setAlphaF(item->getAppropriateOpacity());
-    Vec4B favoriteColorTrans;
-    if (inToolRange && objectDatabase->canPlaceObject(m_user->world(), aimPos, item->objectName())) {
-      favoriteColorTrans = favoriteColor;
-    } else {
-      Color color = Color::rgba(favoriteColor);
-      color.setHue(color.hue() + 120);
-      favoriteColorTrans = color.toRgba();
-    }
+    Color favoriteColorTrans = favoriteColor;
+    if (!inToolRange || !objectDatabase->canPlaceObject(m_user->world(), aimPos, item->objectName()))
+      favoriteColorTrans.setHue(favoriteColor.hue() + 120);
 
-    favoriteColorTrans[3] = m_objectPreviewOuterAlpha * 255;
-    Color nearWhite = Color::rgba(favoriteColorTrans);
+    favoriteColorTrans.setAlphaF(m_objectPreviewOuterAlpha);
+    Color nearWhite = favoriteColorTrans;
     nearWhite.setValue(1 - (1 - nearWhite.value()) / 5);
     nearWhite.setSaturation(nearWhite.saturation() / 5);
     nearWhite.setAlphaF(m_objectPreviewInnerAlpha);
-    ImageOperation op = BorderImageOperation{m_beamGunGlowBorder, nearWhite.toRgba(), favoriteColorTrans, false, false};
+    ImageOperation op = BorderImageOperation{m_beamGunGlowBorder, nearWhite.toRgba(), favoriteColorTrans.toRgba(), false, false};
 
     for (Drawable& drawable : drawables) {
       if (drawable.isImage())

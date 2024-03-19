@@ -32,6 +32,13 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../cmake)
 set(CMAKE_CONFIGURATION_TYPES Debug RelWithAsserts RelWithDebInfo Release)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "")
 set(CMAKE_EXE_LINKER_FLAGS_RELWITHASSERTS "" CACHE STRING "" FORCE)
+
+#include(CheckIPOSupported)
+#check_ipo_supported(RESULT lto_supported OUTPUT lto_output)
+#if(lto_supported)
+#  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+#endif()
+
 # Update the docstring on CMAKE_BUILD_TYPE to show what options we actually
 # allow
 # SET (CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE STRING "Choose the type of build, options are: Debug RelWithAsserts RelWithDebInfo Release" FORCE)

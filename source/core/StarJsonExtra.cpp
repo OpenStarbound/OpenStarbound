@@ -214,13 +214,12 @@ Color jsonToColor(Json const& v) {
     if (v.type() != Json::Type::Array || (v.size() != 3 && v.size() != 4))
       throw JsonException("Json not an array of size 3 or 4 in jsonToColor");
     Color c = Color::rgba(0, 0, 0, 255);
-
-    c.setRed(v.getInt(0));
-    c.setGreen(v.getInt(1));
-    c.setBlue(v.getInt(2));
+    c.setRedF((float)v.getInt(0) / 255.f);
+    c.setGreenF((float)v.getInt(1) / 255.f);
+    c.setBlueF((float)v.getInt(2) / 255.f);
 
     if (v.size() == 4)
-      c.setAlpha(v.getInt(3));
+      c.setAlphaF((float)v.getInt(3) / 255.f);
 
     return c;
   } else if (v.type() == Json::Type::String) {
@@ -232,11 +231,11 @@ Color jsonToColor(Json const& v) {
 
 Json jsonFromColor(Color const& color) {
   JsonArray result;
-  result.push_back(color.red());
-  result.push_back(color.green());
-  result.push_back(color.blue());
-  if (color.alpha() != 255) {
-    result.push_back(color.alpha());
+  result.push_back(color.redF() * 255.f);
+  result.push_back(color.greenF() * 255.f);
+  result.push_back(color.blueF() * 255.f);
+  if (color.alphaF() < 255.f) {
+    result.push_back(color.alphaF() * 255.f);
   }
   return result;
 }

@@ -9,6 +9,7 @@
 #include "StarWeatherTypes.hpp"
 #include "StarEntity.hpp"
 #include "StarThread.hpp"
+#include "StarCellularLighting.hpp"
 
 namespace Star {
 
@@ -16,6 +17,7 @@ struct EntityDrawables {
   EntityHighlightEffect highlightEffect;
   Map<EntityRenderLayer, List<Drawable>> layers;
 };
+
 
 struct WorldRenderData {
   void clear();
@@ -25,7 +27,7 @@ struct WorldRenderData {
   Vec2I tileMinPosition;
   RenderTileArray tiles;
   Vec2I lightMinPosition;
-  Image lightMap;
+  Lightmap lightMap;
 
   List<EntityDrawables> entityDrawables;
   List<Particle> const* particles;

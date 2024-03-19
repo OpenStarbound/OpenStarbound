@@ -26,7 +26,7 @@ public:
   virtual Vec2F aimPosition() const = 0;
 
   virtual bool isAdmin() const = 0;
-  virtual Vec4B favoriteColor() const = 0;
+  virtual Color favoriteColor() const = 0;
   virtual String species() const = 0;
 
   virtual void requestEmote(String const& emote) = 0;

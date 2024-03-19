@@ -321,7 +321,7 @@ void ItemDrop::render(RenderCallback* renderCallback) {
 void ItemDrop::renderLightSources(RenderCallback* renderCallback) {
   LightSource light;
   light.pointLight = false;
-  light.color = Vec3B::filled(20);
+  light.color = Vec3F::filled(20.f / 255.f);
   light.position = position();
   renderCallback->addLightSource(std::move(light));
 }

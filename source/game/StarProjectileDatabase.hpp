@@ -66,7 +66,7 @@ struct ProjectileConfig {
   bool fullbright = false;
   EntityRenderLayer renderLayer;
 
-  Vec3B lightColor;
+  Color lightColor;
   Vec2F lightPosition;
   bool pointLight = false;
 

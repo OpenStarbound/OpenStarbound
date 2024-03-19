@@ -38,7 +38,7 @@ BeamItem::BeamItem(Json config) {
   m_innerBrightnessScale = config.get("innerBrightnessScale").toFloat();
   m_firstStripeThickness = config.get("firstStripeThickness").toFloat();
   m_secondStripeThickness = config.get("secondStripeThickness").toFloat();
-  m_color = {255, 255, 255, 255};
+  m_color = Color::White;
   m_particleGenerateCooldown = .25;
   m_inRangeLastUpdate = false;
 }
@@ -160,12 +160,9 @@ List<Drawable> BeamItem::beamDrawables(bool canPlace) const {
     if ((endPoint - owner()->position()).magnitude() <= m_range && curveLen <= m_range) {
       m_inRangeLastUpdate = true;
       int numLines = projectOntoRange(m_minBeamLines, m_maxBeamLines);
-      Vec4B mainColor = m_color;
-      if (!canPlace) {
-        Color temp = Color::rgba(m_color);
-        temp.setHue(temp.hue() + 120);
-        mainColor = temp.toRgba();
-      }
+      Color mainColor = m_color;
+      if (!canPlace)
+        mainColor.setHue(mainColor.hue() + 120);
       m_lastUpdateColor = mainColor;
 
       String endImage = "";
@@ -189,9 +186,9 @@ List<Drawable> BeamItem::beamDrawables(bool canPlace) const {
       for (auto line = 0; line < numLines; line++) {
         float lineThickness = rangeRand(m_beamWidthDev, m_minBeamWidth, m_maxBeamWidth);
         float beamTransparency = rangeRand(m_beamTransDev, m_minBeamTrans, m_maxBeamTrans);
-        mainColor[3] = mainColor[3] * beamTransparency;
+        mainColor.setAlphaF(mainColor.alphaF() * beamTransparency);
         Vec2F previousLoc = m_beamCurve.origin(); // lines meet at origin and dest.
-        Color innerStripe = Color::rgba(mainColor);
+        Color innerStripe = mainColor;
         innerStripe.setValue(1 - (1 - innerStripe.value()) / m_innerBrightnessScale);
         innerStripe.setSaturation(innerStripe.saturation() / m_innerBrightnessScale);
         Vec4B firstStripe = innerStripe.toRgba();
@@ -206,7 +203,7 @@ List<Drawable> BeamItem::beamDrawables(bool canPlace) const {
               m_beamCurve.pointAt(pos) + Vec2F(rangeRand(m_beamJitterDev, -m_maxBeamJitter, m_maxBeamJitter),
                                              rangeRand(m_beamJitterDev, -m_maxBeamJitter, m_maxBeamJitter));
           res.push_back(
-              Drawable::makeLine(Line2F(previousLoc, currentLoc), lineThickness, Color::rgba(mainColor), Vec2F()));
+              Drawable::makeLine(Line2F(previousLoc, currentLoc), lineThickness, mainColor, Vec2F()));
           res.push_back(Drawable::makeLine(Line2F(previousLoc, currentLoc),
               lineThickness * m_firstStripeThickness,
               Color::rgba(firstStripe),
@@ -218,7 +215,7 @@ List<Drawable> BeamItem::beamDrawables(bool canPlace) const {
           previousLoc = std::move(currentLoc);
         }
         res.push_back(Drawable::makeLine(
-            Line2F(previousLoc, m_beamCurve.dest()), lineThickness, Color::rgba(mainColor), Vec2F()));
+            Line2F(previousLoc, m_beamCurve.dest()), lineThickness, mainColor, Vec2F()));
         res.push_back(Drawable::makeLine(Line2F(previousLoc, m_beamCurve.dest()),
             lineThickness * m_firstStripeThickness,
             Color::rgba(firstStripe),
@@ -243,7 +240,7 @@ List<Drawable> BeamItem::beamDrawables(bool canPlace) const {
           beamParticle.position = m_beamCurve.pointAt(curveLoc);
           beamParticle.size = 1.0f;
 
-          Color randomColor = Color::rgba(m_lastUpdateColor);
+          Color randomColor = m_lastUpdateColor;
           randomColor.setValue(1 - (1 - randomColor.value()) / Random::randf(1, 4));
           randomColor.setSaturation(randomColor.saturation() / Random::randf(1, 4));
 

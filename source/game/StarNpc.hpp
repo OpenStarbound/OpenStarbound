@@ -143,7 +143,7 @@ public:
   Direction facingDirection() const override;
   Direction walkingDirection() const override;
   bool isAdmin() const override;
-  Vec4B favoriteColor() const override;
+  Color favoriteColor() const override;
   float beamGunRadius() const override;
   void addParticles(List<Particle> const& particles) override;
   void addSound(String const& sound, float volume = 1.0f, float pitch = 1.0f) override;

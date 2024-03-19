@@ -103,11 +103,11 @@ List<Particle> const& ParticleManager::particles() const {
   return m_particles;
 }
 
-List<pair<Vec2F, Vec3B>> ParticleManager::lightSources() const {
-  List<pair<Vec2F, Vec3B>> lsources;
+List<pair<Vec2F, Vec3F>> ParticleManager::lightSources() const {
+  List<pair<Vec2F, Vec3F>> lsources;
   for (auto const& particle : m_particles) {
     if (particle.light != Color::Clear)
-      lsources.append({particle.position, particle.light.toRgb()});
+      lsources.append({particle.position, particle.light.toRgbF()});
   }
   return lsources;
 }

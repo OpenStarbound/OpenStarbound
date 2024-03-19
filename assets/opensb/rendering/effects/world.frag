@@ -53,6 +53,12 @@ vec4 bicubicSample(sampler2D texture, vec2 texcoord, vec2 texscale) {
     mix(sample1, sample0, sx), sy);
 }
 
+vec3 sampleLight(vec2 coord, vec2 scale) {
+  //soften super bright lights a little
+  vec3 rgb = bicubicSample(lightMap, coord, scale).rgb;
+  return mix(rgb, (rgb / (vec3(1.) + rgb)) * 1.666666, 0.666666);
+}
+
 void main() {
   vec4 texColor;
   if (fragmentTextureIndex > 2.9) {
@@ -72,6 +78,6 @@ void main() {
   if (texColor.a == 0.99607843137)
     finalColor.a = fragmentColor.a;
   else if (lightMapEnabled && finalLightMapMultiplier > 0.0)
-    finalColor.rgb *= bicubicSample(lightMap, fragmentLightMapCoordinate, 1.0 / lightMapSize).rgb * finalLightMapMultiplier;
+    finalColor.rgb *= sampleLight(fragmentLightMapCoordinate, 1.0 / lightMapSize) * finalLightMapMultiplier;
   gl_FragColor = finalColor;
 }

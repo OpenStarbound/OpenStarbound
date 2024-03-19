@@ -379,7 +379,7 @@ void Projectile::renderLightSources(RenderCallback* renderCallback) {
     if (renderable.is<LightSource>())
       renderCallback->addLightSource(renderable.get<LightSource>());
   }
-  renderCallback->addLightSource({ position(), m_config->lightColor, m_config->pointLight, 0.0f, 0.0f, 0.0f });
+  renderCallback->addLightSource({position(), m_config->lightColor.toRgbF(), m_config->pointLight, 0.0f, 0.0f, 0.0f});
 }
 
 Maybe<Json> Projectile::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
@@ -824,7 +824,7 @@ void Projectile::processAction(Json const& action) {
 
     m_pendingRenderables.append(LightSource{
         position(),
-        jsonToColor(parameters.get("color")).toRgb(),
+        jsonToColor(parameters.get("color")).toRgbF(),
         parameters.getBool("pointLight", true),
         0.0f,
         0.0f,

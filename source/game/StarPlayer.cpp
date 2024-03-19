@@ -1912,13 +1912,13 @@ bool Player::isAdmin() const {
   return m_isAdmin;
 }
 
-void Player::setFavoriteColor(Vec4B color) {
-  m_identity.color = color;
+void Player::setFavoriteColor(Color color) {
+  m_identity.color = color.toRgba();
   updateIdentity();
 }
 
-Vec4B Player::favoriteColor() const {
-  return m_identity.color;
+Color Player::favoriteColor() const {
+  return Color::rgba(m_identity.color);
 }
 
 bool Player::isTeleporting() const {
