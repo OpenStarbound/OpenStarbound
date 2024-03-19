@@ -28,6 +28,8 @@ private:
   String warp(ConnectionId connectionId, String const& argumentString);
   String warpRandom(ConnectionId connectionId, String const& argumentString);
   String timewarp(ConnectionId connectionId, String const& argumentString);
+  String timescale(ConnectionId connectionId, String const& argumentString);
+  String tickrate(ConnectionId connectionId, String const& argumentString);
   String setTileProtection(ConnectionId connectionId, String const& argumentString);
   String setDungeonId(ConnectionId connectionId, String const& argumentString);
   String setPlayerStart(ConnectionId connectionId, String const& argumentString);

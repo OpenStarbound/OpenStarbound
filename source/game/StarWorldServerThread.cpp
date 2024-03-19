@@ -207,7 +207,7 @@ void WorldServerThread::run() {
     double storageInterval = root.assets()->json("/universe_server.config:worldStorageInterval").toDouble() / 1000.0;
     Timer storageTimer = Timer::withTime(storageInterval);
 
-    TickRateApproacher tickApproacher(1.0 / ServerGlobalTimestep, updateMeasureWindow);
+    TickRateApproacher tickApproacher(1.0f / ServerGlobalTimestep, updateMeasureWindow);
     double fidelityScore = 0.0;
     WorldServerFidelity automaticFidelity = WorldServerFidelity::Medium;
 
@@ -217,6 +217,7 @@ void WorldServerThread::run() {
       LogMap::set(strf("server_{}_update", m_worldId), strf("{:4.2f}Hz", tickApproacher.rate()));
 
       update(fidelity);
+      tickApproacher.setTargetTickRate(1.0f / ServerGlobalTimestep);
       tickApproacher.tick();
 
       if (storageTimer.timeUp()) {

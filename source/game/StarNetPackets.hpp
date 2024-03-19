@@ -226,6 +226,7 @@ struct UniverseTimeUpdatePacket : PacketBase<PacketType::UniverseTimeUpdate> {
   void write(DataStream& ds) const override;
 
   double universeTime;
+  float timescale;
 };
 
 struct CelestialResponsePacket : PacketBase<PacketType::CelestialResponse> {
@@ -262,12 +263,15 @@ struct PlanetTypeUpdatePacket : PacketBase<PacketType::PlanetTypeUpdate> {
 
 struct PausePacket : PacketBase<PacketType::Pause> {
   PausePacket();
-  PausePacket(bool pause);
+  PausePacket(bool pause, float timescale = 1.0f);
 
+  void readLegacy(DataStream& ds) override;
   void read(DataStream& ds) override;
+  void writeLegacy(DataStream& ds) const override;
   void write(DataStream& ds) const override;
 
   bool pause;
+  float timescale;
 };
 
 struct ServerInfoPacket : PacketBase<PacketType::ServerInfo> {

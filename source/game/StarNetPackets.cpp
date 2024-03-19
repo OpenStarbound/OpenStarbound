@@ -304,14 +304,25 @@ void PlanetTypeUpdatePacket::write(DataStream& ds) const {
 
 PausePacket::PausePacket() {}
 
-PausePacket::PausePacket(bool pause) : pause(std::move(pause)) {}
+PausePacket::PausePacket(bool pause, float timescale) : pause(pause), timescale(timescale) {}
+
+void PausePacket::readLegacy(DataStream& ds) {
+  ds.read(pause);
+  timescale = 1.0f;
+}
 
 void PausePacket::read(DataStream& ds) {
-  ds.read(pause);
+  readLegacy(ds);
+  ds.read(timescale);
+}
+
+void PausePacket::writeLegacy(DataStream& ds) const {
+  ds.write(pause);
 }
 
 void PausePacket::write(DataStream& ds) const {
-  ds.write(pause);
+  writeLegacy(ds);
+  ds.write(timescale);
 }
 
 ServerInfoPacket::ServerInfoPacket() {}

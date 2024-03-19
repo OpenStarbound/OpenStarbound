@@ -1,7 +1,7 @@
 {
   "directives" : "",
   "pickupDistance" : 0.5,
-  "afterTakenLife" : 2.5,
+  "afterTakenLife" : 0.75,
   "overheadTime" : 0.5,
   "overheadApproach" : 2000,
   "overheadRandomizedDistance" : 0.25

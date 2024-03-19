@@ -143,8 +143,19 @@ void UniverseServer::setPause(bool pause) {
   else
     m_universeClock->start();
 
-  for (auto p : m_clients)
-    m_connectionServer->sendPackets(p.first, {make_shared<PausePacket>(*m_pause)});
+  for (auto& p : m_clients)
+    m_connectionServer->sendPackets(p.first, {make_shared<PausePacket>(*m_pause, GlobalTimescale)});
+}
+
+void UniverseServer::setTimescale(float timescale) {
+  ReadLocker clientsLocker(m_clientsLock);
+  GlobalTimescale = timescale;
+  for (auto& p : m_clients)
+    m_connectionServer->sendPackets(p.first, {make_shared<PausePacket>(*m_pause, GlobalTimescale)});
+}
+
+void UniverseServer::setTickRate(float tickRate) {
+  ServerGlobalTimestep = 1.0f / tickRate;
 }
 
 List<WorldId> UniverseServer::activeWorlds() const {
@@ -1677,7 +1688,8 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
 
   m_connectionServer->sendPackets(clientId, {
       make_shared<ConnectSuccessPacket>(clientId, m_universeSettings->uuid(), m_celestialDatabase->baseInformation()),
-      make_shared<UniverseTimeUpdatePacket>(m_universeClock->time())
+      make_shared<UniverseTimeUpdatePacket>(m_universeClock->time()),
+      make_shared<PausePacket>(*m_pause, GlobalTimescale)
     });
 
   setPvp(clientId, false);
@@ -1701,8 +1713,8 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
     bool useReviveWarp = true;
     if (reviveWarp.world.is<InstanceWorldId>()) {
       String instance = reviveWarp.world.get<InstanceWorldId>().instance;
-      Json worldConfig = Root::singleton().assets()->json("/instance_worlds.config").get(instance);
-      if (!worldConfig.getBool("persistent", false))
+      auto worldConfig = Root::singleton().assets()->json("/instance_worlds.config").opt(instance);
+      if (!worldConfig || !worldConfig->getBool("persistent", false))
         useReviveWarp = false;
     }
 

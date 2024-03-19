@@ -48,6 +48,8 @@ public:
   void stop();
 
   void setPause(bool pause);
+  void setTimescale(float timescale);
+  void setTickRate(float tickRate);
 
   List<WorldId> activeWorlds() const;
   bool isWorldActive(WorldId const& worldId) const;

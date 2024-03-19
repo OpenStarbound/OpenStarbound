@@ -147,7 +147,7 @@ void Clock::setMilliseconds(int64_t millis) {
 
 void Clock::adjustTime(double timeAdjustment) {
   RecursiveMutexLocker locker(m_mutex);
-  setTime(time() + timeAdjustment);
+  setTime(max<double>(0.0, time() + timeAdjustment));
 }
 
 void Clock::adjustMilliseconds(int64_t millisAdjustment) {

@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
       if (auto jUpdateRate = configuration->get("updateRate")) {
         updateRate = jUpdateRate.toFloat();
         ServerGlobalTimestep = GlobalTimestep = 1.0f / updateRate;
-        Logger::info("Configured tickrate is {:4.2f}hz", updateRate);
+        Logger::info("Configured tick rate is {:4.2f}hz", updateRate);
       }
 
       UniverseServerUPtr server = make_unique<UniverseServer>(root->toStoragePath("universe"));

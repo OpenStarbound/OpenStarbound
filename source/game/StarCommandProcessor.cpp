@@ -193,20 +193,54 @@ String CommandProcessor::warpRandom(ConnectionId connectionId, String const& typ
 	return strf("warping to {}", *target);
 }
 
-String CommandProcessor::timewarp(ConnectionId connectionId, String const& argumentString) {
+String CommandProcessor::timewarp(ConnectionId connectionId, String const& argumentsString) {
   if (auto errorMsg = adminCheck(connectionId, "do the time warp again"))
     return *errorMsg;
 
+  auto arguments = m_parser.tokenizeToStringList(argumentsString);
+  if (arguments.empty())
+    return "Not enough arguments to /timewarp";
+
   try {
-    auto time = lexicalCast<double>(argumentString);
-    if (time < 0)
+    auto time = lexicalCast<double>(arguments.at(0));
+    if (time == 0.0)
+      return "You suck at time travel.";
+    else if (time < 0.0 && (arguments.size() < 2 || arguments[1] != "please"))
       return "Great Scott! We can't go back in time!";
 
     m_universe->universeClock()->adjustTime(time);
-    return "It's just a jump to the left...";
+    return strf("It's just a jump to the {}...", time > 0.0 ? "left" : "right");
   } catch (BadLexicalCast const&) {
-    return strf("Could not parse the argument {} as a time adjustment", argumentString);
+    return strf("Could not parse the argument {} as a time adjustment", arguments[0]);
   }
+}
+
+String CommandProcessor::timescale(ConnectionId connectionId, String const& argumentsString) {
+  if (auto errorMsg = adminCheck(connectionId, "mess with time"))
+    return *errorMsg;
+
+  auto arguments = m_parser.tokenizeToStringList(argumentsString);
+
+  if (arguments.empty())
+    return "Not enough arguments to /timescale";
+
+  float timescale = clamp(lexicalCast<float>(arguments[0]), 0.001f, 32.0f);
+  m_universe->setTimescale(timescale);
+  return strf("Set timescale to {:6.6f}x", timescale);
+}
+
+String CommandProcessor::tickrate(ConnectionId connectionId, String const& argumentsString) {
+  if (auto errorMsg = adminCheck(connectionId, "change the tick rate"))
+    return *errorMsg;
+
+  auto arguments = m_parser.tokenizeToStringList(argumentsString);
+
+  if (arguments.empty())
+    return "Not enough arguments to /tickrate";
+
+  unsigned tickRate = clamp<unsigned>(lexicalCast<unsigned>(arguments[0]), 5, 500);
+  m_universe->setTickRate(tickRate);
+  return strf("Set tick rate to {}Hz", tickRate);
 }
 
 String CommandProcessor::setTileProtection(ConnectionId connectionId, String const& argumentString) {
@@ -272,7 +306,7 @@ String CommandProcessor::spawnItem(ConnectionId connectionId, String const& argu
 
   auto arguments = m_parser.tokenizeToStringList(argumentString);
 
-  if (arguments.size() == 0)
+  if (arguments.empty())
     return "Not enough arguments to /spawnitem";
 
   try {
@@ -321,7 +355,7 @@ String CommandProcessor::spawnTreasure(ConnectionId connectionId, String const& 
 
   auto arguments = m_parser.tokenizeToStringList(argumentString);
 
-  if (arguments.size() == 0)
+  if (arguments.empty())
     return "Not enough arguments to /spawntreasure";
 
   try {
@@ -532,7 +566,7 @@ String CommandProcessor::kick(ConnectionId connectionId, String const& argumentS
 
   auto arguments = m_parser.tokenizeToStringList(argumentString);
 
-  if (arguments.size() == 0)
+  if (arguments.empty())
     return "No player specified";
 
   auto toKick = playerCidFromCommand(arguments[0], m_universe);
@@ -557,7 +591,7 @@ String CommandProcessor::ban(ConnectionId connectionId, String const& argumentSt
 
   auto arguments = m_parser.tokenizeToStringList(argumentString);
 
-  if (arguments.size() == 0)
+  if (arguments.empty())
     return "No player specified";
 
   auto toKick = playerCidFromCommand(arguments[0], m_universe);
@@ -605,7 +639,7 @@ String CommandProcessor::unbanIp(ConnectionId connectionId, String const& argume
 
   auto arguments = m_parser.tokenizeToStringList(argumentString);
 
-  if (arguments.size() == 0)
+  if (arguments.empty())
     return "No IP specified";
 
   bool success = m_universe->unbanIp(arguments[0]);
@@ -622,7 +656,7 @@ String CommandProcessor::unbanUuid(ConnectionId connectionId, String const& argu
 
   auto arguments = m_parser.tokenizeToStringList(argumentString);
 
-  if (arguments.size() == 0)
+  if (arguments.empty())
     return "No UUID specified";
 
   bool success = m_universe->unbanUuid(arguments[0]);
@@ -868,121 +902,88 @@ Maybe<ConnectionId> CommandProcessor::playerCidFromCommand(String const& player,
   return universe->findNick(player);
 }
 
+//wow, wtf. TODO: replace with hashmap
 String CommandProcessor::handleCommand(ConnectionId connectionId, String const& command, String const& argumentString) {
   if (command == "admin") {
     return admin(connectionId, argumentString);
-
   } else if (command == "timewarp") {
     return timewarp(connectionId, argumentString);
-
+  } else if (command == "timescale") {
+    return timescale(connectionId, argumentString);
+  } else if (command == "tickrate") {
+    return tickrate(connectionId, argumentString);
   } else if (command == "settileprotection") {
     return setTileProtection(connectionId, argumentString);
-
   } else if (command == "setdungeonid") {
     return setDungeonId(connectionId, argumentString);
-
   } else if (command == "setspawnpoint") {
     return setPlayerStart(connectionId, argumentString);
-
   } else if (command == "spawnitem") {
     return spawnItem(connectionId, argumentString);
-
   } else if (command == "spawntreasure") {
     return spawnTreasure(connectionId, argumentString);
-
   } else if (command == "spawnmonster") {
     return spawnMonster(connectionId, argumentString);
-
   } else if (command == "spawnnpc") {
     return spawnNpc(connectionId, argumentString);
-
   } else if (command == "spawnstagehand") {
     return spawnStagehand(connectionId, argumentString);
-
   } else if (command == "clearstagehand") {
     return clearStagehand(connectionId, argumentString);
-
   } else if (command == "spawnvehicle") {
     return spawnVehicle(connectionId, argumentString);
-
   } else if (command == "spawnliquid") {
     return spawnLiquid(connectionId, argumentString);
-
   } else if (command == "pvp") {
     return pvp(connectionId, argumentString);
-
   } else if (command == "serverwhoami") {
     return whoami(connectionId, argumentString);
-
   } else if (command == "kick") {
     return kick(connectionId, argumentString);
-
   } else if (command == "ban") {
     return ban(connectionId, argumentString);
-
   } else if (command == "unbanip") {
     return unbanIp(connectionId, argumentString);
-
   } else if (command == "unbanuuid") {
     return unbanUuid(connectionId, argumentString);
-
   } else if (command == "list") {
     return list(connectionId, argumentString);
-
   } else if (command == "help") {
     return help(connectionId, argumentString);
-
   } else if (command == "warp") {
     return warp(connectionId, argumentString);
-
   } else if (command == "warprandom") {
     return warpRandom(connectionId, argumentString);
-
   } else if (command == "whereami") {
     return clientCoordinate(connectionId, argumentString);
-
   } else if (command == "whereis") {
     return clientCoordinate(connectionId, argumentString);
-
   } else if (command == "serverreload") {
     return serverReload(connectionId, argumentString);
-
   } else if (command == "eval") {
     return eval(connectionId, argumentString);
-
   } else if (command == "entityeval") {
     return entityEval(connectionId, argumentString);
-
   } else if (command == "enablespawning") {
     return enableSpawning(connectionId, argumentString);
-
   } else if (command == "disablespawning") {
     return disableSpawning(connectionId, argumentString);
-
   } else if (command == "placedungeon") {
     return placeDungeon(connectionId, argumentString);
-
   } else if (command == "setuniverseflag") {
     return setUniverseFlag(connectionId, argumentString);
-
   } else if (command == "resetuniverseflags") {
     return resetUniverseFlags(connectionId, argumentString);
-
   } else if (command == "addbiomeregion") {
     return addBiomeRegion(connectionId, argumentString);
-
   } else if (command == "expandbiomeregion") {
     return expandBiomeRegion(connectionId, argumentString);
-
   } else if (command == "updateplanettype") {
     return updatePlanetType(connectionId, argumentString);
-
   } else if (command == "setenvironmentbiome") {
     return setEnvironmentBiome(connectionId, argumentString);
-
   } else if (auto res = m_scriptComponent.invoke("command", command, connectionId, jsonFromStringList(m_parser.tokenizeToStringList(argumentString)))) {
     return toString(*res);
-
   } else {
     return strf("No such command {}", command);
   }

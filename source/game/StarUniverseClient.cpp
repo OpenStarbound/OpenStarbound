@@ -164,6 +164,7 @@ void UniverseClient::disconnect() {
       break;
   }
 
+  GlobalTimescale = 1.0f;
   reset();
   m_mainPlayer = {};
 }
@@ -675,6 +676,7 @@ void UniverseClient::handlePackets(List<PacketPtr> const& packets) {
       m_celestialDatabase->invalidateCacheFor(planetTypeUpdate->coordinate);
     } else if (auto pausePacket = as<PausePacket>(packet)) {
       setPause(pausePacket->pause);
+      GlobalTimescale = clamp(pausePacket->timescale, 0.0f, 1024.f);
     } else if (auto serverInfoPacket = as<ServerInfoPacket>(packet)) {
       m_serverInfo = ServerInfo{serverInfoPacket->players, serverInfoPacket->maxPlayers};
     } else if (!m_systemWorldClient->handleIncomingPacket(packet)) {
