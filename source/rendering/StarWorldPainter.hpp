@@ -23,7 +23,7 @@ public:
   WorldCamera& camera();
 
   void update(float dt);
-  void render(WorldRenderData& renderData, function<void()> lightWaiter);
+  void render(WorldRenderData& renderData, function<bool()> lightWaiter);
   void adjustLighting(WorldRenderData& renderData);
 
 private:

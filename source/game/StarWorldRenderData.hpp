@@ -26,7 +26,6 @@ struct WorldRenderData {
   RenderTileArray tiles;
   Vec2I lightMinPosition;
   Image lightMap;
-  Image tileLightMap;
 
   List<EntityDrawables> entityDrawables;
   List<Particle> const* particles;

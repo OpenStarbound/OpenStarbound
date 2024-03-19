@@ -89,12 +89,17 @@ void CellularLightingCalculator::calculate(Image& output) {
 
   output.reset(arrayMax[0] - arrayMin[0], arrayMax[1] - arrayMin[1], PixelFormat::RGB24);
 
-  for (size_t x = arrayMin[0]; x < arrayMax[0]; ++x) {
-    for (size_t y = arrayMin[1]; y < arrayMax[1]; ++y) {
-      if (m_monochrome)
+  if (m_monochrome) {
+    for (size_t x = arrayMin[0]; x < arrayMax[0]; ++x) {
+      for (size_t y = arrayMin[1]; y < arrayMax[1]; ++y) {
         output.set24(x - arrayMin[0], y - arrayMin[1], Color::grayf(m_lightArray.right().getLight(x, y)).toRgb());
-      else
+      }
+    }
+  } else {
+    for (size_t x = arrayMin[0]; x < arrayMax[0]; ++x) {
+      for (size_t y = arrayMin[1]; y < arrayMax[1]; ++y) {
         output.set24(x - arrayMin[0], y - arrayMin[1], Color::v3fToByte(m_lightArray.left().getLight(x, y)));
+      }
     }
   }
 }

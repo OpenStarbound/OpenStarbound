@@ -49,7 +49,7 @@ void WorldPainter::update(float dt) {
   m_environmentPainter->update(dt);
 }
 
-void WorldPainter::render(WorldRenderData& renderData, function<void()> lightWaiter) {
+void WorldPainter::render(WorldRenderData& renderData, function<bool()> lightWaiter) {
   m_camera.setScreenSize(m_renderer->screenSize());
   m_camera.setTargetPixelRatio(Root::singleton().configuration()->get("zoomLevel").toFloat());
 
@@ -76,23 +76,24 @@ void WorldPainter::render(WorldRenderData& renderData, function<void()> lightWai
 
   m_renderer->flush();
 
+  bool lightMapUpdated = false;
   if (lightWaiter) {
     auto start = Time::monotonicMicroseconds();
-    lightWaiter();
+    lightMapUpdated = lightWaiter();
     LogMap::set("client_render_world_async_light_wait", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
   }
 
   if (renderData.isFullbright) {
     m_renderer->setEffectTexture("lightMap", Image::filled(Vec2U(1, 1), { 255, 255, 255, 255 }, PixelFormat::RGB24));
-    m_renderer->setEffectTexture("tileLightMap", Image::filled(Vec2U(1, 1), { 0, 0, 0, 0 }, PixelFormat::RGBA32));
     m_renderer->setEffectParameter("lightMapMultiplier", 1.0f);
   } else {
-    adjustLighting(renderData);
+    if (lightMapUpdated) {
+      adjustLighting(renderData);
+      m_renderer->setEffectTexture("lightMap", renderData.lightMap);
+    }
     m_renderer->setEffectParameter("lightMapMultiplier", m_assets->json("/rendering.config:lightMapMultiplier").toFloat());
     m_renderer->setEffectParameter("lightMapScale", Vec2F::filled(TilePixels * m_camera.pixelRatio()));
     m_renderer->setEffectParameter("lightMapOffset", m_camera.worldToScreen(Vec2F(renderData.lightMinPosition)));
-    m_renderer->setEffectTexture("lightMap", renderData.lightMap);
-    m_renderer->setEffectTexture("tileLightMap", renderData.tileLightMap);
   }
 
   // Parallax layers

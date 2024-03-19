@@ -428,7 +428,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
   }
 
   List<LightSource> renderLightSources;
-  List<PreviewTile> previewTiles;
+  m_previewTiles.clear();
 
   renderData.geometry = m_geometry;
 
@@ -444,43 +444,20 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
 
   RectI window = m_clientState.window();
   RectI tileRange = window.padded(bufferTiles);
-  RectI lightRange = window.padded(1);
-  //Kae: Padded by one to fix light spread issues at the edges of the frame.
-
   renderData.tileMinPosition = tileRange.min();
-  renderData.lightMinPosition = lightRange.min();
 
-  Vec2U lightSize(lightRange.size());
-
-  renderData.tileLightMap.reset(lightSize, PixelFormat::RGBA32);
-  renderData.tileLightMap.fill(Vec4B::filled(0));
-
-  if (m_fullBright) {
-    renderData.lightMap.reset(lightSize, PixelFormat::RGB24);
-    renderData.lightMap.fill(Vec3B(255, 255, 255));
-  } else {
-    m_lightingCalculator.begin(lightRange);
-
-    if (!m_asyncLighting)
-      lightingTileGather();
-
-    for (auto const& light : renderLightSources) {
-      Vec2F position = m_geometry.nearestTo(Vec2F(m_lightingCalculator.calculationRegion().min()), light.position);
-      if (light.pointLight)
-        m_lightingCalculator.addPointLight(position, Color::v3bToFloat(light.color), light.pointBeam, light.beamAngle, light.beamAmbience);
-      else
-        m_lightingCalculator.addSpreadLight(position, Color::v3bToFloat(light.color));
-    }
-
-    for (auto const& lightPair : m_particles->lightSources()) {
-      Vec2F position = m_geometry.nearestTo(Vec2F(m_lightingCalculator.calculationRegion().min()), lightPair.first);
-      m_lightingCalculator.addSpreadLight(position, Color::v3bToFloat(lightPair.second));
-    }
+  if (!m_fullBright) {
+    {
+      MutexLocker m_prepLocker(m_lightMapPrepMutex);
+      m_pendingLights = std::move(renderLightSources);
+      m_pendingParticleLights = std::move(m_particles->lightSources());
+      m_pendingLightRange = window.padded(1);
+    } //Kae: Padded by one to fix light spread issues at the edges of the frame.
 
     if (m_asyncLighting)
       m_lightingCond.signal();
     else
-      m_lightingCalculator.calculate(m_lightMap);
+      lightingCalc();
   }
 
   float pulseAmount = Root::singleton().assets()->json("/highlights.config:interactivePulseAmount").toFloat();
@@ -545,7 +522,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
       
       m_particles->addParticles(std::move(renderCallback.particles));
       m_samples.appendAll(std::move(renderCallback.audios));
-      previewTiles.appendAll(std::move(renderCallback.previewTiles));
+      m_previewTiles.appendAll(std::move(renderCallback.previewTiles));
       renderData.overheadBars.appendAll(std::move(renderCallback.overheadBars));
 
     }, [](EntityPtr const& a, EntityPtr const& b) {
@@ -596,7 +573,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
     }
   }
 
-  for (auto const& previewTile : previewTiles) {
+  for (auto const& previewTile : m_previewTiles) {
     Vec2I tileArrayPos = m_geometry.diff(previewTile.position, renderData.tileMinPosition);
     if (tileArrayPos[0] >= 0 && tileArrayPos[0] < (int)renderData.tiles.size(0) && tileArrayPos[1] >= 0 && tileArrayPos[1] < (int)renderData.tiles.size(1)) {
       RenderTile& renderTile = renderData.tiles(tileArrayPos[0], tileArrayPos[1]);
@@ -620,12 +597,6 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
         renderTile.liquidId = previewTile.liqId;
         renderTile.liquidLevel = 255;
       }
-    }
-
-    if (previewTile.updateLight) {
-      Vec2I lightArrayPos = m_geometry.diff(previewTile.position, renderData.lightMinPosition);
-      if (lightArrayPos[0] >= 0 && lightArrayPos[0] < (int)renderData.tileLightMap.width() && lightArrayPos[1] >= 0 && lightArrayPos[1] < (int)renderData.tileLightMap.height())
-        renderData.tileLightMap.set(Vec2U(lightArrayPos), previewTile.light);
     }
   }
 
@@ -1090,8 +1061,6 @@ void WorldClient::update(float dt) {
 
   auto assets = Root::singleton().assets();
 
-  m_lightingCalculator.setMonochrome(Root::singleton().configuration()->get("monochromeLighting").toBool());
-
   float expireTime = min(float(m_latency + 800), 2000.f);
   auto now = Time::monotonicMilliseconds();
   eraseWhere(m_predictedTiles, [&](auto& pair) {
@@ -1406,10 +1375,21 @@ void WorldClient::collectLiquid(List<Vec2I> const& tilePositions, LiquidId liqui
   m_outgoingPackets.append(make_shared<CollectLiquidPacket>(tilePositions, liquidId));
 }
 
-void WorldClient::waitForLighting(Image* out) {
-  MutexLocker lock(m_lightMapMutex);
-  if (out)
+Maybe<Vec2I> WorldClient::waitForLighting(Image* out) {
+  MutexLocker prepLocker(m_lightMapPrepMutex);
+  MutexLocker lightMapLocker(m_lightMapMutex);
+  if (out && !m_lightMap.empty()) {
+    for (auto& previewTile : m_previewTiles) {
+      if (previewTile.updateLight) {
+        Vec2I lightArrayPos = m_geometry.diff(previewTile.position, m_lightMinPosition);
+        if (lightArrayPos[0] >= 0 && lightArrayPos[0] < (int)m_lightMap.width() && lightArrayPos[1] >= 0 && lightArrayPos[1] < (int)m_lightMap.height())
+          m_lightMap.set(Vec2U(lightArrayPos), previewTile.light);
+      }
+    }
     *out = std::move(m_lightMap);
+    return m_lightMinPosition;
+  }
+  return {};
 }
 
 WorldClient::BroadcastCallback& WorldClient::broadcastCallback() {
@@ -1629,11 +1609,11 @@ void WorldClient::lightingTileGather() {
 
   // Each column in tileEvalColumns is guaranteed to be no larger than the sector size.
 
+  size_t lights = 0;
   m_tileArray->tileEvalColumns(m_lightingCalculator.calculationRegion(), [&](Vec2I const& pos, ClientTile const* column, size_t ySize) {
     size_t baseIndex = m_lightingCalculator.baseIndexFor(pos);
     for (size_t y = 0; y < ySize; ++y) {
       auto& tile = column[y];
-
       Vec3F light;
       if (tile.foreground != EmptyMaterialId || tile.foregroundMod != NoModId)
         light += materialDatabase->radiantLight(tile.foreground, tile.foregroundMod);
@@ -1646,9 +1626,43 @@ void WorldClient::lightingTileGather() {
         if (tile.backgroundLightTransparent && pos[1] + y > undergroundLevel)
           light += environmentLight;
       }
-      m_lightingCalculator.setCellIndex(baseIndex + y, std::move(light), !tile.foregroundLightTransparent);
+      if (light.max() > 0.0f)
+        ++lights;
+      m_lightingCalculator.setCellIndex(baseIndex + y, light, !tile.foregroundLightTransparent);
     }
   });
+  LogMap::set("client_render_world_async_light_tiles", toString(lights));
+}
+
+void WorldClient::lightingCalc() {
+  MutexLocker prepLocker(m_lightMapPrepMutex);
+  RectI lightRange = m_pendingLightRange;
+  List<LightSource> lights = std::move(m_pendingLights);
+  List<std::pair<Vec2F, Vec3B>> particleLights = std::move(m_pendingParticleLights);
+  m_lightingCalculator.setMonochrome(Root::singleton().configuration()->get("monochromeLighting").toBool());
+  m_lightingCalculator.begin(lightRange);
+  lightingTileGather();
+  prepLocker.unlock();
+
+  for (auto const& light : lights) {
+    Vec2F position = m_geometry.nearestTo(Vec2F(m_lightingCalculator.calculationRegion().min()), light.position);
+    if (light.pointLight)
+      m_lightingCalculator.addPointLight(position, Color::v3bToFloat(light.color), light.pointBeam, light.beamAngle, light.beamAmbience);
+    else
+      m_lightingCalculator.addSpreadLight(position, Color::v3bToFloat(light.color));
+  }
+
+  for (auto const& lightPair : particleLights) {
+    Vec2F position = m_geometry.nearestTo(Vec2F(m_lightingCalculator.calculationRegion().min()), lightPair.first);
+    m_lightingCalculator.addSpreadLight(position, Color::v3bToFloat(lightPair.second));
+  }
+
+  m_lightingCalculator.calculate(m_pendingLightMap);
+  {
+    MutexLocker mapLocker(m_lightMapMutex);
+    m_lightMinPosition = lightRange.min();
+    m_lightMap = std::move(m_pendingLightMap);
+  }
 }
 
 void WorldClient::lightingMain() {
@@ -1658,11 +1672,8 @@ void WorldClient::lightingMain() {
     if (m_stopLightingThread)
       return;
 
-    MutexLocker mapLocker(m_lightMapMutex);
     int64_t start = Time::monotonicMicroseconds();
-    lightingTileGather();
-    m_lightingCalculator.calculate(m_lightMap);
-    mapLocker.unlock();
+    lightingCalc();
     LogMap::set("client_render_world_async_light_calc", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
   }
 }

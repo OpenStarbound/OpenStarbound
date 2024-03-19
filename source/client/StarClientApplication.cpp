@@ -426,7 +426,14 @@ void ClientApplication::render() {
       LogMap::set("client_render_world_client", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - clientStart));
 
       auto paintStart = Time::monotonicMicroseconds();
-      m_worldPainter->render(m_renderData, [&]() { worldClient->waitForLighting(&m_renderData.lightMap); });
+      m_worldPainter->render(m_renderData, [&]() -> bool {
+        if (auto newMinPosition = worldClient->waitForLighting(&m_renderData.lightMap)) {
+          m_renderData.lightMinPosition = *newMinPosition;
+          return true;
+        } else {
+          return false;
+        }
+      });
       LogMap::set("client_render_world_painter", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - paintStart));
       LogMap::set("client_render_world_total", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - totalStart));
     }

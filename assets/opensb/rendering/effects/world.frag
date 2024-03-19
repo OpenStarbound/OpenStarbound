@@ -6,9 +6,7 @@ uniform sampler2D texture2;
 uniform sampler2D texture3;
 uniform bool lightMapEnabled;
 uniform vec2 lightMapSize;
-uniform vec2 tileLightMapSize;
 uniform sampler2D lightMap;
-uniform sampler2D tileLightMap;
 uniform float lightMapMultiplier;
 
 varying vec2 fragmentTextureCoordinate;
@@ -55,16 +53,6 @@ vec4 bicubicSample(sampler2D texture, vec2 texcoord, vec2 texscale) {
     mix(sample1, sample0, sx), sy);
 }
 
-vec3 sampleLightMap(vec2 texcoord, vec2 texscale) {
-  vec4 b = bicubicSample(tileLightMap, texcoord, texscale);
-  vec4 a = bicubicSample(lightMap, texcoord, texscale);
-
-  if (b.z <= 0.0)
-    return a.rgb;
-
-  return mix(a.rgb, b.rgb / b.z, b.z);
-}
-
 void main() {
   vec4 texColor;
   if (fragmentTextureIndex > 2.9) {
@@ -84,6 +72,6 @@ void main() {
   if (texColor.a == 0.99607843137)
     finalColor.a = fragmentColor.a;
   else if (lightMapEnabled && finalLightMapMultiplier > 0.0)
-    finalColor.rgb *= sampleLightMap(fragmentLightMapCoordinate, 1.0 / lightMapSize) * finalLightMapMultiplier;
+    finalColor.rgb *= bicubicSample(lightMap, fragmentLightMapCoordinate, 1.0 / lightMapSize).rgb * finalLightMapMultiplier;
   gl_FragColor = finalColor;
 }
