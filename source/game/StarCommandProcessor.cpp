@@ -222,7 +222,7 @@ String CommandProcessor::timescale(ConnectionId connectionId, String const& argu
   auto arguments = m_parser.tokenizeToStringList(argumentsString);
 
   if (arguments.empty())
-    return "Not enough arguments to /timescale";
+    return strf("Current timescale is {:6.6f}x", GlobalTimescale);
 
   float timescale = clamp(lexicalCast<float>(arguments[0]), 0.001f, 32.0f);
   m_universe->setTimescale(timescale);
@@ -236,11 +236,11 @@ String CommandProcessor::tickrate(ConnectionId connectionId, String const& argum
   auto arguments = m_parser.tokenizeToStringList(argumentsString);
 
   if (arguments.empty())
-    return "Not enough arguments to /tickrate";
+    return strf("Current tick rate is {:4.2f}Hz", 1.0f / ServerGlobalTimestep);
 
-  unsigned tickRate = clamp<unsigned>(lexicalCast<unsigned>(arguments[0]), 5, 500);
+  float tickRate = clamp(lexicalCast<float>(arguments[0]), 5.f, 500.f);
   m_universe->setTickRate(tickRate);
-  return strf("Set tick rate to {}Hz", tickRate);
+  return strf("Set tick rate to {:4.2f}Hz", tickRate);
 }
 
 String CommandProcessor::setTileProtection(ConnectionId connectionId, String const& argumentString) {
