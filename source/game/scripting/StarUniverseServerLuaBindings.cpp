@@ -129,7 +129,7 @@ RpcThreadPromise<Json> LuaBindings::UniverseServerCallbacks::sendWorldMessage(Un
 
 void LuaBindings::UniverseServerCallbacks::sendPacket(UniverseServer* universe, ConnectionId clientId, String const& packetTypeName, Json const& args) {
   auto packetType = PacketTypeNames.getLeft(packetTypeName);
-  auto packet = createPacket(packetType, args.toArray());
+  auto packet = createPacket(packetType, args);
   universe->sendPacket(clientId, packet);
 }
 
