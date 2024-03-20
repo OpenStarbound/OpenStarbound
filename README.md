@@ -26,3 +26,22 @@ Changes:
 * Skybox sun now matches the system type you're currently in. Previously generated planets will not have this feature and will display the default sun. Modded system types require a patch to display their custom sun. Additionally, you can also access now skybox sun scale and its default ray colors. For more details see [sky.config.patch](https://github.com/OpenStarbound/OpenStarbound/blob/main/assets/opensb/sky.config.patch).
 
 [Discord](https://discord.gg/D4QqtBNmAY)
+
+
+## Building
+Note: Some [text](## 'hi :3') have hover tooltips. 
+
+### Windows
+* Install [vcpkg](https://github.com/microsoft/vcpkg?tab=readme-ov-file#quick-start-windows) *globally*.
+  * vcpkg recommends a short directory, such as `C:\src\vcpkg` or `C:\dev\vcpkg`.
+  * If you're using Visual Studio, don't forget to run `vcpkg integrate install`!
+  * Set [**`VCPKG_ROOT`**](## "Environment Value") to your vcpkg dir, so that CMake can find it.
+* Install [Ninja](https://ninja-build.org/ "Ninja Build System"). Either add it to your [**`PATH`**](## "Environment Value"), or just use [Scoop](https://scoop.sh/) (`scoop install ninja`)
+* Check to see if your IDE has CMake support, and that it's [actually installed](## "If you're using VS, open Visual Studio Installer to install CMake.").
+* Open the repo directory in your IDE - it should detect the CMake project.
+* Build.
+  * You need to create a sbinit.config and manually copy DLLs from lib/windows/ to the [output directory](## "dist/") to run the client.
+### Linux
+To be written.
+### macOS
+To be written.
