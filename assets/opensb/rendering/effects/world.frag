@@ -55,8 +55,11 @@ vec4 bicubicSample(sampler2D texture, vec2 texcoord, vec2 texscale) {
 
 vec3 sampleLight(vec2 coord, vec2 scale) {
   //soften super bright lights a little
+  const float threshold = 1.0;
   vec3 rgb = bicubicSample(lightMap, coord, scale).rgb;
-  return mix(rgb, (rgb / (vec3(1.) + rgb)) * 1.666666, 0.666666);
+  vec3 lower = min(rgb, threshold);
+  vec3 upper = max(rgb, threshold) - threshold;
+  return lower + (upper / (vec3(1.) + upper));
 }
 
 void main() {
