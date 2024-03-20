@@ -1654,13 +1654,15 @@ void WorldClient::lightingCalc() {
     if (light.pointLight)
       m_lightingCalculator.addPointLight(position, light.color, light.pointBeam, light.beamAngle, light.beamAmbience);
     else {
-      m_lightingCalculator.addSpreadLight(position, light.color);
+      m_lightingCalculator.addSpreadLight(position, light.color * 0.6f);
+      m_lightingCalculator.addPointLight(position, light.color * 0.4f, 0.0f, 0.0f, 1.0f);
     }
   }
 
   for (auto const& lightPair : particleLights) {
     Vec2F position = m_geometry.nearestTo(Vec2F(m_lightingCalculator.calculationRegion().min()), lightPair.first);
-    m_lightingCalculator.addSpreadLight(position, lightPair.second);
+    m_lightingCalculator.addSpreadLight(position, lightPair.second * 0.6f);
+    m_lightingCalculator.addPointLight(position, lightPair.second * 0.4f, 0.0f, 0.0f, 1.0f);
   }
 
   m_lightingCalculator.calculate(m_pendingLightMap);

@@ -38,7 +38,7 @@ TilePainter::TilePainter(RendererPtr renderer) : TileDrawer() {
 void TilePainter::adjustLighting(WorldRenderData& renderData) const {
   RectI lightRange = RectI::withSize(renderData.lightMinPosition, Vec2I(renderData.lightMap.size()));
   forEachRenderTile(renderData, lightRange, [&](Vec2I const& pos, RenderTile const& tile) {
-      // Only adjust lighting for full tiles
+      // Only adjust lighting for tiles with liquid above the draw threshold
       float drawLevel = liquidDrawLevel(byteToFloat(tile.liquidLevel));
       if (drawLevel == 0.0f)
         return;
@@ -47,9 +47,8 @@ void TilePainter::adjustLighting(WorldRenderData& renderData) const {
       auto lightValue = renderData.lightMap.get(lightIndex.x(), lightIndex.y());
 
       auto const& liquid = m_liquids[tile.liquidId];
-      Vec3F tileLight = Vec3F(lightValue);
-      float darknessLevel = (1.f - tileLight.sum() / 3.0f) * drawLevel;
-      lightValue = tileLight.piecewiseMultiply(Vec3F::filled(1.f - darknessLevel) + liquid.bottomLightMix * darknessLevel);
+      float darknessLevel = (1.f - (lightValue.sum() / 3.0f)) * drawLevel;
+      lightValue = lightValue.piecewiseMultiply(Vec3F::filled(1.f - darknessLevel) + liquid.bottomLightMix * darknessLevel);
 
       renderData.lightMap.set(lightIndex.x(), lightIndex.y(), lightValue);
     });
