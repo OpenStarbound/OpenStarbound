@@ -110,8 +110,15 @@ Assets::Assets(Settings settings, StringList assetSources) {
   m_assetSources = std::move(assetSources);
 
   auto luaEngine = LuaEngine::create();
+  m_luaEngine = luaEngine;
+  auto pushGlobalContext = [&luaEngine](String const& name, LuaCallbacks & callbacks) {
+    auto table = luaEngine->createTable();
+    for (auto const& p : callbacks.callbacks())
+      table.set(p.first, luaEngine->createWrappedFunction(p.second));
+    luaEngine->setGlobal(name, table);
+  };
+  pushGlobalContext("sb", LuaBindings::makeUtilityCallbacks());
   auto decorateLuaContext = [this](LuaContext& context, MemoryAssetSourcePtr newFiles) {
-    context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
     LuaCallbacks callbacks;
     callbacks.registerCallbackWithSignature<StringSet, String>("byExtension", bind(&Assets::scanExtension, this, _1));
     callbacks.registerCallbackWithSignature<Json, String>("json", bind(&Assets::json, this, _1));
@@ -133,38 +140,40 @@ Assets::Assets(Settings settings, StringList assetSources) {
       return b ? scan(a.value(), *b) : scan(a.value());
     });
 
-    callbacks.registerCallback("add", [this, &newFiles](LuaEngine& engine, String const& path, LuaValue const& data) {
-      ByteArray bytes;
-      if (auto str = engine.luaMaybeTo<String>(data))
-        bytes = ByteArray(str->utf8Ptr(), str->utf8Size());
-      else {
-        auto json = engine.luaTo<Json>(data).repr();
-        bytes = ByteArray(json.utf8Ptr(), json.utf8Size());
-      }
-      newFiles->set(path, bytes);
-    });
+    if (newFiles) {
+      callbacks.registerCallback("add", [this, &newFiles](LuaEngine& engine, String const& path, LuaValue const& data) {
+        ByteArray bytes;
+        if (auto str = engine.luaMaybeTo<String>(data))
+          bytes = ByteArray(str->utf8Ptr(), str->utf8Size());
+        else {
+          auto json = engine.luaTo<Json>(data).repr();
+          bytes = ByteArray(json.utf8Ptr(), json.utf8Size());
+        }
+        newFiles->set(path, bytes);
+      });
 
-    callbacks.registerCallback("patch", [this, &newFiles](String const& path, String const& patchPath) -> bool {
-      if (auto file = m_files.ptr(path)) {
-        if (newFiles->contains(patchPath)) {
-          file->patchSources.append(make_pair(patchPath, newFiles));
-          return true;
-        } else {
-          if (auto asset = m_files.ptr(patchPath)) {
-            file->patchSources.append(make_pair(patchPath, asset->source));
+      callbacks.registerCallback("patch", [this, &newFiles](String const& path, String const& patchPath) -> bool {
+        if (auto file = m_files.ptr(path)) {
+          if (newFiles->contains(patchPath)) {
+            file->patchSources.append(make_pair(patchPath, newFiles));
             return true;
+          } else {
+            if (auto asset = m_files.ptr(patchPath)) {
+              file->patchSources.append(make_pair(patchPath, asset->source));
+              return true;
+            }
           }
         }
-      }
-      return false;
-    });
+        return false;
+      });
 
-    callbacks.registerCallback("erase", [this](String const& path) -> bool {
-      bool erased = m_files.erase(path);
-      if (erased)
-        m_filesByExtension[AssetPath::extension(path).toLower()].erase(path);
-      return erased;
-    });
+      callbacks.registerCallback("erase", [this](String const& path) -> bool {
+        bool erased = m_files.erase(path);
+        if (erased)
+          m_filesByExtension[AssetPath::extension(path).toLower()].erase(path);
+        return erased;
+      });
+    }
 
     context.setCallbacks("assets", callbacks);
   };
@@ -883,21 +892,35 @@ Json Assets::readJson(String const& path) const {
   try {
     Json result = inputUtf8Json(streamData.begin(), streamData.end(), false);
     for (auto const& pair : m_files.get(path).patchSources) {
-      auto patchStream = pair.second->read(pair.first);
-      auto patchJson = inputUtf8Json(patchStream.begin(), patchStream.end(), false);
-      if (patchJson.isType(Json::Type::Array)) {
-        auto patchData = patchJson.toArray();
-        try {
-          result = checkPatchArray(pair.first, pair.second, result, patchData, {});
-        } catch (JsonPatchTestFail const& e) {
-          Logger::debug("Patch test failure from file {} in source: '{}' at '{}'. Caused by: {}", pair.first, pair.second->metadata().value("name", ""), m_assetSourcePaths.getLeft(pair.second), e.what());
-        } catch (JsonPatchException const& e) {
-          Logger::error("Could not apply patch from file {} in source: '{}' at '{}'.  Caused by: {}", pair.first, pair.second->metadata().value("name", ""), m_assetSourcePaths.getLeft(pair.second), e.what());
+      auto& patchPath = pair.first;
+      auto& patchSource = pair.second;
+      auto patchStream = patchSource->read(patchPath);
+        if (pair.first.endsWith(".lua")) {
+          MutexLocker luaLocker(m_luaMutex);
+          // Kae: i don't like that lock. perhaps have a LuaEngine and patch context cache per worker thread later on?
+          LuaContextPtr& context = m_patchContexts[patchPath];
+          if (!context) {
+            context = make_shared<LuaContext>(as<LuaEngine>(m_luaEngine.get())->createContext());
+            context->load(patchStream, patchPath);
+          }
+          auto newResult = context->invokePath<Json>("patch", result, path);
+          if (newResult)
+            result = std::move(newResult);
+        } else {
+          auto patchJson = inputUtf8Json(patchStream.begin(), patchStream.end(), false);
+          if (patchJson.isType(Json::Type::Array)) {
+          auto patchData = patchJson.toArray();
+          try {
+            result = checkPatchArray(patchPath, patchSource, result, patchData, {});
+          } catch (JsonPatchTestFail const& e) {
+            Logger::debug("Patch test failure from file {} in source: '{}' at '{}'. Caused by: {}", patchPath, patchSource->metadata().value("name", ""), m_assetSourcePaths.getLeft(patchSource), e.what());
+          } catch (JsonPatchException const& e) {
+            Logger::error("Could not apply patch from file {} in source: '{}' at '{}'.  Caused by: {}", patchPath, patchSource->metadata().value("name", ""), m_assetSourcePaths.getLeft(patchSource), e.what());
+          }
+          } else if (patchJson.isType(Json::Type::Object)) {//Kae: Do a good ol' json merge instead if the .patch file is a Json object
+            result = jsonMergeNulling(result, patchJson.toObject());
+          }
         }
-      } else if (patchJson.isType(Json::Type::Object)) { //Kae: Do a good ol' json merge instead if the .patch file is a Json object
-        auto patchData = patchJson.toObject();
-        result = jsonMergeNulling(result, patchData);
-      }
     }
     return result;
   } catch (std::exception const& e) {

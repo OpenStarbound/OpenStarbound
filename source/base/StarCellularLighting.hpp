@@ -27,6 +27,7 @@ public:
 
   void set(unsigned x, unsigned y, float v);
   void set(unsigned x, unsigned y, Vec3F const& v);
+  void add(unsigned x, unsigned y, Vec3F const& v);
   Vec3F get(unsigned x, unsigned y) const;
 
   bool empty() const;
@@ -64,6 +65,16 @@ inline void Lightmap::set(unsigned x, unsigned y, Vec3F const& v) {
   ptr[2] = v.z();
 }
 
+inline void Lightmap::add(unsigned x, unsigned y, Vec3F const& v) {
+  if (x >= m_width || y >= m_height) {
+    throw LightmapException(strf("[{}, {}] out of range in Lightmap::add", x, y));
+    return;
+  }
+  float* ptr = m_data.get() + (y * m_width * 3 + x * 3);
+  ptr[0] += v.x();
+  ptr[1] += v.y();
+  ptr[2] += v.z();
+}
 
 inline Vec3F Lightmap::get(unsigned x, unsigned y) const {
   if (x >= m_width || y >= m_height) {
@@ -73,6 +84,7 @@ inline Vec3F Lightmap::get(unsigned x, unsigned y) const {
   float* ptr = m_data.get() + (y * m_width * 3 + x * 3);
   return Vec3F(ptr[0], ptr[1], ptr[2]);
 }
+
 
 inline bool Lightmap::empty() const {
   return m_width == 0 || m_height == 0;

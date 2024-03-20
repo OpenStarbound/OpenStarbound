@@ -1382,7 +1382,8 @@ bool WorldClient::waitForLighting(WorldRenderData* renderData) {
     for (auto& previewTile : m_previewTiles) {
       if (previewTile.updateLight) {
         Vec2I lightArrayPos = m_geometry.diff(previewTile.position, m_lightMinPosition);
-        if (lightArrayPos[0] >= 0 && lightArrayPos[0] < (int)m_lightMap.width() && lightArrayPos[1] >= 0 && lightArrayPos[1] < (int)m_lightMap.height())
+        if (lightArrayPos[0] >= 0 && lightArrayPos[0] < (int)m_lightMap.width()
+         && lightArrayPos[1] >= 0 && lightArrayPos[1] < (int)m_lightMap.height())
           m_lightMap.set(lightArrayPos[0], lightArrayPos[1], Color::v3bToFloat(previewTile.light));
       }
     }
@@ -1654,15 +1655,13 @@ void WorldClient::lightingCalc() {
     if (light.pointLight)
       m_lightingCalculator.addPointLight(position, light.color, light.pointBeam, light.beamAngle, light.beamAmbience);
     else {
-      m_lightingCalculator.addSpreadLight(position, light.color * 0.6f);
-      m_lightingCalculator.addPointLight(position, light.color * 0.4f, 0.0f, 0.0f, 1.0f);
+      m_lightingCalculator.addSpreadLight(position, light.color);
     }
   }
 
   for (auto const& lightPair : particleLights) {
     Vec2F position = m_geometry.nearestTo(Vec2F(m_lightingCalculator.calculationRegion().min()), lightPair.first);
-    m_lightingCalculator.addSpreadLight(position, lightPair.second * 0.6f);
-    m_lightingCalculator.addPointLight(position, lightPair.second * 0.4f, 0.0f, 0.0f, 1.0f);
+    m_lightingCalculator.addSpreadLight(position, lightPair.second);
   }
 
   m_lightingCalculator.calculate(m_pendingLightMap);
