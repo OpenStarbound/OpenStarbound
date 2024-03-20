@@ -29,7 +29,7 @@ Changes:
 
 
 ## Building
-Note: Some [text](## 'hi :3') have hover tooltips. 
+Note: Some [text](## "hi :3") have hover tooltips. 
 
 ### Windows
 * Install [vcpkg](https://github.com/microsoft/vcpkg?tab=readme-ov-file#quick-start-windows) *globally*.
