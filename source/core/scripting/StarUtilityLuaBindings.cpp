@@ -113,6 +113,7 @@ LuaCallbacks LuaBindings::makeUtilityCallbacks() {
   callbacks.registerCallback("logWarn", UtilityCallbacks::logWarn);
   callbacks.registerCallback("logError", UtilityCallbacks::logError);
   callbacks.registerCallback("setLogMap", UtilityCallbacks::setLogMap);
+  callbacks.registerCallback("parseJson", UtilityCallbacks::parseJson);
   callbacks.registerCallback("printJson", UtilityCallbacks::printJson);
   callbacks.registerCallback("print", UtilityCallbacks::print);
   callbacks.registerCallback("interpolateSinEase", UtilityCallbacks::interpolateSinEase);
@@ -190,6 +191,10 @@ void LuaBindings::UtilityCallbacks::logError(String const& str, LuaVariadic<LuaV
 
 void LuaBindings::UtilityCallbacks::setLogMap(String const& key, String const& value, LuaVariadic<LuaValue> const& args) {
   LogMap::set(key, formatLua(value, args));
+}
+
+Json LuaBindings::UtilityCallbacks::parseJson(String const& str) {
+  return Json::parse(str);
 }
 
 String LuaBindings::UtilityCallbacks::printJson(Json const& arg, Maybe<int> pretty) {
