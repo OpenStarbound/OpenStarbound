@@ -1,3 +1,5 @@
+-- unused for now
+
 local function modLight(light)
   for i = 1, #light do
     light[i] = light[i] * 0.4

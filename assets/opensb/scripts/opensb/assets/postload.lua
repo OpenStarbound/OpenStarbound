@@ -11,8 +11,8 @@ if assets.image("/cursors/cursors.png"):size()[1] == 64 then
 end
 
 -- Add object patches
-local objects = assets.byExtension("object")
-local path = "/objects/opensb/object.patch.lua"
-for i = 1, #objects do
-  assets.patch(objects[i], path)
-end
+--local objects = assets.byExtension("object")
+--local path = "/objects/opensb/object.patch.lua"
+--for i = 1, #objects do
+--  assets.patch(objects[i], path)
+--end

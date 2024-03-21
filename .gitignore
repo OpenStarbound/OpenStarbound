@@ -6,6 +6,7 @@
 /mac/
 /dist/
 /installer/
+/vcpkg/
 /client_distribution/
 /server_distribution/
 enc_temp_folder/
