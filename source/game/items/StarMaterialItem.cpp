@@ -122,7 +122,7 @@ void MaterialItem::update(float dt, FireMode fireMode, bool shifting, HashSet<Mo
 void MaterialItem::render(RenderCallback* renderCallback, EntityRenderLayer) {
   if (m_collisionOverride != TileCollisionOverride::None) {
     float pulseLevel = 1.f - 0.3f * 0.5f * ((float)sin(2 * Constants::pi * 4.0 * Time::monotonicTime()) + 1.f);
-    Color color = Color::rgba(owner()->favoriteColor()).mix(Color::White);
+    Color color = owner()->favoriteColor().mix(Color::White);
     color.setAlphaF(color.alphaF() * pulseLevel * 0.95f);
     auto addIndicator = [&](String const& path) {
       Vec2F basePosition = Vec2F(0.5f, 0.5f);
@@ -336,7 +336,7 @@ TileCollisionOverride& MaterialItem::collisionOverride() {
 List<PreviewTile> MaterialItem::previewTiles(bool shifting) const {
   List<PreviewTile> result;
   if (initialized()) {
-    Color lightColor = Color::rgba(owner()->favoriteColor());
+    Color lightColor = owner()->favoriteColor();
     Vec3B light = lightColor.toRgb();
 
     auto material = materialId();

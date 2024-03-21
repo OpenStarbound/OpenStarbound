@@ -11,6 +11,7 @@ struct ScalarLightTraits {
 
   static float spread(float source, float dest, float drop);
   static float subtract(float value, float drop);
+  static float multiply(float v1, float v2);
 
   static float maxIntensity(float value);
   static float minIntensity(float value);
@@ -26,6 +27,7 @@ struct ColoredLightTraits {
 
   static Vec3F spread(Vec3F const& source, Vec3F const& dest, float drop);
   static Vec3F subtract(Vec3F value, float drop);
+  static Vec3F multiply(Vec3F value, float drop);
 
   static float maxIntensity(Vec3F const& value);
   static float minIntensity(Vec3F const& value);
@@ -139,6 +141,10 @@ inline float ScalarLightTraits::subtract(float c, float drop) {
   return std::max(c - drop, 0.0f);
 }
 
+inline float ScalarLightTraits::multiply(float v1, float v2) {
+  return v1 * v2;
+}
+
 inline float ScalarLightTraits::maxIntensity(float value) {
   return value;
 }
@@ -177,6 +183,10 @@ inline Vec3F ColoredLightTraits::subtract(Vec3F c, float drop) {
       c[i] = 0;
   }
   return c;
+}
+
+inline Vec3F ColoredLightTraits::multiply(Vec3F c, float drop) {
+  return c * drop;
 }
 
 inline float ColoredLightTraits::maxIntensity(Vec3F const& value) {
@@ -382,68 +392,6 @@ void CellularLightArray<LightTraits>::calculateLightSpread(size_t xMin, size_t y
 
         cellLeftUp.light = LightTraits::spread(cell.light, cellLeftUp.light, diagDropoff);
         cellLeftDown.light = LightTraits::spread(cell.light, cellLeftDown.light, diagDropoff);
-      }
-    }
-  }
-}
-
-template <typename LightTraits>
-void CellularLightArray<LightTraits>::calculatePointLighting(size_t xmin, size_t ymin, size_t xmax, size_t ymax) {
-  float perBlockObstacleAttenuation = 1.0f / m_pointMaxObstacle;
-  float perBlockAirAttenuation = 1.0f / m_pointMaxAir;
-
-  for (PointLight light : m_pointLights) {
-    if (light.position[0] < 0 || light.position[0] > m_width - 1 || light.position[1] < 0 || light.position[1] > m_height - 1)
-      continue;
-
-    float maxIntensity = LightTraits::maxIntensity(light.value);
-    Vec2F beamDirection = Vec2F(1, 0).rotate(light.beamAngle);
-
-    float maxRange = maxIntensity * m_pointMaxAir;
-    // The min / max considering the radius of the light
-    size_t lxmin = std::floor(std::max<float>(xmin, light.position[0] - maxRange));
-    size_t lymin = std::floor(std::max<float>(ymin, light.position[1] - maxRange));
-    size_t lxmax = std::ceil(std::min<float>(xmax, light.position[0] + maxRange));
-    size_t lymax = std::ceil(std::min<float>(ymax, light.position[1] + maxRange));
-
-    for (size_t x = lxmin; x < lxmax; ++x) {
-      for (size_t y = lymin; y < lymax; ++y) {
-        LightValue lvalue = getLight(x, y);
-        // + 0.5f to correct block position to center
-        Vec2F blockPos = Vec2F(x + 0.5f, y + 0.5f);
-
-        Vec2F relativeLightPosition = blockPos - light.position;
-        float distance = relativeLightPosition.magnitude();
-        if (distance == 0.0f) {
-          setLight(x, y, LightTraits::max(light.value, lvalue));
-          continue;
-        }
-
-        float attenuation = distance * perBlockAirAttenuation;
-        if (attenuation >= 1.0f)
-          continue;
-
-        Vec2F direction = relativeLightPosition / distance;
-        if (light.beam > 0.0f) {
-          attenuation += (1.0f - light.beamAmbience) * clamp(light.beam * (1.0f - direction * beamDirection), 0.0f, 1.0f);
-          if (attenuation >= 1.0f)
-            continue;
-        }
-
-        float remainingAttenuation = maxIntensity - LightTraits::minIntensity(lvalue) - attenuation;
-        if (remainingAttenuation <= 0.0f)
-          continue;
-
-        // Need to circularize manhattan attenuation here
-        float circularizedPerBlockObstacleAttenuation = perBlockObstacleAttenuation / max(fabs(direction[0]), fabs(direction[1]));
-        float blockAttenuation = lineAttenuation(blockPos, light.position, circularizedPerBlockObstacleAttenuation, remainingAttenuation);
-
-        // Apply single obstacle boost (determine single obstacle by one
-        // block unit of attenuation).
-        attenuation += blockAttenuation + min(blockAttenuation, circularizedPerBlockObstacleAttenuation) * m_pointObstacleBoost;
-
-        if (attenuation < 1.0f)
-          setLight(x, y, LightTraits::max(LightTraits::subtract(light.value, attenuation), lvalue));
       }
     }
   }

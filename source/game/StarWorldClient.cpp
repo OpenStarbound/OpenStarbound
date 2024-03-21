@@ -1375,21 +1375,23 @@ void WorldClient::collectLiquid(List<Vec2I> const& tilePositions, LiquidId liqui
   m_outgoingPackets.append(make_shared<CollectLiquidPacket>(tilePositions, liquidId));
 }
 
-Maybe<Vec2I> WorldClient::waitForLighting(Image* out) {
+bool WorldClient::waitForLighting(WorldRenderData* renderData) {
   MutexLocker prepLocker(m_lightMapPrepMutex);
   MutexLocker lightMapLocker(m_lightMapMutex);
-  if (out && !m_lightMap.empty()) {
+  if (renderData && !m_lightMap.empty()) {
     for (auto& previewTile : m_previewTiles) {
       if (previewTile.updateLight) {
         Vec2I lightArrayPos = m_geometry.diff(previewTile.position, m_lightMinPosition);
-        if (lightArrayPos[0] >= 0 && lightArrayPos[0] < (int)m_lightMap.width() && lightArrayPos[1] >= 0 && lightArrayPos[1] < (int)m_lightMap.height())
-          m_lightMap.set(Vec2U(lightArrayPos), previewTile.light);
+        if (lightArrayPos[0] >= 0 && lightArrayPos[0] < (int)m_lightMap.width()
+         && lightArrayPos[1] >= 0 && lightArrayPos[1] < (int)m_lightMap.height())
+          m_lightMap.set(lightArrayPos[0], lightArrayPos[1], Color::v3bToFloat(previewTile.light));
       }
     }
-    *out = std::move(m_lightMap);
-    return m_lightMinPosition;
+    renderData->lightMap = std::move(m_lightMap);
+    renderData->lightMinPosition = m_lightMinPosition;
+    return true;
   }
-  return {};
+  return false;
 }
 
 WorldClient::BroadcastCallback& WorldClient::broadcastCallback() {
@@ -1636,25 +1638,30 @@ void WorldClient::lightingTileGather() {
 
 void WorldClient::lightingCalc() {
   MutexLocker prepLocker(m_lightMapPrepMutex);
+
   RectI lightRange = m_pendingLightRange;
   List<LightSource> lights = std::move(m_pendingLights);
-  List<std::pair<Vec2F, Vec3B>> particleLights = std::move(m_pendingParticleLights);
+  List<std::pair<Vec2F, Vec3F>> particleLights = std::move(m_pendingParticleLights);
   m_lightingCalculator.setMonochrome(Root::singleton().configuration()->get("monochromeLighting").toBool());
   m_lightingCalculator.begin(lightRange);
   lightingTileGather();
+
   prepLocker.unlock();
+
+
 
   for (auto const& light : lights) {
     Vec2F position = m_geometry.nearestTo(Vec2F(m_lightingCalculator.calculationRegion().min()), light.position);
     if (light.pointLight)
-      m_lightingCalculator.addPointLight(position, Color::v3bToFloat(light.color), light.pointBeam, light.beamAngle, light.beamAmbience);
-    else
-      m_lightingCalculator.addSpreadLight(position, Color::v3bToFloat(light.color));
+      m_lightingCalculator.addPointLight(position, light.color, light.pointBeam, light.beamAngle, light.beamAmbience);
+    else {
+      m_lightingCalculator.addSpreadLight(position, light.color);
+    }
   }
 
   for (auto const& lightPair : particleLights) {
     Vec2F position = m_geometry.nearestTo(Vec2F(m_lightingCalculator.calculationRegion().min()), lightPair.first);
-    m_lightingCalculator.addSpreadLight(position, Color::v3bToFloat(lightPair.second));
+    m_lightingCalculator.addSpreadLight(position, lightPair.second);
   }
 
   m_lightingCalculator.calculate(m_pendingLightMap);

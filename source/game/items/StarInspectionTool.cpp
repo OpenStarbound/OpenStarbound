@@ -56,7 +56,7 @@ List<LightSource> InspectionTool::lightSources() const {
   LightSource lightSource;
   lightSource.pointLight = true;
   lightSource.position = owner()->position() + owner()->handPosition(hand(), m_lightPosition - m_handPosition);
-  lightSource.color = m_lightColor.toRgb();
+  lightSource.color = m_lightColor.toRgbF();
   lightSource.pointBeam = m_beamWidth;
   lightSource.beamAngle = angle;
   lightSource.beamAmbience = m_ambientFactor;

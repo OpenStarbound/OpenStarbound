@@ -170,7 +170,7 @@ public:
 
   void collectLiquid(List<Vec2I> const& tilePositions, LiquidId liquidId);
 
-  Maybe<Vec2I> waitForLighting(Image* out = nullptr);
+  bool waitForLighting(WorldRenderData* renderData = nullptr);
 
   typedef std::function<bool(PlayerPtr, StringView)> BroadcastCallback;
   BroadcastCallback& broadcastCallback();
@@ -278,10 +278,10 @@ private:
   Mutex m_lightMapPrepMutex;
   Mutex m_lightMapMutex;
 
-  Image m_pendingLightMap;
-  Image m_lightMap;
+  Lightmap m_pendingLightMap;
+  Lightmap m_lightMap;
   List<LightSource> m_pendingLights;
-  List<std::pair<Vec2F, Vec3B>> m_pendingParticleLights;
+  List<std::pair<Vec2F, Vec3F>> m_pendingParticleLights;
   RectI m_pendingLightRange;
   Vec2I m_lightMinPosition;
   List<PreviewTile> m_previewTiles;

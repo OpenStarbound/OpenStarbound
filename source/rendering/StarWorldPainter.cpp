@@ -83,6 +83,7 @@ void WorldPainter::render(WorldRenderData& renderData, function<bool()> lightWai
     LogMap::set("client_render_world_async_light_wait", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
   }
 
+  m_renderer->setEffectParameter("lightMapEnabled", !renderData.isFullbright);
   if (renderData.isFullbright) {
     m_renderer->setEffectTexture("lightMap", Image::filled(Vec2U(1, 1), { 255, 255, 255, 255 }, PixelFormat::RGB24));
     m_renderer->setEffectParameter("lightMapMultiplier", 1.0f);

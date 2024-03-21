@@ -43,7 +43,7 @@ public:
   // with the rest of everything else, there are TILE previews and OBJECT
   // previews, but of course one has to go through the render method and the
   // other has to be rendered separately.
-  List<Drawable> renderObjectPreviews(Vec2F aimPosition, Direction walkingDirection, bool inToolRange, Vec4B favoriteColor) const;
+  List<Drawable> renderObjectPreviews(Vec2F aimPosition, Direction walkingDirection, bool inToolRange, Color favoriteColor) const;
   // Returns the facing override direciton if there is one
   Maybe<Direction> setupHumanoidHandItems(Humanoid& humanoid, Vec2F position, Vec2F aimPosition) const;
   void setupHumanoidHandItemDrawables(Humanoid& humanoid) const;

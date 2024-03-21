@@ -518,4 +518,10 @@ void Image::writePng(IODevicePtr device) const {
   png_destroy_write_struct(&png_ptr, &info_ptr);
 }
 
+ImageView::ImageView(Image const& image) {
+  size = image.size();
+  data = image.data();
+  format = image.pixelFormat();
+}
+
 }

@@ -241,7 +241,7 @@ List<LightSource> Flashlight::lightSources() const {
   LightSource lightSource;
   lightSource.pointLight = true;
   lightSource.position = owner()->position() + owner()->handPosition(hand(), (m_lightPosition - m_handPosition) / TilePixels);
-  lightSource.color = m_lightColor.toRgb();
+  lightSource.color = m_lightColor.toRgbF();
   lightSource.pointBeam = m_beamWidth;
   lightSource.beamAngle = angle;
   lightSource.beamAmbience = m_ambientFactor;
@@ -367,7 +367,7 @@ List<PreviewTile> BeamMiningTool::previewTiles(bool shifting) const {
 
   if (ownerp && worldp) {
     if (ownerp->isAdmin() || ownerp->inToolRange()) {
-      Color lightColor = Color::rgba(ownerp->favoriteColor());
+      Color lightColor = ownerp->favoriteColor();
       if (!ready())
         lightColor *= Color::rgbaf(0.75f, 0.75f, 0.75f, 1.0f);
       Vec3B light = lightColor.toRgb();
@@ -604,13 +604,13 @@ PaintingBeamTool::PaintingBeamTool(Json const& config, String const& directory, 
   m_blockVolume = assets->json("/sfx.config:miningBlockVolume").toFloat();
   m_endType = EndType::Object;
 
-  for (auto color : instanceValue("colorNumbers").toArray())
+  for (auto& color : instanceValue("colorNumbers").toArray())
     m_colors.append(jsonToColor(color));
 
   m_colorKeys = jsonToStringList(instanceValue("colorKeys"));
 
   m_colorIndex = instanceValue("colorIndex", 0).toInt();
-  m_color = m_colors[m_colorIndex].toRgba();
+  m_color = m_colors[m_colorIndex];
 }
 
 ItemPtr PaintingBeamTool::clone() const {
@@ -666,7 +666,7 @@ List<PreviewTile> PaintingBeamTool::previewTiles(bool shifting) const {
 void PaintingBeamTool::init(ToolUserEntity* owner, ToolHand hand) {
   FireableItem::init(owner, hand);
   BeamItem::init(owner, hand);
-  m_color = m_colors[m_colorIndex].toRgba();
+  m_color = m_colors[m_colorIndex];
 }
 
 List<Drawable> PaintingBeamTool::nonRotatedDrawables() const {
@@ -681,7 +681,7 @@ void PaintingBeamTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
 
   if (mode == FireMode::Alt && edgeTriggered) {
     m_colorIndex = (m_colorIndex + 1) % m_colors.size();
-    m_color = m_colors[m_colorIndex].toRgba();
+    m_color = m_colors[m_colorIndex];
     setInstanceValue("colorIndex", m_colorIndex);
     return;
   }

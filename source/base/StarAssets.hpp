@@ -7,6 +7,7 @@
 #include "StarThread.hpp"
 #include "StarAssetSource.hpp"
 #include "StarAssetPath.hpp"
+#include "StarRefPtr.hpp"
 
 namespace Star {
 
@@ -15,6 +16,8 @@ STAR_CLASS(Audio);
 STAR_CLASS(Image);
 STAR_STRUCT(FramesSpecification);
 STAR_CLASS(Assets);
+
+STAR_CLASS(LuaContext);
 
 STAR_EXCEPTION(AssetException, StarException);
 
@@ -312,6 +315,11 @@ private:
 
   mutable StringMap<String> m_bestFramesFiles;
   mutable StringMap<FramesSpecificationConstPtr> m_framesSpecifications;
+
+  // Lua
+  RefPtr<RefCounter> m_luaEngine; // dumb but to avoid including Lua.hpp in here...
+  mutable StringMap<LuaContextPtr> m_patchContexts;
+  mutable Mutex m_luaMutex;
 
   // Paths of all used asset sources, in load order.
   StringList m_assetSources;

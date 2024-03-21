@@ -25,7 +25,7 @@ public:
   void loadEffectConfig(String const& name, Json const& effectConfig, StringMap<String> const& shaders) override;
 
   void setEffectParameter(String const& parameterName, RenderEffectParameter const& parameter) override;
-  void setEffectTexture(String const& textureName, Image const& image) override;
+  void setEffectTexture(String const& textureName, ImageView const& image) override;
 
   void setScissorRect(Maybe<RectI> const& scissorRect) override;
 
@@ -188,7 +188,8 @@ private:
   static bool logGlErrorSummary(String prefix);
   static void uploadTextureImage(PixelFormat pixelFormat, Vec2U size, uint8_t const* data);
 
-  static RefPtr<GlLoneTexture> createGlTexture(Image const& texture, TextureAddressing addressing, TextureFiltering filtering);
+  
+  static RefPtr<GlLoneTexture> createGlTexture(ImageView const& image, TextureAddressing addressing, TextureFiltering filtering);
 
   shared_ptr<GlRenderBuffer> createGlRenderBuffer();
 

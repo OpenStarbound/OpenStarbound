@@ -214,7 +214,6 @@ Color jsonToColor(Json const& v) {
     if (v.type() != Json::Type::Array || (v.size() != 3 && v.size() != 4))
       throw JsonException("Json not an array of size 3 or 4 in jsonToColor");
     Color c = Color::rgba(0, 0, 0, 255);
-
     c.setRed(v.getInt(0));
     c.setGreen(v.getInt(1));
     c.setBlue(v.getInt(2));
@@ -235,9 +234,8 @@ Json jsonFromColor(Color const& color) {
   result.push_back(color.red());
   result.push_back(color.green());
   result.push_back(color.blue());
-  if (color.alpha() != 255) {
+  if (color.alpha() < 255)
     result.push_back(color.alpha());
-  }
   return result;
 }
 

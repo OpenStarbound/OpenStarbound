@@ -25,6 +25,7 @@ SET (star_base_HEADERS
 SET (star_base_SOURCES
     StarAnimatedPartSet.cpp
     StarAssets.cpp
+    StarCellularLightArray.cpp
     StarCellularLighting.cpp
     StarConfiguration.cpp
     StarDirectoryAssetSource.cpp

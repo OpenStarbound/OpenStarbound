@@ -116,7 +116,7 @@ ProjectileConfigPtr ProjectileDatabase::readConfig(String const& path) {
   projectileConfig->fullbright = config.getBool("fullbright", false);
   projectileConfig->renderLayer = parseRenderLayer(config.getString("renderLayer", "Projectile"));
 
-  projectileConfig->lightColor = jsonToVec3B(config.get("lightColor", JsonArray{0, 0, 0}));
+  projectileConfig->lightColor = jsonToColor(config.get("lightColor", JsonArray{0, 0, 0}));
   projectileConfig->lightPosition = jsonToVec2F(config.get("lightPosition", JsonArray{0, 0}));
   projectileConfig->pointLight = config.getBool("pointLight", false);
 

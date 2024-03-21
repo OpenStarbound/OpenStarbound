@@ -76,7 +76,7 @@ LuaAnimationComponent<Base>::LuaAnimationComponent() {
   animationCallbacks.registerCallback("addLightSource", [this](LuaTable const& lightSourceTable) {
       m_lightSources.append({
           lightSourceTable.get<Vec2F>("position"),
-          lightSourceTable.get<Color>("color").toRgb(),
+          lightSourceTable.get<Color>("color").toRgbF(),
           lightSourceTable.get<Maybe<bool>>("pointLight").value(),
           lightSourceTable.get<Maybe<float>>("pointBeam").value(),
           lightSourceTable.get<Maybe<float>>("beamAngle").value(),

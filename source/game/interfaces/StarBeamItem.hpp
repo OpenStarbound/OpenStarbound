@@ -63,10 +63,10 @@ protected:
   float m_innerBrightnessScale;
   float m_firstStripeThickness;
   float m_secondStripeThickness;
-  Vec4B m_color;
+  Color m_color;
 
   mutable bool m_inRangeLastUpdate;
-  mutable Vec4B m_lastUpdateColor;
+  mutable Color m_lastUpdateColor;
   mutable float m_particleGenerateCooldown;
 
   CSplineF m_beamCurve;

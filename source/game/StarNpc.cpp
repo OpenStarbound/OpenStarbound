@@ -1014,8 +1014,8 @@ bool Npc::isAdmin() const {
   return false;
 }
 
-Vec4B Npc::favoriteColor() const {
-  return Color::White.toRgba();
+Color Npc::favoriteColor() const {
+  return Color::White;
 }
 
 float Npc::beamGunRadius() const {

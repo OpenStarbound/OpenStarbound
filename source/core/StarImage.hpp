@@ -6,11 +6,13 @@
 
 namespace Star {
 
-enum class PixelFormat {
+enum class PixelFormat : uint8_t {
   RGB24,
   RGBA32,
   BGR24,
-  BGRA32
+  BGRA32,
+  RGB_F,
+  RGBA_F
 };
 
 uint8_t bitsPerPixel(PixelFormat pf);
@@ -148,8 +150,12 @@ inline uint8_t bitsPerPixel(PixelFormat pf) {
       return 32;
     case PixelFormat::BGR24:
       return 24;
-    default:
+    case PixelFormat::BGRA32:
       return 32;
+    case PixelFormat::RGB_F:
+      return 96;
+    default:
+      return 128;
   }
 }
 
@@ -161,8 +167,12 @@ inline uint8_t bytesPerPixel(PixelFormat pf) {
       return 4;
     case PixelFormat::BGR24:
       return 3;
-    default:
+    case PixelFormat::BGRA32:
       return 4;
+    case PixelFormat::RGB_F:
+      return 12;
+    default:
+      return 16;
   }
 }
 
@@ -306,5 +316,15 @@ void Image::forEachPixel(CallbackType&& callback) {
     }
   }
 }
+
+struct ImageView {
+  inline bool empty() const { return size.x() == 0 || size.y() == 0; }
+  ImageView() = default;
+  ImageView(Image const& image);
+
+  Vec2U size{0, 0};
+  uint8_t const* data = nullptr;
+  PixelFormat format = PixelFormat::RGB24;
+};
 
 }

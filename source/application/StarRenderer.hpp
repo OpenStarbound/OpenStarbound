@@ -141,8 +141,7 @@ public:
   // The effect config will specify named parameters and textures which can be
   // set here.
   virtual void setEffectParameter(String const& parameterName, RenderEffectParameter const& parameter) = 0;
-  virtual void setEffectTexture(String const& textureName, Image const& image) = 0;
-
+  virtual void setEffectTexture(String const& textureName, ImageView const& image) = 0;
   virtual bool switchEffectConfig(String const& name) = 0;
 
   // Any further rendering will be scissored based on this rect, specified in

@@ -2,6 +2,45 @@
 
 namespace Star {
 
+Lightmap::Lightmap() : m_width(0), m_height(0) {}
+
+Lightmap::Lightmap(unsigned width, unsigned height) : m_width(width), m_height(height) {
+  m_data = std::make_unique<float[]>(len());
+}
+
+Lightmap::Lightmap(Lightmap const& lightMap) {
+  operator=(lightMap);
+}
+
+Lightmap::Lightmap(Lightmap&& lightMap) noexcept {
+  operator=(std::move(lightMap));
+}
+
+Lightmap& Lightmap::operator=(Lightmap const& lightMap) {
+  m_width = lightMap.m_width;
+  m_height = lightMap.m_height;
+  if (lightMap.m_data) {
+    m_data = std::make_unique<float[]>(len());
+    memcpy(m_data.get(), lightMap.m_data.get(), len());
+  }
+  return *this;
+}
+
+Lightmap& Lightmap::operator=(Lightmap&& lightMap) noexcept {
+  m_width = take(lightMap.m_width);
+  m_height = take(lightMap.m_height);
+  m_data = take(lightMap.m_data);
+  return *this;
+}
+
+Lightmap::operator ImageView() {
+  ImageView view;
+  view.data = (uint8_t*)m_data.get();
+  view.size = size();
+  view.format = PixelFormat::RGB_F;
+  return view;
+}
+
 CellularLightingCalculator::CellularLightingCalculator(bool monochrome)
     : m_monochrome(monochrome)
 {
@@ -99,6 +138,32 @@ void CellularLightingCalculator::calculate(Image& output) {
     for (size_t x = arrayMin[0]; x < arrayMax[0]; ++x) {
       for (size_t y = arrayMin[1]; y < arrayMax[1]; ++y) {
         output.set24(x - arrayMin[0], y - arrayMin[1], Color::v3fToByte(m_lightArray.left().getLight(x, y)));
+      }
+    }
+  }
+}
+
+void CellularLightingCalculator::calculate(Lightmap& output) {
+  Vec2S arrayMin = Vec2S(m_queryRegion.min() - m_calculationRegion.min());
+  Vec2S arrayMax = Vec2S(m_queryRegion.max() - m_calculationRegion.min());
+
+  if (m_monochrome)
+    m_lightArray.right().calculate(arrayMin[0], arrayMin[1], arrayMax[0], arrayMax[1]);
+  else
+    m_lightArray.left().calculate(arrayMin[0], arrayMin[1], arrayMax[0], arrayMax[1]);
+
+  output = Lightmap(arrayMax[0] - arrayMin[0], arrayMax[1] - arrayMin[1]);
+
+  if (m_monochrome) {
+    for (size_t x = arrayMin[0]; x < arrayMax[0]; ++x) {
+      for (size_t y = arrayMin[1]; y < arrayMax[1]; ++y) {
+        output.set(x - arrayMin[0], y - arrayMin[1], m_lightArray.right().getLight(x, y));
+      }
+    }
+  } else {
+    for (size_t x = arrayMin[0]; x < arrayMax[0]; ++x) {
+      for (size_t y = arrayMin[1]; y < arrayMax[1]; ++y) {
+        output.set(x - arrayMin[0], y - arrayMin[1], m_lightArray.left().getLight(x, y));
       }
     }
   }

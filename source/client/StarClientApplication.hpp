@@ -53,6 +53,8 @@ private:
     String password;
   };
 
+  void renderReload();
+
   void changeState(MainAppState newState);
   void setError(String const& error);
   void setError(String const& error, std::exception const& e);
@@ -71,6 +73,8 @@ private:
 
   RootUPtr m_root;
   ThreadFunction<void> m_rootLoader;
+  CallbackListenerPtr m_reloadListener;
+
   MainAppState m_state = MainAppState::Startup;
 
   // Valid after applicationInit is called
