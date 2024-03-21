@@ -26,6 +26,7 @@ namespace LuaBindings {
     StringList activeWorlds(UniverseServer* universe);
     RpcThreadPromise<Json> sendWorldMessage(UniverseServer* universe, String const& worldId, String const& message, LuaVariadic<Json> args);
     void sendPacket(UniverseServer* universe, ConnectionId clientId, String const& packetTypeName, Json const& args);
+    String clientWorld(UniverseServer* universe, ConnectionId clientId);
   }
 }
 }

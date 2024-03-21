@@ -22,6 +22,7 @@ LuaCallbacks LuaBindings::makeUniverseServerCallbacks(UniverseServer* universe) 
   callbacks.registerCallbackWithSignature<StringList>("activeWorlds", bind(UniverseServerCallbacks::activeWorlds, universe));
   callbacks.registerCallbackWithSignature<RpcThreadPromise<Json>, String, String, LuaVariadic<Json>>("sendWorldMessage", bind(UniverseServerCallbacks::sendWorldMessage, universe, _1, _2, _3));
   callbacks.registerCallbackWithSignature<void, ConnectionId, String, Json>("sendPacket", bind(UniverseServerCallbacks::sendPacket, universe, _1, _2, _3));
+  callbacks.registerCallbackWithSignature<String, ConnectionId>("clientWorld", bind(UniverseServerCallbacks::clientWorld, universe, _1));
 
   return callbacks;
 }
@@ -131,6 +132,10 @@ void LuaBindings::UniverseServerCallbacks::sendPacket(UniverseServer* universe, 
   auto packetType = PacketTypeNames.getLeft(packetTypeName);
   auto packet = createPacket(packetType, args);
   universe->sendPacket(clientId, packet);
+}
+
+String LuaBindings::UniverseServerCallbacks::clientWorld(UniverseServer* universe, ConnectionId clientId) {
+  return printWorldId(universe->clientWorld(clientId));
 }
 
 }
