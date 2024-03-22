@@ -132,6 +132,9 @@ struct Packet {
   virtual void writeLegacy(DataStream& ds) const;
   virtual void write(DataStream& ds) const = 0;
 
+  virtual void readJson(Json const& json);
+  virtual Json writeJson() const;
+
   PacketCompressionMode compressionMode() const;
   void setCompressionMode(PacketCompressionMode compressionMode);
 
@@ -216,6 +219,9 @@ struct ChatReceivePacket : PacketBase<PacketType::ChatReceive> {
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
 
+  void readJson(Json const& json) override;
+  Json writeJson() const override;
+
   ChatReceivedMessage receivedMessage;
 };
 
@@ -271,8 +277,11 @@ struct PausePacket : PacketBase<PacketType::Pause> {
   void writeLegacy(DataStream& ds) const override;
   void write(DataStream& ds) const override;
 
-  bool pause;
-  float timescale;
+  void readJson(Json const& json) override;
+  Json writeJson() const override;
+
+  bool pause = false;
+  float timescale = 1.0f;
 };
 
 struct ServerInfoPacket : PacketBase<PacketType::ServerInfo> {
@@ -281,6 +290,9 @@ struct ServerInfoPacket : PacketBase<PacketType::ServerInfo> {
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
+
+  void readJson(Json const& json) override;
+  Json writeJson() const override;
 
   uint16_t players;
   uint16_t maxPlayers;
@@ -505,6 +517,9 @@ struct GiveItemPacket : PacketBase<PacketType::GiveItem> {
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
 
+  void readJson(Json const& json) override;
+  Json writeJson() const override;
+
   ItemDescriptor item;
 };
 
@@ -526,6 +541,9 @@ struct UpdateTileProtectionPacket : PacketBase<PacketType::UpdateTileProtection>
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
 
+  void readJson(Json const& json) override;
+  Json writeJson() const override;
+
   DungeonId dungeonId;
   bool isProtected;
 };
@@ -536,6 +554,9 @@ struct SetDungeonGravityPacket : PacketBase<PacketType::SetDungeonGravity> {
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
+
+  void readJson(Json const& json) override;
+  Json writeJson() const override;
 
   DungeonId dungeonId;
   Maybe<float> gravity;
@@ -548,6 +569,9 @@ struct SetDungeonBreathablePacket : PacketBase<PacketType::SetDungeonBreathable>
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
 
+  void readJson(Json const& json) override;
+  Json writeJson() const override;
+
   DungeonId dungeonId;
   Maybe<bool> breathable;
 };
@@ -558,6 +582,9 @@ struct SetPlayerStartPacket : PacketBase<PacketType::SetPlayerStart> {
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
+
+  void readJson(Json const& json) override;
+  Json writeJson() const override;
 
   Vec2F playerStart;
   bool respawnInWorld;
@@ -795,6 +822,9 @@ struct EntityMessagePacket : PacketBase<PacketType::EntityMessage> {
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
 
+  void readJson(Json const& json) override;
+  Json writeJson() const override;
+
   Variant<EntityId, String> entityId;
   String message;
   JsonArray args;
@@ -819,6 +849,9 @@ struct UpdateWorldPropertiesPacket : PacketBase<PacketType::UpdateWorldPropertie
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
+
+  void readJson(Json const& json) override;
+  Json writeJson() const override;
 
   JsonObject updatedProperties;
 };

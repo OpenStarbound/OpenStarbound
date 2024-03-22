@@ -1,0 +1,7 @@
+[
+  {
+    "op" : "add",
+    "path" : "/commandProcessorScripts/-",
+    "value" : "/scripts/opensb/servercommands/servercommands.lua"
+  }
+]

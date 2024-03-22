@@ -46,6 +46,32 @@ ChatReceivedMessage::ChatReceivedMessage(MessageContext context, ConnectionId fr
 ChatReceivedMessage::ChatReceivedMessage(MessageContext context, ConnectionId fromConnection, String const& fromNick, String const& text, String const& portrait)
   : context(context), fromConnection(fromConnection), fromNick(fromNick), portrait(portrait), text(text) {}
 
+ChatReceivedMessage::ChatReceivedMessage(Json const& json) : ChatReceivedMessage() {
+  auto jContext = json.get("context");
+  context = MessageContext(
+    MessageContextModeNames.getLeft(jContext.getString("mode")),
+    jContext.getString("channelName", "")
+  );
+  fromConnection = json.getUInt("fromConnection", 0);
+  fromNick = json.getString("fromNick", "");
+  portrait = json.getString("portrait", "");
+  text = json.getString("text");
+}
+
+Json ChatReceivedMessage::toJson() const {
+  return JsonObject{
+    {"context", JsonObject{
+      {"mode", MessageContextModeNames.getRight(context.mode)},
+      {"channelName", context.channelName.empty() ? Json() : Json(context.channelName)}
+    }},
+    {"fromConnection", fromConnection},
+    {"fromNick", fromNick.empty() ? Json() : fromNick},
+    {"portrait", portrait.empty() ? Json() : portrait},
+    {"text", text}
+  };
+}
+
+
 DataStream& operator>>(DataStream& ds, ChatReceivedMessage& receivedMessage) {
   ds.read(receivedMessage.context);
   ds.read(receivedMessage.fromConnection);

@@ -1,5 +1,6 @@
 #include "StarNetPackets.hpp"
 #include "StarDataStreamExtra.hpp"
+#include "StarJsonExtra.hpp"
 
 namespace Star {
 
@@ -79,17 +80,13 @@ EnumMap<PacketType> const PacketTypeNames{
 
 Packet::~Packet() {}
 
-void Packet::readLegacy(DataStream& ds) {
-  read(ds);
-}
-void Packet::writeLegacy(DataStream& ds) const {
-  write(ds);
-}
+void Packet::readLegacy(DataStream& ds) { read(ds); }
+void Packet::writeLegacy(DataStream& ds) const { write(ds); }
+void Packet::readJson(Json const& json) {}
+Json Packet::writeJson() const  { return JsonObject{}; }
 
-PacketCompressionMode Packet::compressionMode() const
-  { return m_compressionMode; }
-void Packet::setCompressionMode(PacketCompressionMode compressionMode)
-  { m_compressionMode = compressionMode; }
+PacketCompressionMode Packet::compressionMode() const { return m_compressionMode; }
+void Packet::setCompressionMode(PacketCompressionMode compressionMode) { m_compressionMode = compressionMode; }
 
 PacketPtr createPacket(PacketType type) {
   switch (type) {
@@ -168,22 +165,12 @@ PacketPtr createPacket(PacketType type) {
 }
 
 PacketPtr createPacket(PacketType type, Maybe<Json> const& args) {
-  if (!args)
-    return createPacket(type);
+  auto packet = createPacket(type);
 
-  switch (type) {
-    case PacketType::Pause: return make_shared<PausePacket>(args->getBool("pause"), args->getFloat("timescale", 1.0f));
-    case PacketType::ServerInfo: return make_shared<ServerInfoPacket>(args->getUInt("players"), args->getUInt("maxPlayers"));
-    case PacketType::GiveItem: return make_shared<GiveItemPacket>(ItemDescriptor(args->getObject("ItemDescriptor")));
-    case PacketType::UpdateTileProtection: return make_shared<UpdateTileProtectionPacket>(args->getUInt("dungeonId"), args->getBool("protected"));
-    case PacketType::SetDungeonGravity: return make_shared<SetDungeonGravityPacket>(args->getUInt("dungeonId"), args->getFloat("gravity"));
-    case PacketType::SetDungeonBreathable: return make_shared<SetDungeonBreathablePacket>(args->getUInt("dungeonId"), args->getBool("breathable"));
-    case PacketType::SetPlayerStart: return make_shared<SetPlayerStartPacket>(Vec2F{args->getArray("position")[0].toFloat(), args->getArray("position")[1].toFloat()}, args->getBool("respawnInWorld"));
-    case PacketType::EntityMessage: return make_shared<EntityMessagePacket>(EntityId(args->getInt("entityId")), args->getString("message"), args->get("JsonArray").toArray(), Uuid(args->getString("Uuid")));
-    case PacketType::UpdateWorldProperties: return make_shared<UpdateWorldPropertiesPacket>(args->getObject("updatedProperties"));
-    default:
-      throw StarPacketException(strf("Unrecognized packet type {}", (unsigned int)type));
-  }
+  if (args && !args->isNull())
+    packet->readJson(*args);
+
+  return packet;
 }
 
 ProtocolRequestPacket::ProtocolRequestPacket()
@@ -265,6 +252,16 @@ void ChatReceivePacket::write(DataStream& ds) const {
   ds.write(receivedMessage);
 }
 
+void ChatReceivePacket::readJson(Json const& json) {
+  receivedMessage = ChatReceivedMessage(json.get("receivedMessage"));
+}
+
+Json ChatReceivePacket::writeJson() const {
+  return JsonObject{
+    {"receivedMessage", receivedMessage.toJson()}
+  };
+}
+
 UniverseTimeUpdatePacket::UniverseTimeUpdatePacket() {
   universeTime = 0;
 }
@@ -344,6 +341,18 @@ void PausePacket::write(DataStream& ds) const {
   ds.write(timescale);
 }
 
+void PausePacket::readJson(Json const& json) {
+  pause = json.getBool("pause");
+  timescale = json.getFloat("timescale", 1.0f);
+}
+
+Json PausePacket::writeJson() const {
+  return JsonObject{
+    {"pause", pause},
+    {"timescale", timescale}
+  };
+}
+
 ServerInfoPacket::ServerInfoPacket() {}
 
 ServerInfoPacket::ServerInfoPacket(uint16_t players, uint16_t maxPlayers) :
@@ -360,6 +369,18 @@ void ServerInfoPacket::write(DataStream& ds) const
 {
   ds.write(players);
   ds.write(maxPlayers);
+}
+
+void ServerInfoPacket::readJson(Json const& json) {
+  players = json.getUInt("players");
+  maxPlayers = json.getUInt("maxPlayers");
+}
+
+Json ServerInfoPacket::writeJson() const {
+  return JsonObject{
+    {"players", players},
+    {"maxPlayers", maxPlayers}
+  };
 }
 
 ClientConnectPacket::ClientConnectPacket() {}
@@ -674,6 +695,16 @@ void GiveItemPacket::read(DataStream& ds) {
 
 void GiveItemPacket::write(DataStream& ds) const {
   ds.write(item);
+}
+
+void GiveItemPacket::readJson(Json const& json) {
+  item = ItemDescriptor(json.get("item"));
+}
+
+Json GiveItemPacket::writeJson() const {
+  return JsonObject{
+    {"item", item.toJson()}
+  };
 }
 
 EnvironmentUpdatePacket::EnvironmentUpdatePacket() {}
@@ -1019,6 +1050,28 @@ void EntityMessagePacket::write(DataStream& ds) const {
   ds.write(fromConnection);
 }
 
+void EntityMessagePacket::readJson(Json const& json) {
+  auto jEntityId = json.get("entityId");
+  if (jEntityId.canConvert(Json::Type::Int))
+    entityId = (EntityId)jEntityId.toInt();
+  else
+    entityId = jEntityId.toString();
+  message = json.getString("message");
+  args = json.getArray("args");
+  uuid = Uuid(json.getString("uuid"));
+  fromConnection = json.getUInt("fromConnection");
+}
+
+Json EntityMessagePacket::writeJson() const {
+  return JsonObject{
+    {"entityId", entityId.is<EntityId>() ? Json(entityId.get<EntityId>()) : Json(entityId.get<String>())},
+    {"message", message},
+    {"args", args},
+    {"uuid", uuid.hex()},
+    {"fromConnection", fromConnection}
+  };
+}
+
 EntityMessageResponsePacket::EntityMessageResponsePacket() {}
 
 EntityMessageResponsePacket::EntityMessageResponsePacket(Either<String, Json> response, Uuid uuid)
@@ -1047,6 +1100,17 @@ void UpdateWorldPropertiesPacket::write(DataStream& ds) const {
   ds.writeMapContainer(updatedProperties);
 }
 
+
+void UpdateWorldPropertiesPacket::readJson(Json const& json) {
+  updatedProperties = json.getObject("updatedProperties");
+}
+
+Json UpdateWorldPropertiesPacket::writeJson() const {
+  return JsonObject{
+    {"updatedProperties", updatedProperties},
+  };
+}
+
 UpdateTileProtectionPacket::UpdateTileProtectionPacket() {}
 
 UpdateTileProtectionPacket::UpdateTileProtectionPacket(DungeonId dungeonId, bool isProtected)
@@ -1060,6 +1124,18 @@ void UpdateTileProtectionPacket::read(DataStream& ds) {
 void UpdateTileProtectionPacket::write(DataStream& ds) const {
   ds.write(dungeonId);
   ds.write(isProtected);
+}
+
+void UpdateTileProtectionPacket::readJson(Json const& json) {
+  dungeonId = json.getUInt("dungeonId");
+  isProtected = json.getBool("isProtected");
+}
+
+Json UpdateTileProtectionPacket::writeJson() const {
+  return JsonObject{
+    {"dungeonId", dungeonId},
+    {"isProtected", isProtected}
+  };
 }
 
 SetDungeonGravityPacket::SetDungeonGravityPacket() {}
@@ -1077,6 +1153,18 @@ void SetDungeonGravityPacket::write(DataStream& ds) const {
   ds.write(gravity);
 }
 
+void SetDungeonGravityPacket::readJson(Json const& json) {
+  dungeonId = json.getUInt("dungeonId");
+  gravity = json.optFloat("gravity");
+}
+
+Json SetDungeonGravityPacket::writeJson() const {
+  return JsonObject{
+    {"dungeonId", dungeonId},
+    {"gravity", jsonFromMaybe<float>(gravity)}
+  };
+}
+
 SetDungeonBreathablePacket::SetDungeonBreathablePacket() {}
 
 SetDungeonBreathablePacket::SetDungeonBreathablePacket(DungeonId dungeonId, Maybe<bool> breathable)
@@ -1092,6 +1180,18 @@ void SetDungeonBreathablePacket::write(DataStream& ds) const {
   ds.write(breathable);
 }
 
+void SetDungeonBreathablePacket::readJson(Json const& json) {
+  dungeonId = json.getUInt("dungeonId");
+  breathable = json.optBool("breathable");
+}
+
+Json SetDungeonBreathablePacket::writeJson() const {
+  return JsonObject{
+    {"dungeonId", dungeonId},
+    {"breathable", jsonFromMaybe<bool>(breathable)}
+  };
+}
+
 SetPlayerStartPacket::SetPlayerStartPacket() {}
 
 SetPlayerStartPacket::SetPlayerStartPacket(Vec2F playerStart, bool respawnInWorld) : playerStart(playerStart), respawnInWorld(respawnInWorld) {}
@@ -1104,6 +1204,18 @@ void SetPlayerStartPacket::read(DataStream& ds) {
 void SetPlayerStartPacket::write(DataStream& ds) const {
   ds.write(playerStart);
   ds.write(respawnInWorld);
+}
+
+void SetPlayerStartPacket::readJson(Json const& json) {
+  playerStart = jsonToVec2F(json.get("playerStart"));
+  respawnInWorld = json.getBool("respawnInWorld");
+}
+
+Json SetPlayerStartPacket::writeJson() const {
+  return JsonObject{
+    {"playerStart", jsonFromVec2F(playerStart)},
+    {"respawnInWorld", respawnInWorld}
+  };
 }
 
 FindUniqueEntityResponsePacket::FindUniqueEntityResponsePacket() {}
