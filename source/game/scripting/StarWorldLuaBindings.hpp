@@ -73,6 +73,7 @@ namespace LuaBindings {
   }
 
   namespace ServerWorldCallbacks {
+    String id(WorldServer* world);
     bool breakObject(WorldServer* world, EntityId arg1, bool arg2);
     bool isVisibleToPlayer(WorldServer* world, RectF const& arg1);
     bool loadRegion(WorldServer* world, RectF const& arg1);
