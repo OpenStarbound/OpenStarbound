@@ -46,7 +46,7 @@ Directives::Shared::Shared(List<Entry>&& givenEntries, String&& givenString, Str
   entries = std::move(givenEntries);
   string = std::move(givenString);
   prefix = givenPrefix;
-  hash = XXH3_64bits(string.utf8Ptr(), string.utf8Size());
+  hash = string.empty() ? 0 : XXH3_64bits(string.utf8Ptr(), string.utf8Size());
 }
 
 Directives::Directives() {}
@@ -63,7 +63,7 @@ Directives::Directives(const char* directives) {
   parse(directives);
 }
 
-Directives::Directives(Directives&& directives) {
+Directives::Directives(Directives&& directives) noexcept {
   *this = std::move(directives);
 }
 
@@ -99,7 +99,7 @@ Directives& Directives::operator=(const char* s) {
   return *this;
 }
 
-Directives& Directives::operator=(Directives&& other) {
+Directives& Directives::operator=(Directives&& other) noexcept {
   shared = std::move(other.shared);
   return *this;
 }
@@ -215,6 +215,23 @@ bool Directives::empty() const {
 
 Directives::operator bool() const { return !empty(); }
 
+bool Directives::equals(Directives const& other) const {
+  return hash() == other.hash();
+}
+
+bool Directives::equals(String const& string) const {
+  auto directiveString = stringPtr();
+  return directiveString ? string == *directiveString : string.empty();
+}
+
+bool Directives::operator==(Directives const& other) const {
+  return equals(other);
+}
+
+bool Directives::operator==(String const& string) const {
+  return equals(string);
+}
+
 DataStream& operator>>(DataStream& ds, Directives& directives) {
   String string;
   ds.read(string);
@@ -231,6 +248,18 @@ DataStream& operator<<(DataStream & ds, Directives const& directives) {
     ds.write(String());
 
   return ds;
+}
+
+bool operator==(Directives const& d1, Directives const& d2) {
+  return d1.equals(d2);
+}
+
+bool operator==(String const& string, Directives const& directives) {
+  return directives.equals(string);
+}
+
+bool operator==(Directives const& directives, String const& string) {
+  return directives.equals(string);
 }
 
 DirectivesGroup::DirectivesGroup() : m_count(0) {}

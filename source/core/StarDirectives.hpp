@@ -44,13 +44,13 @@ public:
   Directives(String&& directives);
   Directives(const char* directives);
   Directives(Directives const& directives);
-  Directives(Directives&& directives);
+  Directives(Directives&& directives) noexcept;
   ~Directives();
 
   Directives& operator=(String const& s);
   Directives& operator=(String&& s);
   Directives& operator=(const char* s);
-  Directives& operator=(Directives&& other);
+  Directives& operator=(Directives&& other) noexcept;
   Directives& operator=(Directives const& other);
 
   void loadOperations() const;
@@ -65,8 +65,18 @@ public:
   bool empty() const;
   operator bool() const;
 
+  bool equals(Directives const& other) const;
+  bool equals(String const& string) const;
+
+  bool operator==(Directives const& other) const;
+  bool operator==(String const& string) const;
+
   friend DataStream& operator>>(DataStream& ds, Directives& directives);
   friend DataStream& operator<<(DataStream& ds, Directives const& directives);
+
+  //friend bool operator==(Directives const& d1, String const& d2);
+  //friend bool operator==(Directives const& directives, String const& string);
+  //friend bool operator==(String const& string, Directives const& directives);
 
   std::shared_ptr<Shared const> shared;
 };
