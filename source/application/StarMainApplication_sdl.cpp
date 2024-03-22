@@ -457,7 +457,8 @@ public:
           Thread::sleepPrecise(spareMilliseconds);
       }
     } catch (std::exception const& e) {
-      Logger::error("Application: exception thrown, shutting down: {}", outputException(e, true));
+      Logger::error("Application: exception thrown!");
+      fatalException(e, true);
     }
 
     try {
