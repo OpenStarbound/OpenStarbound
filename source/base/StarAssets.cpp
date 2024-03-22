@@ -111,7 +111,7 @@ Assets::Assets(Settings settings, StringList assetSources) {
 
   auto luaEngine = LuaEngine::create();
   m_luaEngine = luaEngine;
-  auto pushGlobalContext = [&luaEngine](String const& name, LuaCallbacks & callbacks) {
+  auto pushGlobalContext = [&luaEngine](String const& name, LuaCallbacks && callbacks) {
     auto table = luaEngine->createTable();
     for (auto const& p : callbacks.callbacks())
       table.set(p.first, luaEngine->createWrappedFunction(p.second));

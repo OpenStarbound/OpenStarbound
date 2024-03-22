@@ -375,6 +375,7 @@ namespace LuaBindings {
       callbacks.registerCallback("isClient", []() { return false; });
       callbacks.registerCallback("isServer", []() { return true;  });
 
+      callbacks.registerCallbackWithSignature<String>("id", bind(ServerWorldCallbacks::id, serverWorld));
       callbacks.registerCallbackWithSignature<bool, EntityId, bool>("breakObject", bind(ServerWorldCallbacks::breakObject, serverWorld, _1, _2));
       callbacks.registerCallbackWithSignature<bool, RectF>("isVisibleToPlayer", bind(ServerWorldCallbacks::isVisibleToPlayer, serverWorld, _1));
       callbacks.registerCallbackWithSignature<bool, RectF>("loadRegion", bind(ServerWorldCallbacks::loadRegion, serverWorld, _1));
@@ -1084,6 +1085,10 @@ namespace LuaBindings {
 
   RectI ClientWorldCallbacks::clientWindow(WorldClient* world) {
     return world->clientWindow();	
+  }
+
+  String ServerWorldCallbacks::id(WorldServer* world) {
+    return world->worldId();
   }
 
   bool ServerWorldCallbacks::breakObject(WorldServer* world, EntityId arg1, bool arg2) {
