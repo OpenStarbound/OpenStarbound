@@ -141,7 +141,7 @@ Assets::Assets(Settings settings, StringList assetSources) {
     });
 
     if (newFiles) {
-      callbacks.registerCallback("add", [this, &newFiles](LuaEngine& engine, String const& path, LuaValue const& data) {
+      callbacks.registerCallback("add", [&newFiles](LuaEngine& engine, String const& path, LuaValue const& data) {
         ByteArray bytes;
         if (auto str = engine.luaMaybeTo<String>(data))
           bytes = ByteArray(str->utf8Ptr(), str->utf8Size());

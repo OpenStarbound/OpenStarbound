@@ -58,6 +58,8 @@ TechController::TechController() {
 
   m_xParentOffset.setFixedPointBase(0.003125);
   m_yParentOffset.setFixedPointBase(0.003125);
+  m_xParentOffset.setInterpolator(lerp<float, float>);
+  m_yParentOffset.setInterpolator(lerp<float, float>);
 }
 
 Json TechController::diskStore() {
