@@ -13,6 +13,26 @@
 
 namespace Star {
 
+float const DefaultPerceptualRangeDb = 40.f;
+float const DefaultPerceptualBoostRangeDb = 6.f;
+// https://github.com/discord/perceptual
+float perceptualToAmplitude(float perceptual, float normalizedMax, float range, float boostRange) {
+  if (perceptual == 0.f) return 0.f;
+  float dB = perceptual > normalizedMax
+    ? ((perceptual - normalizedMax) / normalizedMax) * boostRange
+    : (perceptual / normalizedMax) * range - range;
+  return normalizedMax * pow(10.f, dB / 20.f);
+}
+
+float amplitudeToPerceptual(float amp, float normalizedMax, float range, float boostRange) {
+  if (amp == 0.f) return 0.f;
+  float const dB = 20.f * log10(amp / normalizedMax);
+  float perceptual = dB > 0.f
+    ? dB / boostRange + 1
+    : (range + dB) / range;
+  return normalizedMax * perceptual;
+}
+
 namespace {
   struct WaveData {
     ByteArrayPtr byteArray;

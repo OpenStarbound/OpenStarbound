@@ -4,6 +4,15 @@
 
 namespace Star {
 
+extern float const DefaultPerceptualRangeDb;
+extern float const DefaultPerceptualBoostRangeDb;
+
+float perceptualToAmplitude(float perceptual, float normalizedMax = 1.f,
+  float range = DefaultPerceptualRangeDb, float boostRange = DefaultPerceptualBoostRangeDb);
+
+float amplitudeToPerceptual(float amp, float normalizedMax = 1.f,
+  float range = DefaultPerceptualRangeDb, float boostRange = DefaultPerceptualBoostRangeDb);
+
 STAR_CLASS(CompressedAudioImpl);
 STAR_CLASS(UncompressedAudioImpl);
 STAR_CLASS(Audio);

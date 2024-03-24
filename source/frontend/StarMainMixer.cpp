@@ -37,6 +37,7 @@ void MainMixer::update(float dt, bool muteSfx, bool muteMusic) {
         }
       } else if (!m_mutedGroups.contains(group)) {
         float volumeSetting = Root::singleton().configuration()->get(settingName).toFloat() / 100.0f;
+        volumeSetting = perceptualToAmplitude(volumeSetting);
         if (!m_groupVolumes.contains(group) || volumeSetting != m_groupVolumes[group]) {
           m_mixer->setGroupVolume(group, volumeSetting);
           m_groupVolumes[group] = volumeSetting;

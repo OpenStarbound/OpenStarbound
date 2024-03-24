@@ -173,9 +173,13 @@ private:
 
 
   OpusEncoderPtr m_encoder;
-
+  
   float m_outputVolume = 1.0f;
   float m_inputVolume = 1.0f;
+
+  float m_outputAmplitude = 1.0f;
+  float m_inputAmplitude = 1.0f;
+
   float m_threshold = -50.0f;
   
   int64_t m_lastSentTime = 0;

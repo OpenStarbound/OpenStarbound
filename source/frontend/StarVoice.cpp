@@ -6,6 +6,7 @@
 #include "StarRoot.hpp"
 #include "StarLogging.hpp"
 #include "StarInterpolation.hpp"
+#include "StarAudio.hpp"
 #include "opus/opus.h"
 
 #include "SDL2/SDL.h"
@@ -196,9 +197,11 @@ void Voice::loadJson(Json const& config, bool skipSave) {
 	&& change(m_deviceName, config.optString("deviceName"), changed))
 		resetDevice();
 
-  m_threshold    = config.getFloat("threshold", m_threshold);
-  m_inputVolume  = config.getFloat("inputVolume", m_inputVolume);
-  m_outputVolume = config.getFloat("outputVolume",   m_outputVolume);
+  m_threshold = config.getFloat("threshold", m_threshold);
+  m_inputAmplitude = perceptualToAmplitude(
+		m_inputVolume = config.getFloat("inputVolume", m_inputVolume));
+  m_outputAmplitude = perceptualToAmplitude(
+		m_outputVolume = config.getFloat("outputVolume", m_outputVolume));
 	
 	if (change(m_loopback, config.getBool("loopback", m_loopback), changed))
 		m_clientSpeaker->playing = false;
@@ -321,7 +324,7 @@ void Voice::readAudioData(uint8_t* stream, int len) {
 		}
 	}
 
-	m_clientSpeaker->decibelLevel = getAudioLoudness((int16_t*)stream, sampleCount, m_inputVolume);
+	m_clientSpeaker->decibelLevel = getAudioLoudness((int16_t*)stream, sampleCount, m_inputAmplitude);
 
 	if (!m_loopback) {
 		if (active && !m_clientSpeaker->playing)
@@ -411,7 +414,7 @@ void Voice::mix(int16_t* buffer, size_t frameCount, unsigned channels) {
 	if (mix) {
 		finalBuffer.resize(sharedBuffer.size(), 0);
 
-		float vol = m_outputVolume;
+		float vol = m_outputAmplitude;
 		for (size_t i = 0; i != sharedBuffer.size(); ++i)
 			finalBuffer[i] = (int16_t)clamp<int>(sharedBuffer[i] * vol, INT16_MIN, INT16_MAX);
 
@@ -678,9 +681,9 @@ void Voice::thread() {
 				}
 				m_capturedChunksFrames -= VOICE_FRAME_SIZE;
 
-				if (m_inputVolume != 1.0f) {
+				if (m_inputAmplitude != 1.0f) {
 					for (size_t i = 0; i != samples.size(); ++i)
-						samples[i] *= m_inputVolume;
+						samples[i] *= m_inputAmplitude;
 				}
 
 				if (int encodedSize = opus_encode(m_encoder.get(), samples.data(), VOICE_FRAME_SIZE, (unsigned char*)encoded.ptr(), encoded.size())) {
