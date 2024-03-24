@@ -145,7 +145,10 @@ Assets::Assets(Settings settings, StringList assetSources) {
         ByteArray bytes;
         if (auto str = engine.luaMaybeTo<String>(data))
           bytes = ByteArray(str->utf8Ptr(), str->utf8Size());
-        else {
+        else if (auto image = engine.luaMaybeTo<Image>(data)) {
+          newFiles->set(path, std::move(*image));
+          return;
+        } else {
           auto json = engine.luaTo<Json>(data).repr();
           bytes = ByteArray(json.utf8Ptr(), json.utf8Size());
         }
@@ -855,6 +858,19 @@ ByteArray Assets::read(String const& path) const {
   throw AssetException(strf("No such asset '{}'", path));
 }
 
+ImageConstPtr Assets::readImage(String const& path) const {
+  if (auto p = m_files.ptr(path)) {
+    ImageConstPtr image;
+    if (auto memorySource = as<MemoryAssetSource>(p->source))
+      image = memorySource->image(p->sourceName);
+    if (!image)
+      image = make_shared<Image>(Image::readPng(p->source->open(p->sourceName)));
+    return image;
+  }
+  throw AssetException(strf("No such asset '{}'", path));
+}
+
+
 Json Assets::checkPatchArray(String const& path, AssetSourcePtr const& source, Json const result, JsonArray const patchData, Maybe<Json> const external) const {
   auto externalRef = external.value();
   auto newResult = result;
@@ -1140,7 +1156,7 @@ shared_ptr<Assets::AssetData> Assets::loadImage(AssetPath const& path) const {
   } else {
     auto imageData = make_shared<ImageData>();
     imageData->image = unlockDuring([&]() {
-      return make_shared<Image>(Image::readPng(open(path.basePath)));
+      return readImage(path.basePath);
     });
     imageData->frames = bestFramesSpecification(path.basePath);
 

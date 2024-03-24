@@ -275,6 +275,7 @@ private:
 
   IODevicePtr open(String const& basePath) const;
   ByteArray read(String const& basePath) const;
+  ImageConstPtr readImage(String const& path) const;
 
   Json readJson(String const& basePath) const;
   Json checkPatchArray(String const& path, AssetSourcePtr const& source, Json const result, JsonArray const patchData, Maybe<Json> const external) const;

@@ -17,9 +17,11 @@ SET (star_base_HEADERS
     StarMemoryAssetSource.hpp
     StarMixer.hpp
     StarPackedAssetSource.hpp
+    StarRootBase.hpp
     StarVersion.hpp
     StarVersionOptionParser.hpp
     StarWorldGeometry.hpp
+    scripting/StarImageLuaBindings.hpp
   )
 
 SET (star_base_SOURCES
@@ -32,8 +34,10 @@ SET (star_base_SOURCES
     StarMemoryAssetSource.cpp
     StarMixer.cpp
     StarPackedAssetSource.cpp
+    StarRootBase.cpp
     StarVersionOptionParser.cpp
     StarWorldGeometry.cpp
+    scripting/StarImageLuaBindings.cpp
   )
 
 CONFIGURE_FILE (StarVersion.cpp.in ${CMAKE_CURRENT_BINARY_DIR}/StarVersion.cpp)

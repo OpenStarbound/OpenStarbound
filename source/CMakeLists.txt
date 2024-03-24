@@ -532,7 +532,10 @@ add_subdirectory(core)
 
 # Less general purpose code than core that is available to both the game and
 # application modules.
-set(STAR_BASE_INCLUDES ${PROJECT_SOURCE_DIR}/base)
+set(STAR_BASE_INCLUDES
+    ${PROJECT_SOURCE_DIR}/base
+    ${PROJECT_SOURCE_DIR}/base/scripting
+)
 add_subdirectory(base)
 
 # Platform APIs that are implemented by the application module

@@ -1,14 +1,13 @@
 #pragma once
 
+#include "StarRootBase.hpp"
 #include "StarJson.hpp"
 #include "StarLogging.hpp"
 #include "StarListener.hpp"
-#include "StarAssets.hpp"
 #include "StarConfiguration.hpp"
 
 namespace Star {
 
-STAR_CLASS(Configuration);
 STAR_CLASS(ItemDatabase);
 STAR_CLASS(MaterialDatabase);
 STAR_CLASS(ObjectDatabase);
@@ -50,15 +49,13 @@ STAR_CLASS(CollectionDatabase);
 
 STAR_CLASS(Root);
 
-STAR_EXCEPTION(RootException, StarException);
-
 // Singleton Root object for starbound providing access to the unique
 // Configuration class, as well as the assets, root factories, and databases.
 // Root, and all members of Root, should be thread safe.  Root initialization
 // should be completed before any code dependent on Root is started in any
 // thread, and all Root dependent code in any thread should be finished before
 // letting Root destruct.
-class Root {
+class Root : public RootBase {
 public:
   struct Settings {
     Assets::Settings assetsSettings;
@@ -135,8 +132,8 @@ public:
   // All of the Root member accessors are safe to call at any time after Root
   // initialization, if they are not loaded they will load before returning.
 
-  AssetsConstPtr assets();
-  ConfigurationPtr configuration();
+  AssetsConstPtr assets() override;
+  ConfigurationPtr configuration() override;
 
   ObjectDatabaseConstPtr objectDatabase();
   PlantDatabaseConstPtr plantDatabase();
@@ -164,7 +161,6 @@ public:
   TreasureDatabaseConstPtr treasureDatabase();
   DungeonDefinitionsConstPtr dungeonDefinitions();
   TilesetDatabaseConstPtr tilesetDatabase();
-  StatisticsDatabaseConstPtr statisicsDatabase();
   StatisticsDatabaseConstPtr statisticsDatabase();
   EmoteProcessorConstPtr emoteProcessor();
   SpeciesDatabaseConstPtr speciesDatabase();
@@ -190,8 +186,6 @@ private:
 
   // m_configurationMutex must be held when calling
   void writeConfig();
-
-  static atomic<Root*> s_singleton;
 
   Settings m_settings;
 

@@ -60,25 +60,19 @@ namespace {
   unsigned const RootLoadThreads = 4;
 }
 
-atomic<Root*> Root::s_singleton;
-
 Root* Root::singletonPtr() {
-  return s_singleton.load();
+  return dynamic_cast<Root*>(s_singleton.load());
 }
 
 Root& Root::singleton() {
-  auto ptr = s_singleton.load();
+  auto ptr = singletonPtr();
   if (!ptr)
     throw RootException("Root::singleton() called with no Root instance available");
   else
     return *ptr;
 }
 
-Root::Root(Settings settings) {
-  Root* oldRoot = nullptr;
-  if (!s_singleton.compare_exchange_strong(oldRoot, this))
-    throw RootException("Singleton Root has been constructed twice");
-
+Root::Root(Settings settings) : RootBase() {
   m_settings = std::move(settings);
   if (m_settings.runtimeConfigFile)
     m_runtimeConfigFile = toStoragePath(*m_settings.runtimeConfigFile);

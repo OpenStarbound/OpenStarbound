@@ -1,6 +1,7 @@
 #include "StarImageLuaBindings.hpp"
 #include "StarLuaConverters.hpp"
 #include "StarImage.hpp"
+#include "StarRootBase.hpp"
 
 namespace Star {
 
@@ -20,6 +21,15 @@ LuaMethods<Image> LuaUserDataMethods<Image>::make() {
 
   methods.registerMethod("subImage", [](Image& image, Vec2U const& min, Vec2U const& size) {
     return image.subImage(min, size);
+  });
+
+  methods.registerMethod("process", [](Image& image, String const& directives) {
+    return processImageOperations(parseImageOperations(directives), image, [](String const& path) -> Image const* {
+      if (auto root = RootBase::singletonPtr())
+        return root->assets()->image(path).get();
+      else
+        return nullptr;
+    });
   });
 
   return methods;
