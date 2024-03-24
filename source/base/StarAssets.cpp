@@ -103,7 +103,8 @@ Maybe<RectU> FramesSpecification::getRect(String const& frame) const {
 }
 
 Assets::Assets(Settings settings, StringList assetSources) {
-  const char* const AssetsPatchSuffix = ".patch";
+  const char* AssetsPatchSuffix = ".patch";
+  const char* AssetsLuaPatchSuffix = ".patch.lua";
 
   m_settings = std::move(settings);
   m_stopThreads = false;
@@ -188,6 +189,10 @@ Assets::Assets(Settings settings, StringList assetSources) {
       if (filename.contains(AssetsPatchSuffix, String::CaseInsensitive)) {
         if (filename.endsWith(AssetsPatchSuffix, String::CaseInsensitive)) {
           auto targetPatchFile = filename.substr(0, filename.size() - strlen(AssetsPatchSuffix));
+          if (auto p = m_files.ptr(targetPatchFile))
+            p->patchSources.append({filename, source});
+        } else if (filename.endsWith(AssetsLuaPatchSuffix, String::CaseInsensitive)) {
+          auto targetPatchFile = filename.substr(0, filename.size() - strlen(AssetsLuaPatchSuffix));
           if (auto p = m_files.ptr(targetPatchFile))
             p->patchSources.append({filename, source});
         } else {

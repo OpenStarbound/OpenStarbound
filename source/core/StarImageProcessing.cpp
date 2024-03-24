@@ -446,6 +446,10 @@ StringList imageOperationReferences(List<ImageOperation> const& operations) {
 }
 
 void processImageOperation(ImageOperation const& operation, Image& image, ImageReferenceCallback refCallback) {
+  if (image.bytesPerPixel() == 3) {
+    // Convert to an image format that has alpha so certain operations function properly
+    image = image.convert(image.pixelFormat() == PixelFormat::BGR24 ? PixelFormat::BGRA32 : PixelFormat::RGBA32);
+  }
   if (auto op = operation.ptr<HueShiftImageOperation>()) {
     image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
       if (pixel[3] != 0)
