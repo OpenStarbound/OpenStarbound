@@ -2,14 +2,22 @@
 
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
+#include "StarBiMap.hpp"
 
 namespace Star {
+
+enum class LightType : uint8_t {
+  Spread = 0,
+  Point = 1,
+  PointAsSpread = 2 // Point with spread-like range
+};
+
+extern EnumMap<LightType> const LightTypeNames;
 
 struct LightSource {
   Vec2F position;
   Vec3F color;
-
-  bool pointLight;
+  LightType type;
   // pointBeam of 0.0 means light has no beam component, as pointBeam goes up,
   // the dropoff from the beamAngle becomes faster and faster.
   float pointBeam;

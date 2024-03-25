@@ -495,7 +495,10 @@ ObjectConfigPtr ObjectDatabase::readConfig(String const& path) {
         objectConfig->lightColors[pair.first] = jsonToColor(pair.second);
     }
 
-    objectConfig->pointLight = config.getBool("pointLight", false);
+    if (auto lightType = config.optString("lightType"))
+      objectConfig->lightType = LightTypeNames.getLeft(*lightType);
+    else
+      objectConfig->lightType = (LightType)config.getBool("pointLight", false);
     objectConfig->pointBeam = config.getFloat("pointBeam", 0.0f);
     objectConfig->beamAmbience = config.getFloat("beamAmbience", 0.0f);
 

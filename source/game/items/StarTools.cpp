@@ -239,7 +239,7 @@ List<LightSource> Flashlight::lightSources() const {
 
   float angle = world()->geometry().diff(owner()->aimPosition(), owner()->position()).angle();
   LightSource lightSource;
-  lightSource.pointLight = true;
+  lightSource.type = LightType::Point;
   lightSource.position = owner()->position() + owner()->handPosition(hand(), (m_lightPosition - m_handPosition) / TilePixels);
   lightSource.color = m_lightColor.toRgbF();
   lightSource.pointBeam = m_beamWidth;

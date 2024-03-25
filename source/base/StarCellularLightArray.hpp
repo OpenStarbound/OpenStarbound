@@ -56,6 +56,7 @@ public:
     float beam;
     float beamAngle;
     float beamAmbience;
+    bool asSpread;
   };
 
   void setParameters(unsigned spreadPasses, float spreadMaxAir, float spreadMaxObstacle,

@@ -118,7 +118,10 @@ ProjectileConfigPtr ProjectileDatabase::readConfig(String const& path) {
 
   projectileConfig->lightColor = jsonToColor(config.get("lightColor", JsonArray{0, 0, 0}));
   projectileConfig->lightPosition = jsonToVec2F(config.get("lightPosition", JsonArray{0, 0}));
-  projectileConfig->pointLight = config.getBool("pointLight", false);
+  if (auto lightType = config.optString("lightType"))
+    projectileConfig->lightType = LightTypeNames.getLeft(*lightType);
+  else
+    projectileConfig->lightType = (LightType)config.getBool("pointLight", false);
 
   projectileConfig->persistentAudio = config.getString("persistentAudio", "");
 

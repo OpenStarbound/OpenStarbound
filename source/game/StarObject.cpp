@@ -262,7 +262,7 @@ List<LightSource> Object::lightSources() const {
     LightSource lightSource;
     lightSource.position = position() + centerOfTile(orientation->lightPosition);
     lightSource.color = color.toRgbF();
-    lightSource.pointLight = m_config->pointLight;
+    lightSource.type = m_config->lightType;
     lightSource.pointBeam = m_config->pointBeam;
     lightSource.beamAngle = orientation->beamAngle;
     lightSource.beamAmbience = m_config->beamAmbience;

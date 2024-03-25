@@ -1,12 +1,13 @@
 #include "StarCellularLightArray.hpp"
+#include "StarInterpolation.hpp"
 // just specializing these in a cpp file so I can iterate on them without recompiling like 40 files!!
 
 namespace Star {
 
 template <>
 void CellularLightArray<ScalarLightTraits>::calculatePointLighting(size_t xmin, size_t ymin, size_t xmax, size_t ymax) {
-  float perBlockObstacleAttenuation = 1.0f / m_pointMaxObstacle;
-  float perBlockAirAttenuation = 1.0f / m_pointMaxAir;
+  float pointPerBlockObstacleAttenuation = 1.0f / m_pointMaxObstacle;
+  float pointPerBlockAirAttenuation = 1.0f / m_pointMaxAir;
 
   for (PointLight light : m_pointLights) {
     if (light.position[0] < 0 || light.position[0] > m_width - 1 || light.position[1] < 0 || light.position[1] > m_height - 1)
@@ -14,8 +15,10 @@ void CellularLightArray<ScalarLightTraits>::calculatePointLighting(size_t xmin, 
 
     float maxIntensity = ScalarLightTraits::maxIntensity(light.value);
     Vec2F beamDirection = Vec2F(1, 0).rotate(light.beamAngle);
+    float perBlockObstacleAttenuation = light.asSpread ? 1.0f / m_spreadMaxObstacle : pointPerBlockObstacleAttenuation;
+    float perBlockAirAttenuation = light.asSpread ? 1.0f / m_spreadMaxAir : pointPerBlockAirAttenuation;
 
-    float maxRange = maxIntensity * m_pointMaxAir;
+    float maxRange = maxIntensity * (light.asSpread ? m_spreadMaxAir : m_pointMaxAir);
     // The min / max considering the radius of the light
     size_t lxmin = std::floor(std::max<float>(xmin, light.position[0] - maxRange));
     size_t lymin = std::floor(std::max<float>(ymin, light.position[1] - maxRange));
@@ -40,7 +43,7 @@ void CellularLightArray<ScalarLightTraits>::calculatePointLighting(size_t xmin, 
           continue;
 
         Vec2F direction = relativeLightPosition / distance;
-        if (light.beam > 0.0f) {
+        if (light.beam > 0.0001f) {
           attenuation += (1.0f - light.beamAmbience) * clamp(light.beam * (1.0f - direction * beamDirection), 0.0f, 1.0f);
           if (attenuation >= 1.0f)
             continue;
@@ -54,12 +57,21 @@ void CellularLightArray<ScalarLightTraits>::calculatePointLighting(size_t xmin, 
         float circularizedPerBlockObstacleAttenuation = perBlockObstacleAttenuation / max(fabs(direction[0]), fabs(direction[1]));
         float blockAttenuation = lineAttenuation(blockPos, light.position, circularizedPerBlockObstacleAttenuation, remainingAttenuation);
 
+        attenuation += blockAttenuation;
         // Apply single obstacle boost (determine single obstacle by one
         // block unit of attenuation).
-        attenuation += blockAttenuation + min(blockAttenuation, circularizedPerBlockObstacleAttenuation) * m_pointObstacleBoost;
+        if (!light.asSpread)
+         attenuation += min(blockAttenuation, circularizedPerBlockObstacleAttenuation) * m_pointObstacleBoost;
 
-        if (attenuation < 1.0f)
-          setLight(x, y, lvalue + ScalarLightTraits::subtract(light.value, attenuation));
+        if (attenuation < 1.0f) {
+          auto newLight = ScalarLightTraits::subtract(light.value, attenuation);
+          if (ScalarLightTraits::maxIntensity(newLight) > 0.0001f) {
+            if (light.asSpread)
+              setLight(x, y, lvalue + newLight * 0.25f);
+            else
+              setLight(x, y, lvalue + newLight);
+          }
+        }
       }
     }
   }
@@ -67,8 +79,8 @@ void CellularLightArray<ScalarLightTraits>::calculatePointLighting(size_t xmin, 
 
 template <>
 void CellularLightArray<ColoredLightTraits>::calculatePointLighting(size_t xmin, size_t ymin, size_t xmax, size_t ymax) {
-  float perBlockObstacleAttenuation = 1.0f / m_pointMaxObstacle;
-  float perBlockAirAttenuation = 1.0f / m_pointMaxAir;
+  float pointPerBlockObstacleAttenuation = 1.0f / m_pointMaxObstacle;
+  float pointPerBlockAirAttenuation = 1.0f / m_pointMaxAir;
 
   for (PointLight light : m_pointLights) {
     if (light.position[0] < 0 || light.position[0] > m_width - 1 || light.position[1] < 0 || light.position[1] > m_height - 1)
@@ -76,8 +88,10 @@ void CellularLightArray<ColoredLightTraits>::calculatePointLighting(size_t xmin,
 
     float maxIntensity = ColoredLightTraits::maxIntensity(light.value);
     Vec2F beamDirection = Vec2F(1, 0).rotate(light.beamAngle);
+    float perBlockObstacleAttenuation = light.asSpread ? 1.0f / m_spreadMaxObstacle : pointPerBlockObstacleAttenuation;
+    float perBlockAirAttenuation = light.asSpread ? 1.0f / m_spreadMaxAir : pointPerBlockAirAttenuation;
 
-    float maxRange = maxIntensity * m_pointMaxAir;
+    float maxRange = maxIntensity * (light.asSpread ? m_spreadMaxAir : m_pointMaxAir);
     // The min / max considering the radius of the light
     size_t lxmin = std::floor(std::max<float>(xmin, light.position[0] - maxRange));
     size_t lymin = std::floor(std::max<float>(ymin, light.position[1] - maxRange));
@@ -116,12 +130,21 @@ void CellularLightArray<ColoredLightTraits>::calculatePointLighting(size_t xmin,
         float circularizedPerBlockObstacleAttenuation = perBlockObstacleAttenuation / max(fabs(direction[0]), fabs(direction[1]));
         float blockAttenuation = lineAttenuation(blockPos, light.position, circularizedPerBlockObstacleAttenuation, remainingAttenuation);
 
+        attenuation += blockAttenuation;
         // Apply single obstacle boost (determine single obstacle by one
         // block unit of attenuation).
-        attenuation += blockAttenuation + min(blockAttenuation, circularizedPerBlockObstacleAttenuation) * m_pointObstacleBoost;
+        if (!light.asSpread)
+          attenuation += min(blockAttenuation, circularizedPerBlockObstacleAttenuation) * m_pointObstacleBoost;
 
-        if (attenuation < 1.0f)
-          setLight(x, y, lvalue + ColoredLightTraits::subtract(light.value, attenuation));
+        if (attenuation < 1.0f) {
+          auto newLight = ColoredLightTraits::subtract(light.value, attenuation);
+          if (ColoredLightTraits::maxIntensity(newLight) > 0.0001f) {
+            if (light.asSpread)
+              setLight(x, y, lvalue + newLight * 0.25f);
+            else
+              setLight(x, y, lvalue + newLight);
+          }
+        }
       }
     }
   }
