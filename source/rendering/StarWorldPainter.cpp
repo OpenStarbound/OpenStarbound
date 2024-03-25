@@ -219,7 +219,7 @@ void WorldPainter::renderParticles(WorldRenderData& renderData, Particle::Layer 
 
       if (particle.flip && particle.flippable)
         drawable.scale(Vec2F(-1, 1));
-      if (drawable.isImage())
+      if (drawable.isImage() && particle.type != Particle::Type::Animated)
         drawable.imagePart().addDirectivesGroup(particle.directives, true);
       drawable.fullbright = particle.fullbright;
       drawable.color = particle.color;

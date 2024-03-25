@@ -70,7 +70,7 @@ Drawable Animation::drawable(float pixelSize) const {
     baseFrame += ":" + toString(m_frame);
 
   Drawable drawable = Drawable::makeImage(std::move(baseFrame), pixelSize, m_centered, m_offset);
-  drawable.imagePart().addDirectivesGroup(m_processing);
+  drawable.imagePart().addDirectivesGroup(m_processing, true);
   drawable.rotate(m_angle);
   drawable.color = m_color;
   return drawable;
