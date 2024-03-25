@@ -32,11 +32,11 @@ struct FontImpl {
   FT_Face face;
 };
 
-FontPtr Font::loadTrueTypeFont(String const& fileName, unsigned pixelSize) {
-  return loadTrueTypeFont(make_shared<ByteArray>(File::readFile(fileName)), pixelSize);
+FontPtr Font::loadFont(String const& fileName, unsigned pixelSize) {
+  return loadFont(make_shared<ByteArray>(File::readFile(fileName)), pixelSize);
 }
 
-FontPtr Font::loadTrueTypeFont(ByteArrayConstPtr const& bytes, unsigned pixelSize) {
+FontPtr Font::loadFont(ByteArrayConstPtr const& bytes, unsigned pixelSize) {
   FontPtr font = make_shared<Font>();
   font->m_fontBuffer = bytes;
 
@@ -54,7 +54,7 @@ FontPtr Font::loadTrueTypeFont(ByteArrayConstPtr const& bytes, unsigned pixelSiz
 Font::Font() : m_pixelSize(0), m_alphaThreshold(0) {}
 
 FontPtr Font::clone() const {
-  return Font::loadTrueTypeFont(m_fontBuffer, m_pixelSize);
+  return Font::loadFont(m_fontBuffer, m_pixelSize);
 }
 
 void Font::setPixelSize(unsigned pixelSize) {

@@ -1181,7 +1181,7 @@ shared_ptr<Assets::AssetData> Assets::loadAudio(AssetPath const& path) const {
 shared_ptr<Assets::AssetData> Assets::loadFont(AssetPath const& path) const {
   return unlockDuring([&]() {
     auto newData = make_shared<FontData>();
-    newData->font = Font::loadTrueTypeFont(make_shared<ByteArray>(read(path.basePath)));
+    newData->font = Font::loadFont(make_shared<ByteArray>(read(path.basePath)));
     return newData;
   });
 }

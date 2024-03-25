@@ -337,15 +337,19 @@ void TextPainter::reloadFonts() {
   auto assets = Root::singleton().assets();
   String defaultName = "hobo";
   auto defaultFont = loadFont("/hobo.ttf", defaultName);
-  for (auto& fontPath : assets->scanExtension("ttf")) {
-    auto font = assets->font(fontPath);
-    if (font == defaultFont)
-      continue;
+  auto loadFontsByExtension = [&](String const& ext) {
+    for (auto& fontPath : assets->scanExtension(ext)) {
+      auto font = assets->font(fontPath);
+      if (font == defaultFont)
+        continue;
 
-    auto name = AssetPath::filename(fontPath);
-    name = name.substr(0, name.findLast("."));
-    addFont(loadFont(fontPath, name), name);
-  }
+      auto name = AssetPath::filename(fontPath);
+      name = name.substr(0, name.findLast("."));
+      addFont(loadFont(fontPath, name), name);
+    }
+  };
+  loadFontsByExtension("ttf");
+  loadFontsByExtension("woff2");
   m_fontTextureGroup.addFont(defaultFont, defaultName, true);
 }
 

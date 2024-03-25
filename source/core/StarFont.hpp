@@ -14,8 +14,8 @@ STAR_CLASS(Font);
 
 class Font {
 public:
-  static FontPtr loadTrueTypeFont(String const& fileName, unsigned pixelSize = 12);
-  static FontPtr loadTrueTypeFont(ByteArrayConstPtr const& bytes, unsigned pixelSize = 12);
+  static FontPtr loadFont(String const& fileName, unsigned pixelSize = 12);
+  static FontPtr loadFont(ByteArrayConstPtr const& bytes, unsigned pixelSize = 12);
 
   Font();
 
