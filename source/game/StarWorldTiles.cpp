@@ -32,6 +32,10 @@ ServerTile::ServerTile(ServerTile const& serverTile) : WorldTile() {
   *this = serverTile;
 }
 
+bool ServerTile::isColliding(CollisionSet const& collisionSet) const {
+  return Star::isColliding(getCollision(), collisionSet);
+}
+
 ServerTile& ServerTile::operator=(ServerTile const& serverTile) {
   WorldTile::operator=(serverTile);
 

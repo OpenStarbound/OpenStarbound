@@ -63,6 +63,8 @@ struct ServerTile : public WorldTile {
   ServerTile(ServerTile const& serverTile);
   ServerTile& operator=(ServerTile const& serverTile);
 
+  bool isColliding(CollisionSet const& collisionSet) const;
+
   void write(DataStream& ds) const;
   void read(DataStream& ds, VersionNumber serializationVersion);
 
