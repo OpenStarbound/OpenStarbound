@@ -71,8 +71,11 @@ public:
     // Top-level storage directory under which all game data is saved
     String storageDirectory;
 
+    // Directory to store logs - if not set, uses storage directory and keeps old logs in seperate folder
+    Maybe<String> logDirectory;
+
     // Name of the log file that should be written, if any, relative to the
-    // storage directory
+    // log directory
     Maybe<String> logFile;
 
     // Number of rotated log file backups

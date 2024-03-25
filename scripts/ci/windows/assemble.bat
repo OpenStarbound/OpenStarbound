@@ -5,6 +5,7 @@ if exist %client% rmdir %client% /S /Q
 mkdir %client%
 mkdir %client%\storage
 mkdir %client%\mods
+mkdir %client%\logs
 mkdir %client%\assets
 mkdir %client%\win
 
