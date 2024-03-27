@@ -5,17 +5,29 @@ You **must** own a copy of Starbound to use it. Base game assets are not provide
 
 It is still **work-in-progress**. You can download the very latest build from the [Actions](https://github.com/OpenStarbound/OpenStarbound/actions?query=branch%3Amain) tab, or the ocassional releases.
 
+Note: Not every function from [StarExtensions](https://github.com/StarExtensions/StarExtensions) has been ported yet, but compatibility with mods that use StarExtensions features is planned.
+
 ## Changes
-* You can now make .patch files that are just merged in. That's why the patch files in here are unusually simple.
-* Some Lua functions like getters and setters for player identity values, but not every function from [StarExtensions](https://github.com/StarExtensions/StarExtensions) has been ported yet.
+### Lighting
+**The lightmap generation has been moved off the main thread, and supports higher color range.**
+  * Point lights are now additive, which is more accurate - you'll notice that different lights mix together better!
+  * Object spread lights are auto-converted to a hybrid light which is 25% additive.
+
+### Assets
+* Assets can now run Lua scripts on load, and after all sources have been loaded.
+  * These scripts can modify, read, patch and create new assets!
+* Lua patch files now exist - **.patch.lua**
+
+### Misc
+* Player functions for saving/loading, modifying the humanoid identity
 * Character swapping (rewrite from StarExtensions, currently command-only: `/swap name` case-insensitive, only substring required)
 * Custom user input support with a keybindings menu (rewrite from StarExtensions)
 * Positional Voice Chat that works on completely vanilla servers, uses Opus for crisp, HD audio (rewrite from StarExtensions)
   * Both menus are made available in the options menu in this fork rather than as a chat command.
-* Multiple font support (switch fonts inline with `^font=name;`, .ttf assets are auto-detected)
-* World lightmap generation has been moved off the main thread
-* Experimental changes to the storage of directives in memory to greatly reduce their impact on frametimes
-  * Works well when extremely long directives are used for "vanilla multiplayer-compatible" creations, like [generated clothing](https://silverfeelin.github.io/Starbound-NgOutfitGenerator/).
+* Multiple font support (switch fonts inline with `^font=name;`, **.ttf** and **.woff2** assets are auto-detected)
+  * **.woff2** fonts are much smaller than **.ttf**, [here's a web conversion tool](https://kombu.kanejaku.org/)!
+* Experimental changes to the storage of directives in memory to reduce copying - can reduce their impact on frametimes when very long directives are present
+  * Works especially well when extremely long directives are used for "vanilla multiplayer-compatible" creations, like [generated clothing](https://silverfeelin.github.io/Starbound-NgOutfitGenerator/) or custom items/objects.
 
 * Client-side tile placement prediction (rewrite from StarExtensions)
   * You can also resize the placement area of tiles on the fly.
@@ -23,7 +35,10 @@ It is still **work-in-progress**. You can download the very latest build from th
   * Additionally, objects can be placed under non-solid foreground tiles.
 
 * Some minor polish to UI
-* Skybox sun now matches the system type you're currently in. Previously generated planets will not have this feature and will display the default sun. Modded system types require a patch to display their custom sun. Additionally, you can also access now skybox sun scale and its default ray colors. For more details see [sky.config.patch](https://github.com/OpenStarbound/OpenStarbound/blob/main/assets/opensb/sky.config.patch).
+* The Skybox's sun now matches the system type you're currently in.
+  * Previously generated planets will not have this feature and will display the default sun.
+  * Modded system types require a patch to display their custom sun.
+  * You can also access the skybox sun scale and its default ray colors. For more details see, [sky.config.patch](https://github.com/OpenStarbound/OpenStarbound/blob/main/assets/opensb/sky.config.patch).
 
 [Discord](https://discord.gg/D4QqtBNmAY)
 
