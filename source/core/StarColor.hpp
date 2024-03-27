@@ -33,6 +33,8 @@ public:
 
   static CaseInsensitiveStringMap<Color> const NamedColors;
 
+  static List<Color> const& RainbowSequence;
+
   // Some useful conversion methods for dealing with Vec3 / Vec4 as colors
   static Vec3F v3bToFloat(Vec3B const& b);
   static Vec3B v3fToByte(Vec3F const& f, bool doClamp = true);

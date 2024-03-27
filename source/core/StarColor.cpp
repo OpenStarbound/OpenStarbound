@@ -50,6 +50,17 @@ CaseInsensitiveStringMap<Color> const Color::NamedColors{
   {"clear", Color::Clear}
 };
 
+List<Color> const& Color::RainbowSequence {
+  Color::Red,
+  Color::Orange,
+  Color::Yellow,
+  Color::Green,
+  Color::Cyan,
+  Color::Blue,
+  Color::Violet,
+  Color::Magenta
+};
+
 Color Color::rgbf(const Vec3F& c) {
   return rgbaf(c[0], c[1], c[2], 1.0f);
 }
