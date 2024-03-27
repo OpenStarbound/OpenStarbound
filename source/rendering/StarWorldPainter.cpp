@@ -76,12 +76,7 @@ void WorldPainter::render(WorldRenderData& renderData, function<bool()> lightWai
 
   m_renderer->flush();
 
-  bool lightMapUpdated = false;
-  if (lightWaiter) {
-    auto start = Time::monotonicMicroseconds();
-    lightMapUpdated = lightWaiter();
-    LogMap::set("client_render_world_async_light_wait", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
-  }
+  bool lightMapUpdated = lightWaiter ? lightWaiter() : false;
 
   m_renderer->setEffectParameter("lightMapEnabled", !renderData.isFullbright);
   if (renderData.isFullbright) {
