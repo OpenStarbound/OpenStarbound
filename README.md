@@ -3,9 +3,9 @@
 This is a fork of Starbound. Contributions are welcome!
 You **must** own a copy of Starbound to use it. Base game assets are not provided for obvious reasons.
 
-It is still **work-in-progress**. You can download the latest test build [here](https://github.com/OpenStarbound/OpenStarbound/releases/latest).
+It is still **work-in-progress**. You can download the very latest build from the [Actions](https://github.com/OpenStarbound/OpenStarbound/actions?query=branch%3Amain) tab, or the ocassional releases.
 
-Changes:
+## Changes
 * You can now make .patch files that are just merged in. That's why the patch files in here are unusually simple.
 * Some Lua functions like getters and setters for player identity values, but not every function from [StarExtensions](https://github.com/StarExtensions/StarExtensions) has been ported yet.
 * Character swapping (rewrite from StarExtensions, currently command-only: `/swap name` case-insensitive, only substring required)
