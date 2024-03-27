@@ -471,23 +471,27 @@ WidgetConstructResult WidgetParser::itemSlotHandler(String const& name, Json con
   String backingImage = config.getString("backingImage", "");
   String callback = config.getString("callback", name);
 
-  String rightClickCallback;
-  if (callback.equals("null"))
-    rightClickCallback = callback;
-  else
-    rightClickCallback = callback + ".right";
+  String rightClickCallback = callback.equals("null") ? callback : callback + ".right";
   rightClickCallback = config.getString("rightClickCallback", rightClickCallback);
+
+  String middleClickCallback = callback.equals("null") ? callback : callback + ".middle";
+  middleClickCallback = config.getString("middleClickCallback", middleClickCallback);
 
   auto itemSlot = make_shared<ItemSlotWidget>(ItemPtr(), backingImage);
 
-  if (!m_callbacks.contains(callback))
-    throw WidgetParserException::format("Failed to find itemSlot callback named: '{}'", callback);
-  itemSlot->setCallback(m_callbacks.get(callback));
+  if (auto leftClickCallback = m_callbacks.ptr(callback))
+    itemSlot->setCallback(*leftClickCallback);
+  else
+    throw WidgetParserException::format("Failed to find ItemSlot callback named: '{}'", callback);
 
-  if (!m_callbacks.contains(rightClickCallback))
-    throw WidgetParserException::format("Failed to find itemslot rightClickCallback named: '{}'", rightClickCallback);
+  if (auto callback = m_callbacks.ptr(rightClickCallback))
+    itemSlot->setRightClickCallback(*callback);
+  else
+    throw WidgetParserException::format("Failed to find ItemSlot rightClickCallback named: '{}'", rightClickCallback);
 
-  itemSlot->setRightClickCallback(m_callbacks.get(rightClickCallback));
+  if (auto callback = m_callbacks.ptr(middleClickCallback))
+    itemSlot->setMiddleClickCallback(*callback);
+
   itemSlot->setBackingImageAffinity(config.getBool("showBackingImageWhenFull", false), config.getBool("showBackingImageWhenEmpty", true));
   itemSlot->showDurability(config.getBool("showDurability", false));
   itemSlot->showCount(config.getBool("showCount", true));
@@ -515,33 +519,34 @@ WidgetConstructResult WidgetParser::itemGridHandler(String const& name, Json con
   } catch (MapException const& e) {
     throw WidgetParserException::format("Malformed gui json, missing a required value in the map. {}", outputException(e, false));
   }
-
-  String backingImage = config.getString("backingImage", "");
+  
   String callback = config.getString("callback", name);
-  String rightClickCallback;
-  if (callback.equals("null"))
-    rightClickCallback = callback;
-  else
-    rightClickCallback = callback + ".right";
+  String rightClickCallback = callback.equals("null") ? callback : callback + ".right";
   rightClickCallback = config.getString("rightClickCallback", rightClickCallback);
+  String middleClickCallback = callback.equals("null") ? callback : callback + ".middle";
+  middleClickCallback = config.getString("middleClickCallback", middleClickCallback);
 
   unsigned slotOffset = config.getInt("slotOffset", 0);
+  String backingImage = config.getString("backingImage", "");
 
   auto itemGrid = make_shared<ItemGridWidget>(ItemBagConstPtr(), dimensions, rowSpacing, columnSpacing, backingImage, slotOffset);
 
-  if (!m_callbacks.contains(callback))
-    throw WidgetParserException::format("Failed to find itemgrid callback named: '{}'", callback);
-
-  itemGrid->setCallback(m_callbacks.get(callback));
-
   itemGrid->setBackingImageAffinity(
-      config.getBool("showBackingImageWhenFull", false), config.getBool("showBackingImageWhenEmpty", true));
+    config.getBool("showBackingImageWhenFull", false), config.getBool("showBackingImageWhenEmpty", true));
   itemGrid->showDurability(config.getBool("showDurability", false));
 
-  if (!m_callbacks.contains(rightClickCallback))
-    throw WidgetParserException::format("Failed to find itemgrid rightClickCallback named: '{}'", rightClickCallback);
+  if (auto leftClickCallback = m_callbacks.ptr(callback))
+    itemGrid->setCallback(*leftClickCallback);
+  else
+    throw WidgetParserException::format("Failed to find ItemGrid callback named: '{}'", callback);
+  
+  if (auto callback = m_callbacks.ptr(rightClickCallback))
+    itemGrid->setRightClickCallback(*callback);
+  else
+    throw WidgetParserException::format("Failed to find ItemGrid rightClickCallback named: '{}'", rightClickCallback);
 
-  itemGrid->setRightClickCallback(m_callbacks.get(rightClickCallback));
+  if (auto callback = m_callbacks.ptr(middleClickCallback))
+    itemGrid->setMiddleClickCallback(*callback);
 
   common(itemGrid, config);
 

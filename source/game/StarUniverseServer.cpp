@@ -1650,14 +1650,14 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
   WriteLocker clientsLocker(m_clientsLock);
   if (auto clashId = getClientForUuid(clientConnect->playerUuid)) {
     if (administrator) {
-      doDisconnection(*clashId, String("Duplicate Uuid joined and is Administrator so has priority."));
+      doDisconnection(*clashId, "Duplicate Uuid joined and is Administrator so has priority.");
     } else {
       connectionFail("Duplicate player UUID");
       return;
     }
   }
 
-  if (m_clients.size() + 1 > m_maxPlayers) {
+  if (m_clients.size() + 1 > m_maxPlayers && !administrator) {
     connectionFail("Max player connections");
     return;
   }
@@ -1734,8 +1734,14 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
       clientWarpPlayer(clientId, WarpAlias::OwnShip);
     }
   } else {
-    Logger::info("UniverseServer: Spawning player at ship");
-    clientWarpPlayer(clientId, WarpAlias::OwnShip);
+    Maybe<String> defaultReviveWarp = assets->json("/universe_server.config").optString("defaultReviveWarp");
+    if (defaultReviveWarp) {
+      Logger::info("UniverseServer: Spawning player at default warp");
+      clientWarpPlayer(clientId, parseWarpAction(*defaultReviveWarp));
+    } else {
+      Logger::info("UniverseServer: Spawning player at ship");
+      clientWarpPlayer(clientId, WarpAlias::OwnShip);
+    }
   }
 
   clientFlyShip(clientId, clientContext->shipCoordinate().location(), clientContext->shipLocation());

@@ -19,6 +19,7 @@ public:
   bool sendEvent(InputEvent const& event) override;
   void setCallback(WidgetCallbackFunc callback);
   void setRightClickCallback(WidgetCallbackFunc callback);
+  void setMiddleClickCallback(WidgetCallbackFunc callback);
   void setItem(ItemPtr const& item);
   ItemPtr item() const;
   void setProgress(float progress);
@@ -61,6 +62,7 @@ private:
 
   WidgetCallbackFunc m_callback;
   WidgetCallbackFunc m_rightClickCallback;
+  WidgetCallbackFunc m_middleClickCallback;
   float m_progress;
 
   ProgressWidgetPtr m_durabilityBar;

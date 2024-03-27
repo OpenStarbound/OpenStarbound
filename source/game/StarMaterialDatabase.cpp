@@ -379,7 +379,7 @@ CollisionKind MaterialDatabase::materialCollisionKind(MaterialId materialId) con
 }
 
 bool MaterialDatabase::canPlaceInLayer(MaterialId materialId, TileLayer layer) const {
-  return layer == TileLayer::Foreground || !getMaterialInfo(materialId)->foregroundOnly;
+  return layer != TileLayer::Background || !getMaterialInfo(materialId)->foregroundOnly;
 }
 
 ItemDescriptor MaterialDatabase::materialItemDrop(MaterialId materialId) const {

@@ -67,12 +67,16 @@ void ItemSlotWidget::update(float dt) {
 bool ItemSlotWidget::sendEvent(InputEvent const& event) {
   if (m_visible) {
     if (auto mouseButton = event.ptr<MouseButtonDownEvent>()) {
-      if (mouseButton->mouseButton == MouseButton::Left || (m_rightClickCallback && mouseButton->mouseButton == MouseButton::Right)) {
+      if (mouseButton->mouseButton == MouseButton::Left
+        || (m_rightClickCallback && mouseButton->mouseButton == MouseButton::Right)
+        || (m_middleClickCallback && mouseButton->mouseButton == MouseButton::Middle)) {
         Vec2I mousePos = *context()->mousePosition(event);
         RectI itemArea = m_itemDraggableArea.translated(screenPosition());
         if (itemArea.contains(mousePos)) {
           if (mouseButton->mouseButton == MouseButton::Right)
             m_rightClickCallback(this);
+          else if (mouseButton->mouseButton == MouseButton::Middle)
+            m_middleClickCallback(this);
           else
             m_callback(this);
           return true;
@@ -90,6 +94,10 @@ void ItemSlotWidget::setCallback(WidgetCallbackFunc callback) {
 
 void ItemSlotWidget::setRightClickCallback(WidgetCallbackFunc callback) {
   m_rightClickCallback = callback;
+}
+
+void ItemSlotWidget::setMiddleClickCallback(WidgetCallbackFunc callback) {
+  m_middleClickCallback = callback;
 }
 
 void ItemSlotWidget::setItem(ItemPtr const& item) {
