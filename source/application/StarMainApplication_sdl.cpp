@@ -235,6 +235,8 @@ public:
       SDL_free(basePath);
     }
 
+    SDL_SetHint(SDL_HINT_IME_SHOW_UI, "1");
+
     m_signalHandler.setHandleInterrupt(true);
     m_signalHandler.setHandleFatal(true);
 
