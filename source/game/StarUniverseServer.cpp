@@ -656,7 +656,13 @@ void UniverseServer::updateShips() {
     auto newShipUpgrades = p.second->shipUpgrades();
     if (auto shipWorld = getWorld(ClientShipWorldId(p.second->playerUuid()))) {
       shipWorld->executeAction([&](WorldServerThread*, WorldServer* shipWorld) {
-        auto const& speciesShips = m_speciesShips.get(p.second->playerSpecies());
+        String species;
+        if (auto jSpecies = shipWorld->getProperty("ship.species").optString())
+          species = *jSpecies;
+        else
+          shipWorld->setProperty("ship.species", species = p.second->playerSpecies());
+
+        auto const& speciesShips = m_speciesShips.get(species);
         Json jOldShipLevel = shipWorld->getProperty("ship.level");
         unsigned newShipLevel = min<unsigned>(speciesShips.size() - 1, newShipUpgrades.shipLevel);
 
@@ -1973,7 +1979,8 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::shipWorldPromise(
       if (!shipWorld) {
         Logger::info("UniverseServer: Creating new client ship world {}", clientShipWorldId);
         shipWorld = make_shared<WorldServer>(Vec2U(2048, 2048), File::ephemeralFile());
-        auto shipStructure = WorldStructure(speciesShips.get(clientContext->playerSpecies()).first());
+        auto& species = clientContext->playerSpecies();
+        auto shipStructure = WorldStructure(speciesShips.get(species).first());
         shipStructure = shipWorld->setCentralStructure(shipStructure);
 
         ShipUpgrades currentUpgrades = clientContext->shipUpgrades();
@@ -1984,6 +1991,7 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::shipWorldPromise(
         shipWorld->setSpawningEnabled(false);
         shipWorld->setProperty("invinciblePlayers", true);
         shipWorld->setProperty("ship.level", 0);
+        shipWorld->setProperty("ship.species", species);
         shipWorld->setProperty("ship.fuel", 0);
         shipWorld->setProperty("ship.maxFuel", currentUpgrades.maxFuel);
         shipWorld->setProperty("ship.crewSize", currentUpgrades.crewSize);
