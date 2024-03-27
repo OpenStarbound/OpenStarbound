@@ -657,8 +657,9 @@ void UniverseServer::updateShips() {
     if (auto shipWorld = getWorld(ClientShipWorldId(p.second->playerUuid()))) {
       shipWorld->executeAction([&](WorldServerThread*, WorldServer* shipWorld) {
         String species;
-        if (auto jSpecies = shipWorld->getProperty("ship.species").optString())
-          species = *jSpecies;
+        Json jSpecies = shipWorld->getProperty("ship.species");
+        if (jSpecies.isType(Json::Type::String))
+          species = jSpecies.toString();
         else
           shipWorld->setProperty("ship.species", species = p.second->playerSpecies());
 
