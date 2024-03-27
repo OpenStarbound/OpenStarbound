@@ -136,7 +136,7 @@ public:
   void setCellIndex(size_t cellIndex, Vec3F const& light, bool obstacle);
 
   void addSpreadLight(Vec2F const& position, Vec3F const& light);
-  void addPointLight(Vec2F const& position, Vec3F const& light, float beam, float beamAngle, float beamAmbience);
+  void addPointLight(Vec2F const& position, Vec3F const& light, float beam, float beamAngle, float beamAmbience, bool asSpread = false);
 
   // Finish the calculation, and put the resulting color data in the given
   // output image.  The image will be reset to the size of the region given in

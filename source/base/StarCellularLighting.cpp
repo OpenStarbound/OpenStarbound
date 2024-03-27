@@ -109,12 +109,12 @@ void CellularLightingCalculator::addSpreadLight(Vec2F const& position, Vec3F con
     m_lightArray.left().addSpreadLight({arrayPosition, light});
 }
 
-void CellularLightingCalculator::addPointLight(Vec2F const& position, Vec3F const& light, float beam, float beamAngle, float beamAmbience) {
+void CellularLightingCalculator::addPointLight(Vec2F const& position, Vec3F const& light, float beam, float beamAngle, float beamAmbience, bool asSpread) {
   Vec2F arrayPosition = position - Vec2F(m_calculationRegion.min());
   if (m_monochrome)
-    m_lightArray.right().addPointLight({arrayPosition, light.max(), beam, beamAngle, beamAmbience});
+    m_lightArray.right().addPointLight({arrayPosition, light.max(), beam, beamAngle, beamAmbience, asSpread});
   else
-    m_lightArray.left().addPointLight({arrayPosition, light, beam, beamAngle, beamAmbience});
+    m_lightArray.left().addPointLight({arrayPosition, light, beam, beamAngle, beamAmbience, asSpread});
 }
 
 void CellularLightingCalculator::calculate(Image& output) {

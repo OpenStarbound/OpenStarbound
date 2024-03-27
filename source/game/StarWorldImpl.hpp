@@ -445,10 +445,10 @@ namespace WorldImpl {
     for (auto const& entity : entityMap->entityQuery(RectF(lighting.calculationRegion()))) {
       for (auto const& light : entity->lightSources()) {
         Vec2F position = worldGeometry.nearestTo(Vec2F(lighting.calculationRegion().min()), light.position);
-        if (light.pointLight)
-          lighting.addPointLight(position, light.color.sum() / 3.0f, light.pointBeam, light.beamAngle, light.beamAmbience);
-        else
+        if (light.type == LightType::Spread)
           lighting.addSpreadLight(position, light.color.sum() / 3.0f);
+        else
+          lighting.addPointLight(position, light.color.sum() / 3.0f, light.pointBeam, light.beamAngle, light.beamAmbience);
       }
     }
 

@@ -1652,10 +1652,15 @@ void WorldClient::lightingCalc() {
 
   for (auto const& light : lights) {
     Vec2F position = m_geometry.nearestTo(Vec2F(m_lightingCalculator.calculationRegion().min()), light.position);
-    if (light.pointLight)
-      m_lightingCalculator.addPointLight(position, light.color, light.pointBeam, light.beamAngle, light.beamAmbience);
-    else {
+    if (light.type == LightType::Spread)
       m_lightingCalculator.addSpreadLight(position, light.color);
+    else {
+      if (light.type == LightType::PointAsSpread) {
+        // hybrid (used for auto-converted object lights) - 75% spread, 25% point (2nd is applied elsewhere)
+        m_lightingCalculator.addSpreadLight(position, light.color * 0.75f);
+        m_lightingCalculator.addPointLight(position, light.color, light.pointBeam, light.beamAngle, light.beamAmbience, true);
+      } else // fully additive point light
+        m_lightingCalculator.addPointLight(position, light.color, light.pointBeam, light.beamAngle, light.beamAmbience);
     }
   }
 

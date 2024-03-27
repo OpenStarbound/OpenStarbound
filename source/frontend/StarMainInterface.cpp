@@ -199,6 +199,9 @@ bool MainInterface::escapeDialogOpen() const {
 void MainInterface::openCraftingWindow(Json const& config, EntityId sourceEntityId) {
   if (m_craftingWindow && m_paneManager.isDisplayed(m_craftingWindow)) {
     m_paneManager.dismissPane(m_craftingWindow);
+    bool fromPlayer = false;
+    if (auto player = m_client->mainPlayer())
+      fromPlayer = player->inWorld() && player->entityId() == sourceEntityId;
     if (m_craftingWindow->sourceEntityId() == sourceEntityId) {
       m_craftingWindow.reset();
       return;
@@ -215,21 +218,27 @@ void MainInterface::openCraftingWindow(Json const& config, EntityId sourceEntity
 void MainInterface::openMerchantWindow(Json const& config, EntityId sourceEntityId) {
   if (m_merchantWindow && m_paneManager.isDisplayed(m_merchantWindow)) {
     m_paneManager.dismissPane(m_merchantWindow);
-    if (m_merchantWindow->sourceEntityId() == sourceEntityId) {
+    bool fromPlayer = false;
+    if (auto player = m_client->mainPlayer())
+      fromPlayer = player->inWorld() && player->entityId() == sourceEntityId;
+    if (!fromPlayer && m_merchantWindow->sourceEntityId() == sourceEntityId) {
       m_merchantWindow.reset();
       return;
     }
   }
 
+  bool openWithInventory = config.getBool("openWithInventory", true);
   m_merchantWindow = make_shared<MerchantPane>(m_client->worldClient(), m_client->mainPlayer(), config, sourceEntityId);
   m_paneManager.displayPane(PaneLayer::Window,
       m_merchantWindow,
-      [this](PanePtr const&) {
+      [this, openWithInventory](PanePtr const&) {
       if (auto player = m_client->mainPlayer())
         player->clearSwap();
-      m_paneManager.dismissRegisteredPane(MainInterfacePanes::Inventory);
+      if (openWithInventory)
+        m_paneManager.dismissRegisteredPane(MainInterfacePanes::Inventory);
     });
-  m_paneManager.displayRegisteredPane(MainInterfacePanes::Inventory);
+  if (openWithInventory)
+    m_paneManager.displayRegisteredPane(MainInterfacePanes::Inventory);
 
   m_paneManager.bringPaneAdjacent(m_paneManager.registeredPane(MainInterfacePanes::Inventory),
     m_merchantWindow, Root::singleton().assets()->json("/interface.config:bringAdjacentWindowGap").toFloat());

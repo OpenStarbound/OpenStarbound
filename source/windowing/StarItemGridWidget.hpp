@@ -41,6 +41,7 @@ public:
   bool sendEvent(InputEvent const& event) override;
   void setCallback(WidgetCallbackFunc callback);
   void setRightClickCallback(WidgetCallbackFunc callback);
+  void setMiddleClickCallback(WidgetCallbackFunc callback);
   void setItemBag(ItemBagConstPtr bag);
   void setProgress(float progress);
 
@@ -93,6 +94,7 @@ private:
   unsigned m_selectedIndex;
   WidgetCallbackFunc m_callback;
   WidgetCallbackFunc m_rightClickCallback;
+  WidgetCallbackFunc m_middleClickCallback;
 };
 
 }

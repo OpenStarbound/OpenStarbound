@@ -106,7 +106,9 @@ Vec2I ItemGridWidget::positionOfSlot(size_t slotNumber) {
 bool ItemGridWidget::sendEvent(InputEvent const& event) {
   if (m_visible) {
     if (auto mouseButton = event.ptr<MouseButtonDownEvent>()) {
-      if (mouseButton->mouseButton == MouseButton::Left || (m_rightClickCallback && mouseButton->mouseButton == MouseButton::Right)) {
+      if (mouseButton->mouseButton == MouseButton::Left
+        || (m_rightClickCallback && mouseButton->mouseButton == MouseButton::Right)
+        || (m_middleClickCallback && mouseButton->mouseButton == MouseButton::Middle)) {
         Vec2I mousePos = *context()->mousePosition(event);
         for (size_t i = 0; i < (m_bag->size() - m_bagOffset) && i < unsigned(m_dimensions[0] * m_dimensions[1]); ++i) {
           Vec2I loc = locOfItemSlot(i);
@@ -116,6 +118,8 @@ bool ItemGridWidget::sendEvent(InputEvent const& event) {
             m_selectedIndex = i;
             if (mouseButton->mouseButton == MouseButton::Right)
               m_rightClickCallback(this);
+            else if (mouseButton->mouseButton == MouseButton::Middle)
+              m_middleClickCallback(this);
             else
               m_callback(this);
             return true;
@@ -143,6 +147,10 @@ void ItemGridWidget::setCallback(WidgetCallbackFunc callback) {
 
 void ItemGridWidget::setRightClickCallback(WidgetCallbackFunc callback) {
   m_rightClickCallback = callback;
+}
+
+void ItemGridWidget::setMiddleClickCallback(WidgetCallbackFunc callback) {
+  m_middleClickCallback = callback;
 }
 
 void ItemGridWidget::setItemBag(ItemBagConstPtr bag) {

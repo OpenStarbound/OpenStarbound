@@ -717,7 +717,7 @@ List<LightSource> NetworkedAnimator::lightSources(Vec2F const& translate) const 
     lightSources.append(LightSource{
       position + translate,
       color.toRgbF(),
-      pair.second.pointLight,
+      pair.second.pointLight ? LightType::Point : LightType::Spread,
       pair.second.pointBeam,
       pointAngle,
       pair.second.beamAmbience

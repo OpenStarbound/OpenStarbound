@@ -68,7 +68,7 @@ struct ProjectileConfig {
 
   Color lightColor;
   Vec2F lightPosition;
-  bool pointLight = false;
+  LightType lightType = LightType::Spread;
 
   String persistentAudio;
 

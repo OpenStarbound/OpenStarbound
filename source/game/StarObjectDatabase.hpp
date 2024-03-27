@@ -131,7 +131,7 @@ struct ObjectConfig {
   bool interactive;
 
   StringMap<Color> lightColors;
-  bool pointLight;
+  LightType lightType;
   float pointBeam;
   float beamAmbience;
   Maybe<PeriodicFunction<float>> lightFlickering;
