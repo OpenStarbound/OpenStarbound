@@ -19,7 +19,7 @@ local LINE_COLOR = {50, 210, 255, 255}
 local FONT_DIRECTIVES = "?border=1;333;3337?border=1;333;3330"
 local NAME_PREFIX = "^noshadow,white,set;"
 
-local function dbToLoudness(db) return 2 ^ (db / 8) end
+local function dbToLoudness(db) return math.exp(db * 0.05) end
 
 local canvas
 
@@ -102,7 +102,7 @@ local function simulateSpeakers()
 		speakers[i] = {
 			speakerId = i,
 			entityId = -65536 * i,
-			name = "Player " .. i,
+			name = "Player " .. i .. " (" .. (math.floor((dB * 100) + 0.5) / 100) .. " dB)",
 			decibels = dB,
 			smoothDecibels = dB,
 			muted = false
