@@ -268,6 +268,9 @@ bool WorldServer::addClient(ConnectionId clientId, SpawnTarget const& spawnTarge
 
   clientInfo->outgoingPackets.append(make_shared<CentralStructureUpdatePacket>(m_centralStructure.store()));
 
+  for (auto& p : m_scriptContexts)
+    p.second->invoke("addClient", clientId, isLocal);
+
   return true;
 }
 
@@ -296,6 +299,9 @@ List<PacketPtr> WorldServer::removeClient(ConnectionId clientId) {
   m_clientInfo.remove(clientId);
 
   packets.append(make_shared<WorldStopPacket>("Removed"));
+
+  for (auto& p : m_scriptContexts)
+    p.second->invoke("removeClient", clientId);
 
   return packets;
 }
