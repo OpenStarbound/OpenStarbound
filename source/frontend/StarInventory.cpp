@@ -110,7 +110,7 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
           auto actionData = sourceItem->instanceValue("interactData", Json());
           if (actionData.isType(Json::Type::Object))
             actionData = actionData.set("openWithInventory", false);
-          InteractAction action(actionType, m_player->entityId(), actionData);
+          InteractAction action(actionType, NullEntityId, actionData);
           m_player->interact(action);
         }
       }

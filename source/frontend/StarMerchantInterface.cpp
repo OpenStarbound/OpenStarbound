@@ -118,7 +118,8 @@ void MerchantPane::dismissed() {
   for (auto unsold : m_itemBag->takeAll())
     m_player->giveItem(unsold);
 
-  m_worldClient->sendEntityMessage(m_sourceEntityId, "onMerchantClosed");
+  if (m_sourceEntityId != NullEntityId)
+    m_worldClient->sendEntityMessage(m_sourceEntityId, "onMerchantClosed");
 }
 
 PanePtr MerchantPane::createTooltip(Vec2I const& screenPosition) {
@@ -141,7 +142,7 @@ PanePtr MerchantPane::createTooltip(Vec2I const& screenPosition) {
 void MerchantPane::update(float dt) {
   Pane::update(dt);
 
-  if (!m_worldClient->playerCanReachEntity(m_sourceEntityId))
+  if (m_sourceEntityId != NullEntityId && !m_worldClient->playerCanReachEntity(m_sourceEntityId))
     dismiss();
 
   if (m_refreshTimer.wrapTick()) {
@@ -315,7 +316,8 @@ void MerchantPane::buy() {
     auto reportItem = m_selectedItem->clone();
     reportItem->setCount(reportItem->count() * m_buyCount, true);
     auto buySummary = JsonObject{{"item", reportItem->descriptor().toJson()}, {"total", m_buyTotal}};
-    m_worldClient->sendEntityMessage(m_sourceEntityId, "onBuy", {buySummary});
+    if (m_sourceEntityId != NullEntityId)
+      m_worldClient->sendEntityMessage(m_sourceEntityId, "onBuy", {buySummary});
 
     auto& guiContext = GuiContext::singleton();
     guiContext.playAudio(Root::singleton().assets()->json("/merchant.config:buySound").toString());

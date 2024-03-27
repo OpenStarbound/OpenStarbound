@@ -199,10 +199,7 @@ bool MainInterface::escapeDialogOpen() const {
 void MainInterface::openCraftingWindow(Json const& config, EntityId sourceEntityId) {
   if (m_craftingWindow && m_paneManager.isDisplayed(m_craftingWindow)) {
     m_paneManager.dismissPane(m_craftingWindow);
-    bool fromPlayer = false;
-    if (auto player = m_client->mainPlayer())
-      fromPlayer = player->inWorld() && player->entityId() == sourceEntityId;
-    if (m_craftingWindow->sourceEntityId() == sourceEntityId) {
+    if (sourceEntityId != NullEntityId && m_craftingWindow->sourceEntityId() == sourceEntityId) {
       m_craftingWindow.reset();
       return;
     }
@@ -218,10 +215,7 @@ void MainInterface::openCraftingWindow(Json const& config, EntityId sourceEntity
 void MainInterface::openMerchantWindow(Json const& config, EntityId sourceEntityId) {
   if (m_merchantWindow && m_paneManager.isDisplayed(m_merchantWindow)) {
     m_paneManager.dismissPane(m_merchantWindow);
-    bool fromPlayer = false;
-    if (auto player = m_client->mainPlayer())
-      fromPlayer = player->inWorld() && player->entityId() == sourceEntityId;
-    if (!fromPlayer && m_merchantWindow->sourceEntityId() == sourceEntityId) {
+    if (sourceEntityId != NullEntityId && m_merchantWindow->sourceEntityId() == sourceEntityId) {
       m_merchantWindow.reset();
       return;
     }
@@ -426,19 +420,19 @@ void MainInterface::handleInteractAction(InteractAction interactAction) {
   } else if (interactAction.type == InteractActionType::SitDown) {
     m_client->mainPlayer()->lounge(interactAction.entityId, interactAction.data.toUInt());
   } else if (interactAction.type == InteractActionType::OpenCraftingInterface) {
-    if (!world->entity(interactAction.entityId))
+    if (interactAction.entityId != NullEntityId && !world->entity(interactAction.entityId))
       return;
 
     openCraftingWindow(interactAction.data, interactAction.entityId);
   } else if (interactAction.type == InteractActionType::OpenSongbookInterface) {
     m_paneManager.displayRegisteredPane(MainInterfacePanes::Songbook);
   } else if (interactAction.type == InteractActionType::OpenNpcCraftingInterface) {
-    if (!world->entity(interactAction.entityId))
+    if (interactAction.entityId != NullEntityId && !world->entity(interactAction.entityId))
       return;
-
+    // wait, this is literally the exact same as OpenCraftingInterface. what the fuck? lol
     openCraftingWindow(interactAction.data, interactAction.entityId);
   } else if (interactAction.type == InteractActionType::OpenMerchantInterface) {
-    if (!world->entity(interactAction.entityId))
+    if (interactAction.entityId != NullEntityId && !world->entity(interactAction.entityId))
       return;
 
     openMerchantWindow(interactAction.data, interactAction.entityId);
