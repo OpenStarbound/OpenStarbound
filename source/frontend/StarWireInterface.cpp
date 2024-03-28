@@ -259,7 +259,6 @@ WireConnector::SwingResult WirePane::swing(WorldGeometry const& geometry, Vec2F 
         } else if (m_sourceConnector.entityLocation == matchNode->entityLocation) {
           return Mismatch;
         } else {
-          m_connecting = false;
           if (matchDirection == WireDirection::Output)
             m_worldClient->connectWire(*matchNode, m_sourceConnector);
           else
