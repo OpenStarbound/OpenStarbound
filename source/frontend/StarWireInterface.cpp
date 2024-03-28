@@ -26,6 +26,17 @@ WirePane::WirePane(WorldClientPtr worldClient, PlayerPtr player, WorldPainterPtr
   m_outSize = Vec2F(context()->textureSize("/interface/wires/outbound.png")) / TilePixels;
   m_nodeSize = Vec2F(1.8f, 1.8f);
 
+  JsonObject config = assets->json("/player.config:wireConfig").toObject();
+  m_minBeamWidth = config.get("minWireWidth").toFloat();
+  m_maxBeamWidth = config.get("maxWireWidth").toFloat();
+  m_beamWidthDev = config.value("wireWidthDev", (m_maxBeamWidth - m_minBeamWidth) / 3).toFloat();
+  m_minBeamTrans = config.get("minWireTrans").toFloat();
+  m_maxBeamTrans = config.get("maxWireTrans").toFloat();
+  m_beamTransDev = config.value("wireTransDev", (m_maxBeamTrans - m_minBeamTrans) / 3).toFloat();
+  m_innerBrightnessScale = config.get("innerBrightnessScale").toFloat();
+  m_firstStripeThickness = config.get("firstStripeThickness").toFloat();
+  m_secondStripeThickness = config.get("secondStripeThickness").toFloat();
+
   setTitle({}, "", "Wire you looking at me like that?");
   disableScissoring();
   markAsContainer();
@@ -64,28 +75,6 @@ void WirePane::renderWire(Vec2F from, Vec2F to, Color baseColor) {
   auto rangeRand = [&](float dev, float min, float max) {
     return clamp<float>(Random::nrandf(dev, max), min, max);
   };
-
-  float m_beamWidthDev;
-  float m_minBeamWidth;
-  float m_maxBeamWidth;
-  float m_beamTransDev;
-  float m_minBeamTrans;
-  float m_maxBeamTrans;
-  float m_innerBrightnessScale;
-  float m_firstStripeThickness;
-  float m_secondStripeThickness;
-
-  auto assets = Root::singleton().assets();
-  JsonObject config = assets->json("/player.config:wireConfig").toObject();
-  m_minBeamWidth = config.get("minWireWidth").toFloat();
-  m_maxBeamWidth = config.get("maxWireWidth").toFloat();
-  m_beamWidthDev = config.value("wireWidthDev", (m_maxBeamWidth - m_minBeamWidth) / 3).toFloat();
-  m_minBeamTrans = config.get("minWireTrans").toFloat();
-  m_maxBeamTrans = config.get("maxWireTrans").toFloat();
-  m_beamTransDev = config.value("wireTransDev", (m_maxBeamTrans - m_minBeamTrans) / 3).toFloat();
-  m_innerBrightnessScale = config.get("innerBrightnessScale").toFloat();
-  m_firstStripeThickness = config.get("firstStripeThickness").toFloat();
-  m_secondStripeThickness = config.get("secondStripeThickness").toFloat();
 
   float lineThickness = m_worldPainter->camera().pixelRatio() * rangeRand(m_beamWidthDev, m_minBeamWidth, m_maxBeamWidth);
   float beamTransparency = rangeRand(m_beamTransDev, m_minBeamTrans, m_maxBeamTrans);

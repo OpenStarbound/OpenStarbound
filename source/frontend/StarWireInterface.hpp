@@ -40,6 +40,16 @@ private:
   Vec2F m_inSize;
   Vec2F m_outSize;
   Vec2F m_nodeSize;
+
+  float m_beamWidthDev;
+  float m_minBeamWidth;
+  float m_maxBeamWidth;
+  float m_beamTransDev;
+  float m_minBeamTrans;
+  float m_maxBeamTrans;
+  float m_innerBrightnessScale;
+  float m_firstStripeThickness;
+  float m_secondStripeThickness;
 };
 
 }
