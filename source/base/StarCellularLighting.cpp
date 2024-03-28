@@ -154,16 +154,23 @@ void CellularLightingCalculator::calculate(Lightmap& output) {
 
   output = Lightmap(arrayMax[0] - arrayMin[0], arrayMax[1] - arrayMin[1]);
 
+  float brightnessLimit = m_config.getFloat("brightnessLimit", 1.5f);
+
   if (m_monochrome) {
     for (size_t x = arrayMin[0]; x < arrayMax[0]; ++x) {
       for (size_t y = arrayMin[1]; y < arrayMax[1]; ++y) {
-        output.set(x - arrayMin[0], y - arrayMin[1], m_lightArray.right().getLight(x, y));
+        auto light = min(m_lightArray.right().getLight(x, y), brightnessLimit);
+        output.set(x - arrayMin[0], y - arrayMin[1], light);
       }
     }
   } else {
     for (size_t x = arrayMin[0]; x < arrayMax[0]; ++x) {
       for (size_t y = arrayMin[1]; y < arrayMax[1]; ++y) {
-        output.set(x - arrayMin[0], y - arrayMin[1], m_lightArray.left().getLight(x, y));
+        auto light = m_lightArray.left().getLight(x, y);
+        float intensity = ColoredLightTraits::maxIntensity(light);
+        if (intensity > brightnessLimit)
+          light *= brightnessLimit / intensity;
+        output.set(x - arrayMin[0], y - arrayMin[1], light);
       }
     }
   }
