@@ -1523,18 +1523,20 @@ void WorldServer::updateTileEntityTiles(TileEntityPtr const& entity, bool removi
     if (tile) {
       tile->rootSource = {};
       bool updatedTile = false;
+      bool updatedCollision = false;
       if (tile->foreground == materialSpace.material) {
-        if (!isRealMaterial(tile->foreground))// if the world is old the materialSpace's collision may still be in the tile
-          tile->updateCollision(CollisionKind::None);
+        // if the world is old, the materialSpace's collision may still be in the tile
         tile->foreground = EmptyMaterialId;
         tile->foregroundMod = NoModId;
         updatedTile = true;
+        updatedCollision = tile->updateCollision(CollisionKind::None);
       }
-      if (tile->updateObjectCollision(CollisionKind::None)) {
+      if (tile->updateObjectCollision(CollisionKind::None))
+        updatedTile = updatedCollision = true;
+      if (updatedCollision) {
         m_liquidEngine->visitLocation(pos);
         m_fallingBlocksAgent->visitLocation(pos);
         dirtyCollision(RectI::withSize(pos, { 1, 1 }));
-        updatedTile = true;
       }
       if (updatedTile)
         queueTileUpdates(pos);
