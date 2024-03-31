@@ -15,6 +15,7 @@
       "cacheVariables": {
         "CMAKE_INSTALL_PREFIX": "${sourceParentDir}/install",
         "VCPKG_OVERLAY_TRIPLETS": "${sourceParentDir}/triplets",
+        "VCPKG_OVERLAY_PORTS": "${sourceParentDir}/ports",
         "CMAKE_VERBOSE_MAKEFILE": true,
         "BUILD_TESTING": true,
         "STAR_ENABLE_STEAM_INTEGRATION": true,
