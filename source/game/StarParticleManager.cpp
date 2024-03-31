@@ -49,7 +49,7 @@ void ParticleManager::update(float dt, RectF const& cullRegion, float wind) {
     Vec2I pos(particle.position.floor());
     TileType tiletype;
     auto const& tile = m_tileSectorArray->tile(pos);
-    if (isSolidColliding(tile.collision))
+    if (isSolidColliding(tile.getCollision()))
       tiletype = TileType::Colliding;
     else if (tile.liquid.level > 0.5f)
       tiletype = TileType::Water;

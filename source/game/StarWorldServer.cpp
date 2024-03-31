@@ -783,7 +783,7 @@ CollisionKind WorldServer::tileCollisionKind(Vec2I const& pos) const {
 void WorldServer::forEachCollisionBlock(RectI const& region, function<void(CollisionBlock const&)> const& iterator) const {
   const_cast<WorldServer*>(this)->freshenCollision(region);
   m_tileArray->tileEach(region, [iterator](Vec2I const& pos, ServerTile const& tile) {
-      if (tile.collision == CollisionKind::Null) {
+      if (tile.getCollision() == CollisionKind::Null) {
         iterator(CollisionBlock::nullBlock(pos));
       } else {
         starAssert(!tile.collisionCacheDirty);

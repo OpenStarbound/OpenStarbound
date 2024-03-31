@@ -21,6 +21,7 @@ struct WorldTile {
   MaterialId material(TileLayer layer) const;
   ModId mod(TileLayer layer) const;
   MaterialColorVariant materialColor(TileLayer layer) const;
+  CollisionKind getCollision() const;
   tuple<MaterialId, MaterialHue, MaterialColorVariant> materialAndColor(TileLayer layer) const;
   bool isConnectable(TileLayer layer, bool materialOnly) const;
   bool isColliding(CollisionSet const& collisionSet) const;
@@ -263,6 +264,10 @@ inline MaterialColorVariant WorldTile::materialColor(TileLayer layer) const {
     return foregroundColorVariant;
   else
     return backgroundColorVariant;
+}
+
+inline CollisionKind WorldTile::getCollision() const {
+  return collision;
 }
 
 inline tuple<MaterialId, MaterialHue, MaterialColorVariant> WorldTile::materialAndColor(TileLayer layer) const {

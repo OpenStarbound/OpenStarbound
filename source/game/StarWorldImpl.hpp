@@ -86,7 +86,7 @@ namespace WorldImpl {
       Vec2I const& pos, TileLayer layer, bool includeEphemeral, bool checkCollision) {
     auto& tile = tileSectorArray->tile(pos);
     if (layer == TileLayer::Foreground)
-      return (checkCollision ? tile.collision >= CollisionKind::Dynamic : tile.foreground != EmptyMaterialId) || entityMap->tileIsOccupied(pos, includeEphemeral);
+      return (checkCollision ? tile.getCollision() >= CollisionKind::Dynamic : tile.foreground != EmptyMaterialId) || entityMap->tileIsOccupied(pos, includeEphemeral);
     else
       return tile.background != EmptyMaterialId;
   }
@@ -94,13 +94,13 @@ namespace WorldImpl {
   template <typename TileSectorArray>
   CollisionKind tileCollisionKind(shared_ptr<TileSectorArray> const& tileSectorArray, EntityMapPtr const&,
     Vec2I const& pos) {
-    return tileSectorArray->tile(pos).collision;
+    return tileSectorArray->tile(pos).getCollision();
   }
 
   template <typename TileSectorArray>
   bool rectTileCollision(shared_ptr<TileSectorArray> const& tileSectorArray, RectI const& region, CollisionSet const& collisionSet) {
     return tileSectorArray->tileSatisfies(region, [&collisionSet](Vec2I const&, typename TileSectorArray::Tile const& tile) {
-        return isColliding(tile.collision, collisionSet);
+        return isColliding(tile.getCollision(), collisionSet);
       });
   }
 
@@ -398,7 +398,7 @@ namespace WorldImpl {
     auto tile = tileSectorArray->tile(ipos);
     bool environmentBreathable = breathableMap.maybe(tile.dungeonId).value(worldTemplate->breathable(ipos[0], ipos[1]));
     bool liquidBreathable = remainder >= tile.liquid.level;
-    bool foregroundBreathable = tile.collision != CollisionKind::Block || !world->pointCollision(pos);
+    bool foregroundBreathable = tile.getCollision() != CollisionKind::Block || !world->pointCollision(pos);
 
     return environmentBreathable && foregroundBreathable && liquidBreathable;
   }
@@ -429,7 +429,7 @@ namespace WorldImpl {
 
           bool backgroundTransparent = materialDatabase->backgroundLightTransparent(tile.background);
           bool foregroundTransparent = materialDatabase->foregroundLightTransparent(tile.foreground)
-              && tile.collision != CollisionKind::Dynamic;
+              && tile.getCollision() != CollisionKind::Dynamic;
 
           cell = {materialDatabase->radiantLight(tile.foreground, tile.foregroundMod).sum() / 3.0f, !foregroundTransparent};
           cell.light += liquidsDatabase->radiantLight(tile.liquid).sum() / 3.0f;

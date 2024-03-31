@@ -596,7 +596,7 @@ bool SpawnerWorld::spawningProhibited(RectF const& area) const {
   for (int x = region.xMin(); x < region.xMax(); ++x) {
     for (int y = region.yMin(); y < region.yMax(); ++y) {
       auto const& tile = m_worldServer->getServerTile({x, y});
-      if (tile.collision == CollisionKind::Null || tile.dungeonId != NoDungeonId)
+      if (tile.getCollision() == CollisionKind::Null || tile.dungeonId != NoDungeonId)
         return true;
     }
   }

@@ -256,7 +256,7 @@ void WorldClient::forEachCollisionBlock(RectI const& region, function<void(Colli
 
   const_cast<WorldClient*>(this)->freshenCollision(region);
   m_tileArray->tileEach(region, [iterator](Vec2I const& pos, ClientTile const& tile) {
-      if (tile.collision == CollisionKind::Null) {
+      if (tile.getCollision() == CollisionKind::Null) {
         iterator(CollisionBlock::nullBlock(pos));
       } else {
         starAssert(!tile.collisionCacheDirty);
@@ -1760,7 +1760,7 @@ void WorldClient::initWorld(WorldStartPacket const& startPacket) {
 
   m_weather.setup(m_geometry, [this](Vec2I const& pos) {
       auto const& tile = m_tileArray->tile(pos);
-      return !isRealMaterial(tile.background) && !isSolidColliding(tile.collision);
+      return !isRealMaterial(tile.background) && !isSolidColliding(tile.getCollision());
     });
   m_weather.readUpdate(startPacket.weatherData);
 
