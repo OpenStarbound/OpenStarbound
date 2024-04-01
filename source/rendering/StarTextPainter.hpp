@@ -11,7 +11,8 @@ STAR_CLASS(TextPainter);
 
 enum class FontMode {
   Normal,
-  Shadow
+  Shadow,
+  Rainbow
 };
 
 float const DefaultLineSpacing = 1.3f;
@@ -54,7 +55,7 @@ public:
   int glyphWidth(String::Char c);
   int stringWidth(StringView s);
 
-    
+
   typedef function<bool(StringView, int)> WrapTextCallback;
   bool processWrapText(StringView s, unsigned* wrapWidth, WrapTextCallback textFunc);
 
