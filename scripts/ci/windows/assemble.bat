@@ -26,5 +26,6 @@ for /f "delims=" %%f in (scripts\ci\windows\files_server.txt) do (
 )
 
 set win=windows
+if exist %win% rmdir %win% /S /Q
 xcopy %client% %win% /E /I /Y
 xcopy %server% %win% /E /I /Y
