@@ -390,6 +390,7 @@ namespace LuaBindings {
       callbacks.registerCallbackWithSignature<List<EntityId>>("players", bind(ServerWorldCallbacks::players, world));
       callbacks.registerCallbackWithSignature<LuaString, LuaEngine&>("fidelity", bind(ServerWorldCallbacks::fidelity, world, _1));
       callbacks.registerCallbackWithSignature<Maybe<LuaValue>, String, String, LuaVariadic<LuaValue>>("callScriptContext", bind(ServerWorldCallbacks::callScriptContext, world, _1, _2, _3));
+      callbacks.registerCallbackWithSignature<void, ConnectionId, String, Json>("sendPacket", bind(ServerWorldCallbacks::sendPacket, world, _1, _2, _3));
 
       callbacks.registerCallbackWithSignature<double>("skyTime", [serverWorld]() {
           return serverWorld->sky()->epochTime();
@@ -1184,6 +1185,12 @@ namespace LuaBindings {
     if (!context)
       throw StarException::format("Context {} does not exist", contextName);
     return context->invoke(function, args);
+  }
+
+  void ServerWorldCallbacks::sendPacket(WorldServer* world, ConnectionId clientId, String const& packetType, Json const& packetData) {
+    PacketType type = PacketTypeNames.getLeft(packetType);
+    auto packet = createPacket(type, packetData);
+    world->sendPacket(clientId, packet);
   }
 
   void WorldDebugCallbacks::debugPoint(Vec2F const& arg1, Color const& arg2) {

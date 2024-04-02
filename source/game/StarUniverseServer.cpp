@@ -475,7 +475,8 @@ bool UniverseServer::updatePlanetType(CelestialCoordinate const& coordinate, Str
 
 void UniverseServer::sendPacket(ConnectionId clientId, PacketPtr packet) {
   RecursiveMutexLocker locker(m_mainLock);
-  m_connectionServer->sendPackets(clientId, {packet});
+  if (m_clients.contains(clientId))
+    m_connectionServer->sendPackets(clientId, {packet});
 }
 
 void UniverseServer::run() {
