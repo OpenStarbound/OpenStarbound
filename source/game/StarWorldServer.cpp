@@ -544,6 +544,11 @@ List<PacketPtr> WorldServer::getOutgoingPackets(ConnectionId clientId) {
   return std::move(clientInfo->outgoingPackets);
 }
 
+void WorldServer::sendPacket(ConnectionId clientId, PacketPtr const& packet) {
+  if (auto const& clientInfo = m_clientInfo.get(clientId))
+    clientInfo->outgoingPackets.append(packet);
+}
+
 Maybe<Json> WorldServer::receiveMessage(ConnectionId fromConnection, String const& message, JsonArray const& args) {
   Maybe<Json> result;
   for (auto& p : m_scriptContexts) {
@@ -2084,7 +2089,7 @@ float WorldServer::lightLevel(Vec2F const& pos) const {
 }
 
 void WorldServer::setDungeonBreathable(DungeonId dungeonId, Maybe<bool> breathable) {
-  Maybe<float> current = m_dungeonIdBreathable.maybe(dungeonId);
+  Maybe<bool> current = m_dungeonIdBreathable.maybe(dungeonId);
   if (breathable != current) {
     if (breathable)
       m_dungeonIdBreathable[dungeonId] = *breathable;

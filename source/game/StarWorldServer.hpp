@@ -104,6 +104,7 @@ public:
 
   void handleIncomingPackets(ConnectionId clientId, List<PacketPtr> const& packets);
   List<PacketPtr> getOutgoingPackets(ConnectionId clientId);
+  void sendPacket(ConnectionId clientId, PacketPtr const& packet);
 
   Maybe<Json> receiveMessage(ConnectionId fromConnection, String const& message, JsonArray const& args);
 
