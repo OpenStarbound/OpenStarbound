@@ -390,7 +390,7 @@ namespace LuaBindings {
       callbacks.registerCallbackWithSignature<List<EntityId>>("players", bind(ServerWorldCallbacks::players, world));
       callbacks.registerCallbackWithSignature<LuaString, LuaEngine&>("fidelity", bind(ServerWorldCallbacks::fidelity, world, _1));
       callbacks.registerCallbackWithSignature<Maybe<LuaValue>, String, String, LuaVariadic<LuaValue>>("callScriptContext", bind(ServerWorldCallbacks::callScriptContext, world, _1, _2, _3));
-      callbacks.registerCallbackWithSignature<void, ConnectionId, String, Json>("sendPacket", bind(ServerWorldCallbacks::sendPacket, world, _1, _2, _3));
+      callbacks.registerCallbackWithSignature<void, ConnectionId, String, Json>("sendPacket", bind(ServerWorldCallbacks::sendPacket, serverWorld, _1, _2, _3));
 
       callbacks.registerCallbackWithSignature<double>("skyTime", [serverWorld]() {
           return serverWorld->sky()->epochTime();
