@@ -544,9 +544,12 @@ List<PacketPtr> WorldServer::getOutgoingPackets(ConnectionId clientId) {
   return std::move(clientInfo->outgoingPackets);
 }
 
-void WorldServer::sendPacket(ConnectionId clientId, PacketPtr const& packet) {
-  if (auto const& clientInfo = m_clientInfo.get(clientId))
-    clientInfo->outgoingPackets.append(packet);
+bool WorldServer::sendPacket(ConnectionId clientId, PacketPtr const& packet) {
+  if (auto clientInfo = m_clientInfo.ptr(clientId)) {
+    clientInfo->get()->outgoingPackets.append(packet);
+    return true;
+  }
+  return false;
 }
 
 Maybe<Json> WorldServer::receiveMessage(ConnectionId fromConnection, String const& message, JsonArray const& args) {

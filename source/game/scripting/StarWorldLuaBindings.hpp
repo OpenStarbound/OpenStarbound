@@ -88,7 +88,7 @@ namespace LuaBindings {
     List<EntityId> players(World* world);
     LuaString fidelity(World* world, LuaEngine& engine);
     Maybe<LuaValue> callScriptContext(World* world, String const& contextName, String const& function, LuaVariadic<LuaValue> const& args);
-    void sendPacket(WorldServer* world, ConnectionId clientId, String const& packetType, Json const& packetData);
+    bool sendPacket(WorldServer* world, ConnectionId clientId, String const& packetType, Json const& packetData);
   }
 
   namespace WorldDebugCallbacks {

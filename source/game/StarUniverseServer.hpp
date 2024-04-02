@@ -104,7 +104,7 @@ public:
 
   bool updatePlanetType(CelestialCoordinate const& coordinate, String const& newType, String const& weatherBiome);
 
-  void sendPacket(ConnectionId clientId, PacketPtr packet);
+  bool sendPacket(ConnectionId clientId, PacketPtr packet);
 
 protected:
   virtual void run();

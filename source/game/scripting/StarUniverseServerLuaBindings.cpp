@@ -21,7 +21,7 @@ LuaCallbacks LuaBindings::makeUniverseServerCallbacks(UniverseServer* universe) 
   callbacks.registerCallbackWithSignature<bool, String>("isWorldActive", bind(UniverseServerCallbacks::isWorldActive, universe, _1));
   callbacks.registerCallbackWithSignature<StringList>("activeWorlds", bind(UniverseServerCallbacks::activeWorlds, universe));
   callbacks.registerCallbackWithSignature<RpcThreadPromise<Json>, String, String, LuaVariadic<Json>>("sendWorldMessage", bind(UniverseServerCallbacks::sendWorldMessage, universe, _1, _2, _3));
-  callbacks.registerCallbackWithSignature<void, ConnectionId, String, Json>("sendPacket", bind(UniverseServerCallbacks::sendPacket, universe, _1, _2, _3));
+  callbacks.registerCallbackWithSignature<bool, ConnectionId, String, Json>("sendPacket", bind(UniverseServerCallbacks::sendPacket, universe, _1, _2, _3));
   callbacks.registerCallbackWithSignature<String, ConnectionId>("clientWorld", bind(UniverseServerCallbacks::clientWorld, universe, _1));
 
   return callbacks;
@@ -117,21 +117,17 @@ bool LuaBindings::UniverseServerCallbacks::isWorldActive(UniverseServer* univers
 }
 
 StringList LuaBindings::UniverseServerCallbacks::activeWorlds(UniverseServer* universe) {
-  StringList worlds;
-  for (WorldId& world : universe->activeWorlds())
-    worlds.append(printWorldId(world));
-
-  return worlds;
+  return universe->activeWorlds().transformed(printWorldId);
 }
 
 RpcThreadPromise<Json> LuaBindings::UniverseServerCallbacks::sendWorldMessage(UniverseServer* universe, String const& worldId, String const& message, LuaVariadic<Json> args) {
   return universe->sendWorldMessage(parseWorldId(worldId), message, JsonArray::from(std::move(args)));
 }
 
-void LuaBindings::UniverseServerCallbacks::sendPacket(UniverseServer* universe, ConnectionId clientId, String const& packetTypeName, Json const& args) {
+bool LuaBindings::UniverseServerCallbacks::sendPacket(UniverseServer* universe, ConnectionId clientId, String const& packetTypeName, Json const& args) {
   auto packetType = PacketTypeNames.getLeft(packetTypeName);
   auto packet = createPacket(packetType, args);
-  universe->sendPacket(clientId, packet);
+  return universe->sendPacket(clientId, packet);
 }
 
 String LuaBindings::UniverseServerCallbacks::clientWorld(UniverseServer* universe, ConnectionId clientId) {
