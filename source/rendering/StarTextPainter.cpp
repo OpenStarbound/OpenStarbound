@@ -127,13 +127,12 @@ bool TextPainter::processWrapText(StringView text, unsigned* wrapWidth, WrapText
   auto it = text.begin();
   auto end = text.end();
 
-  unsigned lineStart = 0; // Where does this line start ?
   unsigned linePixelWidth = 0; // How wide is this line so far
   unsigned lineCharSize = 0; // how many characters in this line ?
 
   auto escIt = end;
 
-  unsigned splitPos = 0; // Where did we last see a place to split the string ?
+  bool splitting = false; // Did we last see a place to split the string ?
   unsigned splitWidth = 0; // How wide was the string there ?
 
   auto lineStartIt = it; // Where does this line start ?
@@ -173,17 +172,17 @@ bool TextPainter::processWrapText(StringView text, unsigned* wrapWidth, WrapText
         if (!textFunc(slice(lineStartIt, it), lines++))
           return false;
 
-        lineStart += lineCharSize; 
         lineStartIt = it;
         ++lineStartIt;
-
-        lineCharSize = linePixelWidth = splitPos = 0; // ...with no characters in it and no known splits.
+        // next line starts after the CR with no characters in it and no known splits.
+        lineCharSize = linePixelWidth = 0;
+        splitting = false;
       } else {
         int charWidth = glyphWidth(character);
 
         // is it a place where we might want to split the line ?
         if (character == ' ' || character == '\t') {
-          splitPos = lineStart + lineCharSize; // this is the character after the space.
+          splitting = true;
           splitWidth = linePixelWidth + charWidth; // the width of the string at
           splitIt = it;
           ++splitIt;
@@ -193,29 +192,18 @@ bool TextPainter::processWrapText(StringView text, unsigned* wrapWidth, WrapText
         // would the line be too long if we render this next character ?
         if (wrapWidth && (linePixelWidth + charWidth) > *wrapWidth) {
           // did we find somewhere to split the line ?
-          if (splitPos) {
+          if (splitting) {
             if (!textFunc(slice(lineStartIt, splitIt), lines++))
               return false;
-
-            unsigned stringEnd = lineStart + lineCharSize;
-            lineCharSize = stringEnd - splitPos; // next line has the characters after the space.
-
-            unsigned stringWidth = (linePixelWidth - splitWidth);
+            unsigned stringWidth = linePixelWidth - splitWidth;
             linePixelWidth = stringWidth + charWidth; // and is as wide as the bit after the space.
-
-            lineStart = splitPos;
             lineStartIt = splitIt;
-
-            splitPos = 0;
+            splitting = false;
           } else {
             if (!textFunc(slice(lineStartIt, it), lines++))
               return false;
-
-            lineStart += lineCharSize - 1;
-            lineStartIt = it; // include that character on the next line.
-            
-
-            lineCharSize = 1;           // next line has that character in
+            lineStartIt = it; // include that character on the next line. 
+            lineCharSize = 1;            // next line has that character in
             linePixelWidth = charWidth; // and is as wide as that character
           }
         } else {

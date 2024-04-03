@@ -177,7 +177,7 @@ void Chat::addMessages(List<ChatReceivedMessage> const& messages, bool showPane)
   for (auto const& message : messages) {
     Maybe<unsigned> wrapWidth;
     if (message.portrait.empty())
-      wrapWidth = m_chatLog->size()[0];
+      wrapWidth = m_chatLog->size()[0] - m_chatLogPadding[0];
 
     guiContext.setFont(m_font);
     guiContext.setFontSize(m_fontSize);
