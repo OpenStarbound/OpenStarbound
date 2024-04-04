@@ -177,7 +177,7 @@ void Chat::addMessages(List<ChatReceivedMessage> const& messages, bool showPane)
   for (auto const& message : messages) {
     Maybe<unsigned> wrapWidth;
     if (message.portrait.empty())
-      wrapWidth = m_chatLog->size()[0] - m_chatLogPadding[0];
+      wrapWidth = m_chatLog->size()[0] - m_chatLogPadding[0] * 2;
 
     guiContext.setFont(m_font);
     guiContext.setFontSize(m_fontSize);
@@ -261,7 +261,7 @@ void Chat::renderImpl() {
 
     float messageHeight = 0;
     float lineHeightMargin =  + ((m_chatLineHeight * m_fontSize) - m_fontSize);
-    unsigned wrapWidth = m_chatLog->size()[0] - m_chatLogPadding[0];
+    unsigned wrapWidth = m_chatLog->size()[0] - m_chatLogPadding[0] * 2;
 
     if (message.portrait != "") {
       TextPositioning tp = {Vec2F(chatMin +  m_portraitTextOffset), HorizontalAnchor::LeftAnchor, VerticalAnchor::VMidAnchor, (wrapWidth - m_portraitTextOffset[0])};

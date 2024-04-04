@@ -131,12 +131,10 @@ bool TextPainter::processWrapText(StringView text, unsigned* wrapWidth, WrapText
   unsigned lineCharSize = 0; // how many characters in this line ?
 
   auto escIt = end;
-
-  bool splitting = false; // Did we last see a place to split the string ?
   unsigned splitWidth = 0; // How wide was the string there ?
 
   auto lineStartIt = it; // Where does this line start ?
-  auto splitIt = end;
+  auto splitIt = end; // != end if we last saw a place to split the string
 
   auto slice = [](StringView::const_iterator a, StringView::const_iterator b) -> StringView {
     const char* aPtr = &*a.base();
@@ -176,29 +174,26 @@ bool TextPainter::processWrapText(StringView text, unsigned* wrapWidth, WrapText
         ++lineStartIt;
         // next line starts after the CR with no characters in it and no known splits.
         lineCharSize = linePixelWidth = 0;
-        splitting = false;
       } else {
         int charWidth = glyphWidth(character);
 
         // is it a place where we might want to split the line ?
         if (character == ' ' || character == '\t') {
-          splitting = true;
-          splitWidth = linePixelWidth + charWidth; // the width of the string at
           splitIt = it;
-          ++splitIt;
+          splitWidth = linePixelWidth + charWidth; // the width of the string at
           // the split point, i.e. after the space.
         }
 
         // would the line be too long if we render this next character ?
         if (wrapWidth && (linePixelWidth + charWidth) > *wrapWidth) {
           // did we find somewhere to split the line ?
-          if (splitting) {
+          if (splitIt != end) {
             if (!textFunc(slice(lineStartIt, splitIt), lines++))
               return false;
             unsigned stringWidth = linePixelWidth - splitWidth;
             linePixelWidth = stringWidth + charWidth; // and is as wide as the bit after the space.
-            lineStartIt = splitIt;
-            splitting = false;
+            lineStartIt = ++splitIt;
+            splitIt = end;
           } else {
             if (!textFunc(slice(lineStartIt, it), lines++))
               return false;
