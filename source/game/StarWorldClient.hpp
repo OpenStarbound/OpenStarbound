@@ -143,6 +143,7 @@ public:
   void centerClientWindowOnPlayer(Vec2U const& windowSize);
   void centerClientWindowOnPlayer();
   RectI clientWindow() const;
+  WorldClientState& clientState();
 
   void update(float dt);
   // borderTiles here should extend the client window for border tile

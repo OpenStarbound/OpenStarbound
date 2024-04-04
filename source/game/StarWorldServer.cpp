@@ -520,7 +520,7 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
           response.get<RpcPromiseKeeper<Json>>().fail(entityMessageResponsePacket->response.left());
       }
     } else if (auto pingPacket = as<PingPacket>(packet)) {
-      clientInfo->outgoingPackets.append(make_shared<PongPacket>());
+      clientInfo->outgoingPackets.append(make_shared<PongPacket>(pingPacket->time));
 
     } else if (auto updateWorldProperties = as<UpdateWorldPropertiesPacket>(packet)) {
       // Kae: Properties set to null (nil from Lua) should be erased instead of lingering around

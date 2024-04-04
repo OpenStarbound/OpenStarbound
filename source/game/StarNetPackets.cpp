@@ -924,15 +924,26 @@ void WorldStartAcknowledgePacket::write(DataStream& ds) const {
 }
 
 PingPacket::PingPacket() {}
+PingPacket::PingPacket(int64_t time) : time(time) {}
 
-void PingPacket::read(DataStream& ds) {
+void PingPacket::readLegacy(DataStream& ds) {
   // Packets can't be empty, read the trash data
   ds.read<bool>();
+  time = 0;
+}
+
+void PingPacket::read(DataStream& ds) {
+  ds.readVlqI(time);
+}
+
+
+void PingPacket::writeLegacy(DataStream& ds) const {
+  // Packets can't be empty, write some trash data
+  ds.write<bool>(false);
 }
 
 void PingPacket::write(DataStream& ds) const {
-  // Packets can't be empty, write some trash data
-  ds.write(false);
+  ds.writeVlqI(time);
 }
 
 EntityCreatePacket::EntityCreatePacket(EntityType entityType, ByteArray storeData, ByteArray firstNetState, EntityId entityId)
@@ -1234,15 +1245,25 @@ void FindUniqueEntityResponsePacket::write(DataStream& ds) const {
 }
 
 PongPacket::PongPacket() {}
+PongPacket::PongPacket(int64_t time) : time(time) {}
 
-void PongPacket::read(DataStream& ds) {
+void PongPacket::readLegacy(DataStream& ds) {
   // Packets can't be empty, read the trash data
   ds.read<bool>();
+  time = 0;
+}
+
+void PongPacket::read(DataStream& ds) {
+  ds.readVlqI(time);
+}
+
+void PongPacket::writeLegacy(DataStream& ds) const {
+  // Packets can't be empty, write some trash data
+  ds.write<bool>(false);
 }
 
 void PongPacket::write(DataStream& ds) const {
-  // Packets can't be empty, write some trash data
-  ds.write<bool>(false);
+  ds.writeVlqI(time);
 }
 
 StepUpdatePacket::StepUpdatePacket() : remoteTime(0.0) {}

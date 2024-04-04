@@ -403,6 +403,10 @@ RectI WorldClient::clientWindow() const {
   return m_clientState.window();
 }
 
+WorldClientState& WorldClient::clientState() {
+  return m_clientState;
+}
+
 void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
   if (!m_lightingThread && m_asyncLighting)
     m_lightingThread = Thread::invoke("WorldClient::lightingMain", mem_fn(&WorldClient::lightingMain), this);
@@ -1038,7 +1042,9 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
       m_worldTemplate->setWorldParameters(netLoadVisitableWorldParameters(worldParametersUpdate->parametersData));
 
     } else if (auto pongPacket = as<PongPacket>(packet)) {
-      if (m_pingTime) 
+      if (pongPacket->time)
+        m_latency = Time::monotonicMilliseconds() - pongPacket->time;
+      else if (m_pingTime) 
         m_latency = Time::monotonicMilliseconds() - m_pingTime.take();
 
     } else {
@@ -1203,10 +1209,11 @@ void WorldClient::update(float dt) {
 
   queueUpdatePackets(m_entityUpdateTimer.wrapTick(dt));
 
-  if (m_pingTime.isNothing()) {
+  if ((!m_clientState.legacy() && m_currentStep % 3 == 0) || m_pingTime.isNothing()) {
     m_pingTime = Time::monotonicMilliseconds();
-    m_outgoingPackets.append(make_shared<PingPacket>());
+    m_outgoingPackets.append(make_shared<PingPacket>(*m_pingTime));
   }
+
   LogMap::set("client_ping", m_latency);
 
   // Remove active sectors that are outside of the current monitoring region

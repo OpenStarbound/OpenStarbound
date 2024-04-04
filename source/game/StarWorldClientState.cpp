@@ -22,6 +22,8 @@ WorldClientState::WorldClientState() {
 
   m_netGroup.addNetElement(&m_playerId);
   m_netGroup.addNetElement(&m_clientPresenceEntities);
+
+  m_legacy = false;
 }
 
 RectI WorldClientState::window() const {
@@ -85,6 +87,14 @@ ByteArray WorldClientState::writeDelta() {
 
 void WorldClientState::readDelta(ByteArray delta) {
   m_netGroup.readNetState(std::move(delta));
+}
+
+void WorldClientState::setLegacy(bool legacy) {
+  m_legacy = legacy;
+}
+
+bool WorldClientState::legacy() const {
+  return m_legacy;
 }
 
 void WorldClientState::reset() {

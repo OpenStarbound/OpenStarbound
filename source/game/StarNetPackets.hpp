@@ -603,9 +603,14 @@ struct FindUniqueEntityResponsePacket : PacketBase<PacketType::FindUniqueEntityR
 
 struct PongPacket : PacketBase<PacketType::Pong> {
   PongPacket();
+  PongPacket(int64_t time);
 
+  void readLegacy(DataStream& ds) override;
   void read(DataStream& ds) override;
+  void writeLegacy(DataStream& ds) const override;
   void write(DataStream& ds) const override;
+
+  int64_t time = 0;
 };
 
 struct ModifyTileListPacket : PacketBase<PacketType::ModifyTileList> {
@@ -717,9 +722,14 @@ struct WorldStartAcknowledgePacket : PacketBase<PacketType::WorldStartAcknowledg
   
 struct PingPacket : PacketBase<PacketType::Ping> {
   PingPacket();
+  PingPacket(int64_t time);
 
+  void readLegacy(DataStream& ds) override;
   void read(DataStream& ds) override;
+  void writeLegacy(DataStream& ds) const override;
   void write(DataStream& ds) const override;
+
+  int64_t time = 0;
 };
 
 struct EntityCreatePacket : PacketBase<PacketType::EntityCreate> {
