@@ -293,7 +293,7 @@ void QuestPane::commonSetup(Json config, String bodyText, String const& portrait
   GuiReader reader;
 
   reader.registerCallback("close", [=](Widget*) { close(); });
-  reader.registerCallback("btnDecline", [=](Widget*) { close(); });
+  reader.registerCallback("btnDecline", [=](Widget*) { decline(); });
   reader.registerCallback("btnAccept", [=](Widget*) { accept(); });
   reader.construct(config.get("paneLayout"), this);
 
@@ -330,6 +330,10 @@ void QuestPane::close() {
   dismiss();
 }
 
+void QuestPane::decline() {
+  close();
+}
+
 void QuestPane::accept() {
   close();
 }
@@ -348,7 +352,7 @@ PanePtr QuestPane::createTooltip(Vec2I const& screenPosition) {
 }
 
 NewQuestInterface::NewQuestInterface(QuestManagerPtr const& manager, QuestPtr const& quest, PlayerPtr player)
-  : QuestPane(quest, std::move(player)), m_manager(manager), m_declined(false) {
+  : QuestPane(quest, std::move(player)), m_manager(manager), m_decision(QuestDecision::Cancelled) {
   auto assets = Root::singleton().assets();
 
   List<Drawable> objectivePortrait = m_quest->portrait("Objective").value({});
@@ -364,8 +368,7 @@ NewQuestInterface::NewQuestInterface(QuestManagerPtr const& manager, QuestPtr co
 
   commonSetup(config, m_quest->text(), "QuestStarted");
 
-  m_declined = m_quest->canBeAbandoned();
-  if (!m_declined) {
+  if (!m_quest->canBeAbandoned()) {
     if (auto declineButton = fetchChild<ButtonWidget>("btnDecline"))
       declineButton->disable();
   }
@@ -392,21 +395,28 @@ NewQuestInterface::NewQuestInterface(QuestManagerPtr const& manager, QuestPtr co
 }
 
 void NewQuestInterface::close() {
-  m_declined = true;
+  m_decision = QuestDecision::Cancelled;
+  dismiss();
+}
+
+void NewQuestInterface::decline() {
+  m_decision = QuestDecision::Declined;
   dismiss();
 }
 
 void NewQuestInterface::accept() {
-  m_declined = false;
+  m_decision = QuestDecision::Accepted;
   dismiss();
 }
 
 void NewQuestInterface::dismissed() {
   QuestPane::dismissed();
-  if (m_declined && m_quest->canBeAbandoned()) {
+  if (m_decision == QuestDecision::Declined && m_quest->canBeAbandoned()) {
     m_manager->getQuest(m_quest->questId())->declineOffer();
-  } else {
+  } else if (m_decision == QuestDecision::Accepted) {
     m_manager->getQuest(m_quest->questId())->start();
+  } else {
+    m_manager->getQuest(m_quest->questId())->cancelOffer();
   }
 }
 

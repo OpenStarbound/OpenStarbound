@@ -240,6 +240,12 @@ void Quest::declineOffer() {
   uninitScript();
 }
 
+void Quest::cancelOffer() {
+  setState(QuestState::New);
+  m_scriptComponent.invoke("questCancel");
+  uninitScript();
+}
+
 void Quest::start() {
   setState(QuestState::Active);
   initScript();

@@ -51,6 +51,7 @@ protected:
 
   void commonSetup(Json config, String bodyText, String const& portraitName);
   virtual void close();
+  virtual void decline();
   virtual void accept();
   virtual PanePtr createTooltip(Vec2I const& screenPosition) override;
 
@@ -60,16 +61,23 @@ protected:
 
 class NewQuestInterface : public QuestPane {
 public:
+  enum class QuestDecision {
+    Declined,
+    Accepted,
+    Cancelled
+  };
+
   NewQuestInterface(QuestManagerPtr const& manager, QuestPtr const& quest, PlayerPtr player);
 
 protected:
   void close() override;
+  void decline() override;
   void accept() override;
   void dismissed() override;
 
 private:
   QuestManagerPtr m_manager;
-  bool m_declined;
+  QuestDecision m_decision;
 };
 
 class QuestCompleteInterface : public QuestPane {
