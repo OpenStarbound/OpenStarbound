@@ -122,6 +122,7 @@ void TeamBar::updatePlayerResources() {
     } else {
       m_foodBar->setOverlay("");
     }
+    m_foodBar->show();
   } else {
     m_foodBar->hide();
   }
