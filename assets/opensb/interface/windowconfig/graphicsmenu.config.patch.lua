@@ -28,8 +28,8 @@ function patch(config)
   for i = 1, 32 do config.zoomList[i] = i end
 
   -- Create anti-aliasing toggle
-  shift(clone(layout, "multiTextureLabel", "antiAliasingLabel"), 100).value = "SUPER-SAMPLED AA"
-  shift(clone(layout, "multiTextureCheckbox", "antiAliasingCheckbox"), 100)
+  shift(clone(layout, "multiTextureLabel", "antiAliasingLabel"), 98).value = "SUPER-SAMPLED AA"
+  shift(clone(layout, "multiTextureCheckbox", "antiAliasingCheckbox"), 99)
 
   return config
 end
