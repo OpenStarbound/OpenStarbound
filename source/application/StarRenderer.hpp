@@ -161,7 +161,7 @@ public:
   virtual void render(RenderPrimitive primitive) = 0;
   virtual void renderBuffer(RenderBufferPtr const& renderBuffer, Mat3F const& transformation = Mat3F::identity()) = 0;
 
-  virtual void flush() = 0;
+  virtual void flush(Mat3F const& transformation = Mat3F::identity()) = 0;
 };
 
 }

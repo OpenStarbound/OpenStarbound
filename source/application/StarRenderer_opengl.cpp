@@ -482,8 +482,8 @@ void OpenGlRenderer::renderBuffer(RenderBufferPtr const& renderBuffer, Mat3F con
   renderGlBuffer(*convert<GlRenderBuffer>(renderBuffer.get()), transformation);
 }
 
-void OpenGlRenderer::flush() {
-  flushImmediatePrimitives();
+void OpenGlRenderer::flush(Mat3F const& transformation) {
+  flushImmediatePrimitives(transformation);
 }
 
 void OpenGlRenderer::setScreenSize(Vec2U screenSize) {
@@ -889,13 +889,13 @@ void OpenGlRenderer::uploadTextureImage(PixelFormat pixelFormat, Vec2U size, uin
   glTexImage2D(GL_TEXTURE_2D, 0, internalFormat.value(format), size[0], size[1], 0, format, type, data);
 }
 
-void OpenGlRenderer::flushImmediatePrimitives() {
+void OpenGlRenderer::flushImmediatePrimitives(Mat3F const& transformation) {
   if (m_immediatePrimitives.empty())
     return;
 
   m_immediateRenderBuffer->set(m_immediatePrimitives);
   m_immediatePrimitives.resize(0);
-  renderGlBuffer(*m_immediateRenderBuffer, Mat3F::identity());
+  renderGlBuffer(*m_immediateRenderBuffer, transformation);
 }
 
 auto OpenGlRenderer::createGlTexture(ImageView const& image, TextureAddressing addressing, TextureFiltering filtering)

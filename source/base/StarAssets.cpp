@@ -118,8 +118,8 @@ Assets::Assets(Settings settings, StringList assetSources) {
       table.set(p.first, luaEngine->createWrappedFunction(p.second));
     luaEngine->setGlobal(name, table);
   };
-  pushGlobalContext("sb", LuaBindings::makeUtilityCallbacks());
-  auto decorateLuaContext = [this](LuaContext& context, MemoryAssetSourcePtr newFiles) {
+
+  auto makeBaseAssetCallbacks = [this]() {
     LuaCallbacks callbacks;
     callbacks.registerCallbackWithSignature<StringSet, String>("byExtension", bind(&Assets::scanExtension, this, _1));
     callbacks.registerCallbackWithSignature<Json, String>("json", bind(&Assets::json, this, _1));
@@ -132,7 +132,7 @@ Assets::Assets(Settings settings, StringList assetSources) {
     callbacks.registerCallback("image", [this](String const& path) -> Image {
       auto assetImage = image(path);
       if (assetImage->bytesPerPixel() == 3)
-        return assetImage->convert(PixelFormat::RGBA32); 
+        return assetImage->convert(PixelFormat::RGBA32);
       else
         return *assetImage;
     });
@@ -140,7 +140,14 @@ Assets::Assets(Settings settings, StringList assetSources) {
     callbacks.registerCallback("scan", [this](Maybe<String> const& a, Maybe<String> const& b) -> StringList {
       return b ? scan(a.value(), *b) : scan(a.value());
     });
+    return callbacks;
+  };
 
+  pushGlobalContext("sb", LuaBindings::makeUtilityCallbacks());
+  pushGlobalContext("assets", makeBaseAssetCallbacks());
+
+  auto decorateLuaContext = [&](LuaContext& context, MemoryAssetSourcePtr newFiles) {
+    auto callbacks = makeBaseAssetCallbacks();
     if (newFiles) {
       callbacks.registerCallback("add", [&newFiles](LuaEngine& engine, String const& path, LuaValue const& data) {
         ByteArray bytes;
@@ -872,7 +879,7 @@ ImageConstPtr Assets::readImage(String const& path) const {
       image = make_shared<Image>(Image::readPng(p->source->open(p->sourceName)));
 
     if (!p->patchSources.empty()) {
-      MutexLocker luaLocker(m_luaMutex);
+      RecursiveMutexLocker luaLocker(m_luaMutex);
       LuaEngine* luaEngine = as<LuaEngine>(m_luaEngine.get());
       LuaValue result = luaEngine->createUserData(*image);
       luaLocker.unlock();
@@ -953,7 +960,7 @@ Json Assets::readJson(String const& path) const {
       auto& patchSource = pair.second;
       auto patchStream = patchSource->read(patchPath);
       if (patchPath.endsWith(".lua")) {
-        MutexLocker luaLocker(m_luaMutex);
+        RecursiveMutexLocker luaLocker(m_luaMutex);
         // Kae: i don't like that lock. perhaps have a LuaEngine and patch context cache per worker thread later on?
         LuaContextPtr& context = m_patchContexts[patchPath];
         if (!context) {

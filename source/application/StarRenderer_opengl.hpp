@@ -42,7 +42,7 @@ public:
   void render(RenderPrimitive primitive) override;
   void renderBuffer(RenderBufferPtr const& renderBuffer, Mat3F const& transformation) override;
 
-  void flush() override;
+  void flush(Mat3F const& transformation) override;
 
   void setScreenSize(Vec2U screenSize);
 
@@ -205,7 +205,7 @@ private:
 
   shared_ptr<GlRenderBuffer> createGlRenderBuffer();
 
-  void flushImmediatePrimitives();
+  void flushImmediatePrimitives(Mat3F const& transformation = Mat3F::identity());
 
   void renderGlBuffer(GlRenderBuffer const& renderBuffer, Mat3F const& transformation);
 

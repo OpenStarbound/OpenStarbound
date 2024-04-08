@@ -17,7 +17,6 @@ end
 function patch(config)
   local layout = config.paneLayout
   layout.panefeature.positionLocked = false
-
   -- Create the camera pan speed widgets
   shift(clone(layout, "zoomLabel", "cameraSpeedLabel"), 100).value = "CAMERA PAN SPEED"
   shift(clone(layout, "zoomSlider", "cameraSpeedSlider"), 100)
@@ -26,7 +25,6 @@ function patch(config)
   config.cameraSpeedList = jarray()
   for i = 1, 50 do config.cameraSpeedList[i] = i / 10 end
   for i = 1, 32 do config.zoomList[i] = i end
-
   -- Create anti-aliasing toggle
   shift(clone(layout, "multiTextureLabel", "antiAliasingLabel"), 98).value = "SUPER-SAMPLED AA"
   shift(clone(layout, "multiTextureCheckbox", "antiAliasingCheckbox"), 99)
