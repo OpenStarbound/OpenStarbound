@@ -147,8 +147,10 @@ Assets::Assets(Settings settings, StringList assetSources) {
   pushGlobalContext("assets", makeBaseAssetCallbacks());
 
   auto decorateLuaContext = [&](LuaContext& context, MemoryAssetSourcePtr newFiles) {
-    auto callbacks = makeBaseAssetCallbacks();
     if (newFiles) {
+      // re-add the assets callbacks with more functions
+      context.remove("assets");
+      auto callbacks = makeBaseAssetCallbacks();
       callbacks.registerCallback("add", [&newFiles](LuaEngine& engine, String const& path, LuaValue const& data) {
         ByteArray bytes;
         if (auto str = engine.luaMaybeTo<String>(data))
@@ -184,9 +186,9 @@ Assets::Assets(Settings settings, StringList assetSources) {
           m_filesByExtension[AssetPath::extension(path).toLower()].erase(path);
         return erased;
       });
-    }
 
-    context.setCallbacks("assets", callbacks);
+      context.setCallbacks("assets", callbacks);
+    }
   };
 
   auto addSource = [&](String const& sourcePath, AssetSourcePtr source) {

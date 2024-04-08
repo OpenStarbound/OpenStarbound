@@ -231,6 +231,7 @@ void Mixer::stopAll(float rampTime) {
 void Mixer::read(int16_t* outBuffer, size_t frameCount, ExtraMixFunction extraMixFunction) {
   // Make this method as least locky as possible by copying all the needed
   // member data before the expensive audio / effect stuff.
+  float speed;
   unsigned sampleRate;
   unsigned channels;
   float volume;
@@ -240,6 +241,7 @@ void Mixer::read(int16_t* outBuffer, size_t frameCount, ExtraMixFunction extraMi
 
   {
     MutexLocker locker(m_mutex);
+    speed = m_speed;
     sampleRate = m_sampleRate;
     channels = m_channels;
     volume = m_volume.value;
@@ -265,8 +267,6 @@ void Mixer::read(int16_t* outBuffer, size_t frameCount, ExtraMixFunction extraMi
 
   for (size_t i = 0; i < bufferSize; ++i)
     outBuffer[i] = 0;
-
-  float speed = m_speed;
 
   {
     MutexLocker locker(m_queueMutex);
