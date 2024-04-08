@@ -74,6 +74,12 @@ GraphicsMenu::GraphicsMenu() {
       m_localChanges.set("useMultiTexturing", fetchChild<ButtonWidget>("multiTextureCheckbox")->isChecked());
       syncGui();
     });
+  reader.registerCallback("antiAliasingCheckbox", [=](Widget*) {
+    bool checked = fetchChild<ButtonWidget>("antiAliasingCheckbox")->isChecked();
+    m_localChanges.set("antiAliasing", checked);
+    Root::singleton().configuration()->set("antiAliasing", checked);
+    syncGui();
+  });
   reader.registerCallback("monochromeCheckbox", [=](Widget*) {
       bool checked = fetchChild<ButtonWidget>("monochromeCheckbox")->isChecked();
       m_localChanges.set("monochromeLighting", checked);
@@ -133,6 +139,7 @@ StringList const GraphicsMenu::ConfigKeys = {
   "borderless",
   "limitTextureAtlasSize",
   "useMultiTexturing",
+  "antiAliasing",
   "monochromeLighting"
 };
 
@@ -187,6 +194,7 @@ void GraphicsMenu::syncGui() {
   fetchChild<ButtonWidget>("borderlessCheckbox")->setChecked(m_localChanges.get("borderless").toBool());
   fetchChild<ButtonWidget>("textureLimitCheckbox")->setChecked(m_localChanges.get("limitTextureAtlasSize").toBool());
   fetchChild<ButtonWidget>("multiTextureCheckbox")->setChecked(m_localChanges.get("useMultiTexturing").optBool().value(true));
+  fetchChild<ButtonWidget>("antiAliasingCheckbox")->setChecked(m_localChanges.get("antiAliasing").toBool());
   fetchChild<ButtonWidget>("monochromeCheckbox")->setChecked(m_localChanges.get("monochromeLighting").toBool());
 }
 

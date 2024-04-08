@@ -1,4 +1,4 @@
-#version 110
+#version 130
 
 uniform sampler2D texture0;
 uniform sampler2D texture1;
@@ -9,11 +9,13 @@ uniform vec2 lightMapSize;
 uniform sampler2D lightMap;
 uniform float lightMapMultiplier;
 
-varying vec2 fragmentTextureCoordinate;
-varying float fragmentTextureIndex;
-varying vec4 fragmentColor;
-varying float fragmentLightMapMultiplier;
-varying vec2 fragmentLightMapCoordinate;
+in vec2 fragmentTextureCoordinate;
+flat in int fragmentTextureIndex;
+in vec4 fragmentColor;
+in float fragmentLightMapMultiplier;
+in vec2 fragmentLightMapCoordinate;
+
+out vec4 outColor;
 
 vec4 cubic(float v) {
   vec4 n = vec4(1.0, 2.0, 3.0, 4.0) - v;
@@ -64,15 +66,15 @@ vec3 sampleLight(vec2 coord, vec2 scale) {
 
 void main() {
   vec4 texColor;
-  if (fragmentTextureIndex > 2.9) {
+  if (fragmentTextureIndex == 3)
     texColor = texture2D(texture3, fragmentTextureCoordinate);
-  } else if (fragmentTextureIndex > 1.9) {
+  else if (fragmentTextureIndex == 2)
     texColor = texture2D(texture2, fragmentTextureCoordinate);
-  } else if (fragmentTextureIndex > 0.9) {
+  else if (fragmentTextureIndex == 1)
     texColor = texture2D(texture1, fragmentTextureCoordinate);
-  } else {
+  else
     texColor = texture2D(texture0, fragmentTextureCoordinate);
-  }
+
   if (texColor.a <= 0.0)
     discard;
 
@@ -82,5 +84,5 @@ void main() {
     finalColor.a = fragmentColor.a;
   else if (lightMapEnabled && finalLightMapMultiplier > 0.0)
     finalColor.rgb *= sampleLight(fragmentLightMapCoordinate, 1.0 / lightMapSize) * finalLightMapMultiplier;
-  gl_FragColor = finalColor;
+  outColor = finalColor;
 }

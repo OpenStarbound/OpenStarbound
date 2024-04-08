@@ -2,12 +2,13 @@
 
 namespace Star {
 
-void WorldCamera::setCenterWorldPosition(Vec2F const& position) {
+void WorldCamera::setCenterWorldPosition(Vec2F const& position, bool force) {
   // Only actually move the world center if a half pixel distance has been
   // moved in any direction.  This is sort of arbitrary, but helps prevent
   // judder if the camera is at a boundary and floating point inaccuracy is
   // causing the focus to jitter back and forth across the boundary.
-  if (fabs(position[0] - m_worldCenter[0]) < 1.0f / (TilePixels * m_pixelRatio * 2) && fabs(position[1] - m_worldCenter[1]) < 1.0f / (TilePixels * m_pixelRatio * 2))
+  if (fabs(position[0] - m_worldCenter[0]) < 1.0f / (TilePixels * m_pixelRatio * 2)
+   && fabs(position[1] - m_worldCenter[1]) < 1.0f / (TilePixels * m_pixelRatio * 2) && !force)
     return;
 
   // First, make sure the camera center position is inside the main x

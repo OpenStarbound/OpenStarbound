@@ -58,6 +58,7 @@ Json const AdditionalDefaultConfiguration = Json::parseJson(R"JSON(
       "fullscreen" : false,
       "borderless" : false,
       "maximized" : true,
+      "antiAliasing" : false,
       "zoomLevel" : 3.0,
       "cameraSpeedFactor" : 1.0,
       "speechBubbles" : true,
@@ -375,6 +376,7 @@ void ClientApplication::render() {
   auto assets = m_root->assets();
   auto& renderer = Application::renderer();
 
+  renderer->setMultiSampling(config->get("antiAliasing").optBool().value(false) ? 4 : 0);
   renderer->switchEffectConfig("interface");
 
   if (m_guiContext->windowWidth() >= m_crossoverRes[0] && m_guiContext->windowHeight() >= m_crossoverRes[1])
@@ -452,7 +454,7 @@ void ClientApplication::renderReload() {
       Logger::warn("No rendering config found for renderer with id '{}'", renderer->rendererId());
   };
 
-  renderer->loadConfig(assets->json("/rendering/opengl20.config"));
+  renderer->loadConfig(assets->json("/rendering/opengl.config"));
 
   loadEffectConfig("world");
   loadEffectConfig("interface");

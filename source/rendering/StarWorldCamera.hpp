@@ -20,8 +20,8 @@ public:
 
   // Set the camera center position (in world space) to as close to the given
   // location as possible while keeping the screen within world bounds.
+  void setCenterWorldPosition(Vec2F const& position, bool force = false);
   // Returns the actual camera position.
-  void setCenterWorldPosition(Vec2F const& position);
   Vec2F centerWorldPosition() const;
 
   // Transforms world coordinates into one set of screen coordinates.  Since
@@ -121,7 +121,11 @@ inline Vec2F WorldCamera::tileMinScreen() const {
 }
 
 inline void WorldCamera::update(float dt) {
-  m_pixelRatio = lerp(exp(-20.0f * dt), m_targetPixelRatio, m_pixelRatio);
+  float newPixelRatio = lerp(exp(-20.0f * dt), m_targetPixelRatio, m_pixelRatio);
+  if (m_pixelRatio != newPixelRatio) {
+    m_pixelRatio = newPixelRatio;
+    setCenterWorldPosition(m_worldCenter, true);
+  }
 }
 
 }

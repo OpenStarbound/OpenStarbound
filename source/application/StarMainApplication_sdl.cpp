@@ -2,7 +2,7 @@
 #include "StarLogging.hpp"
 #include "StarSignalHandler.hpp"
 #include "StarTickRateMonitor.hpp"
-#include "StarRenderer_opengl20.hpp"
+#include "StarRenderer_opengl.hpp"
 #include "StarTtlCache.hpp"
 #include "StarImage.hpp"
 #include "StarImageProcessing.hpp"
@@ -335,7 +335,7 @@ public:
       SDL_PauseAudioDevice(m_sdlAudioOutputDevice, 0);
     }
 
-    m_renderer = make_shared<OpenGl20Renderer>();
+    m_renderer = make_shared<OpenGlRenderer>();
     m_renderer->setScreenSize(m_windowSize);
 
     m_cursorCache.setTimeToLive(30000);
@@ -930,7 +930,7 @@ private:
   bool m_audioEnabled = false;
   bool m_quitRequested = false;
 
-  OpenGl20RendererPtr m_renderer;
+  OpenGlRendererPtr m_renderer;
   ApplicationUPtr m_application;
   PcPlatformServicesUPtr m_platformServices;
 };

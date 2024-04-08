@@ -1,4 +1,4 @@
-#version 110
+#version 130
 
 uniform vec2 textureSize0;
 uniform vec2 textureSize1;
@@ -10,31 +10,37 @@ uniform vec2 lightMapSize;
 uniform vec2 lightMapScale;
 uniform vec2 lightMapOffset;
 
-attribute vec2 vertexPosition;
-attribute vec2 vertexTextureCoordinate;
-attribute float vertexTextureIndex;
-attribute vec4 vertexColor;
-attribute float vertexParam1;
+in vec2 vertexPosition;
+in vec2 vertexTextureCoordinate;
+in vec4 vertexColor;
+in int vertexData;
 
-varying vec2 fragmentTextureCoordinate;
-varying float fragmentTextureIndex;
-varying vec4 fragmentColor;
-varying float fragmentLightMapMultiplier;
-varying vec2 fragmentLightMapCoordinate;
+out vec2 fragmentTextureCoordinate;
+flat out int fragmentTextureIndex;
+out vec4 fragmentColor;
+out float fragmentLightMapMultiplier;
+out vec2 fragmentLightMapCoordinate;
 
 void main() {
   vec2 screenPosition = (vertexTransform * vec3(vertexPosition, 1.0)).xy;
-  fragmentLightMapMultiplier = vertexParam1;
+
+  if (((vertexData >> 3) & 0x1) == 1)
+    screenPosition.x = round(screenPosition.x);
+  if (((vertexData >> 4) & 0x1) == 1)
+    screenPosition.y = round(screenPosition.y);
+
+  fragmentLightMapMultiplier = float((vertexData >> 2) & 0x1);
+  int vertexTextureIndex = vertexData & 0x3;
   fragmentLightMapCoordinate = (screenPosition / lightMapScale) - lightMapOffset * lightMapSize / screenSize;
-  if (vertexTextureIndex > 2.9) {
+  if (vertexTextureIndex == 3)
     fragmentTextureCoordinate = vertexTextureCoordinate / textureSize3;
-  } else if (vertexTextureIndex > 1.9) {
+  else if (vertexTextureIndex == 2)
     fragmentTextureCoordinate = vertexTextureCoordinate / textureSize2;
-  } else if (vertexTextureIndex > 0.9) {
+  else if (vertexTextureIndex == 1)
     fragmentTextureCoordinate = vertexTextureCoordinate / textureSize1;
-  } else {
+  else
     fragmentTextureCoordinate = vertexTextureCoordinate / textureSize0;
-  }
+
   fragmentTextureIndex = vertexTextureIndex;
   fragmentColor = vertexColor;
   gl_Position = vec4(screenPosition / screenSize * 2.0 - 1.0, 0.0, 1.0);

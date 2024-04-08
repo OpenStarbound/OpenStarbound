@@ -870,6 +870,42 @@ ImageConstPtr Assets::readImage(String const& path) const {
       image = memorySource->image(p->sourceName);
     if (!image)
       image = make_shared<Image>(Image::readPng(p->source->open(p->sourceName)));
+
+    if (!p->patchSources.empty()) {
+      MutexLocker luaLocker(m_luaMutex);
+      LuaEngine* luaEngine = as<LuaEngine>(m_luaEngine.get());
+      LuaValue result = luaEngine->createUserData(*image);
+      luaLocker.unlock();
+      for (auto const& pair : p->patchSources) {
+        auto& patchPath = pair.first;
+        auto& patchSource = pair.second;
+        auto patchStream = patchSource->read(patchPath);
+        if (patchPath.endsWith(".lua")) {
+          luaLocker.lock();
+          LuaContextPtr& context = m_patchContexts[patchPath];
+          if (!context) {
+            context = make_shared<LuaContext>(luaEngine->createContext());
+            context->load(patchStream, patchPath);
+          }
+          auto newResult = context->invokePath<LuaValue>("patch", result, path);
+          if (!newResult.is<LuaNilType>()) {
+            if (auto ud = newResult.ptr<LuaUserData>()) {
+              if (ud->is<Image>())
+                result = std::move(newResult);
+              else
+                Logger::warn("Patch '{}' for image '{}' returned a non-Image userdata value, ignoring");
+            } else {
+              Logger::warn("Patch '{}' for image '{}' returned a non-Image value, ignoring");
+            }
+          }
+          luaLocker.unlock();
+        } else {
+          Logger::warn("Patch '{}' for image '{}' isn't a Lua script, ignoring", patchPath, path);
+        }
+      }
+      image = make_shared<Image>(std::move(result.get<LuaUserData>().get<Image>()));
+    }
+
     return image;
   }
   throw AssetException(strf("No such asset '{}'", path));
@@ -916,32 +952,32 @@ Json Assets::readJson(String const& path) const {
       auto& patchPath = pair.first;
       auto& patchSource = pair.second;
       auto patchStream = patchSource->read(patchPath);
-        if (pair.first.endsWith(".lua")) {
-          MutexLocker luaLocker(m_luaMutex);
-          // Kae: i don't like that lock. perhaps have a LuaEngine and patch context cache per worker thread later on?
-          LuaContextPtr& context = m_patchContexts[patchPath];
-          if (!context) {
-            context = make_shared<LuaContext>(as<LuaEngine>(m_luaEngine.get())->createContext());
-            context->load(patchStream, patchPath);
-          }
-          auto newResult = context->invokePath<Json>("patch", result, path);
-          if (newResult)
-            result = std::move(newResult);
-        } else {
-          auto patchJson = inputUtf8Json(patchStream.begin(), patchStream.end(), false);
-          if (patchJson.isType(Json::Type::Array)) {
-          auto patchData = patchJson.toArray();
-          try {
-            result = checkPatchArray(patchPath, patchSource, result, patchData, {});
-          } catch (JsonPatchTestFail const& e) {
-            Logger::debug("Patch test failure from file {} in source: '{}' at '{}'. Caused by: {}", patchPath, patchSource->metadata().value("name", ""), m_assetSourcePaths.getLeft(patchSource), e.what());
-          } catch (JsonPatchException const& e) {
-            Logger::error("Could not apply patch from file {} in source: '{}' at '{}'.  Caused by: {}", patchPath, patchSource->metadata().value("name", ""), m_assetSourcePaths.getLeft(patchSource), e.what());
-          }
-          } else if (patchJson.isType(Json::Type::Object)) {//Kae: Do a good ol' json merge instead if the .patch file is a Json object
-            result = jsonMergeNulling(result, patchJson.toObject());
-          }
+      if (patchPath.endsWith(".lua")) {
+        MutexLocker luaLocker(m_luaMutex);
+        // Kae: i don't like that lock. perhaps have a LuaEngine and patch context cache per worker thread later on?
+        LuaContextPtr& context = m_patchContexts[patchPath];
+        if (!context) {
+          context = make_shared<LuaContext>(as<LuaEngine>(m_luaEngine.get())->createContext());
+          context->load(patchStream, patchPath);
         }
+        auto newResult = context->invokePath<Json>("patch", result, path);
+        if (newResult)
+          result = std::move(newResult);
+      } else {
+        auto patchJson = inputUtf8Json(patchStream.begin(), patchStream.end(), false);
+        if (patchJson.isType(Json::Type::Array)) {
+        auto patchData = patchJson.toArray();
+        try {
+          result = checkPatchArray(patchPath, patchSource, result, patchData, {});
+        } catch (JsonPatchTestFail const& e) {
+          Logger::debug("Patch test failure from file {} in source: '{}' at '{}'. Caused by: {}", patchPath, patchSource->metadata().value("name", ""), m_assetSourcePaths.getLeft(patchSource), e.what());
+        } catch (JsonPatchException const& e) {
+          Logger::error("Could not apply patch from file {} in source: '{}' at '{}'.  Caused by: {}", patchPath, patchSource->metadata().value("name", ""), m_assetSourcePaths.getLeft(patchSource), e.what());
+        }
+        } else if (patchJson.isType(Json::Type::Object)) {//Kae: Do a good ol' json merge instead if the .patch file is a Json object
+          result = jsonMergeNulling(result, patchJson.toObject());
+        }
+      }
     }
     return result;
   } catch (std::exception const& e) {

@@ -1,27 +1,29 @@
-#version 110
+#version 130
 
 uniform sampler2D texture0;
 uniform sampler2D texture1;
 uniform sampler2D texture2;
 uniform sampler2D texture3;
 
-varying vec2 fragmentTextureCoordinate;
-varying float fragmentTextureIndex;
-varying vec4 fragmentColor;
+in vec2 fragmentTextureCoordinate;
+flat in int fragmentTextureIndex;
+in vec4 fragmentColor;
+
+out vec4 outColor;
 
 void main() {
   vec4 texColor;
-  if (fragmentTextureIndex > 2.9) {
+  if (fragmentTextureIndex == 3)
     texColor = texture2D(texture3, fragmentTextureCoordinate);
-  } else if (fragmentTextureIndex > 1.9) {
+  else if (fragmentTextureIndex == 2)
     texColor = texture2D(texture2, fragmentTextureCoordinate);
-  } else if (fragmentTextureIndex > 0.9) {
+  else if (fragmentTextureIndex == 1)
     texColor = texture2D(texture1, fragmentTextureCoordinate);
-  } else {
+  else
     texColor = texture2D(texture0, fragmentTextureCoordinate);
-  }
+
   if (texColor.a <= 0.0)
     discard;
 
-  gl_FragColor = texColor * fragmentColor;
+  outColor = texColor * fragmentColor;
 }

@@ -7,16 +7,16 @@
 
 namespace Star {
 
-STAR_CLASS(OpenGl20Renderer);
+STAR_CLASS(OpenGlRenderer);
 
 constexpr size_t FrameBufferCount = 1;
 
 // OpenGL 2.0 implementation of Renderer.  OpenGL context must be created and
 // active during construction, destruction, and all method calls.
-class OpenGl20Renderer : public Renderer {
+class OpenGlRenderer : public Renderer {
 public:
-  OpenGl20Renderer();
-  ~OpenGl20Renderer();
+  OpenGlRenderer();
+  ~OpenGlRenderer();
 
   String rendererId() const override;
   Vec2U screenSize() const override;
@@ -34,6 +34,7 @@ public:
   TexturePtr createTexture(Image const& texture, TextureAddressing addressing, TextureFiltering filtering) override;
   void setSizeLimitEnabled(bool enabled) override;
   void setMultiTexturingEnabled(bool enabled) override;
+  void setMultiSampling(unsigned multiSampling) override;
   TextureGroupPtr createTextureGroup(TextureGroupSize size, TextureFiltering filtering) override;
   RenderBufferPtr createRenderBuffer() override;
 
@@ -112,12 +113,22 @@ private:
     TextureFiltering textureFiltering = TextureFiltering::Nearest;
   };
 
+  struct GlPackedVertexData {
+    uint32_t textureIndex : 2;
+    uint32_t fullbright : 1;
+    uint32_t rX : 1;
+    uint32_t rY : 1;
+    uint32_t unused : 27;
+  };
+
   struct GlRenderVertex {
-    Vec2F screenCoordinate;
-    Vec2F textureCoordinate;
-    float textureIndex;
+    Vec2F pos;
+    Vec2F uv;
     Vec4B color;
-    float param1;
+    union Packed {
+      uint32_t packed;
+      GlPackedVertexData vars;
+    } pack;
   };
 
   struct GlRenderBuffer : public RenderBuffer {
@@ -166,6 +177,7 @@ private:
 
     Json config;
     bool blitted = false;
+    unsigned multisample = 0;
 
     GlFrameBuffer(Json const& config);
     ~GlFrameBuffer();
@@ -199,24 +211,24 @@ private:
 
   void setupGlUniforms(Effect& effect);
 
-  RefPtr<OpenGl20Renderer::GlFrameBuffer> getGlFrameBuffer(String const& id);
-  void blitGlFrameBuffer(RefPtr<OpenGl20Renderer::GlFrameBuffer> const& frameBuffer);
-  void switchGlFrameBuffer(RefPtr<OpenGl20Renderer::GlFrameBuffer> const& frameBuffer);
+  RefPtr<OpenGlRenderer::GlFrameBuffer> getGlFrameBuffer(String const& id);
+  void blitGlFrameBuffer(RefPtr<OpenGlRenderer::GlFrameBuffer> const& frameBuffer);
+  void switchGlFrameBuffer(RefPtr<OpenGlRenderer::GlFrameBuffer> const& frameBuffer);
 
   Vec2U m_screenSize;
 
   GLuint m_program = 0;
 
   GLint m_positionAttribute = -1;
-  GLint m_texCoordAttribute = -1;
-  GLint m_texIndexAttribute = -1;
   GLint m_colorAttribute = -1;
-  GLint m_param1Attribute = -1;
-
+  GLint m_texCoordAttribute = -1;
+  GLint m_dataAttribute = -1;
   List<GLint> m_textureUniforms = {};
   List<GLint> m_textureSizeUniforms = {};
   GLint m_screenSizeUniform = -1;
   GLint m_vertexTransformUniform = -1;
+
+  Json m_config;
 
   StringMap<Effect> m_effects;
   Effect* m_currentEffect;
@@ -230,6 +242,7 @@ private:
 
   bool m_limitTextureGroupSize;
   bool m_useMultiTexturing;
+  unsigned m_multiSampling; // if non-zero, is enabled and acts as sample count
   List<shared_ptr<GlTextureGroup>> m_liveTextureGroups;
 
   List<RenderPrimitive> m_immediatePrimitives;
