@@ -51,6 +51,7 @@ private:
   float m_pixelRatio = 1.0f;
   float m_targetPixelRatio = 1.0f;
   Vec2F m_worldCenter;
+  Vec2F m_rawWorldCenter;
 };
 
 inline void WorldCamera::setScreenSize(Vec2U screenSize) {
@@ -122,9 +123,11 @@ inline Vec2F WorldCamera::tileMinScreen() const {
 
 inline void WorldCamera::update(float dt) {
   float newPixelRatio = lerp(exp(-20.0f * dt), m_targetPixelRatio, m_pixelRatio);
+  if (abs(newPixelRatio - m_targetPixelRatio) < 0.0125f)
+    newPixelRatio = m_targetPixelRatio;
   if (m_pixelRatio != newPixelRatio) {
     m_pixelRatio = newPixelRatio;
-    setCenterWorldPosition(m_worldCenter, true);
+    setCenterWorldPosition(m_rawWorldCenter, true);
   }
 }
 

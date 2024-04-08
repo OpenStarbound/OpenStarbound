@@ -3,6 +3,7 @@
 namespace Star {
 
 void WorldCamera::setCenterWorldPosition(Vec2F const& position, bool force) {
+  m_rawWorldCenter = position;
   // Only actually move the world center if a half pixel distance has been
   // moved in any direction.  This is sort of arbitrary, but helps prevent
   // judder if the camera is at a boundary and floating point inaccuracy is
