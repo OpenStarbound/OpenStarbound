@@ -17,7 +17,7 @@ Note: Not every function from [StarExtensions](https://github.com/StarExtensions
 * Assets can now run Lua scripts on load, and after all sources have been loaded.
   * These scripts can modify, read, patch and create new assets!
 * Lua patch files now exist - **.patch.lua**
-
+  * These can patch JSON assets, as well as images!
 ### Misc
 * Player functions for saving/loading, modifying the humanoid identity
 * Character swapping (rewrite from StarExtensions, currently command-only: `/swap name` case-insensitive, only substring required)
