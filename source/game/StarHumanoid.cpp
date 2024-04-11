@@ -528,7 +528,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotation) {
   auto addDrawable = [&](Drawable drawable, bool forceFullbright = false) {
     if (m_facingDirection == Direction::Left)
       drawable.scale(Vec2F(-1, 1));
-    drawable.fullbright = drawable.fullbright || forceFullbright;
+    drawable.fullbright |= forceFullbright;
     drawables.append(std::move(drawable));
   };
 
@@ -792,12 +792,12 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotation) {
       drawables.insertAllAt(0, m_altHand.nonRotatedDrawables);
   }
 
-  if (withRotation)
-    Drawable::rotateAll(drawables, m_rotation);
-
-  Drawable::translateAll(drawables, m_globalOffset);
-  Drawable::rebaseAll(drawables);
-
+  for (auto& drawable : drawables) {
+    drawable.translate(m_globalOffset);
+    if (withRotation && m_rotation != 0)
+      drawable.rotate(m_rotation);
+    drawable.rebase();
+  }
   return drawables;
 }
 
