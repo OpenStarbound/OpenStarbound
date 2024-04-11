@@ -3,7 +3,7 @@
 This is a fork of Starbound. Contributions are welcome!
 You **must** own a copy of Starbound to use it. Base game assets are not provided for obvious reasons.
 
-It is still **work-in-progress**. You can download the very latest build from the [Actions](https://github.com/OpenStarbound/OpenStarbound/actions?query=branch%3Amain) tab, or the ocassional releases.
+It is still **work-in-progress**. You can download the very latest build from the [Actions](https://github.com/OpenStarbound/OpenStarbound/actions?query=branch%3Amain) tab, or the occasional releases (though those aren't very up to date yet!)
 
 Note: Not every function from [StarExtensions](https://github.com/StarExtensions/StarExtensions) has been ported yet, but compatibility with mods that use StarExtensions features is planned.
 
