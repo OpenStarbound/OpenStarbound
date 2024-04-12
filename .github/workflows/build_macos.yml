@@ -63,8 +63,10 @@ jobs:
         with:
           submodules: 'recursive'
 
-      - name: Hire a Ninja
-        run: brew install ninja
+      - name: Install CMake & Ninja
+        uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: 3.29.2
 
       - name: sccache
         uses: hendrikmuhs/ccache-action@v1.2
