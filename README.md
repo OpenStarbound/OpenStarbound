@@ -44,19 +44,48 @@ Note: Not every function from [StarExtensions](https://github.com/StarExtensions
 
 
 ## Building
-Note: Some [blue text](## "hi :3") only contain tooltips. 
+Note: Some of these [texts](## "hi :3") are just tooltips rather than links. 
+
+<details>
+<summary><b>template sbinit.config for dist/ after build</b></summary>
+<br>
+
+```json
+{
+  "assetDirectories" : [
+    "../assets/",
+    "./mods/"
+  ],
+
+  "storageDirectory" : "./",
+  "logDirectory" : "./logs/"
+}
+```
+
+</details>
 
 ### Windows
 * Install [vcpkg](https://github.com/microsoft/vcpkg?tab=readme-ov-file#quick-start-windows) *globally*.
   * vcpkg recommends a short directory, such as `C:\src\vcpkg` or `C:\dev\vcpkg`.
   * If you're using Visual Studio, don't forget to run `vcpkg integrate install`!
-  * Set [**`VCPKG_ROOT`**](## "Environment Value") to your vcpkg dir, so that CMake can find it.
+* Set the **`VCPKG_ROOT`** environment value to your vcpkg dir, so that CMake can find it.
 * Install [Ninja](https://ninja-build.org/ "Ninja Build System"). Either add it to your [**`PATH`**](## "Environment Value"), or just use [Scoop](https://scoop.sh/) (`scoop install ninja`)
 * Check to see if your IDE has CMake support, and that it's [actually installed](## "If you're using VS, open Visual Studio Installer to install CMake.").
 * Open the repo directory in your IDE - it should detect the CMake project.
 * Build.
-  * You need to create a sbinit.config and manually copy DLLs from lib/windows/ to the [output directory](## "dist/") to run the client.
-### Linux
-To be written.
+  * If you're using an IDE, it should detect the correct preset and allow you to build from within.
+  * Otherwise, build manually by running CMake in the **source/** directory: `cmake --build --preset=windows-release`
+* The built binaries will be in **dist/**. Copy the DLLs from **lib/windows/** and the **sbinit.config** above into **dist/** so the game can run.
+### Linux (Ubuntu)
+* Make sure you're using CMake 3.19 or newer - you may need to [add Kitware's APT repo](https://apt.kitware.com/) to install a newer version.
+* Install dependencies:
+  * `sudo apt-get install pkg-config libxmu-dev libxi-dev libgl-dev libglu1-mesa-dev libsdl2-dev python3-jinja2 ninja-build`
+* Clone [vcpkg](https://github.com/microsoft/vcpkg?tab=readme-ov-file#quick-start-unix) (outside the repo!) and bootstrap it with the linked instructions.
+* Set the **`VCPKG_ROOT`** environment value to your new vcpkg directory, so that CMake can find it.
+  *  `export VCPKG_ROOT=/replace/with/full/path/to/your/vcpkg/directory/`
+* Change to the repo's **source/** directory, then run `cmake --build --preset=linux-release` to build.
+* The built binaries will be in **dist/**. Copy the the .so libs from **lib/linux/** and the **sbinit.config** above into **dist/** so the game can run.
+  * From the root dir of the repo, you can run the assembly script which is used by the GitHub Action: `scripts/ci/linux/assemble.sh`
+    * This packs the game assets and copies the built binaries, premade sbinit configs & required libs into **client/** & **server/**.
 ### macOS
 To be written.
