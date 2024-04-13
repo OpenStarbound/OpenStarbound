@@ -117,6 +117,9 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
     player->setPersonality(parsePersonality(newPersonality, personalityConfig));
   });
 
+  callbacks.registerCallback(   "mode", [player]()                       { return PlayerModeNames.getRight(player->modeType());    });
+  callbacks.registerCallback("setMode", [player](String const& modeName) { player->setModeType(PlayerModeNames.getLeft(modeName)); });
+
   callbacks.registerCallback(   "interactRadius", [player]()         { return player->interactRadius();       });
   callbacks.registerCallback("setInteractRadius", [player](float radius) { player->setInteractRadius(radius); });
 
@@ -207,9 +210,6 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
     auto itemDatabase = Root::singleton().itemDatabase();
     player->inventory()->setItem(slot, itemDatabase->item(ItemDescriptor(item)));
   });
-  
-  callbacks.registerCallback("pickupToActionBar", []() { return Root::singleton().configuration()->getPath("inventory.pickupToActionBar").toBool(); });
-  callbacks.registerCallback("setPickupToActionBar", [](bool b) { Root::singleton().configuration()->setPath("inventory.pickupToActionBar", b); });
 
   callbacks.registerCallback("setDamageTeam", [player](String const& typeName, Maybe<uint16_t> teamNumber) {
     player->setTeam(EntityDamageTeam(TeamTypeNames.getLeft(typeName), teamNumber.value(0)));
