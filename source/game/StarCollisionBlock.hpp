@@ -53,10 +53,10 @@ private:
 };
 
 // The default CollisionSet consists of Null, Slippery, Dynamic and Block
-CollisionSet const DefaultCollisionSet({CollisionKind::Null, CollisionKind::Slippery, CollisionKind::Dynamic, CollisionKind::Block});
+extern CollisionSet const DefaultCollisionSet;
 
 // Defines what can be "blocks" e.g. for tile rendering: Block and Slippery
-CollisionSet const BlockCollisionSet({CollisionKind::Block, CollisionKind::Slippery});
+extern CollisionSet const BlockCollisionSet;
 
 extern EnumMap<TileCollisionOverride> const TileCollisionOverrideNames;
 
