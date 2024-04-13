@@ -24,7 +24,7 @@ jobs:
       - name: Install CMake & Ninja
         uses: lukka/get-cmake@latest
         with:
-          cmakeVersion: 3.29.2
+          cmakeVersion: 3.29.0
 
       - name: sccache
         uses: hendrikmuhs/ccache-action@v1.2
