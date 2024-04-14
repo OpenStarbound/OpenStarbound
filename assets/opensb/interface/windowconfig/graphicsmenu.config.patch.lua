@@ -28,6 +28,8 @@ function patch(config)
   -- Create anti-aliasing toggle
   shift(clone(layout, "multiTextureLabel", "antiAliasingLabel"), 98).value = "SUPER-SAMPLED AA"
   shift(clone(layout, "multiTextureCheckbox", "antiAliasingCheckbox"), 99)
-
+-- Create object lighting toggle
+  shift(clone(layout, "multiTextureLabel", "objectLightingLabel"), 0, -11).value = "NEW OBJECT LIGHTS"
+  shift(clone(layout, "multiTextureCheckbox", "objectLightingCheckbox"), 0, -11)
   return config
 end

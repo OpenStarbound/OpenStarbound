@@ -86,6 +86,12 @@ GraphicsMenu::GraphicsMenu() {
       Root::singleton().configuration()->set("monochromeLighting", checked);
       syncGui();
     });
+  reader.registerCallback("objectLightingCheckbox", [=](Widget*) {
+    bool checked = fetchChild<ButtonWidget>("objectLightingCheckbox")->isChecked();
+    m_localChanges.set("newObjectLighting", checked);
+    Root::singleton().configuration()->set("newObjectLighting", checked);
+    syncGui();
+  });
 
   auto assets = Root::singleton().assets();
 
@@ -140,7 +146,8 @@ StringList const GraphicsMenu::ConfigKeys = {
   "limitTextureAtlasSize",
   "useMultiTexturing",
   "antiAliasing",
-  "monochromeLighting"
+  "monochromeLighting",
+  "newObjectLighting"
 };
 
 void GraphicsMenu::initConfig() {
@@ -196,6 +203,7 @@ void GraphicsMenu::syncGui() {
   fetchChild<ButtonWidget>("multiTextureCheckbox")->setChecked(m_localChanges.get("useMultiTexturing").optBool().value(true));
   fetchChild<ButtonWidget>("antiAliasingCheckbox")->setChecked(m_localChanges.get("antiAliasing").toBool());
   fetchChild<ButtonWidget>("monochromeCheckbox")->setChecked(m_localChanges.get("monochromeLighting").toBool());
+  fetchChild<ButtonWidget>("objectLightingCheckbox")->setChecked(m_localChanges.get("newObjectLighting").optBool().value(true));
 }
 
 void GraphicsMenu::apply() {

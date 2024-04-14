@@ -67,7 +67,7 @@ void CellularLightArray<ScalarLightTraits>::calculatePointLighting(size_t xmin, 
           auto newLight = ScalarLightTraits::subtract(light.value, attenuation);
           if (ScalarLightTraits::maxIntensity(newLight) > 0.0001f) {
             if (light.asSpread)
-              setLight(x, y, lvalue + newLight * 0.25f);
+              setLight(x, y, lvalue + newLight * 0.15f);
             else
               setLight(x, y, lvalue + newLight);
           }
@@ -140,7 +140,7 @@ void CellularLightArray<ColoredLightTraits>::calculatePointLighting(size_t xmin,
           auto newLight = ColoredLightTraits::subtract(light.value, attenuation);
           if (ColoredLightTraits::maxIntensity(newLight) > 0.0001f) {
             if (light.asSpread)
-              setLight(x, y, lvalue + newLight * 0.25f);
+              setLight(x, y, lvalue + newLight * 0.15f);
             else
               setLight(x, y, lvalue + newLight);
           }

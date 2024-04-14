@@ -461,6 +461,13 @@ ByteArray LuaEngine::compile(ByteArray const& contents, String const& name) {
   return compile(contents.ptr(), contents.size(), name.empty() ? nullptr : name.utf8Ptr());
 }
 
+lua_Debug const& LuaEngine::debugInfo(int level, const char* what) {
+  lua_Debug& debug = m_debugInfo = lua_Debug();
+  lua_getstack(m_state, level, &debug);
+  lua_getinfo(m_state, what, &debug);
+  return debug;
+}
+
 LuaString LuaEngine::createString(String const& str) {
   lua_checkstack(m_state, 1);
 

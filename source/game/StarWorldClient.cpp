@@ -489,7 +489,21 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
 
       ClientRenderCallback renderCallback;
 
-      entity->render(&renderCallback);
+      try { entity->render(&renderCallback); }
+      catch (StarException const& e) {
+        if (entity->isMaster()) // this is YOUR problem!!
+          throw e; 
+        else { // this is THEIR problem!!
+          Logger::error("WorldClient: Exception caught in {}::render ({}): {}", EntityTypeNames.getRight(entity->entityType()), entity->entityId(), e.what());
+          auto toolUser = as<ToolUserEntity>(entity);
+          String image = toolUser ? strf("/rendering/error_{}.png", DirectionNames.getRight(toolUser->facingDirection())) : "/rendering/error.png";
+          Color color = Color::rgbf(0.8f + (float)sin(m_currentTime * Constants::pi * 0.5) * 0.2f, 0.0f, 0.0f);
+          auto drawable = Drawable::makeImage(image, 1.0f / TilePixels, true, entity->position(), color);
+          drawable.fullbright = true;
+          renderCallback.addDrawable(std::move(drawable), RenderLayerMiddleParticle);
+        }
+      }
+      
 
       EntityDrawables ed;
       for (auto& p : renderCallback.drawables) {
@@ -1110,7 +1124,13 @@ void WorldClient::update(float dt) {
   List<EntityId> toRemove;
   List<EntityId> clientPresenceEntities;
   m_entityMap->updateAllEntities([&](EntityPtr const& entity) {
-      entity->update(dt, m_currentStep);
+      try { entity->update(dt, m_currentStep); }
+      catch (StarException const& e) {
+        if (entity->isMaster()) // this is YOUR problem!!
+          throw e; 
+        else // this is THEIR problem!!
+          Logger::error("WorldClient: Exception caught in {}::update ({}): {}", EntityTypeNames.getRight(entity->entityType()), entity->entityId(), e.what());
+      }
 
       if (entity->shouldDestroy() && entity->entityMode() == EntityMode::Master)
         toRemove.append(entity->entityId());
@@ -1649,23 +1669,27 @@ void WorldClient::lightingCalc() {
   RectI lightRange = m_pendingLightRange;
   List<LightSource> lights = std::move(m_pendingLights);
   List<std::pair<Vec2F, Vec3F>> particleLights = std::move(m_pendingParticleLights);
-  m_lightingCalculator.setMonochrome(Root::singleton().configuration()->get("monochromeLighting").toBool());
+  auto configuration = Root::singleton().configuration();
+  bool monochrome = configuration->get("monochromeLighting").toBool();
+  m_lightingCalculator.setMonochrome(monochrome);
   m_lightingCalculator.begin(lightRange);
   lightingTileGather();
 
   prepLocker.unlock();
 
-
-
+  bool useHybridPointLights = configuration->get("newObjectLighting").optBool().value(true);
   for (auto const& light : lights) {
     Vec2F position = m_geometry.nearestTo(Vec2F(m_lightingCalculator.calculationRegion().min()), light.position);
     if (light.type == LightType::Spread)
       m_lightingCalculator.addSpreadLight(position, light.color);
     else {
       if (light.type == LightType::PointAsSpread) {
-        // hybrid (used for auto-converted object lights) - 75% spread, 25% point (2nd is applied elsewhere)
-        m_lightingCalculator.addSpreadLight(position, light.color * 0.75f);
-        m_lightingCalculator.addPointLight(position, light.color, light.pointBeam, light.beamAngle, light.beamAmbience, true);
+        if (!useHybridPointLights)
+          m_lightingCalculator.addSpreadLight(position, light.color);
+        else { // hybrid (used for auto-converted object lights) - 85% spread, 15% point (2nd is applied elsewhere)
+          m_lightingCalculator.addSpreadLight(position, light.color * 0.85f);
+          m_lightingCalculator.addPointLight(position, light.color, light.pointBeam, light.beamAngle, light.beamAmbience, true);
+        }
       } else // fully additive point light
         m_lightingCalculator.addPointLight(position, light.color, light.pointBeam, light.beamAngle, light.beamAmbience);
     }

@@ -56,7 +56,7 @@ const FontTextureGroup::GlyphTexture& FontTextureGroup::glyphTexture(String::Cha
 
         res.first->second.offset = (preSize - Vec2F(image.size())) / 2;
       }
-      catch (StarException&) {
+      catch (StarException const&) {
         image.forEachPixel([](unsigned x, unsigned y, Vec4B& pixel) {
           pixel = ((x + y) % 2 == 0) ? Vec4B(255, 0, 255, pixel[3]) : Vec4B(0, 0, 0, pixel[3]);
         });
