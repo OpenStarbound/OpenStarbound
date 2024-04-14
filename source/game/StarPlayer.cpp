@@ -373,11 +373,25 @@ List<Drawable> Player::drawables() const {
     drawables.appendAll(m_techController->backDrawables());
     if (!m_techController->parentHidden()) {
       m_tools->setupHumanoidHandItemDrawables(*m_humanoid);
+
+      // Auto-detect any ?scalenearest and apply them as a direct scale on the Humanoid's drawables instead.
+      DirectivesGroup humanoidDirectives;
+      Vec2F scale = Vec2F::filled(1.f);
+      auto extractScale = [&](List<Directives> const& list) {
+        for (auto& directives : list) {
+          auto result = Humanoid::extractScaleFromDirectives(directives);
+          scale = scale.piecewiseMultiply(result.first);
+          humanoidDirectives.append(result.second);
+        }
+      };
+      extractScale(m_techController->parentDirectives().list());
+      extractScale(m_statusController->parentDirectives().list());
+
       for (auto& drawable : m_humanoid->render()) {
+        drawable.scale(scale);
         drawable.translate(position() + m_techController->parentOffset());
         if (drawable.isImage()) {
-          drawable.imagePart().addDirectivesGroup(m_techController->parentDirectives(), true);
-          drawable.imagePart().addDirectivesGroup(m_statusController->parentDirectives(), true);
+          drawable.imagePart().addDirectivesGroup(humanoidDirectives, true);
 
           if (auto anchor = as<LoungeAnchor>(m_movementController->entityAnchor())) {
             if (auto& directives = anchor->directives)

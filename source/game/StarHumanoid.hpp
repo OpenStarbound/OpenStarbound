@@ -240,6 +240,10 @@ public:
 
   Json const& defaultMovementParameters() const;
 
+  // Extracts scalenearest from directives and returns the combined scale and
+  // a new Directives without those scalenearest directives.
+  static pair<Vec2F, Directives> extractScaleFromDirectives(Directives const& directives);
+
 private:
   struct HandDrawingInfo {
     List<Drawable> itemDrawables;

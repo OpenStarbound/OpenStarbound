@@ -1374,4 +1374,35 @@ Json const& Humanoid::defaultMovementParameters() const {
   return m_defaultMovementParameters;
 }
 
+pair<Vec2F, Directives> Humanoid::extractScaleFromDirectives(Directives const& directives) {
+  if (!directives)
+    return make_pair(Vec2F::filled(1.f), Directives());
+
+  List<StringView> operations;
+  size_t totalLength = 0;
+  Maybe<Vec2F> scale;
+
+  for (auto& entry : directives.shared->entries) {
+    auto string = entry.string(*directives.shared);
+    const ScaleImageOperation* op = nullptr;
+    if (string.beginsWith("scalenearest") && string.utf8().find("skip") == NPos)
+      op = entry.loadOperation(*directives.shared).ptr<ScaleImageOperation>();
+
+    if (op)
+      scale = scale.value(Vec2F::filled(1.f)).piecewiseMultiply(op->scale);
+    else
+      totalLength += operations.emplace_back(string).utf8Size();
+  }
+
+  if (!scale)
+    return make_pair(Vec2F::filled(1.f), directives);
+
+  String mergedDirectives;
+  mergedDirectives.reserve(totalLength);
+  for (auto& directive : operations)
+    mergedDirectives.append(directive.utf8Ptr(), directive.utf8Size());
+
+  return make_pair(*scale, Directives(mergedDirectives));
+}
+
 }

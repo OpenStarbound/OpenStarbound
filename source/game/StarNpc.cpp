@@ -475,10 +475,19 @@ void Npc::render(RenderCallback* renderCallback) {
     renderLayer = loungeAnchor->loungeRenderLayer;
 
   m_tools->setupHumanoidHandItemDrawables(m_humanoid);
+
+  DirectivesGroup humanoidDirectives;
+  Vec2F scale = Vec2F::filled(1.f);
+  for (auto& directives : m_statusController->parentDirectives().list()) {
+    auto result = Humanoid::extractScaleFromDirectives(directives);
+    scale = scale.piecewiseMultiply(result.first);
+    humanoidDirectives.append(result.second);
+  }
+
   for (auto& drawable : m_humanoid.render()) {
     drawable.translate(position());
     if (drawable.isImage())
-      drawable.imagePart().addDirectivesGroup(m_statusController->parentDirectives(), true);
+      drawable.imagePart().addDirectivesGroup(humanoidDirectives, true);
     renderCallback->addDrawable(std::move(drawable), renderLayer);
   }
 
