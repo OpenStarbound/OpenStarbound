@@ -816,6 +816,8 @@ void Projectile::processAction(Json const& action) {
 
     AudioInstancePtr sound = make_shared<AudioInstance>(*Root::singleton().assets()->audio(Random::randValueFrom(parameters.getArray("options")).toString()));
     sound->setPosition(position());
+    sound->setVolume(parameters.getFloat("volume", 1.0f));
+    sound->setPitchMultiplier(parameters.getFloat("pitch", 1.0f));
     m_pendingRenderables.append(std::move(sound));
 
   } else if (command == "light") {

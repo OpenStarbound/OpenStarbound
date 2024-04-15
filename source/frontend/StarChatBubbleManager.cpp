@@ -311,6 +311,8 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
         auto assets = Root::singleton().assets();
         AudioInstancePtr audioInstance = make_shared<AudioInstance>(*assets->audio(*sound));
         audioInstance->setPosition(position);
+        audioInstance->setVolume(config.getFloat("volume", 1.0f));
+        audioInstance->setPitchMultiplier(config.getFloat("pitch", 1.0f));
         m_guiContext->playAudio(audioInstance);
       }
     }
