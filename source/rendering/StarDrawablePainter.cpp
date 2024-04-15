@@ -36,15 +36,13 @@ void DrawablePainter::drawDrawable(Drawable const& drawable) {
   } else if (auto imagePart = drawable.part.ptr<Drawable::ImagePart>()) {
     TexturePtr texture = m_textureGroup->loadTexture(imagePart->image);
 
+    Vec2F position = drawable.position;
     Vec2F textureSize(texture->size());
-    RectF imageRect(Vec2F(), textureSize);
-
-    Mat3F transformation = Mat3F::translation(drawable.position) * imagePart->transformation;
-
-    Vec2F lowerLeft = transformation.transformVec2(Vec2F(imageRect.xMin(), imageRect.yMin()));
-    Vec2F lowerRight = transformation.transformVec2(Vec2F(imageRect.xMax(), imageRect.yMin()));
-    Vec2F upperRight = transformation.transformVec2(Vec2F(imageRect.xMax(), imageRect.yMax()));
-    Vec2F upperLeft = transformation.transformVec2(Vec2F(imageRect.xMin(), imageRect.yMax()));
+    Mat3F transformation = imagePart->transformation;
+    Vec2F lowerLeft  = { transformation[0][2] += position.x(), transformation[1][2] += position.y() };
+    Vec2F lowerRight = transformation * Vec2F(textureSize.x(), 0.f);
+    Vec2F upperRight = transformation * textureSize;
+    Vec2F upperLeft  = transformation * Vec2F(0.f, textureSize.y());
 
     float param1 = drawable.fullbright ? 0.0f : 1.0f;
 

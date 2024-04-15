@@ -394,6 +394,8 @@ bool OpenGlRenderer::switchEffectConfig(String const& name) {
   setupGlUniforms(effect);
   m_currentEffect = &effect;
 
+  setEffectParameter("vertexRounding", m_multiSampling > 0);
+
   return true;
 }
 
@@ -432,7 +434,7 @@ void OpenGlRenderer::setMultiSampling(unsigned multiSampling) {
   if (m_multiSampling) {
     glEnable(GL_MULTISAMPLE);
     glEnable(GL_SAMPLE_SHADING);
-    glMinSampleShading(1.0f);
+    glMinSampleShading(1.f);
   } else {
     glMinSampleShading(0.f);
     glDisable(GL_SAMPLE_SHADING);

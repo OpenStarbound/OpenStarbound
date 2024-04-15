@@ -223,7 +223,7 @@ void CellularLightIntensityCalculator::addSpreadLight(Vec2F const& position, flo
 
 void CellularLightIntensityCalculator::addPointLight(Vec2F const& position, float light, float beam, float beamAngle, float beamAmbience) {
   Vec2F arrayPosition = position - Vec2F(m_calculationRegion.min());
-  m_lightArray.addPointLight({arrayPosition, light, beam, beamAngle, beamAmbience});
+  m_lightArray.addPointLight({arrayPosition, light, beam, beamAngle, beamAmbience, false});
 }
 
 

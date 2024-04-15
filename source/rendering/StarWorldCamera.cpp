@@ -26,15 +26,17 @@ void WorldCamera::setCenterWorldPosition(Vec2F const& position, bool force) {
   // elements drawn in world space that are aligned with TilePixels will
   // eventually also be aligned to real screen pixels.
 
+  float ratio = TilePixels * m_pixelRatio;
+
   if (m_screenSize[0] % 2 == 0)
-    m_worldCenter[0] = round(m_worldCenter[0] * (TilePixels * m_pixelRatio)) / (TilePixels * m_pixelRatio);
+    m_worldCenter[0] = round(m_worldCenter[0] * ratio) / ratio;
   else
-    m_worldCenter[0] = (round(m_worldCenter[0] * (TilePixels * m_pixelRatio) + 0.5f) - 0.5f) / (TilePixels * m_pixelRatio);
+    m_worldCenter[0] = (round(m_worldCenter[0] * ratio + 0.5f) - 0.5f) / ratio;
 
   if (m_screenSize[1] % 2 == 0)
-    m_worldCenter[1] = round(m_worldCenter[1] * (TilePixels * m_pixelRatio)) / (TilePixels * m_pixelRatio);
+    m_worldCenter[1] = round(m_worldCenter[1] * ratio) / ratio;
   else
-    m_worldCenter[1] = (round(m_worldCenter[1] * (TilePixels * m_pixelRatio) + 0.5f) - 0.5f) / (TilePixels * m_pixelRatio);
+    m_worldCenter[1] = (round(m_worldCenter[1] * ratio + 0.5f) - 0.5f) / ratio;
 }
 
 }

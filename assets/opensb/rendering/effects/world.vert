@@ -6,6 +6,7 @@ uniform vec2 textureSize2;
 uniform vec2 textureSize3;
 uniform vec2 screenSize;
 uniform mat3 vertexTransform;
+uniform bool vertexRounding;
 uniform vec2 lightMapSize;
 uniform vec2 lightMapScale;
 uniform vec2 lightMapOffset;
@@ -24,11 +25,13 @@ out vec2 fragmentLightMapCoordinate;
 void main() {
   vec2 screenPosition = (vertexTransform * vec3(vertexPosition, 1.0)).xy;
 
-  if (((vertexData >> 3) & 0x1) == 1)
-    screenPosition.x = round(screenPosition.x);
-  if (((vertexData >> 4) & 0x1) == 1)
-    screenPosition.y = round(screenPosition.y);
-
+  if (vertexRounding) {
+    if (((vertexData >> 3) & 0x1) == 1)
+      screenPosition.x = round(screenPosition.x);
+    if (((vertexData >> 4) & 0x1) == 1)
+      screenPosition.y = round(screenPosition.y);
+  }
+  
   fragmentLightMapMultiplier = float((vertexData >> 2) & 0x1);
   int vertexTextureIndex = vertexData & 0x3;
   fragmentLightMapCoordinate = (screenPosition / lightMapScale) - lightMapOffset * lightMapSize / screenSize;

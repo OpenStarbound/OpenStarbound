@@ -110,6 +110,8 @@ public:
   template <typename T2>
   Vec3 operator*(Vector<T2, 3> const& v) const;
 
+  template <typename T2>
+  Vec2 operator*(Vector<T2, 2> const& v) const;
 private:
   Rows m_rows;
 };
@@ -304,8 +306,7 @@ void Matrix3<T>::scale(T scale, Vec2 const& point) {
 template <typename T>
 template <typename T2>
 Vector<T2, 2> Matrix3<T>::transformVec2(Vector<T2, 2> const& point) const {
-  Vector<T2, 3> res = (*this) * Vector<T2, 3>(point, 1);
-  return res.vec2();
+  return (*this) * point;
 }
 
 template <typename T>
@@ -410,6 +411,13 @@ auto Matrix3<T>::operator*(const Vector<T2, 3>& u) const -> Vec3 {
   return Vec3(m_rows[0][0] * u[0] + m_rows[0][1] * u[1] + m_rows[0][2] * u[2],
       m_rows[1][0] * u[0] + m_rows[1][1] * u[1] + m_rows[1][2] * u[2],
       m_rows[2][0] * u[0] + m_rows[2][1] * u[1] + m_rows[2][2] * u[2]);
+}
+
+template <typename T>
+template <typename T2>
+auto Matrix3<T>::operator*(const Vector<T2, 2>& u) const -> Vec2 {
+  return Vec2(m_rows[0][0] * u[0] + m_rows[0][1] * u[1] + m_rows[0][2],
+    m_rows[1][0] * u[0] + m_rows[1][1] * u[1] + m_rows[1][2]);
 }
 
 template <typename T>

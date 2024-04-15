@@ -45,7 +45,7 @@ IODevicePtr MemoryAssetSource::open(String const& path) {
     String deviceName() const override { return name; }
 
     bool atEnd() override {
-      return assetPos >= assetSize;
+      return assetPos >= (StreamOffset)assetSize;
     }
 
     void seek(StreamOffset p, IOSeek mode) override {
