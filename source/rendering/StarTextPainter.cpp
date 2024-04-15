@@ -174,6 +174,7 @@ bool TextPainter::processWrapText(StringView text, unsigned* wrapWidth, WrapText
         ++lineStartIt;
         // next line starts after the CR with no characters in it and no known splits.
         lineCharSize = linePixelWidth = 0;
+        splitIt = end;
       } else {
         int charWidth = glyphWidth(character);
 
