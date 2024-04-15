@@ -13,7 +13,7 @@ public:
 
   virtual void update(float dt) override;
 
-  String getText() const;
+  String const& getText() const;
   bool setText(String const& text, bool callback = true);
 
   bool getHidden() const;

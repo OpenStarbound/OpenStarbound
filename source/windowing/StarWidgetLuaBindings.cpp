@@ -206,27 +206,37 @@ LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr
   // callbacks only valid for specific widget types
 
   callbacks.registerCallback("getText", [parentWidget](String const& widgetName) -> Maybe<String> {
-      if (auto textBox = parentWidget->fetchChild<TextBoxWidget>(widgetName))
-        return textBox->getText();
+      if (auto widget = parentWidget->fetchChild(widgetName)) {
+        if (auto label = as<LabelWidget>(widget))
+          return label->text();
+        else if (auto button = as<ButtonWidget>(widget))
+          return button->getText();
+        else if (auto textBox = as<TextBoxWidget>(widget))
+          return textBox->getText();
+      }
       return {};
     });
 
   callbacks.registerCallback("setText", [parentWidget](String const& widgetName, String const& text) {
-      if (auto label = parentWidget->fetchChild<LabelWidget>(widgetName))
-        label->setText(text);
-      else if (auto button = parentWidget->fetchChild<ButtonWidget>(widgetName))
-        button->setText(text);
-      else if (auto textBox = parentWidget->fetchChild<TextBoxWidget>(widgetName))
-        textBox->setText(text);
+      if (auto widget = parentWidget->fetchChild(widgetName)) {
+        if (auto label = as<LabelWidget>(widget))
+          label->setText(text);
+        else if (auto button = as<ButtonWidget>(widget))
+          button->setText(text);
+        else if (auto textBox = as<TextBoxWidget>(widget))
+          textBox->setText(text);
+      }
     });
 
   callbacks.registerCallback("setFontColor", [parentWidget](String const& widgetName, Color const& color) {
-      if (auto label = parentWidget->fetchChild<LabelWidget>(widgetName))
-        label->setColor(color);
-      else if (auto button = parentWidget->fetchChild<ButtonWidget>(widgetName))
-        button->setFontColor(color);
-      else if (auto textBox = parentWidget->fetchChild<TextBoxWidget>(widgetName))
-        textBox->setColor(color);
+      if (auto widget = parentWidget->fetchChild(widgetName)) {
+        if (auto label = as<LabelWidget>(widget))
+          label->setColor(color);
+        else if (auto button = as<ButtonWidget>(widget))
+          button->setFontColor(color);
+        else if (auto textBox = as<TextBoxWidget>(widget))
+          textBox->setColor(color);
+      }
     });
 
   callbacks.registerCallback("setImage", [parentWidget](String const& widgetName, String const& imagePath) {

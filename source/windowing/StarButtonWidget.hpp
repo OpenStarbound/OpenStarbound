@@ -66,6 +66,7 @@ public:
   Vec2I const& pressedOffset() const;
   void setPressedOffset(Vec2I const& offset);
 
+  virtual String const& getText() const;
   virtual void setText(String const& text);
   virtual void setFontSize(int size);
   virtual void setFontDirectives(String directives);

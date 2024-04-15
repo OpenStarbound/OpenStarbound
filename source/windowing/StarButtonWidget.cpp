@@ -314,6 +314,10 @@ void ButtonWidget::setPressedOffset(Vec2I const& offset) {
   m_pressedOffset = offset;
 }
 
+String const& ButtonWidget::getText() const {
+  return m_text;
+}
+
 void ButtonWidget::setText(String const& text) {
   m_text = text;
 }

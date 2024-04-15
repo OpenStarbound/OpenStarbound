@@ -154,7 +154,7 @@ void TextBoxWidget::update(float dt) {
   }
 }
 
-String TextBoxWidget::getText() const {
+String const& TextBoxWidget::getText() const {
   return m_text;
 }
 
