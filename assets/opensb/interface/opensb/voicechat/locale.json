@@ -1,0 +1,12 @@
+{
+  "TheirVolume" : "THEIR VOLUME",
+  "YourVolume" : "YOUR VOLUME",
+  "VoiceMode" : "VOICE MODE",
+  "Threshold" : "THRESHOLD",
+  "DisableVoiceChat" : "DISABLE VOICE CHAT",
+  "EnableVoiceChat" : "ENABLE VOICE CHAT",
+  "PushToTalk" : "PUSH TO TALK",
+  "Activity" : "ACTIVITY",
+  "Muted" : "MUTED",
+  "UseSystemDefault" : "Use System Default"
+}

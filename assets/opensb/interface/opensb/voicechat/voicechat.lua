@@ -1,20 +1,32 @@
+local fmt = string.format
+
 --constants
 local PATH = "/interface/opensb/voicechat/"
+local SFX = {}
+for i, v in pairs{"SWITCH", "SWITCH_OFF", "ON", "OFF"} do
+	SFX[v] = fmt("/sfx/interface/voice_%s.ogg", v:lower())
+end
 local DEVICE_LIST_WIDGET = "devices.list"
 local DEFAULT_DEVICE_NAME = "Use System Default"
-local NULL_DEVICE_NAME = "No Audio Device"
 local COLD_COLOR = {25, 255, 255, 225}
 local HOT_COLOR = {255, 96, 96, 225}
 local MINIMUM_DB = -80
 local VOICE_MAX, INPUT_MAX = 1.75, 1.0
 local MID = 7.5
 
-local fmt = string.format
+local localization = {}
+local function str(a, b)
+	return b and a .. tostring(localization[b] or b) or tostring(localization[a] or a)
+end
 
 local debugging = false
 local function log(...)
 	if not debugging then return end
 	sb.logInfo(...)
+end
+
+local function boolToColor(bool)
+	return bool and "0f0" or "f00"
 end
 
 local function mapToRange(x, min, max)
@@ -23,6 +35,10 @@ end
 
 local function linear(a, b, c)
 	return a + (b - a) * c
+end
+
+local function meow(path)
+	widget.playSound(path, 0)
 end
 
 local settings = {}
@@ -40,11 +56,12 @@ local widgetsToDevices = {}
 local nullWidget
 local function addDeviceToList(deviceName)
 	local name = widget.addListItem(DEVICE_LIST_WIDGET)
-	widget.setText(fmt("%s.%s.button", DEVICE_LIST_WIDGET, name), deviceName)
+	local button = fmt("%s.%s.button", DEVICE_LIST_WIDGET, name)
+	widget.setText(button, deviceName)
 	widgetsToDevices[name] = deviceName
 	devicesToWidgets[deviceName] = name
 	log("Added audio device '%s' to list", deviceName)
-	return name
+	return button
 end
 
 function selectDevice()
@@ -59,7 +76,9 @@ function selectDevice()
 	if settings.deviceName == deviceName then
 		local inputEnabled = set("inputEnabled", not settings.inputEnabled)
 		widget.setListSelected(DEVICE_LIST_WIDGET, inputEnabled and selected or nullWidget)
+		meow(inputEnabled and SFX.SWITCH or SFX.SWITCH_OFF)
 	else
+		meow(SFX.SWITCH)
 		set("deviceName", deviceName)
 		set("inputEnabled", true)
 	end
@@ -71,16 +90,17 @@ end
 
 local function updateVoiceButton()
 	local enabled = settings.enabled
-	widget.setText("enableVoiceToggle", enabled and "^#0f0;disable voice chat" or "^#f00;enable voice chat")
-	widget.setImage("enableVoiceToggleBack", PATH .. "bigbuttonback.png?multiply=" .. (enabled and "0f0" or "f00"))
+	local color = boolToColor(enabled)
+	widget.setText("enableVoiceToggle", str(fmt("^#%s;", color), enabled and "DisableVoiceChat" or "EnableVoiceChat"))
+	widget.setImage("enableVoiceToggleBack", PATH .. "bigbuttonback.png?multiply=" .. color)
 end
 
 local function updateVoiceModeButtons()
 	local pushToTalk = settings.inputMode:lower() == "pushtotalk"
-	widget.setImage("pushToTalkBack",    PATH .. "pushtotalkback.png?multiply=" .. (pushToTalk and "0f0" or "f00"))
-	widget.setImage("voiceActivityBack", PATH .. "activityback.png?multiply="   .. (pushToTalk and "f00" or "0f0"))
-	widget.setText("pushToTalk",    pushToTalk and "^#0f0;PUSH TO TALK" or "^#f00;PUSH TO TALK")
-	widget.setText("voiceActivity", pushToTalk and "^#f00;ACTIVITY"     or "^#0f0;ACTIVITY")
+	widget.setImage("pushToTalkBack",    PATH .. "pushtotalkback.png?multiply=" .. boolToColor(    pushToTalk))
+	widget.setImage("voiceActivityBack", PATH .. "activityback.png?multiply="   .. boolToColor(not pushToTalk))
+	widget.setText("pushToTalk",    str(fmt("^#%s;", boolToColor(    pushToTalk)), "PushToTalk"))
+	widget.setText("voiceActivity", str(fmt("^#%s;", boolToColor(not pushToTalk)), "Activity"))
 end
 
 local voiceCanvas, inputCanvas = nil, nil
@@ -102,7 +122,7 @@ local function updateVolumeCanvas(canvas, volume, multiplier)
 
 	canvas:drawLine({1, MID}, {lineEnd, MID}, lineColor, 60)
 	canvas:drawLine({lineEnd - 0.5, MID}, {lineEnd + 0.5, MID}, {255, 255, 255, 200}, 60)
-	local str = volume == 0 and "^#f00,shadow;MUTED" or fmt("^shadow;%s%%", math.floor(volume * multiplier * 1000) * 0.1)
+	local str = volume == 0 and str("^#f00,shadow;", "Muted") or fmt("^shadow;%s%%", math.floor(volume * multiplier * 1000) * 0.1)
 	canvas:drawText(str, {position = {92.5, MID}, horizontalAnchor = "mid", verticalAnchor = "mid"}, 16, {255, 255, 255, 255})
 end
 
@@ -131,6 +151,12 @@ local function updateThresholdCanvas(canvas, dB)
 end
 
 function init()
+  localization = root.assetJson(PATH .. "locale.json")
+  for name, thing in pairs(root.assetJson(PATH .. "voicechat.config:gui")) do
+  	if thing.type == "label" then
+  		widget.setText(name, str(thing.value))
+  	end
+  end
 	settings = voice.getSettings()
 	voiceCanvas = widget.bindCanvas("voiceVolume")
 	inputCanvas = widget.bindCanvas("inputVolume")
@@ -143,11 +169,8 @@ function displayed()
 	widget.clearListItems(DEVICE_LIST_WIDGET)
 	initCallbacks()
 
-	addDeviceToList(DEFAULT_DEVICE_NAME)
-
-	for i, v in pairs(voice.devices()) do
-		addDeviceToList(v)
-	end
+	widget.setText(addDeviceToList(DEFAULT_DEVICE_NAME), str("UseSystemDefault"))
+	for i, v in pairs(voice.devices()) do addDeviceToList(v) end
 
 	nullWidget = widget.addListItem(DEVICE_LIST_WIDGET)
 	local nullWidgetPath = fmt("%s.%s", DEVICE_LIST_WIDGET, nullWidget)
@@ -223,6 +246,6 @@ end
 
 function voiceToggle()
   set("enabled", not settings.enabled)
-  widget.playSound(fmt("/sfx/interface/voice_%s.ogg", settings.enabled and "on" or "off"), 0)
+  meow(settings.enabled and SFX.ON or SFX.OFF)
 	updateVoiceButton()
 end
