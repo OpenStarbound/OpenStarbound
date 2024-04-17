@@ -521,11 +521,12 @@ public:
   }
 
   void endObject() {
+    if (currentState() == ObjectElement) {
+      if (m_pretty)
+        write('\n');
+      indent();
+    }
     popState(Object);
-
-    if (m_pretty)
-      write('\n');
-    indent();
     write('}');
   }
 

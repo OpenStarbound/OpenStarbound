@@ -981,9 +981,17 @@ void Json::getHash(XXHash3& hasher) const {
         json.getHash(hasher);
     }
     else if (type == Json::Type::Object) {
-      for (auto const& pair : *m_data.get<JsonObjectConstPtr>()) {
-        hasher.push(pair.first.utf8Ptr(), pair.first.utf8Size());
-        pair.second.getHash(hasher);
+      auto& object = *m_data.get<JsonObjectConstPtr>();
+      List<JsonObject::const_iterator> iterators;
+      iterators.reserve(object.size());
+      for (auto i = object.begin(); i != object.end(); ++i)
+        iterators.append(i);
+      iterators.sort([](JsonObject::const_iterator a, JsonObject::const_iterator b) {
+        return a->first < b->first;
+      });
+      for (auto& iter : iterators) {
+        hasher.push(iter->first.utf8Ptr(), iter->first.utf8Size());
+        iter->second.getHash(hasher);
       }
     }
   }
