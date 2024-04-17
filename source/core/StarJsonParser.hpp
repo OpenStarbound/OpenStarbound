@@ -521,12 +521,13 @@ public:
   }
 
   void endObject() {
-    if (currentState() == ObjectElement) {
+    bool isNotEmpty = currentState() == ObjectElement;
+    popState(Object);
+    if (isNotEmpty) {
       if (m_pretty)
         write('\n');
       indent();
     }
-    popState(Object);
     write('}');
   }
 
