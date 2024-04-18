@@ -6,4 +6,6 @@ function patch(image)
   image:copyInto({119, 26}, checkbox)
   -- Object Lighting
   image:copyInto({19, 15}, checkbox)
+  -- Hardware Cursor
+  image:copyInto({119, 15}, checkbox)
 end

@@ -80,6 +80,12 @@ GraphicsMenu::GraphicsMenu() {
     Root::singleton().configuration()->set("antiAliasing", checked);
     syncGui();
   });
+  reader.registerCallback("hardwareCursorCheckbox", [=](Widget*) {
+    bool checked = fetchChild<ButtonWidget>("hardwareCursorCheckbox")->isChecked();
+    m_localChanges.set("hardwareCursor", checked);
+    Root::singleton().configuration()->set("hardwareCursor", checked);
+    GuiContext::singleton().applicationController()->setCursorHardware(checked);
+  });
   reader.registerCallback("monochromeCheckbox", [=](Widget*) {
       bool checked = fetchChild<ButtonWidget>("monochromeCheckbox")->isChecked();
       m_localChanges.set("monochromeLighting", checked);
@@ -146,6 +152,7 @@ StringList const GraphicsMenu::ConfigKeys = {
   "limitTextureAtlasSize",
   "useMultiTexturing",
   "antiAliasing",
+  "hardwareCursor",
   "monochromeLighting",
   "newObjectLighting"
 };
@@ -204,6 +211,7 @@ void GraphicsMenu::syncGui() {
   fetchChild<ButtonWidget>("antiAliasingCheckbox")->setChecked(m_localChanges.get("antiAliasing").toBool());
   fetchChild<ButtonWidget>("monochromeCheckbox")->setChecked(m_localChanges.get("monochromeLighting").toBool());
   fetchChild<ButtonWidget>("objectLightingCheckbox")->setChecked(m_localChanges.get("newObjectLighting").optBool().value(true));
+  fetchChild<ButtonWidget>("hardwareCursorCheckbox")->setChecked(m_localChanges.get("hardwareCursor").toBool());
 }
 
 void GraphicsMenu::apply() {

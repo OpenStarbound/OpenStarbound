@@ -630,6 +630,10 @@ private:
       SDL_WarpMouseInWindow(parent->m_sdlWindow, cursorPosition[0], cursorPosition[1]);
     }
 
+    void setCursorHardware(bool hardware) override {
+      parent->m_cursorHardware = hardware;
+    }
+
     bool setCursorImage(const String& id, const ImageConstPtr& image, unsigned scale, const Vec2I& offset) override {
       return parent->setCursorImage(id, image, scale, offset);
     }
@@ -828,12 +832,16 @@ private:
     }
   }
 
-  static const size_t MaximumCursorDimensions = 128;
-  static const size_t MaximumCursorPixelCount = MaximumCursorDimensions * MaximumCursorDimensions;
+  static const size_t MaxCursorSize = 128;
   bool setCursorImage(const String& id, const ImageConstPtr& image, unsigned scale, const Vec2I& offset) {
     auto imageSize = image->size().piecewiseMultiply(Vec2U::filled(scale));
-    if (!scale || imageSize.max() > MaximumCursorDimensions || (size_t)(imageSize[0] * imageSize[1]) > MaximumCursorPixelCount)
+    if (!m_cursorHardware || !scale || imageSize.max() > MaxCursorSize || imageSize.product() > square(MaxCursorSize)) {
+      if (auto defaultCursor = SDL_GetDefaultCursor()) {
+        if (SDL_GetCursor() != defaultCursor)
+          SDL_SetCursor(defaultCursor);
+      }
       return m_cursorVisible = false;
+    }
 
     auto& entry = m_cursorCache.get(m_currentCursor = { scale, offset, id }, [&](auto const&) {
       auto entry = std::make_shared<CursorEntry>();
@@ -926,6 +934,7 @@ private:
   bool m_windowVSync = true;
   unsigned m_maxFrameSkip = 5;
   bool m_cursorVisible = true;
+  bool m_cursorHardware = true;
   bool m_acceptingTextInput = false;
   bool m_audioEnabled = false;
   bool m_quitRequested = false;

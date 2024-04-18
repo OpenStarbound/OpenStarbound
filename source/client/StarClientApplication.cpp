@@ -53,6 +53,7 @@ Json const AdditionalDefaultConfiguration = Json::parseJson(R"JSON(
       "sfxVol" : 100,
       "instrumentVol" : 100,
       "musicVol" : 70,
+      "hardwareCursor" : true,
       "windowedResolution" : [1000, 600],
       "fullscreenResolution" : [1920, 1080],
       "fullscreen" : false,
@@ -207,6 +208,7 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
   appController->setTargetUpdateRate(updateRate);
   appController->setApplicationTitle(assets->json("/client.config:windowTitle").toString());
   appController->setVSyncEnabled(vsync);
+  appController->setCursorHardware(configuration->get("hardwareCursor").optBool().value(true));
 
   if (fullscreen)
     appController->setFullscreenWindow(fullscreenSize);
