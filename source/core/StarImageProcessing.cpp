@@ -591,8 +591,8 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
 
         if (dist < std::numeric_limits<int>::max()) {
           float percent = (dist - 1) / (2.0f * pixels - 1);
-          Color color = Color::rgba(op->startColor).mix(Color::rgba(op->endColor), percent);
           if (pixel[3] != 0) {
+            Color color = Color::rgba(op->startColor).mix(Color::rgba(op->endColor), percent);
             if (op->outlineOnly) {
               float pixelA = byteToFloat(pixel[3]);
               color.setAlphaF((1.0f - pixelA) * fminf(pixelA, 0.5f) * 2.0f);
@@ -607,8 +607,10 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
               color.convertToSRGB();
               color.setAlphaF(colorA);
             }
+            pixel = color.toRgba();
+          } else {
+            pixel = Vec4B(Vec4F(op->startColor) * (1 - percent) + Vec4F(op->endColor) * percent);
           }
-          pixel = color.toRgba();
         }
       } else if (op->outlineOnly) {
         pixel = Vec4B(0, 0, 0, 0);
