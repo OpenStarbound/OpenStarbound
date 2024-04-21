@@ -62,8 +62,7 @@ private:
     int animationFrames;
     String text;
     TextPositioning textPosition;
-    Vec4B fontColor;
-    unsigned fontSize;
+    TextStyle textStyle;
     List<KeyFrame> keyFrames;
     float startTime;
     float endTime;

@@ -45,8 +45,9 @@ void Cinematic::load(Json const& definition) {
     panel->animationFrames = panelDefinition.getInt("animationFrames", std::numeric_limits<int>::max());
     panel->text = panelDefinition.getString("text", "");
     panel->textPosition = TextPositioning(panelDefinition.get("textPosition", JsonObject()));
-    panel->fontColor = panelDefinition.opt("fontColor").apply(jsonToVec4B).value(Vec4B(255, 255, 255, 255));
-    panel->fontSize = panelDefinition.getUInt("fontSize", 8);
+    panel->textStyle = panelDefinition.get("textStyle", Json());
+    panel->textStyle.color = panelDefinition.opt("fontColor").apply(jsonToVec4B).value(panel->textStyle.color);
+    panel->textStyle.fontSize = panelDefinition.getUInt("fontSize", panel->textStyle.fontSize);
     panel->avatar = panelDefinition.getString("avatar", "");
     panel->startTime = panelDefinition.getFloat("startTime", 0);
     panel->endTime = panelDefinition.getFloat("endTime", 0);
@@ -208,8 +209,9 @@ void Cinematic::render() {
       }
     }
     if (!panel->text.empty()) {
-      textPainter->setFontSize(floor(panel->fontSize * drawableScale));
-      auto fontColor = panel->fontColor;
+      textPainter->setTextStyle(panel->textStyle);
+      textPainter->setFontSize(floor(panel->textStyle.fontSize * drawableScale));
+      auto fontColor = panel->textStyle.color;
       fontColor[3] *= values.alpha;
       textPainter->setFontColor(fontColor);
       Vec2F position = (m_offset + values.position + Vec2F(panel->textPosition.pos)) * drawableScale + drawableTranslation;

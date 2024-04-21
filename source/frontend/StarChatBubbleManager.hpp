@@ -26,7 +26,7 @@ public:
 
 private:
   typedef tuple<String, Vec2F> BubbleImage;
-  typedef tuple<String, unsigned, Vec4B, bool, Vec2F> BubbleText;
+  typedef tuple<String, TextStyle, bool, Vec2F> BubbleText;
 
   struct Bubble {
     EntityId entity;
@@ -64,8 +64,7 @@ private:
 
   TextPositioning m_textTemplate;
   TextPositioning m_portraitTextTemplate;
-  Color m_color;
-  int m_fontSize;
+  TextStyle m_textStyle;
   Vec2F m_textPadding;
 
   BubbleSeparator<Bubble> m_bubbles;

@@ -36,6 +36,7 @@ public:
     mutable Mutex mutex;
 
     bool empty() const;
+    Shared();
     Shared(List<Entry>&& givenEntries, String&& givenString, StringView givenPrefix);
   };
 
@@ -65,6 +66,9 @@ public:
   bool empty() const;
   operator bool() const;
 
+  Shared const& operator*() const;
+  Shared const* operator->() const;
+
   bool equals(Directives const& other) const;
   bool equals(String const& string) const;
 
@@ -78,7 +82,7 @@ public:
   //friend bool operator==(Directives const& directives, String const& string);
   //friend bool operator==(String const& string, Directives const& directives);
 
-  std::shared_ptr<Shared const> shared;
+  std::shared_ptr<Shared const> m_shared;
 };
 
 class DirectivesGroup {
@@ -122,12 +126,20 @@ private:
   size_t m_count;
 };
 
-
 template <>
 struct hash<DirectivesGroup> {
   size_t operator()(DirectivesGroup const& s) const;
 };
 
 typedef DirectivesGroup ImageDirectives;
+
+inline Directives::Shared const& Directives::operator*() const {
+  return *m_shared;
+}
+inline Directives::Shared const* Directives::operator->() const {
+  if (!m_shared)
+    throw DirectivesException("Directives::operator-> nullptr");
+  return m_shared.get();
+}
 
 }

@@ -2,9 +2,29 @@
 
 #include "StarString.hpp"
 #include "StarStringView.hpp"
+#include "StarVector.hpp"
+#include "StarDirectives.hpp"
+#include "StarJson.hpp"
 
 namespace Star {
-  
+
+unsigned const DefaultFontSize = 8;
+float const DefaultLineSpacing = 1.3f;
+
+struct TextStyle {
+  float lineSpacing = DefaultLineSpacing;
+  Vec4B color = Vec4B::filled(255);
+  Vec4B shadow = Vec4B::filled(0);
+  unsigned fontSize = DefaultFontSize;
+  String font = "";
+  Directives directives;
+  Directives backDirectives;
+
+  TextStyle() = default;
+  TextStyle(Json const& config);
+  TextStyle& loadJson(Json const& config);
+};
+
 namespace Text {
   unsigned char const StartEsc = '\x1b';
   unsigned char const EndEsc = ';';

@@ -10,17 +10,14 @@ LabelWidget::LabelWidget(String text,
     VerticalAnchor const& vAnchor,
     Maybe<unsigned> wrapWidth,
     Maybe<float> lineSpacing)
-  : m_fontMode(FontMode::Normal),
-    m_color(color),
-    m_hAnchor(hAnchor),
+  : m_hAnchor(hAnchor),
     m_vAnchor(vAnchor),
-    m_wrapWidth(std::move(wrapWidth)),
-    m_lineSpacing(std::move(lineSpacing)) {
+    m_wrapWidth(std::move(wrapWidth)) {
   auto assets = Root::singleton().assets();
-  auto fontConfig = assets->json("/interface.config:font");
-  m_fontSize = fontConfig.getInt("baseSize");
-  m_processingDirectives = fontConfig.getString("defaultDirectives");
-  m_font = fontConfig.queryString("defaultFont", "");
+  m_style = assets->json("/interface.config:labelTextStyle");
+  m_style.color = color.toRgba();
+  if (lineSpacing)
+    m_style.lineSpacing = *lineSpacing;
   setText(std::move(text));
 }
 
@@ -38,16 +35,16 @@ void LabelWidget::setText(String newText) {
 }
 
 void LabelWidget::setFontSize(int fontSize) {
-  m_fontSize = fontSize;
+  m_style.fontSize = fontSize;
   updateTextRegion();
 }
 
 void LabelWidget::setFontMode(FontMode fontMode) {
-  m_fontMode = fontMode;
+  m_style.shadow = fontModeToColor(fontMode).toRgba();
 }
 
 void LabelWidget::setColor(Color newColor) {
-  m_color = std::move(newColor);
+  m_style.color = newColor.toRgba();
 }
 
 void LabelWidget::setAnchor(HorizontalAnchor hAnchor, VerticalAnchor vAnchor) {
@@ -62,12 +59,12 @@ void LabelWidget::setWrapWidth(Maybe<unsigned> wrapWidth) {
 }
 
 void LabelWidget::setLineSpacing(Maybe<float> lineSpacing) {
-  m_lineSpacing = std::move(lineSpacing);
+  m_style.lineSpacing = lineSpacing.value(DefaultLineSpacing);
   updateTextRegion();
 }
 
 void LabelWidget::setDirectives(String const& directives) {
-  m_processingDirectives = directives;
+  m_style.directives = directives;
   updateTextRegion();
 }
 
@@ -75,6 +72,12 @@ void LabelWidget::setTextCharLimit(Maybe<unsigned> charLimit) {
   m_textCharLimit = charLimit;
   updateTextRegion();
 }
+
+void LabelWidget::setTextStyle(TextStyle const& textStyle) {
+  m_style = textStyle;
+  updateTextRegion();
+}
+
 
 RectI LabelWidget::relativeBoundRect() const {
   return RectI(m_textRegion).translated(relativePosition());
@@ -85,41 +88,14 @@ RectI LabelWidget::getScissorRect() const {
 }
 
 void LabelWidget::renderImpl() {
-  context()->setFont(m_font);
-  context()->setFontSize(m_fontSize);
-  context()->setFontMode(m_fontMode);
-  context()->setFontColor(m_color.toRgba());
-  context()->setFontProcessingDirectives(m_processingDirectives);
-
-  if (m_lineSpacing)
-    context()->setLineSpacing(*m_lineSpacing);
-  else
-    context()->setDefaultLineSpacing();
-
+  context()->setTextStyle(m_style);
   context()->renderInterfaceText(m_text, {Vec2F(screenPosition()), m_hAnchor, m_vAnchor, m_wrapWidth, m_textCharLimit});
-
-  context()->setDefaultFont();
-  context()->setFontMode(FontMode::Normal);
-  context()->setFontProcessingDirectives("");
-  context()->setDefaultLineSpacing();
 }
 
 void LabelWidget::updateTextRegion() {
-  context()->setFontSize(m_fontSize);
-  context()->setFontColor(m_color.toRgba());
-  context()->setFontProcessingDirectives(m_processingDirectives);
-  context()->setFont(m_font);
-  if (m_lineSpacing)
-    context()->setLineSpacing(*m_lineSpacing);
-  else
-    context()->setDefaultLineSpacing();
-
+  context()->setTextStyle(m_style);
   m_textRegion = RectI(context()->determineInterfaceTextSize(m_text, {Vec2F(), m_hAnchor, m_vAnchor, m_wrapWidth, m_textCharLimit}));
   setSize(m_textRegion.size());
-
-  context()->setDefaultFont();
-  context()->setFontProcessingDirectives("");
-  context()->setDefaultLineSpacing();
 }
 
 }

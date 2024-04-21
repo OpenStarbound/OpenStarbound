@@ -67,6 +67,7 @@ public:
   void drawTriangles(List<tuple<Vec2F, Vec2F, Vec2F>> const& poly, Vec4B const& color = Vec4B(255, 255, 255, 255));
 
   void drawText(String s, TextPositioning position, unsigned fontSize, Vec4B const& color = Vec4B(255, 255, 255, 255), FontMode mode = FontMode::Normal, float lineSpacing = Star::DefaultLineSpacing, String font = "", String processingDirectives = "");
+  void drawText(String s, TextPositioning position, TextStyle style);
 
 protected:
   void renderImpl() override;
@@ -79,7 +80,7 @@ protected:
   void renderRect(Vec2F const& renderingOffset, RectF const& coords, Vec4B const& color);
   void renderPoly(Vec2F const& renderingOffset, PolyF poly, Vec4B const& color, float lineWidth);
   void renderTriangles(Vec2F const& renderingOffset, List<tuple<Vec2F, Vec2F, Vec2F>> const& triangles, Vec4B const& color);
-  void renderText(Vec2F const& renderingOffset, String const& s, TextPositioning const& position, unsigned fontSize, Vec4B const& color, FontMode mode, float lineSpacing, String const& font, String const& directives);
+  void renderText(Vec2F const& renderingOffset, String const& s, TextPositioning const& position, TextStyle const& style);
 
 private:
   bool m_ignoreInterfaceScale;
@@ -97,7 +98,7 @@ private:
   typedef tuple<Vec2F, Vec2F, Vec4B, float> LineOp;
   typedef tuple<PolyF, Vec4B, float> PolyOp;
   typedef tuple<List<tuple<Vec2F, Vec2F, Vec2F>>, Vec4B> TrianglesOp;
-  typedef tuple<String, TextPositioning, unsigned, Vec4B, FontMode, float, String, String> TextOp;
+  typedef tuple<String, TextPositioning, TextStyle> TextOp;
 
   typedef MVariant<RectOp, ImageOp, ImageRectOp, DrawableOp, TiledImageOp, LineOp, PolyOp, TrianglesOp, TextOp> RenderOp;
   List<RenderOp> m_renderOps;

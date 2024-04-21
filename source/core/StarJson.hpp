@@ -51,6 +51,9 @@ public:
   // Parses JSON or JSON sub-type
   static Json parse(String const& string);
 
+  // Parses JSON sequence
+  static Json parseSequence(String const& sequence);
+
   // Parses JSON object or array only (the only top level types allowed by
   // JSON)
   static Json parseJson(String const& json);

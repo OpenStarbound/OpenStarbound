@@ -43,9 +43,13 @@ public:
   void readUpdate(ByteArray data);
   ByteArray writeUpdate();
 
+  void setConnectionId(ConnectionId connectionId);
+  ConnectionId connectionId() const;
+
 private:
   Uuid m_serverUuid;
   Uuid m_playerUuid;
+  ConnectionId m_connectionId = 0;
 
   JsonRpcPtr m_rpc;
 

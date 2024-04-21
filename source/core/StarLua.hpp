@@ -267,6 +267,8 @@ LuaValue const LuaNil = LuaValue();
 
 class LuaCallbacks {
 public:
+  void copyCallback(String srcName, String dstName);
+
   template <typename Function>
   void registerCallback(String name, Function&& func);
 

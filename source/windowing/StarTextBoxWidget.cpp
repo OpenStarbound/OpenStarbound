@@ -23,14 +23,11 @@ TextBoxWidget::TextBoxWidget(String const& startingText, String const& hint, Wid
   m_overfillMode = true;
 
   m_maxWidth = assets->json("/interface.config:textBoxDefaultWidth").toInt();
-  auto fontConfig = assets->json("/interface.config:font");
-  m_fontSize = fontConfig.getInt("baseSize");
-  m_processingDirectives = fontConfig.getString("defaultDirectives");
-  m_font = fontConfig.queryString("defaultFont", "");
-  m_color = Color::rgb(jsonToVec3B(fontConfig.getArray("defaultColor")));
+  auto fontConfig = assets->json("/interface.config:textBoxTextStyle");
+  m_textStyle = fontConfig;
 
   // Meh, padding is hard-coded here
-  setSize({m_maxWidth + 6, m_fontSize + 2});
+  setSize({m_maxWidth + 6, m_textStyle.fontSize + 2});
   m_cursorHoriz = jsonToVec2I(assets->json("/interface.config:textboxCursorHorizontal"));
   m_cursorVert = jsonToVec2I(assets->json("/interface.config:textboxCursorVertical"));
 }
@@ -48,20 +45,17 @@ void TextBoxWidget::renderImpl() {
   else if (m_hAnchor == HorizontalAnchor::RightAnchor)
     pos += Vec2F(size()[0], 0);
 
-  context()->setFont(m_font);
+  context()->setTextStyle(m_textStyle);
   if ((m_maxWidth != -1) && m_overfillMode) {
-    context()->setFontSize(m_fontSize);
     int shift = std::max(0, getCursorOffset() - m_maxWidth);
     pos += Vec2F(-shift, 0);
   }
 
-  context()->setFontSize(m_fontSize);
-  context()->setFontProcessingDirectives(m_processingDirectives);
   if (m_text.empty()) {
-    context()->setFontColor(m_color.mix(Color::rgbf(0.3f, 0.3f, 0.3f), 0.8f).mix(Color::rgbf(0.0f, 0.0f, 1.0f), blueRate).toRgba());
+    context()->setFontColor(Color::rgba(m_textStyle.color).mix(Color::rgbf(0.3f, 0.3f, 0.3f), 0.8f).mix(Color::rgbf(0.0f, 0.0f, 1.0f), blueRate).toRgba());
     context()->renderInterfaceText(m_hint, {pos, m_hAnchor, m_vAnchor});
   } else {
-    context()->setFontColor(m_color.mix(Color::rgbf(0, 0, 1), blueRate).toRgba());
+    context()->setFontColor(Color::rgba(m_textStyle.color).mix(Color::rgbf(0, 0, 1), blueRate).toRgba());
     if (m_textHidden) {
       String hiddenText('*', m_text.length());
       context()->renderInterfaceText(hiddenText, { pos, m_hAnchor, m_vAnchor });
@@ -69,22 +63,21 @@ void TextBoxWidget::renderImpl() {
     else
       context()->renderInterfaceText(m_text, { pos, m_hAnchor, m_vAnchor });
   }
-  context()->setDefaultFont();
-  context()->setFontProcessingDirectives("");
-  context()->setFontColor(Vec4B::filled(255));
+  context()->clearTextStyle();
 
   if (hasFocus()) {
     // render cursor
     float cc = 0.6f + 0.4f * std::sin((double)Time::monotonicMilliseconds() / 300.0);
     Color cursorColor = Color::rgbf(cc, cc, cc);
 
+    float fontSize = m_textStyle.fontSize;
     context()->drawInterfaceLine(
-        pos + Vec2F(getCursorOffset(), m_fontSize * m_cursorVert[0]),
-        pos + Vec2F(getCursorOffset(), m_fontSize * m_cursorVert[1]),
+        pos + Vec2F(getCursorOffset(), fontSize * m_cursorVert[0]),
+        pos + Vec2F(getCursorOffset(), fontSize * m_cursorVert[1]),
         cursorColor.toRgba());
     context()->drawInterfaceLine(
-        pos + Vec2F(getCursorOffset() + m_fontSize * m_cursorHoriz[0], m_fontSize * m_cursorVert[0]),
-        pos + Vec2F(getCursorOffset() + m_fontSize * m_cursorHoriz[1], m_fontSize * m_cursorVert[0]),
+        pos + Vec2F(getCursorOffset() + fontSize * m_cursorHoriz[0], fontSize * m_cursorVert[0]),
+        pos + Vec2F(getCursorOffset() + fontSize * m_cursorHoriz[1], fontSize * m_cursorVert[0]),
         cursorColor.toRgba());
   }
 
@@ -94,8 +87,7 @@ void TextBoxWidget::renderImpl() {
 
 int TextBoxWidget::getCursorOffset() { // horizontal only
   float scale;
-  context()->setFont(m_font);
-  context()->setFontSize(m_fontSize);
+  context()->setTextStyle(m_textStyle);
   if (m_hAnchor == HorizontalAnchor::LeftAnchor) {
     scale = 1.0;
   } else if (m_hAnchor == HorizontalAnchor::HMidAnchor) {
@@ -158,7 +150,7 @@ String const& TextBoxWidget::getText() const {
   return m_text;
 }
 
-bool TextBoxWidget::setText(String const& text, bool callback) {
+bool TextBoxWidget::setText(String const& text, bool callback, bool moveCursor) {
   if (m_text == text)
     return true;
 
@@ -166,7 +158,10 @@ bool TextBoxWidget::setText(String const& text, bool callback) {
     return false;
 
   m_text = text;
-  m_cursorOffset = m_text.size();
+  size_t size = m_text.size();
+  if (moveCursor || m_cursorOffset > size)
+    m_cursorOffset = size;
+
   m_repeatCode = SpecialRepeatKeyCodes::None;
   if (callback)
     m_callback(this);
@@ -190,20 +185,20 @@ void TextBoxWidget::setRegex(String const& regex) {
 }
 
 void TextBoxWidget::setColor(Color const& color) {
-  m_color = color;
+  m_textStyle.color = color.toRgba();
 }
 
 void TextBoxWidget::setDirectives(String const& directives) {
-  m_processingDirectives = directives;
+  m_textStyle.directives = directives;
 }
 
 void TextBoxWidget::setFontSize(int fontSize) {
-  m_fontSize = fontSize;
+  m_textStyle.fontSize = fontSize;
 }
 
 void TextBoxWidget::setMaxWidth(int maxWidth) {
   m_maxWidth = maxWidth;
-  setSize({m_maxWidth + 6, m_fontSize + 2});
+  setSize({m_maxWidth + 6, m_textStyle.fontSize + 2});
 }
 
 void TextBoxWidget::setOverfillMode(bool overtype) {
@@ -426,8 +421,7 @@ bool TextBoxWidget::newTextValid(String const& text) const {
   if (!text.regexMatch(m_regex))
     return false;
   if ((m_maxWidth != -1) && !m_overfillMode) {
-    context()->setFont(m_font);
-    context()->setFontSize(m_fontSize);
+    context()->setTextStyle(m_textStyle);
     return context()->stringInterfaceWidth(text) <= m_maxWidth;
   }
   return true;

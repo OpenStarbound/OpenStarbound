@@ -93,7 +93,7 @@ private:
 
   GuiContext* m_guiContext;
 
-  int m_nameFontSize;
+  TextStyle m_nameStyle;
   Vec2F m_nameOffset;
 
   TeamInvitePtr m_teamInvite;

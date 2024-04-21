@@ -1,8 +1,34 @@
 #include "StarText.hpp"
-
+#include "StarJsonExtra.hpp"
 #include <regex>
 
 namespace Star {
+
+TextStyle::TextStyle(Json const& config) : TextStyle() {
+  if (config.isType(Json::Type::String))
+    font = config.toString();
+  else
+    loadJson(config);
+}
+TextStyle& TextStyle::loadJson(Json const& config) {
+  if (!config)
+    return *this;
+
+  lineSpacing = config.getFloat("lineSpacing", lineSpacing);
+  if (auto jColor = config.opt("color"))
+    color = jsonToColor(*jColor).toRgba();
+  if (auto jShadow = config.opt("shadow"))
+    shadow = jsonToColor(*jShadow).toRgba();
+  fontSize = config.getUInt("fontSize", fontSize);
+  if (auto jFont = config.optString("font"))
+    font = *jFont;
+  if (auto jDirectives = config.optString("directives"))
+    directives = *jDirectives;
+  if (auto jBackDirectives = config.optString("backDirectives"))
+    backDirectives = *jBackDirectives;
+  
+  return *this;
+}
 
 namespace Text {
   static auto stripEscapeRegex = std::regex(strf("\\{:c}[^;]*{:c}", CmdEsc, EndEsc));

@@ -32,7 +32,7 @@ public:
   void addHistory(String const& chat);
 
   String currentChat() const;
-  void setCurrentChat(String const& chat);
+  bool setCurrentChat(String const& chat, bool moveCursor = false);
   void clearCurrentChat();
 
   ChatSendMode sendMode() const;
@@ -66,10 +66,7 @@ private:
   int64_t m_timeChatLastActive;
   float m_chatVisTime;
   float m_fadeRate;
-  unsigned m_fontSize;
-  String m_fontDirectives;
-  String m_font;
-  float m_chatLineHeight;
+  TextStyle m_chatTextStyle;
   unsigned m_chatHistoryLimit;
   int m_historyOffset;
 

@@ -1,10 +1,8 @@
 {
   "config" : {
     "lineHeight" : 1,
-    "font" : {
-      "directives" : "?border=1;111a;1114",
-      "padding" : [1, 1] // Padding to prevent border clipping at the edges of the log canvas while keeping compat with mods that patch the canvas size
-    },
+    "padding" : [1, 1],
+    "textStyle" : { "backDirectives" : "?border=1;111a;1114" },
     "colors" : {
       "local" : "^white;",
       "party" : "^blue;",

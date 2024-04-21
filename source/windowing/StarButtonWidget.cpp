@@ -24,14 +24,11 @@ ButtonWidget::ButtonWidget() {
 
   auto interfaceConfig = assets->json("/interface.config");
   m_pressedOffset = jsonToVec2I(interfaceConfig.get("buttonPressedOffset"));
-  m_fontSize = interfaceConfig.query("font.buttonSize").toInt();
-  m_fontDirectives = interfaceConfig.queryString("font.defaultDirectives", "");
-  m_font = interfaceConfig.query("font.defaultFont").toString();
-
-  m_clickSounds = jsonToStringList(assets->json("/interface.config:buttonClickSound"));
-  m_releaseSounds = jsonToStringList(assets->json("/interface.config:buttonReleaseSound"));
-  m_hoverSounds = jsonToStringList(assets->json("/interface.config:buttonHoverSound"));
-  m_hoverOffSounds = jsonToStringList(assets->json("/interface.config:buttonHoverOffSound"));
+  m_textStyle = interfaceConfig.get("buttonTextStyle");
+  m_clickSounds = jsonToStringList(interfaceConfig.get("buttonClickSound"));
+  m_releaseSounds = jsonToStringList(interfaceConfig.get("buttonReleaseSound"));
+  m_hoverSounds = jsonToStringList(interfaceConfig.get("buttonHoverSound"));
+  m_hoverOffSounds = jsonToStringList(interfaceConfig.get("buttonHoverOffSound"));
 }
 
 ButtonWidget::ButtonWidget(WidgetCallbackFunc callback,
@@ -95,19 +92,15 @@ void ButtonWidget::renderImpl() {
 
   if (!m_text.empty()) {
     auto& guiContext = GuiContext::singleton();
-    guiContext.setFontProcessingDirectives(m_fontDirectives);
-    guiContext.setFontSize(m_fontSize);
-    guiContext.setFont(m_font);
+    guiContext.setTextStyle(m_textStyle);
     if (m_disabled)
       guiContext.setFontColor(m_fontColorDisabled.toRgba());
     else if (m_fontColorChecked && m_checked)
       guiContext.setFontColor(m_fontColorChecked.value().toRgba());
     else
       guiContext.setFontColor(m_fontColor.toRgba());
-    guiContext.setFontMode(FontMode::Shadow);
     guiContext.renderInterfaceText(m_text, {textPosition, m_hTextAnchor, VerticalAnchor::VMidAnchor});
-    guiContext.setFontMode(FontMode::Normal);
-    guiContext.setFontProcessingDirectives("");
+    guiContext.clearTextStyle();
   }
 }
 
@@ -323,11 +316,11 @@ void ButtonWidget::setText(String const& text) {
 }
 
 void ButtonWidget::setFontSize(int size) {
-  m_fontSize = size;
+  m_textStyle.fontSize = size;
 }
 
 void ButtonWidget::setFontDirectives(String directives) {
-  m_fontDirectives = directives;
+  m_textStyle.directives = directives;
 }
 
 void ButtonWidget::setTextOffset(Vec2I textOffset) {
@@ -339,7 +332,7 @@ void ButtonWidget::setTextAlign(HorizontalAnchor hAnchor) {
 }
 
 void ButtonWidget::setFontColor(Color color) {
-  m_fontColor = color;
+  m_textStyle.color = (m_fontColor = color).toRgba();
 }
 
 void ButtonWidget::setFontColorDisabled(Color color) {

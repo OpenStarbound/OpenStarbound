@@ -1,7 +1,5 @@
 #include "StarTextPainter.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarText.hpp"
-
 #include <regex>
 
 namespace Star {
@@ -40,34 +38,42 @@ TextPositioning TextPositioning::translated(Vec2F translation) const {
 TextPainter::TextPainter(RendererPtr renderer, TextureGroupPtr textureGroup)
   : m_renderer(renderer),
     m_fontTextureGroup(textureGroup),
-    m_fontSize(8),
-    m_lineSpacing(1.30f),
-    m_renderSettings({FontMode::Normal, Vec4B::filled(255), "hobo", ""}) {
+    m_defaultRenderSettings(),
+    m_renderSettings(),
+    m_savedRenderSettings() {
   reloadFonts();
   m_reloadTracker = make_shared<TrackerListener>();
   Root::singleton().registerReloadListener(m_reloadTracker);
 }
 
 RectF TextPainter::renderText(StringView s, TextPositioning const& position) {
+  RectF rect;
   if (position.charLimit) {
     unsigned charLimit = *position.charLimit;
-    return doRenderText(s, position, true, &charLimit);
+    rect = doRenderText(s, position, true, &charLimit);
   } else {
-    return doRenderText(s, position, true, nullptr);
+    rect = doRenderText(s, position, true, nullptr);
   }
+  renderPrimitives();
+  return rect;
 }
 
 RectF TextPainter::renderLine(StringView s, TextPositioning const& position) {
+  RectF rect;
   if (position.charLimit) {
     unsigned charLimit = *position.charLimit;
-    return doRenderLine(s, position, true, &charLimit);
+    rect = doRenderLine(s, position, true, &charLimit);
   } else {
-    return doRenderLine(s, position, true, nullptr);
+    rect = doRenderLine(s, position, true, nullptr);
   }
+  renderPrimitives();
+  return rect;
 }
 
 RectF TextPainter::renderGlyph(String::Char c, TextPositioning const& position) {
-  return doRenderGlyph(c, position, true);
+  auto rect = doRenderGlyph(c, position, true);
+  renderPrimitives();
+  return rect;
 }
 
 RectF TextPainter::determineTextSize(StringView s, TextPositioning const& position) {
@@ -83,34 +89,36 @@ RectF TextPainter::determineGlyphSize(String::Char c, TextPositioning const& pos
 }
 
 int TextPainter::glyphWidth(String::Char c) {
-  return m_fontTextureGroup.glyphWidth(c, m_fontSize);
+  return m_fontTextureGroup.glyphWidth(c, m_renderSettings.fontSize);
 }
 
-int TextPainter::stringWidth(StringView s) {
+int TextPainter::stringWidth(StringView s, unsigned charLimit) {
   if (s.empty())
     return 0;
 
   String font = m_renderSettings.font, setFont = font;
   m_fontTextureGroup.switchFont(font);
 
-  int width = 0;
-
   Text::CommandsCallback commandsCallback = [&](StringView commands) {
     commands.forEachSplitView(",", [&](StringView command, size_t, size_t) {
-      if (command == "reset")
+      if (command == "reset") {
         m_fontTextureGroup.switchFont(font = setFont);
-      else if (command == "set")
+      } else if (command == "set") {
         setFont = font;
-      else if (command.beginsWith("font="))
+      } else if (command.beginsWith("font=")) {
         m_fontTextureGroup.switchFont(font = command.substr(5));
+      }
     });
     return true;
   };
 
+  int width = 0;
   Text::TextCallback textCallback = [&](StringView text) {
-    for (String::Char c : text)
+    for (String::Char c : text) {
       width += glyphWidth(c);
-
+      if (charLimit && --charLimit == 0)
+        return false;
+    }
     return true;
   };
 
@@ -122,7 +130,7 @@ int TextPainter::stringWidth(StringView s) {
 bool TextPainter::processWrapText(StringView text, unsigned* wrapWidth, WrapTextCallback textFunc) {
   String font = m_renderSettings.font, setFont = font;
   m_fontTextureGroup.switchFont(font);
-  int lines = 0;
+  unsigned lines = 0;
 
   auto it = text.begin();
   auto end = text.end();
@@ -149,14 +157,15 @@ bool TextPainter::processWrapText(StringView text, unsigned* wrapWidth, WrapText
 
     if (escIt != end) {
       if (character == Text::EndEsc) {
-        StringView inner = slice(escIt, it);
+        StringView inner = slice(++escIt, it);
         inner.forEachSplitView(",", [&](StringView command, size_t, size_t) {
-          if (command == "reset")
+          if (command == "reset") {
             m_fontTextureGroup.switchFont(font = setFont);
-          else if (command == "set")
+          } else if (command == "set") {
             setFont = font;
-          else if (command.beginsWith("font="))
+          } else if (command.beginsWith("font=")) {
             m_fontTextureGroup.switchFont(font = command.substr(5));
+          }
         });
         escIt = end;
       }
@@ -177,7 +186,6 @@ bool TextPainter::processWrapText(StringView text, unsigned* wrapWidth, WrapText
         splitIt = end;
       } else {
         int charWidth = glyphWidth(character);
-
         // is it a place where we might want to split the line ?
         if (character == ' ' || character == '\t') {
           splitIt = it;
@@ -220,35 +228,19 @@ bool TextPainter::processWrapText(StringView text, unsigned* wrapWidth, WrapText
 
 List<StringView> TextPainter::wrapTextViews(StringView s, Maybe<unsigned> wrapWidth) {
   List<StringView> views = {};
-
-  bool active = false;
-  StringView current;
-  int lastLine = 0;
-
-  auto addText = [&active, &current](StringView text) {
-    // Merge views if they are adjacent
-    if (active && current.utf8Ptr() + current.utf8Size() == text.utf8Ptr())
-      current = StringView(current.utf8Ptr(), current.utf8Size() + text.utf8Size());
-    else
-      current = text;
-    active = true;
-  };
-
-  TextPainter::WrapTextCallback textCallback = [&](StringView text, int line) {
-    if (lastLine != line) {
-      views.push_back(current);
-      lastLine = line;
-      active = false;
+  auto last = views.end();
+  unsigned curLine = 0;
+  TextPainter::WrapTextCallback textCallback = [&](StringView text, unsigned line) {
+    if (line == curLine && last != views.end() && last->end() == text.begin()) {
+      *last = StringView(last->utf8Ptr(), last->utf8Size() + text.utf8Size());
+    } else {
+      last = views.insert(views.end(), text);
+      curLine = line;
     }
-
-    addText(text);
     return true;
   };
 
   processWrapText(s, wrapWidth.ptr(), textCallback);
-
-  if (active)
-    views.push_back(current);
 
   return views;
 }
@@ -258,12 +250,11 @@ StringList TextPainter::wrapText(StringView s, Maybe<unsigned> wrapWidth) {
 
   String current;
   int lastLine = 0;
-  TextPainter::WrapTextCallback textCallback = [&](StringView text, int line) {
+  TextPainter::WrapTextCallback textCallback = [&](StringView text, unsigned line) {
     if (lastLine != line) {
       result.append(std::move(current));
       lastLine = line;
     }
-
     current += text;
     return true;
   };
@@ -277,38 +268,43 @@ StringList TextPainter::wrapText(StringView s, Maybe<unsigned> wrapWidth) {
 };
 
 unsigned TextPainter::fontSize() const {
-  return m_fontSize;
+  return m_renderSettings.fontSize;
 }
 
 void TextPainter::setFontSize(unsigned size) {
-  m_fontSize = size;
+  m_renderSettings.fontSize = size;
 }
 
 void TextPainter::setLineSpacing(float lineSpacing) {
-  m_lineSpacing = lineSpacing;
+  m_renderSettings.lineSpacing = lineSpacing;
 }
 
 void TextPainter::setMode(FontMode mode) {
-  m_renderSettings.mode = mode;
+  m_renderSettings.shadow = fontModeToColor(mode).toRgba();
 }
 
 void TextPainter::setFontColor(Vec4B color) {
   m_renderSettings.color = std::move(color);
 }
 
-void TextPainter::setProcessingDirectives(StringView directives) {
-  m_renderSettings.directives = String(directives);
-  if (m_renderSettings.directives) {
-    m_renderSettings.directives.loadOperations();
-    for (auto& entry : m_renderSettings.directives.shared->entries) {
-      if (auto border = entry.operation.ptr<BorderImageOperation>())
-        border->includeTransparent = true;
-    }
-  }
+void TextPainter::setProcessingDirectives(StringView directives, bool back) {
+  Directives& target = back ? m_renderSettings.backDirectives : m_renderSettings.directives;
+  modifyDirectives(target = String(directives));
 }
 
 void TextPainter::setFont(String const& font) {
   m_renderSettings.font = font;
+}
+
+TextStyle& TextPainter::setTextStyle(TextStyle const& textStyle) {
+  TextStyle& style = m_renderSettings = textStyle;
+  modifyDirectives(style.directives);
+  modifyDirectives(style.backDirectives);
+  return style;
+}
+
+void TextPainter::clearTextStyle() {
+  m_renderSettings = m_defaultRenderSettings;
 }
 
 void TextPainter::addFont(FontPtr const& font, String const& name) {
@@ -348,16 +344,19 @@ void TextPainter::applyCommands(StringView unsplitCommands) {
         m_renderSettings = m_savedRenderSettings;
       } else if (command == "set") {
         m_savedRenderSettings = m_renderSettings;
-      } else if (command == "shadow") {
-        m_renderSettings.mode = (FontMode)((int)m_renderSettings.mode | (int)FontMode::Shadow);
+      } else if (command.beginsWith("shadow")) {
+        if (command.utf8Size() == 6)
+          m_renderSettings.shadow = Color::Black.toRgba();
+        else if (command[6] == '=')
+          m_renderSettings.shadow = Color(command.substr(7)).toRgba();
       } else if (command == "noshadow") {
-        m_renderSettings.mode = (FontMode)((int)m_renderSettings.mode & (-1 ^ (int)FontMode::Shadow));
+        m_renderSettings.shadow = Color::Clear.toRgba();
       } else if (command.beginsWith("font=")) {
         m_renderSettings.font = command.substr(5);
       } else if (command.beginsWith("directives=")) {
-        // Honestly this is really stupid but I just couldn't help myself
-        // Should probably limit in the future
         setProcessingDirectives(command.substr(11));
+      } else if (command.beginsWith("backdirectives=")) {
+        setProcessingDirectives(command.substr(15), true);
       } else {
         // expects both #... sequences and plain old color names.
         Color c = Color(command);
@@ -370,6 +369,16 @@ void TextPainter::applyCommands(StringView unsplitCommands) {
   });
 }
 
+void TextPainter::modifyDirectives(Directives& directives) {
+  if (directives) {
+    directives.loadOperations();
+    for (auto& entry : directives->entries) {
+      if (auto border = entry.operation.ptr<BorderImageOperation>())
+        border->includeTransparent = true;
+    }
+  }
+}
+
 RectF TextPainter::doRenderText(StringView s, TextPositioning const& position, bool reallyRender, unsigned* charLimit) {
   Vec2F pos = position.pos;
   if (s.empty())
@@ -377,26 +386,23 @@ RectF TextPainter::doRenderText(StringView s, TextPositioning const& position, b
 
   List<StringView> lines = wrapTextViews(s, position.wrapWidth);
 
-  int height = (lines.size() - 1) * m_lineSpacing * m_fontSize + m_fontSize;
-
-  RenderSettings backupRenderSettings = m_renderSettings;
-  m_savedRenderSettings = m_renderSettings;
-
+  TextStyle backup = m_savedRenderSettings = m_renderSettings;
+  int height = (lines.size() - 1) * backup.lineSpacing * backup.fontSize + backup.fontSize;
   if (position.vAnchor == VerticalAnchor::BottomAnchor)
-    pos[1] += (height - m_fontSize);
+    pos[1] += (height - backup.fontSize);
   else if (position.vAnchor == VerticalAnchor::VMidAnchor)
-    pos[1] += (height - m_fontSize) / 2;
+    pos[1] += (height - backup.fontSize) / 2;
 
   RectF bounds = RectF::withSize(pos, Vec2F());
   for (auto& i : lines) {
     bounds.combine(doRenderLine(i, { pos, position.hAnchor, position.vAnchor }, reallyRender, charLimit));
-    pos[1] -= m_fontSize * m_lineSpacing;
+    pos[1] -= m_renderSettings.fontSize * m_renderSettings.lineSpacing;
 
     if (charLimit && *charLimit == 0)
       break;
   }
 
-  m_renderSettings = std::move(backupRenderSettings);
+  m_renderSettings = std::move(backup);
 
   return bounds;
 }
@@ -425,9 +431,8 @@ RectF TextPainter::doRenderLine(StringView text, TextPositioning const& position
         if (*charLimit == 0)
           return false;
         else
-          --* charLimit;
+          --*charLimit;
       }
-
       RectF glyphBounds = doRenderGlyph(c, pos, reallyRender);
       bounds.combine(glyphBounds);
       pos.pos[0] += glyphBounds.width();
@@ -461,41 +466,58 @@ RectF TextPainter::doRenderGlyph(String::Char c, TextPositioning const& position
 
   float vOffset = 0;
   if (position.vAnchor == VerticalAnchor::VMidAnchor)
-    vOffset = -floor((float)m_fontSize / 2);
+    vOffset = -floor((float)m_renderSettings.fontSize / 2);
   else if (position.vAnchor == VerticalAnchor::TopAnchor)
-    vOffset = -(float)m_fontSize;
+    vOffset = -(float)m_renderSettings.fontSize;
 
   Directives* directives = m_renderSettings.directives ? &m_renderSettings.directives : nullptr;
 
+  Vec2F pos = position.pos + Vec2F(hOffset, vOffset);
   if (reallyRender) {
-    if ((int)m_renderSettings.mode & (int)FontMode::Shadow) {
-      Color shadow = Color::Black;
-      uint8_t alphaU = m_renderSettings.color[3];
+    bool hasShadow = m_renderSettings.shadow[3] > 0;
+    bool hasBackDirectives = m_renderSettings.backDirectives;
+    if (hasShadow) {
+      //Kae: unlike vanilla we draw only one shadow glyph instead of two, so i'm tweaking the alpha here
+      Vec4B shadow = m_renderSettings.shadow;
+      uint8_t alphaU = m_renderSettings.color[3] * byteToFloat(shadow[3]);
       if (alphaU != 255) {
         float alpha = byteToFloat(alphaU);
-        shadow.setAlpha(floatToByte(alpha * (1.5f - 0.5f * alpha)));
+        shadow[3] = floatToByte(alpha * (1.5f - 0.5f * alpha));
       }
       else
-        shadow.setAlpha(alphaU);
+        shadow[3] = alphaU;
 
-      //Kae: Draw only one shadow glyph instead of stacking two, alpha modified to appear perceptually the same as vanilla
-      renderGlyph(c, position.pos + Vec2F(hOffset, vOffset - 2), m_fontSize, 1, shadow.toRgba(), directives);
+      Directives const* shadowDirectives = hasBackDirectives ? &m_renderSettings.backDirectives : directives;
+      renderGlyph(c, pos + Vec2F(0, -2), m_shadowPrimitives, m_renderSettings.fontSize, 1, shadow, shadowDirectives);
     }
+    if (hasBackDirectives)
+      renderGlyph(c, pos, m_backPrimitives, m_renderSettings.fontSize, 1, m_renderSettings.color, &m_renderSettings.backDirectives);
 
-    renderGlyph(c, position.pos + Vec2F(hOffset, vOffset), m_fontSize, 1, m_renderSettings.color, directives);
+    auto& output = (hasShadow || hasBackDirectives) ? m_frontPrimitives : m_renderer->immediatePrimitives(); 
+    renderGlyph(c, pos, output, m_renderSettings.fontSize, 1, m_renderSettings.color, directives);
   }
 
-  return RectF::withSize(position.pos + Vec2F(hOffset, vOffset), {(float)width, (int)m_fontSize});
+  return RectF::withSize(pos, {(float)width, (int)m_renderSettings.fontSize});
 }
 
-void TextPainter::renderGlyph(String::Char c, Vec2F const& screenPos, unsigned fontSize,
+void TextPainter::renderPrimitives() {
+  auto& destination = m_renderer->immediatePrimitives();
+  std::move(std::begin(m_shadowPrimitives), std::end(m_shadowPrimitives), std::back_inserter(destination));
+  m_shadowPrimitives.clear();
+  std::move(std::begin(m_backPrimitives), std::end(m_backPrimitives), std::back_inserter(destination));
+  m_backPrimitives.clear();
+  std::move(std::begin(m_frontPrimitives), std::end(m_frontPrimitives), std::back_inserter(destination));
+  m_frontPrimitives.clear();
+}
+
+void TextPainter::renderGlyph(String::Char c, Vec2F const& screenPos, List<RenderPrimitive>& out, unsigned fontSize,
     float scale, Vec4B const& color, Directives const* processingDirectives) {
   if (!fontSize)
     return;
 
   const FontTextureGroup::GlyphTexture& glyphTexture = m_fontTextureGroup.glyphTexture(c, fontSize, processingDirectives);
   Vec2F offset = glyphTexture.offset * scale;
-  m_renderer->immediatePrimitives().emplace_back(std::in_place_type_t<RenderQuad>(), glyphTexture.texture, Vec2F::round(screenPos + offset), scale, color, 0.0f);
+  out.emplace_back(std::in_place_type_t<RenderQuad>(), glyphTexture.texture, Vec2F::round(screenPos + offset), scale, color, 0.0f);
 }
 
 FontPtr TextPainter::loadFont(String const& fontPath, Maybe<String> fontName) {

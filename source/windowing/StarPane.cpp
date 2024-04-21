@@ -32,8 +32,7 @@ Pane::Pane() {
   m_hasDisplayed = false;
 
   auto assets = Root::singleton().assets();
-  m_fontSize = assets->json("/interface.config:font.baseSize").toInt();
-  m_font = assets->json("/interface.config:font.defaultFont").toString();
+  m_textStyle = assets->json("/interface.config:paneTextStyle");
   m_iconOffset = jsonToVec2I(assets->json("/interface.config:paneIconOffset"));
   m_titleOffset = jsonToVec2I(assets->json("/interface.config:paneTitleOffset"));
   m_subTitleOffset = jsonToVec2I(assets->json("/interface.config:paneSubTitleOffset"));
@@ -436,15 +435,13 @@ void Pane::renderImpl() {
       m_context->resetInterfaceScissorRect();
     }
 
-    m_context->setFont(m_font);
-    m_context->setFontSize(m_fontSize);
+    m_context->setTextStyle(m_textStyle);
     m_context->setFontColor(m_titleColor.toRgba());
     m_context->setFontMode(FontMode::Shadow);
     m_context->renderInterfaceText(m_title, {headerPos + Vec2F(m_titleOffset)});
     m_context->setFontColor(m_subTitleColor.toRgba());
     m_context->renderInterfaceText(m_subTitle, {headerPos + Vec2F(m_subTitleOffset)});
-    m_context->setFontMode(FontMode::Normal);
-    m_context->setDefaultFont();
+    m_context->clearTextStyle();
   }
 }
 

@@ -25,6 +25,7 @@ public:
   void setLineSpacing(Maybe<float> lineSpacing);
   void setDirectives(String const& directives);
   void setTextCharLimit(Maybe<unsigned> charLimit);
+  void setTextStyle(TextStyle const& style);
 
   RectI relativeBoundRect() const override;
 
@@ -36,13 +37,9 @@ private:
   void updateTextRegion();
 
   String m_text;
-  int m_fontSize;
-  FontMode m_fontMode;
-  Color m_color;
+  TextStyle m_style;
   HorizontalAnchor m_hAnchor;
   VerticalAnchor m_vAnchor;
-  String m_processingDirectives;
-  String m_font;
   Maybe<unsigned> m_wrapWidth;
   Maybe<float> m_lineSpacing;
   Maybe<unsigned> m_textCharLimit;

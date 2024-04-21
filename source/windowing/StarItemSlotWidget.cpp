@@ -14,16 +14,13 @@ ItemSlotWidget::ItemSlotWidget(ItemPtr const& item, String const& backingImage)
   : m_item(item), m_backingImage(backingImage) {
   m_drawBackingImageWhenFull = false;
   m_drawBackingImageWhenEmpty = true;
-  m_fontSize = 0;
   m_progress = 1;
 
   auto assets = Root::singleton().assets();
   auto interfaceConfig = assets->json("/interface.config");
   m_countPosition = TextPositioning(jsonToVec2F(interfaceConfig.get("itemCountRightAnchor")), HorizontalAnchor::RightAnchor);
   m_countFontMode = FontMode::Normal;
-  m_fontSize = interfaceConfig.query("font.itemSize").toInt();
-  m_font = interfaceConfig.query("font.defaultFont").toString();
-  m_fontColor = Color::rgb(jsonToVec3B(interfaceConfig.query("font.defaultColor")));
+  m_textStyle = interfaceConfig.get("itemSlotTextStyle");
   m_itemDraggableArea = jsonToRectI(interfaceConfig.get("itemDraggableArea"));
   m_durabilityOffset = jsonToVec2I(interfaceConfig.get("itemIconDurabilityOffset"));
 
@@ -192,13 +189,10 @@ void ItemSlotWidget::renderImpl() {
     context()->drawInterfaceQuad(String(strf("/interface/cooldown.png:{}", frame)), Vec2F(screenPosition()));
 
     if (m_item->count() > 1 && m_showCount) { // we don't need to tell people that there's only 1 of something
-      context()->setFont(m_font);
-      context()->setFontSize(m_fontSize);
-      context()->setFontColor(m_fontColor.toRgba());
+      context()->setTextStyle(m_textStyle);
       context()->setFontMode(m_countFontMode);
       context()->renderInterfaceText(toString(m_item->count()), m_countPosition.translated(Vec2F(screenPosition())));
-      context()->setFontMode(FontMode::Normal);
-      context()->setDefaultFont();
+      context()->clearTextStyle();
     }
 
   } else if (m_drawBackingImageWhenEmpty && m_backingImage != "") {

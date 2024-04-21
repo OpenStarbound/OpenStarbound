@@ -1734,6 +1734,7 @@ void WorldClient::initWorld(WorldStartPacket const& startPacket) {
   m_entityUpdateTimer = GameTimer(m_interpolationTracker.entityUpdateDelta());
 
   m_clientId = startPacket.clientId;
+  m_mainPlayer->clientContext()->setConnectionId(startPacket.clientId);
   auto entitySpace = connectionEntitySpace(startPacket.clientId);
   m_worldTemplate = make_shared<WorldTemplate>(startPacket.templateData);
   m_entityMap = make_shared<EntityMap>(m_worldTemplate->size(), entitySpace.first, entitySpace.second);

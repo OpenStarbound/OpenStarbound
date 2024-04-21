@@ -29,7 +29,8 @@ TeamBar::TeamBar(MainInterface* mainInterface, UniverseClientPtr client) {
   m_teamInvitation = make_shared<TeamInvitation>(this);
   m_teamMemberMenu = make_shared<TeamMemberMenu>(this);
 
-  m_nameFontSize = assets->json("/interface.config:font.nameSize").toInt();
+  m_nameStyle = assets->json("/interface.config:teamBarNameStyle");
+  m_nameStyle.fontSize = assets->json("/interface.config:font.nameSize").toInt();
   m_nameOffset = jsonToVec2F(assets->json("/interface.config:nameOffset"));
 
   GuiReader reader;

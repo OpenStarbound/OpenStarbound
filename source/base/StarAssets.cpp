@@ -427,8 +427,6 @@ void Assets::queueJsons(StringSet const& paths) const {
 }
 
 ImageConstPtr Assets::image(AssetPath const& path) const {
-  validatePath(path, true, true);
-
   return as<ImageData>(getAsset(AssetId{AssetType::Image, path}))->image;
 }
 
@@ -956,7 +954,7 @@ Json Assets::checkPatchArray(String const& path, AssetSourcePtr const& source, J
 Json Assets::readJson(String const& path) const {
   ByteArray streamData = read(path);
   try {
-    Json result = inputUtf8Json(streamData.begin(), streamData.end(), false);
+    Json result = inputUtf8Json(streamData.begin(), streamData.end(), JsonParseType::Top);
     for (auto const& pair : m_files.get(path).patchSources) {
       auto& patchPath = pair.first;
       auto& patchSource = pair.second;
@@ -973,7 +971,7 @@ Json Assets::readJson(String const& path) const {
         if (newResult)
           result = std::move(newResult);
       } else {
-        auto patchJson = inputUtf8Json(patchStream.begin(), patchStream.end(), false);
+        auto patchJson = inputUtf8Json(patchStream.begin(), patchStream.end(), JsonParseType::Top);
         if (patchJson.isType(Json::Type::Array)) {
         auto patchData = patchJson.toArray();
         try {
@@ -1131,6 +1129,7 @@ shared_ptr<Assets::AssetData> Assets::loadJson(AssetPath const& path) const {
 }
 
 shared_ptr<Assets::AssetData> Assets::loadImage(AssetPath const& path) const {
+  validatePath(path, true, true);
   if (!path.directives.empty()) {
     shared_ptr<ImageData> source =
         as<ImageData>(loadAsset(AssetId{AssetType::Image, {path.basePath, path.subPath, {}}}));

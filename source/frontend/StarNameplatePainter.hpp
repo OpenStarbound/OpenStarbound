@@ -34,14 +34,9 @@ private:
   float m_opacityRate;
   float m_inspectOpacityRate;
   Vec2F m_offset;
-  String m_font;
-  String m_statusFont;
-  String m_fontDirectives;
-  String m_statusFontDirectives;
-  float m_fontSize;
-  float m_statusFontSize;
   Vec2F m_statusOffset;
-  Color m_statusColor;
+  TextStyle m_textStyle;
+  TextStyle m_statusTextStyle;
   float m_opacityBoost;
 
   WorldCamera m_camera;

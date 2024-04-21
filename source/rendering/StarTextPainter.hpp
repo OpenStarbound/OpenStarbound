@@ -4,17 +4,21 @@
 #include "StarAnchorTypes.hpp"
 #include "StarRoot.hpp"
 #include "StarStringView.hpp"
+#include "StarText.hpp"
 
 namespace Star {
 
-STAR_CLASS(TextPainter);
-
-enum class FontMode {
+// deprecated in favor of explicit shadow color
+enum class FontMode : uint8_t {
   Normal,
   Shadow
 };
 
-float const DefaultLineSpacing = 1.3f;
+inline Color const& fontModeToColor(FontMode mode) {
+  return mode == FontMode::Shadow ? Color::Black : Color::Clear;
+}
+
+STAR_CLASS(TextPainter);
 
 struct TextPositioning {
   TextPositioning();
@@ -52,10 +56,10 @@ public:
   RectF determineGlyphSize(String::Char c, TextPositioning const& position);
 
   int glyphWidth(String::Char c);
-  int stringWidth(StringView s);
+  int stringWidth(StringView s, unsigned charLimit = 0);
 
     
-  typedef function<bool(StringView, int)> WrapTextCallback;
+  typedef function<bool(StringView, unsigned)> WrapTextCallback;
   bool processWrapText(StringView s, unsigned* wrapWidth, WrapTextCallback textFunc);
 
   List<StringView> wrapTextViews(StringView s, Maybe<unsigned> wrapWidth);
@@ -66,39 +70,36 @@ public:
   void setLineSpacing(float lineSpacing);
   void setMode(FontMode mode);
   void setFontColor(Vec4B color);
-  void setProcessingDirectives(StringView directives);
+  void setProcessingDirectives(StringView directives, bool back = false);
   void setFont(String const& font);
+  TextStyle& setTextStyle(TextStyle const& textStyle);
+  void clearTextStyle();
   void addFont(FontPtr const& font, String const& name);
   void reloadFonts();
 
   void cleanup(int64_t textureTimeout);
   void applyCommands(StringView unsplitCommands);
 private:
-  struct RenderSettings {
-    FontMode mode;
-    Vec4B color;
-    String font;
-    Directives directives;
-  };
-
+  void modifyDirectives(Directives& directives);
   RectF doRenderText(StringView s, TextPositioning const& position, bool reallyRender, unsigned* charLimit);
   RectF doRenderLine(StringView s, TextPositioning const& position, bool reallyRender, unsigned* charLimit);
   RectF doRenderGlyph(String::Char c, TextPositioning const& position, bool reallyRender);
 
-  void renderGlyph(String::Char c, Vec2F const& screenPos, unsigned fontSize, float scale, Vec4B const& color, Directives const* processingDirectives = nullptr);
+  void renderPrimitives();
+  void renderGlyph(String::Char c, Vec2F const& screenPos, List<RenderPrimitive>& out, unsigned fontSize, float scale, Vec4B const& color, Directives const* processingDirectives = nullptr);
   static FontPtr loadFont(String const& fontPath, Maybe<String> fontName = {});
 
   RendererPtr m_renderer;
+  List<RenderPrimitive> m_shadowPrimitives;
+  List<RenderPrimitive> m_backPrimitives;
+  List<RenderPrimitive> m_frontPrimitives;
   FontTextureGroup m_fontTextureGroup;
 
-  unsigned m_fontSize;
-  float m_lineSpacing;
-
-  RenderSettings m_renderSettings;
-  RenderSettings m_savedRenderSettings;
+  TextStyle m_defaultRenderSettings;
+  TextStyle m_renderSettings;
+  TextStyle m_savedRenderSettings;
 
   String m_nonRenderedCharacters;
-
   TrackerListenerPtr m_reloadTracker;
 };
 

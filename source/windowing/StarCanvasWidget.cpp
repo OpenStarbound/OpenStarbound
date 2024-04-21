@@ -68,7 +68,18 @@ void CanvasWidget::drawTriangles(List<tuple<Vec2F, Vec2F, Vec2F>> const& triangl
 }
 
 void CanvasWidget::drawText(String s, TextPositioning position, unsigned fontSize, Vec4B const& color, FontMode mode, float lineSpacing, String font, String processingDirectives) {
-  m_renderOps.append(make_tuple(std::move(s), std::move(position), fontSize, color, mode, lineSpacing, std::move(font), std::move(processingDirectives)));
+  TextStyle style;
+  style.fontSize = fontSize;
+  style.color = color;
+  style.shadow = fontModeToColor(mode).toRgba();
+  style.lineSpacing = lineSpacing;
+  style.font = font;
+  style.directives = processingDirectives;
+  m_renderOps.append(make_tuple(std::move(s), std::move(position), std::move(style)));
+}
+
+void CanvasWidget::drawText(String s, TextPositioning position, TextStyle style) {
+  m_renderOps.append(make_tuple(std::move(s), std::move(position), std::move(style)));
 }
 
 Vec2I CanvasWidget::mousePosition() const {
@@ -145,7 +156,7 @@ void CanvasWidget::renderImpl() {
     if (auto args = op.ptr<TrianglesOp>())
       tupleUnpackFunction(bind(&CanvasWidget::renderTriangles, this, renderingOffset, _1, _2), *args);
     if (auto args = op.ptr<TextOp>())
-      tupleUnpackFunction(bind(&CanvasWidget::renderText, this, renderingOffset, _1, _2, _3, _4, _5, _6, _7, _8), *args);
+      tupleUnpackFunction(bind(&CanvasWidget::renderText, this, renderingOffset, _1, _2, _3), *args);
   }
 }
 
@@ -256,14 +267,9 @@ void CanvasWidget::renderTriangles(Vec2F const& renderingOffset, List<tuple<Vec2
     context.drawInterfaceTriangles(translated, color);
 }
 
-void CanvasWidget::renderText(Vec2F const& renderingOffset, String const& s, TextPositioning const& position, unsigned fontSize, Vec4B const& color, FontMode mode, float lineSpacing, String const& font, String const& directives) {
+void CanvasWidget::renderText(Vec2F const& renderingOffset, String const& s, TextPositioning const& position, TextStyle const& style) {
   auto& context = GuiContext::singleton();
-  context.setFontProcessingDirectives(directives);
-  context.setFontSize(fontSize, m_ignoreInterfaceScale ? 1 : context.interfaceScale());
-  context.setFontColor(color);
-  context.setFontMode(mode);
-  context.setFont(font);
-  context.setLineSpacing(lineSpacing);
+  context.setTextStyle(style, m_ignoreInterfaceScale ? 1 : context.interfaceScale());
 
   TextPositioning translatedPosition = position;
   translatedPosition.pos += renderingOffset;
@@ -272,10 +278,7 @@ void CanvasWidget::renderText(Vec2F const& renderingOffset, String const& s, Tex
   else
     context.renderInterfaceText(s, translatedPosition);
 
-  context.setDefaultLineSpacing();
-  context.setDefaultFont();
-  context.setFontMode(FontMode::Normal);
-  context.setFontProcessingDirectives("");
+  context.clearTextStyle();
 }
 
 }

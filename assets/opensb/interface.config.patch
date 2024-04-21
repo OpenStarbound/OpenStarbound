@@ -1,29 +1,44 @@
 {
   "nametag" : {
     "showMasterNames" : true,
-    "fontDirectives" : "?border=1;222;2224",
+    // border is double here as it otherwise fades out near the end
+    // (could just the end to opaque too, but then diagonals are more jaggy)
+    "textStyle" : { "backDirectives" : "?border=1;222;2224?border=1;222;2224" },
     "inspectOpacityRate" : 0.15,
     "movementThreshold" : 0.5,
     "offset" : [0, 13]
   },
-  "font" : {
-    "defaultDirectives" : "",
-    "defaultFont" : ""
+  "specialDamageBar" : {
+    "nameStyle" : {}
   },
-  "cursorTooltip" : {
-    "font" : ""
+  "textStyle" : {},
+  "buttonTextStyle" : {
+    "shadow" : "black"
   },
+  "labelTextStyle" : {},
+  "paneTextStyle" : {},
+  "textBoxTextStyle" : {},
+  "itemSlotTextStyle" : {
+    "backDirectives" : "?border=1;444;4444"
+  },
+  "teamBarNameStyle" : {},
+  "cursorTooltip" : { "textStyle" : {} },
 
-  "debugFont" : "iosevka-semibold",
-  "debugFontSize" : 7,
-  "debugFontDirectives" : "?border=1;111a;1114",
+  "debugTextStyle" : {
+    "font" : "iosevka-semibold",
+    "fontSize" : 7,
+    "backDirectives" : "?border=2;111a;1114"
+  },
   "debugSpatialClearTime" : 0.0,
   "debugOffset" : [80, 130],
 
   // Change planet name to support the new internal string formatting.
   "planetNameFormatString" : "- {} -",
-  "planetNameDirectives" : "?border=4;000;000",
-  
+  "planetTextStyle" : {
+    "backDirectives" : "?border=6;000;000",
+    "fontSize" : 24
+  },
+
   "buttonClickSound" : [ "/sfx/interface/button/click.wav" ],
   "buttonReleaseSound" : [ "/sfx/interface/button/release.wav" ],
   "buttonHoverSound" : [ "/sfx/interface/button/hover.wav" ],

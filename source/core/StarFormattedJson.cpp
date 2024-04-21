@@ -65,12 +65,12 @@ bool CommaElement::operator==(CommaElement const&) const {
 
 FormattedJson FormattedJson::parse(String const& string) {
   return inputUtf32Json<String::const_iterator, FormattedJsonBuilderStream, FormattedJson>(
-      string.begin(), string.end(), true);
+      string.begin(), string.end(), JsonParseType::Value);
 }
 
 FormattedJson FormattedJson::parseJson(String const& string) {
   return inputUtf32Json<String::const_iterator, FormattedJsonBuilderStream, FormattedJson>(
-      string.begin(), string.end(), false);
+      string.begin(), string.end(), JsonParseType::Top);
 }
 
 FormattedJson FormattedJson::ofType(Json::Type type) {

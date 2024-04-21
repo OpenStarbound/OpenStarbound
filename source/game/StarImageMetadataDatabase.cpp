@@ -132,7 +132,7 @@ AssetPath ImageMetadataDatabase::filterProcessing(AssetPath const& path) {
           operation.is<ScanLinesImageOperation>()          ||
           operation.is<SetColorImageOperation>())) {
       filtered += "?";
-      filtered += entry.string(*directives.shared);
+      filtered += entry.string(*directives);
     }
     });
 

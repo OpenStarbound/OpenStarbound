@@ -50,7 +50,7 @@ public:
 };
 
 template <typename InputIterator>
-Json inputUtf8Json(InputIterator begin, InputIterator end, bool fragment) {
+Json inputUtf8Json(InputIterator begin, InputIterator end, JsonParseType parseType) {
   typedef U8ToU32Iterator<InputIterator> Utf32Input;
   typedef JsonParser<Utf32Input> Parser;
 
@@ -58,7 +58,7 @@ Json inputUtf8Json(InputIterator begin, InputIterator end, bool fragment) {
   Parser parser(stream);
   Utf32Input wbegin(begin);
   Utf32Input wend(end);
-  Utf32Input pend = parser.parse(wbegin, wend, fragment);
+  Utf32Input pend = parser.parse(wbegin, wend, parseType);
 
   if (parser.error())
     throw JsonParsingException(strf("Error parsing json: {} at {}:{}", parser.error(), parser.line(), parser.column()));
@@ -77,11 +77,11 @@ void outputUtf8Json(Json const& val, OutputIterator out, int pretty, bool sort) 
 }
 
 template <typename InputIterator, typename Stream = JsonBuilderStream, typename Jsonlike = Json>
-Jsonlike inputUtf32Json(InputIterator begin, InputIterator end, bool fragment) {
+Jsonlike inputUtf32Json(InputIterator begin, InputIterator end, JsonParseType parseType) {
   Stream stream;
   JsonParser<InputIterator> parser(stream);
 
-  InputIterator pend = parser.parse(begin, end, fragment);
+  InputIterator pend = parser.parse(begin, end, parseType);
 
   if (parser.error()) {
     throw JsonParsingException(strf("Error parsing json: {} at {}:{}", parser.error(), parser.line(), parser.column()));

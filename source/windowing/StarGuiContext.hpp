@@ -106,6 +106,9 @@ public:
   void setFontProcessingDirectives(String const& directives);
   void setFont(String const& font);
   void setDefaultFont();
+  TextStyle& setTextStyle(TextStyle const& textStyle, int pixelRatio);
+  TextStyle& setTextStyle(TextStyle const& textStyle);
+  void clearTextStyle();
 
   void setLineSpacing(float lineSpacing);
   void setDefaultLineSpacing();

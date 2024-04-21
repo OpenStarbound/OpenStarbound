@@ -5,6 +5,7 @@
 #include "StarBiMap.hpp"
 #include "StarRegisteredPaneManager.hpp"
 #include "StarAnimation.hpp"
+#include "StarText.hpp"
 
 namespace Star {
 
@@ -43,8 +44,7 @@ typedef RegisteredPaneManager<MainInterfacePanes> MainInterfacePaneManager;
 struct MainInterfaceConfig {
   static MainInterfaceConfigPtr loadFromAssets();
 
-  unsigned fontSize;
-  String font;
+  TextStyle textStyle;
 
   String inventoryImage;
   String inventoryImageHover;
@@ -136,17 +136,14 @@ struct MainInterfaceConfig {
   float planetNameTime;
   float planetNameFadeTime;
   String planetNameFormatString;
-  unsigned planetNameFontSize;
-  String planetNameDirectives;
+  TextStyle planetNameTextStyle;
   Vec2I planetNameOffset;
 
   bool renderVirtualCursor;
   Json cursorItemSlot;
 
   Vec2I debugOffset;
-  unsigned debugFontSize;
-  String debugFont;
-  String debugFontDirectives;
+  TextStyle debugTextStyle;
   float debugSpatialClearTime;
   float debugMapClearTime;
   Color debugBackgroundColor;

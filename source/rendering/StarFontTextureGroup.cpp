@@ -47,11 +47,12 @@ const FontTextureGroup::GlyphTexture& FontTextureGroup::glyphTexture(String::Cha
     m_font->setPixelSize(size);
     auto pair = m_font->render(c);
     Image& image = pair.first;
-    if (processingDirectives && *processingDirectives) {
+    if (processingDirectives) {
       try {
+        Directives const& directives = *processingDirectives;
         Vec2F preSize = Vec2F(image.size());
 
-        for (auto& entry : processingDirectives->shared->entries)
+        for (auto& entry : directives->entries)
           processImageOperation(entry.operation, image);
 
         res.first->second.offset = (preSize - Vec2F(image.size())) / 2;

@@ -20,32 +20,30 @@ Chat::Chat(UniverseClientPtr client) : m_client(client) {
   m_historyOffset = 0;
 
   auto assets = Root::singleton().assets();
+  auto config = assets->json("/interface/chat/chat.config:config");
   m_timeChatLastActive = Time::monotonicMilliseconds();
-  auto fontConfig = assets->json("/interface/chat/chat.config:config.font");
-  m_fontSize = fontConfig.getInt("baseSize");
-  m_fontDirectives = fontConfig.queryString("directives", "");
-  m_font = fontConfig.queryString("type", "");
-  m_chatLineHeight = assets->json("/interface/chat/chat.config:config.lineHeight").toFloat();
-  m_chatVisTime = assets->json("/interface/chat/chat.config:config.visTime").toFloat();
-  m_fadeRate = assets->json("/interface/chat/chat.config:config.fadeRate").toDouble();
-  m_chatHistoryLimit = assets->json("/interface/chat/chat.config:config.chatHistoryLimit").toInt();
+  m_chatTextStyle = config.get("textStyle");
+  m_chatTextStyle.lineSpacing = config.get("lineHeight").toFloat();
+  m_chatVisTime = config.get("visTime").toFloat();
+  m_fadeRate = config.get("fadeRate").toDouble();
+  m_chatHistoryLimit = config.get("chatHistoryLimit").toInt();
 
-  m_portraitTextOffset = jsonToVec2I(assets->json("/interface/chat/chat.config:config.portraitTextOffset"));
-  m_portraitImageOffset = jsonToVec2I(assets->json("/interface/chat/chat.config:config.portraitImageOffset"));
-  m_portraitScale = assets->json("/interface/chat/chat.config:config.portraitScale").toFloat();
-  m_portraitVerticalMargin = assets->json("/interface/chat/chat.config:config.portraitVerticalMargin").toFloat();
-  m_portraitBackground = assets->json("/interface/chat/chat.config:config.portraitBackground").toString();
+  m_portraitTextOffset = jsonToVec2I(config.get("portraitTextOffset"));
+  m_portraitImageOffset = jsonToVec2I(config.get("portraitImageOffset"));
+  m_portraitScale = config.get("portraitScale").toFloat();
+  m_portraitVerticalMargin = config.get("portraitVerticalMargin").toFloat();
+  m_portraitBackground = config.get("portraitBackground").toString();
 
-  m_bodyHeight = assets->json("/interface/chat/chat.config:config.bodyHeight").toInt();
-  m_expandedBodyHeight = assets->json("/interface/chat/chat.config:config.expandedBodyHeight").toInt();
+  m_bodyHeight = config.get("bodyHeight").toInt();
+  m_expandedBodyHeight = config.get("expandedBodyHeight").toInt();
 
-  m_colorCodes[MessageContext::Local] = assets->json("/interface/chat/chat.config:config.colors.local").toString();
-  m_colorCodes[MessageContext::Party] = assets->json("/interface/chat/chat.config:config.colors.party").toString();
-  m_colorCodes[MessageContext::Broadcast] = assets->json("/interface/chat/chat.config:config.colors.broadcast").toString();
-  m_colorCodes[MessageContext::Whisper] = assets->json("/interface/chat/chat.config:config.colors.whisper").toString();
-  m_colorCodes[MessageContext::CommandResult] = assets->json("/interface/chat/chat.config:config.colors.commandResult").toString();
-  m_colorCodes[MessageContext::RadioMessage] = assets->json("/interface/chat/chat.config:config.colors.radioMessage").toString();
-  m_colorCodes[MessageContext::World] = assets->json("/interface/chat/chat.config:config.colors.world").toString();
+  m_colorCodes[MessageContext::Local] = config.query("colors.local").toString();
+  m_colorCodes[MessageContext::Party] = config.query("colors.party").toString();
+  m_colorCodes[MessageContext::Broadcast] = config.query("colors.broadcast").toString();
+  m_colorCodes[MessageContext::Whisper] = config.query("colors.whisper").toString();
+  m_colorCodes[MessageContext::CommandResult] = config.query("colors.commandResult").toString();
+  m_colorCodes[MessageContext::RadioMessage] = config.query("colors.radioMessage").toString();
+  m_colorCodes[MessageContext::World] = config.query("colors.world").toString();
 
   GuiReader reader;
 
@@ -72,7 +70,7 @@ Chat::Chat(UniverseClientPtr client) : m_client(client) {
   m_say = fetchChild<LabelWidget>("say");
 
   m_chatLog = fetchChild<CanvasWidget>("chatLog");
-  if (auto logPadding = fontConfig.optQuery("padding")) {
+  if (auto logPadding = config.optQuery("padding")) {
     m_chatLogPadding = jsonToVec2I(logPadding.get());
     m_chatLog->setSize(m_chatLog->size() + m_chatLogPadding * 2);
     m_chatLog->setPosition(m_chatLog->position() - m_chatLogPadding);
@@ -133,8 +131,8 @@ String Chat::currentChat() const {
   return m_textBox->getText();
 }
 
-void Chat::setCurrentChat(String const& chat) {
-  m_textBox->setText(chat);
+bool Chat::setCurrentChat(String const& chat, bool moveCursor) {
+  return m_textBox->setText(chat, true, moveCursor);
 }
 
 void Chat::clearCurrentChat() {
@@ -179,8 +177,7 @@ void Chat::addMessages(List<ChatReceivedMessage> const& messages, bool showPane)
     if (message.portrait.empty())
       wrapWidth = m_chatLog->size()[0] - m_chatLogPadding[0] * 2;
 
-    guiContext.setFont(m_font);
-    guiContext.setFontSize(m_fontSize);
+    guiContext.setTextStyle(m_chatTextStyle);
     StringList lines;
     if (message.fromNick != "" && message.portrait == "")
       lines = guiContext.wrapInterfaceText(strf("<{}> {}", message.fromNick, message.text), wrapWidth);
@@ -239,10 +236,10 @@ void Chat::renderImpl() {
   int messageIndex = -m_historyOffset;
 
   GuiContext& guiContext = GuiContext::singleton();
-  guiContext.setFont(m_font);
-  guiContext.setFontSize(m_fontSize);
-  guiContext.setLineSpacing(m_chatLineHeight);
-  for (auto message : m_receivedMessages) {
+  float lineHeight = m_chatTextStyle.lineSpacing;
+  float fontSize = m_chatTextStyle.fontSize;
+  guiContext.setTextStyle(m_chatTextStyle);
+  for (auto& message : m_receivedMessages) {
     if (!m_modeFilter.empty() && !m_modeFilter.contains(message.mode))
       continue;
 
@@ -260,7 +257,7 @@ void Chat::renderImpl() {
     String messageString = channelColorCode + message.text;
 
     float messageHeight = 0;
-    float lineHeightMargin =  + ((m_chatLineHeight * m_fontSize) - m_fontSize);
+    float lineHeightMargin = ((lineHeight * fontSize) - fontSize);
     unsigned wrapWidth = m_chatLog->size()[0] - m_chatLogPadding[0] * 2;
 
     if (message.portrait != "") {
@@ -274,13 +271,14 @@ void Chat::renderImpl() {
       m_chatLog->drawImage(m_portraitBackground, Vec2F(imagePosition), 1.0f, fade);
       m_chatLog->drawImage(message.portrait, Vec2F(imagePosition + m_portraitImageOffset), m_portraitScale, fade);
       tp.pos += Vec2F(0, floor(messageHeight / 2));
-      m_chatLog->drawText(messageString, tp, m_fontSize, fade, FontMode::Normal, m_chatLineHeight, m_font, m_fontDirectives);
+      m_chatTextStyle.color = fade;
+      m_chatLog->drawText(messageString, tp, m_chatTextStyle);
 
     } else {
       TextPositioning tp = {Vec2F(chatMin), HorizontalAnchor::LeftAnchor, VerticalAnchor::BottomAnchor, wrapWidth};
       messageHeight = guiContext.determineInterfaceTextSize(messageString, tp).size()[1] + lineHeightMargin;
-
-      m_chatLog->drawText(messageString, tp, m_fontSize, fade, FontMode::Normal, m_chatLineHeight, m_font, m_fontDirectives);
+      m_chatTextStyle.color = fade;
+      m_chatLog->drawText(messageString, tp, m_chatTextStyle);
     }
 
     chatMin[1] += ceil(messageHeight);

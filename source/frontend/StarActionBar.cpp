@@ -83,9 +83,7 @@ ActionBar::ActionBar(MainInterfacePaneManager* paneManager, PlayerPtr player) {
 
     TextPositioning countPosition = {jsonToVec2F(m_config.get("countMidAnchor")), HorizontalAnchor::HMidAnchor};
     customBarLeft->setCountPosition(countPosition);
-    customBarLeft->setCountFontMode(FontMode::Shadow);
     customBarRight->setCountPosition(countPosition);
-    customBarRight->setCountFontMode(FontMode::Shadow);
 
     m_customBarWidgets.append({customBarLeft, customBarRight, customBarLeftOverlay, customBarRightOverlay});
   }

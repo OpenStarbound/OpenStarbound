@@ -56,9 +56,7 @@ private:
   Vec2I m_durabilityOffset;
   RectI m_itemDraggableArea;
 
-  int m_fontSize;
-  String m_font;
-  Color m_fontColor;
+  TextStyle m_textStyle;
 
   WidgetCallbackFunc m_callback;
   WidgetCallbackFunc m_rightClickCallback;

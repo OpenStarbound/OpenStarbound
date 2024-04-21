@@ -27,6 +27,12 @@ struct JsonStream {
   virtual void putComma() = 0;
 };
 
+enum class JsonParseType : uint8_t {
+  Top, // Top-level Object or Array
+  Value, // Any singular Json value
+  Sequence // Like an array, but without needing the [] or commas.
+};
+
 // Will parse JSON and output to a given JsonStream.  Parses an *extension* to
 // the JSON format that includes comments.
 template <typename InputIterator>
@@ -39,15 +45,17 @@ public:
   // Does not throw.  On error, returned iterator will not be equal to end, and
   // error() will be non-null.  Set fragment to true to parse any JSON type
   // rather than just object or array.
-  InputIterator parse(InputIterator begin, InputIterator end, bool fragment = false) {
+  InputIterator parse(InputIterator begin, InputIterator end, JsonParseType parseType = JsonParseType::Top) {
     init(begin, end);
 
     try {
       white();
-      if (fragment)
-        value();
-      else
+      if (parseType == JsonParseType::Top)
         top();
+      else if (parseType == JsonParseType::Value)
+        value();
+      else if (parseType == JsonParseType::Sequence)
+        sequence();
       white();
     } catch (ParsingException const&) {
     }
@@ -188,6 +196,56 @@ private:
     } else {
       error("bad array");
     }
+  }
+
+  void sequence() {
+    m_stream.beginArray();
+    while (true) {
+      if (isSpace(m_char)) {
+        next();
+        continue;
+      } else if (m_char == '{')
+        object();
+      else if (m_char == '[')
+        array();
+      else if (m_char == '"')
+        string();
+      else if (m_char == '-')
+        number();
+      else if (m_char == 0)
+        break;
+      else {
+        auto begin = m_current;
+        if (m_char >= '0' && m_char <= '9') {
+          number();
+          if (m_error.empty()) {
+            next();
+            continue;
+          }
+        }
+        m_error.clear();
+        m_current = begin;
+        if (m_char == 't' || m_char == 'f' || m_char == 'n') {
+          word();
+          if (m_error.empty()) {
+            next();
+            continue;
+          }
+        }
+        m_error.clear();
+        m_current = begin;
+        // well, shit. do a simple string parse until we hit whitespace
+        // no fancy things like \n, do a proper string if you want that
+        CharArray str;
+        do {
+          str += m_char;
+          next();
+        } while (m_char && !isSpace(m_char));
+        m_stream.putString(str.c_str(), str.length());
+      }
+      next();
+    }
+    m_stream.endArray();
   }
 
   void string() {

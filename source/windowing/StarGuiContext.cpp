@@ -377,6 +377,20 @@ void GuiContext::setDefaultFont() {
   textPainter()->setFont("");
 }
 
+TextStyle& GuiContext::setTextStyle(TextStyle const& textStyle, int pixelRatio) {
+  TextStyle& setStyle = textPainter()->setTextStyle(textStyle);
+  setStyle.fontSize *= pixelRatio;
+  return setStyle;
+}
+
+TextStyle& GuiContext::setTextStyle(TextStyle const& textStyle) {
+  return setTextStyle(textStyle, interfaceScale());
+}
+
+void GuiContext::clearTextStyle() {
+  textPainter()->clearTextStyle();
+}
+
 void GuiContext::setLineSpacing(float lineSpacing) {
   textPainter()->setLineSpacing(lineSpacing);
 }

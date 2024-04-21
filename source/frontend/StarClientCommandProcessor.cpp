@@ -91,7 +91,7 @@ StringList ClientCommandProcessor::handleCommand(String const& commandLine) {
       }
     } else {
       auto player = m_universeClient->mainPlayer();
-      if (auto messageResult = player->receiveMessage(connectionForEntity(player->entityId()), strf("/{}", command), { allArguments }))
+      if (auto messageResult = player->receiveMessage(connectionForEntity(player->entityId()), "/" + command, { allArguments }))
         result.append(messageResult->isType(Json::Type::String) ? *messageResult->stringPtr() : messageResult->repr(1, true));
       else
         m_universeClient->sendChat(commandLine, ChatSendMode::Broadcast);

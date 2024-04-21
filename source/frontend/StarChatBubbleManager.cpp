@@ -20,9 +20,8 @@ ChatBubbleManager::ChatBubbleManager()
 
   auto jsonData = assets->json("/interface/windowconfig/chatbubbles.config");
 
-  m_color = jsonToColor(jsonData.get("textColor"));
-
-  m_fontSize = jsonData.getInt("fontSize");
+  m_textStyle.color = jsonToColor(jsonData.get("textColor")).toRgba();
+  m_textStyle.loadJson(jsonData.get("textStyle"));
   m_textPadding = jsonToVec2F(jsonData.get("textPadding"));
 
   m_zoom = jsonData.getInt("textZoom");
@@ -196,9 +195,7 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
       // bother me so bad if it weren't so fucking easy to do right.
 
       // yea I agree
-      m_guiContext->setFontSize(m_fontSize, m_zoom);
-      m_guiContext->setFontProcessingDirectives("");
-      m_guiContext->setDefaultFont();
+      m_guiContext->setTextStyle(m_textStyle);
       auto result = m_guiContext->determineTextSize(sayAction.text, m_textTemplate);
       float textWidth = result.width() / m_zoom + m_textPadding[0];
       float textHeight = result.height() / m_zoom + m_textPadding[1];
@@ -252,14 +249,17 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
       float verticalShift = (partSize * innerTiles[1] - textMultiLineShift) * 0.5f + textMultiLineShift;
       Vec2F position = Vec2F(horizontalCenter, verticalShift);
       List<BubbleText> bubbleTexts;
-      auto fontSize = config.getUInt("fontSize", m_fontSize);
-      auto color = config.opt("color").apply(jsonToColor).value(m_color);
-      bubbleTexts.append(make_tuple(sayAction.text, fontSize, color.toRgba(), true, position));
+      TextStyle textStyle = m_textStyle;
+      textStyle.fontSize = config.getUInt("fontSize", textStyle.fontSize);
+      if (auto jColor = config.opt("color"))
+        textStyle.color = jsonToColor(*jColor).toRgba();
+      textStyle.loadJson(config.get("style", Json()));
+      bubbleTexts.append(make_tuple(sayAction.text, textStyle, true, position));
 
       for (auto& backgroundImage : backgroundImages)
         get<1>(backgroundImage) += Vec2F(-horizontalCenter, partSize);
       for (auto& bubbleText : bubbleTexts)
-        get<4>(bubbleText) += Vec2F(-horizontalCenter, partSize);
+        get<3>(bubbleText) += Vec2F(-horizontalCenter, partSize);
 
       auto pos = m_camera.worldToScreen(sayAction.position + m_bubbleOffset);
       RectF boundBox = fold(backgroundImages, RectF::null(), [pos, this](RectF const& boundBox, BubbleImage const& bubbleImage) {
@@ -272,7 +272,7 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
       m_bubbles.filter([&sayAction](BubbleState<Bubble> const&, Bubble const& bubble) { return bubble.entity != sayAction.entity; });
       m_bubbles.addBubble(pos, boundBox, std::move(bubble), m_interBubbleMargin * m_zoom);
       oldBubbles.sort([](BubbleState<Bubble> const& a, BubbleState<Bubble> const& b) { return a.contents.age < b.contents.age; });
-      for (auto bubble : oldBubbles.slice(0, m_maxMessagePerEntity - 1))
+      for (auto& bubble : oldBubbles.slice(0, m_maxMessagePerEntity - 1))
         m_bubbles.addBubble(bubble.idealDestination, bubble.boundBox, bubble.contents, 0);
 
     } else if (action.is<PortraitChatAction>()) {
@@ -286,12 +286,12 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
         backgroundImages.append(make_tuple(m_portraitMoreImage, Vec2F(m_portraitMorePosition)));
       backgroundImages.append(make_tuple(portraitAction.portrait, Vec2F(m_portraitPosition)));
       List<BubbleText> bubbleTexts;
-      bubbleTexts.append(make_tuple(portraitAction.text, m_fontSize, m_color.toRgba(), false, Vec2F(m_portraitTextPosition)));
+      bubbleTexts.append(make_tuple(portraitAction.text, m_textStyle, false, Vec2F(m_portraitTextPosition)));
 
       for (auto& backgroundImage : backgroundImages)
         get<1>(backgroundImage) += Vec2F(-m_portraitBackgroundSize[0] / 2, 0);
       for (auto& bubbleText : bubbleTexts)
-        get<4>(bubbleText) += Vec2F(-m_portraitBackgroundSize[0] / 2, 0);
+        get<3>(bubbleText) += Vec2F(-m_portraitBackgroundSize[0] / 2, 0);
 
       m_portraitBubbles.prepend({
           portraitAction.entity,
@@ -321,28 +321,19 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
 
 RectF ChatBubbleManager::bubbleImageRect(Vec2F screenPos, BubbleImage const& bubbleImage, int pixelRatio) {
   auto imgMetadata = Root::singleton().imageMetadataDatabase();
-  auto image = get<0>(bubbleImage);
+  auto& image = get<0>(bubbleImage);
   return RectF::withSize(screenPos + get<1>(bubbleImage) * pixelRatio, Vec2F(imgMetadata->imageSize(image)) * pixelRatio);
 }
 
 void ChatBubbleManager::drawBubbleImage(Vec2F screenPos, BubbleImage const& bubbleImage, int pixelRatio, int alpha) {
-  auto image = get<0>(bubbleImage);
+  auto& image = get<0>(bubbleImage);
   auto offset = get<1>(bubbleImage) * pixelRatio;
   m_guiContext->drawQuad(image, screenPos + offset, pixelRatio, {255, 255, 255, alpha});
 }
 
 void ChatBubbleManager::drawBubbleText(Vec2F screenPos, BubbleText const& bubbleText, int pixelRatio, int alpha, bool isPortrait) {
-  Vec4B const& baseColor = get<2>(bubbleText);
-
-  // use the alpha as a blend value for the text colour as pulled from data.
-  Vec4B const& displayColor = Vec4B(baseColor[0], baseColor[1], baseColor[2], (baseColor[3] * alpha) / 255);
-
-  m_guiContext->setDefaultFont();
-  m_guiContext->setFontProcessingDirectives("");
-  m_guiContext->setFontColor(displayColor);
-  m_guiContext->setFontSize(get<1>(bubbleText), m_zoom);
-
-  auto offset = get<4>(bubbleText) * pixelRatio;
+  m_guiContext->setTextStyle(get<1>(bubbleText), m_zoom);
+  auto offset = get<3>(bubbleText) * pixelRatio;
   TextPositioning tp = isPortrait ? m_portraitTextTemplate : m_textTemplate;
   tp.pos = screenPos + offset;
 

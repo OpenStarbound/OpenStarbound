@@ -9,8 +9,8 @@ namespace Star {
 FuelWidget::FuelWidget() {
   auto assets = Root::singleton().assets();
 
-  m_fontSize = assets->json("/interface.config:font.buttonSize").toInt();
-  m_font = assets->json("/interface.config:font.defaultFont").toString();
+  m_textStyle.fontSize = assets->json("/interface.config:font.buttonSize").toInt();
+  m_textStyle.loadJson(assets->json("/interface.config:textStyle"));
 
   m_fuelLevel = 0;
   m_maxLevel = 0;
@@ -72,8 +72,7 @@ void FuelWidget::renderImpl() {
   context()->drawInterfaceQuad("/interface/fuel/fuelgaugemarkings.png", shift(0, 1, entireTex), shift(0, 1, entirePosition));
 
   auto& guiContext = GuiContext::singleton();
-  guiContext.setFontSize(m_fontSize);
-  guiContext.setFont(m_font);
+  guiContext.setTextStyle(m_textStyle);
   if (m_potential != 0) {
     guiContext.setFontColor(Color::White.toRgba());
   } else if (m_fuelLevel == 0) {

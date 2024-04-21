@@ -60,6 +60,10 @@ LuaInt LuaTable::rawLength() const {
   return engine().tableLength(true, handleIndex());
 }
 
+void LuaCallbacks::copyCallback(String srcName, String dstName) {
+  m_callbacks.set(dstName, m_callbacks.get(srcName));
+}
+
 LuaCallbacks& LuaCallbacks::merge(LuaCallbacks const& callbacks) {
   try {
     for (auto const& pair : callbacks.m_callbacks)

@@ -80,7 +80,7 @@ public:
   SkyConstPtr currentSky() const;
   bool flying() const;
 
-  void sendChat(String const& text, ChatSendMode sendMode);
+  void sendChat(String const& text, ChatSendMode sendMode, Maybe<bool> speak = {});
   List<ChatReceivedMessage> pullChatMessages();
 
   uint16_t players();

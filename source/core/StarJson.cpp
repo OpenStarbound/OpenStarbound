@@ -105,11 +105,15 @@ Json Json::ofType(Type t) {
 }
 
 Json Json::parse(String const& string) {
-  return inputUtf32Json<String::const_iterator>(string.begin(), string.end(), true);
+  return inputUtf32Json<String::const_iterator>(string.begin(), string.end(), JsonParseType::Value);
+}
+
+Json Json::parseSequence(String const& sequence) {
+  return inputUtf32Json<String::const_iterator>(sequence.begin(), sequence.end(), JsonParseType::Sequence);
 }
 
 Json Json::parseJson(String const& json) {
-  return inputUtf32Json<String::const_iterator>(json.begin(), json.end(), false);
+  return inputUtf32Json<String::const_iterator>(json.begin(), json.end(), JsonParseType::Top);
 }
 
 Json::Json() {}

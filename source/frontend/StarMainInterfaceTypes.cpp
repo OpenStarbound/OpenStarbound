@@ -39,8 +39,7 @@ MainInterfaceConfigPtr MainInterfaceConfig::loadFromAssets() {
 
   auto config = make_shared<MainInterfaceConfig>();
 
-  config->fontSize = assets->json("/interface.config:font.baseSize").toInt();
-  config->font = assets->json("/interface.config:font.defaultFont").toString();
+  config->textStyle = assets->json("/interface.config:textStyle");
   config->inventoryImage = assets->json("/interface.config:mainBar.inventory.base").toString();
   config->inventoryImageHover = assets->json("/interface.config:mainBar.inventory.hover").toString();
   config->inventoryImageGlow = assets->json("/interface.config:mainBar.inventory.glow").toString();
@@ -130,17 +129,14 @@ MainInterfaceConfigPtr MainInterfaceConfig::loadFromAssets() {
   config->planetNameTime = assets->json("/interface.config:planetNameTime").toFloat();
   config->planetNameFadeTime = assets->json("/interface.config:planetNameFadeTime").toFloat();
   config->planetNameFormatString = assets->json("/interface.config:planetNameFormatString").toString();
-  config->planetNameFontSize = assets->json("/interface.config:font.planetSize").toInt();
-  config->planetNameDirectives = assets->json("/interface.config:planetNameDirectives").toString();
+  config->planetNameTextStyle = assets->json("/interface.config:planetTextStyle");
   config->planetNameOffset = jsonToVec2I(assets->json("/interface.config:planetTextOffset"));
 
   config->renderVirtualCursor = assets->json("/interface.config:renderVirtualCursor").toBool();
   config->cursorItemSlot = assets->json("/interface.config:cursorItemSlot");
 
   config->debugOffset = jsonToVec2I(assets->json("/interface.config:debugOffset"));
-  config->debugFontSize = assets->json("/interface.config:debugFontSize").toUInt();
-  config->debugFont = assets->json("/interface.config:debugFont").toString();
-  config->debugFontDirectives = assets->json("/interface.config:debugFontDirectives").toString();
+  config->debugTextStyle = assets->json("/interface.config:debugTextStyle");
   config->debugSpatialClearTime = assets->json("/interface.config:debugSpatialClearTime").toFloat();
   config->debugMapClearTime = assets->json("/interface.config:debugMapClearTime").toFloat();
   config->debugBackgroundColor = jsonToColor(assets->json("/interface.config:debugBackgroundColor"));

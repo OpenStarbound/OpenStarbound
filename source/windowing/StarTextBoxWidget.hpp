@@ -14,7 +14,7 @@ public:
   virtual void update(float dt) override;
 
   String const& getText() const;
-  bool setText(String const& text, bool callback = true);
+  bool setText(String const& text, bool callback = true, bool moveCursor = true);
 
   bool getHidden() const;
   void setHidden(bool hidden);
@@ -64,10 +64,7 @@ private:
   String m_regex;
   HorizontalAnchor m_hAnchor;
   VerticalAnchor m_vAnchor;
-  Color m_color;
-  String m_processingDirectives;
-  String m_font;
-  int m_fontSize;
+  TextStyle m_textStyle;
   int m_maxWidth;
   int m_cursorOffset;
   bool m_isHover;

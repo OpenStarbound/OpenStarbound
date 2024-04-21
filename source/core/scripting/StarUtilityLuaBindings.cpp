@@ -118,11 +118,13 @@ LuaCallbacks LuaBindings::makeUtilityCallbacks() {
   callbacks.registerCallback("print", UtilityCallbacks::print);
   callbacks.registerCallback("interpolateSinEase", UtilityCallbacks::interpolateSinEase);
   callbacks.registerCallback("replaceTags", UtilityCallbacks::replaceTags);
-  callbacks.registerCallback("jsonParse", [](String const& json) { return Json::parse(json); });
+  callbacks.registerCallback("parseJsonSequence", [](String const& json) { return Json::parseSequence(json); });
   callbacks.registerCallback("jsonMerge", [](Json const& a, Json const& b) { return jsonMerge(a, b); });
   callbacks.registerCallback("jsonQuery", [](Json const& json, String const& path, Json const& def) { return json.query(path, def); });
   callbacks.registerCallback("makeRandomSource", [](Maybe<uint64_t> seed) { return seed ? RandomSource(*seed) : RandomSource(); });
   callbacks.registerCallback("makePerlinSource", [](Json const& config) { return PerlinF(config); });
+
+  callbacks.copyCallback("parseJson", "jsonFromString"); // SE compat
 
   auto hash64LuaValues = [](LuaVariadic<LuaValue> const& values) -> uint64_t {
     XXHash64 hash;

@@ -119,6 +119,8 @@ public:
 
   CanvasWidgetPtr fetchCanvas(String const& canvasName, bool ignoreInterfaceScale = false);
 
+  ClientCommandProcessorPtr commandProcessor() const;
+
   struct ScriptPaneInfo {
     ScriptPanePtr scriptPane;
     Json config;

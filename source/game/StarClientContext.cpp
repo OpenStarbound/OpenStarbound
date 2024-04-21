@@ -96,4 +96,12 @@ ByteArray ClientContext::writeUpdate() {
   return m_rpc->send();
 }
 
+void ClientContext::setConnectionId(ConnectionId connectionId) {
+  m_connectionId = connectionId;
+}
+
+ConnectionId ClientContext::connectionId() const {
+  return m_connectionId;
+}
+
 }

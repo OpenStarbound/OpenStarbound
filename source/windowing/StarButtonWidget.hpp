@@ -121,9 +121,7 @@ protected:
   Vec2I m_pressedOffset;
   Vec2U m_buttonBoundSize;
 
-  int m_fontSize;
-  String m_font;
-  String m_fontDirectives;
+  TextStyle m_textStyle;
   String m_text;
   Vec2I m_textOffset;
 

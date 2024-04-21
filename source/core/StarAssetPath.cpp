@@ -162,7 +162,7 @@ std::ostream& operator<<(std::ostream& os, AssetPath const& rhs) {
 
   rhs.directives.forEach([&](auto const& entry, Directives const& directives) {
     os << "?";
-    os << entry.string(*directives.shared);
+    os << entry.string(*directives);
    });
 
   return os;
