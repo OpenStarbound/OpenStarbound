@@ -331,6 +331,7 @@ void TextPainter::reloadFonts() {
   loadFontsByExtension("ttf");
   loadFontsByExtension("woff2");
   m_fontTextureGroup.addFont(defaultFont, defaultName, true);
+  m_fontTextureGroup.setFallbackFont("unifont");
 }
 
 void TextPainter::cleanup(int64_t timeout) {

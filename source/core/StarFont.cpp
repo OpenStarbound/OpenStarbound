@@ -133,4 +133,8 @@ std::pair<Image, Vec2I> Font::render(String::Char c) {
   return { std::move(image), {slot->bitmap_left - 1, (slot->bitmap_top - height) + (m_pixelSize / 4) - 1} };
 }
 
+bool Font::exists(String::Char c) {
+  return FT_Get_Char_Index(m_fontImpl->face, c);
+}
+
 }

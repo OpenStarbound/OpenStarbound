@@ -35,6 +35,7 @@ public:
   // render a box, but if there is an internal freetype error this may return
   // an empty image).
   std::pair<Image, Vec2I> render(String::Char c);
+  bool exists(String::Char c);
 
 private:
   FontImplPtr m_fontImpl;

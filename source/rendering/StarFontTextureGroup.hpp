@@ -37,11 +37,14 @@ public:
   String const& activeFont();
   void addFont(FontPtr const& font, String const& name, bool isDefault = false);
   void clearFonts();
+  void setFallbackFont(String const& fontName);
+
 private:
   CaseInsensitiveStringMap<FontPtr> m_fonts;
   String m_fontName;
   FontPtr m_font;
   FontPtr m_defaultFont;
+  FontPtr m_fallbackFont;
 
   TextureGroupPtr m_textureGroup;
   HashMap<GlyphDescriptor, GlyphTexture> m_glyphs;
