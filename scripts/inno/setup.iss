@@ -4,6 +4,7 @@
 #define AppName "OpenStarbound"
 #define AppVersion "1.0"
 #define AppExeName "starbound.exe"
+#define AppServerExeName "starbound_server.exe"
 
 [Setup]
 SourceDir={#SourcePath}\..\..\
@@ -42,8 +43,12 @@ Source: "windows\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs creat
 Name: "{app}"; Permissions: users-modify
 
 [Icons]
-Name: "{autoprograms}\{#AppName}"; Filename: "{app}\{#AppExeName}"
-Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExeName}"; Tasks: desktopicon
+; Client
+Name: "{autoprograms}\{#AppName}"; Filename: "{app}\win\{#AppExeName}"
+Name: "{autodesktop}\{#AppName}"; Filename: "{app}\win\{#AppExeName}"; Tasks: desktopicon
+; Server
+Name: "{autoprograms}\{#AppName} Server"; Filename: "{app}\win\{#AppServerExeName}"
+Name: "{autodesktop}\{#AppName} Server"; Filename: "{app}\win\{#AppServerExeName}"; Tasks: desktopicon
 
 [Run]
 Filename: "{app}\win\{#AppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(AppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent

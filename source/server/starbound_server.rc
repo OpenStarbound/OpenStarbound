@@ -7,12 +7,12 @@ BEGIN
     BLOCK "040904E4"
     BEGIN
       VALUE "CompanyName", "Chucklefish LTD"
-      VALUE "FileDescription", "OpenStarbound"
+      VALUE "FileDescription", "OpenStarbound Server"
       VALUE "FileVersion", "1.0"
-      VALUE "InternalName", "starbound"
+      VALUE "InternalName", "starbound_server"
       VALUE "LegalCopyright", "Chucklefish LTD"
-      VALUE "OriginalFilename", "starbound.exe"
-      VALUE "ProductName", "OpenStarbound"
+      VALUE "OriginalFilename", "starbound_server.exe"
+      VALUE "ProductName", "OpenStarbound Server"
       VALUE "ProductVersion", "1.0"
     END
   END
@@ -22,4 +22,4 @@ BEGIN
     VALUE "Translation", 0x409, 1252
   END
 END
-icon ICON "starbound.ico"
+icon ICON "starbound_server.ico"

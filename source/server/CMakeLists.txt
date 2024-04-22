@@ -19,9 +19,15 @@ SET (star_server_SOURCES
     main.cpp
   )
 
+IF (STAR_SYSTEM_WINDOWS)
+  SET (star_server_RESOURCES
+      starbound_server.rc
+    )
+ENDIF ()
+
 ADD_EXECUTABLE (starbound_server
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
-  ${star_server_HEADERS} ${star_server_SOURCES})
+  ${star_server_HEADERS} ${star_server_SOURCES} ${star_server_RESOURCES})
 
 IF(STAR_PRECOMPILED_HEADERS)
   TARGET_PRECOMPILE_HEADERS (starbound_server REUSE_FROM star_core)
