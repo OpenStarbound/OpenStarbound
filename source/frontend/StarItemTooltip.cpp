@@ -198,7 +198,7 @@ void ItemTooltipBuilder::describePersistentEffect(
         auto listItem = container->addItem();
         listItem->fetchChild<ImageWidget>("statusImage")
             ->setImage(statsConfig.get(baseMultiplier->statName).getString("icon"));
-        listItem->setLabel("statusLabel", strf("{}%", (baseMultiplier->baseMultiplier - 1) * 100));
+        listItem->setLabel("statusLabel", strf("{:.2f}%", (baseMultiplier->baseMultiplier - 1) * 100));
       }
     } else if (auto valueModifier = modifierEffect->ptr<StatValueModifier>()) {
       if (statsConfig.contains(valueModifier->statName)) {
@@ -212,7 +212,7 @@ void ItemTooltipBuilder::describePersistentEffect(
         auto listItem = container->addItem();
         listItem->fetchChild<ImageWidget>("statusImage")
             ->setImage(statsConfig.get(effectiveMultiplier->statName).getString("icon"));
-        listItem->setLabel("statusLabel", strf("{}%", (effectiveMultiplier->effectiveMultiplier - 1) * 100));
+        listItem->setLabel("statusLabel", strf("{:.2f}%", (effectiveMultiplier->effectiveMultiplier - 1) * 100));
       }
     }
   }

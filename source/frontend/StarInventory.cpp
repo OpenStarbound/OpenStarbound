@@ -364,16 +364,16 @@ void InventoryPane::update(float dt) {
     techOverlay->setVisibility(m_player->techOverridden());
 
   auto healthLabel = fetchChild<LabelWidget>("healthtext");
-  healthLabel->setText(toString(m_player->maxHealth()));
+  healthLabel->setText(strf("{:.2f}", m_player->maxHealth()));
   auto energyLabel = fetchChild<LabelWidget>("energytext");
-  energyLabel->setText(toString(m_player->maxEnergy()));
+  energyLabel->setText(strf("{:.2f}", m_player->maxEnergy()));
   auto weaponLabel = fetchChild<LabelWidget>("weapontext");
-  weaponLabel->setText(strf("{}%", ceil(m_player->powerMultiplier() * 100)));
+  weaponLabel->setText(strf("{:.2f}%", m_player->powerMultiplier() * 100));
   auto defenseLabel = fetchChild<LabelWidget>("defensetext");
   if (m_player->protection() == 0)
     defenseLabel->setText("--");
   else
-    defenseLabel->setText(toString(ceil(m_player->protection())));
+    defenseLabel->setText(strf("{:.2f}", m_player->protection()));
 
   auto moneyLabel = fetchChild<LabelWidget>("lblMoney");
   moneyLabel->setText(toString(m_player->currency("money")));
@@ -406,14 +406,14 @@ void InventoryPane::update(float dt) {
 
     auto attackLabel = fetchChild<LabelWidget>("companionAttackStat");
     if (auto attack = pet->stat("attack")) {
-      attackLabel->setText(strf("{:.0f}", *attack));
+      attackLabel->setText(strf("{:.2f}", *attack));
     } else {
       attackLabel->setText("");
     }
 
     auto defenseLabel = fetchChild<LabelWidget>("companionDefenseStat");
     if (auto defense = pet->stat("defense")) {
-      defenseLabel->setText(strf("{:.0f}", *defense));
+      defenseLabel->setText(strf("{:.2f}", *defense));
     } else {
       defenseLabel->setText("");
     }
