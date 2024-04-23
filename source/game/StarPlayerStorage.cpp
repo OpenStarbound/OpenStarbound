@@ -115,7 +115,7 @@ Maybe<Uuid> PlayerStorage::playerUuidByName(String const& name, Maybe<Uuid> exce
 
   RecursiveMutexLocker locker(m_mutex);
 
-  size_t longest = SIZE_MAX;
+  size_t longest = std::numeric_limits<size_t>::max();
   for (auto& cache : m_savedPlayersCache) {
     if (except && *except == cache.first)
       continue;

@@ -320,14 +320,9 @@ void TextPainter::reloadFonts() {
   m_fontTextureGroup.clearFonts();
   m_fontTextureGroup.cleanup(0);
   auto assets = Root::singleton().assets();
-  String defaultName = "hobo";
-  auto defaultFont = loadFont("/hobo.ttf", defaultName);
   auto loadFontsByExtension = [&](String const& ext) {
     for (auto& fontPath : assets->scanExtension(ext)) {
       auto font = assets->font(fontPath);
-      if (font == defaultFont)
-        continue;
-
       auto name = AssetPath::filename(fontPath);
       name = name.substr(0, name.findLast("."));
       addFont(loadFont(fontPath, name), name);
@@ -335,8 +330,10 @@ void TextPainter::reloadFonts() {
   };
   loadFontsByExtension("ttf");
   loadFontsByExtension("woff2");
-  m_fontTextureGroup.addFont(defaultFont, defaultName, true);
-  m_fontTextureGroup.setFallbackFont("unifont");
+  m_fontTextureGroup.setFixedFonts(
+    assets->json("/interface.config:font.defaultFont").toString(),
+    assets->json("/interface.config:font.fallbackFont").toString(),
+    assets->json("/interface.config:font.emojiFont").toString());
 }
 
 void TextPainter::cleanup(int64_t timeout) {
@@ -518,13 +515,15 @@ void TextPainter::renderPrimitives() {
 }
 
 void TextPainter::renderGlyph(String::Char c, Vec2F const& screenPos, List<RenderPrimitive>& out, unsigned fontSize,
-    float scale, Vec4B const& color, Directives const* processingDirectives) {
+    float scale, Vec4B color, Directives const* processingDirectives) {
   if (!fontSize)
     return;
 
   const FontTextureGroup::GlyphTexture& glyphTexture = m_fontTextureGroup.glyphTexture(c, fontSize, processingDirectives);
-  Vec2F offset = glyphTexture.offset * scale;
-  out.emplace_back(std::in_place_type_t<RenderQuad>(), glyphTexture.texture, Vec2F::round(screenPos + offset), scale, color, 0.0f);
+  if (glyphTexture.colored)
+    color[0] = color[1] = color[2] = 255;
+  out.emplace_back(std::in_place_type_t<RenderQuad>(),
+    glyphTexture.texture, Vec2F::round(screenPos + glyphTexture.offset * scale), scale, color, 0.0f);
 }
 
 FontPtr TextPainter::loadFont(String const& fontPath, Maybe<String> fontName) {

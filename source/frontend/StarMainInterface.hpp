@@ -100,7 +100,6 @@ public:
 
   Vec2F cursorWorldPosition() const;
 
-  void toggleDebugDisplay();
   bool isDebugDisplayed();
 
   void doChat(String const& chat, bool addToHistory);
@@ -112,6 +111,8 @@ public:
   void queueJoinRequest(pair<String, RpcPromiseKeeper<P2PJoinRequestReply>> request);
 
   bool fixedCamera() const;
+  bool hudVisible() const;
+  void setHudVisible(bool visible = true);
 
   void warpToOrbitedWorld(bool deploy = false);
   void warpToOwnShip();
@@ -209,7 +210,7 @@ private:
   QuestIndicatorPainterPtr m_questIndicatorPainter;
   ChatBubbleManagerPtr m_chatBubbleManager;
 
-  bool m_disableHud{false};
+  bool m_disableHud = false;
 
   String m_lastCommand;
 

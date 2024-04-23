@@ -893,6 +893,14 @@ bool MainInterface::fixedCamera() const {
   return m_clientCommandProcessor->fixedCameraEnabled();
 }
 
+bool MainInterface::hudVisible() const {
+  return !m_disableHud;
+}
+
+void MainInterface::setHudVisible(bool visible) {
+  m_disableHud = !visible;
+}
+
 void MainInterface::warpToOrbitedWorld(bool deploy) {
   if (m_client->canBeamDown(deploy)) {
     if (deploy)

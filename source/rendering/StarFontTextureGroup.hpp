@@ -16,7 +16,8 @@ public:
 
   struct GlyphTexture {
     TexturePtr texture;
-    int64_t time;
+    bool colored = false;
+    int64_t time = 0;
     Vec2F offset;
   };
 
@@ -35,16 +36,18 @@ public:
   // Switches the current font
   void switchFont(String const& font);
   String const& activeFont();
-  void addFont(FontPtr const& font, String const& name, bool isDefault = false);
+  void addFont(FontPtr const& font, String const& name);
   void clearFonts();
-  void setFallbackFont(String const& fontName);
-
+  void setFixedFonts(String const& defaultFontName, String const& fallbackFontName, String const& emojiFontName);
 private:
+  Font* getFontForCharacter(String::Char);
+
   CaseInsensitiveStringMap<FontPtr> m_fonts;
   String m_fontName;
-  FontPtr m_font;
+  FontPtr m_activeFont;
   FontPtr m_defaultFont;
   FontPtr m_fallbackFont;
+  FontPtr m_emojiFont;
 
   TextureGroupPtr m_textureGroup;
   HashMap<GlyphDescriptor, GlyphTexture> m_glyphs;

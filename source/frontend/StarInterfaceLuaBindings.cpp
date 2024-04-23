@@ -13,6 +13,11 @@ namespace Star {
 LuaCallbacks LuaBindings::makeInterfaceCallbacks(MainInterface* mainInterface) {
   LuaCallbacks callbacks;
 
+  callbacks.registerCallbackWithSignature<bool>(
+    "hudVisible", bind(mem_fn(&MainInterface::hudVisible), mainInterface));
+  callbacks.registerCallbackWithSignature<void, bool>(
+    "setHudVisible", bind(mem_fn(&MainInterface::setHudVisible), mainInterface, _1));
+
   callbacks.registerCallback("bindCanvas", [mainInterface](String const& canvasName, Maybe<bool> ignoreInterfaceScale) -> Maybe<CanvasWidgetPtr> {
     if (auto canvas = mainInterface->fetchCanvas(canvasName, ignoreInterfaceScale.value(false)))
       return canvas;
@@ -85,6 +90,10 @@ LuaCallbacks LuaBindings::makeChatCallbacks(MainInterface* mainInterface, Univer
 
   callbacks.registerCallback("setInput", [chat](String const& text, Maybe<bool> moveCursor) -> bool {
     return chat->setCurrentChat(text, moveCursor.value(false));
+  });
+
+  callbacks.registerCallback("clear", [chat](Maybe<size_t> count) {
+    chat->clear(count.value(std::numeric_limits<size_t>::max()));
   });
 
   return callbacks;

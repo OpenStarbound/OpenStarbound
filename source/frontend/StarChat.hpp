@@ -30,6 +30,7 @@ public:
   void addLine(String const& text, bool showPane = true);
   void addMessages(List<ChatReceivedMessage> const& messages, bool showPane = true);
   void addHistory(String const& chat);
+  void clear(size_t count = std::numeric_limits<size_t>::max());
 
   String currentChat() const;
   bool setCurrentChat(String const& chat, bool moveCursor = false);
@@ -69,6 +70,7 @@ private:
   TextStyle m_chatTextStyle;
   unsigned m_chatHistoryLimit;
   int m_historyOffset;
+  String m_chatFormatString;
 
   CanvasWidgetPtr m_chatLog;
   Vec2I m_chatLogPadding;

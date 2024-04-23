@@ -2,7 +2,8 @@
   "config" : {
     "lineHeight" : 1,
     "padding" : [1, 1],
-    "textStyle" : { "backDirectives" : "?border=1;111a;1114" },
+    "textStyle" : { "backDirectives" : "border=1;111a;1117" },
+    "chatFormatString" : "^backdirectives=border=1=333=3337;<^backdirectives=border=1=333=3330?border=1=333=3337,white;{}^reset,backdirectives=border=1=333=3337;>^reset,#eee; {}",
     "colors" : {
       "local" : "^white;",
       "party" : "^blue;",

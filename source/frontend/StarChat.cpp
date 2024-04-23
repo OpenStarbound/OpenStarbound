@@ -27,6 +27,7 @@ Chat::Chat(UniverseClientPtr client) : m_client(client) {
   m_chatVisTime = config.get("visTime").toFloat();
   m_fadeRate = config.get("fadeRate").toDouble();
   m_chatHistoryLimit = config.get("chatHistoryLimit").toInt();
+  m_chatFormatString = config.getString("chatFormatString");
 
   m_portraitTextOffset = jsonToVec2I(config.get("portraitTextOffset"));
   m_portraitImageOffset = jsonToVec2I(config.get("portraitImageOffset"));
@@ -180,7 +181,7 @@ void Chat::addMessages(List<ChatReceivedMessage> const& messages, bool showPane)
     guiContext.setTextStyle(m_chatTextStyle);
     StringList lines;
     if (message.fromNick != "" && message.portrait == "")
-      lines = guiContext.wrapInterfaceText(strf("<{}> {}", message.fromNick, message.text), wrapWidth);
+      lines = guiContext.wrapInterfaceText(strf(m_chatFormatString.utf8Ptr(), message.fromNick, message.text), wrapWidth);
     else
       lines = guiContext.wrapInterfaceText(message.text, wrapWidth);
 
@@ -203,7 +204,8 @@ void Chat::addMessages(List<ChatReceivedMessage> const& messages, bool showPane)
     show();
   }
 
-  m_receivedMessages.resize(std::min((unsigned)m_receivedMessages.size(), m_chatHistoryLimit));
+  if ((unsigned)m_receivedMessages.size() > m_chatHistoryLimit)
+    m_receivedMessages.resize(m_chatHistoryLimit);
 }
 
 void Chat::addHistory(String const& chat) {
@@ -214,6 +216,13 @@ void Chat::addHistory(String const& chat) {
   m_chatHistory.resize(std::min((unsigned)m_chatHistory.size(), m_chatHistoryLimit));
   m_timeChatLastActive = Time::monotonicMilliseconds();
   m_client->playerStorage()->setMetadata("chatHistory", JsonArray::from(m_chatHistory));
+}
+
+void Chat::clear(size_t count) {
+  if (count > m_receivedMessages.size())
+    m_receivedMessages.clear();
+  else
+    m_receivedMessages.erase(m_receivedMessages.begin(), m_receivedMessages.begin() + count);
 }
 
 void Chat::renderImpl() {

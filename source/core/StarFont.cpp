@@ -7,7 +7,7 @@
 
 namespace Star {
 
-constexpr int FontLoadFlags = FT_LOAD_FORCE_AUTOHINT;
+constexpr int FontLoadFlags = FT_LOAD_NO_SVG | FT_LOAD_COLOR;
 
 struct FTContext {
   FT_Library library;
@@ -90,47 +90,70 @@ unsigned Font::width(String::Char c) {
 }
 
 
-std::pair<Image, Vec2I> Font::render(String::Char c) {
+tuple<Image, Vec2I, bool> Font::render(String::Char c) {
   if (!m_fontImpl)
     throw FontException("Font::render called on uninitialized font.");
 
   FT_Face face = m_fontImpl->face;
-  FT_UInt glyph_index = FT_Get_Char_Index(face, c);
-  if (FT_Load_Glyph(face, glyph_index, FontLoadFlags) != 0)
-    return {};
+  if (m_loadedPixelSize != m_pixelSize || m_loadedChar != c) {
+    FT_UInt glyph_index = FT_Get_Char_Index(face, c);
+    if (FT_Load_Glyph(face, glyph_index, FontLoadFlags) != 0)
+      return {};
 
-  /* convert to an anti-aliased bitmap */
-  if (FT_Render_Glyph(face->glyph, FT_RENDER_MODE_NORMAL) != 0)
-    return {};
+    /* convert to an anti-aliased bitmap */
+    if (FT_Render_Glyph(face->glyph, FT_RENDER_MODE_NORMAL) != 0)
+      return {};
+  }
+
+  m_loadedPixelSize = m_pixelSize;
+  m_loadedChar = m_loadedChar;
 
   FT_GlyphSlot slot = face->glyph;
 
   unsigned width = slot->bitmap.width;
   unsigned height = slot->bitmap.rows;
+  bool colored = false;
 
-  Image image(width + 2, height + 2, PixelFormat::RGBA32);
-  Vec4B white(255, 255, 255, 0);
-  image.fill(white);
-
-  for (unsigned y = 0; y != height; ++y) {
-    uint8_t* p = slot->bitmap.buffer + y * slot->bitmap.pitch;
-    for (unsigned x = 0; x != width; ++x) {
-      if (x < width && y < height) {
-        uint8_t value = *(p + x);
-        if (m_alphaThreshold) {
-          if (value >= m_alphaThreshold) {
-            white[3] = 255;
-            image.set(x + 1, height - y, white);
-          }
-        } else if (value) {
-          white[3] = value;
+  Image image(width + 2, height + 2, PixelFormat::BGRA32);
+  if (slot->bitmap.pixel_mode == FT_PIXEL_MODE_GRAY) {
+    Vec4B white(255, 255, 255, 0);
+    image.fill(white);
+    for (unsigned y = 0; y != height; ++y) {
+      uint8_t* p = slot->bitmap.buffer + y * slot->bitmap.pitch;
+      for (unsigned x = 0; x != width; ++x) {
+        if (x < width && y < height) {
+          white[3] = m_alphaThreshold
+            ? (*(p + x) >= m_alphaThreshold ? 255 : 0)
+            :  *(p + x);
           image.set(x + 1, height - y, white);
         }
       }
     }
+  } else if (colored = slot->bitmap.pixel_mode == FT_PIXEL_MODE_BGRA) {
+    unsigned bpp = image.bytesPerPixel();
+    uint8_t* data = image.data() + bpp + ((image.width() * (image.height() - 2)) * bpp); // offset by 1 pixel as it's padded
+    for (size_t y = 0; y != height; ++y) {
+      memcpy(data - (y * image.width() * bpp),
+             slot->bitmap.buffer + y * slot->bitmap.pitch,
+             slot->bitmap.pitch);
+    }
+    // unfortunately FreeType pre-multiplied the color channels :(
+    image.forEachPixel([](unsigned, unsigned, Vec4B& pixel) {
+      if (pixel[3] != 0 && pixel[3] != 255) {
+        float a = byteToFloat(pixel[3]);
+        pixel[0] /= a;
+        pixel[1] /= a;
+        pixel[2] /= a;
+      }
+    });
+  } else {
+    return {};
   }
 
-  return { std::move(image), {slot->bitmap_left - 1, (slot->bitmap_top - height) + (m_pixelSize / 4) - 1} };
+  return make_tuple(
+    std::move(image),
+    Vec2I(slot->bitmap_left - 1, (slot->bitmap_top - height) + (m_pixelSize / 4) - 1),
+    colored);
 }
 
 bool Font::exists(String::Char c) {

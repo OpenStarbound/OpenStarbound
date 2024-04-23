@@ -90,7 +90,8 @@ void BaseScriptPane::tick(float dt) {
 bool BaseScriptPane::sendEvent(InputEvent const& event) {
   // Intercept GuiClose before the canvas child so GuiClose always closes
   // BaseScriptPanes without having to support it in the script.
-  if (context()->actions(event).contains(InterfaceAction::GuiClose)) {
+  if (context()->actions(event).contains(InterfaceAction::GuiClose)
+    && m_config.getBool("dismissable", true)) {
     dismiss();
     return true;
   }

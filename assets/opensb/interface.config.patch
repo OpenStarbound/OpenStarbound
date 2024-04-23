@@ -1,9 +1,14 @@
 {
+  "font" : {
+    "defaultFont" : "hobo",
+    "fallbackFont" : "unifont",
+    "emojiFont" : "twemoji"
+  },
   "nametag" : {
     "showMasterNames" : true,
     // border is double here as it otherwise fades out near the end
     // (could just the end to opaque too, but then diagonals are more jaggy)
-    "textStyle" : { "backDirectives" : "?border=1;222;2224?border=1;222;2224" },
+    "textStyle" : { "backDirectives" : "border=1;222;2224?border=1;222;2224" },
     "inspectOpacityRate" : 0.15,
     "movementThreshold" : 0.5,
     "offset" : [0, 13]
@@ -19,7 +24,7 @@
   "paneTextStyle" : {},
   "textBoxTextStyle" : {},
   "itemSlotTextStyle" : {
-    "backDirectives" : "?border=1;444;4444"
+    "backDirectives" : "border=1;444;4444"
   },
   "teamBarNameStyle" : {},
   "cursorTooltip" : { "textStyle" : {} },
@@ -27,7 +32,7 @@
   "debugTextStyle" : {
     "font" : "iosevka-semibold",
     "fontSize" : 7,
-    "backDirectives" : "?border=2;111a;1114"
+    "backDirectives" : "border=1;333a;3334"
   },
   "debugSpatialClearTime" : 0.0,
   "debugOffset" : [80, 130],
@@ -35,7 +40,7 @@
   // Change planet name to support the new internal string formatting.
   "planetNameFormatString" : "- {} -",
   "planetTextStyle" : {
-    "backDirectives" : "?border=6;000;000",
+    "backDirectives" : "border=6;000;000",
     "fontSize" : 24
   },
 
