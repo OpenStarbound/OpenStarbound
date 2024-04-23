@@ -214,10 +214,10 @@ Color Color::gray(uint8_t g) {
 Color::Color() {}
 
 Color::Color(StringView name) {
-  if (name.beginsWith('#'))
-    *this = fromHex(name.substr(1));
+  if (name.utf8().rfind('#', 0) == 0)
+    *this = fromHex(name.utf8().substr(1));
   else {
-    auto i = NamedColors.find(String(name).toLower());
+    auto i = NamedColors.find(String(name));
     if (i != NamedColors.end())
       *this = i->second;
     else
