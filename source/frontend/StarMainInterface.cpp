@@ -1170,9 +1170,10 @@ void MainInterface::renderSpecialDamageBar() {
     m_guiContext->drawQuad(fill, RectF::withSize(bottomCenter + fillOffset, size * interfaceScale()));
 
     auto nameOffset = jsonToVec2F(barConfig.get("nameOffset")) * interfaceScale();
-    m_guiContext->setFontColor(jsonToColor(barConfig.get("nameStyle")).toRgba());
+    m_guiContext->setFontColor(jsonToColor(barConfig.get("nameColor")).toRgba());
     m_guiContext->setFontSize(barConfig.getUInt("nameSize"));
-    m_guiContext->setFontProcessingDirectives(barConfig.getString("nameDirectives"));
+    if (auto style = barConfig.get("nameStyle"))
+      m_guiContext->setTextStyle(style);
     m_guiContext->renderText(target->name(), TextPositioning(bottomCenter + nameOffset, HorizontalAnchor::HMidAnchor, VerticalAnchor::BottomAnchor));
     m_guiContext->clearTextStyle();
   }
