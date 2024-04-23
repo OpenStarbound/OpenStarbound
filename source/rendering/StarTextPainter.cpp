@@ -130,34 +130,39 @@ int TextPainter::stringWidth(StringView s, unsigned charLimit) {
 bool TextPainter::processWrapText(StringView text, unsigned* wrapWidth, WrapTextCallback textFunc) {
   String font = m_renderSettings.font, setFont = font;
   m_fontTextureGroup.switchFont(font);
+  auto iterator = text.begin(), end = text.end();
+
   unsigned lines = 0;
-
-  auto it = text.begin();
-  auto end = text.end();
-
-  unsigned linePixelWidth = 0; // How wide is this line so far
-  unsigned lineCharSize = 0; // how many characters in this line ?
-
-  auto escIt = end;
-  unsigned splitWidth = 0; // How wide was the string there ?
-
-  auto lineStartIt = it; // Where does this line start ?
-  auto splitIt = end; // != end if we last saw a place to split the string
+  auto lineStartIterator = iterator, splitIterator = end;
+  unsigned linePixelWidth = 0, splitPixelWidth = 0;
+  size_t commandStart = NPos, commandEnd = NPos;
+  bool finished = true;
 
   auto slice = [](StringView::const_iterator a, StringView::const_iterator b) -> StringView {
     const char* aPtr = &*a.base();
     return StringView(aPtr, &*b.base() - aPtr);
   };
 
-  while (it != end) {
-    auto character = *it;
-
-    if (Text::isEscapeCode(character))
-      escIt = it;
-
-    if (escIt != end) {
-      if (character == Text::EndEsc) {
-        StringView inner = slice(++escIt, it);
+  while (iterator != end) {
+    auto character = *iterator;
+    finished = false; // assume at least one character if we get here
+    bool noMoreCommands = commandStart != NPos && commandEnd == NPos;
+    if (!noMoreCommands && Text::isEscapeCode(character)) {
+      size_t index = &*iterator.base() - text.utf8Ptr();
+      if (commandStart == NPos) {
+        for (size_t escOrEnd = commandStart = index;
+        (escOrEnd = text.utf8().find_first_of(Text::AllEscEnd, escOrEnd + 1)) != NPos;) {
+          if (text.utf8().at(escOrEnd) != Text::EndEsc)
+            commandStart = escOrEnd;
+          else {
+            commandEnd = escOrEnd;
+            break;
+          }
+        }
+      }
+      if (commandStart == index && commandEnd != NPos) {
+        const char* commandStr = text.utf8Ptr() + ++commandStart;
+        StringView inner(commandStr, commandEnd - commandStart);
         inner.forEachSplitView(",", [&](StringView command, size_t, size_t) {
           if (command == "reset") {
             m_fontTextureGroup.switchFont(font = setFont);
@@ -167,63 +172,61 @@ bool TextPainter::processWrapText(StringView text, unsigned* wrapWidth, WrapText
             m_fontTextureGroup.switchFont(font = command.substr(5));
           }
         });
-        escIt = end;
+        // jump the iterator to the character after the command
+        iterator = text.utf8().begin() + commandEnd + 1;
+        commandStart = commandEnd = NPos;
+        continue;
       }
-      lineCharSize++;
+    }
+    // is this a linefeed / cr / whatever that forces a line split ?
+    if (character == '\n' || character == '\v') {
+      // knock one off the end because we don't render the CR
+      if (!textFunc(slice(lineStartIterator, iterator), lines++))
+        return false;
+
+      lineStartIterator = iterator;
+      ++lineStartIterator;
+      // next line starts after the CR with no characters in it and no known splits.
+      linePixelWidth = 0;
+      splitIterator = end;
+      finished = true;
     } else {
-      lineCharSize++; // assume at least one character if we get here.
+      int characterWidth = glyphWidth(character);
+      // is it a place where we might want to split the line ?
+      if (character == ' ' || character == '\t') {
+        splitIterator = iterator;
+        splitPixelWidth = linePixelWidth + characterWidth;
+      }
 
-      // is this a linefeed / cr / whatever that forces a line split ?
-      if (character == '\n' || character == '\v') {
-        // knock one off the end because we don't render the CR
-        if (!textFunc(slice(lineStartIt, it), lines++))
-          return false;
-
-        lineStartIt = it;
-        ++lineStartIt;
-        // next line starts after the CR with no characters in it and no known splits.
-        lineCharSize = linePixelWidth = 0;
-        splitIt = end;
-      } else {
-        int charWidth = glyphWidth(character);
-        // is it a place where we might want to split the line ?
-        if (character == ' ' || character == '\t') {
-          splitIt = it;
-          splitWidth = linePixelWidth + charWidth; // the width of the string at
-          // the split point, i.e. after the space.
-        }
-
-        // would the line be too long if we render this next character ?
-        if (wrapWidth && (linePixelWidth + charWidth) > *wrapWidth) {
-          // did we find somewhere to split the line ?
-          if (splitIt != end) {
-            if (!textFunc(slice(lineStartIt, splitIt), lines++))
-              return false;
-            unsigned stringWidth = linePixelWidth - splitWidth;
-            linePixelWidth = stringWidth + charWidth; // and is as wide as the bit after the space.
-            lineStartIt = ++splitIt;
-            splitIt = end;
-          } else {
-            if (!textFunc(slice(lineStartIt, it), lines++))
-              return false;
-            lineStartIt = it; // include that character on the next line. 
-            lineCharSize = 1;            // next line has that character in
-            linePixelWidth = charWidth; // and is as wide as that character
-          }
+      // would the line be too long if we render this next character ?
+      if (wrapWidth && (linePixelWidth + characterWidth) > *wrapWidth) {
+        // did we find somewhere to split the line ?
+        if (splitIterator != end) {
+          if (!textFunc(slice(lineStartIterator, splitIterator), lines++))
+            return false;
+          // do not include the split character on the next line
+          unsigned stringWidth = linePixelWidth - splitPixelWidth;
+          linePixelWidth = stringWidth + characterWidth;
+          lineStartIterator = ++splitIterator;
+          splitIterator = end;
         } else {
-          linePixelWidth += charWidth;
+          if (!textFunc(slice(lineStartIterator, iterator), lines++))
+            return false;
+          // include that character on the next line
+          lineStartIterator = iterator;  
+          linePixelWidth = characterWidth;
+          finished = false;
         }
+      } else {
+        linePixelWidth += characterWidth;
       }
     }
 
-    ++it;
+    ++iterator;
   };
 
-  // if we hit the end of the string before hitting the end of the line.
-  if (lineCharSize > 0)
-    return textFunc(slice(lineStartIt, end), lines);
-
-  return true;
+  // if we hit the end of the string before hitting the end of the line
+  return finished || textFunc(slice(lineStartIterator, end), lines);
 }
 
 List<StringView> TextPainter::wrapTextViews(StringView s, Maybe<unsigned> wrapWidth) {
@@ -293,18 +296,20 @@ void TextPainter::setProcessingDirectives(StringView directives, bool back) {
 }
 
 void TextPainter::setFont(String const& font) {
-  m_renderSettings.font = font;
+  m_fontTextureGroup.switchFont(m_renderSettings.font = font);
 }
 
 TextStyle& TextPainter::setTextStyle(TextStyle const& textStyle) {
   TextStyle& style = m_renderSettings = textStyle;
   modifyDirectives(style.directives);
   modifyDirectives(style.backDirectives);
+  m_fontTextureGroup.switchFont(style.font);
   return style;
 }
 
 void TextPainter::clearTextStyle() {
   m_renderSettings = m_defaultRenderSettings;
+  m_fontTextureGroup.switchFont(m_renderSettings.font);
 }
 
 void TextPainter::addFont(FontPtr const& font, String const& name) {
@@ -343,17 +348,18 @@ void TextPainter::applyCommands(StringView unsplitCommands) {
     try {
       if (command == "reset") {
         m_renderSettings = m_savedRenderSettings;
+        m_fontTextureGroup.switchFont(m_renderSettings.font);
       } else if (command == "set") {
         m_savedRenderSettings = m_renderSettings;
       } else if (command.beginsWith("shadow")) {
         if (command.utf8Size() == 6)
           m_renderSettings.shadow = Color::Black.toRgba();
-        else if (command[6] == '=')
+        else if (command.utf8()[6] == '=')
           m_renderSettings.shadow = Color(command.substr(7)).toRgba();
       } else if (command == "noshadow") {
         m_renderSettings.shadow = Color::Clear.toRgba();
       } else if (command.beginsWith("font=")) {
-        m_renderSettings.font = command.substr(5);
+        setFont(m_renderSettings.font = command.substr(5));
       } else if (command.beginsWith("directives=")) {
         setProcessingDirectives(command.substr(11));
       } else if (command.beginsWith("backdirectives=")) {
@@ -404,6 +410,7 @@ RectF TextPainter::doRenderText(StringView s, TextPositioning const& position, b
   }
 
   m_renderSettings = std::move(backup);
+  m_fontTextureGroup.switchFont(m_renderSettings.font);
 
   return bounds;
 }
@@ -455,7 +462,6 @@ RectF TextPainter::doRenderLine(StringView text, TextPositioning const& position
 RectF TextPainter::doRenderGlyph(String::Char c, TextPositioning const& position, bool reallyRender) {
   if (c == '\n' || c == '\v' || c == '\r')
     return RectF();
-  m_fontTextureGroup.switchFont(m_renderSettings.font);
 
   int width = glyphWidth(c);
   // Offset left by width if right anchored.

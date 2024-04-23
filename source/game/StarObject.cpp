@@ -411,7 +411,7 @@ void Object::render(RenderCallback* renderCallback) {
   renderCallback->addAudios(m_networkedAnimatorDynamicTarget.pullNewAudios());
   renderCallback->addParticles(m_networkedAnimatorDynamicTarget.pullNewParticles());
 
-  if (m_networkedAnimator->parts().count() > 0) {
+  if (m_networkedAnimator->constParts().size() > 0) {
     renderCallback->addDrawables(m_networkedAnimator->drawables(position() + m_animationPosition + damageShake()), renderLayer());
   } else {
     if (m_orientationIndex != NPos)

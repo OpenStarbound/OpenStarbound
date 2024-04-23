@@ -31,21 +31,20 @@ TextStyle& TextStyle::loadJson(Json const& config) {
 }
 
 namespace Text {
+  std::string const AllEsc = strf("{:c}{:c}", CmdEsc, StartEsc);
+  std::string const AllEscEnd = strf("{:c}{:c}{:c}", CmdEsc, StartEsc, EndEsc);
+
   static auto stripEscapeRegex = std::regex(strf("\\{:c}[^;]*{:c}", CmdEsc, EndEsc));
   String stripEscapeCodes(String const& s) {
     return std::regex_replace(s.utf8(), stripEscapeRegex, "");
   }
 
-  static std::string escapeChars = strf("{:c}{:c}", CmdEsc, StartEsc);
-
   bool processText(StringView text, TextCallback textFunc, CommandsCallback commandsFunc, bool includeCommandSides) {
-    std::string_view escChars(escapeChars);
-
     std::string_view str = text.utf8();
     while (true) {
-      size_t escape = str.find_first_of(escChars);
+      size_t escape = str.find_first_of(AllEsc);
       if (escape != NPos) {
-        escape = str.find_first_not_of(escChars, escape) - 1; // jump to the last ^
+        escape = str.find_first_not_of(AllEsc, escape) - 1; // jump to the last ^
 
         size_t end = str.find_first_of(EndEsc, escape);
         if (end != NPos) {
