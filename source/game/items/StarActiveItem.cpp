@@ -251,7 +251,7 @@ Maybe<Direction> ActiveItem::facingDirection() const {
 }
 
 List<Drawable> ActiveItem::handDrawables() const {
-  if (m_itemAnimator.parts().empty()) {
+  if (m_itemAnimator.constParts().empty()) {
     auto drawables = Item::iconDrawables();
     Drawable::scaleAll(drawables, 1.0f / TilePixels);
     return drawables;

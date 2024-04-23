@@ -56,59 +56,7 @@ public:
     JsonObject properties;
   };
 
-  AnimatedPartSet();
-  AnimatedPartSet(Json config);
-
-  // Returns the available state types.
-  StringList stateTypes() const;
-
-  // If a state type is disabled, no parts will match against it even
-  // if they have entries for that state type.
-  void setStateTypeEnabled(String const& stateTypeName, bool enabled);
-  void setEnabledStateTypes(StringList const& stateTypeNames);
-  bool stateTypeEnabled(String const& stateTypeName) const;
-
-  // Returns the available states for the given state type.
-  StringList states(String const& stateTypeName) const;
-
-  StringList parts() const;
-
-  // Sets the active state for this state type.  If the state is different than
-  // the previously set state, will start the new states animation off at the
-  // beginning.  If alwaysStart is true, then starts the state animation off at
-  // the beginning even if no state change has occurred.  Returns true if a
-  // state animation reset was done.
-  bool setActiveState(String const& stateTypeName, String const& stateName, bool alwaysStart = false);
-
-  // Restart this given state type's timer off at the beginning.
-  void restartState(String const& stateTypeName);
-
-  ActiveStateInformation const& activeState(String const& stateTypeName) const;
-  ActivePartInformation const& activePart(String const& partName) const;
-
-  // Function will be given the name of each state type, and the
-  // ActiveStateInformation for the active state for that state type.
-  void forEachActiveState(function<void(String const&, ActiveStateInformation const&)> callback) const;
-
-  // Function will be given the name of each part, and the
-  // ActivePartInformation for the active part.
-  void forEachActivePart(function<void(String const&, ActivePartInformation const&)> callback) const;
-
-  // Useful for serializing state changes.  Since each set of states for a
-  // state type is ordered, it is possible to simply serialize and deserialize
-  // the state index for that state type.
-  size_t activeStateIndex(String const& stateTypeName) const;
-  bool setActiveStateIndex(String const& stateTypeName, size_t stateIndex, bool alwaysStart = false);
-
-  // Animate each state type forward 'dt' time, and either change state frames
-  // or transition to new states, depending on the config.
-  void update(float dt);
-
-  // Pushes all the animations into their final state
-  void finishAnimations();
-
-private:
-  enum AnimationMode {
+    enum AnimationMode {
     End,
     Loop,
     Transition
@@ -148,6 +96,61 @@ private:
     bool activePartDirty;
   };
 
+  AnimatedPartSet();
+  AnimatedPartSet(Json config);
+
+  // Returns the available state types.
+  StringList stateTypes() const;
+
+  // If a state type is disabled, no parts will match against it even
+  // if they have entries for that state type.
+  void setStateTypeEnabled(String const& stateTypeName, bool enabled);
+  void setEnabledStateTypes(StringList const& stateTypeNames);
+  bool stateTypeEnabled(String const& stateTypeName) const;
+
+  // Returns the available states for the given state type.
+  StringList states(String const& stateTypeName) const;
+
+  StringList partNames() const;
+
+  // Sets the active state for this state type.  If the state is different than
+  // the previously set state, will start the new states animation off at the
+  // beginning.  If alwaysStart is true, then starts the state animation off at
+  // the beginning even if no state change has occurred.  Returns true if a
+  // state animation reset was done.
+  bool setActiveState(String const& stateTypeName, String const& stateName, bool alwaysStart = false);
+
+  // Restart this given state type's timer off at the beginning.
+  void restartState(String const& stateTypeName);
+
+  ActiveStateInformation const& activeState(String const& stateTypeName) const;
+  ActivePartInformation const& activePart(String const& partName) const;
+
+  StringMap<Part> const& constParts() const;
+  StringMap<Part>& parts();
+
+  // Function will be given the name of each state type, and the
+  // ActiveStateInformation for the active state for that state type.
+  void forEachActiveState(function<void(String const&, ActiveStateInformation const&)> callback) const;
+
+  // Function will be given the name of each part, and the
+  // ActivePartInformation for the active part.
+  void forEachActivePart(function<void(String const&, ActivePartInformation const&)> callback) const;
+
+  // Useful for serializing state changes.  Since each set of states for a
+  // state type is ordered, it is possible to simply serialize and deserialize
+  // the state index for that state type.
+  size_t activeStateIndex(String const& stateTypeName) const;
+  bool setActiveStateIndex(String const& stateTypeName, size_t stateIndex, bool alwaysStart = false);
+
+  // Animate each state type forward 'dt' time, and either change state frames
+  // or transition to new states, depending on the config.
+  void update(float dt);
+
+  // Pushes all the animations into their final state
+  void finishAnimations();
+
+private:
   static AnimationMode stringToAnimationMode(String const& string);
 
   void freshenActiveState(StateType& stateType);

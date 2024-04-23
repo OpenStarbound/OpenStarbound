@@ -307,8 +307,16 @@ String NetworkedAnimator::state(String const& stateType) const {
   return m_animatedParts.activeState(stateType).stateName;
 }
 
-StringList NetworkedAnimator::parts() const {
+StringMap<AnimatedPartSet::Part> const& NetworkedAnimator::constParts() const {
+  return m_animatedParts.constParts();
+}
+
+StringMap<AnimatedPartSet::Part>& NetworkedAnimator::parts() {
   return m_animatedParts.parts();
+}
+
+StringList NetworkedAnimator::partNames() const {
+  return m_animatedParts.partNames();
 }
 
 Json NetworkedAnimator::stateProperty(String const& stateType, String const& propertyName) const {
@@ -573,6 +581,10 @@ List<Drawable> NetworkedAnimator::drawables(Vec2F const& position) const {
 }
 
 List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& position) const {
+  size_t partCount = m_animatedParts.constParts().size();
+  if (!partCount)
+    return {};
+
   List<Directives> baseProcessingDirectives = { m_processingDirectives.get() };
   for (auto& pair : m_effects) {
     auto const& effectState = pair.second;
@@ -591,93 +603,103 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
     }
   }
 
-  List<pair<Drawable, float>> drawables;
-
+  List<tuple<AnimatedPartSet::ActivePartInformation const*, String const*, float>> parts;
+  parts.reserve(partCount);
   m_animatedParts.forEachActivePart([&](String const& partName, AnimatedPartSet::ActivePartInformation const& activePart) {
-      // Make sure we don't copy the original image
-      String fallback = "";
-      Json jImage = activePart.properties.value("image", {});
-      String const& image = jImage.isType(Json::Type::String) ? *jImage.stringPtr() : fallback;
+    Maybe<float> maybeZLevel;
+    if (m_flipped.get()) {
+      if (auto maybeFlipped = activePart.properties.value("flippedZLevel").optFloat())
+        maybeZLevel = *maybeFlipped;
+    }
+    if (!maybeZLevel)
+      maybeZLevel = activePart.properties.value("zLevel").optFloat();
 
-      bool centered = activePart.properties.value("centered").optBool().value(true);
-      bool fullbright = activePart.properties.value("fullbright").optBool().value(false);
+    parts.append(make_tuple(&activePart, &partName, maybeZLevel.value(0.0f)));
+  });
 
-      auto maybeZLevel = activePart.properties.value("zLevel").optFloat();
-      if (m_flipped.get())
-        maybeZLevel = activePart.properties.value("flippedZLevel").optFloat().orMaybe(maybeZLevel);
-      float zLevel = maybeZLevel.value(0.0f);
+  sort(parts, [](auto const& a, auto const& b) { return get<2>(a) < get<2>(b); });
 
-      size_t originalDirectivesSize = baseProcessingDirectives.size();
-      if (auto directives = activePart.properties.value("processingDirectives").optString()) {
+  List<pair<Drawable, float>> drawables;
+  drawables.reserve(partCount);
+  for (auto& entry : parts) {
+    auto& activePart = *get<0>(entry);
+    auto& partName = *get<1>(entry);
+    // Make sure we don't copy the original image
+    String fallback = "";
+    Json jImage = activePart.properties.value("image", {});
+    String const& image = jImage.isType(Json::Type::String) ? *jImage.stringPtr() : fallback;
+
+    bool centered = activePart.properties.value("centered").optBool().value(true);
+    bool fullbright = activePart.properties.value("fullbright").optBool().value(false);
+
+    size_t originalDirectivesSize = baseProcessingDirectives.size();
+    if (auto directives = activePart.properties.value("processingDirectives").optString()) {
+      baseProcessingDirectives.append(*directives);
+    }
+
+    Maybe<unsigned> frame;
+    String frameStr;
+    String frameIndexStr;
+    if (activePart.activeState) {
+      unsigned stateFrame = activePart.activeState->frame;
+      frame = stateFrame;
+      frameStr = static_cast<String>(toString(stateFrame + 1));
+      frameIndexStr = static_cast<String>(toString(stateFrame));
+
+      if (auto directives = activePart.activeState->properties.value("processingDirectives").optString()) {
         baseProcessingDirectives.append(*directives);
       }
+    }
 
-      Maybe<unsigned> frame;
-      String frameStr;
-      String frameIndexStr;
-      if (activePart.activeState) {
-        unsigned stateFrame = activePart.activeState->frame;
-        frame = stateFrame;
-        frameStr = static_cast<String>(toString(stateFrame + 1));
-        frameIndexStr = static_cast<String>(toString(stateFrame));
-
-        if (auto directives = activePart.activeState->properties.value("processingDirectives").optString()) {
-          baseProcessingDirectives.append(*directives);
-        }
+    auto const& partTags = m_partTags.get(partName);
+    Maybe<String> processedImage = image.maybeLookupTagsView([&](StringView tag) -> StringView {
+      if (tag == "frame") {
+        if (frame)
+          return frameStr;
+      } else if (tag == "frameIndex") {
+        if (frame)
+          return frameIndexStr;
+      } else if (auto p = partTags.ptr(tag)) {
+        return StringView(*p);
+      } else if (auto p = m_globalTags.ptr(tag)) {
+        return StringView(*p);
       }
 
-      auto const& partTags = m_partTags.get(partName);
-      Maybe<String> processedImage = image.maybeLookupTagsView([&](StringView tag) -> StringView {
-        if (tag == "frame") {
-          if (frame)
-            return frameStr;
-        } else if (tag == "frameIndex") {
-          if (frame)
-            return frameIndexStr;
-        } else if (auto p = partTags.ptr(tag)) {
-          return StringView(*p);
-        } else if (auto p = m_globalTags.ptr(tag)) {
-          return StringView(*p);
-        }
-
-        return StringView("default");
-      });
-      String const& usedImage = processedImage ? processedImage.get() : image;
-
-      if (!usedImage.empty() && usedImage[0] != ':' && usedImage[0] != '?') {
-        size_t hash = hashOf(usedImage);
-        auto find = m_cachedPartDrawables.find(partName);
-        bool fail = find == m_cachedPartDrawables.end() || find->second.first != hash;
-        if (fail) {
-          String relativeImage;
-          if (usedImage[0] != '/')
-            relativeImage = AssetPath::relativeTo(m_relativePath, usedImage);
-
-          Drawable drawable = Drawable::makeImage(!relativeImage.empty() ? relativeImage : usedImage, 1.0f / TilePixels, centered, Vec2F());
-          if (find == m_cachedPartDrawables.end())
-            find = m_cachedPartDrawables.emplace(partName, std::pair{ hash, std::move(drawable) }).first;
-          else {
-            find->second.first = hash;
-            find->second.second = std::move(drawable);
-          }
-        }
-
-        Drawable drawable = find->second.second;
-        auto& imagePart = drawable.imagePart();
-        for (Directives const& directives : baseProcessingDirectives)
-          imagePart.addDirectives(directives, centered);
-        drawable.transform(partTransformation(partName));
-        drawable.transform(globalTransformation());
-        drawable.fullbright = fullbright;
-        drawable.translate(position);
-
-        drawables.append({std::move(drawable), zLevel});
-      }
-        
-      baseProcessingDirectives.resize(originalDirectivesSize);
+      return StringView("default");
     });
+    String const& usedImage = processedImage ? processedImage.get() : image;
 
-  sort(drawables, [](auto const& a, auto const& b) { return a.second < b.second; });
+    if (!usedImage.empty() && usedImage[0] != ':' && usedImage[0] != '?') {
+      size_t hash = hashOf(usedImage);
+      auto find = m_cachedPartDrawables.find(partName);
+      if (find == m_cachedPartDrawables.end() || find->second.first != hash) {
+        String relativeImage;
+        if (usedImage[0] != '/')
+          relativeImage = AssetPath::relativeTo(m_relativePath, usedImage);
+
+        Drawable drawable = Drawable::makeImage(!relativeImage.empty() ? relativeImage : usedImage, 1.0f / TilePixels, centered, Vec2F());
+        if (find == m_cachedPartDrawables.end())
+          find = m_cachedPartDrawables.emplace(partName, std::pair{ hash, std::move(drawable) }).first;
+        else {
+          find->second.first = hash;
+          find->second.second = std::move(drawable);
+        }
+      }
+
+      Drawable drawable = find->second.second;
+      auto& imagePart = drawable.imagePart();
+      for (Directives const& directives : baseProcessingDirectives)
+        imagePart.addDirectives(directives, centered);
+      drawable.transform(partTransformation(partName));
+      drawable.transform(globalTransformation());
+      drawable.fullbright = fullbright;
+      drawable.translate(position);
+
+      drawables.append({std::move(drawable), get<2>(entry)});
+    }
+        
+    baseProcessingDirectives.resize(originalDirectivesSize);
+  }
 
   return drawables;
 }
@@ -981,7 +1003,7 @@ void NetworkedAnimator::setupNetStates() {
 
   addNetElement(&m_globalTags);
 
-  for (auto const& part : sorted(m_animatedParts.parts()))
+  for (auto const& part : sorted(m_animatedParts.partNames()))
     addNetElement(&m_partTags[part]);
 
   for (auto& pair : m_stateInfo) {

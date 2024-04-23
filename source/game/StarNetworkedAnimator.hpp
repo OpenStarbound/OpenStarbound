@@ -82,7 +82,9 @@ public:
   bool setState(String const& stateType, String const& state, bool startNew = false);
   String state(String const& stateType) const;
 
-  StringList parts() const;
+  StringMap<AnimatedPartSet::Part> const& constParts() const;
+  StringMap<AnimatedPartSet::Part>& parts();
+  StringList partNames() const;
 
   // Queries, if it exists, a property value from the underlying
   // AnimatedPartSet for the given state or part.  If the property does not

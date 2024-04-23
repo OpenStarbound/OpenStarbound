@@ -106,7 +106,7 @@ StringList AnimatedPartSet::states(String const& stateTypeName) const {
   return m_stateTypes.get(stateTypeName).states.keys();
 }
 
-StringList AnimatedPartSet::parts() const {
+StringList AnimatedPartSet::partNames() const {
   return m_parts.keys();
 }
 
@@ -146,6 +146,14 @@ AnimatedPartSet::ActivePartInformation const& AnimatedPartSet::activePart(String
   auto& part = const_cast<Part&>(m_parts.get(partName));
   const_cast<AnimatedPartSet*>(this)->freshenActivePart(part);
   return part.activePart;
+}
+
+StringMap<AnimatedPartSet::Part> const& AnimatedPartSet::constParts() const {
+  return m_parts;
+}
+
+StringMap<AnimatedPartSet::Part>& AnimatedPartSet::parts() {
+  return m_parts;
 }
 
 void AnimatedPartSet::forEachActiveState(function<void(String const&, ActiveStateInformation const&)> callback) const {
