@@ -994,14 +994,14 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
 
     } else if (auto entityMessageResponsePacket = as<EntityMessageResponsePacket>(packet)) {
       if (!m_entityMessageResponses.contains(entityMessageResponsePacket->uuid))
-        throw WorldClientException("EntityMessageResponse received for unknown context!");
-
-      auto response = m_entityMessageResponses.take(entityMessageResponsePacket->uuid);
-      if (entityMessageResponsePacket->response.isRight())
-        response.fulfill(entityMessageResponsePacket->response.right());
-      else
-        response.fail(entityMessageResponsePacket->response.left());
-
+        Logger::warn("EntityMessageResponse received for unknown context [{}]!", entityMessageResponsePacket->uuid.hex());
+      else {
+        auto response = m_entityMessageResponses.take(entityMessageResponsePacket->uuid);
+        if (entityMessageResponsePacket->response.isRight())
+          response.fulfill(entityMessageResponsePacket->response.right());
+        else
+          response.fail(entityMessageResponsePacket->response.left());
+      }
     } else if (auto updateWorldProperties = as<UpdateWorldPropertiesPacket>(packet)) {
       // Kae: Properties set to null (nil from Lua) should be erased instead of lingering around
       for (auto& pair : updateWorldProperties->updatedProperties) {
@@ -1031,12 +1031,12 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
       m_outgoingPackets.append(make_shared<EntityInteractResultPacket>(interactResult.take(), entityInteract->requestId, entityInteract->interactRequest.sourceId));
 
     } else if (auto interactResult = as<EntityInteractResultPacket>(packet)) {
-      auto response = m_entityInteractionResponses.take(interactResult->requestId);
-      if (interactResult->action)
-        response.fulfill(interactResult->action);
-      else
-        response.fail("no interaction result");
-
+      if (auto response = m_entityInteractionResponses.maybeTake(interactResult->requestId)) {
+        if (interactResult->action)
+          response->fulfill(interactResult->action);
+        else
+          response->fail("no interaction result");
+      }
     } else if (auto setPlayerStart = as<SetPlayerStartPacket>(packet)) {
       m_playerStart = setPlayerStart->playerStart;
       m_respawnInWorld = setPlayerStart->respawnInWorld;

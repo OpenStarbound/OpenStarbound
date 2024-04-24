@@ -507,17 +507,18 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
 
     } else if (auto entityMessageResponsePacket = as<EntityMessageResponsePacket>(packet)) {
       if (!m_entityMessageResponses.contains(entityMessageResponsePacket->uuid))
-        throw WorldServerException("ScriptedEntityResponse received for unknown context!");
-
-      auto response = m_entityMessageResponses.take(entityMessageResponsePacket->uuid).second;
-      if (response.is<ConnectionId>()) {
-        if (auto clientInfo = m_clientInfo.value(response.get<ConnectionId>()))
-          clientInfo->outgoingPackets.append(std::move(entityMessageResponsePacket));
-      } else {
-        if (entityMessageResponsePacket->response.isRight())
-          response.get<RpcPromiseKeeper<Json>>().fulfill(entityMessageResponsePacket->response.right());
-        else
-          response.get<RpcPromiseKeeper<Json>>().fail(entityMessageResponsePacket->response.left());
+        Logger::warn("EntityMessageResponse received for unknown context [{}]!", entityMessageResponsePacket->uuid.hex());
+      else {
+        auto response = m_entityMessageResponses.take(entityMessageResponsePacket->uuid).second;
+        if (response.is<ConnectionId>()) {
+          if (auto clientInfo = m_clientInfo.value(response.get<ConnectionId>()))
+            clientInfo->outgoingPackets.append(std::move(entityMessageResponsePacket));
+        } else {
+          if (entityMessageResponsePacket->response.isRight())
+            response.get<RpcPromiseKeeper<Json>>().fulfill(entityMessageResponsePacket->response.right());
+          else
+            response.get<RpcPromiseKeeper<Json>>().fail(entityMessageResponsePacket->response.left());
+        }
       }
     } else if (auto pingPacket = as<PingPacket>(packet)) {
       clientInfo->outgoingPackets.append(make_shared<PongPacket>(pingPacket->time));
