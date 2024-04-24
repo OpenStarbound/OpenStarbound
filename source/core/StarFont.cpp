@@ -106,7 +106,7 @@ tuple<Image, Vec2I, bool> Font::render(String::Char c) {
   }
 
   m_loadedPixelSize = m_pixelSize;
-  m_loadedChar = m_loadedChar;
+  m_loadedChar = c;
 
   FT_GlyphSlot slot = face->glyph;
 
