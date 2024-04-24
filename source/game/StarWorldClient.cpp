@@ -497,7 +497,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
           Logger::error("WorldClient: Exception caught in {}::render ({}): {}", EntityTypeNames.getRight(entity->entityType()), entity->entityId(), e.what());
           auto toolUser = as<ToolUserEntity>(entity);
           String image = toolUser ? strf("/rendering/error_{}.png", DirectionNames.getRight(toolUser->facingDirection())) : "/rendering/error.png";
-          Color color = Color::rgbf(0.8f + (float)sin(m_currentTime * Constants::pi * 0.5) * 0.2f, 0.0f, 0.0f);
+          Color color = Color::rgbf(0.8f + (float)sin(m_currentTime * Constants::pi * 2.0) * 0.2f, 0.0f, 0.0f);
           auto drawable = Drawable::makeImage(image, 1.0f / TilePixels, true, entity->position(), color);
           drawable.fullbright = true;
           renderCallback.addDrawable(std::move(drawable), RenderLayerMiddleParticle);

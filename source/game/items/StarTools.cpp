@@ -620,8 +620,10 @@ ItemPtr PaintingBeamTool::clone() const {
 List<Drawable> PaintingBeamTool::drawables() const {
   auto result = BeamItem::drawables();
   for (auto& entry : result) {
-    if (entry.isImage())
-      entry.imagePart().image.directives += m_colorKeys[m_colorIndex];
+    if (entry.isImage()) {
+      auto& image = entry.imagePart().image;
+      image.subPath = image.subPath.value("0") + m_colorKeys[m_colorIndex];
+    }
   }
   return result;
 }
