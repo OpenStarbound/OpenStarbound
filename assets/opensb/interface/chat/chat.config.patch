@@ -2,8 +2,8 @@
   "config" : {
     "lineHeight" : 1,
     "padding" : [1, 1],
-    "textStyle" : { "backDirectives" : "border=1;111a;1117" },
-    "chatFormatString" : "^backdirectives=border=1=333=3337;<^backdirectives=border=1=333=3330?border=1=333=3337,white;{}^reset,backdirectives=border=1=333=3337;>^reset,#eee; {}",
+    "textStyle" : { "backDirectives" : "border=1;fff;fff7?multiply=111a" },
+    "chatFormatString" : "^backdirectives=border=1=fff=fff7?multiply=333;<^backdirectives=border=1=fff=fff0?border=1=fff=fff7?multiply=333,white;{}^reset,backdirectives=border=1=fff=fff7?multiply=333;>^reset,#eee; {}",
     "colors" : {
       "local" : "^white;",
       "party" : "^blue;",

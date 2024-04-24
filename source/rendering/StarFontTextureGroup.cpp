@@ -1,6 +1,7 @@
 #include "StarFontTextureGroup.hpp"
 #include "StarTime.hpp"
 #include "StarImageProcessing.hpp"
+#include "StarLogging.hpp"
 
 namespace Star {
 
@@ -58,23 +59,30 @@ const FontTextureGroup::GlyphTexture& FontTextureGroup::glyphTexture(String::Cha
     auto renderResult = font->render(c);
     Image& image = get<0>(renderResult);
     if (processingDirectives) {
-      try {
-        Directives const& directives = *processingDirectives;
-        Vec2F preSize = Vec2F(image.size());
+      Directives const& directives = *processingDirectives;
+      Vec2F preSize = Vec2F(image.size());
 
-        for (auto& entry : directives->entries)
+      for (auto& entry : directives->entries) {
+        if (auto error = entry.operation.ptr<ErrorImageOperation>()) {
+          if (error->exception) {
+            try
+              { std::rethrow_exception(error->exception); }
+            catch (std::exception const& e)
+              { Logger::error("Exception parsing font directives: {}", e.what()); }
+            error->exception = {};
+          }
+          image.forEachPixel([](unsigned x, unsigned y, Vec4B& pixel) {
+            pixel = ((x + y) % 2 == 0) ? Vec4B(255, 0, 255, pixel[3]) : Vec4B(0, 0, 0, pixel[3]);
+          });
+          glyphTexture.colored = true;
+        } else
           processImageOperation(entry.operation, image);
+      }
 
-        glyphTexture.offset = (preSize - Vec2F(image.size())) / 2;
-      }
-      catch (StarException const&) {
-        image.forEachPixel([](unsigned x, unsigned y, Vec4B& pixel) {
-          pixel = ((x + y) % 2 == 0) ? Vec4B(255, 0, 255, pixel[3]) : Vec4B(0, 0, 0, pixel[3]);
-        });
-      }
+      glyphTexture.offset = (preSize - Vec2F(image.size())) / 2;
     }
 
-    glyphTexture.colored = get<2>(renderResult);
+    glyphTexture.colored |= get<2>(renderResult);
     glyphTexture.offset += Vec2F(get<1>(renderResult));
     glyphTexture.texture = m_textureGroup->create(image);
   }

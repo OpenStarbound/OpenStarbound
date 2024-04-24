@@ -140,7 +140,7 @@ void Directives::parse(String&& directives) {
         }
         catch (StarException const& e) {
           prefix = split;
-          return;
+          entries.emplace_back(ImageOperation(ErrorImageOperation{std::current_exception()}), beg, end);
         }
       }
       else {

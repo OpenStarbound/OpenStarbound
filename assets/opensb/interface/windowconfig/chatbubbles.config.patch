@@ -1,5 +1,5 @@
 {
  "movementThreshold" : 0.5,
  "bubbleOffset" : [0, 1.875],
- "textStyle" : { "backDirectives" : "?border=1;111;1110?border=1;111;1117" }
+ "textStyle" : { "backDirectives" : "border=1;fff;fff0?border=1;fff;fff7?multiply=111" }
 }
