@@ -3,7 +3,7 @@
     "lineHeight" : 1,
     "padding" : [1, 1],
     "textStyle" : { "backDirectives" : "border=1;fff;fff7?multiply=111a" },
-    "chatFormatString" : "^backdirectives=border=1=fff=fff7?multiply=333;<^backdirectives=border=1=fff=fff0?border=1=fff=fff7?multiply=333,white;{}^reset,backdirectives=border=1=fff=fff7?multiply=333;>^reset,#eee; {}",
+    "chatFormatString" : "^backdirectives=border=1=fff=fff7?multiply=333;<^backdirectives=border=1=fff=fff0?border=1=fff=fff7?multiply=333,white;{}^reset,backdirectives=border=1=fff=fff7?multiply=333;>^reset; {}",
     "colors" : {
       "local" : "^white;",
       "party" : "^blue;",
