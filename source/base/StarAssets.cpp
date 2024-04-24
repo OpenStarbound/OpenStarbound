@@ -1160,7 +1160,10 @@ shared_ptr<Assets::AssetData> Assets::loadImage(AssetPath const& path) const {
       Image newImage = *source->image;
       path.directives.forEach([&](auto const& entry, Directives const&) {
         if (auto error = entry.operation.template ptr<ErrorImageOperation>())
-          std::rethrow_exception(error->exception);
+          if (auto string = error->cause.ptr<std::string>())
+            throw DirectivesException::format("ImageOperation parse error: {}", *string);
+          else
+            std::rethrow_exception(error->cause.get<std::exception_ptr>());
         else
           processImageOperation(entry.operation, newImage, [&](String const& ref) { return references.get(ref).get(); });
       });

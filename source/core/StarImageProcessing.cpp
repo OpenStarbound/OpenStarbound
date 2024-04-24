@@ -199,13 +199,11 @@ ImageOperation imageOperationFromString(StringView string) {
               hexDecode(hexPtr, 8, c, 4);
             }
             else if (!which || (ptr != end && ++ptr != end))
-                throw ImageOperationException(strf("Improper size for hex string '{}' in imageOperationFromString", StringView(hexPtr, hexLen)), false);
-            else // we're in A of A=B. In vanilla only A=B pairs are evaluated, so only throw an exception if B is also there.
+                return ErrorImageOperation{strf("Improper size for hex string '{}'", StringView(hexPtr, hexLen))};
+            else // we're in A of A=B. In vanilla only A=B pairs are evaluated, so only throw an error if B is also there.
                 return operation;
               
-
-            which = !which;
-            if (which)
+            if (which = !which)
               operation.colorReplaceMap[*(Vec4B*)&a] = *(Vec4B*)&b;
 
             hexLen = 0;
@@ -341,12 +339,12 @@ ImageOperation imageOperationFromString(StringView string) {
       return FlipImageOperation{FlipImageOperation::FlipXY};
 
     } else {
-      throw ImageOperationException(strf("Could not recognize ImageOperation type {}", type), false);
+      return NullImageOperation();
     }
   } catch (OutOfRangeException const& e) {
-    throw ImageOperationException("Error reading ImageOperation", e);
+    return ErrorImageOperation{std::exception_ptr()};
   } catch (BadLexicalCast const& e) {
-    throw ImageOperationException("Error reading ImageOperation", e);
+    return ErrorImageOperation{std::exception_ptr()};
   }
 }
 

@@ -18,11 +18,11 @@ StringList colorDirectivesFromConfig(JsonArray const& directives);
 String paletteSwapDirectivesFromConfig(Json const& swaps);
 
 struct NullImageOperation {
-
+  bool unloaded = false;
 };
 
 struct ErrorImageOperation {
-  std::exception_ptr exception;
+  Variant<std::string, std::exception_ptr> cause;
 };
 
 struct HueShiftImageOperation {

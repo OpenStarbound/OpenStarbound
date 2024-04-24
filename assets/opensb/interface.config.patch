@@ -14,7 +14,9 @@
     "offset" : [0, 13]
   },
   "specialDamageBar" : {
-    "nameStyle" : {}
+    "nameStyle" : {
+      "fontSize" : 18
+    }
   },
   "textStyle" : {},
   "buttonTextStyle" : {

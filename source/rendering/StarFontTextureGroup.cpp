@@ -64,12 +64,17 @@ const FontTextureGroup::GlyphTexture& FontTextureGroup::glyphTexture(String::Cha
 
       for (auto& entry : directives->entries) {
         if (auto error = entry.operation.ptr<ErrorImageOperation>()) {
-          if (error->exception) {
+          if (auto string = error->cause.ptr<std::string>()) {
+            if (!string->empty()) {
+              Logger::error("Error parsing font directives: {}", *string);
+              string->clear();
+            }
+          } else if (auto& exception = error->cause.get<std::exception_ptr>()) {
             try
-              { std::rethrow_exception(error->exception); }
+              { std::rethrow_exception(error->cause.get<std::exception_ptr>()); }
             catch (std::exception const& e)
-              { Logger::error("Exception parsing font directives: {}", e.what()); }
-            error->exception = {};
+              { Logger::error("Exception parsing font directives: {}", e.what()); };
+            exception = {};
           }
           image.forEachPixel([](unsigned x, unsigned y, Vec4B& pixel) {
             pixel = ((x + y) % 2 == 0) ? Vec4B(255, 0, 255, pixel[3]) : Vec4B(0, 0, 0, pixel[3]);

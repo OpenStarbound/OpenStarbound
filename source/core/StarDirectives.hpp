@@ -31,13 +31,12 @@ public:
   struct Shared {
     List<Entry> entries;
     String string;
-    StringView prefix;
     size_t hash = 0;
     mutable Mutex mutex;
 
     bool empty() const;
     Shared();
-    Shared(List<Entry>&& givenEntries, String&& givenString, StringView givenPrefix);
+    Shared(List<Entry>&& givenEntries, String&& givenString);
   };
 
   Directives();
@@ -57,7 +56,6 @@ public:
   void loadOperations() const;
   void parse(String&& directives);
   String string() const;
-  StringView prefix() const;
   String const* stringPtr() const;
   String buildString() const;
   String& addToString(String& out) const;

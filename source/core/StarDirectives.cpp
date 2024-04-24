@@ -26,8 +26,10 @@ Directives::Entry::Entry(Entry const& other) {
 
 ImageOperation const& Directives::Entry::loadOperation(Shared const& parent) const {
   if (operation.is<NullImageOperation>()) {
-    try { operation = imageOperationFromString(string(parent)); }
-    catch (StarException const& e) { operation = ErrorImageOperation{ std::current_exception() }; }
+    try
+      { operation = imageOperationFromString(string(parent)); }
+    catch (StarException const& e)
+      { operation = ErrorImageOperation{std::exception_ptr()}; }
   }
   return operation;
 }
@@ -44,10 +46,9 @@ bool Directives::Shared::empty() const {
 
 Directives::Shared::Shared() {}
 
-Directives::Shared::Shared(List<Entry>&& givenEntries, String&& givenString, StringView givenPrefix) {
+Directives::Shared::Shared(List<Entry>&& givenEntries, String&& givenString) {
   entries = std::move(givenEntries);
   string = std::move(givenString);
-  prefix = givenPrefix;
   hash = string.empty() ? 0 : XXH3_64bits(string.utf8Ptr(), string.utf8Size());
 }
 
@@ -130,32 +131,25 @@ void Directives::parse(String&& directives) {
 
   List<Entry> entries;
   StringView view(directives);
-  StringView prefix = "";
   view.forEachSplitView("?", [&](StringView split, size_t beg, size_t end) {
     if (!split.empty()) {
+      ImageOperation operation = NullImageOperation();
       if (beg == 0) {
-        try {
-          ImageOperation operation = imageOperationFromString(split);
-          entries.emplace_back(std::move(operation), beg, end);
-        }
-        catch (StarException const& e) {
-          prefix = split;
-          entries.emplace_back(ImageOperation(ErrorImageOperation{std::current_exception()}), beg, end);
-        }
+        try
+          { operation = imageOperationFromString(split); }
+        catch (StarException const& e)
+          { operation = ErrorImageOperation{std::exception_ptr()}; }
       }
-      else {
-        ImageOperation operation = NullImageOperation();
-        entries.emplace_back(std::move(operation), beg, end);
-      }
+      entries.emplace_back(std::move(operation), beg, end);
     }
-    });
+  });
 
-  if (entries.empty() && !prefix.empty()) {
+  if (entries.empty()) {
     m_shared.reset();
     return;
   }
 
-  m_shared = std::make_shared<Shared const>(std::move(entries), std::move(directives), prefix);
+  m_shared = std::make_shared<Shared const>(std::move(entries), std::move(directives));
   if (view.utf8().size() < 1000) { // Pre-load short enough directives
     for (auto& entry : m_shared->entries)
       entry.loadOperation(*m_shared);
@@ -169,13 +163,6 @@ String Directives::string() const {
     return m_shared->string;
 }
 
-StringView Directives::prefix() const {
-  if (!m_shared)
-    return "";
-  else
-    return m_shared->prefix;
-}
-
 String const* Directives::stringPtr() const {
   if (!m_shared)
     return nullptr;
@@ -186,10 +173,10 @@ String const* Directives::stringPtr() const {
 
 String Directives::buildString() const {
   if (m_shared) {
-    String built = m_shared->prefix;
-
+    String built;
     for (auto& entry : m_shared->entries) {
-      built += "?";
+      if (entry.begin > 0)
+        built += "?";
       built += entry.string(*m_shared);
     }
 
@@ -332,14 +319,11 @@ String DirectivesGroup::toString() const {
 }
 
 void DirectivesGroup::addToString(String& string) const {
-  for (auto& directives : m_directives) {
-    if (directives) {
-      auto& dirString = directives->string;
-      if (!dirString.empty()) {
-        if (dirString.utf8().front() != '?')
-          string += "?";
-        string += dirString;
-      }
+  for (auto& entry : m_directives) {
+    if (entry && !entry->string.empty()) {
+      if (!string.empty() && string.utf8().back() != '?' && entry->string.utf8()[0] != '?')
+        string.append('?');
+      string += entry->string;
     }
   }
 }
@@ -376,7 +360,10 @@ void DirectivesGroup::applyExistingImage(Image& image) const {
   forEach([&](auto const& entry, Directives const& directives) {
     ImageOperation const& operation = entry.loadOperation(*directives);
     if (auto error = operation.ptr<ErrorImageOperation>())
-      std::rethrow_exception(error->exception);
+      if (auto string = error->cause.ptr<std::string>())
+        throw DirectivesException::format("ImageOperation parse error: {}", *string);
+      else
+        std::rethrow_exception(error->cause.get<std::exception_ptr>());
     else
       processImageOperation(operation, image);
   });

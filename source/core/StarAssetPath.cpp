@@ -160,10 +160,10 @@ std::ostream& operator<<(std::ostream& os, AssetPath const& rhs) {
     os << *rhs.subPath;
   }
 
-  rhs.directives.forEach([&](auto const& entry, Directives const& directives) {
+  rhs.directives.forEach([&](Directives::Entry const& entry, Directives const& directives) {
     os << "?";
     os << entry.string(*directives);
-   });
+  });
 
   return os;
 }
