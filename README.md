@@ -40,7 +40,7 @@ Note: Not every function from [StarExtensions](https://github.com/StarExtensions
   * Modded system types require a patch to display their custom sun.
   * You can also access the skybox sun scale and its default ray colors. For more details see, [sky.config.patch](https://github.com/OpenStarbound/OpenStarbound/blob/main/assets/opensb/sky.config.patch).
 
-[Discord](https://discord.gg/D4QqtBNmAY)
+[Discord](https://discord.gg/f8B5bWy3bA)
 
 
 ## Building
