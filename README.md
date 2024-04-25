@@ -47,7 +47,7 @@ Note: Not every function from [StarExtensions](https://github.com/StarExtensions
 Note: Some of these [texts](## "hi :3") are just tooltips rather than links. 
 
 <details>
-<summary><b>template sbinit.config for dist/ after build</b></summary>
+<summary>template sbinit.config for dist/ after build</summary>
 <br>
 
 ```json
@@ -63,8 +63,9 @@ Note: Some of these [texts](## "hi :3") are just tooltips rather than links.
 ```
 
 </details>
-
-### Windows
+<details>
+<summary><b>Windows</b></summary>
+ 
 * Install [vcpkg](https://github.com/microsoft/vcpkg?tab=readme-ov-file#quick-start-windows) *globally*.
   * vcpkg recommends a short directory, such as `C:\src\vcpkg` or `C:\dev\vcpkg`.
   * If you're using Visual Studio, don't forget to run `vcpkg integrate install`!
@@ -76,7 +77,11 @@ Note: Some of these [texts](## "hi :3") are just tooltips rather than links.
   * If you're using an IDE, it should detect the correct preset and allow you to build from within.
   * Otherwise, build manually by running CMake in the **source/** directory: `cmake --build --preset=windows-release`
 * The built binaries will be in **dist/**. Copy the DLLs from **lib/windows/** and the **sbinit.config** above into **dist/** so the game can run.
-### Linux (Ubuntu)
+
+</details>
+<details>
+<summary><b>Linux (Ubuntu)</b></summary>
+ 
 * Make sure you're using CMake 3.19 or newer - you may need to [add Kitware's APT repo](https://apt.kitware.com/) to install a newer version.
 * Install dependencies:
   * `sudo apt-get install pkg-config libxmu-dev libxi-dev libgl-dev libglu1-mesa-dev libsdl2-dev python3-jinja2 ninja-build`
@@ -87,8 +92,11 @@ Note: Some of these [texts](## "hi :3") are just tooltips rather than links.
 * The built binaries will be in **dist/**. Copy the the .so libs from **lib/linux/** and the **sbinit.config** above into **dist/** so the game can run.
   * From the root dir of the repo, you can run the assembly script which is used by the GitHub Action: `scripts/ci/linux/assemble.sh`
     * This packs the game assets and copies the built binaries, premade sbinit configs & required libs into **client/** & **server/**.
+ 
+</details>
 
-### Linux (Fedora)
+<details>
+<summary><b>Linux (Fedora)</b></summary>
 
 Starbound in general is built from the ground up, with its own engine written in C++ on top of some basic libraries.
 
@@ -167,6 +175,8 @@ with
 `#!/bin/sh
 cd "`dirname \"$0\"`"
 LD_LIBRARY_PATH="$LD_LIBRARY_PATH:./" padsp ./starbound "$@"`
+
+</details>
 
 </details>
 
