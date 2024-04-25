@@ -87,5 +87,88 @@ Note: Some of these [texts](## "hi :3") are just tooltips rather than links.
 * The built binaries will be in **dist/**. Copy the the .so libs from **lib/linux/** and the **sbinit.config** above into **dist/** so the game can run.
   * From the root dir of the repo, you can run the assembly script which is used by the GitHub Action: `scripts/ci/linux/assemble.sh`
     * This packs the game assets and copies the built binaries, premade sbinit configs & required libs into **client/** & **server/**.
+
+### Linux (Fedora)
+
+Starbound in general is built from the ground up, with its own engine written in C++ on top of some basic libraries.
+
+* CMake is a C++ build scenario generator and your first target. You need at least version 3.19. Where Ubuntu uses APT, Fedora uses DNF as package manager.
+
+  1. `sudo dnf upgrade --refresh` to ensure your OS is up-to-date
+  2. `sudo dnf install cmake`
+  3. `cmake --version` to verify
+
+* You will need at least the same dependencies ("basic libraries") as for Ubuntu. Some packages have different names or contents between Linux builds. Namely, Fedora uses "-devel" instead of "-dev" for development packages.
+
+  1. `sudo dnf install` [pkg-config](## "will install pkgconf-pkg-config") libXmu-devel libXi-devel [libGL-devel](## "will install mesa-libGL-devel") mesa-libGLU-devel SDL2-devel python3-jinja2 ninja-build
+  2. If you find out that you need any other dependencies not listed here, try finding them via [Fedora Packages](https://packages.fedoraproject.org/) first. And, preferably, improve this instruction.
+
+* Next you will need VCPKG.
+
+VCPKG is another package manager/dependency resolver for C++. CMake will need it to pull the rest of dependencies automatically early in the building process. If you've worked with language-specific package managers before (for example, NPM or YUM for JavaScript), VSPKG is similar. For reference, the list of dependencies VCPKG will try to install later can be found in `source/vcpkg.json`.
+
+  1. There are many ways to get VCPKG. Here's one: `. <(curl https://aka.ms/vcpkg-init.sh -L)`. This instruction should install VCPKG in your Linux home (user profile) directory in `.vcpkg`. Note that this dir is usually hidden by default.
+  2. Next you need to set your **`VCPKG_ROOT`** environment variable to the correct path. Run `. ~/.vcpkg/vcpkg-init` to bootstrap VCPKG. You may want to check if the path is now known to the system by running `printenv VCPKG_ROOT` afterwards.
+  3. Step 2 (init command) should be run in **every** new Terminal (Konsole) window **before** you begin building (environment variables set in this way do not persist between terminal sessions)
+
+* Change to the repo's **source/** directory
+* *Optional.* First step for CMake is now to run VCPKG and install the remaining dependencies as per `source/vcpkg.json`. You can run this step manually via `vcpkg install` on its own to check if it works, or *skip to the next step*.
+
+If this step throws errors, Fedora probably still lacks some packages not listed explicitly before. Read error messages to identify these packages, find them via [Fedora Packages](https://packages.fedoraproject.org/) and install with DNF. What you need most of the time is the package itself as well as its -devel and -static subpackages.
+* *Optional.* Next, we can ask CMake to assemble instructions for linux build without actually running them. The instructions generated will be stored under **build/linux-release**. To do that, run `cmake --preset=linux-release` or *skip to the next step*.
+* Run `cmake --build --preset=linux-release` to build. It includes previous two steps, so if any of them throw errors, you will have problems. If that's the case, run and debug them separately as described earlier, as CMake itself can just throw `Error: could not load cache` without specifying the exact problem. In case of major changes (example: you've reinstalled VCPKG to a different location and need to regenerate path to it for CMake) purge CMake cache by deleting **source/CMakeCache.txt**.
+
+Building will take some time, be patient ;)
+
+<details>
+<summary><b>Specific problem: If your VCPKG can't build meson for libsystemd</b></summary>
+<br>
+
+Diagnosed by 
+
+>ERROR: Value "plain" (of type "string") for combo option "Optimization level" is not one of the choices. Possible choices are (as string): "0", "g", "1", "2", "3", "s".
+
+error in meson building logs when building libsystemd.
+
+Fix for VCPKG is pretty fresh (May 2024) and can be found [here](https://github.com/microsoft/vcpkg/issues/37393).
+
+</details>
+
+* The built binaries will be in **dist/**. Copy the the .so libs from **lib/linux/** and **sbinit.config** (see beginning of this section) into **dist/** so the game can run. Sample sbinit.config can be found in **scripts/linux/**.
+* From the root dir of the repo, you can run the assembly script which is used by the GitHub Action: `scripts/ci/linux/assemble.sh`. This packs the game assets and copies the built binaries, premade sbinit configs & required libs into **client_distribution/** & **server_distribution/**.
+
+Next you need to copy original Starbound assets at **assets/packed.pak** of the Starbound copy that you own into **assets/** of either client or server dir (depending on what you're going to run).
+
+The game now can be run by executing **client_distribution/linux/run-client.sh** (or the corresponding server bash script) from terminal.
+
+<details>
+<summary><b>Fedora-specific problem with OSS (dsp: No such audio device)</b></summary>
+<br>
+
+Diagnosed by this error message when launching *client*:
+
+>Couldn't initialize SDL Audio: dsp: No such audio device
+
+The reason is outlined on [StackEx](https://stackoverflow.com/questions/9248131/failed-to-open-audio-device-dev-dsp/9248166#9248166): 
+
+> Most new Linux distributions don't provide the OSS (open sound system) compatibility layer, because access to the OSS sound device /dev/dsp was exclusive to one program at time only.
+
+The same answer has the solution: use `padsp` to emulate dev/dsp.
+
+* `dnf install pulseaudio-utils` to install padsp util
+* execute `padsp bash run-client.sh` instead of running sh directly. To avoid doing it every time you can edit run-client.sh, replacing 
+
+`#!/bin/sh
+cd "`dirname \"$0\"`"
+LD_LIBRARY_PATH="$LD_LIBRARY_PATH:./" ./starbound "$@"`
+
+with 
+
+`#!/bin/sh
+cd "`dirname \"$0\"`"
+LD_LIBRARY_PATH="$LD_LIBRARY_PATH:./" padsp ./starbound "$@"`
+
+</details>
+
 ### macOS
 To be written.
