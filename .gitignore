@@ -10,6 +10,7 @@
 /vcpkg/
 /client_distribution/
 /server_distribution/
+/source/vcpkg_installed/
 enc_temp_folder/
 .cache/
 /attic/user/
