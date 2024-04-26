@@ -30,6 +30,8 @@ FTContext ftContext;
 
 struct FontImpl {
   FT_Face face;
+  unsigned loadedPixelSize = 0;
+  String::Char loadedChar = 0;
 };
 
 FontPtr Font::loadFont(String const& fileName, unsigned pixelSize) {
@@ -95,20 +97,23 @@ tuple<Image, Vec2I, bool> Font::render(String::Char c) {
     throw FontException("Font::render called on uninitialized font.");
 
   FT_Face face = m_fontImpl->face;
-  if (m_loadedPixelSize != m_pixelSize || m_loadedChar != c) {
+
+  if (m_fontImpl->loadedPixelSize != m_pixelSize || m_fontImpl->loadedChar != c) {
     FT_UInt glyph_index = FT_Get_Char_Index(face, c);
     if (FT_Load_Glyph(face, glyph_index, FontLoadFlags) != 0)
       return {};
 
-    /* convert to an anti-aliased bitmap */
+    // convert to an anti-aliased bitmap
     if (FT_Render_Glyph(face->glyph, FT_RENDER_MODE_NORMAL) != 0)
       return {};
   }
 
-  m_loadedPixelSize = m_pixelSize;
-  m_loadedChar = c;
+  m_fontImpl->loadedPixelSize = m_pixelSize;
+  m_fontImpl->loadedChar = c;
 
   FT_GlyphSlot slot = face->glyph;
+  if (!slot->bitmap.buffer)
+    return {};
 
   unsigned width = slot->bitmap.width;
   unsigned height = slot->bitmap.rows;
