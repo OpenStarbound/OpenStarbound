@@ -17,6 +17,7 @@
 #include "StarInput.hpp"
 #include "StarVoice.hpp"
 #include "StarCurve25519.hpp"
+#include "StarInterpolation.hpp"
 
 #include "StarInterfaceLuaBindings.hpp"
 #include "StarInputLuaBindings.hpp"
@@ -316,17 +317,6 @@ void ClientApplication::processInput(InputEvent const& event) {
   }
 
   m_input->handleInput(event, processed);
-
-  auto config = m_root->configuration();
-  int zoomOffset = 0;
-
-  if (auto presses = m_input->bindDown("opensb", "zoomIn"))
-    zoomOffset += *presses;
-  if (auto presses = m_input->bindDown("opensb", "zoomOut"))
-    zoomOffset -= *presses;
-
-  if (zoomOffset != 0)
-    config->set("zoomLevel", max(1.0f, round(config->get("zoomLevel").toFloat() + zoomOffset)));
 }
 
 void ClientApplication::update() {
@@ -882,6 +872,25 @@ void ClientApplication::updateRunning(float dt) {
         m_player->addEmote(HumanoidEmote::Eat);
       if (isActionTakenEdge(InterfaceAction::EmoteSleep))
         m_player->addEmote(HumanoidEmote::Sleep);
+
+      if (int newZoomDirection = (int)m_input->bindHeld("opensb", "zoomIn") - (int)m_input->bindHeld("opensb", "zoomOut"))
+        m_cameraZoomDirection = newZoomDirection;
+    }
+    if (m_cameraZoomDirection != 0) {
+      const float threshold = 0.01f;
+      bool goingIn = m_cameraZoomDirection == 1;
+      auto config = m_root->configuration();
+      float curZoom = config->get("zoomLevel").toFloat(),
+            newZoom = max(1.f, curZoom * powf(1.f + (float)m_cameraZoomDirection * 0.5f, min(1.f, dt * 5.f))),
+            intZoom = max(1.f, (goingIn ? floor(curZoom) : ceil(curZoom)) + m_cameraZoomDirection);
+      bool pastInt = goingIn ? newZoom + threshold > intZoom
+                             : newZoom - threshold < intZoom;
+      if (pastInt) {
+        float intNewZoom = goingIn ? ceil(newZoom) : floor(newZoom);
+        newZoom = lerp(clamp(abs(intZoom - newZoom) - 1.f, 0.f, 1.f), intZoom, intNewZoom);
+        m_cameraZoomDirection = 0;
+      }
+      config->set("zoomLevel", newZoom);
     }
 
     if (m_controllerLeftStick.magnitudeSquared() > 0.001f)

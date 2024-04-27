@@ -108,6 +108,7 @@ private:
   int m_cameraOffsetDownTicks = 0;
   Vec2F m_cameraPositionSmoother;
   Vec2F m_cameraSmoothDelta;
+  int m_cameraZoomDirection;
 
   int m_minInterfaceScale = 2;
   int m_maxInterfaceScale = 3;
