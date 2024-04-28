@@ -342,9 +342,9 @@ ImageOperation imageOperationFromString(StringView string) {
       return NullImageOperation();
     }
   } catch (OutOfRangeException const& e) {
-    return ErrorImageOperation{std::exception_ptr()};
+    return ErrorImageOperation{std::current_exception()};
   } catch (BadLexicalCast const& e) {
-    return ErrorImageOperation{std::exception_ptr()};
+    return ErrorImageOperation{std::current_exception()};
   }
 }
 
