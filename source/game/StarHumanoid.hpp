@@ -162,6 +162,7 @@ public:
   void setFacingDirection(Direction facingDirection);
   void setMovingBackwards(bool movingBackwards);
   void setRotation(float rotation);
+  void setScale(Vec2F scale);
 
   void setVaporTrail(bool enabled);
 
@@ -197,7 +198,7 @@ public:
 
   // Renders to centered drawables (centered on the normal image center for the
   // player graphics), (in world space, not pixels)
-  List<Drawable> render(bool withItems = true, bool withRotation = true);
+  List<Drawable> render(bool withItems = true, bool withRotationAndScale = true);
 
   // Renders to centered drawables (centered on the normal image center for the
   // player graphics), (in pixels, not world space)
@@ -353,6 +354,7 @@ private:
   Direction m_facingDirection;
   bool m_movingBackwards;
   float m_rotation;
+  Vec2F m_scale;
   bool m_drawVaporTrail;
 
   HandDrawingInfo m_primaryHand;

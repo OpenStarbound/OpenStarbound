@@ -299,6 +299,7 @@ Humanoid::Humanoid(Json const& config) {
   m_altHand.angle = 0;
   m_facingDirection = Direction::Left;
   m_rotation = 0;
+  m_scale = Vec2F::filled(1.f);
   m_drawVaporTrail = false;
   m_state = State::Idle;
   m_emoteState = HumanoidEmote::Idle;
@@ -409,6 +410,10 @@ void Humanoid::setRotation(float rotation) {
   m_rotation = rotation;
 }
 
+void Humanoid::setScale(Vec2F scale) {
+  m_scale = scale;
+}
+
 void Humanoid::setVaporTrail(bool enabled) {
   m_drawVaporTrail = enabled;
 }
@@ -499,7 +504,7 @@ void Humanoid::resetAnimation() {
   m_danceTimer = 0.0f;
 }
 
-List<Drawable> Humanoid::render(bool withItems, bool withRotation) {
+List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
   List<Drawable> drawables;
 
   int armStateSeq = getArmStateSequence();
@@ -794,8 +799,12 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotation) {
 
   for (auto& drawable : drawables) {
     drawable.translate(m_globalOffset);
-    if (withRotation && m_rotation != 0)
-      drawable.rotate(m_rotation);
+    if (withRotationAndScale) {
+      if (m_scale.x() != 1.f || m_scale.y() != 1.f)
+        drawable.scale(m_scale);
+      if (m_rotation != 0.f)
+        drawable.rotate(m_rotation);
+    }
     drawable.rebase();
   }
   return drawables;

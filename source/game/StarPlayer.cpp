@@ -386,9 +386,9 @@ List<Drawable> Player::drawables() const {
       };
       extractScale(m_techController->parentDirectives().list());
       extractScale(m_statusController->parentDirectives().list());
+      m_humanoid->setScale(scale);
 
       for (auto& drawable : m_humanoid->render()) {
-        drawable.scale(scale);
         drawable.translate(position() + m_techController->parentOffset());
         if (drawable.isImage()) {
           drawable.imagePart().addDirectivesGroup(humanoidDirectives, true);

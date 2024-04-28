@@ -483,6 +483,7 @@ void Npc::render(RenderCallback* renderCallback) {
     scale = scale.piecewiseMultiply(result.first);
     humanoidDirectives.append(result.second);
   }
+  m_humanoid.setScale(scale);
 
   for (auto& drawable : m_humanoid.render()) {
     drawable.translate(position());
