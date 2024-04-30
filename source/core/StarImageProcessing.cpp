@@ -342,11 +342,11 @@ ImageOperation imageOperationFromString(StringView string) {
       return NullImageOperation();
     }
   } catch (OutOfRangeException const& e) {
-    return ErrorImageOperation{e.what()};
+    return ErrorImageOperation{std::string(e.what())};
   } catch (BadLexicalCast const& e) {
-    return ErrorImageOperation{e.what()};
+    return ErrorImageOperation{std::string(e.what())};
   } catch (StarException const& e) {
-    return ErrorImageOperation{e.what()};
+    return ErrorImageOperation{std::string(e.what())};
   }
 }
 
