@@ -273,7 +273,7 @@ void WorldPainter::drawEntityLayer(List<Drawable> drawables, EntityHighlightEffe
         if (d.isImage()) {
           auto underlayDrawable = Drawable(d);
           underlayDrawable.fullbright = true;
-          underlayDrawable.color = Color::rgbaf(1, 1, 1, highlightEffect.level);
+          underlayDrawable.color = Color::rgbaf(1, 1, 1, highlightEffect.level * d.color.alphaF());
           underlayDrawable.imagePart().addDirectives(underlayDirectives, true);
           drawDrawable(std::move(underlayDrawable));
         }
@@ -287,7 +287,7 @@ void WorldPainter::drawEntityLayer(List<Drawable> drawables, EntityHighlightEffe
       if (!overlayDirectives.empty() && d.isImage()) {
         auto overlayDrawable = Drawable(d);
         overlayDrawable.fullbright = true;
-        overlayDrawable.color = Color::rgbaf(1, 1, 1, highlightEffect.level);
+        overlayDrawable.color = Color::rgbaf(1, 1, 1, highlightEffect.level * d.color.alphaF());
         overlayDrawable.imagePart().addDirectives(overlayDirectives, true);
         drawDrawable(std::move(overlayDrawable));
       }

@@ -1,0 +1,20 @@
+{
+  "highlightDirectives" : {
+    "interactive" : {
+      "underlay" : "?outline=1;DDD;0000",
+      "overlay" : "?fade=AAA;0.1"
+    },
+    "inspectable" : {
+      "underlay" : "?outline=1;66FC;0000",
+      "overlay" : "?scanlines=55AC;0.4;55FC;0.4"
+    },
+    "interesting" : {
+      "underlay" : "?outline=1;8F8C;0000",
+      "overlay" : "?scanlines=6E6;0.5;5C5;0.5"
+    },
+    "inspected" : {
+      "underlay" : "?outline=1;E98C;0000",
+      "overlay" : "?scanlines=B76;0.5;A65;0.5"
+    }
+  }
+}
