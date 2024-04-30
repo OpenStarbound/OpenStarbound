@@ -539,6 +539,11 @@ namespace LuaBindings {
           return entity->isInteractive();
         return {};
       });
+    callbacks.registerCallback("entityAimPosition", [world](EntityId entityId) -> Maybe<Vec2F> {
+        if (auto entity = world->get<ToolUserEntity>(entityId))
+          return entity->aimPosition();
+        return {};
+      });
     callbacks.registerCallback("entityMouthPosition", [world](EntityId entityId) -> Maybe<Vec2F> {
         if (auto entity = world->get<ChattyEntity>(entityId))
           return entity->mouthPosition();
