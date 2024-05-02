@@ -6,12 +6,15 @@
 #include "StarImage.hpp"
 #include "StarStringView.hpp"
 #include "StarEncode.hpp"
-//#include "StarTime.hpp"
-//#include "StarLogging.hpp"
+#include "StarLogging.hpp"
 
 namespace Star {
 
-Image scaleNearest(Image const& srcImage, Vec2F const& scale) {
+Image scaleNearest(Image const& srcImage, Vec2F scale) {
+  if (scale[0] < 0.0f || scale[1] < 0.0f) {
+    Logger::warn("Negative scale in scaleNearest({})", scale);
+    scale = scale.piecewiseMax(Vec2F::filled(0.f));
+  }
   Vec2U srcSize = srcImage.size();
   Vec2U destSize = Vec2U::round(vmult(Vec2F(srcSize), scale));
   destSize[0] = max(destSize[0], 1u);
@@ -26,7 +29,11 @@ Image scaleNearest(Image const& srcImage, Vec2F const& scale) {
   return destImage;
 }
 
-Image scaleBilinear(Image const& srcImage, Vec2F const& scale) {
+Image scaleBilinear(Image const& srcImage, Vec2F scale) {
+  if (scale[0] < 0.0f || scale[1] < 0.0f) {
+    Logger::warn("Negative scale in scaleBilinear({})", scale);
+    scale = scale.piecewiseMax(Vec2F::filled(0.f));
+  }
   Vec2U srcSize = srcImage.size();
   Vec2U destSize = Vec2U::round(vmult(Vec2F(srcSize), scale));
   destSize[0] = max(destSize[0], 1u);
@@ -50,7 +57,11 @@ Image scaleBilinear(Image const& srcImage, Vec2F const& scale) {
   return destImage;
 }
 
-Image scaleBicubic(Image const& srcImage, Vec2F const& scale) {
+Image scaleBicubic(Image const& srcImage, Vec2F scale) {
+  if (scale[0] < 0.0f || scale[1] < 0.0f) {
+    Logger::warn("Negative scale in scaleBicubic({})", scale);
+    scale = scale.piecewiseMax(Vec2F::filled(0.f));
+  }
   Vec2U srcSize = srcImage.size();
   Vec2U destSize = Vec2U::round(vmult(Vec2F(srcSize), scale));
   destSize[0] = max(destSize[0], 1u);
