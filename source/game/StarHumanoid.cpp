@@ -1387,7 +1387,7 @@ pair<Vec2F, Directives> Humanoid::extractScaleFromDirectives(Directives const& d
   if (!directives)
     return make_pair(Vec2F::filled(1.f), Directives());
 
-  List<Directives::Entry*> entries;
+  List<Directives::Entry const*> entries;
   size_t toReserve = 0;
   Maybe<Vec2F> scale;
 
@@ -1400,7 +1400,7 @@ pair<Vec2F, Directives> Humanoid::extractScaleFromDirectives(Directives const& d
     if (op)
       scale = scale.value(Vec2F::filled(1.f)).piecewiseMultiply(op->scale);
     else {
-      entries.emplace_back(entry);
+      entries.emplace_back(&entry);
       toReserve += string.utf8Size() + 1;
     }
   }
