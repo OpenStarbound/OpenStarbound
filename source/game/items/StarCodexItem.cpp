@@ -33,6 +33,7 @@ void CodexItem::fireTriggered() {
     if (codexLearned) {
       player->queueUIMessage(Root::singleton().assets()->json("/codex.config:messages.learned").toString());
     } else {
+      player->codexes()->markCodexUnread(m_codexId);
       player->queueUIMessage(Root::singleton().assets()->json("/codex.config:messages.alreadyKnown").toString());
     }
   }
