@@ -447,7 +447,7 @@ ItemBagConstPtr PlayerInventory::bagContents(String const& type) const {
   return m_bags.get(type);
 }
 
-void PlayerInventory::condenseBagStacks(String const& bagType) {\
+void PlayerInventory::condenseBagStacks(String const& bagType) {
   auto bag = m_bags[bagType];
 
   bag->condenseStacks();

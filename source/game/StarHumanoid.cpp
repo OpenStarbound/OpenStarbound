@@ -1387,8 +1387,8 @@ pair<Vec2F, Directives> Humanoid::extractScaleFromDirectives(Directives const& d
   if (!directives)
     return make_pair(Vec2F::filled(1.f), Directives());
 
-  List<StringView> operations;
-  size_t totalLength = 0;
+  List<Directives::Entry*> entries;
+  size_t toReserve = 0;
   Maybe<Vec2F> scale;
 
   for (auto& entry : directives->entries) {
@@ -1399,17 +1399,22 @@ pair<Vec2F, Directives> Humanoid::extractScaleFromDirectives(Directives const& d
 
     if (op)
       scale = scale.value(Vec2F::filled(1.f)).piecewiseMultiply(op->scale);
-    else
-      totalLength += operations.emplace_back(string).utf8Size();
+    else {
+      entries.emplace_back(entry);
+      toReserve += string.utf8Size() + 1;
+    }
   }
 
   if (!scale)
     return make_pair(Vec2F::filled(1.f), directives);
 
   String mergedDirectives;
-  mergedDirectives.reserve(totalLength);
-  for (auto& directive : operations)
-    mergedDirectives.append(directive.utf8Ptr(), directive.utf8Size());
+  mergedDirectives.reserve(toReserve);
+  for (auto& entry : entries) {
+    if (entry->begin > 0)
+      mergedDirectives.append('?');
+    mergedDirectives.append(entry->string(*directives));
+  }
 
   return make_pair(*scale, Directives(mergedDirectives));
 }

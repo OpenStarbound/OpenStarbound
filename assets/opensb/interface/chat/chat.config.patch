@@ -7,7 +7,7 @@
     "colors" : {
       "local" : "^white;",
       "party" : "^blue;",
-      "broadcast" : "^yellow;",
+      "broadcast" : "^#fe6;",
       "whisper" : "^pink;",
       "commandResult" : "^lightgray;",
       "radioMessage" : "^cyan;",
