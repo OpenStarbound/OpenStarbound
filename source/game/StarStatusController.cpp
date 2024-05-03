@@ -18,7 +18,9 @@ StatusController::StatusController(Json const& config) : m_statCollection(config
   m_parentEntity = nullptr;
   m_movementController = nullptr;
 
-  m_statusProperties.set(config.getObject("statusProperties", {}));
+  for (auto p : config.getObject("statusProperties", JsonObject())) {
+    m_statusProperties.set(p.first, p.second);
+  }
   m_minimumLiquidStatusEffectPercentage = config.getFloat("minimumLiquidStatusEffectPercentage");
   m_appliesEnvironmentStatusEffects = config.getBool("appliesEnvironmentStatusEffects");
   m_appliesWeatherStatusEffects = config.getBool("appliesWeatherStatusEffects");
@@ -72,9 +74,13 @@ Json StatusController::diskStore() const {
     if (metadata->duration)
       ephemeralEffects.append(jsonFromEphemeralStatusEffect(EphemeralStatusEffect{pair.first, *metadata->duration}));
   }
+  JsonObject statusProperties;
+  for (auto p : m_statusProperties) {
+    statusProperties.set(p.first, p.second);
+  }
 
   return JsonObject{
-      {"statusProperties", m_statusProperties.get()},
+      {"statusProperties", std::move(statusProperties)},
       {"persistentEffectCategories", std::move(persistentEffectCategories)},
       {"ephemeralEffects", std::move(ephemeralEffects)},
       {"resourceValues", std::move(resourceValues)},
@@ -86,7 +92,9 @@ void StatusController::diskLoad(Json const& store) {
   clearAllPersistentEffects();
   clearEphemeralEffects();
 
-  m_statusProperties.set(store.getObject("statusProperties"));
+  for (auto p : store.getObject("statusProperties", JsonObject())) {
+    m_statusProperties.set(p.first, p.second);
+  }
 
   for (auto const& p : store.getObject("persistentEffectCategories", {}))
     addPersistentEffects(p.first, p.second.toArray().transformed(jsonToPersistentStatusEffect));
@@ -105,17 +113,14 @@ void StatusController::diskLoad(Json const& store) {
 }
 
 Json StatusController::statusProperty(String const& name, Json const& def) const {
-  return m_statusProperties.get().value(name, def);
+  if (!m_statusProperties.contains(name))
+    return def;
+  auto val = m_statusProperties.get(name);
+  return val.isNull() ? def : val;
 }
 
 void StatusController::setStatusProperty(String const& name, Json value) {
-  m_statusProperties.update([&](JsonObject& statusProperties) {
-    if (statusProperties[name] != value) {
-      statusProperties[name] = std::move(value);
-      return true;
-    }
-    return false;
-  });
+  m_statusProperties.set(name, value);
 }
 
 StringList StatusController::statNames() const {
