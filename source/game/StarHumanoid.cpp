@@ -1008,7 +1008,7 @@ List<Drawable> Humanoid::renderDummy(Gender gender, Maybe<HeadArmor const*> head
     }
   }
 
-  auto drawables = render();
+  auto drawables = render(false, false);
   Drawable::scaleAll(drawables, TilePixels);
 
   return drawables;
