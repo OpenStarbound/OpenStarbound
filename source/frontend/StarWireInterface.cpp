@@ -99,6 +99,7 @@ void WirePane::renderImpl() {
   auto region = RectF(m_worldClient->clientWindow());
 
   auto const& camera = m_worldPainter->camera();
+  auto badWire = Color::rgbf(0.6f + (float)sin(Time::monotonicTime() * Constants::pi * 2.0) * 0.4f, 0.0f, 0.0f);
   auto highWire = Color::Red;
   auto lowWire = Color::Red.mix(Color::Black, 0.8f);
   auto white = Color::White.toRgba();
@@ -137,9 +138,13 @@ void WirePane::renderImpl() {
         auto wire = lowWire;
         Vec2I outPosition = connection.entityLocation;
         if (auto sourceEntity = m_worldClient->atTile<WireEntity>(connection.entityLocation).get(0)) {
-          outPosition += sourceEntity->nodePosition({WireDirection::Output, connection.nodeIndex});
-          if (sourceEntity->nodeState(WireNode{WireDirection::Output, connection.nodeIndex}))
-            wire = highWire;
+          if (connection.nodeIndex < sourceEntity->nodeCount(WireDirection::Output)) {
+            outPosition += sourceEntity->nodePosition({WireDirection::Output, connection.nodeIndex});
+            if (sourceEntity->nodeState(WireNode{WireDirection::Output, connection.nodeIndex}))
+              wire = highWire;
+          } else {
+            wire = badWire;
+          }
         }
 
         renderWire(centerOfTile(inPosition), centerOfTile(outPosition), wire);
@@ -158,8 +163,12 @@ void WirePane::renderImpl() {
         visitedConnections.contains({connection, {tilePosition, i}});
 
         Vec2I inPosition = connection.entityLocation;
-        if (auto sourceEntity = m_worldClient->atTile<WireEntity>(connection.entityLocation).get(0))
-          inPosition += sourceEntity->nodePosition({WireDirection::Input, connection.nodeIndex});
+        if (auto sourceEntity = m_worldClient->atTile<WireEntity>(connection.entityLocation).get(0)) {
+          if (connection.nodeIndex < sourceEntity->nodeCount(WireDirection::Input))
+            inPosition += sourceEntity->nodePosition({WireDirection::Input, connection.nodeIndex});
+          else
+            wire = badWire;
+        }
 
         renderWire(centerOfTile(outPosition), centerOfTile(inPosition), wire);
       }
