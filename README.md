@@ -5,11 +5,18 @@ You **must** own a copy of Starbound to use it. Base game assets are not provide
 
 It is still **work-in-progress**. You can download the very latest build below, or the occasional releases (though those aren't very up to date yet!)
 ## Nightly Builds
-**Windows**: [Installer](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build_windows/main/Installer.zip), [All Files](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build_windows/main)
+[**Windows**](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build_windows/main):
+[Installer](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build_windows/main/Installer.zip),
+[Client](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build_windows/main/OpenStarbound-Windows-Client.zip),
+[Server](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build_windows/main/OpenStarbound-Windows-Server.zip)
 
-**Linux**: [All Files](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build_linux/main)
+[**Linux**](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build_linux/main):
+[Client](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build_linux/main/OpenStarbound-Linux-Client.zip),
+[Server](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build_linux/main/OpenStarbound-Linux-Server.zip)
 
-**macOS**: [All Files](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build_macos/main)
+[**macOS**](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build_macos/main "overpriced aluminium"): 
+[Intel](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build_macos/main/OpenStarbound-Dev-macOS-Intel.zip),
+[ARM](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build_macos/main/OpenStarbound-Dev-macOS-Silicon.zip)
 
 These link directly to the latest build from the [Actions](https://github.com/OpenStarbound/OpenStarbound/actions?query=branch%3Amain) tab.
 
