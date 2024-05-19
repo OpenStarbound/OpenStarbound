@@ -3,11 +3,19 @@
 This is a fork of Starbound. Contributions are welcome!
 You **must** own a copy of Starbound to use it. Base game assets are not provided for obvious reasons.
 
-It is still **work-in-progress**. You can download the very latest build from the [Actions](https://github.com/OpenStarbound/OpenStarbound/actions?query=branch%3Amain) tab, or the occasional releases (though those aren't very up to date yet!)
+It is still **work-in-progress**. You can download the very latest build below, or the occasional releases (though those aren't very up to date yet!)
+## Nightly Builds
+**Windows**: [Installer](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build_windows/main/Installer.zip), [All Files](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build_windows/main)
 
-Note: Not every function from [StarExtensions](https://github.com/StarExtensions/StarExtensions) has been ported yet, but compatibility with mods that use StarExtensions features is planned.
+**Linux**: [All Files](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build_linux/main)
+
+**macOS**: [All Files](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build_macos/main)
+
+These link directly to the latest build from the [Actions](https://github.com/OpenStarbound/OpenStarbound/actions?query=branch%3Amain) tab.
 
 ## Changes
+Note: Not every function from [StarExtensions](https://github.com/StarExtensions/StarExtensions) has been ported yet, but near-full compatibility with mods that use StarExtensions features is planned.
+
 ### Lighting
 **The lightmap generation has been moved off the main thread, and supports higher color range.**
   * Point lights are now additive, which is more accurate - you'll notice that different lights mix together better!
