@@ -62,7 +62,7 @@ jobs:
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: OpenStarbound-Windows
+          name: OpenStarbound-Windows-All-DevOnly
           path: dist/*
 
       - name: Upload Client
