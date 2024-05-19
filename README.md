@@ -5,6 +5,9 @@ You **must** own a copy of Starbound to use it. Base game assets are not provide
 
 It is still **work-in-progress**. You can download the very latest build below, or the occasional releases (though those aren't very up to date yet!)
 ## Nightly Builds
+
+At the moment, you must copy the game assets (**packed.pak**) from your normal Starbound install to the OpenStarbound assets directory.
+
 [**Windows**](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build_windows/main):
 [Installer](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build_windows/main/Installer.zip),
 [Client](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build_windows/main/OpenStarbound-Windows-Client.zip),
