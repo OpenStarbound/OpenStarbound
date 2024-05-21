@@ -11,7 +11,6 @@ BlueprintItem::BlueprintItem(Json const& config, String const& directory, Json c
   : Item(config, directory, data), SwingableItem(config) {
   setWindupTime(0.2f);
   setCooldownTime(0.1f);
-  setMaxStack(1);
   m_requireEdgeTrigger = true;
   m_recipe = ItemDescriptor(instanceValue("recipe"));
 
