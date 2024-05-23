@@ -77,7 +77,9 @@ void CharSelectionPane::updateCharacterPlates() {
   auto updatePlayerLine = [this](String name, unsigned scrollPosition) {
     auto charSelector = fetchChild<LargeCharPlateWidget>(name);
     if (auto playerUuid = m_playerStorage->playerUuidAt(scrollPosition)) {
-      charSelector->setPlayer(m_playerStorage->loadPlayer(*playerUuid));
+      auto player = m_playerStorage->loadPlayer(*playerUuid);
+      player->humanoid()->setFacingDirection(Direction::Right);
+      charSelector->setPlayer(player);
       charSelector->enableDelete([this, playerUuid](Widget*) { m_deleteCallback(*playerUuid); });
     } else {
       charSelector->setPlayer(PlayerPtr());

@@ -23,11 +23,14 @@ public:
 
   virtual bool sendEvent(InputEvent const& event) override;
 
+  void update(float dt) override;
+
 protected:
   virtual void renderImpl() override;
 
 private:
   PlayerPtr m_player;
+  Json m_config;
 
   PortraitWidgetPtr m_portrait;
   Vec2I m_portraitOffset;

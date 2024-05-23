@@ -12,51 +12,59 @@ LargeCharPlateWidget::LargeCharPlateWidget(WidgetCallbackFunc mainCallback, Play
   setSize(ButtonWidget::size());
 
   auto assets = Root::singleton().assets();
-  auto charPlateImage = assets->json("/interface.config:largeCharPlate.backingImage").toString();
+  m_config = assets->json("/interface.config:largeCharPlate");
+  auto charPlateImage = m_config.getString("backingImage");
 
   setCallback(mainCallback);
   setImages(charPlateImage);
 
   m_playerPlate = charPlateImage;
-  m_playerPlateHover = assets->json("/interface.config:largeCharPlate.playerHover").toString();
-  m_noPlayerPlate = assets->json("/interface.config:largeCharPlate.noPlayer").toString();
-  m_noPlayerPlateHover = assets->json("/interface.config:largeCharPlate.noPlayerHover").toString();
-  m_portraitOffset = jsonToVec2I(assets->json("/interface.config:largeCharPlate.portraitOffset"));
-  m_portraitScale = assets->json("/interface.config:largeCharPlate.portraitScale").toFloat();
+  m_playerPlateHover = m_config.getString("playerHover");
+  m_noPlayerPlate = m_config.getString("noPlayer");
+  m_noPlayerPlateHover = m_config.getString("noPlayerHover");
+  m_portraitOffset = jsonToVec2I(m_config.get("portraitOffset"));
+  m_portraitScale = m_config.getFloat("portraitScale");
 
-  String switchText = assets->json("/interface.config:largeCharPlate.switchText").toString();
-  String createText = assets->json("/interface.config:largeCharPlate.createText").toString();
+  String switchText = m_config.getString("switchText");
+  String createText = m_config.getString("createText");
 
   m_portrait = make_shared<PortraitWidget>();
   m_portrait->setScale(m_portraitScale);
   m_portrait->setPosition(m_portraitOffset);
+  m_portrait->setRenderHumanoid(true);
   addChild("portrait", m_portrait);
 
-  String modeLabelText = assets->json("/interface.config:largeCharPlate.modeText").toString();
-  m_regularTextColor = Color::rgb(jsonToVec3B(assets->json("/interface.config:largeCharPlate.textColor")));
-  m_disabledTextColor = Color::rgb(jsonToVec3B(assets->json("/interface.config:largeCharPlate.textColorDisabled")));
+  String modeLabelText = m_config.getString("modeText");
+  m_regularTextColor = Color::rgb(jsonToVec3B(m_config.get("textColor")));
+  m_disabledTextColor = Color::rgb(jsonToVec3B(m_config.get("textColorDisabled")));
 
-  m_modeNameOffset = jsonToVec2I(assets->json("/interface.config:largeCharPlate.modeNameOffset"));
-  m_modeOffset = jsonToVec2I(assets->json("/interface.config:largeCharPlate.modeOffset"));
+  m_modeNameOffset = jsonToVec2I(m_config.get("modeNameOffset"));
+  m_modeOffset = jsonToVec2I(m_config.get("modeOffset"));
 
-  m_modeName = make_shared<LabelWidget>(modeLabelText, Color::White, HorizontalAnchor::HMidAnchor);
+  auto modeNameHAnchor = HorizontalAnchorNames.getLeft(m_config.getString("modeNameHAnchor", "mid"));
+  auto modeNameVAnchor = VerticalAnchorNames  .getLeft(m_config.getString("modeNameVAnchor", "bottom"));
+  m_modeName = make_shared<LabelWidget>(modeLabelText, Color::White, modeNameHAnchor);
   addChild("modeName", m_modeName);
   m_modeName->setPosition(m_modeNameOffset);
-  m_modeName->setAnchor(HorizontalAnchor::HMidAnchor, VerticalAnchor::BottomAnchor);
+  m_modeName->setAnchor(modeNameHAnchor, modeNameVAnchor);
 
+  auto modeHAnchor = HorizontalAnchorNames.getLeft(m_config.getString("modeHAnchor", "left"));
+  auto modeVAnchor = VerticalAnchorNames  .getLeft(m_config.getString("modeVAnchor", "bottom"));
   m_mode = make_shared<LabelWidget>();
   addChild("mode", m_mode);
   m_mode->setPosition(m_modeOffset);
-  m_mode->setAnchor(HorizontalAnchor::LeftAnchor, VerticalAnchor::BottomAnchor);
+  m_mode->setAnchor(modeHAnchor, modeVAnchor);
 
-  m_createCharText = assets->json("/interface.config:largeCharPlate.noPlayerText").toString();
-  m_createCharTextColor = Color::rgb(jsonToVec3B(assets->json("/interface.config:largeCharPlate.noPlayerTextColor")));
-  m_playerNameOffset = jsonToVec2I(assets->json("/interface.config:largeCharPlate.playerNameOffset"));
+  m_createCharText = m_config.getString("noPlayerText");
+  m_createCharTextColor = Color::rgb(jsonToVec3B(m_config.get("noPlayerTextColor")));
+  m_playerNameOffset = jsonToVec2I(m_config.get("playerNameOffset"));
 
+  auto playerNameHAnchor = HorizontalAnchorNames.getLeft(m_config.getString("playerNameHAnchor", "mid"));
+  auto playerNameVAnchor = VerticalAnchorNames  .getLeft(m_config.getString("playerNameVAnchor", "bottom"));
   m_playerName = make_shared<LabelWidget>();
   m_playerName->setColor(m_createCharTextColor);
   m_playerName->setPosition(m_playerNameOffset);
-  m_playerName->setAnchor(HorizontalAnchor::HMidAnchor, VerticalAnchor::BottomAnchor);
+  m_playerName->setAnchor(playerNameHAnchor, playerNameVAnchor);
   addChild("player", m_playerName);
 }
 
@@ -121,13 +129,12 @@ void LargeCharPlateWidget::setPlayer(PlayerPtr player) {
 void LargeCharPlateWidget::enableDelete(WidgetCallbackFunc const& callback) {
   disableDelete();
 
-  auto assets = Root::singleton().assets();
-
-  auto baseImage = assets->json("/interface.config:largeCharPlate.trashButton.baseImage").toString();
-  auto hoverImage = assets->json("/interface.config:largeCharPlate.trashButton.hoverImage").toString();
-  auto pressedImage = assets->json("/interface.config:largeCharPlate.trashButton.pressedImage").toString();
-  auto disabledImage = assets->json("/interface.config:largeCharPlate.trashButton.disabledImage").toString();
-  auto offset = jsonToVec2I(assets->json("/interface.config:largeCharPlate.trashButton.offset"));
+  auto trashButton = m_config.get("trashButton");
+  auto baseImage = trashButton.getString("baseImage");
+  auto hoverImage = trashButton.getString("hoverImage");
+  auto pressedImage = trashButton.getString("pressedImage");
+  auto disabledImage = trashButton.getString("disabledImage");
+  auto offset = jsonToVec2I(trashButton.get("offset"));
 
   m_delete = make_shared<ButtonWidget>(callback, baseImage, hoverImage, pressedImage, disabledImage);
   addChild("trashButton", m_delete);
@@ -155,6 +162,23 @@ bool LargeCharPlateWidget::sendEvent(InputEvent const& event) {
     return true;
 
   return ButtonWidget::sendEvent(event);
+}
+
+void LargeCharPlateWidget::update(float dt) {
+  ButtonWidget::update(dt);
+
+  if (!m_player || !m_config.getBool("animatePortrait", true))
+    return;
+
+  auto humanoid = m_player->humanoid();
+  if (m_delete->isHovered()) {
+    humanoid->setEmoteState(HumanoidEmote::Sad);
+    humanoid->setState(Humanoid::Run);
+  } else {
+    humanoid->setEmoteState(HumanoidEmote::Idle);
+    humanoid->setState(isHovered() ? Humanoid::Walk : Humanoid::Idle);
+  }
+  humanoid->animate(dt);
 }
 
 }
