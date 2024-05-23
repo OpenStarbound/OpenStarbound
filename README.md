@@ -100,7 +100,7 @@ Note: Some of these [texts](## "hi :3") are just tooltips rather than links.
 <details>
 <summary><b>Linux (Ubuntu)</b></summary>
  
-* Make sure you're using CMake 3.19 or newer - you may need to [add Kitware's APT repo](https://apt.kitware.com/) to install a newer version.
+* Make sure you're using CMake 3.23 or newer - you may need to [add Kitware's APT repo](https://apt.kitware.com/) to install a newer version.
 * Install dependencies:
   * `sudo apt-get install pkg-config libxmu-dev libxi-dev libgl-dev libglu1-mesa-dev libsdl2-dev python3-jinja2 ninja-build`
 * Clone [vcpkg](https://github.com/microsoft/vcpkg?tab=readme-ov-file#quick-start-unix) (outside the repo!) and bootstrap it with the linked instructions.
@@ -118,7 +118,7 @@ Note: Some of these [texts](## "hi :3") are just tooltips rather than links.
 
 Starbound in general is built from the ground up, with its own engine written in C++ on top of some basic libraries.
 
-* CMake is a C++ build scenario generator and your first target. You need at least version 3.19. Where Ubuntu uses APT, Fedora uses DNF as package manager.
+* CMake is a C++ build scenario generator and your first target. You need at least version 3.23. Where Ubuntu uses APT, Fedora uses DNF as package manager.
 
   1. `sudo dnf upgrade --refresh` to ensure your OS is up-to-date
   2. `sudo dnf install cmake`
