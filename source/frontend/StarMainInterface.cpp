@@ -220,15 +220,12 @@ void MainInterface::openMerchantWindow(Json const& config, EntityId sourceEntity
   }
 
   bool openWithInventory = config.getBool("openWithInventory", true);
+  bool closeWithInventory = config.getBool("closeWithInventory", !m_paneManager.registeredPaneIsDisplayed(MainInterfacePanes::Inventory));
   m_merchantWindow = make_shared<MerchantPane>(m_client->worldClient(), m_client->mainPlayer(), config, sourceEntityId);
-  m_paneManager.displayPane(PaneLayer::Window,
-      m_merchantWindow,
-      [this, openWithInventory](PanePtr const&) {
-      if (auto player = m_client->mainPlayer())
-        player->clearSwap();
-      if (openWithInventory)
-        m_paneManager.dismissRegisteredPane(MainInterfacePanes::Inventory);
-    });
+  m_paneManager.displayPane(PaneLayer::Window, m_merchantWindow, [this, closeWithInventory](PanePtr const&) {
+    if (closeWithInventory)
+      m_paneManager.dismissRegisteredPane(MainInterfacePanes::Inventory);
+   });
   if (openWithInventory)
     m_paneManager.displayRegisteredPane(MainInterfacePanes::Inventory);
 
@@ -404,13 +401,17 @@ void MainInterface::handleInteractAction(InteractAction interactAction) {
 
     m_containerInteractor->openContainer(containerEntity);
 
+    bool closeWithInventory = !m_paneManager.registeredPaneIsDisplayed(MainInterfacePanes::Inventory);
     m_paneManager.displayRegisteredPane(MainInterfacePanes::Inventory);
 
     m_containerPane = make_shared<ContainerPane>(world, m_client->mainPlayer(), m_containerInteractor);
-    m_paneManager.displayPane(PaneLayer::Window, m_containerPane, [this](PanePtr const&) {
-      if (auto player = m_client->mainPlayer())
-        player->clearSwap();
-      m_paneManager.dismissRegisteredPane(MainInterfacePanes::Inventory);
+    m_paneManager.displayPane(PaneLayer::Window, m_containerPane, [this, closeWithInventory](PanePtr const&) {
+      if (closeWithInventory)
+        m_paneManager.dismissRegisteredPane(MainInterfacePanes::Inventory);
+      else {
+        m_containerInteractor->closeContainer();
+        m_containerPane = {};
+      }
     });
 
     m_paneManager.bringPaneAdjacent(m_paneManager.registeredPane(MainInterfacePanes::Inventory),
@@ -1580,10 +1581,10 @@ void MainInterface::displayScriptPane(ScriptPanePtr& scriptPane, EntityId source
     layer = PaneLayerNames.getLeft(*layerName);
 
   if (scriptPane->openWithInventory()) {
-    m_paneManager.displayPane(layer, scriptPane, [this](PanePtr const&) {
-      if (auto player = m_client->mainPlayer())
-        player->clearSwap();
-      m_paneManager.dismissRegisteredPane(MainInterfacePanes::Inventory);
+    bool closeWithInventory = scriptPane->closeWithInventory();
+    m_paneManager.displayPane(layer, scriptPane, [this, closeWithInventory](PanePtr const&) {
+      if (closeWithInventory)
+        m_paneManager.dismissRegisteredPane(MainInterfacePanes::Inventory);
     });
     m_paneManager.displayRegisteredPane(MainInterfacePanes::Inventory);
     m_paneManager.bringPaneAdjacent(m_paneManager.registeredPane(MainInterfacePanes::Inventory),

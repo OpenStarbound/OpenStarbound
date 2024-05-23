@@ -20,6 +20,7 @@ public:
   PanePtr createTooltip(Vec2I const& screenPosition) override;
 
   bool openWithInventory() const;
+  bool closeWithInventory() const;
 
   EntityId sourceEntityId() const;
 
