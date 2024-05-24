@@ -9,6 +9,8 @@
 
 namespace Star {
 
+String const SongPathPrefix = "/songs/";
+
 SongbookInterface::SongbookInterface(PlayerPtr player) {
   m_player = std::move(player);
 
@@ -60,13 +62,11 @@ bool SongbookInterface::play() {
 void SongbookInterface::refresh(bool reloadFiles) {
   if (reloadFiles) {
     m_files = Root::singleton().assets()->scanExtension(".abc").values();
-    String prefix = "/songs/";
-    eraseWhere(m_files, [&](String& song) {
-      if (!song.beginsWith(prefix, String::CaseInsensitive)) {
-        Logger::warn("Song '{}' isn't in {}, ignoring", prefix.size(), song);
+    eraseWhere(m_files, [](String& song) {
+      if (!song.beginsWith(SongPathPrefix, String::CaseInsensitive)) {
+        Logger::warn("Song '{}' isn't in {}, ignoring", SongPathPrefix.size(), song);
         return true;
       }
-      song = song.substr(prefix.size(), song.size() - (prefix.size() + 4));
       return false;
     });
     sort(m_files, [](String const& a, String const& b) -> bool { return b.compare(a, String::CaseInsensitive) > 0; });
@@ -81,12 +81,14 @@ void SongbookInterface::refresh(bool reloadFiles) {
         auto widget = songList->addItem();
         widget->setData(i);
         auto songName = widget->fetchChild<LabelWidget>("songName");
-        songName->setText(m_files[i]);
+        String const& song = m_files[i];
+        songName->setText(song.substr(SongPathPrefix.size(), song.size() - (SongPathPrefix.size() + 4)));
         widget->show();
       }
     } else {
       for (size_t i = 0; i != m_files.size(); ++i) {
         StringView song = m_files[i];
+        song = song.substr(SongPathPrefix.size(), song.size() - (SongPathPrefix.size() + 4));
         auto find = song.find(search, 0, String::CaseInsensitive);
         if (find != NPos) {
           auto widget = songList->addItem();
