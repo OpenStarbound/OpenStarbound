@@ -60,9 +60,18 @@ bool SongbookInterface::play() {
 void SongbookInterface::refresh(bool reloadFiles) {
   if (reloadFiles) {
     m_files = Root::singleton().assets()->scanExtension(".abc").values();
+    String prefix = "/songs/";
+    eraseWhere(m_files, [&](String& song) {
+      if (!song.beginsWith(prefix, String::CaseInsensitive)) {
+        Logger::warn("Song '{}' isn't in {}, ignoring", prefix.size(), song);
+        return true;
+      }
+      song = song.substr(prefix.size(), song.size() - (prefix.size() + 4));
+      return false;
+    });
     sort(m_files, [](String const& a, String const& b) -> bool { return b.compare(a, String::CaseInsensitive) > 0; });
   }
-  auto search = fetchChild<TextBoxWidget>("search")->getText();
+  auto& search = fetchChild<TextBoxWidget>("search")->getText();
   if (m_lastSearch != search || reloadFiles) {
     m_lastSearch = search;
     auto songList = fetchChild<ListWidget>("songs.list");
