@@ -25,6 +25,7 @@ private:
   void applyWindowSettings();
 
   List<Vec2U> m_resList;
+  List<int> m_interfaceScaleList;
   List<float> m_zoomList;
   List<float> m_cameraSpeedList;
 

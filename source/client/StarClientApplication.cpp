@@ -63,6 +63,7 @@ Json const AdditionalDefaultConfiguration = Json::parseJson(R"JSON(
       "antiAliasing" : false,
       "zoomLevel" : 3.0,
       "cameraSpeedFactor" : 1.0,
+      "interfaceScale" : 0,
       "speechBubbles" : true,
 
       "title" : {
@@ -371,7 +372,9 @@ void ClientApplication::render() {
   renderer->setMultiSampling(config->get("antiAliasing").optBool().value(false) ? 4 : 0);
   renderer->switchEffectConfig("interface");
 
-  if (m_guiContext->windowWidth() >= m_crossoverRes[0] && m_guiContext->windowHeight() >= m_crossoverRes[1])
+  if (auto interfaceScale = config->get("interfaceScale").optUInt().value())
+    m_guiContext->setInterfaceScale(interfaceScale);
+  else if (m_guiContext->windowWidth() >= m_crossoverRes[0] && m_guiContext->windowHeight() >= m_crossoverRes[1])
     m_guiContext->setInterfaceScale(m_maxInterfaceScale);
   else
     m_guiContext->setInterfaceScale(m_minInterfaceScale);
