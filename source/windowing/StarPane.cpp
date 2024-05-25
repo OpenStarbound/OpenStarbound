@@ -223,7 +223,7 @@ void Pane::setDragActive(bool dragActive, Vec2I dragMouseOrigin) {
 
 void Pane::drag(Vec2I mousePosition) {
   Vec2I delta = mousePosition - m_dragMouseOrigin;
-  setPosition(position() + delta);
+  setPosition(relativePosition() + delta);
   m_dragMouseOrigin += delta;
 }
 
