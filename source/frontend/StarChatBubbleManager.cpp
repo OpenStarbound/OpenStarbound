@@ -195,7 +195,7 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
       // bother me so bad if it weren't so fucking easy to do right.
 
       // yea I agree
-      m_guiContext->setTextStyle(m_textStyle);
+      m_guiContext->setTextStyle(m_textStyle, m_zoom);
       auto result = m_guiContext->determineTextSize(sayAction.text, m_textTemplate);
       float textWidth = result.width() / m_zoom + m_textPadding[0];
       float textHeight = result.height() / m_zoom + m_textPadding[1];

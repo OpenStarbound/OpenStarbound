@@ -1,5 +1,8 @@
 {
   "paneLayout" : {
+    "panefeature" : {
+      "anchor" : "center"
+    },
     "voiceLabel" : {
       "type" : "label",
       "position" : [119, 202],
