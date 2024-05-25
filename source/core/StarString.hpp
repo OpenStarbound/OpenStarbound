@@ -359,6 +359,8 @@ struct CaseInsensitiveStringCompare {
 
 typedef HashSet<String> StringSet;
 
+typedef HashSet<String, CaseInsensitiveStringHash, CaseInsensitiveStringCompare> CaseInsensitiveStringSet;
+
 template <typename MappedT, typename HashT = hash<String>, typename ComparatorT = std::equal_to<String>>
 using StringMap = HashMap<String, MappedT, HashT, ComparatorT>;
 

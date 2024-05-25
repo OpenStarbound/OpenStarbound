@@ -190,7 +190,7 @@ public:
   // Scans all assets for files with the given extension, which is specially
   // indexed and much faster than a normal scan.  Extension may contain leading
   // '.' character or it may be omitted.
-  StringSet const& scanExtension(String const& extension) const;
+  CaseInsensitiveStringSet const& scanExtension(String const& extension) const;
 
   // Get json asset with an optional sub-path.  The sub-path portion of the
   // path refers to a key in the top-level object, and may use dot notation
@@ -204,7 +204,7 @@ public:
 
   // Load all the given jsons using background processing.
   void queueJsons(StringList const& paths) const;
-  void queueJsons(StringSet const& paths) const;
+  void queueJsons(CaseInsensitiveStringSet const& paths) const;
 
   // Returns *either* an image asset or a sub-frame.  Frame files are JSON
   // descriptor files that reference a particular image and label separate
@@ -216,7 +216,7 @@ public:
   ImageConstPtr image(AssetPath const& path) const;
   // Load images using background processing
   void queueImages(StringList const& paths) const;
-  void queueImages(StringSet const& paths) const;
+  void queueImages(CaseInsensitiveStringSet const& paths) const;
   // Return the given image *if* it is already loaded, otherwise queue it for
   // loading.
   ImageConstPtr tryImage(AssetPath const& path) const;
@@ -231,7 +231,7 @@ public:
   AudioConstPtr audio(String const& path) const;
   // Load audios using background processing
   void queueAudios(StringList const& paths) const;
-  void queueAudios(StringSet const& paths) const;
+  void queueAudios(CaseInsensitiveStringSet const& paths) const;
   // Return the given audio *if* it is already loaded, otherwise queue it for
   // loading.
   AudioConstPtr tryAudio(String const& path) const;
@@ -331,7 +331,7 @@ private:
   // Maps the source asset name to the source containing it
   CaseInsensitiveStringMap<AssetFileDescriptor> m_files;
   // Maps an extension to the files with that extension
-  CaseInsensitiveStringMap<StringSet> m_filesByExtension;
+  CaseInsensitiveStringMap<CaseInsensitiveStringSet> m_filesByExtension;
 
   ByteArray m_digest;
 

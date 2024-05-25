@@ -371,7 +371,7 @@ StringList Assets::scan(String const& suffix) const {
 StringList Assets::scan(String const& prefix, String const& suffix) const {
   StringList result;
   if (suffix.beginsWith(".") && !suffix.substr(1).hasChar('.')) {
-    StringSet filesWithExtension = scanExtension(suffix);
+    auto& filesWithExtension = scanExtension(suffix);
     for (auto const& file : filesWithExtension) {
       if (file.beginsWith(prefix, String::CaseInsensitive))
         result.append(file);
@@ -386,11 +386,11 @@ StringList Assets::scan(String const& prefix, String const& suffix) const {
   return result;
 }
 
-const StringSet NullStringSet;
+const CaseInsensitiveStringSet NullExtensionScan;
 
-StringSet const& Assets::scanExtension(String const& extension) const {
+CaseInsensitiveStringSet const& Assets::scanExtension(String const& extension) const {
   auto find = m_filesByExtension.find(extension.beginsWith(".") ? extension.substr(1) : extension);
-  return find != m_filesByExtension.end() ? find->second : NullStringSet;
+  return find != m_filesByExtension.end() ? find->second : NullExtensionScan;
 }
 
 Json Assets::json(String const& path) const {
@@ -416,7 +416,7 @@ void Assets::queueJsons(StringList const& paths) const {
   }));
 }
 
-void Assets::queueJsons(StringSet const& paths) const {
+void Assets::queueJsons(CaseInsensitiveStringSet const& paths) const {
   MutexLocker assetsLocker(m_assetsMutex);
   for (String const& path : paths) {
     auto components = AssetPath::split(path);
@@ -439,7 +439,7 @@ void Assets::queueImages(StringList const& paths) const {
   }));
 }
 
-void Assets::queueImages(StringSet const& paths) const {
+void Assets::queueImages(CaseInsensitiveStringSet const& paths) const {
   MutexLocker assetsLocker(m_assetsMutex);
   for (String const& path : paths) {
     auto components = AssetPath::split(path);
@@ -482,7 +482,7 @@ void Assets::queueAudios(StringList const& paths) const {
   }));
 }
 
-void Assets::queueAudios(StringSet const& paths) const {
+void Assets::queueAudios(CaseInsensitiveStringSet const& paths) const {
   MutexLocker assetsLocker(m_assetsMutex);
   for (String const& path : paths) {
     auto components = AssetPath::split(path);
