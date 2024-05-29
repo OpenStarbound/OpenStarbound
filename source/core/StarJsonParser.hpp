@@ -39,7 +39,7 @@ template <typename InputIterator>
 class JsonParser {
 public:
   JsonParser(JsonStream& stream)
-    : m_line(0), m_column(0), m_stream(stream) {}
+    : m_line(0), m_column(0), m_stream(stream), m_error(nullptr) {}
   virtual ~JsonParser() {}
 
   // Does not throw.  On error, returned iterator will not be equal to end, and
@@ -65,10 +65,7 @@ public:
 
   // Human readable parsing error, does not include line or column info.
   char const* error() const {
-    if (m_error.empty())
-      return nullptr;
-    else
-      return m_error.c_str();
+    return m_error;
   }
 
   size_t line() const {
@@ -216,31 +213,42 @@ private:
         break;
       else {
         auto begin = m_current;
+        auto b_char = m_char;
         if (m_char >= '0' && m_char <= '9') {
-          number();
-          if (m_error.empty()) {
+          try {
+            number(true);
+          }
+          catch (ParsingException const&) {
+            m_current = begin;
+            m_char = b_char;
+          }
+          if (m_error == nullptr) {
             next();
             continue;
           }
         }
-        m_error.clear();
-        m_current = begin;
+        m_error = nullptr;
         if (m_char == 't' || m_char == 'f' || m_char == 'n') {
-          word();
-          if (m_error.empty()) {
+          try {
+            word(true);
+          }
+          catch (ParsingException const&) {
+            m_current = begin;
+            m_char = b_char;
+          }
+          if (m_error == nullptr) {
             next();
             continue;
           }
         }
-        m_error.clear();
-        m_current = begin;
+        m_error = nullptr;
         // well, shit. do a simple string parse until we hit whitespace
         // no fancy things like \n, do a proper string if you want that
         CharArray str;
         do {
           str += m_char;
           next();
-        } while (m_char && !isSpace(m_char));
+        } while (m_char != 0 && !isSpace(m_char));
         m_stream.putString(str.c_str(), str.length());
       }
       next();
@@ -253,7 +261,7 @@ private:
     m_stream.putString(s.c_str(), s.length());
   }
 
-  void number() {
+  void number(bool seq = false) {
     std::basic_string<char32_t> buffer;
     bool isDouble = false;
 
@@ -297,30 +305,35 @@ private:
         next();
       }
     }
+    
+    if (seq && m_char != 0 && !isSpace(m_char))
+      error("unexpected character after number");
 
     if (isDouble) {
       try {
         m_stream.putDouble(buffer.c_str(), buffer.length());
       } catch (std::exception const& e) {
-        error(std::string("Bad double: ") + e.what());
+        error("bad double");
       }
     } else {
       try {
         m_stream.putInteger(buffer.c_str(), buffer.length());
       } catch (std::exception const& e) {
-        error(std::string("Bad integer: ") + e.what());
+        error("bad integer");
       }
     }
   }
 
   // true, false, or null
-  void word() {
+  void word(bool seq = false) {
     switch (m_char) {
       case 't':
         next();
         check('r');
         check('u');
         check('e');
+        if (seq && m_char != 0 && !isSpace(m_char))
+          error("unexpected character after word");
         m_stream.putBoolean(true);
         break;
       case 'f':
@@ -329,6 +342,8 @@ private:
         check('l');
         check('s');
         check('e');
+        if (seq && m_char != 0 && !isSpace(m_char))
+          error("unexpected character after word");
         m_stream.putBoolean(false);
         break;
       case 'n':
@@ -336,6 +351,8 @@ private:
         check('u');
         check('l');
         check('l');
+        if (seq && m_char != 0 && !isSpace(m_char))
+          error("unexpected character after word");
         m_stream.putNull();
         break;
       default:
@@ -502,34 +519,32 @@ private:
           }
         } else {
           // The only allowed characters following / in whitespace are / and *
-          error("/ character in whitespace is not follwed by '/' or '*', invalid comment");
+          error("/ character in whitespace is not followed by '/' or '*', invalid comment");
           return;
         }
       } else if (isSpace(m_char)) {
         buffer += m_char;
         next();
       } else {
-        if (buffer.size() != 0)
-          m_stream.putWhitespace(buffer.c_str(), buffer.length());
-        return;
+        break;
       }
     }
     if (buffer.size() != 0)
       m_stream.putWhitespace(buffer.c_str(), buffer.length());
   }
 
-  void error(std::string msg) {
-    m_error = std::move(msg);
+  void error(const char* msg) {
+    m_error = msg;
     throw ParsingException();
   }
 
   bool isSpace(char32_t c) {
     // Only whitespace allowed by JSON
     return c == 0x20 || // space
-        c == 0x09 || // horizontal tab
-        c == 0x0a || // newline
-        c == 0x0d || // carriage return
-        c == 0xfeff; // BOM or ZWNBSP
+           c == 0x09 || // horizontal tab
+           c == 0x0a || // newline
+           c == 0x0d || // carriage return
+           c == 0xfeff; // BOM or ZWNBSP
   }
 
   char32_t m_char;
@@ -537,7 +552,7 @@ private:
   InputIterator m_end;
   size_t m_line;
   size_t m_column;
-  std::string m_error;
+  const char* m_error;
   JsonStream& m_stream;
 };
 

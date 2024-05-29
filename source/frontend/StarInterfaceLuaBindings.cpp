@@ -61,8 +61,8 @@ LuaCallbacks LuaBindings::makeChatCallbacks(MainInterface* mainInterface, Univer
   });
 
   // just for SE compat - this shoulda been a utility callback :moyai:
-  callbacks.registerCallback("parseArguments", [](String const& args) {
-    return Json::parseSequence(args);
+  callbacks.registerCallback("parseArguments", [](String const& args) -> LuaVariadic<Json> {
+    return Json::parseSequence(args).toArray();
   });
 
   callbacks.registerCallback("command", [mainInterface](String const& command) -> StringList {
