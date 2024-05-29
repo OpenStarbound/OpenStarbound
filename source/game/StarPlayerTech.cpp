@@ -9,9 +9,14 @@ PlayerTech::PlayerTech() {}
 PlayerTech::PlayerTech(Json const& json) {
   m_availableTechs = jsonToStringSet(json.get("availableTechs"));
   m_enabledTechs = jsonToStringSet(json.get("enabledTechs"));
-  m_equippedTechs = jsonToMapKV<HashMap<TechType, String>>(json.get("equippedTechs"), [](Json t) {
-      return TechTypeNames.getLeft(t.toString());
-    }, mem_fn(&Json::toString));
+  auto techDatabase = Root::singleton().techDatabase();
+  for (auto& p : json.getObject("equippedTechs")) {
+    String techName = p.second.toString();
+    if (techDatabase->contains(techName))
+      m_equippedTechs.set(TechTypeNames.getLeft(p.first), techName);
+    else
+      Logger::warn("Unequipping unknown tech '{}' from slot '{}'", techName, p.first);
+  }
 }
 
 Json PlayerTech::toJson() const {
