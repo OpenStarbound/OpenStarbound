@@ -42,7 +42,7 @@ function patch(config)
   shift(clone(layout, "multiTextureLabel", "hardwareCursorLabel"), 98, -11).value = "HARDWARE CURSOR"
   shift(clone(layout, "multiTextureCheckbox", "hardwareCursorCheckbox"), 99, -11)
 
-  shift(layout.title, 0, 28)
+  shift(layout.title, 0, 24)
   shift(layout.resLabel, 0, 28)
   shift(layout.resSlider, 0, 28)
   shift(layout.resValueLabel, 0, 28)
