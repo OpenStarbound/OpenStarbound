@@ -10,11 +10,12 @@ PlayerTech::PlayerTech(Json const& json) {
   m_availableTechs = jsonToStringSet(json.get("availableTechs"));
   m_enabledTechs = jsonToStringSet(json.get("enabledTechs"));
   auto techDatabase = Root::singleton().techDatabase();
-  for (auto p : json.get("equippedTechs", JsonObject()).iterateObject()) {
-    if (techDatabase->contains(p.second.toString()))
-      m_equippedTechs.set(TechTypeNames.getLeft(p.first), p.second.toString());
+  for (auto& p : json.getObject("equippedTechs")) {
+    String techName = p.second.toString();
+    if (techDatabase->contains(techName))
+      m_equippedTechs.set(TechTypeNames.getLeft(p.first), techName);
     else
-      Logger::warn("Missing tech '%s' in slot '%s'", p.second.toString(), p.first);
+      Logger::warn("Unequipping unknown tech '{}' from slot '{}'", techName, p.first);
   }
 }
 
