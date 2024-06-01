@@ -89,14 +89,12 @@ inline LiquidSettingsConstPtr LiquidsDatabase::liquidSettings(LiquidId liquidId)
 }
 
 inline Vec3F LiquidsDatabase::radiantLight(LiquidLevel level) const {
-  if (level.liquid >= m_settings.size())
-    return Vec3F();
+  if (level.liquid < m_settings.size()) {
+    if (auto const& settings = m_settings[level.liquid])
+      return settings->radiantLightLevel * level.level;
+  }
 
-  auto const& settings = m_settings[level.liquid];
-  if (!settings)
-    return Vec3F();
-
-  return settings->radiantLightLevel * level.level;
+  return Vec3F();
 }
 
 }

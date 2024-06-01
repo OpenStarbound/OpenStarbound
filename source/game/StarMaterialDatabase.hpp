@@ -239,13 +239,13 @@ inline Vec3F MaterialDatabase::radiantLight(MaterialId materialId, ModId modId) 
   Vec3F radiantLight;
   if (materialId < m_materials.size()) {
     auto const& mat = m_materials[materialId];
-    if (mat->materialRenderProfile)
+    if (mat && mat->materialRenderProfile)
       radiantLight += mat->materialRenderProfile->radiantLight;
   }
   if (modId < m_mods.size()) {
-    auto const& mat = m_mods[modId];
-    if (mat->modRenderProfile)
-      radiantLight += mat->modRenderProfile->radiantLight;
+    auto const& mod = m_mods[modId];
+    if (mod && mod->modRenderProfile)
+      radiantLight += mod->modRenderProfile->radiantLight;
   }
   return radiantLight;
 }

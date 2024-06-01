@@ -1631,6 +1631,7 @@ RpcPromise<InteractAction> WorldClient::interact(InteractRequest const& request)
 }
 
 void WorldClient::lightingTileGather() {
+  int64_t start = Time::monotonicMicroseconds();
   Vec3F environmentLight = m_sky->environmentLight().toRgbF();
   float undergroundLevel = m_worldTemplate->undergroundLevel();
   auto liquidsDatabase = Root::singleton().liquidsDatabase();
@@ -1638,7 +1639,6 @@ void WorldClient::lightingTileGather() {
 
   // Each column in tileEvalColumns is guaranteed to be no larger than the sector size.
 
-  size_t lights = 0;
   m_tileArray->tileEvalColumns(m_lightingCalculator.calculationRegion(), [&](Vec2I const& pos, ClientTile const* column, size_t ySize) {
     size_t baseIndex = m_lightingCalculator.baseIndexFor(pos);
     for (size_t y = 0; y < ySize; ++y) {
@@ -1655,12 +1655,10 @@ void WorldClient::lightingTileGather() {
         if (tile.backgroundLightTransparent && pos[1] + y > undergroundLevel)
           light += environmentLight;
       }
-      if (light.max() > 0.0f)
-        ++lights;
       m_lightingCalculator.setCellIndex(baseIndex + y, light, !tile.foregroundLightTransparent);
     }
   });
-  LogMap::set("client_render_world_async_light_tiles", toString(lights));
+  LogMap::set("client_render_world_async_light_gather", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
 }
 
 void WorldClient::lightingCalc() {
