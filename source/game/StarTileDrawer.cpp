@@ -65,7 +65,7 @@ bool TileDrawer::produceTerrainDrawables(Drawables& drawables,
 
   MaterialId material = EmptyMaterialId;
   MaterialHue materialHue = 0;
-  MaterialColorVariant materialColorVariant = 0;
+  MaterialColorVariant colorVariant = 0;
   ModId mod = NoModId;
   MaterialHue modHue = 0;
   float damageLevel = 0.0f;
@@ -77,7 +77,7 @@ bool TileDrawer::produceTerrainDrawables(Drawables& drawables,
   if (terrainLayer == TerrainLayer::Background) {
     material = tile.background;
     materialHue = tile.backgroundHueShift;
-    materialColorVariant = tile.backgroundColorVariant;
+    colorVariant = tile.backgroundColorVariant;
     mod = tile.backgroundMod;
     modHue = tile.backgroundModHueShift;
     damageLevel = byteToFloat(tile.backgroundDamageLevel);
@@ -86,7 +86,7 @@ bool TileDrawer::produceTerrainDrawables(Drawables& drawables,
   } else {
     material = tile.foreground;
     materialHue = tile.foregroundHueShift;
-    materialColorVariant = tile.foregroundColorVariant;
+    colorVariant = tile.foregroundColorVariant;
     mod = tile.foregroundMod;
     modHue = tile.foregroundModHueShift;
     damageLevel = byteToFloat(tile.foregroundDamageLevel);
@@ -99,10 +99,14 @@ bool TileDrawer::produceTerrainDrawables(Drawables& drawables,
   if ((isBlock && terrainLayer == TerrainLayer::Midground) || (!isBlock && terrainLayer == TerrainLayer::Foreground))
     return false;
 
-  auto getPieceImage = [](MaterialRenderPieceConstPtr const& piece, Box<float, 2> const& box, MaterialHue hue) -> String {
-    return hue == 0
+  auto getPieceImage = [](MaterialRenderPieceConstPtr const& piece, Box<float, 2> const& box, MaterialHue hue, Directives const* directives) -> AssetPath {
+    AssetPath image = hue == 0
       ? strf("{}?crop={};{};{};{}", piece->texture, box.xMin(), box.yMin(), box.xMax(), box.yMax())
       : strf("{}?crop={};{};{};{}?hueshift={}", piece->texture, box.xMin(), box.yMin(), box.xMax(), box.yMax(), materialHueToDegrees(hue));
+    if (directives)
+      image.directives += *directives;
+
+    return image;
   };
 
   auto materialRenderProfile = materialDatabase->materialRenderProfile(material);
@@ -110,31 +114,43 @@ bool TileDrawer::produceTerrainDrawables(Drawables& drawables,
 
   if (materialRenderProfile) {
     occlude = materialRenderProfile->occludesBehind;
-
+    auto materialColorVariant = materialRenderProfile->colorVariants > 0 ? colorVariant % materialRenderProfile->colorVariants : 0;
     uint32_t variance = staticRandomU32(renderData.geometry.xwrap(pos[0]) + offset[0], pos[1] + offset[1], (int)variantLayer.value(terrainLayer), "main");
     auto& drawList = drawables[materialZLevel(materialRenderProfile->zLevel, material, materialHue, materialColorVariant)];
 
     MaterialPieceResultList pieces;
     determineMatchingPieces(pieces, &occlude, materialDatabase, materialRenderProfile->mainMatchList, renderData, pos,
         terrainLayer == TerrainLayer::Background ? TileLayer::Background : TileLayer::Foreground, false);
+    Directives const* directives = materialRenderProfile->colorDirectives.empty()
+      ? nullptr
+      : &materialRenderProfile->colorDirectives.wrap(materialColorVariant);
     for (auto const& piecePair : pieces) {
-      auto& variant = piecePair.first->variants.get(materialColorVariant).wrap(variance);
-      auto image = getPieceImage(piecePair.first, variant, materialHue);
+      auto variant = piecePair.first->variants.ptr(materialColorVariant);
+      if (!variant) variant = piecePair.first->variants.ptr(0);
+      if (!variant) continue;
+      auto& textureCoords = variant->wrap(variance);
+      auto image = getPieceImage(piecePair.first, textureCoords, materialHue, directives);
       drawList.emplace_back(Drawable::makeImage(image, scale, false, piecePair.second * scale + Vec2F(pos), color));
     }
   }
 
   if (modRenderProfile) {
-    auto modColorVariant = modRenderProfile->multiColor ? materialColorVariant : 0;
+    auto modColorVariant = modRenderProfile->colorVariants > 0 ? colorVariant % modRenderProfile->colorVariants : 0;
     uint32_t variance = staticRandomU32(renderData.geometry.xwrap(pos[0]), pos[1], (int)variantLayer.value(terrainLayer), "mod");
     auto& drawList = drawables[modZLevel(modRenderProfile->zLevel, mod, modHue, modColorVariant)];
 
     MaterialPieceResultList pieces;
     determineMatchingPieces(pieces, &occlude, materialDatabase, modRenderProfile->mainMatchList, renderData, pos,
         terrainLayer == TerrainLayer::Background ? TileLayer::Background : TileLayer::Foreground, true);
+    Directives const* directives = modRenderProfile->colorDirectives.empty()
+      ? nullptr
+      : &modRenderProfile->colorDirectives.wrap(modColorVariant);
     for (auto const& piecePair : pieces) {
-      auto& variant = piecePair.first->variants.get(modColorVariant).wrap(variance);
-      auto image = getPieceImage(piecePair.first, variant, modHue);
+      auto variant = piecePair.first->variants.ptr(modColorVariant);
+      if (!variant) variant = piecePair.first->variants.ptr(0);
+      if (!variant) continue;
+      auto& textureCoords = variant->wrap(variance);
+      auto image = getPieceImage(piecePair.first, textureCoords, modHue, directives);
       drawList.emplace_back(Drawable::makeImage(image, scale, false, piecePair.second * scale + Vec2F(pos), color));
     }
   }

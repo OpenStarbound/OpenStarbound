@@ -402,11 +402,31 @@ ItemDescriptor MaterialDatabase::modItemDrop(ModId modId) const {
   return {};
 }
 
+MaterialColorVariant MaterialDatabase::materialColorVariants(MaterialId materialId) const {
+  if (isRealMaterial(materialId)) {
+    auto const& matInfo = getMaterialInfo(materialId);
+    if (matInfo->materialRenderProfile)
+      return matInfo->materialRenderProfile->colorVariants;
+  }
+
+  return 0;
+}
+
+MaterialColorVariant MaterialDatabase::modColorVariants(ModId modId) const {
+  if (isRealMod(modId)) {
+    auto const& modInfo = getModInfo(modId);
+    if (modInfo->modRenderProfile)
+      return modInfo->modRenderProfile->colorVariants;
+  }
+
+  return 0;
+}
+
 bool MaterialDatabase::isMultiColor(MaterialId materialId) const {
   if (isRealMaterial(materialId)) {
     auto const& matInfo = getMaterialInfo(materialId);
     if (matInfo->materialRenderProfile)
-      return matInfo->materialRenderProfile->multiColor;
+      return matInfo->materialRenderProfile->colorVariants > 0;
   }
 
   return false;
@@ -568,7 +588,7 @@ shared_ptr<MaterialDatabase::MaterialInfo const> const& MaterialDatabase::getMat
 
 shared_ptr<MaterialDatabase::ModInfo const> const& MaterialDatabase::getModInfo(ModId modId) const {
   if (modId >= m_mods.size() || !m_mods[modId])
-    throw MaterialException(strf("No such modId id: {}\n", modId));
+    throw MaterialException(strf("No such mod id: {}\n", modId));
   else
     return m_mods[modId];
 }

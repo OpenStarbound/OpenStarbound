@@ -230,7 +230,7 @@ bool TilePainter::produceTerrainPrimitives(HashMap<QuadZLevel, List<RenderPrimit
 
   MaterialId material = EmptyMaterialId;
   MaterialHue materialHue = 0;
-  MaterialColorVariant materialColorVariant = 0;
+  MaterialColorVariant colorVariant = 0;
   ModId mod = NoModId;
   MaterialHue modHue = 0;
   float damageLevel = 0.0f;
@@ -242,7 +242,7 @@ bool TilePainter::produceTerrainPrimitives(HashMap<QuadZLevel, List<RenderPrimit
   if (terrainLayer == TerrainLayer::Background) {
     material = tile.background;
     materialHue = tile.backgroundHueShift;
-    materialColorVariant = tile.backgroundColorVariant;
+    colorVariant = tile.backgroundColorVariant;
     mod = tile.backgroundMod;
     modHue = tile.backgroundModHueShift;
     damageLevel = byteToFloat(tile.backgroundDamageLevel);
@@ -251,7 +251,7 @@ bool TilePainter::produceTerrainPrimitives(HashMap<QuadZLevel, List<RenderPrimit
   } else {
     material = tile.foreground;
     materialHue = tile.foregroundHueShift;
-    materialColorVariant = tile.foregroundColorVariant;
+    colorVariant = tile.foregroundColorVariant;
     mod = tile.foregroundMod;
     modHue = tile.foregroundModHueShift;
     damageLevel = byteToFloat(tile.foregroundDamageLevel);
@@ -264,13 +264,12 @@ bool TilePainter::produceTerrainPrimitives(HashMap<QuadZLevel, List<RenderPrimit
   if (terrainLayer == (isBlock ? TerrainLayer::Midground : TerrainLayer::Foreground))
     return false;
 
-  auto getPieceTexture = [this, assets](MaterialId material, MaterialRenderPieceConstPtr const& piece, MaterialHue hue, bool mod) {
+  auto getPieceTexture = [this, assets](MaterialId material, MaterialRenderPieceConstPtr const& piece, MaterialHue hue, Directives const* directives, bool mod) {
     return m_textureCache.get(MaterialPieceTextureKey(material, piece->pieceId, hue, mod), [&](auto const&) {
-        String texture;
-        if (hue == 0)
-          texture = piece->texture;
-        else
-          texture = strf("{}?hueshift={}", piece->texture, materialHueToDegrees(hue));
+        AssetPath texture = (hue == 0) ? piece->texture : strf("{}?hueshift={}", piece->texture, materialHueToDegrees(hue));
+
+        if (directives)
+          texture.directives += *directives;
 
         return m_textureGroup->create(*assets->image(texture));
       });
@@ -281,16 +280,20 @@ bool TilePainter::produceTerrainPrimitives(HashMap<QuadZLevel, List<RenderPrimit
 
   if (materialRenderProfile) {
     occlude = materialRenderProfile->occludesBehind;
-
+    auto materialColorVariant = materialRenderProfile->colorVariants > 0 ? colorVariant % materialRenderProfile->colorVariants : 0;
     uint32_t variance = staticRandomU32(renderData.geometry.xwrap(pos[0]), pos[1], (int)terrainLayer, "main");
     auto& quadList = primitives[materialZLevel(materialRenderProfile->zLevel, material, materialHue, materialColorVariant)];
 
     MaterialPieceResultList pieces;
     determineMatchingPieces(pieces, &occlude, materialDatabase, materialRenderProfile->mainMatchList, renderData, pos,
         terrainLayer == TerrainLayer::Background ? TileLayer::Background : TileLayer::Foreground, false);
+    Directives const* directives = materialRenderProfile->colorDirectives.empty()
+      ? nullptr
+      : &materialRenderProfile->colorDirectives.wrap(materialColorVariant);
     for (auto const& piecePair : pieces) {
-      TexturePtr texture = getPieceTexture(material, piecePair.first, materialHue, false);
+      TexturePtr texture = getPieceTexture(material, piecePair.first, materialHue, directives, false);
       auto variant = piecePair.first->variants.ptr(materialColorVariant);
+      if (!variant) variant = piecePair.first->variants.ptr(0);
       if (!variant) continue;
       RectF textureCoords = variant->wrap(variance);
       RectF worldCoords = RectF::withSize(piecePair.second / TilePixels + Vec2F(pos), textureCoords.size() / TilePixels);
@@ -308,16 +311,20 @@ bool TilePainter::produceTerrainPrimitives(HashMap<QuadZLevel, List<RenderPrimit
   }
 
   if (modRenderProfile) {
-    auto modColorVariant = modRenderProfile->multiColor ? materialColorVariant : 0;
+    auto modColorVariant = modRenderProfile->colorVariants > 0 ? colorVariant % modRenderProfile->colorVariants : 0;
     uint32_t variance = staticRandomU32(renderData.geometry.xwrap(pos[0]), pos[1], (int)terrainLayer, "mod");
     auto& quadList = primitives[modZLevel(modRenderProfile->zLevel, mod, modHue, modColorVariant)];
 
     MaterialPieceResultList pieces;
     determineMatchingPieces(pieces, &occlude, materialDatabase, modRenderProfile->mainMatchList, renderData, pos,
         terrainLayer == TerrainLayer::Background ? TileLayer::Background : TileLayer::Foreground, true);
+    Directives const* directives = modRenderProfile->colorDirectives.empty()
+      ? nullptr
+      : &modRenderProfile->colorDirectives.wrap(modColorVariant);
     for (auto const& piecePair : pieces) {
-      auto texture = getPieceTexture(mod, piecePair.first, modHue, true);
+      auto texture = getPieceTexture(mod, piecePair.first, modHue, directives, true);
       auto variant = piecePair.first->variants.ptr(modColorVariant);
+      if (!variant) variant = piecePair.first->variants.ptr(0);
       if (!variant) continue;
       auto& textureCoords = variant->wrap(variance);
       RectF worldCoords = RectF::withSize(piecePair.second / TilePixels + Vec2F(pos), textureCoords.size() / TilePixels);

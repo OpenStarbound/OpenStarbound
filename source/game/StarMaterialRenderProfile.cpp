@@ -80,7 +80,9 @@ MaterialRenderProfile parseMaterialRenderProfile(Json const& spec, String const&
   bool lightTransparent = spec.getBool("lightTransparent", false);
   profile.foregroundLightTransparent = spec.getBool("foregroundLightTransparent", lightTransparent);
   profile.backgroundLightTransparent = spec.getBool("backgroundLightTransparent", lightTransparent);
-  profile.multiColor = spec.getBool("multiColored", false);
+  profile.colorVariants = spec.getBool("multiColored", false) ? spec.getUInt("colorVariants", MaxMaterialColorVariant) : 0;
+  for (auto& entry : spec.getArray("colorDirectives", JsonArray()))
+    profile.colorDirectives.append(entry.toString());
   profile.occludesBehind = spec.getBool("occludesBelow", true);
   profile.zLevel = spec.getUInt("zLevel", 0);
   profile.radiantLight = Color::rgb(jsonToVec3B(spec.get("radiantLight", JsonArray{0, 0, 0}))).toRgbF();
@@ -126,8 +128,8 @@ MaterialRenderProfile parseMaterialRenderProfile(Json const& spec, String const&
     auto flipTextureCoordinates = [imageHeight](
         RectF const& rect) { return RectF::withSize(Vec2F(rect.xMin(), imageHeight - rect.yMax()), rect.size()); };
     for (unsigned v = 0; v < variants; ++v) {
-      if (profile.multiColor) {
-        for (MaterialColorVariant c = 0; c <= MaxMaterialColorVariant; ++c) {
+      if (profile.colorVariants > 0) {
+        for (MaterialColorVariant c = 0; c <= profile.colorVariants; ++c) {
           RectF textureRect = RectF::withSize(texturePosition + variantStride * v + colorStride * c, textureSize);
           renderPiece->variants[c].append(flipTextureCoordinates(textureRect));
         }

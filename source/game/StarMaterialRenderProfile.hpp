@@ -6,6 +6,7 @@
 #include "StarMultiArray.hpp"
 #include "StarGameTypes.hpp"
 #include "StarTileDamage.hpp"
+#include "StarDirectives.hpp"
 
 namespace Star {
 
@@ -96,11 +97,12 @@ struct MaterialRenderProfile {
   MaterialRenderMatchList mainMatchList;
   List<pair<String, Vec2F>> crackingFrames;
   List<pair<String, Vec2F>> protectedFrames;
+  List<Directives> colorDirectives;
   Json ruleProperties;
 
   bool foregroundLightTransparent;
   bool backgroundLightTransparent;
-  bool multiColor;
+  uint8_t colorVariants;
   bool occludesBehind;
   uint32_t zLevel;
   Vec3F radiantLight;

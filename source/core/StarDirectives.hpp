@@ -121,7 +121,7 @@ private:
   void buildString(String& string, const DirectivesGroup& directives) const;
 
   List<Directives> m_directives;
-  size_t m_count;
+  size_t m_count = 0;
 };
 
 template <>

@@ -69,6 +69,8 @@ public:
   ItemDescriptor materialItemDrop(MaterialId materialId) const;
   ItemDescriptor modItemDrop(ModId modId) const;
 
+  MaterialColorVariant materialColorVariants(MaterialId materialId) const;
+  MaterialColorVariant modColorVariants(ModId modId) const;
   bool isMultiColor(MaterialId materialId) const;
   bool foregroundLightTransparent(MaterialId materialId) const;
   bool backgroundLightTransparent(MaterialId materialId) const;
