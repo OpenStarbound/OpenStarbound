@@ -188,15 +188,21 @@ private:
 };
 
 inline MaterialRenderProfileConstPtr MaterialDatabase::materialRenderProfile(MaterialId materialId) const {
-  if (materialId >= m_materials.size())
-    return {};
-  return m_materials[materialId]->materialRenderProfile;
+  if (materialId < m_materials.size()) {
+    if (auto const& mat = m_materials[materialId])
+      return mat->materialRenderProfile;
+  }
+  
+  return {};
 }
 
 inline MaterialRenderProfileConstPtr MaterialDatabase::modRenderProfile(ModId modId) const {
-  if (modId >= m_mods.size())
-    return {};
-  return m_mods[modId]->modRenderProfile;
+  if (modId < m_mods.size()) {
+    if (auto const& mod = m_mods[modId])
+      return mod->modRenderProfile;
+  }
+  
+  return {};
 }
 
 inline bool MaterialDatabase::foregroundLightTransparent(MaterialId materialId) const {

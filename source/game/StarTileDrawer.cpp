@@ -106,7 +106,6 @@ bool TileDrawer::produceTerrainDrawables(Drawables& drawables,
   };
 
   auto materialRenderProfile = materialDatabase->materialRenderProfile(material);
-
   auto modRenderProfile = materialDatabase->modRenderProfile(mod);
 
   if (materialRenderProfile) {
