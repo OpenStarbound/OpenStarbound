@@ -714,6 +714,7 @@ void MainInterface::update(float dt) {
           worldName = worldTemplate->worldName();
 
         if (!worldName.empty()) {
+          m_planetText->parent()->setPosition(Vec2I(Vec2F(m_config->planetNameOffset) * (2.f / interfaceScale())));
           m_planetText->setText(strf(m_config->planetNameFormatString.utf8Ptr(), worldName));
           m_paneManager.displayRegisteredPane(MainInterfacePanes::PlanetText);
         }
