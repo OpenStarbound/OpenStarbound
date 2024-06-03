@@ -26,7 +26,8 @@ namespace LuaBindings {
     Json npcConfig(Root* root, String const& arg1);
     float projectileGravityMultiplier(Root* root, String const& arg1);
     Json projectileConfig(Root* root, String const& arg1);
-    Json recipesForItem(Root* root, String const& arg1);
+    JsonArray recipesForItem(Root* root, String const& arg1);
+    JsonArray allRecipes(Root* root);
     String itemType(Root* root, String const& itemName);
     Json itemTags(Root* root, String const& itemName);
     bool itemHasTag(Root* root, String const& itemName, String const& itemTag);

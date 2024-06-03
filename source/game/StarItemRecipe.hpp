@@ -8,9 +8,9 @@ namespace Star {
 STAR_EXCEPTION(RecipeException, StarException);
 
 struct ItemRecipe {
-  Json toJson();
+  Json toJson() const;
 
-  bool isNull();
+  bool isNull() const;
 
   bool operator==(ItemRecipe const& rhs) const;
   bool operator!=(ItemRecipe const& rhs) const;

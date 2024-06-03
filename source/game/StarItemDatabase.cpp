@@ -375,7 +375,7 @@ ItemRecipe ItemDatabase::parseRecipe(Json const& config) const {
   return res;
 }
 
-HashSet<ItemRecipe> ItemDatabase::allRecipes() const {
+HashSet<ItemRecipe> const& ItemDatabase::allRecipes() const {
   return m_recipes;
 }
 

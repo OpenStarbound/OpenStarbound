@@ -138,7 +138,7 @@ public:
 
   ItemRecipe parseRecipe(Json const& config) const;
 
-  HashSet<ItemRecipe> allRecipes() const;
+  HashSet<ItemRecipe> const& allRecipes() const;
   HashSet<ItemRecipe> allRecipes(StringSet const& types) const;
 
   ItemPtr applyAugment(ItemPtr const item, AugmentItem* augment) const;

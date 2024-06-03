@@ -247,6 +247,17 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
 
   callbacks.registerCallback("blueprintKnown", [player](Json const& item) { return player->blueprintKnown(ItemDescriptor(item)); });
 
+  callbacks.registerCallback("availableRecipes", [player](Maybe<StringSet> const& filter) {
+    auto itemDatabase = Root::singleton().itemDatabase();
+    auto inventory = player->inventory();
+    auto recipes = itemDatabase->recipesFromBagContents(inventory->availableItems(), inventory->availableCurrencies(), filter.value());
+    JsonArray result;
+    result.reserve(recipes.size());
+    for (auto& recipe : recipes)
+      result.append(recipe.toJson());
+    return result;
+  });
+
   callbacks.registerCallback("makeTechAvailable", [player](String const& tech) {
       player->techs()->makeAvailable(tech);
     });

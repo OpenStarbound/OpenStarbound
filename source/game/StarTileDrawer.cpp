@@ -100,9 +100,11 @@ bool TileDrawer::produceTerrainDrawables(Drawables& drawables,
     return false;
 
   auto getPieceImage = [](MaterialRenderPieceConstPtr const& piece, Box<float, 2> const& box, MaterialHue hue, Directives const* directives) -> AssetPath {
-    AssetPath image = hue == 0
+    String path = (hue == 0)
       ? strf("{}?crop={};{};{};{}", piece->texture, box.xMin(), box.yMin(), box.xMax(), box.yMax())
       : strf("{}?crop={};{};{};{}?hueshift={}", piece->texture, box.xMin(), box.yMin(), box.xMax(), box.yMax(), materialHueToDegrees(hue));
+
+    AssetPath image(path);
     if (directives)
       image.directives += *directives;
 

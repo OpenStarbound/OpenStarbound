@@ -5,9 +5,10 @@
 
 namespace Star {
 
-Json ItemRecipe::toJson() {
+Json ItemRecipe::toJson() const {
   JsonArray inputList;
-  for (auto input : inputs)
+  inputList.reserve(inputList.size());
+  for (auto& input : inputs)
     inputList.append(input.toJson());
 
   return JsonObject{
@@ -21,7 +22,7 @@ Json ItemRecipe::toJson() {
     };
 }
 
-bool ItemRecipe::isNull() {
+bool ItemRecipe::isNull() const {
   return currencyInputs.size() == 0 && inputs.size() == 0 && output.isNull();
 }
 
