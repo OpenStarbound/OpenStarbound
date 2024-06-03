@@ -151,7 +151,7 @@ Assets::Assets(Settings settings, StringList assetSources) {
       // re-add the assets callbacks with more functions
       context.remove("assets");
       auto callbacks = makeBaseAssetCallbacks();
-      callbacks.registerCallback("add", [&newFiles](LuaEngine& engine, String const& path, LuaValue const& data) {
+      callbacks.registerCallback("add", [newFiles](LuaEngine& engine, String const& path, LuaValue const& data) {
         ByteArray bytes;
         if (auto str = engine.luaMaybeTo<String>(data))
           bytes = ByteArray(str->utf8Ptr(), str->utf8Size());
@@ -165,7 +165,7 @@ Assets::Assets(Settings settings, StringList assetSources) {
         newFiles->set(path, bytes);
       });
 
-      callbacks.registerCallback("patch", [this, &newFiles](String const& path, String const& patchPath) -> bool {
+      callbacks.registerCallback("patch", [this, newFiles](String const& path, String const& patchPath) -> bool {
         if (auto file = m_files.ptr(path)) {
           if (newFiles->contains(patchPath)) {
             file->patchSources.append(make_pair(patchPath, newFiles));
