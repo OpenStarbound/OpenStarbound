@@ -137,6 +137,10 @@ RectF Projectile::metaBoundBox() const {
   return m_config->boundBox;
 }
 
+Vec2F Projectile::velocity() const {
+  return m_movementController->velocity();
+}
+
 pair<ByteArray, uint64_t> Projectile::writeNetState(uint64_t fromVersion) {
   return m_netGroup.writeNetState(fromVersion);
 }

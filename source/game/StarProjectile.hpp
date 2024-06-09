@@ -37,6 +37,8 @@ public:
   Vec2F position() const override;
   RectF metaBoundBox() const override;
 
+  Vec2F velocity() const;
+
   bool ephemeral() const override;
   ClientEntityMode clientEntityMode() const override;
   bool masterOnly() const override;

@@ -1361,6 +1361,8 @@ namespace LuaBindings {
       return playerEntity->velocity();
     else if (auto vehicleEntity = as<Vehicle>(entity))
       return vehicleEntity->velocity();
+    else if (auto projectileEntity = as<Projectile>(entity))
+      return projectileEntity->velocity();
 
     return {};
   }
