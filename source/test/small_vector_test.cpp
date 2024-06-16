@@ -1,4 +1,5 @@
 #include "StarSmallVector.hpp"
+#include "StarFormat.hpp"
 
 #include "gtest/gtest.h"
 
