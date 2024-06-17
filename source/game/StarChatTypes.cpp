@@ -55,7 +55,7 @@ ChatReceivedMessage::ChatReceivedMessage(Json const& json) : ChatReceivedMessage
   fromConnection = json.getUInt("fromConnection", 0);
   fromNick = json.getString("fromNick", "");
   portrait = json.getString("portrait", "");
-  text = json.getString("text");
+  text = json.getString("text", "");
 }
 
 Json ChatReceivedMessage::toJson() const {

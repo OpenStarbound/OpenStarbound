@@ -976,15 +976,21 @@ void Player::update(float dt, uint64_t) {
         });
     }
 
-    for (auto tool : {m_tools->primaryHandItem(), m_tools->altHandItem()}) {
+    for (auto& tool : {m_tools->primaryHandItem(), m_tools->altHandItem()}) {
       if (auto inspectionTool = as<InspectionTool>(tool)) {
-        for (auto ir : inspectionTool->pullInspectionResults()) {
+        for (auto& ir : inspectionTool->pullInspectionResults()) {
           if (ir.objectName) {
             m_questManager->receiveMessage("objectScanned", true, {*ir.objectName, *ir.entityId});
             m_log->addScannedObject(*ir.objectName);
           }
 
-          addChatMessage(ir.message);
+          addChatMessage(ir.message, JsonObject{
+            {"message", JsonObject{
+              {"context", JsonObject{{"mode", "RadioMessage"}}},
+              {"fromConnection", world()->connection()},
+              {"text", ir.message}
+            }}
+          });
         }
       }
     }
@@ -2178,12 +2184,12 @@ void Player::queueItemPickupMessage(ItemPtr const& item) {
     m_queuedItemPickups.append(item);
 }
 
-void Player::addChatMessage(String const& message) {
+void Player::addChatMessage(String const& message, Json const& config) {
   starAssert(!isSlave());
   m_chatMessage = message;
   m_chatMessageUpdated = true;
   m_chatMessageChanged = true;
-  m_pendingChatActions.append(SayChatAction{entityId(), message, mouthPosition()});
+  m_pendingChatActions.append(SayChatAction{entityId(), message, mouthPosition(), config});
 }
 
 void Player::addEmote(HumanoidEmote const& emote, Maybe<float> emoteCooldown) {

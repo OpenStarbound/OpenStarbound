@@ -760,23 +760,30 @@ void MainInterface::update(float dt) {
   m_chatBubbleManager->setCamera(m_worldPainter->camera());
   if (auto worldClient = m_client->worldClient()) {
     auto chatActions = worldClient->pullPendingChatActions();
-    auto portraitActions = chatActions.filtered([](ChatAction action) { return action.is<PortraitChatAction>(); });
 
-    for (auto action : portraitActions) {
-      PortraitChatAction portraitAction = action.get<PortraitChatAction>();
+    for (auto& action : chatActions) {
+      if (action.is<PortraitChatAction>()) {
+        PortraitChatAction& portraitAction = action.get<PortraitChatAction>();
 
-      String name;
-      if (auto npc = as<Npc>(worldClient->entity(portraitAction.entity)))
-        name = npc->name();
+        String name;
+        if (auto npc = as<Npc>(worldClient->entity(portraitAction.entity)))
+          name = npc->name();
 
-      ChatReceivedMessage message = {
-        { MessageContext::World },
-        ServerConnectionId,
-        Text::stripEscapeCodes(name),
-        Text::stripEscapeCodes(portraitAction.text),
-        Text::stripEscapeCodes(portraitAction.portrait.replace("<frame>", "0"))
-      };
-      m_chat->addMessages({message}, false);
+        ChatReceivedMessage message = {
+          {MessageContext::World},
+          ServerConnectionId,
+          Text::stripEscapeCodes(name),
+          Text::stripEscapeCodes(portraitAction.text),
+          Text::stripEscapeCodes(portraitAction.portrait.replace("<frame>", "0"))};
+        m_chat->addMessages({message}, false);
+      } else if (action.is<SayChatAction>()) {
+        SayChatAction& sayAction = action.get<SayChatAction>();
+        
+        if (sayAction.config) {
+          if (auto message = sayAction.config.opt("message"))
+            m_chat->addMessages({ChatReceivedMessage(*message)}, sayAction.config.getBool("showPane", false));
+        }
+      }
     }
 
     m_chatBubbleManager->addChatActions(chatActions);

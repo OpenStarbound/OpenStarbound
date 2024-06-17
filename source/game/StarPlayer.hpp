@@ -381,7 +381,7 @@ public:
   void queueUIMessage(String const& message) override;
   void queueItemPickupMessage(ItemPtr const& item);
 
-  void addChatMessage(String const& message);
+  void addChatMessage(String const& message, Json const& config = {});
   void addEmote(HumanoidEmote const& emote, Maybe<float> emoteCooldown = {});
   pair<HumanoidEmote, float> currentEmote() const;
 
