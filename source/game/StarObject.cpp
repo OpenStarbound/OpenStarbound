@@ -110,6 +110,8 @@ Object::Object(ObjectConfigConstPtr config, Json const& parameters) {
 
   m_netGroup.setNeedsLoadCallback(bind(&Object::getNetStates, this, _1));
   m_netGroup.setNeedsStoreCallback(bind(&Object::setNetStates, this));
+
+  m_clientEntityMode = ClientEntityModeNames.getLeft(configValue("clientEntityMode", "ClientSlaveOnly").toString());
 }
 
 Json Object::diskStore() const {
@@ -125,6 +127,10 @@ ByteArray Object::netStore() {
 
 EntityType Object::entityType() const {
   return EntityType::Object;
+}
+
+ClientEntityMode Object::clientEntityMode() const {
+  return m_clientEntityMode;
 }
 
 void Object::init(World* world, EntityId entityId, EntityMode mode) {
@@ -182,7 +188,7 @@ void Object::init(World* world, EntityId entityId, EntityMode mode) {
 
     setKeepAlive(configValue("keepAlive", false).toBool());
 
-    m_scriptComponent.setScripts(m_config->scripts);
+    m_scriptComponent.setScripts(jsonToStringList(configValue("scripts", JsonArray()).toArray()));
     m_scriptComponent.setUpdateDelta(configValue("scriptDelta", 5).toInt());
 
     m_scriptComponent.addCallbacks("object", makeObjectCallbacks());

@@ -40,6 +40,7 @@ public:
   ByteArray netStore();
 
   virtual EntityType entityType() const override;
+  virtual ClientEntityMode clientEntityMode() const override;
 
   virtual void init(World* world, EntityId entityId, EntityMode mode) override;
   virtual void uninit() override;
@@ -267,6 +268,8 @@ private:
   NetElementHashMap<String, Json> m_scriptedAnimationParameters;
 
   NetElementData<List<DamageSource>> m_damageSources;
+
+  ClientEntityMode m_clientEntityMode;
 };
 
 }
