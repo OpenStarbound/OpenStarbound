@@ -188,7 +188,8 @@ void Object::init(World* world, EntityId entityId, EntityMode mode) {
 
     setKeepAlive(configValue("keepAlive", false).toBool());
 
-    m_scriptComponent.setScripts(m_config->scripts);
+    auto scripts = jsonToStringList(configValue("scripts", JsonArray()).toArray());
+    m_scriptComponent.setScripts(scripts.transformed(bind(AssetPath::relativeTo, m_config->path, _1)));
     m_scriptComponent.setUpdateDelta(configValue("scriptDelta", 5).toInt());
 
     m_scriptComponent.addCallbacks("object", makeObjectCallbacks());
