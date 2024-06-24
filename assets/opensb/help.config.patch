@@ -1,5 +1,9 @@
 {
-  "basicHelpText" : "Basic commands are: {}",
-  "adminHelpText" : "Admin commands are: {}",
-  "debugHelpText" : "Debug commands are: {}"
+  "basicHelpText": "Basic commands are: {}",
+  "adminHelpText": "Admin commands are: {}",
+  "debugHelpText": "Debug commands are: {}",
+
+  "debugCommands": {
+    "run": "Usage /run <lua>. Executes a script on the player and outputs the return value to chat."
+  }
 }
