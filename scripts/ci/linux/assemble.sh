@@ -21,6 +21,7 @@ cp \
   lib/linux/libsteam_api.so \
   scripts/ci/linux/sbinit.config \
   scripts/ci/linux/run-client.sh \
+  scripts/steam_appid.txt \
   client_distribution/linux/
 
 mkdir server_distribution
@@ -38,6 +39,7 @@ cp \
   dist/btree_repacker \
   scripts/ci/linux/run-server.sh \
   scripts/ci/linux/sbinit.config \
+  scripts/steam_appid.txt \
   server_distribution/linux/
 
 tar -cvf dist.tar dist

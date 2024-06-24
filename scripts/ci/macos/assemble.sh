@@ -24,4 +24,5 @@ cp \
   dist/planet_mapgen \
   scripts/ci/macos/sbinit.config \
   scripts/ci/macos/run-server.sh \
+  scripts/steam_appid.txt \
   client_distribution/osx/

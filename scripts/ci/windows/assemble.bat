@@ -8,6 +8,7 @@ mkdir %client%\mods
 mkdir %client%\logs
 mkdir %client%\assets
 mkdir %client%\win
+echo 211820 > %client%\win\steam_appid.txt
 
 set server=server_distribution
 if exist %server% rmdir %server% /S /Q
