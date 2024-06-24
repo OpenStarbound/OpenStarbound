@@ -735,7 +735,7 @@ void UniverseServer::kickErroredPlayers() {
   for (auto const& worldId : m_worlds.keys()) {
     if (auto world = getWorld(worldId)) {
       for (auto clientId : world->erroredClients())
-        m_pendingDisconnections.add(clientId, "Incoming client packet has caused exception");
+        m_pendingDisconnections[clientId] = "Incoming client packet has caused exception";
     }
   }
 }
@@ -1714,8 +1714,9 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
 
   Vec3I location = clientContext->shipCoordinate().location();
   if (location != Vec3I()) {
-    auto clientSystem = createSystemWorld(clientContext->shipCoordinate().location());
+    auto clientSystem = createSystemWorld(location);
     clientSystem->addClient(clientId, clientContext->playerUuid(), clientContext->shipUpgrades().shipSpeed, clientContext->shipLocation());
+    addCelestialRequests(clientId, {makeLeft(location.vec2()), makeRight(location)});
     clientContext->setSystemWorld(clientSystem);
   }
 

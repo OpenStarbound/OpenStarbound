@@ -75,7 +75,8 @@ void SystemWorldClient::update(float dt) {
     m_clientShips.clear();
     m_ship = {};
     m_location = Vec3I();
-  }
+  } else if (auto celestialSlave = as<CelestialSlaveDatabase>(m_celestialDatabase))
+    celestialSlave->signalSystem(currentSystem()); // keeps the celestial chunk for our current system alive
 }
 
 List<SystemObjectPtr> SystemWorldClient::objects() const {
