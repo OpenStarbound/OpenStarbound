@@ -209,7 +209,7 @@ Assets::Assets(Settings settings, StringList assetSources) {
           auto stream = source->read(filename);
           size_t patchIndex = 0;
           for (auto const& patchPair : inputUtf8Json(stream.begin(), stream.end(), JsonParseType::Top).iterateArray()) {
-            auto& patches = patchPair.getArray("patches");
+            auto patches = patchPair.getArray("patches");
             for (auto& path : patchPair.getArray("paths")) {
               if (auto p = m_files.ptr(path.toString())) {
                 for (size_t i = 0; i != patches.size(); ++i) {
