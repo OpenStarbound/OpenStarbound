@@ -77,14 +77,15 @@ void CharSelectionPane::updateCharacterPlates() {
   auto updatePlayerLine = [this](String name, unsigned scrollPosition) {
     auto charSelector = fetchChild<LargeCharPlateWidget>(name);
     if (auto playerUuid = m_playerStorage->playerUuidAt(scrollPosition)) {
-      auto player = m_playerStorage->loadPlayer(*playerUuid);
-      player->humanoid()->setFacingDirection(Direction::Right);
-      charSelector->setPlayer(player);
-      charSelector->enableDelete([this, playerUuid](Widget*) { m_deleteCallback(*playerUuid); });
-    } else {
-      charSelector->setPlayer(PlayerPtr());
-      charSelector->disableDelete();
+      if (auto player = m_playerStorage->loadPlayer(*playerUuid)) {
+        player->humanoid()->setFacingDirection(Direction::Right);
+        charSelector->setPlayer(player);
+        charSelector->enableDelete([this, playerUuid](Widget*) { m_deleteCallback(*playerUuid); });
+        return;
+      }
     }
+    charSelector->setPlayer(PlayerPtr());
+    charSelector->disableDelete();
   };
 
   updatePlayerLine("charSelector1", m_downScroll + 0);
