@@ -254,7 +254,7 @@ void OpenGlRenderer::loadEffectConfig(String const& name, Json const& effectConf
 
     effectParameter.parameterUniform = glGetUniformLocation(m_program, p.second.getString("uniform").utf8Ptr());
     if (effectParameter.parameterUniform == -1) {
-      Logger::warn("OpenGL20 effect parameter '{}' has no associated uniform, skipping", p.first);
+      Logger::warn("OpenGL20 effect parameter '{}' in effect '{}' has no associated uniform, skipping", p.first, name);
     } else {
       String type = p.second.getString("type");
       if (type == "bool") {
