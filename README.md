@@ -3,10 +3,14 @@
 This is a fork of Starbound. Contributions are welcome!
 You **must** own a copy of Starbound to use it. Base game assets are not provided for obvious reasons.
 
-It is still **work-in-progress**. You can download the very latest build below, or the occasional releases (though those aren't very up to date yet!)
-## Nightly Builds
+It is still **work-in-progress**.
 
-At the moment, you must copy the game assets (**packed.pak**) from your normal Starbound install to the OpenStarbound assets directory.
+## Installation
+You can download a nightly build below, or the [latest release](https://github.com/OpenStarbound/OpenStarbound/releases/latest). At the moment, you must copy the game assets (**packed.pak**) from your normal Starbound install to the OpenStarbound assets directory before playing.
+
+An installer is available for Windows. otherwise, extract the client/server zip for your platform and copy the game assets (packed.pak) to the OpenStarbound assets folder. the macOS releases currently lack the sbinit.config and folder structure that the Linux & Windows zips have, so you'll need to create those before running them.
+### Nightly Builds
+These link directly to the latest build from the [Actions](https://github.com/OpenStarbound/OpenStarbound/actions?query=branch%3Amain) tab.
 
 [**Windows**](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build_windows/main):
 [Installer](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build_windows/main/Installer.zip),
@@ -20,8 +24,6 @@ At the moment, you must copy the game assets (**packed.pak**) from your normal S
 [**macOS**](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build_macos/main "overpriced aluminium"): 
 [Intel](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build_macos/main/OpenStarbound-Dev-macOS-Intel.zip),
 [ARM](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build_macos/main/OpenStarbound-Dev-macOS-Silicon.zip)
-
-These link directly to the latest build from the [Actions](https://github.com/OpenStarbound/OpenStarbound/actions?query=branch%3Amain) tab.
 
 ## Changes
 Note: Not every function from [StarExtensions](https://github.com/StarExtensions/StarExtensions) has been ported yet, but near-full compatibility with mods that use StarExtensions features is planned.
