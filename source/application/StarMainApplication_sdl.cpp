@@ -235,7 +235,9 @@ public:
       SDL_free(basePath);
     }
 
+#if SDL_VERSION_ATLEAST(2, 0, 18)
     SDL_SetHint(SDL_HINT_IME_SHOW_UI, "1");
+#endif
 
     m_signalHandler.setHandleInterrupt(true);
     m_signalHandler.setHandleFatal(true);
