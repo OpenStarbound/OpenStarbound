@@ -88,6 +88,9 @@ public:
     // given.
     bool quiet;
 
+    // If true, loads UGC from platform services if available. True by default.
+    bool includeUGC;
+
     // If given, will write changed configuration to the given file within the
     // storage directory.
     Maybe<String> runtimeConfigFile;
@@ -179,6 +182,8 @@ public:
   SpawnTypeDatabaseConstPtr spawnTypeDatabase();
   RadioMessageDatabaseConstPtr radioMessageDatabase();
   CollectionDatabaseConstPtr collectionDatabase();
+
+  Settings& settings();
 
 private:
   static StringList scanForAssetSources(StringList const& directories, StringList const& manual = {});

@@ -570,6 +570,10 @@ CollectionDatabaseConstPtr Root::collectionDatabase() {
   return loadMember(m_collectionDatabase, m_collectionDatabaseMutex, "CollectionDatabase");
 }
 
+Root::Settings& Root::settings() {
+  return m_settings;
+}
+
 StringList Root::scanForAssetSources(StringList const& directories, StringList const& manual) {
   struct AssetSource {
     String path;
