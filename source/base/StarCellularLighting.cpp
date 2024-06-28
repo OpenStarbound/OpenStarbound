@@ -73,7 +73,8 @@ void CellularLightingCalculator::setParameters(Json const& config) {
         config.getFloat("spreadMaxObstacle"),
         config.getFloat("pointMaxAir"),
         config.getFloat("pointMaxObstacle"),
-        config.getFloat("pointObstacleBoost")
+        config.getFloat("pointObstacleBoost"),
+        config.getBool("pointAdditive", false)
       );
   else
     m_lightArray.left().setParameters(
@@ -82,7 +83,8 @@ void CellularLightingCalculator::setParameters(Json const& config) {
         config.getFloat("spreadMaxObstacle"),
         config.getFloat("pointMaxAir"),
         config.getFloat("pointMaxObstacle"),
-        config.getFloat("pointObstacleBoost")
+        config.getFloat("pointObstacleBoost"),
+        config.getBool("pointAdditive", false)
       );
 }
 
@@ -190,7 +192,8 @@ void CellularLightIntensityCalculator::setParameters(Json const& config) {
       config.getFloat("spreadMaxObstacle"),
       config.getFloat("pointMaxAir"),
       config.getFloat("pointMaxObstacle"),
-      config.getFloat("pointObstacleBoost")
+      config.getFloat("pointObstacleBoost"),
+      config.getBool("pointAdditive", false)
     );
 }
 

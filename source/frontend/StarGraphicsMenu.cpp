@@ -97,10 +97,10 @@ GraphicsMenu::GraphicsMenu() {
       Root::singleton().configuration()->set("monochromeLighting", checked);
       syncGui();
     });
-  reader.registerCallback("objectLightingCheckbox", [=](Widget*) {
-    bool checked = fetchChild<ButtonWidget>("objectLightingCheckbox")->isChecked();
-    m_localChanges.set("newObjectLighting", checked);
-    Root::singleton().configuration()->set("newObjectLighting", checked);
+  reader.registerCallback("newLightingCheckbox", [=](Widget*) {
+    bool checked = fetchChild<ButtonWidget>("newLightingCheckbox")->isChecked();
+    m_localChanges.set("newLighting", checked);
+    Root::singleton().configuration()->set("newLighting", checked);
     syncGui();
   });
 
@@ -162,7 +162,7 @@ StringList const GraphicsMenu::ConfigKeys = {
   "antiAliasing",
   "hardwareCursor",
   "monochromeLighting",
-  "newObjectLighting"
+  "newLighting"
 };
 
 void GraphicsMenu::initConfig() {
@@ -229,7 +229,7 @@ void GraphicsMenu::syncGui() {
   fetchChild<ButtonWidget>("multiTextureCheckbox")->setChecked(m_localChanges.get("useMultiTexturing").optBool().value(true));
   fetchChild<ButtonWidget>("antiAliasingCheckbox")->setChecked(m_localChanges.get("antiAliasing").toBool());
   fetchChild<ButtonWidget>("monochromeCheckbox")->setChecked(m_localChanges.get("monochromeLighting").toBool());
-  fetchChild<ButtonWidget>("objectLightingCheckbox")->setChecked(m_localChanges.get("newObjectLighting").optBool().value(true));
+  fetchChild<ButtonWidget>("newLightingCheckbox")->setChecked(m_localChanges.get("newLighting").optBool().value(true));
   fetchChild<ButtonWidget>("hardwareCursorCheckbox")->setChecked(m_localChanges.get("hardwareCursor").toBool());
 }
 

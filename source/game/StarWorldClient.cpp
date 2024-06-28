@@ -1667,29 +1667,32 @@ void WorldClient::lightingCalc() {
   RectI lightRange = m_pendingLightRange;
   List<LightSource> lights = std::move(m_pendingLights);
   List<std::pair<Vec2F, Vec3F>> particleLights = std::move(m_pendingParticleLights);
-  auto configuration = Root::singleton().configuration();
+  auto& root = Root::singleton();
+  auto configuration = root.configuration();
+  bool newLighting = configuration->get("newLighting").optBool().value(true);
   bool monochrome = configuration->get("monochromeLighting").toBool();
+  m_lightingCalculator.setParameters(root.assets()->json("/lighting.config:lighting").set("pointAdditive", newLighting));
   m_lightingCalculator.setMonochrome(monochrome);
   m_lightingCalculator.begin(lightRange);
   lightingTileGather();
 
   prepLocker.unlock();
 
-  bool useHybridPointLights = configuration->get("newObjectLighting").optBool().value(true);
   for (auto const& light : lights) {
     Vec2F position = m_geometry.nearestTo(Vec2F(m_lightingCalculator.calculationRegion().min()), light.position);
     if (light.type == LightType::Spread)
       m_lightingCalculator.addSpreadLight(position, light.color);
     else {
       if (light.type == LightType::PointAsSpread) {
-        if (!useHybridPointLights)
+        if (!newLighting)
           m_lightingCalculator.addSpreadLight(position, light.color);
-        else { // hybrid (used for auto-converted object lights) - 85% spread, 15% point (2nd is applied elsewhere)
+        else { // hybrid (used for auto-converted object lights) - 85% spread, 15% point (* .15 is applied in the calculation code)
           m_lightingCalculator.addSpreadLight(position, light.color * 0.85f);
           m_lightingCalculator.addPointLight(position, light.color, light.pointBeam, light.beamAngle, light.beamAmbience, true);
         }
-      } else // fully additive point light
+      } else {
         m_lightingCalculator.addPointLight(position, light.color, light.pointBeam, light.beamAngle, light.beamAmbience);
+      }
     }
   }
 

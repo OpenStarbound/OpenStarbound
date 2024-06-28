@@ -64,12 +64,12 @@ void CellularLightArray<ScalarLightTraits>::calculatePointLighting(size_t xmin, 
          attenuation += min(blockAttenuation, circularizedPerBlockObstacleAttenuation) * m_pointObstacleBoost;
 
         if (attenuation < 1.0f) {
-          auto newLight = ScalarLightTraits::subtract(light.value, attenuation);
-          if (ScalarLightTraits::maxIntensity(newLight) > 0.0001f) {
-            if (light.asSpread)
-              setLight(x, y, lvalue + newLight * 0.15f);
-            else
-              setLight(x, y, lvalue + newLight);
+          if (m_pointAdditive) {
+            auto newLight = ScalarLightTraits::subtract(light.value, attenuation);
+            if (ScalarLightTraits::maxIntensity(newLight) > 0.0001f)
+              setLight(x, y, lvalue + (light.asSpread ? newLight * 0.15f : newLight));
+          } else {
+            setLight(x, y, ScalarLightTraits::max(ScalarLightTraits::subtract(light.value, attenuation), lvalue));
           }
         }
       }
@@ -137,12 +137,12 @@ void CellularLightArray<ColoredLightTraits>::calculatePointLighting(size_t xmin,
           attenuation += min(blockAttenuation, circularizedPerBlockObstacleAttenuation) * m_pointObstacleBoost;
 
         if (attenuation < 1.0f) {
-          auto newLight = ColoredLightTraits::subtract(light.value, attenuation);
-          if (ColoredLightTraits::maxIntensity(newLight) > 0.0001f) {
-            if (light.asSpread)
-              setLight(x, y, lvalue + newLight * 0.15f);
-            else
-              setLight(x, y, lvalue + newLight);
+          if (m_pointAdditive) {
+            auto newLight = ColoredLightTraits::subtract(light.value, attenuation);
+            if (ColoredLightTraits::maxIntensity(newLight) > 0.0001f)
+              setLight(x, y, lvalue + (light.asSpread ? newLight * 0.15f : newLight));
+          } else {
+            setLight(x, y, ColoredLightTraits::max(ColoredLightTraits::subtract(light.value, attenuation), lvalue));
           }
         }
       }

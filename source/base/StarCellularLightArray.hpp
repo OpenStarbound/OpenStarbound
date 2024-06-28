@@ -60,7 +60,7 @@ public:
   };
 
   void setParameters(unsigned spreadPasses, float spreadMaxAir, float spreadMaxObstacle,
-      float pointMaxAir, float pointMaxObstacle, float pointObstacleBoost);
+      float pointMaxAir, float pointMaxObstacle, float pointObstacleBoost, bool pointAdditive);
 
   // The border around the target lighting array where initial lighting / light
   // source data is required.  Based on parameters.
@@ -129,6 +129,7 @@ private:
   float m_pointMaxAir;
   float m_pointMaxObstacle;
   float m_pointObstacleBoost;
+  bool m_pointAdditive;
 };
 
 typedef CellularLightArray<ColoredLightTraits> ColoredCellularLightArray;
@@ -204,13 +205,14 @@ inline Vec3F ColoredLightTraits::max(Vec3F const& v1, Vec3F const& v2) {
 
 template <typename LightTraits>
 void CellularLightArray<LightTraits>::setParameters(unsigned spreadPasses, float spreadMaxAir, float spreadMaxObstacle,
-    float pointMaxAir, float pointMaxObstacle, float pointObstacleBoost) {
+    float pointMaxAir, float pointMaxObstacle, float pointObstacleBoost, bool pointAdditive) {
   m_spreadPasses = spreadPasses;
   m_spreadMaxAir = spreadMaxAir;
   m_spreadMaxObstacle = spreadMaxObstacle;
   m_pointMaxAir = pointMaxAir;
   m_pointMaxObstacle = pointMaxObstacle;
   m_pointObstacleBoost = pointObstacleBoost;
+  m_pointAdditive = pointAdditive;
 }
 
 template <typename LightTraits>
