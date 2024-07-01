@@ -594,12 +594,12 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
         });
     });
 
-  callbacks.registerCallback("addOrbitBookmark", [player](Json const& system, Json const& bookmarkConfig) {
+  callbacks.registerCallback("addOrbitBookmark", [player](Json const& system, Json const& bookmarkConfig) -> bool {
       CelestialCoordinate coordinate = CelestialCoordinate(system);
       return player->universeMap()->addOrbitBookmark(coordinate, OrbitBookmark::fromJson(bookmarkConfig));
     });
 
-  callbacks.registerCallback("removeOrbitBookmark", [player](Json const& system, Json const& bookmarkConfig) {
+  callbacks.registerCallback("removeOrbitBookmark", [player](Json const& system, Json const& bookmarkConfig) -> bool {
       CelestialCoordinate coordinate = CelestialCoordinate(system);
       return player->universeMap()->removeOrbitBookmark(coordinate, OrbitBookmark::fromJson(bookmarkConfig));
     });
@@ -610,11 +610,11 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
       });
     });
 
-  callbacks.registerCallback("addTeleportBookmark", [player](Json const& bookmarkConfig) {
+  callbacks.registerCallback("addTeleportBookmark", [player](Json const& bookmarkConfig) -> bool {
       return player->universeMap()->addTeleportBookmark(TeleportBookmark::fromJson(bookmarkConfig));
     });
 
-  callbacks.registerCallback("removeTeleportBookmark", [player](Json const& bookmarkConfig) {
+  callbacks.registerCallback("removeTeleportBookmark", [player](Json const& bookmarkConfig) -> bool {
       player->universeMap()->removeTeleportBookmark(TeleportBookmark::fromJson(bookmarkConfig));
     });
 

@@ -71,30 +71,30 @@ List<pair<Vec3I, OrbitBookmark>> PlayerUniverseMap::orbitBookmarks() const {
   return bookmarks;
 }
 
-void PlayerUniverseMap::addOrbitBookmark(CelestialCoordinate const& system, OrbitBookmark const& bookmark) {
+bool PlayerUniverseMap::addOrbitBookmark(CelestialCoordinate const& system, OrbitBookmark const& bookmark) {
   if (system.isNull())
     throw StarException("Cannot add orbit bookmark to null system");
 
-  m_universeMaps[*m_serverUuid].systems[system.location()].bookmarks.add(std::move(bookmark));
+  return m_universeMaps[*m_serverUuid].systems[system.location()].bookmarks.add(std::move(bookmark));
 }
 
-void PlayerUniverseMap::removeOrbitBookmark(CelestialCoordinate const& system, OrbitBookmark const& bookmark) {
+bool PlayerUniverseMap::removeOrbitBookmark(CelestialCoordinate const& system, OrbitBookmark const& bookmark) {
   if (system.isNull())
     throw StarException("Cannot remove orbit bookmark from null system");
 
-  m_universeMaps[*m_serverUuid].systems[system.location()].bookmarks.remove(bookmark);
+  return m_universeMaps[*m_serverUuid].systems[system.location()].bookmarks.remove(bookmark);
 }
 
 List<TeleportBookmark> PlayerUniverseMap::teleportBookmarks() const {
   return universeMap().teleportBookmarks.values();
 }
 
-void PlayerUniverseMap::addTeleportBookmark(TeleportBookmark bookmark) {
-  m_universeMaps[*m_serverUuid].teleportBookmarks.add(std::move(bookmark));
+bool PlayerUniverseMap::addTeleportBookmark(TeleportBookmark bookmark) {
+  return m_universeMaps[*m_serverUuid].teleportBookmarks.add(std::move(bookmark));
 }
 
-void PlayerUniverseMap::removeTeleportBookmark(TeleportBookmark const& bookmark) {
-  m_universeMaps[*m_serverUuid].teleportBookmarks.remove(bookmark);
+bool PlayerUniverseMap::removeTeleportBookmark(TeleportBookmark const& bookmark) {
+  return m_universeMaps[*m_serverUuid].teleportBookmarks.remove(bookmark);
 }
 
 void PlayerUniverseMap::invalidateWarpAction(WarpAction const& warpAction) {
