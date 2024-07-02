@@ -615,7 +615,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
     });
 
   callbacks.registerCallback("removeTeleportBookmark", [player](Json const& bookmarkConfig) -> bool {
-      player->universeMap()->removeTeleportBookmark(TeleportBookmark::fromJson(bookmarkConfig));
+      return player->universeMap()->removeTeleportBookmark(TeleportBookmark::fromJson(bookmarkConfig));
     });
 
   callbacks.registerCallback("isMapped", [player](Json const& coords) {
