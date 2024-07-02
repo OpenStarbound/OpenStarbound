@@ -53,12 +53,12 @@ public:
 
   // pair of system location and bookmark, not all orbit bookmarks include the system
   List<pair<Vec3I, OrbitBookmark>> orbitBookmarks() const;
-  void addOrbitBookmark(CelestialCoordinate const& system, OrbitBookmark const& bookmark);
-  void removeOrbitBookmark(CelestialCoordinate const& system, OrbitBookmark const& bookmark);
+  bool addOrbitBookmark(CelestialCoordinate const& system, OrbitBookmark const& bookmark);
+  bool removeOrbitBookmark(CelestialCoordinate const& system, OrbitBookmark const& bookmark);
 
   List<TeleportBookmark> teleportBookmarks() const;
-  void addTeleportBookmark(TeleportBookmark bookmark);
-  void removeTeleportBookmark(TeleportBookmark const& bookmark);
+  bool addTeleportBookmark(TeleportBookmark bookmark);
+  bool removeTeleportBookmark(TeleportBookmark const& bookmark);
   void invalidateWarpAction(WarpAction const& bookmark);
 
   Maybe<OrbitBookmark> worldBookmark(CelestialCoordinate const& world) const;
