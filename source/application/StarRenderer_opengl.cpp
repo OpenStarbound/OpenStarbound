@@ -80,6 +80,15 @@ void main() {
 }
 )SHADER";
 
+/*
+static void GLAPIENTRY GlMessageCallback(GLenum, GLenum type, GLuint, GLenum, GLsizei, const GLchar* message, const void* renderer) {
+  if (type == GL_DEBUG_TYPE_ERROR) {
+    Logger::error("GL ERROR: {}", message);
+    __debugbreak();
+  }
+}
+*/
+
 OpenGlRenderer::OpenGlRenderer() {
   if (glewInit() != GLEW_OK)
     throw RendererException("Could not initialize GLEW");
@@ -94,10 +103,11 @@ OpenGlRenderer::OpenGlRenderer() {
       (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 
   glClearColor(0.0, 0.0, 0.0, 1.0);
-  glEnable(GL_TEXTURE_2D);
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glDisable(GL_DEPTH_TEST);
+  //glEnable(GL_DEBUG_OUTPUT);
+  //glDebugMessageCallback(GlMessageCallback, this);
 
   m_whiteTexture = createGlTexture(Image::filled({1, 1}, Vec4B(255, 255, 255, 255), PixelFormat::RGBA32),
       TextureAddressing::Clamp,
@@ -694,6 +704,10 @@ Vec2U OpenGlRenderer::GlLoneTexture::glTextureCoordinateOffset() const {
   return Vec2U();
 }
 
+OpenGlRenderer::GlRenderBuffer::GlRenderBuffer() {
+  glGenVertexArrays(1, &vertexArray);
+}
+
 OpenGlRenderer::GlRenderBuffer::~GlRenderBuffer() {
   for (auto const& texture : usedTextures) {
     if (auto gt = as<GlGroupedTexture>(texture.get()))
@@ -701,6 +715,7 @@ OpenGlRenderer::GlRenderBuffer::~GlRenderBuffer() {
   }
   for (auto const& vb : vertexBuffers)
     glDeleteBuffers(1, &vb.vertexBuffer);
+  glDeleteVertexArrays(1, &vertexArray);
 }
 
 void OpenGlRenderer::GlRenderBuffer::set(List<RenderPrimitive>& primitives) {
@@ -715,7 +730,7 @@ void OpenGlRenderer::GlRenderBuffer::set(List<RenderPrimitive>& primitives) {
   List<GLuint> currentTextures;
   List<Vec2U> currentTextureSizes;
   size_t currentVertexCount = 0;
-
+  glBindVertexArray(vertexArray);
   auto finishCurrentBuffer = [&]() {
     if (currentVertexCount > 0) {
       GlVertexBuffer vb;

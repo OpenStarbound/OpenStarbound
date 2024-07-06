@@ -143,6 +143,7 @@ private:
       size_t vertexCount = 0;
     };
 
+    GlRenderBuffer();
     ~GlRenderBuffer();
 
     void set(List<RenderPrimitive>& primitives) override;
@@ -152,6 +153,7 @@ private:
 
     HashSet<TexturePtr> usedTextures;
     List<GlVertexBuffer> vertexBuffers;
+    GLuint vertexArray = 0;
 
     bool useMultiTexturing{true};
   };
