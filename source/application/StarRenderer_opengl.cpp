@@ -8,7 +8,7 @@ namespace Star {
 size_t const MultiTextureCount = 4;
 
 char const* DefaultVertexShader = R"SHADER(
-#version 130
+#version 140
 
 uniform vec2 textureSize0;
 uniform vec2 textureSize1;
@@ -49,7 +49,7 @@ void main() {
 )SHADER";
 
 char const* DefaultFragmentShader = R"SHADER(
-#version 130
+#version 140
 
 uniform sampler2D texture0;
 uniform sampler2D texture1;
@@ -65,13 +65,13 @@ out vec4 outColor;
 void main() {
   vec4 texColor;
   if (fragmentTextureIndex == 3)
-    texColor = texture2D(texture3, fragmentTextureCoordinate);
+    texColor = texture(texture3, fragmentTextureCoordinate);
   else if (fragmentTextureIndex == 2)
-    texColor = texture2D(texture2, fragmentTextureCoordinate);
+    texColor = texture(texture2, fragmentTextureCoordinate);
   else if (fragmentTextureIndex == 1)
-    texColor = texture2D(texture1, fragmentTextureCoordinate);
+    texColor = texture(texture1, fragmentTextureCoordinate);
   else
-    texColor = texture2D(texture0, fragmentTextureCoordinate);
+    texColor = texture(texture0, fragmentTextureCoordinate);
 
   if (texColor.a <= 0.0)
     discard;

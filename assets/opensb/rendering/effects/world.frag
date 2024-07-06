@@ -1,4 +1,4 @@
-#version 130
+#version 140
 
 uniform sampler2D texture0;
 uniform sampler2D texture1;
@@ -27,7 +27,7 @@ vec4 cubic(float v) {
   return vec4(x, y, z, w);
 }
 
-vec4 bicubicSample(sampler2D texture, vec2 texcoord, vec2 texscale) {
+vec4 bicubicSample(sampler2D tex, vec2 texcoord, vec2 texscale) {
   texcoord = texcoord - vec2(0.5, 0.5);
 
   float fx = fract(texcoord.x);
@@ -42,10 +42,10 @@ vec4 bicubicSample(sampler2D texture, vec2 texcoord, vec2 texscale) {
   vec4 s = vec4(xcubic.x + xcubic.y, xcubic.z + xcubic.w, ycubic.x + ycubic.y, ycubic.z + ycubic.w);
   vec4 offset = c + vec4(xcubic.y, xcubic.w, ycubic.y, ycubic.w) / s;
 
-  vec4 sample0 = texture2D(texture, vec2(offset.x, offset.z) * texscale);
-  vec4 sample1 = texture2D(texture, vec2(offset.y, offset.z) * texscale);
-  vec4 sample2 = texture2D(texture, vec2(offset.x, offset.w) * texscale);
-  vec4 sample3 = texture2D(texture, vec2(offset.y, offset.w) * texscale);
+  vec4 sample0 = texture(tex, vec2(offset.x, offset.z) * texscale);
+  vec4 sample1 = texture(tex, vec2(offset.y, offset.z) * texscale);
+  vec4 sample2 = texture(tex, vec2(offset.x, offset.w) * texscale);
+  vec4 sample3 = texture(tex, vec2(offset.y, offset.w) * texscale);
 
   float sx = s.x / (s.x + s.y);
   float sy = s.z / (s.z + s.w);
@@ -67,13 +67,13 @@ vec3 sampleLight(vec2 coord, vec2 scale) {
 void main() {
   vec4 texColor;
   if (fragmentTextureIndex == 3)
-    texColor = texture2D(texture3, fragmentTextureCoordinate);
+    texColor = texture(texture3, fragmentTextureCoordinate);
   else if (fragmentTextureIndex == 2)
-    texColor = texture2D(texture2, fragmentTextureCoordinate);
+    texColor = texture(texture2, fragmentTextureCoordinate);
   else if (fragmentTextureIndex == 1)
-    texColor = texture2D(texture1, fragmentTextureCoordinate);
+    texColor = texture(texture1, fragmentTextureCoordinate);
   else
-    texColor = texture2D(texture0, fragmentTextureCoordinate);
+    texColor = texture(texture0, fragmentTextureCoordinate);
 
   if (texColor.a <= 0.0)
     discard;
