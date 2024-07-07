@@ -209,7 +209,7 @@ LD_LIBRARY_PATH="$LD_LIBRARY_PATH:./" padsp ./starbound "$@"`
  * Run `cd vcpkg && ./bootstrap-vcpkg.sh`
  * Lastly, run ``` export VCPKG_ROOT=~/vcpkg
 export PATH=$VCPKG_ROOT:$PATH ```
- * This last command makes vcpkg added to the current terminal path. This lasts only while the terminal is only, and will have to be rerun.
+ * This last command makes vcpkg added to the current terminal path. This lasts only while the terminal is active, and will have to be rerun for new terminal instances.
 * Install cmake using `brew install cmake`
 * Install ninja using `brew install ninja`
 * Download the source code [here](https://github.com/OpenStarbound/OpenStarbound/archive/refs/heads/main.zip). This is the current code in main. Unpack the code to your downloads folder. 
