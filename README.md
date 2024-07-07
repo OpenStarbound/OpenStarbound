@@ -205,6 +205,7 @@ LD_LIBRARY_PATH="$LD_LIBRARY_PATH:./" padsp ./starbound "$@"`
 * First, you will need to have brew installed. Check out how to install [Homebrew](https://brew.sh/)
 * Install cmake using `brew install cmake`
 * Install ninja using `brew install ninja`
+* Install pkg config using `brew install pkg-config`
 * Next, install vcpkg by following the commands below.
  * Run `cd ~`. This is just so that everything is local to here. 
  * Run ` git clone https://github.com/microsoft/vcpkg.git `
