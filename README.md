@@ -209,8 +209,7 @@ LD_LIBRARY_PATH="$LD_LIBRARY_PATH:./" padsp ./starbound "$@"`
  * Run `cd ~`. This is just so that everything is local to here. 
  * Run ` git clone https://github.com/microsoft/vcpkg.git `
  * Run `cd vcpkg && ./bootstrap-vcpkg.sh`
- * Lastly, run ``` export VCPKG_ROOT=~/vcpkg
-export PATH=$VCPKG_ROOT:$PATH ```
+ * Lastly, run ``` export VCPKG_ROOT=~/vcpkg && export PATH=$VCPKG_ROOT:$PATH ```
  * This last command makes vcpkg added to the current terminal path. This lasts only while the terminal is active, and will have to be rerun for new terminal instances.
 * Download the source code [here](https://github.com/OpenStarbound/OpenStarbound/archive/refs/heads/main.zip). This is the current code in main. Unpack the code to your downloads folder. 
 * Unpack the zip, and open it up. Navigate to OpenStarbound-main/source using the terminal -> `cd ~/Downloads/OpenStarbound-main`. Then navigate to the source folder, using `cd source`.
