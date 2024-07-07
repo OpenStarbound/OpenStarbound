@@ -204,7 +204,7 @@ LD_LIBRARY_PATH="$LD_LIBRARY_PATH:./" padsp ./starbound "$@"`
  
 * First, you will need to have brew install. Check out how to install [Homebrew](https://brew.sh/)
 * Next, install vcpkg.
- * Run ` cd ~`. This is just so that everything is local to here. 
+ * Run `cd ~`. This is just so that everything is local to here. 
  * Run ` git clone https://github.com/microsoft/vcpkg.git `
  * Run `cd vcpkg && ./bootstrap-vcpkg.sh`
  * Lastly, run ``` export VCPKG_ROOT=~/vcpkg
