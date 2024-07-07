@@ -216,21 +216,23 @@ export PATH=$VCPKG_ROOT:$PATH ```
 * Unpack the zip, and open it up. Navigate to OpenStarbound-main/source using the terminal -> `cd ~/Downloads/OpenStarbound-main`. Then navigate to the source folder, using `cd source`.
 <details>
  <summary>If using ARM</summary>
- * While in the source folder in your terminal, run ` cmake --preset macos-arm-release `. This will get dependencies.
- * After that command has finished, run ` cmake --build --preset macos-arm-release `. Wait for this to finish, then go to Finder. Navigate to the OpenStarbound-main folder using Finder. 
- * There will be a folder called <b>dist</b>. Inside dist will be your game files, but you still need to do a few more things to run it.
- * First, in the OpenStarbound-main folder, there will be lib. Open lib, and open the osx folder. Inside is libsteam_api.dylib. Copy this file, and paste it into OpenStarbound-main/dist, so that it is in the same directory as the game files. 
- * Navigate back to OpenStarbound-main/lib/osx, and open up the folder arm64. Here, rename libdiscord_game_sdk.dylib to discord_game_sdk.dylib. The name must be that, or else the game won't be able to load. 
- * You can now run the game. If it says unverified developer, open up the same folder where the game is in in the terminal. ` xattr -d com.apple.quarantine starbound `, which will get rid of the lock on the file. If that doesn't work, run ` sudo spctl --master-disable ` to allow all unverified apps. 
+
+* While in the source folder in your terminal, run ` cmake --preset macos-arm-release `. This will get dependencies.
+* After that command has finished, run ` cmake --build --preset macos-arm-release `. Wait for this to finish, then go to Finder. Navigate to the OpenStarbound-main folder using Finder. 
+* There will be a folder called <b>dist</b>. Inside dist will be your game files, but you still need to do a few more things to run it.
+* First, in the OpenStarbound-main folder, there will be lib. Open lib, and open the osx folder. Inside is libsteam_api.dylib. Copy this file, and paste it into OpenStarbound-main/dist, so that it is in the same directory as the game files. 
+* Navigate back to OpenStarbound-main/lib/osx, and open up the folder arm64. Here, rename libdiscord_game_sdk.dylib to discord_game_sdk.dylib. The name must be that, or else the game won't be able to load. 
+* You can now run the game. If it says unverified developer, open up the same folder where the game is in in the terminal. ` xattr -d com.apple.quarantine starbound `, which will get rid of the lock on the file. If that doesn't work, run ` sudo spctl --master-disable ` to allow all unverified apps. 
 </details>
 <details>
  <summary>If using Intel</summary>
- * While in the source folder in your terminal, run ` cmake --preset macos-release `. This will get dependencies.
- * After that command has finished, run ` cmake --build --preset macos-release `. Wait for this to finish, then go to Finder. Navigate to the OpenStarbound-main folder using Finder. 
- * There will be a folder called <b>dist</b>. Inside dist will be your game files, but you still need to do a few more things to run it.
- * First, in the OpenStarbound-main folder, there will be lib. Open lib, and open the osx folder. Inside is libsteam_api.dylib. Copy this file, and paste it into OpenStarbound-main/dist, so that it is in the same directory as the game files. 
- * Navigate back to OpenStarbound-main/lib/osx, and open up the folder x64. Here, rename libdiscord_game_sdk.dylib to discord_game_sdk.dylib. The name must be that, or else the game won't be able to load. 
- * You can now run the game. If it says unverified developer, open up the same folder where the game is in in the terminal. ` xattr -d com.apple.quarantine starbound `, which will get rid of the lock on the file. If that doesn't work, run ` sudo spctl --master-disable ` to allow all unverified apps. 
+
+* While in the source folder in your terminal, run ` cmake --preset macos-release `. This will get dependencies.
+* After that command has finished, run ` cmake --build --preset macos-release `. Wait for this to finish, then go to Finder. Navigate to the OpenStarbound-main folder using Finder. 
+* There will be a folder called <b>dist</b>. Inside dist will be your game files, but you still need to do a few more things to run it.
+* First, in the OpenStarbound-main folder, there will be lib. Open lib, and open the osx folder. Inside is libsteam_api.dylib. Copy this file, and paste it into OpenStarbound-main/dist, so that it is in the same directory as the game files. 
+* Navigate back to OpenStarbound-main/lib/osx, and open up the folder x64. Here, rename libdiscord_game_sdk.dylib to discord_game_sdk.dylib. The name must be that, or else the game won't be able to load. 
+* You can now run the game. If it says unverified developer, open up the same folder where the game is in in the terminal. ` xattr -d com.apple.quarantine starbound `, which will get rid of the lock on the file. If that doesn't work, run ` sudo spctl --master-disable ` to allow all unverified apps. 
 
 </details>
 </details>
