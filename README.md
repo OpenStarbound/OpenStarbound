@@ -222,6 +222,7 @@ export PATH=$VCPKG_ROOT:$PATH ```
     * There will be a folder called <b>dist</b>. Inside dist will be your game files, but you still need to do a few more things to run it.
     * First, in the OpenStarbound-main folder, there will be lib. Open lib, and open the osx folder. Inside is libsteam_api.dylib. Copy this file, and paste it into OpenStarbound-main/dist, so that it is in the same directory as the game files. 
     * Navigate back to OpenStarbound-main/lib/osx, and open up the folder arm64. Here, rename libdiscord_game_sdk.dylib to discord_game_sdk.dylib. The name must be that, or else the game won't be able to load. 
+    * Grab the packed.pak file from your current Starbound install. It will be located in the assets folder. Copy that file into OpenStarbound-main/assets.
     * You can now run the game. If it says unverified developer, open up the same folder where the game is in in the terminal. ` xattr -d com.apple.quarantine starbound `, which will get rid of the lock on the file. If that doesn't work, run ` sudo spctl --master-disable ` to allow all unverified apps. 
   </details>
   <details>
@@ -232,6 +233,7 @@ export PATH=$VCPKG_ROOT:$PATH ```
      * There will be a folder called <b>dist</b>. Inside dist will be your game files, but you still need to do a few more things to run it.
      * First, in the OpenStarbound-main folder, there will be lib. Open lib, and open the osx folder. Inside is libsteam_api.dylib. Copy this file, and paste it into OpenStarbound-main/dist, so that it is in the same directory as the game files. 
      * Navigate back to OpenStarbound-main/lib/osx, and open up the folder x64. Here, rename libdiscord_game_sdk.dylib to discord_game_sdk.dylib. The name must be that, or else the game won't be able to load. 
+     * Grab the packed.pak file from your current Starbound install. It will be located in the assets folder. Copy that file into OpenStarbound-main/assets.
      * You can now run the game. If it says unverified developer, open up the same folder where the game is in in the terminal. ` xattr -d com.apple.quarantine starbound `, which will get rid of the lock on the file. If that doesn't work, run ` sudo spctl --master-disable ` to allow all unverified apps. 
 
   </details>
