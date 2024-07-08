@@ -8,7 +8,7 @@ It is still **work-in-progress**.
 ## Installation
 You can download a nightly build below, or the [latest release](https://github.com/OpenStarbound/OpenStarbound/releases/latest). At the moment, you must copy the game assets (**packed.pak**) from your normal Starbound install to the OpenStarbound assets directory before playing.
 
-An installer is available for Windows. otherwise, extract the client/server zip for your platform and copy the game assets (packed.pak) to the OpenStarbound assets folder. the macOS releases currently lack the sbinit.config and folder structure that the Linux & Windows zips have, so you'll need to create those before running them.
+An installer is available for Windows. otherwise, extract the client/server zip for your platform and copy the game assets (packed.pak) to the OpenStarbound assets folder. the macOS releases currently lack the sbinit.config and folder structure that the Linux & Windows zips have, so you'll need to create those before running them. For macOS releases, it is recommended to build them from source (See guide below).
 ### Nightly Builds
 These link directly to the latest build from the [Actions](https://github.com/OpenStarbound/OpenStarbound/actions?query=branch%3Amain) tab.
 
@@ -199,6 +199,44 @@ LD_LIBRARY_PATH="$LD_LIBRARY_PATH:./" padsp ./starbound "$@"`
 </details>
 
 </details>
+<details>
+<summary><b>macOS</b></summary>
+ 
+* First, you will need to have brew installed. Check out how to install [Homebrew](https://brew.sh/)
+* Install cmake using `brew install cmake`
+* Install ninja using `brew install ninja`
+* Install pkg config using `brew install pkg-config`
+* Next, install vcpkg by following the commands below.
+ * Run `cd ~`. This is just so that everything is local to here. 
+ * Run ` git clone https://github.com/microsoft/vcpkg.git `
+ * Run `cd vcpkg && ./bootstrap-vcpkg.sh`
+ * Lastly, run ``` export VCPKG_ROOT=~/vcpkg && export PATH=$VCPKG_ROOT:$PATH ```
+ * This last command makes vcpkg added to the current terminal path. This lasts only while the terminal is active, and will have to be rerun for new terminal instances.
+* Download the source code [here](https://github.com/OpenStarbound/OpenStarbound/archive/refs/heads/main.zip). This is the current code in main. Unpack the code to your downloads folder. 
+* Unpack the zip, and open it up. Navigate to OpenStarbound-main/source using the terminal -> `cd ~/Downloads/OpenStarbound-main`. Then navigate to the source folder, using `cd source`.
+  <details>
+   <summary>If using an Arm Mac</summary>
 
-### macOS
-To be written.
+    * While in the source folder in your terminal, run ` cmake --preset macos-arm-release `. This will get dependencies.
+    * After that command has finished, run ` cmake --build --preset macos-arm-release `. Wait for this to finish, then go to Finder. Navigate to the OpenStarbound-main folder using Finder. 
+    * There will be a folder called <b>dist</b>. Inside dist will be your game files, but you still need to do a few more things to run it.
+    * First, in the OpenStarbound-main folder, there will be lib. Open lib, and open the osx folder. Inside is libsteam_api.dylib. Copy this file, and paste it into OpenStarbound-main/dist, so that it is in the same directory as the game files. 
+    * Navigate back to OpenStarbound-main/lib/osx, and open up the folder arm64. Here, rename libdiscord_game_sdk.dylib to discord_game_sdk.dylib. The name must be that, or else the game won't be able to load. 
+    * Grab the packed.pak file from your current Starbound install. It will be located in the assets folder. Copy that file into OpenStarbound-main/assets.
+    * Make a new file called sbinit.config (Make sure it is .config, not .somethingelse), and copy and paste in the sbinit.config text from above, located right underneath the title Building. Place sbinit.config inside OpenStarbound-main/dist. To make a new file, open the program called TextEdit on your mac, paste in the sbinit.config text from above, and click File (located at the very top of your screen), then click Save. It will prompt you, asking where to save it. Save As: sbinit.config, Where: Navigate to OpenStarbound-main/dist. Find the file you just saved, and rename it to get rid of the wrong extension, making sure the full name and extension looks like sbinit.config.
+    * You can now run the game by double clicking on the file called starbound in dist/. If it says unverified developer, open up the same folder where the game is in in the terminal. ` xattr -d com.apple.quarantine starbound `, which will get rid of the lock on the file. If that doesn't work, run ` sudo spctl --master-disable ` to allow all unverified apps. 
+  </details>
+  <details>
+    <summary>If using an Intel Mac</summary>
+
+     * While in the source folder in your terminal, run ` cmake --preset macos-release `. This will get dependencies.
+     * After that command has finished, run ` cmake --build --preset macos-release `. Wait for this to finish, then go to Finder. Navigate to the OpenStarbound-main folder using Finder. 
+     * There will be a folder called <b>dist</b>. Inside dist will be your game files, but you still need to do a few more things to run it.
+     * First, in the OpenStarbound-main folder, there will be lib. Open lib, and open the osx folder. Inside is libsteam_api.dylib. Copy this file, and paste it into OpenStarbound-main/dist, so that it is in the same directory as the game files. 
+     * Navigate back to OpenStarbound-main/lib/osx, and open up the folder x64. Here, rename libdiscord_game_sdk.dylib to discord_game_sdk.dylib. The name must be that, or else the game won't be able to load. 
+     * Grab the packed.pak file from your current Starbound install. It will be located in the assets folder. Copy that file into OpenStarbound-main/assets.
+     * Make a new file called sbinit.config (Make sure it is .config, not .somethingelse), and copy and paste in the sbinit.config text from above, located right underneath the title Building. Place sbinit.config inside OpenStarbound-main/dist. To make a new file, open the program called TextEdit on your mac, paste in the sbinit.config text from above, and click File (located at the very top of your screen), then click Save. It will prompt you, asking where to save it. Save As: sbinit.config, Where: Navigate to OpenStarbound-main/dist. Find the file you just saved, and rename it to get rid of the wrong extension, making sure the full name and extension looks like sbinit.config.
+     * You can now run the game by double clicking on the file called starbound in dist/. If it says unverified developer, open up the same folder where the game is in in the terminal. ` xattr -d com.apple.quarantine starbound `, which will get rid of the lock on the file. If that doesn't work, run ` sudo spctl --master-disable ` to allow all unverified apps. 
+
+  </details>
+</details>
