@@ -13,7 +13,7 @@ An installer is available for Windows. otherwise, extract the client/server zip 
 These link directly to the latest build from the [Actions](https://github.com/OpenStarbound/OpenStarbound/actions?query=branch%3Amain) tab.
 
 [**Windows**](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build_windows/main):
-[Installer](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build_windows/main/Installer.zip),
+[Installer](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build_windows/main/OpenStarbound-Windows-Installer.zip),
 [Client](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build_windows/main/OpenStarbound-Windows-Client.zip),
 [Server](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build_windows/main/OpenStarbound-Windows-Server.zip)
 
