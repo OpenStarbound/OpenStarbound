@@ -76,6 +76,16 @@ Returns the asset source path of an asset, or nil if the asset doesn't exist. If
 Without metadata: Returns an array with all the asset source paths.
 With metadata: Returns a table, key/value being source path/metadata.
 
+#### `?` root.assetImage(`String` image)
+
+*TODO*
+
+#### `JsonArray` root.assetPatches(`String` asset)
+
+Returns a list of asset sources which patch the specified asset and the paths to those patches.
+
+---
+
 #### `Json` root.getConfiguration(`String` key)
 
 Gets a configuration value in `/storage/starbound.config`.
@@ -96,17 +106,13 @@ Sets a configuration value in `/storage/starbound.config` by path.
 
 *Both setters will error if you try to set `safeScripts`, as that can break Starbound's sandbox.*
 
-#### `Json` root.assetImage(`String` image)
-
-*TODO*
-
-#### `Json` root.assetPatches(`String` asset)
-
-*TODO*
+---
 
 #### `JsonArray` root.allRecipes()
 
 Returns all recipes.
+
+---
 
 # Player
 
