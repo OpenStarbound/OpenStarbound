@@ -38,6 +38,8 @@ Note: Not every function from [StarExtensions](https://github.com/StarExtensions
   * These scripts can modify, read, patch and create new assets!
 * Lua patch files now exist - **.patch.lua**
   * These can patch JSON assets, as well as images!
+### Bug Fixes
+* Invalid character inventories are updated when loading in, allowing players to swap inventory mods with pre-existing characters.
 ### Misc
 * Player functions for saving/loading, modifying the humanoid identity
 * Character swapping (rewrite from StarExtensions, currently command-only: `/swap name` case-insensitive, only substring required)
@@ -48,6 +50,8 @@ Note: Not every function from [StarExtensions](https://github.com/StarExtensions
   * **.woff2** fonts are much smaller than **.ttf**, [here's a web conversion tool](https://kombu.kanejaku.org/)!
 * Experimental changes to the storage of directives in memory to reduce copying - can reduce their impact on frametimes when very long directives are present
   * Works especially well when extremely long directives are used for "vanilla multiplayer-compatible" creations, like [generated clothing](https://silverfeelin.github.io/Starbound-NgOutfitGenerator/) or custom items/objects.
+* Perfectly Generic Items will retain the data for what item they were if a mod is uninstalled, and will attempt to restore themselves if re-installed.
+* Musical instruments have their own volume slider in the options menu.
 
 * Client-side tile placement prediction (rewrite from StarExtensions)
   * You can also resize the placement area of tiles on the fly.
