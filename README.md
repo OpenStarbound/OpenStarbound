@@ -41,7 +41,7 @@ Note: Not every function from [StarExtensions](https://github.com/StarExtensions
 ### Bug Fixes
 * Invalid character inventories are updated when loading in, allowing players to swap inventory mods with pre-existing characters.
 ### Misc
-* Player functions for saving/loading, modifying the humanoid identity
+* Player functions for saving/loading, modifying the humanoid identity, manipulating the inventory. [Documentation](https://github.com/OpenStarbound/OpenStarbound/blob/main/doc/lua/openstarbound.md)
 * Character swapping (rewrite from StarExtensions, currently command-only: `/swap name` case-insensitive, only substring required)
 * Custom user input support with a keybindings menu (rewrite from StarExtensions)
 * Positional Voice Chat that works on completely vanilla servers, uses Opus for crisp, HD audio (rewrite from StarExtensions)
@@ -52,11 +52,13 @@ Note: Not every function from [StarExtensions](https://github.com/StarExtensions
   * Works especially well when extremely long directives are used for "vanilla multiplayer-compatible" creations, like [generated clothing](https://silverfeelin.github.io/Starbound-NgOutfitGenerator/) or custom items/objects.
 * Perfectly Generic Items will retain the data for what item they were if a mod is uninstalled, and will attempt to restore themselves if re-installed.
 * Musical instruments have their own volume slider in the options menu.
+* Players can use items while lounging
 
 * Client-side tile placement prediction (rewrite from StarExtensions)
   * You can also resize the placement area of tiles on the fly.
 * Support for placing foreground tiles with a custom collision type (rewrite from StarExtensions, requires OpenSB server)
   * Additionally, objects can be placed under non-solid foreground tiles.
+  * Admin characters have unlimited and unobstructed interaction/placement ranges
 
 * Some minor polish to UI
 * The Skybox's sun now matches the system type you're currently in.
