@@ -87,7 +87,7 @@ public:
 
   // Returns false if the client id already exists, or the spawn target is
   // invalid.
-  bool addClient(ConnectionId clientId, SpawnTarget const& spawnTarget, bool isLocal);
+  bool addClient(ConnectionId clientId, SpawnTarget const& spawnTarget, bool isLocal, bool isAdmin = false);
 
   // Removes client, sends the WorldStopPacket, and returns any pending packets
   // for that client
@@ -277,6 +277,7 @@ private:
     bool pendingForward;
     bool started;
     bool local;
+    bool admin;
 
     List<PacketPtr> outgoingPackets;
 

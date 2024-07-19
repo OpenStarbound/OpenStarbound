@@ -209,7 +209,7 @@ bool WorldServer::spawnTargetValid(SpawnTarget const& spawnTarget) const {
   return true;
 }
 
-bool WorldServer::addClient(ConnectionId clientId, SpawnTarget const& spawnTarget, bool isLocal) {
+bool WorldServer::addClient(ConnectionId clientId, SpawnTarget const& spawnTarget, bool isLocal, bool isAdmin) {
   if (m_clientInfo.contains(clientId))
     return false;
 
@@ -245,6 +245,7 @@ bool WorldServer::addClient(ConnectionId clientId, SpawnTarget const& spawnTarge
 
   auto& clientInfo = m_clientInfo.add(clientId, make_shared<ClientInfo>(clientId, tracker));
   clientInfo->local = isLocal;
+  clientInfo->admin = isAdmin;
 
   auto worldStartPacket = make_shared<WorldStartPacket>();
   auto& templateData = worldStartPacket->templateData = m_worldTemplate->store();
@@ -2387,7 +2388,7 @@ bool WorldServer::isVisibleToPlayer(RectF const& region) const {
 }
 
 WorldServer::ClientInfo::ClientInfo(ConnectionId clientId, InterpolationTracker const trackerInit)
-  : clientId(clientId), skyNetVersion(0), weatherNetVersion(0), pendingForward(false), started(false), interpolationTracker(trackerInit) {}
+  : clientId(clientId), skyNetVersion(0), weatherNetVersion(0), pendingForward(false), started(false), local(false), admin(false), interpolationTracker(trackerInit) {}
 
 List<RectI> WorldServer::ClientInfo::monitoringRegions(EntityMapPtr const& entityMap) const {
   return clientState.monitoringRegions([entityMap](EntityId entityId) -> Maybe<RectI> {
