@@ -187,9 +187,12 @@ void Object::init(World* world, EntityId entityId, EntityMode mode) {
     m_liquidCheckTimer.setDone();
 
     setKeepAlive(configValue("keepAlive", false).toBool());
-
-    StringList scripts = configValue("scripts", JsonArray()).optArray().apply(jsonToStringList).value(m_config->scripts);
-    m_scriptComponent.setScripts(scripts.transformed(bind(AssetPath::relativeTo, m_config->path, _1)));
+    
+    auto jScripts = configValue("scripts", JsonArray());
+    StringList scripts = jScripts.isType(Json::Type::Array)
+      ? jsonToStringList(jScripts).transformed(bind(AssetPath::relativeTo, m_config->path, _1))
+      : m_config->scripts;
+    m_scriptComponent.setScripts(scripts);
     m_scriptComponent.setUpdateDelta(configValue("scriptDelta", 5).toInt());
 
     m_scriptComponent.addCallbacks("object", makeObjectCallbacks());
