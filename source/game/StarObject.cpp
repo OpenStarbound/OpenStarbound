@@ -189,10 +189,10 @@ void Object::init(World* world, EntityId entityId, EntityMode mode) {
     setKeepAlive(configValue("keepAlive", false).toBool());
     
     auto jScripts = configValue("scripts", JsonArray());
-    StringList scripts = jScripts.isType(Json::Type::Array)
-      ? jsonToStringList(jScripts).transformed(bind(AssetPath::relativeTo, m_config->path, _1))
-      : m_config->scripts;
-    m_scriptComponent.setScripts(scripts);
+    if (jScripts.isType(Json::Type::Array))
+      m_scriptComponent.setScripts(jsonToStringList(jScripts).transformed(bind(AssetPath::relativeTo, m_config->path, _1)));
+    else
+      m_scriptComponent.setScripts(m_config->scripts);
     m_scriptComponent.setUpdateDelta(configValue("scriptDelta", 5).toInt());
 
     m_scriptComponent.addCallbacks("object", makeObjectCallbacks());
