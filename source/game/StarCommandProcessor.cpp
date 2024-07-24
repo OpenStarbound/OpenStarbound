@@ -209,7 +209,7 @@ String CommandProcessor::timewarp(ConnectionId connectionId, String const& argum
       return "Great Scott! We can't go back in time!";
 
     m_universe->universeClock()->adjustTime(time);
-    return strf("It's just a jump to the {}...", time > 0.0 ? "left" : "right");
+    return time > 0.0 ? "It's just a jump to the left..." : "And then a step to the right...";
   } catch (BadLexicalCast const&) {
     return strf("Could not parse the argument {} as a time adjustment", arguments[0]);
   }
