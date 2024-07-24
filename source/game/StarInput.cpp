@@ -122,6 +122,22 @@ Json Input::inputEventToJson(InputEvent const& input) {
       {"mouseMove", jsonFromVec2I(mouseMove->mouseMove)},
       {"mousePosition", jsonFromVec2I(mouseMove->mousePosition)}
     };
+  } else if (auto controllerDown = input.ptr<ControllerButtonDownEvent>()) {
+    type = "ControllerButtonDown";
+    data = JsonObject{
+      {"controllerButton", ControllerButtonNames.getRight(controllerDown->controllerButton)},
+      {"controller", controllerDown->controller}};
+  } else if (auto controllerUp = input.ptr<ControllerButtonUpEvent>()) {
+    type = "ControllerButtonUp";
+    data = JsonObject{
+      {"controllerButton", ControllerButtonNames.getRight(controllerUp->controllerButton)},
+      {"controller", controllerUp->controller}};
+  } else if (auto controllerAxis = input.ptr<ControllerAxisEvent>()) {
+    type = "ControllerAxis";
+    data = JsonObject{
+      {"controllerAxis", ControllerAxisNames.getRight(controllerAxis->controllerAxis)},
+      {"controllerAxisValue", controllerAxis->controllerAxisValue},
+      {"controller", controllerAxis->controller}};
   }
 
   if (data) {
@@ -186,7 +202,8 @@ Json Input::bindToJson(Bind const& bind) {
   else if (auto controllerBind = bind.ptr<ControllerBind>()) {
     return JsonObject{
       {"type", "controller"},
-      {"value", ControllerButtonNames.getRight(controllerBind->button)}
+      {"value", ControllerButtonNames.getRight(controllerBind->button)},
+      {"controller", controllerBind->controller}
     };
   }
 
@@ -392,7 +409,8 @@ bool Input::handleInput(InputEvent const& input, bool gameProcessed) {
           m_bindStates[bind].press();
       }
     }
-  } else if (auto keyUp = input.ptr<KeyUpEvent>()) {
+  }
+  else if (auto keyUp = input.ptr<KeyUpEvent>()) {
     auto keyToMod = KeysToMods.rightPtr(keyUp->key);
     if (keyToMod)
       m_pressedMods &= ~*keyToMod;
@@ -410,7 +428,8 @@ bool Input::handleInput(InputEvent const& input, bool gameProcessed) {
           state->release();
       }
     }
-  } else if (auto mouseDown = input.ptr<MouseButtonDownEvent>()) {
+  }
+  else if (auto mouseDown = input.ptr<MouseButtonDownEvent>()) {
     m_mousePosition = mouseDown->mousePosition;
     if (!gameProcessed) {
       auto& state = m_mouseStates[mouseDown->mouseButton];
@@ -422,7 +441,8 @@ bool Input::handleInput(InputEvent const& input, bool gameProcessed) {
           m_bindStates[bind].press();
       }
     }
-  } else if (auto mouseUp = input.ptr<MouseButtonUpEvent>()) {
+  }
+  else if (auto mouseUp = input.ptr<MouseButtonUpEvent>()) {
     m_mousePosition = mouseUp->mousePosition;
     if (auto state = m_mouseStates.ptr(mouseUp->mouseButton)) {
       state->releasePositions.append(mouseUp->mousePosition);
@@ -438,6 +458,28 @@ bool Input::handleInput(InputEvent const& input, bool gameProcessed) {
   }
   else if (auto mouseMove = input.ptr<MouseMoveEvent>()) {
     m_mousePosition = mouseMove->mousePosition;
+  }
+  else if (auto controllerDown = input.ptr<ControllerButtonDownEvent>()) {
+    if (!gameProcessed) {
+      auto& state = m_controllerStates[controllerDown->controllerButton];
+      state.press();
+
+      if (auto binds = m_bindMappings.ptr(controllerDown->controllerButton)) {
+        for (auto bind : filterBindEntries(*binds, m_pressedMods))
+          m_bindStates[bind].press();
+      }
+    }
+  }
+  else if (auto controllerUp = input.ptr<ControllerButtonUpEvent>()) {
+    if (auto state = m_controllerStates.ptr(controllerUp->controllerButton))
+      state->release();
+
+    if (auto binds = m_bindMappings.ptr(controllerUp->controllerButton)) {
+      for (auto& bind : *binds) {
+        if (auto state = m_bindStates.ptr(bind.entry))
+          state->release();
+      }
+    }
   }
 
   return false;

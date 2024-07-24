@@ -301,20 +301,19 @@ void ClientApplication::processInput(InputEvent const& event) {
       m_controllerRightStick[1] = cAxis->controllerAxisValue;
   }
 
-  if (!m_errorScreen->accepted() && m_errorScreen->handleInputEvent(event))
-    return;
+  bool processed = !m_errorScreen->accepted() && m_errorScreen->handleInputEvent(event);
 
-  bool processed = false;
+  if (!processed) {
+    if (m_state == MainAppState::Splash) {
+      processed = m_cinematicOverlay->handleInputEvent(event);
+    } else if (m_state == MainAppState::Title) {
+      if (!(processed = m_cinematicOverlay->handleInputEvent(event)))
+        processed = m_titleScreen->handleInputEvent(event);
 
-  if (m_state == MainAppState::Splash) {
-    processed = m_cinematicOverlay->handleInputEvent(event);
-  } else if (m_state == MainAppState::Title) {
-    if (!(processed = m_cinematicOverlay->handleInputEvent(event)))
-      processed = m_titleScreen->handleInputEvent(event);
-
-  } else if (m_state == MainAppState::SinglePlayer || m_state == MainAppState::MultiPlayer) {
-    if (!(processed = m_cinematicOverlay->handleInputEvent(event)))
-      processed = m_mainInterface->handleInputEvent(event);
+    } else if (m_state == MainAppState::SinglePlayer || m_state == MainAppState::MultiPlayer) {
+      if (!(processed = m_cinematicOverlay->handleInputEvent(event)))
+        processed = m_mainInterface->handleInputEvent(event);
+    }
   }
 
   m_input->handleInput(event, processed);

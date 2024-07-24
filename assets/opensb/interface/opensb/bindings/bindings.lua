@@ -29,12 +29,16 @@ local function getMods(key)
   if bindMods[1] then return bindMods end
 end
 
-local function finishBind(type, value)
+local function finishBind(a, b)
   widget.blur("snare")
   snared = false
-  snareFinished{ type = type, value = value, mods = getMods(value) }
-  for i, mod in ipairs(mods) do
-    mod.active = false
+  if (type(a) == "table") then
+    snareFinished(a)
+  else
+    snareFinished{ type = a, value = b, mods = getMods(value) }
+    for i, mod in ipairs(mods) do
+      mod.active = false
+    end
   end
 end
 
@@ -50,6 +54,8 @@ local function scanInputEvents()
       return finishBind("key", data.key)
     elseif type == "MouseButtonDown" then
       return finishBind("mouse", data.mouseButton)
+    elseif type == "ControllerButtonDown" then
+      return finishBind{ type = "controller", value = data.controllerButton, controller = data.controller }
     end
   end
 end
@@ -127,9 +133,9 @@ function bindsToString(binds)
         str = str .. v .. " + "
       end
     end
-    if bind.type == "key" then
-      str = str .. bind.value
-    elseif bind.type == "mouse" then
+    if bind.type == "controller" then
+      str = str .. "🎮 " .. bind.value
+    else
       str = str .. bind.value
     end
     local _i = (i - 1) * 2
@@ -362,7 +368,7 @@ local function initCallbacks()
 end
 
 function init()
-  --log = sb.logInfo
+  --log = chat and chat.addMessage or sb.logInfo
 
   widget.clearListItems(CATEGORY_LIST_WIDGET)
   initCallbacks()
