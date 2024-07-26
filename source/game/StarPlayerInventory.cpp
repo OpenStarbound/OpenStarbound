@@ -1008,9 +1008,10 @@ ItemPtr& PlayerInventory::retrieve(InventorySlot const& slot) {
 
   if (auto es = slot.ptr<EquipmentSlot>())
     return guardEmpty(m_equipment[*es]);
-  else if (auto bs = slot.ptr<BagSlot>())
-    return guardEmpty(m_bags[bs->first]->at(bs->second));
-  else if (slot.is<SwapSlot>())
+  else if (auto bs = slot.ptr<BagSlot>()) {
+    if (auto bag = m_bags.ptr(bs->first))
+      return guardEmpty((*bag)->at(bs->second));
+  } else if (slot.is<SwapSlot>())
     return guardEmpty(m_swapSlot);
   else
     return guardEmpty(m_trashSlot);
