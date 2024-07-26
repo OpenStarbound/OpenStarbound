@@ -285,12 +285,14 @@ bool TcpPacketSocket::writeData() {
         m_outputBuffer.clear();
 
         m_compressedBuffer.append(compressed.ptr(), compressed.size());
-        size_t written = m_socket->send(m_compressedBuffer.ptr(), m_compressedBuffer.size());
-        if (written > 0) {
-          dataSent = true;
-          m_compressedBuffer.trimLeft(written);
-          m_outgoingStats.mix(written);
-        }
+        do {
+          size_t written = m_socket->send(m_compressedBuffer.ptr(), m_compressedBuffer.size());
+          if (written > 0) {
+            dataSent = true;
+            m_compressedBuffer.trimLeft(written);
+            m_outgoingStats.mix(written);
+          }
+        } while (!m_compressedBuffer.empty());
       } else {
         do {
           size_t written = m_socket->send(m_outputBuffer.ptr(), m_outputBuffer.size());
