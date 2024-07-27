@@ -379,8 +379,8 @@ void P2PPacketSocket::sendPackets(List<PacketPtr> packets) {
       outBuffer.write<bool>(false);
       outBuffer.writeData(packetBuffer.ptr(), packetBuffer.size());
       m_outgoingStats.mix(currentType, packetBuffer.size(), false);
+      m_outputMessages.append(m_compressionStream.compress(outBuffer.takeData()));
     }
-    m_outputMessages.append(m_compressionStream.compress(outBuffer.data()));
   } else {
     while (it.hasNext()) {
       PacketType currentType = it.peekNext()->type();
