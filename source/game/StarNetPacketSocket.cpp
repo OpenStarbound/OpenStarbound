@@ -467,6 +467,7 @@ bool P2PPacketSocket::writeData() {
   if (m_socket) {
     while (!m_outputMessages.empty()) {
       if (m_socket->sendMessage(m_outputMessages.first())) {
+        m_outgoingStats.mix(m_outputMessages.first().size());
         m_outputMessages.removeFirst();
         workDone = true;
       } else {

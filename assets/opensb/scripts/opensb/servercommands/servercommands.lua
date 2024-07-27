@@ -3,41 +3,57 @@ local logHelp = "Available OpenStarbound server commands:\n"
 local userHelp = logHelp .. "^cyan;"
 local adminHelp = userHelp
 
-local function cmd(name, description, permission, func)
+local function cmd(meta, func)
   local first = next(commands) == nil
-  logHelp   =   logHelp .. (first and name or ", "       .. name)
-  userHelp  =  userHelp .. (first and name or ", ^cyan;" .. name)
-  adminHelp = adminHelp .. (first and name or ", ^cyan;" .. name)
+  local name        = meta.name
+  local description = meta.description
+  local permission  = meta.permission
+  if not meta.hidden then
+    logHelp   =   logHelp .. (first and name or ", "       .. name)
+    userHelp  =  userHelp .. (first and name or ", ^cyan;" .. name)
+    adminHelp = adminHelp .. (first and name or ", ^cyan;" .. name)
+  end
 
   local keyName = name:lower()
   if permission == "tell" then
-    commands[keyName] = function(connectionId, ...)
+    commands[keyName] = {meta = meta, func = function(connectionId, ...)
       return func(universe.isAdmin(connectionId), connectionId, ...)
-    end
+    end}
   elseif permission == "admin" then
-    commands[keyName] = function(connectionId, ...)
+    commands[keyName] = {meta = meta, func = function(connectionId, ...)
       local error = CommandProcessor.adminCheck(connectionId, description:sub(1, 1):lower() .. description:sub(2))
       if error then
         return error
       else
         return func(connectionId, ...)
       end
-    end
+    end}
   elseif permission == "user" then
-    commands[keyName] = func
+    commands[keyName] = {meta = meta, func = func}
   else
     error(string.format("Command '%s' has invalid permission", name))
   end
 end
 
-cmd("openhelp", "Get help", "tell", function(isAdmin, connectionId)
+cmd({
+  name = "openhelp",
+  description = "Get help",
+  permission = "tell"
+},
+function(isAdmin, connectionId)
   return isAdmin and adminHelp or userHelp
 end)
 
 do
 
 local objects = nil
-cmd("packetTest", "Do science", "admin", function(connectionId)
+cmd({
+  name = "packetTest",
+  description = "Do science",
+  permission = "admin",
+  hidden = true
+},
+function(connectionId)
   if not objects then
     objects = {}
     local paths = root.assetsByExtension("object")
@@ -69,7 +85,7 @@ function command(commandName, connectionId, args)
 
   local command = commands[commandName:lower()]
   if command then
-    local success, ret = pcall(command, connectionId, table.unpack(args))
+    local success, ret = pcall(command.func, connectionId, table.unpack(args))
     if not success then
       sb.logError("Error in OpenStarbound server command /%s: %s", commandName, ret)
       return "command error: " .. ret
