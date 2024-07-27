@@ -1015,6 +1015,8 @@ ItemPtr& PlayerInventory::retrieve(InventorySlot const& slot) {
     return guardEmpty(m_swapSlot);
   else
     return guardEmpty(m_trashSlot);
+
+  throw ItemException::format("Invalid inventory slot {}", jsonFromInventorySlot(slot));
 }
 
 void PlayerInventory::swapCustomBarLinks(InventorySlot a, InventorySlot b) {
