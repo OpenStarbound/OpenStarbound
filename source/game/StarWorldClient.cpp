@@ -751,7 +751,7 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
 
   for (auto const& packet : packets) {
     if (!inWorld() && !is<WorldStartPacket>(packet))
-      Logger::error("WorldClient received packet type {} while not in world", packet->typeName());
+      Logger::error("WorldClient received packet type {} while not in world", PacketTypeNames.getRight(packet->type()));
 
     if (auto worldStartPacket = as<WorldStartPacket>(packet)) {
       initWorld(*worldStartPacket);

@@ -132,7 +132,6 @@ struct Packet {
   virtual ~Packet();
 
   virtual PacketType type() const = 0;
-  virtual String const& typeName() const = 0;
 
   virtual void readLegacy(DataStream& ds);
   virtual void read(DataStream& ds) = 0;
@@ -156,7 +155,6 @@ struct PacketBase : public Packet {
   static PacketType const Type = PacketT;
 
   PacketType type() const override { return Type; }
-  String const& typeName() const override { return PacketTypeNames.getRight(Type); }
 };
 
 struct ProtocolRequestPacket : PacketBase<PacketType::ProtocolRequest> {
