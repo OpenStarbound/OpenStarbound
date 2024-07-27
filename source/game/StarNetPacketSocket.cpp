@@ -371,14 +371,14 @@ void P2PPacketSocket::sendPackets(List<PacketPtr> packets) {
   if (compressionStreamEnabled()) {
     DataStreamBuffer outBuffer;
     while (it.hasNext()) {
-      PacketPtr& packet = it.next();
-      auto packetType = packet->type();
+      PacketType currentType = it.peekNext()->type();
       DataStreamBuffer packetBuffer;
-      packet->write(packetBuffer);
-      outBuffer.write(packetType);
-      outBuffer.writeVlqI((int)packetBuffer.size());
+      while (it.hasNext() && it.peekNext()->type() == currentType)
+        it.next()->write(packetBuffer);
+      outBuffer.write(currentType);
+      outBuffer.write<bool>(false);
       outBuffer.writeData(packetBuffer.ptr(), packetBuffer.size());
-      m_outgoingStats.mix(packetType, packetBuffer.size(), false);
+      m_outgoingStats.mix(currentType, packetBuffer.size(), false);
     }
     m_outputMessages.append(m_compressionStream.compress(outBuffer.data()));
   } else {
