@@ -76,6 +76,9 @@ R"JSON(
       "allowAdminCommands" : true,
       "allowAdminCommandsFromAnyone" : false,
       "anonymousConnectionsAreAdmin" : false,
+      "connectionSettings" : {
+        "compression" : "Zstd"
+      },
 
       "clientP2PJoinable" : true,
       "clientIPJoinable" : false,

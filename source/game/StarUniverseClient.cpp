@@ -81,8 +81,8 @@ Maybe<String> UniverseClient::connect(UniverseConnection connection, bool allowA
   {
     auto protocolRequest = make_shared<ProtocolRequestPacket>(StarProtocolVersion);
     protocolRequest->setCompressionMode(PacketCompressionMode::Enabled);
-    // Signal that we're OpenStarbound. Vanilla Starbound only compresses packets above 64 bytes - by forcing it we can communicate this.
-    // If you know a less cursed way, please let me know.
+    // Signal that we're OpenStarbound. Vanilla Starbound only compresses
+    // packets above 64 bytes - by forcing it, we can communicate this.
     connection.pushSingle(protocolRequest);
   }
   connection.sendAll(timeout);
@@ -94,8 +94,24 @@ Maybe<String> UniverseClient::connect(UniverseConnection connection, bool allowA
   else if (!protocolResponsePacket->allowed)
     return String(strf("Join failed! Server does not support connections with protocol version {}", StarProtocolVersion));
 
-  m_legacyServer = protocolResponsePacket->compressionMode() != PacketCompressionMode::Enabled; // True if server is vanilla
-  connection.setLegacy(m_legacyServer);
+  if (!(m_legacyServer = protocolResponsePacket->compressionMode() != PacketCompressionMode::Enabled)) {
+    if (auto compressedSocket = as<CompressedPacketSocket>(&connection.packetSocket())) {
+      if (protocolResponsePacket->info) {
+        auto compressionName = protocolResponsePacket->info.getString("compression", "None");
+        auto compressionMode = NetCompressionModeNames.maybeLeft(compressionName);
+        if (!compressionMode)
+          return String(strf("Join failed! Unknown net stream connection type '{}'", compressionName));
+
+        Logger::info("UniverseClient: Using '{}' network stream compression", NetCompressionModeNames.getRight(*compressionMode));
+        compressedSocket->setCompressionStreamEnabled(compressionMode == NetCompressionMode::Zstd);
+      } else if (!m_legacyServer) {
+        Logger::info("UniverseClient: Defaulting to Zstd network stream compression (older server version)");
+        compressedSocket->setCompressionStreamEnabled(true);// old OpenSB server version always expects it!
+      }
+    }
+  }
+  connection.packetSocket().setLegacy(m_legacyServer);
+
   connection.pushSingle(make_shared<ClientConnectPacket>(Root::singleton().assets()->digest(), allowAssetsMismatch, m_mainPlayer->uuid(), m_mainPlayer->name(),
       m_mainPlayer->species(), m_playerStorage->loadShipData(m_mainPlayer->uuid()), m_mainPlayer->shipUpgrades(),
       m_mainPlayer->log()->introComplete(), account));

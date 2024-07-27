@@ -48,7 +48,8 @@ public:
   // false if the timeout was reached with no packets receivable.
   bool receiveAny(unsigned timeout);
 
-  void setLegacy(bool legacy);
+  // Returns a reference to the packet socket.
+  PacketSocket& packetSocket();
 
   // Packet stats for the most recent one second window of activity incoming
   // and outgoing.  Will only return valid stats if the underlying PacketSocket

@@ -1540,6 +1540,7 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
   int clientWaitLimit = assets->json("/universe_server.config:clientWaitLimit").toInt();
   String serverAssetsMismatchMessage = assets->json("/universe_server.config:serverAssetsMismatchMessage").toString();
   String clientAssetsMismatchMessage = assets->json("/universe_server.config:clientAssetsMismatchMessage").toString();
+  auto connectionSettings = configuration->get("connectionSettings");
 
   RecursiveMutexLocker mainLocker(m_mainLock, false);
 
@@ -1549,8 +1550,9 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
     Logger::warn("UniverseServer: client connection aborted, expected ProtocolRequestPacket");
     return;
   }
-  
+
   bool legacyClient = protocolRequest->compressionMode() != PacketCompressionMode::Enabled;
+  connection.packetSocket().setLegacy(legacyClient);
 
   auto protocolResponse = make_shared<ProtocolResponsePacket>();
   protocolResponse->setCompressionMode(PacketCompressionMode::Enabled); // Signal that we're OpenStarbound
@@ -1565,10 +1567,21 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
     return;
   }
 
+  bool useCompressionStream = false;
   protocolResponse->allowed = true;
+  if (!legacyClient) {
+    auto compressionName = connectionSettings.getString("compression", "None");
+    auto compressionMode = NetCompressionModeNames.maybeLeft(compressionName).value(NetCompressionMode::None);
+    useCompressionStream = compressionMode == NetCompressionMode::Zstd;
+    protocolResponse->info = JsonObject{
+      {"compression", NetCompressionModeNames.getRight(compressionMode)}
+    };
+  }
   connection.pushSingle(protocolResponse);
   connection.sendAll(clientWaitLimit);
-  connection.setLegacy(legacyClient);
+
+  if (auto compressedSocket = as<CompressedPacketSocket>(&connection.packetSocket()))
+    compressedSocket->setCompressionStreamEnabled(useCompressionStream);
 
   String remoteAddressString = remoteAddress ? toString(*remoteAddress) : "local";
   Logger::info("UniverseServer: Awaiting connection info from {}, {} client", remoteAddressString, legacyClient ? "Starbound" : "OpenStarbound");

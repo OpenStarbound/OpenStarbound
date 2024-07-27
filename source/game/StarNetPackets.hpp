@@ -116,16 +116,23 @@ enum class PacketType : uint8_t {
 };
 extern EnumMap<PacketType> const PacketTypeNames;
 
+enum class NetCompressionMode : uint8_t {
+  None,
+  Zstd
+};
+extern EnumMap<NetCompressionMode> const NetCompressionModeNames;
+
 enum class PacketCompressionMode : uint8_t {
   Disabled,
-  Enabled,
-  Automatic
+  Automatic,
+  Enabled
 };
 
 struct Packet {
   virtual ~Packet();
 
   virtual PacketType type() const = 0;
+  virtual String const& typeName() const = 0;
 
   virtual void readLegacy(DataStream& ds);
   virtual void read(DataStream& ds) = 0;
@@ -149,6 +156,7 @@ struct PacketBase : public Packet {
   static PacketType const Type = PacketT;
 
   PacketType type() const override { return Type; }
+  String const& typeName() const override { return PacketTypeNames.getRight(Type); }
 };
 
 struct ProtocolRequestPacket : PacketBase<PacketType::ProtocolRequest> {
@@ -162,12 +170,14 @@ struct ProtocolRequestPacket : PacketBase<PacketType::ProtocolRequest> {
 };
 
 struct ProtocolResponsePacket : PacketBase<PacketType::ProtocolResponse> {
-  ProtocolResponsePacket(bool allowed = false);
+  ProtocolResponsePacket(bool allowed = false, Json info = {});
 
   void read(DataStream& ds) override;
+  void writeLegacy(DataStream& ds) const override;
   void write(DataStream& ds) const override;
 
   bool allowed;
+  Json info;
 };
 
 struct ServerDisconnectPacket : PacketBase<PacketType::ServerDisconnect> {

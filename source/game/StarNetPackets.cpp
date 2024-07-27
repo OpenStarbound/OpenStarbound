@@ -78,6 +78,11 @@ EnumMap<PacketType> const PacketTypeNames{
   {PacketType::SystemObjectSpawn, "SystemObjectSpawn"}
 };
 
+EnumMap<NetCompressionMode> const NetCompressionModeNames {
+  {NetCompressionMode::None, "None"},
+  {NetCompressionMode::Zstd, "Zstd"}
+};
+
 Packet::~Packet() {}
 
 void Packet::readLegacy(DataStream& ds) { read(ds); }
@@ -187,15 +192,27 @@ void ProtocolRequestPacket::write(DataStream& ds) const {
   ds.write(requestProtocolVersion);
 }
 
-ProtocolResponsePacket::ProtocolResponsePacket(bool allowed)
-  : allowed(allowed) {}
+ProtocolResponsePacket::ProtocolResponsePacket(bool allowed, Json info)
+  : allowed(allowed), info(info) {}
 
 void ProtocolResponsePacket::read(DataStream& ds) {
   ds.read(allowed);
+  if (compressionMode() == PacketCompressionMode::Enabled) {
+    // gross hack for backwards compatibility with older OpenSB servers
+    // can be removed later
+    auto externalBuffer = as<DataStreamExternalBuffer>(&ds);
+    if (!externalBuffer || !externalBuffer->atEnd())
+      ds.read(info);
+  }
+}
+
+void ProtocolResponsePacket::writeLegacy(DataStream& ds) const {
+  ds.write(allowed);
 }
 
 void ProtocolResponsePacket::write(DataStream& ds) const {
-  ds.write(allowed);
+  writeLegacy(ds);
+  ds.write(info);
 }
 
 ConnectSuccessPacket::ConnectSuccessPacket() {}

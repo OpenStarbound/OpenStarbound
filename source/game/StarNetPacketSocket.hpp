@@ -78,7 +78,20 @@ public:
   virtual void setLegacy(bool legacy);
   virtual bool legacy() const;
 private:
-  bool m_legacy = true;
+  bool m_legacy = false;
+};
+
+class CompressedPacketSocket : public PacketSocket {
+public:
+  virtual ~CompressedPacketSocket() = default;
+
+  virtual void setCompressionStreamEnabled(bool enabled);
+  virtual bool compressionStreamEnabled() const;
+private:
+  bool m_useCompressionStream = false;
+protected:
+  CompressionStream m_compressionStream;
+  DecompressionStream m_decompressionStream;
 };
 
 // PacketSocket for local communication.
@@ -112,7 +125,7 @@ private:
 };
 
 // Wraps a TCP socket into a PacketSocket.
-class TcpPacketSocket : public PacketSocket {
+class TcpPacketSocket : public CompressedPacketSocket {
 public:
   static TcpPacketSocketUPtr open(TcpSocketPtr socket);
 
@@ -140,14 +153,10 @@ private:
   PacketStatCollector m_outgoingStats;
   ByteArray m_outputBuffer;
   ByteArray m_inputBuffer;
-  bool m_useCompressionStream = false;
-  ByteArray m_compressedBuffer;
-  CompressionStream m_compressionStream;
-  DecompressionStream m_decompressionStream;
 };
 
 // Wraps a P2PSocket into a PacketSocket
-class P2PPacketSocket : public PacketSocket {
+class P2PPacketSocket : public CompressedPacketSocket {
 public:
   static P2PPacketSocketUPtr open(P2PSocketUPtr socket);
 

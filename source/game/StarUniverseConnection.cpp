@@ -107,8 +107,8 @@ bool UniverseConnection::receiveAny(unsigned timeout) {
   }
 }
 
-void UniverseConnection::setLegacy(bool legacy) {
-  m_packetSocket->setLegacy(legacy);
+PacketSocket& UniverseConnection::packetSocket() {
+  return *m_packetSocket;
 }
 
 Maybe<PacketStats> UniverseConnection::incomingStats() const {
