@@ -21,6 +21,8 @@ command("run", function(src)
     local success, result = pcall(result)
     if not success then
       return "^#f00;error: " .. result
+    elseif result == nil then
+      return nil
     else
       local success, printed = pcall(sb.printJson, result)
       if not success then
