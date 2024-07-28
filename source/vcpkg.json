@@ -8,6 +8,7 @@
     "freetype",
     "libpng",
     "opus",
-    "zstd"
+    "zstd",
+    "mimalloc"
   ]
 }

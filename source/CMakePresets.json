@@ -31,7 +31,8 @@
         "VCPKG_TARGET_TRIPLET": "x64-windows-mixed-md",
         "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL",
         "CMAKE_INCLUDE_PATH": "${sourceParentDir}/lib/windows/include",
-        "CMAKE_LIBRARY_PATH": "${sourceParentDir}/lib/windows"
+        "CMAKE_LIBRARY_PATH": "${sourceParentDir}/lib/windows",
+        "STAR_USE_RPMALLOC": true
       },
       "vendor": {
         "microsoft.com/VisualStudioSettings/CMake/1.0": {
