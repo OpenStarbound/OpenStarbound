@@ -310,49 +310,54 @@ void Mixer::read(int16_t* outBuffer, size_t frameCount, ExtraMixFunction extraMi
           m_mixBuffer[i] = 0;
         ramt += silentSamples * channels;
       }
-      ramt += audioInstance->m_audio.resample(channels, sampleRate, m_mixBuffer.ptr() + ramt, bufferSize - ramt, pitchMultiplier);
-      while (ramt != bufferSize && !finished) {
-        // Only seek back to the beginning and read more data if loops is < 0
-        // (loop forever), or we have more loops to go, otherwise, the sample is
-        // finished.
-        if (audioInstance->m_loops != 0) {
-          audioInstance->m_audio.seekSample(0);
-          ramt += audioInstance->m_audio.resample(channels, sampleRate, m_mixBuffer.ptr() + ramt, bufferSize - ramt, pitchMultiplier);
-          if (audioInstance->m_loops > 0)
-            --audioInstance->m_loops;
-        } else {
-          finished = true;
-        }
-      }
-      if (audioInstance->m_clockStop && *audioInstance->m_clockStop < sampleEndTime) {
-        for (size_t s = 0; s < ramt / channels; ++s) {
-          unsigned millisecondsInBuffer = (s * 1000) / sampleRate;
-          auto sampleTime = sampleStartTime + millisecondsInBuffer;
-          if (sampleTime > *audioInstance->m_clockStop) {
-            float volume = 0.0f;
-            if (audioInstance->m_clockStopFadeOut > 0)
-              volume = 1.0f - (float)(sampleTime - *audioInstance->m_clockStop) / (float)audioInstance->m_clockStopFadeOut;
-
-            if (volume <= 0) {
-              for (size_t c = 0; c < channels; ++c)
-                m_mixBuffer[s * channels + c] = 0;
-            } else {
-              for (size_t c = 0; c < channels; ++c)
-                m_mixBuffer[s * channels + c] *= volume;
-            }
+      try {
+        ramt += audioInstance->m_audio.resample(channels, sampleRate, m_mixBuffer.ptr() + ramt, bufferSize - ramt, pitchMultiplier);
+        while (ramt != bufferSize && !finished) {
+          // Only seek back to the beginning and read more data if loops is < 0
+          // (loop forever), or we have more loops to go, otherwise, the sample is
+          // finished.
+          if (audioInstance->m_loops != 0) {
+            audioInstance->m_audio.seekSample(0);
+            ramt += audioInstance->m_audio.resample(channels, sampleRate, m_mixBuffer.ptr() + ramt, bufferSize - ramt, pitchMultiplier);
+            if (audioInstance->m_loops > 0)
+              --audioInstance->m_loops;
+          } else {
+            finished = true;
           }
         }
-        if (sampleEndTime > *audioInstance->m_clockStop + audioInstance->m_clockStopFadeOut)
-          finished = true;
-      }
+        if (audioInstance->m_clockStop && *audioInstance->m_clockStop < sampleEndTime) {
+          for (size_t s = 0; s < ramt / channels; ++s) {
+            unsigned millisecondsInBuffer = (s * 1000) / sampleRate;
+            auto sampleTime = sampleStartTime + millisecondsInBuffer;
+            if (sampleTime > *audioInstance->m_clockStop) {
+              float volume = 0.0f;
+              if (audioInstance->m_clockStopFadeOut > 0)
+                volume = 1.0f - (float)(sampleTime - *audioInstance->m_clockStop) / (float)audioInstance->m_clockStopFadeOut;
 
-      for (size_t s = 0; s < ramt / channels; ++s) {
-        float vol = lerp((float)s / frameCount, beginVolume * groupVolume * audioStopVolBegin, endVolume * groupEndVolume * audioStopVolEnd);
-        for (size_t c = 0; c < channels; ++c) {
-          float sample = m_mixBuffer[s * channels + c] * vol * audioState.positionalChannelVolumes[c] * audioInstance->m_volume.value;
-          int16_t& outSample = outBuffer[s * channels + c];
-          outSample = clamp(sample + outSample, -32767.0f, 32767.0f);
+              if (volume <= 0) {
+                for (size_t c = 0; c < channels; ++c)
+                  m_mixBuffer[s * channels + c] = 0;
+              } else {
+                for (size_t c = 0; c < channels; ++c)
+                  m_mixBuffer[s * channels + c] *= volume;
+              }
+            }
+          }
+          if (sampleEndTime > *audioInstance->m_clockStop + audioInstance->m_clockStopFadeOut)
+            finished = true;
         }
+
+        for (size_t s = 0; s < ramt / channels; ++s) {
+          float vol = lerp((float)s / frameCount, beginVolume * groupVolume * audioStopVolBegin, endVolume * groupEndVolume * audioStopVolEnd);
+          for (size_t c = 0; c < channels; ++c) {
+            float sample = m_mixBuffer[s * channels + c] * vol * audioState.positionalChannelVolumes[c] * audioInstance->m_volume.value;
+            int16_t& outSample = outBuffer[s * channels + c];
+            outSample = clamp(sample + outSample, -32767.0f, 32767.0f);
+          }
+        }
+      } catch (Star::AudioException const& e) {
+        Logger::error("Error reading audio '{}': {}", audioInstance->m_audio.name(), e.what());
+        finished = true;
       }
 
       audioInstance->m_volume.value = audioStopVolEnd;

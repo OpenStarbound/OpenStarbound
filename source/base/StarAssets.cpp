@@ -1241,7 +1241,7 @@ shared_ptr<Assets::AssetData> Assets::loadImage(AssetPath const& path) const {
 shared_ptr<Assets::AssetData> Assets::loadAudio(AssetPath const& path) const {
   return unlockDuring([&]() {
     auto newData = make_shared<AudioData>();
-    newData->audio = make_shared<Audio>(open(path.basePath));
+    newData->audio = make_shared<Audio>(open(path.basePath), path.basePath);
     newData->needsPostProcessing = newData->audio->compressed();
     return newData;
   });

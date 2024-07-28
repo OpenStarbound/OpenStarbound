@@ -239,17 +239,19 @@ public:
 
   size_t readPartial(int16_t* buffer, size_t bufferSize) {
     int bitstream;
-    int read;
+    int read = OV_HOLE;
     // ov_read takes int parameter, so do some magic here to make sure we don't
     // overflow
     bufferSize *= 2;
+    do {
 #if STAR_LITTLE_ENDIAN
-    read = ov_read(&m_vorbisFile, (char*)buffer, bufferSize, 0, 2, 1, &bitstream);
+      read = ov_read(&m_vorbisFile, (char*)buffer, bufferSize, 0, 2, 1, &bitstream);
 #else
-    read = ov_read(&m_vorbisFile, (char*)buffer, bufferSize, 1, 2, 1, &bitstream);
+      read = ov_read(&m_vorbisFile, (char*)buffer, bufferSize, 1, 2, 1, &bitstream);
 #endif
+    } while (read == OV_HOLE);
     if (read < 0)
-      throw AudioException("Error in Audio::read");
+      throw AudioException::format("Error in Audio::read ({})", read);
 
     // read in bytes, returning number of int16_t samples.
     return read / 2;
@@ -349,7 +351,8 @@ private:
   ExternalBuffer m_memoryFile;
 };
 
-Audio::Audio(IODevicePtr device) {
+Audio::Audio(IODevicePtr device, String name) {
+  m_name = name;
   if (!device->isOpen())
     device->open(IOMode::Read);
 
@@ -577,6 +580,14 @@ size_t Audio::resample(unsigned destinationChannels, unsigned destinationSampleR
 
     return writtenSamples * destinationChannels;
   }
+}
+
+String const& Audio::name() const {
+  return m_name;
+}
+
+void Audio::setName(String name) {
+  m_name = std::move(name);
 }
 
 }
