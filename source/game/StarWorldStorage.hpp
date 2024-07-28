@@ -161,7 +161,7 @@ public:
   // Ticks down the TTL on sectors and generation queue entries, stores old
   // sectors, expires old generation queue entries, and unloads any zombie
   // entities.
-  void tick(float dt);
+  void tick(float dt, String const* worldId = nullptr);
 
   // Unload all sectors that can be unloaded (if force is specified, ALWAYS
   // unloads all sectors)
@@ -265,7 +265,7 @@ private:
   // Store and unload the given sector to the given level, given the state of
   // the surrounding sectors.  If force is true, will always unload to the
   // given level.
-  void unloadSectorToLevel(Sector const& sector, SectorLoadLevel targetLoadLevel, bool force = false);
+  bool unloadSectorToLevel(Sector const& sector, SectorLoadLevel targetLoadLevel, bool force = false);
 
   // Sync this sector to disk without unloading it.
   void syncSector(Sector const& sector);

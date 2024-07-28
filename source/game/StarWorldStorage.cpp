@@ -273,7 +273,7 @@ void WorldStorage::generateQueue(Maybe<size_t> sectorGenerationLevelLimit, funct
   }
 }
 
-void WorldStorage::tick(float dt) {
+void WorldStorage::tick(float dt, String const* worldId) {
   try {
     // Tick down generation queue entries, and erase any that are expired.
     eraseWhere(m_generationQueue, [dt](auto& p) {
@@ -289,6 +289,7 @@ void WorldStorage::tick(float dt) {
     // unloaded, kept alive by a keep-alive entity, or has any entities that need
     // to be stored because they moved into an entity-unloaded sector (zombies).
     auto entityFactory = Root::singleton().entityFactory();
+    unsigned unloaded = 0, skipped = 0;
     for (auto const& p : m_sectorMetadata.pairs()) {
       auto const& sector = p.first;
       auto const& metadata = p.second;
@@ -315,7 +316,7 @@ void WorldStorage::tick(float dt) {
       if (keepAlive) {
         setSectorTimeToLive(sector, randomizedSectorTTL());
       } else if (needsUnload) {
-        unloadSectorToLevel(sector, SectorLoadLevel::None);
+        (unloadSectorToLevel(sector, SectorLoadLevel::None) ? unloaded : skipped)++;
       } else if (!zombieEntities.empty()) {
         List<EntityPtr> zombiesToStore;
         List<EntityPtr> zombiesToRemove;
@@ -348,6 +349,10 @@ void WorldStorage::tick(float dt) {
           mergeSectorUniques(sector, storedUniques);
         }
       }
+    }
+    if (worldId) {
+      LogMap::set(strf("server_{}_storage", *worldId),
+        strf("{} active, {}/{} unloaded ({} held)", m_sectorMetadata.size(), unloaded, skipped + unloaded, skipped));
     }
   } catch (std::exception const& e) {
     m_db.rollback();
@@ -712,9 +717,9 @@ void WorldStorage::loadSectorToLevel(Sector const& sector, SectorLoadLevel targe
   }
 }
 
-void WorldStorage::unloadSectorToLevel(Sector const& sector, SectorLoadLevel targetLoadLevel, bool force) {
+bool WorldStorage::unloadSectorToLevel(Sector const& sector, SectorLoadLevel targetLoadLevel, bool force) {
   if (!m_tileArray->sectorValid(sector) || targetLoadLevel == SectorLoadLevel::Loaded)
-    return;
+    return true;
 
   auto entityFactory = Root::singleton().entityFactory();
 
@@ -728,14 +733,18 @@ void WorldStorage::unloadSectorToLevel(Sector const& sector, SectorLoadLevel tar
     // Only store / remove entities who belong to this sector.  If an entity
     // overlaps with this sector but does not belong to it, we may not want to
     // completely unload it.
-    if (!belongsInSector(sector, entity->position())) {
-      entitiesOverlap = true;
+    auto position = entity->position();
+    if (!belongsInSector(sector, position)) {
+      if (auto entitySector = sectorForPosition(Vec2I(position))) {
+        if (auto p = m_sectorMetadata.ptr(*entitySector))
+          entitiesOverlap |= p->timeToLive > 0.0f;
+      }
       continue;
     }
 
     bool keepAlive = m_generatorFacade->entityKeepAlive(this, entity);
     if (keepAlive && !force)
-      return;
+      return false;
 
     if (m_generatorFacade->entityPersistent(this, entity))
       entitiesToStore.append(std::move(entity));
@@ -780,14 +789,19 @@ void WorldStorage::unloadSectorToLevel(Sector const& sector, SectorLoadLevel tar
     }
   }
 
-  if (targetLoadLevel == SectorLoadLevel::None && metadata.loadLevel > SectorLoadLevel::None && !entitiesOverlap) {
-    TileSectorStore sectorStore;
-    sectorStore.tiles = m_tileArray->unloadSector(sector);
-    sectorStore.generationLevel = metadata.generationLevel;
-    m_db.insert(tileSectorKey(sector), writeTileSector(sectorStore));
-    m_sectorMetadata.remove(sector);
-    m_generatorFacade->sectorLoadLevelChanged(this, sector, SectorLoadLevel::None);
+  if (targetLoadLevel == SectorLoadLevel::None) {
+    if (metadata.loadLevel > SectorLoadLevel::None && !entitiesOverlap) {
+      TileSectorStore sectorStore;
+      sectorStore.tiles = m_tileArray->unloadSector(sector);
+      sectorStore.generationLevel = metadata.generationLevel;
+      m_db.insert(tileSectorKey(sector), writeTileSector(sectorStore));
+      m_sectorMetadata.remove(sector);
+      m_generatorFacade->sectorLoadLevelChanged(this, sector, SectorLoadLevel::None);
+      return true;
+    }
+    return false;
   }
+  return true;
 }
 
 void WorldStorage::syncSector(Sector const& sector) {

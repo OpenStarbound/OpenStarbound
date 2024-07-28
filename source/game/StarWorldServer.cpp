@@ -660,10 +660,10 @@ void WorldServer::update(float dt) {
     m_fallingBlocksAgent->update();
 
   if (auto delta = shouldRunThisStep("blockDamageUpdate"))
-    updateDamagedBlocks(*delta * GlobalTimestep);
+    updateDamagedBlocks(*delta * dt);
 
   if (auto delta = shouldRunThisStep("worldStorageTick"))
-    m_worldStorage->tick(*delta * GlobalTimestep);
+    m_worldStorage->tick(*delta * GlobalTimestep, &m_worldId);
 
   if (auto delta = shouldRunThisStep("worldStorageGenerate")) {
     m_worldStorage->generateQueue(m_fidelityConfig.optUInt("worldStorageGenerationLevelLimit"), [this](WorldStorage::Sector a, WorldStorage::Sector b) {
