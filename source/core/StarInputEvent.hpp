@@ -119,15 +119,6 @@ enum class Key : uint16_t {
   F13,
   F14,
   F15,
-  F16,
-  F17,
-  F18,
-  F19,
-  F20,
-  F21,
-  F22,
-  F23,
-  F24,
   NumLock,
   CapsLock,
   ScrollLock,
@@ -146,7 +137,18 @@ enum class Key : uint16_t {
   SysReq,
   Pause,
   Menu,
-  Power
+  Power,
+  // can't have this where I want because canvases
+  // pass keycodes to Lua as a numeric code >:[
+  F16,
+  F17,
+  F18,
+  F19,
+  F20,
+  F21,
+  F22,
+  F23,
+  F24
 };
 extern EnumMap<Key> const KeyNames;
 

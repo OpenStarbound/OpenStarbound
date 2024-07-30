@@ -28,8 +28,6 @@ StatusController::StatusController(Json const& config) : m_statCollection(config
   m_primaryScript.setScripts(jsonToStringList(config.get("primaryScriptSources", JsonArray())));
   m_primaryScript.setUpdateDelta(config.getUInt("primaryScriptDelta", 1));
 
-  m_primaryScript.setUpdateDelta(config.getUInt("primaryScriptDelta", 1));
-
   uint64_t keepDamageSteps = config.getUInt("keepDamageNotificationSteps", 120);
   m_recentHitsGiven.setHistoryLimit(keepDamageSteps);
   m_recentDamageGiven.setHistoryLimit(keepDamageSteps);

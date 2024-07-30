@@ -81,7 +81,7 @@ void BaseScriptPane::tick(float dt) {
   }
   for (auto p : m_canvasKeyCallbacks) {
     for (auto const& keyEvent : p.first->pullKeyEvents())
-      m_script.invoke(p.second, (int)keyEvent.key, keyEvent.keyDown);
+      m_script.invoke(p.second, (int)keyEvent.key, keyEvent.keyDown, KeyNames.getRight(keyEvent.key));
   }
 
   m_script.update(m_script.updateDt(dt));
