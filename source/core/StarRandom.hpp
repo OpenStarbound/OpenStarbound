@@ -208,8 +208,8 @@ typename Container::value_type Random::randValueFrom(
 
 template <typename Container>
 void Random::shuffle(Container& container) {
-  size_t max = container.size();
-  std::shuffle(container.begin(), container.end(), URBG<size_t>([max]() { return Random::randUInt(max - 1); }));
+  RandomSource random;
+  std::shuffle(container.begin(), container.end(), URBG<size_t>([&]() { return static_cast<size_t>(random.randu64()); }));
 }
 
 }

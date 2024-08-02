@@ -134,11 +134,14 @@ private:
 
 template <typename Container, typename T, typename... TL>
 void staticRandomShuffle(Container& container, T const& d, TL const&... rest) {
-  int mix = 0;
-  size_t max = container.size();
-  std::shuffle(container.begin(), container.end(), URBG<size_t>([&]() {
-    return staticRandomU32Range(0, max - 1, ++mix, d, rest...);
-  }));
+  auto begin = container.begin();
+  auto end = container.end();
+  auto it = begin;
+  for (int i = 1, mix = 0; ++it != end; ++i) {
+    int off = staticRandomU32Range(0, i, ++mix, d, rest...);
+    if (off != i)
+      std::swap(*it, *(begin + off));    
+  }
 }
 
 }
