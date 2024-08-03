@@ -972,9 +972,9 @@ void ClientApplication::updateRunning(float dt) {
       config->set("zoomLevel", newZoom);
     }
 
-    //if (m_controllerLeftStick.magnitudeSquared() > 0.001f)
-    //  m_player->setMoveVector(m_controllerLeftStick);
-    //else
+    if (m_controllerLeftStick.magnitudeSquared() > 0.01f)
+      m_player->setMoveVector(m_controllerLeftStick);
+    else
       m_player->setMoveVector(Vec2F());
 
     m_voice->setInput(m_input->bindHeld("opensb", "pushToTalk"));
