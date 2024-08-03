@@ -177,6 +177,7 @@ endif()
 message(STATUS "Using Lua API checks: ${STAR_LUA_APICHECK}")
 message(STATUS "Using jemalloc: ${STAR_USE_JEMALLOC}")
 message(STATUS "Using mimalloc: ${STAR_USE_MIMALLOC}")
+message(STATUS "Using rpmalloc: ${STAR_USE_RPMALLOC}")
 
 # Set C defines and cmake variables based on the build settings we have now
 # determined...
@@ -486,8 +487,10 @@ set(STAR_EXT_LIBS ${STAR_EXT_LIBS}
 
 if(STAR_BUILD_GUI)
   find_package(SDL2 CONFIG REQUIRED)
+  find_package(SampleRate CONFIG REQUIRED)
 
   set(STAR_EXT_GUI_LIBS
+    SampleRate::samplerate
     $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main>
     $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
   )

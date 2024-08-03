@@ -211,13 +211,25 @@ void Voice::loadJson(Json const& config, bool skipSave) {
 			m_lastInputTime = 0;
 	}
 
+	bool shouldResetEncoder = false;
 	if (auto channelMode = config.optString("channelMode")) {
 		if (change(m_channelMode, VoiceChannelModeNames.getLeft(*channelMode), changed)) {
 			closeDevice();
-			resetEncoder();
+			shouldResetEncoder = true;
 			resetDevice();
 		}
 	}
+
+	// not saving this setting to disk, as it's just for audiophiles
+	// don't want someone fudging their bitrate from the intended defaults and forgetting
+	if (auto bitrate = config.opt("bitrate")) {
+    unsigned newBitrate = bitrate->canConvert(Json::Type::Int)
+			? clamp((unsigned)bitrate->toUInt(), 6000u, 510000u) : 0;
+    shouldResetEncoder |= change(m_bitrate, newBitrate, changed);
+  }
+
+  if (shouldResetEncoder)
+    resetEncoder();
 
 	if (changed && !skipSave)
 		scheduleSave();
@@ -607,7 +619,8 @@ void Voice::resetEncoder() {
   int channels = encoderChannels();
 	MutexLocker locker(m_threadMutex);
   m_encoder.reset(createEncoder(channels));
-  opus_encoder_ctl(m_encoder.get(), OPUS_SET_BITRATE(channels == 2 ? 50000 : 24000));
+	int bitrate = m_bitrate > 0 ? (int)m_bitrate : (channels == 2 ? 50000 : 24000);
+  opus_encoder_ctl(m_encoder.get(), OPUS_SET_BITRATE(bitrate));
 }
 
 void Voice::resetDevice() {

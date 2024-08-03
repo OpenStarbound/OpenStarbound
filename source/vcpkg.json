@@ -2,7 +2,11 @@
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
   "dependencies": [
     "glew",
-    "sdl2",
+    "libsamplerate",
+    {
+      "name": "sdl2",
+      "features": [ "samplerate" ]
+    },
     "libvorbis",
     "zlib",
     "freetype",

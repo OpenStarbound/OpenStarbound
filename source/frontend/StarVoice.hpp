@@ -195,6 +195,7 @@ private:
   Maybe<String> m_deviceName;
   VoiceInputMode m_inputMode;
   VoiceChannelMode m_channelMode;
+  unsigned m_bitrate = 0;
 
   ThreadFunction<void> m_thread;
   Mutex m_threadMutex;
