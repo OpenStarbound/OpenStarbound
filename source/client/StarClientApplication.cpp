@@ -852,11 +852,21 @@ void ClientApplication::updateRunning(float dt) {
         if (tag == "playerName")
           return Text::stripEscapeCodes(m_player->name());
         if (tag == "playerHealth")
-          return strf("{}/{} HP", m_player->health(), m_player->maxHealth());
+          return toString(m_player->health());
+        if (tag == "playerMaxHealth")
+          return toString(m_player->maxHealth());
         if (tag == "playerEnergy")
-          return strf("{}/{} HP", m_player->energy(), m_player->maxEnergy());
+          return toString(m_player->energy());
+        if (tag == "playerMaxEnergy")
+          return toString(m_player->maxEnergy());
         if (tag == "playerBreath")
-          return strf("{}/{} HP", m_player->breath(), m_player->maxBreath());
+          return toString(m_player->breath());
+        if (tag == "playerMaxBreath")
+          return toString(m_player->maxBreath());
+        if (tag == "playerXPos")
+          return toString(round(m_player->position().x()));
+        if (tag == "playerYPos")
+          return toString(round(m_player->position().y()));
         if (tag == "worldName") {
           if (m_universeClient->clientContext()->playerWorldId().is<ClientShipWorldId>())
             return "Player Ship";
