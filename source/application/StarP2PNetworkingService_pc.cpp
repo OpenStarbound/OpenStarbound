@@ -81,7 +81,11 @@ void PcP2PNetworkingService::setJoinRemote(HostAddressWithPort location) {
   setJoinLocation(JoinRemote(location));
 }
 
-void Star::PcP2PNetworkingService::setActivityData([[maybe_unused]] String const& title, [[maybe_unused]] Maybe<pair<uint16_t, uint16_t>> party) {
+void Star::PcP2PNetworkingService::setActivityData(
+  [[maybe_unused]] const char* title,
+  [[maybe_unused]] const char* details,
+  [[maybe_unused]] int64_t startTime,
+  [[maybe_unused]] Maybe<pair<uint16_t, uint16_t>> party) {
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
   MutexLocker discordLocker(m_state->discordMutex);
 #endif
@@ -92,19 +96,25 @@ void Star::PcP2PNetworkingService::setActivityData([[maybe_unused]] String const
     if (m_discordUpdatingActivity)
       return;
 
-    if (title != m_discordActivityTitle || party != m_discordPartySize || m_discordForceUpdateActivity) {
+    if (title != m_discordActivityTitle
+     || details != m_discordActivityDetails
+     || startTime != m_discordActivityStartTime || party != m_discordPartySize || m_discordForceUpdateActivity) {
       m_discordForceUpdateActivity = false;
       m_discordPartySize = party;
       m_discordActivityTitle = title;
+      m_discordActivityDetails = details;
+      m_discordActivityStartTime = startTime;
 
       discord::Activity activity = {};
       activity.SetType(discord::ActivityType::Playing);
       activity.SetName("Starbound");
-      activity.SetState(title.utf8Ptr());
-
-      if (auto p = party) {
-        activity.GetParty().GetSize().SetCurrentSize(p->first);
-        activity.GetParty().GetSize().SetMaxSize(p->second);
+      activity.SetState(title);
+      activity.SetDetails(details);
+      activity.GetTimestamps().SetStart(startTime);
+      if (party) {
+        auto& size = activity.GetParty().GetSize();
+        size.SetCurrentSize(party->first);
+        size.SetMaxSize(party->second);
       }
   
       if (auto lobby = m_discordServerLobby)

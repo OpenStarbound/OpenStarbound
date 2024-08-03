@@ -584,6 +584,7 @@ void ClientApplication::changeState(MainAppState newState) {
     m_mainMixer->setUniverseClient(m_universeClient);
     m_universeClient->setMainPlayer(m_player);
     m_cinematicOverlay->setPlayer(m_player);
+    m_timeSinceJoin = (int64_t)Time::millisecondsSinceEpoch() / 1000;
 
     auto assets = m_root->assets();
     String loadingCinematic = assets->json("/client.config:loadingCinematic").toString();
@@ -748,8 +749,36 @@ void ClientApplication::updateTitle(float dt) {
   appController()->setAcceptingTextInput(m_titleScreen->textInputActive());
 
   auto p2pNetworkingService = appController()->p2pNetworkingService();
-  if (p2pNetworkingService)
-    p2pNetworkingService->setActivityData("In Main Menu", {});
+  if (p2pNetworkingService) {
+    auto getStateString = [](TitleState state) -> const char* {
+      switch (state) {
+        case TitleState::Main:
+          return "In Main Menu";
+        case TitleState::Options:
+          return "In Options";
+        case TitleState::Mods:
+          return "In Mods";
+        case TitleState::SinglePlayerSelectCharacter:
+          return "Selecting a character for singleplayer";
+        case TitleState::SinglePlayerCreateCharacter:
+          return "Creating a character for singleplayer";
+        case TitleState::MultiPlayerSelectCharacter:
+          return "Selecting a character for multiplayer";
+        case TitleState::MultiPlayerCreateCharacter:
+          return "Creating a character for multiplayer";
+        case TitleState::MultiPlayerConnect:
+          return "Awaiting multiplayer connection info";
+        case TitleState::StartSinglePlayer:
+          return "Loading Singleplayer";
+        case TitleState::StartMultiPlayer:
+          return "Connecting to Multiplayer";
+        default:
+          return "";
+      }
+    };
+
+    p2pNetworkingService->setActivityData("Not In Game", getStateString(m_titleScreen->currentState()), 0, {});
+  }
 
   if (m_titleScreen->currentState() == TitleState::StartSinglePlayer) {
     changeState(MainAppState::SinglePlayer);
@@ -791,6 +820,7 @@ void ClientApplication::updateTitle(float dt) {
 
 void ClientApplication::updateRunning(float dt) {
   try {
+    auto worldClient = m_universeClient->worldClient();
     auto p2pNetworkingService = appController()->p2pNetworkingService();
     bool clientIPJoinable = m_root->configuration()->get("clientIPJoinable").toBool();
     bool clientP2PJoinable = m_root->configuration()->get("clientP2PJoinable").toBool();
@@ -817,8 +847,44 @@ void ClientApplication::updateRunning(float dt) {
       }
     }
     
-    if (p2pNetworkingService)
-      p2pNetworkingService->setActivityData("In Game", party);
+    if (p2pNetworkingService) {
+      auto getActivityDetail = [&](String const& tag) -> String {
+        if (tag == "playerName")
+          return Text::stripEscapeCodes(m_player->name());
+        if (tag == "playerHealth")
+          return strf("{}/{} HP", m_player->health(), m_player->maxHealth());
+        if (tag == "playerEnergy")
+          return strf("{}/{} HP", m_player->energy(), m_player->maxEnergy());
+        if (tag == "playerBreath")
+          return strf("{}/{} HP", m_player->breath(), m_player->maxBreath());
+        if (tag == "worldName") {
+          if (m_universeClient->clientContext()->playerWorldId().is<ClientShipWorldId>())
+            return "Player Ship";
+          else if (WorldTemplate const* worldTemplate = worldClient ? worldClient->currentTemplate().get() : nullptr) {
+            auto worldName = worldTemplate->worldName();
+            if (worldName.empty())
+              return "In World";
+            else
+              return Text::stripEscapeCodes(worldName);
+          }
+          else
+            return "Nowhere";
+        }
+        return "";
+      };
+
+      String finalDetails = "";
+      Json activityDetails = m_root->configuration()->getPath("discord.activityDetails");
+      if (activityDetails.isType(Json::Type::Array)) {
+        StringList detailsList;
+        for (auto& detail : activityDetails.iterateArray())
+          detailsList.append(getActivityDetail(*detail.stringPtr()));
+        finalDetails = detailsList.join("\n");
+      } else if (activityDetails.isType(Json::Type::String))
+        finalDetails = activityDetails.toString().lookupTags(getActivityDetail);
+
+      p2pNetworkingService->setActivityData("In Game", finalDetails.utf8Ptr(), m_timeSinceJoin, party);
+    }
 
     if (!m_mainInterface->inputFocus() && !m_cinematicOverlay->suppressInput()) {
       m_player->setShifting(isActionTaken(InterfaceAction::PlayerShifting));
@@ -932,7 +998,7 @@ void ClientApplication::updateRunning(float dt) {
     if (checkDisconnection())
       return;
 
-    if (auto worldClient = m_universeClient->worldClient()) {
+    if (worldClient) {
       m_worldPainter->update(dt);
       auto& broadcastCallback = worldClient->broadcastCallback();
       if (!broadcastCallback) {

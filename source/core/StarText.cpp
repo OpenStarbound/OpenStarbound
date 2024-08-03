@@ -36,6 +36,8 @@ namespace Text {
 
   static auto stripEscapeRegex = std::regex(strf("\\{:c}[^;]*{:c}", CmdEsc, EndEsc));
   String stripEscapeCodes(String const& s) {
+    if (s.empty())
+      return s;
     return std::regex_replace(s.utf8(), stripEscapeRegex, "");
   }
 

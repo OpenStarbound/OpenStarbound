@@ -99,6 +99,10 @@ R"JSON(
 
       "inventory" : {
         "pickupToActionBar" : true
+      },
+
+      "discord" : {
+        "activityDetails" : "<playerName> | <worldName>"
       }
     }
   )JSON");

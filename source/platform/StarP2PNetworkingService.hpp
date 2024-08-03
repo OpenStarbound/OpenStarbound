@@ -44,7 +44,7 @@ public:
   // P2P friends can join this player at the given remote server
   virtual void setJoinRemote(HostAddressWithPort location) = 0;
   // Updates rich presence activity info
-  virtual void setActivityData(String const& title, Maybe<pair<uint16_t, uint16_t>>) = 0;
+  virtual void setActivityData(const char* title, const char* details, int64_t startTime, Maybe<pair<uint16_t, uint16_t>>) = 0;
 
   // If this player joins another peer's game using the P2P UI, this will return
   // a pending join location
