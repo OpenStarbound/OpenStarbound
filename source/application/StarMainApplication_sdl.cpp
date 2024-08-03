@@ -271,9 +271,6 @@ public:
 #endif
 
     Logger::info("Application: Initializing SDL Audio");
-#if SDL_VERSION_ATLEAST(2, 0, 26)
-    SDL_SetHint(SDL_HINT_AUDIO_RESAMPLING_MODE, "fast");
-#endif
     if (SDL_InitSubSystem(SDL_INIT_AUDIO))
       throw ApplicationException(strf("Couldn't initialize SDL Audio: {}", SDL_GetError()));
 

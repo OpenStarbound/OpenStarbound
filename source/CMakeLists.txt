@@ -486,11 +486,9 @@ set(STAR_EXT_LIBS ${STAR_EXT_LIBS}
 )
 
 if(STAR_BUILD_GUI)
-  find_package(SampleRate CONFIG REQUIRED)
   find_package(SDL2 CONFIG REQUIRED)
 
   set(STAR_EXT_GUI_LIBS
-    SampleRate::samplerate
     $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main>
     $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
   )
