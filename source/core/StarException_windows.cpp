@@ -10,6 +10,8 @@ namespace Star {
 
 struct WindowsSymInitializer {
   WindowsSymInitializer() {
+    DWORD options = SymGetOptions();
+    SymSetOptions(options | SYMOPT_LOAD_LINES);
     if (!SymInitialize(GetCurrentProcess(), NULL, TRUE))
       fatalError("SymInitialize failed", false);
   }
@@ -126,9 +128,19 @@ OutputProxy outputStack(StackCapture stack) {
       symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
       symbol->MaxNameLen = MAX_SYM_NAME;
 
-      DWORD64 displacement = 0;
-      format(os, "[{}] {}", i, (void*)stack.first[i]);
-      if (SymFromAddr(process, stack.first[i], &displacement, symbol))
+      format(os, "[{:0{}}] {}", i, (int)log10(stack.second) + 1, (void*)stack.first[i]);
+      IMAGEHLP_LINE64 line{};
+      DWORD displacement = 0;
+      line.SizeOfStruct = sizeof(IMAGEHLP_LINE64);
+      if (SymGetLineFromAddr64(process, stack.first[i], &displacement, &line) && *line.FileName) {
+        char* file = line.FileName;
+        for (char* i = file; *i; ++i) {
+          if (*i == '\\' || *i == '/')
+            file = i;
+        }
+        format(os, " ({}:{})", ++file, line.LineNumber);
+      }
+      if (SymFromAddr(process, stack.first[i], NULL, symbol))
         format(os, " {}", symbol->Name);
 
       if (i + 1 < stack.second)
