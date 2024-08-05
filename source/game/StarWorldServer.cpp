@@ -1534,7 +1534,7 @@ void WorldServer::updateTileEntityTiles(TileEntityPtr const& entity, bool removi
       tile->rootSource = {};
       bool updatedTile = false;
       bool updatedCollision = false;
-      if (tile->foreground == materialSpace.material) {
+      if (isBiomeMaterial(materialSpace.material) || tile->foreground == materialSpace.material) {
         // if the world is old, the materialSpace's collision may still be in the tile
         tile->foreground = EmptyMaterialId;
         tile->foregroundMod = NoModId;
@@ -1555,7 +1555,6 @@ void WorldServer::updateTileEntityTiles(TileEntityPtr const& entity, bool removi
 
   if (removing) {
     m_tileEntitySpaces.remove(entity->entityId());
-
   } else {
     // add new material spaces and update the known material spaces entry
     List<MaterialSpace> passedSpaces;
