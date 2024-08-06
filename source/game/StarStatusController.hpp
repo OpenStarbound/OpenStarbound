@@ -203,7 +203,7 @@ private:
 
   NetElementGroup m_netGroup;
   StatCollection m_statCollection;
-  NetElementData<JsonObject> m_statusProperties;
+  NetElementHashMap<String, Json> m_statusProperties;
   NetElementData<DirectivesGroup> m_parentDirectives;
 
   UniqueEffectMetadataGroup m_uniqueEffectMetadata;
