@@ -371,15 +371,17 @@ void WorldStorage::unloadAll(bool force) {
     // or being entirely outside of the world geometry.  This limits the number
     // of tries to completely uninit and store all entities before giving up
     // and just letting some entities not be stored.
-    unsigned forceUnloadTries = storageConfig.getUInt("forceUnloadTries");
-    for (unsigned i = 0; i < forceUnloadTries; ++i) {
-      for (auto sector : sectors)
-        unloadSectorToLevel(sector, SectorLoadLevel::Tiles, force);
+    if (m_entityMap) {
+      unsigned forceUnloadTries = storageConfig.getUInt("forceUnloadTries");
+      for (unsigned i = 0; i < forceUnloadTries; ++i) {
+        for (auto& sector : sectors)
+          unloadSectorToLevel(sector, SectorLoadLevel::Tiles, force);
 
-      if (!force || m_entityMap->size() == 0)
-        break;
+        if (!force || m_entityMap->size() == 0)
+          break;
+      }
     }
-    for (auto sector : sectors)
+    for (auto& sector : sectors)
       unloadSectorToLevel(sector, SectorLoadLevel::None, force);
 
   } catch (std::exception const& e) {
@@ -721,71 +723,71 @@ bool WorldStorage::unloadSectorToLevel(Sector const& sector, SectorLoadLevel tar
   if (!m_tileArray->sectorValid(sector) || targetLoadLevel == SectorLoadLevel::Loaded)
     return true;
 
-  auto entityFactory = Root::singleton().entityFactory();
-
   auto& metadata = m_sectorMetadata[sector];
-
-  List<EntityPtr> entitiesToStore;
-  List<EntityPtr> entitiesToRemove;
   bool entitiesOverlap = false;
+  if (m_entityMap) {
+    auto entityFactory = Root::singleton().entityFactory();
+    List<EntityPtr> entitiesToStore;
+    List<EntityPtr> entitiesToRemove;
 
-  for (auto& entity : m_entityMap->entityQuery(RectF(m_tileArray->sectorRegion(sector)))) {
-    // Only store / remove entities who belong to this sector.  If an entity
-    // overlaps with this sector but does not belong to it, we may not want to
-    // completely unload it.
-    auto position = entity->position();
-    if (!belongsInSector(sector, position)) {
-      if (auto entitySector = sectorForPosition(Vec2I(position))) {
-        if (auto p = m_sectorMetadata.ptr(*entitySector))
-          entitiesOverlap |= p->timeToLive > 0.0f;
+    for (auto& entity : m_entityMap->entityQuery(RectF(m_tileArray->sectorRegion(sector)))) {
+      // Only store / remove entities who belong to this sector.  If an entity
+      // overlaps with this sector but does not belong to it, we may not want to
+      // completely unload it.
+      auto position = entity->position();
+      if (!belongsInSector(sector, position)) {
+        if (auto entitySector = sectorForPosition(Vec2I(position))) {
+          if (auto p = m_sectorMetadata.ptr(*entitySector))
+            entitiesOverlap |= p->timeToLive > 0.0f;
+        }
+        continue;
       }
-      continue;
+
+      bool keepAlive = m_generatorFacade->entityKeepAlive(this, entity);
+      if (keepAlive && !force)
+        return false;
+
+      if (m_generatorFacade->entityPersistent(this, entity))
+        entitiesToStore.append(std::move(entity));
+      else
+        entitiesToRemove.append(std::move(entity));
     }
 
-    bool keepAlive = m_generatorFacade->entityKeepAlive(this, entity);
-    if (keepAlive && !force)
-      return false;
-
-    if (m_generatorFacade->entityPersistent(this, entity))
-      entitiesToStore.append(std::move(entity));
-    else
-      entitiesToRemove.append(std::move(entity));
-  }
-
-  for (auto const& entity : entitiesToRemove) {
-    m_entityMap->removeEntity(entity->entityId());
-    m_generatorFacade->destructEntity(this, entity);
-  }
-
-  if (metadata.loadLevel == SectorLoadLevel::Entities || !entitiesToStore.empty()) {
-    EntitySectorStore sectorStore;
-
-    // If our current load level indicates that we might have entities that are
-    // not loaded, we need to load and merge with them, otherwise we should be
-    // overwriting them.
-    if (metadata.loadLevel < SectorLoadLevel::Entities) {
-      if (auto res = m_db.find(entitySectorKey(sector)))
-        sectorStore = readEntitySector(*res);
-    }
-
-    UniqueIndexStore storedUniques;
-    for (auto const& entity : entitiesToStore) {
+    for (auto const& entity : entitiesToRemove) {
       m_entityMap->removeEntity(entity->entityId());
       m_generatorFacade->destructEntity(this, entity);
-      auto position = entity->position();
-      if (auto uniqueId = entity->uniqueId())
-        storedUniques.add(*uniqueId, {sector, position});
-      sectorStore.append(entityFactory->storeVersionedEntity(entity));
     }
-    m_db.insert(entitySectorKey(sector), writeEntitySector(sectorStore));
-    if (metadata.loadLevel < SectorLoadLevel::Entities)
-      mergeSectorUniques(sector, storedUniques);
-    else
-      updateSectorUniques(sector, storedUniques);
 
-    if (metadata.loadLevel == SectorLoadLevel::Entities) {
-      metadata.loadLevel = SectorLoadLevel::Tiles;
-      m_generatorFacade->sectorLoadLevelChanged(this, sector, SectorLoadLevel::Tiles);
+    if (metadata.loadLevel == SectorLoadLevel::Entities || !entitiesToStore.empty()) {
+      EntitySectorStore sectorStore;
+
+      // If our current load level indicates that we might have entities that are
+      // not loaded, we need to load and merge with them, otherwise we should be
+      // overwriting them.
+      if (metadata.loadLevel < SectorLoadLevel::Entities) {
+        if (auto res = m_db.find(entitySectorKey(sector)))
+          sectorStore = readEntitySector(*res);
+      }
+
+      UniqueIndexStore storedUniques;
+      for (auto const& entity : entitiesToStore) {
+        m_entityMap->removeEntity(entity->entityId());
+        m_generatorFacade->destructEntity(this, entity);
+        auto position = entity->position();
+        if (auto uniqueId = entity->uniqueId())
+          storedUniques.add(*uniqueId, {sector, position});
+        sectorStore.append(entityFactory->storeVersionedEntity(entity));
+      }
+      m_db.insert(entitySectorKey(sector), writeEntitySector(sectorStore));
+      if (metadata.loadLevel < SectorLoadLevel::Entities)
+        mergeSectorUniques(sector, storedUniques);
+      else
+        updateSectorUniques(sector, storedUniques);
+
+      if (metadata.loadLevel == SectorLoadLevel::Entities) {
+        metadata.loadLevel = SectorLoadLevel::Tiles;
+        m_generatorFacade->sectorLoadLevelChanged(this, sector, SectorLoadLevel::Tiles);
+      }
     }
   }
 
