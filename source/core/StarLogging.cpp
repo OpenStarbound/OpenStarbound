@@ -89,7 +89,7 @@ void Logger::refreshLoggable() {
 
 shared_ptr<StdoutLogSink> Logger::s_stdoutSink = make_shared<StdoutLogSink>();
 HashSet<LogSinkPtr> Logger::s_sinks{s_stdoutSink};
-Array<bool, 4> Logger::s_loggable = Array<bool, 4>::filled(false);
+Array<bool, 4> Logger::s_loggable = Array<bool, 4>{false, true, true, true};
 Mutex Logger::s_mutex;
 
 String LogMap::getValue(String const& key) {
