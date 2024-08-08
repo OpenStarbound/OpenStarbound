@@ -36,11 +36,16 @@ int main(int argc, char** argv) {
     newDb.open();
     coutf("Repacking {}...\n", bTreePath);
     //copy the data over
-    unsigned count = 0;
-    db.forAll([&count, &newDb](ByteArray key, ByteArray data) {
-      newDb.insert(key, data);
+    unsigned count = 0, overwritten = 0;
+    auto visitor = [&](ByteArray key, ByteArray data) {
+      if (newDb.insert(key, data))
+        ++overwritten;
       ++count;
-    });
+    };
+    auto errorHandler = [&](String const& error, std::exception const& e) {
+      coutf("{}: {}\n", error, e.what());
+    };
+    db.recoverAll(visitor, errorHandler);
 
     //close the old db
     db.close();
@@ -48,7 +53,7 @@ int main(int argc, char** argv) {
     newDb.commit();
     newDb.close();
 
-    coutf("Repacked BTree to {} in {}s\n", outputFilename, Time::monotonicTime() - startTime);
+    coutf("Repacked BTree to {} in {:.6f}s\n({} inserts, {} overwritten)\n", outputFilename, Time::monotonicTime() - startTime, count, overwritten);
     return 0;
 
   } catch (std::exception const& e) {

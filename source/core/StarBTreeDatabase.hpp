@@ -64,6 +64,7 @@ public:
 
   void forEach(ByteArray const& lower, ByteArray const& upper, function<void(ByteArray, ByteArray)> v);
   void forAll(function<void(ByteArray, ByteArray)> v);
+  void recoverAll(function<void(ByteArray, ByteArray)> v, function<void(String const&, std::exception const&)> e);
 
   // Returns true if a value was overwritten
   bool insert(ByteArray const& k, ByteArray const& data);

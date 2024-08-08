@@ -196,6 +196,11 @@ void BTreeDatabase::forAll(function<void(ByteArray, ByteArray)> v) {
   m_impl.forAll(std::move(v));
 }
 
+void BTreeDatabase::recoverAll(function<void(ByteArray, ByteArray)> v, function<void(String const&, std::exception const&)> e) {
+  ReadLocker readLocker(m_lock);
+  m_impl.recoverAll(std::move(v), std::move(e));
+}
+
 bool BTreeDatabase::insert(ByteArray const& k, ByteArray const& data) {
   WriteLocker writeLocker(m_lock);
   checkKeySize(k);
