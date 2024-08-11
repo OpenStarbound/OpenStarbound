@@ -361,7 +361,7 @@ Makes the player say a string.
 
 Returns the specific humanoid identity of the player, containing information such as hair style and idle pose.
 
-#### `void` player.humanoidIdentity(`Json` humanoidIdentity)
+#### `void` player.setHumanoidIdentity(`Json` humanoidIdentity)
 
 Sets the specific humanoid identity of the player.
 
