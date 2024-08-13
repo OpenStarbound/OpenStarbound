@@ -111,10 +111,11 @@ Maybe<String> UniverseClient::connect(UniverseConnection connection, bool allowA
     }
   }
   connection.packetSocket().setLegacy(m_legacyServer);
-
-  connection.pushSingle(make_shared<ClientConnectPacket>(Root::singleton().assets()->digest(), allowAssetsMismatch, m_mainPlayer->uuid(), m_mainPlayer->name(),
+  auto clientConnect = make_shared<ClientConnectPacket>(Root::singleton().assets()->digest(), allowAssetsMismatch, m_mainPlayer->uuid(), m_mainPlayer->name(),
       m_mainPlayer->species(), m_playerStorage->loadShipData(m_mainPlayer->uuid()), m_mainPlayer->shipUpgrades(),
-      m_mainPlayer->log()->introComplete(), account));
+      m_mainPlayer->log()->introComplete(), account);
+  clientConnect->info = JsonObject{ {"brand", "OpenStarbound"} };
+  connection.pushSingle(std::move(clientConnect));
   connection.sendAll(timeout);
 
   connection.receiveAny(timeout);

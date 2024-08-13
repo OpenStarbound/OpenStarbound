@@ -310,7 +310,7 @@ struct ClientConnectPacket : PacketBase<PacketType::ClientConnect> {
   ClientConnectPacket();
   ClientConnectPacket(ByteArray assetsDigest, bool allowAssetsMismatch, Uuid playerUuid, String playerName,
       String playerSpecies, WorldChunks shipChunks, ShipUpgrades shipUpgrades, bool introComplete,
-      String account);
+      String account, Json info = {});
 
   void readLegacy(DataStream& ds) override;
   void read(DataStream& ds) override;

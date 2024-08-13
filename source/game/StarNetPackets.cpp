@@ -404,10 +404,10 @@ ClientConnectPacket::ClientConnectPacket() {}
 
 ClientConnectPacket::ClientConnectPacket(ByteArray assetsDigest, bool allowAssetsMismatch, Uuid playerUuid,
     String playerName, String playerSpecies, WorldChunks shipChunks, ShipUpgrades shipUpgrades,
-    bool introComplete, String account)
+    bool introComplete, String account, Json info)
   : assetsDigest(std::move(assetsDigest)), allowAssetsMismatch(allowAssetsMismatch), playerUuid(std::move(playerUuid)),
     playerName(std::move(playerName)), playerSpecies(std::move(playerSpecies)), shipChunks(std::move(shipChunks)),
-    shipUpgrades(std::move(shipUpgrades)), introComplete(std::move(introComplete)), account(std::move(account)) {}
+    shipUpgrades(std::move(shipUpgrades)), introComplete(std::move(introComplete)), account(std::move(account)), info(std::move(info)) {}
 
 void ClientConnectPacket::readLegacy(DataStream& ds) {
   ds.read(assetsDigest);
@@ -419,6 +419,7 @@ void ClientConnectPacket::readLegacy(DataStream& ds) {
   ds.read(shipUpgrades);
   ds.read(introComplete);
   ds.read(account);
+  info = Json();
 }
 
 void ClientConnectPacket::read(DataStream& ds) {

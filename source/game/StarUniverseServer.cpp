@@ -1584,7 +1584,7 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
     compressedSocket->setCompressionStreamEnabled(useCompressionStream);
 
   String remoteAddressString = remoteAddress ? toString(*remoteAddress) : "local";
-  Logger::info("UniverseServer: Awaiting connection info from {}, {} client", remoteAddressString, legacyClient ? "Starbound" : "OpenStarbound");
+  Logger::info("UniverseServer: Awaiting connection info from {} ({} client)", remoteAddressString, legacyClient ? "vanilla" : "custom");
 
   connection.receiveAny(clientWaitLimit);
   auto clientConnect = as<ClientConnectPacket>(connection.pullSingle());
@@ -1597,7 +1597,6 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
   }
 
   bool administrator = false;
-
   String accountString = !clientConnect->account.empty() ? strf("'{}'", clientConnect->account) : "<anonymous>";
 
   auto connectionFail = [&](String message) {
@@ -1669,14 +1668,24 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
     }
   }
 
-  Logger::info("UniverseServer: Logged in account '{}' as player '{}' from address {}",
-      accountString, clientConnect->playerName, remoteAddressString);
+  String connectionLog = strf("UniverseServer: Logged in account '{}' as player '{}' from address {}",
+    accountString, clientConnect->playerName, remoteAddressString);
+
+  if (Json& info = clientConnect->info) {
+    if (Json brand = info.get("brand", "custom"))
+      connectionLog += strf(" ({} client)", brand.toString());
+    if (info.getBool("legacy", false))
+      connection.packetSocket().setLegacy(legacyClient = true);
+  }
+  Logger::log(LogLevel::Info, connectionLog.utf8Ptr());
+
+
 
   mainLocker.lock();
   WriteLocker clientsLocker(m_clientsLock);
   if (auto clashId = getClientForUuid(clientConnect->playerUuid)) {
     if (administrator) {
-      doDisconnection(*clashId, "Duplicate Uuid joined and is Administrator so has priority.");
+      doDisconnection(*clashId, "Duplicate UUID joined and is Administrator so has priority.");
     } else {
       connectionFail("Duplicate player UUID");
       return;
