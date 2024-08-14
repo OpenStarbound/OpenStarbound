@@ -135,7 +135,8 @@ struct MutexImpl {
     clock_gettime(CLOCK_REALTIME, &ts);
     ts.tv_sec += 60;
     if (pthread_mutex_timedlock(&mutex, &ts) != 0) {
-      Logger::warn("Mutex lock is taking too long. Stack:\n{}", outputStack(captureStack());
+      Logger::warn("Mutex lock is taking too long, printing stack");
+      printStack();
       pthread_mutex_lock(&mutex);
     }
   }
@@ -209,7 +210,8 @@ struct RecursiveMutexImpl {
     clock_gettime(CLOCK_REALTIME, &ts);
     ts.tv_sec += 60;
     if (pthread_mutex_timedlock(&mutex, &ts) != 0) {
-      Logger::warn("RecursiveMutex lock is taking too long. Stack:\n{}", outputStack(captureStack());
+      Logger::warn("RecursiveMutex lock is taking too long, printing stack");
+      printStack();
       pthread_mutex_lock(&mutex);
     }
   }
