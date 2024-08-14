@@ -232,6 +232,26 @@ Sets the player's hair directives.
 
 ---
 
+#### `String` player.facialHair()
+
+Returns the player's facial hair type. Same as player.facialHairType?
+
+#### `void` player.setFacialHair(`String` facialHairGroup, `String` facialHairType, `String` facialHairDirectives)
+
+Sets the player's facial hair group, type, and directives.
+
+---
+
+#### `String` player.facialHairType()
+
+Returns the player's facial hair type.
+
+#### `void` player.setFacialHairType(`String` facialHairType)
+
+Sets the player's facial hair type.
+
+---
+
 #### `String` player.facialHairGroup()
 
 Returns the player's facial hair group.
@@ -239,16 +259,6 @@ Returns the player's facial hair group.
 #### `void` player.setFacialHairGroup(`String` facialHairGroup)
 
 Sets the player's facial hair group.
-
----
-
-#### `String` player.facialHair()
-
-Returns the player's facial hair.
-
-#### `void` player.setFacialHair(`String` facialHair)
-
-Sets the player's facial hair.
 
 ---
 
@@ -266,19 +276,9 @@ Sets the player's facial hair directives.
 
 Returns the player's facial mask group.
 
-#### `void` player.setFacialMask(`String` facialMask)
+#### `void` player.setFacialMask(`String` facialMaskGroup, `String` facialMaskType, `String` facialMaskDirectives)
 
-Sets the player's facial mask.
-
----
-
-#### `String` player.facialMaskType()
-
-Returns the player's facial mask type.
-
-#### `void` player.setFacialMaskType(`String` facialMaskType)
-
-Sets the player's facial mask type.
+Sets the player's facial mask group, type, and directives.
 
 ---
 
