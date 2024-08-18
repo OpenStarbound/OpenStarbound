@@ -238,7 +238,8 @@ PanePtr InventoryPane::createTooltip(Vec2I const& screenPosition) {
     if (auto techIcon = fetchChild<ImageWidget>(strf("tech{}", p.second))) {
       if (techIcon->screenBoundRect().contains(screenPosition)) {
         if (auto techModule = m_player->techs()->equippedTechs().maybe(p.first))
-          return SimpleTooltipBuilder::buildTooltip(techDatabase->tech(*techModule).description);
+          if (techDatabase->contains(*techModule))
+            return SimpleTooltipBuilder::buildTooltip(techDatabase->tech(*techModule).description);
       }
     }
   }
@@ -325,10 +326,13 @@ void InventoryPane::update(float dt) {
   auto techDatabase = Root::singleton().techDatabase();
   for (auto const& p : TechTypeNames) {
     if (auto techIcon = fetchChild<ImageWidget>(strf("tech{}", p.second))) {
-      if (auto techModule = m_player->techs()->equippedTechs().maybe(p.first))
-        techIcon->setImage(techDatabase->tech(*techModule).icon);
-      else
-        techIcon->setImage("");
+      if (auto techModule = m_player->techs()->equippedTechs().maybe(p.first)) {
+        if (techDatabase->contains(*techModule)) {
+          techIcon->setImage(techDatabase->tech(*techModule).icon);
+          continue;
+        }
+      }
+      techIcon->setImage("");
     }
   }
 
