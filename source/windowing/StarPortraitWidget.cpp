@@ -42,7 +42,8 @@ void PortraitWidget::renderImpl() {
     HumanoidPtr humanoid = nullptr;
     if (m_renderHumanoid) {
       if (auto player = as<Player>(m_entity))
-        humanoid = player->humanoid();
+        if (!player->isPermaDead())
+          humanoid = player->humanoid();
     }
 
     List<Drawable> portrait = humanoid ? humanoid->render(false, false) : m_entity->portrait(m_portraitMode);
