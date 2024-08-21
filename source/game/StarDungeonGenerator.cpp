@@ -654,12 +654,13 @@ namespace Dungeon {
     });
     ground[1] = max(ground[1], liquid[1]);
     if (air.y() < ground.y())
-      throw DungeonException("Invalid ground vs air contraint. Ground at: " + toString(ground.y()) + " Air at: "
+      throw DungeonException("Invalid ground vs air constraint. Ground at: " + toString(ground.y()) + ". Air at: "
           + toString(air.y())
-          + " Pixels: highest ground:"
+          + ". Pixels: highest ground:"
           + toString(ground)
-          + " lowest air:"
-          + toString(air));
+          + ", lowest air:"
+          + toString(air)
+          + ". Try moving your 'require there be air here' anchors above any other 'require there be (something) here' anchors.");
     return air.y();
   }
 
