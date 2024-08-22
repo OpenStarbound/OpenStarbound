@@ -9,5 +9,6 @@
   "deployCinematicBase" : {
     "scissor" : false,
     "letterbox" : false
-  }
+  },
+  "postProcessLayers": []
 }
