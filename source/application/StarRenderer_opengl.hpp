@@ -180,6 +180,7 @@ private:
     Json config;
     bool blitted = false;
     unsigned multisample = 0;
+    unsigned sizeDiv = 1;
 
     GlFrameBuffer(Json const& config);
     ~GlFrameBuffer();
@@ -197,6 +198,7 @@ private:
 
     GLuint getAttribute(String const& name);
     GLuint getUniform(String const& name);
+    bool includeVBTextures;
   };
 
   static bool logGlErrorSummary(String prefix);
@@ -211,7 +213,7 @@ private:
 
   void renderGlBuffer(GlRenderBuffer const& renderBuffer, Mat3F const& transformation);
 
-  void setupGlUniforms(Effect& effect);
+  void setupGlUniforms(Effect& effect, Vec2U screenSize);
 
   RefPtr<OpenGlRenderer::GlFrameBuffer> getGlFrameBuffer(String const& id);
   void blitGlFrameBuffer(RefPtr<OpenGlRenderer::GlFrameBuffer> const& frameBuffer);
