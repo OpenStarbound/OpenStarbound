@@ -153,12 +153,32 @@ OpenGlRenderer::GlFrameBuffer::GlFrameBuffer(Json const& fbConfig) : config(fbCo
   GLenum target = multisample ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D;
   glBindTexture(target, texture->glTextureId());
 
-  Vec2U size = jsonToVec2U(config.getArray("size", { 256, 256 }));
+  sizeDiv = config.getUInt("sizeDiv",1);
+  Vec2U size = jsonToVec2U(config.getArray("size", { 256, 256 }))/sizeDiv;
 
   if (multisample)
     glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, multisample, GL_RGBA8, size[0], size[1], GL_TRUE);
-  else
+  else {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, size[0], size[1], 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+  }
+  auto addressing = TextureAddressingNames.getLeft(config.getString("textureAddressing", "clamp"));
+  auto filtering = TextureFilteringNames.getLeft(config.getString("textureFiltering", "nearest"));
+  if (addressing == TextureAddressing::Clamp) {
+    glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  } else {
+    glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_REPEAT);
+  }
+  if (!multisample) {
+    if (filtering == TextureFiltering::Nearest) {
+      glTexParameterf(target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+      glTexParameterf(target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    } else {
+      glTexParameterf(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+      glTexParameterf(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    }
+  }
 
   glGenFramebuffers(1, &id);
   if (!id)
@@ -184,6 +204,7 @@ void OpenGlRenderer::loadConfig(Json const& config) {
   for (auto& pair : config.getObject("frameBuffers", {})) {
     Json config = pair.second;
     config = config.set("multisample", m_multiSampling);
+    Logger::info("Creating framebuffer {}", pair.first);
     m_frameBuffers[pair.first] = make_ref<GlFrameBuffer>(config);
 
   }
@@ -257,8 +278,9 @@ void OpenGlRenderer::loadEffectConfig(String const& name, Json const& effectConf
   auto& effect = m_effects.emplace(name, Effect()).first->second;
   effect.program = m_program;
   effect.config = effectConfig;
+  effect.includeVBTextures = effectConfig.getBool("includeVBTextures",true);
   m_currentEffect = &effect;
-  setupGlUniforms(effect);
+  setupGlUniforms(effect,m_screenSize);
 
   for (auto const& p : effectConfig.getObject("effectParameters", {})) {
     EffectParameter effectParameter;
@@ -307,7 +329,7 @@ void OpenGlRenderer::loadEffectConfig(String const& name, Json const& effectConf
   // Assign each texture parameter a texture unit starting with MultiTextureCount, the first
   // few texture units are used by the primary textures being drawn.  Currently,
   // maximum texture units are not checked.
-  unsigned parameterTextureUnit = MultiTextureCount;
+  unsigned parameterTextureUnit = effect.includeVBTextures ? MultiTextureCount : 0;
 
   for (auto const& p : effectConfig.getObject("effectTextures", {})) {
     EffectTexture effectTexture;
@@ -394,19 +416,39 @@ bool OpenGlRenderer::switchEffectConfig(String const& name) {
   if (auto blitFrameBufferId = effect.config.optString("blitFrameBuffer"))
     blitGlFrameBuffer(getGlFrameBuffer(*blitFrameBufferId));
 
-  if (auto frameBufferId = effect.config.optString("frameBuffer"))
-    switchGlFrameBuffer(getGlFrameBuffer(*frameBufferId));
-  else {
+  auto effectScreenSize = m_screenSize;
+  if (auto frameBufferId = effect.config.optString("frameBuffer")) {
+    auto buf = getGlFrameBuffer(*frameBufferId);
+    switchGlFrameBuffer(buf);
+    effectScreenSize = m_screenSize/(buf->sizeDiv);
+  } else {
     m_currentFrameBuffer.reset();
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
   }
 
   glUseProgram(m_program = effect.program);
-  setupGlUniforms(effect);
+  setupGlUniforms(effect,effectScreenSize);
   m_currentEffect = &effect;
 
   setEffectParameter("vertexRounding", m_multiSampling > 0);
-
+  if (auto fbts = effect.config.optArray("frameBufferTextures")) {
+    for (auto const& fbt : *fbts) {
+      if (auto frameBufferId = fbt.optString("framebuffer")) {
+        auto textureUniform=fbt.getString("texture");
+        auto ptr = m_currentEffect->textures.ptr(textureUniform);
+        if (ptr) {
+          if (!ptr->textureValue || ptr->textureValue->textureId == 0) {  
+            auto texture = getGlFrameBuffer(*frameBufferId)->texture;
+            ptr->textureValue = texture;
+            if (ptr->textureSizeUniform != -1) {
+              auto textureSize = ptr->textureValue->glTextureSize();
+              glUniform2f(ptr->textureSizeUniform, textureSize[0], textureSize[1]);
+            }
+          }
+        }
+      }
+    }
+  }
   return true;
 }
 
@@ -507,10 +549,10 @@ void OpenGlRenderer::setScreenSize(Vec2U screenSize) {
   for (auto& frameBuffer : m_frameBuffers) {
     if (unsigned multisample = frameBuffer.second->multisample) {
       glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, frameBuffer.second->texture->glTextureId());
-      glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, multisample, GL_RGBA8, m_screenSize[0], m_screenSize[1], GL_TRUE);
+      glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, multisample, GL_RGBA8, m_screenSize[0]/frameBuffer.second->sizeDiv, m_screenSize[1]/frameBuffer.second->sizeDiv, GL_TRUE);
     } else {
       glBindTexture(GL_TEXTURE_2D, frameBuffer.second->texture->glTextureId());
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_screenSize[0], m_screenSize[1], 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_screenSize[0]/frameBuffer.second->sizeDiv, m_screenSize[1]/frameBuffer.second->sizeDiv, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
     }
   }
 }
@@ -963,10 +1005,12 @@ void OpenGlRenderer::renderGlBuffer(GlRenderBuffer const& renderBuffer, Mat3F co
   for (auto const& vb : renderBuffer.vertexBuffers) {
     glUniformMatrix3fv(m_vertexTransformUniform, 1, GL_TRUE, transformation.ptr());
 
-    for (size_t i = 0; i < vb.textures.size(); ++i) {
-      glUniform2f(m_textureSizeUniforms[i], vb.textures[i].size[0], vb.textures[i].size[1]);
-      glActiveTexture(GL_TEXTURE0 + i);
-      glBindTexture(GL_TEXTURE_2D, vb.textures[i].texture);
+    if (m_currentEffect->includeVBTextures) {
+      for (size_t i = 0; i < vb.textures.size(); ++i) {
+        glUniform2f(m_textureSizeUniforms[i], vb.textures[i].size[0], vb.textures[i].size[1]);
+        glActiveTexture(GL_TEXTURE0 + i);
+        glBindTexture(GL_TEXTURE_2D, vb.textures[i].texture);
+      }
     }
 
     for (auto const& p : m_currentEffect->textures) {
@@ -993,7 +1037,7 @@ void OpenGlRenderer::renderGlBuffer(GlRenderBuffer const& renderBuffer, Mat3F co
 }
 
 //Assumes the passed effect program is currently in use.
-void OpenGlRenderer::setupGlUniforms(Effect& effect) {
+void OpenGlRenderer::setupGlUniforms(Effect& effect, Vec2U screenSize) {
   m_positionAttribute = effect.getAttribute("vertexPosition");
   m_colorAttribute = effect.getAttribute("vertexColor");
   m_texCoordAttribute = effect.getAttribute("vertexTextureCoordinate");
@@ -1001,17 +1045,21 @@ void OpenGlRenderer::setupGlUniforms(Effect& effect) {
 
   m_textureUniforms.clear();
   m_textureSizeUniforms.clear();
-  for (size_t i = 0; i < MultiTextureCount; ++i) {
-    m_textureUniforms.append(effect.getUniform(strf("texture{}", i).c_str()));
-    m_textureSizeUniforms.append(effect.getUniform(strf("textureSize{}", i).c_str()));
+  if (effect.includeVBTextures) {
+    for (size_t i = 0; i < MultiTextureCount; ++i) {
+      m_textureUniforms.append(effect.getUniform(strf("texture{}", i).c_str()));
+      m_textureSizeUniforms.append(effect.getUniform(strf("textureSize{}", i).c_str()));
+    }
   }
   m_screenSizeUniform = effect.getUniform("screenSize");
   m_vertexTransformUniform = effect.getUniform("vertexTransform");
 
-  for (size_t i = 0; i < MultiTextureCount; ++i)
-    glUniform1i(m_textureUniforms[i], i);
+  if (effect.includeVBTextures) {
+    for (size_t i = 0; i < MultiTextureCount; ++i)
+      glUniform1i(m_textureUniforms[i], i);
+  }
 
-  glUniform2f(m_screenSizeUniform, m_screenSize[0], m_screenSize[1]);
+  glUniform2f(m_screenSizeUniform, screenSize[0], screenSize[1]);
 }
 
 RefPtr<OpenGlRenderer::GlFrameBuffer> OpenGlRenderer::getGlFrameBuffer(String const& id) {
