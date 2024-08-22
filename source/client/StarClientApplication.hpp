@@ -52,6 +52,11 @@ private:
     String account;
     String password;
   };
+  
+  struct PostProcessLayer {
+    List<String> effects;
+    unsigned passes;
+  };
 
   void renderReload();
 
@@ -98,6 +103,8 @@ private:
   WorldPainterPtr m_worldPainter;
   WorldRenderData m_renderData;
   MainInterfacePtr m_mainInterface;
+  
+  List<PostProcessLayer> m_postProcessLayers;
 
   // Valid if main app state == SinglePlayer
   UniverseServerPtr m_universeServer;
