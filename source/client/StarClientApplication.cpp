@@ -402,9 +402,9 @@ void ClientApplication::render() {
       LogMap::set("client_render_world_total", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - totalStart));
       
       auto size = Vec2F(renderer->screenSize());
-      auto quad = renderFlatRect(RectF::withSize(size/-2, size), Vec4B(0.0f,0.0f,0.0f,0.0f), 0.0f);
+      auto quad = renderFlatRect(RectF::withSize(size / -2, size), Vec4B::filled(0), 0.0f);
       for (auto& layer : m_postProcessLayers) {
-        for(unsigned i = 0; i < layer.passes; i++) {
+        for (unsigned i = 0; i < layer.passes; i++) {
           for (auto& effect : layer.effects) {
             renderer->switchEffectConfig(effect);
             renderer->render(quad);
@@ -466,14 +466,12 @@ void ClientApplication::renderReload() {
   m_postProcessLayers.clear();
   auto postProcessLayers = assets->json("/client.config:postProcessLayers").toArray();
   for (auto& layer : postProcessLayers) {
-    List<String> effects;
-    for (auto& effect : layer.getArray("effects")) {
-      auto effectStr = effect.toString();
-      loadEffectConfig(effectStr);
-      effects.append(effectStr);
-    }
-    m_postProcessLayers.append(PostProcessLayer{effects,layer.getUInt("passes",1)});
+    auto effects = jsonToStringList(layer.getArray("effects"));
+    for (auto& effect : effects)
+      loadEffectConfig(effect);
+    m_postProcessLayers.append(PostProcessLayer{ std::move(effects), (unsigned)layer.getUInt("passes", 1) });
   }
+
   loadEffectConfig("interface");
 }
 

@@ -153,8 +153,8 @@ OpenGlRenderer::GlFrameBuffer::GlFrameBuffer(Json const& fbConfig) : config(fbCo
   GLenum target = multisample ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D;
   glBindTexture(target, texture->glTextureId());
 
-  sizeDiv = config.getUInt("sizeDiv",1);
-  Vec2U size = jsonToVec2U(config.getArray("size", { 256, 256 }))/sizeDiv;
+  sizeDiv = config.getUInt("sizeDiv", 1);
+  Vec2U size = jsonToVec2U(config.getArray("size", { 256, 256 })) / sizeDiv;
 
   if (multisample)
     glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, multisample, GL_RGBA8, size[0], size[1], GL_TRUE);
@@ -280,7 +280,7 @@ void OpenGlRenderer::loadEffectConfig(String const& name, Json const& effectConf
   effect.config = effectConfig;
   effect.includeVBTextures = effectConfig.getBool("includeVBTextures",true);
   m_currentEffect = &effect;
-  setupGlUniforms(effect,m_screenSize);
+  setupGlUniforms(effect, m_screenSize);
 
   for (auto const& p : effectConfig.getObject("effectParameters", {})) {
     EffectParameter effectParameter;
@@ -420,21 +420,21 @@ bool OpenGlRenderer::switchEffectConfig(String const& name) {
   if (auto frameBufferId = effect.config.optString("frameBuffer")) {
     auto buf = getGlFrameBuffer(*frameBufferId);
     switchGlFrameBuffer(buf);
-    effectScreenSize = m_screenSize/(buf->sizeDiv);
+    effectScreenSize = m_screenSize / (buf->sizeDiv);
   } else {
     m_currentFrameBuffer.reset();
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
   }
 
   glUseProgram(m_program = effect.program);
-  setupGlUniforms(effect,effectScreenSize);
+  setupGlUniforms(effect, effectScreenSize);
   m_currentEffect = &effect;
 
   setEffectParameter("vertexRounding", m_multiSampling > 0);
   if (auto fbts = effect.config.optArray("frameBufferTextures")) {
     for (auto const& fbt : *fbts) {
       if (auto frameBufferId = fbt.optString("framebuffer")) {
-        auto textureUniform=fbt.getString("texture");
+        auto textureUniform = fbt.getString("texture");
         auto ptr = m_currentEffect->textures.ptr(textureUniform);
         if (ptr) {
           if (!ptr->textureValue || ptr->textureValue->textureId == 0) {  
@@ -547,12 +547,13 @@ void OpenGlRenderer::setScreenSize(Vec2U screenSize) {
   glUniform2f(m_screenSizeUniform, m_screenSize[0], m_screenSize[1]);
 
   for (auto& frameBuffer : m_frameBuffers) {
+    unsigned sizeDiv = frameBuffer.second->sizeDiv;
     if (unsigned multisample = frameBuffer.second->multisample) {
       glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, frameBuffer.second->texture->glTextureId());
-      glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, multisample, GL_RGBA8, m_screenSize[0]/frameBuffer.second->sizeDiv, m_screenSize[1]/frameBuffer.second->sizeDiv, GL_TRUE);
+      glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, multisample, GL_RGBA8, m_screenSize[0] / sizeDiv, m_screenSize[1] / sizeDiv, GL_TRUE);
     } else {
       glBindTexture(GL_TEXTURE_2D, frameBuffer.second->texture->glTextureId());
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_screenSize[0]/frameBuffer.second->sizeDiv, m_screenSize[1]/frameBuffer.second->sizeDiv, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_screenSize[0] / sizeDiv, m_screenSize[1] / sizeDiv, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
     }
   }
 }
