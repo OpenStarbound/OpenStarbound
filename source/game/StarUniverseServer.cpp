@@ -1782,8 +1782,12 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
   clientFlyShip(clientId, clientContext->shipCoordinate().location(), clientContext->shipLocation());
   Logger::info("UniverseServer: Client {} connected", clientContext->descriptiveName());
   
+  ReadLocker m_clientsReadLocker(m_clientsLock);
   auto players = static_cast<uint16_t>(m_clients.size());
-  for (auto clientId : m_clients.keys()) {
+  auto clients = m_clients.keys();
+  m_clientsReadLocker.unlock();
+
+  for (auto clientId : clients) {
     m_connectionServer->sendPackets(clientId, {
         make_shared<ServerInfoPacket>(players, static_cast<uint16_t>(m_maxPlayers))
       });  
