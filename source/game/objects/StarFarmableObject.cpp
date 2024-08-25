@@ -42,8 +42,13 @@ void FarmableObject::update(float dt, uint64_t currentStep) {
       enterStage(m_stage);
     }
 
-    while (!m_finalStage && world()->epochTime() >= m_nextStageTime)
+
+    while (!m_finalStage && world()->epochTime() >= m_nextStageTime) {
+      int lastStage = m_stage;
       enterStage(m_stage + 1);
+      if (m_stage == lastStage)
+        break;
+    }
 
     // update immersion and check whether farmable should break
     m_immersion.update(bind(&Object::liquidFillLevel, this));
