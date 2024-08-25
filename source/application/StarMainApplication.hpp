@@ -18,6 +18,10 @@ namespace Star {
     LPWSTR* argsList = CommandLineToArgvW(GetCommandLineW(), &nArgs);             \
     Star::StringList args;                                                        \
     for (int i = 0; i < nArgs; ++i) args.append(Star::String(argsList[i]));       \
+    if (IsDebuggerPresent() && AllocConsole()) {                                  \
+      freopen("CONOUT$", "w", stdout);                                            \
+      freopen("CONOUT$", "w", stderr);                                            \
+    }                                                                             \
     return Star::runMainApplication(Star::make_unique<ApplicationClass>(), args); \
   }
 
