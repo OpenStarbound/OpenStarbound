@@ -8,7 +8,7 @@ function patch(data)
   data.backdropImages = jarray{
     jarray{
       jarray{0, 0}, 
-      "/interface/title/" .. (sb.makeRandomSource():randUInt(100) == 0 and "barst" or "starb") .. "ound.png",
+      "/interface/title/" .. (sb.makeRandomSource():randUInt(300) == 0 and "barst" or "starb") .. "ound.png",
       0.5,
       jarray{0.5, 0.5}
     }
