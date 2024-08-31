@@ -413,3 +413,13 @@ Sets the player's interact radius. This does not persist upon returning to the m
 Returns all the recipes the player can craft with their currently held items and currencies.
 
 ---
+#### `Json` player.getSecretProperty(`String` name, `Json` default)
+
+Returns the value assigned to the specified temporary property (which is cleared upon returning to the main menu). If there is no value set, returns default.
+
+---
+
+#### `void` player.setSecretProperty(`String` name, `Json` value)
+
+Sets a generic temporary property (which is cleared upon returning to the main menu) to the specified value.
+
