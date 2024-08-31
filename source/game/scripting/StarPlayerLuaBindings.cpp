@@ -652,20 +652,20 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
       player->setGenericProperty(name, value);
     });
 
-  callbacks.registerCallback("getSecretProperty", [player](String const& name, Maybe<Json> const& defaultValue) -> Json {
-      return player->getSecretProperty(name, defaultValue.value(Json()));
-    });
-
-  callbacks.registerCallback("setSecretProperty", [player](String const& name, Json const& value) {
-      player->setSecretProperty(name, value);
-    });
-
   callbacks.registerCallback("addScannedObject", [player](String const& objectName) -> bool {
       return player->log()->addScannedObject(objectName);
     });
 
   callbacks.registerCallback("removeScannedObject", [player](String const& objectName) {
       player->log()->removeScannedObject(objectName);
+    });
+
+  callbacks.registerCallback("getSecretProperty", [player](String const& name, Maybe<Json> const& defaultValue) -> Json {
+      return player->getSecretProperty(name, defaultValue.value(Json()));
+    });
+
+  callbacks.registerCallback("setSecretProperty", [player](String const& name, Json const& value) {
+      player->setSecretProperty(name, value);
     });
 
   return callbacks;
