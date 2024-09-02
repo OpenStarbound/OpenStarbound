@@ -284,7 +284,7 @@ bool TextBoxWidget::innerSendEvent(InputEvent const& event) {
       }
       return false;
     }
-    if (keyDown->key == Key::Return || keyDown->key == Key::Kp_enter) {
+    if (keyDown->key == Key::Return || keyDown->key == Key::KeypadEnter) {
       if (m_onEnterKey) {
         m_onEnterKey(this);
         return true;

@@ -160,19 +160,28 @@ Input::Bind Input::bindFromJson(Json const& json) {
 
   if (type == "key") {
     KeyBind keyBind;
-    keyBind.key = KeyNames.getLeft(value.toString());
+    if (auto key = KeyNames.maybeLeft(value.toString()))
+      keyBind.key = *key;
+    else
+      return bind;
     keyBind.mods = keyModsFromJson(json.getArray("mods", {}), &keyBind.priority);
     bind = std::move(keyBind);
   }
   else if (type == "mouse") {
     MouseBind mouseBind;
-    mouseBind.button = MouseButtonNames.getLeft(value.toString());
+    if (auto button = MouseButtonNames.maybeLeft(value.toString()))
+      mouseBind.button = *button;
+    else
+      return bind;
     mouseBind.mods = keyModsFromJson(json.getArray("mods", {}), &mouseBind.priority);
     bind = std::move(mouseBind);
   }
   else if (type == "controller") {
     ControllerBind controllerBind;
-    controllerBind.button = ControllerButtonNames.getLeft(value.toString());
+    if (auto button = ControllerButtonNames.maybeLeft(value.toString()))
+      controllerBind.button = *button;
+    else
+      return bind;
     controllerBind.controller = json.getUInt("controller", 0);
     bind = std::move(controllerBind);
   }

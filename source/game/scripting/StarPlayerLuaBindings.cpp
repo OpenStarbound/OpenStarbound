@@ -229,6 +229,10 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
     return luaTupleReturn(HumanoidEmoteNames.getRight(currentEmote.first), currentEmote.second);
   });
 
+  callbacks.registerCallback("currentState", [player]() {
+    return Player::StateNames.getRight(player->currentState());
+  });
+
   callbacks.registerCallback("aimPosition", [player]() { return player->aimPosition(); });
 
   callbacks.registerCallback("id",       [player]() { return player->entityId(); });
