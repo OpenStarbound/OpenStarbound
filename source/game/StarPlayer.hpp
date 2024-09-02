@@ -60,6 +60,21 @@ class Player :
   public virtual EmoteEntity {
 
 public:
+  enum class State {
+    Idle,
+    Walk,
+    Run,
+    Jump,
+    Fall,
+    Swim,
+    SwimIdle,
+    TeleportIn,
+    TeleportOut,
+    Crouch,
+    Lounge
+  };
+  static EnumMap<State> const StateNames;
+
   Player(PlayerConfigPtr config, Uuid uuid = Uuid());
   Player(PlayerConfigPtr config, ByteArray const& netStore);
   Player(PlayerConfigPtr config, Json const& diskStore);
@@ -385,6 +400,8 @@ public:
   void addEmote(HumanoidEmote const& emote, Maybe<float> emoteCooldown = {});
   pair<HumanoidEmote, float> currentEmote() const;
 
+  State currentState() const;
+
   List<ChatAction> pullPendingChatActions() override;
 
   Maybe<String> inspectionLogName() const override;
@@ -483,21 +500,6 @@ public:
   void setSecretProperty(String const& name, Json const& value);
 
 private:
-  enum class State {
-    Idle,
-    Walk,
-    Run,
-    Jump,
-    Fall,
-    Swim,
-    SwimIdle,
-    TeleportIn,
-    TeleportOut,
-    Crouch,
-    Lounge
-  };
-  static EnumMap<State> const StateNames;
-  
   typedef LuaMessageHandlingComponent<LuaStorableComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>>> GenericScriptComponent;
   typedef shared_ptr<GenericScriptComponent> GenericScriptComponentPtr;
 

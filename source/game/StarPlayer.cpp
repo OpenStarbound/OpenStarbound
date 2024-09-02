@@ -2202,6 +2202,10 @@ pair<HumanoidEmote, float> Player::currentEmote() const {
   return make_pair(m_emoteState, m_emoteCooldownTimer);
 }
 
+Player::State Player::currentState() const {
+  return m_state;
+}
+
 List<ChatAction> Player::pullPendingChatActions() {
   return take(m_pendingChatActions);
 }
