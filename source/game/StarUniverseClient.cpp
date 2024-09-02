@@ -648,58 +648,64 @@ void UniverseClient::setPause(bool pause) {
 
 void UniverseClient::handlePackets(List<PacketPtr> const& packets) {
   for (auto const& packet : packets) {
-    if (auto clientContextUpdate = as<ClientContextUpdatePacket>(packet)) {
-      m_clientContext->readUpdate(clientContextUpdate->updateData);
-      m_playerStorage->applyShipUpdates(m_clientContext->playerUuid(), m_clientContext->newShipUpdates());
+    try {
+      if (auto clientContextUpdate = as<ClientContextUpdatePacket>(packet)) {
+        m_clientContext->readUpdate(clientContextUpdate->updateData);
+        m_playerStorage->applyShipUpdates(m_clientContext->playerUuid(), m_clientContext->newShipUpdates());
 
-      if (playerIsOriginal())
-        m_mainPlayer->setShipUpgrades(m_clientContext->shipUpgrades());
+        if (playerIsOriginal())
+          m_mainPlayer->setShipUpgrades(m_clientContext->shipUpgrades());
 
-      m_mainPlayer->setAdmin(m_clientContext->isAdmin());
-      m_mainPlayer->setTeam(m_clientContext->team());
+        m_mainPlayer->setAdmin(m_clientContext->isAdmin());
+        m_mainPlayer->setTeam(m_clientContext->team());
 
-    } else if (auto chatReceivePacket = as<ChatReceivePacket>(packet)) {
-      m_pendingMessages.append(chatReceivePacket->receivedMessage);
+      } else if (auto chatReceivePacket = as<ChatReceivePacket>(packet)) {
+        m_pendingMessages.append(chatReceivePacket->receivedMessage);
 
-    } else if (auto universeTimeUpdatePacket = as<UniverseTimeUpdatePacket>(packet)) {
-      m_universeClock->setTime(universeTimeUpdatePacket->universeTime);
+      } else if (auto universeTimeUpdatePacket = as<UniverseTimeUpdatePacket>(packet)) {
+        m_universeClock->setTime(universeTimeUpdatePacket->universeTime);
 
-    } else if (auto serverDisconnectPacket = as<ServerDisconnectPacket>(packet)) {
-      reset();
-      m_disconnectReason = serverDisconnectPacket->reason;
-      break; // Stop handling other packets
+      } else if (auto serverDisconnectPacket = as<ServerDisconnectPacket>(packet)) {
+        reset();
+        m_disconnectReason = serverDisconnectPacket->reason;
+        break; // Stop handling other packets
 
-    } else if (auto celestialResponse = as<CelestialResponsePacket>(packet)) {
-      m_celestialDatabase->pushResponses(std::move(celestialResponse->responses));
+      } else if (auto celestialResponse = as<CelestialResponsePacket>(packet)) {
+        m_celestialDatabase->pushResponses(std::move(celestialResponse->responses));
 
-    } else if (auto warpResult = as<PlayerWarpResultPacket>(packet)) {
-      if (m_mainPlayer->isDeploying() && m_warping && m_warping->is<WarpToPlayer>()) {
-        Uuid target = m_warping->get<WarpToPlayer>();
-        for (auto member : m_teamClient->members()) {
-          if (member.uuid == target) {
-            if (member.warpMode != WarpMode::DeployOnly && member.warpMode != WarpMode::BeamOrDeploy)
-              m_mainPlayer->deployAbort();
-            break;
+      } else if (auto warpResult = as<PlayerWarpResultPacket>(packet)) {
+        if (m_mainPlayer->isDeploying() && m_warping && m_warping->is<WarpToPlayer>()) {
+          Uuid target = m_warping->get<WarpToPlayer>();
+          for (auto member : m_teamClient->members()) {
+            if (member.uuid == target) {
+              if (member.warpMode != WarpMode::DeployOnly && member.warpMode != WarpMode::BeamOrDeploy)
+                m_mainPlayer->deployAbort();
+              break;
+            }
           }
         }
-      }
 
-      m_warping.reset();
-      if (!warpResult->success) {
-        m_mainPlayer->teleportAbort();
-        if (warpResult->warpActionInvalid)
-          m_mainPlayer->universeMap()->invalidateWarpAction(warpResult->warpAction);
+        m_warping.reset();
+        if (!warpResult->success) {
+          m_mainPlayer->teleportAbort();
+          if (warpResult->warpActionInvalid)
+            m_mainPlayer->universeMap()->invalidateWarpAction(warpResult->warpAction);
+        }
+      } else if (auto planetTypeUpdate = as<PlanetTypeUpdatePacket>(packet)) {
+        m_celestialDatabase->invalidateCacheFor(planetTypeUpdate->coordinate);
+      } else if (auto pausePacket = as<PausePacket>(packet)) {
+        setPause(pausePacket->pause);
+        GlobalTimescale = clamp(pausePacket->timescale, 0.0f, 1024.f);
+      } else if (auto serverInfoPacket = as<ServerInfoPacket>(packet)) {
+        m_serverInfo = ServerInfo{serverInfoPacket->players, serverInfoPacket->maxPlayers};
+      } else if (!m_systemWorldClient->handleIncomingPacket(packet)) {
+        // see if the system world will handle it, otherwise pass it along to the world client
+        m_worldClient->handleIncomingPackets({packet});
       }
-    } else if (auto planetTypeUpdate = as<PlanetTypeUpdatePacket>(packet)) {
-      m_celestialDatabase->invalidateCacheFor(planetTypeUpdate->coordinate);
-    } else if (auto pausePacket = as<PausePacket>(packet)) {
-      setPause(pausePacket->pause);
-      GlobalTimescale = clamp(pausePacket->timescale, 0.0f, 1024.f);
-    } else if (auto serverInfoPacket = as<ServerInfoPacket>(packet)) {
-      m_serverInfo = ServerInfo{serverInfoPacket->players, serverInfoPacket->maxPlayers};
-    } else if (!m_systemWorldClient->handleIncomingPacket(packet)) {
-      // see if the system world will handle it, otherwise pass it along to the world client
-      m_worldClient->handleIncomingPackets({packet});
+    }
+    catch (StarException const& e) {
+      Logger::error("Exception thrown while handling {} packet", PacketTypeNames.getRight(packet->type()));
+      throw;
     }
   }
 }
