@@ -2080,7 +2080,7 @@ void Player::setEmoteDirectives(String const& directives)
 void Player::setHairGroup(String const& group)
 {
   if (group.empty()) {
-    m_identity.hairGroup = clear();
+    m_identity.hairGroup.clear();
   } else {
     m_identity.hairGroup = group;
   }
@@ -2096,7 +2096,7 @@ void Player::setHairDirectives(String const& directives)
 void Player::setFacialHairGroup(String const& group)
 {
   if (group.empty()) {
-    m_identity.facialHairGroup = clear();
+    m_identity.facialHairGroup.clear();
   } else {
     m_identity.facialHairGroup = group;
   }
@@ -2112,7 +2112,7 @@ void Player::setFacialHairDirectives(String const& directives)
 void Player::setFacialMaskGroup(String const& group)
 {
   if (group.empty()) {
-    m_identity.facialMaskGroup = clear();
+    m_identity.facialMaskGroup.clear();
   } else {
     m_identity.facialMaskGroup = group;
   }
@@ -2128,7 +2128,7 @@ void Player::setFacialMaskDirectives(String const& directives)
 void Player::setHair(String const& group, String const& type, String const& directives) {
   {
     if (group.empty()) {
-      m_identity.hairGroup = clear();
+      m_identity.hairGroup.clear();
     } else {
       m_identity.hairGroup = group;
     }
@@ -2141,7 +2141,7 @@ void Player::setHair(String const& group, String const& type, String const& dire
 void Player::setFacialHair(String const& group, String const& type, String const& directives) {
   {
     if (group.empty()) {
-      m_identity.facialHairGroup = clear();
+      m_identity.facialHairGroup.clear();
     } else {
       m_identity.facialHairGroup = group;
     }
@@ -2154,7 +2154,7 @@ void Player::setFacialHair(String const& group, String const& type, String const
 void Player::setFacialMask(String const& group, String const& type, String const& directives) {
   {
     if (group.empty()) {
-      m_identity.facialMaskGroup = clear();
+      m_identity.facialMaskGroup.clear();
     } else {
       m_identity.facialMaskGroup = group;
     }
