@@ -2078,7 +2078,14 @@ void Player::setEmoteDirectives(String const& directives)
 { m_identity.emoteDirectives = directives; updateIdentity(); }
 
 void Player::setHairGroup(String const& group)
-{ m_identity.hairGroup = group; updateIdentity(); }
+{
+  if (group.empty()) {
+    m_identity.hairGroup = clear();
+  } else {
+    m_identity.hairGroup = group;
+  }
+  updateIdentity();
+}
 
 void Player::setHairType(String const& type)
 { m_identity.hairType = type; updateIdentity(); }
@@ -2087,7 +2094,14 @@ void Player::setHairDirectives(String const& directives)
 { m_identity.hairDirectives = directives; updateIdentity(); }
 
 void Player::setFacialHairGroup(String const& group)
-{ m_identity.facialHairGroup = group; updateIdentity(); }
+{
+  if (group.empty()) {
+    m_identity.facialHairGroup = clear();
+  } else {
+    m_identity.facialHairGroup = group;
+  }
+  updateIdentity();
+}
 
 void Player::setFacialHairType(String const& type)
 { m_identity.facialHairType = type; updateIdentity(); }
@@ -2096,7 +2110,14 @@ void Player::setFacialHairDirectives(String const& directives)
 { m_identity.facialHairDirectives = directives; updateIdentity(); }
 
 void Player::setFacialMaskGroup(String const& group)
-{ m_identity.facialMaskGroup = group; updateIdentity(); }
+{
+  if (group.empty()) {
+    m_identity.facialMaskGroup = clear();
+  } else {
+    m_identity.facialMaskGroup = group;
+  }
+  updateIdentity();
+}
 
 void Player::setFacialMaskType(String const& type)
 { m_identity.facialMaskType = type; updateIdentity(); }
@@ -2105,21 +2126,39 @@ void Player::setFacialMaskDirectives(String const& directives)
 { m_identity.facialMaskDirectives = directives; updateIdentity(); }
 
 void Player::setHair(String const& group, String const& type, String const& directives) {
-  m_identity.hairGroup = group;
+  {
+    if (group.empty()) {
+      m_identity.hairGroup = clear();
+    } else {
+      m_identity.hairGroup = group;
+    }
+  }
   m_identity.hairType = type;
   m_identity.hairDirectives = directives;
   updateIdentity();
 }
 
 void Player::setFacialHair(String const& group, String const& type, String const& directives) {
-  m_identity.facialHairGroup = group;
+  {
+    if (group.empty()) {
+      m_identity.facialHairGroup = clear();
+    } else {
+      m_identity.facialHairGroup = group;
+    }
+  }
   m_identity.facialHairType = type;
   m_identity.facialHairDirectives = directives;
   updateIdentity();
 }
 
 void Player::setFacialMask(String const& group, String const& type, String const& directives) {
-  m_identity.facialMaskGroup = group;
+  {
+    if (group.empty()) {
+      m_identity.facialMaskGroup = clear();
+    } else {
+      m_identity.facialMaskGroup = group;
+    }
+  }
   m_identity.facialMaskType = type;
   m_identity.facialMaskDirectives = directives;
   updateIdentity();
