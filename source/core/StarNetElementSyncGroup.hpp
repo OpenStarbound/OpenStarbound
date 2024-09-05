@@ -13,11 +13,11 @@ public:
   void disableNetInterpolation() override;
   void tickNetInterpolation(float dt) override;
 
-  void netStore(DataStream& ds) const override;
-  void netLoad(DataStream& ds) override;
+  void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
+  void netLoad(DataStream& ds, NetCompatibilityRules rules) override;
 
-  bool writeNetDelta(DataStream& ds, uint64_t fromStep) const override;
-  void readNetDelta(DataStream& ds, float interpolationTime = 0.0f) override;
+  bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+  void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
   void blankNetDelta(float interpolationTime = 0.0f) override;
 
 protected:

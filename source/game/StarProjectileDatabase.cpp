@@ -58,10 +58,11 @@ float ProjectileDatabase::gravityMultiplier(String const& type) const {
   return config->movementSettings.getFloat("gravityMultiplier", 1);
 }
 
-ProjectilePtr ProjectileDatabase::netLoadProjectile(ByteArray const& netStore) const {
+ProjectilePtr ProjectileDatabase::netLoadProjectile(ByteArray const& netStore, NetCompatibilityRules rules) const {
   DataStreamBuffer ds(netStore);
+  ds.setStreamCompatibilityVersion(rules);
   String typeName = ds.read<String>();
-  return make_shared<Projectile>(m_configs.get(typeName), ds);
+  return make_shared<Projectile>(m_configs.get(typeName), ds, rules);
 }
 
 ProjectileConfigPtr ProjectileDatabase::readConfig(String const& path) {

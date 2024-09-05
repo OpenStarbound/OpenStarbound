@@ -157,8 +157,9 @@ NpcVariant NpcDatabase::generateNpcVariant(
   return variant;
 }
 
-ByteArray NpcDatabase::writeNpcVariant(NpcVariant const& variant) const {
+ByteArray NpcDatabase::writeNpcVariant(NpcVariant const& variant, NetCompatibilityRules rules) const {
   DataStreamBuffer ds;
+  ds.setStreamCompatibilityVersion(rules);
 
   ds.write(variant.species);
   ds.write(variant.typeName);
@@ -179,8 +180,9 @@ ByteArray NpcDatabase::writeNpcVariant(NpcVariant const& variant) const {
   return ds.data();
 }
 
-NpcVariant NpcDatabase::readNpcVariant(ByteArray const& data) const {
+NpcVariant NpcDatabase::readNpcVariant(ByteArray const& data, NetCompatibilityRules rules) const {
   DataStreamBuffer ds(data);
+  ds.setStreamCompatibilityVersion(rules);
 
   NpcVariant variant;
 
@@ -325,8 +327,8 @@ NpcPtr NpcDatabase::diskLoadNpc(Json const& diskStore) const {
   return make_shared<Npc>(npcVariant, diskStore);
 }
 
-NpcPtr NpcDatabase::netLoadNpc(ByteArray const& netStore) const {
-  return make_shared<Npc>(readNpcVariant(netStore));
+NpcPtr NpcDatabase::netLoadNpc(ByteArray const& netStore, NetCompatibilityRules rules) const {
+  return make_shared<Npc>(readNpcVariant(netStore, rules));
 }
 
 List<Drawable> NpcDatabase::npcPortrait(NpcVariant const& npcVariant, PortraitMode mode) const {

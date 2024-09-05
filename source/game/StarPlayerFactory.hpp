@@ -60,7 +60,7 @@ public:
 
   PlayerPtr create() const;
   PlayerPtr diskLoadPlayer(Json const& diskStore) const;
-  PlayerPtr netLoadPlayer(ByteArray const& netStore) const;
+  PlayerPtr netLoadPlayer(ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
 
 private:
   PlayerConfigPtr m_config;

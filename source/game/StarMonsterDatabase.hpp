@@ -96,8 +96,8 @@ public:
   MonsterVariant randomMonster(String const& typeName, Json const& uniqueParameters = JsonObject()) const;
   MonsterVariant monsterVariant(String const& typeName, uint64_t seed, Json const& uniqueParameters = JsonObject()) const;
 
-  ByteArray writeMonsterVariant(MonsterVariant const& variant) const;
-  MonsterVariant readMonsterVariant(ByteArray const& data) const;
+  ByteArray writeMonsterVariant(MonsterVariant const& variant, NetCompatibilityRules rules = {}) const;
+  MonsterVariant readMonsterVariant(ByteArray const& data, NetCompatibilityRules rules = {}) const;
 
   Json writeMonsterVariantToJson(MonsterVariant const& mVar) const;
   MonsterVariant readMonsterVariantFromJson(Json const& variant) const;
@@ -106,7 +106,7 @@ public:
   // whatever world they're spawned in.
   MonsterPtr createMonster(MonsterVariant monsterVariant, Maybe<float> level = {}, Json uniqueParameters = {}) const;
   MonsterPtr diskLoadMonster(Json const& diskStore) const;
-  MonsterPtr netLoadMonster(ByteArray const& netStore) const;
+  MonsterPtr netLoadMonster(ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
 
   List<Drawable> monsterPortrait(MonsterVariant const& variant) const;
 

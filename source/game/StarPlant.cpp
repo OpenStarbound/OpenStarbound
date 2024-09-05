@@ -411,8 +411,9 @@ Json Plant::diskStore() const {
   };
 }
 
-ByteArray Plant::netStore() const {
+ByteArray Plant::netStore(NetCompatibilityRules rules) const {
   DataStreamBuffer ds;
+  ds.setStreamCompatibilityVersion(rules);
   ds.viwrite(m_tilePosition[0]);
   ds.viwrite(m_tilePosition[1]);
   ds.write(m_ceiling);
@@ -423,7 +424,7 @@ ByteArray Plant::netStore() const {
   ds.write(m_ephemeral);
   ds.write(m_tileDamageParameters);
   ds.write(m_fallsWhenDead);
-  m_tileDamageStatus.netStore(ds);
+  m_tileDamageStatus.netStore(ds, rules);
   ds.write(writePieces());
 
   return ds.takeData();
@@ -534,7 +535,7 @@ Plant::Plant(Json const& diskStore) : Plant() {
   setupNetStates();
 }
 
-Plant::Plant(ByteArray const& netStore) : Plant() {
+Plant::Plant(ByteArray const& netStore, NetCompatibilityRules rules) : Plant() {
   m_broken = false;
   m_tilePosition = Vec2I();
   m_ceiling = false;
@@ -545,6 +546,7 @@ Plant::Plant(ByteArray const& netStore) : Plant() {
   m_piecesUpdated = true;
 
   DataStreamBuffer ds(netStore);
+  ds.setStreamCompatibilityVersion(rules);
   ds.viread(m_tilePosition[0]);
   ds.viread(m_tilePosition[1]);
   ds.read(m_ceiling);
@@ -555,7 +557,7 @@ Plant::Plant(ByteArray const& netStore) : Plant() {
   ds.read(m_ephemeral);
   ds.read(m_tileDamageParameters);
   ds.read(m_fallsWhenDead);
-  m_tileDamageStatus.netLoad(ds);
+  m_tileDamageStatus.netLoad(ds, rules);
   readPieces(ds.read<ByteArray>());
 
   setupNetStates();
@@ -586,12 +588,12 @@ void Plant::init(World* world, EntityId entityId, EntityMode mode) {
   m_tilePosition = world->geometry().xwrap(m_tilePosition);
 }
 
-pair<ByteArray, uint64_t> Plant::writeNetState(uint64_t fromVersion) {
-  return m_netGroup.writeNetState(fromVersion);
+pair<ByteArray, uint64_t> Plant::writeNetState(uint64_t fromVersion, NetCompatibilityRules rules) {
+  return m_netGroup.writeNetState(fromVersion, rules);
 }
 
-void Plant::readNetState(ByteArray data, float interpolationTime) {
-  m_netGroup.readNetState(std::move(data), interpolationTime);
+void Plant::readNetState(ByteArray data, float interpolationTime, NetCompatibilityRules rules) {
+  m_netGroup.readNetState(data, interpolationTime, rules);
 }
 
 void Plant::enableInterpolation(float extrapolationHint) {

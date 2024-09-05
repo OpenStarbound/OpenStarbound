@@ -22,8 +22,6 @@ WorldClientState::WorldClientState() {
 
   m_netGroup.addNetElement(&m_playerId);
   m_netGroup.addNetElement(&m_clientPresenceEntities);
-
-  m_legacy = false;
 }
 
 RectI WorldClientState::window() const {
@@ -81,20 +79,20 @@ List<RectI> WorldClientState::monitoringRegions(function<Maybe<RectI>(EntityId)>
 
 ByteArray WorldClientState::writeDelta() {
   ByteArray delta;
-  tie(delta, m_netVersion) = m_netGroup.writeNetState(m_netVersion);
+  tie(delta, m_netVersion) = m_netGroup.writeNetState(m_netVersion, m_netCompatibilityRules);
   return delta;
 }
 
 void WorldClientState::readDelta(ByteArray delta) {
-  m_netGroup.readNetState(std::move(delta));
+  m_netGroup.readNetState(std::move(delta), 0.0f, m_netCompatibilityRules);
 }
 
-void WorldClientState::setLegacy(bool legacy) {
-  m_legacy = legacy;
+void WorldClientState::setNetCompatibilityRules(NetCompatibilityRules netCompatibilityRules) {
+  m_netCompatibilityRules = netCompatibilityRules;
 }
 
-bool WorldClientState::legacy() const {
-  return m_legacy;
+NetCompatibilityRules WorldClientState::netCompatibilityRules() const {
+  return m_netCompatibilityRules;
 }
 
 void WorldClientState::reset() {

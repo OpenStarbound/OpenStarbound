@@ -2,6 +2,7 @@
 
 #include "StarObserverStream.hpp"
 #include "StarNetElementSystem.hpp"
+#include "StarNetElementExt.hpp"
 #include "StarStatCollection.hpp"
 #include "StarStatusEffectDatabase.hpp"
 #include "StarDamage.hpp"
@@ -103,15 +104,15 @@ public:
 
   void initNetVersion(NetElementVersion const* version = nullptr) override;
 
-  void netStore(DataStream& ds) const override;
-  void netLoad(DataStream& ds) override;
+  void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
+  void netLoad(DataStream& ds, NetCompatibilityRules rules) override;
 
   void enableNetInterpolation(float extrapolationHint = 0.0f) override;
   void disableNetInterpolation() override;
   void tickNetInterpolation(float dt) override;
 
-  bool writeNetDelta(DataStream& ds, uint64_t fromVersion) const override;
-  void readNetDelta(DataStream& ds, float interpolationTime = 0.0) override;
+  bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+  void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
   void blankNetDelta(float interpolationTime) override;
 
   void tickMaster(float dt);
@@ -136,15 +137,15 @@ private:
 
     void initNetVersion(NetElementVersion const* version = nullptr) override;
 
-    void netStore(DataStream& ds) const override;
-    void netLoad(DataStream& ds) override;
+    void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
+    void netLoad(DataStream& ds, NetCompatibilityRules rules) override;
 
     void enableNetInterpolation(float extrapolationHint = 0.0f) override;
     void disableNetInterpolation() override;
     void tickNetInterpolation(float dt) override;
 
-    bool writeNetDelta(DataStream& ds, uint64_t fromVersion) const override;
-    void readNetDelta(DataStream& ds, float interpolationTime = 0.0) override;
+    bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+    void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
     void blankNetDelta(float interpolationTime) override;
 
     Maybe<String> animationConfig;
@@ -203,7 +204,7 @@ private:
 
   NetElementGroup m_netGroup;
   StatCollection m_statCollection;
-  NetElementData<JsonObject> m_statusProperties;
+  NetElementOverride<NetElementHashMap<String, Json>> m_statusProperties;
   NetElementData<DirectivesGroup> m_parentDirectives;
 
   UniqueEffectMetadataGroup m_uniqueEffectMetadata;

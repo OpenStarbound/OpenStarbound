@@ -70,10 +70,12 @@ SET (star_core_HEADERS
     StarMultiArray.hpp
     StarMultiArrayInterpolator.hpp
     StarMultiTable.hpp
+    StarNetCompatibility.hpp
     StarNetElement.hpp
     StarNetElementBasicFields.hpp
     StarNetElementContainers.hpp
     StarNetElementDynamicGroup.hpp
+    StarNetElementExt.hpp
     StarNetElementFloatFields.hpp
     StarNetElementGroup.hpp
     StarNetElementSignal.hpp

@@ -198,7 +198,7 @@ public:
 
   ObjectPtr createObject(String const& objectName, Json const& objectParameters = JsonObject()) const;
   ObjectPtr diskLoadObject(Json const& diskStore) const;
-  ObjectPtr netLoadObject(ByteArray const& netStore) const;
+  ObjectPtr netLoadObject(ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
 
   bool canPlaceObject(World const* world, Vec2I const& position, String const& objectName) const;
   // If the object is placeable in the given position, creates the given object

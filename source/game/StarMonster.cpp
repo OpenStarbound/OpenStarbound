@@ -110,8 +110,8 @@ Json Monster::diskStore() const {
   };
 }
 
-ByteArray Monster::netStore() {
-  return Root::singleton().monsterDatabase()->writeMonsterVariant(m_monsterVariant);
+ByteArray Monster::netStore(NetCompatibilityRules rules) {
+  return Root::singleton().monsterDatabase()->writeMonsterVariant(m_monsterVariant, rules);
 }
 
 EntityType Monster::entityType() const {
@@ -210,12 +210,12 @@ Vec2F Monster::velocity() const {
   return m_movementController->velocity();
 }
 
-pair<ByteArray, uint64_t> Monster::writeNetState(uint64_t fromVersion) {
-  return m_netGroup.writeNetState(fromVersion);
+pair<ByteArray, uint64_t> Monster::writeNetState(uint64_t fromVersion, NetCompatibilityRules rules) {
+  return m_netGroup.writeNetState(fromVersion, rules);
 }
 
-void Monster::readNetState(ByteArray data, float interpolationTime) {
-  m_netGroup.readNetState(std::move(data), interpolationTime);
+void Monster::readNetState(ByteArray data, float interpolationTime, NetCompatibilityRules rules) {
+  m_netGroup.readNetState(data, interpolationTime, rules);
 }
 
 void Monster::enableInterpolation(float extrapolationHint) {

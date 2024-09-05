@@ -87,7 +87,7 @@ public:
 
   // Returns false if the client id already exists, or the spawn target is
   // invalid.
-  bool addClient(ConnectionId clientId, SpawnTarget const& spawnTarget, bool isLocal, bool isAdmin = false);
+  bool addClient(ConnectionId clientId, SpawnTarget const& spawnTarget, bool isLocal, bool isAdmin = false, NetCompatibilityRules netRules = {});
 
   // Removes client, sends the WorldStopPacket, and returns any pending packets
   // for that client
@@ -375,6 +375,7 @@ private:
   List<CollisionBlock> m_workingCollisionBlocks;
 
   HashMap<pair<EntityId, uint64_t>, pair<ByteArray, uint64_t>> m_netStateCache;
+  HashMap<pair<EntityId, uint64_t>, pair<ByteArray, uint64_t>> m_legacyNetStateCache;
   OrderedHashMap<ConnectionId, shared_ptr<ClientInfo>> m_clientInfo;
 
   GameTimer m_entityUpdateTimer;

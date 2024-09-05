@@ -38,11 +38,11 @@ public:
   void disableNetInterpolation() override;
   void tickNetInterpolation(float dt) override;
 
-  void netStore(DataStream& ds) const override;
-  void netLoad(DataStream& ds) override;
+  void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
+  void netLoad(DataStream& ds, NetCompatibilityRules rules) override;
 
-  bool writeNetDelta(DataStream& ds, uint64_t fromVersion) const override;
-  void readNetDelta(DataStream& ds, float interpolationTime = 0.0f) override;
+  bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+  void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
 protected:
   virtual void readData(DataStream& ds, T& t) const = 0;
@@ -107,7 +107,7 @@ public:
   void ignoreOccurrences();
   void setIgnoreOccurrencesOnNetLoad(bool ignoreOccurrencesOnNetLoad);
 
-  void netLoad(DataStream& ds) override;
+  void netLoad(DataStream& ds, NetCompatibilityRules rules) override;
 
 protected:
   void updated() override;
@@ -211,7 +211,8 @@ void NetElementBasicField<T>::tickNetInterpolation(float dt) {
 }
 
 template <typename T>
-void NetElementBasicField<T>::netStore(DataStream& ds) const {
+void NetElementBasicField<T>::netStore(DataStream& ds, NetCompatibilityRules rules) const {
+  if (!checkWithRules(rules)) return;
   if (m_pendingInterpolatedValues && !m_pendingInterpolatedValues->empty())
     writeData(ds, m_pendingInterpolatedValues->last().second);
   else
@@ -219,7 +220,8 @@ void NetElementBasicField<T>::netStore(DataStream& ds) const {
 }
 
 template <typename T>
-void NetElementBasicField<T>::netLoad(DataStream& ds) {
+void NetElementBasicField<T>::netLoad(DataStream& ds, NetCompatibilityRules rules) {
+  if (!checkWithRules(rules)) return;
   readData(ds, m_value);
   m_latestUpdateVersion = m_netVersion ? m_netVersion->current() : 0;
   updated();
@@ -228,7 +230,8 @@ void NetElementBasicField<T>::netLoad(DataStream& ds) {
 }
 
 template <typename T>
-bool NetElementBasicField<T>::writeNetDelta(DataStream& ds, uint64_t fromVersion) const {
+bool NetElementBasicField<T>::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const {
+  if (!checkWithRules(rules)) return false;
   if (m_latestUpdateVersion < fromVersion)
     return false;
 
@@ -236,11 +239,13 @@ bool NetElementBasicField<T>::writeNetDelta(DataStream& ds, uint64_t fromVersion
     writeData(ds, m_pendingInterpolatedValues->last().second);
   else
     writeData(ds, m_value);
+
   return true;
 }
 
 template <typename T>
-void NetElementBasicField<T>::readNetDelta(DataStream& ds, float interpolationTime) {
+void NetElementBasicField<T>::readNetDelta(DataStream& ds, float interpolationTime, NetCompatibilityRules rules) {
+  if (!checkWithRules(rules)) return;
   T t;
   readData(ds, t);
   m_latestUpdateVersion = m_netVersion ? m_netVersion->current() : 0;

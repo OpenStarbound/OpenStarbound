@@ -15,9 +15,9 @@ public:
   PlantDrop(List<Plant::PlantPiece> pieces, Vec2F const& position, Vec2F const& strikeVector, String const& description,
       bool upsideDown, Json stemConfig, Json foliageConfig, Json saplingConfig,
       bool master, float random);
-  PlantDrop(ByteArray const& netStore);
+  PlantDrop(ByteArray const& netStore, NetCompatibilityRules rules = {});
 
-  ByteArray netStore();
+  ByteArray netStore(NetCompatibilityRules rules = {});
 
   EntityType entityType() const override;
 
@@ -26,8 +26,8 @@ public:
 
   String description() const override;
 
-  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0) override;
-  void readNetState(ByteArray data, float interpolationTime = 0.0f) override;
+  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
+  void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
   void enableInterpolation(float extrapolationHint = 0.0f) override;
   void disableInterpolation() override;

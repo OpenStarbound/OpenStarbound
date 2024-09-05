@@ -126,8 +126,8 @@ private:
 class DataStreamExternalBuffer : public DataStream {
 public:
   DataStreamExternalBuffer();
-  explicit DataStreamExternalBuffer(ByteArray const& byteArray);
-  explicit DataStreamExternalBuffer(DataStreamBuffer const& buffer);
+  DataStreamExternalBuffer(ByteArray const& byteArray);
+  DataStreamExternalBuffer(DataStreamBuffer const& buffer);
 
   DataStreamExternalBuffer(DataStreamExternalBuffer const& buffer) = default;
   DataStreamExternalBuffer(char const* externalData, size_t len);

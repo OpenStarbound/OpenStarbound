@@ -243,6 +243,49 @@ EnumMap<Humanoid::State> const Humanoid::StateNames{
 };
 
 Humanoid::Humanoid(Json const& config) {
+  loadConfig(config);
+
+  m_twoHanded = false;
+  m_primaryHand.holdingItem = false;
+  m_altHand.holdingItem = false;
+
+  m_movingBackwards = false;
+  m_altHand.angle = 0;
+  m_facingDirection = Direction::Left;
+  m_rotation = 0;
+  m_scale = Vec2F::filled(1.f);
+  m_drawVaporTrail = false;
+  m_state = State::Idle;
+  m_emoteState = HumanoidEmote::Idle;
+  m_dance = {};
+
+  m_primaryHand.angle = 0;
+  m_animationTimer = m_emoteAnimationTimer = m_danceTimer = 0.0f;
+}
+
+Humanoid::Humanoid(HumanoidIdentity const& identity)
+  : Humanoid(Root::singleton().speciesDatabase()->species(identity.species)->humanoidConfig()) {
+  setIdentity(identity);
+}
+
+void Humanoid::setIdentity(HumanoidIdentity const& identity) {
+  m_identity = identity;
+  m_headFrameset = getHeadFromIdentity();
+  m_bodyFrameset = getBodyFromIdentity();
+  m_emoteFrameset = getFacialEmotesFromIdentity();
+  m_hairFrameset = getHairFromIdentity();
+  m_facialHairFrameset = getFacialHairFromIdentity();
+  m_facialMaskFrameset = getFacialMaskFromIdentity();
+  m_backArmFrameset = getBackArmFromIdentity();
+  m_frontArmFrameset = getFrontArmFromIdentity();
+  m_vaporTrailFrameset = getVaporTrailFrameset();
+}
+
+HumanoidIdentity const& Humanoid::identity() const {
+  return m_identity;
+}
+
+void Humanoid::loadConfig(Json const& config) {
   m_timing = HumanoidTiming(config.getObject("humanoidTiming"));
 
   m_globalOffset = jsonToVec2F(config.get("globalOffset")) / TilePixels;
@@ -271,10 +314,13 @@ Humanoid::Humanoid(Json const& config) {
   m_armWalkSeq = jsonToIntList(config.get("armWalkSeq"));
   m_armRunSeq = jsonToIntList(config.get("armRunSeq"));
 
+  m_walkBob.clear();
   for (auto const& v : config.get("walkBob").toArray())
     m_walkBob.append(v.toDouble() / TilePixels);
+  m_runBob.clear();
   for (auto const& v : config.get("runBob").toArray())
     m_runBob.append(v.toDouble() / TilePixels);
+  m_swimBob.clear();
   for (auto const& v : config.get("swimBob").toArray())
     m_swimBob.append(v.toDouble() / TilePixels);
 
@@ -290,46 +336,6 @@ Humanoid::Humanoid(Json const& config) {
   m_particleEmitters = config.get("particleEmitters");
 
   m_defaultMovementParameters = config.get("movementParameters");
-
-  m_twoHanded = false;
-  m_primaryHand.holdingItem = false;
-  m_altHand.holdingItem = false;
-
-  m_movingBackwards = false;
-  m_altHand.angle = 0;
-  m_facingDirection = Direction::Left;
-  m_rotation = 0;
-  m_scale = Vec2F::filled(1.f);
-  m_drawVaporTrail = false;
-  m_state = State::Idle;
-  m_emoteState = HumanoidEmote::Idle;
-  m_dance = {};
-  m_emoteAnimationTimer = 0;
-
-  m_primaryHand.angle = 0;
-  m_animationTimer = 0.0f;
-}
-
-Humanoid::Humanoid(HumanoidIdentity const& identity)
-  : Humanoid(Root::singleton().speciesDatabase()->species(identity.species)->humanoidConfig()) {
-  setIdentity(identity);
-}
-
-void Humanoid::setIdentity(HumanoidIdentity const& identity) {
-  m_identity = identity;
-  m_headFrameset = getHeadFromIdentity();
-  m_bodyFrameset = getBodyFromIdentity();
-  m_emoteFrameset = getFacialEmotesFromIdentity();
-  m_hairFrameset = getHairFromIdentity();
-  m_facialHairFrameset = getFacialHairFromIdentity();
-  m_facialMaskFrameset = getFacialMaskFromIdentity();
-  m_backArmFrameset = getBackArmFromIdentity();
-  m_frontArmFrameset = getFrontArmFromIdentity();
-  m_vaporTrailFrameset = getVaporTrailFrameset();
-}
-
-HumanoidIdentity const& Humanoid::identity() const {
-  return m_identity;
 }
 
 void Humanoid::setHeadArmorDirectives(Directives directives) {

@@ -58,15 +58,15 @@ public:
   NpcVariant generateNpcVariant(String const& species, String const& typeName, float level) const;
   NpcVariant generateNpcVariant(String const& species, String const& typeName, float level, uint64_t seed, Json const& overrides) const;
 
-  ByteArray writeNpcVariant(NpcVariant const& variant) const;
-  NpcVariant readNpcVariant(ByteArray const& data) const;
+  ByteArray writeNpcVariant(NpcVariant const& variant, NetCompatibilityRules rules = {}) const;
+  NpcVariant readNpcVariant(ByteArray const& data, NetCompatibilityRules rules = {}) const;
 
   Json writeNpcVariantToJson(NpcVariant const& variant) const;
   NpcVariant readNpcVariantFromJson(Json const& data) const;
 
   NpcPtr createNpc(NpcVariant const& npcVariant) const;
-  NpcPtr diskLoadNpc(Json const& diskStoree) const;
-  NpcPtr netLoadNpc(ByteArray const& netStore) const;
+  NpcPtr diskLoadNpc(Json const& diskStore) const;
+  NpcPtr netLoadNpc(ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
 
   List<Drawable> npcPortrait(NpcVariant const& npcVariant, PortraitMode mode) const;
 

@@ -40,57 +40,57 @@ EntityFactory::EntityFactory() {
   m_versioningDatabase = root.versioningDatabase();
 }
 
-ByteArray EntityFactory::netStoreEntity(EntityPtr const& entity) const {
+ByteArray EntityFactory::netStoreEntity(EntityPtr const& entity, NetCompatibilityRules rules) const {
   RecursiveMutexLocker locker(m_mutex);
 
   if (auto player = as<Player>(entity)) {
-    return player->netStore();
+    return player->netStore(rules);
   } else if (auto monster = as<Monster>(entity)) {
-    return monster->netStore();
+    return monster->netStore(rules);
   } else if (auto object = as<Object>(entity)) {
-    return object->netStore();
+    return object->netStore(rules);
   } else if (auto plant = as<Plant>(entity)) {
-    return plant->netStore();
+    return plant->netStore(rules);
   } else if (auto plantDrop = as<PlantDrop>(entity)) {
-    return plantDrop->netStore();
+    return plantDrop->netStore(rules);
   } else if (auto projectile = as<Projectile>(entity)) {
-    return projectile->netStore();
+    return projectile->netStore(rules);
   } else if (auto itemDrop = as<ItemDrop>(entity)) {
-    return itemDrop->netStore();
+    return itemDrop->netStore(rules);
   } else if (auto npc = as<Npc>(entity)) {
-    return npc->netStore();
+    return npc->netStore(rules);
   } else if (auto stagehand = as<Stagehand>(entity)) {
-    return stagehand->netStore();
+    return stagehand->netStore(rules);
   } else if (auto vehicle = as<Vehicle>(entity)) {
-    return m_vehicleDatabase->netStore(vehicle);
+    return m_vehicleDatabase->netStore(vehicle, rules);
   } else {
     throw EntityFactoryException::format("Don't know how to make net store for entity type '{}'", EntityTypeNames.getRight(entity->entityType()));
   }
 }
 
-EntityPtr EntityFactory::netLoadEntity(EntityType type, ByteArray const& netStore) const {
+EntityPtr EntityFactory::netLoadEntity(EntityType type, ByteArray const& netStore, NetCompatibilityRules rules) const {
   RecursiveMutexLocker locker(m_mutex);
 
   if (type == EntityType::Player) {
-    return m_playerFactory->netLoadPlayer(netStore);
+    return m_playerFactory->netLoadPlayer(netStore, rules);
   } else if (type == EntityType::Monster) {
-    return m_monsterDatabase->netLoadMonster(netStore);
+    return m_monsterDatabase->netLoadMonster(netStore, rules);
   } else if (type == EntityType::Object) {
-    return m_objectDatabase->netLoadObject(netStore);
+    return m_objectDatabase->netLoadObject(netStore, rules);
   } else if (type == EntityType::Plant) {
-    return make_shared<Plant>(netStore);
+    return make_shared<Plant>(netStore, rules);
   } else if (type == EntityType::PlantDrop) {
-    return make_shared<PlantDrop>(netStore);
+    return make_shared<PlantDrop>(netStore, rules);
   } else if (type == EntityType::Projectile) {
-    return m_projectileDatabase->netLoadProjectile(netStore);
+    return m_projectileDatabase->netLoadProjectile(netStore, rules);
   } else if (type == EntityType::ItemDrop) {
-    return make_shared<ItemDrop>(netStore);
+    return make_shared<ItemDrop>(netStore, rules);
   } else if (type == EntityType::Npc) {
-    return m_npcDatabase->netLoadNpc(netStore);
+    return m_npcDatabase->netLoadNpc(netStore, rules);
   } else if (type == EntityType::Stagehand) {
-    return make_shared<Stagehand>(netStore);
+    return make_shared<Stagehand>(netStore, rules);
   } else if (type == EntityType::Vehicle) {
-    return m_vehicleDatabase->netLoad(netStore);
+    return m_vehicleDatabase->netLoad(netStore, rules);
   } else {
     throw EntityFactoryException::format("Don't know how to create entity type '{}' from net store", EntityTypeNames.getRight(type));
   }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "StarString.hpp"
+#include "StarNetCompatibility.hpp"
 
 namespace Star {
 
@@ -12,7 +13,7 @@ public:
   DataStream();
   virtual ~DataStream() = default;
 
-  static unsigned const CurrentStreamVersion = 1;
+  static unsigned const CurrentStreamVersion = 2;
 
   // DataStream defaults to big-endian order for all primitive types
   ByteOrder byteOrder() const;
@@ -27,7 +28,7 @@ public:
   // changed for compatibility with older versions of DataStream serialization.
   unsigned streamCompatibilityVersion() const;
   void setStreamCompatibilityVersion(unsigned streamCompatibilityVersion);
-
+  void setStreamCompatibilityVersion(NetCompatibilityRules const& rules);
   // Do direct reads and writes
   virtual void readData(char* data, size_t len) = 0;
   virtual void writeData(char const* data, size_t len) = 0;

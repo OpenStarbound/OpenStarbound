@@ -111,7 +111,7 @@ public:
   float gravityMultiplier(String const& type) const;
 
   ProjectilePtr createProjectile(String const& type, Json const& parameters = JsonObject()) const;
-  ProjectilePtr netLoadProjectile(ByteArray const& netStore) const;
+  ProjectilePtr netLoadProjectile(ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
 
 private:
   ProjectileConfigPtr readConfig(String const& path);

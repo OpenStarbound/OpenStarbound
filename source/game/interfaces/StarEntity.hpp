@@ -3,6 +3,7 @@
 #include "StarCasting.hpp"
 #include "StarDamage.hpp"
 #include "StarLightSource.hpp"
+#include "StarDataStream.hpp"
 
 namespace Star {
 
@@ -63,11 +64,11 @@ public:
   // uninitalized.  Should return the delta to be written to the slave, along
   // with the version to pass into writeDeltaState on the next call.  The first
   // delta written to a slave entity will always be the delta starting with 0.
-  virtual pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0);
+  virtual pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {});
   // Will be called with deltas written by writeDeltaState, including if the
   // delta is empty.  interpolationTime will be provided if interpolation is
   // enabled.
-  virtual void readNetState(ByteArray data, float interpolationTime = 0.0);
+  virtual void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {});
 
   virtual void enableInterpolation(float extrapolationHint);
   virtual void disableInterpolation();

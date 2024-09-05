@@ -835,7 +835,10 @@ void UniverseServer::warpPlayers() {
           // Checking the spawn target validity then adding the client is not
           // perfect, it can still become invalid in between, if we fail at
           // adding the client we need to warp them back.
-          if (toWorld && toWorld->addClient(clientId, warpToWorld.target, !clientContext->remoteAddress(), clientContext->canBecomeAdmin())) {
+          if (toWorld && toWorld->addClient(clientId, warpToWorld.target,
+            !clientContext->remoteAddress(),
+            clientContext->canBecomeAdmin(),
+            clientContext->netRules())) {
             clientContext->setPlayerWorld(toWorld);
             m_chatProcessor->joinChannel(clientId, printWorldId(warpToWorld.world));
 
@@ -1698,7 +1701,8 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
   }
 
   ConnectionId clientId = m_clients.nextId();
-  auto clientContext = make_shared<ServerClientContext>(clientId, remoteAddress, clientConnect->playerUuid,
+  NetCompatibilityRules netRules(legacyClient);
+  auto clientContext = make_shared<ServerClientContext>(clientId, remoteAddress, netRules, clientConnect->playerUuid,
       clientConnect->playerName, clientConnect->playerSpecies, administrator, clientConnect->shipChunks);
   m_clients.add(clientId, clientContext);
   m_connectionServer->addConnection(clientId, std::move(connection));

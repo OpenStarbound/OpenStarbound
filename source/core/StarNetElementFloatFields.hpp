@@ -36,11 +36,11 @@ public:
   void disableNetInterpolation() override;
   void tickNetInterpolation(float dt) override;
 
-  void netStore(DataStream& ds) const override;
-  void netLoad(DataStream& ds) override;
+  void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
+  void netLoad(DataStream& ds, NetCompatibilityRules rules) override;
 
-  bool writeNetDelta(DataStream& ds, uint64_t fromVersion) const override;
-  void readNetDelta(DataStream& ds, float interpolationTime = 0.0f) override;
+  bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+  void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
   void blankNetDelta(float interpolationTime = 0.0f) override;
 
 private:
@@ -131,7 +131,8 @@ void NetElementFloating<T>::tickNetInterpolation(float dt) {
 }
 
 template <typename T>
-void NetElementFloating<T>::netStore(DataStream& ds) const {
+void NetElementFloating<T>::netStore(DataStream& ds, NetCompatibilityRules rules) const {
+  if (!checkWithRules(rules)) return;
   if (m_interpolationDataPoints)
     writeValue(ds, m_interpolationDataPoints->last().second);
   else
@@ -139,7 +140,8 @@ void NetElementFloating<T>::netStore(DataStream& ds) const {
 }
 
 template <typename T>
-void NetElementFloating<T>::netLoad(DataStream& ds) {
+void NetElementFloating<T>::netLoad(DataStream& ds, NetCompatibilityRules rules) {
+  if (!checkWithRules(rules)) return;
   m_value = readValue(ds);
   m_latestUpdateVersion = m_netVersion ? m_netVersion->current() : 0;
   if (m_interpolationDataPoints) {
@@ -149,7 +151,8 @@ void NetElementFloating<T>::netLoad(DataStream& ds) {
 }
 
 template <typename T>
-bool NetElementFloating<T>::writeNetDelta(DataStream& ds, uint64_t fromVersion) const {
+bool NetElementFloating<T>::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const {
+  if (!checkWithRules(rules)) return false;
   if (m_latestUpdateVersion < fromVersion)
     return false;
 
@@ -162,7 +165,7 @@ bool NetElementFloating<T>::writeNetDelta(DataStream& ds, uint64_t fromVersion) 
 }
 
 template <typename T>
-void NetElementFloating<T>::readNetDelta(DataStream& ds, float interpolationTime) {
+void NetElementFloating<T>::readNetDelta(DataStream& ds, float interpolationTime, NetCompatibilityRules rules) {
   T t = readValue(ds);
 
   m_latestUpdateVersion = m_netVersion ? m_netVersion->current() : 0;

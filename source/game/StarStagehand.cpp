@@ -14,8 +14,7 @@ Stagehand::Stagehand(Json const& config)
   readConfig(config);
 }
 
-Stagehand::Stagehand(ByteArray const& netStore)
-  : Stagehand() {
+Stagehand::Stagehand(ByteArray const& netStore, NetCompatibilityRules rules) : Stagehand() {
   readConfig(DataStreamBuffer::deserialize<Json>(netStore));
 }
 
@@ -31,7 +30,7 @@ Json Stagehand::diskStore() const {
     return saveData.set("scriptStorage", m_scriptComponent.getScriptStorage());
 }
 
-ByteArray Stagehand::netStore() {
+ByteArray Stagehand::netStore(NetCompatibilityRules rules) {
   return DataStreamBuffer::serialize(m_config);
 }
 
@@ -77,12 +76,12 @@ RectF Stagehand::metaBoundBox() const {
   return m_boundBox;
 }
 
-pair<ByteArray, uint64_t> Stagehand::writeNetState(uint64_t fromVersion) {
-  return m_netGroup.writeNetState(fromVersion);
+pair<ByteArray, uint64_t> Stagehand::writeNetState(uint64_t fromVersion, NetCompatibilityRules rules) {
+  return m_netGroup.writeNetState(fromVersion, rules);
 }
 
-void Stagehand::readNetState(ByteArray data, float) {
-  m_netGroup.readNetState(std::move(data));
+void Stagehand::readNetState(ByteArray data, float interpolationTime, NetCompatibilityRules rules) {
+  m_netGroup.readNetState(data, interpolationTime, rules);
 }
 
 void Stagehand::update(float dt, uint64_t) {

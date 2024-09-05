@@ -453,12 +453,12 @@ void SystemObject::serverUpdate(SystemWorldServer* system, float dt) {
   }
 }
 
-pair<ByteArray, uint64_t> SystemObject::writeNetState(uint64_t fromVersion) {
-  return m_netGroup.writeNetState(fromVersion);
+pair<ByteArray, uint64_t> SystemObject::writeNetState(uint64_t fromVersion, NetCompatibilityRules rules) {
+  return m_netGroup.writeNetState(fromVersion, rules);
 }
 
-void SystemObject::readNetState(ByteArray data, float interpolationTime) {
-  m_netGroup.readNetState(std::move(data), interpolationTime);
+void SystemObject::readNetState(ByteArray data, float interpolationTime, NetCompatibilityRules rules) {
+  m_netGroup.readNetState(data, interpolationTime, rules);
 }
 
 ByteArray SystemObject::netStore() const {
@@ -615,12 +615,12 @@ void SystemClientShip::serverUpdate(SystemWorld* system, float dt) {
   }
 }
 
-pair<ByteArray, uint64_t> SystemClientShip::writeNetState(uint64_t fromVersion) {
-  return m_netGroup.writeNetState(fromVersion);
+pair<ByteArray, uint64_t> SystemClientShip::writeNetState(uint64_t fromVersion, NetCompatibilityRules rules) {
+  return m_netGroup.writeNetState(fromVersion, rules);
 }
 
-void SystemClientShip::readNetState(ByteArray data, float interpolationTime) {
-  m_netGroup.readNetState(std::move(data), interpolationTime);
+void SystemClientShip::readNetState(ByteArray data, float interpolationTime, NetCompatibilityRules rules) {
+  m_netGroup.readNetState(data, interpolationTime, rules);
 }
 
 ByteArray SystemClientShip::netStore() const {

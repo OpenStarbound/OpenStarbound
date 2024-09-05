@@ -92,9 +92,9 @@ ItemDrop::ItemDrop(Json const& diskStore)
   m_itemDescriptor.set(m_item->descriptor());
 }
 
-ItemDrop::ItemDrop(ByteArray store)
-  : ItemDrop() {
+ItemDrop::ItemDrop(ByteArray store, NetCompatibilityRules rules) : ItemDrop() {
   DataStreamBuffer ds(std::move(store));
+  ds.setStreamCompatibilityVersion(rules);
 
   Root::singleton().itemDatabase()->loadItem(ds.read<ItemDescriptor>(), m_item);
   ds.read(m_eternal);
@@ -116,8 +116,9 @@ Json ItemDrop::diskStore() const {
   };
 }
 
-ByteArray ItemDrop::netStore() const {
+ByteArray ItemDrop::netStore(NetCompatibilityRules rules) const {
   DataStreamBuffer ds;
+  ds.setStreamCompatibilityVersion(rules);
 
   ds.write(itemSafeDescriptor(m_item));
   ds.write(m_eternal);
@@ -146,12 +147,12 @@ String ItemDrop::description() const {
   return m_item->description();
 }
 
-pair<ByteArray, uint64_t> ItemDrop::writeNetState(uint64_t fromVersion) {
-  return m_netGroup.writeNetState(fromVersion);
+pair<ByteArray, uint64_t> ItemDrop::writeNetState(uint64_t fromVersion, NetCompatibilityRules rules) {
+  return m_netGroup.writeNetState(fromVersion, rules);
 }
 
-void ItemDrop::readNetState(ByteArray data, float interpolationTime) {
-  m_netGroup.readNetState(std::move(data), interpolationTime);
+void ItemDrop::readNetState(ByteArray data, float interpolationTime, NetCompatibilityRules rules) {
+  m_netGroup.readNetState(data, interpolationTime, rules);
 }
 
 void ItemDrop::enableInterpolation(float extrapolationHint) {

@@ -209,7 +209,7 @@ bool WorldServer::spawnTargetValid(SpawnTarget const& spawnTarget) const {
   return true;
 }
 
-bool WorldServer::addClient(ConnectionId clientId, SpawnTarget const& spawnTarget, bool isLocal, bool isAdmin) {
+bool WorldServer::addClient(ConnectionId clientId, SpawnTarget const& spawnTarget, bool isLocal, bool isAdmin, NetCompatibilityRules netRules) {
   if (m_clientInfo.contains(clientId))
     return false;
 
@@ -246,6 +246,7 @@ bool WorldServer::addClient(ConnectionId clientId, SpawnTarget const& spawnTarge
   auto& clientInfo = m_clientInfo.add(clientId, make_shared<ClientInfo>(clientId, tracker));
   clientInfo->local = isLocal;
   clientInfo->admin = isAdmin;
+  clientInfo->clientState.setNetCompatibilityRules(netRules);
 
   auto worldStartPacket = make_shared<WorldStartPacket>();
   auto& templateData = worldStartPacket->templateData = m_worldTemplate->store();
@@ -254,8 +255,8 @@ bool WorldServer::addClient(ConnectionId clientId, SpawnTarget const& spawnTarge
     && Root::singletonPtr()->configuration()->getPath("compatibility.customDungeonWorld").optBool().value(false))
     worldStartPacket->templateData = worldStartPacket->templateData.setPath("worldParameters.primaryDungeon", "testarena");
 
-  tie(worldStartPacket->skyData, clientInfo->skyNetVersion) = m_sky->writeUpdate();
-  tie(worldStartPacket->weatherData, clientInfo->weatherNetVersion) = m_weather.writeUpdate();
+  tie(worldStartPacket->skyData, clientInfo->skyNetVersion) = m_sky->writeUpdate(0, netRules);
+  tie(worldStartPacket->weatherData, clientInfo->weatherNetVersion) = m_weather.writeUpdate(0, netRules);
   worldStartPacket->playerStart = playerStart;
   worldStartPacket->playerRespawn = m_playerStart;
   worldStartPacket->respawnInWorld = m_respawnInWorld;
@@ -381,7 +382,7 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
 
     } else if (auto sepacket = as<SpawnEntityPacket>(packet)) {
       auto entity = entityFactory->netLoadEntity(sepacket->entityType, std::move(sepacket->storeData));
-      entity->readNetState(std::move(sepacket->firstNetState));
+      entity->readNetState(std::move(sepacket->firstNetState), 0.0f, clientInfo->clientState.netCompatibilityRules());
       addEntity(std::move(entity));
 
     } else if (auto rdpacket = as<RequestDropPacket>(packet)) {
@@ -434,7 +435,7 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
         }
 
         auto entity = entityFactory->netLoadEntity(entityCreate->entityType, entityCreate->storeData);
-        entity->readNetState(entityCreate->firstNetState);
+        entity->readNetState(entityCreate->firstNetState, 0.0f, clientInfo->clientState.netCompatibilityRules());
         entity->init(this, entityCreate->entityId, EntityMode::Slave);
         m_entityMap->addEntity(entity);
 
@@ -448,14 +449,14 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
           EntityId entityId = entity->entityId();
           if (connectionForEntity(entityId) == clientId) {
             starAssert(entity->isSlave());
-            entity->readNetState(entityUpdateSet->deltas.value(entityId), interpolationLeadTime);
+            entity->readNetState(entityUpdateSet->deltas.value(entityId), interpolationLeadTime, clientInfo->clientState.netCompatibilityRules());
           }
         });
       clientInfo->pendingForward = true;
 
     } else if (auto entityDestroy = as<EntityDestroyPacket>(packet)) {
       if (auto entity = m_entityMap->entity(entityDestroy->entityId)) {
-        entity->readNetState(entityDestroy->finalNetState, clientInfo->interpolationTracker.interpolationLeadTime());
+        entity->readNetState(entityDestroy->finalNetState, clientInfo->interpolationTracker.interpolationLeadTime(), clientInfo->clientState.netCompatibilityRules());
         // Before destroying the entity, we should make sure that the entity is
         // using the absolute latest data, so we disable interpolation.
         entity->disableInterpolation();
@@ -691,6 +692,7 @@ void WorldServer::update(float dt) {
     queueUpdatePackets(pair.first, sendRemoteUpdates);
   }
   m_netStateCache.clear();
+  m_legacyNetStateCache.clear();
 
   for (auto& pair : m_clientInfo)
     pair.second->pendingForward = false;
@@ -1789,10 +1791,10 @@ void WorldServer::queueUpdatePackets(ConnectionId clientId, bool sendRemoteUpdat
 
   if (shouldRunThisStep("environmentUpdate")) {
     ByteArray skyDelta;
-    tie(skyDelta, clientInfo->skyNetVersion) = m_sky->writeUpdate(clientInfo->skyNetVersion);
+    tie(skyDelta, clientInfo->skyNetVersion) = m_sky->writeUpdate(clientInfo->skyNetVersion, clientInfo->clientState.netCompatibilityRules());
 
     ByteArray weatherDelta;
-    tie(weatherDelta, clientInfo->weatherNetVersion) = m_weather.writeUpdate(clientInfo->weatherNetVersion);
+    tie(weatherDelta, clientInfo->weatherNetVersion) = m_weather.writeUpdate(clientInfo->weatherNetVersion, clientInfo->clientState.netCompatibilityRules());
 
     if (!skyDelta.empty() || !weatherDelta.empty())
       clientInfo->outgoingPackets.append(make_shared<EnvironmentUpdatePacket>(std::move(skyDelta), std::move(weatherDelta)));
@@ -1866,12 +1868,14 @@ void WorldServer::queueUpdatePackets(ConnectionId clientId, bool sendRemoteUpdat
     EntityId entityId = monitoredEntity->entityId();
     ConnectionId connectionId = connectionForEntity(entityId);
     if (connectionId != clientId) {
+      auto netRules = clientInfo->clientState.netCompatibilityRules();
       if (auto version = clientInfo->clientSlavesNetVersion.ptr(entityId)) {
         if (auto updateSetPacket = updateSetPackets.value(connectionId)) {
           auto pair = make_pair(entityId, *version);
-          auto i = m_netStateCache.find(pair);
-          if (i == m_netStateCache.end())
-            i = m_netStateCache.insert(pair, monitoredEntity->writeNetState(*version)).first;
+          auto& cache = netRules.isLegacy ? m_legacyNetStateCache : m_netStateCache;
+          auto i = cache.find(pair);
+          if (i == cache.end())
+            i = cache.insert(pair, monitoredEntity->writeNetState(*version, netRules)).first;
           const auto& netState = i->second;
           if (!netState.first.empty())
             updateSetPacket->deltas[entityId] = netState.first;
@@ -1879,7 +1883,7 @@ void WorldServer::queueUpdatePackets(ConnectionId clientId, bool sendRemoteUpdat
         }
       } else if (!monitoredEntity->masterOnly()) {
         // Client was unaware of this entity until now
-        auto firstUpdate = monitoredEntity->writeNetState();
+        auto firstUpdate = monitoredEntity->writeNetState(0, netRules);
         clientInfo->clientSlavesNetVersion.add(entityId, firstUpdate.second);
         clientInfo->outgoingPackets.append(make_shared<EntityCreatePacket>(monitoredEntity->entityType(),
               entityFactory->netStoreEntity(monitoredEntity), std::move(firstUpdate.first), entityId));
@@ -2075,7 +2079,8 @@ void WorldServer::removeEntity(EntityId entityId, bool andDie) {
   for (auto const& pair : m_clientInfo) {
     auto& clientInfo = pair.second;
     if (auto version = clientInfo->clientSlavesNetVersion.maybeTake(entity->entityId())) {
-      ByteArray finalDelta = entity->writeNetState(*version).first;
+      auto netRules = clientInfo->clientState.netCompatibilityRules();
+      ByteArray finalDelta = entity->writeNetState(*version, netRules).first;
       clientInfo->outgoingPackets.append(make_shared<EntityDestroyPacket>(entity->entityId(), std::move(finalDelta), andDie));
     }
   }

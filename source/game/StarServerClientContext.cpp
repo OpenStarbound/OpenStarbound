@@ -10,10 +10,11 @@
 
 namespace Star {
 
-ServerClientContext::ServerClientContext(ConnectionId clientId, Maybe<HostAddress> remoteAddress, Uuid playerUuid,
+ServerClientContext::ServerClientContext(ConnectionId clientId, Maybe<HostAddress> remoteAddress, NetCompatibilityRules netRules, Uuid playerUuid,
     String playerName, String playerSpecies, bool canBecomeAdmin, WorldChunks initialShipChunks)
   : m_clientId(clientId),
     m_remoteAddress(remoteAddress),
+    m_netRules(netRules),
     m_playerUuid(playerUuid),
     m_playerName(playerName),
     m_playerSpecies(playerSpecies),
@@ -86,6 +87,10 @@ String const& ServerClientContext::playerSpecies() const {
 
 bool ServerClientContext::canBecomeAdmin() const {
   return m_canBecomeAdmin;
+}
+
+NetCompatibilityRules ServerClientContext::netRules() const {
+  return m_netRules;
 }
 
 String ServerClientContext::descriptiveName() const {
@@ -184,7 +189,7 @@ ByteArray ServerClientContext::writeUpdate() {
     shipChunksUpdate = DataStreamBuffer::serialize(take(m_shipChunksUpdate));
 
   ByteArray netGroupUpdate;
-  tie(netGroupUpdate, m_netVersion) = m_netGroup.writeNetState(m_netVersion);
+  tie(netGroupUpdate, m_netVersion) = m_netGroup.writeNetState(m_netVersion, m_netRules);
 
   if (rpcUpdate.empty() && shipChunksUpdate.empty() && netGroupUpdate.empty())
     return {};

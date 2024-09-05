@@ -187,8 +187,9 @@ Player::Player(PlayerConfigPtr config, Uuid uuid) {
   m_netGroup.setNeedsStoreCallback(bind(&Player::setNetStates, this));
 }
 
-Player::Player(PlayerConfigPtr config, ByteArray const& netStore) : Player(config) {
+Player::Player(PlayerConfigPtr config, ByteArray const& netStore, NetCompatibilityRules rules) : Player(config) {
   DataStreamBuffer ds(netStore);
+  ds.setStreamCompatibilityVersion(rules);
 
   setUniqueId(ds.read<String>());
 
@@ -1618,12 +1619,12 @@ Direction Player::facingDirection() const {
   return m_movementController->facingDirection();
 }
 
-pair<ByteArray, uint64_t> Player::writeNetState(uint64_t fromVersion) {
-  return m_netGroup.writeNetState(fromVersion);
+pair<ByteArray, uint64_t> Player::writeNetState(uint64_t fromVersion, NetCompatibilityRules rules) {
+  return m_netGroup.writeNetState(fromVersion, rules);
 }
 
-void Player::readNetState(ByteArray data, float interpolationTime) {
-  m_netGroup.readNetState(std::move(data), interpolationTime);
+void Player::readNetState(ByteArray data, float interpolationTime, NetCompatibilityRules rules) {
+  m_netGroup.readNetState(data, interpolationTime, rules);
 }
 
 void Player::enableInterpolation(float) {
@@ -2319,8 +2320,9 @@ Json Player::diskStore() {
   };
 }
 
-ByteArray Player::netStore() {
+ByteArray Player::netStore(NetCompatibilityRules rules) {
   DataStreamBuffer ds;
+  ds.setStreamCompatibilityVersion(rules);
 
   ds.write(*uniqueId());
   ds.write(m_description);

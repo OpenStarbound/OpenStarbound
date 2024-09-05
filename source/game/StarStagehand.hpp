@@ -15,10 +15,10 @@ STAR_CLASS(Stagehand);
 class Stagehand : public virtual ScriptedEntity {
 public:
   Stagehand(Json const& config);
-  Stagehand(ByteArray const& netStore);
+  Stagehand(ByteArray const& netStore, NetCompatibilityRules rules = {});
 
   Json diskStore() const;
-  ByteArray netStore();
+  ByteArray netStore(NetCompatibilityRules rules = {});
 
   void init(World* world, EntityId entityId, EntityMode mode) override;
   void uninit() override;
@@ -31,8 +31,8 @@ public:
 
   RectF metaBoundBox() const override;
 
-  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0) override;
-  void readNetState(ByteArray data, float interpolationTime = 0.0f) override;
+  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
+  void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
   void update(float dt, uint64_t currentStep) override;
 

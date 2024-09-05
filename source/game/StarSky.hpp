@@ -30,8 +30,8 @@ public:
 
   void jumpTo(SkyParameters SkyParameters);
 
-  pair<ByteArray, uint64_t> writeUpdate(uint64_t fromVersion = 0);
-  void readUpdate(ByteArray data);
+  pair<ByteArray, uint64_t> writeUpdate(uint64_t fromVersion = 0, NetCompatibilityRules rules = {});
+  void readUpdate(ByteArray data, NetCompatibilityRules rules = {});
   
   // handles flying and warp state transitions
   void stateUpdate();

@@ -44,8 +44,8 @@ public:
   RectF collisionArea() const override;
   Vec2F velocity() const;
 
-  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion) override;
-  void readNetState(ByteArray data, float interpolationTime = 0) override;
+  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
+  void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
   void enableInterpolation(float extrapolationHint) override;
   void disableInterpolation() override;

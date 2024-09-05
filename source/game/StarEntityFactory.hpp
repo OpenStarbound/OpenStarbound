@@ -20,8 +20,8 @@ class EntityFactory {
 public:
   EntityFactory();
 
-  ByteArray netStoreEntity(EntityPtr const& entity) const;
-  EntityPtr netLoadEntity(EntityType type, ByteArray const& netStore) const;
+  ByteArray netStoreEntity(EntityPtr const& entity, NetCompatibilityRules rules = {}) const;
+  EntityPtr netLoadEntity(EntityType type, ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
 
   Json diskStoreEntity(EntityPtr const& entity) const;
   EntityPtr diskLoadEntity(EntityType type, Json const& diskStore) const;

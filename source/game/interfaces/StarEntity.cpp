@@ -1,5 +1,6 @@
 #include "StarEntity.hpp"
 #include "StarDamageManager.hpp"
+#include "StarNetCompatibility.hpp"
 
 namespace Star {
 
@@ -43,11 +44,11 @@ void Entity::uninit() {
   m_entityId = NullEntityId;
 }
 
-pair<ByteArray, uint64_t> Entity::writeNetState(uint64_t) {
+pair<ByteArray, uint64_t> Entity::writeNetState(uint64_t fromVersion, NetCompatibilityRules rules) {
   return {ByteArray(), 0};
 }
 
-void Entity::readNetState(ByteArray, float) {}
+void Entity::readNetState(ByteArray data, float interpolationTime, NetCompatibilityRules rules) {}
 
 void Entity::enableInterpolation(float) {}
 

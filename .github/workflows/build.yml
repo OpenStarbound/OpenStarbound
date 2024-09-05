@@ -1,0 +1,231 @@
+name: Build
+
+on:
+  workflow_dispatch:
+
+  pull_request:
+    branches:
+      - "*"
+
+jobs:
+  build_windows:
+    name: Build OpenStarbound Windows x64
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Install CMake & Ninja
+        uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: 3.29.2
+
+      - name: sccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          variant: sccache
+          key: ${{ github.job }}-${{ runner.os }}
+          max-size: 1000M
+
+      - uses: ilammy/msvc-dev-cmd@v1
+
+      - name: vcpkg
+        uses: lukka/run-vcpkg@v11
+        id: runvcpkg
+        with:
+          vcpkgJsonGlob: '**/source/vcpkg.json'
+          vcpkgConfigurationJsonGlob: '**/source/vcpkg-configuration.json'
+
+      - name: Run CMake
+        uses: lukka/run-cmake@v10
+        with:
+          cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
+          configurePreset: 'windows-release'
+          buildPreset: 'windows-release'
+          testPreset: 'windows-release'
+
+      - name: Run Post-Build Task
+        working-directory: ${{ github.workspace }}
+        run: scripts\ci\windows\post_build.bat
+
+      - name: Assemble Files
+        working-directory: ${{ github.workspace }}
+        run: scripts\ci\windows\assemble.bat
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenStarbound-Windows-All-DevOnly
+          path: dist/*
+
+      - name: Upload Client
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenStarbound-Windows-Client
+          path: client_distribution/*
+
+      - name: Upload Server
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenStarbound-Windows-Server
+          path: server_distribution/*
+
+      - name: Create Installer
+        working-directory: ${{ github.workspace }}
+        run: |
+          & "C:\Program Files (x86)\Inno Setup 6\iscc.exe" /Oinstaller scripts\inno\setup.iss
+
+      - name: Upload Installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenStarbound-Windows-Installer
+          path: installer/*
+  
+  build_linux:
+    name: Build OpenStarbound Linux x86_64
+    runs-on: ubuntu-20.04
+
+    steps:
+      - name: Install Packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libxmu-dev libxi-dev libgl-dev libglu1-mesa-dev libsdl2-dev
+
+      - name: Install CMake & Ninja
+        uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: 3.29.2
+
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: sccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          variant: sccache
+          key: ${{ github.job }}-${{ runner.os }}
+          max-size: 250M
+
+      - name: vcpkg
+        uses: lukka/run-vcpkg@v11
+        id: runvcpkg
+        with:
+          vcpkgJsonGlob: '**/source/vcpkg.json'
+          vcpkgConfigurationJsonGlob: '**/source/vcpkg-configuration.json'
+
+      - name: Run CMake
+        uses: lukka/run-cmake@v10
+        with:
+          cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
+          configurePreset: 'linux-release'
+          buildPreset: 'linux-release'
+          testPreset: 'linux-release'
+
+      - name: Assemble Files
+        working-directory: ${{ github.workspace }}
+        run: scripts/ci/linux/assemble.sh
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenStarbound-Linux
+          path: dist.tar
+
+      - name: Upload Client Files
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenStarbound-Linux-Client
+          path: client.tar
+
+      - name: Upload Server Files
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenStarbound-Linux-Server
+          path: server.tar
+
+  build-mac-intel:
+    name: Build OpenStarbound macOS x86_64
+    runs-on: macos-13
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Install CMake & Ninja
+        uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: 3.29.0
+
+      - name: sccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          variant: sccache
+          key: ${{ github.job }}-Intel-${{ runner.os }}
+          max-size: 250M
+
+      - name: vcpkg
+        uses: lukka/run-vcpkg@v11
+        id: runvcpkg
+        with:
+          vcpkgJsonGlob: '**/source/vcpkg.json'
+          vcpkgConfigurationJsonGlob: '**/source/vcpkg-configuration.json'
+
+      - name: Run CMake
+        uses: lukka/run-cmake@v10
+        with:
+          cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
+          configurePreset: 'macos-release'
+          buildPreset: 'macos-release'
+          testPreset: 'macos-release'
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenStarbound-macOS-Intel
+          path: dist/*
+
+  build-mac-arm:
+    name: Build OpenStarbound macOS arm64
+    runs-on: macos-14
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Install CMake & Ninja
+        uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: 3.29.2
+
+      - name: sccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          variant: sccache
+          key: ${{ github.job }}-ARM-${{ runner.os }}
+          max-size: 250M
+
+      - name: vcpkg
+        uses: lukka/run-vcpkg@v11
+        id: runvcpkg
+        with:
+          vcpkgJsonGlob: '**/source/vcpkg.json'
+          vcpkgConfigurationJsonGlob: '**/source/vcpkg-configuration.json'
+
+      - name: Run CMake
+        uses: lukka/run-cmake@v10
+        with:
+          cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
+          configurePreset: 'macos-arm-release'
+          buildPreset: 'macos-arm-release'
+          testPreset: 'macos-arm-release'
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenStarbound-macOS-Silicon
+          path: dist/*
