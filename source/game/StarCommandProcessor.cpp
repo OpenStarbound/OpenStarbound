@@ -53,12 +53,14 @@ String CommandProcessor::help(ConnectionId connectionId, String const& argumentS
 
   auto assets = Root::singleton().assets();
   auto basicCommands = assets->json("/help.config:basicCommands");
+  auto openSbCommands = assets->json("/help.config:openSbCommands");
   auto adminCommands = assets->json("/help.config:adminCommands");
   auto debugCommands = assets->json("/help.config:debugCommands");
+  auto openSbDebugCommands = assets->json("/help.config:openSbDebugCommands");
 
   if (arguments.size()) {
     if (arguments.size() >= 1) {
-      if (auto helpText = basicCommands.optString(arguments[0]).orMaybe(adminCommands.optString(arguments[0])).orMaybe(debugCommands.optString(arguments[0])))
+      if (auto helpText = basicCommands.optString(arguments[0]).orMaybe(openSbCommands.optString(arguments[0])).orMaybe(adminCommands.optString(arguments[0])).orMaybe(debugCommands.optString(arguments[0])).orMaybe(openSbDebugCommands.optString(arguments[0])))
         return *helpText;
     }
   }
@@ -74,12 +76,18 @@ String CommandProcessor::help(ConnectionId connectionId, String const& argumentS
   String basicHelpFormat = assets->json("/help.config:basicHelpText").toString();
   res = res + strf(basicHelpFormat.utf8Ptr(), commandDescriptions(basicCommands));
 
+  String openSbHelpFormat = assets->json("/help.config:openSbHelpText").toString();
+  res = res + "\n" + strf(openSbHelpFormat.utf8Ptr(), commandDescriptions(openSbCommands));
+
   if (!adminCheck(connectionId, "")) {
     String adminHelpFormat = assets->json("/help.config:adminHelpText").toString();
     res = res + "\n" + strf(adminHelpFormat.utf8Ptr(), commandDescriptions(adminCommands));
 
     String debugHelpFormat = assets->json("/help.config:debugHelpText").toString();
     res = res + "\n" + strf(debugHelpFormat.utf8Ptr(), commandDescriptions(debugCommands));
+
+    String openSbDebugHelpFormat = assets->json("/help.config:openSbDebugHelpText").toString();
+    res = res + "\n" + strf(openSbDebugHelpFormat.utf8Ptr(), commandDescriptions(openSbDebugCommands));
   }
 
   res = res + "\n" + basicCommands.getString("help");
