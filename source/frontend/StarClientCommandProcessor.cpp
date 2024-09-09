@@ -15,9 +15,9 @@
 namespace Star {
 
 ClientCommandProcessor::ClientCommandProcessor(UniverseClientPtr universeClient, CinematicPtr cinematicOverlay,
-                                               MainInterfacePaneManager* paneManager, StringMap<StringList> macroCommands)
-    : m_universeClient(std::move(universeClient)), m_cinematicOverlay(std::move(cinematicOverlay)),
-      m_paneManager(paneManager), m_macroCommands(std::move(macroCommands)) {
+  MainInterfacePaneManager* paneManager, StringMap<StringList> macroCommands)
+  : m_universeClient(std::move(universeClient)), m_cinematicOverlay(std::move(cinematicOverlay)),
+  m_paneManager(paneManager), m_macroCommands(std::move(macroCommands)) {
   m_builtinCommands = {
     {"reload", bind(&ClientCommandProcessor::reload, this)},
     {"whoami", bind(&ClientCommandProcessor::whoami, this)},
@@ -58,7 +58,7 @@ ClientCommandProcessor::ClientCommandProcessor(UniverseClientPtr universeClient,
 
 bool ClientCommandProcessor::adminCommandAllowed() const {
   return Root::singleton().configuration()->get("allowAdminCommandsFromAnyone").toBool() ||
-      m_universeClient->mainPlayer()->isAdmin();
+    m_universeClient->mainPlayer()->isAdmin();
 }
 
 String ClientCommandProcessor::previewQuestPane(StringList const& arguments, function<PanePtr(QuestPtr)> createPane) {
@@ -187,7 +187,7 @@ String ClientCommandProcessor::setGravity(String const& argumentsString) {
     return "You must be an admin to use this command.";
 
   m_universeClient->worldClient()->overrideGravity(lexicalCast<float>(arguments.at(0)));
-  return strf("Gravity set to {}, the change is LOCAL ONLY", arguments.at(0));
+  return strf("Gravity set to {} (This is client-side!)", arguments.at(0));
 }
 
 String ClientCommandProcessor::resetGravity() {
@@ -431,34 +431,13 @@ String ClientCommandProcessor::swap(String const& argumentsString) {
 String ClientCommandProcessor::respawnInWorld(String const& argumentsString) {
   auto arguments = m_parser.tokenizeToStringList(argumentsString);
 
+  if (arguments.size() == 0)
+    return strf("Respawn in this world is currently {}", worldClient->respawnInWorld() ? "true" : "false");
 
-  WorldClientPtr worldClient = m_universeClient->worldClient();
-
-
-  if (arguments.size() == 0) {
-    const std::string stringResult = worldClient->respawnInWorld() ? "true" : "false";
-    return "Respawn in this world is currently " + stringResult; // return the current state of the respawn value when no argument is given
-  }
-  if (arguments.size() > 1) {
-    return "Too many arguments for this command!"; // we dont wanna have too much, right?
-  }
-
-  // behold: probably one of the least efficient ways to convert a Star::String to a boolean
-  bool value;
-  if (arguments[0].toLower() == "true") {
-    value = true;
-  } else if(arguments[0].toLower() == "false") {
-    value = false;
-  }
-  else {
-    return "Invalid argument!"; // at least we get validation if it was not a boolean
-  }
-
-  bool result = worldClient->setRespawnInWorld(value);
-    // Convert boolean to string for the response
-  const std::string stringResult = result ? "true" : "false";
-
-  return "Successfully set respawn in this world to " + stringResult;
+  bool respawnInWorld = Json::parse(arguments.at(0)).toBool();
+  auto worldClient = m_universeClient->worldClient();
+  worldClient->setRespawnInWorld(respawnInWorld);
+  return strf("Respawn in this world set to {} (This is client-side!)", respawnInWorld ? "true" : "false");
 }
 
 }

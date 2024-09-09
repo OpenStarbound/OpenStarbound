@@ -142,11 +142,8 @@ bool WorldClient::respawnInWorld() const {
   return m_respawnInWorld;
 }
 
-bool WorldClient::setRespawnInWorld(bool value) {
-
-  m_respawnInWorld = value;
-
-  return m_respawnInWorld;
+void WorldClient::setRespawnInWorld(bool respawnInWorld) {
+  m_respawnInWorld = respawnInWorld;
 }
 
 void WorldClient::removeEntity(EntityId entityId, bool andDie) {

@@ -108,8 +108,7 @@ public:
   bool mainPlayerDead() const;
   void reviveMainPlayer();
   bool respawnInWorld() const;
-
-  bool setRespawnInWorld(bool value);
+  void setRespawnInWorld(bool respawnInWorld);
 
   void removeEntity(EntityId entityId, bool andDie);
 
