@@ -430,12 +430,12 @@ String ClientCommandProcessor::swap(String const& argumentsString) {
 
 String ClientCommandProcessor::respawnInWorld(String const& argumentsString) {
   auto arguments = m_parser.tokenizeToStringList(argumentsString);
-
+  auto worldClient = m_universeClient->worldClient();
+  
   if (arguments.size() == 0)
     return strf("Respawn in this world is currently {}", worldClient->respawnInWorld() ? "true" : "false");
 
   bool respawnInWorld = Json::parse(arguments.at(0)).toBool();
-  auto worldClient = m_universeClient->worldClient();
   worldClient->setRespawnInWorld(respawnInWorld);
   return strf("Respawn in this world set to {} (This is client-side!)", respawnInWorld ? "true" : "false");
 }
