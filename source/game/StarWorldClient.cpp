@@ -142,6 +142,16 @@ bool WorldClient::respawnInWorld() const {
   return m_respawnInWorld;
 }
 
+bool WorldClient::setRespawnInWorld(bool value = NULL) {
+
+  if (value != NULL)
+    m_respawnInWorld = value;
+  else
+    m_respawnInWorld ^= true; // dont know if we still want to set the respawn if no argument is given here
+
+  return m_respawnInWorld;
+}
+
 void WorldClient::removeEntity(EntityId entityId, bool andDie) {
   auto entity = m_entityMap->entity(entityId);
   if (!entity)
@@ -2419,18 +2429,6 @@ void WorldClient::setupForceRegions() {
     bottomForceRegion.categoryFilter = regionCategoryFilter;
     m_forceRegions.append(bottomForceRegion);
   }
-}
-
-bool WorldClient::toggleRespawnInWorld() {
-  // Setting oldValue to check if m_respawnInWorld triggered correctly later
-  const bool oldValue = respawnInWorld();
-
-  m_respawnInWorld ^= true;
-
-  if (respawnInWorld() != oldValue) {
-    return true;
-  }
-  return false;
 }
 
 }

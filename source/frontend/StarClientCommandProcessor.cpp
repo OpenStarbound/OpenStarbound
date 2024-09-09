@@ -52,7 +52,7 @@ ClientCommandProcessor::ClientCommandProcessor(UniverseClientPtr universeClient,
     {"enabletech", bind(&ClientCommandProcessor::enableTech, this, _1)},
     {"upgradeship", bind(&ClientCommandProcessor::upgradeShip, this, _1)},
     {"swap", bind(&ClientCommandProcessor::swap, this, _1)},
-    {"respawnInWorld", bind(&ClientCommandProcessor::respawnInWorld, this)}
+    {"respawnInWorld", bind(&ClientCommandProcessor::respawnInWorld, this, _1)}
   };
 }
 
@@ -428,25 +428,37 @@ String ClientCommandProcessor::swap(String const& argumentsString) {
     return "Failed to swap player";
 }
 
-String ClientCommandProcessor::respawnInWorld() {
+String ClientCommandProcessor::respawnInWorld(String const& argumentsString) {
+  auto arguments = m_parser.tokenizeToStringList(argumentsString);
+
+
   WorldClientPtr worldClient = m_universeClient->worldClient();
 
-  // Make sure we got the worldClient
-  if (!worldClient) {
-    return "Error: Unable to access world client.";
+
+  if (arguments.size() == 0) {
+    const std::string stringResult = worldClient->respawnInWorld() ? "true" : "false";
+    return "Respawn in this world is currently " + stringResult; // return the current state of the respawn value when no argument is given
+  }
+  if (arguments.size() > 1) {
+    return "Too many arguments for this command!"; // we dont wanna have too much, right?
   }
 
-  if (worldClient->toggleRespawnInWorld()) {
+  // behold: probably one of the least efficient ways to convert a Star::String to a boolean
+  bool value;
+  if (arguments[0].toLower() == "true") {
+    value = true;
+  } else if(arguments[0].toLower() == "false") {
+    value = false;
+  }
+  else {
+    return "Invalid argument!"; // at least we get validation if it was not a boolean
+  }
+
+  bool result = worldClient->setRespawnInWorld(value);
     // Convert boolean to string for the response
-    const std::string result = worldClient->respawnInWorld() ? "true" : "false";
+  const std::string stringResult = result ? "true" : "false";
 
-    return "Successfully switched respawn in this world to " + result;
-  }
-  else
-    return "Failed to switch respawn in this world!";
-
-  // This should never trigger, but its better to have it than not :3
-  return "Something unforseen happend!";
+  return "Successfully set respawn in this world to " + stringResult;
 }
 
 }
