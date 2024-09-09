@@ -2421,4 +2421,16 @@ void WorldClient::setupForceRegions() {
   }
 }
 
+bool WorldClient::toggleRespawnInWorld() {
+  // Setting oldValue to check if m_respawnInWorld triggered correctly later
+  const bool oldValue = respawnInWorld();
+
+  m_respawnInWorld ^= true;
+
+  if (respawnInWorld() != oldValue) {
+    return true;
+  }
+  return false;
+}
+
 }

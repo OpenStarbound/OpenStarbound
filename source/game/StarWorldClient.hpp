@@ -175,6 +175,9 @@ public:
 
   typedef std::function<bool(PlayerPtr, StringView)> BroadcastCallback;
   BroadcastCallback& broadcastCallback();
+
+  bool toggleRespawnInWorld();
+
 private:
   static const float DropDist;
 
