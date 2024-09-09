@@ -142,12 +142,9 @@ bool WorldClient::respawnInWorld() const {
   return m_respawnInWorld;
 }
 
-bool WorldClient::setRespawnInWorld(bool value = NULL) {
+bool WorldClient::setRespawnInWorld(bool value) {
 
-  if (value != NULL)
-    m_respawnInWorld = value;
-  else
-    m_respawnInWorld ^= true; // dont know if we still want to set the respawn if no argument is given here
+  m_respawnInWorld = value;
 
   return m_respawnInWorld;
 }
