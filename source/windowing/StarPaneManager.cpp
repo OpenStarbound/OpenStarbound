@@ -184,7 +184,7 @@ bool PaneManager::sendInputEvent(InputEvent const& event) {
     }
   }
 
-  if (event.is<MouseButtonDownEvent>() || vmag(m_tooltipInitialPosition - m_tooltipLastMousePos) > m_tooltipMouseoverRadius) {
+  if (event.is<MouseButtonDownEvent>()) {
     m_tooltipShowTimer = m_tooltipMouseoverTime;
     if (m_activeTooltip) {
       dismiss(m_activeTooltip);
@@ -271,36 +271,47 @@ void PaneManager::render() {
 
 void PaneManager::update(float dt) {
   m_tooltipShowTimer -= GlobalTimestep;
-  if (m_tooltipShowTimer < 0 && !m_activeTooltip) {
+  if (m_tooltipParentPane.expired())
+    m_tooltipParentPane.reset();
+
+  bool removeTooltip = vmag(m_tooltipInitialPosition - m_tooltipLastMousePos) > m_tooltipMouseoverRadius
+    || m_tooltipParentPane.expired() || m_tooltipParentPane.lock()->inWindow(m_tooltipLastMousePos);
+
+  if (removeTooltip) {
+    dismiss(m_activeTooltip);
+    m_activeTooltip.reset();
+    m_tooltipParentPane.reset();
+  }
+
+  // Scan for a new tooltip if we just removed the old one, or the show timer has expired
+  if (removeTooltip || (m_tooltipShowTimer < 0 && !m_activeTooltip)) {
     if (auto parentPane = getPaneAt(m_tooltipLastMousePos)) {
       if (auto tooltip = parentPane->createTooltip(m_tooltipLastMousePos)) {
         m_activeTooltip = std::move(tooltip);
         m_tooltipParentPane = std::move(parentPane);
         m_tooltipInitialPosition = m_tooltipLastMousePos;
         displayPane(PaneLayer::Tooltip, m_activeTooltip);
-
-        Vec2I offsetDirection = Vec2I::filled(1);
-        Vec2I offsetAdjust = Vec2I();
-
-        if (m_tooltipLastMousePos[0] + m_tooltipMouseOffset[0] + m_activeTooltip->size()[0] > (int)m_context->windowWidth() / m_context->interfaceScale()) {
-          offsetDirection[0] = -1;
-          offsetAdjust[0] = -m_activeTooltip->size()[0];
-        }
-
-        if (m_tooltipLastMousePos[1] + m_tooltipMouseOffset[1] - m_activeTooltip->size()[1] < 0)
-          offsetDirection[1] = -1;
-        else
-          offsetAdjust[1] = -m_activeTooltip->size()[1];
-
-        m_activeTooltip->setPosition(m_tooltipLastMousePos + (offsetAdjust + m_tooltipMouseOffset.piecewiseMultiply(offsetDirection)));
       } else {
         m_tooltipShowTimer = m_tooltipMouseoverTime;
       }
     }
-  } else if (m_activeTooltip && !m_tooltipParentPane->isDisplayed()) {
-    dismiss(m_activeTooltip);
-    m_activeTooltip.reset();
-    m_tooltipParentPane.reset();
+  }
+
+  if (m_activeTooltip) {
+    Vec2I offsetDirection = Vec2I::filled(1);
+    Vec2I offsetAdjust = Vec2I();
+
+    if (m_tooltipLastMousePos[0] + m_tooltipMouseOffset[0] + m_activeTooltip->size()[0] > (int)m_context->windowWidth() / m_context->interfaceScale()) {
+      offsetDirection[0] = -1;
+      offsetAdjust[0] = -m_activeTooltip->size()[0];
+    }
+
+    if (m_tooltipLastMousePos[1] + m_tooltipMouseOffset[1] - m_activeTooltip->size()[1] < 0)
+      offsetDirection[1] = -1;
+    else
+      offsetAdjust[1] = -m_activeTooltip->size()[1];
+
+    m_activeTooltip->setPosition(m_tooltipLastMousePos + (offsetAdjust + m_tooltipMouseOffset.piecewiseMultiply(offsetDirection)));
   }
 
   for (auto const& layerPair : m_displayedPanes) {

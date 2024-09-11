@@ -100,7 +100,7 @@ private:
   Vec2I m_tooltipLastMousePos;
   Vec2I m_tooltipInitialPosition;
   PanePtr m_activeTooltip;
-  PanePtr m_tooltipParentPane;
+  PaneWeakPtr m_tooltipParentPane;
 };
 
 }
