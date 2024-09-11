@@ -30,8 +30,8 @@ FTContext ftContext;
 
 struct FontImpl {
   FT_Face face;
-  unsigned loadedPixelSize = 0;
   String::Char loadedChar = 0;
+  unsigned renderedPixelSize = 0;
 };
 
 FontPtr Font::loadFont(String const& fileName, unsigned pixelSize) {
@@ -84,7 +84,8 @@ unsigned Font::width(String::Char c) {
   if (auto width = m_widthCache.maybe({c, m_pixelSize})) {
     return *width;
   } else {
-    FT_Load_Char(m_fontImpl->face, c, FontLoadFlags);
+    if (m_fontImpl->loadedChar != c)
+      FT_Load_Char(m_fontImpl->face, m_fontImpl->loadedChar = c, FontLoadFlags);
     unsigned newWidth = (m_fontImpl->face->glyph->linearHoriAdvance + 32768) / 65536;
     m_widthCache.insert({c, m_pixelSize}, newWidth);
     return newWidth;
@@ -98,18 +99,18 @@ tuple<Image, Vec2I, bool> Font::render(String::Char c) {
 
   FT_Face face = m_fontImpl->face;
 
-  if (m_fontImpl->loadedPixelSize != m_pixelSize || m_fontImpl->loadedChar != c) {
-    FT_UInt glyph_index = FT_Get_Char_Index(face, c);
-    if (FT_Load_Glyph(face, glyph_index, FontLoadFlags) != 0)
+  if (m_fontImpl->loadedChar != c) {
+    if (FT_Load_Glyph(face, FT_Get_Char_Index(face, m_fontImpl->loadedChar = c), FontLoadFlags) != 0)
       return {};
 
-    // convert to an anti-aliased bitmap
+    m_fontImpl->renderedPixelSize = 0;
+  }
+
+  if (m_fontImpl->renderedPixelSize != m_pixelSize) {
+    m_fontImpl->renderedPixelSize = m_pixelSize;
     if (FT_Render_Glyph(face->glyph, FT_RENDER_MODE_NORMAL) != 0)
       return {};
   }
-
-  m_fontImpl->loadedPixelSize = m_pixelSize;
-  m_fontImpl->loadedChar = c;
 
   FT_GlyphSlot slot = face->glyph;
   if (!slot->bitmap.buffer)
