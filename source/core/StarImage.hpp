@@ -27,6 +27,7 @@ STAR_CLASS(Image);
 class Image {
 public:
   static Image readPng(IODevicePtr device);
+  static bool isPng(IODevicePtr device);
   // Returns the size and pixel format that would be constructed from the given
   // png file, without actually loading it.
   static tuple<Vec2U, PixelFormat> readPngMetadata(IODevicePtr device);
