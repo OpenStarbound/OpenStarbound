@@ -55,23 +55,25 @@ public:
   // received even if no deltas are produced, so no extrapolation takes place.
   virtual void blankNetDelta(float interpolationTime);
 
-  NetCompatibilityFilter netCompatibilityFilter() const;
-  void setNetCompatibilityFilter(NetCompatibilityFilter netFilter);
+  VersionNumber compatibilityVersion() const;
+  void setCompatibilityVersion(VersionNumber version);
   bool checkWithRules(NetCompatibilityRules const& rules) const;
 private:
-  NetCompatibilityFilter m_netCompatibilityFilter = NetCompatibilityFilter::None;
+  VersionNumber m_netCompatibilityVersion = AnyVersion;
 };
 
-inline NetCompatibilityFilter NetElement::netCompatibilityFilter() const {
-  return m_netCompatibilityFilter;
+inline VersionNumber NetElement::compatibilityVersion() const {
+  return m_netCompatibilityVersion;
 }
 
-inline void NetElement::setNetCompatibilityFilter(NetCompatibilityFilter netFilter) {
-  m_netCompatibilityFilter = netFilter;
+inline void NetElement::setCompatibilityVersion(VersionNumber version) {
+  m_netCompatibilityVersion = version;
 }
 
 inline bool NetElement::checkWithRules(NetCompatibilityRules const& rules) const {
-  return rules.checkFilter(m_netCompatibilityFilter);
+  if (m_netCompatibilityVersion != AnyVersion)
+    return rules.version() >= m_netCompatibilityVersion;
+  return true;
 }
 
 }

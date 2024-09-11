@@ -23,7 +23,6 @@ STAR_STRUCT(Packet);
 STAR_EXCEPTION(StarPacketException, IOException);
 
 extern VersionNumber const StarProtocolVersion;
-extern VersionNumber const OpenProtocolVersion;
 
 // Packet types sent between the client and server over a NetSocket.  Does not
 // correspond to actual packets, simply logical portions of NetSocket data.

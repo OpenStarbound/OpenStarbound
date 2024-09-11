@@ -21,15 +21,15 @@ StatusController::StatusController(Json const& config) : m_statCollection(config
   m_statusProperties.reset(config.getObject("statusProperties", {}));
   m_statusProperties.setOverrides(
     [&](DataStream& ds, NetCompatibilityRules rules) {
-      if (rules.isLegacy) ds << m_statusProperties.baseMap();
+      if (rules.version() <= 1) ds << m_statusProperties.baseMap();
       else m_statusProperties.NetElementHashMap<String, Json>::netStore(ds, rules);
     },
     [&](DataStream& ds, NetCompatibilityRules rules) {
-      if (rules.isLegacy) m_statusProperties.reset(ds.read<JsonObject>());
+      if (rules.version() <= 1) m_statusProperties.reset(ds.read<JsonObject>());
       else m_statusProperties.NetElementHashMap<String, Json>::netLoad(ds, rules);
     },
     [&](DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) {
-      if (rules.isLegacy) {
+      if (rules.version() <= 1) {
         if (m_statusProperties.shouldWriteNetDelta(fromVersion, rules)) {
           ds << m_statusProperties.baseMap();
           return true;
@@ -39,7 +39,7 @@ StatusController::StatusController(Json const& config) : m_statCollection(config
       return m_statusProperties.NetElementHashMap<String, Json>::writeNetDelta(ds, fromVersion, rules);
     },
     [&](DataStream& ds, float interp, NetCompatibilityRules rules) {
-      if (rules.isLegacy) m_statusProperties.reset(ds.read<JsonObject>());
+      if (rules.version() <= 1) m_statusProperties.reset(ds.read<JsonObject>());
       else m_statusProperties.NetElementHashMap<String, Json>::readNetDelta(ds, interp, rules);
     }
   );

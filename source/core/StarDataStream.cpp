@@ -36,10 +36,7 @@ void DataStream::setStreamCompatibilityVersion(unsigned streamCompatibilityVersi
 }
 
 void DataStream::setStreamCompatibilityVersion(NetCompatibilityRules const& rules) {
-  if (rules.isLegacy)
-    m_streamCompatibilityVersion = 1;
-  else
-    m_streamCompatibilityVersion = CurrentStreamVersion;
+  m_streamCompatibilityVersion = rules.version();
 }
 
 ByteArray DataStream::readBytes(size_t len) {

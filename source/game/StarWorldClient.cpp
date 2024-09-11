@@ -1230,7 +1230,7 @@ void WorldClient::update(float dt) {
 
   queueUpdatePackets(m_entityUpdateTimer.wrapTick(dt));
 
-  if ((!m_clientState.netCompatibilityRules().isLegacy && m_currentStep % 3 == 0) || m_pingTime.isNothing()) {
+  if ((!m_clientState.netCompatibilityRules().isLegacy() && m_currentStep % 3 == 0) || m_pingTime.isNothing()) {
     m_pingTime = Time::monotonicMilliseconds();
     m_outgoingPackets.append(make_shared<PingPacket>(*m_pingTime));
   }

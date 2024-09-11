@@ -5,7 +5,6 @@
 namespace Star {
 
 VersionNumber const StarProtocolVersion = 747;
-VersionNumber const OpenProtocolVersion = 1;
 
 EnumMap<PacketType> const PacketTypeNames{
   {PacketType::ProtocolRequest, "ProtocolRequest"},

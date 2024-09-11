@@ -692,7 +692,6 @@ void WorldServer::update(float dt) {
     queueUpdatePackets(pair.first, sendRemoteUpdates);
   }
   m_netStateCache.clear();
-  m_legacyNetStateCache.clear();
 
   for (auto& pair : m_clientInfo)
     pair.second->pendingForward = false;
@@ -1872,7 +1871,7 @@ void WorldServer::queueUpdatePackets(ConnectionId clientId, bool sendRemoteUpdat
       if (auto version = clientInfo->clientSlavesNetVersion.ptr(entityId)) {
         if (auto updateSetPacket = updateSetPackets.value(connectionId)) {
           auto pair = make_pair(entityId, *version);
-          auto& cache = netRules.isLegacy ? m_legacyNetStateCache : m_netStateCache;
+          auto& cache = m_netStateCache[netRules];
           auto i = cache.find(pair);
           if (i == cache.end())
             i = cache.insert(pair, monitoredEntity->writeNetState(*version, netRules)).first;

@@ -374,8 +374,7 @@ private:
   CollisionGenerator m_collisionGenerator;
   List<CollisionBlock> m_workingCollisionBlocks;
 
-  HashMap<pair<EntityId, uint64_t>, pair<ByteArray, uint64_t>> m_netStateCache;
-  HashMap<pair<EntityId, uint64_t>, pair<ByteArray, uint64_t>> m_legacyNetStateCache;
+  HashMap<NetCompatibilityRules, HashMap<pair<EntityId, uint64_t>, pair<ByteArray, uint64_t>>> m_netStateCache;
   OrderedHashMap<ConnectionId, shared_ptr<ClientInfo>> m_clientInfo;
 
   GameTimer m_entityUpdateTimer;

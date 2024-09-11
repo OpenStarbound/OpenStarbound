@@ -1,40 +1,54 @@
 #pragma once
-#include "StarDataStream.hpp"
+#include "StarVersion.hpp"
+#include "StarHash.hpp"
 
 namespace Star {
 
+extern VersionNumber const OpenProtocolVersion;
 
-enum class NetCompatibilityFilter {
-  None = 0,
-  Old = 1,
-  New = 2
-};
+constexpr VersionNumber AnyVersion = 0xFFFFFFFF;
+constexpr VersionNumber LegacyVersion = 0;
 
-struct NetCompatibilityRules {
-  NetCompatibilityRules() = default;
+class NetCompatibilityRules {
+public:
+  NetCompatibilityRules();
   NetCompatibilityRules(uint64_t) = delete;
-  NetCompatibilityRules(bool legacy);
+  NetCompatibilityRules(VersionNumber version);
 
-  bool checkFilter(NetCompatibilityFilter const& filter) const;
+  VersionNumber version() const;
+  void setVersion(VersionNumber version);
+  bool isLegacy() const;
 
-  bool isLegacy = false;
+  bool operator==(NetCompatibilityRules const& a) const;
+
+private:
+  VersionNumber m_version = OpenProtocolVersion;
 };
 
-inline NetCompatibilityRules::NetCompatibilityRules(bool legacy) : isLegacy(legacy) {}
+inline NetCompatibilityRules::NetCompatibilityRules() : m_version(OpenProtocolVersion) {}
 
-inline bool NetCompatibilityRules::checkFilter(NetCompatibilityFilter const& filter) const {
-  if (filter == NetCompatibilityFilter::None)
-    return true;
-  else if (isLegacy)
-    return filter == NetCompatibilityFilter::Old;
-  else
-    return filter == NetCompatibilityFilter::New;
+inline NetCompatibilityRules::NetCompatibilityRules(VersionNumber v) : m_version(v) {}
+
+inline VersionNumber NetCompatibilityRules::version() const {
+  return m_version;
+}
+
+inline void NetCompatibilityRules::setVersion(VersionNumber version) {
+  m_version = version;
+}
+
+inline bool NetCompatibilityRules::isLegacy() const {
+  return m_version == LegacyVersion;
+}
+
+inline bool NetCompatibilityRules::operator==(NetCompatibilityRules const& a) const {
+  return m_version == a.m_version;
 }
 
 template <>
 struct hash<NetCompatibilityRules> {
   size_t operator()(NetCompatibilityRules const& s) const {
-    return s.isLegacy;
+    return s.version();
   }
 };
 
