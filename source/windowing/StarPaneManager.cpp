@@ -17,11 +17,9 @@ EnumMap<PaneLayer> const PaneLayerNames{
 PaneManager::PaneManager()
   : m_context(GuiContext::singletonPtr()), m_prevInterfaceScale(1) {
   auto assets = Root::singleton().assets();
-  m_tooltipMouseoverTime = assets->json("/panes.config:tooltipMouseoverTime").toFloat();
   m_tooltipMouseoverRadius = assets->json("/panes.config:tooltipMouseoverRadius").toFloat();
   m_tooltipMouseOffset = jsonToVec2I(assets->json("/panes.config:tooltipMouseoverOffset"));
-
-  m_tooltipShowTimer = m_tooltipMouseoverTime;
+  m_tooltipShowTimer = GameTimer(assets->json("/panes.config:tooltipMouseoverTime").toFloat());
 }
 
 void PaneManager::displayPane(PaneLayer paneLayer, PanePtr const& pane, DismissCallback onDismiss) {
@@ -124,7 +122,9 @@ PanePtr PaneManager::getPaneAt(Set<PaneLayer> const& paneLayers, Vec2I const& po
 PanePtr PaneManager::getPaneAt(Vec2I const& position) const {
   for (auto const& layerPair : m_displayedPanes) {
     for (auto const& panePair : layerPair.second) {
-      if (panePair.first->inWindow(position) && panePair.first->active())
+      if (panePair.first != m_activeTooltip
+        && panePair.first->inWindow(position)
+        && panePair.first->active())
         return panePair.first;
     }
   }
@@ -185,12 +185,12 @@ bool PaneManager::sendInputEvent(InputEvent const& event) {
   }
 
   if (event.is<MouseButtonDownEvent>()) {
-    m_tooltipShowTimer = m_tooltipMouseoverTime;
+    m_tooltipShowTimer.reset();
     if (m_activeTooltip) {
       dismiss(m_activeTooltip);
       m_activeTooltip.reset();
       m_tooltipParentPane.reset();
-      m_tooltipShowTimer = m_tooltipMouseoverTime;
+      m_tooltipShowTimer.reset();
     }
   }
 
@@ -270,29 +270,27 @@ void PaneManager::render() {
 }
 
 void PaneManager::update(float dt) {
-  m_tooltipShowTimer -= GlobalTimestep;
-  if (m_tooltipParentPane.expired())
-    m_tooltipParentPane.reset();
+  auto newTooltipParentPane = getPaneAt(m_tooltipLastMousePos);
 
-  bool removeTooltip = vmag(m_tooltipInitialPosition - m_tooltipLastMousePos) > m_tooltipMouseoverRadius
-    || m_tooltipParentPane.expired() || m_tooltipParentPane.lock()->inWindow(m_tooltipLastMousePos);
+  bool updateTooltip = m_tooltipShowTimer.tick(dt) || (m_activeTooltip && (
+    vmag(m_tooltipInitialPosition - m_tooltipLastMousePos) > m_tooltipMouseoverRadius
+    || m_tooltipParentPane != newTooltipParentPane
+    || !m_tooltipParentPane->inWindow(m_tooltipLastMousePos))); 
 
-  if (removeTooltip) {
-    dismiss(m_activeTooltip);
-    m_activeTooltip.reset();
-    m_tooltipParentPane.reset();
-  }
+  if (updateTooltip) {
+    if (m_activeTooltip) {
+      dismiss(m_activeTooltip);
+      m_activeTooltip.reset();
+      m_tooltipParentPane.reset();
+    }
 
-  // Scan for a new tooltip if we just removed the old one, or the show timer has expired
-  if (removeTooltip || (m_tooltipShowTimer < 0 && !m_activeTooltip)) {
-    if (auto parentPane = getPaneAt(m_tooltipLastMousePos)) {
-      if (auto tooltip = parentPane->createTooltip(m_tooltipLastMousePos)) {
+    m_tooltipShowTimer.reset();
+    if (newTooltipParentPane) {
+      if (auto tooltip = newTooltipParentPane->createTooltip(m_tooltipLastMousePos)) {
         m_activeTooltip = std::move(tooltip);
-        m_tooltipParentPane = std::move(parentPane);
+        m_tooltipParentPane = std::move(newTooltipParentPane);
         m_tooltipInitialPosition = m_tooltipLastMousePos;
         displayPane(PaneLayer::Tooltip, m_activeTooltip);
-      } else {
-        m_tooltipShowTimer = m_tooltipMouseoverTime;
       }
     }
   }
