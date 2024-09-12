@@ -18,13 +18,11 @@
 
 namespace Star {
 
-namespace {
-  OVERLAPPED makeOverlapped(StreamOffset offset) {
-    OVERLAPPED overlapped = {};
-    overlapped.Offset = offset;
-    overlapped.OffsetHigh = offset >> 32;
-    return overlapped;
-  }
+OVERLAPPED makeOverlapped(StreamOffset offset) {
+  OVERLAPPED overlapped = {};
+  overlapped.Offset = offset;
+  overlapped.OffsetHigh = offset >> 32;
+  return overlapped;
 }
 
 String File::convertDirSeparators(String const& path) {
@@ -377,10 +375,8 @@ size_t File::pread(void* f, char* data, size_t len, StreamOffset position) {
   HANDLE file = (HANDLE)f;
   DWORD numRead = 0;
   OVERLAPPED overlapped = makeOverlapped(position);
-  StreamOffset pos = ftell(f);
-  fseek(f, 0, IOSeek::Absolute);
   int ret = ReadFile(file, data, len, &numRead, &overlapped);
-  fseek(f, pos, IOSeek::Absolute);
+  fseek(f, -(StreamOffset)numRead, IOSeek::Relative);
   if (ret == 0) {
     auto err = GetLastError();
     if (err != ERROR_IO_PENDING)
@@ -394,10 +390,8 @@ size_t File::pwrite(void* f, char const* data, size_t len, StreamOffset position
   HANDLE file = (HANDLE)f;
   DWORD numWritten = 0;
   OVERLAPPED overlapped = makeOverlapped(position);
-  StreamOffset pos = ftell(f);
-  fseek(f, 0, IOSeek::Absolute);
   int ret = WriteFile(file, data, len, &numWritten, &overlapped);
-  fseek(f, pos, IOSeek::Absolute);
+  fseek(f, -(StreamOffset)numWritten, IOSeek::Relative);
   if (ret == 0) {
     auto err = GetLastError();
     if (err != ERROR_IO_PENDING)
