@@ -124,6 +124,7 @@ Assets::Assets(Settings settings, StringList assetSources) {
     LuaCallbacks callbacks;
     callbacks.registerCallbackWithSignature<StringSet, String>("byExtension", bind(&Assets::scanExtension, this, _1));
     callbacks.registerCallbackWithSignature<Json, String>("json", bind(&Assets::json, this, _1));
+    callbacks.registerCallbackWithSignature<bool, String>("exists", bind(&Assets::assetExists, this, _1));
 
     callbacks.registerCallback("bytes", [this](String const& path) -> String {
       auto assetBytes = bytes(path);

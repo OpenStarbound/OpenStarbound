@@ -15,9 +15,9 @@
 namespace Star {
 
 ClientCommandProcessor::ClientCommandProcessor(UniverseClientPtr universeClient, CinematicPtr cinematicOverlay,
-    MainInterfacePaneManager* paneManager, StringMap<StringList> macroCommands)
+  MainInterfacePaneManager* paneManager, StringMap<StringList> macroCommands)
   : m_universeClient(std::move(universeClient)), m_cinematicOverlay(std::move(cinematicOverlay)),
-    m_paneManager(paneManager), m_macroCommands(std::move(macroCommands)) {
+  m_paneManager(paneManager), m_macroCommands(std::move(macroCommands)) {
   m_builtinCommands = {
     {"reload", bind(&ClientCommandProcessor::reload, this)},
     {"whoami", bind(&ClientCommandProcessor::whoami, this)},
@@ -51,7 +51,8 @@ ClientCommandProcessor::ClientCommandProcessor(UniverseClientPtr universeClient,
     {"maketechavailable", bind(&ClientCommandProcessor::makeTechAvailable, this, _1)},
     {"enabletech", bind(&ClientCommandProcessor::enableTech, this, _1)},
     {"upgradeship", bind(&ClientCommandProcessor::upgradeShip, this, _1)},
-    {"swap", bind(&ClientCommandProcessor::swap, this, _1)}
+    {"swap", bind(&ClientCommandProcessor::swap, this, _1)},
+    {"respawnInWorld", bind(&ClientCommandProcessor::respawnInWorld, this, _1)}
   };
 }
 
@@ -128,7 +129,7 @@ String ClientCommandProcessor::reload() {
 
 String ClientCommandProcessor::whoami() {
   return strf("Client: You are {}. You are {}an Admin.",
-      m_universeClient->mainPlayer()->name(), m_universeClient->mainPlayer()->isAdmin() ? "" : "not ");
+              m_universeClient->mainPlayer()->name(), m_universeClient->mainPlayer()->isAdmin() ? "" : "not ");
 }
 
 String ClientCommandProcessor::gravity() {
@@ -186,7 +187,7 @@ String ClientCommandProcessor::setGravity(String const& argumentsString) {
     return "You must be an admin to use this command.";
 
   m_universeClient->worldClient()->overrideGravity(lexicalCast<float>(arguments.at(0)));
-  return strf("Gravity set to {}, the change is LOCAL ONLY", arguments.at(0));
+  return strf("Gravity set to {} (This is client-side!)", arguments.at(0));
 }
 
 String ClientCommandProcessor::resetGravity() {
@@ -273,8 +274,8 @@ String ClientCommandProcessor::previewNewQuest(String const& argumentsString) {
     return "You must be an admin to use this command.";
 
   return previewQuestPane(arguments, [this](QuestPtr const& quest) {
-      return make_shared<NewQuestInterface>(m_universeClient->questManager(), quest, m_universeClient->mainPlayer());
-    });
+    return make_shared<NewQuestInterface>(m_universeClient->questManager(), quest, m_universeClient->mainPlayer());
+  });
 }
 
 String ClientCommandProcessor::previewQuestComplete(String const& argumentsString) {
@@ -283,8 +284,8 @@ String ClientCommandProcessor::previewQuestComplete(String const& argumentsStrin
     return "You must be an admin to use this command.";
 
   return previewQuestPane(arguments, [this](QuestPtr const& quest) {
-      return make_shared<QuestCompleteInterface>(quest, m_universeClient->mainPlayer(), CinematicPtr{});
-    });
+    return make_shared<QuestCompleteInterface>(quest, m_universeClient->mainPlayer(), CinematicPtr{});
+  });
 }
 
 String ClientCommandProcessor::previewQuestFailed(String const& argumentsString) {
@@ -293,8 +294,8 @@ String ClientCommandProcessor::previewQuestFailed(String const& argumentsString)
     return "You must be an admin to use this command.";
 
   return previewQuestPane(arguments, [this](QuestPtr const& quest) {
-      return make_shared<QuestFailedInterface>(quest, m_universeClient->mainPlayer());
-    });
+    return make_shared<QuestFailedInterface>(quest, m_universeClient->mainPlayer());
+  });
 }
 
 String ClientCommandProcessor::clearScannedObjects() {
@@ -425,6 +426,18 @@ String ClientCommandProcessor::swap(String const& argumentsString) {
     return "Successfully swapped player";
   else
     return "Failed to swap player";
+}
+
+String ClientCommandProcessor::respawnInWorld(String const& argumentsString) {
+  auto arguments = m_parser.tokenizeToStringList(argumentsString);
+  auto worldClient = m_universeClient->worldClient();
+  
+  if (arguments.size() == 0)
+    return strf("Respawn in this world is currently {}", worldClient->respawnInWorld() ? "true" : "false");
+
+  bool respawnInWorld = Json::parse(arguments.at(0)).toBool();
+  worldClient->setRespawnInWorld(respawnInWorld);
+  return strf("Respawn in this world set to {} (This is client-side!)", respawnInWorld ? "true" : "false");
 }
 
 }

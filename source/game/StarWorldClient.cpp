@@ -142,6 +142,10 @@ bool WorldClient::respawnInWorld() const {
   return m_respawnInWorld;
 }
 
+void WorldClient::setRespawnInWorld(bool respawnInWorld) {
+  m_respawnInWorld = respawnInWorld;
+}
+
 void WorldClient::removeEntity(EntityId entityId, bool andDie) {
   auto entity = m_entityMap->entity(entityId);
   if (!entity)

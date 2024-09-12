@@ -174,7 +174,11 @@ Vec2U ImageMetadataDatabase::calculateImageSize(AssetPath const& path) const {
       imageSize = *size;
     } else {
       locker.unlock();
-      imageSize = get<0>(Image::readPngMetadata(assets->openFile(path.basePath)));
+      auto file = assets->openFile(path.basePath);
+      if (Image::isPng(file))
+        imageSize = get<0>(Image::readPngMetadata(file));
+      else
+        imageSize = fallback();
       locker.lock();
       m_sizeCache[path.basePath] = imageSize;
     }

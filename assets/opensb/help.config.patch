@@ -2,8 +2,15 @@
   "basicHelpText": "Basic commands are: {}",
   "adminHelpText": "Admin commands are: {}",
   "debugHelpText": "Debug commands are: {}",
+  "openSbHelpText": "OpenSB commands are: {}",
+  "openSbDebugHelpText": "OpenSB Debug commands are: {}",
 
-  "debugCommands": {
+  "openSbDebugCommands": {
     "run": "Usage /run <lua>. Executes a script on the player and outputs the return value to chat."
+  },
+
+  "openSbCommands": {
+    "swap": "Usage /swap <name>. Swaps the current character, case-insensitive, only substring required.",
+    "respawninworld": "Usage /respawninworld. Sets the respawn flag for the current world until you teleport away."
   }
 }

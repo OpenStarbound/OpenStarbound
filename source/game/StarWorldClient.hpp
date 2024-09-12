@@ -108,6 +108,7 @@ public:
   bool mainPlayerDead() const;
   void reviveMainPlayer();
   bool respawnInWorld() const;
+  void setRespawnInWorld(bool respawnInWorld);
 
   void removeEntity(EntityId entityId, bool andDie);
 
@@ -175,6 +176,9 @@ public:
 
   typedef std::function<bool(PlayerPtr, StringView)> BroadcastCallback;
   BroadcastCallback& broadcastCallback();
+
+
+
 private:
   static const float DropDist;
 
