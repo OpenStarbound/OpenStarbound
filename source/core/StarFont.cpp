@@ -30,8 +30,6 @@ FTContext ftContext;
 
 struct FontImpl {
   FT_Face face;
-  String::Char loadedChar = 0;
-  unsigned renderedPixelSize = 0;
 };
 
 FontPtr Font::loadFont(String const& fileName, unsigned pixelSize) {
@@ -84,8 +82,7 @@ unsigned Font::width(String::Char c) {
   if (auto width = m_widthCache.maybe({c, m_pixelSize})) {
     return *width;
   } else {
-    if (m_fontImpl->loadedChar != c)
-      FT_Load_Char(m_fontImpl->face, m_fontImpl->loadedChar = c, FontLoadFlags);
+    FT_Load_Char(m_fontImpl->face, c, FontLoadFlags);
     unsigned newWidth = (m_fontImpl->face->glyph->linearHoriAdvance + 32768) / 65536;
     m_widthCache.insert({c, m_pixelSize}, newWidth);
     return newWidth;
@@ -98,19 +95,11 @@ tuple<Image, Vec2I, bool> Font::render(String::Char c) {
     throw FontException("Font::render called on uninitialized font.");
 
   FT_Face face = m_fontImpl->face;
+  if (FT_Load_Glyph(face, FT_Get_Char_Index(face, c), FontLoadFlags) != 0)
+    return {};
 
-  if (m_fontImpl->loadedChar != c) {
-    if (FT_Load_Glyph(face, FT_Get_Char_Index(face, m_fontImpl->loadedChar = c), FontLoadFlags) != 0)
-      return {};
-
-    m_fontImpl->renderedPixelSize = 0;
-  }
-
-  if (m_fontImpl->renderedPixelSize != m_pixelSize) {
-    m_fontImpl->renderedPixelSize = m_pixelSize;
-    if (FT_Render_Glyph(face->glyph, FT_RENDER_MODE_NORMAL) != 0)
-      return {};
-  }
+  if (FT_Render_Glyph(face->glyph, FT_RENDER_MODE_NORMAL) != 0)
+    return {};
 
   FT_GlyphSlot slot = face->glyph;
   if (!slot->bitmap.buffer)
