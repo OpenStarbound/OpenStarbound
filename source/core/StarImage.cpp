@@ -18,13 +18,12 @@ void readPngData(png_structp pngPtr, png_bytep data, png_size_t length) {
 };
 
 bool Image::isPng(IODevicePtr device) {
-  png_byte header[8];
-  device->readAbsolute(0, (char*)header, sizeof(header));
-  return !png_sig_cmp(header, 0, sizeof(header));
+  png_byte header[8]{};
+  return !png_sig_cmp(header, 0, device->readAbsolute(0, (char*)header, sizeof(header)));
 }
 
 Image Image::readPng(IODevicePtr device) {
-  png_byte header[8];
+  png_byte header[8]{};
   device->readFull((char*)header, sizeof(header));
 
   if (png_sig_cmp(header, 0, sizeof(header)))
