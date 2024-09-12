@@ -122,41 +122,42 @@ bool ActionBar::sendEvent(InputEvent const& event) {
   auto inventory = m_player->inventory();
 
   auto customBarIndexes = inventory->customBarIndexes();
-  if (auto mouseWheel = event.ptr<MouseWheelEvent>()) {
-    auto abl = inventory->selectedActionBarLocation();
+  if (configuration->getPath("inventory.scrollActionBar").optBool().value(true)) {
+    if (auto mouseWheel = event.ptr<MouseWheelEvent>()) {
+      auto abl = inventory->selectedActionBarLocation();
 
-    int index = 0;
-    if (!abl) {
-      if (mouseWheel->mouseWheel == MouseWheel::Down)
-        index = 0;
-      else
-        index = customBarIndexes + EssentialItemCount - 1;
-    } else {
-      if (auto cbi = abl.ptr<CustomBarIndex>()) {
-        if (*cbi < customBarIndexes / 2)
-          index = *cbi;
+      int index = 0;
+      if (!abl) {
+        if (mouseWheel->mouseWheel == MouseWheel::Down)
+          index = 0;
         else
-          index = *cbi + EssentialItemCount;
+          index = customBarIndexes + EssentialItemCount - 1;
       } else {
-        index = customBarIndexes / 2 + (int)abl.get<EssentialItem>();
+        if (auto cbi = abl.ptr<CustomBarIndex>()) {
+          if (*cbi < customBarIndexes / 2)
+            index = *cbi;
+          else
+            index = *cbi + EssentialItemCount;
+        } else {
+          index = customBarIndexes / 2 + (int)abl.get<EssentialItem>();
+        }
+
+        if (mouseWheel->mouseWheel == MouseWheel::Down)
+          index = pmod(index + 1, customBarIndexes + EssentialItemCount);
+        else
+          index = pmod(index - 1, customBarIndexes + EssentialItemCount);
       }
 
-      if (mouseWheel->mouseWheel == MouseWheel::Down)
-        index = pmod(index + 1, customBarIndexes + EssentialItemCount);
+      if (index < customBarIndexes / 2)
+        abl = (CustomBarIndex)index;
+      else if (index < customBarIndexes / 2 + EssentialItemCount)
+        abl = (EssentialItem)(index - customBarIndexes / 2);
       else
-        index = pmod(index - 1, customBarIndexes + EssentialItemCount);
+        abl = (CustomBarIndex)(index - EssentialItemCount);
+
+      inventory->selectActionBarLocation(abl);
+      context()->playAudio(RandomSource().randFrom(m_switchSounds));
     }
-
-    if (index < customBarIndexes / 2)
-      abl = (CustomBarIndex)index;
-    else if (index < customBarIndexes / 2 + EssentialItemCount)
-      abl = (EssentialItem)(index - customBarIndexes / 2);
-    else
-      abl = (CustomBarIndex)(index - EssentialItemCount);
-
-    inventory->selectActionBarLocation(abl);
-    context()->playAudio(RandomSource().randFrom(m_switchSounds));
-
     return true;
   }
 
