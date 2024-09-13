@@ -381,8 +381,9 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
         clientInfo->outgoingPackets.append(make_shared<GiveItemPacket>(item));
 
     } else if (auto sepacket = as<SpawnEntityPacket>(packet)) {
-      auto entity = entityFactory->netLoadEntity(sepacket->entityType, std::move(sepacket->storeData));
-      entity->readNetState(std::move(sepacket->firstNetState), 0.0f, clientInfo->clientState.netCompatibilityRules());
+      auto netRules = clientInfo->clientState.netCompatibilityRules();
+      auto entity = entityFactory->netLoadEntity(sepacket->entityType, std::move(sepacket->storeData), netRules);
+      entity->readNetState(std::move(sepacket->firstNetState), 0.0f, netRules);
       addEntity(std::move(entity));
 
     } else if (auto rdpacket = as<RequestDropPacket>(packet)) {
@@ -433,9 +434,9 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
           Logger::error("WorldServer received duplicate entity create packet from client, deleting old entity {}", entityCreate->entityId);
           removeEntity(entityCreate->entityId, false);
         }
-
-        auto entity = entityFactory->netLoadEntity(entityCreate->entityType, entityCreate->storeData);
-        entity->readNetState(entityCreate->firstNetState, 0.0f, clientInfo->clientState.netCompatibilityRules());
+        auto netRules = clientInfo->clientState.netCompatibilityRules();
+        auto entity = entityFactory->netLoadEntity(entityCreate->entityType, entityCreate->storeData, netRules);
+        entity->readNetState(entityCreate->firstNetState, 0.0f, netRules);
         entity->init(this, entityCreate->entityId, EntityMode::Slave);
         m_entityMap->addEntity(entity);
 
