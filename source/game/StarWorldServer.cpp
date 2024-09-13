@@ -1885,7 +1885,7 @@ void WorldServer::queueUpdatePackets(ConnectionId clientId, bool sendRemoteUpdat
         auto firstUpdate = monitoredEntity->writeNetState(0, netRules);
         clientInfo->clientSlavesNetVersion.add(entityId, firstUpdate.second);
         clientInfo->outgoingPackets.append(make_shared<EntityCreatePacket>(monitoredEntity->entityType(),
-              entityFactory->netStoreEntity(monitoredEntity), std::move(firstUpdate.first), entityId));
+              entityFactory->netStoreEntity(monitoredEntity, netRules), std::move(firstUpdate.first), entityId));
       }
     }
   }
