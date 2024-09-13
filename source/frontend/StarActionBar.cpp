@@ -122,6 +122,7 @@ bool ActionBar::sendEvent(InputEvent const& event) {
   auto inventory = m_player->inventory();
 
   auto customBarIndexes = inventory->customBarIndexes();
+  auto configuration = Root::singleton().configuration();
   if (configuration->getPath("inventory.scrollActionBar").optBool().value(true)) {
     if (auto mouseWheel = event.ptr<MouseWheelEvent>()) {
       auto abl = inventory->selectedActionBarLocation();
