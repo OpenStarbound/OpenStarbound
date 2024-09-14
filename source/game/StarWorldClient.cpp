@@ -1435,7 +1435,7 @@ bool WorldClient::isTileProtected(Vec2I const& pos) const {
   if (!inWorld())
     return true;
 
-  auto tile = m_tileArray->tile(pos);
+  auto const& tile = m_tileArray->tile(pos);
   return m_protectedDungeonIds.contains(tile.dungeonId);
 }
 

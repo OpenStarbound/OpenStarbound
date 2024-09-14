@@ -211,32 +211,32 @@ Json jsonFromList(List<Value> const& list, Converter&& valueConvert) {
   return res;
 }
 
-template <typename Value>
-Set<Value> jsonToSet(Json const& v) {
-  return jsonToSet<Value>(v, construct<Value>());
+template <typename SetType>
+SetType jsonToSet(Json const& v) {
+  return jsonToSet<SetType>(v, construct<Value>());
 }
 
-template <typename Value, typename Converter>
-Set<Value> jsonToSet(Json const& v, Converter&& valueConvert) {
+template <typename SetType, typename Converter>
+SetType jsonToSet(Json const& v, Converter&& valueConvert) {
   if (v.type() != Json::Type::Array)
     throw JsonException("Json type is not an array in jsonToSet");
 
-  Set<Value> res;
+  SetType res;
   for (auto const& entry : v.iterateArray())
     res.add(valueConvert(entry));
 
   return res;
 }
 
-template <typename Value>
-Json jsonFromSet(Set<Value> const& Set) {
-  return jsonFromSet<Value>(Set, construct<Json>());
+template <typename SetType>
+Json jsonFromSet(SetType const& Set) {
+  return jsonFromSet<SetType>(Set, construct<Json>());
 }
 
-template <typename Value, typename Converter>
-Json jsonFromSet(Set<Value> const& Set, Converter&& valueConvert) {
+template <typename SetType, typename Converter>
+Json jsonFromSet(SetType const& Set, Converter&& valueConvert) {
   JsonArray res;
-  for (auto entry : Set)
+  for (auto& entry : Set)
     res.push_back(valueConvert(entry));
 
   return res;

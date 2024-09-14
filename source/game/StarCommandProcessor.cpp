@@ -262,16 +262,33 @@ String CommandProcessor::setTileProtection(ConnectionId connectionId, String con
     return "Not enough arguments to /settileprotection. Use /settileprotection <dungeonId> <protected>";
 
   try {
-    DungeonId dungeonId = lexicalCast<DungeonId>(arguments.at(0));
-    bool isProtected = lexicalCast<bool>(arguments.at(1));
-
-    bool done = m_universe->executeForClient(connectionId, [dungeonId, isProtected](WorldServer* world, PlayerPtr const&) {
-        world->setTileProtection(dungeonId, isProtected);
-      });
-
-    return done ? "" : "Failed to set block protection.";
+    bool isProtected = lexicalCast<bool>(arguments.takeLast());
+    List<DungeonId> dungeonIds;
+    for (auto& banana : arguments) {
+      auto slices = banana.split("..");
+      auto it = slices.begin();
+      DungeonId previous = 0;
+      while (it != slices.end()) {
+        DungeonId current = lexicalCast<DungeonId>(*it);
+        dungeonIds.append(current);
+        if (it++ != slices.begin() && previous != current) {
+          if (current < previous) swap(previous, current);
+          for (DungeonId id = previous + 1; id != current; ++id)
+            dungeonIds.append(id);
+        }
+        previous = current;
+      }
+    }
+    size_t changed = 0;
+    if (!m_universe->executeForClient(connectionId, [&](WorldServer* world, PlayerPtr const&) {
+       changed = world->setTileProtection(dungeonIds, isProtected);
+      })) {
+      return "Invalid client state";
+    }
+    String output = strf("{} {} dungeon IDs", isProtected ? "Protected" : "Unprotected", changed);
+    return changed < dungeonIds.size() ? strf("{} ({} unchanged)", output, dungeonIds.size() - changed) : output;
   } catch (BadLexicalCast const&) {
-    return strf("Could not parse /settileprotection parameters. Use /settileprotection <dungeonId> <protected>", argumentString);
+    return strf("Could not parse /settileprotection parameters. Use /settileprotection <dungeonId...> <protected>", argumentString);
   }
 }
 

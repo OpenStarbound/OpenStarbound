@@ -180,7 +180,10 @@ public:
   RpcPromise<Json> sendEntityMessage(Variant<EntityId, String> const& entity, String const& message, JsonArray const& args = {}) override;
   bool isTileProtected(Vec2I const& pos) const override;
 
+  bool getTileProtection(DungeonId dungeonId) const;
   void setTileProtection(DungeonId dungeonId, bool isProtected);
+  // sets a provided list of DungeonIds all at once and returns how many were changed
+  size_t setTileProtection(List<DungeonId> const& dungeonIds, bool isProtected);
   // used to globally, temporarily disable protection for certain operations
   void setTileProtectionEnabled(bool enabled);
 
@@ -396,7 +399,7 @@ private:
   bool m_generatingDungeon;
   HashMap<DungeonId, float> m_dungeonIdGravity;
   HashMap<DungeonId, bool> m_dungeonIdBreathable;
-  Set<DungeonId> m_protectedDungeonIds;
+  StableHashSet<DungeonId> m_protectedDungeonIds;
   bool m_tileProtectionEnabled;
 
   HashMap<Uuid, pair<ConnectionId, MVariant<ConnectionId, RpcPromiseKeeper<Json>>>> m_entityMessageResponses;

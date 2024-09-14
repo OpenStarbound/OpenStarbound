@@ -94,14 +94,14 @@ void EffectEmitter::render(RenderCallback* renderCallback) {
 
 Json EffectEmitter::toJson() const {
   return JsonObject{{"activeSources",
-      jsonFromSet<pair<String, String>>(m_activeSources.get(),
+      jsonFromSet<Set<pair<String, String>>>(m_activeSources.get(),
                          [](pair<String, String> const& entry) {
                            return JsonObject{{"position", entry.first}, {"source", entry.second}};
                          })}};
 }
 
 void EffectEmitter::fromJson(Json const& diskStore) {
-  m_activeSources.set(jsonToSet<pair<String, String>>(diskStore.get("activeSources"),
+  m_activeSources.set(jsonToSet<Set<pair<String, String>>>(diskStore.get("activeSources"),
       [](Json const& v) {
         return pair<String, String>{v.getString("position"), v.getString("source")};
       }));

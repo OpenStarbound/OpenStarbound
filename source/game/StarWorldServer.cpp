@@ -1190,8 +1190,12 @@ bool WorldServer::isTileProtected(Vec2I const& pos) const {
   if (!m_tileProtectionEnabled)
     return false;
 
-  auto tile = m_tileArray->tile(pos);
+  auto const& tile = m_tileArray->tile(pos);
   return m_protectedDungeonIds.contains(tile.dungeonId);
+}
+
+bool WorldServer::getTileProtection(DungeonId dungeonId) const {
+  return m_protectedDungeonIds.contains(dungeonId);
 }
 
 void WorldServer::setTileProtection(DungeonId dungeonId, bool isProtected) {
@@ -1205,9 +1209,28 @@ void WorldServer::setTileProtection(DungeonId dungeonId, bool isProtected) {
   if (updated) {
     for (auto const& pair : m_clientInfo)
       pair.second->outgoingPackets.append(make_shared<UpdateTileProtectionPacket>(dungeonId, isProtected));
+  
+    Logger::info("Protected dungeonIds for world set to {}", m_protectedDungeonIds);
   }
+}
 
-  Logger::info("Protected dungeonIds for world set to {}", m_protectedDungeonIds);
+size_t WorldServer::setTileProtection(List<DungeonId> const& dungeonIds, bool isProtected) {
+  List<PacketPtr> updates;
+  updates.reserve(dungeonIds.size());
+  for (auto const& dungeonId : dungeonIds)
+    if (isProtected ? m_protectedDungeonIds.add(dungeonId) : m_protectedDungeonIds.remove(dungeonId))
+      updates.append(make_shared<UpdateTileProtectionPacket>(dungeonId, isProtected));
+
+  if (updates.empty())
+    return 0;
+
+  for (auto const& pair : m_clientInfo)
+    pair.second->outgoingPackets.appendAll(updates);
+
+  auto newDungeonIds = m_protectedDungeonIds.values();
+  sort(newDungeonIds);
+  Logger::info("Protected dungeonIds for world set to {}", newDungeonIds);
+  return updates.size();
 }
 
 void WorldServer::setTileProtectionEnabled(bool enabled) {
@@ -2345,7 +2368,7 @@ void WorldServer::readMetadata() {
   m_adjustPlayerStart = metadata.getBool("adjustPlayerStart");
   m_worldTemplate = make_shared<WorldTemplate>(metadata.get("worldTemplate"));
   m_centralStructure = WorldStructure(metadata.get("centralStructure"));
-  m_protectedDungeonIds = jsonToSet<DungeonId>(metadata.get("protectedDungeonIds"), mem_fn(&Json::toUInt));
+  m_protectedDungeonIds = jsonToSet<StableHashSet<DungeonId>>(metadata.get("protectedDungeonIds"), mem_fn(&Json::toUInt));
   m_worldProperties = metadata.getObject("worldProperties");
   m_spawner.setActive(metadata.getBool("spawningEnabled"));
 
