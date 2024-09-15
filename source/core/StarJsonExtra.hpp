@@ -213,7 +213,7 @@ Json jsonFromList(List<Value> const& list, Converter&& valueConvert) {
 
 template <typename SetType>
 SetType jsonToSet(Json const& v) {
-  return jsonToSet<SetType>(v, construct<Value>());
+  return jsonToSet<SetType>(v, construct<SetType::value_type>());
 }
 
 template <typename SetType, typename Converter>
