@@ -38,6 +38,14 @@ Note: Not every function from [StarExtensions](https://github.com/StarExtensions
   * These scripts can modify, read, patch and create new assets!
 * Lua patch files now exist - **.patch.lua**
   * These can patch JSON assets, as well as images!
+
+### Commands
+**View OpenStarbound commands with `/help`! You can also view them [here](https://github.com/OpenStarbound/OpenStarbound/blob/main/assets/opensb/help.config.patch)**
+  * Changes to vanilla commands:
+    * `/settileprotection`
+      * You can now specify as many dungeon IDs as you want: `/settileprotection 69 420 false`
+      * You can now specify a range: /settileprotection 0..65535 true
+
 ### Bug Fixes
 * Invalid character inventories are updated when loading in, allowing players to swap inventory mods with pre-existing characters.
 ### Misc
