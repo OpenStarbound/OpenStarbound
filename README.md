@@ -48,6 +48,8 @@ Note: Not every function from [StarExtensions](https://github.com/StarExtensions
 
 ### Bug Fixes
 * Invalid character inventories are updated when loading in, allowing players to swap inventory mods with pre-existing characters.
+* Starbound has a bug where garbage data is saved along with worlds, which bloats the files and can delete ship worlds on servers. OpenStarbound removes this garbage data when the file is at least 5% bloated, fixing the issue.
+* If both server and client are at least OpenStarbound 0.15, modifying a single status property will no longer re-send every status property.
 ### Misc
 * Player functions for saving/loading, modifying the humanoid identity, manipulating the inventory. [Documentation](https://github.com/OpenStarbound/OpenStarbound/blob/main/doc/lua/openstarbound.md)
 * Character swapping (rewrite from StarExtensions, currently command-only: `/swap name` case-insensitive, only substring required)
