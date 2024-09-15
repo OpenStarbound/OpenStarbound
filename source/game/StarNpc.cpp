@@ -152,8 +152,8 @@ Json Npc::diskStore() const {
   };
 }
 
-ByteArray Npc::netStore() {
-  return Root::singleton().npcDatabase()->writeNpcVariant(m_npcVariant);
+ByteArray Npc::netStore(NetCompatibilityRules rules) {
+  return Root::singleton().npcDatabase()->writeNpcVariant(m_npcVariant, rules);
 }
 
 EntityType Npc::entityType() const {
@@ -252,7 +252,7 @@ RectF Npc::collisionArea() const {
   return m_movementController->collisionPoly().boundBox();
 }
 
-pair<ByteArray, uint64_t> Npc::writeNetState(uint64_t fromVersion) {
+pair<ByteArray, uint64_t> Npc::writeNetState(uint64_t fromVersion, NetCompatibilityRules rules) {
   // client-side npcs error nearby vanilla NPC scripts because callScriptedEntity
   // for now, scrungle the collision poly to avoid their queries. hacky :(
   if (m_npcVariant.overrides && m_npcVariant.overrides.getBool("overrideNetPoly", false)) {
@@ -260,18 +260,18 @@ pair<ByteArray, uint64_t> Npc::writeNetState(uint64_t fromVersion) {
       if (*mode == EntityMode::Master && connectionForEntity(entityId()) != ServerConnectionId) {
         PolyF poly = m_movementController->collisionPoly();
         m_movementController->setCollisionPoly({ { 0.0f, -3.402823466e+38F }});
-        auto result = m_netGroup.writeNetState(fromVersion);
+        auto result = m_netGroup.writeNetState(fromVersion, rules);
         m_movementController->setCollisionPoly(poly);
         return result;
       }
     }
   }
 
-  return m_netGroup.writeNetState(fromVersion);
+  return m_netGroup.writeNetState(fromVersion, rules);
 }
 
-void Npc::readNetState(ByteArray data, float interpolationTime) {
-  m_netGroup.readNetState(std::move(data), interpolationTime);
+void Npc::readNetState(ByteArray data, float interpolationTime, NetCompatibilityRules rules) {
+  m_netGroup.readNetState(data, interpolationTime, rules);
 }
 
 String Npc::description() const {

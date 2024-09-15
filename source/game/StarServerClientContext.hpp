@@ -19,7 +19,7 @@ STAR_CLASS(ServerClientContext);
 
 class ServerClientContext {
 public:
-  ServerClientContext(ConnectionId clientId, Maybe<HostAddress> remoteAddress, Uuid playerUuid,
+  ServerClientContext(ConnectionId clientId, Maybe<HostAddress> remoteAddress, NetCompatibilityRules netRules, Uuid playerUuid,
       String playerName, String playerSpecies, bool canBecomeAdmin, WorldChunks initialShipChunks);
 
   ConnectionId clientId() const;
@@ -28,6 +28,7 @@ public:
   String const& playerName() const;
   String const& playerSpecies() const;
   bool canBecomeAdmin() const;
+  NetCompatibilityRules netRules() const;
   String descriptiveName() const;
 
   // Register additional rpc methods from other server side services.
@@ -87,6 +88,7 @@ public:
 private:
   ConnectionId const m_clientId;
   Maybe<HostAddress> const m_remoteAddress;
+  NetCompatibilityRules m_netRules;
   Uuid const m_playerUuid;
   String const m_playerName;
   String const m_playerSpecies;

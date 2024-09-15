@@ -170,8 +170,9 @@ MonsterVariant MonsterDatabase::monsterVariant(String const& typeName, uint64_t 
     });
 }
 
-ByteArray MonsterDatabase::writeMonsterVariant(MonsterVariant const& variant) const {
+ByteArray MonsterDatabase::writeMonsterVariant(MonsterVariant const& variant, NetCompatibilityRules rules) const {
   DataStreamBuffer ds;
+  ds.setStreamCompatibilityVersion(rules);
 
   ds.write(variant.type);
   ds.write(variant.seed);
@@ -180,8 +181,9 @@ ByteArray MonsterDatabase::writeMonsterVariant(MonsterVariant const& variant) co
   return ds.data();
 }
 
-MonsterVariant MonsterDatabase::readMonsterVariant(ByteArray const& data) const {
+MonsterVariant MonsterDatabase::readMonsterVariant(ByteArray const& data, NetCompatibilityRules rules) const {
   DataStreamBuffer ds(data);
+  ds.setStreamCompatibilityVersion(rules);
 
   String type = ds.read<String>();
   uint64_t seed = ds.read<uint64_t>();
@@ -216,8 +218,8 @@ MonsterPtr MonsterDatabase::diskLoadMonster(Json const& diskStore) const {
   return make_shared<Monster>(diskStore);
 }
 
-MonsterPtr MonsterDatabase::netLoadMonster(ByteArray const& netStore) const {
-  return make_shared<Monster>(readMonsterVariant(netStore));
+MonsterPtr MonsterDatabase::netLoadMonster(ByteArray const& netStore, NetCompatibilityRules rules) const {
+  return make_shared<Monster>(readMonsterVariant(netStore, rules));
 }
 
 List<Drawable> MonsterDatabase::monsterPortrait(MonsterVariant const& variant) const {

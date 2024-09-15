@@ -7,8 +7,8 @@ uint64_t NetElementVersion::current() const {
   return m_version;
 }
 
-void NetElementVersion::increment() {
-  ++m_version;
+uint64_t NetElementVersion::increment() {
+  return ++m_version;
 }
 
 void NetElement::enableNetInterpolation(float) {}

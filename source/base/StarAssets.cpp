@@ -68,7 +68,7 @@ static void validatePath(AssetPath const& components, bool canContainSubPath, bo
     throw AssetException::format("Path '{}' cannot contain directives", components);
 }
 
-static void validatePath(StringView const& path, bool canContainSubPath, bool canContainDirectives) {
+static void validatePath(StringView path, bool canContainSubPath, bool canContainDirectives) {
   std::string_view const& str = path.utf8();
 
   size_t end = str.find_first_of(":?");

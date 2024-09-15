@@ -70,10 +70,12 @@ SET (star_core_HEADERS
     StarMultiArray.hpp
     StarMultiArrayInterpolator.hpp
     StarMultiTable.hpp
+    StarNetCompatibility.hpp
     StarNetElement.hpp
     StarNetElementBasicFields.hpp
     StarNetElementContainers.hpp
     StarNetElementDynamicGroup.hpp
+    StarNetElementExt.hpp
     StarNetElementFloatFields.hpp
     StarNetElementGroup.hpp
     StarNetElementSignal.hpp
@@ -122,6 +124,7 @@ SET (star_core_HEADERS
     StarUnicode.hpp
     StarUuid.hpp
     StarVector.hpp
+    StarVersion.hpp
     StarVlqEncoding.hpp
     StarWeightedPool.hpp
     StarWorkerPool.hpp
@@ -162,6 +165,7 @@ SET (star_core_SOURCES
     StarLua.cpp
     StarLuaConverters.cpp
     StarMemory.cpp
+    StarNetCompatibility.cpp
     StarNetElement.cpp
     StarNetElementBasicFields.cpp
     StarNetElementGroup.cpp
@@ -217,7 +221,8 @@ ELSEIF (STAR_SYSTEM_FAMILY_WINDOWS)
 
 ENDIF ()
 
-ADD_LIBRARY (star_core OBJECT ${star_core_SOURCES} ${star_core_HEADERS})
+CONFIGURE_FILE (StarVersion.cpp.in ${CMAKE_CURRENT_BINARY_DIR}/StarVersion.cpp)
+ADD_LIBRARY (star_core OBJECT ${star_core_SOURCES} ${star_core_HEADERS} ${CMAKE_CURRENT_BINARY_DIR}/StarVersion.cpp)
 
 IF(STAR_PRECOMPILED_HEADERS)
   TARGET_PRECOMPILE_HEADERS (star_core PUBLIC StarPch.hpp)

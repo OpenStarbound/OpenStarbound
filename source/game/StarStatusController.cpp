@@ -18,7 +18,32 @@ StatusController::StatusController(Json const& config) : m_statCollection(config
   m_parentEntity = nullptr;
   m_movementController = nullptr;
 
-  m_statusProperties.set(config.getObject("statusProperties", {}));
+  m_statusProperties.reset(config.getObject("statusProperties", {}));
+  m_statusProperties.setOverrides(
+    [&](DataStream& ds, NetCompatibilityRules rules) {
+      if (rules.version() <= 1) ds << m_statusProperties.baseMap();
+      else m_statusProperties.NetElementHashMap<String, Json>::netStore(ds, rules);
+    },
+    [&](DataStream& ds, NetCompatibilityRules rules) {
+      if (rules.version() <= 1) m_statusProperties.reset(ds.read<JsonObject>());
+      else m_statusProperties.NetElementHashMap<String, Json>::netLoad(ds, rules);
+    },
+    [&](DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) {
+      if (rules.version() <= 1) {
+        if (m_statusProperties.shouldWriteNetDelta(fromVersion, rules)) {
+          ds << m_statusProperties.baseMap();
+          return true;
+        }
+        return false;
+      }
+      return m_statusProperties.NetElementHashMap<String, Json>::writeNetDelta(ds, fromVersion, rules);
+    },
+    [&](DataStream& ds, float interp, NetCompatibilityRules rules) {
+      if (rules.version() <= 1) m_statusProperties.reset(ds.read<JsonObject>());
+      else m_statusProperties.NetElementHashMap<String, Json>::readNetDelta(ds, interp, rules);
+    }
+  );
+
   m_minimumLiquidStatusEffectPercentage = config.getFloat("minimumLiquidStatusEffectPercentage");
   m_appliesEnvironmentStatusEffects = config.getBool("appliesEnvironmentStatusEffects");
   m_appliesWeatherStatusEffects = config.getBool("appliesWeatherStatusEffects");
@@ -72,7 +97,7 @@ Json StatusController::diskStore() const {
   }
 
   return JsonObject{
-      {"statusProperties", m_statusProperties.get()},
+      {"statusProperties", m_statusProperties.baseMap()},
       {"persistentEffectCategories", std::move(persistentEffectCategories)},
       {"ephemeralEffects", std::move(ephemeralEffects)},
       {"resourceValues", std::move(resourceValues)},
@@ -84,7 +109,7 @@ void StatusController::diskLoad(Json const& store) {
   clearAllPersistentEffects();
   clearEphemeralEffects();
 
-  m_statusProperties.set(store.getObject("statusProperties"));
+  m_statusProperties.reset(store.getObject("statusProperties"));
 
   for (auto const& p : store.getObject("persistentEffectCategories", {}))
     addPersistentEffects(p.first, p.second.toArray().transformed(jsonToPersistentStatusEffect));
@@ -103,17 +128,11 @@ void StatusController::diskLoad(Json const& store) {
 }
 
 Json StatusController::statusProperty(String const& name, Json const& def) const {
-  return m_statusProperties.get().value(name, def);
+  return m_statusProperties.value(name, def);
 }
 
 void StatusController::setStatusProperty(String const& name, Json value) {
-  m_statusProperties.update([&](JsonObject& statusProperties) {
-    if (statusProperties[name] != value) {
-      statusProperties[name] = std::move(value);
-      return true;
-    }
-    return false;
-  });
+  m_statusProperties.set(name, value);
 }
 
 StringList StatusController::statNames() const {
@@ -415,15 +434,17 @@ void StatusController::initNetVersion(NetElementVersion const* version) {
   m_netGroup.initNetVersion(version);
 }
 
-void StatusController::netStore(DataStream& ds) const {
-  m_netGroup.netStore(ds);
+void StatusController::netStore(DataStream& ds, NetCompatibilityRules rules) const {
+  if (!checkWithRules(rules)) return;
+  m_netGroup.netStore(ds, rules);
 }
 
-void StatusController::netLoad(DataStream& ds) {
+void StatusController::netLoad(DataStream& ds, NetCompatibilityRules rules) {
+  if (!checkWithRules(rules)) return;
   clearAllPersistentEffects();
   clearEphemeralEffects();
 
-  m_netGroup.netLoad(ds);
+  m_netGroup.netLoad(ds, rules);
 }
 
 void StatusController::enableNetInterpolation(float extrapolationHint) {
@@ -438,12 +459,12 @@ void StatusController::tickNetInterpolation(float dt) {
   m_netGroup.tickNetInterpolation(dt);
 }
 
-bool StatusController::writeNetDelta(DataStream& ds, uint64_t fromStep) const {
-  return m_netGroup.writeNetDelta(ds, fromStep);
+bool StatusController::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const {
+  return m_netGroup.writeNetDelta(ds, fromVersion, rules);
 }
 
-void StatusController::readNetDelta(DataStream& ds, float interpolationTime) {
-  m_netGroup.readNetDelta(ds, interpolationTime);
+void StatusController::readNetDelta(DataStream& ds, float interpolationTime, NetCompatibilityRules rules) {
+  m_netGroup.readNetDelta(ds, interpolationTime, rules);
 }
 
 void StatusController::blankNetDelta(float interpolationTime) {
@@ -576,15 +597,17 @@ void StatusController::EffectAnimator::initNetVersion(NetElementVersion const* v
   animator.initNetVersion(version);
 }
 
-void StatusController::EffectAnimator::netStore(DataStream& ds) const {
+void StatusController::EffectAnimator::netStore(DataStream& ds, NetCompatibilityRules rules) const {
+  if (!checkWithRules(rules)) return;
   ds.write(animationConfig);
-  animator.netStore(ds);
+  animator.netStore(ds, rules);
 }
 
-void StatusController::EffectAnimator::netLoad(DataStream& ds) {
+void StatusController::EffectAnimator::netLoad(DataStream& ds, NetCompatibilityRules rules) {
+  if (!checkWithRules(rules)) return;
   ds.read(animationConfig);
   animator = animationConfig ? NetworkedAnimator(*animationConfig) : NetworkedAnimator();
-  animator.netLoad(ds);
+  animator.netLoad(ds, rules);
 }
 
 void StatusController::EffectAnimator::enableNetInterpolation(float extrapolationHint) {
@@ -599,12 +622,12 @@ void StatusController::EffectAnimator::tickNetInterpolation(float dt) {
   animator.tickNetInterpolation(dt);
 }
 
-bool StatusController::EffectAnimator::writeNetDelta(DataStream& ds, uint64_t fromVersion) const {
-  return animator.writeNetDelta(ds, fromVersion);
+bool StatusController::EffectAnimator::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const {
+  return animator.writeNetDelta(ds, fromVersion, rules);
 }
 
-void StatusController::EffectAnimator::readNetDelta(DataStream& ds, float interpolationTime) {
-  animator.readNetDelta(ds, interpolationTime);
+void StatusController::EffectAnimator::readNetDelta(DataStream& ds, float interpolationTime, NetCompatibilityRules rules) {
+  animator.readNetDelta(ds, interpolationTime, rules);
 }
 
 void StatusController::EffectAnimator::blankNetDelta(float interpolationTime) {

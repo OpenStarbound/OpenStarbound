@@ -86,11 +86,12 @@ PlantDrop::PlantDrop(List<Plant::PlantPiece> pieces, Vec2F const& position, Vec2
     m_collisionRect = fullBounds;
 }
 
-PlantDrop::PlantDrop(ByteArray const& netStore) {
+PlantDrop::PlantDrop(ByteArray const& netStore, NetCompatibilityRules rules) {
   m_netGroup.addNetElement(&m_movementController);
   m_netGroup.addNetElement(&m_spawnedDrops);
 
   DataStreamBuffer ds(netStore);
+  ds.setStreamCompatibilityVersion(rules);
   ds >> m_time;
   ds >> m_master;
   ds >> m_description;
@@ -113,7 +114,7 @@ PlantDrop::PlantDrop(ByteArray const& netStore) {
   m_spawnedDropEffects = true;
 }
 
-ByteArray PlantDrop::netStore() {
+ByteArray PlantDrop::netStore(NetCompatibilityRules rules) {
   DataStreamBuffer ds;
   ds << m_time;
   ds << m_master;
@@ -358,12 +359,12 @@ void PlantDrop::render(RenderCallback* renderCallback) {
   }
 }
 
-pair<ByteArray, uint64_t> PlantDrop::writeNetState(uint64_t fromVersion) {
-  return m_netGroup.writeNetState(fromVersion);
+pair<ByteArray, uint64_t> PlantDrop::writeNetState(uint64_t fromVersion, NetCompatibilityRules rules) {
+  return m_netGroup.writeNetState(fromVersion, rules);
 }
 
-void PlantDrop::readNetState(ByteArray data, float interpolationTime) {
-  m_netGroup.readNetState(std::move(data), interpolationTime);
+void PlantDrop::readNetState(ByteArray data, float interpolationTime, NetCompatibilityRules rules) {
+  m_netGroup.readNetState(data, interpolationTime, rules);
 }
 
 void PlantDrop::enableInterpolation(float extrapolationHint) {

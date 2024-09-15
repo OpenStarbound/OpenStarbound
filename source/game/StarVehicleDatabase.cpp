@@ -10,7 +10,7 @@ VehicleDatabase::VehicleDatabase() {
   auto assets = Root::singleton().assets();
   auto& files = assets->scanExtension("vehicle");
   assets->queueJsons(files);
-  for (auto& file : files) {
+  for (String file : files) {
     try {
       auto config = assets->json(file);
       String name = config.getString("name");
@@ -32,15 +32,18 @@ VehiclePtr VehicleDatabase::create(String const& vehicleName, Json const& extraC
   return make_shared<Vehicle>(configPair->second, configPair->first, extraConfig);
 }
 
-ByteArray VehicleDatabase::netStore(VehiclePtr const& vehicle) const {
+ByteArray VehicleDatabase::netStore(VehiclePtr const& vehicle, NetCompatibilityRules rules) const {
   DataStreamBuffer ds;
+  ds.setStreamCompatibilityVersion(rules);
+
   ds.write(vehicle->baseConfig().getString("name"));
   ds.write(vehicle->dynamicConfig());
   return ds.takeData();
 }
 
-VehiclePtr VehicleDatabase::netLoad(ByteArray const& netStore) const {
+VehiclePtr VehicleDatabase::netLoad(ByteArray const& netStore, NetCompatibilityRules rules) const {
   DataStreamBuffer ds(netStore);
+  ds.setStreamCompatibilityVersion(rules);
 
   String name = ds.read<String>();
   auto dynamicConfig = ds.read<Json>();

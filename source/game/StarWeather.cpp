@@ -55,9 +55,9 @@ void ServerWeather::setClientVisibleRegions(List<RectI> regions) {
   m_clientVisibleRegions = std::move(regions);
 }
 
-pair<ByteArray, uint64_t> ServerWeather::writeUpdate(uint64_t fromVersion) {
+pair<ByteArray, uint64_t> ServerWeather::writeUpdate(uint64_t fromVersion, NetCompatibilityRules rules) {
   setNetStates();
-  return m_netGroup.writeNetState(fromVersion);
+  return m_netGroup.writeNetState(fromVersion, rules);
 }
 
 void ServerWeather::update(double dt) {
@@ -263,9 +263,9 @@ void ClientWeather::setup(WorldGeometry worldGeometry, WeatherEffectsActiveQuery
   m_currentTime = 0.0;
 }
 
-void ClientWeather::readUpdate(ByteArray data) {
+void ClientWeather::readUpdate(ByteArray data, NetCompatibilityRules rules) {
   if (!data.empty()) {
-    m_netGroup.readNetState(std::move(data));
+    m_netGroup.readNetState(data, 0.0f, rules);
     getNetStates();
   }
 }

@@ -29,7 +29,7 @@ public:
 
   void setClientVisibleRegions(List<RectI> regions);
 
-  pair<ByteArray, uint64_t> writeUpdate(uint64_t fromVersion = 0);
+  pair<ByteArray, uint64_t> writeUpdate(uint64_t fromVersion = 0, NetCompatibilityRules rules = {});
 
   void update(double dt);
 
@@ -80,7 +80,7 @@ public:
 
   void setup(WorldGeometry worldGeometry, WeatherEffectsActiveQuery weatherEffectsActiveQuery);
 
-  void readUpdate(ByteArray data);
+  void readUpdate(ByteArray data, NetCompatibilityRules rules);
 
   void setVisibleRegion(RectI visibleRegion);
 

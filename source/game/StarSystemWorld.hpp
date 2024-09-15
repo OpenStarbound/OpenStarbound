@@ -155,8 +155,8 @@ public:
   void clientUpdate(float dt);
   void serverUpdate(SystemWorldServer* system, float dt);
 
-  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion);
-  void readNetState(ByteArray data, float interpolationTime);
+  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion, NetCompatibilityRules rules = {});
+  void readNetState(ByteArray data, float interpolationTime, NetCompatibilityRules rules = {});
 
   ByteArray netStore() const;
   Json diskStore() const;
@@ -198,8 +198,8 @@ public:
   void clientUpdate(float dt);
   void serverUpdate(SystemWorld* system, float dt);
 
-  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion);
-  void readNetState(ByteArray data, float interpolationTime);
+  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion, NetCompatibilityRules rules = {});
+  void readNetState(ByteArray data, float interpolationTime, NetCompatibilityRules rules = {});
 
   ByteArray netStore() const;
 private:

@@ -358,15 +358,17 @@ void TechController::TechAnimator::initNetVersion(NetElementVersion const* versi
   netGroup.initNetVersion(version);
 }
 
-void TechController::TechAnimator::netStore(DataStream& ds) const {
+void TechController::TechAnimator::netStore(DataStream& ds, NetCompatibilityRules rules) const {
+  if (!checkWithRules(rules)) return;
   ds << animationConfig;
-  netGroup.netStore(ds);
+  netGroup.netStore(ds, rules);
 }
 
-void TechController::TechAnimator::netLoad(DataStream& ds) {
+void TechController::TechAnimator::netLoad(DataStream& ds, NetCompatibilityRules rules) {
+  if (!checkWithRules(rules)) return;
   ds >> animationConfig;
   animator = animationConfig ? NetworkedAnimator(*animationConfig) : NetworkedAnimator();
-  netGroup.netLoad(ds);
+  netGroup.netLoad(ds, rules);
 }
 
 void TechController::TechAnimator::enableNetInterpolation(float extrapolationHint) {
@@ -381,12 +383,12 @@ void TechController::TechAnimator::tickNetInterpolation(float dt) {
   netGroup.tickNetInterpolation(dt);
 }
 
-bool TechController::TechAnimator::writeNetDelta(DataStream& ds, uint64_t fromVersion) const {
-  return netGroup.writeNetDelta(ds, fromVersion);
+bool TechController::TechAnimator::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const {
+  return netGroup.writeNetDelta(ds, fromVersion, rules);
 }
 
-void TechController::TechAnimator::readNetDelta(DataStream& ds, float interpolationTime) {
-  netGroup.readNetDelta(ds, interpolationTime);
+void TechController::TechAnimator::readNetDelta(DataStream& ds, float interpolationTime, NetCompatibilityRules rules) {
+  netGroup.readNetDelta(ds, interpolationTime, rules);
 }
 
 void TechController::TechAnimator::blankNetDelta(float interpolationTime) {

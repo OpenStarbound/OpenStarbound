@@ -30,8 +30,6 @@ FTContext ftContext;
 
 struct FontImpl {
   FT_Face face;
-  unsigned loadedPixelSize = 0;
-  String::Char loadedChar = 0;
 };
 
 FontPtr Font::loadFont(String const& fileName, unsigned pixelSize) {
@@ -97,19 +95,11 @@ tuple<Image, Vec2I, bool> Font::render(String::Char c) {
     throw FontException("Font::render called on uninitialized font.");
 
   FT_Face face = m_fontImpl->face;
+  if (FT_Load_Glyph(face, FT_Get_Char_Index(face, c), FontLoadFlags) != 0)
+    return {};
 
-  if (m_fontImpl->loadedPixelSize != m_pixelSize || m_fontImpl->loadedChar != c) {
-    FT_UInt glyph_index = FT_Get_Char_Index(face, c);
-    if (FT_Load_Glyph(face, glyph_index, FontLoadFlags) != 0)
-      return {};
-
-    // convert to an anti-aliased bitmap
-    if (FT_Render_Glyph(face->glyph, FT_RENDER_MODE_NORMAL) != 0)
-      return {};
-  }
-
-  m_fontImpl->loadedPixelSize = m_pixelSize;
-  m_fontImpl->loadedChar = c;
+  if (FT_Render_Glyph(face->glyph, FT_RENDER_MODE_NORMAL) != 0)
+    return {};
 
   FT_GlyphSlot slot = face->glyph;
   if (!slot->bitmap.buffer)
@@ -134,7 +124,7 @@ tuple<Image, Vec2I, bool> Font::render(String::Char c) {
         }
       }
     }
-  } else if (colored = slot->bitmap.pixel_mode == FT_PIXEL_MODE_BGRA) {
+  } else if (colored = (slot->bitmap.pixel_mode == FT_PIXEL_MODE_BGRA)) {
     unsigned bpp = image.bytesPerPixel();
     uint8_t* data = image.data() + bpp + ((image.width() * (image.height() - 2)) * bpp); // offset by 1 pixel as it's padded
     for (size_t y = 0; y != height; ++y) {

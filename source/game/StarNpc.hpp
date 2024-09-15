@@ -42,11 +42,12 @@ class Npc
     public virtual PhysicsEntity,
     public virtual EmoteEntity {
 public:
+  Npc(ByteArray const& netStore, NetCompatibilityRules rules = {});
   Npc(NpcVariant const& npcVariant);
   Npc(NpcVariant const& npcVariant, Json const& initialState);
 
   Json diskStore() const;
-  ByteArray netStore();
+  ByteArray netStore(NetCompatibilityRules rules = {});
 
   EntityType entityType() const override;
   ClientEntityMode clientEntityMode() const override;
@@ -66,8 +67,8 @@ public:
 
   RectF collisionArea() const override;
 
-  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0) override;
-  void readNetState(ByteArray data, float interpolationTime = 0.0f) override;
+  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
+  void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
   void enableInterpolation(float extrapolationHint = 0.0f) override;
   void disableInterpolation() override;

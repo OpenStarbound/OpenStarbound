@@ -266,7 +266,7 @@ void SystemWorldServer::queueUpdatePackets() {
     HashMap<Uuid, ByteArray> shipUpdates;
     for (auto ship : m_ships.values()) {
       uint64_t version = versions->ships.maybe(ship->uuid()).value(0);
-      auto shipUpdate = ship->writeNetState(version);
+      auto shipUpdate = ship->writeNetState(version, {});
       versions->ships.set(ship->uuid(), shipUpdate.second);
       if (!shipUpdate.first.empty())
         shipUpdates.set(ship->uuid(), shipUpdate.first);
@@ -275,7 +275,7 @@ void SystemWorldServer::queueUpdatePackets() {
     HashMap<Uuid, ByteArray> objectUpdates;
     for (auto object : m_objects.values()) {
       uint64_t version = versions->objects.maybe(object->uuid()).value(0);
-      auto objectUpdate = object->writeNetState(version);
+      auto objectUpdate = object->writeNetState(version, {});
       versions->objects.set(object->uuid(), objectUpdate.second);
       if (!objectUpdate.first.empty())
         objectUpdates.set(object->uuid(), objectUpdate.first);

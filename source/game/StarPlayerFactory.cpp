@@ -60,8 +60,8 @@ PlayerPtr PlayerFactory::diskLoadPlayer(Json const& diskStore) const {
   return make_shared<Player>(m_config, diskStore);
 }
 
-PlayerPtr PlayerFactory::netLoadPlayer(ByteArray const& netStore) const {
-  return make_shared<Player>(m_config, netStore);
+PlayerPtr PlayerFactory::netLoadPlayer(ByteArray const& netStore, NetCompatibilityRules rules) const {
+  return make_shared<Player>(m_config, netStore, rules);
 }
 
 }

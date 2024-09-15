@@ -13,8 +13,8 @@ public:
 
   VehiclePtr create(String const& vehicleName, Json const& extraConfig = Json()) const;
 
-  ByteArray netStore(VehiclePtr const& vehicle) const;
-  VehiclePtr netLoad(ByteArray const& netStore) const;
+  ByteArray netStore(VehiclePtr const& vehicle, NetCompatibilityRules rules) const;
+  VehiclePtr netLoad(ByteArray const& netStore, NetCompatibilityRules rules) const;
 
   Json diskStore(VehiclePtr const& vehicle) const;
   VehiclePtr diskLoad(Json const& diskStore) const;

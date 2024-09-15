@@ -45,11 +45,11 @@ public:
   void disableNetInterpolation() override;
   void tickNetInterpolation(float dt) override;
 
-  void netStore(DataStream& ds) const override;
-  void netLoad(DataStream& ds) override;
+  void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
+  void netLoad(DataStream& ds, NetCompatibilityRules rules) override;
 
-  bool writeNetDelta(DataStream& ds, uint64_t fromVersion) const override;
-  void readNetDelta(DataStream& ds, float interpolationTime = 0.0f) override;
+  bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+  void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
   void blankNetDelta(float interpolationTime = 0.0f) override;
 
 private:
@@ -89,7 +89,7 @@ template <typename Element>
 auto NetElementDynamicGroup<Element>::addNetElement(ElementPtr element) -> ElementId {
   readyElement(element);
   DataStreamBuffer storeBuffer;
-  element->netStore(storeBuffer);
+  element->netStore(storeBuffer, {});
   auto id = m_idMap.add(std::move(element));
 
   addChangeData(ElementAddition(id, storeBuffer.takeData()));
@@ -134,7 +134,7 @@ void NetElementDynamicGroup<Element>::initNetVersion(NetElementVersion const* ve
   for (auto& pair : m_idMap) {
     pair.second->initNetVersion(m_netVersion);
     DataStreamBuffer storeBuffer;
-    pair.second->netStore(storeBuffer);
+    pair.second->netStore(storeBuffer, {});
     addChangeData(ElementAddition(pair.first, storeBuffer.takeData()));
   }
 }
@@ -162,19 +162,22 @@ void NetElementDynamicGroup<Element>::tickNetInterpolation(float dt) {
 }
 
 template <typename Element>
-void NetElementDynamicGroup<Element>::netStore(DataStream& ds) const {
+void NetElementDynamicGroup<Element>::netStore(DataStream& ds, NetCompatibilityRules rules) const {
+  if (!checkWithRules(rules)) return;
   ds.writeVlqU(m_idMap.size());
 
+  m_buffer.setStreamCompatibilityVersion(rules);
   for (auto& pair : m_idMap) {
     ds.writeVlqU(pair.first);
-    pair.second->netStore(m_buffer);
+    pair.second->netStore(m_buffer, rules);
     ds.write(m_buffer.data());
     m_buffer.clear();
   }
 }
 
 template <typename Element>
-void NetElementDynamicGroup<Element>::netLoad(DataStream& ds) {
+void NetElementDynamicGroup<Element>::netLoad(DataStream& ds, NetCompatibilityRules rules) {
+  if (!checkWithRules(rules)) return;
   m_changeData.clear();
   m_changeDataLastVersion = m_netVersion ? m_netVersion->current() : 0;
   m_idMap.clear();
@@ -188,7 +191,7 @@ void NetElementDynamicGroup<Element>::netLoad(DataStream& ds) {
     DataStreamBuffer storeBuffer(ds.read<ByteArray>());
 
     ElementPtr element = make_shared<Element>();
-    element->netLoad(storeBuffer);
+    element->netLoad(storeBuffer, rules);
     readyElement(element);
 
     m_idMap.add(id, std::move(element));
@@ -197,10 +200,11 @@ void NetElementDynamicGroup<Element>::netLoad(DataStream& ds) {
 }
 
 template <typename Element>
-bool NetElementDynamicGroup<Element>::writeNetDelta(DataStream& ds, uint64_t fromVersion) const {
+bool NetElementDynamicGroup<Element>::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const {
+  if (!checkWithRules(rules)) return false;
   if (fromVersion < m_changeDataLastVersion) {
     ds.write<bool>(true);
-    netStore(ds);
+    netStore(ds, rules);
     return true;
 
   } else {
@@ -220,8 +224,9 @@ bool NetElementDynamicGroup<Element>::writeNetDelta(DataStream& ds, uint64_t fro
       }
     }
 
+    m_buffer.setStreamCompatibilityVersion(rules);
     for (auto& p : m_idMap) {
-      if (p.second->writeNetDelta(m_buffer, fromVersion)) {
+      if (p.second->writeNetDelta(m_buffer, fromVersion, rules)) {
         willWrite();
         ds.writeVlqU(p.first + 1);
         ds.writeBytes(m_buffer.data());
@@ -237,10 +242,11 @@ bool NetElementDynamicGroup<Element>::writeNetDelta(DataStream& ds, uint64_t fro
 }
 
 template <typename Element>
-void NetElementDynamicGroup<Element>::readNetDelta(DataStream& ds, float interpolationTime) {
+void NetElementDynamicGroup<Element>::readNetDelta(DataStream& ds, float interpolationTime, NetCompatibilityRules rules) {
+  if (!checkWithRules(rules)) return;
   bool isFull = ds.read<bool>();
   if (isFull) {
-    netLoad(ds);
+    netLoad(ds, rules);
   } else {
     while (true) {
       uint64_t code = ds.readVlqU();
@@ -256,7 +262,7 @@ void NetElementDynamicGroup<Element>::readNetDelta(DataStream& ds, float interpo
         } else if (auto addition = changeUpdate.template ptr<ElementAddition>()) {
           ElementPtr element = make_shared<Element>();
           DataStreamBuffer storeBuffer(std::move(get<1>(*addition)));
-          element->netLoad(storeBuffer);
+          element->netLoad(storeBuffer, rules);
           readyElement(element);
           m_idMap.add(get<0>(*addition), std::move(element));
         } else if (auto removal = changeUpdate.template ptr<ElementRemoval>()) {
@@ -265,7 +271,7 @@ void NetElementDynamicGroup<Element>::readNetDelta(DataStream& ds, float interpo
       } else {
         ElementId elementId = code - 1;
         auto const& element = m_idMap.get(elementId);
-        element->readNetDelta(ds, interpolationTime);
+        element->readNetDelta(ds, interpolationTime, rules);
         if (m_interpolationEnabled)
           m_receivedDeltaIds.add(elementId);
       }

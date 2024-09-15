@@ -94,27 +94,38 @@ Maybe<String> UniverseClient::connect(UniverseConnection connection, bool allowA
   else if (!protocolResponsePacket->allowed)
     return String(strf("Join failed! Server does not support connections with protocol version {}", StarProtocolVersion));
 
-  if (!(m_legacyServer = protocolResponsePacket->compressionMode() != PacketCompressionMode::Enabled)) {
-    if (auto compressedSocket = as<CompressedPacketSocket>(&connection.packetSocket())) {
-      if (protocolResponsePacket->info) {
-        auto compressionName = protocolResponsePacket->info.getString("compression", "None");
+  NetCompatibilityRules compatibilityRules;
+  compatibilityRules.setVersion(LegacyVersion);
+  bool legacyServer = protocolResponsePacket->compressionMode() != PacketCompressionMode::Enabled;
+  if (!legacyServer) {
+    auto compressedSocket = as<CompressedPacketSocket>(&connection.packetSocket());
+    if (protocolResponsePacket->info) {
+      compatibilityRules.setVersion(protocolResponsePacket->info.getUInt("openProtocolVersion", 1));
+      auto compressionName = protocolResponsePacket->info.getString("compression", "None");
+      if (compressedSocket) {
         auto compressionMode = NetCompressionModeNames.maybeLeft(compressionName);
         if (!compressionMode)
           return String(strf("Join failed! Unknown net stream connection type '{}'", compressionName));
 
         Logger::info("UniverseClient: Using '{}' network stream compression", NetCompressionModeNames.getRight(*compressionMode));
         compressedSocket->setCompressionStreamEnabled(compressionMode == NetCompressionMode::Zstd);
-      } else if (!m_legacyServer) {
+      }
+    } else {
+      compatibilityRules.setVersion(1); // A version of 1 is OpenStarbound prior to the NetElement compatibility stuff
+      if (compressedSocket) {
         Logger::info("UniverseClient: Defaulting to Zstd network stream compression (older server version)");
-        compressedSocket->setCompressionStreamEnabled(true);// old OpenSB server version always expects it!
+        compressedSocket->setCompressionStreamEnabled(true);
       }
     }
   }
-  connection.packetSocket().setLegacy(m_legacyServer);
+  connection.packetSocket().setLegacy(legacyServer);
   auto clientConnect = make_shared<ClientConnectPacket>(Root::singleton().assets()->digest(), allowAssetsMismatch, m_mainPlayer->uuid(), m_mainPlayer->name(),
       m_mainPlayer->species(), m_playerStorage->loadShipData(m_mainPlayer->uuid()), m_mainPlayer->shipUpgrades(),
       m_mainPlayer->log()->introComplete(), account);
-  clientConnect->info = JsonObject{ {"brand", "OpenStarbound"} };
+  clientConnect->info = JsonObject{
+    {"brand", "OpenStarbound"},
+    {"openProtocolVersion", OpenProtocolVersion }
+  };
   connection.pushSingle(std::move(clientConnect));
   connection.sendAll(timeout);
 
@@ -136,11 +147,12 @@ Maybe<String> UniverseClient::connect(UniverseConnection connection, bool allowA
   if (auto success = as<ConnectSuccessPacket>(packet)) {
     m_universeClock = make_shared<Clock>();
     m_clientContext = make_shared<ClientContext>(success->serverUuid, m_mainPlayer->uuid());
+    m_clientContext->setNetCompatibilityRules(compatibilityRules);
     m_teamClient = make_shared<TeamClient>(m_mainPlayer, m_clientContext);
     m_mainPlayer->setClientContext(m_clientContext);
     m_mainPlayer->setStatistics(m_statistics);
     m_worldClient = make_shared<WorldClient>(m_mainPlayer);
-    m_worldClient->clientState().setLegacy(m_legacyServer);
+    m_worldClient->clientState().setNetCompatibilityRules(compatibilityRules);
     m_worldClient->setAsyncLighting(true);
     for (auto& pair : m_luaCallbacks)
       m_worldClient->setLuaCallbacks(pair.first, pair.second);
@@ -149,7 +161,7 @@ Maybe<String> UniverseClient::connect(UniverseConnection connection, bool allowA
     m_celestialDatabase = make_shared<CelestialSlaveDatabase>(std::move(success->celestialInformation));
     m_systemWorldClient = make_shared<SystemWorldClient>(m_universeClock, m_celestialDatabase, m_mainPlayer->universeMap());
 
-    Logger::info("UniverseClient: Joined {} server as client {}", m_legacyServer ? "Starbound" : "OpenStarbound", success->clientId);
+    Logger::info("UniverseClient: Joined {} server as client {}", legacyServer ? "Starbound" : "OpenStarbound", success->clientId);
     return {};
   } else if (auto failure = as<ConnectFailurePacket>(packet)) {
     Logger::error("UniverseClient: Join failed: {}", failure->reason);
@@ -263,7 +275,7 @@ void UniverseClient::update(float dt) {
 
   m_teamClient->update();
 
-  auto contextUpdate = m_clientContext->writeUpdate();
+  auto contextUpdate = m_clientContext->writeUpdate(m_clientContext->netCompatibilityRules());
   if (!contextUpdate.empty())
     m_connection->pushSingle(make_shared<ClientContextUpdatePacket>(std::move(contextUpdate)));
 
@@ -650,7 +662,7 @@ void UniverseClient::handlePackets(List<PacketPtr> const& packets) {
   for (auto const& packet : packets) {
     try {
       if (auto clientContextUpdate = as<ClientContextUpdatePacket>(packet)) {
-        m_clientContext->readUpdate(clientContextUpdate->updateData);
+        m_clientContext->readUpdate(clientContextUpdate->updateData, m_clientContext->netCompatibilityRules());
         m_playerStorage->applyShipUpdates(m_clientContext->playerUuid(), m_clientContext->newShipUpdates());
 
         if (playerIsOriginal())

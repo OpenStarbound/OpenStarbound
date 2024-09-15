@@ -66,12 +66,12 @@ void Sky::jumpTo(SkyParameters skyParameters) {
   m_skyParametersUpdated = true;
 }
 
-pair<ByteArray, uint64_t> Sky::writeUpdate(uint64_t fromVersion) {
-  return m_netGroup.writeNetState(fromVersion);
+pair<ByteArray, uint64_t> Sky::writeUpdate(uint64_t fromVersion, NetCompatibilityRules rules) {
+  return m_netGroup.writeNetState(fromVersion, rules);
 }
 
-void Sky::readUpdate(ByteArray data) {
-  m_netGroup.readNetState(std::move(data));
+void Sky::readUpdate(ByteArray data, NetCompatibilityRules rules) {
+  m_netGroup.readNetState(std::move(data), 0.0f, rules);
 }
 
 void Sky::stateUpdate() {

@@ -35,6 +35,10 @@ void DataStream::setStreamCompatibilityVersion(unsigned streamCompatibilityVersi
   m_streamCompatibilityVersion = streamCompatibilityVersion;
 }
 
+void DataStream::setStreamCompatibilityVersion(NetCompatibilityRules const& rules) {
+  m_streamCompatibilityVersion = rules.version();
+}
+
 ByteArray DataStream::readBytes(size_t len) {
   ByteArray ba;
   ba.resize(len);

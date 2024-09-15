@@ -3,6 +3,7 @@
 #include "StarPane.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarBiMap.hpp"
+#include "StarGameTimers.hpp"
 
 namespace Star {
 
@@ -92,11 +93,9 @@ private:
 
   WidgetPtr m_backgroundWidget;
 
-  float m_tooltipMouseoverTime;
   float m_tooltipMouseoverRadius;
   Vec2I m_tooltipMouseOffset;
-
-  float m_tooltipShowTimer;
+  GameTimer m_tooltipShowTimer;
   Vec2I m_tooltipLastMousePos;
   Vec2I m_tooltipInitialPosition;
   PanePtr m_activeTooltip;

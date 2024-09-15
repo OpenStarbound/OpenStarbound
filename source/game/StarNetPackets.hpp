@@ -14,6 +14,7 @@
 #include "StarWiring.hpp"
 #include "StarClientContext.hpp"
 #include "StarSystemWorld.hpp"
+#include "StarNetCompatibility.hpp"
 
 namespace Star {
 
@@ -414,7 +415,7 @@ struct WorldStartPacket : PacketBase<PacketType::WorldStart> {
   bool respawnInWorld;
   HashMap<DungeonId, float> dungeonIdGravity;
   HashMap<DungeonId, bool> dungeonIdBreathable;
-  Set<DungeonId> protectedDungeonIds;
+  StableHashSet<DungeonId> protectedDungeonIds;
   Json worldProperties;
   ConnectionId clientId;
   bool localInterpolationMode;

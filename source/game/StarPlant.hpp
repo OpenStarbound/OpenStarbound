@@ -57,10 +57,10 @@ public:
   Plant(GrassVariant const& config, uint64_t seed);
   Plant(BushVariant const& config, uint64_t seed);
   Plant(Json const& diskStore);
-  Plant(ByteArray const& netStore);
+  Plant(ByteArray const& netStore, NetCompatibilityRules rules = {});
 
   Json diskStore() const;
-  ByteArray netStore() const;
+  ByteArray netStore(NetCompatibilityRules rules = {}) const;
 
   EntityType entityType() const override;
 
@@ -68,8 +68,8 @@ public:
 
   virtual String description() const override;
 
-  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0) override;
-  void readNetState(ByteArray data, float interpolationTime = 0.0f) override;
+  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
+  void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
   void enableInterpolation(float extrapolationHint) override;
   void disableInterpolation() override;

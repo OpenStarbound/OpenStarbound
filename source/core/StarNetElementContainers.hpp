@@ -26,11 +26,12 @@ public:
   void disableNetInterpolation() override;
   void tickNetInterpolation(float dt) override;
 
-  void netStore(DataStream& ds) const override;
-  void netLoad(DataStream& ds) override;
+  void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
+  void netLoad(DataStream& ds, NetCompatibilityRules rules) override;
 
-  bool writeNetDelta(DataStream& ds, uint64_t fromVersion) const override;
-  void readNetDelta(DataStream& ds, float interpolationTime = 0.0f) override;
+  bool shouldWriteNetDelta(uint64_t fromVersion, NetCompatibilityRules rules = {}) const;
+  bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+  void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
   mapped_type const& get(key_type const& key) const;
   mapped_type const* ptr(key_type const& key) const;
@@ -76,6 +77,8 @@ public:
   // reset, but with arbitrary map type).
   template <typename MapType>
   void setContents(MapType const& values);
+
+  uint64_t changeDataLastVersion() const;
 
 private:
   // If a delta is written from further back than this many steps, the delta
@@ -152,7 +155,8 @@ void NetElementMapWrapper<BaseMap>::tickNetInterpolation(float dt) {
 }
 
 template <typename BaseMap>
-void NetElementMapWrapper<BaseMap>::netStore(DataStream& ds) const {
+void NetElementMapWrapper<BaseMap>::netStore(DataStream& ds, NetCompatibilityRules rules) const {
+  if (!checkWithRules(rules)) return;
   ds.writeVlqU(BaseMap::size() + m_pendingChangeData.size());
   for (auto const& pair : *this)
     writeChange(ds, SetChange{pair.first, pair.second});
@@ -162,7 +166,8 @@ void NetElementMapWrapper<BaseMap>::netStore(DataStream& ds) const {
 }
 
 template <typename BaseMap>
-void NetElementMapWrapper<BaseMap>::netLoad(DataStream& ds) {
+void NetElementMapWrapper<BaseMap>::netLoad(DataStream& ds, NetCompatibilityRules rules) {
+  if (!checkWithRules(rules)) return;
   m_changeData.clear();
   m_changeDataLastVersion = m_netVersion ? m_netVersion->current() : 0;
   m_pendingChangeData.clear();
@@ -181,13 +186,27 @@ void NetElementMapWrapper<BaseMap>::netLoad(DataStream& ds) {
 }
 
 template <typename BaseMap>
-bool NetElementMapWrapper<BaseMap>::writeNetDelta(DataStream& ds, uint64_t fromVersion) const {
+bool NetElementMapWrapper<BaseMap>::shouldWriteNetDelta(uint64_t fromVersion, NetCompatibilityRules rules) const {
+  if (!checkWithRules(rules)) return false;
+  if (fromVersion < m_changeDataLastVersion)
+    return true;
+
+  for (auto const& p : m_changeData)
+    if (p.first >= fromVersion)
+      return true;
+
+  return false;
+}
+
+template <typename BaseMap>
+bool NetElementMapWrapper<BaseMap>::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const {
+  if (!checkWithRules(rules)) return false;
   bool deltaWritten = false;
 
   if (fromVersion < m_changeDataLastVersion) {
     deltaWritten = true;
     ds.writeVlqU(1);
-    netStore(ds);
+    netStore(ds, rules);
 
   } else {
     for (auto const& p : m_changeData) {
@@ -206,13 +225,14 @@ bool NetElementMapWrapper<BaseMap>::writeNetDelta(DataStream& ds, uint64_t fromV
 }
 
 template <typename BaseMap>
-void NetElementMapWrapper<BaseMap>::readNetDelta(DataStream& ds, float interpolationTime) {
+void NetElementMapWrapper<BaseMap>::readNetDelta(DataStream& ds, float interpolationTime, NetCompatibilityRules rules) {
+  if (!checkWithRules(rules)) return;
   while (true) {
     uint64_t code = ds.readVlqU();
     if (code == 0) {
       break;
     } else if (code == 1) {
-      netLoad(ds);
+      netLoad(ds, rules);
     } else if (code == 2) {
       auto change = readChange(ds);
       addChangeData(change);
@@ -379,6 +399,11 @@ template <typename BaseMap>
 template <typename MapType>
 void NetElementMapWrapper<BaseMap>::setContents(MapType const& values) {
   reset(BaseMap::from(values));
+}
+
+template <typename BaseMap>
+uint64_t NetElementMapWrapper<BaseMap>::changeDataLastVersion() const {
+  return m_changeDataLastVersion;
 }
 
 template <typename BaseMap>

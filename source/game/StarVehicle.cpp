@@ -242,12 +242,12 @@ Vec2F Vehicle::velocity() const {
   return m_movementController.velocity();
 }
 
-pair<ByteArray, uint64_t> Vehicle::writeNetState(uint64_t fromVersion) {
-  return m_netGroup.writeNetState(fromVersion);
+pair<ByteArray, uint64_t> Vehicle::writeNetState(uint64_t fromVersion, NetCompatibilityRules rules) {
+  return m_netGroup.writeNetState(fromVersion, rules);
 }
 
-void Vehicle::readNetState(ByteArray data, float interpolationTime) {
-  m_netGroup.readNetState(std::move(data), interpolationTime);
+void Vehicle::readNetState(ByteArray data, float interpolationTime, NetCompatibilityRules rules) {
+  m_netGroup.readNetState(data, interpolationTime, rules);
 }
 
 void Vehicle::enableInterpolation(float extrapolationHint) {

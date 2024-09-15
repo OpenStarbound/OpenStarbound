@@ -350,13 +350,13 @@ void ArmorWearer::netElementsNeedLoad(bool) {
     m_backNeedsSync |= itemDatabase->loadItem(m_backCosmeticItemDataNetState.get(), m_backCosmeticItem);
 
   if (m_headItemDataNetState.pullUpdated())
-    m_headNeedsSync |= !m_headCosmeticItem && itemDatabase->loadItem(m_headItemDataNetState.get(), m_headItem);
+    m_headNeedsSync |= !itemDatabase->loadItem(m_headItemDataNetState.get(), m_headItem);
   if (m_chestItemDataNetState.pullUpdated())
-    m_chestNeedsSync |= !m_chestCosmeticItem && itemDatabase->loadItem(m_chestItemDataNetState.get(), m_chestItem);
+    m_chestNeedsSync |= itemDatabase->loadItem(m_chestItemDataNetState.get(), m_chestItem);
   if (m_legsItemDataNetState.pullUpdated())
-    m_legsNeedsSync |= !m_legsCosmeticItem && itemDatabase->loadItem(m_legsItemDataNetState.get(), m_legsItem);
+    m_legsNeedsSync |= !itemDatabase->loadItem(m_legsItemDataNetState.get(), m_legsItem);
   if (m_backItemDataNetState.pullUpdated())
-    m_backNeedsSync |= !m_backCosmeticItem && itemDatabase->loadItem(m_backItemDataNetState.get(), m_backItem);
+    m_backNeedsSync |= itemDatabase->loadItem(m_backItemDataNetState.get(), m_backItem);
 }
 
 void ArmorWearer::netElementsNeedStore() {

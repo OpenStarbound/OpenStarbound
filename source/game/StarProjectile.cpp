@@ -27,7 +27,7 @@ Projectile::Projectile(ProjectileConfigPtr const& config, Json const& parameters
   setup();
 }
 
-Projectile::Projectile(ProjectileConfigPtr const& config, DataStreamBuffer& data) {
+Projectile::Projectile(ProjectileConfigPtr const& config, DataStreamBuffer& data, NetCompatibilityRules rules) {
   m_config = config;
   data.read(m_parameters);
   setup();
@@ -41,8 +41,9 @@ Projectile::Projectile(ProjectileConfigPtr const& config, DataStreamBuffer& data
   setTeam(data.read<EntityDamageTeam>());
 }
 
-ByteArray Projectile::netStore() const {
+ByteArray Projectile::netStore(NetCompatibilityRules rules) const {
   DataStreamBuffer ds;
+  ds.setStreamCompatibilityVersion(rules);
 
   ds.write(m_config->typeName);
   ds.write(m_parameters);
@@ -141,12 +142,12 @@ Vec2F Projectile::velocity() const {
   return m_movementController->velocity();
 }
 
-pair<ByteArray, uint64_t> Projectile::writeNetState(uint64_t fromVersion) {
-  return m_netGroup.writeNetState(fromVersion);
+pair<ByteArray, uint64_t> Projectile::writeNetState(uint64_t fromVersion, NetCompatibilityRules rules) {
+  return m_netGroup.writeNetState(fromVersion, rules);
 }
 
-void Projectile::readNetState(ByteArray data, float interpolationTime) {
-  m_netGroup.readNetState(std::move(data), interpolationTime);
+void Projectile::readNetState(ByteArray data, float interpolationTime, NetCompatibilityRules rules) {
+  m_netGroup.readNetState(data, interpolationTime, rules);
 }
 
 void Projectile::enableInterpolation(float extrapolationHint) {

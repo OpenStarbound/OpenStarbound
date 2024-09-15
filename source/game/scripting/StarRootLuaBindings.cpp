@@ -237,14 +237,14 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
 
   
   callbacks.registerCallback("getConfigurationPath", [root](String const& path) -> Json {
-    if (path.beginsWith("title"))
+    if (path.empty() || path.beginsWith("title"))
       throw ConfigurationException(strf("cannot get {}", path));
     else
       return root->configuration()->getPath(path);
     });
 
   callbacks.registerCallback("setConfigurationPath", [root](String const& path, Json const& value) {
-    if (path.beginsWith("safeScripts"))
+    if (path.empty() || path.beginsWith("safeScripts"))
       throw ConfigurationException(strf("cannot set {}", path));
     else
       root->configuration()->setPath(path, value);

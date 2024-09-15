@@ -27,10 +27,10 @@ public:
 
   ItemDrop(ItemPtr item);
   ItemDrop(Json const& diskStore);
-  ItemDrop(ByteArray netStore);
+  ItemDrop(ByteArray netStore, NetCompatibilityRules rules = {});
 
   Json diskStore() const;
-  ByteArray netStore() const;
+  ByteArray netStore(NetCompatibilityRules rules = {}) const;
 
   EntityType entityType() const override;
 
@@ -39,8 +39,8 @@ public:
 
   String description() const override;
 
-  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0) override;
-  void readNetState(ByteArray data, float interpolationTime = 0.0f) override;
+  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
+  void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
   void enableInterpolation(float extrapolationHint = 0.0f) override;
   void disableInterpolation() override;

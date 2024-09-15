@@ -40,16 +40,20 @@ public:
   WorldChunks newShipUpdates();
   ShipUpgrades shipUpgrades() const;
 
-  void readUpdate(ByteArray data);
-  ByteArray writeUpdate();
+  void readUpdate(ByteArray data, NetCompatibilityRules rules);
+  ByteArray writeUpdate(NetCompatibilityRules rules);
 
   void setConnectionId(ConnectionId connectionId);
   ConnectionId connectionId() const;
+
+  void setNetCompatibilityRules(NetCompatibilityRules netCompatibilityRules);
+  NetCompatibilityRules netCompatibilityRules() const;
 
 private:
   Uuid m_serverUuid;
   Uuid m_playerUuid;
   ConnectionId m_connectionId = 0;
+  NetCompatibilityRules m_netCompatibilityRules;
 
   JsonRpcPtr m_rpc;
 

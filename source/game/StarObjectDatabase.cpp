@@ -380,8 +380,9 @@ ObjectPtr ObjectDatabase::diskLoadObject(Json const& diskStore) const {
   return object;
 }
 
-ObjectPtr ObjectDatabase::netLoadObject(ByteArray const& netStore) const {
+ObjectPtr ObjectDatabase::netLoadObject(ByteArray const& netStore, NetCompatibilityRules rules) const {
   DataStreamBuffer ds(netStore);
+  ds.setStreamCompatibilityVersion(rules);
   String name = ds.read<String>();
   Json parameters = ds.read<Json>();
   return createObject(name, parameters);

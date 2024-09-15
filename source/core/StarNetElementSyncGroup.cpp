@@ -26,23 +26,27 @@ void NetElementSyncGroup::tickNetInterpolation(float dt) {
   }
 }
 
-void NetElementSyncGroup::netStore(DataStream& ds) const {
+void NetElementSyncGroup::netStore(DataStream& ds, NetCompatibilityRules rules) const {
+  if (!checkWithRules(rules)) return;
   const_cast<NetElementSyncGroup*>(this)->netElementsNeedStore();
-  return NetElementGroup::netStore(ds);
+  return NetElementGroup::netStore(ds, rules);
 }
 
-void NetElementSyncGroup::netLoad(DataStream& ds) {
-  NetElementGroup::netLoad(ds);
+void NetElementSyncGroup::netLoad(DataStream& ds, NetCompatibilityRules rules) {
+  if (!checkWithRules(rules)) return;
+  NetElementGroup::netLoad(ds, rules);
   netElementsNeedLoad(true);
 }
 
-bool NetElementSyncGroup::writeNetDelta(DataStream& ds, uint64_t fromVersion) const {
+bool NetElementSyncGroup::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const {
+  if (!checkWithRules(rules)) return false;
   const_cast<NetElementSyncGroup*>(this)->netElementsNeedStore();
-  return NetElementGroup::writeNetDelta(ds, fromVersion);
+  return NetElementGroup::writeNetDelta(ds, fromVersion, rules);
 }
 
-void NetElementSyncGroup::readNetDelta(DataStream& ds, float interpolationTime) {
-  NetElementGroup::readNetDelta(ds, interpolationTime);
+void NetElementSyncGroup::readNetDelta(DataStream& ds, float interpolationTime, NetCompatibilityRules rules) {
+  if (!checkWithRules(rules)) return;
+  NetElementGroup::readNetDelta(ds, interpolationTime, rules);
 
   m_hasRecentChanges = true;
   m_recentDeltaTime = interpolationTime;

@@ -165,6 +165,12 @@ void ButtonWidget::mouseOut() {
 
 void ButtonWidget::mouseReturnStillDown() {
   Widget::mouseReturnStillDown();
+  if (!isPressed()) {
+    auto assets = Root::singleton().assets();
+    auto sound = Random::randValueFrom(m_clickSounds, "");
+    if (!sound.empty())
+      context()->playAudio(sound);
+  }
   m_hovered = true;
   m_pressed = true;
 }

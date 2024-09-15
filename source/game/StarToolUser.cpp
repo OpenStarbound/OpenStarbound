@@ -612,15 +612,17 @@ void ToolUser::NetItem::initNetVersion(NetElementVersion const* version) {
     netItem->initNetVersion(m_netVersion);
 }
 
-void ToolUser::NetItem::netStore(DataStream& ds) const {
+void ToolUser::NetItem::netStore(DataStream& ds, NetCompatibilityRules rules) const {
+  if (!checkWithRules(rules)) return;
   const_cast<NetItem*>(this)->updateItemDescriptor();
-  m_itemDescriptor.netStore(ds);
+  m_itemDescriptor.netStore(ds, rules);
   if (auto netItem = as<NetElement>(m_item.get()))
-    netItem->netStore(ds);
+    netItem->netStore(ds, rules);
 }
 
-void ToolUser::NetItem::netLoad(DataStream& ds) {
-  m_itemDescriptor.netLoad(ds);
+void ToolUser::NetItem::netLoad(DataStream& ds, NetCompatibilityRules rules) {
+  if (!checkWithRules(rules)) return;
+  m_itemDescriptor.netLoad(ds, rules);
 
   auto itemDatabase = Root::singleton().itemDatabase();
   if (itemDatabase->loadItem(m_itemDescriptor.get(), m_item)) {
@@ -633,7 +635,7 @@ void ToolUser::NetItem::netLoad(DataStream& ds) {
   }
 
   if (auto netItem = as<NetElement>(m_item.get()))
-    netItem->netLoad(ds);
+    netItem->netLoad(ds, rules);
 }
 
 void ToolUser::NetItem::enableNetInterpolation(float extrapolationHint) {
@@ -657,23 +659,24 @@ void ToolUser::NetItem::tickNetInterpolation(float dt) {
   }
 }
 
-bool ToolUser::NetItem::writeNetDelta(DataStream& ds, uint64_t fromVersion) const {
+bool ToolUser::NetItem::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const {
+  if (!checkWithRules(rules)) return false;
   bool deltaWritten = false;
   const_cast<NetItem*>(this)->updateItemDescriptor();
   m_buffer.clear();
-  if (m_itemDescriptor.writeNetDelta(m_buffer, fromVersion)) {
+  if (m_itemDescriptor.writeNetDelta(m_buffer, fromVersion, rules)) {
     deltaWritten = true;
     ds.write<uint8_t>(1);
     ds.writeBytes(m_buffer.data());
     if (auto netItem = as<NetElement>(m_item.get())) {
       ds.write<uint8_t>(2);
-      netItem->netStore(ds);
+      netItem->netStore(ds, rules);
     }
   }
 
   if (auto netItem = as<NetElement>(m_item.get())) {
     m_buffer.clear();
-    if (netItem->writeNetDelta(m_buffer, fromVersion)) {
+    if (netItem->writeNetDelta(m_buffer, fromVersion, rules)) {
       deltaWritten = true;
       ds.write<uint8_t>(3);
       ds.writeBytes(m_buffer.data());
@@ -685,13 +688,14 @@ bool ToolUser::NetItem::writeNetDelta(DataStream& ds, uint64_t fromVersion) cons
   return deltaWritten;
 }
 
-void ToolUser::NetItem::readNetDelta(DataStream& ds, float interpolationTime) {
+void ToolUser::NetItem::readNetDelta(DataStream& ds, float interpolationTime, NetCompatibilityRules rules) {
+  if (!checkWithRules(rules)) return;
   while (true) {
     uint8_t code = ds.read<uint8_t>();
     if (code == 0) {
       break;
     } else if (code == 1) {
-      m_itemDescriptor.readNetDelta(ds);
+      m_itemDescriptor.readNetDelta(ds, 0.0f, rules);
       if (!m_item || !m_item->matches(m_itemDescriptor.get(), true)) {
         auto itemDatabase = Root::singleton().itemDatabase();
         if (itemDatabase->loadItem(m_itemDescriptor.get(), m_item)) {
@@ -705,12 +709,12 @@ void ToolUser::NetItem::readNetDelta(DataStream& ds, float interpolationTime) {
       }
     } else if (code == 2) {
       if (auto netItem = as<NetElement>(m_item.get()))
-        netItem->netLoad(ds);
+        netItem->netLoad(ds, rules);
       else
         throw IOException("Server/Client disagreement about whether an Item is a NetElement in NetItem::readNetDelta");
     } else if (code == 3) {
       if (auto netItem = as<NetElement>(m_item.get()))
-        netItem->readNetDelta(ds, interpolationTime);
+        netItem->readNetDelta(ds, interpolationTime, rules);
       else
         throw IOException("Server/Client disagreement about whether an Item is a NetElement in NetItem::readNetDelta");
     } else {

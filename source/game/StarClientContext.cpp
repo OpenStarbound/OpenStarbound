@@ -77,11 +77,12 @@ ShipUpgrades ClientContext::shipUpgrades() const {
   return m_shipUpgrades.get();
 }
 
-void ClientContext::readUpdate(ByteArray data) {
+void ClientContext::readUpdate(ByteArray data, NetCompatibilityRules rules) {
   if (data.empty())
     return;
 
   DataStreamBuffer ds(std::move(data));
+  ds.setStreamCompatibilityVersion(rules);
 
   m_rpc->receive(ds.read<ByteArray>());
 
@@ -89,10 +90,10 @@ void ClientContext::readUpdate(ByteArray data) {
   if (!shipUpdates.empty())
     m_newShipUpdates.merge(DataStreamBuffer::deserialize<WorldChunks>(std::move(shipUpdates)), true);
 
-  m_netGroup.readNetState(ds.read<ByteArray>());
+  m_netGroup.readNetState(ds.read<ByteArray>(), 0.0f, rules);
 }
 
-ByteArray ClientContext::writeUpdate() {
+ByteArray ClientContext::writeUpdate(NetCompatibilityRules rules) {
   return m_rpc->send();
 }
 
@@ -102,6 +103,14 @@ void ClientContext::setConnectionId(ConnectionId connectionId) {
 
 ConnectionId ClientContext::connectionId() const {
   return m_connectionId;
+}
+
+void ClientContext::setNetCompatibilityRules(NetCompatibilityRules netCompatibilityRules) {
+  m_netCompatibilityRules = netCompatibilityRules;
+}
+
+NetCompatibilityRules ClientContext::netCompatibilityRules() const {
+  return m_netCompatibilityRules;
 }
 
 }

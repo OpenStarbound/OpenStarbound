@@ -16,15 +16,15 @@ public:
 
   void initNetVersion(NetElementVersion const* version = nullptr) override;
 
-  void netStore(DataStream& ds) const override;
-  void netLoad(DataStream& ds) override;
+  void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
+  void netLoad(DataStream& ds, NetCompatibilityRules rules) override;
 
   void enableNetInterpolation(float extrapolationHint = 0.0f) override;
   void disableNetInterpolation() override;
   void tickNetInterpolation(float dt) override;
 
-  bool writeNetDelta(DataStream& ds, uint64_t fromVersion) const override;
-  void readNetDelta(DataStream& ds, float interpolationTime = 0.0) override;
+  bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+  void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
   void send(Signal signal);
   List<Signal> receive();
@@ -55,10 +55,10 @@ void NetElementSignal<Signal>::initNetVersion(NetElementVersion const* version) 
 }
 
 template <typename Signal>
-void NetElementSignal<Signal>::netStore(DataStream&) const {}
+void NetElementSignal<Signal>::netStore(DataStream&, NetCompatibilityRules) const {}
 
 template <typename Signal>
-void NetElementSignal<Signal>::netLoad(DataStream&) {
+void NetElementSignal<Signal>::netLoad(DataStream&, NetCompatibilityRules) {
 }
 
 template <typename Signal>
@@ -83,7 +83,8 @@ void NetElementSignal<Signal>::tickNetInterpolation(float dt) {
 }
 
 template <typename Signal>
-bool NetElementSignal<Signal>::writeNetDelta(DataStream& ds, uint64_t fromVersion) const {
+bool NetElementSignal<Signal>::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const {
+  if (!checkWithRules(rules)) return false;
   size_t numToWrite = 0;
   for (auto const& p : m_signals) {
     if (p.version >= fromVersion)
@@ -103,7 +104,8 @@ bool NetElementSignal<Signal>::writeNetDelta(DataStream& ds, uint64_t fromVersio
 }
 
 template <typename Signal>
-void NetElementSignal<Signal>::readNetDelta(DataStream& ds, float interpolationTime) {
+void NetElementSignal<Signal>::readNetDelta(DataStream& ds, float interpolationTime, NetCompatibilityRules rules) {
+  if (!checkWithRules(rules)) return;
   size_t numToRead = ds.readVlqU();
   for (size_t i = 0; i < numToRead; ++i) {
     Signal s;

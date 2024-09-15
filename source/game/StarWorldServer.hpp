@@ -87,7 +87,7 @@ public:
 
   // Returns false if the client id already exists, or the spawn target is
   // invalid.
-  bool addClient(ConnectionId clientId, SpawnTarget const& spawnTarget, bool isLocal, bool isAdmin = false);
+  bool addClient(ConnectionId clientId, SpawnTarget const& spawnTarget, bool isLocal, bool isAdmin = false, NetCompatibilityRules netRules = {});
 
   // Removes client, sends the WorldStopPacket, and returns any pending packets
   // for that client
@@ -180,7 +180,10 @@ public:
   RpcPromise<Json> sendEntityMessage(Variant<EntityId, String> const& entity, String const& message, JsonArray const& args = {}) override;
   bool isTileProtected(Vec2I const& pos) const override;
 
+  bool getTileProtection(DungeonId dungeonId) const;
   void setTileProtection(DungeonId dungeonId, bool isProtected);
+  // sets a provided list of DungeonIds all at once and returns how many were changed
+  size_t setTileProtection(List<DungeonId> const& dungeonIds, bool isProtected);
   // used to globally, temporarily disable protection for certain operations
   void setTileProtectionEnabled(bool enabled);
 
@@ -374,7 +377,7 @@ private:
   CollisionGenerator m_collisionGenerator;
   List<CollisionBlock> m_workingCollisionBlocks;
 
-  HashMap<pair<EntityId, uint64_t>, pair<ByteArray, uint64_t>> m_netStateCache;
+  HashMap<NetCompatibilityRules, HashMap<pair<EntityId, uint64_t>, pair<ByteArray, uint64_t>>> m_netStateCache;
   OrderedHashMap<ConnectionId, shared_ptr<ClientInfo>> m_clientInfo;
 
   GameTimer m_entityUpdateTimer;
@@ -396,7 +399,7 @@ private:
   bool m_generatingDungeon;
   HashMap<DungeonId, float> m_dungeonIdGravity;
   HashMap<DungeonId, bool> m_dungeonIdBreathable;
-  Set<DungeonId> m_protectedDungeonIds;
+  StableHashSet<DungeonId> m_protectedDungeonIds;
   bool m_tileProtectionEnabled;
 
   HashMap<Uuid, pair<ConnectionId, MVariant<ConnectionId, RpcPromiseKeeper<Json>>>> m_entityMessageResponses;

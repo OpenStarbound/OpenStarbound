@@ -835,7 +835,10 @@ void UniverseServer::warpPlayers() {
           // Checking the spawn target validity then adding the client is not
           // perfect, it can still become invalid in between, if we fail at
           // adding the client we need to warp them back.
-          if (toWorld && toWorld->addClient(clientId, warpToWorld.target, !clientContext->remoteAddress(), clientContext->canBecomeAdmin())) {
+          if (toWorld && toWorld->addClient(clientId, warpToWorld.target,
+            !clientContext->remoteAddress(),
+            clientContext->canBecomeAdmin(),
+            clientContext->netRules())) {
             clientContext->setPlayerWorld(toWorld);
             m_chatProcessor->joinChannel(clientId, printWorldId(warpToWorld.world));
 
@@ -1574,7 +1577,8 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
     auto compressionMode = NetCompressionModeNames.maybeLeft(compressionName).value(NetCompressionMode::None);
     useCompressionStream = compressionMode == NetCompressionMode::Zstd;
     protocolResponse->info = JsonObject{
-      {"compression", NetCompressionModeNames.getRight(compressionMode)}
+      {"compression", NetCompressionModeNames.getRight(compressionMode)},
+      {"openProtocolVersion", OpenProtocolVersion}
     };
   }
   connection.pushSingle(protocolResponse);
@@ -1671,7 +1675,10 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
   String connectionLog = strf("UniverseServer: Logged in account '{}' as player '{}' from address {}",
     accountString, clientConnect->playerName, remoteAddressString);
 
+  NetCompatibilityRules netRules(legacyClient ? LegacyVersion : 1);
   if (Json& info = clientConnect->info) {
+    if (auto openProtocolVersion = info.optUInt("openProtocolVersion"))
+      netRules.setVersion(*openProtocolVersion);
     if (Json brand = info.get("brand", "custom"))
       connectionLog += strf(" ({} client)", brand.toString());
     if (info.getBool("legacy", false))
@@ -1698,7 +1705,7 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
   }
 
   ConnectionId clientId = m_clients.nextId();
-  auto clientContext = make_shared<ServerClientContext>(clientId, remoteAddress, clientConnect->playerUuid,
+  auto clientContext = make_shared<ServerClientContext>(clientId, remoteAddress, netRules, clientConnect->playerUuid,
       clientConnect->playerName, clientConnect->playerSpecies, administrator, clientConnect->shipChunks);
   m_clients.add(clientId, clientContext);
   m_connectionServer->addConnection(clientId, std::move(connection));

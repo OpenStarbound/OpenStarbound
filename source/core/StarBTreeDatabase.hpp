@@ -230,7 +230,7 @@ private:
   void updateBlock(BlockIndex blockIndex, ByteArray const& block);
 
   void rawReadBlock(BlockIndex blockIndex, size_t blockOffset, char* block, size_t size) const;
-  void rawWriteBlock(BlockIndex blockIndex, size_t blockOffset, char const* block, size_t size) const;
+  void rawWriteBlock(BlockIndex blockIndex, size_t blockOffset, char const* block, size_t size);
 
   void updateHeadFreeIndexBlock(BlockIndex newHead);
 
@@ -251,6 +251,9 @@ private:
   void writeRoot();
   void readRoot();
   void doCommit();
+  void commitWrites();
+  bool tryFlatten();
+  bool flattenVisitor(BTreeImpl::Index& index, BlockIndex& count);
 
   void checkIfOpen(char const* methodName, bool shouldBeOpen) const;
   void checkBlockIndex(size_t blockIndex) const;
@@ -285,14 +288,14 @@ private:
   bool m_dirty;
 
   // Blocks that can be freely allocated and written to without violating
-  // atomic consistency
+  // atomic consistency.
   Set<BlockIndex> m_availableBlocks;
-
-  // Blocks to be freed on next commit.
-  Deque<BlockIndex> m_pendingFree;
 
   // Blocks that have been written in uncommitted portions of the tree.
   Set<BlockIndex> m_uncommitted;
+
+  // Temporarily holds written data so that it can be rolled back.
+  mutable Map<BlockIndex, ByteArray> m_uncommittedWrites;
 };
 
 // Version of BTreeDatabase that hashes keys with SHA-256 to produce a unique

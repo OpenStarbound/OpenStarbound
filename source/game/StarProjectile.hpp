@@ -22,9 +22,9 @@ STAR_CLASS(Projectile);
 class Projectile : public virtual Entity, public virtual ScriptedEntity, public virtual PhysicsEntity, public virtual StatusEffectEntity {
 public:
   Projectile(ProjectileConfigPtr const& config, Json const& parameters);
-  Projectile(ProjectileConfigPtr const& config, DataStreamBuffer& netState);
+  Projectile(ProjectileConfigPtr const& config, DataStreamBuffer& netState, NetCompatibilityRules rules = {});
 
-  ByteArray netStore() const;
+  ByteArray netStore(NetCompatibilityRules rules = {}) const;
 
   EntityType entityType() const override;
 
@@ -43,8 +43,8 @@ public:
   ClientEntityMode clientEntityMode() const override;
   bool masterOnly() const override;
 
-  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0) override;
-  void readNetState(ByteArray data, float interpolationTime = 0.0f) override;
+  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
+  void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
   void enableInterpolation(float extrapolationHint = 0.0f) override;
   void disableInterpolation() override;

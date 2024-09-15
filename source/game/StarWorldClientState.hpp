@@ -36,9 +36,8 @@ public:
   ByteArray writeDelta();
   void readDelta(ByteArray delta);
 
-  // Whether the client is connected to a legacy server.
-  void setLegacy(bool legacy);
-  bool legacy() const;
+  void setNetCompatibilityRules(NetCompatibilityRules netCompatibilityRules);
+  NetCompatibilityRules netCompatibilityRules() const;
 
   void reset();
 
@@ -57,7 +56,7 @@ private:
   NetElementInt m_playerId;
   NetElementData<List<EntityId>> m_clientPresenceEntities;
 
-  bool m_legacy;
+  NetCompatibilityRules m_netCompatibilityRules;
 };
 
 }
