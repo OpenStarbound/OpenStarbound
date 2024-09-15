@@ -392,9 +392,9 @@ Returns whether the specified item can enter the specified item bag.
 
 Returns the contents of the specified action bar link slot's specified hand.
 
-#### `bool` player.setActionBarSlotLink(`String` itemBagName, `ItemDescriptor` item)
-
-Returns whether the specified item can enter the specified item bag. 
+#### `void` player.setSelectedActionBarSlot(`Variant<unsigned, EssentialItem>` slot)
+  
+Sets the player's selected action bar slot.
 
 ---
 
@@ -412,4 +412,23 @@ Sets the player's interact radius. This does not persist upon returning to the m
 
 Returns all the recipes the player can craft with their currently held items and currencies.
 
+---
+
+#### `String` player.currentState()
+
+Returns the player's current movement state.
+
+<details><summary><b>Player States</b></summary>
+idle
+walk
+run
+jump
+fall
+swim
+swimIdle
+lounge
+crouch
+teleportIn
+teleportOut
+</details>
 ---
