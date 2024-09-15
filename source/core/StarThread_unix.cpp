@@ -22,6 +22,10 @@
 #define MAX_THREAD_NAMELEN 16
 #endif
 
+//#ifndef STAR_SYSTEM_MACOS
+//#define STAR_MUTEX_TIMED
+//#endif
+
 namespace Star {
 
 struct ThreadImpl {
@@ -131,7 +135,7 @@ struct MutexImpl {
   }
 
   void lock() {
-#ifndef STAR_SYSTEM_MACOS
+#ifdef STAR_MUTEX_TIMED
     timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
     ts.tv_sec += 60;
@@ -210,7 +214,7 @@ struct RecursiveMutexImpl {
   }
 
   void lock() {
-#ifndef STAR_SYSTEM_MACOS
+#ifdef STAR_MUTEX_TIMED
     timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
     ts.tv_sec += 60;
