@@ -5,40 +5,58 @@
 #include "StarStringView.hpp"
 #include "StarMaybe.hpp"
 
-#include <sstream>
-#include <locale>
+#include "fast_float.h"
 
 namespace Star {
 
 STAR_EXCEPTION(BadLexicalCast, StarException);
 
-// Very simple basic lexical cast using stream input.  Always operates in the
-// "C" locale.
+void throwLexicalCastError(std::errc ec, const char* first, const char* last);
+
 template <typename Type>
-Maybe<Type> maybeLexicalCast(StringView s, std::ios_base::fmtflags flags = std::ios_base::boolalpha) {
-  Type result;
-  std::istringstream stream(std::string(s.utf8()));
-  stream.flags(flags);
-  stream.imbue(std::locale::classic());
+bool tryLexicalCast(Type& result, const char* first, const char* last) {
+  auto res = fast_float::from_chars(first, last, result);
+  return res.ptr == last && (res.ec == std::errc() || res.ec == std::errc::result_out_of_range);
+}
 
-  if (!(stream >> result))
+template <typename Type>
+bool tryLexicalCast(Type& result, String const& s) {
+  return tryLexicalCast<Type>(s.utf8Ptr(), s.utf8Ptr() + s.utf8Size());
+}
+
+template <typename Type>
+bool tryLexicalCast(Type& result, StringView s) {
+  return tryLexicalCast<Type>(s.utf8Ptr(), s.utf8Ptr() + s.utf8Size());
+}
+
+template <typename Type>
+Maybe<Type> maybeLexicalCast(const char* first, const char* last) {
+  Type result{};
+  if (tryLexicalCast(result, first, last))
+    return result;
+  else
     return {};
+}
 
-  // Confirm that we read everything out of the stream
-  char ch;
-  if (stream >> ch)
-    return {};
+template <typename Type>
+Maybe<Type> maybeLexicalCast(StringView s) {
+  return maybeLexicalCast<Type>(s.utf8Ptr(), s.utf8Ptr() + s.utf8Size());
+}
 
+
+template <typename Type>
+Type lexicalCast(const char* first, const char* last) {
+  Type result{};
+  auto res = fast_float::from_chars(first, last, result);
+  if ((res.ec != std::errc() && res.ec != std::errc::result_out_of_range) || res.ptr != last)
+    throwLexicalCastError(res.ec, first, last);
+  
   return result;
 }
 
 template <typename Type>
-Type lexicalCast(StringView s, std::ios_base::fmtflags flags = std::ios_base::boolalpha) {
-  auto m = maybeLexicalCast<Type>(s, flags);
-  if (m)
-    return m.take();
-  else
-    throw BadLexicalCast(strf("Lexical cast failed on '{}'", s));
+Type lexicalCast(StringView s) {
+  return lexicalCast<Type>(s.utf8Ptr(), s.utf8Ptr() + s.utf8Size());
 }
 
 }

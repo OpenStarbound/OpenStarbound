@@ -262,7 +262,7 @@ String CommandProcessor::setTileProtection(ConnectionId connectionId, String con
     return "Not enough arguments to /settileprotection. Use /settileprotection <dungeonId> <protected>";
 
   try {
-    bool isProtected = lexicalCast<bool>(arguments.takeLast());
+    bool isProtected = Json::parse(arguments.takeLast()).toBool();
     List<DungeonId> dungeonIds;
     for (auto& banana : arguments) {
       auto slices = banana.split("..");
