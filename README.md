@@ -12,18 +12,20 @@ An installer is available for Windows. otherwise, extract the client/server zip 
 ### Nightly Builds
 These link directly to the latest build from the [Actions](https://github.com/OpenStarbound/OpenStarbound/actions?query=branch%3Amain) tab.
 
-[**Windows**](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build_windows/main):
-[Installer](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build_windows/main/OpenStarbound-Windows-Installer.zip),
+**Windows**
+[Installer](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main/OpenStarbound-Windows-Installer.zip),
 [Client](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build_windows/main/OpenStarbound-Windows-Client.zip),
 [Server](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build_windows/main/OpenStarbound-Windows-Server.zip)
 
-[**Linux**](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build_linux/main):
-[Client](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build_linux/main/OpenStarbound-Linux-Client.zip),
-[Server](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build_linux/main/OpenStarbound-Linux-Server.zip)
+**Linux**
+[Client](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main/OpenStarbound-Linux-Client.zip),
+[Server](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main/OpenStarbound-Linux-Server.zip)
 
-[**macOS**](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build_macos/main "overpriced aluminium"): 
-[Intel](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build_macos/main/OpenStarbound-Dev-macOS-Intel.zip),
-[ARM](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build_macos/main/OpenStarbound-Dev-macOS-Silicon.zip)
+**macOS**
+[Intel](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main/OpenStarbound-Dev-macOS-Intel.zip),
+[ARM](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main/OpenStarbound-Dev-macOS-Silicon.zip)
+
+[All Nightly Builds](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main)
 
 ## Changes
 Note: Not every function from [StarExtensions](https://github.com/StarExtensions/StarExtensions) has been ported yet, but near-full compatibility with mods that use StarExtensions features is planned.
