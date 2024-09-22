@@ -15,6 +15,7 @@ namespace LuaBindings {
   namespace RootCallbacks {
     String assetData(Root* root, String const& path);
     Image assetImage(Root* root, String const& path);
+    Json assetFrames(Root* root, String const& path);
     Json assetJson(Root* root, String const& path);
     Json makeCurrentVersionedJson(Root* root, String const& identifier, Json const& content);
     Json loadVersionedJson(Root* root, Json const& versionedJson, String const& expectedIdentifier);

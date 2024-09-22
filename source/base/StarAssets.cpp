@@ -102,6 +102,14 @@ Maybe<RectU> FramesSpecification::getRect(String const& frame) const {
   }
 }
 
+Json FramesSpecification::toJson() const {
+  return JsonObject{
+    {"aliases", jsonFromMap(aliases)},
+    {"frames", jsonFromMapV(frames, jsonFromRectU)},
+    {"file", framesFile}
+  };
+}
+
 Assets::Assets(Settings settings, StringList assetSources) {
   const char* AssetsPatchSuffix = ".patch";
   const char* AssetsPatchListSuffix = ".patchlist";
@@ -137,6 +145,12 @@ Assets::Assets(Settings settings, StringList assetSources) {
         return assetImage->convert(PixelFormat::RGBA32);
       else
         return *assetImage;
+    });
+
+    callbacks.registerCallback("frames", [this](String const& path) -> Json {
+      if (auto frames = imageFrames(path))
+        return frames->toJson();
+      return Json();
     });
 
     callbacks.registerCallback("scan", [this](Maybe<String> const& a, Maybe<String> const& b) -> StringList {

@@ -76,7 +76,9 @@ Returns the asset source path of an asset, or nil if the asset doesn't exist. If
 Without metadata: Returns an array with all the asset source paths.
 With metadata: Returns a table, key/value being source path/metadata.
 
-#### `?` root.assetImage(`String` image)
+#### `Image` root.assetImage(`String` image)
+
+#### `Json` root.assetFrames(`String` path)
 
 *TODO*
 

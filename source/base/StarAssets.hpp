@@ -27,7 +27,8 @@ struct FramesSpecification {
   // Get the target sub-rect of a given frame name (which can be an alias).
   // Returns nothing if the frame name is not found.
   Maybe<RectU> getRect(String const& frame) const;
-
+  // Converts to Json.
+  Json toJson() const;
   // The full path to the .frames file from which this was loaded.
   String framesFile;
   // Named sub-frames
