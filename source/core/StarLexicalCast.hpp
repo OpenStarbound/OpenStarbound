@@ -19,6 +19,9 @@ bool tryLexicalCast(Type& result, const char* first, const char* last) {
   return res.ptr == last && (res.ec == std::errc() || res.ec == std::errc::result_out_of_range);
 }
 
+template <>
+bool tryLexicalCast(bool& result, const char* first, const char* last);
+
 template <typename Type>
 bool tryLexicalCast(Type& result, String const& s) {
   return tryLexicalCast<Type>(s.utf8Ptr(), s.utf8Ptr() + s.utf8Size());
@@ -43,7 +46,6 @@ Maybe<Type> maybeLexicalCast(StringView s) {
   return maybeLexicalCast<Type>(s.utf8Ptr(), s.utf8Ptr() + s.utf8Size());
 }
 
-
 template <typename Type>
 Type lexicalCast(const char* first, const char* last) {
   Type result{};
@@ -53,6 +55,9 @@ Type lexicalCast(const char* first, const char* last) {
   
   return result;
 }
+
+template <>
+bool lexicalCast(const char* first, const char* last);
 
 template <typename Type>
 Type lexicalCast(StringView s) {
