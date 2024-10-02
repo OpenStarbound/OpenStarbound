@@ -64,7 +64,7 @@ void SongbookInterface::refresh(bool reloadFiles) {
     m_files = Root::singleton().assets()->scanExtension(".abc").values();
     eraseWhere(m_files, [](String& song) {
       if (!song.beginsWith(SongPathPrefix, String::CaseInsensitive)) {
-        Logger::warn("Song '{}' isn't in {}, ignoring", SongPathPrefix.size(), song);
+        Logger::warn("Song '{}' isn't in {}, ignoring", song, SongPathPrefix);
         return true;
       }
       return false;
