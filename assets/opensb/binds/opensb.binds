@@ -3,7 +3,8 @@
     "groups": {
       "camera": { "name": "Camera" },
       "voice": { "name": "Voice" },
-      "building": { "name": "Building" }
+      "building": { "name": "Building" },
+      "inventory": { "name": "Inventory" }
     },
     "name": "Open^#ebd74a;Starbound",
     "binds": {
@@ -14,6 +15,11 @@
         }],
         "group": "camera",
         "name": "Zoom In"
+      },
+      "takeAll": {
+        "default": [],
+        "group": "inventory",
+        "name":  "Take All From Container"
       },
       "zoomOut": {
         "default": [{
