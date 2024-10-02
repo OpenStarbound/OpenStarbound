@@ -673,7 +673,6 @@ void UniverseServer::updateShips() {
         Json jOldShipLevel = shipWorld->getProperty("ship.level");
         unsigned newShipLevel = min<unsigned>(speciesShips.size() - 1, newShipUpgrades.shipLevel);
 
-
         if (jOldShipLevel.isType(Json::Type::Int)) {
           auto oldShipLevel = jOldShipLevel.toUInt();
           if (oldShipLevel < newShipLevel) {
@@ -2036,10 +2035,21 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::shipWorldPromise(
         shipWorld->setProperty("ship.maxFuel", currentUpgrades.maxFuel);
         shipWorld->setProperty("ship.crewSize", currentUpgrades.crewSize);
         shipWorld->setProperty("ship.fuelEfficiency", currentUpgrades.fuelEfficiency);
+        shipWorld->setProperty("ship.epoch", Time::timeSinceEpoch());
+      }
+
+      auto shipClock = make_shared<Clock>();
+      auto shipTime = shipWorld->getProperty("ship.epoch");
+      if (!shipTime.canConvert(Json::Type::Float)) {
+        auto now = Time::timeSinceEpoch();
+        shipWorld->setProperty("ship.epoch", now);
+      } else {
+        shipClock->setTime(Time::timeSinceEpoch() - shipTime.toDouble());
       }
 
       shipWorld->setUniverseSettings(m_universeSettings);
-      shipWorld->setReferenceClock(universeClock);
+      shipWorld->setReferenceClock(shipClock);
+      shipClock->start();
 
       if (auto systemWorld = clientContext->systemWorld())
         shipWorld->setOrbitalSky(systemWorld->clientSkyParameters(clientContext->clientId()));
