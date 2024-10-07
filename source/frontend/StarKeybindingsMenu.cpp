@@ -180,14 +180,18 @@ void KeybindingsMenu::setKeybinding(KeyChord desc) {
 
   config->set("bindings", base);
 
-  String buttonText;
+  StringList buttonText;
 
   for (auto const& entry : base.get(key).iterateArray()) {
-    auto stored = inputDescriptorFromJson(entry);
-    buttonText = String::joinWith(", ", buttonText, printInputDescriptor(stored));
+    try {
+      auto stored = inputDescriptorFromJson(entry);
+      buttonText.push_back(printInputDescriptor(stored));
+    } catch (StarException const& e) {
+      buttonText.push_back("unknown");
+    }
   }
 
-  convert<ButtonWidget>(m_activeKeybinding)->setText(buttonText);
+  convert<ButtonWidget>(m_activeKeybinding)->setText(buttonText.join(", "));
 
   apply();
   exitActiveMode();
