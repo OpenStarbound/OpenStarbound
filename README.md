@@ -8,6 +8,8 @@ It is still **work-in-progress**.
 ## Installation
 You can download a nightly build below, or the [latest release](https://github.com/OpenStarbound/OpenStarbound/releases/latest). At the moment, you must copy the game assets (**packed.pak**) from your normal Starbound install to the OpenStarbound assets directory before playing.
 
+OpenStarbound is a separate installation/executable than Starbound. You can copy your `storage` folder from Starbound to transfer your save data and settings. Launching OpenStarbound with Steam open will load your subscribed Steam mods.
+
 An installer is available for Windows. otherwise, extract the client/server zip for your platform and copy the game assets (packed.pak) to the OpenStarbound assets folder. the macOS releases currently lack the sbinit.config and folder structure that the Linux & Windows zips have, so you'll need to create those before running them. For macOS releases, it is recommended to build them from source (See guide below).
 ### Nightly Builds
 These link directly to the latest build from the [Actions](https://github.com/OpenStarbound/OpenStarbound/actions?query=branch%3Amain) tab.
@@ -40,8 +42,16 @@ Note: Not every function from [StarExtensions](https://github.com/StarExtensions
   * These scripts can modify, read, patch and create new assets!
 * Lua patch files now exist - **.patch.lua**
   * These can patch JSON assets, as well as images!
+### Commands
+**View OpenStarbound commands with `/help`! You can also view them [here](https://github.com/OpenStarbound/OpenStarbound/blob/main/assets/opensb/help.config.patch)**
+  * Changes to vanilla commands:
+    * `/settileprotection`
+      * You can now specify as many dungeon IDs as you want: `/settileprotection 69 420 false`
+      * You can now specify a range: /settileprotection 0..65535 true
 ### Bug Fixes
 * Invalid character inventories are updated when loading in, allowing players to swap inventory mods with pre-existing characters.
+* Fix vanilla world file size bloating issue.
+* Modifying a single status property no longer re-networks every status property on the entity (server and client must be running at least OpenStarbound 0.15)
 ### Misc
 * Player functions for saving/loading, modifying the humanoid identity, manipulating the inventory. [Documentation](https://github.com/OpenStarbound/OpenStarbound/blob/main/doc/lua/openstarbound.md)
 * Character swapping (rewrite from StarExtensions, currently command-only: `/swap name` case-insensitive, only substring required)
