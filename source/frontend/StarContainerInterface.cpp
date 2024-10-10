@@ -18,7 +18,7 @@
 #include "StarStatusControllerLuaBindings.hpp"
 #include "StarWidgetLuaBindings.hpp"
 #include "StarAugmentItem.hpp"
-#include <StarInput.hpp>
+#include "StarInput.hpp"
 
 namespace Star {
 
