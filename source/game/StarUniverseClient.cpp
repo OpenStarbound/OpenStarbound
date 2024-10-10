@@ -288,7 +288,8 @@ void UniverseClient::update(float dt) {
   if (Time::monotonicMilliseconds() >= m_storageTriggerDeadline) {
     if (m_mainPlayer) {
       m_playerStorage->savePlayer(m_mainPlayer);
-      m_playerStorage->moveToFront(m_mainPlayer->uuid());
+      if (playerIsOriginal())
+        m_playerStorage->moveToFront(m_mainPlayer->uuid());
     }
 
     m_storageTriggerDeadline = Time::monotonicMilliseconds() + assets->json("/client.config:storageTriggerInterval").toUInt();
