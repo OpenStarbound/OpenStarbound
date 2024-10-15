@@ -10,17 +10,28 @@
 
 namespace Star {
 
+ImageMetadataDatabase::ImageMetadataDatabase() {
+  MutexLocker locker(m_mutex);
+  int timeSmear = 2000;
+  int64_t timeToLive = 60000;
+  m_sizeCache.setTimeSmear(timeSmear);
+  m_spacesCache.setTimeSmear(timeSmear);
+  m_regionCache.setTimeSmear(timeSmear);
+  m_sizeCache.setTimeToLive(timeToLive);
+  m_spacesCache.setTimeToLive(timeToLive);
+  m_regionCache.setTimeToLive(timeToLive);
+}
+
 Vec2U ImageMetadataDatabase::imageSize(AssetPath const& path) const {
   MutexLocker locker(m_mutex);
-  auto i = m_sizeCache.find(path);
-  if (i != m_sizeCache.end())
-    return i->second;
+  if (auto cached = m_sizeCache.ptr(path))
+    return *cached;
 
   locker.unlock();
   Vec2U size = calculateImageSize(path);
 
   locker.lock();
-  m_sizeCache[path] = size;
+  m_sizeCache.set(path, size);
   return size;
 }
 
@@ -28,19 +39,16 @@ List<Vec2I> ImageMetadataDatabase::imageSpaces(AssetPath const& path, Vec2F posi
   SpacesEntry key = make_tuple(path, Vec2I::round(position), fillLimit, flip);
 
   MutexLocker locker(m_mutex);
-  auto i = m_spacesCache.find(key);
-  if (i != m_spacesCache.end()) {
-    return i->second;
+  if (auto cached = m_spacesCache.ptr(key)) {
+    return *cached;
   }
 
   auto filteredPath = filterProcessing(path);
   SpacesEntry filteredKey = make_tuple(filteredPath, Vec2I::round(position), fillLimit, flip);
 
-  auto j = m_spacesCache.find(filteredKey);
-  if (j != m_spacesCache.end()) {
-    auto spaces = j->second;
-    m_spacesCache[key] = spaces;
-    return spaces;
+  if (auto cached = m_spacesCache.ptr(filteredKey)) {
+    m_spacesCache.set(key, *cached);
+    return *cached;
   }
 
   locker.unlock();
@@ -82,24 +90,23 @@ List<Vec2I> ImageMetadataDatabase::imageSpaces(AssetPath const& path, Vec2F posi
   }
 
   locker.lock();
-  m_spacesCache[key] = spaces;
-  m_spacesCache[filteredKey] = spaces;
+  m_spacesCache.set(key, spaces);
+  m_spacesCache.set(filteredKey, spaces);
 
   return spaces;
 }
 
 RectU ImageMetadataDatabase::nonEmptyRegion(AssetPath const& path) const {
   MutexLocker locker(m_mutex);
-  auto i = m_regionCache.find(path);
-  if (i != m_regionCache.end()) {
-    return i->second;
+  
+  if (auto cached = m_regionCache.ptr(path)) {
+    return *cached;
   }
 
   auto filteredPath = filterProcessing(path);
-  auto j = m_regionCache.find(filteredPath);
-  if (j != m_regionCache.end()) {
-    m_regionCache[path] = j->second;
-    return j->second;
+  if (auto cached = m_regionCache.ptr(filteredPath)) {
+    m_regionCache.set(path, *cached);
+    return *cached;
   }
 
   locker.unlock();
@@ -111,10 +118,18 @@ RectU ImageMetadataDatabase::nonEmptyRegion(AssetPath const& path) const {
   });
 
   locker.lock();
-  m_regionCache[path] = region;
-  m_regionCache[filteredPath] = region;
+  m_regionCache.set(path, region);
+  m_regionCache.set(filteredPath, region);
 
   return region;
+}
+
+void ImageMetadataDatabase::cleanup() const {
+  MutexLocker locker(m_mutex);
+
+  m_sizeCache.cleanup();
+  m_spacesCache.cleanup();
+  m_regionCache.cleanup();
 }
 
 AssetPath ImageMetadataDatabase::filterProcessing(AssetPath const& path) {
@@ -170,7 +185,7 @@ Vec2U ImageMetadataDatabase::calculateImageSize(AssetPath const& path) const {
     // so we don't have to call Image::readPngMetadata on the same file more
     // than once.
     MutexLocker locker(m_mutex);
-    if (auto size = m_sizeCache.maybe(path.basePath)) {
+    if (auto size = m_sizeCache.ptr(path.basePath)) {
       imageSize = *size;
     } else {
       locker.unlock();
@@ -180,7 +195,7 @@ Vec2U ImageMetadataDatabase::calculateImageSize(AssetPath const& path) const {
       else
         imageSize = fallback();
       locker.lock();
-      m_sizeCache[path.basePath] = imageSize;
+      m_sizeCache.set(path.basePath, imageSize);
     }
   }
 
