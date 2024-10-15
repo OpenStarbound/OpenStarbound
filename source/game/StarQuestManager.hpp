@@ -28,6 +28,9 @@ public:
   // Show a dialog offering the player a quest, and later start it if they
   // accept it.
   void offer(QuestPtr const& quest);
+  StringMap<QuestPtr> quests() const;
+  // Only returns quests that are exclusive to the current server.
+  StringMap<QuestPtr> serverQuests() const;
   QuestPtr getQuest(String const& questId) const;
 
   bool hasQuest(String const& questId) const;
@@ -60,9 +63,9 @@ public:
   void update(float dt);
 
 private:
-  List<QuestPtr> serverQuests() const;
   void startInitialQuests();
   void setMostRecentQuestCurrent();
+  bool questValidOnServer(QuestPtr quest) const;
 
   Player* m_player;
   World* m_world;

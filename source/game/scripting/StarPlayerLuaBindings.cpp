@@ -453,6 +453,21 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
       return followUp->questId();
     });
 
+  callbacks.registerCallback("questIds", [player]() {
+    return player->questManager()->quests().keys();
+  });
+
+  callbacks.registerCallback("serverQuestIds", [player]() {
+    return player->questManager()->serverQuests().keys();
+  });
+
+  callbacks.registerCallback("quest", [player](String const& questId) -> Json {
+    if (!player->questManager()->hasQuest(questId))
+      return {};
+
+    return player->questManager()->getQuest(questId)->diskStore();
+  });
+
   callbacks.registerCallback("hasQuest", [player](String const& questId) {
       return player->questManager()->hasQuest(questId);
     });
@@ -469,11 +484,26 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
       return player->questManager()->hasCompleted(questId);
     });
 
+  callbacks.registerCallback("setTrackedQuest", [player](Maybe<String> const& questId) {
+    return player->questManager()->setAsTracked(questId);
+  });
+
+  callbacks.registerCallback("canTurnInQuest", [player](String const& questId) {
+    return player->questManager()->canTurnIn(questId);
+  });
+
+  callbacks.registerCallback("currentQuest", [player]() -> Json {
+    auto maybeQuest = player->questManager()->currentQuest();
+    if (maybeQuest) {
+      return (*maybeQuest)->diskStore();
+    }
+    return {};
+  });
+
   callbacks.registerCallback("currentQuestWorld", [player]() -> Maybe<String> {
       auto maybeQuest = player->questManager()->currentQuest();
       if (maybeQuest) {
-        auto quest = *maybeQuest;
-        if (auto worldId = quest->worldId())
+        if (auto worldId = (*maybeQuest)->worldId())
           return printWorldId(*worldId);
       }
       return {};
