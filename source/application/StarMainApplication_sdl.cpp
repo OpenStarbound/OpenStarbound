@@ -314,10 +314,12 @@ public:
     int height;
     SDL_GetWindowSize(m_sdlWindow, &width, &height);
     m_windowSize = Vec2U(width, height);
-    
+
+#ifdef __APPLE__
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+#endif
 
     m_sdlGlContext = SDL_GL_CreateContext(m_sdlWindow);
     if (!m_sdlGlContext)

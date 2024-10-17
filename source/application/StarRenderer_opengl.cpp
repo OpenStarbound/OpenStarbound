@@ -107,8 +107,10 @@ OpenGlRenderer::OpenGlRenderer() {
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glDisable(GL_DEPTH_TEST);
-  //glEnable(GL_DEBUG_OUTPUT);
-  //glDebugMessageCallback(GlMessageCallback, this);
+  if (GLEW_VERSION_4_3) {
+    //glEnable(GL_DEBUG_OUTPUT);
+    //glDebugMessageCallback(GlMessageCallback, this);
+  }
 
   m_whiteTexture = createGlTexture(Image::filled({1, 1}, Vec4B(255, 255, 255, 255), PixelFormat::RGBA32),
       TextureAddressing::Clamp,
