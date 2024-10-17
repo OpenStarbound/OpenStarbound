@@ -28,11 +28,17 @@
 namespace Star {
 
 UniverseClient::UniverseClient(PlayerStoragePtr playerStorage, StatisticsPtr statistics) {
+  auto& root = Root::singleton();
+  auto assets = root.assets();
+
   m_storageTriggerDeadline = 0;
   m_playerStorage = std::move(playerStorage);
   m_statistics = std::move(statistics);
   m_pause = false;
   m_luaRoot = make_shared<LuaRoot>();
+
+  auto clientConfig = assets->json("/client.config");
+  m_luaRoot->tuneAutoGarbageCollection(clientConfig.getFloat("luaGcPause"), clientConfig.getFloat("luaGcStepMultiplier"));
   reset();
 }
 
@@ -151,11 +157,9 @@ Maybe<String> UniverseClient::connect(UniverseConnection connection, bool allowA
     m_teamClient = make_shared<TeamClient>(m_mainPlayer, m_clientContext);
     m_mainPlayer->setClientContext(m_clientContext);
     m_mainPlayer->setStatistics(m_statistics);
-    m_worldClient = make_shared<WorldClient>(m_mainPlayer);
+    m_worldClient = make_shared<WorldClient>(m_mainPlayer, m_luaRoot);
     m_worldClient->clientState().setNetCompatibilityRules(compatibilityRules);
     m_worldClient->setAsyncLighting(true);
-    for (auto& pair : m_luaCallbacks)
-      m_worldClient->setLuaCallbacks(pair.first, pair.second);
 
     m_connection = std::move(connection);
     m_celestialDatabase = make_shared<CelestialSlaveDatabase>(std::move(success->celestialInformation));
@@ -489,22 +493,19 @@ uint16_t UniverseClient::maxPlayers() {
 }
 
 void UniverseClient::setLuaCallbacks(String const& groupName, LuaCallbacks const& callbacks) {
-  m_luaCallbacks[groupName] = callbacks;
-  if (m_worldClient)
-    m_worldClient->setLuaCallbacks(groupName, callbacks);
+  m_luaRoot->addCallbacks(groupName, callbacks);
 }
 
 void UniverseClient::startLua() {
+  m_luaRoot->restart();
   setLuaCallbacks("celestial", LuaBindings::makeCelestialCallbacks(this));
+  setLuaCallbacks("world", LuaBindings::makeWorldCallbacks(m_worldClient.get()));
 
   auto assets = Root::singleton().assets();
   for (auto& p : assets->json("/client.config:universeScriptContexts").toObject()) {
     auto scriptComponent = make_shared<ScriptComponent>();
     scriptComponent->setLuaRoot(m_luaRoot);
     scriptComponent->setScripts(jsonToStringList(p.second.toArray()));
-
-    for (auto& pair : m_luaCallbacks)
-      scriptComponent->addCallbacks(pair.first, pair.second);
 
     m_scriptContexts.set(p.first, scriptComponent);
     scriptComponent->init();
@@ -662,6 +663,23 @@ void UniverseClient::setPause(bool pause) {
 void UniverseClient::handlePackets(List<PacketPtr> const& packets) {
   for (auto const& packet : packets) {
     try {
+      bool skip = false;
+      Maybe<Json> packetJson;
+      auto functionName = strf("on{}Packet", PacketTypeNames.getRight(packet->type()));
+      for (auto& context : m_scriptContexts) {
+        auto& luaContext = *context.second->context();
+        auto method = luaContext.get(functionName);
+        if (method != LuaNil) {
+          if (!packetJson)
+            packetJson = packet->writeJson();
+          if (skip = luaContext.luaTo<LuaFunction>(std::move(method)).invoke<LuaValue>(*packetJson).maybe<LuaBoolean>().value()) {
+            break;
+          }
+        }
+      }
+      if (skip)
+        continue;
+
       if (auto clientContextUpdate = as<ClientContextUpdatePacket>(packet)) {
         m_clientContext->readUpdate(clientContextUpdate->updateData, m_clientContext->netCompatibilityRules());
         m_playerStorage->applyShipUpdates(m_clientContext->playerUuid(), m_clientContext->newShipUpdates());

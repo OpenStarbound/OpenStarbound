@@ -28,7 +28,7 @@ const std::string SECRET_BROADCAST_PUBLIC_KEY = "SecretBroadcastPublicKey";
 const std::string SECRET_BROADCAST_PREFIX = "\0Broadcast\0"s;
 
 const float WorldClient::DropDist = 6.0f;
-WorldClient::WorldClient(PlayerPtr mainPlayer) {
+WorldClient::WorldClient(PlayerPtr mainPlayer, LuaRootPtr luaRoot) {
   auto& root = Root::singleton();
   auto assets = root.assets();
 
@@ -48,7 +48,7 @@ WorldClient::WorldClient(PlayerPtr mainPlayer) {
   m_collisionDebug = false;
   m_inWorld = false;
 
-  m_luaRoot = make_shared<LuaRoot>();
+  m_luaRoot = luaRoot;
 
   m_mainPlayer = mainPlayer;
 
@@ -1076,10 +1076,6 @@ List<PacketPtr> WorldClient::getOutgoingPackets() {
   return std::move(m_outgoingPackets);
 }
 
-void WorldClient::setLuaCallbacks(String const& groupName, LuaCallbacks const& callbacks) {
-  m_luaRoot->addCallbacks(groupName, callbacks);
-}
-
 void WorldClient::update(float dt) {
   if (!inWorld())
     return;
@@ -1765,8 +1761,6 @@ void WorldClient::initWorld(WorldStartPacket const& startPacket) {
     return m_tileArray->tile(pos);
   };
   m_damageManager = make_shared<DamageManager>(this, startPacket.clientId);
-  m_luaRoot->restart();
-  m_luaRoot->tuneAutoGarbageCollection(m_clientConfig.getFloat("luaGcPause"), m_clientConfig.getFloat("luaGcStepMultiplier"));
   m_playerStart = startPacket.playerRespawn;
   m_respawnInWorld = startPacket.respawnInWorld;
   m_worldProperties = startPacket.worldProperties.optObject().value();
@@ -1840,8 +1834,6 @@ void WorldClient::clearWorld() {
   m_tileArray.reset();
 
   m_damageManager.reset();
-
-  m_luaRoot->shutdown();
 
   m_particles.reset();
 
@@ -2244,6 +2236,9 @@ LuaRootPtr WorldClient::luaRoot() {
 }
 
 RpcPromise<Vec2F> WorldClient::findUniqueEntity(String const& uniqueId) {
+  if (!inWorld())
+    return RpcPromise<Vec2F>::createFailed("Not currently in a world");
+
   if (auto entity = m_entityMap->uniqueEntity(uniqueId))
     return RpcPromise<Vec2F>::createFulfilled(entity->position());
 
@@ -2257,6 +2252,9 @@ RpcPromise<Vec2F> WorldClient::findUniqueEntity(String const& uniqueId) {
 }
 
 RpcPromise<Json> WorldClient::sendEntityMessage(Variant<EntityId, String> const& entityId, String const& message, JsonArray const& args) {
+  if (!inWorld())
+    return RpcPromise<Json>::createFailed("Not currently in a world");
+
   EntityPtr entity;
   if (entityId.is<EntityId>())
     entity = m_entityMap->entity(entityId.get<EntityId>());

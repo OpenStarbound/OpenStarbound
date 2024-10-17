@@ -356,6 +356,8 @@ namespace LuaBindings {
       });
 
     if (auto clientWorld = as<WorldClient>(world)) {
+      callbacks.registerCallback("inWorld", [clientWorld]() { return clientWorld->inWorld(); });
+      callbacks.registerCallback("mainPlayer", [clientWorld]() { return clientWorld->clientState().playerId(); });
       callbacks.registerCallback("isClient", []() { return true;  });
       callbacks.registerCallback("isServer", []() { return false; });
       callbacks.registerCallbackWithSignature<RectI>("clientWindow", bind(ClientWorldCallbacks::clientWindow, clientWorld));

@@ -132,8 +132,6 @@ private:
   SystemWorldClientPtr m_systemWorldClient;
   Maybe<UniverseConnection> m_connection;
   Maybe<ServerInfo> m_serverInfo;
-  
-  StringMap<LuaCallbacks> m_luaCallbacks;
 
   CelestialSlaveDatabasePtr m_celestialDatabase;
   ClientContextPtr m_clientContext;
