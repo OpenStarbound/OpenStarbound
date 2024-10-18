@@ -41,6 +41,7 @@
 
   // Change planet name to support the new internal string formatting.
   "planetNameFormatString" : "- {} -",
+  "planetTextOffset" : [0, 120],
   "planetTextStyle" : {
     "backDirectives" : "border=5;fff;fff?border=1;fff;fff7?multiply=000",
     "fontSize" : 24
