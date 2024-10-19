@@ -27,6 +27,8 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
     }
   });
 
+  callbacks.registerCallback("teamMembers", [player]() { return player->teamMembers(); });
+
   callbacks.registerCallback(   "humanoidIdentity", [player]()         { return player->humanoid()->identity().toJson();  });
   callbacks.registerCallback("setHumanoidIdentity", [player](Json const& id) { player->setIdentity(HumanoidIdentity(id)); });
 

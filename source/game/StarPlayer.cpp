@@ -35,6 +35,8 @@
 #include "StarInspectionTool.hpp"
 #include "StarUtilityLuaBindings.hpp"
 #include "StarCelestialLuaBindings.hpp"
+#include "StarUniverseClient.hpp"
+#include "StarTeamClient.hpp"
 
 namespace Star {
 
@@ -2071,6 +2073,20 @@ Vec2F Player::nametagOrigin() const {
 
 void Player::updateIdentity()
 { m_identityUpdated = true; m_humanoid->setIdentity(m_identity); }
+
+JsonArray Player::teamMembers() {
+  JsonArray jarray;
+  for (auto member : m_client->teamClient()->members()) {
+    jarray.push_back(JsonObject{
+      {"name", member.name},
+      {"uuid", member.uuid.hex()},
+      {"entity", member.entity},
+      {"healthPercentage", member.healthPercentage},
+      {"energyPercentage", member.energyPercentage}
+    });
+  }
+  return jarray;
+}
 
 void Player::setBodyDirectives(String const& directives)
 { m_identity.bodyDirectives = directives; updateIdentity(); }

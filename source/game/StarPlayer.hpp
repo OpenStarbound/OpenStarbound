@@ -316,6 +316,8 @@ public:
 
   void updateIdentity();
 
+  JsonArray teamMembers();
+
   void setBodyDirectives(String const& directives);
   void setEmoteDirectives(String const& directives);
 
