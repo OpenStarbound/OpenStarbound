@@ -144,7 +144,10 @@ StringMap<QuestPtr> QuestManager::serverQuests() const {
 }
 
 QuestPtr QuestManager::getQuest(String const& questId) const {
-  return m_quests.get(questId);
+  if (auto quest = m_quests.ptr(questId))
+    return *quest;
+
+  return {};
 }
 
 bool QuestManager::hasQuest(String const& questId) const {

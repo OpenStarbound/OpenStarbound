@@ -216,6 +216,13 @@ Maybe<Json> Quest::receiveMessage(String const& message, bool localMessage, Json
   return m_scriptComponent.handleMessage(message, localMessage, args);
 }
 
+
+Maybe<LuaValue> Quest::callScript(String const& func, LuaVariadic<LuaValue> const& args) {
+  if (!m_inited)
+    return {};
+  return m_scriptComponent.invoke(func, args);
+}
+
 void Quest::update(float dt) {
   if (!m_inited)
     return;
@@ -599,11 +606,19 @@ void Quest::uninitScript() {
 LuaCallbacks Quest::makeQuestCallbacks(Player* player) {
   LuaCallbacks callbacks;
 
+  callbacks.registerCallback("context", [this]() { m_scriptComponent.context(); });
+
   callbacks.registerCallback("state", [this]() { return QuestStateNames.getRight(state()); });
 
   callbacks.registerCallback("complete", [this](Maybe<size_t> followup) { complete(followup); });
 
   callbacks.registerCallback("fail", [this]() { fail(); });
+
+  callbacks.registerCallback("abandon", [this]() { abandon(); });
+
+  callbacks.registerCallback("decline", [this]() { declineOffer(); });
+
+  callbacks.registerCallback("cancel", [this]() { cancelOffer(); });
 
   callbacks.registerCallback("setCanTurnIn", [this](bool value) { this->m_canTurnIn = value; });
 

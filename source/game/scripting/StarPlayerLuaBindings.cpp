@@ -478,10 +478,17 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
   });
 
   callbacks.registerCallback("quest", [player](String const& questId) -> Json {
-    if (!player->questManager()->hasQuest(questId))
-      return {};
+    if (auto quest = player->questManager()->getQuest(questId))
+      return quest->diskStore();
 
-    return player->questManager()->getQuest(questId)->diskStore();
+    return {};
+  });
+
+  callbacks.registerCallback("callQuest", [player](String const& questId, String const& func, LuaVariadic<LuaValue> const& args) -> Maybe<LuaValue> {
+    if (auto quest = player->questManager()->getQuest(questId))
+      return quest->callScript(func, args);
+    
+    return {};
   });
 
   callbacks.registerCallback("hasQuest", [player](String const& questId) {

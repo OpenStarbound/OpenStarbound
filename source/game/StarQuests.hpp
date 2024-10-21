@@ -45,6 +45,7 @@ public:
   void uninit();
 
   Maybe<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
+  Maybe<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args);
   void update(float dt);
 
   void offer();
