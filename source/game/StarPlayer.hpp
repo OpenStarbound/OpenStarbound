@@ -88,6 +88,7 @@ public:
   void setStatistics(StatisticsPtr statistics);
 
   void setUniverseClient(UniverseClient* universeClient);
+  UniverseClient* universeClient() const;
 
   QuestManagerPtr questManager() const;
 
@@ -315,8 +316,6 @@ public:
   Vec2F nametagOrigin() const override;
 
   void updateIdentity();
-
-  JsonArray teamMembers();
 
   void setBodyDirectives(String const& directives);
   void setEmoteDirectives(String const& directives);
