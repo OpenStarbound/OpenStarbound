@@ -88,6 +88,7 @@ public:
   void setStatistics(StatisticsPtr statistics);
 
   void setUniverseClient(UniverseClient* universeClient);
+  UniverseClient* universeClient() const;
 
   QuestManagerPtr questManager() const;
 

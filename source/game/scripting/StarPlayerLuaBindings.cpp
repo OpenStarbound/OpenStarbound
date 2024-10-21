@@ -11,6 +11,8 @@
 #include "StarStatistics.hpp"
 #include "StarPlayerUniverseMap.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarUniverseClient.hpp"
+#include "StarTeamClient.hpp"
 
 namespace Star {
 
@@ -25,6 +27,20 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
       player->diskLoad(saved);
       throw;
     }
+  });
+
+  callbacks.registerCallback("teamMembers", [player]() -> Maybe<JsonArray> {
+    if (auto client = player->universeClient()) {
+      return client->teamClient()->members().transformed([](TeamClient::Member const& member) -> Json {
+        return JsonObject{
+          {"name", member.name},
+          {"uuid", member.uuid.hex()},
+          {"entity", member.entity},
+          {"healthPercentage", member.healthPercentage},
+          {"energyPercentage", member.energyPercentage}};
+      });
+    }
+    return {};
   });
 
   callbacks.registerCallback(   "humanoidIdentity", [player]()         { return player->humanoid()->identity().toJson();  });

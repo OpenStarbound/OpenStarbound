@@ -293,6 +293,10 @@ void Player::setUniverseClient(UniverseClient* client) {
   m_questManager->setUniverseClient(client);
 }
 
+UniverseClient* Player::universeClient() const {
+  return m_client;
+}
+
 EntityType Player::entityType() const {
   return EntityType::Player;
 }
