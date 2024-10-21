@@ -52,7 +52,9 @@ public:
   List<QuestPtr> listCompletedQuests() const;
   List<QuestPtr> listFailedQuests() const;
 
+  Maybe<String> currentQuestId() const;
   Maybe<QuestPtr> currentQuest() const;
+  Maybe<String> trackedQuestId() const;
   Maybe<QuestPtr> trackedQuest() const;
   Maybe<QuestIndicator> getQuestIndicator(EntityPtr const& entity) const;
 

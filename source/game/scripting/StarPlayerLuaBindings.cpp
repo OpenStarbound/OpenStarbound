@@ -484,8 +484,8 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
       return player->questManager()->hasCompleted(questId);
     });
 
-  callbacks.registerCallback("trackedQuest", [player]() {
-    return player->questManager()->trackedQuest();
+  callbacks.registerCallback("trackedQuestId", [player]() {
+    return player->questManager()->trackedQuestId();
   });
 
   callbacks.registerCallback("setTrackedQuest", [player](Maybe<String> const& questId) {
@@ -494,6 +494,10 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
 
   callbacks.registerCallback("canTurnInQuest", [player](String const& questId) {
     return player->questManager()->canTurnIn(questId);
+  });
+
+  callbacks.registerCallback("currentQuestId", [player]() {
+    return player->questManager()->currentQuestId();
   });
 
   callbacks.registerCallback("currentQuest", [player]() -> Json {

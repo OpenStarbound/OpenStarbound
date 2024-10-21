@@ -273,6 +273,10 @@ List<QuestPtr> QuestManager::listFailedQuests() const {
   return result;
 }
 
+Maybe<String> QuestManager::currentQuestId() const {
+  return m_trackedQuestId;
+}
+
 Maybe<QuestPtr> QuestManager::currentQuest() const {
   auto questId = m_onWorldQuestId.orMaybe(m_trackedQuestId);
   if (questId && isActive(*questId)) {
@@ -281,6 +285,10 @@ Maybe<QuestPtr> QuestManager::currentQuest() const {
       return current;
   }
   return {};
+}
+
+Maybe<String> QuestManager::trackedQuestId() const {
+  return m_trackedQuestId;
 }
 
 Maybe<QuestPtr> QuestManager::trackedQuest() const {
