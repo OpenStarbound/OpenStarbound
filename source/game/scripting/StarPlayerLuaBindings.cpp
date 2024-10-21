@@ -31,7 +31,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
 
   callbacks.registerCallback("teamMembers", [player]() -> Maybe<JsonArray> {
     if (auto client = player->universeClient()) {
-      return client->teamClient()->members().transformed([](TeamClient::Member& member) -> Json {
+      return client->teamClient()->members().transformed([](TeamClient::Member const& member) -> Json {
         return JsonObject{
           {"name", member.name},
           {"uuid", member.uuid.hex()},
