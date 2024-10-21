@@ -484,6 +484,10 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
       return player->questManager()->hasCompleted(questId);
     });
 
+  callbacks.registerCallback("trackedQuest", [player]() {
+    return player->questManager()->trackedQuest();
+  });
+
   callbacks.registerCallback("setTrackedQuest", [player](Maybe<String> const& questId) {
     return player->questManager()->setAsTracked(questId);
   });
