@@ -123,14 +123,15 @@ struct SignalHandlerImpl {
 
   static LONG CALLBACK vectoredExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo) {
     auto thread = CreateThread(NULL, 0, writeMiniDump, (void*)ExceptionInfo, 0, NULL);
+    LONG result = EXCEPTION_CONTINUE_SEARCH;
     if (ExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION) {
       handleFatalError("Access violation detected", ExceptionInfo);
-      return EXCEPTION_CONTINUE_EXECUTION;
+      result = EXCEPTION_CONTINUE_EXECUTION;
     }
     if ((ExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_ILLEGAL_INSTRUCTION)
         || (ExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_PRIV_INSTRUCTION)) {
       handleFatalError("Illegal instruction encountered", ExceptionInfo);
-      return EXCEPTION_CONTINUE_EXECUTION;
+      result = EXCEPTION_CONTINUE_EXECUTION;
     }
 
     if ((ExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_FLT_DENORMAL_OPERAND)
@@ -143,17 +144,17 @@ struct SignalHandlerImpl {
 
             ) {
       handleFatalError("Floating point exception", ExceptionInfo);
-      return EXCEPTION_CONTINUE_EXECUTION;
+      result = EXCEPTION_CONTINUE_EXECUTION;
     }
 
     if (ExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_INT_DIVIDE_BY_ZERO) {
       handleFatalError("Division by zero", ExceptionInfo);
-      return EXCEPTION_CONTINUE_EXECUTION;
+      result = EXCEPTION_CONTINUE_EXECUTION;
     }
 
     if (ExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_INT_OVERFLOW) {
       handleFatalError("Integer overflow", ExceptionInfo);
-      return EXCEPTION_CONTINUE_EXECUTION;
+      result = EXCEPTION_CONTINUE_EXECUTION;
     }
 
     if ((ExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_DATATYPE_MISALIGNMENT)
@@ -163,13 +164,13 @@ struct SignalHandlerImpl {
         || (ExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_INVALID_DISPOSITION)
         || (ExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_INVALID_HANDLE)) {
       handleFatalError("Error occured", ExceptionInfo);
-      return EXCEPTION_CONTINUE_EXECUTION;
+      result = EXCEPTION_CONTINUE_EXECUTION;
     }
     if (thread != NULL) {
       WaitForSingleObject(thread, 10000);
       CloseHandle(thread);
     }
-    return EXCEPTION_CONTINUE_SEARCH;
+    return result;
   }
 
   static BOOL WINAPI consoleCtrlHandler(DWORD) {
