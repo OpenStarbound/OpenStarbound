@@ -122,8 +122,11 @@ struct SignalHandlerImpl {
   }
 
   static LONG CALLBACK vectoredExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo) {
-    auto thread = CreateThread(NULL, 0, writeMiniDump, (void*)ExceptionInfo, 0, NULL);
+    HANDLE thread = NULL;
     LONG result = EXCEPTION_CONTINUE_SEARCH;
+    if (ExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_STACK_OVERFLOW) {
+      thread = CreateThread(NULL, 0, writeMiniDump, (void*)ExceptionInfo, 0, NULL);
+    }
     if (ExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION) {
       handleFatalError("Access violation detected", ExceptionInfo);
       result = EXCEPTION_CONTINUE_EXECUTION;
