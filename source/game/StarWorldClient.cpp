@@ -485,7 +485,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
   const List<Directives>* directives = nullptr;
   if (auto& worldTemplate = m_worldTemplate) {
     if (const auto& parameters = worldTemplate->worldParameters())
-      if (auto& globalDirectives = m_worldTemplate->worldParameters()->globalDirectives)
+      if (auto& globalDirectives = parameters->globalDirectives)
         directives = &globalDirectives.get();
   }
   m_entityMap->forAllEntities([&](EntityPtr const& entity) {
@@ -1541,7 +1541,7 @@ void WorldClient::handleDamageNotifications() {
       const List<Directives>* directives = nullptr;
       if (auto& worldTemplate = m_worldTemplate) {
         if (const auto& parameters = worldTemplate->worldParameters())
-          if (auto& globalDirectives = m_worldTemplate->worldParameters()->globalDirectives)
+          if (auto& globalDirectives = parameters->globalDirectives)
             directives = &globalDirectives.get();
       }
       if (directives) {
@@ -1775,20 +1775,6 @@ void WorldClient::initWorld(WorldStartPacket const& startPacket) {
 
   setupForceRegions();
 
-  if (!m_mainPlayer->isDead()) {
-    m_mainPlayer->init(this, m_entityMap->reserveEntityId(), EntityMode::Master);
-    m_entityMap->addEntity(m_mainPlayer);
-  }
-  m_mainPlayer->moveTo(startPacket.playerStart);
-  if (m_worldTemplate->worldParameters())
-    m_mainPlayer->overrideTech(m_worldTemplate->worldParameters()->overrideTech);
-  else
-    m_mainPlayer->overrideTech({});
-
-  // Auto reposition the client window on the player when the main player
-  // changes position.
-  centerClientWindowOnPlayer();
-
   m_sky = make_shared<Sky>();
   m_sky->readUpdate(startPacket.skyData, m_clientState.netCompatibilityRules());
 
@@ -1803,6 +1789,20 @@ void WorldClient::initWorld(WorldStartPacket const& startPacket) {
   m_lightIntensityCalculator.setParameters(assets->json("/lighting.config:intensity"));
 
   m_inWorld = true;
+  
+  if (!m_mainPlayer->isDead()) {
+    m_mainPlayer->init(this, m_entityMap->reserveEntityId(), EntityMode::Master);
+    m_entityMap->addEntity(m_mainPlayer);
+  }
+  m_mainPlayer->moveTo(startPacket.playerStart);
+  if (const auto& parameters = m_worldTemplate->worldParameters())
+    m_mainPlayer->overrideTech(parameters->overrideTech);
+  else
+    m_mainPlayer->overrideTech({});
+
+  // Auto reposition the client window on the player when the main player
+  // changes position.
+  centerClientWindowOnPlayer();
 }
 
 void WorldClient::clearWorld() {
@@ -2113,8 +2113,8 @@ bool WorldClient::isUnderground(Vec2F const& pos) const {
 }
 
 bool WorldClient::disableDeathDrops() const {
-  if (m_worldTemplate->worldParameters())
-    return m_worldTemplate->worldParameters()->disableDeathDrops;
+  if (const auto& parameters = m_worldTemplate->worldParameters())
+    return parameters->disableDeathDrops;
   return false;
 }
 
