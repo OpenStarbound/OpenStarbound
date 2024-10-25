@@ -78,6 +78,8 @@ struct ThreadImpl {
 
 #ifdef STAR_SYSTEM_FREEBSD
     pthread_set_name_np(pthread, tname);
+#elif defined(STAR_SYSTEM_NETBSD)
+    pthread_setname_np(pthread, "%s", tname);
 #elif not defined STAR_SYSTEM_MACOS
     pthread_setname_np(pthread, tname);
 #endif
