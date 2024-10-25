@@ -484,6 +484,13 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
     return {};
   });
 
+  callbacks.registerCallback("questState", [player](String const& questId) -> Maybe<String> {
+    if (auto quest = player->questManager()->getQuest(questId))
+      return QuestStateNames.getRight(quest->state());
+
+    return {};
+  });
+
   callbacks.registerCallback("callQuest", [player](String const& questId, String const& func, LuaVariadic<LuaValue> const& args) -> Maybe<LuaValue> {
     if (auto quest = player->questManager()->getQuest(questId))
       return quest->callScript(func, args);
