@@ -1327,7 +1327,7 @@ void WorldClient::addEntity(EntityPtr const& entity, EntityId entityId) {
   } else {
     auto entityFactory = Root::singleton().entityFactory();
     auto netRules = m_clientState.netCompatibilityRules();
-    m_outgoingPackets.append(make_shared<SpawnEntityPacket>(entity->entityType(), entityFactory->netStoreEntity(entity), entity->writeNetState(0, netRules).first));
+    m_outgoingPackets.append(make_shared<SpawnEntityPacket>(entity->entityType(), entityFactory->netStoreEntity(entity, netRules), entity->writeNetState(0, netRules).first));
   }
 }
 
@@ -1873,7 +1873,7 @@ void WorldClient::notifyEntityCreate(EntityPtr const& entity) {
     auto firstNetState = entity->writeNetState(0, netRules);
     m_masterEntitiesNetVersion[entity->entityId()] = firstNetState.second;
     m_outgoingPackets.append(make_shared<EntityCreatePacket>(entity->entityType(),
-      Root::singleton().entityFactory()->netStoreEntity(entity), std::move(firstNetState.first), entity->entityId()));
+      Root::singleton().entityFactory()->netStoreEntity(entity, netRules), std::move(firstNetState.first), entity->entityId()));
   }
 }
 
