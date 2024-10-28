@@ -205,7 +205,7 @@ void ItemTooltipBuilder::describePersistentEffect(
         auto listItem = container->addItem();
         listItem->fetchChild<ImageWidget>("statusImage")
             ->setImage(statsConfig.get(valueModifier->statName).getString("icon"));
-        listItem->setLabel("statusLabel", strf("{}{}", valueModifier->value < 0 ? "-" : "", valueModifier->value));
+        listItem->setLabel("statusLabel", strf("{}{:.2f}", valueModifier->value < 0 ? "-" : "", valueModifier->value));
       }
     } else if (auto effectiveMultiplier = modifierEffect->ptr<StatEffectiveMultiplier>()) {
       if (statsConfig.contains(effectiveMultiplier->statName)) {
