@@ -73,10 +73,10 @@ void QuestManager::setUniverseClient(UniverseClient* client) {
 
 void QuestManager::init(World* world) {
   m_world = world;
-  for (auto& quest : m_quests) {
-    if (!questValidOnServer(quest.second))
+  for (auto& quest : m_quests.values()) {
+    if (!questValidOnServer(quest))
       continue;
-    quest.second->init(m_player, world, m_client);
+    quest->init(m_player, world, m_client);
   }
   m_trackOnWorldQuests = true;
 
@@ -398,19 +398,21 @@ void QuestManager::update(float dt) {
     }
   }
 
-  for (auto& entry : m_quests) {
+  StringMap<QuestPtr> allQuests = quests();
+  for (auto& entry : allQuests) {
     auto quest = entry.second;
     QuestState state = quest->state();
     bool finished = state == QuestState::Complete || state == QuestState::Failed;
     if (state == QuestState::New || (finished && quest->ephemeral() && !quest->showDialog())) {
       quest->uninit();
+      allQuests.remove(entry.first);
       m_quests.remove(entry.first);
     }
   }
 
-  for (auto& q : m_quests.values()) {
-    if (questValidOnServer(q))
-      q->update(dt);
+  for (auto& q : allQuests) {
+    if (questValidOnServer(q.second))
+      q.second->update(dt);
   }
 }
 
