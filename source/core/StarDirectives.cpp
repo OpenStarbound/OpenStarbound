@@ -156,6 +156,15 @@ void Directives::parse(String&& directives) {
   }
 }
 
+StringView Directives::prefix() const {
+  if (!m_shared)
+    return "";
+  else if (m_shared->empty())
+    return m_shared->string;
+  else
+    return StringView(m_shared->string).substr(0, m_shared->entries.begin()->begin);
+}
+
 String Directives::string() const {
   if (!m_shared)
     return "";

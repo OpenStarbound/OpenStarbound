@@ -544,7 +544,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
   };
 
   auto backArmDrawable = [&](String const& frameSet, Directives const& directives) -> Drawable {
-    String image = strf("{}:{}", frameSet, backHand.backFrame);
+    String image = strf("{}:{}{}", frameSet, backHand.backFrame, directives.prefix());
     Drawable backArm = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, backArmFrameOffset);
     backArm.imagePart().addDirectives(directives, true);
     backArm.rotate(backHand.angle, backArmFrameOffset + m_backArmRotationCenter + m_backArmOffset);
@@ -553,15 +553,16 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
 
   if (!m_backArmorFrameset.empty()) {
     auto frameGroup = frameBase(m_state);
+    auto prefix = m_backArmorDirectives.prefix();
     if (m_movingBackwards && (m_state == State::Run))
       frameGroup = "runbackwards";
     String image;
     if (dance.isValid() && danceStep->bodyFrame)
-      image = strf("{}:{}", m_backArmorFrameset, *danceStep->bodyFrame);
+      image = strf("{}:{}{}", m_backArmorFrameset, *danceStep->bodyFrame, prefix);
     else if (m_state == Idle)
-      image = strf("{}:{}", m_backArmorFrameset, m_identity.personality.idle);
+      image = strf("{}:{}{}", m_backArmorFrameset, m_identity.personality.idle, prefix);
     else
-      image = strf("{}:{}.{}", m_backArmorFrameset, frameGroup, bodyStateSeq);
+      image = strf("{}:{}.{}{}", m_backArmorFrameset, frameGroup, bodyStateSeq, prefix);
 
     auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, Vec2F());
     drawable.imagePart().addDirectives(getBackDirectives(), true);
@@ -588,16 +589,18 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
     if (!m_backArmFrameset.empty() && !m_bodyHidden) {
       String image;
       Vec2F position;
+      auto bodyDirectives = getBodyDirectives();
+      auto prefix = bodyDirectives.prefix();
       if (dance.isValid() && danceStep->backArmFrame) {
-        image = strf("{}:{}", m_backArmFrameset, *danceStep->backArmFrame);
+        image = strf("{}:{}{}", m_backArmFrameset, *danceStep->backArmFrame, prefix);
         position = danceStep->backArmOffset / TilePixels;
       } else if (m_state == Idle) {
-        image = strf("{}:{}", m_backArmFrameset, m_identity.personality.armIdle);
+        image = strf("{}:{}{}", m_backArmFrameset, m_identity.personality.armIdle, prefix);
         position = m_identity.personality.armOffset / TilePixels;
       } else
-        image = strf("{}:{}.{}", m_backArmFrameset, frameBase(m_state), armStateSeq);
+        image = strf("{}:{}.{}{}", m_backArmFrameset, frameBase(m_state), armStateSeq, prefix);
       auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, position);
-      drawable.imagePart().addDirectives(getBodyDirectives(), true);
+      drawable.imagePart().addDirectives(bodyDirectives, true);
       if (dance.isValid())
         drawable.rotate(danceStep->backArmRotation);
       addDrawable(std::move(drawable), m_bodyFullbright);
@@ -605,14 +608,15 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
     if (!m_backSleeveFrameset.empty()) {
       String image;
       Vec2F position;
+      auto prefix = m_chestArmorDirectives.prefix();
       if (dance.isValid() && danceStep->backArmFrame) {
-        image = strf("{}:{}", m_backSleeveFrameset, *danceStep->backArmFrame);
+        image = strf("{}:{}{}", m_backSleeveFrameset, *danceStep->backArmFrame, prefix);
         position = danceStep->backArmOffset / TilePixels;
       } else if (m_state == Idle) {
-        image = strf("{}:{}", m_backSleeveFrameset, m_identity.personality.armIdle);
+        image = strf("{}:{}{}", m_backSleeveFrameset, m_identity.personality.armIdle, prefix);
         position = m_identity.personality.armOffset / TilePixels;
       } else
-        image = strf("{}:{}.{}", m_backSleeveFrameset, frameBase(m_state), armStateSeq);
+        image = strf("{}:{}.{}{}", m_backSleeveFrameset, frameBase(m_state), armStateSeq, prefix);
       auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, position);
       drawable.imagePart().addDirectives(getChestDirectives(), true);
       if (dance.isValid())
@@ -645,9 +649,10 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
   }
 
   if (!m_emoteFrameset.empty() && !m_bodyHidden) {
-    String image = strf("{}:{}.{}", m_emoteFrameset, emoteFrameBase(m_emoteState), emoteStateSeq);
+    auto emoteDirectives = getEmoteDirectives();
+    String image = strf("{}:{}.{}{}", m_emoteFrameset, emoteFrameBase(m_emoteState), emoteStateSeq, emoteDirectives.prefix());
     auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, headPosition);
-    drawable.imagePart().addDirectives(getEmoteDirectives(), true);
+    drawable.imagePart().addDirectives(emoteDirectives, true);
     addDrawable(std::move(drawable), m_bodyFullbright);
   }
 
@@ -660,25 +665,28 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
 
   if (!m_bodyFrameset.empty() && !m_bodyHidden) {
     String image;
+    auto bodyDirectives = getBodyDirectives();
+    auto prefix = bodyDirectives.prefix();
     if (dance.isValid() && danceStep->bodyFrame)
-      image = strf("{}:{}", m_bodyFrameset, *danceStep->bodyFrame);
+      image = strf("{}:{}{}", m_bodyFrameset, *danceStep->bodyFrame, prefix);
     else if (m_state == Idle)
-      image = strf("{}:{}", m_bodyFrameset, m_identity.personality.idle);
+      image = strf("{}:{}{}", m_bodyFrameset, m_identity.personality.idle, prefix);
     else
-      image = strf("{}:{}.{}", m_bodyFrameset, frameBase(m_state), bodyStateSeq);
+      image = strf("{}:{}.{}{}", m_bodyFrameset, frameBase(m_state), bodyStateSeq, prefix);
     auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, {});
-    drawable.imagePart().addDirectives(getBodyDirectives(), true);
+    drawable.imagePart().addDirectives(bodyDirectives, true);
     addDrawable(std::move(drawable), m_bodyFullbright);
   }
 
   if (!m_legsArmorFrameset.empty()) {
     String image;
+    auto prefix = m_legsArmorDirectives.prefix();
     if (dance.isValid() && danceStep->bodyFrame)
-      image = strf("{}:{}", m_legsArmorFrameset, *danceStep->bodyFrame);
+      image = strf("{}:{}{}", m_legsArmorFrameset, *danceStep->bodyFrame, prefix);
     else if (m_state == Idle)
-      image = strf("{}:{}", m_legsArmorFrameset, m_identity.personality.idle);
+      image = strf("{}:{}{}", m_legsArmorFrameset, m_identity.personality.idle, prefix);
     else
-      image = strf("{}:{}.{}", m_legsArmorFrameset, frameBase(m_state), bodyStateSeq);
+      image = strf("{}:{}.{}{}", m_legsArmorFrameset, frameBase(m_state), bodyStateSeq, prefix);
     auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, {});
     drawable.imagePart().addDirectives(getLegsDirectives(), true);
     addDrawable(std::move(drawable));
@@ -687,18 +695,19 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
   if (!m_chestArmorFrameset.empty()) {
     String image;
     Vec2F position;
+    auto prefix = m_chestArmorDirectives.prefix();
     if (dance.isValid() && danceStep->bodyFrame)
-      image = strf("{}:{}", m_chestArmorFrameset, *danceStep->bodyFrame);
+      image = strf("{}:{}{}", m_chestArmorFrameset, *danceStep->bodyFrame, prefix);
     else if (m_state == Run)
-      image = strf("{}:run", m_chestArmorFrameset);
+      image = strf("{}:run{}", m_chestArmorFrameset, prefix);
     else if (m_state == Idle)
-      image = strf("{}:{}", m_chestArmorFrameset, m_identity.personality.idle);
+      image = strf("{}:{}{}", m_chestArmorFrameset, m_identity.personality.idle, prefix);
     else if (m_state == Duck)
-      image = strf("{}:duck", m_chestArmorFrameset);
+      image = strf("{}:duck{}", m_chestArmorFrameset, prefix);
     else if ((m_state == Swim) || (m_state == SwimIdle))
-      image = strf("{}:swim", m_chestArmorFrameset);
+      image = strf("{}:swim{}", m_chestArmorFrameset, prefix);
     else
-      image = strf("{}:chest.1", m_chestArmorFrameset);
+      image = strf("{}:chest.1{}", m_chestArmorFrameset, prefix);
     if (m_state != Duck)
       position[1] += bobYOffset;
     auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, position);
@@ -728,7 +737,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
   }
 
   auto frontArmDrawable = [&](String const& frameSet, Directives const& directives) -> Drawable {
-    String image = strf("{}:{}", frameSet, frontHand.frontFrame);
+    String image = strf("{}:{}{}", frameSet, frontHand.frontFrame, directives.prefix());
     Drawable frontArm = Drawable::makeImage(image, 1.0f / TilePixels, true, frontArmFrameOffset);
     frontArm.imagePart().addDirectives(directives, true);
     frontArm.rotate(frontHand.angle, frontArmFrameOffset + m_frontArmRotationCenter);
@@ -755,16 +764,18 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
     if (!m_frontArmFrameset.empty() && !m_bodyHidden) {
       String image;
       Vec2F position;
+      auto bodyDirectives = getBodyDirectives();
+      auto prefix = bodyDirectives.prefix();
       if (dance.isValid() && danceStep->frontArmFrame) {
-        image = strf("{}:{}", m_frontArmFrameset, *danceStep->frontArmFrame);
+        image = strf("{}:{}{}", m_frontArmFrameset, *danceStep->frontArmFrame, prefix);
         position = danceStep->frontArmOffset / TilePixels;
       } else if (m_state == Idle) {
-        image = strf("{}:{}", m_frontArmFrameset, m_identity.personality.armIdle);
+        image = strf("{}:{}{}", m_frontArmFrameset, m_identity.personality.armIdle, prefix);
         position = m_identity.personality.armOffset / TilePixels;
       } else
-        image = strf("{}:{}.{}", m_frontArmFrameset, frameBase(m_state), armStateSeq);
+        image = strf("{}:{}.{}{}", m_frontArmFrameset, frameBase(m_state), armStateSeq, prefix);
       auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, position);
-      drawable.imagePart().addDirectives(getBodyDirectives(), true);
+      drawable.imagePart().addDirectives(bodyDirectives, true);
       if (dance.isValid())
         drawable.rotate(danceStep->frontArmRotation);
       addDrawable(drawable, m_bodyFullbright);
@@ -773,14 +784,15 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
     if (!m_frontSleeveFrameset.empty()) {
       String image;
       Vec2F position;
+      auto prefix = m_chestArmorDirectives.prefix();
       if (dance.isValid() && danceStep->frontArmFrame) {
-        image = strf("{}:{}", m_frontSleeveFrameset, *danceStep->frontArmFrame);
+        image = strf("{}:{}{}", m_frontSleeveFrameset, *danceStep->frontArmFrame, prefix);
         position = danceStep->frontArmOffset / TilePixels;
       } else if (m_state == Idle) {
-        image = strf("{}:{}", m_frontSleeveFrameset, m_identity.personality.armIdle);
+        image = strf("{}:{}{}", m_frontSleeveFrameset, m_identity.personality.armIdle, prefix);
         position = m_identity.personality.armOffset / TilePixels;
       } else
-        image = strf("{}:{}.{}", m_frontSleeveFrameset, frameBase(m_state), armStateSeq);
+        image = strf("{}:{}.{}{}", m_frontSleeveFrameset, frameBase(m_state), armStateSeq, prefix);
       auto drawable = Drawable::makeImage(image, 1.0f / TilePixels, true, position);
       drawable.imagePart().addDirectives(getChestDirectives(), true);
       if (dance.isValid())

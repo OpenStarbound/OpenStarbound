@@ -55,6 +55,7 @@ public:
 
   void loadOperations() const;
   void parse(String&& directives);
+  StringView prefix() const;
   String string() const;
   String const* stringPtr() const;
   String buildString() const;
