@@ -12,7 +12,7 @@ Json jsonPatch(Json const& base, JsonArray const& patch) {
     }
     return res;
   } catch (JsonException const& e) {
-    throw JsonPatchException(strf("Could not apply patch to base. {}", e.what()));
+    throw JsonPatchException(strf("Could not apply patch to base. {}", e.what()), false);
   }
 }
 
@@ -26,7 +26,7 @@ size_t findJsonMatch(Json const& searchable, Json const& value, JsonPath::Pointe
         return i + 1;
     }
   } else {
-    throw JsonPatchException(strf("Search operation failure, value at '{}' is not an array.", pointer.path()));
+    throw JsonPatchException(strf("Search operation failure, value at '{}' is not an array.", pointer.path()), false);
   }
   return 0;
 }
@@ -49,9 +49,9 @@ namespace JsonPatching {
       auto operation = op.getString("op");
       return JsonPatching::functionMap.get(operation)(base, op);
     } catch (JsonException const& e) {
-      throw JsonPatchException(strf("Could not apply operation to base. {}", e.what()));
+      throw JsonPatchException(strf("Could not apply operation to base. {}", e.what()), false);
     } catch (MapException const&) {
-      throw JsonPatchException(strf("Invalid operation: {}", op.getString("op")));
+      throw JsonPatchException(strf("Invalid operation: {}", op.getString("op")), false);
     }
   }
 
@@ -66,28 +66,28 @@ namespace JsonPatching {
         auto searchValue = op.get("search");
         bool found = findJsonMatch(searchable, searchValue, pointer);
         if (found && inverseTest)
-          throw JsonPatchTestFail(strf("Test operation failure, expected {} to be missing.", searchValue));
+          throw JsonPatchTestFail(strf("Test operation failure, expected {} to be missing.", searchValue), false);
         else if (!found && !inverseTest)
-          throw JsonPatchTestFail(strf("Test operation failure, could not find {}.", searchValue));
+          throw JsonPatchTestFail(strf("Test operation failure, could not find {}.", searchValue), false);
         return base;
       } else {
         auto value = op.opt("value");
         auto testValue = pointer.get(base);
         if (!value) {
           if (inverseTest)
-            throw JsonPatchTestFail(strf("Test operation failure, expected {} to be missing.", path));
+            throw JsonPatchTestFail(strf("Test operation failure, expected {} to be missing.", path), false);
           return base;
         }
 
         if ((value && (testValue == *value)) ^ inverseTest)
           return base;
         else
-          throw JsonPatchTestFail(strf("Test operation failure, expected {} found {}.", value, testValue));
+          throw JsonPatchTestFail(strf("Test operation failure, expected {} found {}.", value, testValue), false);
       }
     } catch (JsonPath::TraversalException& e) {
       if (inverseTest)
         return base;
-      throw JsonPatchTestFail(strf("Test operation failure: {}", e.what()));
+      throw JsonPatchTestFail(strf("Test operation failure: {}", e.what()), false);
     }
   }
 
