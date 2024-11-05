@@ -398,19 +398,21 @@ void QuestManager::update(float dt) {
     }
   }
 
-  StringMap<QuestPtr> allQuests = quests();
-  for (auto& entry : allQuests) {
+  List<String> expiredQuests;
+  for (auto& entry : m_quests) {
     auto quest = entry.second;
     QuestState state = quest->state();
     bool finished = state == QuestState::Complete || state == QuestState::Failed;
     if (state == QuestState::New || (finished && quest->ephemeral() && !quest->showDialog())) {
       quest->uninit();
-      allQuests.remove(entry.first);
-      m_quests.remove(entry.first);
+      expiredQuests.append(entry.first);
     }
   }
 
-  for (auto& q : allQuests) {
+  for (auto& questId : expiredQuests)
+    m_quests.remove(questId);
+
+  for (auto& q : m_quests) {
     if (questValidOnServer(q.second))
       q.second->update(dt);
   }
