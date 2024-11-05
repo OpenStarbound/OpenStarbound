@@ -730,7 +730,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
   }
 
   if (!m_headArmorFrameset.empty()) {
-    String image = strf("{}:normal", m_headArmorFrameset);
+    String image = strf("{}:normal{}", m_headArmorFrameset, m_headArmorDirectives.prefix());
     auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, headPosition);
     drawable.imagePart().addDirectives(getHeadDirectives(), true);
     addDrawable(std::move(drawable));
