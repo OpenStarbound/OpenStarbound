@@ -162,6 +162,7 @@ SET (star_game_HEADERS
     StarWeatherTypes.hpp
     StarWireProcessor.hpp
     StarWiring.hpp
+    StarWorldCamera.hpp
     StarWorldClient.hpp
     StarWorldClientState.hpp
     StarWorldGeneration.hpp
@@ -231,6 +232,7 @@ SET (star_game_HEADERS
     objects/StarPhysicsObject.hpp
     objects/StarTeleporterObject.hpp
 
+    scripting/StarCameraLuaBindings.hpp
     scripting/StarCelestialLuaBindings.hpp
     scripting/StarBehaviorLuaBindings.hpp
     scripting/StarConfigLuaBindings.hpp
@@ -421,6 +423,7 @@ SET (star_game_SOURCES
     StarWeatherTypes.cpp
     StarWireProcessor.cpp
     StarWiring.cpp
+    StarWorldCamera.cpp
     StarWorldClient.cpp
     StarWorldClientState.cpp
     StarWorldGeneration.cpp
@@ -470,6 +473,7 @@ SET (star_game_SOURCES
     objects/StarPhysicsObject.cpp
     objects/StarTeleporterObject.cpp
 
+    scripting/StarCameraLuaBindings.cpp
     scripting/StarCelestialLuaBindings.cpp
     scripting/StarBehaviorLuaBindings.cpp
     scripting/StarConfigLuaBindings.cpp

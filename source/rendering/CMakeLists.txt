@@ -16,7 +16,6 @@ SET (star_rendering_HEADERS
       StarFontTextureGroup.hpp
       StarTextPainter.hpp
       StarTilePainter.hpp
-      StarWorldCamera.hpp
       StarWorldPainter.hpp
     )
 
@@ -28,7 +27,6 @@ SET (star_rendering_SOURCES
       StarFontTextureGroup.cpp
       StarTextPainter.cpp
       StarTilePainter.cpp
-      StarWorldCamera.cpp
       StarWorldPainter.cpp
     )
 

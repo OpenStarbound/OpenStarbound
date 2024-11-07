@@ -20,7 +20,7 @@ public:
 
   // Set the camera center position (in world space) to as close to the given
   // location as possible while keeping the screen within world bounds.
-  void setCenterWorldPosition(Vec2F const& position, bool force = false);
+  void setCenterWorldPosition(Vec2F position, bool force = false);
   // Returns the actual camera position.
   Vec2F centerWorldPosition() const;
 
@@ -28,10 +28,10 @@ public:
   // the world is non-euclidean, one world coordinate can transform to
   // potentially an infinite number of screen coordinates.  This will retrun
   // the closest to the center of the screen.
-  Vec2F worldToScreen(Vec2F const& worldCoord) const;
+  Vec2F worldToScreen(Vec2F worldCoord) const;
 
   // Assumes top left corner of screen is (0, 0) in screen coordinates.
-  Vec2F screenToWorld(Vec2F const& screen) const;
+  Vec2F screenToWorld(Vec2F screen) const;
 
   // Returns screen dimensions in world space.
   RectF worldScreenRect() const;
@@ -86,7 +86,7 @@ inline Vec2F WorldCamera::centerWorldPosition() const {
   return Vec2F(m_worldCenter);
 }
 
-inline Vec2F WorldCamera::worldToScreen(Vec2F const& worldCoord) const {
+inline Vec2F WorldCamera::worldToScreen(Vec2F worldCoord) const {
   Vec2F wrappedCoord = m_worldGeometry.nearestTo(Vec2F(m_worldCenter), worldCoord);
   return Vec2F(
       (wrappedCoord[0] - m_worldCenter[0]) * (TilePixels * m_pixelRatio) + (float)m_screenSize[0] / 2.0,
@@ -94,7 +94,7 @@ inline Vec2F WorldCamera::worldToScreen(Vec2F const& worldCoord) const {
     );
 }
 
-inline Vec2F WorldCamera::screenToWorld(Vec2F const& screen) const {
+inline Vec2F WorldCamera::screenToWorld(Vec2F screen) const {
   return Vec2F(
       (screen[0] - (float)m_screenSize[0] / 2.0) / (TilePixels * m_pixelRatio) + m_worldCenter[0],
       (screen[1] - (float)m_screenSize[1] / 2.0) / (TilePixels * m_pixelRatio) + m_worldCenter[1]
