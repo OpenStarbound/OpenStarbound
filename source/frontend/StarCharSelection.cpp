@@ -27,6 +27,7 @@ CharSelectionPane::CharSelectionPane(PlayerStoragePtr playerStorage,
   guiReader.registerCallback("charSelector2", [=](Widget*) { selectCharacter(1); });
   guiReader.registerCallback("charSelector3", [=](Widget*) { selectCharacter(2); });
   guiReader.registerCallback("charSelector4", [=](Widget*) { selectCharacter(3); });
+  guiReader.registerCallback("createCharButton", [=](Widget*) { m_createCallback(); });
 
   guiReader.construct(root.assets()->json("/interface/windowconfig/charselection.config"), this);
 }
