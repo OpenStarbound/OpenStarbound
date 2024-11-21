@@ -852,104 +852,118 @@ List<Drawable> Humanoid::renderPortrait(PortraitMode mode) const {
 
   if (mode != PortraitMode::Head) {
     if (!m_backArmFrameset.empty()) {
-      String image = strf("{}:{}", m_backArmFrameset, personality.armIdle);
+      auto bodyDirectives = getBodyDirectives();
+      String image = strf("{}:{}{}", m_backArmFrameset, personality.armIdle, bodyDirectives.prefix());
       Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.armOffset);
-      drawable.imagePart().addDirectives(getBodyDirectives(), true);
+      drawable.imagePart().addDirectives(bodyDirectives, true);
       addDrawable(std::move(drawable));
     }
     if (dressed && !m_backSleeveFrameset.empty()) {
-      String image = strf("{}:{}", m_backSleeveFrameset, personality.armIdle);
+      auto chestDirectives = getChestDirectives();
+      String image = strf("{}:{}{}", m_backSleeveFrameset, personality.armIdle, chestDirectives.prefix());
       Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.armOffset);
-      drawable.imagePart().addDirectives(getChestDirectives(), true);
+      drawable.imagePart().addDirectives(chestDirectives, true);
       addDrawable(std::move(drawable));
     }
     if (mode != PortraitMode::Bust) {
       if (dressed && !m_backArmorFrameset.empty()) {
-        String image = strf("{}:{}", m_backArmorFrameset, personality.idle);
+        auto backDirectives = getBackDirectives();
+        String image = strf("{}:{}{}", m_backArmorFrameset, personality.idle, backDirectives.prefix());
         Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, {});
-        drawable.imagePart().addDirectives(getBackDirectives(), true);
+        drawable.imagePart().addDirectives(backDirectives, true);
         addDrawable(std::move(drawable));
       }
     }
   }
 
   if (!m_headFrameset.empty()) {
-    String image = strf("{}:normal", m_headFrameset);
+    auto bodyDirectives = getBodyDirectives();
+    String image = strf("{}:normal{}", m_headFrameset, bodyDirectives.prefix());
     Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.headOffset);
-    drawable.imagePart().addDirectives(getBodyDirectives(), true);
+    drawable.imagePart().addDirectives(bodyDirectives, true);
     addDrawable(std::move(drawable));
   }
 
   if (!m_emoteFrameset.empty()) {
-    String image = strf("{}:{}.{}", m_emoteFrameset, emoteFrameBase(m_emoteState), emoteStateSeq);
+    auto emoteDirectives = getEmoteDirectives();
+    String image = strf("{}:{}.{}{}", m_emoteFrameset, emoteFrameBase(m_emoteState), emoteStateSeq, emoteDirectives.prefix());
     Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.headOffset);
-    drawable.imagePart().addDirectives(getEmoteDirectives(), true);
+    drawable.imagePart().addDirectives(emoteDirectives, true);
     addDrawable(std::move(drawable));
   }
 
   if (!m_hairFrameset.empty()) {
-    String image = strf("{}:normal", m_hairFrameset);
+    auto hairDirectives = getHairDirectives();
+    String image = strf("{}:normal{}", m_hairFrameset, hairDirectives.prefix());
     Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.headOffset);
-    drawable.imagePart().addDirectives(getHairDirectives(), true).addDirectives(helmetMaskDirective, true);
+    drawable.imagePart().addDirectives(hairDirectives, true).addDirectives(helmetMaskDirective, true);
     addDrawable(std::move(drawable));
   }
 
   if (!m_bodyFrameset.empty()) {
-    String image = strf("{}:{}", m_bodyFrameset, personality.idle);
+    auto bodyDirectives = getBodyDirectives();
+    String image = strf("{}:{}{}", m_bodyFrameset, personality.idle, bodyDirectives.prefix());
     Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, {});
-    drawable.imagePart().addDirectives(getBodyDirectives(), true);
+    drawable.imagePart().addDirectives(bodyDirectives, true);
     addDrawable(std::move(drawable));
   }
 
   if (mode != PortraitMode::Head) {
     if (dressed && !m_legsArmorFrameset.empty()) {
-      String image = strf("{}:{}", m_legsArmorFrameset, personality.idle);
+      auto legsDirectives = getLegsDirectives();
+      String image = strf("{}:{}{}", m_legsArmorFrameset, personality.idle, legsDirectives.prefix());
       Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, {});
-      drawable.imagePart().addDirectives(getLegsDirectives(), true);
+      drawable.imagePart().addDirectives(legsDirectives, true);
       addDrawable(std::move(drawable));
     }
 
     if (dressed && !m_chestArmorFrameset.empty()) {
-      String image = strf("{}:{}", m_chestArmorFrameset, personality.idle);
+      auto chestDirectives = getChestDirectives();
+      String image = strf("{}:{}{}", m_chestArmorFrameset, personality.idle, chestDirectives.prefix());
       Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, {});
-      drawable.imagePart().addDirectives(getChestDirectives(), true);
+      drawable.imagePart().addDirectives(chestDirectives, true);
       addDrawable(std::move(drawable));
     }
   }
 
   if (!m_facialHairFrameset.empty()) {
-    String image = strf("{}:normal", m_facialHairFrameset);
+    auto facialHairDirectives = getFacialHairDirectives();
+    String image = strf("{}:normal{}", m_facialHairFrameset, facialHairDirectives.prefix());
     Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.headOffset);
-    drawable.imagePart().addDirectives(getFacialHairDirectives(), true).addDirectives(helmetMaskDirective, true);
+    drawable.imagePart().addDirectives(facialHairDirectives, true).addDirectives(helmetMaskDirective, true);
     addDrawable(std::move(drawable));
   }
 
   if (!m_facialMaskFrameset.empty()) {
-    String image = strf("{}:normal", m_facialMaskFrameset);
+    auto facialMaskDirectives = getFacialMaskDirectives();
+    String image = strf("{}:normal{}", m_facialMaskFrameset, facialMaskDirectives.prefix());
     Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.headOffset);
-    drawable.imagePart().addDirectives(getFacialMaskDirectives(), true).addDirectives(helmetMaskDirective, true);
+    drawable.imagePart().addDirectives(facialMaskDirectives, true).addDirectives(helmetMaskDirective, true);
     addDrawable(std::move(drawable));
   }
 
   if (dressed && !m_headArmorFrameset.empty()) {
-    String image = strf("{}:normal", m_headArmorFrameset);
+    auto headDirectives = getHeadDirectives();
+    String image = strf("{}:normal{}", m_headArmorFrameset, headDirectives.prefix());
     Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.headOffset);
-    drawable.imagePart().addDirectives(getHeadDirectives(), true);
+    drawable.imagePart().addDirectives(headDirectives, true);
     addDrawable(std::move(drawable));
   }
 
   if (mode != PortraitMode::Head) {
     if (!m_frontArmFrameset.empty()) {
-      String image = strf("{}:{}", m_frontArmFrameset, personality.armIdle);
+      auto bodyDirectives = getBodyDirectives();
+      String image = strf("{}:{}{}", m_frontArmFrameset, personality.armIdle, bodyDirectives.prefix());
       Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.armOffset);
-      drawable.imagePart().addDirectives(getBodyDirectives(), true);
+      drawable.imagePart().addDirectives(bodyDirectives, true);
       addDrawable(std::move(drawable));
     }
 
     if (dressed && !m_frontSleeveFrameset.empty()) {
-      String image = strf("{}:{}", m_frontSleeveFrameset, personality.armIdle);
+      auto chestDirectives = getChestDirectives();
+      String image = strf("{}:{}{}", m_frontSleeveFrameset, personality.armIdle, chestDirectives.prefix());
       Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.armOffset);
-      drawable.imagePart().addDirectives(getChestDirectives(), true);
+      drawable.imagePart().addDirectives(chestDirectives, true);
       addDrawable(std::move(drawable));
     }
   }
