@@ -1,4 +1,4 @@
-[{"op":"merge", "path":"", "value": {
+{
 	"createCharButton" : {
 		"type" : "button",
 		"base" : "/interface/title/createcharacter.png",
@@ -6,4 +6,4 @@
 		"position" : [23, 241],
 		"pressedOffset" : [0, 0]
 	}
-}}]
+}

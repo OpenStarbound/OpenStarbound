@@ -410,8 +410,9 @@ void StatusController::init(Entity* parentEntity, ActorMovementController* movem
 
   if (m_parentEntity->isMaster()) {
     initPrimaryScript();
-    for (auto& p : m_uniqueEffects)
-      initUniqueEffectScript(p.second);
+    for (auto& p : m_uniqueEffects.keys())
+      if (auto effect = m_uniqueEffects.ptr(p))
+        initUniqueEffectScript(*effect);
   }
 
   m_environmentStatusEffectUpdateTimer.reset();
@@ -421,8 +422,9 @@ void StatusController::uninit() {
   m_parentEntity = nullptr;
   m_movementController = nullptr;
 
-  for (auto& p : m_uniqueEffects)
-    uninitUniqueEffectScript(p.second);
+  for (auto& p : m_uniqueEffects.keys())
+    if (auto effect = m_uniqueEffects.ptr(p))
+      uninitUniqueEffectScript(*effect);
   uninitPrimaryScript();
 
   m_recentHitsGiven.reset();
