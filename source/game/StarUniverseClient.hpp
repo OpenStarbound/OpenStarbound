@@ -89,6 +89,7 @@ public:
   void setLuaCallbacks(String const& groupName, LuaCallbacks const& callbacks);
   void startLua();
   void stopLua();
+  LuaRootPtr luaRoot();
 
   bool reloadPlayer(Json const& data, Uuid const& uuid, bool resetInterfaces = false, bool showIndicator = false);
   bool switchPlayer(Uuid const& uuid);
