@@ -141,7 +141,7 @@ MainInterface::MainInterface(UniverseClientPtr client, WorldPainterPtr painter, 
   m_collections = make_shared<ScriptPane>(m_client, "/interface/scripted/collections/collectionsgui.config");
   m_paneManager.registerPane(MainInterfacePanes::Collections, PaneLayer::Window, m_collections);
 
-  m_chat = make_shared<Chat>(m_client);
+  m_chat = make_shared<Chat>(m_client, Root::singleton().assets()->json("/interface/chat/chat.config"));
   m_paneManager.registerPane(MainInterfacePanes::Chat, PaneLayer::Hud, m_chat);
   m_clientCommandProcessor = make_shared<ClientCommandProcessor>(m_client, m_cinematicOverlay, &m_paneManager, m_config->macroCommands);
 
@@ -171,11 +171,6 @@ MainInterface::MainInterface(UniverseClientPtr client, WorldPainterPtr painter, 
   m_nameplatePainter = make_shared<NameplatePainter>();
   m_questIndicatorPainter = make_shared<QuestIndicatorPainter>(m_client);
   m_chatBubbleManager = make_shared<ChatBubbleManager>();
-
-  m_paneManager.displayRegisteredPane(MainInterfacePanes::ActionBar);
-  m_paneManager.displayRegisteredPane(MainInterfacePanes::Chat);
-  m_paneManager.displayRegisteredPane(MainInterfacePanes::TeamBar);
-  m_paneManager.displayRegisteredPane(MainInterfacePanes::StatusPane);
 }
 
 MainInterface::~MainInterface() {
@@ -995,6 +990,13 @@ void MainInterface::reviveScriptPanes(List<ScriptPaneInfo>& panes) {
     displayScriptPane(info.scriptPane, info.sourceEntityId);
     info.scriptPane->setPosition(info.position);
   }
+}
+
+void MainInterface::displayDefaultPanes() {
+  m_paneManager.displayRegisteredPane(MainInterfacePanes::ActionBar);
+  m_paneManager.displayRegisteredPane(MainInterfacePanes::Chat);
+  m_paneManager.displayRegisteredPane(MainInterfacePanes::TeamBar);
+  m_paneManager.displayRegisteredPane(MainInterfacePanes::StatusPane);
 }
 
 PanePtr MainInterface::createEscapeDialog() {

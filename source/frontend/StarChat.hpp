@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StarPane.hpp"
+#include "StarBaseScriptPane.hpp"
 #include "StarChatTypes.hpp"
 
 namespace Star {
@@ -13,9 +13,9 @@ STAR_CLASS(ImageStretchWidget);
 STAR_CLASS(CanvasWidget);
 STAR_CLASS(Chat);
 
-class Chat : public Pane {
+class Chat : public BaseScriptPane {
 public:
-  Chat(UniverseClientPtr client);
+  Chat(UniverseClientPtr client, Json const&);
 
   void startChat();
   void startCommand();
@@ -57,6 +57,7 @@ private:
   void updateBottomButton();
 
   UniverseClientPtr m_client;
+  bool m_scripted;
 
   TextBoxWidgetPtr m_textBox;
   LabelWidgetPtr m_say;

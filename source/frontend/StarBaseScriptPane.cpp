@@ -14,7 +14,7 @@
 
 namespace Star {
 
-BaseScriptPane::BaseScriptPane(Json config) : Pane(), m_rawConfig(config) {
+BaseScriptPane::BaseScriptPane(Json config, bool construct) : Pane(), m_rawConfig(config) {
   auto& root = Root::singleton();
   auto assets = root.assets();
 
@@ -35,15 +35,8 @@ BaseScriptPane::BaseScriptPane(Json config) : Pane(), m_rawConfig(config) {
     });
   }
 
-  m_reader->construct(assets->fetchJson(m_config.get("gui")), this);
-
-  for (auto pair : m_config.getObject("canvasClickCallbacks", {}))
-    m_canvasClickCallbacks.set(findChild<CanvasWidget>(pair.first), pair.second.toString());
-  for (auto pair : m_config.getObject("canvasKeyCallbacks", {}))
-    m_canvasKeyCallbacks.set(findChild<CanvasWidget>(pair.first), pair.second.toString());
-
-  m_script.setScripts(jsonToStringList(m_config.get("scripts", JsonArray())));
-  m_script.setUpdateDelta(m_config.getUInt("scriptDelta", 1));
+  if (construct)
+    this->construct(assets->fetchJson(m_config.get("gui")));
 
   m_callbacksAdded = false;
 }
@@ -138,6 +131,18 @@ Maybe<String> BaseScriptPane::cursorOverride(Vec2I const& screenPosition) {
 
 GuiReaderPtr BaseScriptPane::reader() {
   return m_reader;
+}
+
+void BaseScriptPane::construct(Json config) {
+  m_reader->construct(config, this);
+
+  for (auto pair : m_config.getObject("canvasClickCallbacks", {}))
+    m_canvasClickCallbacks.set(findChild<CanvasWidget>(pair.first), pair.second.toString());
+  for (auto pair : m_config.getObject("canvasKeyCallbacks", {}))
+    m_canvasKeyCallbacks.set(findChild<CanvasWidget>(pair.first), pair.second.toString());
+
+  m_script.setScripts(jsonToStringList(m_config.get("scripts", JsonArray())));
+  m_script.setUpdateDelta(m_config.getUInt("scriptDelta", 1));
 }
 
 }

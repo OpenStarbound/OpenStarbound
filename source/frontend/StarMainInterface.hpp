@@ -132,6 +132,7 @@ public:
 
   void takeScriptPanes(List<ScriptPaneInfo>& out);
   void reviveScriptPanes(List<ScriptPaneInfo>& panes);
+  void displayDefaultPanes();
 private:
   PanePtr createEscapeDialog();
 
