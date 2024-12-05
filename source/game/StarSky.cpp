@@ -13,11 +13,7 @@
 namespace Star {
 
 Sky::Sky() {
-  m_settings = Root::singleton().assets()->json("/sky.config");
-
-  m_starFrames = m_settings.queryInt("stars.frames");
-  m_starList = jsonToStringList(m_settings.query("stars.list"));
-  m_hyperStarList = jsonToStringList(m_settings.query("stars.hyperlist"));
+  skyParametersUpdated();
 
   m_netInit = false;
 
@@ -38,7 +34,7 @@ Sky::Sky() {
 
 Sky::Sky(SkyParameters const& skyParameters, bool inOrbit) : Sky() {
   m_skyParameters = skyParameters;
-  m_skyParametersUpdated = true;
+  skyParametersUpdated();
 
   if (inOrbit)
     m_skyType = SkyType::Orbital;
@@ -46,7 +42,7 @@ Sky::Sky(SkyParameters const& skyParameters, bool inOrbit) : Sky() {
     m_skyType = m_skyParameters.skyType;
 }
 
-void Sky::startFlying(bool enterHyperspace, bool startInWarp) {
+void Sky::startFlying(bool enterHyperspace, bool startInWarp, Json settings) {
   if (startInWarp)
     m_flyingType = FlyingType::Warp;
   else
@@ -55,6 +51,10 @@ void Sky::startFlying(bool enterHyperspace, bool startInWarp) {
   m_flyingTimer = 0;
   m_enterHyperspace = enterHyperspace;
   m_startInWarp = startInWarp;
+  if (settings.isType(Json::Type::Object)) {
+    m_skyParameters.settings = settings;
+    skyParametersUpdated();
+  }
 }
 
 void Sky::stopFlyingAt(Maybe<SkyParameters> dest) {
@@ -63,7 +63,7 @@ void Sky::stopFlyingAt(Maybe<SkyParameters> dest) {
 
 void Sky::jumpTo(SkyParameters skyParameters) {
   m_skyParameters = skyParameters;
-  m_skyParametersUpdated = true;
+  skyParametersUpdated();
 }
 
 pair<ByteArray, uint64_t> Sky::writeUpdate(uint64_t fromVersion, NetCompatibilityRules rules) {
@@ -531,8 +531,10 @@ void Sky::writeNetStates() {
 }
 
 void Sky::readNetStates() {
-  if (m_skyParametersNetState.pullUpdated())
+  if (m_skyParametersNetState.pullUpdated()) {
     m_skyParameters = SkyParameters(DataStreamBuffer::deserialize<Json>(m_skyParametersNetState.get()));
+    skyParametersUpdated();
+  }
 
   m_skyType = (SkyType)m_skyTypeNetState.get();
   m_time = m_timeNetState.get();
@@ -649,6 +651,14 @@ float Sky::slowdownTime() const {
     return m_settings.queryFloat("hyperspaceSlowdownTime");
   else
     return m_settings.queryFloat("slowdownTime");
+}
+
+void Sky::skyParametersUpdated() {
+  m_skyParametersUpdated = true;
+  m_settings = jsonMerge(Root::singleton().assets()->json("/sky.config"), m_skyParameters.settings);
+  m_starFrames = m_settings.queryInt("stars.frames");
+  m_starList = jsonToStringList(m_settings.query("stars.list"));
+  m_hyperStarList = jsonToStringList(m_settings.query("stars.hyperlist"));
 }
 
 }

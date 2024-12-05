@@ -61,7 +61,7 @@ public:
   bool canTeleport() const;
 
   void warpPlayer(WarpAction const& warpAction, bool animate = true, String const& animationType = "default", bool deploy = false);
-  void flyShip(Vec3I const& system, SystemLocation const& destination);
+  void flyShip(Vec3I const& system, SystemLocation const& destination, Json const& settings = {});
 
   CelestialDatabasePtr celestialDatabase() const;
 

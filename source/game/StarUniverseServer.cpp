@@ -288,7 +288,7 @@ void UniverseServer::clientWarpPlayer(ConnectionId clientId, WarpAction action, 
   m_pendingPlayerWarps[clientId] = pair<WarpAction, bool>(std::move(action), std::move(deploy));
 }
 
-void UniverseServer::clientFlyShip(ConnectionId clientId, Vec3I const& system, SystemLocation const& location) {
+void UniverseServer::clientFlyShip(ConnectionId clientId, Vec3I const& system, SystemLocation const& location, Json const& settings) {
   RecursiveMutexLocker locker(m_mainLock);
   ReadLocker clientsLocker(m_clientsLock);
 
@@ -300,7 +300,7 @@ void UniverseServer::clientFlyShip(ConnectionId clientId, Vec3I const& system, S
     return;
 
   if (system == Vec3I()) {
-    m_pendingFlights.set(clientId, {Vec3I(), {}}); // find starter world
+    m_pendingFlights.set(clientId, make_tuple(Vec3I(), SystemLocation(), settings)); // find starter world
     return;
   }
 
@@ -315,7 +315,7 @@ void UniverseServer::clientFlyShip(ConnectionId clientId, Vec3I const& system, S
 
   // don't switch systems while already flying
   if (!m_pendingArrivals.contains(clientId) || sameSystem)
-    m_pendingFlights.set(clientId, {system, location});
+    m_pendingFlights.set(clientId, make_tuple(system, location, settings));
 }
 
 WorldId UniverseServer::clientWorld(ConnectionId clientId) const {
@@ -892,10 +892,11 @@ void UniverseServer::flyShips() {
     }
   }
 
-  eraseWhere(m_pendingFlights, [this](pair<ConnectionId const, pair<Vec3I, SystemLocation>> const& p) {
+  eraseWhere(m_pendingFlights, [this](pair<ConnectionId const, tuple<Vec3I, SystemLocation, Json>> const& p) {
       ConnectionId clientId = p.first;
-      Vec3I system = p.second.first;
-      SystemLocation location = p.second.second;
+      Vec3I system = get<0>(p.second);
+      SystemLocation location = get<1>(p.second);
+      Json settings = get<2>(p.second);
 
       auto clientContext = m_clients.value(clientId);
       if (!clientContext)
@@ -935,7 +936,7 @@ void UniverseServer::flyShips() {
         clientContext->setSystemWorld({});
 
         if (location)
-          m_queuedFlights.set(clientId, {{system, location}, {}});
+          m_queuedFlights.set(clientId, {make_tuple(system, location, settings), {}});
 
         destination = CelestialCoordinate(system);
       }
@@ -946,8 +947,8 @@ void UniverseServer::flyShips() {
         Logger::info("Flying ship for player {} to {}", clientId, destination);
 
       bool startInWarp = system == Vec3I();
-      clientShip->executeAction([interstellar, startInWarp](WorldServerThread*, WorldServer* worldServer) {
-          worldServer->startFlyingSky(interstellar, startInWarp);
+      clientShip->executeAction([interstellar, startInWarp, settings](WorldServerThread*, WorldServer* worldServer) {
+          worldServer->startFlyingSky(interstellar, startInWarp, settings);
         });
 
       clientContext->setShipCoordinate(CelestialCoordinate(system));
@@ -1507,7 +1508,7 @@ void UniverseServer::packetsReceived(UniverseConnectionServer*, ConnectionId cli
         clientWarpPlayer(clientId, warpAction->action, warpAction->deploy);
 
       } else if (auto flyShip = as<FlyShipPacket>(packet)) {
-        clientFlyShip(clientId, flyShip->system, flyShip->location);
+        clientFlyShip(clientId, flyShip->system, flyShip->location, flyShip->settings);
 
       } else if (auto chatSend = as<ChatSendPacket>(packet)) {
         RecursiveMutexLocker locker(m_mainLock);
@@ -1554,7 +1555,8 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
   }
 
   bool legacyClient = protocolRequest->compressionMode() != PacketCompressionMode::Enabled;
-  connection.packetSocket().setLegacy(legacyClient);
+  if (legacyClient)
+    connection.packetSocket().setNetRules(LegacyVersion);
 
   auto protocolResponse = make_shared<ProtocolResponsePacket>();
   protocolResponse->setCompressionMode(PacketCompressionMode::Enabled); // Signal that we're OpenStarbound
@@ -1681,8 +1683,9 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
     if (Json brand = info.get("brand", "custom"))
       connectionLog += strf(" ({} client)", brand.toString());
     if (info.getBool("legacy", false))
-      connection.packetSocket().setLegacy(legacyClient = true);
+      netRules.setVersion(LegacyVersion);
   }
+  connection.packetSocket().setNetRules(netRules);
   Logger::log(LogLevel::Info, connectionLog.utf8Ptr());
 
 

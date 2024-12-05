@@ -853,6 +853,10 @@ void WorldServer::setSpawningEnabled(bool spawningEnabled) {
   m_spawner.setActive(spawningEnabled);
 }
 
+void WorldServer::setPropertyListener(String const& propertyName, WorldPropertyListener listener) {
+  m_worldPropertyListeners[propertyName] = listener;
+}
+
 TileModificationList WorldServer::validTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap) const {
   return WorldImpl::splitTileModifications(m_entityMap, modificationList, allowEntityOverlap, m_tileGetterFunction, [this](Vec2I pos, TileModification) {
       return !isTileProtected(pos);
@@ -2202,14 +2206,17 @@ void WorldServer::setProperty(String const& propertyName, Json const& property) 
     for (auto const& pair : m_clientInfo)
       pair.second->outgoingPackets.append(make_shared<UpdateWorldPropertiesPacket>(JsonObject{ {propertyName, property} }));
   }
+  auto listener = m_worldPropertyListeners.find(propertyName);
+  if (listener != m_worldPropertyListeners.end())
+    listener->second(property);
 }
 
 void WorldServer::timer(float delay, WorldAction worldAction) {
   m_timers.append({delay, worldAction});
 }
 
-void WorldServer::startFlyingSky(bool enterHyperspace, bool startInWarp) {
-  m_sky->startFlying(enterHyperspace, startInWarp);
+void WorldServer::startFlyingSky(bool enterHyperspace, bool startInWarp, Json settings) {
+  m_sky->startFlying(enterHyperspace, startInWarp, settings);
 }
 
 void WorldServer::stopFlyingSkyAt(SkyParameters const& destination) {

@@ -6,7 +6,7 @@
 
 namespace Star {
 
-StringList SkyRenderData::starTypes() const {
+StringList const& SkyRenderData::starTypes() const {
   if (type == SkyType::Warp)
     return hyperStarList;
   else

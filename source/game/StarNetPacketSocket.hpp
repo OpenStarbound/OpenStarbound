@@ -5,6 +5,7 @@
 #include "StarP2PNetworkingService.hpp"
 #include "StarNetPackets.hpp"
 #include "StarZSTDCompression.hpp"
+#include "StarNetCompatibility.hpp"
 
 namespace Star {
 
@@ -75,10 +76,11 @@ public:
   virtual Maybe<PacketStats> incomingStats() const;
   virtual Maybe<PacketStats> outgoingStats() const;
 
-  virtual void setLegacy(bool legacy);
-  virtual bool legacy() const;
+  virtual void setNetRules(NetCompatibilityRules netRules);
+  virtual NetCompatibilityRules netRules() const;
+
 private:
-  bool m_legacy = false;
+  NetCompatibilityRules m_netRules;
 };
 
 class CompressedPacketSocket : public PacketSocket {
@@ -142,8 +144,6 @@ public:
 
   Maybe<PacketStats> incomingStats() const override;
   Maybe<PacketStats> outgoingStats() const override;
-
-  void setLegacy(bool legacy) override;
 private:
   TcpPacketSocket(TcpSocketPtr socket);
 

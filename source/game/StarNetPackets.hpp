@@ -134,10 +134,10 @@ struct Packet {
 
   virtual PacketType type() const = 0;
 
-  virtual void readLegacy(DataStream& ds);
-  virtual void read(DataStream& ds) = 0;
-  virtual void writeLegacy(DataStream& ds) const;
-  virtual void write(DataStream& ds) const = 0;
+  virtual void read(DataStream& ds, NetCompatibilityRules netRules);
+  virtual void read(DataStream& ds);
+  virtual void write(DataStream& ds, NetCompatibilityRules netRules) const;
+  virtual void write(DataStream& ds) const;
 
   virtual void readJson(Json const& json);
   virtual Json writeJson() const;
@@ -172,8 +172,7 @@ struct ProtocolResponsePacket : PacketBase<PacketType::ProtocolResponse> {
   ProtocolResponsePacket(bool allowed = false, Json info = {});
 
   void read(DataStream& ds) override;
-  void writeLegacy(DataStream& ds) const override;
-  void write(DataStream& ds) const override;
+  void write(DataStream& ds, NetCompatibilityRules netRules) const override;
 
   bool allowed;
   Json info;
@@ -281,10 +280,8 @@ struct PausePacket : PacketBase<PacketType::Pause> {
   PausePacket();
   PausePacket(bool pause, float timescale = 1.0f);
 
-  void readLegacy(DataStream& ds) override;
-  void read(DataStream& ds) override;
-  void writeLegacy(DataStream& ds) const override;
-  void write(DataStream& ds) const override;
+  void read(DataStream& ds, NetCompatibilityRules netRules) override;
+  void write(DataStream& ds, NetCompatibilityRules netRules) const override;
 
   void readJson(Json const& json) override;
   Json writeJson() const override;
@@ -313,10 +310,8 @@ struct ClientConnectPacket : PacketBase<PacketType::ClientConnect> {
       String playerSpecies, WorldChunks shipChunks, ShipUpgrades shipUpgrades, bool introComplete,
       String account, Json info = {});
 
-  void readLegacy(DataStream& ds) override;
-  void read(DataStream& ds) override;
-  void writeLegacy(DataStream& ds) const override;
-  void write(DataStream& ds) const override;
+  void read(DataStream& ds, NetCompatibilityRules netRules) override;
+  void write(DataStream& ds, NetCompatibilityRules netRules) const override;
 
   ByteArray assetsDigest;
   bool allowAssetsMismatch;
@@ -360,13 +355,14 @@ struct PlayerWarpPacket : PacketBase<PacketType::PlayerWarp> {
 
 struct FlyShipPacket : PacketBase<PacketType::FlyShip> {
   FlyShipPacket();
-  FlyShipPacket(Vec3I system, SystemLocation location);
+  FlyShipPacket(Vec3I system, SystemLocation location, Json settings = {});
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  void read(DataStream& ds, NetCompatibilityRules netRules) override;
+  void write(DataStream& ds, NetCompatibilityRules netRules) const override;
 
   Vec3I system;
   SystemLocation location;
+  Json settings;
 };
 
 struct ChatSendPacket : PacketBase<PacketType::ChatSend> {
@@ -614,10 +610,8 @@ struct PongPacket : PacketBase<PacketType::Pong> {
   PongPacket();
   PongPacket(int64_t time);
 
-  void readLegacy(DataStream& ds) override;
-  void read(DataStream& ds) override;
-  void writeLegacy(DataStream& ds) const override;
-  void write(DataStream& ds) const override;
+  void read(DataStream& ds, NetCompatibilityRules netRules) override;
+  void write(DataStream& ds, NetCompatibilityRules netRules) const override;
 
   int64_t time = 0;
 };
@@ -733,10 +727,8 @@ struct PingPacket : PacketBase<PacketType::Ping> {
   PingPacket();
   PingPacket(int64_t time);
 
-  void readLegacy(DataStream& ds) override;
-  void read(DataStream& ds) override;
-  void writeLegacy(DataStream& ds) const override;
-  void write(DataStream& ds) const override;
+  void read(DataStream& ds, NetCompatibilityRules netRules) override;
+  void write(DataStream& ds, NetCompatibilityRules netRules) const override;
 
   int64_t time = 0;
 };
@@ -879,10 +871,8 @@ struct StepUpdatePacket : PacketBase<PacketType::StepUpdate> {
   StepUpdatePacket();
   StepUpdatePacket(double remoteTime);
 
-  void readLegacy(DataStream& ds) override;
-  void read(DataStream& ds) override;
-  void writeLegacy(DataStream& ds) const override;
-  void write(DataStream& ds) const override;
+  void read(DataStream& ds, NetCompatibilityRules netRules) override;
+  void write(DataStream& ds, NetCompatibilityRules netRules) const override;
 
   double remoteTime;
 };

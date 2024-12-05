@@ -23,7 +23,7 @@ public:
   Sky(SkyParameters const& skyParameters, bool inOrbit);
 
   // Controls the space sky "flight" system
-  void startFlying(bool enterHyperspace, bool startInWarp);
+  void startFlying(bool enterHyperspace, bool startInWarp, Json settings = {});
   // Stops flying animation copying the new pertinant sky data from the given
   // sky, as though the sky as moved to a new world.
   void stopFlyingAt(Maybe<SkyParameters> SkyParameters);
@@ -117,6 +117,8 @@ private:
   float speedupTime() const;
   float slowdownTime() const;
 
+  void skyParametersUpdated();
+ 
   Json m_settings;
   SkyParameters m_skyParameters;
   bool m_skyParametersUpdated;

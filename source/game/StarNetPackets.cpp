@@ -85,8 +85,10 @@ EnumMap<NetCompressionMode> const NetCompressionModeNames {
 
 Packet::~Packet() {}
 
-void Packet::readLegacy(DataStream& ds) { read(ds); }
-void Packet::writeLegacy(DataStream& ds) const { write(ds); }
+void Packet::read(DataStream& ds, NetCompatibilityRules netRules) { read(ds); }
+void Packet::read(DataStream& ds) {}
+void Packet::write(DataStream& ds, NetCompatibilityRules netRules) const { write(ds); }
+void Packet::write(DataStream& ds) const {}
 void Packet::readJson(Json const& json) {}
 Json Packet::writeJson() const  { return JsonObject{}; }
 
@@ -206,13 +208,10 @@ void ProtocolResponsePacket::read(DataStream& ds) {
   }
 }
 
-void ProtocolResponsePacket::writeLegacy(DataStream& ds) const {
+void ProtocolResponsePacket::write(DataStream& ds, NetCompatibilityRules netRules) const {
   ds.write(allowed);
-}
-
-void ProtocolResponsePacket::write(DataStream& ds) const {
-  writeLegacy(ds);
-  ds.write(info);
+  if (!netRules.isLegacy())
+    ds.write(info);
 }
 
 ConnectSuccessPacket::ConnectSuccessPacket() {}
@@ -339,23 +338,18 @@ PausePacket::PausePacket() {}
 
 PausePacket::PausePacket(bool pause, float timescale) : pause(pause), timescale(timescale) {}
 
-void PausePacket::readLegacy(DataStream& ds) {
+void PausePacket::read(DataStream& ds, NetCompatibilityRules netRules) {
   ds.read(pause);
-  timescale = 1.0f;
+  if (!netRules.isLegacy())
+    ds.read(timescale);
+  else
+    timescale = 1.0f;
 }
 
-void PausePacket::read(DataStream& ds) {
-  readLegacy(ds);
-  ds.read(timescale);
-}
-
-void PausePacket::writeLegacy(DataStream& ds) const {
+void PausePacket::write(DataStream& ds, NetCompatibilityRules netRules) const {
   ds.write(pause);
-}
-
-void PausePacket::write(DataStream& ds) const {
-  writeLegacy(ds);
-  ds.write(timescale);
+  if (!netRules.isLegacy())
+    ds.write(timescale);
 }
 
 void PausePacket::readJson(Json const& json) {
@@ -409,7 +403,8 @@ ClientConnectPacket::ClientConnectPacket(ByteArray assetsDigest, bool allowAsset
     playerName(std::move(playerName)), playerSpecies(std::move(playerSpecies)), shipChunks(std::move(shipChunks)),
     shipUpgrades(std::move(shipUpgrades)), introComplete(std::move(introComplete)), account(std::move(account)), info(std::move(info)) {}
 
-void ClientConnectPacket::readLegacy(DataStream& ds) {
+
+void ClientConnectPacket::read(DataStream& ds, NetCompatibilityRules netRules) {
   ds.read(assetsDigest);
   ds.read(allowAssetsMismatch);
   ds.read(playerUuid);
@@ -419,15 +414,11 @@ void ClientConnectPacket::readLegacy(DataStream& ds) {
   ds.read(shipUpgrades);
   ds.read(introComplete);
   ds.read(account);
-  info = Json();
+  if (!netRules.isLegacy())
+    ds.read(info);
 }
 
-void ClientConnectPacket::read(DataStream& ds) {
-  readLegacy(ds);
-  ds.read(info);
-}
-
-void ClientConnectPacket::writeLegacy(DataStream& ds) const {
+void ClientConnectPacket::write(DataStream& ds, NetCompatibilityRules netRules) const {
   ds.write(assetsDigest);
   ds.write(allowAssetsMismatch);
   ds.write(playerUuid);
@@ -437,11 +428,8 @@ void ClientConnectPacket::writeLegacy(DataStream& ds) const {
   ds.write(shipUpgrades);
   ds.write(introComplete);
   ds.write(account);
-}
-
-void ClientConnectPacket::write(DataStream& ds) const {
-  writeLegacy(ds);
-  ds.write(info);
+  if (!netRules.isLegacy())
+    ds.write(info);
 }
 
 ClientDisconnectRequestPacket::ClientDisconnectRequestPacket() {}
@@ -484,16 +472,20 @@ void PlayerWarpPacket::write(DataStream& ds) const {
 
 FlyShipPacket::FlyShipPacket() {}
 
-FlyShipPacket::FlyShipPacket(Vec3I system, SystemLocation location) : system(std::move(system)), location(std::move(location)) {}
+FlyShipPacket::FlyShipPacket(Vec3I system, SystemLocation location, Json settings) : system(std::move(system)), location(std::move(location)), settings(std::move(settings)) {}
 
-void FlyShipPacket::read(DataStream& ds) {
+void FlyShipPacket::read(DataStream& ds, NetCompatibilityRules netRules) {
   ds.read(system);
   ds.read(location);
+  if (netRules.version() >= 3)
+    ds.read(settings);
 }
 
-void FlyShipPacket::write(DataStream& ds) const {
+void FlyShipPacket::write(DataStream& ds, NetCompatibilityRules netRules) const {
   ds.write(system);
   ds.write(location);
+  if (netRules.version() >= 3)
+    ds.write(settings);
 }
 
 ChatSendPacket::ChatSendPacket() : sendMode(ChatSendMode::Broadcast) {}
@@ -944,24 +936,23 @@ void WorldStartAcknowledgePacket::write(DataStream& ds) const {
 PingPacket::PingPacket() {}
 PingPacket::PingPacket(int64_t time) : time(time) {}
 
-void PingPacket::readLegacy(DataStream& ds) {
-  // Packets can't be empty, read the trash data
-  ds.read<bool>();
-  time = 0;
+void PingPacket::read(DataStream& ds, NetCompatibilityRules netRules) {
+  if (netRules.isLegacy()) {
+    // Packets can't be empty, read the trash data
+    ds.read<bool>();
+    time = 0;
+  } else {
+    ds.readVlqI(time);
+  }
 }
 
-void PingPacket::read(DataStream& ds) {
-  ds.readVlqI(time);
-}
-
-
-void PingPacket::writeLegacy(DataStream& ds) const {
-  // Packets can't be empty, write some trash data
-  ds.write<bool>(false);
-}
-
-void PingPacket::write(DataStream& ds) const {
-  ds.writeVlqI(time);
+void PingPacket::write(DataStream& ds, NetCompatibilityRules netRules) const {
+  if (netRules.isLegacy()) {
+    // Packets can't be empty, write some trash data
+    ds.write<bool>(false);
+  } else {
+    ds.writeVlqI(time);
+  }
 }
 
 EntityCreatePacket::EntityCreatePacket(EntityType entityType, ByteArray storeData, ByteArray firstNetState, EntityId entityId)
@@ -1265,44 +1256,47 @@ void FindUniqueEntityResponsePacket::write(DataStream& ds) const {
 PongPacket::PongPacket() {}
 PongPacket::PongPacket(int64_t time) : time(time) {}
 
-void PongPacket::readLegacy(DataStream& ds) {
-  // Packets can't be empty, read the trash data
-  ds.read<bool>();
-  time = 0;
+
+void PongPacket::read(DataStream& ds, NetCompatibilityRules netRules) {
+  if (netRules.isLegacy()) {
+    // Packets can't be empty, read the trash data
+    ds.read<bool>();
+    time = 0;
+  } else {
+    ds.readVlqI(time);
+  }
+  
 }
 
-void PongPacket::read(DataStream& ds) {
-  ds.readVlqI(time);
-}
-
-void PongPacket::writeLegacy(DataStream& ds) const {
-  // Packets can't be empty, write some trash data
-  ds.write<bool>(false);
-}
-
-void PongPacket::write(DataStream& ds) const {
-  ds.writeVlqI(time);
+void PongPacket::write(DataStream& ds, NetCompatibilityRules netRules) const {
+  if (netRules.isLegacy()) {
+    // Packets can't be empty, write some trash data
+    ds.write<bool>(false);
+  } else {
+    ds.writeVlqI(time);
+  }
 }
 
 StepUpdatePacket::StepUpdatePacket() : remoteTime(0.0) {}
 
 StepUpdatePacket::StepUpdatePacket(double remoteTime) : remoteTime(remoteTime) {}
 
-void StepUpdatePacket::readLegacy(DataStream& ds) {
-  auto steps = ds.readVlqU();
-  remoteTime = double(steps) / 60.0;
+
+void StepUpdatePacket::read(DataStream& ds, NetCompatibilityRules netRules) {
+  if (netRules.isLegacy()) {
+    auto steps = ds.readVlqU();
+    remoteTime = double(steps) / 60.0;
+  } else {
+    ds.read(remoteTime);
+  }
 }
 
-void StepUpdatePacket::read(DataStream& ds) {
-  ds.read(remoteTime);
-}
-
-void StepUpdatePacket::writeLegacy(DataStream& ds) const {
-  ds.writeVlqU((uint64_t)round(remoteTime * 60.0));
-}
-
-void StepUpdatePacket::write(DataStream& ds) const {
-  ds.write(remoteTime);
+void StepUpdatePacket::write(DataStream& ds, NetCompatibilityRules netRules) const {
+  if (netRules.isLegacy()) {
+    ds.writeVlqU((uint64_t)round(remoteTime * 60.0));
+  } else {
+    ds.write(remoteTime);
+  }
 }
 
 SystemWorldStartPacket::SystemWorldStartPacket() {}

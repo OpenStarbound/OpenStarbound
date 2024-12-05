@@ -83,7 +83,7 @@ public:
   RpcThreadPromise<Json> sendWorldMessage(WorldId const& worldId, String const& message, JsonArray const& args = {});
 
   void clientWarpPlayer(ConnectionId clientId, WarpAction action, bool deploy = false);
-  void clientFlyShip(ConnectionId clientId, Vec3I const& system, SystemLocation const& location);
+  void clientFlyShip(ConnectionId clientId, Vec3I const& system, SystemLocation const& location, Json const& settings = {});
   WorldId clientWorld(ConnectionId clientId) const;
   CelestialCoordinate clientShipCoordinate(ConnectionId clientId) const;
 
@@ -243,8 +243,8 @@ private:
   TeamManagerPtr m_teamManager;
 
   HashMap<ConnectionId, pair<WarpAction, bool>> m_pendingPlayerWarps;
-  HashMap<ConnectionId, pair<pair<Vec3I, SystemLocation>, Maybe<double>>> m_queuedFlights;
-  HashMap<ConnectionId, pair<Vec3I, SystemLocation>> m_pendingFlights;
+  HashMap<ConnectionId, pair<tuple<Vec3I, SystemLocation, Json>, Maybe<double>>> m_queuedFlights;
+  HashMap<ConnectionId, tuple<Vec3I, SystemLocation, Json>> m_pendingFlights;
   HashMap<ConnectionId, CelestialCoordinate> m_pendingArrivals;
   HashMap<ConnectionId, String> m_pendingDisconnections;
   HashMap<ConnectionId, List<WorkerPoolPromise<CelestialResponse>>> m_pendingCelestialRequests;

@@ -62,9 +62,8 @@ Maybe<PacketStats> PacketSocket::incomingStats() const {
 Maybe<PacketStats> PacketSocket::outgoingStats() const {
   return {};
 }
-
-void PacketSocket::setLegacy(bool legacy) { m_legacy = legacy; }
-bool PacketSocket::legacy() const { return m_legacy; }
+void PacketSocket::setNetRules(NetCompatibilityRules netRules) { m_netRules = netRules; }
+NetCompatibilityRules PacketSocket::netRules() const { return m_netRules; }
 
 void CompressedPacketSocket::setCompressionStreamEnabled(bool enabled) { m_useCompressionStream = enabled; }
 bool CompressedPacketSocket::compressionStreamEnabled() const { return m_useCompressionStream; }
@@ -155,7 +154,8 @@ void TcpPacketSocket::sendPackets(List<PacketPtr> packets) {
       PacketPtr& packet = it.next();
       auto packetType = packet->type();
       DataStreamBuffer packetBuffer;
-      packet->write(packetBuffer);
+      packetBuffer.setStreamCompatibilityVersion(netRules());
+      packet->write(packetBuffer, netRules());
       outBuffer.write(packetType);
       outBuffer.writeVlqI((int)packetBuffer.size());
       outBuffer.writeData(packetBuffer.ptr(), packetBuffer.size());
@@ -168,13 +168,11 @@ void TcpPacketSocket::sendPackets(List<PacketPtr> packets) {
       PacketCompressionMode currentCompressionMode = it.peekNext()->compressionMode();
 
       DataStreamBuffer packetBuffer;
+      packetBuffer.setStreamCompatibilityVersion(netRules());
       while (it.hasNext()
              && it.peekNext()->type() == currentType
              && it.peekNext()->compressionMode() == currentCompressionMode) {
-        if (legacy())
-          it.next()->writeLegacy(packetBuffer);
-        else
-          it.next()->write(packetBuffer);
+          it.next()->write(packetBuffer, netRules());
       }
 
       // Packets must read and write actual data, because this is used to
@@ -239,6 +237,7 @@ List<PacketPtr> TcpPacketSocket::receivePackets() {
       m_incomingStats.mix(packetType, packetSize, !compressionStreamEnabled());
 
       DataStreamExternalBuffer packetStream(ds.ptr() + ds.pos(), packetSize);
+      packetStream.setStreamCompatibilityVersion(netRules());
       ByteArray uncompressed;
       if (packetCompressed) {
         uncompressed = uncompressData(packetStream.ptr(), packetSize, PacketSizeLimit);
@@ -255,10 +254,7 @@ List<PacketPtr> TcpPacketSocket::receivePackets() {
         }
         PacketPtr packet = createPacket(packetType);
         packet->setCompressionMode(packetCompressed ? PacketCompressionMode::Enabled : PacketCompressionMode::Disabled);
-        if (legacy())
-          packet->readLegacy(packetStream);
-        else
-          packet->read(packetStream);
+        packet->read(packetStream, netRules());
         packets.append(std::move(packet));
       } while (!packetStream.atEnd());
     }
@@ -347,10 +343,6 @@ Maybe<PacketStats> TcpPacketSocket::outgoingStats() const {
   return m_outgoingStats.stats();
 }
 
-void TcpPacketSocket::setLegacy(bool legacy) {
-  PacketSocket::setLegacy(legacy);
-}
-
 TcpPacketSocket::TcpPacketSocket(TcpSocketPtr socket) : m_socket(std::move(socket)) {}
 
 P2PPacketSocketUPtr P2PPacketSocket::open(P2PSocketUPtr socket) {
@@ -373,8 +365,9 @@ void P2PPacketSocket::sendPackets(List<PacketPtr> packets) {
     while (it.hasNext()) {
       PacketType currentType = it.peekNext()->type();
       DataStreamBuffer packetBuffer;
+      packetBuffer.setStreamCompatibilityVersion(netRules());
       while (it.hasNext() && it.peekNext()->type() == currentType)
-        it.next()->write(packetBuffer);
+        it.next()->write(packetBuffer, netRules());
       outBuffer.write(currentType);
       outBuffer.write<bool>(false);
       outBuffer.writeData(packetBuffer.ptr(), packetBuffer.size());
@@ -387,13 +380,11 @@ void P2PPacketSocket::sendPackets(List<PacketPtr> packets) {
       PacketCompressionMode currentCompressionMode = it.peekNext()->compressionMode();
 
       DataStreamBuffer packetBuffer;
+      packetBuffer.setStreamCompatibilityVersion(netRules());
       while (it.hasNext()
              && it.peekNext()->type() == currentType
              && it.peekNext()->compressionMode() == currentCompressionMode) {
-        if (legacy())
-          it.next()->writeLegacy(packetBuffer);
-        else
-          it.next()->write(packetBuffer);
+          it.next()->write(packetBuffer, netRules());
       }
 
       // Packets must read and write actual data, because this is used to
@@ -440,13 +431,11 @@ List<PacketPtr> P2PPacketSocket::receivePackets() {
       m_incomingStats.mix(packetType, packetSize, !compressionStreamEnabled());
 
       DataStreamExternalBuffer packetStream(packetBytes);
+      packetStream.setStreamCompatibilityVersion(netRules());
       do {
         PacketPtr packet = createPacket(packetType);
         packet->setCompressionMode(packetCompressed ? PacketCompressionMode::Enabled : PacketCompressionMode::Disabled);
-        if (legacy())
-          packet->readLegacy(packetStream);
-        else
-          packet->read(packetStream);
+        packet->read(packetStream, netRules());
         packets.append(std::move(packet));
       } while (!packetStream.atEnd());
     }

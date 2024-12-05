@@ -6,14 +6,13 @@
 namespace Star {
 
 STAR_EXCEPTION(DataStreamException, IOException);
+extern unsigned const CurrentStreamVersion;
 
 // Writes complex types to bytes in a portable big-endian fashion.
 class DataStream {
 public:
   DataStream();
   virtual ~DataStream() = default;
-
-  static unsigned const CurrentStreamVersion = 2;
 
   // DataStream defaults to big-endian order for all primitive types
   ByteOrder byteOrder() const;

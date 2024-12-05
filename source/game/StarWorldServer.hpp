@@ -50,6 +50,7 @@ class WorldServer : public World {
 public:
   typedef LuaMessageHandlingComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> ScriptComponent;
   typedef shared_ptr<ScriptComponent> ScriptComponentPtr;
+  typedef function<void(Json const&)> WorldPropertyListener;
 
   // Create a new world with the given template, writing new storage file.
   WorldServer(WorldTemplatePtr const& worldTemplate, IODevicePtr storage);
@@ -108,7 +109,7 @@ public:
 
   Maybe<Json> receiveMessage(ConnectionId fromConnection, String const& message, JsonArray const& args);
 
-  void startFlyingSky(bool enterHyperspace, bool startInWarp);
+  void startFlyingSky(bool enterHyperspace, bool startInWarp, Json settings = {});
   void stopFlyingSkyAt(SkyParameters const& destination);
   void setOrbitalSky(SkyParameters const& destination);
 
@@ -231,6 +232,8 @@ public:
 
   void setSpawningEnabled(bool spawningEnabled);
 
+  void setPropertyListener(String const& propertyName, WorldPropertyListener listener);
+
   // Write all active sectors to disk without unloading them
   void sync();
   // Copy full world to in memory representation
@@ -347,6 +350,7 @@ private:
   bool m_adjustPlayerStart;
   bool m_respawnInWorld;
   JsonObject m_worldProperties;
+  StringMap<WorldPropertyListener> m_worldPropertyListeners;
 
   Maybe<pair<String, String>> m_newPlanetType;
 

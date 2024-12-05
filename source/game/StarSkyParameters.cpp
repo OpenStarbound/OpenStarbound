@@ -7,7 +7,7 @@
 
 namespace Star {
 
-SkyParameters::SkyParameters() : seed(), skyType(SkyType::Barren), skyColoring(makeRight(Color::Black)) {}
+SkyParameters::SkyParameters() : seed(), skyType(SkyType::Barren), skyColoring(makeRight(Color::Black)), settings(JsonObject()) {}
 
 SkyParameters::SkyParameters(CelestialCoordinate const& coordinate, CelestialDatabasePtr const& celestialDatabase)
   : SkyParameters() {
@@ -113,6 +113,8 @@ SkyParameters::SkyParameters(Json const& config) : SkyParameters() {
   surfaceLevel = config.optFloat("surfaceLevel");
 
   sunType = config.getString("sunType", "");
+
+  settings = config.get("settings", JsonObject());
 }
 
 Json SkyParameters::toJson() const {
@@ -155,6 +157,7 @@ Json SkyParameters::toJson() const {
       {"spaceLevel", jsonFromMaybe<float>(spaceLevel)},
       {"surfaceLevel", jsonFromMaybe<float>(surfaceLevel)},
       {"sunType", sunType},
+      {"settings", settings}
   };
 }
 
@@ -170,6 +173,8 @@ void SkyParameters::read(DataStream& ds) {
   ds >> spaceLevel;
   ds >> surfaceLevel;
   ds >> sunType;
+  if (ds.streamCompatibilityVersion() >= 3)
+    ds >> settings;
 }
 
 void SkyParameters::write(DataStream& ds) const {
@@ -184,6 +189,8 @@ void SkyParameters::write(DataStream& ds) const {
   ds << spaceLevel;
   ds << surfaceLevel;
   ds << sunType;
+  if (ds.streamCompatibilityVersion() >= 3)
+    ds << settings;
 }
 
 void SkyParameters::readVisitableParameters(VisitableWorldParametersConstPtr visitableParameters) {

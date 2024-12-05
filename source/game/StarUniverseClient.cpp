@@ -124,7 +124,7 @@ Maybe<String> UniverseClient::connect(UniverseConnection connection, bool allowA
       }
     }
   }
-  connection.packetSocket().setLegacy(legacyServer);
+  connection.packetSocket().setNetRules(compatibilityRules);
   auto clientConnect = make_shared<ClientConnectPacket>(Root::singleton().assets()->digest(), allowAssetsMismatch, m_mainPlayer->uuid(), m_mainPlayer->name(),
       m_mainPlayer->species(), m_playerStorage->loadShipData(m_mainPlayer->uuid()), m_mainPlayer->shipUpgrades(),
       m_mainPlayer->log()->introComplete(), account);
@@ -426,8 +426,8 @@ void UniverseClient::warpPlayer(WarpAction const& warpAction, bool animate, Stri
   m_pendingWarp = warpAction;
 }
 
-void UniverseClient::flyShip(Vec3I const& system, SystemLocation const& destination) {
-  m_connection->pushSingle(make_shared<FlyShipPacket>(system, destination));
+void UniverseClient::flyShip(Vec3I const& system, SystemLocation const& destination, Json const& settings) {
+  m_connection->pushSingle(make_shared<FlyShipPacket>(system, destination, settings));
 }
 
 CelestialDatabasePtr UniverseClient::celestialDatabase() const {

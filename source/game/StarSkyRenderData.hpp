@@ -32,7 +32,7 @@ struct SkyRenderData {
   Color bottomRectColor;
   Color flashColor;
 
-  StringList starTypes() const;
+  StringList const& starTypes() const;
 
   // Star and orbiter positions here are in view space, from (0, 0) to viewSize
 

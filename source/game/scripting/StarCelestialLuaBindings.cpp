@@ -30,9 +30,9 @@ LuaCallbacks LuaBindings::makeCelestialCallbacks(UniverseClient* client) {
       return client->currentSky()->inHyperspace();
     });
 
-  callbacks.registerCallback("flyShip", [client,systemWorld](Vec3I const& system, Json const& destination) {
+  callbacks.registerCallback("flyShip", [client,systemWorld](Vec3I const& system, Json const& destination, Json const& settings) {
       auto location = jsonToSystemLocation(destination);
-      client->flyShip(system, location);
+      client->flyShip(system, location, settings);
     });
   callbacks.registerCallback("flying", [systemWorld]() {
       return systemWorld->flying();
