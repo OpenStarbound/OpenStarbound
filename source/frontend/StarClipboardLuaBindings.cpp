@@ -1,21 +1,35 @@
 #include "StarClipboardLuaBindings.hpp"
 #include "StarLuaConverters.hpp"
+#include "StarInput.hpp"
 
 namespace Star {
 
-LuaCallbacks LuaBindings::makeClipboardCallbacks(ApplicationControllerPtr appController) {
+LuaCallbacks LuaBindings::makeClipboardCallbacks(ApplicationControllerPtr appController, bool alwaysAllow) {
   LuaCallbacks callbacks;
 
-  callbacks.registerCallback("hasText", [appController]() -> bool {
-    return appController->hasClipboard();
+  auto available = [alwaysAllow]() { return alwaysAllow || Input::singleton().getTag("clipboard") > 0; };
+
+  callbacks.registerCallback("available", [=]() -> bool {
+    return available();
   });
 
-  callbacks.registerCallback("getText", [appController]() -> Maybe<String> {
-    return appController->getClipboard();
+  callbacks.registerCallback("hasText", [=]() -> bool {
+    return available() && appController->hasClipboard();
   });
 
-  callbacks.registerCallback("setText", [appController](String const& text) {
-    appController->setClipboard(text);
+  callbacks.registerCallback("getText", [=]() -> Maybe<String> {
+    if (!available())
+      return {};
+    else
+      return appController->getClipboard();
+  });
+
+  callbacks.registerCallback("setText", [=](String const& text) -> bool {
+    if (available()) {
+      appController->setClipboard(text);
+      return true;
+    }
+    return false;
   });
 
   return callbacks;

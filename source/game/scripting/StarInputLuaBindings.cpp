@@ -53,6 +53,7 @@ LuaCallbacks LuaBindings::makeInputCallbacks() {
   });
 
   callbacks.registerCallbackWithSignature<Vec2I>("mousePosition", bind(mem_fn(&Input::mousePosition), input));
+  callbacks.registerCallbackWithSignature<unsigned, String>("getTag", bind(mem_fn(&Input::getTag), input, _1));
 
   return callbacks;
 }

@@ -6,7 +6,7 @@
 namespace Star {
 
 namespace LuaBindings {
-LuaCallbacks makeClipboardCallbacks(ApplicationControllerPtr appController);
+LuaCallbacks makeClipboardCallbacks(ApplicationControllerPtr appController, bool alwaysAllow);
 }
 
 }// namespace Star

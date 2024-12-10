@@ -543,8 +543,9 @@ void ClientApplication::changeState(MainAppState newState) {
     m_universeClient->setLuaCallbacks("input", LuaBindings::makeInputCallbacks());
     m_universeClient->setLuaCallbacks("voice", LuaBindings::makeVoiceCallbacks());
     m_universeClient->setLuaCallbacks("camera", LuaBindings::makeCameraCallbacks(&m_worldPainter->camera()));
-    if (!m_root->configuration()->get("safeScripts").toBool())
-      m_universeClient->setLuaCallbacks("clipboard", LuaBindings::makeClipboardCallbacks(appController()));
+
+    Json alwaysAllow = m_root->configuration()->getPath("safe.alwaysAllowClipboard");
+    m_universeClient->setLuaCallbacks("clipboard", LuaBindings::makeClipboardCallbacks(appController(), alwaysAllow && alwaysAllow.toBool()));
 
     auto heldScriptPanes = make_shared<List<MainInterface::ScriptPaneInfo>>();
 

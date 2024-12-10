@@ -223,7 +223,7 @@ Input::BindEntry::BindEntry(String entryId, Json const& config, BindCategory con
   category = &parentCategory;
   id = entryId;
   name = config.getString("name", id);
-
+  tags = jsonToStringList(config.get("tags", JsonArray()));
   for (Json const& jBind : config.getArray("default", {})) {
     try
       { defaultBinds.emplace_back(bindFromJson(jBind)); }
@@ -342,6 +342,15 @@ Input::InputState* Input::bindStatePtr(String const& categoryId, String const& b
     return nullptr;
 }
 
+Input::InputState& Input::addBindState(BindEntry const* bindEntry) {
+  auto insertion = m_bindStates.insert(bindEntry, InputState());
+  if (insertion.second) {
+    for (auto& tag : bindEntry->tags)
+      ++m_activeTags[tag];
+  }
+  return insertion.first->second;
+}
+
 Input* Input::s_singleton;
 
 Input* Input::singletonPtr() {
@@ -393,7 +402,19 @@ void Input::reset() {
   eraseWhere(m_keyStates,        eraseCond);
   eraseWhere(m_mouseStates,      eraseCond);
   eraseWhere(m_controllerStates, eraseCond);
-  eraseWhere(m_bindStates,       eraseCond);
+  eraseWhere(m_bindStates, [&](auto& p) {
+    if (p.second.held)
+      p.second.reset();
+    else {
+      for (auto& tag : p.first->tags) {
+        auto find = m_activeTags.find(tag);
+        if (find != m_activeTags.end() && !--find->second)
+            m_activeTags.erase(find);
+      }
+      return true;
+    }
+    return false;
+  });
 }
 
 void Input::update() {
@@ -415,7 +436,7 @@ bool Input::handleInput(InputEvent const& input, bool gameProcessed) {
       
       if (auto binds = m_bindMappings.ptr(keyDown->key)) {
         for (auto bind : filterBindEntries(*binds, keyDown->mods))
-          m_bindStates[bind].press();
+          addBindState(bind).press();
       }
     }
   }
@@ -447,7 +468,7 @@ bool Input::handleInput(InputEvent const& input, bool gameProcessed) {
 
       if (auto binds = m_bindMappings.ptr(mouseDown->mouseButton)) {
         for (auto bind : filterBindEntries(*binds, m_pressedMods))
-          m_bindStates[bind].press();
+          addBindState(bind).press();
       }
     }
   }
@@ -475,7 +496,7 @@ bool Input::handleInput(InputEvent const& input, bool gameProcessed) {
 
       if (auto binds = m_bindMappings.ptr(controllerDown->controllerButton)) {
         for (auto bind : filterBindEntries(*binds, m_pressedMods))
-          m_bindStates[bind].press();
+          addBindState(bind).press();
       }
     }
   }
@@ -648,6 +669,10 @@ void Input::setBinds(String const& categoryId, String const& bindId, Json const&
 
   entry.customBinds = std::move(binds);
   entry.updated();
+}
+
+unsigned Input::getTag(String const& tag) {
+  return m_activeTags.maybe(tag).value(0);
 }
 
 }
