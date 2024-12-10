@@ -2,7 +2,7 @@ local module = {}
 modules.commands = module
 
 local commands = {}
-local function command(name, func)
+local function register(name, func)
   commands[name] = func
 end
 
@@ -12,8 +12,7 @@ function module.init()
   end
 end
 
-
-command("run", function(src)
+register("run", function(src)
 	local success, result = pcall(loadstring, src, "/run")
   if not success then
     return "^#f00;compile error: " .. result
@@ -36,3 +35,5 @@ command("run", function(src)
     end
   end
 end)
+
+module.register = register

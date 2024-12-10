@@ -4,7 +4,8 @@
       "camera": { "name": "Camera" },
       "voice": { "name": "Voice" },
       "building": { "name": "Building" },
-      "inventory": { "name": "Inventory" }
+      "inventory": { "name": "Inventory" },
+      "editing" : { "name" : "Editing" }
     },
     "name": "Open^#ebd74a;Starbound",
     "binds": {
@@ -48,6 +49,18 @@
         "default": [],
         "group": "building",
         "name": "Shrink Building Radius"
+      },
+      "editingCopyItemJson": {
+        "default": [], // [{"type": "key", "value": "C","mods": ["LShift"]}],
+        "name": "Copy Item in Cursor",
+        "group": "editing",
+        "tags" : ["clipboard"]
+      },
+      "editingPasteItemJson": {
+        "default": [], // [{"type": "key", "value": "V", "mods": ["LShift"]}],
+        "name": "Paste Item in Cursor",
+        "group": "editing",
+        "tags" : ["clipboard"]
       }
     }
   }
