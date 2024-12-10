@@ -35,7 +35,7 @@ local function finishBind(a, b)
   if (type(a) == "table") then
     snareFinished(a)
   else
-    snareFinished{ type = a, value = b, mods = getMods(value) }
+    snareFinished{ type = a, value = b, mods = getMods(b) }
     for i, mod in ipairs(mods) do
       mod.active = false
     end
