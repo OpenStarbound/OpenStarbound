@@ -527,9 +527,3 @@ Returns uuid, type, and orbits for all system objects in the specified system;
 #### `List<String>` player.collectables(`String` collectionName)
 
 Returns a list of names of the collectables the player has unlocked in the specified collection.
-
----
-
-#### `List<Json>` player.teamMembers()
-
-Returns an array, each entry being a table with `name`, `uuid`, `entity`, `healthPercentage` and `energyPercentage`
