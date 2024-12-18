@@ -4,7 +4,11 @@
   // Disables the crafting timer if true.
   "disableTimer" : false,
 
-   // This is only used if the crafting timer is enabled.
-   // This is how many crafts are ran when the crafting timer wraps.
-  "craftCount" : 1
+  // This is only used if the crafting timer is enabled.
+  // This is how many crafts are ran when the crafting timer wraps.
+  "craftCount" : 1,
+
+  // This is how many of any item can be crafted at once.
+  // This is also used by merchants.
+  "maxSpinCount" : 9999
 } }
