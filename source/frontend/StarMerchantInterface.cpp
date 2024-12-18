@@ -38,6 +38,8 @@ MerchantPane::MerchantPane(
 
   m_itemBag = make_shared<ItemBag>(m_settings.getUInt("sellContainerSize"));
 
+  m_maxBuyCount = m_settings.getUInt("maxBuyCount");
+
   GuiReader reader;
   reader.registerCallback("spinCount.up", [=](Widget*) {
       if (m_selectedIndex != NPos) {
@@ -360,8 +362,8 @@ int MerchantPane::maxBuyCount() {
     auto assets = Root::singleton().assets();
     auto unitPrice = selected->data().toUInt();
     if (unitPrice == 0)
-      return 1000;
-    return min(1000, (int)floor(m_player->currency("money") / unitPrice));
+      return m_maxBuyCount;
+    return min(m_maxBuyCount, (int)floor(m_player->currency("money") / unitPrice));
   } else {
     return 0;
   }
