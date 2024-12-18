@@ -1,0 +1,12 @@
+[
+  {
+    "op" : "test",
+    "path" : "/paneLayout/bgShine/position/1",
+    "value" : -12
+  },
+  {
+    "op" : "replace",
+    "path" : "/paneLayout/bgShine/position/1",
+    "value" : -19
+  }
+]
