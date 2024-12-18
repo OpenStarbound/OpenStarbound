@@ -76,6 +76,7 @@ private:
   ItemBagPtr m_itemBag;
 
   int m_buyCount;
+  int m_maxBuyCount;
 };
 
 }
