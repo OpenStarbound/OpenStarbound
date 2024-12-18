@@ -41,8 +41,8 @@ CraftingPane::CraftingPane(WorldClientPtr worldClient, PlayerPtr player, Json co
   m_settings = jsonMerge(assets->json("/interface/windowconfig/crafting.config:default"), 
                jsonMerge(assets->fetchJson(baseConfig), settings));
 
-  m_maxSpinCount = m_settings.get("maxSpinCount", 1000);
   m_filter = StringSet::from(jsonToStringList(m_settings.get("filter", JsonArray())));
+  m_maxSpinCount = m_settings.get("maxSpinCount", 1000);
 
   GuiReader reader;
   reader.registerCallback("spinCount.up", [=](Widget*) {
