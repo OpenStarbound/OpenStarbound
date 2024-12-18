@@ -38,7 +38,7 @@ MerchantPane::MerchantPane(
 
   m_itemBag = make_shared<ItemBag>(m_settings.getUInt("sellContainerSize"));
 
-  m_maxBuyCount = m_settings.getUInt("maxBuyCount");
+  m_maxBuyCount = m_settings.getUInt("maxBuyCount", 1000);
 
   GuiReader reader;
   reader.registerCallback("spinCount.up", [=](Widget*) {
