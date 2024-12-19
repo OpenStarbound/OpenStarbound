@@ -18,7 +18,7 @@
 
 namespace Star {
 
-TitleScreen::TitleScreen(PlayerStoragePtr playerStorage, MixerPtr mixer)
+TitleScreen::TitleScreen(PlayerStoragePtr playerStorage, MixerPtr mixer, UniverseClientPtr client)
   : m_playerStorage(playerStorage), m_skipMultiPlayerConnection(false), m_mixer(mixer) {
   m_titleState = TitleState::Quit;
 
@@ -43,7 +43,7 @@ TitleScreen::TitleScreen(PlayerStoragePtr playerStorage, MixerPtr mixer)
   initCharSelectionMenu();
   initCharCreationMenu();
   initMultiPlayerMenu();
-  initOptionsMenu();
+  initOptionsMenu(client);
   initModsMenu();
 
   resetState();
@@ -345,8 +345,8 @@ void TitleScreen::initMultiPlayerMenu() {
   m_paneManager.registerPane("multiplayerMenu", PaneLayer::Hud, m_multiPlayerMenu);
 }
 
-void TitleScreen::initOptionsMenu() {
-  auto optionsMenu = make_shared<OptionsMenu>(&m_paneManager);
+void TitleScreen::initOptionsMenu(UniverseClientPtr client) {
+  auto optionsMenu = make_shared<OptionsMenu>(&m_paneManager,client);
   optionsMenu->setAnchor(PaneAnchor::Center);
   optionsMenu->lockPosition();
 
