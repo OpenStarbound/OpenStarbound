@@ -1,14 +1,17 @@
 #pragma once
 
 #include "StarPane.hpp"
+#include "StarMainInterfaceTypes.hpp"
+#include "StarUniverseClient.hpp"
 
 namespace Star {
 
 STAR_CLASS(GraphicsMenu);
+STAR_CLASS(ShadersMenu);
 
 class GraphicsMenu : public Pane {
 public:
-  GraphicsMenu();
+  GraphicsMenu(PaneManager* manager,UniverseClientPtr client);
 
   void show() override;
   void dismissed() override;
@@ -23,6 +26,8 @@ private:
 
   void apply();
   void applyWindowSettings();
+  
+  void displayShaders();
 
   List<Vec2U> m_resList;
   List<int> m_interfaceScaleList;
@@ -30,6 +35,9 @@ private:
   List<float> m_cameraSpeedList;
 
   JsonObject m_localChanges;
+  
+  ShadersMenuPtr m_shadersMenu;
+  PaneManager* m_paneManager;
 };
 
 }
