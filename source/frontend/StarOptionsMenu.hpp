@@ -3,6 +3,7 @@
 #include "StarPane.hpp"
 #include "StarConfiguration.hpp"
 #include "StarMainInterfaceTypes.hpp"
+#include "StarUniverseClient.hpp"
 
 namespace Star {
 
@@ -17,7 +18,7 @@ STAR_CLASS(OptionsMenu);
 
 class OptionsMenu : public Pane {
 public:
-  OptionsMenu(PaneManager* manager);
+  OptionsMenu(PaneManager* manager, UniverseClientPtr client);
 
   virtual void show() override;
 

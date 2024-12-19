@@ -117,7 +117,7 @@ MainInterface::MainInterface(UniverseClientPtr client, WorldPainterPtr painter, 
   m_codexInterface = make_shared<CodexInterface>(m_client->mainPlayer());
   m_paneManager.registerPane(MainInterfacePanes::Codex, PaneLayer::Window, m_codexInterface);
 
-  m_optionsMenu = make_shared<OptionsMenu>(&m_paneManager);
+  m_optionsMenu = make_shared<OptionsMenu>(&m_paneManager,m_client);
   m_paneManager.registerPane(MainInterfacePanes::Options, PaneLayer::ModalWindow, m_optionsMenu);
 
   m_popupInterface = make_shared<PopupInterface>();

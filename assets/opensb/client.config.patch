@@ -10,5 +10,6 @@
     "scissor" : false,
     "letterbox" : false
   },
-  "postProcessLayers": []
+  "postProcessLayers": [],
+  "postProcessGroups": {}
 }

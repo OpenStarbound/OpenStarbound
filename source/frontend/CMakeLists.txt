@@ -55,6 +55,7 @@ SET (star_frontend_HEADERS
     StarSimpleTooltip.hpp
     StarSongbookInterface.hpp
     StarStatusPane.hpp
+    StarShadersMenu.hpp
     StarTeleportDialog.hpp
     StarVoice.hpp
     StarVoiceLuaBindings.hpp
@@ -107,6 +108,7 @@ SET (star_frontend_SOURCES
     StarSimpleTooltip.cpp
     StarSongbookInterface.cpp
     StarStatusPane.cpp
+    StarShadersMenu.cpp
     StarTeleportDialog.cpp
     StarVoice.cpp
     StarVoiceLuaBindings.cpp

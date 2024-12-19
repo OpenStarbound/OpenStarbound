@@ -9,10 +9,12 @@
 #include "StarButtonWidget.hpp"
 #include "StarOrderedSet.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarShadersMenu.hpp"
 
 namespace Star {
 
-GraphicsMenu::GraphicsMenu() {
+GraphicsMenu::GraphicsMenu(PaneManager* manager,UniverseClientPtr client)
+  : m_paneManager(manager) {
   GuiReader reader;
   reader.registerCallback("cancel",
       [&](Widget*) {
@@ -103,10 +105,14 @@ GraphicsMenu::GraphicsMenu() {
     Root::singleton().configuration()->set("newLighting", checked);
     syncGui();
   });
+  reader.registerCallback("showShadersMenu", [=](Widget*) {
+      displayShaders();
+    });
 
   auto assets = Root::singleton().assets();
 
-  Json paneLayout = assets->json("/interface/windowconfig/graphicsmenu.config:paneLayout");
+  auto config = assets->json("/interface/windowconfig/graphicsmenu.config");
+  Json paneLayout = config.get("paneLayout");
 
   m_interfaceScaleList = jsonToIntList(assets->json("/interface/windowconfig/graphicsmenu.config:interfaceScaleList"));
   m_resList = jsonToVec2UList(assets->json("/interface/windowconfig/graphicsmenu.config:resolutionList"));
@@ -122,6 +128,8 @@ GraphicsMenu::GraphicsMenu() {
 
   initConfig();
   syncGui();
+  
+  m_shadersMenu = make_shared<ShadersMenu>(assets->json(config.getString("shadersPanePath", "/interface/opensb/shaders/shaders.config")), client);
 }
 
 void GraphicsMenu::show() {
@@ -238,6 +246,10 @@ void GraphicsMenu::apply() {
   for (auto p : m_localChanges) {
     configuration->set(p.first, p.second);
   }
+}
+
+void GraphicsMenu::displayShaders() {
+  m_paneManager->displayPane(PaneLayer::ModalWindow, m_shadersMenu);
 }
 
 void GraphicsMenu::applyWindowSettings() {

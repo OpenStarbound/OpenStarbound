@@ -13,6 +13,12 @@ local function shift(thing, x, y)
   return thing
 end
 
+local function moveto(thing, otherthing)
+  thing.position[1] = otherthing.position[1]
+  thing.position[2] = otherthing.position[2]
+  return thing
+end
+
 -- patch function, called by the game
 function patch(config)
   local layout = config.paneLayout
@@ -41,6 +47,10 @@ function patch(config)
   -- Create hardware cursor toggle
   shift(clone(layout, "multiTextureLabel", "hardwareCursorLabel"), 98, -11).value = "HARDWARE CURSOR"
   shift(clone(layout, "multiTextureCheckbox", "hardwareCursorCheckbox"), 99, -11)
+  
+  -- Create shader menu button
+  shift(moveto(clone(layout, "accept", "showShadersMenu"), layout.interfaceScaleSlider), 112, -2).caption = "Shaders"
+  
 
   shift(layout.title, 0, 24)
   shift(layout.resLabel, 0, 28)

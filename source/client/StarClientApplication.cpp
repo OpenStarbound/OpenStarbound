@@ -24,6 +24,7 @@
 #include "StarVoiceLuaBindings.hpp"
 #include "StarCameraLuaBindings.hpp"
 #include "StarClipboardLuaBindings.hpp"
+#include "StarRenderingLuaBindings.hpp"
 
 #if defined STAR_SYSTEM_WINDOWS
 #include <windows.h>
@@ -405,10 +406,12 @@ void ClientApplication::render() {
       auto size = Vec2F(renderer->screenSize());
       auto quad = renderFlatRect(RectF::withSize(size / -2, size), Vec4B::filled(0), 0.0f);
       for (auto& layer : m_postProcessLayers) {
-        for (unsigned i = 0; i < layer.passes; i++) {
-          for (auto& effect : layer.effects) {
-            renderer->switchEffectConfig(effect);
-            renderer->render(quad);
+        if (layer.group ? layer.group->enabled : true) {
+          for (unsigned i = 0; i < layer.passes; i++) {
+            for (auto& effect : layer.effects) {
+              renderer->switchEffectConfig(effect);
+              renderer->render(quad);
+            }
           }
         }
       }
@@ -433,6 +436,8 @@ void ClientApplication::getAudioData(int16_t* sampleData, size_t frameCount) {
     });
   }
 }
+
+auto postProcessGroupsRoot = "postProcessGroups";
 
 void ClientApplication::renderReload() {
   auto assets = m_root->assets();
@@ -464,16 +469,53 @@ void ClientApplication::renderReload() {
   
   loadEffectConfig("world");
   
+  // define post process groups and set them to be enabled/disabled based on config
+  
+  auto config = m_root->configuration();
+  if (!config->get(postProcessGroupsRoot).isType(Json::Type::Object))
+    config->set(postProcessGroupsRoot, JsonObject());
+  auto groupsConfig = config->get(postProcessGroupsRoot);
+  
+  m_postProcessGroups.clear();
+  auto postProcessGroups = assets->json("/client.config:postProcessGroups").toObject();
+  for (auto& pair : postProcessGroups) {
+    auto name = pair.first;
+    auto groupConfig = groupsConfig.opt(name);
+    auto def = pair.second.getBool("enabledDefault",true);
+    if (!groupConfig)
+      config->setPath(strf("{}.{}", postProcessGroupsRoot, name),JsonObject());
+    m_postProcessGroups.add(name,PostProcessGroup{ groupConfig ? groupConfig.value().getBool("enabled", def) : def });
+  }
+  
+  // define post process layers and optionally assign them to groups
   m_postProcessLayers.clear();
   auto postProcessLayers = assets->json("/client.config:postProcessLayers").toArray();
   for (auto& layer : postProcessLayers) {
     auto effects = jsonToStringList(layer.getArray("effects"));
     for (auto& effect : effects)
       loadEffectConfig(effect);
-    m_postProcessLayers.append(PostProcessLayer{ std::move(effects), (unsigned)layer.getUInt("passes", 1) });
+    PostProcessGroup* group = nullptr;
+    auto gname = layer.optString("group");
+    if (gname) {
+      group = &m_postProcessGroups.get(gname.value());
+    }
+    m_postProcessLayers.append(PostProcessLayer{ std::move(effects), (unsigned)layer.getUInt("passes", 1), group });
   }
 
   loadEffectConfig("interface");
+}
+
+void ClientApplication::setPostProcessGroupEnabled(String group, bool enabled, Maybe<bool> save) {
+  m_postProcessGroups.get(group).enabled = enabled;
+  if (save && save.value())
+    m_root->configuration()->setPath(strf("{}.{}.enabled", postProcessGroupsRoot, group),enabled);
+}
+bool ClientApplication::postProcessGroupEnabled(String group) {
+  return m_postProcessGroups.get(group).enabled;
+}
+
+Json ClientApplication::postProcessGroups() {
+  return m_root->assets()->json("/client.config:postProcessGroups");
 }
 
 void ClientApplication::changeState(MainAppState newState) {
@@ -543,6 +585,7 @@ void ClientApplication::changeState(MainAppState newState) {
     m_universeClient->setLuaCallbacks("input", LuaBindings::makeInputCallbacks());
     m_universeClient->setLuaCallbacks("voice", LuaBindings::makeVoiceCallbacks());
     m_universeClient->setLuaCallbacks("camera", LuaBindings::makeCameraCallbacks(&m_worldPainter->camera()));
+    m_universeClient->setLuaCallbacks("renderer", LuaBindings::makeRenderingCallbacks(this));
 
     Json alwaysAllow = m_root->configuration()->getPath("safe.alwaysAllowClipboard");
     m_universeClient->setLuaCallbacks("clipboard", LuaBindings::makeClipboardCallbacks(appController(), alwaysAllow && alwaysAllow.toBool()));
@@ -568,7 +611,7 @@ void ClientApplication::changeState(MainAppState newState) {
     };
 
     m_mainMixer->setUniverseClient(m_universeClient);
-    m_titleScreen = make_shared<TitleScreen>(m_playerStorage, m_mainMixer->mixer());
+    m_titleScreen = make_shared<TitleScreen>(m_playerStorage, m_mainMixer->mixer(), m_universeClient);
     if (auto renderer = Application::renderer())
       m_titleScreen->renderInit(renderer);
   }
