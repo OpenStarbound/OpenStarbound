@@ -313,7 +313,7 @@ void UniverseClient::update(float dt) {
             {"mode", PlayerModeNames.getRight(m_mainPlayer->modeType())}
           });
         m_mainPlayer->setPendingCinematic(Json(std::move(cinematic)));
-        if (!m_worldClient->respawnInWorld())
+        if (!playerOnOwnShip() && !m_worldClient->respawnInWorld())
           m_pendingWarp = WarpAlias::OwnShip;
         m_warpDelay.reset();
       }
