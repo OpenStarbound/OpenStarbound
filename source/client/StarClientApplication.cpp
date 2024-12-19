@@ -24,6 +24,7 @@
 #include "StarVoiceLuaBindings.hpp"
 #include "StarCameraLuaBindings.hpp"
 #include "StarClipboardLuaBindings.hpp"
+#include "StarRenderingLuaBindings.hpp"
 
 #if defined STAR_SYSTEM_WINDOWS
 #include <windows.h>
@@ -582,6 +583,7 @@ void ClientApplication::changeState(MainAppState newState) {
     m_universeClient->setLuaCallbacks("input", LuaBindings::makeInputCallbacks());
     m_universeClient->setLuaCallbacks("voice", LuaBindings::makeVoiceCallbacks());
     m_universeClient->setLuaCallbacks("camera", LuaBindings::makeCameraCallbacks(&m_worldPainter->camera()));
+    m_universeClient->setLuaCallbacks("renderer", LuaBindings::makeRenderingCallbacks(this));
 
     Json alwaysAllow = m_root->configuration()->getPath("safe.alwaysAllowClipboard");
     m_universeClient->setLuaCallbacks("clipboard", LuaBindings::makeClipboardCallbacks(appController(), alwaysAllow && alwaysAllow.toBool()));
