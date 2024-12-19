@@ -78,9 +78,11 @@ With metadata: Returns a table, key/value being source path/metadata.
 
 #### `Image` root.assetImage(`String` image)
 
-#### `Json` root.assetFrames(`String` path)
+Returns an image.
 
-*TODO*
+#### `Json` root.assetFrames(`String` imagePath)
+
+Returns an array containing a `file` (the frames file used for the image) and `frames` (the frame data of the image).
 
 #### `JsonArray` root.assetPatches(`String` asset)
 
@@ -132,7 +134,7 @@ Sets the HUD's visibility.
 Returns the HUD's visibility.
 
 #### `PaneId` interface.bindRegisteredPane(`string` paneName)
-Binds a registered pane (defined in `/source/frontend/StarMainInterfaceTypes`) to a Lua value, which can then call functions on that pane.
+Binds a registered pane (defined in `/source/frontend/StarMainInterfaceTypes`) to a Lua value, which can then call widget functions on that pane.
 <details><summary><b>Panes</b></summary>
 EscapeDialog<br>
 Inventory<br>
@@ -170,6 +172,74 @@ TODO
 #### `int` interface.scale()
 Returns the scale used for interfaces.
 
+
+---
+
+# World
+
+The world table now contains extra bindings.
+
+---
+
+#### `bool` world.isServer()
+
+Returns whether the script is running on the server or client.
+
+---
+
+#### `bool` world.isClient()
+
+Returns whether the script is running on the server or client.
+
+---
+
+The following additional world bindings are available only for scripts running on the client.
+
+---
+
+#### `entityId` world.mainPlayer()
+
+Returns the entity ID of the player hosting the world.
+
+---
+
+#### `Vec2F` world.entityAimPosition(`entityId` entityId)
+
+Returns the current cursor aim position of the specified entity.
+
+---
+
+#### `bool` world.inWorld()
+
+Returns whether any players are in the world.
+
+---
+
+The following additional world bindings are available only for scripts running on the server.
+
+---
+
+#### `void` world.setExpiryTime(`float` expiryTime)
+
+Sets the amount of time to persist a ephemeral world when it is inactive.
+
+---
+
+#### `string` world.id()
+
+Returns a `String` representation of the world's id.
+
+---
+
+#### `?` world.callScriptContext(`?` ?)
+
+TODO
+
+---
+
+#### `?` world.sendPacket(`?` ?)
+
+?
 
 ---
 
@@ -490,3 +560,7 @@ teleportIn<br>
 teleportOut<br>
 </details>
 ---
+
+#### `List<Json>` player.teamMembers()
+
+Returns an array, each entry being a table with `name`, `uuid`, `entity`, `healthPercentage` and `energyPercentage`
