@@ -13,7 +13,7 @@
 
 namespace Star {
 
-OptionsMenu::OptionsMenu(PaneManager* manager)
+OptionsMenu::OptionsMenu(PaneManager* manager, UniverseClientPtr client)
   : m_sfxRange(0, 100), m_musicRange(0, 100), m_paneManager(manager) {
   auto root = Root::singletonPtr();
   auto assets = root->assets();
@@ -90,7 +90,7 @@ OptionsMenu::OptionsMenu(PaneManager* manager)
   m_voiceSettingsMenu = make_shared<VoiceSettingsMenu>(assets->json(config.getString("voiceSettingsPanePath", "/interface/opensb/voicechat/voicechat.config")));
   m_modBindingsMenu = make_shared<BindingsMenu>(assets->json(config.getString("bindingsPanePath", "/interface/opensb/bindings/bindings.config")));
   m_keybindingsMenu = make_shared<KeybindingsMenu>();
-  m_graphicsMenu = make_shared<GraphicsMenu>();
+  m_graphicsMenu = make_shared<GraphicsMenu>(manager,client);
 
   initConfig();
 }
