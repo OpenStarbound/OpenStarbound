@@ -12,10 +12,12 @@ INCLUDE_DIRECTORIES (
 
 SET (star_client_HEADERS
       StarClientApplication.hpp
+      StarRenderingLuaBindings.hpp
     )
 
 SET (star_client_SOURCES
       StarClientApplication.cpp
+      StarRenderingLuaBindings.cpp
     )
 
 IF (STAR_SYSTEM_WINDOWS)
