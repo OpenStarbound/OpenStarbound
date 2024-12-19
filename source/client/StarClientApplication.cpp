@@ -611,7 +611,7 @@ void ClientApplication::changeState(MainAppState newState) {
     };
 
     m_mainMixer->setUniverseClient(m_universeClient);
-    m_titleScreen = make_shared<TitleScreen>(m_playerStorage, m_mainMixer->mixer());
+    m_titleScreen = make_shared<TitleScreen>(m_playerStorage, m_mainMixer->mixer(), m_universeClient);
     if (auto renderer = Application::renderer())
       m_titleScreen->renderInit(renderer);
   }
