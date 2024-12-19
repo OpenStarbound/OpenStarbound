@@ -406,10 +406,12 @@ void ClientApplication::render() {
       auto size = Vec2F(renderer->screenSize());
       auto quad = renderFlatRect(RectF::withSize(size / -2, size), Vec4B::filled(0), 0.0f);
       for (auto& layer : m_postProcessLayers) {
-        for (unsigned i = 0; i < layer.passes; i++) {
-          for (auto& effect : layer.effects) {
-            renderer->switchEffectConfig(effect);
-            renderer->render(quad);
+        if (layer.group ? layer.group->enabled : true) {
+          for (unsigned i = 0; i < layer.passes; i++) {
+            for (auto& effect : layer.effects) {
+              renderer->switchEffectConfig(effect);
+              renderer->render(quad);
+            }
           }
         }
       }
