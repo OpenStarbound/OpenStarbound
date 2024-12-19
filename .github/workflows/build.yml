@@ -3,14 +3,6 @@ name: Build
 on:
   workflow_dispatch:
 
-  push:
-    branches:
-      - "*" 
-
-  pull_request:
-    branches:
-      - "*"
-
 jobs:
   build_windows:
     name: Build OpenStarbound Windows x64
