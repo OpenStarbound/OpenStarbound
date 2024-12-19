@@ -69,6 +69,8 @@ private:
 
   StringSet m_filter;
 
+  int m_maxSpinCount;
+
   int m_recipeAutorefreshCooldown;
 
   HashMap<ItemDescriptor, ItemPtr> m_itemCache;

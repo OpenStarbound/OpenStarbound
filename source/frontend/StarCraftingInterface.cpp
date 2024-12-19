@@ -42,6 +42,7 @@ CraftingPane::CraftingPane(WorldClientPtr worldClient, PlayerPtr player, Json co
                jsonMerge(assets->fetchJson(baseConfig), settings));
 
   m_filter = StringSet::from(jsonToStringList(m_settings.get("filter", JsonArray())));
+  m_maxSpinCount = m_settings.getUInt("maxSpinCount", 1000);
 
   GuiReader reader;
   reader.registerCallback("spinCount.up", [=](Widget*) {
@@ -752,14 +753,14 @@ List<ItemRecipe> CraftingPane::determineRecipes() {
 
 int CraftingPane::maxCraft() {
   if (m_player->isAdmin())
-    return 1000;
+    return m_maxSpinCount;
   auto itemDb = Root::singleton().itemDatabase();
   int res = 0;
   if (m_guiList->selectedItem() != NPos && m_guiList->selectedItem() < m_recipes.size()) {
     HashMap<ItemDescriptor, uint64_t> normalizedBag = m_player->inventory()->availableItems();
     auto selectedRecipe = recipeFromSelectedWidget();
     res = itemDb->maxCraftableInBag(normalizedBag, m_player->inventory()->availableCurrencies(), selectedRecipe);
-    res = std::min(res, 1000);
+    res = std::min(res, m_maxSpinCount);
   }
   return res;
 }
