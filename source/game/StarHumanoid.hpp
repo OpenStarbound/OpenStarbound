@@ -100,7 +100,7 @@ public:
   };
   static EnumMap<State> const StateNames;
 
-  static bool& globalHeadRotation(Maybe<bool> default = {});
+  static bool& globalHeadRotation();
 
   Humanoid(Json const& config);
   Humanoid(HumanoidIdentity const& identity);

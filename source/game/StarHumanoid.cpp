@@ -243,7 +243,7 @@ EnumMap<Humanoid::State> const Humanoid::StateNames{
 };
 
 // gross, but I don't want to make config calls more than I need to
-bool& Humanoid::globalHeadRotation(Maybe<bool> default) {
+bool& Humanoid::globalHeadRotation() {
   static Maybe<bool> s_headRotation;
   if (!s_headRotation)
     s_headRotation = Root::singleton().configuration()->get("humanoidHeadRotation").optBool().value(true);
