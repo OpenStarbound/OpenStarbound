@@ -947,14 +947,14 @@ bool PlayerInventory::checkInventoryFilter(ItemPtr const& items, String const& f
 
   auto itemFilters = items->instanceValue("inventoryFilters");
   if (itemFilters.isType(Json::Type::Object)) {
-    filterConfig = itemFilters.get(filterName);
+    filterConfig = itemFilters.opt(filterName).value();
     if (!filterConfig.isType(Json::Type::Object))
-      filterConfig = itemFilters.get("default");
+      filterConfig = itemFilters.opt("default").value();
   }
 
   if (!filterConfig.isType(Json::Type::Object)) {
     auto config = Root::singleton().assets()->json("/player.config:inventoryFilters");
-    filterConfig = config.get(filterName);
+    filterConfig = config.opt(filterName).value();
     if (!filterConfig.isType(Json::Type::Object))
       filterConfig = config.get("default");
   }

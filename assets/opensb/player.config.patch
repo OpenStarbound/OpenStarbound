@@ -12,5 +12,7 @@
     "maxWireTrans" : 0.4
   },
 
+  "inventoryFilters" : { "default" : {} },
+
   "swapDance" : null // Set this to a valid dance to trigger on character swap.
 }
