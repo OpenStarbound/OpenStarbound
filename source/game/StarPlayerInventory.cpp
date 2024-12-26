@@ -943,11 +943,24 @@ void PlayerInventory::cleanup() {
 }
 
 bool PlayerInventory::checkInventoryFilter(ItemPtr const& items, String const& filterName) {
-  auto config = Root::singleton().assets()->json("/player.config:inventoryFilters");
+  Json filterConfig;
+
+  auto itemFilters = items->instanceValue("inventoryFilters");
+  if (itemFilters.isType(Json::Type::Object)) {
+    filterConfig = itemFilters.get(filterName);
+    if (!filterConfig.isType(Json::Type::Object))
+      filterConfig = itemFilters.get("default");
+  }
+
+  if (!filterConfig.isType(Json::Type::Object)) {
+    auto config = Root::singleton().assets()->json("/player.config:inventoryFilters");
+    filterConfig = config.get(filterName);
+    if (!filterConfig.isType(Json::Type::Object))
+      filterConfig = config.get("default");
+  }
 
   // filter by item type if an itemTypes filter is set
   auto itemDatabase = Root::singleton().itemDatabase();
-  auto filterConfig = config.get(filterName);
   auto itemTypeName = ItemTypeNames.getRight(itemDatabase->itemType(items->name()));
   if (filterConfig.contains("typeWhitelist") && !filterConfig.getArray("typeWhitelist").contains(itemTypeName))
     return false;
