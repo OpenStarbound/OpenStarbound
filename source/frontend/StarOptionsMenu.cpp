@@ -10,6 +10,7 @@
 #include "StarVoiceSettingsMenu.hpp"
 #include "StarBindingsMenu.hpp"
 #include "StarGraphicsMenu.hpp"
+#include "StarHumanoid.hpp"
 
 namespace Star {
 
@@ -47,6 +48,9 @@ OptionsMenu::OptionsMenu(PaneManager* manager, UniverseClientPtr client)
   reader.registerCallback("allowAssetsMismatchCheckbox", [=](Widget*) {
       updateAllowAssetsMismatch();
     });
+  reader.registerCallback("headRotationCheckbox", [=](Widget*) {
+      updateHeadRotation();
+    });
   reader.registerCallback("backButton", [=](Widget*) {
       dismiss();
     });
@@ -77,6 +81,7 @@ OptionsMenu::OptionsMenu(PaneManager* manager, UniverseClientPtr client)
   m_clientIPJoinableButton = fetchChild<ButtonWidget>("clientIPJoinableCheckbox");
   m_clientP2PJoinableButton = fetchChild<ButtonWidget>("clientP2PJoinableCheckbox");
   m_allowAssetsMismatchButton = fetchChild<ButtonWidget>("allowAssetsMismatchCheckbox");
+  m_headRotationButton = fetchChild<ButtonWidget>("headRotationCheckbox");
 
   m_instrumentLabel = fetchChild<LabelWidget>("instrumentValueLabel");
   m_sfxLabel = fetchChild<LabelWidget>("sfxValueLabel");
@@ -115,7 +120,8 @@ StringList const OptionsMenu::ConfigKeys = {
   "tutorialMessages",
   "clientIPJoinable",
   "clientP2PJoinable",
-  "allowAssetsMismatch"
+  "allowAssetsMismatch",
+  "humanoidHeadRotation"
 };
 
 void OptionsMenu::initConfig() {
@@ -166,6 +172,12 @@ void OptionsMenu::updateAllowAssetsMismatch() {
   Root::singleton().configuration()->set("allowAssetsMismatch", m_allowAssetsMismatchButton->isChecked());
 }
 
+void OptionsMenu::updateHeadRotation() {
+  m_localChanges.set("humanoidHeadRotation", m_headRotationButton->isChecked());
+  Root::singleton().configuration()->set("humanoidHeadRotation", m_headRotationButton->isChecked());
+  Humanoid::globalHeadRotation() = m_headRotationButton->isChecked();
+}
+
 void OptionsMenu::syncGuiToConf() {
   m_instrumentSlider->setVal(m_localChanges.get("instrumentVol").toInt(), false);
   m_instrumentLabel->setText(toString(m_instrumentSlider->val()));
@@ -180,6 +192,7 @@ void OptionsMenu::syncGuiToConf() {
   m_clientIPJoinableButton->setChecked(m_localChanges.get("clientIPJoinable").toBool());
   m_clientP2PJoinableButton->setChecked(m_localChanges.get("clientP2PJoinable").toBool());
   m_allowAssetsMismatchButton->setChecked(m_localChanges.get("allowAssetsMismatch").toBool());
+  m_headRotationButton->setChecked(m_localChanges.get("humanoidHeadRotation").optBool().value(true));
 
   auto appController = GuiContext::singleton().applicationController();
   if (!appController->p2pNetworkingService()) {

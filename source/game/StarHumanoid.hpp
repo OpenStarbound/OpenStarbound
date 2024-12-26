@@ -100,6 +100,8 @@ public:
   };
   static EnumMap<State> const StateNames;
 
+  static bool& globalHeadRotation(Maybe<bool> default = {});
+
   Humanoid(Json const& config);
   Humanoid(HumanoidIdentity const& identity);
   Humanoid(Humanoid const&) = default;
@@ -163,6 +165,7 @@ public:
   void setDance(Maybe<String> const& dance);
   void setFacingDirection(Direction facingDirection);
   void setMovingBackwards(bool movingBackwards);
+  void setHeadRotation(float headRotation);
   void setRotation(float rotation);
   void setScale(Vec2F scale);
 
@@ -183,6 +186,7 @@ public:
   void setPrimaryHandFrameOverrides(String backFrameOverride, String frontFrameOverride);
   void setPrimaryHandDrawables(List<Drawable> drawables);
   void setPrimaryHandNonRotatedDrawables(List<Drawable> drawables);
+  bool primaryHandHoldingItem() const;
 
   // Same as primary hand.
   void setAltHandParameters(bool holdingItem, float angle, float itemAngle, bool recoil,
@@ -190,6 +194,7 @@ public:
   void setAltHandFrameOverrides(String backFrameOverride, String frontFrameOverride);
   void setAltHandDrawables(List<Drawable> drawables);
   void setAltHandNonRotatedDrawables(List<Drawable> drawables);
+  bool altHandHoldingItem() const;
 
   // Updates the animation based on whatever the current animation state is,
   // wrapping or clamping animation time as appropriate.
@@ -355,6 +360,8 @@ private:
   Maybe<String> m_dance;
   Direction m_facingDirection;
   bool m_movingBackwards;
+  float m_headRotation;
+  float m_headRotationTarget;
   float m_rotation;
   Vec2F m_scale;
   bool m_drawVaporTrail;

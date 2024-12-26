@@ -54,6 +54,24 @@
 
     "instrumentSlider" : { "type" : "slider", "position" : [62, 158], "gridImage" : "/interface/optionsmenu/largeselection.png" },
     "instrumentLabel" : { "type" : "label", "position" : [32, 158], "value" : "Tunes" },
-    "instrumentValueLabel" : { "type" : "label", "position" : [192, 158], "hAnchor" : "mid", "value" : "Replace Me" }
+    "instrumentValueLabel" : { "type" : "label", "position" : [192, 158], "hAnchor" : "mid", "value" : "Replace Me" },
+
+    "headRotationLabel" : {
+      "type" : "label",
+      "position" : [25, 51],
+      "hAnchor" : "left",
+      "value" : "HEAD ROTATION"
+    },
+    "headRotationCheckbox" : {
+      "type" : "button",
+      "pressedOffset" : [0, 0],
+      "position" : [104, 51],
+      "base" : "/interface/optionsmenu/checkboxnocheck.png",
+      "hover" : "/interface/optionsmenu/checkboxnocheckhover.png",
+      "baseImageChecked" : "/interface/optionsmenu/checkboxcheck.png",
+      "hoverImageChecked" : "/interface/optionsmenu/checkboxcheckhover.png",
+      "checkable" : true,
+      "checked" : true
+    }
   }
 }

@@ -242,6 +242,14 @@ EnumMap<Humanoid::State> const Humanoid::StateNames{
     {Humanoid::State::Lay, "lay"},
 };
 
+// gross, but I don't want to make config calls more than I need to
+bool& Humanoid::globalHeadRotation(Maybe<bool> default) {
+  static Maybe<bool> s_headRotation;
+  if (!s_headRotation)
+    s_headRotation = Root::singleton().configuration()->get("humanoidHeadRotation").optBool().value(true);
+  return *s_headRotation;
+};
+
 Humanoid::Humanoid(Json const& config) {
   loadConfig(config);
 
@@ -252,7 +260,7 @@ Humanoid::Humanoid(Json const& config) {
   m_movingBackwards = false;
   m_altHand.angle = 0;
   m_facingDirection = Direction::Left;
-  m_rotation = 0;
+  m_headRotationTarget = m_headRotation = m_rotation = 0;
   m_scale = Vec2F::filled(1.f);
   m_drawVaporTrail = false;
   m_state = State::Idle;
@@ -412,6 +420,10 @@ void Humanoid::setMovingBackwards(bool movingBackwards) {
   m_movingBackwards = movingBackwards;
 }
 
+void Humanoid::setHeadRotation(float headRotation) {
+  m_headRotationTarget = headRotation;
+}
+
 void Humanoid::setRotation(float rotation) {
   m_rotation = rotation;
 }
@@ -476,6 +488,10 @@ void Humanoid::setPrimaryHandNonRotatedDrawables(List<Drawable> drawables) {
   m_primaryHand.nonRotatedDrawables = std::move(drawables);
 }
 
+bool Humanoid::primaryHandHoldingItem() const {
+  return m_primaryHand.holdingItem;
+}
+
 void Humanoid::setAltHandParameters(bool holdingItem, float angle, float itemAngle, bool recoil,
     bool outsideOfHand) {
   m_altHand.holdingItem = holdingItem;
@@ -498,16 +514,24 @@ void Humanoid::setAltHandNonRotatedDrawables(List<Drawable> drawables) {
   m_altHand.nonRotatedDrawables = std::move(drawables);
 }
 
+bool Humanoid::altHandHoldingItem() const {
+  return m_altHand.holdingItem;
+}
+
 void Humanoid::animate(float dt) {
   m_animationTimer += dt;
   m_emoteAnimationTimer += dt;
   m_danceTimer += dt;
+  float headRotationTarget = globalHeadRotation() ? m_headRotationTarget : 0.f;
+  float diff = angleDiff(m_headRotation, headRotationTarget);
+  m_headRotation = (headRotationTarget - (headRotationTarget - m_headRotation) * powf(.333333f, dt * 60.f));
 }
 
 void Humanoid::resetAnimation() {
   m_animationTimer = 0.0f;
   m_emoteAnimationTimer = 0.0f;
   m_danceTimer = 0.0f;
+  m_headRotation = globalHeadRotation() ? 0.f : m_headRotationTarget;
 }
 
 List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
@@ -641,11 +665,28 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
   else if (m_state == Lay)
     headPosition += m_headLayOffset;
 
+  auto addHeadDrawable = [&](Drawable drawable, bool forceFullbright = false) {
+    if (m_facingDirection == Direction::Left)
+      drawable.scale(Vec2F(-1, 1));
+    drawable.fullbright |= forceFullbright;
+    if (m_headRotation != 0.f) {
+      float dir = numericalDirection(m_facingDirection);
+      Vec2F rotationPoint = headPosition;
+      rotationPoint[0] *= dir;
+      rotationPoint[1] -= .25f;
+      float headX = (m_headRotation / ((float)Constants::pi * 2.f));
+      drawable.rotate(m_headRotation, rotationPoint);
+      drawable.position[0] -= state() == State::Run ? (fmaxf(headX * dir, 0.f) * 2.f) * dir : headX;
+      drawable.position[1] -= fabsf(m_headRotation / ((float)Constants::pi * 4.f));
+    }
+    drawables.append(std::move(drawable));
+  };
+
   if (!m_headFrameset.empty() && !m_bodyHidden) {
     String image = strf("{}:normal", m_headFrameset);
     auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, headPosition);
     drawable.imagePart().addDirectives(getBodyDirectives(), true);
-    addDrawable(std::move(drawable), m_bodyFullbright);
+    addHeadDrawable(std::move(drawable), m_bodyFullbright);
   }
 
   if (!m_emoteFrameset.empty() && !m_bodyHidden) {
@@ -653,14 +694,14 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
     String image = strf("{}:{}.{}{}", m_emoteFrameset, emoteFrameBase(m_emoteState), emoteStateSeq, emoteDirectives.prefix());
     auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, headPosition);
     drawable.imagePart().addDirectives(emoteDirectives, true);
-    addDrawable(std::move(drawable), m_bodyFullbright);
+    addHeadDrawable(std::move(drawable), m_bodyFullbright);
   }
 
   if (!m_hairFrameset.empty() && !m_bodyHidden) {
     String image = strf("{}:normal", m_hairFrameset);
     auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, headPosition);
     drawable.imagePart().addDirectives(getHairDirectives(), true).addDirectives(getHelmetMaskDirectives(), true);
-    addDrawable(std::move(drawable), m_bodyFullbright);
+    addHeadDrawable(std::move(drawable), m_bodyFullbright);
   }
 
   if (!m_bodyFrameset.empty() && !m_bodyHidden) {
@@ -719,21 +760,21 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
     String image = strf("{}:normal", m_facialHairFrameset);
     auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, headPosition);
     drawable.imagePart().addDirectives(getFacialHairDirectives(), true).addDirectives(getHelmetMaskDirectives(), true);
-    addDrawable(std::move(drawable), m_bodyFullbright);
+    addHeadDrawable(std::move(drawable), m_bodyFullbright);
   }
 
   if (!m_facialMaskFrameset.empty() && !m_bodyHidden) {
     String image = strf("{}:normal", m_facialMaskFrameset);
     auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, headPosition);
     drawable.imagePart().addDirectives(getFacialMaskDirectives(), true).addDirectives(getHelmetMaskDirectives(), true);
-    addDrawable(std::move(drawable));
+    addHeadDrawable(std::move(drawable));
   }
 
   if (!m_headArmorFrameset.empty()) {
     String image = strf("{}:normal{}", m_headArmorFrameset, m_headArmorDirectives.prefix());
     auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, headPosition);
     drawable.imagePart().addDirectives(getHeadDirectives(), true);
-    addDrawable(std::move(drawable));
+    addHeadDrawable(std::move(drawable));
   }
 
   auto frontArmDrawable = [&](String const& frameSet, Directives const& directives) -> Drawable {

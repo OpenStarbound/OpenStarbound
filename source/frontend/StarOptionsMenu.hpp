@@ -36,6 +36,7 @@ private:
   void updateClientIPJoinable();
   void updateClientP2PJoinable();
   void updateAllowAssetsMismatch();
+  void updateHeadRotation();
 
   void syncGuiToConf();
 
@@ -52,6 +53,7 @@ private:
   ButtonWidgetPtr m_clientIPJoinableButton;
   ButtonWidgetPtr m_clientP2PJoinableButton;
   ButtonWidgetPtr m_allowAssetsMismatchButton;
+  ButtonWidgetPtr m_headRotationButton;
 
   LabelWidgetPtr m_instrumentLabel;
   LabelWidgetPtr m_sfxLabel;

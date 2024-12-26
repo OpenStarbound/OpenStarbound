@@ -1021,15 +1021,15 @@ void Player::update(float dt, uint64_t) {
     || m_humanoid->danceCyclicOrEnded() || m_movementController->running())
     m_humanoid->setDance({});
 
+  m_tools->suppressItems(suppressedItems);
+  m_tools->tick(dt, m_shifting, m_pendingMoves);
+  
+  if (auto overrideFacingDirection = m_tools->setupHumanoidHandItems(*m_humanoid, position(), aimPosition()))
+    m_movementController->controlFace(*overrideFacingDirection);
+
   bool isClient = world()->isClient();
   if (isClient)
     m_armor->setupHumanoidClothingDrawables(*m_humanoid, forceNude());
-
-  m_tools->suppressItems(suppressedItems);
-  m_tools->tick(dt, m_shifting, m_pendingMoves);
-
-  if (auto overrideFacingDirection = m_tools->setupHumanoidHandItems(*m_humanoid, position(), aimPosition()))
-    m_movementController->controlFace(*overrideFacingDirection);
 
   m_effectsAnimator->resetTransformationGroup("flip");
   if (m_movementController->facingDirection() == Direction::Left)
@@ -1074,6 +1074,35 @@ void Player::update(float dt, uint64_t) {
   m_effectEmitter->setDirection(facingDirection());
 
   m_effectEmitter->tick(dt, *entityMode());
+
+  if (isClient) {
+    bool calculateHeadRotation = isMaster();
+    if (!calculateHeadRotation) {
+      auto headRotationProperty = getSecretProperty("humanoid.headRotation");
+      if (headRotationProperty.isType(Json::Type::Float)) {
+        m_humanoid->setHeadRotation(headRotationProperty.toFloat());
+      } else
+        calculateHeadRotation = true;
+    }
+    if (calculateHeadRotation) { // master or not an OpenStarbound player
+      float headRotation = 0.f;
+      if (m_humanoid->primaryHandHoldingItem() || m_humanoid->altHandHoldingItem()) {
+        auto primary = m_tools->primaryHandItem();
+        auto alt = m_tools->altHandItem();
+        String const disableFlag = "disableHeadRotation";
+        auto statusFlag = m_statusController->statusProperty(disableFlag);
+        if (!(statusFlag.isType(Json::Type::Bool) && statusFlag.toBool())
+         && !(primary && primary->instanceValue(disableFlag))
+         && !(alt && alt->instanceValue(disableFlag))) {
+          auto diff = world()->geometry().diff(aimPosition(), mouthPosition());
+          diff.setX(fabsf(diff.x()));
+          headRotation = diff.angle() * .25f * numericalDirection(m_humanoid->facingDirection());
+        }
+      }
+      m_humanoid->setHeadRotation(headRotation);
+      setSecretProperty("humanoid.headRotation", headRotation);
+    }
+  }
 
   m_humanoid->setFacingDirection(m_movementController->facingDirection());
   m_humanoid->setMovingBackwards(m_movementController->facingDirection() != m_movementController->movingDirection());
@@ -2609,6 +2638,7 @@ Maybe<StringView> Player::getSecretPropertyView(String const& name) const {
 
   return {};
 }
+
 
 Json Player::getSecretProperty(String const& name, Json defaultValue) const {
   if (auto tag = m_effectsAnimator->globalTagPtr(secretProprefix + name)) {
