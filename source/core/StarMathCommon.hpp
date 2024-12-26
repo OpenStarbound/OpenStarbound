@@ -10,11 +10,11 @@ namespace Star {
 STAR_EXCEPTION(MathException, StarException);
 
 namespace Constants {
-  double const pi = 3.14159265358979323846;
-  double const rad2deg = 57.2957795130823208768;
-  double const deg2rad = 1 / rad2deg;
-  double const sqrt2 = 1.41421356237309504880;
-  double const log2e = 1.44269504088896340736;
+  double constexpr pi = 3.14159265358979323846;
+  double constexpr rad2deg = 57.2957795130823208768;
+  double constexpr deg2rad = 1 / rad2deg;
+  double constexpr sqrt2 = 1.41421356237309504880;
+  double constexpr log2e = 1.44269504088896340736;
 }
 
 // Really common std namespace includes, and replacements for std libraries
