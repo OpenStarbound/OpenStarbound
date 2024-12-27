@@ -25,6 +25,8 @@ Image scaleNearest(Image const& srcImage, Vec2F const& scale) {
   return destImage;
 }
 
+#pragma GCC push_options
+#pragma GCC optimize("-fno-unsafe-math-optimizations")
 Image scaleBilinear(Image const& srcImage, Vec2F const& scale) {
   Vec2U srcSize = srcImage.size();
   Vec2U destSize = Vec2U::round(vmult(Vec2F(srcSize), scale));
@@ -100,6 +102,7 @@ Image scaleBicubic(Image const& srcImage, Vec2F const& scale) {
 
   return destImage;
 }
+#pragma GCC pop_options
 
 StringList colorDirectivesFromConfig(JsonArray const& directives) {
   List<String> result;
