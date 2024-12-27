@@ -26,7 +26,7 @@ Image scaleNearest(Image const& srcImage, Vec2F const& scale) {
 }
 
 #pragma GCC push_options
-#pragma GCC optimize("-O3")
+#pragma GCC optimize("-fno-unsafe-math-optimizations", "-ffloat-store")
 Image scaleBilinear(Image const& srcImage, Vec2F const& scale) {
   Vec2U srcSize = srcImage.size();
   Vec2U destSize = Vec2U::round(vmult(Vec2F(srcSize), scale));
@@ -35,13 +35,17 @@ Image scaleBilinear(Image const& srcImage, Vec2F const& scale) {
 
   Image destImage(destSize, srcImage.pixelFormat());
 
+  auto lerpVec = [](float const& offset, Vec4F f0, Vec4F f1) {
+    return f0 * (1 - offset) + f1 * (offset);
+  };
+
   for (unsigned y = 0; y < destSize[1]; ++y) {
     for (unsigned x = 0; x < destSize[0]; ++x) {
       auto pos = vdiv(Vec2F(x, y), scale);
       auto ipart = Vec2I::floor(pos);
       auto fpart = pos - Vec2F(ipart);
 
-      auto result = lerp(fpart[1], lerp(fpart[0], Vec4F(srcImage.clamp(ipart[0], ipart[1])), Vec4F(srcImage.clamp(ipart[0] + 1, ipart[1]))), lerp(fpart[0],
+      auto result = lerpVec(fpart[1], lerpVec(fpart[0], Vec4F(srcImage.clamp(ipart[0], ipart[1])), Vec4F(srcImage.clamp(ipart[0] + 1, ipart[1]))), lerpVec(fpart[0],
             Vec4F(srcImage.clamp(ipart[0], ipart[1] + 1)), Vec4F(srcImage.clamp(ipart[0] + 1, ipart[1] + 1))));
 
       destImage.set({x, y}, Vec4B(result));
