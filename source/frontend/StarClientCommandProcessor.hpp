@@ -59,6 +59,7 @@ private:
   String upgradeShip(String const& argumentsString);
   String swap(String const& argumentsString);
   String respawnInWorld(String const& argumentsString);
+  String render(String const& imagePath);
 
   UniverseClientPtr m_universeClient;
   CinematicPtr m_cinematicOverlay;
