@@ -625,11 +625,11 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
       scale = scale.piecewiseMax(Vec2F::filled(0.f));
     }
     if (op->mode == ScaleImageOperation::Nearest)
-      image = scaleNearest(image, op->scale);
+      image = scaleNearest(image, scale);
     else if (op->mode == ScaleImageOperation::Bilinear)
-      image = scaleBilinear(image, op->scale);
+      image = scaleBilinear(image, scale);
     else if (op->mode == ScaleImageOperation::Bicubic)
-      image = scaleBicubic(image, op->scale);
+      image = scaleBicubic(image, scale);
 
   } else if (auto op = operation.ptr<CropImageOperation>()) {
     image = image.subImage(Vec2U(op->subset.min()), Vec2U(op->subset.size()));
