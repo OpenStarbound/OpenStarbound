@@ -10,11 +10,7 @@
 
 namespace Star {
 
-Image scaleNearest(Image const& srcImage, Vec2F scale) {
-  if (scale[0] < 0.0f || scale[1] < 0.0f) {
-    Logger::warn("Negative scale in scaleNearest({})", scale);
-    scale = scale.piecewiseMax(Vec2F::filled(0.f));
-  }
+Image scaleNearest(Image const& srcImage, Vec2F const& scale) {
   Vec2U srcSize = srcImage.size();
   Vec2U destSize = Vec2U::round(vmult(Vec2F(srcSize), scale));
   destSize[0] = max(destSize[0], 1u);
@@ -29,11 +25,7 @@ Image scaleNearest(Image const& srcImage, Vec2F scale) {
   return destImage;
 }
 
-Image scaleBilinear(Image const& srcImage, Vec2F scale) {
-  if (scale[0] < 0.0f || scale[1] < 0.0f) {
-    Logger::warn("Negative scale in scaleBilinear({})", scale);
-    scale = scale.piecewiseMax(Vec2F::filled(0.f));
-  }
+Image scaleBilinear(Image const& srcImage, Vec2F const& scale) {
   Vec2U srcSize = srcImage.size();
   Vec2U destSize = Vec2U::round(vmult(Vec2F(srcSize), scale));
   destSize[0] = max(destSize[0], 1u);
@@ -57,11 +49,7 @@ Image scaleBilinear(Image const& srcImage, Vec2F scale) {
   return destImage;
 }
 
-Image scaleBicubic(Image const& srcImage, Vec2F scale) {
-  if (scale[0] < 0.0f || scale[1] < 0.0f) {
-    Logger::warn("Negative scale in scaleBicubic({})", scale);
-    scale = scale.piecewiseMax(Vec2F::filled(0.f));
-  }
+Image scaleBicubic(Image const& srcImage, Vec2F const& scale) {
   Vec2U srcSize = srcImage.size();
   Vec2U destSize = Vec2U::round(vmult(Vec2F(srcSize), scale));
   destSize[0] = max(destSize[0], 1u);
@@ -631,6 +619,11 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
     image = borderImage;
 
   } else if (auto op = operation.ptr<ScaleImageOperation>()) {
+    auto scale = op->scale;
+    if (scale[0] < 0.0f || scale[1] < 0.0f) {
+      Logger::warn("Negative scale in ScaleImageOperation ({})", scale);
+      scale = scale.piecewiseMax(Vec2F::filled(0.f));
+    }
     if (op->mode == ScaleImageOperation::Nearest)
       image = scaleNearest(image, op->scale);
     else if (op->mode == ScaleImageOperation::Bilinear)

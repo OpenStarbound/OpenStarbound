@@ -10,9 +10,9 @@ STAR_CLASS(Image);
 
 STAR_EXCEPTION(ImageOperationException, StarException);
 
-Image scaleNearest(Image const& srcImage, Vec2F scale);
-Image scaleBilinear(Image const& srcImage, Vec2F scale);
-Image scaleBicubic(Image const& srcImage, Vec2F scale);
+Image scaleNearest(Image const& srcImage, Vec2F const& scale);
+Image scaleBilinear(Image const& srcImage, Vec2F const& scale);
+Image scaleBicubic(Image const& srcImage, Vec2F const& scale);
 
 StringList colorDirectivesFromConfig(JsonArray const& directives);
 String paletteSwapDirectivesFromConfig(Json const& swaps);
