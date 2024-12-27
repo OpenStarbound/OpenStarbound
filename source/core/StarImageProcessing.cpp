@@ -26,7 +26,7 @@ Image scaleNearest(Image const& srcImage, Vec2F const& scale) {
 }
 
 #pragma GCC push_options
-#pragma GCC optimize("-fno-unsafe-math-optimizations")
+#pragma GCC optimize("-O3")
 Image scaleBilinear(Image const& srcImage, Vec2F const& scale) {
   Vec2U srcSize = srcImage.size();
   Vec2U destSize = Vec2U::round(vmult(Vec2F(srcSize), scale));
