@@ -41,6 +41,7 @@ SET (star_core_HEADERS
     StarIdMap.hpp
     StarImage.hpp
     StarImageProcessing.hpp
+    StarImageScaling.hpp
     StarInputEvent.hpp
     StarInterpolation.hpp
     StarRefPtr.hpp
@@ -152,6 +153,7 @@ SET (star_core_SOURCES
     StarIODevice.cpp
     StarImage.cpp
     StarImageProcessing.cpp
+    StarImageScaling.cpp
     StarInputEvent.cpp
     StarJson.cpp
     StarJsonBuilder.cpp
@@ -227,6 +229,10 @@ ADD_LIBRARY (star_core OBJECT ${star_core_SOURCES} ${star_core_HEADERS} ${CMAKE_
 
 IF(STAR_PRECOMPILED_HEADERS)
   TARGET_PRECOMPILE_HEADERS (star_core PUBLIC StarPch.hpp)
+ENDIF()
+
+IF(STAR_COMPILER STREQUAL "gnu")
+  SET_SOURCE_FILES_PROPERTIES(StarImageScaling.cpp PROPERTIES COMPILE_FLAGS "-O2")
 ENDIF()
 
 IF(STAR_USE_JEMALLOC AND JEMALLOC_IS_PREFIXED)
