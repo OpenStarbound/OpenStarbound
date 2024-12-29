@@ -168,11 +168,11 @@ struct LuaConverter<Line<T, N>> {
 template <typename FirstType, typename... RestTypes>
 struct LuaConverter<Variant<FirstType, RestTypes...>> {
   static LuaValue from(LuaEngine& engine, Variant<FirstType, RestTypes...> const& variant) {
-    return variant.call([&engine](auto const& a) { return luaFrom(engine, a); });
+    return variant.call([&engine](auto const& a) { return engine.luaFrom(a); });
   }
 
   static LuaValue from(LuaEngine& engine, Variant<FirstType, RestTypes...>&& variant) {
-    return variant.call([&engine](auto& a) { return luaFrom(engine, std::move(a)); });
+    return variant.call([&engine](auto& a) { return engine.luaFrom(std::move(a)); });
   }
 
   static Maybe<Variant<FirstType, RestTypes...>> to(LuaEngine& engine, LuaValue const& v) {
@@ -217,7 +217,7 @@ struct LuaConverter<MVariant<Types...>> {
   static LuaValue from(LuaEngine& engine, MVariant<Types...> const& variant) {
     LuaValue value;
     variant.call([&value, &engine](auto const& a) {
-        value = luaFrom(engine, a);
+        value = engine.luaFrom(a);
       });
     return value;
   }
@@ -225,7 +225,7 @@ struct LuaConverter<MVariant<Types...>> {
   static LuaValue from(LuaEngine& engine, MVariant<Types...>&& variant) {
     LuaValue value;
     variant.call([&value, &engine](auto& a) {
-        value = luaFrom(engine, std::move(a));
+        value = engine.luaFrom(std::move(a));
       });
     return value;
   }
