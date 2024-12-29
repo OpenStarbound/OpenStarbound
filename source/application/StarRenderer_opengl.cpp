@@ -308,21 +308,39 @@ void OpenGlRenderer::loadEffectConfig(String const& name, Json const& effectConf
         throw RendererException::format("Unrecognized effect parameter type '{}'", type);
       }
 
-      effect.parameters[p.first] = effectParameter;
-
-      if (Json def = p.second.get("default", {})) {
-        if (type == "bool") {
-          setEffectParameter(p.first, def.toBool());
-        } else if (type == "int") {
-          setEffectParameter(p.first, (int)def.toInt());
-        } else if (type == "float") {
-          setEffectParameter(p.first, def.toFloat());
-        } else if (type == "vec2") {
-          setEffectParameter(p.first, jsonToVec2F(def));
-        } else if (type == "vec3") {
-          setEffectParameter(p.first, jsonToVec3F(def));
-        } else if (type == "vec4") {
-          setEffectParameter(p.first, jsonToVec4F(def));
+      if (p.second.getBool("scriptable",false)) {
+        if (Json def = p.second.get("default", {})) {
+          if (type == "bool") {
+            effectParameter.parameterValue = (RenderEffectParameter)def.toBool();
+          } else if (type == "int") {
+            effectParameter.parameterValue = (RenderEffectParameter)(int)def.toInt();
+          } else if (type == "float") {
+            effectParameter.parameterValue = (RenderEffectParameter)def.toFloat();
+          } else if (type == "vec2") {
+            effectParameter.parameterValue = (RenderEffectParameter)jsonToVec2F(def);
+          } else if (type == "vec3") {
+            effectParameter.parameterValue = (RenderEffectParameter)jsonToVec3F(def);
+          } else if (type == "vec4") {
+            effectParameter.parameterValue = (RenderEffectParameter)jsonToVec4F(def);
+          }
+        }
+        effect.scriptables[p.first] = effectParameter;
+      } else {
+        effect.parameters[p.first] = effectParameter;
+        if (Json def = p.second.get("default", {})) {
+          if (type == "bool") {
+            setEffectParameter(p.first, def.toBool());
+          } else if (type == "int") {
+            setEffectParameter(p.first, (int)def.toInt());
+          } else if (type == "float") {
+            setEffectParameter(p.first, def.toFloat());
+          } else if (type == "vec2") {
+            setEffectParameter(p.first, jsonToVec2F(def));
+          } else if (type == "vec3") {
+            setEffectParameter(p.first, jsonToVec3F(def));
+          } else if (type == "vec4") {
+            setEffectParameter(p.first, jsonToVec4F(def));
+          }
         }
       }
     }
@@ -382,6 +400,50 @@ void OpenGlRenderer::setEffectParameter(String const& parameterName, RenderEffec
     glUniform4f(ptr->parameterUniform, (*v)[0], (*v)[1], (*v)[2], (*v)[3]);
 
   ptr->parameterValue = value;
+}
+
+void OpenGlRenderer::setEffectScriptableParameter(String const& effectName, String const& parameterName, RenderEffectParameter const& value) {
+  auto find = m_effects.find(effectName);
+  if (find == m_effects.end())
+    return;
+
+  Effect& effect = find->second;
+  
+  auto ptr = effect.scriptables.ptr(parameterName);
+  if (!ptr || (ptr->parameterValue && *ptr->parameterValue == value))
+    return;
+
+  if (ptr->parameterType != value.typeIndex())
+    throw RendererException::format("OpenGlRenderer::setEffectScriptableParameter '{}' parameter type mismatch", parameterName);
+
+  ptr->parameterValue = value;
+}
+
+Maybe<RenderEffectParameter> OpenGlRenderer::getEffectScriptableParameter(String const& effectName, String const& parameterName) {
+  auto find = m_effects.find(effectName);
+  if (find == m_effects.end())
+    return {};
+
+  Effect& effect = find->second;
+
+  auto ptr = effect.scriptables.ptr(parameterName);
+  if (!ptr)
+    return {};
+  
+  return ptr->parameterValue;
+}
+Maybe<VariantTypeIndex> OpenGlRenderer::getEffectScriptableParameterType(String const& effectName, String const& parameterName) {
+  auto find = m_effects.find(effectName);
+  if (find == m_effects.end())
+    return {};
+
+  Effect& effect = find->second;
+
+  auto ptr = effect.scriptables.ptr(parameterName);
+  if (!ptr)
+    return {};
+  
+  return ptr->parameterType;
 }
 
 void OpenGlRenderer::setEffectTexture(String const& textureName, ImageView const& image) {
@@ -1063,6 +1125,26 @@ void OpenGlRenderer::setupGlUniforms(Effect& effect, Vec2U screenSize) {
   }
 
   glUniform2f(m_screenSizeUniform, screenSize[0], screenSize[1]);
+  
+  for (auto& param : effect.scriptables) {
+    auto ptr = &param.second;
+    auto mvalue = ptr->parameterValue;
+    if (mvalue) {
+      RenderEffectParameter value = mvalue.value();
+      if (auto v = value.ptr<bool>())
+        glUniform1i(ptr->parameterUniform, *v);
+      else if (auto v = value.ptr<int>())
+        glUniform1i(ptr->parameterUniform, *v);
+      else if (auto v = value.ptr<float>())
+        glUniform1f(ptr->parameterUniform, *v);
+      else if (auto v = value.ptr<Vec2F>())
+        glUniform2f(ptr->parameterUniform, (*v)[0], (*v)[1]);
+      else if (auto v = value.ptr<Vec3F>())
+        glUniform3f(ptr->parameterUniform, (*v)[0], (*v)[1], (*v)[2]);
+      else if (auto v = value.ptr<Vec4F>())
+        glUniform4f(ptr->parameterUniform, (*v)[0], (*v)[1], (*v)[2], (*v)[3]);
+    }
+  }
 }
 
 RefPtr<OpenGlRenderer::GlFrameBuffer> OpenGlRenderer::getGlFrameBuffer(String const& id) {
