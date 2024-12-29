@@ -1,2 +1,2 @@
 require "/scripts/opensb/util/modules.lua"
-modules("/scripts/opensb/universeclient/", {"voicemanager"})
+modules("/scripts/opensb/universeclient/", {"voicemanager","loadconfig"})

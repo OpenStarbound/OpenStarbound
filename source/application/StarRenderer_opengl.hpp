@@ -25,6 +25,9 @@ public:
   void loadEffectConfig(String const& name, Json const& effectConfig, StringMap<String> const& shaders) override;
 
   void setEffectParameter(String const& parameterName, RenderEffectParameter const& parameter) override;
+  void setEffectScriptableParameter(String const& effectName, String const& parameterName, RenderEffectParameter const& parameter) override;
+  Maybe<RenderEffectParameter> getEffectScriptableParameter(String const& effectName, String const& parameterName) override;
+  Maybe<VariantTypeIndex> getEffectScriptableParameterType(String const& effectName, String const& parameterName) override;
   void setEffectTexture(String const& textureName, ImageView const& image) override;
 
   void setScissorRect(Maybe<RectI> const& scissorRect) override;
@@ -191,6 +194,7 @@ private:
     GLuint program = 0;
     Json config;
     StringMap<EffectParameter> parameters;
+    StringMap<EffectParameter> scriptables; // scriptable parameters which can be changed when the effect is not loaded
     StringMap<EffectTexture> textures;
 
     StringMap<GLuint> attributes;

@@ -120,7 +120,7 @@ public:
   virtual void set(List<RenderPrimitive>& primitives) = 0;
 };
 
-typedef Variant<bool, int, float, Vec2F, Vec3F, Vec4F> RenderEffectParameter;
+typedef Variant<float, int, Vec2F, Vec3F, Vec4F, bool> RenderEffectParameter;
 
 class Renderer {
 public:
@@ -141,6 +141,9 @@ public:
   // The effect config will specify named parameters and textures which can be
   // set here.
   virtual void setEffectParameter(String const& parameterName, RenderEffectParameter const& parameter) = 0;
+  virtual void setEffectScriptableParameter(String const& effectName, String const& parameterName, RenderEffectParameter const& parameter) = 0;
+  virtual Maybe<RenderEffectParameter> getEffectScriptableParameter(String const& effectName, String const& parameterName) = 0;
+  virtual Maybe<VariantTypeIndex> getEffectScriptableParameterType(String const& effectName, String const& parameterName) = 0;
   virtual void setEffectTexture(String const& textureName, ImageView const& image) = 0;
   virtual bool switchEffectConfig(String const& name) = 0;
 
