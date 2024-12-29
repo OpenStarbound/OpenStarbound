@@ -19,13 +19,6 @@ local widgetsToGroups = {}
 local allSettings = {}
 local shaderConfig
 
-function displayed()
-  shaderConfig = root.getConfiguration("postProcessGroups")
-end
-function dismissed()
-  shaderConfig = nil
-end
-
 local function addGroupToList(data)
   local name = widget.addListItem(GROUP_LIST_WIDGET)
   widget.setText(fmt("%s.%s.button", GROUP_LIST_WIDGET, name), data.friendlyName)
@@ -351,6 +344,7 @@ local function initCallbacks()
 end
 
 function init()
+  shaderConfig = root.getConfiguration("postProcessGroups")
   --log = chat and chat.addMessage or sb.logInfo
 
   widget.clearListItems(GROUP_LIST_WIDGET)
