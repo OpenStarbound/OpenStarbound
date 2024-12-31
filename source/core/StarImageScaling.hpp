@@ -1,3 +1,5 @@
+#pragma once
+
 namespace Star {
 
 STAR_CLASS(Image);

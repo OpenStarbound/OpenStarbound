@@ -322,6 +322,8 @@ Vec3F Color::toRgbF() const {
   return Vec3F(redF(), greenF(), blueF());
 }
 
+#pragma GCC push_options
+#pragma GCC optimize("-fno-fast-math")
 Vec4F Color::toHsva() const {
   float h, s, v;
 
@@ -365,6 +367,7 @@ Vec4F Color::toHsva() const {
 
   return Vec4F(h, s, v, alphaF());
 }
+#pragma GCC pop_options
 
 String Color::toHex() const {
   auto rgba = toRgba();

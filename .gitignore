@@ -15,6 +15,7 @@ enc_temp_folder/
 .cache/
 /attic/user/
 /attic/chucklefish/
+/attic/debug/
 /tiled/
 /assets/user/
 /assets/devel/
