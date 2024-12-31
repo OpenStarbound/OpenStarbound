@@ -53,7 +53,7 @@
         "CMAKE_INCLUDE_PATH": "${sourceParentDir}/lib/linux/include",
         "CMAKE_LIBRARY_PATH": "${sourceParentDir}/lib/linux",
         "STAR_ENABLE_STATIC_LIBGCC_LIBSTDCXX": true,
-        "STAR_USE_JEMALLOC": true
+        "STAR_USE_JEMALLOC": false
       },
       "vendor": {
         "microsoft.com/VisualStudioSettings/CMake/1.0": {
