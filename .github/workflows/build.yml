@@ -145,9 +145,9 @@ jobs:
           configurePreset: 'linux-release'
           buildPreset: 'linux-release'
 
-      - name: Assemble Files
+      - name: Prepare Artifacts
         working-directory: ${{ github.workspace }}
-        run: scripts/ci/linux/assemble.sh
+        run: tar -cvf dist.tar dist
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
@@ -160,6 +160,10 @@ jobs:
         with:
           cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
           testPreset: 'linux-release'
+
+      - name: Assemble Files
+        working-directory: ${{ github.workspace }}
+        run: scripts/ci/linux/assemble.sh
 
       - name: Upload Client Files
         uses: actions/upload-artifact@v4

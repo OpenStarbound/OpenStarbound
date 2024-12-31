@@ -51,6 +51,5 @@ cp \
   scripts/steam_appid.txt \
   server_distribution/linux/
 
-tar -cvf dist.tar dist
 tar -cvf client.tar client_distribution
 tar -cvf server.tar server_distribution
