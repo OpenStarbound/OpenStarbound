@@ -89,10 +89,10 @@ jobs:
   
   build_linux:
     name: Build OpenStarbound Linux x86_64
-    runs-on: ubuntu-20.04
-    #env:
-    #    CC: clang
-    #    CXX: clang++
+    runs-on: ubuntu-22.04
+    env:
+        CC: clang
+        CXX: clang++
 
     steps:
       - name: Install Packages
