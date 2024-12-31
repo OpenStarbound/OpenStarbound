@@ -98,7 +98,7 @@ jobs:
       - name: Install Packages
         run: |
           sudo apt-get update
-          sudo apt-get install -y pkg-config libxmu-dev libxi-dev libgl-dev libglu1-mesa-dev libsdl2-dev
+          sudo apt-get install -y pkg-config libxmu-dev libxi-dev libgl-dev libglu1-mesa-dev libsdl2-dev python3-jinja2
 
       - name: Install CMake & Ninja
         uses: lukka/get-cmake@latest
