@@ -51,7 +51,7 @@ namespace Star {
 
   void free(void* ptr, size_t size) {
     if (ptr)
-      ::sdallocx(ptr, size, 0);
+      je_sdallocx(ptr, size, 0);
   }
 #endif
 #elif STAR_USE_MIMALLOC
