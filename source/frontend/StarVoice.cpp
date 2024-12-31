@@ -387,7 +387,7 @@ void Voice::mix(int16_t* buffer, size_t frameCount, unsigned channels) {
 					mix = true;
 
 					float volume = speaker->volume;
-					Array2F levels = speaker->channelVolumes;
+					std::array<float, 2> levels = speaker->channelVolumes;
 					for (size_t i = 0; i != samples; ++i)
 						sharedBuffer[i] += (int32_t)(speakerBuffer[i]) * levels[i % 2] * volume;
 					//Blends the weaker channel into the stronger one,
@@ -438,14 +438,12 @@ void Voice::mix(int16_t* buffer, size_t frameCount, unsigned channels) {
 void Voice::update(float, PositionalAttenuationFunction positionalAttenuationFunction) {
   for (auto& entry : m_speakers) {
     if (SpeakerPtr& speaker = entry.second) {
-			if (positionalAttenuationFunction) {
-				speaker->channelVolumes = {
-					1.0f - positionalAttenuationFunction(0, speaker->position, 1.0f),
-					1.0f - positionalAttenuationFunction(1, speaker->position, 1.0f)
-				};
-			}
-			else
-				speaker->channelVolumes = Vec2F::filled(1.0f);
+      if (positionalAttenuationFunction) {
+        speaker->channelVolumes = {
+          1.0f - positionalAttenuationFunction(0, speaker->position, 1.0f),
+          1.0f - positionalAttenuationFunction(1, speaker->position, 1.0f)};
+      } else
+        speaker->channelVolumes = {1.0f, 1.0f};
 				
 			auto& dbHistory = speaker->dbHistory;
 			memmove(&dbHistory[1], &dbHistory[0], (dbHistory.size() - 1) * sizeof(float));
