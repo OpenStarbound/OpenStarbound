@@ -144,7 +144,6 @@ jobs:
           cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
           configurePreset: 'linux-release'
           buildPreset: 'linux-release'
-          testPreset: 'linux-release'
 
       - name: Assemble Files
         working-directory: ${{ github.workspace }}
@@ -155,6 +154,12 @@ jobs:
         with:
           name: OpenStarbound-Linux
           path: dist.tar
+
+      - name: Run Tests
+        uses: lukka/run-cmake@v10
+        with:
+          cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
+          testPreset: 'linux-release'
 
       - name: Upload Client Files
         uses: actions/upload-artifact@v4
