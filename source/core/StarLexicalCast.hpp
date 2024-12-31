@@ -24,12 +24,12 @@ bool tryLexicalCast(bool& result, const char* first, const char* last);
 
 template <typename Type>
 bool tryLexicalCast(Type& result, String const& s) {
-  return tryLexicalCast<Type>(s.utf8Ptr(), s.utf8Ptr() + s.utf8Size());
+  return tryLexicalCast<Type>(result, s.utf8Ptr(), s.utf8Ptr() + s.utf8Size());
 }
 
 template <typename Type>
 bool tryLexicalCast(Type& result, StringView s) {
-  return tryLexicalCast<Type>(s.utf8Ptr(), s.utf8Ptr() + s.utf8Size());
+  return tryLexicalCast<Type>(result, s.utf8Ptr(), s.utf8Ptr() + s.utf8Size());
 }
 
 template <typename Type>
