@@ -441,10 +441,152 @@ String ClientCommandProcessor::respawnInWorld(String const& argumentsString) {
   return strf("Respawn in this world set to {} (This is client-side!)", respawnInWorld ? "true" : "false");
 }
 
-// Temporary hardcoded render command for debugging purposes, future version will write to the clipboard
-String ClientCommandProcessor::render(String const& imagePath) {
-  auto image = Root::singleton().assets()->image(imagePath);
-  image->writePng(File::open("render.png", IOMode::Write));
+// Hardcoded render command, future version will write to the clipboard and possibly be implemented in Lua
+String ClientCommandProcessor::render(String const& path) {
+  if (path.empty()) {
+    return "Specify a path to render an image, or for worn armor: "
+           "^cyan;hat^reset;/^cyan;chest^reset;/^cyan;legs^reset;/^cyan;back^reset; "
+           "or for body parts: "
+           "^cyan;head^reset;/^cyan;body^reset;/^cyan;hair^reset;/^cyan;facialhair^reset;/"
+           "^cyan;facialmask^reset;/^cyan;frontarm^reset;/^cyan;backarm^reset;/^cyan;emote^reset;";
+  }
+  AssetPath assetPath;
+  bool outputSheet = false;
+  String outputName = "render";
+  auto player = m_universeClient->mainPlayer();
+  if (player && path.utf8Size() < 100) {
+    auto args = m_parser.tokenizeToStringList(path);
+    auto first = args.maybeFirst().value().toLower();
+    auto humanoid = player->humanoid();
+    auto& identity = humanoid->identity();
+    auto species = identity.imagePath.value(identity.species);
+    outputSheet = true;
+    outputName = first;
+    if (first.equals("hat")) {
+      assetPath.basePath = humanoid->headArmorFrameset();
+      assetPath.directives += humanoid->headArmorDirectives();
+    } else if (first.equals("chest")) {
+      if (args.size() <= 1) {
+        return "Chest armors have multiple spritesheets. Do: "
+               "^white;/chest torso ^cyan;front^reset;/^cyan;torso^reset;/^cyan;back^reset;. "
+               "To repair old generated clothes, then also specify ^cyan;old^reset;.";
+      }
+      String sheet = args[1].toLower();
+      outputName += " " + sheet;
+      if (sheet == "torso") {
+        assetPath.basePath = humanoid->chestArmorFrameset();
+        assetPath.directives += humanoid->chestArmorDirectives();
+      } else if (sheet == "front") {
+        assetPath.basePath = humanoid->frontSleeveFrameset();
+        assetPath.directives += humanoid->chestArmorDirectives();
+      } else if (sheet == "back") {
+        assetPath.basePath = humanoid->backSleeveFrameset();
+        assetPath.directives += humanoid->chestArmorDirectives();
+      } else {
+        return strf("^red;Invalid chest sheet type '{}'^reset;", sheet);
+      }
+      // recovery for custom chests made by a very old generator
+      if (args.size() <= 2 && args[2].toLower() == "old" && assetPath.basePath.beginsWith("/items/armors/avian/avian-tier6separator/"))
+          assetPath.basePath = "/items/armors/avian/avian-tier6separator/old/" + assetPath.basePath.substr(41);
+    } else if (first.equals("legs")) {
+      assetPath.basePath = humanoid->legsArmorFrameset();
+      assetPath.directives += humanoid->legsArmorDirectives();
+    } else if (first.equals("back")) {
+      assetPath.basePath = humanoid->backArmorFrameset();
+      assetPath.directives += humanoid->backArmorDirectives();
+    } else if (first.equals("body")) {
+      assetPath.basePath = humanoid->getBodyFromIdentity();
+      assetPath.directives += identity.bodyDirectives;
+    } else if (first.equals("head")) {
+      outputSheet = false;
+      assetPath.basePath = humanoid->getHeadFromIdentity();
+      assetPath.directives += identity.bodyDirectives;
+    } else if (first.equals("hair")) {
+      outputSheet = false;
+      assetPath.basePath = humanoid->getHairFromIdentity();
+      assetPath.directives += identity.hairDirectives;
+    } else if (first.equals("facialhair")) {
+      outputSheet = false;
+      assetPath.basePath = humanoid->getFacialHairFromIdentity();
+      assetPath.directives += identity.facialHairDirectives;
+    } else if (first.equals("facialmask")) {
+      outputSheet = false;
+      assetPath.basePath = humanoid->getFacialMaskFromIdentity();
+      assetPath.directives += identity.facialMaskDirectives;
+    } else if (first.equals("frontarm")) {
+      assetPath.basePath = humanoid->getFrontArmFromIdentity();
+      assetPath.directives += identity.bodyDirectives;
+    } else if (first.equals("backarm")) {
+      assetPath.basePath = humanoid->getBackArmFromIdentity();
+      assetPath.directives += identity.bodyDirectives;
+    } else if (first.equals("emote")) {
+      assetPath.basePath = humanoid->getFacialEmotesFromIdentity();
+      assetPath.directives += identity.emoteDirectives;
+    } else {
+      outputName = "render";
+    }
+
+    if (!outputSheet)
+      assetPath.subPath = String("normal");
+  }
+  if (assetPath == AssetPath()) {
+    assetPath = AssetPath::split(path);
+    if (!assetPath.basePath.beginsWith("/"))
+      assetPath.basePath = "/assetmissing.png" + assetPath.basePath;
+  }
+  auto assets = Root::singleton().assets();
+  ImageConstPtr image;
+  if (outputSheet) {
+    auto sheet = make_shared<Image>(*assets->image(assetPath.basePath));
+    sheet->convert(PixelFormat::RGBA32);
+    AssetPath framePath = assetPath;
+
+    StringMap<pair<RectU, ImageConstPtr>> frames;
+    auto imageFrames = assets->imageFrames(assetPath.basePath);
+    for (auto& pair : imageFrames->frames)
+      frames[pair.first] = make_pair(pair.second, ImageConstPtr());
+
+    if (frames.empty())
+      return "^red;Failed to save image^reset;";
+
+    for (auto& entry : frames) {
+      framePath.subPath = entry.first;
+      entry.second.second = assets->image(framePath);
+    }
+
+    Vec2U frameSize = frames.begin()->second.first.size();
+    Vec2U imageSize = frames.begin()->second.second->size().piecewiseMin(Vec2U{256, 256});
+    if (imageSize.min() == 0)
+      return "^red;Resulting image is empty^reset;";
+
+    for (auto& frame : frames) {
+      RectU& box = frame.second.first;
+      box.setXMin((box.xMin() / frameSize[0]) * imageSize[0]);
+      box.setYMin(((sheet->height() - box.yMin() - box.height()) / frameSize[1]) * imageSize[1]);
+      box.setXMax(box.xMin() + imageSize[0]);
+      box.setYMax(box.yMin() + imageSize[1]);
+    }
+
+    if (frameSize != imageSize) {
+      unsigned sheetWidth  = (sheet->width()  / frameSize[0]) * imageSize[0];
+      unsigned sheetHeight = (sheet->height() / frameSize[0]) * imageSize[0];
+      sheet->reset(sheetWidth, sheetHeight, PixelFormat::RGBA32);
+    }
+
+    for (auto& entry : frames)
+      sheet->copyInto(entry.second.first.min(), *entry.second.second);
+
+    image = std::move(sheet);
+  } else {
+    image = assets->image(assetPath);
+  }
+  if (image->size().min() == 0)
+    return "^red;Resulting image is empty^reset;";
+  auto outputDirectory = Root::singleton().toStoragePath("output");
+  auto outputPath = File::relativeTo(outputDirectory, strf("{}.png", outputName));
+  if (!File::isDirectory(outputDirectory))
+    File::makeDirectory(outputDirectory);
+  image->writePng(File::open(outputPath, IOMode::Write | IOMode::Truncate));
   return strf("Saved {}x{} image to render.png", image->width(), image->height());
 }
 

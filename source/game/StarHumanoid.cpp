@@ -390,6 +390,46 @@ void Humanoid::setHelmetMaskDirectives(Directives helmetMaskDirectives) {
   m_helmetMaskDirectives = std::move(helmetMaskDirectives);
 }
 
+Directives const& Humanoid::headArmorDirectives() const {
+  return m_headArmorDirectives;
+};
+
+String const& Humanoid::headArmorFrameset() const {
+  return m_headArmorFrameset;
+};
+
+Directives const& Humanoid::chestArmorDirectives() const {
+  return m_chestArmorDirectives;
+};
+
+String const& Humanoid::chestArmorFrameset() const {
+  return m_chestArmorFrameset;
+};
+
+String const& Humanoid::backSleeveFrameset() const {
+  return m_backSleeveFrameset;
+};
+
+String const& Humanoid::frontSleeveFrameset() const {
+  return m_frontSleeveFrameset;
+};
+
+Directives const& Humanoid::legsArmorDirectives() const {
+  return m_legsArmorDirectives;
+};
+
+String const& Humanoid::legsArmorFrameset() const {
+  return m_legsArmorFrameset;
+};
+
+Directives const& Humanoid::backArmorDirectives() const {
+  return m_backArmorDirectives;
+};
+
+String const& Humanoid::backArmorFrameset() const {
+  return m_backArmorFrameset;
+};
+
 void Humanoid::setBodyHidden(bool hidden) {
   m_bodyHidden = hidden;
 }
