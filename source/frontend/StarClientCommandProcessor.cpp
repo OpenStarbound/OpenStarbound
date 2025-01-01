@@ -587,7 +587,7 @@ String ClientCommandProcessor::render(String const& path) {
   if (!File::isDirectory(outputDirectory))
     File::makeDirectory(outputDirectory);
   image->writePng(File::open(outputPath, IOMode::Write | IOMode::Truncate));
-  return strf("Saved {}x{} image to render.png", image->width(), image->height());
+  return strf("Saved {}x{} image to {}.png", image->width(), image->height(), outputName);
 }
 
 
