@@ -1086,7 +1086,7 @@ void Player::update(float dt, uint64_t) {
     }
     if (calculateHeadRotation) { // master or not an OpenStarbound player
       float headRotation = 0.f;
-      if (m_humanoid->primaryHandHoldingItem() || m_humanoid->altHandHoldingItem()) {
+      if (m_humanoid->primaryHandHoldingItem() || m_humanoid->altHandHoldingItem() || m_humanoid->dance()) {
         auto primary = m_tools->primaryHandItem();
         auto alt = m_tools->altHandItem();
         String const disableFlag = "disableHeadRotation";
