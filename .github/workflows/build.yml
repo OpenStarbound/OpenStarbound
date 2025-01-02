@@ -28,7 +28,7 @@ jobs:
   build_windows:
     name: Build OpenStarbound Windows x64
     runs-on: windows-latest
-    if: ${{ (github.event_name == 'workflow_dispatch') && (inputs.windows == true) }}
+    if: ${{ (github.event_name != 'workflow_dispatch') || (inputs.windows == true) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -180,7 +180,7 @@ jobs:
   build-mac-intel:
     name: Build OpenStarbound macOS x86_64
     runs-on: macos-13
-    if: ${{ (github.event_name == 'workflow_dispatch') && (inputs.macOS == true) }}
+    if: ${{ (github.event_name != 'workflow_dispatch') || (inputs.macOS == true) }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -222,7 +222,7 @@ jobs:
   build-mac-arm:
     name: Build OpenStarbound macOS arm64
     runs-on: macos-14
-    if: ${{ (github.event_name == 'workflow_dispatch') && (inputs.macOS == true) }}
+    if: ${{ (github.event_name != 'workflow_dispatch') || (inputs.macOS == true) }}
     steps:
       - uses: actions/checkout@v4
         with:
