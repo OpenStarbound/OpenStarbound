@@ -350,11 +350,11 @@ void ArmorWearer::netElementsNeedLoad(bool) {
     m_backNeedsSync |= itemDatabase->loadItem(m_backCosmeticItemDataNetState.get(), m_backCosmeticItem);
 
   if (m_headItemDataNetState.pullUpdated())
-    m_headNeedsSync |= !itemDatabase->loadItem(m_headItemDataNetState.get(), m_headItem);
+    m_headNeedsSync |= itemDatabase->loadItem(m_headItemDataNetState.get(), m_headItem);
   if (m_chestItemDataNetState.pullUpdated())
     m_chestNeedsSync |= itemDatabase->loadItem(m_chestItemDataNetState.get(), m_chestItem);
   if (m_legsItemDataNetState.pullUpdated())
-    m_legsNeedsSync |= !itemDatabase->loadItem(m_legsItemDataNetState.get(), m_legsItem);
+    m_legsNeedsSync |= itemDatabase->loadItem(m_legsItemDataNetState.get(), m_legsItem);
   if (m_backItemDataNetState.pullUpdated())
     m_backNeedsSync |= itemDatabase->loadItem(m_backItemDataNetState.get(), m_backItem);
 }
