@@ -1,5 +1,5 @@
 /*
-** $Id: lundump.c,v 2.41 2014/11/02 19:19:04 roberto Exp $
+** $Id: lundump.c,v 2.44.1.1 2017/04/19 17:20:42 roberto Exp $
 ** load precompiled Lua chunks
 ** See Copyright Notice in lua.h
 */
@@ -32,7 +32,6 @@
 typedef struct {
   lua_State *L;
   ZIO *Z;
-  Mbuffer *b;
   const char *name;
 } LoadState;
 
@@ -86,17 +85,28 @@ static lua_Integer LoadInteger (LoadState *S) {
 }
 
 
-static TString *LoadString (LoadState *S) {
+static TString *LoadString (LoadState *S, Proto *p) {
+  lua_State *L = S->L;
   size_t size = LoadByte(S);
+  TString *ts;
   if (size == 0xFF)
     LoadVar(S, size);
   if (size == 0)
     return NULL;
-  else {
-    char *s = luaZ_openspace(S->L, S->b, --size);
-    LoadVector(S, s, size);
-    return luaS_newlstr(S->L, s, size);
+  else if (--size <= LUAI_MAXSHORTLEN) {  /* short string? */
+    char buff[LUAI_MAXSHORTLEN];
+    LoadVector(S, buff, size);
+    ts = luaS_newlstr(L, buff, size);
   }
+  else {  /* long string */
+    ts = luaS_createlngstrobj(L, size);
+    setsvalue2s(L, L->top, ts);  /* anchor it ('loadVector' can GC) */
+    luaD_inctop(L);
+    LoadVector(S, getstr(ts), size);  /* load directly in final place */
+    L->top--;  /* pop string */
+  }
+  luaC_objbarrier(L, p, ts);
+  return ts;
 }
 
 
@@ -136,7 +146,7 @@ static void LoadConstants (LoadState *S, Proto *f) {
       break;
     case LUA_TSHRSTR:
     case LUA_TLNGSTR:
-      setsvalue2n(S->L, o, LoadString(S));
+      setsvalue2n(S->L, o, LoadString(S, f));
       break;
     default:
       lua_assert(0);
@@ -154,6 +164,7 @@ static void LoadProtos (LoadState *S, Proto *f) {
     f->p[i] = NULL;
   for (i = 0; i < n; i++) {
     f->p[i] = luaF_newproto(S->L);
+    luaC_objbarrier(S->L, f, f->p[i]);
     LoadFunction(S, f->p[i], f->source);
   }
 }
@@ -185,18 +196,18 @@ static void LoadDebug (LoadState *S, Proto *f) {
   for (i = 0; i < n; i++)
     f->locvars[i].varname = NULL;
   for (i = 0; i < n; i++) {
-    f->locvars[i].varname = LoadString(S);
+    f->locvars[i].varname = LoadString(S, f);
     f->locvars[i].startpc = LoadInt(S);
     f->locvars[i].endpc = LoadInt(S);
   }
   n = LoadInt(S);
   for (i = 0; i < n; i++)
-    f->upvalues[i].name = LoadString(S);
+    f->upvalues[i].name = LoadString(S, f);
 }
 
 
 static void LoadFunction (LoadState *S, Proto *f, TString *psource) {
-  f->source = LoadString(S);
+  f->source = LoadString(S, f);
   if (f->source == NULL)  /* no source in dump? */
     f->source = psource;  /* reuse parent's source */
   f->linedefined = LoadInt(S);
@@ -251,8 +262,7 @@ static void checkHeader (LoadState *S) {
 /*
 ** load precompiled chunk
 */
-LClosure *luaU_undump(lua_State *L, ZIO *Z, Mbuffer *buff,
-                      const char *name) {
+LClosure *luaU_undump(lua_State *L, ZIO *Z, const char *name) {
   LoadState S;
   LClosure *cl;
   if (*name == '@' || *name == '=')
@@ -263,12 +273,12 @@ LClosure *luaU_undump(lua_State *L, ZIO *Z, Mbuffer *buff,
     S.name = name;
   S.L = L;
   S.Z = Z;
-  S.b = buff;
   checkHeader(&S);
   cl = luaF_newLclosure(L, LoadByte(&S));
   setclLvalue(L, L->top, cl);
-  incr_top(L);
+  luaD_inctop(L);
   cl->p = luaF_newproto(L);
+  luaC_objbarrier(L, cl, cl->p);
   LoadFunction(&S, cl->p, NULL);
   lua_assert(cl->nupvalues == cl->p->sizeupvalues);
   luai_verifycode(L, buff, cl->p);
