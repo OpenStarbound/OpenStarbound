@@ -771,8 +771,9 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
         removeEntity(entityCreate->entityId, false);
       }
 
-      auto entity = entityFactory->netLoadEntity(entityCreate->entityType, entityCreate->storeData);
-      entity->readNetState(entityCreate->firstNetState, 0.0f, m_clientState.netCompatibilityRules());
+      auto netRules = m_clientState.netCompatibilityRules();
+      auto entity = entityFactory->netLoadEntity(entityCreate->entityType, entityCreate->storeData, netRules);
+      entity->readNetState(entityCreate->firstNetState, 0.0f, netRules);
       entity->init(this, entityCreate->entityId, EntityMode::Slave);
       m_entityMap->addEntity(entity);
 
