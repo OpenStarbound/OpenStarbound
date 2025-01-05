@@ -107,6 +107,8 @@ bool ServerQueryThread::processPacket(HostAddressWithPort const& address, char c
                         << A2S_TYPE_DEDICATED // dedicated
 #ifdef STAR_SYSTEM_FAMILY_WINDOWS
                         << A2S_ENV_WINDOWS // os
+#elif defined(STAR_SYSTEM_MACOS)
+                        << A2S_ENV_MAC // os
 #else
                         << A2S_ENV_LINUX // os
 #endif
@@ -153,17 +155,17 @@ void ServerQueryThread::buildPlayerResponse() {
     return;
   }
 
-  auto clientIds = m_universe->clientIds();
+  auto clientIds = m_universe->clientIdsAndCreationTime();
   uint8_t cnt = (uint8_t)clientIds.count();
   int32_t kills = 0; // Not currently supported
-  float timeConnected = 60; // Not supported defaults to 1min
 
   m_playersResponse.clear();
   m_playersResponse << A2S_HEAD_INT << A2S_PLAYER_REPLY << cnt;
 
   uint8_t i = 0;
-  for (auto clientId : clientIds) {
-    m_playersResponse << i++ << m_universe->clientNick(clientId) << kills << timeConnected;
+  for (auto& pair : clientIds) {
+    auto timeConnected = float(now - pair.second) / 1000.f;
+    m_playersResponse << i++ << m_universe->clientNick(pair.first) << kills << timeConnected;
   }
 
   m_lastPlayersResponse = now;

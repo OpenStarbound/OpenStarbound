@@ -42,11 +42,12 @@ private:
   static const uint8_t A2S_EDF_TAGS = 0x20;
   static const uint8_t A2S_EDF_STV = 0x40;
   static const uint8_t A2S_EDF_PORT = 0x80;
-  static const uint8_t A2S_ENV_WINDOWS = 'W';
-  static const uint8_t A2S_ENV_LINUX = 'L';
-  static const uint8_t A2S_TYPE_DEDICATED = 'D';
-  static const uint8_t A2S_TYPE_LISTEN = 'L';
-  static const uint8_t A2S_TYPE_TV = 'P';
+  static const uint8_t A2S_ENV_WINDOWS = 'w';
+  static const uint8_t A2S_ENV_LINUX = 'l';
+  static const uint8_t A2S_ENV_MAC = 'm';
+  static const uint8_t A2S_TYPE_DEDICATED = 'd';
+  static const uint8_t A2S_TYPE_LISTEN = 'l';
+  static const uint8_t A2S_TYPE_TV = 'p';
   static const uint8_t A2S_VAC_OFF = 0x00;
   static const uint8_t A2S_VAC_ON = 0x01;
   static constexpr const char* A2S_INFO_REQUEST_STRING = "Source Engine Query";

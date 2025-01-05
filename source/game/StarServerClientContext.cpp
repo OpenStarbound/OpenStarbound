@@ -63,6 +63,8 @@ ServerClientContext::ServerClientContext(ConnectionId clientId, Maybe<HostAddres
   m_netGroup.addNetElement(&m_teamNetState);
   m_netGroup.addNetElement(&m_shipUpgrades);
   m_netGroup.addNetElement(&m_shipCoordinate);
+
+  m_creationTime = Time::monotonicMilliseconds();
 }
 
 ConnectionId ServerClientContext::clientId() const {
@@ -287,6 +289,10 @@ Json ServerClientContext::storeServerData() {
     {"returnWarp", m_returnWarp.toJson()}
   };
   return store;
+}
+
+int64_t ServerClientContext::creationTime() const {
+  return m_creationTime;
 }
 
 }

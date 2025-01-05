@@ -173,6 +173,15 @@ List<ConnectionId> UniverseServer::clientIds() const {
   return m_clients.keys();
 }
 
+List<pair<ConnectionId, int64_t>> UniverseServer::clientIdsAndCreationTime() const {
+  List<pair<ConnectionId, int64_t>> result;
+  ReadLocker clientsLocker(m_clientsLock);
+  result.reserve(m_clients.size());
+  for (auto& pair : m_clients)
+    result.emplaceAppend(pair.first, pair.second->creationTime());
+  return result;
+}
+
 size_t UniverseServer::numberOfClients() const {
   ReadLocker clientsLocker(m_clientsLock);
   return m_clients.size();

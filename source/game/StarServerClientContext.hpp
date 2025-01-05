@@ -85,6 +85,8 @@ public:
   void loadServerData(Json const& store);
   Json storeServerData();
 
+  int64_t creationTime() const;
+
 private:
   ConnectionId const m_clientId;
   Maybe<HostAddress> const m_remoteAddress;
@@ -109,6 +111,7 @@ private:
 
   NetElementTopGroup m_netGroup;
   uint64_t m_netVersion = 0;
+  int64_t m_creationTime;
 
   NetElementData<Maybe<pair<WarpAction, WarpMode>>> m_orbitWarpActionNetState;
   NetElementData<WorldId> m_playerWorldIdNetState;
