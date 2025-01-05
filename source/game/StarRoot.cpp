@@ -585,6 +585,7 @@ StringList Root::scanForAssetSources(StringList const& directories, StringList c
   struct AssetSource {
     String path;
     Maybe<String> name;
+    Maybe<String> version;
     float priority;
     StringList requires_;
     StringList includes;
@@ -612,6 +613,7 @@ StringList Root::scanForAssetSources(StringList const& directories, StringList c
     auto assetSource = make_shared<AssetSource>();
     assetSource->path = sourcePath;
     assetSource->name = metadata.maybe("name").apply(mem_fn(&Json::toString));
+    assetSource->version = metadata.maybe("version").apply(mem_fn(&Json::toString));
     assetSource->priority = metadata.value("priority", 0.0f).toFloat();
     assetSource->requires_ = jsonToStringList(metadata.value("requires", JsonArray{}));
     assetSource->includes = jsonToStringList(metadata.value("includes", JsonArray{}));
@@ -705,7 +707,7 @@ StringList Root::scanForAssetSources(StringList const& directories, StringList c
   for (auto const& source : dependencySortedSources) {
     auto path = File::convertDirSeparators(source->path);
     if (source->name)
-      Logger::info("Root: Detected asset source named '{}' at '{}'", *source->name, path);
+      Logger::info("Root: Detected asset source named '{}'{} at '{}'", *source->name, source->version ? strf(" version '{}'", *source->version) : "", path);
     else
       Logger::info("Root: Detected unnamed asset source at '{}'", path);
     sourcePaths.append(path);
