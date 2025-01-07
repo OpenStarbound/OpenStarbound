@@ -10,7 +10,8 @@ if(PORT MATCHES "discord-")
 endif()
 
 if(PORT MATCHES "libsystemd")
-    set(VCPKG_C_FLAGS "-std=c11")
+    set(VCPKG_C_FLAGS "${VCPKG_C_FLAGS} -std=c11")
+    set(VCPKG_CXX_FLAGS "${VCPKG_CXX_FLAGS}")
 endif()
 
 if(PORT MATCHES "opus")
