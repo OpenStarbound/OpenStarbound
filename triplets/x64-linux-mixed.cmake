@@ -11,7 +11,6 @@ endif()
 
 if(PORT MATCHES "libsystemd")
     set(VCPKG_C_FLAGS "-std=c11")
-    set(VCPKG_CXX_FLAGS "-std=c11")
 endif()
 
 if(PORT MATCHES "opus")
