@@ -1,0 +1,7 @@
+m6x11: managore.itch.io/m6x11
+beech: 04.jp.org
+twemoji: github.com/jdecked/twemoji
+unifont: github.com/stgiga/UnifontEX
+dotsies: dotsies.org
+newspaper: onlygfx.com/newspaper-cutout
+pixelhobo: Chucklefish
