@@ -9,6 +9,11 @@ if(PORT MATCHES "discord-")
     set(VCPKG_LIBRARY_LINKAGE dynamic)
 endif()
 
+if(PORT MATCHES "libsystemd")
+    set(VCPKG_C_FLAGS "-std=c11")
+    set(VCPKG_CXX_FLAGS "-std=c11")
+endif()
+
 if(PORT MATCHES "opus")
   string(CONCAT VCPKG_CMAKE_CONFIGURE_OPTIONS
     "-DOPUS_INSTALL_PKG_CONFIG_MODULE=OFF"
