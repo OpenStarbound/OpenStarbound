@@ -137,13 +137,6 @@ Root::Root(Settings settings) : RootBase() {
             tenantDb->cleanup();
           }
         }
-        {
-          MutexLocker locker(m_imageMetadataDatabaseMutex);
-          if (ImageMetadataDatabasePtr imgMetaDb = m_imageMetadataDatabase) {
-            locker.unlock();
-            imgMetaDb->cleanup();
-          }
-        }
 
         Random::addEntropy();
 

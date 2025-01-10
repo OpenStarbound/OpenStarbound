@@ -5,7 +5,6 @@
 #include "StarString.hpp"
 #include "StarThread.hpp"
 #include "StarAssetPath.hpp"
-#include "StarTtlCache.hpp"
 
 namespace Star {
 
@@ -16,11 +15,9 @@ STAR_CLASS(ImageMetadataDatabase);
 // because they are expensive to compute and cheap to keep around.
 class ImageMetadataDatabase {
 public:
-  ImageMetadataDatabase();
   Vec2U imageSize(AssetPath const& path) const;
   List<Vec2I> imageSpaces(AssetPath const& path, Vec2F position, float fillLimit, bool flip) const;
   RectU nonEmptyRegion(AssetPath const& path) const;
-  void cleanup() const;
 
 private:
   // Removes image processing directives that don't affect image spaces /
@@ -33,9 +30,9 @@ private:
   typedef tuple<AssetPath, Vec2I, float, bool> SpacesEntry;
 
   mutable Mutex m_mutex;
-  mutable HashTtlCache<AssetPath, Vec2U> m_sizeCache;
-  mutable HashTtlCache<SpacesEntry, List<Vec2I>> m_spacesCache;
-  mutable HashTtlCache<AssetPath, RectU> m_regionCache;
+  mutable HashMap<AssetPath, Vec2U> m_sizeCache;
+  mutable HashMap<SpacesEntry, List<Vec2I>> m_spacesCache;
+  mutable HashMap<AssetPath, RectU> m_regionCache;
 };
 
 }
