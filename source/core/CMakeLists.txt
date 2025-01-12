@@ -162,7 +162,6 @@ SET (star_core_SOURCES
     StarJsonPatch.cpp
     StarJsonRpc.cpp
     StarFormattedJson.cpp
-    StarLexicalCast.cpp
     StarListener.cpp
     StarLogging.cpp
     StarLua.cpp

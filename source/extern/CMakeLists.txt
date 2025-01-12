@@ -15,7 +15,6 @@ SET (star_extern_HEADERS
     fmt/printf.h
     fmt/ranges.h
     fmt/std.h
-    fast_float.h
     lauxlib.h
     lua.h
     lua.hpp
