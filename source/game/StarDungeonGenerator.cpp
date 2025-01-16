@@ -1442,10 +1442,10 @@ Maybe<pair<List<RectI>, Set<Vec2I>>> DungeonGenerator::generate(DungeonGenerator
 
     auto pos = position + Vec2I(0, -anchor->placementLevelConstraint());
     if (forcePlacement || anchor->canPlace(pos, &writer)) {
-      Logger::info("Placing dungeon at {}", position);
+      Logger::info("Placing dungeon {} at {}", m_def->name(), position);
       return buildDungeon(anchor, pos, &writer, forcePlacement);
     } else {
-      Logger::debug("Failed to place a dungeon at {}", position);
+      Logger::debug("Failed to place dungeon {} at {}", m_def->name(), position);
       return {};
     }
   } catch (std::exception const& e) {
