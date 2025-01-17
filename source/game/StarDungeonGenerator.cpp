@@ -1429,27 +1429,28 @@ DungeonGenerator::DungeonGenerator(String const& dungeonName, uint64_t seed, flo
 }
 
 Maybe<pair<List<RectI>, Set<Vec2I>>> DungeonGenerator::generate(DungeonGeneratorWorldFacadePtr facade, Vec2I position, bool markSurfaceAndTerrain, bool forcePlacement) {
+  String name = m_def->name();
   try {
     Dungeon::DungeonGeneratorWriter writer(facade, markSurfaceAndTerrain ? position[1] : Maybe<int>(), m_def->extendSurfaceFreeSpace());
 
-    Logger::debug(forcePlacement ? "Forcing generation of dungeon {}" : "Generating dungeon {}", m_def->name());
+    Logger::debug(forcePlacement ? "Forcing generation of dungeon {}" : "Generating dungeon {}", name);
 
     Dungeon::PartConstPtr anchor = pickAnchor();
     if (!anchor) {
-      Logger::error("No valid anchor piece found for dungeon at {}", position);
+      Logger::error("No valid anchor piece found for dungeon {} at {}", name, position);
       return {};
     }
 
     auto pos = position + Vec2I(0, -anchor->placementLevelConstraint());
     if (forcePlacement || anchor->canPlace(pos, &writer)) {
-      Logger::info("Placing dungeon {} at {}", m_def->name(), position);
+      Logger::info("Placing dungeon {} at {}", name, position);
       return buildDungeon(anchor, pos, &writer, forcePlacement);
     } else {
-      Logger::debug("Failed to place dungeon {} at {}", m_def->name(), position);
+      Logger::debug("Failed to place dungeon {} at {}", name, position);
       return {};
     }
   } catch (std::exception const& e) {
-    throw DungeonException(strf("Error generating dungeon named '{}'", m_def->name()), e);
+    throw DungeonException(strf("Error generating dungeon named '{}'", name), e);
   }
 }
 
