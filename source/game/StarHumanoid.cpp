@@ -251,7 +251,8 @@ bool& Humanoid::globalHeadRotation() {
 };
 
 Humanoid::Humanoid(Json const& config) {
-  loadConfig(config);
+  m_baseConfig = config;
+  loadConfig(JsonObject());
 
   m_twoHanded = false;
   m_primaryHand.holdingItem = false;
@@ -293,7 +294,12 @@ HumanoidIdentity const& Humanoid::identity() const {
   return m_identity;
 }
 
-void Humanoid::loadConfig(Json const& config) {
+void Humanoid::loadConfig(Json merger) {
+  if (m_mergeConfig == merger)
+    return;
+
+  m_mergeConfig = merger;
+  auto config = jsonMerge(m_baseConfig, merger);
   m_timing = HumanoidTiming(config.getObject("humanoidTiming"));
 
   m_globalOffset = jsonToVec2F(config.get("globalOffset")) / TilePixels;

@@ -127,7 +127,7 @@ public:
   void setIdentity(HumanoidIdentity const& identity);
   HumanoidIdentity const& identity() const;
 
-  void loadConfig(Json const& config);
+  void loadConfig(Json merger = JsonObject());
 
   // All of the image identifiers here are meant to be image *base* names, with
   // a collection of frames specific to each piece.  If an image is set to
@@ -307,6 +307,9 @@ private:
   int getBodyStateSequence() const;
 
   Maybe<DancePtr> getDance() const;
+
+  Json m_baseConfig;
+  Json m_mergeConfig;
 
   Vec2F m_globalOffset;
   Vec2F m_headRunOffset;

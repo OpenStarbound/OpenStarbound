@@ -40,77 +40,71 @@ void ArmorWearer::setupHumanoidClothingDrawables(Humanoid& humanoid, bool forceN
   bool backNeedsSync  = nudeChanged  || m_backNeedsSync;
 
   bool bodyHidden = false;
-  if (m_headCosmeticItem && !forceNude) {
+  HeadArmorPtr const& headArmor = m_headCosmeticItem ? m_headCosmeticItem : m_headItem;
+  if (headArmor && !forceNude) {
     if (headNeedsSync) {
-      humanoid.setHeadArmorFrameset(m_headCosmeticItem->frameset(humanoid.identity().gender));
-      humanoid.setHeadArmorDirectives(m_headCosmeticItem->directives());
-      humanoid.setHelmetMaskDirectives(m_headCosmeticItem->maskDirectives());
+      humanoid.setHeadArmorFrameset(headArmor->frameset(humanoid.identity().gender));
+      humanoid.setHeadArmorDirectives(headArmor->directives());
+      humanoid.setHelmetMaskDirectives(headArmor->maskDirectives());
     }
-    bodyHidden = bodyHidden || m_headCosmeticItem->hideBody();
-  } else if (m_headItem && !forceNude) {
-    if (headNeedsSync) {
-      humanoid.setHeadArmorFrameset(m_headItem->frameset(humanoid.identity().gender));
-      humanoid.setHeadArmorDirectives(m_headItem->directives());
-      humanoid.setHelmetMaskDirectives(m_headItem->maskDirectives());
-    }
-    bodyHidden = bodyHidden || m_headItem->hideBody();
+    bodyHidden = bodyHidden || headArmor->hideBody();
   } else {
     humanoid.setHeadArmorFrameset("");
     humanoid.setHelmetMaskDirectives("");
   }
 
-  if (m_chestCosmeticItem && !forceNude) {
-    if (chestNeedsSync) {
-      humanoid.setBackSleeveFrameset(m_chestCosmeticItem->backSleeveFrameset(humanoid.identity().gender));
-      humanoid.setFrontSleeveFrameset(m_chestCosmeticItem->frontSleeveFrameset(humanoid.identity().gender));
-      humanoid.setChestArmorFrameset(m_chestCosmeticItem->bodyFrameset(humanoid.identity().gender));
-      humanoid.setChestArmorDirectives(m_chestCosmeticItem->directives());
+  Json humanoidConfig;
+
+  auto addHumanoidConfig = [&](Item const& item) {
+    auto newConfig = item.instanceValue("humanoidConfig");
+    if (newConfig.isType(Json::Type::Object)) {
+      if (!humanoidConfig)
+        humanoidConfig = JsonObject();
+      humanoidConfig = jsonMerge(humanoidConfig, newConfig);
     }
-    bodyHidden = bodyHidden || m_chestCosmeticItem->hideBody();
-  } else if (m_chestItem && !forceNude) {
+  };
+
+  ChestArmorPtr const& chestArmor = m_chestCosmeticItem ? m_chestCosmeticItem : m_chestItem;
+  if (chestArmor && !forceNude) {
     if (chestNeedsSync) {
-      humanoid.setBackSleeveFrameset(m_chestItem->backSleeveFrameset(humanoid.identity().gender));
-      humanoid.setFrontSleeveFrameset(m_chestItem->frontSleeveFrameset(humanoid.identity().gender));
-      humanoid.setChestArmorFrameset(m_chestItem->bodyFrameset(humanoid.identity().gender));
-      humanoid.setChestArmorDirectives(m_chestItem->directives());
+      humanoid.setBackSleeveFrameset(chestArmor->backSleeveFrameset(humanoid.identity().gender));
+      humanoid.setFrontSleeveFrameset(chestArmor->frontSleeveFrameset(humanoid.identity().gender));
+      humanoid.setChestArmorFrameset(chestArmor->bodyFrameset(humanoid.identity().gender));
+      humanoid.setChestArmorDirectives(chestArmor->directives());
+      addHumanoidConfig(*chestArmor);
     }
-    bodyHidden = bodyHidden || m_chestItem->hideBody();
+    bodyHidden = bodyHidden || chestArmor->hideBody();
   } else {
     humanoid.setBackSleeveFrameset("");
     humanoid.setFrontSleeveFrameset("");
     humanoid.setChestArmorFrameset("");
   }
 
-  if (m_legsCosmeticItem && !forceNude) {
+  LegsArmorPtr const& legsArmor = m_legsCosmeticItem ? m_legsCosmeticItem : m_legsItem;
+  if (legsArmor && !forceNude) {
     if (legsNeedsSync) {
-      humanoid.setLegsArmorFrameset(m_legsCosmeticItem->frameset(humanoid.identity().gender));
-      humanoid.setLegsArmorDirectives(m_legsCosmeticItem->directives());
+      humanoid.setLegsArmorFrameset(legsArmor->frameset(humanoid.identity().gender));
+      humanoid.setLegsArmorDirectives(legsArmor->directives());
+      addHumanoidConfig(*chestArmor);
     }
-    bodyHidden = bodyHidden || m_legsCosmeticItem->hideBody();
-  } else if (m_legsItem && !forceNude) {
-    if (legsNeedsSync) {
-      humanoid.setLegsArmorFrameset(m_legsItem->frameset(humanoid.identity().gender));
-      humanoid.setLegsArmorDirectives(m_legsItem->directives());
-    }
-    bodyHidden = bodyHidden || m_legsItem->hideBody();
+    bodyHidden = bodyHidden || legsArmor->hideBody();
   } else {
     humanoid.setLegsArmorFrameset("");
   }
 
-  if (m_backCosmeticItem && !forceNude) {
+  BackArmorPtr const& backArmor = m_backCosmeticItem ? m_backCosmeticItem : m_backItem;
+  if (backArmor && !forceNude) {
     if (backNeedsSync) {
-      humanoid.setBackArmorFrameset(m_backCosmeticItem->frameset(humanoid.identity().gender));
-      humanoid.setBackArmorDirectives(m_backCosmeticItem->directives());
+      humanoid.setBackArmorFrameset(backArmor->frameset(humanoid.identity().gender));
+      humanoid.setBackArmorDirectives(backArmor->directives());
     }
-    bodyHidden = bodyHidden || m_backCosmeticItem->hideBody();
-  } else if (m_backItem && !forceNude) {
-    if (backNeedsSync) {
-      humanoid.setBackArmorFrameset(m_backItem->frameset(humanoid.identity().gender));
-      humanoid.setBackArmorDirectives(m_backItem->directives());
-    }
-    bodyHidden = bodyHidden || m_backItem->hideBody();
+    bodyHidden = bodyHidden || backArmor->hideBody();
   } else {
     humanoid.setBackArmorFrameset("");
+  }
+
+  if (chestNeedsSync || legsNeedsSync) {
+    humanoid.loadConfig(humanoidConfig);
   }
 
   m_headNeedsSync = m_chestNeedsSync = m_legsNeedsSync = m_backNeedsSync = false;
