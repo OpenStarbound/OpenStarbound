@@ -85,7 +85,7 @@ void ArmorWearer::setupHumanoidClothingDrawables(Humanoid& humanoid, bool forceN
     if (legsNeedsSync) {
       humanoid.setLegsArmorFrameset(legsArmor->frameset(humanoid.identity().gender));
       humanoid.setLegsArmorDirectives(legsArmor->directives());
-      addHumanoidConfig(*chestArmor);
+      addHumanoidConfig(*legsArmor);
     }
     bodyHidden = bodyHidden || legsArmor->hideBody();
   } else {
