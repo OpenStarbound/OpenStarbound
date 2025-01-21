@@ -199,6 +199,7 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
   bool fullscreen = configuration->get("fullscreen").toBool();
   bool borderless = configuration->get("borderless").toBool();
   bool maximized = configuration->get("maximized").toBool();
+  m_controllerInput = configuration->get("controllerInput").optBool().value();
 
   float updateRate = 1.0f / GlobalTimestep;
   if (auto jUpdateRate = configuration->get("updateRate")) {
@@ -1040,7 +1041,7 @@ void ClientApplication::updateRunning(float dt) {
       config->set("zoomLevel", newZoom);
     }
 
-    if (m_controllerLeftStick.magnitudeSquared() > 0.01f)
+    if (m_controllerInput && m_controllerLeftStick.magnitudeSquared() > 0.01f)
       m_player->setMoveVector(m_controllerLeftStick);
     else
       m_player->setMoveVector(Vec2F());
