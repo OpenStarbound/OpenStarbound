@@ -9,7 +9,7 @@ function module.init()
 	local changes = false
 	for k,v in next, shaderConfig do
 		local group = postProcessGroups[k]
-		if v.parameters then
+		if group and v.parameters then
 			for k2,v2 in next, group.parameters do
 				if v.parameters[k2] ~= nil then
 					for _,e in next, v2.effects do
