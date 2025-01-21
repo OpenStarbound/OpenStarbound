@@ -530,7 +530,9 @@ namespace LuaBindings {
     callbacks.registerCallbackWithSignature<Maybe<LuaValue>, EntityId, String, LuaVariadic<LuaValue>>("callScriptedEntity", bind(WorldEntityCallbacks::callScriptedEntity, world, _1, _2, _3));
     callbacks.registerCallbackWithSignature<RpcPromise<Vec2F>, String>("findUniqueEntity", bind(WorldEntityCallbacks::findUniqueEntity, world, _1));
     callbacks.registerCallbackWithSignature<RpcPromise<Json>, LuaEngine&, LuaValue, String, LuaVariadic<Json>>("sendEntityMessage", bind(WorldEntityCallbacks::sendEntityMessage, world, _1, _2, _3, _4));
-    callbacks.registerCallbackWithSignature<Maybe<bool>, EntityId>("loungeableOccupied", bind(WorldEntityCallbacks::loungeableOccupied, world, _1));
+    callbacks.registerCallbackWithSignature<Maybe<List<EntityId>>, EntityId, Maybe<size_t>>("loungingEntities", bind(WorldEntityCallbacks::loungingEntities, world, _1, _2));
+    callbacks.registerCallbackWithSignature<Maybe<bool>, EntityId, Maybe<size_t>>("loungeableOccupied", bind(WorldEntityCallbacks::loungeableOccupied, world, _1, _2));
+    callbacks.registerCallbackWithSignature<Maybe<size_t>, EntityId>("loungeableAnchorCount", bind(WorldEntityCallbacks::loungeableAnchorCount, world, _1));
     callbacks.registerCallbackWithSignature<bool, EntityId, Maybe<bool>>("isMonster", bind(WorldEntityCallbacks::isMonster, world, _1, _2));
     callbacks.registerCallbackWithSignature<Maybe<String>, EntityId>("monsterType", bind(WorldEntityCallbacks::monsterType, world, _1));
     callbacks.registerCallbackWithSignature<Maybe<String>, EntityId>("npcType", bind(WorldEntityCallbacks::npcType, world, _1));
@@ -1770,10 +1772,23 @@ namespace LuaBindings {
       return world->sendEntityMessage(engine.luaTo<EntityId>(entityId), message, JsonArray::from(std::move(args)));
   }
 
-  Maybe<bool> WorldEntityCallbacks::loungeableOccupied(World* world, EntityId entityId) {
+  Maybe<List<EntityId>> WorldEntityCallbacks::loungingEntities(World* world, EntityId entityId, Maybe<size_t> anchorIndex) {
+    if (auto entity = world->get<LoungeableEntity>(entityId))
+      return entity->entitiesLoungingIn(anchorIndex.value()).values();
+    return {};
+  }
+
+  Maybe<bool> WorldEntityCallbacks::loungeableOccupied(World* world, EntityId entityId, Maybe<size_t> anchorIndex) {
     auto entity = world->get<LoungeableEntity>(entityId);
-    if (entity && entity->anchorCount() > 0)
-      return !entity->entitiesLoungingIn(0).empty();
+    size_t anchor = anchorIndex.value();
+    if (entity && entity->anchorCount() > anchor)
+      return !entity->entitiesLoungingIn(anchor).empty();
+    return {};
+  }
+
+  Maybe<size_t> WorldEntityCallbacks::loungeableAnchorCount(World* world, EntityId entityId) {
+    if (auto entity = world->get<LoungeableEntity>(entityId))
+      return entity->anchorCount();
     return {};
   }
 
