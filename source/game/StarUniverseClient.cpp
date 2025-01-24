@@ -24,6 +24,7 @@
 #include "StarPlayerUniverseMap.hpp"
 #include "StarWorldTemplate.hpp"
 #include "StarCelestialLuaBindings.hpp"
+#include "StarTeamClientLuaBindings.hpp"
 
 namespace Star {
 
@@ -499,6 +500,7 @@ void UniverseClient::setLuaCallbacks(String const& groupName, LuaCallbacks const
 void UniverseClient::startLua() {
   m_luaRoot->restart();
   setLuaCallbacks("celestial", LuaBindings::makeCelestialCallbacks(this));
+  setLuaCallbacks("team", LuaBindings::makeTeamClientCallbacks(m_teamClient.get()));
   setLuaCallbacks("world", LuaBindings::makeWorldCallbacks(m_worldClient.get()));
 
   auto assets = Root::singleton().assets();
