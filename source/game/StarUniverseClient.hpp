@@ -87,7 +87,8 @@ public:
   uint16_t maxPlayers();
 
   void setLuaCallbacks(String const& groupName, LuaCallbacks const& callbacks);
-  void startLua();
+  void restartLua();
+  void startLuaScripts();
   void stopLua();
   LuaRootPtr luaRoot();
 

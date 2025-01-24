@@ -23,8 +23,6 @@
 #include "StarQuestManager.hpp"
 #include "StarPlayerUniverseMap.hpp"
 #include "StarWorldTemplate.hpp"
-#include "StarCelestialLuaBindings.hpp"
-#include "StarTeamClientLuaBindings.hpp"
 
 namespace Star {
 
@@ -497,12 +495,11 @@ void UniverseClient::setLuaCallbacks(String const& groupName, LuaCallbacks const
   m_luaRoot->addCallbacks(groupName, callbacks);
 }
 
-void UniverseClient::startLua() {
+void UniverseClient::restartLua() {
   m_luaRoot->restart();
-  setLuaCallbacks("celestial", LuaBindings::makeCelestialCallbacks(this));
-  setLuaCallbacks("team", LuaBindings::makeTeamClientCallbacks(m_teamClient.get()));
-  setLuaCallbacks("world", LuaBindings::makeWorldCallbacks(m_worldClient.get()));
+}
 
+void UniverseClient::startLuaScripts() {
   auto assets = Root::singleton().assets();
   for (auto& p : assets->json("/client.config:universeScriptContexts").toObject()) {
     auto scriptComponent = make_shared<ScriptComponent>();
