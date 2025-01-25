@@ -521,6 +521,10 @@ private:
       SDL_SetClipboardText(text.utf8Ptr());
     }
 
+    bool isFocused() const override {
+      return (SDL_GetWindowFlags(parent->m_sdlWindow) & (SDL_WINDOW_INPUT_FOCUS | SDL_WINDOW_MOUSE_FOCUS)) != 0;
+    }
+
     void setTargetUpdateRate(float targetUpdateRate) override {
       parent->m_updateTicker.setTargetTickRate(targetUpdateRate);
     }

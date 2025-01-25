@@ -59,6 +59,8 @@ public:
   virtual void setClipboard(String text) = 0;
   virtual Maybe<String> getClipboard() = 0;
 
+  virtual bool isFocused() const = 0;
+
   // Returns the latest actual measured update and render rate, which may be
   // different than the target update rate.
   virtual float updateRate() const = 0;

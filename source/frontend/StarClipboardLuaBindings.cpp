@@ -7,7 +7,7 @@ namespace Star {
 LuaCallbacks LuaBindings::makeClipboardCallbacks(ApplicationControllerPtr appController, bool alwaysAllow) {
   LuaCallbacks callbacks;
 
-  auto available = [alwaysAllow]() { return alwaysAllow || Input::singleton().getTag("clipboard") > 0; };
+  auto available = [=]() { return alwaysAllow || (appController->isFocused() && Input::singleton().getTag("clipboard") > 0); };
 
   callbacks.registerCallback("available", [=]() -> bool {
     return available();
@@ -25,7 +25,7 @@ LuaCallbacks LuaBindings::makeClipboardCallbacks(ApplicationControllerPtr appCon
   });
 
   callbacks.registerCallback("setText", [=](String const& text) -> bool {
-    if (available()) {
+    if (appController->isFocused()) {
       appController->setClipboard(text);
       return true;
     }
