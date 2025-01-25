@@ -486,7 +486,7 @@ String ClientCommandProcessor::render(String const& path) {
         return strf("^red;Invalid chest sheet type '{}'^reset;", sheet);
       }
       // recovery for custom chests made by a very old generator
-      if (args.size() <= 2 && args[2].toLower() == "old" && assetPath.basePath.beginsWith("/items/armors/avian/avian-tier6separator/"))
+      if (args.size() >= 2 && args[2].toLower() == "old" && assetPath.basePath.beginsWith("/items/armors/avian/avian-tier6separator/"))
           assetPath.basePath = "/items/armors/avian/avian-tier6separator/old/" + assetPath.basePath.substr(41);
     } else if (first.equals("legs")) {
       assetPath.basePath = humanoid->legsArmorFrameset();
