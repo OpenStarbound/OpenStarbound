@@ -68,7 +68,7 @@ void ModsMenu::update(float dt) {
 
     m_modName->setText(bestModName(assetsSourceMetadata, assetsSource));
     m_modAuthor->setText(assetsSourceMetadata.value("author", "No Author Set").toString());
-    m_modVersion->setText(assetsSourceMetadata.value("version", "No Version Set").toString());
+    m_modVersion->setText(assetsSourceMetadata.value("version", "No Version Set").printString());
     m_modPath->setText(assetsSource);
     m_modDescription->setText(assetsSourceMetadata.value("description", "").toString());
 

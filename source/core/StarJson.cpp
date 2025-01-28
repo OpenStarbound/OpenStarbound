@@ -868,6 +868,12 @@ String Json::printJson(int pretty, bool sort) const {
   return repr(pretty, sort);
 }
 
+String Json::printString() const {
+  if (type() == Type::String)
+    return *m_data.get<StringConstPtr>();
+  return repr();
+}
+
 std::ostream& operator<<(std::ostream& os, Json const& v) {
   outputUtf8Json(v, std::ostream_iterator<char>(os), 0, false);
   return os;

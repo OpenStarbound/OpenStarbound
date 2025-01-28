@@ -613,7 +613,7 @@ StringList Root::scanForAssetSources(StringList const& directories, StringList c
     auto assetSource = make_shared<AssetSource>();
     assetSource->path = sourcePath;
     assetSource->name = metadata.maybe("name").apply(mem_fn(&Json::toString));
-    assetSource->version = metadata.maybe("version").apply(mem_fn(&Json::toString));
+    assetSource->version = metadata.maybe("version").apply(mem_fn(&Json::printString));
     assetSource->priority = metadata.value("priority", 0.0f).toFloat();
     assetSource->requires_ = jsonToStringList(metadata.value("requires", JsonArray{}));
     assetSource->includes = jsonToStringList(metadata.value("includes", JsonArray{}));
