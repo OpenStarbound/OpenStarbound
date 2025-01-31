@@ -32,14 +32,14 @@ Personality parsePersonalityArray(Json const& config) {
 }
 
 Personality& parsePersonality(Personality& personality, Json const& config) {
-  if (auto idle = config.get("idle"))
-    personality.idle = idle.toString();
-  if (auto armIdle = config.get("armIdle"))
-    personality.armIdle = armIdle.toString();
-  if (auto headOffset = config.get("headOffset"))
-    personality.headOffset = jsonToVec2F(headOffset);
-  if (auto armOffset = config.get("armOffset"))
-    personality.armOffset = jsonToVec2F(armOffset);
+  if (auto idle = config.opt("idle"))
+    personality.idle = idle->toString();
+  if (auto armIdle = config.opt("armIdle"))
+    personality.armIdle = armIdle->toString();
+  if (auto headOffset = config.opt("headOffset"))
+    personality.headOffset = jsonToVec2F(*headOffset);
+  if (auto armOffset = config.opt("armOffset"))
+    personality.armOffset = jsonToVec2F(*armOffset);
 
   return personality;
 }
