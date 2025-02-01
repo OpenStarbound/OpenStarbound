@@ -522,7 +522,7 @@ private:
     }
 
     bool isFocused() const override {
-      return (SDL_GetWindowFlags(parent->m_sdlWindow) & (SDL_WINDOW_INPUT_FOCUS | SDL_WINDOW_MOUSE_FOCUS)) != 0;
+      return (SDL_GetWindowFlags(parent->m_sdlWindow) & SDL_WINDOW_INPUT_FOCUS) != 0;
     }
 
     void setTargetUpdateRate(float targetUpdateRate) override {
