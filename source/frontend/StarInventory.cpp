@@ -450,12 +450,13 @@ void InventoryPane::update(float dt) {
   }
 
   if (auto item = inventory->swapSlotItem()) {
+    float pitch = 1.f - ((float)item->count() / (float)item->maxStack()) * .2f;
     if (!m_currentSwapSlotItem || !item->matches(*m_currentSwapSlotItem, true))
-      context->playAudio(RandomSource().randFrom(m_pickUpSounds));
+      context->playAudio(RandomSource().randFrom(m_pickUpSounds), 0, 1.f, pitch);
     else if (item->count() > m_currentSwapSlotItem->count())
-      context->playAudio(RandomSource().randFrom(m_someUpSounds));
+      context->playAudio(RandomSource().randFrom(m_someUpSounds), 0, 1.f, pitch);
     else if (item->count() < m_currentSwapSlotItem->count())
-      context->playAudio(RandomSource().randFrom(m_someDownSounds));
+      context->playAudio(RandomSource().randFrom(m_someDownSounds), 0, 1.f, pitch);
 
     m_currentSwapSlotItem = item->descriptor();
   } else {

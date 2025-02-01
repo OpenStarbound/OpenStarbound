@@ -24,13 +24,18 @@ local function copyItem()
   local item = player.swapSlotItem() or player.primaryHandItem() or player.altHandItem()
   if not item then return end
 
-  clipboard.setText(sb.printJson(item, 2))
-  local message = string.format("Copied ^cyan;%s^reset; to clipboard", getItemName(item))
+  local message = "^#f00;Failed to write to clipboard^reset;"
+  if clipboard.setText(sb.printJson(item, 2)) then
+    message = string.format("Copied ^cyan;%s^reset; to clipboard", getItemName(item))
+  end
   interface.queueMessage(message, 4, 0.5)
 end
 
 local function pasteItem()
-  if player.swapSlotItem() then return end
+  if not clipboard.available() then
+    return interface.queueMessage("^#f00;Clipboard unavailable^reset;", 4, 0.5)
+  end
+  local swap = player.swapSlotItem()
   local data = getClipboardText()
   if not data then return end
 
@@ -38,6 +43,13 @@ local function pasteItem()
   if not success then
     popupError("Error parsing clipboard item", result)
   else
+    if swap then
+      if swap.name == result.name and sb.jsonEqual(swap.parameters, result.parameters) then
+        result.count = (tonumber(result.count) or 1) + (tonumber(swap.count) or 1)
+      else
+        return interface.queueMessage("^#f00;Cursor is occupied^reset;", 4, 0.5)
+      end
+    end
     local success, err = pcall(player.setSwapSlotItem, result)
     if not success then popupError("Error loading clipboard item", err)
     else
