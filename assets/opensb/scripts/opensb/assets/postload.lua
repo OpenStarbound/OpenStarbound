@@ -30,3 +30,23 @@ assets.patch(
   "/interface/windowconfig/songbook.config",
   "/interface/windowconfig/songbook_search_patch.lua"
 )
+
+
+-- Relocate songs to the /songs/ folder
+
+local songs = assets.byExtension("abc")
+local count = 0
+
+for i = 1, #songs do
+  local song = songs[i]
+  if song:sub(1, 7) ~= "/songs/" then
+    local data = assets.bytes(song)
+    assets.erase(song)
+    assets.add("/songs" .. song, data)
+    count = count + 1
+  end
+end
+
+if count > 0 then
+  sb.logInfo("Moved %s misplaced songs to /songs/", count)
+end
