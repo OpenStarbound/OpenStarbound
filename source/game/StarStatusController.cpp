@@ -132,7 +132,10 @@ Json StatusController::statusProperty(String const& name, Json const& def) const
 }
 
 void StatusController::setStatusProperty(String const& name, Json value) {
-  m_statusProperties.set(name, value);
+  if (value.isNull())
+    m_statusProperties.remove(name);
+  else
+    m_statusProperties.set(name, value);
 }
 
 StringList StatusController::statNames() const {

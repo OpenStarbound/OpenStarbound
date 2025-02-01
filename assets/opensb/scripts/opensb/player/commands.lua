@@ -36,4 +36,15 @@ register("run", function(src)
   end
 end)
 
+register("headrotation", function(arg)
+  local key = "disableHeadRotation"
+  if status.statusProperty(key) == true then
+    status.setStatusProperty(key, nil)
+    return "Head rotation is now enabled for this character"
+  else
+    status.setStatusProperty(key, true)
+    return "Head rotation is now disabled for this character"
+  end
+end)
+
 module.register = register
