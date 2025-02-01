@@ -416,6 +416,19 @@ void UniverseClient::warpPlayer(WarpAction const& warpAction, bool animate, Stri
     return;
 
   m_mainPlayer->stopLounging();
+
+    // Check if the warp target is within the same world
+  if (warpAction.is<WarpToWorld>()) {
+    if (auto warpToWorld = warpAction.ptr<WarpToWorld>()) {
+      if (warpToWorld->world.empty() || warpToWorld->world == playerWorld()) {
+        if (auto pos = warpToWorld->target.ptr<SpawnTargetPosition>()) {
+          m_mainPlayer->movementController()->setPosition(*pos + Vec2F{0, 2}); // Add a little space to up
+          return;
+        }
+      }
+    }
+  }
+
   if (animate) {
     m_mainPlayer->teleportOut(animationType, deploy);
     m_warping = warpAction;
