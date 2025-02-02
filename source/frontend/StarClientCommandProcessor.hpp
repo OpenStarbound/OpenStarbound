@@ -26,6 +26,7 @@ private:
   String previewQuestPane(StringList const& arguments, function<PanePtr(QuestPtr)> createPane);
 
   String reload();
+  String hotReload();
   String whoami();
   String gravity();
   String debug(String const& argumentsString);

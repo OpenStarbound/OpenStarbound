@@ -348,6 +348,13 @@ Assets::~Assets() {
   m_workerThreads.clear();
 }
 
+void Assets::hotReload() const {
+  MutexLocker assetsLocker(m_assetsMutex);
+  m_assetsCache.clear();
+  m_queue.clear();
+  m_framesSpecifications.clear();
+}
+
 StringList Assets::assetSources() const {
   MutexLocker assetsLocker(m_assetsMutex);
   return m_assetSources;
@@ -778,6 +785,11 @@ void Assets::workerMain() {
   while (true) {
     if (m_stopThreads)
       break;
+
+    {
+      RecursiveMutexLocker luaLocker(m_luaMutex);
+      as<LuaEngine>(m_luaEngine.get())->collectGarbage();
+    }
 
     MutexLocker assetsLocker(m_assetsMutex);
 

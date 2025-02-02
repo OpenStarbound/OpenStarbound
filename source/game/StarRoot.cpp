@@ -371,6 +371,11 @@ void Root::registerReloadListener(ListenerWeakPtr reloadListener) {
   m_reloadListeners.addListener(std::move(reloadListener));
 }
 
+void Root::hotReload() {
+  assets()->hotReload();
+  m_reloadListeners.trigger();
+}
+
 String Root::toStoragePath(String const& path) const {
   return File::relativeTo(m_settings.storageDirectory, File::convertDirSeparators(path));
 }

@@ -131,6 +131,8 @@ public:
   // the internal listener list.
   void registerReloadListener(ListenerWeakPtr reloadListener);
 
+  void hotReload();
+
   // Translates the given path to be relative to the configured storage
   // location.
   String toStoragePath(String const& path) const;

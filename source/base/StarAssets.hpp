@@ -161,6 +161,8 @@ public:
   Assets(Settings settings, StringList assetSources);
   ~Assets();
 
+  void hotReload() const;
+
   // Returns a list of all the asset source paths used by Assets in load order.
   StringList assetSources() const;
 
