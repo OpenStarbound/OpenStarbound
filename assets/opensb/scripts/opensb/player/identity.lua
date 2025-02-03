@@ -4,9 +4,8 @@ modules.copy_paste = module
 local commands = modules.commands
 
 
-commands.register("identity", function(parms)
-  method, path, value = commands.splitArgs(parms)
-
+commands.register("identity", function(args)
+  method, path, value = chat.parseArguments(args)
   if not method or method == "get" or method == "" then
     local identity = player.humanoidIdentity()
 
