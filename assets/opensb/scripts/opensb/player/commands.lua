@@ -6,6 +6,30 @@ local function register(name, func)
   commands[name] = func
 end
 
+local function splitArgs(input)
+  local args = {}
+  local spat, epat, buf, quoted = [=[^(['"])]=], [=[(['"])$]=]
+  for str in input:gmatch("%S+") do
+    local squoted = str:match(spat)
+    local equoted = str:match(epat)
+    local escaped = str:match([=[(\*)['"]$]=])
+
+    if squoted and not quoted and not equoted then
+      buf, quoted = str, squoted
+    elseif buf and equoted == quoted and #escaped % 2 == 0 then
+      str, buf, quoted = buf .. ' ' .. str, nil, nil
+    elseif buf then
+      buf = buf .. ' ' .. str
+    end
+    if not buf and str then 
+      local cleaned = str:gsub(spat,""):gsub(epat,"")
+      table.insert(args, cleaned)
+    end
+  end
+
+  return table.unpack(args)
+end
+
 function module.init()
   for name, func in pairs(commands) do
     message.setHandler({name = "/" .. name, localOnly = true}, func)
@@ -48,3 +72,4 @@ register("headrotation", function(arg)
 end)
 
 module.register = register
+module.splitArgs = splitArgs
