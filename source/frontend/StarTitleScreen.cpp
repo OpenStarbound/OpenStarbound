@@ -337,6 +337,9 @@ void TitleScreen::initMultiPlayerMenu() {
   GuiReader readerServer;
 
   m_serverList = Root::singleton().configuration()->get("serverList");
+  if (!m_serverList.isType(Json::Type::Array))
+    m_serverList = JsonArray();
+
   auto assets = Root::singleton().assets();
 
   readerServer.registerCallback("saveServer", [=](Widget*) {
@@ -348,9 +351,9 @@ void TitleScreen::initMultiPlayerMenu() {
     };
 
     auto serverList = m_serverSelectPane->fetchChild<ListWidget>("serverSelectArea.serverList");
-    if (auto const pos = serverList->selectedItem(); pos != NPos) {// Edit existing
+    if (auto const pos = serverList->selectedItem(); pos != NPos) { // Edit existing
       m_serverList = m_serverList.set(pos, serverData);
-    } else {// Save new
+    } else { // Save new
       m_serverList = m_serverList.insert(0, serverData);
     }
 
@@ -374,6 +377,8 @@ void TitleScreen::initMultiPlayerMenu() {
 
   serverList->setCallback([=](Widget* widget) {
     if (auto selectedItem = serverList->selectedWidget()) {
+      if (selectedItem->findChild<ButtonWidget>("delete")->isHovered())
+        return;
       auto& data = selectedItem->data();
       setMultiPlayerAddress(data.getString("address", ""));
       setMultiPlayerPort(data.getString("port", ""));
