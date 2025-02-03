@@ -18,6 +18,7 @@ public:
   static FontPtr loadFont(ByteArrayConstPtr const& bytes, unsigned pixelSize = 12);
 
   Font();
+  ~Font();
 
   Font(Font const&) = delete;
   Font const& operator=(Font const&) = delete;
