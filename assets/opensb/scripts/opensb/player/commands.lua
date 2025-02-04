@@ -48,4 +48,3 @@ register("headrotation", function(arg)
 end)
 
 module.register = register
-module.splitArgs = splitArgs
