@@ -22,6 +22,7 @@ end
 -- patch function, called by the game
 function patch(config)
   local layout = config.paneLayout
+  layout.bgShine.zlevel = -10
   layout.panefeature.positionLocked = false
   layout.panefeature.anchor = "center"
   for i = 1, 32 do config.zoomList[i] = i end
