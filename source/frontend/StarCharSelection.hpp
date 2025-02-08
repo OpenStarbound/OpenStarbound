@@ -26,6 +26,8 @@ private:
 
   PlayerStoragePtr m_playerStorage;
   unsigned m_downScroll;
+  String m_search;
+  List<Uuid> m_filteredList;
 
   CreateCharCallback m_createCallback;
   SelectCharacterCallback m_selectCallback;
