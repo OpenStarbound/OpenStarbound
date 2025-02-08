@@ -19,6 +19,8 @@ Sets the HUD's visibility.
 
 Returns the HUD's visibility.
 
+---
+
 #### `PaneId` interface.bindRegisteredPane(`string` paneName)
 Binds a registered pane (defined in `/source/frontend/StarMainInterfaceTypes`) to a Lua value, which can then call widget functions on that pane.
 <details><summary><b>Panes</b></summary>
