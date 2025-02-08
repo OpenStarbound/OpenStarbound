@@ -132,6 +132,27 @@ Maybe<Uuid> PlayerStorage::playerUuidByName(String const& name, Maybe<Uuid> exce
   return uuid;
 }
 
+List<Uuid> PlayerStorage::playerUuidListByName(String const& name, Maybe<Uuid> except) {
+  String cleanMatch = Text::stripEscapeCodes(name).toLower();
+  List<Uuid> list = {};
+
+  RecursiveMutexLocker locker(m_mutex);
+
+  for (auto& cache : m_savedPlayersCache) {
+    if (except && *except == cache.first)
+      continue;
+    else if (auto name = cache.second.optQueryString("identity.name")) {
+      auto cleanName = Text::stripEscapeCodes(*name).toLower();
+      if (cleanMatch == "" || cleanName.utf8().rfind(cleanMatch.utf8()) != NPos) {
+        list.append(cache.first);
+      }
+    }
+  }
+
+  return list;
+}
+
+
 Json PlayerStorage::savePlayer(PlayerPtr const& player) {
   auto entityFactory = Root::singleton().entityFactory();
   auto versioningDatabase = Root::singleton().versioningDatabase();
