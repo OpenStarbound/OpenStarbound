@@ -54,7 +54,7 @@ Returns a `String` representation of the world's id.
 
 ---
 
-#### `Maybe<LuaValue>` world.callScriptContext(`String` contextName, `String` function, `String` contextName, [LuaValue args ...])
+#### `Maybe<LuaValue>` world.callScriptContext(`String` contextName, `String` function, `String` contextName, [`LuaValue` args ...])
 
 Calls a function in the specified world script context.
 
