@@ -17,12 +17,17 @@ on:
         default: false
 
   push:
+    paths:
+      - 'assets/**'
+      - 'source/**'
+      - 'toolchains/**'
+      - 'triplets/**'
     branches:
-      - "*" 
+      - '*' 
 
   pull_request:
     branches:
-      - "*"
+      - '*'
 
 jobs:
   build_windows:
