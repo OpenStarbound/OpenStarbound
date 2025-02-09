@@ -36,6 +36,10 @@ CharSelectionPane::CharSelectionPane(PlayerStoragePtr playerStorage,
     m_search = convert<TextBoxWidget>(obj)->getText().trim().toLower();
     updateCharacterPlates();
   });
+  guiReader.registerCallback("clearSearch", [=](Widget*) {
+    auto searchCharacter = fetchChild<TextBoxWidget>("searchCharacter");
+    searchCharacter->setText("");
+  });
 
   guiReader.construct(root.assets()->json("/interface/windowconfig/charselection.config"), this);
 }

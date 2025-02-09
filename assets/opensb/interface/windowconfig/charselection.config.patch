@@ -10,6 +10,13 @@
 		"type": "textbox",
 		"hint": "Search...",
 		"position": [ 130, 244 ],
-		"maxWidth": 75
+		"maxWidth": 68
+	},
+	"clearSearch": {
+		"type": "button",
+		"base": "/interface/x.png",
+		"hover": "/interface/xhover.png",
+		"pressed": "/interface/xpress.png",
+		"position": [ 200, 242 ]
 	}
 }
