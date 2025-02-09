@@ -391,30 +391,37 @@ List<std::pair<InputEvent, bool>> const& Input::inputEventsThisFrame() const {
 
 
 
-void Input::reset() {
+void Input::reset(bool clear) {
   m_inputEvents.clear();
-  auto eraseCond = [](auto& p) {
-    if (p.second.held)
-      p.second.reset();
-    return !p.second.held;
-  };
+  if (clear) {
+    m_keyStates.clear();
+    m_mouseStates.clear();
+    m_controllerStates.clear();
+    m_bindStates.clear();
+  } else {
+    auto eraseCond = [](auto& p) {
+      if (p.second.held)
+        p.second.reset();
+      return !p.second.held;
+    };
 
-  eraseWhere(m_keyStates,        eraseCond);
-  eraseWhere(m_mouseStates,      eraseCond);
-  eraseWhere(m_controllerStates, eraseCond);
-  eraseWhere(m_bindStates, [&](auto& p) {
-    if (p.second.held)
-      p.second.reset();
-    else {
-      for (auto& tag : p.first->tags) {
-        auto find = m_activeTags.find(tag);
-        if (find != m_activeTags.end() && !--find->second)
-            m_activeTags.erase(find);
+    eraseWhere(m_keyStates,        eraseCond);
+    eraseWhere(m_mouseStates,      eraseCond);
+    eraseWhere(m_controllerStates, eraseCond);
+    eraseWhere(m_bindStates, [&](auto& p) {
+      if (p.second.held)
+        p.second.reset();
+      else {
+        for (auto& tag : p.first->tags) {
+          auto find = m_activeTags.find(tag);
+          if (find != m_activeTags.end() && !--find->second)
+              m_activeTags.erase(find);
+        }
+        return true;
       }
-      return true;
-    }
-    return false;
-  });
+      return false;
+    });
+  }
 }
 
 void Input::update() {
@@ -516,7 +523,7 @@ bool Input::handleInput(InputEvent const& input, bool gameProcessed) {
 }
 
 void Input::rebuildMappings() {
-  reset();
+  reset(true);
   m_bindMappings.clear();
 
   for (auto& category : m_bindCategories) {
