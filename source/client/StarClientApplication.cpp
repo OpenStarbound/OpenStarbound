@@ -1044,7 +1044,6 @@ void ClientApplication::updateRunning(float dt) {
         newZoom = lerp(clamp(abs(intZoom - newZoom) - 1.f, 0.f, 1.f), intZoom, intNewZoom);
         m_cameraZoomDirection = 0;
       }
-      newZoom = clamp(newZoom, 1.0f, 10.0f);
       config->set("zoomLevel", newZoom);
     }
 
