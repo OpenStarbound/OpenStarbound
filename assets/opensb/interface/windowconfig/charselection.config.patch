@@ -10,7 +10,7 @@
 		"type": "textbox",
 		"hint": "Search...",
 		"position": [ 130, 244 ],
-		"maxWidth": 75
+		"maxWidth": 68
 	},
 	"clearSearch": {
 		"type": "button",
