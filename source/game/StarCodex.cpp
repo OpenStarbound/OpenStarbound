@@ -1,10 +1,12 @@
 #include "StarCodex.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarAssetPath.hpp"
 
 namespace Star {
 
-Codex::Codex(Json const& config, String const& directory) {
-  m_directory = directory;
+Codex::Codex(Json const& config, String const& path) {
+  m_directory = AssetPath::directory(path);
+  m_filename = AssetPath::filename(path);
   m_id = config.getString("id");
   m_species = config.getString("species", "other");
   m_title = config.getString("title");
@@ -66,6 +68,10 @@ Json Codex::itemConfig() const {
 
 String Codex::directory() const {
   return m_directory;
+}
+
+String Codex::filename() const {
+  return m_filename;
 }
 
 }

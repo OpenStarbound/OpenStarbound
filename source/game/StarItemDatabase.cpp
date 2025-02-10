@@ -218,7 +218,7 @@ Maybe<String> ItemDatabase::itemFile(String const& itemName) const {
     return {};
   }
   auto const& data = itemData(itemName);
-  return data.directory + "/" + data.filename;
+  return data.directory + data.filename;
 }
 
 ItemPtr ItemDatabase::itemShared(ItemDescriptor descriptor, Maybe<float> level, Maybe<uint64_t> seed) const {
@@ -751,7 +751,7 @@ void ItemDatabase::addCodexes() {
       codexItemData.name = codexItemName;
       codexItemData.friendlyName = codexPair.second->title();
       codexItemData.directory = codexPair.second->directory();
-
+      codexItemData.filename = codexPair.second->filename();
       auto customConfig = jsonMerge(codexConfig.get("defaultItemConfig"), codexPair.second->itemConfig()).toObject();
       customConfig["itemName"] = codexItemName;
       customConfig["codexId"] = codexPair.second->id();
