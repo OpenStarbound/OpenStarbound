@@ -53,7 +53,7 @@ Note: Not every function from [StarExtensions](https://github.com/StarExtensions
 * Fix vanilla world file size bloating issue.
 * Modifying a single status property no longer re-networks every status property on the entity (server and client must be running at least OpenStarbound 0.15)
 ### Misc
-* Player functions for saving/loading, modifying the humanoid identity, manipulating the inventory. [Documentation](https://github.com/OpenStarbound/OpenStarbound/blob/main/doc/lua/openstarbound.md)
+* Player functions for saving/loading, modifying the humanoid identity, manipulating the inventory. [Documentation](https://github.com/OpenStarbound/OpenStarbound/tree/main/doc/lua/openstarbound)
 * Character swapping (rewrite from StarExtensions, currently command-only: `/swap name` case-insensitive, only substring required)
 * Custom user input support with a keybindings menu (rewrite from StarExtensions)
 * Positional Voice Chat that works on completely vanilla servers, uses Opus for crisp, HD audio (rewrite from StarExtensions)
