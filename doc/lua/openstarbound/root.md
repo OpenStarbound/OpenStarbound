@@ -101,4 +101,8 @@ Sets a configuration value in `/storage/starbound.config` by path.
 
 Returns all recipes.
 
+#### `String` root.itemFile(`String` itemName)
+
+Returns the asset file path for the specified item.
+
 ---
