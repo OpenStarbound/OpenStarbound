@@ -215,10 +215,10 @@ ItemDatabase::ItemConfig ItemDatabase::itemConfig(String const& itemName, Json p
 
 Maybe<String> ItemDatabase::itemFile(String const& itemName) const {
   if (!hasItem(itemName)) {
-    return {}
+    return {};
   }
   auto const& data = itemData(itemName);
-  return data->directory + "/" + data->filename;
+  return data.directory + "/" + data.filename;
 }
 
 ItemPtr ItemDatabase::itemShared(ItemDescriptor descriptor, Maybe<float> level, Maybe<uint64_t> seed) const {
