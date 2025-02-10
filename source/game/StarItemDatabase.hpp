@@ -159,6 +159,7 @@ private:
     Maybe<String> assetsConfig;
     JsonObject customConfig;
     String directory;
+    String filename;
   };
 
   static ItemPtr createItem(ItemType type, ItemConfig const& config);
