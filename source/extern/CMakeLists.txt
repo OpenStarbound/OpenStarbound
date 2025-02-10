@@ -1,8 +1,10 @@
 INCLUDE_DIRECTORIES (
     ${STAR_EXTERN_INCLUDES}
     fmt
-    lua
   )
+IF (NOT STAR_USE_RAVI)
+INCLUDE_DIRECTORIES(lua)
+ENDIF()
 
 SET (star_extern_HEADERS
     curve25519/include/curve25519_dh.h
@@ -16,11 +18,6 @@ SET (star_extern_HEADERS
     fmt/ranges.h
     fmt/std.h
     fast_float.h
-    lauxlib.h
-    lua.h
-    lua.hpp
-    luaconf.h
-    lualib.h
     tinyformat.h
     xxhash.h
   )
@@ -36,6 +33,16 @@ SET (star_extern_SOURCES
     curve25519/source/ed25519_verify.c
     xxhash.c
     fmt/format.cc
+  )
+IF (NOT STAR_USE_RAVI)
+  SET(star_extern_HEADERS ${star_extern_HEADERS}
+    lauxlib.h
+    lua.h
+    lua.hpp
+    luaconf.h
+    lualib.h
+  )
+  SET(star_extern_SOURCES ${star_extern_SOURCES}
     lua/lapi.c
     lua/lauxlib.c
     lua/lbaselib.c
@@ -70,6 +77,7 @@ SET (star_extern_SOURCES
     lua/lvm.c
     lua/lzio.c
   )
+ENDIF()
 
   
 IF (STAR_USE_RPMALLOC)

@@ -365,6 +365,12 @@ LuaEnginePtr LuaEngine::create(bool safe) {
     loadBaseLibrary(self->m_state, "debug", luaopen_debug);
     lua_pop(self->m_state, 3);
   }
+  
+  #ifdef STAR_USE_RAVI
+  // Ravi API
+  loadBaseLibrary(self->m_state, "ravi", raviopen_jit);
+  loadBaseLibrary(self->m_state, "compiler", raviopen_compiler);
+  #endif
 
   // Make a shallow copy of the default script environment and save it for
   // resetting the global state.
