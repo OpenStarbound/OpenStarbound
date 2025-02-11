@@ -1,16 +1,22 @@
 #include "StarLuaComponents.hpp"
 #include "StarUtilityLuaBindings.hpp"
 #include "StarRootLuaBindings.hpp"
+#include "StarScriptableThread.hpp"
+#include "StarRpcThreadPromise.hpp"
+#include "StarLuaGameConverters.hpp"
 
 namespace Star {
 
 LuaBaseComponent::LuaBaseComponent() {
   addCallbacks("sb", LuaBindings::makeUtilityCallbacks());
   addCallbacks("root", LuaBindings::makeRootCallbacks());
+  addCallbacks("threads", makeThreadsCallbacks());
   setAutoReInit(true);
 }
 
-LuaBaseComponent::~LuaBaseComponent() {}
+LuaBaseComponent::~LuaBaseComponent() {
+  m_threads.clear();
+}
 
 StringList const& LuaBaseComponent::scripts() const {
   return m_scripts;
@@ -109,6 +115,9 @@ void LuaBaseComponent::uninit() {
     contextShutdown();
     m_context.reset();
   }
+  for (auto p : m_threads) {
+    p.second->stop();
+  }
 
   m_error.reset();
 }
@@ -150,6 +159,38 @@ bool LuaBaseComponent::checkInitialization() {
   if (shouldBeInitialized && m_reloadTracker && m_reloadTracker->pullTriggered())
     init();
   return initialized();
+}
+
+LuaCallbacks LuaBaseComponent::makeThreadsCallbacks() {
+  LuaCallbacks callbacks;
+  
+  callbacks.registerCallback("create", [this](Json parameters) {
+    auto name = parameters.getString("name");
+    if (m_threads.contains(name)) {
+      m_threads.get(name)->stop();
+      m_threads.remove(name);
+    }
+    auto thread = make_shared<ScriptableThread>(parameters);
+    thread->setPause(false);
+    thread->start();
+    m_threads.set(name,thread);
+    return name;
+  });
+  callbacks.registerCallback("setPause", [this](String const& threadName, bool paused) {
+      m_threads.get(threadName)->setPause(paused);
+  });
+  callbacks.registerCallback("stop", [this](String const& threadName) {
+      m_threads.get(threadName)->stop();
+      m_threads.remove(threadName);
+  });
+  callbacks.registerCallback("sendMessage", [this](String const& threadName, String const& message, LuaVariadic<Json> args) {
+    auto pair = RpcThreadPromise<Json>::createPair();
+    RecursiveMutexLocker locker(m_threadLock);
+    m_threads.get(threadName)->passMessage({ message, args, pair.second });
+    return pair.first;
+  });
+  
+  return callbacks;
 }
 
 }

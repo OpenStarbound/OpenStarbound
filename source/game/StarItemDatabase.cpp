@@ -213,6 +213,14 @@ ItemDatabase::ItemConfig ItemDatabase::itemConfig(String const& itemName, Json p
   return itemConfig;
 }
 
+Maybe<String> ItemDatabase::itemFile(String const& itemName) const {
+  if (!hasItem(itemName)) {
+    return {};
+  }
+  auto const& data = itemData(itemName);
+  return data.directory + data.filename;
+}
+
 ItemPtr ItemDatabase::itemShared(ItemDescriptor descriptor, Maybe<float> level, Maybe<uint64_t> seed) const {
   if (!descriptor)
     return {};
@@ -563,6 +571,7 @@ void ItemDatabase::addItemSet(ItemType type, String const& extension) {
       data.itemTags = config.opt("itemTags").apply(jsonToStringSet).value();
       data.agingScripts = config.opt("itemAgingScripts").apply(jsonToStringList).value();
       data.directory = AssetPath::directory(file);
+      data.filename = AssetPath::filename(file);
 
       data.agingScripts = data.agingScripts.transformed(bind(&AssetPath::relativeTo, data.directory, _1));
     } catch (std::exception const& e) {
@@ -586,6 +595,7 @@ void ItemDatabase::addObjectDropItem(String const& objectPath, Json const& objec
   data.itemTags = objectConfig.opt("itemTags").apply(jsonToStringSet).value();
   data.agingScripts = objectConfig.opt("itemAgingScripts").apply(jsonToStringList).value();
   data.directory = AssetPath::directory(objectPath);
+  data.filename = AssetPath::filename(objectPath);
   JsonObject customConfig = objectConfig.toObject();
   if (!customConfig.contains("inventoryIcon")) {
     customConfig["inventoryIcon"] = assets->json("/objects/defaultParameters.config:missingIcon");
@@ -741,7 +751,7 @@ void ItemDatabase::addCodexes() {
       codexItemData.name = codexItemName;
       codexItemData.friendlyName = codexPair.second->title();
       codexItemData.directory = codexPair.second->directory();
-
+      codexItemData.filename = codexPair.second->filename();
       auto customConfig = jsonMerge(codexConfig.get("defaultItemConfig"), codexPair.second->itemConfig()).toObject();
       customConfig["itemName"] = codexItemName;
       customConfig["codexId"] = codexPair.second->id();

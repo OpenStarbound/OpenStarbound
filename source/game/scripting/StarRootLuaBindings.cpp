@@ -116,6 +116,10 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
       return table;
     });
 
+  callbacks.registerCallback("itemFile", [root](LuaEngine& engine, String const& itemName) -> Maybe<String> {
+      return root->itemDatabase()->itemFile(itemName);
+    });
+
   callbacks.registerCallback("materialConfig", [root](String const& materialName) -> Json {
       auto materialId = root->materialDatabase()->materialId(materialName);
       if (auto path = root->materialDatabase()->materialPath(materialId))

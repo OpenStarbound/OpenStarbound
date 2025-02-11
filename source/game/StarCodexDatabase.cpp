@@ -16,7 +16,7 @@ CodexDatabase::CodexDatabase() {
       codexJson = codexJson.set("icon",
           AssetPath::relativeTo(AssetPath::directory(file), codexJson.getString("icon", codexConfig.getString("defaultIcon"))));
 
-      auto codex = make_shared<Codex>(codexJson, AssetPath::directory(file));
+      auto codex = make_shared<Codex>(codexJson, file);
 
       if (m_codexes.contains(codex->id()))
         throw CodexDatabaseException::format("Duplicate codex named '{}', config file '{}'", codex->id(), file);

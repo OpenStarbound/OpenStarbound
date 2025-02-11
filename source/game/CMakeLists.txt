@@ -254,6 +254,7 @@ SET (star_game_HEADERS
     scripting/StarTeamClientLuaBindings.hpp
     scripting/StarWorldLuaBindings.hpp
     scripting/StarUniverseServerLuaBindings.hpp
+    scripting/StarScriptableThread.hpp
 
     terrain/StarCacheSelector.hpp
     terrain/StarConstantSelector.hpp
@@ -494,6 +495,7 @@ SET (star_game_SOURCES
     scripting/StarTeamClientLuaBindings.cpp
     scripting/StarWorldLuaBindings.cpp
     scripting/StarUniverseServerLuaBindings.cpp
+    scripting/StarScriptableThread.cpp
 
     terrain/StarCacheSelector.cpp
     terrain/StarConstantSelector.cpp
