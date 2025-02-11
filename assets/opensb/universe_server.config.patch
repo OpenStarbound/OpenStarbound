@@ -3,5 +3,10 @@
     "op" : "add",
     "path" : "/commandProcessorScripts/-",
     "value" : "/scripts/opensb/servercommands/servercommands.lua"
+  },
+  {
+    "op" : "add",
+    "path" : "/commandProcessorScripts/-",
+    "value" : "/scripts/opensb/ravi_config.lua"
   }
 ]

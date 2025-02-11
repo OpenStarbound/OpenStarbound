@@ -2,7 +2,15 @@
 
 #include <typeindex>
 #include <type_traits>
-#include <lua.hpp>
+#ifdef STAR_USE_RAVI
+extern "C" {
+  #include "ravi/lua.h"
+  #include "ravi/lualib.h"
+  #include "ravi/lauxlib.h"
+}
+#else
+#include "lua.hpp"
+#endif
 
 #include "StarLexicalCast.hpp"
 #include "StarString.hpp"

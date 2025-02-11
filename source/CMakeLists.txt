@@ -137,6 +137,7 @@ if(STAR_BUILD_GUI)
 endif()
 
 option(STAR_LUA_APICHECK "Use lua api checks" OFF)
+option(STAR_USE_RAVI "Use Ravi for Lua" ON)
 option(STAR_USE_JEMALLOC "Use jemalloc allocators" OFF)
 option(STAR_USE_MIMALLOC "Use mimalloc allocators" OFF)
 option(STAR_USE_RPMALLOC "Use rpmalloc allocators" OFF)
@@ -248,6 +249,10 @@ endif()
 
 if(STAR_ENABLE_DISCORD_INTEGRATION)
   add_definitions(-DSTAR_ENABLE_DISCORD_INTEGRATION)
+endif()
+
+if(STAR_USE_RAVI)
+  add_definitions(-DSTAR_USE_RAVI)
 endif()
 
 if(STAR_USE_JEMALLOC)
@@ -492,6 +497,16 @@ set(STAR_EXT_LIBS ${STAR_EXT_LIBS}
     ${VORBIS_LIBRARY}
     ${OGG_LIBRARY}
 )
+
+if (STAR_USE_RAVI)
+  find_package(Ravi REQUIRED)
+  include_directories(SYSTEM ${RAVI_INCLUDE_DIR})
+  set(STAR_EXT_LIBS ${STAR_EXT_LIBS}
+    ${RAVI_LIBRARY}
+    ${RAVICOMP_LIBRARY}
+    ${MIR_LIBRARY}
+  )
+endif()
 
 if(STAR_BUILD_GUI)
   find_package(SDL2 CONFIG REQUIRED)
