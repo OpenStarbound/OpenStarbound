@@ -17,6 +17,7 @@
 		"base": "/interface/x.png",
 		"hover": "/interface/xhover.png",
 		"pressed": "/interface/xpress.png",
-		"position": [ 200, 242 ]
+		"position": [ 200, 242 ],
+  		"pressedOffset": [0, 0]
 	}
 }
