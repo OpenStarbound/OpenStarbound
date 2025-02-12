@@ -50,6 +50,10 @@ ByteArray DirectoryAssetSource::read(String const& path) {
   return device->readBytes(device->size());
 }
 
+ByteArray DirectoryAssetSource::mmap(String const& path) {
+  return File::mmapFile(toFilesystem(path));
+}
+
 String DirectoryAssetSource::toFilesystem(String const& path) const {
   if (!path.beginsWith("/"))
     throw AssetSourceException::format("Asset path '{}' must be absolute in DirectoryAssetSource::toFilesystem", path);

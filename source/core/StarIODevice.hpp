@@ -15,7 +15,7 @@ enum class IOMode : uint8_t {
   Write = 0x2,
   ReadWrite = 0x3,
   Append = 0x4,
-  Truncate = 0x8,
+  Truncate = 0x8
 };
 
 IOMode operator|(IOMode a, IOMode b);

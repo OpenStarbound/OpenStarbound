@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarByteArray.hpp"
 #include "StarIODevice.hpp"
 #include "StarString.hpp"
 
@@ -117,5 +118,6 @@ private:
   char const* m_bytes;
   size_t m_size;
 };
+
 
 }

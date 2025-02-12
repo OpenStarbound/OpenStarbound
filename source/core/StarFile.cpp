@@ -1,7 +1,9 @@
 #include "StarFile.hpp"
+#include "StarByteArray.hpp"
 #include "StarFormat.hpp"
 
 #include <fstream>
+#include <pthread.h>
 
 namespace Star {
 
@@ -79,6 +81,14 @@ String File::readFileString(String const& filename) {
 
 StreamOffset File::fileSize(String const& filename) {
   return File::open(filename, IOMode::Read)->size();
+}
+
+ByteArray File::mmapFile(String const& filename) {
+  return ByteArray::fromMMap(filename.utf8Ptr());
+}
+
+ByteArray File::mmapFilePartial(String const& filename, size_t offset, size_t len) {
+  return ByteArray::fromMMap(filename.utf8Ptr(), offset, len);
 }
 
 void File::writeFile(char const* data, size_t len, String const& filename) {
