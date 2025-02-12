@@ -1,4 +1,6 @@
 #include "StarPackedAssetSource.hpp"
+#include "StarByteArray.hpp"
+#include "StarConfig.hpp"
 #include "StarDirectoryAssetSource.hpp"
 #include "StarOrderedSet.hpp"
 #include "StarDataStreamDevices.hpp"
@@ -91,6 +93,18 @@ JsonObject PackedAssetSource::metadata() const {
 
 StringList PackedAssetSource::assetPaths() const {
   return m_index.keys();
+}
+
+ByteArray PackedAssetSource::mmap(String const& path) {
+  auto p = m_index.ptr(path);
+  if (!p)
+    throw AssetSourceException::format("Requested file '{}' does not exist in the packed assets file", path);
+
+  StreamOffset offset = p->first;
+  StreamOffset size = p->second;
+  String fullPath = File::fullPath(m_packedFile->fileName());
+
+  return File::mmapFilePartial(fullPath, offset, size);
 }
 
 IODevicePtr PackedAssetSource::open(String const& path) {

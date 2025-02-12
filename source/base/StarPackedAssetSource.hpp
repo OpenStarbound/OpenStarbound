@@ -32,6 +32,7 @@ public:
 
   IODevicePtr open(String const& path) override;
   ByteArray read(String const& path) override;
+  ByteArray mmap(String const& path) override;
 
 private:
   FilePtr m_packedFile;

@@ -110,6 +110,11 @@ ByteArray MemoryAssetSource::read(String const& path) {
   }
 }
 
+// you can't mmap what's already memory
+ByteArray MemoryAssetSource::mmap(String const& path) {
+  return read(path);
+}
+
 ImageConstPtr MemoryAssetSource::image(String const& path) {
   auto p = m_files.ptr(path);
   if (!p)

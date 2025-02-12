@@ -7,6 +7,7 @@
 namespace Star {
 
 STAR_CLASS(ByteArray);
+STAR_CLASS(MappedByteArray);
 
 // Class to hold an array of bytes.  Contains an internal buffer that may be
 // larger than what is reported by size(), to avoid repeated allocations when a
@@ -22,8 +23,12 @@ public:
   static ByteArray fromCString(char const* str);
   // Same, but includes the trailing '\0'
   static ByteArray fromCStringWithNull(char const* str);
-  static ByteArray withReserve(size_t capacity);
+  
+  // mmap from file saves memory space over reading
+  static ByteArray fromMMap(const char* path, size_t offset = 0, size_t length = -1);
 
+  static ByteArray withReserve(size_t capacity);
+  
   ByteArray();
   ByteArray(size_t dataSize, char c);
   ByteArray(char const* data, size_t dataSize);
@@ -114,6 +119,12 @@ private:
   char* m_data;
   size_t m_capacity;
   size_t m_size;
+
+  // Mmap-specific metadata
+  void* m_mapped_addr;     // Original aligned address from mmap
+  size_t m_mapped_len;  // Full length of the mmap region
+  enum class AllocationType { Heap, Mapped };
+  AllocationType m_allocation = AllocationType::Heap;
 };
 
 template <>

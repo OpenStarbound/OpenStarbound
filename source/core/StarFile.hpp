@@ -77,6 +77,10 @@ public:
   static String readFileString(String const& filename);
   static StreamOffset fileSize(String const& filename);
 
+  // return all or part of a file as an mmapped ByteArray
+  static ByteArray mmapFile(String const& filename);
+  static ByteArray mmapFilePartial(String const& filename, size_t offset, size_t len);
+
   static void writeFile(char const* data, size_t len, String const& filename);
   static void writeFile(ByteArray const& data, String const& filename);
   static void writeFile(String const& data, String const& filename);

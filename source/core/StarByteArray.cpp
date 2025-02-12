@@ -1,5 +1,9 @@
 #include "StarByteArray.hpp"
 #include "StarEncode.hpp"
+#include <sys/mman.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/stat.h>
 
 namespace Star {
 
@@ -24,6 +28,10 @@ ByteArray::ByteArray() {
   m_data = nullptr;
   m_capacity = 0;
   m_size = 0;
+
+  m_allocation = AllocationType::Heap;
+  m_mapped_addr = nullptr;
+  m_mapped_len = 0;
 }
 
 ByteArray::ByteArray(size_t dataSize, char c)
@@ -72,15 +80,26 @@ ByteArray& ByteArray::operator=(ByteArray&& b) noexcept {
 }
 
 void ByteArray::reset() {
-  if (m_data) {
+  if (m_allocation == AllocationType::Mapped && m_mapped_addr) {
+    munmap(m_mapped_addr, m_mapped_len); // Use aligned address/length
+  } else if (m_data) {
     Star::free(m_data, m_capacity);
-    m_data = nullptr;
-    m_capacity = 0;
-    m_size = 0;
   }
+
+  m_data = nullptr;
+  m_size = 0;
+  m_capacity = 0;
+  m_mapped_addr = nullptr;
+  m_mapped_len = 0;
+  m_allocation = AllocationType::Heap;
 }
 
 void ByteArray::reserve(size_t newCapacity) {
+  if (m_allocation == AllocationType::Mapped) {
+    // Disallow resizing of mmap-backed buffers
+    throw StarException("Cannot resize mmap-backed ByteArray");
+  }
+
   if (newCapacity > m_capacity) {
     if (!m_data) {
       auto newMem = (char*)Star::malloc(newCapacity);
@@ -253,6 +272,59 @@ bool ByteArray::operator!=(const ByteArray& b) const {
 std::ostream& operator<<(std::ostream& os, const ByteArray& b) {
   os << "0x" << hexEncode(b);
   return os;
+}
+
+ByteArray ByteArray::fromMMap(const char* path, size_t offset, size_t length) {
+  int fd = open(path, O_RDONLY);
+  if (fd == -1)
+    throw IOException::format("Failed to open '{}'", path);
+
+  struct stat st;
+  if (fstat(fd, &st) == -1) {
+    close(fd);
+    throw IOException::format("Failed to stat '{}'", path);
+  }
+
+  size_t file_size = st.st_size;
+  if (offset > file_size) {
+    close(fd);
+    throw IOException::format("Offset {} exceeds file size {}", offset, file_size);
+  }
+
+  // Calculate page-aligned offset (required by mmap)
+  size_t page_size = sysconf(_SC_PAGESIZE);
+  size_t aligned_offset = offset - (offset % page_size);
+  size_t offset_within_page = offset - aligned_offset;
+
+  // Adjust length to fit within the file
+  size_t max_length = file_size - offset;
+  if (length == 0 || length > max_length)
+    length = max_length;
+
+  // Total mapped region length (aligned)
+  size_t mapped_length = offset_within_page + length;
+  if (mapped_length == 0) {
+    close(fd);
+    return ByteArray(); // Empty
+  }
+
+  // Map the aligned region
+  void* mapped_addr = mmap(nullptr, mapped_length, PROT_READ, MAP_PRIVATE, fd, aligned_offset);
+  close(fd);
+
+  if (mapped_addr == MAP_FAILED)
+    throw IOException::format("mmap failed for '{}'", path);
+
+  // Construct ByteArray
+  ByteArray ba;
+  ba.m_mapped_addr = mapped_addr;
+  ba.m_mapped_len = mapped_length;
+  ba.m_data = static_cast<char*>(mapped_addr) + offset_within_page; // Adjusted pointer
+  ba.m_size = length;
+  ba.m_capacity = length; // Mapped capacity is fixed
+  ba.m_allocation = AllocationType::Mapped;
+
+  return ba;
 }
 
 }

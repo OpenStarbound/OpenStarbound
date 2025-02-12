@@ -27,6 +27,9 @@ public:
 
   // Read the entirety of the given path into a buffer.
   virtual ByteArray read(String const& path) = 0;
+
+  // Return the given asset as a ByteArray representing its mmap'd data
+  virtual ByteArray mmap(String const& path) = 0;
 };
 
 }
