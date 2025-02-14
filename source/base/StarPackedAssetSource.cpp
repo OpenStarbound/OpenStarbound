@@ -136,6 +136,12 @@ IODevicePtr PackedAssetSource::open(String const& path) {
         assetPos = clamp<StreamOffset>(assetSize - p, 0, assetSize);
     }
 
+    IODevicePtr clone() override {
+      auto cloned = make_shared<AssetReader>(file, path, fileOffset, assetSize);
+      cloned->assetPos = assetPos;
+      return cloned;
+    }
+
     FilePtr file;
     String path;
     StreamOffset fileOffset;

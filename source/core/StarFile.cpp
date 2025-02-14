@@ -243,4 +243,15 @@ String File::deviceName() const {
     return m_filename;
 }
 
+IODevicePtr File::clone() {
+  auto cloned = make_shared<File>(m_filename);
+  if (isOpen()) {
+    // Open with same mode
+    cloned->open(mode());
+    // Seek to same position
+    cloned->seek(pos());
+  }
+  return cloned;
+}
+
 }

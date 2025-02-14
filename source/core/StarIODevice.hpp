@@ -70,6 +70,9 @@ public:
   // Default implementation is a no-op
   virtual void sync();
 
+  // Returns a clone of this device with the same mode
+  virtual IODevicePtr clone() = 0;
+
   // Default implementation just prints address of generic IODevice
   virtual String deviceName() const;
 

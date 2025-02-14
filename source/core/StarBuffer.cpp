@@ -2,6 +2,7 @@
 #include "StarMathCommon.hpp"
 #include "StarIODevice.hpp"
 #include "StarFormat.hpp"
+#include "StarLogging.hpp"
 
 namespace Star {
 
@@ -271,6 +272,18 @@ void ExternalBuffer::reset(char const* externalData, size_t len) {
   m_pos = 0;
   m_bytes = externalData;
   m_size = len;
+}
+
+IODevicePtr Buffer::clone() {
+  auto cloned = make_shared<Buffer>(*this);
+  // Reset position to 0 while preserving mode and data
+  cloned->seek(0);
+  return cloned;
+}
+
+IODevicePtr ExternalBuffer::clone() {
+  Logger::info("Cloning ExternalBuffer from position {}");
+  return make_shared<ExternalBuffer>(*this);
 }
 
 size_t ExternalBuffer::doRead(size_t pos, char* data, size_t len) {
