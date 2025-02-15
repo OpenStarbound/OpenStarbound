@@ -853,7 +853,7 @@ private:
     }
   }
 
-  static const size_t MaxCursorSize = 128;
+  inline static const size_t MaxCursorSize = 128;
   bool setCursorImage(const String& id, const ImageConstPtr& image, unsigned scale, const Vec2I& offset) {
     auto imageSize = image->size().piecewiseMultiply(Vec2U::filled(scale));
     if (!m_cursorHardware || !scale || imageSize.max() > MaxCursorSize || imageSize.product() > square(MaxCursorSize)) {
