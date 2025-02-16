@@ -49,6 +49,8 @@ public:
   void sync() override;
   void close() override;
 
+  IODevicePtr clone() override;
+
 private:
   String m_filename;
   void* m_file;

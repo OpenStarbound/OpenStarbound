@@ -10,6 +10,7 @@ SET (star_core_HEADERS
     StarAssetPath.hpp
     StarAtomicSharedPtr.hpp
     StarAudio.hpp
+    StarIODeviceCallbacks.hpp
     StarBTree.hpp
     StarBTreeDatabase.hpp
     StarBiMap.hpp
@@ -141,6 +142,7 @@ SET (star_core_SOURCES
     StarBuffer.cpp
     StarByteArray.cpp
     StarColor.cpp
+    StarIODeviceCallbacks.cpp
     StarCompression.cpp
     StarCurve25519.cpp
     StarDataStream.cpp
