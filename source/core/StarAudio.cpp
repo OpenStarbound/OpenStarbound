@@ -540,14 +540,15 @@ Audio::Audio(Audio&& audio) {
 Audio& Audio::operator=(Audio const& audio) {
     if (audio.m_uncompressed) {
         m_uncompressed = make_shared<UncompressedAudioImpl>(*audio.m_uncompressed);
-        m_uncompressed->open();
+        if (!m_uncompressed->open())
+          throw AudioException("Failed to open uncompressed audio stream during copy");
     } else {
         m_compressed = make_shared<CompressedAudioImpl>(*audio.m_compressed);
-        if (!m_compressed->open())  // Check the return value
+        if (!m_compressed->open()) 
             throw AudioException("Failed to open compressed audio stream during copy");
-        seekSample(audio.currentSample());  // Only seek after successful open
     }
 
+    seekSample(audio.currentSample());
     return *this;
 }
 
