@@ -38,10 +38,16 @@ float amplitudeToPerceptual(float amp, float normalizedMax, float range, float b
 
 namespace {
   struct WaveData {
+#ifdef STAR_STREAM_AUDIO
     IODevicePtr device;
     unsigned channels;
     unsigned sampleRate;
     size_t dataSize; // get the data size from the header to avoid id3 tag
+#else
+    ByteArrayPtr byteArray;
+    unsigned channels;
+    unsigned sampleRate;
+#endif
   };
 
   template <typename T>
@@ -145,21 +151,36 @@ namespace {
           device->size(), wavDataSize + wavDataOffset));
     }
 
+    #ifdef STAR_STREAM_AUDIO
     // Return the original device positioned at the PCM data
     // Note: This means the caller owns handling endianness conversion
     device->seek(wavDataOffset);
     
     return WaveData{device, wavChannels, wavSampleRate, wavDataSize};
+    #else
+    ByteArrayPtr pcmData = make_shared<ByteArray>();
+    pcmData->resize(wavDataSize);
+
+    // Copy across data and perform and endianess conversion if needed
+
+    device->readFull(pcmData->ptr(), pcmData->size());
+    for (size_t i = 0; i < pcmData->size() / 2; ++i)
+      fromByteOrder(ByteOrder::LittleEndian, pcmData->ptr() + i * 2, 2);
+
+    return WaveData{std::move(pcmData), wavChannels, wavSampleRate};
+    #endif
   }
 }
 
 class CompressedAudioImpl {
 public:
-
+  #ifdef STAR_STREAM_AUDIO
   CompressedAudioImpl(CompressedAudioImpl const& impl)
-  : m_audioData(impl.m_audioData->clone())  // Clone instead of sharing
-  , m_deviceCallbacks(m_audioData)  // Pass reference to cloned data
-  , m_vorbisInfo(nullptr) {
+      : m_audioData(impl.m_audioData->clone())// Clone instead of sharing
+        ,
+        m_deviceCallbacks(m_audioData)// Pass reference to cloned data
+        ,
+        m_vorbisInfo(nullptr) {
     setupCallbacks();
 
     // Make sure data stream is ready to be read
@@ -176,28 +197,70 @@ public:
   }
 
   CompressedAudioImpl(IODevicePtr audioData)
-    : m_audioData(audioData->clone())  // Clone instead of taking ownership
-    , m_deviceCallbacks(m_audioData)  // Pass reference
-    , m_vorbisInfo(nullptr) {
+      : m_audioData(audioData->clone())// Clone instead of taking ownership
+        ,
+        m_deviceCallbacks(m_audioData)// Pass reference
+        ,
+        m_vorbisInfo(nullptr) {
     setupCallbacks();
     m_audioData->open(IOMode::Read);
     m_audioData->seek(0);
   }
+  #else
+  static size_t readFunc(void* ptr, size_t size, size_t nmemb, void* datasource) {
+    return static_cast<ExternalBuffer*>(datasource)->read((char*)ptr, size * nmemb) / size;
+  }
+
+  static int seekFunc(void* datasource, ogg_int64_t offset, int whence) {
+    static_cast<ExternalBuffer*>(datasource)->seek(offset, (IOSeek)whence);
+    return 0;
+  };
+
+  static long int tellFunc(void* datasource) {
+    return (long int)static_cast<ExternalBuffer*>(datasource)->pos();
+  };
+
+    CompressedAudioImpl(CompressedAudioImpl const& impl) {
+    m_audioData = impl.m_audioData;
+    m_memoryFile.reset(m_audioData->ptr(), m_audioData->size());
+    m_vorbisInfo = nullptr;
+  }
+
+  CompressedAudioImpl(IODevicePtr audioData) {
+    audioData->open(IOMode::Read);
+    audioData->seek(0);
+    m_audioData = make_shared<ByteArray>(audioData->readBytes((size_t)audioData->size()));
+    m_memoryFile.reset(m_audioData->ptr(), m_audioData->size());
+    m_vorbisInfo = nullptr;
+  }
+  #endif
 
   ~CompressedAudioImpl() {
     ov_clear(&m_vorbisFile);
   }
 
+  #ifdef STAR_STREAM_AUDIO
   void setupCallbacks() {
     m_deviceCallbacks.setupOggCallbacks(m_callbacks);
   }
+  #endif
 
   bool open() {
+    #ifdef STAR_STREAM_AUDIO
     int result = ov_open_callbacks(&m_deviceCallbacks, &m_vorbisFile, NULL, 0, m_callbacks);
     if (result < 0) {
       Logger::error("Failed to open ogg stream: error code {}", result);
       return false;
     }
+    #else
+    m_callbacks.read_func = readFunc;
+    m_callbacks.seek_func = seekFunc;
+    m_callbacks.tell_func = tellFunc;
+    m_callbacks.close_func = NULL;
+
+    if (ov_open_callbacks(&m_memoryFile, &m_vorbisFile, NULL, 0, m_callbacks) < 0)
+      return false;
+    #endif
 
     m_vorbisInfo = ov_info(&m_vorbisFile, -1);
     return true;
@@ -262,8 +325,13 @@ public:
   }
   
 private:
+  #ifdef STAR_STREAM_AUDIO
   IODevicePtr m_audioData;  
   IODeviceCallbacks m_deviceCallbacks;
+  #else
+  ByteArrayConstPtr m_audioData;
+  ExternalBuffer m_memoryFile;
+  #endif
   ov_callbacks m_callbacks;
   OggVorbis_File m_vorbisFile;
   vorbis_info* m_vorbisInfo;
@@ -271,6 +339,7 @@ private:
 
 class UncompressedAudioImpl {
 public:
+  #ifdef STAR_STREAM_AUDIO
   UncompressedAudioImpl(UncompressedAudioImpl const& impl)
     : m_device(impl.m_device->clone())
     , m_channels(impl.m_channels)
@@ -313,7 +382,43 @@ public:
     if (!m_device->isOpen())
       m_device->open(IOMode::Read);
   }
-  
+  #else
+  UncompressedAudioImpl(UncompressedAudioImpl const& impl) {
+    m_channels = impl.m_channels;
+    m_sampleRate = impl.m_sampleRate;
+    m_audioData = impl.m_audioData;
+    m_memoryFile.reset(m_audioData->ptr(), m_audioData->size());
+  }
+
+  UncompressedAudioImpl(CompressedAudioImpl& impl) {
+    m_channels = impl.channels();
+    m_sampleRate = impl.sampleRate();
+
+    int16_t buffer[1024];
+    Buffer uncompressBuffer;
+    while (true) {
+      size_t ramt = impl.readPartial(buffer, 1024);
+
+      if (ramt == 0) {
+        // End of stream reached
+        break;
+      } else {
+        uncompressBuffer.writeFull((char*)buffer, ramt * 2);
+      }
+    }
+
+    m_audioData = make_shared<ByteArray>(uncompressBuffer.takeData());
+    m_memoryFile.reset(m_audioData->ptr(), m_audioData->size());
+  }
+
+  UncompressedAudioImpl(ByteArrayConstPtr data, unsigned channels, unsigned sampleRate) {
+    m_channels = channels;
+    m_sampleRate = sampleRate;
+    m_audioData = std::move(data);
+    m_memoryFile.reset(m_audioData->ptr(), m_audioData->size());
+  }
+  #endif
+
   bool open() {
     return true;
   }
@@ -331,7 +436,11 @@ public:
   }
 
   uint64_t totalSamples() {
+    #ifdef STAR_STREAM_AUDIO
     return m_device->size() / 2 / m_channels;
+    #else
+    return m_memoryFile.dataSize() / 2 / m_channels;
+    #endif
   }
 
   void seekTime(double time) {
@@ -339,7 +448,11 @@ public:
   }
 
   void seekSample(uint64_t pos) {
+    #ifdef STAR_STREAM_AUDIO
     m_device->seek(pos * 2 * m_channels);
+    #else
+    m_memoryFile.seek(pos * 2 * m_channels);
+    #endif
   }
 
   double currentTime() {
@@ -347,14 +460,20 @@ public:
   }
 
   uint64_t currentSample() {
+    #ifdef STAR_STREAM_AUDIO
     return m_device->pos() / 2 / m_channels;
+    #else
+    return m_memoryFile.pos() / 2 / m_channels;
+    #endif
   }
 
 
   size_t readPartial(int16_t* buffer, size_t bufferSize) {
     if (bufferSize != NPos)
       bufferSize = bufferSize * 2;
-    
+    #ifndef STAR_STREAM_AUDIO
+    return m_memoryFile.read((char*)buffer, bufferSize) / 2;
+    #else
     // Calculate remaining valid data
     size_t currentPos = m_device->pos() - m_dataStart;
     size_t remainingBytes = m_dataSize - currentPos;
@@ -373,15 +492,22 @@ public:
       fromByteOrder(ByteOrder::LittleEndian, ((char*)buffer) + i * 2, 2);
       
     return bytesRead / 2;
-
+    #endif
   }
 
 private:
+  #ifdef STAR_STREAM_AUDIO
   IODevicePtr m_device;
+  #endif
   unsigned m_channels;
   unsigned m_sampleRate;
+  #ifdef STAR_STREAM_AUDIO
   size_t m_dataSize;
   size_t m_dataStart;
+  #else
+  ByteArrayConstPtr m_audioData;
+  ExternalBuffer m_memoryFile;
+  #endif
 };
 
 Audio::Audio(IODevicePtr device, String name) {
@@ -391,7 +517,11 @@ Audio::Audio(IODevicePtr device, String name) {
 
   if (isUncompressed(device)) {
     WaveData data = parseWav(device);
+    #ifdef STAR_STREAM_AUDIO
     m_uncompressed = make_shared<UncompressedAudioImpl>(std::move(data.device), data.channels, data.sampleRate, data.dataSize);
+    #else
+    m_uncompressed = make_shared<UncompressedAudioImpl>(std::move(data.byteArray), data.channels, data.sampleRate);
+    #endif
   } else {
     m_compressed = make_shared<CompressedAudioImpl>(device);
     if (!m_compressed->open())
@@ -417,6 +547,7 @@ Audio& Audio::operator=(Audio const& audio) {
             throw AudioException("Failed to open compressed audio stream during copy");
         seekSample(audio.currentSample());  // Only seek after successful open
     }
+
     return *this;
 }
 
