@@ -206,13 +206,13 @@ The same answer has the solution: use `padsp` to emulate dev/dsp.
 
 `#!/bin/sh
 cd "`dirname \"$0\"`"
-LD_LIBRARY_PATH="$LD_LIBRARY_PATH:./" ./starbound "$@"`
+LD_LIBRARY_PATH=".:$LD_LIBRARY_PATH" ./starbound "$@"`
 
 with 
 
 `#!/bin/sh
 cd "`dirname \"$0\"`"
-LD_LIBRARY_PATH="$LD_LIBRARY_PATH:./" padsp ./starbound "$@"`
+LD_LIBRARY_PATH=".:$LD_LIBRARY_PATH" padsp ./starbound "$@"`
 
 </details>
 
