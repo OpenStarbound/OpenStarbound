@@ -29,7 +29,8 @@ EnumMap<MainInterfacePanes> const MainInterfacePanesNames{
   {MainInterfacePanes::CraftingPlain, "CraftingPlain"},
   {MainInterfacePanes::QuestTracker, "QuestTracker"},
   {MainInterfacePanes::MmUpgrade, "MmUpgrade"},
-  {MainInterfacePanes::Collections, "Collections"}
+  {MainInterfacePanes::Collections, "Collections"},
+  {MainInterfacePanes::CharacterSwap, "CharacterSwap"}
 };
 
 MainInterfaceConfigPtr MainInterfaceConfig::loadFromAssets() {
