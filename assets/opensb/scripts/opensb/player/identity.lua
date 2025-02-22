@@ -34,3 +34,12 @@ commands.register("identity", function(args)
     return "Usage: /identity <get|set> [path] [value]"
   end
 end)
+
+commands.register("description", function(args)
+  if not args or args == "" then
+    return player.description()
+  else
+    player.setDescription(args)
+    return "Description set to " .. args .. ". Warp or rejoin for it to take effect."
+  end
+end)
