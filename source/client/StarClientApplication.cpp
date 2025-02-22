@@ -221,12 +221,12 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
   m_mainMixer = make_shared<MainMixer>(audioFormat.sampleRate, audioFormat.channels);
   m_mainMixer->setVolume(0.5);
   
+  auto assets = loadAssets();
   m_worldPainter = make_shared<WorldPainter>();
   m_guiContext = make_shared<GuiContext>(m_mainMixer->mixer(), appController);
   m_input = make_shared<Input>();
   m_voice = make_shared<Voice>(appController);  
     
-  auto assets = m_root->assets();
   m_minInterfaceScale = assets->json("/interface.config:minInterfaceScale").toInt();
   m_maxInterfaceScale = assets->json("/interface.config:maxInterfaceScale").toInt();
   m_crossoverRes = jsonToVec2F(assets->json("/interface.config:interfaceCrossoverRes"));
