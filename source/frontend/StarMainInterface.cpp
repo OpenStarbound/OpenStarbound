@@ -171,7 +171,7 @@ MainInterface::MainInterface(UniverseClientPtr client, WorldPainterPtr painter, 
 
   auto charSelectionMenu = make_shared<CharSelectionPane>(m_client->playerStorage(), [=]() {}, [=](PlayerPtr mainPlayer) {
     m_client->playerStorage()->moveToFront(mainPlayer->uuid());
-    m_client->switchPlayer(mainPlayer->name());
+    m_client->switchPlayer(mainPlayer->uuid());
     m_paneManager.dismissRegisteredPane(MainInterfacePanes::CharacterSwap); }, [=](Uuid) {});
   charSelectionMenu->setAnchor(PaneAnchor::Center);
 
