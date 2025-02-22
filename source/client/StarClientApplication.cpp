@@ -217,15 +217,21 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
   appController->setVSyncEnabled(vsync);
   appController->setCursorHardware(configuration->get("hardwareCursor").optBool().value(true));
 
-  if (fullscreen)
-    appController->setFullscreenWindow(fullscreenSize);
-  else if (borderless)
-    appController->setBorderlessWindow();
-  else if (maximized)
-    appController->setMaximizedWindow();
-  else
-    appController->setNormalWindow(windowedSize);
-
+  AudioFormat audioFormat = appController->enableAudio();
+  m_mainMixer = make_shared<MainMixer>(audioFormat.sampleRate, audioFormat.channels);
+  m_mainMixer->setVolume(0.5);
+  
+  m_worldPainter = make_shared<WorldPainter>();
+  m_guiContext = make_shared<GuiContext>(m_mainMixer->mixer(), appController);
+  m_input = make_shared<Input>();
+  m_voice = make_shared<Voice>(appController);  
+    
+  auto assets = m_root->assets();
+  m_minInterfaceScale = assets->json("/interface.config:minInterfaceScale").toInt();
+  m_maxInterfaceScale = assets->json("/interface.config:maxInterfaceScale").toInt();
+  m_crossoverRes = jsonToVec2F(assets->json("/interface.config:interfaceCrossoverRes"));
+  
+  appController->setApplicationTitle(assets->json("/client.config:windowTitle").toString());
   appController->setMaxFrameSkip(assets->json("/client.config:maxFrameSkip").toUInt());
   appController->setUpdateTrackWindow(assets->json("/client.config:updateTrackWindow").toFloat());
 
@@ -256,7 +262,9 @@ void ClientApplication::renderInit(RendererPtr renderer) {
   if (m_worldPainter)
     m_worldPainter->renderInit(renderer);
 
-  changeState(MainAppState::Mods);
+  // FIXME: Go to Mods instead of Splash, but it needs a way of getting out of Mods...
+  // Unless you don't want the mod cinematic anymore.
+  changeState(MainAppState::Splash);
 }
 
 void ClientApplication::windowChanged(WindowMode windowMode, Vec2U screenSize) {
@@ -342,13 +350,10 @@ void ClientApplication::update() {
 
   if (!m_errorScreen->accepted())
     m_errorScreen->update(dt);
-
-  if (m_state == MainAppState::Mods)
-    updateMods(dt);
-  else if (m_state == MainAppState::ModsWarning)
+    
+  if (m_state == MainAppState::ModsWarning)
     updateModsWarning(dt);
-
-  if (m_state == MainAppState::Splash)
+  else if (m_state == MainAppState::Splash)
     updateSplash(dt);
   else if (m_state == MainAppState::Error)
     updateError(dt);
@@ -758,13 +763,12 @@ void ClientApplication::setError(String const& error, std::exception const& e) {
   changeState(MainAppState::Title);
 }
 
-void ClientApplication::updateMods(float dt) {
-  m_cinematicOverlay->update(dt);
+AssetsConstPtr ClientApplication::loadAssets() {
   auto ugcService = appController()->userGeneratedContentService();
+  StringList modDirectories;
   if (ugcService && m_root->settings().includeUGC) {
     Logger::info("Checking for user generated content...");
     if (ugcService->triggerContentDownload()) {
-      StringList modDirectories;
       for (auto& contentId : ugcService->subscribedContentIds()) {
         if (auto contentDirectory = ugcService->contentDownloadDirectory(contentId)) {
           Logger::info("Loading mods from user generated content with id '{}' from directory '{}'", contentId, *contentDirectory);
@@ -773,29 +777,13 @@ void ClientApplication::updateMods(float dt) {
           Logger::warn("User generated content with id '{}' is not available", contentId);
         }
       }
-
-      if (modDirectories.empty()) {
-        Logger::info("No subscribed user generated content");
-        changeState(MainAppState::Splash);
-      } else {
-        Logger::info("Reloading to include all user generated content");
-        Root::singleton().reloadWithMods(modDirectories);
-
-        auto configuration = m_root->configuration();
-        auto assets = m_root->assets();
-
-        if (configuration->get("modsWarningShown").optBool().value()) {
-          changeState(MainAppState::Splash);
-        } else {
-          configuration->set("modsWarningShown", true);
-          m_errorScreen->setMessage(assets->json("/interface.config:modsWarningMessage").toString());
-          changeState(MainAppState::ModsWarning);
-        }
-      }
     }
-  } else {
-    changeState(MainAppState::Splash);
   }
+  
+  if (!modDirectories.empty())
+    m_root->loadMods(modDirectories);
+  
+  return m_root->assets();
 }
 
 void ClientApplication::updateModsWarning(float) {
