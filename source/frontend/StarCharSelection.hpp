@@ -19,6 +19,7 @@ public:
   bool sendEvent(InputEvent const& event) override;
   void show() override;
   void updateCharacterPlates();
+  void setReadOnly(bool readOnly);
 
 private:
   void shiftCharacters(int movement);
@@ -28,6 +29,7 @@ private:
   unsigned m_downScroll;
   String m_search;
   List<Uuid> m_filteredList;
+  bool m_readOnly = false;
 
   CreateCharCallback m_createCallback;
   SelectCharacterCallback m_selectCallback;
