@@ -171,12 +171,12 @@ MainInterface::MainInterface(UniverseClientPtr client, WorldPainterPtr painter, 
 
   auto charSelectionMenu = make_shared<CharSelectionPane>(m_client->playerStorage(), [=]() {},
     [=](PlayerPtr mainPlayer) {
+      m_client->switchPlayer(mainPlayer->uuid());
       auto configuration = Root::singleton().configuration();
       if (configuration->get("characterSwapMovesToFront", false).toBool())
         m_client->playerStorage()->moveToFront(mainPlayer->uuid());
       if (configuration->get("characterSwapDismisses", false).toBool())
         m_paneManager.dismissRegisteredPane(MainInterfacePanes::CharacterSwap);
-      m_client->switchPlayer(mainPlayer->uuid());
     }, [=](Uuid) {});
   {
     charSelectionMenu->setReadOnly(true);
