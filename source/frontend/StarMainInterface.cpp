@@ -57,6 +57,7 @@
 #include "StarContainerInteractor.hpp"
 #include "StarChatBubbleManager.hpp"
 #include "StarNpc.hpp"
+#include "StarCharSelection.hpp"
 
 namespace Star {
 
@@ -167,6 +168,26 @@ MainInterface::MainInterface(UniverseClientPtr client, WorldPainterPtr painter, 
   planetName->setAnchor(PaneAnchor::Center);
   planetName->addChild("planetText", m_planetText);
   m_paneManager.registerPane(MainInterfacePanes::PlanetText, PaneLayer::Hud, planetName);
+
+  auto charSelectionMenu = make_shared<CharSelectionPane>(m_client->playerStorage(), [=]() {},
+    [=](PlayerPtr mainPlayer) {
+      m_client->switchPlayer(mainPlayer->uuid());
+      auto configuration = Root::singleton().configuration();
+      if (configuration->get("characterSwapMovesToFront", false).toBool())
+        m_client->playerStorage()->moveToFront(mainPlayer->uuid());
+      if (configuration->get("characterSwapDismisses", false).toBool())
+        m_paneManager.dismissRegisteredPane(MainInterfacePanes::CharacterSwap);
+    }, [=](Uuid) {});
+  {
+    charSelectionMenu->setReadOnly(true);
+    charSelectionMenu->setAnchor(PaneAnchor::Center);
+    charSelectionMenu->unlockPosition();
+    auto backgrounds = charSelectionMenu->getBG();
+    backgrounds.header = std::move(backgrounds.body);
+    charSelectionMenu->setBG(backgrounds);
+  }
+
+  m_paneManager.registerPane(MainInterfacePanes::CharacterSwap, PaneLayer::ModalWindow, charSelectionMenu);
 
   m_nameplatePainter = make_shared<NameplatePainter>();
   m_questIndicatorPainter = make_shared<QuestIndicatorPainter>(m_client);

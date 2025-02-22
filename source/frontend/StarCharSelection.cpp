@@ -37,8 +37,7 @@ CharSelectionPane::CharSelectionPane(PlayerStoragePtr playerStorage,
     updateCharacterPlates();
   });
   guiReader.registerCallback("clearSearch", [=](Widget*) {
-    auto searchCharacter = fetchChild<TextBoxWidget>("searchCharacter");
-    searchCharacter->setText("");
+    fetchChild<TextBoxWidget>("searchCharacter")->setText("");
   });
 
   guiReader.construct(root.assets()->json("/interface/windowconfig/charselection.config"), this);
@@ -63,6 +62,7 @@ void CharSelectionPane::show() {
   Pane::show();
 
   m_downScroll = 0;
+  fetchChild<TextBoxWidget>("searchCharacter")->setText("");
   updateCharacterPlates();
 }
 
@@ -96,14 +96,18 @@ void CharSelectionPane::updateCharacterPlates() {
     if (m_filteredList.size() > 0 && scrollPosition < m_filteredList.size()) {
       auto playerUuid = m_filteredList.get(scrollPosition);
       if (auto player = m_playerStorage->loadPlayer(playerUuid)) {
+        charSelector->show();
         player->humanoid()->setFacingDirection(Direction::Right);
         charSelector->setPlayer(player);
-        charSelector->enableDelete([this, playerUuid](Widget*) { m_deleteCallback(playerUuid); });
+        if (!m_readOnly)
+          charSelector->enableDelete([this, playerUuid](Widget*) { m_deleteCallback(playerUuid); });
         return;
       }
     }
     charSelector->setPlayer(PlayerPtr());
     charSelector->disableDelete();
+    if (m_readOnly)
+      charSelector->hide();
   };
 
   updatePlayerLine("charSelector1", m_downScroll + 0);
@@ -120,6 +124,10 @@ void CharSelectionPane::updateCharacterPlates() {
     fetchChild("playerDownButton")->show();
   else
     fetchChild("playerDownButton")->hide();
+}
+
+void CharSelectionPane::setReadOnly(bool readOnly) {
+  findChild("createCharButton")->setVisibility(!(m_readOnly = readOnly));
 }
 
 }

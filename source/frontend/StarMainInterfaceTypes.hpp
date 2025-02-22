@@ -34,7 +34,8 @@ enum class MainInterfacePanes {
   CraftingPlain,
   QuestTracker,
   MmUpgrade,
-  Collections
+  Collections,
+  CharacterSwap
 };
 
 extern EnumMap<MainInterfacePanes> const MainInterfacePanesNames;
