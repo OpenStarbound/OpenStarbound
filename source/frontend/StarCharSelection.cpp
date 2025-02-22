@@ -39,6 +39,10 @@ CharSelectionPane::CharSelectionPane(PlayerStoragePtr playerStorage,
   guiReader.registerCallback("clearSearch", [=](Widget*) {
     fetchChild<TextBoxWidget>("searchCharacter")->setText("");
   });
+  guiReader.registerCallback("toggleDismissCheckbox", [=](Widget* widget) {
+    auto configuration = Root::singleton().configuration();
+    configuration->set("characterSwapDismisses", as<ButtonWidget>(widget)->isChecked());
+  });
 
   guiReader.construct(root.assets()->json("/interface/windowconfig/charselection.config"), this);
 }
