@@ -57,6 +57,7 @@
 #include "StarContainerInteractor.hpp"
 #include "StarChatBubbleManager.hpp"
 #include "StarNpc.hpp"
+#include "StarCharSelection.hpp"
 
 namespace Star {
 
@@ -167,6 +168,14 @@ MainInterface::MainInterface(UniverseClientPtr client, WorldPainterPtr painter, 
   planetName->setAnchor(PaneAnchor::Center);
   planetName->addChild("planetText", m_planetText);
   m_paneManager.registerPane(MainInterfacePanes::PlanetText, PaneLayer::Hud, planetName);
+
+  auto charSelectionMenu = make_shared<CharSelectionPane>(m_client->playerStorage(), [=]() {}, [=](PlayerPtr mainPlayer) {
+    m_client->playerStorage()->moveToFront(mainPlayer->uuid());
+    m_client->switchPlayer(mainPlayer->name());
+    m_paneManager.dismissRegisteredPane(MainInterfacePanes::CharacterSwap); }, [=](Uuid) {});
+  charSelectionMenu->setAnchor(PaneAnchor::Center);
+
+  m_paneManager.registerPane(MainInterfacePanes::CharacterSwap, PaneLayer::ModalWindow, charSelectionMenu);
 
   m_nameplatePainter = make_shared<NameplatePainter>();
   m_questIndicatorPainter = make_shared<QuestIndicatorPainter>(m_client);
