@@ -178,21 +178,7 @@ void ClientApplication::shutdown() {
 void ClientApplication::applicationInit(ApplicationControllerPtr appController) {
   Application::applicationInit(appController);
 
-  auto assets = m_root->assets();
-  m_minInterfaceScale = assets->json("/interface.config:minInterfaceScale").toInt();
-  m_maxInterfaceScale = assets->json("/interface.config:maxInterfaceScale").toInt();
-  m_crossoverRes = jsonToVec2F(assets->json("/interface.config:interfaceCrossoverRes"));
-
   appController->setCursorVisible(true);
-
-  AudioFormat audioFormat = appController->enableAudio();
-  m_mainMixer = make_shared<MainMixer>(audioFormat.sampleRate, audioFormat.channels);
-  m_mainMixer->setVolume(0.5);
-
-  m_worldPainter = make_shared<WorldPainter>();
-  m_guiContext = make_shared<GuiContext>(m_mainMixer->mixer(), appController);
-  m_input = make_shared<Input>();
-  m_voice = make_shared<Voice>(appController);
 
   auto configuration = m_root->configuration();
   bool vsync = configuration->get("vsync").toBool();
@@ -202,6 +188,15 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
   bool borderless = configuration->get("borderless").toBool();
   bool maximized = configuration->get("maximized").toBool();
   m_controllerInput = configuration->get("controllerInput").optBool().value();
+  
+  if (fullscreen)
+    appController->setFullscreenWindow(fullscreenSize);
+  else if (borderless)
+    appController->setBorderlessWindow();
+  else if (maximized)
+    appController->setMaximizedWindow();
+  else
+    appController->setNormalWindow(windowedSize);
 
   float updateRate = 1.0f / GlobalTimestep;
   if (auto jUpdateRate = configuration->get("updateRate")) {
@@ -213,7 +208,6 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
     ServerGlobalTimestep = 1.0f / jServerUpdateRate.toFloat();
 
   appController->setTargetUpdateRate(updateRate);
-  appController->setApplicationTitle(assets->json("/client.config:windowTitle").toString());
   appController->setVSyncEnabled(vsync);
   appController->setCursorHardware(configuration->get("hardwareCursor").optBool().value(true));
 
@@ -234,7 +228,7 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
   appController->setApplicationTitle(assets->json("/client.config:windowTitle").toString());
   appController->setMaxFrameSkip(assets->json("/client.config:maxFrameSkip").toUInt());
   appController->setUpdateTrackWindow(assets->json("/client.config:updateTrackWindow").toFloat());
-
+  
   if (auto jVoice = configuration->get("voice"))
     m_voice->loadJson(jVoice.toObject(), true);
 
