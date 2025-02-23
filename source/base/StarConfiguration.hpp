@@ -18,8 +18,8 @@ public:
   Json currentConfiguration() const;
   String printConfiguration() const;
 
-  Json get(String const& key) const;
-  Json getPath(String const& path) const;
+  Json get(String const& key, Json def = {}) const;
+  Json getPath(String const& path, Json def = {}) const;
 
   Json getDefault(String const& key) const;
   Json getDefaultPath(String const& path) const;

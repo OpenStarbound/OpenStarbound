@@ -426,8 +426,10 @@ String ClientCommandProcessor::upgradeShip(String const& argumentsString) {
 String ClientCommandProcessor::swap(String const& argumentsString) {
   auto arguments = m_parser.tokenizeToStringList(argumentsString);
 
-  if (arguments.size() == 0)
-    return "Not enough arguments to /swap";
+  if (arguments.size() == 0) {
+    m_paneManager->displayRegisteredPane(MainInterfacePanes::CharacterSwap);
+    return "";
+  }
 
   if (m_universeClient->switchPlayer(arguments[0]))
     return "Successfully swapped player";
