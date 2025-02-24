@@ -134,6 +134,27 @@ Assets::Assets(Settings settings, StringList assetSources) {
     callbacks.registerCallbackWithSignature<Json, String>("json", bind(&Assets::json, this, _1));
     callbacks.registerCallbackWithSignature<bool, String>("exists", bind(&Assets::assetExists, this, _1));
 
+    callbacks.registerCallback("sourcePaths", [this](LuaEngine& engine, Maybe<bool> withMetaData) -> LuaTable {
+      auto assetSources = this->assetSources();
+      auto table = engine.createTable(assetSources.size(), 0);
+      if (withMetaData.value()) {
+        for (auto& assetSource : assetSources)
+          table.set(assetSource, this->assetSourceMetadata(assetSource));
+      }
+      else {
+        size_t i = 0;
+        for (auto& assetSource : assetSources)
+          table.set(++i, assetSource);
+      }
+      return table;
+    });
+    
+    callbacks.registerCallback("origin", [this](String const& path) -> Maybe<String> {
+      if (auto descriptor = this->assetDescriptor(path))
+        return this->assetSourcePath(descriptor->source);
+      return {};
+    });
+    
     callbacks.registerCallback("bytes", [this](String const& path) -> String {
       auto assetBytes = bytes(path);
       return String(assetBytes->ptr(), assetBytes->size());
