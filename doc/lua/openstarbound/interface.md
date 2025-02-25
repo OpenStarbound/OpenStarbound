@@ -55,7 +55,7 @@ Displays a registered pane.
 ---
 
 #### `CanvasWidget` interface.bindCanvas(`string` name, [`bool` ignoreInterfaceScale = false])
-Binds the canvas widget on the main interface with the specified name as userdata for easy access. The `CanvasWidget` has the same methods as described in widget.md.
+Binds the canvas widget on the main interface with the specified name as userdata for easy access. The `CanvasWidget` has the same methods as described in `widget.md`.
 
 - **ignoreInterfaceScale** is used to ignore the current interface scaling and bind the canvas with the screen size.
 
