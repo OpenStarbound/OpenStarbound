@@ -779,6 +779,8 @@ WidgetConstructResult WidgetParser::scrollAreaHandler(String const& name, Json c
   if (config.contains("verticalScroll"))
     scrollArea->setVerticalScroll(config.getBool("verticalScroll"));
 
+  scrollArea->setUpdatesChildren(config.getBool("updatesChildren", false));
+
   common(scrollArea, config);
   return WidgetConstructResult(scrollArea, name, config.getFloat("zlevel", 0));
 }
