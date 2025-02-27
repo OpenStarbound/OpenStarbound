@@ -34,6 +34,8 @@ public:
   String deviceName() const override;
 
   StreamOffset size() override;
+  
+  IODevicePtr clone() override;
 
   ByteArray& data();
   ByteArray const& data() const;
@@ -95,6 +97,8 @@ public:
   String deviceName() const override;
 
   StreamOffset size() override;
+  
+  IODevicePtr clone() override;
 
   // Returns a pointer to the beginning of the Buffer.
   char const* ptr() const;

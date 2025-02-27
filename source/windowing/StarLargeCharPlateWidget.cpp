@@ -171,7 +171,7 @@ void LargeCharPlateWidget::update(float dt) {
     return;
 
   auto humanoid = m_player->humanoid();
-  if (m_delete->isHovered()) {
+  if (m_delete && m_delete->isHovered()) {
     humanoid->setEmoteState(HumanoidEmote::Sad);
     humanoid->setState(Humanoid::Run);
   } else {

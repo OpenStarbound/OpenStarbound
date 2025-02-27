@@ -57,6 +57,12 @@ IODevicePtr MemoryAssetSource::open(String const& path) {
         assetPos = clamp<StreamOffset>(assetPos - p, 0, assetSize);
     }
 
+    IODevicePtr clone() override {
+      auto cloned = make_shared<AssetReader>(assetData, assetSize, name);
+      cloned->assetPos = assetPos;
+      return cloned;
+    }
+
     char* assetData;
     size_t assetSize;
     StreamOffset assetPos = 0;

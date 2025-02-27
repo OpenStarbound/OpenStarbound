@@ -127,6 +127,8 @@ public:
 
   String deviceName() const override;
 
+  IODevicePtr clone() override;
+
 private:
   static void* fopen(char const* filename, IOMode mode);
   static void fseek(void* file, StreamOffset offset, IOSeek seek);

@@ -233,4 +233,16 @@ void CompressedFile::close() {
   setMode(IOMode::Closed);
 }
 
+IODevicePtr CompressedFile::clone() {
+  auto cloned = make_shared<CompressedFile>(m_filename);
+  cloned->setCompression(m_compression);
+  if (isOpen()) {
+    // Open with same mode
+    cloned->open(mode());
+    // Seek to same position
+    cloned->seek(pos());
+  }
+  return cloned;
+}
+
 }
