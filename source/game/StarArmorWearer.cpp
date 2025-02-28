@@ -31,13 +31,16 @@ ArmorWearer::ArmorWearer() : m_lastNude(true) {
 
 void ArmorWearer::setupHumanoidClothingDrawables(Humanoid& humanoid, bool forceNude) {
   bool nudeChanged = m_lastNude != forceNude;
-  if (nudeChanged)
-    m_lastNude = forceNude;
+  auto gender = humanoid.identity().gender;
+  bool genderChanged = !m_lastGender || m_lastGender.value() != gender;
+  m_lastNude = forceNude;
+  m_lastGender = gender;
 
-  bool headNeedsSync  = nudeChanged  || m_headNeedsSync;
-  bool chestNeedsSync = nudeChanged  || m_chestNeedsSync;
-  bool legsNeedsSync  = nudeChanged  || m_legsNeedsSync;
-  bool backNeedsSync  = nudeChanged  || m_backNeedsSync;
+  bool allNeedsSync = nudeChanged || genderChanged;
+  bool headNeedsSync = allNeedsSync  || m_headNeedsSync;
+  bool chestNeedsSync = allNeedsSync || m_chestNeedsSync;
+  bool legsNeedsSync = allNeedsSync  || m_legsNeedsSync;
+  bool backNeedsSync = allNeedsSync  || m_backNeedsSync;
 
   bool bodyHidden = false;
   HeadArmorPtr const& headArmor = m_headCosmeticItem ? m_headCosmeticItem : m_headItem;
