@@ -1,0 +1,33 @@
+# Widget
+
+New widget callbacks introduced in OpenStarbound.
+
+## General callbacks
+
+These callbacks are available for all widgets.
+
+---
+
+## Widget specific callbacks
+
+These callbacks only work for some widget types.
+
+---
+
+#### `String` widget.getHint(`String` widgetName)
+
+Gets the hint text of a TextBoxWidget.
+
+#### `void` widget.setHint(`String` widgetName, `String` hint)
+
+Sets the hint text of a TextBoxWidget.
+
+---
+
+#### `String` widget.getCursorPosition(`String` widgetName)
+
+Gets the cursor position of a TextBoxWidget.
+
+#### `void` widget.setCursorPosition(`String` widgetName, `int` cursorPosition)
+
+Sets the cursor position of a TextBoxWidget.
