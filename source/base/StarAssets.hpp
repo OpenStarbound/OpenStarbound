@@ -107,6 +107,7 @@ public:
 
     double time = 0.0;
     bool needsPostProcessing = false;
+    bool overridePersistent = false;
   };
 
   struct JsonData : AssetData {
@@ -200,6 +201,9 @@ public:
   // for deeper field access and [] notation for array access.  Example:
   // "/path/to/json:key1.key2.key3[4]".
   Json json(String const& path) const;
+  // Persistence should only be true if an asset should never unload, excluding through reloading.
+  // (For example, player-related data that's used frequently.)
+  Json json(String const& path, bool const& persistent) const;
 
   // Either returns the json v, or, if v is a string type, returns the json
   // pointed to by interpreting v as a string path.
@@ -262,6 +266,7 @@ private:
   void queueAsset(AssetId const& assetId) const;
   shared_ptr<AssetData> tryAsset(AssetId const& id) const;
   shared_ptr<AssetData> getAsset(AssetId const& id) const;
+  shared_ptr<AssetData> getAsset(AssetId const& id, bool const& persistent) const;
 
   void workerMain();
 

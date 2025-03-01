@@ -953,7 +953,7 @@ bool PlayerInventory::checkInventoryFilter(ItemPtr const& items, String const& f
   }
 
   if (!filterConfig.isType(Json::Type::Object)) {
-    auto config = Root::singleton().assets()->json("/player.config:inventoryFilters");
+    auto config = Root::singleton().assets()->json("/player.config:inventoryFilters",true);
     filterConfig = config.opt(filterName).value();
     if (!filterConfig.isType(Json::Type::Object))
       filterConfig = config.get("default");

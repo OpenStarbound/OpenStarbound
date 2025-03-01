@@ -131,8 +131,11 @@ Assets::Assets(Settings settings, StringList assetSources) {
   auto makeBaseAssetCallbacks = [this]() {
     LuaCallbacks callbacks;
     callbacks.registerCallbackWithSignature<StringSet, String>("byExtension", bind(&Assets::scanExtension, this, _1));
-    callbacks.registerCallbackWithSignature<Json, String>("json", bind(&Assets::json, this, _1));
     callbacks.registerCallbackWithSignature<bool, String>("exists", bind(&Assets::assetExists, this, _1));
+
+    callbacks.registerCallback("json", [this](LuaEngine& engine, String const& path, Maybe<bool> persistent) -> Json {
+      return json(path, persistent.value(false));
+    });
 
     callbacks.registerCallback("sourcePaths", [this](LuaEngine& engine, Maybe<bool> withMetaData) -> LuaTable {
       auto assetSources = this->assetSources();
@@ -462,6 +465,13 @@ Json Assets::json(String const& path) const {
   return as<JsonData>(getAsset(AssetId{AssetType::Json, std::move(components)}))->json;
 }
 
+Json Assets::json(String const& path, bool const& persistent) const {
+  auto components = AssetPath::split(path);
+  validatePath(components, true, false);
+
+  return as<JsonData>(getAsset(AssetId{AssetType::Json, std::move(components)}, persistent))->json;
+}
+
 Json Assets::fetchJson(Json const& v, String const& dir) const {
   if (v.isType(Json::Type::String))
     return Assets::json(AssetPath::relativeTo(dir, v.toString()));
@@ -626,23 +636,23 @@ size_t Assets::AssetIdHash::operator()(AssetId const& id) const {
 }
 
 bool Assets::JsonData::shouldPersist() const {
-  return !json.unique();
+  return overridePersistent || !json.unique();
 }
 
 bool Assets::ImageData::shouldPersist() const {
-  return !alias && !image.unique();
+  return overridePersistent || (!alias && !image.unique());
 }
 
 bool Assets::AudioData::shouldPersist() const {
-  return !audio.unique();
+  return overridePersistent || !audio.unique();
 }
 
 bool Assets::FontData::shouldPersist() const {
-  return !font.unique();
+  return overridePersistent || !font.unique();
 }
 
 bool Assets::BytesData::shouldPersist() const {
-  return !bytes.unique();
+  return overridePersistent || !bytes.unique();
 }
 
 FramesSpecification Assets::parseFramesSpecification(Json const& frameConfig, String path) {
@@ -800,6 +810,12 @@ shared_ptr<Assets::AssetData> Assets::getAsset(AssetId const& id) const {
         m_assetsDone.wait(m_assetsMutex);
     }
   }
+}
+
+shared_ptr<Assets::AssetData> Assets::getAsset(AssetId const& id, bool const& persistent) const {
+  shared_ptr<Assets::AssetData> asset = getAsset(id);
+  asset->overridePersistent = persistent;
+  return asset;
 }
 
 void Assets::workerMain() {
