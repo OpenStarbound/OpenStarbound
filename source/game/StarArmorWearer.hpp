@@ -84,6 +84,9 @@ private:
   NetElementData<ItemDescriptor> m_legsCosmeticItemDataNetState;
   NetElementData<ItemDescriptor> m_backCosmeticItemDataNetState;
 
+  // only works under the assumption that this ArmorWearer
+  // will only ever touch one Humanoid (which is true!)
+  Maybe<Gender> m_lastGender;
   bool m_lastNude;
   bool m_headNeedsSync;
   bool m_chestNeedsSync;
