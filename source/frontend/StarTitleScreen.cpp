@@ -433,7 +433,7 @@ void TitleScreen::initOptionsMenu(UniverseClientPtr client) {
 }
 
 void TitleScreen::initModsMenu() {
-  auto modsMenu = make_shared<ModsMenu>();
+  auto modsMenu = make_shared<ModsMenu>(&m_paneManager);
   modsMenu->setAnchor(PaneAnchor::Center);
   modsMenu->lockPosition();
 
@@ -463,6 +463,7 @@ void TitleScreen::switchState(TitleState titleState) {
       m_paneManager.displayRegisteredPane("optionsMenu");
     } if (titleState == TitleState::Mods) {
       m_paneManager.displayRegisteredPane("modsMenu");
+      m_paneManager.displayRegisteredPane("presetSelect");
     } else if (titleState == TitleState::SinglePlayerSelectCharacter) {
       m_paneManager.displayRegisteredPane("charSelectionMenu");
     } else if (titleState == TitleState::SinglePlayerCreateCharacter) {

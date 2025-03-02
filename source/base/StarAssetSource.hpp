@@ -27,6 +27,23 @@ public:
 
   // Read the entirety of the given path into a buffer.
   virtual ByteArray read(String const& path) = 0;
+
+  // The Asset source can be disabled
+  bool enabled() const { return m_enabled; };
+
+  // Disable the asset source
+  void setEnabled(bool enabled) { m_enabled = enabled; };
+
+  // Set name of the asset source
+  void setName(String const& name) { m_name = name; };
+
+  // Get name of the asset source
+  String const& name() const { return m_name; };
+
+private:
+  bool m_enabled = true;
+  String m_name = "";
+
 };
 
 }

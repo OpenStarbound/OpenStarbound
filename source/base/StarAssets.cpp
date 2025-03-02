@@ -110,7 +110,7 @@ Json FramesSpecification::toJson() const {
   };
 }
 
-Assets::Assets(Settings settings, StringList assetSources) {
+Assets::Assets(Settings settings, StringList assetSources, StringList ignoreList) {
   const char* AssetsPatchSuffix = ".patch";
   const char* AssetsPatchListSuffix = ".patchlist";
   const char* AssetsLuaPatchSuffix = ".patch.lua";
@@ -118,6 +118,7 @@ Assets::Assets(Settings settings, StringList assetSources) {
   m_settings = std::move(settings);
   m_stopThreads = false;
   m_assetSources = std::move(assetSources);
+  m_ignoreList = std::move(ignoreList);
 
   auto luaEngine = LuaEngine::create();
   m_luaEngine = luaEngine;
@@ -311,10 +312,23 @@ Assets::Assets(Settings settings, StringList assetSources) {
   for (auto& sourcePath : m_assetSources) {
     Logger::info("Loading assets from: '{}'", sourcePath);
     AssetSourcePtr source;
-    if (File::isDirectory(sourcePath))
+    if (File::isDirectory(sourcePath)) {
       source = std::make_shared<DirectoryAssetSource>(sourcePath, m_settings.pathIgnore);
-    else
+      source->setName(File::baseName(sourcePath));
+    } else {
       source = std::make_shared<PackedAssetSource>(sourcePath);
+      source->setName(source->metadata().maybe("name").value("").toString());
+    }
+
+    auto& sourceName = source->name();
+    if (m_ignoreList.contains(sourceName)) {
+      Logger::info("Skipping '{}' assets - ignored by preset", sourceName);
+      // We still add it to the paths, so the mod page can show it
+      source.get()->setEnabled(false);
+      m_assetSourcePaths.add(sourcePath, source);
+      continue;
+    }
+
 
     addSource(sourcePath, source);
     sources.append(make_pair(sourcePath, source));
@@ -379,6 +393,16 @@ void Assets::hotReload() const {
 StringList Assets::assetSources() const {
   MutexLocker assetsLocker(m_assetsMutex);
   return m_assetSources;
+}
+
+bool Assets::assetSourceEnabled(String const& sourcePath) const {
+  MutexLocker assetsLocker(m_assetsMutex);
+  return m_assetSourcePaths.getRight(sourcePath)->enabled();
+}
+
+String Assets::assetName(String const& sourcePath) const {
+  MutexLocker assetsLocker(m_assetsMutex);
+  return m_assetSourcePaths.getRight(sourcePath)->name();
 }
 
 JsonObject Assets::assetSourceMetadata(String const& sourceName) const {
