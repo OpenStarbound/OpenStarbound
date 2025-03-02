@@ -205,6 +205,36 @@ LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr
 
   // callbacks only valid for specific widget types
 
+  callbacks.registerCallback("setHint", [parentWidget](String const& widgetName, String const& hint) {
+    if (auto widget = parentWidget->fetchChild(widgetName)) {
+      if (auto textBox = as<TextBoxWidget>(widget))
+        textBox->setHint(hint);
+    }
+  });   
+
+  callbacks.registerCallback("getHint", [parentWidget](String const& widgetName) -> Maybe<String> {
+    if (auto widget = parentWidget->fetchChild(widgetName)) {
+      if (auto textBox = as<TextBoxWidget>(widget))
+        return textBox->getHint();
+    }
+    return {};
+  });
+
+  callbacks.registerCallback("setCursorPosition", [parentWidget](String const& widgetName, int cursorPosition) {
+    if (auto widget = parentWidget->fetchChild(widgetName)) {
+      if (auto textBox = as<TextBoxWidget>(widget))
+        textBox->setCursorPosition(cursorPosition);
+    }
+  });
+
+  callbacks.registerCallback("getCursorPosition", [parentWidget](String const& widgetName) -> Maybe<int> {
+    if (auto widget = parentWidget->fetchChild(widgetName)) {
+      if (auto textBox = as<TextBoxWidget>(widget))
+        return textBox->getCursorPosition();
+    }
+    return {};
+  });
+
   callbacks.registerCallback("getText", [parentWidget](String const& widgetName) -> Maybe<String> {
       if (auto widget = parentWidget->fetchChild(widgetName)) {
         if (auto label = as<LabelWidget>(widget))

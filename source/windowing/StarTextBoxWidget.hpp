@@ -16,6 +16,13 @@ public:
   String const& getText() const;
   bool setText(String const& text, bool callback = true, bool moveCursor = true);
 
+  String const& getHint() const;
+  void setHint(String const& hint);
+
+  int const& getCursorPosition() const;
+  void setCursorPosition(int cursorPosition);
+
+
   bool getHidden() const;
   void setHidden(bool hidden);
 
