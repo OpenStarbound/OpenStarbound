@@ -25,7 +25,6 @@ ModsMenu::ModsMenu(RegisteredPaneManager<String>* manager) {
   m_presets = Root::singleton().configuration()->get("disabledAssetsPresets", JsonObject());
 
   auto saveDialog = make_shared<Pane>();
-
   saveReader.registerCallback("save", [=](Widget*) { 
     auto textBox = saveDialog->fetchChild<TextBoxWidget>("name");
     if (textBox->getText().empty())
@@ -36,11 +35,15 @@ ModsMenu::ModsMenu(RegisteredPaneManager<String>* manager) {
     Root::singleton().configuration()->set("disabledAssetsPresets", m_presets);
 
     populatePresetList(m_presets);
+    saveDialog->fetchChild<TextBoxWidget>("name")->setText("");
     saveDialog->dismiss(); 
   });
-  saveReader.registerCallback("cancel", [=](Widget*) { saveDialog->dismiss(); });
-
+  saveReader.registerCallback("cancel", [=](Widget*) { 
+    saveDialog->fetchChild<TextBoxWidget>("name")->setText("");
+    saveDialog->dismiss(); 
+  });
   saveReader.construct(Root::singleton().assets()->json("/interface/modsmenu/savedialog.config"), saveDialog.get());
+  m_paneManager->registerPane("savePresetDialog", PaneLayer::ModalWindow, saveDialog);
 
   
   presetReader.registerCallback("savePreset", [=](Widget*) {
@@ -48,11 +51,9 @@ ModsMenu::ModsMenu(RegisteredPaneManager<String>* manager) {
 
     m_paneManager->displayRegisteredPane("savePresetDialog");
   });
-
   presetReader.construct(assets->json("/interface/modsmenu/presetlist.config"), m_presetSelectPane.get());
 
   auto presetList = m_presetSelectPane->fetchChild<ListWidget>("presetSelectArea.presetList");
-
   presetList->registerMemberCallback("delete", [=](Widget* widget) {
     if (auto const pos = presetList->selectedItem(); pos != NPos) {
       m_presets = m_presets.eraseKey(presetList->selectedWidget()->data().toString());
@@ -61,7 +62,6 @@ ModsMenu::ModsMenu(RegisteredPaneManager<String>* manager) {
 
     populatePresetList(m_presets);
   });
-
   presetList->setCallback([=](Widget* widget) {
     if (auto selectedItem = presetList->selectedWidget()) {
       if (selectedItem->findChild<ButtonWidget>("delete")->isHovered())
@@ -77,9 +77,7 @@ ModsMenu::ModsMenu(RegisteredPaneManager<String>* manager) {
       }
     }
   });
-
   m_paneManager->registerPane("presetSelect", PaneLayer::Hud, m_presetSelectPane);
-  m_paneManager->registerPane("savePresetDialog", PaneLayer::ModalWindow, saveDialog);
 
 
   reader.registerCallback("linkbutton", bind(&ModsMenu::openLink, this));
@@ -94,9 +92,7 @@ ModsMenu::ModsMenu(RegisteredPaneManager<String>* manager) {
   m_assetsSources = assets->assetSources();
   m_modList = fetchChild<ListWidget>("mods.list");
   m_modList->registerMemberCallback("enabled", bind(&ModsMenu::enableMod, this));
-
   StringList baseMods = {"base", "opensb", "user"};
-
   for (auto const& assetsSource : m_assetsSources) {
     auto item = m_modList->addItem();
     auto modName = item->fetchChild<LabelWidget>("name");
