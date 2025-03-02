@@ -5,7 +5,7 @@
 #include "StarLabelWidget.hpp"
 #include "StarButtonWidget.hpp"
 #include "StarListWidget.hpp"
-#include "StarTextboxWidget.hpp"
+#include "StarTextBoxWidget.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarUuid.hpp"
 
