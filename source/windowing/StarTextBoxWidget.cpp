@@ -181,11 +181,7 @@ int const& TextBoxWidget::getCursorPosition() const {
 }
 
 void TextBoxWidget::setCursorPosition(int cursorPosition) {
-  m_cursorOffset = cursorPosition;
-  if (m_cursorOffset < 0)
-    m_cursorOffset = 0;
-  if (m_cursorOffset > (int)m_text.size())
-    m_cursorOffset = m_text.size();
+  m_cursorOffset = clamp(cursorPosition, 0, (int)m_text.size());
 }
 
 bool TextBoxWidget::getHidden() const {
