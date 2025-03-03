@@ -45,7 +45,6 @@ enum class AssetType {
   Font,
   Bytes
 };
-extern EnumMap<AssetType> const AssetTypeNames;
 
 // The assets system can load image, font, json, and data assets from a set of
 // sources.  Each source is either a directory on the filesystem or a single

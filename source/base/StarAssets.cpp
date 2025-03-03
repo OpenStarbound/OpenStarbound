@@ -369,7 +369,7 @@ Assets::Assets(Settings settings, StringList assetSources) {
     auto type = AssetTypeNames.getLeft(script.getString("type"));
     auto path = script.getString("path");
     auto components = AssetPath::split(path);
-    validatePath(components, type == AssetType::Json, type == AssetType::Image);
+    validatePath(components, type == AssetType::Json || type == AssetType::Image, type == AssetType::Image);
 
     auto asset = getAsset(AssetId{type, std::move(components)});
     // make this asset never unload
