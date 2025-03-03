@@ -38,14 +38,6 @@ struct FramesSpecification {
   StringMap<String> aliases;
 };
 
-enum class AssetType {
-  Json,
-  Image,
-  Audio,
-  Font,
-  Bytes
-};
-
 // The assets system can load image, font, json, and data assets from a set of
 // sources.  Each source is either a directory on the filesystem or a single
 // packed asset file.
@@ -84,6 +76,14 @@ public:
     Working,
     PostProcess,
     Load
+  };
+  
+  enum class AssetType {
+    Json,
+    Image,
+    Audio,
+    Font,
+    Bytes
   };
 
   struct AssetId {
@@ -256,6 +256,14 @@ public:
   void cleanup();
 
 private:
+  EnumMap<AssetType> const AssetTypeNames{
+      {AssetType::Json, "json"},
+      {AssetType::Image, "image"},
+      {AssetType::Audio, "audio"},
+      {AssetType::Font, "font"},
+      {AssetType::Bytes, "bytes"}
+  };
+  
   static FramesSpecification parseFramesSpecification(Json const& frameConfig, String path);
 
   void queueAssets(List<AssetId> const& assetIds) const;

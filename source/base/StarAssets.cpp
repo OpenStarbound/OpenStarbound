@@ -23,14 +23,6 @@
 #include "StarUtilityLuaBindings.hpp"
 
 namespace Star {
-
-EnumMap<AssetType> const AssetTypeNames{
-    {AssetType::Json, "json"},
-    {AssetType::Image, "image"},
-    {AssetType::Audio, "audio"},
-    {AssetType::Font, "font"},
-    {AssetType::Bytes, "bytes"}
-};
     
 static void validateBasePath(std::string_view const& basePath) {
   if (basePath.empty() || basePath[0] != '/')
