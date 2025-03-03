@@ -24,13 +24,12 @@
 
 namespace Star {
 
-CommandProcessor::CommandProcessor(UniverseServer* universe)
+CommandProcessor::CommandProcessor(UniverseServer* universe, LuaRootPtr luaRoot)
   : m_universe(universe) {
   auto assets = Root::singleton().assets();
   m_scriptComponent.addCallbacks("universe", LuaBindings::makeUniverseServerCallbacks(m_universe));
   m_scriptComponent.addCallbacks("CommandProcessor", makeCommandCallbacks());
   m_scriptComponent.setScripts(jsonToStringList(assets->json("/universe_server.config:commandProcessorScripts")));
-  auto luaRoot = make_shared<LuaRoot>();
   luaRoot->luaEngine().setNullTerminated(false);
   m_scriptComponent.setLuaRoot(luaRoot);
   m_scriptComponent.init();

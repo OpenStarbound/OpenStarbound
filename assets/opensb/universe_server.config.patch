@@ -3,5 +3,20 @@
     "op" : "add",
     "path" : "/commandProcessorScripts/-",
     "value" : "/scripts/opensb/servercommands/servercommands.lua"
+  },
+  {
+    "op" : "add",
+    "path" : "/luaGcPause",
+    "value" : 1.2
+  },
+  {
+    "op" : "add",
+    "path" : "/luaGcStepMultiplier",
+    "value" : 1.2
+  },
+  {
+    "op" : "add",
+    "path" : "/scriptContexts",
+    "value" : {}
   }
 ]
