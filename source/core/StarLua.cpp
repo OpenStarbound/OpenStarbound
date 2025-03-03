@@ -365,6 +365,28 @@ LuaEnginePtr LuaEngine::create(bool safe) {
     loadBaseLibrary(self->m_state, "debug", luaopen_debug);
     lua_pop(self->m_state, 3);
   }
+  
+  #ifdef STAR_USE_RAVI
+  // Ravi API
+  loadBaseLibrary(self->m_state, "ravi", raviopen_jit);
+  // exclude some file accessing functions
+  luaL_requiref(self->m_state, "compiler", raviopen_compiler, true);
+  if (safe) {
+    StringSet blacklist = {"compile","loadfile"};
+
+    lua_pushnil(self->m_state);
+    while (lua_next(self->m_state, -2) != 0) {
+      lua_pop(self->m_state, 1);
+      String key(lua_tostring(self->m_state, -1));
+
+      if (blacklist.contains(key)) {
+        lua_pushvalue(self->m_state, -1);
+        lua_pushnil(self->m_state);
+        lua_rawset(self->m_state, -4);
+      }
+    }
+  }
+  #endif
 
   // Make a shallow copy of the default script environment and save it for
   // resetting the global state.
