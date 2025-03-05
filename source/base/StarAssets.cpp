@@ -23,7 +23,7 @@
 #include "StarUtilityLuaBindings.hpp"
 
 namespace Star {
-
+    
 static void validateBasePath(std::string_view const& basePath) {
   if (basePath.empty() || basePath[0] != '/')
     throw AssetException(strf("Path '{}' must be absolute", basePath));
@@ -353,6 +353,20 @@ Assets::Assets(Settings settings, StringList assetSources) {
   int workerPoolSize = m_settings.workerPoolSize;
   for (int i = 0; i < workerPoolSize; i++)
     m_workerThreads.append(Thread::invoke("Assets::workerMain", mem_fn(&Assets::workerMain), this));
+  
+  // preload.config contains an array of files which will be loaded and then told to persist
+  Json preload = json("/preload.config");
+  Logger::info("Preloading assets");
+  for (auto script : preload.iterateArray()) {
+    auto type = AssetTypeNames.getLeft(script.getString("type"));
+    auto path = script.getString("path");
+    auto components = AssetPath::split(path);
+    validatePath(components, type == AssetType::Json || type == AssetType::Image, type == AssetType::Image);
+
+    auto asset = getAsset(AssetId{type, std::move(components)});
+    // make this asset never unload
+    asset->forcePersist = true;
+  }
 }
 
 Assets::~Assets() {
@@ -626,23 +640,23 @@ size_t Assets::AssetIdHash::operator()(AssetId const& id) const {
 }
 
 bool Assets::JsonData::shouldPersist() const {
-  return !json.unique();
+  return forcePersist || !json.unique();
 }
 
 bool Assets::ImageData::shouldPersist() const {
-  return !alias && !image.unique();
+  return forcePersist || !alias && !image.unique();
 }
 
 bool Assets::AudioData::shouldPersist() const {
-  return !audio.unique();
+  return forcePersist || !audio.unique();
 }
 
 bool Assets::FontData::shouldPersist() const {
-  return !font.unique();
+  return forcePersist || !font.unique();
 }
 
 bool Assets::BytesData::shouldPersist() const {
-  return !bytes.unique();
+  return forcePersist || !bytes.unique();
 }
 
 FramesSpecification Assets::parseFramesSpecification(Json const& frameConfig, String path) {
