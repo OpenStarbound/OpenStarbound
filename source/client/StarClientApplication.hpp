@@ -43,8 +43,6 @@ private:
   enum class MainAppState {
     Quit,
     Startup,
-    Mods,
-    ModsWarning,
     Splash,
     Error,
     Title,

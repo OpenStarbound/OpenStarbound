@@ -257,8 +257,6 @@ void ClientApplication::renderInit(RendererPtr renderer) {
   if (m_worldPainter)
     m_worldPainter->renderInit(renderer);
 
-  // FIXME: Go to Mods instead of Splash, but it needs a way of getting out of Mods...
-  // Unless you don't want the mod cinematic anymore.
   changeState(MainAppState::Splash);
 }
 
@@ -346,9 +344,7 @@ void ClientApplication::update() {
   if (!m_errorScreen->accepted())
     m_errorScreen->update(dt);
     
-  if (m_state == MainAppState::ModsWarning)
-    updateModsWarning(dt);
-  else if (m_state == MainAppState::Splash)
+  if (m_state == MainAppState::Splash)
     updateSplash(dt);
   else if (m_state == MainAppState::Error)
     updateError(dt);
@@ -383,7 +379,7 @@ void ClientApplication::render() {
   else
     m_guiContext->setInterfaceScale(m_minInterfaceScale);
 
-  if (m_state == MainAppState::Mods || m_state == MainAppState::Splash) {
+  if (m_state == MainAppState::Splash) {
     m_cinematicOverlay->render();
 
   } else if (m_state == MainAppState::Title) {
@@ -428,7 +424,7 @@ void ClientApplication::render() {
   }
 
   if (!m_errorScreen->accepted())
-    m_errorScreen->render(m_state == MainAppState::ModsWarning || m_state == MainAppState::Error);
+    m_errorScreen->render(m_state == MainAppState::Error);
 }
 
 void ClientApplication::getAudioData(int16_t* sampleData, size_t frameCount) {
@@ -527,9 +523,6 @@ void ClientApplication::changeState(MainAppState newState) {
 
   if (m_state == MainAppState::Quit)
     appController()->quit();
-
-  if (newState == MainAppState::Mods)
-    m_cinematicOverlay->load(m_root->assets()->json("/cinematics/mods/modloading.cinematic"));
 
   if (newState == MainAppState::Splash) {
     m_cinematicOverlay->load(m_root->assets()->json("/cinematics/splash.cinematic"));
