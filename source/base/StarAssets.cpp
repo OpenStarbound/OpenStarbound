@@ -644,7 +644,7 @@ bool Assets::JsonData::shouldPersist() const {
 }
 
 bool Assets::ImageData::shouldPersist() const {
-  return forcePersist || !alias && !image.unique();
+  return forcePersist || (!alias && !image.unique());
 }
 
 bool Assets::AudioData::shouldPersist() const {
