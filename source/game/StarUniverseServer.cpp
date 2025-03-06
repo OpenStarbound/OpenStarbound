@@ -45,7 +45,9 @@ UniverseServer::UniverseServer(String const& storageDir)
     m_assetsDigest = assets->digest();
   }
 
-  m_commandProcessor = make_shared<CommandProcessor>(this);
+  startLuaScripts();
+
+  m_commandProcessor = make_shared<CommandProcessor>(this, m_luaRoot);
   m_chatProcessor = make_shared<ChatProcessor>();
   m_chatProcessor->setCommandHandler(bind(&CommandProcessor::userCommand, m_commandProcessor.get(), _1, _2, _3));
 
@@ -76,11 +78,13 @@ UniverseServer::UniverseServer(String const& storageDir)
   
   m_maxPlayers = configuration->get("maxPlayers").toUInt();
 
-  for (auto const& pair : assets->json("/universe_server.config:speciesShips").iterateObject())
+  auto universeConfig = assets->json("/universe_server.config");
+
+  for (auto const& pair : universeConfig.get("speciesShips").iterateObject())
     m_speciesShips[pair.first] = jsonToStringList(pair.second);
 
   m_teamManager = make_shared<TeamManager>();
-  m_workerPool.start(assets->json("/universe_server.config:workerPoolThreads").toUInt());
+  m_workerPool.start(universeConfig.getUInt("workerPoolThreads"));
   m_connectionServer = make_shared<UniverseConnectionServer>(bind(&UniverseServer::packetsReceived, this, _1, _2, _3));
 
   m_pause = make_shared<atomic<bool>>(false);
@@ -88,6 +92,7 @@ UniverseServer::UniverseServer(String const& storageDir)
 
 UniverseServer::~UniverseServer() {
   stop();
+  stopLua();
   join();
   m_workerPool.stop();
 
@@ -538,6 +543,7 @@ void UniverseServer::run() {
     LogMap::set("universe_time", m_universeClock->time());
 
     try {
+      updateLua();
       processUniverseFlags();
       removeTimedBan();
       sendPendingChat();
@@ -1810,6 +1816,9 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
         make_shared<ServerInfoPacket>(players, static_cast<uint16_t>(m_maxPlayers))
       });  
   }
+
+  for (auto& p : m_scriptContexts)
+    p.second->invoke("acceptConnection", clientId);
 }
 
 WarpToWorld UniverseServer::resolveWarpAction(WarpAction warpAction, ConnectionId clientId, bool deploy) const {
@@ -1911,6 +1920,9 @@ void UniverseServer::doDisconnection(ConnectionId clientId, String const& reason
           make_shared<ServerInfoPacket>(players, static_cast<uint16_t>(m_maxPlayers))
         });  
     }
+
+    for (auto& p : m_scriptContexts)
+      p.second->invoke("doDisconnection", clientId);  
   }
 }
 
@@ -2294,6 +2306,37 @@ SkyParameters UniverseServer::celestialSkyParameters(CelestialCoordinate const& 
   if (m_celestialDatabase->coordinateValid(coordinate))
     return SkyParameters(coordinate, m_celestialDatabase);
   return SkyParameters();
+}
+
+void UniverseServer::startLuaScripts() {
+  auto assets = Root::singleton().assets();
+  auto universeConfig = assets->json("/universe_server.config");
+
+  m_luaRoot = make_shared<LuaRoot>();
+  m_luaRoot->tuneAutoGarbageCollection(universeConfig.getFloat("luaGcPause"), universeConfig.getFloat("luaGcStepMultiplier"));
+
+  
+  for (auto& p : universeConfig.getObject("scriptContexts")) {
+    auto scriptComponent = make_shared<ScriptComponent>();
+    scriptComponent->setLuaRoot(m_luaRoot);
+    scriptComponent->addCallbacks("universe", LuaBindings::makeUniverseServerCallbacks(this));
+    scriptComponent->setScripts(jsonToStringList(p.second.toArray()));
+
+    m_scriptContexts.set(p.first, scriptComponent);
+    scriptComponent->init();
+  }
+}
+
+void UniverseServer::updateLua() {
+  for (auto& p : m_scriptContexts)
+    p.second->update();
+}
+
+void UniverseServer::stopLua() {
+  for (auto& p : m_scriptContexts)
+    p.second->uninit();
+
+  m_scriptContexts.clear();
 }
 
 }

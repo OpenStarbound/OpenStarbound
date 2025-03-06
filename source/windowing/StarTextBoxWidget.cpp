@@ -168,6 +168,22 @@ bool TextBoxWidget::setText(String const& text, bool callback, bool moveCursor) 
   return true;
 }
 
+String const& TextBoxWidget::getHint() const {
+  return m_hint;
+}
+
+void TextBoxWidget::setHint(String const& hint) {
+  m_hint = hint;
+}
+
+int const& TextBoxWidget::getCursorPosition() const {
+  return m_cursorOffset;
+}
+
+void TextBoxWidget::setCursorPosition(int cursorPosition) {
+  m_cursorOffset = clamp(cursorPosition, 0, (int)m_text.size());
+}
+
 bool TextBoxWidget::getHidden() const {
   return m_textHidden;
 }

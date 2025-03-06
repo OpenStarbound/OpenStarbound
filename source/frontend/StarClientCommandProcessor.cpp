@@ -494,7 +494,7 @@ String ClientCommandProcessor::render(String const& path) {
         return strf("^red;Invalid chest sheet type '{}'^reset;", sheet);
       }
       // recovery for custom chests made by a very old generator
-      if (args.size() >= 2 && args[2].toLower() == "old" && assetPath.basePath.beginsWith("/items/armors/avian/avian-tier6separator/"))
+      if (args.size() > 2 && args[2].toLower() == "old" && assetPath.basePath.beginsWith("/items/armors/avian/avian-tier6separator/"))
           assetPath.basePath = "/items/armors/avian/avian-tier6separator/old/" + assetPath.basePath.substr(41);
     } else if (first.equals("legs")) {
       assetPath.basePath = humanoid->legsArmorFrameset();
@@ -508,18 +508,22 @@ String ClientCommandProcessor::render(String const& path) {
     } else if (first.equals("head")) {
       outputSheet = false;
       assetPath.basePath = humanoid->getHeadFromIdentity();
+      assetPath.subPath = String("normal");
       assetPath.directives += identity.bodyDirectives;
     } else if (first.equals("hair")) {
       outputSheet = false;
       assetPath.basePath = humanoid->getHairFromIdentity();
+      assetPath.subPath = String("normal");
       assetPath.directives += identity.hairDirectives;
     } else if (first.equals("facialhair")) {
       outputSheet = false;
       assetPath.basePath = humanoid->getFacialHairFromIdentity();
+      assetPath.subPath = String("normal");
       assetPath.directives += identity.facialHairDirectives;
     } else if (first.equals("facialmask")) {
       outputSheet = false;
       assetPath.basePath = humanoid->getFacialMaskFromIdentity();
+      assetPath.subPath = String("normal");
       assetPath.directives += identity.facialMaskDirectives;
     } else if (first.equals("frontarm")) {
       assetPath.basePath = humanoid->getFrontArmFromIdentity();
@@ -531,11 +535,9 @@ String ClientCommandProcessor::render(String const& path) {
       assetPath.basePath = humanoid->getFacialEmotesFromIdentity();
       assetPath.directives += identity.emoteDirectives;
     } else {
+      outputSheet = false;
       outputName = "render";
     }
-
-    if (!outputSheet)
-      assetPath.subPath = String("normal");
   }
   if (assetPath == AssetPath()) {
     assetPath = AssetPath::split(path);
@@ -550,9 +552,9 @@ String ClientCommandProcessor::render(String const& path) {
     AssetPath framePath = assetPath;
 
     StringMap<pair<RectU, ImageConstPtr>> frames;
-    auto imageFrames = assets->imageFrames(assetPath.basePath);
-    for (auto& pair : imageFrames->frames)
-      frames[pair.first] = make_pair(pair.second, ImageConstPtr());
+    if (auto imageFrames = assets->imageFrames(assetPath.basePath))
+      for (auto& pair : imageFrames->frames)
+        frames[pair.first] = make_pair(pair.second, ImageConstPtr());
 
     if (frames.empty())
       return "^red;Failed to save image^reset;";

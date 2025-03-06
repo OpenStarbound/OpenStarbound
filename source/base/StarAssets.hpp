@@ -71,19 +71,19 @@ public:
     StringList digestIgnore;
   };
 
-    enum class AssetType {
-    Json,
-    Image,
-    Audio,
-    Font,
-    Bytes
-  };
-
   enum class QueuePriority {
     None,
     Working,
     PostProcess,
     Load
+  };
+  
+  enum class AssetType {
+    Json,
+    Image,
+    Audio,
+    Font,
+    Bytes
   };
 
   struct AssetId {
@@ -107,6 +107,7 @@ public:
 
     double time = 0.0;
     bool needsPostProcessing = false;
+    bool forcePersist = false;
   };
 
   struct JsonData : AssetData {
@@ -255,6 +256,14 @@ public:
   void cleanup();
 
 private:
+  EnumMap<AssetType> const AssetTypeNames{
+      {AssetType::Json, "json"},
+      {AssetType::Image, "image"},
+      {AssetType::Audio, "audio"},
+      {AssetType::Font, "font"},
+      {AssetType::Bytes, "bytes"}
+  };
+  
   static FramesSpecification parseFramesSpecification(Json const& frameConfig, String path);
 
   void queueAssets(List<AssetId> const& assetIds) const;
