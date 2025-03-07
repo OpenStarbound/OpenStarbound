@@ -1,0 +1,31 @@
+{
+  "paneLayout": {
+    "load": {
+      "type": "button",
+      "caption": "Load",
+      "base": "/interface/buttonactive.png",
+      "hover": "/interface/buttonactivehover.png",
+      "position": [10, 15]
+    },
+    "mods": {
+      "children": {
+        "list": {
+          "schema": {
+            "listTemplate": {
+              "enabled": {
+                "type": "button",
+                "checkable": true,
+                "checked": true,
+                "position": [140, 4],
+                "base": "/interface/crafting/checkboxnocheck.png",
+                "hover": "/interface/crafting/checkboxnocheck.png",
+                "baseImageChecked": "/interface/crafting/checkboxcheck.png",
+                "hoverImageChecked": "/interface/crafting/checkboxcheck.png"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
