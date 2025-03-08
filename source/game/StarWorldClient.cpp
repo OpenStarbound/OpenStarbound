@@ -90,6 +90,7 @@ WorldClient::WorldClient(PlayerPtr mainPlayer, LuaRootPtr luaRoot) {
   m_altMusicActive = false;
 
   m_stopLightingThread = false;
+  m_pendingLightReady = false;
 
   clearWorld();
 }
@@ -461,6 +462,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
       m_pendingLights = std::move(renderLightSources);
       m_pendingParticleLights = std::move(m_particles->lightSources());
       m_pendingLightRange = window.padded(1);
+      m_pendingLightReady = true;
     } //Kae: Padded by one to fix light spread issues at the edges of the frame.
 
     if (m_asyncLighting)
@@ -1667,7 +1669,9 @@ void WorldClient::lightingTileGather() {
 
 void WorldClient::lightingCalc() {
   MutexLocker prepLocker(m_lightMapPrepMutex);
-
+  if (!m_pendingLightReady.load())
+    return;
+  m_pendingLightReady = false;
   RectI lightRange = m_pendingLightRange;
   List<LightSource> lights = std::move(m_pendingLights);
   List<std::pair<Vec2F, Vec3F>> particleLights = std::move(m_pendingParticleLights);
