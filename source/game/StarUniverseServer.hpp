@@ -143,6 +143,10 @@ private:
   void saveSettings();
   void loadSettings();
 
+  void startLuaScripts();
+  void updateLua();
+  void stopLua();
+
   // Either returns the default configured starter world, or a new randomized
   // starter world, or if a randomized world is not yet available, starts a job
   // to find a randomized starter world and returns nothing until it is ready.
@@ -255,6 +259,12 @@ private:
   Map<WorldId, List<WorldServerThread::Message>> m_pendingWorldMessages;
 
   List<TimeoutBan> m_tempBans;
+
+  LuaRootPtr m_luaRoot;
+
+  typedef LuaUpdatableComponent<LuaBaseComponent> ScriptComponent;
+  typedef shared_ptr<ScriptComponent> ScriptComponentPtr;
+  StringMap<ScriptComponentPtr> m_scriptContexts;
 };
 
 }

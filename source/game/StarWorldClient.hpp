@@ -285,6 +285,7 @@ private:
   List<LightSource> m_pendingLights;
   List<std::pair<Vec2F, Vec3F>> m_pendingParticleLights;
   RectI m_pendingLightRange;
+  atomic<bool> m_pendingLightReady;
   Vec2I m_lightMinPosition;
   List<PreviewTile> m_previewTiles;
 
