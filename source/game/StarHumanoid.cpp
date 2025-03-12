@@ -761,24 +761,24 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
   if (!m_bodyFrameset.empty() && !m_bodyHidden) {
     auto bodyDirectives = getBodyDirectives();
     auto prefix = bodyDirectives.prefix();
-    String framePrefix;
+    String frameName;
     if (dance.isValid() && danceStep->bodyFrame)
-      framePrefix = strf("{}{}", *danceStep->bodyFrame, prefix);
+      frameName = strf("{}{}", *danceStep->bodyFrame, prefix);
     else if (m_state == Idle)
-      framePrefix = strf("{}{}", m_identity.personality.idle, prefix);
+      frameName = strf("{}{}", m_identity.personality.idle, prefix);
     else
-      framePrefix = strf("{}.{}{}", frameBase(m_state), bodyStateSeq, prefix);
-    String image = strf("{}:{}",m_bodyFrameset,framePrefix);
+      frameName = strf("{}.{}{}", frameBase(m_state), bodyStateSeq, prefix);
+    String image = strf("{}:{}",m_bodyFrameset,frameName);
     auto drawable = Drawable::makeImage(m_useBodyHeadMask ? image : std::move(image), 1.0f / TilePixels, true, {});
     drawable.imagePart().addDirectives(bodyDirectives, true);
     if (m_useBodyMask && !m_bodyMaskFrameset.empty()) {
-      String maskImage = strf("{}:{}",m_bodyMaskFrameset,framePrefix);
+      String maskImage = strf("{}:{}",m_bodyMaskFrameset,frameName);
       Directives maskDirectives = "?addmask="+maskImage+";0;0";
       drawable.imagePart().addDirectives(maskDirectives, true);
     }
     addDrawable(std::move(drawable), m_bodyFullbright);
     if (m_useBodyHeadMask && !m_bodyHeadMaskFrameset.empty()) {
-      String maskImage = strf("{}:{}",m_bodyHeadMaskFrameset,framePrefix);
+      String maskImage = strf("{}:{}",m_bodyHeadMaskFrameset,frameName);
       Directives maskDirectives = "?addmask="+maskImage+";0;0";
       auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, {});
       drawable.imagePart().addDirectives(bodyDirectives, true);
