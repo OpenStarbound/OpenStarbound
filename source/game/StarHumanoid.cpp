@@ -288,6 +288,12 @@ void Humanoid::setIdentity(HumanoidIdentity const& identity) {
   m_backArmFrameset = getBackArmFromIdentity();
   m_frontArmFrameset = getFrontArmFromIdentity();
   m_vaporTrailFrameset = getVaporTrailFrameset();
+  if (m_useBodyMask) {
+    m_bodyMaskFrameset = getBodyMaskFromIdentity();
+  }
+  if (m_useBodyHeadMask) {
+    m_bodyHeadMaskFrameset = getBodyHeadMaskFromIdentity();
+  }
 }
 
 HumanoidIdentity const& Humanoid::identity() const {
@@ -317,6 +323,8 @@ void Humanoid::loadConfig(Json merger) {
   m_feetOffset = jsonToVec2F(config.get("feetOffset")) / TilePixels;
 
   m_bodyFullbright = config.getBool("bodyFullbright", false);
+  m_useBodyMask = config.getBool("useBodyMask", false);
+  m_useBodyHeadMask = config.getBool("useBodyHeadMask", false);
 
   m_headArmorOffset = jsonToVec2F(config.get("headArmorOffset")) / TilePixels;
   m_chestArmorOffset = jsonToVec2F(config.get("chestArmorOffset")) / TilePixels;
@@ -751,18 +759,32 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
   }
 
   if (!m_bodyFrameset.empty() && !m_bodyHidden) {
-    String image;
     auto bodyDirectives = getBodyDirectives();
     auto prefix = bodyDirectives.prefix();
+    String frameName;
     if (dance.isValid() && danceStep->bodyFrame)
-      image = strf("{}:{}{}", m_bodyFrameset, *danceStep->bodyFrame, prefix);
+      frameName = strf("{}{}", *danceStep->bodyFrame, prefix);
     else if (m_state == Idle)
-      image = strf("{}:{}{}", m_bodyFrameset, m_identity.personality.idle, prefix);
+      frameName = strf("{}{}", m_identity.personality.idle, prefix);
     else
-      image = strf("{}:{}.{}{}", m_bodyFrameset, frameBase(m_state), bodyStateSeq, prefix);
-    auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, {});
+      frameName = strf("{}.{}{}", frameBase(m_state), bodyStateSeq, prefix);
+    String image = strf("{}:{}",m_bodyFrameset,frameName);
+    auto drawable = Drawable::makeImage(m_useBodyHeadMask ? image : std::move(image), 1.0f / TilePixels, true, {});
     drawable.imagePart().addDirectives(bodyDirectives, true);
+    if (m_useBodyMask && !m_bodyMaskFrameset.empty()) {
+      String maskImage = strf("{}:{}",m_bodyMaskFrameset,frameName);
+      Directives maskDirectives = "?addmask="+maskImage+";0;0";
+      drawable.imagePart().addDirectives(maskDirectives, true);
+    }
     addDrawable(std::move(drawable), m_bodyFullbright);
+    if (m_useBodyHeadMask && !m_bodyHeadMaskFrameset.empty()) {
+      String maskImage = strf("{}:{}",m_bodyHeadMaskFrameset,frameName);
+      Directives maskDirectives = "?addmask="+maskImage+";0;0";
+      auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, {});
+      drawable.imagePart().addDirectives(bodyDirectives, true);
+      drawable.imagePart().addDirectives(maskDirectives, true);
+      addHeadDrawable(std::move(drawable), m_bodyFullbright);
+    }
   }
 
   if (!m_legsArmorFrameset.empty()) {
@@ -1271,6 +1293,18 @@ String Humanoid::getHeadFromIdentity() const {
 
 String Humanoid::getBodyFromIdentity() const {
   return strf("/humanoid/{}/{}body.png",
+      m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
+      GenderNames.getRight(m_identity.gender));
+}
+
+String Humanoid::getBodyMaskFromIdentity() const {
+  return strf("/humanoid/{}/mask/{}body.png",
+      m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
+      GenderNames.getRight(m_identity.gender));
+}
+
+String Humanoid::getBodyHeadMaskFromIdentity() const {
+  return strf("/humanoid/{}/headmask/{}body.png",
       m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
       GenderNames.getRight(m_identity.gender));
 }
