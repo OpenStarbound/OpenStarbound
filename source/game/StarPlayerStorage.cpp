@@ -168,7 +168,9 @@ Json PlayerStorage::savePlayer(PlayerPtr const& player) {
   if (playerCacheData != newPlayerData) {
     playerCacheData = newPlayerData;
     VersionedJson versionedJson = entityFactory->storeVersionedJson(EntityType::Player, playerCacheData);
-    VersionedJson::writeFile(versionedJson, File::relativeTo(m_storageDirectory, strf("{}.player", uuidFileName(uuid))));
+    auto fileName = strf("{}.player", uuidFileName(uuid));
+    VersionedJson::writeFile(versionedJson, File::relativeTo(m_storageDirectory, fileName));
+    Logger::info("Saved player {} to {}", Text::stripEscapeCodes(player->name()), fileName);
   }
   return newPlayerData;
 }
