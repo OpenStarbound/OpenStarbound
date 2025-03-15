@@ -258,6 +258,7 @@ Humanoid::Humanoid(Json const& config) {
   m_primaryHand.holdingItem = false;
   m_altHand.holdingItem = false;
 
+  m_backRotatesWithHead = false;
   m_movingBackwards = false;
   m_altHand.angle = 0;
   m_facingDirection = Direction::Left;
@@ -478,6 +479,10 @@ void Humanoid::setHeadRotation(float headRotation) {
   m_headRotationTarget = headRotation;
 }
 
+void Humanoid::setBackRotatesWithHead(bool backRotatesWithHead) {
+  m_backRotatesWithHead = backRotatesWithHead;
+}
+
 void Humanoid::setRotation(float rotation) {
   m_rotation = rotation;
 }
@@ -614,11 +619,12 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
   if (backHand.recoil)
     backArmFrameOffset += m_recoilOffset;
 
-  auto addDrawable = [&](Drawable drawable, bool forceFullbright = false) {
+  auto addDrawable = [&](Drawable drawable, bool forceFullbright = false) -> Drawable& {
     if (m_facingDirection == Direction::Left)
       drawable.scale(Vec2F(-1, 1));
     drawable.fullbright |= forceFullbright;
     drawables.append(std::move(drawable));
+    return drawables.back();
   };
 
   auto backArmDrawable = [&](String const& frameSet, Directives const& directives) -> Drawable {
@@ -627,6 +633,35 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
     backArm.imagePart().addDirectives(directives, true);
     backArm.rotate(backHand.angle, backArmFrameOffset + m_backArmRotationCenter + m_backArmOffset);
     return backArm;
+  };
+
+  Vec2F headPosition(0, bobYOffset);
+  if (dance.isValid())
+    headPosition += danceStep->headOffset / TilePixels;
+  else if (m_state == Idle)
+    headPosition += m_identity.personality.headOffset / TilePixels;
+  else if (m_state == Run)
+    headPosition += m_headRunOffset;
+  else if (m_state == Swim || m_state == SwimIdle)
+    headPosition += m_headSwimOffset;
+  else if (m_state == Duck)
+    headPosition += m_headDuckOffset;
+  else if (m_state == Sit)
+    headPosition += m_headSitOffset;
+  else if (m_state == Lay)
+    headPosition += m_headLayOffset;
+
+  auto applyHeadRotation = [&](Drawable& drawable) {
+    if (m_headRotation != 0.f) {
+      float dir = numericalDirection(m_facingDirection);
+      Vec2F rotationPoint = headPosition;
+      rotationPoint[0] *= dir;
+      rotationPoint[1] -= .25f;
+      float headX = (m_headRotation / ((float)Constants::pi * 2.f));
+      drawable.rotate(m_headRotation, rotationPoint);
+      drawable.position[0] -= state() == State::Run ? (fmaxf(headX * dir, 0.f) * 2.f) * dir : headX;
+      drawable.position[1] -= fabsf(m_headRotation / ((float)Constants::pi * 4.f));
+    }
   };
 
   if (!m_backArmorFrameset.empty()) {
@@ -644,7 +679,9 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
 
     auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, Vec2F());
     drawable.imagePart().addDirectives(getBackDirectives(), true);
-    addDrawable(std::move(drawable));
+    Drawable& applied = addDrawable(std::move(drawable));
+    if (m_backRotatesWithHead)
+      applyHeadRotation(applied);
   }
 
   if (backHand.holdingItem && !dance.isValid() && withItems) {
@@ -703,36 +740,11 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
     }
   }
 
-  Vec2F headPosition(0, bobYOffset);
-  if (dance.isValid())
-    headPosition += danceStep->headOffset / TilePixels;
-  else if (m_state == Idle)
-    headPosition += m_identity.personality.headOffset / TilePixels;
-  else if (m_state == Run)
-    headPosition += m_headRunOffset;
-  else if (m_state == Swim || m_state == SwimIdle)
-    headPosition += m_headSwimOffset;
-  else if (m_state == Duck)
-    headPosition += m_headDuckOffset;
-  else if (m_state == Sit)
-    headPosition += m_headSitOffset;
-  else if (m_state == Lay)
-    headPosition += m_headLayOffset;
-
   auto addHeadDrawable = [&](Drawable drawable, bool forceFullbright = false) {
     if (m_facingDirection == Direction::Left)
       drawable.scale(Vec2F(-1, 1));
     drawable.fullbright |= forceFullbright;
-    if (m_headRotation != 0.f) {
-      float dir = numericalDirection(m_facingDirection);
-      Vec2F rotationPoint = headPosition;
-      rotationPoint[0] *= dir;
-      rotationPoint[1] -= .25f;
-      float headX = (m_headRotation / ((float)Constants::pi * 2.f));
-      drawable.rotate(m_headRotation, rotationPoint);
-      drawable.position[0] -= state() == State::Run ? (fmaxf(headX * dir, 0.f) * 2.f) * dir : headX;
-      drawable.position[1] -= fabsf(m_headRotation / ((float)Constants::pi * 4.f));
-    }
+    applyHeadRotation(drawable);
     drawables.append(std::move(drawable));
   };
 

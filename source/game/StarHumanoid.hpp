@@ -178,6 +178,7 @@ public:
   void setFacingDirection(Direction facingDirection);
   void setMovingBackwards(bool movingBackwards);
   void setHeadRotation(float headRotation);
+  void setBackRotatesWithHead(bool backRotatesWithHead);
   void setRotation(float rotation);
   void setScale(Vec2F scale);
 
@@ -382,6 +383,7 @@ private:
   Maybe<String> m_dance;
   Direction m_facingDirection;
   bool m_movingBackwards;
+  bool m_backRotatesWithHead;
   float m_headRotation;
   float m_headRotationTarget;
   float m_rotation;

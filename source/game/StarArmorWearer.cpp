@@ -100,10 +100,12 @@ void ArmorWearer::setupHumanoidClothingDrawables(Humanoid& humanoid, bool forceN
     if (backNeedsSync) {
       humanoid.setBackArmorFrameset(backArmor->frameset(humanoid.identity().gender));
       humanoid.setBackArmorDirectives(backArmor->directives());
+      humanoid.setBackRotatesWithHead(backArmor->instanceValue("rotateWithHead", false).optBool().value());
     }
     bodyHidden = bodyHidden || backArmor->hideBody();
   } else {
     humanoid.setBackArmorFrameset("");
+    humanoid.setBackRotatesWithHead(false);
   }
 
   if (chestNeedsSync || legsNeedsSync) {
