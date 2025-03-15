@@ -41,9 +41,12 @@ PlayerStorage::PlayerStorage(String const& storageDir) {
         try {
           auto json = VersionedJson::readFile(filename);
           Uuid uuid(json.content.getString("uuid"));
-          auto& playerCacheData = m_savedPlayersCache[uuid];
-          playerCacheData = entityFactory->loadVersionedJson(json, EntityType::Player);
-          m_playerFileNames.insert(uuid, file.first.rsplit('.', 1).at(0));
+          if (m_playerFileNames.insert(uuid, file.first.rsplit('.', 1).at(0))) {
+            auto& playerCacheData = m_savedPlayersCache[uuid];
+            playerCacheData = entityFactory->loadVersionedJson(json, EntityType::Player);
+          } else {
+            Logger::warn("Duplicate player? Skipping player file {} because it has the same UUID as {}.player ({})", file.first, m_playerFileNames.getRight(uuid), uuid.hex());
+          }
         } catch (std::exception const& e) {
           Logger::error("Error loading player file, ignoring! {} : {}", filename, outputException(e, false));
         }
