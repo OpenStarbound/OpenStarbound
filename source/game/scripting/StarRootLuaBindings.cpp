@@ -116,6 +116,11 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
       return table;
     });
 
+  callbacks.registerCallback("assetSourceMetadata", [root](LuaEngine& engine, String const& assetSourcePath) {
+    auto assets = root->assets();
+    return assets->assetSourceMetadata(assetSourcePath);
+  });
+
   callbacks.registerCallback("itemFile", [root](LuaEngine& engine, String const& itemName) -> Maybe<String> {
       return root->itemDatabase()->itemFile(itemName);
     });

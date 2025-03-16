@@ -178,6 +178,7 @@ public:
   void setFacingDirection(Direction facingDirection);
   void setMovingBackwards(bool movingBackwards);
   void setHeadRotation(float headRotation);
+  void setBackRotatesWithHead(bool backRotatesWithHead);
   void setRotation(float rotation);
   void setScale(Vec2F scale);
 
@@ -262,6 +263,8 @@ public:
   
   String getHeadFromIdentity() const;
   String getBodyFromIdentity() const;
+  String getBodyMaskFromIdentity() const;
+  String getBodyHeadMaskFromIdentity() const;
   String getFacialEmotesFromIdentity() const;
   String getHairFromIdentity() const;
   String getFacialHairFromIdentity() const;
@@ -329,6 +332,9 @@ private:
   Vec2F m_chestArmorOffset;
   Vec2F m_legsArmorOffset;
   Vec2F m_backArmorOffset;
+  
+  bool m_useBodyMask;
+  bool m_useBodyHeadMask;
 
   bool m_bodyHidden;
 
@@ -345,6 +351,8 @@ private:
 
   String m_headFrameset;
   String m_bodyFrameset;
+  String m_bodyMaskFrameset;
+  String m_bodyHeadMaskFrameset;
   String m_backArmFrameset;
   String m_frontArmFrameset;
   String m_emoteFrameset;
@@ -375,6 +383,7 @@ private:
   Maybe<String> m_dance;
   Direction m_facingDirection;
   bool m_movingBackwards;
+  bool m_backRotatesWithHead;
   float m_headRotation;
   float m_headRotationTarget;
   float m_rotation;
