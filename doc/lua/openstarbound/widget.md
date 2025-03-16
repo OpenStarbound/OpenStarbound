@@ -31,3 +31,17 @@ Gets the cursor position of a TextBoxWidget.
 #### `void` widget.setCursorPosition(`String` widgetName, `int` cursorPosition)
 
 Sets the cursor position of a TextBoxWidget.
+
+---
+
+#### `void` widget.setImageStretchSet(`String` widgetName, `Json` imageStretchSet)
+
+Sets the full image set of a ImageStretchWidget.
+
+```
+{
+  begin = "image.png",
+  inner = "image.png",
+  end = "image.png"
+}
+```

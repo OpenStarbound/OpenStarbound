@@ -9,6 +9,8 @@ STAR_CLASS(ImageStretchWidget);
 class ImageStretchWidget : public Widget {
 public:
   ImageStretchWidget(ImageStretchSet const& imageStretchSet, GuiDirection direction);
+  void setImageStretchSet(String const& beginImage, String const& innerImage, String const& endImage);
+
   virtual ~ImageStretchWidget() {}
 
 protected:

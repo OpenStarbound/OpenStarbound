@@ -14,6 +14,7 @@
 #include "StarItemSlotWidget.hpp"
 #include "StarItemDatabase.hpp"
 #include "StarFlowLayout.hpp"
+#include "StarImageStretchWidget.hpp"
 
 namespace Star {
 
@@ -449,6 +450,12 @@ LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr
       if (auto flow = parentWidget->fetchChild<FlowLayout>(widgetName)) {
         WidgetPtr newChild = make_shared<ImageWidget>(image);
         flow->addChild(childName, newChild);
+      }
+    });
+
+  callbacks.registerCallback("setImageStretchSet", [parentWidget](String const& widgetName, Json const& imageSet) {
+      if (auto imageStretch = parentWidget->fetchChild<ImageStretchWidget>(widgetName)) {
+        imageStretch->setImageStretchSet(imageSet.getString("begin", ""), imageSet.getString("inner", ""), imageSet.getString("end", ""));
       }
     });
 
