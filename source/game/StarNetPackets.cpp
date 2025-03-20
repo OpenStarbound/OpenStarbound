@@ -747,6 +747,17 @@ void ModifyTileListPacket::write(DataStream& ds) const {
   ds.write(allowEntityOverlap);
 }
 
+ReplaceTileListPacket::ReplaceTileListPacket(TileModificationList modifications)
+  : modifications(modifications) {}
+
+void ReplaceTileListPacket::read(DataStream& ds) {
+  ds.readContainer(modifications);
+}
+
+void ReplaceTileListPacket::write(DataStream& ds) const {
+  ds.writeContainer(modifications);
+}
+
 DamageTileGroupPacket::DamageTileGroupPacket() : layer(TileLayer::Foreground) {}
 
 DamageTileGroupPacket::DamageTileGroupPacket(

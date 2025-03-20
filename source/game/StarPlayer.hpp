@@ -223,6 +223,7 @@ public:
 
   void triggerPickupEvents(ItemPtr const& item);
 
+  ItemPtr essentialItem(EssentialItem essentialItem) const;
   bool hasItem(ItemDescriptor const& descriptor, bool exactMatch = false) const;
   uint64_t hasCountOfItem(ItemDescriptor const& descriptor, bool exactMatch = false) const;
   // altough multiple entries may match, they might have different

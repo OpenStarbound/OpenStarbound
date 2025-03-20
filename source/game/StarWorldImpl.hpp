@@ -39,6 +39,9 @@ namespace WorldImpl {
   List<Vec2I> collidingTilesAlongLine(WorldGeometry const& worldGeometry, shared_ptr<TileSectorArray> const& tileSectorArray,
       Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet, size_t maxSize, bool includeEdges);
 
+  template <typename TileSectorArray>
+  bool damageWouldDestroy(shared_ptr<TileSectorArray> const& tileSectorArray, Vec2I pos, TileLayer layer, TileDamage const& tileDamage);
+  
   template <typename GetTileFunction>
   bool canPlaceMaterial(EntityMapPtr const& entityMap,
       Vec2I const& pos, TileLayer layer, MaterialId material, bool allowEntityOverlap, bool allowTileOverlap, GetTileFunction& getTile);
@@ -54,6 +57,7 @@ namespace WorldImpl {
   bool canPlaceMod(Vec2I const& pos, TileLayer layer, ModId mod, GetTileFunction& getTile);
   template <typename GetTileFunction>
   pair<bool, bool> validateTileModification(EntityMapPtr const& entityMap, Vec2I const& pos, TileModification const& modification, bool allowEntityOverlap, GetTileFunction& getTile);
+  bool validateTileReplacement(Vec2I const& pos, TileModification const& modification);
   // Split modification list into good and bad
   template <typename GetTileFunction>
   pair<TileModificationList, TileModificationList> splitTileModifications(EntityMapPtr const& entityMap, TileModificationList const& modificationList,
@@ -218,6 +222,37 @@ namespace WorldImpl {
     return res;
   }
 
+  template <typename TileSectorArray>
+  bool damageWouldDestroy(shared_ptr<TileSectorArray> const& tileSectorArray, Vec2I pos, TileLayer layer, TileDamage const& tileDamage) {
+    if (auto tile = tileSectorArray->modifyTile(pos)) {
+      bool foreground = layer == TileLayer::Foreground;
+      auto damage = foreground ? tile->foregroundDamage : tile->backgroundDamage;
+      if (damage.damageProtected())
+        return false;
+      
+      auto materialDatabase = Root::singleton().materialDatabase();
+      auto target = foreground ? tile->foreground : tile->background;
+      auto mod = foreground ? tile->foregroundMod : tile->backgroundMod;
+      TileDamageParameters damageParameters;
+  
+      if (isRealMod(mod)) {
+        if (tileDamageIsPenetrating(tileDamage.type))
+          damageParameters = materialDatabase->materialDamageParameters(target);
+        else if (materialDatabase->modBreaksWithTile(mod))
+          damageParameters = materialDatabase->modDamageParameters(mod).sum(materialDatabase->materialDamageParameters(target));
+        else
+          damageParameters = materialDatabase->modDamageParameters(mod);
+      } else {
+        damageParameters = materialDatabase->materialDamageParameters(target);
+      }
+  
+      float percentageDelta = damageParameters.damageDone(tileDamage) / damageParameters.totalHealth();
+      return percentageDelta + damage.damagePercentage() >= 1.0f;
+    }
+
+    return false;
+  }
+
   template <typename GetTileFunction>
   bool canPlaceMaterial(EntityMapPtr const& entityMap,
       Vec2I const& pos, TileLayer layer, MaterialId material, bool allowEntityOverlap, bool allowTileOverlap, GetTileFunction& getTile) {
@@ -347,6 +382,21 @@ namespace WorldImpl {
     }
 
     return { good, perhaps };
+  }
+
+  bool validateTileReplacement(Vec2I const& pos, TileModification const& modification) {
+    if (auto placeMaterial = modification.ptr<PlaceMaterial>()) {
+      if (!isRealMaterial(placeMaterial->material))
+        return false;
+      
+      auto materialDatabase = Root::singleton().materialDatabase();
+      if (!materialDatabase->canPlaceInLayer(placeMaterial->material, placeMaterial->layer))
+        return false;
+      
+      return true;
+    }
+
+    return false;
   }
 
   template <typename GetTileFunction>

@@ -1273,6 +1273,10 @@ void Player::triggerPickupEvents(ItemPtr const& item) {
   }
 }
 
+ItemPtr Player::essentialItem(EssentialItem essentialItem) const {
+  return m_inventory->essentialItem(essentialItem);
+}
+
 bool Player::hasItem(ItemDescriptor const& descriptor, bool exactMatch) const {
   return m_inventory->hasItem(descriptor, exactMatch);
 }

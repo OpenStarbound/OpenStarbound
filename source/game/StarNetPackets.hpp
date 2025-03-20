@@ -79,6 +79,7 @@ enum class PacketType : uint8_t {
 
   // Packets sent world client -> world server
   ModifyTileList,
+  ReplaceTileList,
   DamageTileGroup,
   CollectLiquid,
   RequestDrop,
@@ -625,6 +626,16 @@ struct ModifyTileListPacket : PacketBase<PacketType::ModifyTileList> {
 
   TileModificationList modifications;
   bool allowEntityOverlap;
+};
+
+struct ReplaceTileListPacket : PacketBase<PacketType::ReplaceTileList> {
+  ReplaceTileListPacket();
+  ReplaceTileListPacket(TileModificationList modifications);
+
+  void read(DataStream& ds) override;
+  void write(DataStream& ds) const override;
+
+  TileModificationList modifications;
 };
 
 struct DamageTileGroupPacket : PacketBase<PacketType::DamageTileGroup> {
