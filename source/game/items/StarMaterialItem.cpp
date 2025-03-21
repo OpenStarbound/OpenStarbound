@@ -299,9 +299,18 @@ void MaterialItem::blockSwap(float radius, TileLayer layer) {
   if (toDamage.size() + toSwap.size() > count())
     toDamage.resize(count() - toSwap.size());
   
-  size_t failed = world()->replaceTiles(toSwap).size();
-  if (failed < toSwap.size())
-    consume(toSwap.size() - failed);
+  if (!toSwap.empty()) {
+    size_t failed = world()->replaceTiles(toSwap).size();
+
+    if (failed < toSwap.size())
+      consume(toSwap.size() - failed);
+    else {
+      for (auto pair : toSwap)
+        toDamage.append(pair.first);
+      if (toDamage.size() > count())
+        toDamage.resize(count());
+    }
+  }
 
   auto damageResult = world()->damageTiles(toDamage, layer, owner()->position(), damage, owner()->entityId());
 

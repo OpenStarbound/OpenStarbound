@@ -79,7 +79,6 @@ enum class PacketType : uint8_t {
 
   // Packets sent world client -> world server
   ModifyTileList,
-  ReplaceTileList,
   DamageTileGroup,
   CollectLiquid,
   RequestDrop,
@@ -114,7 +113,10 @@ enum class PacketType : uint8_t {
   SystemShipDestroy,
 
   // Packets sent system client -> system server
-  SystemObjectSpawn
+  SystemObjectSpawn,
+
+  // OpenStarbound packets
+  ReplaceTileList
 };
 extern EnumMap<PacketType> const PacketTypeNames;
 

@@ -379,9 +379,13 @@ TileModificationList WorldClient::replaceTiles(TileModificationList const& modif
   if (!inWorld())
     return {};
   
+  // Tell client it can't send a replace packet
+  if (m_clientState.netCompatibilityRules().isLegacy())
+    return modificationList;
+  
   TileModificationList success, failures;
   for (auto pair : modificationList) {
-    if (!isTileProtected(pair.first) && WorldImpl::validateTileReplacement(pair.first, pair.second))
+    if (!isTileProtected(pair.first) && WorldImpl::validateTileReplacement(pair.second))
       success.append(pair);
     else
       failures.append(pair);

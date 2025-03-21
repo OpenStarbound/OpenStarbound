@@ -884,7 +884,7 @@ bool WorldServer::replaceTile(Vec2I const& pos, TileModification const& modifica
   if (isTileProtected(pos))
     return false;
 
-  if (!WorldImpl::validateTileReplacement(pos, modification))
+  if (!WorldImpl::validateTileReplacement(modification))
     return false;
   
   if (auto placeMaterial = modification.ptr<PlaceMaterial>()) {

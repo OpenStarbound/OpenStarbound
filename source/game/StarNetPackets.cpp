@@ -75,7 +75,9 @@ EnumMap<PacketType> const PacketTypeNames{
   {PacketType::SystemObjectDestroy, "SystemObjectDestroy"},
   {PacketType::SystemShipCreate, "SystemShipCreate"},
   {PacketType::SystemShipDestroy, "SystemShipDestroy"},
-  {PacketType::SystemObjectSpawn, "SystemObjectSpawn"}
+  {PacketType::SystemObjectSpawn, "SystemObjectSpawn"},
+  // OpenStarbound packets
+  {PacketType::ReplaceTileList, "ReplaceTileList"}
 };
 
 EnumMap<NetCompressionMode> const NetCompressionModeNames {
@@ -137,6 +139,7 @@ PacketPtr createPacket(PacketType type) {
     case PacketType::FindUniqueEntityResponse: return make_shared<FindUniqueEntityResponsePacket>();
     case PacketType::Pong: return make_shared<PongPacket>();
     case PacketType::ModifyTileList: return make_shared<ModifyTileListPacket>();
+    case PacketType::ReplaceTileList: return make_shared<ReplaceTileListPacket>();
     case PacketType::DamageTileGroup: return make_shared<DamageTileGroupPacket>();
     case PacketType::CollectLiquid: return make_shared<CollectLiquidPacket>();
     case PacketType::RequestDrop: return make_shared<RequestDropPacket>();
@@ -746,6 +749,8 @@ void ModifyTileListPacket::write(DataStream& ds) const {
   ds.writeContainer(modifications);
   ds.write(allowEntityOverlap);
 }
+
+ReplaceTileListPacket::ReplaceTileListPacket() {}
 
 ReplaceTileListPacket::ReplaceTileListPacket(TileModificationList modifications)
   : modifications(modifications) {}

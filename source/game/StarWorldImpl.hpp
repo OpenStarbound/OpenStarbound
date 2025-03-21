@@ -57,7 +57,7 @@ namespace WorldImpl {
   bool canPlaceMod(Vec2I const& pos, TileLayer layer, ModId mod, GetTileFunction& getTile);
   template <typename GetTileFunction>
   pair<bool, bool> validateTileModification(EntityMapPtr const& entityMap, Vec2I const& pos, TileModification const& modification, bool allowEntityOverlap, GetTileFunction& getTile);
-  bool validateTileReplacement(Vec2I const& pos, TileModification const& modification);
+  bool validateTileReplacement(TileModification const& modification);
   // Split modification list into good and bad
   template <typename GetTileFunction>
   pair<TileModificationList, TileModificationList> splitTileModifications(EntityMapPtr const& entityMap, TileModificationList const& modificationList,
@@ -384,7 +384,7 @@ namespace WorldImpl {
     return { good, perhaps };
   }
 
-  bool validateTileReplacement(Vec2I const& pos, TileModification const& modification) {
+  inline bool validateTileReplacement(TileModification const& modification) {
     if (auto placeMaterial = modification.ptr<PlaceMaterial>()) {
       if (!isRealMaterial(placeMaterial->material))
         return false;
