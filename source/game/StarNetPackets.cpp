@@ -752,15 +752,17 @@ void ModifyTileListPacket::write(DataStream& ds) const {
 
 ReplaceTileListPacket::ReplaceTileListPacket() {}
 
-ReplaceTileListPacket::ReplaceTileListPacket(TileModificationList modifications)
-  : modifications(modifications) {}
+ReplaceTileListPacket::ReplaceTileListPacket(TileModificationList modifications, TileDamage tileDamage)
+  : modifications(modifications), tileDamage(std::move(tileDamage)) {}
 
 void ReplaceTileListPacket::read(DataStream& ds) {
   ds.readContainer(modifications);
+  ds.read(tileDamage);
 }
 
 void ReplaceTileListPacket::write(DataStream& ds) const {
   ds.writeContainer(modifications);
+  ds.write(tileDamage);
 }
 
 DamageTileGroupPacket::DamageTileGroupPacket() : layer(TileLayer::Foreground) {}

@@ -254,6 +254,8 @@ void MaterialItem::blockSwap(float radius, TileLayer layer) {
   for (Vec2I& pos : tileArea(radius, owner()->aimPosition())) {
     if (!world()->isTileConnectable(pos, layer, true))
       continue;
+    if (world()->isTileProtected(pos))
+      continue;
     if (world()->material(pos, layer) == materialId())
       continue;
     swapPositions.append(pos);
@@ -300,7 +302,7 @@ void MaterialItem::blockSwap(float radius, TileLayer layer) {
     toDamage.resize(count() - toSwap.size());
   
   if (!toSwap.empty()) {
-    size_t failed = world()->replaceTiles(toSwap).size();
+    size_t failed = world()->replaceTiles(toSwap, damage).size();
 
     if (failed < toSwap.size())
       consume(toSwap.size() - failed);
@@ -312,13 +314,11 @@ void MaterialItem::blockSwap(float radius, TileLayer layer) {
     }
   }
 
-  auto damageResult = world()->damageTiles(toDamage, layer, owner()->position(), damage, owner()->entityId());
-
-  if (damageResult == TileDamageResult::None)
-    return;
-
-  if (damageResult == TileDamageResult::Protected) {
-    blockSound = assets->json("/client.config:defaultDingSound").toString();
+  if (!toDamage.empty()) {
+    auto damageResult = world()->damageTiles(toDamage, layer, owner()->position(), damage, owner()->entityId());
+    if (damageResult == TileDamageResult::Protected) {
+      blockSound = assets->json("/client.config:defaultDingSound").toString();
+    }
   }
 
   owner()->addSound(

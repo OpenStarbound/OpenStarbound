@@ -39,6 +39,7 @@ namespace WorldImpl {
   List<Vec2I> collidingTilesAlongLine(WorldGeometry const& worldGeometry, shared_ptr<TileSectorArray> const& tileSectorArray,
       Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet, size_t maxSize, bool includeEdges);
 
+  inline TileDamageParameters tileDamageParameters(WorldTile* tile, TileLayer layer, TileDamage const& tileDamage);
   template <typename TileSectorArray>
   bool damageWouldDestroy(shared_ptr<TileSectorArray> const& tileSectorArray, Vec2I pos, TileLayer layer, TileDamage const& tileDamage);
   
@@ -222,31 +223,30 @@ namespace WorldImpl {
     return res;
   }
 
+  inline TileDamageParameters tileDamageParameters(WorldTile* tile, TileLayer layer, TileDamage const& tileDamage) {
+    bool foreground = layer == TileLayer::Foreground;
+    auto materialDatabase = Root::singleton().materialDatabase();
+    auto target = foreground ? tile->foreground : tile->background;
+    auto mod = foreground ? tile->foregroundMod : tile->backgroundMod;
+
+    if (!isRealMod(mod))
+      return materialDatabase->materialDamageParameters(target);
+
+    if (tileDamageIsPenetrating(tileDamage.type))
+      return materialDatabase->materialDamageParameters(target);
+
+    if (materialDatabase->modBreaksWithTile(mod))
+      return materialDatabase->modDamageParameters(mod).sum(materialDatabase->materialDamageParameters(target));
+    
+    return materialDatabase->modDamageParameters(mod);
+  }
+
   template <typename TileSectorArray>
   bool damageWouldDestroy(shared_ptr<TileSectorArray> const& tileSectorArray, Vec2I pos, TileLayer layer, TileDamage const& tileDamage) {
     if (auto tile = tileSectorArray->modifyTile(pos)) {
-      bool foreground = layer == TileLayer::Foreground;
-      auto damage = foreground ? tile->foregroundDamage : tile->backgroundDamage;
-      if (damage.damageProtected())
-        return false;
-      
-      auto materialDatabase = Root::singleton().materialDatabase();
-      auto target = foreground ? tile->foreground : tile->background;
-      auto mod = foreground ? tile->foregroundMod : tile->backgroundMod;
-      TileDamageParameters damageParameters;
-  
-      if (isRealMod(mod)) {
-        if (tileDamageIsPenetrating(tileDamage.type))
-          damageParameters = materialDatabase->materialDamageParameters(target);
-        else if (materialDatabase->modBreaksWithTile(mod))
-          damageParameters = materialDatabase->modDamageParameters(mod).sum(materialDatabase->materialDamageParameters(target));
-        else
-          damageParameters = materialDatabase->modDamageParameters(mod);
-      } else {
-        damageParameters = materialDatabase->materialDamageParameters(target);
-      }
-  
+      auto damageParameters = tileDamageParameters(tile, layer, tileDamage);
       float percentageDelta = damageParameters.damageDone(tileDamage) / damageParameters.totalHealth();
+      auto damage = layer == TileLayer::Foreground ? tile->foregroundDamage : tile->backgroundDamage;
       return percentageDelta + damage.damagePercentage() >= 1.0f;
     }
 

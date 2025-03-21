@@ -374,7 +374,7 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
         clientInfo->outgoingPackets.append(make_shared<TileModificationFailurePacket>(unappliedModifications));
 
     } else if (auto rtpacket = as<ReplaceTileListPacket>(packet)) {
-      auto unappliedModifications = replaceTiles(rtpacket->modifications);
+      auto unappliedModifications = replaceTiles(rtpacket->modifications, rtpacket->tileDamage);
       if (!unappliedModifications.empty())
         clientInfo->outgoingPackets.append(make_shared<TileModificationFailurePacket>(unappliedModifications));
 
@@ -880,7 +880,7 @@ TileModificationList WorldServer::forceApplyTileModifications(TileModificationLi
   return doApplyTileModifications(modificationList, allowEntityOverlap, true);
 }
 
-bool WorldServer::replaceTile(Vec2I const& pos, TileModification const& modification) {
+bool WorldServer::replaceTile(Vec2I const& pos, TileModification const& modification, TileDamage const& tileDamage) {
   if (isTileProtected(pos))
     return false;
 
@@ -892,9 +892,12 @@ bool WorldServer::replaceTile(Vec2I const& pos, TileModification const& modifica
       return false;
 
     if (auto tile = m_tileArray->modifyTile(pos)) {
-      Vec2F dropPosition = centerOfTile(pos);
+      auto damageParameters = WorldImpl::tileDamageParameters(tile, placeMaterial->layer, tileDamage);
+      bool harvested = tileDamage.harvestLevel >= damageParameters.requiredHarvestLevel();
       auto damage = placeMaterial->layer == TileLayer::Foreground ? tile->foregroundDamage : tile->backgroundDamage;
-      for (auto drop : destroyBlock(placeMaterial->layer, pos, damage.harvested(), !tileDamageIsPenetrating(damage.damageType()), false))
+      Vec2F dropPosition = centerOfTile(pos);
+
+      for (auto drop : destroyBlock(placeMaterial->layer, pos, harvested, !tileDamageIsPenetrating(damage.damageType()), false))
         addEntity(ItemDrop::createRandomizedDrop(drop, dropPosition));
       
       return true;
@@ -904,11 +907,11 @@ bool WorldServer::replaceTile(Vec2I const& pos, TileModification const& modifica
   return false;
 }
 
-TileModificationList WorldServer::replaceTiles(TileModificationList const& modificationList) {
+TileModificationList WorldServer::replaceTiles(TileModificationList const& modificationList, TileDamage const& tileDamage) {
   TileModificationList success, failures;
 
   for (auto pair : modificationList) {
-    if (replaceTile(pair.first, pair.second))
+    if (replaceTile(pair.first, pair.second, tileDamage))
       success.append(pair);
     else
       failures.append(pair);
@@ -983,20 +986,11 @@ TileDamageResult WorldServer::damageTiles(List<Vec2I> const& positions, TileLaye
       // Penetrating damage should carry through to the blocks behind this
       // entity.
       if (tileRes == TileDamageResult::None || tileDamageIsPenetrating(tileDamage.type)) {
-        auto materialDatabase = Root::singleton().materialDatabase();
+        auto damageParameters = WorldImpl::tileDamageParameters(tile, layer, tileDamage);
 
         if (layer == TileLayer::Foreground && isRealMaterial(tile->foreground)) {
           if (!tile->rootSource) {
-            if (isRealMod(tile->foregroundMod)) {
-              if (tileDamageIsPenetrating(tileDamage.type))
-                tile->foregroundDamage.damage(materialDatabase->materialDamageParameters(tile->foreground), sourcePosition, tileDamage);
-              else if (materialDatabase->modBreaksWithTile(tile->foregroundMod))
-                tile->foregroundDamage.damage(materialDatabase->modDamageParameters(tile->foregroundMod).sum(materialDatabase->materialDamageParameters(tile->foreground)), sourcePosition, tileDamage);
-              else
-                tile->foregroundDamage.damage(materialDatabase->modDamageParameters(tile->foregroundMod), sourcePosition, tileDamage);
-            } else {
-              tile->foregroundDamage.damage(materialDatabase->materialDamageParameters(tile->foreground), sourcePosition, tileDamage);
-            }
+            tile->foregroundDamage.damage(damageParameters, sourcePosition, tileDamage);
 
             // if the tile is broken, send a message back to the source entity with position, layer, dungeonId, and whether the tile was harvested
             if (sourceEntity.isValid() && tile->foregroundDamage.dead()) {
@@ -1018,16 +1012,7 @@ TileDamageResult WorldServer::damageTiles(List<Vec2I> const& positions, TileLaye
               tileRes = TileDamageResult::Normal;
           }
         } else if (layer == TileLayer::Background && isRealMaterial(tile->background)) {
-          if (isRealMod(tile->backgroundMod)) {
-            if (tileDamageIsPenetrating(tileDamage.type))
-              tile->backgroundDamage.damage(materialDatabase->materialDamageParameters(tile->background), sourcePosition, tileDamage);
-            else if (materialDatabase->modBreaksWithTile(tile->backgroundMod))
-              tile->backgroundDamage.damage(materialDatabase->modDamageParameters(tile->backgroundMod).sum(materialDatabase->materialDamageParameters(tile->background)), sourcePosition, tileDamage);
-            else
-              tile->backgroundDamage.damage(materialDatabase->modDamageParameters(tile->backgroundMod), sourcePosition, tileDamage);
-          } else {
-            tile->backgroundDamage.damage(materialDatabase->materialDamageParameters(tile->background), sourcePosition, tileDamage);
-          }
+          tile->backgroundDamage.damage(damageParameters, sourcePosition, tileDamage);
           
           // if the tile is broken, send a message back to the source entity with position and whether the tile was harvested
             if (sourceEntity.isValid() && tile->backgroundDamage.dead()) {

@@ -632,12 +632,13 @@ struct ModifyTileListPacket : PacketBase<PacketType::ModifyTileList> {
 
 struct ReplaceTileListPacket : PacketBase<PacketType::ReplaceTileList> {
   ReplaceTileListPacket();
-  ReplaceTileListPacket(TileModificationList modifications);
+  ReplaceTileListPacket(TileModificationList modifications, TileDamage tileDamage);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
 
   TileModificationList modifications;
+  TileDamage tileDamage;
 };
 
 struct DamageTileGroupPacket : PacketBase<PacketType::DamageTileGroup> {
