@@ -131,7 +131,7 @@ void MaterialItem::update(float dt, FireMode fireMode, bool shifting, HashSet<Mo
 }
 
 void MaterialItem::render(RenderCallback* renderCallback, EntityRenderLayer) {
-  if (m_collisionOverride != TileCollisionOverride::None) {
+  if (m_blockSwap || m_collisionOverride != TileCollisionOverride::None) {
     float pulseLevel = 1.f - 0.3f * 0.5f * ((float)sin(2 * Constants::pi * 4.0 * Time::monotonicTime()) + 1.f);
     Color color = owner()->favoriteColor().mix(Color::White);
     color.setAlphaF(color.alphaF() * pulseLevel * 0.95f);
@@ -145,6 +145,12 @@ void MaterialItem::render(RenderCallback* renderCallback, EntityRenderLayer) {
         renderCallback->addDrawable(indicator, RenderLayerForegroundTile);
       }
     };
+
+    if (m_blockSwap) {
+      color.hueShift(0.167f);
+      addIndicator("/interface/building/blockswap.png");
+      color.hueShift(-0.167f);
+    }
 
     if (m_collisionOverride == TileCollisionOverride::Empty)
       addIndicator("/interface/building/collisionempty.png");
