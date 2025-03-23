@@ -375,6 +375,33 @@ TileModificationList WorldClient::applyTileModifications(TileModificationList co
   return failures;
 }
 
+TileModificationList WorldClient::replaceTiles(TileModificationList const& modificationList, TileDamage const& tileDamage) {
+  if (!inWorld())
+    return {};
+  
+  // Tell client it can't send a replace packet
+  if (m_clientState.netCompatibilityRules().isLegacy())
+    return modificationList;
+  
+  TileModificationList success, failures;
+  for (auto pair : modificationList) {
+    if (!isTileProtected(pair.first) && WorldImpl::validateTileReplacement(pair.second))
+      success.append(pair);
+    else
+      failures.append(pair);
+  }
+
+  m_outgoingPackets.append(make_shared<ReplaceTileListPacket>(std::move(success), tileDamage));
+
+  return failures;
+}
+
+bool WorldClient::damageWouldDestroy(Vec2I const& pos, TileLayer layer, TileDamage const& tileDamage) const {
+  if (!inWorld())
+    return false;
+  return WorldImpl::damageWouldDestroy(m_tileArray, pos, layer, tileDamage);
+}
+
 float WorldClient::gravity(Vec2F const& pos) const {
   if (!inWorld())
     return 0.0f;

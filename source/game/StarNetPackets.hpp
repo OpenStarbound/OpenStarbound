@@ -113,7 +113,10 @@ enum class PacketType : uint8_t {
   SystemShipDestroy,
 
   // Packets sent system client -> system server
-  SystemObjectSpawn
+  SystemObjectSpawn,
+
+  // OpenStarbound packets
+  ReplaceTileList
 };
 extern EnumMap<PacketType> const PacketTypeNames;
 
@@ -625,6 +628,17 @@ struct ModifyTileListPacket : PacketBase<PacketType::ModifyTileList> {
 
   TileModificationList modifications;
   bool allowEntityOverlap;
+};
+
+struct ReplaceTileListPacket : PacketBase<PacketType::ReplaceTileList> {
+  ReplaceTileListPacket();
+  ReplaceTileListPacket(TileModificationList modifications, TileDamage tileDamage);
+
+  void read(DataStream& ds) override;
+  void write(DataStream& ds) const override;
+
+  TileModificationList modifications;
+  TileDamage tileDamage;
 };
 
 struct DamageTileGroupPacket : PacketBase<PacketType::DamageTileGroup> {
