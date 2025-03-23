@@ -329,13 +329,11 @@ void MaterialItem::blockSwap(float radius, TileLayer layer) {
     }
   }
 
-  auto strikeSounds = beamAxe->instanceValue("strikeSounds", {});
-  if (!strikeSounds.empty()) {
-    owner()->addSound(
-        Random::randValueFrom(jsonToStringList(strikeSounds)),
-        assets->json("/sfx.config:miningToolVolume").toFloat()
-    );
-  }
+  auto strikeSounds = beamAxe->instanceValue("strikeSounds", {"/assetmissing.wav"});
+  owner()->addSound(
+      Random::randValueFrom(jsonToStringList(strikeSounds)),
+      assets->json("/sfx.config:miningToolVolume").toFloat()
+  );
   owner()->addSound(blockSound, assets->json("/sfx.config:miningBlockVolume").toFloat());
   setFireTimer(windupTime() + cooldownTime());
 }
