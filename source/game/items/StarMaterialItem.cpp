@@ -335,8 +335,8 @@ void MaterialItem::blockSwap(float radius, TileLayer layer) {
       assets->json("/sfx.config:miningToolVolume").toFloat()
   );
   owner()->addSound(blockSound, assets->json("/sfx.config:miningBlockVolume").toFloat());
-  setFireTimer(windupTime() + cooldownTime());
-}*/
+  setFireTimer(windupTime() + cooldownTime());*/
+}
 
 MaterialId MaterialItem::materialId() const {
   return m_material;
