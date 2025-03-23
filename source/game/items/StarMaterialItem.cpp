@@ -133,7 +133,6 @@ void MaterialItem::update(float dt, FireMode fireMode, bool shifting, HashSet<Mo
 void MaterialItem::render(RenderCallback* renderCallback, EntityRenderLayer) {
   if (m_blockSwap || m_collisionOverride != TileCollisionOverride::None) {
     float pulse = (float)sin(2 * Constants::pi * 4.0 * Time::monotonicTime());
-    float pulseLevel = 1.f - 0.3f * 0.5f * ((float)sin(2 * Constants::pi * 4.0 * Time::monotonicTime()) + 1.f);
     float pulseA = 0.85 - pulse * 0.15f;
     float pulseB = 0.85 + pulse * 0.15f;
     Color color = owner()->favoriteColor().mix(Color::White);
