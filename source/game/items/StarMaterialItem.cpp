@@ -329,7 +329,7 @@ void MaterialItem::blockSwap(float radius, TileLayer layer) {
     }
   }
 
-  auto strikeSounds = beamaxe->instanceValue("strikeSounds");
+  auto strikeSounds = beamaxe->instanceValue("strikeSounds", {});
   if (!strikeSounds.empty()) {
     owner()->addSound(
         Random::randValueFrom(jsonToStringList(strikeSounds)),
