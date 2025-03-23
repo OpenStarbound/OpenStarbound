@@ -292,8 +292,8 @@ void MaterialItem::blockSwap(float radius, TileLayer layer) {
 
   TileDamage damage;
   damage.type = TileDamageType::Beamish;
-  damage.amount = beamAxe->instanceValue("tileDamage", instanceValue("primaryAbility.tileDamage", 1.0f)).toFloat();
-  damage.harvestLevel = beamAxe->instanceValue("harvestLevel", instanceValue("primaryAbility.harvestLevel", 1)).toUInt();
+  damage.amount = beamAxe->instanceValue("tileDamage", 1.0f).toFloat();
+  damage.harvestLevel = beamAxe->instanceValue("harvestLevel", 1).toUInt();
 
   TileModificationList toSwap;
   List<Vec2I> toDamage;
@@ -334,7 +334,7 @@ void MaterialItem::blockSwap(float radius, TileLayer layer) {
       assets->json("/sfx.config:miningToolVolume").toFloat()
   );
   owner()->addSound(blockSound, assets->json("/sfx.config:miningBlockVolume").toFloat());
-  setFireTimer(cooldownTime());
+  setFireTimer(windupTime() + cooldownTime());
 }
 
 MaterialId MaterialItem::materialId() const {
