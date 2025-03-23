@@ -893,7 +893,7 @@ bool WorldServer::replaceTile(Vec2I const& pos, TileModification const& modifica
 
     if (auto tile = m_tileArray->modifyTile(pos)) {
       auto damageParameters = WorldImpl::tileDamageParameters(tile, placeMaterial->layer, tileDamage);
-      bool harvested = tileDamage.harvestLevel >= damageParameters.requiredHarvestLevel();
+      bool harvested = tileDamage.amount >= 0 && tileDamage.harvestLevel >= damageParameters.requiredHarvestLevel();
       auto damage = placeMaterial->layer == TileLayer::Foreground ? tile->foregroundDamage : tile->backgroundDamage;
       Vec2F dropPosition = centerOfTile(pos);
 
