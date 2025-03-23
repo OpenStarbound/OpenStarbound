@@ -132,9 +132,13 @@ void MaterialItem::update(float dt, FireMode fireMode, bool shifting, HashSet<Mo
 
 void MaterialItem::render(RenderCallback* renderCallback, EntityRenderLayer) {
   if (m_blockSwap || m_collisionOverride != TileCollisionOverride::None) {
+    float pulse = (float)sin(2 * Constants::pi * 4.0 * Time::monotonicTime());
     float pulseLevel = 1.f - 0.3f * 0.5f * ((float)sin(2 * Constants::pi * 4.0 * Time::monotonicTime()) + 1.f);
+    float pulseA = 0.85 - pulse * 0.15f;
+    float pulseB = 0.85 + pulse * 0.15f;
     Color color = owner()->favoriteColor().mix(Color::White);
-    color.setAlphaF(color.alphaF() * pulseLevel * 0.95f);
+    float alpha = color.alphaF();
+    color.setAlphaF(alpha * pulseA * 0.95f);
     auto addIndicator = [&](String const& path) {
       Vec2F basePosition = Vec2F(0.5f, 0.5f);
       auto indicator = Drawable::makeImage(path, 1.0f / TilePixels, true, basePosition);
@@ -147,9 +151,11 @@ void MaterialItem::render(RenderCallback* renderCallback, EntityRenderLayer) {
     };
 
     if (m_blockSwap) {
+      auto prev = color;
       color.hueShift(0.167f);
+      color.setAlphaF(alpha * pulseB * 0.95f);
       addIndicator("/interface/building/blockswap.png");
-      color.hueShift(-0.167f);
+      color = prev;
     }
 
     if (m_collisionOverride == TileCollisionOverride::Empty)
