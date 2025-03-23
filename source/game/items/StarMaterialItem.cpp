@@ -295,8 +295,8 @@ void MaterialItem::blockSwap(float radius, TileLayer layer) {
 
   TileDamage damage;
   damage.type = TileDamageType::Beamish;
-  damage.amount = beamAxe->instanceValue("tileDamage", instanceValue("primaryAbility", {}).tileDamage, 1.0f).toFloat();
-  damage.harvestLevel = beamAxe->instanceValue("harvestLevel", instanceValue("primaryAbility", {}).harvestLevel, 1).toUInt();
+  damage.amount = beamAxe->instanceValue("tileDamage", instanceValue("primaryAbility", {}).value("tileDamage"), 1.0f).toFloat();
+  damage.harvestLevel = beamAxe->instanceValue("harvestLevel", instanceValue("primaryAbility", {}).value("harvestLevel"), 1).toUInt();
 
   TileModificationList toSwap;
   List<Vec2I> toDamage;
