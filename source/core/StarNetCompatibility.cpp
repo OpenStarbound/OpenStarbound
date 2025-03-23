@@ -2,6 +2,6 @@
 
 namespace Star {
 
-VersionNumber const OpenProtocolVersion = 3;
+VersionNumber const OpenProtocolVersion = 4;
 
 }

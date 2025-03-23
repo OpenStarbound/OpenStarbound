@@ -380,7 +380,8 @@ TileModificationList WorldClient::replaceTiles(TileModificationList const& modif
     return {};
   
   // Tell client it can't send a replace packet
-  if (m_clientState.netCompatibilityRules().isLegacy())
+  auto netRules = m_clientState.netCompatibilityRules();
+  if (netRules.isLegacy() || netRules.version() <= 3)
     return modificationList;
   
   TileModificationList success, failures;
