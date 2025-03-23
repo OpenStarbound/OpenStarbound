@@ -293,7 +293,7 @@ void MaterialItem::blockSwap(float radius, TileLayer layer) {
   TileDamage damage;
   damage.type = TileDamageType::Beamish;
   damage.amount = beamAxe->instanceValue("tileDamage", beamAxe->instanceValue("primaryAbility.tileDamage", 1.0f)).toFloat();
-  damage.harvestLevel = beamAxe->instanceValue("harvestLevel", beamaxe->instanceValue("primaryAbility.harvestLevel", 1)).toUInt();
+  damage.harvestLevel = beamAxe->instanceValue("harvestLevel", beamAxe->instanceValue("primaryAbility.harvestLevel", 1)).toUInt();
 
   TileModificationList toSwap;
   List<Vec2I> toDamage;
@@ -329,7 +329,7 @@ void MaterialItem::blockSwap(float radius, TileLayer layer) {
     }
   }
 
-  auto strikeSounds = beamaxe->instanceValue("strikeSounds", {});
+  auto strikeSounds = beamaxe->instanceValue("strikeSounds");
   if (!strikeSounds.empty()) {
     owner()->addSound(
         Random::randValueFrom(jsonToStringList(strikeSounds)),
