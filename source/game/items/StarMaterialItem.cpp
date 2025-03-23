@@ -257,9 +257,9 @@ void MaterialItem::blockSwap(float radius, TileLayer layer) {
     return;
   
   Item* beamAxe = beamAxePtr.get();
-  BeamMiningTool* tool = as<BeamMiningTool>(beamAxe);
-  if (!tool)
-    return;
+//BeamMiningTool* tool = as<BeamMiningTool>(beamAxe);
+//if (!tool)
+//  return;
   
   List<Vec2I> swapPositions;
   for (Vec2I& pos : tileArea(radius, owner()->aimPosition())) {
@@ -337,7 +337,7 @@ void MaterialItem::blockSwap(float radius, TileLayer layer) {
       assets->json("/sfx.config:miningToolVolume").toFloat()
   );
   owner()->addSound(blockSound, assets->json("/sfx.config:miningBlockVolume").toFloat());
-  setFireTimer(tool->windupTime() + tool->cooldownTime());
+//setFireTimer(tool->windupTime() + tool->cooldownTime());
 }
 
 MaterialId MaterialItem::materialId() const {
