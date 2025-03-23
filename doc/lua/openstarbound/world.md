@@ -65,3 +65,15 @@ Calls a function in the specified world script context.
 ?
 
 ---
+
+#### `bool` world.replaceMaterials(`List<Vec2I>` positions, `String` layerName, `String` materialName, [`int` hueShift], [`bool` enableDrops])
+
+Attempts to replace existing materials with the specified material in the specified positions and layer. Positions with no preexisting material will be skipped. Returns `true` if the placement succeeds and `false` otherwise.
+
+---
+
+#### `bool` world.replaceMaterialArea(`Vec2F` center, `float` radius, `String` layerName, `String` materialName, [`int` hueShift], [`bool` enableDrops])
+
+Identical to world.replaceMaterials but applies to tiles in a circular radius around the specified center point.
+
+---
