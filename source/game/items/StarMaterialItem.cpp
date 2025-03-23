@@ -257,9 +257,9 @@ void MaterialItem::blockSwap(float radius, TileLayer layer) {
     return;
   
   Item* beamAxe = beamAxePtr.get();
-  BeamMiningTool* tool = as<BeamMiningTool>(beamAxe);
-  if (!tool)
-    return;
+//BeamMiningTool* tool = as<BeamMiningTool>(beamAxe);
+//if (!tool)
+//  return;
   
   List<Vec2I> swapPositions;
   for (Vec2I& pos : tileArea(radius, owner()->aimPosition())) {
@@ -295,8 +295,8 @@ void MaterialItem::blockSwap(float radius, TileLayer layer) {
 
   TileDamage damage;
   damage.type = TileDamageType::Beamish;
-  damage.amount = beamAxe->instanceValue("tileDamage", 1.0f).toFloat();
-  damage.harvestLevel = beamAxe->instanceValue("harvestLevel", 1).toUInt();
+  damage.amount = beamAxe->instanceValue("tileDamage", instanceValue("primaryAbility", {}).tileDamage, 1.0f).toFloat();
+  damage.harvestLevel = beamAxe->instanceValue("harvestLevel", instanceValue("primaryAbility", {}).harvestLevel, 1).toUInt();
 
   TileModificationList toSwap;
   List<Vec2I> toDamage;
