@@ -375,7 +375,7 @@ TileModificationList WorldClient::applyTileModifications(TileModificationList co
   return failures;
 }
 
-TileModificationList WorldClient::replaceTiles(TileModificationList const& modificationList, TileDamage const& tileDamage) {
+TileModificationList WorldClient::replaceTiles(TileModificationList const& modificationList, TileDamage const& tileDamage, bool applyDamage) {
   if (!inWorld())
     return {};
   
@@ -392,7 +392,7 @@ TileModificationList WorldClient::replaceTiles(TileModificationList const& modif
       failures.append(pair);
   }
 
-  m_outgoingPackets.append(make_shared<ReplaceTileListPacket>(std::move(success), tileDamage));
+  m_outgoingPackets.append(make_shared<ReplaceTileListPacket>(std::move(success), tileDamage, applyDamage));
 
   return failures;
 }

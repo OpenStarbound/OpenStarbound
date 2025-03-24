@@ -750,19 +750,21 @@ void ModifyTileListPacket::write(DataStream& ds) const {
   ds.write(allowEntityOverlap);
 }
 
-ReplaceTileListPacket::ReplaceTileListPacket() {}
+ReplaceTileListPacket::ReplaceTileListPacket() : applyDamage() {}
 
-ReplaceTileListPacket::ReplaceTileListPacket(TileModificationList modifications, TileDamage tileDamage)
-  : modifications(modifications), tileDamage(std::move(tileDamage)) {}
+ReplaceTileListPacket::ReplaceTileListPacket(TileModificationList modifications, TileDamage tileDamage, bool applyDamage)
+  : modifications(modifications), tileDamage(std::move(tileDamage)), applyDamage(applyDamage) {}
 
 void ReplaceTileListPacket::read(DataStream& ds) {
   ds.readContainer(modifications);
   ds.read(tileDamage);
+  ds.read(applyDamage);
 }
 
 void ReplaceTileListPacket::write(DataStream& ds) const {
   ds.writeContainer(modifications);
   ds.write(tileDamage);
+  ds.write(applyDamage);
 }
 
 DamageTileGroupPacket::DamageTileGroupPacket() : layer(TileLayer::Foreground) {}

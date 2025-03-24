@@ -136,7 +136,7 @@ public:
   TileModificationList validTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap) const override;
   TileModificationList applyTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap) override;
   bool replaceTile(Vec2I const& pos, TileModification const& modification, TileDamage const& tileDamage);
-  TileModificationList replaceTiles(TileModificationList const& modificationList, TileDamage const& tileDamage) override;
+  TileModificationList replaceTiles(TileModificationList const& modificationList, TileDamage const& tileDamage, bool applyDamage = false) override;
   bool damageWouldDestroy(Vec2I const& pos, TileLayer layer, TileDamage const& tileDamage) const override;
   EntityPtr entity(EntityId entityId) const override;
   void addEntity(EntityPtr const& entity, EntityId entityId = NullEntityId) override;
