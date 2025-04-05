@@ -492,6 +492,7 @@ void ClientApplication::renderReload() {
   
   // define post process layers and optionally assign them to groups
   m_postProcessLayers.clear();
+  m_labelledPostProcessLayers.clear();
   auto postProcessLayers = assets->json("/client.config:postProcessLayers").toArray();
   for (auto& layer : postProcessLayers) {
     auto effects = jsonToStringList(layer.getArray("effects"));
@@ -502,18 +503,28 @@ void ClientApplication::renderReload() {
     if (gname) {
       group = &m_postProcessGroups.get(gname.value());
     }
+    // I'd think a string map for all of these would be better, but the order does matter here, and does make sense to depend on mod priority, so...
+    // guess a string map of indices works
+    // I tried pointers but for whatever reason the behaviour was highly inconsistent and only worked after reload...
+    auto label = layer.optString("name");
+    if (label) {
+      m_labelledPostProcessLayers.add(label.value(),m_postProcessLayers.count());
+    }
     m_postProcessLayers.append(PostProcessLayer{ std::move(effects), (unsigned)layer.getUInt("passes", 1), group });
   }
 
   loadEffectConfig("interface");
 }
 
-void ClientApplication::setPostProcessGroupEnabled(String group, bool enabled, Maybe<bool> save) {
+void ClientApplication::setPostProcessLayerPasses(String const& layer, unsigned const& passes) {
+  m_postProcessLayers.at(m_labelledPostProcessLayers.get(layer)).passes = passes;
+}
+void ClientApplication::setPostProcessGroupEnabled(String const& group, bool const& enabled, Maybe<bool> const& save) {
   m_postProcessGroups.get(group).enabled = enabled;
   if (save && save.value())
     m_root->configuration()->setPath(strf("{}.{}.enabled", postProcessGroupsRoot, group),enabled);
 }
-bool ClientApplication::postProcessGroupEnabled(String group) {
+bool ClientApplication::postProcessGroupEnabled(String const& group) {
   return m_postProcessGroups.get(group).enabled;
 }
 

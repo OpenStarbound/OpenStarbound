@@ -184,6 +184,18 @@ local function addOption(data, i, added)
   end
 end
 
+local function updateParameter(parameter,oname,value)
+  if parameter.isPasses then
+    for k,v in next, parameter.layers do
+      renderer.setPostProcessLayerPasses(v, value)
+    end
+  else
+    for k,v in next, parameter.effects do
+      renderer.setEffectParameter(v, oname, value)
+    end
+  end
+end
+
 function sliderOptionModified(option, odata)
   local oname = string.sub(option, optionOffset)
   local parameter = groups[activeGroup].parameters[oname]
@@ -191,15 +203,12 @@ function sliderOptionModified(option, odata)
   
   widget.setText(fmt("%s.%s",OPTIONS_WIDGET,option.."_value"), fmt(digitRegex(parameter.delta),value))
   
-  for k,v in next, parameter.effects do
-    renderer.setEffectParameter(v, oname, value)
-  end
+  updateParameter(parameter,oname,value)
   shaderConfig[activeGroup].parameters[oname] = value
   root.setConfiguration("postProcessGroups",shaderConfig)
 end
 
 function selectOptionPressed(button,bdata)
-  sb.logInfo(sb.print(bdata))
   
   for k,v in next, bdata.buttons do
     if v.index ~= bdata.index then
@@ -212,9 +221,7 @@ function selectOptionPressed(button,bdata)
   local oname = bdata.option.name
   local parameter = groups[activeGroup].parameters[oname]
   
-  for k,v in next, parameter.effects do
-    renderer.setEffectParameter(v, oname, value)
-  end
+  updateParameter(parameter,oname,value)
   shaderConfig[activeGroup].parameters[oname] = value
   root.setConfiguration("postProcessGroups",shaderConfig)
 end

@@ -19,8 +19,9 @@ STAR_CLASS(Voice);
 
 class ClientApplication : public Application {
 public:
-  void setPostProcessGroupEnabled(String group, bool enabled, Maybe<bool> save);
-  bool postProcessGroupEnabled(String group);
+  void setPostProcessLayerPasses(String const& layer, unsigned const& passes);
+  void setPostProcessGroupEnabled(String const& group, bool const& enabled, Maybe<bool> const& save);
+  bool postProcessGroupEnabled(String const& group);
   Json postProcessGroups();
   
 protected:
@@ -116,6 +117,7 @@ private:
   
   StringMap<PostProcessGroup> m_postProcessGroups;
   List<PostProcessLayer> m_postProcessLayers;
+  StringMap<size_t> m_labelledPostProcessLayers;
 
   // Valid if main app state == SinglePlayer
   UniverseServerPtr m_universeServer;
