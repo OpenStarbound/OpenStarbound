@@ -331,7 +331,7 @@ private:
 
   // Lua
   RefPtr<RefCounter> m_luaEngine; // dumb but to avoid including Lua.hpp in here...
-  mutable StringMap<LuaContextPtr> m_patchContexts;
+  mutable HashMap<pair<AssetSource*, String>, LuaContextPtr> m_patchContexts;
   mutable RecursiveMutex m_luaMutex;
 
   // Paths of all used asset sources, in load order.
