@@ -41,9 +41,9 @@ public:
   StringList clientChannels(ConnectionId clientId) const;
   StringList activeChannels() const;
 
-  void broadcast(ConnectionId sourceConnectionId, String const& text);
-  void message(ConnectionId sourceConnectionId, MessageContext::Mode context, String const& channelName, String const& text);
-  void whisper(ConnectionId sourceConnectionId, ConnectionId targetClientId, String const& text);
+  void broadcast(ConnectionId sourceConnectionId, String const& text, JsonObject data = {});
+  void message(ConnectionId sourceConnectionId, MessageContext::Mode context, String const& channelName, String const& text, JsonObject data = {});
+  void whisper(ConnectionId sourceConnectionId, ConnectionId targetClientId, String const& text, JsonObject data = {});
 
   // Shorthand for passing ServerConnectionId as sourceConnectionId to
   // broadcast / message / whisper
