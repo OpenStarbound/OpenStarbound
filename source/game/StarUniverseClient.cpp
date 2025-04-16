@@ -484,10 +484,13 @@ bool UniverseClient::flying() const {
   return false;
 }
 
-void UniverseClient::sendChat(String const& text, ChatSendMode sendMode, Maybe<bool> speak) {
+void UniverseClient::sendChat(String const& text, ChatSendMode sendMode, Maybe<bool> speak, Maybe<JsonObject> data) {
   if (speak.value(!text.beginsWith("/")))
     m_mainPlayer->addChatMessage(text);
-  m_connection->pushSingle(make_shared<ChatSendPacket>(text, sendMode));
+  auto packet = make_shared<ChatSendPacket>(text, sendMode);
+  if (data)
+    packet->data = std::move(*data);
+  m_connection->pushSingle(packet);
 }
 
 List<ChatReceivedMessage> UniverseClient::pullChatMessages() {

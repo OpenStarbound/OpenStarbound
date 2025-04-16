@@ -371,12 +371,14 @@ struct FlyShipPacket : PacketBase<PacketType::FlyShip> {
 struct ChatSendPacket : PacketBase<PacketType::ChatSend> {
   ChatSendPacket();
   ChatSendPacket(String text, ChatSendMode sendMode);
+  ChatSendPacket(String text, ChatSendMode sendMode, JsonObject data);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
 
   String text;
   ChatSendMode sendMode;
+  JsonObject data;
 };
 
 struct CelestialRequestPacket : PacketBase<PacketType::CelestialRequest> {

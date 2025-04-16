@@ -495,14 +495,20 @@ ChatSendPacket::ChatSendPacket() : sendMode(ChatSendMode::Broadcast) {}
 
 ChatSendPacket::ChatSendPacket(String text, ChatSendMode sendMode) : text(std::move(text)), sendMode(sendMode) {}
 
+ChatSendPacket::ChatSendPacket(String text, ChatSendMode sendMode, JsonObject data) : text(std::move(text)), sendMode(sendMode), data(std::move(data)) {}
+
 void ChatSendPacket::read(DataStream& ds) {
   ds.read(text);
   ds.read(sendMode);
+  if (ds.streamCompatibilityVersion() >= 5)
+    ds.read(data);
 }
 
 void ChatSendPacket::write(DataStream& ds) const {
   ds.write(text);
   ds.write(sendMode);
+  if (ds.streamCompatibilityVersion() >= 5)
+    ds.write(data);
 }
 
 CelestialRequestPacket::CelestialRequestPacket() {}
