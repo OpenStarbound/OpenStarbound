@@ -17,7 +17,7 @@ If `data` is provided, it will be sent as a JSON object with the message. This c
 
 ---
 
-#### `List<String>` chat.command(`String` command)
+#### `String[]` chat.command(`String` command)
 
 Executes the specified command and returns a list of strings with the result.
 
