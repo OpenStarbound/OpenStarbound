@@ -151,7 +151,7 @@ void ClientApplication::startup(StringList const& cmdLineArgs) {
   RootLoader rootLoader({AdditionalAssetsSettings, AdditionalDefaultConfiguration, String("starbound.log"), LogLevel::Info, false, String("starbound.config")});
   m_root = rootLoader.initOrDie(cmdLineArgs).first;
 
-  Logger::info("Client Version {} ({}) Source ID: {} Protocol: {}", StarVersionString, StarArchitectureString, StarSourceIdentifierString, StarProtocolVersion);
+  Logger::info("OpenStarbound Client v{} for v{} ({}) Source ID: {} Protocol: {}", OpenStarVersionString, StarVersionString, StarArchitectureString, StarSourceIdentifierString, StarProtocolVersion);
 }
 
 void ClientApplication::shutdown() {

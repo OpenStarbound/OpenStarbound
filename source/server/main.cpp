@@ -45,7 +45,7 @@ int main(int argc, char** argv) {
 
     auto configuration = root->configuration();
     {
-      Logger::info("Server Version {} ({}) Source ID: {} Protocol: {}", StarVersionString, StarArchitectureString, StarSourceIdentifierString, StarProtocolVersion);
+      Logger::info("OpenStarbound Server v{} for v{} ({}) Source ID: {} Protocol: {}", OpenStarVersionString, StarVersionString, StarArchitectureString, StarSourceIdentifierString, StarProtocolVersion);
 
       float updateRate = 1.0f / GlobalTimestep;
       if (auto jUpdateRate = configuration->get("updateRate")) {
