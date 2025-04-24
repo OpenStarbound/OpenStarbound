@@ -496,6 +496,10 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
     return QuestStateNames.getRight(player->questManager()->getQuest(questId)->state());
   });
 
+  callbacks.registerCallback("questObjectives", [player](String const& questId) -> Maybe<JsonArray> {
+    return player->questManager()->getQuest(questId)->objectiveList();
+  });
+
   callbacks.registerCallback("callQuest", [player](String const& questId, String const& func, LuaVariadic<LuaValue> const& args) -> Maybe<LuaValue> {
     if (!player->questManager()->hasQuest(questId))
       return {};
@@ -522,8 +526,11 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
     return player->questManager()->trackedQuestId();
   });
 
-  callbacks.registerCallback("setTrackedQuest", [player](Maybe<String> const& questId) {
-    return player->questManager()->setAsTracked(questId);
+  callbacks.registerCallback("setTrackedQuest", [player](String const& questId) {
+    if (!player->questManager()->isCurrent(questId))
+      return player->questManager()->setAsTracked(questId);
+    else
+      return player->questManager()->setAsTracked({});
   });
 
   callbacks.registerCallback("canTurnInQuest", [player](String const& questId) {
