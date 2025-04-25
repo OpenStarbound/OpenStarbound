@@ -213,6 +213,15 @@ void TitleScreen::setMultiPlayerPassword(String password) {
   m_password = std::move(password);
 }
 
+bool TitleScreen::multiPlayerForceLegacy() const {
+  return m_forceLegacy;
+}
+
+void TitleScreen::setMultiPlayerForceLegacy(bool const& forceLegacy) {
+  m_multiPlayerMenu->fetchChild<ButtonWidget>("legacyCheckbox")->setChecked(forceLegacy);
+  m_forceLegacy = forceLegacy;
+}
+
 void TitleScreen::initMainMenu() {
   m_mainMenu = make_shared<Pane>();
   auto backMenu = make_shared<Pane>();
@@ -347,7 +356,8 @@ void TitleScreen::initMultiPlayerMenu() {
       {"address", multiPlayerAddress()},
       {"account", multiPlayerAccount()},
       {"port", multiPlayerPort()},
-      //{"password", multiPlayerPassword()}
+      //{"password", multiPlayerPassword()},
+      {"forceLegacy",multiPlayerForceLegacy()}
     };
 
     auto serverList = m_serverSelectPane->fetchChild<ListWidget>("serverSelectArea.serverList");
@@ -384,6 +394,7 @@ void TitleScreen::initMultiPlayerMenu() {
       setMultiPlayerPort(data.getString("port", ""));
       setMultiPlayerAccount(data.getString("account", ""));
       setMultiPlayerPassword(data.getString("password", ""));
+      setMultiPlayerForceLegacy(data.getBool("forceLegacy", false));
 
     if (auto passwordWidget = m_multiPlayerMenu->fetchChild("password"))
       passwordWidget->focus();
@@ -405,6 +416,10 @@ void TitleScreen::initMultiPlayerMenu() {
 
   readerConnect.registerCallback("password", [=](Widget* obj) {
       m_password = convert<TextBoxWidget>(obj)->getText().trim();
+    });
+  
+  readerConnect.registerCallback("legacyCheckbox", [=](Widget* obj) {
+      m_forceLegacy = convert<ButtonWidget>(obj)->isChecked();
     });
 
   readerConnect.registerCallback("connect", [=](Widget*) {

@@ -57,6 +57,7 @@ private:
     Variant<P2PNetworkingPeerId, HostAddressWithPort> server;
     String account;
     String password;
+    bool forceLegacy;
   };
   
   struct PostProcessGroup {

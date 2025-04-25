@@ -4,5 +4,25 @@
     "anchor" : "center",
     "positionLocked" : true
   },
+  "connect": {
+    "position" : [34, 32]
+  },
+  "legacyLabel" : {
+    "type" : "label",
+    "position" : [130, 34],
+    "hAnchor" : "left",
+    "value" : "FORCE LEGACY"
+  },
+  "legacyCheckbox" : {
+    "type" : "button",
+    "pressedOffset" : [0, 0],
+    "position" : [120, 34],
+    "base" : "/interface/optionsmenu/checkboxnocheck.png",
+    "hover" : "/interface/optionsmenu/checkboxnocheckhover.png",
+    "baseImageChecked" : "/interface/optionsmenu/checkboxcheck.png",
+    "hoverImageChecked" : "/interface/optionsmenu/checkboxcheckhover.png",
+    "checkable" : true,
+    "checked": false
+  },
   "password" : { "hidden" : true }
 }
