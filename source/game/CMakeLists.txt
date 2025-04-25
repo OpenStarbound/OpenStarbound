@@ -250,6 +250,7 @@ SET (star_game_HEADERS
     scripting/StarPlayerLuaBindings.hpp
     scripting/StarRootLuaBindings.hpp
     scripting/StarScriptedAnimatorLuaBindings.hpp
+    scripting/StarSongbookLuaBindings.hpp
     scripting/StarStatusControllerLuaBindings.hpp
     scripting/StarTeamClientLuaBindings.hpp
     scripting/StarWorldLuaBindings.hpp
@@ -491,6 +492,7 @@ SET (star_game_SOURCES
     scripting/StarPlayerLuaBindings.cpp
     scripting/StarRootLuaBindings.cpp
     scripting/StarScriptedAnimatorLuaBindings.cpp
+    scripting/StarSongbookLuaBindings.cpp
     scripting/StarStatusControllerLuaBindings.cpp
     scripting/StarTeamClientLuaBindings.cpp
     scripting/StarWorldLuaBindings.cpp

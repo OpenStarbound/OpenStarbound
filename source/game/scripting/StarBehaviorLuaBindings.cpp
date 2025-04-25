@@ -4,7 +4,7 @@
 
 namespace Star {
 
-LuaCallbacks LuaBindings::makeBehaviorLuaCallbacks(List<BehaviorStatePtr>* list) {
+LuaCallbacks LuaBindings::makeBehaviorCallbacks(List<BehaviorStatePtr>* list) {
   LuaCallbacks callbacks;
 
   callbacks.registerCallback("behavior", [list](Json const& config, JsonObject const& parameters, LuaTable context, Maybe<LuaUserData> blackboard) -> BehaviorStateWeakPtr {

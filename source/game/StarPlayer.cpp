@@ -3,6 +3,7 @@
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
 #include "StarSongbook.hpp"
+#include "StarSongbookLuaBindings.hpp"
 #include "StarEmoteProcessor.hpp"
 #include "StarSpeciesDatabase.hpp"
 #include "StarDamageManager.hpp"
@@ -331,6 +332,7 @@ void Player::init(World* world, EntityId entityId, EntityMode mode) {
       p.second->addActorMovementCallbacks(m_movementController.get());
       p.second->addCallbacks("player", LuaBindings::makePlayerCallbacks(this));
       p.second->addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(m_statusController.get()));
+      p.second->addCallbacks("songbook", LuaBindings::makeSongbookCallbacks(m_songbook.get()));
       if (m_client)
         p.second->addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(m_client));
       p.second->init(world);
@@ -362,6 +364,7 @@ void Player::uninit() {
       p.second->removeCallbacks("player");
       p.second->removeCallbacks("mcontroller");
       p.second->removeCallbacks("status");
+      p.second->removeCallbacks("songbook");
       p.second->removeCallbacks("world");
       if (m_client)
         p.second->removeCallbacks("celestial");
@@ -2272,7 +2275,7 @@ bool Player::instrumentPlaying() {
 
 void Player::instrumentEquipped(String const& instrumentKind) {
   if (canUseTool())
-    m_songbook->keepalive(instrumentKind, mouthPosition());
+    m_songbook->keepAlive(instrumentKind, mouthPosition());
 }
 
 void Player::interact(InteractAction const& action) {

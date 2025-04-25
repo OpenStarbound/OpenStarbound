@@ -24,12 +24,16 @@ public:
   // instrument needs to tell the songbook what type it is, and needs to keep
   // calling it to signal
   // the instrument is still equiped
-  void keepalive(String const& instrument, Vec2F const& position);
+  void keepAlive(String const& instrument, Vec2F const& position);
 
   void stop();
-  void play(Json const& song, String const& timesource);
-  bool active();
-  bool instrumentPlaying();
+  void play(Json const& song, String const& timeSource);
+  bool active() const;
+  bool instrumentPlaying() const;
+
+  Maybe<String> timeSource() const;
+  Maybe<String> instrument() const;
+  Json song() const;
 
 private:
   struct Note {
