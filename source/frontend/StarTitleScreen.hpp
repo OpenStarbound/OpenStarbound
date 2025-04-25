@@ -77,6 +77,9 @@ public:
   String multiPlayerPassword() const;
   void setMultiPlayerPassword(String password);
 
+  bool multiPlayerForceLegacy() const;
+  void setMultiPlayerForceLegacy(bool const& forceLegacy);
+
 private:
   void initMainMenu();
   void initCharSelectionMenu();
@@ -122,6 +125,7 @@ private:
   String m_connectionPort;
   String m_account;
   String m_password;
+  bool m_forceLegacy;
 
   CelestialMasterDatabasePtr m_celestialDatabase;
 

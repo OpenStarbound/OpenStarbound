@@ -71,7 +71,7 @@ PlayerPtr UniverseClient::mainPlayer() const {
   return m_mainPlayer;
 }
 
-Maybe<String> UniverseClient::connect(UniverseConnection connection, bool allowAssetsMismatch, String const& account, String const& password) {
+Maybe<String> UniverseClient::connect(UniverseConnection connection, bool allowAssetsMismatch, String const& account, String const& password, bool const& forceLegacy) {
   auto& root = Root::singleton();
   auto assets = root.assets();
 
@@ -85,9 +85,11 @@ Maybe<String> UniverseClient::connect(UniverseConnection connection, bool allowA
 
   {
     auto protocolRequest = make_shared<ProtocolRequestPacket>(StarProtocolVersion);
-    protocolRequest->setCompressionMode(PacketCompressionMode::Enabled);
-    // Signal that we're OpenStarbound. Vanilla Starbound only compresses
-    // packets above 64 bytes - by forcing it, we can communicate this.
+    if (!forceLegacy) {
+      protocolRequest->setCompressionMode(PacketCompressionMode::Enabled);
+      // Signal that we're OpenStarbound. Vanilla Starbound only compresses
+      // packets above 64 bytes - by forcing it, we can communicate this.
+    }
     connection.pushSingle(protocolRequest);
   }
   connection.sendAll(timeout);
@@ -101,7 +103,7 @@ Maybe<String> UniverseClient::connect(UniverseConnection connection, bool allowA
 
   NetCompatibilityRules compatibilityRules;
   compatibilityRules.setVersion(LegacyVersion);
-  bool legacyServer = protocolResponsePacket->compressionMode() != PacketCompressionMode::Enabled;
+  bool legacyServer = forceLegacy || (protocolResponsePacket->compressionMode() != PacketCompressionMode::Enabled);
   if (!legacyServer) {
     auto compressedSocket = as<CompressedPacketSocket>(&connection.packetSocket());
     if (protocolResponsePacket->info) {

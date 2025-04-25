@@ -73,7 +73,8 @@ Json const AdditionalDefaultConfiguration = Json::parseJson(R"JSON(
       "title" : {
         "multiPlayerAddress" : "",
         "multiPlayerPort" : "",
-        "multiPlayerAccount" : ""
+        "multiPlayerAccount" : "",
+        "multiPlayerForceLegacy" : false
       },
 
       "bindings" : {
@@ -638,6 +639,7 @@ void ClientApplication::changeState(MainAppState newState) {
         m_titleScreen->setMultiPlayerAddress(toString(address->address()));
         m_titleScreen->setMultiPlayerPort(toString(address->port()));
         m_titleScreen->setMultiPlayerAccount(configuration->getPath("title.multiPlayerAccount").toString());
+        m_titleScreen->setMultiPlayerForceLegacy(configuration->getPath("title.multiPlayerForceLegacy").optBool().value(false));
         m_titleScreen->goToMultiPlayerSelectCharacter(false);
       } else {
         m_titleScreen->goToMultiPlayerSelectCharacter(true);
@@ -646,6 +648,7 @@ void ClientApplication::changeState(MainAppState newState) {
       m_titleScreen->setMultiPlayerAddress(configuration->getPath("title.multiPlayerAddress").toString());
       m_titleScreen->setMultiPlayerPort(configuration->getPath("title.multiPlayerPort").toString());
       m_titleScreen->setMultiPlayerAccount(configuration->getPath("title.multiPlayerAccount").toString());
+      m_titleScreen->setMultiPlayerForceLegacy(configuration->getPath("title.multiPlayerForceLegacy").optBool().value(false));
     }
   }
 
@@ -710,7 +713,7 @@ void ClientApplication::changeState(MainAppState newState) {
 
       bool allowAssetsMismatch = m_root->configuration()->get("allowAssetsMismatch").toBool();
       if (auto errorMessage = m_universeClient->connect(UniverseConnection(std::move(packetSocket)), allowAssetsMismatch,
-            multiPlayerConnection.account, multiPlayerConnection.password)) {
+            multiPlayerConnection.account, multiPlayerConnection.password, multiPlayerConnection.forceLegacy)) {
         setError(*errorMessage);
         return;
       }
@@ -882,13 +885,15 @@ void ClientApplication::updateTitle(float dt) {
           m_pendingMultiPlayerConnection = PendingMultiPlayerConnection{
             address.right(),
             m_titleScreen->multiPlayerAccount(),
-            m_titleScreen->multiPlayerPassword()
+            m_titleScreen->multiPlayerPassword(),
+            m_titleScreen->multiPlayerForceLegacy()
           };
 
           auto configuration = m_root->configuration();
           configuration->setPath("title.multiPlayerAddress", m_titleScreen->multiPlayerAddress());
           configuration->setPath("title.multiPlayerPort", m_titleScreen->multiPlayerPort());
           configuration->setPath("title.multiPlayerAccount", m_titleScreen->multiPlayerAccount());
+          configuration->setPath("title.multiPlayerForceLegacy", m_titleScreen->multiPlayerForceLegacy());
 
           changeState(MainAppState::MultiPlayer);
         }
