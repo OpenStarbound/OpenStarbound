@@ -764,13 +764,17 @@ ReplaceTileListPacket::ReplaceTileListPacket(TileModificationList modifications,
 void ReplaceTileListPacket::read(DataStream& ds) {
   ds.readContainer(modifications);
   ds.read(tileDamage);
-  ds.read(applyDamage);
+  if (ds.streamCompatibilityVersion() >= 7)
+    ds.read(applyDamage);
+  else
+    applyDamage = false;
 }
 
 void ReplaceTileListPacket::write(DataStream& ds) const {
   ds.writeContainer(modifications);
   ds.write(tileDamage);
-  ds.write(applyDamage);
+  if (ds.streamCompatibilityVersion() >= 7)
+    ds.write(applyDamage);
 }
 
 DamageTileGroupPacket::DamageTileGroupPacket() : layer(TileLayer::Foreground) {}
