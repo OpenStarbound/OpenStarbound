@@ -374,7 +374,7 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
         clientInfo->outgoingPackets.append(make_shared<TileModificationFailurePacket>(unappliedModifications));
 
     } else if (auto rtpacket = as<ReplaceTileListPacket>(packet)) {
-      auto unappliedModifications = replaceTiles(rtpacket->modifications, rtpacket->tileDamage);
+      auto unappliedModifications = replaceTiles(rtpacket->modifications, rtpacket->tileDamage, rtpacket->applyDamage);
       if (!unappliedModifications.empty())
         clientInfo->outgoingPackets.append(make_shared<TileModificationFailurePacket>(unappliedModifications));
 
@@ -907,14 +907,48 @@ bool WorldServer::replaceTile(Vec2I const& pos, TileModification const& modifica
   return false;
 }
 
-TileModificationList WorldServer::replaceTiles(TileModificationList const& modificationList, TileDamage const& tileDamage) {
+TileModificationList WorldServer::replaceTiles(TileModificationList const& modificationList, TileDamage const& tileDamage, bool applyDamage) {
   TileModificationList success, failures;
 
-  for (auto pair : modificationList) {
-    if (replaceTile(pair.first, pair.second, tileDamage))
-      success.append(pair);
-    else
+  if (applyDamage) {
+    List<Vec2I> toDamage;
+    TileLayer layer;
+
+    for (auto pair : modificationList) {
+      if (auto placeMaterial = pair.second.ptr<PlaceMaterial>()) {
+        layer = placeMaterial->layer;
+
+        if (placeMaterial->material == material(pair.first, layer)) {
+          failures.append(pair);
+          continue;
+        }
+
+        if (damageWouldDestroy(pair.first, layer, tileDamage)) {
+          if (replaceTile(pair.first, pair.second, tileDamage))
+            success.append(pair);
+          else
+            failures.append(pair);
+          continue;
+        }
+
+        toDamage.append(pair.first);
+        success.append(pair);
+        continue;
+      }
+      
       failures.append(pair);
+    }
+
+    if (!toDamage.empty())
+      damageTiles(toDamage, layer, Vec2F(), tileDamage, Maybe<EntityId>());
+    
+  } else {
+    for (auto pair : modificationList) {
+      if (replaceTile(pair.first, pair.second, tileDamage))
+        success.append(pair);
+      else
+        failures.append(pair);
+    }
   }
 
   failures.appendAll(doApplyTileModifications(success, true, false, false));

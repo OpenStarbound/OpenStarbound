@@ -10,7 +10,6 @@
 #include "StarInput.hpp"
 #include "StarTileDrawer.hpp"
 #include "StarPlayer.hpp"
-#include "StarTools.hpp"
 
 namespace Star {
 
@@ -211,10 +210,11 @@ void MaterialItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
     ? collisionKindFromOverride(m_collisionOverride)
     : Root::singleton().materialDatabase()->materialCollisionKind(m_material);
 
-  if (m_blockSwap && owner()->inToolRange(aimPosition))
-    blockSwap(radius, layer);
-  
   size_t total = 0;
+
+  if (m_blockSwap && owner()->inToolRange(aimPosition))
+    total += blockSwap(radius, layer);
+  
   for (unsigned i = 0; i != steps; ++i) {
     auto placementOrigin = aimPosition + diff * (1.0f - (static_cast<float>(i) / steps));
     if (!owner()->inToolRange(placementOrigin))
@@ -247,20 +247,17 @@ void MaterialItem::endFire(FireMode, bool) {
   m_lastAimPosition.reset();
 }
 
-void MaterialItem::blockSwap(float radius, TileLayer layer) {
+size_t MaterialItem::blockSwap(float radius, TileLayer layer) {
   Player* player = as<Player>(owner());
   if (!player)
-    return;
+    return 0;
   
   ItemPtr beamAxePtr = player->essentialItem(EssentialItem::BeamAxe);
   if (!beamAxePtr)
-    return;
+    return 0;
   
   Item* beamAxe = beamAxePtr.get();
-  BeamMiningTool* tool = as<BeamMiningTool>(beamAxe);
-  if (!tool)
-    return;
-  
+
   List<Vec2I> swapPositions;
   for (Vec2I& pos : tileArea(radius, owner()->aimPosition())) {
     if (!world()->isTileConnectable(pos, layer, true))
@@ -273,19 +270,53 @@ void MaterialItem::blockSwap(float radius, TileLayer layer) {
   }
 
   if (swapPositions.empty())
-    return;
+    return 0;
+  if (swapPositions.size() > count())
+    swapPositions.resize(count());
+
+  TileDamage damage;
+  damage.type = TileDamageType::Beamish;
+  damage.amount = beamAxe->instanceValue("tileDamage", beamAxe->instanceValue("primaryAbility.tileDamage", 1.0f)).toFloat();
+  damage.harvestLevel = beamAxe->instanceValue("harvestLevel", beamAxe->instanceValue("primaryAbility.harvestLevel", 1)).toUInt();
+
+  TileModificationList toSwap;
+  List<Vec2I> willDamage;
+  for (auto pos : swapPositions) {
+    toSwap.emplaceAppend(pos, PlaceMaterial{layer, materialId(), placementHueShift(pos), m_collisionOverride});
+    if (!world()->damageWouldDestroy(pos, layer, damage))
+      willDamage.append(pos);
+  }
   
+  size_t success;
+  size_t failed = world()->replaceTiles(toSwap, damage, true).size();
+
+  if (failed < toSwap.size()) {
+    success = toSwap.size() - failed;
+    consume(success);
+  } else {
+    List<Vec2I> toDamage;
+
+    for (auto pair : toSwap)
+      toDamage.append(pair.first);
+    
+    world()->damageTiles(toDamage, layer, owner()->position(), damage, owner()->entityId());
+  }
+
+  if (willDamage.empty())
+    return success;
+
   auto materialDatabase = Root::singleton().materialDatabase();
   auto assets = Root::singleton().assets();
   String blockSound;
 
-  for (auto pos : swapPositions) {
+  for (auto pos : willDamage) {
     blockSound = materialDatabase->miningSound(world()->material(pos, layer), world()->mod(pos, layer));
     if (!blockSound.empty())
       break;
   }
+
   if (blockSound.empty()) {
-    for (auto pos : swapPositions) {
+    for (auto pos : willDamage) {
       blockSound = materialDatabase->footstepSound(world()->material(pos, layer), world()->mod(pos, layer));
       if (!blockSound.empty()
           && blockSound != assets->json("/client.config:defaultFootstepSound").toString())
@@ -293,51 +324,20 @@ void MaterialItem::blockSwap(float radius, TileLayer layer) {
     }
   }
 
-  TileDamage damage;
-  damage.type = TileDamageType::Beamish;
-  damage.amount = beamAxe->instanceValue("tileDamage", 1.0f).toFloat();
-  damage.harvestLevel = beamAxe->instanceValue("harvestLevel", 1).toUInt();
-
-  TileModificationList toSwap;
-  List<Vec2I> toDamage;
-  for (auto pos : swapPositions) {
-    if (world()->damageWouldDestroy(pos, layer, damage))
-      toSwap.emplaceAppend(pos, PlaceMaterial{layer, materialId(), placementHueShift(pos), m_collisionOverride});
-    else
-      toDamage.append(pos);
-  }
-
-  if (toSwap.size() > count())
-    toSwap.resize(count());
-  if (toDamage.size() + toSwap.size() > count())
-    toDamage.resize(count() - toSwap.size());
-  
-  if (!toSwap.empty()) {
-    size_t failed = world()->replaceTiles(toSwap, damage).size();
-
-    if (failed < toSwap.size())
-      consume(toSwap.size() - failed);
-    else {
-      for (auto pair : toSwap)
-        toDamage.append(pair.first);
-      if (toDamage.size() > count())
-        toDamage.resize(count());
-    }
-  }
-
-  if (!toDamage.empty()) {
-    auto damageResult = world()->damageTiles(toDamage, layer, owner()->position(), damage, owner()->entityId());
-    if (damageResult == TileDamageResult::Protected) {
-      blockSound = assets->json("/client.config:defaultDingSound").toString();
-    }
-  }
-
-  owner()->addSound(
-      Random::randValueFrom(jsonToStringList(beamAxe->instanceValue("strikeSounds"))),
-      assets->json("/sfx.config:miningToolVolume").toFloat()
-  );
   owner()->addSound(blockSound, assets->json("/sfx.config:miningBlockVolume").toFloat());
-  setFireTimer(tool->windupTime() + tool->cooldownTime());
+
+  auto strikeSounds = beamAxe->instanceValue("strikeSounds");
+  if (!strikeSounds.isNull()) {
+    owner()->addSound(
+        Random::randValueFrom(jsonToStringList(strikeSounds)),
+        assets->json("/sfx.config:miningToolVolume").toFloat()
+    );
+  }
+
+  if (FireableItem* item = as<FireableItem>(beamAxe))
+    setFireTimer(item->windupTime() + item->cooldownTime());
+  
+  return success;
 }
 
 MaterialId MaterialItem::materialId() const {

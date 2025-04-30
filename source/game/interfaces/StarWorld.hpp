@@ -48,7 +48,7 @@ public:
   virtual TileModificationList applyTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap) = 0;
   // Swap existing tiles for ones defined in the modification list,
   // and returns the modifications that could not be applied.
-  virtual TileModificationList replaceTiles(TileModificationList const& modificationList, TileDamage const& tileDamage) = 0;
+  virtual TileModificationList replaceTiles(TileModificationList const& modificationList, TileDamage const& tileDamage, bool applyDamage = false) = 0;
   // If an applied damage would destroy a tile
   virtual bool damageWouldDestroy(Vec2I const& pos, TileLayer layer, TileDamage const& tileDamage) const = 0;
 
