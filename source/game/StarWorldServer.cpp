@@ -103,11 +103,11 @@ void WorldServer::setReferenceClock(ClockPtr clock) {
 }
 
 void WorldServer::initLua(UniverseServer* universe) {
+  m_luaRoot->addCallbacks("universe", LuaBindings::makeUniverseServerCallbacks(universe));
   auto assets = Root::singleton().assets();
   for (auto& p : assets->json("/worldserver.config:scriptContexts").toObject()) {
     auto scriptComponent = make_shared<ScriptComponent>();
     scriptComponent->setScripts(jsonToStringList(p.second.toArray()));
-    scriptComponent->addCallbacks("universe", LuaBindings::makeUniverseServerCallbacks(universe));
 
     m_scriptContexts.set(p.first, scriptComponent);
     scriptComponent->init(this);
