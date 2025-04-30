@@ -28,7 +28,7 @@ static DWORD WINAPI writeMiniDump(void* ExceptionInfo) {
     NULL);
   CloseHandle(hFile);
   if (dumpExceptionInfo.ExceptionPointers->ExceptionRecord->ExceptionCode == EXCEPTION_STACK_OVERFLOW) {
-    MessageBoxA(NULL, "Stack overflow encountered\nA minidump has been generated", NULL, MB_OK | MB_ICONERROR | MB_SETFOREGROUND);
+    MessageBoxA(NULL, "Fatal stack overflow encountered\nA minidump has been generated", NULL, MB_OK | MB_ICONERROR | MB_SETFOREGROUND);
   }
   return 0;
 };
@@ -166,7 +166,7 @@ struct SignalHandlerImpl {
         || (ExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_NONCONTINUABLE_EXCEPTION)
         || (ExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_INVALID_DISPOSITION)
         || (ExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_INVALID_HANDLE)) {
-      handleFatalError("Error occured", ExceptionInfo);
+      handleFatalError("Error occurred", ExceptionInfo);
       result = EXCEPTION_CONTINUE_EXECUTION;
     }
     if (thread != NULL) {

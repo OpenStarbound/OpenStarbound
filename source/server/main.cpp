@@ -12,6 +12,10 @@
 
 using namespace Star;
 
+#if defined STAR_SYSTEM_WINDOWS
+#include <windows.h>
+#endif
+
 Json const AdditionalDefaultConfiguration = Json::parseJson(R"JSON(
     {
       "configurationVersion" : {
@@ -35,6 +39,10 @@ Json const AdditionalDefaultConfiguration = Json::parseJson(R"JSON(
 
 int main(int argc, char** argv) {
   try {
+    #if defined STAR_SYSTEM_WINDOWS
+    unsigned long exceptionStackSize = 16384;
+    SetThreadStackGuarantee(&exceptionStackSize);
+    #endif
     RootLoader rootLoader({{}, AdditionalDefaultConfiguration, String("starbound_server.log"), LogLevel::Info, false, String("starbound_server.config")});
     RootUPtr root = rootLoader.commandInitOrDie(argc, argv).first;
     root->fullyLoad();
