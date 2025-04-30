@@ -37,6 +37,9 @@ LuaCallbacks LuaBindings::makeRenderingCallbacks(ClientApplication* app) {
     auto renderer = app->renderer();
     return renderer->getEffectScriptableParameter(effectName, effectParameter);
   });
+  
+  // not saved; should be loaded by Lua again
+  callbacks.registerCallbackWithSignature<void, String, unsigned>("setPostProcessLayerPasses", bind(mem_fn(&ClientApplication::setPostProcessLayerPasses), app, _1, _2));
 
   return callbacks;
 }

@@ -254,7 +254,7 @@ private:
   HashMap<ConnectionId, String> m_pendingDisconnections;
   HashMap<ConnectionId, List<WorkerPoolPromise<CelestialResponse>>> m_pendingCelestialRequests;
   List<pair<WorldId, UniverseFlagAction>> m_pendingFlagActions;
-  HashMap<ConnectionId, List<pair<String, ChatSendMode>>> m_pendingChat;
+  HashMap<ConnectionId, List<tuple<String, ChatSendMode, JsonObject>>> m_pendingChat;
   Maybe<WorkerPoolPromise<CelestialCoordinate>> m_nextRandomizedStarterWorld;
   Map<WorldId, List<WorldServerThread::Message>> m_pendingWorldMessages;
 

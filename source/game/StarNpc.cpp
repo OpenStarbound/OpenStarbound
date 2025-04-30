@@ -2,6 +2,8 @@
 #include "StarDataStreamExtra.hpp"
 #include "StarWorld.hpp"
 #include "StarRoot.hpp"
+#include "StarSongbook.hpp"
+#include "StarSongbookLuaBindings.hpp"
 #include "StarDamageManager.hpp"
 #include "StarDamageDatabase.hpp"
 #include "StarLogging.hpp"
@@ -75,6 +77,8 @@ Npc::Npc(NpcVariant const& npcVariant)
   m_statusController->setStatusProperty("species", species());
   if (!m_statusController->statusProperty("effectDirectives"))
     m_statusController->setStatusProperty("effectDirectives", speciesDefinition->effectDirectives());
+
+  m_songbook = make_shared<Songbook>(species());
 
   m_effectEmitter = make_shared<EffectEmitter>();
 
@@ -185,7 +189,8 @@ void Npc::init(World* world, EntityId entityId, EntityMode mode) {
             { return m_npcVariant.scriptConfig.query(name, def); }));
     m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
     m_scriptComponent.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(m_statusController.get()));
-    m_scriptComponent.addCallbacks("behavior", LuaBindings::makeBehaviorLuaCallbacks(&m_behaviors));
+    m_scriptComponent.addCallbacks("behavior", LuaBindings::makeBehaviorCallbacks(&m_behaviors));
+    m_scriptComponent.addCallbacks("songbook", LuaBindings::makeSongbookCallbacks(m_songbook.get()));
     m_scriptComponent.addActorMovementCallbacks(m_movementController.get());
     m_scriptComponent.init(world);
   }
@@ -199,6 +204,8 @@ void Npc::uninit() {
     m_scriptComponent.removeCallbacks("config");
     m_scriptComponent.removeCallbacks("entity");
     m_scriptComponent.removeCallbacks("status");
+    m_scriptComponent.removeCallbacks("behavior");
+    m_scriptComponent.removeCallbacks("songbook");
     m_scriptComponent.removeActorMovementCallbacks();
   }
   m_tools->uninit();
@@ -359,6 +366,8 @@ void Npc::destroy(RenderCallback* renderCallback) {
 
   if (renderCallback && m_deathParticleBurst.get())
     renderCallback->addParticles(m_humanoid.particles(*m_deathParticleBurst.get()), position());
+
+  m_songbook->stop();
 }
 
 void Npc::damagedOther(DamageNotification const& damage) {
@@ -503,6 +512,7 @@ void Npc::render(RenderCallback* renderCallback) {
   renderCallback->addDrawables(m_tools->renderObjectPreviews(aimPosition(), walkingDirection(), inToolRange(), favoriteColor()), renderLayer);
 
   m_effectEmitter->render(renderCallback);
+  m_songbook->render(renderCallback);
 }
 
 void Npc::renderLightSources(RenderCallback* renderCallback) {
@@ -570,6 +580,8 @@ Vec2F Npc::getAbsolutePosition(Vec2F relativePosition) const {
 void Npc::tickShared(float dt) {
   if (m_hitDamageNotificationLimiter)
     m_hitDamageNotificationLimiter--;
+
+  m_songbook->update(*entityMode(), world());
 
   m_effectEmitter->setSourcePosition("normal", position());
   m_effectEmitter->setSourcePosition("mouth", position() + mouthOffset());
@@ -814,6 +826,8 @@ void Npc::setupNetStates() {
   m_netGroup.addNetElement(m_statusController.get());
   m_netGroup.addNetElement(m_armor.get());
   m_netGroup.addNetElement(m_tools.get());
+  m_songbook->setCompatibilityVersion(6);
+  m_netGroup.addNetElement(m_songbook.get());
 
   m_netGroup.setNeedsStoreCallback(bind(&Npc::setNetStates, this));
   m_netGroup.setNeedsLoadCallback(bind(&Npc::getNetStates, this, _1));
@@ -1075,10 +1089,13 @@ bool Npc::consumeEnergy(float energy) {
 void Npc::queueUIMessage(String const&) {}
 
 bool Npc::instrumentPlaying() {
-  return false; // TODO: remove this from tool user entirely
+  return m_songbook->instrumentPlaying();
 }
 
-void Npc::instrumentEquipped(String const&) {}
+void Npc::instrumentEquipped(String const& instrumentKind) {
+  if (canUseTool())
+    m_songbook->keepAlive(instrumentKind, mouthPosition());
+}
 
 void Npc::interact(InteractAction const&) {}
 
@@ -1100,6 +1117,10 @@ ActorMovementController* Npc::movementController() {
 
 StatusController* Npc::statusController() {
   return m_statusController.get();
+}
+
+Songbook* Npc::songbook() {
+  return m_songbook.get();
 }
 
 void Npc::setCameraFocusEntity(Maybe<EntityId> const&) {

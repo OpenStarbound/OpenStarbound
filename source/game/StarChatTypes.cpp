@@ -56,6 +56,7 @@ ChatReceivedMessage::ChatReceivedMessage(Json const& json) : ChatReceivedMessage
   fromNick = json.getString("fromNick", "");
   portrait = json.getString("portrait", "");
   text = json.getString("text", "");
+  data = json.getObject("data", JsonObject());
 }
 
 Json ChatReceivedMessage::toJson() const {
@@ -67,7 +68,8 @@ Json ChatReceivedMessage::toJson() const {
     {"fromConnection", fromConnection},
     {"fromNick", fromNick.empty() ? Json() : fromNick},
     {"portrait", portrait.empty() ? Json() : portrait},
-    {"text", text}
+    {"text", text},
+    {"data", data}
   };
 }
 
@@ -78,7 +80,8 @@ DataStream& operator>>(DataStream& ds, ChatReceivedMessage& receivedMessage) {
   ds.read(receivedMessage.fromNick);
   ds.read(receivedMessage.portrait);
   ds.read(receivedMessage.text);
-
+  if (ds.streamCompatibilityVersion() >= 5)
+    ds.read(receivedMessage.data);
   return ds;
 }
 
@@ -88,7 +91,8 @@ DataStream& operator<<(DataStream& ds, ChatReceivedMessage const& receivedMessag
   ds.write(receivedMessage.fromNick);
   ds.write(receivedMessage.portrait);
   ds.write(receivedMessage.text);
-
+  if (ds.streamCompatibilityVersion() >= 5)
+    ds.write(receivedMessage.data);
   return ds;
 }
 

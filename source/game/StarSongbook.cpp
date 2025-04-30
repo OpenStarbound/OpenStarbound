@@ -158,7 +158,7 @@ void Songbook::render(RenderCallback* renderCallback) {
   m_pendingAudio.clear();
 }
 
-void Songbook::keepalive(String const& instrument, Vec2F const& position) {
+void Songbook::keepAlive(String const& instrument, Vec2F const& position) {
   if (instrument != m_instrument) {
     m_instrument = instrument;
     m_dataUpdated = true;
@@ -681,11 +681,11 @@ void Songbook::play(Json const& song, String const& timeSource) {
   m_activeCooldown = 3;
 }
 
-bool Songbook::active() {
+bool Songbook::active() const {
   return m_activeCooldown > 0;
 }
 
-bool Songbook::instrumentPlaying() {
+bool Songbook::instrumentPlaying() const {
   if (!active())
     return false;
   if (m_timeSourceInstance) {
@@ -696,6 +696,18 @@ bool Songbook::instrumentPlaying() {
     }
   }
   return false;
+}
+
+Maybe<String> Songbook::timeSource() const {
+  return m_timeSource;
+}
+
+Maybe<String> Songbook::instrument() const {
+  return m_instrument;
+}
+
+Json Songbook::song() const {
+  return m_song;
 }
 
 double Songbook::fundamentalFrequency(double p) {

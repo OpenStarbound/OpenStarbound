@@ -55,9 +55,9 @@ LuaCallbacks LuaBindings::makeChatCallbacks(MainInterface* mainInterface, Univer
 
   auto chat = as<Chat>(mainInterface->paneManager()->registeredPane(MainInterfacePanes::Chat).get());
 
-  callbacks.registerCallback("send", [chat, client](String const& message, Maybe<String> modeName, Maybe<bool> speak) {
+  callbacks.registerCallback("send", [chat, client](String const& message, Maybe<String> modeName, Maybe<bool> speak, Maybe<JsonObject> data) {
     auto sendMode = modeName ? ChatSendModeNames.getLeft(*modeName) : ChatSendMode::Broadcast;
-    client->sendChat(message, sendMode, speak);
+    client->sendChat(message, sendMode, speak, data);
   });
 
   // just for SE compat - this shoulda been a utility callback :moyai:

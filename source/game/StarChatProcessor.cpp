@@ -122,7 +122,7 @@ StringList ChatProcessor::activeChannels() const {
   return channels;
 }
 
-void ChatProcessor::broadcast(ConnectionId sourceConnectionId, String const& text) {
+void ChatProcessor::broadcast(ConnectionId sourceConnectionId, String const& text, JsonObject data) {
   RecursiveMutexLocker locker(m_mutex);
 
   ChatReceivedMessage message = {
@@ -132,6 +132,8 @@ void ChatProcessor::broadcast(ConnectionId sourceConnectionId, String const& tex
     text
   };
 
+  message.data = std::move(data);
+
   if (handleCommand(message))
     return;
 
@@ -139,7 +141,7 @@ void ChatProcessor::broadcast(ConnectionId sourceConnectionId, String const& tex
     pair.second.pendingMessages.append(message);
 }
 
-void ChatProcessor::message(ConnectionId sourceConnectionId, MessageContext::Mode mode, String const& channelName, String const& text) {
+void ChatProcessor::message(ConnectionId sourceConnectionId, MessageContext::Mode mode, String const& channelName, String const& text, JsonObject data) {
   RecursiveMutexLocker locker(m_mutex);
 
   ChatReceivedMessage message = {
@@ -148,6 +150,8 @@ void ChatProcessor::message(ConnectionId sourceConnectionId, MessageContext::Mod
     connectionNick(sourceConnectionId),
     text
   };
+
+  message.data = std::move(data);
 
   if (handleCommand(message))
     return;
@@ -158,11 +162,17 @@ void ChatProcessor::message(ConnectionId sourceConnectionId, MessageContext::Mod
   }
 }
 
-void ChatProcessor::whisper(ConnectionId sourceConnectionId, ConnectionId targetClientId, String const& text) {
+void ChatProcessor::whisper(ConnectionId sourceConnectionId, ConnectionId targetClientId, String const& text, JsonObject data) {
   RecursiveMutexLocker locker(m_mutex);
 
   ChatReceivedMessage message = {
-      {MessageContext::Whisper}, sourceConnectionId, connectionNick(sourceConnectionId), text};
+    {MessageContext::Whisper},
+    sourceConnectionId,
+    connectionNick(sourceConnectionId),
+    text
+  };
+
+  message.data = std::move(data);
 
   if (handleCommand(message))
     return;

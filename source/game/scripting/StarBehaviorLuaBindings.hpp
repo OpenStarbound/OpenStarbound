@@ -9,6 +9,6 @@ STAR_CLASS(Root);
 STAR_CLASS(UniverseClient);
 
 namespace LuaBindings {
-  LuaCallbacks makeBehaviorLuaCallbacks(List<BehaviorStatePtr>* list);
+  LuaCallbacks makeBehaviorCallbacks(List<BehaviorStatePtr>* list);
 }
 }

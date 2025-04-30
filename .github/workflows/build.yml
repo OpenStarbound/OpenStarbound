@@ -26,6 +26,11 @@ on:
       - '*' 
 
   pull_request:
+    paths:
+      - 'assets/**'
+      - 'source/**'
+      - 'toolchains/**'
+      - 'triplets/**'
     branches:
       - '*'
 

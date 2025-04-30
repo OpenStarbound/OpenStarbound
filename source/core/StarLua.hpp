@@ -1050,6 +1050,9 @@ struct LuaContainerConverter {
 template <typename T, typename Allocator>
 struct LuaConverter<List<T, Allocator>> : LuaContainerConverter<List<T, Allocator>> {};
 
+template <typename T, typename Allocator, typename Equals>
+struct LuaConverter<HashSet<T, Allocator, Equals>> : LuaContainerConverter<HashSet<T, Allocator, Equals>> {};
+
 template <typename T, size_t MaxSize>
 struct LuaConverter<StaticList<T, MaxSize>> : LuaContainerConverter<StaticList<T, MaxSize>> {};
 

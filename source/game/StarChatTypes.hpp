@@ -55,6 +55,8 @@ struct ChatReceivedMessage {
   String portrait;
 
   String text;
+
+  JsonObject data;
 };
 
 DataStream& operator>>(DataStream& ds, ChatReceivedMessage& receivedMessage);
