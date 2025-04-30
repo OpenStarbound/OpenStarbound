@@ -66,11 +66,11 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
   callbacks.registerCallbackWithSignature<Maybe<String>, String, Maybe<String>>("materialMiningSound", bind(RootCallbacks::materialMiningSound, root, _1, _2));
   callbacks.registerCallbackWithSignature<Maybe<String>, String, Maybe<String>>("materialFootstepSound", bind(RootCallbacks::materialFootstepSound, root, _1, _2));
 
-  callbacks.registerCallback("assetsByExtension", [root](LuaEngine& engine, String const& extension) -> CaseInsensitiveStringSet {
+  callbacks.registerCallback("assetsByExtension", [root](String const& extension) -> CaseInsensitiveStringSet {
     return root->assets()->scanExtension(extension);
   });
 
-  callbacks.registerCallback("assetsScan", [root](LuaEngine& engine, Maybe<String> const& a, Maybe<String> const& b) -> StringList {
+  callbacks.registerCallback("assetsScan", [root]( Maybe<String> const& a, Maybe<String> const& b) -> StringList {
     return b ? root->assets()->scan(a.value(), *b) : root->assets()->scan(a.value());
   });
 
@@ -115,12 +115,12 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
       return table;
     });
 
-  callbacks.registerCallback("assetSourceMetadata", [root](LuaEngine& engine, String const& assetSourcePath) {
+  callbacks.registerCallback("assetSourceMetadata", [root](String const& assetSourcePath) {
     auto assets = root->assets();
     return assets->assetSourceMetadata(assetSourcePath);
   });
 
-  callbacks.registerCallback("itemFile", [root](LuaEngine& engine, String const& itemName) -> Maybe<String> {
+  callbacks.registerCallback("itemFile", [root](String const& itemName) -> Maybe<String> {
       return root->itemDatabase()->itemFile(itemName);
     });
 
