@@ -1055,20 +1055,24 @@ Json Assets::readJson(String const& path) const {
         if (newResult)
           result = std::move(newResult);
       } else {
-        auto patchJson = inputUtf8Json(patchStream.begin(), patchStream.end(), JsonParseType::Top);
-        if (patchAssetPath.subPath)
-          patchJson = patchJson.query(*patchAssetPath.subPath);
-        if (patchJson.isType(Json::Type::Array)) {
-          auto patchData = patchJson.toArray();
-          try {
-            result = checkPatchArray(pair.first, patchSource, result, patchData, {});
-          } catch (JsonPatchTestFail const& e) {
-            Logger::debug("Patch test failure from file {} in source: '{}' at '{}'. Caused by: {}", pair.first, patchSource->metadata().value("name", ""), m_assetSourcePaths.getLeft(patchSource), e.what());
-          } catch (JsonPatchException const& e) {
-            Logger::error("Could not apply patch from file {} in source: '{}' at '{}'.  Caused by: {}", pair.first, patchSource->metadata().value("name", ""), m_assetSourcePaths.getLeft(patchSource), e.what());
+        try {
+          auto patchJson = inputUtf8Json(patchStream.begin(), patchStream.end(), JsonParseType::Top);
+          if (patchAssetPath.subPath)
+            patchJson = patchJson.query(*patchAssetPath.subPath);
+          if (patchJson.isType(Json::Type::Array)) {
+            auto patchData = patchJson.toArray();
+            try {
+              result = checkPatchArray(pair.first, patchSource, result, patchData, {});
+            } catch (JsonPatchTestFail const& e) {
+              Logger::debug("Patch test failure from file {} in source: '{}' at '{}'. Caused by: {}", pair.first, patchSource->metadata().value("name", ""), m_assetSourcePaths.getLeft(patchSource), e.what());
+            } catch (JsonPatchException const& e) {
+              Logger::error("Could not apply patch from file {} in source: '{}' at '{}'.  Caused by: {}", pair.first, patchSource->metadata().value("name", ""), m_assetSourcePaths.getLeft(patchSource), e.what());
+            }
+          } else if (patchJson.isType(Json::Type::Object)) {
+            result = jsonMergeNulling(result, patchJson.toObject());
           }
-        } else if (patchJson.isType(Json::Type::Object)) {
-          result = jsonMergeNulling(result, patchJson.toObject());
+        } catch (std::exception const& e) {
+          throw JsonParsingException(strf("Cannot parse json patch file: {} in source {}", patchBasePath, patchSource->metadata().value("name", "")), e);
         }
       }
     }
