@@ -77,7 +77,8 @@ EnumMap<PacketType> const PacketTypeNames{
   {PacketType::SystemShipDestroy, "SystemShipDestroy"},
   {PacketType::SystemObjectSpawn, "SystemObjectSpawn"},
   // OpenStarbound packets
-  {PacketType::ReplaceTileList, "ReplaceTileList"}
+  {PacketType::ReplaceTileList, "ReplaceTileList"},
+  {PacketType::UpdateWorldTemplate, "UpdateWorldTemplate"}
 };
 
 EnumMap<NetCompressionMode> const NetCompressionModeNames {
@@ -139,7 +140,6 @@ PacketPtr createPacket(PacketType type) {
     case PacketType::FindUniqueEntityResponse: return make_shared<FindUniqueEntityResponsePacket>();
     case PacketType::Pong: return make_shared<PongPacket>();
     case PacketType::ModifyTileList: return make_shared<ModifyTileListPacket>();
-    case PacketType::ReplaceTileList: return make_shared<ReplaceTileListPacket>();
     case PacketType::DamageTileGroup: return make_shared<DamageTileGroupPacket>();
     case PacketType::CollectLiquid: return make_shared<CollectLiquidPacket>();
     case PacketType::RequestDrop: return make_shared<RequestDropPacket>();
@@ -169,6 +169,9 @@ PacketPtr createPacket(PacketType type) {
     case PacketType::SystemShipCreate: return make_shared<SystemShipCreatePacket>();
     case PacketType::SystemShipDestroy: return make_shared<SystemShipDestroyPacket>();
     case PacketType::SystemObjectSpawn: return make_shared<SystemObjectSpawnPacket>();
+    // OpenStarbound
+    case PacketType::ReplaceTileList: return make_shared<ReplaceTileListPacket>();
+    case PacketType::UpdateWorldTemplate: return make_shared<UpdateWorldTemplatePacket>();
     default:
       throw StarPacketException(strf("Unrecognized packet type {}", (unsigned int)type));
   }
@@ -1428,6 +1431,18 @@ void SystemObjectSpawnPacket::write(DataStream& ds) const {
   ds.write(uuid);
   ds.write(position);
   ds.write(parameters);
+}
+
+UpdateWorldTemplatePacket::UpdateWorldTemplatePacket() {}
+
+UpdateWorldTemplatePacket::UpdateWorldTemplatePacket(Json templateData) : templateData(std::move(templateData)) {}
+
+void UpdateWorldTemplatePacket::read(DataStream& ds) {
+  ds.read(templateData);
+}
+
+void UpdateWorldTemplatePacket::write(DataStream& ds) const {
+  ds.write(templateData);
 }
 
 }

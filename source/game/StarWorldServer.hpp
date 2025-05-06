@@ -217,6 +217,7 @@ public:
   EntityId loadUniqueEntity(String const& uniqueId);
 
   WorldTemplatePtr worldTemplate() const;
+  void setTemplate(WorldTemplatePtr newTemplate);
   SkyPtr sky() const;
   void modifyLiquid(Vec2I const& pos, LiquidId liquid, float quantity, bool additive = false);
   void setLiquid(Vec2I const& pos, LiquidId liquid, float level, float pressure);

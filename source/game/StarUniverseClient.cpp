@@ -423,7 +423,7 @@ void UniverseClient::warpPlayer(WarpAction const& warpAction, bool animate, Stri
   if (auto warpToWorld = warpAction.ptr<WarpToWorld>()) {
     if (warpToWorld->world.empty() || warpToWorld->world == playerWorld()) {
       if (auto pos = warpToWorld->target.ptr<SpawnTargetPosition>()) {
-        m_mainPlayer->moveTo(*pos); // Add a little space to up
+        m_mainPlayer->moveTo(*pos);
         return;
       }
     }

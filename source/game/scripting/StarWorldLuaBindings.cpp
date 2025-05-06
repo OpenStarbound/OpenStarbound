@@ -371,6 +371,12 @@ namespace LuaBindings {
 
         return playerIds;
       });
+      callbacks.registerCallback("template", [clientWorld]() {
+        return clientWorld->currentTemplate()->store();
+      });
+      callbacks.registerCallback("setTemplate", [clientWorld](Json worldTemplate) {
+        clientWorld->setTemplate(worldTemplate);
+      });
     }
 
     if (auto serverWorld = as<WorldServer>(world)) {
@@ -455,6 +461,13 @@ namespace LuaBindings {
           });
           return serverWorld->enqueuePlacement(std::move(distributions), id);
         });
+      callbacks.registerCallback("template", [serverWorld]() {
+        return serverWorld->worldTemplate()->store();
+      });
+      callbacks.registerCallback("setTemplate", [serverWorld](Json worldTemplate) {
+        auto newTemplate = make_shared<WorldTemplate>(worldTemplate);
+        serverWorld->setTemplate(newTemplate);
+      });
     }
 
     return callbacks;

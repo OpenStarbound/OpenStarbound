@@ -340,7 +340,7 @@ List<EntityId> WorldServer::players() const {
 }
 
 void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> const& packets) {
-  auto const& clientInfo = m_clientInfo.get(clientId);
+  shared_ptr<ClientInfo> clientInfo = m_clientInfo.get(clientId);
   auto& root = Root::singleton();
   auto entityFactory = root.entityFactory();
   auto itemDatabase = root.itemDatabase();
@@ -542,6 +542,14 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
       for (auto const& pair : m_clientInfo)
         pair.second->outgoingPackets.append(make_shared<UpdateWorldPropertiesPacket>(updateWorldProperties->updatedProperties));
 
+    } else if (auto updateWorldTemplate = as<UpdateWorldTemplatePacket>(packet)) {
+      if (!clientInfo->admin)
+        continue; // nuh-uh!
+
+      auto newWorldTemplate = make_shared<WorldTemplate>(updateWorldTemplate->templateData);
+      setTemplate(newWorldTemplate);
+      // setTemplate re-adds all clients currently, update clientInfo
+      clientInfo = m_clientInfo.get(clientId);
     } else {
       throw WorldServerException::format("Improper packet type {} received by client", (int)packet->type());
     }
@@ -2584,6 +2592,21 @@ void WorldServer::setupForceRegions() {
     bottomForceRegion.baseControlForce = regionForce;
     bottomForceRegion.categoryFilter = regionCategoryFilter;
     m_forceRegions.append(bottomForceRegion);
+  }
+}
+
+void WorldServer::setTemplate(WorldTemplatePtr newTemplate) {
+  m_worldTemplate = std::move(newTemplate);
+  for (auto& client : clientIds()) {
+    auto& info = m_clientInfo.get(client);
+    bool local = info->local;
+    bool isAdmin = info->admin;
+    auto netRules = info->clientState.netCompatibilityRules();
+    SpawnTarget spawnTarget;
+    if (auto player = clientPlayer(client))
+      spawnTarget = SpawnTargetPosition(player->position() + player->feetOffset());
+    removeClient(client);
+    addClient(client, spawnTarget, local, isAdmin, netRules);
   }
 }
 
