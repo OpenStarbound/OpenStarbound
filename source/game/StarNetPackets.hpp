@@ -116,7 +116,8 @@ enum class PacketType : uint8_t {
   SystemObjectSpawn,
 
   // OpenStarbound packets
-  ReplaceTileList
+  ReplaceTileList,
+  UpdateWorldTemplate
 };
 extern EnumMap<PacketType> const PacketTypeNames;
 
@@ -969,5 +970,15 @@ struct SystemObjectSpawnPacket : PacketBase<PacketType::SystemObjectSpawn> {
   Uuid uuid;
   Maybe<Vec2F> position;
   JsonObject parameters;
+};
+
+struct UpdateWorldTemplatePacket : PacketBase<PacketType::UpdateWorldTemplate> {
+  UpdateWorldTemplatePacket();
+  UpdateWorldTemplatePacket(Json templateData);
+
+  void read(DataStream& ds) override;
+  void write(DataStream& ds) const override;
+
+  Json templateData;
 };
 }

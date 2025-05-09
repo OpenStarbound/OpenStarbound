@@ -186,6 +186,10 @@ WorldTemplateConstPtr WorldClient::currentTemplate() const {
   return m_worldTemplate;
 }
 
+void WorldClient::setTemplate(Json newTemplate) {
+  m_outgoingPackets.push_back(make_shared<UpdateWorldTemplatePacket>(newTemplate));
+}
+
 SkyConstPtr WorldClient::currentSky() const {
   return m_sky;
 }

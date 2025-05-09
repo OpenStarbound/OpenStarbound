@@ -69,6 +69,7 @@ SET (star_core_HEADERS
     StarMatrix3.hpp
     StarMaybe.hpp
     StarMemory.hpp
+    StarMiniDump.hpp
     StarMultiArray.hpp
     StarMultiArrayInterpolator.hpp
     StarMultiTable.hpp
@@ -216,6 +217,7 @@ ELSEIF (STAR_SYSTEM_FAMILY_WINDOWS)
       StarDynamicLib_windows.cpp
       StarFile_windows.cpp
       StarLockFile_windows.cpp
+      StarMiniDump_windows.cpp
       StarSignalHandler_windows.cpp
       StarString_windows.cpp
       StarThread_windows.cpp

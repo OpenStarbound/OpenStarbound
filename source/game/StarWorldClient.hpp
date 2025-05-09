@@ -115,6 +115,7 @@ public:
   void removeEntity(EntityId entityId, bool andDie);
 
   WorldTemplateConstPtr currentTemplate() const;
+  void setTemplate(Json newTemplate);
   SkyConstPtr currentSky() const;
 
   void dimWorld();
