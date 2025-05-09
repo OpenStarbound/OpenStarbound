@@ -31,6 +31,7 @@
 #include "StarUtilityLuaBindings.hpp"
 #include "StarUniverseSettings.hpp"
 #include "StarBiome.hpp"
+#include "StarStatusController.hpp"
 
 namespace Star {
 namespace LuaBindings {
@@ -345,7 +346,7 @@ namespace LuaBindings {
 
         return {};
       });
-      
+
 
     callbacks.registerCallback("dungeonId", [world](Vec2I position) -> DungeonId {
         if (auto serverWorld = as<WorldServer>(world)) {
@@ -582,6 +583,241 @@ namespace LuaBindings {
         }
         return {};
       });
+
+    // status controller callbacks, they're networked anyway so might as well make them available to read
+    callbacks.registerCallback("entityStatusProperty", [world](EntityId entityId, String name, Json const& def = Json()) -> Maybe<Json> {
+        if (auto entity = world->get<ActorEntity>(entityId))
+          return entity->statusController()->statusProperty(name, def);
+        return {};
+      });
+    callbacks.registerCallback("entityStat", [world](EntityId entityId, String name) -> Maybe<float> {
+        if (auto entity = world->get<ActorEntity>(entityId))
+          return entity->statusController()->stat(name);
+        return {};
+      });
+    callbacks.registerCallback("entityStatPositive", [world](EntityId entityId, String name) -> Maybe<bool> {
+        if (auto entity = world->get<ActorEntity>(entityId))
+          return entity->statusController()->statPositive(name);
+        return {};
+      });
+    callbacks.registerCallback("entityResourceNames", [world](EntityId entityId) -> Maybe<StringList> {
+        if (auto entity = world->get<ActorEntity>(entityId))
+          return entity->statusController()->resourceNames();
+        return {};
+      });
+    callbacks.registerCallback("entityIsResource", [world](EntityId entityId, String name) -> Maybe<bool> {
+        if (auto entity = world->get<ActorEntity>(entityId))
+          return entity->statusController()->isResource(name);
+        return {};
+      });
+    callbacks.registerCallback("entityResourcePositive", [world](EntityId entityId, String name) -> Maybe<bool> {
+        if (auto entity = world->get<ActorEntity>(entityId))
+          return entity->statusController()->resourcePositive(name);
+        return {};
+      });
+    callbacks.registerCallback("entityResourceLocked", [world](EntityId entityId, String name) -> Maybe<bool> {
+        if (auto entity = world->get<ActorEntity>(entityId))
+          return entity->statusController()->resourceLocked(name);
+        return {};
+      });
+    callbacks.registerCallback("entityResourceMax", [world](EntityId entityId, String name) -> Maybe<float> {
+        if (auto entity = world->get<ActorEntity>(entityId))
+          return entity->statusController()->resourceMax(name);
+        return {};
+      });
+    callbacks.registerCallback("entityResourcePercentage", [world](EntityId entityId, String name) -> Maybe<float> {
+        if (auto entity = world->get<ActorEntity>(entityId))
+          return entity->statusController()->resourcePercentage(name);
+        return {};
+      });
+    callbacks.registerCallback("entityResourceMax", [world](EntityId entityId, String name) -> Maybe<float> {
+        if (auto entity = world->get<ActorEntity>(entityId))
+          return entity->statusController()->resourceMax(name);
+        return {};
+      });
+    callbacks.registerCallback("entityGetPersistentEffects", [world](EntityId entityId, String name) -> Maybe<JsonArray> {
+        if (auto entity = world->get<ActorEntity>(entityId))
+          return entity->statusController()->getPersistentEffects(name).transformed(jsonFromPersistentStatusEffect);
+        return {};
+      });
+    callbacks.registerCallback("entityResourceMax", [world](EntityId entityId, String name) -> Maybe<float> {
+        if (auto entity = world->get<ActorEntity>(entityId))
+          return entity->statusController()->resourceMax(name);
+        return {};
+      });
+    callbacks.registerCallback("entityActiveUniqueStatusEffectSummary", [world](EntityId entityId) -> Maybe<List<JsonArray>> {
+        if (auto entity = world->get<ActorEntity>(entityId))
+          return entity->statusController()->activeUniqueStatusEffectSummary().transformed([](pair<UniqueStatusEffect, Maybe<float>> effect) {
+            JsonArray effectJson = {effect.first};
+            if (effect.second)
+              effectJson.append(*effect.second);
+            return effectJson;
+          });;
+        return {};
+      });
+    callbacks.registerCallback("entityUniqueStatusEffectActive", [world](EntityId entityId, String name) -> Maybe<bool> {
+        if (auto entity = world->get<ActorEntity>(entityId))
+          return entity->statusController()->uniqueStatusEffectActive(name);
+        return {};
+      });
+
+    // movement controller callbacks, they're networked anyway so might as well make them available to read
+
+    callbacks.registerCallback("entityMass", [world](EntityId entityId) -> Maybe<float> {
+        if (auto entity = world->get<ActorEntity>(entityId))
+          return entity->movementController()->mass();
+        return {};
+      });
+    callbacks.registerCallback("entityBoundBox", [world](EntityId entityId) -> Maybe<RectF> {
+        if (auto entity = world->get<ActorEntity>(entityId))
+          return entity->movementController()->collisionPoly().boundBox();
+        return {};
+      });
+    callbacks.registerCallback("entityCollisionPoly", [world](EntityId entityId) -> Maybe<PolyF> {
+        if (auto entity = world->get<ActorEntity>(entityId))
+          return entity->movementController()->collisionPoly();
+        return {};
+      });
+    callbacks.registerCallback("entityCollisionBody", [world](EntityId entityId) -> Maybe<PolyF> {
+        if (auto entity = world->get<ActorEntity>(entityId))
+          return entity->movementController()->collisionBody();
+        return {};
+      });
+    callbacks.registerCallback("entityCollisionBoundBox", [world](EntityId entityId) -> Maybe<RectF> {
+        if (auto entity = world->get<ActorEntity>(entityId))
+          return entity->movementController()->collisionBody().boundBox();
+        return {};
+      });
+    callbacks.registerCallback("entityLocalBoundBox", [world](EntityId entityId) -> Maybe<RectF> {
+        if (auto entity = world->get<ActorEntity>(entityId))
+          return entity->movementController()->localBoundBox();
+        return {};
+      });
+    callbacks.registerCallback("entityRotation", [world](EntityId entityId) -> Maybe<float> {
+        if (auto entity = world->get<ActorEntity>(entityId))
+          return entity->movementController()->rotation();
+        return {};
+      });
+    callbacks.registerCallback("entityIsColliding", [world](EntityId entityId) -> Maybe<bool> {
+        if (auto entity = world->get<ActorEntity>(entityId))
+          return entity->movementController()->isColliding();
+        return {};
+      });
+    callbacks.registerCallback("entityIsNullColliding", [world](EntityId entityId) -> Maybe<bool> {
+        if (auto entity = world->get<ActorEntity>(entityId))
+          return entity->movementController()->isNullColliding();
+        return {};
+      });
+    callbacks.registerCallback("entityIsCollisionStuck", [world](EntityId entityId) -> Maybe<bool> {
+        if (auto entity = world->get<ActorEntity>(entityId))
+          return entity->movementController()->isCollisionStuck();
+        return {};
+      });
+    callbacks.registerCallback("entityStickingDirection", [world](EntityId entityId) -> Maybe<float> {
+        if (auto entity = world->get<ActorEntity>(entityId))
+          return entity->movementController()->stickingDirection();
+        return {};
+      });
+    callbacks.registerCallback("entityLiquidPercentage", [world](EntityId entityId) -> Maybe<float> {
+        if (auto entity = world->get<ActorEntity>(entityId))
+          return entity->movementController()->liquidPercentage();
+        return {};
+      });
+    callbacks.registerCallback("entityLiquidId", [world](EntityId entityId) -> Maybe<float> {
+        if (auto entity = world->get<ActorEntity>(entityId))
+          return entity->movementController()->liquidId();
+        return {};
+      });
+    callbacks.registerCallback("entityOnGround", [world](EntityId entityId) -> Maybe<bool> {
+        if (auto entity = world->get<ActorEntity>(entityId))
+          return entity->movementController()->onGround();
+        return {};
+      });
+    callbacks.registerCallback("entityZeroG", [world](EntityId entityId) -> Maybe<bool> {
+        if (auto entity = world->get<ActorEntity>(entityId))
+          return entity->movementController()->zeroG();
+        return {};
+      });
+    callbacks.registerCallback("entityAtWorldLimit", [world](EntityId entityId) -> Maybe<bool> {
+        if (auto entity = world->get<ActorEntity>(entityId))
+          return entity->movementController()->atWorldLimit();
+        return {};
+      });
+    callbacks.registerCallback("entityAnchorState", [world](EntityId entityId) -> LuaVariadic<LuaValue> {
+        if (auto entity = world->get<ActorEntity>(entityId))
+          if (auto anchorState = entity->movementController()->anchorState())
+            return LuaVariadic<LuaValue>{LuaInt(anchorState->entityId), LuaInt(anchorState->positionIndex)};
+        return LuaVariadic<LuaValue>();
+      });
+    // slightly inconsistent for the sake of being more clear what the function is
+    callbacks.registerCallback("entityBaseMovementParameters", [world](EntityId entityId) -> Maybe<Json> {
+        if (auto entity = world->get<ActorEntity>(entityId))
+          return entity->movementController()->baseParameters().toJson();
+        return {};
+      });
+    // slightly inconsistent for the sake of being more clear what the function is
+    callbacks.registerCallback("entityMovementParameters", [world](EntityId entityId) -> Maybe<Json> {
+        if (auto entity = world->get<ActorEntity>(entityId))
+          return entity->movementController()->parameters().toJson();
+        return {};
+      });
+
+    callbacks.registerCallback("entityWalking", [world](EntityId entityId) -> Maybe<bool> {
+        if (auto entity = world->get<ActorEntity>(entityId))
+          return entity->movementController()->walking();
+        return {};
+      });
+    callbacks.registerCallback("entityRunning", [world](EntityId entityId) -> Maybe<bool> {
+        if (auto entity = world->get<ActorEntity>(entityId))
+          return entity->movementController()->running();
+        return {};
+      });
+    callbacks.registerCallback("entityMovingDirection", [world](EntityId entityId) -> Maybe<int> {
+        if (auto entity = world->get<ActorEntity>(entityId))
+          return numericalDirection(entity->movementController()->movingDirection());
+        return {};
+      });
+    callbacks.registerCallback("entityFacingDirection", [world](EntityId entityId) -> Maybe<int> {
+        if (auto entity = world->get<ActorEntity>(entityId))
+          return numericalDirection(entity->movementController()->facingDirection());
+        return {};
+      });
+    callbacks.registerCallback("entityCrouching", [world](EntityId entityId) -> Maybe<bool> {
+        if (auto entity = world->get<ActorEntity>(entityId))
+          return entity->movementController()->crouching();
+        return {};
+      });
+    callbacks.registerCallback("entityFlying", [world](EntityId entityId) -> Maybe<bool> {
+        if (auto entity = world->get<ActorEntity>(entityId))
+          return entity->movementController()->flying();
+        return {};
+      });
+    callbacks.registerCallback("entityFalling", [world](EntityId entityId) -> Maybe<bool> {
+        if (auto entity = world->get<ActorEntity>(entityId))
+          return entity->movementController()->falling();
+        return {};
+      });
+    callbacks.registerCallback("entityCanJump", [world](EntityId entityId) -> Maybe<bool> {
+        if (auto entity = world->get<ActorEntity>(entityId))
+          return entity->movementController()->canJump();
+        return {};
+      });
+    callbacks.registerCallback("entityJumping", [world](EntityId entityId) -> Maybe<bool> {
+        if (auto entity = world->get<ActorEntity>(entityId))
+          return entity->movementController()->jumping();
+        return {};
+      });
+    callbacks.registerCallback("entityGroundMovement", [world](EntityId entityId) -> Maybe<bool> {
+        if (auto entity = world->get<ActorEntity>(entityId))
+          return entity->movementController()->groundMovement();
+        return {};
+      });
+    callbacks.registerCallback("entityLiquidMovement", [world](EntityId entityId) -> Maybe<bool> {
+        if (auto entity = world->get<ActorEntity>(entityId))
+          return entity->movementController()->liquidMovement();
+        return {};
+      });
+
   }
 
   void addWorldEnvironmentCallbacks(LuaCallbacks& callbacks, World* world) {
@@ -1109,7 +1345,7 @@ namespace LuaBindings {
   }
 
   RectI ClientWorldCallbacks::clientWindow(WorldClient* world) {
-    return world->clientWindow();	
+    return world->clientWindow();
   }
 
   String ServerWorldCallbacks::id(WorldServer* world) {
