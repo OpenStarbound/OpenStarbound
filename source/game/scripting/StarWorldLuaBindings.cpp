@@ -630,19 +630,9 @@ namespace LuaBindings {
           return entity->statusController()->resourcePercentage(name);
         return {};
       });
-    callbacks.registerCallback("entityResourceMax", [world](EntityId entityId, String name) -> Maybe<float> {
-        if (auto entity = world->get<ActorEntity>(entityId))
-          return entity->statusController()->resourceMax(name);
-        return {};
-      });
     callbacks.registerCallback("entityGetPersistentEffects", [world](EntityId entityId, String name) -> Maybe<JsonArray> {
         if (auto entity = world->get<ActorEntity>(entityId))
           return entity->statusController()->getPersistentEffects(name).transformed(jsonFromPersistentStatusEffect);
-        return {};
-      });
-    callbacks.registerCallback("entityResourceMax", [world](EntityId entityId, String name) -> Maybe<float> {
-        if (auto entity = world->get<ActorEntity>(entityId))
-          return entity->statusController()->resourceMax(name);
         return {};
       });
     callbacks.registerCallback("entityActiveUniqueStatusEffectSummary", [world](EntityId entityId) -> Maybe<List<JsonArray>> {
