@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Check if environment variables are already used by user
+# Check if environment variables are already set
 if [ -n "${__GLX_VENDOR_LIBRARY_NAME}" ] || [ -n "${MESA_LOADER_DRIVER_OVERRIDE}" ] || [ -n "${GALLIUM_DRIVER}" ]; then :
 else
     # Check for Vulkan support
