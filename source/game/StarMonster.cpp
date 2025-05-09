@@ -868,4 +868,13 @@ Vec2F Monster::questIndicatorPosition() const {
   return pos;
 }
 
+ActorMovementController* Monster::movementController() {
+  return m_movementController.get();
+}
+
+StatusController* Monster::statusController() {
+  return m_statusController.get();
+}
+
+
 }
