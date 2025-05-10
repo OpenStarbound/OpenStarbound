@@ -178,8 +178,20 @@ public:
   void setBinds(String const& categoryId, String const& bindId, Json const& binds);
   Json getDefaultBinds(String const& categoryId, String const& bindId); 
   Json getBinds(String const& categoryId, String const& bindId);
-  unsigned getTag(String const& tag);
 
+  unsigned getTag(String const& tagName) const;
+
+  class ClipboardUnlock {
+  public:
+    ClipboardUnlock(Input& input);
+    ~ClipboardUnlock();
+
+  private:
+    Input* m_input;
+  };
+
+  ClipboardUnlock unlockClipboard();
+  bool clipboardAllowed() const;
 private:
   List<BindEntry*> filterBindEntries(List<BindRef> const& binds, KeyMod mods) const;
 
@@ -214,6 +226,8 @@ private:
   KeyMod m_pressedMods;
   bool m_textInputActive;
   Vec2I m_mousePosition;
+
+  unsigned m_clipboardAllowed = 0;
 };
 
 }
