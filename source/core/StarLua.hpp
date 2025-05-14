@@ -414,6 +414,7 @@ struct LuaNullTermWrapper : T {
 class LuaNullEnforcer {
 public:
   LuaNullEnforcer(LuaEngine& engine);
+  LuaNullEnforcer(LuaNullEnforcer&&);
   ~LuaNullEnforcer();
 private:
   LuaEngine* m_engine;

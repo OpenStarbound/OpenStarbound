@@ -688,7 +688,10 @@ unsigned Input::getTag(String const& tagName) const {
 Input::ClipboardUnlock::ClipboardUnlock(Input& input)
     : m_input(&input) { ++m_input->m_clipboardAllowed; };
 
-Input::ClipboardUnlock::~ClipboardUnlock() { --m_input->m_clipboardAllowed; };
+Input::ClipboardUnlock::ClipboardUnlock(ClipboardUnlock&& other) { m_input = take(other.m_input); };
+
+Input::ClipboardUnlock::~ClipboardUnlock() { if (m_input) --m_input->m_clipboardAllowed; };
+
 
 Input::ClipboardUnlock Input::unlockClipboard() {
   return Input::ClipboardUnlock(*this);

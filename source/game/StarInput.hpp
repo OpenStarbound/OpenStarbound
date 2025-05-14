@@ -184,6 +184,7 @@ public:
   class ClipboardUnlock {
   public:
     ClipboardUnlock(Input& input);
+    ClipboardUnlock(ClipboardUnlock&&);
     ~ClipboardUnlock();
 
   private:

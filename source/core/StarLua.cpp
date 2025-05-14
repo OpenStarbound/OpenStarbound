@@ -125,7 +125,9 @@ LuaTable LuaContext::createTable() {
 LuaNullEnforcer::LuaNullEnforcer(LuaEngine& engine)
   : m_engine(&engine) { ++m_engine->m_nullTerminated; };
 
-LuaNullEnforcer::~LuaNullEnforcer() { --m_engine->m_nullTerminated; };
+LuaNullEnforcer::LuaNullEnforcer(LuaNullEnforcer&& other) { m_engine = take(other.m_engine); };
+
+LuaNullEnforcer::~LuaNullEnforcer() { if (m_engine) --m_engine->m_nullTerminated; };
 
 LuaValue LuaConverter<Json>::from(LuaEngine& engine, Json const& v) {
   if (v.isType(Json::Type::Null)) {
