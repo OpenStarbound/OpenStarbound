@@ -30,6 +30,13 @@ LuaCallbacks LuaBindings::makeUniverseServerCallbacks(UniverseServer* universe) 
 // Gets a list of client ids
 //
 // @return A list of numerical client IDs.
+Maybe<String> LuaBindings::UniverseServerCallbacks::uuidForClient(UniverseServer* universe, ConnectionId arg1) {
+  return universe->uuidForClient(arg1).apply([](Uuid const& str) { return str.hex(); });
+}
+
+// Gets a list of client ids
+//
+// @return A list of numerical client IDs.
 List<ConnectionId> LuaBindings::UniverseServerCallbacks::clientIds(UniverseServer* universe) {
   return universe->clientIds();
 }

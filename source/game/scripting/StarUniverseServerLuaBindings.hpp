@@ -12,6 +12,7 @@ namespace LuaBindings {
   LuaCallbacks makeUniverseServerCallbacks(UniverseServer* universe);
 
   namespace UniverseServerCallbacks {
+    Maybe<String> uuidForClient(UniverseServer* universe, ConnectionId arg1);
     List<ConnectionId> clientIds(UniverseServer* universe);
     size_t numberOfClients(UniverseServer* universe);
     bool isConnectedClient(UniverseServer* universe, ConnectionId arg1);
