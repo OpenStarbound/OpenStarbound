@@ -126,7 +126,7 @@ private:
   float m_cameraXOffset = 0.0f;
   float m_cameraYOffset = 0.0f;
   bool m_snapBackCameraOffset = false;
-  int m_cameraOffsetDownTicks = 0;
+  float m_cameraOffsetDownTime = 0.f;
   Vec2F m_cameraPositionSmoother;
   Vec2F m_cameraSmoothDelta;
   int m_cameraZoomDirection = 0;

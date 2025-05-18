@@ -1213,12 +1213,13 @@ void ClientApplication::updateCamera(float dt) {
   const float deadzone = 0.1f;
   const float panFactor = 1.5f;
   float cameraSpeedFactor = 30.0f / m_root->configuration()->get("cameraSpeedFactor").toFloat();
+  cameraSpeedFactor /= (dt * 60.f);
 
   auto playerCameraPosition = m_player->cameraPosition();
 
   if (isActionTaken(InterfaceAction::CameraShift)) {
     m_snapBackCameraOffset = false;
-    m_cameraOffsetDownTicks++;
+    m_cameraOffsetDownTime += dt;
     Vec2F aim = m_universeClient->worldClient()->geometry().diff(m_mainInterface->cursorWorldPosition(), playerCameraPosition);
 
     float magnitude = aim.magnitude() / (triggerRadius / camera.pixelRatio());
@@ -1234,13 +1235,13 @@ void ClientApplication::updateCamera(float dt) {
       m_cameraYOffset = (m_cameraYOffset * (cameraSpeedFactor - 1.0) + cameraYOffset) / cameraSpeedFactor;
     }
   } else {
-    if ((m_cameraOffsetDownTicks > 0) && (m_cameraOffsetDownTicks < 20))
+    if (m_cameraOffsetDownTime > 0.0f && m_cameraOffsetDownTime < 0.333333f)
       m_snapBackCameraOffset = true;
     if (m_snapBackCameraOffset) {
       m_cameraXOffset = (m_cameraXOffset * (cameraSpeedFactor - 1.0)) / cameraSpeedFactor;
       m_cameraYOffset = (m_cameraYOffset * (cameraSpeedFactor - 1.0)) / cameraSpeedFactor;
     }
-    m_cameraOffsetDownTicks = 0;
+    m_cameraOffsetDownTime = 0.f;
   }
   Vec2F newCameraPosition;
 
