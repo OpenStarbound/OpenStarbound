@@ -14,6 +14,8 @@ LuaCallbacks LuaBindings::makeNetworkedAnimatorCallbacks(NetworkedAnimator* netw
       "animationState", bind(&NetworkedAnimator::state, networkedAnimator, _1));
   callbacks.registerCallbackWithSignature<Json, String, String>(
       "animationStateProperty", bind(&NetworkedAnimator::stateProperty, networkedAnimator, _1, _2));
+  callbacks.registerCallbackWithSignature<Json, String, String>(
+      "animationStateNextProperty", bind(&NetworkedAnimator::stateNextProperty, networkedAnimator, _1, _2));
   callbacks.registerCallbackWithSignature<int, String>(
       "animationStateFrame", bind(&NetworkedAnimator::stateFrame, networkedAnimator, _1));
   callbacks.registerCallbackWithSignature<float, String>(
@@ -140,6 +142,9 @@ LuaCallbacks LuaBindings::makeNetworkedAnimatorCallbacks(NetworkedAnimator* netw
       "addPartDrawables", bind(&NetworkedAnimator::addPartDrawables, networkedAnimator, _1, _2));
   callbacks.registerCallbackWithSignature<void, String, List<Drawable>>(
       "setPartDrawables", bind(&NetworkedAnimator::setPartDrawables, networkedAnimator, _1, _2));
+
+  callbacks.registerCallbackWithSignature<String, String, String>(
+      "applyPartTags", bind(&NetworkedAnimator::applyPartTags, networkedAnimator, _1, _2));
 
   return callbacks;
 }

@@ -129,6 +129,8 @@ public:
   void setPartDrawables(String const& partName, List<Drawable> drawables);
   void addPartDrawables(String const& partName, List<Drawable> drawables);
 
+  String applyPartTags(String const& partName, String apply);
+
   void setProcessingDirectives(Directives const& directives);
   void setZoom(float zoom);
   bool flipped() const;

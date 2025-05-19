@@ -442,6 +442,56 @@ void NetworkedAnimator::setPartDrawables(String const& partName, List<Drawable> 
 void NetworkedAnimator::addPartDrawables(String const& partName, List<Drawable> drawables) {
   m_partDrawables.ptr(partName)->appendAll(drawables);
 }
+String NetworkedAnimator::applyPartTags(String const& partName, String apply) {
+  HashMap<String, String> animationTags = {};
+  Maybe<unsigned> frame;
+  String frameStr;
+  String frameIndexStr;
+  auto activePart = m_animatedParts.activePart(partName);
+  auto partTags = m_partTags.get(partName);
+  if (activePart.activeState) {
+    unsigned stateFrame = activePart.activeState->frame;
+    frame = stateFrame;
+    frameStr = static_cast<String>(toString(stateFrame + 1));
+    frameIndexStr = static_cast<String>(toString(stateFrame));
+  }
+  if (version() > 0)
+    m_animatedParts.forEachActiveState([&](String const& stateTypeName, AnimatedPartSet::ActiveStateInformation const& activeState) {
+      unsigned stateFrame = activeState.frame;
+      Maybe<unsigned> frame;
+      String frameStr;
+      String frameIndexStr;
+
+      frame = stateFrame;
+      frameStr = static_cast<String>(toString(stateFrame + 1));
+      frameIndexStr = static_cast<String>(toString(stateFrame));
+      if (frame) {
+        animationTags.set(stateTypeName + "_frame", frameStr);
+        animationTags.set(stateTypeName + "_frameIndex", frameIndexStr);
+      }
+      animationTags.set(stateTypeName + "_state", activeState.stateName);
+    });
+
+  auto applied = apply.maybeLookupTagsView([&](StringView tag) -> StringView {
+    if (tag == "frame") {
+      if (frame)
+        return frameStr;
+    } else if (tag == "frameIndex") {
+      if (frame)
+        return frameIndexStr;
+    } else if (auto p = animationTags.ptr(tag)) {
+      return StringView(*p);
+    } else if (auto p = partTags.ptr(tag)) {
+      return StringView(*p);
+    } else if (auto p = m_globalTags.ptr(tag)) {
+      return StringView(*p);
+    }
+
+    return StringView("default");
+  });
+  return applied ? applied.get() : apply;
+}
+
 
 void NetworkedAnimator::setProcessingDirectives(Directives const& directives) {
   m_processingDirectives.set(directives);
