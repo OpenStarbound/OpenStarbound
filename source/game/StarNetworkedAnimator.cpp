@@ -87,8 +87,14 @@ NetworkedAnimator::NetworkedAnimator(Json config, String relativePath) : Network
     if (relativePath.empty())
       relativePath = "/";
   }
+  m_animatorVersion = config.getUInt("version", 0);
 
-  m_animatedParts = AnimatedPartSet(config.get("animatedParts", JsonObject()));
+  if (version() > 0) {
+    if (auto v = config.get("includes"))
+      config = mergeIncludes(config, v, relativePath);
+  }
+
+  m_animatedParts = AnimatedPartSet(config.get("animatedParts", JsonObject()), version());
   m_relativePath = AssetPath::directory(relativePath);
 
   for (auto const& pair : config.get("globalTagDefaults", JsonObject()).iterateObject())
@@ -103,6 +109,8 @@ NetworkedAnimator::NetworkedAnimator(Json config, String relativePath) : Network
     auto& tg = m_transformationGroups[pair.first];
     tg.interpolated = pair.second.getBool("interpolated", false);
     tg.setAffineTransform(Mat3F::identity());
+    tg.setAnimationAffineTransform(Mat3F::identity());
+    tg.setLocalAffineTransform(Mat3F::identity());
   }
 
   for (auto const& pair : config.get("rotationGroups", JsonObject()).iterateObject()) {
@@ -294,8 +302,9 @@ StringList NetworkedAnimator::states(String const& stateType) const {
   return m_animatedParts.states(stateType);
 }
 
-bool NetworkedAnimator::setState(String const& stateType, String const& state, bool startNew) {
-  if (m_animatedParts.setActiveState(stateType, state, startNew)) {
+bool NetworkedAnimator::setState(String const& stateType, String const& state, bool startNew, bool reverse) {
+  if (m_animatedParts.setActiveState(stateType, state, startNew, reverse)) {
+    m_stateInfo[stateType].wasUpdated = true;
     m_stateInfo[stateType].startedEvent.trigger();
     return true;
   } else {
@@ -303,8 +312,24 @@ bool NetworkedAnimator::setState(String const& stateType, String const& state, b
   }
 }
 
+bool NetworkedAnimator::setLocalState(String const& stateType, String const& state, bool startNew, bool reverse) {
+  return m_animatedParts.setActiveState(stateType, state, startNew, reverse);
+}
+
 String NetworkedAnimator::state(String const& stateType) const {
   return m_animatedParts.activeState(stateType).stateName;
+}
+int NetworkedAnimator::stateFrame(String const& stateType) const {
+  return m_animatedParts.activeState(stateType).frame;
+}
+float NetworkedAnimator::stateFrameProgress(String const& stateType) const {
+  return m_animatedParts.activeState(stateType).frameProgress;
+}
+float NetworkedAnimator::stateTimer(String const& stateType) const {
+  return m_animatedParts.activeState(stateType).timer;
+}
+bool NetworkedAnimator::stateReverse(String const& stateType) const {
+  return m_animatedParts.activeState(stateType).reverse;
 }
 
 StringMap<AnimatedPartSet::Part> const& NetworkedAnimator::constParts() const {
@@ -337,7 +362,7 @@ Mat3F NetworkedAnimator::globalTransformation() const {
 Mat3F NetworkedAnimator::groupTransformation(StringList const& transformationGroups) const {
   auto mat = Mat3F::identity();
   for (auto const& tg : transformationGroups)
-    mat = m_transformationGroups.get(tg).affineTransform() * mat;
+    mat = m_transformationGroups.get(tg).affineTransform() * m_transformationGroups.get(tg).localAffineTransform() * mat;
   return mat;
 }
 
@@ -402,6 +427,13 @@ String const* NetworkedAnimator::globalTagPtr(String const& tagName) const {
 
 void NetworkedAnimator::setPartTag(String const& partType, String tagName, String tagValue) {
   m_partTags[partType].set(std::move(tagName), std::move(tagValue));
+}
+
+void NetworkedAnimator::setPartDrawables(String const& partName, List<Drawable> drawables) {
+  m_partDrawables.set(partName, drawables);
+}
+void NetworkedAnimator::addPartDrawables(String const& partName, List<Drawable> drawables) {
+  m_partDrawables.ptr(partName)->appendAll(drawables);
 }
 
 void NetworkedAnimator::setProcessingDirectives(Directives const& directives) {
@@ -483,6 +515,40 @@ void NetworkedAnimator::transformTransformationGroup(
 
 void NetworkedAnimator::resetTransformationGroup(String const& transformationGroup) {
   m_transformationGroups.get(transformationGroup).setAffineTransform(Mat3F::identity());
+}
+
+void NetworkedAnimator::translateLocalTransformationGroup(String const& transformationGroup, Vec2F const& translation) {
+  auto& group = m_transformationGroups.get(transformationGroup);
+  group.setLocalAffineTransform(Mat3F::translation(translation) * group.localAffineTransform());
+}
+
+void NetworkedAnimator::rotateLocalTransformationGroup(
+    String const& transformationGroup, float rotation, Vec2F const& rotationCenter) {
+  auto& group = m_transformationGroups.get(transformationGroup);
+  group.setLocalAffineTransform(Mat3F::rotation(rotation, rotationCenter) * group.localAffineTransform());
+}
+
+void NetworkedAnimator::scaleLocalTransformationGroup(
+    String const& transformationGroup, float scale, Vec2F const& scaleCenter) {
+  auto& group = m_transformationGroups.get(transformationGroup);
+  group.setLocalAffineTransform(Mat3F::scaling(scale, scaleCenter) * group.localAffineTransform());
+}
+
+void NetworkedAnimator::scaleLocalTransformationGroup(
+    String const& transformationGroup, Vec2F const& scale, Vec2F const& scaleCenter) {
+  auto& group = m_transformationGroups.get(transformationGroup);
+  group.setLocalAffineTransform(Mat3F::scaling(scale, scaleCenter) * group.localAffineTransform());
+}
+
+void NetworkedAnimator::transformLocalTransformationGroup(
+    String const& transformationGroup, float a, float b, float c, float d, float tx, float ty) {
+  auto& group = m_transformationGroups.get(transformationGroup);
+  Mat3F transform = Mat3F(a, b, tx, c, d, ty, 0, 0, 1);
+  group.setLocalAffineTransform(transform * group.localAffineTransform());
+}
+
+void NetworkedAnimator::resetLocalTransformationGroup(String const& transformationGroup) {
+  m_transformationGroups.get(transformationGroup).setLocalAffineTransform(Mat3F::identity());
 }
 
 bool NetworkedAnimator::hasParticleEmitter(String const& emitterName) const {
@@ -602,9 +668,27 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
       }
     }
   }
+  HashMap<String, String> animationTags = {};
+  if (version() > 0)
+    m_animatedParts.forEachActiveState([&](String const& stateTypeName, AnimatedPartSet::ActiveStateInformation const& activeState) {
+      unsigned stateFrame = activeState.frame;
+      Maybe<unsigned> frame;
+      String frameStr;
+      String frameIndexStr;
+
+      frame = stateFrame;
+      frameStr = static_cast<String>(toString(stateFrame + 1));
+      frameIndexStr = static_cast<String>(toString(stateFrame));
+      if (frame) {
+        animationTags.set(stateTypeName + "_frame", frameStr);
+        animationTags.set(stateTypeName + "_frameIndex", frameIndexStr);
+      }
+      animationTags.set(stateTypeName + "_state", activeState.stateName);
+    });
 
   List<tuple<AnimatedPartSet::ActivePartInformation const*, String const*, float>> parts;
   parts.reserve(partCount);
+  int drawableCount = 0;
   m_animatedParts.forEachActivePart([&](String const& partName, AnimatedPartSet::ActivePartInformation const& activePart) {
     Maybe<float> maybeZLevel;
     if (m_flipped.get()) {
@@ -614,13 +698,15 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
     if (!maybeZLevel)
       maybeZLevel = activePart.properties.value("zLevel").optFloat();
 
+    if (auto drawables = m_partDrawables.contains(partName))
+      drawableCount += m_partDrawables.get(partName).size();
     parts.append(make_tuple(&activePart, &partName, maybeZLevel.value(0.0f)));
   });
 
   sort(parts, [](auto const& a, auto const& b) { return get<2>(a) < get<2>(b); });
 
   List<pair<Drawable, float>> drawables;
-  drawables.reserve(partCount);
+  drawables.reserve(partCount + drawableCount);
   for (auto& entry : parts) {
     auto& activePart = *get<0>(entry);
     auto& partName = *get<1>(entry);
@@ -633,7 +719,22 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
     bool fullbright = activePart.properties.value("fullbright").optBool().value(false);
 
     size_t originalDirectivesSize = baseProcessingDirectives.size();
+
+    auto const& partTags = m_partTags.get(partName);
+
     if (auto directives = activePart.properties.value("processingDirectives").optString()) {
+      if (version() > 0){
+        directives = directives->maybeLookupTagsView([&](StringView tag) -> StringView {
+          if (auto p = animationTags.ptr(tag)) {
+            return StringView(*p);
+          } else if (auto p = partTags.ptr(tag)) {
+            return StringView(*p);
+          } else if (auto p = m_globalTags.ptr(tag)) {
+            return StringView(*p);
+          }
+          return StringView("default");
+        });
+      }
       baseProcessingDirectives.append(*directives);
     }
 
@@ -647,11 +748,22 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
       frameIndexStr = static_cast<String>(toString(stateFrame));
 
       if (auto directives = activePart.activeState->properties.value("processingDirectives").optString()) {
+        if (version() > 0){
+          directives = directives->maybeLookupTagsView([&](StringView tag) -> StringView {
+            if (auto p = animationTags.ptr(tag)) {
+              return StringView(*p);
+            } else if (auto p = partTags.ptr(tag)) {
+              return StringView(*p);
+            } else if (auto p = m_globalTags.ptr(tag)) {
+              return StringView(*p);
+            }
+            return StringView("default");
+          });
+        }
         baseProcessingDirectives.append(*directives);
       }
     }
 
-    auto const& partTags = m_partTags.get(partName);
     Maybe<String> processedImage = image.maybeLookupTagsView([&](StringView tag) -> StringView {
       if (tag == "frame") {
         if (frame)
@@ -659,6 +771,8 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
       } else if (tag == "frameIndex") {
         if (frame)
           return frameIndexStr;
+      } else if (auto p = animationTags.ptr(tag)) {
+        return StringView(*p);
       } else if (auto p = partTags.ptr(tag)) {
         return StringView(*p);
       } else if (auto p = m_globalTags.ptr(tag)) {
@@ -668,6 +782,9 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
       return StringView("default");
     });
     String const& usedImage = processedImage ? processedImage.get() : image;
+
+    auto transformation = globalTransformation() * partTransformation(partName);
+    transformation.translate(position);
 
     if (!usedImage.empty() && usedImage[0] != ':' && usedImage[0] != '?') {
       size_t hash = hashOf(usedImage);
@@ -690,14 +807,19 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
       auto& imagePart = drawable.imagePart();
       for (Directives const& directives : baseProcessingDirectives)
         imagePart.addDirectives(directives, centered);
-      drawable.transform(partTransformation(partName));
-      drawable.transform(globalTransformation());
       drawable.fullbright = fullbright;
-      drawable.translate(position);
-
+      drawable.transform(transformation);
       drawables.append({std::move(drawable), get<2>(entry)});
     }
-        
+
+    if (m_partDrawables.contains(partName)) {
+      auto partDrawables = m_partDrawables.get(partName);
+      Drawable::transformAll(partDrawables, transformation);
+      for (auto drawable : partDrawables) {
+      drawables.append({drawable, get<2>(entry)});
+      }
+    }
+
     baseProcessingDirectives.resize(originalDirectivesSize);
   }
 
@@ -829,6 +951,60 @@ void NetworkedAnimator::update(float dt, DynamicTarget* dynamicTarget) {
       if (auto particleEmittersOff = activeState.properties.ptr("particleEmittersOff")) {
         for (auto const& name : particleEmittersOff->iterateArray())
           m_particleEmitters.get(name.toString()).active.set(false);
+      }
+
+      if (version() > 0){
+        auto processTransforms = [](Mat3F mat, JsonArray transforms, JsonObject properties) -> Mat3F {
+          for (auto const& v : transforms) {
+            auto actionData = v.toArray();
+            auto action = actionData[0].toString();
+            if (action == "reset") {
+              mat = Mat3F::identity();
+            } else if (action == "translate") {
+              mat.translate(jsonToVec2F(actionData[1]));
+            } else if (action == "rotate") {
+              if (auto center = actionData[2]) {
+                mat.rotate(actionData[1].toFloat(), jsonToVec2F(center));
+              } else if (auto center = properties.ptr("rotationCenter")) {
+                mat.rotate(actionData[1].toFloat(), jsonToVec2F(center));
+              } else if (auto center = properties.ptr("center")) {
+                mat.rotate(actionData[1].toFloat(), jsonToVec2F(center));
+              } else {
+                mat.rotate(actionData[1].toFloat());
+              }
+            } else if (action == "scale") {
+              if (auto center = actionData[2]) {
+                mat.scale(actionData[1].toFloat(), jsonToVec2F(center));
+              } else if (auto center = properties.ptr("scaleCenter")) {
+                mat.scale(actionData[1].toFloat(), jsonToVec2F(center));
+              } else if (auto center = properties.ptr("center")) {
+                mat.scale(actionData[1].toFloat(), jsonToVec2F(center));
+              } else {
+                mat.scale(actionData[1].toFloat());
+              }
+            } else if (action == "transform") {
+              mat = Mat3F(actionData[1].toFloat(), actionData[2].toFloat(), actionData[3].toFloat(), actionData[4].toFloat(), actionData[5].toFloat(), actionData[6].toFloat(), 0, 0, 1) * mat;
+            }
+          }
+          return mat;
+        };
+
+
+        for (auto& pair : m_transformationGroups) {
+          if (auto transforms = activeState.properties.ptr(pair.first)) {
+            auto mat = processTransforms(pair.second.animationAffineTransform(), transforms->toArray(), activeState.properties);
+            if (pair.second.interpolated) {
+              if (auto nextTransforms = activeState.nextProperties.ptr("transforms")) {
+                auto nextMat = processTransforms(pair.second.animationAffineTransform(), nextTransforms->toArray(), activeState.nextProperties);
+                pair.second.setAnimationAffineTransform(mat, nextMat, activeState.frameProgress);
+              } else {
+                pair.second.setAnimationAffineTransform(mat);
+              }
+            } else {
+              pair.second.setAnimationAffineTransform(mat);
+            }
+          }
+        }
       }
     });
 
@@ -990,6 +1166,47 @@ void NetworkedAnimator::TransformationGroup::setAffineTransform(Mat3F const& mat
   yShear.set(atan2(matrix[1][0], matrix[1][1]));
 }
 
+void NetworkedAnimator::TransformationGroup::setLocalAffineTransform(Mat3F const& matrix) {
+  localTransform = matrix;
+}
+
+Mat3F NetworkedAnimator::TransformationGroup::localAffineTransform() const {
+  return localTransform;
+}
+
+void NetworkedAnimator::TransformationGroup::setAnimationAffineTransform(Mat3F const& matrix) {
+  xTranslationAnimation = matrix[0][2];
+  yTranslationAnimation = matrix[1][2];
+  xScaleAnimation = sqrt(square(matrix[0][0]) + square(matrix[0][1]));
+  yScaleAnimation = sqrt(square(matrix[1][0]) + square(matrix[1][1]));
+  xShearAnimation = atan2(matrix[0][1], matrix[0][0]);
+  yShearAnimation = atan2(matrix[1][0], matrix[1][1]);
+}
+void NetworkedAnimator::TransformationGroup::setAnimationAffineTransform(Mat3F const& mat1, Mat3F const& mat2, float progress) {
+  xTranslationAnimation = mat1[0][2];
+  yTranslationAnimation = mat1[1][2];
+  xScaleAnimation = sqrt(square(mat1[0][0]) + square(mat1[0][1]));
+  yScaleAnimation = sqrt(square(mat1[1][0]) + square(mat1[1][1]));
+  xShearAnimation = atan2(mat1[0][1], mat1[0][0]);
+  yShearAnimation = atan2(mat1[1][0], mat1[1][1]);
+
+  xTranslationAnimation += (mat2[0][2] - xTranslationAnimation) * progress;
+  yTranslationAnimation += (mat2[1][2] - yTranslationAnimation) * progress;
+  xScaleAnimation += (sqrt(square(mat2[0][0]) + square(mat2[0][1])) - xScaleAnimation) * progress;
+  yScaleAnimation += (sqrt(square(mat2[1][0]) + square(mat2[1][1])) - yScaleAnimation) * progress;
+  xShearAnimation += (atan2(mat2[0][1], mat2[0][0]) - xShearAnimation) * progress;
+  yShearAnimation += (atan2(mat2[1][0], mat2[1][1]) - yShearAnimation) * progress;
+
+}
+
+Mat3F NetworkedAnimator::TransformationGroup::animationAffineTransform() const {
+  return Mat3F(
+      xScaleAnimation * cos(xShearAnimation), xScaleAnimation * sin(xShearAnimation), xTranslationAnimation,
+      yScaleAnimation * sin(yShearAnimation), yScaleAnimation * cos(yShearAnimation), yTranslationAnimation,
+      0, 0, 1
+    );
+}
+
 void NetworkedAnimator::setupNetStates() {
   clearNetElements();
 
@@ -1007,6 +1224,8 @@ void NetworkedAnimator::setupNetStates() {
     addNetElement(&m_partTags[part]);
 
   for (auto& pair : m_stateInfo) {
+    pair.second.reverse.setCompatibilityVersion(8);
+    addNetElement(&pair.second.reverse);
     addNetElement(&pair.second.stateIndex);
     addNetElement(&pair.second.startedEvent);
   }
@@ -1086,7 +1305,7 @@ void NetworkedAnimator::setupNetStates() {
 void NetworkedAnimator::netElementsNeedLoad(bool initial) {
   for (auto& pair : m_stateInfo) {
     if (pair.second.startedEvent.pullOccurred() || initial)
-      m_animatedParts.setActiveStateIndex(pair.first, pair.second.stateIndex.get(), true);
+      m_animatedParts.setActiveStateIndex(pair.first, pair.second.stateIndex.get(), true, pair.second.reverse.get());
   }
 
   for (auto& pair : m_rotationGroups) {
@@ -1096,8 +1315,26 @@ void NetworkedAnimator::netElementsNeedLoad(bool initial) {
 }
 
 void NetworkedAnimator::netElementsNeedStore() {
-  for (auto& pair : m_stateInfo)
-    pair.second.stateIndex.set(m_animatedParts.activeStateIndex(pair.first));
+  for (auto& pair : m_stateInfo) {
+    if (pair.second.wasUpdated) {
+      pair.second.stateIndex.set(m_animatedParts.activeStateIndex(pair.first));
+      pair.second.reverse.set(m_animatedParts.activeStateReverse(pair.first));
+    }
+  }
+}
+
+uint8_t NetworkedAnimator::version() const {
+  return m_animatorVersion;
+}
+
+Json NetworkedAnimator::mergeIncludes(Json config, Json includes, String relativePath){
+  for (Json const& path : includes.iterateArray()) {
+    auto includeConfig = Root::singleton().assets()->json(AssetPath::relativeTo(relativePath, path.toString()));
+    if (auto v = includeConfig.get("includes"))
+      includeConfig = mergeIncludes(includeConfig, v, relativePath);
+    config = jsonMerge(includeConfig, config);
+  }
+  return config;
 }
 
 }
