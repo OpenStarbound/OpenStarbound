@@ -60,7 +60,9 @@ AnimatedPartSet::AnimatedPartSet(Json config, uint8_t animatorVersion) {
 
       for (auto const& partStatePair : partStateTypePair.second.toObject()) {
         auto const& stateName = partStatePair.first;
-        auto const& stateConfig = partStatePair.second;
+        auto stateConfig = partStatePair.second;
+        if ((version() > 0) && stateConfig.isType(Json::Type::String))
+          stateConfig = partStatePair.second.get(stateConfig.toString());
 
         PartState partState = {stateConfig.getObject("properties", {}), stateConfig.getObject("frameProperties", {})};
         newPart.partStates[stateTypeName][stateName] = std::move(partState);
