@@ -349,6 +349,9 @@ StringList NetworkedAnimator::partNames() const {
 Json NetworkedAnimator::stateProperty(String const& stateType, String const& propertyName) const {
   return m_animatedParts.activeState(stateType).properties.value(propertyName);
 }
+Json NetworkedAnimator::stateNextProperty(String const& stateType, String const& propertyName) const {
+  return m_animatedParts.activeState(stateType).nextProperties.value(propertyName);
+}
 
 Json NetworkedAnimator::partProperty(String const& partName, String const& propertyName) const {
   return m_animatedParts.activePart(partName).properties.value(propertyName);

@@ -22,6 +22,8 @@ LuaCallbacks LuaBindings::makeScriptedAnimatorCallbacks(NetworkedAnimator* netwo
 
   callbacks.registerCallbackWithSignature<Json, String, String>(
       "animationStateProperty", bind(&NetworkedAnimator::stateProperty, networkedAnimator, _1, _2));
+  callbacks.registerCallbackWithSignature<Json, String, String>(
+      "animationStateNextProperty", bind(&NetworkedAnimator::stateNextProperty, networkedAnimator, _1, _2));
   callbacks.registerCallbackWithSignature<int, String>(
       "animationState", bind(&NetworkedAnimator::state, networkedAnimator, _1));
   callbacks.registerCallbackWithSignature<int, String>(

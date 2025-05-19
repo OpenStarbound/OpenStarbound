@@ -95,6 +95,7 @@ public:
   // AnimatedPartSet for the given state or part.  If the property does not
   // exist, returns null.
   Json stateProperty(String const& stateType, String const& propertyName) const;
+  Json stateNextProperty(String const& stateType, String const& propertyName) const;
   Json partProperty(String const& partName, String const& propertyName) const;
 
   // Returns the transformation from flipping and zooming that is applied to
