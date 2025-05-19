@@ -10,6 +10,8 @@ LuaCallbacks LuaBindings::makeNetworkedAnimatorCallbacks(NetworkedAnimator* netw
 
   callbacks.registerCallbackWithSignature<bool, String, String, bool, bool>(
       "setAnimationState", bind(&NetworkedAnimator::setState, networkedAnimator, _1, _2, _3, _4));
+  callbacks.registerCallbackWithSignature<bool, String, String, bool, bool>(
+      "setLocalAnimationState", bind(&NetworkedAnimator::setLocalState, networkedAnimator, _1, _2, _3, _4));
   callbacks.registerCallbackWithSignature<String, String>(
       "animationState", bind(&NetworkedAnimator::state, networkedAnimator, _1));
   callbacks.registerCallbackWithSignature<Json, String, String>(

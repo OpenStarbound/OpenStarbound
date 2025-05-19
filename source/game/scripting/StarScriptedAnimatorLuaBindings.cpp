@@ -20,6 +20,8 @@ LuaCallbacks LuaBindings::makeScriptedAnimatorCallbacks(NetworkedAnimator* netwo
       return poly;
     });
 
+  callbacks.registerCallbackWithSignature<bool, String, String, bool, bool>(
+      "setLocalAnimationState", bind(&NetworkedAnimator::setLocalState, networkedAnimator, _1, _2, _3, _4));
   callbacks.registerCallbackWithSignature<Json, String, String>(
       "animationStateProperty", bind(&NetworkedAnimator::stateProperty, networkedAnimator, _1, _2));
   callbacks.registerCallbackWithSignature<Json, String, String>(
