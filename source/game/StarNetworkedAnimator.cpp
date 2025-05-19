@@ -264,6 +264,7 @@ NetworkedAnimator& NetworkedAnimator::operator=(NetworkedAnimator&& animator) {
   m_globalTags = std::move(animator.m_globalTags);
   m_partTags = std::move(animator.m_partTags);
   m_cachedPartDrawables = std::move(animator.m_cachedPartDrawables);
+  m_partDrawables = std::move(animator.m_partDrawables);
 
   setupNetStates();
 
@@ -288,6 +289,7 @@ NetworkedAnimator& NetworkedAnimator::operator=(NetworkedAnimator const& animato
   m_globalTags = animator.m_globalTags;
   m_partTags = animator.m_partTags;
   m_cachedPartDrawables = animator.m_cachedPartDrawables;
+  m_partDrawables = animator.m_partDrawables;
 
   setupNetStates();
 
@@ -979,7 +981,7 @@ void NetworkedAnimator::update(float dt, DynamicTarget* dynamicTarget) {
           if (auto transforms = activeState.properties.ptr(pair.first)) {
             auto mat = processTransforms(pair.second.animationAffineTransform(), transforms->toArray(), activeState.properties);
             if (pair.second.interpolated) {
-              if (auto nextTransforms = activeState.nextProperties.ptr("transforms")) {
+              if (auto nextTransforms = activeState.nextProperties.ptr(pair.first)) {
                 auto nextMat = processTransforms(pair.second.animationAffineTransform(), nextTransforms->toArray(), activeState.nextProperties);
                 pair.second.setAnimationAffineTransform(mat, nextMat, activeState.frameProgress);
               } else {
