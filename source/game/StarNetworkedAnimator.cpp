@@ -90,8 +90,8 @@ NetworkedAnimator::NetworkedAnimator(Json config, String relativePath) : Network
   m_animatorVersion = config.getUInt("version", 0);
 
   if (version() > 0) {
-    if (auto v = config.get("includes"))
-      config = mergeIncludes(config, v, relativePath);
+    if (config.contains("includes"))
+      config = mergeIncludes(config, config.get("includes"), relativePath);
   }
 
   m_animatedParts = AnimatedPartSet(config.get("animatedParts", JsonObject()), version());
@@ -362,7 +362,7 @@ Mat3F NetworkedAnimator::globalTransformation() const {
 Mat3F NetworkedAnimator::groupTransformation(StringList const& transformationGroups) const {
   auto mat = Mat3F::identity();
   for (auto const& tg : transformationGroups)
-    mat = m_transformationGroups.get(tg).affineTransform() * m_transformationGroups.get(tg).localAffineTransform() * mat;
+    mat = m_transformationGroups.get(tg).affineTransform() * m_transformationGroups.get(tg).localAffineTransform() * m_transformationGroups.get(tg).animationAffineTransform() * mat;
   return mat;
 }
 
@@ -372,6 +372,8 @@ Mat3F NetworkedAnimator::partTransformation(String const& partName) const {
 
   if (auto offset = part.properties.value("offset").opt().apply(jsonToVec2F))
     transformation = Mat3F::translation(*offset) * transformation;
+
+  transformation = part.animationAffineTransform() * transformation;
 
   auto transformationGroups = jsonToStringList(part.properties.value("transformationGroups", JsonArray()));
   transformation = groupTransformation(transformationGroups) * transformation;
@@ -956,34 +958,17 @@ void NetworkedAnimator::update(float dt, DynamicTarget* dynamicTarget) {
       if (version() > 0){
         auto processTransforms = [](Mat3F mat, JsonArray transforms, JsonObject properties) -> Mat3F {
           for (auto const& v : transforms) {
-            auto actionData = v.toArray();
-            auto action = actionData[0].toString();
+            auto action = v.getString(0);
             if (action == "reset") {
               mat = Mat3F::identity();
             } else if (action == "translate") {
-              mat.translate(jsonToVec2F(actionData[1]));
+              mat.translate(jsonToVec2F(v.getArray(1)));
             } else if (action == "rotate") {
-              if (auto center = actionData[2]) {
-                mat.rotate(actionData[1].toFloat(), jsonToVec2F(center));
-              } else if (auto center = properties.ptr("rotationCenter")) {
-                mat.rotate(actionData[1].toFloat(), jsonToVec2F(center));
-              } else if (auto center = properties.ptr("center")) {
-                mat.rotate(actionData[1].toFloat(), jsonToVec2F(center));
-              } else {
-                mat.rotate(actionData[1].toFloat());
-              }
+              mat.rotate(v.getFloat(1), jsonToVec2F(v.getArray(2, properties.maybe("rotationCenter").value(JsonArray({0,0})).toArray())));
             } else if (action == "scale") {
-              if (auto center = actionData[2]) {
-                mat.scale(actionData[1].toFloat(), jsonToVec2F(center));
-              } else if (auto center = properties.ptr("scaleCenter")) {
-                mat.scale(actionData[1].toFloat(), jsonToVec2F(center));
-              } else if (auto center = properties.ptr("center")) {
-                mat.scale(actionData[1].toFloat(), jsonToVec2F(center));
-              } else {
-                mat.scale(actionData[1].toFloat());
-              }
+              mat.scale(jsonToVec2F(v.getArray(1)), jsonToVec2F(v.getArray(2, properties.maybe("scalingCenter").value(JsonArray({0,0})).toArray())));
             } else if (action == "transform") {
-              mat = Mat3F(actionData[1].toFloat(), actionData[2].toFloat(), actionData[3].toFloat(), actionData[4].toFloat(), actionData[5].toFloat(), actionData[6].toFloat(), 0, 0, 1) * mat;
+              mat = Mat3F(v.getFloat(1), v.getFloat(2), v.getFloat(3), v.getFloat(4), v.getFloat(5), v.getFloat(6), 0, 0, 1) * mat;
             }
           }
           return mat;
@@ -1330,8 +1315,8 @@ uint8_t NetworkedAnimator::version() const {
 Json NetworkedAnimator::mergeIncludes(Json config, Json includes, String relativePath){
   for (Json const& path : includes.iterateArray()) {
     auto includeConfig = Root::singleton().assets()->json(AssetPath::relativeTo(relativePath, path.toString()));
-    if (auto v = includeConfig.get("includes"))
-      includeConfig = mergeIncludes(includeConfig, v, relativePath);
+    if (includeConfig.contains("includes"))
+      includeConfig = mergeIncludes(includeConfig, includeConfig.get("includes"), relativePath);
     config = jsonMerge(includeConfig, config);
   }
   return config;

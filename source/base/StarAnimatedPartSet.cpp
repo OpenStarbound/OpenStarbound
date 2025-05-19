@@ -344,34 +344,17 @@ void AnimatedPartSet::freshenActivePart(Part& part) {
       if (version() > 0) {
         auto processTransforms = [](Mat3F mat, JsonArray transforms, JsonObject properties) -> Mat3F {
           for (auto const& v : transforms) {
-            auto actionData = v.toArray();
-            auto action = actionData[0].toString();
+            auto action = v.getString(0);
             if (action == "reset") {
               mat = Mat3F::identity();
             } else if (action == "translate") {
-              mat.translate(jsonToVec2F(actionData[1]));
+              mat.translate(jsonToVec2F(v.getArray(1)));
             } else if (action == "rotate") {
-              if (auto center = actionData[2]) {
-                mat.rotate(actionData[1].toFloat(), jsonToVec2F(center));
-              } else if (auto center = properties.ptr("rotationCenter")) {
-                mat.rotate(actionData[1].toFloat(), jsonToVec2F(center));
-              } else if (auto center = properties.ptr("center")) {
-                mat.rotate(actionData[1].toFloat(), jsonToVec2F(center));
-              } else {
-                mat.rotate(actionData[1].toFloat());
-              }
+              mat.rotate(v.getFloat(1), jsonToVec2F(v.getArray(2, properties.maybe("rotationCenter").value(JsonArray({0,0})).toArray())));
             } else if (action == "scale") {
-              if (auto center = actionData[2]) {
-                mat.scale(actionData[1].toFloat(), jsonToVec2F(center));
-              } else if (auto center = properties.ptr("scaleCenter")) {
-                mat.scale(actionData[1].toFloat(), jsonToVec2F(center));
-              } else if (auto center = properties.ptr("center")) {
-                mat.scale(actionData[1].toFloat(), jsonToVec2F(center));
-              } else {
-                mat.scale(actionData[1].toFloat());
-              }
+              mat.scale(jsonToVec2F(v.getArray(1)), jsonToVec2F(v.getArray(2, properties.maybe("scalingCenter").value(JsonArray({0,0})).toArray())));
             } else if (action == "transform") {
-              mat = Mat3F(actionData[1].toFloat(), actionData[2].toFloat(), actionData[3].toFloat(), actionData[4].toFloat(), actionData[5].toFloat(), actionData[6].toFloat(), 0, 0, 1) * mat;
+              mat = Mat3F(v.getFloat(1), v.getFloat(2), v.getFloat(3), v.getFloat(4), v.getFloat(5), v.getFloat(6), 0, 0, 1) * mat;
             }
           }
           return mat;
@@ -380,7 +363,7 @@ void AnimatedPartSet::freshenActivePart(Part& part) {
 
         if (auto transforms = activePart.properties.ptr("transforms")) {
           auto mat = processTransforms(activePart.animationAffineTransform(), transforms->toArray(), activePart.properties);
-          if (activePart.properties.value("interpolated").optBool().value(false)) {
+          if (activePart.properties.maybe("interpolated").value(false)) {
             if (auto nextTransforms = activePart.nextProperties.ptr("transforms")) {
               auto nextMat = processTransforms(activePart.animationAffineTransform(), nextTransforms->toArray(), activePart.nextProperties);
               activePart.setAnimationAffineTransform(mat, nextMat, stateType.activeState.frameProgress);
