@@ -76,7 +76,7 @@ AnimatedPartSet::AnimatedPartSet(Json config, uint8_t animatorVersion) {
   }
 
   for (auto const& pair : m_stateTypes)
-    setActiveState(pair.first, pair.second.defaultState, true);
+    setActiveState(pair.first, pair.second.defaultState, true, false);
 }
 
 StringList AnimatedPartSet::stateTypes() const {

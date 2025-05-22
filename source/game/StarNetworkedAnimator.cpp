@@ -1264,6 +1264,7 @@ void NetworkedAnimator::setupNetStates() {
     addNetElement(&m_partTags[part]);
 
   for (auto& pair : m_stateInfo) {
+    pair.second.wasUpdated = true;
     pair.second.reverse.setCompatibilityVersion(8);
     addNetElement(&pair.second.reverse);
     addNetElement(&pair.second.stateIndex);
@@ -1356,7 +1357,7 @@ void NetworkedAnimator::netElementsNeedLoad(bool initial) {
 
 void NetworkedAnimator::netElementsNeedStore() {
   for (auto& pair : m_stateInfo) {
-    if (pair.second.wasUpdated) {
+    if (pair.second.wasUpdated || (version() < 1)) {
       pair.second.stateIndex.set(m_animatedParts.activeStateIndex(pair.first));
       pair.second.reverse.set(m_animatedParts.activeStateReverse(pair.first));
     }
