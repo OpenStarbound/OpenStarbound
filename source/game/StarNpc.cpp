@@ -382,6 +382,8 @@ void Npc::update(float dt, uint64_t) {
   m_movementController->setTimestep(dt);
 
   if (isMaster()) {
+    m_statusController->setScale(m_movementController->getScale());
+
     m_scriptComponent.update(m_scriptComponent.updateDt(dt));
 
     if (inConflictingLoungeAnchor())
@@ -492,7 +494,7 @@ void Npc::render(RenderCallback* renderCallback) {
     scale = scale.piecewiseMultiply(result.first);
     humanoidDirectives.append(result.second);
   }
-  m_humanoid.setScale(scale);
+  m_humanoid.setScale(scale * m_movementController->getScale());
 
   for (auto& drawable : m_humanoid.render()) {
     drawable.translate(position());
@@ -1140,8 +1142,10 @@ List<DamageSource> Npc::damageSources() const {
       config = config.set("poly", jsonFromPolyF(m_movementController->collisionPoly()));
     }
     DamageSource damageSource(config);
-    if (auto damagePoly = damageSource.damageArea.ptr<PolyF>())
+    if (auto damagePoly = damageSource.damageArea.ptr<PolyF>()) {
       damagePoly->rotate(m_movementController->rotation());
+      damagePoly->scale(m_movementController->getScale());
+    }
     damageSource.damage *= m_statusController->stat("powerMultiplier");
     damageSources.append(damageSource);
   }

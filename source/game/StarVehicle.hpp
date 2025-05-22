@@ -8,13 +8,19 @@
 #include "StarLoungingEntities.hpp"
 #include "StarScriptedEntity.hpp"
 #include "StarLuaAnimationComponent.hpp"
+#include "StarMobileEntity.hpp"
 
 namespace Star {
 
 STAR_EXCEPTION(VehicleException, StarException);
 STAR_CLASS(Vehicle);
 
-class Vehicle : public virtual LoungeableEntity, public virtual InteractiveEntity, public virtual PhysicsEntity, public virtual ScriptedEntity {
+class Vehicle :
+  public virtual LoungeableEntity,
+  public virtual InteractiveEntity,
+  public virtual PhysicsEntity,
+  public virtual ScriptedEntity,
+  public virtual MobileEntity {
 public:
   Vehicle(Json baseConfig, String path, Json dynamicConfig);
 
@@ -80,6 +86,8 @@ public:
   Maybe<LuaValue> evalScript(String const& code) override;
 
   void setPosition(Vec2F const& position);
+
+  MovementController* movementController() override;
 
 private:
   struct MasterControlState {
@@ -157,7 +165,7 @@ private:
   NetworkedAnimator m_networkedAnimator;
   NetworkedAnimator::DynamicTarget m_networkedAnimatorDynamicTarget;
   LuaMessageHandlingComponent<LuaStorableComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>> m_scriptComponent;
-  
+
   LuaAnimationComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptedAnimator;
   NetElementHashMap<String, Json> m_scriptedAnimationParameters;
 

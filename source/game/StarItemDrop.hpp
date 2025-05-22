@@ -6,13 +6,14 @@
 #include "StarGameTimers.hpp"
 #include "StarEntity.hpp"
 #include "StarDrawable.hpp"
+#include "StarMobileEntity.hpp"
 
 namespace Star {
 
 STAR_CLASS(Item);
 STAR_CLASS(ItemDrop);
 
-class ItemDrop : public virtual Entity {
+class ItemDrop : public virtual MobileEntity {
 public:
   // Creates a drop at the given position and adds a hard-coded amount of
   // randomness to the drop position / velocity.
@@ -22,8 +23,8 @@ public:
   // Create a drop and throw in the given direction with a hard-coded initial
   // throw velocity (unrelated to magnitude of direction, direction is
   // normalized first).  Initially intangible for 1 second.
-  static ItemDropPtr throwDrop(ItemPtr const& item, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal = false);
-  static ItemDropPtr throwDrop(ItemDescriptor const& itemDescriptor, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal = false);
+  static ItemDropPtr throwDrop(ItemPtr const& item, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, float scale, bool eternal = false);
+  static ItemDropPtr throwDrop(ItemDescriptor const& itemDescriptor, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, float scale, bool eternal = false);
 
   ItemDrop(ItemPtr item);
   ItemDrop(Json const& diskStore);
@@ -82,6 +83,8 @@ public:
 
   Vec2F velocity() const;
   void setVelocity(Vec2F const& position);
+
+  MovementController* movementController() override;
 
 private:
   enum class Mode { Intangible, Available, Taken, Dead };

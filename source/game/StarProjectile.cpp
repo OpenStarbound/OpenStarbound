@@ -17,6 +17,8 @@
 #include "StarEntityLuaBindings.hpp"
 #include "StarMovementControllerLuaBindings.hpp"
 #include "StarParticleDatabase.hpp"
+#include "StarActorEntity.hpp"
+#include "StarMobileEntity.hpp"
 
 namespace Star {
 
@@ -223,8 +225,10 @@ List<DamageSource> Projectile::damageSources() const {
       if (angleSide.second == Direction::Left)
         damagePoly.flipHorizontal(0);
       damagePoly.rotate(angleSide.first);
+      damagePoly.scale(m_movementController->getScale());
     } else {
       damagePoly.rotate(m_movementController->rotation());
+      damagePoly.scale(m_movementController->getScale());
     }
     addDamageSource(damagePoly);
   } else if (!useDamageLine) {
@@ -364,7 +368,7 @@ void Projectile::render(RenderCallback* renderCallback) {
   m_effectEmitter->render(renderCallback);
 
   String image = strf("{}:{}{}", m_config->image, m_frame, m_imageSuffix);
-  Drawable drawable = Drawable::makeImage(image, 1.0f / TilePixels, true, Vec2F());
+  Drawable drawable = Drawable::makeImage(image, m_movementController->getScale() / TilePixels, true, Vec2F());
   drawable.imagePart().addDirectives(m_imageDirectives, true);
   if (m_config->flippable) {
     auto angleSide = getAngleSide(m_movementController->rotation(), true);
@@ -438,6 +442,13 @@ void Projectile::setSourceEntity(EntityId source, bool trackSource) {
   if (inWorld()) {
     if (auto sourceEntity = world()->entity(source)) {
       m_lastEntityPosition = sourceEntity->position();
+
+      // projectiles inherit scale from their owners when they initialize
+      if (auto actor = as<ActorEntity>(sourceEntity))
+        m_movementController->setScale(m_movementController->getScale() * actor->movementController()->getScale());
+      else if (auto mob = as<MobileEntity>(sourceEntity))
+        m_movementController->setScale(m_movementController->getScale() * mob->movementController()->getScale());
+
       if (!m_damageTeam)
         setTeam(sourceEntity->getTeam());
     } else {
@@ -472,7 +483,15 @@ List<PhysicsForceRegion> Projectile::forceRegions() const {
   for (auto const& p : m_physicsForces) {
     if (p.second.enabled.get()) {
       PhysicsForceRegion forceRegion = p.second.forceRegion;
-      forceRegion.call([pos = position()](auto& fr) { fr.translate(pos); });
+      if (auto dfr = as<DirectionalForceRegion>(&forceRegion)) {
+        dfr->region.scale(m_movementController->getScale());
+      } else if (auto rfr = as<RadialForceRegion>(&forceRegion)) {
+        rfr->innerRadius *= m_movementController->getScale();
+        rfr->outerRadius *= m_movementController->getScale();
+      }
+      forceRegion.call([pos = position()](auto& fr) {
+        fr.translate(pos);
+      });
       forces.append(std::move(forceRegion));
     }
   }
@@ -715,7 +734,7 @@ void Projectile::processAction(Json const& action) {
     }
     projectile->setSourceEntity(m_sourceEntity, false);
     projectile->setPowerMultiplier(m_powerMultiplier);
-    
+
     // if the entity no longer exists and no explicit damage team is set, inherit damage team
     if (!projectile->m_damageTeam && !world()->entity(m_sourceEntity))
       projectile->setTeam(getTeam());

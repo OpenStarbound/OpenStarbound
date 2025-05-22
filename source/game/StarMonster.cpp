@@ -282,8 +282,10 @@ List<DamageSource> Monster::damageSources() const {
   float levelPowerMultiplier = Root::singleton().functionDatabase()->function(m_monsterVariant.powerLevelFunction)->evaluate(*m_monsterLevel);
   if (m_damageOnTouch && !m_monsterVariant.touchDamageConfig.isNull()) {
     DamageSource damageSource(m_monsterVariant.touchDamageConfig);
-    if (auto damagePoly = damageSource.damageArea.ptr<PolyF>())
+    if (auto damagePoly = damageSource.damageArea.ptr<PolyF>()) {
       damagePoly->rotate(m_movementController->rotation());
+      damagePoly->scale(m_movementController->getScale());
+    }
     damageSource.damage *= m_monsterVariant.touchDamageMultiplier * levelPowerMultiplier * m_statusController->stat("powerMultiplier");
     damageSource.sourceEntityId = entityId();
     damageSource.team = getTeam();
@@ -302,19 +304,21 @@ List<DamageSource> Monster::damageSources() const {
       poly.transform(m_networkedAnimator.partTransformation(anchorPart));
       if (m_networkedAnimator.flipped())
         poly.flipHorizontal(m_networkedAnimator.flippedRelativeCenterLine());
+      poly.scale(m_movementController->getScale());
     });
     if (ds.knockback.is<Vec2F>()) {
       Vec2F knockback = ds.knockback.get<Vec2F>();
       knockback = m_networkedAnimator.partTransformation(anchorPart).transformVec2(knockback);
       if (m_networkedAnimator.flipped())
         knockback = Vec2F(-knockback[0], knockback[1]);
-      ds.knockback = knockback;
+      ds.knockback = knockback * m_movementController->getScale();
     }
 
     List<DamageSource> partSources;
     if (auto line = ds.damageArea.maybe<Line2F>()) {
       if (pair.second.getBool("checkLineCollision", false)) {
         Line2F worldLine = line.value().translated(position());
+        worldLine.scale(m_movementController->getScale());
         float length = worldLine.length();
 
         auto bounces = pair.second.getInt("bounces", 0);
@@ -449,6 +453,7 @@ void Monster::update(float dt, uint64_t) {
 
   if (isMaster()) {
     m_networkedAnimator.setFlipped((m_movementController->facingDirection() == Direction::Left) != m_monsterVariant.reversed);
+    m_networkedAnimator.setZoom(m_movementController->getScale());
 
     if (m_knockedOut) {
       m_knockoutTimer -= dt;
@@ -843,7 +848,16 @@ List<ChatAction> Monster::pullPendingChatActions() {
 }
 
 List<PhysicsForceRegion> Monster::forceRegions() const {
-  return m_physicsForces.get();
+  auto forceRegions = m_physicsForces.get();
+  for (auto forceRegion : forceRegions) {
+    if (auto dfr = as<DirectionalForceRegion>(&forceRegion)) {
+      dfr->region.scale(m_movementController->getScale());
+    } else if (auto rfr = as<RadialForceRegion>(&forceRegion)) {
+      rfr->innerRadius *= m_movementController->getScale();
+      rfr->outerRadius *= m_movementController->getScale();
+    }
+  }
+  return forceRegions;
 }
 
 InteractAction Monster::interact(InteractRequest const& request) {

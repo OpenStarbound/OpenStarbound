@@ -544,4 +544,10 @@ LuaCallbacks TechController::makeTechCallbacks(TechModule& techModule) {
   return callbacks;
 }
 
+void TechController::setScale(float scale) {
+  for (auto const& animator : m_techAnimators.netElements()) {
+    animator->animator.setZoom(scale);
+  }
+}
+
 }

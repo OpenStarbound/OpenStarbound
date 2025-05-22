@@ -394,10 +394,10 @@ List<Drawable> Player::drawables() const {
       };
       extractScale(m_techController->parentDirectives().list());
       extractScale(m_statusController->parentDirectives().list());
-      m_humanoid->setScale(scale);
+      m_humanoid->setScale(scale * m_movementController->getScale());
 
       for (auto& drawable : m_humanoid->render()) {
-        drawable.translate(position() + m_techController->parentOffset());
+        drawable.translate(position() + (m_techController->parentOffset() * m_movementController->getScale()));
         if (drawable.isImage()) {
           drawable.imagePart().addDirectivesGroup(humanoidDirectives, true);
 
@@ -662,6 +662,14 @@ Vec2F Player::mouthPosition(bool ignoreAdjustments) const {
   return position() + mouthOffset(ignoreAdjustments);
 }
 
+Vec2F Player::throwItemPosition() const {
+  return position();
+}
+
+Vec2F Player::interactPosition() const {
+  return position();
+}
+
 RectF Player::collisionArea() const {
   return m_movementController->collisionPoly().boundBox();
 }
@@ -744,11 +752,11 @@ void Player::dropItem() {
   if (!canUseTool())
     return;
 
-  Vec2F throwDirection = world()->geometry().diff(aimPosition(), position());
+  Vec2F throwDirection = world()->geometry().diff(aimPosition(), throwItemPosition());
   for (auto& throwSlot : {m_inventory->primaryHeldSlot(), m_inventory->secondaryHeldSlot()}) {
     if (throwSlot) {
       if (auto drop = m_inventory->takeSlot(*throwSlot)) {
-        world()->addEntity(ItemDrop::throwDrop(drop, position(), velocity(), throwDirection));
+        world()->addEntity(ItemDrop::throwDrop(drop, throwItemPosition(), velocity(), throwDirection, m_movementController->getScale()));
         break;
       }
     }
@@ -829,6 +837,9 @@ void Player::update(float dt, uint64_t) {
   m_movementController->setTimestep(dt);
 
   if (isMaster()) {
+    m_statusController->setScale(m_movementController->getScale());
+    m_techController->setScale(m_movementController->getScale());
+
     if (m_emoteCooldownTimer) {
       m_emoteCooldownTimer -= dt;
       if (m_emoteCooldownTimer <= 0) {
@@ -1030,7 +1041,7 @@ void Player::update(float dt, uint64_t) {
 
   m_tools->suppressItems(suppressedItems);
   m_tools->tick(dt, m_shifting, m_pendingMoves);
-  
+
   if (auto overrideFacingDirection = m_tools->setupHumanoidHandItems(*m_humanoid, position(), aimPosition()))
     m_movementController->controlFace(*overrideFacingDirection);
 
@@ -1047,7 +1058,7 @@ void Player::update(float dt, uint64_t) {
 
   if (isClient) {
     m_effectsAnimator->update(dt, &m_effectsAnimatorDynamicTarget);
-    m_effectsAnimatorDynamicTarget.updatePosition(position() + m_techController->parentOffset());
+    m_effectsAnimatorDynamicTarget.updatePosition(position() + (m_techController->parentOffset() * m_movementController->getScale()));
   } else {
     m_effectsAnimator->update(dt, nullptr);
   }
@@ -1414,19 +1425,19 @@ InteractiveEntityPtr Player::bestInteractionEntity(bool includeNearby) {
     return {};
 
   InteractiveEntityPtr interactiveEntity;
-  if (auto entity = world()->getInteractiveInRange(m_aimPosition, isAdmin() ? m_aimPosition : position(), m_interactRadius)) {
+  if (auto entity = world()->getInteractiveInRange(m_aimPosition, isAdmin() ? m_aimPosition : interactPosition(), interactRadius())) {
     interactiveEntity = entity;
   } else if (includeNearby) {
     Vec2F interactBias = m_walkIntoInteractBias;
     if (facingDirection() == Direction::Left)
       interactBias[0] *= -1;
-    Vec2F pos = position() + interactBias;
+    Vec2F pos = interactPosition() + interactBias;
 
-    if (auto entity = world()->getInteractiveInRange(pos, position(), m_interactRadius))
+    if (auto entity = world()->getInteractiveInRange(pos, interactPosition(), interactRadius()))
       interactiveEntity = entity;
   }
 
-  if (interactiveEntity && (isAdmin() || world()->canReachEntity(position(), interactRadius(), interactiveEntity->entityId())))
+  if (interactiveEntity && (isAdmin() || world()->canReachEntity(interactPosition(), interactRadius(), interactiveEntity->entityId())))
     return interactiveEntity;
   return {};
 }
@@ -1557,7 +1568,7 @@ float Player::toolRadius() const {
 }
 
 float Player::interactRadius() const {
-  return m_interactRadius;
+  return m_interactRadius * m_movementController->getScale();
 }
 
 void Player::setInteractRadius(float interactRadius) {
@@ -2435,7 +2446,7 @@ void Player::dropSelectedItems(function<bool(ItemPtr)> filter) {
 
   m_inventory->forEveryItem([&](InventorySlot const&, ItemPtr& item) {
       if (item && (!filter || filter(item)))
-        world()->addEntity(ItemDrop::throwDrop(take(item), position(), velocity(), Vec2F::withAngle(Random::randf(-Constants::pi, Constants::pi)), true));
+        world()->addEntity(ItemDrop::throwDrop(take(item), position(), velocity(), Vec2F::withAngle(Random::randf(-Constants::pi, Constants::pi)), m_movementController->getScale(), true));
     });
 }
 

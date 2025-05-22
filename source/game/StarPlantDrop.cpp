@@ -379,4 +379,9 @@ bool PlantDrop::shouldDestroy() const {
   return m_time <= 0.0f;
 }
 
+MovementController* PlantDrop::movementController() {
+  return &m_movementController;
+}
+
+
 }
