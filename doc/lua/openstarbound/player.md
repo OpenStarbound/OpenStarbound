@@ -86,11 +86,17 @@ Sets the player's emote directives.
 
 ---
 
-#### `String` player.hair()
+#### `void` player.setHair(`String` hairGroup, `String` hairType, `String` hairDirectives)
+
+Sets the player's hair group, type, and directives.
+
+---
+
+#### `String` player.hairGroup()
 
 Returns the player's hair group.
 
-#### `void` player.setHair(`String` hairGroup)
+#### `void` player.setHairGroup(`String` hairGroup)
 
 Sets the player's hair group.
 
