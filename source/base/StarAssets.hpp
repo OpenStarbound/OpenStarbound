@@ -159,7 +159,7 @@ public:
     List<pair<String, AssetSourcePtr>> patchSources;
   };
 
-  Assets(Settings settings, StringList assetSources);
+  Assets(Settings settings, StringList assetSources, StringList ignoreList);
   ~Assets();
 
   void hotReload() const;
@@ -183,6 +183,10 @@ public:
 
   // The name of the asset source within which the path exists.
   String assetSource(String const& path) const;
+
+  bool assetSourceEnabled(String const& sourcePath) const;
+
+  String assetName(String const& sourcePath) const;
 
   Maybe<String> assetSourcePath(AssetSourcePtr const& source) const;
 
@@ -336,6 +340,9 @@ private:
 
   // Paths of all used asset sources, in load order.
   StringList m_assetSources;
+
+  // Paths to ignore when scanning for assets
+  StringList m_ignoreList;
 
   // Maps an asset path to the loaded asset source and vice versa
   BiMap<String, AssetSourcePtr> m_assetSourcePaths;

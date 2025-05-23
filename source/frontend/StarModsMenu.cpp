@@ -5,22 +5,102 @@
 #include "StarLabelWidget.hpp"
 #include "StarButtonWidget.hpp"
 #include "StarListWidget.hpp"
+#include "StarTextBoxWidget.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarUuid.hpp"
 
 namespace Star {
 
-ModsMenu::ModsMenu() {
+ModsMenu::ModsMenu(RegisteredPaneManager<String>* manager) {
   auto assets = Root::singleton().assets();
 
   GuiReader reader;
+  GuiReader presetReader;
+  GuiReader saveReader;
+  m_paneManager = manager;
+
+  m_presetSelectPane = make_shared<Pane>();
+
+  m_modPresetName = Root::singleton().configuration()->get("selectedDisabledAssetsPreset", "").toString();
+  m_presets = Root::singleton().configuration()->get("disabledAssetsPresets", JsonObject());
+
+  auto saveDialog = make_shared<Pane>();
+  saveReader.registerCallback("save", [=](Widget*) { 
+    auto textBox = saveDialog->fetchChild<TextBoxWidget>("name");
+    if (textBox->getText().empty())
+      return;
+
+    m_modPresetName = textBox->getText();
+    m_presets = m_presets.set(m_modPresetName, jsonFromStringList(m_disabledPaths));
+    Root::singleton().configuration()->set("disabledAssetsPresets", m_presets);
+
+    populatePresetList(m_presets);
+    saveDialog->fetchChild<TextBoxWidget>("name")->setText("");
+    saveDialog->dismiss(); 
+  });
+  saveReader.registerCallback("cancel", [=](Widget*) { 
+    saveDialog->fetchChild<TextBoxWidget>("name")->setText("");
+    saveDialog->dismiss(); 
+  });
+  saveReader.construct(Root::singleton().assets()->json("/interface/modsmenu/savedialog.config"), saveDialog.get());
+  m_paneManager->registerPane("savePresetDialog", PaneLayer::ModalWindow, saveDialog);
+
+  
+  presetReader.registerCallback("savePreset", [=](Widget*) {
+    auto savePresetDialog = m_paneManager->registeredPane("savePresetDialog");
+
+    m_paneManager->displayRegisteredPane("savePresetDialog");
+  });
+  presetReader.construct(assets->json("/interface/modsmenu/presetlist.config"), m_presetSelectPane.get());
+
+  auto presetList = m_presetSelectPane->fetchChild<ListWidget>("presetSelectArea.presetList");
+  presetList->registerMemberCallback("delete", [=](Widget* widget) {
+    if (auto const pos = presetList->selectedItem(); pos != NPos) {
+      m_presets = m_presets.eraseKey(presetList->selectedWidget()->data().toString());
+    }
+    Root::singleton().configuration()->set("disabledAssetsPresets", m_presets);
+
+    populatePresetList(m_presets);
+  });
+  presetList->setCallback([=](Widget* widget) {
+    if (auto selectedItem = presetList->selectedWidget()) {
+      if (selectedItem->findChild<ButtonWidget>("delete")->isHovered())
+        return;
+
+      m_modPresetName = selectedItem->data().toString();
+      Root::singleton().configuration()->set("selectedDisabledAssetsPreset", m_modPresetName);
+      m_disabledPaths = jsonToStringList(m_presets.get(m_modPresetName, JsonArray()));
+      for (size_t i = 0; i != m_modList->listSize(); ++i) {
+        auto item = m_modList->itemAt(i);
+        auto name = item->data().toString();
+        item->findChild<ButtonWidget>("enabled")->setChecked(!m_disabledPaths.contains(name));
+      }
+    }
+  });
+  m_paneManager->registerPane("presetSelect", PaneLayer::Hud, m_presetSelectPane);
+
+
   reader.registerCallback("linkbutton", bind(&ModsMenu::openLink, this));
   reader.registerCallback("workshopbutton", bind(&ModsMenu::openWorkshop, this));
+  reader.registerCallback("load", [=] (Widget* widget) {
+    //TODO: Kae please help >3<
+    auto& guiContext = GuiContext::singleton();
+    guiContext.applicationController()->quit();
+  });
   reader.construct(assets->json("/interface/modsmenu/modsmenu.config:paneLayout"), this);
 
   m_assetsSources = assets->assetSources();
   m_modList = fetchChild<ListWidget>("mods.list");
+  m_modList->registerMemberCallback("enabled", bind(&ModsMenu::enableMod, this));
+  StringList baseMods = {"base", "opensb", "user"};
   for (auto const& assetsSource : m_assetsSources) {
-    auto modName = m_modList->addItem()->fetchChild<LabelWidget>("name");
+    auto item = m_modList->addItem();
+    auto modName = item->fetchChild<LabelWidget>("name");
     modName->setText(bestModName(assets->assetSourceMetadata(assetsSource), assetsSource));
+    item->setData(assets->assetName(assetsSource));
+    item->findChild<ButtonWidget>("enabled")->setChecked(assets->assetSourceEnabled(assetsSource));
+    if (baseMods.contains(assets->assetName(assetsSource)))
+      item->findChild<ButtonWidget>("enabled")->disable();
   }
 
   m_modName = findChild<LabelWidget>("modname");
@@ -49,6 +129,21 @@ ModsMenu::ModsMenu() {
 
   linkLabel->setVisibility(hasDesktopService);
   copyLinkLabel->setVisibility(!hasDesktopService);
+
+  populatePresetList(m_presets);
+}
+
+void ModsMenu::populatePresetList(Json const& disabledAssetsPresets) {
+  auto presetList = m_presetSelectPane->fetchChild<ListWidget>("presetSelectArea.presetList");
+  presetList->clear();
+  for (auto const& preset : disabledAssetsPresets.iterateObject()) {
+    auto item = presetList->addItem();
+    item->fetchChild<LabelWidget>("name")->setText(preset.first);
+    item->setData(preset.first);
+
+    if (preset.first == m_modPresetName)
+      presetList->setSelectedWidget(item);
+  }
 }
 
 void ModsMenu::update(float dt) {
@@ -88,6 +183,22 @@ String ModsMenu::bestModName(JsonObject const& metadata, String const& sourcePat
   if (baseName.contains("."))
     baseName.rextract(".");
   return baseName;
+}
+
+void ModsMenu::enableMod() {
+  size_t selectedItem = m_modList->selectedItem();
+  if (selectedItem == NPos)
+    return;
+  String assetsSource = m_assetsSources.at(selectedItem);
+
+  String name = Root::singleton().assets()->assetName(assetsSource);
+  bool enabled = m_modList->selectedWidget()->fetchChild<ButtonWidget>("enabled")->isChecked();
+
+  if (enabled) {
+    m_disabledPaths.remove(name);
+  } else if (!m_disabledPaths.contains(name)) {
+    m_disabledPaths.append(name);
+  }
 }
 
 void ModsMenu::openLink() {
