@@ -319,7 +319,7 @@ LuaEnginePtr LuaEngine::create(bool safe) {
 
   luaL_requiref(self->m_state, "os", luaopen_os, true);
   if (safe) {
-    StringSet osWhitelist = {"clock", "difftime", "time"};
+    StringSet osWhitelist = {"clock", "difftime", "time", "date"};
 
     lua_pushnil(self->m_state);
     while (lua_next(self->m_state, -2) != 0) {
