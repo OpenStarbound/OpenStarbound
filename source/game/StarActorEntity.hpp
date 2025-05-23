@@ -1,6 +1,8 @@
 #pragma once
 
 #include "StarEntity.hpp"
+#include "StarActorMovementController.hpp"
+#include "StarStatusController.hpp"
 
 STAR_CLASS(ActorMovementController);
 STAR_CLASS(StatusController);

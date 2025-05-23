@@ -18,6 +18,7 @@
 #include "StarLuaComponents.hpp"
 #include "StarLuaAnimationComponent.hpp"
 #include "StarLuaActorMovementComponent.hpp"
+#include "StarActorEntity.hpp"
 
 namespace Star {
 
@@ -31,7 +32,8 @@ class Monster
     public virtual PhysicsEntity,
     public virtual NametagEntity,
     public virtual ChattyEntity,
-    public virtual InteractiveEntity {
+    public virtual InteractiveEntity,
+    public virtual ActorEntity {
 public:
   struct SkillInfo {
     String label;
@@ -132,6 +134,9 @@ public:
 
   using Entity::setKeepAlive;
   using Entity::setUniqueId;
+
+  virtual ActorMovementController* movementController() override;
+  virtual StatusController* statusController() override;
 
 private:
   Vec2F getAbsolutePosition(Vec2F relativePosition) const;

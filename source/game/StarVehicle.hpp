@@ -20,7 +20,8 @@ class Vehicle :
   public virtual InteractiveEntity,
   public virtual PhysicsEntity,
   public virtual ScriptedEntity,
-  public virtual MobileEntity {
+  public virtual MobileEntity,
+  public virtual Entity {
 public:
   Vehicle(Json baseConfig, String path, Json dynamicConfig);
 

@@ -11,7 +11,9 @@ namespace Star {
 STAR_CLASS(RenderCallback);
 STAR_CLASS(PlantDrop);
 
-class PlantDrop : public virtual MobileEntity {
+class PlantDrop :
+  public virtual MobileEntity,
+  public virtual Entity {
 public:
   PlantDrop(List<Plant::PlantPiece> pieces, Vec2F const& position, Vec2F const& strikeVector, String const& description,
       bool upsideDown, Json stemConfig, Json foliageConfig, Json saplingConfig,

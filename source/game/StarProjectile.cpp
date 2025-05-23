@@ -483,12 +483,12 @@ List<PhysicsForceRegion> Projectile::forceRegions() const {
   for (auto const& p : m_physicsForces) {
     if (p.second.enabled.get()) {
       PhysicsForceRegion forceRegion = p.second.forceRegion;
-      if (auto dfr = as<DirectionalForceRegion>(&forceRegion)) {
-        dfr->region.scale(m_movementController->getScale());
-      } else if (auto rfr = as<RadialForceRegion>(&forceRegion)) {
-        rfr->innerRadius *= m_movementController->getScale();
-        rfr->outerRadius *= m_movementController->getScale();
-      }
+      // if (auto dfr = as<DirectionalForceRegion>(&forceRegion)) {
+      //   dfr->region.scale(m_movementController->getScale());
+      // } else if (auto rfr = as<RadialForceRegion>(&forceRegion)) {
+      //   rfr->innerRadius *= m_movementController->getScale();
+      //   rfr->outerRadius *= m_movementController->getScale();
+      // }
       forceRegion.call([pos = position()](auto& fr) {
         fr.translate(pos);
       });
@@ -1036,5 +1036,10 @@ void Projectile::renderPendingRenderables(RenderCallback* renderCallback) {
   }
   m_pendingRenderables.clear();
 }
+
+MovementController* Projectile::movementController() {
+  return m_movementController.get();
+}
+
 
 }

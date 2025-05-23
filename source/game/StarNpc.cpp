@@ -232,27 +232,27 @@ RectF Npc::metaBoundBox() const {
 
 Vec2F Npc::mouthOffset(bool ignoreAdjustments) const {
   return Vec2F{m_humanoid.mouthOffset(ignoreAdjustments)[0] * numericalDirection(m_humanoid.facingDirection()),
-      m_humanoid.mouthOffset(ignoreAdjustments)[1]};
+      m_humanoid.mouthOffset(ignoreAdjustments)[1]} * m_movementController->getScale();
 }
 
 Vec2F Npc::feetOffset() const {
-  return {m_humanoid.feetOffset()[0] * numericalDirection(m_humanoid.facingDirection()), m_humanoid.feetOffset()[1]};
+  return Vec2F{m_humanoid.feetOffset()[0] * numericalDirection(m_humanoid.facingDirection()), m_humanoid.feetOffset()[1]} * m_movementController->getScale();
 }
 
 Vec2F Npc::headArmorOffset() const {
-  return {m_humanoid.headArmorOffset()[0] * numericalDirection(m_humanoid.facingDirection()), m_humanoid.headArmorOffset()[1]};
+  return Vec2F{m_humanoid.headArmorOffset()[0] * numericalDirection(m_humanoid.facingDirection()), m_humanoid.headArmorOffset()[1]} * m_movementController->getScale();
 }
 
 Vec2F Npc::chestArmorOffset() const {
-  return {m_humanoid.chestArmorOffset()[0] * numericalDirection(m_humanoid.facingDirection()), m_humanoid.chestArmorOffset()[1]};
+  return Vec2F{m_humanoid.chestArmorOffset()[0] * numericalDirection(m_humanoid.facingDirection()), m_humanoid.chestArmorOffset()[1]} * m_movementController->getScale();
 }
 
 Vec2F Npc::backArmorOffset() const {
-  return {m_humanoid.backArmorOffset()[0] * numericalDirection(m_humanoid.facingDirection()), m_humanoid.backArmorOffset()[1]};
+  return Vec2F{m_humanoid.backArmorOffset()[0] * numericalDirection(m_humanoid.facingDirection()), m_humanoid.backArmorOffset()[1]} * m_movementController->getScale();
 }
 
 Vec2F Npc::legsArmorOffset() const {
-  return {m_humanoid.legsArmorOffset()[0] * numericalDirection(m_humanoid.facingDirection()), m_humanoid.legsArmorOffset()[1]};
+  return Vec2F{m_humanoid.legsArmorOffset()[0] * numericalDirection(m_humanoid.facingDirection()), m_humanoid.legsArmorOffset()[1]} * m_movementController->getScale();
 }
 
 RectF Npc::collisionArea() const {

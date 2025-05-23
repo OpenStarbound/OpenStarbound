@@ -13,7 +13,9 @@ namespace Star {
 STAR_CLASS(Item);
 STAR_CLASS(ItemDrop);
 
-class ItemDrop : public virtual MobileEntity {
+class ItemDrop :
+  public virtual MobileEntity,
+  public virtual Entity {
 public:
   // Creates a drop at the given position and adds a hard-coded amount of
   // randomness to the drop position / velocity.

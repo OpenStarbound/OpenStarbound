@@ -627,31 +627,31 @@ Vec2F Player::velocity() const {
 
 Vec2F Player::mouthOffset(bool ignoreAdjustments) const {
   return Vec2F(
-      m_humanoid->mouthOffset(ignoreAdjustments)[0] * numericalDirection(facingDirection()), m_humanoid->mouthOffset(ignoreAdjustments)[1]);
+      m_humanoid->mouthOffset(ignoreAdjustments)[0] * numericalDirection(facingDirection()), m_humanoid->mouthOffset(ignoreAdjustments)[1]) * m_movementController->getScale();
 }
 
 Vec2F Player::feetOffset() const {
-  return Vec2F(m_humanoid->feetOffset()[0] * numericalDirection(facingDirection()), m_humanoid->feetOffset()[1]);
+  return Vec2F(m_humanoid->feetOffset()[0] * numericalDirection(facingDirection()), m_humanoid->feetOffset()[1]) * m_movementController->getScale();
 }
 
 Vec2F Player::headArmorOffset() const {
   return Vec2F(
-      m_humanoid->headArmorOffset()[0] * numericalDirection(facingDirection()), m_humanoid->headArmorOffset()[1]);
+      m_humanoid->headArmorOffset()[0] * numericalDirection(facingDirection()), m_humanoid->headArmorOffset()[1]) * m_movementController->getScale();
 }
 
 Vec2F Player::chestArmorOffset() const {
   return Vec2F(
-      m_humanoid->chestArmorOffset()[0] * numericalDirection(facingDirection()), m_humanoid->chestArmorOffset()[1]);
+      m_humanoid->chestArmorOffset()[0] * numericalDirection(facingDirection()), m_humanoid->chestArmorOffset()[1]) * m_movementController->getScale();
 }
 
 Vec2F Player::backArmorOffset() const {
   return Vec2F(
-      m_humanoid->backArmorOffset()[0] * numericalDirection(facingDirection()), m_humanoid->backArmorOffset()[1]);
+      m_humanoid->backArmorOffset()[0] * numericalDirection(facingDirection()), m_humanoid->backArmorOffset()[1]) * m_movementController->getScale();
 }
 
 Vec2F Player::legsArmorOffset() const {
   return Vec2F(
-      m_humanoid->legsArmorOffset()[0] * numericalDirection(facingDirection()), m_humanoid->legsArmorOffset()[1]);
+      m_humanoid->legsArmorOffset()[0] * numericalDirection(facingDirection()), m_humanoid->legsArmorOffset()[1]) * m_movementController->getScale();
 }
 
 Vec2F Player::mouthPosition() const {

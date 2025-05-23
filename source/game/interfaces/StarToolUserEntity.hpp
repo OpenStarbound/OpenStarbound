@@ -14,7 +14,9 @@ STAR_CLASS(ActorMovementController);
 STAR_CLASS(StatusController);
 
 // FIXME: This interface is a complete mess.
-class ToolUserEntity : public virtual ActorEntity {
+class ToolUserEntity :
+  public virtual Entity,
+  public virtual ActorEntity{
 public:
   // Translates the given arm position into it's final entity space position
   // based on the given facing direction, and arm angle, and an offset from the
@@ -31,9 +33,6 @@ public:
   virtual String species() const = 0;
 
   virtual void requestEmote(String const& emote) = 0;
-
-  virtual ActorMovementController* movementController() override;
-  virtual StatusController* statusController() override;
 
   // FIXME: This is effectively unusable, because since tool user items control
   // the angle and facing direction of the owner, and this uses the facing
