@@ -84,6 +84,8 @@ public:
 
   Maybe<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
 
+  void setScale(float scale);
+
 private:
   struct TechAnimator : public NetElement {
     TechAnimator(Maybe<String> animationConfig = {});

@@ -4,13 +4,16 @@
 #include "StarMovementController.hpp"
 #include "StarPlant.hpp"
 #include "StarAssetPath.hpp"
+#include "StarMobileEntity.hpp"
 
 namespace Star {
 
 STAR_CLASS(RenderCallback);
 STAR_CLASS(PlantDrop);
 
-class PlantDrop : public virtual Entity {
+class PlantDrop :
+  public virtual MobileEntity,
+  public virtual Entity {
 public:
   PlantDrop(List<Plant::PlantPiece> pieces, Vec2F const& position, Vec2F const& strikeVector, String const& description,
       bool upsideDown, Json stemConfig, Json foliageConfig, Json saplingConfig,
@@ -46,6 +49,8 @@ public:
   void update(float dt, uint64_t currentStep) override;
 
   void render(RenderCallback* renderCallback) override;
+
+  MovementController* movementController() override;
 
 private:
   struct PlantDropPiece {

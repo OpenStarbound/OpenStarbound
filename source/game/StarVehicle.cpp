@@ -270,6 +270,8 @@ void Vehicle::update(float dt, uint64_t) {
 
   if (isMaster()) {
     m_movementController.tickMaster(dt);
+    m_networkedAnimator.setZoom(m_movementController.getScale());
+
     m_scriptComponent.update(m_scriptComponent.updateDt(dt));
 
     eraseWhere(m_aliveMasterConnections, [](auto& p) {
@@ -650,5 +652,10 @@ LuaCallbacks Vehicle::makeVehicleCallbacks() {
 Json Vehicle::configValue(String const& name, Json def) const {
   return jsonMergeQueryDef(name, std::move(def), m_baseConfig, m_dynamicConfig);
 }
+
+MovementController* Vehicle::movementController() {
+  return &m_movementController;
+}
+
 
 }

@@ -339,6 +339,13 @@ void LuaActorMovementComponent<Base>::addActorMovementCallbacks(ActorMovementCon
     callbacks.registerCallbackWithSignature<void, bool>("setAutoClearControls", bind(&LuaActorMovementComponent::setAutoClearControls, this, _1));
     callbacks.registerCallbackWithSignature<void>("clearControls", bind(&LuaActorMovementComponent::clearControls, this));
 
+    callbacks.registerCallback("setScale", [this](float scale) {
+        return m_movementController->setScale(scale);
+      });
+    callbacks.registerCallback("getScale", [this]() -> float {
+        return m_movementController->getScale();
+      });
+
     Base::addCallbacks("mcontroller", callbacks);
 
   } else {
@@ -426,7 +433,7 @@ void LuaActorMovementComponent<Base>::clearControls() {
   m_controlJump = {};
   m_controlHoldJump = {};
   m_controlFly = {};
-  
+
   m_resetPathMove = false;
   // Clear path move result one clear after controlPathMove is no longer called
   // to keep the result available for the following update

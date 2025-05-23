@@ -853,4 +853,10 @@ LuaCallbacks StatusController::makeUniqueEffectCallbacks(UniqueEffectInstance& u
   return callbacks;
 }
 
+void StatusController::setScale(float scale) {
+  for (auto const& animator : m_effectAnimators.netElements()) {
+    animator->animator.setZoom(scale);
+  }
+}
+
 }
