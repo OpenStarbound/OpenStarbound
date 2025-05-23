@@ -839,7 +839,6 @@ void Player::update(float dt, uint64_t) {
   if (isMaster()) {
     m_statusController->setScale(m_movementController->getScale());
     m_techController->setScale(m_movementController->getScale());
-
     if (m_emoteCooldownTimer) {
       m_emoteCooldownTimer -= dt;
       if (m_emoteCooldownTimer <= 0) {

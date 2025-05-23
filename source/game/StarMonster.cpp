@@ -850,12 +850,12 @@ List<ChatAction> Monster::pullPendingChatActions() {
 List<PhysicsForceRegion> Monster::forceRegions() const {
   auto forceRegions = m_physicsForces.get();
   for (auto forceRegion : forceRegions) {
-    // if (auto dfr = as<DirectionalForceRegion>(&forceRegion)) {
-    //   dfr->region.scale(m_movementController->getScale());
-    // } else if (auto rfr = as<RadialForceRegion>(&forceRegion)) {
-    //   rfr->innerRadius *= m_movementController->getScale();
-    //   rfr->outerRadius *= m_movementController->getScale();
-    // }
+    if (auto dfr = forceRegion.ptr<DirectionalForceRegion>()) {
+      dfr->region.scale(m_movementController->getScale());
+    } else if (auto rfr = forceRegion.ptr<RadialForceRegion>()) {
+      rfr->innerRadius *= m_movementController->getScale();
+      rfr->outerRadius *= m_movementController->getScale();
+    }
   }
   return forceRegions;
 }

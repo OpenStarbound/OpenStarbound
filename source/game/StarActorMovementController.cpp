@@ -483,7 +483,8 @@ Json ActorMovementController::storeState() const {
       {"rotation", MovementController::rotation()},
       {"movingDirection", DirectionNames.getRight(m_movingDirection.get())},
       {"facingDirection", DirectionNames.getRight(m_facingDirection.get())},
-      {"crouching", m_crouching.get()}};
+      {"crouching", m_crouching.get()},
+      {"scale", getScale()}};
 }
 
 void ActorMovementController::loadState(Json const& state) {
@@ -493,6 +494,7 @@ void ActorMovementController::loadState(Json const& state) {
   m_movingDirection.set(DirectionNames.getLeft(state.getString("movingDirection")));
   m_facingDirection.set(DirectionNames.getLeft(state.getString("facingDirection")));
   m_crouching.set(state.getBool("crouching"));
+  setScale(state.getFloat("scale", 1.0f));
 }
 
 void ActorMovementController::setAnchorState(EntityAnchorState anchorState) {
@@ -860,9 +862,9 @@ void ActorMovementController::tickMaster(float dt) {
         flyVelocity = flyVelocity.normalized() * *activeParameters.flySpeed * getScale();
 
       if (m_liquidMovement.get())
-        approachVelocity(flyVelocity * (1.0f - liquidImpedance) * activeModifiers.speedModifier, *activeParameters.liquidForce * activeModifiers.liquidMovementModifier);
+        approachVelocity(flyVelocity * (1.0f - liquidImpedance) * activeModifiers.speedModifier, *activeParameters.liquidForce * activeModifiers.liquidMovementModifier * getScale());
       else
-        approachVelocity(flyVelocity * activeModifiers.speedModifier, *activeParameters.airForce);
+        approachVelocity(flyVelocity * activeModifiers.speedModifier, *activeParameters.airForce * getScale());
 
       if (flyVelocity[0] > 0)
         updatedMovingDirection = Direction::Right;
@@ -928,7 +930,7 @@ void ActorMovementController::tickMaster(float dt) {
         else
           m_jumpHoldTimer = {};
 
-        setYVelocity(yVelocity() + *jumpProfile.jumpSpeed * *jumpProfile.jumpInitialPercentage * jumpModifier);
+        setYVelocity(yVelocity() + *jumpProfile.jumpSpeed * *jumpProfile.jumpInitialPercentage * jumpModifier * getScale());
 
         m_groundMovementSustainTimer = GameTimer(0);
 
@@ -937,7 +939,7 @@ void ActorMovementController::tickMaster(float dt) {
         if (m_jumpHoldTimer)
           m_jumpHoldTimer->tick(dt);
 
-        approachYVelocity(*jumpProfile.jumpSpeed * jumpModifier, *jumpProfile.jumpControlForce * jumpModifier);
+        approachYVelocity(*jumpProfile.jumpSpeed * jumpModifier * getScale(), *jumpProfile.jumpControlForce * jumpModifier * getScale());
 
       } else {
         m_jumping.set(false);
@@ -976,7 +978,7 @@ void ActorMovementController::tickMaster(float dt) {
         else
           ambulatingAccel = *activeParameters.airForce;
 
-        approachXVelocity(m_targetHorizontalAmbulatingVelocity + surfaceVelocity[0], ambulatingAccel);
+        approachXVelocity(m_targetHorizontalAmbulatingVelocity + surfaceVelocity[0], ambulatingAccel * getScale());
       }
     }
 
@@ -1307,7 +1309,7 @@ Maybe<bool> PathController::move(ActorMovementController& movementController, Ac
           // accelerate along path using airForce
           float angleFactor = movementController.velocity().normalized() * delta.normalized();
           float speedAlongAngle = angleFactor * movementController.velocity().magnitude();
-          auto acc = parameters.airForce.value(0.0) / movementController.mass();
+          auto acc = parameters.airForce.value(0.0) / movementController.mass() * movementController.getScale();
           sourceVelocity = delta.normalized() * fmin(parameters.flySpeed.value(0.0) * movementController.getScale(), speedAlongAngle + acc * dt);
           targetVelocity = sourceVelocity;
         }
