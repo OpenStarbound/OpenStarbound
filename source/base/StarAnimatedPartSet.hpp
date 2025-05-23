@@ -2,6 +2,7 @@
 
 #include "StarOrderedMap.hpp"
 #include "StarJson.hpp"
+#include "StarMatrix3.hpp"
 
 namespace Star {
 
@@ -46,7 +47,11 @@ public:
     String stateName;
     float timer;
     unsigned frame;
+    float frameProgress;
     JsonObject properties;
+    bool reverse;
+    unsigned nextFrame;
+    JsonObject nextProperties;
   };
 
   struct ActivePartInformation {
@@ -54,6 +59,18 @@ public:
     // If a state match is found, this will be set.
     Maybe<ActiveStateInformation> activeState;
     JsonObject properties;
+    JsonObject nextProperties;
+
+    Mat3F animationAffineTransform() const;
+    void setAnimationAffineTransform(Mat3F const& matrix);
+    void setAnimationAffineTransform(Mat3F const& mat1, Mat3F const& mat2, float progress);
+
+    float xTranslationAnimation;
+    float yTranslationAnimation;
+    float xScaleAnimation;
+    float yScaleAnimation;
+    float xShearAnimation;
+    float yShearAnimation;
   };
 
     enum AnimationMode {
@@ -97,7 +114,7 @@ public:
   };
 
   AnimatedPartSet();
-  AnimatedPartSet(Json config);
+  AnimatedPartSet(Json config, uint8_t animatiorVersion);
 
   // Returns the available state types.
   StringList stateTypes() const;
@@ -118,7 +135,7 @@ public:
   // beginning.  If alwaysStart is true, then starts the state animation off at
   // the beginning even if no state change has occurred.  Returns true if a
   // state animation reset was done.
-  bool setActiveState(String const& stateTypeName, String const& stateName, bool alwaysStart = false);
+  bool setActiveState(String const& stateTypeName, String const& stateName, bool alwaysStart = false, bool reverse = false);
 
   // Restart this given state type's timer off at the beginning.
   void restartState(String const& stateTypeName);
@@ -141,7 +158,8 @@ public:
   // state type is ordered, it is possible to simply serialize and deserialize
   // the state index for that state type.
   size_t activeStateIndex(String const& stateTypeName) const;
-  bool setActiveStateIndex(String const& stateTypeName, size_t stateIndex, bool alwaysStart = false);
+  bool activeStateReverse(String const& stateTypeName) const;
+  bool setActiveStateIndex(String const& stateTypeName, size_t stateIndex, bool alwaysStart = false, bool reverse = false);
 
   // Animate each state type forward 'dt' time, and either change state frames
   // or transition to new states, depending on the config.
@@ -149,6 +167,8 @@ public:
 
   // Pushes all the animations into their final state
   void finishAnimations();
+
+  uint8_t version() const;
 
 private:
   static AnimationMode stringToAnimationMode(String const& string);
@@ -158,6 +178,8 @@ private:
 
   OrderedHashMap<String, StateType> m_stateTypes;
   StringMap<Part> m_parts;
+
+  uint8_t m_animatorVersion;
 };
 
 }
