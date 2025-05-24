@@ -120,7 +120,7 @@ public:
   // Reloads with the given mod sources applied on top of the base mod source
   // specified in the settings.  Mods in the base mod source will override mods
   // in the given mod sources
-  void reloadWithMods(StringList modDirectories);
+  void loadMods(StringList& modDirectories);
 
   // Ensures all Root members are loaded without waiting for them to be auto
   // loaded.
