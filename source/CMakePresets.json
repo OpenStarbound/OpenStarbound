@@ -41,6 +41,12 @@
       }
     },
     {
+      "inherits": "windows-release",
+      "name": "windows-release-VS2022",
+      "displayName": "Windows x64 (Visual Studio 2022)",
+      "generator": "Visual Studio 17 2022"
+    },
+    {
       "inherits": "base",
       "name": "linux-release",
       "displayName": "Linux x64",
@@ -98,6 +104,20 @@
       "configurePreset": "windows-release"
     },
     {
+      "name": "windows-debug",
+      "configurePreset": "windows-release"
+    },
+    {
+      "name": "windows-release-VS2022",
+      "configurePreset": "windows-release-VS2022",
+      "configuration": "Release"
+    },
+    {
+      "name": "windows-debug-VS2022",
+      "configurePreset": "windows-release-VS2022",
+      "configuration": "Debug"
+    },
+    {
       "name": "linux-release",
       "configurePreset": "linux-release"
     },
@@ -120,7 +140,8 @@
     {
       "inherits": "base",
       "name": "windows-release",
-      "configurePreset": "windows-release"
+      "configurePreset": "windows-release",
+      "configuration": "Release"
     },
     {
       "inherits": "base",
