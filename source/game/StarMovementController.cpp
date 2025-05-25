@@ -175,10 +175,6 @@ MovementController::MovementController(MovementParameters const& parameters) {
   m_liquidPercentage = 0.0f;
   m_liquidId = EmptyLiquidId;
 
-  m_scale.setCompatibilityVersion(8);
-  m_scale.setFixedPointBase(0.01f);
-  m_scale.set(1.0f);
-
   m_xPosition.setFixedPointBase(0.0125f);
   m_yPosition.setFixedPointBase(0.0125f);
   m_xVelocity.setFixedPointBase(0.00625f);
@@ -201,7 +197,6 @@ MovementController::MovementController(MovementParameters const& parameters) {
   addNetElement(&m_xVelocity);
   addNetElement(&m_yVelocity);
   addNetElement(&m_rotation);
-  addNetElement(&m_scale);
 
   addNetElement(&m_colliding);
   addNetElement(&m_collisionStuck);
@@ -215,6 +210,11 @@ MovementController::MovementController(MovementParameters const& parameters) {
   addNetElement(&m_yRelativeSurfaceMovingCollisionPosition);
 
   m_world = nullptr;
+
+  m_scale.setCompatibilityVersion(8);
+  m_scale.setFixedPointBase(0.01f);
+  m_scale.set(1.0f);
+  addNetElement(&m_scale);
 
   resetParameters(parameters);
 }
