@@ -258,7 +258,15 @@ void UniverseClient::update(float dt) {
   }
 
   m_connection->receive();
-  handlePackets(m_connection->pull());
+  try {
+    handlePackets(m_connection->pull());
+  }
+  catch (StarException const& e) {
+    Logger::error("Exception caught handling incoming server packets {}", outputException(e, true));
+    reset();
+    if (!m_disconnectReason)
+      m_disconnectReason = String("Exception caught handling incoming server packets, check log");
+  }
 
   if (!isConnected())
     return;

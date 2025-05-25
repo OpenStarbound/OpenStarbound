@@ -1068,7 +1068,7 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
 
     } else if (auto entityInteract = as<EntityInteractPacket>(packet)) {
       auto interactResult = interact(entityInteract->interactRequest).result();
-      m_outgoingPackets.append(make_shared<EntityInteractResultPacket>(interactResult.take(), entityInteract->requestId, entityInteract->interactRequest.sourceId));
+      m_outgoingPackets.append(make_shared<EntityInteractResultPacket>(interactResult.value(), entityInteract->requestId, entityInteract->interactRequest.sourceId));
 
     } else if (auto interactResult = as<EntityInteractResultPacket>(packet)) {
       if (auto response = m_entityInteractionResponses.maybeTake(interactResult->requestId)) {
