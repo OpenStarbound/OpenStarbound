@@ -13,6 +13,8 @@ void NetElementGroup::addNetElement(NetElement* element, bool propagateInterpola
 
 void NetElementGroup::clearNetElements() {
   m_elements.clear();
+  m_filteredForRules.reset();
+  m_filteredElementsCache.clear();
 }
 
 void NetElementGroup::initNetVersion(NetElementVersion const* version) {
@@ -89,26 +91,24 @@ bool NetElementGroup::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCom
 
 void NetElementGroup::readNetDelta(DataStream& ds, float interpolationTime, NetCompatibilityRules rules) {
   if (!checkWithRules(rules)) return;
-  if (m_elements.size() == 0) {
-    throw IOException("readNetDelta called on empty NetElementGroup");
-  } else if (m_elements.size() == 1) {
-    m_elements[0].first->readNetDelta(ds, interpolationTime, rules);
+  auto& elements = filterElementsForRules(rules);
+  if (elements.size() == 0) {
+    if (m_elements.size() == 0)
+      throw IOException("readNetDelta called on empty NetElementGroup");
+  } else if (elements.size() == 1) {
+    elements[0]->readNetDelta(ds, interpolationTime, rules);
   } else {
     uint64_t readIndex = ds.readVlqU();
-    uint64_t i = 0;
-    for (auto& element : m_elements) {
-      if (!element.first->checkWithRules(rules))
-        continue;
+    for (uint64_t i = 0; i != elements.size(); ++i) {
       if (readIndex == 0 || readIndex - 1 > i) {
         if (m_interpolationEnabled)
-          m_elements[i].first->blankNetDelta(interpolationTime);
+          elements[i]->blankNetDelta(interpolationTime);
       } else if (readIndex - 1 == i) {
-        m_elements[i].first->readNetDelta(ds, interpolationTime, rules);
+        elements[i]->readNetDelta(ds, interpolationTime);
         readIndex = ds.readVlqU();
       } else {
         throw IOException("group indexes out of order in NetElementGroup::readNetDelta");
       }
-      ++i;
     }
   }
 }
@@ -118,6 +118,19 @@ void NetElementGroup::blankNetDelta(float interpolationTime) {
     for (auto& p : m_elements)
       p.first->blankNetDelta(interpolationTime);
   }
+}
+
+List<NetElement*>& NetElementGroup::filterElementsForRules(NetCompatibilityRules rules) {
+  if (!m_filteredForRules || m_filteredForRules != rules) {
+    m_filteredForRules = rules;
+    m_filteredElementsCache.clear();
+    m_filteredElementsCache.reserve(m_elements.size());
+    for (auto& element : m_elements) {
+      if (element.first->checkWithRules(rules))
+        m_filteredElementsCache.push_back(element.first);
+    }
+  }
+  return m_filteredElementsCache;
 }
 
 }
