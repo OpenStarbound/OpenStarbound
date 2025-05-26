@@ -13,8 +13,6 @@ void NetElementGroup::addNetElement(NetElement* element, bool propagateInterpola
 
 void NetElementGroup::clearNetElements() {
   m_elements.clear();
-  m_filteredForRules.reset();
-  m_filteredElementsCache.clear();
 }
 
 void NetElementGroup::initNetVersion(NetElementVersion const* version) {
@@ -90,25 +88,31 @@ bool NetElementGroup::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCom
 }
 
 void NetElementGroup::readNetDelta(DataStream& ds, float interpolationTime, NetCompatibilityRules rules) {
-  if (!checkWithRules(rules)) return;
-  auto& elements = filterElementsForRules(rules);
-  if (elements.size() == 0) {
-    if (m_elements.size() == 0)
-      throw IOException("readNetDelta called on empty NetElementGroup");
-  } else if (elements.size() == 1) {
-    elements[0]->readNetDelta(ds, interpolationTime, rules);
+  if (!checkWithRules(rules))
+    return;
+  if (m_elements.size() == 0) {
+    throw IOException("readNetDelta called on empty NetElementGroup");
+  } else if (m_elements.size() == 1) {
+    m_elements[0].first->readNetDelta(ds, interpolationTime, rules);
   } else {
     uint64_t readIndex = ds.readVlqU();
-    for (uint64_t i = 0; i != elements.size(); ++i) {
+    uint64_t i = 0;
+    uint64_t offset = 0;
+    for (auto& element : m_elements) {
+      if (!element.first->checkWithRules(rules)) {
+        offset++;
+        continue;
+      }
       if (readIndex == 0 || readIndex - 1 > i) {
         if (m_interpolationEnabled)
-          elements[i]->blankNetDelta(interpolationTime);
+          m_elements[i + offset].first->blankNetDelta(interpolationTime);
       } else if (readIndex - 1 == i) {
-        elements[i]->readNetDelta(ds, interpolationTime);
+        m_elements[i + offset].first->readNetDelta(ds, interpolationTime, rules);
         readIndex = ds.readVlqU();
       } else {
         throw IOException("group indexes out of order in NetElementGroup::readNetDelta");
       }
+      ++i;
     }
   }
 }
@@ -118,19 +122,6 @@ void NetElementGroup::blankNetDelta(float interpolationTime) {
     for (auto& p : m_elements)
       p.first->blankNetDelta(interpolationTime);
   }
-}
-
-List<NetElement*>& NetElementGroup::filterElementsForRules(NetCompatibilityRules rules) {
-  if (!m_filteredForRules || m_filteredForRules != rules) {
-    m_filteredForRules = rules;
-    m_filteredElementsCache.clear();
-    m_filteredElementsCache.reserve(m_elements.size());
-    for (auto& element : m_elements) {
-      if (element.first->checkWithRules(rules))
-        m_filteredElementsCache.push_back(element.first);
-    }
-  }
-  return m_filteredElementsCache;
 }
 
 }
