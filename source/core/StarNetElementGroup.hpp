@@ -40,11 +40,7 @@ public:
   float netExtrapolationHint() const;
 
 private:
-  List<NetElement*>& filterElementsForRules(NetCompatibilityRules rules);
-
   List<pair<NetElement*, bool>> m_elements;
-  Maybe<NetCompatibilityRules> m_filteredForRules;
-  List<NetElement*> m_filteredElementsCache;
   NetElementVersion const* m_version = nullptr;
   bool m_interpolationEnabled = false;
   float m_extrapolationHint = 0.0f;
