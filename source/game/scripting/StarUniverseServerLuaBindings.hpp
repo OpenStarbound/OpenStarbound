@@ -28,6 +28,7 @@ namespace LuaBindings {
     RpcThreadPromise<Json> sendWorldMessage(UniverseServer* universe, String const& worldId, String const& message, LuaVariadic<Json> args);
     bool sendPacket(UniverseServer* universe, ConnectionId clientId, String const& packetTypeName, Json const& args);
     String clientWorld(UniverseServer* universe, ConnectionId clientId);
+    void disconnectClient(UniverseServer* universe, ConnectionId clientId, Maybe<String> const& reason);
   }
 }
 }
