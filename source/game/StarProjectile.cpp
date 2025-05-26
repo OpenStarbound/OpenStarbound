@@ -445,11 +445,11 @@ void Projectile::setSourceEntity(EntityId source, bool trackSource) {
 
       // projectiles inherit scale from their owners when they initialize
       if (auto actor = as<ActorEntity>(sourceEntity)) {
-        m_movementController->setScale(m_movementController->getScale() * actor->movementController()->getScale());
+        m_movementController->scale(m_movementController->getScale() * actor->movementController()->getScale());
         m_movementController->setVelocity(m_movementController->velocity() * actor->movementController()->getScale());
         m_acceleration *= actor->movementController()->getScale();
       } else if (auto mob = as<MobileEntity>(sourceEntity)) {
-        m_movementController->setScale(m_movementController->getScale() * mob->movementController()->getScale());
+        m_movementController->scale(m_movementController->getScale() * mob->movementController()->getScale());
         m_movementController->setVelocity(m_movementController->velocity() * mob->movementController()->getScale());
         m_acceleration *= mob->movementController()->getScale();
       }
@@ -818,7 +818,7 @@ void Projectile::processAction(Json const& action) {
         spawnPosition += jsonToVec2F(parameters.get("offset")) * m_movementController->getScale();
       monster->setPosition(spawnPosition);
       // make monsters inherit scale
-      monster->movementController()->setScale(monster->movementController()->getScale() * m_movementController->getScale());
+      monster->movementController()->scale(monster->movementController()->getScale() * m_movementController->getScale());
       world()->addEntity(monster);
     }
 

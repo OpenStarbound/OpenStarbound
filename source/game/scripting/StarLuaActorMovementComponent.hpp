@@ -339,8 +339,8 @@ void LuaActorMovementComponent<Base>::addActorMovementCallbacks(ActorMovementCon
     callbacks.registerCallbackWithSignature<void, bool>("setAutoClearControls", bind(&LuaActorMovementComponent::setAutoClearControls, this, _1));
     callbacks.registerCallbackWithSignature<void>("clearControls", bind(&LuaActorMovementComponent::clearControls, this));
 
-    callbacks.registerCallback("setScale", [this](float scale) {
-        return m_movementController->setScale(scale);
+    callbacks.registerCallback("scale", [this](float scale) {
+        return m_movementController->scale(scale);
       });
     callbacks.registerCallback("getScale", [this]() -> float {
         return m_movementController->getScale();

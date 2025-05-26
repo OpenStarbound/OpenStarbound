@@ -157,7 +157,7 @@ public:
 
   void setRotation(float angle);
 
-  void setScale(float scale);
+  void scale(float scale);
 
   // Apply one timestep of rotation.
   void rotate(float rotationRate);

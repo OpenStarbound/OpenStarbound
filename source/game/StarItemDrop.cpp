@@ -52,7 +52,7 @@ ItemDropPtr ItemDrop::throwDrop(ItemPtr const& item, Vec2F const& position, Vec2
 
   itemDrop->setEternal(eternal);
   itemDrop->setIntangibleTime(idconfig.getFloat("throwIntangibleTime"));
-  itemDrop->movementController()->setScale(scale);
+  itemDrop->movementController()->scale(scale);
 
   return itemDrop;
 }

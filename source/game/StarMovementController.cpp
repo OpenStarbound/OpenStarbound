@@ -212,7 +212,6 @@ MovementController::MovementController(MovementParameters const& parameters) {
   m_world = nullptr;
 
   m_scale.setCompatibilityVersion(8);
-  m_scale.setFixedPointBase(0.01f);
   m_scale.set(1.0f);
   addNetElement(&m_scale);
 
@@ -244,7 +243,7 @@ void MovementController::loadState(Json const& state) {
   setPosition(jsonToVec2F(state.get("position")));
   setVelocity(jsonToVec2F(state.get("velocity")));
   setRotation(state.getFloat("rotation"));
-  setScale(state.getFloat("scale", 1));
+  scale(state.getFloat("scale", 1));
 }
 
 float MovementController::mass() const {
@@ -406,7 +405,7 @@ void MovementController::setRotation(float rotation) {
   m_rotation.set(rotation);
 }
 
-void MovementController::setScale(float scale) {
+void MovementController::scale(float scale) {
   if (scale > 0)
     m_scale.set(scale);
   else

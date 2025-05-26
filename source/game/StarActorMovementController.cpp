@@ -494,7 +494,7 @@ void ActorMovementController::loadState(Json const& state) {
   m_movingDirection.set(DirectionNames.getLeft(state.getString("movingDirection")));
   m_facingDirection.set(DirectionNames.getLeft(state.getString("facingDirection")));
   m_crouching.set(state.getBool("crouching"));
-  setScale(state.getFloat("scale", 1.0f));
+  scale(state.getFloat("scale", 1.0f));
 }
 
 void ActorMovementController::setAnchorState(EntityAnchorState anchorState) {
