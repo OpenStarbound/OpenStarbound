@@ -6,7 +6,7 @@
 
 namespace Star {
 
-unsigned const CurrentStreamVersion = 7; // update OpenProtocolVersion too!
+unsigned const CurrentStreamVersion = 8; // update OpenProtocolVersion too!
 
 DataStream::DataStream()
   : m_byteOrder(ByteOrder::BigEndian),
