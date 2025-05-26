@@ -1265,6 +1265,8 @@ void NetworkedAnimator::setupNetStates() {
 
   for (auto& pair : m_stateInfo) {
     pair.second.wasUpdated = true;
+    pair.second.reverse.setCompatibilityVersion(8);
+    addNetElement(&pair.second.reverse);
     addNetElement(&pair.second.stateIndex);
     addNetElement(&pair.second.startedEvent);
   }
@@ -1339,12 +1341,6 @@ void NetworkedAnimator::setupNetStates() {
 
   for (auto& pair : m_effects)
     addNetElement(&pair.second.enabled);
-
-  // all new net elements must be added at the end of netgroups to not interfere with load order for communicating with retail clients
-  for (auto& pair : m_stateInfo) {
-    pair.second.reverse.setCompatibilityVersion(8);
-    addNetElement(&pair.second.reverse);
-  }
 
 }
 
