@@ -24,7 +24,7 @@ LuaCallbacks LuaBindings::makeUniverseServerCallbacks(UniverseServer* universe) 
   callbacks.registerCallbackWithSignature<RpcThreadPromise<Json>, String, String, LuaVariadic<Json>>("sendWorldMessage", bind(UniverseServerCallbacks::sendWorldMessage, universe, _1, _2, _3));
   callbacks.registerCallbackWithSignature<bool, ConnectionId, String, Json>("sendPacket", bind(UniverseServerCallbacks::sendPacket, universe, _1, _2, _3));
   callbacks.registerCallbackWithSignature<String, ConnectionId>("clientWorld", bind(UniverseServerCallbacks::clientWorld, universe, _1));
-  callbacks.registerCallbackWithSignature<String, ConnectionId>("disconnectClient", bind(UniverseServerCallbacks::disconnectClient, universe, _1, _2));
+  callbacks.registerCallbackWithSignature<void, ConnectionId, String>("disconnectClient", bind(UniverseServerCallbacks::disconnectClient, universe, _1, _2));
 
   return callbacks;
 }
