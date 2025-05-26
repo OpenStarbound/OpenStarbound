@@ -7,6 +7,7 @@
 #include "StarLogging.hpp"
 #include "StarInterpolation.hpp"
 #include "StarLuaConverters.hpp"
+#include "StarText.hpp"
 
 namespace Star {
 
@@ -118,6 +119,7 @@ LuaCallbacks LuaBindings::makeUtilityCallbacks() {
   callbacks.registerCallback("print", UtilityCallbacks::print);
   callbacks.registerCallback("interpolateSinEase", UtilityCallbacks::interpolateSinEase);
   callbacks.registerCallback("replaceTags", UtilityCallbacks::replaceTags);
+  callbacks.registerCallback("stripEscapeCodes", [](String const& text) { return Text::stripEscapeCodes(text); });
   callbacks.registerCallback("parseJsonSequence", [](String const& json) { return Json::parseSequence(json); });
   callbacks.registerCallback("jsonMerge", [](Json const& a, Json const& b) { return jsonMerge(a, b); });
   callbacks.registerCallback("jsonEqual", [](Json const& a, Json const& b) { return a == b; });
