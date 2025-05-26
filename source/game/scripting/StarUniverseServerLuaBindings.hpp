@@ -29,6 +29,7 @@ namespace LuaBindings {
     bool sendPacket(UniverseServer* universe, ConnectionId clientId, String const& packetTypeName, Json const& args);
     String clientWorld(UniverseServer* universe, ConnectionId clientId);
     void disconnectClient(UniverseServer* universe, ConnectionId clientId, Maybe<String> const& reason);
+    void banClient(UniverseServer* universe, ConnectionId clientId, Maybe<String> const& reason, bool banIp, bool banUuid, Maybe<int> timeout);
   }
 }
 }
