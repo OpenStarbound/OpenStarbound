@@ -4,6 +4,7 @@
 #include "StarGameTypes.hpp"
 #include "StarDrawable.hpp"
 #include "StarParticle.hpp"
+#include "StarNetworkedAnimator.hpp"
 
 namespace Star {
 
@@ -103,7 +104,7 @@ public:
   static bool& globalHeadRotation();
 
   Humanoid(Json const& config);
-  Humanoid(HumanoidIdentity const& identity);
+  Humanoid(HumanoidIdentity const& identity, Json config = Json());
   Humanoid(Humanoid const&) = default;
 
   struct HumanoidTiming {
@@ -124,7 +125,7 @@ public:
     Array<unsigned, EmoteSize> emoteFrames;
   };
 
-  void setIdentity(HumanoidIdentity const& identity);
+  void setIdentity(HumanoidIdentity const& identity, Json config = Json());
   HumanoidIdentity const& identity() const;
 
   void loadConfig(Json merger = JsonObject());
@@ -260,7 +261,8 @@ public:
   List<Particle> particles(String const& name) const;
 
   Json const& defaultMovementParameters() const;
-  
+  Maybe<Json> const& playerMovementParameters() const;
+
   String getHeadFromIdentity() const;
   String getBodyFromIdentity() const;
   String getBodyMaskFromIdentity() const;
@@ -272,6 +274,8 @@ public:
   String getBackArmFromIdentity() const;
   String getFrontArmFromIdentity() const;
   String getVaporTrailFrameset() const;
+
+  pair<Maybe<Json>,String> getAnimation() const;
 
   // Extracts scalenearest from directives and returns the combined scale and
   // a new Directives without those scalenearest directives.
@@ -332,7 +336,7 @@ private:
   Vec2F m_chestArmorOffset;
   Vec2F m_legsArmorOffset;
   Vec2F m_backArmorOffset;
-  
+
   bool m_useBodyMask;
   bool m_useBodyHeadMask;
 
@@ -406,6 +410,34 @@ private:
   String m_defaultDeathParticles;
 
   Json m_defaultMovementParameters;
+  Maybe<Json> m_playerMovementParameters;
+  Maybe<Json> m_animationConfig;
+
+  // struct HumanoidAnimator : public NetElement {
+  //   HumanoidAnimator(pair<Maybe<Json>,String> animationConfig);
+
+  //   void initNetVersion(NetElementVersion const* version = nullptr) override;
+
+  //   void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
+  //   void netLoad(DataStream& ds, NetCompatibilityRules rules) override;
+
+  //   void enableNetInterpolation(float extrapolationHint = 0.0f) override;
+  //   void disableNetInterpolation() override;
+  //   void tickNetInterpolation(float dt) override;
+
+  //   bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+  //   void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
+  //   void blankNetDelta(float interpolationTime) override;
+
+  //   pair<Maybe<Json>,String> animationConfig;
+  //   NetworkedAnimator animator;
+  //   NetworkedAnimator::DynamicTarget dynamicTarget;
+  //   NetElementGroup netGroup;
+  // };
+
+  // typedef NetElementDynamicGroup<HumanoidAnimator> HumanoidAnimatorGroup;
+
+  // HumanoidAnimatorGroup m_humanoidAnimators;
 };
 
 }

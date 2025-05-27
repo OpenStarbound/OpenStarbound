@@ -86,9 +86,8 @@ Player::Player(PlayerConfigPtr config, Uuid uuid) {
   }
 
   // all of these are defaults and won't include the correct humanoid config for the species
-  m_humanoid = make_shared<Humanoid>(Root::singleton().speciesDatabase()->species(m_identity.species)->humanoidConfig());
-  m_humanoid->setIdentity(m_identity);
-  auto movementParameters = ActorMovementParameters(jsonMerge(m_humanoid->defaultMovementParameters(), m_config->movementParameters));
+  m_humanoid = make_shared<Humanoid>(m_identity);
+  auto movementParameters = ActorMovementParameters(jsonMerge(m_humanoid->defaultMovementParameters(), m_humanoid->playerMovementParameters().value(m_config->movementParameters)));
   if (!movementParameters.physicsEffectCategories)
     movementParameters.physicsEffectCategories = StringSet({"player"});
   m_movementController = make_shared<ActorMovementController>(movementParameters);
@@ -198,9 +197,8 @@ Player::Player(PlayerConfigPtr config, ByteArray const& netStore, NetCompatibili
   ds.read(m_modeType);
   ds.read(m_identity);
 
-  m_humanoid = make_shared<Humanoid>(Root::singleton().speciesDatabase()->species(m_identity.species)->humanoidConfig());
-  m_humanoid->setIdentity(m_identity);
-  m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(m_humanoid->defaultMovementParameters(), m_config->movementParameters)));
+  m_humanoid = make_shared<Humanoid>(m_identity);
+  m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(m_humanoid->defaultMovementParameters(), m_humanoid->playerMovementParameters().value(m_config->movementParameters))));
 }
 
 
@@ -235,14 +233,14 @@ void Player::diskLoad(Json const& diskStore) {
 
   m_log = make_shared<PlayerLog>(diskStore.get("log"));
 
-  auto speciesDef = Root::singleton().speciesDatabase()->species(m_identity.species);
+  auto speciesDatabase = Root::singleton().speciesDatabase();
+  auto speciesDef = speciesDatabase->species(m_identity.species);
 
   m_questManager->diskLoad(diskStore.get("quests", JsonObject{}));
   m_companions->diskLoad(diskStore.get("companions", JsonObject{}));
   m_deployment->diskLoad(diskStore.get("deployment", JsonObject{}));
-  m_humanoid = make_shared<Humanoid>(speciesDef->humanoidConfig());
-  m_humanoid->setIdentity(m_identity);
-  m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(m_humanoid->defaultMovementParameters(), m_config->movementParameters)));
+  m_humanoid = make_shared<Humanoid>(m_identity);
+  m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(m_humanoid->defaultMovementParameters(), m_humanoid->playerMovementParameters().value(m_config->movementParameters))));
   m_effectsAnimator->setGlobalTag("effectDirectives", speciesDef->effectDirectives());
 
   m_genericProperties = diskStore.getObject("genericProperties");
@@ -1030,7 +1028,7 @@ void Player::update(float dt, uint64_t) {
 
   m_tools->suppressItems(suppressedItems);
   m_tools->tick(dt, m_shifting, m_pendingMoves);
-  
+
   if (auto overrideFacingDirection = m_tools->setupHumanoidHandItems(*m_humanoid, position(), aimPosition()))
     m_movementController->controlFace(*overrideFacingDirection);
 

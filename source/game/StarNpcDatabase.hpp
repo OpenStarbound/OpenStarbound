@@ -29,6 +29,7 @@ struct NpcVariant {
 
   HumanoidIdentity humanoidIdentity;
   Json humanoidConfig;
+  bool uniqueHumanoidConfig;
 
   Json movementParameters;
   Json statusControllerSettings;

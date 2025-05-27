@@ -273,12 +273,18 @@ Humanoid::Humanoid(Json const& config) {
   m_animationTimer = m_emoteAnimationTimer = m_danceTimer = 0.0f;
 }
 
-Humanoid::Humanoid(HumanoidIdentity const& identity)
-  : Humanoid(Root::singleton().speciesDatabase()->species(identity.species)->humanoidConfig()) {
-  setIdentity(identity);
+Humanoid::Humanoid(HumanoidIdentity const& identity, Json config)
+  : Humanoid(Root::singleton().speciesDatabase()->humanoidConfig(identity, config)) {
+  setIdentity(identity, config);
 }
 
-void Humanoid::setIdentity(HumanoidIdentity const& identity) {
+void Humanoid::setIdentity(HumanoidIdentity const& identity, Json config) {
+  if ((identity.species != m_identity.species) || (identity.gender != m_identity.gender)) {
+    Logger::info("humanoid config should reload");
+    m_baseConfig = Root::singleton().speciesDatabase()->humanoidConfig(identity, config);
+    loadConfig(JsonObject());
+    Logger::info("{}", m_baseConfig.printJson(2));
+  }
   m_identity = identity;
   m_headFrameset = getHeadFromIdentity();
   m_bodyFrameset = getBodyFromIdentity();
@@ -359,6 +365,9 @@ void Humanoid::loadConfig(Json merger) {
   m_particleEmitters = config.get("particleEmitters");
 
   m_defaultMovementParameters = config.get("movementParameters");
+  m_playerMovementParameters = config.opt("playerMovementParameters");
+
+  m_animationConfig = config.opt("animation");
 }
 
 void Humanoid::setHeadArmorDirectives(Directives directives) {
@@ -584,6 +593,9 @@ void Humanoid::animate(float dt) {
   float headRotationTarget = globalHeadRotation() ? m_headRotationTarget : 0.f;
   float diff = angleDiff(m_headRotation, headRotationTarget);
   m_headRotation = (headRotationTarget - (headRotationTarget - m_headRotation) * powf(.333333f, dt * 60.f));
+
+  if (m_animationConfig.isValid()) {
+  }
 }
 
 void Humanoid::resetAnimation() {
@@ -612,340 +624,349 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
   auto frontHand = (m_facingDirection == Direction::Left || m_twoHanded) ? m_primaryHand : m_altHand;
   auto backHand = (m_facingDirection == Direction::Right || m_twoHanded) ? m_primaryHand : m_altHand;
 
-  Vec2F frontArmFrameOffset = Vec2F(0, bobYOffset);
-  if (frontHand.recoil)
-    frontArmFrameOffset += m_recoilOffset;
-  Vec2F backArmFrameOffset = Vec2F(0, bobYOffset);
-  if (backHand.recoil)
-    backArmFrameOffset += m_recoilOffset;
+  if (!m_animationConfig) {
 
-  auto addDrawable = [&](Drawable drawable, bool forceFullbright = false) -> Drawable& {
-    if (m_facingDirection == Direction::Left)
-      drawable.scale(Vec2F(-1, 1));
-    drawable.fullbright |= forceFullbright;
-    drawables.append(std::move(drawable));
-    return drawables.back();
-  };
+    Vec2F frontArmFrameOffset = Vec2F(0, bobYOffset);
+    if (frontHand.recoil)
+      frontArmFrameOffset += m_recoilOffset;
+    Vec2F backArmFrameOffset = Vec2F(0, bobYOffset);
+    if (backHand.recoil)
+      backArmFrameOffset += m_recoilOffset;
 
-  auto backArmDrawable = [&](String const& frameSet, Directives const& directives) -> Drawable {
-    String image = strf("{}:{}{}", frameSet, backHand.backFrame, directives.prefix());
-    Drawable backArm = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, backArmFrameOffset);
-    backArm.imagePart().addDirectives(directives, true);
-    backArm.rotate(backHand.angle, backArmFrameOffset + m_backArmRotationCenter + m_backArmOffset);
-    return backArm;
-  };
+    auto addDrawable = [&](Drawable drawable, bool forceFullbright = false) -> Drawable& {
+      if (m_facingDirection == Direction::Left)
+        drawable.scale(Vec2F(-1, 1));
+      drawable.fullbright |= forceFullbright;
+      drawables.append(std::move(drawable));
+      return drawables.back();
+    };
 
-  Vec2F headPosition(0, bobYOffset);
-  if (dance.isValid())
-    headPosition += danceStep->headOffset / TilePixels;
-  else if (m_state == Idle)
-    headPosition += m_identity.personality.headOffset / TilePixels;
-  else if (m_state == Run)
-    headPosition += m_headRunOffset;
-  else if (m_state == Swim || m_state == SwimIdle)
-    headPosition += m_headSwimOffset;
-  else if (m_state == Duck)
-    headPosition += m_headDuckOffset;
-  else if (m_state == Sit)
-    headPosition += m_headSitOffset;
-  else if (m_state == Lay)
-    headPosition += m_headLayOffset;
+    auto backArmDrawable = [&](String const& frameSet, Directives const& directives) -> Drawable {
+      String image = strf("{}:{}{}", frameSet, backHand.backFrame, directives.prefix());
+      Drawable backArm = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, backArmFrameOffset);
+      backArm.imagePart().addDirectives(directives, true);
+      backArm.rotate(backHand.angle, backArmFrameOffset + m_backArmRotationCenter + m_backArmOffset);
+      return backArm;
+    };
 
-  auto applyHeadRotation = [&](Drawable& drawable) {
-    if (m_headRotation != 0.f) {
-      float dir = numericalDirection(m_facingDirection);
-      Vec2F rotationPoint = headPosition;
-      rotationPoint[0] *= dir;
-      rotationPoint[1] -= .25f;
-      float headX = (m_headRotation / ((float)Constants::pi * 2.f));
-      drawable.rotate(m_headRotation, rotationPoint);
-      drawable.position[0] -= state() == State::Run ? (fmaxf(headX * dir, 0.f) * 2.f) * dir : headX;
-      drawable.position[1] -= fabsf(m_headRotation / ((float)Constants::pi * 4.f));
-    }
-  };
-
-  if (!m_backArmorFrameset.empty()) {
-    auto frameGroup = frameBase(m_state);
-    auto prefix = m_backArmorDirectives.prefix();
-    if (m_movingBackwards && (m_state == State::Run))
-      frameGroup = "runbackwards";
-    String image;
-    if (dance.isValid() && danceStep->bodyFrame)
-      image = strf("{}:{}{}", m_backArmorFrameset, *danceStep->bodyFrame, prefix);
+    Vec2F headPosition(0, bobYOffset);
+    if (dance.isValid())
+      headPosition += danceStep->headOffset / TilePixels;
     else if (m_state == Idle)
-      image = strf("{}:{}{}", m_backArmorFrameset, m_identity.personality.idle, prefix);
-    else
-      image = strf("{}:{}.{}{}", m_backArmorFrameset, frameGroup, bodyStateSeq, prefix);
+      headPosition += m_identity.personality.headOffset / TilePixels;
+    else if (m_state == Run)
+      headPosition += m_headRunOffset;
+    else if (m_state == Swim || m_state == SwimIdle)
+      headPosition += m_headSwimOffset;
+    else if (m_state == Duck)
+      headPosition += m_headDuckOffset;
+    else if (m_state == Sit)
+      headPosition += m_headSitOffset;
+    else if (m_state == Lay)
+      headPosition += m_headLayOffset;
 
-    auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, Vec2F());
-    drawable.imagePart().addDirectives(getBackDirectives(), true);
-    Drawable& applied = addDrawable(std::move(drawable));
-    if (m_backRotatesWithHead)
-      applyHeadRotation(applied);
-  }
-
-  if (backHand.holdingItem && !dance.isValid() && withItems) {
-    auto drawItem = [&]() {
-      for (auto& backHandItem : backHand.itemDrawables) {
-        backHandItem.translate(m_frontHandPosition + backArmFrameOffset + m_backArmOffset);
-        backHandItem.rotate(backHand.itemAngle, backArmFrameOffset + m_backArmRotationCenter + m_backArmOffset);
-        addDrawable(std::move(backHandItem));
+    auto applyHeadRotation = [&](Drawable& drawable) {
+      if (m_headRotation != 0.f) {
+        float dir = numericalDirection(m_facingDirection);
+        Vec2F rotationPoint = headPosition;
+        rotationPoint[0] *= dir;
+        rotationPoint[1] -= .25f;
+        float headX = (m_headRotation / ((float)Constants::pi * 2.f));
+        drawable.rotate(m_headRotation, rotationPoint);
+        drawable.position[0] -= state() == State::Run ? (fmaxf(headX * dir, 0.f) * 2.f) * dir : headX;
+        drawable.position[1] -= fabsf(m_headRotation / ((float)Constants::pi * 4.f));
       }
     };
-    if (!m_twoHanded && backHand.outsideOfHand)
-      drawItem();
-    if (!m_backArmFrameset.empty() && !m_bodyHidden)
-      addDrawable(backArmDrawable(m_backArmFrameset, getBodyDirectives()), m_bodyFullbright);
-    if (!m_backSleeveFrameset.empty())
-      addDrawable(backArmDrawable(m_backSleeveFrameset, getChestDirectives()));
-    if (!m_twoHanded && !backHand.outsideOfHand)
-      drawItem();
-  } else {
-    if (!m_backArmFrameset.empty() && !m_bodyHidden) {
+
+    if (!m_backArmorFrameset.empty()) {
+      auto frameGroup = frameBase(m_state);
+      auto prefix = m_backArmorDirectives.prefix();
+      if (m_movingBackwards && (m_state == State::Run))
+        frameGroup = "runbackwards";
       String image;
-      Vec2F position;
-      auto bodyDirectives = getBodyDirectives();
-      auto prefix = bodyDirectives.prefix();
-      if (dance.isValid() && danceStep->backArmFrame) {
-        image = strf("{}:{}{}", m_backArmFrameset, *danceStep->backArmFrame, prefix);
-        position = danceStep->backArmOffset / TilePixels;
-      } else if (m_state == Idle) {
-        image = strf("{}:{}{}", m_backArmFrameset, m_identity.personality.armIdle, prefix);
-        position = m_identity.personality.armOffset / TilePixels;
-      } else
-        image = strf("{}:{}.{}{}", m_backArmFrameset, frameBase(m_state), armStateSeq, prefix);
-      auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, position);
-      drawable.imagePart().addDirectives(bodyDirectives, true);
-      if (dance.isValid())
-        drawable.rotate(danceStep->backArmRotation);
-      addDrawable(std::move(drawable), m_bodyFullbright);
+      if (dance.isValid() && danceStep->bodyFrame)
+        image = strf("{}:{}{}", m_backArmorFrameset, *danceStep->bodyFrame, prefix);
+      else if (m_state == Idle)
+        image = strf("{}:{}{}", m_backArmorFrameset, m_identity.personality.idle, prefix);
+      else
+        image = strf("{}:{}.{}{}", m_backArmorFrameset, frameGroup, bodyStateSeq, prefix);
+
+      auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, Vec2F());
+      drawable.imagePart().addDirectives(getBackDirectives(), true);
+      Drawable& applied = addDrawable(std::move(drawable));
+      if (m_backRotatesWithHead)
+        applyHeadRotation(applied);
     }
-    if (!m_backSleeveFrameset.empty()) {
-      String image;
-      Vec2F position;
-      auto prefix = m_chestArmorDirectives.prefix();
-      if (dance.isValid() && danceStep->backArmFrame) {
-        image = strf("{}:{}{}", m_backSleeveFrameset, *danceStep->backArmFrame, prefix);
-        position = danceStep->backArmOffset / TilePixels;
-      } else if (m_state == Idle) {
-        image = strf("{}:{}{}", m_backSleeveFrameset, m_identity.personality.armIdle, prefix);
-        position = m_identity.personality.armOffset / TilePixels;
-      } else
-        image = strf("{}:{}.{}{}", m_backSleeveFrameset, frameBase(m_state), armStateSeq, prefix);
-      auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, position);
-      drawable.imagePart().addDirectives(getChestDirectives(), true);
-      if (dance.isValid())
-        drawable.rotate(danceStep->backArmRotation);
-      addDrawable(std::move(drawable));
+
+    if (backHand.holdingItem && !dance.isValid() && withItems) {
+      auto drawItem = [&]() {
+        for (auto& backHandItem : backHand.itemDrawables) {
+          backHandItem.translate(m_frontHandPosition + backArmFrameOffset + m_backArmOffset);
+          backHandItem.rotate(backHand.itemAngle, backArmFrameOffset + m_backArmRotationCenter + m_backArmOffset);
+          addDrawable(std::move(backHandItem));
+        }
+      };
+      if (!m_twoHanded && backHand.outsideOfHand)
+        drawItem();
+      if (!m_backArmFrameset.empty() && !m_bodyHidden)
+        addDrawable(backArmDrawable(m_backArmFrameset, getBodyDirectives()), m_bodyFullbright);
+      if (!m_backSleeveFrameset.empty())
+        addDrawable(backArmDrawable(m_backSleeveFrameset, getChestDirectives()));
+      if (!m_twoHanded && !backHand.outsideOfHand)
+        drawItem();
+    } else {
+      if (!m_backArmFrameset.empty() && !m_bodyHidden) {
+        String image;
+        Vec2F position;
+        auto bodyDirectives = getBodyDirectives();
+        auto prefix = bodyDirectives.prefix();
+        if (dance.isValid() && danceStep->backArmFrame) {
+          image = strf("{}:{}{}", m_backArmFrameset, *danceStep->backArmFrame, prefix);
+          position = danceStep->backArmOffset / TilePixels;
+        } else if (m_state == Idle) {
+          image = strf("{}:{}{}", m_backArmFrameset, m_identity.personality.armIdle, prefix);
+          position = m_identity.personality.armOffset / TilePixels;
+        } else
+          image = strf("{}:{}.{}{}", m_backArmFrameset, frameBase(m_state), armStateSeq, prefix);
+        auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, position);
+        drawable.imagePart().addDirectives(bodyDirectives, true);
+        if (dance.isValid())
+          drawable.rotate(danceStep->backArmRotation);
+        addDrawable(std::move(drawable), m_bodyFullbright);
+      }
+      if (!m_backSleeveFrameset.empty()) {
+        String image;
+        Vec2F position;
+        auto prefix = m_chestArmorDirectives.prefix();
+        if (dance.isValid() && danceStep->backArmFrame) {
+          image = strf("{}:{}{}", m_backSleeveFrameset, *danceStep->backArmFrame, prefix);
+          position = danceStep->backArmOffset / TilePixels;
+        } else if (m_state == Idle) {
+          image = strf("{}:{}{}", m_backSleeveFrameset, m_identity.personality.armIdle, prefix);
+          position = m_identity.personality.armOffset / TilePixels;
+        } else
+          image = strf("{}:{}.{}{}", m_backSleeveFrameset, frameBase(m_state), armStateSeq, prefix);
+        auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, position);
+        drawable.imagePart().addDirectives(getChestDirectives(), true);
+        if (dance.isValid())
+          drawable.rotate(danceStep->backArmRotation);
+        addDrawable(std::move(drawable));
+      }
     }
-  }
 
-  auto addHeadDrawable = [&](Drawable drawable, bool forceFullbright = false) {
-    if (m_facingDirection == Direction::Left)
-      drawable.scale(Vec2F(-1, 1));
-    drawable.fullbright |= forceFullbright;
-    applyHeadRotation(drawable);
-    drawables.append(std::move(drawable));
-  };
+    auto addHeadDrawable = [&](Drawable drawable, bool forceFullbright = false) {
+      if (m_facingDirection == Direction::Left)
+        drawable.scale(Vec2F(-1, 1));
+      drawable.fullbright |= forceFullbright;
+      applyHeadRotation(drawable);
+      drawables.append(std::move(drawable));
+    };
 
-  if (!m_headFrameset.empty() && !m_bodyHidden) {
-    String image = strf("{}:normal", m_headFrameset);
-    auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, headPosition);
-    drawable.imagePart().addDirectives(getBodyDirectives(), true);
-    addHeadDrawable(std::move(drawable), m_bodyFullbright);
-  }
-
-  if (!m_emoteFrameset.empty() && !m_bodyHidden) {
-    auto emoteDirectives = getEmoteDirectives();
-    String image = strf("{}:{}.{}{}", m_emoteFrameset, emoteFrameBase(m_emoteState), emoteStateSeq, emoteDirectives.prefix());
-    auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, headPosition);
-    drawable.imagePart().addDirectives(emoteDirectives, true);
-    addHeadDrawable(std::move(drawable), m_bodyFullbright);
-  }
-
-  if (!m_hairFrameset.empty() && !m_bodyHidden) {
-    String image = strf("{}:normal", m_hairFrameset);
-    auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, headPosition);
-    drawable.imagePart().addDirectives(getHairDirectives(), true).addDirectives(getHelmetMaskDirectives(), true);
-    addHeadDrawable(std::move(drawable), m_bodyFullbright);
-  }
-
-  if (!m_bodyFrameset.empty() && !m_bodyHidden) {
-    auto bodyDirectives = getBodyDirectives();
-    auto prefix = bodyDirectives.prefix();
-    String frameName;
-    if (dance.isValid() && danceStep->bodyFrame)
-      frameName = strf("{}{}", *danceStep->bodyFrame, prefix);
-    else if (m_state == Idle)
-      frameName = strf("{}{}", m_identity.personality.idle, prefix);
-    else
-      frameName = strf("{}.{}{}", frameBase(m_state), bodyStateSeq, prefix);
-    String image = strf("{}:{}",m_bodyFrameset,frameName);
-    auto drawable = Drawable::makeImage(m_useBodyHeadMask ? image : std::move(image), 1.0f / TilePixels, true, {});
-    drawable.imagePart().addDirectives(bodyDirectives, true);
-    if (m_useBodyMask && !m_bodyMaskFrameset.empty()) {
-      String maskImage = strf("{}:{}",m_bodyMaskFrameset,frameName);
-      Directives maskDirectives = "?addmask="+maskImage+";0;0";
-      drawable.imagePart().addDirectives(maskDirectives, true);
-    }
-    addDrawable(std::move(drawable), m_bodyFullbright);
-    if (m_useBodyHeadMask && !m_bodyHeadMaskFrameset.empty()) {
-      String maskImage = strf("{}:{}",m_bodyHeadMaskFrameset,frameName);
-      Directives maskDirectives = "?addmask="+maskImage+";0;0";
-      auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, {});
-      drawable.imagePart().addDirectives(bodyDirectives, true);
-      drawable.imagePart().addDirectives(maskDirectives, true);
+    if (!m_headFrameset.empty() && !m_bodyHidden) {
+      String image = strf("{}:normal", m_headFrameset);
+      auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, headPosition);
+      drawable.imagePart().addDirectives(getBodyDirectives(), true);
       addHeadDrawable(std::move(drawable), m_bodyFullbright);
     }
-  }
 
-  if (!m_legsArmorFrameset.empty()) {
-    String image;
-    auto prefix = m_legsArmorDirectives.prefix();
-    if (dance.isValid() && danceStep->bodyFrame)
-      image = strf("{}:{}{}", m_legsArmorFrameset, *danceStep->bodyFrame, prefix);
-    else if (m_state == Idle)
-      image = strf("{}:{}{}", m_legsArmorFrameset, m_identity.personality.idle, prefix);
-    else
-      image = strf("{}:{}.{}{}", m_legsArmorFrameset, frameBase(m_state), bodyStateSeq, prefix);
-    auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, {});
-    drawable.imagePart().addDirectives(getLegsDirectives(), true);
-    addDrawable(std::move(drawable));
-  }
-
-  if (!m_chestArmorFrameset.empty()) {
-    String image;
-    Vec2F position;
-    auto prefix = m_chestArmorDirectives.prefix();
-    if (dance.isValid() && danceStep->bodyFrame)
-      image = strf("{}:{}{}", m_chestArmorFrameset, *danceStep->bodyFrame, prefix);
-    else if (m_state == Run)
-      image = strf("{}:run{}", m_chestArmorFrameset, prefix);
-    else if (m_state == Idle)
-      image = strf("{}:{}{}", m_chestArmorFrameset, m_identity.personality.idle, prefix);
-    else if (m_state == Duck)
-      image = strf("{}:duck{}", m_chestArmorFrameset, prefix);
-    else if ((m_state == Swim) || (m_state == SwimIdle))
-      image = strf("{}:swim{}", m_chestArmorFrameset, prefix);
-    else
-      image = strf("{}:chest.1{}", m_chestArmorFrameset, prefix);
-    if (m_state != Duck)
-      position[1] += bobYOffset;
-    auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, position);
-    drawable.imagePart().addDirectives(getChestDirectives(), true);
-    addDrawable(std::move(drawable));
-  }
-
-  if (!m_facialHairFrameset.empty() && !m_bodyHidden) {
-    String image = strf("{}:normal", m_facialHairFrameset);
-    auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, headPosition);
-    drawable.imagePart().addDirectives(getFacialHairDirectives(), true).addDirectives(getHelmetMaskDirectives(), true);
-    addHeadDrawable(std::move(drawable), m_bodyFullbright);
-  }
-
-  if (!m_facialMaskFrameset.empty() && !m_bodyHidden) {
-    String image = strf("{}:normal", m_facialMaskFrameset);
-    auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, headPosition);
-    drawable.imagePart().addDirectives(getFacialMaskDirectives(), true).addDirectives(getHelmetMaskDirectives(), true);
-    addHeadDrawable(std::move(drawable));
-  }
-
-  if (!m_headArmorFrameset.empty()) {
-    String image = strf("{}:normal{}", m_headArmorFrameset, m_headArmorDirectives.prefix());
-    auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, headPosition);
-    drawable.imagePart().addDirectives(getHeadDirectives(), true);
-    addHeadDrawable(std::move(drawable));
-  }
-
-  auto frontArmDrawable = [&](String const& frameSet, Directives const& directives) -> Drawable {
-    String image = strf("{}:{}{}", frameSet, frontHand.frontFrame, directives.prefix());
-    Drawable frontArm = Drawable::makeImage(image, 1.0f / TilePixels, true, frontArmFrameOffset);
-    frontArm.imagePart().addDirectives(directives, true);
-    frontArm.rotate(frontHand.angle, frontArmFrameOffset + m_frontArmRotationCenter);
-    return frontArm;
-  };
-
-  if (frontHand.holdingItem && !dance.isValid() && withItems) {
-    auto drawItem = [&]() {
-      for (auto& frontHandItem : frontHand.itemDrawables) {
-        frontHandItem.translate(m_frontHandPosition + frontArmFrameOffset);
-        frontHandItem.rotate(frontHand.itemAngle, frontArmFrameOffset + m_frontArmRotationCenter);
-        addDrawable(frontHandItem);
-      }
-    };
-    if (!frontHand.outsideOfHand)
-      drawItem();
-    if (!m_frontArmFrameset.empty() && !m_bodyHidden)
-      addDrawable(frontArmDrawable(m_frontArmFrameset, getBodyDirectives()), m_bodyFullbright);
-    if (!m_frontSleeveFrameset.empty())
-      addDrawable(frontArmDrawable(m_frontSleeveFrameset, getChestDirectives()));
-    if (frontHand.outsideOfHand)
-      drawItem();
-  } else {
-    if (!m_frontArmFrameset.empty() && !m_bodyHidden) {
-      String image;
-      Vec2F position;
-      auto bodyDirectives = getBodyDirectives();
-      auto prefix = bodyDirectives.prefix();
-      if (dance.isValid() && danceStep->frontArmFrame) {
-        image = strf("{}:{}{}", m_frontArmFrameset, *danceStep->frontArmFrame, prefix);
-        position = danceStep->frontArmOffset / TilePixels;
-      } else if (m_state == Idle) {
-        image = strf("{}:{}{}", m_frontArmFrameset, m_identity.personality.armIdle, prefix);
-        position = m_identity.personality.armOffset / TilePixels;
-      } else
-        image = strf("{}:{}.{}{}", m_frontArmFrameset, frameBase(m_state), armStateSeq, prefix);
-      auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, position);
-      drawable.imagePart().addDirectives(bodyDirectives, true);
-      if (dance.isValid())
-        drawable.rotate(danceStep->frontArmRotation);
-      addDrawable(drawable, m_bodyFullbright);
+    if (!m_emoteFrameset.empty() && !m_bodyHidden) {
+      auto emoteDirectives = getEmoteDirectives();
+      String image = strf("{}:{}.{}{}", m_emoteFrameset, emoteFrameBase(m_emoteState), emoteStateSeq, emoteDirectives.prefix());
+      auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, headPosition);
+      drawable.imagePart().addDirectives(emoteDirectives, true);
+      addHeadDrawable(std::move(drawable), m_bodyFullbright);
     }
 
-    if (!m_frontSleeveFrameset.empty()) {
+    if (!m_hairFrameset.empty() && !m_bodyHidden) {
+      String image = strf("{}:normal", m_hairFrameset);
+      auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, headPosition);
+      drawable.imagePart().addDirectives(getHairDirectives(), true).addDirectives(getHelmetMaskDirectives(), true);
+      addHeadDrawable(std::move(drawable), m_bodyFullbright);
+    }
+
+    if (!m_bodyFrameset.empty() && !m_bodyHidden) {
+      auto bodyDirectives = getBodyDirectives();
+      auto prefix = bodyDirectives.prefix();
+      String frameName;
+      if (dance.isValid() && danceStep->bodyFrame)
+        frameName = strf("{}{}", *danceStep->bodyFrame, prefix);
+      else if (m_state == Idle)
+        frameName = strf("{}{}", m_identity.personality.idle, prefix);
+      else
+        frameName = strf("{}.{}{}", frameBase(m_state), bodyStateSeq, prefix);
+      String image = strf("{}:{}",m_bodyFrameset,frameName);
+      auto drawable = Drawable::makeImage(m_useBodyHeadMask ? image : std::move(image), 1.0f / TilePixels, true, {});
+      drawable.imagePart().addDirectives(bodyDirectives, true);
+      if (m_useBodyMask && !m_bodyMaskFrameset.empty()) {
+        String maskImage = strf("{}:{}",m_bodyMaskFrameset,frameName);
+        Directives maskDirectives = "?addmask="+maskImage+";0;0";
+        drawable.imagePart().addDirectives(maskDirectives, true);
+      }
+      addDrawable(std::move(drawable), m_bodyFullbright);
+      if (m_useBodyHeadMask && !m_bodyHeadMaskFrameset.empty()) {
+        String maskImage = strf("{}:{}",m_bodyHeadMaskFrameset,frameName);
+        Directives maskDirectives = "?addmask="+maskImage+";0;0";
+        auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, {});
+        drawable.imagePart().addDirectives(bodyDirectives, true);
+        drawable.imagePart().addDirectives(maskDirectives, true);
+        addHeadDrawable(std::move(drawable), m_bodyFullbright);
+      }
+    }
+
+    if (!m_legsArmorFrameset.empty()) {
+      String image;
+      auto prefix = m_legsArmorDirectives.prefix();
+      if (dance.isValid() && danceStep->bodyFrame)
+        image = strf("{}:{}{}", m_legsArmorFrameset, *danceStep->bodyFrame, prefix);
+      else if (m_state == Idle)
+        image = strf("{}:{}{}", m_legsArmorFrameset, m_identity.personality.idle, prefix);
+      else
+        image = strf("{}:{}.{}{}", m_legsArmorFrameset, frameBase(m_state), bodyStateSeq, prefix);
+      auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, {});
+      drawable.imagePart().addDirectives(getLegsDirectives(), true);
+      addDrawable(std::move(drawable));
+    }
+
+    if (!m_chestArmorFrameset.empty()) {
       String image;
       Vec2F position;
       auto prefix = m_chestArmorDirectives.prefix();
-      if (dance.isValid() && danceStep->frontArmFrame) {
-        image = strf("{}:{}{}", m_frontSleeveFrameset, *danceStep->frontArmFrame, prefix);
-        position = danceStep->frontArmOffset / TilePixels;
-      } else if (m_state == Idle) {
-        image = strf("{}:{}{}", m_frontSleeveFrameset, m_identity.personality.armIdle, prefix);
-        position = m_identity.personality.armOffset / TilePixels;
-      } else
-        image = strf("{}:{}.{}{}", m_frontSleeveFrameset, frameBase(m_state), armStateSeq, prefix);
-      auto drawable = Drawable::makeImage(image, 1.0f / TilePixels, true, position);
+      if (dance.isValid() && danceStep->bodyFrame)
+        image = strf("{}:{}{}", m_chestArmorFrameset, *danceStep->bodyFrame, prefix);
+      else if (m_state == Run)
+        image = strf("{}:run{}", m_chestArmorFrameset, prefix);
+      else if (m_state == Idle)
+        image = strf("{}:{}{}", m_chestArmorFrameset, m_identity.personality.idle, prefix);
+      else if (m_state == Duck)
+        image = strf("{}:duck{}", m_chestArmorFrameset, prefix);
+      else if ((m_state == Swim) || (m_state == SwimIdle))
+        image = strf("{}:swim{}", m_chestArmorFrameset, prefix);
+      else
+        image = strf("{}:chest.1{}", m_chestArmorFrameset, prefix);
+      if (m_state != Duck)
+        position[1] += bobYOffset;
+      auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, position);
       drawable.imagePart().addDirectives(getChestDirectives(), true);
-      if (dance.isValid())
-        drawable.rotate(danceStep->frontArmRotation);
-      addDrawable(drawable);
+      addDrawable(std::move(drawable));
     }
-  }
 
-  if (m_drawVaporTrail) {
-    auto image = strf("{}:{}",
-        m_vaporTrailFrameset,
-        m_timing.genericSeq(m_animationTimer, m_vaporTrailCycle, m_vaporTrailFrames, true));
-    addDrawable(Drawable::makeImage(AssetPath::split(image), 1.0f / TilePixels, true, {}));
-  }
-
-  if (withItems) {
-    if (m_primaryHand.nonRotatedDrawables.size())
-      drawables.insertAllAt(0, m_primaryHand.nonRotatedDrawables);
-    if (m_altHand.nonRotatedDrawables.size())
-      drawables.insertAllAt(0, m_altHand.nonRotatedDrawables);
-  }
-
-  for (auto& drawable : drawables) {
-    drawable.translate(m_globalOffset);
-    if (withRotationAndScale) {
-      if (m_scale.x() != 1.f || m_scale.y() != 1.f)
-        drawable.scale(m_scale);
-      if (m_rotation != 0.f)
-        drawable.rotate(m_rotation);
+    if (!m_facialHairFrameset.empty() && !m_bodyHidden) {
+      String image = strf("{}:normal", m_facialHairFrameset);
+      auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, headPosition);
+      drawable.imagePart().addDirectives(getFacialHairDirectives(), true).addDirectives(getHelmetMaskDirectives(), true);
+      addHeadDrawable(std::move(drawable), m_bodyFullbright);
     }
-    drawable.rebase();
+
+    if (!m_facialMaskFrameset.empty() && !m_bodyHidden) {
+      String image = strf("{}:normal", m_facialMaskFrameset);
+      auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, headPosition);
+      drawable.imagePart().addDirectives(getFacialMaskDirectives(), true).addDirectives(getHelmetMaskDirectives(), true);
+      addHeadDrawable(std::move(drawable));
+    }
+
+    if (!m_headArmorFrameset.empty()) {
+      String image = strf("{}:normal{}", m_headArmorFrameset, m_headArmorDirectives.prefix());
+      auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, headPosition);
+      drawable.imagePart().addDirectives(getHeadDirectives(), true);
+      addHeadDrawable(std::move(drawable));
+    }
+
+    auto frontArmDrawable = [&](String const& frameSet, Directives const& directives) -> Drawable {
+      String image = strf("{}:{}{}", frameSet, frontHand.frontFrame, directives.prefix());
+      Drawable frontArm = Drawable::makeImage(image, 1.0f / TilePixels, true, frontArmFrameOffset);
+      frontArm.imagePart().addDirectives(directives, true);
+      frontArm.rotate(frontHand.angle, frontArmFrameOffset + m_frontArmRotationCenter);
+      return frontArm;
+    };
+
+    if (frontHand.holdingItem && !dance.isValid() && withItems) {
+      auto drawItem = [&]() {
+        for (auto& frontHandItem : frontHand.itemDrawables) {
+          frontHandItem.translate(m_frontHandPosition + frontArmFrameOffset);
+          frontHandItem.rotate(frontHand.itemAngle, frontArmFrameOffset + m_frontArmRotationCenter);
+          addDrawable(frontHandItem);
+        }
+      };
+      if (!frontHand.outsideOfHand)
+        drawItem();
+      if (!m_frontArmFrameset.empty() && !m_bodyHidden)
+        addDrawable(frontArmDrawable(m_frontArmFrameset, getBodyDirectives()), m_bodyFullbright);
+      if (!m_frontSleeveFrameset.empty())
+        addDrawable(frontArmDrawable(m_frontSleeveFrameset, getChestDirectives()));
+      if (frontHand.outsideOfHand)
+        drawItem();
+    } else {
+      if (!m_frontArmFrameset.empty() && !m_bodyHidden) {
+        String image;
+        Vec2F position;
+        auto bodyDirectives = getBodyDirectives();
+        auto prefix = bodyDirectives.prefix();
+        if (dance.isValid() && danceStep->frontArmFrame) {
+          image = strf("{}:{}{}", m_frontArmFrameset, *danceStep->frontArmFrame, prefix);
+          position = danceStep->frontArmOffset / TilePixels;
+        } else if (m_state == Idle) {
+          image = strf("{}:{}{}", m_frontArmFrameset, m_identity.personality.armIdle, prefix);
+          position = m_identity.personality.armOffset / TilePixels;
+        } else
+          image = strf("{}:{}.{}{}", m_frontArmFrameset, frameBase(m_state), armStateSeq, prefix);
+        auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, position);
+        drawable.imagePart().addDirectives(bodyDirectives, true);
+        if (dance.isValid())
+          drawable.rotate(danceStep->frontArmRotation);
+        addDrawable(drawable, m_bodyFullbright);
+      }
+
+      if (!m_frontSleeveFrameset.empty()) {
+        String image;
+        Vec2F position;
+        auto prefix = m_chestArmorDirectives.prefix();
+        if (dance.isValid() && danceStep->frontArmFrame) {
+          image = strf("{}:{}{}", m_frontSleeveFrameset, *danceStep->frontArmFrame, prefix);
+          position = danceStep->frontArmOffset / TilePixels;
+        } else if (m_state == Idle) {
+          image = strf("{}:{}{}", m_frontSleeveFrameset, m_identity.personality.armIdle, prefix);
+          position = m_identity.personality.armOffset / TilePixels;
+        } else
+          image = strf("{}:{}.{}{}", m_frontSleeveFrameset, frameBase(m_state), armStateSeq, prefix);
+        auto drawable = Drawable::makeImage(image, 1.0f / TilePixels, true, position);
+        drawable.imagePart().addDirectives(getChestDirectives(), true);
+        if (dance.isValid())
+          drawable.rotate(danceStep->frontArmRotation);
+        addDrawable(drawable);
+      }
+    }
+
+    if (m_drawVaporTrail) {
+      auto image = strf("{}:{}",
+          m_vaporTrailFrameset,
+          m_timing.genericSeq(m_animationTimer, m_vaporTrailCycle, m_vaporTrailFrames, true));
+      addDrawable(Drawable::makeImage(AssetPath::split(image), 1.0f / TilePixels, true, {}));
+    }
+
+    if (withItems) {
+      if (m_primaryHand.nonRotatedDrawables.size())
+        drawables.insertAllAt(0, m_primaryHand.nonRotatedDrawables);
+      if (m_altHand.nonRotatedDrawables.size())
+        drawables.insertAllAt(0, m_altHand.nonRotatedDrawables);
+    }
+
+    for (auto& drawable : drawables) {
+      drawable.translate(m_globalOffset);
+      if (withRotationAndScale) {
+        if (m_scale.x() != 1.f || m_scale.y() != 1.f)
+          drawable.scale(m_scale);
+        if (m_rotation != 0.f)
+          drawable.rotate(m_rotation);
+      }
+      drawable.rebase();
+    }
+  } else {
+    // this is where the animator drawables are supposed to go, but just putting this here for now
+    auto bodyDirectives = getBodyDirectives();
+    String image = strf("{}:normal{}", m_headFrameset, bodyDirectives.prefix());
+    drawables.append(Drawable::makeImage(AssetPath::split(image), 1.0f / TilePixels, true, {}));
   }
+
   return drawables;
 }
 
@@ -1547,6 +1568,9 @@ List<Particle> Humanoid::particles(String const& name) const {
 Json const& Humanoid::defaultMovementParameters() const {
   return m_defaultMovementParameters;
 }
+Maybe<Json> const& Humanoid::playerMovementParameters() const {
+  return m_playerMovementParameters;
+}
 
 pair<Vec2F, Directives> Humanoid::extractScaleFromDirectives(Directives const& directives) {
   if (!directives)
@@ -1583,5 +1607,58 @@ pair<Vec2F, Directives> Humanoid::extractScaleFromDirectives(Directives const& d
 
   return make_pair(*scale, Directives(mergedDirectives));
 }
+
+pair<Maybe<Json>,String> Humanoid::getAnimation() const {
+  return {m_animationConfig, "/humanoid/" + m_identity.imagePath.value(m_identity.species) + "/"};
+}
+
+
+// Humanoid::HumanoidAnimator::HumanoidAnimator(pair<Maybe<Json>,String> ac) {
+//   animationConfig = std::move(ac);
+//   animator = animationConfig.first ? NetworkedAnimator(*animationConfig.first, animationConfig.second) : NetworkedAnimator();
+//   netGroup.addNetElement(&animator);
+// }
+
+// void Humanoid::HumanoidAnimator::initNetVersion(NetElementVersion const* version) {
+//   netGroup.initNetVersion(version);
+// }
+
+// void Humanoid::HumanoidAnimator::netStore(DataStream& ds, NetCompatibilityRules rules) const {
+//   if (!checkWithRules(rules)) return;
+//   ds << animationConfig;
+//   netGroup.netStore(ds, rules);
+// }
+
+// void Humanoid::HumanoidAnimator::netLoad(DataStream& ds, NetCompatibilityRules rules) {
+//   if (!checkWithRules(rules)) return;
+//   ds >> animationConfig;
+//   animator = animationConfig.first ? NetworkedAnimator(*animationConfig.first, animationConfig.second) : NetworkedAnimator();
+//   netGroup.netLoad(ds, rules);
+// }
+
+// void Humanoid::HumanoidAnimator::enableNetInterpolation(float extrapolationHint) {
+//   netGroup.enableNetInterpolation(extrapolationHint);
+// }
+
+// void Humanoid::HumanoidAnimator::disableNetInterpolation() {
+//   netGroup.disableNetInterpolation();
+// }
+
+// void Humanoid::HumanoidAnimator::tickNetInterpolation(float dt) {
+//   netGroup.tickNetInterpolation(dt);
+// }
+
+// bool Humanoid::HumanoidAnimator::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const {
+//   return netGroup.writeNetDelta(ds, fromVersion, rules);
+// }
+
+// void Humanoid::HumanoidAnimator::readNetDelta(DataStream& ds, float interpolationTime, NetCompatibilityRules rules) {
+//   netGroup.readNetDelta(ds, interpolationTime, rules);
+// }
+
+// void Humanoid::HumanoidAnimator::blankNetDelta(float interpolationTime) {
+//   netGroup.blankNetDelta(interpolationTime);
+// }
+
 
 }

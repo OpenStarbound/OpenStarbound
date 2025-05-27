@@ -210,6 +210,9 @@ private:
   NetElementEnum<Humanoid::State> m_humanoidStateNetState;
   NetElementEnum<HumanoidEmote> m_humanoidEmoteStateNetState;
   NetElementData<Maybe<String>> m_humanoidDanceNetState;
+  NetElementData<HumanoidIdentity> m_identityNetState;
+
+  bool m_identityUpdated;
 
   NetElementData<Maybe<String>> m_deathParticleBurst;
 

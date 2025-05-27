@@ -31,7 +31,7 @@
 namespace Star {
 
 Npc::Npc(NpcVariant const& npcVariant)
-  : m_humanoid(npcVariant.humanoidConfig) {
+  : m_humanoid(npcVariant.humanoidIdentity, npcVariant.uniqueHumanoidConfig ? npcVariant.humanoidConfig : Json()) {
   m_disableWornArmor.set(npcVariant.disableWornArmor);
 
   m_emoteState = HumanoidEmote::Idle;
@@ -67,7 +67,7 @@ Npc::Npc(NpcVariant const& npcVariant)
   if (!movementParameters.physicsEffectCategories)
     movementParameters.physicsEffectCategories = StringSet({"npc"});
   m_movementController = make_shared<ActorMovementController>(movementParameters);
-  m_humanoid.setIdentity(m_npcVariant.humanoidIdentity);
+  m_identityUpdated = false;
   m_deathParticleBurst.set(m_humanoid.defaultDeathParticles());
 
   m_statusController = make_shared<StatusController>(m_npcVariant.statusControllerSettings);
@@ -780,6 +780,20 @@ LuaCallbacks Npc::makeNpcCallbacks() {
 
   callbacks.registerCallback("setUniqueId", [this](Maybe<String> uniqueId) { setUniqueId(uniqueId); });
 
+  // temp for testing
+  callbacks.registerCallback("setIdentity", [this](Json identity) {
+    auto newIdentity = HumanoidIdentity(identity);
+    m_npcVariant.humanoidIdentity = newIdentity;
+    m_humanoid.setIdentity(m_npcVariant.humanoidIdentity, m_npcVariant.uniqueHumanoidConfig ? m_npcVariant.humanoidConfig : Json());
+    m_identityUpdated = true;
+  });
+  callbacks.registerCallback("setSpecies", [this](String species) {
+    m_npcVariant.humanoidIdentity.species = species;
+    m_humanoid.setIdentity(m_npcVariant.humanoidIdentity, m_npcVariant.uniqueHumanoidConfig ? m_npcVariant.humanoidConfig : Json());
+    m_identityUpdated = true;
+  });
+
+
   return callbacks;
 }
 
@@ -829,6 +843,9 @@ void Npc::setupNetStates() {
   m_songbook->setCompatibilityVersion(6);
   m_netGroup.addNetElement(m_songbook.get());
 
+  m_identityNetState.setCompatibilityVersion(8);
+  m_netGroup.addNetElement(&m_identityNetState);
+
   m_netGroup.setNeedsStoreCallback(bind(&Npc::setNetStates, this));
   m_netGroup.setNeedsLoadCallback(bind(&Npc::getNetStates, this, _1));
 }
@@ -839,6 +856,11 @@ void Npc::setNetStates() {
   m_humanoidStateNetState.set(m_humanoid.state());
   m_humanoidEmoteStateNetState.set(m_humanoid.emoteState());
   m_humanoidDanceNetState.set(m_humanoid.dance());
+
+  if (m_identityUpdated) {
+    m_identityNetState.push(m_npcVariant.humanoidIdentity);
+    m_identityUpdated = false;
+  }
 }
 
 void Npc::getNetStates(bool initial) {
@@ -847,6 +869,11 @@ void Npc::getNetStates(bool initial) {
   m_humanoid.setState(m_humanoidStateNetState.get());
   m_humanoid.setEmoteState(m_humanoidEmoteStateNetState.get());
   m_humanoid.setDance(m_humanoidDanceNetState.get());
+
+  if (m_identityNetState.pullUpdated() && !initial) {
+    m_npcVariant.humanoidIdentity = m_identityNetState.get();
+    m_humanoid.setIdentity(m_npcVariant.humanoidIdentity, m_npcVariant.uniqueHumanoidConfig ? m_npcVariant.humanoidConfig : Json());
+  }
 
   if (m_newChatMessageEvent.pullOccurred() && !initial) {
     m_chatMessageUpdated = true;
