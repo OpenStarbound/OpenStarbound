@@ -470,6 +470,11 @@ String NetworkedAnimator::applyPartTags(String const& partName, String apply) {
         animationTags.set(stateTypeName + "_frameIndex", frameIndexStr);
       }
       animationTags.set(stateTypeName + "_state", activeState.stateName);
+
+      if (activeState.properties.contains("animationTags")) {
+        for (auto tag : activeState.properties.get("animationTags").iterateObject())
+          animationTags.set(tag.first, tag.second.toString());
+      }
     });
 
   auto applied = apply.maybeLookupTagsView([&](StringView tag) -> StringView {
