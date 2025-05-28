@@ -22,11 +22,12 @@ PcPlatformServicesState::PcPlatformServicesState()
 #endif
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
-  if (SteamAPI_Init()) {
+  SteamErrMsg errMsg;
+  if (SteamAPI_InitEx(&errMsg) == k_ESteamAPIInitResult_OK) {
     steamAvailable = true;
     Logger::info("Initialized Steam platform services");
   } else {
-    Logger::info("Failed to initialize Steam platform services");
+    Logger::info("Failed to initialize Steam platform services: {}", errMsg);
   }
 #endif
 
