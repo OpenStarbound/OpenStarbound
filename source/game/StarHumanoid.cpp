@@ -280,10 +280,9 @@ Humanoid::Humanoid(HumanoidIdentity const& identity, Json config)
 
 void Humanoid::setIdentity(HumanoidIdentity const& identity, Json config) {
   if ((identity.species != m_identity.species) || (identity.gender != m_identity.gender)) {
-    Logger::info("humanoid config should reload");
-    m_baseConfig = Root::singleton().speciesDatabase()->humanoidConfig(identity, config);
-    loadConfig(JsonObject());
-    Logger::info("{}", m_baseConfig.printJson(2));
+    auto newConfig = Root::singleton().speciesDatabase()->humanoidConfig(identity, config);
+    m_baseConfig = newConfig;
+    loadConfig(newConfig); // I don't actually need to merge it, this is just to make sure it actually reloads
   }
   m_identity = identity;
   m_headFrameset = getHeadFromIdentity();
