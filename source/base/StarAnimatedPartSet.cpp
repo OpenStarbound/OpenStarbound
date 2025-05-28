@@ -10,6 +10,8 @@ AnimatedPartSet::AnimatedPartSet(Json config, uint8_t animatorVersion) {
   for (auto const& stateTypePair : config.get("stateTypes", JsonObject()).iterateObject()) {
     auto const& stateTypeName = stateTypePair.first;
     auto const& stateTypeConfig = stateTypePair.second;
+    if ((version() > 0) && !stateTypeConfig.isType(Json::Type::Object)) // guard just incase any merges use false to override and remove entries from inherited configs
+      continue;
 
     StateType newStateType;
     newStateType.priority = stateTypeConfig.getFloat("priority", 0.0f);
@@ -20,6 +22,8 @@ AnimatedPartSet::AnimatedPartSet(Json config, uint8_t animatorVersion) {
     for (auto const& statePair : stateTypeConfig.get("states", JsonObject()).iterateObject()) {
       auto const& stateName = statePair.first;
       auto const& stateConfig = statePair.second;
+      if ((version() > 0) && !stateConfig.isType(Json::Type::Object)) // guard just incase any merges use false to override and remove entries from inherited configs
+        continue;
 
       auto newState = make_shared<State>();
       newState->frames = stateConfig.getInt("frames", 1);
@@ -51,6 +55,8 @@ AnimatedPartSet::AnimatedPartSet(Json config, uint8_t animatorVersion) {
   for (auto const& partPair : config.get("parts", JsonObject()).iterateObject()) {
     auto const& partName = partPair.first;
     auto const& partConfig = partPair.second;
+    if ((version() > 0) && !partConfig.isType(Json::Type::Object)) // guard just incase any merges use false to override and remove entries from inherited configs
+      continue;
 
     Part newPart;
     newPart.partProperties = partConfig.getObject("properties", {});
@@ -63,6 +69,9 @@ AnimatedPartSet::AnimatedPartSet(Json config, uint8_t animatorVersion) {
         auto stateConfig = partStatePair.second;
         if ((version() > 0) && stateConfig.isType(Json::Type::String))
           stateConfig = partStatePair.second.get(stateConfig.toString());
+
+        if ((version() > 0) && !stateConfig.isType(Json::Type::Object)) // guard just incase any merges use false to override and remove entries from inherited configs
+          continue;
 
         PartState partState = {stateConfig.getObject("properties", {}), stateConfig.getObject("frameProperties", {})};
         newPart.partStates[stateTypeName][stateName] = std::move(partState);
