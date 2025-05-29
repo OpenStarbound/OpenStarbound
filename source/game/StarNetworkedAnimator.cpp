@@ -334,6 +334,16 @@ bool NetworkedAnimator::stateReverse(String const& stateType) const {
   return m_animatedParts.activeState(stateType).reverse;
 }
 
+bool NetworkedAnimator::hasState(String const & stateType, Maybe<String> const & state) const {
+  if (m_animatedParts.stateTypes().contains(stateType)) {
+    if (state) {
+      return m_animatedParts.states(stateType).contains(*state);
+    }
+    return true;
+  }
+  return false;
+}
+
 StringMap<AnimatedPartSet::Part> const& NetworkedAnimator::constParts() const {
   return m_animatedParts.constParts();
 }
@@ -436,14 +446,18 @@ void NetworkedAnimator::setPartTag(String const& partType, String tagName, Strin
   m_partTags[partType].set(std::move(tagName), std::move(tagValue));
 }
 
+void NetworkedAnimator::setLocalTag(String tagName, String tagValue) {
+  m_localTags.set(tagName, tagValue);
+}
+
 void NetworkedAnimator::setPartDrawables(String const& partName, List<Drawable> drawables) {
   m_partDrawables.set(partName, drawables);
 }
 void NetworkedAnimator::addPartDrawables(String const& partName, List<Drawable> drawables) {
   m_partDrawables.ptr(partName)->appendAll(drawables);
 }
-String NetworkedAnimator::applyPartTags(String const& partName, String apply) {
-  HashMap<String, String> animationTags = {};
+String NetworkedAnimator::applyPartTags(String const& partName, String apply) const {
+  HashMap<String, String> animationTags = m_localTags;
   Maybe<unsigned> frame;
   String frameStr;
   String frameIndexStr;
@@ -730,7 +744,7 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
       }
     }
   }
-  HashMap<String, String> animationTags = {};
+  HashMap<String, String> animationTags = m_localTags;
   if (version() > 0)
     m_animatedParts.forEachActiveState([&](String const& stateTypeName, AnimatedPartSet::ActiveStateInformation const& activeState) {
       unsigned stateFrame = activeState.frame;

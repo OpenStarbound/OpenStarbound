@@ -36,6 +36,8 @@ LuaCallbacks LuaBindings::makeScriptedAnimatorCallbacks(NetworkedAnimator* netwo
       "animationStateTimer", bind(&NetworkedAnimator::stateTimer, networkedAnimator, _1));
   callbacks.registerCallbackWithSignature<bool, String>(
       "animationStateReverse", bind(&NetworkedAnimator::stateReverse, networkedAnimator, _1));
+  callbacks.registerCallbackWithSignature<bool, String, Maybe<String>>(
+      "hasState", bind(&NetworkedAnimator::hasState, networkedAnimator, _1, _2));
 
   callbacks.registerCallbackWithSignature<bool, String>(
       "hasTransformationGroup", bind(&NetworkedAnimator::hasTransformationGroup, networkedAnimator, _1));
@@ -65,6 +67,8 @@ LuaCallbacks LuaBindings::makeScriptedAnimatorCallbacks(NetworkedAnimator* netwo
       "setPartDrawables", bind(&NetworkedAnimator::setPartDrawables, networkedAnimator, _1, _2));
   callbacks.registerCallbackWithSignature<String, String, String>(
       "applyPartTags", bind(&NetworkedAnimator::applyPartTags, networkedAnimator, _1, _2));
+  callbacks.registerCallbackWithSignature<void, String, String>(
+      "setLocalTag", bind(&NetworkedAnimator::setLocalTag, networkedAnimator, _1, _2));
 
 
   return callbacks;

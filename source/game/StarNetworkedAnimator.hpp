@@ -86,6 +86,7 @@ public:
   float stateFrameProgress(String const& stateType) const;
   float stateTimer(String const& stateType) const;
   bool stateReverse(String const& stateType) const;
+  bool hasState(String const& stateType, Maybe<String> const& state = {}) const;
 
   StringMap<AnimatedPartSet::Part> const& constParts() const;
   StringMap<AnimatedPartSet::Part>& parts();
@@ -125,11 +126,12 @@ public:
   void removeGlobalTag(String const& tagName);
   String const* globalTagPtr(String const& tagName) const;
   void setPartTag(String const& partType, String tagName, String tagValue);
+  void setLocalTag(String tagName, String tagValue);
 
   void setPartDrawables(String const& partName, List<Drawable> drawables);
   void addPartDrawables(String const& partName, List<Drawable> drawables);
 
-  String applyPartTags(String const& partName, String apply);
+  String applyPartTags(String const& partName, String apply) const;
 
   void setProcessingDirectives(Directives const& directives);
   void setZoom(float zoom);
@@ -368,6 +370,7 @@ private:
 
   NetElementHashMap<String, String> m_globalTags;
   StableStringMap<NetElementHashMap<String, String>> m_partTags;
+  HashMap<String, String> m_localTags;
 
   HashMap<String,List<Drawable>> m_partDrawables;
 
