@@ -266,7 +266,7 @@ public:
           SDL_setenv("SDL_VIDEODRIVER", "x11", 1);
       }
     } 
-    Logger::info("Application: using Windowing System '{}'", SDL_GetCurrentVideoDriver());
+
 #endif
     
     Logger::info("Application: Initializing SDL Video");
