@@ -7,6 +7,7 @@ namespace Star {
 AnimatedPartSet::AnimatedPartSet() {}
 
 AnimatedPartSet::AnimatedPartSet(Json config, uint8_t animatorVersion) {
+  m_animatorVersion = animatorVersion;
   for (auto const& stateTypePair : config.get("stateTypes", JsonObject()).iterateObject()) {
     auto const& stateTypeName = stateTypePair.first;
     auto const& stateTypeConfig = stateTypePair.second;
@@ -68,7 +69,7 @@ AnimatedPartSet::AnimatedPartSet(Json config, uint8_t animatorVersion) {
         auto const& stateName = partStatePair.first;
         auto stateConfig = partStatePair.second;
         if ((version() > 0) && stateConfig.isType(Json::Type::String))
-          stateConfig = partStatePair.second.get(stateConfig.toString());
+          stateConfig = partStateTypePair.second.get(stateConfig.toString());
 
         if ((version() > 0) && !stateConfig.isType(Json::Type::Object)) // guard just incase any merges use false to override and remove entries from inherited configs
           continue;
