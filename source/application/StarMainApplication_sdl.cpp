@@ -259,13 +259,14 @@ public:
     }
     
 #ifdef STAR_SYSTEM_LINUX // Checks for Wayland and uses it if available, otherwise uses X11.
-    if (SDL_getenv("WAYLAND_DISPLAY") != nullptr) {
-        SDL_setenv("SDL_VIDEODRIVER", "wayland", 1);
-        Logger::info("Application: Using Wayland window system");
-    } else {
-        SDL_setenv("SDL_VIDEODRIVER", "x11", 1);
-        Logger::info("Application: Using X11 window system");
-    }
+    if (SDL_getenv("SDL_VIDEODRIVER") == nullptr) {
+      if (SDL_getenv("WAYLAND_DISPLAY") != nullptr) {
+          SDL_setenv("SDL_VIDEODRIVER", "wayland", 1);
+      } else {
+          SDL_setenv("SDL_VIDEODRIVER", "x11", 1);
+      }
+    } 
+    Logger::info("Application: using Windowing System '{}'", SDL_GetCurrentVideoDriver());
 #endif
     
     Logger::info("Application: Initializing SDL Video");
