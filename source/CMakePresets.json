@@ -53,13 +53,11 @@
       "binaryDir": "${sourceParentDir}/build/linux-release",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
-        "CMAKE_C_COMPILER": "clang",
-        "CMAKE_CXX_COMPILER": "clang++",
         "VCPKG_TARGET_TRIPLET": "x64-linux-mixed",
         "CMAKE_INCLUDE_PATH": "${sourceParentDir}/lib/linux/include",
         "CMAKE_LIBRARY_PATH": "${sourceParentDir}/lib/linux",
         "STAR_ENABLE_STATIC_LIBGCC_LIBSTDCXX": true,
-        "STAR_USE_JEMALLOC": false
+        "STAR_USE_JEMALLOC": true
       },
       "vendor": {
         "microsoft.com/VisualStudioSettings/CMake/1.0": {
