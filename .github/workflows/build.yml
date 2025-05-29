@@ -115,10 +115,6 @@ jobs:
     name: Build OpenStarbound Linux x86_64
     runs-on: ubuntu-22.04
     if: ${{ (github.event_name != 'workflow_dispatch') || (inputs.linux == true) }}
-    env:
-        CC: clang
-        CXX: clang++
-
     steps:
       - name: Install Packages
         run: |
