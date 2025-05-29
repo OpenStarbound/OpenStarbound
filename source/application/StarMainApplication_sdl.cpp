@@ -257,7 +257,17 @@ public:
     } catch (std::exception const& e) {
       throw ApplicationException("Application threw exception during startup", e);
     }
-
+    
+#ifdef STAR_SYSTEM_LINUX // Checks for Wayland and uses it if available, otherwise uses X11.
+    if (SDL_getenv("WAYLAND_DISPLAY") != nullptr) {
+        SDL_setenv("SDL_VIDEODRIVER", "wayland", 1);
+        Logger::info("Application: Using Wayland window system");
+    } else {
+        SDL_setenv("SDL_VIDEODRIVER", "x11", 1);
+        Logger::info("Application: Using X11 window system");
+    }
+#endif
+    
     Logger::info("Application: Initializing SDL Video");
     if (SDL_InitSubSystem(SDL_INIT_VIDEO))
       throw ApplicationException(strf("Couldn't initialize SDL Video: {}", SDL_GetError()));
@@ -282,16 +292,6 @@ public:
     if (!m_platformServices)
       Logger::info("Application: No platform services available");
 
-#ifdef STAR_SYSTEM_LINUX // Checks for Wayland and uses it if available, otherwise uses X11.
-    if (SDL_getenv("WAYLAND_DISPLAY") != nullptr) {
-        SDL_setenv("SDL_VIDEODRIVER", "wayland", 1);
-        Logger::info("Application: Using Wayland window system");
-    } else {
-        SDL_setenv("SDL_VIDEODRIVER", "x11", 1);
-        Logger::info("Application: Using X11 window system");
-    }
-#endif
-    
     Logger::info("Application: Creating SDL Window");
     m_sdlWindow = SDL_CreateWindow(m_windowTitle.utf8Ptr(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
         m_windowSize[0], m_windowSize[1], SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
