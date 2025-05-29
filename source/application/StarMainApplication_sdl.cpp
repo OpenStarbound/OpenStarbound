@@ -290,6 +290,7 @@ public:
         SDL_setenv("SDL_VIDEODRIVER", "x11", 1);
         Logger::info("Application: Using X11 window system");
     }
+#endif
     
     Logger::info("Application: Creating SDL Window");
     m_sdlWindow = SDL_CreateWindow(m_windowTitle.utf8Ptr(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
