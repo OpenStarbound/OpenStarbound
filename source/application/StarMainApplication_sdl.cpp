@@ -266,12 +266,13 @@ public:
           SDL_setenv("SDL_VIDEODRIVER", "x11", 1);
       }
     } 
-
 #endif
     
     Logger::info("Application: Initializing SDL Video");
     if (SDL_InitSubSystem(SDL_INIT_VIDEO))
       throw ApplicationException(strf("Couldn't initialize SDL Video: {}", SDL_GetError()));
+
+    Logger::info("Application: using Video Driver '{}'", SDL_GetCurrentVideoDriver());
 
     Logger::info("Application: Initializing SDL Controller");
     if (SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER))
