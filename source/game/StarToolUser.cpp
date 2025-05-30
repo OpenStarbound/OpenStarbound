@@ -331,9 +331,9 @@ void ToolUser::setupHumanoidHandItemDrawables(Humanoid& humanoid) const {
 
 Vec2F ToolUser::armPosition(Humanoid const& humanoid, ToolHand hand, Direction facingDirection, float armAngle, Vec2F offset) const {
   if (hand == ToolHand::Primary)
-    return humanoid.primaryArmPosition(facingDirection, armAngle, offset);
+    return humanoid.primaryArmPosition(facingDirection, armAngle, offset) * m_user->movementController()->getScale();
   else
-    return humanoid.altArmPosition(facingDirection, armAngle, offset);
+    return humanoid.altArmPosition(facingDirection, armAngle, offset) * m_user->movementController()->getScale();
 }
 
 Vec2F ToolUser::handOffset(Humanoid const& humanoid, ToolHand hand, Direction direction) const {
@@ -345,9 +345,9 @@ Vec2F ToolUser::handOffset(Humanoid const& humanoid, ToolHand hand, Direction di
 
 Vec2F ToolUser::handPosition(ToolHand hand, Humanoid const& humanoid, Vec2F const& handOffset) const {
   if (hand == ToolHand::Primary)
-    return humanoid.primaryHandPosition(handOffset);
+    return humanoid.primaryHandPosition(handOffset) * m_user->movementController()->getScale();
   else
-    return humanoid.altHandPosition(handOffset);
+    return humanoid.altHandPosition(handOffset) * m_user->movementController()->getScale();
 }
 
 bool ToolUser::queryShieldHit(DamageSource const& source) const {
@@ -602,7 +602,7 @@ Maybe<Json> ToolUser::receiveMessage(String const& message, bool localMessage, J
 }
 
 float ToolUser::beamGunRadius() const {
-  return m_beamGunRadius + m_user->statusController()->statusProperty("bonusBeamGunRadius", 0).toFloat();
+  return (m_beamGunRadius + m_user->statusController()->statusProperty("bonusBeamGunRadius", 0).toFloat()) * m_user->movementController()->getScale();
 }
 
 void ToolUser::NetItem::initNetVersion(NetElementVersion const* version) {

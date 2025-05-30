@@ -77,6 +77,11 @@ LuaCallbacks LuaBindings::makeMovementControllerCallbacks(MovementController* mo
   callbacks.registerCallbackWithSignature<void, float, float>(
       "approachYVelocity", bind(&MovementController::approachYVelocity, movementController, _1, _2));
 
+  callbacks.registerCallbackWithSignature<void, float>(
+      "scale", bind(&MovementController::scale, movementController, _1));
+  callbacks.registerCallbackWithSignature<float>(
+      "getScale", bind(&MovementController::getScale, movementController));
+
   return callbacks;
 }
 

@@ -929,11 +929,16 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
     addDrawable(Drawable::makeImage(AssetPath::split(image), 1.0f / TilePixels, true, {}));
   }
 
+  List<Drawable> nonRotatedDrawables;
   if (withItems) {
-    if (m_primaryHand.nonRotatedDrawables.size())
-      drawables.insertAllAt(0, m_primaryHand.nonRotatedDrawables);
-    if (m_altHand.nonRotatedDrawables.size())
-      drawables.insertAllAt(0, m_altHand.nonRotatedDrawables);
+    if (m_altHand.nonRotatedDrawables.size()) {
+      nonRotatedDrawables.appendAll(m_altHand.nonRotatedDrawables);
+    }
+    if (m_primaryHand.nonRotatedDrawables.size()) {
+      nonRotatedDrawables.appendAll(m_primaryHand.nonRotatedDrawables);
+    }
+    Drawable::translateAll(nonRotatedDrawables, m_globalOffset);
+    Drawable::rebaseAll(nonRotatedDrawables);
   }
 
   for (auto& drawable : drawables) {
@@ -946,6 +951,8 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
     }
     drawable.rebase();
   }
+  drawables.insertAllAt(0, nonRotatedDrawables);
+
   return drawables;
 }
 

@@ -483,7 +483,8 @@ Json ActorMovementController::storeState() const {
       {"rotation", MovementController::rotation()},
       {"movingDirection", DirectionNames.getRight(m_movingDirection.get())},
       {"facingDirection", DirectionNames.getRight(m_facingDirection.get())},
-      {"crouching", m_crouching.get()}};
+      {"crouching", m_crouching.get()},
+      {"scale", getScale()}};
 }
 
 void ActorMovementController::loadState(Json const& state) {
@@ -493,6 +494,7 @@ void ActorMovementController::loadState(Json const& state) {
   m_movingDirection.set(DirectionNames.getLeft(state.getString("movingDirection")));
   m_facingDirection.set(DirectionNames.getLeft(state.getString("facingDirection")));
   m_crouching.set(state.getBool("crouching"));
+  scale(state.getFloat("scale", 1.0f));
 }
 
 void ActorMovementController::setAnchorState(EntityAnchorState anchorState) {
@@ -679,7 +681,7 @@ Maybe<pair<Vec2F, bool>> ActorMovementController::pathMove(Vec2F const& position
   if (m_pathController) {
     m_pathController->findPath(*this, position);
   }
-  
+
   if (m_pathMoveResult.isValid()) {
     // path controller failed or succeeded, return the result and reset the controller
     m_pathController->reset();
@@ -749,7 +751,7 @@ void ActorMovementController::tickMaster(float dt) {
   } else {
     auto activeParameters = m_baseParameters.merge(m_controlParameters);
     auto activeModifiers = m_baseModifiers.combine(m_controlModifiers);
-    
+
     if (activeModifiers.movementSuppressed) {
       m_controlMove = {};
       m_controlRun = false;
@@ -857,12 +859,12 @@ void ActorMovementController::tickMaster(float dt) {
     if (m_controlFly) {
       Vec2F flyVelocity = *m_controlFly;
       if (flyVelocity.magnitudeSquared() != 0)
-        flyVelocity = flyVelocity.normalized() * *activeParameters.flySpeed;
+        flyVelocity = flyVelocity.normalized() * *activeParameters.flySpeed * getScale();
 
       if (m_liquidMovement.get())
-        approachVelocity(flyVelocity * (1.0f - liquidImpedance) * activeModifiers.speedModifier, *activeParameters.liquidForce * activeModifiers.liquidMovementModifier);
+        approachVelocity(flyVelocity * (1.0f - liquidImpedance) * activeModifiers.speedModifier, *activeParameters.liquidForce * activeModifiers.liquidMovementModifier * getScale());
       else
-        approachVelocity(flyVelocity * activeModifiers.speedModifier, *activeParameters.airForce);
+        approachVelocity(flyVelocity * activeModifiers.speedModifier, *activeParameters.airForce * getScale());
 
       if (flyVelocity[0] > 0)
         updatedMovingDirection = Direction::Right;
@@ -877,7 +879,7 @@ void ActorMovementController::tickMaster(float dt) {
       if (m_liquidMovement.get()) {
         jumpModifier = activeModifiers.liquidJumpModifier;
         jumpProfile = activeParameters.liquidJumpProfile;
-        *jumpProfile.jumpSpeed *= (1.0f - liquidImpedance);
+        *jumpProfile.jumpSpeed *= (1.0f - liquidImpedance) * getScale();
       } else {
         jumpModifier = activeModifiers.airJumpModifier;
         jumpProfile = activeParameters.airJumpProfile;
@@ -928,7 +930,7 @@ void ActorMovementController::tickMaster(float dt) {
         else
           m_jumpHoldTimer = {};
 
-        setYVelocity(yVelocity() + *jumpProfile.jumpSpeed * *jumpProfile.jumpInitialPercentage * jumpModifier);
+        setYVelocity(yVelocity() + *jumpProfile.jumpSpeed * *jumpProfile.jumpInitialPercentage * jumpModifier * getScale());
 
         m_groundMovementSustainTimer = GameTimer(0);
 
@@ -937,7 +939,7 @@ void ActorMovementController::tickMaster(float dt) {
         if (m_jumpHoldTimer)
           m_jumpHoldTimer->tick(dt);
 
-        approachYVelocity(*jumpProfile.jumpSpeed * jumpModifier, *jumpProfile.jumpControlForce * jumpModifier);
+        approachYVelocity(*jumpProfile.jumpSpeed * jumpModifier * getScale(), *jumpProfile.jumpControlForce * jumpModifier * getScale());
 
       } else {
         m_jumping.set(false);
@@ -947,13 +949,13 @@ void ActorMovementController::tickMaster(float dt) {
       if (m_controlMove == Direction::Left) {
         updatedMovingDirection = Direction::Left;
         m_targetHorizontalAmbulatingVelocity =
-            -1.0f * (running ? *activeParameters.runSpeed * activeModifiers.speedModifier
-                             : *activeParameters.walkSpeed * activeModifiers.speedModifier);
+            -1.0f * (running ? *activeParameters.runSpeed * activeModifiers.speedModifier * getScale()
+                             : *activeParameters.walkSpeed * activeModifiers.speedModifier * getScale());
       } else if (m_controlMove == Direction::Right) {
         updatedMovingDirection = Direction::Right;
         m_targetHorizontalAmbulatingVelocity =
-            1.0f * (running ? *activeParameters.runSpeed * activeModifiers.speedModifier
-                            : *activeParameters.walkSpeed * activeModifiers.speedModifier);
+            1.0f * (running ? *activeParameters.runSpeed * activeModifiers.speedModifier * getScale()
+                            : *activeParameters.walkSpeed * activeModifiers.speedModifier * getScale());
       }
 
       m_targetHorizontalAmbulatingVelocity *= m_moveSpeedMultiplier;
@@ -976,7 +978,7 @@ void ActorMovementController::tickMaster(float dt) {
         else
           ambulatingAccel = *activeParameters.airForce;
 
-        approachXVelocity(m_targetHorizontalAmbulatingVelocity + surfaceVelocity[0], ambulatingAccel);
+        approachXVelocity(m_targetHorizontalAmbulatingVelocity + surfaceVelocity[0], ambulatingAccel * getScale());
       }
     }
 
@@ -1109,7 +1111,7 @@ void ActorMovementController::doSetAnchorState(Maybe<EntityAnchorState> anchorSt
   if (m_entityAnchor)
     setPosition(m_entityAnchor->position);
 }
-  
+
 
 PathController::PathController(World* world)
   : m_world(world), m_edgeTimer(0.0) { }
@@ -1221,7 +1223,7 @@ Maybe<bool> PathController::findPath(ActorMovementController& movementController
                 auto newPath = m_path->slice(0, i + 1);
                 newPath.appendAll(path);
                 path = newPath;
-                
+
                 newEdgeTimer = m_edgeTimer;
                 newEdgeIndex = m_edgeIndex;
 
@@ -1255,7 +1257,7 @@ Maybe<bool> PathController::findPath(ActorMovementController& movementController
           reset();
           return false;
         }
-        
+
         m_edgeTimer = newEdgeTimer;
         m_edgeIndex = newEdgeIndex;
         m_path = path;
@@ -1285,7 +1287,7 @@ Maybe<bool> PathController::move(ActorMovementController& movementController, Ac
   while (m_edgeIndex < m_path->size()) {
     auto& edge = m_path->at(m_edgeIndex);
     Vec2F delta =  m_world->geometry().diff(edge.target.position, edge.source.position);
-    
+
     Vec2F sourceVelocity;
     Vec2F targetVelocity;
     switch (edge.action) {
@@ -1307,17 +1309,17 @@ Maybe<bool> PathController::move(ActorMovementController& movementController, Ac
           // accelerate along path using airForce
           float angleFactor = movementController.velocity().normalized() * delta.normalized();
           float speedAlongAngle = angleFactor * movementController.velocity().magnitude();
-          auto acc = parameters.airForce.value(0.0) / movementController.mass();
-          sourceVelocity = delta.normalized() * fmin(parameters.flySpeed.value(0.0), speedAlongAngle + acc * dt);
+          auto acc = parameters.airForce.value(0.0) / movementController.mass() * movementController.getScale();
+          sourceVelocity = delta.normalized() * fmin(parameters.flySpeed.value(0.0) * movementController.getScale(), speedAlongAngle + acc * dt);
           targetVelocity = sourceVelocity;
         }
         break;
       case Action::Swim:
-        sourceVelocity = targetVelocity = delta.normalized() * parameters.flySpeed.value(0.0f) * (1.0f - parameters.liquidImpedance.value(0.0f));
+        sourceVelocity = targetVelocity = delta.normalized() * parameters.flySpeed.value(0.0f) * (1.0f - parameters.liquidImpedance.value(0.0f)) * movementController.getScale();
         break;
       case Action::Walk:
         sourceVelocity = delta.normalized() * (run ? parameters.runSpeed.value(0.0f) : parameters.walkSpeed.value(0.0f));
-        sourceVelocity *= modifiers.speedModifier;
+        sourceVelocity *= modifiers.speedModifier * movementController.getScale();
         targetVelocity = sourceVelocity;
         break;
       default: {}
@@ -1345,7 +1347,7 @@ Maybe<bool> PathController::move(ActorMovementController& movementController, Ac
     movementController.setVelocity(curVelocity);
     auto movement = (curVelocity + sourceVelocity) / 2.0 * m_edgeTimer;
     movementController.setPosition(edge.source.position + movement);
-    
+
     // Shows path and current step
     // for (size_t i = 0; i < m_path->size(); i++) {
     //   auto debugEdge = m_path->get(i);
