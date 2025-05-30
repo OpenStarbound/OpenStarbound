@@ -5,8 +5,12 @@ on:
     inputs:
       linux:
         type: boolean
-        description: Linux
+        description: Linux (GCC)
         default: true
+      linux_clang:
+        type: boolean
+        description: Linux (Clang)
+        default: false
       windows:
         type: boolean
         description: Windows
@@ -162,7 +166,7 @@ jobs:
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: OpenStarbound-Linux
+          name: OpenStarbound-Linux-GCC
           path: dist.tar
 
       - name: Run Tests
@@ -178,13 +182,89 @@ jobs:
       - name: Upload Client Files
         uses: actions/upload-artifact@v4
         with:
-          name: OpenStarbound-Linux-Client
+          name: OpenStarbound-Linux-GCC-Client
           path: client.tar
 
       - name: Upload Server Files
         uses: actions/upload-artifact@v4
         with:
-          name: OpenStarbound-Linux-Server
+          name: OpenStarbound-Linux-GCC-Server
+          path: server.tar
+
+  build_linux_Clang:
+    name: Build OpenStarbound Linux Clang x86_64
+    runs-on: ubuntu-22.04
+    if: ${{ inputs.linux_clang == true }}
+    env:
+        CC: clang
+        CXX: clang++
+
+    steps:
+      - name: Install Packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libxmu-dev libxi-dev libgl-dev libglu1-mesa-dev libsdl2-dev
+
+      - name: Install CMake & Ninja
+        uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: 3.29.2
+
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: sccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          variant: sccache
+          key: ${{ github.job }}-${{ runner.os }}
+          max-size: 250M
+
+      - name: vcpkg
+        uses: lukka/run-vcpkg@v11
+        id: runvcpkg
+        with:
+          vcpkgJsonGlob: '**/source/vcpkg.json'
+          vcpkgConfigurationJsonGlob: '**/source/vcpkg-configuration.json'
+
+      - name: Run CMake
+        uses: lukka/run-cmake@v10
+        with:
+          cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
+          configurePreset: 'linux-release-clang'
+          buildPreset: 'linux-release-clang'
+
+      - name: Prepare Artifacts
+        working-directory: ${{ github.workspace }}
+        run: tar -cvf dist.tar dist
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenStarbound-Linux-Clang
+          path: dist.tar
+
+      - name: Run Tests
+        uses: lukka/run-cmake@v10
+        with:
+          cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
+          testPreset: 'linux-release'
+
+      - name: Assemble Files
+        working-directory: ${{ github.workspace }}
+        run: scripts/ci/linux/assemble.sh
+
+      - name: Upload Client Files
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenStarbound-Linux-Clang-Client
+          path: client.tar
+
+      - name: Upload Server Files
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenStarbound-Linux-Clang-Server
           path: server.tar
 
   build-mac-intel:

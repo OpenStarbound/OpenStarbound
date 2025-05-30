@@ -53,8 +53,6 @@
       "binaryDir": "${sourceParentDir}/build/linux-release",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
-        "CMAKE_C_COMPILER": "clang",
-        "CMAKE_CXX_COMPILER": "clang++",
         "VCPKG_TARGET_TRIPLET": "x64-linux-mixed",
         "CMAKE_INCLUDE_PATH": "${sourceParentDir}/lib/linux/include",
         "CMAKE_LIBRARY_PATH": "${sourceParentDir}/lib/linux",
@@ -65,6 +63,18 @@
         "microsoft.com/VisualStudioSettings/CMake/1.0": {
           "hostOS": [ "Linux" ]
         }
+      }
+    },
+    {
+      "inherits": "linux-release",
+      "name": "linux-release-clang",
+      "displayName": "Linux Clang x64",
+      "binaryDir": "${sourceParentDir}/build/linux-release-clang",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++",
+        "VCPKG_TARGET_TRIPLET": "x64-linux-mixed-clang",
+        "STAR_USE_JEMALLOC": true
       }
     },
     {
@@ -120,6 +130,10 @@
     {
       "name": "linux-release",
       "configurePreset": "linux-release"
+    },
+    {
+      "name": "linux-release-clang",
+      "configurePreset": "linux-release-clang"
     },
     {
       "name": "macos-release",
