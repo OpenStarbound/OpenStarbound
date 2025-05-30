@@ -429,8 +429,11 @@ Maybe<PolyF> NetworkedAnimator::partPoly(String const& partName, String const& p
   return poly;
 }
 
-void NetworkedAnimator::setGlobalTag(String tagName, String tagValue) {
-  m_globalTags.set(std::move(tagName), std::move(tagValue));
+void NetworkedAnimator::setGlobalTag(String tagName, Maybe<String> tagValue) {
+  if (tagValue)
+    m_globalTags.set(std::move(tagName), std::move(*tagValue));
+  else
+    m_globalTags.remove(tagName);
 }
 
 void NetworkedAnimator::removeGlobalTag(String const& tagName) {
@@ -442,12 +445,18 @@ String const* NetworkedAnimator::globalTagPtr(String const& tagName) const {
 }
 
 
-void NetworkedAnimator::setPartTag(String const& partType, String tagName, String tagValue) {
-  m_partTags[partType].set(std::move(tagName), std::move(tagValue));
+void NetworkedAnimator::setPartTag(String const& partType, String tagName, Maybe<String> tagValue) {
+  if (tagValue)
+    m_partTags[partType].set(std::move(tagName), std::move(*tagValue));
+  else
+    m_partTags[partType].remove(tagName);
 }
 
-void NetworkedAnimator::setLocalTag(String tagName, String tagValue) {
-  m_localTags.set(tagName, tagValue);
+void NetworkedAnimator::setLocalTag(String tagName, Maybe<String> tagValue) {
+  if (tagValue)
+    m_localTags.set(tagName, *tagValue);
+  else
+    m_localTags.remove(tagName);
 }
 
 void NetworkedAnimator::setPartDrawables(String const& partName, List<Drawable> drawables) {
@@ -485,8 +494,8 @@ String NetworkedAnimator::applyPartTags(String const& partName, String apply) co
       }
       animationTags.set(stateTypeName + "_state", activeState.stateName);
 
-      if (activeState.properties.contains("animationTags")) {
-        for (auto tag : activeState.properties.get("animationTags").iterateObject())
+      if (auto p = activeState.properties.ptr("animationTags")) {
+        for (auto tag : p->iterateObject())
           animationTags.set(tag.first, tag.second.toString());
       }
     });
@@ -760,6 +769,11 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
         animationTags.set(stateTypeName + "_frameIndex", frameIndexStr);
       }
       animationTags.set(stateTypeName + "_state", activeState.stateName);
+
+      if (auto p = activeState.properties.ptr("animationTags")) {
+        for (auto tag : p->iterateObject())
+          animationTags.set(tag.first, tag.second.toString());
+      }
     });
 
   List<tuple<AnimatedPartSet::ActivePartInformation const*, String const*, float>> parts;

@@ -29,9 +29,9 @@ LuaCallbacks LuaBindings::makeNetworkedAnimatorCallbacks(NetworkedAnimator* netw
   callbacks.registerCallbackWithSignature<bool, String, Maybe<String>>(
       "hasState", bind(&NetworkedAnimator::hasState, networkedAnimator, _1, _2));
 
-  callbacks.registerCallbackWithSignature<void, String, String>(
+  callbacks.registerCallbackWithSignature<void, String, Maybe<String>>(
       "setGlobalTag", bind(&NetworkedAnimator::setGlobalTag, networkedAnimator, _1, _2));
-  callbacks.registerCallbackWithSignature<void, String, String, String>(
+  callbacks.registerCallbackWithSignature<void, String, String, Maybe<String>>(
       "setPartTag", bind(&NetworkedAnimator::setPartTag, networkedAnimator, _1, _2, _3));
   callbacks.registerCallback("setFlipped",
       [networkedAnimator](bool flipped, Maybe<float> relativeCenterLine) {
@@ -149,7 +149,7 @@ LuaCallbacks LuaBindings::makeNetworkedAnimatorCallbacks(NetworkedAnimator* netw
 
   callbacks.registerCallbackWithSignature<String, String, String>(
       "applyPartTags", bind(&NetworkedAnimator::applyPartTags, networkedAnimator, _1, _2));
-  callbacks.registerCallbackWithSignature<void, String, String>(
+  callbacks.registerCallbackWithSignature<void, String, Maybe<String>>(
       "setLocalTag", bind(&NetworkedAnimator::setLocalTag, networkedAnimator, _1, _2));
 
   return callbacks;

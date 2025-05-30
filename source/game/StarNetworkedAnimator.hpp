@@ -122,11 +122,11 @@ public:
   // here will be replaced by the tag value when constructing Drawables.  All
   // Drawables can also have a <frame> tag which will be set to whatever the
   // current state frame is (1 indexed, so the first frame is 1).
-  void setGlobalTag(String tagName, String tagValue);
+  void setGlobalTag(String tagName, Maybe<String> tagValue = {});
   void removeGlobalTag(String const& tagName);
   String const* globalTagPtr(String const& tagName) const;
-  void setPartTag(String const& partType, String tagName, String tagValue);
-  void setLocalTag(String tagName, String tagValue);
+  void setPartTag(String const& partType, String tagName, Maybe<String> tagValue = {});
+  void setLocalTag(String tagName, Maybe<String> tagValue = {});
 
   void setPartDrawables(String const& partName, List<Drawable> drawables);
   void addPartDrawables(String const& partName, List<Drawable> drawables);

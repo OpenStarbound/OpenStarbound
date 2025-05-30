@@ -67,7 +67,7 @@ LuaCallbacks LuaBindings::makeScriptedAnimatorCallbacks(NetworkedAnimator* netwo
       "setPartDrawables", bind(&NetworkedAnimator::setPartDrawables, networkedAnimator, _1, _2));
   callbacks.registerCallbackWithSignature<String, String, String>(
       "applyPartTags", bind(&NetworkedAnimator::applyPartTags, networkedAnimator, _1, _2));
-  callbacks.registerCallbackWithSignature<void, String, String>(
+  callbacks.registerCallbackWithSignature<void, String, Maybe<String>>(
       "setLocalTag", bind(&NetworkedAnimator::setLocalTag, networkedAnimator, _1, _2));
 
 
