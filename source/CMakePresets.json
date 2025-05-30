@@ -52,7 +52,7 @@
       "displayName": "Linux x64",
       "binaryDir": "${sourceParentDir}/build/linux-release",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "CMAKE_BUILD_TYPE": "Release",
         "VCPKG_TARGET_TRIPLET": "x64-linux-mixed",
         "CMAKE_INCLUDE_PATH": "${sourceParentDir}/lib/linux/include",
         "CMAKE_LIBRARY_PATH": "${sourceParentDir}/lib/linux",
