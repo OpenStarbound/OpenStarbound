@@ -159,7 +159,7 @@ Maybe<Json> LuaConverter<Json>::to(LuaEngine&, LuaValue const& v) {
     return Json(*f);
 
   if (auto s = v.ptr<LuaString>())
-    return Json(s->ptr());
+    return Json(s->toString());
 
   if (v.is<LuaTable>())
     return LuaDetail::tableToJsonContainer(v.get<LuaTable>());
@@ -474,14 +474,18 @@ lua_Debug const& LuaEngine::debugInfo(int level, const char* what) {
   return debug;
 }
 
-LuaString LuaEngine::createString(String const& str) {
+LuaString LuaEngine::createString(std::string const& str) {
   lua_checkstack(m_state, 1);
 
   if (m_nullTerminated > 0)
-    lua_pushstring(m_state, str.utf8Ptr());
+    lua_pushstring(m_state, str.data());
   else
-    lua_pushlstring(m_state, str.utf8Ptr(), str.utf8Size());
+    lua_pushlstring(m_state, str.data(), str.size());
   return LuaString(LuaDetail::LuaHandle(RefPtr<LuaEngine>(this), popHandle(m_state)));
+}
+
+LuaString LuaEngine::createString(String const& str) {
+  return createString(str.utf8());
 }
 
 LuaString LuaEngine::createString(char const* str) {

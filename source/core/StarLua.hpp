@@ -414,6 +414,7 @@ struct LuaNullTermWrapper : T {
 class LuaNullEnforcer {
 public:
   LuaNullEnforcer(LuaEngine& engine);
+  LuaNullEnforcer(LuaNullEnforcer const&) = delete;
   LuaNullEnforcer(LuaNullEnforcer&&);
   ~LuaNullEnforcer();
 private:
@@ -543,6 +544,7 @@ public:
   template <typename T>
   T luaTo(LuaValue&& v);
 
+  LuaString createString(std::string const& str);
   LuaString createString(String const& str);
   LuaString createString(char const* str);
 
@@ -858,7 +860,7 @@ struct LuaConverter<String> {
 template <>
 struct LuaConverter<std::string> {
   static LuaValue from(LuaEngine& engine, std::string const& v) {
-    return engine.createString(v.c_str());
+    return engine.createString(v);
   }
 
   static Maybe<std::string> to(LuaEngine& engine, LuaValue v) {
