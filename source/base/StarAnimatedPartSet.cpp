@@ -131,6 +131,7 @@ bool AnimatedPartSet::setActiveState(String const& stateTypeName, String const& 
     stateType.activeState.stateName = stateName;
     stateType.activeState.timer = 0.0f;
     stateType.activeState.frameProgress = 0.0f;
+    stateType.activeState.reverse = reverse;
     stateType.activeStatePointer = stateType.states.get(stateName).get();
 
     stateType.activeStateDirty = true;
