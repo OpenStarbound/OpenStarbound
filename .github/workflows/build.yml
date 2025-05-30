@@ -69,7 +69,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: ${{ github.workspace }}/vcpkg_cache
-          key: vcpkg-${{github.job}}-${{ hashFiles('vcpkg.json') }}
+          key: vcpkg-${{github.job}}-${{ hashFiles('**/source/vcpkg.json') }}
           restore-keys: vcpkg-${{github.job}}-
 
       - name: vcpkg
@@ -78,12 +78,6 @@ jobs:
         with:
           vcpkgJsonGlob: '**/source/vcpkg.json'
           vcpkgConfigurationJsonGlob: '**/source/vcpkg-configuration.json'
-
-      - name: Save VCPKG cache
-        uses: actions/cache/save@v4
-        with:
-          path: ${{ github.workspace }}/vcpkg_cache
-          key: vcpkg-${{github.job}}-${{ hashFiles('vcpkg.json') }}
 
       - name: Run CMake
         uses: lukka/run-cmake@v10
@@ -106,6 +100,12 @@ jobs:
         with:
           name: OpenStarbound-Windows-All-DevOnly
           path: dist/*
+      
+      - name: Save VCPKG cache
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ github.workspace }}/vcpkg_cache
+          key: vcpkg-${{github.job}}-${{ hashFiles('**/source/vcpkg.json') }}
 
       - name: Upload Client
         uses: actions/upload-artifact@v4
@@ -162,7 +162,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: ${{ github.workspace }}/vcpkg_cache
-          key: vcpkg-${{github.job}}-${{ hashFiles('vcpkg.json') }}
+          key: vcpkg-${{github.job}}-${{ hashFiles('**/source/vcpkg.json') }}
           restore-keys: vcpkg-${{github.job}}-
 
       - name: vcpkg
@@ -171,12 +171,6 @@ jobs:
         with:
           vcpkgJsonGlob: '**/source/vcpkg.json'
           vcpkgConfigurationJsonGlob: '**/source/vcpkg-configuration.json'
-
-      - name: Save VCPKG cache
-        uses: actions/cache/save@v4
-        with:
-          path: ${{ github.workspace }}/vcpkg_cache
-          key: vcpkg-${{github.job}}-${{ hashFiles('vcpkg.json') }}
 
       - name: Run CMake
         uses: lukka/run-cmake@v10
@@ -194,6 +188,12 @@ jobs:
         with:
           name: OpenStarbound-Linux-GCC
           path: dist.tar
+      
+      - name: Save VCPKG cache
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ github.workspace }}/vcpkg_cache
+          key: vcpkg-${{github.job}}-${{ hashFiles('**/source/vcpkg.json') }}
 
       - name: Run Tests
         uses: lukka/run-cmake@v10
@@ -251,7 +251,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: ${{ github.workspace }}/vcpkg_cache
-          key: vcpkg-${{github.job}}-${{ hashFiles('vcpkg.json') }}
+          key: vcpkg-${{github.job}}-${{ hashFiles('**/source/vcpkg.json') }}
           restore-keys: vcpkg-${{github.job}}-
 
       - name: vcpkg
@@ -260,12 +260,6 @@ jobs:
         with:
           vcpkgJsonGlob: '**/source/vcpkg.json'
           vcpkgConfigurationJsonGlob: '**/source/vcpkg-configuration.json'
-
-      - name: Save VCPKG cache
-        uses: actions/cache/save@v4
-        with:
-          path: ${{ github.workspace }}/vcpkg_cache
-          key: vcpkg-${{github.job}}-${{ hashFiles('vcpkg.json') }}
 
       - name: Run CMake
         uses: lukka/run-cmake@v10
@@ -283,6 +277,12 @@ jobs:
         with:
           name: OpenStarbound-Linux-Clang
           path: dist.tar
+      
+      - name: Save VCPKG cache
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ github.workspace }}/vcpkg_cache
+          key: vcpkg-${{github.job}}-${{ hashFiles('**/source/vcpkg.json') }}
 
       - name: Run Tests
         uses: lukka/run-cmake@v10
@@ -333,7 +333,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: ${{ github.workspace }}/vcpkg_cache
-          key: vcpkg-${{github.job}}-${{ hashFiles('vcpkg.json') }}
+          key: vcpkg-${{github.job}}-${{ hashFiles('**/source/vcpkg.json') }}
           restore-keys: vcpkg-${{github.job}}-
 
       - name: vcpkg
@@ -342,12 +342,6 @@ jobs:
         with:
           vcpkgJsonGlob: '**/source/vcpkg.json'
           vcpkgConfigurationJsonGlob: '**/source/vcpkg-configuration.json'
-
-      - name: Save VCPKG cache
-        uses: actions/cache/save@v4
-        with:
-          path: ${{ github.workspace }}/vcpkg_cache
-          key: vcpkg-${{github.job}}-${{ hashFiles('vcpkg.json') }}
 
       - name: Run CMake
         uses: lukka/run-cmake@v10
@@ -362,7 +356,12 @@ jobs:
         with:
           name: OpenStarbound-macOS-Intel
           path: dist/*
-
+      
+      - name: Save VCPKG cache
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ github.workspace }}/vcpkg_cache
+          key: vcpkg-${{github.job}}-${{ hashFiles('**/source/vcpkg.json') }}
   build-mac-arm:
     name: Build OpenStarbound macOS arm64
     runs-on: macos-14
@@ -390,7 +389,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: ${{ github.workspace }}/vcpkg_cache
-          key: vcpkg-${{github.job}}-${{ hashFiles('vcpkg.json') }}
+          key: vcpkg-${{github.job}}-${{ hashFiles('**/source/vcpkg.json') }}
           restore-keys: vcpkg-${{github.job}}-
 
       - name: vcpkg
@@ -399,12 +398,6 @@ jobs:
         with:
           vcpkgJsonGlob: '**/source/vcpkg.json'
           vcpkgConfigurationJsonGlob: '**/source/vcpkg-configuration.json'
-
-      - name: Save VCPKG cache
-        uses: actions/cache/save@v4
-        with:
-          path: ${{ github.workspace }}/vcpkg_cache
-          key: vcpkg-${{github.job}}-${{ hashFiles('vcpkg.json') }}
 
       - name: Run CMake
         uses: lukka/run-cmake@v10
@@ -419,3 +412,9 @@ jobs:
         with:
           name: OpenStarbound-macOS-Silicon
           path: dist/*
+
+      - name: Save VCPKG cache
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ github.workspace }}/vcpkg_cache
+          key: vcpkg-${{github.job}}-${{ hashFiles('**/source/vcpkg.json') }}
