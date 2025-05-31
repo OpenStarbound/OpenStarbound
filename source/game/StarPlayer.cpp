@@ -1025,14 +1025,21 @@ void Player::update(float dt, uint64_t) {
     m_humanoid->setDance({});
 
   bool isClient = world()->isClient();
-  if (isClient)
-    m_armor->setupHumanoidClothingDrawables(*m_humanoid, forceNude());
 
   m_tools->suppressItems(suppressedItems);
   m_tools->tick(dt, m_shifting, m_pendingMoves);
   
-  if (auto overrideFacingDirection = m_tools->setupHumanoidHandItems(*m_humanoid, position(), aimPosition()))
-    m_movementController->controlFace(*overrideFacingDirection);
+  Direction facingDirection = m_movementController->facingDirection();
+
+  auto overrideFacingDirection = m_tools->setupHumanoidHandItems(*m_humanoid, position(), aimPosition());
+  if (overrideFacingDirection)
+    m_movementController->controlFace(facingDirection = *overrideFacingDirection);
+  
+  m_humanoid->setFacingDirection(facingDirection);
+  m_humanoid->setMovingBackwards(facingDirection != m_movementController->movingDirection());
+
+  if (isClient)
+    m_armor->setupHumanoidClothingDrawables(*m_humanoid, forceNude());
 
   m_effectsAnimator->resetTransformationGroup("flip");
   if (m_movementController->facingDirection() == Direction::Left)
@@ -1074,7 +1081,7 @@ void Player::update(float dt, uint64_t) {
   m_effectEmitter->setSourcePosition("primary", handPosition(ToolHand::Primary) + position());
   m_effectEmitter->setSourcePosition("alt", handPosition(ToolHand::Alt) + position());
 
-  m_effectEmitter->setDirection(facingDirection());
+  m_effectEmitter->setDirection(facingDirection);
 
   m_effectEmitter->tick(dt, *entityMode());
 
@@ -1089,7 +1096,7 @@ void Player::update(float dt, uint64_t) {
     }
     if (calculateHeadRotation) { // master or not an OpenStarbound player
       float headRotation = 0.f;
-      if (Humanoid::globalHeadRotation() && (m_humanoid->primaryHandHoldingItem() || m_humanoid->altHandHoldingItem() || m_humanoid->dance())) {
+      if (Humanoid::globalHeadRotation() && (m_humanoid->handHoldingItem(ToolHand::Primary) || m_humanoid->handHoldingItem(ToolHand::Alt) || m_humanoid->dance())) {
         auto primary = m_tools->primaryHandItem();
         auto alt = m_tools->altHandItem();
         String const disableFlag = "disableHeadRotation";
@@ -1107,9 +1114,6 @@ void Player::update(float dt, uint64_t) {
         setSecretProperty("humanoid.headRotation", headRotation);
     }
   }
-
-  m_humanoid->setFacingDirection(m_movementController->facingDirection());
-  m_humanoid->setMovingBackwards(m_movementController->facingDirection() != m_movementController->movingDirection());
 
   m_pendingMoves.clear();
 

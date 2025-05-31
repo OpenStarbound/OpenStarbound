@@ -87,11 +87,13 @@ private:
   // only works under the assumption that this ArmorWearer
   // will only ever touch one Humanoid (which is true!)
   Maybe<Gender> m_lastGender;
+  Maybe<Direction> m_lastDirection;
   bool m_lastNude;
   bool m_headNeedsSync;
   bool m_chestNeedsSync;
   bool m_legsNeedsSync;
   bool m_backNeedsSync;
+  Direction facingDirection;
 };
 
 }

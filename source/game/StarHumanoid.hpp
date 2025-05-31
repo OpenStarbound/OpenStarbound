@@ -36,6 +36,24 @@ enum class HumanoidEmote {
 extern EnumMap<HumanoidEmote> const HumanoidEmoteNames;
 size_t const EmoteSize = 14;
 
+enum class HumanoidHand {
+  Idle,
+  Blabbering,
+  Shouting,
+  Happy,
+  Sad,
+  NEUTRAL,
+  Laugh,
+  Annoyed,
+  Oh,
+  OOOH,
+  Blink,
+  Wink,
+  Eat,
+  Sleep
+};
+extern EnumMap<HumanoidEmote> const HumanoidEmoteNames;
+
 struct Personality {
   String idle = "idle.1";
   String armIdle = "idle.1";
@@ -194,20 +212,12 @@ public:
   // If not rotating, then the arms follow normal movement animation.  The
   // angle parameter should be in the range [-pi/2, pi/2] (the facing direction
   // should not be included in the angle).
-  void setPrimaryHandParameters(bool holdingItem, float angle, float itemAngle, bool twoHanded,
+  void setHandParameters(ToolHand hand, bool holdingItem, float angle, float itemAngle, bool twoHanded,
       bool recoil, bool outsideOfHand);
-  void setPrimaryHandFrameOverrides(String backFrameOverride, String frontFrameOverride);
-  void setPrimaryHandDrawables(List<Drawable> drawables);
-  void setPrimaryHandNonRotatedDrawables(List<Drawable> drawables);
-  bool primaryHandHoldingItem() const;
-
-  // Same as primary hand.
-  void setAltHandParameters(bool holdingItem, float angle, float itemAngle, bool recoil,
-      bool outsideOfHand);
-  void setAltHandFrameOverrides(String backFrameOverride, String frontFrameOverride);
-  void setAltHandDrawables(List<Drawable> drawables);
-  void setAltHandNonRotatedDrawables(List<Drawable> drawables);
-  bool altHandHoldingItem() const;
+  void setHandFrameOverrides(ToolHand hand, StringView back, StringView front);
+  void setHandDrawables(ToolHand hand, List<Drawable> drawables);
+  void setHandNonRotatedDrawables(ToolHand hand, List<Drawable> drawables);
+  bool handHoldingItem(ToolHand hand) const;
 
   // Updates the animation based on whatever the current animation state is,
   // wrapping or clamping animation time as appropriate.
@@ -286,10 +296,14 @@ private:
     float itemAngle = 0.0f;
     String backFrame;
     String frontFrame;
+    Directives backDirectives;
+    Directives frontDirectives;
     float frameAngleAdjust = 0.0f;
     bool recoil = false;
     bool outsideOfHand = false;
   };
+
+  HandDrawingInfo const& getHand(ToolHand hand) const;
 
   String frameBase(State state) const;
   String emoteFrameBase(HumanoidEmote state) const;

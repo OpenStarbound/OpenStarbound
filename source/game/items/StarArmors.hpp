@@ -29,9 +29,11 @@ public:
   virtual void fire(FireMode mode, bool shifting, bool edgeTriggered) override;
   virtual void fireTriggered() override;
 
+
   List<String> const& colorOptions();
 
-  Directives const& directives() const;
+  Directives const& directives(bool flip = false) const;
+  bool flipping() const;
 
   bool hideBody() const;
 
@@ -45,6 +47,7 @@ private:
   List<PersistentStatusEffect> m_statusEffects;
   StringSet m_effectSources;
   Directives m_directives;
+  Maybe<Directives> m_flipDirectives;
   bool m_hideBody;
   Maybe<String> m_techModule;
 };

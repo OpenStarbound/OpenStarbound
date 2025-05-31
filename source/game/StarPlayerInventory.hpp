@@ -158,7 +158,7 @@ public:
   void selectActionBarLocation(SelectedActionBarLocation selectedActionBarLocation);
 
   // Held items are either the items shortcutted to in the currently selected
-  // ActionBar primar / secondary locations, or if the swap slot is non-empty
+  // ActionBar primary / secondary locations, or if the swap slot is non-empty
   // then the swap slot.
   ItemPtr primaryHeldItem() const;
   ItemPtr secondaryHeldItem() const;

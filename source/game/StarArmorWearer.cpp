@@ -32,22 +32,30 @@ ArmorWearer::ArmorWearer() : m_lastNude(true) {
 void ArmorWearer::setupHumanoidClothingDrawables(Humanoid& humanoid, bool forceNude) {
   bool nudeChanged = m_lastNude != forceNude;
   auto gender = humanoid.identity().gender;
-  bool genderChanged = !m_lastGender || m_lastGender.value() != gender;
+  bool genderChanged = !m_lastGender || *m_lastGender != gender;
+  Direction direction = humanoid.facingDirection();
+  bool dirChanged = !m_lastDirection || *m_lastDirection != direction;
   m_lastNude = forceNude;
   m_lastGender = gender;
+  m_lastDirection = direction;
+
+  HeadArmorPtr const& headArmor   = m_headCosmeticItem  ? m_headCosmeticItem  : m_headItem;
+  ChestArmorPtr const& chestArmor = m_chestCosmeticItem ? m_chestCosmeticItem : m_chestItem;
+  LegsArmorPtr const& legsArmor   = m_legsCosmeticItem  ? m_legsCosmeticItem  : m_legsItem;
+  BackArmorPtr const& backArmor   = m_backCosmeticItem  ? m_backCosmeticItem  : m_backItem;
 
   bool allNeedsSync = nudeChanged || genderChanged;
-  bool headNeedsSync = allNeedsSync  || m_headNeedsSync;
-  bool chestNeedsSync = allNeedsSync || m_chestNeedsSync;
-  bool legsNeedsSync = allNeedsSync  || m_legsNeedsSync;
-  bool backNeedsSync = allNeedsSync  || m_backNeedsSync;
+  bool headNeedsSync  = allNeedsSync || (dirChanged &&  headArmor &&  headArmor->flipping()) || m_headNeedsSync;
+  bool chestNeedsSync = allNeedsSync || (dirChanged && chestArmor && chestArmor->flipping()) || m_chestNeedsSync;
+  bool legsNeedsSync  = allNeedsSync || (dirChanged &&  legsArmor &&  legsArmor->flipping()) || m_legsNeedsSync;
+  bool backNeedsSync  = allNeedsSync || (dirChanged &&  backArmor &&  backArmor->flipping()) || m_backNeedsSync;
 
+  bool bodyFlipped = direction != Direction::Right;
   bool bodyHidden = false;
-  HeadArmorPtr const& headArmor = m_headCosmeticItem ? m_headCosmeticItem : m_headItem;
   if (headArmor && !forceNude) {
     if (headNeedsSync) {
       humanoid.setHeadArmorFrameset(headArmor->frameset(humanoid.identity().gender));
-      humanoid.setHeadArmorDirectives(headArmor->directives());
+      humanoid.setHeadArmorDirectives(headArmor->directives(bodyFlipped));
       humanoid.setHelmetMaskDirectives(headArmor->maskDirectives());
     }
     bodyHidden = bodyHidden || headArmor->hideBody();
@@ -67,13 +75,12 @@ void ArmorWearer::setupHumanoidClothingDrawables(Humanoid& humanoid, bool forceN
     }
   };
 
-  ChestArmorPtr const& chestArmor = m_chestCosmeticItem ? m_chestCosmeticItem : m_chestItem;
   if (chestArmor && !forceNude) {
     if (chestNeedsSync) {
       humanoid.setBackSleeveFrameset(chestArmor->backSleeveFrameset(humanoid.identity().gender));
       humanoid.setFrontSleeveFrameset(chestArmor->frontSleeveFrameset(humanoid.identity().gender));
       humanoid.setChestArmorFrameset(chestArmor->bodyFrameset(humanoid.identity().gender));
-      humanoid.setChestArmorDirectives(chestArmor->directives());
+      humanoid.setChestArmorDirectives(chestArmor->directives(bodyFlipped));
       addHumanoidConfig(*chestArmor);
     }
     bodyHidden = bodyHidden || chestArmor->hideBody();
@@ -83,11 +90,10 @@ void ArmorWearer::setupHumanoidClothingDrawables(Humanoid& humanoid, bool forceN
     humanoid.setChestArmorFrameset("");
   }
 
-  LegsArmorPtr const& legsArmor = m_legsCosmeticItem ? m_legsCosmeticItem : m_legsItem;
   if (legsArmor && !forceNude) {
     if (legsNeedsSync) {
       humanoid.setLegsArmorFrameset(legsArmor->frameset(humanoid.identity().gender));
-      humanoid.setLegsArmorDirectives(legsArmor->directives());
+      humanoid.setLegsArmorDirectives(legsArmor->directives(bodyFlipped));
       addHumanoidConfig(*legsArmor);
     }
     bodyHidden = bodyHidden || legsArmor->hideBody();
@@ -95,11 +101,10 @@ void ArmorWearer::setupHumanoidClothingDrawables(Humanoid& humanoid, bool forceN
     humanoid.setLegsArmorFrameset("");
   }
 
-  BackArmorPtr const& backArmor = m_backCosmeticItem ? m_backCosmeticItem : m_backItem;
   if (backArmor && !forceNude) {
     if (backNeedsSync) {
       humanoid.setBackArmorFrameset(backArmor->frameset(humanoid.identity().gender));
-      humanoid.setBackArmorDirectives(backArmor->directives());
+      humanoid.setBackArmorDirectives(backArmor->directives(bodyFlipped));
       humanoid.setBackRotatesWithHead(backArmor->instanceValue("rotateWithHead", false).optBool().value());
     }
     bodyHidden = bodyHidden || backArmor->hideBody();
@@ -140,6 +145,8 @@ void ArmorWearer::effects(EffectEmitter& effectEmitter) {
 }
 
 void ArmorWearer::reset() {
+  m_lastGender.reset();
+  m_lastDirection.reset();
   m_headNeedsSync = m_chestNeedsSync = m_legsNeedsSync = m_backNeedsSync = true;
   m_headItem .reset();
   m_chestItem.reset();

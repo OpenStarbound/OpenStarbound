@@ -524,57 +524,43 @@ bool Humanoid::movingBackwards() const {
   return m_movingBackwards;
 }
 
-void Humanoid::setPrimaryHandParameters(bool holdingItem, float angle, float itemAngle, bool twoHanded,
+void Humanoid::setHandParameters(ToolHand hand, bool holdingItem, float angle, float itemAngle, bool twoHanded,
     bool recoil, bool outsideOfHand) {
-  m_primaryHand.holdingItem = holdingItem;
-  m_primaryHand.angle = angle;
-  m_primaryHand.itemAngle = itemAngle;
-  m_twoHanded = twoHanded;
-  m_primaryHand.recoil = recoil;
-  m_primaryHand.outsideOfHand = outsideOfHand;
+  auto& handInfo = const_cast<HandDrawingInfo&>(getHand(hand));
+  handInfo.holdingItem = holdingItem;
+  handInfo.angle = angle;
+  handInfo.itemAngle = itemAngle;
+  handInfo.recoil = recoil;
+  handInfo.outsideOfHand = outsideOfHand;
+  if (hand == ToolHand::Primary)
+    m_twoHanded = twoHanded;
 }
 
-void Humanoid::setPrimaryHandFrameOverrides(String backFrameOverride, String frontFrameOverride) {
-  m_primaryHand.backFrame = !backFrameOverride.empty() ? std::move(backFrameOverride) : "rotation";
-  m_primaryHand.frontFrame = !frontFrameOverride.empty() ? std::move(frontFrameOverride) : "rotation";
+void Humanoid::setHandFrameOverrides(ToolHand hand, StringView back, StringView front) {
+  auto& handInfo = const_cast<HandDrawingInfo&>(getHand(hand));
+  // some users stick directives in these?? better make sure they don't break with custom clothing
+  size_t  backEnd =  back.utf8().find('?');
+  size_t frontEnd = front.utf8().find('?');
+  Directives  backDirectives =  backEnd == NPos ? Directives() : Directives( back.utf8().substr( backEnd));
+  Directives frontDirectives = frontEnd == NPos ? Directives() : Directives(front.utf8().substr(frontEnd));
+  if ( backEnd != NPos)  back =  back.utf8().substr(0,  backEnd);
+  if (frontEnd != NPos) front = front.utf8().substr(0, frontEnd);
+  handInfo. backFrame = ! back.empty() ? std::move( back) : "rotation";
+  handInfo.frontFrame = !front.empty() ? std::move(front) : "rotation";
+  handInfo. backDirectives = ! backDirectives.empty() ? std::move( backDirectives) : Directives();
+  handInfo.frontDirectives = !frontDirectives.empty() ? std::move(frontDirectives) : Directives();
 }
 
-void Humanoid::setPrimaryHandDrawables(List<Drawable> drawables) {
-  m_primaryHand.itemDrawables = std::move(drawables);
+void Humanoid::setHandDrawables(ToolHand hand, List<Drawable> drawables) {
+  const_cast<HandDrawingInfo&>(getHand(hand)).itemDrawables = std::move(drawables);
 }
 
-void Humanoid::setPrimaryHandNonRotatedDrawables(List<Drawable> drawables) {
-  m_primaryHand.nonRotatedDrawables = std::move(drawables);
+void Humanoid::setHandNonRotatedDrawables(ToolHand hand, List<Drawable> drawables) {
+  const_cast<HandDrawingInfo&>(getHand(hand)).nonRotatedDrawables = std::move(drawables);
 }
 
-bool Humanoid::primaryHandHoldingItem() const {
-  return m_primaryHand.holdingItem;
-}
-
-void Humanoid::setAltHandParameters(bool holdingItem, float angle, float itemAngle, bool recoil,
-    bool outsideOfHand) {
-  m_altHand.holdingItem = holdingItem;
-  m_altHand.angle = angle;
-  m_altHand.itemAngle = itemAngle;
-  m_altHand.recoil = recoil;
-  m_altHand.outsideOfHand = outsideOfHand;
-}
-
-void Humanoid::setAltHandFrameOverrides(String backFrameOverride, String frontFrameOverride) {
-  m_altHand.backFrame = !backFrameOverride.empty() ? std::move(backFrameOverride) : "rotation";
-  m_altHand.frontFrame = !frontFrameOverride.empty() ? std::move(frontFrameOverride) : "rotation";
-}
-
-void Humanoid::setAltHandDrawables(List<Drawable> drawables) {
-  m_altHand.itemDrawables = std::move(drawables);
-}
-
-void Humanoid::setAltHandNonRotatedDrawables(List<Drawable> drawables) {
-  m_altHand.nonRotatedDrawables = std::move(drawables);
-}
-
-bool Humanoid::altHandHoldingItem() const {
-  return m_altHand.holdingItem;
+bool Humanoid::handHoldingItem(ToolHand hand) const {
+  return getHand(hand).holdingItem;
 }
 
 void Humanoid::animate(float dt) {
@@ -631,6 +617,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
     String image = strf("{}:{}{}", frameSet, backHand.backFrame, directives.prefix());
     Drawable backArm = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, backArmFrameOffset);
     backArm.imagePart().addDirectives(directives, true);
+    backArm.imagePart().addDirectives(backHand.backDirectives, true);
     backArm.rotate(backHand.angle, backArmFrameOffset + m_backArmRotationCenter + m_backArmOffset);
     return backArm;
   };
@@ -861,6 +848,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
     String image = strf("{}:{}{}", frameSet, frontHand.frontFrame, directives.prefix());
     Drawable frontArm = Drawable::makeImage(image, 1.0f / TilePixels, true, frontArmFrameOffset);
     frontArm.imagePart().addDirectives(directives, true);
+    frontArm.imagePart().addDirectives(frontHand.frontDirectives, true);
     frontArm.rotate(frontHand.angle, frontArmFrameOffset + m_frontArmRotationCenter);
     return frontArm;
   };
@@ -1231,6 +1219,10 @@ Vec2F Humanoid::altHandOffset(Direction facingDirection) const {
     return m_frontHandPosition - m_backArmRotationCenter;
   else
     return m_frontHandPosition - m_frontArmRotationCenter;
+}
+
+Humanoid::HandDrawingInfo const& Humanoid::getHand(ToolHand hand) const {
+  return hand == ToolHand::Primary ? m_primaryHand : m_altHand;
 }
 
 String Humanoid::frameBase(State state) const {
