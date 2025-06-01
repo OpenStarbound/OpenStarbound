@@ -432,4 +432,23 @@ uint8_t AnimatedPartSet::version() const {
   return m_animatorVersion;
 }
 
+Json AnimatedPartSet::getStateFrameProperty(String const & stateTypeName, String const & propertyName, String stateName, int frame) const {
+  auto stateType = m_stateTypes.get(stateTypeName);
+  auto state = stateType.states.get(stateName);
+  if (auto frameProperty = state->stateFrameProperties.maybe(propertyName))
+    if (frame < frameProperty.value().size())
+      return frameProperty.value().get(frame);
+  return state->stateProperties.maybe(propertyName).value(stateType.stateTypeProperties.maybe(propertyName).value(Json()));
+}
+
+Json AnimatedPartSet::getPartStateFrameProperty(String const & partName, String const & propertyName, String const & stateTypeName, String stateName, int frame) const {
+  auto part = m_parts.get(partName);
+  auto state = part.partStates.get(stateTypeName).get(stateName);
+  if (auto frameProperty = state.partStateFrameProperties.maybe(propertyName))
+    if (frame < frameProperty.value().size())
+      return frameProperty.value().get(frame);
+  return state.partStateProperties.maybe(propertyName).value(part.partProperties.maybe(propertyName).value(Json()));
+}
+
+
 }

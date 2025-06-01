@@ -10,7 +10,7 @@ LuaCallbacks LuaBindings::makeScriptedAnimatorCallbacks(NetworkedAnimator* netwo
   callbacks.registerCallback("animationParameter", getParameter);
   callbacks.registerCallbackWithSignature<Maybe<Vec2F>, String, String>("partPoint", bind(&NetworkedAnimator::partPoint, networkedAnimator, _1, _2));
   callbacks.registerCallbackWithSignature<Maybe<PolyF>, String, String>("partPoly", bind(&NetworkedAnimator::partPoly, networkedAnimator, _1, _2));
-  callbacks.registerCallbackWithSignature<Json, String, String>("partProperty", bind(&NetworkedAnimator::partProperty, networkedAnimator, _1, _2));
+  callbacks.registerCallbackWithSignature<Json, String, String, Maybe<String>, Maybe<String>, Maybe<int>>("partProperty", bind(&NetworkedAnimator::partProperty, networkedAnimator, _1, _2, _3, _4, _5));
 
   callbacks.registerCallback("transformPoint", [networkedAnimator] (Vec2F point, String const& part) -> Vec2F {
       return networkedAnimator->partTransformation(part).transformVec2(point);
@@ -22,8 +22,8 @@ LuaCallbacks LuaBindings::makeScriptedAnimatorCallbacks(NetworkedAnimator* netwo
 
   callbacks.registerCallbackWithSignature<bool, String, String, bool, bool>(
       "setLocalAnimationState", bind(&NetworkedAnimator::setLocalState, networkedAnimator, _1, _2, _3, _4));
-  callbacks.registerCallbackWithSignature<Json, String, String>(
-      "animationStateProperty", bind(&NetworkedAnimator::stateProperty, networkedAnimator, _1, _2));
+  callbacks.registerCallbackWithSignature<Json, String, String, Maybe<String>, Maybe<int>>(
+      "animationStateProperty", bind(&NetworkedAnimator::stateProperty, networkedAnimator, _1, _2, _3, _4));
   callbacks.registerCallbackWithSignature<Json, String, String>(
       "animationStateNextProperty", bind(&NetworkedAnimator::stateNextProperty, networkedAnimator, _1, _2));
   callbacks.registerCallbackWithSignature<String, String>(

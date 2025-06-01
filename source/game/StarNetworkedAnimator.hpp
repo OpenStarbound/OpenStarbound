@@ -95,9 +95,10 @@ public:
   // Queries, if it exists, a property value from the underlying
   // AnimatedPartSet for the given state or part.  If the property does not
   // exist, returns null.
-  Json stateProperty(String const& stateType, String const& propertyName) const;
+  Json stateProperty(String const& stateType, String const& propertyName, Maybe<String> state = {}, Maybe<int> frame = {}) const;
   Json stateNextProperty(String const& stateType, String const& propertyName) const;
-  Json partProperty(String const& partName, String const& propertyName) const;
+  Json partProperty(String const& partName, String const& propertyName, Maybe<String> stateType = {}, Maybe<String> state = {}, Maybe<int> frame = {}) const;
+  Json partNextProperty(String const & partName, String const & propertyName) const;
 
   // Returns the transformation from flipping and zooming that is applied to
   // all parts in the NetworkedAnimator.

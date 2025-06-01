@@ -358,15 +358,22 @@ StringList NetworkedAnimator::partNames() const {
   return m_animatedParts.partNames();
 }
 
-Json NetworkedAnimator::stateProperty(String const& stateType, String const& propertyName) const {
+Json NetworkedAnimator::stateProperty(String const& stateType, String const& propertyName, Maybe<String> state, Maybe<int> frame) const {
+  if (state.isValid())
+    return m_animatedParts.getStateFrameProperty(stateType, propertyName, *state, *frame);
   return m_animatedParts.activeState(stateType).properties.value(propertyName);
 }
 Json NetworkedAnimator::stateNextProperty(String const& stateType, String const& propertyName) const {
   return m_animatedParts.activeState(stateType).nextProperties.value(propertyName);
 }
 
-Json NetworkedAnimator::partProperty(String const& partName, String const& propertyName) const {
+Json NetworkedAnimator::partProperty(String const& partName, String const& propertyName, Maybe<String> stateType, Maybe<String> state, Maybe<int> frame) const {
+  if (stateType.isValid())
+    return m_animatedParts.getPartStateFrameProperty(partName, propertyName, *stateType, *state, *frame);
   return m_animatedParts.activePart(partName).properties.value(propertyName);
+}
+Json NetworkedAnimator::partNextProperty(String const& partName, String const& propertyName) const {
+  return m_animatedParts.activePart(partName).nextProperties.value(propertyName);
 }
 
 Mat3F NetworkedAnimator::globalTransformation() const {

@@ -170,6 +170,9 @@ public:
 
   uint8_t version() const;
 
+  Json getStateFrameProperty(String const& stateType, String const& propertyName, String state, int frame) const;
+  Json getPartStateFrameProperty(String const& partName, String const& propertyName, String const& stateType, String state, int frame) const;
+
 private:
   static AnimationMode stringToAnimationMode(String const& string);
 
