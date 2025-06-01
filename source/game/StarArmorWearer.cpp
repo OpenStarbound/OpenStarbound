@@ -49,11 +49,13 @@ void ArmorWearer::setupHumanoidClothingDrawables(Humanoid& humanoid, bool forceN
       humanoid.setHeadArmorFrameset(headArmor->frameset(humanoid.identity().gender));
       humanoid.setHeadArmorDirectives(headArmor->directives());
       humanoid.setHelmetMaskDirectives(headArmor->maskDirectives());
+      humanoid.setHeadArmorTags(headArmor->humanoidAnimationTags());
     }
     bodyHidden = bodyHidden || headArmor->hideBody();
   } else {
     humanoid.setHeadArmorFrameset("");
     humanoid.setHelmetMaskDirectives("");
+    humanoid.setHeadArmorTags();
   }
 
   Json humanoidConfig;
@@ -74,6 +76,7 @@ void ArmorWearer::setupHumanoidClothingDrawables(Humanoid& humanoid, bool forceN
       humanoid.setFrontSleeveFrameset(chestArmor->frontSleeveFrameset(humanoid.identity().gender));
       humanoid.setChestArmorFrameset(chestArmor->bodyFrameset(humanoid.identity().gender));
       humanoid.setChestArmorDirectives(chestArmor->directives());
+      humanoid.setChestArmorTags(chestArmor->humanoidAnimationTags());
       addHumanoidConfig(*chestArmor);
     }
     bodyHidden = bodyHidden || chestArmor->hideBody();
@@ -81,6 +84,7 @@ void ArmorWearer::setupHumanoidClothingDrawables(Humanoid& humanoid, bool forceN
     humanoid.setBackSleeveFrameset("");
     humanoid.setFrontSleeveFrameset("");
     humanoid.setChestArmorFrameset("");
+    humanoid.setChestArmorTags();
   }
 
   LegsArmorPtr const& legsArmor = m_legsCosmeticItem ? m_legsCosmeticItem : m_legsItem;
@@ -88,11 +92,13 @@ void ArmorWearer::setupHumanoidClothingDrawables(Humanoid& humanoid, bool forceN
     if (legsNeedsSync) {
       humanoid.setLegsArmorFrameset(legsArmor->frameset(humanoid.identity().gender));
       humanoid.setLegsArmorDirectives(legsArmor->directives());
+      humanoid.setLegsArmorTags(legsArmor->humanoidAnimationTags());
       addHumanoidConfig(*legsArmor);
     }
     bodyHidden = bodyHidden || legsArmor->hideBody();
   } else {
     humanoid.setLegsArmorFrameset("");
+    humanoid.setLegsArmorTags();
   }
 
   BackArmorPtr const& backArmor = m_backCosmeticItem ? m_backCosmeticItem : m_backItem;
@@ -101,11 +107,13 @@ void ArmorWearer::setupHumanoidClothingDrawables(Humanoid& humanoid, bool forceN
       humanoid.setBackArmorFrameset(backArmor->frameset(humanoid.identity().gender));
       humanoid.setBackArmorDirectives(backArmor->directives());
       humanoid.setBackRotatesWithHead(backArmor->instanceValue("rotateWithHead", false).optBool().value());
+      humanoid.setBackArmorTags(backArmor->humanoidAnimationTags());
     }
     bodyHidden = bodyHidden || backArmor->hideBody();
   } else {
     humanoid.setBackArmorFrameset("");
     humanoid.setBackRotatesWithHead(false);
+    humanoid.setBackArmorTags();
   }
 
   if (chestNeedsSync || legsNeedsSync) {

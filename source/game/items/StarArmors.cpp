@@ -25,6 +25,8 @@ ArmorItem::ArmorItem(Json const& config, String const& directory, Json const& da
     m_directives = "?" + m_colorOptions.wrap(instanceValue("colorIndex", 0).toUInt());
   refreshIconDrawables();
 
+  m_humanoindAnimationTags = instanceValue("humanoidAnimationTags").optObject();
+
   m_hideBody = config.getBool("hideBody", false);
 }
 
@@ -65,6 +67,11 @@ bool ArmorItem::hideBody() const {
 Maybe<String> const& ArmorItem::techModule() const {
   return m_techModule;
 }
+
+Maybe<JsonObject> const & ArmorItem::humanoidAnimationTags() const {
+  return m_humanoindAnimationTags;
+}
+
 
 void ArmorItem::refreshIconDrawables() {
   auto drawables = iconDrawables();

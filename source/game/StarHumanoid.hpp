@@ -103,6 +103,7 @@ public:
 
   static bool& globalHeadRotation();
 
+  Humanoid();
   Humanoid(Json const& config);
   Humanoid(HumanoidIdentity const& identity, Json config = Json());
   Humanoid(Humanoid const&) = default;
@@ -128,7 +129,7 @@ public:
   void setIdentity(HumanoidIdentity const& identity, Json config = Json());
   HumanoidIdentity const& identity() const;
 
-  void loadConfig(Json merger = JsonObject());
+  void loadConfig(Json merger = JsonObject(), bool force = false);
 
   // All of the image identifiers here are meant to be image *base* names, with
   // a collection of frames specific to each piece.  If an image is set to
@@ -159,6 +160,11 @@ public:
 
   void setHelmetMaskDirectives(Directives helmetMaskDirectives);
 
+  void setHeadArmorTags(Maybe<JsonObject> tags = {});
+  void setChestArmorTags(Maybe<JsonObject> tags = {});
+  void setLegsArmorTags(Maybe<JsonObject> tags = {});
+  void setBackArmorTags(Maybe<JsonObject> tags = {});
+
   // Getters for all of the above
   Directives const& headArmorDirectives() const;
   String const& headArmorFrameset() const;
@@ -170,6 +176,11 @@ public:
   String const& legsArmorFrameset() const;
   Directives const& backArmorDirectives() const;
   String const& backArmorFrameset() const;
+
+  Maybe<JsonObject> getHeadArmorTags() const;
+  Maybe<JsonObject> getChestArmorTags() const;
+  Maybe<JsonObject> getLegsArmorTags() const;
+  Maybe<JsonObject> getBackArmorTags() const;
 
   void setBodyHidden(bool hidden);
 
@@ -277,6 +288,10 @@ public:
 
   pair<Maybe<Json>,String> getAnimation() const;
 
+  NetworkedAnimator * networkedAnimator();
+  NetworkedAnimator const* networkedAnimator() const;
+  NetworkedAnimator::DynamicTarget * networkedAnimatorDynamicTarget();
+
   // Extracts scalenearest from directives and returns the combined scale and
   // a new Directives without those scalenearest directives.
   static pair<Vec2F, Directives> extractScaleFromDirectives(Directives const& directives);
@@ -315,6 +330,8 @@ private:
 
   Maybe<DancePtr> getDance() const;
 
+  void refreshAnimationState(bool startNew = false);
+
   Json m_baseConfig;
   Json m_mergeConfig;
 
@@ -352,6 +369,8 @@ private:
   Vec2F m_backArmRotationCenter;
   Vec2F m_frontHandPosition;
   Vec2F m_backArmOffset;
+
+  Vec2F m_headRotationCenter;
 
   String m_headFrameset;
   String m_bodyFrameset;
@@ -412,32 +431,42 @@ private:
   Json m_defaultMovementParameters;
   Maybe<Json> m_playerMovementParameters;
   Maybe<Json> m_animationConfig;
+  String m_animationPath;
 
-  // struct HumanoidAnimator : public NetElement {
-  //   HumanoidAnimator(pair<Maybe<Json>,String> animationConfig);
+  NetworkedAnimator m_networkedAnimator;
+  NetworkedAnimator::DynamicTarget m_networkedAnimatorDynamicTarget;
 
-  //   void initNetVersion(NetElementVersion const* version = nullptr) override;
+  struct AnimationStateArgs {
+    String state;
+    bool startNew;
+    bool reverse;
+  };
+  HashMap<Humanoid::State, HashMap<String,AnimationStateArgs>> m_animationStates;
+  HashMap<Humanoid::State, HashMap<String,AnimationStateArgs>> m_animationStatesBackwards;
+  HashMap<HumanoidEmote, HashMap<String,AnimationStateArgs>> m_emoteAnimationStates;
+  HashMap<PortraitMode, HashMap<String,AnimationStateArgs>> m_portraitAnimationStates;
 
-  //   void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
-  //   void netLoad(DataStream& ds, NetCompatibilityRules rules) override;
+  pair<String, String> m_headRotationPoint;
+  pair<String, String> m_frontArmRotationPoint;
+  pair<String, String> m_backArmRotationPoint;
 
-  //   void enableNetInterpolation(float extrapolationHint = 0.0f) override;
-  //   void disableNetInterpolation() override;
-  //   void tickNetInterpolation(float dt) override;
+  String m_frontItemPart;
+  String m_backItemPart;
 
-  //   bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
-  //   void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
-  //   void blankNetDelta(float interpolationTime) override;
+  pair<String, String> m_mouthOffsetPoint;
+  pair<String, String> m_headArmorOffsetPoint;
+  pair<String, String> m_chestArmorOffsetPoint;
+  pair<String, String> m_legsArmorOffsetPoint;
+  pair<String, String> m_backArmorOffsetPoint;
+  pair<String, String> m_feetOffsetPoint;
+  pair<String, String> m_throwPoint;
+  pair<String, String> m_interactPoint;
 
-  //   pair<Maybe<Json>,String> animationConfig;
-  //   NetworkedAnimator animator;
-  //   NetworkedAnimator::DynamicTarget dynamicTarget;
-  //   NetElementGroup netGroup;
-  // };
+  Maybe<JsonObject> m_headArmorTags;
+  Maybe<JsonObject> m_chestArmorTags;
+  Maybe<JsonObject> m_legsArmorTags;
+  Maybe<JsonObject> m_backArmorTags;
 
-  // typedef NetElementDynamicGroup<HumanoidAnimator> HumanoidAnimatorGroup;
-
-  // HumanoidAnimatorGroup m_humanoidAnimators;
 };
 
 }

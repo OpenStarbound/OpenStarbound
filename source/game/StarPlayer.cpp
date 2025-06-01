@@ -427,6 +427,7 @@ List<Particle> Player::particles() {
   List<Particle> particles;
   particles.appendAll(m_config->splashConfig.doSplash(position(), m_movementController->velocity(), world()));
   particles.appendAll(take(m_callbackParticles));
+  particles.appendAll(m_humanoid->networkedAnimatorDynamicTarget()->pullNewParticles());
   particles.appendAll(m_techController->pullNewParticles());
   particles.appendAll(m_statusController->pullNewParticles());
 
@@ -494,6 +495,7 @@ List<LightSource> Player::lightSources() const {
   lights.appendAll(m_tools->lightSources());
   lights.appendAll(m_statusController->lightSources());
   lights.appendAll(m_techController->lightSources());
+  lights.appendAll(m_humanoid->networkedAnimator()->lightSources());
   return lights;
 }
 
@@ -1010,7 +1012,6 @@ void Player::update(float dt, uint64_t) {
     m_statusController->tickSlave(dt);
   }
 
-  m_humanoid->setMovingBackwards(false);
   m_humanoid->setRotation(m_movementController->rotation());
 
   bool suppressedItems = !canUseTool();
@@ -1129,6 +1130,9 @@ void Player::render(RenderCallback* renderCallback) {
     m_techController->pullNewParticles();
     m_statusController->pullNewAudios();
     m_statusController->pullNewParticles();
+
+    m_humanoid->networkedAnimatorDynamicTarget()->pullNewAudios();
+    m_humanoid->networkedAnimatorDynamicTarget()->pullNewParticles();
     return;
   }
 
@@ -1161,6 +1165,7 @@ void Player::render(RenderCallback* renderCallback) {
 
   renderCallback->addAudios(m_techController->pullNewAudios());
   renderCallback->addAudios(m_statusController->pullNewAudios());
+  renderCallback->addAudios(m_humanoid->networkedAnimatorDynamicTarget()->pullNewAudios());
 
   for (auto const& p : take(m_callbackSounds)) {
     auto audio = make_shared<AudioInstance>(*Root::singleton().assets()->audio(get<0>(p)));

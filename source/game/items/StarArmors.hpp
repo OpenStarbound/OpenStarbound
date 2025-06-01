@@ -37,6 +37,8 @@ public:
 
   Maybe<String> const& techModule() const;
 
+  Maybe<JsonObject> const& humanoidAnimationTags() const;
+
 private:
   void refreshIconDrawables();
   void refreshStatusEffects();
@@ -47,6 +49,8 @@ private:
   Directives m_directives;
   bool m_hideBody;
   Maybe<String> m_techModule;
+
+  Maybe<JsonObject> m_humanoindAnimationTags;
 };
 
 class HeadArmor : public ArmorItem, public PreviewableItem {

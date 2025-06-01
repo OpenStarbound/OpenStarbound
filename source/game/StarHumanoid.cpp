@@ -27,6 +27,24 @@ extern EnumMap<HumanoidEmote> const HumanoidEmoteNames{
   {HumanoidEmote::Sleep, "Sleep"}
 };
 
+// Raptor - I hate the fact that its inconsistent between the strings used in the map above and with the switch case down below
+extern EnumMap<HumanoidEmote> const HumanoidEmoteFrameBaseNames{
+  {HumanoidEmote::Idle, "idle"},
+  {HumanoidEmote::Blabbering, "blabber"},
+  {HumanoidEmote::Shouting, "shout"},
+  {HumanoidEmote::Happy, "happy"},
+  {HumanoidEmote::Sad, "sad"},
+  {HumanoidEmote::NEUTRAL, "neutral"},
+  {HumanoidEmote::Laugh, "laugh"},
+  {HumanoidEmote::Annoyed, "annoyed"},
+  {HumanoidEmote::Oh, "oh"},
+  {HumanoidEmote::OOOH, "oooh"},
+  {HumanoidEmote::Blink, "blink"},
+  {HumanoidEmote::Wink, "wink"},
+  {HumanoidEmote::Eat, "eat"},
+  {HumanoidEmote::Sleep, "sleep"}
+};
+
 Personality parsePersonalityArray(Json const& config) {
   return Personality{config.getString(0), config.getString(1), jsonToVec2F(config.get(2)), jsonToVec2F(config.get(3))};
 }
@@ -250,10 +268,7 @@ bool& Humanoid::globalHeadRotation() {
   return *s_headRotation;
 };
 
-Humanoid::Humanoid(Json const& config) {
-  m_baseConfig = config;
-  loadConfig(JsonObject());
-
+Humanoid::Humanoid() {
   m_twoHanded = false;
   m_primaryHand.holdingItem = false;
   m_altHand.holdingItem = false;
@@ -273,16 +288,28 @@ Humanoid::Humanoid(Json const& config) {
   m_animationTimer = m_emoteAnimationTimer = m_danceTimer = 0.0f;
 }
 
-Humanoid::Humanoid(HumanoidIdentity const& identity, Json config)
-  : Humanoid(Root::singleton().speciesDatabase()->humanoidConfig(identity, config)) {
-  setIdentity(identity, config);
+Humanoid::Humanoid(Json const& config) : Humanoid() {
+  m_baseConfig = config;
+  loadConfig(JsonObject());
+  m_animationPath = ("/humanoid/" + m_identity.imagePath.value(m_identity.species) + "/");
+  m_networkedAnimator = m_animationConfig.isValid() ? NetworkedAnimator(*m_animationConfig, m_animationPath) : NetworkedAnimator();
+}
+
+Humanoid::Humanoid(HumanoidIdentity const& identity, Json config) : Humanoid() {
+  m_identity = identity;
+  m_baseConfig = (Root::singleton().speciesDatabase()->humanoidConfig(m_identity, config));
+  loadConfig(JsonObject());
+  m_animationPath = ("/humanoid/" + m_identity.imagePath.value(m_identity.species) + "/");
+  m_networkedAnimator = m_animationConfig.isValid() ? NetworkedAnimator(*m_animationConfig, m_animationPath) : NetworkedAnimator();
+  setIdentity(m_identity, config);
 }
 
 void Humanoid::setIdentity(HumanoidIdentity const& identity, Json config) {
-  if ((identity.species != m_identity.species) || (identity.gender != m_identity.gender)) {
-    auto newConfig = Root::singleton().speciesDatabase()->humanoidConfig(identity, config);
-    m_baseConfig = newConfig;
-    loadConfig(newConfig); // I don't actually need to merge it, this is just to make sure it actually reloads
+  if ((identity.species != m_identity.species) || (identity.gender != m_identity.gender) || (identity.imagePath != m_identity.imagePath)) {
+    m_baseConfig = Root::singleton().speciesDatabase()->humanoidConfig(identity, config);
+    loadConfig(JsonObject(), true);
+    m_animationPath = ("/humanoid/" + identity.imagePath.value(identity.species) + "/");
+    m_networkedAnimator = m_animationConfig.isValid() ? NetworkedAnimator(*m_animationConfig, m_animationPath) : NetworkedAnimator();
   }
   m_identity = identity;
   m_headFrameset = getHeadFromIdentity();
@@ -300,14 +327,61 @@ void Humanoid::setIdentity(HumanoidIdentity const& identity, Json config) {
   if (m_useBodyHeadMask) {
     m_bodyHeadMaskFrameset = getBodyHeadMaskFromIdentity();
   }
+  if (m_animationConfig.isValid()) {
+    m_networkedAnimator.setLocalTag("name", m_identity.name);
+    m_networkedAnimator.setLocalTag("species", m_identity.species);
+    m_networkedAnimator.setLocalTag("gender", GenderNames.getRight(m_identity.gender));
+    m_networkedAnimator.setLocalTag("hairGroup", m_identity.hairGroup);
+    m_networkedAnimator.setLocalTag("hairType", m_identity.hairType);
+    m_networkedAnimator.setLocalTag("hairDirectives", m_identity.hairDirectives.string());
+    m_networkedAnimator.setLocalTag("bodyDirectives", m_identity.bodyDirectives.string());
+    m_networkedAnimator.setLocalTag("emoteDirectives", m_identity.emoteDirectives.string());
+    m_networkedAnimator.setLocalTag("facialHairGroup", m_identity.facialHairGroup);
+    m_networkedAnimator.setLocalTag("facialHairType", m_identity.facialHairType);
+    m_networkedAnimator.setLocalTag("facialHairDirectives", m_identity.facialHairDirectives.string());
+    m_networkedAnimator.setLocalTag("facialMaskGroup", m_identity.facialHairGroup);
+    m_networkedAnimator.setLocalTag("facialMaskType", m_identity.facialHairType);
+    m_networkedAnimator.setLocalTag("facialMaskDirectives", m_identity.facialMaskDirectives.string());
+    m_networkedAnimator.setLocalTag("personalityIdle", m_identity.personality.idle);
+    m_networkedAnimator.setLocalTag("personalityArmIdle", m_identity.personality.armIdle);
+    m_networkedAnimator.resetLocalTransformationGroup("personalityHeadOffset");
+    m_networkedAnimator.translateLocalTransformationGroup("personalityHeadOffset", m_identity.personality.headOffset / TilePixels);
+    m_networkedAnimator.resetLocalTransformationGroup("personalityArmOffset");
+    m_networkedAnimator.translateLocalTransformationGroup("personalityArmOffset", m_identity.personality.armOffset / TilePixels);
+
+    m_networkedAnimator.setLocalTag("headArmorFrameset", m_headArmorFrameset);
+    m_networkedAnimator.setLocalTag("headArmorDirectives", m_headArmorDirectives.string());
+    if (m_headArmorTags)
+      for (auto tag : *m_headArmorTags)
+        m_networkedAnimator.setLocalTag(tag.first, tag.second.toString());
+    m_networkedAnimator.setLocalTag("chestArmorFrameset", m_chestArmorFrameset);
+    m_networkedAnimator.setLocalTag("chestArmorDirectives", m_chestArmorDirectives.string());
+    if (m_chestArmorTags)
+      for (auto tag : *m_chestArmorTags)
+        m_networkedAnimator.setLocalTag(tag.first, tag.second.toString());
+    m_networkedAnimator.setLocalTag("legsArmorFrameset", m_legsArmorFrameset);
+    m_networkedAnimator.setLocalTag("legsArmorDirectives", m_legsArmorDirectives.string());
+    if (m_legsArmorTags)
+      for (auto tag : *m_legsArmorTags)
+        m_networkedAnimator.setLocalTag(tag.first, tag.second.toString());
+    m_networkedAnimator.setLocalTag("backArmorFrameset", m_backArmorFrameset);
+    m_networkedAnimator.setLocalTag("backArmorDirectives", m_backArmorDirectives.string());
+    if (m_backArmorTags)
+      for (auto tag : *m_backArmorTags)
+        m_networkedAnimator.setLocalTag(tag.first, tag.second.toString());
+
+    m_networkedAnimator.setLocalTag("frontSleeveFrameset", m_frontSleeveFrameset);
+    m_networkedAnimator.setLocalTag("backSleeveFrameset", m_frontSleeveFrameset);
+    m_networkedAnimator.setLocalTag("helmetMaskDirectives", m_helmetMaskDirectives.string());
+  }
 }
 
 HumanoidIdentity const& Humanoid::identity() const {
   return m_identity;
 }
 
-void Humanoid::loadConfig(Json merger) {
-  if (m_mergeConfig == merger)
+void Humanoid::loadConfig(Json merger, bool force) {
+  if ((m_mergeConfig == merger) && !force)
     return;
 
   m_mergeConfig = merger;
@@ -366,51 +440,197 @@ void Humanoid::loadConfig(Json merger) {
   m_defaultMovementParameters = config.get("movementParameters");
   m_playerMovementParameters = config.opt("playerMovementParameters");
 
+  m_headRotationCenter = jsonToVec2F(config.getArray("headRotationCenter", JsonArray{0,-2})) / TilePixels;
+
   m_animationConfig = config.opt("animation");
+
+  m_animationStates.clear();
+  m_animationStatesBackwards.clear();
+  m_emoteAnimationStates.clear();
+  m_portraitAnimationStates.clear();
+
+  if (m_animationConfig.isValid()) {
+    m_frontItemPart = config.getString("frontHandItemPart", "frontHandItem");
+    m_backItemPart = config.getString("backHandItemPart", "backHandItem");
+
+    m_headRotationPoint = {config.getString("headRotationPart", "head"), config.getString("headRotationPartPoint", "rotationCenter")};
+    m_frontArmRotationPoint = {config.getString("frontArmRotationPart", "frontArm"), config.getString("frontArmRotationPartPoint", "rotationCenter")};
+    m_backArmRotationPoint = {config.getString("backArmRotationPart", "backArm"), config.getString("backArmRotationPartPoint", "rotationCenter")};
+
+    m_mouthOffsetPoint = {config.getString("mouthOffsetPart", "head"), config.getString("mouthOffsetPartPoint", "mouthOffset")};
+    m_headArmorOffsetPoint = {config.getString("headArmorOffsetPart", "head_cosmetic"), config.getString("headArmorOffsetPartPoint", "armorOffset")};
+    m_chestArmorOffsetPoint = {config.getString("chestArmorOffsetPart", "chest_cosmetic"), config.getString("chestArmorOffsetPartPoint", "armorOffset")};
+    m_legsArmorOffsetPoint = {config.getString("legsArmorOffsetPart", "legs_cosmetic"), config.getString("legsArmorOffsetPartPoint", "armorOffset")};
+    m_backArmorOffsetPoint = {config.getString("backArmorOffsetPart", "back_cosmetic"), config.getString("backArmorOffsetPartPoint", "armorOffset")};
+    m_feetOffsetPoint = {config.getString("feetOffsetPart", "body"), config.getString("feetOffsetPartPoint", "feetOffset")};
+    m_throwPoint = {config.getString("throwPart", "head"), config.getString("throwPartPoint", "mouthOffset")};
+    m_interactPoint = {config.getString("interactPart", "body"), config.getString("interactPartPoint", "interact")};
+
+
+    for (auto pair : config.getObject("stateAnimations", JsonObject())) {
+      HashMap<String,AnimationStateArgs> animations;
+      for (auto anim : pair.second.iterateObject()){
+        auto args = anim.second.toArray();
+        animations.set(anim.first, {args[0].toString(), args[1].toBool(), args[2].toBool()});
+      }
+      m_animationStates.set(StateNames.getLeft(pair.first), animations);
+    }
+    for (auto pair : config.getObject("stateAnimationsBackwards", JsonObject())) {
+      HashMap<String,AnimationStateArgs> animations;
+      for (auto anim : pair.second.iterateObject()){
+        auto args = anim.second.toArray();
+        animations.set(anim.first, {args[0].toString(), args[1].toBool(), args[2].toBool()});
+      }
+      m_animationStatesBackwards.set(StateNames.getLeft(pair.first), animations);
+    }
+    for (auto pair : config.getObject("emoteAnimations", JsonObject())) {
+      HashMap<String,AnimationStateArgs> animations;
+      for (auto anim : pair.second.iterateObject()){
+        auto args = anim.second.toArray();
+        animations.set(anim.first, {args[0].toString(), args[1].toBool(), args[2].toBool()});
+      }
+      m_emoteAnimationStates.set(HumanoidEmoteFrameBaseNames.getLeft(pair.first), animations);
+    }
+    for (auto pair : config.getObject("portraitAnimations", JsonObject())) {
+      HashMap<String,AnimationStateArgs> animations;
+      for (auto anim : pair.second.iterateObject()){
+        auto args = anim.second.toArray();
+        animations.set(anim.first, {args[0].toString(), args[1].toBool(), args[2].toBool()});
+      }
+      m_portraitAnimationStates.set(PortraitModeNames.getLeft(pair.first), animations);
+
+    }
+  }
 }
 
 void Humanoid::setHeadArmorDirectives(Directives directives) {
+  if (m_animationConfig.isValid())
+    m_networkedAnimator.setLocalTag("headArmorDirectives", directives.string());
   m_headArmorDirectives = std::move(directives);
 }
 
 void Humanoid::setHeadArmorFrameset(String headFrameset) {
+  if (m_animationConfig.isValid())
+    m_networkedAnimator.setLocalTag("headArmorFrameset", headFrameset);
   m_headArmorFrameset = std::move(headFrameset);
 }
 
 void Humanoid::setChestArmorDirectives(Directives directives) {
+  if (m_animationConfig.isValid())
+    m_networkedAnimator.setLocalTag("chestArmorDirectives", directives.string());
   m_chestArmorDirectives = std::move(directives);
 }
 
-void Humanoid::setChestArmorFrameset(String chest) {
-  m_chestArmorFrameset = std::move(chest);
+void Humanoid::setChestArmorFrameset(String chestFrameset) {
+  if (m_animationConfig.isValid())
+    m_networkedAnimator.setLocalTag("chestArmorFrameset", chestFrameset);
+  m_chestArmorFrameset = std::move(chestFrameset);
 }
 
 void Humanoid::setBackSleeveFrameset(String backSleeveFrameset) {
+  if (m_animationConfig.isValid())
+    m_networkedAnimator.setLocalTag("backSleeveFrameset", backSleeveFrameset);
   m_backSleeveFrameset = std::move(backSleeveFrameset);
 }
 
 void Humanoid::setFrontSleeveFrameset(String frontSleeveFrameset) {
+  if (m_animationConfig.isValid())
+    m_networkedAnimator.setLocalTag("frontSleeveFrameset", frontSleeveFrameset);
   m_frontSleeveFrameset = std::move(frontSleeveFrameset);
 }
 
 void Humanoid::setLegsArmorDirectives(Directives directives) {
+  if (m_animationConfig.isValid())
+    m_networkedAnimator.setLocalTag("legsArmorDirectives", directives.string());
   m_legsArmorDirectives = std::move(directives);
 }
 
 void Humanoid::setLegsArmorFrameset(String legsFrameset) {
+  if (m_animationConfig.isValid())
+    m_networkedAnimator.setLocalTag("legsArmorFrameset", legsFrameset);
   m_legsArmorFrameset = std::move(legsFrameset);
 }
 
 void Humanoid::setBackArmorDirectives(Directives directives) {
+  if (m_animationConfig.isValid())
+    m_networkedAnimator.setLocalTag("backArmorDirectives", directives.string());
   m_backArmorDirectives = std::move(directives);
 }
 
 void Humanoid::setBackArmorFrameset(String backFrameset) {
+  if (m_animationConfig.isValid())
+    m_networkedAnimator.setLocalTag("backArmorFrameset", backFrameset);
   m_backArmorFrameset = std::move(backFrameset);
 }
 
 void Humanoid::setHelmetMaskDirectives(Directives helmetMaskDirectives) {
+  if (m_animationConfig.isValid())
+    m_networkedAnimator.setLocalTag("helmetMaskDirectives", helmetMaskDirectives.string());
   m_helmetMaskDirectives = std::move(helmetMaskDirectives);
+}
+
+void Humanoid::setHeadArmorTags(Maybe<JsonObject> tags){
+  if (m_animationConfig.isValid() && (tags != m_headArmorTags)) {
+    if (m_headArmorTags)
+      for (auto tag : *m_headArmorTags)
+        m_networkedAnimator.setLocalTag(tag.first);
+    if (tags)
+      for (auto tag : *tags)
+        m_networkedAnimator.setLocalTag(tag.first, tag.second.toString());
+    m_headArmorTags = std::move(tags);
+  }
+}
+
+void Humanoid::setChestArmorTags(Maybe<JsonObject> tags){
+  if (m_animationConfig.isValid() && (tags != m_chestArmorTags)) {
+    if (m_chestArmorTags)
+      for (auto tag : *m_chestArmorTags)
+        m_networkedAnimator.setLocalTag(tag.first);
+    if (tags)
+      for (auto tag : *tags)
+        m_networkedAnimator.setLocalTag(tag.first, tag.second.toString());
+    m_chestArmorTags = std::move(tags);
+  }
+}
+
+void Humanoid::setLegsArmorTags(Maybe<JsonObject> tags){
+  if (m_animationConfig.isValid() && (tags != m_legsArmorTags)) {
+    if (m_legsArmorTags)
+      for (auto tag : *m_legsArmorTags)
+        m_networkedAnimator.setLocalTag(tag.first);
+    if (tags)
+      for (auto tag : *tags)
+        m_networkedAnimator.setLocalTag(tag.first, tag.second.toString());
+    m_legsArmorTags = std::move(tags);
+  }
+}
+
+void Humanoid::setBackArmorTags(Maybe<JsonObject> tags){
+  if (m_animationConfig.isValid() && (tags != m_backArmorTags)) {
+    if (m_backArmorTags)
+      for (auto tag : *m_backArmorTags)
+        m_networkedAnimator.setLocalTag(tag.first);
+    if (tags)
+      for (auto tag : *tags)
+        m_networkedAnimator.setLocalTag(tag.first, tag.second.toString());
+    m_backArmorTags = std::move(tags);
+  }
+}
+
+Maybe<JsonObject> Humanoid::getHeadArmorTags() const {
+  return m_headArmorTags;
+}
+
+Maybe<JsonObject> Humanoid::getChestArmorTags() const {
+  return m_chestArmorTags;
+}
+
+Maybe<JsonObject> Humanoid::getLegsArmorTags() const {
+  return m_legsArmorTags;
+}
+
+Maybe<JsonObject> Humanoid::getBackArmorTags() const {
+  return m_backArmorTags;
 }
 
 Directives const& Humanoid::headArmorDirectives() const {
@@ -458,15 +678,25 @@ void Humanoid::setBodyHidden(bool hidden) {
 }
 
 void Humanoid::setState(State state) {
-  if (m_state != state)
+  if (m_state != state) {
+    m_state = state;
     m_animationTimer = 0.0f;
-  m_state = state;
+    if (m_animationConfig.isValid())
+      refreshAnimationState();
+
+  }
 }
 
 void Humanoid::setEmoteState(HumanoidEmote state) {
-  if (m_emoteState != state)
+  if (m_emoteState != state) {
+    m_emoteState = state;
     m_emoteAnimationTimer = 0.0f;
-  m_emoteState = state;
+    if (m_animationConfig.isValid()) {
+      if (auto animationStates = m_emoteAnimationStates.maybe(m_emoteState))
+        for (auto args : *animationStates)
+          m_networkedAnimator.setLocalState(args.first, args.second.state, args.second.startNew, args.second.reverse);
+    }
+  }
 }
 
 void Humanoid::setDance(Maybe<String> const& dance) {
@@ -477,10 +707,16 @@ void Humanoid::setDance(Maybe<String> const& dance) {
 
 void Humanoid::setFacingDirection(Direction facingDirection) {
   m_facingDirection = facingDirection;
+  if (m_animationConfig.isValid())
+    m_networkedAnimator.setFlipped(m_facingDirection == Direction::Left);
 }
 
 void Humanoid::setMovingBackwards(bool movingBackwards) {
-  m_movingBackwards = movingBackwards;
+  if (m_movingBackwards != movingBackwards) {
+    m_movingBackwards = movingBackwards;
+    if (m_animationConfig.isValid())
+      refreshAnimationState();
+  }
 }
 
 void Humanoid::setHeadRotation(float headRotation) {
@@ -594,6 +830,7 @@ void Humanoid::animate(float dt) {
   m_headRotation = (headRotationTarget - (headRotationTarget - m_headRotation) * powf(.333333f, dt * 60.f));
 
   if (m_animationConfig.isValid()) {
+    m_networkedAnimator.update(dt, networkedAnimatorDynamicTarget());
   }
 }
 
@@ -602,15 +839,20 @@ void Humanoid::resetAnimation() {
   m_emoteAnimationTimer = 0.0f;
   m_danceTimer = 0.0f;
   m_headRotation = globalHeadRotation() ? 0.f : m_headRotationTarget;
+
+  if (m_animationConfig.isValid()) {
+    m_networkedAnimator.finishAnimations();
+    // reset set all animations and force startnew
+    if (auto animationStates = m_emoteAnimationStates.maybe(m_emoteState))
+      for (auto args : *animationStates)
+        m_networkedAnimator.setLocalState(args.first, args.second.state, true, args.second.reverse);
+    refreshAnimationState(true);
+  }
 }
 
 List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
   List<Drawable> drawables;
 
-  int armStateSeq = getArmStateSequence();
-  int bodyStateSeq = getBodyStateSequence();
-  int emoteStateSeq = getEmoteStateSequence();
-  float bobYOffset = getBobYOffset();
   Maybe<DancePtr> dance = getDance();
   Maybe<DanceStep> danceStep = {};
   if (dance.isValid()) {
@@ -623,7 +865,79 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
   auto frontHand = (m_facingDirection == Direction::Left || m_twoHanded) ? m_primaryHand : m_altHand;
   auto backHand = (m_facingDirection == Direction::Right || m_twoHanded) ? m_primaryHand : m_altHand;
 
-  if (!m_animationConfig) {
+  if (m_animationConfig.isValid()) {
+    m_networkedAnimator.resetLocalTransformationGroup("globalTransformation");
+    m_networkedAnimator.resetLocalTransformationGroup("headRotation");
+    m_networkedAnimator.resetLocalTransformationGroup("backArmorRotation");
+    if (m_headRotation != 0.f) {
+      float dir = numericalDirection(m_facingDirection);
+      float headX = (m_headRotation / ((float)Constants::pi * 2.f));
+      Vec2F translate = {
+        -(state() == State::Run ? (fmaxf(headX * dir, 0.f) * 2.f) * dir : headX),
+        -(fabsf(m_headRotation / ((float)Constants::pi * 4.f)))
+      };
+      auto rotationPoint = *m_networkedAnimator.partPoint(m_headRotationPoint.first, m_headRotationPoint.second); // assuming we want the point after other transformations
+      rotationPoint[0] *= dir;
+      m_networkedAnimator.rotateLocalTransformationGroup("headRotation", m_headRotation * dir, rotationPoint);
+      m_networkedAnimator.translateLocalTransformationGroup("headRotation", translate);
+
+      if (m_backRotatesWithHead) {
+        m_networkedAnimator.rotateLocalTransformationGroup("backArmorRotation", m_headRotation * dir, rotationPoint);
+        m_networkedAnimator.translateLocalTransformationGroup("backArmorRotation", translate);
+      }
+    }
+
+    m_networkedAnimator.setPartDrawables(m_backItemPart, {});
+    m_networkedAnimator.resetLocalTransformationGroup("backArmRotation");
+    m_networkedAnimator.rotateLocalTransformationGroup("backArmRotation",
+      backHand.angle,
+      jsonToVec2F(m_networkedAnimator.partProperty(m_backArmRotationPoint.first, m_backArmRotationPoint.second))
+    );
+    if (backHand.recoil)
+      m_networkedAnimator.translateLocalTransformationGroup("backArmRotation", m_recoilOffset);
+    if (backHand.holdingItem && !dance.isValid() && withItems) {
+      m_networkedAnimator.setLocalTag("backArmFrame", backHand.backFrame);
+      m_networkedAnimator.setLocalState("backArm", m_networkedAnimator.hasState("backArm", backHand.backFrame) ? backHand.backFrame : "rotation");
+      if (!m_twoHanded)
+        m_networkedAnimator.setPartDrawables(m_backItemPart, backHand.itemDrawables);
+      m_networkedAnimator.setLocalState("backHandItem", backHand.outsideOfHand ? "outside" : "inside");
+    } else {
+      m_networkedAnimator.setLocalState("backArm", "idle");
+    }
+
+    m_networkedAnimator.setPartDrawables(m_frontItemPart, {});
+    m_networkedAnimator.resetLocalTransformationGroup("frontArmRotation");
+    m_networkedAnimator.rotateLocalTransformationGroup("frontArmRotation",
+      frontHand.angle,
+      jsonToVec2F(m_networkedAnimator.partProperty(m_frontArmRotationPoint.first, m_frontArmRotationPoint.second))
+    );
+    if (frontHand.recoil)
+      m_networkedAnimator.translateLocalTransformationGroup("frontArmRotation", m_recoilOffset);
+    if (frontHand.holdingItem && !dance.isValid() && withItems) {
+      m_networkedAnimator.setLocalTag("frontArmFrame", frontHand.frontFrame);
+      m_networkedAnimator.setLocalState("frontArm", m_networkedAnimator.hasState("frontArm", frontHand.frontFrame) ? frontHand.frontFrame : "rotation");
+      m_networkedAnimator.setPartDrawables(m_frontItemPart, frontHand.itemDrawables);
+      m_networkedAnimator.setLocalState("frontHandItem", frontHand.outsideOfHand ? "outside" : "inside");
+    } else {
+      m_networkedAnimator.setLocalState("frontArm", "idle");
+    }
+    if (withRotationAndScale) {
+      m_networkedAnimator.rotateLocalTransformationGroup("globalTransformation", m_rotation);
+      m_networkedAnimator.scaleLocalTransformationGroup("globalTransformation", m_scale);
+    }
+
+    if (withItems) {
+      if (m_altHand.nonRotatedDrawables.size())
+        drawables.appendAll(m_altHand.nonRotatedDrawables);
+      if (m_primaryHand.nonRotatedDrawables.size())
+        drawables.appendAll(m_primaryHand.nonRotatedDrawables);
+    }
+    drawables.appendAll(m_networkedAnimator.drawables());
+  } else {
+    int armStateSeq = getArmStateSequence();
+    int bodyStateSeq = getBodyStateSequence();
+    int emoteStateSeq = getEmoteStateSequence();
+    float bobYOffset = getBobYOffset();
 
     Vec2F frontArmFrameOffset = Vec2F(0, bobYOffset);
     if (frontHand.recoil)
@@ -667,9 +981,8 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
     auto applyHeadRotation = [&](Drawable& drawable) {
       if (m_headRotation != 0.f) {
         float dir = numericalDirection(m_facingDirection);
-        Vec2F rotationPoint = headPosition;
+        Vec2F rotationPoint = headPosition + m_headRotationCenter;
         rotationPoint[0] *= dir;
-        rotationPoint[1] -= .25f;
         float headX = (m_headRotation / ((float)Constants::pi * 2.f));
         drawable.rotate(m_headRotation, rotationPoint);
         drawable.position[0] -= state() == State::Run ? (fmaxf(headX * dir, 0.f) * 2.f) * dir : headX;
@@ -959,11 +1272,6 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
       }
       drawable.rebase();
     }
-  } else {
-    // this is where the animator drawables are supposed to go, but just putting this here for now
-    auto bodyDirectives = getBodyDirectives();
-    String image = strf("{}:normal{}", m_headFrameset, bodyDirectives.prefix());
-    drawables.append(Drawable::makeImage(AssetPath::split(image), 1.0f / TilePixels, true, {}));
   }
 
   return drawables;
@@ -971,144 +1279,200 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
 
 List<Drawable> Humanoid::renderPortrait(PortraitMode mode) const {
   List<Drawable> drawables;
-  int emoteStateSeq = m_timing.emoteStateSeq(m_emoteAnimationTimer, m_emoteState);
 
-  auto addDrawable = [&](Drawable&& drawable) -> Drawable& {
-    if (mode != PortraitMode::Full && mode != PortraitMode::FullNeutral
-      && mode != PortraitMode::FullNude && mode != PortraitMode::FullNeutralNude) {
-      // TODO: make this configurable
-      drawable.imagePart().addDirectives(String("addmask=/humanoid/portraitMask.png;0;0"), false);
+  if (m_animationConfig.isValid()) {
+    auto portraitAnimator = m_networkedAnimator;
+    portraitAnimator.setFlipped(false);
+    portraitAnimator.setPartDrawables(m_frontItemPart, {});
+    portraitAnimator.setPartDrawables(m_backItemPart, {});
+    portraitAnimator.resetLocalTransformationGroup("headRotation");
+    portraitAnimator.resetLocalTransformationGroup("backArmorRotation");
+    portraitAnimator.resetLocalTransformationGroup("frontArmRotation");
+    portraitAnimator.resetLocalTransformationGroup("backArmRotation");
+    portraitAnimator.setLocalState("frontArm", "idle");
+    portraitAnimator.setLocalState("backArm", "idle");
+
+    if (auto animationStates = m_portraitAnimationStates.maybe(mode))
+      for (auto args : *animationStates)
+        portraitAnimator.setLocalState(args.first, args.second.state, args.second.startNew, args.second.reverse);
+
+    if (mode == PortraitMode::FullNeutral || mode == PortraitMode::FullNeutralNude) {
+      auto personality = Root::singleton().speciesDatabase()->species(m_identity.species)->personalities()[0];
+      portraitAnimator.setLocalTag("personalityIdle", personality.idle);
+      portraitAnimator.setLocalTag("personalityArmIdle", personality.armIdle);
+      portraitAnimator.resetLocalTransformationGroup("personalityHeadOffset");
+      portraitAnimator.translateLocalTransformationGroup("personalityHeadOffset", personality.headOffset / TilePixels);
+      portraitAnimator.resetLocalTransformationGroup("personalityArmOffset");
+      portraitAnimator.translateLocalTransformationGroup("personalityArmOffset", personality.armOffset / TilePixels);
     }
-    drawables.append(std::move(drawable));
-    return drawables.back();
-  };
+    if (mode == PortraitMode::FullNude || mode == PortraitMode::FullNeutralNude) {
+      portraitAnimator.setLocalTag("headArmorFrameset");
+      portraitAnimator.setLocalTag("headArmorDirectives");
+      if (m_headArmorTags)
+        for (auto tag : *m_headArmorTags)
+          portraitAnimator.setLocalTag(tag.first);
+      portraitAnimator.setLocalTag("chestArmorFrameset");
+      portraitAnimator.setLocalTag("chestArmorDirectives");
+      if (m_chestArmorTags)
+        for (auto tag : *m_chestArmorTags)
+          portraitAnimator.setLocalTag(tag.first);
+      portraitAnimator.setLocalTag("legsArmorFrameset");
+      portraitAnimator.setLocalTag("legsArmorDirectives");
+      if (m_legsArmorTags)
+        for (auto tag : *m_legsArmorTags)
+          portraitAnimator.setLocalTag(tag.first);
+      portraitAnimator.setLocalTag("backArmorFrameset");
+      portraitAnimator.setLocalTag("backArmorDirectives");
+      if (m_backArmorTags)
+        for (auto tag : *m_backArmorTags)
+          portraitAnimator.setLocalTag(tag.first);
+      portraitAnimator.setLocalTag("helmetMaskDirectives");
+      portraitAnimator.setLocalTag("frontSleeveFrameset");
+      portraitAnimator.setLocalTag("backSleeveFrameset");
+    }
+    portraitAnimator.update(0, {});
 
-  bool dressed = !(mode == PortraitMode::FullNude || mode == PortraitMode::FullNeutralNude);
+    drawables = portraitAnimator.drawables();
+    Drawable::scaleAll(drawables, TilePixels);
+  } else {
+    int emoteStateSeq = m_timing.emoteStateSeq(m_emoteAnimationTimer, m_emoteState);
 
-  Directives helmetMaskDirective = dressed ? getHelmetMaskDirectives() : Directives();
+    auto addDrawable = [&](Drawable&& drawable) -> Drawable& {
+      if (mode != PortraitMode::Full && mode != PortraitMode::FullNeutral
+        && mode != PortraitMode::FullNude && mode != PortraitMode::FullNeutralNude) {
+        // TODO: make this configurable
+        drawable.imagePart().addDirectives(String("addmask=/humanoid/portraitMask.png;0;0"), false);
+      }
+      drawables.append(std::move(drawable));
+      return drawables.back();
+    };
 
-  auto personality = m_identity.personality;
-  if (mode == PortraitMode::FullNeutral || mode == PortraitMode::FullNeutralNude)
-    personality = Root::singleton().speciesDatabase()->species(m_identity.species)->personalities()[0];
+    bool dressed = !(mode == PortraitMode::FullNude || mode == PortraitMode::FullNeutralNude);
 
-  if (mode != PortraitMode::Head) {
-    if (!m_backArmFrameset.empty()) {
+    Directives helmetMaskDirective = dressed ? getHelmetMaskDirectives() : Directives();
+
+    auto personality = m_identity.personality;
+    if (mode == PortraitMode::FullNeutral || mode == PortraitMode::FullNeutralNude)
+      personality = Root::singleton().speciesDatabase()->species(m_identity.species)->personalities()[0];
+
+    if (mode != PortraitMode::Head) {
+      if (!m_backArmFrameset.empty()) {
+        auto bodyDirectives = getBodyDirectives();
+        String image = strf("{}:{}{}", m_backArmFrameset, personality.armIdle, bodyDirectives.prefix());
+        Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.armOffset);
+        drawable.imagePart().addDirectives(bodyDirectives, true);
+        addDrawable(std::move(drawable));
+      }
+      if (dressed && !m_backSleeveFrameset.empty()) {
+        auto chestDirectives = getChestDirectives();
+        String image = strf("{}:{}{}", m_backSleeveFrameset, personality.armIdle, chestDirectives.prefix());
+        Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.armOffset);
+        drawable.imagePart().addDirectives(chestDirectives, true);
+        addDrawable(std::move(drawable));
+      }
+      if (mode != PortraitMode::Bust) {
+        if (dressed && !m_backArmorFrameset.empty()) {
+          auto backDirectives = getBackDirectives();
+          String image = strf("{}:{}{}", m_backArmorFrameset, personality.idle, backDirectives.prefix());
+          Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, {});
+          drawable.imagePart().addDirectives(backDirectives, true);
+          addDrawable(std::move(drawable));
+        }
+      }
+    }
+
+    if (!m_headFrameset.empty()) {
       auto bodyDirectives = getBodyDirectives();
-      String image = strf("{}:{}{}", m_backArmFrameset, personality.armIdle, bodyDirectives.prefix());
-      Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.armOffset);
+      String image = strf("{}:normal{}", m_headFrameset, bodyDirectives.prefix());
+      Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.headOffset);
       drawable.imagePart().addDirectives(bodyDirectives, true);
       addDrawable(std::move(drawable));
     }
-    if (dressed && !m_backSleeveFrameset.empty()) {
-      auto chestDirectives = getChestDirectives();
-      String image = strf("{}:{}{}", m_backSleeveFrameset, personality.armIdle, chestDirectives.prefix());
-      Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.armOffset);
-      drawable.imagePart().addDirectives(chestDirectives, true);
+
+    if (!m_emoteFrameset.empty()) {
+      auto emoteDirectives = getEmoteDirectives();
+      String image = strf("{}:{}.{}{}", m_emoteFrameset, emoteFrameBase(m_emoteState), emoteStateSeq, emoteDirectives.prefix());
+      Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.headOffset);
+      drawable.imagePart().addDirectives(emoteDirectives, true);
       addDrawable(std::move(drawable));
     }
-    if (mode != PortraitMode::Bust) {
-      if (dressed && !m_backArmorFrameset.empty()) {
-        auto backDirectives = getBackDirectives();
-        String image = strf("{}:{}{}", m_backArmorFrameset, personality.idle, backDirectives.prefix());
+
+    if (!m_hairFrameset.empty()) {
+      auto hairDirectives = getHairDirectives();
+      String image = strf("{}:normal{}", m_hairFrameset, hairDirectives.prefix());
+      Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.headOffset);
+      drawable.imagePart().addDirectives(hairDirectives, true).addDirectives(helmetMaskDirective, true);
+      addDrawable(std::move(drawable));
+    }
+
+    if (!m_bodyFrameset.empty()) {
+      auto bodyDirectives = getBodyDirectives();
+      String image = strf("{}:{}{}", m_bodyFrameset, personality.idle, bodyDirectives.prefix());
+      Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, {});
+      drawable.imagePart().addDirectives(bodyDirectives, true);
+      addDrawable(std::move(drawable));
+    }
+
+    if (mode != PortraitMode::Head) {
+      if (dressed && !m_legsArmorFrameset.empty()) {
+        auto legsDirectives = getLegsDirectives();
+        String image = strf("{}:{}{}", m_legsArmorFrameset, personality.idle, legsDirectives.prefix());
         Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, {});
-        drawable.imagePart().addDirectives(backDirectives, true);
+        drawable.imagePart().addDirectives(legsDirectives, true);
+        addDrawable(std::move(drawable));
+      }
+
+      if (dressed && !m_chestArmorFrameset.empty()) {
+        auto chestDirectives = getChestDirectives();
+        String image = strf("{}:{}{}", m_chestArmorFrameset, personality.idle, chestDirectives.prefix());
+        Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, {});
+        drawable.imagePart().addDirectives(chestDirectives, true);
+        addDrawable(std::move(drawable));
+      }
+    }
+
+    if (!m_facialHairFrameset.empty()) {
+      auto facialHairDirectives = getFacialHairDirectives();
+      String image = strf("{}:normal{}", m_facialHairFrameset, facialHairDirectives.prefix());
+      Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.headOffset);
+      drawable.imagePart().addDirectives(facialHairDirectives, true).addDirectives(helmetMaskDirective, true);
+      addDrawable(std::move(drawable));
+    }
+
+    if (!m_facialMaskFrameset.empty()) {
+      auto facialMaskDirectives = getFacialMaskDirectives();
+      String image = strf("{}:normal{}", m_facialMaskFrameset, facialMaskDirectives.prefix());
+      Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.headOffset);
+      drawable.imagePart().addDirectives(facialMaskDirectives, true).addDirectives(helmetMaskDirective, true);
+      addDrawable(std::move(drawable));
+    }
+
+    if (dressed && !m_headArmorFrameset.empty()) {
+      auto headDirectives = getHeadDirectives();
+      String image = strf("{}:normal{}", m_headArmorFrameset, headDirectives.prefix());
+      Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.headOffset);
+      drawable.imagePart().addDirectives(headDirectives, true);
+      addDrawable(std::move(drawable));
+    }
+
+    if (mode != PortraitMode::Head) {
+      if (!m_frontArmFrameset.empty()) {
+        auto bodyDirectives = getBodyDirectives();
+        String image = strf("{}:{}{}", m_frontArmFrameset, personality.armIdle, bodyDirectives.prefix());
+        Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.armOffset);
+        drawable.imagePart().addDirectives(bodyDirectives, true);
+        addDrawable(std::move(drawable));
+      }
+
+      if (dressed && !m_frontSleeveFrameset.empty()) {
+        auto chestDirectives = getChestDirectives();
+        String image = strf("{}:{}{}", m_frontSleeveFrameset, personality.armIdle, chestDirectives.prefix());
+        Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.armOffset);
+        drawable.imagePart().addDirectives(chestDirectives, true);
         addDrawable(std::move(drawable));
       }
     }
   }
-
-  if (!m_headFrameset.empty()) {
-    auto bodyDirectives = getBodyDirectives();
-    String image = strf("{}:normal{}", m_headFrameset, bodyDirectives.prefix());
-    Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.headOffset);
-    drawable.imagePart().addDirectives(bodyDirectives, true);
-    addDrawable(std::move(drawable));
-  }
-
-  if (!m_emoteFrameset.empty()) {
-    auto emoteDirectives = getEmoteDirectives();
-    String image = strf("{}:{}.{}{}", m_emoteFrameset, emoteFrameBase(m_emoteState), emoteStateSeq, emoteDirectives.prefix());
-    Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.headOffset);
-    drawable.imagePart().addDirectives(emoteDirectives, true);
-    addDrawable(std::move(drawable));
-  }
-
-  if (!m_hairFrameset.empty()) {
-    auto hairDirectives = getHairDirectives();
-    String image = strf("{}:normal{}", m_hairFrameset, hairDirectives.prefix());
-    Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.headOffset);
-    drawable.imagePart().addDirectives(hairDirectives, true).addDirectives(helmetMaskDirective, true);
-    addDrawable(std::move(drawable));
-  }
-
-  if (!m_bodyFrameset.empty()) {
-    auto bodyDirectives = getBodyDirectives();
-    String image = strf("{}:{}{}", m_bodyFrameset, personality.idle, bodyDirectives.prefix());
-    Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, {});
-    drawable.imagePart().addDirectives(bodyDirectives, true);
-    addDrawable(std::move(drawable));
-  }
-
-  if (mode != PortraitMode::Head) {
-    if (dressed && !m_legsArmorFrameset.empty()) {
-      auto legsDirectives = getLegsDirectives();
-      String image = strf("{}:{}{}", m_legsArmorFrameset, personality.idle, legsDirectives.prefix());
-      Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, {});
-      drawable.imagePart().addDirectives(legsDirectives, true);
-      addDrawable(std::move(drawable));
-    }
-
-    if (dressed && !m_chestArmorFrameset.empty()) {
-      auto chestDirectives = getChestDirectives();
-      String image = strf("{}:{}{}", m_chestArmorFrameset, personality.idle, chestDirectives.prefix());
-      Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, {});
-      drawable.imagePart().addDirectives(chestDirectives, true);
-      addDrawable(std::move(drawable));
-    }
-  }
-
-  if (!m_facialHairFrameset.empty()) {
-    auto facialHairDirectives = getFacialHairDirectives();
-    String image = strf("{}:normal{}", m_facialHairFrameset, facialHairDirectives.prefix());
-    Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.headOffset);
-    drawable.imagePart().addDirectives(facialHairDirectives, true).addDirectives(helmetMaskDirective, true);
-    addDrawable(std::move(drawable));
-  }
-
-  if (!m_facialMaskFrameset.empty()) {
-    auto facialMaskDirectives = getFacialMaskDirectives();
-    String image = strf("{}:normal{}", m_facialMaskFrameset, facialMaskDirectives.prefix());
-    Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.headOffset);
-    drawable.imagePart().addDirectives(facialMaskDirectives, true).addDirectives(helmetMaskDirective, true);
-    addDrawable(std::move(drawable));
-  }
-
-  if (dressed && !m_headArmorFrameset.empty()) {
-    auto headDirectives = getHeadDirectives();
-    String image = strf("{}:normal{}", m_headArmorFrameset, headDirectives.prefix());
-    Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.headOffset);
-    drawable.imagePart().addDirectives(headDirectives, true);
-    addDrawable(std::move(drawable));
-  }
-
-  if (mode != PortraitMode::Head) {
-    if (!m_frontArmFrameset.empty()) {
-      auto bodyDirectives = getBodyDirectives();
-      String image = strf("{}:{}{}", m_frontArmFrameset, personality.armIdle, bodyDirectives.prefix());
-      Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.armOffset);
-      drawable.imagePart().addDirectives(bodyDirectives, true);
-      addDrawable(std::move(drawable));
-    }
-
-    if (dressed && !m_frontSleeveFrameset.empty()) {
-      auto chestDirectives = getChestDirectives();
-      String image = strf("{}:{}{}", m_frontSleeveFrameset, personality.armIdle, chestDirectives.prefix());
-      Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.armOffset);
-      drawable.imagePart().addDirectives(chestDirectives, true);
-      addDrawable(std::move(drawable));
-    }
-  }
-
   return drawables;
 }
 
@@ -1196,6 +1560,51 @@ Vec2F Humanoid::altHandPosition(Vec2F const& offset) const {
 }
 
 Vec2F Humanoid::primaryArmPosition(Direction facingDirection, float armAngle, Vec2F const& offset) const {
+  if (m_animationConfig.isValid()){
+    // does the animator being configurable overcomplicate some things? yeah probably
+    Vec2F rotationCenter;
+    String anchor;
+    StringList transformationGroups;
+    String rotationTransformGroup;
+    if (facingDirection == Direction::Left || m_twoHanded) {
+      rotationTransformGroup = "frontArmRotation";
+      auto state = m_networkedAnimator.hasState("frontArm", m_primaryHand.frontFrame) ? m_primaryHand.frontFrame : "rotation";
+      // make sure we ge the properties for the arm rotation state
+      rotationCenter = jsonToVec2F(m_networkedAnimator.partProperty(m_frontArmRotationPoint.first,m_frontArmRotationPoint.second,{"frontArm"},state,1));
+      anchor = m_networkedAnimator.partProperty(m_frontArmRotationPoint.first, "anchorPart", {"frontArm"},state,1).toString();
+      transformationGroups = jsonToStringList(m_networkedAnimator.partProperty(m_frontArmRotationPoint.first, "transformationGroups", {"frontArm"},state,1));
+    } else {
+      rotationTransformGroup = "backArmRotation";
+      auto state = m_networkedAnimator.hasState("backArm", m_primaryHand.backFrame) ? m_primaryHand.backFrame : "rotation";
+      // make sure we ge the properties for the arm rotation state
+      rotationCenter = jsonToVec2F(m_networkedAnimator.partProperty(m_backArmRotationPoint.first,m_backArmRotationPoint.second,{"backArm"},state,1));
+      anchor = m_networkedAnimator.partProperty(m_backArmRotationPoint.first, "anchorPart", {"backArm"},state,1).toString();
+      transformationGroups = jsonToStringList(m_networkedAnimator.partProperty(m_backArmRotationPoint.first, "transformationGroups", {"backArm"},state,1));
+    }
+    // and now, we do the group transformations for the part, but where it would do the rotation, we do some finagling to do it here instead of
+    // using the rotation stored in the animator
+    // now I DOUBT people will be doing crazy things using the animation transformation properties on the arm rotation parts themselves
+    // but rather parts that the arms are parented to with anchors, so I'm not accounting for that here
+    auto mat = Mat3F::identity();
+    auto i = transformationGroups.indexOf(rotationTransformGroup);
+    if (i != NPos) {
+      if (i > 0)
+        mat = m_networkedAnimator.groupTransformation(transformationGroups.slice(0, i-1));
+      auto rotated = Mat3F::identity();
+      rotated.rotate(armAngle, rotationCenter);
+      mat = rotated * mat;
+      if (i < (transformationGroups.size() -1))
+        mat = m_networkedAnimator.groupTransformation(transformationGroups.slice(i+1, transformationGroups.size() -1)) * mat;
+    } else {
+      mat = m_networkedAnimator.groupTransformation(transformationGroups);
+    }
+    mat = m_networkedAnimator.partTransformation(anchor) * mat;
+    auto position = mat.transformVec2(offset);
+    if (facingDirection == Direction::Left)
+      position[0] *= -1;
+    return position;
+  }
+
   float bobYOffset = getBobYOffset();
 
   if (m_primaryHand.holdingItem) {
@@ -1218,6 +1627,51 @@ Vec2F Humanoid::primaryArmPosition(Direction facingDirection, float armAngle, Ve
 }
 
 Vec2F Humanoid::altArmPosition(Direction facingDirection, float armAngle, Vec2F const& offset) const {
+  if (m_animationConfig.isValid()){
+    // does the animator being configurable overcomplicate some things? yeah probably
+    Vec2F rotationCenter;
+    String anchor;
+    StringList transformationGroups;
+    String rotationTransformGroup;
+    if (facingDirection == Direction::Right) {
+      rotationTransformGroup = "frontArmRotation";
+      auto state = m_networkedAnimator.hasState("frontArm", m_primaryHand.frontFrame) ? m_primaryHand.frontFrame : "rotation";
+      // make sure we ge the properties for the arm rotation state
+      rotationCenter = jsonToVec2F(m_networkedAnimator.partProperty(m_frontArmRotationPoint.first,m_frontArmRotationPoint.second,{"frontArm"},state,1));
+      anchor = m_networkedAnimator.partProperty(m_frontArmRotationPoint.first, "anchorPart", {"frontArm"},state,1).toString();
+      transformationGroups = jsonToStringList(m_networkedAnimator.partProperty(m_frontArmRotationPoint.first, "transformationGroups", {"frontArm"},state,1));
+    } else {
+      rotationTransformGroup = "backArmRotation";
+      auto state = m_networkedAnimator.hasState("backArm", m_primaryHand.backFrame) ? m_primaryHand.backFrame : "rotation";
+      // make sure we ge the properties for the arm rotation state
+      rotationCenter = jsonToVec2F(m_networkedAnimator.partProperty(m_backArmRotationPoint.first,m_backArmRotationPoint.second,{"backArm"},state,1));
+      anchor = m_networkedAnimator.partProperty(m_backArmRotationPoint.first, "anchorPart", {"backArm"},state,1).toString();
+      transformationGroups = jsonToStringList(m_networkedAnimator.partProperty(m_backArmRotationPoint.first, "transformationGroups", {"backArm"},state,1));
+    }
+    // and now, we do the group transformations for the part, but where it would do the rotation, we do some finagling to do it here instead of
+    // using the rotation stored in the animator
+    // now I DOUBT people will be doing crazy things using the animation transformation properties on the arm rotation parts themselves
+    // but rather parts that the arms are parented to with anchors, so I'm not accounting for that here
+    auto mat = Mat3F::identity();
+    auto i = transformationGroups.indexOf(rotationTransformGroup);
+    if (i != NPos) {
+      if (i > 0)
+        mat = m_networkedAnimator.groupTransformation(transformationGroups.slice(0, i-1));
+      auto rotated = Mat3F::identity();
+      rotated.rotate(armAngle, rotationCenter);
+      mat = rotated * mat;
+      if (i < (transformationGroups.size() -1))
+        mat = m_networkedAnimator.groupTransformation(transformationGroups.slice(i+1, transformationGroups.size() -1)) * mat;
+    } else {
+      mat = m_networkedAnimator.groupTransformation(transformationGroups);
+    }
+    mat = m_networkedAnimator.partTransformation(anchor) * mat;
+    auto position = mat.transformVec2(offset);
+    if (facingDirection == Direction::Left)
+      position[0] *= -1;
+    return position;
+  }
+
   float bobYOffset = getBobYOffset();
 
   if (m_altHand.holdingItem) {
@@ -1240,6 +1694,12 @@ Vec2F Humanoid::altArmPosition(Direction facingDirection, float armAngle, Vec2F 
 }
 
 Vec2F Humanoid::primaryHandOffset(Direction facingDirection) const {
+  if (m_animationConfig.isValid())
+    if (facingDirection == Direction::Left || m_twoHanded)
+      return jsonToVec2F(m_networkedAnimator.partProperty(m_frontItemPart,"offset")) - jsonToVec2F(m_networkedAnimator.partProperty(m_frontArmRotationPoint.first,m_frontArmRotationPoint.second));
+    else
+      return jsonToVec2F(m_networkedAnimator.partProperty(m_backItemPart,"offset")) - jsonToVec2F(m_networkedAnimator.partProperty(m_backArmRotationPoint.first,m_backArmRotationPoint.second));
+
   if (facingDirection == Direction::Left || m_twoHanded)
     return m_frontHandPosition - m_frontArmRotationCenter;
   else
@@ -1247,6 +1707,12 @@ Vec2F Humanoid::primaryHandOffset(Direction facingDirection) const {
 }
 
 Vec2F Humanoid::altHandOffset(Direction facingDirection) const {
+  if (m_animationConfig.isValid())
+    if (facingDirection == Direction::Left || m_twoHanded)
+      return jsonToVec2F(m_networkedAnimator.partProperty(m_backItemPart,"offset")) - jsonToVec2F(m_networkedAnimator.partProperty(m_backArmRotationPoint.first,m_backArmRotationPoint.second));
+    else
+      return jsonToVec2F(m_networkedAnimator.partProperty(m_frontItemPart,"offset")) - jsonToVec2F(m_networkedAnimator.partProperty(m_frontArmRotationPoint.first,m_frontArmRotationPoint.second));
+
   if (facingDirection == Direction::Left || m_twoHanded)
     return m_frontHandPosition - m_backArmRotationCenter;
   else
@@ -1463,6 +1929,18 @@ Maybe<DancePtr> Humanoid::getDance() const {
   return danceDatabase->getDance(*m_dance);
 }
 
+void Humanoid::refreshAnimationState(bool startNew) {
+  if (m_movingBackwards)
+    if (auto animationStates = m_animationStatesBackwards.maybe(m_state)) {
+      for (auto args : *animationStates)
+        m_networkedAnimator.setLocalState(args.first, args.second.state, startNew || args.second.startNew, args.second.reverse);
+      return;
+    }
+  if (auto animationStates = m_animationStates.maybe(m_state))
+    for (auto args : *animationStates)
+      m_networkedAnimator.setLocalState(args.first, args.second.state, startNew || args.second.startNew, args.second.reverse);
+}
+
 float Humanoid::getBobYOffset() const {
   int bodyStateSeq = getBodyStateSequence();
   float bobYOffset = 0.0f;
@@ -1494,6 +1972,9 @@ Vec2F Humanoid::mouthOffset(bool ignoreAdjustments) const {
   if (ignoreAdjustments) {
     return (m_mouthOffset).rotate(m_rotation);
   } else {
+    if (m_animationConfig.isValid())
+      return m_networkedAnimator.partPoint(m_mouthOffsetPoint.first, m_mouthOffsetPoint.second).value(m_mouthOffset.rotate(m_rotation));
+
     Vec2F headPosition(0, getBobYOffset());
     if (m_state == Idle)
       headPosition += m_identity.personality.headOffset / TilePixels;
@@ -1513,10 +1994,15 @@ Vec2F Humanoid::mouthOffset(bool ignoreAdjustments) const {
 }
 
 Vec2F Humanoid::feetOffset() const {
+  if (m_animationConfig.isValid())
+    return m_networkedAnimator.partPoint(m_feetOffsetPoint.first, m_feetOffsetPoint.second).value(m_feetOffset.rotate(m_rotation));
   return m_feetOffset.rotate(m_rotation);
 }
 
 Vec2F Humanoid::headArmorOffset() const {
+  if (m_animationConfig.isValid())
+    return m_networkedAnimator.partPoint(m_headArmorOffsetPoint.first, m_headArmorOffsetPoint.second).value(m_headArmorOffset.rotate(m_rotation));
+
   Vec2F headPosition(0, getBobYOffset());
   if (m_state == Idle)
     headPosition += m_identity.personality.headOffset / TilePixels;
@@ -1535,15 +2021,22 @@ Vec2F Humanoid::headArmorOffset() const {
 }
 
 Vec2F Humanoid::chestArmorOffset() const {
+  if (m_animationConfig.isValid())
+    return m_networkedAnimator.partPoint(m_chestArmorOffsetPoint.first, m_chestArmorOffsetPoint.second).value(m_chestArmorOffset.rotate(m_rotation));
+
   Vec2F position(0, getBobYOffset());
   return (m_chestArmorOffset + position).rotate(m_rotation);
 }
 
 Vec2F Humanoid::legsArmorOffset() const {
+  if (m_animationConfig.isValid())
+    return m_networkedAnimator.partPoint(m_legsArmorOffsetPoint.first, m_legsArmorOffsetPoint.second).value(m_legsArmorOffset.rotate(m_rotation));
   return m_legsArmorOffset.rotate(m_rotation);
 }
 
 Vec2F Humanoid::backArmorOffset() const {
+  if (m_animationConfig.isValid())
+    return m_networkedAnimator.partPoint(m_backArmorOffsetPoint.first, m_backArmorOffsetPoint.second).value(m_backArmorOffset.rotate(m_rotation));
   Vec2F position(0, getBobYOffset());
   return (m_backArmorOffset + position).rotate(m_rotation);
 }
@@ -1608,56 +2101,18 @@ pair<Vec2F, Directives> Humanoid::extractScaleFromDirectives(Directives const& d
 }
 
 pair<Maybe<Json>,String> Humanoid::getAnimation() const {
-  return {m_animationConfig, "/humanoid/" + m_identity.imagePath.value(m_identity.species) + "/"};
+  return {m_animationConfig, m_animationPath};
 }
 
+NetworkedAnimator * Humanoid::networkedAnimator() {
+  return &m_networkedAnimator;
+}
+NetworkedAnimator const* Humanoid::networkedAnimator() const {
+  return &m_networkedAnimator;
+}
 
-// Humanoid::HumanoidAnimator::HumanoidAnimator(pair<Maybe<Json>,String> ac) {
-//   animationConfig = std::move(ac);
-//   animator = animationConfig.first ? NetworkedAnimator(*animationConfig.first, animationConfig.second) : NetworkedAnimator();
-//   netGroup.addNetElement(&animator);
-// }
-
-// void Humanoid::HumanoidAnimator::initNetVersion(NetElementVersion const* version) {
-//   netGroup.initNetVersion(version);
-// }
-
-// void Humanoid::HumanoidAnimator::netStore(DataStream& ds, NetCompatibilityRules rules) const {
-//   if (!checkWithRules(rules)) return;
-//   ds << animationConfig;
-//   netGroup.netStore(ds, rules);
-// }
-
-// void Humanoid::HumanoidAnimator::netLoad(DataStream& ds, NetCompatibilityRules rules) {
-//   if (!checkWithRules(rules)) return;
-//   ds >> animationConfig;
-//   animator = animationConfig.first ? NetworkedAnimator(*animationConfig.first, animationConfig.second) : NetworkedAnimator();
-//   netGroup.netLoad(ds, rules);
-// }
-
-// void Humanoid::HumanoidAnimator::enableNetInterpolation(float extrapolationHint) {
-//   netGroup.enableNetInterpolation(extrapolationHint);
-// }
-
-// void Humanoid::HumanoidAnimator::disableNetInterpolation() {
-//   netGroup.disableNetInterpolation();
-// }
-
-// void Humanoid::HumanoidAnimator::tickNetInterpolation(float dt) {
-//   netGroup.tickNetInterpolation(dt);
-// }
-
-// bool Humanoid::HumanoidAnimator::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const {
-//   return netGroup.writeNetDelta(ds, fromVersion, rules);
-// }
-
-// void Humanoid::HumanoidAnimator::readNetDelta(DataStream& ds, float interpolationTime, NetCompatibilityRules rules) {
-//   netGroup.readNetDelta(ds, interpolationTime, rules);
-// }
-
-// void Humanoid::HumanoidAnimator::blankNetDelta(float interpolationTime) {
-//   netGroup.blankNetDelta(interpolationTime);
-// }
-
+NetworkedAnimator::DynamicTarget * Humanoid::networkedAnimatorDynamicTarget() {
+  return &m_networkedAnimatorDynamicTarget;
+}
 
 }

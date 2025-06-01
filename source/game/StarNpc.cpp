@@ -501,6 +501,9 @@ void Npc::render(RenderCallback* renderCallback) {
     renderCallback->addDrawable(std::move(drawable), renderLayer);
   }
 
+  renderCallback->addParticles(m_humanoid.networkedAnimatorDynamicTarget()->pullNewParticles());
+  renderCallback->addAudios(m_humanoid.networkedAnimatorDynamicTarget()->pullNewAudios());
+
   renderCallback->addDrawables(m_statusController->drawables(), renderLayer);
   renderCallback->addParticles(m_statusController->pullNewParticles());
   renderCallback->addAudios(m_statusController->pullNewAudios());
@@ -1009,6 +1012,7 @@ List<LightSource> Npc::lightSources() const {
   List<LightSource> lights;
   lights.appendAll(m_tools->lightSources());
   lights.appendAll(m_statusController->lightSources());
+  lights.appendAll(m_humanoid.networkedAnimator()->lightSources());
   return lights;
 }
 
