@@ -527,3 +527,39 @@ Returns uuid, type, and orbits for all system objects in the specified system;
 #### `List<String>` player.collectables(`String` collectionName)
 
 Returns a list of names of the collectables the player has unlocked in the specified collection.
+
+---
+
+#### `bool` player.isCodexKnown(`String` codexId)
+
+Returns `true` if the player knows the specified codexId, and `false` otherwise.
+
+---
+
+#### `bool` player.isCodexRead(`String` codexId)
+
+Returns `true` if the player has read the specified codexId, and `false` otherwise.
+
+---
+
+#### `bool` player.markCodexRead(`String` codexId)
+
+Marks the specified codexId as read by the player. Returns `true` if the codex is known by the player and was marked as unread and `false` otherwise.
+
+---
+
+#### `bool` player.markCodexUnread(`String` codexId)
+
+Marks the specified codexId as not read by the player. Returns `true` if the codex is known by the player and was marked as read and `false` otherwise.
+
+---
+
+#### `void` player.learnCodex(`String` codexId, [`bool` markRead])
+
+Make the player learn the specified codexId. If markRead is `true`, then the codex will be marked as read by default.
+
+---
+
+#### `Json` player.getCodexes()
+
+Returns a JSON object where the keys are the codex ID, and the values are if the codex is marked as read.
