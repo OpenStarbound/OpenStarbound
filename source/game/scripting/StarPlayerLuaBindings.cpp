@@ -761,8 +761,8 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
     return player->codexes()->markCodexUnread(codexId);
   });
 
-  callbacks.registerCallback("learnCodex", [player](String const& codexId, bool markRead) {
-    player->codexes()->learnCodex(codexId, markRead);
+  callbacks.registerCallback("learnCodex", [player](String const& codexId, Maybe<bool> markRead) {
+    player->codexes()->learnCodex(codexId, markRead.value(false));
   });
 
   callbacks.registerCallback("getCodexes", [player]() -> Json {
