@@ -743,6 +743,31 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
       player->log()->removeScannedObject(objectName);
     });
 
+  // codex bindings
+  callbacks.registerCallback("isCodexKnown", [player](String const& codexId) -> bool {
+    return player.codexes()->codexKnown(codexId);
+  });
+
+  callbacks.registerCallback("isCodexRead", [player](String const& codexId) -> bool {
+    return player->codexes()->codexRead(codexId);
+  });
+
+  callbacks.registerCallback("markCodexRead", [player](String const& codexId) -> bool {
+    return player->codexes()->markCodexRead(codexId);
+  });
+
+  callbacks.registerCallback("markCodexUnread", [player](String const& codexId) -> bool {
+    return player->codexes()->markCodexUnread(codexId);
+  });
+
+  callbacks.registerCallback("learnCodex", [player](String const& codexId, bool markRead) {
+    player->codexes()->learnCodex(codexId, markRead);
+  });
+
+  callbacks.registerCallback("getCodexes", [player]() -> Json {
+    return player->codexes()->toJson();
+  });
+
   return callbacks;
 }
 
