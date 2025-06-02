@@ -1455,16 +1455,19 @@ namespace LuaBindings {
   Maybe<Json> WorldEntityCallbacks::entityNametag(World* world, EntityId entityId) {
     auto entity = world->entity(entityId);
 
+    Json result;
     if (auto nametagEntity = as<NametagEntity>(entity)) {
-      return JsonObject{
+      Json result = JsonObject{
         {"nametag", nametagEntity->nametag()},
         {"displayed", nametagEntity->displayNametag()},
         {"color", jsonFromColor(Color::rgb(nametagEntity->nametagColor()))},
         {"origin", jsonFromVec2F(nametagEntity->nametagOrigin())},
       };
+      if (auto status = nametagEntity->statusText())
+        result.set("status", *status);
     }
 
-    return {};
+    return result;
   }
 
   Maybe<String> WorldEntityCallbacks::entityDescription(World* world, EntityId entityId, Maybe<String> const& species) {
