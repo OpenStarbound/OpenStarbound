@@ -745,7 +745,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
 
   // codex bindings
   callbacks.registerCallback("isCodexKnown", [player](String const& codexId) -> bool {
-    return player.codexes()->codexKnown(codexId);
+    return player->codexes()->codexKnown(codexId);
   });
 
   callbacks.registerCallback("isCodexRead", [player](String const& codexId) -> bool {
