@@ -2114,6 +2114,17 @@ Vec2F Player::nametagOrigin() const {
   return mouthPosition(false);
 }
 
+String Player::nametag() const {
+  if (auto jNametag = getSecretProperty("nametag"); jNametag.isType(Json::Type::String))
+    return jNametag.toString();
+  else
+    return name();
+}
+
+void Player::setNametag(Maybe<String> nametag) {
+  setSecretProperty("nametag", nametag ? Json(*nametag) : Json());
+}
+
 void Player::updateIdentity()
 { m_identityUpdated = true; m_humanoid->setIdentity(m_identity); }
 

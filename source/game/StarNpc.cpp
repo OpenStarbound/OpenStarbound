@@ -559,6 +559,10 @@ Vec2F Npc::nametagOrigin() const {
   return mouthPosition(false);
 }
 
+String Npc::nametag() const {
+  return name();
+}
+
 bool Npc::aggressive() const {
   return m_aggressive.get();
 }

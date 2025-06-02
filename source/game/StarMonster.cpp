@@ -818,6 +818,10 @@ Vec2F Monster::nametagOrigin() const {
   return mouthPosition(false);
 }
 
+String Monster::nametag() const {
+  return name();
+}
+
 bool Monster::aggressive() const {
   return m_aggressive;
 }

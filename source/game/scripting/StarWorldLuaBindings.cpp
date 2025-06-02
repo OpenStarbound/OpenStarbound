@@ -512,6 +512,7 @@ namespace LuaBindings {
     callbacks.registerCallbackWithSignature<Maybe<String>, EntityId>("entitySpecies", bind(WorldEntityCallbacks::entitySpecies, world, _1));
     callbacks.registerCallbackWithSignature<Maybe<String>, EntityId>("entityGender", bind(WorldEntityCallbacks::entityGender, world, _1));
     callbacks.registerCallbackWithSignature<Maybe<String>, EntityId>("entityName", bind(WorldEntityCallbacks::entityName, world, _1));
+    callbacks.registerCallbackWithSignature<Maybe<Json>, EntityId>("entityNametag", bind(WorldEntityCallbacks::entityNametag, world, _1));
     callbacks.registerCallbackWithSignature<Maybe<String>, EntityId, Maybe<String>>("entityDescription", bind(WorldEntityCallbacks::entityDescription, world, _1, _2));
     callbacks.registerCallbackWithSignature<LuaNullTermWrapper<Maybe<List<Drawable>>>, EntityId, String>("entityPortrait", bind(WorldEntityCallbacks::entityPortrait, world, _1, _2));
     callbacks.registerCallbackWithSignature<Maybe<String>, EntityId, String>("entityHandItem", bind(WorldEntityCallbacks::entityHandItem, world, _1, _2));
@@ -1446,6 +1447,21 @@ namespace LuaBindings {
       return stagehandEntity->typeName();
     } else if (auto projectileEntity = as<Projectile>(entity)) {
       return projectileEntity->typeName();
+    }
+
+    return {};
+  }
+
+  Maybe<Json> WorldEntityCallbacks::entityNametag(World* world, EntityId entityId) {
+    auto entity = world->entity(entityId);
+
+    if (auto nametagEntity = as<NametagEntity>(entity)) {
+      return JsonObject{
+        {"nametag", nametagEntity->nametag()},
+        {"displayed", nametagEntity->displayNametag()},
+        {"color", jsonFromColor(Color::rgb(nametagEntity->nametagColor()))},
+        {"origin", jsonFromVec2F(nametagEntity->nametagOrigin())},
+      };
     }
 
     return {};

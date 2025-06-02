@@ -110,6 +110,7 @@ public:
   bool displayNametag() const override;
   Vec3B nametagColor() const override;
   Vec2F nametagOrigin() const override;
+  String nametag() const override;
 
   bool aggressive() const;
 
