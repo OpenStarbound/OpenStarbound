@@ -13,6 +13,7 @@
 #include "StarJsonExtra.hpp"
 #include "StarUniverseClient.hpp"
 #include "StarTeamClient.hpp"
+#include "StarPlayerCodexes.hpp"
 
 namespace Star {
 
