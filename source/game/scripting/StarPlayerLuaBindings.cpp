@@ -13,6 +13,7 @@
 #include "StarJsonExtra.hpp"
 #include "StarUniverseClient.hpp"
 #include "StarTeamClient.hpp"
+#include "StarPlayerCodexes.hpp"
 
 namespace Star {
 
@@ -742,6 +743,31 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
   callbacks.registerCallback("removeScannedObject", [player](String const& objectName) {
       player->log()->removeScannedObject(objectName);
     });
+
+  // codex bindings
+  callbacks.registerCallback("isCodexKnown", [player](String const& codexId) -> bool {
+    return player->codexes()->codexKnown(codexId);
+  });
+
+  callbacks.registerCallback("isCodexRead", [player](String const& codexId) -> bool {
+    return player->codexes()->codexRead(codexId);
+  });
+
+  callbacks.registerCallback("markCodexRead", [player](String const& codexId) -> bool {
+    return player->codexes()->markCodexRead(codexId);
+  });
+
+  callbacks.registerCallback("markCodexUnread", [player](String const& codexId) -> bool {
+    return player->codexes()->markCodexUnread(codexId);
+  });
+
+  callbacks.registerCallback("learnCodex", [player](String const& codexId, Maybe<bool> markRead) {
+    player->codexes()->learnCodex(codexId, markRead.value(false));
+  });
+
+  callbacks.registerCallback("getCodexes", [player]() -> Json {
+    return player->codexes()->toJson();
+  });
 
   return callbacks;
 }
