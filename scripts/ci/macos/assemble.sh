@@ -26,3 +26,5 @@ cp \
   scripts/ci/macos/run-server.sh \
   scripts/steam_appid.txt \
   client_distribution/osx/
+
+tar -cvf client.tar client_distribution

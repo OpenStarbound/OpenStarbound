@@ -350,18 +350,29 @@ jobs:
           configurePreset: 'macos-release'
           buildPreset: 'macos-release'
           testPreset: 'macos-release'
-
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: OpenStarbound-macOS-Intel
-          path: dist/*
       
       - name: Save VCPKG cache
         uses: actions/cache/save@v4
         with:
           path: ${{ github.workspace }}/vcpkg_cache
           key: vcpkg-${{github.job}}-${{ hashFiles('**/source/vcpkg.json') }}
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenStarbound-macOS-Intel
+          path: dist/*
+
+      - name: Assemble Files
+        working-directory: ${{ github.workspace }}
+        run: scripts/ci/macos/assemble.sh
+
+      - name: Upload Client Files
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenStarbound-macOS-Intel-Client
+          path: client.tar
+
   build-mac-arm:
     name: Build OpenStarbound macOS arm64
     runs-on: macos-14
@@ -407,14 +418,24 @@ jobs:
           buildPreset: 'macos-arm-release'
           testPreset: 'macos-arm-release'
 
+      - name: Save VCPKG cache
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ github.workspace }}/vcpkg_cache
+          key: vcpkg-${{github.job}}-${{ hashFiles('**/source/vcpkg.json') }}
+
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: OpenStarbound-macOS-Silicon
           path: dist/*
 
-      - name: Save VCPKG cache
-        uses: actions/cache/save@v4
+      - name: Assemble Files
+        working-directory: ${{ github.workspace }}
+        run: scripts/ci/macos/assemble.sh
+
+      - name: Upload Client Files
+        uses: actions/upload-artifact@v4
         with:
-          path: ${{ github.workspace }}/vcpkg_cache
-          key: vcpkg-${{github.job}}-${{ hashFiles('**/source/vcpkg.json') }}
+          name: OpenStarbound-macOS-Silicon-Client
+          path: client.tar
