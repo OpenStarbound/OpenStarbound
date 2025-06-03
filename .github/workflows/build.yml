@@ -357,6 +357,14 @@ jobs:
           path: ${{ github.workspace }}/vcpkg_cache
           key: vcpkg-${{github.job}}-${{ hashFiles('**/source/vcpkg.json') }}
 
+      - name: Copy Libraries
+        working-directory: ${{ github.workspace }}
+        run: |
+          cp \
+            lib/osx/x64/*.dylib \
+            lib/osx/libsteam_api.dylib \
+            dist/
+
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -423,6 +431,14 @@ jobs:
         with:
           path: ${{ github.workspace }}/vcpkg_cache
           key: vcpkg-${{github.job}}-${{ hashFiles('**/source/vcpkg.json') }}
+
+      - name: Copy Libraries
+        working-directory: ${{ github.workspace }}
+        run: |
+          cp \
+            lib/osx/arm64/*.dylib \
+            lib/osx/libsteam_api.dylib \
+            dist/
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
