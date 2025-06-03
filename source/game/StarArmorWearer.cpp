@@ -39,17 +39,17 @@ void ArmorWearer::setupHumanoidClothingDrawables(Humanoid& humanoid, bool forceN
   m_lastGender = gender;
   m_lastDirection = direction;
 
-  HeadArmorPtr const& headArmor   = m_headCosmeticItem  ? m_headCosmeticItem  : m_headItem;
+  HeadArmorPtr const&   headArmor =  m_headCosmeticItem ?  m_headCosmeticItem :  m_headItem;
   ChestArmorPtr const& chestArmor = m_chestCosmeticItem ? m_chestCosmeticItem : m_chestItem;
-  LegsArmorPtr const& legsArmor   = m_legsCosmeticItem  ? m_legsCosmeticItem  : m_legsItem;
-  BackArmorPtr const& backArmor   = m_backCosmeticItem  ? m_backCosmeticItem  : m_backItem;
+  LegsArmorPtr const&   legsArmor =  m_legsCosmeticItem ?  m_legsCosmeticItem :  m_legsItem;
+  BackArmorPtr const&   backArmor =  m_backCosmeticItem ?  m_backCosmeticItem :  m_backItem;
 
   bool allNeedsSync = nudeChanged || genderChanged;
   bool headNeedsSync  = allNeedsSync || (dirChanged &&  headArmor &&  headArmor->flipping()) || m_headNeedsSync;
   bool chestNeedsSync = allNeedsSync || (dirChanged && chestArmor && chestArmor->flipping()) || m_chestNeedsSync;
   bool legsNeedsSync  = allNeedsSync || (dirChanged &&  legsArmor &&  legsArmor->flipping()) || m_legsNeedsSync;
   bool backNeedsSync  = allNeedsSync || (dirChanged &&  backArmor &&  backArmor->flipping()) || m_backNeedsSync;
-  bool anyNeedsSync = headNeedsSync || chestNeedsSync || legsNeedsSync || backNeedsSync;
+  bool anyNeedsSync = headNeedsSync  || chestNeedsSync || legsNeedsSync || backNeedsSync;
 
   bool bodyFlipped = direction != Direction::Right;
   bool bodyHidden = false;
