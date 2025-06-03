@@ -24,8 +24,8 @@ These link directly to the latest build from the [Actions](https://github.com/Op
 [Server](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main/OpenStarbound-Linux-Server.zip)
 
 **macOS**
-[Intel](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main/OpenStarbound-Dev-macOS-Intel.zip),
-[ARM](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main/OpenStarbound-Dev-macOS-Silicon.zip)
+[Intel](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main/OpenStarbound-macOS-Intel.zip),
+[ARM](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main/OpenStarbound-macOS-Silicon.zip)
 
 [All Nightly Builds](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main)
 
