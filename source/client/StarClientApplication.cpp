@@ -1209,8 +1209,6 @@ void ClientApplication::updateCamera(float dt) {
 
   auto assets = m_root->assets();
 
-  const float triggerRadius = 100.0f;
-  const float deadzone = 0.1f;
   const float panFactor = 1.5f;
   float cameraSpeedFactor = 30.0f / m_root->configuration()->get("cameraSpeedFactor").toFloat();
   cameraSpeedFactor /= (dt * 60.f);
@@ -1222,18 +1220,29 @@ void ClientApplication::updateCamera(float dt) {
     m_cameraOffsetDownTime += dt;
     Vec2F aim = m_universeClient->worldClient()->geometry().diff(m_mainInterface->cursorWorldPosition(), playerCameraPosition);
 
-    float magnitude = aim.magnitude() / (triggerRadius / camera.pixelRatio());
-    if (magnitude > deadzone) {
-      float cameraXOffset = aim.x() / magnitude;
-      float cameraYOffset = aim.y() / magnitude;
-      magnitude = (magnitude - deadzone) / (1.0 - deadzone);
-      if (magnitude > 1)
-        magnitude = 1;
-      cameraXOffset *= magnitude * 0.5f * camera.pixelRatio() * panFactor;
-      cameraYOffset *= magnitude * 0.5f * camera.pixelRatio() * panFactor;
-      m_cameraXOffset = (m_cameraXOffset * (cameraSpeedFactor - 1.0) + cameraXOffset) / cameraSpeedFactor;
-      m_cameraYOffset = (m_cameraYOffset * (cameraSpeedFactor - 1.0) + cameraYOffset) / cameraSpeedFactor;
+    RectI clientWindow = m_universeClient->worldClient()->clientWindow();
+    const float windowWidth = static_cast<float>(clientWindow.width());
+    const float windowHeight = static_cast<float>(clientWindow.height());
+    const float triggerRadius = max(windowWidth, windowHeight) * 0.5f;
+
+    float windowXMult = 1.0f;
+    float windowYMult = 1.0f;
+
+    if (windowWidth > windowHeight) {
+      windowYMult = windowHeight / windowWidth;
+    } else {
+      windowXMult = windowWidth / windowHeight;
     }
+
+    float magnitude = aim.magnitude() / triggerRadius;
+    float cameraXOffset = aim.x() / magnitude;
+    float cameraYOffset = aim.y() / magnitude;
+    if (magnitude > 1)
+      magnitude = 1;
+    cameraXOffset *= magnitude * 0.5f * windowXMult * camera.pixelRatio() * panFactor;
+    cameraYOffset *= magnitude * 0.5f * windowYMult * camera.pixelRatio() * panFactor;
+    m_cameraXOffset = (m_cameraXOffset * (cameraSpeedFactor - 1.0) + cameraXOffset) / cameraSpeedFactor;
+    m_cameraYOffset = (m_cameraYOffset * (cameraSpeedFactor - 1.0) + cameraYOffset) / cameraSpeedFactor;
   } else {
     if (m_cameraOffsetDownTime > 0.0f && m_cameraOffsetDownTime < 0.333333f)
       m_snapBackCameraOffset = true;
