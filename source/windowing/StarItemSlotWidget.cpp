@@ -186,19 +186,23 @@ void ItemSlotWidget::renderImpl() {
     }
 
 if (m_item->count() > 1 && m_showCount) {  // we don't need to tell people that there's only 1 of something
-    uint32_t count = m_item->count();
     std::string formattedCount;
 
-    if (count >= 1000000000000000) { // Quadrillions (Q)
-        formattedCount = toString(count / 1000000000000000) + "Q";
-    } else if (count >= 1000000000) { // Billions (B)
-        formattedCount = toString(count / 1000000000) + "B";
-    } else if (count >= 1000000) { // Millions (M)
-        formattedCount = toString(count / 1000000) + "M";
-    } else if (count >= 1000) { // Thousands (K)
-        formattedCount = toString(count / 1000) + "K";
+    if (m_item->count() >= 1000000000000000) { // Quadrillions (Q)
+        formattedCount = toString(m_item->count() / 1000000000000000) + "Q";
+    } else if (m_item->count() >= 1000000000) { // Billions (B)
+        formattedCount = toString(m_item->count() / 1000000000) + "B";
+    } else if (m_item->count() >= 1000000) { // Millions (M)
+        formattedCount = toString(m_item->count() / 1000000) + "M";
+    } else if (m_item->count() >= 1000) { // Thousands (K)
+        formattedCount = toString(m_item->count() / 1000) + "K";
     } else {
-        formattedCount = toString(count);
+        formattedCount = toString(m_item->count());
+    }
+
+    // Ensure formatted count is at most 4 characters long
+    if (formattedCount.length() > 4) {
+        formattedCount = formattedCount.substr(0, 4);
     }
 
     context()->setTextStyle(m_textStyle);
