@@ -197,14 +197,9 @@ if (m_item->count() > 1 && m_showCount) {  // we don't need to tell people that 
     } else if (m_item->count() >= 1000000) { // Million (m)
         formattedCount = toString(m_item->count() / 1000000) + "m";
     } else if (m_item->count() >= 1000) { // Thousand (k)
-        formattedCount = toString(m_item->count() / 1000) + "k";
+        formattedCount = toString(m_item->count() / 10000) + "k";
     } else {
         formattedCount = toString(m_item->count());
-    }
-
-    // Ensure formatted count is at most 4 characters long
-    if (formattedCount.length() > 4) {
-        formattedCount = formattedCount.substr(0, 4);
     }
 
     context()->setTextStyle(m_textStyle);
