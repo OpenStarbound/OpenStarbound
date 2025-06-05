@@ -196,8 +196,8 @@ if (m_item->count() > 1 && m_showCount) {  // we don't need to tell people that 
         formattedCount = toString(m_item->count() / 1000000000) + "b";
     } else if (m_item->count() >= 1000000) { // Million (m)
         formattedCount = toString(m_item->count() / 1000000) + "m";
-    } else if (m_item->count() >= 1000) { // Thousand (k)
-        formattedCount = toString(m_item->count() / 10000) + "k";
+    } else if (m_item->count() >= 10000) { // Thousand (k)
+        formattedCount = toString(m_item->count() / 1000) + "k";
     } else {
         formattedCount = toString(m_item->count());
     }
