@@ -186,6 +186,7 @@ void ItemSlotWidget::renderImpl() {
     }
 
 if (m_item->count() > 1 && m_showCount) {  // we don't need to tell people that there's only 1 of something
+    uint64_t count = m_item->count();
     std::string formattedCount;
 
     if (m_item->count() >= 1000000000000000000000) { // Sextillion (S)
