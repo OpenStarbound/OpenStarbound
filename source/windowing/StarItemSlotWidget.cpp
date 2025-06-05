@@ -185,15 +185,28 @@ void ItemSlotWidget::renderImpl() {
       }
     }
 
-    int frame = (int)roundf(m_progress * 18); // TODO: Hardcoded lol
-    context()->drawInterfaceQuad(String(strf("/interface/cooldown.png:{}", frame)), Vec2F(screenPosition()));
+if (m_item->count() > 1 && m_showCount) {  // we don't need to tell people that there's only 1 of something
+    std::string formattedCount;
 
-    if (m_item->count() > 1 && m_showCount) { // we don't need to tell people that there's only 1 of something
-      context()->setTextStyle(m_textStyle);
-      context()->setFontMode(m_countFontMode);
-      context()->renderInterfaceText(toString(m_item->count()), m_countPosition.translated(Vec2F(screenPosition())));
-      context()->clearTextStyle();
+    if (m_item->count() >= 1000000000000000) { // Quadrillion (q)
+        formattedCount = toString(m_item->count() / 1000000000000000) + "q";
+    } else if (m_item->count() >= 1000000000000) { // Trillion (t)
+        formattedCount = toString(m_item->count() / 1000000000000) + "t";
+    } else if (m_item->count() >= 1000000000) { // Billion (b)
+        formattedCount = toString(m_item->count() / 1000000000) + "b";
+    } else if (m_item->count() >= 1000000) { // Million (m)
+        formattedCount = toString(m_item->count() / 1000000) + "m";
+    } else if (m_item->count() >= 10000) { // Thousand (k)
+        formattedCount = toString(m_item->count() / 1000) + "k";
+    } else {
+        formattedCount = toString(m_item->count());
     }
+
+    context()->setTextStyle(m_textStyle);
+    context()->setFontMode(m_countFontMode);
+    context()->renderInterfaceText(formattedCount, m_countPosition.translated(Vec2F(screenPosition())));
+    context()->clearTextStyle();
+}
 
   } else if (m_drawBackingImageWhenEmpty && m_backingImage != "") {
     context()->drawInterfaceQuad(m_backingImage, Vec2F(screenPosition()));
