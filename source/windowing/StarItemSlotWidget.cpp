@@ -185,32 +185,27 @@ void ItemSlotWidget::renderImpl() {
       }
     }
 
-    if (m_item->count() > 1 && m_showCount) {  // we don't need to tell people that there's only 1 of something
-      uint32_t count = m_item->count();Add commentMore actions
-        std::string formattedCount;
+if (m_item->count() > 1 && m_showCount) {  // we don't need to tell people that there's only 1 of something
+    uint32_t count = m_item->count();
+    std::string formattedCount;
 
-        if (count >= 1000000000000000) { // Quadrillions (Q)
-            formattedCount = toString(count / 1000000000000000) + "Q";
-        } else if (count >= 1000000000) { // Billions (B)
-            formattedCount = toString(count / 1000000000) + "B";
-        } else if (count >= 1000000) { // Millions (M)
-            formattedCount = toString(count / 1000000) + "M";
-        } else if (count >= 1000) { // Thousands (K)
-            formattedCount = toString(count / 1000) + "K";
-        } else {
-            formattedCount = toString(count);
-        }
-
-        // Ensure formatted count is at most 4 characters long
-        if (formattedCount.length() > 4) {
-            formattedCount = formattedCount.substr(0, 4);
+    if (count >= 1000000000000000) { // Quadrillions (Q)
+        formattedCount = toString(count / 1000000000000000) + "Q";
+    } else if (count >= 1000000000) { // Billions (B)
+        formattedCount = toString(count / 1000000000) + "B";
+    } else if (count >= 1000000) { // Millions (M)
+        formattedCount = toString(count / 1000000) + "M";
+    } else if (count >= 1000) { // Thousands (K)
+        formattedCount = toString(count / 1000) + "K";
+    } else {
+        formattedCount = toString(count);
     }
 
     context()->setTextStyle(m_textStyle);
     context()->setFontMode(m_countFontMode);
     context()->renderInterfaceText(formattedCount, m_countPosition.translated(Vec2F(screenPosition())));
     context()->clearTextStyle();
-    }
+}
 
   } else if (m_drawBackingImageWhenEmpty && m_backingImage != "") {
     context()->drawInterfaceQuad(m_backingImage, Vec2F(screenPosition()));
