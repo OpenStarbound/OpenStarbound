@@ -188,14 +188,20 @@ void ItemSlotWidget::renderImpl() {
 if (m_item->count() > 1 && m_showCount) {  // we don't need to tell people that there's only 1 of something
     std::string formattedCount;
 
-    if (m_item->count() >= 1000000000000000) { // Quadrillions (Q)
-        formattedCount = toString(m_item->count() / 1000000000000000) + "Q";
-    } else if (m_item->count() >= 1000000000) { // Billions (B)
-        formattedCount = toString(m_item->count() / 1000000000) + "B";
-    } else if (m_item->count() >= 1000000) { // Millions (M)
-        formattedCount = toString(m_item->count() / 1000000) + "M";
-    } else if (m_item->count() >= 1000) { // Thousands (K)
-        formattedCount = toString(m_item->count() / 1000) + "K";
+    if (m_item->count() >= 1000000000000000000000) { // Sextillion (S)
+        formattedCount = toString(m_item->count() / 1000000000000000000000) + "S";
+    } else if (m_item->count() >= 1000000000000000000) { // Quintillion (Q)
+        formattedCount = toString(m_item->count() / 1000000000000000000) + "Q";
+    } else if (m_item->count() >= 1000000000000000) { // Quadrillion (q)
+        formattedCount = toString(m_item->count() / 1000000000000000) + "q";
+    } else if (m_item->count() >= 1000000000000) { // Trillion (t)
+        formattedCount = toString(m_item->count() / 1000000000000) + "t";
+    } else if (m_item->count() >= 1000000000) { // Billion (b)
+        formattedCount = toString(m_item->count() / 1000000000) + "b";
+    } else if (m_item->count() >= 1000000) { // Million (m)
+        formattedCount = toString(m_item->count() / 1000000) + "m";
+    } else if (m_item->count() >= 1000) { // Thousand (k)
+        formattedCount = toString(m_item->count() / 1000) + "k";
     } else {
         formattedCount = toString(m_item->count());
     }
