@@ -14,8 +14,8 @@ static String formatShortSize(uint64_t n) {
     if (n < 10000)
       return toString(n);
     
-    uint64_t divisor;
-    char suffix;
+    uint64_t divisor = 1000ull;
+    char suffix = 'k';
     
     if (n >= 1000000000000000ull) {
       divisor = 1000000000000000ull;
@@ -29,13 +29,9 @@ static String formatShortSize(uint64_t n) {
     } else if (n >= 1000000ull) {
       divisor = 1000000ull;
       suffix = 'm';
-    } else {
-      divisor = 1000ull;
-      suffix = 'k';
     }
     
     uint64_t whole = n / divisor;
-    
     if (whole >= 100ull)
         return strf("{}{:c}", whole, suffix);
     
