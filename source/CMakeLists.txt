@@ -457,15 +457,11 @@ endif()
 
 # Find all required external libraries, based on build settings...
 
-
-
-
 if(STAR_USE_JEMALLOC)
   find_package(PkgConfig)
-  pkg_check_modules(JEMALLOC REQUIRED jemalloc)
+  pkg_check_modules(JEMALLOC REQUIRED IMPORTED_TARGET GLOBAL jemalloc)
 
-  include_directories(SYSTEM ${JEMALLOC_INCLUDE_DIRS})
-  set(STAR_EXT_LIBS ${JEMALLOC_LIBRARY})
+  set(STAR_EXT_LIBS PkgConfig::JEMALLOC)
 endif()
 
 if (STAR_USE_MIMALLOC)

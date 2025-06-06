@@ -19,7 +19,6 @@ static bool _rpm_linker_ref = rpm_linker_ref();
 namespace Star {
 
 #ifdef STAR_USE_JEMALLOC
-#ifdef STAR_JEMALLOC_IS_PREFIXED
   void* malloc(size_t size) {
     return je_malloc(size);
   }
@@ -36,23 +35,6 @@ namespace Star {
     if (ptr)
       je_sdallocx(ptr, size, 0);
   }
-#else
-  void* malloc(size_t size) {
-    return ::malloc(size);
-  }
-
-  void* realloc(void* ptr, size_t size) {
-    return ::realloc(ptr, size);
-  }
-
-  void free(void* ptr) {
-    ::free(ptr);
-  }
-
-  void free(void* ptr, size_t size) {
-    ::free(ptr);
-  }
-#endif
 #elif STAR_USE_MIMALLOC
   void* malloc(size_t size) {
   return mi_malloc(size);

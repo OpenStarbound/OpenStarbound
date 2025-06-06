@@ -32,8 +32,8 @@
         "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL",
         "CMAKE_INCLUDE_PATH": "${sourceParentDir}/lib/windows/include",
         "CMAKE_LIBRARY_PATH": "${sourceParentDir}/lib/windows",
-        "STAR_USE_RPMALLOC": false,
-        "STAR_USE_JEMALLOC": true
+        "STAR_USE_RPMALLOC": true,
+        "STAR_USE_JEMALLOC": false
       },
       "vendor": {
         "microsoft.com/VisualStudioSettings/CMake/1.0": {
