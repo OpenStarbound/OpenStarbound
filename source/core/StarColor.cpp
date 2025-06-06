@@ -124,6 +124,11 @@ Color Color::temperature(float temp) {
   return c;
 }
 
+#ifdef __GNUC__
+#pragma GCC push_options
+#pragma GCC optimize("-fno-fast-math", "-fassociative-math", "-freciprocal-math")
+#endif
+
 Color Color::rgb(Vec3B const& c) {
   return rgb(c[0], c[1], c[2]);
 }
@@ -322,10 +327,6 @@ Vec3F Color::toRgbF() const {
   return Vec3F(redF(), greenF(), blueF());
 }
 
-#ifdef __GNUC__
-#pragma GCC push_options
-#pragma GCC optimize("-fno-fast-math", "-fassociative-math", "-freciprocal-math")
-#endif
 Vec4F Color::toHsva() const {
   float h, s, v;
 
