@@ -354,6 +354,25 @@ StringList imageOperationReferences(List<ImageOperation> const& operations) {
   return references;
 }
 
+#ifdef __GNUC__
+#pragma GCC push_options
+#pragma GCC optimize("-fno-fast-math -fassociative-math -freciprocal-math")
+#endif
+static void processSaturationShift(Image& image, SaturationShiftImageOperation const* op) {
+  image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
+    if (pixel[3] != 0) {
+      Color color = Color::rgba(pixel);
+      color.setSaturation(clamp(color.saturation() + op->saturationShiftAmount, 0.0f, 1.0f));
+      pixel = color.toRgba();
+    }
+  });
+}
+#ifdef __GNUC__
+#pragma GCC pop_options
+#endif
+
+
+
 void processImageOperation(ImageOperation const& operation, Image& image, ImageReferenceCallback refCallback) {
   if (image.bytesPerPixel() == 3) {
     // Convert to an image format that has alpha so certain operations function properly
@@ -365,13 +384,7 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
         pixel = Color::hueShiftVec4B(pixel, op->hueShiftAmount);
     });
   } else if (auto op = operation.ptr<SaturationShiftImageOperation>()) {
-    image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
-      if (pixel[3] != 0) {
-        Color color = Color::rgba(pixel);
-        color.setSaturation(clamp(color.saturation() + op->saturationShiftAmount, 0.0f, 1.0f));
-        pixel = color.toRgba();
-      }
-    });
+    processSaturationShift(image, op);
   } else if (auto op = operation.ptr<BrightnessMultiplyImageOperation>()) {
     image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
       if (pixel[3] != 0) {

@@ -324,7 +324,7 @@ Vec3F Color::toRgbF() const {
 
 #ifdef __GNUC__
 #pragma GCC push_options
-#pragma GCC optimize("-fno-fast-math")
+#pragma GCC optimize("-fno-fast-math -fassociative-math -freciprocal-math")
 #endif
 Vec4F Color::toHsva() const {
   float h, s, v;
@@ -369,14 +369,6 @@ Vec4F Color::toHsva() const {
 
   return Vec4F(h, s, v, alphaF());
 }
-#ifdef __GNUC__
-#pragma GCC pop_options
-#endif
-
-String Color::toHex() const {
-  auto rgba = toRgba();
-  return hexEncode((char*)rgba.ptr(), rgba[3] == 255 ? 3 : 4);
-}
 
 float Color::hue() const {
   return toHsva()[0];
@@ -401,6 +393,9 @@ float Color::saturation() const {
 float Color::value() const {
   return max(max(m_data[0], m_data[1]), m_data[2]);
 }
+#ifdef __GNUC__
+#pragma GCC pop_options
+#endif
 
 void Color::setHue(float h) {
   auto hsva = toHsva();
@@ -451,6 +446,11 @@ float Color::fromLinear(float in) {
   if (in <= 0.0031308f)
     return 12.92f * in;
   return (1.0f + a) * powf(in, 1.0f / 2.4f) - a;
+}
+
+String Color::toHex() const {
+  auto rgba = toRgba();
+  return hexEncode((char*)rgba.ptr(), rgba[3] == 255 ? 3 : 4);
 }
 
 void Color::convertToLinear() {
