@@ -6,11 +6,11 @@ on:
       linux:
         type: boolean
         description: Linux (GCC)
-        default: true
+        default: false
       linux_clang:
         type: boolean
         description: Linux (Clang)
-        default: false
+        default: true
       windows:
         type: boolean
         description: Windows
@@ -133,7 +133,7 @@ jobs:
   build_linux:
     name: Build OpenStarbound Linux x86_64
     runs-on: ubuntu-22.04
-    if: ${{ (github.event_name != 'workflow_dispatch') || (inputs.linux == true) }}
+    if: ${{ (github.event_name != 'pull_request') || (inputs.linux == true) }}
     env:
       VCPKG_BINARY_SOURCES: clear;files,${{ github.workspace }}/vcpkg_cache,readwrite
     steps:
@@ -220,7 +220,7 @@ jobs:
   build_linux_clang:
     name: Build OpenStarbound Linux Clang x86_64
     runs-on: ubuntu-22.04
-    if: ${{ (github.event_name != 'pull_request') && (inputs.linux_clang == true) }}
+    if: ${{ (github.event_name != 'workflow_dispatch') && (inputs.linux_clang == true) }}
     env:
         CC: clang
         CXX: clang++

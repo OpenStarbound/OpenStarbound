@@ -79,7 +79,7 @@
         "CMAKE_C_COMPILER": "clang",
         "CMAKE_CXX_COMPILER": "clang++",
         "VCPKG_TARGET_TRIPLET": "x64-linux-mixed-clang",
-        "STAR_USE_JEMALLOC": false
+        "STAR_USE_JEMALLOC": true
       }
     },
     {
