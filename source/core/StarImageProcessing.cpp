@@ -356,7 +356,7 @@ StringList imageOperationReferences(List<ImageOperation> const& operations) {
 
 #ifdef __GNUC__
 #pragma GCC push_options
-#pragma GCC optimize("-fno-fast-math -fassociative-math -freciprocal-math")
+#pragma GCC optimize("-fno-fast-math", "-fassociative-math", "-freciprocal-math")
 #endif
 static void processSaturationShift(Image& image, SaturationShiftImageOperation const* op) {
   image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {

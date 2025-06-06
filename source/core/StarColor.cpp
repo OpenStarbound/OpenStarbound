@@ -324,7 +324,7 @@ Vec3F Color::toRgbF() const {
 
 #ifdef __GNUC__
 #pragma GCC push_options
-#pragma GCC optimize("-fno-fast-math -fassociative-math -freciprocal-math")
+#pragma GCC optimize("-fno-fast-math", "-fassociative-math", "-freciprocal-math")
 #endif
 Vec4F Color::toHsva() const {
   float h, s, v;
