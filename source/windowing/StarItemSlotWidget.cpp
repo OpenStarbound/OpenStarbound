@@ -17,7 +17,10 @@ static String formatShortSize(uint64_t n) {
     uint64_t divisor = 1000ull;
     char suffix = 'k';
     
-    if (n >= 1000000000000000ull) {
+    if (n >= 1000000000000000000ull) {
+      divisor = 1000000000000000000ull;
+      suffix = 'Q';
+    } else if (n >= 1000000000000000ull) {
       divisor = 1000000000000000ull;
       suffix = 'q';
     } else if (n >= 1000000000000ull) {
