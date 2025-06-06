@@ -11,7 +11,7 @@
     "opus",
     "zstd",
     "mimalloc",
-    "jemalloc",
+    { "name": "jemalloc", "platform": "!osx" },
     "pkgconf"
   ]
 }
