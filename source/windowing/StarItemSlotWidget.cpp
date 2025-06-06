@@ -39,7 +39,7 @@ static String formatShortSize(uint64_t n) {
         return strf("{}{:c}", whole, suffix);
     
     uint64_t remainder = n - (whole * divisor);
-    uint64_t frac = (remainder * 1000) / divisor;
+    uint64_t frac = (remainder / (divisor / 1000));
     
     if (frac == 0)
       return strf("{}{:c}", whole, suffix);
