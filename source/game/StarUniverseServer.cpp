@@ -365,7 +365,9 @@ bool UniverseServer::executeForClient(ConnectionId clientId, function<void(World
   bool success = false;
   if (auto clientContext = m_clients.value(clientId)) {
     if (auto currentWorld = clientContext->playerWorld()) {
-      currentWorld->executeAction([clientId, action, &success](WorldServerThread*, WorldServer* worldServer) {
+      locker.unlock();
+      currentWorld->executeAction([clientId, action, &success, &locker](WorldServerThread*, WorldServer* worldServer) {
+        locker.lock();
         if (auto player = worldServer->clientPlayer(clientId)) {
           action(worldServer, player);
           success = true;
@@ -610,16 +612,18 @@ void UniverseServer::processUniverseFlags() {
     }
   }
 
-  eraseWhere(m_pendingFlagActions, [this](pair<WorldId, UniverseFlagAction> const& p) {
+  eraseWhere(m_pendingFlagActions, [&](pair<WorldId, UniverseFlagAction> const& p) {
       if (p.first.is<InstanceWorldId>() && instanceWorldStoredOrActive(p.first.get<InstanceWorldId>())) {
         // world is stored or active; perform flag actions once it loads
         if (auto maybeTargetWorld = triggerWorldCreation(p.first)) {
           if (auto targetWorld = maybeTargetWorld.value()) {
             if (p.second.is<PlaceDungeonFlagAction>()) {
               auto placeDungeonAction = p.second.get<PlaceDungeonFlagAction>();
-              targetWorld->executeAction([placeDungeonAction](WorldServerThread*, WorldServer* worldServer) {
-                  worldServer->placeDungeon(placeDungeonAction.dungeonId, placeDungeonAction.targetPosition, 0);
-                });
+              locker.unlock();
+              targetWorld->executeAction([&](WorldServerThread*, WorldServer* worldServer) {
+                worldServer->placeDungeon(placeDungeonAction.dungeonId, placeDungeonAction.targetPosition, 0);
+              });
+              locker.lock();
             }
             return true;
           }
@@ -676,7 +680,9 @@ void UniverseServer::updateShips() {
   for (auto const& p : m_clients) {
     auto newShipUpgrades = p.second->shipUpgrades();
     if (auto shipWorld = getWorld(ClientShipWorldId(p.second->playerUuid()))) {
+      locker.unlock();
       shipWorld->executeAction([&](WorldServerThread*, WorldServer* shipWorld) {
+        locker.lock();
         String species;
         Json jSpecies = shipWorld->getProperty("ship.species");
         if (jSpecies.isType(Json::Type::String))
@@ -748,7 +754,10 @@ void UniverseServer::kickErroredPlayers() {
   RecursiveMutexLocker locker(m_mainLock);
   for (auto const& worldId : m_worlds.keys()) {
     if (auto world = getWorld(worldId)) {
-      for (auto clientId : world->erroredClients())
+      locker.unlock();
+      auto erroredClients = world->erroredClients();
+      locker.lock();
+      for (auto clientId : erroredClients)
         m_pendingDisconnections[clientId] = "Incoming client packet has caused exception";
     }
   }
@@ -807,7 +816,10 @@ void UniverseServer::processPlanetTypeChanges() {
   for (auto const& worldId : m_worlds.keys()) {
     if (auto celestialWorldId = worldId.ptr<CelestialWorldId>()) {
       if (auto world = getWorld(worldId)) {
-        if (auto newPlanetType = world->pullNewPlanetType())
+        locker.unlock();
+        auto newPlanetType = world->pullNewPlanetType();
+        locker.lock();
+        if (newPlanetType)
           updatePlanetType(*celestialWorldId, newPlanetType->first, newPlanetType->second);
       }
     }
@@ -832,7 +844,8 @@ void UniverseServer::warpPlayers() {
     if (auto maybeToWorld = triggerWorldCreation(warpToWorld.world)) {
       Logger::info("UniverseServer: Warping player {} to {}", clientId, printWarpAction(warpToWorld));
       if (auto toWorld = maybeToWorld.value()) {
-        if (toWorld->spawnTargetValid(warpToWorld.target)) {
+        locker.unlock();
+        if (auto spawnTargetValid = toWorld->spawnTargetValid(warpToWorld.target)) {
           if (auto currentWorld = clientContext->playerWorld()) {
             if (auto playerRevivePosition = currentWorld->playerRevivePosition(clientId))
               clientContext->setPlayerReturnWarp(WarpToWorld{currentWorld->worldId(), SpawnTargetPosition(*playerRevivePosition)});
@@ -849,10 +862,15 @@ void UniverseServer::warpPlayers() {
           // Checking the spawn target validity then adding the client is not
           // perfect, it can still become invalid in between, if we fail at
           // adding the client we need to warp them back.
-          if (toWorld && toWorld->addClient(clientId, warpToWorld.target,
+          bool clientAdded = toWorld && toWorld->addClient(
+            clientId,
+            warpToWorld.target,
             !clientContext->remoteAddress(),
             clientContext->canBecomeAdmin(),
-            clientContext->netRules())) {
+            clientContext->netRules());
+
+          locker.lock();
+          if (clientAdded) {
             clientContext->setPlayerWorld(toWorld);
             m_chatProcessor->joinChannel(clientId, printWorldId(warpToWorld.world));
 
@@ -873,6 +891,7 @@ void UniverseServer::warpPlayers() {
           m_pendingPlayerWarps.remove(clientId);
         } else {
           Logger::info("UniverseServer: Warping player {} failed, invalid spawn target '{}'", clientId, printSpawnTarget(warpToWorld.target));
+          locker.lock();
           m_connectionServer->sendPackets(clientId, {make_shared<PlayerWarpResultPacket>(false, warpAction, true)});
           m_pendingPlayerWarps.remove(clientId);
         }
@@ -907,7 +926,7 @@ void UniverseServer::flyShips() {
     }
   }
 
-  eraseWhere(m_pendingFlights, [this](pair<ConnectionId const, tuple<Vec3I, SystemLocation, Json>> const& p) {
+  eraseWhere(m_pendingFlights, [this, &locker](pair<ConnectionId const, tuple<Vec3I, SystemLocation, Json>> const& p) {
       ConnectionId clientId = p.first;
       Vec3I system = get<0>(p.second);
       SystemLocation location = get<1>(p.second);
@@ -962,9 +981,11 @@ void UniverseServer::flyShips() {
         Logger::info("Flying ship for player {} to {}", clientId, destination);
 
       bool startInWarp = system == Vec3I();
-      clientShip->executeAction([interstellar, startInWarp, settings](WorldServerThread*, WorldServer* worldServer) {
-          worldServer->startFlyingSky(interstellar, startInWarp, settings);
-        });
+      locker.unlock();
+      clientShip->executeAction([&](WorldServerThread*, WorldServer* worldServer) {
+        worldServer->startFlyingSky(interstellar, startInWarp, settings);
+      });
+      locker.lock();
 
       clientContext->setShipCoordinate(CelestialCoordinate(system));
       clientContext->setOrbitWarpAction({});
@@ -983,7 +1004,7 @@ void UniverseServer::arriveShips() {
   RecursiveMutexLocker locker(m_mainLock);
   ReadLocker clientsLocker(m_clientsLock);
 
-  eraseWhere(m_pendingArrivals, [this](pair<ConnectionId const, CelestialCoordinate>& p) {
+  eraseWhere(m_pendingArrivals, [this, &locker](pair<ConnectionId const, CelestialCoordinate>& p) {
       auto& clientId = p.first;
       auto& coordinate = p.second;
 
@@ -1023,9 +1044,11 @@ void UniverseServer::arriveShips() {
 
       if (auto clientShip = createWorld(ClientShipWorldId(clientContext->playerUuid()))) {
         auto skyParameters = clientSystem->clientSkyParameters(clientId);
-        clientShip->executeAction([skyParameters](WorldServerThread*, WorldServer* worldServer) {
-            worldServer->stopFlyingSkyAt(skyParameters);
-          });
+        locker.unlock();
+        clientShip->executeAction([&](WorldServerThread*, WorldServer* worldServer) {
+          worldServer->stopFlyingSkyAt(skyParameters);
+        });
+        locker.lock();
 
         for (auto shipClientId : clientShip->clients()) {
           if (auto clientContext = m_clients.get(shipClientId))
@@ -1071,12 +1094,14 @@ void UniverseServer::processChat() {
           Logger::info("Chat: <{}> {}", clientContext->playerName(), message);
 
         auto team = m_teamManager->getTeam(clientContext->playerUuid());
+        locker.unlock();
         if (sendMode == ChatSendMode::Broadcast)
           m_chatProcessor->broadcast(p.first, message, std::move(data));
         else if (sendMode == ChatSendMode::Party && team.isValid())
           m_chatProcessor->message(p.first, MessageContext::Mode::Party, team.value().hex(), message, std::move(data));
         else
           m_chatProcessor->message(p.first, MessageContext::Mode::Local, printWorldId(clientContext->playerWorldId()), message, std::move(data));
+        locker.lock();
       }
     }
   }
@@ -1131,10 +1156,13 @@ void UniverseServer::shutdownInactiveWorlds() {
   // Shutdown idle and errored worlds.
   for (auto const& worldId : m_worlds.keys()) {
     if (auto world = getWorld(worldId)) {
+      locker.unlock();
       if (world->serverErrorOccurred()) {
         world->stop();
         Logger::error("UniverseServer: World {} has stopped due to an error", worldId);
+        locker.lock();
         worldDiedWithError(world->worldId());
+        locker.unlock();
       } else if (world->noClients()) {
         bool anyPendingWarps = false;
         for (auto const& p : m_pendingPlayerWarps) {
@@ -1149,7 +1177,7 @@ void UniverseServer::shutdownInactiveWorlds() {
           world->stop();
         }
       }
-
+      locker.lock();
       if (world->isJoined()) {
         auto kickClients = world->clients();
         if (!kickClients.empty()) {
@@ -1208,6 +1236,7 @@ void UniverseServer::doTriggeredStorage() {
     saveSettings();
     saveTempWorldIndex();
 
+    locker.unlock();
     for (auto const& p : m_clients) {
       if (auto shipWorld = getWorld(ClientShipWorldId(p.second->playerUuid())))
         p.second->updateShipChunks(shipWorld->readChunks());
@@ -1217,6 +1246,7 @@ void UniverseServer::doTriggeredStorage() {
       VersionedJson::writeFile(versioningDatabase->makeCurrentVersionedJson("ClientContext", p.second->storeServerData()), clientContextFile);
     }
 
+    locker.lock();
     int storageTriggerInterval = Root::singleton().assets()->json("/universe_server.config:universeStorageInterval").toInt();
     m_storageTriggerDeadline = Time::monotonicMilliseconds() + storageTriggerInterval;
 
