@@ -105,7 +105,7 @@ if(NOT DEFINED STAR_COMPILER)
     message(FATAL_ERROR "C and C++ compiler id do not match, unsupported build configuration")
   endif()
 
-  if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
+  if(CMAKE_C_COMPILER_ID STREQUAL "Clang" OR CMAKE_C_COMPILER_ID STREQUAL "AppleClang")
     set(STAR_COMPILER "clang")
   elseif(CMAKE_COMPILER_IS_GNUC)
     set(STAR_COMPILER "gnu")
