@@ -354,7 +354,7 @@ StringList imageOperationReferences(List<ImageOperation> const& operations) {
   return references;
 }
 
-#ifdef __GNUC__
+#ifdef STAR_COMPILER_CLANG
 #pragma GCC push_options
 #pragma GCC optimize("-fno-fast-math", "-fassociative-math", "-freciprocal-math")
 #endif
@@ -367,7 +367,7 @@ static void processSaturationShift(Image& image, SaturationShiftImageOperation c
     }
   });
 }
-#ifdef __GNUC__
+#ifdef STAR_COMPILER_CLANG
 #pragma GCC pop_options
 #endif
 

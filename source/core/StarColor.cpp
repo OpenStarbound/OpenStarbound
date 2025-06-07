@@ -124,7 +124,7 @@ Color Color::temperature(float temp) {
   return c;
 }
 
-#ifdef __GNUC__
+#ifdef STAR_COMPILER_GNU
 #pragma GCC push_options
 #pragma GCC optimize("-fno-fast-math", "-fassociative-math", "-freciprocal-math")
 #endif
@@ -394,7 +394,7 @@ float Color::saturation() const {
 float Color::value() const {
   return max(max(m_data[0], m_data[1]), m_data[2]);
 }
-#ifdef __GNUC__
+#ifdef STAR_COMPILER_GNU
 #pragma GCC pop_options
 #endif
 
