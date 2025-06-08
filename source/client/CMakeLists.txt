@@ -38,7 +38,7 @@ ENDIF()
 IF(STAR_SYSTEM_MACOS)
   SET_TARGET_PROPERTIES (starbound PROPERTIES LINK_FLAGS "-Wl,-rpath,'@executable_path'")
 ELSEIF (UNIX)
-  SET_TARGET_PROPERTIES (starbound PROPERTIES LINK_FLAGS "-Wl,--export_dynamic,-rpath,'$ORIGIN'")
+  SET_TARGET_PROPERTIES (starbound PROPERTIES LINK_FLAGS "-Wl,--export-dynamic,-rpath,'$ORIGIN'")
 ENDIF()
 
 IF (STAR_SYSTEM_MACOS)
