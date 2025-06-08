@@ -583,7 +583,9 @@ void UniverseServer::run() {
     }
 
     ReadLocker clientsLocker(m_clientsLock);
-    for (auto clientId : m_clients.keys())
+    auto clients = m_clients.keys();
+    clientsLocker.unlock();
+    for (auto clientId : clients)
       doDisconnection(clientId, "ServerShutdown");
 
     RecursiveMutexLocker locker(m_mainLock);
@@ -786,15 +788,20 @@ void UniverseServer::reapConnections() {
     doDisconnection(p.first, p.second);
 
   ReadLocker clientsLocker(m_clientsLock);
-  for (auto clientId : m_clients.keys()) {
+  auto clients = m_clients.keys();
+  for (auto clientId : clients) {
     auto clientContext = m_clients.value(clientId);
     if (!m_connectionServer->connectionIsOpen(clientId)) {
       Logger::info("UniverseServer: Client {} connection lost", clientContext->descriptiveName());
+      clientsLocker.unlock();
       doDisconnection(clientId, String("Disconnected due to connection lost"));
+      clientsLocker.lock();
     } else {
       if (clientContext->remoteAddress() && startTime - m_connectionServer->lastActivityTime(clientId) > timeout) {
         Logger::info("UniverseServer: Kicking client {} due to inactivity", clientContext->descriptiveName());
+        clientsLocker.unlock();
         doDisconnection(clientId, String("Disconnected due to inactivity"));
+        clientsLocker.lock();
       }
     }
   }
