@@ -582,15 +582,15 @@ void UniverseServer::run() {
       tcpServer.reset();
     }
 
-    RecursiveMutexLocker locker(m_mainLock);
-    WriteLocker clientsLocker(m_clientsLock);
+    ReadLocker clientsLocker(m_clientsLock);
     for (auto clientId : m_clients.keys())
       doDisconnection(clientId, "ServerShutdown");
 
+    RecursiveMutexLocker locker(m_mainLock);
+    auto leftoverWorlds = take(m_worlds);
     saveSettings();
     saveTempWorldIndex();
-    m_worlds.clear();
-
+    locker.unlock();
   } catch (std::exception const& e) {
     Logger::error("UniverseServer: exception caught cleaning up: {}", outputException(e, true));
   }
@@ -780,10 +780,12 @@ void UniverseServer::reapConnections() {
       return function.isFinished();
     });
 
-  WriteLocker clientsLocker(m_clientsLock);
-  for (auto p : take(m_pendingDisconnections))
+  auto pendingConnections = take(m_pendingDisconnections);
+  locker.unlock();
+  for (auto p : pendingConnections)
     doDisconnection(p.first, p.second);
 
+  ReadLocker clientsLocker(m_clientsLock);
   for (auto clientId : m_clients.keys()) {
     auto clientContext = m_clients.value(clientId);
     if (!m_connectionServer->connectionIsOpen(clientId)) {
@@ -797,6 +799,7 @@ void UniverseServer::reapConnections() {
     }
   }
 
+  locker.lock();
   // Once connections are waiting to close, send any pending data and wait up
   // to the connection timeout for the client to do the closing to ensure the
   // client has all the data.
@@ -985,12 +988,14 @@ void UniverseServer::flyShips() {
       clientShip->executeAction([&](WorldServerThread*, WorldServer* worldServer) {
         worldServer->startFlyingSky(interstellar, startInWarp, settings);
       });
+
+      auto clients = clientShip->clients();
       locker.lock();
 
       clientContext->setShipCoordinate(CelestialCoordinate(system));
       clientContext->setOrbitWarpAction({});
-      for (auto clientId : clientShip->clients()) {
-        if (auto clientContext = m_clients.get(clientId))
+      for (auto clientId : clients) {
+        if (auto& clientContext = m_clients.get(clientId))
           clientContext->setOrbitWarpAction({});
       }
 
@@ -1048,10 +1053,11 @@ void UniverseServer::arriveShips() {
         clientShip->executeAction([&](WorldServerThread*, WorldServer* worldServer) {
           worldServer->stopFlyingSkyAt(skyParameters);
         });
+        auto clients = clientShip->clients();
         locker.lock();
 
-        for (auto shipClientId : clientShip->clients()) {
-          if (auto clientContext = m_clients.get(shipClientId))
+        for (auto shipClientId : clients) {
+          if (auto& clientContext = m_clients.get(shipClientId))
             clientContext->setOrbitWarpAction(clientSystem->clientWarpAction(clientId));
         }
       }
@@ -1737,9 +1743,7 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
   Logger::log(LogLevel::Info, connectionLog.utf8Ptr());
 
 
-
-  mainLocker.lock();
-  WriteLocker clientsLocker(m_clientsLock);
+  ReadLocker clientsLocker(m_clientsLock);
   if (auto clashId = getClientForUuid(clientConnect->playerUuid)) {
     if (administrator) {
       doDisconnection(*clashId, "Duplicate UUID joined and is Administrator so has priority.");
@@ -1749,6 +1753,7 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
     }
   }
 
+  mainLocker.lock();
   if (m_clients.size() + 1 > m_maxPlayers && !administrator) {
     connectionFail("Max player connections");
     return;
@@ -1901,17 +1906,22 @@ WarpToWorld UniverseServer::resolveWarpAction(WarpAction warpAction, ConnectionI
 }
 
 void UniverseServer::doDisconnection(ConnectionId clientId, String const& reason) {
+  WriteLocker clientsLocker(m_clientsLock);
+  RecursiveMutexLocker locker(m_mainLock);
   if (auto clientContext = m_clients.value(clientId)) {
     m_teamManager->playerDisconnected(clientContext->playerUuid());
-
+    clientsLocker.unlock();
     // The client should revive at their ship if they are in an un-revivable
     // state
     WarpToWorld reviveWarp = WarpToWorld(ClientShipWorldId(clientContext->playerUuid()));
     if (auto currentWorld = clientContext->playerWorld()) {
       auto currentWorldId = currentWorld->worldId();
+      locker.unlock();
       if (auto playerRevivePosition = currentWorld->playerRevivePosition(clientId))
         reviveWarp = WarpToWorld(currentWorldId, SpawnTargetPosition(*playerRevivePosition));
-      m_connectionServer->sendPackets(clientId, currentWorld->removeClient(clientId));
+      auto finalPackets = currentWorld->removeClient(clientId);
+      locker.lock();
+      m_connectionServer->sendPackets(clientId, finalPackets);
       m_chatProcessor->leaveChannel(clientId, printWorldId(currentWorld->worldId()));
     }
 
@@ -1929,8 +1939,10 @@ void UniverseServer::doDisconnection(ConnectionId clientId, String const& reason
     if (m_connectionServer->connectionIsOpen(clientId)) {
       // Send the client the last ship update.
       if (auto shipWorld = getWorld(ClientShipWorldId(clientContext->playerUuid()))) {
+        locker.unlock();
         clientContext->updateShipChunks(shipWorld->readChunks());
         shipWorld->stop();
+        locker.lock();
       }
       sendClientContextUpdate(clientContext);
 
@@ -1943,6 +1955,7 @@ void UniverseServer::doDisconnection(ConnectionId clientId, String const& reason
     String clientContextFile = File::relativeTo(m_storageDirectory, strf("{}.clientcontext", clientContext->playerUuid().hex()));
     VersionedJson::writeFile(versioningDatabase->makeCurrentVersionedJson("ClientContext", clientContext->storeServerData()), clientContextFile);
 
+    clientsLocker.lock();
     m_clients.remove(clientId);
     m_deadConnections.append({m_connectionServer->removeConnection(clientId), Time::monotonicMilliseconds()});
     Logger::info("UniverseServer: Client {} disconnected for reason: {}", clientContext->descriptiveName(), reason);
@@ -1953,6 +1966,7 @@ void UniverseServer::doDisconnection(ConnectionId clientId, String const& reason
           make_shared<ServerInfoPacket>(players, static_cast<uint16_t>(m_maxPlayers))
         });  
     }
+    clientsLocker.unlock();
 
     for (auto& p : m_scriptContexts)
       p.second->invoke("doDisconnection", clientId);  

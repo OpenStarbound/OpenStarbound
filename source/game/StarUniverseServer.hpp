@@ -172,7 +172,6 @@ private:
   // Main lock and clients read lock must be held when calling
   WarpToWorld resolveWarpAction(WarpAction warpAction, ConnectionId clientId, bool deploy) const;
 
-  // Main lock and clients write lock must be held when calling
   void doDisconnection(ConnectionId clientId, String const& reason);
 
   // Clients read lock must be held when calling
