@@ -855,7 +855,7 @@ void UniverseServer::warpPlayers() {
       Logger::info("UniverseServer: Warping player {} to {}", clientId, printWarpAction(warpToWorld));
       if (auto toWorld = maybeToWorld.value()) {
         locker.unlock();
-        if (auto spawnTargetValid = toWorld->spawnTargetValid(warpToWorld.target)) {
+        if (toWorld->spawnTargetValid(warpToWorld.target)) {
           if (auto currentWorld = clientContext->playerWorld()) {
             if (auto playerRevivePosition = currentWorld->playerRevivePosition(clientId))
               clientContext->setPlayerReturnWarp(WarpToWorld{currentWorld->worldId(), SpawnTargetPosition(*playerRevivePosition)});
