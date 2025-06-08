@@ -22,9 +22,9 @@
 #define MAX_THREAD_NAMELEN 16
 #endif
 
-//#ifndef STAR_SYSTEM_MACOS
-//#define STAR_MUTEX_TIMED
-//#endif
+#ifndef STAR_SYSTEM_MACOS
+#define STAR_MUTEX_TIMED
+#endif
 
 namespace Star {
 
@@ -142,8 +142,7 @@ struct MutexImpl {
     clock_gettime(CLOCK_REALTIME, &ts);
     ts.tv_sec += 60;
     if (pthread_mutex_timedlock(&mutex, &ts) != 0) {
-      Logger::warn("Mutex lock is taking too long, printing stack");
-      printStack("Mutex::lock");
+      printStack("Mutex::lock is taking too long!");
 #else
     {
 #endif
@@ -221,8 +220,7 @@ struct RecursiveMutexImpl {
     clock_gettime(CLOCK_REALTIME, &ts);
     ts.tv_sec += 60;
     if (pthread_mutex_timedlock(&mutex, &ts) != 0) {
-      Logger::warn("RecursiveMutex lock is taking too long, printing stack");
-      printStack("RecursiveMutex::lock");
+      printStack("RecursiveMutex::lock is taking too long!");
 #else
     {
 #endif
