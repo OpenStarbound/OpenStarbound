@@ -1743,10 +1743,12 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
   Logger::log(LogLevel::Info, connectionLog.utf8Ptr());
 
 
-  ReadLocker clientsLocker(m_clientsLock);
+  WriteLocker clientsLocker(m_clientsLock);
   if (auto clashId = getClientForUuid(clientConnect->playerUuid)) {
     if (administrator) {
+      clientsLocker.unlock();
       doDisconnection(*clashId, "Duplicate UUID joined and is Administrator so has priority.");
+      clientsLocker.lock();
     } else {
       connectionFail("Duplicate player UUID");
       return;
@@ -1765,7 +1767,6 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
   m_clients.add(clientId, clientContext);
   m_connectionServer->addConnection(clientId, std::move(connection));
   clientsLocker.unlock();
-
   clientContext->registerRpcHandlers(m_teamManager->rpcHandlers());
 
   String clientContextFile = File::relativeTo(m_storageDirectory, strf("{}.clientcontext", clientConnect->playerUuid.hex()));
