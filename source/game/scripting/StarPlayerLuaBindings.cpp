@@ -775,7 +775,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
   callbacks.registerCallback("getNewCodex", [player]() -> Maybe<String> {
     auto codexPtr = player->codexes()->firstNewCodex();
     if (codexPtr)
-      return codexPtr.title();
+      return codexPtr->title();
 
     return {};
   });
