@@ -12,6 +12,7 @@
     "zstd",
     "mimalloc",
     { "name": "jemalloc", "platform": "!osx" },
-    "pkgconf"
+    "pkgconf",
+    "re2"
   ]
 }

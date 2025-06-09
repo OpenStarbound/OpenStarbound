@@ -478,6 +478,7 @@ find_package(Freetype REQUIRED)
 find_package(Opus CONFIG REQUIRED)
 find_package(OggVorbis REQUIRED)
 find_package(zstd CONFIG REQUIRED)
+find_package(re2 CONFIG REQUIRED)
 
 include_directories(SYSTEM
     ${FREETYPE_INCLUDE_DIRS}
@@ -490,6 +491,7 @@ set(STAR_EXT_LIBS ${STAR_EXT_LIBS}
     $<IF:$<TARGET_EXISTS:Freetype::Freetype>,Freetype::Freetype,freetype>
     $<IF:$<TARGET_EXISTS:zstd::libzstd_shared>,zstd::libzstd_shared,zstd::libzstd_static>
     Opus::opus
+    re2::re2
     ${VORBISFILE_LIBRARY}
     ${VORBIS_LIBRARY}
     ${OGG_LIBRARY}

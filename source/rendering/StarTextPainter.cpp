@@ -1,6 +1,5 @@
 #include "StarTextPainter.hpp"
 #include "StarJsonExtra.hpp"
-#include <regex>
 
 namespace Star {
 
