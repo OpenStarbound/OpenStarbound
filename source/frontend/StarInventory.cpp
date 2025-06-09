@@ -49,6 +49,14 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
           m_containerInteractor->addToContainer(sourceItem);
           m_containerSource = inventorySlot;
           m_expectingSwap = true;
+        } else {
+          for (PanePtr& pane : m_parent->paneManager()->getAllPanes()) {
+            auto remainder = pane->shiftItemFromInventory(inventory->itemsAt(inventorySlot));
+            if (remainder.isValid()) {
+              inventory->setItem(inventorySlot, remainder.value());
+              break;
+            }
+          }
         }
       }
     } else {

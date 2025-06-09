@@ -32,6 +32,8 @@ public:
 
   PanePtr createTooltip(Vec2I const& screenPosition) override;
   Maybe<String> cursorOverride(Vec2I const& screenPosition) override;
+  Maybe<ItemPtr> shiftItemFromInventory(ItemPtr const& input) override;
+
 protected:
   virtual GuiReaderPtr reader() override;
   void construct(Json config);
