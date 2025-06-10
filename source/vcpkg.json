@@ -13,6 +13,7 @@
     "mimalloc",
     { "name": "jemalloc", "platform": "!osx" },
     "pkgconf",
-    "re2"
+    "re2",
+    { "name": "abseil", "features": ["cxx17"] }
   ]
 }
