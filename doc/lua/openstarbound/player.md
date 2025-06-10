@@ -327,3 +327,45 @@ teleportOut<br>
 Returns an array, each entry being a table with `name`, `uuid`, `entity`, `healthPercentage` and `energyPercentage`
 
 ---
+
+#### `bool` player.isCodexKnown(`String` codexId)
+
+Returns `true` if the player knows the specified codexId, and `false` otherwise.
+
+---
+
+#### `bool` player.isCodexRead(`String` codexId)
+
+Returns `true` if the player has read the specified codexId, and `false` otherwise.
+
+---
+
+#### `bool` player.markCodexRead(`String` codexId)
+
+Marks the specified codexId as read by the player. Returns `true` if the codex is known by the player and was marked as unread and `false` otherwise.
+
+---
+
+#### `bool` player.markCodexUnread(`String` codexId)
+
+Marks the specified codexId as not read by the player. Returns `true` if the codex is known by the player and was marked as read and `false` otherwise.
+
+---
+
+#### `void` player.learnCodex(`String` codexId, [`bool` markRead])
+
+Make the player learn the specified codexId. If markRead is `true`, then the codex will be marked as read by default.
+
+---
+
+#### `Json` player.getCodexes()
+
+Returns a JSON object of key-value pairs, which are the codex ID and read status respectively.
+
+---
+
+#### `String` player.getNewCodex()
+
+Returns the codex ID of the newest codex not read and `nil` otherwise.
+
+---

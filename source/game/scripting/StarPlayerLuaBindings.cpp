@@ -14,6 +14,7 @@
 #include "StarUniverseClient.hpp"
 #include "StarTeamClient.hpp"
 #include "StarPlayerCodexes.hpp"
+#include "StarCodex.hpp"
 
 namespace Star {
 
@@ -770,6 +771,14 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
 
   callbacks.registerCallback("getCodexes", [player]() -> Json {
     return player->codexes()->toJson();
+  });
+
+  callbacks.registerCallback("getNewCodex", [player]() -> Maybe<String> {
+    auto codexPtr = player->codexes()->firstNewCodex();
+    if (codexPtr)
+      return codexPtr->title();
+
+    return {};
   });
 
   return callbacks;
