@@ -378,8 +378,8 @@ void ButtonWidget::setInvisible(bool invisible) {
 }
 
 RectI ButtonWidget::getScissorRect() const {
-  if (m_pressed) {
-    return RectI::withSize(screenPosition(), size() + m_pressedOffset);
+  if (m_pressed || (m_checked && !m_hasCheckedImages)) {
+    return RectI::withSize(screenPosition() + m_pressedOffset, size());
   }
   return RectI::withSize(screenPosition(), size());
 }
