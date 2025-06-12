@@ -13,6 +13,7 @@
       "generator": "Ninja",
       "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
       "cacheVariables": {
+        "CMAKE_CXX_STANDARD":  "17",
         "CMAKE_INSTALL_PREFIX": "${sourceParentDir}/install",
         "VCPKG_OVERLAY_TRIPLETS": "${sourceParentDir}/triplets",
         "CMAKE_VERBOSE_MAKEFILE": true,
