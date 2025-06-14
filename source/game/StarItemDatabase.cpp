@@ -513,8 +513,8 @@ ItemPtr ItemDatabase::tryCreateItem(ItemDescriptor const& descriptor, Maybe<floa
   Json parameters = descriptor.parameters();
 
   try {
-    if ((name == "perfectlygenericitem") || (name == "missingmod") && parameters.contains("genericItemStorage") || parameters.contains("missingModStorage")) {
-      Json storage = parameters.get("genericItemStorage") || parameters.get("missingModStorage");
+    if ((name == "perfectlygenericitem") || (name == "missingmod") && parameters.contains("genericItemStorage")) {
+      Json storage = parameters.get("genericItemStorage");
       name = storage.getString("name");
       parameters = storage.get("parameters");
     }
@@ -527,7 +527,7 @@ ItemPtr ItemDatabase::tryCreateItem(ItemDescriptor const& descriptor, Maybe<floa
     } else if (!ignoreInvalid) {
       Logger::error("Could not instantiate item '{}'. {}", descriptor, outputException(e, false));
       result = createItem(m_items.get("missingmod").type, itemConfig("missingmod", JsonObject({
-        {"missingModStorage", descriptor.toJson()},
+        {"genericItemStorage", descriptor.toJson()},
         {"shortdescription", descriptor.name()},
       }), {}, {}));
     } else
