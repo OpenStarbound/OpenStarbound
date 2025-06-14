@@ -513,8 +513,8 @@ ItemPtr ItemDatabase::tryCreateItem(ItemDescriptor const& descriptor, Maybe<floa
   Json parameters = descriptor.parameters();
 
   try {
-    if ((name == "perfectlygenericitem") && parameters.contains("genericItemStorage")) {
-      Json storage = parameters.get("genericItemStorage");
+    if ((name == "perfectlygenericitem") || (name == "missingmod") && parameters.contains("genericItemStorage") || parameters.contains("missingModStorage")) {
+      Json storage = parameters.get("genericItemStorage") || parameters.get("missingModStorage");
       name = storage.getString("name");
       parameters = storage.get("parameters");
     }
@@ -523,13 +523,12 @@ ItemPtr ItemDatabase::tryCreateItem(ItemDescriptor const& descriptor, Maybe<floa
   catch (std::exception const& e) {
     if (descriptor.name() == "perfectlygenericitem") {
       Logger::error("Could not re-instantiate item '{}'. {}", descriptor, outputException(e, false));
-		  result = createItem(m_items.get("perfectlygenericitem").type, itemConfig("perfectlygenericitem", descriptor.parameters(), level, seed));
+		  result = createItem(m_items.get("missingmod").type, itemConfig("missingmod", descriptor.parameters(), level, seed));
     } else if (!ignoreInvalid) {
       Logger::error("Could not instantiate item '{}'. {}", descriptor, outputException(e, false));
-      result = createItem(m_items.get("perfectlygenericitem").type, itemConfig("perfectlygenericitem", JsonObject({
-        {"genericItemStorage", descriptor.toJson()},
+      result = createItem(m_items.get("missingmod").type, itemConfig("missingmod", JsonObject({
+        {"missingModStorage", descriptor.toJson()},
         {"shortdescription", descriptor.name()},
-        {"description", "Reinstall the parent mod to return this item to normal\n^red;(to retain data, do not place as object)"}
       }), {}, {}));
     } else
       throw e;
