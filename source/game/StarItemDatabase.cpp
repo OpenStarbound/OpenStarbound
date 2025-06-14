@@ -521,9 +521,9 @@ ItemPtr ItemDatabase::tryCreateItem(ItemDescriptor const& descriptor, Maybe<floa
 	  result = createItem(m_items.get(name).type, itemConfig(name, parameters, level, seed));
   }
   catch (std::exception const& e) {
-    if (descriptor.name() == "perfectlygenericitem") {
+    if (descriptor.name() == "perfectlygenericitem" || name == "missingmod") {
       Logger::error("Could not re-instantiate item '{}'. {}", descriptor, outputException(e, false));
-		  result = createItem(m_items.get("missingmod").type, itemConfig("missingmod", descriptor.parameters(), level, seed));
+		  result = createItem(m_items.get("missingmod").type, itemConfig("missingmod", descriptor.parameters(), descriptor.name(), level, seed));
     } else if (!ignoreInvalid) {
       Logger::error("Could not instantiate item '{}'. {}", descriptor, outputException(e, false));
       result = createItem(m_items.get("missingmod").type, itemConfig("missingmod", JsonObject({
