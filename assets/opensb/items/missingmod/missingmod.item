@@ -1,8 +1,9 @@
 {
   "itemName" : "missingmod",
-  "price" : 0,
+  "shortdescription" : "Missing Mod",
   "rarity" : "Legendary",
   "category" : "Missing Mod",
   "inventoryIcon" : "/interface/modsmenu/modicon.png",
-  "description" : "Reinstall the parent mod to return this item to normal"
+  "description" : "Reinstall the parent mod to return this item to normal",
+  "price" : 0
 }
