@@ -8,7 +8,7 @@ function patch(data)
   local rng = sb.makeRandomSource()
   local num = rng:randUInt(300)
   local terry = num == rng:randUInt(10) -- thanks to Discord user arcanearcaneflower for letting me use this sprite!
-  local logo = terry and "starraria.png" or (rand == 0 and "barst" or "starb") .. "ound.png"
+  local logo = terry and "starraria.png" or (num == 0 and "barst" or "starb") .. "ound.png"
   data.backdropImages = jarray{
     jarray{
       jarray{0, 0}, 
