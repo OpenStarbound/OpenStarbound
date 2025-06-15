@@ -1,4 +1,4 @@
-#include "StarThread.hpp"
+﻿#include "StarThread.hpp"
 #include "StarTime.hpp"
 #include "StarLogging.hpp"
 
@@ -140,9 +140,9 @@ struct MutexImpl {
 #ifdef STAR_MUTEX_TIMED
     timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
-    ts.tv_sec += 60;
+    ts.tv_sec += 15;
     if (pthread_mutex_timedlock(&mutex, &ts) != 0) {
-      printStack("Mutex::lock is taking too long!");
+      printStack("Mutex::lock is TAKING TOO LONG 🎃");
 #else
     {
 #endif
@@ -218,9 +218,9 @@ struct RecursiveMutexImpl {
 #ifdef STAR_MUTEX_TIMED
     timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
-    ts.tv_sec += 60;
+    ts.tv_sec += 15;
     if (pthread_mutex_timedlock(&mutex, &ts) != 0) {
-      printStack("RecursiveMutex::lock is taking too long!");
+      printStack("RecursiveMutex::lock is TAKING TOO LONG 🎃");
 #else
     {
 #endif
