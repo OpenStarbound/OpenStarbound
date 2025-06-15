@@ -771,10 +771,12 @@ void UniverseServer::reapConnections() {
   int64_t startTime = Time::monotonicMilliseconds();
   int64_t timeout = Root::singleton().assets()->json("/universe_server.config:connectionTimeout").toInt();
 
-  eraseWhere(m_connectionAcceptThreads, [](ThreadFunction<void>& function) {
+  eraseWhere(m_connectionAcceptThreads, [&](ThreadFunction<void>& function) {
       if (!function.isRunning()) {
         try {
+          locker.unlock();
           function.finish();
+          locker.lock();
         } catch (std::exception const& e) {
           Logger::error("UniverseServer: Exception caught accepting new connection: {}", outputException(e, true));
         }
@@ -786,7 +788,6 @@ void UniverseServer::reapConnections() {
   locker.unlock();
   for (auto p : pendingConnections)
     doDisconnection(p.first, p.second);
-  locker.lock();
 
   ReadLocker clientsLocker(m_clientsLock);
   auto clients = m_clients.keys();
@@ -807,6 +808,7 @@ void UniverseServer::reapConnections() {
     }
   }
 
+  locker.lock();
   // Once connections are waiting to close, send any pending data and wait up
   // to the connection timeout for the client to do the closing to ensure the
   // client has all the data.
