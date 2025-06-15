@@ -99,6 +99,9 @@ private:
   unsigned windowHeight() const;
   unsigned windowWidth() const;
 
+  typedef LuaUpdatableComponent<LuaBaseComponent> ScriptComponent;
+  shared_ptr<ScriptComponent> m_scriptComponent;
+
   GuiContext* m_guiContext;
 
   RendererPtr m_renderer;

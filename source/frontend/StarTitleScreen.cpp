@@ -12,6 +12,8 @@
 #include "StarCharSelection.hpp"
 #include "StarCharCreation.hpp"
 #include "StarTextBoxWidget.hpp"
+#include "StarCanvasWidget.hpp"
+#include "StarWidgetLuaBindings.hpp"
 #include "StarOptionsMenu.hpp"
 #include "StarModsMenu.hpp"
 #include "StarAssets.hpp"
@@ -81,6 +83,13 @@ void TitleScreen::render() {
 
   m_renderer->flush();
 
+  if (auto canvas = m_mainMenu->findChild("canvas")) {
+    canvas->setPosition(Vec2I());
+    canvas->setSize(Vec2I(m_guiContext->windowInterfaceSize()));
+  }
+  m_scriptComponent->invoke("render", JsonObject{{"interfaceScale", interfaceScale()}
+  });
+  /*
   for (auto& backdropImage : assets->json("/interface/windowconfig/title.config:backdropImages").toArray()) {
     Vec2F offset = jsonToVec2F(backdropImage.get(0)) * interfaceScale();
     String image = backdropImage.getString(1);
@@ -93,6 +102,7 @@ void TitleScreen::render() {
     RectF screenCoords(position, position + imageSize);
     m_guiContext->drawQuad(image, screenCoords);
   }
+  //*/
 
   m_renderer->flush();
 
@@ -128,6 +138,7 @@ void TitleScreen::update(float dt) {
 
   m_paneManager.update(dt);
 
+  m_scriptComponent->update(dt);
   if (!finishedState()) {
     if (auto audioSample = m_musicTrackManager.updateAmbient(m_musicTrack, m_skyBackdrop->isDayTime())) {
       m_currentMusicTrack = audioSample;
@@ -262,6 +273,16 @@ void TitleScreen::initMainMenu() {
   backMenu->determineSizeFromChildren();
   backMenu->setAnchor(PaneAnchor::BottomLeft);
   backMenu->lockPosition();
+
+  auto titleCanvas = make_shared<CanvasWidget>();
+  m_mainMenu->addChild("canvas", titleCanvas);
+
+  m_scriptComponent = make_shared<ScriptComponent>();
+  m_scriptComponent->setLuaRoot(make_shared<LuaRoot>());
+  m_scriptComponent->addCallbacks("pane", m_mainMenu->makePaneCallbacks());
+  m_scriptComponent->addCallbacks("widget", LuaBindings::makeWidgetCallbacks(m_mainMenu.get()));
+  m_scriptComponent->setScripts(jsonToStringList(assets->json("/interface/windowconfig/title.config:scripts").optArray().value()));
+  m_scriptComponent->init();
 
   m_paneManager.registerPane("mainMenu", PaneLayer::Hud, m_mainMenu);
   m_paneManager.registerPane("backMenu", PaneLayer::Hud, backMenu);
