@@ -763,12 +763,14 @@ void ClientApplication::changeState(MainAppState newState) {
 void ClientApplication::setError(String const& error) {
   Logger::error(error.utf8Ptr());
   m_errorScreen->setMessage(error);
+  m_titleScreen->resetState();
   changeState(MainAppState::Title);
 }
 
 void ClientApplication::setError(String const& error, std::exception const& e) {
   Logger::error("{}\n{}", error, outputException(e, true));
   m_errorScreen->setMessage(strf("{}\n{}", error, outputException(e, false)));
+  m_titleScreen->resetState();
   changeState(MainAppState::Title);
 }
 
