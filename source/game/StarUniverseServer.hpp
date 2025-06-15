@@ -239,6 +239,7 @@ private:
   Map<Vec3I, SystemWorldServerThreadPtr> m_systemWorlds;
   UniverseConnectionServerPtr m_connectionServer;
 
+  RecursiveMutex m_connectionAcceptThreadsMutex;
   List<ThreadFunction<void>> m_connectionAcceptThreads;
   LinkedList<pair<UniverseConnection, int64_t>> m_deadConnections;
 

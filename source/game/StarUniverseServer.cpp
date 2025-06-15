@@ -114,7 +114,7 @@ void UniverseServer::setListeningTcp(bool listenTcp) {
 }
 
 void UniverseServer::addClient(UniverseConnection remoteConnection) {
-  RecursiveMutexLocker locker(m_mainLock);
+  RecursiveMutexLocker acceptThreadsLocker(m_connectionAcceptThreadsMutex);
   // Binding requires us to make the given lambda copy constructible, so the
   // make_shared is requried here.
   m_connectionAcceptThreads.append(Thread::invoke("UniverseServer::acceptConnection", [this, conn = make_shared<UniverseConnection>(std::move(remoteConnection))]() {
@@ -520,7 +520,7 @@ void UniverseServer::run() {
       try {
         tcpServer = make_shared<TcpServer>(bindAddress);
         tcpServer->setAcceptCallback([this, maxPendingConnections](TcpSocketPtr socket) {
-          RecursiveMutexLocker locker(m_mainLock);
+          RecursiveMutexLocker acceptThreadsLocker(m_connectionAcceptThreadsMutex);
           if (m_connectionAcceptThreads.size() < maxPendingConnections) {
             Logger::info("UniverseServer: Connection received from: {}", socket->remoteAddress());
             m_connectionAcceptThreads.append(Thread::invoke("UniverseServer::acceptConnection", [this, socket]() {
@@ -766,24 +766,23 @@ void UniverseServer::kickErroredPlayers() {
 }
 
 void UniverseServer::reapConnections() {
-  RecursiveMutexLocker locker(m_mainLock);
-
   int64_t startTime = Time::monotonicMilliseconds();
   int64_t timeout = Root::singleton().assets()->json("/universe_server.config:connectionTimeout").toInt();
-
-  eraseWhere(m_connectionAcceptThreads, [&](ThreadFunction<void>& function) {
+  {
+    RecursiveMutexLocker acceptThreadsLocker(m_connectionAcceptThreadsMutex);
+    eraseWhere(m_connectionAcceptThreads, [&](ThreadFunction<void>& function) {
       if (!function.isRunning()) {
         try {
-          locker.unlock();
           function.finish();
-          locker.lock();
         } catch (std::exception const& e) {
           Logger::error("UniverseServer: Exception caught accepting new connection: {}", outputException(e, true));
         }
       }
       return function.isFinished();
     });
+  }
 
+  RecursiveMutexLocker locker(m_mainLock);
   auto pendingConnections = take(m_pendingDisconnections);
   locker.unlock();
   for (auto p : pendingConnections)
