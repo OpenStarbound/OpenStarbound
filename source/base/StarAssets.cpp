@@ -149,6 +149,12 @@ Assets::Assets(Settings settings, StringList assetSources) {
       return table;
     });
     
+    callbacks.registerCallback("sourceMetadata", [this](String const& sourcePath) -> Maybe<JsonObject> {
+      if (auto assetSource = m_assetSourcePaths.rightPtr(sourcePath))
+        return (*assetSource)->metadata();
+      return {};
+    });
+
     callbacks.registerCallback("origin", [this](String const& path) -> Maybe<String> {
       if (auto descriptor = this->assetDescriptor(path))
         return this->assetSourcePath(descriptor->source);
