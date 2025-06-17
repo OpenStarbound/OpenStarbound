@@ -271,6 +271,7 @@ void ArmorWearer::diskLoad(Json const& diskStore) {
   m_chestCosmeticItem = as<ChestArmor>(itemDb->diskLoad(diskStore.get("chestCosmeticItem", {})));
   m_legsCosmeticItem = as<LegsArmor>(itemDb->diskLoad(diskStore.get("legsCosmeticItem", {})));
   m_backCosmeticItem = as<BackArmor>(itemDb->diskLoad(diskStore.get("backCosmeticItem", {})));
+
   for (size_t i = 0; i != 12; ++i) {
     auto& cosmetic = m_cosmeticItems[i];
     cosmetic.item = as<ArmorItem>(itemDb->diskLoad(diskStore.get(strf("cosmetic{}Item", i + 1), {})));
