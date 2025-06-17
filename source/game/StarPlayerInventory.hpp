@@ -9,6 +9,7 @@ namespace Star {
 
 STAR_CLASS(Item);
 STAR_CLASS(ItemBag);
+STAR_CLASS(ArmorItem);
 STAR_CLASS(HeadArmor);
 STAR_CLASS(ChestArmor);
 STAR_CLASS(LegsArmor);
@@ -96,6 +97,8 @@ public:
   ChestArmorPtr chestCosmetic() const;
   LegsArmorPtr legsCosmetic() const;
   BackArmorPtr backCosmetic() const;
+
+  ArmorItemPtr equipment(EquipmentSlot slot) const;
 
   ItemBagConstPtr bagContents(String const& bag) const;
 

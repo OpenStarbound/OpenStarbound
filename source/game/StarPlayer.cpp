@@ -1333,6 +1333,8 @@ void Player::refreshArmor() {
   m_armor->setLegsCosmeticItem(m_inventory->legsCosmetic());
   m_armor->setBackItem(m_inventory->backArmor());
   m_armor->setBackCosmeticItem(m_inventory->backCosmetic());
+  for (uint8_t i = 0; i != 12; ++i)
+    m_armor->setCosmeticItem(i, m_inventory->equipment(EquipmentSlot((uint8_t)EquipmentSlot::Cosmetic1 + i)));
 }
 
 void Player::refreshEquipment() {

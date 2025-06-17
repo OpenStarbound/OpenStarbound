@@ -8,6 +8,14 @@
 #include "StarSwingableItem.hpp"
 namespace Star {
 
+enum class ArmorType : uint8_t {
+  Head,
+  Chest,
+  Legs,
+  Back
+};
+extern EnumMap<ArmorType> ArmorTypeNames;
+
 STAR_CLASS(ArmorItem);
 STAR_CLASS(HeadArmor);
 STAR_CLASS(ChestArmor);
@@ -29,12 +37,13 @@ public:
   virtual void fire(FireMode mode, bool shifting, bool edgeTriggered) override;
   virtual void fireTriggered() override;
 
+  virtual ArmorType armorType() const = 0;
 
   List<String> const& colorOptions();
 
   Directives const& directives(bool flip = false) const;
   bool flipping() const;
-
+  bool visible(bool extraCosmetics = false) const;
   bool hideBody() const;
 
   Maybe<String> const& techModule() const;
@@ -49,6 +58,7 @@ private:
   Directives m_directives;
   Maybe<Directives> m_flipDirectives;
   bool m_hideBody;
+  bool m_hideInVanillaSlots;
   Maybe<String> m_techModule;
 };
 
@@ -58,6 +68,8 @@ public:
   virtual ~HeadArmor() {}
 
   virtual ItemPtr clone() const;
+
+  virtual ArmorType armorType() const override;
 
   String const& frameset(Gender gender) const;
   Directives const& maskDirectives() const;
@@ -76,6 +88,8 @@ public:
   virtual ~ChestArmor() {}
 
   virtual ItemPtr clone() const;
+
+  virtual ArmorType armorType() const override;
 
   // Will have :run, :normal, :duck, and :portrait
   String const& bodyFrameset(Gender gender) const;
@@ -104,6 +118,8 @@ public:
 
   virtual ItemPtr clone() const;
 
+  virtual ArmorType armorType() const override;
+
   // Will have :idle, :duck, :walk[1-8], :run[1-8], :jump[1-4], :fall[1-4]
   String const& frameset(Gender gender) const;
 
@@ -120,6 +136,8 @@ public:
   virtual ~BackArmor() {}
 
   virtual ItemPtr clone() const;
+
+  virtual ArmorType armorType() const override;
 
   // Will have :idle, :duck, :walk[1-8], :run[1-8], :jump[1-4], :fall[1-4]
   String const& frameset(Gender gender) const;
