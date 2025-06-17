@@ -1,9 +1,7 @@
 name: Build
 permissions:
   actions: read
-env:
-  VCPKG_FEATURE_FLAGS: "binarycaching"
-  VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
+
   
 on:
   workflow_dispatch:
@@ -48,6 +46,9 @@ jobs:
     name: Build OpenStarbound Windows x64
     runs-on: windows-latest
     if: ${{ (github.event_name != 'pull_request') && ((github.event_name != 'workflow_dispatch') || (inputs.windows == true)) }}
+    env:
+      VCPKG_FEATURE_FLAGS: "binarycaching"
+      VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -130,6 +131,9 @@ jobs:
     name: Build OpenStarbound Linux x86_64
     runs-on: ubuntu-22.04
     if: ${{ (github.event_name != 'pull_request') && (inputs.linux == true) }}
+    env:
+      VCPKG_FEATURE_FLAGS: "binarycaching"
+      VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
     steps:
       - name: Install Packages
         run: |
@@ -211,6 +215,8 @@ jobs:
     env:
         CC: clang
         CXX: clang++
+        VCPKG_FEATURE_FLAGS: "binarycaching"
+        VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
     steps:
       - name: Install Packages
         run: |
@@ -289,6 +295,9 @@ jobs:
     name: Build OpenStarbound macOS x86_64
     runs-on: macos-13
     if: ${{ (github.event_name != 'pull_request') && ((github.event_name != 'workflow_dispatch') || (inputs.macOS == true)) }}
+    env:
+      VCPKG_FEATURE_FLAGS: "binarycaching"
+      VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
     steps:
       - uses: actions/checkout@v4
         with:
@@ -355,6 +364,9 @@ jobs:
     name: Build OpenStarbound macOS arm64
     runs-on: macos-14
     if: ${{ (github.event_name != 'pull_request') && ((github.event_name != 'workflow_dispatch') || (inputs.macOS == true)) }}
+    env:
+      VCPKG_FEATURE_FLAGS: "binarycaching"
+      VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
     steps:
       - uses: actions/checkout@v4
         with:
