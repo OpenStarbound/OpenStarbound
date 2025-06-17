@@ -96,7 +96,7 @@ private:
     NetElementData<ItemDescriptor> netState;
   };
   List<Cosmetic> m_cosmeticItems;
-
+  Array<uint8_t, 4> m_wornCosmeticTypes;
   // only works under the assumption that this ArmorWearer
   // will only ever touch one Humanoid (which is true!)
   Maybe<Gender> m_lastGender;
