@@ -1,5 +1,10 @@
 name: Build
-
+permissions:
+  actions: read
+env:
+  VCPKG_FEATURE_FLAGS: "binarycaching"
+  VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
+  
 on:
   workflow_dispatch:
     inputs:
@@ -69,6 +74,12 @@ jobs:
         with:
           vcpkgJsonGlob: '**/source/vcpkg.json'
           vcpkgConfigurationJsonGlob: '**/source/vcpkg-configuration.json'
+
+      - name: Restore vcpkg cache
+        id: vcpkg-cache
+        uses: TAServers/vcpkg-cache@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run CMake
         uses: lukka/run-cmake@v10
@@ -148,6 +159,12 @@ jobs:
           vcpkgJsonGlob: '**/source/vcpkg.json'
           vcpkgConfigurationJsonGlob: '**/source/vcpkg-configuration.json'
 
+      - name: Restore vcpkg cache
+        id: vcpkg-cache
+        uses: TAServers/vcpkg-cache@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Run CMake
         uses: lukka/run-cmake@v10
         with:
@@ -223,6 +240,12 @@ jobs:
           vcpkgJsonGlob: '**/source/vcpkg.json'
           vcpkgConfigurationJsonGlob: '**/source/vcpkg-configuration.json'
 
+      - name: Restore vcpkg cache
+        id: vcpkg-cache
+        uses: TAServers/vcpkg-cache@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Run CMake
         uses: lukka/run-cmake@v10
         with:
@@ -290,6 +313,12 @@ jobs:
           vcpkgJsonGlob: '**/source/vcpkg.json'
           vcpkgConfigurationJsonGlob: '**/source/vcpkg-configuration.json'
 
+      - name: Restore vcpkg cache
+        id: vcpkg-cache
+        uses: TAServers/vcpkg-cache@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Run CMake
         uses: lukka/run-cmake@v10
         with:
@@ -342,6 +371,12 @@ jobs:
           variant: sccache
           key: ${{ github.job }}-ARM-${{ runner.os }}
           max-size: 250M
+
+      - name: Restore vcpkg cache
+        id: vcpkg-cache
+        uses: TAServers/vcpkg-cache@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: vcpkg
         uses: lukka/run-vcpkg@v11
