@@ -237,6 +237,9 @@ void TitleScreen::initMainMenu() {
   m_mainMenu = make_shared<Pane>();
   auto backMenu = make_shared<Pane>();
 
+  auto titleCanvas = make_shared<CanvasWidget>();
+  m_mainMenu->addChild("canvas", titleCanvas);
+
   auto assets = Root::singleton().assets();
   auto config = assets->json("/interface/windowconfig/title.config");
 
@@ -274,9 +277,6 @@ void TitleScreen::initMainMenu() {
   backMenu->determineSizeFromChildren();
   backMenu->setAnchor(PaneAnchor::BottomLeft);
   backMenu->lockPosition();
-
-  auto titleCanvas = make_shared<CanvasWidget>();
-  m_mainMenu->addChild("canvas", titleCanvas);
 
   m_scriptComponent = make_shared<ScriptComponent>();
   m_scriptComponent->setLuaRoot(make_shared<LuaRoot>());
