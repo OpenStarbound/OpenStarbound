@@ -43,7 +43,7 @@ public:
   void setLegsCosmeticItem(LegsArmorPtr legsCosmeticItem);
   void setBackItem(BackArmorPtr backItem);
   void setBackCosmeticItem(BackArmorPtr backCosmeticItem);
-  void setCosmeticItem(uint8_t slot, ArmorItemPtr cosmeticItem);
+  bool setCosmeticItem(uint8_t slot, ArmorItemPtr cosmeticItem);
 
   HeadArmorPtr headItem() const;
   HeadArmorPtr headCosmeticItem() const;

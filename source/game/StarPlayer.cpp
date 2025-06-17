@@ -277,7 +277,7 @@ ClientContextPtr Player::clientContext() const {
 
 void Player::setClientContext(ClientContextPtr clientContext) {
   m_clientContext = std::move(clientContext);
-  if (m_clientContext)
+  if (m_clientContext && m_universeMap)
     m_universeMap->setServerUuid(m_clientContext->serverUuid());
 }
 
@@ -340,6 +340,14 @@ void Player::init(World* world, EntityId entityId, EntityMode mode) {
 
     for (auto& p : m_inventory->pullOverflow()) {
       world->addEntity(ItemDrop::createRandomizedDrop(p, m_movementController->position(), true));
+    }
+
+    if (m_clientContext && m_clientContext->netCompatibilityRules().version() < 9) {
+      for (uint8_t i = 0; i != 12; ++i) {
+        auto slot = EquipmentSlot((uint8_t)EquipmentSlot::Cosmetic1 + i);
+        if (auto item = as<ArmorItem>(m_inventory->itemsAt(slot)))
+          setNetArmorSecret(slot, item);
+      }
     }
   }
 
@@ -1333,8 +1341,13 @@ void Player::refreshArmor() {
   m_armor->setLegsCosmeticItem(m_inventory->legsCosmetic());
   m_armor->setBackItem(m_inventory->backArmor());
   m_armor->setBackCosmeticItem(m_inventory->backCosmetic());
-  for (uint8_t i = 0; i != 12; ++i)
-    m_armor->setCosmeticItem(i, m_inventory->equipment(EquipmentSlot((uint8_t)EquipmentSlot::Cosmetic1 + i)));
+  bool shouldSetArmorSecrets = m_clientContext && m_clientContext->netCompatibilityRules().version() < 9;
+  for (uint8_t i = 0; i != 12; ++i) {
+    auto slot = EquipmentSlot((uint8_t)EquipmentSlot::Cosmetic1 + i);
+    auto item = m_inventory->equipment(slot);
+    if (m_armor->setCosmeticItem(i, item) && shouldSetArmorSecrets)
+      setNetArmorSecret(slot, item);
+  }
 }
 
 void Player::refreshEquipment() {
@@ -1948,6 +1961,8 @@ void Player::getNetStates(bool initial) {
   }
 
   m_emoteState = HumanoidEmoteNames.getLeft(m_emoteNetState.get());
+
+  getNetArmorSecrets();
 }
 
 void Player::setNetStates() {
@@ -1970,6 +1985,36 @@ void Player::setNetStates() {
   }
 
   m_emoteNetState.set(HumanoidEmoteNames.getRight(m_emoteState));
+}
+
+void Player::setNetArmorSecret(EquipmentSlot slot, ArmorItemPtr const& armor) {
+  String const& slotName = EquipmentSlotNames.getRight(slot);
+  setSecretProperty(strf("armorWearer.{}.data", slotName), itemSafeDescriptor(armor).diskStore());
+  if (m_armorSecretNetVersions.empty())
+    setSecretProperty("armorWearer.replicating", true);
+  setSecretProperty(strf("armorWearer.{}.version", slotName), ++m_armorSecretNetVersions[slot]);
+}
+
+void Player::getNetArmorSecrets() {
+  if (isSlave() && getSecretPropertyPtr("armorWearer.replicating") != nullptr) {
+    auto itemDatabase = Root::singleton().itemDatabase();
+
+    for (uint8_t i = 0; i != 12; ++i) {
+      auto slot = EquipmentSlot((uint8_t)EquipmentSlot::Cosmetic1 + i);
+      String const& slotName = EquipmentSlotNames.getRight(slot);
+      auto& curVersion = m_armorSecretNetVersions[slot];
+      uint64_t newVersion = 0;
+      if (auto jVersion = getSecretProperty(strf("armorWearer.{}.version", slotName), 0); jVersion.isType(Json::Type::Int))
+        newVersion = jVersion.toUInt();
+      if (newVersion > curVersion) {
+        curVersion = newVersion;
+        ArmorItemPtr item;
+        itemDatabase->diskLoad(getSecretProperty(strf("armorWearer.{}.data", slotName)), item);
+        m_inventory->setItem(slot, item);
+        m_armor->setCosmeticItem(i, item);
+      }
+    }
+  }
 }
 
 void Player::setAdmin(bool isAdmin) {
@@ -2664,6 +2709,9 @@ Maybe<StringView> Player::getSecretPropertyView(String const& name) const {
   return {};
 }
 
+String const* Player::getSecretPropertyPtr(String const& name) const {
+  return m_effectsAnimator->globalTagPtr(secretProprefix + name);
+}
 
 Json Player::getSecretProperty(String const& name, Json defaultValue) const {
   if (auto tag = m_effectsAnimator->globalTagPtr(secretProprefix + name)) {

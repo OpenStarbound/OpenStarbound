@@ -309,14 +309,15 @@ void ArmorWearer::setBackCosmeticItem(BackArmorPtr backCosmeticItem) {
   m_backNeedsSync = true;
 }
 
-void ArmorWearer::setCosmeticItem(uint8_t slot, ArmorItemPtr cosmeticItem) {
+bool ArmorWearer::setCosmeticItem(uint8_t slot, ArmorItemPtr cosmeticItem) {
   if (slot >= m_cosmeticItems.size())
-    return;
+    return false;
   Cosmetic& cosmetic = m_cosmeticItems.at(slot);
   if (Item::itemsEqual(cosmetic.item, cosmeticItem))
-    return;
+    return false;
   cosmetic.item = std::move(cosmeticItem);
   cosmetic.needsStore = cosmetic.needsSync = true;
+  return true;
 }
 
 HeadArmorPtr ArmorWearer::headItem() const {

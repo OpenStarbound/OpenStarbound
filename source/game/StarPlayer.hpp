@@ -498,6 +498,7 @@ public:
   
   // If the secret property exists as a serialized Json string, returns a view to it without deserializing.
   Maybe<StringView> getSecretPropertyView(String const& name) const;
+  String const* getSecretPropertyPtr(String const& name) const;
   // Gets a secret Json property. It will be de-serialized.
   Json getSecretProperty(String const& name, Json defaultValue = Json()) const;
   // Sets a secret Json property. It will be serialized.
@@ -517,6 +518,8 @@ private:
 
   void getNetStates(bool initial);
   void setNetStates();
+  void getNetArmorSecrets();
+  void setNetArmorSecret(EquipmentSlot slot, ArmorItemPtr const& armor);
 
   List<Drawable> drawables() const;
   List<OverheadBar> bars() const;
@@ -587,6 +590,7 @@ private:
 
   ToolUserPtr m_tools;
   ArmorWearerPtr m_armor;
+  HashMap<EquipmentSlot, uint64_t> m_armorSecretNetVersions;
 
   bool m_useDown;
   bool m_edgeTriggeredUse;
