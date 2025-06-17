@@ -91,8 +91,8 @@ private:
 
   struct Cosmetic {
     ArmorItemPtr item;
-    bool needsSync = false;
-    bool needsStore = false;
+    bool needsSync = true;
+    bool needsStore = true;
     NetElementData<ItemDescriptor> netState;
   };
   List<Cosmetic> m_cosmeticItems;

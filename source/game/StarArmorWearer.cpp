@@ -229,6 +229,8 @@ void ArmorWearer::reset() {
   m_chestCosmeticItem.reset();
   m_legsCosmeticItem .reset();
   m_backCosmeticItem .reset();
+  for (auto& cosmetic : m_cosmeticItems)
+    cosmetic = Cosmetic();
 }
 
 Json ArmorWearer::diskStore() const {
@@ -250,6 +252,12 @@ Json ArmorWearer::diskStore() const {
   if (m_backCosmeticItem)
     res["backCosmeticItem"] = m_backCosmeticItem->descriptor().diskStore();
 
+  for (size_t i = 0; i != 12; ++i) {
+    auto& cosmetic = m_cosmeticItems[i];
+    if (cosmetic.item)
+      res[strf("cosmetic{}Item", i + 1)] = cosmetic.item->descriptor().diskStore();
+  }
+
   return res;
 }
 
@@ -263,6 +271,11 @@ void ArmorWearer::diskLoad(Json const& diskStore) {
   m_chestCosmeticItem = as<ChestArmor>(itemDb->diskLoad(diskStore.get("chestCosmeticItem", {})));
   m_legsCosmeticItem = as<LegsArmor>(itemDb->diskLoad(diskStore.get("legsCosmeticItem", {})));
   m_backCosmeticItem = as<BackArmor>(itemDb->diskLoad(diskStore.get("backCosmeticItem", {})));
+  for (size_t i = 0; i != 12; ++i) {
+    auto& cosmetic = m_cosmeticItems[i];
+    cosmetic.item = as<ArmorItem>(itemDb->diskLoad(diskStore.get(strf("cosmetic{}Item", i + 1), {})));
+    cosmetic.needsStore = cosmetic.needsSync = true;
+  }
 }
 
 List<PersistentStatusEffect> ArmorWearer::statusEffects() const {

@@ -866,7 +866,7 @@ Json PlayerInventory::store() const {
   };
 
   for (auto& equipment : m_equipment) {
-    if (equipment.first <= EquipmentSlot::HeadCosmetic || equipment.second)
+    if (equipment.first <= EquipmentSlot::BackCosmetic || equipment.second)
       data.set(strf("{}Slot", EquipmentSlotNames.getRight(equipment.first)), itemDatabase->diskStore(equipment.second));
   }
 
