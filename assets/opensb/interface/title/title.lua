@@ -50,7 +50,7 @@ function render(data)
     origin = origin or {0.5, 1.0}
     local imageSize = vec2.mul(root.imageSize(image), scale)
     local position = vec2.add(vec2.mul(window, origin), vec2.sub(offset, vec2.mul(imageSize, vec2.sub(origin, 0.5))))
-    if misc.terry then
+    if misc and misc.terry then
       terry = true
       canvas:drawImageDrawable(image, position, scale * logoScale, {255, 255, 255}, logoRotation)
     else
