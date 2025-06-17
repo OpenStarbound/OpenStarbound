@@ -238,6 +238,7 @@ void TitleScreen::initMainMenu() {
   auto backMenu = make_shared<Pane>();
 
   auto assets = Root::singleton().assets();
+  auto config = assets->json("/interface/windowconfig/title.config");
 
   StringMap<WidgetCallbackFunc> buttonCallbacks;
   buttonCallbacks["singleplayer"] = [=](Widget*) { switchState(TitleState::SinglePlayerSelectCharacter); };
@@ -247,7 +248,7 @@ void TitleScreen::initMainMenu() {
   buttonCallbacks["back"] = [=](Widget*) { back(); };
   buttonCallbacks["mods"] = [=](Widget*) { switchState(TitleState::Mods); };
 
-  for (auto buttonConfig : assets->json("/interface/windowconfig/title.config:mainMenuButtons").toArray()) {
+  for (auto buttonConfig : config.getArray("mainMenuButtons")) {
     String key = buttonConfig.getString("key");
     String image = buttonConfig.getString("button");
     String imageHover = buttonConfig.getString("hover");
@@ -281,7 +282,7 @@ void TitleScreen::initMainMenu() {
   m_scriptComponent->setLuaRoot(make_shared<LuaRoot>());
   m_scriptComponent->addCallbacks("pane", m_mainMenu->makePaneCallbacks());
   m_scriptComponent->addCallbacks("widget", LuaBindings::makeWidgetCallbacks(m_mainMenu.get()));
-  m_scriptComponent->setScripts(jsonToStringList(assets->json("/interface/windowconfig/title.config:scripts").optArray().value()));
+  m_scriptComponent->setScripts(jsonToStringList(config.getArray("scripts", JsonArray())));
   m_scriptComponent->init();
 
   m_paneManager.registerPane("mainMenu", PaneLayer::Hud, m_mainMenu);
