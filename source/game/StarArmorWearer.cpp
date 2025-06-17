@@ -45,6 +45,10 @@ void ArmorWearer::setupHumanoidClothingDrawables(Humanoid& humanoid, bool forceN
   m_lastGender = gender;
   m_lastDirection = direction;
 
+  auto flipped = [=](ArmorItemPtr const& armor) {
+    return dirChanged && armor && armor->flipping();
+  };
+
   bool allNeedsSync = nudeChanged || genderChanged;
   bool anyNeedsSync = allNeedsSync;
   Array<uint8_t, 4> wornCosmeticTypes;
@@ -54,7 +58,7 @@ void ArmorWearer::setupHumanoidClothingDrawables(Humanoid& humanoid, bool forceN
     if (cosmetic.item) {
       if (forceNude || !cosmetic.item->visible(true))
         continue;
-      if (dirChanged && cosmetic.item && cosmetic.item->flipping())
+      if (flipped(cosmetic.item))
         anyNeedsSync = true;
       auto armorType = cosmetic.item->armorType();
       ++wornCosmeticTypes[(uint8_t)armorType];
@@ -85,10 +89,6 @@ void ArmorWearer::setupHumanoidClothingDrawables(Humanoid& humanoid, bool forceN
   ChestArmorPtr chestArmor = as<ChestArmor>(determineArmor(ArmorType::Chest, m_chestItem, m_chestCosmeticItem, m_chestNeedsSync));
   LegsArmorPtr legsArmor = as<LegsArmor>(determineArmor(ArmorType::Legs, m_legsItem, m_legsCosmeticItem, m_legsNeedsSync));
   BackArmorPtr backArmor = as<BackArmor>(determineArmor(ArmorType::Back, m_backItem, m_backCosmeticItem, m_backNeedsSync));
-
-  auto flipped = [=](ArmorItemPtr const& armor) {
-    return dirChanged && armor && armor->flipping();
-  };
 
   bool headNeedsSync  = allNeedsSync || flipped(headArmor) || m_headNeedsSync;
   bool chestNeedsSync = allNeedsSync || flipped(chestArmor) || m_chestNeedsSync;
