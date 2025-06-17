@@ -388,6 +388,7 @@ void Humanoid::setWearableFromHead(uint8_t slot, HeadArmor const& head) {
   else {
     wearableRemoved(current);
     fashion.wornHeadsChanged = true;
+    fashion.helmetMasksChanged |= !head.maskDirectives().empty();
   }
   current.makeType(current.typeIndexOf<WornHead>());
   auto& wornHead = current.get<WornHead>();
