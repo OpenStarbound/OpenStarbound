@@ -60,7 +60,7 @@ PlayerInventory::PlayerInventory() {
   m_customBarGroup = 0;
   m_customBar.resize(customBarGroups, customBarIndexes);
 
-  for (auto& slot : EquipmentSlotNames) {
+  for (auto slot : EquipmentSlotNames) {
     auto& element = m_equipmentNetState[slot.first];
     if (slot.first > EquipmentSlot::BackCosmetic)
       element.setCompatibilityVersion(9);
@@ -778,7 +778,7 @@ List<ItemPtr> PlayerInventory::pullOverflow() {
 void PlayerInventory::load(Json const& store) {
   auto itemDatabase = Root::singleton().itemDatabase();
 
-  for (auto& slot : EquipmentSlotNames) {
+  for (auto slot : EquipmentSlotNames) {
     auto jItem = store.get(strf("{}Slot", slot.second), Json());
     m_equipment[slot.first] = itemDatabase->diskLoad(jItem);
   }
