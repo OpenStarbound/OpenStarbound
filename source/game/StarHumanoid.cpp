@@ -1114,7 +1114,7 @@ List<Drawable> Humanoid::renderPortrait(PortraitMode mode) const {
           break;
         auto chest = fashion.wearables[size_t(i) - 1].ptr<WornChest>();
         if (chest && !chest->backSleeveFrameset.empty()) {
-          String image = strf("{}:{}{}", chest->frameset, personality.armIdle, chest->directives.prefix());
+          String image = strf("{}:{}{}", chest->backSleeveFrameset, personality.armIdle, chest->directives.prefix());
           Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.armOffset);
           drawable.imagePart().addDirectives(chest->directives, true);
           addDrawable(std::move(drawable));
