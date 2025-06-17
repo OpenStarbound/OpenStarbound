@@ -236,6 +236,7 @@ void TitleScreen::setMultiPlayerForceLegacy(bool const& forceLegacy) {
 void TitleScreen::initMainMenu() {
   m_mainMenu = make_shared<Pane>();
   auto backMenu = make_shared<Pane>();
+
   auto titleCanvas = make_shared<CanvasWidget>();
   m_mainMenu->addChild("canvas", titleCanvas);
 

@@ -46,9 +46,6 @@ jobs:
     name: Build OpenStarbound Windows x64
     runs-on: windows-latest
     if: ${{ (github.event_name != 'pull_request') && ((github.event_name != 'workflow_dispatch') || (inputs.windows == true)) }}
-    env:
-      VCPKG_FEATURE_FLAGS: "binarycaching"
-      VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -84,6 +81,9 @@ jobs:
 
       - name: Run CMake
         uses: lukka/run-cmake@v10
+        env:
+          VCPKG_FEATURE_FLAGS: "binarycaching"
+          VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
         with:
           cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
           configurePreset: 'windows-release'
@@ -131,9 +131,6 @@ jobs:
     name: Build OpenStarbound Linux x86_64
     runs-on: ubuntu-22.04
     if: ${{ (github.event_name != 'pull_request') && (inputs.linux == true) }}
-    env:
-      VCPKG_FEATURE_FLAGS: "binarycaching"
-      VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
     steps:
       - name: Install Packages
         run: |
@@ -171,6 +168,9 @@ jobs:
 
       - name: Run CMake
         uses: lukka/run-cmake@v10
+        env:
+          VCPKG_FEATURE_FLAGS: "binarycaching"
+          VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
         with:
           cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
           configurePreset: 'linux-release'
@@ -188,6 +188,9 @@ jobs:
 
       - name: Run Tests
         uses: lukka/run-cmake@v10
+        env:
+          VCPKG_FEATURE_FLAGS: "binarycaching"
+          VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
         with:
           cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
           testPreset: 'linux-release'
@@ -215,8 +218,6 @@ jobs:
     env:
         CC: clang
         CXX: clang++
-        VCPKG_FEATURE_FLAGS: "binarycaching"
-        VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
     steps:
       - name: Install Packages
         run: |
@@ -254,6 +255,9 @@ jobs:
 
       - name: Run CMake
         uses: lukka/run-cmake@v10
+        env:
+          VCPKG_FEATURE_FLAGS: "binarycaching"
+          VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
         with:
           cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
           configurePreset: 'linux-release-clang'
@@ -271,6 +275,9 @@ jobs:
 
       - name: Run Tests
         uses: lukka/run-cmake@v10
+        env:
+          VCPKG_FEATURE_FLAGS: "binarycaching"
+          VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
         with:
           cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
           testPreset: 'linux-release'
@@ -295,9 +302,6 @@ jobs:
     name: Build OpenStarbound macOS x86_64
     runs-on: macos-13
     if: ${{ (github.event_name != 'pull_request') && ((github.event_name != 'workflow_dispatch') || (inputs.macOS == true)) }}
-    env:
-      VCPKG_FEATURE_FLAGS: "binarycaching"
-      VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
     steps:
       - uses: actions/checkout@v4
         with:
@@ -330,6 +334,9 @@ jobs:
 
       - name: Run CMake
         uses: lukka/run-cmake@v10
+        env:
+          VCPKG_FEATURE_FLAGS: "binarycaching"
+          VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
         with:
           cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
           configurePreset: 'macos-release'
@@ -364,9 +371,6 @@ jobs:
     name: Build OpenStarbound macOS arm64
     runs-on: macos-14
     if: ${{ (github.event_name != 'pull_request') && ((github.event_name != 'workflow_dispatch') || (inputs.macOS == true)) }}
-    env:
-      VCPKG_FEATURE_FLAGS: "binarycaching"
-      VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
     steps:
       - uses: actions/checkout@v4
         with:
@@ -399,6 +403,9 @@ jobs:
 
       - name: Run CMake
         uses: lukka/run-cmake@v10
+        env:
+          VCPKG_FEATURE_FLAGS: "binarycaching"
+          VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
         with:
           cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
           configurePreset: 'macos-arm-release'
