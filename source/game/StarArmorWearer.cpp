@@ -179,25 +179,42 @@ void ArmorWearer::setupHumanoidClothingDrawables(Humanoid& humanoid, bool forceN
 }
 
 void ArmorWearer::effects(EffectEmitter& effectEmitter) {
-  if (auto item = as<EffectSourceItem>(m_headCosmeticItem))
-    effectEmitter.addEffectSources("headArmor", item->effectSources());
-  else if (auto item = as<EffectSourceItem>(m_headItem))
-    effectEmitter.addEffectSources("headArmor", item->effectSources());
+  auto gatherEffectSources = [&](ArmorType armorType, ArmorItemPtr const& base, ArmorItemPtr const& cosmetic) -> StringSet {
+    uint8_t typeIndex = (uint8_t)armorType;
+    if (auto item = as<EffectSourceItem>(cosmetic)) {
+      return item->effectSources();
+    } else if (!cosmetic && m_wornCosmeticTypes[typeIndex] == 0) {
+      if (auto item = as<EffectSourceItem>(base))
+        return item->effectSources();
+    }
+    return StringSet();
+  };
+ 
+  auto headEffects = gatherEffectSources(ArmorType::Head, m_headItem, m_headCosmeticItem);
+  auto chestEffects = gatherEffectSources(ArmorType::Chest, m_chestItem, m_chestCosmeticItem);
+  auto legsEffects = gatherEffectSources(ArmorType::Legs, m_legsItem, m_legsCosmeticItem);
+  auto backEffects = gatherEffectSources(ArmorType::Back, m_backItem, m_backCosmeticItem);
 
-  if (auto item = as<EffectSourceItem>(m_chestCosmeticItem))
-    effectEmitter.addEffectSources("chestArmor", item->effectSources());
-  else if (auto item = as<EffectSourceItem>(m_chestItem))
-    effectEmitter.addEffectSources("chestArmor", item->effectSources());
+  for (uint8_t i = 0; i != m_cosmeticItems.size(); ++i) {
+    auto& cosmetic = m_cosmeticItems[i];
+    if (auto item = as<EffectSourceItem>(cosmetic.item)) {
+      auto armorType = cosmetic.item->armorType();
+      auto newEffects = item->effectSources();
+      if (armorType == ArmorType::Head)
+        headEffects.addAll(newEffects);
+      else if (armorType == ArmorType::Chest)
+        chestEffects.addAll(newEffects);
+      else if (armorType == ArmorType::Legs)
+        legsEffects.addAll(newEffects);
+      else if (armorType == ArmorType::Back)
+        backEffects.addAll(newEffects);
+    }
+  }
 
-  if (auto item = as<EffectSourceItem>(m_legsCosmeticItem))
-    effectEmitter.addEffectSources("legsArmor", item->effectSources());
-  else if (auto item = as<EffectSourceItem>(m_legsItem))
-    effectEmitter.addEffectSources("legsArmor", item->effectSources());
-
-  if (auto item = as<EffectSourceItem>(m_backCosmeticItem))
-    effectEmitter.addEffectSources("backArmor", item->effectSources());
-  else if (auto item = as<EffectSourceItem>(m_backItem))
-    effectEmitter.addEffectSources("backArmor", item->effectSources());
+  effectEmitter.addEffectSources("headArmor", headEffects);
+  effectEmitter.addEffectSources("chestArmor", chestEffects);
+  effectEmitter.addEffectSources("legsArmor", legsEffects);
+  effectEmitter.addEffectSources("backArmor", backEffects);
 }
 
 void ArmorWearer::reset() {
