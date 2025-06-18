@@ -229,8 +229,10 @@ void ArmorWearer::reset() {
   m_chestCosmeticItem.reset();
   m_legsCosmeticItem .reset();
   m_backCosmeticItem .reset();
-  for (auto& cosmetic : m_cosmeticItems)
-    cosmetic = Cosmetic();
+  for (auto& cosmetic : m_cosmeticItems) {
+    cosmetic.item.reset();
+    cosmetic.needsStore = cosmetic.needsSync = true;
+  }
 }
 
 Json ArmorWearer::diskStore() const {
