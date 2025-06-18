@@ -61,6 +61,10 @@ Returns the asset source path of an asset, or nil if the asset doesn't exist. If
 Without metadata: Returns an array with all the asset source paths.
 With metadata: Returns a table, key/value being source path/metadata.
 
+#### `Json` root.assetSourceMetadata(`String` path)
+
+Returns the metadata of an asset source.
+
 #### `Image` root.assetImage(`String` image)
 
 Returns an image.

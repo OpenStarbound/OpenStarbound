@@ -1,6 +1,7 @@
 /build/
 /build_linux/
 /out/
+/source/out/
 /Output/
 /windows/
 /linux/
@@ -40,12 +41,7 @@ CTestTestfile.cmake
 _deps
 
 
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-!.vscode/*.code-snippets
+.vscode/
 
 # Local History for Visual Studio Code
 .history/

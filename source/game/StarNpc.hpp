@@ -25,6 +25,7 @@
 
 namespace Star {
 
+STAR_CLASS(Songbook);
 STAR_CLASS(Item);
 STAR_CLASS(RenderCallback);
 STAR_CLASS(Npc);
@@ -109,6 +110,7 @@ public:
   bool displayNametag() const override;
   Vec3B nametagColor() const override;
   Vec2F nametagOrigin() const override;
+  String nametag() const override;
 
   bool aggressive() const;
 
@@ -165,6 +167,7 @@ public:
   void requestEmote(String const& emote) override;
   ActorMovementController* movementController() override;
   StatusController* statusController() override;
+  Songbook* songbook();
   void setCameraFocusEntity(Maybe<EntityId> const& cameraFocusEntity) override;
 
   void playEmote(HumanoidEmote emote) override;
@@ -246,6 +249,7 @@ private:
 
   ArmorWearerPtr m_armor;
   ToolUserPtr m_tools;
+  SongbookPtr m_songbook;
 
   NetElementBool m_disableWornArmor;
 

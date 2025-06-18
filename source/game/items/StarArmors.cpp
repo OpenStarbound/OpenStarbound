@@ -10,6 +10,13 @@
 
 namespace Star {
 
+EnumMap<ArmorType> ArmorTypeNames{
+  {ArmorType::Head, "Head"},
+  {ArmorType::Chest, "Chest"},
+  {ArmorType::Legs, "Legs"},
+  {ArmorType::Back, "Back"}
+};
+
 ArmorItem::ArmorItem(Json const& config, String const& directory, Json const& data) : Item(config, directory, data), SwingableItem(config) {
   refreshStatusEffects();
   m_effectSources = jsonToStringSet(instanceValue("effectSources", JsonArray()));
@@ -19,11 +26,25 @@ ArmorItem::ArmorItem(Json const& config, String const& directory, Json const& da
   else
     m_techModule = AssetPath::relativeTo(directory, *m_techModule);
 
-  m_directives = instanceValue("directives", "").toString();
+  auto directives = instanceValue("directives", "").toString();
+  m_directives = directives;
+  if (auto jFlipDirectives = instanceValue("flipDirectives"); jFlipDirectives.isType(Json::Type::String)) {
+    auto flipDirectives = jFlipDirectives.toString();
+    if (flipDirectives.beginsWith('+'))
+      m_flipDirectives = Directives(directives + flipDirectives.substr(1));
+    else
+      m_flipDirectives = Directives(std::move(flipDirectives));
+  }
+
   m_colorOptions = colorDirectivesFromConfig(config.getArray("colorOptions", JsonArray{""}));
   if (!m_directives)
     m_directives = "?" + m_colorOptions.wrap(instanceValue("colorIndex", 0).toUInt());
   refreshIconDrawables();
+
+  if (auto jHide = instanceValue("hideInVanillaSlots"); jHide.isType(Json::Type::Bool))
+    m_hideInVanillaSlots = jHide.toBool();
+  else
+    m_hideInVanillaSlots = false;
 
   m_hideBody = config.getBool("hideBody", false);
 }
@@ -54,8 +75,16 @@ List<String> const& ArmorItem::colorOptions() {
   return m_colorOptions;
 }
 
-Directives const& ArmorItem::directives() const {
-  return m_directives;
+Directives const& ArmorItem::directives(bool flip) const {
+  return (flip && m_flipDirectives) ? *m_flipDirectives : m_directives;
+}
+
+bool ArmorItem::flipping() const {
+  return m_flipDirectives.isValid();
+}
+
+bool ArmorItem::visible(bool extraCosmetic) const {
+  return extraCosmetic || !m_hideInVanillaSlots;
 }
 
 bool ArmorItem::hideBody() const {
@@ -114,6 +143,10 @@ ItemPtr HeadArmor::clone() const {
   return make_shared<HeadArmor>(*this);
 }
 
+ArmorType HeadArmor::armorType() const {
+  return ArmorType::Head;
+}
+
 String const& HeadArmor::frameset(Gender gender) const {
   if (gender == Gender::Male)
     return m_maleImage;
@@ -128,8 +161,8 @@ Directives const& HeadArmor::maskDirectives() const {
 List<Drawable> HeadArmor::preview(PlayerPtr const& viewer) const {
   Gender gender = viewer ? viewer->gender() : Gender::Male;
   //Humanoid humanoid = Humanoid::makeDummy(gender);
-  Humanoid humanoid = viewer ? *viewer->humanoid() : Humanoid::makeDummy(gender);
-  return humanoid.renderDummy(gender, this, nullptr, nullptr, nullptr);
+  HumanoidPtr humanoid = viewer ? viewer->humanoid() : Humanoid::makeDummy(gender);
+  return humanoid->renderDummy(gender, this, nullptr, nullptr, nullptr);
 }
 
 ChestArmor::ChestArmor(Json const& config, String const& directory, Json const& data)
@@ -147,6 +180,10 @@ ChestArmor::ChestArmor(Json const& config, String const& directory, Json const& 
 
 ItemPtr ChestArmor::clone() const {
   return make_shared<ChestArmor>(*this);
+}
+
+ArmorType ChestArmor::armorType() const {
+  return ArmorType::Chest;
 }
 
 String const& ChestArmor::bodyFrameset(Gender gender) const {
@@ -173,8 +210,8 @@ String const& ChestArmor::backSleeveFrameset(Gender gender) const {
 List<Drawable> ChestArmor::preview(PlayerPtr const& viewer) const {
   Gender gender = viewer ? viewer->gender() : Gender::Male;
   //Humanoid humanoid = Humanoid::makeDummy(gender);
-  Humanoid humanoid = viewer ? *viewer->humanoid() : Humanoid::makeDummy(gender);
-  return humanoid.renderDummy(gender, nullptr, this, nullptr, nullptr);
+  HumanoidPtr humanoid = viewer ? viewer->humanoid() : Humanoid::makeDummy(gender);
+  return humanoid->renderDummy(gender, nullptr, this, nullptr, nullptr);
 }
 
 LegsArmor::LegsArmor(Json const& config, String const& directory, Json const& data)
@@ -187,6 +224,10 @@ ItemPtr LegsArmor::clone() const {
   return make_shared<LegsArmor>(*this);
 }
 
+ArmorType LegsArmor::armorType() const {
+  return ArmorType::Legs;
+}
+
 String const& LegsArmor::frameset(Gender gender) const {
   if (gender == Gender::Male)
     return m_maleImage;
@@ -197,8 +238,8 @@ String const& LegsArmor::frameset(Gender gender) const {
 List<Drawable> LegsArmor::preview(PlayerPtr const& viewer) const {
   Gender gender = viewer ? viewer->gender() : Gender::Male;
   //Humanoid humanoid = Humanoid::makeDummy(gender);
-  Humanoid humanoid = viewer ? *viewer->humanoid() : Humanoid::makeDummy(gender);
-  return humanoid.renderDummy(gender, nullptr, nullptr, this, nullptr);
+  HumanoidPtr humanoid = viewer ? viewer->humanoid() : Humanoid::makeDummy(gender);
+  return humanoid->renderDummy(gender, nullptr, nullptr, this, nullptr);
 }
 
 BackArmor::BackArmor(Json const& config, String const& directory, Json const& data)
@@ -211,6 +252,10 @@ ItemPtr BackArmor::clone() const {
   return make_shared<BackArmor>(*this);
 }
 
+ArmorType BackArmor::armorType() const {
+  return ArmorType::Back;
+}
+
 String const& BackArmor::frameset(Gender gender) const {
   if (gender == Gender::Male)
     return m_maleImage;
@@ -220,9 +265,8 @@ String const& BackArmor::frameset(Gender gender) const {
 
 List<Drawable> BackArmor::preview(PlayerPtr const& viewer) const {
   Gender gender = viewer ? viewer->gender() : Gender::Male;
-  //Humanoid humanoid = Humanoid::makeDummy(gender);
-  Humanoid humanoid = viewer ? *viewer->humanoid() : Humanoid::makeDummy(gender);
-  return humanoid.renderDummy(gender, nullptr, nullptr, nullptr, this);
+  HumanoidPtr humanoid = viewer ? viewer->humanoid() : Humanoid::makeDummy(gender);
+  return humanoid->renderDummy(gender, nullptr, nullptr, nullptr, this);
 }
 
 }

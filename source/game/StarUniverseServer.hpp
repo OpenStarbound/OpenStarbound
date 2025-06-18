@@ -172,7 +172,6 @@ private:
   // Main lock and clients read lock must be held when calling
   WarpToWorld resolveWarpAction(WarpAction warpAction, ConnectionId clientId, bool deploy) const;
 
-  // Main lock and clients write lock must be held when calling
   void doDisconnection(ConnectionId clientId, String const& reason);
 
   // Clients read lock must be held when calling
@@ -240,6 +239,7 @@ private:
   Map<Vec3I, SystemWorldServerThreadPtr> m_systemWorlds;
   UniverseConnectionServerPtr m_connectionServer;
 
+  RecursiveMutex m_connectionAcceptThreadsMutex;
   List<ThreadFunction<void>> m_connectionAcceptThreads;
   LinkedList<pair<UniverseConnection, int64_t>> m_deadConnections;
 
@@ -254,7 +254,7 @@ private:
   HashMap<ConnectionId, String> m_pendingDisconnections;
   HashMap<ConnectionId, List<WorkerPoolPromise<CelestialResponse>>> m_pendingCelestialRequests;
   List<pair<WorldId, UniverseFlagAction>> m_pendingFlagActions;
-  HashMap<ConnectionId, List<pair<String, ChatSendMode>>> m_pendingChat;
+  HashMap<ConnectionId, List<tuple<String, ChatSendMode, JsonObject>>> m_pendingChat;
   Maybe<WorkerPoolPromise<CelestialCoordinate>> m_nextRandomizedStarterWorld;
   Map<WorldId, List<WorldServerThread::Message>> m_pendingWorldMessages;
 

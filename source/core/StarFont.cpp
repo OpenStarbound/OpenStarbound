@@ -135,7 +135,7 @@ tuple<Image, Vec2I, bool> Font::render(String::Char c) {
         }
       }
     }
-  } else if (colored = (slot->bitmap.pixel_mode == FT_PIXEL_MODE_BGRA)) {
+  } else if ((colored = (slot->bitmap.pixel_mode == FT_PIXEL_MODE_BGRA))) {
     unsigned bpp = image.bytesPerPixel();
     uint8_t* data = image.data() + bpp + ((image.width() * (image.height() - 2)) * bpp); // offset by 1 pixel as it's padded
     for (size_t y = 0; y != height; ++y) {

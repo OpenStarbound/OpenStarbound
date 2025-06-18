@@ -257,10 +257,22 @@ public:
     } catch (std::exception const& e) {
       throw ApplicationException("Application threw exception during startup", e);
     }
-
+    
+#ifdef STAR_SYSTEM_LINUX // Checks for Wayland and uses it if available, otherwise uses X11.
+    if (SDL_getenv("SDL_VIDEODRIVER") == nullptr) {
+      if (SDL_getenv("WAYLAND_DISPLAY") != nullptr) {
+          SDL_setenv("SDL_VIDEODRIVER", "wayland", 1);
+      } else {
+          SDL_setenv("SDL_VIDEODRIVER", "x11", 1);
+      }
+    } 
+#endif
+    
     Logger::info("Application: Initializing SDL Video");
     if (SDL_InitSubSystem(SDL_INIT_VIDEO))
       throw ApplicationException(strf("Couldn't initialize SDL Video: {}", SDL_GetError()));
+
+    Logger::info("Application: using Video Driver '{}'", SDL_GetCurrentVideoDriver());
 
     Logger::info("Application: Initializing SDL Controller");
     if (SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER))

@@ -234,17 +234,22 @@ auto ItemBag::itemsFitWhere(ItemConstPtr const& items, uint64_t max) const -> It
     return ItemsFitWhereResult();
 
   List<size_t> slots;
+  StableHashSet<size_t> taken;
   uint64_t count = std::min(items->count(), max);
 
   while (true) {
     if (count == 0)
       break;
 
-    size_t slot = bestSlotAvailable(items, false);
+    size_t slot = bestSlotAvailable(items, false, [&](size_t i) {
+      return !taken.contains(i);
+    });
     if (slot == NPos)
       break;
-    else
+    else {
       slots.append(slot);
+      taken.insert(slot);
+    }
 
     uint64_t available = stackTransfer(at(slot), items);
     if (available != 0)
@@ -350,9 +355,11 @@ uint64_t ItemBag::stackTransfer(ItemConstPtr const& to, ItemConstPtr const& from
     return std::min(to->maxStack() - to->count(), from->count());
 }
 
-size_t ItemBag::bestSlotAvailable(ItemConstPtr const& item, bool stacksOnly) const {
+size_t ItemBag::bestSlotAvailable(ItemConstPtr const& item, bool stacksOnly, std::function<bool(size_t)> test) const {
   // First look for any slots that can stack, before empty slots.
   for (size_t i = 0; i < m_items.size(); ++i) {
+    if (!test(i))
+      continue;
     auto const& storedItem = at(i);
     if (storedItem && stackTransfer(storedItem, item) != 0)
       return i;
@@ -367,6 +374,10 @@ size_t ItemBag::bestSlotAvailable(ItemConstPtr const& item, bool stacksOnly) con
   }
 
   return NPos;
+}
+
+size_t ItemBag::bestSlotAvailable(ItemConstPtr const& item, bool stacksOnly) const {
+  return bestSlotAvailable(item, stacksOnly, [](size_t) { return true; });
 }
 
 }

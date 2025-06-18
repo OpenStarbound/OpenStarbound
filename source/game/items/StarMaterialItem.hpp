@@ -46,6 +46,7 @@ public:
   List<PreviewTile> previewTiles(bool shifting) const override;
   List<Drawable> const& generatedPreview(Vec2I position = {}) const;
 private:
+  size_t blockSwap(float radius, TileLayer layer);
   void updatePropertiesFromPlayer(Player* player);
   float calcRadius(bool shifting) const;
   List<Vec2I>& tileArea(float radius, Vec2F const& position) const;
@@ -56,6 +57,7 @@ private:
 
   float m_blockRadius;
   float m_altBlockRadius;
+  bool m_blockSwap;
   bool m_shifting;
   bool m_multiplace;
   StringList m_placeSounds;

@@ -135,6 +135,9 @@ public:
 
   TileModificationList validTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap) const override;
   TileModificationList applyTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap) override;
+  bool replaceTile(Vec2I const& pos, TileModification const& modification, TileDamage const& tileDamage);
+  TileModificationList replaceTiles(TileModificationList const& modificationList, TileDamage const& tileDamage, bool applyDamage = false) override;
+  bool damageWouldDestroy(Vec2I const& pos, TileLayer layer, TileDamage const& tileDamage) const override;
   EntityPtr entity(EntityId entityId) const override;
   void addEntity(EntityPtr const& entity, EntityId entityId = NullEntityId) override;
   EntityPtr closestEntity(Vec2F const& center, float radius, EntityFilter selector = EntityFilter()) const override;
@@ -214,10 +217,11 @@ public:
   EntityId loadUniqueEntity(String const& uniqueId);
 
   WorldTemplatePtr worldTemplate() const;
+  void setTemplate(WorldTemplatePtr newTemplate);
   SkyPtr sky() const;
   void modifyLiquid(Vec2I const& pos, LiquidId liquid, float quantity, bool additive = false);
   void setLiquid(Vec2I const& pos, LiquidId liquid, float level, float pressure);
-  List<ItemDescriptor> destroyBlock(TileLayer layer, Vec2I const& pos, bool genItems, bool destroyModFirst);
+  List<ItemDescriptor> destroyBlock(TileLayer layer, Vec2I const& pos, bool genItems, bool destroyModFirst, bool updateNeighbors = true);
   void removeEntity(EntityId entityId, bool andDie);
 
   void updateTileEntityTiles(TileEntityPtr const& object, bool removing = false, bool checkBreaks = true);
@@ -314,7 +318,7 @@ private:
   // of ticks since the last run.
   Maybe<unsigned> shouldRunThisStep(String const& timingConfiguration);
 
-  TileModificationList doApplyTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap, bool ignoreTileProtection = false);
+  TileModificationList doApplyTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap, bool ignoreTileProtection = false, bool updateNeighbors = true);
 
   // Queues pending (step based) updates to the given player
   void queueUpdatePackets(ConnectionId clientId, bool sendRemoteUpdates);

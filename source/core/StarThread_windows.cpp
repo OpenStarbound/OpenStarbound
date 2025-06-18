@@ -46,6 +46,8 @@ struct ThreadImpl {
   static DWORD WINAPI runThread(void* data) {
     ThreadImpl* ptr = static_cast<ThreadImpl*>(data);
     try {
+      unsigned long exceptionStackSize = 16384;
+      SetThreadStackGuarantee(&exceptionStackSize);
       ptr->function();
     } catch (std::exception const& e) {
       if (ptr->name.empty())
@@ -526,16 +528,49 @@ RecursiveMutex::~RecursiveMutex() {}
 
 RecursiveMutex& RecursiveMutex::operator=(RecursiveMutex&&) = default;
 
+#ifdef STAR_MUTEX_LOG
+void RecursiveMutex::setLogged(bool logged) {
+  m_log = logged;
+}
+#endif
+
 void RecursiveMutex::lock() {
+  #ifdef STAR_MUTEX_LOG
+  if (m_log)
+    printStack("RecursiveMutex lock waiting");
+  #endif
   m_impl->lock();
+  #ifdef STAR_MUTEX_LOG
+  if (m_log) {
+    auto str = strf("RecursiveMutex locked, LockCount {}", m_impl->criticalSection.LockCount);
+    printStack(str.c_str());
+  }
+  #endif
 }
 
 bool RecursiveMutex::tryLock() {
-  return m_impl->tryLock();
+  #ifdef STAR_MUTEX_LOG
+  if (m_log)
+    printStack("RecursiveMutex tryLock waiting");
+  #endif
+  bool result = m_impl->tryLock();
+  #ifdef STAR_MUTEX_LOG
+  if (result && m_log) {
+    auto str = strf("RecursiveMutex tryLock success, LockCount {}", m_impl->criticalSection.LockCount);
+    printStack(str.c_str());
+  }
+  #endif;
+  return result;
 }
 
 void RecursiveMutex::unlock() {
   m_impl->unlock();
+  #ifdef STAR_MUTEX_LOG
+  if (m_log) {
+    auto str = strf("RecursiveMutex unlocked, LockCount {}", m_impl->criticalSection.LockCount);
+    printStack(str.c_str());
+  }
+  #endif
 }
 
 }

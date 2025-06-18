@@ -13,6 +13,8 @@
 #include "StarJsonExtra.hpp"
 #include "StarUniverseClient.hpp"
 #include "StarTeamClient.hpp"
+#include "StarPlayerCodexes.hpp"
+#include "StarCodex.hpp"
 
 namespace Star {
 
@@ -116,6 +118,9 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
 
   callbacks.registerCallback(   "name", [player]()                   { return player->name(); });
   callbacks.registerCallback("setName", [player](String const& name) { player->setName(name); });
+
+  callbacks.registerCallback(   "nametag", [player]()                             { return player->nametag();    });
+  callbacks.registerCallback("setNametag", [player](Maybe<String> const& nametag) { player->setNametag(nametag); });
 
   callbacks.registerCallback(   "species", [player]()                      { return player->species();    });
   callbacks.registerCallback("setSpecies", [player](String const& species) { player->setSpecies(species); });
@@ -496,6 +501,10 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
     return QuestStateNames.getRight(player->questManager()->getQuest(questId)->state());
   });
 
+  callbacks.registerCallback("questObjectives", [player](String const& questId) -> Maybe<JsonArray> {
+    return player->questManager()->getQuest(questId)->objectiveList();
+  });
+
   callbacks.registerCallback("callQuest", [player](String const& questId, String const& func, LuaVariadic<LuaValue> const& args) -> Maybe<LuaValue> {
     if (!player->questManager()->hasQuest(questId))
       return {};
@@ -522,8 +531,11 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
     return player->questManager()->trackedQuestId();
   });
 
-  callbacks.registerCallback("setTrackedQuest", [player](Maybe<String> const& questId) {
-    return player->questManager()->setAsTracked(questId);
+  callbacks.registerCallback("setTrackedQuest", [player](String const& questId) {
+    if (!player->questManager()->isCurrent(questId))
+      return player->questManager()->setAsTracked(questId);
+    else
+      return player->questManager()->setAsTracked({});
   });
 
   callbacks.registerCallback("canTurnInQuest", [player](String const& questId) {
@@ -735,6 +747,39 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
   callbacks.registerCallback("removeScannedObject", [player](String const& objectName) {
       player->log()->removeScannedObject(objectName);
     });
+
+  // codex bindings
+  callbacks.registerCallback("isCodexKnown", [player](String const& codexId) -> bool {
+    return player->codexes()->codexKnown(codexId);
+  });
+
+  callbacks.registerCallback("isCodexRead", [player](String const& codexId) -> bool {
+    return player->codexes()->codexRead(codexId);
+  });
+
+  callbacks.registerCallback("markCodexRead", [player](String const& codexId) -> bool {
+    return player->codexes()->markCodexRead(codexId);
+  });
+
+  callbacks.registerCallback("markCodexUnread", [player](String const& codexId) -> bool {
+    return player->codexes()->markCodexUnread(codexId);
+  });
+
+  callbacks.registerCallback("learnCodex", [player](String const& codexId, Maybe<bool> markRead) {
+    player->codexes()->learnCodex(codexId, markRead.value(false));
+  });
+
+  callbacks.registerCallback("getCodexes", [player]() -> Json {
+    return player->codexes()->toJson();
+  });
+
+  callbacks.registerCallback("getNewCodex", [player]() -> Maybe<String> {
+    auto codexPtr = player->codexes()->firstNewCodex();
+    if (codexPtr)
+      return codexPtr->title();
+
+    return {};
+  });
 
   return callbacks;
 }

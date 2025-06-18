@@ -32,8 +32,10 @@ bool PlayerInventory::itemAllowedAsEquipment(ItemPtr const& item, EquipmentSlot 
     return is<ChestArmor>(item);
   else if (equipmentSlot == EquipmentSlot::Legs || equipmentSlot == EquipmentSlot::LegsCosmetic)
     return is<LegsArmor>(item);
-  else
+  else if (equipmentSlot == EquipmentSlot::Back || equipmentSlot == EquipmentSlot::BackCosmetic)
     return is<BackArmor>(item);
+  else
+    return is<ArmorItem>(item);
 }
 
 PlayerInventory::PlayerInventory() {
@@ -58,14 +60,12 @@ PlayerInventory::PlayerInventory() {
   m_customBarGroup = 0;
   m_customBar.resize(customBarGroups, customBarIndexes);
 
-  addNetElement(&m_equipmentNetState[EquipmentSlot::Head]);
-  addNetElement(&m_equipmentNetState[EquipmentSlot::Chest]);
-  addNetElement(&m_equipmentNetState[EquipmentSlot::Legs]);
-  addNetElement(&m_equipmentNetState[EquipmentSlot::Back]);
-  addNetElement(&m_equipmentNetState[EquipmentSlot::HeadCosmetic]);
-  addNetElement(&m_equipmentNetState[EquipmentSlot::ChestCosmetic]);
-  addNetElement(&m_equipmentNetState[EquipmentSlot::LegsCosmetic]);
-  addNetElement(&m_equipmentNetState[EquipmentSlot::BackCosmetic]);
+  for (auto slot : EquipmentSlotNames) {
+    auto& element = m_equipmentNetState[slot.first];
+    if (slot.first > EquipmentSlot::BackCosmetic)
+      element.setCompatibilityVersion(9);
+    addNetElement(&element);
+  }
 
   for (auto& p : m_bagsNetState) {
     for (auto& e : p.second)
@@ -442,6 +442,14 @@ BackArmorPtr PlayerInventory::backCosmetic() const {
   return as<BackArmor>(m_equipment.value(EquipmentSlot::BackCosmetic));
 }
 
+ArmorItemPtr PlayerInventory::equipment(EquipmentSlot slot) const {
+  if (auto item = m_equipment.ptr(slot))
+    if (auto armor = as<ArmorItem>(*item))
+      return armor;
+
+  return {};
+}
+
 ItemBagConstPtr PlayerInventory::bagContents(String const& type) const {
   if (!m_bags.contains(type)) return nullptr;
   return m_bags.get(type);
@@ -770,14 +778,10 @@ List<ItemPtr> PlayerInventory::pullOverflow() {
 void PlayerInventory::load(Json const& store) {
   auto itemDatabase = Root::singleton().itemDatabase();
 
-  m_equipment[EquipmentSlot::Head] = itemDatabase->diskLoad(store.get("headSlot"));
-  m_equipment[EquipmentSlot::Chest] = itemDatabase->diskLoad(store.get("chestSlot"));
-  m_equipment[EquipmentSlot::Legs] = itemDatabase->diskLoad(store.get("legsSlot"));
-  m_equipment[EquipmentSlot::Back] = itemDatabase->diskLoad(store.get("backSlot"));
-  m_equipment[EquipmentSlot::HeadCosmetic] = itemDatabase->diskLoad(store.get("headCosmeticSlot"));
-  m_equipment[EquipmentSlot::ChestCosmetic] = itemDatabase->diskLoad(store.get("chestCosmeticSlot"));
-  m_equipment[EquipmentSlot::LegsCosmetic] = itemDatabase->diskLoad(store.get("legsCosmeticSlot"));
-  m_equipment[EquipmentSlot::BackCosmetic] = itemDatabase->diskLoad(store.get("backCosmeticSlot"));
+  for (auto slot : EquipmentSlotNames) {
+    auto jItem = store.get(strf("{}Slot", slot.second), Json());
+    m_equipment[slot.first] = itemDatabase->diskLoad(jItem);
+  }
 
   //reuse ItemBags so the Inventory pane still works after load()'ing into the same PlayerInventory again (from swap)
   auto itemBags = store.get("itemBags").toObject();
@@ -844,18 +848,10 @@ Json PlayerInventory::store() const {
   }
 
   JsonObject itemBags;
-  for (auto bag : m_bags)
+  for (auto& bag : m_bags)
     itemBags.add(bag.first, bag.second->diskStore());
 
-  return JsonObject{
-    {"headSlot", itemDatabase->diskStore(m_equipment.value(EquipmentSlot::Head))},
-    {"chestSlot", itemDatabase->diskStore(m_equipment.value(EquipmentSlot::Chest))},
-    {"legsSlot", itemDatabase->diskStore(m_equipment.value(EquipmentSlot::Legs))},
-    {"backSlot", itemDatabase->diskStore(m_equipment.value(EquipmentSlot::Back))},
-    {"headCosmeticSlot", itemDatabase->diskStore(m_equipment.value(EquipmentSlot::HeadCosmetic))},
-    {"chestCosmeticSlot", itemDatabase->diskStore(m_equipment.value(EquipmentSlot::ChestCosmetic))},
-    {"legsCosmeticSlot", itemDatabase->diskStore(m_equipment.value(EquipmentSlot::LegsCosmetic))},
-    {"backCosmeticSlot", itemDatabase->diskStore(m_equipment.value(EquipmentSlot::BackCosmetic))},
+  auto data = JsonObject{
     {"itemBags", itemBags},
     {"swapSlot", itemDatabase->diskStore(m_swapSlot)},
     {"trashSlot", itemDatabase->diskStore(m_trashSlot)},
@@ -868,6 +864,13 @@ Json PlayerInventory::store() const {
     {"paintTool", itemDatabase->diskStore(m_essential.value(EssentialItem::PaintTool))},
     {"inspectionTool", itemDatabase->diskStore(m_essential.value(EssentialItem::InspectionTool))}
   };
+
+  for (auto& equipment : m_equipment) {
+    if (equipment.first <= EquipmentSlot::BackCosmetic || equipment.second)
+      data.set(strf("{}Slot", EquipmentSlotNames.getRight(equipment.first)), itemDatabase->diskStore(equipment.second));
+  }
+
+  return data;
 }
 
 void PlayerInventory::forEveryItem(function<void(InventorySlot const&, ItemPtr&)> function) {

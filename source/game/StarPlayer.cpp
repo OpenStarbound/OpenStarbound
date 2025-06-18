@@ -3,6 +3,7 @@
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
 #include "StarSongbook.hpp"
+#include "StarSongbookLuaBindings.hpp"
 #include "StarEmoteProcessor.hpp"
 #include "StarSpeciesDatabase.hpp"
 #include "StarDamageManager.hpp"
@@ -276,7 +277,7 @@ ClientContextPtr Player::clientContext() const {
 
 void Player::setClientContext(ClientContextPtr clientContext) {
   m_clientContext = std::move(clientContext);
-  if (m_clientContext)
+  if (m_clientContext && m_universeMap)
     m_universeMap->setServerUuid(m_clientContext->serverUuid());
 }
 
@@ -331,6 +332,7 @@ void Player::init(World* world, EntityId entityId, EntityMode mode) {
       p.second->addActorMovementCallbacks(m_movementController.get());
       p.second->addCallbacks("player", LuaBindings::makePlayerCallbacks(this));
       p.second->addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(m_statusController.get()));
+      p.second->addCallbacks("songbook", LuaBindings::makeSongbookCallbacks(m_songbook.get()));
       if (m_client)
         p.second->addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(m_client));
       p.second->init(world);
@@ -338,6 +340,14 @@ void Player::init(World* world, EntityId entityId, EntityMode mode) {
 
     for (auto& p : m_inventory->pullOverflow()) {
       world->addEntity(ItemDrop::createRandomizedDrop(p, m_movementController->position(), true));
+    }
+
+    if (m_clientContext && m_clientContext->netCompatibilityRules().version() < 9) {
+      for (uint8_t i = 0; i != 12; ++i) {
+        auto slot = EquipmentSlot((uint8_t)EquipmentSlot::Cosmetic1 + i);
+        if (auto item = as<ArmorItem>(m_inventory->itemsAt(slot)))
+          setNetArmorSecret(slot, item);
+      }
     }
   }
 
@@ -362,6 +372,7 @@ void Player::uninit() {
       p.second->removeCallbacks("player");
       p.second->removeCallbacks("mcontroller");
       p.second->removeCallbacks("status");
+      p.second->removeCallbacks("songbook");
       p.second->removeCallbacks("world");
       if (m_client)
         p.second->removeCallbacks("celestial");
@@ -1022,14 +1033,21 @@ void Player::update(float dt, uint64_t) {
     m_humanoid->setDance({});
 
   bool isClient = world()->isClient();
-  if (isClient)
-    m_armor->setupHumanoidClothingDrawables(*m_humanoid, forceNude());
 
   m_tools->suppressItems(suppressedItems);
   m_tools->tick(dt, m_shifting, m_pendingMoves);
   
-  if (auto overrideFacingDirection = m_tools->setupHumanoidHandItems(*m_humanoid, position(), aimPosition()))
-    m_movementController->controlFace(*overrideFacingDirection);
+  Direction facingDirection = m_movementController->facingDirection();
+
+  auto overrideFacingDirection = m_tools->setupHumanoidHandItems(*m_humanoid, position(), aimPosition());
+  if (overrideFacingDirection)
+    m_movementController->controlFace(facingDirection = *overrideFacingDirection);
+  
+  m_humanoid->setFacingDirection(facingDirection);
+  m_humanoid->setMovingBackwards(facingDirection != m_movementController->movingDirection());
+
+  if (isClient)
+    m_armor->setupHumanoidClothingDrawables(*m_humanoid, forceNude());
 
   m_effectsAnimator->resetTransformationGroup("flip");
   if (m_movementController->facingDirection() == Direction::Left)
@@ -1071,7 +1089,7 @@ void Player::update(float dt, uint64_t) {
   m_effectEmitter->setSourcePosition("primary", handPosition(ToolHand::Primary) + position());
   m_effectEmitter->setSourcePosition("alt", handPosition(ToolHand::Alt) + position());
 
-  m_effectEmitter->setDirection(facingDirection());
+  m_effectEmitter->setDirection(facingDirection);
 
   m_effectEmitter->tick(dt, *entityMode());
 
@@ -1086,7 +1104,7 @@ void Player::update(float dt, uint64_t) {
     }
     if (calculateHeadRotation) { // master or not an OpenStarbound player
       float headRotation = 0.f;
-      if (Humanoid::globalHeadRotation() && (m_humanoid->primaryHandHoldingItem() || m_humanoid->altHandHoldingItem() || m_humanoid->dance())) {
+      if (Humanoid::globalHeadRotation() && (m_humanoid->handHoldingItem(ToolHand::Primary) || m_humanoid->handHoldingItem(ToolHand::Alt) || m_humanoid->dance())) {
         auto primary = m_tools->primaryHandItem();
         auto alt = m_tools->altHandItem();
         String const disableFlag = "disableHeadRotation";
@@ -1104,9 +1122,6 @@ void Player::update(float dt, uint64_t) {
         setSecretProperty("humanoid.headRotation", headRotation);
     }
   }
-
-  m_humanoid->setFacingDirection(m_movementController->facingDirection());
-  m_humanoid->setMovingBackwards(m_movementController->facingDirection() != m_movementController->movingDirection());
 
   m_pendingMoves.clear();
 
@@ -1273,6 +1288,10 @@ void Player::triggerPickupEvents(ItemPtr const& item) {
   }
 }
 
+ItemPtr Player::essentialItem(EssentialItem essentialItem) const {
+  return m_inventory->essentialItem(essentialItem);
+}
+
 bool Player::hasItem(ItemDescriptor const& descriptor, bool exactMatch) const {
   return m_inventory->hasItem(descriptor, exactMatch);
 }
@@ -1322,6 +1341,13 @@ void Player::refreshArmor() {
   m_armor->setLegsCosmeticItem(m_inventory->legsCosmetic());
   m_armor->setBackItem(m_inventory->backArmor());
   m_armor->setBackCosmeticItem(m_inventory->backCosmetic());
+  bool shouldSetArmorSecrets = m_clientContext && m_clientContext->netCompatibilityRules().version() < 9;
+  for (uint8_t i = 0; i != 12; ++i) {
+    auto slot = EquipmentSlot((uint8_t)EquipmentSlot::Cosmetic1 + i);
+    auto item = m_inventory->equipment(slot);
+    if (m_armor->setCosmeticItem(i, item) && shouldSetArmorSecrets)
+      setNetArmorSecret(slot, item);
+  }
 }
 
 void Player::refreshEquipment() {
@@ -1935,6 +1961,8 @@ void Player::getNetStates(bool initial) {
   }
 
   m_emoteState = HumanoidEmoteNames.getLeft(m_emoteNetState.get());
+
+  getNetArmorSecrets();
 }
 
 void Player::setNetStates() {
@@ -1957,6 +1985,36 @@ void Player::setNetStates() {
   }
 
   m_emoteNetState.set(HumanoidEmoteNames.getRight(m_emoteState));
+}
+
+void Player::setNetArmorSecret(EquipmentSlot slot, ArmorItemPtr const& armor) {
+  String const& slotName = EquipmentSlotNames.getRight(slot);
+  setSecretProperty(strf("armorWearer.{}.data", slotName), itemSafeDescriptor(armor).diskStore());
+  if (m_armorSecretNetVersions.empty())
+    setSecretProperty("armorWearer.replicating", true);
+  setSecretProperty(strf("armorWearer.{}.version", slotName), ++m_armorSecretNetVersions[slot]);
+}
+
+void Player::getNetArmorSecrets() {
+  if (isSlave() && getSecretPropertyPtr("armorWearer.replicating") != nullptr) {
+    auto itemDatabase = Root::singleton().itemDatabase();
+
+    for (uint8_t i = 0; i != 12; ++i) {
+      auto slot = EquipmentSlot((uint8_t)EquipmentSlot::Cosmetic1 + i);
+      String const& slotName = EquipmentSlotNames.getRight(slot);
+      auto& curVersion = m_armorSecretNetVersions[slot];
+      uint64_t newVersion = 0;
+      if (auto jVersion = getSecretProperty(strf("armorWearer.{}.version", slotName), 0); jVersion.isType(Json::Type::Int))
+        newVersion = jVersion.toUInt();
+      if (newVersion > curVersion) {
+        curVersion = newVersion;
+        ArmorItemPtr item;
+        itemDatabase->diskLoad(getSecretProperty(strf("armorWearer.{}.data", slotName)), item);
+        m_inventory->setItem(slot, item);
+        m_armor->setCosmeticItem(i, item);
+      }
+    }
+  }
 }
 
 void Player::setAdmin(bool isAdmin) {
@@ -2101,6 +2159,17 @@ Vec3B Player::nametagColor() const {
 
 Vec2F Player::nametagOrigin() const {
   return mouthPosition(false);
+}
+
+String Player::nametag() const {
+  if (auto jNametag = getSecretProperty("nametag"); jNametag.isType(Json::Type::String))
+    return jNametag.toString();
+  else
+    return name();
+}
+
+void Player::setNametag(Maybe<String> nametag) {
+  setSecretProperty("nametag", nametag ? Json(*nametag) : Json());
 }
 
 void Player::updateIdentity()
@@ -2268,7 +2337,7 @@ bool Player::instrumentPlaying() {
 
 void Player::instrumentEquipped(String const& instrumentKind) {
   if (canUseTool())
-    m_songbook->keepalive(instrumentKind, mouthPosition());
+    m_songbook->keepAlive(instrumentKind, mouthPosition());
 }
 
 void Player::interact(InteractAction const& action) {
@@ -2640,6 +2709,9 @@ Maybe<StringView> Player::getSecretPropertyView(String const& name) const {
   return {};
 }
 
+String const* Player::getSecretPropertyPtr(String const& name) const {
+  return m_effectsAnimator->globalTagPtr(secretProprefix + name);
+}
 
 Json Player::getSecretProperty(String const& name, Json defaultValue) const {
   if (auto tag = m_effectsAnimator->globalTagPtr(secretProprefix + name)) {

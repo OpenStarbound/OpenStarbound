@@ -172,7 +172,8 @@ bool ActionBar::sendEvent(InputEvent const& event) {
   }
 
   for (auto action : context()->actions(event)) {
-    if (action >= InterfaceAction::InterfaceBar1 && action <= InterfaceAction::InterfaceBar6)
+    if (action >= InterfaceAction::InterfaceBar1 && action <= InterfaceAction::InterfaceBar10
+      && ((int)action - (int)InterfaceAction::InterfaceBar1) < inventory->customBarIndexes())
       inventory->selectActionBarLocation((CustomBarIndex)((int)action - (int)InterfaceAction::InterfaceBar1));
 
     if (action >= InterfaceAction::EssentialBar1 && action <= InterfaceAction::EssentialBar4)

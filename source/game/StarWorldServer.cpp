@@ -103,11 +103,11 @@ void WorldServer::setReferenceClock(ClockPtr clock) {
 }
 
 void WorldServer::initLua(UniverseServer* universe) {
+  m_luaRoot->addCallbacks("universe", LuaBindings::makeUniverseServerCallbacks(universe));
   auto assets = Root::singleton().assets();
   for (auto& p : assets->json("/worldserver.config:scriptContexts").toObject()) {
     auto scriptComponent = make_shared<ScriptComponent>();
     scriptComponent->setScripts(jsonToStringList(p.second.toArray()));
-    scriptComponent->addCallbacks("universe", LuaBindings::makeUniverseServerCallbacks(universe));
 
     m_scriptContexts.set(p.first, scriptComponent);
     scriptComponent->init(this);
@@ -340,7 +340,7 @@ List<EntityId> WorldServer::players() const {
 }
 
 void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> const& packets) {
-  auto const& clientInfo = m_clientInfo.get(clientId);
+  shared_ptr<ClientInfo> clientInfo = m_clientInfo.get(clientId);
   auto& root = Root::singleton();
   auto entityFactory = root.entityFactory();
   auto itemDatabase = root.itemDatabase();
@@ -370,6 +370,11 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
 
     } else if (auto mtpacket = as<ModifyTileListPacket>(packet)) {
       auto unappliedModifications = applyTileModifications(mtpacket->modifications, mtpacket->allowEntityOverlap);
+      if (!unappliedModifications.empty())
+        clientInfo->outgoingPackets.append(make_shared<TileModificationFailurePacket>(unappliedModifications));
+
+    } else if (auto rtpacket = as<ReplaceTileListPacket>(packet)) {
+      auto unappliedModifications = replaceTiles(rtpacket->modifications, rtpacket->tileDamage, rtpacket->applyDamage);
       if (!unappliedModifications.empty())
         clientInfo->outgoingPackets.append(make_shared<TileModificationFailurePacket>(unappliedModifications));
 
@@ -537,6 +542,14 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
       for (auto const& pair : m_clientInfo)
         pair.second->outgoingPackets.append(make_shared<UpdateWorldPropertiesPacket>(updateWorldProperties->updatedProperties));
 
+    } else if (auto updateWorldTemplate = as<UpdateWorldTemplatePacket>(packet)) {
+      if (!clientInfo->admin)
+        continue; // nuh-uh!
+
+      auto newWorldTemplate = make_shared<WorldTemplate>(updateWorldTemplate->templateData);
+      setTemplate(newWorldTemplate);
+      // setTemplate re-adds all clients currently, update clientInfo
+      clientInfo = m_clientInfo.get(clientId);
     } else {
       throw WorldServerException::format("Improper packet type {} received by client", (int)packet->type());
     }
@@ -875,6 +888,92 @@ TileModificationList WorldServer::forceApplyTileModifications(TileModificationLi
   return doApplyTileModifications(modificationList, allowEntityOverlap, true);
 }
 
+bool WorldServer::replaceTile(Vec2I const& pos, TileModification const& modification, TileDamage const& tileDamage) {
+  if (isTileProtected(pos))
+    return false;
+
+  if (!WorldImpl::validateTileReplacement(modification))
+    return false;
+  
+  if (auto placeMaterial = modification.ptr<PlaceMaterial>()) {
+    if (!isTileConnectable(pos, placeMaterial->layer, true))
+      return false;
+
+    if (auto tile = m_tileArray->modifyTile(pos)) {
+      auto damageParameters = WorldImpl::tileDamageParameters(tile, placeMaterial->layer, tileDamage);
+      bool harvested = tileDamage.amount >= 0 && tileDamage.harvestLevel >= damageParameters.requiredHarvestLevel();
+      auto damage = placeMaterial->layer == TileLayer::Foreground ? tile->foregroundDamage : tile->backgroundDamage;
+      Vec2F dropPosition = centerOfTile(pos);
+
+      for (auto drop : destroyBlock(placeMaterial->layer, pos, harvested, !tileDamageIsPenetrating(damage.damageType()), false))
+        addEntity(ItemDrop::createRandomizedDrop(drop, dropPosition));
+      
+      return true;
+    }
+  }
+
+  return false;
+}
+
+TileModificationList WorldServer::replaceTiles(TileModificationList const& modificationList, TileDamage const& tileDamage, bool applyDamage) {
+  TileModificationList success, failures;
+
+  if (applyDamage) {
+    List<Vec2I> toDamage;
+    TileLayer layer;
+
+    for (auto pair : modificationList) {
+      if (auto placeMaterial = pair.second.ptr<PlaceMaterial>()) {
+        layer = placeMaterial->layer;
+
+        if (placeMaterial->material == material(pair.first, layer)) {
+          failures.append(pair);
+          continue;
+        }
+
+        if (damageWouldDestroy(pair.first, layer, tileDamage)) {
+          if (replaceTile(pair.first, pair.second, tileDamage))
+            success.append(pair);
+          else
+            failures.append(pair);
+          continue;
+        }
+
+        toDamage.append(pair.first);
+        success.append(pair);
+        continue;
+      }
+      
+      failures.append(pair);
+    }
+
+    if (!toDamage.empty())
+      damageTiles(toDamage, layer, Vec2F(), tileDamage, Maybe<EntityId>());
+    
+  } else {
+    for (auto pair : modificationList) {
+      if (replaceTile(pair.first, pair.second, tileDamage))
+        success.append(pair);
+      else
+        failures.append(pair);
+    }
+  }
+
+  failures.appendAll(doApplyTileModifications(success, true, false, false));
+
+  for (auto pair : success) {
+    checkEntityBreaks(RectF::withSize(Vec2F(pair.first), Vec2F(1, 1)));
+    m_liquidEngine->visitLocation(pair.first);
+    m_fallingBlocksAgent->visitLocation(pair.first);
+  }
+
+  return failures;
+}
+
+bool WorldServer::damageWouldDestroy(Vec2I const& pos, TileLayer layer, TileDamage const& tileDamage) const {
+  return WorldImpl::damageWouldDestroy(m_tileArray, pos, layer, tileDamage);
+}
+
 TileDamageResult WorldServer::damageTiles(List<Vec2I> const& positions, TileLayer layer, Vec2F const& sourcePosition, TileDamage const& damage, Maybe<EntityId> sourceEntity) {
   Set<Vec2I> positionSet;
   for (auto const& pos : positions)
@@ -929,20 +1028,11 @@ TileDamageResult WorldServer::damageTiles(List<Vec2I> const& positions, TileLaye
       // Penetrating damage should carry through to the blocks behind this
       // entity.
       if (tileRes == TileDamageResult::None || tileDamageIsPenetrating(tileDamage.type)) {
-        auto materialDatabase = Root::singleton().materialDatabase();
+        auto damageParameters = WorldImpl::tileDamageParameters(tile, layer, tileDamage);
 
         if (layer == TileLayer::Foreground && isRealMaterial(tile->foreground)) {
           if (!tile->rootSource) {
-            if (isRealMod(tile->foregroundMod)) {
-              if (tileDamageIsPenetrating(tileDamage.type))
-                tile->foregroundDamage.damage(materialDatabase->materialDamageParameters(tile->foreground), sourcePosition, tileDamage);
-              else if (materialDatabase->modBreaksWithTile(tile->foregroundMod))
-                tile->foregroundDamage.damage(materialDatabase->modDamageParameters(tile->foregroundMod).sum(materialDatabase->materialDamageParameters(tile->foreground)), sourcePosition, tileDamage);
-              else
-                tile->foregroundDamage.damage(materialDatabase->modDamageParameters(tile->foregroundMod), sourcePosition, tileDamage);
-            } else {
-              tile->foregroundDamage.damage(materialDatabase->materialDamageParameters(tile->foreground), sourcePosition, tileDamage);
-            }
+            tile->foregroundDamage.damage(damageParameters, sourcePosition, tileDamage);
 
             // if the tile is broken, send a message back to the source entity with position, layer, dungeonId, and whether the tile was harvested
             if (sourceEntity.isValid() && tile->foregroundDamage.dead()) {
@@ -964,16 +1054,7 @@ TileDamageResult WorldServer::damageTiles(List<Vec2I> const& positions, TileLaye
               tileRes = TileDamageResult::Normal;
           }
         } else if (layer == TileLayer::Background && isRealMaterial(tile->background)) {
-          if (isRealMod(tile->backgroundMod)) {
-            if (tileDamageIsPenetrating(tileDamage.type))
-              tile->backgroundDamage.damage(materialDatabase->materialDamageParameters(tile->background), sourcePosition, tileDamage);
-            else if (materialDatabase->modBreaksWithTile(tile->backgroundMod))
-              tile->backgroundDamage.damage(materialDatabase->modDamageParameters(tile->backgroundMod).sum(materialDatabase->materialDamageParameters(tile->background)), sourcePosition, tileDamage);
-            else
-              tile->backgroundDamage.damage(materialDatabase->modDamageParameters(tile->backgroundMod), sourcePosition, tileDamage);
-          } else {
-            tile->backgroundDamage.damage(materialDatabase->materialDamageParameters(tile->background), sourcePosition, tileDamage);
-          }
+          tile->backgroundDamage.damage(damageParameters, sourcePosition, tileDamage);
           
           // if the tile is broken, send a message back to the source entity with position and whether the tile was harvested
             if (sourceEntity.isValid() && tile->backgroundDamage.dead()) {
@@ -1394,7 +1475,7 @@ Maybe<unsigned> WorldServer::shouldRunThisStep(String const& timingConfiguration
   return {};
 }
 
-TileModificationList WorldServer::doApplyTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap, bool ignoreTileProtection) {
+TileModificationList WorldServer::doApplyTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap, bool ignoreTileProtection, bool updateNeighbors) {
   auto materialDatabase = Root::singleton().materialDatabase();
 
   TileModificationList unapplied = modificationList;
@@ -1454,9 +1535,12 @@ TileModificationList WorldServer::doApplyTileModifications(TileModificationList 
 
       tile->dungeonId = ConstructionDungeonId;
 
-      checkEntityBreaks(RectF::withSize(Vec2F(pos), Vec2F(1, 1)));
-      m_liquidEngine->visitLocation(pos);
-      m_fallingBlocksAgent->visitLocation(pos);
+      if (updateNeighbors) {
+        checkEntityBreaks(RectF::withSize(Vec2F(pos), Vec2F(1, 1)));
+        m_liquidEngine->visitLocation(pos);
+        m_fallingBlocksAgent->visitLocation(pos);
+      }
+
       if (placeMaterial->layer == TileLayer::Foreground)
         dirtyCollision(RectI::withSize(pos, {1, 1}));
       queueTileUpdates(pos);
@@ -1737,7 +1821,7 @@ void WorldServer::setLiquid(Vec2I const& pos, LiquidId liquid, float level, floa
   }
 }
 
-List<ItemDescriptor> WorldServer::destroyBlock(TileLayer layer, Vec2I const& pos, bool genItems, bool destroyModFirst) {
+List<ItemDescriptor> WorldServer::destroyBlock(TileLayer layer, Vec2I const& pos, bool genItems, bool destroyModFirst, bool updateNeighbors) {
   auto materialDatabase = Root::singleton().materialDatabase();
 
   auto* tile = m_tileArray->modifyTile(pos);
@@ -1803,9 +1887,11 @@ List<ItemDescriptor> WorldServer::destroyBlock(TileLayer layer, Vec2I const& pos
 
   tile->dungeonId = DestroyedBlockDungeonId;
 
-  checkEntityBreaks(RectF::withSize(Vec2F(pos), Vec2F(1, 1)));
-  m_liquidEngine->visitLocation(pos);
-  m_fallingBlocksAgent->visitLocation(pos);
+  if (updateNeighbors) {
+    checkEntityBreaks(RectF::withSize(Vec2F(pos), Vec2F(1, 1)));
+    m_liquidEngine->visitLocation(pos);
+    m_fallingBlocksAgent->visitLocation(pos);
+  }
   queueTileUpdates(pos);
   queueTileDamageUpdates(pos, layer);
 
@@ -2506,6 +2592,21 @@ void WorldServer::setupForceRegions() {
     bottomForceRegion.baseControlForce = regionForce;
     bottomForceRegion.categoryFilter = regionCategoryFilter;
     m_forceRegions.append(bottomForceRegion);
+  }
+}
+
+void WorldServer::setTemplate(WorldTemplatePtr newTemplate) {
+  m_worldTemplate = std::move(newTemplate);
+  for (auto& client : clientIds()) {
+    auto& info = m_clientInfo.get(client);
+    bool local = info->local;
+    bool isAdmin = info->admin;
+    auto netRules = info->clientState.netCompatibilityRules();
+    SpawnTarget spawnTarget;
+    if (auto player = clientPlayer(client))
+      spawnTarget = SpawnTargetPosition(player->position() + player->feetOffset());
+    removeClient(client);
+    addClient(client, spawnTarget, local, isAdmin, netRules);
   }
 }
 

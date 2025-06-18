@@ -15,7 +15,7 @@ public:
   ClientCommandProcessor(UniverseClientPtr universeClient, CinematicPtr cinematicOverlay,
       MainInterfacePaneManager* paneManager, StringMap<StringList> macroCommands);
 
-  StringList handleCommand(String const& commandLine);
+  StringList handleCommand(String const& commandLine, bool userInput = false);
 
   bool debugDisplayEnabled() const;
   bool debugHudEnabled() const;

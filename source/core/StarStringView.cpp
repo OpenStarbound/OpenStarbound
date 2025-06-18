@@ -113,8 +113,11 @@ bool StringView::beginsWith(StringView beg, CaseSensitivity cs) const {
   auto it = begin();
   auto itEnd = end();
   for (size_t i = 0; i != begSize; ++i)
-    if (it++ == itEnd)
+  {
+    if (it == itEnd)
       return false;
+    it++;
+  }
 
   return compare(0, begSize, beg, 0, NPos, cs) == 0;
 }
@@ -352,18 +355,20 @@ StringView StringView::substr(size_t position, size_t n) const {
   auto it = begin();
 
   for (size_t i = 0; i != position; ++i) {
-    if (it++ == itEnd)
+    if (it == itEnd)
       throw OutOfRangeException(strf("out of range in StringView::substr({}, {})", position, n));
+    it++;
   }
 
-  const char* start = &*it.base();
+  const auto itStart = it;
 
   for (size_t i = 0; i != n; ++i) {
-    if (it++ == itEnd)
-      return StringView(start, &*it.base() - start - 1);
+    if (it == itEnd)
+      break;
+    ++it;
   }
 
-  return StringView(start, &*it.base() - start);
+  return StringView(&*itStart.base(), it.base() - itStart.base());
 }
 
 int StringView::compare(size_t selfOffset, size_t selfLen, StringView other,

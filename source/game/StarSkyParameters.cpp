@@ -175,6 +175,8 @@ void SkyParameters::read(DataStream& ds) {
   ds >> sunType;
   if (ds.streamCompatibilityVersion() >= 3)
     ds >> settings;
+  else
+    settings = JsonObject();
 }
 
 void SkyParameters::write(DataStream& ds) const {

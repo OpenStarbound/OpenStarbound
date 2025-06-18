@@ -12,6 +12,10 @@
 
 using namespace Star;
 
+#if defined STAR_SYSTEM_WINDOWS
+#include <windows.h>
+#endif
+
 Json const AdditionalDefaultConfiguration = Json::parseJson(R"JSON(
     {
       "configurationVersion" : {
@@ -35,6 +39,10 @@ Json const AdditionalDefaultConfiguration = Json::parseJson(R"JSON(
 
 int main(int argc, char** argv) {
   try {
+    #if defined STAR_SYSTEM_WINDOWS
+    unsigned long exceptionStackSize = 16384;
+    SetThreadStackGuarantee(&exceptionStackSize);
+    #endif
     RootLoader rootLoader({{}, AdditionalDefaultConfiguration, String("starbound_server.log"), LogLevel::Info, false, String("starbound_server.config")});
     RootUPtr root = rootLoader.commandInitOrDie(argc, argv).first;
     root->fullyLoad();
@@ -45,7 +53,7 @@ int main(int argc, char** argv) {
 
     auto configuration = root->configuration();
     {
-      Logger::info("Server Version {} ({}) Source ID: {} Protocol: {}", StarVersionString, StarArchitectureString, StarSourceIdentifierString, StarProtocolVersion);
+      Logger::info("OpenStarbound Server v{} for v{} ({}) Source ID: {} Protocol: {}", OpenStarVersionString, StarVersionString, StarArchitectureString, StarSourceIdentifierString, StarProtocolVersion);
 
       float updateRate = 1.0f / GlobalTimestep;
       if (auto jUpdateRate = configuration->get("updateRate")) {

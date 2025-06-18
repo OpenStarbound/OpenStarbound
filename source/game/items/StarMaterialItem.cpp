@@ -17,6 +17,7 @@ constexpr int BlockRadiusLimit = 16;
 const String BlockRadiusPropertyKey = "building.blockRadius";
 const String AltBlockRadiusPropertyKey = "building.altBlockRadius";
 const String CollisionOverridePropertyKey = "building.collisionOverride";
+const String BlockSwapPropertyKey = "building.blockSwap";
 
 MaterialItem::MaterialItem(Json const& config, String const& directory, Json const& settings)
   : Item(config, directory, settings), FireableItem(config), BeamItem(config) {
@@ -42,6 +43,7 @@ MaterialItem::MaterialItem(Json const& config, String const& directory, Json con
   m_blockRadius = config.getFloat("blockRadius", defaultParameters.getFloat("blockRadius"));
   m_altBlockRadius = config.getFloat("altBlockRadius", defaultParameters.getFloat("altBlockRadius"));
   m_collisionOverride = TileCollisionOverrideNames.maybeLeft(config.getString("collisionOverride", "None")).value(TileCollisionOverride::None);
+  m_blockSwap = false;
 
   m_multiplace = config.getBool("allowMultiplace", BlockCollisionSet.contains(materialDatabase->materialCollisionKind(m_material)));
   m_placeSounds = jsonToStringList(config.get("placeSounds", JsonArray()));
@@ -114,6 +116,13 @@ void MaterialItem::update(float dt, FireMode fireMode, bool shifting, HashSet<Mo
         player->setSecretProperty(BlockRadiusPropertyKey, m_blockRadius);
         owner()->addSound("/sfx/tools/buildradiusshrink.wav", 1.0f, 1.0f + m_blockRadius / BlockRadiusLimit);
       }
+
+      if (auto presses = input.bindDown("opensb", "blockSwapToggle")) {
+        if (*presses % 2 != 0)
+          m_blockSwap = !m_blockSwap;
+        player->setSecretProperty(BlockSwapPropertyKey, m_blockSwap);
+        owner()->addSound(m_blockSwap ? "/sfx/interface/button/click.wav" : "/sfx/interface/button/release.wav", 1.0f, Random::randf(0.9f, 1.1f));
+      }
     }
     else
       updatePropertiesFromPlayer(player);
@@ -121,10 +130,13 @@ void MaterialItem::update(float dt, FireMode fireMode, bool shifting, HashSet<Mo
 }
 
 void MaterialItem::render(RenderCallback* renderCallback, EntityRenderLayer) {
-  if (m_collisionOverride != TileCollisionOverride::None) {
-    float pulseLevel = 1.f - 0.3f * 0.5f * ((float)sin(2 * Constants::pi * 4.0 * Time::monotonicTime()) + 1.f);
+  if (m_blockSwap || m_collisionOverride != TileCollisionOverride::None) {
+    float pulse = (float)sin(2 * Constants::pi * 4.0 * Time::monotonicTime());
+    float pulseA = 0.85 - pulse * 0.15f;
+    float pulseB = 0.85 + pulse * 0.15f;
     Color color = owner()->favoriteColor().mix(Color::White);
-    color.setAlphaF(color.alphaF() * pulseLevel * 0.95f);
+    float alpha = color.alphaF();
+    color.setAlphaF(alpha * pulseA * 0.95f);
     auto addIndicator = [&](String const& path) {
       Vec2F basePosition = Vec2F(0.5f, 0.5f);
       auto indicator = Drawable::makeImage(path, 1.0f / TilePixels, true, basePosition);
@@ -135,6 +147,14 @@ void MaterialItem::render(RenderCallback* renderCallback, EntityRenderLayer) {
         renderCallback->addDrawable(indicator, RenderLayerForegroundTile);
       }
     };
+
+    if (m_blockSwap) {
+      auto prev = color;
+      color.hueShift(0.167f);
+      color.setAlphaF(alpha * pulseB * 0.95f);
+      addIndicator("/interface/building/blockswap.png");
+      color = prev;
+    }
 
     if (m_collisionOverride == TileCollisionOverride::Empty)
       addIndicator("/interface/building/collisionempty.png");
@@ -191,6 +211,10 @@ void MaterialItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
     : Root::singleton().materialDatabase()->materialCollisionKind(m_material);
 
   size_t total = 0;
+
+  if (m_blockSwap && owner()->inToolRange(aimPosition))
+    total += blockSwap(radius, layer);
+  
   for (unsigned i = 0; i != steps; ++i) {
     auto placementOrigin = aimPosition + diff * (1.0f - (static_cast<float>(i) / steps));
     if (!owner()->inToolRange(placementOrigin))
@@ -221,6 +245,99 @@ void MaterialItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
 
 void MaterialItem::endFire(FireMode, bool) {
   m_lastAimPosition.reset();
+}
+
+size_t MaterialItem::blockSwap(float radius, TileLayer layer) {
+  Player* player = as<Player>(owner());
+  if (!player)
+    return 0;
+  
+  ItemPtr beamAxePtr = player->essentialItem(EssentialItem::BeamAxe);
+  if (!beamAxePtr)
+    return 0;
+  
+  Item* beamAxe = beamAxePtr.get();
+
+  List<Vec2I> swapPositions;
+  for (Vec2I& pos : tileArea(radius, owner()->aimPosition())) {
+    if (!world()->isTileConnectable(pos, layer, true))
+      continue;
+    if (world()->isTileProtected(pos))
+      continue;
+    if (world()->material(pos, layer) == materialId())
+      continue;
+    swapPositions.append(pos);
+  }
+
+  if (swapPositions.empty())
+    return 0;
+  if (swapPositions.size() > count())
+    swapPositions.resize(count());
+
+  TileDamage damage;
+  damage.type = TileDamageType::Beamish;
+  damage.amount = beamAxe->instanceValue("tileDamage", beamAxe->instanceValue("primaryAbility.tileDamage", 1.0f)).toFloat();
+  damage.harvestLevel = beamAxe->instanceValue("harvestLevel", beamAxe->instanceValue("primaryAbility.harvestLevel", 1)).toUInt();
+
+  TileModificationList toSwap;
+  List<Vec2I> willDamage;
+  for (auto pos : swapPositions) {
+    toSwap.emplaceAppend(pos, PlaceMaterial{layer, materialId(), placementHueShift(pos), m_collisionOverride});
+    if (!world()->damageWouldDestroy(pos, layer, damage))
+      willDamage.append(pos);
+  }
+  
+  size_t success;
+  size_t failed = world()->replaceTiles(toSwap, damage, true).size();
+
+  if (failed < toSwap.size()) {
+    success = toSwap.size() - failed;
+    consume(success);
+  } else {
+    List<Vec2I> toDamage;
+
+    for (auto pair : toSwap)
+      toDamage.append(pair.first);
+    
+    world()->damageTiles(toDamage, layer, owner()->position(), damage, owner()->entityId());
+  }
+
+  if (willDamage.empty())
+    return success;
+
+  auto materialDatabase = Root::singleton().materialDatabase();
+  auto assets = Root::singleton().assets();
+  String blockSound;
+
+  for (auto pos : willDamage) {
+    blockSound = materialDatabase->miningSound(world()->material(pos, layer), world()->mod(pos, layer));
+    if (!blockSound.empty())
+      break;
+  }
+
+  if (blockSound.empty()) {
+    for (auto pos : willDamage) {
+      blockSound = materialDatabase->footstepSound(world()->material(pos, layer), world()->mod(pos, layer));
+      if (!blockSound.empty()
+          && blockSound != assets->json("/client.config:defaultFootstepSound").toString())
+        break;
+    }
+  }
+
+  owner()->addSound(blockSound, assets->json("/sfx.config:miningBlockVolume").toFloat());
+
+  auto strikeSounds = beamAxe->instanceValue("strikeSounds");
+  if (!strikeSounds.isNull()) {
+    owner()->addSound(
+        Random::randValueFrom(jsonToStringList(strikeSounds)),
+        assets->json("/sfx.config:miningToolVolume").toFloat()
+    );
+  }
+
+  if (FireableItem* item = as<FireableItem>(beamAxe))
+    setFireTimer(item->windupTime() + item->cooldownTime());
+  
+  return success;
 }
 
 MaterialId MaterialItem::materialId() const {
@@ -280,6 +397,10 @@ void MaterialItem::updatePropertiesFromPlayer(Player* player) {
   auto collisionOverride = player->getSecretProperty(CollisionOverridePropertyKey);
   if (collisionOverride.isType(Json::Type::String))
     m_collisionOverride = TileCollisionOverrideNames.maybeLeft(collisionOverride.toString()).value(TileCollisionOverride::None);
+  
+  auto blockSwap = player->getSecretProperty(BlockSwapPropertyKey);
+  if (blockSwap.isType(Json::Type::Bool))
+    m_blockSwap = blockSwap.toBool();
 }
 
 float MaterialItem::calcRadius(bool shifting) const {

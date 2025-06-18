@@ -125,7 +125,9 @@ LuaTable LuaContext::createTable() {
 LuaNullEnforcer::LuaNullEnforcer(LuaEngine& engine)
   : m_engine(&engine) { ++m_engine->m_nullTerminated; };
 
-LuaNullEnforcer::~LuaNullEnforcer() { --m_engine->m_nullTerminated; };
+LuaNullEnforcer::LuaNullEnforcer(LuaNullEnforcer&& other) { m_engine = take(other.m_engine); };
+
+LuaNullEnforcer::~LuaNullEnforcer() { if (m_engine) --m_engine->m_nullTerminated; };
 
 LuaValue LuaConverter<Json>::from(LuaEngine& engine, Json const& v) {
   if (v.isType(Json::Type::Null)) {
@@ -157,7 +159,7 @@ Maybe<Json> LuaConverter<Json>::to(LuaEngine&, LuaValue const& v) {
     return Json(*f);
 
   if (auto s = v.ptr<LuaString>())
-    return Json(s->ptr());
+    return Json(s->toString());
 
   if (v.is<LuaTable>())
     return LuaDetail::tableToJsonContainer(v.get<LuaTable>());
@@ -317,7 +319,7 @@ LuaEnginePtr LuaEngine::create(bool safe) {
 
   luaL_requiref(self->m_state, "os", luaopen_os, true);
   if (safe) {
-    StringSet osWhitelist = {"clock", "difftime", "time"};
+    StringSet osWhitelist = {"clock", "difftime", "time", "date"};
 
     lua_pushnil(self->m_state);
     while (lua_next(self->m_state, -2) != 0) {
@@ -472,14 +474,18 @@ lua_Debug const& LuaEngine::debugInfo(int level, const char* what) {
   return debug;
 }
 
-LuaString LuaEngine::createString(String const& str) {
+LuaString LuaEngine::createString(std::string const& str) {
   lua_checkstack(m_state, 1);
 
   if (m_nullTerminated > 0)
-    lua_pushstring(m_state, str.utf8Ptr());
+    lua_pushstring(m_state, str.data());
   else
-    lua_pushlstring(m_state, str.utf8Ptr(), str.utf8Size());
+    lua_pushlstring(m_state, str.data(), str.size());
   return LuaString(LuaDetail::LuaHandle(RefPtr<LuaEngine>(this), popHandle(m_state)));
+}
+
+LuaString LuaEngine::createString(String const& str) {
+  return createString(str.utf8());
 }
 
 LuaString LuaEngine::createString(char const* str) {

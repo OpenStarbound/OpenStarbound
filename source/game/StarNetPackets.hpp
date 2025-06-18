@@ -113,7 +113,11 @@ enum class PacketType : uint8_t {
   SystemShipDestroy,
 
   // Packets sent system client -> system server
-  SystemObjectSpawn
+  SystemObjectSpawn,
+
+  // OpenStarbound packets
+  ReplaceTileList,
+  UpdateWorldTemplate
 };
 extern EnumMap<PacketType> const PacketTypeNames;
 
@@ -368,12 +372,14 @@ struct FlyShipPacket : PacketBase<PacketType::FlyShip> {
 struct ChatSendPacket : PacketBase<PacketType::ChatSend> {
   ChatSendPacket();
   ChatSendPacket(String text, ChatSendMode sendMode);
+  ChatSendPacket(String text, ChatSendMode sendMode, JsonObject data);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
 
   String text;
   ChatSendMode sendMode;
+  JsonObject data;
 };
 
 struct CelestialRequestPacket : PacketBase<PacketType::CelestialRequest> {
@@ -625,6 +631,18 @@ struct ModifyTileListPacket : PacketBase<PacketType::ModifyTileList> {
 
   TileModificationList modifications;
   bool allowEntityOverlap;
+};
+
+struct ReplaceTileListPacket : PacketBase<PacketType::ReplaceTileList> {
+  ReplaceTileListPacket();
+  ReplaceTileListPacket(TileModificationList modifications, TileDamage tileDamage, bool applyDamage);
+
+  void read(DataStream& ds) override;
+  void write(DataStream& ds) const override;
+
+  TileModificationList modifications;
+  TileDamage tileDamage;
+  bool applyDamage;
 };
 
 struct DamageTileGroupPacket : PacketBase<PacketType::DamageTileGroup> {
@@ -952,5 +970,15 @@ struct SystemObjectSpawnPacket : PacketBase<PacketType::SystemObjectSpawn> {
   Uuid uuid;
   Maybe<Vec2F> position;
   JsonObject parameters;
+};
+
+struct UpdateWorldTemplatePacket : PacketBase<PacketType::UpdateWorldTemplate> {
+  UpdateWorldTemplatePacket();
+  UpdateWorldTemplatePacket(Json templateData);
+
+  void read(DataStream& ds) override;
+  void write(DataStream& ds) const override;
+
+  Json templateData;
 };
 }

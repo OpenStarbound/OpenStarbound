@@ -14,9 +14,9 @@ namespace Star {
 ScriptableThread::ScriptableThread(Json parameters)
   : Thread("ScriptableThread: " + parameters.getString("name")), // TODO
     m_stop(false),
+    m_parameters(std::move(parameters)),
     m_errorOccurred(false),
-    m_shouldExpire(true),
-    m_parameters(std::move(parameters)) {
+    m_shouldExpire(true) {
       m_luaRoot = make_shared<LuaRoot>();
       m_name = m_parameters.getString("name");
       
@@ -78,8 +78,6 @@ void ScriptableThread::passMessage(Message&& message) {
 
 void ScriptableThread::run() {
   try {
-    auto& root = Root::singleton();
-    
     double updateMeasureWindow = m_parameters.getDouble("updateMeasureWindow",0.5);
     TickRateApproacher tickApproacher(1.0f / m_timestep, updateMeasureWindow);
 

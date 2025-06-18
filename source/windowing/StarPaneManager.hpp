@@ -63,6 +63,7 @@ public:
 
   PanePtr getPaneAt(Set<PaneLayer> const& paneLayers, Vec2I const& position) const;
   PanePtr getPaneAt(Vec2I const& position) const;
+  List<PanePtr> getAllPanes();
 
   void setBackgroundWidget(WidgetPtr bg);
 

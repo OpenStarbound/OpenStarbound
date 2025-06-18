@@ -41,7 +41,7 @@ public:
   PlayerPtr mainPlayer() const;
 
   // Returns error if connection failed
-  Maybe<String> connect(UniverseConnection connection, bool allowAssetsMismatch, String const& account = "", String const& password = "");
+  Maybe<String> connect(UniverseConnection connection, bool allowAssetsMismatch, String const& account = "", String const& password = "", bool const& forceLegacy = false);
   bool isConnected() const;
   void disconnect();
   Maybe<String> disconnectReason() const;
@@ -80,7 +80,7 @@ public:
   SkyConstPtr currentSky() const;
   bool flying() const;
 
-  void sendChat(String const& text, ChatSendMode sendMode, Maybe<bool> speak = {});
+  void sendChat(String const& text, ChatSendMode sendMode, Maybe<bool> speak = {}, Maybe<JsonObject> data = {});
   List<ChatReceivedMessage> pullChatMessages();
 
   uint16_t players();

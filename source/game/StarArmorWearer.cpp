@@ -26,36 +26,79 @@ ArmorWearer::ArmorWearer() : m_lastNude(true) {
   addNetElement(&m_legsCosmeticItemDataNetState);
   addNetElement(&m_backCosmeticItemDataNetState);
 
+  m_cosmeticItems.resize(12);
+  for (auto& cosmetic : m_cosmeticItems) {
+    cosmetic.netState.setCompatibilityVersion(9);
+    addNetElement(&cosmetic.netState);
+  }
+
   reset();
 }
 
 void ArmorWearer::setupHumanoidClothingDrawables(Humanoid& humanoid, bool forceNude) {
   bool nudeChanged = m_lastNude != forceNude;
   auto gender = humanoid.identity().gender;
-  bool genderChanged = !m_lastGender || m_lastGender.value() != gender;
+  bool genderChanged = !m_lastGender || *m_lastGender != gender;
+  Direction direction = humanoid.facingDirection();
+  bool dirChanged = !m_lastDirection || *m_lastDirection != direction;
   m_lastNude = forceNude;
   m_lastGender = gender;
+  m_lastDirection = direction;
+
+  auto flipped = [=](ArmorItemPtr const& armor) {
+    return dirChanged && armor && armor->flipping();
+  };
 
   bool allNeedsSync = nudeChanged || genderChanged;
-  bool headNeedsSync = allNeedsSync  || m_headNeedsSync;
-  bool chestNeedsSync = allNeedsSync || m_chestNeedsSync;
-  bool legsNeedsSync = allNeedsSync  || m_legsNeedsSync;
-  bool backNeedsSync = allNeedsSync  || m_backNeedsSync;
-
-  bool bodyHidden = false;
-  HeadArmorPtr const& headArmor = m_headCosmeticItem ? m_headCosmeticItem : m_headItem;
-  if (headArmor && !forceNude) {
-    if (headNeedsSync) {
-      humanoid.setHeadArmorFrameset(headArmor->frameset(humanoid.identity().gender));
-      humanoid.setHeadArmorDirectives(headArmor->directives());
-      humanoid.setHelmetMaskDirectives(headArmor->maskDirectives());
+  bool anyNeedsSync = allNeedsSync;
+  Array<uint8_t, 4> wornCosmeticTypes;
+  for (auto& cosmetic : m_cosmeticItems) {
+    if (cosmetic.needsSync)
+      anyNeedsSync = true;
+    if (cosmetic.item) {
+      if (forceNude || !cosmetic.item->visible(true))
+        continue;
+      if (flipped(cosmetic.item))
+        anyNeedsSync = true;
+      auto armorType = cosmetic.item->armorType();
+      ++wornCosmeticTypes[(uint8_t)armorType];
     }
-    bodyHidden = bodyHidden || headArmor->hideBody();
-  } else {
-    humanoid.setHeadArmorFrameset("");
-    humanoid.setHelmetMaskDirectives("");
   }
 
+  auto determineArmor = [&](ArmorType armorType, ArmorItemPtr const& base, ArmorItemPtr const& cosmetic, bool& outSync) -> ArmorItemPtr {
+    ArmorItemPtr const* armor = nullptr;
+    if (cosmetic && cosmetic->visible())
+      armor = &cosmetic;
+    else if (base && base->visible())
+      armor = &base;
+    uint8_t typeIndex = (uint8_t)armorType;
+    uint8_t& cosmeticsPrevWorn = m_wornCosmeticTypes[typeIndex];
+    uint8_t cosmeticsWorn = wornCosmeticTypes[typeIndex];
+    if (armor == &base) {
+      bool wearingCosmetics = cosmeticsWorn > 0;
+      if (wearingCosmetics)
+        armor = nullptr;
+      if (cosmeticsPrevWorn > 0 != wearingCosmetics)
+        outSync = true;
+    }
+    cosmeticsPrevWorn = cosmeticsWorn;
+    return armor ? *armor : ArmorItemPtr();
+  };
+
+  HeadArmorPtr headArmor = as<HeadArmor>(determineArmor(ArmorType::Head, m_headItem, m_headCosmeticItem, m_headNeedsSync));
+  ChestArmorPtr chestArmor = as<ChestArmor>(determineArmor(ArmorType::Chest, m_chestItem, m_chestCosmeticItem, m_chestNeedsSync));
+  LegsArmorPtr legsArmor = as<LegsArmor>(determineArmor(ArmorType::Legs, m_legsItem, m_legsCosmeticItem, m_legsNeedsSync));
+  BackArmorPtr backArmor = as<BackArmor>(determineArmor(ArmorType::Back, m_backItem, m_backCosmeticItem, m_backNeedsSync));
+
+  bool headNeedsSync  = allNeedsSync || flipped(headArmor) || m_headNeedsSync;
+  bool chestNeedsSync = allNeedsSync || flipped(chestArmor) || m_chestNeedsSync;
+  bool legsNeedsSync  = allNeedsSync || flipped(legsArmor) || m_legsNeedsSync;
+  bool backNeedsSync  = allNeedsSync || flipped(backArmor) || m_backNeedsSync;
+  anyNeedsSync |= headNeedsSync || chestNeedsSync || legsNeedsSync || backNeedsSync;
+
+  bool bodyFlipped = direction != Direction::Right;
+  bool bodyHidden = false;
+  
   Json humanoidConfig;
 
   auto addHumanoidConfig = [&](Item const& item) {
@@ -67,77 +110,116 @@ void ArmorWearer::setupHumanoidClothingDrawables(Humanoid& humanoid, bool forceN
     }
   };
 
-  ChestArmorPtr const& chestArmor = m_chestCosmeticItem ? m_chestCosmeticItem : m_chestItem;
+  if (headArmor && !forceNude) {
+    if (anyNeedsSync) {
+      addHumanoidConfig(*headArmor);
+      if (headNeedsSync)
+        humanoid.setWearableFromHead(3, *headArmor);
+    }
+    bodyHidden |= headArmor->hideBody();
+  } else
+    humanoid.removeWearable(3);
+
   if (chestArmor && !forceNude) {
-    if (chestNeedsSync) {
-      humanoid.setBackSleeveFrameset(chestArmor->backSleeveFrameset(humanoid.identity().gender));
-      humanoid.setFrontSleeveFrameset(chestArmor->frontSleeveFrameset(humanoid.identity().gender));
-      humanoid.setChestArmorFrameset(chestArmor->bodyFrameset(humanoid.identity().gender));
-      humanoid.setChestArmorDirectives(chestArmor->directives());
+    if (anyNeedsSync) {
       addHumanoidConfig(*chestArmor);
+      if (chestNeedsSync)
+        humanoid.setWearableFromChest(2, *chestArmor);
     }
-    bodyHidden = bodyHidden || chestArmor->hideBody();
-  } else {
-    humanoid.setBackSleeveFrameset("");
-    humanoid.setFrontSleeveFrameset("");
-    humanoid.setChestArmorFrameset("");
-  }
+    bodyHidden |= chestArmor->hideBody();
+  } else
+    humanoid.removeWearable(2);
 
-  LegsArmorPtr const& legsArmor = m_legsCosmeticItem ? m_legsCosmeticItem : m_legsItem;
   if (legsArmor && !forceNude) {
-    if (legsNeedsSync) {
-      humanoid.setLegsArmorFrameset(legsArmor->frameset(humanoid.identity().gender));
-      humanoid.setLegsArmorDirectives(legsArmor->directives());
+    if (anyNeedsSync) {
       addHumanoidConfig(*legsArmor);
+      if (legsNeedsSync)
+        humanoid.setWearableFromLegs(1, *legsArmor);
     }
-    bodyHidden = bodyHidden || legsArmor->hideBody();
-  } else {
-    humanoid.setLegsArmorFrameset("");
-  }
+    bodyHidden |= legsArmor->hideBody();
+  } else
+    humanoid.removeWearable(1);
 
-  BackArmorPtr const& backArmor = m_backCosmeticItem ? m_backCosmeticItem : m_backItem;
   if (backArmor && !forceNude) {
-    if (backNeedsSync) {
-      humanoid.setBackArmorFrameset(backArmor->frameset(humanoid.identity().gender));
-      humanoid.setBackArmorDirectives(backArmor->directives());
+    if (anyNeedsSync) {
+      addHumanoidConfig(*backArmor);
+      if (backNeedsSync)
+        humanoid.setWearableFromBack(0, *backArmor);
     }
-    bodyHidden = bodyHidden || backArmor->hideBody();
-  } else {
-    humanoid.setBackArmorFrameset("");
-  }
+    bodyHidden |= backArmor->hideBody();
+  } else
+    humanoid.removeWearable(0);
 
-  if (chestNeedsSync || legsNeedsSync) {
+  if (anyNeedsSync) {
+    for (size_t i = 0; i != 12; ++i) {
+      size_t wearableIndex = 4 + i;
+      Cosmetic& cosmetic = m_cosmeticItems[i];
+      if (cosmetic.item && !forceNude && cosmetic.item->visible(true)) {
+        addHumanoidConfig(*cosmetic.item);
+        bodyHidden |= cosmetic.item->hideBody();
+        if (allNeedsSync || cosmetic.needsSync || flipped(cosmetic.item)) {
+          if (auto head = as<HeadArmor>(cosmetic.item))
+            humanoid.setWearableFromHead(wearableIndex, *head);
+          else if (auto chest = as<ChestArmor>(cosmetic.item))
+            humanoid.setWearableFromChest(wearableIndex, *chest);
+          else if (auto legs = as<LegsArmor>(cosmetic.item))
+            humanoid.setWearableFromLegs(wearableIndex, *legs);
+          else if (auto back = as<BackArmor>(cosmetic.item))
+            humanoid.setWearableFromBack(wearableIndex, *back);
+          cosmetic.needsSync = false;
+        }
+      } else
+        humanoid.removeWearable(wearableIndex);
+    }
     humanoid.loadConfig(humanoidConfig);
   }
-
   m_headNeedsSync = m_chestNeedsSync = m_legsNeedsSync = m_backNeedsSync = false;
 
   humanoid.setBodyHidden(bodyHidden);
 }
 
 void ArmorWearer::effects(EffectEmitter& effectEmitter) {
-  if (auto item = as<EffectSourceItem>(m_headCosmeticItem))
-    effectEmitter.addEffectSources("headArmor", item->effectSources());
-  else if (auto item = as<EffectSourceItem>(m_headItem))
-    effectEmitter.addEffectSources("headArmor", item->effectSources());
+  auto gatherEffectSources = [&](ArmorType armorType, ArmorItemPtr const& base, ArmorItemPtr const& cosmetic) -> StringSet {
+    uint8_t typeIndex = (uint8_t)armorType;
+    if (auto item = as<EffectSourceItem>(cosmetic)) {
+      return item->effectSources();
+    } else if (!cosmetic && m_wornCosmeticTypes[typeIndex] == 0) {
+      if (auto item = as<EffectSourceItem>(base))
+        return item->effectSources();
+    }
+    return StringSet();
+  };
+ 
+  auto headEffects = gatherEffectSources(ArmorType::Head, m_headItem, m_headCosmeticItem);
+  auto chestEffects = gatherEffectSources(ArmorType::Chest, m_chestItem, m_chestCosmeticItem);
+  auto legsEffects = gatherEffectSources(ArmorType::Legs, m_legsItem, m_legsCosmeticItem);
+  auto backEffects = gatherEffectSources(ArmorType::Back, m_backItem, m_backCosmeticItem);
 
-  if (auto item = as<EffectSourceItem>(m_chestCosmeticItem))
-    effectEmitter.addEffectSources("chestArmor", item->effectSources());
-  else if (auto item = as<EffectSourceItem>(m_chestItem))
-    effectEmitter.addEffectSources("chestArmor", item->effectSources());
+  for (uint8_t i = 0; i != m_cosmeticItems.size(); ++i) {
+    auto& cosmetic = m_cosmeticItems[i];
+    if (auto item = as<EffectSourceItem>(cosmetic.item)) {
+      auto armorType = cosmetic.item->armorType();
+      auto newEffects = item->effectSources();
+      if (armorType == ArmorType::Head)
+        headEffects.addAll(newEffects);
+      else if (armorType == ArmorType::Chest)
+        chestEffects.addAll(newEffects);
+      else if (armorType == ArmorType::Legs)
+        legsEffects.addAll(newEffects);
+      else if (armorType == ArmorType::Back)
+        backEffects.addAll(newEffects);
+    }
+  }
 
-  if (auto item = as<EffectSourceItem>(m_legsCosmeticItem))
-    effectEmitter.addEffectSources("legsArmor", item->effectSources());
-  else if (auto item = as<EffectSourceItem>(m_legsItem))
-    effectEmitter.addEffectSources("legsArmor", item->effectSources());
-
-  if (auto item = as<EffectSourceItem>(m_backCosmeticItem))
-    effectEmitter.addEffectSources("backArmor", item->effectSources());
-  else if (auto item = as<EffectSourceItem>(m_backItem))
-    effectEmitter.addEffectSources("backArmor", item->effectSources());
+  effectEmitter.addEffectSources("headArmor", headEffects);
+  effectEmitter.addEffectSources("chestArmor", chestEffects);
+  effectEmitter.addEffectSources("legsArmor", legsEffects);
+  effectEmitter.addEffectSources("backArmor", backEffects);
 }
 
 void ArmorWearer::reset() {
+  m_lastGender.reset();
+  m_lastDirection.reset();
   m_headNeedsSync = m_chestNeedsSync = m_legsNeedsSync = m_backNeedsSync = true;
   m_headItem .reset();
   m_chestItem.reset();
@@ -147,6 +229,10 @@ void ArmorWearer::reset() {
   m_chestCosmeticItem.reset();
   m_legsCosmeticItem .reset();
   m_backCosmeticItem .reset();
+  for (auto& cosmetic : m_cosmeticItems) {
+    cosmetic.item.reset();
+    cosmetic.needsStore = cosmetic.needsSync = true;
+  }
 }
 
 Json ArmorWearer::diskStore() const {
@@ -168,6 +254,12 @@ Json ArmorWearer::diskStore() const {
   if (m_backCosmeticItem)
     res["backCosmeticItem"] = m_backCosmeticItem->descriptor().diskStore();
 
+  for (size_t i = 0; i != 12; ++i) {
+    auto& cosmetic = m_cosmeticItems[i];
+    if (cosmetic.item)
+      res[strf("cosmetic{}Item", i + 1)] = cosmetic.item->descriptor().diskStore();
+  }
+
   return res;
 }
 
@@ -181,6 +273,12 @@ void ArmorWearer::diskLoad(Json const& diskStore) {
   m_chestCosmeticItem = as<ChestArmor>(itemDb->diskLoad(diskStore.get("chestCosmeticItem", {})));
   m_legsCosmeticItem = as<LegsArmor>(itemDb->diskLoad(diskStore.get("legsCosmeticItem", {})));
   m_backCosmeticItem = as<BackArmor>(itemDb->diskLoad(diskStore.get("backCosmeticItem", {})));
+
+  for (size_t i = 0; i != 12; ++i) {
+    auto& cosmetic = m_cosmeticItems[i];
+    cosmetic.item = as<ArmorItem>(itemDb->diskLoad(diskStore.get(strf("cosmetic{}Item", i + 1), {})));
+    cosmetic.needsStore = cosmetic.needsSync = true;
+  }
 }
 
 List<PersistentStatusEffect> ArmorWearer::statusEffects() const {
@@ -254,6 +352,17 @@ void ArmorWearer::setBackCosmeticItem(BackArmorPtr backCosmeticItem) {
   m_backNeedsSync = true;
 }
 
+bool ArmorWearer::setCosmeticItem(uint8_t slot, ArmorItemPtr cosmeticItem) {
+  if (slot >= m_cosmeticItems.size())
+    return false;
+  Cosmetic& cosmetic = m_cosmeticItems.at(slot);
+  if (Item::itemsEqual(cosmetic.item, cosmeticItem))
+    return false;
+  cosmetic.item = std::move(cosmeticItem);
+  cosmetic.needsStore = cosmetic.needsSync = true;
+  return true;
+}
+
 HeadArmorPtr ArmorWearer::headItem() const {
   return m_headItem;
 }
@@ -284,6 +393,12 @@ BackArmorPtr ArmorWearer::backItem() const {
 
 BackArmorPtr ArmorWearer::backCosmeticItem() const {
   return m_backCosmeticItem;
+}
+
+ArmorItemPtr ArmorWearer::cosmeticItem(uint8_t slot) const {
+  if (slot < m_cosmeticItems.size())
+    return m_cosmeticItems[slot].item;
+  return {};
 }
 
 ItemDescriptor ArmorWearer::headItemDescriptor() const {
@@ -334,8 +449,22 @@ ItemDescriptor ArmorWearer::backCosmeticItemDescriptor() const {
   return {};
 }
 
+ItemDescriptor ArmorWearer::cosmeticItemDescriptor(uint8_t slot) const {
+  if (slot < m_cosmeticItems.size()) {
+    auto& item = m_cosmeticItems[slot].item;
+    if (item)
+      return item->descriptor();
+  }
+  return {};
+}
+
 void ArmorWearer::netElementsNeedLoad(bool) {
   auto itemDatabase = Root::singleton().itemDatabase();
+
+  for (auto& cosmetic : m_cosmeticItems) {
+    if (cosmetic.netState.pullUpdated())
+      cosmetic.needsStore |= cosmetic.needsSync |= itemDatabase->loadItem(cosmetic.netState.get(), cosmetic.item);
+  }
 
   if (m_headCosmeticItemDataNetState.pullUpdated())
     m_headNeedsSync |= itemDatabase->loadItem(m_headCosmeticItemDataNetState.get(), m_headCosmeticItem);
@@ -367,6 +496,13 @@ void ArmorWearer::netElementsNeedStore() {
   m_chestCosmeticItemDataNetState.set(itemSafeDescriptor(m_chestCosmeticItem));
   m_legsCosmeticItemDataNetState.set(itemSafeDescriptor(m_legsCosmeticItem));
   m_backCosmeticItemDataNetState.set(itemSafeDescriptor(m_backCosmeticItem));
+
+  for (auto& cosmetic : m_cosmeticItems) {
+    if (cosmetic.needsStore) {
+      cosmetic.netState.set(itemSafeDescriptor(cosmetic.item));
+      cosmetic.needsStore = false;
+    }
+  }
 }
 
 }

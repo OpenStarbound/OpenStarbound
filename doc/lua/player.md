@@ -527,3 +527,5 @@ Returns uuid, type, and orbits for all system objects in the specified system;
 #### `List<String>` player.collectables(`String` collectionName)
 
 Returns a list of names of the collectables the player has unlocked in the specified collection.
+
+---

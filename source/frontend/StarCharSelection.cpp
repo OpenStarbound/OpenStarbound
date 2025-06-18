@@ -15,8 +15,8 @@ CharSelectionPane::CharSelectionPane(PlayerStoragePtr playerStorage,
     DeleteCharacterCallback deleteCallback)
   : m_playerStorage(playerStorage),
     m_downScroll(0),
-    m_filteredList({}),
     m_search(""),
+    m_filteredList({}),
     m_createCallback(createCallback),
     m_selectCallback(selectCallback),
     m_deleteCallback(deleteCallback) {

@@ -49,6 +49,14 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
           m_containerInteractor->addToContainer(sourceItem);
           m_containerSource = inventorySlot;
           m_expectingSwap = true;
+        } else {
+          for (PanePtr& pane : m_parent->paneManager()->getAllPanes()) {
+            auto remainder = pane->shiftItemFromInventory(inventory->itemsAt(inventorySlot));
+            if (remainder.isValid()) {
+              inventory->setItem(inventorySlot, remainder.value());
+              break;
+            }
+          }
         }
       }
     } else {
@@ -174,8 +182,11 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
   m_disabledTechOverlays.append(fetchChild<ImageWidget>("techLegsDisabled"));
 
   for (auto const p : EquipmentSlotNames) {
-    if (auto itemSlot = fetchChild<ItemSlotWidget>(p.second))
+    if (auto itemSlot = fetchChild<ItemSlotWidget>(p.second)) {
       itemSlot->setItem(m_player->inventory()->itemsAt(p.first));
+      if (p.first >= EquipmentSlot::Cosmetic1)
+        itemSlot->hide();
+    }
   }
 
   for (auto name : bagOrder) {
@@ -195,7 +206,7 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
   portrait->setIconMode();
   setTitle(portrait, m_player->name(), config.getString("subtitle"));
 
-  m_expectingSwap = false;
+  m_displayingCosmetics = m_expectingSwap = false;
 
   if (auto item = m_player->inventory()->swapSlotItem())
     m_currentSwapSlotItem = item->descriptor();
@@ -245,6 +256,29 @@ PanePtr InventoryPane::createTooltip(Vec2I const& screenPosition) {
   }
 
   return {};
+}
+
+bool InventoryPane::sendEvent(InputEvent const& event) {
+  if (auto mousePosition = Widget::context()->mousePosition(event)) {
+    bool displayingCosmetics = false;
+    for (auto const& p : EquipmentSlotNames) {
+      if (auto itemSlot = fetchChild<ItemSlotWidget>(p.second)) {
+        if (displayingCosmetics = itemSlot->inMember(*mousePosition))
+          break;
+      }
+    }
+
+    if (m_displayingCosmetics != displayingCosmetics) {
+      for (auto const& p : EquipmentSlotNames) {
+        if (p.first >= EquipmentSlot::Cosmetic1) {
+          if (auto itemSlot = fetchChild<ItemSlotWidget>(p.second))
+            itemSlot->setVisibility(displayingCosmetics);
+        }
+      }
+      fetchChild<ImageWidget>("imgCosmeticBack")->setVisibility(m_displayingCosmetics = displayingCosmetics);
+    }
+  }
+  return Pane::sendEvent(event);
 }
 
 bool InventoryPane::giveContainerResult(ContainerResult result) {

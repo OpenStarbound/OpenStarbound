@@ -495,7 +495,7 @@ void Object::destroy(RenderCallback* renderCallback) {
             world()->addEntity(ItemDrop::createRandomizedDrop(o, position()));
         } else if (m_config->hasObjectItem) {
           ItemDescriptor objectItem(m_config->name, 1);
-          if (m_config->retainObjectParametersInItem) {
+          if (configValue("retainObjectParametersInItem", m_config->retainObjectParametersInItem).optBool().value()) {
             auto parameters = m_parameters.baseMap();
             parameters.remove("owner");
             parameters["scriptStorage"] = m_scriptComponent.getScriptStorage();

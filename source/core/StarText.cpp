@@ -1,6 +1,6 @@
 #include "StarText.hpp"
 #include "StarJsonExtra.hpp"
-#include <regex>
+#include <re2/re2.h>
 
 namespace Star {
 
@@ -34,11 +34,13 @@ namespace Text {
   std::string const AllEsc = strf("{:c}{:c}", CmdEsc, StartEsc);
   std::string const AllEscEnd = strf("{:c}{:c}{:c}", CmdEsc, StartEsc, EndEsc);
 
-  static auto stripEscapeRegex = std::regex(strf("\\{:c}[^;]*{:c}", CmdEsc, EndEsc));
+  static RE2 stripEscapeRegex = strf("\\{:c}[^;]*{:c}", CmdEsc, EndEsc);
   String stripEscapeCodes(String const& s) {
     if (s.empty())
       return s;
-    return std::regex_replace(s.utf8(), stripEscapeRegex, "");
+    std::string result = s.utf8();
+    RE2::GlobalReplace(&result, stripEscapeRegex, "");
+    return String(std::move(result));
   }
 
   bool processText(StringView text, TextCallback textFunc, CommandsCallback commandsFunc, bool includeCommandSides) {

@@ -77,6 +77,9 @@ public:
   String multiPlayerPassword() const;
   void setMultiPlayerPassword(String password);
 
+  bool multiPlayerForceLegacy() const;
+  void setMultiPlayerForceLegacy(bool const& forceLegacy);
+
 private:
   void initMainMenu();
   void initCharSelectionMenu();
@@ -95,6 +98,9 @@ private:
   float interfaceScale() const;
   unsigned windowHeight() const;
   unsigned windowWidth() const;
+
+  typedef LuaUpdatableComponent<LuaBaseComponent> ScriptComponent;
+  shared_ptr<ScriptComponent> m_scriptComponent;
 
   GuiContext* m_guiContext;
 
@@ -122,6 +128,7 @@ private:
   String m_connectionPort;
   String m_account;
   String m_password;
+  bool m_forceLegacy;
 
   CelestialMasterDatabasePtr m_celestialDatabase;
 

@@ -73,7 +73,8 @@ Json const AdditionalDefaultConfiguration = Json::parseJson(R"JSON(
       "title" : {
         "multiPlayerAddress" : "",
         "multiPlayerPort" : "",
-        "multiPlayerAccount" : ""
+        "multiPlayerAccount" : "",
+        "multiPlayerForceLegacy" : false
       },
 
       "bindings" : {
@@ -151,7 +152,7 @@ void ClientApplication::startup(StringList const& cmdLineArgs) {
   RootLoader rootLoader({AdditionalAssetsSettings, AdditionalDefaultConfiguration, String("starbound.log"), LogLevel::Info, false, String("starbound.config")});
   m_root = rootLoader.initOrDie(cmdLineArgs).first;
 
-  Logger::info("Client Version {} ({}) Source ID: {} Protocol: {}", StarVersionString, StarArchitectureString, StarSourceIdentifierString, StarProtocolVersion);
+  Logger::info("OpenStarbound Client v{} for v{} ({}) Source ID: {} Protocol: {}", OpenStarVersionString, StarVersionString, StarArchitectureString, StarSourceIdentifierString, StarProtocolVersion);
 }
 
 void ClientApplication::shutdown() {
@@ -488,6 +489,7 @@ void ClientApplication::renderReload() {
   
   // define post process layers and optionally assign them to groups
   m_postProcessLayers.clear();
+  m_labelledPostProcessLayers.clear();
   auto postProcessLayers = assets->json("/client.config:postProcessLayers").toArray();
   for (auto& layer : postProcessLayers) {
     auto effects = jsonToStringList(layer.getArray("effects"));
@@ -498,18 +500,28 @@ void ClientApplication::renderReload() {
     if (gname) {
       group = &m_postProcessGroups.get(gname.value());
     }
+    // I'd think a string map for all of these would be better, but the order does matter here, and does make sense to depend on mod priority, so...
+    // guess a string map of indices works
+    // I tried pointers but for whatever reason the behaviour was highly inconsistent and only worked after reload...
+    auto label = layer.optString("name");
+    if (label) {
+      m_labelledPostProcessLayers.add(label.value(),m_postProcessLayers.count());
+    }
     m_postProcessLayers.append(PostProcessLayer{ std::move(effects), (unsigned)layer.getUInt("passes", 1), group });
   }
 
   loadEffectConfig("interface");
 }
 
-void ClientApplication::setPostProcessGroupEnabled(String group, bool enabled, Maybe<bool> save) {
+void ClientApplication::setPostProcessLayerPasses(String const& layer, unsigned const& passes) {
+  m_postProcessLayers.at(m_labelledPostProcessLayers.get(layer)).passes = passes;
+}
+void ClientApplication::setPostProcessGroupEnabled(String const& group, bool const& enabled, Maybe<bool> const& save) {
   m_postProcessGroups.get(group).enabled = enabled;
   if (save && save.value())
     m_root->configuration()->setPath(strf("{}.{}.enabled", postProcessGroupsRoot, group),enabled);
 }
-bool ClientApplication::postProcessGroupEnabled(String group) {
+bool ClientApplication::postProcessGroupEnabled(String const& group) {
   return m_postProcessGroups.get(group).enabled;
 }
 
@@ -620,6 +632,7 @@ void ClientApplication::changeState(MainAppState newState) {
         m_titleScreen->setMultiPlayerAddress(toString(address->address()));
         m_titleScreen->setMultiPlayerPort(toString(address->port()));
         m_titleScreen->setMultiPlayerAccount(configuration->getPath("title.multiPlayerAccount").toString());
+        m_titleScreen->setMultiPlayerForceLegacy(configuration->getPath("title.multiPlayerForceLegacy").optBool().value(false));
         m_titleScreen->goToMultiPlayerSelectCharacter(false);
       } else {
         m_titleScreen->goToMultiPlayerSelectCharacter(true);
@@ -628,6 +641,7 @@ void ClientApplication::changeState(MainAppState newState) {
       m_titleScreen->setMultiPlayerAddress(configuration->getPath("title.multiPlayerAddress").toString());
       m_titleScreen->setMultiPlayerPort(configuration->getPath("title.multiPlayerPort").toString());
       m_titleScreen->setMultiPlayerAccount(configuration->getPath("title.multiPlayerAccount").toString());
+      m_titleScreen->setMultiPlayerForceLegacy(configuration->getPath("title.multiPlayerForceLegacy").optBool().value(false));
     }
   }
 
@@ -692,7 +706,7 @@ void ClientApplication::changeState(MainAppState newState) {
 
       bool allowAssetsMismatch = m_root->configuration()->get("allowAssetsMismatch").toBool();
       if (auto errorMessage = m_universeClient->connect(UniverseConnection(std::move(packetSocket)), allowAssetsMismatch,
-            multiPlayerConnection.account, multiPlayerConnection.password)) {
+            multiPlayerConnection.account, multiPlayerConnection.password, multiPlayerConnection.forceLegacy)) {
         setError(*errorMessage);
         return;
       }
@@ -742,12 +756,14 @@ void ClientApplication::changeState(MainAppState newState) {
 void ClientApplication::setError(String const& error) {
   Logger::error(error.utf8Ptr());
   m_errorScreen->setMessage(error);
+  m_titleScreen->resetState();
   changeState(MainAppState::Title);
 }
 
 void ClientApplication::setError(String const& error, std::exception const& e) {
   Logger::error("{}\n{}", error, outputException(e, true));
   m_errorScreen->setMessage(strf("{}\n{}", error, outputException(e, false)));
+  m_titleScreen->resetState();
   changeState(MainAppState::Title);
 }
 
@@ -847,13 +863,15 @@ void ClientApplication::updateTitle(float dt) {
           m_pendingMultiPlayerConnection = PendingMultiPlayerConnection{
             address.right(),
             m_titleScreen->multiPlayerAccount(),
-            m_titleScreen->multiPlayerPassword()
+            m_titleScreen->multiPlayerPassword(),
+            m_titleScreen->multiPlayerForceLegacy()
           };
 
           auto configuration = m_root->configuration();
           configuration->setPath("title.multiPlayerAddress", m_titleScreen->multiPlayerAddress());
           configuration->setPath("title.multiPlayerPort", m_titleScreen->multiPlayerPort());
           configuration->setPath("title.multiPlayerAccount", m_titleScreen->multiPlayerAccount());
+          configuration->setPath("title.multiPlayerForceLegacy", m_titleScreen->multiPlayerForceLegacy());
 
           changeState(MainAppState::MultiPlayer);
         }
@@ -1173,12 +1191,13 @@ void ClientApplication::updateCamera(float dt) {
   const float deadzone = 0.1f;
   const float panFactor = 1.5f;
   float cameraSpeedFactor = 30.0f / m_root->configuration()->get("cameraSpeedFactor").toFloat();
+  cameraSpeedFactor /= (dt * 60.f);
 
   auto playerCameraPosition = m_player->cameraPosition();
 
   if (isActionTaken(InterfaceAction::CameraShift)) {
     m_snapBackCameraOffset = false;
-    m_cameraOffsetDownTicks++;
+    m_cameraOffsetDownTime += dt;
     Vec2F aim = m_universeClient->worldClient()->geometry().diff(m_mainInterface->cursorWorldPosition(), playerCameraPosition);
 
     float magnitude = aim.magnitude() / (triggerRadius / camera.pixelRatio());
@@ -1194,13 +1213,13 @@ void ClientApplication::updateCamera(float dt) {
       m_cameraYOffset = (m_cameraYOffset * (cameraSpeedFactor - 1.0) + cameraYOffset) / cameraSpeedFactor;
     }
   } else {
-    if ((m_cameraOffsetDownTicks > 0) && (m_cameraOffsetDownTicks < 20))
+    if (m_cameraOffsetDownTime > 0.0f && m_cameraOffsetDownTime < 0.333333f)
       m_snapBackCameraOffset = true;
     if (m_snapBackCameraOffset) {
       m_cameraXOffset = (m_cameraXOffset * (cameraSpeedFactor - 1.0)) / cameraSpeedFactor;
       m_cameraYOffset = (m_cameraYOffset * (cameraSpeedFactor - 1.0)) / cameraSpeedFactor;
     }
-    m_cameraOffsetDownTicks = 0;
+    m_cameraOffsetDownTime = 0.f;
   }
   Vec2F newCameraPosition;
 

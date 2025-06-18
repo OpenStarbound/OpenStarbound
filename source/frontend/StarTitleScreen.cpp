@@ -12,6 +12,8 @@
 #include "StarCharSelection.hpp"
 #include "StarCharCreation.hpp"
 #include "StarTextBoxWidget.hpp"
+#include "StarCanvasWidget.hpp"
+#include "StarWidgetLuaBindings.hpp"
 #include "StarOptionsMenu.hpp"
 #include "StarModsMenu.hpp"
 #include "StarAssets.hpp"
@@ -81,6 +83,13 @@ void TitleScreen::render() {
 
   m_renderer->flush();
 
+  if (auto canvas = m_mainMenu->findChild("canvas")) {
+    canvas->setPosition(Vec2I());
+    canvas->setSize(Vec2I(m_guiContext->windowInterfaceSize()));
+  }
+  m_scriptComponent->invoke("render", JsonObject{{"interfaceScale", interfaceScale()}
+  });
+  /*
   for (auto& backdropImage : assets->json("/interface/windowconfig/title.config:backdropImages").toArray()) {
     Vec2F offset = jsonToVec2F(backdropImage.get(0)) * interfaceScale();
     String image = backdropImage.getString(1);
@@ -93,6 +102,7 @@ void TitleScreen::render() {
     RectF screenCoords(position, position + imageSize);
     m_guiContext->drawQuad(image, screenCoords);
   }
+  //*/
 
   m_renderer->flush();
 
@@ -128,6 +138,7 @@ void TitleScreen::update(float dt) {
 
   m_paneManager.update(dt);
 
+  m_scriptComponent->update(dt);
   if (!finishedState()) {
     if (auto audioSample = m_musicTrackManager.updateAmbient(m_musicTrack, m_skyBackdrop->isDayTime())) {
       m_currentMusicTrack = audioSample;
@@ -213,11 +224,24 @@ void TitleScreen::setMultiPlayerPassword(String password) {
   m_password = std::move(password);
 }
 
+bool TitleScreen::multiPlayerForceLegacy() const {
+  return m_forceLegacy;
+}
+
+void TitleScreen::setMultiPlayerForceLegacy(bool const& forceLegacy) {
+  m_multiPlayerMenu->fetchChild<ButtonWidget>("legacyCheckbox")->setChecked(forceLegacy);
+  m_forceLegacy = forceLegacy;
+}
+
 void TitleScreen::initMainMenu() {
   m_mainMenu = make_shared<Pane>();
   auto backMenu = make_shared<Pane>();
 
+  auto titleCanvas = make_shared<CanvasWidget>();
+  m_mainMenu->addChild("canvas", titleCanvas);
+
   auto assets = Root::singleton().assets();
+  auto config = assets->json("/interface/windowconfig/title.config");
 
   StringMap<WidgetCallbackFunc> buttonCallbacks;
   buttonCallbacks["singleplayer"] = [=](Widget*) { switchState(TitleState::SinglePlayerSelectCharacter); };
@@ -227,7 +251,7 @@ void TitleScreen::initMainMenu() {
   buttonCallbacks["back"] = [=](Widget*) { back(); };
   buttonCallbacks["mods"] = [=](Widget*) { switchState(TitleState::Mods); };
 
-  for (auto buttonConfig : assets->json("/interface/windowconfig/title.config:mainMenuButtons").toArray()) {
+  for (auto buttonConfig : config.getArray("mainMenuButtons")) {
     String key = buttonConfig.getString("key");
     String image = buttonConfig.getString("button");
     String imageHover = buttonConfig.getString("hover");
@@ -253,6 +277,13 @@ void TitleScreen::initMainMenu() {
   backMenu->determineSizeFromChildren();
   backMenu->setAnchor(PaneAnchor::BottomLeft);
   backMenu->lockPosition();
+
+  m_scriptComponent = make_shared<ScriptComponent>();
+  m_scriptComponent->setLuaRoot(make_shared<LuaRoot>());
+  m_scriptComponent->addCallbacks("pane", m_mainMenu->makePaneCallbacks());
+  m_scriptComponent->addCallbacks("widget", LuaBindings::makeWidgetCallbacks(m_mainMenu.get()));
+  m_scriptComponent->setScripts(jsonToStringList(config.getArray("scripts", JsonArray())));
+  m_scriptComponent->init();
 
   m_paneManager.registerPane("mainMenu", PaneLayer::Hud, m_mainMenu);
   m_paneManager.registerPane("backMenu", PaneLayer::Hud, backMenu);
@@ -347,7 +378,8 @@ void TitleScreen::initMultiPlayerMenu() {
       {"address", multiPlayerAddress()},
       {"account", multiPlayerAccount()},
       {"port", multiPlayerPort()},
-      //{"password", multiPlayerPassword()}
+      //{"password", multiPlayerPassword()},
+      {"forceLegacy",multiPlayerForceLegacy()}
     };
 
     auto serverList = m_serverSelectPane->fetchChild<ListWidget>("serverSelectArea.serverList");
@@ -384,6 +416,7 @@ void TitleScreen::initMultiPlayerMenu() {
       setMultiPlayerPort(data.getString("port", ""));
       setMultiPlayerAccount(data.getString("account", ""));
       setMultiPlayerPassword(data.getString("password", ""));
+      setMultiPlayerForceLegacy(data.getBool("forceLegacy", false));
 
     if (auto passwordWidget = m_multiPlayerMenu->fetchChild("password"))
       passwordWidget->focus();
@@ -405,6 +438,10 @@ void TitleScreen::initMultiPlayerMenu() {
 
   readerConnect.registerCallback("password", [=](Widget* obj) {
       m_password = convert<TextBoxWidget>(obj)->getText().trim();
+    });
+  
+  readerConnect.registerCallback("legacyCheckbox", [=](Widget* obj) {
+      m_forceLegacy = convert<ButtonWidget>(obj)->isChecked();
     });
 
   readerConnect.registerCallback("connect", [=](Widget*) {

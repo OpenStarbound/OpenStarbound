@@ -5,6 +5,7 @@
 #include "StarWidgetLuaBindings.hpp"
 #include "StarLuaConverters.hpp"
 #include "StarImageWidget.hpp"
+#include "StarItemDatabase.hpp"
 #include "StarGuiReader.hpp"
 
 namespace Star {
@@ -344,6 +345,10 @@ PanePtr Pane::createTooltip(Vec2I const&) {
 }
 
 Maybe<String> Pane::cursorOverride(Vec2I const&) {
+  return {};
+}
+
+Maybe<ItemPtr> Pane::shiftItemFromInventory(ItemPtr const& input) {
   return {};
 }
 

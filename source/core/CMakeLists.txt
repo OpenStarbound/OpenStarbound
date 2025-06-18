@@ -69,6 +69,7 @@ SET (star_core_HEADERS
     StarMatrix3.hpp
     StarMaybe.hpp
     StarMemory.hpp
+    StarMiniDump.hpp
     StarMultiArray.hpp
     StarMultiArrayInterpolator.hpp
     StarMultiTable.hpp
@@ -216,6 +217,7 @@ ELSEIF (STAR_SYSTEM_FAMILY_WINDOWS)
       StarDynamicLib_windows.cpp
       StarFile_windows.cpp
       StarLockFile_windows.cpp
+      StarMiniDump_windows.cpp
       StarSignalHandler_windows.cpp
       StarString_windows.cpp
       StarThread_windows.cpp
@@ -231,6 +233,10 @@ ADD_LIBRARY (star_core OBJECT ${star_core_SOURCES} ${star_core_HEADERS} ${CMAKE_
 
 IF(STAR_PRECOMPILED_HEADERS)
   TARGET_PRECOMPILE_HEADERS (star_core PUBLIC StarPch.hpp)
+ENDIF()
+
+IF(STAR_COMPILER_CLANG AND STAR_SYSTEM_MACOS)
+  SET_SOURCE_FILES_PROPERTIES(StarColor.cpp PROPERTIES COMPILE_FLAGS "-fno-fast-math -fassociative-math -freciprocal-math")
 ENDIF()
 
 IF(STAR_USE_JEMALLOC AND JEMALLOC_IS_PREFIXED)

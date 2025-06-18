@@ -123,6 +123,7 @@ namespace LuaBindings {
     Maybe<String> entitySpecies(World* world, EntityId entityId);
     Maybe<String> entityGender(World* world, EntityId entityId);
     Maybe<String> entityName(World* world, EntityId entityId);
+    Maybe<Json> entityNametag(World* world, EntityId entityId);
     Maybe<String> entityDescription(World* world, EntityId entityId, Maybe<String> const& species);
     LuaNullTermWrapper<Maybe<List<Drawable>>> entityPortrait(World* world, EntityId entityId, String const& portraitMode);
     Maybe<String> entityHandItem(World* world, EntityId entityId, String const& handName);
@@ -178,6 +179,8 @@ namespace LuaBindings {
     bool damageTiles(World* world, List<Vec2I> const& arg1, String const& arg2, Vec2F const& arg3, String const& arg4, float arg5, Maybe<unsigned> const& arg6, Maybe<EntityId> sourceEntity);
     bool damageTileArea(World* world, Vec2F center, float radius, String layer, Vec2F sourcePosition, String damageType, float damage, Maybe<unsigned> const& harvestLevel, Maybe<EntityId> sourceEntity);
     bool placeMaterial(World* world, Vec2I const& arg1, String const& arg2, String const& arg3, Maybe<int> const& arg4, bool arg5);
+    bool replaceMaterials(World* world, List<Vec2I> const& tilePositions, String const& layer, String const& materialName, Maybe<int> const& hueShift, bool enableDrops);
+    bool replaceMaterialArea(World* world, Vec2F center, float radius, String const& layer, String const& materialName, Maybe<int> const& hueShift, bool enableDrops);
     bool placeMod(World* world, Vec2I const& arg1, String const& arg2, String const& arg3, Maybe<int> const& arg4, bool arg5);
   }
 }

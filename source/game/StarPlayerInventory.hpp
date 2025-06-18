@@ -9,6 +9,7 @@ namespace Star {
 
 STAR_CLASS(Item);
 STAR_CLASS(ItemBag);
+STAR_CLASS(ArmorItem);
 STAR_CLASS(HeadArmor);
 STAR_CLASS(ChestArmor);
 STAR_CLASS(LegsArmor);
@@ -97,6 +98,8 @@ public:
   LegsArmorPtr legsCosmetic() const;
   BackArmorPtr backCosmetic() const;
 
+  ArmorItemPtr equipment(EquipmentSlot slot) const;
+
   ItemBagConstPtr bagContents(String const& bag) const;
 
   void condenseBagStacks(String const& bag);
@@ -158,7 +161,7 @@ public:
   void selectActionBarLocation(SelectedActionBarLocation selectedActionBarLocation);
 
   // Held items are either the items shortcutted to in the currently selected
-  // ActionBar primar / secondary locations, or if the swap slot is non-empty
+  // ActionBar primary / secondary locations, or if the swap slot is non-empty
   // then the swap slot.
   ItemPtr primaryHeldItem() const;
   ItemPtr secondaryHeldItem() const;

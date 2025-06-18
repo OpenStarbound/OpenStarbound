@@ -10,7 +10,7 @@
   },
 
   "openSbCommands": {
-    "swap": "Usage /swap <name>. Swaps the current character, case-insensitive, only substring required.",
+    "swap": "Usage /swap [name]. Opens an interface to swap the current character. If a name or matching substring of a name is provided, directly swaps to that character.",
     "respawninworld": "Usage /respawninworld. Sets the respawn flag for the current world until you teleport away."
   }
 }

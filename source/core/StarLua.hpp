@@ -414,6 +414,8 @@ struct LuaNullTermWrapper : T {
 class LuaNullEnforcer {
 public:
   LuaNullEnforcer(LuaEngine& engine);
+  LuaNullEnforcer(LuaNullEnforcer const&) = delete;
+  LuaNullEnforcer(LuaNullEnforcer&&);
   ~LuaNullEnforcer();
 private:
   LuaEngine* m_engine;
@@ -542,6 +544,7 @@ public:
   template <typename T>
   T luaTo(LuaValue&& v);
 
+  LuaString createString(std::string const& str);
   LuaString createString(String const& str);
   LuaString createString(char const* str);
 
@@ -857,7 +860,7 @@ struct LuaConverter<String> {
 template <>
 struct LuaConverter<std::string> {
   static LuaValue from(LuaEngine& engine, std::string const& v) {
-    return engine.createString(v.c_str());
+    return engine.createString(v);
   }
 
   static Maybe<std::string> to(LuaEngine& engine, LuaValue v) {
@@ -1049,6 +1052,9 @@ struct LuaContainerConverter {
 
 template <typename T, typename Allocator>
 struct LuaConverter<List<T, Allocator>> : LuaContainerConverter<List<T, Allocator>> {};
+
+template <typename T, typename Allocator, typename Equals>
+struct LuaConverter<HashSet<T, Allocator, Equals>> : LuaContainerConverter<HashSet<T, Allocator, Equals>> {};
 
 template <typename T, size_t MaxSize>
 struct LuaConverter<StaticList<T, MaxSize>> : LuaContainerConverter<StaticList<T, MaxSize>> {};

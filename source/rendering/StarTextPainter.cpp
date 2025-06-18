@@ -1,6 +1,5 @@
 #include "StarTextPainter.hpp"
 #include "StarJsonExtra.hpp"
-#include <regex>
 
 namespace Star {
 
@@ -139,8 +138,7 @@ bool TextPainter::processWrapText(StringView text, unsigned* wrapWidth, WrapText
   bool finished = true;
 
   auto slice = [](StringView::const_iterator a, StringView::const_iterator b) -> StringView {
-    const char* aPtr = &*a.base();
-    return StringView(aPtr, &*b.base() - aPtr);
+    return StringView(&*a.base(), b.base() - a.base());
   };
 
   while (iterator != end) {

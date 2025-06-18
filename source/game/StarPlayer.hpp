@@ -223,6 +223,7 @@ public:
 
   void triggerPickupEvents(ItemPtr const& item);
 
+  ItemPtr essentialItem(EssentialItem essentialItem) const;
   bool hasItem(ItemDescriptor const& descriptor, bool exactMatch = false) const;
   uint64_t hasCountOfItem(ItemDescriptor const& descriptor, bool exactMatch = false) const;
   // altough multiple entries may match, they might have different
@@ -314,6 +315,8 @@ public:
   bool displayNametag() const override;
   Vec3B nametagColor() const override;
   Vec2F nametagOrigin() const override;
+  String nametag() const override;
+  void setNametag(Maybe<String> nametag);
 
   void updateIdentity();
 
@@ -495,6 +498,7 @@ public:
   
   // If the secret property exists as a serialized Json string, returns a view to it without deserializing.
   Maybe<StringView> getSecretPropertyView(String const& name) const;
+  String const* getSecretPropertyPtr(String const& name) const;
   // Gets a secret Json property. It will be de-serialized.
   Json getSecretProperty(String const& name, Json defaultValue = Json()) const;
   // Sets a secret Json property. It will be serialized.
@@ -514,6 +518,8 @@ private:
 
   void getNetStates(bool initial);
   void setNetStates();
+  void getNetArmorSecrets();
+  void setNetArmorSecret(EquipmentSlot slot, ArmorItemPtr const& armor);
 
   List<Drawable> drawables() const;
   List<OverheadBar> bars() const;
@@ -584,6 +590,7 @@ private:
 
   ToolUserPtr m_tools;
   ArmorWearerPtr m_armor;
+  HashMap<EquipmentSlot, uint64_t> m_armorSecretNetVersions;
 
   bool m_useDown;
   bool m_edgeTriggeredUse;

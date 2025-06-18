@@ -132,6 +132,17 @@ PanePtr PaneManager::getPaneAt(Vec2I const& position) const {
   return {};
 }
 
+List<PanePtr> PaneManager::getAllPanes() {
+  List<PanePtr> list;
+  for (auto const& layerPair : m_displayedPanes) {
+    for (auto const& panePair : layerPair.second) {
+      if (panePair.first != m_activeTooltip && panePair.first->active())
+        list.append(panePair.first);
+    }
+  }
+  return list;
+}
+
 void PaneManager::setBackgroundWidget(WidgetPtr bg) {
   m_backgroundWidget = bg;
 }

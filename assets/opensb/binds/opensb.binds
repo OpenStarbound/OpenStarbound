@@ -50,6 +50,11 @@
         "group": "building",
         "name": "Shrink Building Radius"
       },
+      "blockSwapToggle": {
+        "default": [],
+        "group": "building",
+        "name": "Toggle Block Swap"
+      },
       "editingCopyItemJson": {
         "default": [], // [{"type": "key", "value": "C","mods": ["LShift"]}],
         "name": "Copy Item in Cursor",

@@ -75,7 +75,10 @@ EnumMap<PacketType> const PacketTypeNames{
   {PacketType::SystemObjectDestroy, "SystemObjectDestroy"},
   {PacketType::SystemShipCreate, "SystemShipCreate"},
   {PacketType::SystemShipDestroy, "SystemShipDestroy"},
-  {PacketType::SystemObjectSpawn, "SystemObjectSpawn"}
+  {PacketType::SystemObjectSpawn, "SystemObjectSpawn"},
+  // OpenStarbound packets
+  {PacketType::ReplaceTileList, "ReplaceTileList"},
+  {PacketType::UpdateWorldTemplate, "UpdateWorldTemplate"}
 };
 
 EnumMap<NetCompressionMode> const NetCompressionModeNames {
@@ -166,6 +169,9 @@ PacketPtr createPacket(PacketType type) {
     case PacketType::SystemShipCreate: return make_shared<SystemShipCreatePacket>();
     case PacketType::SystemShipDestroy: return make_shared<SystemShipDestroyPacket>();
     case PacketType::SystemObjectSpawn: return make_shared<SystemObjectSpawnPacket>();
+    // OpenStarbound
+    case PacketType::ReplaceTileList: return make_shared<ReplaceTileListPacket>();
+    case PacketType::UpdateWorldTemplate: return make_shared<UpdateWorldTemplatePacket>();
     default:
       throw StarPacketException(strf("Unrecognized packet type {}", (unsigned int)type));
   }
@@ -492,14 +498,20 @@ ChatSendPacket::ChatSendPacket() : sendMode(ChatSendMode::Broadcast) {}
 
 ChatSendPacket::ChatSendPacket(String text, ChatSendMode sendMode) : text(std::move(text)), sendMode(sendMode) {}
 
+ChatSendPacket::ChatSendPacket(String text, ChatSendMode sendMode, JsonObject data) : text(std::move(text)), sendMode(sendMode), data(std::move(data)) {}
+
 void ChatSendPacket::read(DataStream& ds) {
   ds.read(text);
   ds.read(sendMode);
+  if (ds.streamCompatibilityVersion() >= 5)
+    ds.read(data);
 }
 
 void ChatSendPacket::write(DataStream& ds) const {
   ds.write(text);
   ds.write(sendMode);
+  if (ds.streamCompatibilityVersion() >= 5)
+    ds.write(data);
 }
 
 CelestialRequestPacket::CelestialRequestPacket() {}
@@ -745,6 +757,27 @@ void ModifyTileListPacket::read(DataStream& ds) {
 void ModifyTileListPacket::write(DataStream& ds) const {
   ds.writeContainer(modifications);
   ds.write(allowEntityOverlap);
+}
+
+ReplaceTileListPacket::ReplaceTileListPacket() : applyDamage() {}
+
+ReplaceTileListPacket::ReplaceTileListPacket(TileModificationList modifications, TileDamage tileDamage, bool applyDamage)
+  : modifications(modifications), tileDamage(std::move(tileDamage)), applyDamage(applyDamage) {}
+
+void ReplaceTileListPacket::read(DataStream& ds) {
+  ds.readContainer(modifications);
+  ds.read(tileDamage);
+  if (ds.streamCompatibilityVersion() >= 7)
+    ds.read(applyDamage);
+  else
+    applyDamage = false;
+}
+
+void ReplaceTileListPacket::write(DataStream& ds) const {
+  ds.writeContainer(modifications);
+  ds.write(tileDamage);
+  if (ds.streamCompatibilityVersion() >= 7)
+    ds.write(applyDamage);
 }
 
 DamageTileGroupPacket::DamageTileGroupPacket() : layer(TileLayer::Foreground) {}
@@ -1398,6 +1431,18 @@ void SystemObjectSpawnPacket::write(DataStream& ds) const {
   ds.write(uuid);
   ds.write(position);
   ds.write(parameters);
+}
+
+UpdateWorldTemplatePacket::UpdateWorldTemplatePacket() {}
+
+UpdateWorldTemplatePacket::UpdateWorldTemplatePacket(Json templateData) : templateData(std::move(templateData)) {}
+
+void UpdateWorldTemplatePacket::read(DataStream& ds) {
+  ds.read(templateData);
+}
+
+void UpdateWorldTemplatePacket::write(DataStream& ds) const {
+  ds.write(templateData);
 }
 
 }

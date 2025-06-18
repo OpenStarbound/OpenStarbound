@@ -678,8 +678,27 @@ void Input::setBinds(String const& categoryId, String const& bindId, Json const&
   entry.updated();
 }
 
-unsigned Input::getTag(String const& tag) {
-  return m_activeTags.maybe(tag).value(0);
+unsigned Input::getTag(String const& tagName) const {
+  if (auto tag = m_activeTags.ptr(tagName))
+    return *tag;
+  else
+    return 0;
+}
+
+Input::ClipboardUnlock::ClipboardUnlock(Input& input)
+    : m_input(&input) { ++m_input->m_clipboardAllowed; };
+
+Input::ClipboardUnlock::ClipboardUnlock(ClipboardUnlock&& other) { m_input = take(other.m_input); };
+
+Input::ClipboardUnlock::~ClipboardUnlock() { if (m_input) --m_input->m_clipboardAllowed; };
+
+
+Input::ClipboardUnlock Input::unlockClipboard() {
+  return Input::ClipboardUnlock(*this);
+}
+
+bool Input::clipboardAllowed() const {
+  return m_clipboardAllowed > 0 ? true : getTag("clipboard") > 0;
 }
 
 }

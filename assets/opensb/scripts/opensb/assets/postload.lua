@@ -31,6 +31,10 @@ assets.patch(
   "/interface/windowconfig/songbook_search_patch.lua"
 )
 
+assets.patch(
+  "/interface/windowconfig/playerinventory.config",
+  "/interface/windowconfig/inventory_cosmetics_patch.lua"
+)
 
 -- Relocate songs to the /songs/ folder
 

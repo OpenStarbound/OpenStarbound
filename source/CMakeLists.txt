@@ -105,7 +105,7 @@ if(NOT DEFINED STAR_COMPILER)
     message(FATAL_ERROR "C and C++ compiler id do not match, unsupported build configuration")
   endif()
 
-  if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
+  if(CMAKE_C_COMPILER_ID STREQUAL "Clang" OR CMAKE_C_COMPILER_ID STREQUAL "AppleClang")
     set(STAR_COMPILER "clang")
   elseif(CMAKE_COMPILER_IS_GNUC)
     set(STAR_COMPILER "gnu")
@@ -309,8 +309,8 @@ elseif(STAR_COMPILER_CLANG)
   elseif()
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread -D_REENTRANT")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -D_REENTRANT")
-    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--export_dynamic")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--export_dynamic")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--export-dynamic")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--export-dynamic")
   endif()
 
   set(CMAKE_C_FLAGS_DEBUG "-g")
@@ -319,8 +319,8 @@ elseif(STAR_COMPILER_CLANG)
   set(CMAKE_C_FLAGS_RELWITHASSERTS "-g -O3 -ffast-math")
   set(CMAKE_CXX_FLAGS_RELWITHASSERTS "-g -O3 -ffast-math")
 
-  set(CMAKE_C_FLAGS_RELWITHDEBINFO "-g -DNDEBUG -O3 -ffast-math")
-  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-g -DNDEBUG -O3 -ffast-math")
+  set(CMAKE_C_FLAGS_RELWITHDEBINFO "-gline-tables-only -DNDEBUG -O3 -ffast-math")
+  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-gline-tables-only -DNDEBUG -O3 -ffast-math")
 
   set(CMAKE_C_FLAGS_RELEASE "-DNDEBUG -O3 -ffast-math")
   set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -O3 -ffast-math")
@@ -458,11 +458,13 @@ endif()
 # Find all required external libraries, based on build settings...
 
 if(STAR_USE_JEMALLOC)
-  # Assumes jemalloc was configured with a "je_" function prefix
-  find_package(JeMalloc REQUIRED)
+  find_package(PkgConfig)
+  pkg_check_modules(JEMALLOC REQUIRED IMPORTED_TARGET GLOBAL jemalloc)
 
-  include_directories(SYSTEM ${JEMALLOC_INCLUDE_DIR})
-  set(STAR_EXT_LIBS ${JEMALLOC_LIBRARY})
+  set(STAR_EXT_LIBS PkgConfig::JEMALLOC)
+  if (STAR_SYSTEM_WINDOWS OR STAR_SYSTEM_MACOS)
+    set_flag(STAR_JEMALLOC_IS_PREFIXED)
+  endif()
 endif()
 
 if (STAR_USE_MIMALLOC)
@@ -476,6 +478,7 @@ find_package(Freetype REQUIRED)
 find_package(Opus CONFIG REQUIRED)
 find_package(OggVorbis REQUIRED)
 find_package(zstd CONFIG REQUIRED)
+find_package(re2 CONFIG REQUIRED)
 
 include_directories(SYSTEM
     ${FREETYPE_INCLUDE_DIRS}
@@ -488,6 +491,7 @@ set(STAR_EXT_LIBS ${STAR_EXT_LIBS}
     $<IF:$<TARGET_EXISTS:Freetype::Freetype>,Freetype::Freetype,freetype>
     $<IF:$<TARGET_EXISTS:zstd::libzstd_shared>,zstd::libzstd_shared,zstd::libzstd_static>
     Opus::opus
+    re2::re2
     ${VORBISFILE_LIBRARY}
     ${VORBIS_LIBRARY}
     ${OGG_LIBRARY}

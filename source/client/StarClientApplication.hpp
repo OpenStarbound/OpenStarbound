@@ -19,8 +19,9 @@ STAR_CLASS(Voice);
 
 class ClientApplication : public Application {
 public:
-  void setPostProcessGroupEnabled(String group, bool enabled, Maybe<bool> save);
-  bool postProcessGroupEnabled(String group);
+  void setPostProcessLayerPasses(String const& layer, unsigned const& passes);
+  void setPostProcessGroupEnabled(String const& group, bool const& enabled, Maybe<bool> const& save);
+  bool postProcessGroupEnabled(String const& group);
   Json postProcessGroups();
   
 protected:
@@ -54,6 +55,7 @@ private:
     Variant<P2PNetworkingPeerId, HostAddressWithPort> server;
     String account;
     String password;
+    bool forceLegacy;
   };
   
   struct PostProcessGroup {
@@ -114,6 +116,7 @@ private:
   
   StringMap<PostProcessGroup> m_postProcessGroups;
   List<PostProcessLayer> m_postProcessLayers;
+  StringMap<size_t> m_labelledPostProcessLayers;
 
   // Valid if main app state == SinglePlayer
   UniverseServerPtr m_universeServer;
@@ -121,7 +124,7 @@ private:
   float m_cameraXOffset = 0.0f;
   float m_cameraYOffset = 0.0f;
   bool m_snapBackCameraOffset = false;
-  int m_cameraOffsetDownTicks = 0;
+  float m_cameraOffsetDownTime = 0.f;
   Vec2F m_cameraPositionSmoother;
   Vec2F m_cameraSmoothDelta;
   int m_cameraZoomDirection = 0;

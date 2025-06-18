@@ -371,6 +371,12 @@ namespace LuaBindings {
 
         return playerIds;
       });
+      callbacks.registerCallback("template", [clientWorld]() {
+        return clientWorld->currentTemplate()->store();
+      });
+      callbacks.registerCallback("setTemplate", [clientWorld](Json worldTemplate) {
+        clientWorld->setTemplate(worldTemplate);
+      });
     }
 
     if (auto serverWorld = as<WorldServer>(world)) {
@@ -455,6 +461,13 @@ namespace LuaBindings {
           });
           return serverWorld->enqueuePlacement(std::move(distributions), id);
         });
+      callbacks.registerCallback("template", [serverWorld]() {
+        return serverWorld->worldTemplate()->store();
+      });
+      callbacks.registerCallback("setTemplate", [serverWorld](Json worldTemplate) {
+        auto newTemplate = make_shared<WorldTemplate>(worldTemplate);
+        serverWorld->setTemplate(newTemplate);
+      });
     }
 
     return callbacks;
@@ -499,6 +512,7 @@ namespace LuaBindings {
     callbacks.registerCallbackWithSignature<Maybe<String>, EntityId>("entitySpecies", bind(WorldEntityCallbacks::entitySpecies, world, _1));
     callbacks.registerCallbackWithSignature<Maybe<String>, EntityId>("entityGender", bind(WorldEntityCallbacks::entityGender, world, _1));
     callbacks.registerCallbackWithSignature<Maybe<String>, EntityId>("entityName", bind(WorldEntityCallbacks::entityName, world, _1));
+    callbacks.registerCallbackWithSignature<Maybe<Json>, EntityId>("entityNametag", bind(WorldEntityCallbacks::entityNametag, world, _1));
     callbacks.registerCallbackWithSignature<Maybe<String>, EntityId, Maybe<String>>("entityDescription", bind(WorldEntityCallbacks::entityDescription, world, _1, _2));
     callbacks.registerCallbackWithSignature<LuaNullTermWrapper<Maybe<List<Drawable>>>, EntityId, String>("entityPortrait", bind(WorldEntityCallbacks::entityPortrait, world, _1, _2));
     callbacks.registerCallbackWithSignature<Maybe<String>, EntityId, String>("entityHandItem", bind(WorldEntityCallbacks::entityHandItem, world, _1, _2));
@@ -599,6 +613,8 @@ namespace LuaBindings {
     callbacks.registerCallbackWithSignature<bool, List<Vec2I>, String, Vec2F, String, float, Maybe<unsigned>, Maybe<EntityId>>("damageTiles", bind(WorldEnvironmentCallbacks::damageTiles, world, _1, _2, _3, _4, _5, _6, _7));
     callbacks.registerCallbackWithSignature<bool, Vec2F, float, String, Vec2F, String, float, Maybe<unsigned>, Maybe<EntityId>>("damageTileArea", bind(WorldEnvironmentCallbacks::damageTileArea, world, _1, _2, _3, _4, _5, _6, _7, _8));
     callbacks.registerCallbackWithSignature<bool, Vec2I, String, String, Maybe<int>, bool>("placeMaterial", bind(WorldEnvironmentCallbacks::placeMaterial, world, _1, _2, _3, _4, _5));
+    callbacks.registerCallbackWithSignature<bool, List<Vec2I>, String, String, Maybe<int>, bool>("replaceMaterials", bind(WorldEnvironmentCallbacks::replaceMaterials, world, _1, _2, _3, _4, _5));
+    callbacks.registerCallbackWithSignature<bool, Vec2F, float, String, String, Maybe<int>, bool>("replaceMaterialArea", bind(WorldEnvironmentCallbacks::replaceMaterialArea, world, _1, _2, _3, _4, _5, _6));
     callbacks.registerCallbackWithSignature<bool, Vec2I, String, String, Maybe<int>, bool>("placeMod", bind(WorldEnvironmentCallbacks::placeMod, world, _1, _2, _3, _4, _5));
 
     callbacks.registerCallback("radialTileQuery", [world](Vec2F center, float radius, String layerName) -> List<Vec2I> {
@@ -1436,6 +1452,24 @@ namespace LuaBindings {
     return {};
   }
 
+  Maybe<Json> WorldEntityCallbacks::entityNametag(World* world, EntityId entityId) {
+    auto entity = world->entity(entityId);
+
+    Json result;
+    if (auto nametagEntity = as<NametagEntity>(entity)) {
+      Json result = JsonObject{
+        {"nametag", nametagEntity->nametag()},
+        {"displayed", nametagEntity->displayNametag()},
+        {"color", jsonFromColor(Color::rgb(nametagEntity->nametagColor()))},
+        {"origin", jsonFromVec2F(nametagEntity->nametagOrigin())},
+      };
+      if (auto status = nametagEntity->statusText())
+        result.set("status", *status);
+    }
+
+    return result;
+  }
+
   Maybe<String> WorldEntityCallbacks::entityDescription(World* world, EntityId entityId, Maybe<String> const& species) {
     if (auto entity = world->entity(entityId)) {
       if (auto inspectableEntity = as<InspectableEntity>(entity)) {
@@ -2017,6 +2051,76 @@ namespace LuaBindings {
     bool allowOverlap = arg5;
 
     return world->modifyTile(tilePosition, placeMaterial, allowOverlap);
+  }
+
+  bool WorldEnvironmentCallbacks::replaceMaterials(World* world,
+      List<Vec2I> const& tilePositions,
+      String const& layer,
+      String const& materialName,
+      Maybe<int> const& hueShift,
+      bool enableDrops) {
+    PlaceMaterial placeMaterial;
+
+    std::string layerName = layer.utf8();
+    auto split = layerName.find_first_of('+');
+    if (split != NPos) {
+      auto overrideName = layerName.substr(split + 1);
+      layerName = layerName.substr(0, split);
+      if (overrideName == "empty" || overrideName == "none")
+        placeMaterial.collisionOverride = TileCollisionOverride::Empty;
+      else if (overrideName == "block")
+        placeMaterial.collisionOverride = TileCollisionOverride::Block;
+      else if (overrideName == "platform")
+        placeMaterial.collisionOverride = TileCollisionOverride::Platform;
+      else
+        throw StarException(strf("Unsupported collision override {}", overrideName));
+    }
+
+    if (layerName == "foreground")
+      placeMaterial.layer = TileLayer::Foreground;
+    else if (layerName == "background")
+      placeMaterial.layer = TileLayer::Background;
+    else
+      throw StarException(strf("Unsupported tile layer {}", layerName));
+
+    auto materialDatabase = Root::singleton().materialDatabase();
+    if (!materialDatabase->materialNames().contains(materialName))
+      throw StarException(strf("Unknown material name {}", materialName));
+    placeMaterial.material = materialDatabase->materialId(materialName);
+
+    if (hueShift)
+      placeMaterial.materialHueShift = (MaterialHue)*hueShift;
+
+    TileModificationList modifications;
+    for (auto pos : tilePositions) {
+      if (!world->isTileConnectable(pos, placeMaterial.layer, true))
+        continue;
+      modifications.emplaceAppend(pos, placeMaterial);
+    }
+
+    if (modifications.empty())
+      return true;
+
+    TileDamage damage;
+    if (enableDrops) {
+      damage.amount = 1.0f;
+      damage.harvestLevel = 999;
+    } else {
+      damage.amount = -1.0f;
+    }
+
+    return world->replaceTiles(modifications, damage).empty();;
+  }
+
+  bool WorldEnvironmentCallbacks::replaceMaterialArea(World* world,
+      Vec2F center,
+      float radius,
+      String const& layer,
+      String const& materialName,
+      Maybe<int> const& hueShift,
+      bool enableDrops) {
+    auto tiles = tileAreaBrush(radius, center, false);
+    return replaceMaterials(world, tiles, layer, materialName, hueShift, enableDrops);
   }
 
   bool WorldEnvironmentCallbacks::placeMod(World* world, Vec2I const& arg1, String const& arg2, String const& arg3, Maybe<int> const& arg4, bool arg5) {

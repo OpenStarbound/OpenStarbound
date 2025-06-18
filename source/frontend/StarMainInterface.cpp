@@ -878,7 +878,7 @@ void MainInterface::doChat(String const& chat, bool addToHistory) {
   if (chat.beginsWith("/")) {
     m_lastCommand = chat;
 
-    for (auto const& result : m_clientCommandProcessor->handleCommand(chat))
+    for (auto const& result : m_clientCommandProcessor->handleCommand(chat, true))
       m_chat->addLine(result);
   } else {
     m_client->sendChat(chat, m_chat->sendMode());

@@ -53,6 +53,8 @@ public:
   LiquidLevel liquidLevel(RectF const& region) const override;
   TileModificationList validTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap) const override;
   TileModificationList applyTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap) override;
+  TileModificationList replaceTiles(TileModificationList const& modificationList, TileDamage const& tileDamage, bool applyDamage = false) override;
+  bool damageWouldDestroy(Vec2I const& pos, TileLayer layer, TileDamage const& tileDamage) const override;
   EntityPtr entity(EntityId entityId) const override;
   void addEntity(EntityPtr const& entity, EntityId entityId = NullEntityId) override;
   EntityPtr closestEntity(Vec2F const& center, float radius, EntityFilter selector = EntityFilter()) const override;
@@ -113,6 +115,7 @@ public:
   void removeEntity(EntityId entityId, bool andDie);
 
   WorldTemplateConstPtr currentTemplate() const;
+  void setTemplate(Json newTemplate);
   SkyConstPtr currentSky() const;
 
   void dimWorld();
@@ -285,6 +288,7 @@ private:
   List<LightSource> m_pendingLights;
   List<std::pair<Vec2F, Vec3F>> m_pendingParticleLights;
   RectI m_pendingLightRange;
+  atomic<bool> m_pendingLightReady;
   Vec2I m_lightMinPosition;
   List<PreviewTile> m_previewTiles;
 

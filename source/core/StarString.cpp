@@ -4,7 +4,7 @@
 #include "StarFormat.hpp"
 
 #include <cctype>
-#include <regex>
+#include <re2/re2.h>
 
 namespace Star {
 
@@ -713,19 +713,14 @@ bool String::contains(String const& s, CaseSensitivity cs) const {
 }
 
 bool String::regexMatch(String const& regex, bool full, bool caseSensitive) const {
-  if (full) {
-    if (caseSensitive)
-      return std::regex_match(utf8(), std::regex(regex.utf8()));
-    else
-      return std::regex_match(utf8(), std::regex(regex.utf8(), std::regex::icase));
-  } else {
-    if (caseSensitive)
-      return std::regex_search(utf8(), std::regex(regex.utf8()));
-    else
-      return std::regex_search(utf8(), std::regex(regex.utf8(), std::regex::icase));
-  }
-}
+  re2::RE2::Options options;
+  options.set_case_sensitive(caseSensitive);
+  RE2 re(regex.utf8(), options);
+  if (!re.ok())
+    throw StringException::format("Regex pattern is invalid: {}", re.error());
 
+  return full ? RE2::FullMatch(utf8(), re) : RE2::PartialMatch(utf8(), re);
+}
 int String::compare(String const& s, CaseSensitivity cs) const {
   if (cs == CaseSensitive)
     return m_string.compare(s.m_string);

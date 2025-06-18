@@ -22,6 +22,8 @@ register("run", function(src)
       return "^#f00;error: " .. result
     elseif result == nil then
       return nil
+    elseif type(result) == "string" then
+      return result
     else
       local success, printed = pcall(sb.printJson, result)
       if not success then

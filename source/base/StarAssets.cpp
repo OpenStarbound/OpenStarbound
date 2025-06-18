@@ -149,6 +149,12 @@ Assets::Assets(Settings settings, StringList assetSources) {
       return table;
     });
     
+    callbacks.registerCallback("sourceMetadata", [this](String const& sourcePath) -> Maybe<JsonObject> {
+      if (auto assetSource = m_assetSourcePaths.rightPtr(sourcePath))
+        return (*assetSource)->metadata();
+      return {};
+    });
+
     callbacks.registerCallback("origin", [this](String const& path) -> Maybe<String> {
       if (auto descriptor = this->assetDescriptor(path))
         return this->assetSourcePath(descriptor->source);
@@ -969,8 +975,9 @@ ImageConstPtr Assets::readImage(String const& path) const {
         auto& patchSource = pair.second;
         auto patchStream = patchSource->read(patchPath);
         if (patchPath.endsWith(".lua")) {
+          std::pair<AssetSource*, String> contextKey = make_pair(patchSource.get(), patchPath);
           luaLocker.lock();
-          LuaContextPtr& context = m_patchContexts[patchPath];
+          LuaContextPtr& context = m_patchContexts[contextKey];
           if (!context) {
             context = make_shared<LuaContext>(luaEngine->createContext());
             context->load(patchStream, patchPath);
@@ -1042,9 +1049,10 @@ Json Assets::readJson(String const& path) const {
       auto& patchSource = pair.second;
       auto patchStream = patchSource->read(patchBasePath);
       if (patchBasePath.endsWith(".lua")) {
+        std::pair<AssetSource*, String> contextKey = make_pair(patchSource.get(), patchBasePath);
         RecursiveMutexLocker luaLocker(m_luaMutex);
         // Kae: i don't like that lock. perhaps have a LuaEngine and patch context cache per worker thread later on?
-        LuaContextPtr& context = m_patchContexts[patchBasePath];
+        LuaContextPtr& context = m_patchContexts[contextKey];
         if (!context) {
           context = make_shared<LuaContext>(as<LuaEngine>(m_luaEngine.get())->createContext());
           context->load(patchStream, patchBasePath);
@@ -1053,20 +1061,24 @@ Json Assets::readJson(String const& path) const {
         if (newResult)
           result = std::move(newResult);
       } else {
-        auto patchJson = inputUtf8Json(patchStream.begin(), patchStream.end(), JsonParseType::Top);
-        if (patchAssetPath.subPath)
-          patchJson = patchJson.query(*patchAssetPath.subPath);
-        if (patchJson.isType(Json::Type::Array)) {
-          auto patchData = patchJson.toArray();
-          try {
-            result = checkPatchArray(pair.first, patchSource, result, patchData, {});
-          } catch (JsonPatchTestFail const& e) {
-            Logger::debug("Patch test failure from file {} in source: '{}' at '{}'. Caused by: {}", pair.first, patchSource->metadata().value("name", ""), m_assetSourcePaths.getLeft(patchSource), e.what());
-          } catch (JsonPatchException const& e) {
-            Logger::error("Could not apply patch from file {} in source: '{}' at '{}'.  Caused by: {}", pair.first, patchSource->metadata().value("name", ""), m_assetSourcePaths.getLeft(patchSource), e.what());
+        try {
+          auto patchJson = inputUtf8Json(patchStream.begin(), patchStream.end(), JsonParseType::Top);
+          if (patchAssetPath.subPath)
+            patchJson = patchJson.query(*patchAssetPath.subPath);
+          if (patchJson.isType(Json::Type::Array)) {
+            auto patchData = patchJson.toArray();
+            try {
+              result = checkPatchArray(pair.first, patchSource, result, patchData, {});
+            } catch (JsonPatchTestFail const& e) {
+              Logger::debug("Patch test failure from file {} in source: '{}' at '{}'. Caused by: {}", pair.first, patchSource->metadata().value("name", ""), m_assetSourcePaths.getLeft(patchSource), e.what());
+            } catch (JsonPatchException const& e) {
+              Logger::error("Could not apply patch from file {} in source: '{}' at '{}'.  Caused by: {}", pair.first, patchSource->metadata().value("name", ""), m_assetSourcePaths.getLeft(patchSource), e.what());
+            }
+          } else if (patchJson.isType(Json::Type::Object)) {
+            result = jsonMergeNulling(result, patchJson.toObject());
           }
-        } else if (patchJson.isType(Json::Type::Object)) {
-          result = jsonMergeNulling(result, patchJson.toObject());
+        } catch (std::exception const& e) {
+          throw JsonParsingException(strf("Cannot parse json patch file: {} in source {}", patchBasePath, patchSource->metadata().value("name", "")), e);
         }
       }
     }
