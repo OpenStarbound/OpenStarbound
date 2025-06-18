@@ -174,14 +174,13 @@ public:
   typedef MVariant<WornHead, WornChest, WornLegs, WornBack> Wearable;
   
   struct Fashion {
-    // 4 vanilla + 12 extra slots
-    Array<Wearable, 16> wearables;
+    // 8 vanilla + 12 extra slots
+    Array<Wearable, 20> wearables;
     // below 3 are recalculated when rendering updated wearables, null-terminated
-    Array<uint8_t, 16> wornHeads;
+    Array<uint8_t, 20> wornHeads;
     // chests and leg layering is interchangeable
-    // if index > 16 then it's WornLegs at [i - 16]
-    Array<uint8_t, 16> wornChestsLegs;
-    Array<uint8_t, 16> wornBacks;
+    Array<uint8_t, 20> wornChestsLegs;
+    Array<uint8_t, 20> wornBacks;
     bool wornHeadsChanged = true;
     bool wornChestsLegsChanged = true;
     bool wornBacksChanged = true;

@@ -2,7 +2,7 @@
 
 namespace Star {
 
-char const* const OpenStarVersionString = "0.1.11";
+char const* const OpenStarVersionString = "0.1.11.1";
 char const* const StarVersionString = "1.4.4";
 char const* const StarSourceIdentifierString = "${STAR_SOURCE_IDENTIFIER}";
 char const* const StarArchitectureString = "${STAR_SYSTEM} ${STAR_ARCHITECTURE}";

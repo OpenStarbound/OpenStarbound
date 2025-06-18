@@ -46,6 +46,11 @@ ArmorItem::ArmorItem(Json const& config, String const& directory, Json const& da
   else
     m_hideInVanillaSlots = false;
 
+  if (auto jArmorTypeToHide = instanceValue("armorTypeToHide"); jArmorTypeToHide.isType(Json::Type::String))
+    m_armorTypeToHide = ArmorTypeNames.maybeLeft(jArmorTypeToHide.toString());
+  else
+    m_armorTypeToHide = ArmorType::Null;
+
   m_hideBody = config.getBool("hideBody", false);
 }
 
@@ -85,6 +90,12 @@ bool ArmorItem::flipping() const {
 
 bool ArmorItem::visible(bool extraCosmetic) const {
   return extraCosmetic || !m_hideInVanillaSlots;
+}
+
+Maybe<ArmorType> ArmorItem::armorTypeToHide() const {
+  if (m_armorTypeToHide && *m_armorTypeToHide == ArmorType::Null)
+    return armorType();
+  return m_armorTypeToHide;
 }
 
 bool ArmorItem::hideBody() const {
