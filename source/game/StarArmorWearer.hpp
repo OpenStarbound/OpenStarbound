@@ -35,7 +35,7 @@ public:
   Json diskStore() const;
   void diskLoad(Json const& diskStore);
 
-  void setItem(uint8_t slot, ArmorItemPtr item);
+  bool setItem(uint8_t slot, ArmorItemPtr item);
   void setHeadItem(HeadArmorPtr headItem);
   void setChestItem(ChestArmorPtr chestItem);
   void setLegsItem(LegsArmorPtr legsItem);

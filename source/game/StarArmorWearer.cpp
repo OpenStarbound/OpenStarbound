@@ -53,8 +53,8 @@ void ArmorWearer::setupHumanoidClothingDrawables(Humanoid& humanoid, bool forceN
       anyNeedsSync = armor.needsSync = true;
 
     if (armorVisible(armor.item, i >= 8) && armor.isCosmetic) {
-      if (auto typeToHide = armor.item->armorTypeToHide())
-        ++wornCosmeticTypes[(uint8_t)*typeToHide];
+      for (auto armorType : armor.item->armorTypesToHide())
+        ++wornCosmeticTypes[(uint8_t)armorType];
     }
   }
 
@@ -174,8 +174,7 @@ void ArmorWearer::diskLoad(Json const& diskStore) {
   auto load = [&](uint8_t slot, String const& id) {
     auto& armor = m_armors[slot];
     if (auto item = as<ArmorItem>(itemDb->diskLoad(diskStore.get(id, {})))) {
-      armor.item = std::move(item);
-      armor.needsStore = armor.needsSync = true;
+      setItem(slot, item);
     }
   };
 
@@ -205,14 +204,15 @@ List<PersistentStatusEffect> ArmorWearer::statusEffects() const {
   return statusEffects;
 }
 
-void ArmorWearer::setItem(uint8_t slot, ArmorItemPtr item) {
-  if (slot < m_armors.size()) {
-    auto& armor = m_armors[slot];
-    if (Item::itemsEqual(armor.item, item))
-      return;
-    armor.item = item;
-    armor.needsStore = armor.needsSync = true;
-  }
+bool ArmorWearer::setItem(uint8_t slot, ArmorItemPtr item) {
+  if (slot >= m_armors.size())
+    return false;
+  auto& armor = m_armors[slot];
+  if (Item::itemsEqual(armor.item, item))
+    return false;
+  armor.item = item;
+  armor.needsStore = armor.needsSync = true;
+  return true;
 }
 
 void ArmorWearer::setHeadItem(HeadArmorPtr headItem) { setItem(0, headItem); }
@@ -288,29 +288,16 @@ ItemDescriptor ArmorWearer::backCosmeticItemDescriptor() const {
 }
 
 bool ArmorWearer::setCosmeticItem(uint8_t slot, ArmorItemPtr cosmeticItem) {
-  slot += 8;
-  if (slot >= m_armors.size())
-    return false;
-  Armor& armor = m_armors.at(slot);
-  if (Item::itemsEqual(armor.item, cosmeticItem))
-    return false;
-  armor.item = std::move(cosmeticItem);
-  armor.needsStore = armor.needsSync = true;
-  return true;
+  return setItem(slot + 8, cosmeticItem);
 }
 
 ArmorItemPtr ArmorWearer::cosmeticItem(uint8_t slot) const {
-  slot += 8;
-  if (slot < m_armors.size())
-    return m_armors[slot].item;
-  return {};
+  return item(slot + 8);
 }
 
 ItemDescriptor ArmorWearer::cosmeticItemDescriptor(uint8_t slot) const {
-  slot += 8;
-  if (slot < m_armors.size())
-    if (auto& item = m_armors[slot].item)
-      return item->descriptor();
+  if (auto item = cosmeticItem(slot + 8))
+    return item->descriptor();
   return {};
 }
 

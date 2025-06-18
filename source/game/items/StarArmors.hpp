@@ -12,8 +12,7 @@ enum class ArmorType : uint8_t {
   Head,
   Chest,
   Legs,
-  Back,
-  Null = 255
+  Back
 };
 extern EnumMap<ArmorType> ArmorTypeNames;
 
@@ -45,7 +44,7 @@ public:
   Directives const& directives(bool flip = false) const;
   bool flipping() const;
   bool visible(bool extraCosmetics = false) const;
-  Maybe<ArmorType> armorTypeToHide() const;
+  HashSet<ArmorType> const& armorTypesToHide();
   bool hideBody() const;
 
   Maybe<String> const& techModule() const;
@@ -61,7 +60,7 @@ private:
   Maybe<Directives> m_flipDirectives;
   bool m_hideBody;
   bool m_hideInVanillaSlots;
-  Maybe<ArmorType> m_armorTypeToHide;
+  Maybe<HashSet<ArmorType>> m_armorTypesToHide;
   Maybe<String> m_techModule;
 };
 

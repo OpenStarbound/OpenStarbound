@@ -41,15 +41,20 @@ ArmorItem::ArmorItem(Json const& config, String const& directory, Json const& da
     m_directives = "?" + m_colorOptions.wrap(instanceValue("colorIndex", 0).toUInt());
   refreshIconDrawables();
 
-  if (auto jHide = instanceValue("hideInVanillaSlots"); jHide.isType(Json::Type::Bool))
-    m_hideInVanillaSlots = jHide.toBool();
+  if (auto hide = instanceValue("hideInVanillaSlots"); hide.isType(Json::Type::Bool))
+    m_hideInVanillaSlots = hide.toBool();
   else
     m_hideInVanillaSlots = false;
 
-  if (auto jArmorTypeToHide = instanceValue("armorTypeToHide"); jArmorTypeToHide.isType(Json::Type::String))
-    m_armorTypeToHide = ArmorTypeNames.maybeLeft(jArmorTypeToHide.toString());
-  else
-    m_armorTypeToHide = ArmorType::Null;
+  if (auto armorTypesToHide = instanceValue("armorTypesToHide"); armorTypesToHide.isType(Json::Type::Array)) {
+    m_armorTypesToHide.emplace();
+    for (auto& str : armorTypesToHide.toArray()) {
+      if (!str.isType(Json::Type::String))
+        continue;
+      if (auto armorType = ArmorTypeNames.leftPtr(str.toString()))
+        m_armorTypesToHide->add(*armorType);
+    }
+  }
 
   m_hideBody = config.getBool("hideBody", false);
 }
@@ -92,10 +97,12 @@ bool ArmorItem::visible(bool extraCosmetic) const {
   return extraCosmetic || !m_hideInVanillaSlots;
 }
 
-Maybe<ArmorType> ArmorItem::armorTypeToHide() const {
-  if (m_armorTypeToHide && *m_armorTypeToHide == ArmorType::Null)
-    return armorType();
-  return m_armorTypeToHide;
+HashSet<ArmorType> const& ArmorItem::armorTypesToHide() {
+  if (!m_armorTypesToHide) {
+    m_armorTypesToHide.emplace();
+    m_armorTypesToHide->add(armorType());
+  }
+  return *m_armorTypesToHide;
 }
 
 bool ArmorItem::hideBody() const {
