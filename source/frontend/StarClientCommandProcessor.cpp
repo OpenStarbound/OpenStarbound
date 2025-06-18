@@ -152,9 +152,6 @@ String ClientCommandProcessor::gravity() {
 
 String ClientCommandProcessor::debug(String const& argumentsString) {
   auto arguments = m_parser.tokenizeToStringList(argumentsString);
-  if (!adminCommandAllowed())
-    return "You must be an admin to use this command.";
-
   if (!arguments.empty() && arguments.at(0).equalsIgnoreCase("hud")) {
     m_debugHudEnabled = !m_debugHudEnabled;
     return strf("Debug HUD {}", m_debugHudEnabled ? "enabled" : "disabled");
@@ -166,9 +163,6 @@ String ClientCommandProcessor::debug(String const& argumentsString) {
 }
 
 String ClientCommandProcessor::boxes() {
-  if (!adminCommandAllowed())
-    return "You must be an admin to use this command.";
-
   auto worldClient = m_universeClient->worldClient();
   bool state = !worldClient->collisionDebug();
   worldClient->setCollisionDebug(state);
@@ -176,9 +170,6 @@ String ClientCommandProcessor::boxes() {
 }
 
 String ClientCommandProcessor::fullbright() {
-  if (!adminCommandAllowed())
-    return "You must be an admin to use this command.";
-
   auto worldClient = m_universeClient->worldClient();
   bool state = !worldClient->fullBright();
   worldClient->setFullBright(state);
@@ -210,9 +201,6 @@ String ClientCommandProcessor::resetGravity() {
 }
 
 String ClientCommandProcessor::fixedCamera() {
-  if (!adminCommandAllowed())
-    return "You must be an admin to use this command.";
-
   m_fixedCameraEnabled = !m_fixedCameraEnabled;
   return strf("Fixed camera {}", m_fixedCameraEnabled ? "enabled" : "disabled");
 }
