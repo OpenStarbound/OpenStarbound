@@ -7,7 +7,7 @@ function patch(data)
   data.skyBackdropDarken = jarray{0, 0, 0, 64}
   local rng = sb.makeRandomSource()
   local num = rng:randUInt(300)
-  local terry = num == rng:randUInt(10) -- thanks to Discord user arcanearcaneflower for letting me use this sprite!
+  local terry = num == rng:randUInt(10)
   local logo = terry and "starraria.png" or (num == 0 and "barst" or "starb") .. "ound.png"
   data.backdropImages = jarray{
     jarray{
