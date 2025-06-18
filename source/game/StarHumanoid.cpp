@@ -773,7 +773,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
   
   auto drawBackArmAndSleeves = [&](bool holdingItem) {
     auto bodyDirectives = getBodyDirectives();
-    if (holdingItem)
+    if (holdingItem && !m_bodyHidden)
       addDrawable(backArmDrawable(m_backArmFrameset, bodyDirectives), m_bodyFullbright);
     else if (!m_backArmFrameset.empty() && !m_bodyHidden) {
       String image;
@@ -982,7 +982,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
   
   auto drawFrontArmAndSleeves = [&](bool holdingItem) {
     auto& bodyDirectives = getBodyDirectives();
-    if (holdingItem)
+    if (holdingItem && !m_bodyHidden)
       addDrawable(frontArmDrawable(m_frontArmFrameset, getBodyDirectives()), m_bodyFullbright);
     else if (!m_frontArmFrameset.empty() && !m_bodyHidden) {
       String image;
