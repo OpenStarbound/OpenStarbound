@@ -146,7 +146,7 @@ public:
   void setIdentity(HumanoidIdentity const& identity);
   HumanoidIdentity const& identity() const;
 
-  void loadConfig(Json merger = JsonObject());
+  bool loadConfig(Json merger = JsonObject());
 
   // All of the image identifiers here are meant to be image *base* names, with
   // a collection of frames specific to each piece.  If an image is set to

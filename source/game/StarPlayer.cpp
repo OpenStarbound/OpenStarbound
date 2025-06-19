@@ -487,7 +487,8 @@ List<Drawable> Player::portrait(PortraitMode mode) const {
     return m_humanoid->renderSkull();
   if (invisible())
     return {};
-  m_armor->setupHumanoidClothingDrawables(*m_humanoid, forceNude());
+  if (!inWorld())
+    refreshHumanoid();
   return m_humanoid->renderPortrait(mode);
 }
 
@@ -1046,8 +1047,7 @@ void Player::update(float dt, uint64_t) {
   m_humanoid->setFacingDirection(facingDirection);
   m_humanoid->setMovingBackwards(facingDirection != m_movementController->movingDirection());
 
-  if (isClient)
-    m_armor->setupHumanoidClothingDrawables(*m_humanoid, forceNude());
+  refreshHumanoid();
 
   m_effectsAnimator->resetTransformationGroup("flip");
   if (m_movementController->facingDirection() == Direction::Left)
@@ -1333,20 +1333,26 @@ void Player::refreshArmor() {
   if (isSlave())
     return;
 
-  m_armor->setHeadItem(m_inventory->headArmor());
-  m_armor->setHeadCosmeticItem(m_inventory->headCosmetic());
-  m_armor->setChestItem(m_inventory->chestArmor());
-  m_armor->setChestCosmeticItem(m_inventory->chestCosmetic());
-  m_armor->setLegsItem(m_inventory->legsArmor());
-  m_armor->setLegsCosmeticItem(m_inventory->legsCosmetic());
-  m_armor->setBackItem(m_inventory->backArmor());
-  m_armor->setBackCosmeticItem(m_inventory->backCosmetic());
   bool shouldSetArmorSecrets = m_clientContext && m_clientContext->netCompatibilityRules().version() < 9;
-  for (uint8_t i = 0; i != 12; ++i) {
-    auto slot = EquipmentSlot((uint8_t)EquipmentSlot::Cosmetic1 + i);
+  for (uint8_t i = 0; i != 20; ++i) {
+    auto slot = (EquipmentSlot)i;
     auto item = m_inventory->equipment(slot);
-    if (m_armor->setCosmeticItem(i, item) && shouldSetArmorSecrets)
-      setNetArmorSecret(slot, item);
+    if (m_armor->setItem(i, item)) {
+      if (slot >= EquipmentSlot::Cosmetic1 && shouldSetArmorSecrets)
+        setNetArmorSecret(slot, item);
+    }
+  }
+}
+
+void Player::refreshHumanoid() const {
+  try {
+    if (m_armor->setupHumanoid(*m_humanoid, forceNude())) {
+      m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(m_humanoid->defaultMovementParameters(), m_config->movementParameters)));
+    }
+  }
+  catch (std::exception const&) {
+    if (isMaster()) // it's your problem,
+      throw;        // deal with it!
   }
 }
 

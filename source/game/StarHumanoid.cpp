@@ -301,11 +301,10 @@ HumanoidIdentity const& Humanoid::identity() const {
   return m_identity;
 }
 
-void Humanoid::loadConfig(Json merger) {
+bool Humanoid::loadConfig(Json merger) {
   if (m_mergeConfig == merger)
-    return;
+    return false;
 
-  m_mergeConfig = merger;
   auto config = jsonMerge(m_baseConfig, merger);
   m_timing = HumanoidTiming(config.getObject("humanoidTiming"));
 
@@ -358,7 +357,13 @@ void Humanoid::loadConfig(Json merger) {
   m_defaultDeathParticles = config.getString("deathParticles");
   m_particleEmitters = config.get("particleEmitters");
 
-  m_defaultMovementParameters = config.get("movementParameters");
+  Json newMovementParameters = config.get("movementParameters");
+  bool movementParametersChanged = m_defaultMovementParameters != newMovementParameters;
+  m_defaultMovementParameters = newMovementParameters;
+
+  m_mergeConfig = merger;
+
+  return movementParametersChanged;
 }
 
 void Humanoid::wearableRemoved(Wearable const& wearable) {

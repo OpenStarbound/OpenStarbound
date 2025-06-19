@@ -175,7 +175,7 @@ void Npc::init(World* world, EntityId entityId, EntityMode mode) {
   m_statusController->init(this, m_movementController.get());
   m_tools->init(this);
 
-  m_armor->setupHumanoidClothingDrawables(m_humanoid, false);
+  m_armor->setupHumanoid(m_humanoid, false);
 
   if (isMaster()) {
     m_movementController->resetAnchorState();
@@ -621,7 +621,7 @@ void Npc::tickShared(float dt) {
     }
   }
 
-  m_armor->setupHumanoidClothingDrawables(m_humanoid, false);
+  m_armor->setupHumanoid(m_humanoid, false);
 
   m_tools->suppressItems(!canUseTool());
   m_tools->tick(dt, m_shifting.get(), {});

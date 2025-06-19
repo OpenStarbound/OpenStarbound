@@ -28,7 +28,7 @@ ArmorWearer::ArmorWearer() : m_lastNude(true) {
   reset();
 }
 
-void ArmorWearer::setupHumanoidClothingDrawables(Humanoid& humanoid, bool forceNude) {
+bool ArmorWearer::setupHumanoid(Humanoid& humanoid, bool forceNude) {
   bool nudeChanged = m_lastNude != forceNude;
   auto gender = humanoid.identity().gender;
   bool genderChanged = !m_lastGender || *m_lastGender != gender;
@@ -70,6 +70,8 @@ void ArmorWearer::setupHumanoidClothingDrawables(Humanoid& humanoid, bool forceN
     }
   };
 
+  std::exception_ptr configException;
+  bool movementParametersChanged;
   if (anyNeedsSync) {
     for (size_t i = 0; i != m_armors.size(); ++i) {
       Armor& armor = m_armors[i];
@@ -103,11 +105,16 @@ void ArmorWearer::setupHumanoidClothingDrawables(Humanoid& humanoid, bool forceN
       } else
         humanoid.removeWearable(i);
     }
-    humanoid.loadConfig(humanoidConfig);
+    try
+      { movementParametersChanged = humanoid.loadConfig(humanoidConfig); }
+    catch (std::exception const&)
+      { configException = std::current_exception(); }
+    humanoid.setBodyHidden(bodyHidden);
   }
   m_wornCosmeticTypes = wornCosmeticTypes;
-
-  humanoid.setBodyHidden(bodyHidden);
+  if (configException)
+    std::rethrow_exception(configException);
+  return movementParametersChanged;
 }
 
 void ArmorWearer::effects(EffectEmitter& effectEmitter) {

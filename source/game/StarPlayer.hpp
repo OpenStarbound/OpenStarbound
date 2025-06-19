@@ -234,9 +234,9 @@ public:
   // Clear the item swap slot.
   void clearSwap();
 
-  void refreshArmor();
   void refreshItems();
-
+  void refreshArmor();
+  void refreshHumanoid() const; 
   // Refresh worn equipment from the inventory
   void refreshEquipment();
 

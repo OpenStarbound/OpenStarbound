@@ -26,7 +26,8 @@ class ArmorWearer : public NetElementSyncGroup {
 public:
   ArmorWearer();
 
-  void setupHumanoidClothingDrawables(Humanoid& humanoid, bool forceNude);
+  // returns true if movement parameters changed
+  bool setupHumanoid(Humanoid& humanoid, bool forceNude);
   void effects(EffectEmitter& effectEmitter);
   List<PersistentStatusEffect> statusEffects() const;
 
