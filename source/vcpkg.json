@@ -12,7 +12,6 @@
     "zstd",
     "mimalloc",
     { "name": "jemalloc", "platform": "!osx" },
-    "pkgconf",
     "re2",
     { "name": "abseil", "features": ["cxx17"] }
   ]
