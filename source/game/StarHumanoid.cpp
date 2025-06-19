@@ -481,6 +481,18 @@ void Humanoid::refreshWearables(Fashion& fashion) {
         fashion.wornBacks[backsI++] = i + 1;
     }
   }
+  if (wornChestsLegsChanged) {
+    sort(fashion.wornChestsLegs, [&](uint8_t a, uint8_t b) {
+      if (!a || !b)
+        return a != 0;
+      else if (a < 8 && b < 8) {
+        bool aIsChest = fashion.wearables[--a].is<WornChest>();
+        if (aIsChest != fashion.wearables[--b].is<WornChest>())
+          return !aIsChest;
+      }
+      return a < b;
+    });
+  }
   fashion.wornHeadsChanged = fashion.wornChestsLegsChanged = fashion.wornBacksChanged = fashion.helmetMasksChanged = false;
 }
 
