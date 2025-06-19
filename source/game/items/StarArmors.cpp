@@ -28,18 +28,20 @@ ArmorItem::ArmorItem(Json const& config, String const& directory, Json const& da
 
   auto directives = instanceValue("directives", "").toString();
   m_directives = directives;
-  if (auto jFlipDirectives = instanceValue("flipDirectives"); jFlipDirectives.isType(Json::Type::String)) {
-    auto flipDirectives = jFlipDirectives.toString();
-    if (flipDirectives.beginsWith('+'))
-      m_flipDirectives = Directives(directives + flipDirectives.substr(1));
-    else
-      m_flipDirectives = Directives(std::move(flipDirectives));
-  }
 
   m_colorOptions = colorDirectivesFromConfig(config.getArray("colorOptions", JsonArray{""}));
   if (!m_directives)
     m_directives = "?" + m_colorOptions.wrap(instanceValue("colorIndex", 0).toUInt());
   refreshIconDrawables();
+
+  if (auto jFlipDirectives = instanceValue("flipDirectives"); jFlipDirectives.isType(Json::Type::String)) {
+    auto flipDirectives = jFlipDirectives.toString();
+    auto directivesStr = m_directives.stringPtr();
+    if (flipDirectives.beginsWith('+') && directivesStr)
+      m_flipDirectives = Directives(*directivesStr + flipDirectives.substr(1));
+    else
+      m_flipDirectives = Directives(std::move(flipDirectives));
+  }
 
   if (auto hide = instanceValue("hideInVanillaSlots"); hide.isType(Json::Type::Bool))
     m_hideInVanillaSlots = hide.toBool();
