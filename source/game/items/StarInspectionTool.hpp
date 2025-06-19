@@ -57,12 +57,14 @@ private:
 
   bool m_showHighlights;
   bool m_allowScanning;
+  bool m_requireLineOfSight;
 
   Vec2F m_inspectionAngles;
   Vec2F m_inspectionRanges;
   float m_ambientInspectionRadius;
   size_t m_fullInspectionSpaces;
   float m_minimumInspectionLevel;
+  Maybe<HashSet<EntityType>> m_inspectableTypeFilter;
 
   FireMode m_lastFireMode;
   List<InspectionResult> m_inspectionResults;
