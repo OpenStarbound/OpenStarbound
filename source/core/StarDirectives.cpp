@@ -236,6 +236,14 @@ bool Directives::operator==(String const& string) const {
   return equals(string);
 }
 
+bool Directives::operator!=(Directives const& other) const {
+  return !equals(other);
+}
+
+bool Directives::operator!=(String const& string) const {
+  return !equals(string);
+}
+
 DataStream& operator>>(DataStream& ds, Directives& directives) {
   String string;
   ds.read(string);
