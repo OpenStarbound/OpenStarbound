@@ -1457,7 +1457,7 @@ namespace LuaBindings {
 
     Json result;
     if (auto nametagEntity = as<NametagEntity>(entity)) {
-      Json result = JsonObject{
+      result = JsonObject{
         {"nametag", nametagEntity->nametag()},
         {"displayed", nametagEntity->displayNametag()},
         {"color", jsonFromColor(Color::rgb(nametagEntity->nametagColor()))},
