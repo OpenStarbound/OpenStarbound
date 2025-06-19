@@ -467,7 +467,7 @@ if(STAR_USE_JEMALLOC)
   endif()
 
   pkg_check_modules(PKG_WAYLAND "wayland-client>=1.18" wayland-egl wayland-cursor egl "xkbcommon>=0.5.0")
-  if(PKG_WAYLAND_FOUND)
+  if (PKG_WAYLAND_FOUND)
     message(STATUS "Wayland was found")
   else()
     message(STATUS "Wayland was not found")
