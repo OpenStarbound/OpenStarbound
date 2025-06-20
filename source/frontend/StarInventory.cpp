@@ -384,8 +384,10 @@ void InventoryPane::update(float dt) {
   for (auto p : m_itemGrids) {
     p.second->updateItemState();
     for (size_t i = 0; i < p.second->itemSlots(); ++i) {
-      auto itemWidget = p.second->itemWidgetAt(i);
-      itemWidget->showLinkIndicator(customBarItems.contains(itemWidget->item()));
+      if (auto itemWidget = p.second->itemWidgetAt(i))
+        itemWidget->showLinkIndicator(customBarItems.contains(itemWidget->item()));
+      else
+        Logger::warn("Could not find item widget {} in item grid {}!", i, p.first);
     }
   }
 

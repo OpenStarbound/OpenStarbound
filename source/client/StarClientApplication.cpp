@@ -330,7 +330,7 @@ void ClientApplication::update() {
   if (m_state >= MainAppState::Title) {
     if (auto p2pNetworkingService = appController()->p2pNetworkingService()) {
       if (auto join = p2pNetworkingService->pullPendingJoin()) {
-        m_pendingMultiPlayerConnection = PendingMultiPlayerConnection{join.takeValue(), {}, {}};
+        m_pendingMultiPlayerConnection = PendingMultiPlayerConnection{join.takeValue(), {}, {}, false};
         changeState(MainAppState::Title);
       }
       

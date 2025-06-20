@@ -379,7 +379,7 @@ void TitleScreen::initMultiPlayerMenu() {
       {"account", multiPlayerAccount()},
       {"port", multiPlayerPort()},
       //{"password", multiPlayerPassword()},
-      {"forceLegacy",multiPlayerForceLegacy()}
+      {"forceLegacy", multiPlayerForceLegacy()}
     };
 
     auto serverList = m_serverSelectPane->fetchChild<ListWidget>("serverSelectArea.serverList");
