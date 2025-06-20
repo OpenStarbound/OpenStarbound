@@ -447,6 +447,8 @@ void Humanoid::setWearableFromBack(uint8_t slot, BackArmor const& back) {
   wornBack.rotateWithHead = back.instanceValue("rotateWithHead", false).optBool().value();
 }
 
+const uint8_t ChestLegsSortOrder[21] = {255, 14, 8, 2, 0, 15, 9, 3, 1, 4, 5, 6, 7, 10, 11, 12, 13, 16, 17, 18, 19};
+
 void Humanoid::refreshWearables(Fashion& fashion) {
   bool wornHeadsChanged = fashion.wornHeadsChanged;
   bool wornChestsLegsChanged = fashion.wornChestsLegsChanged;
@@ -482,15 +484,8 @@ void Humanoid::refreshWearables(Fashion& fashion) {
     }
   }
   if (wornChestsLegsChanged) {
-    sort(fashion.wornChestsLegs, [&](uint8_t a, uint8_t b) {
-      if (!a || !b)
-        return a != 0;
-      else if (a < 8 && b < 8) {
-        bool aIsChest = fashion.wearables[--a].is<WornChest>();
-        if (aIsChest != fashion.wearables[--b].is<WornChest>())
-          return !aIsChest;
-      }
-      return a < b;
+    sort(fashion.wornChestsLegs, [](uint8_t a, uint8_t b) {
+      return ChestLegsSortOrder[a] < ChestLegsSortOrder[b];
     });
   }
   fashion.wornHeadsChanged = fashion.wornChestsLegsChanged = fashion.wornBacksChanged = fashion.helmetMasksChanged = false;
