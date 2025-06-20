@@ -20,7 +20,6 @@ cp \
   lib/linux/libdiscord_game_sdk.so \
   lib/linux/libsteam_api.so \
   scripts/ci/linux/sbinit.config \
-  scripts/ci/linux/run-client.sh \
   scripts/steam_appid.txt \
   client_distribution/linux/
 
