@@ -1775,6 +1775,7 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
   auto clientContext = make_shared<ServerClientContext>(clientId, remoteAddress, netRules, clientConnect->playerUuid,
       clientConnect->playerName, clientConnect->playerSpecies, administrator, clientConnect->shipChunks);
   m_clients.add(clientId, clientContext);
+  m_chatProcessor->connectClient(clientId, clientConnect->playerName);
   clientsLocker.unlock();
   m_connectionServer->addConnection(clientId, std::move(connection));
   clientContext->registerRpcHandlers(m_teamManager->rpcHandlers());
@@ -1796,7 +1797,6 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
     clientContext->setAdmin(false);
 
   clientContext->setShipUpgrades(clientConnect->shipUpgrades);
-  m_chatProcessor->connectClient(clientId, clientConnect->playerName);
 
   m_connectionServer->sendPackets(clientId, {
       make_shared<ConnectSuccessPacket>(clientId, m_universeSettings->uuid(), m_celestialDatabase->baseInformation()),
