@@ -44,8 +44,6 @@ private:
   enum class MainAppState {
     Quit,
     Startup,
-    Mods,
-    ModsWarning,
     Splash,
     Error,
     Title,
@@ -76,7 +74,7 @@ private:
   void setError(String const& error);
   void setError(String const& error, std::exception const& e);
 
-  void updateMods(float dt);
+  AssetsConstPtr loadAssets();
   void updateModsWarning(float dt);
   void updateSplash(float dt);
   void updateError(float dt);
