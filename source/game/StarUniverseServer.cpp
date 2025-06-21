@@ -1677,6 +1677,12 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
     m_deadConnections.append({std::move(connection), Time::monotonicMilliseconds()});
   };
 
+  if (connectionSettings.getBool("requireLatestVersion", false)
+  && (legacyClient || clientConnect->info.getUInt("openProtocolVersion", 0) < OpenProtocolVersion)) {
+    connectionFail(strf("OpenStarbound v{} or later is required.\nSource ID: {}...", OpenStarVersionString, String(StarSourceIdentifierString, 8)));
+    return;
+  }
+
   if (!remoteAddress) {
     administrator = true;
     Logger::info("UniverseServer: Logged in player '{}' locally", clientConnect->playerName);
