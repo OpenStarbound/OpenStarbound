@@ -112,6 +112,7 @@ public:
   bool respawnInWorld() const;
   void setRespawnInWorld(bool respawnInWorld);
 
+  void resendEntity(EntityId entityId);
   void removeEntity(EntityId entityId, bool andDie);
 
   WorldTemplateConstPtr currentTemplate() const;

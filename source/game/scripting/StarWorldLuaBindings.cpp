@@ -360,6 +360,7 @@ namespace LuaBindings {
       callbacks.registerCallback("mainPlayer", [clientWorld]() { return clientWorld->clientState().playerId(); });
       callbacks.registerCallback("isClient", []() { return true;  });
       callbacks.registerCallback("isServer", []() { return false; });
+      callbacks.registerCallbackWithSignature<void, EntityId>("resendEntity", bind(ClientWorldCallbacks::resendEntity, clientWorld, _1));
       callbacks.registerCallbackWithSignature<RectI>("clientWindow", bind(ClientWorldCallbacks::clientWindow, clientWorld));
       callbacks.registerCallback("players", [clientWorld]() {
         List<EntityId> playerIds;
@@ -1107,6 +1108,10 @@ namespace LuaBindings {
       ActorMovementParameters actorMovementParameters,
       PlatformerAStar::Parameters searchParameters) {
     return PlatformerAStar::PathFinder(world, start, end, std::move(actorMovementParameters), std::move(searchParameters));
+  }
+
+  void ClientWorldCallbacks::resendEntity(WorldClient* world, EntityId arg1) {
+    return world->resendEntity(arg1);
   }
 
   RectI ClientWorldCallbacks::clientWindow(WorldClient* world) {

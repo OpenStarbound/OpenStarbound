@@ -147,6 +147,18 @@ void WorldClient::setRespawnInWorld(bool respawnInWorld) {
   m_respawnInWorld = respawnInWorld;
 }
 
+void WorldClient::resendEntity(EntityId entityId) {
+  auto entity = m_entityMap->entity(entityId);
+  if (!entity || !entity->isMaster() || !m_masterEntitiesNetVersion.contains(entity->entityId()))
+    return;
+
+  auto fromVersion = m_masterEntitiesNetVersion.take(entity->entityId());
+  auto netRules = m_clientState.netCompatibilityRules();
+  ByteArray finalNetState = entity->writeNetState(fromVersion, netRules).first;
+  m_outgoingPackets.append(make_shared<EntityDestroyPacket>(entity->entityId(), std::move(finalNetState), false));
+  notifyEntityCreate(entity);
+}
+
 void WorldClient::removeEntity(EntityId entityId, bool andDie) {
   auto entity = m_entityMap->entity(entityId);
   if (!entity)

@@ -69,6 +69,7 @@ namespace LuaBindings {
   }
 
   namespace ClientWorldCallbacks {
+    void resendEntity(WorldClient* world, EntityId arg1);
     RectI clientWindow(WorldClient* world);
   }
 
