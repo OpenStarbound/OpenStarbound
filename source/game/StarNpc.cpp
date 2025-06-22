@@ -725,7 +725,7 @@ LuaCallbacks Npc::makeNpcCallbacks() {
 
   callbacks.registerCallback("getItemSlot", [this](String const& entry) -> Json {
       if (auto equipmentSlot = EquipmentSlotNames.leftPtr(entry)) {
-        return m_armor->itemDescriptor((uint8_t)equipmentSlot).toJson();
+        return m_armor->itemDescriptor((uint8_t)*equipmentSlot).toJson();
       } else if (entry.equalsIgnoreCase("primary"))
         return m_tools->primaryHandItemDescriptor().toJson();
       else if (entry.equalsIgnoreCase("alt"))
@@ -935,7 +935,7 @@ bool Npc::setItemSlot(String const& slot, ItemDescriptor itemDescriptor) {
   auto item = Root::singleton().itemDatabase()->item(ItemDescriptor(itemDescriptor), m_npcVariant.level, m_npcVariant.seed);
 
   if (auto equipmentSlot = EquipmentSlotNames.leftPtr(slot)) {
-    m_armor->setItem((uint8_t)equipmentSlot, as<ArmorItem>(item));
+    m_armor->setItem((uint8_t)*equipmentSlot, as<ArmorItem>(item));
   } else if (slot.equalsIgnoreCase("primary"))
     m_tools->setItems(item, m_tools->altHandItem());
   else if (slot.equalsIgnoreCase("alt"))
