@@ -14,6 +14,7 @@
 #include "StarUniverseClient.hpp"
 #include "StarTeamClient.hpp"
 #include "StarPlayerCodexes.hpp"
+#include "StarNetworkedAnimatorLuaBindings.hpp"
 #include "StarCodex.hpp"
 
 namespace Star {
@@ -29,6 +30,10 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
       player->diskLoad(saved);
       throw;
     }
+  });
+
+  callbacks.registerCallback("effectsAnimator", [player]() -> LuaCallbacks {
+    return LuaBindings::makeNetworkedAnimatorCallbacks(player->effectsAnimator().get());
   });
 
   callbacks.registerCallback("teamMembers", [player]() -> Maybe<JsonArray> {

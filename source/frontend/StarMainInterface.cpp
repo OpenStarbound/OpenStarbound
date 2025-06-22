@@ -531,6 +531,13 @@ void MainInterface::preUpdate(float dt) {
   auto player = m_client->mainPlayer();
   if (!m_client->paused())
     player->aim(cursorWorldPosition());
+  
+  if (m_paneManager.topPane({PaneLayer::Window, PaneLayer::ModalWindow}))
+    player->setBusyState(PlayerBusyState::Menu);
+  else if (m_chat->hasFocus())
+    player->setBusyState(PlayerBusyState::Chatting);
+  else
+    player->setBusyState(PlayerBusyState::None);
 }
 
 void MainInterface::update(float dt) {
@@ -815,13 +822,6 @@ void MainInterface::update(float dt) {
         || !container->isInteractive())
       m_containerInteractor->closeContainer();
   }
-
-  if (m_paneManager.topPane({PaneLayer::Window, PaneLayer::ModalWindow}))
-    m_client->mainPlayer()->setBusyState(PlayerBusyState::Menu);
-  else if (m_chat->hasFocus())
-    m_client->mainPlayer()->setBusyState(PlayerBusyState::Chatting);
-  else
-    m_client->mainPlayer()->setBusyState(PlayerBusyState::None);
 
   for (auto& pair : m_canvases) {
     pair.second->setPosition(Vec2I());
