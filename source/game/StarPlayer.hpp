@@ -520,6 +520,7 @@ private:
   void setNetStates();
   void getNetArmorSecrets();
   void setNetArmorSecret(EquipmentSlot slot, ArmorItemPtr const& armor);
+  void setNetArmorSecrets(bool includeEmpty = false);
 
   List<Drawable> drawables() const;
   List<OverheadBar> bars() const;

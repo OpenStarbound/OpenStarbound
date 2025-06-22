@@ -249,6 +249,7 @@ void Player::diskLoad(Json const& diskStore) {
 
   m_armor->reset();
   refreshArmor();
+  setNetArmorSecrets(true);
 
   m_codexes->learnInitialCodexes(species());
 
@@ -342,13 +343,7 @@ void Player::init(World* world, EntityId entityId, EntityMode mode) {
       world->addEntity(ItemDrop::createRandomizedDrop(p, m_movementController->position(), true));
     }
 
-    if (m_clientContext && m_clientContext->netCompatibilityRules().version() < 9) {
-      for (uint8_t i = 0; i != 12; ++i) {
-        auto slot = EquipmentSlot((uint8_t)EquipmentSlot::Cosmetic1 + i);
-        if (auto item = as<ArmorItem>(m_inventory->itemsAt(slot)))
-          setNetArmorSecret(slot, item);
-      }
-    }
+    setNetArmorSecrets();
   }
 
   m_xAimPositionNetState.setInterpolator(world->geometry().xLerpFunction());
@@ -1999,6 +1994,17 @@ void Player::setNetArmorSecret(EquipmentSlot slot, ArmorItemPtr const& armor) {
   if (m_armorSecretNetVersions.empty())
     setSecretProperty("armorWearer.replicating", true);
   setSecretProperty(strf("armorWearer.{}.version", slotName), ++m_armorSecretNetVersions[slot]);
+}
+
+void Player::setNetArmorSecrets(bool includeEmpty) {
+  if (m_clientContext && m_clientContext->netCompatibilityRules().version() < 9) {
+    for (uint8_t i = 0; i != 12; ++i) {
+      auto slot = EquipmentSlot((uint8_t)EquipmentSlot::Cosmetic1 + i);
+      auto item = as<ArmorItem>(m_inventory->itemsAt(slot));
+      if (item || includeEmpty)
+        setNetArmorSecret(slot, item);
+    }
+  }
 }
 
 void Player::getNetArmorSecrets() {
