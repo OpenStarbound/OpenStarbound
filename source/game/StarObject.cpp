@@ -29,7 +29,7 @@ Object::Object(ObjectConfigConstPtr config, Json const& parameters) {
   if (!parameters.isNull())
     m_parameters.reset(parameters.toObject());
 
-  auto jOrientations = m_parameters.ptr("orientations");
+  auto jOrientations = m_parameters.ptr("customOrientations");
   if (jOrientations && jOrientations->isType(Json::Type::Array)) {
     JsonArray base = m_config->config.get("orientations").toArray();
     auto orientations = jOrientations->toArray();
