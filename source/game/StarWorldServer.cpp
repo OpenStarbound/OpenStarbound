@@ -1017,10 +1017,10 @@ TileDamageResult WorldServer::damageTiles(List<Vec2I> const& positions, TileLaye
 
             if (tileDamage.type == TileDamageType::Protected)
               tileRes = TileDamageResult::Protected;
-            else
+            else if (broken || entity->canBeDamaged()) {
               tileRes = TileDamageResult::Normal;
-
-            damagedEntities.add(entity);
+              damagedEntities.add(entity);
+            }
           }
         }
       }
@@ -1031,7 +1031,7 @@ TileDamageResult WorldServer::damageTiles(List<Vec2I> const& positions, TileLaye
         auto damageParameters = WorldImpl::tileDamageParameters(tile, layer, tileDamage);
 
         if (layer == TileLayer::Foreground && isRealMaterial(tile->foreground)) {
-          if (!tile->rootSource) {
+          if (!tile->rootSource || damagedEntities.empty()) {
             tile->foregroundDamage.damage(damageParameters, sourcePosition, tileDamage);
 
             // if the tile is broken, send a message back to the source entity with position, layer, dungeonId, and whether the tile was harvested

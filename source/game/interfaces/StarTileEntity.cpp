@@ -42,6 +42,10 @@ bool TileEntity::damageTiles(List<Vec2I> const&, Vec2F const&, TileDamage const&
   return false;
 }
 
+bool TileEntity::canBeDamaged() const {
+  return true;
+}
+
 bool TileEntity::isInteractive() const {
   return false;
 }

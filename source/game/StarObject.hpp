@@ -105,6 +105,7 @@ public:
   virtual List<DamageNotification> applyDamage(DamageRequest const& damage) override;
 
   virtual bool damageTiles(List<Vec2I> const& position, Vec2F const& sourcePosition, TileDamage const& tileDamage) override;
+  virtual bool canBeDamaged() const override;
 
   RectF interactiveBoundBox() const override;
 
@@ -205,12 +206,15 @@ private:
   void renderParticles(RenderCallback* renderCallback);
   void renderSounds(RenderCallback* renderCallback);
 
+  List<ObjectOrientationPtr> const& getOrientations() const;
+
   Vec2F damageShake() const;
 
   void checkLiquidBroken();
   GameTimer m_liquidCheckTimer;
 
   ObjectConfigConstPtr m_config;
+  Maybe<List<ObjectOrientationPtr>> m_orientations;
   NetElementHashMap<String, Json> m_parameters;
 
   NetElementData<Maybe<String>> m_uniqueIdNetState;
