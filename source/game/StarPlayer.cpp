@@ -2236,6 +2236,7 @@ void Player::setFacialMask(String const& group, String const& type, String const
 }
 
 void Player::setSpecies(String const& species) {
+  Root::singleton().speciesDatabase()->species(species); // throw if non-existent
   m_identity.species = species;
   updateIdentity();
 }

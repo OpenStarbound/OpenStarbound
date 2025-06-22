@@ -279,7 +279,12 @@ Humanoid::Humanoid(HumanoidIdentity const& identity)
 }
 
 void Humanoid::setIdentity(HumanoidIdentity const& identity) {
+  String lastSpecies = std::move(m_identity.species);
   m_identity = identity;
+  if (m_identity.species != lastSpecies) {
+    m_baseConfig = Root::singleton().speciesDatabase()->species(identity.species)->humanoidConfig();
+    loadConfig(take(m_mergeConfig), true);
+  }
   m_headFrameset = getHeadFromIdentity();
   m_bodyFrameset = getBodyFromIdentity();
   m_emoteFrameset = getFacialEmotesFromIdentity();
@@ -301,8 +306,8 @@ HumanoidIdentity const& Humanoid::identity() const {
   return m_identity;
 }
 
-bool Humanoid::loadConfig(Json merger) {
-  if (m_mergeConfig == merger)
+bool Humanoid::loadConfig(Json merger, bool forceRefresh) {
+  if (m_mergeConfig == merger && !forceRefresh)
     return false;
 
   auto config = jsonMerge(m_baseConfig, merger);
