@@ -126,6 +126,7 @@ jobs:
         with:
           name: OpenStarbound-Windows-Installer
           path: installer/*
+          compression-level: 0
   
   build_linux:
     name: Build OpenStarbound Linux x86_64
