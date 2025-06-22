@@ -404,29 +404,14 @@ LuaCallbacks Pane::makePaneCallbacks() {
       return LuaBindings::makeWidgetCallbacks(newWidget.get(), reader());
     });
 
-  callbacks.registerCallback("removeWidget", [this](String const& widgetName) -> bool {
-      return this->removeChild(widgetName);
-    });
+  callbacks.registerCallback("removeWidget", [this](String const& widgetName) -> bool
+    { return this->removeChild(widgetName); });
 
-  callbacks.registerCallback("scale", []() -> int {
-      return GuiContext::singleton().interfaceScale();
-    });
-  
-  callbacks.registerCallback("isDisplayed", [this]() {
-    return isDisplayed();
-  });
-
-  callbacks.registerCallback("hasFocus", [this]() {
-    hasFocus();
-  });
-
-  callbacks.registerCallback("show", [this]() {
-    show();
-  });
-
-  callbacks.registerCallback("hide", [this]() {
-    hide();
-  });
+  callbacks.registerCallback("scale", []() -> int { return GuiContext::singleton().interfaceScale(); });
+  callbacks.registerCallback("isDisplayed", [this]() { return isDisplayed(); });
+  callbacks.registerCallback("hasFocus", [this]() { return hasFocus(); });
+  callbacks.registerCallback("show", [this]() { show(); });
+  callbacks.registerCallback("hide", [this]() { hide(); });
 
   return callbacks;
 }
