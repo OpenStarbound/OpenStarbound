@@ -246,6 +246,12 @@ ChestArmorPtr ArmorWearer::chestCosmeticItem() const { return as<ChestArmor>(ite
  LegsArmorPtr ArmorWearer:: legsCosmeticItem() const { return as< LegsArmor>(item(6)); }
  BackArmorPtr ArmorWearer:: backCosmeticItem() const { return as< BackArmor>(item(7)); }
 
+ItemDescriptor ArmorWearer::itemDescriptor(uint8_t slot) const {
+   if (auto foundItem = item(slot))
+     return foundItem->descriptor();
+   return {};
+}
+
 ItemDescriptor ArmorWearer::headItemDescriptor() const {
   if (auto item = headItem())
     return item->descriptor();

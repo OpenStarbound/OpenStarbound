@@ -56,6 +56,7 @@ public:
   LegsArmorPtr legsCosmeticItem() const;
   BackArmorPtr backCosmeticItem() const;
 
+  ItemDescriptor itemDescriptor(uint8_t slot) const;
   ItemDescriptor headItemDescriptor() const;
   ItemDescriptor chestItemDescriptor() const;
   ItemDescriptor legsItemDescriptor() const;

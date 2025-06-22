@@ -724,23 +724,9 @@ LuaCallbacks Npc::makeNpcCallbacks() {
     });
 
   callbacks.registerCallback("getItemSlot", [this](String const& entry) -> Json {
-      if (entry.equalsIgnoreCase("head"))
-        return m_armor->headItemDescriptor().toJson();
-      else if (entry.equalsIgnoreCase("headCosmetic"))
-        return m_armor->headCosmeticItemDescriptor().toJson();
-      else if (entry.equalsIgnoreCase("chest"))
-        return m_armor->chestItemDescriptor().toJson();
-      else if (entry.equalsIgnoreCase("chestCosmetic"))
-        return m_armor->chestCosmeticItemDescriptor().toJson();
-      else if (entry.equalsIgnoreCase("legs"))
-        return m_armor->legsItemDescriptor().toJson();
-      else if (entry.equalsIgnoreCase("legsCosmetic"))
-        return m_armor->legsCosmeticItemDescriptor().toJson();
-      else if (entry.equalsIgnoreCase("back"))
-        return m_armor->backItemDescriptor().toJson();
-      else if (entry.equalsIgnoreCase("backCosmetic"))
-        return m_armor->backCosmeticItemDescriptor().toJson();
-      else if (entry.equalsIgnoreCase("primary"))
+      if (auto equipmentSlot = EquipmentSlotNames.leftPtr(entry)) {
+        return m_armor->itemDescriptor((uint8_t)equipmentSlot).toJson();
+      } else if (entry.equalsIgnoreCase("primary"))
         return m_tools->primaryHandItemDescriptor().toJson();
       else if (entry.equalsIgnoreCase("alt"))
         return m_tools->altHandItemDescriptor().toJson();
@@ -948,23 +934,9 @@ Vec2F Npc::questIndicatorPosition() const {
 bool Npc::setItemSlot(String const& slot, ItemDescriptor itemDescriptor) {
   auto item = Root::singleton().itemDatabase()->item(ItemDescriptor(itemDescriptor), m_npcVariant.level, m_npcVariant.seed);
 
-  if (slot.equalsIgnoreCase("head"))
-    m_armor->setHeadItem(as<HeadArmor>(item));
-  else if (slot.equalsIgnoreCase("headCosmetic"))
-    m_armor->setHeadCosmeticItem(as<HeadArmor>(item));
-  else if (slot.equalsIgnoreCase("chest"))
-    m_armor->setChestItem(as<ChestArmor>(item));
-  else if (slot.equalsIgnoreCase("chestCosmetic"))
-    m_armor->setChestCosmeticItem(as<ChestArmor>(item));
-  else if (slot.equalsIgnoreCase("legs"))
-    m_armor->setLegsItem(as<LegsArmor>(item));
-  else if (slot.equalsIgnoreCase("legsCosmetic"))
-    m_armor->setLegsCosmeticItem(as<LegsArmor>(item));
-  else if (slot.equalsIgnoreCase("back"))
-    m_armor->setBackItem(as<BackArmor>(item));
-  else if (slot.equalsIgnoreCase("backCosmetic"))
-    m_armor->setBackCosmeticItem(as<BackArmor>(item));
-  else if (slot.equalsIgnoreCase("primary"))
+  if (auto equipmentSlot = EquipmentSlotNames.leftPtr(slot)) {
+    m_armor->setItem((uint8_t)equipmentSlot, as<ArmorItem>(item));
+  } else if (slot.equalsIgnoreCase("primary"))
     m_tools->setItems(item, m_tools->altHandItem());
   else if (slot.equalsIgnoreCase("alt"))
     m_tools->setItems(m_tools->primaryHandItem(), item);
