@@ -777,7 +777,9 @@ void ClientApplication::setError(String const& error, std::exception const& e) {
 void ClientApplication::updateMods(float dt) {
   m_cinematicOverlay->update(dt);
   auto ugcService = appController()->userGeneratedContentService();
-  if (ugcService && m_root->settings().includeUGC) {
+  auto configuration = m_root->configuration();
+  bool includeUGC = configuration->get("includeUGC", m_root->settings().includeUGC).toBool();
+  if (includeUGC) {
     Logger::info("Checking for user generated content...");
     if (ugcService->triggerContentDownload()) {
       StringList modDirectories;
@@ -797,7 +799,6 @@ void ClientApplication::updateMods(float dt) {
         Logger::info("Reloading to include all user generated content");
         Root::singleton().reloadWithMods(modDirectories);
 
-        auto configuration = m_root->configuration();
         auto assets = m_root->assets();
 
         if (configuration->get("modsWarningShown").optBool().value()) {
