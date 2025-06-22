@@ -46,7 +46,7 @@ struct ThreadImpl {
   static DWORD WINAPI runThread(void* data) {
     ThreadImpl* ptr = static_cast<ThreadImpl*>(data);
     try {
-      unsigned long exceptionStackSize = 16384;
+      unsigned long exceptionStackSize = 131072;
       SetThreadStackGuarantee(&exceptionStackSize);
       ptr->function();
     } catch (std::exception const& e) {

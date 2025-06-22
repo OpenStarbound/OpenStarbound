@@ -40,7 +40,7 @@ Json const AdditionalDefaultConfiguration = Json::parseJson(R"JSON(
 int main(int argc, char** argv) {
   try {
     #if defined STAR_SYSTEM_WINDOWS
-    unsigned long exceptionStackSize = 16384;
+    unsigned long exceptionStackSize = 131072;
     SetThreadStackGuarantee(&exceptionStackSize);
     #endif
     RootLoader rootLoader({{}, AdditionalDefaultConfiguration, String("starbound_server.log"), LogLevel::Info, false, String("starbound_server.config")});
