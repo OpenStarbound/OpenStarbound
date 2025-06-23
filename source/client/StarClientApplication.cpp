@@ -779,7 +779,7 @@ void ClientApplication::updateMods(float dt) {
   auto ugcService = appController()->userGeneratedContentService();
   auto configuration = m_root->configuration();
   bool includeUGC = configuration->get("includeUGC", m_root->settings().includeUGC).toBool();
-  if (includeUGC) {
+  if (ugcService && includeUGC) {
     Logger::info("Checking for user generated content...");
     if (ugcService->triggerContentDownload()) {
       StringList modDirectories;
