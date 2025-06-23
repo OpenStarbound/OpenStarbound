@@ -71,7 +71,7 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
       if (!swapItem || swapItem->empty() || swapItem->couldStack(slotItem)) {
         uint64_t count = swapItem ? swapItem->couldStack(slotItem) : slotItem->maxStack();
         if (context()->shiftHeld())
-          count = max(1, min<int>(count, slotItem->count() / 2));
+          count = max<uint64_t>(1, min<uint64_t>(count, slotItem->count() / 2));
         else
           count = 1;
 
