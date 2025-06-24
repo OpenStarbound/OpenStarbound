@@ -649,7 +649,7 @@ private:
       if (area) {
         RectI& r = area->first;
         SDL_Rect rect{
-          r.xMin(), parent->m_windowSize[1] - r.yMax(),
+          r.xMin(), (int)parent->m_windowSize.y() - r.yMax(),
           r.width(), r.height()
         };
         SDL_SetTextInputArea(parent->m_sdlWindow, &rect, area->second);
