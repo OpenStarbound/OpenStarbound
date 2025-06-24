@@ -56,7 +56,10 @@ public:
   virtual bool closeAudioInputDevice() = 0;
 
   virtual bool hasClipboard() = 0;
-  virtual void setClipboard(String text) = 0;
+  virtual bool setClipboard(String text) = 0;
+  virtual bool setClipboardData(StringMap<ByteArray>) = 0;
+  virtual bool setClipboardImage(Image const& image, ByteArray* png = {}) = 0;
+  virtual bool setClipboardFile(String const& path) = 0;
   virtual Maybe<String> getClipboard() = 0;
 
   virtual bool isFocused() const = 0;

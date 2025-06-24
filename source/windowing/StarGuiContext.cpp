@@ -449,8 +449,20 @@ String GuiContext::getClipboard() const {
   return m_applicationController->getClipboard().value();
 }
 
-void GuiContext::setClipboard(String text) {
-  m_applicationController->setClipboard(std::move(text));
+bool GuiContext::setClipboard(String text) {
+  return m_applicationController->setClipboard(std::move(text));
+}
+
+bool GuiContext::setClipboardData(StringMap<ByteArray> data) {
+  return m_applicationController->setClipboardData(std::move(data));
+}
+
+bool GuiContext::setClipboardImage(Image const& image, ByteArray* png) {
+  return m_applicationController->setClipboardImage(image, png);
+}
+
+bool GuiContext::setClipboardFile(String const& path) {
+  return m_applicationController->setClipboardFile(path);
 }
 
 void GuiContext::cleanup() {

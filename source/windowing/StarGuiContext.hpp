@@ -126,7 +126,10 @@ public:
   void setShiftHeld(bool held);
 
   String getClipboard() const;
-  void setClipboard(String text);
+  bool setClipboard(String text);
+  bool setClipboardData(StringMap<ByteArray> data);
+  bool setClipboardImage(Image const& image, ByteArray* png);
+  bool setClipboardFile(String const& path);
 
   void cleanup();
 
