@@ -78,7 +78,7 @@ String ClientCommandProcessor::previewQuestPane(StringList const& arguments, fun
 StringList ClientCommandProcessor::handleCommand(String const& commandLine, bool userInput) {
   Maybe<Input::ClipboardUnlock> unlock;
   if (userInput) // allow clipboard usage during this code
-    unlock = std::move(Input::singleton().unlockClipboard());
+    unlock = Input::singleton().unlockClipboard();
   try {
     if (!commandLine.beginsWith("/"))
       throw StarException("ClientCommandProcessor expected command, does not start with '/'");

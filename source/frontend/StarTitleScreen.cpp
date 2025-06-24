@@ -403,7 +403,7 @@ void TitleScreen::initMultiPlayerMenu() {
 
   auto serverList = m_serverSelectPane->fetchChild<ListWidget>("serverSelectArea.serverList");
   
-  serverList->registerMemberCallback("delete", [=](Widget* widget) {
+  serverList->registerMemberCallback("delete", [=](Widget*) {
     if (auto const pos = serverList->selectedItem(); pos != NPos) {
       m_serverList = m_serverList.eraseIndex(pos);
     }
@@ -411,7 +411,7 @@ void TitleScreen::initMultiPlayerMenu() {
     Root::singleton().configuration()->set("serverList", m_serverList);
   });
 
-  serverList->setCallback([=](Widget* widget) {
+  serverList->setCallback([=](Widget*) {
     if (auto selectedItem = serverList->selectedWidget()) {
       if (selectedItem->findChild<ButtonWidget>("delete")->isHovered())
         return;

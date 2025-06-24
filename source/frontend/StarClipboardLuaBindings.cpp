@@ -33,7 +33,7 @@ LuaCallbacks LuaBindings::makeClipboardCallbacks(ApplicationControllerPtr appCon
     return false;
   });
 
-  callbacks.registerCallback("setData", [=](LuaEngine const& engine, LuaTable const& data) -> bool {
+  callbacks.registerCallback("setData", [=](LuaTable const& data) -> bool {
     if (appController->isFocused()) {
       StringMap<ByteArray> clipboardData;
       data.iterate([&](LuaValue const& key, LuaValue const& value) {
@@ -45,7 +45,7 @@ LuaCallbacks LuaBindings::makeClipboardCallbacks(ApplicationControllerPtr appCon
     return false;
   });
 
-  callbacks.registerCallback("setImage", [=](LuaEngine const& engine, LuaValue const& imgOrPath) -> bool {
+  callbacks.registerCallback("setImage", [=](LuaValue const& imgOrPath) -> bool {
     if (appController->isFocused()) {
       auto buffer = make_shared<Buffer>();
       if (imgOrPath.is<LuaUserData>() && imgOrPath.get<LuaUserData>().is<Image>()) {

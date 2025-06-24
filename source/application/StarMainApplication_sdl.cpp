@@ -95,6 +95,7 @@ static bool duringClipboard(SDL_Window* window, std::function<void()> task) {
   EmptyClipboard();
   task();
   CloseClipboard();
+  return true;
 }
 #endif
 

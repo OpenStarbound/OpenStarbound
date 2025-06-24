@@ -55,7 +55,7 @@ STAR_CLASS(Root);
 // should be completed before any code dependent on Root is started in any
 // thread, and all Root dependent code in any thread should be finished before
 // letting Root destruct.
-class Root : public RootBase {
+class Root final : public RootBase {
 public:
   struct Settings {
     Assets::Settings assetsSettings;
