@@ -148,6 +148,7 @@ public:
   List<Drawable> portrait(PortraitMode mode) const override;
   bool underwater() const;
 
+  bool shifting() const;
   void setShifting(bool shifting);
   void special(int specialKey);
 

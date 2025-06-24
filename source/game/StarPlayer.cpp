@@ -697,6 +697,10 @@ void Player::revive(Vec2F const& footPosition) {
   m_inventory->consumeCurrency("money", min((uint64_t)round(moneyCost), m_inventory->currency("money")));
 }
 
+bool Player::shifting() const {
+  return m_shifting;
+}
+
 void Player::setShifting(bool shifting) {
   m_shifting = shifting;
 }
@@ -1758,7 +1762,8 @@ void Player::processControls() {
         loungeableEntity->loungeControl(anchorState->positionIndex, LoungeControl::PrimaryFire);
       if (m_tools->firingAlt())
         loungeableEntity->loungeControl(anchorState->positionIndex, LoungeControl::AltFire);
-
+      if (m_shifting)
+        loungeableEntity->loungeControl(anchorState->positionIndex, LoungeControl::Walk);
       loungeableEntity->loungeAim(anchorState->positionIndex, m_aimPosition);
     }
     move = false;
