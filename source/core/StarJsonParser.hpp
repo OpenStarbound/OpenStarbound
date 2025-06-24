@@ -620,7 +620,7 @@ public:
 
     write('"');
     char32_t c = *s;
-    while (c && (len > 0)) {
+    while (len > 0) {
       if (!isPrintable(c)) {
         switch (c) {
           case '"':
