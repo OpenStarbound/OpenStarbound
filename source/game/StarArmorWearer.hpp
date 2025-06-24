@@ -89,7 +89,6 @@ private:
   Maybe<Gender> m_lastGender;
   Maybe<Direction> m_lastDirection;
   bool m_lastNude;
-  Direction facingDirection;
 };
 
 }

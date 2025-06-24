@@ -390,7 +390,7 @@ void Humanoid::removeWearable(uint8_t slot) {
   current.reset();
 }
 
-void Humanoid::setWearableFromHead(uint8_t slot, HeadArmor const& head) {
+void Humanoid::setWearableFromHead(uint8_t slot, HeadArmor const& head, Gender gender) {
   auto& fashion = *m_fashion;
   Wearable& current = fashion.wearables.at(slot);
   if (auto currentHead = current.ptr<WornHead>())
@@ -403,11 +403,11 @@ void Humanoid::setWearableFromHead(uint8_t slot, HeadArmor const& head) {
   current.makeType(current.typeIndexOf<WornHead>());
   auto& wornHead = current.get<WornHead>();
   wornHead.directives = head.directives(m_facingDirection == Direction::Left);
-  wornHead.frameset = head.frameset(m_identity.gender);
+  wornHead.frameset = head.frameset(gender);
   wornHead.maskDirectives = head.maskDirectives();
 }
 
-void Humanoid::setWearableFromChest(uint8_t slot, ChestArmor const& chest) {
+void Humanoid::setWearableFromChest(uint8_t slot, ChestArmor const& chest, Gender gender) {
   auto& fashion = *m_fashion;
   Wearable& current = fashion.wearables.at(slot);
   if (!current.is<WornChest>() && !current.is<WornLegs>()) {
@@ -418,12 +418,12 @@ void Humanoid::setWearableFromChest(uint8_t slot, ChestArmor const& chest) {
   current.makeType(current.typeIndexOf<WornChest>());
   auto& wornChest = current.get<WornChest>();
   wornChest.directives = chest.directives(m_facingDirection == Direction::Left);
-  wornChest.frameset = chest.bodyFrameset(m_identity.gender);
-  wornChest.backSleeveFrameset = chest.backSleeveFrameset(m_identity.gender);
-  wornChest.frontSleeveFrameset = chest.frontSleeveFrameset(m_identity.gender);
+  wornChest.frameset = chest.bodyFrameset(gender);
+  wornChest.backSleeveFrameset = chest.backSleeveFrameset(gender);
+  wornChest.frontSleeveFrameset = chest.frontSleeveFrameset(gender);
 }
 
-void Humanoid::setWearableFromLegs(uint8_t slot, LegsArmor const& legs) {
+void Humanoid::setWearableFromLegs(uint8_t slot, LegsArmor const& legs, Gender gender) {
   auto& fashion = *m_fashion;
   Wearable& current = fashion.wearables.at(slot);
   if (!current.is<WornChest>() && !current.is<WornLegs>()) {
@@ -434,10 +434,10 @@ void Humanoid::setWearableFromLegs(uint8_t slot, LegsArmor const& legs) {
   current.makeType(current.typeIndexOf<WornLegs>());
   auto& wornLegs = current.get<WornLegs>();
   wornLegs.directives = legs.directives(m_facingDirection == Direction::Left);
-  wornLegs.frameset = legs.frameset(m_identity.gender);
+  wornLegs.frameset = legs.frameset(gender);
 }
 
-void Humanoid::setWearableFromBack(uint8_t slot, BackArmor const& back) {
+void Humanoid::setWearableFromBack(uint8_t slot, BackArmor const& back, Gender gender) {
   auto& fashion = *m_fashion;
   Wearable& current = fashion.wearables.at(slot);
   if (!current.is<WornBack>()) {
@@ -448,7 +448,7 @@ void Humanoid::setWearableFromBack(uint8_t slot, BackArmor const& back) {
   current.makeType(current.typeIndexOf<WornBack>());
   auto& wornBack = current.get<WornBack>();
   wornBack.directives = back.directives(m_facingDirection == Direction::Left);
-  wornBack.frameset = back.frameset(m_identity.gender);
+  wornBack.frameset = back.frameset(gender);
   wornBack.rotateWithHead = back.instanceValue("rotateWithHead", false).optBool().value();
 }
 
@@ -1000,11 +1000,10 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
   auto drawFrontArmAndSleeves = [&](bool holdingItem) {
     auto& bodyDirectives = getBodyDirectives();
     if (holdingItem && !m_bodyHidden)
-      addDrawable(frontArmDrawable(m_frontArmFrameset, getBodyDirectives()), m_bodyFullbright);
+      addDrawable(frontArmDrawable(m_frontArmFrameset, bodyDirectives), m_bodyFullbright);
     else if (!m_frontArmFrameset.empty() && !m_bodyHidden) {
       String image;
       Vec2F position;
-      auto& bodyDirectives = getBodyDirectives();
       auto prefix = bodyDirectives.prefix();
       if (dance.isValid() && danceStep->frontArmFrame) {
         image = strf("{}:{}{}", m_frontArmFrameset, *danceStep->frontArmFrame, prefix);
@@ -1290,13 +1289,13 @@ List<Drawable> Humanoid::renderDummy(Gender gender, HeadArmor const* head, Chest
   try {
     m_fashion = std::make_shared<Fashion>();
     if (head)
-      setWearableFromHead(3, *head);
+      setWearableFromHead(3, *head, gender);
     if (chest)
-      setWearableFromChest(2, *chest);
+      setWearableFromChest(2, *chest, gender);
     if (legs)
-      setWearableFromLegs(1, *legs);
+      setWearableFromLegs(1, *legs, gender);
     if (back)
-      setWearableFromBack(0, *back);
+      setWearableFromBack(0, *back, gender);
 
     drawables = render(false, false);
     Drawable::scaleAll(drawables, TilePixels);

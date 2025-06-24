@@ -160,7 +160,7 @@ bool TextBoxWidget::setText(String const& text, bool callback, bool moveCursor) 
 
   m_text = text;
   size_t size = m_text.size();
-  if (moveCursor || m_cursorOffset > size)
+  if (moveCursor || (size_t)m_cursorOffset > size)
     m_cursorOffset = size;
 
   m_repeatCode = SpecialRepeatKeyCodes::None;

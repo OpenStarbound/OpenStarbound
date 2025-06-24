@@ -250,7 +250,7 @@ StringList TextPainter::wrapText(StringView s, Maybe<unsigned> wrapWidth) {
   StringList result;
 
   String current;
-  int lastLine = 0;
+  unsigned lastLine = 0;
   TextPainter::WrapTextCallback textCallback = [&](StringView text, unsigned line) {
     if (lastLine != line) {
       result.append(std::move(current));

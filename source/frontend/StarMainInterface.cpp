@@ -527,7 +527,7 @@ void MainInterface::handleInteractAction(InteractAction interactAction) {
   }
 }
 
-void MainInterface::preUpdate(float dt) {
+void MainInterface::preUpdate(float) {
   auto player = m_client->mainPlayer();
   if (!m_client->paused())
     player->aim(cursorWorldPosition());

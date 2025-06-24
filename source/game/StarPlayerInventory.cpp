@@ -348,6 +348,7 @@ bool PlayerInventory::consumeItems(ItemDescriptor const& descriptor, bool exactM
   quantity = min(leftoverCount, consumeFromEquipment);
   if (quantity > 0) {
     auto leftoverQuantity = quantity;
+    _unused(leftoverQuantity);
     for (auto const& p : m_equipment) {
       if (p.second && p.second->matches(one, exactMatch)) {
         auto toConsume = min(p.second->count(), quantity);

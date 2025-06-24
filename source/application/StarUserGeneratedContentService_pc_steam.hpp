@@ -6,7 +6,7 @@ namespace Star {
 
 STAR_CLASS(SteamUserGeneratedContentService);
 
-class SteamUserGeneratedContentService : public UserGeneratedContentService {
+class SteamUserGeneratedContentService final : public UserGeneratedContentService {
 public:
   SteamUserGeneratedContentService(PcPlatformServicesStatePtr state);
 

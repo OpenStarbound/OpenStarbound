@@ -348,7 +348,7 @@ Maybe<String> Pane::cursorOverride(Vec2I const&) {
   return {};
 }
 
-Maybe<ItemPtr> Pane::shiftItemFromInventory(ItemPtr const& input) {
+Maybe<ItemPtr> Pane::shiftItemFromInventory(ItemPtr const&) {
   return {};
 }
 

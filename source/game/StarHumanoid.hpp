@@ -192,11 +192,10 @@ public:
   inline T const* getLastWearableOfType() const;
 
   void removeWearable(uint8_t slot);
-  void setWearable(uint8_t slot, Wearable&& wearable);
-  void setWearableFromHead(uint8_t slot, HeadArmor const& head);
-  void setWearableFromChest(uint8_t slot, ChestArmor const& chest);
-  void setWearableFromLegs(uint8_t slot, LegsArmor const& legs);
-  void setWearableFromBack(uint8_t slot, BackArmor const& back);
+  void setWearableFromHead(uint8_t slot, HeadArmor const& head, Gender gender);
+  void setWearableFromChest(uint8_t slot, ChestArmor const& chest, Gender gender);
+  void setWearableFromLegs(uint8_t slot, LegsArmor const& legs, Gender gender);
+  void setWearableFromBack(uint8_t slot, BackArmor const& back, Gender gender);
   void refreshWearables(Fashion& fashion);
 
   // Legacy getters for all of the above, returns last found

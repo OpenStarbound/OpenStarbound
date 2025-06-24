@@ -504,7 +504,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
     {
       MutexLocker m_prepLocker(m_lightMapPrepMutex);
       m_pendingLights = std::move(renderLightSources);
-      m_pendingParticleLights = std::move(m_particles->lightSources());
+      m_pendingParticleLights = m_particles->lightSources();
       m_pendingLightRange = window.padded(1);
       m_pendingLightReady = true;
     } //Kae: Padded by one to fix light spread issues at the edges of the frame.
@@ -598,7 +598,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
       return a->entityId() < b->entityId();
     });
 
-  m_tileArray->tileEachTo(renderData.tiles, tileRange, [&](RenderTile& renderTile, Vec2I const& position, ClientTile const& clientTile) {
+  m_tileArray->tileEachTo(renderData.tiles, tileRange, [&](RenderTile& renderTile, Vec2I const&, ClientTile const& clientTile) {
       renderTile.foreground = clientTile.foreground;
       renderTile.foregroundMod = clientTile.foregroundMod;
 

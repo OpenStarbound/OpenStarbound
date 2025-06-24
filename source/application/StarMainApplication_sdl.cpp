@@ -399,9 +399,8 @@ public:
     SDL_StopTextInput(m_sdlWindow);
 
     SDL_AudioSpec desired = {SDL_AUDIO_S16, 2, 44100};
-
-    SDL_AudioSpec obtained = {};
-    m_sdlAudioOutputStream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &desired, [](void* userdata, SDL_AudioStream* stream, int len, int total) {
+    m_sdlAudioOutputStream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &desired,
+    [](void* userdata, SDL_AudioStream* stream, int len, int) {
       if (len > 0) {
         auto sdlPlatform = ((SdlPlatform*)(userdata));
         sdlPlatform->m_audioOutputData.resize(len);
@@ -442,7 +441,8 @@ public:
     closeAudioInputDevice();
     m_audioInputCallback = std::move(callback);
     SDL_AudioSpec desired = {SDL_AUDIO_S16, channels, freq};
-    m_sdlAudioInputStream = SDL_OpenAudioDeviceStream(deviceId, &desired, [](void* userdata, SDL_AudioStream* stream, int len, int total) {
+    m_sdlAudioInputStream = SDL_OpenAudioDeviceStream(deviceId, &desired,
+    [](void* userdata, SDL_AudioStream* stream, int len, int) {
       if (len > 0) {
         auto sdlPlatform = ((SdlPlatform*)(userdata));
         sdlPlatform->m_audioInputData.resize(len);
@@ -1038,6 +1038,7 @@ private:
       return false;
     });
     #else
+    _unused(path);
     return false;
     #endif
   }

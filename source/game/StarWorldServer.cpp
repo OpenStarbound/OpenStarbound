@@ -1683,10 +1683,9 @@ void WorldServer::updateTileEntityTiles(TileEntityPtr const& entity, bool removi
           tile->foregroundMod = NoModId;
           updatedTile = true;
         }
-        bool hadRoot = tile->rootSource.isValid();
         if (isRealMaterial(materialSpace.material))
           tile->rootSource = entity->tilePosition();
-        auto& space = passedSpaces.emplaceAppend(materialSpace);
+        passedSpaces.emplaceAppend(materialSpace);
         updatedTile |= updatedCollision = tile->updateObjectCollision(materialDatabase->materialCollisionKind(materialSpace.material));
       }
       if (updatedCollision) {

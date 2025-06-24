@@ -93,13 +93,13 @@ bool ArmorWearer::setupHumanoid(Humanoid& humanoid, bool forceNude) {
         addHumanoidConfig(*armor.item);
         if (armor.needsSync) {
           if (auto head = as<HeadArmor>(armor.item))
-            humanoid.setWearableFromHead(i, *head);
+            humanoid.setWearableFromHead(i, *head, gender);
           else if (auto chest = as<ChestArmor>(armor.item))
-            humanoid.setWearableFromChest(i, *chest);
+            humanoid.setWearableFromChest(i, *chest, gender);
           else if (auto legs = as<LegsArmor>(armor.item))
-            humanoid.setWearableFromLegs(i, *legs);
+            humanoid.setWearableFromLegs(i, *legs, gender);
           else if (auto back = as<BackArmor>(armor.item))
-            humanoid.setWearableFromBack(i, *back);
+            humanoid.setWearableFromBack(i, *back, gender);
           armor.needsSync = false;
         }
       } else
@@ -179,10 +179,8 @@ Json ArmorWearer::diskStore() const {
 void ArmorWearer::diskLoad(Json const& diskStore) {
   auto itemDb = Root::singleton().itemDatabase();
   auto load = [&](uint8_t slot, String const& id) {
-    auto& armor = m_armors[slot];
-    if (auto item = as<ArmorItem>(itemDb->diskLoad(diskStore.get(id, {})))) {
+    if (auto item = as<ArmorItem>(itemDb->diskLoad(diskStore.get(id, {}))))
       setItem(slot, item);
-    }
   };
 
   load(0, "headItem");

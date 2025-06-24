@@ -3,6 +3,8 @@
 
 #include "gtest/gtest.h"
 
+#pragma clang diagnostic ignored "-Wself-assign-overloaded"
+
 using namespace Star;
 
 int g_test1Count = 0;
