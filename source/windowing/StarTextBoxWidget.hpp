@@ -47,7 +47,7 @@ public:
 
   void setDrawBorder(bool drawBorder);
   void setTextAlign(HorizontalAnchor hAnchor);
-  int getCursorOffset();
+  int getCursorDrawOffset() const;
 
   virtual void mouseOver() override;
   virtual void mouseOut() override;
@@ -55,7 +55,8 @@ public:
 
   virtual void blur() override;
 
-  virtual KeyboardCaptureMode keyboardCaptured() const override;
+  virtual KeyboardCaptureMode keyboardCaptureMode() const override;
+  virtual Maybe<pair<RectI, int>> keyboardCaptureArea() const override;
 
 protected:
   virtual void renderImpl() override;

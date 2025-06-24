@@ -123,8 +123,8 @@ public:
   };
 
   struct MouseInputState : InputState {
-    List<Vec2I> pressPositions;
-    List<Vec2I> releasePositions;
+    List<Vec2F> pressPositions;
+    List<Vec2F> releasePositions;
   };
 
   typedef InputState ControllerInputState;
@@ -168,11 +168,11 @@ public:
   bool            keyHeld(Key key);
   Maybe<unsigned> keyUp  (Key key);
 
-  Maybe<List<Vec2I>> mouseDown(MouseButton button);
+  Maybe<List<Vec2F>> mouseDown(MouseButton button);
   bool               mouseHeld(MouseButton button);
-  Maybe<List<Vec2I>> mouseUp  (MouseButton button);
+  Maybe<List<Vec2F>> mouseUp  (MouseButton button);
 
-  Vec2I mousePosition() const;
+  Vec2F mousePosition() const;
 
   void resetBinds(String const& categoryId, String const& bindId);
   void setBinds(String const& categoryId, String const& bindId, Json const& binds);
@@ -227,7 +227,7 @@ private:
 
   KeyMod m_pressedMods;
   bool m_textInputActive;
-  Vec2I m_mousePosition;
+  Vec2F m_mousePosition;
 
   unsigned m_clipboardAllowed = 0;
 };

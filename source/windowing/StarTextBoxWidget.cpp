@@ -38,17 +38,18 @@ void TextBoxWidget::renderImpl() {
     blueRate = 0.2f;
   else
     blueRate = 0.0f;
-
+  
+  float cursorOffset = (float)getCursorDrawOffset() / context()->interfaceScale();
   Vec2F pos(screenPosition());
   if (m_hAnchor == HorizontalAnchor::HMidAnchor)
-    pos += Vec2F(size()[0] / 2.0f, 0);
+    pos[0] += size()[0] / 2.0f;
   else if (m_hAnchor == HorizontalAnchor::RightAnchor)
-    pos += Vec2F(size()[0], 0);
+    pos[0] += size()[0];
 
   context()->setTextStyle(m_textStyle);
   if ((m_maxWidth != -1) && m_overfillMode) {
-    int shift = std::max(0, getCursorOffset() - m_maxWidth);
-    pos += Vec2F(-shift, 0);
+    float shift = std::max(0.f, cursorOffset - m_maxWidth);
+    pos[0] -= shift;
   }
 
   if (m_text.empty()) {
@@ -72,12 +73,12 @@ void TextBoxWidget::renderImpl() {
 
     float fontSize = m_textStyle.fontSize;
     context()->drawInterfaceLine(
-        pos + Vec2F(getCursorOffset(), fontSize * m_cursorVert[0]),
-        pos + Vec2F(getCursorOffset(), fontSize * m_cursorVert[1]),
+        pos + Vec2F(cursorOffset, fontSize * m_cursorVert[0]),
+        pos + Vec2F(cursorOffset, fontSize * m_cursorVert[1]),
         cursorColor.toRgba());
     context()->drawInterfaceLine(
-        pos + Vec2F(getCursorOffset() + fontSize * m_cursorHoriz[0], fontSize * m_cursorVert[0]),
-        pos + Vec2F(getCursorOffset() + fontSize * m_cursorHoriz[1], fontSize * m_cursorVert[0]),
+        pos + Vec2F(cursorOffset + fontSize * m_cursorHoriz[0], fontSize * m_cursorVert[0]),
+        pos + Vec2F(cursorOffset + fontSize * m_cursorHoriz[1], fontSize * m_cursorVert[0]),
         cursorColor.toRgba());
   }
 
@@ -85,7 +86,7 @@ void TextBoxWidget::renderImpl() {
     context()->drawInterfacePolyLines(PolyF(screenBoundRect()), Color(Color::White).toRgba());
 }
 
-int TextBoxWidget::getCursorOffset() { // horizontal only
+int TextBoxWidget::getCursorDrawOffset() const { // horizontal only
   float scale;
   context()->setTextStyle(m_textStyle);
   if (m_hAnchor == HorizontalAnchor::LeftAnchor) {
@@ -95,24 +96,24 @@ int TextBoxWidget::getCursorOffset() { // horizontal only
   } else if (m_hAnchor == HorizontalAnchor::RightAnchor) {
     scale = -1.0;
     if (m_textHidden) {
-      int width = context()->stringInterfaceWidth("*");
+      int width = context()->stringWidth("*");
       size_t chars = m_text.size();
       return (width * chars) * scale + (width * (chars - m_cursorOffset));
     } else {
-      return context()->stringInterfaceWidth(m_text) * scale
-           + context()->stringInterfaceWidth(m_text.substr(m_cursorOffset, m_text.size()));
+      return context()->stringWidth(m_text) * scale
+           + context()->stringWidth(m_text.substr(m_cursorOffset, m_text.size()));
     }
   } else {
     throw GuiException("Somehow, the value of m_hAnchor became bad");
   }
 
   if (m_textHidden) {
-    int width = context()->stringInterfaceWidth("*");
+    int width = context()->stringWidth("*");
     size_t chars = m_text.size();
     return (int)std::ceil((width * chars) * scale - (width * (chars - m_cursorOffset)));
   } else {
-  return (int)std::ceil(context()->stringInterfaceWidth(m_text) * scale
-                      - context()->stringInterfaceWidth(m_text.substr(m_cursorOffset, m_text.size())));
+  return (int)std::ceil(context()->stringWidth(m_text) * scale
+                      - context()->stringWidth(m_text.substr(m_cursorOffset, m_text.size())));
   }
 }
 
@@ -265,10 +266,17 @@ void TextBoxWidget::blur() {
   m_repeatCode = SpecialRepeatKeyCodes::None;
 }
 
-KeyboardCaptureMode TextBoxWidget::keyboardCaptured() const {
+KeyboardCaptureMode TextBoxWidget::keyboardCaptureMode() const {
   if (active() && hasFocus())
     return KeyboardCaptureMode::TextInput;
   return KeyboardCaptureMode::None;
+}
+
+Maybe<pair<RectI, int>> TextBoxWidget::keyboardCaptureArea() const {
+  if (active() && hasFocus()) {
+    return make_pair(screenBoundRect().scaled(context()->interfaceScale()), getCursorDrawOffset());
+  }
+  return {};
 }
 
 bool TextBoxWidget::sendEvent(InputEvent const& event) {

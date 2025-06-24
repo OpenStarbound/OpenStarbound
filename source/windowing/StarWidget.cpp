@@ -129,15 +129,25 @@ void Widget::markAsContainer() {
   m_container = true;
 }
 
-KeyboardCaptureMode Widget::keyboardCaptured() const {
+WidgetPtr Widget::keyboardCapturer() const {
   if (active()) {
     for (auto const& member : m_members) {
-      auto mode = member->keyboardCaptured();
+      auto mode = member->keyboardCaptureMode();
       if (mode != KeyboardCaptureMode::None)
-        return mode;
+        return member;
+      else if (auto capturer = member->keyboardCapturer())
+        return capturer;
     }
   }
+  return {};
+}
+
+KeyboardCaptureMode Widget::keyboardCaptureMode() const {
   return KeyboardCaptureMode::None;
+}
+
+Maybe<pair<RectI, int>> Widget::keyboardCaptureArea() const {
+  return {};
 }
 
 void Widget::setData(Json const& data) {

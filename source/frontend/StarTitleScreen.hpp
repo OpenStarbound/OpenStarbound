@@ -52,6 +52,9 @@ public:
 
   bool textInputActive() const;
 
+  typedef RegisteredPaneManager<String> TitlePaneManager;
+  TitlePaneManager* paneManager();
+
   TitleState currentState() const;
   // TitleState is StartSinglePlayer, StartMultiPlayer, or Quit
   bool finishedState() const;
@@ -111,7 +114,7 @@ private:
   PanePtr m_serverSelectPane;
   Json m_serverList;
 
-  RegisteredPaneManager<String> m_paneManager;
+  TitlePaneManager m_paneManager;
 
   Vec2I m_cursorScreenPos;
   InterfaceCursor m_cursor;

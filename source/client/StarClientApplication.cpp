@@ -327,8 +327,9 @@ void ClientApplication::processInput(InputEvent const& event) {
 
 void ClientApplication::update() {
   float dt = GlobalTimestep * GlobalTimescale;
+  auto& app = appController();
   if (m_state >= MainAppState::Title) {
-    if (auto p2pNetworkingService = appController()->p2pNetworkingService()) {
+    if (auto p2pNetworkingService = app->p2pNetworkingService()) {
       if (auto join = p2pNetworkingService->pullPendingJoin()) {
         m_pendingMultiPlayerConnection = PendingMultiPlayerConnection{join.takeValue(), {}, {}, false};
         changeState(MainAppState::Title);
@@ -536,9 +537,10 @@ Json ClientApplication::postProcessGroups() {
 void ClientApplication::changeState(MainAppState newState) {
   MainAppState oldState = m_state;
   m_state = newState;
+  auto& app = appController();
 
   if (m_state == MainAppState::Quit)
-    appController()->quit();
+    app->quit();
 
   if (newState == MainAppState::Mods)
     m_cinematicOverlay->load(m_root->assets()->json("/cinematics/mods/modloading.cinematic"));
@@ -564,7 +566,7 @@ void ClientApplication::changeState(MainAppState newState) {
 
     m_voice->clearSpeakers();
 
-    if (auto p2pNetworkingService = appController()->p2pNetworkingService()) {
+    if (auto p2pNetworkingService = app->p2pNetworkingService()) {
       p2pNetworkingService->setJoinUnavailable();
       p2pNetworkingService->setAcceptingP2PConnections(false);
     }
@@ -594,7 +596,7 @@ void ClientApplication::changeState(MainAppState newState) {
     m_cinematicOverlay->stop();
 
     m_playerStorage = make_shared<PlayerStorage>(m_root->toStoragePath("player"));
-    m_statistics = make_shared<Statistics>(m_root->toStoragePath("player"), appController()->statisticsService());
+    m_statistics = make_shared<Statistics>(m_root->toStoragePath("player"), app->statisticsService());
     m_universeClient = make_shared<UniverseClient>(m_playerStorage, m_statistics);
 
     m_universeClient->setLuaCallbacks("input", LuaBindings::makeInputCallbacks());
@@ -603,7 +605,7 @@ void ClientApplication::changeState(MainAppState newState) {
     m_universeClient->setLuaCallbacks("renderer", LuaBindings::makeRenderingCallbacks(this));
 
     Json alwaysAllow = m_root->configuration()->getPath("safe.alwaysAllowClipboard");
-    m_universeClient->setLuaCallbacks("clipboard", LuaBindings::makeClipboardCallbacks(appController(), alwaysAllow && alwaysAllow.toBool()));
+    m_universeClient->setLuaCallbacks("clipboard", LuaBindings::makeClipboardCallbacks(app, alwaysAllow && alwaysAllow.toBool()));
 
     auto heldScriptPanes = make_shared<List<MainInterface::ScriptPaneInfo>>();
 
@@ -697,7 +699,7 @@ void ClientApplication::changeState(MainAppState newState) {
       } else {
         auto p2pPeerId = multiPlayerConnection.server.ptr<P2PNetworkingPeerId>();
 
-        if (auto p2pNetworkingService = appController()->p2pNetworkingService()) {
+        if (auto p2pNetworkingService = app->p2pNetworkingService()) {
           auto result = p2pNetworkingService->connectToPeer(*p2pPeerId);
           if (result.isLeft()) {
             setError(strf("Cannot join peer: {}", result.left()));
@@ -838,9 +840,16 @@ void ClientApplication::updateTitle(float dt) {
   m_mainMixer->update(dt);
   m_mainMixer->setSpeed(GlobalTimescale);
 
-  appController()->setAcceptingTextInput(m_titleScreen->textInputActive());
+  auto& app = appController();
+  bool inputActive = m_titleScreen->textInputActive();
+  app->setAcceptingTextInput(inputActive);
+  m_input->setTextInputActive(inputActive);
+  if (inputActive)
+    app->setTextArea(m_titleScreen->paneManager()->keyboardCapturedWidget()->keyboardCaptureArea());
+  else
+    app->setTextArea();
 
-  auto p2pNetworkingService = appController()->p2pNetworkingService();
+  auto p2pNetworkingService = app->p2pNetworkingService();
   if (p2pNetworkingService) {
     auto getStateString = [](TitleState state) -> const char* {
       switch (state) {
@@ -914,8 +923,9 @@ void ClientApplication::updateTitle(float dt) {
 
 void ClientApplication::updateRunning(float dt) {
   try {
+    auto& app = appController();
     auto worldClient = m_universeClient->worldClient();
-    auto p2pNetworkingService = appController()->p2pNetworkingService();
+    auto p2pNetworkingService = app->p2pNetworkingService();
     bool clientIPJoinable = m_root->configuration()->get("clientIPJoinable").toBool();
     bool clientP2PJoinable = m_root->configuration()->get("clientP2PJoinable").toBool();
     Maybe<pair<uint16_t, uint16_t>> party = make_pair(m_universeClient->players(), m_universeClient->maxPlayers());
@@ -1146,14 +1156,18 @@ void ClientApplication::updateRunning(float dt) {
     m_mainMixer->setSpeed(GlobalTimescale);
 
     bool inputActive = m_mainInterface->textInputActive();
-    appController()->setAcceptingTextInput(inputActive);
+    app->setAcceptingTextInput(inputActive);
     m_input->setTextInputActive(inputActive);
+    if (inputActive)
+      app->setTextArea(m_mainInterface->paneManager()->keyboardCapturedWidget()->keyboardCaptureArea());
+    else
+      app->setTextArea();
 
     for (auto const& interactAction : m_player->pullInteractActions())
       m_mainInterface->handleInteractAction(interactAction);
 
     if (m_universeServer) {
-      if (auto p2pNetworkingService = appController()->p2pNetworkingService()) {
+      if (auto p2pNetworkingService = app->p2pNetworkingService()) {
         for (auto& p2pClient : p2pNetworkingService->acceptP2PConnections())
           m_universeServer->addClient(UniverseConnection(P2PPacketSocket::open(std::move(p2pClient))));
       }
@@ -1162,9 +1176,9 @@ void ClientApplication::updateRunning(float dt) {
     }
 
     Vec2F aimPosition = m_player->aimPosition();
-    float fps = appController()->renderFps();
-    LogMap::set("client_render_rate", strf("{:4.2f} FPS ({:4.2f}ms)", fps, (1.0f / appController()->renderFps()) * 1000.0f));
-    LogMap::set("client_update_rate", strf("{:4.2f}Hz", appController()->updateRate()));
+    float fps = app->renderFps();
+    LogMap::set("client_render_rate", strf("{:4.2f} FPS ({:4.2f}ms)", fps, (1.0f / app->renderFps()) * 1000.0f));
+    LogMap::set("client_update_rate", strf("{:4.2f}Hz", app->updateRate()));
     LogMap::set("player_pos", strf("[ ^#f45;{:4.2f}^reset;, ^#49f;{:4.2f}^reset; ]", m_player->position()[0], m_player->position()[1]));
     LogMap::set("player_vel", strf("[ ^#f45;{:4.2f}^reset;, ^#49f;{:4.2f}^reset; ]", m_player->velocity()[0], m_player->velocity()[1]));
     LogMap::set("player_aim", strf("[ ^#f45;{:4.2f}^reset;, ^#49f;{:4.2f}^reset; ]", aimPosition[0], aimPosition[1]));

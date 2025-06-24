@@ -2,8 +2,7 @@
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
   "dependencies": [
     "glew",
-    { "name": "sdl2", "default-features": false, "features": ["wayland", "x11", "alsa"], "platform": "linux" },
-    { "name": "sdl2", "platform": "!linux" },
+    "sdl3",
     "libvorbis",
     "zlib",
     "freetype",

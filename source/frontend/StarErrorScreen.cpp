@@ -65,7 +65,7 @@ void ErrorScreen::render(bool useBackdrop) {
 
 bool ErrorScreen::handleInputEvent(InputEvent const& event) {
   if (auto mouseMove = event.ptr<MouseMoveEvent>())
-    m_cursorScreenPos = mouseMove->mousePosition;
+    m_cursorScreenPos = Vec2I(mouseMove->mousePosition);
 
   return m_paneManager->sendInputEvent(event);
 }

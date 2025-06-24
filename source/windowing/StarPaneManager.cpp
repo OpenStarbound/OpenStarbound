@@ -167,7 +167,7 @@ void PaneManager::dismissWhere(function<bool(PanePtr const&)> func) {
 PanePtr PaneManager::keyboardCapturedPane() const {
   for (auto const& layerPair : m_displayedPanes) {
     for (auto const& panePair : layerPair.second) {
-      if (panePair.first->active() && panePair.first->keyboardCaptured() != KeyboardCaptureMode::None)
+      if (panePair.first->keyboardCapturer())
         return panePair.first;
     }
   }
@@ -175,9 +175,20 @@ PanePtr PaneManager::keyboardCapturedPane() const {
   return {};
 }
 
+WidgetPtr PaneManager::keyboardCapturedWidget() const {
+  for (auto const& layerPair : m_displayedPanes) {
+    for (auto const& panePair : layerPair.second) {
+      if (auto capturer = panePair.first->keyboardCapturer())
+        return capturer;
+    }
+  }
+
+  return {};
+}
+
 bool PaneManager::keyboardCapturedForTextInput() const {
-  if (auto pane = keyboardCapturedPane())
-    return pane->keyboardCaptured() == KeyboardCaptureMode::TextInput;
+  if (auto widget = keyboardCapturedWidget())
+    return widget->keyboardCaptureMode() == KeyboardCaptureMode::TextInput;
   return false;
 }
 

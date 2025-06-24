@@ -280,7 +280,7 @@ bool MainInterface::handleInputEvent(InputEvent const& event) {
   auto& root = Root::singleton();
 
   if (auto mouseMove = event.ptr<MouseMoveEvent>())
-    m_cursorScreenPos = mouseMove->mousePosition;
+    m_cursorScreenIPos = Vec2I::round(m_cursorScreenPos = mouseMove->mousePosition);
 
   if (m_paneManager.sendInputEvent(event)) {
     if (!event.is<MouseButtonUpEvent>() && !event.is<KeyUpEvent>())
@@ -295,7 +295,7 @@ bool MainInterface::handleInputEvent(InputEvent const& event) {
         m_chat->stopChat();
         return true;
       }
-    } else if (!m_paneManager.keyboardCapturedPane()) {
+    } else if (!m_paneManager.keyboardCapturedWidget()) {
       Maybe<InventorySlot> swapSlot;
 
       for (auto action : m_guiContext->actions(event)) {
@@ -365,7 +365,7 @@ bool MainInterface::handleInputEvent(InputEvent const& event) {
   } else if (auto mouseDown = event.ptr<MouseButtonDownEvent>()) {
     auto mouseButton = mouseDown->mouseButton;
     if (mouseButton >= MouseButton::Left && mouseButton <= MouseButton::Right
-    && overlayClick(mouseDown->mousePosition, mouseDown->mouseButton)) {
+    && overlayClick(Vec2I::round(mouseDown->mousePosition), mouseDown->mouseButton)) {
       return true;
     } else {
       if (mouseButton == MouseButton::Left)
@@ -393,7 +393,7 @@ bool MainInterface::handleInputEvent(InputEvent const& event) {
 }
 
 bool MainInterface::inputFocus() const {
-  return (bool)m_paneManager.keyboardCapturedPane();
+  return (bool)m_paneManager.keyboardCapturedWidget();
 }
 
 bool MainInterface::textInputActive() const {
@@ -864,7 +864,7 @@ void MainInterface::render() {
 }
 
 Vec2F MainInterface::cursorWorldPosition() const {
-  return m_worldPainter->camera().screenToWorld(Vec2F(m_cursorScreenPos));
+  return m_worldPainter->camera().screenToWorld(m_cursorScreenPos);
 }
 
 bool MainInterface::isDebugDisplayed() {
@@ -1232,13 +1232,13 @@ void MainInterface::renderMainBar() {
 
   Vec2I inventoryButtonPos = barPos + m_config->mainBarInventoryButtonOffset * interfaceScale();
   if (m_paneManager.registeredPaneIsDisplayed(MainInterfacePanes::Inventory)) {
-    if (overButton(m_config->mainBarInventoryButtonPoly, m_cursorScreenPos)) {
+    if (overButton(m_config->mainBarInventoryButtonPoly, m_cursorScreenIPos)) {
       m_guiContext->drawQuad(m_config->inventoryImageOpenHover, Vec2F(inventoryButtonPos), interfaceScale());
       m_cursorTooltip = assets->json("/interface.config:cursorTooltip.inventoryText").toString();
     } else {
       m_guiContext->drawQuad(m_config->inventoryImageOpen, Vec2F(inventoryButtonPos), interfaceScale());
     }
-  } else if (overButton(m_config->mainBarInventoryButtonPoly, m_cursorScreenPos)) {
+  } else if (overButton(m_config->mainBarInventoryButtonPoly, m_cursorScreenIPos)) {
     if (m_inventoryWindow->containsNewItems())
       m_guiContext->drawQuad(m_config->inventoryImageGlowHover, Vec2F(inventoryButtonPos), interfaceScale());
     else
@@ -1254,13 +1254,13 @@ void MainInterface::renderMainBar() {
   auto drawStateButton = [this](MainInterfacePanes paneType, Vec2I pos, PolyI poly,
       String image, String hoverImage, String openImage, String hoverOpenImage, String toolTip) {
     if (m_paneManager.registeredPaneIsDisplayed(paneType)) {
-      if (overButton(poly, m_cursorScreenPos)) {
+      if (overButton(poly, m_cursorScreenIPos)) {
         m_guiContext->drawQuad(hoverOpenImage, Vec2F(pos), interfaceScale());
         m_cursorTooltip = toolTip;
       } else {
         m_guiContext->drawQuad(openImage, Vec2F(pos), interfaceScale());
       }
-    } else if (overButton(poly, m_cursorScreenPos)) {
+    } else if (overButton(poly, m_cursorScreenIPos)) {
       m_guiContext->drawQuad(hoverImage, Vec2F(pos), interfaceScale());
       m_cursorTooltip = toolTip;
     } else {
@@ -1326,14 +1326,14 @@ void MainInterface::renderMainBar() {
 
   Vec2F deployButtonPos(barPos + m_config->mainBarDeployButtonOffset * interfaceScale());
   if (m_client->canBeamUp()) {
-    if (overButton(m_config->mainBarDeployButtonPoly, m_cursorScreenPos)) {
+    if (overButton(m_config->mainBarDeployButtonPoly, m_cursorScreenIPos)) {
       m_guiContext->drawQuad(m_config->beamUpImageHover, deployButtonPos, interfaceScale());
       m_cursorTooltip = assets->json("/interface.config:cursorTooltip.beamUpText").toString();
     } else {
       m_guiContext->drawQuad(m_config->beamUpImage, deployButtonPos, interfaceScale());
     }
   } else if (m_client->canBeamDown(true)) {
-    if (overButton(m_config->mainBarDeployButtonPoly, m_cursorScreenPos)) {
+    if (overButton(m_config->mainBarDeployButtonPoly, m_cursorScreenIPos)) {
       m_guiContext->drawQuad(m_config->deployImageHover, deployButtonPos, interfaceScale());
       m_cursorTooltip = assets->json("/interface.config:cursorTooltip.deployText").toString();
     } else {
@@ -1345,7 +1345,7 @@ void MainInterface::renderMainBar() {
 
   Vec2F beamButtonPos(barPos + m_config->mainBarBeamButtonOffset * interfaceScale());
   if (m_client->canBeamDown()) {
-    if (overButton(m_config->mainBarBeamButtonPoly, m_cursorScreenPos)) {
+    if (overButton(m_config->mainBarBeamButtonPoly, m_cursorScreenIPos)) {
       m_guiContext->drawQuad(m_config->beamDownImageHover, beamButtonPos, interfaceScale());
       m_cursorTooltip = assets->json("/interface.config:cursorTooltip.beamDownText").toString();
     } else {
@@ -1457,11 +1457,11 @@ void MainInterface::renderDebug() {
 }
 
 void MainInterface::updateCursor() {
-  Maybe<String> cursorOverride = m_actionBar->cursorOverride(m_cursorScreenPos);
+  Maybe<String> cursorOverride = m_actionBar->cursorOverride(m_cursorScreenIPos);
 
   if (!cursorOverride) {
-    if (auto pane = m_paneManager.getPaneAt(m_cursorScreenPos / interfaceScale())) {
-      cursorOverride = cursorOverride.orMaybe(pane->cursorOverride(m_cursorScreenPos / interfaceScale()));
+    if (auto pane = m_paneManager.getPaneAt(m_cursorScreenIPos / interfaceScale())) {
+      cursorOverride = cursorOverride.orMaybe(pane->cursorOverride(m_cursorScreenIPos / interfaceScale()));
     } else {
       auto player = m_client->mainPlayer();
       if (auto anchorState = m_client->mainPlayer()->loungingIn()) {
@@ -1497,7 +1497,7 @@ void MainInterface::renderCursor() {
   if (m_cinematicOverlay && !m_cinematicOverlay->completed())
     return m_guiContext->applicationController()->setCursorVisible(false);
 
-  Vec2I cursorPos = m_cursorScreenPos;
+  Vec2I cursorPos = m_cursorScreenIPos;
   Vec2I cursorSize = m_cursor.size();
   Vec2I cursorOffset = m_cursor.offset();
   unsigned int cursorScale = m_cursor.scale(interfaceScale());
@@ -1518,7 +1518,7 @@ void MainInterface::renderCursor() {
 
     Vec2I tooltipSize = Vec2I(imgDb->imageSize(backgroundImage)) * interfaceScale();
     Vec2I cursorOffset = (Vec2I{0, -m_cursor.size().y()} + rawCursorOffset) * cursorScale;
-    Vec2I tooltipOffset = m_cursorScreenPos + cursorOffset;
+    Vec2I tooltipOffset = m_cursorScreenIPos + cursorOffset;
     TextStyle textStyle = config.get("textStyle");
     size_t fontSize = config.get("fontSize").toUInt();
     Vec4B fontColor = jsonToColor(config.get("color")).toRgba();
@@ -1534,7 +1534,7 @@ void MainInterface::renderCursor() {
     m_guiContext->clearTextStyle();
   }
 
-  m_cursorItem->setPosition(m_cursorScreenPos / interfaceScale() + m_config->inventoryItemMouseOffset);
+  m_cursorItem->setPosition(m_cursorScreenIPos / interfaceScale() + m_config->inventoryItemMouseOffset);
 
   if (auto swapItem = m_client->mainPlayer()->inventory()->swapSlotItem())
     m_cursorItem->setItem(swapItem);

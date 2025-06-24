@@ -102,25 +102,25 @@ Json Input::inputEventToJson(InputEvent const& input) {
     type = "MouseButtonDown";
     data = JsonObject{
       {"mouseButton", MouseButtonNames.getRight(mouseDown->mouseButton)},
-      {"mousePosition", jsonFromVec2I(mouseDown->mousePosition)}
+      {"mousePosition", jsonFromVec2F(mouseDown->mousePosition)}
     };
   } else if (auto mouseUp = input.ptr<MouseButtonUpEvent>()) {
     type = "MouseButtonUp";
     data = JsonObject{
       {"mouseButton", MouseButtonNames.getRight(mouseUp->mouseButton)},
-      {"mousePosition", jsonFromVec2I(mouseUp->mousePosition)}
+      {"mousePosition", jsonFromVec2F(mouseUp->mousePosition)}
     };
   } else if (auto mouseWheel = input.ptr<MouseWheelEvent>()) {
     type = "MouseWheel";
     data = JsonObject{
       {"mouseWheel", mouseWheel->mouseWheel == MouseWheel::Up ? 1 : -1},
-      {"mousePosition", jsonFromVec2I(mouseWheel->mousePosition)}
+      {"mousePosition", jsonFromVec2F(mouseWheel->mousePosition)}
     };
   } else if (auto mouseMove = input.ptr<MouseMoveEvent>()) {
     type = "MouseMove";
     data = JsonObject{
-      {"mouseMove", jsonFromVec2I(mouseMove->mouseMove)},
-      {"mousePosition", jsonFromVec2I(mouseMove->mousePosition)}
+      {"mouseMove", jsonFromVec2F(mouseMove->mouseMove)},
+      {"mousePosition", jsonFromVec2F(mouseMove->mousePosition)}
     };
   } else if (auto controllerDown = input.ptr<ControllerButtonDownEvent>()) {
     type = "ControllerButtonDown";
@@ -619,7 +619,7 @@ Maybe<unsigned> Input::keyUp(Key key) {
   return {};
 }
 
-Maybe<List<Vec2I>> Input::mouseDown(MouseButton button) {
+Maybe<List<Vec2F>> Input::mouseDown(MouseButton button) {
   if (auto state = m_mouseStates.ptr(button)) {
     if (state->presses)
       return state->pressPositions;
@@ -632,7 +632,7 @@ bool Input::mouseHeld(MouseButton button) {
   return state && state->held;
 }
 
-Maybe<List<Vec2I>> Input::mouseUp(MouseButton button) {
+Maybe<List<Vec2F>> Input::mouseUp(MouseButton button) {
   if (auto state = m_mouseStates.ptr(button)) {
     if (state->releases)
       return state->releasePositions;
@@ -640,7 +640,7 @@ Maybe<List<Vec2I>> Input::mouseUp(MouseButton button) {
   return {};
 }
 
-Vec2I Input::mousePosition() const {
+Vec2F Input::mousePosition() const {
   return m_mousePosition;
 }
 
