@@ -599,7 +599,7 @@ String ClientCommandProcessor::render(String const& path) {
   file->writeFull(buffer->ptr(), buffer->size());
   GuiContext::singleton().setClipboardImage(*image, &buffer->data());
   #endif
-  return strf("Saved {}x{} image to {}.png & copied to clipboard", image->width(), image->height(), outputName);
+  return strf("Saved '{}.png' ({}x{}) and copied to clipboard", outputName, image->width(), image->height());
 }
 
 

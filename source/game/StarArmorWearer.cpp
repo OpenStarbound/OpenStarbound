@@ -38,22 +38,19 @@ bool ArmorWearer::setupHumanoid(Humanoid& humanoid, bool forceNude) {
   m_lastGender = gender;
   m_lastDirection = direction;
 
-  auto armorVisible = [&](ArmorItemPtr const& item, bool extraCosmetic) {
-    return !forceNude && item && item->visible(extraCosmetic);
-  };
-
-  bool allNeedsSync = nudeChanged || genderChanged;
+  bool allNeedsSync = genderChanged;
   bool anyNeedsSync = allNeedsSync;
   Array<uint8_t, 4> wornCosmeticTypes;
   for (size_t i = 0; i != m_armors.size(); ++i) {
     auto& armor = m_armors[i];
+    auto& item = armor.item;
     if (armor.needsSync)
       anyNeedsSync = true;
-    if (allNeedsSync || (dirChanged && armor.item && armor.item->flipping()))
+    else if (allNeedsSync || (item && ((dirChanged && item->flipping()) || (nudeChanged && !item->bypassNude()))))
       anyNeedsSync = armor.needsSync = true;
 
-    if (armorVisible(armor.item, i >= 8) && armor.isCosmetic) {
-      for (auto armorType : armor.item->armorTypesToHide())
+    if (armor.isCosmetic && item && item->visible(i >= 8)) {
+      for (auto armorType : item->armorTypesToHide())
         ++wornCosmeticTypes[(uint8_t)armorType];
     }
   }
@@ -75,8 +72,9 @@ bool ArmorWearer::setupHumanoid(Humanoid& humanoid, bool forceNude) {
   if (anyNeedsSync) {
     for (size_t i = 0; i != m_armors.size(); ++i) {
       Armor& armor = m_armors[i];
+      auto& item = armor.item;
       bool allowed = true;
-      if (!armorVisible(armor.item, i >= 8)) {
+      if (!item || !item->visible(i >= 8) || (forceNude && !item->bypassNude())) {
         allowed = false;
       } else if (!armor.isCosmetic) {
         uint8_t typeIndex = (uint8_t)armor.item->armorType();

@@ -46,6 +46,7 @@ public:
   bool visible(bool extraCosmetics = false) const;
   HashSet<ArmorType> const& armorTypesToHide();
   bool hideBody() const;
+  bool bypassNude() const;
 
   Maybe<String> const& techModule() const;
 
@@ -59,6 +60,7 @@ private:
   Directives m_directives;
   Maybe<Directives> m_flipDirectives;
   bool m_hideBody;
+  bool m_bypassNude;
   bool m_hideInVanillaSlots;
   Maybe<HashSet<ArmorType>> m_armorTypesToHide;
   Maybe<String> m_techModule;

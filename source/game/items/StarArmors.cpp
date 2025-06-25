@@ -34,7 +34,7 @@ ArmorItem::ArmorItem(Json const& config, String const& directory, Json const& da
     m_directives = "?" + m_colorOptions.wrap(instanceValue("colorIndex", 0).toUInt());
   refreshIconDrawables();
 
-  if (auto jFlipDirectives = instanceValue("flipDirectives"); jFlipDirectives.isType(Json::Type::String)) {
+  if (auto jFlipDirectives = instanceValueOfType("flipDirectives", Json::Type::String)) {
     auto flipDirectives = jFlipDirectives.toString();
     auto directivesStr = m_directives.stringPtr();
     if (flipDirectives.beginsWith('+') && directivesStr)
@@ -43,12 +43,10 @@ ArmorItem::ArmorItem(Json const& config, String const& directory, Json const& da
       m_flipDirectives = Directives(std::move(flipDirectives));
   }
 
-  if (auto hide = instanceValue("hideInVanillaSlots"); hide.isType(Json::Type::Bool))
-    m_hideInVanillaSlots = hide.toBool();
-  else
-    m_hideInVanillaSlots = false;
+  m_bypassNude = instanceValueOfType("bypassNude", Json::Type::Bool, false).toBool();
+  m_hideInVanillaSlots = instanceValueOfType("hideInVanillaSlots", Json::Type::Bool, false).toBool();
 
-  if (auto armorTypesToHide = instanceValue("armorTypesToHide"); armorTypesToHide.isType(Json::Type::Array)) {
+  if (auto armorTypesToHide = instanceValueOfType("armorTypesToHide", Json::Type::Array)) {
     m_armorTypesToHide.emplace();
     for (auto& str : armorTypesToHide.toArray()) {
       if (!str.isType(Json::Type::String))
@@ -110,6 +108,11 @@ HashSet<ArmorType> const& ArmorItem::armorTypesToHide() {
 bool ArmorItem::hideBody() const {
   return m_hideBody;
 }
+
+bool ArmorItem::bypassNude() const {
+  return m_bypassNude;
+}
+
 
 Maybe<String> const& ArmorItem::techModule() const {
   return m_techModule;

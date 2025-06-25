@@ -155,6 +155,7 @@ public:
     Directives directives;
     String frameset;
     bool rotateWithHead = false;
+    bool bypassNude = false;
   };
 
   // Must have :normal, climb
@@ -185,7 +186,7 @@ public:
     bool wornChestsLegsChanged = true;
     bool wornBacksChanged = true;
     DirectivesGroup helmetMaskDirectivesGroup;
-    bool helmetMasksChanged;
+    bool helmetMasksChanged = true;
   };
 
   template <typename T>

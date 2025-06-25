@@ -103,6 +103,7 @@ public:
   // Return either a parameter given to the item or a config value, if no such
   // parameter exists.
   Json instanceValue(String const& name, Json const& def = Json()) const;
+  Json instanceValueOfType(String const& name, Json::Type type, Json const& def = Json()) const;
 
   // Returns the full set of configuration values merged with parameters
   Json instanceValues() const;
