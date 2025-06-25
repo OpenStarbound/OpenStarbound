@@ -1006,6 +1006,7 @@ private:
       copyPngToClipboard(png->ptr(), png->size());
     });
     #else
+    _unused(image);
     if (png) {
       StringMap<ByteArray> clipboardData = {{"image/png", std::move(*png)}};
       return setClipboardData(std::move(clipboardData));

@@ -678,7 +678,6 @@ void Humanoid::animate(float dt) {
   m_emoteAnimationTimer += dt;
   m_danceTimer += dt;
   float headRotationTarget = globalHeadRotation() ? m_headRotationTarget : 0.f;
-  float diff = angleDiff(m_headRotation, headRotationTarget);
   m_headRotation = (headRotationTarget - (headRotationTarget - m_headRotation) * powf(.333333f, dt * 60.f));
 }
 
