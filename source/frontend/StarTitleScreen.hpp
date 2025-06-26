@@ -121,6 +121,7 @@ private:
   TitleState m_titleState;
 
   PanePtr m_mainMenu;
+  PanePtr m_backgroundMenu;
   List<pair<ButtonWidgetPtr, Vec2I>> m_rightAnchoredButtons;
 
   PlayerPtr m_mainAppPlayer;

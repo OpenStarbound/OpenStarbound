@@ -170,7 +170,8 @@ Voice::~Voice() {
 
 void Voice::init() {
   resetEncoder();
-  resetDevice();
+  if (shouldEnableInput())
+    openDevice();
 }
 
 
@@ -186,20 +187,18 @@ void Voice::loadJson(Json const& config, bool skipSave) {
   // Not all keys are required
 
   bool changed = false;
-
+  bool shouldResetDevice = false;
   {
     bool enabled = shouldEnableInput();
     m_enabled      = config.getBool("enabled", m_enabled);
     m_inputEnabled = config.getBool("inputEnabled", m_inputEnabled);
-    if (shouldEnableInput() != enabled) {
-      changed = true;
-      resetDevice();
-    }
+    if (shouldEnableInput() != enabled)
+      shouldResetDevice = changed = true;
   }
 
   if (config.contains("deviceName") // Make sure null-type key exists
   && change(m_deviceName, config.optString("deviceName"), changed))
-    resetDevice();
+    shouldResetDevice = true;
 
   m_threshold = config.getFloat("threshold", m_threshold);
   m_inputAmplitude = perceptualToAmplitude(
@@ -220,7 +219,7 @@ void Voice::loadJson(Json const& config, bool skipSave) {
     if (change(m_channelMode, VoiceChannelModeNames.getLeft(*channelMode), changed)) {
       closeDevice();
       shouldResetEncoder = true;
-      resetDevice();
+      shouldResetDevice = true;
     }
   }
 
@@ -234,6 +233,9 @@ void Voice::loadJson(Json const& config, bool skipSave) {
 
   if (shouldResetEncoder)
     resetEncoder();
+
+  if (shouldResetDevice)
+    resetDevice();
 
   if (changed && !skipSave)
     scheduleSave();
@@ -632,13 +634,14 @@ void Voice::resetEncoder() {
 }
 
 void Voice::resetDevice() {
+  closeDevice();
   if (shouldEnableInput())
     openDevice();
-  else
-    closeDevice();
 }
 
 void Voice::openDevice() {
+  if (m_deviceOpen)
+    return;
   closeDevice();
 
   uint32_t deviceId = SDL_AUDIO_DEVICE_DEFAULT_RECORDING;

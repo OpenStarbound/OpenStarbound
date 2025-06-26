@@ -3,7 +3,7 @@ require "/scripts/vec2.lua"
 local canvas
 local backdropImages
 function init()
-  canvas = widget.bindCanvas("canvas")
+  canvas = background.bindCanvas("canvas")
   backdropImages = root.assetJson("/interface/windowconfig/title.config:backdropImages")
 end
 

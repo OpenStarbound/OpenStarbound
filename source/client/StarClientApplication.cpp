@@ -430,7 +430,7 @@ void ClientApplication::render() {
   }
 
   if (!m_errorScreen->accepted())
-    m_errorScreen->render(m_state == MainAppState::ModsWarning || m_state == MainAppState::Error);
+    m_errorScreen->render();
 }
 
 void ClientApplication::getAudioData(int16_t* sampleData, size_t frameCount) {

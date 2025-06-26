@@ -83,29 +83,15 @@ void TitleScreen::render() {
 
   m_renderer->flush();
 
-  if (auto canvas = m_mainMenu->findChild("canvas")) {
+  if (auto canvas = m_backgroundMenu->findChild("canvas")) {
     canvas->setPosition(Vec2I());
     canvas->setSize(Vec2I(m_guiContext->windowInterfaceSize()));
   }
   m_scriptComponent->invoke("render", JsonObject{{"interfaceScale", interfaceScale()}
   });
-  /*
-  for (auto& backdropImage : assets->json("/interface/windowconfig/title.config:backdropImages").toArray()) {
-    Vec2F offset = jsonToVec2F(backdropImage.get(0)) * interfaceScale();
-    String image = backdropImage.getString(1);
-    float scale = backdropImage.getFloat(2);
-    Vec2F origin = jsonToVec2F(backdropImage.getArray(3, { 0.5f, 1.0f }));
-    Vec2F imageSize = Vec2F(m_guiContext->textureSize(image)) * interfaceScale() * scale;
-
-    Vec2F position = Vec2F(m_guiContext->windowSize()).piecewiseMultiply(origin);
-    position += offset - imageSize.piecewiseMultiply(origin);
-    RectF screenCoords(position, position + imageSize);
-    m_guiContext->drawQuad(image, screenCoords);
-  }
-  //*/
 
   m_renderer->flush();
-
+  m_backgroundMenu->render(RectI(Vec2I(), Vec2I(m_guiContext->windowInterfaceSize())));
   m_paneManager.render();
   renderCursor();
 
@@ -132,10 +118,12 @@ void TitleScreen::update(float dt) {
   for (auto p : m_rightAnchoredButtons)
     p.first->setPosition(Vec2I(m_guiContext->windowWidth() / m_guiContext->interfaceScale(), 0) + p.second);
   m_mainMenu->determineSizeFromChildren();
+  m_backgroundMenu->determineSizeFromChildren();
 
   m_skyBackdrop->update(dt);
   m_environmentPainter->update(dt);
 
+  m_backgroundMenu->update(dt);
   m_paneManager.update(dt);
 
   m_scriptComponent->update(dt);
@@ -241,9 +229,6 @@ void TitleScreen::initMainMenu() {
   m_mainMenu = make_shared<Pane>();
   auto backMenu = make_shared<Pane>();
 
-  auto titleCanvas = make_shared<CanvasWidget>();
-  m_mainMenu->addChild("canvas", titleCanvas);
-
   auto assets = Root::singleton().assets();
   auto config = assets->json("/interface/windowconfig/title.config");
 
@@ -281,16 +266,22 @@ void TitleScreen::initMainMenu() {
   backMenu->determineSizeFromChildren();
   backMenu->setAnchor(PaneAnchor::BottomLeft);
   backMenu->lockPosition();
-
-  m_scriptComponent = make_shared<ScriptComponent>();
-  m_scriptComponent->setLuaRoot(make_shared<LuaRoot>());
-  m_scriptComponent->addCallbacks("pane", m_mainMenu->makePaneCallbacks());
-  m_scriptComponent->addCallbacks("widget", LuaBindings::makeWidgetCallbacks(m_mainMenu.get()));
-  m_scriptComponent->setScripts(jsonToStringList(config.getArray("scripts", JsonArray())));
-  m_scriptComponent->init();
+  
+  m_backgroundMenu = make_shared<Pane>();
+  m_backgroundMenu->setAnchor(PaneAnchor::BottomLeft);
+  m_backgroundMenu->lockPosition();
+  m_backgroundMenu->addChild("canvas", make_shared<CanvasWidget>());
+  m_backgroundMenu->show();
 
   m_paneManager.registerPane("mainMenu", PaneLayer::Hud, m_mainMenu);
   m_paneManager.registerPane("backMenu", PaneLayer::Hud, backMenu);
+
+  m_scriptComponent = make_shared<ScriptComponent>();
+  m_scriptComponent->setLuaRoot(make_shared<LuaRoot>());
+  m_scriptComponent->addCallbacks("background", LuaBindings::makeWidgetCallbacks(m_backgroundMenu.get()));
+  m_scriptComponent->addCallbacks("widget", LuaBindings::makeWidgetCallbacks(m_mainMenu.get()));
+  m_scriptComponent->setScripts(jsonToStringList(config.getArray("scripts", JsonArray())));
+  m_scriptComponent->init();
 }
 
 void TitleScreen::initCharSelectionMenu() {
