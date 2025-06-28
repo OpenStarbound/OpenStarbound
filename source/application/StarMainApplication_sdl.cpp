@@ -333,6 +333,10 @@ public:
     } catch (std::exception const& e) {
       throw ApplicationException("Application threw exception during startup", e);
     }
+
+    //Sets Sdl metadata
+    SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_NAME_STRING, "Starbound");
+    SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_TYPE_STRING, "game");
     
 #ifdef STAR_SYSTEM_LINUX // Checks for Wayland and uses it if available, otherwise uses X11.
     if (SDL_getenv("SDL_VIDEODRIVER") == nullptr) {
