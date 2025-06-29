@@ -65,7 +65,7 @@
       "binaryDir": "${sourceParentDir}/build/linux-release",
       "cacheVariables": {
         "CMAKE_MAKE_PROGRAM": "ninja",
-        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
         "VCPKG_TARGET_TRIPLET": "x64-linux-mixed",
         "CMAKE_INCLUDE_PATH": "${sourceParentDir}/lib/linux/include",
         "CMAKE_LIBRARY_PATH": "${sourceParentDir}/lib/linux",
@@ -88,7 +88,7 @@
       "displayName": "Linux Clang x64",
       "binaryDir": "${sourceParentDir}/build/linux-release-clang",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
         "CMAKE_C_COMPILER": "clang",
         "CMAKE_CXX_COMPILER": "clang++",
         "VCPKG_TARGET_TRIPLET": "x64-linux-mixed-clang",

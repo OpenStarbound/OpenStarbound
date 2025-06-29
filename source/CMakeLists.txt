@@ -505,9 +505,10 @@ else()
   message(STATUS "Wayland was not found")
 endif()
 
-if (STAR_SYSTEM_LINUX)
-  set_flag(STAR_USE_LIBBACKTRACE)
-  set(STAR_EXT_LIBS ${STAR_EXT_LIBS} backtrace)
+if(STAR_SYSTEM_FAMILY STREQUAL "unix")
+  set_flag(STAR_USE_CPPTRACE)
+  find_package(cpptrace CONFIG REQUIRED)
+  set(STAR_EXT_LIBS ${STAR_EXT_LIBS} cpptrace::cpptrace)
 endif()
 
 if(STAR_BUILD_GUI)

@@ -4,7 +4,7 @@
     "glew",
     { "name": "sdl3", "default-features": false, "features": ["wayland", "x11", "alsa", "ibus"], "platform": "linux" },
     { "name": "sdl3", "platform": "!linux" },
-    { "name": "libbacktrace", "platform": "!windows" },
+    { "name": "cpptrace", "platform": "!windows" },
     "libvorbis",
     "zlib",
     "freetype",
