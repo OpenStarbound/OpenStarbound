@@ -319,8 +319,8 @@ elseif(STAR_COMPILER_CLANG)
   set(CMAKE_C_FLAGS_RELWITHASSERTS "-g -O3 -ffast-math")
   set(CMAKE_CXX_FLAGS_RELWITHASSERTS "-g -O3 -ffast-math")
 
-  set(CMAKE_C_FLAGS_RELWITHDEBINFO "-g -DNDEBUG -O3 -ffast-math")
-  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-g -DNDEBUG -O3 -ffast-math")
+  set(CMAKE_C_FLAGS_RELWITHDEBINFO "-gline-tables-only -DNDEBUG -O3 -ffast-math")
+  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-gline-tables-only -DNDEBUG -O3 -ffast-math")
 
   set(CMAKE_C_FLAGS_RELEASE "-DNDEBUG -O3 -ffast-math")
   set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -O3 -ffast-math")
