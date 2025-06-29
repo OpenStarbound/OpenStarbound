@@ -16,6 +16,10 @@
 #include <ShlObj_core.h>
 #endif
 
+#include "imgui.h"
+#include "imgui_impl_sdl3.h"
+#include "imgui_impl_opengl3.h"
+
 namespace Star {
 
 #ifdef STAR_SYSTEM_WINDOWS
@@ -338,16 +342,6 @@ public:
     SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_NAME_STRING, "Starbound");
     SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_TYPE_STRING, "game");
     
-#ifdef STAR_SYSTEM_LINUX // Checks for Wayland and uses it if available, otherwise uses X11.
-    if (SDL_getenv("SDL_VIDEODRIVER") == nullptr) {
-      if (SDL_getenv("WAYLAND_DISPLAY") != nullptr) {
-          SDL_setenv_unsafe("SDL_VIDEODRIVER", "wayland", 1);
-      } else {
-          SDL_setenv_unsafe("SDL_VIDEODRIVER", "x11", 1);
-      }
-    } 
-#endif
-    
     Logger::info("Application: Initializing SDL Video");
     if (!SDL_InitSubSystem(SDL_INIT_VIDEO))
       throw ApplicationException(strf("Couldn't initialize SDL Video: {}", SDL_GetError()));
@@ -375,10 +369,30 @@ public:
       Logger::info("Application: No platform services available");
 
     Logger::info("Application: Creating SDL Window");
-    m_sdlWindow = SDL_CreateWindow(m_windowTitle.utf8Ptr(), m_windowSize[0], m_windowSize[1], SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+    m_sdlWindow = SDL_CreateWindow(m_windowTitle.utf8Ptr(), m_windowSize[0], m_windowSize[1], SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY);
     if (!m_sdlWindow)
       throw ApplicationException::format("Application: Could not create SDL Window: {}", SDL_GetError());
 
+#if defined(__APPLE__)
+    // GL 3.2 Core + GLSL 150
+    const char* glsl_version = "#version 150";
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG); // Always required on Mac
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+#else
+    // GL 3.0 + GLSL 130
+    const char* glsl_version = "#version 130";
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+#endif
+
+    m_sdlGlContext = SDL_GL_CreateContext(m_sdlWindow);
+    if (!m_sdlGlContext)
+      throw ApplicationException::format("Application: Could not create OpenGL context: {}", SDL_GetError());
+    
     SDL_ShowWindow(m_sdlWindow);
     SDL_RaiseWindow(m_sdlWindow);
 
@@ -386,16 +400,6 @@ public:
     int height;
     SDL_GetWindowSize(m_sdlWindow, &width, &height);
     m_windowSize = Vec2U(width, height);
-
-#ifdef __APPLE__
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-#endif
-
-    m_sdlGlContext = SDL_GL_CreateContext(m_sdlWindow);
-    if (!m_sdlGlContext)
-      throw ApplicationException::format("Application: Could not create OpenGL context: {}", SDL_GetError());
 
     SDL_GL_SwapWindow(m_sdlWindow);
     setVSyncEnabled(m_windowVSync);
@@ -423,6 +427,19 @@ public:
     m_renderer->setScreenSize(m_windowSize);
 
     m_cursorCache.setTimeToLive(30000);
+
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+
+    ImGui::StyleColorsDark();
+    ImGuiStyle& style = ImGui::GetStyle();
+    float main_scale = SDL_GetDisplayContentScale(SDL_GetPrimaryDisplay());
+    style.ScaleAllSizes(main_scale);
+
+    ImGui_ImplSDL3_InitForOpenGL(m_sdlWindow, m_sdlGlContext);
+    ImGui_ImplOpenGL3_Init(glsl_version);
+
   }
 
   ~SdlPlatform() {
@@ -434,7 +451,12 @@ public:
 
     m_renderer.reset();
 
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplSDL3_Shutdown();
+    ImGui::DestroyContext();
+
     Logger::info("Application: Destroying SDL Window");
+    SDL_GL_DestroyContext(m_sdlGlContext);
     SDL_DestroyWindow(m_sdlWindow);
 
     SDL_Quit();
@@ -497,6 +519,10 @@ public:
       while (true) {
         cleanup();
 
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplSDL3_NewFrame();
+        ImGui::NewFrame();
+
         for (auto const& event : processEvents())
           m_application->processInput(event);
 
@@ -518,6 +544,9 @@ public:
         m_renderer->startFrame();
         m_application->render();
         m_renderer->finishFrame();
+
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         SDL_GL_SwapWindow(m_sdlWindow);
         m_renderRate = m_renderTicker.tick();
 
@@ -818,8 +847,10 @@ private:
   List<InputEvent> processEvents() {
     List<InputEvent> inputEvents;
 
+    ImGuiIO& io = ImGui::GetIO();
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
+      ImGui_ImplSDL3_ProcessEvent(&event);
       Maybe<InputEvent> starEvent;
       if (event.type == SDL_EVENT_WINDOW_MAXIMIZED || event.type == SDL_EVENT_WINDOW_RESTORED) {
         auto windowFlags = SDL_GetWindowFlags(m_sdlWindow);
@@ -839,7 +870,7 @@ private:
         m_renderer->setScreenSize(m_windowSize);
         m_application->windowChanged(m_windowMode, m_windowSize);
       }
-      else if (event.type == SDL_EVENT_KEY_DOWN) {
+      else if (event.type == SDL_EVENT_KEY_DOWN && !io.WantCaptureKeyboard) {
         if (!event.key.repeat) {
           if (auto key = keyFromSdlKeyCode(event.key.key))
             starEvent.set(KeyDownEvent{*key, keyModsFromSdlKeyMods(event.key.mod)});
@@ -847,18 +878,18 @@ private:
       } else if (event.type == SDL_EVENT_KEY_UP) {
         if (auto key = keyFromSdlKeyCode(event.key.key))
           starEvent.set(KeyUpEvent{*key});
-      } else if (event.type == SDL_EVENT_TEXT_INPUT) {
+      } else if (event.type == SDL_EVENT_TEXT_INPUT && !io.WantCaptureKeyboard) {
         starEvent.set(TextInputEvent{String(event.text.text)});
       } else if (event.type == SDL_EVENT_MOUSE_MOTION) {
         starEvent.set(MouseMoveEvent{
             {event.motion.xrel, -event.motion.yrel}, {event.motion.x, (int)m_windowSize[1] - event.motion.y}});
-      } else if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
+      } else if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN && !io.WantCaptureMouse) {
         starEvent.set(MouseButtonDownEvent{mouseButtonFromSdlMouseButton(event.button.button),
             {event.button.x, (int)m_windowSize[1] - event.button.y}});
-      } else if (event.type == SDL_EVENT_MOUSE_BUTTON_UP) {
+      } else if (event.type == SDL_EVENT_MOUSE_BUTTON_UP && !io.WantCaptureMouse) {
         starEvent.set(MouseButtonUpEvent{mouseButtonFromSdlMouseButton(event.button.button),
             {event.button.x, (int)m_windowSize[1] - event.button.y}});
-      }else if (event.type == SDL_EVENT_MOUSE_WHEEL) {
+      } else if (event.type == SDL_EVENT_MOUSE_WHEEL && !io.WantCaptureMouse) {
         starEvent.set(MouseWheelEvent{event.wheel.y < 0 ? MouseWheel::Down : MouseWheel::Up,
           {event.wheel.mouse_x, (int)m_windowSize[1] - event.wheel.mouse_y}});
       } else if (event.type == SDL_EVENT_GAMEPAD_AXIS_MOTION) {

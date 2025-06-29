@@ -456,21 +456,14 @@ elseif(STAR_SYSTEM_NETBSD)
 endif()
 
 # Find all required external libraries, based on build settings...
+find_package(PkgConfig)
 
 if(STAR_USE_JEMALLOC)
-  find_package(PkgConfig)
   pkg_check_modules(JEMALLOC REQUIRED IMPORTED_TARGET GLOBAL jemalloc)
 
   set(STAR_EXT_LIBS PkgConfig::JEMALLOC)
   if (STAR_SYSTEM_WINDOWS OR STAR_SYSTEM_MACOS)
     set_flag(STAR_JEMALLOC_IS_PREFIXED)
-  endif()
-
-  pkg_check_modules(PKG_WAYLAND "wayland-client>=1.18" wayland-egl wayland-cursor egl "xkbcommon>=0.5.0")
-  if (PKG_WAYLAND_FOUND)
-    message(STATUS "Wayland was found")
-  else()
-    message(STATUS "Wayland was not found")
   endif()
 endif()
 
@@ -504,12 +497,25 @@ set(STAR_EXT_LIBS ${STAR_EXT_LIBS}
     ${OGG_LIBRARY}
 )
 
+pkg_check_modules(PKG_WAYLAND "wayland-client>=1.18" wayland-egl wayland-cursor egl "xkbcommon>=0.5.0")
+if (PKG_WAYLAND_FOUND)
+  message(STATUS "Wayland was found")
+else()
+  message(STATUS "Wayland was not found")
+endif()
+
+if (STAR_SYSTEM_FAMILY_UNIX)
+  set(STAR_EXT_LIBS ${STAR_EXT_LIBS} backtrace)
+endif()
+
 if(STAR_BUILD_GUI)
   find_package(SDL3 CONFIG REQUIRED)
+  find_package(imgui CONFIG REQUIRED)
 
   set(STAR_EXT_GUI_LIBS
     $<TARGET_NAME_IF_EXISTS:SDL3::SDL3main>
     $<IF:$<TARGET_EXISTS:SDL3::SDL3>,SDL3::SDL3,SDL3::SDL3-static>
+    imgui::imgui
   )
 
   find_package(OpenGL REQUIRED)

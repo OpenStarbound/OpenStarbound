@@ -611,7 +611,7 @@ public:
   LuaNullEnforcer nullTerminate();
   // Disables null-termination enforcement
   void setNullTerminated(bool nullTerminated);
-
+  void addImGui();
 private:
   friend struct LuaDetail::LuaHandle;
   friend class LuaReference;

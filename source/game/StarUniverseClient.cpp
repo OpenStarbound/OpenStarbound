@@ -27,17 +27,11 @@
 namespace Star {
 
 UniverseClient::UniverseClient(PlayerStoragePtr playerStorage, StatisticsPtr statistics) {
-  auto& root = Root::singleton();
-  auto assets = root.assets();
-
   m_storageTriggerDeadline = 0;
   m_playerStorage = std::move(playerStorage);
   m_statistics = std::move(statistics);
   m_pause = false;
   m_luaRoot = make_shared<LuaRoot>();
-
-  auto clientConfig = assets->json("/client.config");
-  m_luaRoot->tuneAutoGarbageCollection(clientConfig.getFloat("luaGcPause"), clientConfig.getFloat("luaGcStepMultiplier"));
   reset();
 }
 
@@ -521,6 +515,11 @@ void UniverseClient::setLuaCallbacks(String const& groupName, LuaCallbacks const
 
 void UniverseClient::restartLua() {
   m_luaRoot->restart();
+  auto clientConfig = Root::singleton().assets()->json("/client.config");
+  m_luaRoot->tuneAutoGarbageCollection(clientConfig.getFloat("luaGcPause"), clientConfig.getFloat("luaGcStepMultiplier"));
+  auto enableImGui = Root::singleton().configuration()->getPath("safe.enableImGui");
+  if (enableImGui && enableImGui.toBool())
+    m_luaRoot->luaEngine().addImGui();
 }
 
 void UniverseClient::startLuaScripts() {

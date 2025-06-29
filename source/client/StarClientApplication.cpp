@@ -27,6 +27,8 @@
 #include "StarCameraLuaBindings.hpp"
 #include "StarClipboardLuaBindings.hpp"
 #include "StarRenderingLuaBindings.hpp"
+#include "imgui.h"
+#include "imgui_freetype.h"
 
 #if defined STAR_SYSTEM_WINDOWS
 #include <windows.h>
@@ -222,6 +224,17 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
   m_voice = make_shared<Voice>(appController);  
     
   auto assets = m_root->assets();
+
+  {
+    auto& io = ImGui::GetIO();
+    m_immediateFont = *assets->bytes("/hobo.ttf");
+    ImFontConfig config{};
+    config.FontDataOwnedByAtlas = false;
+    config.FontBuilderFlags = ImGuiFreeTypeBuilderFlags_ForceAutoHint;
+    io.Fonts->AddFontFromMemoryTTF(m_immediateFont.ptr(), m_immediateFont.size(),
+      16, &config, io.Fonts->GetGlyphRangesDefault());
+  }
+
   m_minInterfaceScale = assets->json("/interface.config:minInterfaceScale").toInt();
   m_maxInterfaceScale = assets->json("/interface.config:maxInterfaceScale").toInt();
   m_crossoverRes = jsonToVec2F(assets->json("/interface.config:interfaceCrossoverRes"));
@@ -368,9 +381,11 @@ void ClientApplication::update() {
   m_guiContext->cleanup();
   m_edgeKeyEvents.clear();
   m_input->update();
+  ++m_framesSkipped;
 }
 
 void ClientApplication::render() {
+  m_framesSkipped = 0;
   auto config = m_root->configuration();
   auto assets = m_root->assets();
   auto& renderer = Application::renderer();
@@ -532,6 +547,10 @@ bool ClientApplication::postProcessGroupEnabled(String const& group) {
 
 Json ClientApplication::postProcessGroups() {
   return m_root->assets()->json("/client.config:postProcessGroups");
+}
+
+unsigned ClientApplication::framesSkipped() const {
+  return m_framesSkipped;
 }
 
 void ClientApplication::changeState(MainAppState newState) {
