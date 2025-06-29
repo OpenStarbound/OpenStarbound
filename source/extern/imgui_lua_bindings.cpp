@@ -10,6 +10,10 @@ extern "C" {
 
 #include "imgui_lua_bindings.hpp"
 
+#ifdef STAR_COMPILER_CLANG
+#pragma clang diagnostic ignored "-Wunused-variable"
+#pragma clang diagnostic ignored "-Wformat-security"
+#endif
 
 // THIS IS FOR LUA 5.3 although you can make a few changes for other versions
 

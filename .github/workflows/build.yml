@@ -316,6 +316,10 @@ jobs:
         with:
           submodules: 'recursive'
 
+      - name: Install Packages
+        run: |
+          brew install autoconf automake libtool
+
       - name: Install CMake & Ninja
         uses: lukka/get-cmake@latest
         with:
@@ -384,6 +388,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: 'recursive'
+
+      - name: Install Packages
+        run: |
+          brew install autoconf automake libtool
 
       - name: Install CMake & Ninja
         uses: lukka/get-cmake@latest
