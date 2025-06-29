@@ -382,14 +382,20 @@ String Root::toStoragePath(String const& path) const {
 
 AssetsConstPtr Root::assets() {
   return loadMemberFunction<Assets>(m_assets, m_assetsMutex, "Assets", [this]() {
-      StringList assetDirectories = m_settings.assetDirectories;
-      assetDirectories.appendAll(m_modDirectories);
-      StringList assetSources = scanForAssetSources(assetDirectories, m_settings.assetSources);
+    StringList assetDirectories = m_settings.assetDirectories;
+    assetDirectories.appendAll(m_modDirectories);
 
-      auto assets = make_shared<Assets>(m_settings.assetsSettings, assetSources);
-      Logger::info("Assets digest is {}", hexEncode(assets->digest()));
-      return assets;
-    });
+    // Retrieve the selected disabled assets preset
+    auto config = configuration()->currentConfiguration();
+    String selectedPreset = config.get("selectedDisabledAssetsPreset", "").toString();
+    StringList disabledPaths = jsonToStringList(config.get("disabledAssetsPresets", JsonObject()).get(selectedPreset, JsonArray()));
+
+    StringList assetSources = scanForAssetSources(assetDirectories, m_settings.assetSources);
+
+    auto assets = make_shared<Assets>(m_settings.assetsSettings, assetSources, disabledPaths);
+    Logger::info("Assets digest is {}", hexEncode(assets->digest()));
+    return assets;
+  });
 }
 
 ConfigurationPtr Root::configuration() {
@@ -613,6 +619,7 @@ StringList Root::scanForAssetSources(StringList const& directories, StringList c
     if (!source)
       return false;
 
+
     auto metadata = source->metadata();
 
     auto assetSource = make_shared<AssetSource>();
@@ -711,10 +718,11 @@ StringList Root::scanForAssetSources(StringList const& directories, StringList c
   StringList sourcePaths;
   for (auto const& source : dependencySortedSources) {
     auto path = File::convertDirSeparators(source->path);
-    if (source->name)
+    if (source->name) {
       Logger::info("Root: Detected asset source named '{}'{} at '{}'", *source->name, source->version ? strf(" version '{}'", *source->version) : "", path);
-    else
+    } else {
       Logger::info("Root: Detected unnamed asset source at '{}'", path);
+    }
     sourcePaths.append(path);
   }
 

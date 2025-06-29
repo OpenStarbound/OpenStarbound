@@ -1,6 +1,7 @@
 #pragma once
 
 #include "StarPane.hpp"
+#include "StarRegisteredPaneManager.hpp"
 
 namespace Star {
 
@@ -10,7 +11,7 @@ STAR_CLASS(ListWidget);
 
 class ModsMenu : public Pane {
 public:
-  ModsMenu();
+  ModsMenu(RegisteredPaneManager<String>* manager);
 
   void update(float dt) override;
 
@@ -19,6 +20,8 @@ private:
 
   void openLink();
   void openWorkshop();
+  void enableMod();
+  void populatePresetList(Json const& disabledAssetsPresets);
 
   StringList m_assetsSources;
 
@@ -31,6 +34,14 @@ private:
 
   ButtonWidgetPtr m_linkButton;
   ButtonWidgetPtr m_copyLinkButton;
+
+  String m_modPresetName;
+  Json m_presets;
+  StringList m_disabledPaths;
+
+  PanePtr m_presetSelectPane;
+
+  RegisteredPaneManager<String>* m_paneManager;
 };
 
 }
