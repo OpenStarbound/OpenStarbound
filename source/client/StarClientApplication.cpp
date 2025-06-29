@@ -861,12 +861,12 @@ void ClientApplication::updateTitle(float dt) {
 
   auto& app = appController();
   bool inputActive = m_titleScreen->textInputActive();
-  app->setAcceptingTextInput(inputActive);
   m_input->setTextInputActive(inputActive);
   if (inputActive)
     app->setTextArea(m_titleScreen->paneManager()->keyboardCapturedWidget()->keyboardCaptureArea());
   else
     app->setTextArea();
+  app->setAcceptingTextInput(inputActive);
 
   auto p2pNetworkingService = app->p2pNetworkingService();
   if (p2pNetworkingService) {
@@ -1175,12 +1175,12 @@ void ClientApplication::updateRunning(float dt) {
     m_mainMixer->setSpeed(GlobalTimescale);
 
     bool inputActive = m_mainInterface->textInputActive();
-    app->setAcceptingTextInput(inputActive);
     m_input->setTextInputActive(inputActive);
     if (inputActive)
       app->setTextArea(m_mainInterface->paneManager()->keyboardCapturedWidget()->keyboardCaptureArea());
     else
       app->setTextArea();
+    app->setAcceptingTextInput(inputActive);
 
     for (auto const& interactAction : m_player->pullInteractActions())
       m_mainInterface->handleInteractAction(interactAction);

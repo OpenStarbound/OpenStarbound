@@ -770,6 +770,9 @@ private:
     }
 
     void setTextArea(Maybe<pair<RectI, int>> area) override {
+      if (parent->m_textInputArea == area)
+        return;
+      parent->m_textInputArea = area;
       if (area) {
         RectI& r = area->first;
         SDL_Rect rect{
@@ -1089,6 +1092,7 @@ private:
   AudioCallback m_audioInputCallback;
   std::vector<uint8_t> m_audioInputData;
   std::vector<uint8_t> m_audioOutputData;
+  Maybe<pair<RectI, int>> m_textInputArea;
 
   typedef std::unique_ptr<SDL_Gamepad, decltype(&SDL_CloseGamepad)> SDLGameControllerUPtr;
   StableHashMap<int, SDLGameControllerUPtr> m_SdlControllers;
