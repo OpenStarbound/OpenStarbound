@@ -12,43 +12,47 @@
 namespace Star {
 
 #ifdef STAR_USE_LIBBACKTRACE
-static inline std::string captureBacktrace() {
-  static backtrace_state* state = nullptr;
 
-  auto full_callback = [](void* data, uintptr_t pc, const char* pathname, int line, const char* function) -> int {
-    if (!data)
-      return 0;
-    auto& out = *(std::pair<std::string, bool>*)data;
-    if (pathname != NULL || function != NULL || line != 0) {
-      if (out.second) {
-        out.first += "  ...\n";
-        out.second = false;
-      };
-      const char* filename = rindex(pathname, '/');
-      out.first += strf("{}:{} ({}) [{}]\n", filename ? ++filename : pathname, line, function, fmt::ptr((void*)pc));
-    } else
-      out.second = true;
+static backtrace_state* state = nullptr;
+
+static int backtrace_full_callback(void* data, uintptr_t pc, const char* pathname, int line, const char* function) {
+  if (!data)
     return 0;
-  };
+  auto& out = *(std::string*)data;
+  if (function)
+    out += strf("{} ", function);
+  if (pathname) {
+    const char* filename = rindex(pathname, '/');
+    out += strf("@ {}:{} ", filename ? ++filename : pathname, line);
+  }
+  out += strf("[{}]\n", fmt::ptr((void*)pc));
+  return 0;
+};
 
-  auto error_callback = [](void* data, const char* message, int error) {
-    std::string str;
-    if (error == -1)
-      str = "Missing symbols\n";
-    else
-      str = strf("Backtrace error #{}: {}\n", error, message);
-    if (data)
-      ((std::pair<std::string, bool>*)data)->first.append(str);
-  };
+static void backtrace_error_callback(void* data, const char* message, int error) {
+  std::string str;
+  if (error == -1)
+    str = "Missing symbols\n";
+  else
+    str = strf("Backtrace error #{}: {}\n", error, message);
+  if (data)
+    ((std::string*)data)->append(str);
+};
 
+static void initBacktrace() {
   if (!state)
-    state = backtrace_create_state(NULL, 1, error_callback, NULL);
-  std::pair<std::string, bool> out;
-  backtrace_full(state, 0, full_callback, error_callback, &out);
-  if (out.second)
-    out.first += "  ...\n";
-  return std::move(out.first);
+    state = backtrace_create_state(NULL, 1, backtrace_error_callback, NULL);
 }
+
+static inline std::string captureBacktrace() {
+  if (!state)
+    state = backtrace_create_state(NULL, 1, backtrace_error_callback, NULL);
+  std::string out;
+  backtrace_full(state, 0, backtrace_full_callback, backtrace_error_callback, &out);
+  return out;
+}
+#else
+  static void initBacktrace() {}
 #endif
 
 static size_t const StackLimit = 256;
