@@ -4,6 +4,7 @@
     "glew",
     { "name": "sdl3", "default-features": false, "features": ["wayland", "x11", "alsa", "ibus"], "platform": "linux" },
     { "name": "sdl3", "platform": "!linux" },
+    { "name": "libbacktrace", "platform": "!windows" },
     "libvorbis",
     "zlib",
     "freetype",
@@ -13,6 +14,7 @@
     "mimalloc",
     { "name": "jemalloc", "platform": "!osx" },
     "re2",
-    { "name": "abseil", "features": ["cxx17"] }
+    { "name": "abseil", "features": ["cxx17"] },
+    { "name": "imgui", "features": ["sdl3-binding", "opengl3-binding", "freetype"] }
   ]
 }

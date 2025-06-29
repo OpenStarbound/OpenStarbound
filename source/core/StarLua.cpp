@@ -1,6 +1,7 @@
 #include "StarLua.hpp"
 #include "StarArray.hpp"
 #include "StarTime.hpp"
+#include "imgui_lua_bindings.hpp"
 
 namespace Star {
 
@@ -586,6 +587,16 @@ LuaNullEnforcer LuaEngine::nullTerminate() {
 
 void LuaEngine::setNullTerminated(bool nullTerminated) {
   m_nullTerminated = nullTerminated ? 0 : INT_MIN;
+}
+
+void LuaEngine::addImGui() {
+  lua_checkstack(m_state, 1);
+
+  lua_rawgeti(m_state, LUA_REGISTRYINDEX, m_scriptDefaultEnvRegistryId);
+  pushImguiBindings(m_state);
+  lua_setfield(m_state, -2, "imgui");
+
+  lua_pop(m_state, 1);
 }
 
 LuaEngine* LuaEngine::luaEnginePtr(lua_State* state) {

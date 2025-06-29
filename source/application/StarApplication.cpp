@@ -20,6 +20,8 @@ void Application::processInput(InputEvent const&) {}
 
 void Application::update() {}
 
+unsigned Application::framesSkipped() const { return 0; }
+
 void Application::render() {}
 
 void Application::getAudioData(int16_t* samples, size_t sampleCount) {

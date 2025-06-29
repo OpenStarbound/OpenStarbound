@@ -13,13 +13,23 @@
       "generator": "Ninja",
       "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
       "cacheVariables": {
-        "CMAKE_CXX_STANDARD":  "17",
+        "CMAKE_CXX_STANDARD": "17",
         "CMAKE_INSTALL_PREFIX": "${sourceParentDir}/install",
         "VCPKG_OVERLAY_TRIPLETS": "${sourceParentDir}/triplets",
         "CMAKE_VERBOSE_MAKEFILE": true,
         "BUILD_TESTING": true,
         "STAR_ENABLE_STEAM_INTEGRATION": true,
         "STAR_ENABLE_DISCORD_INTEGRATION": true
+      },
+      "vendor": {
+        "microsoft.com/VisualStudioRemoteSettings/CMake/2.0": {
+          "sourceRootDir": "$ms{localSourceDir}\\..",
+          "remoteSourceRootDir": "$env{HOME}/.vs/wsl",
+          "copySourcesOptions": {
+            "method": "rsync",
+            "exclusionList": [ ".vs", ".git", "out", "dist", "attic", "build" ]
+          }
+        }
       }
     },
     {
@@ -102,10 +112,6 @@
       "vendor": {
         "microsoft.com/VisualStudioSettings/CMake/1.0": {
           "hostOS": [ "macOS" ]
-        },
-        "microsoft.com/VisualStudioRemoteSettings/CMake/2.0": {
-          "sourceRootDir": "$ms{localSourceDir}\\..",
-          "remoteSourceRootDir": "$env{HOME}/.vs/wsl"
         }
       }
     },
