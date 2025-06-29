@@ -4,20 +4,14 @@
 
 #include <execinfo.h>
 #include <cstdlib>
+#ifdef STAR_USE_LIBBACKTRACE
 #include <signal.h>
 #include <backtrace.h>
+#endif
 
 namespace Star {
 
-static void error_callback(void* data, const char* message, int error_number) {
-  if (error_number == -1) {
-    fprintf(stderr, "If you want backtraces, you have to compile with -g\n\n");
-    _Exit(1);
-  } else {
-    fprintf(stderr, "Backtrace error %d: %s\n", error_number, message);
-  };
-};
-
+#ifdef STAR_USE_LIBBACKTRACE
 static inline std::string captureBacktrace() {
   static backtrace_state* state = nullptr;
 
@@ -55,6 +49,7 @@ static inline std::string captureBacktrace() {
     out.first += "  ...\n";
   return std::move(out.first);
 }
+#endif
 
 static size_t const StackLimit = 256;
 
@@ -106,18 +101,32 @@ const char* StarException::what() const throw() {
 }
 
 StarException::StarException(char const* type, std::string message, bool genStackTrace) noexcept {
+#ifdef STAR_USE_LIBBACKTRACE
   auto printException = [](std::ostream& os, bool fullStacktrace, char const* type, std::string message, std::string stack) {
+#else
+  auto printException = [](std::ostream& os, bool fullStacktrace, char const* type, std::string message, Maybe<StackCapture> stack) {
+#endif
     os << "(" << type << ")";
     if (!message.empty())
       os << " " << message;
 
+#ifdef STAR_USE_LIBBACKTRACE
     if (fullStacktrace && !stack.empty()) {
       os << std::endl;
       os << stack;
     }
+#else
+    if (fullStacktrace && stack) {
+      os << std::endl;
+      os << outputStack(*stack);
+    }
+#endif
   };
-
+#ifdef STAR_USE_LIBBACKTRACE
   m_printException = bind(printException, _1, _2, type, std::move(message), genStackTrace ? captureBacktrace() : std::string());
+#else
+  m_printException = bind(printException, _1, _2, type, std::move(message), genStackTrace ? captureStack() : Maybe<StackCapture>());
+#endif
 }
 
 StarException::StarException(char const* type, std::string message, std::exception const& cause) noexcept
@@ -161,12 +170,20 @@ OutputProxy outputException(std::exception const& e, bool fullStacktrace) {
 }
 
 void printStack(char const* message) {
+#ifdef STAR_USE_LIBBACKTRACE
   Logger::info("Stack Trace ({})...\n{}", message, captureBacktrace());
+#else
+  Logger::info("Stack Trace ({})...\n{}", message, outputStack(captureStack()));
+#endif
 }
 
 void fatalError(char const* message, bool showStackTrace) {
   if (showStackTrace)
+#ifdef STAR_USE_LIBBACKTRACE
     Logger::error("Fatal Error: {}\n{}", message, captureBacktrace());
+#else
+    Logger::error("Fatal Error: {}\n{}", message, outputStack(captureStack()));
+#endif
   else
     Logger::error("Fatal Error: {}", message);
 
@@ -175,7 +192,11 @@ void fatalError(char const* message, bool showStackTrace) {
 
 void fatalException(std::exception const& e, bool showStackTrace) {
   if (showStackTrace)
+#ifdef STAR_USE_LIBBACKTRACE
     Logger::error("Fatal Exception caught: {}\nCaught at:\n{}", outputException(e, true), captureBacktrace());
+#else
+    Logger::error("Fatal Exception caught: {}\nCaught at:\n{}", outputException(e, true), outputStack(captureStack()));
+#endif
   else
     Logger::error("Fatal Exception caught: {}", outputException(e, showStackTrace));
 

@@ -479,7 +479,7 @@ find_package(Opus CONFIG REQUIRED)
 find_package(OggVorbis REQUIRED)
 find_package(zstd CONFIG REQUIRED)
 find_package(re2 CONFIG REQUIRED)
-
+find_package(imgui CONFIG REQUIRED)
 include_directories(SYSTEM
     ${FREETYPE_INCLUDE_DIRS}
     ${OGGVORBIS_INCLUDE_DIR}
@@ -492,6 +492,7 @@ set(STAR_EXT_LIBS ${STAR_EXT_LIBS}
     $<IF:$<TARGET_EXISTS:zstd::libzstd_shared>,zstd::libzstd_shared,zstd::libzstd_static>
     Opus::opus
     re2::re2
+    imgui::imgui
     ${VORBISFILE_LIBRARY}
     ${VORBIS_LIBRARY}
     ${OGG_LIBRARY}
@@ -504,18 +505,17 @@ else()
   message(STATUS "Wayland was not found")
 endif()
 
-if (STAR_SYSTEM_FAMILY_UNIX)
+if (STAR_SYSTEM_LINUX)
+  set_flag(STAR_USE_LIBBACKTRACE)
   set(STAR_EXT_LIBS ${STAR_EXT_LIBS} backtrace)
 endif()
 
 if(STAR_BUILD_GUI)
   find_package(SDL3 CONFIG REQUIRED)
-  find_package(imgui CONFIG REQUIRED)
 
   set(STAR_EXT_GUI_LIBS
     $<TARGET_NAME_IF_EXISTS:SDL3::SDL3main>
     $<IF:$<TARGET_EXISTS:SDL3::SDL3>,SDL3::SDL3,SDL3::SDL3-static>
-    imgui::imgui
   )
 
   find_package(OpenGL REQUIRED)
