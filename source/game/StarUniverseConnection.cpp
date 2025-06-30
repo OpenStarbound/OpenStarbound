@@ -249,6 +249,7 @@ void UniverseConnectionServer::sendPackets(ConnectionId clientId, List<PacketPtr
   RecursiveMutexLocker connectionsLocker(m_connectionsMutex);
   if (auto conn = m_connections.value(clientId)) {
     MutexLocker connectionLocker(conn->mutex);
+    connectionsLocker.unlock();
     conn->sendQueue.appendAll(std::move(packets));
 
     if (conn->packetSocket->isOpen()) {
