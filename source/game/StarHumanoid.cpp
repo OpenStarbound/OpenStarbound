@@ -1284,7 +1284,14 @@ HumanoidPtr Humanoid::makeDummy(Gender) {
 
 List<Drawable> Humanoid::renderDummy(Gender gender, HeadArmor const* head, ChestArmor const* chest, LegsArmor const* legs, BackArmor const* back) {
   std::shared_ptr<Fashion> fashion = std::move(m_fashion);
+  auto state = m_state;
+  m_state = State::Idle;
+  auto restore = [&]() {
+    m_fashion = std::move(fashion);
+    m_state = state;
+  };
   List<Drawable> drawables;
+
   try {
     m_fashion = std::make_shared<Fashion>();
     if (head)
@@ -1299,11 +1306,11 @@ List<Drawable> Humanoid::renderDummy(Gender gender, HeadArmor const* head, Chest
     drawables = render(false, false);
     Drawable::scaleAll(drawables, TilePixels);
   }
-  catch (std::exception const& e) {
-    m_fashion = std::move(fashion);
+  catch (std::exception const&) {
+    restore();
     throw;
   }
-  m_fashion = std::move(fashion);
+  restore();
   return drawables;
 }
 
