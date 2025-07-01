@@ -193,6 +193,7 @@ List<ConnectionId> UniverseConnectionServer::allConnections() const {
 bool UniverseConnectionServer::connectionIsOpen(ConnectionId clientId) const {
   RecursiveMutexLocker connectionsLocker(m_connectionsMutex);
   if (auto conn = m_connections.value(clientId)) {
+    connectionsLocker.unlock();
     MutexLocker connectionLocker(conn->mutex);
     return conn->packetSocket->isOpen();
   }
@@ -203,6 +204,7 @@ bool UniverseConnectionServer::connectionIsOpen(ConnectionId clientId) const {
 int64_t UniverseConnectionServer::lastActivityTime(ConnectionId clientId) const {
   RecursiveMutexLocker connectionsLocker(m_connectionsMutex);
   if (auto conn = m_connections.value(clientId)) {
+    connectionsLocker.unlock();
     MutexLocker connectionLocker(conn->mutex);
     return conn->lastActivityTime;
   }
@@ -228,6 +230,7 @@ UniverseConnection UniverseConnectionServer::removeConnection(ConnectionId clien
     throw UniverseConnectionException::format("Client '{}' does not exist in UniverseConnectionServer::removeConnection", clientId);
 
   auto conn = m_connections.take(clientId);
+  connectionsLocker.unlock();
   MutexLocker connectionLocker(conn->mutex);
 
   UniverseConnection uc;
@@ -248,8 +251,8 @@ List<UniverseConnection> UniverseConnectionServer::removeAllConnections() {
 void UniverseConnectionServer::sendPackets(ConnectionId clientId, List<PacketPtr> packets) {
   RecursiveMutexLocker connectionsLocker(m_connectionsMutex);
   if (auto conn = m_connections.value(clientId)) {
-    MutexLocker connectionLocker(conn->mutex);
     connectionsLocker.unlock();
+    MutexLocker connectionLocker(conn->mutex);
     conn->sendQueue.appendAll(std::move(packets));
 
     if (conn->packetSocket->isOpen()) {
