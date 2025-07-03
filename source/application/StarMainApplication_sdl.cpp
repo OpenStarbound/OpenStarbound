@@ -338,11 +338,11 @@ public:
       throw ApplicationException("Application threw exception during startup", e);
     }
 
-//try stuf
-
+    //Sets Sdl metadata
+    SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_NAME_STRING, "Starbound");
+    SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_TYPE_STRING, "game");
+    //icon stuf
     SDL_SetHint(SDL_HINT_AUDIO_DEVICE_APP_ICON_NAME, "steam_icon_211820");  // should be the default icon name steam has set for the icon
-
-
     
     Logger::info("Application: Initializing SDL Video");
     if (!SDL_InitSubSystem(SDL_INIT_VIDEO))
