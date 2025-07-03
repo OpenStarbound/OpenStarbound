@@ -344,7 +344,7 @@ public:
     //icon stuf
     SDL_SetHint(SDL_HINT_AUDIO_DEVICE_APP_ICON_NAME, "steam_icon_211820");  // should be the default icon name steam has set for the icon
 
-	  
+    SDL_SetHint(SDL_HINT_AUDIO_DEVICE_STREAM_NAME, "Audio");  
     
     Logger::info("Application: Initializing SDL Video");
     if (!SDL_InitSubSystem(SDL_INIT_VIDEO))
@@ -647,7 +647,7 @@ private:
       parent->m_windowTitle = std::move(title);
       if (parent->m_sdlWindow)
         SDL_SetWindowTitle(parent->m_sdlWindow, parent->m_windowTitle.utf8Ptr());
-        SDL_SetHint(SDL_HINT_AUDIO_DEVICE_STREAM_NAME, "Voice");
+        SDL_SetHint(SDL_HINT_AUDIO_DEVICE_STREAM_NAME, "Voice Chat");
     }
 
     void setFullscreenWindow(Vec2U fullScreenResolution) override {
