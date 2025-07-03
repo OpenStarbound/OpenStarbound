@@ -340,7 +340,7 @@ public:
 
 //try stuf
 
-    SDL_SetHint(SDL_HINT_AUDIO_DEVICE_APP_ICON_NAME, "211820");  // should be the default icon name steam has set for the icon
+    SDL_SetHint(SDL_HINT_AUDIO_DEVICE_APP_ICON_NAME, "steam_icon_211820");  // should be the default icon name steam has set for the icon
 
 
     
