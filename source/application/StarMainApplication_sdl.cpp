@@ -337,6 +337,12 @@ public:
     } catch (std::exception const& e) {
       throw ApplicationException("Application threw exception during startup", e);
     }
+
+//try stuf
+
+    SDL_SetHint(SDL_HINT_AUDIO_DEVICE_APP_ICON_NAME, "211820");  // should be the default icon name steam has set for the icon
+
+
     
     Logger::info("Application: Initializing SDL Video");
     if (!SDL_InitSubSystem(SDL_INIT_VIDEO))
