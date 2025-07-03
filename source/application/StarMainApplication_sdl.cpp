@@ -375,6 +375,12 @@ public:
     if (!m_sdlWindow)
       throw ApplicationException::format("Application: Could not create SDL Window: {}", SDL_GetError());
 
+
+SDL_SetTrayIcon(tray, "steam_icon_211820");
+SDL_SetWindowIcon(m_sdlWindow, "steam_icon_211820");
+
+
+	  
 #if defined(__APPLE__)
     // GL 3.2 Core + GLSL 150
     const char* glsl_version = "#version 150";
