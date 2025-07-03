@@ -269,7 +269,7 @@ List<PacketPtr> TcpPacketSocket::receivePackets() {
 }
 
 bool TcpPacketSocket::sentPacketsPending() const {
-  return !m_outputBuffer.empty();
+  return !m_outputBuffer.empty() || (compressionStreamEnabled() && !m_compressedOutputBuffer.empty());
 }
 
 bool TcpPacketSocket::writeData() {
@@ -278,10 +278,12 @@ bool TcpPacketSocket::writeData() {
 
   bool dataSent = false;
   try {
-    if (!m_outputBuffer.empty()) {
+    if (!m_outputBuffer.empty() || !m_compressedOutputBuffer.empty()) {
       if (compressionStreamEnabled()) {
-        m_compressionStream.compress(m_outputBuffer, m_compressedOutputBuffer);
-        m_outputBuffer.clear();
+        if (!m_outputBuffer.empty()) {
+          m_compressionStream.compress(m_outputBuffer, m_compressedOutputBuffer);
+          m_outputBuffer.clear();
+        }
         do {
           size_t written = m_socket->send(m_compressedOutputBuffer.ptr(), m_compressedOutputBuffer.size());
           if (written == 0)
