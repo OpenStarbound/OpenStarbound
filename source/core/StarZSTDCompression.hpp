@@ -14,33 +14,27 @@ public:
   CompressionStream();
   ~CompressionStream();
 
+  void compress(const char* in, size_t inLen, ByteArray& out);
+  void compress(ByteArray const& in, ByteArray& out);
   ByteArray compress(const char* in, size_t inLen);
   ByteArray compress(ByteArray const& in);
 
 private:
   ZSTD_CStream* m_cStream;
-  ByteArray m_output;
 };
-
-inline ByteArray CompressionStream::compress(ByteArray const& in) {
-  return compress(in.ptr(), in.size());
-}
 
 class DecompressionStream {
 public:
   DecompressionStream();
   ~DecompressionStream();
 
+  void decompress(const char* in, size_t inLen, ByteArray& out);
+  void decompress(ByteArray const& in, ByteArray& out);
   ByteArray decompress(const char* in, size_t inLen);
   ByteArray decompress(ByteArray const& in);
 
 private:
   ZSTD_DStream* m_dStream;
-  ByteArray m_output;
 };
-
-inline ByteArray DecompressionStream::decompress(ByteArray const& in) {
-  return decompress(in.ptr(), in.size());
-}
 
 }
