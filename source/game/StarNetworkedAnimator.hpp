@@ -139,7 +139,9 @@ public:
 
   // Transformation groups can be used for arbitrary part transforamtions.
   // They apply immediately, and are optionally interpolated on slaves.
+  Mat3F transformationGroup(String const& transformationGroup) const;
   bool hasTransformationGroup(String const& transformationGroup) const;
+  void setTransformationGroup(String const& transformationGroup, Mat3F const& matrix);
   void translateTransformationGroup(String const& transformationGroup, Vec2F const& translation);
   void rotateTransformationGroup(String const& transformationGroup, float rotation, Vec2F const& rotationCenter = Vec2F());
   void scaleTransformationGroup(String const& transformationGroup, float scale, Vec2F const& scaleCenter = Vec2F());
