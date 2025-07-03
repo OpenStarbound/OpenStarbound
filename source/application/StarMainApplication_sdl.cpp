@@ -807,6 +807,7 @@ private:
 
     bool openAudioInputDevice(uint32_t deviceId, int freq, int channels, AudioCallback callback) override {
       return parent->openAudioInputDevice(deviceId, freq, channels, callback);
+        SDL_SetHint(SDL_HINT_AUDIO_DEVICE_STREAM_NAME, "Voice");
     };
 
     bool closeAudioInputDevice() override {
@@ -932,8 +933,6 @@ private:
 
     return inputEvents;
   }
-
-        SDL_SetHint(SDL_HINT_AUDIO_DEVICE_STREAM_NAME, "Test");
 
   void getAudioData(Uint8* stream, int len) {
     if (m_audioEnabled) {
