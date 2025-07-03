@@ -447,8 +447,16 @@ float NetworkedAnimator::currentRotationAngle(String const& rotationGroup) const
   return m_rotationGroups.get(rotationGroup).currentAngle;
 }
 
+Mat3F NetworkedAnimator::transformationGroup(String const& transformationGroup) const {
+  return m_transformationGroups.get(transformationGroup).affineTransform();
+}
+
 bool NetworkedAnimator::hasTransformationGroup(String const& transformationGroup) const {
   return m_transformationGroups.contains(transformationGroup);
+}
+
+void NetworkedAnimator::setTransformationGroup(String const& transformationGroup, Mat3F const& matrix) {
+  m_transformationGroups.get(transformationGroup).setAffineTransform(matrix);
 }
 
 void NetworkedAnimator::translateTransformationGroup(String const& transformationGroup, Vec2F const& translation) {

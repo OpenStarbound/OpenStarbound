@@ -319,8 +319,8 @@ elseif(STAR_COMPILER_CLANG)
   set(CMAKE_C_FLAGS_RELWITHASSERTS "-g -O3 -ffast-math")
   set(CMAKE_CXX_FLAGS_RELWITHASSERTS "-g -O3 -ffast-math")
 
-  set(CMAKE_C_FLAGS_RELWITHDEBINFO "-gline-tables-only -DNDEBUG -O3 -ffast-math")
-  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-gline-tables-only -DNDEBUG -O3 -ffast-math")
+  set(CMAKE_C_FLAGS_RELWITHDEBINFO "-gline-tables-only -gz=zlib -DNDEBUG -O3 -ffast-math")
+  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-gline-tables-only -gz=zlib -DNDEBUG -O3 -ffast-math")
 
   set(CMAKE_C_FLAGS_RELEASE "-DNDEBUG -O3 -ffast-math")
   set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -O3 -ffast-math")
@@ -509,6 +509,7 @@ if(STAR_SYSTEM_FAMILY STREQUAL "unix")
   set_flag(STAR_USE_CPPTRACE)
   find_package(cpptrace CONFIG REQUIRED)
   set(STAR_EXT_LIBS ${STAR_EXT_LIBS} cpptrace::cpptrace)
+  message(STATUS "Using cpptrace")
 endif()
 
 if(STAR_BUILD_GUI)

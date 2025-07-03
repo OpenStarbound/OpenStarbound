@@ -369,11 +369,7 @@ public:
       Logger::info("Application: No platform services available");
 
     Logger::info("Application: Creating SDL Window");
-#ifdef STAR_SYSTEM_LINUX
-    m_sdlWindow = SDL_CreateWindow(m_windowTitle.utf8Ptr(), m_windowSize[0], m_windowSize[1], SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
-#else
     m_sdlWindow = SDL_CreateWindow(m_windowTitle.utf8Ptr(), m_windowSize[0], m_windowSize[1], SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY);
-#endif
     if (!m_sdlWindow)
       throw ApplicationException::format("Application: Could not create SDL Window: {}", SDL_GetError());
 
@@ -778,6 +774,9 @@ private:
     }
 
     void setTextArea(Maybe<pair<RectI, int>> area) override {
+      if (parent->m_textInputArea == area)
+        return;
+      parent->m_textInputArea = area;
       if (area) {
         RectI& r = area->first;
         SDL_Rect rect{
@@ -1097,6 +1096,7 @@ private:
   AudioCallback m_audioInputCallback;
   std::vector<uint8_t> m_audioInputData;
   std::vector<uint8_t> m_audioOutputData;
+  Maybe<pair<RectI, int>> m_textInputArea;
 
   typedef std::unique_ptr<SDL_Gamepad, decltype(&SDL_CloseGamepad)> SDLGameControllerUPtr;
   StableHashMap<int, SDLGameControllerUPtr> m_SdlControllers;

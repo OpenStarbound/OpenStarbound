@@ -1048,9 +1048,8 @@ void Player::update(float dt, uint64_t) {
 
   refreshHumanoid();
 
-  m_effectsAnimator->resetTransformationGroup("flip");
-  if (m_movementController->facingDirection() == Direction::Left)
-    m_effectsAnimator->scaleTransformationGroup("flip", Vec2F(-1, 1));
+  auto scale = Mat3F::scaling(Vec2F(facingDirection == Direction::Right ? 1.f : -1.f, 1.f));
+  m_effectsAnimator->setTransformationGroup("flip", scale);
 
   if (m_state == State::Walk || m_state == State::Run) {
     if ((m_footstepTimer += dt) > m_config->footstepTiming) {

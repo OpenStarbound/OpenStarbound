@@ -1937,9 +1937,9 @@ void UniverseServer::doDisconnection(ConnectionId clientId, String const& reason
       if (auto playerRevivePosition = currentWorld->playerRevivePosition(clientId))
         reviveWarp = WarpToWorld(currentWorldId, SpawnTargetPosition(*playerRevivePosition));
       auto finalPackets = currentWorld->removeClient(clientId);
-      locker.lock();
       m_connectionServer->sendPackets(clientId, finalPackets);
       m_chatProcessor->leaveChannel(clientId, printWorldId(currentWorld->worldId()));
+      locker.lock();
     }
 
     clientContext->clearPlayerWorld();
