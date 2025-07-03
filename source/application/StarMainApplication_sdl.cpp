@@ -374,12 +374,6 @@ public:
     m_sdlWindow = SDL_CreateWindow(m_windowTitle.utf8Ptr(), m_windowSize[0], m_windowSize[1], SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY);
     if (!m_sdlWindow)
       throw ApplicationException::format("Application: Could not create SDL Window: {}", SDL_GetError());
-
-
-SDL_SetTrayIcon(tray, "steam_icon_211820");
-SDL_SetWindowIcon(m_sdlWindow, "steam_icon_211820");
-
-
 	  
 #if defined(__APPLE__)
     // GL 3.2 Core + GLSL 150
@@ -651,6 +645,7 @@ private:
       parent->m_windowTitle = std::move(title);
       if (parent->m_sdlWindow)
         SDL_SetWindowTitle(parent->m_sdlWindow, parent->m_windowTitle.utf8Ptr());
+        SDL_SetHint(SDL_HINT_AUDIO_DEVICE_STREAM_NAME, "Test");
     }
 
     void setFullscreenWindow(Vec2U fullScreenResolution) override {
