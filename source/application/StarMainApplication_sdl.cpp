@@ -616,9 +616,6 @@ private:
       return string;
     }
 
-    //Sets Audio Stream name to Voice
-    SDL_SetHint(SDL_HINT_AUDIO_DEVICE_STREAM_NAME, "Voice");
-
     bool setClipboard(String text) override {
       return SDL_SetClipboardText(text.utf8Ptr());
     }
@@ -799,6 +796,7 @@ private:
 
     AudioFormat enableAudio() override {
       parent->m_audioEnabled = true;
+      SDL_SetHint(SDL_HINT_AUDIO_DEVICE_STREAM_NAME, "Voice"); //Sets Audio Stream name to Voice
       SDL_ResumeAudioDevice(SDL_GetAudioStreamDevice(parent->m_sdlAudioOutputStream));
       return AudioFormat{44100, 2};
     }
