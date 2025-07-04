@@ -696,7 +696,7 @@ StringList Root::scanForAssetSources(StringList const& directories, StringList c
       if (auto requirement = namedSources.ptr(requirementName))
         dependencySortVisit(*requirement);
       else
-        throw StarException(strf("Asset source '{}' is missing dependency '{}'{}", *source->name, requirementName,
+        throw StarException(strf("Asset source '{}' is missing dependency '{}'{}", source->name ? *source->name : "<unnamed>", requirementName,
           requirementName != "base" ? "" : "\n\nThe base Starbound asset package could not be found, please copy it from another Starbound install!\n(Locate 'packed.pak' in vanilla Starbound's assets folder, then copy it to OpenStarbound's assets folder.)\n"));
     }
 
