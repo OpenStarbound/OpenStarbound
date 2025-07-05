@@ -1,4 +1,9 @@
 # OpenStarbound
+<p align="center">
+   <img src="/source/client/OpenStarbound.svg?raw=true" /></a>
+</p>
+
+#
 
 This is a fork of Starbound. Contributions are welcome!
 You **must** own a copy of Starbound to use it. Base game assets are not provided for obvious reasons.
