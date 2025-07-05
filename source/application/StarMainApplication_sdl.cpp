@@ -339,7 +339,7 @@ public:
     }
 
     //Sets Sdl metadata
-    SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_NAME_STRING, "OpenStarbound");
+    SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_NAME_STRING, "Starbound");
     SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_TYPE_STRING, "game");
 
     //icon stuf
@@ -1125,7 +1125,7 @@ private:
   Vec2U m_windowSize = {800, 600};
   WindowMode m_windowMode = WindowMode::Normal;
 
-  String m_windowTitle = "OpenStarbound";
+  String m_windowTitle = "Starbound";
   bool m_windowVSync = true;
   unsigned m_maxFrameSkip = 5;
   bool m_cursorVisible = true;
