@@ -26,7 +26,7 @@ SolidCompression=yes
 ArchitecturesInstallIn64BitMode=x64
 WizardStyle=modern
 WizardImageAlphaFormat=premultiplied
-WizardSmallImageFile=scripts\inno\small.bmp
+WizardSmallImageFile=scripts\inno\OpenStarbound.bmp
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
