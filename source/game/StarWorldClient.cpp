@@ -1261,7 +1261,7 @@ void WorldClient::update(float dt) {
 
   if (auto newAltMusic = m_mainPlayer->pullPendingAltMusic()) {
     if (newAltMusic->first)
-      playAltMusic(newAltMusic->first.get(), newAltMusic->second);
+      playAltMusic(newAltMusic->first->first, newAltMusic->second, newAltMusic->first->second);
     else
       stopAltMusic(newAltMusic->second);
   }
@@ -1968,9 +1968,9 @@ AmbientNoisesDescriptionPtr WorldClient::currentAltMusicTrack() const {
   return m_altMusicTrackDescription;
 }
 
-void WorldClient::playAltMusic(StringList const& newTracks, float fadeTime) {
+void WorldClient::playAltMusic(StringList const& newTracks, float fadeTime, int loops) {
   auto newTrackGroup = AmbientTrackGroup(newTracks);
-  m_altMusicTrackDescription = make_shared<AmbientNoisesDescription>(AmbientTrackGroup(newTracks), AmbientTrackGroup());
+  m_altMusicTrackDescription = make_shared<AmbientNoisesDescription>(AmbientTrackGroup(newTracks), AmbientTrackGroup(), loops);
   if (!m_altMusicActive) {
     m_musicTrack.setVolume(0.0, 0.0, fadeTime);
     m_altMusicTrack.setVolume(1.0, 0.0, fadeTime);
