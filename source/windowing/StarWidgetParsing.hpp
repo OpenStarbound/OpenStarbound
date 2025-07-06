@@ -62,7 +62,7 @@ protected:
   WidgetConstructResult layoutHandler(String const& name, Json const& config);
 
   // Utilities
-  void common(WidgetPtr widget, Json const& config);
+  void common(WidgetPtr widget, Json const& config, bool getChildren = true);
   ImageStretchSet parseImageStretchSet(Json const& config);
 
   Pane* m_pane;
