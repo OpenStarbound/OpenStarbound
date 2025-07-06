@@ -1,6 +1,6 @@
 # OpenStarbound
 <p align="center">
-   <img src="/source/client/OpenStarbound.svg?raw=true" /></a>
+   <img src="/source/client/OpenStarbound.svg" />
 </p>
 
 #
