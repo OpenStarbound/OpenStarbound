@@ -275,7 +275,7 @@ bool InventoryPane::sendEvent(InputEvent const& event) {
             itemSlot->setVisibility(displayingCosmetics);
         }
       }
-      fetchChild<ImageWidget>("imgCosmeticBack")->setVisibility(m_displayingCosmetics = displayingCosmetics);
+      m_displayingCosmetics = displayingCosmetics;
     }
   }
   return Pane::sendEvent(event);
