@@ -45,6 +45,7 @@ private:
   PlayerPtr m_player;
   ContainerInteractorPtr m_containerInteractor;
 
+  bool m_alwaysDisplayCosmetics;
   bool m_displayingCosmetics;
   bool m_expectingSwap;
   InventorySlot m_containerSource;

@@ -4,7 +4,9 @@ function patch(data)
   local layout = data.paneLayout
 
   local function createCosmeticSlot(origin, offset, i)
-    layout["cosmetic" .. i] = {
+    local name = "cosmetic" .. i
+    if layout[name] then return end
+    layout[name] = {
       type = "itemslot",
       position = {origin.position[1] + offset, origin.position[2]},
       backingImage = origin.backingImage,
