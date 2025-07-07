@@ -750,7 +750,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
     headPosition += m_headLayOffset;
 
   auto applyHeadRotation = [&](Drawable& drawable) {
-    if (m_headRotation != 0.f) {
+    if (m_headRotation != 0.f && withRotationAndScale) {
       float dir = numericalDirection(m_facingDirection);
       Vec2F rotationPoint = headPosition;
       rotationPoint[0] *= dir;
@@ -1286,9 +1286,12 @@ List<Drawable> Humanoid::renderDummy(Gender gender, HeadArmor const* head, Chest
   std::shared_ptr<Fashion> fashion = std::move(m_fashion);
   auto state = m_state;
   m_state = State::Idle;
+  float headRotation = m_headRotation;
+  m_headRotation = 0.f;
   auto restore = [&]() {
     m_fashion = std::move(fashion);
     m_state = state;
+    m_headRotation = headRotation;
   };
   List<Drawable> drawables;
 

@@ -5,10 +5,10 @@ function patch(data)
     end
   end
   data.skyBackdropDarken = jarray{0, 0, 0, 64}
-  local rng = sb.makeRandomSource()
-  local num = rng:randUInt(300)
-  local terry = num == rng:randUInt(10)
-  local logo = terry and "starraria.png" or (num == 0 and "barst" or "starb") .. "ound.png"
+  local rng = sb.makeRandomSource(os.time())
+  local barst = rng:randUInt(3000) == 0 and "barst"
+  local terry = barst and rng:randUInt(5) == 0 and "starraria.png"
+  local logo = terry or ((barst or "starb") .. "ound.png")
   data.backdropImages = jarray{
     jarray{
       jarray{0, 0}, 

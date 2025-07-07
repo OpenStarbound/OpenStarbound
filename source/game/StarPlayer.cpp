@@ -789,20 +789,19 @@ Maybe<Json> Player::receiveMessage(ConnectionId fromConnection, String const& me
       unique = args.get(1).toBool();
     setPendingCinematic(args.get(0), unique);
   } else if (message == "playAltMusic" && args.size() > 0) {
-    float fadeTime = 0;
-    if (args.size() > 1)
-      fadeTime = args.get(1).toFloat();
+    float fadeTime = args.size() > 1 ? args.get(1).toFloat() : 0.f;
+    int loops = args.size() > 2 ? args.get(2).toInt() : -1;
     StringList trackList;
     if (args.get(0).canConvert(Json::Type::Array))
       trackList = jsonToStringList(args.get(0).toArray());
     else
       trackList = StringList();
-    m_pendingAltMusic = pair<Maybe<StringList>, float>(trackList, fadeTime);
+    m_pendingAltMusic = pair<Maybe<pair<StringList, int>>, float>(make_pair(trackList, loops), fadeTime);
   } else if (message == "stopAltMusic") {
     float fadeTime = 0;
     if (args.size() > 0)
       fadeTime = args.get(0).toFloat();
-    m_pendingAltMusic = pair<Maybe<StringList>, float>({}, fadeTime);
+    m_pendingAltMusic = pair<Maybe<pair<StringList, int>>, float>({}, fadeTime);
   } else if (message == "recordEvent") {
     statistics()->recordEvent(args.at(0).toString(), args.at(1));
   } else if (message == "addCollectable") {
@@ -2619,7 +2618,7 @@ void Player::setInCinematic(bool inCinematic) {
     m_statusController->setPersistentEffects("cinematic", {});
 }
 
-Maybe<pair<Maybe<StringList>, float>> Player::pullPendingAltMusic() {
+Maybe<pair<Maybe<pair<StringList, int>>, float>> Player::pullPendingAltMusic() {
   if (m_pendingAltMusic)
     return m_pendingAltMusic.take();
   return {};

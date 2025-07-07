@@ -206,7 +206,16 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
   portrait->setIconMode();
   setTitle(portrait, m_player->name(), config.getString("subtitle"));
 
-  m_displayingCosmetics = m_expectingSwap = false;
+  if ((m_displayingCosmetics = m_alwaysDisplayCosmetics = config.getBool("alwaysDisplayCosmetics", false))) {
+    for (auto const& p : EquipmentSlotNames) {
+      if (p.first >= EquipmentSlot::Cosmetic1) {
+        if (auto itemSlot = fetchChild<ItemSlotWidget>(p.second))
+          itemSlot->setVisibility(true);
+      }
+    }
+  }
+
+  m_expectingSwap = false;
 
   if (auto item = m_player->inventory()->swapSlotItem())
     m_currentSwapSlotItem = item->descriptor();
@@ -259,6 +268,9 @@ PanePtr InventoryPane::createTooltip(Vec2I const& screenPosition) {
 }
 
 bool InventoryPane::sendEvent(InputEvent const& event) {
+  if (m_alwaysDisplayCosmetics)
+    return Pane::sendEvent(event);
+
   if (auto mousePosition = Widget::context()->mousePosition(event)) {
     bool displayingCosmetics = false;
     for (auto const& p : EquipmentSlotNames) {
@@ -275,9 +287,10 @@ bool InventoryPane::sendEvent(InputEvent const& event) {
             itemSlot->setVisibility(displayingCosmetics);
         }
       }
-      fetchChild<ImageWidget>("imgCosmeticBack")->setVisibility(m_displayingCosmetics = displayingCosmetics);
+      m_displayingCosmetics = displayingCosmetics;
     }
   }
+
   return Pane::sendEvent(event);
 }
 

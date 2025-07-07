@@ -2,21 +2,24 @@ function patch(data)
   data.sounds.someup = jarray{"/sfx/interface/inventory_someup.ogg"}  
   data.sounds.somedown = jarray{"/sfx/interface/inventory_somedown.ogg"}
   local layout = data.paneLayout
-  layout.imgCosmeticBack = {
-    type = "image",
-    position = {layout.legsCosmetic.position[1] + 18, layout.legsCosmetic.position[2]},
-    file = "/interface/inventory/cosmeticsback.png",
-    zlevel = 3,
-    visible = false
-  }
 
   local function createCosmeticSlot(origin, offset, i)
-    layout["cosmetic" .. i] = {
+    local name = "cosmetic" .. i
+    if layout[name] then return end
+    layout[name] = {
       type = "itemslot",
       position = {origin.position[1] + offset, origin.position[2]},
       backingImage = origin.backingImage,
       data = {tooltipText = "Cosmetic " .. i},
-      zlevel = 4
+      zlevel = 5,
+      children = {
+        back = {
+          type = "image",
+          position = {-2, 0},
+          file = "/interface/inventory/cosmeticback.png",
+          mouseTransparent = true
+        }
+      }
     }
   end
 
