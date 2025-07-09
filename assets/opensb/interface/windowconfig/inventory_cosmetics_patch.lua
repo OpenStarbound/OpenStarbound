@@ -2,21 +2,36 @@ function patch(data)
   data.sounds.someup = jarray{"/sfx/interface/inventory_someup.ogg"}  
   data.sounds.somedown = jarray{"/sfx/interface/inventory_somedown.ogg"}
   local layout = data.paneLayout
-  layout.imgCosmeticBack = {
-    type = "image",
-    position = {layout.legsCosmetic.position[1] + 18, layout.legsCosmetic.position[2]},
-    file = "/interface/inventory/cosmeticsback.png",
-    zlevel = 3,
-    visible = false
-  }
+
+  local function addHiddenIndicator(slot)
+    if not slot.children then slot.children = {} end
+    slot.children.hidden = {
+      type = "image",
+      position = {0, 0},
+      file = "/interface/inventory/cosmetichidden.png",
+      mouseTransparent = true,
+      visible = false
+    }
+    return slot
+  end
 
   local function createCosmeticSlot(origin, offset, i)
-    layout["cosmetic" .. i] = {
+    local name = "cosmetic" .. i
+    if layout[name] then return end
+    layout[name] = addHiddenIndicator{
       type = "itemslot",
       position = {origin.position[1] + offset, origin.position[2]},
       backingImage = origin.backingImage,
       data = {tooltipText = "Cosmetic " .. i},
-      zlevel = 4
+      zlevel = 5,
+      children = {
+        back = {
+          type = "image",
+          position = {-2, 0},
+          file = "/interface/inventory/cosmeticback.png",
+          mouseTransparent = true
+        }
+      }
     }
   end
 
@@ -26,7 +41,16 @@ function patch(data)
     createCosmeticSlot(layout.chestCosmetic, offset, i + 4)
     createCosmeticSlot(layout.headCosmetic, offset, i + 8)
   end
-
+  
+  addHiddenIndicator(layout.legs)
+  addHiddenIndicator(layout.chest)
+  addHiddenIndicator(layout.head)
+  addHiddenIndicator(layout.back)
+  addHiddenIndicator(layout.legsCosmetic)
+  addHiddenIndicator(layout.chestCosmetic)
+  addHiddenIndicator(layout.headCosmetic)
+  addHiddenIndicator(layout.backCosmetic)
+  
   layout.portrait.renderHumanoid = true
   return data
 end

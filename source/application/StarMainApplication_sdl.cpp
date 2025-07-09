@@ -656,7 +656,7 @@ private:
 
         SDL_DisplayMode closestDisplayMode;
         if (SDL_GetClosestFullscreenDisplayMode(currentDisplayIndex, (int)fullScreenResolution[0], (int)fullScreenResolution[1], 0.f, true, &closestDisplayMode)) {
-          if (SDL_SetWindowFullscreenMode(parent->m_sdlWindow, &closestDisplayMode) == 0) {
+          if (SDL_SetWindowFullscreenMode(parent->m_sdlWindow, &closestDisplayMode)) {
             if (parent->m_windowMode == WindowMode::Fullscreen)
               SDL_SetWindowFullscreen(parent->m_sdlWindow, 0);
             else if (parent->m_windowMode == WindowMode::Borderless)

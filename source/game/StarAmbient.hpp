@@ -22,13 +22,14 @@ struct AmbientTrackGroup {
 // represents the ambient sounds data for a biome
 struct AmbientNoisesDescription {
   AmbientNoisesDescription();
-  AmbientNoisesDescription(AmbientTrackGroup day, AmbientTrackGroup night);
+  AmbientNoisesDescription(AmbientTrackGroup day, AmbientTrackGroup night, int loops = -1);
   AmbientNoisesDescription(Json const& config, String const& directory = "");
 
   Json toJson() const;
 
   AmbientTrackGroup daySounds;
   AmbientTrackGroup nightSounds;
+  int trackLoops = -1;
 };
 
 typedef AmbientTrackGroup WeatherNoisesDescription;

@@ -5,6 +5,7 @@
 #include "StarLabelWidget.hpp"
 #include "StarButtonWidget.hpp"
 #include "StarListWidget.hpp"
+#include "StarImageWidget.hpp"
 
 namespace Star {
 
@@ -19,8 +20,14 @@ ModsMenu::ModsMenu() {
   m_assetsSources = assets->assetSources();
   m_modList = fetchChild<ListWidget>("mods.list");
   for (auto const& assetsSource : m_assetsSources) {
-    auto modName = m_modList->addItem()->fetchChild<LabelWidget>("name");
-    modName->setText(bestModName(assets->assetSourceMetadata(assetsSource), assetsSource));
+    auto metadata = assets->assetSourceMetadata(assetsSource);
+    auto listItem = m_modList->addItem();
+    auto modName = listItem->fetchChild<LabelWidget>("name");
+    modName->setText(bestModName(metadata, assetsSource));
+    if (auto iconImage = metadata.ptr("icon")) {
+      auto modIcon = listItem->fetchChild<ImageWidget>("icon");
+      modIcon->setImage(iconImage->toString());
+    }
   }
 
   m_modName = findChild<LabelWidget>("modname");

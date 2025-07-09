@@ -460,7 +460,7 @@ public:
 
   void setInCinematic(bool inCinematic);
 
-  Maybe<pair<Maybe<StringList>, float>> pullPendingAltMusic();
+  Maybe<pair<Maybe<pair<StringList, int>>, float>> pullPendingAltMusic();
 
   Maybe<PlayerWarpRequest> pullPendingWarp();
   void setPendingWarp(String const& action, Maybe<String> const& animation = {}, bool deploy = false);
@@ -635,7 +635,7 @@ private:
   List<pair<GameTimer, RadioMessage>> m_delayedRadioMessages;
   Deque<RadioMessage> m_pendingRadioMessages;
   Maybe<Json> m_pendingCinematic;
-  Maybe<pair<Maybe<StringList>, float>> m_pendingAltMusic;
+  Maybe<pair<Maybe<pair<StringList, int>>, float>> m_pendingAltMusic;
   Maybe<PlayerWarpRequest> m_pendingWarp;
   Deque<pair<Json, RpcPromiseKeeper<Json>>> m_pendingConfirmations;
 

@@ -132,8 +132,8 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
   for (auto name : bagOrder) {
     auto itemGrid = itemBagConfig.get(name).getString("itemGrid");
     invWindowReader.registerCallback(itemGrid, bind(leftClickCallback, name, _1));
-    invWindowReader.registerCallback(strf("{}.right", itemGrid), bind(bagGridCallback, name, _1));
-    invWindowReader.registerCallback(strf("{}.middle", itemGrid), bind(middleClickCallback, name, _1));
+    invWindowReader.registerCallback(itemGrid + ".right", bind(bagGridCallback, name, _1));
+    invWindowReader.registerCallback(itemGrid + ".middle", bind(middleClickCallback, name, _1));
   }
 
   invWindowReader.registerCallback("close", [=](Widget*) {
@@ -168,8 +168,14 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
       });
   };
 
-  for (auto const p : EquipmentSlotNames)
-    registerSlotCallbacks(p.second, p.first);
+  for (auto const p : EquipmentSlotNames) {
+    EquipmentSlot slot = p.first;
+    registerSlotCallbacks(p.second, slot);
+    invWindowReader.registerCallback(p.second + ".middle", [slot, this](Widget* paneObj) {
+      auto inventory = m_player->inventory();
+      inventory->setEquipmentVisibility(slot, !inventory->equipmentVisibility(slot));
+    });
+  }
   registerSlotCallbacks("trash", TrashSlot());
 
   invWindowReader.construct(config.get("paneLayout"), this);
@@ -184,6 +190,8 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
   for (auto const p : EquipmentSlotNames) {
     if (auto itemSlot = fetchChild<ItemSlotWidget>(p.second)) {
       itemSlot->setItem(m_player->inventory()->itemsAt(p.first));
+      if (auto indicator = itemSlot->findChild<ImageWidget>("hidden"))
+        indicator->setVisibility(!m_player->inventory()->equipmentVisibility(p.first));
       if (p.first >= EquipmentSlot::Cosmetic1)
         itemSlot->hide();
     }
@@ -206,7 +214,16 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
   portrait->setIconMode();
   setTitle(portrait, m_player->name(), config.getString("subtitle"));
 
-  m_displayingCosmetics = m_expectingSwap = false;
+  if ((m_displayingCosmetics = m_alwaysDisplayCosmetics = config.getBool("alwaysDisplayCosmetics", false))) {
+    for (auto const& p : EquipmentSlotNames) {
+      if (p.first >= EquipmentSlot::Cosmetic1) {
+        if (auto itemSlot = fetchChild<ItemSlotWidget>(p.second))
+          itemSlot->setVisibility(true);
+      }
+    }
+  }
+
+  m_expectingSwap = false;
 
   if (auto item = m_player->inventory()->swapSlotItem())
     m_currentSwapSlotItem = item->descriptor();
@@ -259,6 +276,9 @@ PanePtr InventoryPane::createTooltip(Vec2I const& screenPosition) {
 }
 
 bool InventoryPane::sendEvent(InputEvent const& event) {
+  if (m_alwaysDisplayCosmetics)
+    return Pane::sendEvent(event);
+
   if (auto mousePosition = Widget::context()->mousePosition(event)) {
     bool displayingCosmetics = false;
     for (auto const& p : EquipmentSlotNames) {
@@ -275,9 +295,10 @@ bool InventoryPane::sendEvent(InputEvent const& event) {
             itemSlot->setVisibility(displayingCosmetics);
         }
       }
-      fetchChild<ImageWidget>("imgCosmeticBack")->setVisibility(m_displayingCosmetics = displayingCosmetics);
+      m_displayingCosmetics = displayingCosmetics;
     }
   }
+
   return Pane::sendEvent(event);
 }
 
@@ -354,6 +375,8 @@ void InventoryPane::update(float dt) {
     if (auto itemSlot = fetchChild<ItemSlotWidget>(p.second)) {
       itemSlot->setItem(inventory->itemsAt(p.first));
       itemSlot->showLinkIndicator(customBarItems.contains(itemSlot->item()));
+      if (auto indicator = itemSlot->findChild<ImageWidget>("hidden"))
+        indicator->setVisibility(!inventory->equipmentVisibility(p.first));
     }
   }
 
