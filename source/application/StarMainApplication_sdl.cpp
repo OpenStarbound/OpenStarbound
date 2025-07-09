@@ -321,6 +321,10 @@ public:
         return false;
       });
 
+    SDL_SetAppMetadata("Starbound", OpenStarVersionString);
+    SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_TYPE_STRING, "game");
+    SDL_SetHint(SDL_HINT_AUDIO_DEVICE_STREAM_NAME, "Audio");  
+	  
     Logger::info("Application: Initializing SDL");
     if (!SDL_Init(0))
       throw ApplicationException(strf("Couldn't initialize SDL: {}", SDL_GetError()));
@@ -337,11 +341,6 @@ public:
     } catch (std::exception const& e) {
       throw ApplicationException("Application threw exception during startup", e);
     }
-
-    //Sets Sdl metadata
-    SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_NAME_STRING, "Starbound");
-    SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_TYPE_STRING, "game");
-    SDL_SetHint(SDL_HINT_AUDIO_DEVICE_STREAM_NAME, "Audio");  
     
     Logger::info("Application: Initializing SDL Video");
     if (!SDL_InitSubSystem(SDL_INIT_VIDEO))
