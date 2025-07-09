@@ -341,10 +341,6 @@ public:
     //Sets Sdl metadata
     SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_NAME_STRING, "Starbound");
     SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_TYPE_STRING, "game");
-
-    //icon stuf
-    //SDL_SetHint(SDL_HINT_AUDIO_DEVICE_APP_ICON_NAME, "steam_icon_211820");  // should be used to set icon steam icon is temp
-    
     SDL_SetHint(SDL_HINT_AUDIO_DEVICE_STREAM_NAME, "Audio");  
     
     Logger::info("Application: Initializing SDL Video");
@@ -796,7 +792,6 @@ private:
 
     AudioFormat enableAudio() override {
       parent->m_audioEnabled = true;
-      //SDL_SetHint(SDL_HINT_AUDIO_DEVICE_STREAM_NAME, "Voice"); //Sets Audio Stream name to Voice
       SDL_ResumeAudioDevice(SDL_GetAudioStreamDevice(parent->m_sdlAudioOutputStream));
       return AudioFormat{44100, 2};
     }
