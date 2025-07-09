@@ -654,7 +654,7 @@ void UniverseServer::updateTeams() {
   StringMap<List<Uuid>> connectedPlayers;
   auto teams = m_teamManager->getPvpTeams();
   for (auto const& p : m_clients) {
-    connectedPlayers[p.second->playerName().toLower()].append(p.second->playerUuid());
+    connectedPlayers[p.second->playerName()].append(p.second->playerUuid());
 
     if (p.second->team().type == TeamType::PVP)
       p.second->setTeam(EntityDamageTeam(TeamType::PVP, teams.value(p.second->playerUuid(), soloPvpTeam(p.second->clientId()))));

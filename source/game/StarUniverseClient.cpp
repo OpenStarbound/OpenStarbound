@@ -288,6 +288,22 @@ void UniverseClient::update(float dt) {
   m_connection->push(m_systemWorldClient->pullOutgoingPackets());
 
   m_teamClient->update();
+  for (auto& result : m_teamClient->pullInviteResults()) {
+    String printout;
+    if (auto pair = result.ptr<std::pair<String, bool>>()) {
+      printout = strf(pair->second ? "Invited {}" : "Couldn't find anyone to invite named {}", pair->first);
+    } else if (auto invited = result.ptr<StringList>()) {
+      printout = "";
+      for (size_t i = 0; i != invited->size(); ++i) {
+        String& name = invited->at(i);
+        if (!printout.empty())
+          printout += (i == invited->size() - 1) ? "^reset;, and " : "^reset;, ";
+        printout += name;
+      }
+      printout = "Invited " + printout;
+    }
+    m_pendingMessages.emplaceAppend(MessageContext::CommandResult, 0, "", printout);
+  }
 
   auto contextUpdate = m_clientContext->writeUpdate(m_clientContext->netCompatibilityRules());
   if (!contextUpdate.empty())

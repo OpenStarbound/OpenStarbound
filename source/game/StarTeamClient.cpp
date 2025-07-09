@@ -49,7 +49,23 @@ void TeamClient::invitePlayer(String const& playerName) {
   request["inviteeName"] = playerName;
   request["inviterUuid"] = m_clientContext->playerUuid().hex();
   request["inviterName"] = m_mainPlayer->name();
-  invokeRemote("team.invite", request, [](Json) {});
+  invokeRemote("team.invite", request, [=](Json response) {
+    if (!response)
+      m_pendingInviteResults.append(make_pair(playerName, true));
+    else if (response == "inviteeNotFound")
+      m_pendingInviteResults.append(make_pair(playerName, false));
+    else if (response.isType(Json::Type::Array)) {
+      m_pendingInviteResults.push_back(StringList());
+      StringList& invited = m_pendingInviteResults.back().get<StringList>();
+      for (auto& entry : response.toArray()) {
+        if (!entry.isType(Json::Type::Array))
+          continue;
+        auto name = entry.get(0, Json());
+        if (name.isType(Json::Type::String))
+          invited.append(name.toString());
+      }
+    }
+  });
 }
 
 void TeamClient::acceptInvitation(Uuid const& inviterUuid) {
@@ -92,6 +108,10 @@ bool TeamClient::hasInvitationPending() {
 std::pair<Uuid, String> TeamClient::pullInvitation() {
   m_hasPendingInvitation = false;
   return m_pendingInvitation;
+}
+
+List<Variant<pair<String, bool>, StringList>> TeamClient::pullInviteResults() {
+  return take(m_pendingInviteResults);
 }
 
 void TeamClient::update() {

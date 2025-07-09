@@ -17,7 +17,7 @@ public:
 
   JsonRpcHandlers rpcHandlers();
 
-  void setConnectedPlayers(StringMap<List<Uuid>> const& connectedPlayers);
+  void setConnectedPlayers(StringMap<List<Uuid>> connectedPlayers);
   void playerDisconnected(Uuid const& playerUuid);
 
   TeamNumber getPvpTeam(Uuid const& playerUuid);
