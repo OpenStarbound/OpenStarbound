@@ -132,8 +132,8 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
   for (auto name : bagOrder) {
     auto itemGrid = itemBagConfig.get(name).getString("itemGrid");
     invWindowReader.registerCallback(itemGrid, bind(leftClickCallback, name, _1));
-    invWindowReader.registerCallback(strf("{}.right", itemGrid), bind(bagGridCallback, name, _1));
-    invWindowReader.registerCallback(strf("{}.middle", itemGrid), bind(middleClickCallback, name, _1));
+    invWindowReader.registerCallback(itemGrid + ".right", bind(bagGridCallback, name, _1));
+    invWindowReader.registerCallback(itemGrid + ".middle", bind(middleClickCallback, name, _1));
   }
 
   invWindowReader.registerCallback("close", [=](Widget*) {
@@ -168,8 +168,14 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
       });
   };
 
-  for (auto const p : EquipmentSlotNames)
-    registerSlotCallbacks(p.second, p.first);
+  for (auto const p : EquipmentSlotNames) {
+    EquipmentSlot slot = p.first;
+    registerSlotCallbacks(p.second, slot);
+    invWindowReader.registerCallback(p.second + ".middle", [slot, this](Widget* paneObj) {
+      auto inventory = m_player->inventory();
+      inventory->setEquipmentVisibility(slot, !inventory->equipmentVisibility(slot));
+    });
+  }
   registerSlotCallbacks("trash", TrashSlot());
 
   invWindowReader.construct(config.get("paneLayout"), this);
@@ -184,6 +190,8 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
   for (auto const p : EquipmentSlotNames) {
     if (auto itemSlot = fetchChild<ItemSlotWidget>(p.second)) {
       itemSlot->setItem(m_player->inventory()->itemsAt(p.first));
+      if (auto indicator = itemSlot->findChild<ImageWidget>("hidden"))
+        indicator->setVisibility(!m_player->inventory()->equipmentVisibility(p.first));
       if (p.first >= EquipmentSlot::Cosmetic1)
         itemSlot->hide();
     }
@@ -367,6 +375,8 @@ void InventoryPane::update(float dt) {
     if (auto itemSlot = fetchChild<ItemSlotWidget>(p.second)) {
       itemSlot->setItem(inventory->itemsAt(p.first));
       itemSlot->showLinkIndicator(customBarItems.contains(itemSlot->item()));
+      if (auto indicator = itemSlot->findChild<ImageWidget>("hidden"))
+        indicator->setVisibility(!inventory->equipmentVisibility(p.first));
     }
   }
 

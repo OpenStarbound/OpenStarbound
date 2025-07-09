@@ -1333,7 +1333,7 @@ void Player::refreshArmor() {
   bool shouldSetArmorSecrets = m_clientContext && m_clientContext->netCompatibilityRules().version() < 9;
   for (uint8_t i = 0; i != 20; ++i) {
     auto slot = (EquipmentSlot)i;
-    auto item = m_inventory->equipment(slot);
+    auto item = m_inventory->equipment(slot, true);
     if (m_armor->setItem(i, item)) {
       if (slot >= EquipmentSlot::Cosmetic1 && shouldSetArmorSecrets)
         setNetArmorSecret(slot, item);

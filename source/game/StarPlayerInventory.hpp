@@ -98,7 +98,7 @@ public:
   LegsArmorPtr legsCosmetic() const;
   BackArmorPtr backCosmetic() const;
 
-  ArmorItemPtr equipment(EquipmentSlot slot) const;
+  ArmorItemPtr equipment(EquipmentSlot slot, bool testMask = false) const;
 
   ItemBagConstPtr bagContents(String const& bag) const;
 
@@ -172,6 +172,8 @@ public:
   Maybe<InventorySlot> secondaryHeldSlot() const;
 
   List<ItemPtr> pullOverflow();
+  void setEquipmentVisibility(EquipmentSlot slot, bool visible);
+  bool equipmentVisibility(EquipmentSlot slot) const;
 
   void load(Json const& store);
   Json store() const;
@@ -226,6 +228,7 @@ private:
   NetElementData<SelectedActionBarLocation> m_selectedActionBarNetState;
 
   List<ItemPtr> m_inventoryLoadOverflow;
+  unsigned m_equipmentVisibilityMask;
 };
 
 }
