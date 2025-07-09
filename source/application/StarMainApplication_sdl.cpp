@@ -323,7 +323,7 @@ public:
 
     SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_NAME_STRING, "Starbound");
     SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_VERSION_STRING, OpenStarVersionString);
-    SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_IDENTIFIER_STRING, "org.openstarbound.starbound");
+    SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_IDENTIFIER_STRING, "io.github.openstarbound.openstarbound");
     SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_URL_STRING, "https://github.com/OpenStarbound/OpenStarbound");
     SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_TYPE_STRING, "game");
     SDL_SetHint(SDL_HINT_AUDIO_DEVICE_STREAM_NAME, "Audio");  
