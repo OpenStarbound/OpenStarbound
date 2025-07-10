@@ -266,7 +266,7 @@ NetworkedAnimator& NetworkedAnimator::operator=(NetworkedAnimator&& animator) {
   m_cachedPartDrawables = std::move(animator.m_cachedPartDrawables);
   m_partDrawables = std::move(animator.m_partDrawables);
   m_localTags = std::move(animator.m_localTags);
-
+  m_animatorVersion = std::move(animator.m_animatorVersion);
   setupNetStates();
 
   return *this;
@@ -292,7 +292,7 @@ NetworkedAnimator& NetworkedAnimator::operator=(NetworkedAnimator const& animato
   m_cachedPartDrawables = animator.m_cachedPartDrawables;
   m_partDrawables = animator.m_partDrawables;
   m_localTags = animator.m_localTags;
-
+  m_animatorVersion = animator.m_animatorVersion;
   setupNetStates();
 
   return *this;
