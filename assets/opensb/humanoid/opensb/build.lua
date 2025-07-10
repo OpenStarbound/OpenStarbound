@@ -16,9 +16,10 @@ function build(identity, humanoidConfig, npcHumanoidConfig)
 
 	if not humanoidConfig.animation then
 		humanoidConfig.animation = {
+			version = 1,
 			includes = {
 				"/humanoid/opensb/humanoid.animation"
-            },
+			},
 			globalTagDefaults = {},
 			animatedParts = {
 				stateTypes = {},
@@ -28,6 +29,7 @@ function build(identity, humanoidConfig, npcHumanoidConfig)
 	elseif type(humanoidConfig.animation) == "string" then
 		local animation = humanoidConfig.animation
 		humanoidConfig.animation = {
+			version = 1,
 			includes = {
 				animation
 			},
@@ -37,7 +39,7 @@ function build(identity, humanoidConfig, npcHumanoidConfig)
 				parts = {}
 			}
 		}
-    end
+	end
 	for k, v in pairs(identity) do
 		if type(v) == "string" then
 			humanoidConfig.animation.globalTagDefaults[k] = v
@@ -45,7 +47,7 @@ function build(identity, humanoidConfig, npcHumanoidConfig)
 	end
 	local stateTypes = humanoidConfig.animation.animatedParts.stateTypes
 	local parts = humanoidConfig.animation.animatedParts.parts
-	humanoidConfig.animation.version = 1
+
 	for i, emoteState in ipairs(emoteStates) do
 		setPath(stateTypes, { "emote", "states", emoteState, "cycle"}, humanoidConfig.humanoidTiming.emoteCycle[i])
 		stateTypes.emote.states[emoteState].frames = humanoidConfig.humanoidTiming.emoteFrames[i]

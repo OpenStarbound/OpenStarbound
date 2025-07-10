@@ -86,8 +86,8 @@ Player::Player(PlayerConfigPtr config, Uuid uuid) {
   }
 
   // all of these are defaults and won't include the correct humanoid config for the species
-  m_humanoid = make_shared<Humanoid>(m_identity);
-  auto movementParameters = ActorMovementParameters(jsonMerge(m_humanoid->defaultMovementParameters(), m_humanoid->playerMovementParameters().value(m_config->movementParameters)));
+  m_NetHumanoidElelmentId.set(m_NetHumanoid.addNetElement(make_shared<NetHumanoid>(m_identity, Json())));
+  auto movementParameters = ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value(m_config->movementParameters)));
   if (!movementParameters.physicsEffectCategories)
     movementParameters.physicsEffectCategories = StringSet({"player"});
   m_movementController = make_shared<ActorMovementController>(movementParameters);
@@ -183,6 +183,11 @@ Player::Player(PlayerConfigPtr config, Uuid uuid) {
   m_netGroup.addNetElement(m_statusController.get());
   m_netGroup.addNetElement(m_techController.get());
 
+  m_NetHumanoid.setCompatibilityVersion(8);
+  m_NetHumanoidElelmentId.setCompatibilityVersion(8);
+  m_netGroup.addNetElement(&m_NetHumanoid);
+  m_netGroup.addNetElement(&m_NetHumanoidElelmentId);
+
   m_netGroup.setNeedsLoadCallback(bind(&Player::getNetStates, this, _1));
   m_netGroup.setNeedsStoreCallback(bind(&Player::setNetStates, this));
 }
@@ -197,8 +202,9 @@ Player::Player(PlayerConfigPtr config, ByteArray const& netStore, NetCompatibili
   ds.read(m_modeType);
   ds.read(m_identity);
 
-  m_humanoid = make_shared<Humanoid>(m_identity);
-  m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(m_humanoid->defaultMovementParameters(), m_humanoid->playerMovementParameters().value(m_config->movementParameters))));
+  m_NetHumanoid.removeNetElement(m_NetHumanoidElelmentId.get());
+  m_NetHumanoidElelmentId.set(m_NetHumanoid.addNetElement(make_shared<NetHumanoid>(m_identity, Json())));
+  m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value(m_config->movementParameters))));
 }
 
 
@@ -239,8 +245,9 @@ void Player::diskLoad(Json const& diskStore) {
   m_questManager->diskLoad(diskStore.get("quests", JsonObject{}));
   m_companions->diskLoad(diskStore.get("companions", JsonObject{}));
   m_deployment->diskLoad(diskStore.get("deployment", JsonObject{}));
-  m_humanoid = make_shared<Humanoid>(m_identity);
-  m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(m_humanoid->defaultMovementParameters(), m_humanoid->playerMovementParameters().value(m_config->movementParameters))));
+  m_NetHumanoid.removeNetElement(m_NetHumanoidElelmentId.get());
+  m_NetHumanoidElelmentId.set(m_NetHumanoid.addNetElement(make_shared<NetHumanoid>(m_identity, Json())));
+  m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value(m_config->movementParameters))));
   m_effectsAnimator->setGlobalTag("effectDirectives", speciesDef->effectDirectives());
 
   m_genericProperties = diskStore.getObject("genericProperties");
@@ -378,7 +385,7 @@ List<Drawable> Player::drawables() const {
   if (!isTeleporting()) {
     drawables.appendAll(m_techController->backDrawables());
     if (!m_techController->parentHidden()) {
-      m_tools->setupHumanoidHandItemDrawables(*m_humanoid);
+      m_tools->setupHumanoidHandItemDrawables(*humanoid());
 
       // Auto-detect any ?scalenearest and apply them as a direct scale on the Humanoid's drawables instead.
       DirectivesGroup humanoidDirectives;
@@ -392,9 +399,9 @@ List<Drawable> Player::drawables() const {
       };
       extractScale(m_techController->parentDirectives().list());
       extractScale(m_statusController->parentDirectives().list());
-      m_humanoid->setScale(scale);
+      humanoid()->setScale(scale);
 
-      for (auto& drawable : m_humanoid->render()) {
+      for (auto& drawable : humanoid()->render()) {
         drawable.translate(position() + m_techController->parentOffset());
         if (drawable.isImage()) {
           drawable.imagePart().addDirectivesGroup(humanoidDirectives, true);
@@ -427,7 +434,7 @@ List<Particle> Player::particles() {
   List<Particle> particles;
   particles.appendAll(m_config->splashConfig.doSplash(position(), m_movementController->velocity(), world()));
   particles.appendAll(take(m_callbackParticles));
-  particles.appendAll(m_humanoid->networkedAnimatorDynamicTarget()->pullNewParticles());
+  particles.appendAll(humanoid()->networkedAnimatorDynamicTarget()->pullNewParticles());
   particles.appendAll(m_techController->pullNewParticles());
   particles.appendAll(m_statusController->pullNewParticles());
 
@@ -475,11 +482,11 @@ void Player::setWireConnector(WireConnector* wireConnector) const {
 
 List<Drawable> Player::portrait(PortraitMode mode) const {
   if (isPermaDead())
-    return m_humanoid->renderSkull();
+    return humanoid()->renderSkull();
   if (invisible())
     return {};
-  m_armor->setupHumanoidClothingDrawables(*m_humanoid, forceNude());
-  return m_humanoid->renderPortrait(mode);
+  m_armor->setupHumanoidClothingDrawables(*humanoid(), forceNude());
+  return humanoid()->renderPortrait(mode);
 }
 
 bool Player::underwater() const {
@@ -495,7 +502,7 @@ List<LightSource> Player::lightSources() const {
   lights.appendAll(m_tools->lightSources());
   lights.appendAll(m_statusController->lightSources());
   lights.appendAll(m_techController->lightSources());
-  lights.appendAll(m_humanoid->networkedAnimator()->lightSources());
+  lights.appendAll(humanoid()->networkedAnimator()->lightSources());
   return lights;
 }
 
@@ -561,7 +568,7 @@ void Player::destroy(RenderCallback* renderCallback) {
   m_state = State::Idle;
   m_emoteState = HumanoidEmote::Idle;
   if (renderCallback) {
-    List<Particle> deathParticles = m_humanoid->particles(m_humanoid->defaultDeathParticles());
+    List<Particle> deathParticles = humanoid()->particles(humanoid()->defaultDeathParticles());
     renderCallback->addParticles(deathParticles, position());
   }
 
@@ -627,31 +634,31 @@ Vec2F Player::velocity() const {
 
 Vec2F Player::mouthOffset(bool ignoreAdjustments) const {
   return Vec2F(
-      m_humanoid->mouthOffset(ignoreAdjustments)[0] * numericalDirection(facingDirection()), m_humanoid->mouthOffset(ignoreAdjustments)[1]);
+      humanoid()->mouthOffset(ignoreAdjustments)[0] * numericalDirection(facingDirection()), humanoid()->mouthOffset(ignoreAdjustments)[1]);
 }
 
 Vec2F Player::feetOffset() const {
-  return Vec2F(m_humanoid->feetOffset()[0] * numericalDirection(facingDirection()), m_humanoid->feetOffset()[1]);
+  return Vec2F(humanoid()->feetOffset()[0] * numericalDirection(facingDirection()), humanoid()->feetOffset()[1]);
 }
 
 Vec2F Player::headArmorOffset() const {
   return Vec2F(
-      m_humanoid->headArmorOffset()[0] * numericalDirection(facingDirection()), m_humanoid->headArmorOffset()[1]);
+      humanoid()->headArmorOffset()[0] * numericalDirection(facingDirection()), humanoid()->headArmorOffset()[1]);
 }
 
 Vec2F Player::chestArmorOffset() const {
   return Vec2F(
-      m_humanoid->chestArmorOffset()[0] * numericalDirection(facingDirection()), m_humanoid->chestArmorOffset()[1]);
+      humanoid()->chestArmorOffset()[0] * numericalDirection(facingDirection()), humanoid()->chestArmorOffset()[1]);
 }
 
 Vec2F Player::backArmorOffset() const {
   return Vec2F(
-      m_humanoid->backArmorOffset()[0] * numericalDirection(facingDirection()), m_humanoid->backArmorOffset()[1]);
+      humanoid()->backArmorOffset()[0] * numericalDirection(facingDirection()), humanoid()->backArmorOffset()[1]);
 }
 
 Vec2F Player::legsArmorOffset() const {
   return Vec2F(
-      m_humanoid->legsArmorOffset()[0] * numericalDirection(facingDirection()), m_humanoid->legsArmorOffset()[1]);
+      humanoid()->legsArmorOffset()[0] * numericalDirection(facingDirection()), humanoid()->legsArmorOffset()[1]);
 }
 
 Vec2F Player::mouthPosition() const {
@@ -1012,25 +1019,25 @@ void Player::update(float dt, uint64_t) {
     m_statusController->tickSlave(dt);
   }
 
-  m_humanoid->setRotation(m_movementController->rotation());
+  humanoid()->setRotation(m_movementController->rotation());
 
   bool suppressedItems = !canUseTool();
 
   auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor());
   if (loungeAnchor && loungeAnchor->dance)
-    m_humanoid->setDance(*loungeAnchor->dance);
+    humanoid()->setDance(*loungeAnchor->dance);
   else if ((!suppressedItems && (m_tools->primaryHandItem() || m_tools->altHandItem()))
-    || m_humanoid->danceCyclicOrEnded() || m_movementController->running())
-    m_humanoid->setDance({});
+    || humanoid()->danceCyclicOrEnded() || m_movementController->running())
+    humanoid()->setDance({});
 
   bool isClient = world()->isClient();
   if (isClient)
-    m_armor->setupHumanoidClothingDrawables(*m_humanoid, forceNude());
+    m_armor->setupHumanoidClothingDrawables(*humanoid(), forceNude());
 
   m_tools->suppressItems(suppressedItems);
   m_tools->tick(dt, m_shifting, m_pendingMoves);
 
-  if (auto overrideFacingDirection = m_tools->setupHumanoidHandItems(*m_humanoid, position(), aimPosition()))
+  if (auto overrideFacingDirection = m_tools->setupHumanoidHandItems(*humanoid(), position(), aimPosition()))
     m_movementController->controlFace(*overrideFacingDirection);
 
   m_effectsAnimator->resetTransformationGroup("flip");
@@ -1082,13 +1089,13 @@ void Player::update(float dt, uint64_t) {
     if (!calculateHeadRotation) {
       auto headRotationProperty = getSecretProperty("humanoid.headRotation");
       if (headRotationProperty.isType(Json::Type::Float)) {
-        m_humanoid->setHeadRotation(headRotationProperty.toFloat());
+        humanoid()->setHeadRotation(headRotationProperty.toFloat());
       } else
         calculateHeadRotation = true;
     }
     if (calculateHeadRotation) { // master or not an OpenStarbound player
       float headRotation = 0.f;
-      if (Humanoid::globalHeadRotation() && (m_humanoid->primaryHandHoldingItem() || m_humanoid->altHandHoldingItem() || m_humanoid->dance())) {
+      if (Humanoid::globalHeadRotation() && (humanoid()->primaryHandHoldingItem() || humanoid()->altHandHoldingItem() || humanoid()->dance())) {
         auto primary = m_tools->primaryHandItem();
         auto alt = m_tools->altHandItem();
         String const disableFlag = "disableHeadRotation";
@@ -1098,17 +1105,17 @@ void Player::update(float dt, uint64_t) {
          && !(alt && alt->instanceValue(disableFlag))) {
           auto diff = world()->geometry().diff(aimPosition(), mouthPosition());
           diff.setX(fabsf(diff.x()));
-          headRotation = diff.angle() * .25f * numericalDirection(m_humanoid->facingDirection());
+          headRotation = diff.angle() * .25f * numericalDirection(humanoid()->facingDirection());
         }
       }
-      m_humanoid->setHeadRotation(headRotation);
+      humanoid()->setHeadRotation(headRotation);
       if (isMaster())
         setSecretProperty("humanoid.headRotation", headRotation);
     }
   }
 
-  m_humanoid->setFacingDirection(m_movementController->facingDirection());
-  m_humanoid->setMovingBackwards(m_movementController->facingDirection() != m_movementController->movingDirection());
+  humanoid()->setFacingDirection(m_movementController->facingDirection());
+  humanoid()->setMovingBackwards(m_movementController->facingDirection() != m_movementController->movingDirection());
 
   m_pendingMoves.clear();
 
@@ -1131,8 +1138,8 @@ void Player::render(RenderCallback* renderCallback) {
     m_statusController->pullNewAudios();
     m_statusController->pullNewParticles();
 
-    m_humanoid->networkedAnimatorDynamicTarget()->pullNewAudios();
-    m_humanoid->networkedAnimatorDynamicTarget()->pullNewParticles();
+    humanoid()->networkedAnimatorDynamicTarget()->pullNewAudios();
+    humanoid()->networkedAnimatorDynamicTarget()->pullNewParticles();
     return;
   }
 
@@ -1165,7 +1172,7 @@ void Player::render(RenderCallback* renderCallback) {
 
   renderCallback->addAudios(m_techController->pullNewAudios());
   renderCallback->addAudios(m_statusController->pullNewAudios());
-  renderCallback->addAudios(m_humanoid->networkedAnimatorDynamicTarget()->pullNewAudios());
+  renderCallback->addAudios(humanoid()->networkedAnimatorDynamicTarget()->pullNewAudios());
 
   for (auto const& p : take(m_callbackSounds)) {
     auto audio = make_shared<AudioInstance>(*Root::singleton().assets()->audio(get<0>(p)));
@@ -1482,15 +1489,15 @@ Vec2F Player::aimPosition() const {
 }
 
 Vec2F Player::armPosition(ToolHand hand, Direction facingDirection, float armAngle, Vec2F offset) const {
-  return m_tools->armPosition(*m_humanoid, hand, facingDirection, armAngle, offset);
+  return m_tools->armPosition(*humanoid(), hand, facingDirection, armAngle, offset);
 }
 
 Vec2F Player::handOffset(ToolHand hand, Direction facingDirection) const {
-  return m_tools->handOffset(*m_humanoid, hand, facingDirection);
+  return m_tools->handOffset(*humanoid(), hand, facingDirection);
 }
 
 Vec2F Player::handPosition(ToolHand hand, Vec2F const& handOffset) const {
-  return m_tools->handPosition(hand, *m_humanoid, handOffset);
+  return m_tools->handPosition(hand, *humanoid(), handOffset);
 }
 
 ItemPtr Player::handItem(ToolHand hand) const {
@@ -1501,7 +1508,7 @@ ItemPtr Player::handItem(ToolHand hand) const {
 }
 
 Vec2F Player::armAdjustment() const {
-  return m_humanoid->armAdjustment();
+  return humanoid()->armAdjustment();
 }
 
 void Player::setCameraFocusEntity(Maybe<EntityId> const& cameraFocusEntity) {
@@ -1835,58 +1842,58 @@ void Player::processStateChanges(float dt) {
     }
   }
 
-  m_humanoid->animate(dt);
+  humanoid()->animate(dt);
 
   if (auto techState = m_techController->parentState()) {
     if (techState == TechController::ParentState::Stand) {
-      m_humanoid->setState(Humanoid::Idle);
+      humanoid()->setState(Humanoid::Idle);
     } else if (techState == TechController::ParentState::Fly) {
-      m_humanoid->setState(Humanoid::Jump);
+      humanoid()->setState(Humanoid::Jump);
     } else if (techState == TechController::ParentState::Fall) {
-      m_humanoid->setState(Humanoid::Fall);
+      humanoid()->setState(Humanoid::Fall);
     } else if (techState == TechController::ParentState::Sit) {
-      m_humanoid->setState(Humanoid::Sit);
+      humanoid()->setState(Humanoid::Sit);
     } else if (techState == TechController::ParentState::Lay) {
-      m_humanoid->setState(Humanoid::Lay);
+      humanoid()->setState(Humanoid::Lay);
     } else if (techState == TechController::ParentState::Duck) {
-      m_humanoid->setState(Humanoid::Duck);
+      humanoid()->setState(Humanoid::Duck);
     } else if (techState == TechController::ParentState::Walk) {
-      m_humanoid->setState(Humanoid::Walk);
+      humanoid()->setState(Humanoid::Walk);
     } else if (techState == TechController::ParentState::Run) {
-      m_humanoid->setState(Humanoid::Run);
+      humanoid()->setState(Humanoid::Run);
     } else if (techState == TechController::ParentState::Swim) {
-      m_humanoid->setState(Humanoid::Swim);
+      humanoid()->setState(Humanoid::Swim);
     } else if (techState == TechController::ParentState::SwimIdle) {
-      m_humanoid->setState(Humanoid::SwimIdle);
+      humanoid()->setState(Humanoid::SwimIdle);
     }
   } else {
     auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor());
     if (m_state == State::Idle) {
-      m_humanoid->setState(Humanoid::Idle);
+      humanoid()->setState(Humanoid::Idle);
     } else if (m_state == State::Walk) {
-      m_humanoid->setState(Humanoid::Walk);
+      humanoid()->setState(Humanoid::Walk);
     } else if (m_state == State::Run) {
-      m_humanoid->setState(Humanoid::Run);
+      humanoid()->setState(Humanoid::Run);
     } else if (m_state == State::Jump) {
-      m_humanoid->setState(Humanoid::Jump);
+      humanoid()->setState(Humanoid::Jump);
     } else if (m_state == State::Fall) {
-      m_humanoid->setState(Humanoid::Fall);
+      humanoid()->setState(Humanoid::Fall);
     } else if (m_state == State::Swim) {
-      m_humanoid->setState(Humanoid::Swim);
+      humanoid()->setState(Humanoid::Swim);
     } else if (m_state == State::SwimIdle) {
-      m_humanoid->setState(Humanoid::SwimIdle);
+      humanoid()->setState(Humanoid::SwimIdle);
     } else if (m_state == State::Crouch) {
-      m_humanoid->setState(Humanoid::Duck);
+      humanoid()->setState(Humanoid::Duck);
     } else if (m_state == State::Lounge && loungeAnchor && loungeAnchor->orientation == LoungeOrientation::Sit) {
-      m_humanoid->setState(Humanoid::Sit);
+      humanoid()->setState(Humanoid::Sit);
     } else if (m_state == State::Lounge && loungeAnchor && loungeAnchor->orientation == LoungeOrientation::Lay) {
-      m_humanoid->setState(Humanoid::Lay);
+      humanoid()->setState(Humanoid::Lay);
     } else if (m_state == State::Lounge && loungeAnchor && loungeAnchor->orientation == LoungeOrientation::Stand) {
-      m_humanoid->setState(Humanoid::Idle);
+      humanoid()->setState(Humanoid::Idle);
     }
   }
 
-  m_humanoid->setEmoteState(m_emoteState);
+  humanoid()->setEmoteState(m_emoteState);
 }
 
 String Player::getFootstepSound(Vec2I const& sensor) const {
@@ -1929,9 +1936,14 @@ void Player::getNetStates(bool initial) {
   m_aimPosition[1] = m_yAimPositionNetState.get();
 
   if (m_identityNetState.pullUpdated()) {
-    m_identity = m_identityNetState.get();
-    m_humanoid->setIdentity(m_identity);
+    auto newIdentity = m_identityNetState.get();
+    if (m_identity.species == newIdentity.species) {
+      humanoid()->setIdentity(newIdentity);
+    }
+    m_identity = newIdentity;
   }
+  if (m_NetHumanoidElelmentId.pullUpdated())
+    refreshHumanoid();
 
   setTeam(m_teamNetState.get());
 
@@ -2113,8 +2125,15 @@ Vec2F Player::nametagOrigin() const {
   return mouthPosition(false);
 }
 
-void Player::updateIdentity()
-{ m_identityUpdated = true; m_humanoid->setIdentity(m_identity); }
+void Player::updateIdentity() {
+  m_identityUpdated = true;
+  auto oldIdentity = humanoid()->identity();
+  if (m_identity.species != oldIdentity.species) {
+    refreshHumanoid();
+  } else {
+    humanoid()->setIdentity(m_identity);
+  }
+}
 
 void Player::setBodyDirectives(String const& directives)
 { m_identity.bodyDirectives = directives; updateIdentity(); }
@@ -2199,7 +2218,10 @@ void Player::setImagePath(Maybe<String> const& imagePath) {
 }
 
 HumanoidPtr Player::humanoid() {
-  return m_humanoid;
+  return m_NetHumanoid.getNetElement(m_NetHumanoidElelmentId.get())->humanoid();
+}
+HumanoidPtr Player::humanoid() const {
+  return m_NetHumanoid.getNetElement(m_NetHumanoidElelmentId.get())->humanoid();
 }
 
 HumanoidIdentity const& Player::identity() const {
@@ -2414,7 +2436,7 @@ bool Player::invisible() const {
 }
 
 void Player::animatePortrait(float dt) {
-  m_humanoid->animate(dt);
+  humanoid()->animate(dt);
   if (m_emoteCooldownTimer) {
     m_emoteCooldownTimer -= dt;
     if (m_emoteCooldownTimer <= 0) {
@@ -2422,7 +2444,7 @@ void Player::animatePortrait(float dt) {
       m_emoteState = HumanoidEmote::Idle;
     }
   }
-  m_humanoid->setEmoteState(m_emoteState);
+  humanoid()->setEmoteState(m_emoteState);
 }
 
 bool Player::isOutside() {
@@ -2674,5 +2696,27 @@ void Player::setSecretProperty(String const& name, Json const& value) {
     m_effectsAnimator->removeGlobalTag(secretProprefix + name);
 }
 
+void Player::refreshHumanoid() {
+  auto speciesDatabase = Root::singleton().speciesDatabase();
+  auto speciesDef = speciesDatabase->species(m_identity.species);
+
+  if (isMaster()) {
+    m_NetHumanoid.removeNetElement(m_NetHumanoidElelmentId.get());
+    m_NetHumanoidElelmentId.set(m_NetHumanoid.addNetElement(make_shared<NetHumanoid>(m_identity, Json())));
+    m_effectsAnimator->setGlobalTag("effectDirectives", speciesDef->effectDirectives());
+    m_armor->reset();
+  }
+
+  refreshEquipment();
+  m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value(m_config->movementParameters))));
+
+  if (isMaster()) {
+    for (auto& p : m_genericScriptContexts) {
+      if (p.second->initialized())
+        p.second->invoke("refreshHumanoid");
+    }
+  }
+
+}
 
 }

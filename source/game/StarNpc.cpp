@@ -787,12 +787,12 @@ LuaCallbacks Npc::makeNpcCallbacks() {
   callbacks.registerCallback("setIdentity", [this](Json identity) {
     auto newIdentity = HumanoidIdentity(identity);
     m_npcVariant.humanoidIdentity = newIdentity;
-    m_humanoid.setIdentity(m_npcVariant.humanoidIdentity, m_npcVariant.uniqueHumanoidConfig ? m_npcVariant.humanoidConfig : Json());
+    m_humanoid.setIdentity(m_npcVariant.humanoidIdentity);
     m_identityUpdated = true;
   });
   callbacks.registerCallback("setSpecies", [this](String species) {
     m_npcVariant.humanoidIdentity.species = species;
-    m_humanoid.setIdentity(m_npcVariant.humanoidIdentity, m_npcVariant.uniqueHumanoidConfig ? m_npcVariant.humanoidConfig : Json());
+    m_humanoid.setIdentity(m_npcVariant.humanoidIdentity);
     m_identityUpdated = true;
   });
 
@@ -875,7 +875,7 @@ void Npc::getNetStates(bool initial) {
 
   if (m_identityNetState.pullUpdated() && !initial) {
     m_npcVariant.humanoidIdentity = m_identityNetState.get();
-    m_humanoid.setIdentity(m_npcVariant.humanoidIdentity, m_npcVariant.uniqueHumanoidConfig ? m_npcVariant.humanoidConfig : Json());
+    m_humanoid.setIdentity(m_npcVariant.humanoidIdentity);
   }
 
   if (m_newChatMessageEvent.pullOccurred() && !initial) {

@@ -5,6 +5,7 @@
 #include "StarDrawable.hpp"
 #include "StarParticle.hpp"
 #include "StarNetworkedAnimator.hpp"
+#include "StarNetElement.hpp"
 
 namespace Star {
 
@@ -126,10 +127,10 @@ public:
     Array<unsigned, EmoteSize> emoteFrames;
   };
 
-  void setIdentity(HumanoidIdentity const& identity, Json config = Json());
+  void setIdentity(HumanoidIdentity const& identity);
   HumanoidIdentity const& identity() const;
 
-  void loadConfig(Json merger = JsonObject(), bool force = false);
+  void loadConfig(Json merger = JsonObject());
 
   // All of the image identifiers here are meant to be image *base* names, with
   // a collection of frames specific to each piece.  If an image is set to
@@ -467,6 +468,33 @@ private:
   Maybe<JsonObject> m_legsArmorTags;
   Maybe<JsonObject> m_backArmorTags;
 
+};
+
+
+// this is because species can be changed on the fly and therefore the humanoid needs to re-initialize as the new species when it changes
+// therefore we need to have these in a dynamic group in players and NPCs for the sake of the networked animator not breaking the game
+class NetHumanoid : NetElement {
+public:
+  NetHumanoid(HumanoidIdentity identity = HumanoidIdentity(), Json config = Json());
+
+  void initNetVersion(NetElementVersion const* version = nullptr) override;
+
+  void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
+  void netLoad(DataStream& ds, NetCompatibilityRules rules) override;
+
+  void enableNetInterpolation(float extrapolationHint = 0.0f) override;
+  void disableNetInterpolation() override;
+  void tickNetInterpolation(float dt) override;
+
+  bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+  void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
+  void blankNetDelta(float interpolationTime) override;
+
+  HumanoidPtr humanoid();
+
+private:
+  Json m_config;
+  HumanoidPtr m_humanoid;
 };
 
 }

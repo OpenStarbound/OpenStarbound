@@ -296,21 +296,14 @@ Humanoid::Humanoid(Json const& config) : Humanoid() {
 }
 
 Humanoid::Humanoid(HumanoidIdentity const& identity, Json config) : Humanoid() {
-  m_identity = identity;
-  m_baseConfig = (Root::singleton().speciesDatabase()->humanoidConfig(m_identity, config));
+  m_baseConfig = (Root::singleton().speciesDatabase()->humanoidConfig(identity, config));
   loadConfig(JsonObject());
-  m_animationPath = ("/humanoid/" + m_identity.imagePath.value(m_identity.species) + "/");
+  m_animationPath = ("/humanoid/" + identity.imagePath.value(identity.species) + "/");
   m_networkedAnimator = m_animationConfig.isValid() ? NetworkedAnimator(*m_animationConfig, m_animationPath) : NetworkedAnimator();
-  setIdentity(m_identity, config);
+  setIdentity(identity);
 }
 
-void Humanoid::setIdentity(HumanoidIdentity const& identity, Json config) {
-  if ((identity.species != m_identity.species) || (identity.gender != m_identity.gender) || (identity.imagePath != m_identity.imagePath)) {
-    m_baseConfig = Root::singleton().speciesDatabase()->humanoidConfig(identity, config);
-    loadConfig(JsonObject(), true);
-    m_animationPath = ("/humanoid/" + identity.imagePath.value(identity.species) + "/");
-    m_networkedAnimator = m_animationConfig.isValid() ? NetworkedAnimator(*m_animationConfig, m_animationPath) : NetworkedAnimator();
-  }
+void Humanoid::setIdentity(HumanoidIdentity const& identity) {
   m_identity = identity;
   m_headFrameset = getHeadFromIdentity();
   m_bodyFrameset = getBodyFromIdentity();
@@ -380,8 +373,8 @@ HumanoidIdentity const& Humanoid::identity() const {
   return m_identity;
 }
 
-void Humanoid::loadConfig(Json merger, bool force) {
-  if ((m_mergeConfig == merger) && !force)
+void Humanoid::loadConfig(Json merger) {
+  if (m_mergeConfig == merger)
     return;
 
   m_mergeConfig = merger;
@@ -2115,4 +2108,57 @@ NetworkedAnimator::DynamicTarget * Humanoid::networkedAnimatorDynamicTarget() {
   return &m_networkedAnimatorDynamicTarget;
 }
 
+
+NetHumanoid::NetHumanoid(HumanoidIdentity identity, Json config) {
+  m_config = config;
+  m_humanoid = make_shared<Humanoid>(identity, config);
+}
+
+void NetHumanoid::initNetVersion(NetElementVersion const* version) {
+  m_humanoid->networkedAnimator()->initNetVersion(version);
+}
+
+void NetHumanoid::netStore(DataStream& ds, NetCompatibilityRules rules) const {
+  if (!checkWithRules(rules)) return;
+  ds.write(m_humanoid->identity());
+  ds.write(m_config);
+  m_humanoid->networkedAnimator()->netStore(ds, rules);
+}
+
+void NetHumanoid::netLoad(DataStream& ds, NetCompatibilityRules rules) {
+  if (!checkWithRules(rules)) return;
+  HumanoidIdentity identity;
+  ds.read(identity);
+  ds.read(m_config);
+  m_humanoid = make_shared<Humanoid>(identity, m_config);
+  m_humanoid->networkedAnimator()->netLoad(ds, rules);
+}
+
+void NetHumanoid::enableNetInterpolation(float extrapolationHint) {
+  m_humanoid->networkedAnimator()->enableNetInterpolation(extrapolationHint);
+}
+
+void NetHumanoid::disableNetInterpolation() {
+  m_humanoid->networkedAnimator()->disableNetInterpolation();
+}
+
+void NetHumanoid::tickNetInterpolation(float dt) {
+  m_humanoid->networkedAnimator()->tickNetInterpolation(dt);
+}
+
+bool NetHumanoid::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const {
+  return m_humanoid->networkedAnimator()->writeNetDelta(ds, fromVersion, rules);
+}
+
+void NetHumanoid::readNetDelta(DataStream& ds, float interpolationTime, NetCompatibilityRules rules) {
+  m_humanoid->networkedAnimator()->readNetDelta(ds, interpolationTime, rules);
+}
+
+void NetHumanoid::blankNetDelta(float interpolationTime) {
+  m_humanoid->networkedAnimator()->blankNetDelta(interpolationTime);
+}
+
+HumanoidPtr NetHumanoid::humanoid() {
+  return m_humanoid;
+}
 }

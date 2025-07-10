@@ -345,6 +345,7 @@ public:
   void setImagePath(Maybe<String> const& imagePath);
 
   HumanoidPtr humanoid();
+  HumanoidPtr humanoid() const;
   HumanoidIdentity const& identity() const;
 
   void setIdentity(HumanoidIdentity identity);
@@ -525,6 +526,11 @@ private:
 
   HumanoidEmote detectEmotes(String const& chatter);
 
+  void refreshHumanoid();
+
+  NetElementDynamicGroup<NetHumanoid> m_NetHumanoid;
+  NetElementUInt m_NetHumanoidElelmentId;
+
   PlayerConfigPtr m_config;
 
   NetElementTopGroup m_netGroup;
@@ -533,7 +539,6 @@ private:
   StatisticsPtr m_statistics;
   QuestManagerPtr m_questManager;
 
-  HumanoidPtr m_humanoid;
   PlayerInventoryPtr m_inventory;
   PlayerBlueprintsPtr m_blueprints;
   PlayerUniverseMapPtr m_universeMap;
