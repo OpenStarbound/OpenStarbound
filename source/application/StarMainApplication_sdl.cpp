@@ -364,7 +364,7 @@ public:
     if (!m_platformServices)
       Logger::info("Application: No platform services available");
 
-    Logger::info("Application: Creating SDL Window");
+    Logger::info("Application: Creating SDL window");
     m_sdlWindow = SDL_CreateWindow(m_windowTitle.utf8Ptr(), m_windowSize[0], m_windowSize[1], SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY);
     if (!m_sdlWindow)
       throw ApplicationException::format("Application: Could not create SDL Window: {}", SDL_GetError());
@@ -385,6 +385,7 @@ public:
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
 #endif
 
+    Logger::info("Application: Creating SDL OpenGL context");
     m_sdlGlContext = SDL_GL_CreateContext(m_sdlWindow);
     if (!m_sdlGlContext)
       throw ApplicationException::format("Application: Could not create OpenGL context: {}", SDL_GetError());
@@ -402,6 +403,8 @@ public:
 
     SDL_StopTextInput(m_sdlWindow);
 
+    Logger::info("Application: Opening audio device");
+    m_audioOutputData.clear();
     SDL_AudioSpec desired = {SDL_AUDIO_S16, 2, 44100};
     m_sdlAudioOutputStream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &desired,
     [](void* userdata, SDL_AudioStream* stream, int len, int) {
