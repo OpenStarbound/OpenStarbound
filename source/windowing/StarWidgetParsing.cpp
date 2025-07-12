@@ -165,6 +165,9 @@ WidgetConstructResult WidgetParser::buttonHandler(String const& name, Json const
   if (config.contains("checkable"))
     button->setCheckable(config.getBool("checkable"));
 
+  if (config.contains("sustainCallbackOnDownHold"))
+    button->setSustainCallbackOnDownHold(config.getBool("sustainCallbackOnDownHold"));
+
   if (config.contains("checked"))
     button->setChecked(config.getBool("checked"));
 
