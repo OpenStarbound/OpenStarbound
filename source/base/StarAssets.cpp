@@ -532,8 +532,6 @@ void Assets::queueImages(CaseInsensitiveStringSet const& paths) const {
 }
 
 ImageConstPtr Assets::tryImage(AssetPath const& path) const {
-  validatePath(path, true, true);
-
   if (auto imageData = as<ImageData>(tryAsset(AssetId{AssetType::Image, path})))
     return imageData->image;
   else
