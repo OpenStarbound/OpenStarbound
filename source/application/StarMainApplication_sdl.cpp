@@ -355,10 +355,6 @@ public:
     if (!SDL_InitSubSystem(SDL_INIT_GAMEPAD))
       throw ApplicationException(strf("Couldn't initialize SDL Controller: {}", SDL_GetError()));
 
-#ifdef STAR_SYSTEM_WINDOWS // Newer SDL is defaulting to xaudio2, which does not support audio capture
-  SDL_setenv_unsafe("SDL_AUDIODRIVER", "directsound", 1);
-#endif
-
     Logger::info("Application: Initializing SDL Audio");
     if (!SDL_InitSubSystem(SDL_INIT_AUDIO))
       throw ApplicationException(strf("Couldn't initialize SDL Audio: {}", SDL_GetError()));
