@@ -56,12 +56,14 @@ vec4 bicubicSample(sampler2D tex, vec2 texcoord, vec2 texscale) {
 }
 
 vec3 sampleLight(vec2 coord, vec2 scale) {
-  //soften super bright lights a little
+  //soften super bright lights a little and add dithering 
   const float threshold = 1.0;
   vec3 rgb = bicubicSample(lightMap, coord, scale).rgb;
   vec3 lower = min(rgb, threshold);
   vec3 upper = max(rgb, threshold) - threshold;
-  return lower + (upper / (vec3(1.) + upper));
+  vec3 clamped = lower + (upper / (vec3(1.0) + upper));
+  vec3 dither = vec3(0.00675 * (fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453)));
+  return clamped + dither;
 }
 
 void main() {
