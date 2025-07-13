@@ -24,9 +24,10 @@
 
 namespace Star {
     
-static void validateBasePath(std::string_view const& basePath) {
+// if a ptr is returned, can be optionally used to format an error
+static const char* validateBasePath(std::string_view const& basePath) {
   if (basePath.empty() || basePath[0] != '/')
-    throw AssetException(strf("Path '{}' must be absolute", basePath));
+    return "Path '{}' must be absolute";
 
   bool first = true;
   bool slashed = true;
@@ -35,19 +36,19 @@ static void validateBasePath(std::string_view const& basePath) {
     if (c == '/') {
       if (!first) {
         if (slashed)
-          throw AssetException(strf("Path '{}' contains consecutive //, not allowed", basePath));
+          return "Path '{}' contains consecutive //, not allowed";
         else if (dotted)
-          throw AssetException(strf("Path '{}' '.' and '..' not allowed", basePath));
+          return "Path '{}' '.' and '..' not allowed";
       }
       slashed = true;
       dotted = false;
     } else if (c == ':') {
       if (slashed)
-        throw AssetException(strf("Path '{}' has ':' after directory", basePath));
+        return "Path '{}' has ':' after directory";
       break;
     } else if (c == '?') {
       if (slashed)
-        throw AssetException(strf("Path '{}' has '?' after directory", basePath));
+        return "Path '{}' has '?' after directory";
       break;
     } else {
       slashed = false;
@@ -56,24 +57,45 @@ static void validateBasePath(std::string_view const& basePath) {
     first = false;
   }
   if (slashed)
-    throw AssetException(strf("Path '{}' cannot be a file", basePath));
+    return "Path '{}' cannot be a file";
+
+  return nullptr;
 }
 
-static void validatePath(AssetPath const& components, bool canContainSubPath, bool canContainDirectives) {
-  validateBasePath(components.basePath.utf8());
+static bool validatePath(AssetPath const& components, bool canContainSubPath, bool canContainDirectives, bool throwing = true) {
+  if (auto error = validateBasePath(components.basePath.utf8())) {
+    if (throwing)
+      throw AssetException::format(error, components.basePath.utf8());
+    else
+      return false;
+  }
 
-  if (!canContainSubPath && components.subPath)
-    throw AssetException::format("Path '{}' cannot contain sub-path", components);
-  if (!canContainDirectives && !components.directives.empty())
-    throw AssetException::format("Path '{}' cannot contain directives", components);
+  if (!canContainSubPath && components.subPath) {
+    if (throwing)
+      throw AssetException::format("Path '{}' cannot contain sub-path", components);
+    else
+      return false;
+  } else if (!canContainDirectives && !components.directives.empty()) {
+    if (throwing)
+      throw AssetException::format("Path '{}' cannot contain directives", components);
+    else
+      return false;
+  }
+
+  return true;
 }
 
-static void validatePath(StringView path, bool canContainSubPath, bool canContainDirectives) {
+static bool validatePath(StringView path, bool canContainSubPath, bool canContainDirectives, bool throwing = true) {
   std::string_view const& str = path.utf8();
 
   size_t end = str.find_first_of(":?");
   auto basePath = str.substr(0, end);
-  validateBasePath(basePath);
+  if (auto error = validateBasePath(basePath)) {
+    if (throwing)
+      throw AssetException::format(error, basePath);
+    else
+      return false;
+  }
 
   bool subPath = false;
   if (str[end] == ':') {
@@ -87,11 +109,19 @@ static void validatePath(StringView path, bool canContainSubPath, bool canContai
     }
   }
 
-  if (subPath)
-    throw AssetException::format("Path '{}' cannot contain sub-path", path);
+  if (subPath) {
+    if (throwing)
+      throw AssetException::format("Path '{}' cannot contain sub-path", path);
+    else
+      return false;
+  } else if (end != NPos && str[end] == '?' && !canContainDirectives) {
+    if (throwing)
+      throw AssetException::format("Path '{}' cannot contain directives", path);
+    else
+      return false;
+  }
 
-  if (end != NPos && str[end] == '?' && !canContainDirectives)
-    throw AssetException::format("Path '{}' cannot contain directives", path);
+  return true;
 }
 
 Maybe<RectU> FramesSpecification::getRect(String const& frame) const {
