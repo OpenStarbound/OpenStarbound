@@ -86,7 +86,7 @@ Player::Player(PlayerConfigPtr config, Uuid uuid) {
   }
 
   // all of these are defaults and won't include the correct humanoid config for the species
-  m_NetHumanoidElelmentId.set(m_NetHumanoid.addNetElement(make_shared<NetHumanoid>(m_identity, Json())));
+m_netHumanoid.addNetElement(make_shared<NetHumanoid>(m_identity, Json()));
   auto movementParameters = ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value(m_config->movementParameters)));
   if (!movementParameters.physicsEffectCategories)
     movementParameters.physicsEffectCategories = StringSet({"player"});
@@ -183,10 +183,11 @@ Player::Player(PlayerConfigPtr config, Uuid uuid) {
   m_netGroup.addNetElement(m_statusController.get());
   m_netGroup.addNetElement(m_techController.get());
 
-  m_NetHumanoid.setCompatibilityVersion(8);
-  m_NetHumanoidElelmentId.setCompatibilityVersion(8);
-  m_netGroup.addNetElement(&m_NetHumanoid);
-  m_netGroup.addNetElement(&m_NetHumanoidElelmentId);
+  m_netHumanoid.setCompatibilityVersion(9);
+  m_netGroup.addNetElement(&m_netHumanoid);
+
+  m_deathParticleBurst.setCompatibilityVersion(9);
+  m_netGroup.addNetElement(&m_deathParticleBurst);
 
   m_netGroup.setNeedsLoadCallback(bind(&Player::getNetStates, this, _1));
   m_netGroup.setNeedsStoreCallback(bind(&Player::setNetStates, this));
@@ -202,9 +203,10 @@ Player::Player(PlayerConfigPtr config, ByteArray const& netStore, NetCompatibili
   ds.read(m_modeType);
   ds.read(m_identity);
 
-  m_NetHumanoid.removeNetElement(m_NetHumanoidElelmentId.get());
-  m_NetHumanoidElelmentId.set(m_NetHumanoid.addNetElement(make_shared<NetHumanoid>(m_identity, Json())));
+  m_netHumanoid.clearNetElements();
+  m_netHumanoid.addNetElement(make_shared<NetHumanoid>(m_identity, Json()));
   m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value(m_config->movementParameters))));
+  m_deathParticleBurst.set(humanoid()->defaultDeathParticles());
 }
 
 
@@ -245,10 +247,12 @@ void Player::diskLoad(Json const& diskStore) {
   m_questManager->diskLoad(diskStore.get("quests", JsonObject{}));
   m_companions->diskLoad(diskStore.get("companions", JsonObject{}));
   m_deployment->diskLoad(diskStore.get("deployment", JsonObject{}));
-  m_NetHumanoid.removeNetElement(m_NetHumanoidElelmentId.get());
-  m_NetHumanoidElelmentId.set(m_NetHumanoid.addNetElement(make_shared<NetHumanoid>(m_identity, Json())));
+
+  m_netHumanoid.clearNetElements();
+  m_netHumanoid.addNetElement(make_shared<NetHumanoid>(m_identity, Json()));
   m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value(m_config->movementParameters))));
   m_effectsAnimator->setGlobalTag("effectDirectives", speciesDef->effectDirectives());
+  m_deathParticleBurst.set(humanoid()->defaultDeathParticles());
 
   m_genericProperties = diskStore.getObject("genericProperties");
 
@@ -567,10 +571,8 @@ bool Player::shouldDestroy() const {
 void Player::destroy(RenderCallback* renderCallback) {
   m_state = State::Idle;
   m_emoteState = HumanoidEmote::Idle;
-  if (renderCallback) {
-    List<Particle> deathParticles = humanoid()->particles(humanoid()->defaultDeathParticles());
-    renderCallback->addParticles(deathParticles, position());
-  }
+  if (renderCallback && m_deathParticleBurst.get())
+    renderCallback->addParticles(humanoid()->particles(*m_deathParticleBurst.get()), position());
 
   if (isMaster()) {
     m_log->addDeathCount(1);
@@ -1939,11 +1941,11 @@ void Player::getNetStates(bool initial) {
     auto newIdentity = m_identityNetState.get();
     if (m_identity.species == newIdentity.species) {
       humanoid()->setIdentity(newIdentity);
+    } else {
+      refreshHumanoid();
     }
     m_identity = newIdentity;
   }
-  if (m_NetHumanoidElelmentId.pullUpdated())
-    refreshHumanoid();
 
   setTeam(m_teamNetState.get());
 
@@ -2218,10 +2220,10 @@ void Player::setImagePath(Maybe<String> const& imagePath) {
 }
 
 HumanoidPtr Player::humanoid() {
-  return m_NetHumanoid.getNetElement(m_NetHumanoidElelmentId.get())->humanoid();
+  return m_netHumanoid.netElements().last()->humanoid();
 }
 HumanoidPtr Player::humanoid() const {
-  return m_NetHumanoid.getNetElement(m_NetHumanoidElelmentId.get())->humanoid();
+  return m_netHumanoid.netElements().last()->humanoid();
 }
 
 HumanoidIdentity const& Player::identity() const {
@@ -2701,13 +2703,16 @@ void Player::refreshHumanoid() {
   auto speciesDef = speciesDatabase->species(m_identity.species);
 
   if (isMaster()) {
-    m_NetHumanoid.removeNetElement(m_NetHumanoidElelmentId.get());
-    m_NetHumanoidElelmentId.set(m_NetHumanoid.addNetElement(make_shared<NetHumanoid>(m_identity, Json())));
+    m_netHumanoid.clearNetElements();
+    m_netHumanoid.addNetElement(make_shared<NetHumanoid>(m_identity, Json()));
     m_effectsAnimator->setGlobalTag("effectDirectives", speciesDef->effectDirectives());
-    m_armor->reset();
+    m_deathParticleBurst.set(humanoid()->defaultDeathParticles());
   }
+  auto armor = m_armor->diskStore();
+  m_armor->reset();
+  m_armor->diskLoad(armor);
+  m_armor->setupHumanoidClothingDrawables(*humanoid(), forceNude());
 
-  refreshEquipment();
   m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value(m_config->movementParameters))));
 
   if (isMaster()) {

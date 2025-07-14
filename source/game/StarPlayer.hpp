@@ -528,8 +528,8 @@ private:
 
   void refreshHumanoid();
 
-  NetElementDynamicGroup<NetHumanoid> m_NetHumanoid;
-  NetElementUInt m_NetHumanoidElelmentId;
+  NetElementDynamicGroup<NetHumanoid> m_netHumanoid;
+  NetElementData<Maybe<String>> m_deathParticleBurst;
 
   PlayerConfigPtr m_config;
 

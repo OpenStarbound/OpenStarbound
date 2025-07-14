@@ -177,6 +177,43 @@ public:
 
   using Entity::setUniqueId;
 
+  HumanoidIdentity const& identity() const;
+  void updateIdentity();
+  void setIdentity(HumanoidIdentity identity);
+
+  void setBodyDirectives(String const& directives);
+  void setEmoteDirectives(String const& directives);
+
+  void setHairGroup(String const& group);
+  void setHairType(String const& type);
+  void setHairDirectives(String const& directives);
+
+  void setFacialHairGroup(String const& group);
+  void setFacialHairType(String const& type);
+  void setFacialHairDirectives(String const& directives);
+
+  void setFacialMaskGroup(String const& group);
+  void setFacialMaskType(String const& type);
+  void setFacialMaskDirectives(String const& directives);
+
+  void setHair      (String const& group, String const& type, String const& directives);
+  void setFacialHair(String const& group, String const& type, String const& directives);
+  void setFacialMask(String const& group, String const& type, String const& directives);
+
+  void setSpecies(String const& species);
+  void setGender(Gender const& gender);
+  void setPersonality(Personality const& personality);
+  void setImagePath(Maybe<String> const& imagePath);
+
+  void setFavoriteColor(Color color);
+  void setName(String const& name);
+  void setDescription(String const& description);
+
+  HumanoidPtr humanoid();
+  HumanoidPtr humanoid() const;
+
+  bool forceNude() const;
+
 private:
   Vec2F getAbsolutePosition(Vec2F relativePosition) const;
 
@@ -197,6 +234,10 @@ private:
 
   void disableWornArmor(bool disable);
 
+  void refreshHumanoid();
+
+  NetElementDynamicGroup<NetHumanoid> m_netHumanoid;
+
   NpcVariant m_npcVariant;
   NetElementTopGroup m_netGroup;
   NetElementData<StringList> m_dropPools;
@@ -206,7 +247,6 @@ private:
 
   ClientEntityMode m_clientEntityMode;
 
-  Humanoid m_humanoid;
   NetElementEnum<Humanoid::State> m_humanoidStateNetState;
   NetElementEnum<HumanoidEmote> m_humanoidEmoteStateNetState;
   NetElementData<Maybe<String>> m_humanoidDanceNetState;
