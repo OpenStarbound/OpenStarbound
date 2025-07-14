@@ -521,9 +521,6 @@ public:
       while (true) {
         cleanup();
 
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplSDL3_NewFrame();
-        ImGui::NewFrame();
 
         for (auto const& event : processEvents())
           m_application->processInput(event);
@@ -539,6 +536,11 @@ public:
         int updatesBehind = max<int>(round(m_updateTicker.ticksBehind()), 1);
         updatesBehind = min<int>(updatesBehind, m_maxFrameSkip + 1);
         for (int i = 0; i < updatesBehind; ++i) {
+          if (i + 1 == updatesBehind) {
+            ImGui_ImplOpenGL3_NewFrame();
+            ImGui_ImplSDL3_NewFrame();
+            ImGui::NewFrame();
+          }
           m_application->update();
           m_updateRate = m_updateTicker.tick();
         }
