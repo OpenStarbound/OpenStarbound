@@ -1333,10 +1333,11 @@ void Player::refreshArmor() {
   bool shouldSetArmorSecrets = m_clientContext && m_clientContext->netCompatibilityRules().version() < 9;
   for (uint8_t i = 0; i != 20; ++i) {
     auto slot = (EquipmentSlot)i;
-    auto item = m_inventory->equipment(slot, true);
-    if (m_armor->setItem(i, item)) {
+    auto item = m_inventory->equipment(slot);
+    bool visible = m_inventory->equipmentVisibility(slot);
+    if (m_armor->setItem(i, item, visible)) {
       if (slot >= EquipmentSlot::Cosmetic1 && shouldSetArmorSecrets)
-        setNetArmorSecret(slot, item);
+        setNetArmorSecret(slot, item, visible);
     }
   }
 }
@@ -1991,9 +1992,10 @@ void Player::setNetStates() {
   m_emoteNetState.set(HumanoidEmoteNames.getRight(m_emoteState));
 }
 
-void Player::setNetArmorSecret(EquipmentSlot slot, ArmorItemPtr const& armor) {
+void Player::setNetArmorSecret(EquipmentSlot slot, ArmorItemPtr const& armor, bool visible) {
   String const& slotName = EquipmentSlotNames.getRight(slot);
-  setSecretProperty(strf("armorWearer.{}.data", slotName), itemSafeDescriptor(armor).diskStore());
+  ItemDescriptor descriptor = visible ? itemSafeDescriptor(armor) : ItemDescriptor();
+  setSecretProperty(strf("armorWearer.{}.data", slotName), descriptor.diskStore());
   if (m_armorSecretNetVersions.empty())
     setSecretProperty("armorWearer.replicating", true);
   setSecretProperty(strf("armorWearer.{}.version", slotName), ++m_armorSecretNetVersions[slot]);
@@ -2004,8 +2006,9 @@ void Player::setNetArmorSecrets(bool includeEmpty) {
     for (uint8_t i = 0; i != 12; ++i) {
       auto slot = EquipmentSlot((uint8_t)EquipmentSlot::Cosmetic1 + i);
       auto item = as<ArmorItem>(m_inventory->itemsAt(slot));
-      if (item || includeEmpty)
-        setNetArmorSecret(slot, item);
+      bool visible = m_inventory->equipmentVisibility(slot);
+      if ((item && visible) || includeEmpty)
+        setNetArmorSecret(slot, item, visible);
     }
   }
 }

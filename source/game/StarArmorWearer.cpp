@@ -49,7 +49,7 @@ bool ArmorWearer::setupHumanoid(Humanoid& humanoid, bool forceNude) {
     else if (allNeedsSync || (item && ((dirChanged && item->flipping()) || (nudeChanged && !item->bypassNude()))))
       anyNeedsSync = armor.needsSync = true;
 
-    if (armor.isCosmetic && item && item->visible(i >= 8)) {
+    if (armor.visible && armor.isCosmetic && item && item->visible(i >= 8)) {
       for (auto armorType : item->armorTypesToHide())
         ++wornCosmeticTypes[(uint8_t)armorType];
     }
@@ -74,7 +74,7 @@ bool ArmorWearer::setupHumanoid(Humanoid& humanoid, bool forceNude) {
       Armor& armor = m_armors[i];
       auto& item = armor.item;
       bool allowed = true;
-      if (!item || !item->visible(i >= 8) || (forceNude && !item->bypassNude())) {
+      if (!armor.visible || !item || !item->visible(i >= 8) || (forceNude && !item->bypassNude())) {
         allowed = false;
       } else if (!armor.isCosmetic) {
         uint8_t typeIndex = (uint8_t)armor.item->armorType();
@@ -122,7 +122,7 @@ void ArmorWearer::effects(EffectEmitter& effectEmitter) {
     auto& armor = m_armors[i];
     if (auto item = as<EffectSourceItem>(armor.item)) {
       auto armorType = armor.item->armorType();
-      if (!armor.isCosmetic && m_wornCosmeticTypes[(uint8_t)armorType] > 0)
+      if (!armor.visible || (!armor.isCosmetic && m_wornCosmeticTypes[(uint8_t)armorType] > 0))
         continue;
       auto newEffects = item->effectSources();
       if (armorType == ArmorType::Head)
@@ -207,15 +207,23 @@ List<PersistentStatusEffect> ArmorWearer::statusEffects() const {
   return statusEffects;
 }
 
-bool ArmorWearer::setItem(uint8_t slot, ArmorItemPtr item) {
+bool ArmorWearer::setItem(uint8_t slot, ArmorItemPtr item, bool visible) {
   if (slot >= m_armors.size())
     return false;
   auto& armor = m_armors[slot];
-  if (Item::itemsEqual(armor.item, item))
+
+  bool itemChanged = !Item::itemsEqual(armor.item, item);
+  bool visChanged = visible != armor.visible;
+
+  if (itemChanged)
+    armor.item = item;
+  if (visChanged)
+    armor.visible = visible;
+
+  if (itemChanged || visChanged)
+    return armor.needsStore = armor.needsSync = true;
+  else
     return false;
-  armor.item = item;
-  armor.needsStore = armor.needsSync = true;
-  return true;
 }
 
 void ArmorWearer::setHeadItem(HeadArmorPtr headItem) { setItem(0, headItem); }
@@ -323,7 +331,7 @@ void ArmorWearer::netElementsNeedStore() {
   auto itemDatabase = Root::singleton().itemDatabase();
   for (auto& armor : m_armors) {
     if (armor.needsStore) {
-      armor.netState.set(itemSafeDescriptor(armor.item));
+      armor.netState.set(armor.visible ? itemSafeDescriptor(armor.item) : ItemDescriptor());
       armor.needsStore = false;
     }
   }
