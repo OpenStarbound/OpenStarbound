@@ -536,11 +536,11 @@ public:
         int updatesBehind = max<int>(round(m_updateTicker.ticksBehind()), 1);
         updatesBehind = min<int>(updatesBehind, m_maxFrameSkip + 1);
         for (int i = 0; i < updatesBehind; ++i) {
-          if (i + 1 == updatesBehind) {
-            ImGui_ImplOpenGL3_NewFrame();
-            ImGui_ImplSDL3_NewFrame();
-            ImGui::NewFrame();
-          }
+          //since frame-skipping is a thing, we have to begin a new ImGui frame here to prevent duplicate elements made by updates
+          ImGui_ImplOpenGL3_NewFrame();
+          ImGui_ImplSDL3_NewFrame();
+          ImGui::NewFrame();
+
           m_application->update();
           m_updateRate = m_updateTicker.tick();
         }
@@ -857,6 +857,7 @@ private:
     ImGuiIO& io = ImGui::GetIO();
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
+      SDL_ConvertEventToRenderCoordinates(SDL_GetRenderer(m_sdlWindow), &event);
       ImGui_ImplSDL3_ProcessEvent(&event);
       Maybe<InputEvent> starEvent;
       if (event.type == SDL_EVENT_WINDOW_MAXIMIZED || event.type == SDL_EVENT_WINDOW_RESTORED) {
