@@ -292,6 +292,7 @@ Humanoid::Humanoid() {
 Humanoid::Humanoid(Json const& config) : Humanoid() {
   m_baseConfig = config;
   loadConfig(JsonObject());
+  loadAnimation();
   m_animationPath = ("/humanoid/" + m_identity.imagePath.value(m_identity.species) + "/");
   m_networkedAnimator = m_animationConfig.isValid() ? NetworkedAnimator(*m_animationConfig, m_animationPath) : NetworkedAnimator();
 }
@@ -299,6 +300,7 @@ Humanoid::Humanoid(Json const& config) : Humanoid() {
 Humanoid::Humanoid(HumanoidIdentity const& identity, Json config) : Humanoid() {
   m_baseConfig = (Root::singleton().speciesDatabase()->humanoidConfig(identity, config));
   loadConfig(JsonObject());
+  loadAnimation();
   m_animationPath = ("/humanoid/" + identity.imagePath.value(identity.species) + "/");
   m_networkedAnimator = m_animationConfig.isValid() ? NetworkedAnimator(*m_animationConfig, m_animationPath) : NetworkedAnimator();
   setIdentity(identity);
