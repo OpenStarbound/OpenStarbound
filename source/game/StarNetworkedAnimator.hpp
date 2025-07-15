@@ -160,6 +160,8 @@ public:
   void scaleTransformationGroup(String const& transformationGroup, Vec2F const& scale, Vec2F const& scaleCenter = Vec2F());
   void transformTransformationGroup(String const& transformationGroup, float a, float b, float c, float d, float tx, float ty);
   void resetTransformationGroup(String const& transformationGroup);
+  void setTransformationGroup(String const& transformationGroup, Mat3F transform);
+  Mat3F getTransformationGroup(String const& transformationGroup);
 
   void translateLocalTransformationGroup(String const& transformationGroup, Vec2F const& translation);
   void rotateLocalTransformationGroup(String const& transformationGroup, float rotation, Vec2F const& rotationCenter = Vec2F());
@@ -167,6 +169,8 @@ public:
   void scaleLocalTransformationGroup(String const& transformationGroup, Vec2F const& scale, Vec2F const& scaleCenter = Vec2F());
   void transformLocalTransformationGroup(String const& transformationGroup, float a, float b, float c, float d, float tx, float ty);
   void resetLocalTransformationGroup(String const& transformationGroup);
+  void setLocalTransformationGroup(String const& transformationGroup, Mat3F transform);
+  Mat3F getLocalTransformationGroup(String const& transformationGroup);
 
   bool hasParticleEmitter(String const& emitterName) const;
   // Active particle emitters emit over time based on emission rate/variance.

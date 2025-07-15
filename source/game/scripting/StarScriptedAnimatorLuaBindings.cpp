@@ -60,6 +60,10 @@ LuaCallbacks LuaBindings::makeScriptedAnimatorCallbacks(NetworkedAnimator* netwo
       bind(&NetworkedAnimator::transformLocalTransformationGroup, networkedAnimator, _1, _2, _3, _4, _5, _6, _7));
   callbacks.registerCallbackWithSignature<void, String>(
       "resetLocalTransformationGroup", bind(&NetworkedAnimator::resetLocalTransformationGroup, networkedAnimator, _1));
+  callbacks.registerCallbackWithSignature<void, String, Mat3F>(
+      "setLocalTransformationGroup", bind(&NetworkedAnimator::setLocalTransformationGroup, networkedAnimator, _1, _2));
+  callbacks.registerCallbackWithSignature<Mat3F, String>(
+      "getLocalTransformationGroup", bind(&NetworkedAnimator::getLocalTransformationGroup, networkedAnimator, _1));
 
   callbacks.registerCallbackWithSignature<void, String, List<Drawable>>(
       "addPartDrawables", bind(&NetworkedAnimator::addPartDrawables, networkedAnimator, _1, _2));

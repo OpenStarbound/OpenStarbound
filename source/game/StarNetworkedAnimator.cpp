@@ -611,6 +611,13 @@ void NetworkedAnimator::resetTransformationGroup(String const& transformationGro
   m_transformationGroups.get(transformationGroup).setAffineTransform(Mat3F::identity());
 }
 
+void NetworkedAnimator::setTransformationGroup(String const& transformationGroup, Mat3F transform) {
+  m_transformationGroups.get(transformationGroup).setAffineTransform(transform);
+}
+
+Mat3F NetworkedAnimator::getTransformationGroup(String const& transformationGroup) {
+  return m_transformationGroups.get(transformationGroup).affineTransform();
+}
 void NetworkedAnimator::translateLocalTransformationGroup(String const& transformationGroup, Vec2F const& translation) {
   auto& group = m_transformationGroups.get(transformationGroup);
   group.setLocalAffineTransform(Mat3F::translation(translation) * group.localAffineTransform());
@@ -643,6 +650,14 @@ void NetworkedAnimator::transformLocalTransformationGroup(
 
 void NetworkedAnimator::resetLocalTransformationGroup(String const& transformationGroup) {
   m_transformationGroups.get(transformationGroup).setLocalAffineTransform(Mat3F::identity());
+}
+
+void NetworkedAnimator::setLocalTransformationGroup(String const& transformationGroup, Mat3F transform) {
+  m_transformationGroups.get(transformationGroup).setLocalAffineTransform(transform);
+}
+
+Mat3F NetworkedAnimator::getLocalTransformationGroup(String const& transformationGroup) {
+  return m_transformationGroups.get(transformationGroup).localAffineTransform();
 }
 
 bool NetworkedAnimator::hasParticleEmitter(String const& emitterName) const {
