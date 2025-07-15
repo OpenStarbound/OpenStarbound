@@ -23,7 +23,8 @@ public:
   void setPostProcessGroupEnabled(String const& group, bool const& enabled, Maybe<bool> const& save);
   bool postProcessGroupEnabled(String const& group);
   Json postProcessGroups();
-  
+  virtual unsigned framesSkipped() const override;
+
 protected:
   virtual void startup(StringList const& cmdLineArgs) override;
   virtual void shutdown() override;
@@ -131,6 +132,7 @@ private:
   Vec2F m_cameraSmoothDelta;
   int m_cameraZoomDirection = 0;
 
+  unsigned m_framesSkipped = 0;
   int m_minInterfaceScale = 2;
   int m_maxInterfaceScale = 3;
   Vec2F m_crossoverRes;
@@ -144,6 +146,8 @@ private:
   Maybe<PendingMultiPlayerConnection> m_pendingMultiPlayerConnection;
   Maybe<HostAddressWithPort> m_currentRemoteJoin;
   int64_t m_timeSinceJoin = 0;
+
+  ByteArray m_immediateFont;
 };
 
 }

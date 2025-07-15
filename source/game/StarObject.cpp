@@ -29,6 +29,15 @@ Object::Object(ObjectConfigConstPtr config, Json const& parameters) {
   if (!parameters.isNull())
     m_parameters.reset(parameters.toObject());
 
+  auto jOrientations = m_parameters.ptr("customOrientations");
+  if (jOrientations && jOrientations->isType(Json::Type::Array)) {
+    JsonArray base = m_config->config.get("orientations").toArray();
+    auto orientations = jOrientations->toArray();
+    for (size_t i = 0; i != orientations.size(); ++i)
+      base.set(i, jsonMergeNulling(base.get(i), orientations.get(i)));
+    m_orientations = ObjectDatabase::parseOrientations(m_config->path, base);
+  }
+
   m_animationTimer = 0.0f;
   m_currentFrame = 0;
 
@@ -448,6 +457,10 @@ bool Object::damageTiles(List<Vec2I> const&, Vec2F const&, TileDamage const& til
   return m_broken;
 }
 
+bool Object::canBeDamaged() const {
+  return !m_unbreakable;
+}
+
 bool Object::checkBroken() {
   if (!m_broken && !m_unbreakable) {
     auto orientation = currentOrientation();
@@ -575,7 +588,7 @@ String Object::category() const {
 
 ObjectOrientationPtr Object::currentOrientation() const {
   if (m_orientationIndex != NPos)
-    return m_config->orientations.at(m_orientationIndex);
+    return const_cast<ObjectOrientationPtr&>(getOrientations().at(m_orientationIndex));
   else
     return {};
 }
@@ -597,8 +610,9 @@ List<Drawable> Object::cursorHintDrawables() const {
       // matches our current direction, or if that fails just the first
       // orientation.
       List<Drawable> result;
-      for (size_t i = 0; i < m_config->orientations.size(); ++i) {
-        if (m_config->orientations[i]->directionAffinity && *m_config->orientations[i]->directionAffinity == m_direction.get()) {
+      auto& orientations = getOrientations();
+      for (size_t i = 0; i < orientations.size(); ++i) {
+        if (orientations[i]->directionAffinity && *orientations[i]->directionAffinity == m_direction.get()) {
           result = orientationDrawables(i);
           break;
         }
@@ -1239,7 +1253,7 @@ List<Drawable> Object::orientationDrawables(size_t orientationIndex) const {
   if (orientationIndex == NPos)
     return {};
 
-  auto orientation = m_config->orientations.at(orientationIndex);
+  auto& orientation = getOrientations().at(orientationIndex);
 
   if (!m_orientationDrawablesCache || orientationIndex != m_orientationDrawablesCache->first) {
     m_orientationDrawablesCache = make_pair(orientationIndex, List<Drawable>());
@@ -1349,6 +1363,10 @@ void Object::renderSounds(RenderCallback* renderCallback) {
     if (m_soundEffect)
       m_soundEffect->stop();
   }
+}
+
+List<ObjectOrientationPtr> const& Object::getOrientations() const {
+  return m_orientations ? *m_orientations : m_config->orientations;
 }
 
 Vec2F Object::damageShake() const {

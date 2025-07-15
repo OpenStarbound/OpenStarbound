@@ -147,6 +147,18 @@ void WorldClient::setRespawnInWorld(bool respawnInWorld) {
   m_respawnInWorld = respawnInWorld;
 }
 
+void WorldClient::resendEntity(EntityId entityId) {
+  auto entity = m_entityMap->entity(entityId);
+  if (!entity || !entity->isMaster() || !m_masterEntitiesNetVersion.contains(entity->entityId()))
+    return;
+
+  auto fromVersion = m_masterEntitiesNetVersion.take(entity->entityId());
+  auto netRules = m_clientState.netCompatibilityRules();
+  ByteArray finalNetState = entity->writeNetState(fromVersion, netRules).first;
+  m_outgoingPackets.append(make_shared<EntityDestroyPacket>(entity->entityId(), std::move(finalNetState), false));
+  notifyEntityCreate(entity);
+}
+
 void WorldClient::removeEntity(EntityId entityId, bool andDie) {
   auto entity = m_entityMap->entity(entityId);
   if (!entity)
@@ -492,7 +504,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
     {
       MutexLocker m_prepLocker(m_lightMapPrepMutex);
       m_pendingLights = std::move(renderLightSources);
-      m_pendingParticleLights = std::move(m_particles->lightSources());
+      m_pendingParticleLights = m_particles->lightSources();
       m_pendingLightRange = window.padded(1);
       m_pendingLightReady = true;
     } //Kae: Padded by one to fix light spread issues at the edges of the frame.
@@ -586,7 +598,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
       return a->entityId() < b->entityId();
     });
 
-  m_tileArray->tileEachTo(renderData.tiles, tileRange, [&](RenderTile& renderTile, Vec2I const& position, ClientTile const& clientTile) {
+  m_tileArray->tileEachTo(renderData.tiles, tileRange, [&](RenderTile& renderTile, Vec2I const&, ClientTile const& clientTile) {
       renderTile.foreground = clientTile.foreground;
       renderTile.foregroundMod = clientTile.foregroundMod;
 
@@ -1249,7 +1261,7 @@ void WorldClient::update(float dt) {
 
   if (auto newAltMusic = m_mainPlayer->pullPendingAltMusic()) {
     if (newAltMusic->first)
-      playAltMusic(newAltMusic->first.get(), newAltMusic->second);
+      playAltMusic(newAltMusic->first->first, newAltMusic->second, newAltMusic->first->second);
     else
       stopAltMusic(newAltMusic->second);
   }
@@ -1956,9 +1968,9 @@ AmbientNoisesDescriptionPtr WorldClient::currentAltMusicTrack() const {
   return m_altMusicTrackDescription;
 }
 
-void WorldClient::playAltMusic(StringList const& newTracks, float fadeTime) {
+void WorldClient::playAltMusic(StringList const& newTracks, float fadeTime, int loops) {
   auto newTrackGroup = AmbientTrackGroup(newTracks);
-  m_altMusicTrackDescription = make_shared<AmbientNoisesDescription>(AmbientTrackGroup(newTracks), AmbientTrackGroup());
+  m_altMusicTrackDescription = make_shared<AmbientNoisesDescription>(AmbientTrackGroup(newTracks), AmbientTrackGroup(), loops);
   if (!m_altMusicActive) {
     m_musicTrack.setVolume(0.0, 0.0, fadeTime);
     m_altMusicTrack.setVolume(1.0, 0.0, fadeTime);

@@ -13,12 +13,23 @@
       "generator": "Ninja",
       "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
       "cacheVariables": {
+        "CMAKE_CXX_STANDARD": "17",
         "CMAKE_INSTALL_PREFIX": "${sourceParentDir}/install",
         "VCPKG_OVERLAY_TRIPLETS": "${sourceParentDir}/triplets",
         "CMAKE_VERBOSE_MAKEFILE": true,
         "BUILD_TESTING": true,
         "STAR_ENABLE_STEAM_INTEGRATION": true,
         "STAR_ENABLE_DISCORD_INTEGRATION": true
+      },
+      "vendor": {
+        "microsoft.com/VisualStudioRemoteSettings/CMake/2.0": {
+          "sourceRootDir": "$ms{localSourceDir}\\..",
+          "remoteSourceRootDir": "$env{HOME}/.vs/wsl",
+          "copySourcesOptions": {
+            "method": "rsync",
+            "exclusionList": [ ".vs", ".git", "out", "dist", "attic", "build" ]
+          }
+        }
       }
     },
     {
@@ -32,7 +43,8 @@
         "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL",
         "CMAKE_INCLUDE_PATH": "${sourceParentDir}/lib/windows/include",
         "CMAKE_LIBRARY_PATH": "${sourceParentDir}/lib/windows",
-        "STAR_USE_RPMALLOC": true
+        "STAR_USE_RPMALLOC": true,
+        "STAR_USE_JEMALLOC": false
       },
       "vendor": {
         "microsoft.com/VisualStudioSettings/CMake/1.0": {
@@ -52,19 +64,35 @@
       "displayName": "Linux x64",
       "binaryDir": "${sourceParentDir}/build/linux-release",
       "cacheVariables": {
+        "CMAKE_MAKE_PROGRAM": "ninja",
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
-        "CMAKE_C_COMPILER": "clang",
-        "CMAKE_CXX_COMPILER": "clang++",
         "VCPKG_TARGET_TRIPLET": "x64-linux-mixed",
         "CMAKE_INCLUDE_PATH": "${sourceParentDir}/lib/linux/include",
         "CMAKE_LIBRARY_PATH": "${sourceParentDir}/lib/linux",
         "STAR_ENABLE_STATIC_LIBGCC_LIBSTDCXX": true,
-        "STAR_USE_JEMALLOC": false
+        "STAR_USE_JEMALLOC": true
       },
       "vendor": {
         "microsoft.com/VisualStudioSettings/CMake/1.0": {
           "hostOS": [ "Linux" ]
+        },
+        "microsoft.com/VisualStudioRemoteSettings/CMake/2.0": {
+          "sourceRootDir": "$ms{localSourceDir}\\..",
+          "remoteSourceRootDir": "$env{HOME}/.vs/wsl"
         }
+      }
+    },
+    {
+      "inherits": "linux-release",
+      "name": "linux-release-clang",
+      "displayName": "Linux Clang x64",
+      "binaryDir": "${sourceParentDir}/build/linux-release-clang",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++",
+        "VCPKG_TARGET_TRIPLET": "x64-linux-mixed-clang",
+        "STAR_USE_JEMALLOC": true
       }
     },
     {
@@ -78,7 +106,8 @@
         "CMAKE_INCLUDE_PATH": "${sourceParentDir}/lib/osx/include",
         "CMAKE_LIBRARY_PATH": "${sourceParentDir}/lib/osx/x64;${sourceParentDir}/lib/osx",
         "STAR_ENABLE_STATIC_LIBGCC_LIBSTDCXX": true,
-        "STAR_USE_JEMALLOC": false
+        "STAR_USE_JEMALLOC": false,
+        "STAR_ENABLE_DISCORD_INTEGRATION": false
       },
       "vendor": {
         "microsoft.com/VisualStudioSettings/CMake/1.0": {
@@ -120,6 +149,10 @@
     {
       "name": "linux-release",
       "configurePreset": "linux-release"
+    },
+    {
+      "name": "linux-release-clang",
+      "configurePreset": "linux-release-clang"
     },
     {
       "name": "macos-release",

@@ -93,7 +93,7 @@ void ClientContext::readUpdate(ByteArray data, NetCompatibilityRules rules) {
   m_netGroup.readNetState(ds.read<ByteArray>(), 0.0f, rules);
 }
 
-ByteArray ClientContext::writeUpdate(NetCompatibilityRules rules) {
+ByteArray ClientContext::writeUpdate(NetCompatibilityRules) {
   return m_rpc->send();
 }
 

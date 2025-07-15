@@ -9,6 +9,7 @@
 #include "StarImageWidget.hpp"
 #include "StarItemSlotWidget.hpp"
 #include "StarPreviewableItem.hpp"
+#include "StarArmors.hpp"
 #include "StarFireableItem.hpp"
 #include "StarStatusEffectItem.hpp"
 #include "StarObject.hpp"
@@ -70,12 +71,12 @@ void ItemTooltipBuilder::buildItemDescriptionInner(
     WidgetPtr const& container, ItemPtr const& item, String const& tooltipKind, String& title, String& subTitle, PlayerPtr const& viewer) {
   GuiReader reader;
   auto& root = Root::singleton();
-
+  auto assets = root.assets();
   title = item->friendlyName();
   subTitle = categoryDisplayName(item->category());
   String description = item->description();
 
-  reader.construct(root.assets()->json(tooltipKind), container.get());
+  reader.construct(assets->json(tooltipKind), container.get());
 
   if (container->containsChild("icon"))
     container->fetchChild<ItemSlotWidget>("icon")->setItem(item);
@@ -113,11 +114,20 @@ void ItemTooltipBuilder::buildItemDescriptionInner(
     }
   } else {
     if (container->containsChild("objectImage")) {
+      auto objectImage = container->fetchChild<ImageWidget>("objectImage");
       if (auto previewable = as<PreviewableItem>(item)) {
-        container->fetchChild<ImageWidget>("objectImage")->setDrawables(previewable->preview(viewer));
+        if (is<ArmorItem>(previewable)) {
+          objectImage->disableScissoring();
+          PlayerPtr armorViewer;
+          if (assets->json("/interface.config:tooltip.previewArmorWith").toString() == "player")
+            armorViewer = viewer;
+          objectImage->setDrawables(previewable->preview(armorViewer));
+        } else {
+          objectImage->setDrawables(previewable->preview(viewer));
+        }
       } else {
         auto drawables = item->iconDrawables();
-        container->fetchChild<ImageWidget>("objectImage")->setDrawables(drawables);
+        objectImage->setDrawables(drawables);
       }
     }
   }

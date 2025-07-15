@@ -369,7 +369,7 @@ List<Drawable> NpcDatabase::npcPortrait(NpcVariant const& npcVariant, PortraitMo
   if (items.contains("backCosmetic"))
     armor.setBackCosmeticItem(as<BackArmor>(makeItem(items["backCosmetic"])));
 
-  armor.setupHumanoidClothingDrawables(humanoid, false);
+  armor.setupHumanoid(humanoid, false);
 
   return humanoid.renderPortrait(mode);
 }

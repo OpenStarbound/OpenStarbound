@@ -384,13 +384,13 @@ public:
 
   RangeIterator operator++(int) {
     RangeIterator tmp(*this);
-    ++this;
+    ++(*this);
     return tmp;
   }
 
   RangeIterator operator--(int) {
     RangeIterator tmp(*this);
-    --this;
+    --(*this);
     return tmp;
   }
 

@@ -14,7 +14,7 @@ Stagehand::Stagehand(Json const& config)
   readConfig(config);
 }
 
-Stagehand::Stagehand(ByteArray const& netStore, NetCompatibilityRules rules) : Stagehand() {
+Stagehand::Stagehand(ByteArray const& netStore, NetCompatibilityRules) : Stagehand() {
   readConfig(DataStreamBuffer::deserialize<Json>(netStore));
 }
 
@@ -30,7 +30,7 @@ Json Stagehand::diskStore() const {
     return saveData.set("scriptStorage", m_scriptComponent.getScriptStorage());
 }
 
-ByteArray Stagehand::netStore(NetCompatibilityRules rules) {
+ByteArray Stagehand::netStore(NetCompatibilityRules) {
   return DataStreamBuffer::serialize(m_config);
 }
 

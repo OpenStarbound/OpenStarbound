@@ -13,7 +13,7 @@ public:
   KeybindingsMenu();
 
   // We need to handle our own Esc dismissal
-  KeyboardCaptureMode keyboardCaptured() const override;
+  KeyboardCaptureMode keyboardCaptureMode() const override;
   bool sendEvent(InputEvent const& event) override;
 
   void show() override;

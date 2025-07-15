@@ -269,7 +269,7 @@ List<PacketPtr> TcpPacketSocket::receivePackets() {
 }
 
 bool TcpPacketSocket::sentPacketsPending() const {
-  return !m_outputBuffer.empty();
+  return !m_outputBuffer.empty() || (compressionStreamEnabled() && !m_compressedOutputBuffer.empty());
 }
 
 bool TcpPacketSocket::writeData() {
@@ -278,18 +278,20 @@ bool TcpPacketSocket::writeData() {
 
   bool dataSent = false;
   try {
-    if (!m_outputBuffer.empty()) {
+    if (!m_outputBuffer.empty() || !m_compressedOutputBuffer.empty()) {
       if (compressionStreamEnabled()) {
-        auto compressedBuffer = m_compressionStream.compress(m_outputBuffer);
-        m_outputBuffer.clear();
+        if (!m_outputBuffer.empty()) {
+          m_compressionStream.compress(m_outputBuffer, m_compressedOutputBuffer);
+          m_outputBuffer.clear();
+        }
         do {
-          size_t written = m_socket->send(compressedBuffer.ptr(), compressedBuffer.size());
-          if (written > 0) {
-            dataSent = true;
-            compressedBuffer.trimLeft(written);
-            m_outgoingStats.mix(written);
-          }
-        } while (!compressedBuffer.empty());
+          size_t written = m_socket->send(m_compressedOutputBuffer.ptr(), m_compressedOutputBuffer.size());
+          if (written == 0)
+            break;
+          dataSent = true;
+          m_compressedOutputBuffer.trimLeft(written);
+          m_outgoingStats.mix(written);
+        } while (!m_compressedOutputBuffer.empty());
       } else {
         do {
           size_t written = m_socket->send(m_outputBuffer.ptr(), m_outputBuffer.size());
@@ -320,8 +322,7 @@ bool TcpPacketSocket::readData() {
       dataReceived = true;
       if (compressionStreamEnabled()) {
         m_incomingStats.mix(readAmount);
-        auto decompressed = m_decompressionStream.decompress(readBuffer, readAmount);
-        m_inputBuffer.append(decompressed);
+        m_decompressionStream.decompress(readBuffer, readAmount, m_inputBuffer);
       } else {
         m_inputBuffer.append(readBuffer, readAmount);
       }

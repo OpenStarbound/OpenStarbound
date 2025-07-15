@@ -251,6 +251,8 @@ void EnvironmentPainter::renderParallaxLayers(
 
     AssetPath first = layer.textures.first();
     first.directives += layer.directives;
+    if (layer.frameNumber > 1)
+      first.subPath.emplace("0");
     Vec2F parallaxSize = Vec2F(m_textureGroup->loadTexture(first)->size());
     Vec2F parallaxPixels = parallaxSize * camera.pixelRatio();
 
@@ -320,6 +322,13 @@ void EnvironmentPainter::renderParallaxLayers(
         for (auto const& textureImage : layer.textures) {
           AssetPath withDirectives = textureImage;
           withDirectives.directives += layer.directives;
+          if (layer.frameNumber > 1) {
+            float time_within_cycle = (float)fmod(sky.epochTime, (double)layer.animationCycle);
+            float time_per_frame = layer.animationCycle / layer.frameNumber;
+            float frame_number = time_within_cycle / time_per_frame;
+            int frame = (layer.frameOffset + clamp<int>(frame_number, 0, layer.frameNumber - 1)) % layer.frameNumber;
+            withDirectives.subPath.emplace(toString(frame));
+          }
           if (auto texture = m_textureGroup->tryTexture(withDirectives)) {
             RectF drawRect = RectF::withSize(anchorPoint, subImage.size() * camera.pixelRatio());
             primitives.emplace_back(std::in_place_type_t<RenderQuad>(), std::move(texture),

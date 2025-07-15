@@ -90,6 +90,9 @@ SpeciesDefinition::SpeciesDefinition(Json const& config) {
 
   m_ouchNoises = jsonToStringList(config.get("ouchNoises"));
 
+  for (Json v : config.getArray("defaultItems", JsonArray()))
+    m_defaultItems.append(ItemDescriptor(v));
+
   for (Json v : config.get("defaultBlueprints", JsonObject()).getArray("tier1", JsonArray()))
     m_defaultBlueprints.append(ItemDescriptor(v));
 

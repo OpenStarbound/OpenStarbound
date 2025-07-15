@@ -25,6 +25,7 @@ public:
 
   void displayed() override;
   PanePtr createTooltip(Vec2I const& screenPosition) override;
+  bool sendEvent(InputEvent const& event) override;
 
   bool giveContainerResult(ContainerResult result);
 
@@ -36,6 +37,7 @@ public:
 
 protected:
   virtual void update(float dt) override;
+
   void selectTab(String const& selected);
 
 private:
@@ -43,6 +45,8 @@ private:
   PlayerPtr m_player;
   ContainerInteractorPtr m_containerInteractor;
 
+  bool m_alwaysDisplayCosmetics;
+  bool m_displayingCosmetics;
   bool m_expectingSwap;
   InventorySlot m_containerSource;
 

@@ -148,6 +148,7 @@ public:
   List<Drawable> portrait(PortraitMode mode) const override;
   bool underwater() const;
 
+  bool shifting() const;
   void setShifting(bool shifting);
   void special(int specialKey);
 
@@ -234,9 +235,9 @@ public:
   // Clear the item swap slot.
   void clearSwap();
 
-  void refreshArmor();
   void refreshItems();
-
+  void refreshArmor();
+  void refreshHumanoid() const; 
   // Refresh worn equipment from the inventory
   void refreshEquipment();
 
@@ -315,6 +316,8 @@ public:
   bool displayNametag() const override;
   Vec3B nametagColor() const override;
   Vec2F nametagOrigin() const override;
+  String nametag() const override;
+  void setNametag(Maybe<String> nametag);
 
   void updateIdentity();
 
@@ -458,7 +461,7 @@ public:
 
   void setInCinematic(bool inCinematic);
 
-  Maybe<pair<Maybe<StringList>, float>> pullPendingAltMusic();
+  Maybe<pair<Maybe<pair<StringList, int>>, float>> pullPendingAltMusic();
 
   Maybe<PlayerWarpRequest> pullPendingWarp();
   void setPendingWarp(String const& action, Maybe<String> const& animation = {}, bool deploy = false);
@@ -497,6 +500,7 @@ public:
 
   // If the secret property exists as a serialized Json string, returns a view to it without deserializing.
   Maybe<StringView> getSecretPropertyView(String const& name) const;
+  String const* getSecretPropertyPtr(String const& name) const;
   // Gets a secret Json property. It will be de-serialized.
   Json getSecretProperty(String const& name, Json defaultValue = Json()) const;
   // Sets a secret Json property. It will be serialized.
@@ -516,6 +520,9 @@ private:
 
   void getNetStates(bool initial);
   void setNetStates();
+  void getNetArmorSecrets();
+  void setNetArmorSecret(EquipmentSlot slot, ArmorItemPtr const& armor, bool visible = true);
+  void setNetArmorSecrets(bool includeEmpty = false);
 
   List<Drawable> drawables() const;
   List<OverheadBar> bars() const;
@@ -590,6 +597,7 @@ private:
 
   ToolUserPtr m_tools;
   ArmorWearerPtr m_armor;
+  HashMap<EquipmentSlot, uint64_t> m_armorSecretNetVersions;
 
   bool m_useDown;
   bool m_edgeTriggeredUse;
@@ -632,7 +640,7 @@ private:
   List<pair<GameTimer, RadioMessage>> m_delayedRadioMessages;
   Deque<RadioMessage> m_pendingRadioMessages;
   Maybe<Json> m_pendingCinematic;
-  Maybe<pair<Maybe<StringList>, float>> m_pendingAltMusic;
+  Maybe<pair<Maybe<pair<StringList, int>>, float>> m_pendingAltMusic;
   Maybe<PlayerWarpRequest> m_pendingWarp;
   Deque<pair<Json, RpcPromiseKeeper<Json>>> m_pendingConfirmations;
 

@@ -44,11 +44,11 @@ void Entity::uninit() {
   m_entityId = NullEntityId;
 }
 
-pair<ByteArray, uint64_t> Entity::writeNetState(uint64_t fromVersion, NetCompatibilityRules rules) {
+pair<ByteArray, uint64_t> Entity::writeNetState(uint64_t, NetCompatibilityRules) {
   return {ByteArray(), 0};
 }
 
-void Entity::readNetState(ByteArray data, float interpolationTime, NetCompatibilityRules rules) {}
+void Entity::readNetState(ByteArray, float, NetCompatibilityRules) {}
 
 void Entity::enableInterpolation(float) {}
 

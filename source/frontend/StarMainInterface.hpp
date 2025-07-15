@@ -86,7 +86,6 @@ public:
   bool inputFocus() const;
   // If input is focused, should MainInterface also accept text input events?
   bool textInputActive() const;
-
   void handleInteractAction(InteractAction interactAction);
 
   void preUpdate(float dt);
@@ -196,7 +195,8 @@ private:
   WirePanePtr m_wireInterface;
 
   ActionBarPtr m_actionBar;
-  Vec2I m_cursorScreenPos{};
+  Vec2F m_cursorScreenPos{};
+  Vec2I m_cursorScreenIPos{};
   ItemSlotWidgetPtr m_cursorItem;
   Maybe<String> m_cursorTooltip;
 

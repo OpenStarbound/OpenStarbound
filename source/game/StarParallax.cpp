@@ -18,12 +18,18 @@ ParallaxLayer::ParallaxLayer() {
   lightMapped = false;
   fadePercent = 0;
   directives = "";
+  frameNumber = 1;
+  frameOffset = 0;
+  animationCycle = 1.0f;
   alpha = 1.0f;
 }
 
 ParallaxLayer::ParallaxLayer(Json const& store) : ParallaxLayer() {
   textures = jsonToStringList(store.get("textures"));
   directives = store.getString("directives");
+  frameNumber = store.getInt("frameNumber", 1);
+  frameOffset = store.getInt("frameOffset", 0);
+  animationCycle = store.getFloat("animationCycle", 1.0f);
   parallaxValue = jsonToVec2F(store.get("parallaxValue"));
   repeat = jsonToVec2B(store.get("repeat"));
   tileLimitTop = store.optFloat("tileLimitTop");
@@ -42,6 +48,9 @@ Json ParallaxLayer::store() const {
   return JsonObject{
       {"textures", jsonFromStringList(textures)},
       {"directives", directives.string()},
+      {"frameNumber", frameNumber},
+      {"frameOffset", frameOffset},
+      {"animationCycle", animationCycle},
       {"parallaxValue", jsonFromVec2F(parallaxValue)},
       {"repeat", jsonFromVec2B(repeat)},
       {"tileLimitTop", jsonFromMaybe(tileLimitTop)},

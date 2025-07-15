@@ -258,6 +258,7 @@ void Player::diskLoad(Json const& diskStore) {
 
   m_armor->reset();
   refreshArmor();
+  setNetArmorSecrets(true);
 
   m_codexes->learnInitialCodexes(species());
 
@@ -286,7 +287,7 @@ ClientContextPtr Player::clientContext() const {
 
 void Player::setClientContext(ClientContextPtr clientContext) {
   m_clientContext = std::move(clientContext);
-  if (m_clientContext)
+  if (m_clientContext && m_universeMap)
     m_universeMap->setServerUuid(m_clientContext->serverUuid());
 }
 
@@ -350,6 +351,8 @@ void Player::init(World* world, EntityId entityId, EntityMode mode) {
     for (auto& p : m_inventory->pullOverflow()) {
       world->addEntity(ItemDrop::createRandomizedDrop(p, m_movementController->position(), true));
     }
+
+    setNetArmorSecrets();
   }
 
   m_xAimPositionNetState.setInterpolator(world->geometry().xLerpFunction());
@@ -489,7 +492,8 @@ List<Drawable> Player::portrait(PortraitMode mode) const {
     return humanoid()->renderSkull();
   if (invisible())
     return {};
-  m_armor->setupHumanoidClothingDrawables(*humanoid(), forceNude());
+  if (!inWorld())
+    refreshHumanoid();
   return humanoid()->renderPortrait(mode);
 }
 
@@ -702,6 +706,10 @@ void Player::revive(Vec2F const& footPosition) {
   m_inventory->consumeCurrency("money", min((uint64_t)round(moneyCost), m_inventory->currency("money")));
 }
 
+bool Player::shifting() const {
+  return m_shifting;
+}
+
 void Player::setShifting(bool shifting) {
   m_shifting = shifting;
 }
@@ -790,20 +798,19 @@ Maybe<Json> Player::receiveMessage(ConnectionId fromConnection, String const& me
       unique = args.get(1).toBool();
     setPendingCinematic(args.get(0), unique);
   } else if (message == "playAltMusic" && args.size() > 0) {
-    float fadeTime = 0;
-    if (args.size() > 1)
-      fadeTime = args.get(1).toFloat();
+    float fadeTime = args.size() > 1 ? args.get(1).toFloat() : 0.f;
+    int loops = args.size() > 2 ? args.get(2).toInt() : -1;
     StringList trackList;
     if (args.get(0).canConvert(Json::Type::Array))
       trackList = jsonToStringList(args.get(0).toArray());
     else
       trackList = StringList();
-    m_pendingAltMusic = pair<Maybe<StringList>, float>(trackList, fadeTime);
+    m_pendingAltMusic = pair<Maybe<pair<StringList, int>>, float>(make_pair(trackList, loops), fadeTime);
   } else if (message == "stopAltMusic") {
     float fadeTime = 0;
     if (args.size() > 0)
       fadeTime = args.get(0).toFloat();
-    m_pendingAltMusic = pair<Maybe<StringList>, float>({}, fadeTime);
+    m_pendingAltMusic = pair<Maybe<pair<StringList, int>>, float>({}, fadeTime);
   } else if (message == "recordEvent") {
     statistics()->recordEvent(args.at(0).toString(), args.at(1));
   } else if (message == "addCollectable") {
@@ -1033,18 +1040,23 @@ void Player::update(float dt, uint64_t) {
     humanoid()->setDance({});
 
   bool isClient = world()->isClient();
-  if (isClient)
-    m_armor->setupHumanoidClothingDrawables(*humanoid(), forceNude());
 
   m_tools->suppressItems(suppressedItems);
   m_tools->tick(dt, m_shifting, m_pendingMoves);
 
-  if (auto overrideFacingDirection = m_tools->setupHumanoidHandItems(*humanoid(), position(), aimPosition()))
-    m_movementController->controlFace(*overrideFacingDirection);
+  Direction facingDirection = m_movementController->facingDirection();
 
-  m_effectsAnimator->resetTransformationGroup("flip");
-  if (m_movementController->facingDirection() == Direction::Left)
-    m_effectsAnimator->scaleTransformationGroup("flip", Vec2F(-1, 1));
+  auto overrideFacingDirection = m_tools->setupHumanoidHandItems(*humanoid(), position(), aimPosition());
+  if (overrideFacingDirection)
+    m_movementController->controlFace(facingDirection = *overrideFacingDirection);
+
+  humanoid()->setFacingDirection(facingDirection);
+  humanoid()->setMovingBackwards(facingDirection != m_movementController->movingDirection());
+
+  refreshHumanoid();
+
+  auto scale = Mat3F::scaling(Vec2F(facingDirection == Direction::Right ? 1.f : -1.f, 1.f));
+  m_effectsAnimator->setTransformationGroup("flip", scale);
 
   if (m_state == State::Walk || m_state == State::Run) {
     if ((m_footstepTimer += dt) > m_config->footstepTiming) {
@@ -1082,7 +1094,7 @@ void Player::update(float dt, uint64_t) {
   m_effectEmitter->setSourcePosition("primary", handPosition(ToolHand::Primary) + position());
   m_effectEmitter->setSourcePosition("alt", handPosition(ToolHand::Alt) + position());
 
-  m_effectEmitter->setDirection(facingDirection());
+  m_effectEmitter->setDirection(facingDirection);
 
   m_effectEmitter->tick(dt, *entityMode());
 
@@ -1097,7 +1109,7 @@ void Player::update(float dt, uint64_t) {
     }
     if (calculateHeadRotation) { // master or not an OpenStarbound player
       float headRotation = 0.f;
-      if (Humanoid::globalHeadRotation() && (humanoid()->primaryHandHoldingItem() || humanoid()->altHandHoldingItem() || humanoid()->dance())) {
+      if (Humanoid::globalHeadRotation() && (humanoid()->handHoldingItem(ToolHand::Primary) || humanoid()->handHoldingItem(ToolHand::Alt) || humanoid()->dance())) {
         auto primary = m_tools->primaryHandItem();
         auto alt = m_tools->altHandItem();
         String const disableFlag = "disableHeadRotation";
@@ -1115,9 +1127,6 @@ void Player::update(float dt, uint64_t) {
         setSecretProperty("humanoid.headRotation", headRotation);
     }
   }
-
-  humanoid()->setFacingDirection(m_movementController->facingDirection());
-  humanoid()->setMovingBackwards(m_movementController->facingDirection() != m_movementController->movingDirection());
 
   m_pendingMoves.clear();
 
@@ -1333,14 +1342,28 @@ void Player::refreshArmor() {
   if (isSlave())
     return;
 
-  m_armor->setHeadItem(m_inventory->headArmor());
-  m_armor->setHeadCosmeticItem(m_inventory->headCosmetic());
-  m_armor->setChestItem(m_inventory->chestArmor());
-  m_armor->setChestCosmeticItem(m_inventory->chestCosmetic());
-  m_armor->setLegsItem(m_inventory->legsArmor());
-  m_armor->setLegsCosmeticItem(m_inventory->legsCosmetic());
-  m_armor->setBackItem(m_inventory->backArmor());
-  m_armor->setBackCosmeticItem(m_inventory->backCosmetic());
+  bool shouldSetArmorSecrets = m_clientContext && m_clientContext->netCompatibilityRules().version() < 9;
+  for (uint8_t i = 0; i != 20; ++i) {
+    auto slot = (EquipmentSlot)i;
+    auto item = m_inventory->equipment(slot);
+    bool visible = m_inventory->equipmentVisibility(slot);
+    if (m_armor->setItem(i, item, visible)) {
+      if (slot >= EquipmentSlot::Cosmetic1 && shouldSetArmorSecrets)
+        setNetArmorSecret(slot, item, visible);
+    }
+  }
+}
+
+void Player::refreshHumanoid() const {
+  try {
+    if (m_armor->setupHumanoid(*humanoid(), forceNude())) {
+      m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value(m_config->movementParameters))));
+    }
+  }
+  catch (std::exception const&) {
+    if (isMaster()) // it's your problem,
+      throw;        // deal with it!
+  }
 }
 
 void Player::refreshEquipment() {
@@ -1750,7 +1773,8 @@ void Player::processControls() {
         loungeableEntity->loungeControl(anchorState->positionIndex, LoungeControl::PrimaryFire);
       if (m_tools->firingAlt())
         loungeableEntity->loungeControl(anchorState->positionIndex, LoungeControl::AltFire);
-
+      if (m_shifting)
+        loungeableEntity->loungeControl(anchorState->positionIndex, LoungeControl::Walk);
       loungeableEntity->loungeAim(anchorState->positionIndex, m_aimPosition);
     }
     move = false;
@@ -1942,7 +1966,7 @@ void Player::getNetStates(bool initial) {
     if (m_identity.species == newIdentity.species) {
       humanoid()->setIdentity(newIdentity);
     } else {
-      refreshHumanoid();
+      refreshHumanoidSpecies();
     }
     m_identity = newIdentity;
   }
@@ -1959,6 +1983,8 @@ void Player::getNetStates(bool initial) {
   }
 
   m_emoteState = HumanoidEmoteNames.getLeft(m_emoteNetState.get());
+
+  getNetArmorSecrets();
 }
 
 void Player::setNetStates() {
@@ -1981,6 +2007,49 @@ void Player::setNetStates() {
   }
 
   m_emoteNetState.set(HumanoidEmoteNames.getRight(m_emoteState));
+}
+
+void Player::setNetArmorSecret(EquipmentSlot slot, ArmorItemPtr const& armor, bool visible) {
+  String const& slotName = EquipmentSlotNames.getRight(slot);
+  ItemDescriptor descriptor = visible ? itemSafeDescriptor(armor) : ItemDescriptor();
+  setSecretProperty(strf("armorWearer.{}.data", slotName), descriptor.diskStore());
+  if (m_armorSecretNetVersions.empty())
+    setSecretProperty("armorWearer.replicating", true);
+  setSecretProperty(strf("armorWearer.{}.version", slotName), ++m_armorSecretNetVersions[slot]);
+}
+
+void Player::setNetArmorSecrets(bool includeEmpty) {
+  if (m_clientContext && m_clientContext->netCompatibilityRules().version() < 9) {
+    for (uint8_t i = 0; i != 12; ++i) {
+      auto slot = EquipmentSlot((uint8_t)EquipmentSlot::Cosmetic1 + i);
+      auto item = as<ArmorItem>(m_inventory->itemsAt(slot));
+      bool visible = m_inventory->equipmentVisibility(slot);
+      if ((item && visible) || includeEmpty)
+        setNetArmorSecret(slot, item, visible);
+    }
+  }
+}
+
+void Player::getNetArmorSecrets() {
+  if (isSlave() && getSecretPropertyPtr("armorWearer.replicating") != nullptr) {
+    auto itemDatabase = Root::singleton().itemDatabase();
+
+    for (uint8_t i = 0; i != 12; ++i) {
+      auto slot = EquipmentSlot((uint8_t)EquipmentSlot::Cosmetic1 + i);
+      String const& slotName = EquipmentSlotNames.getRight(slot);
+      auto& curVersion = m_armorSecretNetVersions[slot];
+      uint64_t newVersion = 0;
+      if (auto jVersion = getSecretProperty(strf("armorWearer.{}.version", slotName), 0); jVersion.isType(Json::Type::Int))
+        newVersion = jVersion.toUInt();
+      if (newVersion > curVersion) {
+        curVersion = newVersion;
+        ArmorItemPtr item;
+        itemDatabase->diskLoad(getSecretProperty(strf("armorWearer.{}.data", slotName)), item);
+        m_inventory->setItem(slot, item);
+        m_armor->setCosmeticItem(i, item);
+      }
+    }
+  }
 }
 
 void Player::setAdmin(bool isAdmin) {
@@ -2127,11 +2196,22 @@ Vec2F Player::nametagOrigin() const {
   return mouthPosition(false);
 }
 
+String Player::nametag() const {
+  if (auto jNametag = getSecretProperty("nametag"); jNametag.isType(Json::Type::String))
+    return jNametag.toString();
+  else
+    return name();
+}
+
+void Player::setNametag(Maybe<String> nametag) {
+  setSecretProperty("nametag", nametag ? Json(*nametag) : Json());
+}
+
 void Player::updateIdentity() {
   m_identityUpdated = true;
   auto oldIdentity = humanoid()->identity();
   if (m_identity.species != oldIdentity.species) {
-    refreshHumanoid();
+    refreshHumanoidSpecies();
   } else {
     humanoid()->setIdentity(m_identity);
   }
@@ -2192,6 +2272,7 @@ void Player::setFacialMask(String const& group, String const& type, String const
 }
 
 void Player::setSpecies(String const& species) {
+  Root::singleton().speciesDatabase()->species(species); // throw if non-existent
   m_identity.species = species;
   updateIdentity();
 }
@@ -2567,7 +2648,7 @@ void Player::setInCinematic(bool inCinematic) {
     m_statusController->setPersistentEffects("cinematic", {});
 }
 
-Maybe<pair<Maybe<StringList>, float>> Player::pullPendingAltMusic() {
+Maybe<pair<Maybe<pair<StringList, int>>, float>> Player::pullPendingAltMusic() {
   if (m_pendingAltMusic)
     return m_pendingAltMusic.take();
   return {};
@@ -2674,6 +2755,9 @@ Maybe<StringView> Player::getSecretPropertyView(String const& name) const {
   return {};
 }
 
+String const* Player::getSecretPropertyPtr(String const& name) const {
+  return m_effectsAnimator->globalTagPtr(secretProprefix + name);
+}
 
 Json Player::getSecretProperty(String const& name, Json defaultValue) const {
   if (auto tag = m_effectsAnimator->globalTagPtr(secretProprefix + name)) {
@@ -2698,7 +2782,7 @@ void Player::setSecretProperty(String const& name, Json const& value) {
     m_effectsAnimator->removeGlobalTag(secretProprefix + name);
 }
 
-void Player::refreshHumanoid() {
+void Player::refreshHumanoidSpecies() {
   auto speciesDatabase = Root::singleton().speciesDatabase();
   auto speciesDef = speciesDatabase->species(m_identity.species);
 
@@ -2711,7 +2795,7 @@ void Player::refreshHumanoid() {
   auto armor = m_armor->diskStore();
   m_armor->reset();
   m_armor->diskLoad(armor);
-  m_armor->setupHumanoidClothingDrawables(*humanoid(), forceNude());
+  m_armor->setupHumanoid(*humanoid(), forceNude());
 
   m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value(m_config->movementParameters))));
 

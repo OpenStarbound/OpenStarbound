@@ -27,7 +27,7 @@ Projectile::Projectile(ProjectileConfigPtr const& config, Json const& parameters
   setup();
 }
 
-Projectile::Projectile(ProjectileConfigPtr const& config, DataStreamBuffer& data, NetCompatibilityRules rules) {
+Projectile::Projectile(ProjectileConfigPtr const& config, DataStreamBuffer& data, NetCompatibilityRules) {
   m_config = config;
   data.read(m_parameters);
   setup();

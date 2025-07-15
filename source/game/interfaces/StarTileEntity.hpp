@@ -51,6 +51,7 @@ public:
   
   // Returns whether the entity was destroyed
   virtual bool damageTiles(List<Vec2I> const& positions, Vec2F const& sourcePosition, TileDamage const& tileDamage);
+  virtual bool canBeDamaged() const;
 
   // Forces the tile entity to do an immediate check if it has been invalidly
   // placed in some way.  The tile entity may do this check on its own, but

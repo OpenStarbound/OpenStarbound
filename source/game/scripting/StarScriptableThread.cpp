@@ -13,8 +13,8 @@ namespace Star {
 
 ScriptableThread::ScriptableThread(Json parameters)
   : Thread("ScriptableThread: " + parameters.getString("name")), // TODO
-    m_stop(false),
     m_parameters(std::move(parameters)),
+    m_stop(false),
     m_errorOccurred(false),
     m_shouldExpire(true) {
       m_luaRoot = make_shared<LuaRoot>();

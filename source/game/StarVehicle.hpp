@@ -145,6 +145,7 @@ private:
   Json m_dynamicConfig;
   RectF m_boundBox;
   float m_slaveControlTimeout = 0.0f;
+  bool m_receiveExtraControls;
   OrderedHashMap<String, LoungePositionConfig> m_loungePositions;
   OrderedHashMap<String, MovingCollisionConfig> m_movingCollisions;
   OrderedHashMap<String, ForceRegionConfig> m_forceRegions;

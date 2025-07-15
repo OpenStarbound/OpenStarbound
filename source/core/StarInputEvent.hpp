@@ -243,23 +243,23 @@ struct TextInputEvent {
 };
 
 struct MouseMoveEvent {
-  Vec2I mouseMove;
-  Vec2I mousePosition;
+  Vec2F mouseMove;
+  Vec2F mousePosition;
 };
 
 struct MouseButtonDownEvent {
   MouseButton mouseButton;
-  Vec2I mousePosition;
+  Vec2F mousePosition;
 };
 
 struct MouseButtonUpEvent {
   MouseButton mouseButton;
-  Vec2I mousePosition;
+  Vec2F mousePosition;
 };
 
 struct MouseWheelEvent {
   MouseWheel mouseWheel;
-  Vec2I mousePosition;
+  Vec2F mousePosition;
 };
 
 struct ControllerAxisEvent {

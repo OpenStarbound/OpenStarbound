@@ -41,31 +41,13 @@ bool ErrorScreen::accepted() {
   return m_accepted;
 }
 
-void ErrorScreen::render(bool useBackdrop) {
-  if (useBackdrop) {
-    auto assets = Root::singleton().assets();
-
-    for (auto backdropImage : assets->json("/interface/windowconfig/title.config:backdropImages").toArray()) {
-      Vec2F offset = jsonToVec2F(backdropImage.get(0)) * interfaceScale();
-      String image = backdropImage.getString(1);
-      float scale = backdropImage.getFloat(2);
-      Vec2F imageSize = Vec2F(m_guiContext->textureSize(image)) * interfaceScale() * scale;
-
-      Vec2F lowerLeft = Vec2F(windowWidth() / 2.0f, windowHeight());
-      lowerLeft[0] -= imageSize[0] / 2;
-      lowerLeft[1] -= imageSize[1];
-      lowerLeft += offset;
-      RectF screenCoords(lowerLeft, lowerLeft + imageSize);
-      m_guiContext->drawQuad(image, screenCoords);
-    }
-  }
-
+void ErrorScreen::render() {
   m_paneManager->render();
 }
 
 bool ErrorScreen::handleInputEvent(InputEvent const& event) {
   if (auto mouseMove = event.ptr<MouseMoveEvent>())
-    m_cursorScreenPos = mouseMove->mousePosition;
+    m_cursorScreenPos = Vec2I(mouseMove->mousePosition);
 
   return m_paneManager->sendInputEvent(event);
 }

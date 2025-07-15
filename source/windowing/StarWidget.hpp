@@ -117,7 +117,9 @@ public:
   void determineSizeFromChildren();
   void markAsContainer();
 
-  virtual KeyboardCaptureMode keyboardCaptured() const;
+  virtual WidgetPtr keyboardCapturer() const;
+  virtual KeyboardCaptureMode keyboardCaptureMode() const;
+  virtual Maybe<pair<RectI, int>> keyboardCaptureArea() const;
 
   void setData(Json const& data);
   Json const& data();

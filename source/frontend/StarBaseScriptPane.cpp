@@ -7,6 +7,7 @@
 #include "StarLuaGameConverters.hpp"
 #include "StarWidgetLuaBindings.hpp"
 #include "StarCanvasWidget.hpp"
+#include "StarItemDatabase.hpp"
 #include "StarItemTooltip.hpp"
 #include "StarItemGridWidget.hpp"
 #include "StarSimpleTooltip.hpp"
@@ -127,6 +128,22 @@ Maybe<String> BaseScriptPane::cursorOverride(Vec2I const& screenPosition) {
     return *result;
   else
     return {};
+}
+
+Maybe<ItemPtr> BaseScriptPane::shiftItemFromInventory(ItemPtr const& input) {
+  auto result = m_script.invoke<Json>("shiftItemFromInventory", input->descriptor().toJson());
+  if (!result || result->isNull())
+    return {};
+
+  auto itemDatabase = Root::singleton().itemDatabase();
+
+  if (result->type() == Json::Type::Bool) {
+    if (result->toBool())
+      return itemDatabase->item({});
+    return {};
+  }
+
+  return itemDatabase->item(ItemDescriptor(result.value()));
 }
 
 GuiReaderPtr BaseScriptPane::reader() {

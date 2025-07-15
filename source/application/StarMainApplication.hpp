@@ -22,7 +22,7 @@ namespace Star {
       freopen("CONOUT$", "w", stdout);                                            \
       freopen("CONOUT$", "w", stderr);                                            \
     }                                                                             \
-    unsigned long exceptionStackSize = 16384;                                     \
+    unsigned long exceptionStackSize = 131072;                                    \
     SetThreadStackGuarantee(&exceptionStackSize);                                 \
     return Star::runMainApplication(Star::make_unique<ApplicationClass>(), args); \
   }

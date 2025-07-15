@@ -13,6 +13,9 @@
 #include "StarJsonExtra.hpp"
 #include "StarUniverseClient.hpp"
 #include "StarTeamClient.hpp"
+#include "StarPlayerCodexes.hpp"
+#include "StarNetworkedAnimatorLuaBindings.hpp"
+#include "StarCodex.hpp"
 
 namespace Star {
 
@@ -27,6 +30,10 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
       player->diskLoad(saved);
       throw;
     }
+  });
+
+  callbacks.registerCallback("effectsAnimator", [player]() -> LuaCallbacks {
+    return LuaBindings::makeNetworkedAnimatorCallbacks(player->effectsAnimator().get());
   });
 
   callbacks.registerCallback("teamMembers", [player]() -> Maybe<JsonArray> {
@@ -65,6 +72,13 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
   callbacks.registerCallback("setFacialHairType",       [player](String const& str) { player->setFacialHairType(str); });
   callbacks.registerCallback(   "facialHairDirectives", [player]()   { return player->identity().facialHairDirectives;      });
   callbacks.registerCallback("setFacialHairDirectives", [player](String const& str) { player->setFacialHairDirectives(str); });
+
+  callbacks.registerCallback(   "facialMaskGroup",      [player]()   { return player->identity().facialMaskGroup;      });
+  callbacks.registerCallback("setFacialMaskGroup",      [player](String const& str) { player->setFacialMaskGroup(str); });
+  callbacks.registerCallback(   "facialMaskType",       [player]()   { return player->identity().facialMaskType;      });
+  callbacks.registerCallback("setFacialMaskType",       [player](String const& str) { player->setFacialMaskType(str); });
+  callbacks.registerCallback(   "facialMaskDirectives", [player]()   { return player->identity().facialMaskDirectives;      });
+  callbacks.registerCallback("setFacialMaskDirectives", [player](String const& str) { player->setFacialMaskDirectives(str); });
 
   callbacks.registerCallback("hair", [player]() {
     HumanoidIdentity const& identity = player->identity();
@@ -116,6 +130,9 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
 
   callbacks.registerCallback(   "name", [player]()                   { return player->name(); });
   callbacks.registerCallback("setName", [player](String const& name) { player->setName(name); });
+
+  callbacks.registerCallback(   "nametag", [player]()                             { return player->nametag();    });
+  callbacks.registerCallback("setNametag", [player](Maybe<String> const& nametag) { player->setNametag(nametag); });
 
   callbacks.registerCallback(   "species", [player]()                      { return player->species();    });
   callbacks.registerCallback("setSpecies", [player](String const& species) { player->setSpecies(species); });
@@ -742,6 +759,39 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
   callbacks.registerCallback("removeScannedObject", [player](String const& objectName) {
       player->log()->removeScannedObject(objectName);
     });
+
+  // codex bindings
+  callbacks.registerCallback("isCodexKnown", [player](String const& codexId) -> bool {
+    return player->codexes()->codexKnown(codexId);
+  });
+
+  callbacks.registerCallback("isCodexRead", [player](String const& codexId) -> bool {
+    return player->codexes()->codexRead(codexId);
+  });
+
+  callbacks.registerCallback("markCodexRead", [player](String const& codexId) -> bool {
+    return player->codexes()->markCodexRead(codexId);
+  });
+
+  callbacks.registerCallback("markCodexUnread", [player](String const& codexId) -> bool {
+    return player->codexes()->markCodexUnread(codexId);
+  });
+
+  callbacks.registerCallback("learnCodex", [player](String const& codexId, Maybe<bool> markRead) {
+    player->codexes()->learnCodex(codexId, markRead.value(false));
+  });
+
+  callbacks.registerCallback("getCodexes", [player]() -> Json {
+    return player->codexes()->toJson();
+  });
+
+  callbacks.registerCallback("getNewCodex", [player]() -> Maybe<String> {
+    auto codexPtr = player->codexes()->firstNewCodex();
+    if (codexPtr)
+      return codexPtr->title();
+
+    return {};
+  });
 
   return callbacks;
 }

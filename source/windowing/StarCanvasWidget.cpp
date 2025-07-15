@@ -131,7 +131,7 @@ bool CanvasWidget::sendEvent(InputEvent const& event) {
   return Widget::sendEvent(event);
 }
 
-KeyboardCaptureMode CanvasWidget::keyboardCaptured() const {
+KeyboardCaptureMode CanvasWidget::keyboardCaptureMode() const {
   return m_captureKeyboard ? KeyboardCaptureMode::KeyEvents : KeyboardCaptureMode::None;
 }
 

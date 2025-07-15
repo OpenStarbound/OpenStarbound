@@ -3,6 +3,10 @@
 
 #include "gtest/gtest.h"
 
+#ifdef STAR_COMPILER_CLANG
+#pragma clang diagnostic ignored "-Wself-assign-overloaded"
+#endif
+
 using namespace Star;
 
 TEST(VariantTest, All) {

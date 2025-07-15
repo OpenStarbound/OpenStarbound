@@ -332,11 +332,12 @@ void ChatBubbleManager::drawBubbleImage(Vec2F screenPos, BubbleImage const& bubb
 }
 
 void ChatBubbleManager::drawBubbleText(Vec2F screenPos, BubbleText const& bubbleText, int pixelRatio, int alpha, bool isPortrait) {
-  m_guiContext->setTextStyle(get<1>(bubbleText), m_zoom);
+  TextStyle style = get<1>(bubbleText);
+  style.color[3] *= ((float)alpha / 255.f);
+  m_guiContext->setTextStyle(style, m_zoom);
   auto offset = get<3>(bubbleText) * pixelRatio;
   TextPositioning tp = isPortrait ? m_portraitTextTemplate : m_textTemplate;
   tp.pos = screenPos + offset;
-
   m_guiContext->renderText(get<0>(bubbleText), tp);
 }
 

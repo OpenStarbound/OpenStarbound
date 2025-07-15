@@ -1,16 +1,26 @@
 # OpenStarbound
 
-This is a fork of Starbound. Contributions are welcome!
-You **must** own a copy of Starbound to use it. Base game assets are not provided for obvious reasons.
+<details>
+<summary><b>What is this?</b></summary>
+ 
+tl;dr: **OpenStarbound** is a mod of the latest version of Starbound, 1.4.4. It fixes many bugs, adds many new features and improves performance.
 
-It is still **work-in-progress**.
+By a truly unbelievable coincidence, I was recently out for a walk when I saw a small package fall off a truck ahead of me.  As I got closer, the typeface slowly came into focus: **Starbound**. Inside, I found a submachine gun, a fursuit (tells you something about their audience I guess!), and the latest version of the [**Starbound source code**](https://archive.org/details/starbound_source_code).
+
+![185361129-9883fb92-9597-4ba4-b003-4be3dc4971a3](https://github.com/user-attachments/assets/b35dd133-2dc8-4205-9a3f-788e14192a05)
+
+</details>
+
+You **must** own a copy of Starbound. Base game assets are not provided for very obvious reasons.
+
+The code is worked on whenever I feel like it. Contributions are welcome!
 
 ## Installation
 You can download a nightly build below, or the [latest release](https://github.com/OpenStarbound/OpenStarbound/releases/latest). At the moment, you must copy the game assets (**packed.pak**) from your normal Starbound install to the OpenStarbound assets directory before playing.
 
 OpenStarbound is a separate installation/executable than Starbound. You can copy your `storage` folder from Starbound to transfer your save data and settings. Launching OpenStarbound with Steam open will load your subscribed Steam mods.
 
-An installer is available for Windows. otherwise, extract the client/server zip for your platform and copy the game assets (packed.pak) to the OpenStarbound assets folder. the macOS releases currently lack the sbinit.config and folder structure that the Linux & Windows zips have, so you'll need to create those before running them. For macOS releases, it is recommended to build them from source (See guide below).
+An installer is available for Windows. otherwise, extract the client/server zip for your platform and copy the game assets (packed.pak) to the OpenStarbound assets folder.
 ### Nightly Builds
 These link directly to the latest build from the [Actions](https://github.com/OpenStarbound/OpenStarbound/actions?query=branch%3Amain) tab.
 
@@ -20,12 +30,12 @@ These link directly to the latest build from the [Actions](https://github.com/Op
 [Server](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main/OpenStarbound-Windows-Server.zip)
 
 **Linux**
-[Client](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main/OpenStarbound-Linux-Client.zip),
-[Server](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main/OpenStarbound-Linux-Server.zip)
+[Client](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main/OpenStarbound-Linux-Clang-Client.zip),
+[Server](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main/OpenStarbound-Linux-Clang-Server.zip)
 
 **macOS**
-[Intel](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main/OpenStarbound-Dev-macOS-Intel.zip),
-[ARM](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main/OpenStarbound-Dev-macOS-Silicon.zip)
+[Intel](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main/OpenStarbound-macOS-Intel-Client.zip),
+[ARM](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main/OpenStarbound-macOS-Silicon-Client.zip)
 
 [All Nightly Builds](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main)
 

@@ -3,6 +3,7 @@
 #include "StarLogging.hpp"
 #include "StarCasting.hpp"
 #include "StarString_windows.hpp"
+#include "StarVersion.hpp"
 
 #include <DbgHelp.h>
 
@@ -241,7 +242,8 @@ void printStack(char const* message) {
 
 void fatalError(char const* message, bool showStackTrace) {
   std::ostringstream ss;
-  ss << "Fatal Error: " << message << std::endl;
+  ss << "v" << OpenStarVersionString << " (" << StarSourceIdentifierString << ")\n"
+     << "Fatal Error: " << message << std::endl;
   if (showStackTrace)
     ss << outputStack(captureStack());
 
@@ -253,7 +255,8 @@ void fatalError(char const* message, bool showStackTrace) {
 
 void fatalException(std::exception const& e, bool showStackTrace) {
   std::ostringstream ss;
-  ss << "Fatal Exception caught: " << outputException(e, showStackTrace) << std::endl;
+  ss << "v" << OpenStarVersionString << " (" << StarSourceIdentifierString << ")\n"
+     << "Fatal Exception: " << outputException(e, showStackTrace) << std::endl;
   if (showStackTrace)
     ss << "Caught at:" << std::endl << outputStack(captureStack());
 

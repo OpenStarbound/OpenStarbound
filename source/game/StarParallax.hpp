@@ -21,6 +21,9 @@ struct ParallaxLayer {
 
   List<String> textures;
   Directives directives;
+  unsigned frameNumber;
+  int frameOffset;
+  float animationCycle;
   float alpha;
   Vec2F parallaxValue;
   Vec2B repeat;

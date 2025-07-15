@@ -253,6 +253,13 @@ Json Item::instanceValue(String const& name, Json const& def) const {
   return jsonMergeQueryDef(name, def, m_config, m_parameters);
 }
 
+Json Item::instanceValueOfType(String const& name, Json::Type type, Json const& def) const {
+  auto value = instanceValue(name, def);
+  if (value.isType(type))
+    return value;
+  return def;
+}
+
 Json Item::instanceValues() const {
   return m_config.setAll(m_parameters.toObject());
 }

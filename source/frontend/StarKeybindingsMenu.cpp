@@ -37,7 +37,7 @@ KeybindingsMenu::KeybindingsMenu() : m_activeKeybinding(nullptr) {
   m_currentMods = KeyMod::NoMod;
 }
 
-KeyboardCaptureMode KeybindingsMenu::keyboardCaptured() const {
+KeyboardCaptureMode KeybindingsMenu::keyboardCaptureMode() const {
   return m_activeKeybinding ? KeyboardCaptureMode::KeyEvents : KeyboardCaptureMode::None;
 }
 

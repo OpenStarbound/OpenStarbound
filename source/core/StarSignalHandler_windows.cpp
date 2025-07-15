@@ -101,10 +101,7 @@ struct SignalHandlerImpl {
   static LONG CALLBACK vectoredExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo) {
     LONG result = EXCEPTION_CONTINUE_SEARCH;
     if (ExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_STACK_OVERFLOW) {
-      if (HANDLE thread = CreateThread(NULL, 0, writeMiniDump, (void*)ExceptionInfo, 0, NULL)) {
-        WaitForSingleObject(thread, 10000);
-        CloseHandle(thread);
-      }
+      writeMiniDump(ExceptionInfo);
       handleFatalError("Stack overflow detected", ExceptionInfo);
       result = EXCEPTION_CONTINUE_EXECUTION;
     }

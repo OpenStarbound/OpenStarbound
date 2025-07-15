@@ -176,7 +176,7 @@ void Npc::init(World* world, EntityId entityId, EntityMode mode) {
   m_statusController->init(this, m_movementController.get());
   m_tools->init(this);
 
-  m_armor->setupHumanoidClothingDrawables(*humanoid(), forceNude());
+  m_armor->setupHumanoid(*humanoid(), forceNude());
 
   if (isMaster()) {
     m_movementController->resetAnchorState();
@@ -563,6 +563,10 @@ Vec2F Npc::nametagOrigin() const {
   return mouthPosition(false);
 }
 
+String Npc::nametag() const {
+  return name();
+}
+
 bool Npc::aggressive() const {
   return m_aggressive.get();
 }
@@ -621,7 +625,7 @@ void Npc::tickShared(float dt) {
     }
   }
 
-  m_armor->setupHumanoidClothingDrawables(*humanoid(), forceNude());
+  m_armor->setupHumanoid(*humanoid(), forceNude());
 
   m_tools->suppressItems(!canUseTool());
   m_tools->tick(dt, m_shifting.get(), {});
@@ -814,23 +818,9 @@ LuaCallbacks Npc::makeNpcCallbacks() {
     });
 
   callbacks.registerCallback("getItemSlot", [this](String const& entry) -> Json {
-      if (entry.equalsIgnoreCase("head"))
-        return m_armor->headItemDescriptor().toJson();
-      else if (entry.equalsIgnoreCase("headCosmetic"))
-        return m_armor->headCosmeticItemDescriptor().toJson();
-      else if (entry.equalsIgnoreCase("chest"))
-        return m_armor->chestItemDescriptor().toJson();
-      else if (entry.equalsIgnoreCase("chestCosmetic"))
-        return m_armor->chestCosmeticItemDescriptor().toJson();
-      else if (entry.equalsIgnoreCase("legs"))
-        return m_armor->legsItemDescriptor().toJson();
-      else if (entry.equalsIgnoreCase("legsCosmetic"))
-        return m_armor->legsCosmeticItemDescriptor().toJson();
-      else if (entry.equalsIgnoreCase("back"))
-        return m_armor->backItemDescriptor().toJson();
-      else if (entry.equalsIgnoreCase("backCosmetic"))
-        return m_armor->backCosmeticItemDescriptor().toJson();
-      else if (entry.equalsIgnoreCase("primary"))
+      if (auto equipmentSlot = EquipmentSlotNames.leftPtr(entry)) {
+        return m_armor->itemDescriptor((uint8_t)*equipmentSlot).toJson();
+      } else if (entry.equalsIgnoreCase("primary"))
         return m_tools->primaryHandItemDescriptor().toJson();
       else if (entry.equalsIgnoreCase("alt"))
         return m_tools->altHandItemDescriptor().toJson();
@@ -958,7 +948,7 @@ void Npc::getNetStates(bool initial) {
     if (m_npcVariant.humanoidIdentity.species == newIdentity.species) {
       humanoid()->setIdentity(newIdentity);
     } else {
-      refreshHumanoid();
+      refreshHumanoidSpecies();
     }
     m_npcVariant.humanoidIdentity = newIdentity;
   }
@@ -1060,23 +1050,9 @@ Vec2F Npc::questIndicatorPosition() const {
 bool Npc::setItemSlot(String const& slot, ItemDescriptor itemDescriptor) {
   auto item = Root::singleton().itemDatabase()->item(ItemDescriptor(itemDescriptor), m_npcVariant.level, m_npcVariant.seed);
 
-  if (slot.equalsIgnoreCase("head"))
-    m_armor->setHeadItem(as<HeadArmor>(item));
-  else if (slot.equalsIgnoreCase("headCosmetic"))
-    m_armor->setHeadCosmeticItem(as<HeadArmor>(item));
-  else if (slot.equalsIgnoreCase("chest"))
-    m_armor->setChestItem(as<ChestArmor>(item));
-  else if (slot.equalsIgnoreCase("chestCosmetic"))
-    m_armor->setChestCosmeticItem(as<ChestArmor>(item));
-  else if (slot.equalsIgnoreCase("legs"))
-    m_armor->setLegsItem(as<LegsArmor>(item));
-  else if (slot.equalsIgnoreCase("legsCosmetic"))
-    m_armor->setLegsCosmeticItem(as<LegsArmor>(item));
-  else if (slot.equalsIgnoreCase("back"))
-    m_armor->setBackItem(as<BackArmor>(item));
-  else if (slot.equalsIgnoreCase("backCosmetic"))
-    m_armor->setBackCosmeticItem(as<BackArmor>(item));
-  else if (slot.equalsIgnoreCase("primary"))
+  if (auto equipmentSlot = EquipmentSlotNames.leftPtr(slot)) {
+    m_armor->setItem((uint8_t)*equipmentSlot, as<ArmorItem>(item));
+  } else if (slot.equalsIgnoreCase("primary"))
     m_tools->setItems(item, m_tools->altHandItem());
   else if (slot.equalsIgnoreCase("alt"))
     m_tools->setItems(m_tools->primaryHandItem(), item);
@@ -1284,7 +1260,7 @@ void Npc::updateIdentity() {
   m_identityUpdated = true;
   auto oldIdentity = humanoid()->identity();
   if (m_npcVariant.humanoidIdentity.species != oldIdentity.species) {
-    refreshHumanoid();
+    refreshHumanoidSpecies();
   } else {
     humanoid()->setIdentity(m_npcVariant.humanoidIdentity);
   }
@@ -1391,7 +1367,7 @@ HumanoidPtr Npc::humanoid() const {
   return m_netHumanoid.netElements().last()->humanoid();
 }
 
-void Npc::refreshHumanoid() {
+void Npc::refreshHumanoidSpecies() {
   auto speciesDatabase = Root::singleton().speciesDatabase();
   auto speciesDef = speciesDatabase->species(m_npcVariant.humanoidIdentity.species);
 
@@ -1404,7 +1380,7 @@ void Npc::refreshHumanoid() {
   auto armor = m_armor->diskStore();
   m_armor->reset();
   m_armor->diskLoad(armor);
-  m_armor->setupHumanoidClothingDrawables(*humanoid(), forceNude());
+  m_armor->setupHumanoid(*humanoid(), forceNude());
 
   m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), m_npcVariant.movementParameters)));
 

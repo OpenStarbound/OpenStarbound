@@ -78,7 +78,7 @@ String ClientCommandProcessor::previewQuestPane(StringList const& arguments, fun
 StringList ClientCommandProcessor::handleCommand(String const& commandLine, bool userInput) {
   Maybe<Input::ClipboardUnlock> unlock;
   if (userInput) // allow clipboard usage during this code
-    unlock = std::move(Input::singleton().unlockClipboard());
+    unlock = Input::singleton().unlockClipboard();
   try {
     if (!commandLine.beginsWith("/"))
       throw StarException("ClientCommandProcessor expected command, does not start with '/'");
@@ -152,9 +152,6 @@ String ClientCommandProcessor::gravity() {
 
 String ClientCommandProcessor::debug(String const& argumentsString) {
   auto arguments = m_parser.tokenizeToStringList(argumentsString);
-  if (!adminCommandAllowed())
-    return "You must be an admin to use this command.";
-
   if (!arguments.empty() && arguments.at(0).equalsIgnoreCase("hud")) {
     m_debugHudEnabled = !m_debugHudEnabled;
     return strf("Debug HUD {}", m_debugHudEnabled ? "enabled" : "disabled");
@@ -166,9 +163,6 @@ String ClientCommandProcessor::debug(String const& argumentsString) {
 }
 
 String ClientCommandProcessor::boxes() {
-  if (!adminCommandAllowed())
-    return "You must be an admin to use this command.";
-
   auto worldClient = m_universeClient->worldClient();
   bool state = !worldClient->collisionDebug();
   worldClient->setCollisionDebug(state);
@@ -176,9 +170,6 @@ String ClientCommandProcessor::boxes() {
 }
 
 String ClientCommandProcessor::fullbright() {
-  if (!adminCommandAllowed())
-    return "You must be an admin to use this command.";
-
   auto worldClient = m_universeClient->worldClient();
   bool state = !worldClient->fullBright();
   worldClient->setFullBright(state);
@@ -210,9 +201,6 @@ String ClientCommandProcessor::resetGravity() {
 }
 
 String ClientCommandProcessor::fixedCamera() {
-  if (!adminCommandAllowed())
-    return "You must be an admin to use this command.";
-
   m_fixedCameraEnabled = !m_fixedCameraEnabled;
   return strf("Fixed camera {}", m_fixedCameraEnabled ? "enabled" : "disabled");
 }
@@ -600,8 +588,18 @@ String ClientCommandProcessor::render(String const& path) {
   auto outputPath = File::relativeTo(outputDirectory, strf("{}.png", outputName));
   if (!File::isDirectory(outputDirectory))
     File::makeDirectory(outputDirectory);
-  image->writePng(File::open(outputPath, IOMode::Write | IOMode::Truncate));
-  return strf("Saved {}x{} image to {}.png", image->width(), image->height(), outputName);
+
+  auto file = File::open(outputPath, IOMode::Write | IOMode::Truncate);
+  #ifdef STAR_SYSTEM_WINDOWS
+  image->writePng(file);
+  GuiContext::singleton().setClipboardFile(File::fullPath(outputPath));
+  #else
+  auto buffer = make_shared<Buffer>();
+  image->writePng(buffer);
+  file->writeFull(buffer->ptr(), buffer->size());
+  GuiContext::singleton().setClipboardImage(*image, &buffer->data());
+  #endif
+  return strf("Saved '{}.png' ({}x{}) and copied to clipboard", outputName, image->width(), image->height());
 }
 
 

@@ -1017,10 +1017,10 @@ TileDamageResult WorldServer::damageTiles(List<Vec2I> const& positions, TileLaye
 
             if (tileDamage.type == TileDamageType::Protected)
               tileRes = TileDamageResult::Protected;
-            else
+            else if (broken || entity->canBeDamaged()) {
               tileRes = TileDamageResult::Normal;
-
-            damagedEntities.add(entity);
+              damagedEntities.add(entity);
+            }
           }
         }
       }
@@ -1031,7 +1031,7 @@ TileDamageResult WorldServer::damageTiles(List<Vec2I> const& positions, TileLaye
         auto damageParameters = WorldImpl::tileDamageParameters(tile, layer, tileDamage);
 
         if (layer == TileLayer::Foreground && isRealMaterial(tile->foreground)) {
-          if (!tile->rootSource) {
+          if (!tile->rootSource || damagedEntities.empty()) {
             tile->foregroundDamage.damage(damageParameters, sourcePosition, tileDamage);
 
             // if the tile is broken, send a message back to the source entity with position, layer, dungeonId, and whether the tile was harvested
@@ -1683,10 +1683,9 @@ void WorldServer::updateTileEntityTiles(TileEntityPtr const& entity, bool removi
           tile->foregroundMod = NoModId;
           updatedTile = true;
         }
-        bool hadRoot = tile->rootSource.isValid();
         if (isRealMaterial(materialSpace.material))
           tile->rootSource = entity->tilePosition();
-        auto& space = passedSpaces.emplaceAppend(materialSpace);
+        passedSpaces.emplaceAppend(materialSpace);
         updatedTile |= updatedCollision = tile->updateObjectCollision(materialDatabase->materialCollisionKind(materialSpace.material));
       }
       if (updatedCollision) {

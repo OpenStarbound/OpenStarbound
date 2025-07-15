@@ -4,8 +4,24 @@
 
 #include <execinfo.h>
 #include <cstdlib>
+#ifdef STAR_USE_CPPTRACE
+#include "cpptrace/cpptrace.hpp"
+#include "cpptrace/formatting.hpp"
+#endif
 
 namespace Star {
+
+#ifdef STAR_USE_CPPTRACE
+
+static inline std::string captureBacktrace() {
+  auto formatter = cpptrace::formatter{}
+    .paths(cpptrace::formatter::path_mode::basename);
+  std::ostringstream out;
+  formatter.print(out, cpptrace::generate_trace());
+  return out.str();
+}
+  
+#endif
 
 static size_t const StackLimit = 256;
 
@@ -57,18 +73,32 @@ const char* StarException::what() const throw() {
 }
 
 StarException::StarException(char const* type, std::string message, bool genStackTrace) noexcept {
+#ifdef STAR_USE_CPPTRACE
+  auto printException = [](std::ostream& os, bool fullStacktrace, char const* type, std::string message, std::string stack) {
+#else
   auto printException = [](std::ostream& os, bool fullStacktrace, char const* type, std::string message, Maybe<StackCapture> stack) {
+#endif
     os << "(" << type << ")";
     if (!message.empty())
       os << " " << message;
 
+#ifdef STAR_USE_CPPTRACE
+    if (fullStacktrace && !stack.empty()) {
+      os << std::endl;
+      os << stack;
+    }
+#else
     if (fullStacktrace && stack) {
       os << std::endl;
       os << outputStack(*stack);
     }
+#endif
   };
-
+#ifdef STAR_USE_CPPTRACE
+  m_printException = bind(printException, _1, _2, type, std::move(message), genStackTrace ? captureBacktrace() : std::string());
+#else
   m_printException = bind(printException, _1, _2, type, std::move(message), genStackTrace ? captureStack() : Maybe<StackCapture>());
+#endif
 }
 
 StarException::StarException(char const* type, std::string message, std::exception const& cause) noexcept
@@ -112,12 +142,20 @@ OutputProxy outputException(std::exception const& e, bool fullStacktrace) {
 }
 
 void printStack(char const* message) {
+#ifdef STAR_USE_CPPTRACE
+  Logger::info("Stack Trace ({})...\n{}", message, captureBacktrace());
+#else
   Logger::info("Stack Trace ({})...\n{}", message, outputStack(captureStack()));
+#endif
 }
 
 void fatalError(char const* message, bool showStackTrace) {
   if (showStackTrace)
+#ifdef STAR_USE_CPPTRACE
+    Logger::error("Fatal Error: {}\n{}", message, captureBacktrace());
+#else
     Logger::error("Fatal Error: {}\n{}", message, outputStack(captureStack()));
+#endif
   else
     Logger::error("Fatal Error: {}", message);
 
@@ -126,7 +164,11 @@ void fatalError(char const* message, bool showStackTrace) {
 
 void fatalException(std::exception const& e, bool showStackTrace) {
   if (showStackTrace)
+#ifdef STAR_USE_CPPTRACE
+    Logger::error("Fatal Exception caught: {}\nCaught at:\n{}", outputException(e, true), captureBacktrace());
+#else
     Logger::error("Fatal Exception caught: {}\nCaught at:\n{}", outputException(e, true), outputStack(captureStack()));
+#endif
   else
     Logger::error("Fatal Exception caught: {}", outputException(e, showStackTrace));
 

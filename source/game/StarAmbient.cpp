@@ -24,20 +24,22 @@ Json AmbientTrackGroup::toJson() const {
   return JsonObject{{"tracks", jsonFromStringList(tracks)}};
 }
 
-AmbientNoisesDescription::AmbientNoisesDescription() {}
+AmbientNoisesDescription::AmbientNoisesDescription() : trackLoops(-1) {}
 
-AmbientNoisesDescription::AmbientNoisesDescription(AmbientTrackGroup day, AmbientTrackGroup night)
-  : daySounds(std::move(day)), nightSounds(std::move(night)) {}
+AmbientNoisesDescription::AmbientNoisesDescription(AmbientTrackGroup day, AmbientTrackGroup night, int loops)
+  : daySounds(std::move(day)), nightSounds(std::move(night)), trackLoops(loops) {}
 
 AmbientNoisesDescription::AmbientNoisesDescription(Json const& config, String const& directory) {
   if (auto day = config.opt("day"))
     daySounds = AmbientTrackGroup(*day, directory);
   if (auto night = config.opt("night"))
     nightSounds = AmbientTrackGroup(*night, directory);
+  if (auto loops = config.optInt("loops"))
+    trackLoops = *loops;
 }
 
 Json AmbientNoisesDescription::toJson() const {
-  return JsonObject{{"day", daySounds.toJson()}, {"night", nightSounds.toJson()}};
+  return JsonObject{{"day", daySounds.toJson()}, {"night", nightSounds.toJson()}, {"loops", trackLoops}};
 }
 
 AmbientManager::~AmbientManager() {
@@ -60,14 +62,11 @@ AudioInstancePtr AmbientManager::updateAmbient(AmbientNoisesDescriptionPtr curre
       m_currentTrack = {};
   }
   StringList tracks;
-  if (current) {
-    if (dayTime)
-      tracks = current->daySounds.tracks;
-    else
-      tracks = current->nightSounds.tracks;
-  }
+  if (current)
+    tracks = dayTime ? current->daySounds.tracks : current->nightSounds.tracks;
+
   if (m_currentTrack) {
-    if (!tracks.contains(m_currentTrackName)) {
+    if (m_currentTrack->finished() || !tracks.contains(m_currentTrackName)) {
       if (m_trackSwitchGrace <= Time::monotonicTime() - m_trackGraceTimestamp) {
         m_currentTrack->stop(m_trackFadeInTime);
         m_currentTrack = {};
@@ -92,7 +91,7 @@ AudioInstancePtr AmbientManager::updateAmbient(AmbientNoisesDescriptionPtr curre
       if (auto audio = assets->tryAudio(m_currentTrackName)) {
         m_recentTracks.append(m_currentTrackName);
         m_currentTrack = make_shared<AudioInstance>(*audio);
-        m_currentTrack->setLoops(-1);
+        m_currentTrack->setLoops(current ? current->trackLoops : -1);
         // Slowly fade the music track in
         m_currentTrack->setVolume(0.0f);
         m_currentTrack->setVolume(m_volume, m_trackFadeInTime);

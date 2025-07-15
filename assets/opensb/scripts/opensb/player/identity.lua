@@ -9,7 +9,7 @@ commands.register("identity", function(args)
     if path then
       value = identity[path]
       if value or path == "imagePath" then
-        return sb.printJson(value)
+        return type(value) == "string" and value or sb.printJson(value, 1)
       else
         return string.format("%s is not a part of the identity", path)
       end
@@ -29,7 +29,7 @@ commands.register("identity", function(args)
     end
     identity[path] = value
     player.setHumanoidIdentity(identity)
-    return string.format("Set %s to %s", path, value)
+    return string.format("Set %s to %s", path, type(value) == "string" and value or sb.printJson(value, 1))
   else 
     return "Usage: /identity <get|set> [path] [value]"
   end

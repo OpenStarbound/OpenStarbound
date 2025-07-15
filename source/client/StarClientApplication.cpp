@@ -27,6 +27,8 @@
 #include "StarCameraLuaBindings.hpp"
 #include "StarClipboardLuaBindings.hpp"
 #include "StarRenderingLuaBindings.hpp"
+#include "imgui.h"
+#include "imgui_freetype.h"
 
 #if defined STAR_SYSTEM_WINDOWS
 #include <windows.h>
@@ -222,6 +224,17 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
   m_voice = make_shared<Voice>(appController);  
     
   auto assets = m_root->assets();
+
+  {
+    auto& io = ImGui::GetIO();
+    m_immediateFont = *assets->bytes("/hobo.ttf");
+    ImFontConfig config{};
+    config.FontDataOwnedByAtlas = false;
+    config.FontBuilderFlags = ImGuiFreeTypeBuilderFlags_ForceAutoHint;
+    io.Fonts->AddFontFromMemoryTTF(m_immediateFont.ptr(), m_immediateFont.size(),
+      16, &config, io.Fonts->GetGlyphRangesDefault());
+  }
+
   m_minInterfaceScale = assets->json("/interface.config:minInterfaceScale").toInt();
   m_maxInterfaceScale = assets->json("/interface.config:maxInterfaceScale").toInt();
   m_crossoverRes = jsonToVec2F(assets->json("/interface.config:interfaceCrossoverRes"));
@@ -327,10 +340,11 @@ void ClientApplication::processInput(InputEvent const& event) {
 
 void ClientApplication::update() {
   float dt = GlobalTimestep * GlobalTimescale;
+  auto& app = appController();
   if (m_state >= MainAppState::Title) {
-    if (auto p2pNetworkingService = appController()->p2pNetworkingService()) {
+    if (auto p2pNetworkingService = app->p2pNetworkingService()) {
       if (auto join = p2pNetworkingService->pullPendingJoin()) {
-        m_pendingMultiPlayerConnection = PendingMultiPlayerConnection{join.takeValue(), {}, {}};
+        m_pendingMultiPlayerConnection = PendingMultiPlayerConnection{join.takeValue(), {}, {}, false};
         changeState(MainAppState::Title);
       }
       
@@ -367,9 +381,11 @@ void ClientApplication::update() {
   m_guiContext->cleanup();
   m_edgeKeyEvents.clear();
   m_input->update();
+  ++m_framesSkipped;
 }
 
 void ClientApplication::render() {
+  m_framesSkipped = 0;
   auto config = m_root->configuration();
   auto assets = m_root->assets();
   auto& renderer = Application::renderer();
@@ -429,7 +445,7 @@ void ClientApplication::render() {
   }
 
   if (!m_errorScreen->accepted())
-    m_errorScreen->render(m_state == MainAppState::ModsWarning || m_state == MainAppState::Error);
+    m_errorScreen->render();
 }
 
 void ClientApplication::getAudioData(int16_t* sampleData, size_t frameCount) {
@@ -533,12 +549,17 @@ Json ClientApplication::postProcessGroups() {
   return m_root->assets()->json("/client.config:postProcessGroups");
 }
 
+unsigned ClientApplication::framesSkipped() const {
+  return m_framesSkipped;
+}
+
 void ClientApplication::changeState(MainAppState newState) {
   MainAppState oldState = m_state;
   m_state = newState;
+  auto& app = appController();
 
   if (m_state == MainAppState::Quit)
-    appController()->quit();
+    app->quit();
 
   if (newState == MainAppState::Mods)
     m_cinematicOverlay->load(m_root->assets()->json("/cinematics/mods/modloading.cinematic"));
@@ -564,7 +585,7 @@ void ClientApplication::changeState(MainAppState newState) {
 
     m_voice->clearSpeakers();
 
-    if (auto p2pNetworkingService = appController()->p2pNetworkingService()) {
+    if (auto p2pNetworkingService = app->p2pNetworkingService()) {
       p2pNetworkingService->setJoinUnavailable();
       p2pNetworkingService->setAcceptingP2PConnections(false);
     }
@@ -594,7 +615,7 @@ void ClientApplication::changeState(MainAppState newState) {
     m_cinematicOverlay->stop();
 
     m_playerStorage = make_shared<PlayerStorage>(m_root->toStoragePath("player"));
-    m_statistics = make_shared<Statistics>(m_root->toStoragePath("player"), appController()->statisticsService());
+    m_statistics = make_shared<Statistics>(m_root->toStoragePath("player"), app->statisticsService());
     m_universeClient = make_shared<UniverseClient>(m_playerStorage, m_statistics);
 
     m_universeClient->setLuaCallbacks("input", LuaBindings::makeInputCallbacks());
@@ -603,7 +624,7 @@ void ClientApplication::changeState(MainAppState newState) {
     m_universeClient->setLuaCallbacks("renderer", LuaBindings::makeRenderingCallbacks(this));
 
     Json alwaysAllow = m_root->configuration()->getPath("safe.alwaysAllowClipboard");
-    m_universeClient->setLuaCallbacks("clipboard", LuaBindings::makeClipboardCallbacks(appController(), alwaysAllow && alwaysAllow.toBool()));
+    m_universeClient->setLuaCallbacks("clipboard", LuaBindings::makeClipboardCallbacks(app, alwaysAllow && alwaysAllow.toBool()));
 
     auto heldScriptPanes = make_shared<List<MainInterface::ScriptPaneInfo>>();
 
@@ -697,7 +718,7 @@ void ClientApplication::changeState(MainAppState newState) {
       } else {
         auto p2pPeerId = multiPlayerConnection.server.ptr<P2PNetworkingPeerId>();
 
-        if (auto p2pNetworkingService = appController()->p2pNetworkingService()) {
+        if (auto p2pNetworkingService = app->p2pNetworkingService()) {
           auto result = p2pNetworkingService->connectToPeer(*p2pPeerId);
           if (result.isLeft()) {
             setError(strf("Cannot join peer: {}", result.left()));
@@ -763,19 +784,23 @@ void ClientApplication::changeState(MainAppState newState) {
 void ClientApplication::setError(String const& error) {
   Logger::error(error.utf8Ptr());
   m_errorScreen->setMessage(error);
+  m_titleScreen->resetState();
   changeState(MainAppState::Title);
 }
 
 void ClientApplication::setError(String const& error, std::exception const& e) {
   Logger::error("{}\n{}", error, outputException(e, true));
   m_errorScreen->setMessage(strf("{}\n{}", error, outputException(e, false)));
+  m_titleScreen->resetState();
   changeState(MainAppState::Title);
 }
 
 void ClientApplication::updateMods(float dt) {
   m_cinematicOverlay->update(dt);
   auto ugcService = appController()->userGeneratedContentService();
-  if (ugcService && m_root->settings().includeUGC) {
+  auto configuration = m_root->configuration();
+  bool includeUGC = configuration->get("includeUGC", m_root->settings().includeUGC).toBool();
+  if (ugcService && includeUGC) {
     Logger::info("Checking for user generated content...");
     if (ugcService->triggerContentDownload()) {
       StringList modDirectories;
@@ -795,7 +820,6 @@ void ClientApplication::updateMods(float dt) {
         Logger::info("Reloading to include all user generated content");
         Root::singleton().reloadWithMods(modDirectories);
 
-        auto configuration = m_root->configuration();
         auto assets = m_root->assets();
 
         if (configuration->get("modsWarningShown").optBool().value()) {
@@ -835,9 +859,16 @@ void ClientApplication::updateTitle(float dt) {
   m_mainMixer->update(dt);
   m_mainMixer->setSpeed(GlobalTimescale);
 
-  appController()->setAcceptingTextInput(m_titleScreen->textInputActive());
+  auto& app = appController();
+  bool inputActive = m_titleScreen->textInputActive();
+  m_input->setTextInputActive(inputActive);
+  if (inputActive)
+    app->setTextArea(m_titleScreen->paneManager()->keyboardCapturedWidget()->keyboardCaptureArea());
+  else
+    app->setTextArea();
+  app->setAcceptingTextInput(inputActive);
 
-  auto p2pNetworkingService = appController()->p2pNetworkingService();
+  auto p2pNetworkingService = app->p2pNetworkingService();
   if (p2pNetworkingService) {
     auto getStateString = [](TitleState state) -> const char* {
       switch (state) {
@@ -911,8 +942,9 @@ void ClientApplication::updateTitle(float dt) {
 
 void ClientApplication::updateRunning(float dt) {
   try {
+    auto& app = appController();
     auto worldClient = m_universeClient->worldClient();
-    auto p2pNetworkingService = appController()->p2pNetworkingService();
+    auto p2pNetworkingService = app->p2pNetworkingService();
     bool clientIPJoinable = m_root->configuration()->get("clientIPJoinable").toBool();
     bool clientP2PJoinable = m_root->configuration()->get("clientP2PJoinable").toBool();
     Maybe<pair<uint16_t, uint16_t>> party = make_pair(m_universeClient->players(), m_universeClient->maxPlayers());
@@ -1143,14 +1175,18 @@ void ClientApplication::updateRunning(float dt) {
     m_mainMixer->setSpeed(GlobalTimescale);
 
     bool inputActive = m_mainInterface->textInputActive();
-    appController()->setAcceptingTextInput(inputActive);
     m_input->setTextInputActive(inputActive);
+    if (inputActive)
+      app->setTextArea(m_mainInterface->paneManager()->keyboardCapturedWidget()->keyboardCaptureArea());
+    else
+      app->setTextArea();
+    app->setAcceptingTextInput(inputActive);
 
     for (auto const& interactAction : m_player->pullInteractActions())
       m_mainInterface->handleInteractAction(interactAction);
 
     if (m_universeServer) {
-      if (auto p2pNetworkingService = appController()->p2pNetworkingService()) {
+      if (auto p2pNetworkingService = app->p2pNetworkingService()) {
         for (auto& p2pClient : p2pNetworkingService->acceptP2PConnections())
           m_universeServer->addClient(UniverseConnection(P2PPacketSocket::open(std::move(p2pClient))));
       }
@@ -1159,9 +1195,9 @@ void ClientApplication::updateRunning(float dt) {
     }
 
     Vec2F aimPosition = m_player->aimPosition();
-    float fps = appController()->renderFps();
-    LogMap::set("client_render_rate", strf("{:4.2f} FPS ({:4.2f}ms)", fps, (1.0f / appController()->renderFps()) * 1000.0f));
-    LogMap::set("client_update_rate", strf("{:4.2f}Hz", appController()->updateRate()));
+    float fps = app->renderFps();
+    LogMap::set("client_render_rate", strf("{:4.2f} FPS ({:4.2f}ms)", fps, (1.0f / app->renderFps()) * 1000.0f));
+    LogMap::set("client_update_rate", strf("{:4.2f}Hz", app->updateRate()));
     LogMap::set("player_pos", strf("[ ^#f45;{:4.2f}^reset;, ^#49f;{:4.2f}^reset; ]", m_player->position()[0], m_player->position()[1]));
     LogMap::set("player_vel", strf("[ ^#f45;{:4.2f}^reset;, ^#49f;{:4.2f}^reset; ]", m_player->velocity()[0], m_player->velocity()[1]));
     LogMap::set("player_aim", strf("[ ^#f45;{:4.2f}^reset;, ^#49f;{:4.2f}^reset; ]", aimPosition[0], aimPosition[1]));
