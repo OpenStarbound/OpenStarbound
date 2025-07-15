@@ -348,30 +348,30 @@ void Humanoid::setIdentity(HumanoidIdentity const& identity) {
     m_networkedAnimator.resetLocalTransformationGroup("personalityArmOffset");
     m_networkedAnimator.translateLocalTransformationGroup("personalityArmOffset", m_identity.personality.armOffset / TilePixels);
 
-    m_networkedAnimator.setLocalTag("headArmorFrameset", m_headArmorFrameset);
-    m_networkedAnimator.setLocalTag("headArmorDirectives", m_headArmorDirectives.string());
-    if (m_headArmorTags)
-      for (auto tag : *m_headArmorTags)
-        m_networkedAnimator.setLocalTag(tag.first, tag.second.toString());
-    m_networkedAnimator.setLocalTag("chestArmorFrameset", m_chestArmorFrameset);
-    m_networkedAnimator.setLocalTag("chestArmorDirectives", m_chestArmorDirectives.string());
-    if (m_chestArmorTags)
-      for (auto tag : *m_chestArmorTags)
-        m_networkedAnimator.setLocalTag(tag.first, tag.second.toString());
-    m_networkedAnimator.setLocalTag("legsArmorFrameset", m_legsArmorFrameset);
-    m_networkedAnimator.setLocalTag("legsArmorDirectives", m_legsArmorDirectives.string());
-    if (m_legsArmorTags)
-      for (auto tag : *m_legsArmorTags)
-        m_networkedAnimator.setLocalTag(tag.first, tag.second.toString());
-    m_networkedAnimator.setLocalTag("backArmorFrameset", m_backArmorFrameset);
-    m_networkedAnimator.setLocalTag("backArmorDirectives", m_backArmorDirectives.string());
-    if (m_backArmorTags)
-      for (auto tag : *m_backArmorTags)
-        m_networkedAnimator.setLocalTag(tag.first, tag.second.toString());
+    // m_networkedAnimator.setLocalTag("headArmorFrameset", m_headArmorFrameset);
+    // m_networkedAnimator.setLocalTag("headArmorDirectives", m_headArmorDirectives.string());
+    // if (m_headArmorTags)
+    //   for (auto tag : *m_headArmorTags)
+    //     m_networkedAnimator.setLocalTag(tag.first, tag.second.toString());
+    // m_networkedAnimator.setLocalTag("chestArmorFrameset", m_chestArmorFrameset);
+    // m_networkedAnimator.setLocalTag("chestArmorDirectives", m_chestArmorDirectives.string());
+    // if (m_chestArmorTags)
+    //   for (auto tag : *m_chestArmorTags)
+    //     m_networkedAnimator.setLocalTag(tag.first, tag.second.toString());
+    // m_networkedAnimator.setLocalTag("legsArmorFrameset", m_legsArmorFrameset);
+    // m_networkedAnimator.setLocalTag("legsArmorDirectives", m_legsArmorDirectives.string());
+    // if (m_legsArmorTags)
+    //   for (auto tag : *m_legsArmorTags)
+    //     m_networkedAnimator.setLocalTag(tag.first, tag.second.toString());
+    // m_networkedAnimator.setLocalTag("backArmorFrameset", m_backArmorFrameset);
+    // m_networkedAnimator.setLocalTag("backArmorDirectives", m_backArmorDirectives.string());
+    // if (m_backArmorTags)
+    //   for (auto tag : *m_backArmorTags)
+    //     m_networkedAnimator.setLocalTag(tag.first, tag.second.toString());
 
-    m_networkedAnimator.setLocalTag("frontSleeveFrameset", m_frontSleeveFrameset);
-    m_networkedAnimator.setLocalTag("backSleeveFrameset", m_frontSleeveFrameset);
-    m_networkedAnimator.setLocalTag("helmetMaskDirectives", m_helmetMaskDirectives.string());
+    // m_networkedAnimator.setLocalTag("frontSleeveFrameset", m_frontSleeveFrameset);
+    // m_networkedAnimator.setLocalTag("backSleeveFrameset", m_frontSleeveFrameset);
+    // m_networkedAnimator.setLocalTag("helmetMaskDirectives", m_helmetMaskDirectives.string());
   }
 }
 
@@ -639,70 +639,6 @@ void Humanoid::refreshWearables(Fashion& fashion) {
 
 const Directives nullDirectives = {};
 const String nullFrameset = "";
-
-void Humanoid::setHeadArmorTags(Maybe<JsonObject> tags){
-  if (m_animationConfig.isValid() && (tags != m_headArmorTags)) {
-    if (m_headArmorTags)
-      for (auto tag : *m_headArmorTags)
-        m_networkedAnimator.setLocalTag(tag.first);
-    if (tags)
-      for (auto tag : *tags)
-        m_networkedAnimator.setLocalTag(tag.first, tag.second.toString());
-    m_headArmorTags = std::move(tags);
-  }
-}
-
-void Humanoid::setChestArmorTags(Maybe<JsonObject> tags){
-  if (m_animationConfig.isValid() && (tags != m_chestArmorTags)) {
-    if (m_chestArmorTags)
-      for (auto tag : *m_chestArmorTags)
-        m_networkedAnimator.setLocalTag(tag.first);
-    if (tags)
-      for (auto tag : *tags)
-        m_networkedAnimator.setLocalTag(tag.first, tag.second.toString());
-    m_chestArmorTags = std::move(tags);
-  }
-}
-
-void Humanoid::setLegsArmorTags(Maybe<JsonObject> tags){
-  if (m_animationConfig.isValid() && (tags != m_legsArmorTags)) {
-    if (m_legsArmorTags)
-      for (auto tag : *m_legsArmorTags)
-        m_networkedAnimator.setLocalTag(tag.first);
-    if (tags)
-      for (auto tag : *tags)
-        m_networkedAnimator.setLocalTag(tag.first, tag.second.toString());
-    m_legsArmorTags = std::move(tags);
-  }
-}
-
-void Humanoid::setBackArmorTags(Maybe<JsonObject> tags){
-  if (m_animationConfig.isValid() && (tags != m_backArmorTags)) {
-    if (m_backArmorTags)
-      for (auto tag : *m_backArmorTags)
-        m_networkedAnimator.setLocalTag(tag.first);
-    if (tags)
-      for (auto tag : *tags)
-        m_networkedAnimator.setLocalTag(tag.first, tag.second.toString());
-    m_backArmorTags = std::move(tags);
-  }
-}
-
-Maybe<JsonObject> Humanoid::getHeadArmorTags() const {
-  return m_headArmorTags;
-}
-
-Maybe<JsonObject> Humanoid::getChestArmorTags() const {
-  return m_chestArmorTags;
-}
-
-Maybe<JsonObject> Humanoid::getLegsArmorTags() const {
-  return m_legsArmorTags;
-}
-
-Maybe<JsonObject> Humanoid::getBackArmorTags() const {
-  return m_backArmorTags;
-}
 
 Directives const& Humanoid::headArmorDirectives() const {
   if (auto head = getLastWearableOfType<WornHead>())

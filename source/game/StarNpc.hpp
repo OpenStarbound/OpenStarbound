@@ -235,7 +235,7 @@ private:
 
   void disableWornArmor(bool disable);
 
-  void refreshHumanoid();
+  void refreshHumanoidSpecies();
 
   NetElementDynamicGroup<NetHumanoid> m_netHumanoid;
 

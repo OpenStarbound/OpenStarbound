@@ -237,7 +237,7 @@ public:
 
   void refreshItems();
   void refreshArmor();
-  void refreshHumanoid() const; 
+  void refreshHumanoid() const;
   // Refresh worn equipment from the inventory
   void refreshEquipment();
 
@@ -533,7 +533,7 @@ private:
 
   HumanoidEmote detectEmotes(String const& chatter);
 
-  void refreshHumanoid();
+  void refreshHumanoidSpecies();
 
   NetElementDynamicGroup<NetHumanoid> m_netHumanoid;
   NetElementData<Maybe<String>> m_deathParticleBurst;
