@@ -27,6 +27,7 @@
 #include "StarJsonExtra.hpp"
 #include "StarDanceDatabase.hpp"
 #include "StarSpeciesDatabase.hpp"
+#include "StarNetworkedAnimatorLuaBindings.hpp"
 
 namespace Star {
 
@@ -192,6 +193,7 @@ void Npc::init(World* world, EntityId entityId, EntityMode mode) {
     m_scriptComponent.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(m_statusController.get()));
     m_scriptComponent.addCallbacks("behavior", LuaBindings::makeBehaviorCallbacks(&m_behaviors));
     m_scriptComponent.addCallbacks("songbook", LuaBindings::makeSongbookCallbacks(m_songbook.get()));
+    m_scriptComponent.addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(humanoid()->networkedAnimator()));
     m_scriptComponent.addActorMovementCallbacks(m_movementController.get());
     m_scriptComponent.init(world);
   }
@@ -207,6 +209,7 @@ void Npc::uninit() {
     m_scriptComponent.removeCallbacks("status");
     m_scriptComponent.removeCallbacks("behavior");
     m_scriptComponent.removeCallbacks("songbook");
+    m_scriptComponent.removeCallbacks("animator");
     m_scriptComponent.removeActorMovementCallbacks();
   }
   m_tools->uninit();
@@ -1385,8 +1388,11 @@ void Npc::refreshHumanoidSpecies() {
   m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), m_npcVariant.movementParameters)));
 
   if (isMaster()) {
-      if (m_scriptComponent.initialized())
-        m_scriptComponent.invoke("refreshHumanoid");
+    if (m_scriptComponent.initialized()) {
+      m_scriptComponent.removeCallbacks("animator");
+      m_scriptComponent.addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(humanoid()->networkedAnimator()));
+      m_scriptComponent.invoke("refreshHumanoidSpecies");
+    }
   }
 
 }

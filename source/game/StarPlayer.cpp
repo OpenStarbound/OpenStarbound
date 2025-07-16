@@ -36,6 +36,7 @@
 #include "StarInspectionTool.hpp"
 #include "StarUtilityLuaBindings.hpp"
 #include "StarCelestialLuaBindings.hpp"
+#include "StarNetworkedAnimatorLuaBindings.hpp"
 
 namespace Star {
 
@@ -343,6 +344,7 @@ void Player::init(World* world, EntityId entityId, EntityMode mode) {
       p.second->addCallbacks("player", LuaBindings::makePlayerCallbacks(this));
       p.second->addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(m_statusController.get()));
       p.second->addCallbacks("songbook", LuaBindings::makeSongbookCallbacks(m_songbook.get()));
+      p.second->addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(humanoid()->networkedAnimator()));
       if (m_client)
         p.second->addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(m_client));
       p.second->init(world);
@@ -372,6 +374,7 @@ void Player::uninit() {
 
     for (auto& p : m_genericScriptContexts) {
       p.second->uninit();
+      p.second->removeCallbacks("animator");
       p.second->removeCallbacks("entity");
       p.second->removeCallbacks("player");
       p.second->removeCallbacks("mcontroller");
@@ -2801,8 +2804,13 @@ void Player::refreshHumanoidSpecies() {
 
   if (isMaster()) {
     for (auto& p : m_genericScriptContexts) {
-      if (p.second->initialized())
-        p.second->invoke("refreshHumanoid");
+      if (p.second->initialized()) {
+        p.second->removeCallbacks("animator");
+        p.second->addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(humanoid()->networkedAnimator()));
+
+        p.second->invoke("refreshHumanoidSpecies");
+
+      }
     }
   }
 
