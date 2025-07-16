@@ -34,7 +34,6 @@ ArmorItem::ArmorItem(Json const& config, String const& directory, Json const& da
     m_directives = "?" + m_colorOptions.wrap(instanceValue("colorIndex", 0).toUInt());
   refreshIconDrawables();
 
-  m_humanoindAnimationTags = instanceValue("humanoidAnimationTags").optObject();
   if (auto jFlipDirectives = instanceValueOfType("flipDirectives", Json::Type::String)) {
     auto flipDirectives = jFlipDirectives.toString();
     auto directivesStr = m_directives.stringPtr();
@@ -117,10 +116,6 @@ bool ArmorItem::bypassNude() const {
 
 Maybe<String> const& ArmorItem::techModule() const {
   return m_techModule;
-}
-
-Maybe<JsonObject> const & ArmorItem::humanoidAnimationTags() const {
-  return m_humanoindAnimationTags;
 }
 
 

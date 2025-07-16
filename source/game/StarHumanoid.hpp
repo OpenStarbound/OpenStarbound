@@ -159,6 +159,7 @@ public:
     String frameset;
     bool rotateWithHead = false;
     bool bypassNude = false;
+    HashMap<String, String> animationTags = {};
   };
 
   // Must have :normal, climb
@@ -214,11 +215,6 @@ public:
   Directives const& backArmorDirectives() const;
   String const& backArmorFrameset() const;
 
-  Maybe<JsonObject> getHeadArmorTags() const;
-  Maybe<JsonObject> getChestArmorTags() const;
-  Maybe<JsonObject> getLegsArmorTags() const;
-  Maybe<JsonObject> getBackArmorTags() const;
-
   void setBodyHidden(bool hidden);
 
   void setState(State state);
@@ -227,7 +223,6 @@ public:
   void setFacingDirection(Direction facingDirection);
   void setMovingBackwards(bool movingBackwards);
   void setHeadRotation(float headRotation);
-  void setBackRotatesWithHead(bool backRotatesWithHead);
   void setRotation(float rotation);
   void setScale(Vec2F scale);
 
@@ -314,8 +309,6 @@ public:
   String getBackArmFromIdentity() const;
   String getFrontArmFromIdentity() const;
   String getVaporTrailFrameset() const;
-
-  pair<Maybe<Json>,String> getAnimation() const;
 
   NetworkedAnimator * networkedAnimator();
   NetworkedAnimator const* networkedAnimator() const;
@@ -427,7 +420,6 @@ private:
   Maybe<String> m_dance;
   Direction m_facingDirection;
   bool m_movingBackwards;
-  bool m_backRotatesWithHead;
   float m_headRotation;
   float m_headRotationTarget;
   float m_rotation;
@@ -452,7 +444,6 @@ private:
   Json m_defaultMovementParameters;
   Maybe<Json> m_playerMovementParameters;
   Maybe<Json> m_animationConfig;
-  String m_animationPath;
 
   NetworkedAnimator m_networkedAnimator;
   NetworkedAnimator::DynamicTarget m_networkedAnimatorDynamicTarget;
@@ -482,11 +473,6 @@ private:
   pair<String, String> m_feetOffsetPoint;
   pair<String, String> m_throwPoint;
   pair<String, String> m_interactPoint;
-
-  Maybe<JsonObject> m_headArmorTags;
-  Maybe<JsonObject> m_chestArmorTags;
-  Maybe<JsonObject> m_legsArmorTags;
-  Maybe<JsonObject> m_backArmorTags;
 
 };
 

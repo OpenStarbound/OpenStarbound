@@ -50,8 +50,6 @@ public:
 
   Maybe<String> const& techModule() const;
 
-  Maybe<JsonObject> const& humanoidAnimationTags() const;
-
 private:
   void refreshIconDrawables();
   void refreshStatusEffects();
@@ -66,8 +64,6 @@ private:
   bool m_hideInVanillaSlots;
   Maybe<HashSet<ArmorType>> m_armorTypesToHide;
   Maybe<String> m_techModule;
-
-  Maybe<JsonObject> m_humanoindAnimationTags;
 };
 
 class HeadArmor : public ArmorItem, public PreviewableItem {

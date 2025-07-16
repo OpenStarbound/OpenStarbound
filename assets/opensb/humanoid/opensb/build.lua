@@ -24,7 +24,8 @@ function build(identity, humanoidConfig, npcHumanoidConfig)
 			animatedParts = {
 				stateTypes = {},
 				parts = {}
-			}
+			},
+			transformationGroups = {}
 		}
 	elseif type(humanoidConfig.animation) == "string" then
 		local animation = humanoidConfig.animation
@@ -37,7 +38,8 @@ function build(identity, humanoidConfig, npcHumanoidConfig)
 			animatedParts = {
 				stateTypes = {},
 				parts = {}
-			}
+			},
+			transformationGroups = {}
 		}
 	end
 	for k, v in pairs(identity) do
@@ -61,7 +63,7 @@ function build(identity, humanoidConfig, npcHumanoidConfig)
 	end
 	for i, portraitMode in ipairs(portraitModes) do
 		setPath(humanoidConfig, {"portraitAnimations", portraitMode, "body"}, {"idle", true, false})
-    end
+	end
 	humanoidConfig.portraitAnimations.bust.portraitMode = {"bust", true, false}
 	humanoidConfig.portraitAnimations.head.portraitMode = {"head", true, false}
 
@@ -141,11 +143,40 @@ function build(identity, humanoidConfig, npcHumanoidConfig)
 	}))
 	setPath(parts, { "head", "properties", "rotationCenter"}, vecTilePixels(humanoidConfig.headRotationCenter or {0,0}))
 
-
 	-- these states play in reverse for moving backwards, run has a duplicate state for this because back items have a different frameset for it
 	stateTypes.body.states.runbackwards = stateTypes.body.states.run
 	setPath(humanoidConfig, { "stateAnimationsBackwards", "walk", "body" }, { "walk", false, true })
 	setPath(humanoidConfig, { "stateAnimationsBackwards", "run", "body" }, { "runbackwards", false, true })
+
+
+	-- there are 20 cosmetic slots and we need to support any cosmetic being in any slot, and these should all be the same aside from zlevel, so just generate that
+	for i = 1, 20 do
+		local cosmeticParts = root.assetJson("/humanoid/opensb/humanoidCosmetics.config")
+		for partName, part in pairs(cosmeticParts) do
+			fixCosmeticPartProperties(part.properties, i)
+			for stateTypeName, stateType in pairs(part.partStates or {}) do
+				for stateName, state in pairs(stateType) do
+					if type(state) == "table" then
+						fixCosmeticPartProperties(state.properties, i)
+					end
+				end
+			end
+			parts[partName:gsub("<slot>", tostring(i))] = part
+		end
+		humanoidConfig.animation.globalTagDefaults["headCosmetic".. tostring(i) .. "Frameset"] = ""
+		humanoidConfig.animation.globalTagDefaults["headCosmetic" .. tostring(i) .. "Directives"] = ""
+		humanoidConfig.animation.globalTagDefaults["chestCosmetic".. tostring(i) .. "Frameset"] = ""
+		humanoidConfig.animation.globalTagDefaults["chestCosmetic" .. tostring(i) .. "Directives"] = ""
+		humanoidConfig.animation.globalTagDefaults["legsCosmetic".. tostring(i) .. "Frameset"] = ""
+		humanoidConfig.animation.globalTagDefaults["legsCosmetic" .. tostring(i) .. "Directives"] = ""
+		humanoidConfig.animation.globalTagDefaults["backCosmetic".. tostring(i) .. "Frameset"] = ""
+		humanoidConfig.animation.globalTagDefaults["backCosmetic" .. tostring(i) .. "Directives"] = ""
+
+		humanoidConfig.animation.globalTagDefaults["frontSleeve".. tostring(i).. "Frameset"] = ""
+		humanoidConfig.animation.globalTagDefaults["backSleeve" .. tostring(i).. "Frameset"] = ""
+
+		humanoidConfig.animation.transformationGroups["backCosmetic"..tostring(i).."Rotation"] = {interpolated = true}
+	end
 
 	-- remove parts that aren't used so the game isn't fussing about incomplete image paths in the log
 	if identity.facialHairGroup == "" then
@@ -180,4 +211,28 @@ end
 
 function vecTilePixels(vec)
 	return {vec[1]/tilePixels, vec[2]/tilePixels}
+end
+
+function fixCosmeticPartProperties(properties, slot)
+	if properties.zLevel then
+		properties.zLevel = properties.zLevel + slot / 100
+	end
+	if properties.flippedZLevel then
+		properties.flippedZLevel = properties.flippedZLevel + slot / 100
+	end
+	if properties.zLevelSlot then
+		properties.zLevel = properties.zLevelSlot[slot]
+	end
+	if properties.flippedZLevelSlot then
+		properties.flippedZLevel = properties.flippedZLevelSlot[slot]
+	end
+	if properties.image then
+		properties.image = string.gsub(properties.image, "<slot>", tostring(slot))
+	end
+	if properties.processingDirectives then
+		properties.processingDirectives = string.gsub(properties.processingDirectives, "<slot>", tostring(slot))
+	end
+	for j, v in ipairs(properties.transformationGroups or {}) do
+		properties.transformationGroups[j] = string.gsub(v, "<slot>", tostring(slot))
+	end
 end
