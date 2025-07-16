@@ -433,6 +433,7 @@ public:
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
+    io.ConfigNavCaptureKeyboard = false;
 
     ImGui::StyleColorsDark();
     ImGuiStyle& style = ImGui::GetStyle();
@@ -878,7 +879,7 @@ private:
         m_renderer->setScreenSize(m_windowSize);
         m_application->windowChanged(m_windowMode, m_windowSize);
       }
-      else if (event.type == SDL_EVENT_KEY_DOWN && !io.WantCaptureKeyboard) {
+      else if (event.type == SDL_EVENT_KEY_DOWN && (!io.WantCaptureKeyboard || !io.WantTextInput)) {
         if (!event.key.repeat) {
           if (auto key = keyFromSdlKeyCode(event.key.key))
             starEvent.set(KeyDownEvent{*key, keyModsFromSdlKeyMods(event.key.mod)});
@@ -886,7 +887,7 @@ private:
       } else if (event.type == SDL_EVENT_KEY_UP) {
         if (auto key = keyFromSdlKeyCode(event.key.key))
           starEvent.set(KeyUpEvent{*key});
-      } else if (event.type == SDL_EVENT_TEXT_INPUT && !io.WantCaptureKeyboard) {
+      } else if (event.type == SDL_EVENT_TEXT_INPUT && !io.WantTextInput) {
         starEvent.set(TextInputEvent{String(event.text.text)});
       } else if (event.type == SDL_EVENT_MOUSE_MOTION) {
         starEvent.set(MouseMoveEvent{
