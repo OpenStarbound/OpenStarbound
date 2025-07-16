@@ -982,7 +982,7 @@ void Npc::getNetStates(bool initial) {
   if ((m_identityNetState.pullUpdated() || m_identityExtraNetState.pullUpdated()) && !initial) {
     auto newIdentity = m_identityNetState.get();
     newIdentity.extra = m_identityExtraNetState.baseMap();
-    if (m_npcVariant.humanoidIdentity.species == newIdentity.species) {
+    if ((m_npcVariant.humanoidIdentity.species == newIdentity.species) && (m_npcVariant.humanoidIdentity.imagePath == newIdentity.imagePath)) {
       humanoid()->setIdentity(newIdentity);
     } else {
       refreshHumanoidSpecies();
@@ -1296,7 +1296,7 @@ HumanoidIdentity const& Npc::identity() const {
 void Npc::updateIdentity() {
   m_identityUpdated = true;
   auto oldIdentity = humanoid()->identity();
-  if (m_npcVariant.humanoidIdentity.species != oldIdentity.species) {
+  if ((m_npcVariant.humanoidIdentity.species != oldIdentity.species) || (m_npcVariant.humanoidIdentity.imagePath != oldIdentity.imagePath)) {
     refreshHumanoidSpecies();
   } else {
     humanoid()->setIdentity(m_npcVariant.humanoidIdentity);

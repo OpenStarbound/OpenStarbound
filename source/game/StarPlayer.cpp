@@ -1993,7 +1993,7 @@ void Player::getNetStates(bool initial) {
   if ((m_identityNetState.pullUpdated() || m_identityExtraNetState.pullUpdated()) && !initial) {
     auto newIdentity = m_identityNetState.get();
     newIdentity.extra = m_identityExtraNetState.baseMap();
-    if (m_identity.species == newIdentity.species) {
+    if ((m_identity.species == newIdentity.species) && (m_identity.imagePath == newIdentity.imagePath)) {
       humanoid()->setIdentity(newIdentity);
     } else {
       refreshHumanoidSpecies();
@@ -2240,7 +2240,7 @@ void Player::setNametag(Maybe<String> nametag) {
 void Player::updateIdentity() {
   m_identityUpdated = true;
   auto oldIdentity = humanoid()->identity();
-  if (m_identity.species != oldIdentity.species) {
+  if ((m_identity.species != oldIdentity.species) || (m_identity.imagePath != oldIdentity.imagePath)) {
     refreshHumanoidSpecies();
   } else {
     humanoid()->setIdentity(m_identity);
