@@ -24,6 +24,7 @@
 #include "StarRadioMessageDatabase.hpp"
 #include "StarLuaComponents.hpp"
 #include "StarLuaActorMovementComponent.hpp"
+#include "StarLuaAnimationComponent.hpp"
 
 namespace Star {
 
@@ -537,6 +538,8 @@ private:
 
   NetElementDynamicGroup<NetHumanoid> m_netHumanoid;
   NetElementData<Maybe<String>> m_deathParticleBurst;
+  LuaAnimationComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptedAnimator;
+  NetElementHashMap<String, Json> m_scriptedAnimationParameters;
 
   PlayerConfigPtr m_config;
 

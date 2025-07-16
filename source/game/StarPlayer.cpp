@@ -37,6 +37,8 @@
 #include "StarUtilityLuaBindings.hpp"
 #include "StarCelestialLuaBindings.hpp"
 #include "StarNetworkedAnimatorLuaBindings.hpp"
+#include "StarScriptedAnimatorLuaBindings.hpp"
+#include "StarEntityLuaBindings.hpp"
 
 namespace Star {
 
@@ -187,6 +189,9 @@ m_netHumanoid.addNetElement(make_shared<NetHumanoid>(m_identity, Json()));
   m_netHumanoid.setCompatibilityVersion(9);
   m_netGroup.addNetElement(&m_netHumanoid);
 
+  m_scriptedAnimationParameters.setCompatibilityVersion(9);
+  m_netGroup.addNetElement(&m_scriptedAnimationParameters);
+
   m_deathParticleBurst.setCompatibilityVersion(9);
   m_netGroup.addNetElement(&m_deathParticleBurst);
 
@@ -326,9 +331,9 @@ void Player::init(World* world, EntityId entityId, EntityMode mode) {
   m_movementController->setIgnorePhysicsEntities({entityId});
   m_statusController->init(this, m_movementController.get());
   m_techController->init(this, m_movementController.get(), m_statusController.get());
+  auto speciesDefinition = Root::singleton().speciesDatabase()->species(m_identity.species);
 
   if (mode == EntityMode::Master) {
-    auto speciesDefinition = Root::singleton().speciesDatabase()->species(m_identity.species);
     m_movementController->setRotation(0);
     m_statusController->setStatusProperty("ouchNoise", speciesDefinition->ouchNoise(m_identity.gender));
     m_emoteState = HumanoidEmote::Idle;
@@ -355,6 +360,16 @@ void Player::init(World* world, EntityId entityId, EntityMode mode) {
     }
 
     setNetArmorSecrets();
+  }
+
+  if (world->isClient()) {
+      m_scriptedAnimator.setScripts(speciesDefinition->animationScripts());
+      m_scriptedAnimator.addCallbacks("animationConfig", LuaBindings::makeScriptedAnimatorCallbacks(humanoid()->networkedAnimator(),
+        [this](String const& name, Json const& defaultValue) -> Json {
+          return m_scriptedAnimationParameters.value(name, defaultValue);
+        }));
+      m_scriptedAnimator.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
+      m_scriptedAnimator.init(world);
   }
 
   m_xAimPositionNetState.setInterpolator(world->geometry().xLerpFunction());
@@ -384,6 +399,11 @@ void Player::uninit() {
       if (m_client)
         p.second->removeCallbacks("celestial");
     }
+  }
+  if (world()->isClient()) {
+    m_scriptedAnimator.uninit();
+    m_scriptedAnimator.removeCallbacks("animationConfig");
+    m_scriptedAnimator.removeCallbacks("entity");
   }
 
   Entity::uninit();
@@ -1872,6 +1892,7 @@ void Player::processStateChanges(float dt) {
   }
 
   humanoid()->animate(dt);
+  m_scriptedAnimator.update();
 
   if (auto techState = m_techController->parentState()) {
     if (techState == TechController::ParentState::Stand) {
@@ -2794,6 +2815,7 @@ void Player::refreshHumanoidSpecies() {
     m_netHumanoid.addNetElement(make_shared<NetHumanoid>(m_identity, Json()));
     m_effectsAnimator->setGlobalTag("effectDirectives", speciesDef->effectDirectives());
     m_deathParticleBurst.set(humanoid()->defaultDeathParticles());
+    m_statusController->setStatusProperty("ouchNoise", speciesDef->ouchNoise(m_identity.gender));
   }
   auto armor = m_armor->diskStore();
   m_armor->reset();
@@ -2802,16 +2824,32 @@ void Player::refreshHumanoidSpecies() {
 
   m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value(m_config->movementParameters))));
 
-  if (isMaster()) {
-    for (auto& p : m_genericScriptContexts) {
-      if (p.second->initialized()) {
-        p.second->removeCallbacks("animator");
-        p.second->addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(humanoid()->networkedAnimator()));
+  if (inWorld()) {
+    if (isMaster()) {
+      for (auto& p : m_genericScriptContexts) {
+        if (p.second->initialized()) {
+          p.second->removeCallbacks("animator");
+          p.second->addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(humanoid()->networkedAnimator()));
 
-        p.second->invoke("refreshHumanoidSpecies");
+          p.second->invoke("refreshHumanoidSpecies");
 
+        }
       }
     }
+    if (world()->isClient()) {
+      m_scriptedAnimator.uninit();
+      m_scriptedAnimator.removeCallbacks("animationConfig");
+      m_scriptedAnimator.removeCallbacks("entity");
+
+      m_scriptedAnimator.setScripts(speciesDef->animationScripts());
+      m_scriptedAnimator.addCallbacks("animationConfig", LuaBindings::makeScriptedAnimatorCallbacks(humanoid()->networkedAnimator(),
+        [this](String const& name, Json const& defaultValue) -> Json {
+          return m_scriptedAnimationParameters.value(name, defaultValue);
+        }));
+      m_scriptedAnimator.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
+      m_scriptedAnimator.init(world());
+    }
+
   }
 
 }

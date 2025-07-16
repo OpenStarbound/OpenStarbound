@@ -28,6 +28,7 @@
 #include "StarDanceDatabase.hpp"
 #include "StarSpeciesDatabase.hpp"
 #include "StarNetworkedAnimatorLuaBindings.hpp"
+#include "StarScriptedAnimatorLuaBindings.hpp"
 
 namespace Star {
 
@@ -197,6 +198,21 @@ void Npc::init(World* world, EntityId entityId, EntityMode mode) {
     m_scriptComponent.addActorMovementCallbacks(m_movementController.get());
     m_scriptComponent.init(world);
   }
+  if (world->isClient()) {
+    auto speciesDatabase = Root::singleton().speciesDatabase();
+    auto speciesDef = speciesDatabase->species(m_npcVariant.humanoidIdentity.species);
+    m_scriptedAnimator.setScripts(speciesDef->animationScripts());
+    m_scriptedAnimator.addCallbacks("animationConfig", LuaBindings::makeScriptedAnimatorCallbacks(humanoid()->networkedAnimator(),
+      [this](String const& name, Json const& defaultValue) -> Json {
+        return m_scriptedAnimationParameters.value(name, defaultValue);
+      }));
+    m_scriptedAnimator.addCallbacks("config",
+        LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def)
+            { return m_npcVariant.scriptConfig.query(name, def); }));
+    m_scriptedAnimator.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
+    m_scriptedAnimator.init(world);
+  }
+
 }
 
 void Npc::uninit() {
@@ -211,6 +227,12 @@ void Npc::uninit() {
     m_scriptComponent.removeCallbacks("songbook");
     m_scriptComponent.removeCallbacks("animator");
     m_scriptComponent.removeActorMovementCallbacks();
+  }
+  if (world()->isClient()) {
+    m_scriptedAnimator.uninit();
+    m_scriptedAnimator.removeCallbacks("animationConfig");
+    m_scriptedAnimator.removeCallbacks("config");
+    m_scriptedAnimator.removeCallbacks("entity");
   }
   m_tools->uninit();
   m_statusController->uninit();
@@ -637,6 +659,7 @@ void Npc::tickShared(float dt) {
     m_movementController->controlFace(*overrideDirection);
 
   humanoid()->animate(dt);
+  m_scriptedAnimator.update();
 }
 
 LuaCallbacks Npc::makeNpcCallbacks() {
@@ -921,6 +944,9 @@ void Npc::setupNetStates() {
 
   m_netHumanoid.setCompatibilityVersion(9);
   m_netGroup.addNetElement(&m_netHumanoid);
+
+  m_scriptedAnimationParameters.setCompatibilityVersion(9);
+  m_netGroup.addNetElement(&m_scriptedAnimationParameters);
 
   m_netGroup.setNeedsStoreCallback(bind(&Npc::setNetStates, this));
   m_netGroup.setNeedsLoadCallback(bind(&Npc::getNetStates, this, _1));
@@ -1387,14 +1413,32 @@ void Npc::refreshHumanoidSpecies() {
 
   m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), m_npcVariant.movementParameters)));
 
-  if (isMaster()) {
-    if (m_scriptComponent.initialized()) {
-      m_scriptComponent.removeCallbacks("animator");
-      m_scriptComponent.addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(humanoid()->networkedAnimator()));
-      m_scriptComponent.invoke("refreshHumanoidSpecies");
+  if (inWorld()) {
+    if (isMaster()) {
+      if (m_scriptComponent.initialized()) {
+        m_scriptComponent.removeCallbacks("animator");
+        m_scriptComponent.addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(humanoid()->networkedAnimator()));
+        m_scriptComponent.invoke("refreshHumanoidSpecies");
+      }
+    }
+    if (world()->isClient()) {
+      m_scriptedAnimator.uninit();
+      m_scriptedAnimator.removeCallbacks("animationConfig");
+      m_scriptedAnimator.removeCallbacks("config");
+      m_scriptedAnimator.removeCallbacks("entity");
+
+      m_scriptedAnimator.setScripts(speciesDef->animationScripts());
+      m_scriptedAnimator.addCallbacks("animationConfig", LuaBindings::makeScriptedAnimatorCallbacks(humanoid()->networkedAnimator(),
+        [this](String const& name, Json const& defaultValue) -> Json {
+          return m_scriptedAnimationParameters.value(name, defaultValue);
+        }));
+      m_scriptedAnimator.addCallbacks("config",
+          LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def)
+              { return m_npcVariant.scriptConfig.query(name, def); }));
+      m_scriptedAnimator.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
+      m_scriptedAnimator.init(world());
     }
   }
-
 }
 
 bool Npc::forceNude() const {

@@ -22,6 +22,7 @@
 #include "StarArmorWearer.hpp"
 #include "StarToolUser.hpp"
 #include "StarPhysicsEntity.hpp"
+#include "StarLuaAnimationComponent.hpp"
 
 namespace Star {
 
@@ -238,6 +239,8 @@ private:
   void refreshHumanoidSpecies();
 
   NetElementDynamicGroup<NetHumanoid> m_netHumanoid;
+  LuaAnimationComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptedAnimator;
+  NetElementHashMap<String, Json> m_scriptedAnimationParameters;
 
   NpcVariant m_npcVariant;
   NetElementTopGroup m_netGroup;
