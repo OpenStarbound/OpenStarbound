@@ -70,6 +70,7 @@ NetworkedAnimator::NetworkedAnimator() {
   m_flipped.set(false);
   m_flippedRelativeCenterLine.set(0.0f);
   m_animationRate.set(1.0f);
+  m_animatorVersion = 0;
   setupNetStates();
 }
 
@@ -1322,7 +1323,7 @@ void NetworkedAnimator::setupNetStates() {
 
   for (auto& pair : m_stateInfo) {
     pair.second.wasUpdated = true;
-    pair.second.reverse.setCompatibilityVersion(8);
+    pair.second.reverse.setCompatibilityVersion(10);
     addNetElement(&pair.second.reverse);
     addNetElement(&pair.second.stateIndex);
     addNetElement(&pair.second.startedEvent);

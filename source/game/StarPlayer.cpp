@@ -186,15 +186,15 @@ Player::Player(PlayerConfigPtr config, Uuid uuid) {
   m_netGroup.addNetElement(m_statusController.get());
   m_netGroup.addNetElement(m_techController.get());
 
-  m_netHumanoid.setCompatibilityVersion(9);
+  m_netHumanoid.setCompatibilityVersion(10);
   m_netGroup.addNetElement(&m_netHumanoid);
-  m_identityExtraNetState.setCompatibilityVersion(9);
+  m_identityExtraNetState.setCompatibilityVersion(10);
   m_netGroup.addNetElement(&m_identityExtraNetState);
 
-  m_scriptedAnimationParameters.setCompatibilityVersion(9);
+  m_scriptedAnimationParameters.setCompatibilityVersion(10);
   m_netGroup.addNetElement(&m_scriptedAnimationParameters);
 
-  m_deathParticleBurst.setCompatibilityVersion(9);
+  m_deathParticleBurst.setCompatibilityVersion(10);
   m_netGroup.addNetElement(&m_deathParticleBurst);
 
   m_netGroup.setNeedsLoadCallback(bind(&Player::getNetStates, this, _1));

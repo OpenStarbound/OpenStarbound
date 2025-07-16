@@ -944,15 +944,15 @@ void Npc::setupNetStates() {
   m_songbook->setCompatibilityVersion(6);
   m_netGroup.addNetElement(m_songbook.get());
 
-  m_identityNetState.setCompatibilityVersion(9);
+  m_identityNetState.setCompatibilityVersion(10);
   m_netGroup.addNetElement(&m_identityNetState);
-  m_identityExtraNetState.setCompatibilityVersion(9);
+  m_identityExtraNetState.setCompatibilityVersion(10);
   m_netGroup.addNetElement(&m_identityExtraNetState);
 
-  m_netHumanoid.setCompatibilityVersion(9);
+  m_netHumanoid.setCompatibilityVersion(10);
   m_netGroup.addNetElement(&m_netHumanoid);
 
-  m_scriptedAnimationParameters.setCompatibilityVersion(9);
+  m_scriptedAnimationParameters.setCompatibilityVersion(10);
   m_netGroup.addNetElement(&m_scriptedAnimationParameters);
 
   m_netGroup.setNeedsStoreCallback(bind(&Npc::setNetStates, this));
