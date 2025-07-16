@@ -322,6 +322,7 @@ public:
 
   void updateIdentity();
 
+  void setIdentityExtra(String key, Json value);
   void setBodyDirectives(String const& directives);
   void setEmoteDirectives(String const& directives);
 
@@ -669,6 +670,7 @@ private:
   NetElementFloat m_xAimPositionNetState;
   NetElementFloat m_yAimPositionNetState;
   NetElementData<HumanoidIdentity> m_identityNetState;
+  NetElementHashMap<String, Json> m_identityExtraNetState;
   NetElementData<EntityDamageTeam> m_teamNetState;
   NetElementEvent m_landedNetState;
   NetElementString m_chatMessageNetState;

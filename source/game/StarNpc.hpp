@@ -182,6 +182,7 @@ public:
   HumanoidIdentity const& identity() const;
   void updateIdentity();
   void setIdentity(HumanoidIdentity identity);
+  void setIdentityExtra(String key, Json value);
 
   void setBodyDirectives(String const& directives);
   void setEmoteDirectives(String const& directives);
@@ -254,8 +255,9 @@ private:
   NetElementEnum<Humanoid::State> m_humanoidStateNetState;
   NetElementEnum<HumanoidEmote> m_humanoidEmoteStateNetState;
   NetElementData<Maybe<String>> m_humanoidDanceNetState;
-  NetElementData<HumanoidIdentity> m_identityNetState;
 
+  NetElementData<HumanoidIdentity> m_identityNetState;
+  NetElementHashMap<String, Json> m_identityExtraNetState;
   bool m_identityUpdated;
 
   NetElementData<Maybe<String>> m_deathParticleBurst;

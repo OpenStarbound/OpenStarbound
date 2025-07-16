@@ -89,7 +89,7 @@ Player::Player(PlayerConfigPtr config, Uuid uuid) {
   }
 
   // all of these are defaults and won't include the correct humanoid config for the species
-m_netHumanoid.addNetElement(make_shared<NetHumanoid>(m_identity, Json()));
+  m_netHumanoid.addNetElement(make_shared<NetHumanoid>(m_identity, Json()));
   auto movementParameters = ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value(m_config->movementParameters)));
   if (!movementParameters.physicsEffectCategories)
     movementParameters.physicsEffectCategories = StringSet({"player"});
@@ -188,6 +188,8 @@ m_netHumanoid.addNetElement(make_shared<NetHumanoid>(m_identity, Json()));
 
   m_netHumanoid.setCompatibilityVersion(9);
   m_netGroup.addNetElement(&m_netHumanoid);
+  m_identityExtraNetState.setCompatibilityVersion(9);
+  m_netGroup.addNetElement(&m_identityExtraNetState);
 
   m_scriptedAnimationParameters.setCompatibilityVersion(9);
   m_netGroup.addNetElement(&m_scriptedAnimationParameters);
@@ -208,6 +210,8 @@ Player::Player(PlayerConfigPtr config, ByteArray const& netStore, NetCompatibili
   ds.read(m_description);
   ds.read(m_modeType);
   ds.read(m_identity);
+  if (rules.version() >= 9)
+    ds.read(m_identity.extra);
 
   m_netHumanoid.clearNetElements();
   m_netHumanoid.addNetElement(make_shared<NetHumanoid>(m_identity, Json()));
@@ -1986,8 +1990,9 @@ void Player::getNetStates(bool initial) {
   m_aimPosition[0] = m_xAimPositionNetState.get();
   m_aimPosition[1] = m_yAimPositionNetState.get();
 
-  if (m_identityNetState.pullUpdated()) {
+  if ((m_identityNetState.pullUpdated() || m_identityExtraNetState.pullUpdated()) && !initial) {
     auto newIdentity = m_identityNetState.get();
+    newIdentity.extra = m_identityExtraNetState.baseMap();
     if (m_identity.species == newIdentity.species) {
       humanoid()->setIdentity(newIdentity);
     } else {
@@ -2240,6 +2245,12 @@ void Player::updateIdentity() {
   } else {
     humanoid()->setIdentity(m_identity);
   }
+}
+
+void Player::setIdentityExtra(String key, Json value) {
+  m_identityExtraNetState.set(key, value);
+  m_identity.extra.set(key, value);
+  humanoid()->setIdentity(m_identity);
 }
 
 void Player::setBodyDirectives(String const& directives)
@@ -2502,6 +2513,8 @@ ByteArray Player::netStore(NetCompatibilityRules rules) {
   ds.write(m_description);
   ds.write(m_modeType);
   ds.write(m_identity);
+  if (rules.version() >= 9)
+    ds.write(m_identity.extra);
 
   return ds.data();
 }

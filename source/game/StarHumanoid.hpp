@@ -99,6 +99,8 @@ struct HumanoidIdentity {
   Vec4B color;
 
   Maybe<String> imagePath;
+
+  JsonObject extra = JsonObject();
 };
 
 DataStream& operator>>(DataStream& ds, HumanoidIdentity& identity);

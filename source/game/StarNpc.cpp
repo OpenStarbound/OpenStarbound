@@ -673,6 +673,7 @@ LuaCallbacks Npc::makeNpcCallbacks() {
 
   callbacks.registerCallback("humanoidIdentity", [this]() { return humanoid()->identity().toJson(); });
   callbacks.registerCallback("setHumanoidIdentity", [this](Json const& id) { setIdentity(HumanoidIdentity(id)); });
+  callbacks.registerCallback("setIdentityExtra", [this](String key, Json value) { setIdentityExtra(key, value); });
 
   callbacks.registerCallback(   "bodyDirectives", [this]()   { return identity().bodyDirectives;      });
   callbacks.registerCallback("setBodyDirectives", [this](String const& str) { setBodyDirectives(str); });
@@ -945,6 +946,8 @@ void Npc::setupNetStates() {
 
   m_identityNetState.setCompatibilityVersion(9);
   m_netGroup.addNetElement(&m_identityNetState);
+  m_identityExtraNetState.setCompatibilityVersion(9);
+  m_netGroup.addNetElement(&m_identityExtraNetState);
 
   m_netHumanoid.setCompatibilityVersion(9);
   m_netGroup.addNetElement(&m_netHumanoid);
@@ -976,8 +979,9 @@ void Npc::getNetStates(bool initial) {
   humanoid()->setEmoteState(m_humanoidEmoteStateNetState.get());
   humanoid()->setDance(m_humanoidDanceNetState.get());
 
-  if (m_identityNetState.pullUpdated() && !initial) {
+  if ((m_identityNetState.pullUpdated() || m_identityExtraNetState.pullUpdated()) && !initial) {
     auto newIdentity = m_identityNetState.get();
+    newIdentity.extra = m_identityExtraNetState.baseMap();
     if (m_npcVariant.humanoidIdentity.species == newIdentity.species) {
       humanoid()->setIdentity(newIdentity);
     } else {
@@ -1302,6 +1306,12 @@ void Npc::updateIdentity() {
 void Npc::setIdentity(HumanoidIdentity identity) {
   m_npcVariant.humanoidIdentity = std::move(identity);
   updateIdentity();
+}
+
+void Npc::setIdentityExtra(String key, Json value) {
+  m_identityExtraNetState.set(key, value);
+  m_npcVariant.humanoidIdentity.extra.set(key, value);
+  humanoid()->setIdentity(m_npcVariant.humanoidIdentity);
 }
 
 void Npc::setBodyDirectives(String const& directives)

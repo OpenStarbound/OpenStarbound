@@ -107,6 +107,8 @@ HumanoidIdentity::HumanoidIdentity(Json config) {
   color = jsonToColor(config.get("color", "white")).toRgba();
 
   imagePath = config.optString("imagePath");
+
+  extra = config.getObject("extra", JsonObject());
 }
 
 Json HumanoidIdentity::toJson() const {
@@ -129,7 +131,8 @@ Json HumanoidIdentity::toJson() const {
     {"personalityArmIdle", personality.armIdle},
     {"personalityHeadOffset", jsonFromVec2F(personality.headOffset)},
     {"personalityArmOffset", jsonFromVec2F(personality.armOffset)},
-    {"color", jsonFromColor(Color::rgba(color))}
+    {"color", jsonFromColor(Color::rgba(color))},
+    {"extra", extra}
   };
   if (imagePath)
     result["imagePath"] = *imagePath;
@@ -349,6 +352,11 @@ void Humanoid::setIdentity(HumanoidIdentity const& identity) {
     m_networkedAnimator.translateLocalTransformationGroup("personalityHeadOffset", m_identity.personality.headOffset / TilePixels);
     m_networkedAnimator.resetLocalTransformationGroup("personalityArmOffset");
     m_networkedAnimator.translateLocalTransformationGroup("personalityArmOffset", m_identity.personality.armOffset / TilePixels);
+
+    for (auto p : m_identity.extra) {
+      if (p.second.isType(Json::Type::String))
+        m_networkedAnimator.setLocalTag(p.first, p.second.toString());
+    }
   }
 }
 
@@ -2230,7 +2238,9 @@ void NetHumanoid::initNetVersion(NetElementVersion const* version) {
 
 void NetHumanoid::netStore(DataStream& ds, NetCompatibilityRules rules) const {
   if (!checkWithRules(rules)) return;
-  ds.write(m_humanoid->identity());
+  auto identity = m_humanoid->identity();
+  ds.write(identity);
+  ds.write(identity.extra);
   ds.write(m_config);
   m_humanoid->networkedAnimator()->netStore(ds, rules);
 }
@@ -2239,6 +2249,7 @@ void NetHumanoid::netLoad(DataStream& ds, NetCompatibilityRules rules) {
   if (!checkWithRules(rules)) return;
   HumanoidIdentity identity;
   ds.read(identity);
+  ds.read(identity.extra);
   ds.read(m_config);
   m_humanoid = make_shared<Humanoid>(identity, m_config);
   m_humanoid->networkedAnimator()->netLoad(ds, rules);
