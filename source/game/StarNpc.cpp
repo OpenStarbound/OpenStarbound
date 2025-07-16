@@ -890,6 +890,10 @@ LuaCallbacks Npc::makeNpcCallbacks() {
 
   callbacks.registerCallback("setUniqueId", [this](Maybe<String> uniqueId) { setUniqueId(uniqueId); });
 
+  callbacks.registerCallback("setAnimationParameter", [this](String name, Json value) {
+    m_scriptedAnimationParameters.set(std::move(name), std::move(value));
+  });
+
   return callbacks;
 }
 
@@ -1401,6 +1405,7 @@ void Npc::refreshHumanoidSpecies() {
   auto speciesDef = speciesDatabase->species(m_npcVariant.humanoidIdentity.species);
 
   if (isMaster()) {
+    m_scriptedAnimationParameters.clear();
     m_netHumanoid.clearNetElements();
     m_netHumanoid.addNetElement(make_shared<NetHumanoid>(m_npcVariant.humanoidIdentity, m_npcVariant.uniqueHumanoidConfig ? m_npcVariant.humanoidConfig : Json()));
     m_deathParticleBurst.set(humanoid()->defaultDeathParticles());

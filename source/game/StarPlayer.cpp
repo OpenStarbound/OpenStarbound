@@ -334,6 +334,7 @@ void Player::init(World* world, EntityId entityId, EntityMode mode) {
   auto speciesDefinition = Root::singleton().speciesDatabase()->species(m_identity.species);
 
   if (mode == EntityMode::Master) {
+    m_scriptedAnimationParameters.clear();
     m_movementController->setRotation(0);
     m_statusController->setStatusProperty("ouchNoise", speciesDefinition->ouchNoise(m_identity.gender));
     m_emoteState = HumanoidEmote::Idle;
@@ -2816,6 +2817,7 @@ void Player::refreshHumanoidSpecies() {
     m_effectsAnimator->setGlobalTag("effectDirectives", speciesDef->effectDirectives());
     m_deathParticleBurst.set(humanoid()->defaultDeathParticles());
     m_statusController->setStatusProperty("ouchNoise", speciesDef->ouchNoise(m_identity.gender));
+    m_scriptedAnimationParameters.clear();
   }
   auto armor = m_armor->diskStore();
   m_armor->reset();
@@ -2849,9 +2851,11 @@ void Player::refreshHumanoidSpecies() {
       m_scriptedAnimator.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
       m_scriptedAnimator.init(world());
     }
-
   }
+}
 
+void Player::setAnimationParameter(String name, Json value) {
+  m_scriptedAnimationParameters.set(std::move(name), std::move(value));
 }
 
 }

@@ -183,7 +183,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
     auto inventory = player->inventory();
     if (!slot)
       inventory->selectActionBarLocation(SelectedActionBarLocation());
-    else if (auto index = slot.ptr<int>()) { 
+    else if (auto index = slot.ptr<int>()) {
       CustomBarIndex wrapped = (*index - 1) % (unsigned)inventory->customBarIndexes();
       inventory->selectActionBarLocation(SelectedActionBarLocation(wrapped));
     } else {
@@ -191,7 +191,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
       inventory->selectActionBarLocation(SelectedActionBarLocation(item));
     }
   });
-  
+
   callbacks.registerCallback("actionBarSlotLink", [player](int slot, String const& handName) {
     auto inventory = player->inventory();
     CustomBarIndex wrapped = (slot - 1) % (unsigned)inventory->customBarIndexes();
@@ -216,14 +216,14 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
     else
       throw StarException(strf("Unknown tool hand {}", handName));
   });
-  
+
   callbacks.registerCallback("itemBagSize", [player](String const& bagName) -> Maybe<unsigned> {
     if (auto bag = player->inventory()->bagContents(bagName))
       return (unsigned)bag->size();
     else
       return {};
   });
-  
+
   callbacks.registerCallback("itemAllowedInBag", [player](String const& bagName, Json const& item) {
     auto inventory = player->inventory();
     auto itemDatabase = Root::singleton().itemDatabase();
@@ -232,7 +232,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
     else
       return inventory->itemAllowedInBag(itemDatabase->item(ItemDescriptor(item)), bagName);
   });
-  
+
   callbacks.registerCallback("item", [player](InventorySlot const& slot) -> Maybe<Json> {
     if (!player->inventory()->slotValid(slot)) return {};
     if (auto item = player->inventory()->itemsAt(slot))
@@ -240,7 +240,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
     else
       return {};
   });
-  
+
   callbacks.registerCallback("setItem", [player](InventorySlot const& slot, Json const& item) {
     if (!player->inventory()->slotValid(slot)) return;
     auto itemDatabase = Root::singleton().itemDatabase();
@@ -791,6 +791,10 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
       return codexPtr->title();
 
     return {};
+  });
+
+  callbacks.registerCallback("setAnimationParameter", [player](String name, Json value) {
+    player->setAnimationParameter(name, value);
   });
 
   return callbacks;

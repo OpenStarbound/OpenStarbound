@@ -507,6 +507,8 @@ public:
   // Sets a secret Json property. It will be serialized.
   void setSecretProperty(String const& name, Json const& value);
 
+  void setAnimationParameter(String name, Json value);
+
 private:
   typedef LuaMessageHandlingComponent<LuaStorableComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>>> GenericScriptComponent;
   typedef shared_ptr<GenericScriptComponent> GenericScriptComponentPtr;
