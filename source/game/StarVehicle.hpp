@@ -67,11 +67,6 @@ public:
   bool isInteractive() const override;
   InteractAction interact(InteractRequest const& request) override;
 
-  size_t anchorCount() const override;
-  LoungeAnchorConstPtr loungeAnchor(size_t positionIndex) const override;
-  void loungeControl(size_t positionIndex, LoungeControl loungeControl) override;
-  void loungeAim(size_t positionIndex, Vec2F const& aimPosition) override;
-
   List<PhysicsForceRegion> forceRegions() const override;
   size_t movingCollisionCount() const override;
   Maybe<PhysicsMovingCollision> movingCollision(size_t positionIndex) const override;
@@ -81,39 +76,10 @@ public:
 
   void setPosition(Vec2F const& position);
 
+  virtual EntityRenderLayer loungeRenderLayer(size_t anchorPositionIndex) const override;
+  virtual NetworkedAnimator const* networkedAnimator() const override;
+
 private:
-  struct MasterControlState {
-    Set<ConnectionId> slavesHeld;
-    bool masterHeld;
-  };
-
-  struct LoungePositionConfig {
-    // The NetworkedAnimator part and part property which should control the
-    // lounge position.
-    String part;
-    String partAnchor;
-    Maybe<Vec2F> exitBottomOffset;
-    JsonObject armorCosmeticOverrides;
-    Maybe<String> cursorOverride;
-    Maybe<bool> suppressTools;
-    bool cameraFocus;
-
-    NetElementBool enabled;
-    NetElementEnum<LoungeOrientation> orientation;
-    NetElementData<Maybe<String>> emote;
-    NetElementData<Maybe<String>> dance;
-    NetElementData<Maybe<String>> directives;
-    NetElementData<List<PersistentStatusEffect>> statusEffects;
-
-    Map<LoungeControl, MasterControlState> masterControlState;
-    Vec2F masterAimPosition;
-
-    Set<LoungeControl> slaveOldControls;
-    Vec2F slaveOldAimPosition;
-    Set<LoungeControl> slaveNewControls;
-    Vec2F slaveNewAimPosition;
-  };
-
   struct MovingCollisionConfig {
     PhysicsMovingCollision movingCollision;
     Maybe<String> attachToPart;
@@ -144,9 +110,6 @@ private:
   String m_path;
   Json m_dynamicConfig;
   RectF m_boundBox;
-  float m_slaveControlTimeout = 0.0f;
-  bool m_receiveExtraControls;
-  OrderedHashMap<String, LoungePositionConfig> m_loungePositions;
   OrderedHashMap<String, MovingCollisionConfig> m_movingCollisions;
   OrderedHashMap<String, ForceRegionConfig> m_forceRegions;
 
@@ -158,16 +121,14 @@ private:
   NetworkedAnimator m_networkedAnimator;
   NetworkedAnimator::DynamicTarget m_networkedAnimatorDynamicTarget;
   LuaMessageHandlingComponent<LuaStorableComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>> m_scriptComponent;
-  
+
   LuaAnimationComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptedAnimator;
   NetElementHashMap<String, Json> m_scriptedAnimationParameters;
 
-  Map<ConnectionId, GameTimer> m_aliveMasterConnections;
   bool m_shouldDestroy = false;
   NetElementData<EntityDamageTeam> m_damageTeam;
   OrderedHashMap<String, DamageSourceConfig> m_damageSources;
 
-  GameTimer m_slaveHeartbeatTimer;
 };
 
 }
