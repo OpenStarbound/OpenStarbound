@@ -135,6 +135,13 @@ NetworkedAnimator const* LoungeableObject::networkedAnimator() const {
   return Object::networkedAnimator();
 }
 
+Maybe<Json> LoungeableObject::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
+  if (m_useLoungePositions)
+    if (receiveLoungeMessage(sendingConnection, message, args).isValid())
+      return Json();
+  return Object::receiveMessage(sendingConnection, message, args);
+}
+
 LuaCallbacks LoungeableObject::makeObjectCallbacks() {
   if (m_useLoungePositions)
     return addLoungeableCallbacks(Object::makeObjectCallbacks());
