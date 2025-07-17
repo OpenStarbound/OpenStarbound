@@ -252,8 +252,7 @@ Maybe<size_t> LoungeableEntity::loungeInteract(InteractRequest const& request){
   return index;
 }
 
-LuaCallbacks LoungeableEntity::makeLoungeableCallbacks(){
-  LuaCallbacks callbacks;
+LuaCallbacks LoungeableEntity::addLoungeableCallbacks(LuaCallbacks callbacks){
   callbacks.registerCallback("controlHeld", [this](String const& loungeName, String const& controlName) {
       auto const& mc = m_loungePositions.get(loungeName).masterControlState[LoungeControlNames.getLeft(controlName)];
       return mc.masterHeld || !mc.slavesHeld.empty();

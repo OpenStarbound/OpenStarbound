@@ -7,6 +7,13 @@ namespace Star {
 
 LoungeableObject::LoungeableObject(ObjectConfigConstPtr config, Json const& parameters) : Object(config, parameters) {
   m_interactive.set(true);
+
+  if (configValue("loungePositions", Json()).isType(Json::Type::Object)) {
+    m_useLoungePositions = true;
+    setupLoungePositions([this](String const& name, Json const& def)
+          { return configValue(name, def); });
+    setupLoungeNetStates(&m_netGroup, 10);
+  }
 }
 
 void LoungeableObject::render(RenderCallback* renderCallback) {
@@ -27,7 +34,12 @@ void LoungeableObject::render(RenderCallback* renderCallback) {
 
 InteractAction LoungeableObject::interact(InteractRequest const& request) {
   auto res = Object::interact(request);
-  if (res.type == InteractActionType::None && !m_sitPositions.empty()) {
+  if (m_useLoungePositions) {
+    Maybe<size_t> index = loungeInteract(request);
+    if (index)
+      return InteractAction(InteractActionType::SitDown, entityId(), *index);
+    return res;
+  } else if (res.type == InteractActionType::None && !m_sitPositions.empty() ) {
     Maybe<size_t> index;
     Vec2F interactOffset =
         direction() == Direction::Right ? position() - request.interactPosition : request.interactPosition - position();
@@ -42,10 +54,14 @@ InteractAction LoungeableObject::interact(InteractRequest const& request) {
 }
 
 size_t LoungeableObject::anchorCount() const {
+  if (m_useLoungePositions)
+    return LoungeableEntity::anchorCount();
   return m_sitPositions.size();
 }
 
 LoungeAnchorConstPtr LoungeableObject::loungeAnchor(size_t positionIndex) const {
+  if (m_useLoungePositions)
+    return LoungeableEntity::loungeAnchor(positionIndex);
   if (positionIndex >= m_sitPositions.size())
     return {};
 
@@ -81,12 +97,48 @@ LoungeAnchorConstPtr LoungeableObject::loungeAnchor(size_t positionIndex) const 
   return loungeAnchor;
 }
 
+void LoungeableObject::init(World* world, EntityId entityId, EntityMode mode) {
+  Object::init(world, entityId, mode);
+  if (m_useLoungePositions){
+    loungeInit();
+  }
+}
+
+void LoungeableObject::uninit() {
+  Object::uninit();
+}
+
+void LoungeableObject::update(float dt, uint64_t currentStep) {
+  Object::update(dt, currentStep);
+  if (isMaster()) {
+    loungeTickMaster(dt);
+  } else {
+    loungeTickSlave(dt);
+  }
+}
+
+void LoungeableObject::loungeControl(size_t anchorPositionIndex, LoungeControl loungeControl) {
+  if (m_useLoungePositions)
+    LoungeableEntity::loungeControl(anchorPositionIndex, loungeControl);
+}
+
+void LoungeableObject::loungeAim(size_t anchorPositionIndex, Vec2F const& aimPosition) {
+  if (m_useLoungePositions)
+    LoungeableEntity::loungeAim(anchorPositionIndex, aimPosition);
+}
+
 EntityRenderLayer LoungeableObject::loungeRenderLayer(size_t anchorPositionIndex) const {
-  return RenderLayerObject + m_sitPositions.size() - anchorPositionIndex;
+  return RenderLayerObject + anchorCount() - anchorPositionIndex;
 }
 
 NetworkedAnimator const* LoungeableObject::networkedAnimator() const {
   return Object::networkedAnimator();
+}
+
+LuaCallbacks LoungeableObject::makeObjectCallbacks() {
+  if (m_useLoungePositions)
+    return addLoungeableCallbacks(Object::makeObjectCallbacks());
+  return Object::makeObjectCallbacks();
 }
 
 void LoungeableObject::setOrientationIndex(size_t orientationIndex) {

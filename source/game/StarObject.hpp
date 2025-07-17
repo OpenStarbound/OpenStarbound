@@ -170,6 +170,7 @@ protected:
   virtual void setOrientationIndex(size_t orientationIndex);
 
   PolyF volume() const;
+  virtual LuaCallbacks makeObjectCallbacks();
 
   LuaMessageHandlingComponent<LuaStorableComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>> m_scriptComponent;
   mutable LuaAnimationComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptedAnimator;
@@ -191,7 +192,6 @@ private:
     NetElementBool state;
   };
 
-  LuaCallbacks makeObjectCallbacks();
   LuaCallbacks makeAnimatorObjectCallbacks();
 
   void ensureNetSetup();

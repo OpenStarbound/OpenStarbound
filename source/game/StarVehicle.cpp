@@ -331,7 +331,6 @@ InteractAction Vehicle::interact(InteractRequest const& request) {
     return InteractAction(result.getString(0), entityId(), result.get(1));
 
   Maybe<size_t> index = loungeInteract(request);
-
   if (index)
     return InteractAction(InteractActionType::SitDown, entityId(), *index);
 
@@ -430,7 +429,7 @@ EntityRenderLayer Vehicle::renderLayer(VehicleLayer vehicleLayer) const {
 }
 
 LuaCallbacks Vehicle::makeVehicleCallbacks() {
-  LuaCallbacks callbacks = makeLoungeableCallbacks();
+  LuaCallbacks callbacks;
 
   callbacks.registerCallback("setPersistent", [this](bool persistent) {
       setPersistent(persistent);
@@ -464,7 +463,7 @@ LuaCallbacks Vehicle::makeVehicleCallbacks() {
       m_scriptedAnimationParameters.set(std::move(name), std::move(value));
     });
 
-  return callbacks;
+  return addLoungeableCallbacks(callbacks);
 }
 
 Json Vehicle::configValue(String const& name, Json def) const {

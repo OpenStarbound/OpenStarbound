@@ -65,7 +65,7 @@ public:
 
   Maybe<Json> receiveLoungeMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args);
   Maybe<size_t> loungeInteract(InteractRequest const& request);
-  LuaCallbacks makeLoungeableCallbacks();
+  LuaCallbacks addLoungeableCallbacks(LuaCallbacks callbacks);
 
   virtual EntityRenderLayer loungeRenderLayer(size_t anchorPositionIndex) const = 0;
   virtual NetworkedAnimator const* networkedAnimator() const = 0;
