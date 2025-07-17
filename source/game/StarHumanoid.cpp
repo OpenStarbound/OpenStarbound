@@ -775,8 +775,11 @@ void Humanoid::setEmoteState(HumanoidEmote state) {
 }
 
 void Humanoid::setDance(Maybe<String> const& dance) {
-  if (m_dance != dance)
+  if (m_dance != dance) {
     m_danceTimer = 0.0f;
+    if (m_animationConfig.isValid() && dance.isValid() && m_networkedAnimator.hasState("dance", dance.value()))
+      m_networkedAnimator.setLocalState("dance", dance.value());
+  }
   m_dance = dance;
 }
 
@@ -968,38 +971,71 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
 
     m_networkedAnimator.setPartDrawables(m_backItemPart, {});
     m_networkedAnimator.resetLocalTransformationGroup("backArmRotation");
-    m_networkedAnimator.rotateLocalTransformationGroup("backArmRotation",
-      backHand.angle,
-      jsonToVec2F(m_networkedAnimator.partProperty(m_backArmRotationPoint.first, m_backArmRotationPoint.second))
-    );
-    if (backHand.recoil)
-      m_networkedAnimator.translateLocalTransformationGroup("backArmRotation", m_recoilOffset);
-    if (backHand.holdingItem && !dance.isValid() && withItems) {
-      m_networkedAnimator.setLocalTag("backArmFrame", backHand.backFrame);
-      m_networkedAnimator.setLocalState("backArm", m_networkedAnimator.hasState("backArm", backHand.backFrame) ? backHand.backFrame : "rotation");
-      if (!m_twoHanded)
-        m_networkedAnimator.setPartDrawables(m_backItemPart, backHand.itemDrawables);
-      m_networkedAnimator.setLocalState("backHandItem", backHand.outsideOfHand ? "outside" : "inside");
-    } else {
-      m_networkedAnimator.setLocalState("backArm", "idle");
-    }
-
     m_networkedAnimator.setPartDrawables(m_frontItemPart, {});
     m_networkedAnimator.resetLocalTransformationGroup("frontArmRotation");
-    m_networkedAnimator.rotateLocalTransformationGroup("frontArmRotation",
-      frontHand.angle,
-      jsonToVec2F(m_networkedAnimator.partProperty(m_frontArmRotationPoint.first, m_frontArmRotationPoint.second))
-    );
-    if (frontHand.recoil)
-      m_networkedAnimator.translateLocalTransformationGroup("frontArmRotation", m_recoilOffset);
-    if (frontHand.holdingItem && !dance.isValid() && withItems) {
-      m_networkedAnimator.setLocalTag("frontArmFrame", frontHand.frontFrame);
-      m_networkedAnimator.setLocalState("frontArm", m_networkedAnimator.hasState("frontArm", frontHand.frontFrame) ? frontHand.frontFrame : "rotation");
-      m_networkedAnimator.setPartDrawables(m_frontItemPart, frontHand.itemDrawables);
-      m_networkedAnimator.setLocalState("frontHandItem", frontHand.outsideOfHand ? "outside" : "inside");
-    } else {
+
+    if (dance.isValid()) {
+
+      if (danceStep->bodyFrame.isValid()) {
+        auto danceFrame = danceStep->bodyFrame.value();
+        m_networkedAnimator.setLocalTag("bodyDanceFrame", danceFrame);
+        m_networkedAnimator.setLocalState("bodyDance", m_networkedAnimator.hasState("bodyDance", danceFrame) ? danceFrame : "dance");
+      }
+
+      m_networkedAnimator.translateLocalTransformationGroup("backArmRotation", danceStep->backArmOffset / TilePixels);
+      m_networkedAnimator.rotateLocalTransformationGroup("backArmRotation", danceStep->backArmRotation);
+      if (danceStep->backArmFrame.isValid()) {
+        auto danceFrame = danceStep->backArmFrame.value();
+        m_networkedAnimator.setLocalTag("backArmDanceFrame", danceFrame);
+        m_networkedAnimator.setLocalState("backArmDance", m_networkedAnimator.hasState("backArmDance", danceFrame) ? danceFrame : "dance");
+      }
+      m_networkedAnimator.setLocalState("backArm", "idle");
+
+      m_networkedAnimator.translateLocalTransformationGroup("frontArmRotation", danceStep->frontArmOffset / TilePixels);
+      m_networkedAnimator.rotateLocalTransformationGroup("frontArmRotation", danceStep->frontArmRotation);
+      if (danceStep->frontArmFrame.isValid()) {
+        auto danceFrame = danceStep->frontArmFrame.value();
+        m_networkedAnimator.setLocalTag("frontArmDanceFrame", danceFrame);
+        m_networkedAnimator.setLocalState("frontArmDance", m_networkedAnimator.hasState("frontArmDance", danceFrame) ? danceFrame : "dance");
+      }
       m_networkedAnimator.setLocalState("frontArm", "idle");
+
+    } else {
+      m_networkedAnimator.setLocalState("backArmDance", "idle");
+      m_networkedAnimator.rotateLocalTransformationGroup("backArmRotation",
+        backHand.angle,
+        jsonToVec2F(m_networkedAnimator.partProperty(m_backArmRotationPoint.first, m_backArmRotationPoint.second))
+      );
+      if (backHand.recoil)
+        m_networkedAnimator.translateLocalTransformationGroup("backArmRotation", m_recoilOffset);
+      if (backHand.holdingItem && withItems) {
+        m_networkedAnimator.setLocalTag("backArmFrame", backHand.backFrame);
+        m_networkedAnimator.setLocalState("backArm", m_networkedAnimator.hasState("backArm", backHand.backFrame) ? backHand.backFrame : "rotation");
+        if (!m_twoHanded)
+          m_networkedAnimator.setPartDrawables(m_backItemPart, backHand.itemDrawables);
+        m_networkedAnimator.setLocalState("backHandItem", backHand.outsideOfHand ? "outside" : "inside");
+      } else {
+        m_networkedAnimator.setLocalState("backArm", "idle");
+      }
+
+      m_networkedAnimator.setLocalState("frontArmDance", "idle");
+      m_networkedAnimator.rotateLocalTransformationGroup("frontArmRotation",
+        frontHand.angle,
+        jsonToVec2F(m_networkedAnimator.partProperty(m_frontArmRotationPoint.first, m_frontArmRotationPoint.second))
+      );
+      if (frontHand.recoil)
+        m_networkedAnimator.translateLocalTransformationGroup("frontArmRotation", m_recoilOffset);
+      if (frontHand.holdingItem && withItems) {
+        m_networkedAnimator.setLocalTag("frontArmFrame", frontHand.frontFrame);
+        m_networkedAnimator.setLocalState("frontArm", m_networkedAnimator.hasState("frontArm", frontHand.frontFrame) ? frontHand.frontFrame : "rotation");
+        if (!m_twoHanded)
+          m_networkedAnimator.setPartDrawables(m_frontItemPart, frontHand.itemDrawables);
+        m_networkedAnimator.setLocalState("frontHandItem", frontHand.outsideOfHand ? "outside" : "inside");
+      } else {
+        m_networkedAnimator.setLocalState("frontArm", "idle");
+      }
     }
+
     if (withRotationAndScale) {
       m_networkedAnimator.rotateLocalTransformationGroup("globalTransformation", m_rotation);
       m_networkedAnimator.scaleLocalTransformationGroup("globalTransformation", m_scale);

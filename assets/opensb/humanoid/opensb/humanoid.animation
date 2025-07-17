@@ -116,6 +116,30 @@
 					"idle" : {"frames" : 1, "cycle" : 0, "mode":"end"},
 					"rotation" : {"frames" : 1, "cycle" : 0, "mode":"end"}
 				}
+			},
+			"backArmDance" : {
+				"priority" : 2,
+				"default" : "idle",
+				"states" : {
+					"idle" : {"frames" : 1, "cycle" : 0, "mode":"end"},
+					"dance" : {"frames" : 1, "cycle" : 0, "mode":"end"}
+				}
+			},
+			"frontArmDance" : {
+				"priority" : 2,
+				"default" : "idle",
+				"states" : {
+					"idle" : {"frames" : 1, "cycle" : 0, "mode":"end"},
+					"dance" : {"frames" : 1, "cycle" : 0, "mode":"end"}
+				}
+			},
+			"bodyDance" : {
+				"priority" : 2,
+				"default" : "idle",
+				"states" : {
+					"idle" : {"frames" : 1, "cycle" : 0, "mode":"end"},
+					"dance" : {"frames" : 1, "cycle" : 0, "mode":"end"}
+				}
 			}
 		},
 		"parts": {
@@ -158,8 +182,8 @@
 							"image": "<bodyImagePath>backarm.png:<backArmFrame>"
 						} }
 					},
-					"backarmDanceState" : {
-						"dance": { "properties": { "image": "<bodyImagePath>backarm.png:<backarmDanceFrame>", "transformationGroups": ["backArmRotation"] } }
+					"backArmDance" : {
+						"dance": { "properties": { "image": "<bodyImagePath>backarm.png:<backArmDanceFrame>", "transformationGroups": ["backArmRotation"] } }
 					},
 					"portraitMode" : {
 						"head": { "properties": {} },
@@ -289,7 +313,7 @@
 						"swim" : "duck",
 						"swimIdle" : "duck"
 					},
-					"bodyDanceState" : {
+					"bodyDance" : {
 						"dance": { "properties": { "image": "<bodyImagePath><gender>body.png:<bodyDanceFrame>" } }
 					},
 					"portraitMode" : {
@@ -395,8 +419,8 @@
 							"image": "<bodyImagePath>frontarm.png:<frontArmFrame>"
 						} }
 					},
-					"frontarmDanceState" : {
-						"dance": { "properties": { "image": "<bodyImagePath>frontarm.png:<frontarmDanceFrame>", "transformationGroups": ["frontArmRotation"] } }
+					"frontArmDance" : {
+						"dance": { "properties": { "image": "<bodyImagePath>frontarm.png:<frontArmDanceFrame>", "transformationGroups": ["frontArmRotation"] } }
 					},
 					"portraitMode" : {
 						"head": { "properties": {} },
