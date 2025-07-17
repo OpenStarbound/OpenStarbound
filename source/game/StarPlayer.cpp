@@ -210,7 +210,7 @@ Player::Player(PlayerConfigPtr config, ByteArray const& netStore, NetCompatibili
   ds.read(m_description);
   ds.read(m_modeType);
   ds.read(m_identity);
-  if (rules.version() >= 9)
+  if (rules.version() >= 10)
     ds.read(m_identity.extra);
 
   m_netHumanoid.clearNetElements();
@@ -2513,7 +2513,7 @@ ByteArray Player::netStore(NetCompatibilityRules rules) {
   ds.write(m_description);
   ds.write(m_modeType);
   ds.write(m_identity);
-  if (rules.version() >= 9)
+  if (rules.version() >= 10)
     ds.write(m_identity.extra);
 
   return ds.data();
