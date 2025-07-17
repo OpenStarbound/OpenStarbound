@@ -938,7 +938,6 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
     backArmFrameOffset += m_recoilOffset;
 
   if (m_animationConfig.isValid()) {
-    m_networkedAnimator.resetLocalTransformationGroup("globalTransformation");
     m_networkedAnimator.resetLocalTransformationGroup("headRotation");
     for (uint8_t i : fashion.wornBacks) {
       if (i == 0)
@@ -1036,9 +1035,10 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
       }
     }
 
+    auto animatorDrawables = m_networkedAnimator.drawables();
     if (withRotationAndScale) {
-      m_networkedAnimator.rotateLocalTransformationGroup("globalTransformation", m_rotation);
-      m_networkedAnimator.scaleLocalTransformationGroup("globalTransformation", m_scale);
+      Drawable::rotateAll(animatorDrawables, m_rotation);
+      Drawable::scaleAll(animatorDrawables, m_scale);
     }
 
     if (withItems) {
@@ -1047,7 +1047,8 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
       if (m_primaryHand.nonRotatedDrawables.size())
         drawables.appendAll(m_primaryHand.nonRotatedDrawables);
     }
-    drawables.appendAll(m_networkedAnimator.drawables());
+    drawables.appendAll(animatorDrawables);
+    Drawable::rebaseAll(drawables);
   } else {
     auto addDrawable = [&](Drawable drawable, bool forceFullbright = false) -> Drawable& {
       if (m_facingDirection == Direction::Left)
@@ -2124,7 +2125,7 @@ Vec2F Humanoid::mouthOffset(bool ignoreAdjustments) const {
     return (m_mouthOffset).rotate(m_rotation);
   } else {
     if (m_animationConfig.isValid())
-      return m_networkedAnimator.partPoint(m_mouthOffsetPoint.first, m_mouthOffsetPoint.second).value(m_mouthOffset.rotate(m_rotation));
+      return m_networkedAnimator.partPoint(m_mouthOffsetPoint.first, m_mouthOffsetPoint.second).value(m_mouthOffset).rotate(m_rotation);
 
     Vec2F headPosition(0, getBobYOffset());
     if (m_state == Idle)
@@ -2146,13 +2147,13 @@ Vec2F Humanoid::mouthOffset(bool ignoreAdjustments) const {
 
 Vec2F Humanoid::feetOffset() const {
   if (m_animationConfig.isValid())
-    return m_networkedAnimator.partPoint(m_feetOffsetPoint.first, m_feetOffsetPoint.second).value(m_feetOffset.rotate(m_rotation));
+    return m_networkedAnimator.partPoint(m_feetOffsetPoint.first, m_feetOffsetPoint.second).value(m_feetOffset).rotate(m_rotation);
   return m_feetOffset.rotate(m_rotation);
 }
 
 Vec2F Humanoid::headArmorOffset() const {
   if (m_animationConfig.isValid())
-    return m_networkedAnimator.partPoint(m_headArmorOffsetPoint.first, m_headArmorOffsetPoint.second).value(m_headArmorOffset.rotate(m_rotation));
+    return m_networkedAnimator.partPoint(m_headArmorOffsetPoint.first, m_headArmorOffsetPoint.second).value(m_headArmorOffset).rotate(m_rotation);
 
   Vec2F headPosition(0, getBobYOffset());
   if (m_state == Idle)
@@ -2173,7 +2174,7 @@ Vec2F Humanoid::headArmorOffset() const {
 
 Vec2F Humanoid::chestArmorOffset() const {
   if (m_animationConfig.isValid())
-    return m_networkedAnimator.partPoint(m_chestArmorOffsetPoint.first, m_chestArmorOffsetPoint.second).value(m_chestArmorOffset.rotate(m_rotation));
+    return m_networkedAnimator.partPoint(m_chestArmorOffsetPoint.first, m_chestArmorOffsetPoint.second).value(m_chestArmorOffset).rotate(m_rotation);
 
   Vec2F position(0, getBobYOffset());
   return (m_chestArmorOffset + position).rotate(m_rotation);
@@ -2181,13 +2182,13 @@ Vec2F Humanoid::chestArmorOffset() const {
 
 Vec2F Humanoid::legsArmorOffset() const {
   if (m_animationConfig.isValid())
-    return m_networkedAnimator.partPoint(m_legsArmorOffsetPoint.first, m_legsArmorOffsetPoint.second).value(m_legsArmorOffset.rotate(m_rotation));
+    return m_networkedAnimator.partPoint(m_legsArmorOffsetPoint.first, m_legsArmorOffsetPoint.second).value(m_legsArmorOffset).rotate(m_rotation);
   return m_legsArmorOffset.rotate(m_rotation);
 }
 
 Vec2F Humanoid::backArmorOffset() const {
   if (m_animationConfig.isValid())
-    return m_networkedAnimator.partPoint(m_backArmorOffsetPoint.first, m_backArmorOffsetPoint.second).value(m_backArmorOffset.rotate(m_rotation));
+    return m_networkedAnimator.partPoint(m_backArmorOffsetPoint.first, m_backArmorOffsetPoint.second).value(m_backArmorOffset).rotate(m_rotation);
   Vec2F position(0, getBobYOffset());
   return (m_backArmorOffset + position).rotate(m_rotation);
 }
