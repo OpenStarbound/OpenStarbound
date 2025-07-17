@@ -182,7 +182,8 @@ public:
   HumanoidIdentity const& identity() const;
   void updateIdentity();
   void setIdentity(HumanoidIdentity identity);
-  void setIdentityExtra(String key, Json value);
+  void setHumanoidParameters(JsonObject parameters);
+  JsonObject getHumanoidParameters();
 
   void setBodyDirectives(String const& directives);
   void setEmoteDirectives(String const& directives);
@@ -237,7 +238,7 @@ private:
 
   void disableWornArmor(bool disable);
 
-  void refreshHumanoidSpecies();
+  void refreshHumanoidParameters();
 
   NetElementDynamicGroup<NetHumanoid> m_netHumanoid;
   LuaAnimationComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptedAnimator;
@@ -257,7 +258,7 @@ private:
   NetElementData<Maybe<String>> m_humanoidDanceNetState;
 
   NetElementData<HumanoidIdentity> m_identityNetState;
-  NetElementHashMap<String, Json> m_identityExtraNetState;
+  NetElementEvent m_refreshedHumanoidParameters;
   bool m_identityUpdated;
 
   NetElementData<Maybe<String>> m_deathParticleBurst;

@@ -105,7 +105,7 @@ public:
   SpeciesDefinitionPtr species(String const& kind) const;
   StringMap<SpeciesDefinitionPtr> allSpecies() const;
 
-  Json humanoidConfig(HumanoidIdentity identity, Json config = Json()) const;
+  Json humanoidConfig(HumanoidIdentity identity, JsonObject parameters = JsonObject(), Json config = Json()) const;
 
 private:
   StringMap<SpeciesDefinitionPtr> m_species;

@@ -52,7 +52,7 @@ StringMap<SpeciesDefinitionPtr> SpeciesDatabase::allSpecies() const {
   return m_species;
 }
 
-Json SpeciesDatabase::humanoidConfig(HumanoidIdentity identity, Json config) const {
+Json SpeciesDatabase::humanoidConfig(HumanoidIdentity identity, JsonObject parameters, Json config) const {
   auto speciesDef = species(identity.species);
   if (speciesDef->m_buildScripts.size() > 0) {
     RecursiveMutexLocker locker(m_luaMutex);
@@ -63,11 +63,12 @@ Json SpeciesDatabase::humanoidConfig(HumanoidIdentity identity, Json config) con
     // NPCs can have their own custom humanoidConfig that don't align with their species
     // however we need to make sure it only gets passed into this if its different from base
     // so in script we know when we have a unique case we should probably ignore or not
-    return context.invokePath<Json>("build", identity.toJson(), speciesDef->humanoidConfig(), config );
+    return context.invokePath<Json>("build", identity.toJson(), parameters, speciesDef->humanoidConfig(), config );
   } else {
     if (config.isType(Json::Type::Object))
       return config;
-    return speciesDef->humanoidConfig();
+    // assuming most people would just use it to merge over default humanoid config params
+    return jsonMerge(speciesDef->humanoidConfig(), parameters);
   }
 }
 

@@ -52,7 +52,9 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
 
   callbacks.registerCallback(   "humanoidIdentity", [player]()         { return player->humanoid()->identity().toJson();  });
   callbacks.registerCallback("setHumanoidIdentity", [player](Json const& id) { player->setIdentity(HumanoidIdentity(id)); });
-  callbacks.registerCallback("setIdentityExtra", [player](String key, Json value) { player->setIdentityExtra(key, value); });
+  callbacks.registerCallback("setHumanoidParameters", [player](JsonObject parameters) { player->setHumanoidParameters(parameters); });
+  callbacks.registerCallback("getHumanoidParameters", [player]() -> JsonObject { return player->getHumanoidParameters(); });
+  callbacks.registerCallback("refreshHumanoidParameters", [player]() { player->refreshHumanoidParameters(); });
 
   callbacks.registerCallback(   "bodyDirectives", [player]()   { return player->identity().bodyDirectives;      });
   callbacks.registerCallback("setBodyDirectives", [player](String const& str) { player->setBodyDirectives(str); });

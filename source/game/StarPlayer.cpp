@@ -89,7 +89,7 @@ Player::Player(PlayerConfigPtr config, Uuid uuid) {
   }
 
   // all of these are defaults and won't include the correct humanoid config for the species
-  m_netHumanoid.addNetElement(make_shared<NetHumanoid>(m_identity, Json()));
+  m_netHumanoid.addNetElement(make_shared<NetHumanoid>(m_identity, m_humanoidParameters, Json()));
   auto movementParameters = ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value(m_config->movementParameters)));
   if (!movementParameters.physicsEffectCategories)
     movementParameters.physicsEffectCategories = StringSet({"player"});
@@ -188,8 +188,8 @@ Player::Player(PlayerConfigPtr config, Uuid uuid) {
 
   m_netHumanoid.setCompatibilityVersion(10);
   m_netGroup.addNetElement(&m_netHumanoid);
-  m_identityExtraNetState.setCompatibilityVersion(10);
-  m_netGroup.addNetElement(&m_identityExtraNetState);
+  m_refreshedHumanoidParameters.setCompatibilityVersion(10);
+  m_netGroup.addNetElement(&m_refreshedHumanoidParameters);
 
   m_scriptedAnimationParameters.setCompatibilityVersion(10);
   m_netGroup.addNetElement(&m_scriptedAnimationParameters);
@@ -210,11 +210,12 @@ Player::Player(PlayerConfigPtr config, ByteArray const& netStore, NetCompatibili
   ds.read(m_description);
   ds.read(m_modeType);
   ds.read(m_identity);
-  if (rules.version() >= 10)
-    ds.read(m_identity.extra);
+  if (rules.version() >= 10) {
+    ds.read(m_humanoidParameters);
+  }
 
   m_netHumanoid.clearNetElements();
-  m_netHumanoid.addNetElement(make_shared<NetHumanoid>(m_identity, Json()));
+  m_netHumanoid.addNetElement(make_shared<NetHumanoid>(m_identity, m_humanoidParameters, Json()));
   m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value(m_config->movementParameters))));
   m_deathParticleBurst.set(humanoid()->defaultDeathParticles());
 }
@@ -258,8 +259,10 @@ void Player::diskLoad(Json const& diskStore) {
   m_companions->diskLoad(diskStore.get("companions", JsonObject{}));
   m_deployment->diskLoad(diskStore.get("deployment", JsonObject{}));
 
+  m_humanoidParameters = diskStore.getObject("humanoidParameters", JsonObject());
+
   m_netHumanoid.clearNetElements();
-  m_netHumanoid.addNetElement(make_shared<NetHumanoid>(m_identity, Json()));
+  m_netHumanoid.addNetElement(make_shared<NetHumanoid>(m_identity, m_humanoidParameters, Json()));
   m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value(m_config->movementParameters))));
   m_effectsAnimator->setGlobalTag("effectDirectives", speciesDef->effectDirectives());
   m_deathParticleBurst.set(humanoid()->defaultDeathParticles());
@@ -1990,15 +1993,15 @@ void Player::getNetStates(bool initial) {
   m_aimPosition[0] = m_xAimPositionNetState.get();
   m_aimPosition[1] = m_yAimPositionNetState.get();
 
-  if ((m_identityNetState.pullUpdated() || m_identityExtraNetState.pullUpdated()) && !initial) {
+  if (m_identityNetState.pullUpdated() && !initial) {
     auto newIdentity = m_identityNetState.get();
-    newIdentity.extra = m_identityExtraNetState.baseMap();
     if ((m_identity.species == newIdentity.species) && (m_identity.imagePath == newIdentity.imagePath)) {
       humanoid()->setIdentity(newIdentity);
-    } else {
-      refreshHumanoidSpecies();
     }
     m_identity = newIdentity;
+  }
+  if (m_refreshedHumanoidParameters.pullOccurred() && !initial) {
+    refreshHumanoidParameters();
   }
 
   setTeam(m_teamNetState.get());
@@ -2241,16 +2244,18 @@ void Player::updateIdentity() {
   m_identityUpdated = true;
   auto oldIdentity = humanoid()->identity();
   if ((m_identity.species != oldIdentity.species) || (m_identity.imagePath != oldIdentity.imagePath)) {
-    refreshHumanoidSpecies();
+    refreshHumanoidParameters();
   } else {
     humanoid()->setIdentity(m_identity);
   }
 }
 
-void Player::setIdentityExtra(String key, Json value) {
-  m_identityExtraNetState.set(key, value);
-  m_identity.extra.set(key, value);
-  humanoid()->setIdentity(m_identity);
+void Player::setHumanoidParameters(JsonObject parameters) {
+  m_humanoidParameters = parameters;
+}
+
+JsonObject Player::getHumanoidParameters() {
+  return m_humanoidParameters;
 }
 
 void Player::setBodyDirectives(String const& directives)
@@ -2502,6 +2507,7 @@ Json Player::diskStore() {
     {"deployment", m_deployment->diskStore()},
     {"genericProperties", m_genericProperties},
     {"genericScriptStorage", genericScriptStorage},
+    {"humanoidParameters", m_humanoidParameters},
   };
 }
 
@@ -2514,7 +2520,7 @@ ByteArray Player::netStore(NetCompatibilityRules rules) {
   ds.write(m_modeType);
   ds.write(m_identity);
   if (rules.version() >= 10)
-    ds.write(m_identity.extra);
+    ds.write(m_humanoidParameters);
 
   return ds.data();
 }
@@ -2820,13 +2826,14 @@ void Player::setSecretProperty(String const& name, Json const& value) {
     m_effectsAnimator->removeGlobalTag(secretProprefix + name);
 }
 
-void Player::refreshHumanoidSpecies() {
+void Player::refreshHumanoidParameters() {
   auto speciesDatabase = Root::singleton().speciesDatabase();
   auto speciesDef = speciesDatabase->species(m_identity.species);
 
   if (isMaster()) {
+    m_refreshedHumanoidParameters.trigger();
     m_netHumanoid.clearNetElements();
-    m_netHumanoid.addNetElement(make_shared<NetHumanoid>(m_identity, Json()));
+    m_netHumanoid.addNetElement(make_shared<NetHumanoid>(m_identity, m_humanoidParameters, Json()));
     m_effectsAnimator->setGlobalTag("effectDirectives", speciesDef->effectDirectives());
     m_deathParticleBurst.set(humanoid()->defaultDeathParticles());
     m_statusController->setStatusProperty("ouchNoise", speciesDef->ouchNoise(m_identity.gender));
@@ -2845,9 +2852,7 @@ void Player::refreshHumanoidSpecies() {
         if (p.second->initialized()) {
           p.second->removeCallbacks("animator");
           p.second->addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(humanoid()->networkedAnimator()));
-
-          p.second->invoke("refreshHumanoidSpecies");
-
+          p.second->invoke("refreshHumanoidParameters");
         }
       }
     }

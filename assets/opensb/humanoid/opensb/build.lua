@@ -11,8 +11,9 @@ local portraitModes = { "head", "bust", "full", "fullNeutral", "fullNude", "full
 local tilePixels = 8
 -- this build script is meant to interpret retail's humanoidConfig and apply all the relevant values to a base animation that should then
 -- be basically identical to how the retail humanoids look, now with the ability to add extra parts into the animation
-function build(identity, humanoidConfig, npcHumanoidConfig)
-	if npcHumanoidConfig then return npcHumanoidConfig end
+function build(identity, humanoidParameters, humanoidConfig, npcHumanoidConfig)
+	if npcHumanoidConfig then return sb.jsonMerge(npcHumanoidConfig, humanoidParameters) end
+	humanoidConfig = sb.jsonMerge(humanoidConfig, humanoidParameters)
 
 	if not humanoidConfig.animation then
 		humanoidConfig.animation = {

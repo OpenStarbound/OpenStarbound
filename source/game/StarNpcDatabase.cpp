@@ -86,6 +86,8 @@ NpcVariant NpcDatabase::generateNpcVariant(
 
   variant.humanoidIdentity = identity;
 
+  variant.humanoidParameters = config.getObject("humanoidParameters", JsonObject());
+
   variant.movementParameters = config.get("movementParameters", {});
   variant.statusControllerSettings = config.get("statusControllerSettings");
 
@@ -213,6 +215,8 @@ NpcVariant NpcDatabase::readNpcVariant(ByteArray const& data, NetCompatibilityRu
   else
     variant.humanoidConfig = speciesDefinition->humanoidConfig();
 
+  variant.humanoidParameters = config.getObject("humanoidParameters", JsonObject());
+
   variant.movementParameters = config.get("movementParameters", {});
   variant.statusControllerSettings = config.get("statusControllerSettings");
 
@@ -261,7 +265,8 @@ Json NpcDatabase::writeNpcVariantToJson(NpcVariant const& variant) const {
       {"persistent", variant.persistent},
       {"keepAlive", variant.keepAlive},
       {"damageTeam", variant.damageTeam},
-      {"damageTeamType", TeamTypeNames.getRight(variant.damageTeamType)}};
+      {"damageTeamType", TeamTypeNames.getRight(variant.damageTeamType)}
+    };
 }
 
 NpcVariant NpcDatabase::readNpcVariantFromJson(Json const& data) const {
@@ -290,6 +295,8 @@ NpcVariant NpcDatabase::readNpcVariantFromJson(Json const& data) const {
     variant.humanoidConfig = Root::singleton().assets()->json(config.getString("humanoidConfig"));
   else
     variant.humanoidConfig = speciesDefinition->humanoidConfig();
+
+  variant.humanoidParameters = config.getObject("humanoidParameters", JsonObject());
 
   variant.movementParameters = config.get("movementParameters", {});
   variant.statusControllerSettings = config.get("statusControllerSettings", {});

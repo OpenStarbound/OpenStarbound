@@ -100,7 +100,6 @@ struct HumanoidIdentity {
 
   Maybe<String> imagePath;
 
-  JsonObject extra = JsonObject();
 };
 
 DataStream& operator>>(DataStream& ds, HumanoidIdentity& identity);
@@ -127,7 +126,7 @@ public:
 
   Humanoid();
   Humanoid(Json const& config);
-  Humanoid(HumanoidIdentity const& identity, Json config = Json());
+  Humanoid(HumanoidIdentity const& identity, JsonObject parameters = JsonObject(), Json config = Json());
   Humanoid(Humanoid const&) = default;
 
   struct HumanoidTiming {
@@ -483,7 +482,7 @@ private:
 // therefore we need to have these in a dynamic group in players and NPCs for the sake of the networked animator not breaking the game
 class NetHumanoid : NetElement {
 public:
-  NetHumanoid(HumanoidIdentity identity = HumanoidIdentity(), Json config = Json());
+  NetHumanoid(HumanoidIdentity identity = HumanoidIdentity(), JsonObject parameters = JsonObject(), Json config = Json());
 
   void initNetVersion(NetElementVersion const* version = nullptr) override;
 
@@ -502,6 +501,7 @@ public:
 
 private:
   Json m_config;
+  JsonObject m_parameters;
   HumanoidPtr m_humanoid;
 };
 

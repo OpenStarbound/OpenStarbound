@@ -34,7 +34,7 @@ namespace Star {
 
 Npc::Npc(NpcVariant const& npcVariant) {
 
-  m_netHumanoid.addNetElement(make_shared<NetHumanoid>(npcVariant.humanoidIdentity, npcVariant.uniqueHumanoidConfig ? npcVariant.humanoidConfig : Json()));
+  m_netHumanoid.addNetElement(make_shared<NetHumanoid>(npcVariant.humanoidIdentity, npcVariant.humanoidParameters, npcVariant.uniqueHumanoidConfig ? npcVariant.humanoidConfig : Json()));
   m_disableWornArmor.set(npcVariant.disableWornArmor);
 
   m_emoteState = HumanoidEmote::Idle;
@@ -673,7 +673,9 @@ LuaCallbacks Npc::makeNpcCallbacks() {
 
   callbacks.registerCallback("humanoidIdentity", [this]() { return humanoid()->identity().toJson(); });
   callbacks.registerCallback("setHumanoidIdentity", [this](Json const& id) { setIdentity(HumanoidIdentity(id)); });
-  callbacks.registerCallback("setIdentityExtra", [this](String key, Json value) { setIdentityExtra(key, value); });
+  callbacks.registerCallback("setHumanoidParameters", [this](JsonObject parameters) { setHumanoidParameters(parameters); });
+  callbacks.registerCallback("getHumanoidParameters", [this]() -> JsonObject { return getHumanoidParameters(); });
+  callbacks.registerCallback("refreshHumanoidParameters", [this]() { refreshHumanoidParameters(); });
 
   callbacks.registerCallback(   "bodyDirectives", [this]()   { return identity().bodyDirectives;      });
   callbacks.registerCallback("setBodyDirectives", [this](String const& str) { setBodyDirectives(str); });
@@ -946,8 +948,8 @@ void Npc::setupNetStates() {
 
   m_identityNetState.setCompatibilityVersion(10);
   m_netGroup.addNetElement(&m_identityNetState);
-  m_identityExtraNetState.setCompatibilityVersion(10);
-  m_netGroup.addNetElement(&m_identityExtraNetState);
+  m_refreshedHumanoidParameters.setCompatibilityVersion(10);
+  m_netGroup.addNetElement(&m_refreshedHumanoidParameters);
 
   m_netHumanoid.setCompatibilityVersion(10);
   m_netGroup.addNetElement(&m_netHumanoid);
@@ -979,17 +981,16 @@ void Npc::getNetStates(bool initial) {
   humanoid()->setEmoteState(m_humanoidEmoteStateNetState.get());
   humanoid()->setDance(m_humanoidDanceNetState.get());
 
-  if ((m_identityNetState.pullUpdated() || m_identityExtraNetState.pullUpdated()) && !initial) {
+  if ((m_identityNetState.pullUpdated()) && !initial) {
     auto newIdentity = m_identityNetState.get();
-    newIdentity.extra = m_identityExtraNetState.baseMap();
     if ((m_npcVariant.humanoidIdentity.species == newIdentity.species) && (m_npcVariant.humanoidIdentity.imagePath == newIdentity.imagePath)) {
       humanoid()->setIdentity(newIdentity);
-    } else {
-      refreshHumanoidSpecies();
     }
     m_npcVariant.humanoidIdentity = newIdentity;
   }
-
+  if (m_refreshedHumanoidParameters.pullOccurred() && !initial) {
+    refreshHumanoidParameters();
+  }
 
   if (m_newChatMessageEvent.pullOccurred() && !initial) {
     m_chatMessageUpdated = true;
@@ -1297,7 +1298,7 @@ void Npc::updateIdentity() {
   m_identityUpdated = true;
   auto oldIdentity = humanoid()->identity();
   if ((m_npcVariant.humanoidIdentity.species != oldIdentity.species) || (m_npcVariant.humanoidIdentity.imagePath != oldIdentity.imagePath)) {
-    refreshHumanoidSpecies();
+    refreshHumanoidParameters();
   } else {
     humanoid()->setIdentity(m_npcVariant.humanoidIdentity);
   }
@@ -1308,10 +1309,13 @@ void Npc::setIdentity(HumanoidIdentity identity) {
   updateIdentity();
 }
 
-void Npc::setIdentityExtra(String key, Json value) {
-  m_identityExtraNetState.set(key, value);
-  m_npcVariant.humanoidIdentity.extra.set(key, value);
-  humanoid()->setIdentity(m_npcVariant.humanoidIdentity);
+void Npc::setHumanoidParameters(JsonObject parameters) {
+  m_npcVariant.overrides.set("humanoidParameters", parameters);
+  m_npcVariant.humanoidParameters = parameters;
+}
+
+JsonObject Npc::getHumanoidParameters() {
+  return m_npcVariant.humanoidParameters;
 }
 
 void Npc::setBodyDirectives(String const& directives)
@@ -1410,14 +1414,15 @@ HumanoidPtr Npc::humanoid() const {
   return m_netHumanoid.netElements().last()->humanoid();
 }
 
-void Npc::refreshHumanoidSpecies() {
+void Npc::refreshHumanoidParameters() {
   auto speciesDatabase = Root::singleton().speciesDatabase();
   auto speciesDef = speciesDatabase->species(m_npcVariant.humanoidIdentity.species);
 
   if (isMaster()) {
+    m_refreshedHumanoidParameters.trigger();
     m_scriptedAnimationParameters.clear();
     m_netHumanoid.clearNetElements();
-    m_netHumanoid.addNetElement(make_shared<NetHumanoid>(m_npcVariant.humanoidIdentity, m_npcVariant.uniqueHumanoidConfig ? m_npcVariant.humanoidConfig : Json()));
+    m_netHumanoid.addNetElement(make_shared<NetHumanoid>(m_npcVariant.humanoidIdentity, m_npcVariant.humanoidParameters, m_npcVariant.uniqueHumanoidConfig ? m_npcVariant.humanoidConfig : Json()));
     m_deathParticleBurst.set(humanoid()->defaultDeathParticles());
   }
 
@@ -1433,7 +1438,7 @@ void Npc::refreshHumanoidSpecies() {
       if (m_scriptComponent.initialized()) {
         m_scriptComponent.removeCallbacks("animator");
         m_scriptComponent.addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(humanoid()->networkedAnimator()));
-        m_scriptComponent.invoke("refreshHumanoidSpecies");
+        m_scriptComponent.invoke("refreshHumanoidParameters");
       }
     }
     if (world()->isClient()) {

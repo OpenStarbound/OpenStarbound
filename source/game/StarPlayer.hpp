@@ -322,7 +322,10 @@ public:
 
   void updateIdentity();
 
-  void setIdentityExtra(String key, Json value);
+  void setHumanoidParameters(JsonObject parameters);
+  JsonObject getHumanoidParameters();
+  void refreshHumanoidParameters();
+
   void setBodyDirectives(String const& directives);
   void setEmoteDirectives(String const& directives);
 
@@ -537,8 +540,6 @@ private:
 
   HumanoidEmote detectEmotes(String const& chatter);
 
-  void refreshHumanoidSpecies();
-
   NetElementDynamicGroup<NetHumanoid> m_netHumanoid;
   NetElementData<Maybe<String>> m_deathParticleBurst;
   LuaAnimationComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptedAnimator;
@@ -670,7 +671,8 @@ private:
   NetElementFloat m_xAimPositionNetState;
   NetElementFloat m_yAimPositionNetState;
   NetElementData<HumanoidIdentity> m_identityNetState;
-  NetElementHashMap<String, Json> m_identityExtraNetState;
+  NetElementEvent m_refreshedHumanoidParameters;
+  JsonObject m_humanoidParameters = JsonObject();
   NetElementData<EntityDamageTeam> m_teamNetState;
   NetElementEvent m_landedNetState;
   NetElementString m_chatMessageNetState;
