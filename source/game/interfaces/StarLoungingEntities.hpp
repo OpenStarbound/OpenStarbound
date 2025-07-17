@@ -6,6 +6,8 @@
 #include "StarEntityRenderingTypes.hpp"
 #include "StarGameTimers.hpp"
 #include "StarNetworkedAnimator.hpp"
+#include "StarLua.hpp"
+#include "StarInteractionTypes.hpp"
 
 namespace Star {
 
@@ -56,7 +58,7 @@ public:
   Set<pair<EntityId, size_t>> entitiesLounging() const;
 
   void setupLoungePositions(function<Json(String const&, Json const&)> configValue);
-  void setupLoungeNetStates(NetElementTopGroup* netGroup, u_int8_t minimumVersion = 0 );
+  void setupLoungeNetStates(NetElementTopGroup* netGroup, uint8_t minimumVersion);
   void loungeInit();
   void loungeTickMaster(float dt);
   void loungeTickSlave(float dt);

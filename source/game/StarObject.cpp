@@ -197,7 +197,7 @@ void Object::init(World* world, EntityId entityId, EntityMode mode) {
     m_liquidCheckTimer.setDone();
 
     setKeepAlive(configValue("keepAlive", false).toBool());
-    
+
     auto jScripts = configValue("scripts", JsonArray());
     if (jScripts.isType(Json::Type::Array))
       m_scriptComponent.setScripts(jsonToStringList(jScripts).transformed(bind(AssetPath::relativeTo, m_config->path, _1)));
@@ -896,6 +896,10 @@ bool Object::biomePlaced() const {
   return m_config->biomePlaced;
 }
 
+NetworkedAnimator const* Object::networkedAnimator() const {
+  return m_networkedAnimator.get();
+}
+
 LuaCallbacks Object::makeObjectCallbacks() {
   LuaCallbacks callbacks;
 
@@ -1290,7 +1294,7 @@ List<Drawable> Object::orientationDrawables(size_t orientationIndex) const {
       }
 
       imagePart.addDirectives(m_directives);
-      
+
       if (orientation->flipImages)
         drawable.scale(Vec2F(-1, 1), drawable.boundBox(false).center() - drawable.position);
 

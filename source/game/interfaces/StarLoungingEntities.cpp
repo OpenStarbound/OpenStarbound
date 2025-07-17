@@ -124,7 +124,7 @@ void LoungeableEntity::setupLoungePositions(function<Json(String const&,Json con
   }
 }
 
-void LoungeableEntity::setupLoungeNetStates(NetElementTopGroup * netGroup, u_int8_t minimumVersion) {
+void LoungeableEntity::setupLoungeNetStates(NetElementTopGroup * netGroup, uint8_t minimumVersion) {
   m_loungePositions.sortByKey();
   for (auto& p : m_loungePositions) {
     p.second.enabled.setCompatibilityVersion(minimumVersion);
@@ -252,8 +252,7 @@ Maybe<size_t> LoungeableEntity::loungeInteract(InteractRequest const& request){
   return index;
 }
 
-LuaCallbacks LoungeableEntity::makeLoungeableCallbacks()
-{
+LuaCallbacks LoungeableEntity::makeLoungeableCallbacks(){
   LuaCallbacks callbacks;
   callbacks.registerCallback("controlHeld", [this](String const& loungeName, String const& controlName) {
       auto const& mc = m_loungePositions.get(loungeName).masterControlState[LoungeControlNames.getLeft(controlName)];

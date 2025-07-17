@@ -78,7 +78,7 @@ Vehicle::Vehicle(Json baseConfig, String path, Json dynamicConfig)
   m_netGroup.addNetElement(&m_networkedAnimator);
   m_netGroup.addNetElement(&m_damageTeam);
 
-  setupLoungeNetStates(&m_netGroup);
+  setupLoungeNetStates(&m_netGroup, 0);
 
   m_movingCollisions.sortByKey();
   for (auto& p : m_movingCollisions)
@@ -305,8 +305,9 @@ void Vehicle::destroy(RenderCallback* renderCallback) {
 }
 
 Maybe<Json> Vehicle::receiveMessage(ConnectionId connectionId, String const& message, JsonArray const& args) {
-  if (receiveLoungeMessage(connectionId, message, args).isNothing())
-    return m_scriptComponent.handleMessage(message, connectionId == world()->connection(), args);
+  if (receiveLoungeMessage(connectionId, message, args).isValid())
+    return Json();
+  return m_scriptComponent.handleMessage(message, connectionId == world()->connection(), args);
 }
 
 RectF Vehicle::interactiveBoundBox() const {

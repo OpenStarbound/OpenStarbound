@@ -16,6 +16,9 @@ public:
   size_t anchorCount() const override;
   LoungeAnchorConstPtr loungeAnchor(size_t positionIndex) const override;
 
+  virtual EntityRenderLayer loungeRenderLayer(size_t anchorPositionIndex) const override;
+  virtual NetworkedAnimator const* networkedAnimator() const override;
+
 protected:
   void setOrientationIndex(size_t orientationIndex) override;
 

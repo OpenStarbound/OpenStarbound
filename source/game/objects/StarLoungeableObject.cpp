@@ -81,6 +81,14 @@ LoungeAnchorConstPtr LoungeableObject::loungeAnchor(size_t positionIndex) const 
   return loungeAnchor;
 }
 
+EntityRenderLayer LoungeableObject::loungeRenderLayer(size_t anchorPositionIndex) const {
+  return RenderLayerObject + m_sitPositions.size() - anchorPositionIndex;
+}
+
+NetworkedAnimator const* LoungeableObject::networkedAnimator() const {
+  return Object::networkedAnimator();
+}
+
 void LoungeableObject::setOrientationIndex(size_t orientationIndex) {
   Object::setOrientationIndex(orientationIndex);
   if (orientationIndex != NPos) {

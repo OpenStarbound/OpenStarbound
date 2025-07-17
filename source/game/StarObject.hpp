@@ -149,6 +149,8 @@ public:
 
   bool biomePlaced() const;
 
+  virtual NetworkedAnimator const* networkedAnimator() const;
+
   using Entity::setUniqueId;
 
 protected:
