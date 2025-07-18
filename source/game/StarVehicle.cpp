@@ -30,8 +30,12 @@ Vehicle::Vehicle(Json baseConfig, String path, Json dynamicConfig)
   if (auto animationScript = configValue("animationScript").optString())
     m_scriptedAnimator.setScript(*animationScript);
 
-  setupLoungePositions([this](String const& name, Json const& def)
-            { return configValue(name, def); });
+  setupLoungePositions(
+    configValue("slaveControlTimeout").toFloat(),
+    configValue("slaveControlHeartbeat").toFloat(),
+    configValue("loungePositions", JsonObject()).toObject(),
+    configValue("receiveExtraControls", false).toBool()
+  );
 
   for (auto const& pair : configValue("physicsCollisions", JsonObject()).iterateObject()) {
     auto& collisionConfig = m_movingCollisions[pair.first];
@@ -422,6 +426,15 @@ EntityRenderLayer Vehicle::loungeRenderLayer(size_t anchorPositionIndex) const {
 NetworkedAnimator const* Vehicle::networkedAnimator() const {
   return &m_networkedAnimator;
 }
+
+LoungeableEntity::LoungePositions * Vehicle::loungePositions(){
+  return &m_loungePositions;
+}
+
+LoungeableEntity::LoungePositions const* Vehicle::loungePositions() const {
+  return &m_loungePositions;
+}
+
 
 EntityRenderLayer Vehicle::renderLayer(VehicleLayer vehicleLayer) const {
   // Z-offset based on entity id, so vehicles don't overlap strangely.

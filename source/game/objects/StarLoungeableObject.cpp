@@ -10,8 +10,12 @@ LoungeableObject::LoungeableObject(ObjectConfigConstPtr config, Json const& para
 
   if (configValue("loungePositions", Json()).isType(Json::Type::Object)) {
     m_useLoungePositions = true;
-    setupLoungePositions([this](String const& name, Json const& def)
-          { return configValue(name, def); });
+    setupLoungePositions(
+      configValue("slaveControlTimeout").toFloat(),
+      configValue("slaveControlHeartbeat").toFloat(),
+      configValue("loungePositions", JsonObject()).toObject(),
+      configValue("receiveExtraControls", false).toBool()
+    );
     setupLoungeNetStates(&m_netGroup, 10);
   }
 }
@@ -170,6 +174,14 @@ void LoungeableObject::setOrientationIndex(size_t orientationIndex) {
     m_sitArmorCosmeticOverrides = configValue("sitArmorCosmeticOverrides", JsonObject()).toObject();
     m_sitCursorOverride = configValue("sitCursorOverride").optString();
   }
+}
+
+LoungeableEntity::LoungePositions * LoungeableObject::loungePositions(){
+  return &m_loungePositions;
+}
+
+LoungeableEntity::LoungePositions const* LoungeableObject::loungePositions() const {
+  return &m_loungePositions;
 }
 
 }

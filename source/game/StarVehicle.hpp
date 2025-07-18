@@ -79,6 +79,9 @@ public:
   virtual EntityRenderLayer loungeRenderLayer(size_t anchorPositionIndex) const override;
   virtual NetworkedAnimator const* networkedAnimator() const override;
 
+  virtual LoungeableEntity::LoungePositions* loungePositions() override;
+  virtual LoungeableEntity::LoungePositions const* loungePositions() const override;
+
 private:
   struct MovingCollisionConfig {
     PhysicsMovingCollision movingCollision;
@@ -129,6 +132,7 @@ private:
   NetElementData<EntityDamageTeam> m_damageTeam;
   OrderedHashMap<String, DamageSourceConfig> m_damageSources;
 
+  LoungePositions m_loungePositions;
 };
 
 }

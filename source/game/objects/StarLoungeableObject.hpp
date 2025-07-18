@@ -28,6 +28,9 @@ public:
 
   virtual Maybe<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args = {}) override;
 
+  virtual LoungeableEntity::LoungePositions* loungePositions() override;
+  virtual LoungeableEntity::LoungePositions const* loungePositions() const override;
+
 protected:
   virtual LuaCallbacks makeObjectCallbacks() override;
 
@@ -48,6 +51,7 @@ private:
   Maybe<String> m_sitCursorOverride;
 
   bool m_useLoungePositions = false;
+  LoungePositions m_loungePositions;
 };
 
 }

@@ -57,7 +57,7 @@ public:
   // Returns pairs of entity ids, and the position they are lounging in.
   Set<pair<EntityId, size_t>> entitiesLounging() const;
 
-  void setupLoungePositions(function<Json(String const&, Json const&)> configValue);
+  void setupLoungePositions(float timeout, float heartbeat, JsonObject positions, bool extraControls);
   void setupLoungeNetStates(NetElementTopGroup* netGroup, uint8_t minimumVersion);
   void loungeInit();
   void loungeTickMaster(float dt);
@@ -70,13 +70,15 @@ public:
   virtual EntityRenderLayer loungeRenderLayer(size_t anchorPositionIndex) const = 0;
   virtual NetworkedAnimator const* networkedAnimator() const = 0;
 
-private:
   struct MasterControlState {
     Set<ConnectionId> slavesHeld;
     bool masterHeld;
   };
 
   struct LoungePositionConfig {
+    LoungePositionConfig(Json config);
+    void setupNetStates(NetElementTopGroup* netGroup, uint8_t minimumVersion);
+
     // The NetworkedAnimator part and part property which should control the
     // lounge position.
     String part;
@@ -102,14 +104,16 @@ private:
     Set<LoungeControl> slaveNewControls;
     Vec2F slaveNewAimPosition;
   };
+  typedef OrderedHashMap<String, LoungePositionConfig> LoungePositions;
+  virtual LoungeableEntity::LoungePositions* loungePositions() = 0;
+  virtual LoungeableEntity::LoungePositions const* loungePositions() const = 0;
 
+private:
   float m_slaveControlTimeout = 0.0f;
   bool m_receiveExtraControls;
 
   Map<ConnectionId, GameTimer> m_aliveMasterConnections;
   GameTimer m_slaveHeartbeatTimer;
-
-  OrderedHashMap<String, LoungePositionConfig> m_loungePositions;
 
 };
 
