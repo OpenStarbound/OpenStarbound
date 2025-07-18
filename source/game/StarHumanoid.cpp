@@ -2257,14 +2257,15 @@ NetworkedAnimator::DynamicTarget * Humanoid::networkedAnimatorDynamicTarget() {
   return &m_networkedAnimatorDynamicTarget;
 }
 
+void NetHumanoid::initNetVersion(NetElementVersion const* version) {
+  m_humanoid->networkedAnimator()->initNetVersion(version);
+}
+
 NetHumanoid::NetHumanoid(HumanoidIdentity identity, JsonObject parameters, Json config) {
   m_config = config;
   m_parameters = parameters;
   m_humanoid = make_shared<Humanoid>(identity, parameters, config);
-}
-
-void NetHumanoid::initNetVersion(NetElementVersion const* version) {
-  m_humanoid->networkedAnimator()->initNetVersion(version);
+  setupNetElements();
 }
 
 void NetHumanoid::netStore(DataStream& ds, NetCompatibilityRules rules) const {
@@ -2273,7 +2274,7 @@ void NetHumanoid::netStore(DataStream& ds, NetCompatibilityRules rules) const {
   ds.write(identity);
   ds.write(m_parameters);
   ds.write(m_config);
-  m_humanoid->networkedAnimator()->netStore(ds, rules);
+  m_netGroup.netStore(ds, rules);
 }
 
 void NetHumanoid::netLoad(DataStream& ds, NetCompatibilityRules rules) {
@@ -2283,34 +2284,41 @@ void NetHumanoid::netLoad(DataStream& ds, NetCompatibilityRules rules) {
   ds.read(m_parameters);
   ds.read(m_config);
   m_humanoid = make_shared<Humanoid>(identity, m_parameters, m_config);
-  m_humanoid->networkedAnimator()->netLoad(ds, rules);
+  m_netGroup.clearNetElements();
+  setupNetElements();
+  m_netGroup.netLoad(ds, rules);
 }
 
 void NetHumanoid::enableNetInterpolation(float extrapolationHint) {
-  m_humanoid->networkedAnimator()->enableNetInterpolation(extrapolationHint);
+  m_netGroup.enableNetInterpolation(extrapolationHint);
 }
 
 void NetHumanoid::disableNetInterpolation() {
-  m_humanoid->networkedAnimator()->disableNetInterpolation();
+  m_netGroup.disableNetInterpolation();
 }
 
 void NetHumanoid::tickNetInterpolation(float dt) {
-  m_humanoid->networkedAnimator()->tickNetInterpolation(dt);
+  m_netGroup.tickNetInterpolation(dt);
 }
 
 bool NetHumanoid::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const {
-  return m_humanoid->networkedAnimator()->writeNetDelta(ds, fromVersion, rules);
+  return m_netGroup.writeNetDelta(ds, fromVersion, rules);
 }
 
 void NetHumanoid::readNetDelta(DataStream& ds, float interpolationTime, NetCompatibilityRules rules) {
-  m_humanoid->networkedAnimator()->readNetDelta(ds, interpolationTime, rules);
+  m_netGroup.readNetDelta(ds, interpolationTime, rules);
 }
 
 void NetHumanoid::blankNetDelta(float interpolationTime) {
-  m_humanoid->networkedAnimator()->blankNetDelta(interpolationTime);
+  m_netGroup.blankNetDelta(interpolationTime);
 }
 
 HumanoidPtr NetHumanoid::humanoid() {
   return m_humanoid;
 }
+
+void NetHumanoid::setupNetElements() {
+  m_netGroup.addNetElement(m_humanoid->networkedAnimator());
+}
+
 }

@@ -500,6 +500,9 @@ public:
   HumanoidPtr humanoid();
 
 private:
+  void setupNetElements();
+
+  NetElementSyncGroup m_netGroup;
   Json m_config;
   JsonObject m_parameters;
   HumanoidPtr m_humanoid;
