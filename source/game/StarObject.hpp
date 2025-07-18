@@ -136,7 +136,7 @@ public:
   virtual StringSet turnInQuests() const override;
   virtual Vec2F questIndicatorPosition() const override;
 
-  Maybe<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args = {}) override;
+  virtual Maybe<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args = {}) override;
 
   // Check, in order, the passed in object parameters, the config parameters,
   // and then the orientation parameters for the given key.  Returns 'def' if
@@ -148,6 +148,8 @@ public:
   float liquidFillLevel() const;
 
   bool biomePlaced() const;
+
+  virtual NetworkedAnimator const* networkedAnimator() const;
 
   using Entity::setUniqueId;
 
@@ -168,6 +170,7 @@ protected:
   virtual void setOrientationIndex(size_t orientationIndex);
 
   PolyF volume() const;
+  virtual LuaCallbacks makeObjectCallbacks();
 
   LuaMessageHandlingComponent<LuaStorableComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>> m_scriptComponent;
   mutable LuaAnimationComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptedAnimator;
@@ -189,7 +192,6 @@ private:
     NetElementBool state;
   };
 
-  LuaCallbacks makeObjectCallbacks();
   LuaCallbacks makeAnimatorObjectCallbacks();
 
   void ensureNetSetup();
