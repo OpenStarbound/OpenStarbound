@@ -6,6 +6,9 @@
 #include "StarAssets.hpp"
 #include "StarRoot.hpp"
 #include "StarImageProcessing.hpp"
+#include "StarRootLuaBindings.hpp"
+#include "StarConfigLuaBindings.hpp"
+#include "StarUtilityLuaBindings.hpp"
 
 namespace Star {
 
@@ -24,7 +27,7 @@ SpeciesOption::SpeciesOption()
     undyColorDirectives(),
     hairColorDirectives() {}
 
-SpeciesDatabase::SpeciesDatabase() {
+SpeciesDatabase::SpeciesDatabase() : m_luaRoot(make_shared<LuaRoot>()) {
   auto assets = Root::singleton().assets();
 
   auto& files = assets->scanExtension("species");
@@ -49,11 +52,33 @@ StringMap<SpeciesDefinitionPtr> SpeciesDatabase::allSpecies() const {
   return m_species;
 }
 
+Json SpeciesDatabase::humanoidConfig(HumanoidIdentity identity, JsonObject parameters, Json config) const {
+  auto speciesDef = species(identity.species);
+  if (speciesDef->m_buildScripts.size() > 0) {
+    RecursiveMutexLocker locker(m_luaMutex);
+    auto context = m_luaRoot->createContext(speciesDef->m_buildScripts);
+    context.setCallbacks("root", LuaBindings::makeRootCallbacks());
+    context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
+
+    // NPCs can have their own custom humanoidConfig that don't align with their species
+    // however we need to make sure it only gets passed into this if its different from base
+    // so in script we know when we have a unique case we should probably ignore or not
+    return context.invokePath<Json>("build", identity.toJson(), parameters, speciesDef->humanoidConfig(), config );
+  } else {
+    if (config.isType(Json::Type::Object))
+      return config;
+    // assuming most people would just use it to merge over default humanoid config params
+    return jsonMerge(speciesDef->humanoidConfig(), parameters);
+  }
+}
+
 SpeciesDefinition::SpeciesDefinition(Json const& config) {
   m_config = config;
   m_kind = config.getString("kind");
   m_humanoidConfig = config.getString("humanoidConfig", "/humanoid.config");
   m_humanoidOverrides = config.getObject("humanoidOverrides", JsonObject());
+  m_buildScripts = jsonToStringList(config.getArray("buildScripts", JsonArray()));
+  m_animationScripts = jsonToStringList(config.getArray("animationScripts", JsonArray()));
 
   Json tooltip = config.get("charCreationTooltip");
 
@@ -167,6 +192,10 @@ List<PersistentStatusEffect> SpeciesDefinition::statusEffects() const {
 
 String SpeciesDefinition::effectDirectives() const {
   return m_effectDirectives;
+}
+
+List<String> SpeciesDefinition::animationScripts() const {
+  return m_animationScripts;
 }
 
 void SpeciesDefinition::generateHumanoid(HumanoidIdentity& identity, int64_t seed) {

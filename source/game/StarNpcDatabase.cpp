@@ -51,6 +51,8 @@ NpcVariant NpcDatabase::generateNpcVariant(
 
   auto config = buildConfig(typeName, overrides);
 
+  variant.description = config.getString("description", "Some funny looking person");
+
   auto levelVariance = jsonToVec2F(config.getArray("levelVariance", {0, 0}));
   variant.level = max(randSource.randf(level + levelVariance[0], level + levelVariance[1]), 0.0f);
 
@@ -59,9 +61,11 @@ NpcVariant NpcDatabase::generateNpcVariant(
   variant.scriptConfig = config.get("scriptConfig");
 
   HumanoidIdentity identity;
-  auto speciesDefinition = Root::singleton().speciesDatabase()->species(species);
+  auto speciesDatabase = Root::singleton().speciesDatabase();
+  auto speciesDefinition = speciesDatabase->species(species);
 
-  if (config.contains("humanoidConfig"))
+  variant.uniqueHumanoidConfig = config.contains("humanoidConfig");
+  if (variant.uniqueHumanoidConfig)
     variant.humanoidConfig = Root::singleton().assets()->json(config.getString("humanoidConfig"));
   else
     variant.humanoidConfig = speciesDefinition->humanoidConfig();
@@ -82,8 +86,9 @@ NpcVariant NpcDatabase::generateNpcVariant(
 
   variant.humanoidIdentity = identity;
 
-  variant.movementParameters =
-      jsonMerge(variant.humanoidConfig.get("movementParameters"), config.get("movementParameters", {}));
+  variant.humanoidParameters = config.getObject("humanoidParameters", JsonObject());
+
+  variant.movementParameters = config.get("movementParameters", {});
   variant.statusControllerSettings = config.get("statusControllerSettings");
 
   auto functionDatabase = Root::singleton().functionDatabase();
@@ -194,20 +199,25 @@ NpcVariant NpcDatabase::readNpcVariant(ByteArray const& data, NetCompatibilityRu
 
   auto config = buildConfig(variant.typeName, variant.overrides);
 
+  variant.description = config.getString("description", "Some funny looking person");
+
   variant.scripts = jsonToStringList(config.get("scripts"));
   variant.scriptConfig = config.get("scriptConfig");
 
   ds.read(variant.initialScriptDelta);
   ds.read(variant.humanoidIdentity);
 
-  auto speciesDefinition = Root::singleton().speciesDatabase()->species(variant.species);
-  if (config.contains("humanoidConfig"))
+  auto speciesDatabase = Root::singleton().speciesDatabase();
+  auto speciesDefinition = speciesDatabase->species(variant.species);
+  variant.uniqueHumanoidConfig = config.contains("humanoidConfig");
+  if (variant.uniqueHumanoidConfig)
     variant.humanoidConfig = Root::singleton().assets()->json(config.getString("humanoidConfig"));
   else
     variant.humanoidConfig = speciesDefinition->humanoidConfig();
 
-  variant.movementParameters =
-      jsonMerge(variant.humanoidConfig.get("movementParameters"), config.get("movementParameters", {}));
+  variant.humanoidParameters = config.getObject("humanoidParameters", JsonObject());
+
+  variant.movementParameters = config.get("movementParameters", {});
   variant.statusControllerSettings = config.get("statusControllerSettings");
 
   auto functionDatabase = Root::singleton().functionDatabase();
@@ -255,7 +265,8 @@ Json NpcDatabase::writeNpcVariantToJson(NpcVariant const& variant) const {
       {"persistent", variant.persistent},
       {"keepAlive", variant.keepAlive},
       {"damageTeam", variant.damageTeam},
-      {"damageTeamType", TeamTypeNames.getRight(variant.damageTeamType)}};
+      {"damageTeamType", TeamTypeNames.getRight(variant.damageTeamType)}
+    };
 }
 
 NpcVariant NpcDatabase::readNpcVariantFromJson(Json const& data) const {
@@ -269,20 +280,25 @@ NpcVariant NpcDatabase::readNpcVariantFromJson(Json const& data) const {
 
   auto config = buildConfig(variant.typeName, variant.overrides);
 
+  variant.description = config.getString("description", "Some funny looking person");
+
   variant.scripts = jsonToStringList(config.get("scripts"));
   variant.scriptConfig = config.get("scriptConfig");
 
   variant.initialScriptDelta = data.getInt("initialScriptDelta");
   variant.humanoidIdentity = HumanoidIdentity(data.get("humanoidIdentity"));
 
-  auto speciesDefinition = Root::singleton().speciesDatabase()->species(variant.species);
-  if (config.contains("humanoidConfig"))
+  auto speciesDatabase = Root::singleton().speciesDatabase();
+  auto speciesDefinition = speciesDatabase->species(variant.species);
+  variant.uniqueHumanoidConfig = config.contains("humanoidConfig");
+  if (variant.uniqueHumanoidConfig)
     variant.humanoidConfig = Root::singleton().assets()->json(config.getString("humanoidConfig"));
   else
     variant.humanoidConfig = speciesDefinition->humanoidConfig();
 
-  variant.movementParameters =
-      jsonMerge(variant.humanoidConfig.get("movementParameters"), config.get("movementParameters", {}));
+  variant.humanoidParameters = config.getObject("humanoidParameters", JsonObject());
+
+  variant.movementParameters = config.get("movementParameters", {});
   variant.statusControllerSettings = config.get("statusControllerSettings", {});
 
   auto functionDatabase = Root::singleton().functionDatabase();

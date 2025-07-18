@@ -4,6 +4,8 @@
 #include "StarItemDescriptor.hpp"
 #include "StarHumanoid.hpp"
 #include "StarStatusTypes.hpp"
+#include "StarLuaRoot.hpp"
+#include "StarTtlCache.hpp"
 
 namespace Star {
 
@@ -66,6 +68,7 @@ public:
   String skull() const;
   List<PersistentStatusEffect> statusEffects() const;
   String effectDirectives() const;
+  List<String> animationScripts() const;
 
   SpeciesCharCreationTooltip const& tooltip() const;
 
@@ -89,6 +92,9 @@ private:
   List<PersistentStatusEffect> m_statusEffects;
   String m_effectDirectives;
 
+  List<String> m_buildScripts;
+  List<String> m_animationScripts;
+
   friend class SpeciesDatabase;
 };
 
@@ -99,8 +105,13 @@ public:
   SpeciesDefinitionPtr species(String const& kind) const;
   StringMap<SpeciesDefinitionPtr> allSpecies() const;
 
+  Json humanoidConfig(HumanoidIdentity identity, JsonObject parameters = JsonObject(), Json config = Json()) const;
+
 private:
   StringMap<SpeciesDefinitionPtr> m_species;
+
+  mutable RecursiveMutex m_luaMutex;
+  LuaRootPtr m_luaRoot;
 };
 
 }
