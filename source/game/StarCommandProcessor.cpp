@@ -336,12 +336,12 @@ String CommandProcessor::spawnItem(ConnectionId connectionId, String const& argu
   try {
     String kind = arguments.at(0);
     Json parameters = JsonObject();
-    unsigned amount = 1;
+    uint64_t amount = 1;
     Maybe<float> level;
     Maybe<uint64_t> seed;
 
     if (arguments.size() >= 2)
-      amount = lexicalCast<unsigned>(arguments.at(1));
+      amount = lexicalCast<uint64_t>(arguments.at(1));
 
     if (arguments.size() >= 3)
       parameters = Json::parse(arguments.at(2));
