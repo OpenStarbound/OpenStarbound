@@ -552,10 +552,10 @@ const DirectivesGroup& StatusController::parentDirectives() const {
   return m_parentDirectives.get();
 }
 
-List<Drawable> StatusController::drawables() const {
+List<Drawable> StatusController::drawables(Vec2F position) const {
   List<Drawable> drawables;
   for (auto const& animator : m_effectAnimators.netElements())
-    drawables.appendAll(animator->animator.drawables(m_movementController->position()));
+    drawables.appendAll(animator->animator.drawables(position));
   return drawables;
 }
 

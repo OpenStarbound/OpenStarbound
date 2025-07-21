@@ -377,11 +377,13 @@ void Player::uninit() {
   Entity::uninit();
 }
 
-List<Drawable> Player::drawables() const {
+List<Drawable> Player::drawables(Vec2F position) {
   List<Drawable> drawables;
 
   if (!isTeleporting()) {
-    drawables.appendAll(m_techController->backDrawables());
+    drawables.appendAll(m_techController->backDrawables(position));
+    auto anchor = as<LoungeAnchor>(m_movementController->entityAnchor());
+
     if (!m_techController->parentHidden()) {
       m_tools->setupHumanoidHandItemDrawables(*m_humanoid);
 
@@ -400,11 +402,11 @@ List<Drawable> Player::drawables() const {
       m_humanoid->setScale(scale);
 
       for (auto& drawable : m_humanoid->render()) {
-        drawable.translate(position() + m_techController->parentOffset());
+        drawable.translate(position + m_techController->parentOffset());
         if (drawable.isImage()) {
           drawable.imagePart().addDirectivesGroup(humanoidDirectives, true);
 
-          if (auto anchor = as<LoungeAnchor>(m_movementController->entityAnchor())) {
+          if (anchor) {
             if (auto& directives = anchor->directives)
               drawable.imagePart().addDirectives(*directives, true);
           }
@@ -412,14 +414,13 @@ List<Drawable> Player::drawables() const {
         drawables.append(std::move(drawable));
       }
     }
-    drawables.appendAll(m_techController->frontDrawables());
 
-    drawables.appendAll(m_statusController->drawables());
+    drawables.appendAll(m_techController->frontDrawables(position));
 
-    drawables.appendAll(m_tools->renderObjectPreviews(aimPosition(), walkingDirection(), inToolRange(), favoriteColor()));
+    drawables.appendAll(m_statusController->drawables(position));
   }
 
-  drawables.appendAll(m_effectsAnimator->drawables(position()));
+  drawables.appendAll(m_effectsAnimator->drawables(position));
 
   return drawables;
 }
@@ -1035,13 +1036,13 @@ void Player::update(float dt, uint64_t) {
 
   m_tools->suppressItems(suppressedItems);
   m_tools->tick(dt, m_shifting, m_pendingMoves);
-  
+
   Direction facingDirection = m_movementController->facingDirection();
 
   auto overrideFacingDirection = m_tools->setupHumanoidHandItems(*m_humanoid, position(), aimPosition());
   if (overrideFacingDirection)
     m_movementController->controlFace(facingDirection = *overrideFacingDirection);
-  
+
   m_humanoid->setFacingDirection(facingDirection);
   m_humanoid->setMovingBackwards(facingDirection != m_movementController->movingDirection());
 
@@ -1167,9 +1168,16 @@ void Player::render(RenderCallback* renderCallback) {
   m_footstepPending = false;
   m_landingNoisePending = false;
 
-  renderCallback->addAudios(m_effectsAnimatorDynamicTarget.pullNewAudios());
-  renderCallback->addParticles(m_effectsAnimatorDynamicTarget.pullNewParticles());
+  auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor());
+  if (loungeAnchor && loungeAnchor->hidden) {
+    m_effectsAnimatorDynamicTarget.pullNewParticles();
+    particles();
+  } else {
+    renderCallback->addParticles(m_effectsAnimatorDynamicTarget.pullNewParticles());
+    renderCallback->addParticles(particles());
+  }
 
+  renderCallback->addAudios(m_effectsAnimatorDynamicTarget.pullNewAudios());
   renderCallback->addAudios(m_techController->pullNewAudios());
   renderCallback->addAudios(m_statusController->pullNewAudios());
 
@@ -1181,13 +1189,15 @@ void Player::render(RenderCallback* renderCallback) {
     renderCallback->addAudio(std::move(audio));
   }
 
-  auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor());
   EntityRenderLayer renderLayer = loungeAnchor ? loungeAnchor->loungeRenderLayer : RenderLayerPlayer;
 
-  renderCallback->addDrawables(drawables(), renderLayer);
+  if (!loungeAnchor ||(!loungeAnchor->usePartZLevel && !loungeAnchor->hidden) ) {
+    renderCallback->addDrawables(drawables(position()), renderLayer);
+  }
+  renderCallback->addDrawables(m_tools->renderObjectPreviews(aimPosition(), walkingDirection(), inToolRange(), favoriteColor()), renderLayer);
+
   if (!isTeleporting())
     renderCallback->addOverheadBars(bars(), position());
-  renderCallback->addParticles(particles());
 
   m_tools->render(renderCallback, inToolRange(), m_shifting, renderLayer);
 

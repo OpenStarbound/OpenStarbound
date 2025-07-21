@@ -277,6 +277,10 @@ List<DamageNotification> Monster::selfDamageNotifications() {
 }
 
 List<DamageSource> Monster::damageSources() const {
+  auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor());
+  if (loungeAnchor && loungeAnchor->suppressTools) {
+    return List<DamageSource>();
+  }
   List<DamageSource> damageSources = m_damageSources.get();
 
   float levelPowerMultiplier = Root::singleton().functionDatabase()->function(m_monsterVariant.powerLevelFunction)->evaluate(*m_monsterLevel);
@@ -460,6 +464,15 @@ void Monster::update(float dt, uint64_t) {
       if (shouldDie())
         knockout();
     }
+    if (inConflictingLoungeAnchor())
+      m_movementController->resetAnchorState();
+
+    if (auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor())) {
+      m_statusController->setPersistentEffects("lounging", loungeAnchor->statusEffects);
+      m_effectEmitter.addEffectSources("normal", loungeAnchor->effectEmitters);
+    } else {
+      m_statusController->setPersistentEffects("lounging", {});
+    }
 
     m_movementController->tickMaster(dt);
 
@@ -487,25 +500,51 @@ void Monster::update(float dt, uint64_t) {
 }
 
 void Monster::render(RenderCallback* renderCallback) {
-  for (auto& drawable : m_networkedAnimator.drawables(position())) {
-    if (drawable.isImage())
-      drawable.imagePart().addDirectivesGroup(m_statusController->parentDirectives(), true);
-    renderCallback->addDrawable(std::move(drawable), m_monsterVariant.renderLayer);
+  EntityRenderLayer renderLayer = m_monsterVariant.renderLayer;
+  auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor());
+  if (loungeAnchor)
+    renderLayer = loungeAnchor->loungeRenderLayer;
+
+  if (!loungeAnchor ||(!loungeAnchor->usePartZLevel && !loungeAnchor->hidden) ) {
+    renderCallback->addDrawables(drawables(position()), renderLayer);
+  }
+  if (loungeAnchor && loungeAnchor->hidden) {
+    m_networkedAnimatorDynamicTarget.pullNewParticles();
+    m_statusController->pullNewParticles();
+    m_scriptedAnimator.pullNewParticles();
+  } else {
+    renderCallback->addParticles(m_networkedAnimatorDynamicTarget.pullNewParticles());
+    renderCallback->addParticles(m_statusController->pullNewParticles());
+    renderCallback->addParticles(m_scriptedAnimator.pullNewParticles());
   }
 
   renderCallback->addAudios(m_networkedAnimatorDynamicTarget.pullNewAudios());
-  renderCallback->addParticles(m_networkedAnimatorDynamicTarget.pullNewParticles());
-
-  renderCallback->addDrawables(m_statusController->drawables(), m_monsterVariant.renderLayer);
-  renderCallback->addParticles(m_statusController->pullNewParticles());
   renderCallback->addAudios(m_statusController->pullNewAudios());
 
   m_effectEmitter.render(renderCallback);
 
   for (auto drawablePair : m_scriptedAnimator.drawables())
-    renderCallback->addDrawable(drawablePair.first, drawablePair.second.value(m_monsterVariant.renderLayer));
+    renderCallback->addDrawable(drawablePair.first, drawablePair.second.value(renderLayer));
   renderCallback->addAudios(m_scriptedAnimator.pullNewAudios());
-  renderCallback->addParticles(m_scriptedAnimator.pullNewParticles());
+}
+
+List<Drawable> Monster::drawables(Vec2F position) {
+  List<Drawable> drawables;
+  auto anchor = as<LoungeAnchor>(m_movementController->entityAnchor());
+
+  for (auto& drawable : m_networkedAnimator.drawables(position)) {
+    if (drawable.isImage()) {
+      drawable.imagePart().addDirectivesGroup(m_statusController->parentDirectives(), true);
+      if (anchor) {
+        if (auto& directives = anchor->directives)
+          drawable.imagePart().addDirectives(*directives, true);
+      }
+    }
+    drawables.append(std::move(drawable));
+  }
+  drawables.appendAll(m_statusController->drawables(position));
+
+  return drawables;
 }
 
 void Monster::renderLightSources(RenderCallback* renderCallback) {
@@ -672,6 +711,30 @@ LuaCallbacks Monster::makeMonsterCallbacks() {
 
   callbacks.registerCallback("setAnimationParameter", [this](String name, Json value) {
       m_scriptedAnimationParameters.set(std::move(name), std::move(value));
+    });
+
+  callbacks.registerCallback("setLounging", [this](EntityId loungeableEntityId, Maybe<size_t> maybeAnchorIndex) {
+      size_t anchorIndex = maybeAnchorIndex.value(0);
+      auto loungeableEntity = world()->get<LoungeableEntity>(loungeableEntityId);
+      if (!loungeableEntity || anchorIndex >= loungeableEntity->anchorCount()
+          || !loungeableEntity->entitiesLoungingIn(anchorIndex).empty()
+          || !loungeableEntity->loungeAnchor(anchorIndex))
+        return false;
+
+      m_movementController->setAnchorState({loungeableEntityId, anchorIndex});
+      return true;
+    });
+
+  callbacks.registerCallback("resetLounging", [this]() { m_movementController->resetAnchorState(); });
+
+  callbacks.registerCallback("isLounging", [this]() { return is<LoungeAnchor>(m_movementController->entityAnchor()); });
+
+  callbacks.registerCallback("loungingIn", [this]() -> Maybe<EntityId> {
+      auto loungingState = loungingIn();
+      if (loungingState)
+        return loungingState.value().entityId;
+      else
+        return {};
     });
 
   return callbacks;
@@ -847,6 +910,10 @@ List<ChatAction> Monster::pullPendingChatActions() {
 }
 
 List<PhysicsForceRegion> Monster::forceRegions() const {
+  auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor());
+  if (loungeAnchor && loungeAnchor->suppressTools) {
+    return List<PhysicsForceRegion>();
+  }
   return m_physicsForces.get();
 }
 
@@ -870,6 +937,12 @@ Vec2F Monster::questIndicatorPosition() const {
   Vec2F pos = position() + m_questIndicatorOffset;
   pos[1] += collisionArea().yMax();
   return pos;
+}
+
+Maybe<EntityAnchorState> Monster::loungingIn() const {
+  if (is<LoungeAnchor>(m_movementController->entityAnchor()))
+    return m_movementController->anchorState();
+  return {};
 }
 
 }

@@ -899,6 +899,9 @@ bool Object::biomePlaced() const {
 NetworkedAnimator const* Object::networkedAnimator() const {
   return m_networkedAnimator.get();
 }
+NetworkedAnimator * Object::networkedAnimator()  {
+  return m_networkedAnimator.get();
+}
 
 LuaCallbacks Object::makeObjectCallbacks() {
   LuaCallbacks callbacks;

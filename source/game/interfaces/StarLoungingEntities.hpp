@@ -36,6 +36,8 @@ struct LoungeAnchor : EntityAnchor {
   Maybe<String> cursorOverride;
   Maybe<bool> suppressTools;
   bool cameraFocus;
+  bool usePartZLevel = false;
+  bool hidden = false;
 };
 
 // Extends an AnchorableEntity to have more specific effects when anchoring,
@@ -67,8 +69,11 @@ public:
   Maybe<size_t> loungeInteract(InteractRequest const& request);
   LuaCallbacks addLoungeableCallbacks(LuaCallbacks callbacks);
 
+  virtual void setupLoungingDrawables();
+
   virtual EntityRenderLayer loungeRenderLayer(size_t anchorPositionIndex) const = 0;
   virtual NetworkedAnimator const* networkedAnimator() const = 0;
+  virtual NetworkedAnimator * networkedAnimator() = 0;
 
   struct MasterControlState {
     Set<ConnectionId> slavesHeld;
@@ -88,6 +93,7 @@ public:
     Maybe<String> cursorOverride;
     Maybe<bool> suppressTools;
     bool cameraFocus;
+    bool usePartZLevel;
 
     NetElementBool enabled;
     NetElementEnum<LoungeOrientation> orientation;
@@ -95,6 +101,7 @@ public:
     NetElementData<Maybe<String>> dance;
     NetElementData<Maybe<String>> directives;
     NetElementData<List<PersistentStatusEffect>> statusEffects;
+    NetElementBool hidden;
 
     Map<LoungeControl, MasterControlState> masterControlState;
     Vec2F masterAimPosition;
@@ -122,6 +129,8 @@ private:
 // in the same spot.
 class LoungingEntity : public virtual Entity {
 public:
+  virtual List<Drawable> drawables(Vec2F position = Vec2F()) = 0;
+
   virtual Maybe<EntityAnchorState> loungingIn() const = 0;
   // Returns true if the entity is in a lounge achor, but other entities are
   // also reporting being in that lounge anchor.

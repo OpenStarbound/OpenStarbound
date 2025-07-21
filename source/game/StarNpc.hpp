@@ -95,6 +95,7 @@ public:
   void update(float dt, uint64_t currentVersion) override;
 
   void render(RenderCallback* renderCallback) override;
+  List<Drawable> drawables(Vec2F position = Vec2F()) override;
 
   void renderLightSources(RenderCallback* renderCallback) override;
 

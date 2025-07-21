@@ -269,6 +269,7 @@ void Vehicle::update(float dt, uint64_t) {
 }
 
 void Vehicle::render(RenderCallback* renderer) {
+  setupLoungingDrawables();
   for (auto& drawable : m_networkedAnimator.drawablesWithZLevel(position())) {
     if (drawable.second < 0.0f)
       renderer->addDrawable(std::move(drawable.first), renderLayer(VehicleLayer::Back));
@@ -424,6 +425,9 @@ EntityRenderLayer Vehicle::loungeRenderLayer(size_t anchorPositionIndex) const {
 }
 
 NetworkedAnimator const* Vehicle::networkedAnimator() const {
+  return &m_networkedAnimator;
+}
+NetworkedAnimator * Vehicle::networkedAnimator()  {
   return &m_networkedAnimator;
 }
 

@@ -480,10 +480,35 @@ void Npc::update(float dt, uint64_t) {
 
 void Npc::render(RenderCallback* renderCallback) {
   EntityRenderLayer renderLayer = RenderLayerNpc;
-  if (auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor()))
+  auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor());
+  if (loungeAnchor)
     renderLayer = loungeAnchor->loungeRenderLayer;
 
+  if (!loungeAnchor ||(!loungeAnchor->usePartZLevel && !loungeAnchor->hidden) ) {
+    renderCallback->addDrawables(drawables(position()), renderLayer);
+  }
+  renderCallback->addDrawables(m_tools->renderObjectPreviews(aimPosition(), walkingDirection(), inToolRange(), favoriteColor()), renderLayer);
+
+  if (loungeAnchor && loungeAnchor->hidden) {
+    m_statusController->pullNewParticles();
+    m_npcVariant.splashConfig.doSplash(position(), m_movementController->velocity(), world());
+  } else {
+    renderCallback->addParticles(m_statusController->pullNewParticles());
+    renderCallback->addParticles(m_npcVariant.splashConfig.doSplash(position(), m_movementController->velocity(), world()));
+  }
+
+  renderCallback->addAudios(m_statusController->pullNewAudios());
+
+  m_tools->render(renderCallback, inToolRange(), m_shifting.get(), renderLayer);
+
+  m_effectEmitter->render(renderCallback);
+  m_songbook->render(renderCallback);
+}
+
+List<Drawable> Npc::drawables(Vec2F position) {
+  List<Drawable> drawables;
   m_tools->setupHumanoidHandItemDrawables(m_humanoid);
+  auto anchor = as<LoungeAnchor>(m_movementController->entityAnchor());
 
   DirectivesGroup humanoidDirectives;
   Vec2F scale = Vec2F::filled(1.f);
@@ -495,24 +520,21 @@ void Npc::render(RenderCallback* renderCallback) {
   m_humanoid.setScale(scale);
 
   for (auto& drawable : m_humanoid.render()) {
-    drawable.translate(position());
-    if (drawable.isImage())
+    drawable.translate(position);
+    if (drawable.isImage()) {
       drawable.imagePart().addDirectivesGroup(humanoidDirectives, true);
-    renderCallback->addDrawable(std::move(drawable), renderLayer);
+
+      if (anchor) {
+        if (auto& directives = anchor->directives)
+          drawable.imagePart().addDirectives(*directives, true);
+      }
+    }
+    drawables.append(std::move(drawable));
   }
 
-  renderCallback->addDrawables(m_statusController->drawables(), renderLayer);
-  renderCallback->addParticles(m_statusController->pullNewParticles());
-  renderCallback->addAudios(m_statusController->pullNewAudios());
+  drawables.appendAll(m_statusController->drawables(position));
 
-  renderCallback->addParticles(m_npcVariant.splashConfig.doSplash(position(), m_movementController->velocity(), world()));
-
-  m_tools->render(renderCallback, inToolRange(), m_shifting.get(), renderLayer);
-
-  renderCallback->addDrawables(m_tools->renderObjectPreviews(aimPosition(), walkingDirection(), inToolRange(), favoriteColor()), renderLayer);
-
-  m_effectEmitter->render(renderCallback);
-  m_songbook->render(renderCallback);
+  return drawables;
 }
 
 void Npc::renderLightSources(RenderCallback* renderCallback) {
@@ -1109,8 +1131,9 @@ void Npc::playEmote(HumanoidEmote emote) {
 
 List<DamageSource> Npc::damageSources() const {
   auto damageSources = m_tools->damageSources();
+  auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor());
 
-  if (m_damageOnTouch.get() && !m_npcVariant.touchDamageConfig.isNull()) {
+  if (m_damageOnTouch.get() && !m_npcVariant.touchDamageConfig.isNull() && !(loungeAnchor && loungeAnchor->suppressTools)) {
     Json config = m_npcVariant.touchDamageConfig;
     if (!config.contains("poly") && !config.contains("line")) {
       config = config.set("poly", jsonFromPolyF(m_movementController->collisionPoly()));

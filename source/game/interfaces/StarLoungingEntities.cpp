@@ -58,6 +58,8 @@ LoungeAnchorConstPtr LoungeableEntity::loungeAnchor(size_t positionIndex) const 
   loungePosition->cursorOverride = positionConfig.cursorOverride;
   loungePosition->cameraFocus = positionConfig.cameraFocus;
   loungePosition->suppressTools = positionConfig.suppressTools;
+  loungePosition->usePartZLevel = positionConfig.usePartZLevel;
+  loungePosition->hidden = positionConfig.hidden.get();
   return loungePosition;
 }
 
@@ -207,13 +209,12 @@ Maybe<Json> LoungeableEntity::receiveLoungeMessage(ConnectionId connectionId, St
 Maybe<size_t> LoungeableEntity::loungeInteract(InteractRequest const& request){
   Maybe<size_t> index;
   for (size_t i = 0; i < loungePositions()->size(); ++i) {
+    auto const& thisLounge = loungePositions()->valueAt(i);
+    if (!thisLounge.enabled.get())
+      continue;
     if (!index) {
       index = i;
     } else {
-      auto const& thisLounge = loungePositions()->valueAt(i);
-      if (!thisLounge.enabled.get())
-        continue;
-
       Vec2F thisLoungePosition = *networkedAnimator()->partPoint(thisLounge.part, thisLounge.partAnchor) + position();
 
       auto const& selectedLounge = loungePositions()->valueAt(*index);
@@ -279,8 +280,37 @@ LuaCallbacks LoungeableEntity::addLoungeableCallbacks(LuaCallbacks callbacks){
   callbacks.registerCallback("setLoungeStatusEffects", [this](String const& name, JsonArray const& statusEffects) {
       loungePositions()->get(name).statusEffects.set(statusEffects.transformed(jsonToPersistentStatusEffect));
     });
+  callbacks.registerCallback("setLoungeHidden", [this](String const& name, bool hidden) {
+      loungePositions()->get(name).hidden.set(hidden);
+    });
+  callbacks.registerCallback("getLoungeIndex", [this](String const& name) -> Maybe<int> {
+      return loungePositions()->indexOf(name);
+    });
+  callbacks.registerCallback("getLoungeName", [this](int const& index) -> Maybe<String> {
+      return loungePositions()->keyAt(index);
+    });
 
   return callbacks;
+}
+
+void LoungeableEntity::setupLoungingDrawables() {
+  for (size_t i = 0; i < loungePositions()->size(); ++i) {
+    auto const& thisLounge = loungePositions()->valueAt(i);
+    if (thisLounge.usePartZLevel && !thisLounge.hidden.get()) {
+      // TODO: clear part's local drawables here once animator improvements merge
+    }
+  }
+  for (size_t i = 0; i < loungePositions()->size(); ++i) {
+    auto const& thisLounge = loungePositions()->valueAt(i);
+    if (thisLounge.usePartZLevel && !thisLounge.hidden.get()) {
+      for (auto id : entitiesLoungingIn(i)) {
+        if (auto entity = world()->get<LoungingEntity>(id)) {
+          entity->drawables();
+          // TODO: add drawables to part's local drawables here once animator improvements merge
+        }
+      }
+    }
+  }
 }
 
 bool LoungingEntity::inConflictingLoungeAnchor() const {
@@ -308,6 +338,8 @@ LoungeableEntity::LoungePositionConfig::LoungePositionConfig(Json config){
   directives.set(config.optString("directives"));
   statusEffects.set(config.getArray("statusEffects", {}).transformed(jsonToPersistentStatusEffect));
   suppressTools = config.optBool("suppressTools");
+  usePartZLevel = config.getBool("usePartZLevel", false);
+  hidden.set(config.getBool("hidden", false));
 }
 
 void LoungeableEntity::LoungePositionConfig::setupNetStates(NetElementTopGroup * netGroup, uint8_t minimumVersion){
@@ -323,6 +355,7 @@ void LoungeableEntity::LoungePositionConfig::setupNetStates(NetElementTopGroup *
   netGroup->addNetElement(&directives);
   statusEffects.setCompatibilityVersion(minimumVersion);
   netGroup->addNetElement(&statusEffects);
+  hidden.setCompatibilityVersion(max<uint8_t>(minimumVersion, 10));
+  netGroup->addNetElement(&hidden);
 }
-
 }

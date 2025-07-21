@@ -150,6 +150,7 @@ public:
   bool biomePlaced() const;
 
   virtual NetworkedAnimator const* networkedAnimator() const;
+  virtual NetworkedAnimator * networkedAnimator();
 
   using Entity::setUniqueId;
 

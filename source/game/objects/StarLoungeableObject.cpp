@@ -21,6 +21,7 @@ LoungeableObject::LoungeableObject(ObjectConfigConstPtr config, Json const& para
 }
 
 void LoungeableObject::render(RenderCallback* renderCallback) {
+  setupLoungingDrawables();
   Object::render(renderCallback);
 
   if (!m_sitCoverImage.empty()) {
@@ -97,7 +98,6 @@ LoungeAnchorConstPtr LoungeableObject::loungeAnchor(size_t positionIndex) const 
   loungeAnchor->dance = m_sitDance;
   loungeAnchor->armorCosmeticOverrides = m_sitArmorCosmeticOverrides;
   loungeAnchor->cursorOverride = m_sitCursorOverride;
-
   return loungeAnchor;
 }
 
@@ -136,6 +136,9 @@ EntityRenderLayer LoungeableObject::loungeRenderLayer(size_t anchorPositionIndex
 }
 
 NetworkedAnimator const* LoungeableObject::networkedAnimator() const {
+  return Object::networkedAnimator();
+}
+NetworkedAnimator * LoungeableObject::networkedAnimator()  {
   return Object::networkedAnimator();
 }
 

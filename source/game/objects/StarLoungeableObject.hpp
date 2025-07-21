@@ -25,6 +25,7 @@ public:
 
   virtual EntityRenderLayer loungeRenderLayer(size_t anchorPositionIndex) const override;
   virtual NetworkedAnimator const* networkedAnimator() const override;
+  virtual NetworkedAnimator * networkedAnimator() override;
 
   virtual Maybe<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args = {}) override;
 
