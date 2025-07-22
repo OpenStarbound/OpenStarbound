@@ -117,9 +117,9 @@ SpeciesDefinition::SpeciesDefinition(Json const& config) {
   species.hairColorAsBodySubColor = config.getBool("hairColorAsBodySubColor", false);
   species.bodyColorAsFacialMaskSubColor = config.getBool("bodyColorAsFacialMaskSubColor", false);
   species.altColorAsFacialMaskSubColor = config.getBool("altColorAsFacialMaskSubColor", false);
-  species.bodyColorDirectives = colorDirectivesFromConfig(config.getArray("bodyColor"));
-  species.undyColorDirectives = colorDirectivesFromConfig(config.getArray("undyColor"));
-  species.hairColorDirectives = colorDirectivesFromConfig(config.getArray("hairColor"));
+  species.bodyColorDirectives = colorDirectivesFromConfig(config.getArray("bodyColor", JsonArray({""})));
+  species.undyColorDirectives = colorDirectivesFromConfig(config.getArray("undyColor", JsonArray({""})));
+  species.hairColorDirectives = colorDirectivesFromConfig(config.getArray("hairColor", JsonArray({""})));
   for (auto genderData : config.getArray("genders", JsonArray())) {
     SpeciesGenderOption gender;
     gender.name = genderData.getString("name", "");
@@ -127,14 +127,14 @@ SpeciesDefinition::SpeciesDefinition(Json const& config) {
     gender.image = genderData.getString("image", "");
     gender.characterImage = genderData.getString("characterImage", "");
 
-    gender.hairOptions = jsonToStringList(genderData.get("hair"));
-    gender.hairGroup = genderData.getString("hairGroup", "hair");
-    gender.shirtOptions = jsonToStringList(genderData.get("shirt"));
-    gender.pantsOptions = jsonToStringList(genderData.get("pants"));
-    gender.facialHairGroup = genderData.getString("facialHairGroup");
-    gender.facialHairOptions = jsonToStringList(genderData.get("facialHair"));
-    gender.facialMaskGroup = genderData.getString("facialMaskGroup");
-    gender.facialMaskOptions = jsonToStringList(genderData.get("facialMask"));
+    gender.hairOptions = jsonToStringList(genderData.get("hair", config.get("hair", JsonArray({""}))));
+    gender.hairGroup = genderData.getString("hairGroup", config.getString("HairGroup", "hair"));
+    gender.shirtOptions = jsonToStringList(genderData.get("shirt", config.get("shirt", JsonArray({""}))));
+    gender.pantsOptions = jsonToStringList(genderData.get("pants", config.get("pants", JsonArray({""}))));
+    gender.facialHairGroup = genderData.getString("facialHairGroup", config.getString("facialHairGroup", ""));
+    gender.facialHairOptions = jsonToStringList(genderData.get("facialHair", config.get("facialHair", JsonArray({""}))));
+    gender.facialMaskGroup = genderData.getString("facialMaskGroup", config.getString("facialMaskGroup",""));
+    gender.facialMaskOptions = jsonToStringList(genderData.get("facialMask", config.get("facialMask", JsonArray({""}))));
 
     species.genderOptions.append(gender);
   }
