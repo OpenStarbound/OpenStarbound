@@ -676,6 +676,7 @@ LuaCallbacks Npc::makeNpcCallbacks() {
   callbacks.registerCallback("setHumanoidParameters", [this](JsonObject parameters) { setHumanoidParameters(parameters); });
   callbacks.registerCallback("getHumanoidParameters", [this]() -> JsonObject { return getHumanoidParameters(); });
   callbacks.registerCallback("refreshHumanoidParameters", [this]() { refreshHumanoidParameters(); });
+  callbacks.registerCallback("humanoidConfig", [this](bool withOverrides) -> Json { return humanoid()->humanoidConfig(withOverrides); });
 
   callbacks.registerCallback(   "bodyDirectives", [this]()   { return identity().bodyDirectives;      });
   callbacks.registerCallback("setBodyDirectives", [this](String const& str) { setBodyDirectives(str); });
