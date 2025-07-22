@@ -315,6 +315,8 @@ public:
   NetworkedAnimator const* networkedAnimator() const;
   NetworkedAnimator::DynamicTarget * networkedAnimatorDynamicTarget();
 
+  Json humanoidConfig(bool withOverrides = true);
+
   // Extracts scalenearest from directives and returns the combined scale and
   // a new Directives without those scalenearest directives.
   static pair<Vec2F, Directives> extractScaleFromDirectives(Directives const& directives);

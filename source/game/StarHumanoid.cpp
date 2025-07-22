@@ -2257,6 +2257,12 @@ NetworkedAnimator::DynamicTarget * Humanoid::networkedAnimatorDynamicTarget() {
   return &m_networkedAnimatorDynamicTarget;
 }
 
+Json Humanoid::humanoidConfig(bool withOverrides) {
+  if (withOverrides)
+    jsonMerge(m_baseConfig, m_mergeConfig)
+  return m_baseConfig;
+}
+
 void NetHumanoid::initNetVersion(NetElementVersion const* version) {
   m_humanoid->networkedAnimator()->initNetVersion(version);
 }
