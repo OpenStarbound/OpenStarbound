@@ -141,6 +141,10 @@ SpeciesDefinition::SpeciesDefinition(Json const& config) {
   m_options = species;
 }
 
+Json SpeciesDefinition::config() const {
+  return m_config;
+}
+
 String SpeciesDefinition::kind() const {
   return m_kind;
 }
@@ -198,11 +202,15 @@ List<String> SpeciesDefinition::animationScripts() const {
   return m_animationScripts;
 }
 
-void SpeciesDefinition::generateHumanoid(HumanoidIdentity& identity, int64_t seed) {
+void SpeciesDefinition::generateHumanoid(HumanoidIdentity& identity, int64_t seed, Maybe<Gender> genderOverride) {
   RandomSource randSource(seed);
 
   identity.species = m_kind;
-  identity.gender = randSource.randb() ? Gender::Male : Gender::Female;
+  if (genderOverride.isValid())
+    identity.gender = genderOverride.value();
+  else
+    identity.gender = randSource.randb() ? Gender::Male : Gender::Female;
+
   identity.name = Root::singleton().nameGenerator()->generateName(nameGen(identity.gender), randSource);
 
   auto gender = m_options.genderOptions[(unsigned)identity.gender];

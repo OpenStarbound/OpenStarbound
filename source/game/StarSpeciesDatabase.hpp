@@ -55,6 +55,7 @@ class SpeciesDefinition {
 public:
   SpeciesDefinition(Json const& config);
 
+  Json config() const;
   String kind() const;
   bool playerSelectable() const;
   SpeciesOption const& options() const;
@@ -72,7 +73,7 @@ public:
 
   SpeciesCharCreationTooltip const& tooltip() const;
 
-  void generateHumanoid(HumanoidIdentity& identity, int64_t seed);
+  void generateHumanoid(HumanoidIdentity& identity, int64_t seed, Maybe<Gender> = {});
 
 private:
   String m_kind;
