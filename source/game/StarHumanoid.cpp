@@ -2259,7 +2259,7 @@ NetworkedAnimator::DynamicTarget * Humanoid::networkedAnimatorDynamicTarget() {
 
 Json Humanoid::humanoidConfig(bool withOverrides) {
   if (withOverrides)
-    jsonMerge(m_baseConfig, m_mergeConfig)
+    return jsonMerge(m_baseConfig, m_mergeConfig)
   return m_baseConfig;
 }
 
