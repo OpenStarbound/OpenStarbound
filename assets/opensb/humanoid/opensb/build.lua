@@ -157,7 +157,8 @@ function build(identity, humanoidParameters, humanoidConfig, npcHumanoidConfig)
 
 	-- there are 20 cosmetic slots and we need to support any cosmetic being in any slot, and these should all be the same aside from zlevel, so just generate that
 	for i = 1, 20 do
-		local cosmeticParts = root.assetJson("/humanoid/opensb/humanoidCosmetics.config")
+		local cosmeticParts = sb.parseJson(sb.printJson(root.assetJson(humanoidConfig.cosmeticParts or
+			"/humanoid/opensb/humanoidCosmetics.config")):gsub("%<slot%>", tostring(i)))
 		for partName, part in pairs(cosmeticParts) do
 			fixSlotProperties(part.properties, i)
 			fixSlotFrameProperties(part.frameProperties, i)
@@ -169,7 +170,7 @@ function build(identity, humanoidParameters, humanoidConfig, npcHumanoidConfig)
 					end
 				end
 			end
-			parts[partName:gsub("<slot>", tostring(i))] = part
+			parts[partName] = part
 		end
 		humanoidConfig.animation.globalTagDefaults["headCosmetic" .. tostring(i) .. "Frameset"] = ""
 		humanoidConfig.animation.globalTagDefaults["headCosmetic" .. tostring(i) .. "Directives"] = ""
@@ -235,27 +236,6 @@ function fixSlotProperties(properties, slot)
 	if properties.flippedZLevelSlot then
 		properties.flippedZLevel = properties.flippedZLevelSlot[slot]
 	end
-	if properties.image then
-		properties.image = string.gsub(properties.image, "%<slot%>", tostring(slot))
-	end
-	if properties.processingDirectives then
-		properties.processingDirectives = string.gsub(properties.processingDirectives, "%<slot%>", tostring(slot))
-	end
-	if properties.transformationGroups then
-		for j, v in ipairs(properties.transformationGroups) do
-			properties.transformationGroups[j] = string.gsub(v, "%<slot%>", tostring(slot))
-		end
-	end
-	for k, v in pairs(properties) do
-		if type(v) == "string" then
-			v = v:gsub("%<slot%>", tostring(slot))
-			properties[k] = v
-		end
-		if k:find("%<slot%>") then
-			properties[k] = nil
-			properties[k:gsub("%<slot%>", tostring(slot))] = v
-		end
-	end
 end
 
 function fixSlotFrameProperties(frameProperties, slot)
@@ -278,30 +258,6 @@ function fixSlotFrameProperties(frameProperties, slot)
 	if frameProperties.flippedZLevelSlot then
 		for i, v in ipairs(frameProperties.flippedZLevelSlot) do
 			frameProperties.flippedZLevel[i] = v[slot]
-		end
-	end
-
-	if frameProperties.image then
-		for i, v in ipairs(frameProperties.image) do
-			frameProperties.image[i] = string.gsub(v, "%<slot%>", tostring(slot))
-		end
-	end
-	if frameProperties.processingDirectives then
-		for i, v in ipairs(frameProperties.processingDirectives) do
-			frameProperties.processingDirectives[i] = string.gsub(v, "%<slot%>", tostring(slot))
-		end
-	end
-	if frameProperties.transformationGroups then
-		for i, v in ipairs(frameProperties.transformationGroups) do
-			for j, v in ipairs(v) do
-				frameProperties.transformationGroups[i][j] = string.gsub(v, "%<slot%>", tostring(slot))
-			end
-		end
-	end
-	for k, v in pairs(frameProperties) do
-		if k:find("%<slot%>") then
-			frameProperties[k] = nil
-			frameProperties[k:gsub("%<slot%>", tostring(slot))] = v
 		end
 	end
 end
