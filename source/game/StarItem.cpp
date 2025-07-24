@@ -32,7 +32,7 @@ Item::Item(Json config, String directory, Json parameters) {
     auto image = AssetPath::relativeTo(m_directory, inventoryIcon.toString());
     setIconDrawables({Drawable::makeImage(image, 1.0f, true, Vec2F())});
   }
-  auto secondaryIcon = instanceValue("secondaryIcon", Root::singleton().assets()->json("/items/defaultParameters.config:missingIcon"));
+  auto secondaryIcon = instanceValue("secondaryIcon", Json());
   if (secondaryIcon.type() == Json::Type::Array) {
     setSecondaryIconDrawables(secondaryIcon.toArray().transformed([&](Json config) -> Drawable {
       if (auto image = config.optString("image"))
@@ -43,7 +43,7 @@ Item::Item(Json config, String directory, Json parameters) {
     auto image = AssetPath::relativeTo(m_directory, secondaryIcon.toString());
     setSecondaryIconDrawables(Maybe<List<Drawable>>({Drawable::makeImage(image, 1.0f, true, Vec2F())}));
   } else {
-    setSecondaryIconDrawables({});
+    setSecondaryIconDrawables(Maybe<List<Drawable>>());
   }
 
   auto assets = Root::singleton().assets();

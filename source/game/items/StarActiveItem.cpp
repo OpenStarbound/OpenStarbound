@@ -495,7 +495,7 @@ LuaCallbacks ActiveItem::makeActiveItemCallbacks() {
       auto image = AssetPath::relativeTo(directory(), secondaryIcon.toString());
       setSecondaryIconDrawables(Maybe<List<Drawable>>({Drawable::makeImage(image, 1.0f, true, Vec2F())}));
     } else {
-      setSecondaryIconDrawables({});
+      setSecondaryIconDrawables(Maybe<List<Drawable>>());
     }
   });
 
