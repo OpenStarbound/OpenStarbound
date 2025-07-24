@@ -5,7 +5,8 @@
 -- this means you can have things like movement parameters, death particles, or the numerous offsets change based on identity values
 -- and if you're using animation configs for the species, you can change things a whole lot more
 
-local emoteStates = { "idle", "blabber", "shout", "happy", "sad", "neutral", "laugh", "annoyed", "oh", "oooh", "blink", "wink", "eat", "sleep" }
+local emoteStates = { "idle", "blabber", "shout", "happy", "sad", "neutral", "laugh", "annoyed", "oh", "oooh", "blink",
+	"wink", "eat", "sleep" }
 local bodyStates = { "idle", "walk", "run", "jump", "fall", "swim", "swimIdle", "duck", "sit", "lay" }
 local portraitModes = { "head", "bust", "full", "fullNeutral", "fullNude", "fullNeutralNude" }
 local tilePixels = 8
@@ -52,37 +53,40 @@ function build(identity, humanoidParameters, humanoidConfig, npcHumanoidConfig)
 	local parts = humanoidConfig.animation.animatedParts.parts
 
 	for i, emoteState in ipairs(emoteStates) do
-		setPath(stateTypes, { "emote", "states", emoteState, "cycle"}, humanoidConfig.humanoidTiming.emoteCycle[i])
+		setPath(stateTypes, { "emote", "states", emoteState, "cycle" }, humanoidConfig.humanoidTiming.emoteCycle[i])
 		stateTypes.emote.states[emoteState].frames = humanoidConfig.humanoidTiming.emoteFrames[i]
-		setPath(humanoidConfig, {"emoteAnimations", emoteState, "emote"}, {emoteState, false, false})
+		setPath(humanoidConfig, { "emoteAnimations", emoteState, "emote" }, { emoteState, false, false })
 	end
 	for i, bodyState in ipairs(bodyStates) do
-		setPath(stateTypes, { "body", "states", bodyState, "cycle"}, humanoidConfig.humanoidTiming.stateCycle[i])
+		setPath(stateTypes, { "body", "states", bodyState, "cycle" }, humanoidConfig.humanoidTiming.stateCycle[i])
 		stateTypes.body.states[bodyState].frames = humanoidConfig.humanoidTiming.stateFrames[i]
 		stateTypes.body.states[bodyState].properties = {}
-		setPath(humanoidConfig, {"stateAnimations", bodyState, "body"}, {bodyState, false, false})
+		setPath(humanoidConfig, { "stateAnimations", bodyState, "body" }, { bodyState, false, false })
 	end
 	for i, portraitMode in ipairs(portraitModes) do
-		setPath(humanoidConfig, {"portraitAnimations", portraitMode, "body"}, {"idle", true, false})
+		setPath(humanoidConfig, { "portraitAnimations", portraitMode, "body" }, { "idle", true, false })
 	end
-	humanoidConfig.portraitAnimations.bust.portraitMode = {"bust", true, false}
-	humanoidConfig.portraitAnimations.head.portraitMode = {"head", true, false}
+	humanoidConfig.portraitAnimations.bust.portraitMode = { "bust", true, false }
+	humanoidConfig.portraitAnimations.head.portraitMode = { "head", true, false }
 
 	for i, v in ipairs(humanoidConfig.armWalkSeq) do
-		setPath(stateTypes.body.states.walk, {"frameProperties", "animationTags", i, "armSequenceFrame" }, tostring(v))
+		setPath(stateTypes.body.states.walk, { "frameProperties", "animationTags", i, "armSequenceFrame" }, tostring(v))
 	end
 	for i, v in ipairs(humanoidConfig.armRunSeq) do
-		setPath(stateTypes.body.states.run, {"frameProperties", "animationTags", i, "armSequenceFrame" }, tostring(v))
+		setPath(stateTypes.body.states.run, { "frameProperties", "animationTags", i, "armSequenceFrame" }, tostring(v))
 	end
 
 	for i, v in ipairs(humanoidConfig.walkBob) do
-		setPath(stateTypes.body.states.walk, {"frameProperties", "movementOffset", i }, {{"reset"},{"translate",{0,v/tilePixels}}})
+		setPath(stateTypes.body.states.walk, { "frameProperties", "movementOffset", i },
+			{ { "reset" }, { "translate", { 0, v / tilePixels } } })
 	end
 	for i, v in ipairs(humanoidConfig.runBob) do
-		setPath(stateTypes.body.states.run, {"frameProperties", "movementOffset", i }, {{"reset"},{"translate",{0,(v + humanoidConfig.runFallOffset)/tilePixels}}})
+		setPath(stateTypes.body.states.run, { "frameProperties", "movementOffset", i },
+			{ { "reset" }, { "translate", { 0, (v + humanoidConfig.runFallOffset) / tilePixels } } })
 	end
 	for i, v in ipairs(humanoidConfig.swimBob) do
-		setPath(stateTypes.body.states.swim, {"frameProperties", "movementOffset", i }, {{"reset"},{"translate",{0,v/tilePixels}}})
+		setPath(stateTypes.body.states.swim, { "frameProperties", "movementOffset", i },
+			{ { "reset" }, { "translate", { 0, v / tilePixels } } })
 	end
 
 	stateTypes.body.states.run.properties.headOffset = {
@@ -142,7 +146,8 @@ function build(identity, humanoidParameters, humanoidConfig, npcHumanoidConfig)
 		humanoidConfig.frontHandPosition[1] + humanoidConfig.backArmOffset[1],
 		humanoidConfig.frontHandPosition[2] + humanoidConfig.backArmOffset[2],
 	}))
-	setPath(parts, { "head", "properties", "rotationCenter"}, vecTilePixels(humanoidConfig.headRotationCenter or {0,0}))
+	setPath(parts, { "head", "properties", "rotationCenter" },
+		vecTilePixels(humanoidConfig.headRotationCenter or { 0, 0 }))
 
 	-- these states play in reverse for moving backwards, run has a duplicate state for this because back items have a different frameset for it
 	stateTypes.body.states.runbackwards = stateTypes.body.states.run
@@ -154,29 +159,31 @@ function build(identity, humanoidParameters, humanoidConfig, npcHumanoidConfig)
 	for i = 1, 20 do
 		local cosmeticParts = root.assetJson("/humanoid/opensb/humanoidCosmetics.config")
 		for partName, part in pairs(cosmeticParts) do
-			fixCosmeticPartProperties(part.properties, i)
+			fixSlotProperties(part.properties, i)
+			fixSlotFrameProperties(part.frameProperties, i)
 			for stateTypeName, stateType in pairs(part.partStates or {}) do
 				for stateName, state in pairs(stateType) do
 					if type(state) == "table" then
-						fixCosmeticPartProperties(state.properties, i)
+						fixSlotProperties(state.properties, i)
+						fixSlotFrameProperties(state.frameProperties, i)
 					end
 				end
 			end
 			parts[partName:gsub("<slot>", tostring(i))] = part
 		end
-		humanoidConfig.animation.globalTagDefaults["headCosmetic".. tostring(i) .. "Frameset"] = ""
+		humanoidConfig.animation.globalTagDefaults["headCosmetic" .. tostring(i) .. "Frameset"] = ""
 		humanoidConfig.animation.globalTagDefaults["headCosmetic" .. tostring(i) .. "Directives"] = ""
-		humanoidConfig.animation.globalTagDefaults["chestCosmetic".. tostring(i) .. "Frameset"] = ""
+		humanoidConfig.animation.globalTagDefaults["chestCosmetic" .. tostring(i) .. "Frameset"] = ""
 		humanoidConfig.animation.globalTagDefaults["chestCosmetic" .. tostring(i) .. "Directives"] = ""
-		humanoidConfig.animation.globalTagDefaults["legsCosmetic".. tostring(i) .. "Frameset"] = ""
+		humanoidConfig.animation.globalTagDefaults["legsCosmetic" .. tostring(i) .. "Frameset"] = ""
 		humanoidConfig.animation.globalTagDefaults["legsCosmetic" .. tostring(i) .. "Directives"] = ""
-		humanoidConfig.animation.globalTagDefaults["backCosmetic".. tostring(i) .. "Frameset"] = ""
+		humanoidConfig.animation.globalTagDefaults["backCosmetic" .. tostring(i) .. "Frameset"] = ""
 		humanoidConfig.animation.globalTagDefaults["backCosmetic" .. tostring(i) .. "Directives"] = ""
 
-		humanoidConfig.animation.globalTagDefaults["frontSleeve".. tostring(i).. "Frameset"] = ""
-		humanoidConfig.animation.globalTagDefaults["backSleeve" .. tostring(i).. "Frameset"] = ""
+		humanoidConfig.animation.globalTagDefaults["frontSleeve" .. tostring(i) .. "Frameset"] = ""
+		humanoidConfig.animation.globalTagDefaults["backSleeve" .. tostring(i) .. "Frameset"] = ""
 
-		humanoidConfig.animation.transformationGroups["backCosmetic"..tostring(i).."Rotation"] = {interpolated = true}
+		humanoidConfig.animation.transformationGroups["backCosmetic" .. tostring(i) .. "Rotation"] = { interpolated = true }
 	end
 
 	-- remove parts that aren't used so the game isn't fussing about incomplete image paths in the log
@@ -211,10 +218,11 @@ function setPath(input, path, value)
 end
 
 function vecTilePixels(vec)
-	return {vec[1]/tilePixels, vec[2]/tilePixels}
+	return { vec[1] / tilePixels, vec[2] / tilePixels }
 end
 
-function fixCosmeticPartProperties(properties, slot)
+function fixSlotProperties(properties, slot)
+	if not properties then return end
 	if properties.zLevel then
 		properties.zLevel = properties.zLevel + slot / 100
 	end
@@ -228,12 +236,72 @@ function fixCosmeticPartProperties(properties, slot)
 		properties.flippedZLevel = properties.flippedZLevelSlot[slot]
 	end
 	if properties.image then
-		properties.image = string.gsub(properties.image, "<slot>", tostring(slot))
+		properties.image = string.gsub(properties.image, "%<slot%>", tostring(slot))
 	end
 	if properties.processingDirectives then
-		properties.processingDirectives = string.gsub(properties.processingDirectives, "<slot>", tostring(slot))
+		properties.processingDirectives = string.gsub(properties.processingDirectives, "%<slot%>", tostring(slot))
 	end
-	for j, v in ipairs(properties.transformationGroups or {}) do
-		properties.transformationGroups[j] = string.gsub(v, "<slot>", tostring(slot))
+	if properties.transformationGroups then
+		for j, v in ipairs(properties.transformationGroups) do
+			properties.transformationGroups[j] = string.gsub(v, "%<slot%>", tostring(slot))
+		end
+	end
+	for k, v in pairs(properties) do
+		if type(v) == "string" then
+			v = v:gsub("%<slot%>", tostring(slot))
+			properties[k] = v
+		end
+		if k:find("%<slot%>") then
+			properties[k] = nil
+			properties[k:gsub("%<slot%>", tostring(slot))] = v
+		end
+	end
+end
+
+function fixSlotFrameProperties(frameProperties, slot)
+	if not frameProperties then return end
+	if frameProperties.zLevel then
+		for i, v in ipairs(frameProperties.zLevel) do
+			frameProperties.zLevel[i] = v + slot / 100
+		end
+	end
+	if frameProperties.flippedZLevel then
+		for i, v in ipairs(frameProperties.flippedZLevel) do
+			frameProperties.flippedZLevel[i] = v + slot / 100
+		end
+	end
+	if frameProperties.zLevelSlot then
+		for i, v in ipairs(frameProperties.zLevelSlot) do
+			frameProperties.zLevel[i] = v[slot]
+		end
+	end
+	if frameProperties.flippedZLevelSlot then
+		for i, v in ipairs(frameProperties.flippedZLevelSlot) do
+			frameProperties.flippedZLevel[i] = v[slot]
+		end
+	end
+
+	if frameProperties.image then
+		for i, v in ipairs(frameProperties.image) do
+			frameProperties.image[i] = string.gsub(v, "%<slot%>", tostring(slot))
+		end
+	end
+	if frameProperties.processingDirectives then
+		for i, v in ipairs(frameProperties.processingDirectives) do
+			frameProperties.processingDirectives[i] = string.gsub(v, "%<slot%>", tostring(slot))
+		end
+	end
+	if frameProperties.transformationGroups then
+		for i, v in ipairs(frameProperties.transformationGroups) do
+			for j, v in ipairs(v) do
+				frameProperties.transformationGroups[i][j] = string.gsub(v, "%<slot%>", tostring(slot))
+			end
+		end
+	end
+	for k, v in pairs(frameProperties) do
+		if k:find("%<slot%>") then
+			frameProperties[k] = nil
+			frameProperties[k:gsub("%<slot%>", tostring(slot))] = v
+		end
 	end
 end
