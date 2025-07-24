@@ -48,6 +48,10 @@ LuaCallbacks LuaBindings::makeScriptedAnimatorCallbacks(NetworkedAnimator* netwo
       [networkedAnimator](String const& transformationGroup, float rotation, Maybe<Vec2F> const& rotationCenter) {
         networkedAnimator->rotateLocalTransformationGroup(transformationGroup, rotation, rotationCenter.value());
       });
+  callbacks.registerCallback("rotateDegreesLocalTransformationGroup",
+      [networkedAnimator](String const& transformationGroup, float rotation, Maybe<Vec2F> const& rotationCenter) {
+        networkedAnimator->rotateLocalTransformationGroup(transformationGroup, rotation * Star::Constants::pi / 180, rotationCenter.value());
+      });
   callbacks.registerCallback("scaleLocalTransformationGroup",
       [networkedAnimator](LuaEngine& engine, String const& transformationGroup, LuaValue scale, Maybe<Vec2F> const& scaleCenter) {
         if (auto cs = engine.luaMaybeTo<Vec2F>(scale))

@@ -1078,6 +1078,8 @@ void NetworkedAnimator::update(float dt, DynamicTarget* dynamicTarget) {
               mat.translate(jsonToVec2F(v.getArray(1)));
             } else if (action == "rotate") {
               mat.rotate(v.getFloat(1), jsonToVec2F(v.getArray(2, properties.maybe("rotationCenter").value(JsonArray({0,0})).toArray())));
+            } else if (action == "rotateDegrees") { // because radians are fucking annoying
+              mat.rotate(v.getFloat(1) * Star::Constants::pi / 180, jsonToVec2F(v.getArray(2, properties.maybe("rotationCenter").value(JsonArray({0,0})).toArray())));
             } else if (action == "scale") {
               mat.scale(jsonToVec2F(v.getArray(1)), jsonToVec2F(v.getArray(2, properties.maybe("scalingCenter").value(JsonArray({0,0})).toArray())));
             } else if (action == "transform") {
