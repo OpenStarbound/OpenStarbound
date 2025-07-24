@@ -534,14 +534,17 @@ public:
         else
           SDL_HideCursor();
 
+        
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplSDL3_NewFrame();
+
         int updatesBehind = max<int>(round(m_updateTicker.ticksBehind()), 1);
         updatesBehind = min<int>(updatesBehind, m_maxFrameSkip + 1);
         for (int i = 0; i < updatesBehind; ++i) {
           //since frame-skipping is a thing, we have to begin a new ImGui frame here to prevent duplicate elements made by updates
-          ImGui_ImplOpenGL3_NewFrame();
-          ImGui_ImplSDL3_NewFrame();
+          if (i != 0)
+            ImGui::EndFrame();
           ImGui::NewFrame();
-
           m_application->update();
           m_updateRate = m_updateTicker.tick();
         }
