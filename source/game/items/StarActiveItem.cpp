@@ -469,10 +469,35 @@ LuaCallbacks ActiveItem::makeActiveItemCallbacks() {
       m_scriptedAnimationParameters.set(std::move(name), std::move(value));
     });
 
-  callbacks.registerCallback("setInventoryIcon", [this](String image) {
-      setInstanceValue("inventoryIcon", image);
-      setIconDrawables({Drawable::makeImage(std::move(image), 1.0f, true, Vec2F())});
-    });
+  callbacks.registerCallback("setInventoryIcon", [this](Json inventoryIcon) {
+    setInstanceValue("inventoryIcon", inventoryIcon);
+
+    if (inventoryIcon.type() == Json::Type::Array) {
+      setIconDrawables(inventoryIcon.toArray().transformed([&](Json config) -> Drawable {
+        if (auto image = config.optString("image"))
+          return Drawable(config.set("image", AssetPath::relativeTo(directory(), *image)));
+        return Drawable(config);
+      }));
+    } else {
+      auto image = AssetPath::relativeTo(directory(), inventoryIcon.toString());
+      setIconDrawables({Drawable::makeImage(image, 1.0f, true, Vec2F())});
+    }
+  });
+  callbacks.registerCallback("setSecondaryIcon", [this](Json secondaryIcon) {
+    setInstanceValue("secondaryIcon", secondaryIcon);
+    if (secondaryIcon.type() == Json::Type::Array) {
+      setSecondaryIconDrawables(secondaryIcon.toArray().transformed([&](Json config) -> Drawable {
+        if (auto image = config.optString("image"))
+          return Drawable(config.set("image", AssetPath::relativeTo(directory(), *image)));
+        return Drawable(config);
+      }));
+    } else if (secondaryIcon.type() == Json::Type::String) {
+      auto image = AssetPath::relativeTo(directory(), secondaryIcon.toString());
+      setSecondaryIconDrawables(Maybe<List<Drawable>>({Drawable::makeImage(image, 1.0f, true, Vec2F())}));
+    } else {
+      setSecondaryIconDrawables({});
+    }
+  });
 
   callbacks.registerCallback("setInstanceValue", [this](String name, Json val) {
       setInstanceValue(std::move(name), std::move(val));
@@ -499,6 +524,15 @@ LuaCallbacks ActiveItem::makeActiveItemCallbacks() {
   callbacks.registerCallback("setCameraFocusEntity", [this](Maybe<EntityId> const& cameraFocusEntity) {
       owner()->setCameraFocusEntity(cameraFocusEntity);
     });
+
+  callbacks.registerCallback("setDescription", [this](String const& description) {
+    setInstanceValue("description", description);
+    setDescription(description);
+  });
+  callbacks.registerCallback("setShortDescription", [this](String const& description) {
+    setInstanceValue("shortdescription", description);
+    setShortDescription(description);
+  });
 
   return callbacks;
 }

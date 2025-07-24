@@ -23,20 +23,27 @@ Item::Item(Json config, String directory, Json parameters) {
 
   auto inventoryIcon = instanceValue("inventoryIcon", Root::singleton().assets()->json("/items/defaultParameters.config:missingIcon"));
   if (inventoryIcon.type() == Json::Type::Array) {
-    List<Drawable> iconDrawables;
-    for (auto const& drawable : inventoryIcon.toArray()) {
-      if (auto image = drawable.optString("image")) {
-        auto changed = drawable.set("image", AssetPath::relativeTo(m_directory, *image));
-        iconDrawables.emplaceAppend(changed);
-      }
-      else {
-        iconDrawables.emplaceAppend(drawable);
-      }
-    }
-    setIconDrawables(std::move(iconDrawables));
+    setIconDrawables(inventoryIcon.toArray().transformed([&](Json config) -> Drawable {
+      if (auto image = config.optString("image"))
+        return Drawable(config.set("image", AssetPath::relativeTo(m_directory, *image)));
+      return Drawable(config);
+    }));
   } else {
     auto image = AssetPath::relativeTo(m_directory, inventoryIcon.toString());
     setIconDrawables({Drawable::makeImage(image, 1.0f, true, Vec2F())});
+  }
+  auto secondaryIcon = instanceValue("secondaryIcon", Root::singleton().assets()->json("/items/defaultParameters.config:missingIcon"));
+  if (secondaryIcon.type() == Json::Type::Array) {
+    setSecondaryIconDrawables(secondaryIcon.toArray().transformed([&](Json config) -> Drawable {
+      if (auto image = config.optString("image"))
+        return Drawable(config.set("image", AssetPath::relativeTo(m_directory, *image)));
+      return Drawable(config);
+    }));
+  } else if (secondaryIcon.type() == Json::Type::String) {
+    auto image = AssetPath::relativeTo(m_directory, secondaryIcon.toString());
+    setSecondaryIconDrawables(Maybe<List<Drawable>>({Drawable::makeImage(image, 1.0f, true, Vec2F())}));
+  } else {
+    setSecondaryIconDrawables({});
   }
 
   auto assets = Root::singleton().assets();
@@ -163,6 +170,14 @@ List<Drawable> Item::iconDrawables() const {
   return m_iconDrawables;
 }
 
+Maybe<List<Drawable>> Item::secondaryDrawables() const {
+  return m_secondaryIconDrawables;
+}
+
+bool Item::hasSecondaryDrawables() const {
+  return m_secondaryIconDrawables.isValid();
+}
+
 List<Drawable> Item::dropDrawables() const {
   auto drawables = iconDrawables();
   Drawable::scaleAll(drawables, 1.0f / TilePixels);
@@ -205,6 +220,10 @@ void Item::setDescription(String const& description) {
   m_description = description;
 }
 
+void Item::setShortDescription(String const& description) {
+  m_shortDescription = description;
+}
+
 void Item::setRarity(Rarity rarity) {
   m_rarity = rarity;
 }
@@ -224,6 +243,25 @@ void Item::setIconDrawables(List<Drawable> drawables) {
     float zoom = 16.0f / std::max(boundBox.width(), boundBox.height());
     if (zoom < 1) {
       for (auto& drawable : m_iconDrawables)
+        drawable.scale(zoom);
+    }
+  }
+}
+
+void Item::setSecondaryIconDrawables(Maybe<List<Drawable>> drawables) {
+  m_secondaryIconDrawables = std::move(drawables);
+  if (m_secondaryIconDrawables.isNothing())
+    return;
+
+  auto boundBox = Drawable::boundBoxAll(*m_secondaryIconDrawables, true);
+  if (!boundBox.isEmpty()) {
+    for (auto& drawable : *m_secondaryIconDrawables)
+      drawable.translate(-boundBox.center());
+    // TODO: Why 16?  Is this the size of the icon container?  Shouldn't this
+    // be configurable?
+    float zoom = 16.0f / std::max(boundBox.width(), boundBox.height());
+    if (zoom < 1) {
+      for (auto& drawable : *m_secondaryIconDrawables)
         drawable.scale(zoom);
     }
   }
