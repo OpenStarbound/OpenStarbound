@@ -38,6 +38,9 @@ struct LoungeAnchor : EntityAnchor {
   bool cameraFocus;
   bool usePartZLevel = false;
   bool hidden = false;
+  bool dismountable = true;
+
+  JsonObject toJson() const;
 };
 
 // Extends an AnchorableEntity to have more specific effects when anchoring,
@@ -102,6 +105,7 @@ public:
     NetElementData<Maybe<String>> directives;
     NetElementData<List<PersistentStatusEffect>> statusEffects;
     NetElementBool hidden;
+    NetElementBool dismountable;
 
     Map<LoungeControl, MasterControlState> masterControlState;
     Vec2F masterAimPosition;

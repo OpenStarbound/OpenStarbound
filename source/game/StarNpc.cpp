@@ -721,7 +721,12 @@ LuaCallbacks Npc::makeNpcCallbacks() {
       return true;
     });
 
-  callbacks.registerCallback("resetLounging", [this]() { m_movementController->resetAnchorState(); });
+  callbacks.registerCallback("resetLounging", [this]() {
+    auto anchor = as<LoungeAnchor>(m_movementController->entityAnchor());
+    if (anchor && anchor->dismountable) {
+      m_movementController->resetAnchorState();
+    }
+  });
 
   callbacks.registerCallback("isLounging", [this]() { return is<LoungeAnchor>(m_movementController->entityAnchor()); });
 

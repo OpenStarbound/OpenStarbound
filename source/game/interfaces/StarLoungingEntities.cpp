@@ -60,6 +60,7 @@ LoungeAnchorConstPtr LoungeableEntity::loungeAnchor(size_t positionIndex) const 
   loungePosition->suppressTools = positionConfig.suppressTools;
   loungePosition->usePartZLevel = positionConfig.usePartZLevel;
   loungePosition->hidden = positionConfig.hidden.get();
+  loungePosition->dismountable = positionConfig.dismountable.get();
   return loungePosition;
 }
 
@@ -283,6 +284,9 @@ LuaCallbacks LoungeableEntity::addLoungeableCallbacks(LuaCallbacks callbacks){
   callbacks.registerCallback("setLoungeHidden", [this](String const& name, bool hidden) {
       loungePositions()->get(name).hidden.set(hidden);
     });
+  callbacks.registerCallback("setLoungeDismountable", [this](String const& name, bool dismountable) {
+      loungePositions()->get(name).dismountable.set(dismountable);
+    });
   callbacks.registerCallback("getLoungeIndex", [this](String const& name) -> Maybe<int> {
       return loungePositions()->indexOf(name);
     });
@@ -340,6 +344,7 @@ LoungeableEntity::LoungePositionConfig::LoungePositionConfig(Json config){
   suppressTools = config.optBool("suppressTools");
   usePartZLevel = config.getBool("usePartZLevel", false);
   hidden.set(config.getBool("hidden", false));
+  dismountable.set(config.getBool("dismountable", true));
 }
 
 void LoungeableEntity::LoungePositionConfig::setupNetStates(NetElementTopGroup * netGroup, uint8_t minimumVersion){
@@ -357,5 +362,26 @@ void LoungeableEntity::LoungePositionConfig::setupNetStates(NetElementTopGroup *
   netGroup->addNetElement(&statusEffects);
   hidden.setCompatibilityVersion(max<uint8_t>(minimumVersion, 10));
   netGroup->addNetElement(&hidden);
+  dismountable.setCompatibilityVersion(max<uint8_t>(minimumVersion, 10));
+  netGroup->addNetElement(&dismountable);
 }
+JsonObject LoungeAnchor::toJson() const {
+  return {
+    {"orientation", LoungeOrientationNames.getRight(orientation)},
+    {"loungeRenderLayer", loungeRenderLayer},
+    {"controllable", controllable},
+    {"statusEffects", statusEffects.transformed(jsonFromPersistentStatusEffect)},
+    {"effectEmitters", jsonFromStringSet(effectEmitters)},
+    {"emote", emote.isValid() ? emote.value(): Json()},
+    {"dance", dance.isValid() ? dance.value(): Json()},
+    {"directives", directives.isValid() ? directives.value().string() : Json()},
+    {"cursorOverride", cursorOverride.isValid() ? cursorOverride.value(): Json()},
+    {"suppressTools", suppressTools.isValid() ? suppressTools.value(): Json()},
+    {"armorCosmeticOverrides", armorCosmeticOverrides},
+    {"cameraFocus", cameraFocus},
+    {"usePartZLevel", usePartZLevel},
+    {"hidden", hidden},
+    {"dismountable", dismountable}
+  };
 }
+}// namespace Star

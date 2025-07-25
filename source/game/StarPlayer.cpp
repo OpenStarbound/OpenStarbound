@@ -615,7 +615,8 @@ bool Player::lounge(EntityId loungeableEntityId, size_t anchorIndex) {
 }
 
 void Player::stopLounging() {
-  if (loungingIn()) {
+  auto anchor = as<LoungeAnchor>(m_movementController->entityAnchor());
+  if (anchor && anchor->dismountable) {
     m_movementController->resetAnchorState();
     m_state = State::Idle;
     m_statusController->setPersistentEffects("lounging", {});
@@ -942,7 +943,7 @@ void Player::update(float dt, uint64_t) {
       if (edgeTriggeredUse) {
         auto anchor = as<LoungeAnchor>(m_movementController->entityAnchor());
         bool useTool = canUseTool();
-        if (anchor && (!useTool || anchor->controllable))
+        if (anchor && (!useTool || anchor->controllable) && anchor->dismountable)
           m_movementController->resetAnchorState();
         else if (useTool) {
           if (auto ie = bestInteractionEntity(true))
