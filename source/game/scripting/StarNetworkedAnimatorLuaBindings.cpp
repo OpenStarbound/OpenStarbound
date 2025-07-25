@@ -29,6 +29,11 @@ LuaCallbacks LuaBindings::makeNetworkedAnimatorCallbacks(NetworkedAnimator* netw
   callbacks.registerCallbackWithSignature<bool, String, Maybe<String>>(
       "hasState", bind(&NetworkedAnimator::hasState, networkedAnimator, _1, _2));
 
+  callbacks.registerCallbackWithSignature<float, String, Maybe<String>>(
+      "stateCycle", bind(&NetworkedAnimator::stateCycle, networkedAnimator, _1, _2));
+  callbacks.registerCallbackWithSignature<int, String, Maybe<String>>(
+      "stateFrames", bind(&NetworkedAnimator::stateFrames, networkedAnimator, _1, _2));
+
   callbacks.registerCallbackWithSignature<void, String, Maybe<String>>(
       "setGlobalTag", bind(&NetworkedAnimator::setGlobalTag, networkedAnimator, _1, _2));
   callbacks.registerCallbackWithSignature<void, String, String, Maybe<String>>(

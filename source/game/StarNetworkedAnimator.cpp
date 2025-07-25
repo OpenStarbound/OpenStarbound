@@ -337,6 +337,13 @@ bool NetworkedAnimator::stateReverse(String const& stateType) const {
   return m_animatedParts.activeState(stateType).reverse;
 }
 
+float NetworkedAnimator::stateCycle(String const& stateType, Maybe<String> state) const {
+  return m_animatedParts.getState(stateType, state.value(m_animatedParts.activeState(stateType).stateName)).cycle;
+}
+int NetworkedAnimator::stateFrames(String const& stateType, Maybe<String> state) const {
+  return m_animatedParts.getState(stateType, state.value(m_animatedParts.activeState(stateType).stateName)).frames;
+}
+
 bool NetworkedAnimator::hasState(String const & stateType, Maybe<String> const & state) const {
   if (m_animatedParts.stateTypes().contains(stateType)) {
     if (state) {

@@ -36,6 +36,12 @@ LuaCallbacks LuaBindings::makeScriptedAnimatorCallbacks(NetworkedAnimator* netwo
       "animationStateTimer", bind(&NetworkedAnimator::stateTimer, networkedAnimator, _1));
   callbacks.registerCallbackWithSignature<bool, String>(
       "animationStateReverse", bind(&NetworkedAnimator::stateReverse, networkedAnimator, _1));
+
+  callbacks.registerCallbackWithSignature<float, String, Maybe<String>>(
+      "stateCycle", bind(&NetworkedAnimator::stateCycle, networkedAnimator, _1, _2));
+  callbacks.registerCallbackWithSignature<int, String, Maybe<String>>(
+      "stateFrames", bind(&NetworkedAnimator::stateFrames, networkedAnimator, _1, _2));
+
   callbacks.registerCallbackWithSignature<bool, String, Maybe<String>>(
       "hasState", bind(&NetworkedAnimator::hasState, networkedAnimator, _1, _2));
 

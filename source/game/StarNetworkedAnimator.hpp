@@ -86,6 +86,10 @@ public:
   float stateFrameProgress(String const& stateType) const;
   float stateTimer(String const& stateType) const;
   bool stateReverse(String const& stateType) const;
+
+  float stateCycle(String const& stateType, Maybe<String> state) const;
+  int stateFrames(String const& stateType, Maybe<String> state) const;
+
   bool hasState(String const& stateType, Maybe<String> const& state = {}) const;
 
   StringMap<AnimatedPartSet::Part> const& constParts() const;

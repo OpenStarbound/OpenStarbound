@@ -142,6 +142,7 @@ public:
 
   ActiveStateInformation const& activeState(String const& stateTypeName) const;
   ActivePartInformation const& activePart(String const& partName) const;
+  State const& getState(String const& stateTypeName, String const& stateName) const;
 
   StringMap<Part> const& constParts() const;
   StringMap<Part>& parts();

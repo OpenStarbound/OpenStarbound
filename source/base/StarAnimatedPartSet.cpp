@@ -165,6 +165,10 @@ AnimatedPartSet::ActivePartInformation const& AnimatedPartSet::activePart(String
   return part.activePart;
 }
 
+AnimatedPartSet::State const& AnimatedPartSet::getState(String const& stateTypeName, String const& stateName) const {
+  return *m_stateTypes.get(stateTypeName).states.get(stateName);
+}
+
 StringMap<AnimatedPartSet::Part> const& AnimatedPartSet::constParts() const {
   return m_parts;
 }
