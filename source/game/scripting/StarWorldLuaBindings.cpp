@@ -345,7 +345,7 @@ namespace LuaBindings {
 
         return {};
       });
-      
+
 
     callbacks.registerCallback("dungeonId", [world](Vec2I position) -> DungeonId {
         if (auto serverWorld = as<WorldServer>(world)) {
@@ -582,6 +582,12 @@ namespace LuaBindings {
           if (itemDrop->item())
             return itemDrop->item()->name();
         }
+        return {};
+      });
+
+    callbacks.registerCallback("entityLoungeAnchor", [world](EntityId entityId, int anchorIndex) -> JsonObject {
+        if (auto entity = world->get<LoungeableEntity>(entityId))
+          return entity->loungeAnchor(anchorIndex)->toJson();
         return {};
       });
   }
@@ -1115,7 +1121,7 @@ namespace LuaBindings {
   }
 
   RectI ClientWorldCallbacks::clientWindow(WorldClient* world) {
-    return world->clientWindow();	
+    return world->clientWindow();
   }
 
   String ServerWorldCallbacks::id(WorldServer* world) {
