@@ -23,6 +23,7 @@
 #include "StarDamageDatabase.hpp"
 #include "StarDungeonGenerator.hpp"
 #include "StarImageLuaBindings.hpp"
+#include "StarSpeciesDatabase.hpp"
 
 namespace Star {
 
@@ -244,7 +245,7 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
       root->configuration()->set(key, value);
     });
 
-  
+
   callbacks.registerCallback("getConfigurationPath", [root](String const& path) -> Json {
     if (path.empty() || path.beginsWith("title"))
       throw ConfigurationException(strf("cannot get {}", path));
@@ -259,6 +260,15 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
       root->configuration()->setPath(path, value);
     });
 
+  callbacks.registerCallback("speciesConfig", [root](String const& species) -> Json {
+    return root->speciesDatabase()->species(species)->config();
+  });
+
+  callbacks.registerCallback("generateHumanoidIdentity", [root](String const& species, Json const& seed, Maybe<String> gender) -> Json {
+    auto identity = HumanoidIdentity();
+    root->speciesDatabase()->species(species)->generateHumanoid(identity, seed.toUInt(), gender.isValid() ? GenderNames.getLeft(*gender) : Maybe<Gender>());
+    return identity.toJson();
+  });
   return callbacks;
 }
 

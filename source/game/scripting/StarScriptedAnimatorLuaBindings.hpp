@@ -6,6 +6,6 @@
 namespace Star {
 
 namespace LuaBindings {
-  LuaCallbacks makeScriptedAnimatorCallbacks(const NetworkedAnimator* animator, function<Json(String const&, Json const&)> getParameter);
+  LuaCallbacks makeScriptedAnimatorCallbacks( NetworkedAnimator* animator, function<Json(String const&, Json const&)> getParameter);
 }
 }
