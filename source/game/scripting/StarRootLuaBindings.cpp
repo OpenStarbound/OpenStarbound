@@ -23,6 +23,7 @@
 #include "StarDamageDatabase.hpp"
 #include "StarDungeonGenerator.hpp"
 #include "StarImageLuaBindings.hpp"
+#include "StarStatusEffectDatabase.hpp"
 
 namespace Star {
 
@@ -244,7 +245,7 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
       root->configuration()->set(key, value);
     });
 
-  
+
   callbacks.registerCallback("getConfigurationPath", [root](String const& path) -> Json {
     if (path.empty() || path.beginsWith("title"))
       throw ConfigurationException(strf("cannot get {}", path));
@@ -258,6 +259,10 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
     else
       root->configuration()->setPath(path, value);
     });
+
+  callbacks.registerCallback("effectConfig", [root](String const& effect) -> Json {
+    return root->statusEffectDatabase()->uniqueEffectConfig(effect).toJson();
+  });
 
   return callbacks;
 }
