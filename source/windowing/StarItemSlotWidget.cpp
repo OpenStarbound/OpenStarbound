@@ -13,10 +13,10 @@ namespace Star {
 static String formatShortSize(uint64_t n) {
     if (n < 10000)
       return toString(n);
-    
+
     uint64_t divisor = 1000ull;
     char suffix = 'k';
-    
+
     if (n >= 1000000000000000000ull) {
       divisor = 1000000000000000000ull;
       suffix = 'Q';
@@ -33,14 +33,14 @@ static String formatShortSize(uint64_t n) {
       divisor = 1000000ull;
       suffix = 'm';
     }
-    
+
     uint64_t whole = n / divisor;
     if (whole >= 100ull)
         return strf("{}{:c}", whole, suffix);
-    
+
     uint64_t remainder = n - (whole * divisor);
     uint64_t frac = (remainder / (divisor / 1000));
-    
+
     if (frac == 0)
       return strf("{}{:c}", whole, suffix);
     else if (whole >= 10)
@@ -88,7 +88,7 @@ ItemSlotWidget::ItemSlotWidget(ItemPtr const& item, String const& backingImage)
   m_showCount = true;
   m_showRarity = true;
   m_showLinkIndicator = false;
-
+  m_showSecondaryIcon = false;
   disableScissoring();
 }
 
@@ -177,6 +177,10 @@ void ItemSlotWidget::showLinkIndicator(bool showLinkIndicator) {
   m_showLinkIndicator = showLinkIndicator;
 }
 
+void ItemSlotWidget::showSecondaryIcon(bool show) {
+  m_showSecondaryIcon = show;
+}
+
 void ItemSlotWidget::indicateNew() {
   m_newItemIndicator.reset();
 }
@@ -196,7 +200,7 @@ void ItemSlotWidget::renderImpl() {
     if (m_drawBackingImageWhenFull && m_backingImage != "")
       context()->drawInterfaceQuad(m_backingImage, Vec2F(screenPosition()));
 
-    List<Drawable> iconDrawables = m_item->iconDrawables();
+    List<Drawable> iconDrawables = m_showSecondaryIcon ? m_item->secondaryDrawables().value(m_item->iconDrawables()) : m_item->iconDrawables();
 
     if (m_showRarity) {
       String border = rarityBorder(m_item->rarity());
