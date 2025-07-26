@@ -119,7 +119,7 @@ public:
   void tickSlave(float dt);
 
   const DirectivesGroup& parentDirectives() const;
-  List<Drawable> drawables() const;
+  List<Drawable> drawables(Vec2F position = Vec2F()) const;
   List<LightSource> lightSources() const;
   List<OverheadBar> overheadBars();
 

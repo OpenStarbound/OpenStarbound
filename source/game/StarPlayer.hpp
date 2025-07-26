@@ -237,7 +237,7 @@ public:
 
   void refreshItems();
   void refreshArmor();
-  void refreshHumanoid() const; 
+  void refreshHumanoid() const;
   // Refresh worn equipment from the inventory
   void refreshEquipment();
 
@@ -496,7 +496,7 @@ public:
   //   Unfortunately values are Strings, so to work with Json we need to serialize/deserialize. Whatever.
   //   Additionally, this is compatible with vanilla networking.
   // I call this a 'secret property'.
-  
+
   // If the secret property exists as a serialized Json string, returns a view to it without deserializing.
   Maybe<StringView> getSecretPropertyView(String const& name) const;
   String const* getSecretPropertyPtr(String const& name) const;
@@ -523,7 +523,7 @@ private:
   void setNetArmorSecret(EquipmentSlot slot, ArmorItemPtr const& armor, bool visible = true);
   void setNetArmorSecrets(bool includeEmpty = false);
 
-  List<Drawable> drawables() const;
+  List<Drawable> drawables(Vec2F position = Vec2F()) override;
   List<OverheadBar> bars() const;
   List<Particle> particles();
   String getFootstepSound(Vec2I const& sensor) const;
