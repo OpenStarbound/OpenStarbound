@@ -1266,12 +1266,16 @@ void WorldServer::setPlanetType(String const& planetType, String const& primaryB
 }
 
 
-void WorldServer::setWeatherIndex(size_t weatherIndex) {
-  m_weather.setWeatherIndex(weatherIndex);
+void WorldServer::setWeatherIndex(size_t weatherIndex, bool force) {
+  m_weather.setWeatherIndex(weatherIndex, force);
 }
 
-void WorldServer::setWeather(String const& weatherName) {
-  m_weather.setWeather(weatherName);
+void WorldServer::setWeather(String const& weatherName, bool force) {
+  m_weather.setWeather(weatherName, force);
+}
+
+StringList WorldServer::weatherList() const {
+  return m_weather.weatherList();
 }
 
 Maybe<pair<String, String>> WorldServer::pullNewPlanetType() {

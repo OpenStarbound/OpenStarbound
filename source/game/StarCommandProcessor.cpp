@@ -895,16 +895,39 @@ String CommandProcessor::setWeather(ConnectionId connectionId, String const& arg
     return *errorMsg;
 
   auto arguments = m_parser.tokenizeToStringList(argumentString);
-  if (arguments.size() < 2)
-    return "Not enough arguments to /setweather";
 
-  auto coordinate = CelestialCoordinate(arguments.at(0));
-  auto weatherName = arguments.at(1);
+  if (arguments.empty()) {
+    StringList list;
+    bool done = m_universe->executeForClient(connectionId,
+                                             [&list](WorldServer* world, PlayerPtr const&) { list = world->weatherList(); });
+    return done ? strf("weathers: {}", list.join(", ")) : "failed to query weather";
+  }
 
-  bool done = m_universe->setWeather(coordinate, weatherName);
+  String weatherName = arguments.at(0);
+  bool force = false;
+  CelestialCoordinate coordinate;
 
-  return done ? strf("set weather for {} to {}", coordinate, weatherName) : "failed to set weather";
+  if (arguments.size() >= 2) {
+    if (arguments.at(1) == "force") {
+      force = true;
+      if (arguments.size() >= 3)
+        coordinate = CelestialCoordinate(arguments.at(2));
+    } else {
+      coordinate = CelestialCoordinate(arguments.at(1));
+    }
+  }
+
+  bool done;
+  if (coordinate.isNull()) {
+    done = m_universe->executeForClient(connectionId,
+                                        [weatherName, force](WorldServer* world, PlayerPtr const&) { world->setWeather(weatherName, force); });
+  } else {
+    done = m_universe->setWeather(coordinate, weatherName, force);
+  }
+
+  return done ? (coordinate.isNull() ? strf("set weather to {}{}", weatherName, force ? " (forced)" : "") : strf("set weather for {} to {}{}", coordinate, weatherName, force ? " (forced)" : "")) : "failed to set weather";
 }
+
 
 String CommandProcessor::setEnvironmentBiome(ConnectionId connectionId, String const&) {
   if (auto errorMsg = adminCheck(connectionId, "update layer environment biome"))
