@@ -58,6 +58,7 @@ private:
   String addBiomeRegion(ConnectionId connectionId, String const& argumentString);
   String expandBiomeRegion(ConnectionId connectionId, String const& argumentString);
   String updatePlanetType(ConnectionId connectionId, String const& argumentString);
+  String setWeather(ConnectionId connectionId, String const& argumentString);
   String setEnvironmentBiome(ConnectionId connectionId, String const& argumentString);
 
   mutable Mutex m_mutex;

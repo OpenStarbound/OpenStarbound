@@ -890,6 +890,22 @@ String CommandProcessor::updatePlanetType(ConnectionId connectionId, String cons
   return done ? strf("set planet at {} to type {} weatherBiome {}", coordinate, newType, weatherBiome) : "failed to update planet type";
 }
 
+String CommandProcessor::setWeather(ConnectionId connectionId, String const& argumentString) {
+  if (auto errorMsg = adminCheck(connectionId, "set weather"))
+    return *errorMsg;
+
+  auto arguments = m_parser.tokenizeToStringList(argumentString);
+  if (arguments.size() < 2)
+    return "Not enough arguments to /setweather";
+
+  auto coordinate = CelestialCoordinate(arguments.at(0));
+  auto weatherName = arguments.at(1);
+
+  bool done = m_universe->setWeather(coordinate, weatherName);
+
+  return done ? strf("set weather for {} to {}", coordinate, weatherName) : "failed to set weather";
+}
+
 String CommandProcessor::setEnvironmentBiome(ConnectionId connectionId, String const&) {
   if (auto errorMsg = adminCheck(connectionId, "update layer environment biome"))
     return *errorMsg;
@@ -1004,6 +1020,8 @@ String CommandProcessor::handleCommand(ConnectionId connectionId, String const& 
     return expandBiomeRegion(connectionId, argumentString);
   } else if (command == "updateplanettype") {
     return updatePlanetType(connectionId, argumentString);
+  } else if (command == "setweather") {
+    return setWeather(connectionId, argumentString);
   } else if (command == "setenvironmentbiome") {
     return setEnvironmentBiome(connectionId, argumentString);
   } else if (auto res = m_scriptComponent.invoke("command", command, connectionId, jsonFromStringList(m_parser.tokenizeToStringList(argumentString)))) {

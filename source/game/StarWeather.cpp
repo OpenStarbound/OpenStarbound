@@ -123,6 +123,41 @@ List<ProjectilePtr> ServerWeather::pullNewProjectiles() {
   return take(m_newProjectiles);
 }
 
+void ServerWeather::setWeather(String const& weatherName) {
+  size_t index = NPos;
+  for (size_t i = 0; i < m_weatherPool.size(); ++i) {
+    if (m_weatherPool.item(i) == weatherName) {
+      index = i;
+      break;
+    }
+  }
+
+  setWeatherIndex(index);
+}
+
+void ServerWeather::setWeatherIndex(size_t weatherIndex) {
+  if (weatherIndex == NPos || weatherIndex >= m_weatherPool.size()) {
+    m_currentWeatherIndex = NPos;
+    m_currentWeatherType = {};
+    m_currentWeatherIntensity = 0.0f;
+    m_currentWind = 0.0f;
+  } else {
+    m_currentWeatherIndex = weatherIndex;
+    m_currentWeatherType =
+        Root::singleton().biomeDatabase()->weatherType(m_weatherPool.item(m_currentWeatherIndex));
+    m_currentWeatherIntensity = 1.0f;
+    m_currentWind = m_currentWeatherType->maximumWind * (Random::randb() ? 1 : -1);
+  }
+
+  m_lastWeatherChangeTime = m_currentTime;
+  m_nextWeatherChangeTime =
+      m_currentWeatherType ? m_currentTime + Random::randd(m_currentWeatherType->duration[0],
+                                                          m_currentWeatherType->duration[1])
+                           : m_currentTime;
+
+  setNetStates();
+}
+
 void ServerWeather::setNetStates() {
   m_weatherPoolNetState.set(DataStreamBuffer::serializeContainer(m_weatherPool.items()));
   m_undergroundLevelNetState.set(m_undergroundLevel);
