@@ -22,6 +22,7 @@ function patch(data)
       type = "itemslot",
       position = {origin.position[1] + offset, origin.position[2]},
       backingImage = origin.backingImage,
+      showBackingImageWhenFull = true,
       data = {tooltipText = "Cosmetic " .. i},
       zlevel = 5,
       children = {

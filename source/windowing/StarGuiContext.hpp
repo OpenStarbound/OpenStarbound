@@ -128,7 +128,7 @@ public:
   String getClipboard() const;
   bool setClipboard(String text);
   bool setClipboardData(StringMap<ByteArray> data);
-  bool setClipboardImage(Image const& image, ByteArray* png);
+  bool setClipboardImage(Image const& image, ByteArray* png, String const* path = nullptr);
   bool setClipboardFile(String const& path);
 
   void cleanup();
