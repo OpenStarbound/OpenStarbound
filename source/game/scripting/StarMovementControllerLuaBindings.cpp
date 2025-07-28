@@ -16,6 +16,10 @@ LuaCallbacks LuaBindings::makeMovementControllerCallbacks(MovementController* mo
   callbacks.registerCallbackWithSignature<float>("mass", bind(&MovementController::mass, movementController));
   callbacks.registerCallbackWithSignature<PolyF>(
       "collisionPoly", bind(&MovementController::collisionPoly, movementController));
+  callbacks.registerCallback("boundBox", [movementController]() {
+      return movementController->collisionPoly().boundBox();
+    });
+
   callbacks.registerCallbackWithSignature<Vec2F>("position", bind(&MovementController::position, movementController));
   callbacks.registerCallbackWithSignature<float>("xPosition", bind(&MovementController::xPosition, movementController));
   callbacks.registerCallbackWithSignature<float>("yPosition", bind(&MovementController::yPosition, movementController));

@@ -517,35 +517,10 @@ Vec2F ActorMovementController::position() const {
   return MovementController::position();
 }
 
-float ActorMovementController::xPosition() const {
-  return position()[0];
-}
-
-float ActorMovementController::yPosition() const {
-  return position()[1];
-}
-
 float ActorMovementController::rotation() const {
   if (m_entityAnchor)
     return m_entityAnchor->angle;
   return MovementController::rotation();
-}
-
-PolyF ActorMovementController::collisionBody() const {
-  auto collisionBody = MovementController::collisionPoly();
-  collisionBody.rotate(rotation());
-  collisionBody.translate(position());
-  return collisionBody;
-}
-
-RectF ActorMovementController::localBoundBox() const {
-  auto poly = MovementController::collisionPoly();
-  poly.rotate(rotation());
-  return poly.boundBox();
-}
-
-RectF ActorMovementController::collisionBoundBox() const {
-  return collisionBody().boundBox();
 }
 
 bool ActorMovementController::walking() const {
@@ -679,7 +654,7 @@ Maybe<pair<Vec2F, bool>> ActorMovementController::pathMove(Vec2F const& position
   if (m_pathController) {
     m_pathController->findPath(*this, position);
   }
-  
+
   if (m_pathMoveResult.isValid()) {
     // path controller failed or succeeded, return the result and reset the controller
     m_pathController->reset();
@@ -749,7 +724,7 @@ void ActorMovementController::tickMaster(float dt) {
   } else {
     auto activeParameters = m_baseParameters.merge(m_controlParameters);
     auto activeModifiers = m_baseModifiers.combine(m_controlModifiers);
-    
+
     if (activeModifiers.movementSuppressed) {
       m_controlMove = {};
       m_controlRun = false;
@@ -1109,7 +1084,7 @@ void ActorMovementController::doSetAnchorState(Maybe<EntityAnchorState> anchorSt
   if (m_entityAnchor)
     setPosition(m_entityAnchor->position);
 }
-  
+
 
 PathController::PathController(World* world)
   : m_world(world), m_edgeTimer(0.0) { }
@@ -1221,7 +1196,7 @@ Maybe<bool> PathController::findPath(ActorMovementController& movementController
                 auto newPath = m_path->slice(0, i + 1);
                 newPath.appendAll(path);
                 path = newPath;
-                
+
                 newEdgeTimer = m_edgeTimer;
                 newEdgeIndex = m_edgeIndex;
 
@@ -1255,7 +1230,7 @@ Maybe<bool> PathController::findPath(ActorMovementController& movementController
           reset();
           return false;
         }
-        
+
         m_edgeTimer = newEdgeTimer;
         m_edgeIndex = newEdgeIndex;
         m_path = path;
@@ -1285,7 +1260,7 @@ Maybe<bool> PathController::move(ActorMovementController& movementController, Ac
   while (m_edgeIndex < m_path->size()) {
     auto& edge = m_path->at(m_edgeIndex);
     Vec2F delta =  m_world->geometry().diff(edge.target.position, edge.source.position);
-    
+
     Vec2F sourceVelocity;
     Vec2F targetVelocity;
     switch (edge.action) {
@@ -1345,7 +1320,7 @@ Maybe<bool> PathController::move(ActorMovementController& movementController, Ac
     movementController.setVelocity(curVelocity);
     auto movement = (curVelocity + sourceVelocity) / 2.0 * m_edgeTimer;
     movementController.setPosition(edge.source.position + movement);
-    
+
     // Shows path and current step
     // for (size_t i = 0; i < m_path->size(); i++) {
     //   auto debugEdge = m_path->get(i);
