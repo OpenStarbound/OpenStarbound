@@ -308,12 +308,7 @@ Humanoid::Humanoid(HumanoidIdentity const& identity, JsonObject parameters, Json
 }
 
 void Humanoid::setIdentity(HumanoidIdentity const& identity) {
-  String lastSpecies = std::move(m_identity.species);
   m_identity = identity;
-  if (m_identity.species != lastSpecies) {
-    m_baseConfig = Root::singleton().speciesDatabase()->species(identity.species)->humanoidConfig();
-    loadConfig(take(m_mergeConfig), true);
-  }
   m_headFrameset = getHeadFromIdentity();
   m_bodyFrameset = getBodyFromIdentity();
   m_emoteFrameset = getFacialEmotesFromIdentity();
