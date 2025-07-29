@@ -585,9 +585,10 @@ namespace LuaBindings {
         return {};
       });
 
-    callbacks.registerCallback("entityLoungeAnchor", [world](EntityId entityId, int anchorIndex) -> JsonObject {
+    callbacks.registerCallback("entityLoungeAnchor", [world](EntityId entityId, int anchorIndex) -> Maybe<JsonObject> {
         if (auto entity = world->get<LoungeableEntity>(entityId))
-          return entity->loungeAnchor(anchorIndex)->toJson();
+          if (auto anchor = entity->loungeAnchor(anchorIndex))
+            return anchor->toJson();
         return {};
       });
   }
