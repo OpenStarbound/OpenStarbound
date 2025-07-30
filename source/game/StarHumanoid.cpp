@@ -2258,10 +2258,6 @@ Json Humanoid::humanoidConfig(bool withOverrides) {
   return m_baseConfig;
 }
 
-void NetHumanoid::initNetVersion(NetElementVersion const* version) {
-  m_humanoid->networkedAnimator()->initNetVersion(version);
-}
-
 NetHumanoid::NetHumanoid(HumanoidIdentity identity, JsonObject parameters, Json config) {
   m_config = config;
   m_parameters = parameters;
@@ -2275,7 +2271,7 @@ void NetHumanoid::netStore(DataStream& ds, NetCompatibilityRules rules) const {
   ds.write(identity);
   ds.write(m_parameters);
   ds.write(m_config);
-  m_netGroup.netStore(ds, rules);
+  NetElementGroup::netStore(ds, rules);
 }
 
 void NetHumanoid::netLoad(DataStream& ds, NetCompatibilityRules rules) {
@@ -2285,33 +2281,8 @@ void NetHumanoid::netLoad(DataStream& ds, NetCompatibilityRules rules) {
   ds.read(m_parameters);
   ds.read(m_config);
   m_humanoid = make_shared<Humanoid>(identity, m_parameters, m_config);
-  m_netGroup.clearNetElements();
   setupNetElements();
-  m_netGroup.netLoad(ds, rules);
-}
-
-void NetHumanoid::enableNetInterpolation(float extrapolationHint) {
-  m_netGroup.enableNetInterpolation(extrapolationHint);
-}
-
-void NetHumanoid::disableNetInterpolation() {
-  m_netGroup.disableNetInterpolation();
-}
-
-void NetHumanoid::tickNetInterpolation(float dt) {
-  m_netGroup.tickNetInterpolation(dt);
-}
-
-bool NetHumanoid::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const {
-  return m_netGroup.writeNetDelta(ds, fromVersion, rules);
-}
-
-void NetHumanoid::readNetDelta(DataStream& ds, float interpolationTime, NetCompatibilityRules rules) {
-  m_netGroup.readNetDelta(ds, interpolationTime, rules);
-}
-
-void NetHumanoid::blankNetDelta(float interpolationTime) {
-  m_netGroup.blankNetDelta(interpolationTime);
+  NetElementGroup::netLoad(ds, rules);
 }
 
 HumanoidPtr NetHumanoid::humanoid() {
@@ -2319,7 +2290,8 @@ HumanoidPtr NetHumanoid::humanoid() {
 }
 
 void NetHumanoid::setupNetElements() {
-  m_netGroup.addNetElement(m_humanoid->networkedAnimator());
+  clearNetElements();
+  addNetElement(m_humanoid->networkedAnimator());
 }
 
 }

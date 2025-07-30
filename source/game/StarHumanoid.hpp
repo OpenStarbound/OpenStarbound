@@ -482,29 +482,18 @@ private:
 
 // this is because species can be changed on the fly and therefore the humanoid needs to re-initialize as the new species when it changes
 // therefore we need to have these in a dynamic group in players and NPCs for the sake of the networked animator not breaking the game
-class NetHumanoid : NetElement {
+class NetHumanoid : public NetElementGroup {
 public:
   NetHumanoid(HumanoidIdentity identity = HumanoidIdentity(), JsonObject parameters = JsonObject(), Json config = Json());
 
-  void initNetVersion(NetElementVersion const* version = nullptr) override;
-
   void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
   void netLoad(DataStream& ds, NetCompatibilityRules rules) override;
-
-  void enableNetInterpolation(float extrapolationHint = 0.0f) override;
-  void disableNetInterpolation() override;
-  void tickNetInterpolation(float dt) override;
-
-  bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
-  void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
-  void blankNetDelta(float interpolationTime) override;
 
   HumanoidPtr humanoid();
 
 private:
   void setupNetElements();
 
-  NetElementSyncGroup m_netGroup;
   Json m_config;
   JsonObject m_parameters;
   HumanoidPtr m_humanoid;
