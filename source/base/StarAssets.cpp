@@ -321,6 +321,7 @@ Assets::Assets(Settings settings, StringList assetSources) {
         auto memoryName = strf("{}::{}", metadata.value("name", File::baseName(sourcePath)), groupName);
         JsonObject memoryMetadata{ {"name", memoryName} };
         auto memoryAssets = make_shared<MemoryAssetSource>(memoryName, memoryMetadata);
+        auto now = Time::monotonicTime();
         Logger::info("Running {} scripts {}", groupName, *scriptGroup);
         try {
           auto context = luaEngine->createContext();
@@ -333,6 +334,7 @@ Assets::Assets(Settings settings, StringList assetSources) {
         } catch (LuaException const& e) {
           Logger::error("Exception while running {} scripts from asset source '{}': {}", groupName, sourcePath, e.what());
         }
+        Logger::info("Took {} seconds to run {} scripts {}", Time::monotonicTime() - now, groupName, *scriptGroup);
         if (!memoryAssets->empty())
           addSource(strf("{}::{}", sourcePath, groupName), memoryAssets);
       }
