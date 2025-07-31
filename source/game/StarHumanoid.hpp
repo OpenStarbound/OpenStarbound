@@ -448,7 +448,7 @@ private:
 
   Json m_defaultMovementParameters;
   Maybe<Json> m_playerMovementParameters;
-  Maybe<Json> m_animationConfig;
+  bool m_useAnimation;
 
   NetworkedAnimator m_networkedAnimator;
   NetworkedAnimator::DynamicTarget m_networkedAnimatorDynamicTarget;
