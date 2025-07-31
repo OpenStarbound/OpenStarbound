@@ -353,6 +353,11 @@ HumanoidIdentity const& Humanoid::identity() const {
   return m_identity;
 }
 
+void Humanoid::setHumanoidParameters(JsonObject parameters){
+  m_baseConfig = jsonMerge(m_baseConfig, parameters);
+  loadConfig(take(m_mergeConfig), true);
+}
+
 bool Humanoid::loadConfig(Json merger, bool forceRefresh) {
   if (m_mergeConfig == merger && !forceRefresh)
     return false;
@@ -2260,7 +2265,7 @@ Json Humanoid::humanoidConfig(bool withOverrides) {
 
 NetHumanoid::NetHumanoid(HumanoidIdentity identity, JsonObject parameters, Json config) {
   m_config = config;
-  m_parameters = parameters;
+  m_humanoidParameters.reset(parameters);
   m_humanoid = make_shared<Humanoid>(identity, parameters, config);
   setupNetElements();
 }
@@ -2269,29 +2274,50 @@ void NetHumanoid::netStore(DataStream& ds, NetCompatibilityRules rules) const {
   if (!checkWithRules(rules)) return;
   auto identity = m_humanoid->identity();
   ds.write(identity);
-  ds.write(m_parameters);
+  JsonObject parameters = m_humanoidParameters.baseMap();
+  ds.write(parameters);
   ds.write(m_config);
-  NetElementGroup::netStore(ds, rules);
+  NetElementSyncGroup::netStore(ds, rules);
 }
 
 void NetHumanoid::netLoad(DataStream& ds, NetCompatibilityRules rules) {
   if (!checkWithRules(rules)) return;
   HumanoidIdentity identity;
   ds.read(identity);
-  ds.read(m_parameters);
+  JsonObject parameters;
+  ds.read(parameters);
+  m_humanoidParameters.reset(parameters);
   ds.read(m_config);
-  m_humanoid = make_shared<Humanoid>(identity, m_parameters, m_config);
+  m_humanoid = make_shared<Humanoid>(identity, parameters, m_config);
   setupNetElements();
-  NetElementGroup::netLoad(ds, rules);
+  NetElementSyncGroup::netLoad(ds, rules);
+}
+
+void NetHumanoid::netElementsNeedLoad(bool initial) {
+}
+
+void NetHumanoid::netElementsNeedStore() {
+  if (m_humanoidParameters.pullUpdated()) {
+    m_humanoid->setHumanoidParameters(m_humanoidParameters.baseMap());
+  }
 }
 
 HumanoidPtr NetHumanoid::humanoid() {
   return m_humanoid;
 }
 
+JsonObject NetHumanoid::humanoidParameters() {
+  return m_humanoidParameters.baseMap();
+}
+
+void NetHumanoid::setHumanoidParameters(JsonObject parameters) {
+  m_humanoidParameters.reset(parameters);
+  m_humanoid->setHumanoidParameters(parameters);
+}
+
 void NetHumanoid::setupNetElements() {
   clearNetElements();
   addNetElement(m_humanoid->networkedAnimator());
+  addNetElement(&m_humanoidParameters);
 }
-
 }

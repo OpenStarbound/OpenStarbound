@@ -182,6 +182,9 @@ public:
   HumanoidIdentity const& identity() const;
   void updateIdentity();
   void setIdentity(HumanoidIdentity identity);
+
+  void setHumanoidParameter(String key, Maybe<Json> value);
+  Maybe<Json> getHumanoidParameter(String key);
   void setHumanoidParameters(JsonObject parameters);
   JsonObject getHumanoidParameters();
 

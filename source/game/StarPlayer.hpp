@@ -322,6 +322,8 @@ public:
 
   void updateIdentity();
 
+  void setHumanoidParameter(String key, Maybe<Json> value);
+  Maybe<Json> getHumanoidParameter(String key);
   void setHumanoidParameters(JsonObject parameters);
   JsonObject getHumanoidParameters();
   void refreshHumanoidParameters();
