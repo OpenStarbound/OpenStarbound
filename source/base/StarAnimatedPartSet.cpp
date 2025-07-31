@@ -1,6 +1,7 @@
 #include "StarAnimatedPartSet.hpp"
 #include "StarMathCommon.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarInterpolation.hpp"
 
 namespace Star {
 
@@ -411,19 +412,12 @@ void AnimatedPartSet::ActivePartInformation::setAnimationAffineTransform(Mat3F c
   yShearAnimation = atan2(matrix[1][0], matrix[1][1]);
 }
 void AnimatedPartSet::ActivePartInformation::setAnimationAffineTransform(Mat3F const& mat1, Mat3F const& mat2, float progress) {
-  xTranslationAnimation = mat1[0][2];
-  yTranslationAnimation = mat1[1][2];
-  xScaleAnimation = sqrt(square(mat1[0][0]) + square(mat1[0][1]));
-  yScaleAnimation = sqrt(square(mat1[1][0]) + square(mat1[1][1]));
-  xShearAnimation = atan2(mat1[0][1], mat1[0][0]);
-  yShearAnimation = atan2(mat1[1][0], mat1[1][1]);
-
-  xTranslationAnimation += (mat2[0][2] - xTranslationAnimation) * progress;
-  yTranslationAnimation += (mat2[1][2] - yTranslationAnimation) * progress;
-  xScaleAnimation += (sqrt(square(mat2[0][0]) + square(mat2[0][1])) - xScaleAnimation) * progress;
-  yScaleAnimation += (sqrt(square(mat2[1][0]) + square(mat2[1][1])) - yScaleAnimation) * progress;
-  xShearAnimation += (atan2(mat2[0][1], mat2[0][0]) - xShearAnimation) * progress;
-  yShearAnimation += (atan2(mat2[1][0], mat2[1][1]) - yShearAnimation) * progress;
+  xTranslationAnimation = lerp(progress, mat1[0][2], mat2[0][2]);
+  yTranslationAnimation = lerp(progress, mat1[1][2], mat2[1][2]);
+  xScaleAnimation = lerp(progress, sqrt(square(mat1[0][0]) + square(mat1[0][1])), sqrt(square(mat2[0][0]) + square(mat2[0][1])));
+  yScaleAnimation = lerp(progress, sqrt(square(mat1[1][0]) + square(mat1[1][1])), sqrt(square(mat2[1][0]) + square(mat2[1][1])));
+  xShearAnimation = angleLerp(progress, atan2(mat1[0][1], mat1[0][0]), atan2(mat2[0][1], mat2[0][0]));
+  yShearAnimation = angleLerp(progress, atan2(mat1[1][0], mat1[1][1]), atan2(mat2[1][0], mat2[1][1]));
 }
 
 Mat3F AnimatedPartSet::ActivePartInformation::animationAffineTransform() const {
