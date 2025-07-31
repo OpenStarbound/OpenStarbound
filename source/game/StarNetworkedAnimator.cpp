@@ -327,6 +327,9 @@ String NetworkedAnimator::state(String const& stateType) const {
 int NetworkedAnimator::stateFrame(String const& stateType) const {
   return m_animatedParts.activeState(stateType).frame;
 }
+int NetworkedAnimator::stateNextFrame(String const& stateType) const {
+  return m_animatedParts.activeState(stateType).nextFrame;
+}
 float NetworkedAnimator::stateFrameProgress(String const& stateType) const {
   return m_animatedParts.activeState(stateType).frameProgress;
 }

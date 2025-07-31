@@ -83,6 +83,7 @@ public:
   bool setLocalState(String const& stateType, String const& state, bool startNew = false, bool reverse = false);
   String state(String const& stateType) const;
   int stateFrame(String const& stateType) const;
+  int stateNextFrame(String const& stateType) const;
   float stateFrameProgress(String const& stateType) const;
   float stateTimer(String const& stateType) const;
   bool stateReverse(String const& stateType) const;

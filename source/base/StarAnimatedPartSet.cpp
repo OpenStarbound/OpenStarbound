@@ -279,31 +279,28 @@ void AnimatedPartSet::freshenActiveState(StateType& stateType) {
     activeState.frame = clamp<int>(progress, 0, state.frames - 1);
     if (activeState.reverse) {
       activeState.frame = (state.frames - 1) - activeState.frame;
-      if (state.animationMode == Loop)
-        if (activeState.frame <= 0 ) {
-          activeState.nextFrame = state.frames - 1;
-        } else {
-          activeState.nextFrame = clamp<int>(activeState.frame - 1, 0, state.frames - 1);
-        }
+      if ((state.animationMode == Loop) && (activeState.frame <= 0)) {
+        activeState.nextFrame = state.frames - 1;
+      } else {
+        activeState.nextFrame = clamp<int>(activeState.frame - 1, 0, state.frames - 1);
+      }
     } else {
-      if (state.animationMode == Loop)
-        if (activeState.frame >= (state.frames-1) ) {
-          activeState.nextFrame = 0;
-        } else {
-          activeState.nextFrame = clamp<int>(activeState.frame + 1, 0, state.frames - 1);
-        }
+      if ((state.animationMode == Loop) && (activeState.frame >= (state.frames - 1))) {
+        activeState.nextFrame = 0;
+      } else {
+        activeState.nextFrame = clamp<int>(activeState.frame + 1, 0, state.frames - 1);
+      }
     }
 
     activeState.properties = stateType.stateTypeProperties;
     activeState.properties.merge(state.stateProperties, true);
 
-    activeState.nextProperties = activeState.properties;
+    activeState.nextProperties = stateType.stateTypeProperties;
+    activeState.nextProperties.merge(state.stateProperties, true);
 
     for (auto const& pair : state.stateFrameProperties) {
       if (activeState.frame < pair.second.size())
         activeState.properties[pair.first] = pair.second.get(activeState.frame);
-    }
-    for (auto const& pair : state.stateFrameProperties) {
       if (activeState.nextFrame < pair.second.size())
         activeState.nextProperties[pair.first] = pair.second.get(activeState.nextFrame);
     }
@@ -319,6 +316,7 @@ void AnimatedPartSet::freshenActivePart(Part& part) {
     auto& activePart = part.activePart;
     activePart.activeState = {};
     activePart.properties = part.partProperties;
+    activePart.nextProperties = part.partProperties;
 
     // Then go through each of the state types and states and look for a part
     // state match in order of priority.
@@ -348,14 +346,13 @@ void AnimatedPartSet::freshenActivePart(Part& part) {
       // Then set the part state data, as well as any part state frame data if
       // the current frame is within the list size.
       activePart.properties.merge(partState->partStateProperties, true);
-      activePart.nextProperties = activePart.properties;
+
+      activePart.nextProperties.merge(partState->partStateProperties, true);
 
       for (auto const& pair : partState->partStateFrameProperties) {
         if (frame < pair.second.size())
           activePart.properties[pair.first] = pair.second.get(frame);
-      }
-      for (auto const& pair : partState->partStateFrameProperties) {
-        if (nextFrame< pair.second.size())
+        if (nextFrame < pair.second.size())
           activePart.nextProperties[pair.first] = pair.second.get(nextFrame);
       }
 
