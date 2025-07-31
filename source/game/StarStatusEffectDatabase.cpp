@@ -51,4 +51,19 @@ UniqueStatusEffectConfig StatusEffectDatabase::parseUniqueEffect(Json const& con
   }
 }
 
+JsonObject UniqueStatusEffectConfig::toJson() {
+  return {
+    {"name", name},
+    {"blockingStat", blockingStat.isValid() ? blockingStat.value() : Json()},
+    {"effectConfig", effectConfig},
+    {"defaultDuration", defaultDuration},
+    {"scripts", jsonFromStringList(scripts)},
+    {"scriptDelta", scriptDelta},
+    {"animationConfig", animationConfig.isValid() ? animationConfig.value() : Json()},
+    {"label", label},
+    {"description", description},
+    {"icon", icon.isValid() ? icon.value() : Json()}
+  };
 }
+
+}// namespace Star

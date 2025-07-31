@@ -82,6 +82,9 @@ public:
   uint64_t price() const;
 
   virtual List<Drawable> iconDrawables() const;
+  virtual Maybe<List<Drawable>> secondaryDrawables() const;
+  virtual bool hasSecondaryDrawables() const;
+
   virtual List<Drawable> dropDrawables() const;
   String largeImage() const;
 
@@ -119,10 +122,13 @@ public:
 protected:
   void setMaxStack(uint64_t maxStack);
   void setDescription(String const& description);
+  void setShortDescription(String const& description);
+
   void setRarity(Rarity rarity);
   void setPrice(uint64_t price);
   // icon drawables are pixels, not tile, based
   void setIconDrawables(List<Drawable> drawables);
+  void setSecondaryIconDrawables(Maybe<List<Drawable>> drawables);
   void setTwoHanded(bool twoHanded);
   void setTimeToLive(float timeToLive);
 
@@ -143,6 +149,7 @@ private:
   String m_description;
   Rarity m_rarity;
   List<Drawable> m_iconDrawables;
+  Maybe<List<Drawable>> m_secondaryIconDrawables;
   bool m_twoHanded;
   float m_timeToLive;
   uint64_t m_price;
