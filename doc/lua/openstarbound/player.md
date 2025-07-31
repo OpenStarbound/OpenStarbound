@@ -11,7 +11,7 @@ Serializes the player to Json the same way Starbound does for disk storage and r
 #### `void` player.load(`Json` save)
 
 Reloads the player from a Json **save**. This will reset active ScriptPanes and scripts running on the player.
-  
+
 ---
 
 #### `String` player.name()
@@ -30,13 +30,51 @@ Returns the player's description.
 
 #### `void` player.setDescription(`String` description)
 
-Sets the player's description. The new description will not be networked buntil the player warps or respawns.
+Sets the player's description. The new description will not be networked until the player warps or respawns.
+
+---
+
+#### `void` player.refreshHumanoidParameters()
+
+Refreshes the active humanoid parameters by re-building the current humanoid instance.
+
+This must be called when certain values in the humanoid config would be changed by a parameter, such as the animationConfig and movementParameters.
+
+This is implicitly called whenever the current humanoid identity's species or imagePath changes.
+
+This has to network the humanoid identity and humanoid parameters as intialization arguments for the new instance, so only use it when necessary.
+
+#### `void` player.setHumanoidParameter(`String` key `Json` value)
+
+Sets a parameter that overwrites a value in the humanoid config.
+
+#### `void` player.setHumanoidParameters(`JsonObject` parameters)
+
+Replaces the current table of humanoid parameters that overwrite values in the humanoid config.
+
+#### `Maybe<Json>` player.getHumanoidParameter(`String` key)
+
+Gets a humanoid parameter.
+
+#### `JsonObject` player.getHumanoidParameters()
+
+Gets a table of all the humanoid parameters.
+
+---
+
+#### `JsonObject` player.humanoidConfig()
+
+Gets the active humanoid config.
+
+The humanoid config controls how the player is animated, as well as their movement properties.
 
 ---
 
 #### `void` player.setSpecies(`String` species)
 
 Sets the player's species. Must be a valid species.
+
+Implicitly calls `player.refreshHumanoidParameters()` if species is changed.
 
 ---
 
@@ -53,6 +91,8 @@ If the player has a custom humanoid image path set, returns it. otherwise, retur
 #### `void` player.setImagePath(`String` imagePath)
 
 Sets the player's image path. Specify `nil` to remove the image path.
+
+Implicitly calls `player.refreshHumanoidParameters()` if imagePath is changed.
 
 ---
 
@@ -216,27 +256,27 @@ Makes the player do an emote with the default cooldown unless a **cooldown** is 
 #### `String, float` player.currentEmote()
 
 Returns the player's current emote and the seconds left in it.
-  
+
 ---
 
 #### `unsigned` player.actionBarGroup()
 
 Returns the player's active action bar.
-  
+
 #### `void` player.setActionBarGroup(`unsigned` barId)
-  
+
 Sets the player's active action bar.
-  
+
 #### `Variant<unsigned, EssentialItem>` player.selectedActionBarSlot()
 
 Returns the player's selected action bar slot.
-  
+
 #### `void` player.setSelectedActionBarSlot(`Variant<unsigned, EssentialItem>` slot)
-  
+
 Sets the player's selected action bar slot.
-  
+
 #### `void` player.setDamageTeam(`DamageTeam` team)
-  
+
 Sets the player's damage team. This must be called every frame to override the current damage team that the server has given the player (normally controlled by /pvp)
 
 ---
@@ -254,6 +294,8 @@ Returns the specific humanoid identity of the player, containing information suc
 #### `void` player.setHumanoidIdentity(`Json` humanoidIdentity)
 
 Sets the specific humanoid identity of the player.
+
+Implicitly calls `player.refreshHumanoidParameters()` if species or imagePath is changed.
 
 ---
 
@@ -274,7 +316,7 @@ Returns the size of an item bag.
 
 #### `bool` player.itemAllowedInBag(`String` itemBagName, `ItemDescriptor` item)
 
-Returns whether the specified item can enter the specified item bag. 
+Returns whether the specified item can enter the specified item bag.
 
 ---
 
