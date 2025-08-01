@@ -69,7 +69,6 @@ public:
   String skull() const;
   List<PersistentStatusEffect> statusEffects() const;
   String effectDirectives() const;
-  List<String> animationScripts() const;
 
   SpeciesCharCreationTooltip const& tooltip() const;
 
@@ -94,7 +93,6 @@ private:
   String m_effectDirectives;
 
   List<String> m_buildScripts;
-  List<String> m_animationScripts;
 
   friend class SpeciesDatabase;
 };

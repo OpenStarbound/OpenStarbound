@@ -429,6 +429,8 @@ void Humanoid::loadAnimation() {
   auto animationConfig = m_baseConfig.opt("animation");
   m_useAnimation = animationConfig.isValid();
 
+  m_animationScripts = jsonToStringList(m_baseConfig.getArray("animationScripts", JsonArray()));
+
   m_animationStates.clear();
   m_animationStatesBackwards.clear();
   m_emoteAnimationStates.clear();
@@ -2255,6 +2257,10 @@ NetworkedAnimator const* Humanoid::networkedAnimator() const {
 
 NetworkedAnimator::DynamicTarget * Humanoid::networkedAnimatorDynamicTarget() {
   return &m_networkedAnimatorDynamicTarget;
+}
+
+List<String> Humanoid::animationScripts() const {
+  return m_animationScripts;
 }
 
 Json Humanoid::humanoidConfig(bool withOverrides) {

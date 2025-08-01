@@ -199,9 +199,7 @@ void Npc::init(World* world, EntityId entityId, EntityMode mode) {
     m_scriptComponent.init(world);
   }
   if (world->isClient()) {
-    auto speciesDatabase = Root::singleton().speciesDatabase();
-    auto speciesDef = speciesDatabase->species(m_npcVariant.humanoidIdentity.species);
-    m_scriptedAnimator.setScripts(speciesDef->animationScripts());
+    m_scriptedAnimator.setScripts(humanoid()->animationScripts());
     m_scriptedAnimator.addCallbacks("animationConfig", LuaBindings::makeScriptedAnimatorCallbacks(humanoid()->networkedAnimator(),
       [this](String const& name, Json const& defaultValue) -> Json {
         return m_scriptedAnimationParameters.value(name, defaultValue);
@@ -1469,7 +1467,7 @@ void Npc::refreshHumanoidParameters() {
       m_scriptedAnimator.removeCallbacks("config");
       m_scriptedAnimator.removeCallbacks("entity");
 
-      m_scriptedAnimator.setScripts(speciesDef->animationScripts());
+      m_scriptedAnimator.setScripts(humanoid()->animationScripts());
       m_scriptedAnimator.addCallbacks("animationConfig", LuaBindings::makeScriptedAnimatorCallbacks(humanoid()->networkedAnimator(),
         [this](String const& name, Json const& defaultValue) -> Json {
           return m_scriptedAnimationParameters.value(name, defaultValue);

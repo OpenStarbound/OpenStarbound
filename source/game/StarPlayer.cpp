@@ -371,7 +371,7 @@ void Player::init(World* world, EntityId entityId, EntityMode mode) {
   }
 
   if (world->isClient()) {
-      m_scriptedAnimator.setScripts(speciesDefinition->animationScripts());
+      m_scriptedAnimator.setScripts(humanoid()->animationScripts());
       m_scriptedAnimator.addCallbacks("animationConfig", LuaBindings::makeScriptedAnimatorCallbacks(humanoid()->networkedAnimator(),
         [this](String const& name, Json const& defaultValue) -> Json {
           return m_scriptedAnimationParameters.value(name, defaultValue);
@@ -2878,7 +2878,7 @@ void Player::refreshHumanoidParameters() {
       m_scriptedAnimator.removeCallbacks("animationConfig");
       m_scriptedAnimator.removeCallbacks("entity");
 
-      m_scriptedAnimator.setScripts(speciesDef->animationScripts());
+      m_scriptedAnimator.setScripts(humanoid()->animationScripts());
       m_scriptedAnimator.addCallbacks("animationConfig", LuaBindings::makeScriptedAnimatorCallbacks(humanoid()->networkedAnimator(),
         [this](String const& name, Json const& defaultValue) -> Json {
           return m_scriptedAnimationParameters.value(name, defaultValue);

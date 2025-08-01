@@ -316,6 +316,7 @@ public:
   NetworkedAnimator * networkedAnimator();
   NetworkedAnimator const* networkedAnimator() const;
   NetworkedAnimator::DynamicTarget * networkedAnimatorDynamicTarget();
+  List<String> animationScripts() const;
 
   Json humanoidConfig(bool withOverrides = true);
 
@@ -452,6 +453,8 @@ private:
 
   NetworkedAnimator m_networkedAnimator;
   NetworkedAnimator::DynamicTarget m_networkedAnimatorDynamicTarget;
+
+  List<String> m_animationScripts;
 
   struct AnimationStateArgs {
     String state;

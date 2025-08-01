@@ -78,7 +78,6 @@ SpeciesDefinition::SpeciesDefinition(Json const& config) {
   m_humanoidConfig = config.getString("humanoidConfig", "/humanoid.config");
   m_humanoidOverrides = config.getObject("humanoidOverrides", JsonObject());
   m_buildScripts = jsonToStringList(config.getArray("buildScripts", JsonArray()));
-  m_animationScripts = jsonToStringList(config.getArray("animationScripts", JsonArray()));
 
   Json tooltip = config.get("charCreationTooltip");
 
@@ -198,9 +197,6 @@ String SpeciesDefinition::effectDirectives() const {
   return m_effectDirectives;
 }
 
-List<String> SpeciesDefinition::animationScripts() const {
-  return m_animationScripts;
-}
 
 void SpeciesDefinition::generateHumanoid(HumanoidIdentity& identity, int64_t seed, Maybe<Gender> genderOverride) {
   RandomSource randSource(seed);
