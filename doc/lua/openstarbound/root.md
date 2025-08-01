@@ -110,3 +110,9 @@ Returns all recipes.
 Returns the asset file path for the specified item.
 
 ---
+
+#### `JsonObject` root.effectConfig(`String` effect)
+
+Returns the config for the status effect.
+
+---
