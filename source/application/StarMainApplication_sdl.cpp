@@ -1063,6 +1063,7 @@ private:
     });
     #else
     _unused(image);
+    _unused(path);
     if (png) {
       StringMap<ByteArray> clipboardData = {{"image/png", std::move(*png)}};
       return setClipboardData(std::move(clipboardData));

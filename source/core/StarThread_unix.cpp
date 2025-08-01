@@ -23,7 +23,7 @@
 #endif
 
 #ifndef STAR_SYSTEM_MACOS
-#define STAR_MUTEX_TIMED
+#define STAR_RECURSIVE_MUTEX_TIMED
 #endif
 
 namespace Star {
@@ -215,7 +215,7 @@ struct RecursiveMutexImpl {
   }
 
   void lock() {
-#ifdef STAR_MUTEX_TIMED
+#ifdef STAR_RECURSIVE_MUTEX_TIMED
     timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
     ts.tv_sec += 15;
