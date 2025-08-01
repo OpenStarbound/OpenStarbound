@@ -122,3 +122,10 @@ Returns the config for the species.
 Generates a random humanoid identity for the given species. Optionally supply a seed and or predetermined gender.
 
 ---
+
+#### `JsonObject` root.effectConfig(`String` effect)
+
+Returns the config for the status effect.
+
+
+---
