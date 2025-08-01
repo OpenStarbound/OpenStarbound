@@ -838,6 +838,11 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
     // Make sure we don't copy the original image
     String fallback = "";
     Json jImage = activePart.properties.value("image", {});
+    if (version() > 0 && m_flipped.get()) {
+      if (auto maybeFlipped = activePart.properties.value("flippedImage").optString())
+        jImage = *maybeFlipped;
+    }
+
     String const& image = jImage.isType(Json::Type::String) ? *jImage.stringPtr() : fallback;
 
     bool centered = activePart.properties.value("centered").optBool().value(true);

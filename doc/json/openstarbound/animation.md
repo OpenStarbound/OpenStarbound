@@ -55,3 +55,6 @@ These are also available in part state `properties` and `frameProperties` by def
 
 ## animation tag properties
 The `properties` or `frameProperties` of a stateType's state can define an `animationTags` JsonObject, where each key : value pair is a tag that gets set while it is active.
+
+## flipped image property
+`properties` or `frameProperties` can contain a `flippedImage` property that gets used for the image when the animator is flipped, much like how there is a `flippedZlevel` property
