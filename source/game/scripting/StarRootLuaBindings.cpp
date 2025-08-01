@@ -265,9 +265,9 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
     return root->speciesDatabase()->species(species)->config();
   });
 
-  callbacks.registerCallback("generateHumanoidIdentity", [root](String const& species, Json const& seed, Maybe<String> gender) -> Json {
+  callbacks.registerCallback("generateHumanoidIdentity", [root](String const& species, Maybe<uint64_t> seed, Maybe<String> gender) -> Json {
     auto identity = HumanoidIdentity();
-    root->speciesDatabase()->species(species)->generateHumanoid(identity, seed.toUInt(), gender.isValid() ? GenderNames.getLeft(*gender) : Maybe<Gender>());
+    root->speciesDatabase()->species(species)->generateHumanoid(identity, seed.value(Random::randu64()), gender.isValid() ? GenderNames.getLeft(*gender) : Maybe<Gender>());
     return identity.toJson();
   });
 
