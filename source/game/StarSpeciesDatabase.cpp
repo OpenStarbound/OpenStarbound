@@ -6,6 +6,9 @@
 #include "StarAssets.hpp"
 #include "StarRoot.hpp"
 #include "StarImageProcessing.hpp"
+#include "StarRootLuaBindings.hpp"
+#include "StarConfigLuaBindings.hpp"
+#include "StarUtilityLuaBindings.hpp"
 
 namespace Star {
 
@@ -24,7 +27,7 @@ SpeciesOption::SpeciesOption()
     undyColorDirectives(),
     hairColorDirectives() {}
 
-SpeciesDatabase::SpeciesDatabase() {
+SpeciesDatabase::SpeciesDatabase() : m_luaRoot(make_shared<LuaRoot>()) {
   auto assets = Root::singleton().assets();
 
   auto& files = assets->scanExtension("species");
@@ -49,11 +52,32 @@ StringMap<SpeciesDefinitionPtr> SpeciesDatabase::allSpecies() const {
   return m_species;
 }
 
+Json SpeciesDatabase::humanoidConfig(HumanoidIdentity identity, JsonObject parameters, Json config) const {
+  auto speciesDef = species(identity.species);
+  if (speciesDef->m_buildScripts.size() > 0) {
+    RecursiveMutexLocker locker(m_luaMutex);
+    auto context = m_luaRoot->createContext(speciesDef->m_buildScripts);
+    context.setCallbacks("root", LuaBindings::makeRootCallbacks());
+    context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
+
+    // NPCs can have their own custom humanoidConfig that don't align with their species
+    // however we need to make sure it only gets passed into this if its different from base
+    // so in script we know when we have a unique case we should probably ignore or not
+    return context.invokePath<Json>("build", identity.toJson(), parameters, speciesDef->humanoidConfig(), config );
+  } else {
+    if (config.isType(Json::Type::Object))
+      return config;
+    // assuming most people would just use it to merge over default humanoid config params
+    return jsonMerge(speciesDef->humanoidConfig(), parameters);
+  }
+}
+
 SpeciesDefinition::SpeciesDefinition(Json const& config) {
   m_config = config;
   m_kind = config.getString("kind");
   m_humanoidConfig = config.getString("humanoidConfig", "/humanoid.config");
   m_humanoidOverrides = config.getObject("humanoidOverrides", JsonObject());
+  m_buildScripts = jsonToStringList(config.getArray("buildScripts", JsonArray()));
 
   Json tooltip = config.get("charCreationTooltip");
 
@@ -92,9 +116,9 @@ SpeciesDefinition::SpeciesDefinition(Json const& config) {
   species.hairColorAsBodySubColor = config.getBool("hairColorAsBodySubColor", false);
   species.bodyColorAsFacialMaskSubColor = config.getBool("bodyColorAsFacialMaskSubColor", false);
   species.altColorAsFacialMaskSubColor = config.getBool("altColorAsFacialMaskSubColor", false);
-  species.bodyColorDirectives = colorDirectivesFromConfig(config.getArray("bodyColor"));
-  species.undyColorDirectives = colorDirectivesFromConfig(config.getArray("undyColor"));
-  species.hairColorDirectives = colorDirectivesFromConfig(config.getArray("hairColor"));
+  species.bodyColorDirectives = colorDirectivesFromConfig(config.getArray("bodyColor", JsonArray({""})));
+  species.undyColorDirectives = colorDirectivesFromConfig(config.getArray("undyColor", JsonArray({""})));
+  species.hairColorDirectives = colorDirectivesFromConfig(config.getArray("hairColor", JsonArray({""})));
   for (auto genderData : config.getArray("genders", JsonArray())) {
     SpeciesGenderOption gender;
     gender.name = genderData.getString("name", "");
@@ -102,18 +126,22 @@ SpeciesDefinition::SpeciesDefinition(Json const& config) {
     gender.image = genderData.getString("image", "");
     gender.characterImage = genderData.getString("characterImage", "");
 
-    gender.hairOptions = jsonToStringList(genderData.get("hair"));
-    gender.hairGroup = genderData.getString("hairGroup", "hair");
-    gender.shirtOptions = jsonToStringList(genderData.get("shirt"));
-    gender.pantsOptions = jsonToStringList(genderData.get("pants"));
-    gender.facialHairGroup = genderData.getString("facialHairGroup");
-    gender.facialHairOptions = jsonToStringList(genderData.get("facialHair"));
-    gender.facialMaskGroup = genderData.getString("facialMaskGroup");
-    gender.facialMaskOptions = jsonToStringList(genderData.get("facialMask"));
+    gender.hairOptions = jsonToStringList(genderData.get("hair", config.get("hair", JsonArray({""}))));
+    gender.hairGroup = genderData.getString("hairGroup", config.getString("HairGroup", "hair"));
+    gender.shirtOptions = jsonToStringList(genderData.get("shirt", config.get("shirt", JsonArray({""}))));
+    gender.pantsOptions = jsonToStringList(genderData.get("pants", config.get("pants", JsonArray({""}))));
+    gender.facialHairGroup = genderData.getString("facialHairGroup", config.getString("facialHairGroup", ""));
+    gender.facialHairOptions = jsonToStringList(genderData.get("facialHair", config.get("facialHair", JsonArray({""}))));
+    gender.facialMaskGroup = genderData.getString("facialMaskGroup", config.getString("facialMaskGroup",""));
+    gender.facialMaskOptions = jsonToStringList(genderData.get("facialMask", config.get("facialMask", JsonArray({""}))));
 
     species.genderOptions.append(gender);
   }
   m_options = species;
+}
+
+Json SpeciesDefinition::config() const {
+  return m_config;
 }
 
 String SpeciesDefinition::kind() const {
@@ -169,11 +197,16 @@ String SpeciesDefinition::effectDirectives() const {
   return m_effectDirectives;
 }
 
-void SpeciesDefinition::generateHumanoid(HumanoidIdentity& identity, int64_t seed) {
+
+void SpeciesDefinition::generateHumanoid(HumanoidIdentity& identity, int64_t seed, Maybe<Gender> genderOverride) {
   RandomSource randSource(seed);
 
   identity.species = m_kind;
-  identity.gender = randSource.randb() ? Gender::Male : Gender::Female;
+  if (genderOverride.isValid())
+    identity.gender = genderOverride.value();
+  else
+    identity.gender = randSource.randb() ? Gender::Male : Gender::Female;
+
   identity.name = Root::singleton().nameGenerator()->generateName(nameGen(identity.gender), randSource);
 
   auto gender = m_options.genderOptions[(unsigned)identity.gender];

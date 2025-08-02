@@ -23,6 +23,7 @@
 #include "StarDamageDatabase.hpp"
 #include "StarDungeonGenerator.hpp"
 #include "StarImageLuaBindings.hpp"
+#include "StarSpeciesDatabase.hpp"
 #include "StarStatusEffectDatabase.hpp"
 
 namespace Star {
@@ -259,6 +260,16 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
     else
       root->configuration()->setPath(path, value);
     });
+
+  callbacks.registerCallback("speciesConfig", [root](String const& species) -> Json {
+    return root->speciesDatabase()->species(species)->config();
+  });
+
+  callbacks.registerCallback("generateHumanoidIdentity", [root](String const& species, Maybe<uint64_t> seed, Maybe<String> gender) -> Json {
+    auto identity = HumanoidIdentity();
+    root->speciesDatabase()->species(species)->generateHumanoid(identity, seed.value(Random::randu64()), gender.isValid() ? GenderNames.getLeft(*gender) : Maybe<Gender>());
+    return identity.toJson();
+  });
 
   callbacks.registerCallback("effectConfig", [root](String const& effect) -> Json {
     return root->statusEffectDatabase()->uniqueEffectConfig(effect).toJson();

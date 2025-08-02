@@ -118,6 +118,7 @@ Maybe<String> const& ArmorItem::techModule() const {
   return m_techModule;
 }
 
+
 void ArmorItem::refreshIconDrawables() {
   auto drawables = iconDrawables();
   for (auto& drawable : drawables) {
