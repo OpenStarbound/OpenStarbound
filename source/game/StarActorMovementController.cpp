@@ -1071,15 +1071,15 @@ void ActorMovementController::doSetAnchorState(Maybe<EntityAnchorState> anchorSt
     if (!entityAnchor)
       throw ActorMovementControllerException::format("Anchor position {} is disabled ActorMovementController::setAnchorState", anchorState->positionIndex);
   }
-
-  if (!entityAnchor && m_entityAnchor && m_entityAnchor->exitBottomPosition) {
-    auto boundBox = MovementController::localBoundBox();
-    Vec2F bottomMid = {boundBox.center()[0], boundBox.yMin()};
-    setPosition(*m_entityAnchor->exitBottomPosition - bottomMid);
-  }
-
+  auto prevAnchor = m_entityAnchor;
   m_anchorState.set(anchorState);
   m_entityAnchor = std::move(entityAnchor);
+
+  if (!entityAnchor && prevAnchor && prevAnchor->exitBottomPosition) {
+    auto boundBox = MovementController::localBoundBox();
+    Vec2F bottomMid = {boundBox.center()[0], boundBox.yMin()};
+    setPosition(*prevAnchor->exitBottomPosition - bottomMid);
+  }
 
   if (m_entityAnchor)
     setPosition(m_entityAnchor->position);
