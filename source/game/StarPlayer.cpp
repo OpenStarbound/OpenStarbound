@@ -187,7 +187,7 @@ Player::Player(PlayerConfigPtr config, Uuid uuid) {
   m_netGroup.addNetElement(m_techController.get());
 
   m_netHumanoid.setCompatibilityVersion(10);
-  m_netGroup.addNetElement(&m_netHumanoid);
+  // m_netGroup.addNetElement(&m_netHumanoid);
   m_refreshedHumanoidParameters.setCompatibilityVersion(10);
   m_netGroup.addNetElement(&m_refreshedHumanoidParameters);
 
