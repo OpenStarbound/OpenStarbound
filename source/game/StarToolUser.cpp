@@ -208,7 +208,8 @@ List<Drawable> ToolUser::renderObjectPreviews(Vec2F aimPosition, Direction walki
   else if (auto alt = as<ObjectItem>(m_altHandItem.get()))
     return generate(alt);
   else
-    return {};
+    m_cachedObjectItem.reset();
+  return {};
 }
 
 Maybe<Direction> ToolUser::setupHumanoidHandItems(Humanoid& humanoid, Vec2F position, Vec2F aimPosition) const {
