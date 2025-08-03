@@ -165,14 +165,17 @@ Maybe<float> ToolUser::toolRadius() const {
   return {};
 }
 
-List<Drawable> ToolUser::renderObjectPreviews(Vec2F aimPosition, Direction walkingDirection, bool inToolRange, Color favoriteColor) const {
+List<Drawable> ToolUser::renderObjectPreviews(Vec2F aimPosition, Direction walkingDirection, bool inToolRange, Color favoriteColor) {
   if (m_suppress.get() || !m_user)
     return {};
 
   auto generate = [&](ObjectItemPtr item) -> List<Drawable> {
+    Vec2I aimPos(aimPosition.floor());
+    if ((aimPos == m_cachedObjectPreviewPosition) && (item == m_cachedObjectItem))
+      return m_cachedObjectPreview;
+
     auto objectDatabase = Root::singleton().objectDatabase();
 
-    Vec2I aimPos(aimPosition.floor());
     auto drawables = objectDatabase->cursorHintDrawables(m_user->world(), item->objectName(),
         aimPos, walkingDirection, item->objectParameters());
 
@@ -194,6 +197,9 @@ List<Drawable> ToolUser::renderObjectPreviews(Vec2F aimPosition, Direction walki
         drawable.imagePart().addDirectives(imageOperationToString(op), true);
       drawable.color = opacityMask;
     }
+    m_cachedObjectPreview = drawables;
+    m_cachedObjectItem = item;
+    m_cachedObjectPreviewPosition = aimPos;
     return drawables;
   };
 
