@@ -185,6 +185,8 @@ void Object::init(World* world, EntityId entityId, EntityMode mode) {
 
   if (isMaster()) {
     setImageKey("color", colorName);
+    for (auto p : configValue("defaultImageKeys", JsonObject()).toObject())
+      setImageKey(p.first, p.second.toString());
 
     if (m_config->lightColors.contains(colorName))
       m_lightSourceColor.set(m_config->lightColors.get(colorName));
