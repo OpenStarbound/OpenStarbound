@@ -219,6 +219,9 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
       DamageKind const& damageKind = root->damageDatabase()->damageKind(damageKindName);
       return root->damageDatabase()->elementalType(damageKind.elementalType).resistanceStat;
     });
+  callbacks.registerCallback("elementalType", [root](String const& damageKindName) -> String {
+      return root->damageDatabase()->damageKind(damageKindName).elementalType;
+    });
 
   callbacks.registerCallback("dungeonMetadata", [root](String const& name) {
       return root->dungeonDefinitions()->getMetadata(name);
