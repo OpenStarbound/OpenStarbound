@@ -306,7 +306,7 @@ void Npc::readNetState(ByteArray data, float interpolationTime, NetCompatibility
 }
 
 String Npc::description() const {
-  return m_npcVariant.description;
+  return m_npcVariant.description.value("Some funny looking person");
 }
 
 String Npc::species() const {
@@ -1316,7 +1316,6 @@ void Npc::setHumanoidParameter(String key, Maybe<Json> value) {
   else
     m_npcVariant.humanoidParameters.erase(key);
 
-  m_npcVariant.overrides.set("humanoidParameters", m_npcVariant.humanoidParameters);
   m_netHumanoid.netElements().last()->setHumanoidParameters(m_npcVariant.humanoidParameters);
 }
 
@@ -1327,7 +1326,6 @@ Maybe<Json> Npc::getHumanoidParameter(String key) {
 void Npc::setHumanoidParameters(JsonObject parameters) {
   m_npcVariant.humanoidParameters = parameters;
 
-  m_npcVariant.overrides.set("humanoidParameters", m_npcVariant.humanoidParameters);
   m_netHumanoid.netElements().last()->setHumanoidParameters(m_npcVariant.humanoidParameters);
 }
 
@@ -1421,7 +1419,6 @@ void Npc::setName(String const& name) {
 }
 
 void Npc::setDescription(String const& description) {
-  m_npcVariant.overrides = m_npcVariant.overrides.set("description", description);
   m_npcVariant.description = description;
 }
 
