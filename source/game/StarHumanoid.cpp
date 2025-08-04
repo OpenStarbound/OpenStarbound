@@ -1023,8 +1023,8 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
       if (frontHand.holdingItem && withItems) {
         m_networkedAnimator.setLocalTag("frontArmFrame", frontHand.frontFrame);
         m_networkedAnimator.setLocalState("frontArm", m_networkedAnimator.hasState("frontArm", frontHand.frontFrame) ? frontHand.frontFrame : "rotation");
-        if (!m_twoHanded)
-          m_networkedAnimator.setPartDrawables(m_frontItemPart, frontHand.itemDrawables);
+
+        m_networkedAnimator.setPartDrawables(m_frontItemPart, frontHand.itemDrawables);
         m_networkedAnimator.setLocalState("frontHandItem", frontHand.outsideOfHand ? "outside" : "inside");
       } else {
         m_networkedAnimator.setLocalState("frontArm", "idle");
