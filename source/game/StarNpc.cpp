@@ -953,7 +953,7 @@ void Npc::setupNetStates() {
   m_netGroup.addNetElement(&m_refreshedHumanoidParameters);
 
   m_netHumanoid.setCompatibilityVersion(10);
-  // m_netGroup.addNetElement(&m_netHumanoid);
+  m_netGroup.addNetElement(&m_netHumanoid);
 
   m_scriptedAnimationParameters.setCompatibilityVersion(10);
   m_netGroup.addNetElement(&m_scriptedAnimationParameters);
