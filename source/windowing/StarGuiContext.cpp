@@ -457,8 +457,8 @@ bool GuiContext::setClipboardData(StringMap<ByteArray> data) {
   return m_applicationController->setClipboardData(std::move(data));
 }
 
-bool GuiContext::setClipboardImage(Image const& image, ByteArray* png) {
-  return m_applicationController->setClipboardImage(image, png);
+bool GuiContext::setClipboardImage(Image const& image, ByteArray* png, String const* path) {
+  return m_applicationController->setClipboardImage(image, png, path);
 }
 
 bool GuiContext::setClipboardFile(String const& path) {

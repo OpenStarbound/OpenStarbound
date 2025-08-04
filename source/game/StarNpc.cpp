@@ -27,11 +27,14 @@
 #include "StarJsonExtra.hpp"
 #include "StarDanceDatabase.hpp"
 #include "StarSpeciesDatabase.hpp"
+#include "StarNetworkedAnimatorLuaBindings.hpp"
+#include "StarScriptedAnimatorLuaBindings.hpp"
 
 namespace Star {
 
-Npc::Npc(NpcVariant const& npcVariant)
-  : m_humanoid(npcVariant.humanoidConfig) {
+Npc::Npc(NpcVariant const& npcVariant) {
+
+  m_netHumanoid.addNetElement(make_shared<NetHumanoid>(npcVariant.humanoidIdentity, npcVariant.humanoidParameters, npcVariant.uniqueHumanoidConfig ? npcVariant.humanoidConfig : Json()));
   m_disableWornArmor.set(npcVariant.disableWornArmor);
 
   m_emoteState = HumanoidEmote::Idle;
@@ -63,12 +66,12 @@ Npc::Npc(NpcVariant const& npcVariant)
 
   m_scriptComponent.setScripts(m_npcVariant.scripts);
   m_scriptComponent.setUpdateDelta(m_npcVariant.initialScriptDelta);
-  auto movementParameters = ActorMovementParameters(m_npcVariant.movementParameters);
+  auto movementParameters = ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), m_npcVariant.movementParameters));
   if (!movementParameters.physicsEffectCategories)
     movementParameters.physicsEffectCategories = StringSet({"npc"});
   m_movementController = make_shared<ActorMovementController>(movementParameters);
-  m_humanoid.setIdentity(m_npcVariant.humanoidIdentity);
-  m_deathParticleBurst.set(m_humanoid.defaultDeathParticles());
+  m_identityUpdated = false;
+  m_deathParticleBurst.set(humanoid()->defaultDeathParticles());
 
   m_statusController = make_shared<StatusController>(m_npcVariant.statusControllerSettings);
   m_statusController->setPersistentEffects("innate", m_npcVariant.innateStatusEffects);
@@ -104,8 +107,8 @@ Npc::Npc(NpcVariant const& npcVariant, Json const& diskStore) : Npc(npcVariant) 
   auto aimPosition = jsonToVec2F(diskStore.get("aimPosition"));
   m_xAimPosition.set(aimPosition[0]);
   m_yAimPosition.set(aimPosition[1]);
-  m_humanoid.setState(Humanoid::StateNames.getLeft(diskStore.getString("humanoidState")));
-  m_humanoid.setEmoteState(HumanoidEmoteNames.getLeft(diskStore.getString("humanoidEmoteState")));
+  humanoid()->setState(Humanoid::StateNames.getLeft(diskStore.getString("humanoidState")));
+  humanoid()->setEmoteState(HumanoidEmoteNames.getLeft(diskStore.getString("humanoidEmoteState")));
   m_isInteractive.set(diskStore.getBool("isInteractive"));
   m_shifting.set(diskStore.getBool("shifting"));
   m_damageOnTouch.set(diskStore.getBool("damageOnTouch", false));
@@ -140,8 +143,8 @@ Json Npc::diskStore() const {
     {"armor", m_armor->diskStore()},
     {"tools", m_tools->diskStore()},
     {"aimPosition", jsonFromVec2F({m_xAimPosition.get(), m_yAimPosition.get()})},
-    {"humanoidState", Humanoid::StateNames.getRight(m_humanoid.state())},
-    {"humanoidEmoteState", HumanoidEmoteNames.getRight(m_humanoid.emoteState())},
+    {"humanoidState", Humanoid::StateNames.getRight(humanoid()->state())},
+    {"humanoidEmoteState", HumanoidEmoteNames.getRight(humanoid()->emoteState())},
     {"isInteractive", m_isInteractive.get()},
     {"shifting", m_shifting.get()},
     {"damageOnTouch", m_damageOnTouch.get()},
@@ -175,7 +178,7 @@ void Npc::init(World* world, EntityId entityId, EntityMode mode) {
   m_statusController->init(this, m_movementController.get());
   m_tools->init(this);
 
-  m_armor->setupHumanoid(m_humanoid, false);
+  m_armor->setupHumanoid(*humanoid(), forceNude());
 
   if (isMaster()) {
     m_movementController->resetAnchorState();
@@ -191,9 +194,23 @@ void Npc::init(World* world, EntityId entityId, EntityMode mode) {
     m_scriptComponent.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(m_statusController.get()));
     m_scriptComponent.addCallbacks("behavior", LuaBindings::makeBehaviorCallbacks(&m_behaviors));
     m_scriptComponent.addCallbacks("songbook", LuaBindings::makeSongbookCallbacks(m_songbook.get()));
+    m_scriptComponent.addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(humanoid()->networkedAnimator()));
     m_scriptComponent.addActorMovementCallbacks(m_movementController.get());
     m_scriptComponent.init(world);
   }
+  if (world->isClient()) {
+    m_scriptedAnimator.setScripts(humanoid()->animationScripts());
+    m_scriptedAnimator.addCallbacks("animationConfig", LuaBindings::makeScriptedAnimatorCallbacks(humanoid()->networkedAnimator(),
+      [this](String const& name, Json const& defaultValue) -> Json {
+        return m_scriptedAnimationParameters.value(name, defaultValue);
+      }));
+    m_scriptedAnimator.addCallbacks("config",
+        LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def)
+            { return m_npcVariant.scriptConfig.query(name, def); }));
+    m_scriptedAnimator.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
+    m_scriptedAnimator.init(world);
+  }
+
 }
 
 void Npc::uninit() {
@@ -206,7 +223,14 @@ void Npc::uninit() {
     m_scriptComponent.removeCallbacks("status");
     m_scriptComponent.removeCallbacks("behavior");
     m_scriptComponent.removeCallbacks("songbook");
+    m_scriptComponent.removeCallbacks("animator");
     m_scriptComponent.removeActorMovementCallbacks();
+  }
+  if (world()->isClient()) {
+    m_scriptedAnimator.uninit();
+    m_scriptedAnimator.removeCallbacks("animationConfig");
+    m_scriptedAnimator.removeCallbacks("config");
+    m_scriptedAnimator.removeCallbacks("entity");
   }
   m_tools->uninit();
   m_statusController->uninit();
@@ -231,28 +255,28 @@ RectF Npc::metaBoundBox() const {
 }
 
 Vec2F Npc::mouthOffset(bool ignoreAdjustments) const {
-  return Vec2F{m_humanoid.mouthOffset(ignoreAdjustments)[0] * numericalDirection(m_humanoid.facingDirection()),
-      m_humanoid.mouthOffset(ignoreAdjustments)[1]};
+  return Vec2F{humanoid()->mouthOffset(ignoreAdjustments)[0] * numericalDirection(humanoid()->facingDirection()),
+      humanoid()->mouthOffset(ignoreAdjustments)[1]};
 }
 
 Vec2F Npc::feetOffset() const {
-  return {m_humanoid.feetOffset()[0] * numericalDirection(m_humanoid.facingDirection()), m_humanoid.feetOffset()[1]};
+  return {humanoid()->feetOffset()[0] * numericalDirection(humanoid()->facingDirection()), humanoid()->feetOffset()[1]};
 }
 
 Vec2F Npc::headArmorOffset() const {
-  return {m_humanoid.headArmorOffset()[0] * numericalDirection(m_humanoid.facingDirection()), m_humanoid.headArmorOffset()[1]};
+  return {humanoid()->headArmorOffset()[0] * numericalDirection(humanoid()->facingDirection()), humanoid()->headArmorOffset()[1]};
 }
 
 Vec2F Npc::chestArmorOffset() const {
-  return {m_humanoid.chestArmorOffset()[0] * numericalDirection(m_humanoid.facingDirection()), m_humanoid.chestArmorOffset()[1]};
+  return {humanoid()->chestArmorOffset()[0] * numericalDirection(humanoid()->facingDirection()), humanoid()->chestArmorOffset()[1]};
 }
 
 Vec2F Npc::backArmorOffset() const {
-  return {m_humanoid.backArmorOffset()[0] * numericalDirection(m_humanoid.facingDirection()), m_humanoid.backArmorOffset()[1]};
+  return {humanoid()->backArmorOffset()[0] * numericalDirection(humanoid()->facingDirection()), humanoid()->backArmorOffset()[1]};
 }
 
 Vec2F Npc::legsArmorOffset() const {
-  return {m_humanoid.legsArmorOffset()[0] * numericalDirection(m_humanoid.facingDirection()), m_humanoid.legsArmorOffset()[1]};
+  return {humanoid()->legsArmorOffset()[0] * numericalDirection(humanoid()->facingDirection()), humanoid()->legsArmorOffset()[1]};
 }
 
 RectF Npc::collisionArea() const {
@@ -282,15 +306,15 @@ void Npc::readNetState(ByteArray data, float interpolationTime, NetCompatibility
 }
 
 String Npc::description() const {
-  return "Some funny looking person";
+  return m_npcVariant.description.value("Some funny looking person");
 }
 
 String Npc::species() const {
-  return m_humanoid.identity().species;
+  return m_npcVariant.humanoidIdentity.species;
 }
 
 Gender Npc::gender() const {
-  return m_humanoid.identity().gender;
+  return m_npcVariant.humanoidIdentity.gender;
 }
 
 String Npc::npcType() const {
@@ -365,7 +389,7 @@ void Npc::destroy(RenderCallback* renderCallback) {
   }
 
   if (renderCallback && m_deathParticleBurst.get())
-    renderCallback->addParticles(m_humanoid.particles(*m_deathParticleBurst.get()), position());
+    renderCallback->addParticles(humanoid()->particles(*m_deathParticleBurst.get()), position());
 
   m_songbook->stop();
 }
@@ -394,17 +418,17 @@ void Npc::update(float dt, uint64_t) {
       m_effectEmitter->addEffectSources("normal", loungeAnchor->effectEmitters);
       switch (loungeAnchor->orientation) {
         case LoungeOrientation::Sit:
-          m_humanoid.setState(Humanoid::Sit);
+          humanoid()->setState(Humanoid::Sit);
           break;
         case LoungeOrientation::Lay:
-          m_humanoid.setState(Humanoid::Lay);
+          humanoid()->setState(Humanoid::Lay);
           break;
         case LoungeOrientation::Stand:
-          m_humanoid.setState(Humanoid::Idle); // currently the same as "standard"
+          humanoid()->setState(Humanoid::Idle); // currently the same as "standard"
           // idle, but this is lounging idle
           break;
         default:
-          m_humanoid.setState(Humanoid::Idle);
+          humanoid()->setState(Humanoid::Idle);
       }
     } else {
       m_statusController->setPersistentEffects("lounging", {});
@@ -425,23 +449,23 @@ void Npc::update(float dt, uint64_t) {
     if (!is<LoungeAnchor>(m_movementController->entityAnchor())) {
       if (m_movementController->groundMovement()) {
         if (m_movementController->running())
-          m_humanoid.setState(Humanoid::Run);
+          humanoid()->setState(Humanoid::Run);
         else if (m_movementController->walking())
-          m_humanoid.setState(Humanoid::Walk);
+          humanoid()->setState(Humanoid::Walk);
         else if (m_movementController->crouching())
-          m_humanoid.setState(Humanoid::Duck);
+          humanoid()->setState(Humanoid::Duck);
         else
-          m_humanoid.setState(Humanoid::Idle);
+          humanoid()->setState(Humanoid::Idle);
       } else if (m_movementController->liquidMovement()) {
         if (abs(m_movementController->xVelocity()) > 0)
-          m_humanoid.setState(Humanoid::Swim);
+          humanoid()->setState(Humanoid::Swim);
         else
-          m_humanoid.setState(Humanoid::SwimIdle);
+          humanoid()->setState(Humanoid::SwimIdle);
       } else {
         if (m_movementController->yVelocity() > 0)
-          m_humanoid.setState(Humanoid::Jump);
+          humanoid()->setState(Humanoid::Jump);
         else
-          m_humanoid.setState(Humanoid::Fall);
+          humanoid()->setState(Humanoid::Fall);
       }
     }
 
@@ -463,8 +487,8 @@ void Npc::update(float dt, uint64_t) {
         addEmote(HumanoidEmote::Blink);
     }
 
-    m_humanoid.setEmoteState(m_emoteState);
-    m_humanoid.setDance(m_dance);
+    humanoid()->setEmoteState(m_emoteState);
+    humanoid()->setDance(m_dance);
 
   } else {
     m_netGroup.tickNetInterpolation(dt);
@@ -492,10 +516,16 @@ void Npc::render(RenderCallback* renderCallback) {
   if (loungeAnchor && loungeAnchor->hidden) {
     m_statusController->pullNewParticles();
     m_npcVariant.splashConfig.doSplash(position(), m_movementController->velocity(), world());
+    humanoid()->networkedAnimatorDynamicTarget()->pullNewParticles();
+    humanoid()->networkedAnimatorDynamicTarget()->pullNewAudios();
   } else {
     renderCallback->addParticles(m_statusController->pullNewParticles());
     renderCallback->addParticles(m_npcVariant.splashConfig.doSplash(position(), m_movementController->velocity(), world()));
+    renderCallback->addParticles(humanoid()->networkedAnimatorDynamicTarget()->pullNewParticles());
+    renderCallback->addAudios(humanoid()->networkedAnimatorDynamicTarget()->pullNewAudios());
+
   }
+
 
   renderCallback->addAudios(m_statusController->pullNewAudios());
 
@@ -507,7 +537,7 @@ void Npc::render(RenderCallback* renderCallback) {
 
 List<Drawable> Npc::drawables(Vec2F position) {
   List<Drawable> drawables;
-  m_tools->setupHumanoidHandItemDrawables(m_humanoid);
+  m_tools->setupHumanoidHandItemDrawables(*humanoid());
   auto anchor = as<LoungeAnchor>(m_movementController->entityAnchor());
 
   DirectivesGroup humanoidDirectives;
@@ -517,11 +547,11 @@ List<Drawable> Npc::drawables(Vec2F position) {
     scale = scale.piecewiseMultiply(result.first);
     humanoidDirectives.append(result.second);
   }
-  m_humanoid.setScale(scale);
+  humanoid()->setScale(scale);
 
-  for (auto& drawable : m_humanoid.render()) {
+  for (auto& drawable : humanoid()->render()) {
     drawable.translate(position);
-    if (drawable.isImage()) {
+    if (drawable.isImage())
       drawable.imagePart().addDirectivesGroup(humanoidDirectives, true);
 
       if (anchor) {
@@ -558,7 +588,7 @@ DamageBarType Npc::damageBar() const {
 }
 
 List<Drawable> Npc::portrait(PortraitMode mode) const {
-  return m_humanoid.renderPortrait(mode);
+  return humanoid()->renderPortrait(mode);
 }
 
 String Npc::name() const {
@@ -598,7 +628,7 @@ Maybe<LuaValue> Npc::evalScript(String const& code) {
 }
 
 Vec2F Npc::getAbsolutePosition(Vec2F relativePosition) const {
-  if (m_humanoid.facingDirection() == Direction::Left)
+  if (humanoid()->facingDirection() == Direction::Left)
     relativePosition[0] *= -1;
   return m_movementController->position() + relativePosition;
 }
@@ -617,12 +647,12 @@ void Npc::tickShared(float dt) {
   m_effectEmitter->setSourcePosition("legsArmor", legsArmorOffset() + position());
   m_effectEmitter->setSourcePosition("backArmor", backArmorOffset() + position());
 
-  m_effectEmitter->setDirection(m_humanoid.facingDirection());
+  m_effectEmitter->setDirection(humanoid()->facingDirection());
   m_effectEmitter->tick(dt, *entityMode());
 
-  m_humanoid.setMovingBackwards(m_movementController->movingDirection() != m_movementController->facingDirection());
-  m_humanoid.setFacingDirection(m_movementController->facingDirection());
-  m_humanoid.setRotation(m_movementController->rotation());
+  humanoid()->setMovingBackwards(m_movementController->movingDirection() != m_movementController->facingDirection());
+  humanoid()->setFacingDirection(m_movementController->facingDirection());
+  humanoid()->setRotation(m_movementController->rotation());
 
   ActorMovementModifiers firingModifiers;
   if (auto fireableMain = as<FireableItem>(handItem(ToolHand::Primary))) {
@@ -643,15 +673,16 @@ void Npc::tickShared(float dt) {
     }
   }
 
-  m_armor->setupHumanoid(m_humanoid, false);
+  m_armor->setupHumanoid(*humanoid(), forceNude());
 
   m_tools->suppressItems(!canUseTool());
   m_tools->tick(dt, m_shifting.get(), {});
 
-  if (auto overrideDirection = m_tools->setupHumanoidHandItems(m_humanoid, position(), aimPosition()))
+  if (auto overrideDirection = m_tools->setupHumanoidHandItems(*humanoid(), position(), aimPosition()))
     m_movementController->controlFace(*overrideDirection);
 
-  m_humanoid.animate(dt);
+  humanoid()->animate(dt);
+  m_scriptedAnimator.update();
 }
 
 LuaCallbacks Npc::makeNpcCallbacks() {
@@ -661,9 +692,105 @@ LuaCallbacks Npc::makeNpcCallbacks() {
 
   callbacks.registerCallback("species", [this]() { return m_npcVariant.species; });
 
-  callbacks.registerCallback("gender", [this]() { return GenderNames.getRight(m_humanoid.identity().gender); });
+  callbacks.registerCallback("gender", [this]() { return GenderNames.getRight(humanoid()->identity().gender); });
 
-  callbacks.registerCallback("humanoidIdentity", [this]() { return m_humanoid.identity().toJson(); });
+  callbacks.registerCallback("humanoidIdentity", [this]() { return humanoid()->identity().toJson(); });
+  callbacks.registerCallback("setHumanoidIdentity", [this](Json const& id) { setIdentity(HumanoidIdentity(id)); });
+  callbacks.registerCallback("setHumanoidParameter", [this](String key, Maybe<Json> value) { setHumanoidParameter(key, value); });
+  callbacks.registerCallback("getHumanoidParameter", [this](String key) -> Maybe<Json> { return getHumanoidParameter(key); });
+  callbacks.registerCallback("setHumanoidParameters", [this](JsonObject parameters) { setHumanoidParameters(parameters); });
+  callbacks.registerCallback("getHumanoidParameters", [this]() -> JsonObject { return getHumanoidParameters(); });
+  callbacks.registerCallback("refreshHumanoidParameters", [this]() { refreshHumanoidParameters(); });
+  callbacks.registerCallback("humanoidConfig", [this](bool withOverrides) -> Json { return humanoid()->humanoidConfig(withOverrides); });
+
+  callbacks.registerCallback(   "bodyDirectives", [this]()   { return identity().bodyDirectives;      });
+  callbacks.registerCallback("setBodyDirectives", [this](String const& str) { setBodyDirectives(str); });
+
+  callbacks.registerCallback(   "emoteDirectives", [this]()   { return identity().emoteDirectives;      });
+  callbacks.registerCallback("setEmoteDirectives", [this](String const& str) { setEmoteDirectives(str); });
+
+  callbacks.registerCallback(   "hairGroup",      [this]()   { return identity().hairGroup;      });
+  callbacks.registerCallback("setHairGroup",      [this](String const& str) { setHairGroup(str); });
+  callbacks.registerCallback(   "hairType",       [this]()   { return identity().hairType;      });
+  callbacks.registerCallback("setHairType",       [this](String const& str) { setHairType(str); });
+  callbacks.registerCallback(   "hairDirectives", [this]()   { return identity().hairDirectives;     });
+  callbacks.registerCallback("setHairDirectives", [this](String const& str) { setHairDirectives(str); });
+
+  callbacks.registerCallback(   "facialHairGroup",      [this]()   { return identity().facialHairGroup;      });
+  callbacks.registerCallback("setFacialHairGroup",      [this](String const& str) { setFacialHairGroup(str); });
+  callbacks.registerCallback(   "facialHairType",       [this]()   { return identity().facialHairType;      });
+  callbacks.registerCallback("setFacialHairType",       [this](String const& str) { setFacialHairType(str); });
+  callbacks.registerCallback(   "facialHairDirectives", [this]()   { return identity().facialHairDirectives;      });
+  callbacks.registerCallback("setFacialHairDirectives", [this](String const& str) { setFacialHairDirectives(str); });
+
+  callbacks.registerCallback("hair", [this]() {
+    HumanoidIdentity const& humanoidIdentity = identity();
+    return luaTupleReturn(humanoidIdentity.hairGroup, humanoidIdentity.hairType, humanoidIdentity.hairDirectives);
+  });
+
+  callbacks.registerCallback("facialHair", [this]() {
+    HumanoidIdentity const& humanoidIdentity = identity();
+    return luaTupleReturn(humanoidIdentity.facialHairGroup, humanoidIdentity.facialHairType, humanoidIdentity.facialHairDirectives);
+  });
+
+  callbacks.registerCallback("facialMask", [this]() {
+    HumanoidIdentity const& humanoidIdentity = identity();
+    return luaTupleReturn(humanoidIdentity.facialMaskGroup, humanoidIdentity.facialMaskType, humanoidIdentity.facialMaskDirectives);
+  });
+
+  callbacks.registerCallback("setFacialHair", [this](Maybe<String> const& group, Maybe<String> const& type, Maybe<String> const& directives) {
+    if (group && type && directives)
+      setFacialHair(*group, *type, *directives);
+    else {
+      if (group)      setFacialHairGroup(*group);
+      if (type)       setFacialHairType(*type);
+      if (directives) setFacialHairDirectives(*directives);
+    }
+  });
+
+  callbacks.registerCallback("setFacialMask", [this](Maybe<String> const& group, Maybe<String> const& type, Maybe<String> const& directives) {
+    if (group && type && directives)
+      setFacialMask(*group, *type, *directives);
+    else {
+      if (group)      setFacialMaskGroup(*group);
+      if (type)       setFacialMaskType(*type);
+      if (directives) setFacialMaskDirectives(*directives);
+    }
+  });
+
+  callbacks.registerCallback("setHair", [this](Maybe<String> const& group, Maybe<String> const& type, Maybe<String> const& directives) {
+    if (group && type && directives)
+      setHair(*group, *type, *directives);
+    else {
+      if (group)      setHairGroup(*group);
+      if (type)       setHairType(*type);
+      if (directives) setHairDirectives(*directives);
+    }
+  });
+
+  callbacks.registerCallback(   "description", [this]()                          { return description(); });
+  callbacks.registerCallback("setDescription", [this](String const& description) { setDescription(description); });
+
+  callbacks.registerCallback(   "name", [this]()                   { return name(); });
+  callbacks.registerCallback("setName", [this](String const& name) { setName(name); });
+
+  callbacks.registerCallback("setSpecies", [this](String const& species) { setSpecies(species); });
+
+  callbacks.registerCallback(   "imagePath", [this]()                        { return identity().imagePath;    });
+  callbacks.registerCallback("setImagePath", [this](Maybe<String> const& imagePath) { setImagePath(imagePath); });
+
+  callbacks.registerCallback("setGender", [this](String const& gender) { setGender(GenderNames.getLeft(gender)); });
+
+  callbacks.registerCallback(   "personality", [this]() { return jsonFromPersonality(identity().personality); });
+  callbacks.registerCallback("setPersonality", [this](Json const& personalityConfig) {
+    Personality const& oldPersonality = identity().personality;
+    Personality newPersonality = oldPersonality;
+    setPersonality(parsePersonality(newPersonality, personalityConfig));
+  });
+
+  callbacks.registerCallback(   "favoriteColor", [this]()            { return favoriteColor();  });
+  callbacks.registerCallback("setFavoriteColor", [this](Color color) { setFavoriteColor(color); });
+
 
   callbacks.registerCallback("npcType", [this]() { return npcType(); });
 
@@ -797,6 +924,10 @@ LuaCallbacks Npc::makeNpcCallbacks() {
 
   callbacks.registerCallback("setUniqueId", [this](Maybe<String> uniqueId) { setUniqueId(uniqueId); });
 
+  callbacks.registerCallback("setAnimationParameter", [this](String name, Json value) {
+    m_scriptedAnimationParameters.set(std::move(name), std::move(value));
+  });
+
   return callbacks;
 }
 
@@ -846,6 +977,17 @@ void Npc::setupNetStates() {
   m_songbook->setCompatibilityVersion(6);
   m_netGroup.addNetElement(m_songbook.get());
 
+  m_identityNetState.setCompatibilityVersion(10);
+  m_netGroup.addNetElement(&m_identityNetState);
+  m_refreshedHumanoidParameters.setCompatibilityVersion(10);
+  m_netGroup.addNetElement(&m_refreshedHumanoidParameters);
+
+  m_netHumanoid.setCompatibilityVersion(10);
+  m_netGroup.addNetElement(&m_netHumanoid);
+
+  m_scriptedAnimationParameters.setCompatibilityVersion(10);
+  m_netGroup.addNetElement(&m_scriptedAnimationParameters);
+
   m_netGroup.setNeedsStoreCallback(bind(&Npc::setNetStates, this));
   m_netGroup.setNeedsLoadCallback(bind(&Npc::getNetStates, this, _1));
 }
@@ -853,17 +995,33 @@ void Npc::setupNetStates() {
 void Npc::setNetStates() {
   m_uniqueIdNetState.set(uniqueId());
   m_teamNetState.set(getTeam());
-  m_humanoidStateNetState.set(m_humanoid.state());
-  m_humanoidEmoteStateNetState.set(m_humanoid.emoteState());
-  m_humanoidDanceNetState.set(m_humanoid.dance());
+  m_humanoidStateNetState.set(humanoid()->state());
+  m_humanoidEmoteStateNetState.set(humanoid()->emoteState());
+  m_humanoidDanceNetState.set(humanoid()->dance());
+
+  if (m_identityUpdated) {
+    m_identityNetState.push(m_npcVariant.humanoidIdentity);
+    m_identityUpdated = false;
+  }
 }
 
 void Npc::getNetStates(bool initial) {
   setUniqueId(m_uniqueIdNetState.get());
   setTeam(m_teamNetState.get());
-  m_humanoid.setState(m_humanoidStateNetState.get());
-  m_humanoid.setEmoteState(m_humanoidEmoteStateNetState.get());
-  m_humanoid.setDance(m_humanoidDanceNetState.get());
+  humanoid()->setState(m_humanoidStateNetState.get());
+  humanoid()->setEmoteState(m_humanoidEmoteStateNetState.get());
+  humanoid()->setDance(m_humanoidDanceNetState.get());
+
+  if ((m_identityNetState.pullUpdated()) && !initial) {
+    auto newIdentity = m_identityNetState.get();
+    if ((m_npcVariant.humanoidIdentity.species == newIdentity.species) && (m_npcVariant.humanoidIdentity.imagePath == newIdentity.imagePath)) {
+      humanoid()->setIdentity(newIdentity);
+    }
+    m_npcVariant.humanoidIdentity = newIdentity;
+  }
+  if (m_refreshedHumanoidParameters.pullOccurred() && !initial) {
+    refreshHumanoidParameters();
+  }
 
   if (m_newChatMessageEvent.pullOccurred() && !initial) {
     m_chatMessageUpdated = true;
@@ -985,6 +1143,7 @@ List<LightSource> Npc::lightSources() const {
   List<LightSource> lights;
   lights.appendAll(m_tools->lightSources());
   lights.appendAll(m_statusController->lightSources());
+  lights.appendAll(humanoid()->networkedAnimator()->lightSources());
   return lights;
 }
 
@@ -996,15 +1155,15 @@ Maybe<Json> Npc::receiveMessage(ConnectionId sendingConnection, String const& me
 }
 
 Vec2F Npc::armPosition(ToolHand hand, Direction facingDirection, float armAngle, Vec2F offset) const {
-  return m_tools->armPosition(m_humanoid, hand, facingDirection, armAngle, offset);
+  return m_tools->armPosition(*humanoid(), hand, facingDirection, armAngle, offset);
 }
 
 Vec2F Npc::handOffset(ToolHand hand, Direction facingDirection) const {
-  return m_tools->handOffset(m_humanoid, hand, facingDirection);
+  return m_tools->handOffset(*humanoid(), hand, facingDirection);
 }
 
 Vec2F Npc::handPosition(ToolHand hand, Vec2F const& handOffset) const {
-  return m_tools->handPosition(hand, m_humanoid, handOffset);
+  return m_tools->handPosition(hand, *humanoid(), handOffset);
 }
 
 ItemPtr Npc::handItem(ToolHand hand) const {
@@ -1014,7 +1173,7 @@ ItemPtr Npc::handItem(ToolHand hand) const {
 }
 
 Vec2F Npc::armAdjustment() const {
-  return m_humanoid.armAdjustment();
+  return humanoid()->armAdjustment();
 }
 
 Vec2F Npc::velocity() const {
@@ -1160,6 +1319,198 @@ List<DamageSource> Npc::damageSources() const {
 
 List<PhysicsForceRegion> Npc::forceRegions() const {
   return m_tools->forceRegions();
+}
+
+
+HumanoidIdentity const& Npc::identity() const {
+  return m_npcVariant.humanoidIdentity;
+}
+
+void Npc::updateIdentity() {
+  m_identityUpdated = true;
+  auto oldIdentity = humanoid()->identity();
+  if ((m_npcVariant.humanoidIdentity.species != oldIdentity.species) || (m_npcVariant.humanoidIdentity.imagePath != oldIdentity.imagePath)) {
+    refreshHumanoidParameters();
+  } else {
+    humanoid()->setIdentity(m_npcVariant.humanoidIdentity);
+  }
+}
+
+void Npc::setIdentity(HumanoidIdentity identity) {
+  m_npcVariant.humanoidIdentity = std::move(identity);
+  updateIdentity();
+}
+
+void Npc::setHumanoidParameter(String key, Maybe<Json> value) {
+  if (value.isValid())
+    m_npcVariant.humanoidParameters.set(key, value.value());
+  else
+    m_npcVariant.humanoidParameters.erase(key);
+
+  m_netHumanoid.netElements().last()->setHumanoidParameters(m_npcVariant.humanoidParameters);
+}
+
+Maybe<Json> Npc::getHumanoidParameter(String key) {
+  return m_npcVariant.humanoidParameters.maybe(key);
+}
+
+void Npc::setHumanoidParameters(JsonObject parameters) {
+  m_npcVariant.humanoidParameters = parameters;
+
+  m_netHumanoid.netElements().last()->setHumanoidParameters(m_npcVariant.humanoidParameters);
+}
+
+
+JsonObject Npc::getHumanoidParameters() {
+  return m_npcVariant.humanoidParameters;
+}
+
+void Npc::setBodyDirectives(String const& directives)
+{ m_npcVariant.humanoidIdentity.bodyDirectives = directives; updateIdentity(); }
+
+void Npc::setEmoteDirectives(String const& directives)
+{ m_npcVariant.humanoidIdentity.emoteDirectives = directives; updateIdentity(); }
+
+void Npc::setHairGroup(String const& group)
+{ m_npcVariant.humanoidIdentity.hairGroup = group; updateIdentity(); }
+
+void Npc::setHairType(String const& type)
+{ m_npcVariant.humanoidIdentity.hairType = type; updateIdentity(); }
+
+void Npc::setHairDirectives(String const& directives)
+{ m_npcVariant.humanoidIdentity.hairDirectives = directives; updateIdentity(); }
+
+void Npc::setFacialHairGroup(String const& group)
+{ m_npcVariant.humanoidIdentity.facialHairGroup = group; updateIdentity(); }
+
+void Npc::setFacialHairType(String const& type)
+{ m_npcVariant.humanoidIdentity.facialHairType = type; updateIdentity(); }
+
+void Npc::setFacialHairDirectives(String const& directives)
+{ m_npcVariant.humanoidIdentity.facialHairDirectives = directives; updateIdentity(); }
+
+void Npc::setFacialMaskGroup(String const& group)
+{ m_npcVariant.humanoidIdentity.facialMaskGroup = group; updateIdentity(); }
+
+void Npc::setFacialMaskType(String const& type)
+{ m_npcVariant.humanoidIdentity.facialMaskType = type; updateIdentity(); }
+
+void Npc::setFacialMaskDirectives(String const& directives)
+{ m_npcVariant.humanoidIdentity.facialMaskDirectives = directives; updateIdentity(); }
+
+void Npc::setHair(String const& group, String const& type, String const& directives) {
+  m_npcVariant.humanoidIdentity.hairGroup = group;
+  m_npcVariant.humanoidIdentity.hairType = type;
+  m_npcVariant.humanoidIdentity.hairDirectives = directives;
+  updateIdentity();
+}
+
+void Npc::setFacialHair(String const& group, String const& type, String const& directives) {
+  m_npcVariant.humanoidIdentity.facialHairGroup = group;
+  m_npcVariant.humanoidIdentity.facialHairType = type;
+  m_npcVariant.humanoidIdentity.facialHairDirectives = directives;
+  updateIdentity();
+}
+
+void Npc::setFacialMask(String const& group, String const& type, String const& directives) {
+  m_npcVariant.humanoidIdentity.facialMaskGroup = group;
+  m_npcVariant.humanoidIdentity.facialMaskType = type;
+  m_npcVariant.humanoidIdentity.facialMaskDirectives = directives;
+  updateIdentity();
+}
+
+void Npc::setSpecies(String const& species) {
+  m_npcVariant.humanoidIdentity.species = species;
+  updateIdentity();
+}
+
+void Npc::setGender(Gender const& gender) {
+  m_npcVariant.humanoidIdentity.gender = gender;
+  updateIdentity();
+}
+
+void Npc::setPersonality(Personality const& personality) {
+  m_npcVariant.humanoidIdentity.personality = personality;
+  updateIdentity();
+}
+
+void Npc::setImagePath(Maybe<String> const& imagePath) {
+  m_npcVariant.humanoidIdentity.imagePath = imagePath;
+  updateIdentity();
+}
+
+void Npc::setFavoriteColor(Color color) {
+  m_npcVariant.humanoidIdentity.color = color.toRgba();
+  updateIdentity();
+}
+
+void Npc::setName(String const& name) {
+  m_npcVariant.humanoidIdentity.name = name;
+  updateIdentity();
+}
+
+void Npc::setDescription(String const& description) {
+  m_npcVariant.description = description;
+}
+
+HumanoidPtr Npc::humanoid() {
+  return m_netHumanoid.netElements().last()->humanoid();
+}
+HumanoidPtr Npc::humanoid() const {
+  return m_netHumanoid.netElements().last()->humanoid();
+}
+
+void Npc::refreshHumanoidParameters() {
+  auto speciesDatabase = Root::singleton().speciesDatabase();
+  auto speciesDef = speciesDatabase->species(m_npcVariant.humanoidIdentity.species);
+
+  if (isMaster()) {
+    m_refreshedHumanoidParameters.trigger();
+    m_scriptedAnimationParameters.clear();
+    m_netHumanoid.clearNetElements();
+    m_netHumanoid.addNetElement(make_shared<NetHumanoid>(m_npcVariant.humanoidIdentity, m_npcVariant.humanoidParameters, m_npcVariant.uniqueHumanoidConfig ? m_npcVariant.humanoidConfig : Json()));
+    m_deathParticleBurst.set(humanoid()->defaultDeathParticles());
+  }else {
+    m_npcVariant.humanoidParameters = m_netHumanoid.netElements().last()->humanoidParameters();
+  }
+
+  auto armor = m_armor->diskStore();
+  m_armor->reset();
+  m_armor->diskLoad(armor);
+  m_armor->setupHumanoid(*humanoid(), forceNude());
+
+  m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), m_npcVariant.movementParameters)));
+
+  if (inWorld()) {
+    if (isMaster()) {
+      if (m_scriptComponent.initialized()) {
+        m_scriptComponent.removeCallbacks("animator");
+        m_scriptComponent.addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(humanoid()->networkedAnimator()));
+        m_scriptComponent.invoke("refreshHumanoidParameters");
+      }
+    }
+    if (world()->isClient()) {
+      m_scriptedAnimator.uninit();
+      m_scriptedAnimator.removeCallbacks("animationConfig");
+      m_scriptedAnimator.removeCallbacks("config");
+      m_scriptedAnimator.removeCallbacks("entity");
+
+      m_scriptedAnimator.setScripts(humanoid()->animationScripts());
+      m_scriptedAnimator.addCallbacks("animationConfig", LuaBindings::makeScriptedAnimatorCallbacks(humanoid()->networkedAnimator(),
+        [this](String const& name, Json const& defaultValue) -> Json {
+          return m_scriptedAnimationParameters.value(name, defaultValue);
+        }));
+      m_scriptedAnimator.addCallbacks("config",
+          LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def)
+              { return m_npcVariant.scriptConfig.query(name, def); }));
+      m_scriptedAnimator.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
+      m_scriptedAnimator.init(world());
+    }
+  }
+}
+
+bool Npc::forceNude() const {
+  return m_statusController->statPositive("nude");
 }
 
 }

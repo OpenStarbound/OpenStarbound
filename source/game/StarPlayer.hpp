@@ -24,6 +24,7 @@
 #include "StarRadioMessageDatabase.hpp"
 #include "StarLuaComponents.hpp"
 #include "StarLuaActorMovementComponent.hpp"
+#include "StarLuaAnimationComponent.hpp"
 
 namespace Star {
 
@@ -321,6 +322,12 @@ public:
 
   void updateIdentity();
 
+  void setHumanoidParameter(String key, Maybe<Json> value);
+  Maybe<Json> getHumanoidParameter(String key);
+  void setHumanoidParameters(JsonObject parameters);
+  JsonObject getHumanoidParameters();
+  void refreshHumanoidParameters();
+
   void setBodyDirectives(String const& directives);
   void setEmoteDirectives(String const& directives);
 
@@ -348,6 +355,7 @@ public:
   void setImagePath(Maybe<String> const& imagePath);
 
   HumanoidPtr humanoid();
+  HumanoidPtr humanoid() const;
   HumanoidIdentity const& identity() const;
 
   void setIdentity(HumanoidIdentity identity);
@@ -505,6 +513,8 @@ public:
   // Sets a secret Json property. It will be serialized.
   void setSecretProperty(String const& name, Json const& value);
 
+  void setAnimationParameter(String name, Json value);
+
 private:
   typedef LuaMessageHandlingComponent<LuaStorableComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>>> GenericScriptComponent;
   typedef shared_ptr<GenericScriptComponent> GenericScriptComponentPtr;
@@ -532,6 +542,11 @@ private:
 
   HumanoidEmote detectEmotes(String const& chatter);
 
+  NetElementDynamicGroup<NetHumanoid> m_netHumanoid;
+  NetElementData<Maybe<String>> m_deathParticleBurst;
+  LuaAnimationComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptedAnimator;
+  NetElementHashMap<String, Json> m_scriptedAnimationParameters;
+
   PlayerConfigPtr m_config;
 
   NetElementTopGroup m_netGroup;
@@ -540,7 +555,6 @@ private:
   StatisticsPtr m_statistics;
   QuestManagerPtr m_questManager;
 
-  HumanoidPtr m_humanoid;
   PlayerInventoryPtr m_inventory;
   PlayerBlueprintsPtr m_blueprints;
   PlayerUniverseMapPtr m_universeMap;
@@ -659,6 +673,8 @@ private:
   NetElementFloat m_xAimPositionNetState;
   NetElementFloat m_yAimPositionNetState;
   NetElementData<HumanoidIdentity> m_identityNetState;
+  NetElementEvent m_refreshedHumanoidParameters;
+  JsonObject m_humanoidParameters = JsonObject();
   NetElementData<EntityDamageTeam> m_teamNetState;
   NetElementEvent m_landedNetState;
   NetElementString m_chatMessageNetState;

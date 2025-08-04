@@ -65,6 +65,10 @@ void LuaCallbacks::copyCallback(String srcName, String dstName) {
   m_callbacks.set(dstName, m_callbacks.get(srcName));
 }
 
+bool LuaCallbacks::removeCallback(String name) {
+  return m_callbacks.remove(name);
+}
+
 LuaCallbacks& LuaCallbacks::merge(LuaCallbacks const& callbacks) {
   try {
     for (auto const& pair : callbacks.m_callbacks)
@@ -335,11 +339,11 @@ LuaEnginePtr LuaEngine::create(bool safe) {
     }
   }
   lua_pop(self->m_state, 1);
-  
+
   // loads a lua base library, leaves it at the top of the stack
   auto loadBaseLibrary = [](lua_State* state, char const* modname, lua_CFunction openf) {
     luaL_requiref(state, modname, openf, true);
-    
+
     // set __metatable metamethod to false
     // otherwise scripts can access and mutate the metatable, allowing passing values
     // between script contexts, breaking the sandbox

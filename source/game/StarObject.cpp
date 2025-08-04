@@ -185,6 +185,8 @@ void Object::init(World* world, EntityId entityId, EntityMode mode) {
 
   if (isMaster()) {
     setImageKey("color", colorName);
+    for (auto p : configValue("defaultImageKeys", JsonObject()).toObject())
+      setImageKey(p.first, p.second.toString());
 
     if (m_config->lightColors.contains(colorName))
       m_lightSourceColor.set(m_config->lightColors.get(colorName));
@@ -1154,6 +1156,17 @@ Maybe<PolyF> Object::hitPoly() const {
 List<DamageNotification> Object::applyDamage(DamageRequest const& damage) {
   if (!m_config->smashable || !inWorld() || m_health.get() <= 0.0f)
     return {};
+
+  if (m_scriptComponent.context()->getPath("applyDamageRequest") != LuaNil) {
+    auto notifications = m_scriptComponent.invoke<List<DamageNotification>>("applyDamageRequest", damage);
+    float totalDamage = 0.0f;
+    for (auto const& notification : *notifications)
+      totalDamage += notification.healthLost;
+
+    float dmg = std::min(m_health.get(), totalDamage);
+    m_health.set(m_health.get() - dmg);
+    return *notifications;
+  }
 
   float dmg = std::min(m_health.get(), damage.damage);
   m_health.set(m_health.get() - dmg);

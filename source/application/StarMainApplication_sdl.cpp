@@ -24,59 +24,43 @@ namespace Star {
 
 #ifdef STAR_SYSTEM_WINDOWS
 static bool copyDibToClipboard(const uint8_t* buf, unsigned int width, unsigned int height) {
-	size_t size = (size_t)(width * height * 4u);
-	BITMAPV5HEADER hV5{};
-	hV5.bV5Size = sizeof(hV5);
-	hV5.bV5Width = width;
-	hV5.bV5Height = height;
-	hV5.bV5Planes = 1;
-	hV5.bV5BitCount = 32;
-	hV5.bV5Compression = BI_BITFIELDS;
-	hV5.bV5RedMask = 0x00FF0000;
-	hV5.bV5GreenMask = 0x0000FF00;
-	hV5.bV5BlueMask = 0x000000FF;
-	hV5.bV5AlphaMask = 0xFF000000;
+  size_t size = (size_t)(width * height * 4u);
 
-	BITMAPINFOHEADER hV1{};
-	hV1.biSize = sizeof(hV1);
-	hV1.biWidth = width;
-	hV1.biHeight = height;
-	hV1.biPlanes = 1;
-	hV1.biBitCount = 32;
-	hV1.biCompression = BI_BITFIELDS;
-	hV1.biSizeImage = size;
-	DWORD colors[3] = { 0x00FF0000, 0x0000FF00, 0x000000FF };
-	if (HGLOBAL handle = GlobalAlloc(GMEM_MOVEABLE, sizeof(hV1) + sizeof(colors) + size)) {
-		if (auto dst = (char*)GlobalLock(handle)) {
-			memcpy(dst, &hV1, sizeof(hV1));
-			memcpy(dst + sizeof(hV1), &colors, sizeof(colors));
-			unsigned int sizeI = width * height;
-			unsigned int* data = (unsigned int*)buf;
-			unsigned int* rgba = (unsigned int*)(dst + sizeof(hV1) + sizeof(colors));
-			for (unsigned int x = 0; x != sizeI; ++x) {
-				unsigned int c = data[x];
-				if ((c & 0xFF000000) != 0xFF000000) { //pre-multiply
-					float a = (float)(c >> 24) / 255.0f;
-					unsigned int v = c & 0xFF000000;
-					v |= (unsigned int)((c & 0x000000FF) * a) << 16; // r
-					v |= (unsigned int)(((c >> 8) & 0x000000FF) * a) << 8; // g
-					v |= (unsigned int)(((c >> 16) & 0x000000FF) * a); // b
-					rgba[x] = v;
-				} else {
-					unsigned int v = c & 0xFF00FF00; // a and g
-					v |= c << 16 & 0x00FF0000; // r
-					v |= c >> 16 & 0x000000FF; // b
-					rgba[x] = v;
-				}
-			}
-			GlobalUnlock(handle);
-		}
+  BITMAPV5HEADER hV5{};
+  hV5.bV5Size = sizeof(hV5);
+  hV5.bV5SizeImage = size;
+  hV5.bV5Width = width;
+  hV5.bV5Height = height;
+  hV5.bV5Planes = 1;
+  hV5.bV5BitCount = 32;
+  hV5.bV5Compression = BI_RGB;
+  hV5.bV5RedMask   = 0x00FF0000;
+  hV5.bV5GreenMask = 0x0000FF00;
+  hV5.bV5BlueMask  = 0x000000FF;
+  hV5.bV5AlphaMask = 0xFF000000;
+  hV5.bV5CSType = LCS_WINDOWS_COLOR_SPACE;
+  hV5.bV5Intent = LCS_GM_GRAPHICS;
+  if (HGLOBAL handle = GlobalAlloc(GMEM_MOVEABLE, sizeof(hV5) + size)) {
+    if (auto dst = (char*)GlobalLock(handle)) {
+      memcpy(dst, &hV5, sizeof(hV5));
+      unsigned int sizeI = width * height;
+      unsigned int* data = (unsigned int*)buf;
+      unsigned int* rgba = (unsigned int*)(dst + sizeof(hV5));
+      for (unsigned int x = 0; x != sizeI; ++x) {
+        unsigned int c = data[x];
+        unsigned int v = c & 0xFF00FF00; // a and g
+        v |= c << 16 & 0x00FF0000;       // r
+        v |= c >> 16 & 0x000000FF;       // b
+        rgba[x] = v;
+      }
+      GlobalUnlock(handle);
+    }
 
-		SetClipboardData(CF_DIB, handle);
+    SetClipboardData(CF_DIBV5, handle);
     return true;
-	}
+  }
 
-	return false;
+  return false;
 }
 
 static bool copyPngToClipboard(void* buf, size_t size) {
@@ -100,6 +84,28 @@ static bool duringClipboard(SDL_Window* window, std::function<void()> task) {
   task();
   CloseClipboard();
   return true;
+}
+
+static bool copyFileToClipboard(String const& path) {
+  DROPFILES drop{};
+  drop.pFiles = sizeof(DROPFILES);
+  drop.pt = {0, 0};
+  drop.fNC = false;
+  drop.fWide = true;
+  auto wide = path.wstring();
+  wide.push_back(0);
+  wide.push_back(0);
+  size_t wideSize = wide.size() * sizeof(std::wstring::value_type);
+  if (HGLOBAL handle = GlobalAlloc(GMEM_MOVEABLE, sizeof(DROPFILES) + wideSize)) {
+    if (auto dst = (char*)GlobalLock(handle)) {
+      memcpy(dst, &drop, sizeof(drop));
+      memcpy(dst + sizeof(DROPFILES), wide.data(), wideSize);
+      GlobalUnlock(handle);
+    }
+    SetClipboardData(CF_HDROP, handle);
+    return true;
+  }
+  return false;
 }
 #endif
 
@@ -534,14 +540,17 @@ public:
         else
           SDL_HideCursor();
 
+        
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplSDL3_NewFrame();
+
         int updatesBehind = max<int>(round(m_updateTicker.ticksBehind()), 1);
         updatesBehind = min<int>(updatesBehind, m_maxFrameSkip + 1);
         for (int i = 0; i < updatesBehind; ++i) {
           //since frame-skipping is a thing, we have to begin a new ImGui frame here to prevent duplicate elements made by updates
-          ImGui_ImplOpenGL3_NewFrame();
-          ImGui_ImplSDL3_NewFrame();
+          if (i != 0)
+            ImGui::EndFrame();
           ImGui::NewFrame();
-
           m_application->update();
           m_updateRate = m_updateTicker.tick();
         }
@@ -624,8 +633,8 @@ private:
       return parent->setClipboardData(std::move(data));
     }
 
-    bool setClipboardImage(Image const& image, ByteArray* png) override {
-      return parent->setClipboardImage(image, png);
+    bool setClipboardImage(Image const& image, ByteArray* png, String const* path) override {
+      return parent->setClipboardImage(image, png, path);
     }
 
     bool setClipboardFile(String const& path) override {
@@ -1043,14 +1052,18 @@ private:
     return false;
   }
 
-  bool setClipboardImage(Image const& image, ByteArray* png) {
+  bool setClipboardImage(Image const& image, ByteArray* png, String const* path) {
     #ifdef STAR_SYSTEM_WINDOWS // wow, SDL3's implementation is so bad!!
     return duringClipboard(m_sdlWindow, [&]() {
-      copyDibToClipboard(image.data(), image.width(), image.height());
+      if (path)
+        copyFileToClipboard(*path);
       copyPngToClipboard(png->ptr(), png->size());
+      auto converted = image.convert(PixelFormat::RGBA32);
+      copyDibToClipboard(converted.data(), converted.width(), converted.height());
     });
     #else
     _unused(image);
+    _unused(path);
     if (png) {
       StringMap<ByteArray> clipboardData = {{"image/png", std::move(*png)}};
       return setClipboardData(std::move(clipboardData));
@@ -1062,25 +1075,7 @@ private:
   bool setClipboardFile(String const& path) {
     #ifdef STAR_SYSTEM_WINDOWS
     return duringClipboard(m_sdlWindow, [&]() {
-      DROPFILES drop{};
-      drop.pFiles = sizeof(DROPFILES);
-      drop.pt = {0, 0};
-      drop.fNC = false;
-      drop.fWide = true;
-      auto wide = path.wstring();
-      wide.push_back(0);
-      wide.push_back(0);
-      size_t wideSize = wide.size() * sizeof(std::wstring::value_type);
-      if (HGLOBAL handle = GlobalAlloc(GMEM_MOVEABLE, sizeof(DROPFILES) + wideSize)) {
-        if (auto dst = (char*)GlobalLock(handle)) {
-          memcpy(dst, &drop, sizeof(drop));
-          memcpy(dst + sizeof(DROPFILES), wide.data(), wideSize);
-          GlobalUnlock(handle);
-        }
-        SetClipboardData(CF_HDROP, handle);
-        return true;
-      }
-      return false;
+      return copyFileToClipboard(path);
     });
     #else
     _unused(path);

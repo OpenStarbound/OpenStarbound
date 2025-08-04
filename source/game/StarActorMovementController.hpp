@@ -144,7 +144,7 @@ struct ActorMovementModifiers {
 DataStream& operator>>(DataStream& ds, ActorMovementModifiers& movementModifiers);
 DataStream& operator<<(DataStream& ds, ActorMovementModifiers const& movementModifiers);
 
-class ActorMovementController : public MovementController {
+class ActorMovementController : public virtual MovementController {
 public:
   // Constructs an ActorMovementController with parameters loaded from sensible
   // defaults, and the given parameters (if any) applied on top of them.
@@ -186,13 +186,8 @@ public:
 
   // ActorMovementController position and rotation honor the entity anchor, if
   // an anchor is set.
-  Vec2F position() const;
-  float xPosition() const;
-  float yPosition() const;
-  float rotation() const;
-  PolyF collisionBody() const;
-  RectF localBoundBox() const;
-  RectF collisionBoundBox() const;
+  Vec2F position() const override;
+  float rotation() const override;
 
   bool walking() const;
   bool running() const;
@@ -234,7 +229,7 @@ public:
   void controlCrouch();
   void controlJump(bool jumpEvenIfUnable = false);
   void controlFly(Vec2F const& velocity);
-  
+
   Maybe<pair<Vec2F, bool>> pathMove(Vec2F const& pathPosition, bool run = false, Maybe<PlatformerAStar::Parameters> const& parameters = {});
   Maybe<pair<Vec2F, bool>> controlPathMove(Vec2F const& pathPosition, bool run = false, Maybe<PlatformerAStar::Parameters> const& parameters = {});
 

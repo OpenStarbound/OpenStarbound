@@ -589,16 +589,13 @@ String ClientCommandProcessor::render(String const& path) {
   if (!File::isDirectory(outputDirectory))
     File::makeDirectory(outputDirectory);
 
-  auto file = File::open(outputPath, IOMode::Write | IOMode::Truncate);
-  #ifdef STAR_SYSTEM_WINDOWS
-  image->writePng(file);
-  GuiContext::singleton().setClipboardFile(File::fullPath(outputPath));
-  #else
   auto buffer = make_shared<Buffer>();
   image->writePng(buffer);
+  auto file = File::open(outputPath, IOMode::Write | IOMode::Truncate);
   file->writeFull(buffer->ptr(), buffer->size());
-  GuiContext::singleton().setClipboardImage(*image, &buffer->data());
-  #endif
+  file->close();
+  auto fullPath = File::fullPath(outputPath);
+  GuiContext::singleton().setClipboardImage(*image, &buffer->data(), &fullPath);
   return strf("Saved '{}.png' ({}x{}) and copied to clipboard", outputName, image->width(), image->height());
 }
 

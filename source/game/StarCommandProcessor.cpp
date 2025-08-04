@@ -890,6 +890,45 @@ String CommandProcessor::updatePlanetType(ConnectionId connectionId, String cons
   return done ? strf("set planet at {} to type {} weatherBiome {}", coordinate, newType, weatherBiome) : "failed to update planet type";
 }
 
+String CommandProcessor::setWeather(ConnectionId connectionId, String const& argumentString) {
+  if (auto errorMsg = adminCheck(connectionId, "set weather"))
+    return *errorMsg;
+
+  auto arguments = m_parser.tokenizeToStringList(argumentString);
+
+  if (arguments.empty()) {
+    StringList list;
+    bool done = m_universe->executeForClient(connectionId,
+                                             [&list](WorldServer* world, PlayerPtr const&) { list = world->weatherList(); });
+    return done ? strf("weathers: {}", list.join(", ")) : "failed to query weather";
+  }
+
+  String weatherName = arguments.at(0);
+  bool force = false;
+  CelestialCoordinate coordinate;
+
+  if (arguments.size() >= 2) {
+    if (arguments.at(1) == "force") {
+      force = true;
+      if (arguments.size() >= 3)
+        coordinate = CelestialCoordinate(arguments.at(2));
+    } else {
+      coordinate = CelestialCoordinate(arguments.at(1));
+    }
+  }
+
+  bool done;
+  if (coordinate.isNull()) {
+    done = m_universe->executeForClient(connectionId,
+                                        [weatherName, force](WorldServer* world, PlayerPtr const&) { world->setWeather(weatherName, force); });
+  } else {
+    done = m_universe->setWeather(coordinate, weatherName, force);
+  }
+
+  return done ? (coordinate.isNull() ? strf("set weather to {}{}", weatherName, force ? " (forced)" : "") : strf("set weather for {} to {}{}", coordinate, weatherName, force ? " (forced)" : "")) : "failed to set weather";
+}
+
+
 String CommandProcessor::setEnvironmentBiome(ConnectionId connectionId, String const&) {
   if (auto errorMsg = adminCheck(connectionId, "update layer environment biome"))
     return *errorMsg;
@@ -1004,6 +1043,8 @@ String CommandProcessor::handleCommand(ConnectionId connectionId, String const& 
     return expandBiomeRegion(connectionId, argumentString);
   } else if (command == "updateplanettype") {
     return updatePlanetType(connectionId, argumentString);
+  } else if (command == "setweather") {
+    return setWeather(connectionId, argumentString);
   } else if (command == "setenvironmentbiome") {
     return setEnvironmentBiome(connectionId, argumentString);
   } else if (auto res = m_scriptComponent.invoke("command", command, connectionId, jsonFromStringList(m_parser.tokenizeToStringList(argumentString)))) {

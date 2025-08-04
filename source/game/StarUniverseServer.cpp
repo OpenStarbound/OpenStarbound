@@ -489,6 +489,34 @@ bool UniverseServer::updatePlanetType(CelestialCoordinate const& coordinate, Str
   return false;
 }
 
+bool UniverseServer::setWeather(CelestialCoordinate const& coordinate, String const& weatherName, bool force) {
+  RecursiveMutexLocker locker(m_mainLock);
+
+  if (!coordinate.isNull() && m_celestialDatabase->coordinateValid(coordinate)) {
+    if (auto world = createWorld(CelestialWorldId(coordinate))) {
+      locker.unlock();
+      world->executeAction([weatherName, force](WorldServerThread*, WorldServer* ws) { ws->setWeather(weatherName, force); });
+      return true;
+    }
+  }
+
+  return false;
+}
+
+StringList UniverseServer::weatherList(CelestialCoordinate const& coordinate) {
+  RecursiveMutexLocker locker(m_mainLock);
+
+  StringList result;
+  if (!coordinate.isNull() && m_celestialDatabase->coordinateValid(coordinate)) {
+    if (auto world = createWorld(CelestialWorldId(coordinate))) {
+      locker.unlock();
+      world->executeAction([&result](WorldServerThread*, WorldServer* ws) { result = ws->weatherList(); });
+    }
+  }
+
+  return result;
+}
+
 bool UniverseServer::sendPacket(ConnectionId clientId, PacketPtr packet) {
   RecursiveMutexLocker locker(m_mainLock);
   ReadLocker clientsLocker(m_clientsLock);

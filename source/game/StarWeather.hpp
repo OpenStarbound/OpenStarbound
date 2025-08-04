@@ -33,6 +33,20 @@ public:
 
   void update(double dt);
 
+  // Immediately sets the active weather index. If the index is NPos or out of
+  // range, weather is cleared.  If force is true, weather will not automatically
+  // change until setWeatherIndex/SetWeather is called again.
+  void setWeatherIndex(size_t weatherIndex, bool force = false);
+  // Immediately sets the active weather type by name. If not found, weather is
+  // cleared.  Behavior of |force| is the same as above.
+  void setWeather(String const& weatherName, bool force = false);
+
+  StringList weatherList() const;
+
+  // Set or clear forcing without changing the current weather
+  void forceWeather(bool force);
+
+
   float wind() const;
   float weatherIntensity() const;
 
@@ -56,6 +70,8 @@ private:
   Maybe<WeatherType> m_currentWeatherType;
   float m_currentWeatherIntensity;
   float m_currentWind;
+
+  bool m_forceWeather;
 
   ClockConstPtr m_referenceClock;
   Maybe<double> m_clockTrackingTime;

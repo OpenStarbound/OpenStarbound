@@ -98,7 +98,7 @@ public:
   PolyF const& collisionPoly() const;
   void setCollisionPoly(PolyF const& poly);
 
-  Vec2F position() const;
+  virtual Vec2F position() const;
   float xPosition() const;
   float yPosition() const;
 
@@ -106,7 +106,7 @@ public:
   float xVelocity() const;
   float yVelocity() const;
 
-  float rotation() const;
+  virtual float rotation() const;
 
   // CollisionPoly rotated and translated by position
   PolyF collisionBody() const;

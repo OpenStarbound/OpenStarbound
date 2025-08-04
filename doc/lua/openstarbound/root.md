@@ -110,3 +110,22 @@ Returns all recipes.
 Returns the asset file path for the specified item.
 
 ---
+
+#### `JsonObject` root.speciesConfig(`String` species)
+
+Returns the config for the species.
+
+---
+
+#### `JsonObject` root.generateHumanoidIdentity(`String` species, `Maybe<uint64_t>` seed, `Maybe<String>` gender)
+
+Generates a random humanoid identity for the given species. Optionally supply a seed and or predetermined gender.
+
+---
+
+#### `JsonObject` root.effectConfig(`String` effect)
+
+Returns the config for the status effect.
+
+
+---

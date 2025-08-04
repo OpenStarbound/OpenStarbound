@@ -15,6 +15,7 @@ ServerWeather::ServerWeather() {
   m_currentWeatherIndex = NPos;
   m_currentWeatherIntensity = 0.0f;
   m_currentWind = 0.0f;
+  m_forceWeather = false;
 
   m_currentTime = 0.0;
   m_lastWeatherChangeTime = 0.0;
@@ -77,7 +78,12 @@ void ServerWeather::update(double dt) {
 
   m_currentTime += dt;
 
-  if (!m_weatherPool.empty()) {
+  if (m_forceWeather) {
+    if (m_currentWeatherType)
+      m_currentWeatherIntensity = 1.0f;
+    else
+      m_currentWeatherIntensity = 0.0f;
+  } else if (!m_weatherPool.empty()) {
     auto assets = Root::singleton().assets();
     double weatherCooldownTime = assets->json("/weather.config:weatherCooldownTime").toDouble();
     double weatherWarmupTime = assets->json("/weather.config:weatherWarmupTime").toDouble();
@@ -122,6 +128,57 @@ StringList ServerWeather::statusEffects() const {
 List<ProjectilePtr> ServerWeather::pullNewProjectiles() {
   return take(m_newProjectiles);
 }
+
+StringList ServerWeather::weatherList() const {
+  StringList weatherList;
+  for (size_t i = 0; i < m_weatherPool.size(); ++i)
+    weatherList.append(m_weatherPool.item(i));
+  return weatherList;
+}
+
+void ServerWeather::setWeather(String const& weatherName, bool force) {
+  size_t index = NPos;
+  for (size_t i = 0; i < m_weatherPool.size(); ++i) {
+    if (m_weatherPool.item(i) == weatherName) {
+      index = i;
+      break;
+    }
+  }
+
+  setWeatherIndex(index, force);
+}
+
+void ServerWeather::setWeatherIndex(size_t weatherIndex, bool force) {
+  m_forceWeather = force;
+  if (weatherIndex == NPos || weatherIndex >= m_weatherPool.size()) {
+    m_currentWeatherIndex = NPos;
+    m_currentWeatherType = {};
+    m_currentWeatherIntensity = 0.0f;
+    m_currentWind = 0.0f;
+  } else {
+    m_currentWeatherIndex = weatherIndex;
+    m_currentWeatherType =
+      Root::singleton().biomeDatabase()->weatherType(m_weatherPool.item(m_currentWeatherIndex));
+    m_currentWeatherIntensity = 1.0f;
+    m_currentWind = m_currentWeatherType->maximumWind * (Random::randb() ? 1 : -1);
+  }
+
+  m_lastWeatherChangeTime = m_currentTime;
+  if (m_forceWeather)
+    m_nextWeatherChangeTime = INFINITY;
+  else
+    m_nextWeatherChangeTime =
+      m_currentWeatherType ? m_currentTime + Random::randd(m_currentWeatherType->duration[0], m_currentWeatherType->duration[1])
+                           : m_currentTime;
+
+  setNetStates();
+  }
+
+  void ServerWeather::forceWeather(bool force) {
+  m_forceWeather = force;
+  if (force)
+    m_nextWeatherChangeTime = INFINITY;
+  }
 
 void ServerWeather::setNetStates() {
   m_weatherPoolNetState.set(DataStreamBuffer::serializeContainer(m_weatherPool.items()));

@@ -9,9 +9,16 @@ void NetElementGroup::addNetElement(NetElement* element, bool propagateInterpola
   if (m_interpolationEnabled && propagateInterpolation)
     element->enableNetInterpolation(m_extrapolationHint);
   m_elements.append(pair<NetElement*, bool>(element, propagateInterpolation));
+
+
+  for (VersionNumber i = 0; i < (CurrentStreamVersion + 1); i++) {
+    if (element->checkWithRules(NetCompatibilityRules(i)))
+      m_elementCounts[i]++;
+  }
 }
 
 void NetElementGroup::clearNetElements() {
+  m_elementCounts.clear();
   m_elements.clear();
 }
 
@@ -90,15 +97,24 @@ bool NetElementGroup::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCom
 void NetElementGroup::readNetDelta(DataStream& ds, float interpolationTime, NetCompatibilityRules rules) {
   if (!checkWithRules(rules))
     return;
-  if (m_elements.size() == 0) {
+
+  auto expectedSize = m_elementCounts.maybe(rules.version()).value(m_elements.size());
+
+  if (expectedSize == 0) {
     throw IOException("readNetDelta called on empty NetElementGroup");
-  } else if (m_elements.size() == 1) {
-    m_elements[0].first->readNetDelta(ds, interpolationTime, rules);
+  } else if (expectedSize == 1) {
+    for (auto& element : m_elements)
+      if (element.first->checkWithRules(rules)) {
+        element.first->readNetDelta(ds, interpolationTime, rules);
+        break;
+      }
   } else {
     uint64_t readIndex = ds.readVlqU();
     uint64_t i = 0;
     uint64_t offset = 0;
     for (auto& element : m_elements) {
+      if (i > expectedSize)
+        break;
       if (!element.first->checkWithRules(rules)) {
         offset++;
         continue;
