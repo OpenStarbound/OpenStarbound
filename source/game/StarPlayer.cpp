@@ -2845,7 +2845,7 @@ void Player::refreshHumanoidParameters() {
   auto speciesDatabase = Root::singleton().speciesDatabase();
   auto speciesDef = speciesDatabase->species(m_identity.species);
 
-  if (isMaster()) {
+  if (isMaster() || !inWorld()) {
     m_refreshedHumanoidParameters.trigger();
     m_netHumanoid.clearNetElements();
     m_netHumanoid.addNetElement(make_shared<NetHumanoid>(m_identity, m_humanoidParameters, Json()));
