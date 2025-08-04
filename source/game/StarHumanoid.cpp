@@ -297,6 +297,7 @@ Humanoid::Humanoid(Json const& config) : Humanoid() {
 }
 
 Humanoid::Humanoid(HumanoidIdentity const& identity, JsonObject parameters, Json config) : Humanoid() {
+  m_identity = identity;
   m_baseConfig = (Root::singleton().speciesDatabase()->humanoidConfig(identity, parameters, config));
   loadConfig(JsonObject());
   loadAnimation();
