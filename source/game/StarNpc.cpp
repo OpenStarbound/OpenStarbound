@@ -551,7 +551,7 @@ List<Drawable> Npc::drawables(Vec2F position) {
 
   for (auto& drawable : humanoid()->render()) {
     drawable.translate(position);
-    if (drawable.isImage())
+    if (drawable.isImage()) {
       drawable.imagePart().addDirectivesGroup(humanoidDirectives, true);
 
       if (anchor) {
