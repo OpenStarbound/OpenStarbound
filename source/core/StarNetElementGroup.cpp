@@ -10,16 +10,15 @@ void NetElementGroup::addNetElement(NetElement* element, bool propagateInterpola
     element->enableNetInterpolation(m_extrapolationHint);
   m_elements.append(pair<NetElement*, bool>(element, propagateInterpolation));
 
-  auto version = element->compatibilityVersion();
-  if (version == AnyVersion)
-    version = 0;
 
-  for (auto i = version; i < (CurrentStreamVersion + 1); i++) {
-    m_elementCounts[i]++;
+  for (VersionNumber i = 0; i < (CurrentStreamVersion + 1); i++) {
+    if (element->checkWithRules(NetCompatibilityRules(i)))
+      m_elementCounts[i]++;
   }
 }
 
 void NetElementGroup::clearNetElements() {
+  m_elementCounts.clear();
   m_elements.clear();
 }
 
