@@ -77,8 +77,7 @@ bool NetElementGroup::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCom
   } else if (expectedSize == 1) {
     for (auto& element : m_elements)
       if (element.first->checkWithRules(rules)) {
-        element.first->writeNetDelta(ds, fromVersion, rules);
-        break;
+        return element.first->writeNetDelta(ds, fromVersion, rules);
       }
   } else {
     bool deltaWritten = false;
