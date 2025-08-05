@@ -217,11 +217,11 @@ bool NetElementDynamicGroup<Element>::writeNetDelta(DataStream& ds, uint64_t fro
       if (p.first >= fromVersion) {
         if (ElementAddition const* elementAddition = p.second.ptr<ElementAddition>()) {
           ElementId id = elementAddition->first;
-          if (Maybe<Element> element = m_idMap.maybe(id)) {
+          if (shared_ptr<Element> const* element = m_idMap.ptr(id)) {
             willWrite();
             ds.writeVlqU(1);
             DataStreamBuffer storeBuffer;
-            element.value().netStore(storeBuffer, rules);
+            element->get()->netStore(storeBuffer, rules);
             ds.write((ElementChange)ElementAddition(id, storeBuffer.takeData()));
           }
         } else {
