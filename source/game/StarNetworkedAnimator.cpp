@@ -1332,10 +1332,12 @@ void NetworkedAnimator::setupNetStates() {
 
   for (auto& pair : m_stateInfo) {
     pair.second.wasUpdated = true;
-    // pair.second.reverse.setCompatibilityVersion(10);
-    // addNetElement(&pair.second.reverse);
     addNetElement(&pair.second.stateIndex);
     addNetElement(&pair.second.startedEvent);
+  }
+  for (auto& pair : m_stateInfo) {
+    pair.second.reverse.setCompatibilityVersion(10);
+    addNetElement(&pair.second.reverse);
   }
 
   for (auto& pair : m_transformationGroups) {
