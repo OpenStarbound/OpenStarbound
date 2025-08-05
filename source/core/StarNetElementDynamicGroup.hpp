@@ -131,7 +131,7 @@ void NetElementDynamicGroup<Element>::initNetVersion(NetElementVersion const* ve
   addChangeData(ElementReset());
   for (auto& pair : m_idMap) {
     pair.second->initNetVersion(m_netVersion);
-    addChangeData(ElementAddition(id, {})); // we will write the data stream once we know the rules for the one recieving
+    addChangeData(ElementAddition(pair.first, {})); // we will write the data stream once we know the rules for the one recieving
   }
 }
 
@@ -219,7 +219,9 @@ bool NetElementDynamicGroup<Element>::writeNetDelta(DataStream& ds, uint64_t fro
           if (Maybe<Element> element = m_idMap.maybe(elementAddition->first)) {
             willWrite();
             ds.writeVlqU(1);
-            element.value().netLoad(ds, rules);
+            DataStreamBuffer storeBuffer;
+            element.value().netLoad(storeBuffer, rules);
+            ds.write(ElementAddition(elementAddition->first, storeBuffer))
           }
         } else {
           willWrite();
