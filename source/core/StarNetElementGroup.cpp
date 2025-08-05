@@ -69,18 +69,28 @@ void NetElementGroup::tickNetInterpolation(float dt) {
 
 bool NetElementGroup::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const {
   if (!checkWithRules(rules)) return false;
-  if (m_elements.size() == 0) {
+
+  auto expectedSize = m_elementCounts.maybe(rules.version()).value(m_elements.size());
+
+  if (expectedSize == 0) {
     return false;
-  } else if (m_elements.size() == 1) {
-    return m_elements[0].first->writeNetDelta(ds, fromVersion, rules);
+  } else if (expectedSize == 1) {
+    for (auto& element : m_elements)
+      if (element.first->checkWithRules(rules)) {
+        element.first->writeNetDelta(ds, fromVersion, rules);
+        break;
+      }
   } else {
     bool deltaWritten = false;
     uint64_t i = 0;
     m_buffer.setStreamCompatibilityVersion(rules);
     for (auto& element : m_elements) {
+      if (i > expectedSize)
+        break;
       if (!element.first->checkWithRules(rules))
         continue;
       ++i;
+
       if (element.first->writeNetDelta(m_buffer, fromVersion, rules)) {
         deltaWritten = true;
         ds.writeVlqU(i);
