@@ -88,11 +88,9 @@ private:
 template <typename Element>
 auto NetElementDynamicGroup<Element>::addNetElement(ElementPtr element) -> ElementId {
   readyElement(element);
-  DataStreamBuffer storeBuffer;
-  element->netStore(storeBuffer, {});
   auto id = m_idMap.add(std::move(element));
 
-  addChangeData(ElementAddition(id, storeBuffer.takeData()));
+  addChangeData(ElementAddition(id, {})); // we will write the data stream once we know the rules for the one recieving
 
   return id;
 }
@@ -133,9 +131,7 @@ void NetElementDynamicGroup<Element>::initNetVersion(NetElementVersion const* ve
   addChangeData(ElementReset());
   for (auto& pair : m_idMap) {
     pair.second->initNetVersion(m_netVersion);
-    DataStreamBuffer storeBuffer;
-    pair.second->netStore(storeBuffer, {});
-    addChangeData(ElementAddition(pair.first, storeBuffer.takeData()));
+    addChangeData(ElementAddition(id, {})); // we will write the data stream once we know the rules for the one recieving
   }
 }
 
@@ -216,11 +212,20 @@ bool NetElementDynamicGroup<Element>::writeNetDelta(DataStream& ds, uint64_t fro
       }
     };
 
+    // THIS THIS RIGHT HERE IS THE CULPRIT, IT JUST NEEDS TO BE FIXED AND ACTUALLY WORK
     for (auto const& p : m_changeData) {
       if (p.first >= fromVersion) {
-        willWrite();
-        ds.writeVlqU(1);
-        ds.write(p.second);
+        if (ElementAddition const* elementAddition = p.second.ptr<ElementAddition>()) {
+          if (Maybe<Element> element = m_idMap.maybe(elementAddition->first)) {
+            willWrite();
+            ds.writeVlqU(1);
+            element.value().netLoad(ds, rules);
+          }
+        } else {
+          willWrite();
+          ds.writeVlqU(1);
+          ds.write(p.second);
+        }
       }
     }
 
