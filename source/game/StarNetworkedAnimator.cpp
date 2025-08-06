@@ -1439,13 +1439,14 @@ uint8_t NetworkedAnimator::version() const {
 }
 
 Json NetworkedAnimator::mergeIncludes(Json config, Json includes, String relativePath){
+  Json includedConfigs;
   for (Json const& path : includes.iterateArray()) {
     auto includeConfig = Root::singleton().assets()->json(AssetPath::relativeTo(relativePath, path.toString()));
     if (includeConfig.contains("includes"))
       includeConfig = mergeIncludes(includeConfig, includeConfig.get("includes"), relativePath);
-    config = jsonMerge(includeConfig, config);
+    includedConfigs = jsonMerge(includedConfigs, includeConfig);
   }
-  return config;
+  return jsonMerge(includedConfigs, config);
 }
 
 }
