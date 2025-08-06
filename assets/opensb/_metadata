@@ -10,6 +10,13 @@
   "scripts" : {
     //"onLoad" : ["/scripts/opensb/assets/onload.lua"],
     "postLoad" : ["/scripts/opensb/assets/postload.lua"],
-    "itemRebuild" : ["/scripts/opensb/assets/itemRebuild.lua"]
+
+    "itemRebuild" : ["/scripts/opensb/rebuild/itemRebuild.lua"],
+    "objectRebuild" : ["/scripts/opensb/rebuild/objectRebuild.lua"],
+    "npcRebuild" : ["/scripts/opensb/rebuild/npcRebuild.lua"],
+    "playerRebuild" : ["/scripts/opensb/rebuild/playerRebuild.lua"],
+    "monsterRebuild" : ["/scripts/opensb/rebuild/monsterRebuild.lua"],
+    "vehicleRebuild" : ["/scripts/opensb/rebuild/vehicleRebuild.lua"]
+
   }
 }

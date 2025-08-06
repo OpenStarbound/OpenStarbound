@@ -7,6 +7,7 @@
 #include "StarStatusTypes.hpp"
 #include "StarImageProcessing.hpp"
 #include "StarEntityRenderingTypes.hpp"
+#include "StarLuaRoot.hpp"
 
 namespace Star {
 
@@ -190,6 +191,9 @@ private:
   StringMap<List<ColorReplaceMap>> m_colorSwaps;
 
   mutable Mutex m_cacheMutex;
+
+  LuaRootPtr m_luaRoot;
+  List<String> m_rebuildScripts;
 
   // Key here is the type name, seed, and the serialized unique parameters JSON
   mutable HashTtlCache<tuple<String, uint64_t, Json>, MonsterVariant> m_monsterCache;

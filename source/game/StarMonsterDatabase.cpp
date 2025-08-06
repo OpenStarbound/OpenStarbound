@@ -5,10 +5,12 @@
 #include "StarJsonExtra.hpp"
 #include "StarRandom.hpp"
 #include "StarLexicalCast.hpp"
+#include "StarRootLuaBindings.hpp"
+#include "StarUtilityLuaBindings.hpp"
 
 namespace Star {
 
-MonsterDatabase::MonsterDatabase() {
+MonsterDatabase::MonsterDatabase() : m_luaRoot(make_shared<LuaRoot>()) {
   auto assets = Root::singleton().assets();
 
   auto& monsterTypes = assets->scanExtension("monstertype");
@@ -137,6 +139,14 @@ MonsterDatabase::MonsterDatabase() {
       throw MonsterException(strf("Error loading monster colors '{}'", file), e);
     }
   }
+
+  for (auto& path : assets->assetSources()) {
+    auto metadata = assets->assetSourceMetadata(path);
+    if (auto scripts = metadata.maybe("scripts"))
+      if (auto rebuildScripts = scripts.value().optArray("monsterRebuild"))
+        m_rebuildScripts.appendAll(jsonToStringList(rebuildScripts.value()));
+  }
+
 }
 
 void MonsterDatabase::cleanup() {
@@ -159,7 +169,7 @@ MonsterVariant MonsterDatabase::randomMonster(String const& typeName, Json const
   } else {
     seed = Random::randu64();
   }
-  
+
   return monsterVariant(typeName, seed, uniqueParameters);
 }
 
@@ -215,7 +225,14 @@ MonsterPtr MonsterDatabase::createMonster(
 }
 
 MonsterPtr MonsterDatabase::diskLoadMonster(Json const& diskStore) const {
-  return make_shared<Monster>(diskStore);
+  try {
+    return make_shared<Monster>(diskStore);
+  } catch (std::exception const& e) {
+    auto context = m_luaRoot->createContext(m_rebuildScripts);
+    context.setCallbacks("root", LuaBindings::makeRootCallbacks());
+    context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
+    return make_shared<Monster>(context.invokePath<Json>("rebuild", diskStore, strf("{}", outputException(e, false))));
+  }
 }
 
 MonsterPtr MonsterDatabase::netLoadMonster(ByteArray const& netStore, NetCompatibilityRules rules) const {

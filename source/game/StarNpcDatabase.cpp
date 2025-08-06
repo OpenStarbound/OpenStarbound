@@ -11,10 +11,12 @@
 #include "StarAssets.hpp"
 #include "StarEncode.hpp"
 #include "StarArmors.hpp"
+#include "StarRootLuaBindings.hpp"
+#include "StarUtilityLuaBindings.hpp"
 
 namespace Star {
 
-NpcDatabase::NpcDatabase() {
+NpcDatabase::NpcDatabase() : m_luaRoot(make_shared<LuaRoot>()) {
   auto assets = Root::singleton().assets();
 
   auto& files = assets->scanExtension("npctype");
@@ -33,6 +35,13 @@ NpcDatabase::NpcDatabase() {
       throw NpcException(strf("Error loading npc type '{}'", file), e);
     }
   }
+  for (auto& path : assets->assetSources()) {
+    auto metadata = assets->assetSourceMetadata(path);
+    if (auto scripts = metadata.maybe("scripts"))
+      if (auto rebuildScripts = scripts.value().optArray("npcRebuild"))
+        m_rebuildScripts.appendAll(jsonToStringList(rebuildScripts.value()));
+  }
+
 }
 
 NpcVariant NpcDatabase::generateNpcVariant(String const& species, String const& typeName, float level) const {
@@ -346,7 +355,15 @@ NpcPtr NpcDatabase::createNpc(NpcVariant const& npcVariant) const {
 }
 
 NpcPtr NpcDatabase::diskLoadNpc(Json const& diskStore) const {
-  auto npcVariant = readNpcVariantFromJson(diskStore.get("npcVariant"));
+  NpcVariant npcVariant;
+  try {
+    npcVariant = readNpcVariantFromJson(diskStore.get("npcVariant"));
+  } catch (std::exception const& e) {
+    auto context = m_luaRoot->createContext(m_rebuildScripts);
+    context.setCallbacks("root", LuaBindings::makeRootCallbacks());
+    context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
+    npcVariant = readNpcVariantFromJson(context.invokePath<Json>("rebuild", diskStore, strf("{}", outputException(e, false))));
+  }
   return make_shared<Npc>(npcVariant, diskStore);
 }
 

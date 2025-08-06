@@ -13,6 +13,8 @@
 #include "StarFarmableObject.hpp"
 #include "StarTeleporterObject.hpp"
 #include "StarPhysicsObject.hpp"
+#include "StarRootLuaBindings.hpp"
+#include "StarUtilityLuaBindings.hpp"
 
 namespace Star {
 
@@ -312,7 +314,7 @@ List<ObjectOrientationPtr> ObjectDatabase::parseOrientations(String const& path,
   return res;
 }
 
-ObjectDatabase::ObjectDatabase() {
+ObjectDatabase::ObjectDatabase() : m_luaRoot(make_shared<LuaRoot>()) {
   auto assets = Root::singleton().assets();
 
   auto& files = assets->scanExtension("object");
@@ -327,6 +329,13 @@ ObjectDatabase::ObjectDatabase() {
     } catch (std::exception const& e) {
       Logger::error("Error loading object file {}: {}", file, outputException(e, true));
     }
+  }
+
+  for (auto& path : assets->assetSources()) {
+    auto metadata = assets->assetSourceMetadata(path);
+    if (auto scripts = metadata.maybe("scripts"))
+      if (auto rebuildScripts = scripts.value().optArray("objectRebuild"))
+        m_rebuildScripts.appendAll(jsonToStringList(rebuildScripts.value()));
   }
 }
 
@@ -380,8 +389,19 @@ ObjectPtr ObjectDatabase::createObject(String const& objectName, Json const& par
 }
 
 ObjectPtr ObjectDatabase::diskLoadObject(Json const& diskStore) const {
-  auto object = createObject(diskStore.getString("name"), diskStore.get("parameters"));
-  object->readStoredData(diskStore);
+  ObjectPtr object;
+  Json newDiskStore = diskStore;
+  try {
+    object = createObject(diskStore.getString("name"), diskStore.get("parameters"));
+  } catch (std::exception const& e) {
+    auto context = m_luaRoot->createContext(m_rebuildScripts);
+    context.setCallbacks("root", LuaBindings::makeRootCallbacks());
+    context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
+    newDiskStore = context.invokePath<Json>("rebuild", diskStore, strf("{}", outputException(e, false)));
+    object = createObject(newDiskStore.getString("name"), newDiskStore.get("parameters"));
+  }
+
+  object->readStoredData(newDiskStore);
   object->setNetStates();
   return object;
 }
