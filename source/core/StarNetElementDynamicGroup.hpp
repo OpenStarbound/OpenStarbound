@@ -215,7 +215,7 @@ bool NetElementDynamicGroup<Element>::writeNetDelta(DataStream& ds, uint64_t fro
     // THIS THIS RIGHT HERE IS THE CULPRIT, IT JUST NEEDS TO BE FIXED AND ACTUALLY WORK
     for (auto const& p : m_changeData) {
       if (p.first >= fromVersion) {
-        if (ElementAddition const* elementAddition = p.second.ptr<ElementAddition>()) {
+        if (ElementAddition const* elementAddition = p.second.ptr<typename ElementAddition>()) {
           ElementId id = elementAddition->first;
           if (shared_ptr<Element> const* element = m_idMap.ptr(id)) {
             willWrite();
