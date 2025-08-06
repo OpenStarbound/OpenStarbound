@@ -231,8 +231,10 @@ NetworkedAnimator::NetworkedAnimator(Json config, String relativePath) : Network
 
   // Make sure that every state type has an entry in the state info map, and
   // order it predictably by key.
-  for (auto const& stateType : m_animatedParts.stateTypes())
-    m_stateInfo[stateType];
+  for (auto const& stateType : m_animatedParts.stateTypes()) {
+    StateInfo& stateInfo = m_stateInfo[stateType];
+    stateInfo.wasUpdated = true;
+  }
 
   m_stateInfo.sortByKey();
 
@@ -1331,7 +1333,6 @@ void NetworkedAnimator::setupNetStates() {
     addNetElement(&m_partTags[part]);
 
   for (auto& pair : m_stateInfo) {
-    pair.second.wasUpdated = true;
     pair.second.reverse.setCompatibilityVersion(10);
     addNetElement(&pair.second.reverse);
     addNetElement(&pair.second.stateIndex);
@@ -1426,6 +1427,7 @@ void NetworkedAnimator::netElementsNeedLoad(bool initial) {
 void NetworkedAnimator::netElementsNeedStore() {
   for (auto& pair : m_stateInfo) {
     if (pair.second.wasUpdated || (version() < 1)) {
+      pair.second.wasUpdated = false;
       pair.second.stateIndex.set(m_animatedParts.activeStateIndex(pair.first));
       pair.second.reverse.set(m_animatedParts.activeStateReverse(pair.first));
     }
