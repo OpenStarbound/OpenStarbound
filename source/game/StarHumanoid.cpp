@@ -1855,12 +1855,12 @@ Vec2F Humanoid::altArmPosition(Direction facingDirection, float armAngle, Vec2F 
 }
 
 Vec2F Humanoid::primaryHandOffset(Direction facingDirection) const {
-  if (m_useAnimation)
+  if (m_useAnimation){
     if (facingDirection == Direction::Left || m_twoHanded)
       return jsonToVec2F(m_networkedAnimator.partProperty(m_frontItemPart,"offset")) - jsonToVec2F(m_networkedAnimator.partProperty(m_frontArmRotationPoint.first,m_frontArmRotationPoint.second));
     else
       return jsonToVec2F(m_networkedAnimator.partProperty(m_backItemPart,"offset")) - jsonToVec2F(m_networkedAnimator.partProperty(m_backArmRotationPoint.first,m_backArmRotationPoint.second));
-
+  }
   if (facingDirection == Direction::Left || m_twoHanded)
     return m_frontHandPosition - m_frontArmRotationCenter;
   else
@@ -1868,12 +1868,12 @@ Vec2F Humanoid::primaryHandOffset(Direction facingDirection) const {
 }
 
 Vec2F Humanoid::altHandOffset(Direction facingDirection) const {
-  if (m_useAnimation)
+  if (m_useAnimation){
     if (facingDirection == Direction::Left || m_twoHanded)
       return jsonToVec2F(m_networkedAnimator.partProperty(m_backItemPart,"offset")) - jsonToVec2F(m_networkedAnimator.partProperty(m_backArmRotationPoint.first,m_backArmRotationPoint.second));
     else
       return jsonToVec2F(m_networkedAnimator.partProperty(m_frontItemPart,"offset")) - jsonToVec2F(m_networkedAnimator.partProperty(m_frontArmRotationPoint.first,m_frontArmRotationPoint.second));
-
+  }
   if (facingDirection == Direction::Left || m_twoHanded)
     return m_frontHandPosition - m_backArmRotationCenter;
   else
