@@ -9,6 +9,7 @@
   "link" : "https://github.com/OpenStarbound/OpenStarbound",
   "scripts" : {
     //"onLoad" : ["/scripts/opensb/assets/onload.lua"],
-    "postLoad" : ["/scripts/opensb/assets/postload.lua"]
+    "postLoad" : ["/scripts/opensb/assets/postload.lua"],
+    "itemRebuild" : ["/scripts/opensb/assets/itemRebuild.lua"]
   }
 }

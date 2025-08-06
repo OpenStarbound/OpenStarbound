@@ -138,6 +138,14 @@ ItemDatabase::ItemDatabase()
   addCodexes();
   scanRecipes();
   addBlueprints();
+
+  auto assets = Root::singleton().assets();
+  for (auto& path : assets->assetSources()) {
+    auto metadata = assets->assetSourceMetadata(path);
+    if (auto scripts = metadata.maybe("scripts"))
+      if (auto rebuildScripts = scripts.value().optArray("itemRebuild"))
+        m_rebuildScripts.appendAll(jsonToStringList(rebuildScripts.value()));
+  }
 }
 
 void ItemDatabase::cleanup() {
@@ -521,16 +529,13 @@ ItemPtr ItemDatabase::tryCreateItem(ItemDescriptor const& descriptor, Maybe<floa
 	  result = createItem(m_items.get(name).type, itemConfig(name, parameters, level, seed));
   }
   catch (std::exception const& e) {
-    if (descriptor.name() == "perfectlygenericitem") {
-      Logger::error("Could not re-instantiate item '{}'. {}", descriptor, outputException(e, false));
-		  result = createItem(m_items.get("perfectlygenericitem").type, itemConfig("perfectlygenericitem", descriptor.parameters(), level, seed));
-    } else if (!ignoreInvalid) {
-      Logger::error("Could not instantiate item '{}'. {}", descriptor, outputException(e, false));
-      result = createItem(m_items.get("perfectlygenericitem").type, itemConfig("perfectlygenericitem", JsonObject({
-        {"genericItemStorage", descriptor.toJson()},
-        {"shortdescription", descriptor.name()},
-        {"description", "Reinstall the parent mod to return this item to normal\n^red;(to retain data, do not place as object)"}
-      }), {}, {}));
+    if (!ignoreInvalid) {
+      RecursiveMutexLocker locker(m_luaMutex);
+      auto context = m_luaRoot->createContext(m_rebuildScripts);
+      context.setCallbacks("root", LuaBindings::makeRootCallbacks());
+      context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
+      auto newDescriptor = ItemDescriptor(context.invokePath<Json>("rebuild", descriptor.toJson(), strf("{}", outputException(e, false))));
+      result = createItem(m_items.get(newDescriptor.name()).type, itemConfig(newDescriptor.name(), newDescriptor.parameters(), level, seed));
     } else
       throw e;
   }
