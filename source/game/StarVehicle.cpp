@@ -269,6 +269,7 @@ void Vehicle::update(float dt, uint64_t) {
 }
 
 void Vehicle::render(RenderCallback* renderer) {
+  clearLoungingDrawables();
   setupLoungingDrawables();
   for (auto& drawable : m_networkedAnimator.drawablesWithZLevel(position())) {
     if (drawable.second < 0.0f)

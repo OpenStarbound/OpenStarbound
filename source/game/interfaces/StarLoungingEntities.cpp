@@ -297,20 +297,26 @@ LuaCallbacks LoungeableEntity::addLoungeableCallbacks(LuaCallbacks callbacks){
   return callbacks;
 }
 
-void LoungeableEntity::setupLoungingDrawables() {
+void LoungeableEntity::clearLoungingDrawables() {
   for (size_t i = 0; i < loungePositions()->size(); ++i) {
     auto const& thisLounge = loungePositions()->valueAt(i);
     if (thisLounge.usePartZLevel && !thisLounge.hidden.get()) {
-      // TODO: clear part's local drawables here once animator improvements merge
+      networkedAnimator()->setPartDrawables(thisLounge.part, {});
     }
   }
+}
+
+void LoungeableEntity::setupLoungingDrawables(Vec2F scale) {
   for (size_t i = 0; i < loungePositions()->size(); ++i) {
     auto const& thisLounge = loungePositions()->valueAt(i);
     if (thisLounge.usePartZLevel && !thisLounge.hidden.get()) {
       for (auto id : entitiesLoungingIn(i)) {
         if (auto entity = world()->get<LoungingEntity>(id)) {
-          entity->drawables();
-          // TODO: add drawables to part's local drawables here once animator improvements merge
+          Mat3F partTransformation = networkedAnimator()->finalPartTransformation(thisLounge.part);
+          auto drawables = entity->drawables();
+          Drawable::scaleAll(drawables, Vec2F(scale[0] * (partTransformation.determinant() > 0 ? 1 : -1), scale[1]));
+          Drawable::translateAll(drawables, jsonToVec2F(networkedAnimator()->partProperty(thisLounge.part, thisLounge.partAnchor)));
+          networkedAnimator()->setPartDrawables(thisLounge.part, drawables);
         }
       }
     }

@@ -21,6 +21,7 @@ LoungeableObject::LoungeableObject(ObjectConfigConstPtr config, Json const& para
 }
 
 void LoungeableObject::render(RenderCallback* renderCallback) {
+  clearLoungingDrawables();
   setupLoungingDrawables();
   Object::render(renderCallback);
 

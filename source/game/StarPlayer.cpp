@@ -441,7 +441,7 @@ List<Drawable> Player::drawables(Vec2F position) {
       extractScale(m_statusController->parentDirectives().list());
       humanoid()->setScale(scale);
 
-      for (auto& drawable : humanoid()->render()) {
+      for (auto& drawable : humanoid()->render(true, true, (!anchor || !anchor->usePartZLevel), true)) {
         drawable.translate(position + m_techController->parentOffset());
         if (drawable.isImage()) {
           drawable.imagePart().addDirectivesGroup(humanoidDirectives, true);

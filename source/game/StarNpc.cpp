@@ -549,7 +549,7 @@ List<Drawable> Npc::drawables(Vec2F position) {
   }
   humanoid()->setScale(scale);
 
-  for (auto& drawable : humanoid()->render()) {
+  for (auto& drawable : humanoid()->render(true, true, (!anchor || !anchor->usePartZLevel), true)) {
     drawable.translate(position);
     if (drawable.isImage()) {
       drawable.imagePart().addDirectivesGroup(humanoidDirectives, true);

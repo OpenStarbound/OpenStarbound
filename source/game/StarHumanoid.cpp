@@ -906,7 +906,7 @@ void Humanoid::resetAnimation() {
   }
 }
 
-List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
+List<Drawable> Humanoid::render(bool withItems, bool withHeadRotation, bool withRotation,  bool withScale) {
   auto& fashion = *m_fashion;
   refreshWearables(fashion);
   List<Drawable> drawables;
@@ -941,7 +941,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
         break;
       m_networkedAnimator.resetLocalTransformationGroup("backCosmetic" + toString(i) + "Rotation");
     }
-    if (m_headRotation != 0.f) {
+    if (m_headRotation != 0.f && withHeadRotation) {
       float dir = numericalDirection(m_facingDirection);
       float headX = (m_headRotation / ((float)Constants::pi * 2.f));
       Vec2F translate = {
@@ -1033,10 +1033,11 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
     }
 
     auto animatorDrawables = m_networkedAnimator.drawables();
-    if (withRotationAndScale) {
-      Drawable::rotateAll(animatorDrawables, m_rotation);
+    if (withScale)
       Drawable::scaleAll(animatorDrawables, m_scale);
-    }
+    if (withRotation)
+      Drawable::rotateAll(animatorDrawables, m_rotation);
+
 
     if (withItems) {
       if (m_altHand.nonRotatedDrawables.size())
@@ -1081,7 +1082,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
       headPosition += m_headLayOffset;
 
     auto applyHeadRotation = [&](Drawable& drawable) {
-      if (m_headRotation != 0.f && withRotationAndScale) {
+      if (m_headRotation != 0.f && withHeadRotation) {
         float dir = numericalDirection(m_facingDirection);
         Vec2F rotationPoint = headPosition + m_headRotationCenter;
         rotationPoint[0] *= dir;
@@ -1412,12 +1413,10 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
 
     for (auto& drawable : drawables) {
       drawable.translate(m_globalOffset);
-      if (withRotationAndScale) {
-        if (m_scale.x() != 1.f || m_scale.y() != 1.f)
-          drawable.scale(m_scale);
-        if (m_rotation != 0.f)
-          drawable.rotate(m_rotation);
-      }
+      if (withScale && (m_scale.x() != 1.f || m_scale.y() != 1.f))
+        drawable.scale(m_scale);
+      if (withRotation && (m_rotation != 0.f))
+        drawable.rotate(m_rotation);
       drawable.rebase();
     }
   }
@@ -1698,7 +1697,7 @@ List<Drawable> Humanoid::renderDummy(Gender gender, HeadArmor const* head, Chest
     if (back)
       setWearableFromBack(0, *back, gender);
 
-    drawables = render(false, false);
+    drawables = render(false, false, false, false);
     Drawable::scaleAll(drawables, TilePixels);
     removeWearable(0);
     removeWearable(1);

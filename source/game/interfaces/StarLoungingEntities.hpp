@@ -72,7 +72,8 @@ public:
   Maybe<size_t> loungeInteract(InteractRequest const& request);
   LuaCallbacks addLoungeableCallbacks(LuaCallbacks callbacks);
 
-  virtual void setupLoungingDrawables();
+  virtual void setupLoungingDrawables(Vec2F scale = Vec2F(1,1));
+  virtual void clearLoungingDrawables();
 
   virtual EntityRenderLayer loungeRenderLayer(size_t anchorPositionIndex) const = 0;
   virtual NetworkedAnimator const* networkedAnimator() const = 0;
