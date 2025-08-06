@@ -27,7 +27,7 @@ struct NpcVariant {
   unsigned initialScriptDelta;
   Json scriptConfig;
 
-  String description;
+  Maybe<String> description;
 
   HumanoidIdentity humanoidIdentity;
   Json humanoidConfig;

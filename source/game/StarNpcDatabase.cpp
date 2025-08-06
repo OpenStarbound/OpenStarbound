@@ -254,11 +254,18 @@ NpcVariant NpcDatabase::readNpcVariant(ByteArray const& data, NetCompatibilityRu
 }
 
 Json NpcDatabase::writeNpcVariantToJson(NpcVariant const& variant) const {
+  JsonObject overrides;
+  if (variant.overrides)
+    overrides = variant.overrides.toObject();
+  overrides.set("humanoidParameters", variant.humanoidParameters);
+  if (variant.description.isValid())
+    overrides.set("description", variant.description.value());
+
   return JsonObject{{"species", variant.species},
       {"typeName", variant.typeName},
       {"level", variant.level},
       {"seed", variant.seed},
-      {"overrides", variant.overrides},
+      {"overrides", overrides},
       {"initialScriptDelta", variant.initialScriptDelta},
       {"humanoidIdentity", variant.humanoidIdentity.toJson()},
       {"items", jsonFromMapV<StringMap<ItemDescriptor>>(variant.items, mem_fn(&ItemDescriptor::diskStore))},
@@ -280,7 +287,7 @@ NpcVariant NpcDatabase::readNpcVariantFromJson(Json const& data) const {
 
   auto config = buildConfig(variant.typeName, variant.overrides);
 
-  variant.description = config.getString("description", "Some funny looking person");
+  variant.description = config.optString("description");
 
   variant.scripts = jsonToStringList(config.get("scripts"));
   variant.scriptConfig = config.get("scriptConfig");

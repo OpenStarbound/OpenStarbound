@@ -10,16 +10,15 @@ void NetElementGroup::addNetElement(NetElement* element, bool propagateInterpola
     element->enableNetInterpolation(m_extrapolationHint);
   m_elements.append(pair<NetElement*, bool>(element, propagateInterpolation));
 
-  auto version = element->compatibilityVersion();
-  if (version == AnyVersion)
-    version = 0;
 
-  for (auto i = version; i < (CurrentStreamVersion + 1); i++) {
-    m_elementCounts[i]++;
+  for (VersionNumber i = 0; i < (CurrentStreamVersion + 1); i++) {
+    if (element->checkWithRules(NetCompatibilityRules(i)))
+      m_elementCounts[i]++;
   }
 }
 
 void NetElementGroup::clearNetElements() {
+  m_elementCounts.clear();
   m_elements.clear();
 }
 
@@ -70,18 +69,27 @@ void NetElementGroup::tickNetInterpolation(float dt) {
 
 bool NetElementGroup::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const {
   if (!checkWithRules(rules)) return false;
-  if (m_elements.size() == 0) {
+
+  auto expectedSize = m_elementCounts.maybe(rules.version()).value(m_elements.size());
+
+  if (expectedSize == 0) {
     return false;
-  } else if (m_elements.size() == 1) {
-    return m_elements[0].first->writeNetDelta(ds, fromVersion, rules);
+  } else if (expectedSize == 1) {
+    for (auto& element : m_elements)
+      if (element.first->checkWithRules(rules)) {
+        return element.first->writeNetDelta(ds, fromVersion, rules);
+      }
   } else {
     bool deltaWritten = false;
     uint64_t i = 0;
     m_buffer.setStreamCompatibilityVersion(rules);
     for (auto& element : m_elements) {
+      if (i > expectedSize)
+        break;
       if (!element.first->checkWithRules(rules))
         continue;
       ++i;
+
       if (element.first->writeNetDelta(m_buffer, fromVersion, rules)) {
         deltaWritten = true;
         ds.writeVlqU(i);
