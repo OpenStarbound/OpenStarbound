@@ -250,7 +250,7 @@ public:
 
   // Updates the animation based on whatever the current animation state is,
   // wrapping or clamping animation time as appropriate.
-  void animate(float dt);
+  void animate(float dt, NetworkedAnimator::DynamicTarget * dynamicTarget);
 
   // Reset animation time to 0.0f
   void resetAnimation();
@@ -315,7 +315,6 @@ public:
 
   NetworkedAnimator * networkedAnimator();
   NetworkedAnimator const* networkedAnimator() const;
-  NetworkedAnimator::DynamicTarget * networkedAnimatorDynamicTarget();
   List<String> animationScripts() const;
 
   Json humanoidConfig(bool withOverrides = true);
@@ -452,7 +451,6 @@ private:
   bool m_useAnimation;
 
   NetworkedAnimator m_networkedAnimator;
-  NetworkedAnimator::DynamicTarget m_networkedAnimatorDynamicTarget;
 
   List<String> m_animationScripts;
 

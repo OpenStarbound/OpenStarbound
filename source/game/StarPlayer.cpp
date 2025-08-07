@@ -472,7 +472,7 @@ List<Particle> Player::particles() {
   List<Particle> particles;
   particles.appendAll(m_config->splashConfig.doSplash(position(), m_movementController->velocity(), world()));
   particles.appendAll(take(m_callbackParticles));
-  particles.appendAll(humanoid()->networkedAnimatorDynamicTarget()->pullNewParticles());
+  particles.appendAll(m_humanoidDynamicTarget.pullNewParticles());
   particles.appendAll(m_techController->pullNewParticles());
   particles.appendAll(m_statusController->pullNewParticles());
 
@@ -1180,8 +1180,8 @@ void Player::render(RenderCallback* renderCallback) {
     m_statusController->pullNewAudios();
     m_statusController->pullNewParticles();
 
-    humanoid()->networkedAnimatorDynamicTarget()->pullNewAudios();
-    humanoid()->networkedAnimatorDynamicTarget()->pullNewParticles();
+    m_humanoidDynamicTarget.pullNewAudios();
+    m_humanoidDynamicTarget.pullNewParticles();
     return;
   }
 
@@ -1214,7 +1214,7 @@ void Player::render(RenderCallback* renderCallback) {
 
   renderCallback->addAudios(m_techController->pullNewAudios());
   renderCallback->addAudios(m_statusController->pullNewAudios());
-  renderCallback->addAudios(humanoid()->networkedAnimatorDynamicTarget()->pullNewAudios());
+  renderCallback->addAudios(m_humanoidDynamicTarget.pullNewAudios());
 
   for (auto const& p : take(m_callbackSounds)) {
     auto audio = make_shared<AudioInstance>(*Root::singleton().assets()->audio(get<0>(p)));
@@ -1898,8 +1898,12 @@ void Player::processStateChanges(float dt) {
       }
     }
   }
-
-  humanoid()->animate(dt);
+  if (world()->isClient()) {
+    humanoid()->animate(dt, &m_humanoidDynamicTarget);
+    m_humanoidDynamicTarget.updatePosition(position() + (m_techController->parentOffset() * m_movementController->getScale()));
+  } else {
+    humanoid()->animate(dt, {});
+  }
   m_scriptedAnimator.update();
 
   if (auto techState = m_techController->parentState()) {
@@ -2578,7 +2582,7 @@ bool Player::invisible() const {
 }
 
 void Player::animatePortrait(float dt) {
-  humanoid()->animate(dt);
+  humanoid()->animate(dt, {});
   if (m_emoteCooldownTimer) {
     m_emoteCooldownTimer -= dt;
     if (m_emoteCooldownTimer <= 0) {
