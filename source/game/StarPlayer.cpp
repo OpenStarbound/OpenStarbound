@@ -929,40 +929,37 @@ void Player::update(float dt, uint64_t) {
       if (inConflictingLoungeAnchor())
         m_movementController->resetAnchorState();
 
-      if (m_state == State::Lounge) {
-        if (auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor())) {
-          m_statusController->setPersistentEffects("lounging", loungeAnchor->statusEffects);
-          addEffectEmitters(loungeAnchor->effectEmitters);
-          if (loungeAnchor->emote)
-            requestEmote(*loungeAnchor->emote);
+      if (auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor())) {
+        m_state = State::Lounge;
+        m_statusController->setPersistentEffects("lounging", loungeAnchor->statusEffects);
+        addEffectEmitters(loungeAnchor->effectEmitters);
+        if (loungeAnchor->emote)
+          requestEmote(*loungeAnchor->emote);
 
-          auto itemDatabase = Root::singleton().itemDatabase();
-          if (auto headOverride = loungeAnchor->armorCosmeticOverrides.maybe("head")) {
-            auto overrideItem = itemDatabase->item(ItemDescriptor(*headOverride));
-            if (m_inventory->itemAllowedAsEquipment(overrideItem, EquipmentSlot::HeadCosmetic))
-              m_armor->setHeadCosmeticItem(as<HeadArmor>(overrideItem));
-          }
-          if (auto chestOverride = loungeAnchor->armorCosmeticOverrides.maybe("chest")) {
-            auto overrideItem = itemDatabase->item(ItemDescriptor(*chestOverride));
-            if (m_inventory->itemAllowedAsEquipment(overrideItem, EquipmentSlot::ChestCosmetic))
-              m_armor->setChestCosmeticItem(as<ChestArmor>(overrideItem));
-          }
-          if (auto legsOverride = loungeAnchor->armorCosmeticOverrides.maybe("legs")) {
-            auto overrideItem = itemDatabase->item(ItemDescriptor(*legsOverride));
-            if (m_inventory->itemAllowedAsEquipment(overrideItem, EquipmentSlot::LegsCosmetic))
-              m_armor->setLegsCosmeticItem(as<LegsArmor>(overrideItem));
-          }
-          if (auto backOverride = loungeAnchor->armorCosmeticOverrides.maybe("back")) {
-            auto overrideItem = itemDatabase->item(ItemDescriptor(*backOverride));
-            if (m_inventory->itemAllowedAsEquipment(overrideItem, EquipmentSlot::BackCosmetic))
-              m_armor->setBackCosmeticItem(as<BackArmor>(overrideItem));
-          }
-        } else {
-          m_state = State::Idle;
-          m_movementController->resetAnchorState();
+        auto itemDatabase = Root::singleton().itemDatabase();
+        if (auto headOverride = loungeAnchor->armorCosmeticOverrides.maybe("head")) {
+          auto overrideItem = itemDatabase->item(ItemDescriptor(*headOverride));
+          if (m_inventory->itemAllowedAsEquipment(overrideItem, EquipmentSlot::HeadCosmetic))
+            m_armor->setHeadCosmeticItem(as<HeadArmor>(overrideItem));
+        }
+        if (auto chestOverride = loungeAnchor->armorCosmeticOverrides.maybe("chest")) {
+          auto overrideItem = itemDatabase->item(ItemDescriptor(*chestOverride));
+          if (m_inventory->itemAllowedAsEquipment(overrideItem, EquipmentSlot::ChestCosmetic))
+            m_armor->setChestCosmeticItem(as<ChestArmor>(overrideItem));
+        }
+        if (auto legsOverride = loungeAnchor->armorCosmeticOverrides.maybe("legs")) {
+          auto overrideItem = itemDatabase->item(ItemDescriptor(*legsOverride));
+          if (m_inventory->itemAllowedAsEquipment(overrideItem, EquipmentSlot::LegsCosmetic))
+            m_armor->setLegsCosmeticItem(as<LegsArmor>(overrideItem));
+        }
+        if (auto backOverride = loungeAnchor->armorCosmeticOverrides.maybe("back")) {
+          auto overrideItem = itemDatabase->item(ItemDescriptor(*backOverride));
+          if (m_inventory->itemAllowedAsEquipment(overrideItem, EquipmentSlot::BackCosmetic))
+            m_armor->setBackCosmeticItem(as<BackArmor>(overrideItem));
         }
       } else {
-        m_movementController->resetAnchorState();
+        if (m_state == State::Lounge)
+          m_state = State::Idle;
         m_statusController->setPersistentEffects("lounging", {});
       }
 
