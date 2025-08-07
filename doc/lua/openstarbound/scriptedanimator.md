@@ -6,6 +6,19 @@ It is available only in client side rendering scripts.
 
 ---
 
+#### `bool` animationConfig.flipped()
+True if the animator is flipped.
+
+#### `float` animationConfig.flippedRelativeCenterLine()
+Returns the center line the animator was flipped at.
+
+---
+
+#### `float` animationConfig.animationRate()
+Returns the animation rate.
+
+---
+
 #### `void` animationConfig.setLocalTag(`String` tagName, `Maybe<String>` tagValue)
 
 Sets an animator tag. A tag replaces any tag <tagName> with the specified tagValue across all animation parts.

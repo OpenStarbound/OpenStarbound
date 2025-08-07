@@ -568,6 +568,10 @@ void NetworkedAnimator::setAnimationRate(float rate) {
   m_animationRate.set(rate);
 }
 
+float NetworkedAnimator::animationRate() {
+  return m_animationRate.get();
+}
+
 bool NetworkedAnimator::hasRotationGroup(String const& rotationGroup) const {
   return m_rotationGroups.contains(rotationGroup);
 }

@@ -44,6 +44,16 @@ LuaCallbacks LuaBindings::makeNetworkedAnimatorCallbacks(NetworkedAnimator* netw
       [networkedAnimator](bool flipped, Maybe<float> relativeCenterLine) {
         networkedAnimator->setFlipped(flipped, relativeCenterLine.value());
       });
+  callbacks.registerCallback("flipped", [networkedAnimator]() -> bool {
+        return networkedAnimator->flipped();
+    });
+  callbacks.registerCallback("flippedRelativeCenterLine", [networkedAnimator]() -> float {
+        return networkedAnimator->flippedRelativeCenterLine();
+    });
+  callbacks.registerCallback("animationRate", [networkedAnimator]() -> float {
+        return networkedAnimator->animationRate();
+    });
+
   callbacks.registerCallbackWithSignature<void, float>(
       "setAnimationRate", bind(&NetworkedAnimator::setAnimationRate, networkedAnimator, _1));
   callbacks.registerCallbackWithSignature<void, String, float, bool>(

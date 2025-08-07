@@ -149,6 +149,7 @@ public:
   // can be used to globally speed up or slow down all components of
   // NetworkedAnimator together.
   void setAnimationRate(float rate);
+  float animationRate();
 
   // Given angle is an absolute angle.  Will rotate over time at the configured
   // angular velocity unless the immediate flag is set.
