@@ -210,6 +210,9 @@ private:
   NetElementData<DamageBarType> m_damageBar;
 
   NetElementHashMap<String, Json> m_scriptedAnimationParameters;
+
+  HashSet<LoungeControl> m_LoungeControlsHeld;
+
 };
 
 }

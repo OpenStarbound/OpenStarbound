@@ -468,6 +468,11 @@ void Monster::update(float dt, uint64_t) {
       m_movementController->resetAnchorState();
 
     if (auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor())) {
+      auto anchorState = m_movementController->anchorState();
+      if (auto loungeableEntity = world()->get<LoungeableEntity>(anchorState->entityId))
+        for (auto control : m_LoungeControlsHeld)
+          loungeableEntity->loungeControl(anchorState->positionIndex, control);
+
       m_statusController->setPersistentEffects("lounging", loungeAnchor->statusEffects);
       m_effectEmitter.addEffectSources("normal", loungeAnchor->effectEmitters);
     } else {
@@ -730,6 +735,15 @@ LuaCallbacks Monster::makeMonsterCallbacks() {
     if (anchor && anchor->dismountable) {
       m_movementController->resetAnchorState();
     }
+  });
+  callbacks.registerCallback("setLoungeControlHeld", [this](String control, bool held) {
+    if (held)
+      m_LoungeControlsHeld.add(LoungeControlNames.getLeft(control));
+    else
+      m_LoungeControlsHeld.remove(LoungeControlNames.getLeft(control));
+  });
+  callbacks.registerCallback("isLoungeControlHeld", [this](String control) -> bool {
+    return m_LoungeControlsHeld.contains(LoungeControlNames.getLeft(control));
   });
 
   callbacks.registerCallback("isLounging", [this]() { return is<LoungeAnchor>(m_movementController->entityAnchor()); });

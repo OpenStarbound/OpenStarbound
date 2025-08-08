@@ -412,6 +412,11 @@ void Npc::update(float dt, uint64_t) {
       m_movementController->resetAnchorState();
 
     if (auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor())) {
+      auto anchorState = m_movementController->anchorState();
+      if (auto loungeableEntity = world()->get<LoungeableEntity>(anchorState->entityId))
+        for (auto control : m_LoungeControlsHeld)
+          loungeableEntity->loungeControl(anchorState->positionIndex, control);
+
       if (loungeAnchor->emote)
         requestEmote(*loungeAnchor->emote);
       m_statusController->setPersistentEffects("lounging", loungeAnchor->statusEffects);
@@ -861,6 +866,16 @@ LuaCallbacks Npc::makeNpcCallbacks() {
   });
 
   callbacks.registerCallback("isLounging", [this]() { return is<LoungeAnchor>(m_movementController->entityAnchor()); });
+
+  callbacks.registerCallback("setLoungeControlHeld", [this](String control, bool held) {
+    if (held)
+      m_LoungeControlsHeld.add(LoungeControlNames.getLeft(control));
+    else
+      m_LoungeControlsHeld.remove(LoungeControlNames.getLeft(control));
+  });
+  callbacks.registerCallback("isLoungeControlHeld", [this](String control) -> bool {
+    return m_LoungeControlsHeld.contains(LoungeControlNames.getLeft(control));
+  });
 
   callbacks.registerCallback("loungingIn", [this]() -> Maybe<EntityId> {
       auto loungingState = loungingIn();
