@@ -87,6 +87,16 @@ LuaCallbacks LuaBindings::makeScriptedAnimatorCallbacks(NetworkedAnimator* netwo
   callbacks.registerCallbackWithSignature<void, String, Maybe<String>>(
       "setLocalTag", bind(&NetworkedAnimator::setLocalTag, networkedAnimator, _1, _2));
 
+  callbacks.registerCallback("flipped", [networkedAnimator]() -> bool {
+        return networkedAnimator->flipped();
+    });
+  callbacks.registerCallback("flippedRelativeCenterLine", [networkedAnimator]() -> float {
+        return networkedAnimator->flippedRelativeCenterLine();
+    });
+  callbacks.registerCallback("animationRate", [networkedAnimator]() -> float {
+        return networkedAnimator->animationRate();
+    });
+
 
   return callbacks;
 }

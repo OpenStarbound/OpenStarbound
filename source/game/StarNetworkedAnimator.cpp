@@ -568,6 +568,10 @@ void NetworkedAnimator::setAnimationRate(float rate) {
   m_animationRate.set(rate);
 }
 
+float NetworkedAnimator::animationRate() {
+  return m_animationRate.get();
+}
+
 bool NetworkedAnimator::hasRotationGroup(String const& rotationGroup) const {
   return m_rotationGroups.contains(rotationGroup);
 }
@@ -1439,13 +1443,14 @@ uint8_t NetworkedAnimator::version() const {
 }
 
 Json NetworkedAnimator::mergeIncludes(Json config, Json includes, String relativePath){
+  Json includedConfigs;
   for (Json const& path : includes.iterateArray()) {
     auto includeConfig = Root::singleton().assets()->json(AssetPath::relativeTo(relativePath, path.toString()));
     if (includeConfig.contains("includes"))
       includeConfig = mergeIncludes(includeConfig, includeConfig.get("includes"), relativePath);
-    config = jsonMerge(includeConfig, config);
+    includedConfigs = jsonMerge(includedConfigs, includeConfig);
   }
-  return config;
+  return jsonMerge(includedConfigs, config);
 }
 
 }

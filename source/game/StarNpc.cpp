@@ -516,13 +516,13 @@ void Npc::render(RenderCallback* renderCallback) {
   if (loungeAnchor && loungeAnchor->hidden) {
     m_statusController->pullNewParticles();
     m_npcVariant.splashConfig.doSplash(position(), m_movementController->velocity(), world());
-    humanoid()->networkedAnimatorDynamicTarget()->pullNewParticles();
-    humanoid()->networkedAnimatorDynamicTarget()->pullNewAudios();
+    m_humanoidDynamicTarget.pullNewParticles();
+    m_humanoidDynamicTarget.pullNewAudios();
   } else {
     renderCallback->addParticles(m_statusController->pullNewParticles());
     renderCallback->addParticles(m_npcVariant.splashConfig.doSplash(position(), m_movementController->velocity(), world()));
-    renderCallback->addParticles(humanoid()->networkedAnimatorDynamicTarget()->pullNewParticles());
-    renderCallback->addAudios(humanoid()->networkedAnimatorDynamicTarget()->pullNewAudios());
+    renderCallback->addParticles(m_humanoidDynamicTarget.pullNewParticles());
+    renderCallback->addAudios(m_humanoidDynamicTarget.pullNewAudios());
 
   }
 
@@ -681,7 +681,12 @@ void Npc::tickShared(float dt) {
   if (auto overrideDirection = m_tools->setupHumanoidHandItems(*humanoid(), position(), aimPosition()))
     m_movementController->controlFace(*overrideDirection);
 
-  humanoid()->animate(dt);
+  if (world()->isClient()) {
+    humanoid()->animate(dt, &m_humanoidDynamicTarget);
+    m_humanoidDynamicTarget.updatePosition(position());
+  } else {
+    humanoid()->animate(dt, {});
+  }
   m_scriptedAnimator.update();
 }
 
