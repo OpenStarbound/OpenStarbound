@@ -246,6 +246,7 @@ private:
   NetElementDynamicGroup<NetHumanoid> m_netHumanoid;
   LuaAnimationComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptedAnimator;
   NetElementHashMap<String, Json> m_scriptedAnimationParameters;
+  NetworkedAnimator::DynamicTarget m_humanoidDynamicTarget;
 
   NpcVariant m_npcVariant;
   NetElementTopGroup m_netGroup;

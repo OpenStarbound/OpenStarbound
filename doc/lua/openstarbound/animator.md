@@ -17,6 +17,19 @@ Animator callbacks will be added and removed from player/npc script contexts dep
 
 ---
 
+#### `bool` animator.flipped()
+True if the animator is flipped.
+
+#### `float` animator.flippedRelativeCenterLine()
+Returns the center line the animator was flipped at.
+
+---
+
+#### `float` animator.animationRate()
+Returns the animation rate.
+
+---
+
 #### `void` animator.setGlobalTag(`String` tagName, `Maybe<String>` tagValue)
 
 Sets a global animator tag. A global tag replaces any tag <tagName> with the specified tagValue across all animation parts.
