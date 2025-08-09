@@ -62,9 +62,11 @@ Gets a table of all the humanoid parameters.
 
 ---
 
-#### `JsonObject` player.humanoidConfig()
+#### `JsonObject` player.humanoidConfig(`bool` withOverrides)
 
 Gets the active humanoid config.
+
+If withOverrides is true, returns it with the overrides applied by armor.
 
 The humanoid config controls how the player is animated, as well as their movement properties.
 
