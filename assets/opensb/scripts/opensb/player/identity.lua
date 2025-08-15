@@ -39,17 +39,19 @@ commands.register("identity", function(args)
       if arg1:find("%.") then
         return "Name cannot contain '.'"
       end
-            root.setConfigurationPath("savedHumanoidIdentities." .. arg1, player.humanoidIdentity())
-      return "Saved identity to starbound.config:savedHumanoidIdentities."..arg1
+        root.setConfigurationPath("savedHumanoids." .. arg1, {identity = player.humanoidIdentity(), parameters = player.humanoidParameters()})
+      return "Saved identity to starbound.config:savedHumanoids."..arg1
     else
       return "You must provide a name for this identity"
     end
   elseif method == "load" then
     if type(arg1) == "string" then
-      local identity = root.getConfigurationPath("savedHumanoidIdentities." .. arg1)
-      if identity then
-        player.setHumanoidIdentity(identity)
-        return "Loaded identity from starbound.config:savedHumanoidIdentities."..arg1
+      local humanoid = root.getConfigurationPath("savedHumanoids." .. arg1)
+      if humanoid then
+        player.setHumanoidParameters(humanoid.parameters)
+        player.setHumanoidIdentity(humanoid.identity)
+        player.refreshHumanoidParameters()
+        return "Loaded identity from starbound.config:savedHumanoids."..arg1
       else
         return "No saved identity named "..arg1
       end

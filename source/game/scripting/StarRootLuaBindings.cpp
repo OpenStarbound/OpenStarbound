@@ -268,10 +268,41 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
     return root->speciesDatabase()->species(species)->config();
   });
 
-  callbacks.registerCallback("generateHumanoidIdentity", [root](String const& species, Maybe<uint64_t> seed, Maybe<String> gender) -> Json {
-    auto identity = HumanoidIdentity();
-    root->speciesDatabase()->species(species)->generateHumanoid(identity, seed.value(Random::randu64()), gender.isValid() ? GenderNames.getLeft(*gender) : Maybe<Gender>());
-    return identity.toJson();
+  callbacks.registerCallback("generateHumanoidIdentity", [root](String const& species, Maybe<uint64_t> seed, Maybe<String> gender) -> LuaTupleReturn<Json, JsonObject, JsonObject> {
+    auto result = root->speciesDatabase()->generateHumanoid(species, seed.value(Random::randu64()), gender.isValid() ? GenderNames.getLeft(*gender) : Maybe<Gender>());
+    return LuaTupleReturn<Json, JsonObject, JsonObject>{result.identity.toJson(), result.humanoidParameters, result.armor};
+  });
+  callbacks.registerCallback("createHumanoid", [root](
+    String name,
+    String speciesChoice,
+    size_t genderChoice,
+    size_t bodyColorChoice,
+    size_t alty,
+    size_t hairChoice,
+    size_t heady,
+    size_t shirtChoice,
+    size_t shirtColor,
+    size_t pantsChoice,
+    size_t pantsColor,
+    size_t personality,
+    LuaVariadic<LuaValue> ext
+  ) -> LuaTupleReturn<Json, JsonObject, JsonObject> {
+    auto result = root->speciesDatabase()->createHumanoid(
+      name,
+      speciesChoice,
+      genderChoice,
+      bodyColorChoice,
+      alty,
+      hairChoice,
+      heady,
+      shirtChoice,
+      shirtColor,
+      pantsChoice,
+      pantsColor,
+      personality,
+      ext
+    );
+    return LuaTupleReturn<Json, JsonObject, JsonObject>{result.identity.toJson(), result.humanoidParameters, result.armor};
   });
 
   callbacks.registerCallback("effectConfig", [root](String const& effect) -> Json {

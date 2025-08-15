@@ -117,9 +117,23 @@ Returns the config for the species.
 
 ---
 
-#### `JsonObject` root.generateHumanoidIdentity(`String` species, `Maybe<uint64_t>` seed, `Maybe<String>` gender)
+#### `LuaTupleReturn<Json, JsonObject, JsonObject>` root.generateHumanoidIdentity(`String` species, `Maybe<uint64_t>` seed, `Maybe<String>` gender)
 
 Generates a random humanoid identity for the given species. Optionally supply a seed and or predetermined gender.
+
+Additionaly supplies a humanoidParameters object, as well as an object of the clothing that would be chosen with those choices
+
+humanoidParameters will have the `choices` value set to an array of the indexes of the choices made.
+
+#### `LuaTupleReturn<Json, JsonObject, JsonObject>` root.createHumanoid(`String` name, `String` speciesChoice, `size_t` genderChoice, `size_t` bodyColorChoice, `size_t` alty, `size_t` hairChoice, `size_t` heady, `size_t` shirtChoice, `size_t` shirtColor, `size_t` pantsChoice, `size_t` pantsColor, `size_t` personality, `LuaVariadic<LuaValue>` ext)
+
+Generates a the identity for the given choices on the character creation screen for the given species.
+
+Additionaly supplies a humanoidParameters object, as well as an object of the clothing that would be chosen with those choices
+
+humanoidParameters will have the `choices` value set to an array of the indexes of the choices made.
+
+Additional arguments **ext** are not used by the retail character creation, but will be passed to a species' character creation script if it is defined.
 
 ---
 

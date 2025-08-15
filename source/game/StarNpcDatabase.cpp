@@ -60,17 +60,15 @@ NpcVariant NpcDatabase::generateNpcVariant(
   variant.initialScriptDelta = config.getUInt("initialScriptDelta", 5);
   variant.scriptConfig = config.get("scriptConfig");
 
-  HumanoidIdentity identity;
   auto speciesDatabase = Root::singleton().speciesDatabase();
   auto speciesDefinition = speciesDatabase->species(species);
+  HumanoidIdentity identity = speciesDatabase->generateHumanoid(species, seed).identity;
 
   variant.uniqueHumanoidConfig = config.contains("humanoidConfig");
   if (variant.uniqueHumanoidConfig)
     variant.humanoidConfig = Root::singleton().assets()->json(config.getString("humanoidConfig"));
   else
     variant.humanoidConfig = speciesDefinition->humanoidConfig();
-
-  speciesDefinition->generateHumanoid(identity, seed);
 
   if (config.contains("npcname"))
     identity.name = config.getString("npcname");

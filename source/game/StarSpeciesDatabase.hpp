@@ -51,6 +51,12 @@ struct SpeciesOption {
   List<String> hairColorDirectives;
 };
 
+struct CharacterCreationResult {
+  HumanoidIdentity identity;
+  JsonObject humanoidParameters;
+  JsonObject armor;
+};
+
 class SpeciesDefinition {
 public:
   SpeciesDefinition(Json const& config);
@@ -72,8 +78,6 @@ public:
 
   SpeciesCharCreationTooltip const& tooltip() const;
 
-  void generateHumanoid(HumanoidIdentity& identity, int64_t seed, Maybe<Gender> = {});
-
 private:
   String m_kind;
   SpeciesCharCreationTooltip m_tooltip;
@@ -93,6 +97,7 @@ private:
   String m_effectDirectives;
 
   List<String> m_buildScripts;
+  List<String> m_creationScripts;
 
   friend class SpeciesDatabase;
 };
@@ -105,6 +110,9 @@ public:
   StringMap<SpeciesDefinitionPtr> allSpecies() const;
 
   Json humanoidConfig(HumanoidIdentity identity, JsonObject parameters = JsonObject(), Json config = Json()) const;
+  CharacterCreationResult createHumanoid(String name, String speciesChoice, size_t genderChoice, size_t bodyColor, size_t alty, size_t hairChoice, size_t heady, size_t shirtChoice, size_t shirtColor, size_t pantsChoice, size_t pantsColor, size_t personality, LuaVariadic<LuaValue> ext = {}) const;
+
+  CharacterCreationResult generateHumanoid(String species, int64_t seed, Maybe<Gender> = {}) const;
 
 private:
   StringMap<SpeciesDefinitionPtr> m_species;
