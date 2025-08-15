@@ -37,6 +37,8 @@ public:
   void update(float dt, uint64_t currentStep) override;
 
   bool shouldDestroy() const override;
+  
+  ClientEntityMode clientEntityMode() const override;
 
   Maybe<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
   Maybe<LuaValue> evalScript(String const& code) override;
@@ -59,6 +61,8 @@ private:
   RectF m_boundBox;
 
   bool m_dead = false;
+      
+  ClientEntityMode m_clientEntityMode;
 
   NetElementTopGroup m_netGroup;
 
