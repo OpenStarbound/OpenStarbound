@@ -62,7 +62,8 @@ NpcVariant NpcDatabase::generateNpcVariant(
 
   auto speciesDatabase = Root::singleton().speciesDatabase();
   auto speciesDefinition = speciesDatabase->species(species);
-  HumanoidIdentity identity = speciesDatabase->generateHumanoid(species, seed).identity;
+  auto result = speciesDatabase->generateHumanoid(species, seed);
+  HumanoidIdentity identity = result.identity;
 
   variant.uniqueHumanoidConfig = config.contains("humanoidConfig");
   if (variant.uniqueHumanoidConfig)
@@ -84,7 +85,7 @@ NpcVariant NpcDatabase::generateNpcVariant(
 
   variant.humanoidIdentity = identity;
 
-  variant.humanoidParameters = config.getObject("humanoidParameters", JsonObject());
+  variant.humanoidParameters = jsonMerge(result.humanoidParameters, config.getObject("humanoidParameters", JsonObject())).toObject();
 
   variant.movementParameters = config.get("movementParameters", {});
   variant.statusControllerSettings = config.get("statusControllerSettings");

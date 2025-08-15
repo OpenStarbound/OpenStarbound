@@ -272,6 +272,7 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
     auto result = root->speciesDatabase()->generateHumanoid(species, seed.value(Random::randu64()), gender.isValid() ? GenderNames.getLeft(*gender) : Maybe<Gender>());
     return LuaTupleReturn<Json, JsonObject, JsonObject>{result.identity.toJson(), result.humanoidParameters, result.armor};
   });
+  callbacks.copyCallback("generateHumanoidIdentity", "generateHumanoid");
   callbacks.registerCallback("createHumanoid", [root](
     String name,
     String speciesChoice,
