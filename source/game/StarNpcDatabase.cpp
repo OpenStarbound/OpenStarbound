@@ -363,8 +363,7 @@ NpcPtr NpcDatabase::netLoadNpc(ByteArray const& netStore, NetCompatibilityRules 
 }
 
 List<Drawable> NpcDatabase::npcPortrait(NpcVariant const& npcVariant, PortraitMode mode) const {
-  Humanoid humanoid(npcVariant.humanoidConfig);
-  humanoid.setIdentity(npcVariant.humanoidIdentity);
+  Humanoid humanoid(npcVariant.humanoidIdentity, npcVariant.humanoidParameters, npcVariant.uniqueHumanoidConfig ? npcVariant.humanoidConfig : Json());
 
   auto itemDatabase = Root::singleton().itemDatabase();
   auto items = StringMap<ItemDescriptor, CaseInsensitiveStringHash, CaseInsensitiveStringCompare>::from(npcVariant.items);
@@ -374,22 +373,11 @@ List<Drawable> NpcDatabase::npcPortrait(NpcVariant const& npcVariant, PortraitMo
   };
 
   ArmorWearer armor;
-  if (items.contains("head"))
-    armor.setHeadItem(as<HeadArmor>(makeItem(items["head"])));
-  if (items.contains("headCosmetic"))
-    armor.setHeadItem(as<HeadArmor>(makeItem(items["headCosmetic"])));
-  if (items.contains("chest"))
-    armor.setChestItem(as<ChestArmor>(makeItem(items["chest"])));
-  if (items.contains("chestCosmetic"))
-    armor.setChestCosmeticItem(as<ChestArmor>(makeItem(items["chestCosmetic"])));
-  if (items.contains("legs"))
-    armor.setLegsItem(as<LegsArmor>(makeItem(items["legs"])));
-  if (items.contains("legsCosmetic"))
-    armor.setLegsCosmeticItem(as<LegsArmor>(makeItem(items["legsCosmetic"])));
-  if (items.contains("back"))
-    armor.setBackItem(as<BackArmor>(makeItem(items["back"])));
-  if (items.contains("backCosmetic"))
-    armor.setBackCosmeticItem(as<BackArmor>(makeItem(items["backCosmetic"])));
+  for (auto item : npcVariant.items) {
+    if (auto equipmentSlot = EquipmentSlotNames.maybeLeft(item.first)) {
+      armor.setItem((uint8_t)*equipmentSlot, as<ArmorItem>(makeItem(ItemDescriptor(item.second))));
+    }
+  }
 
   armor.setupHumanoid(humanoid, false);
 
