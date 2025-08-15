@@ -65,11 +65,7 @@ NpcVariant NpcDatabase::generateNpcVariant(
   auto result = speciesDatabase->generateHumanoid(species, seed);
   HumanoidIdentity identity = result.identity;
 
-  variant.uniqueHumanoidConfig = config.contains("humanoidConfig");
-  if (variant.uniqueHumanoidConfig)
-    variant.humanoidConfig = Root::singleton().assets()->json(config.getString("humanoidConfig"));
-  else
-    variant.humanoidConfig = speciesDefinition->humanoidConfig();
+  variant.humanoidParameters = jsonMerge(result.humanoidParameters, config.getObject("humanoidParameters", JsonObject())).toObject();
 
   if (config.contains("npcname"))
     identity.name = config.getString("npcname");
@@ -77,15 +73,28 @@ NpcVariant NpcDatabase::generateNpcVariant(
     identity.name = Root::singleton().nameGenerator()->generateName(
         jsonToStringList(config.get("nameGen"))[(int)identity.gender], randSource);
   }
+  // we're going to kinda end up doing this twice just to make sure it ends up generating with the right personality array
+  // its dumb that personality is the only identity value that isn't in the customization screen but comes from the humanoid config
+  // therefore we have to do this little dance here for the npcs that get unique humanoid configs, which is silly since if they
+  // got a unique humanoid config they probably would have had a predefined personality anyway, but whatever
+  if (config.contains("identity"))
+    identity = HumanoidIdentity(jsonMerge(identity.toJson(), config.get("identity")));
 
-  identity.personality = parsePersonalityArray(randSource.randFrom(variant.humanoidConfig.getArray("personalities")));
+  variant.uniqueHumanoidConfig = config.contains("humanoidConfig");
+  if (variant.uniqueHumanoidConfig){
+    variant.humanoidConfig = Root::singleton().assets()->json(config.getString("humanoidConfig"));
+    auto usedHumanoidConfig = speciesDatabase->humanoidConfig(identity, variant.humanoidParameters, variant.humanoidConfig);
+    // this only needs to be done if the npc has a unique humanoid config, otherwise the output from generateHumanoid should be fine
+    identity.personality = parsePersonalityArray(randSource.randFrom(usedHumanoidConfig.getArray("personalities")));
+  } else {
+    variant.humanoidConfig = speciesDefinition->humanoidConfig();
+  }
 
+  // and where it ususally merges the identity
   if (config.contains("identity"))
     identity = HumanoidIdentity(jsonMerge(identity.toJson(), config.get("identity")));
 
   variant.humanoidIdentity = identity;
-
-  variant.humanoidParameters = jsonMerge(result.humanoidParameters, config.getObject("humanoidParameters", JsonObject())).toObject();
 
   variant.movementParameters = config.get("movementParameters", {});
   variant.statusControllerSettings = config.get("statusControllerSettings");
