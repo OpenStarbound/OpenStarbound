@@ -16,6 +16,10 @@ commands.register("identity", function(args)
     end
     return sb.printJson(player.humanoidIdentity(), 1)
   elseif method == "set" and arg1 then
+    if type(arg1) == "table" then
+      player.setHumanoidIdentity(arg1)
+      return sb.printJson(player.humanoidIdentity(), 1)
+    end
     local identity = player.humanoidIdentity()
     local prev = identity[arg1]
     if arg1 ~= "imagePath" then
@@ -31,15 +35,17 @@ commands.register("identity", function(args)
     player.setHumanoidIdentity(identity)
     return string.format("Set %s to %s", arg1, type(arg2) == "string" and arg2 or sb.printJson(arg2, 1))
   elseif method == "randomize" then
-    local newIdentity = root.generateHumanoidIdentity(arg1 or player.species(), nil, player.gender())
+    local newIdentity, newParameters = root.generateHumanoidIdentity(arg1 or player.species(), nil, player.gender())
+    player.setHumanoidParameters(newParameters)
     player.setHumanoidIdentity(newIdentity)
+    player.refreshHumanoidParameters()
     return "Randomized identity"
   elseif method == "save" then
     if type(arg1) == "string" then
       if arg1:find("%.") then
         return "Name cannot contain '.'"
       end
-        root.setConfigurationPath("savedHumanoids." .. arg1, {identity = player.humanoidIdentity(), parameters = player.humanoidParameters()})
+        root.setConfigurationPath("savedHumanoids." .. arg1, {identity = player.humanoidIdentity(), parameters = player.getHumanoidParameters()})
       return "Saved identity to starbound.config:savedHumanoids."..arg1
     else
       return "You must provide a name for this identity"
@@ -60,6 +66,25 @@ commands.register("identity", function(args)
     end
   else
     return "Usage: /identity <get|set> [path] [value]\n/identity randomize [species]\n/identity <save|load> [name]"
+  end
+end)
+
+commands.register("humanoidParameters", function (args)
+  local method, arg1, arg2 = chat.parseArguments(args)
+  if not method or method == "get" or method == "" then
+    if arg1 then
+      return sb.printJson(player.getHumanoidParameter(arg1))
+    end
+    return sb.printJson(player.getHumanoidParameters(), 1)
+  elseif method == "set" and arg1 then
+    if type(arg1) == "table" then
+      player.setHumanoidParameters(arg1)
+      return sb.printJson(player.getHumanoidParameters(), 1)
+    end
+    player.setHumanoidParameter(arg1, arg2)
+    return string.format("Set %s to %s", arg1, type(arg2) == "string" and arg2 or sb.printJson(arg2, 1))
+  else
+    return "Usage: /humanoidParameters <get|set> [path] [value]"
   end
 end)
 
