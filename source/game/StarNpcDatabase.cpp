@@ -51,7 +51,7 @@ NpcVariant NpcDatabase::generateNpcVariant(
 
   auto config = buildConfig(typeName, overrides);
 
-  variant.description = config.getString("description", "Some funny looking person");
+  variant.description = config.optString("description");
 
   auto levelVariance = jsonToVec2F(config.getArray("levelVariance", {0, 0}));
   variant.level = max(randSource.randf(level + levelVariance[0], level + levelVariance[1]), 0.0f);
@@ -182,6 +182,10 @@ ByteArray NpcDatabase::writeNpcVariant(NpcVariant const& variant, NetCompatibili
 
   ds.write(variant.initialScriptDelta);
   ds.write(variant.humanoidIdentity);
+  if (rules.version() >= 11 ) {
+    ds.write(variant.humanoidParameters);
+    ds.write(variant.description);
+  }
 
   ds.writeMapContainer(variant.items);
 
@@ -207,13 +211,19 @@ NpcVariant NpcDatabase::readNpcVariant(ByteArray const& data, NetCompatibilityRu
 
   auto config = buildConfig(variant.typeName, variant.overrides);
 
-  variant.description = config.getString("description", "Some funny looking person");
 
   variant.scripts = jsonToStringList(config.get("scripts"));
   variant.scriptConfig = config.get("scriptConfig");
 
   ds.read(variant.initialScriptDelta);
   ds.read(variant.humanoidIdentity);
+  if (rules.version() >= 11){
+    ds.read(variant.humanoidParameters);
+    ds.read(variant.description);
+  } else {
+    variant.humanoidParameters = config.getObject("humanoidParameters", JsonObject());
+    variant.description = config.optString("description");
+  }
 
   auto speciesDatabase = Root::singleton().speciesDatabase();
   auto speciesDefinition = speciesDatabase->species(variant.species);
@@ -222,8 +232,6 @@ NpcVariant NpcDatabase::readNpcVariant(ByteArray const& data, NetCompatibilityRu
     variant.humanoidConfig = Root::singleton().assets()->json(config.getString("humanoidConfig"));
   else
     variant.humanoidConfig = speciesDefinition->humanoidConfig();
-
-  variant.humanoidParameters = config.getObject("humanoidParameters", JsonObject());
 
   variant.movementParameters = config.get("movementParameters", {});
   variant.statusControllerSettings = config.get("statusControllerSettings");
@@ -262,26 +270,24 @@ NpcVariant NpcDatabase::readNpcVariant(ByteArray const& data, NetCompatibilityRu
 }
 
 Json NpcDatabase::writeNpcVariantToJson(NpcVariant const& variant) const {
-  JsonObject overrides;
-  if (variant.overrides)
-    overrides = variant.overrides.toObject();
-  overrides.set("humanoidParameters", variant.humanoidParameters);
+  JsonObject store {
+    {"species", variant.species},
+    {"typeName", variant.typeName},
+    {"level", variant.level},
+    {"seed", variant.seed},
+    {"overrides", variant.overrides},
+    {"initialScriptDelta", variant.initialScriptDelta},
+    {"humanoidIdentity", variant.humanoidIdentity.toJson()},
+    {"items", jsonFromMapV<StringMap<ItemDescriptor>>(variant.items, mem_fn(&ItemDescriptor::diskStore))},
+    {"persistent", variant.persistent},
+    {"keepAlive", variant.keepAlive},
+    {"damageTeam", variant.damageTeam},
+    {"damageTeamType", TeamTypeNames.getRight(variant.damageTeamType)},
+    {"humanoidParameters", variant.humanoidParameters}
+  };
   if (variant.description.isValid())
-    overrides.set("description", variant.description.value());
-
-  return JsonObject{{"species", variant.species},
-      {"typeName", variant.typeName},
-      {"level", variant.level},
-      {"seed", variant.seed},
-      {"overrides", overrides},
-      {"initialScriptDelta", variant.initialScriptDelta},
-      {"humanoidIdentity", variant.humanoidIdentity.toJson()},
-      {"items", jsonFromMapV<StringMap<ItemDescriptor>>(variant.items, mem_fn(&ItemDescriptor::diskStore))},
-      {"persistent", variant.persistent},
-      {"keepAlive", variant.keepAlive},
-      {"damageTeam", variant.damageTeam},
-      {"damageTeamType", TeamTypeNames.getRight(variant.damageTeamType)}
-    };
+    store.set("description", variant.description.value());
+  return store;
 }
 
 NpcVariant NpcDatabase::readNpcVariantFromJson(Json const& data) const {
@@ -295,13 +301,14 @@ NpcVariant NpcDatabase::readNpcVariantFromJson(Json const& data) const {
 
   auto config = buildConfig(variant.typeName, variant.overrides);
 
-  variant.description = config.optString("description");
+  variant.description = data.optString("description");
 
   variant.scripts = jsonToStringList(config.get("scripts"));
   variant.scriptConfig = config.get("scriptConfig");
 
   variant.initialScriptDelta = data.getInt("initialScriptDelta");
   variant.humanoidIdentity = HumanoidIdentity(data.get("humanoidIdentity"));
+  variant.humanoidParameters = data.getObject("humanoidParameters", JsonObject());
 
   auto speciesDatabase = Root::singleton().speciesDatabase();
   auto speciesDefinition = speciesDatabase->species(variant.species);
@@ -311,7 +318,6 @@ NpcVariant NpcDatabase::readNpcVariantFromJson(Json const& data) const {
   else
     variant.humanoidConfig = speciesDefinition->humanoidConfig();
 
-  variant.humanoidParameters = config.getObject("humanoidParameters", JsonObject());
 
   variant.movementParameters = config.get("movementParameters", {});
   variant.statusControllerSettings = config.get("statusControllerSettings", {});
