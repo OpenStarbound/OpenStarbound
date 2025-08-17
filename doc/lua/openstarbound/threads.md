@@ -21,7 +21,7 @@ threads.create({
     instructionLimit=100000000, -- optional, threads are allowed to change their own instruction limit (as they have nothing else to block if stuck)
     tickRate=60, -- optional, how many ticks per second the thread runs at, defaults to 60 but can be any number
     updateMeasureWindow=0.5, -- optional, defaults to 0.5, changing this is unnecessary unless you really care about an accurate tickrate for some reason
-    someParameter="scrungus" -- parameters for the scripts, all parameters are accessible using config.getParameter in the scripts
+    someParameter="scungus" -- parameters for the scripts, all parameters are accessible using config.getParameter in the scripts
 }),
 ```
 
