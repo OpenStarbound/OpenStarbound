@@ -1,6 +1,6 @@
 # Input
 
-Allows access to custom keybinds from most clientside Lua scripts.
+The new `input` table allows access to user input from most clientside Lua scripts.
 
 ---
 
@@ -109,4 +109,3 @@ Returns the mouse position in pixels relative to the bottom left of the screen.
 #### `unsigned` input.getTag(`String` tagName)
 
 Returns the amount of binds currently held with the given tag.
-
