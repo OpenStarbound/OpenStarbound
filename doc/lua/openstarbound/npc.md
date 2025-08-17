@@ -112,7 +112,7 @@ Implicitly calls `npc.refreshHumanoidParameters()` if imagePath is changed.
 
 #### `Personality` npc.personality()
 
-Returns the npc's personality as a `table` containing a `string` idle, `string` armIdle, `Vec2F` headOffset and `Vec2F` armOffset.
+Returns the npc's personality as a `table` containing a `String` idle, `String` armIdle, `Vec2F` headOffset and `Vec2F` armOffset.
 
 ---
 
