@@ -1,6 +1,6 @@
 # Root
 
-The *root* table now contains extra asset bindings and bindings to return the tile variant that is used for material and matmods at any position.
+The `root` table now contains extra asset bindings and bindings to return the tile variant that is used for material and matmods at any position.
 
 ---
 
