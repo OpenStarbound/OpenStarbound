@@ -6,7 +6,7 @@ Allows access to custom keybinds from most clientside Lua scripts.
 
 #### `Maybe<unsigned>` input.bindDown(`String` categoryId, `String` bindId)
 
-TODO
+If this bind was pressed this frame, returns how many times it has been pressed. Returns `nil` otherwise.
 
 ---
 
@@ -18,13 +18,13 @@ Returns `true` if this bind is currently held.
 
 #### `Maybe<unsigned>` input.bindDown(`String` categoryId, `String` bindId)
 
-TODO
+If this bind was released this frame, returns how many times it has been released. Returns `nil` otherwise.
 
 ---
 
 #### `Maybe<unsigned>` input.keyDown(`String` keyName, [`StringList` modNames])
 
-TODO
+If this key was pressed this frame, returns how many times it has been pressed. Returns `nil` otherwise or if the specified modifier keys are not held.
 
 ---
 
@@ -42,13 +42,13 @@ Same as `input.keyHeld`.
 
 #### `Maybe<unsigned>` input.keyUp(`String` keyName, [`StringList` modNames])
 
-TODO
+If this key was released this frame, returns how many times it has been released. Returns `nil` otherwise or if the specified modifier keys are not held.
 
 ---
 
 #### `Maybe<unsigned>` input.mouseDown(`String` buttonName)
 
-TODO
+If this mouse button was pressed this frame, returns how many times it has been pressed. Returns `nil` otherwise.
 
 ---
 
@@ -66,37 +66,37 @@ Same as `input.mouseHeld`.
 
 #### `Maybe<unsigned>` input.mouseUp(`String` buttonName)
 
-TODO
+If this mouse button was released this frame, returns how many times it has been released. Returns `nil` otherwise.
 
 ---
 
 #### `void` input.resetBinds(`String` categoryId, `String` bindId)
 
-TODO
+Resets this bind to its default keys.
 
 ---
 
-#### `void` input.setBinds(`String` categoryId, `String` bindId)
+#### `void` input.setBinds(`String` categoryId, `String` bindId, `Json` binds)
 
-TODO
+Sets this bind to the specified keys.
 
 ---
 
 #### `Json` input.getDefaultBinds(`String` categoryId, `String` bindId)
 
-TODO
+Returns the default keys for this bind.
 
 ---
 
 #### `Json` input.getBinds(`String` categoryId, `String` bindId)
 
-TODO
+Returns the keys for this bind.
 
 ---
 
 #### `Json` input.events()
 
-TODO
+Returns all input events for this frame.
 
 ---
 
@@ -108,13 +108,5 @@ Returns the mouse position in pixels relative to the bottom left of the screen.
 
 #### `unsigned` input.getTag(`String` tagName)
 
-TODO
-
-
-
-
-
-
-
-
+Returns the amount of binds currently held with the given tag.
 
