@@ -2,6 +2,8 @@
 
 New `widget` callbacks introduced in OpenStarbound.
 
+---
+
 ## Widget specific callbacks
 
 These callbacks only work for some widget types.
