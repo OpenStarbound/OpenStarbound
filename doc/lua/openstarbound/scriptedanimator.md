@@ -7,6 +7,8 @@ The `animationConfig` table contains functions for getting configuration options
 #### `bool` animationConfig.flipped()
 True if the animator is flipped.
 
+---
+
 #### `float` animationConfig.flippedRelativeCenterLine()
 Returns the center line the animator was flipped at.
 
@@ -20,6 +22,8 @@ Returns the animation rate.
 #### `void` animationConfig.setLocalTag(`String` tagName, `Maybe<String>` tagValue)
 
 Sets an animator tag. A tag replaces any tag <tagName> with the specified tagValue across all animation parts.
+
+---
 
 If tagValue is nothing, then the tag will be removed, inheriting from part and global tags again, empty global tags default to `default`.
 
