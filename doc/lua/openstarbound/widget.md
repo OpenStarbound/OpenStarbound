@@ -1,12 +1,6 @@
 # Widget
 
-New widget callbacks introduced in OpenStarbound.
-
-## General callbacks
-
-These callbacks are available for all widgets.
-
----
+New `widget` callbacks introduced in OpenStarbound.
 
 ## Widget specific callbacks
 
@@ -18,6 +12,8 @@ These callbacks only work for some widget types.
 
 Gets the hint text of a TextBoxWidget.
 
+---
+
 #### `void` widget.setHint(`String` widgetName, `String` hint)
 
 Sets the hint text of a TextBoxWidget.
@@ -27,6 +23,8 @@ Sets the hint text of a TextBoxWidget.
 #### `String` widget.getCursorPosition(`String` widgetName)
 
 Gets the cursor position of a TextBoxWidget.
+
+---
 
 #### `void` widget.setCursorPosition(`String` widgetName, `int` cursorPosition)
 
@@ -38,7 +36,7 @@ Sets the cursor position of a TextBoxWidget.
 
 Sets the full image set of a ImageStretchWidget.
 
-```
+```lua
 {
   begin = "image.png",
   inner = "image.png",
