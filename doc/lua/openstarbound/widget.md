@@ -1,6 +1,6 @@
 # Widget
 
-New `widget` callbacks introduced in OpenStarbound.
+The `widget` table now contains extra bindings.
 
 ---
 
