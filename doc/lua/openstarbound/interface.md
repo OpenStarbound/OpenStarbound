@@ -22,7 +22,7 @@ Returns the HUD's visibility.
 
 ---
 
-#### `PaneId` interface.bindRegisteredPane(`string` paneName)
+#### `PaneId` interface.bindRegisteredPane(`String` paneName)
 Binds a registered pane (defined in `/source/frontend/StarMainInterfaceTypes`) to a Lua value, which can then call widget functions on that pane.
 <details><summary><b>Panes</b></summary>
 EscapeDialog<br>
@@ -52,13 +52,13 @@ Collections<br>
 
 ---
 
-#### `void` interface.displayRegisteredPane(`string` paneName)
+#### `void` interface.displayRegisteredPane(`String` paneName)
 
 Displays a registered pane.
 
 ---
 
-#### `CanvasWidget` interface.bindCanvas(`string` name, [`bool` ignoreInterfaceScale = false])
+#### `CanvasWidget` interface.bindCanvas(`String` name, [`bool` ignoreInterfaceScale = false])
 
 Binds the canvas widget on the main interface with the specified name as userdata for easy access. The `CanvasWidget` has the same methods as described in `widget.md`.
 
