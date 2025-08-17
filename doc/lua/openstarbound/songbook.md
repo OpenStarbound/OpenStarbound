@@ -1,6 +1,6 @@
 # Songbook
 
-The new songbook table is accessible from players and NPC's.
+The new `songbook` table is accessible from players and NPC's.
 
 ---
 
