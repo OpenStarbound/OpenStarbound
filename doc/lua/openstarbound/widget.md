@@ -40,8 +40,8 @@ Sets the full image set of a ImageStretchWidget.
 
 ```lua
 {
-  begin = "image.png",
-  inner = "image.png",
-  end = "image.png"
+  ["begin"] = "image.png",
+  ["inner"] = "image.png",
+  ["end"] = "image.png"
 }
 ```
