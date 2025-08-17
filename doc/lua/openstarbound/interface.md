@@ -1,6 +1,6 @@
 # Interface
 
-The interface table contains bindings which allow scripts to display a message at the bottom of the screen, among other things.
+The *interface* table contains bindings which allow scripts to display a message at the bottom of the screen, among other things.
 
 ---
 
@@ -50,6 +50,8 @@ MmUpgrade<br>
 Collections<br>
 </details>
 
+---
+
 #### `void` interface.displayRegisteredPane(`string` paneName)
 
 Displays a registered pane.
@@ -67,5 +69,3 @@ Binds the canvas widget on the main interface with the specified name as userdat
 #### `int` interface.scale()
 
 Returns the scale used for interfaces.
-
----
