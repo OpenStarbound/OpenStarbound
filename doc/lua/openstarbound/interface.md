@@ -1,6 +1,6 @@
 # Interface
 
-The *interface* table contains bindings which allow scripts to display a message at the bottom of the screen, among other things.
+The `interface` table contains bindings which allow scripts to display a message at the bottom of the screen, among other things.
 
 ---
 
