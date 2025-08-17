@@ -1,6 +1,6 @@
 # Renderer
 
-The new *renderer* table is accessible from almost every clientside script and allows configuring shaders.
+The new `renderer` table is accessible from almost every clientside script and allows configuring shaders.
 
 ---
 
