@@ -1,6 +1,6 @@
 # animator
 
-The *animator* table contains functions that relate to an attached networked animator. Networked animators are found in:
+The `animator` table contains functions that relate to an attached networked animator. Networked animators are found in:
 
 * tech
 * monsters
