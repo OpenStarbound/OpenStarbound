@@ -1,6 +1,6 @@
 # npc
 
-The *npc* table is for functions relating directly to the current npc. It is available only in NPC scripts.
+The `npc` table is for functions relating directly to the current npc. It is available only in NPC scripts.
 
 ---
 
