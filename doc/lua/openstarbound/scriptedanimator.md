@@ -1,8 +1,6 @@
 # animationConfig
 
-The `animationConfig` table contains functions for getting configuration options from the base entity and its networked animationConfig.
-
-It is available only in client side rendering scripts.
+The `animationConfig` table contains functions for getting configuration options from the base entity and its networked animationConfig. It is available only in client side rendering scripts.
 
 ---
 
@@ -41,6 +39,8 @@ Returns the value of the specified property for a state type.
 
 If **state** and **frame** are supplied, the value for that specific state and frame is returned, even if that state is not active.
 
+---
+
 #### `Json` animationConfig.animationStateNextProperty(`String` stateType, `String` propertyName)
 
 Returns the value of the specified property of the next frame for a state type.
@@ -52,6 +52,8 @@ Returns the value of the specified property of the next frame for a state type.
 Returns an animation part property without applying any transformations.
 
 If **stateType**, **state**, and **frame** are supplied, the value for that specific state and frame is returned, even if that state is not active.
+
+---
 
 #### `Json` animationConfig.partNextProperty(`String` partName, `String` propertyName)
 
@@ -73,29 +75,43 @@ Does not trigger a networking update. This is intended to be used in client anim
 
 Returns the current state for a state type.
 
+---
+
 #### `int` animationConfig.animationStateFrame(`String` stateType)
 
 Returns the current frame index of the sateType.
+
+---
 
 #### `int` animationConfig.animationStateNextFrame(`String` stateType)
 
 Returns the next frame index of the sateType.
 
-#### `float` animationConfig.animationStateFrameProgress(`String` stateType)
-
-Returns percentage of progress for the current frame of the stateType.
-
-#### `float` animationConfig.animationStateTimer(`String` stateType)
-
-Returns timer for the current animation of the stateType.
+---
 
 #### `float` animationConfig.animationStateFrameProgress(`String` stateType)
 
 Returns percentage of progress for the current frame of the stateType.
 
+---
+
 #### `float` animationConfig.animationStateTimer(`String` stateType)
 
 Returns timer for the current animation of the stateType.
+
+---
+
+#### `float` animationConfig.animationStateFrameProgress(`String` stateType)
+
+Returns percentage of progress for the current frame of the stateType.
+
+---
+
+#### `float` animationConfig.animationStateTimer(`String` stateType)
+
+Returns timer for the current animation of the stateType.
+
+---
 
 #### `bool` animationConfig.animationStateReverse(`String` stateType)
 
@@ -109,6 +125,8 @@ Returns true if the animator has the stateType.
 
 If **state** is valid, then it will only return true if the state also exists.
 
+---
+
 #### `bool` animationConfig.hasTransformationGroup(`String` transformationGroup)
 
 Returns whether the animator contains the specified transformation group.
@@ -120,6 +138,8 @@ Returns whether the animator contains the specified transformation group.
 Returns the animation cycle of the current animation for stateType.
 
 If **state** is valid, then it will return the animation cycle of that state instead.
+
+---
 
 #### `int` animationConfig.stateFrames(`String` stateType, `Maybe<String>` state)
 
@@ -144,16 +164,17 @@ Local transformations for a group are added onto the networked counterparts, the
 These are intended for client animation scripts. As when using the networked transformation groups, transformations often become visually desynced with the frame timing on clients.
 
 ---
+
 #### `void` animationConfig.addPartDrawables(`String` part, `List<Drawable>` drawables)
 
 Adds the list of drawables attached to the specified part. These drawables inherit all transformations from the part they are attached to.
 
 These are not networked, intended for use in client animation scripts.
 
+---
+
 #### `void` animationConfig.setPartDrawables(`String` part, `List<Drawable>` drawables)
 
 Overwrites the list of drawables attached to the specified part. These drawables inherit all transformations from the part they are attached to.
 
 These are not networked, intended for use in client animation scripts.
-
----
