@@ -1,6 +1,6 @@
 # Player
 
-The *player* table now contains bindings which contains functions to save/load, access and modify the player's identity, mode, aim, emote and more.
+The `player` table now contains bindings which contains functions to save/load, access and modify the player's identity, mode, aim, emote and more.
 
 ---
 
