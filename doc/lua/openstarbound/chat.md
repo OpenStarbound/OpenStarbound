@@ -1,4 +1,4 @@
-# Chat
+# chat
 
 The new *chat* table is accessible from almost every clientside script and allows interaction with the in-game chat system.
 
