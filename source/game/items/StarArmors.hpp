@@ -28,6 +28,9 @@ public:
   virtual ~ArmorItem() {}
 
   virtual List<PersistentStatusEffect> statusEffects() const override;
+  bool statusEffectsInCosmeticSlot();
+  List<PersistentStatusEffect> cosmeticStatusEffects();
+
   virtual StringSet effectSources() const override;
 
   virtual List<Drawable> drawables() const override;
@@ -62,6 +65,8 @@ private:
   bool m_hideBody;
   bool m_bypassNude;
   bool m_hideInVanillaSlots;
+  bool m_statusEffectsInCosmeticSlot;
+  List<PersistentStatusEffect> m_cosmeticStatusEffects;
   Maybe<HashSet<ArmorType>> m_armorTypesToHide;
   Maybe<String> m_techModule;
 };

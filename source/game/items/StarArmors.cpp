@@ -57,10 +57,19 @@ ArmorItem::ArmorItem(Json const& config, String const& directory, Json const& da
   }
 
   m_hideBody = config.getBool("hideBody", false);
+  m_statusEffectsInCosmeticSlot = config.getBool("statusEffectsInCosmeticSlots", false);
 }
 
 List<PersistentStatusEffect> ArmorItem::statusEffects() const {
   return m_statusEffects;
+}
+
+bool ArmorItem::statusEffectsInCosmeticSlot() {
+  return m_statusEffectsInCosmeticSlot;
+}
+
+List<PersistentStatusEffect> ArmorItem::cosmeticStatusEffects() {
+  return m_cosmeticStatusEffects;
 }
 
 StringSet ArmorItem::effectSources() const {
@@ -132,6 +141,7 @@ void ArmorItem::refreshIconDrawables() {
 
 void ArmorItem::refreshStatusEffects() {
   m_statusEffects = instanceValue("statusEffects", JsonArray()).toArray().transformed(jsonToPersistentStatusEffect);
+  m_cosmeticStatusEffects = instanceValue("cosmeticStatusEffects", JsonArray()).toArray().transformed(jsonToPersistentStatusEffect);
   if (auto leveledStatusEffects = instanceValue("leveledStatusEffects", Json())) {
     auto functionDatabase = Root::singleton().functionDatabase();
     float level = instanceValue("level", 1).toFloat();
