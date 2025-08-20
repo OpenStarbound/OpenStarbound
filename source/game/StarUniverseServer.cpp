@@ -2133,9 +2133,12 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::shipWorldPromise(
 
       if (!shipWorld) {
         Logger::info("UniverseServer: Creating new client ship world {}", clientShipWorldId);
-        shipWorld = make_shared<WorldServer>(Vec2U(2048, 2048), File::ephemeralFile());
         auto& species = clientContext->playerSpecies();
         auto shipStructure = WorldStructure(speciesShips.get(species).first());
+        Vec2U worldSize(2048, 2048);
+        if (auto jWorldSize = shipStructure.configValue("worldSize"))
+          worldSize = jsonToVec2U(jWorldSize);
+        shipWorld = make_shared<WorldServer>(worldSize, File::ephemeralFile());
         shipStructure = shipWorld->setCentralStructure(shipStructure);
 
         ShipUpgrades currentUpgrades = clientContext->shipUpgrades();
