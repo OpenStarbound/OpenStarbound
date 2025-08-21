@@ -3,10 +3,12 @@
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
+#include "StarRootLuaBindings.hpp"
+#include "StarUtilityLuaBindings.hpp"
 
 namespace Star {
 
-VehicleDatabase::VehicleDatabase() {
+VehicleDatabase::VehicleDatabase() : m_luaRoot(make_shared<LuaRoot>()) {
   auto assets = Root::singleton().assets();
   auto& files = assets->scanExtension("vehicle");
   assets->queueJsons(files);
@@ -22,6 +24,13 @@ VehicleDatabase::VehicleDatabase() {
     } catch (StarException const& e) {
       throw VehicleDatabaseException(strf("Error loading vehicle '{}'", file), e);
     }
+  }
+
+  for (auto& path : assets->assetSources()) {
+    auto metadata = assets->assetSourceMetadata(path);
+    if (auto scripts = metadata.maybe("scripts"))
+      if (auto rebuildScripts = scripts.value().optArray("vehicleRebuild"))
+        m_rebuildScripts.appendAll(jsonToStringList(rebuildScripts.value()));
   }
 }
 
@@ -61,8 +70,19 @@ Json VehicleDatabase::diskStore(VehiclePtr const& vehicle) const {
 }
 
 VehiclePtr VehicleDatabase::diskLoad(Json const& diskStore) const {
-  auto vehicle = create(diskStore.getString("name"), diskStore.get("dynamicConfig"));
-  vehicle->diskLoad(diskStore.get("state"));
+  VehiclePtr vehicle;
+  auto newDiskStore = diskStore;
+  try {
+    vehicle = create(diskStore.getString("name"), diskStore.get("dynamicConfig"));
+  } catch (std::exception const& e) {
+    auto context = m_luaRoot->createContext(m_rebuildScripts);
+    context.setCallbacks("root", LuaBindings::makeRootCallbacks());
+    context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
+    newDiskStore = context.invokePath<Json>("rebuild", diskStore, strf("{}", outputException(e, false)));
+    vehicle = create(newDiskStore.getString("name"), newDiskStore.get("dynamicConfig"));
+  }
+
+  vehicle->diskLoad(newDiskStore.get("state"));
   return vehicle;
 }
 

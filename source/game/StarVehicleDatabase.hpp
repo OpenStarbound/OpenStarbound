@@ -2,6 +2,7 @@
 
 #include "StarJson.hpp"
 #include "StarVehicle.hpp"
+#include "StarLuaRoot.hpp"
 
 namespace Star {
 
@@ -21,6 +22,9 @@ public:
 
 private:
   StringMap<pair<String, Json>> m_vehicles;
+
+  LuaRootPtr m_luaRoot;
+  List<String> m_rebuildScripts;
 };
 
 }

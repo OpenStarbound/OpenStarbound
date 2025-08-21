@@ -187,6 +187,8 @@ private:
 
   mutable Mutex m_cacheMutex;
   mutable HashTtlCache<ItemCacheEntry, ItemPtr> m_itemCache;
+
+  List<String> m_rebuildScripts;
 };
 
 template <typename ItemT>
