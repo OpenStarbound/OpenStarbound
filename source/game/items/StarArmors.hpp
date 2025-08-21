@@ -28,8 +28,8 @@ public:
   virtual ~ArmorItem() {}
 
   virtual List<PersistentStatusEffect> statusEffects() const override;
-  bool statusEffectsInCosmeticSlot();
-  List<PersistentStatusEffect> cosmeticStatusEffects();
+  bool statusEffectsInCosmeticSlot() const;
+  List<PersistentStatusEffect> cosmeticStatusEffects() const;
 
   virtual StringSet effectSources() const override;
 

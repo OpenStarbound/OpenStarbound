@@ -198,6 +198,8 @@ List<PersistentStatusEffect> ArmorWearer::statusEffects() const {
   List<PersistentStatusEffect> statusEffects;
 
   for (size_t i = 0; i != m_armors.size(); ++i) {
+    if (!m_armors[i].item)
+      continue;
     if ((i < 4) ||  m_armors[i].item->statusEffectsInCosmeticSlot())
       statusEffects.appendAll(m_armors[i].item->statusEffects());
     if (m_armors[i].visible)

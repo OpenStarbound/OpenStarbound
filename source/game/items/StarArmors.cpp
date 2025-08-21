@@ -64,11 +64,11 @@ List<PersistentStatusEffect> ArmorItem::statusEffects() const {
   return m_statusEffects;
 }
 
-bool ArmorItem::statusEffectsInCosmeticSlot() {
+bool ArmorItem::statusEffectsInCosmeticSlot() const {
   return m_statusEffectsInCosmeticSlot;
 }
 
-List<PersistentStatusEffect> ArmorItem::cosmeticStatusEffects() {
+List<PersistentStatusEffect> ArmorItem::cosmeticStatusEffects() const {
   return m_cosmeticStatusEffects;
 }
 
