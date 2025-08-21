@@ -87,6 +87,8 @@ bool ArmorWearer::setupHumanoid(Humanoid& humanoid, bool forceNude) {
           allowed = false;
         }
       }
+
+      m_armors[i].isCurrentlyVisible = allowed;
       if (allowed) {
         addHumanoidConfig(*armor.item);
         if (armor.needsSync) {
@@ -202,7 +204,7 @@ List<PersistentStatusEffect> ArmorWearer::statusEffects() const {
       continue;
     if ((i < 4) ||  m_armors[i].item->statusEffectsInCosmeticSlot())
       statusEffects.appendAll(m_armors[i].item->statusEffects());
-    if (m_armors[i].visible)
+    if (m_armors[i].isCurrentlyVisible)
       statusEffects.appendAll(m_armors[i].item->cosmeticStatusEffects());
   }
 
