@@ -4,6 +4,7 @@
 #include "StarSkyTypes.hpp"
 #include "StarWeatherTypes.hpp"
 #include "StarForceRegions.hpp"
+#include "StarAmbient.hpp"
 
 namespace Star {
 
@@ -170,10 +171,10 @@ struct FloatingDungeonWorldParameters : VisitableWorldParameters {
   String primaryDungeon;
   Color ambientLightLevel;
   Maybe<String> biome;
-  Maybe<String> dayMusicTrack;
-  Maybe<String> nightMusicTrack;
-  Maybe<String> dayAmbientNoises;
-  Maybe<String> nightAmbientNoises;
+  AmbientTrackGroup dayMusicTrack;
+  AmbientTrackGroup nightMusicTrack;
+  AmbientTrackGroup dayAmbientNoises;
+  AmbientTrackGroup nightAmbientNoises;
 };
 
 Json diskStoreVisitableWorldParameters(VisitableWorldParametersConstPtr const& parameters);

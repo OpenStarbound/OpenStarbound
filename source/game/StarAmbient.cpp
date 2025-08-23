@@ -27,19 +27,31 @@ Json AmbientTrackGroup::toJson() const {
 AmbientNoisesDescription::AmbientNoisesDescription() : trackLoops(-1) {}
 
 AmbientNoisesDescription::AmbientNoisesDescription(AmbientTrackGroup day, AmbientTrackGroup night, int loops)
-  : daySounds(std::move(day)), nightSounds(std::move(night)), trackLoops(loops) {}
+  : daySounds(std::move(day)), nightSounds(std::move(night)), trackLoops(loops) {
+  if ((daySounds.tracks.size() > 1 || nightSounds.tracks.size() > 1) && trackLoops == -1)
+    sequential = true, trackLoops = 0;
+}
 
 AmbientNoisesDescription::AmbientNoisesDescription(Json const& config, String const& directory) {
   if (auto day = config.opt("day"))
     daySounds = AmbientTrackGroup(*day, directory);
   if (auto night = config.opt("night"))
     nightSounds = AmbientTrackGroup(*night, directory);
-  if (auto loops = config.optInt("loops"))
-    trackLoops = *loops;
+  if (auto loopsOpt = config.optInt("loops"))
+    trackLoops = *loopsOpt;
+  bool seqSpecified = false;
+  if (auto seqOpt = config.optBool("sequential")) {
+    sequential = *seqOpt;
+    seqSpecified = true;
+  }
+  if (!seqSpecified && (daySounds.tracks.size() > 1 || nightSounds.tracks.size() > 1) && trackLoops == -1) {
+    sequential = true;
+    trackLoops = 0;
+  }
 }
 
 Json AmbientNoisesDescription::toJson() const {
-  return JsonObject{{"day", daySounds.toJson()}, {"night", nightSounds.toJson()}, {"loops", trackLoops}};
+  return JsonObject{{"day", daySounds.toJson()}, {"night", nightSounds.toJson()}, {"loops", trackLoops}, {"sequential", sequential}};
 }
 
 AmbientManager::~AmbientManager() {
@@ -77,29 +89,58 @@ AudioInstancePtr AmbientManager::updateAmbient(AmbientNoisesDescriptionPtr curre
   }
   if (!m_currentTrack) {
     m_currentTrackName = "";
-    if (tracks.size() > 0) {
-      while ((m_recentTracks.size() / 2) >= tracks.size())
-        m_recentTracks.removeFirst();
-      while (true) {
-        m_currentTrackName = Random::randValueFrom(tracks);
-        if (m_currentTrackName.empty() || !m_recentTracks.contains(m_currentTrackName))
-          break;
-        m_recentTracks.removeFirst(); // reduce chance of collisions on collision
+    if (!tracks.empty()) {
+      if (current && current->sequential) {
+        // Последовательный выбор
+        int nextIndex = 0;
+        if (!m_lastSequentialTrack.empty()) {
+          int lastIndex = tracks.indexOf(m_lastSequentialTrack);
+          if (lastIndex >= 0)
+            nextIndex = (lastIndex + 1) % tracks.size();
+        }
+        m_currentTrackName = tracks.at(nextIndex);
+      } else {
+        // Случайный выбор с историей
+        while ((m_recentTracks.size() / 2) >= tracks.size())
+          m_recentTracks.removeFirst();
+        while (true) {
+          m_currentTrackName = Random::randValueFrom(tracks);
+          if (m_currentTrackName.empty() || !m_recentTracks.contains(m_currentTrackName))
+            break;
+          m_recentTracks.removeFirst();
+        }
       }
     }
     if (!m_currentTrackName.empty()) {
       if (auto audio = assets->tryAudio(m_currentTrackName)) {
-        m_recentTracks.append(m_currentTrackName);
+        if (current && current->sequential)
+          m_lastSequentialTrack = m_currentTrackName;
+        if (!current || !current->sequential)
+          m_recentTracks.append(m_currentTrackName);
         m_currentTrack = make_shared<AudioInstance>(*audio);
         m_currentTrack->setLoops(current ? current->trackLoops : -1);
-        // Slowly fade the music track in
         m_currentTrack->setVolume(0.0f);
         m_currentTrack->setVolume(m_volume, m_trackFadeInTime);
         m_delay = 0;
         m_duration = 0;
         m_volumeChanged = false;
         return m_currentTrack;
+      } else {
+        // Если аудио не найден, сбрасываем текущий трек, чтобы попробовать след��ующий на следующем кадре
+        if (current && current->sequential && !tracks.empty()) {
+          // переходим к следующему сразу
+          int failIndex = tracks.indexOf(m_currentTrackName);
+          if (failIndex >= 0 && tracks.size() > 1) {
+            m_lastSequentialTrack = tracks.at(failIndex); // чтобы след. обновление взяло следующий
+          } else {
+            m_lastSequentialTrack.clear();
+          }
+        }
+        m_currentTrackName.clear();
       }
+    } else if (current && current->sequential) {
+      // Нет треков - очистим состояние последовательности
+      m_lastSequentialTrack.clear();
     }
   }
   if (m_volumeChanged) {

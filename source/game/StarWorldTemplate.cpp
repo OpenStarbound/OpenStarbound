@@ -413,14 +413,8 @@ WeatherPool WorldTemplate::weathers() const {
 
 AmbientNoisesDescriptionPtr WorldTemplate::ambientNoises(int x, int y) const {
   if (auto floatingDungeonParameters = as<FloatingDungeonWorldParameters>(m_worldParameters)) {
-    if (floatingDungeonParameters->dayAmbientNoises || floatingDungeonParameters->nightAmbientNoises) {
-      auto dayTracks = floatingDungeonParameters->dayAmbientNoises
-          ? AmbientTrackGroup(StringList{*floatingDungeonParameters->dayAmbientNoises})
-          : AmbientTrackGroup();
-      auto nightTracks = floatingDungeonParameters->nightAmbientNoises
-          ? AmbientTrackGroup(StringList{*floatingDungeonParameters->nightAmbientNoises})
-          : AmbientTrackGroup();
-      return make_shared<AmbientNoisesDescription>(dayTracks, nightTracks);
+    if (!floatingDungeonParameters->dayAmbientNoises.tracks.empty() || !floatingDungeonParameters->nightAmbientNoises.tracks.empty()) {
+      return make_shared<AmbientNoisesDescription>(floatingDungeonParameters->dayAmbientNoises, floatingDungeonParameters->nightAmbientNoises);
     }
   }
   if (auto biome = environmentBiome(x, y))
@@ -430,14 +424,8 @@ AmbientNoisesDescriptionPtr WorldTemplate::ambientNoises(int x, int y) const {
 
 AmbientNoisesDescriptionPtr WorldTemplate::musicTrack(int x, int y) const {
   if (auto floatingDungeonParameters = as<FloatingDungeonWorldParameters>(m_worldParameters)) {
-    if (floatingDungeonParameters->dayMusicTrack || floatingDungeonParameters->nightMusicTrack) {
-      auto dayTracks = floatingDungeonParameters->dayMusicTrack
-          ? AmbientTrackGroup(StringList{*floatingDungeonParameters->dayMusicTrack})
-          : AmbientTrackGroup();
-      auto nightTracks = floatingDungeonParameters->nightMusicTrack
-          ? AmbientTrackGroup(StringList{*floatingDungeonParameters->nightMusicTrack})
-          : AmbientTrackGroup();
-      return make_shared<AmbientNoisesDescription>(dayTracks, nightTracks);
+    if (!floatingDungeonParameters->dayMusicTrack.tracks.empty() || !floatingDungeonParameters->nightMusicTrack.tracks.empty()) {
+      return make_shared<AmbientNoisesDescription>(floatingDungeonParameters->dayMusicTrack, floatingDungeonParameters->nightMusicTrack);
     }
   }
   if (auto biome = environmentBiome(x, y))

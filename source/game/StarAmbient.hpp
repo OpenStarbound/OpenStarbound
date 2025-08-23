@@ -30,6 +30,7 @@ struct AmbientNoisesDescription {
   AmbientTrackGroup daySounds;
   AmbientTrackGroup nightSounds;
   int trackLoops = -1;
+  bool sequential = false; //flag for sequential playback of tracks
 };
 
 typedef AmbientTrackGroup WeatherNoisesDescription;
@@ -64,6 +65,7 @@ private:
   float m_delay = 0.0f;
   float m_duration = 0.0f;
   bool m_volumeChanged = false;
+  String m_lastSequentialTrack; // хранит последний проигранный трек для последовательного режима
 };
 
 }
