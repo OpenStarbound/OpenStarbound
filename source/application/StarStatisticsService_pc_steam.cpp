@@ -52,7 +52,7 @@ bool SteamStatisticsService::reportEvent(String const&, Json const&) {
 
 bool SteamStatisticsService::unlockAchievement(String const& name) {
     std::vector<std::string> ValidSteamAchievements = {
-    // list of all steam 51 achivements
+    // list of all 51 steam achivements
         "completequest", "protectorate", "harvestcrop", "preparefood", "findoutpost",
         "findlore", "lunarbasemission", "findinstrument", "killmotherpoptop", "craftarmor",
         "findaugment", "floranmission", "gaincrew", "killdreadwing", "killinnocent",
