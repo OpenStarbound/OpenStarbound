@@ -65,7 +65,7 @@ private:
   float m_delay = 0.0f;
   float m_duration = 0.0f;
   bool m_volumeChanged = false;
-  String m_lastSequentialTrack; // хранит последний проигранный трек для последовательного режима
+  String m_lastSequentialTrack; // last track played in sequential mode, to pick up next one
 };
 
 }

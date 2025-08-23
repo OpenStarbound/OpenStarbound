@@ -357,7 +357,7 @@ FloatingDungeonWorldParameters::FloatingDungeonWorldParameters(Json const& store
   biome = store.optString("biome");
   ambientLightLevel = jsonToColor(store.get("ambientLightLevel"));
 
-  // Загружаем музыкальные треки как AmbientTrackGroup
+  // Load music tracks as AmbientTrackGroup
   if (store.contains("dayMusicTrack")) {
     if (store.get("dayMusicTrack").isType(Json::Type::Array)) {
       dayMusicTrack = AmbientTrackGroup(jsonToStringList(store.get("dayMusicTrack")));
@@ -418,7 +418,7 @@ void FloatingDungeonWorldParameters::read(DataStream& ds) {
   ds >> biome;
   ds >> ambientLightLevel;
 
-  // Читаем AmbientTrackGroup как StringList
+  // Reading AmbientTrackGroup as StringList instead stupid MayebString
   StringList dayMusicTracks, nightMusicTracks, dayAmbientTracks, nightAmbientTracks;
   ds >> dayMusicTracks;
   ds >> nightMusicTracks;
@@ -440,7 +440,7 @@ void FloatingDungeonWorldParameters::write(DataStream& ds) const {
   ds << biome;
   ds << ambientLightLevel;
 
-  // Записываем AmbientTrackGroup как StringList
+  // Write AmbientTrackGroup as StringList
   ds << dayMusicTrack.tracks;
   ds << nightMusicTrack.tracks;
   ds << dayAmbientNoises.tracks;

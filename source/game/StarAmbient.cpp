@@ -125,21 +125,18 @@ AudioInstancePtr AmbientManager::updateAmbient(AmbientNoisesDescriptionPtr curre
         m_duration = 0;
         m_volumeChanged = false;
         return m_currentTrack;
-      } else {
-        // Если аудио не найден, сбрасываем текущий трек, чтобы попробовать след��ующий на следующем кадре
-        if (current && current->sequential && !tracks.empty()) {
-          // переходим к следующему сразу
-          int failIndex = tracks.indexOf(m_currentTrackName);
-          if (failIndex >= 0 && tracks.size() > 1) {
-            m_lastSequentialTrack = tracks.at(failIndex); // чтобы след. обновление взяло следующий
-          } else {
-            m_lastSequentialTrack.clear();
-          }
-        }
-        m_currentTrackName.clear();
       }
+      // If we failed to load the track, clear the current track name so we try again next update
+      if (current && current->sequential && !tracks.empty()) {
+        int failIndex = tracks.indexOf(m_currentTrackName);
+        if (failIndex >= 0 && tracks.size() > 1) {
+          m_lastSequentialTrack = tracks.at(failIndex);
+        } else {
+          m_lastSequentialTrack.clear();
+        }
+      }
+      m_currentTrackName.clear();
     } else if (current && current->sequential) {
-      // Нет треков - очистим состояние последовательности
       m_lastSequentialTrack.clear();
     }
   }
