@@ -51,11 +51,31 @@ bool SteamStatisticsService::reportEvent(String const&, Json const&) {
 }
 
 bool SteamStatisticsService::unlockAchievement(String const& name) {
-  if (!SteamUserStats()->SetAchievement(name.utf8Ptr())) {
-    Logger::error("Cannot set Steam achievement {}", name);
+    std::vector<std::string> ValidSteamAchievements = {
+    // list of all steam 51 achivements
+        "completequest", "protectorate", "harvestcrop", "preparefood", "findoutpost",
+        "findlore", "lunarbasemission", "findinstrument", "killmotherpoptop", "craftarmor",
+        "findaugment", "floranmission", "gaincrew", "killdreadwing", "killinnocent",
+        "hylotlmission", "findbike", "capturemonster", "avianmission", "findpgi",
+        "killshockhopper", "gaintenant", "apexmission", "killbirds", "floranarena",
+        "collectallfruit", "glitchmission", "destroyruin", "penguincrew", "killrobotchicken",
+        "findbug", "maxcrew", "mazebound", "cookallfood", "largecolony",
+        "10tenantquests", "crampedcolony", "museum", "restorefossil", "killplayer",
+        "25tenantquests", "uniquetenants", "everyspeciescrew", "collectcodex", "findalpaca",
+        "50tenantquests", "craftallarmors", "catchallbugs", "planetblocks", "collectionaf",
+        "findallfossils"
+    };
+
+    for (const auto& achievement : ValidSteamAchievements) {
+        if (achievement == name) {
+            if (!SteamUserStats()->SetAchievement(name.utf8Ptr())) {
+                Logger::error("Cannot set Steam achievement {}", name);
+                return false;
+            }
+            return true;
+        }
+    }
     return false;
-  }
-  return true;
 }
 
 StringSet SteamStatisticsService::achievementsUnlocked() const {
