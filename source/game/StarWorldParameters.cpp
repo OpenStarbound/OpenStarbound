@@ -358,38 +358,20 @@ FloatingDungeonWorldParameters::FloatingDungeonWorldParameters(Json const& store
   ambientLightLevel = jsonToColor(store.get("ambientLightLevel"));
 
   // Load music tracks as AmbientTrackGroup
-  if (store.contains("dayMusicTrack")) {
-    if (store.get("dayMusicTrack").isType(Json::Type::Array)) {
-      dayMusicTrack = AmbientTrackGroup(jsonToStringList(store.get("dayMusicTrack")));
-    } else if (store.get("dayMusicTrack").isType(Json::Type::String)) {
-      dayMusicTrack = AmbientTrackGroup(StringList{store.getString("dayMusicTrack")});
+  auto readTrack = [&](AmbientTrackGroup& track, String const& name) {
+    if (store.contains(name)) {
+      if (store.get(name).isType(Json::Type::Array)) {
+        track = AmbientTrackGroup(jsonToStringList(store.get(name)));
+      } else if (store.get(name).isType(Json::Type::String)) {
+        track = AmbientTrackGroup(StringList{store.getString(name)});
+      }
     }
-  }
+  };
 
-  if (store.contains("nightMusicTrack")) {
-    if (store.get("nightMusicTrack").isType(Json::Type::Array)) {
-      nightMusicTrack = AmbientTrackGroup(jsonToStringList(store.get("nightMusicTrack")));
-    } else if (store.get("nightMusicTrack").isType(Json::Type::String)) {
-      nightMusicTrack = AmbientTrackGroup(StringList{store.getString("nightMusicTrack")});
-    }
-  }
-
-  // Загружаем окружающие звуки как AmbientTrackGroup
-  if (store.contains("dayAmbientNoises")) {
-    if (store.get("dayAmbientNoises").isType(Json::Type::Array)) {
-      dayAmbientNoises = AmbientTrackGroup(jsonToStringList(store.get("dayAmbientNoises")));
-    } else if (store.get("dayAmbientNoises").isType(Json::Type::String)) {
-      dayAmbientNoises = AmbientTrackGroup(StringList{store.getString("dayAmbientNoises")});
-    }
-  }
-
-  if (store.contains("nightAmbientNoises")) {
-    if (store.get("nightAmbientNoises").isType(Json::Type::Array)) {
-      nightAmbientNoises = AmbientTrackGroup(jsonToStringList(store.get("nightAmbientNoises")));
-    } else if (store.get("nightAmbientNoises").isType(Json::Type::String)) {
-      nightAmbientNoises = AmbientTrackGroup(StringList{store.getString("nightAmbientNoises")});
-    }
-  }
+  readTrack(dayMusicTrack, "dayMusicTrack");
+  readTrack(nightMusicTrack, "nightMusicTrack");
+  readTrack(dayAmbientNoises, "dayAmbientNoises");
+  readTrack(nightAmbientNoises, "nightAmbientNoises");
 }
 
 WorldParametersType FloatingDungeonWorldParameters::type() const {

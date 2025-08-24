@@ -91,7 +91,7 @@ AudioInstancePtr AmbientManager::updateAmbient(AmbientNoisesDescriptionPtr curre
     m_currentTrackName = "";
     if (!tracks.empty()) {
       if (current && current->sequential) {
-        // Последовательный выбор
+        // Sequential selection
         int nextIndex = 0;
         if (!m_lastSequentialTrack.empty()) {
           int lastIndex = tracks.indexOf(m_lastSequentialTrack);
@@ -100,7 +100,7 @@ AudioInstancePtr AmbientManager::updateAmbient(AmbientNoisesDescriptionPtr curre
         }
         m_currentTrackName = tracks.at(nextIndex);
       } else {
-        // Случайный выбор с историей
+        // Random selection with history
         while ((m_recentTracks.size() / 2) >= tracks.size())
           m_recentTracks.removeFirst();
         while (true) {
