@@ -345,7 +345,7 @@ namespace LuaBindings {
 
         return {};
       });
-      
+
 
     callbacks.registerCallback("dungeonId", [world](Vec2I position) -> DungeonId {
         if (auto serverWorld = as<WorldServer>(world)) {
@@ -582,6 +582,13 @@ namespace LuaBindings {
           if (itemDrop->item())
             return itemDrop->item()->name();
         }
+        return {};
+      });
+
+    callbacks.registerCallback("entityLoungeAnchor", [world](EntityId entityId, int anchorIndex) -> Maybe<JsonObject> {
+        if (auto entity = world->get<LoungeableEntity>(entityId))
+          if (auto anchor = entity->loungeAnchor(anchorIndex))
+            return anchor->toJson();
         return {};
       });
   }
@@ -1115,7 +1122,7 @@ namespace LuaBindings {
   }
 
   RectI ClientWorldCallbacks::clientWindow(WorldClient* world) {
-    return world->clientWindow();	
+    return world->clientWindow();
   }
 
   String ServerWorldCallbacks::id(WorldServer* world) {
@@ -1813,7 +1820,12 @@ namespace LuaBindings {
 
   Maybe<List<EntityId>> WorldEntityCallbacks::loungingEntities(World* world, EntityId entityId, Maybe<size_t> anchorIndex) {
     if (auto entity = world->get<LoungeableEntity>(entityId))
-      return entity->entitiesLoungingIn(anchorIndex.value()).values();
+      if (anchorIndex.isValid())
+        return entity->entitiesLoungingIn(anchorIndex.value()).values();
+      else
+        return entity->entitiesLounging().values().transformed([](pair<EntityId, size_t> p) -> EntityId {
+          return p.first;
+        });
     return {};
   }
 
