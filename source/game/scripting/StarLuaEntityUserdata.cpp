@@ -222,62 +222,62 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     // actor entity methods
 
     // status controller methods, they're networked anyway so might as well make them available to read
-    methods.registerMethod("entityStatusProperty", [&](EntityPtr entity, String name, Json const& def = Json()) -> Maybe<Json> {
+    methods.registerMethod("statusProperty", [&](EntityPtr entity, String name, Json const& def = Json()) -> Maybe<Json> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->statusController()->statusProperty(name, def);
         return {};
     });
-    methods.registerMethod("entityStat", [&](EntityPtr entity, String name) -> Maybe<float> {
+    methods.registerMethod("stat", [&](EntityPtr entity, String name) -> Maybe<float> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->statusController()->stat(name);
         return {};
     });
-    methods.registerMethod("entityStatPositive", [&](EntityPtr entity, String name) -> Maybe<bool> {
+    methods.registerMethod("statPositive", [&](EntityPtr entity, String name) -> Maybe<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->statusController()->statPositive(name);
         return {};
     });
-    methods.registerMethod("entityResourceNames", [&](EntityPtr entity) -> Maybe<StringList> {
+    methods.registerMethod("resourceNames", [&](EntityPtr entity) -> Maybe<StringList> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->statusController()->resourceNames();
         return {};
     });
-    methods.registerMethod("entityResource", [&](EntityPtr entity, String name) -> Maybe<float> {
+    methods.registerMethod("resource", [&](EntityPtr entity, String name) -> Maybe<float> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->statusController()->resource(name);
         return {};
     });
-    methods.registerMethod("entityIsResource", [&](EntityPtr entity, String name) -> Maybe<bool> {
+    methods.registerMethod("isResource", [&](EntityPtr entity, String name) -> Maybe<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->statusController()->isResource(name);
         return {};
     });
-    methods.registerMethod("entityResourcePositive", [&](EntityPtr entity, String name) -> Maybe<bool> {
+    methods.registerMethod("resourcePositive", [&](EntityPtr entity, String name) -> Maybe<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->statusController()->resourcePositive(name);
         return {};
     });
-    methods.registerMethod("entityResourceLocked", [&](EntityPtr entity, String name) -> Maybe<bool> {
+    methods.registerMethod("resourceLocked", [&](EntityPtr entity, String name) -> Maybe<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->statusController()->resourceLocked(name);
         return {};
     });
-    methods.registerMethod("entityResourceMax", [&](EntityPtr entity, String name) -> Maybe<float> {
+    methods.registerMethod("resourceMax", [&](EntityPtr entity, String name) -> Maybe<float> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->statusController()->resourceMax(name);
         return {};
     });
-    methods.registerMethod("entityResourcePercentage", [&](EntityPtr entity, String name) -> Maybe<float> {
+    methods.registerMethod("resourcePercentage", [&](EntityPtr entity, String name) -> Maybe<float> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->statusController()->resourcePercentage(name);
         return {};
     });
-    methods.registerMethod("entityGetPersistentEffects", [&](EntityPtr entity, String name) -> Maybe<JsonArray> {
+    methods.registerMethod("getPersistentEffects", [&](EntityPtr entity, String name) -> Maybe<JsonArray> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->statusController()->getPersistentEffects(name).transformed(jsonFromPersistentStatusEffect);
         return {};
     });
-    methods.registerMethod("entityActiveUniqueStatusEffectSummary", [&](EntityPtr entity) -> Maybe<List<JsonArray>> {
+    methods.registerMethod("activeUniqueStatusEffectSummary", [&](EntityPtr entity) -> Maybe<List<JsonArray>> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->statusController()->activeUniqueStatusEffectSummary().transformed([](pair<UniqueStatusEffect, Maybe<float>> effect) {
             JsonArray effectJson = {effect.first};
@@ -287,7 +287,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
             });;
         return {};
     });
-    methods.registerMethod("entityUniqueStatusEffectActive", [&](EntityPtr entity, String name) -> Maybe<bool> {
+    methods.registerMethod("uniqueStatusEffectActive", [&](EntityPtr entity, String name) -> Maybe<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->statusController()->uniqueStatusEffectActive(name);
         return {};
@@ -295,156 +295,156 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
 
     // movement controller methods, they're networked anyway so might as well make them available to read
 
-    methods.registerMethod("entityMass", [&](EntityPtr entity) -> Maybe<float> {
+    methods.registerMethod("mass", [&](EntityPtr entity) -> Maybe<float> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->mass();
         return {};
     });
-    methods.registerMethod("entityBoundBox", [&](EntityPtr entity) -> Maybe<RectF> {
+    methods.registerMethod("boundBox", [&](EntityPtr entity) -> Maybe<RectF> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->collisionPoly().boundBox();
         return {};
     });
-    methods.registerMethod("entityCollisionPoly", [&](EntityPtr entity) -> Maybe<PolyF> {
+    methods.registerMethod("collisionPoly", [&](EntityPtr entity) -> Maybe<PolyF> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->collisionPoly();
         return {};
     });
-    methods.registerMethod("entityCollisionBody", [&](EntityPtr entity) -> Maybe<PolyF> {
+    methods.registerMethod("collisionBody", [&](EntityPtr entity) -> Maybe<PolyF> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->collisionBody();
         return {};
     });
-    methods.registerMethod("entityCollisionBoundBox", [&](EntityPtr entity) -> Maybe<RectF> {
+    methods.registerMethod("collisionBoundBox", [&](EntityPtr entity) -> Maybe<RectF> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->collisionBody().boundBox();
         return {};
     });
-    methods.registerMethod("entityLocalBoundBox", [&](EntityPtr entity) -> Maybe<RectF> {
+    methods.registerMethod("localBoundBox", [&](EntityPtr entity) -> Maybe<RectF> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->localBoundBox();
         return {};
     });
-    methods.registerMethod("entityRotation", [&](EntityPtr entity) -> Maybe<float> {
+    methods.registerMethod("rotation", [&](EntityPtr entity) -> Maybe<float> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->rotation();
         return {};
     });
-    methods.registerMethod("entityIsColliding", [&](EntityPtr entity) -> Maybe<bool> {
+    methods.registerMethod("isColliding", [&](EntityPtr entity) -> Maybe<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->isColliding();
         return {};
     });
-    methods.registerMethod("entityIsNullColliding", [&](EntityPtr entity) -> Maybe<bool> {
+    methods.registerMethod("isNullColliding", [&](EntityPtr entity) -> Maybe<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->isNullColliding();
         return {};
     });
-    methods.registerMethod("entityIsCollisionStuck", [&](EntityPtr entity) -> Maybe<bool> {
+    methods.registerMethod("isCollisionStuck", [&](EntityPtr entity) -> Maybe<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->isCollisionStuck();
         return {};
     });
-    methods.registerMethod("entityStickingDirection", [&](EntityPtr entity) -> Maybe<float> {
+    methods.registerMethod("stickingDirection", [&](EntityPtr entity) -> Maybe<float> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->stickingDirection();
         return {};
     });
-    methods.registerMethod("entityLiquidPercentage", [&](EntityPtr entity) -> Maybe<float> {
+    methods.registerMethod("liquidPercentage", [&](EntityPtr entity) -> Maybe<float> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->liquidPercentage();
         return {};
     });
-    methods.registerMethod("entityLiquidId", [&](EntityPtr entity) -> Maybe<float> {
+    methods.registerMethod("liquidId", [&](EntityPtr entity) -> Maybe<float> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->liquidId();
         return {};
     });
-    methods.registerMethod("entityOnGround", [&](EntityPtr entity) -> Maybe<bool> {
+    methods.registerMethod("onGround", [&](EntityPtr entity) -> Maybe<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->onGround();
         return {};
     });
-    methods.registerMethod("entityZeroG", [&](EntityPtr entity) -> Maybe<bool> {
+    methods.registerMethod("zeroG", [&](EntityPtr entity) -> Maybe<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->zeroG();
         return {};
     });
-    methods.registerMethod("entityAtWorldLimit", [&](EntityPtr entity) -> Maybe<bool> {
+    methods.registerMethod("atWorldLimit", [&](EntityPtr entity) -> Maybe<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->atWorldLimit();
         return {};
     });
-    methods.registerMethod("entityAnchorState", [&](EntityPtr entity) -> LuaVariadic<LuaValue> {
+    methods.registerMethod("anchorState", [&](EntityPtr entity) -> LuaVariadic<LuaValue> {
         if (auto actor = as<ActorEntity>(entity))
             if (auto anchorState = actor->movementController()->anchorState())
             return LuaVariadic<LuaValue>{LuaInt(anchorState->entityId), LuaInt(anchorState->positionIndex)};
         return LuaVariadic<LuaValue>();
     });
     // slightly inconsistent for the sake of being more clear what the function is
-    methods.registerMethod("entityBaseMovementParameters", [&](EntityPtr entity) -> Maybe<Json> {
+    methods.registerMethod("baseMovementParameters", [&](EntityPtr entity) -> Maybe<Json> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->baseParameters().toJson();
         return {};
     });
     // slightly inconsistent for the sake of being more clear what the function is
-    methods.registerMethod("entityMovementParameters", [&](EntityPtr entity) -> Maybe<Json> {
+    methods.registerMethod("movementParameters", [&](EntityPtr entity) -> Maybe<Json> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->parameters().toJson();
         return {};
     });
 
-    methods.registerMethod("entityWalking", [&](EntityPtr entity) -> Maybe<bool> {
+    methods.registerMethod("walking", [&](EntityPtr entity) -> Maybe<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->walking();
         return {};
     });
-    methods.registerMethod("entityRunning", [&](EntityPtr entity) -> Maybe<bool> {
+    methods.registerMethod("running", [&](EntityPtr entity) -> Maybe<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->running();
         return {};
     });
-    methods.registerMethod("entityMovingDirection", [&](EntityPtr entity) -> Maybe<int> {
+    methods.registerMethod("movingDirection", [&](EntityPtr entity) -> Maybe<int> {
         if (auto actor = as<ActorEntity>(entity))
             return numericalDirection(actor->movementController()->movingDirection());
         return {};
     });
-    methods.registerMethod("entityFacingDirection", [&](EntityPtr entity) -> Maybe<int> {
+    methods.registerMethod("facingDirection", [&](EntityPtr entity) -> Maybe<int> {
         if (auto actor = as<ActorEntity>(entity))
             return numericalDirection(actor->movementController()->facingDirection());
         return {};
     });
-    methods.registerMethod("entityCrouching", [&](EntityPtr entity) -> Maybe<bool> {
+    methods.registerMethod("crouching", [&](EntityPtr entity) -> Maybe<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->crouching();
         return {};
     });
-    methods.registerMethod("entityFlying", [&](EntityPtr entity) -> Maybe<bool> {
+    methods.registerMethod("flying", [&](EntityPtr entity) -> Maybe<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->flying();
         return {};
     });
-    methods.registerMethod("entityFalling", [&](EntityPtr entity) -> Maybe<bool> {
+    methods.registerMethod("falling", [&](EntityPtr entity) -> Maybe<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->falling();
         return {};
     });
-    methods.registerMethod("entityCanJump", [&](EntityPtr entity) -> Maybe<bool> {
+    methods.registerMethod("canJump", [&](EntityPtr entity) -> Maybe<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->canJump();
         return {};
     });
-    methods.registerMethod("entityJumping", [&](EntityPtr entity) -> Maybe<bool> {
+    methods.registerMethod("jumping", [&](EntityPtr entity) -> Maybe<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->jumping();
         return {};
     });
-    methods.registerMethod("entityGroundMovement", [&](EntityPtr entity) -> Maybe<bool> {
+    methods.registerMethod("groundMovement", [&](EntityPtr entity) -> Maybe<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->groundMovement();
         return {};
     });
-    methods.registerMethod("entityLiquidMovement", [&](EntityPtr entity) -> Maybe<bool> {
+    methods.registerMethod("liquidMovement", [&](EntityPtr entity) -> Maybe<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->liquidMovement();
         return {};
