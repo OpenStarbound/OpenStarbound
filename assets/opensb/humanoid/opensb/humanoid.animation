@@ -347,6 +347,7 @@
 					"centered": true,
 					"zLevel": 0,
 					"transformationGroups": ["globalTransformation"],
+					"transforms" : [["reset"]],
 
 					"interact" : [0,0] // this is the origin that the interaction radius propogates from
 				}
@@ -358,7 +359,8 @@
 					"transformationGroups": [],
 					"anchorPart" : "body",
 					"itemHidden" : true,
-					"processingDirectives" : "<bodyDirectives>"
+					"processingDirectives" : "<bodyDirectives>",
+					"transforms" : [["reset"]]
 				},
 				"partStates": {
 					"body": {
@@ -760,7 +762,8 @@
 					"transformationGroups": [],
 					"anchorPart" : "body",
 					"itemHidden" : true,
-					"processingDirectives" : "<bodyDirectives>"
+					"processingDirectives" : "<bodyDirectives>",
+					"transforms" : [["reset"]]
 				},
 				"partStates": {
 					"body": {

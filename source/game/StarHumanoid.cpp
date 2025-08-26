@@ -644,7 +644,6 @@ void Humanoid::refreshWearables(Fashion& fashion) {
   auto setTags = [&](HashMap<String,String> tags) {
     if (m_useAnimation)
       for (auto tag : tags) {
-        Logger::info("Set Tag {} {}", tag.first, tag.second);
         m_networkedAnimator.setLocalTag(tag.first, tag.second);
       }
   };
