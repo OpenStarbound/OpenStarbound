@@ -605,11 +605,6 @@ namespace LuaBindings {
           return entity->statusController()->resourceNames();
         return {};
       });
-    callbacks.registerCallback("entityResource", [world](EntityId entityId, String name) -> Maybe<float> {
-        if (auto entity = world->get<ActorEntity>(entityId))
-          return entity->statusController()->resource(name);
-        return {};
-      });
     callbacks.registerCallback("entityIsResource", [world](EntityId entityId, String name) -> Maybe<bool> {
         if (auto entity = world->get<ActorEntity>(entityId))
           return entity->statusController()->isResource(name);
