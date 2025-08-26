@@ -161,8 +161,8 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     methods.registerMethod("callScript",
     [&](EntityPtr const& entity, String const& function, LuaVariadic<LuaValue> const& args) -> Maybe<LuaValue> {
         auto scrEntity = as<ScriptedEntity>(entity);
-        if (!scrEntity || !scrEntity->isMaster())
-            throw StarException::format("Entity {} is not a local master scripted entity", entity->entityId());
+        if (!scrEntity || !scrEntity->isMaster() || !entity->inWorld())
+            throw StarException::format("Entity {} does not exist or is not a local master scripted entity", entity->entityId());
         return scrEntity->callScript(function, args);
     });
 
