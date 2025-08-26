@@ -34,6 +34,8 @@ public:
   pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
   void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
+  String name() const override;
+
   void update(float dt, uint64_t currentStep) override;
 
   bool shouldDestroy() const override;

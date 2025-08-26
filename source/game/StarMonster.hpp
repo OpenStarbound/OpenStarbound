@@ -66,6 +66,7 @@ public:
   void enableInterpolation(float extrapolationHint) override;
   void disableInterpolation() override;
 
+  String name() const override;
   String description() const override;
 
   List<LightSource> lightSources() const override;
@@ -105,7 +106,6 @@ public:
   SkillInfo activeSkillInfo() const;
 
   List<Drawable> portrait(PortraitMode mode) const override;
-  String name() const override;
   String typeName() const;
   MonsterVariant monsterVariant() const;
 

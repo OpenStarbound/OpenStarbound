@@ -18,7 +18,7 @@ class Vehicle : public virtual LoungeableEntity, public virtual InteractiveEntit
 public:
   Vehicle(Json baseConfig, String path, Json dynamicConfig);
 
-  String name() const;
+  String name() const override;
 
   Json baseConfig() const;
   Json dynamicConfig() const;

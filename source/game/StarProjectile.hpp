@@ -32,6 +32,7 @@ public:
   void uninit() override;
 
   String typeName() const;
+  String name() const override;
   String description() const override;
 
   Vec2F position() const override;

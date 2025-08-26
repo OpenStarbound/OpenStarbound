@@ -126,6 +126,10 @@ String Projectile::typeName() const {
   return m_config->typeName;
 }
 
+String Projectile::name() const {
+  return m_config->typeName;
+}
+
 String Projectile::description() const {
   return m_config->description;
 }

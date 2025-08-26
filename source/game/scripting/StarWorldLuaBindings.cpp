@@ -1437,22 +1437,8 @@ namespace LuaBindings {
   }
 
   Maybe<String> WorldEntityCallbacks::entityName(World* world, EntityId entityId) {
-    auto entity = world->entity(entityId);
-
-    if (auto portraitEntity = as<PortraitEntity>(entity)) {
-      return portraitEntity->name();
-    } else if (auto objectEntity = as<Object>(entity)) {
-      return objectEntity->name();
-    } else if (auto itemDropEntity = as<ItemDrop>(entity)) {
-      if (itemDropEntity->item())
-        return itemDropEntity->item()->name();
-    } else if (auto vehicleEntity = as<Vehicle>(entity)) {
-      return vehicleEntity->name();
-    } else if (auto stagehandEntity = as<Stagehand>(entity)) {
-      return stagehandEntity->typeName();
-    } else if (auto projectileEntity = as<Projectile>(entity)) {
-      return projectileEntity->typeName();
-    }
+    if (auto entity = world->entity(entityId))
+      return entity->name();
 
     return {};
   }

@@ -220,8 +220,19 @@ void EntityMap::forAllEntities(EntityCallback const& callback, function<bool(Ent
       });
   }
 
-  for (auto ptr : allEntities)
-    callback(*ptr);
+  for (auto ptr : allEntities) {
+    auto& entity = *ptr;
+    try {
+      callback(entity);
+    } catch (...) {
+      Logger::error("[EntityMap] Exception caught running forAllEntities callback for {} entity {} (named \"{}\")",
+        EntityTypeNames.getRight(entity->entityType()),
+        entity->entityId(),
+        entity->name()
+      );
+      throw;
+    }
+  }
 }
 
 EntityPtr EntityMap::findEntity(RectF const& boundBox, EntityFilter const& filter) const {
