@@ -1,0 +1,39 @@
+{
+	"globalTagDefaults" : {
+		"headCosmetic<slot>Frameset" : "",
+		"headCosmetic<slot>Directives" : ""
+	},
+
+	"animatedParts" : {
+		"parts" : {
+			"headCosmetic<slot>": {
+				"properties": {
+					"centered": true,
+					"zLevel": 14.1234,
+					"anchorPart": "headCosmetic",
+					"processingDirectives" : "<headCosmetic<slot>Directives>"
+				},
+				"partStates": {
+					"body": {
+						"idle": { "properties": { "image": "<headCosmetic<slot>Frameset>:normal" } },
+						"duck": "idle",
+						"sit": "idle",
+						"lay": "idle",
+						"walk": "idle",
+						"run": "idle",
+						"runbackwards": "idle",
+						"jump": "idle",
+						"fall": "idle",
+						"swim": "idle",
+						"swimIdle": "idle"
+					},
+					"portraitMode" : {
+						"head": { "properties":{"image" : "<headCosmetic<slot>Frameset>:normal<portraitMask>"}},
+						"bust" : "head"
+					}
+				}
+			}
+		}
+	},
+	"transformationGroups" : {}
+}

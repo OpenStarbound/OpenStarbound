@@ -117,22 +117,22 @@ Defaults are `body` and `feetOffset`
 ## `String` headArmorOffsetPart
 ## `String` headArmorOffsetPartPoint
 When using the animator, the part point used as the head armor offset.
-Defaults are `headCosmetic1` and `armorOffset`
+Defaults are `headCosmetic` and `armorOffset`
 
 ## `String` chestArmorOffsetPart
 ## `String` chestArmorOffsetPartPoint
 When using the animator, the part point used as the head chest offset.
-Defaults are `chestCosmetic1` and `armorOffset`
+Defaults are `chestCosmetic` and `armorOffset`
 
 ## `String` legsArmorOffsetPart
 ## `String` legsArmorOffsetPartPoint
 When using the animator, the part point used as the head legs offset.
-Defaults are `legsCosmetic1` and `armorOffset`
+Defaults are `legsCosmetic` and `armorOffset`
 
 ## `String` backArmorOffsetPart
 ## `String` backArmorOffsetPartPoint
 When using the animator, the part point used as the head back offset.
-Defaults are `backCosmetic1` and `armorOffset`
+Defaults are `backCosmetic` and `armorOffset`
 
 ---
 
