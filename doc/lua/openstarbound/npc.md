@@ -16,6 +16,8 @@ Implicitly calls `npc.refreshHumanoidParameters()` if species or imagePath is ch
 
 Returns the npc's name.
 
+---
+
 #### `void` npc.setName(`String` name)
 
 Sets the npc's name.
@@ -25,6 +27,8 @@ Sets the npc's name.
 #### `String` npc.description()
 
 Returns the npc's description.
+
+---
 
 #### `void` npc.setDescription(`String` description)
 
@@ -42,17 +46,25 @@ This is implicitly called whenever the current humanoid identity's species or im
 
 This has to network the humanoid identity and humanoid parameters as intialization arguments for the new instance, so only use it when necessary.
 
+---
+
 #### `void` npc.setHumanoidParameter(`String` key `Json` value)
 
 Sets a parameter that overwrites a value in the humanoid config.
+
+---
 
 #### `void` npc.setHumanoidParameters(`JsonObject` parameters)
 
 Replaces the current table of humanoid parameters that overwrite values in the humanoid config.
 
+---
+
 #### `Maybe<Json>` npc.getHumanoidParameter(`String` key)
 
 Gets a humanoid parameter.
+
+---
 
 #### `JsonObject` npc.getHumanoidParameters()
 
@@ -88,6 +100,8 @@ Sets the npc's gender.
 
 If the npc has a custom humanoid image path set, returns it. otherwise, returns `nil`.
 
+---
+
 #### `void` npc.setImagePath(`String` imagePath)
 
 Sets the npc's image path. Specify `nil` to remove the image path.
@@ -98,7 +112,9 @@ Implicitly calls `npc.refreshHumanoidParameters()` if imagePath is changed.
 
 #### `Personality` npc.personality()
 
-Returns the npc's personality as a `table` containing a `string` idle, `string` armIdle, `Vec2F` headOffset and `Vec2F` armOffset.
+Returns the npc's personality as a `table` containing a `String` idle, `String` armIdle, `Vec2F` headOffset and `Vec2F` armOffset.
+
+---
 
 #### `void` npc.setPersonality(`Personality` personality)
 
@@ -110,6 +126,8 @@ Sets the npc's personality. The **personality** must be a `table` containing at 
 
 Returns the npc's body directives.
 
+---
+
 #### `void` npc.setBodyDirectives(`String` bodyDirectives)
 
 Sets the npc's body directives.
@@ -119,6 +137,8 @@ Sets the npc's body directives.
 #### `String` npc.emoteDirectives()
 
 Returns the npc's emote directives.
+
+---
 
 #### `void` npc.setEmoteDirectives(`String` emoteDirectives)
 
@@ -136,6 +156,8 @@ Sets the npc's hair group, type, and directives.
 
 Returns the npc's hair group.
 
+---
+
 #### `void` npc.setHairGroup(`String` hairGroup)
 
 Sets the npc's hair group.
@@ -145,6 +167,8 @@ Sets the npc's hair group.
 #### `String` npc.hairType()
 
 Returns the npc's hair type.
+
+---
 
 #### `void` npc.setHairType(`String` hairType)
 
@@ -156,6 +180,8 @@ Sets the npc's hair type.
 
 Returns the npc's hair directives.
 
+---
+
 #### `void` npc.setHairDirectives(`String` hairDirectives)
 
 Sets the npc's hair directives.
@@ -165,6 +191,8 @@ Sets the npc's hair directives.
 #### `String` npc.facialHair()
 
 Returns the npc's facial hair type. Same as npc.facialHairType?
+
+---
 
 #### `void` npc.setFacialHair(`String` facialHairGroup, `String` facialHairType, `String` facialHairDirectives)
 
@@ -176,6 +204,8 @@ Sets the npc's facial hair group, type, and directives.
 
 Returns the npc's facial hair type.
 
+---
+
 #### `void` npc.setFacialHairType(`String` facialHairType)
 
 Sets the npc's facial hair type.
@@ -185,6 +215,8 @@ Sets the npc's facial hair type.
 #### `String` npc.facialHairGroup()
 
 Returns the npc's facial hair group.
+
+---
 
 #### `void` npc.setFacialHairGroup(`String` facialHairGroup)
 
@@ -196,6 +228,8 @@ Sets the npc's facial hair group.
 
 Returns the npc's facial hair directives.
 
+---
+
 #### `void` npc.setFacialHairDirectives(`String` facialHairDirectives)
 
 Sets the npc's facial hair directives.
@@ -206,6 +240,8 @@ Sets the npc's facial hair directives.
 
 Returns the npc's facial mask group.
 
+---
+
 #### `void` npc.setFacialMask(`String` facialMaskGroup, `String` facialMaskType, `String` facialMaskDirectives)
 
 Sets the npc's facial mask group, type, and directives.
@@ -215,6 +251,8 @@ Sets the npc's facial mask group, type, and directives.
 #### `String` npc.facialMaskDirectives()
 
 Returns the npc's facial mask directives.
+
+---
 
 #### `void` npc.setFacialMaskDirectives(`String` facialMaskDirectives)
 
@@ -227,8 +265,8 @@ Sets the npc's facial mask directives.
 Returns the npc's favorite color.
 It is used for the beam shown when wiring, placing, and highlighting with beam-tools (Matter Manipulator).
 
+---
+
 #### `void` npc.setFavoriteColor(`Color` color)
 
 Sets the npc's favorite color. **color** can have an optional fourth value for transparency.
-
----

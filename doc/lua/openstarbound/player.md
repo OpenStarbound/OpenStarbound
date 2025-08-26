@@ -1,12 +1,14 @@
 # Player
 
-The player table now contains bindings which contains functions to save/load, access and modify the player's identity, mode, aim, emote and more.
+The `player` table now contains bindings which contains functions to save/load, access and modify the player's identity, mode, aim, emote and more.
 
 ---
 
 #### `Json` player.save()
 
 Serializes the player to Json the same way Starbound does for disk storage and returns it.
+
+---
 
 #### `void` player.load(`Json` save)
 
@@ -18,6 +20,8 @@ Reloads the player from a Json **save**. This will reset active ScriptPanes and 
 
 Returns the player's name.
 
+---
+
 #### `void` player.setName(`String` name)
 
 Sets the player's name.
@@ -27,6 +31,8 @@ Sets the player's name.
 #### `String` player.description()
 
 Returns the player's description.
+
+---
 
 #### `void` player.setDescription(`String` description)
 
@@ -44,17 +50,25 @@ This is implicitly called whenever the current humanoid identity's species or im
 
 This has to network the humanoid identity and humanoid parameters as intialization arguments for the new instance, so only use it when necessary.
 
+---
+
 #### `void` player.setHumanoidParameter(`String` key `Json` value)
 
 Sets a parameter that overwrites a value in the humanoid config.
+
+---
 
 #### `void` player.setHumanoidParameters(`JsonObject` parameters)
 
 Replaces the current table of humanoid parameters that overwrite values in the humanoid config.
 
+---
+
 #### `Maybe<Json>` player.getHumanoidParameter(`String` key)
 
 Gets a humanoid parameter.
+
+---
 
 #### `JsonObject` player.getHumanoidParameters()
 
@@ -100,7 +114,9 @@ Implicitly calls `player.refreshHumanoidParameters()` if imagePath is changed.
 
 #### `Personality` player.personality()
 
-Returns the player's personality as a `table` containing a `string` idle, `string` armIdle, `Vec2F` headOffset and `Vec2F` armOffset.
+Returns the player's personality as a `table` containing a `String` idle, `String` armIdle, `Vec2F` headOffset and `Vec2F` armOffset.
+
+---
 
 #### `void` player.setPersonality(`Personality` personality)
 
@@ -112,6 +128,8 @@ Sets the player's personality. The **personality** must be a `table` containing 
 
 Returns the player's body directives.
 
+---
+
 #### `void` player.setBodyDirectives(`String` bodyDirectives)
 
 Sets the player's body directives.
@@ -121,6 +139,8 @@ Sets the player's body directives.
 #### `String` player.emoteDirectives()
 
 Returns the player's emote directives.
+
+---
 
 #### `void` player.setEmoteDirectives(`String` emoteDirectives)
 
@@ -138,6 +158,8 @@ Sets the player's hair group, type, and directives.
 
 Returns the player's hair group.
 
+---
+
 #### `void` player.setHairGroup(`String` hairGroup)
 
 Sets the player's hair group.
@@ -147,6 +169,8 @@ Sets the player's hair group.
 #### `String` player.hairType()
 
 Returns the player's hair type.
+
+---
 
 #### `void` player.setHairType(`String` hairType)
 
@@ -158,6 +182,8 @@ Sets the player's hair type.
 
 Returns the player's hair directives.
 
+---
+
 #### `void` player.setHairDirectives(`String` hairDirectives)
 
 Sets the player's hair directives.
@@ -167,6 +193,8 @@ Sets the player's hair directives.
 #### `String` player.facialHair()
 
 Returns the player's facial hair type. Same as player.facialHairType?
+
+---
 
 #### `void` player.setFacialHair(`String` facialHairGroup, `String` facialHairType, `String` facialHairDirectives)
 
@@ -178,6 +206,8 @@ Sets the player's facial hair group, type, and directives.
 
 Returns the player's facial hair type.
 
+---
+
 #### `void` player.setFacialHairType(`String` facialHairType)
 
 Sets the player's facial hair type.
@@ -187,6 +217,8 @@ Sets the player's facial hair type.
 #### `String` player.facialHairGroup()
 
 Returns the player's facial hair group.
+
+---
 
 #### `void` player.setFacialHairGroup(`String` facialHairGroup)
 
@@ -198,6 +230,8 @@ Sets the player's facial hair group.
 
 Returns the player's facial hair directives.
 
+---
+
 #### `void` player.setFacialHairDirectives(`String` facialHairDirectives)
 
 Sets the player's facial hair directives.
@@ -207,6 +241,8 @@ Sets the player's facial hair directives.
 #### `String` player.facialMask()
 
 Returns the player's facial mask group.
+
+---
 
 #### `void` player.setFacialMask(`String` facialMaskGroup, `String` facialMaskType, `String` facialMaskDirectives)
 
@@ -218,6 +254,8 @@ Sets the player's facial mask group, type, and directives.
 
 Returns the player's facial mask directives.
 
+---
+
 #### `void` player.setFacialMaskDirectives(`String` facialMaskDirectives)
 
 Sets the player's facial mask directives.
@@ -227,6 +265,8 @@ Sets the player's facial mask directives.
 #### `PlayerMode` player.mode()
 
 Returns the player's mode.
+
+---
 
 #### `void` player.setMode(`String` mode)
 
@@ -238,6 +278,8 @@ Sets the player's mode. **mode** must be either `"casual"`, `"survival"` or `"ha
 
 Returns the player's favorite color.
 It is used for the beam shown when wiring, placing, and highlighting with beam-tools (Matter Manipulator).
+
+---
 
 #### `void` player.setFavoriteColor(`Color` color)
 
@@ -255,6 +297,8 @@ Returns the player's aim position.
 
 Makes the player do an emote with the default cooldown unless a **cooldown** is specified.
 
+---
+
 #### `String, float` player.currentEmote()
 
 Returns the player's current emote and the seconds left in it.
@@ -265,17 +309,25 @@ Returns the player's current emote and the seconds left in it.
 
 Returns the player's active action bar.
 
+---
+
 #### `void` player.setActionBarGroup(`unsigned` barId)
 
 Sets the player's active action bar.
+
+---
 
 #### `Variant<unsigned, EssentialItem>` player.selectedActionBarSlot()
 
 Returns the player's selected action bar slot.
 
+---
+
 #### `void` player.setSelectedActionBarSlot(`Variant<unsigned, EssentialItem>` slot)
 
 Sets the player's selected action bar slot.
+
+---
 
 #### `void` player.setDamageTeam(`DamageTeam` team)
 
@@ -293,6 +345,8 @@ Makes the player say a string.
 
 Returns the specific humanoid identity of the player, containing information such as hair style and idle pose.
 
+---
+
 #### `void` player.setHumanoidIdentity(`Json` humanoidIdentity)
 
 Sets the specific humanoid identity of the player.
@@ -305,6 +359,8 @@ Implicitly calls `player.refreshHumanoidParameters()` if species or imagePath is
 
 Returns the contents of the specified itemSlot.
 
+---
+
 #### `void` player.setItem(`ItemSlot` itemSlot, `ItemDescriptor` item)
 
 Puts the specified item into the specified itemSlot.
@@ -316,6 +372,8 @@ Item slots in item bags are structured like so: `{String bagName, int slot}`
 
 Returns the size of an item bag.
 
+---
+
 #### `bool` player.itemAllowedInBag(`String` itemBagName, `ItemDescriptor` item)
 
 Returns whether the specified item can enter the specified item bag.
@@ -326,6 +384,8 @@ Returns whether the specified item can enter the specified item bag.
 
 Returns the contents of the specified action bar link slot's specified hand.
 
+---
+
 #### `bool` player.setActionBarSlotLink(`int` slot, `String` hand, `ItemSlot` itemSlot)
 
 Links the specified slot's hand to the specified itemSlot.
@@ -335,6 +395,8 @@ Links the specified slot's hand to the specified itemSlot.
 #### `Float` player.interactRadius()
 
 Returns the player's interact radius.
+
+---
 
 #### `void` player.setInteractRadius(`Float` interactRadius)
 
@@ -347,6 +409,7 @@ Sets the player's interact radius. This does not persist upon returning to the m
 Returns all the recipes the player can craft with their currently held items and currencies.
 
 ---
+
 #### `String` player.currentState()
 
 Returns the player's current movement state.
@@ -364,6 +427,7 @@ crouch<br>
 teleportIn<br>
 teleportOut<br>
 </details>
+
 ---
 
 #### `List<Json>` player.teamMembers()
@@ -411,5 +475,3 @@ Returns a JSON object of key-value pairs, which are the codex ID and read status
 #### `String` player.getNewCodex()
 
 Returns the codex ID of the newest codex not read and `nil` otherwise.
-
----

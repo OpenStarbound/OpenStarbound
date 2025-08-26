@@ -1,7 +1,6 @@
----
 # Interface
 
-The interface table contains bindings which allow scripts to display a message at the bottom of the screen, among other things.
+The `interface` table contains bindings which allow scripts to display a message at the bottom of the screen, among other things.
 
 ---
 
@@ -15,13 +14,15 @@ Queues a message popup at the bottom of the screen with an optional **cooldown**
 
 Sets the HUD's visibility.
 
+---
+
 #### `bool` interface.hudVisible()
 
 Returns the HUD's visibility.
 
 ---
 
-#### `PaneId` interface.bindRegisteredPane(`string` paneName)
+#### `PaneId` interface.bindRegisteredPane(`String` paneName)
 Binds a registered pane (defined in `/source/frontend/StarMainInterfaceTypes`) to a Lua value, which can then call widget functions on that pane.
 <details><summary><b>Panes</b></summary>
 EscapeDialog<br>
@@ -49,12 +50,16 @@ MmUpgrade<br>
 Collections<br>
 </details>
 
-#### `void` interface.displayRegisteredPane(`string` paneName)
+---
+
+#### `void` interface.displayRegisteredPane(`String` paneName)
+
 Displays a registered pane.
 
 ---
 
-#### `CanvasWidget` interface.bindCanvas(`string` name, [`bool` ignoreInterfaceScale = false])
+#### `CanvasWidget` interface.bindCanvas(`String` name, [`bool` ignoreInterfaceScale = false])
+
 Binds the canvas widget on the main interface with the specified name as userdata for easy access. The `CanvasWidget` has the same methods as described in `widget.md`.
 
 - **ignoreInterfaceScale** is used to ignore the current interface scaling and bind the canvas with the screen size.
@@ -62,6 +67,5 @@ Binds the canvas widget on the main interface with the specified name as userdat
 ---
 
 #### `int` interface.scale()
-Returns the scale used for interfaces.
 
----
+Returns the scale used for interfaces.
