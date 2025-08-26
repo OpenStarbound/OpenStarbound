@@ -11,6 +11,7 @@
 #include "StarSystemWorld.hpp"
 #include "StarDrawable.hpp"
 #include "StarRpcThreadPromise.hpp"
+#include "StarEntity.hpp"
 
 namespace Star {
 
@@ -176,6 +177,14 @@ struct LuaConverter<BlackboardWeakPtr> : LuaUserDataConverter<BlackboardWeakPtr>
 template <>
 struct LuaUserDataMethods<BlackboardWeakPtr> {
   static LuaMethods<BlackboardWeakPtr> make();
+};
+
+template <>
+struct LuaConverter<EntityPtr> : LuaUserDataConverter<EntityPtr> {};
+
+template <>
+struct LuaUserDataMethods<EntityPtr> {
+  static LuaMethods<EntityPtr> make();
 };
 
 }
