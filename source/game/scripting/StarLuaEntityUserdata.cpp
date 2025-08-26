@@ -1,4 +1,6 @@
 #include "StarLuaGameConverters.hpp"
+#include "StarStatusController.hpp"
+#include "StarActorMovementController.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarWorld.hpp"
 #include "StarPlayer.hpp"
@@ -19,20 +21,20 @@
 namespace Star {
 
 LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
-  LuaMethods<EntityPtr> methods;
+    LuaMethods<EntityPtr> methods;
 
-  // general entity methods
-  methods.registerMethod("exists",
+    // general entity methods
+    methods.registerMethod("exists",
     [&](EntityPtr const& entity) -> bool {
         return entity->inWorld();
-  });
+    });
 
-  methods.registerMethod("id",
+    methods.registerMethod("id",
     [&](EntityPtr const& entity) -> EntityId {
         return entity->entityId();
-  });
+    });
 
-  methods.registerMethod("canDamage",
+    methods.registerMethod("canDamage",
     [&](EntityPtr const& entity, EntityId const& otherId) -> bool {
         if (entity->inWorld()) {
             auto other = entity->world()->entity(otherId);
@@ -43,28 +45,28 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
             return true;
         }
         return false;
-  });
+    });
 
-  methods.registerMethod("damageTeam",
+    methods.registerMethod("damageTeam",
     [&](EntityPtr const& entity) -> Json {
         return entity->getTeam().toJson();
-  });
+    });
 
-  methods.registerMethod("aggressive",
+    methods.registerMethod("aggressive",
     [&](EntityPtr const& entity) -> Json {
         if (auto monster = as<Monster>(entity))
             return monster->aggressive();
         if (auto npc = as<Npc>(entity))
             return npc->aggressive();
         return false;
-  });
+    });
 
-  methods.registerMethod("type",
+    methods.registerMethod("type",
     [&](EntityPtr const& entity, LuaEngine& engine) -> LuaString {
         return engine.createString(EntityTypeNames.getRight(entity->entityType()));
-  });
+    });
 
-  methods.registerMethod("typeName",
+    methods.registerMethod("typeName",
     [&](EntityPtr const& entity, LuaEngine& engine) -> Maybe<String> {
         if (auto monster = as<Monster>(entity))
             return monster->typeName();
@@ -79,19 +81,19 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
             return itemDrop->item()->name();
         }
         return {};
-  });
+    });
 
-  methods.registerMethod("position",
+    methods.registerMethod("position",
     [&](EntityPtr const& entity) -> Vec2F {
         return entity->position();
-  });
+    });
 
-  methods.registerMethod("metaBoundBox",
+    methods.registerMethod("metaBoundBox",
     [&](EntityPtr const& entity) -> RectF {
         return entity->metaBoundBox();
-  });
+    });
 
-  methods.registerMethod("velocity",
+    methods.registerMethod("velocity",
     [&](EntityPtr const& entity) -> Maybe<Vec2F> {
         if (auto monsterEntity = as<Monster>(entity))
             return monsterEntity->velocity();
@@ -103,14 +105,14 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
             return projectileEntity->velocity();
 
         return {};
-  });
+    });
 
-  methods.registerMethod("name",
+    methods.registerMethod("name",
     [&](EntityPtr const& entity) -> String {
         return entity->name();
-  });
+    });
 
-  methods.registerMethod("description",
+    methods.registerMethod("description",
     [&](EntityPtr const& entity, Maybe<String> const& species) -> Maybe<String> {
         if (auto inspectableEntity = as<InspectableEntity>(entity)) {
             if (species)
@@ -118,14 +120,14 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
         }
 
         return entity->description();
-  });
+    });
 
-  methods.registerMethod("uniqueId",
+    methods.registerMethod("uniqueId",
     [&](EntityPtr const& entity) -> LuaNullTermWrapper<Maybe<String>> {
         return entity->uniqueId();
-  });
+    });
 
-  methods.registerMethod("getParameter",
+    methods.registerMethod("getParameter",
     [&](EntityPtr const& entity, String const& parameterName, Maybe<Json> const& defaultValue) -> Json {
         Json val = Json();
         
@@ -145,27 +147,27 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
             val = *defaultValue;
 
         return val;
-  });
-  
-  methods.registerMethod("sendMessage",
+    });
+
+    methods.registerMethod("sendMessage",
     [&](EntityPtr const& entity, String const& message, LuaVariadic<Json> args) -> RpcPromise<Json> {
         if (entity->inWorld()) {
             return entity->world()->sendEntityMessage(entity->entityId(), message, JsonArray::from(std::move(args)));
         }
         return RpcPromise<Json>::createFailed("Entity not in world");
-  });
-  
-  // scripted entity methods
-  methods.registerMethod("callScript",
+    });
+
+    // scripted entity methods
+    methods.registerMethod("callScript",
     [&](EntityPtr const& entity, String const& function, LuaVariadic<LuaValue> const& args) -> Maybe<LuaValue> {
         auto scrEntity = as<ScriptedEntity>(entity);
         if (!scrEntity || !scrEntity->isMaster())
             throw StarException::format("Entity {} is not a local master scripted entity", entity->entityId());
         return scrEntity->callScript(function, args);
-  });
-  
-  // nametag entity methods
-  methods.registerMethod("nametag",
+    });
+
+    // nametag entity methods
+    methods.registerMethod("nametag",
     [&](EntityPtr const& entity) -> Maybe<Json> {
         Json result;
         if (auto nametagEntity = as<NametagEntity>(entity)) {
@@ -180,47 +182,276 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
         }
 
         return result;
-  });
-  
-  // portrait entity methods
-  methods.registerMethod("portrait",
+    });
+
+    // portrait entity methods
+    methods.registerMethod("portrait",
     [&](EntityPtr const& entity, String const& portraitMode) -> LuaNullTermWrapper<Maybe<List<Drawable>>> {
         if (auto portraitEntity = as<PortraitEntity>(entity))
             return portraitEntity->portrait(PortraitModeNames.getLeft(portraitMode));
 
         return {};
-  });
-  
-  
-  // damage bar entity methods
-  methods.registerMethod("health",
+    });
+
+
+    // damage bar entity methods
+    methods.registerMethod("health",
     [&](EntityPtr const& entity) -> Maybe<Vec2F> {
         if (auto dmgEntity = as<DamageBarEntity>(entity)) {
             return Vec2F(dmgEntity->health(), dmgEntity->maxHealth());
         }
         return {};
-  });
-  
-  // interactive entity methods
-  methods.registerMethod("isInteractive",
+    });
+
+    // interactive entity methods
+    methods.registerMethod("isInteractive",
     [&](EntityPtr const& entity) -> Maybe<bool> {
         if (auto interactEntity = as<InteractiveEntity>(entity))
-          return interactEntity->isInteractive();
+            return interactEntity->isInteractive();
         return {};
-  });
-  
-  // chatty entity methods
-  methods.registerMethod("mouthPosition",
+    });
+
+    // chatty entity methods
+    methods.registerMethod("mouthPosition",
     [&](EntityPtr const& entity) -> Maybe<Vec2F> {
         if (auto chatty = as<ChattyEntity>(entity))
-          return chatty->mouthPosition();
+            return chatty->mouthPosition();
         return {};
-  });
-  
-  // actor entity methods
-  
-  // tool user entity methods
-  methods.registerMethod("handItem",
+    });
+
+    // actor entity methods
+
+    // status controller methods, they're networked anyway so might as well make them available to read
+    methods.registerMethod("entityStatusProperty", [&](EntityPtr entity, String name, Json const& def = Json()) -> Maybe<Json> {
+        if (auto actor = as<ActorEntity>(entity))
+            return actor->statusController()->statusProperty(name, def);
+        return {};
+    });
+    methods.registerMethod("entityStat", [&](EntityPtr entity, String name) -> Maybe<float> {
+        if (auto actor = as<ActorEntity>(entity))
+            return actor->statusController()->stat(name);
+        return {};
+    });
+    methods.registerMethod("entityStatPositive", [&](EntityPtr entity, String name) -> Maybe<bool> {
+        if (auto actor = as<ActorEntity>(entity))
+            return actor->statusController()->statPositive(name);
+        return {};
+    });
+    methods.registerMethod("entityResourceNames", [&](EntityPtr entity) -> Maybe<StringList> {
+        if (auto actor = as<ActorEntity>(entity))
+            return actor->statusController()->resourceNames();
+        return {};
+    });
+    methods.registerMethod("entityResource", [&](EntityPtr entity, String name) -> Maybe<float> {
+        if (auto actor = as<ActorEntity>(entity))
+            return actor->statusController()->resource(name);
+        return {};
+    });
+    methods.registerMethod("entityIsResource", [&](EntityPtr entity, String name) -> Maybe<bool> {
+        if (auto actor = as<ActorEntity>(entity))
+            return actor->statusController()->isResource(name);
+        return {};
+    });
+    methods.registerMethod("entityResourcePositive", [&](EntityPtr entity, String name) -> Maybe<bool> {
+        if (auto actor = as<ActorEntity>(entity))
+            return actor->statusController()->resourcePositive(name);
+        return {};
+    });
+    methods.registerMethod("entityResourceLocked", [&](EntityPtr entity, String name) -> Maybe<bool> {
+        if (auto actor = as<ActorEntity>(entity))
+            return actor->statusController()->resourceLocked(name);
+        return {};
+    });
+    methods.registerMethod("entityResourceMax", [&](EntityPtr entity, String name) -> Maybe<float> {
+        if (auto actor = as<ActorEntity>(entity))
+            return actor->statusController()->resourceMax(name);
+        return {};
+    });
+    methods.registerMethod("entityResourcePercentage", [&](EntityPtr entity, String name) -> Maybe<float> {
+        if (auto actor = as<ActorEntity>(entity))
+            return actor->statusController()->resourcePercentage(name);
+        return {};
+    });
+    methods.registerMethod("entityGetPersistentEffects", [&](EntityPtr entity, String name) -> Maybe<JsonArray> {
+        if (auto actor = as<ActorEntity>(entity))
+            return actor->statusController()->getPersistentEffects(name).transformed(jsonFromPersistentStatusEffect);
+        return {};
+    });
+    methods.registerMethod("entityActiveUniqueStatusEffectSummary", [&](EntityPtr entity) -> Maybe<List<JsonArray>> {
+        if (auto actor = as<ActorEntity>(entity))
+            return actor->statusController()->activeUniqueStatusEffectSummary().transformed([](pair<UniqueStatusEffect, Maybe<float>> effect) {
+            JsonArray effectJson = {effect.first};
+            if (effect.second)
+                effectJson.append(*effect.second);
+            return effectJson;
+            });;
+        return {};
+    });
+    methods.registerMethod("entityUniqueStatusEffectActive", [&](EntityPtr entity, String name) -> Maybe<bool> {
+        if (auto actor = as<ActorEntity>(entity))
+            return actor->statusController()->uniqueStatusEffectActive(name);
+        return {};
+    });
+
+    // movement controller methods, they're networked anyway so might as well make them available to read
+
+    methods.registerMethod("entityMass", [&](EntityPtr entity) -> Maybe<float> {
+        if (auto actor = as<ActorEntity>(entity))
+            return actor->movementController()->mass();
+        return {};
+    });
+    methods.registerMethod("entityBoundBox", [&](EntityPtr entity) -> Maybe<RectF> {
+        if (auto actor = as<ActorEntity>(entity))
+            return actor->movementController()->collisionPoly().boundBox();
+        return {};
+    });
+    methods.registerMethod("entityCollisionPoly", [&](EntityPtr entity) -> Maybe<PolyF> {
+        if (auto actor = as<ActorEntity>(entity))
+            return actor->movementController()->collisionPoly();
+        return {};
+    });
+    methods.registerMethod("entityCollisionBody", [&](EntityPtr entity) -> Maybe<PolyF> {
+        if (auto actor = as<ActorEntity>(entity))
+            return actor->movementController()->collisionBody();
+        return {};
+    });
+    methods.registerMethod("entityCollisionBoundBox", [&](EntityPtr entity) -> Maybe<RectF> {
+        if (auto actor = as<ActorEntity>(entity))
+            return actor->movementController()->collisionBody().boundBox();
+        return {};
+    });
+    methods.registerMethod("entityLocalBoundBox", [&](EntityPtr entity) -> Maybe<RectF> {
+        if (auto actor = as<ActorEntity>(entity))
+            return actor->movementController()->localBoundBox();
+        return {};
+    });
+    methods.registerMethod("entityRotation", [&](EntityPtr entity) -> Maybe<float> {
+        if (auto actor = as<ActorEntity>(entity))
+            return actor->movementController()->rotation();
+        return {};
+    });
+    methods.registerMethod("entityIsColliding", [&](EntityPtr entity) -> Maybe<bool> {
+        if (auto actor = as<ActorEntity>(entity))
+            return actor->movementController()->isColliding();
+        return {};
+    });
+    methods.registerMethod("entityIsNullColliding", [&](EntityPtr entity) -> Maybe<bool> {
+        if (auto actor = as<ActorEntity>(entity))
+            return actor->movementController()->isNullColliding();
+        return {};
+    });
+    methods.registerMethod("entityIsCollisionStuck", [&](EntityPtr entity) -> Maybe<bool> {
+        if (auto actor = as<ActorEntity>(entity))
+            return actor->movementController()->isCollisionStuck();
+        return {};
+    });
+    methods.registerMethod("entityStickingDirection", [&](EntityPtr entity) -> Maybe<float> {
+        if (auto actor = as<ActorEntity>(entity))
+            return actor->movementController()->stickingDirection();
+        return {};
+    });
+    methods.registerMethod("entityLiquidPercentage", [&](EntityPtr entity) -> Maybe<float> {
+        if (auto actor = as<ActorEntity>(entity))
+            return actor->movementController()->liquidPercentage();
+        return {};
+    });
+    methods.registerMethod("entityLiquidId", [&](EntityPtr entity) -> Maybe<float> {
+        if (auto actor = as<ActorEntity>(entity))
+            return actor->movementController()->liquidId();
+        return {};
+    });
+    methods.registerMethod("entityOnGround", [&](EntityPtr entity) -> Maybe<bool> {
+        if (auto actor = as<ActorEntity>(entity))
+            return actor->movementController()->onGround();
+        return {};
+    });
+    methods.registerMethod("entityZeroG", [&](EntityPtr entity) -> Maybe<bool> {
+        if (auto actor = as<ActorEntity>(entity))
+            return actor->movementController()->zeroG();
+        return {};
+    });
+    methods.registerMethod("entityAtWorldLimit", [&](EntityPtr entity) -> Maybe<bool> {
+        if (auto actor = as<ActorEntity>(entity))
+            return actor->movementController()->atWorldLimit();
+        return {};
+    });
+    methods.registerMethod("entityAnchorState", [&](EntityPtr entity) -> LuaVariadic<LuaValue> {
+        if (auto actor = as<ActorEntity>(entity))
+            if (auto anchorState = actor->movementController()->anchorState())
+            return LuaVariadic<LuaValue>{LuaInt(anchorState->entityId), LuaInt(anchorState->positionIndex)};
+        return LuaVariadic<LuaValue>();
+    });
+    // slightly inconsistent for the sake of being more clear what the function is
+    methods.registerMethod("entityBaseMovementParameters", [&](EntityPtr entity) -> Maybe<Json> {
+        if (auto actor = as<ActorEntity>(entity))
+            return actor->movementController()->baseParameters().toJson();
+        return {};
+    });
+    // slightly inconsistent for the sake of being more clear what the function is
+    methods.registerMethod("entityMovementParameters", [&](EntityPtr entity) -> Maybe<Json> {
+        if (auto actor = as<ActorEntity>(entity))
+            return actor->movementController()->parameters().toJson();
+        return {};
+    });
+
+    methods.registerMethod("entityWalking", [&](EntityPtr entity) -> Maybe<bool> {
+        if (auto actor = as<ActorEntity>(entity))
+            return actor->movementController()->walking();
+        return {};
+    });
+    methods.registerMethod("entityRunning", [&](EntityPtr entity) -> Maybe<bool> {
+        if (auto actor = as<ActorEntity>(entity))
+            return actor->movementController()->running();
+        return {};
+    });
+    methods.registerMethod("entityMovingDirection", [&](EntityPtr entity) -> Maybe<int> {
+        if (auto actor = as<ActorEntity>(entity))
+            return numericalDirection(actor->movementController()->movingDirection());
+        return {};
+    });
+    methods.registerMethod("entityFacingDirection", [&](EntityPtr entity) -> Maybe<int> {
+        if (auto actor = as<ActorEntity>(entity))
+            return numericalDirection(actor->movementController()->facingDirection());
+        return {};
+    });
+    methods.registerMethod("entityCrouching", [&](EntityPtr entity) -> Maybe<bool> {
+        if (auto actor = as<ActorEntity>(entity))
+            return actor->movementController()->crouching();
+        return {};
+    });
+    methods.registerMethod("entityFlying", [&](EntityPtr entity) -> Maybe<bool> {
+        if (auto actor = as<ActorEntity>(entity))
+            return actor->movementController()->flying();
+        return {};
+    });
+    methods.registerMethod("entityFalling", [&](EntityPtr entity) -> Maybe<bool> {
+        if (auto actor = as<ActorEntity>(entity))
+            return actor->movementController()->falling();
+        return {};
+    });
+    methods.registerMethod("entityCanJump", [&](EntityPtr entity) -> Maybe<bool> {
+        if (auto actor = as<ActorEntity>(entity))
+            return actor->movementController()->canJump();
+        return {};
+    });
+    methods.registerMethod("entityJumping", [&](EntityPtr entity) -> Maybe<bool> {
+        if (auto actor = as<ActorEntity>(entity))
+            return actor->movementController()->jumping();
+        return {};
+    });
+    methods.registerMethod("entityGroundMovement", [&](EntityPtr entity) -> Maybe<bool> {
+        if (auto actor = as<ActorEntity>(entity))
+            return actor->movementController()->groundMovement();
+        return {};
+    });
+    methods.registerMethod("entityLiquidMovement", [&](EntityPtr entity) -> Maybe<bool> {
+        if (auto actor = as<ActorEntity>(entity))
+            return actor->movementController()->liquidMovement();
+        return {};
+    }); 
+
+    // tool user entity methods
+    methods.registerMethod("handItem",
     [&](EntityPtr const& entity, String const& handName) -> Maybe<String> {
         ToolHand toolHand;
         if (handName == "primary") {
@@ -238,9 +469,9 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
         }
 
         return {};
-  });
-  
-  methods.registerMethod("handItemDescriptor",
+    });
+
+    methods.registerMethod("handItemDescriptor",
     [&](EntityPtr const& entity, String const& handName) -> Json {
         ToolHand toolHand;
         if (handName == "primary") {
@@ -258,18 +489,18 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
         }
 
         return Json();
-  });
-  
-  methods.registerMethod("aimPosition",
+    });
+
+    methods.registerMethod("aimPosition",
     [&](EntityPtr const& entity) -> Maybe<Vec2F> {
         if (auto toolUser = as<ToolUserEntity>(entity))
             return toolUser->aimPosition();
         return {};
-  });
-  
-  
-  // humanoid entity methods
-  methods.registerMethod("species",
+    });
+
+
+    // humanoid entity methods
+    methods.registerMethod("species",
     [&](EntityPtr const& entity) -> Maybe<String> {
         if (auto player = as<Player>(entity)) {
             return player->species();
@@ -278,9 +509,9 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
         } else {
             return {};
         }
-  });
-  
-  methods.registerMethod("gender",
+    });
+
+    methods.registerMethod("gender",
     [&](EntityPtr const& entity) -> Maybe<String> {
         if (auto player = as<Player>(entity)) {
             return GenderNames.getRight(player->gender());
@@ -289,36 +520,36 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
         } else {
             return {};
         }
-  });
-  
-  // player methods
-  methods.registerMethod("currency",
+    });
+
+    // player methods
+    methods.registerMethod("currency",
     [&](EntityPtr const& entity, String const& currencyType) -> Maybe<uint64_t> {
         if (auto player = as<Player>(entity)) {
             return player->currency(currencyType);
         }
         return {};
-  });
-  
-  methods.registerMethod("hasCountOfItem",
+    });
+
+    methods.registerMethod("hasCountOfItem",
     [&](EntityPtr const& entity, Json descriptor, Maybe<bool> exactMatch) -> Maybe<uint64_t> {
         if (auto player = as<Player>(entity)) {
             return player->inventory()->hasCountOfItem(ItemDescriptor(descriptor), exactMatch.value(false));
         }
         return {};
-  });
-  
-  // loungeable entity methods
-  methods.registerMethod("loungingEntities",
+    });
+
+    // loungeable entity methods
+    methods.registerMethod("loungingEntities",
     [&](EntityPtr const& entity, Maybe<size_t> anchorIndex) -> Maybe<List<EntityId>> {
         if (!entity->inWorld())
             return {};
         if (auto loungeable = as<LoungeableEntity>(entity))
             return loungeable->entitiesLoungingIn(anchorIndex.value()).values();
         return {};
-  });
-  
-  methods.registerMethod("loungeableOccupied",
+    });
+
+    methods.registerMethod("loungeableOccupied",
     [&](EntityPtr const& entity, Maybe<size_t> anchorIndex) -> Maybe<bool> {
         if (!entity->inWorld())
             return {};
@@ -327,45 +558,45 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
         if (loungeable && loungeable->anchorCount() > anchor)
             return !loungeable->entitiesLoungingIn(anchor).empty();
         return {};
-  });
-  
-  methods.registerMethod("loungeableAnchorCount",
+    });
+
+    methods.registerMethod("loungeableAnchorCount",
     [&](EntityPtr const& entity) -> Maybe<size_t> {
         if (!entity->inWorld())
             return {};
         if (auto loungeable = as<LoungeableEntity>(entity))
             return loungeable->anchorCount();
         return {};
-  });
-  
-  // object methods
-  methods.registerMethod("objectSpaces",
+    });
+
+    // object methods
+    methods.registerMethod("objectSpaces",
     [&](EntityPtr const& entity) -> List<Vec2I> {
         if (auto tileEntity = as<TileEntity>(entity))
             return tileEntity->spaces();
         return {};
-  });
-  
-  // farmables
-  methods.registerMethod("farmableStage",
+    });
+
+    // farmables
+    methods.registerMethod("farmableStage",
     [&](EntityPtr const& entity) -> Maybe<int> {
         if (auto farmable = as<FarmableObject>(entity)) {
             return farmable->stage();
         }
 
         return {};
-  });
-  
-  // containers
-  methods.registerMethod("containerSize",
+    });
+
+    // containers
+    methods.registerMethod("containerSize",
     [&](EntityPtr const& entity) -> Maybe<int> {
         if (auto container = as<ContainerObject>(entity))
             return container->containerSize();
 
         return {};
-  });
-  
-  methods.registerMethod("containerClose",
+    });
+
+    methods.registerMethod("containerClose",
     [&](EntityPtr const& entity) -> bool {
         if (auto container = as<ContainerObject>(entity)) {
             container->containerClose();
@@ -373,9 +604,9 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
         }
 
         return false;
-  });
-  
-  methods.registerMethod("containerOpen",
+    });
+
+    methods.registerMethod("containerOpen",
     [&](EntityPtr const& entity) -> bool {
         if (auto container = as<ContainerObject>(entity)) {
             container->containerOpen();
@@ -383,9 +614,9 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
         }
 
         return false;
-  });
-  
-  methods.registerMethod("containerItems",
+    });
+
+    methods.registerMethod("containerItems",
     [&](EntityPtr const& entity) -> Json {
         if (auto container = as<ContainerObject>(entity)) {
             JsonArray res;
@@ -396,9 +627,9 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
         }
 
         return Json();
-  });
-  
-  methods.registerMethod("containerItemAt",
+    });
+
+    methods.registerMethod("containerItemAt",
     [&](EntityPtr const& entity, size_t offset) -> Json {
         if (auto container = as<ContainerObject>(entity)) {
             auto itemDb = Root::singleton().itemDatabase();
@@ -409,9 +640,9 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
         }
 
         return Json();
-  });
-  
-  methods.registerMethod("containerConsume",
+    });
+
+    methods.registerMethod("containerConsume",
     [&](EntityPtr const& entity, Json const& items) -> Maybe<bool> {
         if (auto container = as<ContainerObject>(entity)) {
             auto toConsume = ItemDescriptor(items);
@@ -419,9 +650,9 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
         }
 
         return {};
-  });
-  
-  methods.registerMethod("containerConsumeAt",
+    });
+
+    methods.registerMethod("containerConsumeAt",
     [&](EntityPtr const& entity, size_t offset, int count) -> Maybe<bool> {
         if (auto container = as<ContainerObject>(entity)) {
             if (offset < container->containerSize()) {
@@ -430,9 +661,9 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
         }
 
         return {};
-  });
-  
-  methods.registerMethod("containerAvailable",
+    });
+
+    methods.registerMethod("containerAvailable",
     [&](EntityPtr const& entity, Json const& items) -> Maybe<size_t> {
         if (auto container = as<ContainerObject>(entity)) {
             auto itemBag = container->itemBag();
@@ -441,9 +672,9 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
         }
 
         return {};
-  });
-  
-  methods.registerMethod("containerTakeAll",
+    });
+
+    methods.registerMethod("containerTakeAll",
     [&](EntityPtr const& entity) -> Json {
         auto itemDb = Root::singleton().itemDatabase();
         if (auto container = as<ContainerObject>(entity)) {
@@ -456,9 +687,9 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
         }
 
         return Json();
-  });
-  
-  methods.registerMethod("containerTakeAt",
+    });
+
+    methods.registerMethod("containerTakeAt",
     [&](EntityPtr const& entity, size_t offset) -> Json {
         if (auto container = as<ContainerObject>(entity)) {
             auto itemDb = Root::singleton().itemDatabase();
@@ -469,9 +700,9 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
         }
 
         return Json();
-  });
-  
-  methods.registerMethod("containerTakeNumItemsAt",
+    });
+
+    methods.registerMethod("containerTakeNumItemsAt",
     [&](EntityPtr const& entity, size_t offset, int const& count) -> Json {
         if (auto container = as<ContainerObject>(entity)) {
             auto itemDb = Root::singleton().itemDatabase();
@@ -482,9 +713,9 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
         }
 
         return Json();
-  });
-  
-  methods.registerMethod("containerItemsCanFit",
+    });
+
+    methods.registerMethod("containerItemsCanFit",
     [&](EntityPtr const& entity, Json const& items) -> Maybe<size_t> {
         if (auto container = as<ContainerObject>(entity)) {
             auto itemDb = Root::singleton().itemDatabase();
@@ -494,9 +725,9 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
         }
 
         return {};
-  });
-  
-  methods.registerMethod("containerItemsFitWhere",
+    });
+
+    methods.registerMethod("containerItemsFitWhere",
     [&](EntityPtr const& entity, Json const& items) -> Json {
         if (auto container = as<ContainerObject>(entity)) {
             auto itemDb = Root::singleton().itemDatabase();
@@ -510,9 +741,9 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
         }
 
         return Json();
-  });
-  
-  methods.registerMethod("containerAddItems",
+    });
+
+    methods.registerMethod("containerAddItems",
     [&](EntityPtr const& entity, Json const& items) -> Json {
         if (auto container = as<ContainerObject>(entity)) {
             auto itemDb = Root::singleton().itemDatabase();
@@ -522,9 +753,9 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
         }
 
         return items;
-  });
-  
-  methods.registerMethod("containerStackItems",
+    });
+
+    methods.registerMethod("containerStackItems",
     [&](EntityPtr const& entity, Json const& items) -> Json {
         if (auto container = as<ContainerObject>(entity)) {
             auto itemDb = Root::singleton().itemDatabase();
@@ -534,9 +765,9 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
         }
 
         return items;
-  });
-  
-  methods.registerMethod("containerPutItemsAt",
+    });
+
+    methods.registerMethod("containerPutItemsAt",
     [&](EntityPtr const& entity, Json const& items, size_t offset) -> Json {
         if (auto container = as<ContainerObject>(entity)) {
             auto itemDb = Root::singleton().itemDatabase();
@@ -548,9 +779,9 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
         }
 
         return items;
-  });
-  
-  methods.registerMethod("containerSwapItems",
+    });
+
+    methods.registerMethod("containerSwapItems",
     [&](EntityPtr const& entity, Json const& items, size_t offset, bool noCombine) -> Json {
         if (auto container = as<ContainerObject>(entity)) {
             auto itemDb = Root::singleton().itemDatabase();
@@ -562,9 +793,9 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
         }
 
         return items;
-  });
-  
-  methods.registerMethod("containerItemApply",
+    });
+
+    methods.registerMethod("containerItemApply",
     [&](EntityPtr const& entity, Json const& items, size_t offset) -> Json {
         if (auto container = as<ContainerObject>(entity)) {
             auto itemDb = Root::singleton().itemDatabase();
@@ -576,9 +807,9 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
         }
 
         return items;
-  });
-  
-  return methods;
+    });
+
+    return methods;
 } 
 
 }
