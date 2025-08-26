@@ -84,6 +84,10 @@ void Stagehand::readNetState(ByteArray data, float interpolationTime, NetCompati
   m_netGroup.readNetState(data, interpolationTime, rules);
 }
 
+String Stagehand::name() const {
+  return typeName();
+}
+
 void Stagehand::update(float dt, uint64_t) {
   if (!inWorld())
     return;

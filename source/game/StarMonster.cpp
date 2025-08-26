@@ -226,6 +226,10 @@ void Monster::disableInterpolation() {
   m_netGroup.disableNetInterpolation();
 }
 
+String Monster::name() const {
+  return m_name.get().orMaybe(m_monsterVariant.shortDescription).value("");
+}
+
 String Monster::description() const {
   return m_monsterVariant.description.value("Some indescribable horror");
 }
@@ -788,10 +792,6 @@ List<Drawable> Monster::portrait(PortraitMode) const {
     Drawable::scaleAll(drawables, TilePixels);
     return drawables;
   }
-}
-
-String Monster::name() const {
-  return m_name.get().orMaybe(m_monsterVariant.shortDescription).value("");
 }
 
 String Monster::typeName() const {

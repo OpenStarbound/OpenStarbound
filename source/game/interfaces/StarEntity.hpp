@@ -97,6 +97,7 @@ public:
   // Should this entity only exist on the master side?
   virtual bool masterOnly() const;
 
+  virtual String name() const;
   virtual String description() const;
 
   // Gameplay affecting light sources (separate from light sources added during

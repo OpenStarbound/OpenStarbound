@@ -51,6 +51,7 @@ public:
   virtual pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
   virtual void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
+  virtual String name() const override;
   virtual String description() const override;
 
   virtual bool inspectable() const override;
@@ -88,7 +89,6 @@ public:
 
   virtual List<Drawable> cursorHintDrawables() const;
 
-  String name() const;
   String shortDescription() const;
   String category() const;
 
