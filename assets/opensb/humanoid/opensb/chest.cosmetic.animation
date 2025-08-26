@@ -1,0 +1,245 @@
+{
+	"globalTagDefaults" : {
+		"chestCosmetic<slot>Frameset" : "",
+		"chestCosmetic<slot>Directives" : "",
+
+		"frontSleeve<slot>Frameset" : "",
+		"backSleeve<slot>Frameset" : ""
+
+	},
+
+	"animatedParts" : {
+		"parts" : {
+			"chestCosmetic<slot>": {
+				"properties": {
+					"centered": true,
+					"zLevel": 10.4567,
+					"anchorPart" : "chestCosmetic",
+					"processingDirectives" : "<chestCosmetic<slot>Directives>"
+				},
+				"partStates": {
+					"body": {
+						"idle": { "properties": { "image": "<chestCosmetic<slot>Frameset>:<personalityIdle>", "transformationGroups" : [] } },
+						"duck": { "properties": { "image": "<chestCosmetic<slot>Frameset>:<body_state>", "transformationGroups" : [] } },
+						"sit": { "properties": { "image": "<chestCosmetic<slot>Frameset>:chest.1" } },
+						"lay" : "sit",
+						"walk" : "sit",
+						"run": { "properties": { "image": "<chestCosmetic<slot>Frameset>:run" } },
+						"runbackwards": "run",
+						"jump" : "sit",
+						"fall" : "sit",
+						"swim" : { "properties": { "image": "<chestCosmetic<slot>Frameset>:swim" } },
+						"swimIdle" : "swim"
+					},
+					"bodyDance" : {
+						"dance": { "properties": { "image": "<chestCosmetic<slot>Frameset>:<bodyDanceFrame>" } }
+					},
+					"portraitMode" : {
+						"head": { "properties": { } },
+						"bust": { "properties": { "image": "<chestCosmetic<slot>Frameset>:<personalityIdle><portraitMask>", "transformationGroups" : [] } }
+					}
+				}
+			},
+
+			"backSleeve<slot>": {
+				"properties": {
+					"centered": true,
+					"zLevel": 3.4567,
+					"anchorPart": "backSleeve",
+					"processingDirectives" : "<chestCosmetic<slot>Directives>"
+				},
+				"partStates": {
+					"body": {
+						"idle": { "properties": { "image": "<backSleeve<slot>Frameset>:<personalityArmIdle>" } },
+						"duck": { "properties": { "image": "<backSleeve<slot>Frameset>:<body_state>.<body_frame>" } },
+						"sit" : "duck",
+						"lay" : "duck",
+						"walk": { "properties": { "image": "<backSleeve<slot>Frameset>:<body_state>.<armSequenceFrame>" } },
+						"run": { "properties": { "image": "<backSleeve<slot>Frameset>:run.<armSequenceFrame>" } },
+						"runbackwards" : "run",
+						"jump" : "duck",
+						"fall" : "duck",
+						"swim" : "duck",
+						"swimIdle" : "duck"
+					},
+					"backArm" : {
+						"rotation": { "properties": {
+							"image": "<backSleeve<slot>Frameset>:<backArmFrame>"
+						} }
+					},
+					"backArmDance" : {
+						"dance": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+
+						"idle.1": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+						"idle.2": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+						"idle.3": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+						"idle.4": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+						"idle.5": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+
+						"walk.1": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+						"walk.2": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+						"walk.3": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+						"walk.4": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+						"walk.5": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+						"walk.6": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+						"walk.7": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+						"walk.8": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+
+						"run.1": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+						"run.2": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+						"run.3": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+						"run.4": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+						"run.5": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+						"run.6": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+						"run.7": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+						"run.8": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+
+						"hidden.1": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+
+						"jump.1": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+						"jump.2": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+						"jump.3": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+						"jump.4": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+
+						"fall.1": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+						"fall.2": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+						"fall.3": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+						"fall.4": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+
+						"swimIdle.1": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+						"swimIdle.2": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+
+						"swim.1": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+						"swim.2": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+						"swim.3": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+						"swim.4": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+						"swim.5": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+						"swim.6": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+						"swim.7": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+
+						"sit.1": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+						"lay.1": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+
+						"idleMelee": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+						"duckMelee": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+
+						// doubt they'll see use but you never know
+						"climb.1": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+						"climb.2": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+						"climb.3": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+						"climb.4": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+						"climb.5": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+						"climb.6": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+						"climb.7": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } },
+						"climb.8": { "properties": { "image": "<backSleeve<slot>Frameset>:<backArmDanceFrame>" } }
+					},
+					"portraitMode" : {
+						"head": { "properties": {} },
+						"bust": { "properties": { "image": "<backSleeve<slot>Frameset>:<personalityArmIdle><portraitMask>" } }
+					}
+				}
+			},
+
+			"frontSleeve<slot>": {
+				"properties": {
+					"centered": true,
+					"zLevel": 17.4567,
+					"anchorPart": "frontSleeve",
+					"processingDirectives" : "<chestCosmetic<slot>Directives>"
+				},
+				"partStates": {
+					"body": {
+						"idle": { "properties": { "image": "<frontSleeve<slot>Frameset>:<personalityArmIdle>" } },
+						"duck": { "properties": { "image": "<frontSleeve<slot>Frameset>:<body_state>.<body_frame>" } },
+						"sit" : "duck",
+						"lay" : "duck",
+						"walk": { "properties": { "image": "<frontSleeve<slot>Frameset>:<body_state>.<armSequenceFrame>" } },
+						"run": { "properties": { "image": "<frontSleeve<slot>Frameset>:run.<armSequenceFrame>" } },
+						"runbackwards": "run",
+						"jump" : "duck",
+						"fall" : "duck",
+						"swim" : "duck",
+						"swimIdle" : "duck"
+					},
+					"frontArm" : {
+						"rotation": { "properties": {
+							"image": "<frontSleeve<slot>Frameset>:<frontArmFrame>"
+						} }
+					},
+					"frontArmDance" : {
+						// I could just use aliases here but I suspect some people might want to put frame property things into the dances
+						"dance": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+
+						"idle.1": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+						"idle.2": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+						"idle.3": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+						"idle.4": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+						"idle.5": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+
+						"walk.1": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+						"walk.2": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+						"walk.3": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+						"walk.4": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+						"walk.5": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+						"walk.6": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+						"walk.7": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+						"walk.8": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+
+						"run.1": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+						"run.2": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+						"run.3": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+						"run.4": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+						"run.5": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+						"run.6": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+						"run.7": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+						"run.8": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+
+						"hidden.1": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+
+						"jump.1": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+						"jump.2": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+						"jump.3": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+						"jump.4": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+
+						"fall.1": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+						"fall.2": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+						"fall.3": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+						"fall.4": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+
+						"swimIdle.1": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+						"swimIdle.2": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+
+						"swim.1": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+						"swim.2": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+						"swim.3": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+						"swim.4": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+						"swim.5": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+						"swim.6": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+						"swim.7": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+
+						"sit.1": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+						"lay.1": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+
+						"idleMelee": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+						"duckMelee": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+
+						// doubt they'll see use but you never know
+						"climb.1": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+						"climb.2": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+						"climb.3": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+						"climb.4": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+						"climb.5": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+						"climb.6": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+						"climb.7": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } },
+						"climb.8": { "properties": { "image": "<frontSleeve<slot>Frameset>:<frontArmDanceFrame>" } }
+					},
+					"portraitMode" : {
+						"head": { "properties": {} },
+						"bust": { "properties": { "image": "<frontSleeve<slot>Frameset>:<personalityArmIdle><portraitMask>" } }
+					}
+				}
+			}
+		}
+	},
+	"transformationGroups" : {}
+}

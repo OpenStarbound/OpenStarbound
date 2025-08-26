@@ -44,6 +44,14 @@ function build(identity, humanoidParameters, humanoidConfig, npcHumanoidConfig)
 			transformationGroups = {}
 		}
 	end
+	-- there are 20 cosmetic slots and we need to support any cosmetic being in any slot
+	-- in postload we generated 20 duplicates of each cosmetic's animation but with the <slot> tag changed and z levels changed to respect the slot
+	for _, path in ipairs(humanoidConfig.cosmeticAnimations or root.assetJson("/humanoid.config:cosmeticAnimations")) do
+		for i = 1, 20 do
+			table.insert(humanoidConfig.animation.includes, path .. "." .. i)
+		end
+	end
+
 	for k, v in pairs(identity) do
 		if type(v) == "string" then
 			humanoidConfig.animation.globalTagDefaults[k] = v
@@ -123,18 +131,18 @@ function build(identity, humanoidParameters, humanoidConfig, npcHumanoidConfig)
 		{ "reset" }, { "translate", { 0, humanoidConfig.runFallOffset / tilePixels } }
 	}
 	if humanoidConfig.bodyFullbright then
-		setPath(parts, { "body", "properties", "fullbright" }, true)
-		setPath(parts, { "frontArm", "properties", "fullbright" }, true)
-		setPath(parts, { "backArm", "properties", "fullbright" }, true)
-		setPath(parts, { "facialHair", "properties", "fullbright" }, true)
-		setPath(parts, { "facialMask", "properties", "fullbright" }, true)
-		setPath(parts, { "hair", "properties", "fullbright" }, true)
-		setPath(parts, { "head", "properties", "fullbright" }, true)
-		setPath(parts, { "emote", "properties", "fullbright" }, true)
+		for _, v in ipairs(humanoidConfig.bodyFullbrightParts or root.assetJson("/humanoid.config:bodyFullbrightParts")) do
+			setPath(parts, { v, "properties", "fullbright" }, true)
+		end
 	end
 	setPath(parts, { "anchor", "properties", "offset" }, vecTilePixels(humanoidConfig.globalOffset))
 	setPath(parts, { "head", "properties", "mouthOffset" }, vecTilePixels(humanoidConfig.mouthOffset))
 	setPath(parts, { "body", "properties", "feetOffset" }, vecTilePixels(humanoidConfig.feetOffset))
+
+	setPath(parts, { "headCosmetic", "properties", "armorOffset" }, vecTilePixels(humanoidConfig.headArmorOffset))
+	setPath(parts, { "chestCosmetic", "properties", "armorOffset" }, vecTilePixels(humanoidConfig.chestArmorOffset))
+	setPath(parts, { "legsCosmetic", "properties", "armorOffset" }, vecTilePixels(humanoidConfig.legsArmorOffset))
+	setPath(parts, { "backCosmetic", "properties", "armorOffset" }, vecTilePixels(humanoidConfig.backArmorOffset))
 
 	setPath(parts, { "frontArm", "properties", "rotationCenter" }, vecTilePixels(humanoidConfig.frontArmRotationCenter))
 	setPath(parts, { "backArm", "properties", "rotationCenter" }, vecTilePixels({
@@ -153,50 +161,6 @@ function build(identity, humanoidParameters, humanoidConfig, npcHumanoidConfig)
 	stateTypes.body.states.runbackwards = stateTypes.body.states.run
 	setPath(humanoidConfig, { "stateAnimationsBackwards", "walk", "body" }, { "walk", false, true })
 	setPath(humanoidConfig, { "stateAnimationsBackwards", "run", "body" }, { "runbackwards", false, true })
-
-
-	-- there are 20 cosmetic slots and we need to support any cosmetic being in any slot, and these should all be the same aside from zlevel, so just generate that
-	for i = 1, 20 do
-		local cosmeticParts = sb.parseJson(sb.printJson(root.assetJson(humanoidConfig.cosmeticParts or
-			"/humanoid/opensb/humanoidCosmetics.config")):gsub("%<slot%>", tostring(i)))
-		for partName, part in pairs(cosmeticParts) do
-			fixSlotProperties(part.properties, i)
-			fixSlotFrameProperties(part.frameProperties, i)
-			for stateTypeName, stateType in pairs(part.partStates or {}) do
-				for stateName, state in pairs(stateType) do
-					if type(state) == "table" then
-						fixSlotProperties(state.properties, i)
-						fixSlotFrameProperties(state.frameProperties, i)
-					end
-				end
-			end
-			parts[partName] = part
-		end
-		humanoidConfig.animation.globalTagDefaults["headCosmetic" .. tostring(i) .. "Frameset"] = ""
-		humanoidConfig.animation.globalTagDefaults["headCosmetic" .. tostring(i) .. "Directives"] = ""
-		humanoidConfig.animation.globalTagDefaults["chestCosmetic" .. tostring(i) .. "Frameset"] = ""
-		humanoidConfig.animation.globalTagDefaults["chestCosmetic" .. tostring(i) .. "Directives"] = ""
-		humanoidConfig.animation.globalTagDefaults["legsCosmetic" .. tostring(i) .. "Frameset"] = ""
-		humanoidConfig.animation.globalTagDefaults["legsCosmetic" .. tostring(i) .. "Directives"] = ""
-		humanoidConfig.animation.globalTagDefaults["backCosmetic" .. tostring(i) .. "Frameset"] = ""
-		humanoidConfig.animation.globalTagDefaults["backCosmetic" .. tostring(i) .. "Directives"] = ""
-
-		humanoidConfig.animation.globalTagDefaults["frontSleeve" .. tostring(i) .. "Frameset"] = ""
-		humanoidConfig.animation.globalTagDefaults["backSleeve" .. tostring(i) .. "Frameset"] = ""
-
-		humanoidConfig.animation.transformationGroups["backCosmetic" .. tostring(i) .. "Rotation"] = { interpolated = true }
-	end
-
-	-- remove parts that aren't used so the game isn't fussing about incomplete image paths in the log
-	if identity.facialHairGroup == "" then
-		parts.facialHair = false
-	end
-	if identity.facialMaskGroup == "" then
-		parts.facialMask = false
-	end
-	if identity.hairGroup == "" then
-		parts.hair = false
-	end
 
 	return humanoidConfig
 end
@@ -220,44 +184,4 @@ end
 
 function vecTilePixels(vec)
 	return { vec[1] / tilePixels, vec[2] / tilePixels }
-end
-
-function fixSlotProperties(properties, slot)
-	if not properties then return end
-	if properties.zLevel then
-		properties.zLevel = properties.zLevel + slot / 100
-	end
-	if properties.flippedZLevel then
-		properties.flippedZLevel = properties.flippedZLevel + slot / 100
-	end
-	if properties.zLevelSlot then
-		properties.zLevel = properties.zLevelSlot[slot]
-	end
-	if properties.flippedZLevelSlot then
-		properties.flippedZLevel = properties.flippedZLevelSlot[slot]
-	end
-end
-
-function fixSlotFrameProperties(frameProperties, slot)
-	if not frameProperties then return end
-	if frameProperties.zLevel then
-		for i, v in ipairs(frameProperties.zLevel) do
-			frameProperties.zLevel[i] = v + slot / 100
-		end
-	end
-	if frameProperties.flippedZLevel then
-		for i, v in ipairs(frameProperties.flippedZLevel) do
-			frameProperties.flippedZLevel[i] = v + slot / 100
-		end
-	end
-	if frameProperties.zLevelSlot then
-		for i, v in ipairs(frameProperties.zLevelSlot) do
-			frameProperties.zLevel[i] = v[slot]
-		end
-	end
-	if frameProperties.flippedZLevelSlot then
-		for i, v in ipairs(frameProperties.flippedZLevelSlot) do
-			frameProperties.flippedZLevel[i] = v[slot]
-		end
-	end
 end
