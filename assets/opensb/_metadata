@@ -12,7 +12,7 @@
     "postLoad" : ["/scripts/opensb/assets/postload.lua"],
 
     "itemError" : ["/scripts/opensb/errorHandling/item.lua"],
-    "objectError" : ["/scripts/opensb/errorHandling/object.lua"],
+    "objectError" : ["/scripts/opensb/errorHandling/object.lua"]
     // "npcError" : ["/scripts/opensb/errorHandling/npc.lua"],
     // "playerError" : ["/scripts/opensb/errorHandling/player.lua"],
     // "monsterError" : ["/scripts/opensb/errorHandling/monster.lua"],
