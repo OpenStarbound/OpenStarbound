@@ -1,5 +1,4 @@
 -- invoked when an Object loaded from disk fails to deserialize properly
--- return null if script did not handle the error
 
 -- we're catching any object error and converting them to generic objects
 function error(diskStore, e)

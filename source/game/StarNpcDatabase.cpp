@@ -367,7 +367,7 @@ NpcPtr NpcDatabase::diskLoadNpc(Json const& diskStore) const {
       context.setCallbacks("root", LuaBindings::makeRootCallbacks());
       context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
       Json returnedDiskStore = context.invokePath<Json>("error", newDiskStore, strf("{}", outputException(lastException, false)));
-      if (!returnedDiskStore.isNull()) {
+      if (returnedDiskStore != newDiskStore) {
         newDiskStore = returnedDiskStore;
         try {
           NpcVariant npcVariant = readNpcVariantFromJson(newDiskStore.get("npcVariant"));
