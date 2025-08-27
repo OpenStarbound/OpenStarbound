@@ -3,6 +3,8 @@
 #include "StarPlayer.hpp"
 #include "StarAssets.hpp"
 #include "StarRoot.hpp"
+#include "StarRootLuaBindings.hpp"
+#include "StarUtilityLuaBindings.hpp"
 
 namespace Star {
 
@@ -48,8 +50,17 @@ PlayerConfig::PlayerConfig(JsonObject const& cfg) {
     genericScriptContexts[p.first] = p.second.toString();
 }
 
-PlayerFactory::PlayerFactory() {
-  m_config = make_shared<PlayerConfig>(Root::singleton().assets()->json("/player.config").toObject());
+PlayerFactory::PlayerFactory() : m_luaRoot(make_shared<LuaRoot>()) {
+  auto assets = Root::singleton().assets();
+  m_config = make_shared<PlayerConfig>(assets->json("/player.config").toObject());
+
+  for (auto& path : assets->assetSources()) {
+    auto metadata = assets->assetSourceMetadata(path);
+    if (auto scripts = metadata.maybe("errorHandlers"))
+      if (auto rebuildScripts = scripts.value().optArray("player"))
+        m_rebuildScripts.insertAllAt(0, jsonToStringList(rebuildScripts.value()));
+  }
+
 }
 
 PlayerPtr PlayerFactory::create() const {
@@ -57,7 +68,28 @@ PlayerPtr PlayerFactory::create() const {
 }
 
 PlayerPtr PlayerFactory::diskLoadPlayer(Json const& diskStore) const {
-  return make_shared<Player>(m_config, diskStore);
+  try {
+    return make_shared<Player>(m_config, diskStore);
+  } catch (std::exception const& e) {
+    auto lastException = e;
+    Json newDiskStore = diskStore;
+    for (auto script : m_rebuildScripts) {
+      RecursiveMutexLocker locker(m_luaMutex);
+      auto context = m_luaRoot->createContext(script);
+      context.setCallbacks("root", LuaBindings::makeRootCallbacks());
+      context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
+      Json returnedDiskStore = context.invokePath<Json>("error", newDiskStore, strf("{}", outputException(lastException, false)));
+      if (returnedDiskStore != newDiskStore) {
+        newDiskStore = returnedDiskStore;
+        try {
+          return make_shared<Player>(m_config, newDiskStore);
+        } catch (std::exception const& e) {
+          lastException = e;
+        }
+      }
+    }
+    throw lastException;
+  }
 }
 
 PlayerPtr PlayerFactory::netLoadPlayer(ByteArray const& netStore, NetCompatibilityRules rules) const {

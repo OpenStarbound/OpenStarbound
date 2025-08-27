@@ -11,6 +11,7 @@
 #include "StarStatusTypes.hpp"
 #include "StarEntityRendering.hpp"
 #include "StarTileEntity.hpp"
+#include "StarLuaRoot.hpp"
 
 namespace Star {
 
@@ -216,6 +217,10 @@ private:
   StringMap<String> m_paths;
   mutable Mutex m_cacheMutex;
   mutable HashTtlCache<String, ObjectConfigPtr> m_configCache;
+
+  mutable RecursiveMutex m_luaMutex;
+  LuaRootPtr m_luaRoot;
+  List<String> m_rebuildScripts;
 };
 
 }

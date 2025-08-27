@@ -3,6 +3,7 @@
 #include "StarItemDescriptor.hpp"
 #include "StarHumanoid.hpp"
 #include "StarEntitySplash.hpp"
+#include "StarLuaRoot.hpp"
 
 namespace Star {
 
@@ -64,6 +65,10 @@ public:
 
 private:
   PlayerConfigPtr m_config;
+
+  mutable RecursiveMutex m_luaMutex;
+  LuaRootPtr m_luaRoot;
+  List<String> m_rebuildScripts;
 };
 
 }
