@@ -9,13 +9,14 @@
   "link" : "https://github.com/OpenStarbound/OpenStarbound",
   "scripts" : {
     //"onLoad" : ["/scripts/opensb/assets/onload.lua"],
-    "postLoad" : ["/scripts/opensb/assets/postload.lua"],
-
-    "itemError" : ["/scripts/opensb/errorHandling/item.lua"],
-    "objectError" : ["/scripts/opensb/errorHandling/object.lua"]
-    // "npcError" : ["/scripts/opensb/errorHandling/npc.lua"],
-    // "playerError" : ["/scripts/opensb/errorHandling/player.lua"],
-    // "monsterError" : ["/scripts/opensb/errorHandling/monster.lua"],
-    // "vehicleError" : ["/scripts/opensb/errorHandling/vehicle.lua"]
+    "postLoad" : ["/scripts/opensb/assets/postload.lua"]
+  },
+  "errorHandlers" : {
+    "item" : ["/scripts/opensb/errorHandling/item.lua"],
+    "object" : ["/scripts/opensb/errorHandling/object.lua"]
+    // "npc" : ["/scripts/opensb/errorHandling/npc.lua"],
+    // "player" : ["/scripts/opensb/errorHandling/player.lua"],
+    // "monster" : ["/scripts/opensb/errorHandling/monster.lua"],
+    // "vehicle" : ["/scripts/opensb/errorHandling/vehicle.lua"]
   }
 }

@@ -333,8 +333,8 @@ ObjectDatabase::ObjectDatabase() : m_luaRoot(make_shared<LuaRoot>()) {
 
   for (auto& path : assets->assetSources()) {
     auto metadata = assets->assetSourceMetadata(path);
-    if (auto scripts = metadata.maybe("scripts"))
-      if (auto rebuildScripts = scripts.value().optArray("objectError"))
+    if (auto scripts = metadata.maybe("errorHandlers"))
+      if (auto rebuildScripts = scripts.value().optArray("object"))
         m_rebuildScripts.insertAllAt(0, jsonToStringList(rebuildScripts.value()));
   }
 }
