@@ -380,7 +380,7 @@ void AnimatedPartSet::freshenActivePart(Part& part) {
 
         if (auto transforms = activePart.properties.ptr("transforms")) {
           auto mat = processTransforms(activePart.animationAffineTransform(), transforms->toArray(), activePart.properties);
-          if (activePart.properties.maybe("interpolated").value(false)) {
+          if (activePart.properties.maybe("interpolated").value(false).toBool()) {
             if (auto nextTransforms = activePart.nextProperties.ptr("transforms")) {
               auto nextMat = processTransforms(activePart.animationAffineTransform(), nextTransforms->toArray(), activePart.nextProperties);
               activePart.setAnimationAffineTransform(mat, nextMat, stateType.activeState.frameProgress);
