@@ -4,6 +4,9 @@
   "priority" : -9999,
   "friendlyName" : "OpenStarbound Assets",
   "requires" : ["base"],
+  "version" : "0.1.14.1",
+  "icon" : "/opensb/modicon.png",
+  "link" : "https://github.com/OpenStarbound/OpenStarbound",
   "scripts" : {
     //"onLoad" : ["/scripts/opensb/assets/onload.lua"],
     "postLoad" : ["/scripts/opensb/assets/postload.lua"]

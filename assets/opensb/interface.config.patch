@@ -31,6 +31,7 @@
   "teamBarNameStyle" : {},
   "cursorTooltip" : { "textStyle" : {} },
 
+  "tooltip" : { "previewArmorWith" : "player" },
   "debugTextStyle" : {
     "font" : "iosevka-semibold",
     "fontSize" : 7,

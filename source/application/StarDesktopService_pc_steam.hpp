@@ -6,7 +6,7 @@ namespace Star {
 
 STAR_CLASS(SteamDesktopService);
 
-class SteamDesktopService : public DesktopService {
+class SteamDesktopService final : public DesktopService {
 public:
   SteamDesktopService(PcPlatformServicesStatePtr state);
 

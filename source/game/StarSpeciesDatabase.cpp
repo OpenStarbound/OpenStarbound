@@ -6,6 +6,9 @@
 #include "StarAssets.hpp"
 #include "StarRoot.hpp"
 #include "StarImageProcessing.hpp"
+#include "StarRootLuaBindings.hpp"
+#include "StarConfigLuaBindings.hpp"
+#include "StarUtilityLuaBindings.hpp"
 
 namespace Star {
 
@@ -24,7 +27,7 @@ SpeciesOption::SpeciesOption()
     undyColorDirectives(),
     hairColorDirectives() {}
 
-SpeciesDatabase::SpeciesDatabase() {
+SpeciesDatabase::SpeciesDatabase() : m_luaRoot(make_shared<LuaRoot>()) {
   auto assets = Root::singleton().assets();
 
   auto& files = assets->scanExtension("species");
@@ -49,11 +52,170 @@ StringMap<SpeciesDefinitionPtr> SpeciesDatabase::allSpecies() const {
   return m_species;
 }
 
+Json SpeciesDatabase::humanoidConfig(HumanoidIdentity identity, JsonObject parameters, Json config) const {
+  auto speciesDef = species(identity.species);
+  if (speciesDef->m_buildScripts.size() > 0) {
+    RecursiveMutexLocker locker(m_luaMutex);
+    auto context = m_luaRoot->createContext(speciesDef->m_buildScripts);
+    context.setCallbacks("root", LuaBindings::makeRootCallbacks());
+    context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
+
+    // NPCs can have their own custom humanoidConfig that don't align with their species
+    // however we need to make sure it only gets passed into this if its different from base
+    // so in script we know when we have a unique case we should probably ignore or not
+    return context.invokePath<Json>("build", identity.toJson(), parameters, speciesDef->humanoidConfig(), config );
+  } else {
+    if (config.isType(Json::Type::Object))
+      return config;
+    // assuming most people would just use it to merge over default humanoid config params
+    return jsonMerge(speciesDef->humanoidConfig(), parameters);
+  }
+}
+
+CharacterCreationResult SpeciesDatabase::createHumanoid(
+  String name,
+  String speciesChoice,
+  size_t genderChoice,
+  size_t bodyColorChoice,
+  size_t alty,
+  size_t hairChoice,
+  size_t heady,
+  size_t shirtChoice,
+  size_t shirtColor,
+  size_t pantsChoice,
+  size_t pantsColor,
+  size_t personality,
+  LuaVariadic<LuaValue> ext
+) const {
+  CharacterCreationResult result;
+
+  auto speciesDefinition = species(speciesChoice);
+  if (speciesDefinition->m_creationScripts.size() > 0) {
+    RecursiveMutexLocker locker(m_luaMutex);
+    auto context = m_luaRoot->createContext(speciesDefinition->m_creationScripts);
+    context.setCallbacks("root", LuaBindings::makeRootCallbacks());
+    context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
+    Json identityReturn;
+    luaTie(identityReturn, result.humanoidParameters, result.armor) = context.invokePath<LuaTupleReturn<Json, JsonObject, JsonObject>>(
+      "create",
+      name,
+      speciesChoice,
+      genderChoice,
+      bodyColorChoice,
+      alty,
+      hairChoice,
+      heady,
+      shirtChoice,
+      shirtColor,
+      pantsChoice,
+      pantsColor,
+      personality,
+      ext);
+    result.identity = HumanoidIdentity(identityReturn);
+  } else {
+    auto species = speciesDefinition->options();
+    auto gender = species.genderOptions.wrap(genderChoice);
+
+    auto bodyColor = species.bodyColorDirectives.wrap(bodyColorChoice);
+
+    String altColor;
+
+    if (species.altOptionAsUndyColor) {
+      // undyColor
+      altColor = species.undyColorDirectives.wrap(alty);
+    }
+
+    auto hair = gender.hairOptions.wrap(hairChoice);
+    String hairColor = bodyColor;
+    if (species.headOptionAsHairColor && species.altOptionAsHairColor) {
+      hairColor = species.hairColorDirectives.wrap(heady);
+      hairColor += species.undyColorDirectives.wrap(alty);
+    } else if (species.headOptionAsHairColor) {
+      hairColor = species.hairColorDirectives.wrap(heady);
+    }
+
+    if (species.hairColorAsBodySubColor)
+      bodyColor += hairColor;
+
+    String facialHair;
+    String facialHairGroup;
+    String facialHairDirective;
+    if (species.headOptionAsFacialhair) {
+      facialHair = gender.facialHairOptions.wrap(heady);
+      facialHairGroup = gender.facialHairGroup;
+      facialHairDirective = hairColor;
+    }
+
+    String facialMask;
+    String facialMaskGroup;
+    String facialMaskDirective;
+    if (species.altOptionAsFacialMask) {
+      facialMask = gender.facialMaskOptions.wrap(alty);
+      facialMaskGroup = gender.facialMaskGroup;
+      facialMaskDirective = "";
+    }
+    if (species.bodyColorAsFacialMaskSubColor)
+      facialMaskDirective += bodyColor;
+    if (species.altColorAsFacialMaskSubColor)
+      facialMaskDirective += altColor;
+
+    auto shirt = gender.shirtOptions.wrap(shirtChoice);
+    auto pants = gender.pantsOptions.wrap(pantsChoice);
+
+    auto personalityResult = speciesDefinition->personalities().wrap(personality);
+
+    result.identity.name = name;
+    result.identity.species = species.species;
+    result.identity.bodyDirectives = bodyColor + altColor;
+    result.identity.gender = GenderNames.getLeft(gender.name);
+    result.identity.hairGroup = gender.hairGroup;
+    result.identity.hairType = hair;
+    result.identity.hairDirectives = hairColor;
+    result.identity.emoteDirectives = bodyColor + altColor;
+    result.identity.facialHairGroup = facialHairGroup;
+    result.identity.facialHairType = facialHair;
+    result.identity.facialHairDirectives = facialHairDirective;
+    result.identity.facialMaskGroup = facialMaskGroup;
+    result.identity.facialMaskType = facialMask;
+    result.identity.facialMaskDirectives = facialMaskDirective;
+    result.identity.personality = personalityResult;
+
+    result.armor.set(EquipmentSlotNames.getRight(EquipmentSlot::Chest), ItemDescriptor(shirt, 1, JsonObject{{"colorIndex", shirtColor}}).toJson());
+    result.armor.set(EquipmentSlotNames.getRight(EquipmentSlot::Legs), ItemDescriptor(pants, 1, JsonObject{{"colorIndex", pantsColor}}).toJson());
+
+    result.humanoidParameters.set("choices", JsonArray({genderChoice, bodyColorChoice, alty, hairChoice, heady, shirtChoice, shirtColor, pantsChoice, pantsColor, personality}));
+  }
+
+  return result;
+}
+
+CharacterCreationResult SpeciesDatabase::generateHumanoid(String speciesChoice, int64_t seed, Maybe<Gender> gender) const {
+  RandomSource randSource(seed);
+  auto speciesDefinition = species(speciesChoice);
+  auto chosenGender = gender.value(randSource.randb() ? Gender::Male : Gender::Female);
+  return createHumanoid(
+    Root::singleton().nameGenerator()->generateName(speciesDefinition->nameGen(chosenGender), randSource),
+    speciesChoice,
+    (unsigned)chosenGender,
+    randSource.randu32(),
+    randSource.randu32(),
+    randSource.randu32(),
+    randSource.randu32(),
+    randSource.randu32(),
+    randSource.randu32(),
+    randSource.randu32(),
+    randSource.randu32(),
+    randSource.randu32()
+  );
+}
+
 SpeciesDefinition::SpeciesDefinition(Json const& config) {
   m_config = config;
   m_kind = config.getString("kind");
   m_humanoidConfig = config.getString("humanoidConfig", "/humanoid.config");
   m_humanoidOverrides = config.getObject("humanoidOverrides", JsonObject());
+  m_buildScripts = jsonToStringList(config.getArray("buildScripts", JsonArray()));
+  m_creationScripts = jsonToStringList(config.getArray("createScripts", JsonArray()));
 
   Json tooltip = config.get("charCreationTooltip");
 
@@ -66,6 +228,9 @@ SpeciesDefinition::SpeciesDefinition(Json const& config) {
   m_skull = config.getString("skull", "/humanoid/any/dead.png");
 
   m_ouchNoises = jsonToStringList(config.get("ouchNoises"));
+
+  for (Json v : config.getArray("defaultItems", JsonArray()))
+    m_defaultItems.append(ItemDescriptor(v));
 
   for (Json v : config.get("defaultBlueprints", JsonObject()).getArray("tier1", JsonArray()))
     m_defaultBlueprints.append(ItemDescriptor(v));
@@ -89,9 +254,9 @@ SpeciesDefinition::SpeciesDefinition(Json const& config) {
   species.hairColorAsBodySubColor = config.getBool("hairColorAsBodySubColor", false);
   species.bodyColorAsFacialMaskSubColor = config.getBool("bodyColorAsFacialMaskSubColor", false);
   species.altColorAsFacialMaskSubColor = config.getBool("altColorAsFacialMaskSubColor", false);
-  species.bodyColorDirectives = colorDirectivesFromConfig(config.getArray("bodyColor"));
-  species.undyColorDirectives = colorDirectivesFromConfig(config.getArray("undyColor"));
-  species.hairColorDirectives = colorDirectivesFromConfig(config.getArray("hairColor"));
+  species.bodyColorDirectives = colorDirectivesFromConfig(config.getArray("bodyColor", JsonArray({""})));
+  species.undyColorDirectives = colorDirectivesFromConfig(config.getArray("undyColor", JsonArray({""})));
+  species.hairColorDirectives = colorDirectivesFromConfig(config.getArray("hairColor", JsonArray({""})));
   for (auto genderData : config.getArray("genders", JsonArray())) {
     SpeciesGenderOption gender;
     gender.name = genderData.getString("name", "");
@@ -99,18 +264,22 @@ SpeciesDefinition::SpeciesDefinition(Json const& config) {
     gender.image = genderData.getString("image", "");
     gender.characterImage = genderData.getString("characterImage", "");
 
-    gender.hairOptions = jsonToStringList(genderData.get("hair"));
-    gender.hairGroup = genderData.getString("hairGroup", "hair");
-    gender.shirtOptions = jsonToStringList(genderData.get("shirt"));
-    gender.pantsOptions = jsonToStringList(genderData.get("pants"));
-    gender.facialHairGroup = genderData.getString("facialHairGroup");
-    gender.facialHairOptions = jsonToStringList(genderData.get("facialHair"));
-    gender.facialMaskGroup = genderData.getString("facialMaskGroup");
-    gender.facialMaskOptions = jsonToStringList(genderData.get("facialMask"));
+    gender.hairOptions = jsonToStringList(genderData.get("hair", config.get("hair", JsonArray({""}))));
+    gender.hairGroup = genderData.getString("hairGroup", config.getString("HairGroup", "hair"));
+    gender.shirtOptions = jsonToStringList(genderData.get("shirt", config.get("shirt", JsonArray({""}))));
+    gender.pantsOptions = jsonToStringList(genderData.get("pants", config.get("pants", JsonArray({""}))));
+    gender.facialHairGroup = genderData.getString("facialHairGroup", config.getString("facialHairGroup", ""));
+    gender.facialHairOptions = jsonToStringList(genderData.get("facialHair", config.get("facialHair", JsonArray({""}))));
+    gender.facialMaskGroup = genderData.getString("facialMaskGroup", config.getString("facialMaskGroup",""));
+    gender.facialMaskOptions = jsonToStringList(genderData.get("facialMask", config.get("facialMask", JsonArray({""}))));
 
     species.genderOptions.append(gender);
   }
   m_options = species;
+}
+
+Json SpeciesDefinition::config() const {
+  return m_config;
 }
 
 String SpeciesDefinition::kind() const {
@@ -164,75 +333,6 @@ List<PersistentStatusEffect> SpeciesDefinition::statusEffects() const {
 
 String SpeciesDefinition::effectDirectives() const {
   return m_effectDirectives;
-}
-
-void SpeciesDefinition::generateHumanoid(HumanoidIdentity& identity, int64_t seed) {
-  RandomSource randSource(seed);
-
-  identity.species = m_kind;
-  identity.gender = randSource.randb() ? Gender::Male : Gender::Female;
-  identity.name = Root::singleton().nameGenerator()->generateName(nameGen(identity.gender), randSource);
-
-  auto gender = m_options.genderOptions[(unsigned)identity.gender];
-  auto bodyColor = randSource.randFrom(m_options.bodyColorDirectives);
-
-  String altColor;
-
-  size_t altOpt = randSource.randu32();
-  size_t headOpt = randSource.randu32();
-  size_t hairOpt = randSource.randu32();
-
-  if (m_options.altOptionAsUndyColor) {
-    // undyColor
-    altColor = m_options.undyColorDirectives.wrap(altOpt);
-  }
-
-  auto hair = gender.hairOptions.wrap(hairOpt);
-  String hairColor = bodyColor;
-  auto hairGroup = gender.hairGroup;
-  if (m_options.headOptionAsHairColor && m_options.altOptionAsHairColor) {
-    hairColor = m_options.hairColorDirectives.wrap(headOpt);
-    hairColor += m_options.undyColorDirectives.wrap(altOpt);
-  } else if (m_options.headOptionAsHairColor) {
-    hairColor = m_options.hairColorDirectives.wrap(headOpt);
-  }
-
-  if (m_options.hairColorAsBodySubColor)
-    bodyColor += hairColor;
-
-  String facialHair;
-  String facialHairGroup;
-  String facialHairDirective;
-  if (m_options.headOptionAsFacialhair) {
-    facialHair = gender.facialHairOptions.wrap(headOpt);
-    facialHairGroup = gender.facialHairGroup;
-    facialHairDirective = hairColor;
-  }
-
-  String facialMask;
-  String facialMaskGroup;
-  String facialMaskDirective;
-  if (m_options.altOptionAsFacialMask) {
-    facialMask = gender.facialMaskOptions.wrap(altOpt);
-    facialMaskGroup = gender.facialMaskGroup;
-    facialMaskDirective = "";
-  }
-  if (m_options.bodyColorAsFacialMaskSubColor)
-    facialMaskDirective += bodyColor;
-  if (m_options.altColorAsFacialMaskSubColor)
-    facialMaskDirective += altColor;
-
-  identity.hairGroup = hairGroup;
-  identity.hairType = hair;
-  identity.hairDirectives = hairColor;
-  identity.bodyDirectives = bodyColor + altColor;
-  identity.emoteDirectives = bodyColor + altColor;
-  identity.facialHairGroup = facialHairGroup;
-  identity.facialHairType = facialHair;
-  identity.facialHairDirectives = facialHairDirective;
-  identity.facialMaskGroup = facialMaskGroup;
-  identity.facialMaskType = facialMask;
-  identity.facialMaskDirectives = facialMaskDirective;
 }
 
 }

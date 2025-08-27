@@ -519,35 +519,10 @@ Vec2F ActorMovementController::position() const {
   return MovementController::position();
 }
 
-float ActorMovementController::xPosition() const {
-  return position()[0];
-}
-
-float ActorMovementController::yPosition() const {
-  return position()[1];
-}
-
 float ActorMovementController::rotation() const {
   if (m_entityAnchor)
     return m_entityAnchor->angle;
   return MovementController::rotation();
-}
-
-PolyF ActorMovementController::collisionBody() const {
-  auto collisionBody = MovementController::collisionPoly();
-  collisionBody.rotate(rotation());
-  collisionBody.translate(position());
-  return collisionBody;
-}
-
-RectF ActorMovementController::localBoundBox() const {
-  auto poly = MovementController::collisionPoly();
-  poly.rotate(rotation());
-  return poly.boundBox();
-}
-
-RectF ActorMovementController::collisionBoundBox() const {
-  return collisionBody().boundBox();
 }
 
 bool ActorMovementController::walking() const {
@@ -1098,15 +1073,15 @@ void ActorMovementController::doSetAnchorState(Maybe<EntityAnchorState> anchorSt
     if (!entityAnchor)
       throw ActorMovementControllerException::format("Anchor position {} is disabled ActorMovementController::setAnchorState", anchorState->positionIndex);
   }
-
-  if (!entityAnchor && m_entityAnchor && m_entityAnchor->exitBottomPosition) {
-    auto boundBox = MovementController::localBoundBox();
-    Vec2F bottomMid = {boundBox.center()[0], boundBox.yMin()};
-    setPosition(*m_entityAnchor->exitBottomPosition - bottomMid);
-  }
-
+  auto prevAnchor = m_entityAnchor;
   m_anchorState.set(anchorState);
   m_entityAnchor = std::move(entityAnchor);
+
+  if (!entityAnchor && prevAnchor && prevAnchor->exitBottomPosition) {
+    auto boundBox = MovementController::localBoundBox();
+    Vec2F bottomMid = {boundBox.center()[0], boundBox.yMin()};
+    setPosition(*prevAnchor->exitBottomPosition - bottomMid);
+  }
 
   if (m_entityAnchor)
     setPosition(m_entityAnchor->position);

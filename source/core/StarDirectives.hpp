@@ -73,6 +73,8 @@ public:
 
   bool operator==(Directives const& other) const;
   bool operator==(String const& string) const;
+  bool operator!=(Directives const& other) const;
+  bool operator!=(String const& string) const;
 
   friend DataStream& operator>>(DataStream& ds, Directives& directives);
   friend DataStream& operator<<(DataStream& ds, Directives const& directives);

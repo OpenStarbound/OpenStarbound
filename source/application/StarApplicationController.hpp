@@ -6,6 +6,7 @@
 #include "StarUserGeneratedContentService.hpp"
 #include "StarDesktopService.hpp"
 #include "StarImage.hpp"
+#include "StarRect.hpp"
 
 namespace Star {
 
@@ -44,19 +45,21 @@ public:
   virtual void setCursorHardware(bool cursorHardware) = 0;
   virtual bool setCursorImage(const String& id, const ImageConstPtr& image, unsigned scale, const Vec2I& offset) = 0;
   virtual void setAcceptingTextInput(bool acceptingTextInput) = 0;
-
+  virtual void setTextArea(Maybe<pair<RectI, int>> area = {}) = 0;
 
 
   virtual AudioFormat enableAudio() = 0;
   virtual void disableAudio() = 0;
-  
-  typedef void (*AudioCallback)(void* userdata, uint8_t* stream, int len);
-  
-  virtual bool openAudioInputDevice(const char* name, int freq, int channels, void* userdata, AudioCallback callback) = 0;
+
+  typedef std::function<void(uint8_t*, int)> AudioCallback;
+  virtual bool openAudioInputDevice(uint32_t deviceId, int freq, int channels, AudioCallback callback) = 0;
   virtual bool closeAudioInputDevice() = 0;
 
   virtual bool hasClipboard() = 0;
-  virtual void setClipboard(String text) = 0;
+  virtual bool setClipboard(String text) = 0;
+  virtual bool setClipboardData(StringMap<ByteArray>) = 0;
+  virtual bool setClipboardImage(Image const& image, ByteArray* png = {}, String const* path = nullptr) = 0;
+  virtual bool setClipboardFile(String const& path) = 0;
   virtual Maybe<String> getClipboard() = 0;
 
   virtual bool isFocused() const = 0;

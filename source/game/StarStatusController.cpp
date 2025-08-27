@@ -805,6 +805,10 @@ void StatusController::uninitUniqueEffectScript(UniqueEffectInstance& uniqueEffe
 LuaCallbacks StatusController::makeUniqueEffectCallbacks(UniqueEffectInstance& uniqueEffect) {
   LuaCallbacks callbacks;
 
+  callbacks.registerCallback("name", [this, &uniqueEffect]() {
+    return m_uniqueEffectMetadata.getNetElement(uniqueEffect.metadataId)->effect;
+  });
+
   callbacks.registerCallback("duration", [this, &uniqueEffect]() {
       return m_uniqueEffectMetadata.getNetElement(uniqueEffect.metadataId)->duration;
     });
@@ -813,6 +817,12 @@ LuaCallbacks StatusController::makeUniqueEffectCallbacks(UniqueEffectInstance& u
       if (metadata->duration)
         *metadata->duration += duration;
     });
+  callbacks.registerCallback("setDuration", [this, &uniqueEffect](float duration) {
+    auto metadata = m_uniqueEffectMetadata.getNetElement(uniqueEffect.metadataId);
+    if (metadata->duration)
+      *metadata->duration = duration;
+  });
+
   callbacks.registerCallback("expire", [this, &uniqueEffect]() {
       auto metadata = m_uniqueEffectMetadata.getNetElement(uniqueEffect.metadataId);
       if (metadata->duration)

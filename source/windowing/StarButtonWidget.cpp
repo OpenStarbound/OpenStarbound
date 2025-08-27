@@ -3,6 +3,7 @@
 #include "StarJsonExtra.hpp"
 #include "StarRandom.hpp"
 #include "StarAssets.hpp"
+#include "StarInput.hpp"
 
 namespace Star {
 
@@ -47,9 +48,12 @@ ButtonWidget::~ButtonWidget() {
 }
 
 void ButtonWidget::renderImpl() {
-  if (isPressed() && sustainCallbackOnDownHold())
-    if (m_callback)
+  if (isPressed() && sustainCallbackOnDownHold()) {
+    if (m_callback) {
+      auto unlocker = Input::singleton().unlockClipboard();
       m_callback(this);
+    }
+  }
 
   Vec2F position = Vec2F(screenPosition());
   Vec2F textPosition = position + Vec2F(m_textOffset);
@@ -224,6 +228,7 @@ void ButtonWidget::setPressed(bool pressed) {
     if (m_pressed) {
       check();
       if (m_callback) {
+        auto unlocker = Input::singleton().unlockClipboard();
         m_callback(this);
       }
     }
@@ -373,8 +378,8 @@ void ButtonWidget::setInvisible(bool invisible) {
 }
 
 RectI ButtonWidget::getScissorRect() const {
-  if (m_pressed) {
-    return RectI::withSize(screenPosition(), size() + m_pressedOffset);
+  if (m_pressed || (m_checked && !m_hasCheckedImages)) {
+    return RectI::withSize(screenPosition() + m_pressedOffset, size());
   }
   return RectI::withSize(screenPosition(), size());
 }

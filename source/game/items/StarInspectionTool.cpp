@@ -17,12 +17,21 @@ InspectionTool::InspectionTool(Json const& config, String const& directory, Json
 
   m_showHighlights = instanceValue("showHighlights").toBool();
   m_allowScanning = instanceValue("allowScanning").toBool();
-
+  m_requireLineOfSight = instanceValue("requireLineOfSight", true) == Json(true);
   m_inspectionAngles = jsonToVec2F(instanceValue("inspectionAngles"));
   m_inspectionRanges = jsonToVec2F(instanceValue("inspectionRanges"));
   m_ambientInspectionRadius = instanceValue("ambientInspectionRadius").toFloat();
   m_fullInspectionSpaces = instanceValue("fullInspectionSpaces").toUInt();
   m_minimumInspectionLevel = instanceValue("minimumInspectionLevel").toFloat();
+  if (auto typeFilter = instanceValue("inspectableTypeFilter"); typeFilter.isType(Json::Type::Array)) {
+    m_inspectableTypeFilter.emplace();
+    for (auto& str : typeFilter.toArray()) {
+      if (!str.isType(Json::Type::String))
+        continue;
+      if (auto entityType = EntityTypeNames.leftPtr(str.toString()))
+        m_inspectableTypeFilter->add(*entityType);
+    }
+  }
 
   m_lastFireMode = FireMode::None;
 }
@@ -77,6 +86,9 @@ float InspectionTool::inspectionLevel(InspectableEntityPtr const& inspectable) c
   if (!initialized() || !inspectable->inspectable())
     return 0;
 
+  if (m_inspectableTypeFilter && !m_inspectableTypeFilter->contains(inspectable->entityType()))
+    return 0;
+
   if (auto tileEntity = as<TileEntity>(inspectable)) {
     float totalLevel = 0;
 
@@ -106,6 +118,8 @@ float InspectionTool::pointInspectionLevel(Vec2F const& position) const {
 }
 
 bool InspectionTool::hasLineOfSight(Vec2I const& position, Set<Vec2I> const& targetSpaces) const {
+  if (!m_requireLineOfSight)
+    return true;
   auto collisions = world()->collidingTilesAlongLine(centerOfTile(m_currentPosition), centerOfTile(position));
   for (auto collision : collisions) {
     if (collision != position && !targetSpaces.contains(collision))
@@ -121,6 +135,8 @@ InspectionTool::InspectionResult InspectionTool::inspect(Vec2F const& position) 
   // if there's a candidate InspectableEntity at the position, make sure that entity's total inspection level
   // is above the minimum threshold
   auto check = [&](InspectableEntityPtr entity) -> Maybe<InspectionTool::InspectionResult> {
+    if (m_inspectableTypeFilter && !m_inspectableTypeFilter->contains(entity->entityType()))
+      return {};
     if (entity->inspectable() && inspectionLevel(entity) >= m_minimumInspectionLevel) {
       if (m_allowScanning)
         return { { entity->inspectionDescription(species).value(), entity->inspectionLogName(), entity->entityId() } };

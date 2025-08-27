@@ -27,8 +27,8 @@ Animation::Animation(Json config, String const& directory) {
   // to the end.
   m_appendFrame = !m_base.contains("<index>");
   m_frameNumber = config.getInt("frameNumber", 1);
-  m_animationCycle = config.getDouble("animationCycle", 1.0);
-  m_animationTime = m_animationCycle * config.getDouble("loops", 1.0);
+  m_animationCycle = config.getFloat("animationCycle", 1.0);
+  m_animationTime = m_animationCycle * config.getFloat("loops", 1.0);
   m_angle = config.getFloat("angle", 0.0f);
   m_offset = jsonToVec2F(config.get("offset", JsonArray{0.0f, 0.0f}));
   m_centered = config.getBool("centered", true);

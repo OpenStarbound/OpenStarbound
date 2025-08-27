@@ -107,8 +107,6 @@ public:
 
   Vec4F toHsva() const;
 
-  String toHex() const;
-
   float hue() const;
   float saturation() const;
   float value() const;
@@ -122,6 +120,8 @@ public:
 
   // Reduce the color toward black by the given amount, from 0.0 to 1.0.
   void fade(float value);
+
+  String toHex() const;
 
   void convertToLinear();
   void convertToSRGB();

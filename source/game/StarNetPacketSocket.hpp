@@ -153,6 +153,7 @@ private:
   PacketStatCollector m_outgoingStats;
   ByteArray m_outputBuffer;
   ByteArray m_inputBuffer;
+  ByteArray m_compressedOutputBuffer;
 };
 
 // Wraps a P2PSocket into a PacketSocket

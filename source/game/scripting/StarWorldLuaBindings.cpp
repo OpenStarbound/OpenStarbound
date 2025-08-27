@@ -360,6 +360,7 @@ namespace LuaBindings {
       callbacks.registerCallback("mainPlayer", [clientWorld]() { return clientWorld->clientState().playerId(); });
       callbacks.registerCallback("isClient", []() { return true;  });
       callbacks.registerCallback("isServer", []() { return false; });
+      callbacks.registerCallbackWithSignature<void, EntityId>("resendEntity", bind(ClientWorldCallbacks::resendEntity, clientWorld, _1));
       callbacks.registerCallbackWithSignature<RectI>("clientWindow", bind(ClientWorldCallbacks::clientWindow, clientWorld));
       callbacks.registerCallback("players", [clientWorld]() {
         List<EntityId> playerIds;
@@ -498,6 +499,11 @@ namespace LuaBindings {
           else
             return {};
         });
+    
+    callbacks.registerCallbackWithSignature<EntityPtr, EntityId>("entity", [world](EntityId entityId) -> EntityPtr {
+      return world->entity(entityId);
+    });
+    
     callbacks.registerCallbackWithSignature<bool, int>("entityExists", bind(WorldEntityCallbacks::entityExists, world, _1));
     callbacks.registerCallbackWithSignature<bool, int, int>("entityCanDamage", bind(WorldEntityCallbacks::entityCanDamage, world, _1, _2));
     callbacks.registerCallbackWithSignature<Json, EntityId>("entityDamageTeam", bind(WorldEntityCallbacks::entityDamageTeam, world, _1));
@@ -512,6 +518,7 @@ namespace LuaBindings {
     callbacks.registerCallbackWithSignature<Maybe<String>, EntityId>("entitySpecies", bind(WorldEntityCallbacks::entitySpecies, world, _1));
     callbacks.registerCallbackWithSignature<Maybe<String>, EntityId>("entityGender", bind(WorldEntityCallbacks::entityGender, world, _1));
     callbacks.registerCallbackWithSignature<Maybe<String>, EntityId>("entityName", bind(WorldEntityCallbacks::entityName, world, _1));
+    callbacks.registerCallbackWithSignature<Maybe<Json>, EntityId>("entityNametag", bind(WorldEntityCallbacks::entityNametag, world, _1));
     callbacks.registerCallbackWithSignature<Maybe<String>, EntityId, Maybe<String>>("entityDescription", bind(WorldEntityCallbacks::entityDescription, world, _1, _2));
     callbacks.registerCallbackWithSignature<LuaNullTermWrapper<Maybe<List<Drawable>>>, EntityId, String>("entityPortrait", bind(WorldEntityCallbacks::entityPortrait, world, _1, _2));
     callbacks.registerCallbackWithSignature<Maybe<String>, EntityId, String>("entityHandItem", bind(WorldEntityCallbacks::entityHandItem, world, _1, _2));
@@ -1108,6 +1115,10 @@ namespace LuaBindings {
     return PlatformerAStar::PathFinder(world, start, end, std::move(actorMovementParameters), std::move(searchParameters));
   }
 
+  void ClientWorldCallbacks::resendEntity(WorldClient* world, EntityId arg1) {
+    return world->resendEntity(arg1);
+  }
+
   RectI ClientWorldCallbacks::clientWindow(WorldClient* world) {
     return world->clientWindow();	
   }
@@ -1431,24 +1442,28 @@ namespace LuaBindings {
   }
 
   Maybe<String> WorldEntityCallbacks::entityName(World* world, EntityId entityId) {
-    auto entity = world->entity(entityId);
-
-    if (auto portraitEntity = as<PortraitEntity>(entity)) {
-      return portraitEntity->name();
-    } else if (auto objectEntity = as<Object>(entity)) {
-      return objectEntity->name();
-    } else if (auto itemDropEntity = as<ItemDrop>(entity)) {
-      if (itemDropEntity->item())
-        return itemDropEntity->item()->name();
-    } else if (auto vehicleEntity = as<Vehicle>(entity)) {
-      return vehicleEntity->name();
-    } else if (auto stagehandEntity = as<Stagehand>(entity)) {
-      return stagehandEntity->typeName();
-    } else if (auto projectileEntity = as<Projectile>(entity)) {
-      return projectileEntity->typeName();
-    }
+    if (auto entity = world->entity(entityId))
+      return entity->name();
 
     return {};
+  }
+
+  Maybe<Json> WorldEntityCallbacks::entityNametag(World* world, EntityId entityId) {
+    auto entity = world->entity(entityId);
+
+    Json result;
+    if (auto nametagEntity = as<NametagEntity>(entity)) {
+      result = JsonObject{
+        {"nametag", nametagEntity->nametag()},
+        {"displayed", nametagEntity->displayNametag()},
+        {"color", jsonFromColor(Color::rgb(nametagEntity->nametagColor()))},
+        {"origin", jsonFromVec2F(nametagEntity->nametagOrigin())},
+      };
+      if (auto status = nametagEntity->statusText())
+        result.set("status", *status);
+    }
+
+    return result;
   }
 
   Maybe<String> WorldEntityCallbacks::entityDescription(World* world, EntityId entityId, Maybe<String> const& species) {

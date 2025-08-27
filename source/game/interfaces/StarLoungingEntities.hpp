@@ -16,7 +16,7 @@ STAR_CLASS(LoungingEntity);
 enum class LoungeOrientation { None, Sit, Lay, Stand };
 extern EnumMap<LoungeOrientation> const LoungeOrientationNames;
 
-enum class LoungeControl { Left, Right, Down, Up, Jump, PrimaryFire, AltFire, Special1, Special2, Special3 };
+enum class LoungeControl { Left, Right, Down, Up, Jump, PrimaryFire, AltFire, Special1, Special2, Special3, Walk };
 extern EnumMap<LoungeControl> const LoungeControlNames;
 
 struct LoungeAnchor : EntityAnchor {

@@ -69,6 +69,7 @@ namespace LuaBindings {
   }
 
   namespace ClientWorldCallbacks {
+    void resendEntity(WorldClient* world, EntityId arg1);
     RectI clientWindow(WorldClient* world);
   }
 
@@ -123,6 +124,7 @@ namespace LuaBindings {
     Maybe<String> entitySpecies(World* world, EntityId entityId);
     Maybe<String> entityGender(World* world, EntityId entityId);
     Maybe<String> entityName(World* world, EntityId entityId);
+    Maybe<Json> entityNametag(World* world, EntityId entityId);
     Maybe<String> entityDescription(World* world, EntityId entityId, Maybe<String> const& species);
     LuaNullTermWrapper<Maybe<List<Drawable>>> entityPortrait(World* world, EntityId entityId, String const& portraitMode);
     Maybe<String> entityHandItem(World* world, EntityId entityId, String const& handName);

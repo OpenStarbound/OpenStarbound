@@ -226,6 +226,10 @@ void Monster::disableInterpolation() {
   m_netGroup.disableNetInterpolation();
 }
 
+String Monster::name() const {
+  return m_name.get().orMaybe(m_monsterVariant.shortDescription).value("");
+}
+
 String Monster::description() const {
   return m_monsterVariant.description.value("Some indescribable horror");
 }
@@ -795,10 +799,6 @@ List<Drawable> Monster::portrait(PortraitMode) const {
   }
 }
 
-String Monster::name() const {
-  return m_name.get().orMaybe(m_monsterVariant.shortDescription).value("");
-}
-
 String Monster::typeName() const {
   return m_monsterVariant.type;
 }
@@ -821,6 +821,10 @@ Vec3B Monster::nametagColor() const {
 
 Vec2F Monster::nametagOrigin() const {
   return mouthPosition(false);
+}
+
+String Monster::nametag() const {
+  return name();
 }
 
 bool Monster::aggressive() const {

@@ -2,6 +2,7 @@
 
 #include "StarActorMovementController.hpp"
 #include "StarLuaGameConverters.hpp"
+#include "StarMovementControllerLuaBindings.hpp"
 
 namespace Star {
 
@@ -67,88 +68,44 @@ template <typename Base>
 void LuaActorMovementComponent<Base>::addActorMovementCallbacks(ActorMovementController* actorMovementController) {
   m_movementController = actorMovementController;
   if (m_movementController) {
-    LuaCallbacks callbacks;
+    // inherit base mcontroller callbacks so that we have some consistency and don't need to have duplicate definitions here
+    LuaCallbacks callbacks = LuaBindings::makeMovementControllerCallbacks(m_movementController);
 
-    callbacks.registerCallback("mass", [this]() {
-        return m_movementController->mass();
+    // replace callbacks that need to set a value here that probably shouldn't be done with virtual function overrides
+    callbacks.removeCallback("setVelocity");
+    callbacks.registerCallback("setVelocity", [this](Vec2F const& vel) {
+      m_resetPathMove = true;
+      m_movementController->setVelocity(vel);
+    });
+    callbacks.removeCallback("setXVelocity");
+    callbacks.registerCallback("setXVelocity", [this](float xVel) {
+        m_resetPathMove = true;
+        m_movementController->setXVelocity(xVel);
+      });
+    callbacks.removeCallback("setYVelocity");
+    callbacks.registerCallback("setYVelocity", [this](float yVel) {
+        m_resetPathMove = true;
+        m_movementController->setYVelocity(yVel);
+      });
+    callbacks.removeCallback("addMomentum");
+    callbacks.registerCallback("addMomentum", [this](Vec2F const& momentum) {
+        m_resetPathMove = true;
+        m_movementController->addMomentum(momentum);
       });
 
-    callbacks.registerCallback("boundBox", [this]() {
-        return m_movementController->collisionPoly().boundBox();
+    callbacks.removeCallback("setRotation");
+    callbacks.registerCallback("setRotation", [this](float rotation) {
+        m_resetPathMove = true;
+        m_movementController->setRotation(rotation);
       });
 
-    callbacks.registerCallback("collisionPoly", [this]() {
-        return m_movementController->collisionPoly();
+    callbacks.removeCallback("setRotation");
+    callbacks.registerCallback("setRotation", [this](float rotation) {
+        m_resetPathMove = true;
+        m_movementController->setRotation(rotation);
       });
 
-    callbacks.registerCallback("collisionBody", [this]() {
-        return m_movementController->collisionBody();
-      });
-
-    callbacks.registerCallback("position", [this]() {
-        return m_movementController->position();
-      });
-
-    callbacks.registerCallback("xPosition", [this]() {
-        return m_movementController->xPosition();
-      });
-
-    callbacks.registerCallback("yPosition", [this]() {
-        return m_movementController->yPosition();
-      });
-
-    callbacks.registerCallback("velocity", [this]() {
-        return m_movementController->velocity();
-      });
-
-    callbacks.registerCallback("xVelocity", [this]() {
-        return m_movementController->xVelocity();
-      });
-
-    callbacks.registerCallback("yVelocity", [this]() {
-        return m_movementController->yVelocity();
-      });
-
-    callbacks.registerCallback("rotation", [this]() {
-        return m_movementController->rotation();
-      });
-
-    callbacks.registerCallback("isColliding", [this]() {
-        return m_movementController->isColliding();
-      });
-
-    callbacks.registerCallback("isNullColliding", [this]() {
-        return m_movementController->isNullColliding();
-      });
-
-    callbacks.registerCallback("isCollisionStuck", [this]() {
-        return m_movementController->isCollisionStuck();
-      });
-
-    callbacks.registerCallback("stickingDirection", [this]() {
-        return m_movementController->stickingDirection();
-      });
-
-    callbacks.registerCallback("liquidPercentage", [this]() {
-        return m_movementController->liquidPercentage();
-      });
-
-    callbacks.registerCallback("liquidId", [this]() {
-        return m_movementController->liquidId();
-      });
-
-    callbacks.registerCallback("onGround", [this]() {
-        return m_movementController->onGround();
-      });
-
-    callbacks.registerCallback("zeroG", [this]() {
-        return m_movementController->zeroG();
-      });
-
-    callbacks.registerCallback("atWorldLimit", [this](bool bottomOnly) {
-        return m_movementController->atWorldLimit(bottomOnly);
-      });
-
+    // The actual actor specific callbacks
     callbacks.registerCallback("setAnchorState", [this](EntityId anchorableEntity, size_t anchorPosition) {
         m_movementController->setAnchorState({anchorableEntity, anchorPosition});
       });
@@ -161,47 +118,6 @@ void LuaActorMovementComponent<Base>::addActorMovementCallbacks(ActorMovementCon
         if (auto anchorState = m_movementController->anchorState())
           return LuaVariadic<LuaValue>{LuaInt(anchorState->entityId), LuaInt(anchorState->positionIndex)};
         return LuaVariadic<LuaValue>();
-      });
-
-    callbacks.registerCallback("setPosition", [this](Vec2F const& pos) {
-        m_movementController->setPosition(pos);
-      });
-
-    callbacks.registerCallback("setXPosition", [this](float xPosition) {
-        m_movementController->setXPosition(xPosition);
-      });
-
-    callbacks.registerCallback("setYPosition", [this](float yPosition) {
-        m_movementController->setYPosition(yPosition);
-      });
-
-    callbacks.registerCallback("translate", [this](Vec2F const& translate) {
-        m_movementController->translate(translate);
-      });
-
-    callbacks.registerCallback("setVelocity", [this](Vec2F const& vel) {
-        m_resetPathMove = true;
-        m_movementController->setVelocity(vel);
-      });
-
-    callbacks.registerCallback("setXVelocity", [this](float xVel) {
-        m_resetPathMove = true;
-        m_movementController->setXVelocity(xVel);
-      });
-
-    callbacks.registerCallback("setYVelocity", [this](float yVel) {
-        m_resetPathMove = true;
-        m_movementController->setYVelocity(yVel);
-      });
-
-    callbacks.registerCallback("addMomentum", [this](Vec2F const& momentum) {
-        m_resetPathMove = true;
-        m_movementController->addMomentum(momentum);
-      });
-
-    callbacks.registerCallback("setRotation", [this](float rotation) {
-        m_resetPathMove = true;
-        m_movementController->setRotation(rotation);
       });
 
     callbacks.registerCallback("baseParameters", [this]() {

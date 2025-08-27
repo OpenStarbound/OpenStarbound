@@ -114,7 +114,7 @@ PlantDrop::PlantDrop(ByteArray const& netStore, NetCompatibilityRules rules) {
   m_spawnedDropEffects = true;
 }
 
-ByteArray PlantDrop::netStore(NetCompatibilityRules rules) {
+ByteArray PlantDrop::netStore(NetCompatibilityRules) {
   DataStreamBuffer ds;
   ds << m_time;
   ds << m_master;

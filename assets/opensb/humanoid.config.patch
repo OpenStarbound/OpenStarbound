@@ -1,0 +1,19 @@
+{
+	"headRotationCenter" : [0,-2],
+
+	"bodyFullbrightParts" : [
+		"body",
+		"frontArm",
+		"backArm",
+		"facialHair",
+		"hair",
+		"head",
+		"emote"
+	],
+	"cosmeticAnimations" : [
+		"/humanoid/opensb/head.cosmetic.animation",
+		"/humanoid/opensb/chest.cosmetic.animation",
+		"/humanoid/opensb/legs.cosmetic.animation",
+		"/humanoid/opensb/back.cosmetic.animation"
+	]
+}

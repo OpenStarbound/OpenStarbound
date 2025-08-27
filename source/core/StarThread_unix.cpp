@@ -1,4 +1,4 @@
-#include "StarThread.hpp"
+﻿#include "StarThread.hpp"
 #include "StarTime.hpp"
 #include "StarLogging.hpp"
 
@@ -22,9 +22,9 @@
 #define MAX_THREAD_NAMELEN 16
 #endif
 
-//#ifndef STAR_SYSTEM_MACOS
-//#define STAR_MUTEX_TIMED
-//#endif
+#ifndef STAR_SYSTEM_MACOS
+#define STAR_RECURSIVE_MUTEX_TIMED
+#endif
 
 namespace Star {
 
@@ -140,10 +140,9 @@ struct MutexImpl {
 #ifdef STAR_MUTEX_TIMED
     timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
-    ts.tv_sec += 60;
+    ts.tv_sec += 15;
     if (pthread_mutex_timedlock(&mutex, &ts) != 0) {
-      Logger::warn("Mutex lock is taking too long, printing stack");
-      printStack("Mutex::lock");
+      printStack("Mutex::lock is TAKING TOO LONG 🎃");
 #else
     {
 #endif
@@ -216,13 +215,12 @@ struct RecursiveMutexImpl {
   }
 
   void lock() {
-#ifdef STAR_MUTEX_TIMED
+#ifdef STAR_RECURSIVE_MUTEX_TIMED
     timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
-    ts.tv_sec += 60;
+    ts.tv_sec += 15;
     if (pthread_mutex_timedlock(&mutex, &ts) != 0) {
-      Logger::warn("RecursiveMutex lock is taking too long, printing stack");
-      printStack("RecursiveMutex::lock");
+      printStack("RecursiveMutex::lock is TAKING TOO LONG 🎃");
 #else
     {
 #endif

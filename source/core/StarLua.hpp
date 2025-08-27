@@ -272,6 +272,8 @@ public:
   template <typename Function>
   void registerCallback(String name, Function&& func);
 
+  bool removeCallback(String name);
+
   template <typename Return, typename... Args, typename Function>
   void registerCallbackWithSignature(String name, Function&& func);
 
@@ -414,6 +416,7 @@ struct LuaNullTermWrapper : T {
 class LuaNullEnforcer {
 public:
   LuaNullEnforcer(LuaEngine& engine);
+  LuaNullEnforcer(LuaNullEnforcer const&) = delete;
   LuaNullEnforcer(LuaNullEnforcer&&);
   ~LuaNullEnforcer();
 private:
@@ -522,7 +525,7 @@ public:
   ByteArray compile(char const* contents, size_t size, char const* name = nullptr);
   ByteArray compile(String const& contents, String const& name = String());
   ByteArray compile(ByteArray const& contents, String const& name = String());
-  
+
   // Returns the debug info of the state.
   lua_Debug const& debugInfo(int level = 1, const char* what = "nSlu");
 
@@ -543,6 +546,7 @@ public:
   template <typename T>
   T luaTo(LuaValue&& v);
 
+  LuaString createString(std::string const& str);
   LuaString createString(String const& str);
   LuaString createString(char const* str);
 
@@ -609,7 +613,7 @@ public:
   LuaNullEnforcer nullTerminate();
   // Disables null-termination enforcement
   void setNullTerminated(bool nullTerminated);
-
+  void addImGui();
 private:
   friend struct LuaDetail::LuaHandle;
   friend class LuaReference;
@@ -858,7 +862,7 @@ struct LuaConverter<String> {
 template <>
 struct LuaConverter<std::string> {
   static LuaValue from(LuaEngine& engine, std::string const& v) {
-    return engine.createString(v.c_str());
+    return engine.createString(v);
   }
 
   static Maybe<std::string> to(LuaEngine& engine, LuaValue v) {

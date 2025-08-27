@@ -12,6 +12,8 @@
 #include "StarCharSelection.hpp"
 #include "StarCharCreation.hpp"
 #include "StarTextBoxWidget.hpp"
+#include "StarCanvasWidget.hpp"
+#include "StarWidgetLuaBindings.hpp"
 #include "StarOptionsMenu.hpp"
 #include "StarModsMenu.hpp"
 #include "StarAssets.hpp"
@@ -81,21 +83,15 @@ void TitleScreen::render() {
 
   m_renderer->flush();
 
-  for (auto& backdropImage : assets->json("/interface/windowconfig/title.config:backdropImages").toArray()) {
-    Vec2F offset = jsonToVec2F(backdropImage.get(0)) * interfaceScale();
-    String image = backdropImage.getString(1);
-    float scale = backdropImage.getFloat(2);
-    Vec2F origin = jsonToVec2F(backdropImage.getArray(3, { 0.5f, 1.0f }));
-    Vec2F imageSize = Vec2F(m_guiContext->textureSize(image)) * interfaceScale() * scale;
-
-    Vec2F position = Vec2F(m_guiContext->windowSize()).piecewiseMultiply(origin);
-    position += offset - imageSize.piecewiseMultiply(origin);
-    RectF screenCoords(position, position + imageSize);
-    m_guiContext->drawQuad(image, screenCoords);
+  if (auto canvas = m_backgroundMenu->findChild("canvas")) {
+    canvas->setPosition(Vec2I());
+    canvas->setSize(Vec2I(m_guiContext->windowInterfaceSize()));
   }
+  m_scriptComponent->invoke("render", JsonObject{{"interfaceScale", interfaceScale()}
+  });
 
   m_renderer->flush();
-
+  m_backgroundMenu->render(RectI(Vec2I(), Vec2I(m_guiContext->windowInterfaceSize())));
   m_paneManager.render();
   renderCursor();
 
@@ -104,7 +100,7 @@ void TitleScreen::render() {
 
 bool TitleScreen::handleInputEvent(InputEvent const& event) {
   if (auto mouseMove = event.ptr<MouseMoveEvent>())
-    m_cursorScreenPos = mouseMove->mousePosition;
+    m_cursorScreenPos = Vec2I(mouseMove->mousePosition);
 
   if (event.is<KeyDownEvent>()) {
     if (GuiContext::singleton().actions(event).contains(InterfaceAction::TitleBack)) {
@@ -122,12 +118,15 @@ void TitleScreen::update(float dt) {
   for (auto p : m_rightAnchoredButtons)
     p.first->setPosition(Vec2I(m_guiContext->windowWidth() / m_guiContext->interfaceScale(), 0) + p.second);
   m_mainMenu->determineSizeFromChildren();
+  m_backgroundMenu->determineSizeFromChildren();
 
   m_skyBackdrop->update(dt);
   m_environmentPainter->update(dt);
 
+  m_backgroundMenu->update(dt);
   m_paneManager.update(dt);
 
+  m_scriptComponent->update(dt);
   if (!finishedState()) {
     if (auto audioSample = m_musicTrackManager.updateAmbient(m_musicTrack, m_skyBackdrop->isDayTime())) {
       m_currentMusicTrack = audioSample;
@@ -140,6 +139,10 @@ void TitleScreen::update(float dt) {
 
 bool TitleScreen::textInputActive() const {
   return m_paneManager.keyboardCapturedForTextInput();
+}
+
+TitleScreen::TitlePaneManager* TitleScreen::paneManager() {
+  return &m_paneManager;
 }
 
 TitleState TitleScreen::currentState() const {
@@ -227,6 +230,7 @@ void TitleScreen::initMainMenu() {
   auto backMenu = make_shared<Pane>();
 
   auto assets = Root::singleton().assets();
+  auto config = assets->json("/interface/windowconfig/title.config");
 
   StringMap<WidgetCallbackFunc> buttonCallbacks;
   buttonCallbacks["singleplayer"] = [=](Widget*) { switchState(TitleState::SinglePlayerSelectCharacter); };
@@ -236,7 +240,7 @@ void TitleScreen::initMainMenu() {
   buttonCallbacks["back"] = [=](Widget*) { back(); };
   buttonCallbacks["mods"] = [=](Widget*) { switchState(TitleState::Mods); };
 
-  for (auto buttonConfig : assets->json("/interface/windowconfig/title.config:mainMenuButtons").toArray()) {
+  for (auto buttonConfig : config.getArray("mainMenuButtons")) {
     String key = buttonConfig.getString("key");
     String image = buttonConfig.getString("button");
     String imageHover = buttonConfig.getString("hover");
@@ -262,9 +266,22 @@ void TitleScreen::initMainMenu() {
   backMenu->determineSizeFromChildren();
   backMenu->setAnchor(PaneAnchor::BottomLeft);
   backMenu->lockPosition();
+  
+  m_backgroundMenu = make_shared<Pane>();
+  m_backgroundMenu->setAnchor(PaneAnchor::BottomLeft);
+  m_backgroundMenu->lockPosition();
+  m_backgroundMenu->addChild("canvas", make_shared<CanvasWidget>());
+  m_backgroundMenu->show();
 
   m_paneManager.registerPane("mainMenu", PaneLayer::Hud, m_mainMenu);
   m_paneManager.registerPane("backMenu", PaneLayer::Hud, backMenu);
+
+  m_scriptComponent = make_shared<ScriptComponent>();
+  m_scriptComponent->setLuaRoot(make_shared<LuaRoot>());
+  m_scriptComponent->addCallbacks("background", LuaBindings::makeWidgetCallbacks(m_backgroundMenu.get()));
+  m_scriptComponent->addCallbacks("widget", LuaBindings::makeWidgetCallbacks(m_mainMenu.get()));
+  m_scriptComponent->setScripts(jsonToStringList(config.getArray("scripts", JsonArray())));
+  m_scriptComponent->init();
 }
 
 void TitleScreen::initCharSelectionMenu() {
@@ -357,7 +374,7 @@ void TitleScreen::initMultiPlayerMenu() {
       {"account", multiPlayerAccount()},
       {"port", multiPlayerPort()},
       //{"password", multiPlayerPassword()},
-      {"forceLegacy",multiPlayerForceLegacy()}
+      {"forceLegacy", multiPlayerForceLegacy()}
     };
 
     auto serverList = m_serverSelectPane->fetchChild<ListWidget>("serverSelectArea.serverList");
@@ -377,7 +394,7 @@ void TitleScreen::initMultiPlayerMenu() {
 
   auto serverList = m_serverSelectPane->fetchChild<ListWidget>("serverSelectArea.serverList");
   
-  serverList->registerMemberCallback("delete", [=](Widget* widget) {
+  serverList->registerMemberCallback("delete", [=](Widget*) {
     if (auto const pos = serverList->selectedItem(); pos != NPos) {
       m_serverList = m_serverList.eraseIndex(pos);
     }
@@ -385,7 +402,7 @@ void TitleScreen::initMultiPlayerMenu() {
     Root::singleton().configuration()->set("serverList", m_serverList);
   });
 
-  serverList->setCallback([=](Widget* widget) {
+  serverList->setCallback([=](Widget*) {
     if (auto selectedItem = serverList->selectedWidget()) {
       if (selectedItem->findChild<ButtonWidget>("delete")->isHovered())
         return;

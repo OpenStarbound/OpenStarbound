@@ -5,6 +5,7 @@
 #include "StarWidgetLuaBindings.hpp"
 #include "StarLuaConverters.hpp"
 #include "StarImageWidget.hpp"
+#include "StarItemDatabase.hpp"
 #include "StarGuiReader.hpp"
 
 namespace Star {
@@ -347,6 +348,10 @@ Maybe<String> Pane::cursorOverride(Vec2I const&) {
   return {};
 }
 
+Maybe<ItemPtr> Pane::shiftItemFromInventory(ItemPtr const&) {
+  return {};
+}
+
 LuaCallbacks Pane::makePaneCallbacks() {
   LuaCallbacks callbacks;
 
@@ -399,29 +404,14 @@ LuaCallbacks Pane::makePaneCallbacks() {
       return LuaBindings::makeWidgetCallbacks(newWidget.get(), reader());
     });
 
-  callbacks.registerCallback("removeWidget", [this](String const& widgetName) -> bool {
-      return this->removeChild(widgetName);
-    });
+  callbacks.registerCallback("removeWidget", [this](String const& widgetName) -> bool
+    { return this->removeChild(widgetName); });
 
-  callbacks.registerCallback("scale", []() -> int {
-      return GuiContext::singleton().interfaceScale();
-    });
-  
-  callbacks.registerCallback("isDisplayed", [this]() {
-    return isDisplayed();
-  });
-
-  callbacks.registerCallback("hasFocus", [this]() {
-    hasFocus();
-  });
-
-  callbacks.registerCallback("show", [this]() {
-    show();
-  });
-
-  callbacks.registerCallback("hide", [this]() {
-    hide();
-  });
+  callbacks.registerCallback("scale", []() -> int { return GuiContext::singleton().interfaceScale(); });
+  callbacks.registerCallback("isDisplayed", [this]() { return isDisplayed(); });
+  callbacks.registerCallback("hasFocus", [this]() { return hasFocus(); });
+  callbacks.registerCallback("show", [this]() { show(); });
+  callbacks.registerCallback("hide", [this]() { hide(); });
 
   return callbacks;
 }

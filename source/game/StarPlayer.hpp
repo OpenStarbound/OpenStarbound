@@ -24,6 +24,7 @@
 #include "StarRadioMessageDatabase.hpp"
 #include "StarLuaComponents.hpp"
 #include "StarLuaActorMovementComponent.hpp"
+#include "StarLuaAnimationComponent.hpp"
 
 namespace Star {
 
@@ -150,6 +151,7 @@ public:
   List<Drawable> portrait(PortraitMode mode) const override;
   bool underwater() const;
 
+  bool shifting() const;
   void setShifting(bool shifting);
   void special(int specialKey);
 
@@ -236,9 +238,9 @@ public:
   // Clear the item swap slot.
   void clearSwap();
 
-  void refreshArmor();
   void refreshItems();
-
+  void refreshArmor();
+  void refreshHumanoid() const;
   // Refresh worn equipment from the inventory
   void refreshEquipment();
 
@@ -317,8 +319,16 @@ public:
   bool displayNametag() const override;
   Vec3B nametagColor() const override;
   Vec2F nametagOrigin() const override;
+  String nametag() const override;
+  void setNametag(Maybe<String> nametag);
 
   void updateIdentity();
+
+  void setHumanoidParameter(String key, Maybe<Json> value);
+  Maybe<Json> getHumanoidParameter(String key);
+  void setHumanoidParameters(JsonObject parameters);
+  JsonObject getHumanoidParameters();
+  void refreshHumanoidParameters();
 
   void setBodyDirectives(String const& directives);
   void setEmoteDirectives(String const& directives);
@@ -347,6 +357,7 @@ public:
   void setImagePath(Maybe<String> const& imagePath);
 
   HumanoidPtr humanoid();
+  HumanoidPtr humanoid() const;
   HumanoidIdentity const& identity() const;
 
   void setIdentity(HumanoidIdentity identity);
@@ -459,7 +470,7 @@ public:
 
   void setInCinematic(bool inCinematic);
 
-  Maybe<pair<Maybe<StringList>, float>> pullPendingAltMusic();
+  Maybe<pair<Maybe<pair<StringList, int>>, float>> pullPendingAltMusic();
 
   Maybe<PlayerWarpRequest> pullPendingWarp();
   void setPendingWarp(String const& action, Maybe<String> const& animation = {}, bool deploy = false);
@@ -498,10 +509,13 @@ public:
 
   // If the secret property exists as a serialized Json string, returns a view to it without deserializing.
   Maybe<StringView> getSecretPropertyView(String const& name) const;
+  String const* getSecretPropertyPtr(String const& name) const;
   // Gets a secret Json property. It will be de-serialized.
   Json getSecretProperty(String const& name, Json defaultValue = Json()) const;
   // Sets a secret Json property. It will be serialized.
   void setSecretProperty(String const& name, Json const& value);
+
+  void setAnimationParameter(String name, Json value);
 
 private:
   typedef LuaMessageHandlingComponent<LuaStorableComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>>> GenericScriptComponent;
@@ -517,6 +531,9 @@ private:
 
   void getNetStates(bool initial);
   void setNetStates();
+  void getNetArmorSecrets();
+  void setNetArmorSecret(EquipmentSlot slot, ArmorItemPtr const& armor, bool visible = true);
+  void setNetArmorSecrets(bool includeEmpty = false);
 
   List<Drawable> drawables() const;
   List<OverheadBar> bars() const;
@@ -527,6 +544,12 @@ private:
 
   HumanoidEmote detectEmotes(String const& chatter);
 
+  NetElementDynamicGroup<NetHumanoid> m_netHumanoid;
+  NetElementData<Maybe<String>> m_deathParticleBurst;
+  LuaAnimationComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptedAnimator;
+  NetElementHashMap<String, Json> m_scriptedAnimationParameters;
+  NetworkedAnimator::DynamicTarget m_humanoidDynamicTarget;
+
   PlayerConfigPtr m_config;
 
   NetElementTopGroup m_netGroup;
@@ -535,7 +558,6 @@ private:
   StatisticsPtr m_statistics;
   QuestManagerPtr m_questManager;
 
-  HumanoidPtr m_humanoid;
   PlayerInventoryPtr m_inventory;
   PlayerBlueprintsPtr m_blueprints;
   PlayerUniverseMapPtr m_universeMap;
@@ -587,6 +609,7 @@ private:
 
   ToolUserPtr m_tools;
   ArmorWearerPtr m_armor;
+  HashMap<EquipmentSlot, uint64_t> m_armorSecretNetVersions;
 
   bool m_useDown;
   bool m_edgeTriggeredUse;
@@ -629,7 +652,7 @@ private:
   List<pair<GameTimer, RadioMessage>> m_delayedRadioMessages;
   Deque<RadioMessage> m_pendingRadioMessages;
   Maybe<Json> m_pendingCinematic;
-  Maybe<pair<Maybe<StringList>, float>> m_pendingAltMusic;
+  Maybe<pair<Maybe<pair<StringList, int>>, float>> m_pendingAltMusic;
   Maybe<PlayerWarpRequest> m_pendingWarp;
   Deque<pair<Json, RpcPromiseKeeper<Json>>> m_pendingConfirmations;
 
@@ -653,6 +676,8 @@ private:
   NetElementFloat m_xAimPositionNetState;
   NetElementFloat m_yAimPositionNetState;
   NetElementData<HumanoidIdentity> m_identityNetState;
+  NetElementEvent m_refreshedHumanoidParameters;
+  JsonObject m_humanoidParameters = JsonObject();
   NetElementData<EntityDamageTeam> m_teamNetState;
   NetElementEvent m_landedNetState;
   NetElementString m_chatMessageNetState;

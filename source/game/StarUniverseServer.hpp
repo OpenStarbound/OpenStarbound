@@ -105,6 +105,10 @@ public:
 
   bool updatePlanetType(CelestialCoordinate const& coordinate, String const& newType, String const& weatherBiome);
 
+  bool setWeather(CelestialCoordinate const& coordinate, String const& weatherName, bool force = false);
+
+  StringList weatherList(CelestialCoordinate const& coordinate);
+
   bool sendPacket(ConnectionId clientId, PacketPtr packet);
 
 protected:
@@ -172,7 +176,6 @@ private:
   // Main lock and clients read lock must be held when calling
   WarpToWorld resolveWarpAction(WarpAction warpAction, ConnectionId clientId, bool deploy) const;
 
-  // Main lock and clients write lock must be held when calling
   void doDisconnection(ConnectionId clientId, String const& reason);
 
   // Clients read lock must be held when calling
@@ -240,6 +243,7 @@ private:
   Map<Vec3I, SystemWorldServerThreadPtr> m_systemWorlds;
   UniverseConnectionServerPtr m_connectionServer;
 
+  RecursiveMutex m_connectionAcceptThreadsMutex;
   List<ThreadFunction<void>> m_connectionAcceptThreads;
   LinkedList<pair<UniverseConnection, int64_t>> m_deadConnections;
 

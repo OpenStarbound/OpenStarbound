@@ -13,6 +13,9 @@
 #include "StarJsonExtra.hpp"
 #include "StarUniverseClient.hpp"
 #include "StarTeamClient.hpp"
+#include "StarPlayerCodexes.hpp"
+#include "StarNetworkedAnimatorLuaBindings.hpp"
+#include "StarCodex.hpp"
 
 namespace Star {
 
@@ -27,6 +30,10 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
       player->diskLoad(saved);
       throw;
     }
+  });
+
+  callbacks.registerCallback("effectsAnimator", [player]() -> LuaCallbacks {
+    return LuaBindings::makeNetworkedAnimatorCallbacks(player->effectsAnimator().get());
   });
 
   callbacks.registerCallback("teamMembers", [player]() -> Maybe<JsonArray> {
@@ -45,6 +52,12 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
 
   callbacks.registerCallback(   "humanoidIdentity", [player]()         { return player->humanoid()->identity().toJson();  });
   callbacks.registerCallback("setHumanoidIdentity", [player](Json const& id) { player->setIdentity(HumanoidIdentity(id)); });
+  callbacks.registerCallback("setHumanoidParameter", [player](String key, Maybe<Json> value) { player->setHumanoidParameter(key, value); });
+  callbacks.registerCallback("getHumanoidParameter", [player](String key) -> Maybe<Json> { return player->getHumanoidParameter(key); });
+  callbacks.registerCallback("setHumanoidParameters", [player](JsonObject parameters) { player->setHumanoidParameters(parameters); });
+  callbacks.registerCallback("getHumanoidParameters", [player]() -> JsonObject { return player->getHumanoidParameters(); });
+  callbacks.registerCallback("refreshHumanoidParameters", [player]() { player->refreshHumanoidParameters(); });
+  callbacks.registerCallback("humanoidConfig", [player](bool withOverrides) -> Json { return player->humanoid()->humanoidConfig(withOverrides); });
 
   callbacks.registerCallback(   "bodyDirectives", [player]()   { return player->identity().bodyDirectives;      });
   callbacks.registerCallback("setBodyDirectives", [player](String const& str) { player->setBodyDirectives(str); });
@@ -65,6 +78,13 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
   callbacks.registerCallback("setFacialHairType",       [player](String const& str) { player->setFacialHairType(str); });
   callbacks.registerCallback(   "facialHairDirectives", [player]()   { return player->identity().facialHairDirectives;      });
   callbacks.registerCallback("setFacialHairDirectives", [player](String const& str) { player->setFacialHairDirectives(str); });
+
+  callbacks.registerCallback(   "facialMaskGroup",      [player]()   { return player->identity().facialMaskGroup;      });
+  callbacks.registerCallback("setFacialMaskGroup",      [player](String const& str) { player->setFacialMaskGroup(str); });
+  callbacks.registerCallback(   "facialMaskType",       [player]()   { return player->identity().facialMaskType;      });
+  callbacks.registerCallback("setFacialMaskType",       [player](String const& str) { player->setFacialMaskType(str); });
+  callbacks.registerCallback(   "facialMaskDirectives", [player]()   { return player->identity().facialMaskDirectives;      });
+  callbacks.registerCallback("setFacialMaskDirectives", [player](String const& str) { player->setFacialMaskDirectives(str); });
 
   callbacks.registerCallback("hair", [player]() {
     HumanoidIdentity const& identity = player->identity();
@@ -117,6 +137,9 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
   callbacks.registerCallback(   "name", [player]()                   { return player->name(); });
   callbacks.registerCallback("setName", [player](String const& name) { player->setName(name); });
 
+  callbacks.registerCallback(   "nametag", [player]()                             { return player->nametag();    });
+  callbacks.registerCallback("setNametag", [player](Maybe<String> const& nametag) { player->setNametag(nametag); });
+
   callbacks.registerCallback(   "species", [player]()                      { return player->species();    });
   callbacks.registerCallback("setSpecies", [player](String const& species) { player->setSpecies(species); });
 
@@ -166,7 +189,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
     auto inventory = player->inventory();
     if (!slot)
       inventory->selectActionBarLocation(SelectedActionBarLocation());
-    else if (auto index = slot.ptr<int>()) { 
+    else if (auto index = slot.ptr<int>()) {
       CustomBarIndex wrapped = (*index - 1) % (unsigned)inventory->customBarIndexes();
       inventory->selectActionBarLocation(SelectedActionBarLocation(wrapped));
     } else {
@@ -174,7 +197,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
       inventory->selectActionBarLocation(SelectedActionBarLocation(item));
     }
   });
-  
+
   callbacks.registerCallback("actionBarSlotLink", [player](int slot, String const& handName) {
     auto inventory = player->inventory();
     CustomBarIndex wrapped = (slot - 1) % (unsigned)inventory->customBarIndexes();
@@ -199,14 +222,14 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
     else
       throw StarException(strf("Unknown tool hand {}", handName));
   });
-  
+
   callbacks.registerCallback("itemBagSize", [player](String const& bagName) -> Maybe<unsigned> {
     if (auto bag = player->inventory()->bagContents(bagName))
       return (unsigned)bag->size();
     else
       return {};
   });
-  
+
   callbacks.registerCallback("itemAllowedInBag", [player](String const& bagName, Json const& item) {
     auto inventory = player->inventory();
     auto itemDatabase = Root::singleton().itemDatabase();
@@ -215,7 +238,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
     else
       return inventory->itemAllowedInBag(itemDatabase->item(ItemDescriptor(item)), bagName);
   });
-  
+
   callbacks.registerCallback("item", [player](InventorySlot const& slot) -> Maybe<Json> {
     if (!player->inventory()->slotValid(slot)) return {};
     if (auto item = player->inventory()->itemsAt(slot))
@@ -223,7 +246,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
     else
       return {};
   });
-  
+
   callbacks.registerCallback("setItem", [player](InventorySlot const& slot, Json const& item) {
     if (!player->inventory()->slotValid(slot)) return;
     auto itemDatabase = Root::singleton().itemDatabase();
@@ -742,6 +765,43 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
   callbacks.registerCallback("removeScannedObject", [player](String const& objectName) {
       player->log()->removeScannedObject(objectName);
     });
+
+  // codex bindings
+  callbacks.registerCallback("isCodexKnown", [player](String const& codexId) -> bool {
+    return player->codexes()->codexKnown(codexId);
+  });
+
+  callbacks.registerCallback("isCodexRead", [player](String const& codexId) -> bool {
+    return player->codexes()->codexRead(codexId);
+  });
+
+  callbacks.registerCallback("markCodexRead", [player](String const& codexId) -> bool {
+    return player->codexes()->markCodexRead(codexId);
+  });
+
+  callbacks.registerCallback("markCodexUnread", [player](String const& codexId) -> bool {
+    return player->codexes()->markCodexUnread(codexId);
+  });
+
+  callbacks.registerCallback("learnCodex", [player](String const& codexId, Maybe<bool> markRead) {
+    player->codexes()->learnCodex(codexId, markRead.value(false));
+  });
+
+  callbacks.registerCallback("getCodexes", [player]() -> Json {
+    return player->codexes()->toJson();
+  });
+
+  callbacks.registerCallback("getNewCodex", [player]() -> Maybe<String> {
+    auto codexPtr = player->codexes()->firstNewCodex();
+    if (codexPtr)
+      return codexPtr->title();
+
+    return {};
+  });
+
+  callbacks.registerCallback("setAnimationParameter", [player](String name, Json value) {
+    player->setAnimationParameter(name, value);
+  });
 
   return callbacks;
 }

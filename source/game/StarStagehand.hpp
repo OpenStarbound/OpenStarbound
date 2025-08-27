@@ -34,14 +34,20 @@ public:
   pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
   void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
+  String name() const override;
+
   void update(float dt, uint64_t currentStep) override;
 
   bool shouldDestroy() const override;
+  
+  ClientEntityMode clientEntityMode() const override;
 
   Maybe<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
   Maybe<LuaValue> evalScript(String const& code) override;
 
   String typeName() const;
+  
+  Json configValue(String const& name, Json const& def = Json()) const;
 
   Maybe<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
 
@@ -59,6 +65,8 @@ private:
   RectF m_boundBox;
 
   bool m_dead = false;
+      
+  ClientEntityMode m_clientEntityMode;
 
   NetElementTopGroup m_netGroup;
 

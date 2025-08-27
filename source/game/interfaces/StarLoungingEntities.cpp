@@ -17,7 +17,9 @@ EnumMap<LoungeControl> const LoungeControlNames{{LoungeControl::Left, "Left"},
     {LoungeControl::AltFire, "AltFire"},
     {LoungeControl::Special1, "Special1"},
     {LoungeControl::Special2, "Special2"},
-    {LoungeControl::Special3, "Special3"}};
+    {LoungeControl::Special3, "Special3"},
+    {LoungeControl::Walk, "Walk"},
+};
 
 EntityAnchorConstPtr LoungeableEntity::anchor(size_t anchorPositionIndex) const {
   return loungeAnchor(anchorPositionIndex);

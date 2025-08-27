@@ -99,7 +99,7 @@ void GuiContext::setInterfaceScale(int interfaceScale) {
 }
 
 Maybe<Vec2I> GuiContext::mousePosition(InputEvent const& event, int pixelRatio) const {
-  auto getInterfacePosition = [pixelRatio](Vec2I pos) {
+  auto getInterfacePosition = [pixelRatio](Vec2F pos) {
     return Vec2I(pos) / pixelRatio;
   };
 
@@ -449,8 +449,20 @@ String GuiContext::getClipboard() const {
   return m_applicationController->getClipboard().value();
 }
 
-void GuiContext::setClipboard(String text) {
-  m_applicationController->setClipboard(std::move(text));
+bool GuiContext::setClipboard(String text) {
+  return m_applicationController->setClipboard(std::move(text));
+}
+
+bool GuiContext::setClipboardData(StringMap<ByteArray> data) {
+  return m_applicationController->setClipboardData(std::move(data));
+}
+
+bool GuiContext::setClipboardImage(Image const& image, ByteArray* png, String const* path) {
+  return m_applicationController->setClipboardImage(image, png, path);
+}
+
+bool GuiContext::setClipboardFile(String const& path) {
+  return m_applicationController->setClipboardFile(path);
 }
 
 void GuiContext::cleanup() {

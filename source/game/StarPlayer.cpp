@@ -36,6 +36,9 @@
 #include "StarInspectionTool.hpp"
 #include "StarUtilityLuaBindings.hpp"
 #include "StarCelestialLuaBindings.hpp"
+#include "StarNetworkedAnimatorLuaBindings.hpp"
+#include "StarScriptedAnimatorLuaBindings.hpp"
+#include "StarEntityLuaBindings.hpp"
 
 namespace Star {
 
@@ -86,9 +89,8 @@ Player::Player(PlayerConfigPtr config, Uuid uuid) {
   }
 
   // all of these are defaults and won't include the correct humanoid config for the species
-  m_humanoid = make_shared<Humanoid>(Root::singleton().speciesDatabase()->species(m_identity.species)->humanoidConfig());
-  m_humanoid->setIdentity(m_identity);
-  auto movementParameters = ActorMovementParameters(jsonMerge(m_humanoid->defaultMovementParameters(), m_config->movementParameters));
+  m_netHumanoid.addNetElement(make_shared<NetHumanoid>(m_identity, m_humanoidParameters, Json()));
+  auto movementParameters = ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value(m_config->movementParameters)));
   if (!movementParameters.physicsEffectCategories)
     movementParameters.physicsEffectCategories = StringSet({"player"});
   m_movementController = make_shared<ActorMovementController>(movementParameters);
@@ -184,6 +186,17 @@ Player::Player(PlayerConfigPtr config, Uuid uuid) {
   m_netGroup.addNetElement(m_statusController.get());
   m_netGroup.addNetElement(m_techController.get());
 
+  m_netHumanoid.setCompatibilityVersion(10);
+  m_netGroup.addNetElement(&m_netHumanoid);
+  m_refreshedHumanoidParameters.setCompatibilityVersion(10);
+  m_netGroup.addNetElement(&m_refreshedHumanoidParameters);
+
+  m_scriptedAnimationParameters.setCompatibilityVersion(10);
+  m_netGroup.addNetElement(&m_scriptedAnimationParameters);
+
+  m_deathParticleBurst.setCompatibilityVersion(10);
+  m_netGroup.addNetElement(&m_deathParticleBurst);
+
   m_netGroup.setNeedsLoadCallback(bind(&Player::getNetStates, this, _1));
   m_netGroup.setNeedsStoreCallback(bind(&Player::setNetStates, this));
 }
@@ -197,10 +210,14 @@ Player::Player(PlayerConfigPtr config, ByteArray const& netStore, NetCompatibili
   ds.read(m_description);
   ds.read(m_modeType);
   ds.read(m_identity);
+  if (rules.version() >= 10) {
+    ds.read(m_humanoidParameters);
+  }
 
-  m_humanoid = make_shared<Humanoid>(Root::singleton().speciesDatabase()->species(m_identity.species)->humanoidConfig());
-  m_humanoid->setIdentity(m_identity);
-  m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(m_humanoid->defaultMovementParameters(), m_config->movementParameters)));
+  m_netHumanoid.clearNetElements();
+  m_netHumanoid.addNetElement(make_shared<NetHumanoid>(m_identity, m_humanoidParameters, Json()));
+  m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value(m_config->movementParameters))));
+  m_deathParticleBurst.set(humanoid()->defaultDeathParticles());
 }
 
 
@@ -235,20 +252,26 @@ void Player::diskLoad(Json const& diskStore) {
 
   m_log = make_shared<PlayerLog>(diskStore.get("log"));
 
-  auto speciesDef = Root::singleton().speciesDatabase()->species(m_identity.species);
+  auto speciesDatabase = Root::singleton().speciesDatabase();
+  auto speciesDef = speciesDatabase->species(m_identity.species);
 
   m_questManager->diskLoad(diskStore.get("quests", JsonObject{}));
   m_companions->diskLoad(diskStore.get("companions", JsonObject{}));
   m_deployment->diskLoad(diskStore.get("deployment", JsonObject{}));
-  m_humanoid = make_shared<Humanoid>(speciesDef->humanoidConfig());
-  m_humanoid->setIdentity(m_identity);
-  m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(m_humanoid->defaultMovementParameters(), m_config->movementParameters)));
+
+  m_humanoidParameters = diskStore.getObject("humanoidParameters", JsonObject());
+
+  m_netHumanoid.clearNetElements();
+  m_netHumanoid.addNetElement(make_shared<NetHumanoid>(m_identity, m_humanoidParameters, Json()));
+  m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value(m_config->movementParameters))));
   m_effectsAnimator->setGlobalTag("effectDirectives", speciesDef->effectDirectives());
+  m_deathParticleBurst.set(humanoid()->defaultDeathParticles());
 
   m_genericProperties = diskStore.getObject("genericProperties");
 
   m_armor->reset();
   refreshArmor();
+  setNetArmorSecrets(true);
 
   m_codexes->learnInitialCodexes(species());
 
@@ -277,7 +300,7 @@ ClientContextPtr Player::clientContext() const {
 
 void Player::setClientContext(ClientContextPtr clientContext) {
   m_clientContext = std::move(clientContext);
-  if (m_clientContext)
+  if (m_clientContext && m_universeMap)
     m_universeMap->setServerUuid(m_clientContext->serverUuid());
 }
 
@@ -315,9 +338,10 @@ void Player::init(World* world, EntityId entityId, EntityMode mode) {
   m_movementController->setIgnorePhysicsEntities({entityId});
   m_statusController->init(this, m_movementController.get());
   m_techController->init(this, m_movementController.get(), m_statusController.get());
+  auto speciesDefinition = Root::singleton().speciesDatabase()->species(m_identity.species);
 
   if (mode == EntityMode::Master) {
-    auto speciesDefinition = Root::singleton().speciesDatabase()->species(m_identity.species);
+    m_scriptedAnimationParameters.clear();
     m_movementController->setRotation(0);
     m_statusController->setStatusProperty("ouchNoise", speciesDefinition->ouchNoise(m_identity.gender));
     m_emoteState = HumanoidEmote::Idle;
@@ -333,6 +357,7 @@ void Player::init(World* world, EntityId entityId, EntityMode mode) {
       p.second->addCallbacks("player", LuaBindings::makePlayerCallbacks(this));
       p.second->addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(m_statusController.get()));
       p.second->addCallbacks("songbook", LuaBindings::makeSongbookCallbacks(m_songbook.get()));
+      p.second->addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(humanoid()->networkedAnimator()));
       if (m_client)
         p.second->addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(m_client));
       p.second->init(world);
@@ -341,6 +366,18 @@ void Player::init(World* world, EntityId entityId, EntityMode mode) {
     for (auto& p : m_inventory->pullOverflow()) {
       world->addEntity(ItemDrop::createRandomizedDrop(p, m_movementController->position(), true));
     }
+
+    setNetArmorSecrets();
+  }
+
+  if (world->isClient()) {
+      m_scriptedAnimator.setScripts(humanoid()->animationScripts());
+      m_scriptedAnimator.addCallbacks("animationConfig", LuaBindings::makeScriptedAnimatorCallbacks(humanoid()->networkedAnimator(),
+        [this](String const& name, Json const& defaultValue) -> Json {
+          return m_scriptedAnimationParameters.value(name, defaultValue);
+        }));
+      m_scriptedAnimator.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
+      m_scriptedAnimator.init(world);
   }
 
   m_xAimPositionNetState.setInterpolator(world->geometry().xLerpFunction());
@@ -360,6 +397,7 @@ void Player::uninit() {
 
     for (auto& p : m_genericScriptContexts) {
       p.second->uninit();
+      p.second->removeCallbacks("animator");
       p.second->removeCallbacks("entity");
       p.second->removeCallbacks("player");
       p.second->removeCallbacks("mcontroller");
@@ -369,6 +407,11 @@ void Player::uninit() {
       if (m_client)
         p.second->removeCallbacks("celestial");
     }
+  }
+  if (world()->isClient()) {
+    m_scriptedAnimator.uninit();
+    m_scriptedAnimator.removeCallbacks("animationConfig");
+    m_scriptedAnimator.removeCallbacks("entity");
   }
 
   Entity::uninit();
@@ -380,7 +423,7 @@ List<Drawable> Player::drawables() const {
   if (!isTeleporting()) {
     drawables.appendAll(m_techController->backDrawables());
     if (!m_techController->parentHidden()) {
-      m_tools->setupHumanoidHandItemDrawables(*m_humanoid);
+      m_tools->setupHumanoidHandItemDrawables(*humanoid());
 
       // Auto-detect any ?scalenearest and apply them as a direct scale on the Humanoid's drawables instead.
       DirectivesGroup humanoidDirectives;
@@ -394,9 +437,9 @@ List<Drawable> Player::drawables() const {
       };
       extractScale(m_techController->parentDirectives().list());
       extractScale(m_statusController->parentDirectives().list());
-      m_humanoid->setScale(scale * m_movementController->getScale());
+      humanoid()->setScale(scale * m_movementController->getScale());
 
-      for (auto& drawable : m_humanoid->render()) {
+      for (auto& drawable : humanoid()->render()) {
         drawable.translate(position() + (m_techController->parentOffset() * m_movementController->getScale()));
         if (drawable.isImage()) {
           drawable.imagePart().addDirectivesGroup(humanoidDirectives, true);
@@ -429,6 +472,7 @@ List<Particle> Player::particles() {
   List<Particle> particles;
   particles.appendAll(m_config->splashConfig.doSplash(position(), m_movementController->velocity(), world()));
   particles.appendAll(take(m_callbackParticles));
+  particles.appendAll(m_humanoidDynamicTarget.pullNewParticles());
   particles.appendAll(m_techController->pullNewParticles());
   particles.appendAll(m_statusController->pullNewParticles());
 
@@ -476,11 +520,12 @@ void Player::setWireConnector(WireConnector* wireConnector) const {
 
 List<Drawable> Player::portrait(PortraitMode mode) const {
   if (isPermaDead())
-    return m_humanoid->renderSkull();
+    return humanoid()->renderSkull();
   if (invisible())
     return {};
-  m_armor->setupHumanoidClothingDrawables(*m_humanoid, forceNude());
-  return m_humanoid->renderPortrait(mode);
+  if (!inWorld())
+    refreshHumanoid();
+  return humanoid()->renderPortrait(mode);
 }
 
 bool Player::underwater() const {
@@ -496,6 +541,7 @@ List<LightSource> Player::lightSources() const {
   lights.appendAll(m_tools->lightSources());
   lights.appendAll(m_statusController->lightSources());
   lights.appendAll(m_techController->lightSources());
+  lights.appendAll(humanoid()->networkedAnimator()->lightSources());
   return lights;
 }
 
@@ -560,10 +606,8 @@ bool Player::shouldDestroy() const {
 void Player::destroy(RenderCallback* renderCallback) {
   m_state = State::Idle;
   m_emoteState = HumanoidEmote::Idle;
-  if (renderCallback) {
-    List<Particle> deathParticles = m_humanoid->particles(m_humanoid->defaultDeathParticles());
-    renderCallback->addParticles(deathParticles, position());
-  }
+  if (renderCallback && m_deathParticleBurst.get())
+    renderCallback->addParticles(humanoid()->particles(*m_deathParticleBurst.get()), position());
 
   if (isMaster()) {
     m_log->addDeathCount(1);
@@ -627,31 +671,31 @@ Vec2F Player::velocity() const {
 
 Vec2F Player::mouthOffset(bool ignoreAdjustments) const {
   return Vec2F(
-      m_humanoid->mouthOffset(ignoreAdjustments)[0] * numericalDirection(facingDirection()), m_humanoid->mouthOffset(ignoreAdjustments)[1]) * m_movementController->getScale();
+      humanoid()->mouthOffset(ignoreAdjustments)[0] * numericalDirection(facingDirection()), humanoid()->mouthOffset(ignoreAdjustments)[1]) * m_movementController->getScale();
 }
 
 Vec2F Player::feetOffset() const {
-  return Vec2F(m_humanoid->feetOffset()[0] * numericalDirection(facingDirection()), m_humanoid->feetOffset()[1]) * m_movementController->getScale();
+  return Vec2F(humanoid()->feetOffset()[0] * numericalDirection(facingDirection()), humanoid()->feetOffset()[1]) * m_movementController->getScale();
 }
 
 Vec2F Player::headArmorOffset() const {
   return Vec2F(
-      m_humanoid->headArmorOffset()[0] * numericalDirection(facingDirection()), m_humanoid->headArmorOffset()[1]) * m_movementController->getScale();
+      humanoid()->headArmorOffset()[0] * numericalDirection(facingDirection()), humanoid()->headArmorOffset()[1]) * m_movementController->getScale();
 }
 
 Vec2F Player::chestArmorOffset() const {
   return Vec2F(
-      m_humanoid->chestArmorOffset()[0] * numericalDirection(facingDirection()), m_humanoid->chestArmorOffset()[1]) * m_movementController->getScale();
+      humanoid()->chestArmorOffset()[0] * numericalDirection(facingDirection()), humanoid()->chestArmorOffset()[1]) * m_movementController->getScale();
 }
 
 Vec2F Player::backArmorOffset() const {
   return Vec2F(
-      m_humanoid->backArmorOffset()[0] * numericalDirection(facingDirection()), m_humanoid->backArmorOffset()[1]) * m_movementController->getScale();
+      humanoid()->backArmorOffset()[0] * numericalDirection(facingDirection()), humanoid()->backArmorOffset()[1]) * m_movementController->getScale();
 }
 
 Vec2F Player::legsArmorOffset() const {
   return Vec2F(
-      m_humanoid->legsArmorOffset()[0] * numericalDirection(facingDirection()), m_humanoid->legsArmorOffset()[1]) * m_movementController->getScale();
+      humanoid()->legsArmorOffset()[0] * numericalDirection(facingDirection()), humanoid()->legsArmorOffset()[1]) * m_movementController->getScale();
 }
 
 Vec2F Player::mouthPosition() const {
@@ -699,6 +743,10 @@ void Player::revive(Vec2F const& footPosition) {
 
   float moneyCost = m_inventory->currency("money") * modeConfig().reviveCostPercentile;
   m_inventory->consumeCurrency("money", min((uint64_t)round(moneyCost), m_inventory->currency("money")));
+}
+
+bool Player::shifting() const {
+  return m_shifting;
 }
 
 void Player::setShifting(bool shifting) {
@@ -789,20 +837,19 @@ Maybe<Json> Player::receiveMessage(ConnectionId fromConnection, String const& me
       unique = args.get(1).toBool();
     setPendingCinematic(args.get(0), unique);
   } else if (message == "playAltMusic" && args.size() > 0) {
-    float fadeTime = 0;
-    if (args.size() > 1)
-      fadeTime = args.get(1).toFloat();
+    float fadeTime = args.size() > 1 ? args.get(1).toFloat() : 0.f;
+    int loops = args.size() > 2 ? args.get(2).toInt() : -1;
     StringList trackList;
     if (args.get(0).canConvert(Json::Type::Array))
       trackList = jsonToStringList(args.get(0).toArray());
     else
       trackList = StringList();
-    m_pendingAltMusic = pair<Maybe<StringList>, float>(trackList, fadeTime);
+    m_pendingAltMusic = pair<Maybe<pair<StringList, int>>, float>(make_pair(trackList, loops), fadeTime);
   } else if (message == "stopAltMusic") {
     float fadeTime = 0;
     if (args.size() > 0)
       fadeTime = args.get(0).toFloat();
-    m_pendingAltMusic = pair<Maybe<StringList>, float>({}, fadeTime);
+    m_pendingAltMusic = pair<Maybe<pair<StringList, int>>, float>({}, fadeTime);
   } else if (message == "recordEvent") {
     statistics()->recordEvent(args.at(0).toString(), args.at(1));
   } else if (message == "addCollectable") {
@@ -1024,31 +1071,35 @@ void Player::update(float dt, uint64_t) {
     m_statusController->tickSlave(dt);
   }
 
-  m_humanoid->setMovingBackwards(false);
-  m_humanoid->setRotation(m_movementController->rotation());
+  humanoid()->setRotation(m_movementController->rotation());
 
   bool suppressedItems = !canUseTool();
 
   auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor());
   if (loungeAnchor && loungeAnchor->dance)
-    m_humanoid->setDance(*loungeAnchor->dance);
+    humanoid()->setDance(*loungeAnchor->dance);
   else if ((!suppressedItems && (m_tools->primaryHandItem() || m_tools->altHandItem()))
-    || m_humanoid->danceCyclicOrEnded() || m_movementController->running())
-    m_humanoid->setDance({});
+    || humanoid()->danceCyclicOrEnded() || m_movementController->running())
+    humanoid()->setDance({});
 
   bool isClient = world()->isClient();
-  if (isClient)
-    m_armor->setupHumanoidClothingDrawables(*m_humanoid, forceNude());
 
   m_tools->suppressItems(suppressedItems);
   m_tools->tick(dt, m_shifting, m_pendingMoves);
 
-  if (auto overrideFacingDirection = m_tools->setupHumanoidHandItems(*m_humanoid, position(), aimPosition()))
-    m_movementController->controlFace(*overrideFacingDirection);
+  Direction facingDirection = m_movementController->facingDirection();
 
-  m_effectsAnimator->resetTransformationGroup("flip");
-  if (m_movementController->facingDirection() == Direction::Left)
-    m_effectsAnimator->scaleTransformationGroup("flip", Vec2F(-1, 1));
+  auto overrideFacingDirection = m_tools->setupHumanoidHandItems(*humanoid(), position(), aimPosition());
+  if (overrideFacingDirection)
+    m_movementController->controlFace(facingDirection = *overrideFacingDirection);
+
+  humanoid()->setFacingDirection(facingDirection);
+  humanoid()->setMovingBackwards(facingDirection != m_movementController->movingDirection());
+
+  refreshHumanoid();
+
+  auto scale = Mat3F::scaling(Vec2F(facingDirection == Direction::Right ? 1.f : -1.f, 1.f));
+  m_effectsAnimator->setTransformationGroup("flip", scale);
 
   if (m_state == State::Walk || m_state == State::Run) {
     if ((m_footstepTimer += dt) > m_config->footstepTiming) {
@@ -1086,7 +1137,7 @@ void Player::update(float dt, uint64_t) {
   m_effectEmitter->setSourcePosition("primary", handPosition(ToolHand::Primary) + position());
   m_effectEmitter->setSourcePosition("alt", handPosition(ToolHand::Alt) + position());
 
-  m_effectEmitter->setDirection(facingDirection());
+  m_effectEmitter->setDirection(facingDirection);
 
   m_effectEmitter->tick(dt, *entityMode());
 
@@ -1095,13 +1146,13 @@ void Player::update(float dt, uint64_t) {
     if (!calculateHeadRotation) {
       auto headRotationProperty = getSecretProperty("humanoid.headRotation");
       if (headRotationProperty.isType(Json::Type::Float)) {
-        m_humanoid->setHeadRotation(headRotationProperty.toFloat());
+        humanoid()->setHeadRotation(headRotationProperty.toFloat());
       } else
         calculateHeadRotation = true;
     }
     if (calculateHeadRotation) { // master or not an OpenStarbound player
       float headRotation = 0.f;
-      if (Humanoid::globalHeadRotation() && (m_humanoid->primaryHandHoldingItem() || m_humanoid->altHandHoldingItem() || m_humanoid->dance())) {
+      if (Humanoid::globalHeadRotation() && (humanoid()->handHoldingItem(ToolHand::Primary) || humanoid()->handHoldingItem(ToolHand::Alt) || humanoid()->dance())) {
         auto primary = m_tools->primaryHandItem();
         auto alt = m_tools->altHandItem();
         String const disableFlag = "disableHeadRotation";
@@ -1111,17 +1162,14 @@ void Player::update(float dt, uint64_t) {
          && !(alt && alt->instanceValue(disableFlag))) {
           auto diff = world()->geometry().diff(aimPosition(), mouthPosition());
           diff.setX(fabsf(diff.x()));
-          headRotation = diff.angle() * .25f * numericalDirection(m_humanoid->facingDirection());
+          headRotation = diff.angle() * .25f * numericalDirection(humanoid()->facingDirection());
         }
       }
-      m_humanoid->setHeadRotation(headRotation);
+      humanoid()->setHeadRotation(headRotation);
       if (isMaster())
         setSecretProperty("humanoid.headRotation", headRotation);
     }
   }
-
-  m_humanoid->setFacingDirection(m_movementController->facingDirection());
-  m_humanoid->setMovingBackwards(m_movementController->facingDirection() != m_movementController->movingDirection());
 
   m_pendingMoves.clear();
 
@@ -1143,6 +1191,9 @@ void Player::render(RenderCallback* renderCallback) {
     m_techController->pullNewParticles();
     m_statusController->pullNewAudios();
     m_statusController->pullNewParticles();
+
+    m_humanoidDynamicTarget.pullNewAudios();
+    m_humanoidDynamicTarget.pullNewParticles();
     return;
   }
 
@@ -1175,6 +1226,7 @@ void Player::render(RenderCallback* renderCallback) {
 
   renderCallback->addAudios(m_techController->pullNewAudios());
   renderCallback->addAudios(m_statusController->pullNewAudios());
+  renderCallback->addAudios(m_humanoidDynamicTarget.pullNewAudios());
 
   for (auto const& p : take(m_callbackSounds)) {
     auto audio = make_shared<AudioInstance>(*Root::singleton().assets()->audio(get<0>(p)));
@@ -1333,14 +1385,28 @@ void Player::refreshArmor() {
   if (isSlave())
     return;
 
-  m_armor->setHeadItem(m_inventory->headArmor());
-  m_armor->setHeadCosmeticItem(m_inventory->headCosmetic());
-  m_armor->setChestItem(m_inventory->chestArmor());
-  m_armor->setChestCosmeticItem(m_inventory->chestCosmetic());
-  m_armor->setLegsItem(m_inventory->legsArmor());
-  m_armor->setLegsCosmeticItem(m_inventory->legsCosmetic());
-  m_armor->setBackItem(m_inventory->backArmor());
-  m_armor->setBackCosmeticItem(m_inventory->backCosmetic());
+  bool shouldSetArmorSecrets = m_clientContext && m_clientContext->netCompatibilityRules().version() < 9;
+  for (uint8_t i = 0; i != 20; ++i) {
+    auto slot = (EquipmentSlot)i;
+    auto item = m_inventory->equipment(slot);
+    bool visible = m_inventory->equipmentVisibility(slot);
+    if (m_armor->setItem(i, item, visible)) {
+      if (slot >= EquipmentSlot::Cosmetic1 && shouldSetArmorSecrets)
+        setNetArmorSecret(slot, item, visible);
+    }
+  }
+}
+
+void Player::refreshHumanoid() const {
+  try {
+    if (m_armor->setupHumanoid(*humanoid(), forceNude())) {
+      m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value(m_config->movementParameters))));
+    }
+  }
+  catch (std::exception const&) {
+    if (isMaster()) // it's your problem,
+      throw;        // deal with it!
+  }
 }
 
 void Player::refreshEquipment() {
@@ -1491,15 +1557,15 @@ Vec2F Player::aimPosition() const {
 }
 
 Vec2F Player::armPosition(ToolHand hand, Direction facingDirection, float armAngle, Vec2F offset) const {
-  return m_tools->armPosition(*m_humanoid, hand, facingDirection, armAngle, offset);
+  return m_tools->armPosition(*humanoid(), hand, facingDirection, armAngle, offset);
 }
 
 Vec2F Player::handOffset(ToolHand hand, Direction facingDirection) const {
-  return m_tools->handOffset(*m_humanoid, hand, facingDirection);
+  return m_tools->handOffset(*humanoid(), hand, facingDirection);
 }
 
 Vec2F Player::handPosition(ToolHand hand, Vec2F const& handOffset) const {
-  return m_tools->handPosition(hand, *m_humanoid, handOffset);
+  return m_tools->handPosition(hand, *humanoid(), handOffset);
 }
 
 ItemPtr Player::handItem(ToolHand hand) const {
@@ -1510,7 +1576,7 @@ ItemPtr Player::handItem(ToolHand hand) const {
 }
 
 Vec2F Player::armAdjustment() const {
-  return m_humanoid->armAdjustment();
+  return humanoid()->armAdjustment();
 }
 
 void Player::setCameraFocusEntity(Maybe<EntityId> const& cameraFocusEntity) {
@@ -1750,7 +1816,8 @@ void Player::processControls() {
         loungeableEntity->loungeControl(anchorState->positionIndex, LoungeControl::PrimaryFire);
       if (m_tools->firingAlt())
         loungeableEntity->loungeControl(anchorState->positionIndex, LoungeControl::AltFire);
-
+      if (m_shifting)
+        loungeableEntity->loungeControl(anchorState->positionIndex, LoungeControl::Walk);
       loungeableEntity->loungeAim(anchorState->positionIndex, m_aimPosition);
     }
     move = false;
@@ -1843,59 +1910,64 @@ void Player::processStateChanges(float dt) {
       }
     }
   }
-
-  m_humanoid->animate(dt);
+  if (world()->isClient()) {
+    humanoid()->animate(dt, &m_humanoidDynamicTarget);
+    m_humanoidDynamicTarget.updatePosition(position() + (m_techController->parentOffset()));
+  } else {
+    humanoid()->animate(dt, {});
+  }
+  m_scriptedAnimator.update();
 
   if (auto techState = m_techController->parentState()) {
     if (techState == TechController::ParentState::Stand) {
-      m_humanoid->setState(Humanoid::Idle);
+      humanoid()->setState(Humanoid::Idle);
     } else if (techState == TechController::ParentState::Fly) {
-      m_humanoid->setState(Humanoid::Jump);
+      humanoid()->setState(Humanoid::Jump);
     } else if (techState == TechController::ParentState::Fall) {
-      m_humanoid->setState(Humanoid::Fall);
+      humanoid()->setState(Humanoid::Fall);
     } else if (techState == TechController::ParentState::Sit) {
-      m_humanoid->setState(Humanoid::Sit);
+      humanoid()->setState(Humanoid::Sit);
     } else if (techState == TechController::ParentState::Lay) {
-      m_humanoid->setState(Humanoid::Lay);
+      humanoid()->setState(Humanoid::Lay);
     } else if (techState == TechController::ParentState::Duck) {
-      m_humanoid->setState(Humanoid::Duck);
+      humanoid()->setState(Humanoid::Duck);
     } else if (techState == TechController::ParentState::Walk) {
-      m_humanoid->setState(Humanoid::Walk);
+      humanoid()->setState(Humanoid::Walk);
     } else if (techState == TechController::ParentState::Run) {
-      m_humanoid->setState(Humanoid::Run);
+      humanoid()->setState(Humanoid::Run);
     } else if (techState == TechController::ParentState::Swim) {
-      m_humanoid->setState(Humanoid::Swim);
+      humanoid()->setState(Humanoid::Swim);
     } else if (techState == TechController::ParentState::SwimIdle) {
-      m_humanoid->setState(Humanoid::SwimIdle);
+      humanoid()->setState(Humanoid::SwimIdle);
     }
   } else {
     auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor());
     if (m_state == State::Idle) {
-      m_humanoid->setState(Humanoid::Idle);
+      humanoid()->setState(Humanoid::Idle);
     } else if (m_state == State::Walk) {
-      m_humanoid->setState(Humanoid::Walk);
+      humanoid()->setState(Humanoid::Walk);
     } else if (m_state == State::Run) {
-      m_humanoid->setState(Humanoid::Run);
+      humanoid()->setState(Humanoid::Run);
     } else if (m_state == State::Jump) {
-      m_humanoid->setState(Humanoid::Jump);
+      humanoid()->setState(Humanoid::Jump);
     } else if (m_state == State::Fall) {
-      m_humanoid->setState(Humanoid::Fall);
+      humanoid()->setState(Humanoid::Fall);
     } else if (m_state == State::Swim) {
-      m_humanoid->setState(Humanoid::Swim);
+      humanoid()->setState(Humanoid::Swim);
     } else if (m_state == State::SwimIdle) {
-      m_humanoid->setState(Humanoid::SwimIdle);
+      humanoid()->setState(Humanoid::SwimIdle);
     } else if (m_state == State::Crouch) {
-      m_humanoid->setState(Humanoid::Duck);
+      humanoid()->setState(Humanoid::Duck);
     } else if (m_state == State::Lounge && loungeAnchor && loungeAnchor->orientation == LoungeOrientation::Sit) {
-      m_humanoid->setState(Humanoid::Sit);
+      humanoid()->setState(Humanoid::Sit);
     } else if (m_state == State::Lounge && loungeAnchor && loungeAnchor->orientation == LoungeOrientation::Lay) {
-      m_humanoid->setState(Humanoid::Lay);
+      humanoid()->setState(Humanoid::Lay);
     } else if (m_state == State::Lounge && loungeAnchor && loungeAnchor->orientation == LoungeOrientation::Stand) {
-      m_humanoid->setState(Humanoid::Idle);
+      humanoid()->setState(Humanoid::Idle);
     }
   }
 
-  m_humanoid->setEmoteState(m_emoteState);
+  humanoid()->setEmoteState(m_emoteState);
 }
 
 String Player::getFootstepSound(Vec2I const& sensor) const {
@@ -1937,9 +2009,15 @@ void Player::getNetStates(bool initial) {
   m_aimPosition[0] = m_xAimPositionNetState.get();
   m_aimPosition[1] = m_yAimPositionNetState.get();
 
-  if (m_identityNetState.pullUpdated()) {
-    m_identity = m_identityNetState.get();
-    m_humanoid->setIdentity(m_identity);
+  if (m_identityNetState.pullUpdated() && !initial) {
+    auto newIdentity = m_identityNetState.get();
+    if ((m_identity.species == newIdentity.species) && (m_identity.imagePath == newIdentity.imagePath)) {
+      humanoid()->setIdentity(newIdentity);
+    }
+    m_identity = newIdentity;
+  }
+  if (m_refreshedHumanoidParameters.pullOccurred() && !initial) {
+    refreshHumanoidParameters();
   }
 
   setTeam(m_teamNetState.get());
@@ -1954,6 +2032,8 @@ void Player::getNetStates(bool initial) {
   }
 
   m_emoteState = HumanoidEmoteNames.getLeft(m_emoteNetState.get());
+
+  getNetArmorSecrets();
 }
 
 void Player::setNetStates() {
@@ -1976,6 +2056,49 @@ void Player::setNetStates() {
   }
 
   m_emoteNetState.set(HumanoidEmoteNames.getRight(m_emoteState));
+}
+
+void Player::setNetArmorSecret(EquipmentSlot slot, ArmorItemPtr const& armor, bool visible) {
+  String const& slotName = EquipmentSlotNames.getRight(slot);
+  ItemDescriptor descriptor = visible ? itemSafeDescriptor(armor) : ItemDescriptor();
+  setSecretProperty(strf("armorWearer.{}.data", slotName), descriptor.diskStore());
+  if (m_armorSecretNetVersions.empty())
+    setSecretProperty("armorWearer.replicating", true);
+  setSecretProperty(strf("armorWearer.{}.version", slotName), ++m_armorSecretNetVersions[slot]);
+}
+
+void Player::setNetArmorSecrets(bool includeEmpty) {
+  if (m_clientContext && m_clientContext->netCompatibilityRules().version() < 9) {
+    for (uint8_t i = 0; i != 12; ++i) {
+      auto slot = EquipmentSlot((uint8_t)EquipmentSlot::Cosmetic1 + i);
+      auto item = as<ArmorItem>(m_inventory->itemsAt(slot));
+      bool visible = m_inventory->equipmentVisibility(slot);
+      if ((item && visible) || includeEmpty)
+        setNetArmorSecret(slot, item, visible);
+    }
+  }
+}
+
+void Player::getNetArmorSecrets() {
+  if (isSlave() && getSecretPropertyPtr("armorWearer.replicating") != nullptr) {
+    auto itemDatabase = Root::singleton().itemDatabase();
+
+    for (uint8_t i = 0; i != 12; ++i) {
+      auto slot = EquipmentSlot((uint8_t)EquipmentSlot::Cosmetic1 + i);
+      String const& slotName = EquipmentSlotNames.getRight(slot);
+      auto& curVersion = m_armorSecretNetVersions[slot];
+      uint64_t newVersion = 0;
+      if (auto jVersion = getSecretProperty(strf("armorWearer.{}.version", slotName), 0); jVersion.isType(Json::Type::Int))
+        newVersion = jVersion.toUInt();
+      if (newVersion > curVersion) {
+        curVersion = newVersion;
+        ArmorItemPtr item;
+        itemDatabase->diskLoad(getSecretProperty(strf("armorWearer.{}.data", slotName)), item);
+        m_inventory->setItem(slot, item);
+        m_armor->setCosmeticItem(i, item);
+      }
+    }
+  }
 }
 
 void Player::setAdmin(bool isAdmin) {
@@ -2122,8 +2245,49 @@ Vec2F Player::nametagOrigin() const {
   return mouthPosition(false);
 }
 
-void Player::updateIdentity()
-{ m_identityUpdated = true; m_humanoid->setIdentity(m_identity); }
+String Player::nametag() const {
+  if (auto jNametag = getSecretProperty("nametag"); jNametag.isType(Json::Type::String))
+    return jNametag.toString();
+  else
+    return name();
+}
+
+void Player::setNametag(Maybe<String> nametag) {
+  setSecretProperty("nametag", nametag ? Json(*nametag) : Json());
+}
+
+void Player::updateIdentity() {
+  m_identityUpdated = true;
+  auto oldIdentity = humanoid()->identity();
+  if ((m_identity.species != oldIdentity.species) || (m_identity.imagePath != oldIdentity.imagePath)) {
+    refreshHumanoidParameters();
+  } else {
+    humanoid()->setIdentity(m_identity);
+  }
+}
+
+void Player::setHumanoidParameter(String key, Maybe<Json> value) {
+  if (value.isValid())
+    m_humanoidParameters.set(key, value.value());
+  else
+    m_humanoidParameters.erase(key);
+
+  m_netHumanoid.netElements().last()->setHumanoidParameters(m_humanoidParameters);
+}
+
+Maybe<Json> Player::getHumanoidParameter(String key) {
+  return m_humanoidParameters.maybe(key);
+}
+
+void Player::setHumanoidParameters(JsonObject parameters) {
+  m_humanoidParameters = parameters;
+
+  m_netHumanoid.netElements().last()->setHumanoidParameters(m_humanoidParameters);
+}
+
+JsonObject Player::getHumanoidParameters() {
+  return m_humanoidParameters;
+}
 
 void Player::setBodyDirectives(String const& directives)
 { m_identity.bodyDirectives = directives; updateIdentity(); }
@@ -2180,6 +2344,7 @@ void Player::setFacialMask(String const& group, String const& type, String const
 }
 
 void Player::setSpecies(String const& species) {
+  Root::singleton().speciesDatabase()->species(species); // throw if non-existent
   m_identity.species = species;
   updateIdentity();
 }
@@ -2208,7 +2373,10 @@ void Player::setImagePath(Maybe<String> const& imagePath) {
 }
 
 HumanoidPtr Player::humanoid() {
-  return m_humanoid;
+  return m_netHumanoid.netElements().last()->humanoid();
+}
+HumanoidPtr Player::humanoid() const {
+  return m_netHumanoid.netElements().last()->humanoid();
 }
 
 HumanoidIdentity const& Player::identity() const {
@@ -2370,6 +2538,7 @@ Json Player::diskStore() {
     {"deployment", m_deployment->diskStore()},
     {"genericProperties", m_genericProperties},
     {"genericScriptStorage", genericScriptStorage},
+    {"humanoidParameters", m_humanoidParameters},
   };
 }
 
@@ -2381,6 +2550,8 @@ ByteArray Player::netStore(NetCompatibilityRules rules) {
   ds.write(m_description);
   ds.write(m_modeType);
   ds.write(m_identity);
+  if (rules.version() >= 10)
+    ds.write(m_humanoidParameters);
 
   return ds.data();
 }
@@ -2423,7 +2594,7 @@ bool Player::invisible() const {
 }
 
 void Player::animatePortrait(float dt) {
-  m_humanoid->animate(dt);
+  humanoid()->animate(dt, {});
   if (m_emoteCooldownTimer) {
     m_emoteCooldownTimer -= dt;
     if (m_emoteCooldownTimer <= 0) {
@@ -2431,7 +2602,7 @@ void Player::animatePortrait(float dt) {
       m_emoteState = HumanoidEmote::Idle;
     }
   }
-  m_humanoid->setEmoteState(m_emoteState);
+  humanoid()->setEmoteState(m_emoteState);
 }
 
 bool Player::isOutside() {
@@ -2552,7 +2723,7 @@ void Player::setInCinematic(bool inCinematic) {
     m_statusController->setPersistentEffects("cinematic", {});
 }
 
-Maybe<pair<Maybe<StringList>, float>> Player::pullPendingAltMusic() {
+Maybe<pair<Maybe<pair<StringList, int>>, float>> Player::pullPendingAltMusic() {
   if (m_pendingAltMusic)
     return m_pendingAltMusic.take();
   return {};
@@ -2659,6 +2830,9 @@ Maybe<StringView> Player::getSecretPropertyView(String const& name) const {
   return {};
 }
 
+String const* Player::getSecretPropertyPtr(String const& name) const {
+  return m_effectsAnimator->globalTagPtr(secretProprefix + name);
+}
 
 Json Player::getSecretProperty(String const& name, Json defaultValue) const {
   if (auto tag = m_effectsAnimator->globalTagPtr(secretProprefix + name)) {
@@ -2683,5 +2857,56 @@ void Player::setSecretProperty(String const& name, Json const& value) {
     m_effectsAnimator->removeGlobalTag(secretProprefix + name);
 }
 
+void Player::refreshHumanoidParameters() {
+  auto speciesDatabase = Root::singleton().speciesDatabase();
+  auto speciesDef = speciesDatabase->species(m_identity.species);
+
+  if (isMaster() || !inWorld()) {
+    m_refreshedHumanoidParameters.trigger();
+    m_netHumanoid.clearNetElements();
+    m_netHumanoid.addNetElement(make_shared<NetHumanoid>(m_identity, m_humanoidParameters, Json()));
+    m_effectsAnimator->setGlobalTag("effectDirectives", speciesDef->effectDirectives());
+    m_deathParticleBurst.set(humanoid()->defaultDeathParticles());
+    m_statusController->setStatusProperty("ouchNoise", speciesDef->ouchNoise(m_identity.gender));
+    m_scriptedAnimationParameters.clear();
+  } else {
+    m_humanoidParameters = m_netHumanoid.netElements().last()->humanoidParameters();
+  }
+  auto armor = m_armor->diskStore();
+  m_armor->reset();
+  m_armor->diskLoad(armor);
+  m_armor->setupHumanoid(*humanoid(), forceNude());
+
+  m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value(m_config->movementParameters))));
+
+  if (inWorld()) {
+    if (isMaster()) {
+      for (auto& p : m_genericScriptContexts) {
+        if (p.second->initialized()) {
+          p.second->removeCallbacks("animator");
+          p.second->addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(humanoid()->networkedAnimator()));
+          p.second->invoke("refreshHumanoidParameters");
+        }
+      }
+    }
+    if (world()->isClient() && m_scriptedAnimator.initialized()) {
+      m_scriptedAnimator.uninit();
+      m_scriptedAnimator.removeCallbacks("animationConfig");
+      m_scriptedAnimator.removeCallbacks("entity");
+
+      m_scriptedAnimator.setScripts(humanoid()->animationScripts());
+      m_scriptedAnimator.addCallbacks("animationConfig", LuaBindings::makeScriptedAnimatorCallbacks(humanoid()->networkedAnimator(),
+        [this](String const& name, Json const& defaultValue) -> Json {
+          return m_scriptedAnimationParameters.value(name, defaultValue);
+        }));
+      m_scriptedAnimator.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
+      m_scriptedAnimator.init(world());
+    }
+  }
+}
+
+void Player::setAnimationParameter(String name, Json value) {
+  m_scriptedAnimationParameters.set(std::move(name), std::move(value));
+}
 
 }

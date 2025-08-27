@@ -141,6 +141,12 @@ void ItemDrop::uninit() {
   m_movementController.uninit();
 }
 
+String ItemDrop::name() const {
+  if (m_item)
+    return m_item->name();
+  return Entity::name();
+}
+
 String ItemDrop::description() const {
   return m_item->description();
 }

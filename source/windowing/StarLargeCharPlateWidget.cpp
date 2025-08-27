@@ -178,7 +178,7 @@ void LargeCharPlateWidget::update(float dt) {
     humanoid->setEmoteState(HumanoidEmote::Idle);
     humanoid->setState(isHovered() ? Humanoid::Walk : Humanoid::Idle);
   }
-  humanoid->animate(dt);
+  humanoid->animate(dt, {});
 }
 
 }

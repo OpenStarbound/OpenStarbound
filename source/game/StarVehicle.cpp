@@ -9,6 +9,7 @@
 #include "StarNetworkedAnimatorLuaBindings.hpp"
 #include "StarAssets.hpp"
 #include "StarScriptedAnimatorLuaBindings.hpp"
+#include "StarPlayer.hpp"
 
 namespace Star {
 
@@ -24,6 +25,7 @@ Vehicle::Vehicle(Json baseConfig, String path, Json dynamicConfig)
   m_scriptComponent.setUpdateDelta(configValue("scriptDelta", 1).toUInt());
   m_boundBox = jsonToRectF(configValue("boundBox"));
   m_slaveControlTimeout = configValue("slaveControlTimeout").toFloat();
+  m_receiveExtraControls = configValue("receiveExtraControls", false).toBool();
   m_slaveHeartbeatTimer = GameTimer(configValue("slaveControlHeartbeat").toFloat());
   m_damageTeam.set(configValue("damageTeam").opt().apply(construct<EntityDamageTeam>()).value());
   m_interactive.set(configValue("interactive", true).toBool());
@@ -295,16 +297,24 @@ void Vehicle::update(float dt, uint64_t) {
 
     for (auto& p : m_loungePositions) {
       if (heartbeat) {
-        JsonArray allControlsHeld = transform<JsonArray>(p.second.slaveNewControls, [](LoungeControl control) {
-            return LoungeControlNames.getRight(control);
-          });
+        JsonArray allControlsHeld;
+        for (LoungeControl control : p.second.slaveNewControls) {
+          if (control > LoungeControl::Special3 && !m_receiveExtraControls)
+            continue;
+          allControlsHeld.append(LoungeControlNames.getRight(control));
+        }
         world()->sendEntityMessage(entityId(), "control_all", {*m_loungePositions.indexOf(p.first), std::move(allControlsHeld)});
       } else {
-        for (auto control : p.second.slaveNewControls.difference(p.second.slaveOldControls))
+        for (auto control : p.second.slaveNewControls.difference(p.second.slaveOldControls)) {
+          if (control > LoungeControl::Special3 && !m_receiveExtraControls)
+            continue;
           world()->sendEntityMessage(entityId(), "control_on", {*m_loungePositions.indexOf(p.first), LoungeControlNames.getRight(control)});
-
-        for (auto control : p.second.slaveOldControls.difference(p.second.slaveNewControls))
+        }
+        for (auto control : p.second.slaveOldControls.difference(p.second.slaveNewControls)) {
+          if (control > LoungeControl::Special3 && !m_receiveExtraControls)
+            continue;
           world()->sendEntityMessage(entityId(), "control_off", {*m_loungePositions.indexOf(p.first), LoungeControlNames.getRight(control)});
+        }
       }
 
       if (p.second.slaveOldAimPosition != p.second.slaveNewAimPosition)
@@ -577,6 +587,19 @@ LuaCallbacks Vehicle::makeVehicleCallbacks() {
   callbacks.registerCallback("controlHeld", [this](String const& loungeName, String const& controlName) {
       auto const& mc = m_loungePositions.get(loungeName).masterControlState[LoungeControlNames.getLeft(controlName)];
       return mc.masterHeld || !mc.slavesHeld.empty();
+    });
+
+  callbacks.registerCallback("shiftingHeld", [this](String const& loungeName) {
+      auto const& mc = m_loungePositions.get(loungeName).masterControlState[LoungeControl::Walk];
+      if (mc.masterHeld || !mc.slavesHeld.empty())
+        return true;
+      else {
+        for (EntityId entity : entitiesLoungingIn(*m_loungePositions.indexOf(loungeName))) {
+          if (auto player = world()->get<Player>(entity))
+            return player->shifting();
+        }
+      }
+      return false;
     });
 
   callbacks.registerCallback( "aimPosition", [this](String const& loungeName) {

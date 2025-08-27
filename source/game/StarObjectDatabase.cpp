@@ -190,10 +190,16 @@ List<ObjectOrientationPtr> ObjectDatabase::parseOrientations(String const& path,
 
     if (orientationSettings.contains("spaceScan")) {
       auto spaceScanSpaces = Set<Vec2I>::from(orientation->spaces);
+      StringMap<String> imageKeys;
+      imageKeys.set("color", orientationSettings.get("color", "default").toString().takeUtf8());
+      for (auto p : orientationSettings.get("defaultImageKeys", JsonObject()).toObject())
+        imageKeys.set(p.first, p.second.toString());
+
       for (auto const& layer : orientation->imageLayers) {
-        spaceScanSpaces.addAll(root.imageMetadataDatabase()->imageSpaces(
-            AssetPath::join(layer.imagePart().image).replaceTags(StringMap<String>(), true, "default"),
-            imagePosition,
+        if (layer.isImage())
+          spaceScanSpaces.addAll(root.imageMetadataDatabase()->imageSpaces(
+            AssetPath::join(layer.imagePart().image).replaceTags(imageKeys, true, "default"),
+            imagePosition + (layer.position + layer.imagePart().transformation.transformVec2(Vec2F())) * TilePixels,
             orientationSettings.getDouble("spaceScan"),
             orientation->flipImages));
       }
@@ -582,10 +588,17 @@ List<Drawable> ObjectDatabase::cursorHintDrawables(World const* world, String co
     }
 
     auto orientation = config->orientations.at(orientationIndex);
+
+    StringMap<String> imageKeys;
+    imageKeys.set("color", orientation->config.get("color", "default").toString().takeUtf8());
+    for (auto p : orientation->config.get("defaultImageKeys", JsonObject()).toObject())
+      imageKeys.set(p.first, p.second.toString());
+
     for (auto const& layer : orientation->imageLayers) {
       Drawable drawable = layer;
       auto& image = drawable.imagePart().image;
-      image = AssetPath::join(image).replaceTags(StringMap<String>(), true, "default");
+
+      image = AssetPath::join(image).replaceTags(imageKeys, true, "default");
       if (orientation->flipImages)
         drawable.scale(Vec2F(-1, 1), drawable.boundBox(false).center() - drawable.position);
       drawables.append(std::move(drawable));

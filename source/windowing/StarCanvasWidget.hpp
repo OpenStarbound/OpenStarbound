@@ -45,7 +45,7 @@ public:
   List<KeyEvent> pullKeyEvents();
 
   bool sendEvent(InputEvent const& event) override;
-  KeyboardCaptureMode keyboardCaptured() const override;
+  KeyboardCaptureMode keyboardCaptureMode() const override;
 
   // Call before drawing to clear old draw data.
   void clear();

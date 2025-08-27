@@ -67,9 +67,9 @@ struct SignalHandlerImpl {
           (PVOID)ExceptionInfo->ExceptionRecord->ExceptionInformation[1]);
     } else {
       g_sehMessage = msg;
-      g_sehMessage = strf("{} (%p @ {})",
+      g_sehMessage = strf("{} ({} @ {})",
           g_sehMessage,
-          ExceptionInfo->ExceptionRecord->ExceptionCode,
+          (PVOID)ExceptionInfo->ExceptionRecord->ExceptionCode,
           ExceptionInfo->ExceptionRecord->ExceptionAddress);
       for (DWORD i = 0; i < ExceptionInfo->ExceptionRecord->NumberParameters; i++)
         g_sehMessage = strf("{} [{}]", g_sehMessage, (PVOID)ExceptionInfo->ExceptionRecord->ExceptionInformation[i]);
@@ -101,10 +101,7 @@ struct SignalHandlerImpl {
   static LONG CALLBACK vectoredExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo) {
     LONG result = EXCEPTION_CONTINUE_SEARCH;
     if (ExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_STACK_OVERFLOW) {
-      if (HANDLE thread = CreateThread(NULL, 0, writeMiniDump, (void*)ExceptionInfo, 0, NULL)) {
-        WaitForSingleObject(thread, 10000);
-        CloseHandle(thread);
-      }
+      writeMiniDump(ExceptionInfo);
       handleFatalError("Stack overflow detected", ExceptionInfo);
       result = EXCEPTION_CONTINUE_EXECUTION;
     }

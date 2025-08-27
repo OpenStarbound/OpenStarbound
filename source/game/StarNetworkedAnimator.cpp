@@ -70,6 +70,7 @@ NetworkedAnimator::NetworkedAnimator() {
   m_flipped.set(false);
   m_flippedRelativeCenterLine.set(0.0f);
   m_animationRate.set(1.0f);
+  m_animatorVersion = 0;
   setupNetStates();
 }
 
@@ -87,8 +88,14 @@ NetworkedAnimator::NetworkedAnimator(Json config, String relativePath) : Network
     if (relativePath.empty())
       relativePath = "/";
   }
+  m_animatorVersion = config.getUInt("version", 0);
 
-  m_animatedParts = AnimatedPartSet(config.get("animatedParts", JsonObject()));
+  if (version() > 0) {
+    if (config.contains("includes"))
+      config = mergeIncludes(config, config.get("includes"), relativePath);
+  }
+
+  m_animatedParts = AnimatedPartSet(config.get("animatedParts", JsonObject()), version());
   m_relativePath = AssetPath::directory(relativePath);
 
   for (auto const& pair : config.get("globalTagDefaults", JsonObject()).iterateObject())
@@ -103,6 +110,8 @@ NetworkedAnimator::NetworkedAnimator(Json config, String relativePath) : Network
     auto& tg = m_transformationGroups[pair.first];
     tg.interpolated = pair.second.getBool("interpolated", false);
     tg.setAffineTransform(Mat3F::identity());
+    tg.setAnimationAffineTransform(Mat3F::identity());
+    tg.setLocalAffineTransform(Mat3F::identity());
   }
 
   for (auto const& pair : config.get("rotationGroups", JsonObject()).iterateObject()) {
@@ -222,8 +231,10 @@ NetworkedAnimator::NetworkedAnimator(Json config, String relativePath) : Network
 
   // Make sure that every state type has an entry in the state info map, and
   // order it predictably by key.
-  for (auto const& stateType : m_animatedParts.stateTypes())
-    m_stateInfo[stateType];
+  for (auto const& stateType : m_animatedParts.stateTypes()) {
+    StateInfo& stateInfo = m_stateInfo[stateType];
+    stateInfo.wasUpdated = true;
+  }
 
   m_stateInfo.sortByKey();
 
@@ -256,7 +267,9 @@ NetworkedAnimator& NetworkedAnimator::operator=(NetworkedAnimator&& animator) {
   m_globalTags = std::move(animator.m_globalTags);
   m_partTags = std::move(animator.m_partTags);
   m_cachedPartDrawables = std::move(animator.m_cachedPartDrawables);
-
+  m_partDrawables = std::move(animator.m_partDrawables);
+  m_localTags = std::move(animator.m_localTags);
+  m_animatorVersion = std::move(animator.m_animatorVersion);
   setupNetStates();
 
   return *this;
@@ -280,7 +293,9 @@ NetworkedAnimator& NetworkedAnimator::operator=(NetworkedAnimator const& animato
   m_globalTags = animator.m_globalTags;
   m_partTags = animator.m_partTags;
   m_cachedPartDrawables = animator.m_cachedPartDrawables;
-
+  m_partDrawables = animator.m_partDrawables;
+  m_localTags = animator.m_localTags;
+  m_animatorVersion = animator.m_animatorVersion;
   setupNetStates();
 
   return *this;
@@ -294,8 +309,9 @@ StringList NetworkedAnimator::states(String const& stateType) const {
   return m_animatedParts.states(stateType);
 }
 
-bool NetworkedAnimator::setState(String const& stateType, String const& state, bool startNew) {
-  if (m_animatedParts.setActiveState(stateType, state, startNew)) {
+bool NetworkedAnimator::setState(String const& stateType, String const& state, bool startNew, bool reverse) {
+  if (m_animatedParts.setActiveState(stateType, state, startNew, reverse)) {
+    m_stateInfo[stateType].wasUpdated = true;
     m_stateInfo[stateType].startedEvent.trigger();
     return true;
   } else {
@@ -303,8 +319,44 @@ bool NetworkedAnimator::setState(String const& stateType, String const& state, b
   }
 }
 
+bool NetworkedAnimator::setLocalState(String const& stateType, String const& state, bool startNew, bool reverse) {
+  return m_animatedParts.setActiveState(stateType, state, startNew, reverse);
+}
+
 String NetworkedAnimator::state(String const& stateType) const {
   return m_animatedParts.activeState(stateType).stateName;
+}
+int NetworkedAnimator::stateFrame(String const& stateType) const {
+  return m_animatedParts.activeState(stateType).frame;
+}
+int NetworkedAnimator::stateNextFrame(String const& stateType) const {
+  return m_animatedParts.activeState(stateType).nextFrame;
+}
+float NetworkedAnimator::stateFrameProgress(String const& stateType) const {
+  return m_animatedParts.activeState(stateType).frameProgress;
+}
+float NetworkedAnimator::stateTimer(String const& stateType) const {
+  return m_animatedParts.activeState(stateType).timer;
+}
+bool NetworkedAnimator::stateReverse(String const& stateType) const {
+  return m_animatedParts.activeState(stateType).reverse;
+}
+
+float NetworkedAnimator::stateCycle(String const& stateType, Maybe<String> state) const {
+  return m_animatedParts.getState(stateType, state.value(m_animatedParts.activeState(stateType).stateName)).cycle;
+}
+int NetworkedAnimator::stateFrames(String const& stateType, Maybe<String> state) const {
+  return m_animatedParts.getState(stateType, state.value(m_animatedParts.activeState(stateType).stateName)).frames;
+}
+
+bool NetworkedAnimator::hasState(String const & stateType, Maybe<String> const & state) const {
+  if (m_animatedParts.stateTypes().contains(stateType)) {
+    if (state) {
+      return m_animatedParts.states(stateType).contains(*state);
+    }
+    return true;
+  }
+  return false;
 }
 
 StringMap<AnimatedPartSet::Part> const& NetworkedAnimator::constParts() const {
@@ -319,12 +371,22 @@ StringList NetworkedAnimator::partNames() const {
   return m_animatedParts.partNames();
 }
 
-Json NetworkedAnimator::stateProperty(String const& stateType, String const& propertyName) const {
+Json NetworkedAnimator::stateProperty(String const& stateType, String const& propertyName, Maybe<String> state, Maybe<int> frame) const {
+  if (state.isValid())
+    return m_animatedParts.getStateFrameProperty(stateType, propertyName, *state, *frame);
   return m_animatedParts.activeState(stateType).properties.value(propertyName);
 }
+Json NetworkedAnimator::stateNextProperty(String const& stateType, String const& propertyName) const {
+  return m_animatedParts.activeState(stateType).nextProperties.value(propertyName);
+}
 
-Json NetworkedAnimator::partProperty(String const& partName, String const& propertyName) const {
+Json NetworkedAnimator::partProperty(String const& partName, String const& propertyName, Maybe<String> stateType, Maybe<String> state, Maybe<int> frame) const {
+  if (stateType.isValid())
+    return m_animatedParts.getPartStateFrameProperty(partName, propertyName, *stateType, *state, *frame);
   return m_animatedParts.activePart(partName).properties.value(propertyName);
+}
+Json NetworkedAnimator::partNextProperty(String const& partName, String const& propertyName) const {
+  return m_animatedParts.activePart(partName).nextProperties.value(propertyName);
 }
 
 Mat3F NetworkedAnimator::globalTransformation() const {
@@ -337,7 +399,7 @@ Mat3F NetworkedAnimator::globalTransformation() const {
 Mat3F NetworkedAnimator::groupTransformation(StringList const& transformationGroups) const {
   auto mat = Mat3F::identity();
   for (auto const& tg : transformationGroups)
-    mat = m_transformationGroups.get(tg).affineTransform() * mat;
+    mat = m_transformationGroups.get(tg).affineTransform() * m_transformationGroups.get(tg).localAffineTransform() * m_transformationGroups.get(tg).animationAffineTransform() * mat;
   return mat;
 }
 
@@ -347,6 +409,8 @@ Mat3F NetworkedAnimator::partTransformation(String const& partName) const {
 
   if (auto offset = part.properties.value("offset").opt().apply(jsonToVec2F))
     transformation = Mat3F::translation(*offset) * transformation;
+
+  transformation = part.animationAffineTransform() * transformation;
 
   auto transformationGroups = jsonToStringList(part.properties.value("transformationGroups", JsonArray()));
   transformation = groupTransformation(transformationGroups) * transformation;
@@ -387,8 +451,11 @@ Maybe<PolyF> NetworkedAnimator::partPoly(String const& partName, String const& p
   return poly;
 }
 
-void NetworkedAnimator::setGlobalTag(String tagName, String tagValue) {
-  m_globalTags.set(std::move(tagName), std::move(tagValue));
+void NetworkedAnimator::setGlobalTag(String tagName, Maybe<String> tagValue) {
+  if (tagValue)
+    m_globalTags.set(std::move(tagName), std::move(*tagValue));
+  else
+    m_globalTags.remove(tagName);
 }
 
 void NetworkedAnimator::removeGlobalTag(String const& tagName) {
@@ -400,9 +467,81 @@ String const* NetworkedAnimator::globalTagPtr(String const& tagName) const {
 }
 
 
-void NetworkedAnimator::setPartTag(String const& partType, String tagName, String tagValue) {
-  m_partTags[partType].set(std::move(tagName), std::move(tagValue));
+void NetworkedAnimator::setPartTag(String const& partType, String tagName, Maybe<String> tagValue) {
+  if (tagValue)
+    m_partTags[partType].set(std::move(tagName), std::move(*tagValue));
+  else
+    m_partTags[partType].remove(tagName);
 }
+
+void NetworkedAnimator::setLocalTag(String tagName, Maybe<String> tagValue) {
+  if (tagValue)
+    m_localTags.set(tagName, *tagValue);
+  else
+    m_localTags.remove(tagName);
+}
+
+void NetworkedAnimator::setPartDrawables(String const& partName, List<Drawable> drawables) {
+  m_partDrawables.set(partName, drawables);
+}
+void NetworkedAnimator::addPartDrawables(String const& partName, List<Drawable> drawables) {
+  m_partDrawables.ptr(partName)->appendAll(drawables);
+}
+String NetworkedAnimator::applyPartTags(String const& partName, String apply) const {
+  HashMap<String, String> animationTags = m_localTags;
+  Maybe<unsigned> frame;
+  String frameStr;
+  String frameIndexStr;
+  auto activePart = m_animatedParts.activePart(partName);
+  auto partTags = m_partTags.get(partName);
+  if (activePart.activeState) {
+    unsigned stateFrame = activePart.activeState->frame;
+    frame = stateFrame;
+    frameStr = static_cast<String>(toString(stateFrame + 1));
+    frameIndexStr = static_cast<String>(toString(stateFrame));
+  }
+  if (version() > 0)
+    m_animatedParts.forEachActiveState([&](String const& stateTypeName, AnimatedPartSet::ActiveStateInformation const& activeState) {
+      unsigned stateFrame = activeState.frame;
+      Maybe<unsigned> frame;
+      String frameStr;
+      String frameIndexStr;
+
+      frame = stateFrame;
+      frameStr = static_cast<String>(toString(stateFrame + 1));
+      frameIndexStr = static_cast<String>(toString(stateFrame));
+      if (frame) {
+        animationTags.set(stateTypeName + "_frame", frameStr);
+        animationTags.set(stateTypeName + "_frameIndex", frameIndexStr);
+      }
+      animationTags.set(stateTypeName + "_state", activeState.stateName);
+
+      if (auto p = activeState.properties.ptr("animationTags")) {
+        for (auto tag : p->iterateObject())
+          animationTags.set(tag.first, tag.second.toString());
+      }
+    });
+
+  auto applied = apply.maybeLookupTagsView([&](StringView tag) -> StringView {
+    if (tag == "frame") {
+      if (frame)
+        return frameStr;
+    } else if (tag == "frameIndex") {
+      if (frame)
+        return frameIndexStr;
+    } else if (auto p = animationTags.ptr(tag)) {
+      return StringView(*p);
+    } else if (auto p = partTags.ptr(tag)) {
+      return StringView(*p);
+    } else if (auto p = m_globalTags.ptr(tag)) {
+      return StringView(*p);
+    }
+
+    return StringView("default");
+  });
+  return applied ? applied.get() : apply;
+}
+
 
 void NetworkedAnimator::setProcessingDirectives(Directives const& directives) {
   m_processingDirectives.set(directives);
@@ -427,6 +566,10 @@ void NetworkedAnimator::setFlipped(bool flipped, float relativeCenterLine) {
 
 void NetworkedAnimator::setAnimationRate(float rate) {
   m_animationRate.set(rate);
+}
+
+float NetworkedAnimator::animationRate() {
+  return m_animationRate.get();
 }
 
 bool NetworkedAnimator::hasRotationGroup(String const& rotationGroup) const {
@@ -483,6 +626,55 @@ void NetworkedAnimator::transformTransformationGroup(
 
 void NetworkedAnimator::resetTransformationGroup(String const& transformationGroup) {
   m_transformationGroups.get(transformationGroup).setAffineTransform(Mat3F::identity());
+}
+
+void NetworkedAnimator::setTransformationGroup(String const& transformationGroup, Mat3F transform) {
+  m_transformationGroups.get(transformationGroup).setAffineTransform(transform);
+}
+
+Mat3F NetworkedAnimator::getTransformationGroup(String const& transformationGroup) {
+  return m_transformationGroups.get(transformationGroup).affineTransform();
+}
+void NetworkedAnimator::translateLocalTransformationGroup(String const& transformationGroup, Vec2F const& translation) {
+  auto& group = m_transformationGroups.get(transformationGroup);
+  group.setLocalAffineTransform(Mat3F::translation(translation) * group.localAffineTransform());
+}
+
+void NetworkedAnimator::rotateLocalTransformationGroup(
+    String const& transformationGroup, float rotation, Vec2F const& rotationCenter) {
+  auto& group = m_transformationGroups.get(transformationGroup);
+  group.setLocalAffineTransform(Mat3F::rotation(rotation, rotationCenter) * group.localAffineTransform());
+}
+
+void NetworkedAnimator::scaleLocalTransformationGroup(
+    String const& transformationGroup, float scale, Vec2F const& scaleCenter) {
+  auto& group = m_transformationGroups.get(transformationGroup);
+  group.setLocalAffineTransform(Mat3F::scaling(scale, scaleCenter) * group.localAffineTransform());
+}
+
+void NetworkedAnimator::scaleLocalTransformationGroup(
+    String const& transformationGroup, Vec2F const& scale, Vec2F const& scaleCenter) {
+  auto& group = m_transformationGroups.get(transformationGroup);
+  group.setLocalAffineTransform(Mat3F::scaling(scale, scaleCenter) * group.localAffineTransform());
+}
+
+void NetworkedAnimator::transformLocalTransformationGroup(
+    String const& transformationGroup, float a, float b, float c, float d, float tx, float ty) {
+  auto& group = m_transformationGroups.get(transformationGroup);
+  Mat3F transform = Mat3F(a, b, tx, c, d, ty, 0, 0, 1);
+  group.setLocalAffineTransform(transform * group.localAffineTransform());
+}
+
+void NetworkedAnimator::resetLocalTransformationGroup(String const& transformationGroup) {
+  m_transformationGroups.get(transformationGroup).setLocalAffineTransform(Mat3F::identity());
+}
+
+void NetworkedAnimator::setLocalTransformationGroup(String const& transformationGroup, Mat3F transform) {
+  m_transformationGroups.get(transformationGroup).setLocalAffineTransform(transform);
+}
+
+Mat3F NetworkedAnimator::getLocalTransformationGroup(String const& transformationGroup) {
+  return m_transformationGroups.get(transformationGroup).localAffineTransform();
 }
 
 bool NetworkedAnimator::hasParticleEmitter(String const& emitterName) const {
@@ -602,9 +794,32 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
       }
     }
   }
+  HashMap<String, String> animationTags = m_localTags;
+  if (version() > 0)
+    m_animatedParts.forEachActiveState([&](String const& stateTypeName, AnimatedPartSet::ActiveStateInformation const& activeState) {
+      unsigned stateFrame = activeState.frame;
+      Maybe<unsigned> frame;
+      String frameStr;
+      String frameIndexStr;
+
+      frame = stateFrame;
+      frameStr = static_cast<String>(toString(stateFrame + 1));
+      frameIndexStr = static_cast<String>(toString(stateFrame));
+      if (frame) {
+        animationTags.set(stateTypeName + "_frame", frameStr);
+        animationTags.set(stateTypeName + "_frameIndex", frameIndexStr);
+      }
+      animationTags.set(stateTypeName + "_state", activeState.stateName);
+
+      if (auto p = activeState.properties.ptr("animationTags")) {
+        for (auto tag : p->iterateObject())
+          animationTags.set(tag.first, tag.second.toString());
+      }
+    });
 
   List<tuple<AnimatedPartSet::ActivePartInformation const*, String const*, float>> parts;
   parts.reserve(partCount);
+  int drawableCount = 0;
   m_animatedParts.forEachActivePart([&](String const& partName, AnimatedPartSet::ActivePartInformation const& activePart) {
     Maybe<float> maybeZLevel;
     if (m_flipped.get()) {
@@ -614,26 +829,48 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
     if (!maybeZLevel)
       maybeZLevel = activePart.properties.value("zLevel").optFloat();
 
+    if (auto drawables = m_partDrawables.contains(partName))
+      drawableCount += m_partDrawables.get(partName).size();
     parts.append(make_tuple(&activePart, &partName, maybeZLevel.value(0.0f)));
   });
 
   sort(parts, [](auto const& a, auto const& b) { return get<2>(a) < get<2>(b); });
 
   List<pair<Drawable, float>> drawables;
-  drawables.reserve(partCount);
+  drawables.reserve(partCount + drawableCount);
   for (auto& entry : parts) {
     auto& activePart = *get<0>(entry);
     auto& partName = *get<1>(entry);
     // Make sure we don't copy the original image
     String fallback = "";
     Json jImage = activePart.properties.value("image", {});
+    if (version() > 0 && m_flipped.get()) {
+      if (auto maybeFlipped = activePart.properties.value("flippedImage").optString())
+        jImage = *maybeFlipped;
+    }
+
     String const& image = jImage.isType(Json::Type::String) ? *jImage.stringPtr() : fallback;
 
     bool centered = activePart.properties.value("centered").optBool().value(true);
     bool fullbright = activePart.properties.value("fullbright").optBool().value(false);
 
     size_t originalDirectivesSize = baseProcessingDirectives.size();
+
+    auto const& partTags = m_partTags.get(partName);
+
     if (auto directives = activePart.properties.value("processingDirectives").optString()) {
+      if (version() > 0){
+        directives = directives->maybeLookupTagsView([&](StringView tag) -> StringView {
+          if (auto p = animationTags.ptr(tag)) {
+            return StringView(*p);
+          } else if (auto p = partTags.ptr(tag)) {
+            return StringView(*p);
+          } else if (auto p = m_globalTags.ptr(tag)) {
+            return StringView(*p);
+          }
+          return StringView("default");
+        });
+      }
       baseProcessingDirectives.append(*directives);
     }
 
@@ -647,11 +884,22 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
       frameIndexStr = static_cast<String>(toString(stateFrame));
 
       if (auto directives = activePart.activeState->properties.value("processingDirectives").optString()) {
+        if (version() > 0){
+          directives = directives->maybeLookupTagsView([&](StringView tag) -> StringView {
+            if (auto p = animationTags.ptr(tag)) {
+              return StringView(*p);
+            } else if (auto p = partTags.ptr(tag)) {
+              return StringView(*p);
+            } else if (auto p = m_globalTags.ptr(tag)) {
+              return StringView(*p);
+            }
+            return StringView("default");
+          });
+        }
         baseProcessingDirectives.append(*directives);
       }
     }
 
-    auto const& partTags = m_partTags.get(partName);
     Maybe<String> processedImage = image.maybeLookupTagsView([&](StringView tag) -> StringView {
       if (tag == "frame") {
         if (frame)
@@ -659,6 +907,8 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
       } else if (tag == "frameIndex") {
         if (frame)
           return frameIndexStr;
+      } else if (auto p = animationTags.ptr(tag)) {
+        return StringView(*p);
       } else if (auto p = partTags.ptr(tag)) {
         return StringView(*p);
       } else if (auto p = m_globalTags.ptr(tag)) {
@@ -668,6 +918,9 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
       return StringView("default");
     });
     String const& usedImage = processedImage ? processedImage.get() : image;
+
+    auto transformation = globalTransformation() * partTransformation(partName);
+    transformation.translate(position);
 
     if (!usedImage.empty() && usedImage[0] != ':' && usedImage[0] != '?') {
       size_t hash = hashOf(usedImage);
@@ -690,14 +943,19 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
       auto& imagePart = drawable.imagePart();
       for (Directives const& directives : baseProcessingDirectives)
         imagePart.addDirectives(directives, centered);
-      drawable.transform(partTransformation(partName));
-      drawable.transform(globalTransformation());
       drawable.fullbright = fullbright;
-      drawable.translate(position);
-
+      drawable.transform(transformation);
       drawables.append({std::move(drawable), get<2>(entry)});
     }
-        
+
+    if (m_partDrawables.contains(partName)) {
+      auto partDrawables = m_partDrawables.get(partName);
+      Drawable::transformAll(partDrawables, transformation);
+      for (auto drawable : partDrawables) {
+      drawables.append({drawable, get<2>(entry)});
+      }
+    }
+
     baseProcessingDirectives.resize(originalDirectivesSize);
   }
 
@@ -829,6 +1087,45 @@ void NetworkedAnimator::update(float dt, DynamicTarget* dynamicTarget) {
       if (auto particleEmittersOff = activeState.properties.ptr("particleEmittersOff")) {
         for (auto const& name : particleEmittersOff->iterateArray())
           m_particleEmitters.get(name.toString()).active.set(false);
+      }
+
+      if (version() > 0){
+        auto processTransforms = [](Mat3F mat, JsonArray transforms, JsonObject properties) -> Mat3F {
+          for (auto const& v : transforms) {
+            auto action = v.getString(0);
+            if (action == "reset") {
+              mat = Mat3F::identity();
+            } else if (action == "translate") {
+              mat.translate(jsonToVec2F(v.getArray(1)));
+            } else if (action == "rotate") {
+              mat.rotate(v.getFloat(1), jsonToVec2F(v.getArray(2, properties.maybe("rotationCenter").value(JsonArray({0,0})).toArray())));
+            } else if (action == "rotateDegrees") { // because radians are fucking annoying
+              mat.rotate(v.getFloat(1) * Star::Constants::pi / 180, jsonToVec2F(v.getArray(2, properties.maybe("rotationCenter").value(JsonArray({0,0})).toArray())));
+            } else if (action == "scale") {
+              mat.scale(jsonToVec2F(v.getArray(1)), jsonToVec2F(v.getArray(2, properties.maybe("scalingCenter").value(JsonArray({0,0})).toArray())));
+            } else if (action == "transform") {
+              mat = Mat3F(v.getFloat(1), v.getFloat(2), v.getFloat(3), v.getFloat(4), v.getFloat(5), v.getFloat(6), 0, 0, 1) * mat;
+            }
+          }
+          return mat;
+        };
+
+
+        for (auto& pair : m_transformationGroups) {
+          if (auto transforms = activeState.properties.ptr(pair.first)) {
+            auto mat = processTransforms(pair.second.animationAffineTransform(), transforms->toArray(), activeState.properties);
+            if (pair.second.interpolated) {
+              if (auto nextTransforms = activeState.nextProperties.ptr(pair.first)) {
+                auto nextMat = processTransforms(pair.second.animationAffineTransform(), nextTransforms->toArray(), activeState.nextProperties);
+                pair.second.setAnimationAffineTransform(mat, nextMat, activeState.frameProgress);
+              } else {
+                pair.second.setAnimationAffineTransform(mat);
+              }
+            } else {
+              pair.second.setAnimationAffineTransform(mat);
+            }
+          }
+        }
       }
     });
 
@@ -990,6 +1287,39 @@ void NetworkedAnimator::TransformationGroup::setAffineTransform(Mat3F const& mat
   yShear.set(atan2(matrix[1][0], matrix[1][1]));
 }
 
+void NetworkedAnimator::TransformationGroup::setLocalAffineTransform(Mat3F const& matrix) {
+  localTransform = matrix;
+}
+
+Mat3F NetworkedAnimator::TransformationGroup::localAffineTransform() const {
+  return localTransform;
+}
+
+void NetworkedAnimator::TransformationGroup::setAnimationAffineTransform(Mat3F const& matrix) {
+  xTranslationAnimation = matrix[0][2];
+  yTranslationAnimation = matrix[1][2];
+  xScaleAnimation = sqrt(square(matrix[0][0]) + square(matrix[0][1]));
+  yScaleAnimation = sqrt(square(matrix[1][0]) + square(matrix[1][1]));
+  xShearAnimation = atan2(matrix[0][1], matrix[0][0]);
+  yShearAnimation = atan2(matrix[1][0], matrix[1][1]);
+}
+void NetworkedAnimator::TransformationGroup::setAnimationAffineTransform(Mat3F const& mat1, Mat3F const& mat2, float progress) {
+  xTranslationAnimation = lerp(progress, mat1[0][2], mat2[0][2]);
+  yTranslationAnimation = lerp(progress, mat1[1][2], mat2[1][2]);
+  xScaleAnimation = lerp(progress, sqrt(square(mat1[0][0]) + square(mat1[0][1])), sqrt(square(mat2[0][0]) + square(mat2[0][1])));
+  yScaleAnimation = lerp(progress, sqrt(square(mat1[1][0]) + square(mat1[1][1])), sqrt(square(mat2[1][0]) + square(mat2[1][1])));
+  xShearAnimation = angleLerp(progress, atan2(mat1[0][1], mat1[0][0]), atan2(mat2[0][1], mat2[0][0]));
+  yShearAnimation = angleLerp(progress, atan2(mat1[1][0], mat1[1][1]), atan2(mat2[1][0], mat2[1][1]));
+}
+
+Mat3F NetworkedAnimator::TransformationGroup::animationAffineTransform() const {
+  return Mat3F(
+      xScaleAnimation * cos(xShearAnimation), xScaleAnimation * sin(xShearAnimation), xTranslationAnimation,
+      yScaleAnimation * sin(yShearAnimation), yScaleAnimation * cos(yShearAnimation), yTranslationAnimation,
+      0, 0, 1
+    );
+}
+
 void NetworkedAnimator::setupNetStates() {
   clearNetElements();
 
@@ -1007,6 +1337,8 @@ void NetworkedAnimator::setupNetStates() {
     addNetElement(&m_partTags[part]);
 
   for (auto& pair : m_stateInfo) {
+    pair.second.reverse.setCompatibilityVersion(10);
+    addNetElement(&pair.second.reverse);
     addNetElement(&pair.second.stateIndex);
     addNetElement(&pair.second.startedEvent);
   }
@@ -1081,12 +1413,13 @@ void NetworkedAnimator::setupNetStates() {
 
   for (auto& pair : m_effects)
     addNetElement(&pair.second.enabled);
+
 }
 
 void NetworkedAnimator::netElementsNeedLoad(bool initial) {
   for (auto& pair : m_stateInfo) {
     if (pair.second.startedEvent.pullOccurred() || initial)
-      m_animatedParts.setActiveStateIndex(pair.first, pair.second.stateIndex.get(), true);
+      m_animatedParts.setActiveStateIndex(pair.first, pair.second.stateIndex.get(), true, pair.second.reverse.get());
   }
 
   for (auto& pair : m_rotationGroups) {
@@ -1096,8 +1429,28 @@ void NetworkedAnimator::netElementsNeedLoad(bool initial) {
 }
 
 void NetworkedAnimator::netElementsNeedStore() {
-  for (auto& pair : m_stateInfo)
-    pair.second.stateIndex.set(m_animatedParts.activeStateIndex(pair.first));
+  for (auto& pair : m_stateInfo) {
+    if (pair.second.wasUpdated || (version() < 1)) {
+      pair.second.wasUpdated = false;
+      pair.second.stateIndex.set(m_animatedParts.activeStateIndex(pair.first));
+      pair.second.reverse.set(m_animatedParts.activeStateReverse(pair.first));
+    }
+  }
+}
+
+uint8_t NetworkedAnimator::version() const {
+  return m_animatorVersion;
+}
+
+Json NetworkedAnimator::mergeIncludes(Json config, Json includes, String relativePath){
+  Json includedConfigs;
+  for (Json const& path : includes.iterateArray()) {
+    auto includeConfig = Root::singleton().assets()->json(AssetPath::relativeTo(relativePath, path.toString()));
+    if (includeConfig.contains("includes"))
+      includeConfig = mergeIncludes(includeConfig, includeConfig.get("includes"), relativePath);
+    includedConfigs = jsonMerge(includedConfigs, includeConfig);
+  }
+  return jsonMerge(includedConfigs, config);
 }
 
 }

@@ -29,12 +29,14 @@ LuaCallbacks LuaBindings::makeInputCallbacks() {
   callbacks.registerCallback("key",     keyHeld);
   callbacks.registerCallback("keyUp",   [input](String const& keyName) -> Maybe<unsigned> { return input->keyUp(  KeyNames.getLeft(keyName)); });
 
-  callbacks.registerCallback("mouseDown", [input](String const& buttonName) -> Maybe<List<Vec2I>> { return input->mouseDown(MouseButtonNames.getLeft(buttonName)); });
+  callbacks.registerCallback("mouseDown", [input](String const& buttonName) -> Maybe<List<Vec2F>>
+    { return input->mouseDown(MouseButtonNames.getLeft(buttonName)); });
   
   auto mouseHeld = [input](String const& buttonName) -> bool { return input->mouseHeld(MouseButtonNames.getLeft(buttonName)); };
   callbacks.registerCallback("mouseHeld", mouseHeld);
   callbacks.registerCallback("mouse",     mouseHeld);
-  callbacks.registerCallback("mouseUp",   [input](String const& buttonName) -> Maybe<List<Vec2I>> { return input->mouseUp(  MouseButtonNames.getLeft(buttonName)); });
+  callbacks.registerCallback("mouseUp",   [input](String const& buttonName) -> Maybe<List<Vec2F>>
+    { return input->mouseUp(  MouseButtonNames.getLeft(buttonName)); });
 
   callbacks.registerCallbackWithSignature<void, String, String>("resetBinds",      bind(mem_fn(&Input::resetBinds),      input, _1, _2));
   callbacks.registerCallbackWithSignature<void, String, String, Json>("setBinds",  bind(mem_fn(&Input::setBinds),        input, _1, _2, _3));
@@ -52,7 +54,7 @@ LuaCallbacks LuaBindings::makeInputCallbacks() {
     return result;
   });
 
-  callbacks.registerCallbackWithSignature<Vec2I>("mousePosition", bind(mem_fn(&Input::mousePosition), input));
+  callbacks.registerCallbackWithSignature<Vec2F>("mousePosition", bind(mem_fn(&Input::mousePosition), input));
   callbacks.registerCallbackWithSignature<unsigned, String>("getTag", bind(mem_fn(&Input::getTag), input, _1));
 
   return callbacks;

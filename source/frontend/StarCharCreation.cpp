@@ -301,103 +301,37 @@ void CharCreationPane::changed() {
   else
     portrait->setMode(PortraitMode::FullNude);
 
-  auto gender = species.genderOptions.wrap(m_genderChoice);
-  auto bodyColor = species.bodyColorDirectives.wrap(m_bodyColor);
+  auto results = root.speciesDatabase()->createHumanoid(
+    textBox->getText(),
+    species.species,
+    m_genderChoice,
+    m_bodyColor,
+    m_alty,
+    m_hairChoice,
+    m_heady,
+    m_shirtChoice,
+    m_shirtColor,
+    m_pantsChoice,
+    m_pantsColor,
+    m_personality
+  );
 
-  String altColor;
-
-  if (species.altOptionAsUndyColor) {
-    // undyColor
-    altColor = species.undyColorDirectives.wrap(m_alty);
-  }
-
-  auto hair = gender.hairOptions.wrap(m_hairChoice);
-  String hairColor = bodyColor;
-  if (species.headOptionAsHairColor && species.altOptionAsHairColor) {
-    hairColor = species.hairColorDirectives.wrap(m_heady);
-    hairColor += species.undyColorDirectives.wrap(m_alty);
-  } else if (species.headOptionAsHairColor) {
-    hairColor = species.hairColorDirectives.wrap(m_heady);
-  }
-
-  if (species.hairColorAsBodySubColor)
-    bodyColor += hairColor;
-
-  String facialHair;
-  String facialHairGroup;
-  String facialHairDirective;
-  if (species.headOptionAsFacialhair) {
-    facialHair = gender.facialHairOptions.wrap(m_heady);
-    facialHairGroup = gender.facialHairGroup;
-    facialHairDirective = hairColor;
-  }
-
-  String facialMask;
-  String facialMaskGroup;
-  String facialMaskDirective;
-  if (species.altOptionAsFacialMask) {
-    facialMask = gender.facialMaskOptions.wrap(m_alty);
-    facialMaskGroup = gender.facialMaskGroup;
-    facialMaskDirective = "";
-  }
-  if (species.bodyColorAsFacialMaskSubColor)
-    facialMaskDirective += bodyColor;
-  if (species.altColorAsFacialMaskSubColor)
-    facialMaskDirective += altColor;
-
-  auto shirt = gender.shirtOptions.wrap(m_shirtChoice);
-  auto pants = gender.pantsOptions.wrap(m_pantsChoice);
 
   m_previewPlayer->setModeType((PlayerMode)m_modeChoice);
 
-  m_previewPlayer->setName(textBox->getText());
-
-  m_previewPlayer->setSpecies(species.species);
-  m_previewPlayer->setBodyDirectives(bodyColor + altColor);
-
-  m_previewPlayer->setGender(GenderNames.getLeft(gender.name));
-
-  m_previewPlayer->setHairGroup(gender.hairGroup);
-  m_previewPlayer->setHairType(hair);
-  m_previewPlayer->setHairDirectives(hairColor);
-
-  m_previewPlayer->setEmoteDirectives(bodyColor + altColor);
-
-  m_previewPlayer->setFacialHair(facialHairGroup, facialHair, facialHairDirective);
-
-  m_previewPlayer->setFacialMask(facialMaskGroup, facialMask, facialMaskDirective);
-
-  auto personality = speciesDefinition->personalities().wrap(m_personality);
-  m_previewPlayer->setPersonality(personality);
-
-  setShirt(shirt, m_shirtColor);
-  setPants(pants, m_pantsColor);
+  m_previewPlayer->setHumanoidParameters(results.humanoidParameters);
+  m_previewPlayer->setIdentity(results.identity);
+  m_previewPlayer->refreshHumanoidParameters();
+  for (auto p : EquipmentSlotNames) {
+    if (auto equipment = results.armor.maybe(p.second)) {
+      m_previewPlayer->inventory()->setItem(InventorySlot(p.first), root.itemDatabase()->item(ItemDescriptor(equipment.value())));
+    } else {
+      m_previewPlayer->inventory()->consumeSlot(InventorySlot(p.first));
+    }
+  }
+  m_previewPlayer->refreshEquipment();
 
   m_previewPlayer->finalizeCreation();
-}
-
-void CharCreationPane::setShirt(String const& shirt, size_t colorIndex) {
-  auto& root = Root::singleton();
-
-  while (m_previewPlayer->inventory()->chestArmor())
-    m_previewPlayer->inventory()->consumeSlot(InventorySlot(EquipmentSlot::Chest));
-  if (!shirt.empty()) {
-    m_previewPlayer->inventory()->addItems(
-        root.itemDatabase()->item({shirt, 1, JsonObject{{"colorIndex", colorIndex}}}));
-  }
-  m_previewPlayer->refreshEquipment();
-}
-
-void CharCreationPane::setPants(String const& pants, size_t colorIndex) {
-  auto& root = Root::singleton();
-
-  while (m_previewPlayer->inventory()->legsArmor())
-    m_previewPlayer->inventory()->consumeSlot(InventorySlot(EquipmentSlot::Legs));
-  if (!pants.empty()) {
-    m_previewPlayer->inventory()->addItems(
-        root.itemDatabase()->item({pants, 1, JsonObject{{"colorIndex", colorIndex}}}));
-  }
-  m_previewPlayer->refreshEquipment();
 }
 
 void CharCreationPane::nameBoxCallback(Widget* object) {

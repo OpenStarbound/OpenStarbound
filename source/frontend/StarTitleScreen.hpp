@@ -52,6 +52,9 @@ public:
 
   bool textInputActive() const;
 
+  typedef RegisteredPaneManager<String> TitlePaneManager;
+  TitlePaneManager* paneManager();
+
   TitleState currentState() const;
   // TitleState is StartSinglePlayer, StartMultiPlayer, or Quit
   bool finishedState() const;
@@ -99,6 +102,9 @@ private:
   unsigned windowHeight() const;
   unsigned windowWidth() const;
 
+  typedef LuaUpdatableComponent<LuaBaseComponent> ScriptComponent;
+  shared_ptr<ScriptComponent> m_scriptComponent;
+
   GuiContext* m_guiContext;
 
   RendererPtr m_renderer;
@@ -108,13 +114,14 @@ private:
   PanePtr m_serverSelectPane;
   Json m_serverList;
 
-  RegisteredPaneManager<String> m_paneManager;
+  TitlePaneManager m_paneManager;
 
   Vec2I m_cursorScreenPos;
   InterfaceCursor m_cursor;
   TitleState m_titleState;
 
   PanePtr m_mainMenu;
+  PanePtr m_backgroundMenu;
   List<pair<ButtonWidgetPtr, Vec2I>> m_rightAnchoredButtons;
 
   PlayerPtr m_mainAppPlayer;

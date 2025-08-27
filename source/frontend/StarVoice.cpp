@@ -9,7 +9,7 @@
 #include "StarAudio.hpp"
 #include "opus/opus.h"
 
-#include "SDL2/SDL.h"
+#include "SDL3/SDL.h"
 
 constexpr int VOICE_SAMPLE_RATE = 48000;
 constexpr int VOICE_FRAME_SIZE = 960;
@@ -69,12 +69,16 @@ public:
   SDL_AudioStream* sdlAudioStreamStereo;
   Mutex mutex;
 
-  VoiceAudioStream()
-    : sdlAudioStreamMono  (SDL_NewAudioStream(AUDIO_S16, 1, 48000, AUDIO_S16SYS, 1, 44100))
-    , sdlAudioStreamStereo(SDL_NewAudioStream(AUDIO_S16, 2, 48000, AUDIO_S16SYS, 2, 44100)) {};
+  VoiceAudioStream() {
+    SDL_AudioSpec srcSpec = {SDL_AUDIO_S16LE, 1, 48000};
+    SDL_AudioSpec dstSpec = {SDL_AUDIO_S16,   1, 44100};
+    sdlAudioStreamMono = SDL_CreateAudioStream(&srcSpec, &dstSpec);
+    srcSpec.channels = dstSpec.channels = 2;
+    sdlAudioStreamStereo = SDL_CreateAudioStream(&srcSpec, &dstSpec);
+  }
   ~VoiceAudioStream() {
-    SDL_FreeAudioStream(sdlAudioStreamMono);
-    SDL_FreeAudioStream(sdlAudioStreamStereo);
+    SDL_DestroyAudioStream(sdlAudioStreamMono);
+    SDL_DestroyAudioStream(sdlAudioStreamStereo);
   }
 
   inline int16_t take() {
@@ -88,10 +92,10 @@ public:
 
   size_t resample(int16_t* in, size_t inSamples, std::vector<int16_t>& out, bool mono) {
     SDL_AudioStream* stream = mono ? sdlAudioStreamMono : sdlAudioStreamStereo;
-    SDL_AudioStreamPut(stream, in, inSamples * sizeof(int16_t));
-    if (int available = SDL_AudioStreamAvailable(stream)) {
+    SDL_PutAudioStreamData(stream, in, inSamples * sizeof(int16_t));
+    if (int available = SDL_GetAudioStreamAvailable(stream)) {
       out.resize(available / 2);
-      SDL_AudioStreamGet(stream, out.data(), available);
+      SDL_GetAudioStreamData(stream, out.data(), available);
       return available;
     }
     return 0;
@@ -166,7 +170,8 @@ Voice::~Voice() {
 
 void Voice::init() {
   resetEncoder();
-  resetDevice();
+  if (shouldEnableInput())
+    openDevice();
 }
 
 
@@ -182,20 +187,18 @@ void Voice::loadJson(Json const& config, bool skipSave) {
   // Not all keys are required
 
   bool changed = false;
-
+  bool shouldResetDevice = false;
   {
     bool enabled = shouldEnableInput();
     m_enabled      = config.getBool("enabled", m_enabled);
     m_inputEnabled = config.getBool("inputEnabled", m_inputEnabled);
-    if (shouldEnableInput() != enabled) {
-      changed = true;
-      resetDevice();
-    }
+    if (shouldEnableInput() != enabled)
+      shouldResetDevice = changed = true;
   }
 
   if (config.contains("deviceName") // Make sure null-type key exists
   && change(m_deviceName, config.optString("deviceName"), changed))
-    resetDevice();
+    shouldResetDevice = true;
 
   m_threshold = config.getFloat("threshold", m_threshold);
   m_inputAmplitude = perceptualToAmplitude(
@@ -216,7 +219,7 @@ void Voice::loadJson(Json const& config, bool skipSave) {
     if (change(m_channelMode, VoiceChannelModeNames.getLeft(*channelMode), changed)) {
       closeDevice();
       shouldResetEncoder = true;
-      resetDevice();
+      shouldResetDevice = true;
     }
   }
 
@@ -230,6 +233,9 @@ void Voice::loadJson(Json const& config, bool skipSave) {
 
   if (shouldResetEncoder)
     resetEncoder();
+
+  if (shouldResetDevice)
+    resetDevice();
 
   if (changed && !skipSave)
     scheduleSave();
@@ -434,7 +440,7 @@ void Voice::mix(int16_t* buffer, size_t frameCount, unsigned channels) {
     for (size_t i = 0; i != sharedBuffer.size(); ++i)
       finalBuffer[i] = (int16_t)clamp<int>(sharedBuffer[i] * vol, INT16_MIN, INT16_MAX);
 
-    SDL_MixAudioFormat((Uint8*)buffer, (Uint8*)finalBuffer.data(), AUDIO_S16, finalBuffer.size() * sizeof(int16_t), SDL_MIX_MAXVOLUME);
+    SDL_MixAudio((Uint8*)buffer, (Uint8*)finalBuffer.data(), SDL_AUDIO_S16LE, finalBuffer.size() * sizeof(int16_t), 1.0f);
     memset(sharedBuffer.data(), 0, sharedBuffer.size() * sizeof(int32_t));
   }
 }
@@ -478,15 +484,16 @@ void Voice::setDeviceName(Maybe<String> deviceName) {
 }
 
 StringList Voice::availableDevices() {
-  int devices = SDL_GetNumAudioDevices(1);
-  StringList deviceList;
-  if (devices > 0) {
-    deviceList.reserve(devices);
-    for (int i = 0; i != devices; ++i)
-      deviceList.emplace_back(SDL_GetAudioDeviceName(i, 1));
+  StringList list;
+  int i, num_devices;
+  if (SDL_AudioDeviceID* devices = SDL_GetAudioRecordingDevices(&num_devices)) {
+    list.reserve(num_devices);
+    for (i = 0; i < num_devices; ++i)
+      list.emplace_back(SDL_GetAudioDeviceName(devices[i]));
+    SDL_free(devices);
   }
-  deviceList.sort();
-  return deviceList;
+  list.sort();
+  return list;
 }
 
 int Voice::send(DataStreamBuffer& out, size_t budget) {
@@ -627,22 +634,35 @@ void Voice::resetEncoder() {
 }
 
 void Voice::resetDevice() {
+  closeDevice();
   if (shouldEnableInput())
     openDevice();
-  else
-    closeDevice();
 }
 
 void Voice::openDevice() {
+  if (m_deviceOpen)
+    return;
   closeDevice();
 
+  uint32_t deviceId = SDL_AUDIO_DEVICE_DEFAULT_RECORDING;
+  if (m_deviceName) {
+    int i, num_devices;
+    if (SDL_AudioDeviceID* devices = SDL_GetAudioRecordingDevices(&num_devices)) {
+      for (i = 0; i < num_devices; ++i) {
+        if (*m_deviceName == SDL_GetAudioDeviceName(devices[i])) {
+          deviceId = devices[i];
+          break;
+        }
+      }
+      SDL_free(devices);
+    }
+  }
   m_applicationController->openAudioInputDevice(
-    m_deviceName ? m_deviceName->utf8Ptr() : nullptr,
+    deviceId,
     VOICE_SAMPLE_RATE,
     m_deviceChannels = encoderChannels(),
-    this,
-    [](void* userdata, uint8_t* stream, int len) {
-      ((Voice*)(userdata))->readAudioData(stream, len);
+    [this](uint8_t* stream, int len) {
+      readAudioData(stream, len);
     }
   );
 
@@ -731,4 +751,4 @@ void Voice::thread() {
   return;
 }
 
-}
+}// namespace Star

@@ -68,6 +68,7 @@ public:
   void enableInterpolation(float extrapolationHint) override;
   void disableInterpolation() override;
 
+  String name() const override;
   String description() const override;
 
   List<LightSource> lightSources() const override;
@@ -107,7 +108,6 @@ public:
   SkillInfo activeSkillInfo() const;
 
   List<Drawable> portrait(PortraitMode mode) const override;
-  String name() const override;
   String typeName() const;
   MonsterVariant monsterVariant() const;
 
@@ -115,6 +115,7 @@ public:
   bool displayNametag() const override;
   Vec3B nametagColor() const override;
   Vec2F nametagOrigin() const override;
+  String nametag() const override;
 
   bool aggressive() const override;
 
@@ -131,6 +132,9 @@ public:
   bool isInteractive() const override;
 
   Vec2F questIndicatorPosition() const override;
+
+  ActorMovementController* movementController() override;
+  StatusController* statusController() override;
 
   using Entity::setKeepAlive;
   using Entity::setUniqueId;

@@ -188,7 +188,7 @@ void Star::PcP2PNetworkingService::update() {
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
   for (auto& p : m_pendingDiscordJoinRequests) {
     if (auto res = p.second.result()) {
-      discord::ActivityJoinRequestReply reply;
+      auto reply = discord::ActivityJoinRequestReply::Ignore;
       switch (*res) {
         case P2PJoinRequestReply::Yes:
           reply = discord::ActivityJoinRequestReply::Yes;
@@ -207,7 +207,7 @@ void Star::PcP2PNetworkingService::update() {
         });
     }
   }
-  m_pendingDiscordJoinRequests = m_pendingDiscordJoinRequests.filtered([this](pair<discord::UserId, RpcPromise<P2PJoinRequestReply>>& p) {
+  m_pendingDiscordJoinRequests = m_pendingDiscordJoinRequests.filtered([](pair<discord::UserId, RpcPromise<P2PJoinRequestReply>>& p) {
       return !p.second.finished();
     });
 #endif
@@ -449,7 +449,7 @@ P2PSocketUPtr PcP2PNetworkingService::discordConnectRemote(discord::UserId remot
   m_discordOpenSockets[remoteUserId] = socket.get();
 
   Logger::info("Connecting to Discord lobby {}", lobbyId);
-  m_state->discordCore->LobbyManager().ConnectLobby(lobbyId, lobbySecret.utf8Ptr(), [this, remoteUserId, lobbyId](discord::Result res, discord::Lobby const& lobby) {
+  m_state->discordCore->LobbyManager().ConnectLobby(lobbyId, lobbySecret.utf8Ptr(), [this, remoteUserId, lobbyId](discord::Result res, discord::Lobby const&) {
       MutexLocker serviceLocker(m_mutex);
       if (res == discord::Result::Ok) {
         if (auto socket = m_discordOpenSockets.value(remoteUserId)) {

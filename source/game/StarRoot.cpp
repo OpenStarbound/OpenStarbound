@@ -623,6 +623,11 @@ StringList Root::scanForAssetSources(StringList const& directories, StringList c
     assetSource->requires_ = jsonToStringList(metadata.value("requires", JsonArray{}));
     assetSource->includes = jsonToStringList(metadata.value("includes", JsonArray{}));
 
+    if (assetSource->name.value() == "opensb_base" && assetSource->version.value() != OpenStarVersionString) {
+      throw AssetSourceException(strf("\n\nOpenStarbound assets version mismatch!\nOpenStarbound v{}, but opensb.pak is v{}\n",
+        OpenStarVersionString, assetSource->version.value()), false);
+    }
+
     if (assetSource->name) {
       if (auto oldAssetSource = namedSources.value(*assetSource->name)) {
         if (oldAssetSource->priority <= assetSource->priority) {
@@ -680,7 +685,7 @@ StringList Root::scanForAssetSources(StringList const& directories, StringList c
   function<void(shared_ptr<AssetSource>)> dependencySortVisit;
   dependencySortVisit = [&](shared_ptr<AssetSource> source) {
     if (workingSet.contains(source))
-      throw StarException("Asset dependencies form a cycle");
+      throw AssetSourceException("Asset dependencies form a cycle");
 
     if (dependencySortedSources.contains(source))
       return;
@@ -696,8 +701,10 @@ StringList Root::scanForAssetSources(StringList const& directories, StringList c
       if (auto requirement = namedSources.ptr(requirementName))
         dependencySortVisit(*requirement);
       else
-        throw StarException(strf("Asset source '{}' is missing dependency '{}'{}", *source->name, requirementName,
-          requirementName != "base" ? "" : "\n\nThe base Starbound asset package could not be found, please copy it from another Starbound install!\n(Locate 'packed.pak' in vanilla Starbound's assets folder, then copy it to OpenStarbound's assets folder.)\n"));
+        throw AssetSourceException(strf("Asset source '{}' is missing dependency '{}'{}", source->name ? *source->name : "<unnamed>", requirementName,
+          requirementName != "base" ? "" :
+            "\n\nThe base Starbound asset package could not be found, please copy it from another Starbound install!\n"
+            "(Locate 'packed.pak' in vanilla Starbound's assets folder, then copy it to OpenStarbound's assets folder.)\n"), false);
     }
 
     workingSet.remove(source);

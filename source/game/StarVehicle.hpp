@@ -25,7 +25,7 @@ class Vehicle :
 public:
   Vehicle(Json baseConfig, String path, Json dynamicConfig);
 
-  String name() const;
+  String name() const override;
 
   Json baseConfig() const;
   Json dynamicConfig() const;
@@ -154,6 +154,7 @@ private:
   Json m_dynamicConfig;
   RectF m_boundBox;
   float m_slaveControlTimeout = 0.0f;
+  bool m_receiveExtraControls;
   OrderedHashMap<String, LoungePositionConfig> m_loungePositions;
   OrderedHashMap<String, MovingCollisionConfig> m_movingCollisions;
   OrderedHashMap<String, ForceRegionConfig> m_forceRegions;

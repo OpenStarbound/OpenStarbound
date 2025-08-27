@@ -13,7 +13,7 @@ SourceDir={#SourcePath}\..\..\
 AppId={{08791089-2868-4FE5-ACC8-4473ACA67ED7}
 AppName={#AppName}
 AppVersion={#AppVersion}
-AppVerName={#AppName} {#AppVersion}
+AppVerName={#AppName}
 DefaultDirName={autopf}\{#AppName}
 DisableProgramGroupPage=yes
 ; Uncomment the following line to run in non administrative install mode (install for current user only.)
@@ -49,6 +49,9 @@ Name: "{autodesktop}\{#AppName}"; Filename: "{app}\win\{#AppExeName}"; Tasks: de
 ; Server
 Name: "{autoprograms}\{#AppName} Server"; Filename: "{app}\win\{#AppServerExeName}"
 Name: "{autodesktop}\{#AppName} Server"; Filename: "{app}\win\{#AppServerExeName}"; Tasks: desktopicon
+
+[InstallDelete]
+Type: files; Name: "{app}\win\SDL2.dll"
 
 [Run]
 Filename: "{app}\win\{#AppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(AppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent

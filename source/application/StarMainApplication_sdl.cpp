@@ -7,15 +7,107 @@
 #include "StarImage.hpp"
 #include "StarImageProcessing.hpp"
 
-#include "SDL2/SDL.h"
+#include "SDL3/SDL.h"
 #include "StarPlatformServices_pc.hpp"
 
 #ifdef STAR_SYSTEM_WINDOWS
-#include "SDL2/SDL_syswm.h"
 #include <dwmapi.h>
+#include <objidl.h>
+#include <ShlObj_core.h>
 #endif
 
+#include "imgui.h"
+#include "imgui_impl_sdl3.h"
+#include "imgui_impl_opengl3.h"
+
 namespace Star {
+
+#ifdef STAR_SYSTEM_WINDOWS
+static bool copyDibToClipboard(const uint8_t* buf, unsigned int width, unsigned int height) {
+  size_t size = (size_t)(width * height * 4u);
+
+  BITMAPV5HEADER hV5{};
+  hV5.bV5Size = sizeof(hV5);
+  hV5.bV5SizeImage = size;
+  hV5.bV5Width = width;
+  hV5.bV5Height = height;
+  hV5.bV5Planes = 1;
+  hV5.bV5BitCount = 32;
+  hV5.bV5Compression = BI_RGB;
+  hV5.bV5RedMask   = 0x00FF0000;
+  hV5.bV5GreenMask = 0x0000FF00;
+  hV5.bV5BlueMask  = 0x000000FF;
+  hV5.bV5AlphaMask = 0xFF000000;
+  hV5.bV5CSType = LCS_WINDOWS_COLOR_SPACE;
+  hV5.bV5Intent = LCS_GM_GRAPHICS;
+  if (HGLOBAL handle = GlobalAlloc(GMEM_MOVEABLE, sizeof(hV5) + size)) {
+    if (auto dst = (char*)GlobalLock(handle)) {
+      memcpy(dst, &hV5, sizeof(hV5));
+      unsigned int sizeI = width * height;
+      unsigned int* data = (unsigned int*)buf;
+      unsigned int* rgba = (unsigned int*)(dst + sizeof(hV5));
+      for (unsigned int x = 0; x != sizeI; ++x) {
+        unsigned int c = data[x];
+        unsigned int v = c & 0xFF00FF00; // a and g
+        v |= c << 16 & 0x00FF0000;       // r
+        v |= c >> 16 & 0x000000FF;       // b
+        rgba[x] = v;
+      }
+      GlobalUnlock(handle);
+    }
+
+    SetClipboardData(CF_DIBV5, handle);
+    return true;
+  }
+
+  return false;
+}
+
+static bool copyPngToClipboard(void* buf, size_t size) {
+  if (HGLOBAL handle = GlobalAlloc(GMEM_MOVEABLE, size)) {
+    if (auto dst = (char*)GlobalLock(handle)) {
+      memcpy(dst, buf, size);
+      GlobalUnlock(handle);
+    }
+    SetClipboardData(RegisterClipboardFormatA("PNG"), handle);
+    return true;
+  }
+  return false;
+}
+
+static bool duringClipboard(SDL_Window* window, std::function<void()> task) {
+  auto props = SDL_GetWindowProperties(window);
+  auto handle = (HWND)SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
+  if (!handle || !OpenClipboard(handle))
+    return false;
+  EmptyClipboard();
+  task();
+  CloseClipboard();
+  return true;
+}
+
+static bool copyFileToClipboard(String const& path) {
+  DROPFILES drop{};
+  drop.pFiles = sizeof(DROPFILES);
+  drop.pt = {0, 0};
+  drop.fNC = false;
+  drop.fWide = true;
+  auto wide = path.wstring();
+  wide.push_back(0);
+  wide.push_back(0);
+  size_t wideSize = wide.size() * sizeof(std::wstring::value_type);
+  if (HGLOBAL handle = GlobalAlloc(GMEM_MOVEABLE, sizeof(DROPFILES) + wideSize)) {
+    if (auto dst = (char*)GlobalLock(handle)) {
+      memcpy(dst, &drop, sizeof(drop));
+      memcpy(dst + sizeof(DROPFILES), wide.data(), wideSize);
+      GlobalUnlock(handle);
+    }
+    SetClipboardData(CF_HDROP, handle);
+    return true;
+  }
+  return false;
+}
+#endif
 
 Maybe<Key> keyFromSdlKeyCode(SDL_Keycode sym) {
   static HashMap<int, Key> KeyCodeMap{
@@ -27,11 +119,11 @@ Maybe<Key> keyFromSdlKeyCode(SDL_Keycode sym) {
     {SDLK_ESCAPE, Key::Escape},
     {SDLK_SPACE, Key::Space},
     {SDLK_EXCLAIM, Key::Exclaim},
-    {SDLK_QUOTEDBL, Key::QuotedBL},
+    {SDLK_DBLAPOSTROPHE, Key::QuotedBL},
     {SDLK_HASH, Key::Hash},
     {SDLK_DOLLAR, Key::Dollar},
     {SDLK_AMPERSAND, Key::Ampersand},
-    {SDLK_QUOTE, Key::Quote},
+    {SDLK_APOSTROPHE, Key::Quote},
     {SDLK_LEFTPAREN, Key::LeftParen},
     {SDLK_RIGHTPAREN, Key::RightParen},
     {SDLK_ASTERISK, Key::Asterisk},
@@ -62,33 +154,33 @@ Maybe<Key> keyFromSdlKeyCode(SDL_Keycode sym) {
     {SDLK_RIGHTBRACKET, Key::RightBracket},
     {SDLK_CARET, Key::Caret},
     {SDLK_UNDERSCORE, Key::Underscore},
-    {SDLK_BACKQUOTE, Key::Backquote},
-    {SDLK_a, Key::A},
-    {SDLK_b, Key::B},
-    {SDLK_c, Key::C},
-    {SDLK_d, Key::D},
-    {SDLK_e, Key::E},
-    {SDLK_f, Key::F},
-    {SDLK_g, Key::G},
-    {SDLK_h, Key::H},
-    {SDLK_i, Key::I},
-    {SDLK_j, Key::J},
-    {SDLK_k, Key::K},
-    {SDLK_l, Key::L},
-    {SDLK_m, Key::M},
-    {SDLK_n, Key::N},
-    {SDLK_o, Key::O},
-    {SDLK_p, Key::P},
-    {SDLK_q, Key::Q},
-    {SDLK_r, Key::R},
-    {SDLK_s, Key::S},
-    {SDLK_t, Key::T},
-    {SDLK_u, Key::U},
-    {SDLK_v, Key::V},
-    {SDLK_w, Key::W},
-    {SDLK_x, Key::X},
-    {SDLK_y, Key::Y},
-    {SDLK_z, Key::Z},
+    {SDLK_GRAVE, Key::Backquote},
+    {SDLK_A, Key::A},
+    {SDLK_B, Key::B},
+    {SDLK_C, Key::C},
+    {SDLK_D, Key::D},
+    {SDLK_E, Key::E},
+    {SDLK_F, Key::F},
+    {SDLK_G, Key::G},
+    {SDLK_H, Key::H},
+    {SDLK_I, Key::I},
+    {SDLK_J, Key::J},
+    {SDLK_K, Key::K},
+    {SDLK_L, Key::L},
+    {SDLK_M, Key::M},
+    {SDLK_N, Key::N},
+    {SDLK_O, Key::O},
+    {SDLK_P, Key::P},
+    {SDLK_Q, Key::Q},
+    {SDLK_R, Key::R},
+    {SDLK_S, Key::S},
+    {SDLK_T, Key::T},
+    {SDLK_U, Key::U},
+    {SDLK_V, Key::V},
+    {SDLK_W, Key::W},
+    {SDLK_X, Key::X},
+    {SDLK_Y, Key::Y},
+    {SDLK_Z, Key::Z},
     {SDLK_DELETE, Key::Delete},
     {SDLK_KP_0, Key::Keypad0},
     {SDLK_KP_1, Key::Keypad1},
@@ -180,39 +272,39 @@ MouseButton mouseButtonFromSdlMouseButton(uint8_t button) {
 
 ControllerAxis controllerAxisFromSdlControllerAxis(uint8_t axis) {
   switch (axis) {
-    case SDL_CONTROLLER_AXIS_LEFTX: return ControllerAxis::LeftX;
-    case SDL_CONTROLLER_AXIS_LEFTY: return ControllerAxis::LeftY;
-    case SDL_CONTROLLER_AXIS_RIGHTX: return ControllerAxis::RightX;
-    case SDL_CONTROLLER_AXIS_RIGHTY: return ControllerAxis::RightY;
-    case SDL_CONTROLLER_AXIS_TRIGGERLEFT: return ControllerAxis::TriggerLeft;
-    case SDL_CONTROLLER_AXIS_TRIGGERRIGHT: return ControllerAxis::TriggerRight;
+    case SDL_GAMEPAD_AXIS_LEFTX : return ControllerAxis::LeftX;
+    case SDL_GAMEPAD_AXIS_LEFTY : return ControllerAxis::LeftY;
+    case SDL_GAMEPAD_AXIS_RIGHTX : return ControllerAxis::RightX;
+    case SDL_GAMEPAD_AXIS_RIGHTY : return ControllerAxis::RightY;
+    case SDL_GAMEPAD_AXIS_LEFT_TRIGGER : return ControllerAxis::TriggerLeft;
+    case SDL_GAMEPAD_AXIS_RIGHT_TRIGGER : return ControllerAxis::TriggerRight;
     default: return ControllerAxis::Invalid;
   }
 }
 
 ControllerButton controllerButtonFromSdlControllerButton(uint8_t button) {
   switch (button) {
-    case SDL_CONTROLLER_BUTTON_A: return ControllerButton::A;
-    case SDL_CONTROLLER_BUTTON_B: return ControllerButton::B;
-    case SDL_CONTROLLER_BUTTON_X: return ControllerButton::X;
-    case SDL_CONTROLLER_BUTTON_Y: return ControllerButton::Y;
-    case SDL_CONTROLLER_BUTTON_BACK: return ControllerButton::Back;
-    case SDL_CONTROLLER_BUTTON_GUIDE: return ControllerButton::Guide;
-    case SDL_CONTROLLER_BUTTON_START: return ControllerButton::Start;
-    case SDL_CONTROLLER_BUTTON_LEFTSTICK: return ControllerButton::LeftStick;
-    case SDL_CONTROLLER_BUTTON_RIGHTSTICK: return ControllerButton::RightStick;
-    case SDL_CONTROLLER_BUTTON_LEFTSHOULDER: return ControllerButton::LeftShoulder;
-    case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER: return ControllerButton::RightShoulder;
-    case SDL_CONTROLLER_BUTTON_DPAD_UP: return ControllerButton::DPadUp;
-    case SDL_CONTROLLER_BUTTON_DPAD_DOWN: return ControllerButton::DPadDown;
-    case SDL_CONTROLLER_BUTTON_DPAD_LEFT: return ControllerButton::DPadLeft;
-    case SDL_CONTROLLER_BUTTON_DPAD_RIGHT: return ControllerButton::DPadRight;
-    case SDL_CONTROLLER_BUTTON_MISC1: return ControllerButton::Misc1;
-    case SDL_CONTROLLER_BUTTON_PADDLE1: return ControllerButton::Paddle1;
-    case SDL_CONTROLLER_BUTTON_PADDLE2: return ControllerButton::Paddle2;
-    case SDL_CONTROLLER_BUTTON_PADDLE3: return ControllerButton::Paddle3;
-    case SDL_CONTROLLER_BUTTON_PADDLE4: return ControllerButton::Paddle4;
-    case SDL_CONTROLLER_BUTTON_TOUCHPAD: return ControllerButton::Touchpad;
+    case SDL_GAMEPAD_BUTTON_SOUTH : return ControllerButton::A;
+    case SDL_GAMEPAD_BUTTON_EAST : return ControllerButton::B;
+    case SDL_GAMEPAD_BUTTON_WEST : return ControllerButton::X;
+    case SDL_GAMEPAD_BUTTON_NORTH : return ControllerButton::Y;
+    case SDL_GAMEPAD_BUTTON_BACK : return ControllerButton::Back;
+    case SDL_GAMEPAD_BUTTON_GUIDE : return ControllerButton::Guide;
+    case SDL_GAMEPAD_BUTTON_START : return ControllerButton::Start;
+    case SDL_GAMEPAD_BUTTON_LEFT_STICK : return ControllerButton::LeftStick;
+    case SDL_GAMEPAD_BUTTON_RIGHT_STICK : return ControllerButton::RightStick;
+    case SDL_GAMEPAD_BUTTON_LEFT_SHOULDER : return ControllerButton::LeftShoulder;
+    case SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER : return ControllerButton::RightShoulder;
+    case SDL_GAMEPAD_BUTTON_DPAD_UP : return ControllerButton::DPadUp;
+    case SDL_GAMEPAD_BUTTON_DPAD_DOWN : return ControllerButton::DPadDown;
+    case SDL_GAMEPAD_BUTTON_DPAD_LEFT : return ControllerButton::DPadLeft;
+    case SDL_GAMEPAD_BUTTON_DPAD_RIGHT : return ControllerButton::DPadRight;
+    case SDL_GAMEPAD_BUTTON_MISC1 : return ControllerButton::Misc1;
+    case SDL_GAMEPAD_BUTTON_RIGHT_PADDLE1 : return ControllerButton::Paddle1;
+    case SDL_GAMEPAD_BUTTON_LEFT_PADDLE1 : return ControllerButton::Paddle2;
+    case SDL_GAMEPAD_BUTTON_RIGHT_PADDLE2 : return ControllerButton::Paddle3;
+    case SDL_GAMEPAD_BUTTON_LEFT_PADDLE2 : return ControllerButton::Paddle4;
+    case SDL_GAMEPAD_BUTTON_TOUCHPAD : return ControllerButton::Touchpad;
     default: return ControllerButton::Invalid;
   }
 }
@@ -235,18 +327,19 @@ public:
         return false;
       });
 
+    SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_NAME_STRING, "Starbound");
+    SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_VERSION_STRING, OpenStarVersionString);
+    SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_IDENTIFIER_STRING, "io.github.openstarbound.openstarbound");
+    SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_URL_STRING, "https://github.com/OpenStarbound/OpenStarbound");
+    SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_TYPE_STRING, "game");
+    SDL_SetHint(SDL_HINT_AUDIO_DEVICE_STREAM_NAME, "Audio");  
+	  
     Logger::info("Application: Initializing SDL");
-    if (SDL_Init(0))
+    if (!SDL_Init(0))
       throw ApplicationException(strf("Couldn't initialize SDL: {}", SDL_GetError()));
 
-    if (char* basePath = SDL_GetBasePath()) {
+    if (auto basePath = SDL_GetBasePath())
       File::changeDirectory(basePath);
-      SDL_free(basePath);
-    }
-
-#if SDL_VERSION_ATLEAST(2, 0, 18)
-    SDL_SetHint(SDL_HINT_IME_SHOW_UI, "1");
-#endif
 
     m_signalHandler.setHandleInterrupt(true);
     m_signalHandler.setHandleFatal(true);
@@ -257,154 +350,157 @@ public:
     } catch (std::exception const& e) {
       throw ApplicationException("Application threw exception during startup", e);
     }
-
+    
     Logger::info("Application: Initializing SDL Video");
-    if (SDL_InitSubSystem(SDL_INIT_VIDEO))
+    if (!SDL_InitSubSystem(SDL_INIT_VIDEO))
       throw ApplicationException(strf("Couldn't initialize SDL Video: {}", SDL_GetError()));
 
+    Logger::info("Application: using Video Driver '{}'", SDL_GetCurrentVideoDriver());
+
     Logger::info("Application: Initializing SDL Controller");
-    if (SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER))
+    if (!SDL_InitSubSystem(SDL_INIT_GAMEPAD))
       throw ApplicationException(strf("Couldn't initialize SDL Controller: {}", SDL_GetError()));
 
-#ifdef STAR_SYSTEM_WINDOWS // Newer SDL is defaulting to xaudio2, which does not support audio capture
-    SDL_setenv("SDL_AUDIODRIVER", "directsound", 1);
-#endif
-
     Logger::info("Application: Initializing SDL Audio");
-    if (SDL_InitSubSystem(SDL_INIT_AUDIO))
+    if (!SDL_InitSubSystem(SDL_INIT_AUDIO))
       throw ApplicationException(strf("Couldn't initialize SDL Audio: {}", SDL_GetError()));
 
     Logger::info("Application: using Audio Driver '{}'", SDL_GetCurrentAudioDriver());
 
-    SDL_JoystickEventState(SDL_ENABLE);
+    SDL_SetJoystickEventsEnabled(true);
 
     m_platformServices = PcPlatformServices::create(applicationPath, platformArguments);
     if (!m_platformServices)
       Logger::info("Application: No platform services available");
 
-    Logger::info("Application: Creating SDL Window");
-    m_sdlWindow = SDL_CreateWindow(m_windowTitle.utf8Ptr(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-        m_windowSize[0], m_windowSize[1], SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+    Logger::info("Application: Creating SDL window");
+    m_sdlWindow = SDL_CreateWindow(m_windowTitle.utf8Ptr(), m_windowSize[0], m_windowSize[1], SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
     if (!m_sdlWindow)
       throw ApplicationException::format("Application: Could not create SDL Window: {}", SDL_GetError());
+	  
+#if defined(__APPLE__)
+    // GL 3.2 Core + GLSL 150
+    const char* glsl_version = "#version 150";
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG); // Always required on Mac
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+#else
+    // GL 3.0 + GLSL 130
+    const char* glsl_version = "#version 130";
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+#endif
 
+    Logger::info("Application: Creating SDL OpenGL context");
+    m_sdlGlContext = SDL_GL_CreateContext(m_sdlWindow);
+    if (!m_sdlGlContext)
+      throw ApplicationException::format("Application: Could not create OpenGL context: {}", SDL_GetError());
+    
     SDL_ShowWindow(m_sdlWindow);
     SDL_RaiseWindow(m_sdlWindow);
-
-// Makes the window border black. From https://github.com/libsdl-org/SDL/commit/89948787#diff-f2ae5c36a8afc0a9a343a6664ab306da2963213e180af8cd97b12397dcbb9ae7R1478
-#ifdef STAR_SYSTEM_WINDOWS
-    if (void* handle = SDL_LoadObject("dwmapi.dll")) {
-      if (auto DwmSetWindowAttributeFunc = (decltype(&DwmSetWindowAttribute))SDL_LoadFunction(handle, "DwmSetWindowAttribute")) {
-        SDL_SysWMinfo wmInfo{};
-        SDL_VERSION(&wmInfo.version);
-        SDL_GetWindowWMInfo(m_sdlWindow, &wmInfo);
-        DWORD type{}, value{}, count = sizeof(value);
-        LSTATUS status = RegGetValue(HKEY_CURRENT_USER,
-                             TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize"),
-                             TEXT("AppsUseLightTheme"),
-                             RRF_RT_REG_DWORD, &type, &value, &count);
-        BOOL enabled = status == ERROR_SUCCESS && type == REG_DWORD && value == 0;
-        DwmSetWindowAttributeFunc(wmInfo.info.win.window, DWMWA_USE_IMMERSIVE_DARK_MODE, &enabled, sizeof(enabled));
-      }
-      SDL_UnloadObject(handle);
-    }
-#endif
 
     int width;
     int height;
     SDL_GetWindowSize(m_sdlWindow, &width, &height);
     m_windowSize = Vec2U(width, height);
 
-#ifdef __APPLE__
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-#endif
-
-    m_sdlGlContext = SDL_GL_CreateContext(m_sdlWindow);
-    if (!m_sdlGlContext)
-      throw ApplicationException::format("Application: Could not create OpenGL context: {}", SDL_GetError());
-
     SDL_GL_SwapWindow(m_sdlWindow);
     setVSyncEnabled(m_windowVSync);
 
-    SDL_StopTextInput();
+    SDL_StopTextInput(m_sdlWindow);
 
-    SDL_AudioSpec desired = {};
-    desired.freq = 44100;
-    desired.format = AUDIO_S16SYS;
-    desired.samples = 1024;
-    desired.channels = 2;
-    desired.userdata = this;
-    desired.callback = [](void* userdata, Uint8* stream, int len) {
-      ((SdlPlatform*)(userdata))->getAudioData(stream, len);
-    };
-
-    SDL_AudioSpec obtained = {};
-    m_sdlAudioOutputDevice = SDL_OpenAudioDevice(NULL, 0, &desired, &obtained, 0);
-    if (!m_sdlAudioOutputDevice) {
+    Logger::info("Application: Opening audio device");
+    m_audioOutputData.clear();
+    SDL_AudioSpec desired = {SDL_AUDIO_S16, 2, 44100};
+    m_sdlAudioOutputStream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &desired,
+    [](void* userdata, SDL_AudioStream* stream, int len, int) {
+      if (len > 0) {
+        auto sdlPlatform = ((SdlPlatform*)(userdata));
+        sdlPlatform->m_audioOutputData.resize(len);
+        sdlPlatform->getAudioData(sdlPlatform->m_audioOutputData.data(), len);
+        SDL_PutAudioStreamData(stream, sdlPlatform->m_audioOutputData.data(), len);
+      }
+    }, this);
+    if (!m_sdlAudioOutputStream) {
       Logger::error("Application: Could not open audio device, no sound available!");
-    } else if (obtained.freq != desired.freq || obtained.channels != desired.channels || obtained.format != desired.format) {
-      SDL_CloseAudioDevice(m_sdlAudioOutputDevice);
-      Logger::error("Application: Could not open 44.1khz / 16 bit stereo audio device, no sound available!");
     } else {
-      Logger::info("Application: Opened default audio device with 44.1khz / 16 bit stereo audio, {} sample size buffer", obtained.samples);
-      SDL_PauseAudioDevice(m_sdlAudioOutputDevice, 0);
+      Logger::info("Application: Opened default audio device with 44.1khz / 16 bit stereo audio");
+      SDL_ResumeAudioDevice(SDL_GetAudioStreamDevice(m_sdlAudioOutputStream));
     }
 
     m_renderer = make_shared<OpenGlRenderer>();
     m_renderer->setScreenSize(m_windowSize);
 
     m_cursorCache.setTimeToLive(30000);
+
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigNavCaptureKeyboard = false;
+
+    ImGui::StyleColorsDark();
+    ImGuiStyle& style = ImGui::GetStyle();
+    float main_scale = SDL_GetDisplayContentScale(SDL_GetPrimaryDisplay());
+    style.ScaleAllSizes(main_scale);
+
+    ImGui_ImplSDL3_InitForOpenGL(m_sdlWindow, m_sdlGlContext);
+    ImGui_ImplOpenGL3_Init(glsl_version);
+
   }
 
   ~SdlPlatform() {
 
-    if (m_sdlAudioOutputDevice)
-      SDL_CloseAudioDevice(m_sdlAudioOutputDevice);
+    if (m_sdlAudioOutputStream)
+      SDL_CloseAudioDevice(SDL_GetAudioStreamDevice(m_sdlAudioOutputStream));
 
     closeAudioInputDevice();
 
     m_renderer.reset();
 
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplSDL3_Shutdown();
+    ImGui::DestroyContext();
+
     Logger::info("Application: Destroying SDL Window");
+    SDL_GL_DestroyContext(m_sdlGlContext);
     SDL_DestroyWindow(m_sdlWindow);
 
     SDL_Quit();
   }
-
-  bool openAudioInputDevice(const char* name, int freq, int channels, void* userdata, SDL_AudioCallback callback) {
-    SDL_AudioSpec desired = {};
-    desired.freq = freq;
-    desired.format = AUDIO_S16SYS;
-    desired.samples = 1024;
-    desired.channels = channels;
-    desired.userdata = userdata;
-    desired.callback = callback;
-
+  
+  typedef std::function<void(uint8_t*, int)> AudioCallback;
+  bool openAudioInputDevice(SDL_AudioDeviceID deviceId, int freq, int channels, AudioCallback callback) {
     closeAudioInputDevice();
+    m_audioInputCallback = std::move(callback);
+    SDL_AudioSpec desired = {SDL_AUDIO_S16, channels, freq};
+    m_sdlAudioInputStream = SDL_OpenAudioDeviceStream(deviceId, &desired,
+    [](void* userdata, SDL_AudioStream* stream, int len, int) {
+      if (len > 0) {
+        auto sdlPlatform = ((SdlPlatform*)(userdata));
+        sdlPlatform->m_audioInputData.resize(len);
+        SDL_GetAudioStreamData(stream, sdlPlatform->m_audioInputData.data(), len);
+        sdlPlatform->m_audioInputCallback(sdlPlatform->m_audioInputData.data(), len);
+      }
+    }, this);
 
-    SDL_AudioSpec obtained = {};
-    m_sdlAudioInputDevice = SDL_OpenAudioDevice(name, 1, &desired, &obtained, 0);
-
-    if (m_sdlAudioInputDevice) {
-      if (name)
-        Logger::info("Opened audio input device '{}'", name);
-      else
-        Logger::info("Opened default audio input device");
-      SDL_PauseAudioDevice(m_sdlAudioInputDevice, 0);
+    if (m_sdlAudioInputStream) {
+        Logger::info("Opened audio input device '{}'", SDL_GetAudioDeviceName(SDL_GetAudioStreamDevice(m_sdlAudioInputStream)));
+      SDL_ResumeAudioDevice(SDL_GetAudioStreamDevice(m_sdlAudioInputStream));
     }
     else
       Logger::info("Failed to open audio input device: {}", SDL_GetError());
 
-    return m_sdlAudioInputDevice != 0;
+    return m_sdlAudioInputStream != 0;
   }
 
   bool closeAudioInputDevice() {
-    if (m_sdlAudioInputDevice) {
+    if (m_sdlAudioInputStream) {
       Logger::info("Closing audio input device");
-      SDL_CloseAudioDevice(m_sdlAudioInputDevice);
-      m_sdlAudioInputDevice = 0;
+      SDL_CloseAudioDevice(SDL_GetAudioStreamDevice(m_sdlAudioInputStream));
+      m_sdlAudioInputStream = 0;
       return true;
     }
     return false;
@@ -432,20 +528,29 @@ public:
       while (true) {
         cleanup();
 
+
         for (auto const& event : processEvents())
           m_application->processInput(event);
 
         if (m_platformServices)
           m_platformServices->update();
 
-        if (m_platformServices->overlayActive())
-          SDL_ShowCursor(1);
+        if (m_cursorVisible || m_platformServices->overlayActive())
+          SDL_ShowCursor();
         else
-          SDL_ShowCursor(m_cursorVisible ? 1 : 0);
+          SDL_HideCursor();
+
+        
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplSDL3_NewFrame();
 
         int updatesBehind = max<int>(round(m_updateTicker.ticksBehind()), 1);
         updatesBehind = min<int>(updatesBehind, m_maxFrameSkip + 1);
         for (int i = 0; i < updatesBehind; ++i) {
+          //since frame-skipping is a thing, we have to begin a new ImGui frame here to prevent duplicate elements made by updates
+          if (i != 0)
+            ImGui::EndFrame();
+          ImGui::NewFrame();
           m_application->update();
           m_updateRate = m_updateTicker.tick();
         }
@@ -453,6 +558,9 @@ public:
         m_renderer->startFrame();
         m_application->render();
         m_renderer->finishFrame();
+
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         SDL_GL_SwapWindow(m_sdlWindow);
         m_renderRate = m_renderTicker.tick();
 
@@ -487,7 +595,7 @@ public:
       Logger::error("Application: threw exception during shutdown: {}", outputException(e, true));
     }
 
-    SDL_CloseAudioDevice(m_sdlAudioOutputDevice);
+    SDL_CloseAudioDevice(SDL_GetAudioStreamDevice(m_sdlAudioOutputStream));
     m_SdlControllers.clear();
 
     SDL_SetCursor(NULL);
@@ -517,8 +625,20 @@ private:
       return string;
     }
 
-    void setClipboard(String text) override {
-      SDL_SetClipboardText(text.utf8Ptr());
+    bool setClipboard(String text) override {
+      return SDL_SetClipboardText(text.utf8Ptr());
+    }
+
+    bool setClipboardData(StringMap<ByteArray> data) override {
+      return parent->setClipboardData(std::move(data));
+    }
+
+    bool setClipboardImage(Image const& image, ByteArray* png, String const* path) override {
+      return parent->setClipboardImage(image, png, path);
+    }
+
+    bool setClipboardFile(String const& path) override {
+      return parent->setClipboardFile(path);
     }
 
     bool isFocused() const override {
@@ -541,31 +661,29 @@ private:
 
     void setFullscreenWindow(Vec2U fullScreenResolution) override {
       if (parent->m_windowMode != WindowMode::Fullscreen || parent->m_windowSize != fullScreenResolution) {
-        SDL_DisplayMode requestedDisplayMode = {SDL_PIXELFORMAT_RGB888, (int)fullScreenResolution[0], (int)fullScreenResolution[1], 0, 0};
-        int currentDisplayIndex = SDL_GetWindowDisplayIndex(parent->m_sdlWindow);
+        int currentDisplayIndex = SDL_GetDisplayForWindow(parent->m_sdlWindow);
 
-        SDL_DisplayMode targetDisplayMode;
-        if (SDL_GetClosestDisplayMode(currentDisplayIndex, &requestedDisplayMode, &targetDisplayMode) != NULL) {
-          if (SDL_SetWindowDisplayMode(parent->m_sdlWindow, &requestedDisplayMode) == 0) {
+        SDL_DisplayMode closestDisplayMode;
+        if (SDL_GetClosestFullscreenDisplayMode(currentDisplayIndex, (int)fullScreenResolution[0], (int)fullScreenResolution[1], 0.f, true, &closestDisplayMode)) {
+          if (SDL_SetWindowFullscreenMode(parent->m_sdlWindow, &closestDisplayMode)) {
             if (parent->m_windowMode == WindowMode::Fullscreen)
               SDL_SetWindowFullscreen(parent->m_sdlWindow, 0);
             else if (parent->m_windowMode == WindowMode::Borderless)
-              SDL_SetWindowBordered(parent->m_sdlWindow, SDL_TRUE);
+              SDL_SetWindowBordered(parent->m_sdlWindow, true);
             else if (parent->m_windowMode == WindowMode::Maximized)
               SDL_RestoreWindow(parent->m_sdlWindow);
             
             parent->m_windowMode = WindowMode::Fullscreen;
             SDL_SetWindowFullscreen(parent->m_sdlWindow, SDL_WINDOW_FULLSCREEN);
           } else {
-            Logger::warn("Failed to set resolution {}, {}", (unsigned)requestedDisplayMode.w, (unsigned)requestedDisplayMode.h);
+            Logger::warn("Failed to set resolution {}, {}", (unsigned)closestDisplayMode.w, (unsigned)closestDisplayMode.h);
           }
         } else {
           Logger::warn("Unable to set requested display resolution {}, {}", (int)fullScreenResolution[0], (int)fullScreenResolution[1]);
         }
 
-        SDL_DisplayMode actualDisplayMode;
-        if (SDL_GetWindowDisplayMode(parent->m_sdlWindow, &actualDisplayMode) == 0) {
-          parent->m_windowSize = {(unsigned)actualDisplayMode.w, (unsigned)actualDisplayMode.h};
+        if (auto displayMode = SDL_GetWindowFullscreenMode(parent->m_sdlWindow)) {
+          parent->m_windowSize = {(unsigned)displayMode->w, (unsigned)displayMode->h};
 
           // call these manually since no SDL_WindowEvent is triggered when changing between fullscreen resolutions for some reason
           parent->m_renderer->setScreenSize(parent->m_windowSize);
@@ -582,11 +700,11 @@ private:
         if (parent->m_windowMode == WindowMode::Fullscreen)
           SDL_SetWindowFullscreen(window, 0);
         else if (parent->m_windowMode == WindowMode::Borderless)
-          SDL_SetWindowBordered(window, SDL_TRUE);
+          SDL_SetWindowBordered(window, true);
         else if (parent->m_windowMode == WindowMode::Maximized)
           SDL_RestoreWindow(window);
 
-        SDL_SetWindowBordered(window, SDL_TRUE);
+        SDL_SetWindowBordered(window, true);
         SDL_SetWindowSize(window, windowSize[0], windowSize[1]);
         SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
 
@@ -600,7 +718,7 @@ private:
         if (parent->m_windowMode == WindowMode::Fullscreen)
           SDL_SetWindowFullscreen(parent->m_sdlWindow, 0);
         else if (parent->m_windowMode == WindowMode::Borderless)
-          SDL_SetWindowBordered(parent->m_sdlWindow, SDL_TRUE);
+          SDL_SetWindowBordered(parent->m_sdlWindow, true);
 
         SDL_RestoreWindow(parent->m_sdlWindow);
         SDL_MaximizeWindow(parent->m_sdlWindow);
@@ -615,12 +733,11 @@ private:
         else if (parent->m_windowMode == WindowMode::Maximized)
           SDL_RestoreWindow(parent->m_sdlWindow);
 
-        SDL_SetWindowBordered(parent->m_sdlWindow, SDL_FALSE);
+        SDL_SetWindowBordered(parent->m_sdlWindow, false);
         parent->m_windowMode = WindowMode::Borderless;
 
-        SDL_DisplayMode actualDisplayMode;
-        if (SDL_GetDesktopDisplayMode(SDL_GetWindowDisplayIndex(parent->m_sdlWindow), &actualDisplayMode) == 0) {
-          parent->m_windowSize = {(unsigned)actualDisplayMode.w, (unsigned)actualDisplayMode.h};
+        if (auto displayMode = SDL_GetDesktopDisplayMode(SDL_GetDisplayForWindow(parent->m_sdlWindow))) {
+          parent->m_windowSize = {(unsigned)displayMode->w, (unsigned)displayMode->h};
 
           SDL_SetWindowPosition(parent->m_sdlWindow, 0, 0);
           SDL_SetWindowSize(parent->m_sdlWindow, parent->m_windowSize[0], parent->m_windowSize[1]);
@@ -662,27 +779,43 @@ private:
     void setAcceptingTextInput(bool acceptingTextInput) override {
       if (acceptingTextInput != parent->m_acceptingTextInput) {
         if (acceptingTextInput)
-          SDL_StartTextInput();
+          SDL_StartTextInput(parent->m_sdlWindow);
         else
-          SDL_StopTextInput();
+          SDL_StopTextInput(parent->m_sdlWindow);
 
         parent->m_acceptingTextInput = acceptingTextInput;
       }
     }
 
+    void setTextArea(Maybe<pair<RectI, int>> area) override {
+      if (parent->m_textInputArea == area)
+        return;
+      parent->m_textInputArea = area;
+      if (area) {
+        RectI& r = area->first;
+        SDL_Rect rect{
+          r.xMin(), (int)parent->m_windowSize.y() - r.yMax(),
+          r.width(), r.height()
+        };
+        SDL_SetTextInputArea(parent->m_sdlWindow, &rect, area->second);
+      } else {
+        SDL_SetTextInputArea(parent->m_sdlWindow, NULL, 0);
+      }
+    }
+
     AudioFormat enableAudio() override {
       parent->m_audioEnabled = true;
-      SDL_PauseAudio(false);
+      SDL_ResumeAudioDevice(SDL_GetAudioStreamDevice(parent->m_sdlAudioOutputStream));
       return AudioFormat{44100, 2};
     }
 
     void disableAudio() override {
       parent->m_audioEnabled = false;
-      SDL_PauseAudio(true);
+      SDL_PauseAudioDevice(SDL_GetAudioStreamDevice(parent->m_sdlAudioOutputStream));
     }
 
-    bool openAudioInputDevice(const char* name, int freq, int channels, void* userdata, AudioCallback callback) override {
-      return parent->openAudioInputDevice(name, freq, channels, userdata, callback);
+    bool openAudioInputDevice(uint32_t deviceId, int freq, int channels, AudioCallback callback) override {
+      return parent->openAudioInputDevice(deviceId, freq, channels, callback);
     };
 
     bool closeAudioInputDevice() override {
@@ -731,95 +864,76 @@ private:
   List<InputEvent> processEvents() {
     List<InputEvent> inputEvents;
 
+    ImGuiIO& io = ImGui::GetIO();
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
+      SDL_ConvertEventToRenderCoordinates(SDL_GetRenderer(m_sdlWindow), &event);
+      ImGui_ImplSDL3_ProcessEvent(&event);
       Maybe<InputEvent> starEvent;
-      switch (event.type) {
-      case SDL_WINDOWEVENT:
-        if (event.window.event == SDL_WINDOWEVENT_MAXIMIZED || event.window.event == SDL_WINDOWEVENT_RESTORED) {
-          auto windowFlags = SDL_GetWindowFlags(m_sdlWindow);
+      if (event.type == SDL_EVENT_WINDOW_MAXIMIZED || event.type == SDL_EVENT_WINDOW_RESTORED) {
+        auto windowFlags = SDL_GetWindowFlags(m_sdlWindow);
 
-          if (windowFlags & SDL_WINDOW_MAXIMIZED)
-            m_windowMode = WindowMode::Maximized;
-          else if (windowFlags & SDL_WINDOW_FULLSCREEN)
-            m_windowMode = WindowMode::Fullscreen;
-          else if (windowFlags & SDL_WINDOW_BORDERLESS)
-            m_windowMode = WindowMode::Borderless;
-          else
-            m_windowMode = WindowMode::Normal;
+        if (windowFlags & SDL_WINDOW_MAXIMIZED)
+          m_windowMode = WindowMode::Maximized;
+        else if (windowFlags & SDL_WINDOW_FULLSCREEN)
+          m_windowMode = WindowMode::Fullscreen;
+        else if (windowFlags & SDL_WINDOW_BORDERLESS)
+          m_windowMode = WindowMode::Borderless;
+        else
+          m_windowMode = WindowMode::Normal;
 
-          m_application->windowChanged(m_windowMode, m_windowSize);
-
-        } else if (event.window.event == SDL_WINDOWEVENT_RESIZED || event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
-          m_windowSize = Vec2U(event.window.data1, event.window.data2);
-          m_renderer->setScreenSize(m_windowSize);
-          m_application->windowChanged(m_windowMode, m_windowSize);
-        }
-        break;
-      case SDL_KEYDOWN:
+        m_application->windowChanged(m_windowMode, m_windowSize);
+      } else if (event.type == SDL_EVENT_WINDOW_RESIZED || event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) {
+        m_windowSize = Vec2U(event.window.data1, event.window.data2);
+        m_renderer->setScreenSize(m_windowSize);
+        m_application->windowChanged(m_windowMode, m_windowSize);
+      }
+      else if (event.type == SDL_EVENT_KEY_DOWN && (!io.WantCaptureKeyboard || !io.WantTextInput)) {
         if (!event.key.repeat) {
-          if (auto key = keyFromSdlKeyCode(event.key.keysym.sym))
-            starEvent.set(KeyDownEvent{*key, keyModsFromSdlKeyMods(event.key.keysym.mod)});
+          if (auto key = keyFromSdlKeyCode(event.key.key))
+            starEvent.set(KeyDownEvent{*key, keyModsFromSdlKeyMods(event.key.mod)});
         }
-        break;
-      case SDL_KEYUP:
-        if (auto key = keyFromSdlKeyCode(event.key.keysym.sym))
+      } else if (event.type == SDL_EVENT_KEY_UP) {
+        if (auto key = keyFromSdlKeyCode(event.key.key))
           starEvent.set(KeyUpEvent{*key});
-        break;
-      case SDL_TEXTINPUT:
+      } else if (event.type == SDL_EVENT_TEXT_INPUT && !io.WantTextInput) {
         starEvent.set(TextInputEvent{String(event.text.text)});
-        break;
-      case SDL_MOUSEMOTION:
+      } else if (event.type == SDL_EVENT_MOUSE_MOTION) {
         starEvent.set(MouseMoveEvent{
             {event.motion.xrel, -event.motion.yrel}, {event.motion.x, (int)m_windowSize[1] - event.motion.y}});
-        break;
-      case SDL_MOUSEBUTTONDOWN:
+      } else if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN && !io.WantCaptureMouse) {
         starEvent.set(MouseButtonDownEvent{mouseButtonFromSdlMouseButton(event.button.button),
             {event.button.x, (int)m_windowSize[1] - event.button.y}});
-        break;
-      case SDL_MOUSEBUTTONUP:
+      } else if (event.type == SDL_EVENT_MOUSE_BUTTON_UP && !io.WantCaptureMouse) {
         starEvent.set(MouseButtonUpEvent{mouseButtonFromSdlMouseButton(event.button.button),
             {event.button.x, (int)m_windowSize[1] - event.button.y}});
-        break;
-      case SDL_MOUSEWHEEL:
-        int x, y;
-        SDL_GetMouseState(&x, &y);
-        starEvent.set(MouseWheelEvent{event.wheel.y < 0 ? MouseWheel::Down : MouseWheel::Up, {x, (int)m_windowSize[1] - y}});
-        break;
-      case SDL_CONTROLLERAXISMOTION:
+      } else if (event.type == SDL_EVENT_MOUSE_WHEEL && !io.WantCaptureMouse) {
+        starEvent.set(MouseWheelEvent{event.wheel.y < 0 ? MouseWheel::Down : MouseWheel::Up,
+          {event.wheel.mouse_x, (int)m_windowSize[1] - event.wheel.mouse_y}});
+      } else if (event.type == SDL_EVENT_GAMEPAD_AXIS_MOTION) {
         starEvent.set(ControllerAxisEvent{
-          (ControllerId)event.caxis.which,
-          controllerAxisFromSdlControllerAxis(event.caxis.axis),
-          (float)event.caxis.value / 32768.0f
+          (ControllerId)event.gaxis.which,
+          controllerAxisFromSdlControllerAxis(event.gaxis.axis),
+          (float)event.gaxis.value / 32768.0f
         });
-        break;
-      case SDL_CONTROLLERBUTTONDOWN:
-        starEvent.set(ControllerButtonDownEvent{ (ControllerId)event.cbutton.which, controllerButtonFromSdlControllerButton(event.cbutton.button) });
-        break;
-      case SDL_CONTROLLERBUTTONUP:
-        starEvent.set(ControllerButtonUpEvent{ (ControllerId)event.cbutton.which, controllerButtonFromSdlControllerButton(event.cbutton.button) });
-        break;
-      case SDL_CONTROLLERDEVICEADDED:
-        {
-          auto insertion = m_SdlControllers.insert_or_assign(event.cdevice.which, SDLGameControllerUPtr(SDL_GameControllerOpen(event.cdevice.which), SDL_GameControllerClose));
-          if (SDL_GameController* controller = insertion.first->second.get())
-            Logger::info("Controller device '{}' added", SDL_GameControllerName(controller));
+      } else if (event.type == SDL_EVENT_GAMEPAD_BUTTON_DOWN) {
+        starEvent.set(ControllerButtonDownEvent{ (ControllerId)event.gbutton.which, controllerButtonFromSdlControllerButton(event.gbutton.button) });
+      } else if (event.type == SDL_EVENT_GAMEPAD_BUTTON_UP) {
+        starEvent.set(ControllerButtonUpEvent{ (ControllerId)event.gbutton.which, controllerButtonFromSdlControllerButton(event.gbutton.button) });
+      } else if (event.type == SDL_EVENT_GAMEPAD_ADDED) {
+        auto insertion = m_SdlControllers.insert_or_assign(event.gdevice.which, SDLGameControllerUPtr(SDL_OpenGamepad(event.gdevice.which), SDL_CloseGamepad));
+        if (SDL_Gamepad* controller = insertion.first->second.get())
+          Logger::info("Controller device '{}' added", SDL_GetGamepadName(controller));
+      } else if (event.type == SDL_EVENT_GAMEPAD_REMOVED) {
+        auto find = m_SdlControllers.find(event.gdevice.which);
+        if (find != m_SdlControllers.end()) {
+          if (SDL_Gamepad* controller = find->second.get())
+            Logger::info("Controller device '{}' removed", SDL_GetGamepadName(controller));
+          m_SdlControllers.erase(event.gdevice.which);
         }
-        break;
-      case SDL_CONTROLLERDEVICEREMOVED:
-        {
-          auto find = m_SdlControllers.find(event.cdevice.which);
-          if (find != m_SdlControllers.end()) {
-            if (SDL_GameController* controller = find->second.get())
-              Logger::info("Controller device '{}' removed", SDL_GameControllerName(controller));
-            m_SdlControllers.erase(event.cdevice.which);
-          }
-        }
-        break;
-      case SDL_QUIT:
+      } else if (event.type == SDL_EVENT_QUIT) {
         m_quitRequested = true;
         starEvent.reset();
-        break;
       }
 
       if (starEvent)
@@ -842,9 +956,9 @@ private:
     if (vsyncEnabled) {
       // If VSync is requested, try for late swap tearing first, then fall back
       // to regular VSync
-      Logger::info("Application: Enabling VSync with late swap tearing");
-      if (SDL_GL_SetSwapInterval(-1) < 0) {
-        Logger::info("Application: Enabling VSync late swap tearing failed, falling back to full VSync");
+      Logger::info("Application: Enabling adaptive VSync");
+      if (!SDL_GL_SetSwapInterval(-1)) {
+        Logger::info("Application: Enabling adaptive VSync, falling back to full VSync");
         SDL_GL_SetSwapInterval(1);
       }
     } else {
@@ -884,16 +998,16 @@ private:
       
 
       auto size = entry->image->size();
-      uint32_t pixelFormat;
+      SDL_PixelFormat pixelFormat;
       switch (entry->image->pixelFormat()) {
         case PixelFormat::RGB24: // I know this conversion looks wrong, but it's correct. I'm confused too.
-          pixelFormat = SDL_PIXELFORMAT_BGR888;
+          pixelFormat = SDL_PIXELFORMAT_XBGR8888;
           break;
         case PixelFormat::RGBA32:
           pixelFormat = SDL_PIXELFORMAT_ABGR8888;
           break;
         case PixelFormat::BGR24:
-          pixelFormat = SDL_PIXELFORMAT_RGB888;
+          pixelFormat = SDL_PIXELFORMAT_XRGB8888;
           break;
         case PixelFormat::BGRA32:
           pixelFormat = SDL_PIXELFORMAT_ARGB8888;
@@ -902,12 +1016,11 @@ private:
           pixelFormat = SDL_PIXELFORMAT_UNKNOWN;
       }
 
-      entry->sdlSurface.reset(SDL_CreateRGBSurfaceWithFormatFrom(
-        (void*)entry->image->data(),
+      entry->sdlSurface.reset(SDL_CreateSurfaceFrom(
         size[0], size[1],
-        entry->image->bitsPerPixel(),
-        entry->image->bytesPerPixel() * size[0],
-        pixelFormat)
+        pixelFormat,
+        (void*)entry->image->data(),
+        entry->image->bytesPerPixel() * size[0])
       );
       entry->sdlCursor.reset(SDL_CreateColorCursor(entry->sdlSurface.get(), offset[0] * scale, offset[1] * scale));
 
@@ -916,6 +1029,58 @@ private:
 
     SDL_SetCursor(entry->sdlCursor.get());
     return m_cursorVisible = true;
+  }
+
+  bool setClipboardData(StringMap<ByteArray> data) {
+    auto heldData = new StringMap<ByteArray>(std::move(data));
+    std::vector<const char*> types;
+    for (auto& entry : *heldData)
+      types.push_back(entry.first.utf8Ptr());
+    auto request = [](void* userdata, const char* mime_type, size_t* size) -> const void* {
+      if (auto entry = ((StringMap<ByteArray>*)userdata)->ptr(mime_type)) {
+        *size = entry->size();
+        return entry->ptr();
+      }
+      *size = 0;
+      return NULL;
+    };
+    auto cleanup = [](void* userdata) { delete ((StringMap<ByteArray>*)userdata); };
+    if (SDL_SetClipboardData(request, cleanup, heldData, types.data(), types.size()))
+      return true;
+
+    cleanup(heldData);
+    return false;
+  }
+
+  bool setClipboardImage(Image const& image, ByteArray* png, String const* path) {
+    #ifdef STAR_SYSTEM_WINDOWS // wow, SDL3's implementation is so bad!!
+    return duringClipboard(m_sdlWindow, [&]() {
+      if (path)
+        copyFileToClipboard(*path);
+      copyPngToClipboard(png->ptr(), png->size());
+      auto converted = image.convert(PixelFormat::RGBA32);
+      copyDibToClipboard(converted.data(), converted.width(), converted.height());
+    });
+    #else
+    _unused(image);
+    _unused(path);
+    if (png) {
+      StringMap<ByteArray> clipboardData = {{"image/png", std::move(*png)}};
+      return setClipboardData(std::move(clipboardData));
+    }
+    return false;
+    #endif
+  }
+
+  bool setClipboardFile(String const& path) {
+    #ifdef STAR_SYSTEM_WINDOWS
+    return duringClipboard(m_sdlWindow, [&]() {
+      return copyFileToClipboard(path);
+    });
+    #else
+    _unused(path);
+    return false;
+    #endif
   }
 
   SignalHandler m_signalHandler;
@@ -927,20 +1092,24 @@ private:
 
   SDL_Window* m_sdlWindow = nullptr;
   SDL_GLContext m_sdlGlContext = nullptr;
-  SDL_AudioDeviceID m_sdlAudioOutputDevice = 0;
-  SDL_AudioDeviceID m_sdlAudioInputDevice = 0;
+  SDL_AudioStream* m_sdlAudioOutputStream = 0;
+  SDL_AudioStream* m_sdlAudioInputStream = 0;
+  AudioCallback m_audioInputCallback;
+  std::vector<uint8_t> m_audioInputData;
+  std::vector<uint8_t> m_audioOutputData;
+  Maybe<pair<RectI, int>> m_textInputArea;
 
-  typedef std::unique_ptr<SDL_GameController, decltype(&SDL_GameControllerClose)> SDLGameControllerUPtr;
+  typedef std::unique_ptr<SDL_Gamepad, decltype(&SDL_CloseGamepad)> SDLGameControllerUPtr;
   StableHashMap<int, SDLGameControllerUPtr> m_SdlControllers;
 
-  typedef std::unique_ptr<SDL_Surface, decltype(&SDL_FreeSurface)> SDLSurfaceUPtr;
-  typedef std::unique_ptr<SDL_Cursor, decltype(&SDL_FreeCursor)> SDLCursorUPtr;
+  typedef std::unique_ptr<SDL_Surface, decltype(&SDL_DestroySurface)> SDLSurfaceUPtr;
+  typedef std::unique_ptr<SDL_Cursor, decltype(&SDL_DestroyCursor)> SDLCursorUPtr;
   struct CursorEntry {
     ImageConstPtr image = nullptr;
     SDLSurfaceUPtr sdlSurface;
     SDLCursorUPtr sdlCursor;
 
-    CursorEntry() : image(nullptr), sdlSurface(nullptr, SDL_FreeSurface), sdlCursor(nullptr, SDL_FreeCursor) {};
+    CursorEntry() : image(nullptr), sdlSurface(nullptr, SDL_DestroySurface), sdlCursor(nullptr, SDL_DestroyCursor) {};
   };
 
   typedef tuple<unsigned, Vec2I, String> CursorDescriptor;

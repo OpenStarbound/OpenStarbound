@@ -14,7 +14,19 @@ enum class EquipmentSlot : uint8_t {
   HeadCosmetic = 4,
   ChestCosmetic = 5,
   LegsCosmetic = 6,
-  BackCosmetic = 7
+  BackCosmetic = 7,
+  Cosmetic1,
+  Cosmetic2,
+  Cosmetic3,
+  Cosmetic4,
+  Cosmetic5,
+  Cosmetic6,
+  Cosmetic7,
+  Cosmetic8,
+  Cosmetic9,
+  Cosmetic10,
+  Cosmetic11,
+  Cosmetic12
 };
 extern EnumMap<EquipmentSlot> const EquipmentSlotNames;
 

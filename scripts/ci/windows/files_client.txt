@@ -9,3 +9,4 @@ dist\*.dll
 lib\windows\discord_game_sdk.dll
 lib\windows\steam_api64.dll
 scripts\ci\windows\sbinit.config
+build\windows-release\vcpkg_installed\x64-windows-mixed-md\bin\SDL3.pdb

@@ -1,6 +1,7 @@
 #include "StarLua.hpp"
 #include "StarArray.hpp"
 #include "StarTime.hpp"
+#include "imgui_lua_bindings.hpp"
 
 namespace Star {
 
@@ -62,6 +63,10 @@ LuaInt LuaTable::rawLength() const {
 
 void LuaCallbacks::copyCallback(String srcName, String dstName) {
   m_callbacks.set(dstName, m_callbacks.get(srcName));
+}
+
+bool LuaCallbacks::removeCallback(String name) {
+  return m_callbacks.remove(name);
 }
 
 LuaCallbacks& LuaCallbacks::merge(LuaCallbacks const& callbacks) {
@@ -159,7 +164,7 @@ Maybe<Json> LuaConverter<Json>::to(LuaEngine&, LuaValue const& v) {
     return Json(*f);
 
   if (auto s = v.ptr<LuaString>())
-    return Json(s->ptr());
+    return Json(s->toString());
 
   if (v.is<LuaTable>())
     return LuaDetail::tableToJsonContainer(v.get<LuaTable>());
@@ -334,11 +339,11 @@ LuaEnginePtr LuaEngine::create(bool safe) {
     }
   }
   lua_pop(self->m_state, 1);
-  
+
   // loads a lua base library, leaves it at the top of the stack
   auto loadBaseLibrary = [](lua_State* state, char const* modname, lua_CFunction openf) {
     luaL_requiref(state, modname, openf, true);
-    
+
     // set __metatable metamethod to false
     // otherwise scripts can access and mutate the metatable, allowing passing values
     // between script contexts, breaking the sandbox
@@ -474,14 +479,18 @@ lua_Debug const& LuaEngine::debugInfo(int level, const char* what) {
   return debug;
 }
 
-LuaString LuaEngine::createString(String const& str) {
+LuaString LuaEngine::createString(std::string const& str) {
   lua_checkstack(m_state, 1);
 
   if (m_nullTerminated > 0)
-    lua_pushstring(m_state, str.utf8Ptr());
+    lua_pushstring(m_state, str.data());
   else
-    lua_pushlstring(m_state, str.utf8Ptr(), str.utf8Size());
+    lua_pushlstring(m_state, str.data(), str.size());
   return LuaString(LuaDetail::LuaHandle(RefPtr<LuaEngine>(this), popHandle(m_state)));
+}
+
+LuaString LuaEngine::createString(String const& str) {
+  return createString(str.utf8());
 }
 
 LuaString LuaEngine::createString(char const* str) {
@@ -582,6 +591,16 @@ LuaNullEnforcer LuaEngine::nullTerminate() {
 
 void LuaEngine::setNullTerminated(bool nullTerminated) {
   m_nullTerminated = nullTerminated ? 0 : INT_MIN;
+}
+
+void LuaEngine::addImGui() {
+  lua_checkstack(m_state, 1);
+
+  lua_rawgeti(m_state, LUA_REGISTRYINDEX, m_scriptDefaultEnvRegistryId);
+  pushImguiBindings(m_state);
+  lua_setfield(m_state, -2, "imgui");
+
+  lua_pop(m_state, 1);
 }
 
 LuaEngine* LuaEngine::luaEnginePtr(lua_State* state) {

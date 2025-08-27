@@ -40,6 +40,7 @@ public:
   void init(World* world, EntityId entityId, EntityMode mode) override;
   void uninit() override;
 
+  String name() const override;
   String description() const override;
 
   pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;

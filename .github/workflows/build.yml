@@ -1,11 +1,18 @@
 name: Build
+permissions:
+  actions: read
 
+  
 on:
   workflow_dispatch:
     inputs:
       linux:
         type: boolean
-        description: Linux
+        description: Linux (GCC)
+        default: false
+      linux_clang:
+        type: boolean
+        description: Linux (Clang)
         default: true
       windows:
         type: boolean
@@ -38,7 +45,7 @@ jobs:
   build_windows:
     name: Build OpenStarbound Windows x64
     runs-on: windows-latest
-    if: ${{ (github.event_name != 'workflow_dispatch') || (inputs.windows == true) }}
+    if: ${{ (github.event_name != 'pull_request') && ((github.event_name != 'workflow_dispatch') || (inputs.windows == true)) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -66,8 +73,17 @@ jobs:
           vcpkgJsonGlob: '**/source/vcpkg.json'
           vcpkgConfigurationJsonGlob: '**/source/vcpkg-configuration.json'
 
+      - name: Restore vcpkg cache
+        id: vcpkg-cache
+        uses: TAServers/vcpkg-cache@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Run CMake
         uses: lukka/run-cmake@v10
+        env:
+          VCPKG_FEATURE_FLAGS: "binarycaching"
+          VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
         with:
           cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
           configurePreset: 'windows-release'
@@ -110,20 +126,21 @@ jobs:
         with:
           name: OpenStarbound-Windows-Installer
           path: installer/*
+          compression-level: 0
   
   build_linux:
     name: Build OpenStarbound Linux x86_64
     runs-on: ubuntu-22.04
-    if: ${{ (github.event_name != 'workflow_dispatch') || (inputs.linux == true) }}
-    env:
-        CC: clang
-        CXX: clang++
-
+    if: ${{ (github.event_name != 'pull_request') && (inputs.linux == true) }}
     steps:
       - name: Install Packages
         run: |
           sudo apt-get update
-          sudo apt-get install -y pkg-config libxmu-dev libxi-dev libgl-dev libglu1-mesa-dev libsdl2-dev
+          sudo apt-get install -y pkgconf libxmu-dev libgl-dev libglu1-mesa-dev libasound2-dev libpulse-dev \
+          libaudio-dev libjack-dev libsndio-dev libx11-dev libxext-dev \
+          libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev \
+          libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev \
+          libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev libpipewire-0.3-dev libwayland-dev libdecor-0-dev liburing-dev
 
       - name: Install CMake & Ninja
         uses: lukka/get-cmake@latest
@@ -148,8 +165,17 @@ jobs:
           vcpkgJsonGlob: '**/source/vcpkg.json'
           vcpkgConfigurationJsonGlob: '**/source/vcpkg-configuration.json'
 
+      - name: Restore vcpkg cache
+        id: vcpkg-cache
+        uses: TAServers/vcpkg-cache@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Run CMake
         uses: lukka/run-cmake@v10
+        env:
+          VCPKG_FEATURE_FLAGS: "binarycaching"
+          VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
         with:
           cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
           configurePreset: 'linux-release'
@@ -162,11 +188,14 @@ jobs:
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: OpenStarbound-Linux
+          name: OpenStarbound-Linux-GCC
           path: dist.tar
 
       - name: Run Tests
         uses: lukka/run-cmake@v10
+        env:
+          VCPKG_FEATURE_FLAGS: "binarycaching"
+          VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
         with:
           cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
           testPreset: 'linux-release'
@@ -178,23 +207,118 @@ jobs:
       - name: Upload Client Files
         uses: actions/upload-artifact@v4
         with:
-          name: OpenStarbound-Linux-Client
+          name: OpenStarbound-Linux-GCC-Client
           path: client.tar
 
       - name: Upload Server Files
         uses: actions/upload-artifact@v4
         with:
-          name: OpenStarbound-Linux-Server
+          name: OpenStarbound-Linux-GCC-Server
+          path: server.tar
+
+  build_linux_clang:
+    name: Build OpenStarbound Linux Clang x86_64
+    runs-on: ubuntu-22.04
+    if: ${{ (github.event_name != 'workflow_dispatch') || (inputs.linux_clang == true) }}
+    env:
+        CC: clang
+        CXX: clang++
+    steps:
+      - name: Install Packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkgconf libxmu-dev libgl-dev libglu1-mesa-dev libasound2-dev libpulse-dev \
+          libaudio-dev libjack-dev libsndio-dev libx11-dev libxext-dev \
+          libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev \
+          libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev \
+          libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev libpipewire-0.3-dev libwayland-dev libdecor-0-dev liburing-dev
+
+      - name: Install CMake & Ninja
+        uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: 3.29.2
+
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: sccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          variant: sccache
+          key: ${{ github.job }}-${{ runner.os }}
+          max-size: 250M
+
+      - name: vcpkg
+        uses: lukka/run-vcpkg@v11
+        id: runvcpkg
+        with:
+          vcpkgJsonGlob: '**/source/vcpkg.json'
+          vcpkgConfigurationJsonGlob: '**/source/vcpkg-configuration.json'
+
+      - name: Restore vcpkg cache
+        id: vcpkg-cache
+        uses: TAServers/vcpkg-cache@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run CMake
+        uses: lukka/run-cmake@v10
+        env:
+          VCPKG_FEATURE_FLAGS: "binarycaching"
+          VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
+        with:
+          cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
+          configurePreset: 'linux-release-clang'
+          buildPreset: 'linux-release-clang'
+
+      - name: Prepare Artifacts
+        working-directory: ${{ github.workspace }}
+        run: tar -cvf dist.tar dist
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenStarbound-Linux-Clang
+          path: dist.tar
+
+      - name: Run Tests
+        uses: lukka/run-cmake@v10
+        env:
+          VCPKG_FEATURE_FLAGS: "binarycaching"
+          VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
+        with:
+          cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
+          testPreset: 'linux-release'
+
+      - name: Assemble Files
+        working-directory: ${{ github.workspace }}
+        run: scripts/ci/linux/assemble.sh
+
+      - name: Upload Client Files
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenStarbound-Linux-Clang-Client
+          path: client.tar
+
+      - name: Upload Server Files
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenStarbound-Linux-Clang-Server
           path: server.tar
 
   build-mac-intel:
     name: Build OpenStarbound macOS x86_64
     runs-on: macos-13
-    if: ${{ (github.event_name != 'workflow_dispatch') || (inputs.macOS == true) }}
+    if: ${{ (github.event_name != 'pull_request') && ((github.event_name != 'workflow_dispatch') || (inputs.macOS == true)) }}
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: 'recursive'
+
+      - name: Install Packages
+        run: |
+          brew install autoconf automake libtool
 
       - name: Install CMake & Ninja
         uses: lukka/get-cmake@latest
@@ -215,13 +339,30 @@ jobs:
           vcpkgJsonGlob: '**/source/vcpkg.json'
           vcpkgConfigurationJsonGlob: '**/source/vcpkg-configuration.json'
 
+      - name: Restore vcpkg cache
+        id: vcpkg-cache
+        uses: TAServers/vcpkg-cache@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Run CMake
         uses: lukka/run-cmake@v10
+        env:
+          VCPKG_FEATURE_FLAGS: "binarycaching"
+          VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
         with:
           cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
           configurePreset: 'macos-release'
           buildPreset: 'macos-release'
           testPreset: 'macos-release'
+
+      - name: Copy Libraries
+        working-directory: ${{ github.workspace }}
+        run: |
+          cp \
+            lib/osx/x64/*.dylib \
+            lib/osx/libsteam_api.dylib \
+            dist/
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
@@ -229,14 +370,28 @@ jobs:
           name: OpenStarbound-macOS-Intel
           path: dist/*
 
+      - name: Assemble Files
+        working-directory: ${{ github.workspace }}
+        run: scripts/ci/macos/assemble.sh
+
+      - name: Upload Client Files
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenStarbound-macOS-Intel-Client
+          path: client.tar
+
   build-mac-arm:
     name: Build OpenStarbound macOS arm64
     runs-on: macos-14
-    if: ${{ (github.event_name != 'workflow_dispatch') || (inputs.macOS == true) }}
+    if: ${{ (github.event_name != 'pull_request') && ((github.event_name != 'workflow_dispatch') || (inputs.macOS == true)) }}
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: 'recursive'
+
+      - name: Install Packages
+        run: |
+          brew install autoconf automake libtool
 
       - name: Install CMake & Ninja
         uses: lukka/get-cmake@latest
@@ -250,6 +405,12 @@ jobs:
           key: ${{ github.job }}-ARM-${{ runner.os }}
           max-size: 250M
 
+      - name: Restore vcpkg cache
+        id: vcpkg-cache
+        uses: TAServers/vcpkg-cache@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: vcpkg
         uses: lukka/run-vcpkg@v11
         id: runvcpkg
@@ -259,14 +420,35 @@ jobs:
 
       - name: Run CMake
         uses: lukka/run-cmake@v10
+        env:
+          VCPKG_FEATURE_FLAGS: "binarycaching"
+          VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
         with:
           cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
           configurePreset: 'macos-arm-release'
           buildPreset: 'macos-arm-release'
           testPreset: 'macos-arm-release'
 
+      - name: Copy Libraries
+        working-directory: ${{ github.workspace }}
+        run: |
+          cp \
+            lib/osx/arm64/*.dylib \
+            lib/osx/libsteam_api.dylib \
+            dist/
+
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: OpenStarbound-macOS-Silicon
           path: dist/*
+
+      - name: Assemble Files
+        working-directory: ${{ github.workspace }}
+        run: scripts/ci/macos/assemble.sh
+
+      - name: Upload Client Files
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenStarbound-macOS-Silicon-Client
+          path: client.tar

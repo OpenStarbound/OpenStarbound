@@ -1,42 +1,42 @@
 {
-	"toggleDismissCheckbox": {
-		"type": "button",
-		"base" : "/interface/optionsmenu/checkboxnocheck.png",
-	    "hover" : "/interface/optionsmenu/checkboxnocheckhover.png",
-	    "baseImageChecked" : "/interface/optionsmenu/checkboxcheck.png",
-	    "hoverImageChecked" : "/interface/optionsmenu/checkboxcheckhover.png",
-	    "checkable" : true,
-	    "checked" : false,
-		"position": [ 23, 244 ],
-		"pressedOffset": [ 0, 0 ],
-		"visible" : false
-	},
-	"toggleDismissLabel": {
-		"type" : "label",
-	    "position" : [ 35, 244 ],
-	    "hAnchor" : "left",
-	    "value" : "DISMISS ON SWAP",
-		"visible" : false
-	},
-	"createCharButton": {
-		"type": "button",
-		"base": "/interface/title/createcharacter.png",
-		"hover": "/interface/title/createcharacterover.png",
-		"position": [ 23, 241 ],
-		"pressedOffset": [ 0, 0 ]
-	},
-	"searchCharacter": {
-		"type": "textbox",
-		"hint": "Search...",
-		"position": [ 130, 244 ],
-		"maxWidth": 69
-	},
-	"clearSearch": {
-		"type": "button",
-		"base": "/interface/x.png",
-		"hover": "/interface/xhover.png",
-		"pressed": "/interface/xpress.png",
-		"position": [ 200, 242 ],
-  		"pressedOffset": [0, 0]
-	}
+  "toggleDismissCheckbox" : {
+    "type" : "button",
+    "base" : "/interface/optionsmenu/checkboxnocheck.png",
+    "hover" : "/interface/optionsmenu/checkboxnocheckhover.png",
+    "baseImageChecked" : "/interface/optionsmenu/checkboxcheck.png",
+    "hoverImageChecked" : "/interface/optionsmenu/checkboxcheckhover.png",
+    "checkable" : true,
+    "checked" : false,
+    "position" : [ 23, 244 ],
+    "pressedOffset" : [ 0, 0 ],
+    "visible" : false
+  },
+  "toggleDismissLabel" : {
+    "type" : "label",
+    "position" : [ 35, 244 ],
+    "hAnchor" : "left",
+    "value" : "DISMISS ON SWAP",
+    "visible" : false
+  },
+  "createCharButton" : {
+    "type" : "button",
+    "caption" : "Create Character",
+    "base" : "/interface/opensb/charselectioncreatebutton.png",
+    "hover" : "/interface/opensb/charselectioncreatebuttonhover.png",
+    "position" : [ 23, 241 ]
+  },
+  "searchCharacter" : {
+    "type" : "textbox",
+    "hint" : "Search...",
+    "position" : [ 130, 244 ],
+    "maxWidth" : 69
+  },
+  "clearSearch" : {
+    "type" : "button",
+    "base" : "/interface/x.png",
+    "hover" : "/interface/xhover.png",
+    "pressed" : "/interface/xpress.png",
+    "position" : [ 200, 242 ],
+    "pressedOffset" : [ 0, 0 ]
+  }
 }

@@ -22,7 +22,7 @@ public:
 
   bool accepted();
 
-  void render(bool useBackdrop = false);
+  void render();
 
   bool handleInputEvent(InputEvent const& event);
   void update(float dt);

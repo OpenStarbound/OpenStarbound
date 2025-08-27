@@ -3,6 +3,7 @@
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
+#include "StarText.hpp"
 
 namespace Star {
 
@@ -23,7 +24,7 @@ JsonRpcHandlers TeamManager::rpcHandlers() {
   };
 }
 
-void TeamManager::setConnectedPlayers(StringMap<List<Uuid>> const& connectedPlayers) {
+void TeamManager::setConnectedPlayers(StringMap<List<Uuid>> connectedPlayers) {
   m_connectedPlayers = std::move(connectedPlayers);
 }
 
@@ -226,24 +227,31 @@ Json TeamManager::updateStatus(Json const& arguments) {
 
 Json TeamManager::invite(Json const& arguments) {
   RecursiveMutexLocker lock(m_mutex);
-  auto inviteeName = arguments.getString("inviteeName").toLower();
+  auto inviteeName = Text::stripEscapeCodes(arguments.getString("inviteeName"));
 
-  if (!m_connectedPlayers.contains(inviteeName))
+  if (inviteeName.empty())
     return "inviteeNotFound";
 
   auto inviterUuid = Uuid(arguments.getString("inviterUuid"));
 
-  for (auto inviteeUuid : m_connectedPlayers[inviteeName]) {
-    if (inviteeUuid == inviterUuid)
+  JsonArray invited;
+  for (auto& entry : m_connectedPlayers) {
+    if (!Text::stripEscapeCodes(entry.first).beginsWith(inviteeName, String::CaseInsensitive))
       continue;
 
-    Invitation invitation;
-    invitation.inviterUuid = inviterUuid;
-    invitation.inviterName = arguments.getString("inviterName");
-    m_invitations[inviteeUuid] = invitation;
+    for (auto& inviteeUuid : entry.second) {
+      Invitation invitation;
+      invitation.inviterUuid = inviterUuid;
+      invitation.inviterName = arguments.getString("inviterName");
+      m_invitations[inviteeUuid] = invitation;
+      invited.append(JsonArray{entry.first, inviteeUuid.hex()});
+    }
   }
 
-  return {};
+  if (!invited.empty())
+    return invited;
+  else
+    return "inviteeNotFound";
 }
 
 Json TeamManager::pollInvitation(Json const& arguments) {

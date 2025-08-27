@@ -228,6 +228,18 @@ public:
   template <typename T, typename = ValidateType<T>>
   MVariant(T&& x);
 
+  template <typename T, typename = ValidateType<T>, typename... Args,
+    typename std::enable_if< std::is_constructible<T, Args...>::value, int >::type = 0
+  >
+  MVariant(std::in_place_type_t<T>, Args&&... args)
+    : m_variant(std::in_place_type<T>, std::forward<Args>(args)...) {}
+
+  template <typename T, typename U, typename = ValidateType<T>, typename... Args,
+    typename std::enable_if< std::is_constructible<T, std::initializer_list<U>&, Args...>::value, int >::type = 0
+  >
+  MVariant(std::in_place_type_t<T>, std::initializer_list<U> il, Args&&... args)
+      : m_variant(std::in_place_type<T>, il, std::forward<Args>(args)...) {}
+
   MVariant(Variant<Types...> const& x);
   MVariant(Variant<Types...>&& x);
 

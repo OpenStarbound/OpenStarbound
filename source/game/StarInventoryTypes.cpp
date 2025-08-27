@@ -12,7 +12,19 @@ EnumMap<EquipmentSlot> const EquipmentSlotNames{
   {EquipmentSlot::HeadCosmetic, "headCosmetic"},
   {EquipmentSlot::ChestCosmetic, "chestCosmetic"},
   {EquipmentSlot::LegsCosmetic, "legsCosmetic"},
-  {EquipmentSlot::BackCosmetic, "backCosmetic"}
+  {EquipmentSlot::BackCosmetic, "backCosmetic"},
+  {EquipmentSlot::Cosmetic1, "cosmetic1"},
+  {EquipmentSlot::Cosmetic2, "cosmetic2"},
+  {EquipmentSlot::Cosmetic3, "cosmetic3"},
+  {EquipmentSlot::Cosmetic4, "cosmetic4"},
+  {EquipmentSlot::Cosmetic5, "cosmetic5"},
+  {EquipmentSlot::Cosmetic6, "cosmetic6"},
+  {EquipmentSlot::Cosmetic7, "cosmetic7"},
+  {EquipmentSlot::Cosmetic8, "cosmetic8"},
+  {EquipmentSlot::Cosmetic9, "cosmetic9"},
+  {EquipmentSlot::Cosmetic10, "cosmetic10"},
+  {EquipmentSlot::Cosmetic11, "cosmetic11"},
+  {EquipmentSlot::Cosmetic12, "cosmetic12"}
 };
 
 InventorySlot jsonToInventorySlot(Json const& json) {

@@ -165,14 +165,17 @@ Maybe<float> ToolUser::toolRadius() const {
   return {};
 }
 
-List<Drawable> ToolUser::renderObjectPreviews(Vec2F aimPosition, Direction walkingDirection, bool inToolRange, Color favoriteColor) const {
+List<Drawable> ToolUser::renderObjectPreviews(Vec2F aimPosition, Direction walkingDirection, bool inToolRange, Color favoriteColor) {
   if (m_suppress.get() || !m_user)
     return {};
 
   auto generate = [&](ObjectItemPtr item) -> List<Drawable> {
+    Vec2I aimPos(aimPosition.floor());
+    if ((aimPos == m_cachedObjectPreviewPosition) && (item == m_cachedObjectItem))
+      return m_cachedObjectPreview;
+
     auto objectDatabase = Root::singleton().objectDatabase();
 
-    Vec2I aimPos(aimPosition.floor());
     auto drawables = objectDatabase->cursorHintDrawables(m_user->world(), item->objectName(),
         aimPos, walkingDirection, item->objectParameters());
 
@@ -194,6 +197,9 @@ List<Drawable> ToolUser::renderObjectPreviews(Vec2F aimPosition, Direction walki
         drawable.imagePart().addDirectives(imageOperationToString(op), true);
       drawable.color = opacityMask;
     }
+    m_cachedObjectPreview = drawables;
+    m_cachedObjectItem = item;
+    m_cachedObjectPreviewPosition = aimPos;
     return drawables;
   };
 
@@ -202,13 +208,14 @@ List<Drawable> ToolUser::renderObjectPreviews(Vec2F aimPosition, Direction walki
   else if (auto alt = as<ObjectItem>(m_altHandItem.get()))
     return generate(alt);
   else
-    return {};
+    m_cachedObjectItem.reset();
+  return {};
 }
 
 Maybe<Direction> ToolUser::setupHumanoidHandItems(Humanoid& humanoid, Vec2F position, Vec2F aimPosition) const {
   if (m_suppress.get() || !m_user) {
-    humanoid.setPrimaryHandParameters(false, 0.0f, 0.0f, false, false, false);
-    humanoid.setAltHandParameters(false, 0.0f, 0.0f, false, false);
+    humanoid.setHandParameters(ToolHand::Primary, false, 0.0f, 0.0f, false, false, false);
+    humanoid.setHandParameters(ToolHand::Alt, false, 0.0f, 0.0f, false, false, false);
     return {};
   }
 
@@ -216,10 +223,8 @@ Maybe<Direction> ToolUser::setupHumanoidHandItems(Humanoid& humanoid, Vec2F posi
     Maybe<Direction> overrideFacingDirection;
 
     auto setRotation = [&](bool holdingItem, float angle, float itemAngle, bool twoHanded, bool recoil, bool outsideOfHand) {
-      if (primary || twoHanded)
-        humanoid.setPrimaryHandParameters(holdingItem, angle, itemAngle, twoHanded, recoil, outsideOfHand);
-      else
-        humanoid.setAltHandParameters(holdingItem, angle, itemAngle, recoil, outsideOfHand);
+      ToolHand hand = primary || twoHanded ? ToolHand::Primary : ToolHand::Alt;
+      humanoid.setHandParameters(hand, holdingItem, angle, itemAngle, twoHanded, recoil, outsideOfHand);
     };
 
     ItemPtr handItem = primary ? m_primaryHandItem.get() : m_altHandItem.get();
@@ -258,7 +263,7 @@ Maybe<Direction> ToolUser::setupHumanoidHandItems(Humanoid& humanoid, Vec2F posi
   Maybe<Direction> overrideFacingDirection;
   overrideFacingDirection = overrideFacingDirection.orMaybe(inner(true));
   if (itemSafeTwoHanded(m_primaryHandItem.get()))
-    humanoid.setAltHandParameters(false, 0.0f, 0.0f, false, false);
+    humanoid.setHandParameters(ToolHand::Alt, false, 0.0f, 0.0f, false, false, false);
   else
     overrideFacingDirection = overrideFacingDirection.orMaybe(inner(false));
 
@@ -267,31 +272,31 @@ Maybe<Direction> ToolUser::setupHumanoidHandItems(Humanoid& humanoid, Vec2F posi
 
 void ToolUser::setupHumanoidHandItemDrawables(Humanoid& humanoid) const {
   if (m_suppress.get() || !m_user) {
-    humanoid.setPrimaryHandFrameOverrides("", "");
-    humanoid.setAltHandFrameOverrides("", "");
-    humanoid.setPrimaryHandDrawables({});
-    humanoid.setAltHandDrawables({});
-    humanoid.setPrimaryHandNonRotatedDrawables({});
-    humanoid.setAltHandNonRotatedDrawables({});
+    humanoid.setHandFrameOverrides(ToolHand::Primary, "", "");
+    humanoid.setHandFrameOverrides(ToolHand::Alt, "", "");
+    humanoid.setHandDrawables(ToolHand::Primary, {});
+    humanoid.setHandDrawables(ToolHand::Alt, {});
+    humanoid.setHandNonRotatedDrawables(ToolHand::Primary, {});
+    humanoid.setHandNonRotatedDrawables(ToolHand::Alt, {});
     return;
   }
 
   auto inner = [&](bool primary) {
-    auto setRotated = [&](String const& backFrameOverride, String const& frontFrameOverride, List<Drawable> drawables, bool twoHanded) {
+    auto setRotated = [&](String const& backFrame, String const& frontFrame, List<Drawable> drawables, bool twoHanded) {
       if (primary || twoHanded) {
-        humanoid.setPrimaryHandFrameOverrides(backFrameOverride, frontFrameOverride);
-        humanoid.setPrimaryHandDrawables(std::move(drawables));
+        humanoid.setHandFrameOverrides(ToolHand::Primary, backFrame, frontFrame);
+        humanoid.setHandDrawables(ToolHand::Primary, std::move(drawables));
       } else {
-        humanoid.setAltHandFrameOverrides(backFrameOverride, frontFrameOverride);
-        humanoid.setAltHandDrawables(std::move(drawables));
+        humanoid.setHandFrameOverrides(ToolHand::Alt, backFrame, frontFrame);
+        humanoid.setHandDrawables(ToolHand::Alt, std::move(drawables));
       }
     };
 
     auto setNonRotated = [&](List<Drawable> drawables) {
       if (primary)
-        humanoid.setPrimaryHandNonRotatedDrawables(std::move(drawables));
+        humanoid.setHandNonRotatedDrawables(ToolHand::Primary, std::move(drawables));
       else
-        humanoid.setAltHandNonRotatedDrawables(std::move(drawables));
+        humanoid.setHandNonRotatedDrawables(ToolHand::Alt, std::move(drawables));
     };
 
     ItemPtr handItem = primary ? m_primaryHandItem.get() : m_altHandItem.get();
@@ -321,9 +326,9 @@ void ToolUser::setupHumanoidHandItemDrawables(Humanoid& humanoid) const {
 
   inner(true);
   if (itemSafeTwoHanded(m_primaryHandItem.get())) {
-    humanoid.setAltHandFrameOverrides("", "");
-    humanoid.setAltHandDrawables({});
-    humanoid.setAltHandNonRotatedDrawables({});
+    humanoid.setHandFrameOverrides(ToolHand::Alt, "", "");
+    humanoid.setHandDrawables(ToolHand::Alt, {});
+    humanoid.setHandNonRotatedDrawables(ToolHand::Alt, {});
   } else {
     inner(false);
   }

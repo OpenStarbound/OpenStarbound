@@ -63,14 +63,16 @@ public:
 
   PanePtr getPaneAt(Set<PaneLayer> const& paneLayers, Vec2I const& position) const;
   PanePtr getPaneAt(Vec2I const& position) const;
+  List<PanePtr> getAllPanes();
 
   void setBackgroundWidget(WidgetPtr bg);
 
   void dismissWhere(function<bool(PanePtr const&)> func);
 
-  // Returns the pane that has captured the keyboard, if any.
+  // Returns the pane/widget that has captured the keyboard, if any.
   PanePtr keyboardCapturedPane() const;
-  // Returns true if the current pane that has captured the keyboard is
+  WidgetPtr keyboardCapturedWidget() const;
+  // Returns true if the current widget that has captured the keyboard is
   // accepting text input.
   bool keyboardCapturedForTextInput() const;
 

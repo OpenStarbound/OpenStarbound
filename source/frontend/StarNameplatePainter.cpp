@@ -39,7 +39,7 @@ void NameplatePainter::update(float dt, WorldClientPtr const& world, WorldCamera
     foundEntities.insert(entity->entityId());
 
     if (!m_entitiesWithNametags.contains(entity->entityId())) {
-      Nametag nametag = {entity->name(), entity->statusText(), entity->nametagColor(), 1.0f, entity->entityId()};
+      Nametag nametag = {entity->nametag(), entity->statusText(), entity->nametagColor(), 1.0f, entity->entityId()};
       RectF boundBox = determineBoundBox(Vec2F(), nametag);
       m_nametags.addBubble(Vec2F(), boundBox, std::move(nametag));
     }
@@ -54,7 +54,7 @@ void NameplatePainter::update(float dt, WorldClientPtr const& world, WorldCamera
       bubbleState.boundBox = determineBoundBox(bubbleState.idealDestination, nametag);
 
       nametag.statusText = entity->statusText();
-      nametag.name = entity->name();
+      nametag.name = entity->nametag();
       nametag.color = entity->nametagColor();
       bool fullyOnScreen = world->geometry().rectContains(camera.worldScreenRect(), entity->position());
       if (inspectionMode)

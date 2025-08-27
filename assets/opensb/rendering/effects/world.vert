@@ -34,7 +34,7 @@ void main() {
   
   fragmentLightMapMultiplier = float((vertexData >> 2) & 0x1);
   int vertexTextureIndex = vertexData & 0x3;
-  fragmentLightMapCoordinate = (screenPosition / lightMapScale) - lightMapOffset * lightMapSize / screenSize;
+  fragmentLightMapCoordinate = (screenPosition - lightMapOffset) / lightMapScale;
   if (vertexTextureIndex == 3)
     fragmentTextureCoordinate = vertexTextureCoordinate / textureSize3;
   else if (vertexTextureIndex == 2)

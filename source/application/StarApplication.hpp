@@ -41,6 +41,9 @@ public:
 
   // Will be called at updateRate hz, or as close as possible.
   virtual void update();
+  
+  // Returns how many frames have been skipped.
+  virtual unsigned framesSkipped() const;
 
   // Will be called at updateRate hz, or more or less depending on settings and
   // performance.  update() is always prioritized over render().

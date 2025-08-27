@@ -79,8 +79,19 @@ public:
   // Returns whether a state change occurred.  If startNew is true, always
   // forces a state change and starts the state off at the beginning even if
   // this state is already the current state.
-  bool setState(String const& stateType, String const& state, bool startNew = false);
+  bool setState(String const& stateType, String const& state, bool startNew = false, bool reverse = false);
+  bool setLocalState(String const& stateType, String const& state, bool startNew = false, bool reverse = false);
   String state(String const& stateType) const;
+  int stateFrame(String const& stateType) const;
+  int stateNextFrame(String const& stateType) const;
+  float stateFrameProgress(String const& stateType) const;
+  float stateTimer(String const& stateType) const;
+  bool stateReverse(String const& stateType) const;
+
+  float stateCycle(String const& stateType, Maybe<String> state) const;
+  int stateFrames(String const& stateType, Maybe<String> state) const;
+
+  bool hasState(String const& stateType, Maybe<String> const& state = {}) const;
 
   StringMap<AnimatedPartSet::Part> const& constParts() const;
   StringMap<AnimatedPartSet::Part>& parts();
@@ -89,8 +100,10 @@ public:
   // Queries, if it exists, a property value from the underlying
   // AnimatedPartSet for the given state or part.  If the property does not
   // exist, returns null.
-  Json stateProperty(String const& stateType, String const& propertyName) const;
-  Json partProperty(String const& partName, String const& propertyName) const;
+  Json stateProperty(String const& stateType, String const& propertyName, Maybe<String> state = {}, Maybe<int> frame = {}) const;
+  Json stateNextProperty(String const& stateType, String const& propertyName) const;
+  Json partProperty(String const& partName, String const& propertyName, Maybe<String> stateType = {}, Maybe<String> state = {}, Maybe<int> frame = {}) const;
+  Json partNextProperty(String const & partName, String const & propertyName) const;
 
   // Returns the transformation from flipping and zooming that is applied to
   // all parts in the NetworkedAnimator.
@@ -115,10 +128,16 @@ public:
   // here will be replaced by the tag value when constructing Drawables.  All
   // Drawables can also have a <frame> tag which will be set to whatever the
   // current state frame is (1 indexed, so the first frame is 1).
-  void setGlobalTag(String tagName, String tagValue);
+  void setGlobalTag(String tagName, Maybe<String> tagValue = {});
   void removeGlobalTag(String const& tagName);
   String const* globalTagPtr(String const& tagName) const;
-  void setPartTag(String const& partType, String tagName, String tagValue);
+  void setPartTag(String const& partType, String tagName, Maybe<String> tagValue = {});
+  void setLocalTag(String tagName, Maybe<String> tagValue = {});
+
+  void setPartDrawables(String const& partName, List<Drawable> drawables);
+  void addPartDrawables(String const& partName, List<Drawable> drawables);
+
+  String applyPartTags(String const& partName, String apply) const;
 
   void setProcessingDirectives(Directives const& directives);
   void setZoom(float zoom);
@@ -130,6 +149,7 @@ public:
   // can be used to globally speed up or slow down all components of
   // NetworkedAnimator together.
   void setAnimationRate(float rate);
+  float animationRate();
 
   // Given angle is an absolute angle.  Will rotate over time at the configured
   // angular velocity unless the immediate flag is set.
@@ -146,6 +166,17 @@ public:
   void scaleTransformationGroup(String const& transformationGroup, Vec2F const& scale, Vec2F const& scaleCenter = Vec2F());
   void transformTransformationGroup(String const& transformationGroup, float a, float b, float c, float d, float tx, float ty);
   void resetTransformationGroup(String const& transformationGroup);
+  void setTransformationGroup(String const& transformationGroup, Mat3F transform);
+  Mat3F getTransformationGroup(String const& transformationGroup);
+
+  void translateLocalTransformationGroup(String const& transformationGroup, Vec2F const& translation);
+  void rotateLocalTransformationGroup(String const& transformationGroup, float rotation, Vec2F const& rotationCenter = Vec2F());
+  void scaleLocalTransformationGroup(String const& transformationGroup, float scale, Vec2F const& scaleCenter = Vec2F());
+  void scaleLocalTransformationGroup(String const& transformationGroup, Vec2F const& scale, Vec2F const& scaleCenter = Vec2F());
+  void transformLocalTransformationGroup(String const& transformationGroup, float a, float b, float c, float d, float tx, float ty);
+  void resetLocalTransformationGroup(String const& transformationGroup);
+  void setLocalTransformationGroup(String const& transformationGroup, Mat3F transform);
+  Mat3F getLocalTransformationGroup(String const& transformationGroup);
 
   bool hasParticleEmitter(String const& emitterName) const;
   // Active particle emitters emit over time based on emission rate/variance.
@@ -200,6 +231,7 @@ public:
   // Run through the current animations until the final frame, including any
   // transition animations.
   void finishAnimations();
+  uint8_t version() const;
 
 private:
   struct RotationGroup {
@@ -216,7 +248,16 @@ private:
     Mat3F affineTransform() const;
     void setAffineTransform(Mat3F const& matrix);
 
+    Mat3F localAffineTransform() const;
+    void setLocalAffineTransform(Mat3F const& matrix);
+
+    Mat3F animationAffineTransform() const;
+    void setAnimationAffineTransform(Mat3F const& matrix);
+    void setAnimationAffineTransform(Mat3F const& mat1, Mat3F const& mat2, float progress);
+
     bool interpolated;
+
+    Mat3F localTransform;
 
     NetElementFloat xTranslation;
     NetElementFloat yTranslation;
@@ -224,6 +265,14 @@ private:
     NetElementFloat yScale;
     NetElementFloat xShear;
     NetElementFloat yShear;
+
+    float xTranslationAnimation;
+    float yTranslationAnimation;
+    float xScaleAnimation;
+    float yScaleAnimation;
+    float xShearAnimation;
+    float yShearAnimation;
+
   };
 
   struct ParticleEmitter {
@@ -299,6 +348,8 @@ private:
   struct StateInfo {
     NetElementSize stateIndex;
     NetElementEvent startedEvent;
+    bool wasUpdated;
+    NetElementBool reverse;
   };
 
   void setupNetStates();
@@ -306,7 +357,10 @@ private:
   void netElementsNeedLoad(bool full) override;
   void netElementsNeedStore() override;
 
+  Json mergeIncludes(Json config, Json includes, String relativePath);
+
   String m_relativePath;
+  uint8_t m_animatorVersion;
 
   AnimatedPartSet m_animatedParts;
   OrderedHashMap<String, StateInfo> m_stateInfo;
@@ -327,6 +381,10 @@ private:
 
   NetElementHashMap<String, String> m_globalTags;
   StableStringMap<NetElementHashMap<String, String>> m_partTags;
+  HashMap<String, String> m_localTags;
+
+  HashMap<String,List<Drawable>> m_partDrawables;
+
   mutable StringMap<std::pair<size_t, Drawable>> m_cachedPartDrawables;
 };
 

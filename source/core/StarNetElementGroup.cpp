@@ -9,9 +9,16 @@ void NetElementGroup::addNetElement(NetElement* element, bool propagateInterpola
   if (m_interpolationEnabled && propagateInterpolation)
     element->enableNetInterpolation(m_extrapolationHint);
   m_elements.append(pair<NetElement*, bool>(element, propagateInterpolation));
+
+
+  for (VersionNumber i = 0; i < (CurrentStreamVersion + 1); i++) {
+    if (element->checkWithRules(NetCompatibilityRules(i)))
+      m_elementCounts[i]++;
+  }
 }
 
 void NetElementGroup::clearNetElements() {
+  m_elementCounts.clear();
   m_elements.clear();
 }
 
@@ -62,18 +69,27 @@ void NetElementGroup::tickNetInterpolation(float dt) {
 
 bool NetElementGroup::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const {
   if (!checkWithRules(rules)) return false;
-  if (m_elements.size() == 0) {
+
+  auto expectedSize = m_elementCounts.maybe(rules.version()).value(m_elements.size());
+
+  if (expectedSize == 0) {
     return false;
-  } else if (m_elements.size() == 1) {
-    return m_elements[0].first->writeNetDelta(ds, fromVersion, rules);
+  } else if (expectedSize == 1) {
+    for (auto& element : m_elements)
+      if (element.first->checkWithRules(rules)) {
+        return element.first->writeNetDelta(ds, fromVersion, rules);
+      }
   } else {
     bool deltaWritten = false;
     uint64_t i = 0;
     m_buffer.setStreamCompatibilityVersion(rules);
     for (auto& element : m_elements) {
+      if (i > expectedSize)
+        break;
       if (!element.first->checkWithRules(rules))
         continue;
       ++i;
+
       if (element.first->writeNetDelta(m_buffer, fromVersion, rules)) {
         deltaWritten = true;
         ds.writeVlqU(i);
@@ -88,22 +104,35 @@ bool NetElementGroup::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCom
 }
 
 void NetElementGroup::readNetDelta(DataStream& ds, float interpolationTime, NetCompatibilityRules rules) {
-  if (!checkWithRules(rules)) return;
-  if (m_elements.size() == 0) {
+  if (!checkWithRules(rules))
+    return;
+
+  auto expectedSize = m_elementCounts.maybe(rules.version()).value(m_elements.size());
+
+  if (expectedSize == 0) {
     throw IOException("readNetDelta called on empty NetElementGroup");
-  } else if (m_elements.size() == 1) {
-    m_elements[0].first->readNetDelta(ds, interpolationTime, rules);
+  } else if (expectedSize == 1) {
+    for (auto& element : m_elements)
+      if (element.first->checkWithRules(rules)) {
+        element.first->readNetDelta(ds, interpolationTime, rules);
+        break;
+      }
   } else {
     uint64_t readIndex = ds.readVlqU();
     uint64_t i = 0;
+    uint64_t offset = 0;
     for (auto& element : m_elements) {
-      if (!element.first->checkWithRules(rules))
+      if (i > expectedSize)
+        break;
+      if (!element.first->checkWithRules(rules)) {
+        offset++;
         continue;
+      }
       if (readIndex == 0 || readIndex - 1 > i) {
         if (m_interpolationEnabled)
-          m_elements[i].first->blankNetDelta(interpolationTime);
+          m_elements[i + offset].first->blankNetDelta(interpolationTime);
       } else if (readIndex - 1 == i) {
-        m_elements[i].first->readNetDelta(ds, interpolationTime, rules);
+        m_elements[i + offset].first->readNetDelta(ds, interpolationTime, rules);
         readIndex = ds.readVlqU();
       } else {
         throw IOException("group indexes out of order in NetElementGroup::readNetDelta");

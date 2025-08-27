@@ -21,8 +21,9 @@ cp \
   dist/asset_unpacker \
   dist/dump_versioned_json \
   dist/make_versioned_json \
-  dist/planet_mapgen \
   scripts/ci/macos/sbinit.config \
   scripts/ci/macos/run-server.sh \
   scripts/steam_appid.txt \
   client_distribution/osx/
+
+tar -cvf client.tar client_distribution
