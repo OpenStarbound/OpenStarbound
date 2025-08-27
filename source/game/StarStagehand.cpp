@@ -115,6 +115,10 @@ Maybe<LuaValue> Stagehand::evalScript(String const& code) {
   return m_scriptComponent.eval(code);
 }
 
+Json Stagehand::configValue(String const& name, Json const& def) const {
+  return m_config.query(name, def);
+}
+
 Stagehand::Stagehand() {
   setPersistent(true);
 

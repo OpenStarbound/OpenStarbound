@@ -62,6 +62,10 @@ EntityType Projectile::entityType() const {
   return EntityType::Projectile;
 }
 
+Json Projectile::configValue(String const& name, Json const& def) const {
+  return m_parameters.query(name, m_config->config.query(name, def));
+}
+
 void Projectile::init(World* world, EntityId entityId, EntityMode mode) {
   Entity::init(world, entityId, mode);
   m_movementController->init(world);
@@ -80,14 +84,14 @@ void Projectile::init(World* world, EntityId entityId, EntityMode mode) {
   }
 
   if (isMaster()) {
-    if (!m_config->scripts.empty()) {
-      m_scriptComponent.setScripts(m_config->scripts);
+    auto parameterScripts = m_parameters.optArray("scripts").apply(jsonToStringList);
+    auto scripts = parameterScripts ? parameterScripts.value() : m_config->scripts;
+    if (!scripts.empty()) {
+      m_scriptComponent.setScripts(scripts);
       m_scriptComponent.setUpdateDelta(m_parameters.getUInt("scriptDelta", m_config->config.getUInt("scriptDelta", 1)));
 
       m_scriptComponent.addCallbacks("projectile", makeProjectileCallbacks());
-      m_scriptComponent.addCallbacks("config", LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def) {
-           return m_parameters.query(name, m_config->config.query(name, def));
-         }));
+      m_scriptComponent.addCallbacks("config", LuaBindings::makeConfigCallbacks(bind(&Projectile::configValue, this, _1, _2)));
       m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
       m_scriptComponent.addCallbacks("mcontroller", LuaBindings::makeMovementControllerCallbacks(m_movementController.get()));
       m_scriptComponent.init(world);
@@ -992,7 +996,7 @@ void Projectile::setup() {
 LuaCallbacks Projectile::makeProjectileCallbacks() {
   LuaCallbacks callbacks;
   callbacks.registerCallback("getParameter", [this](String const& name, Json const& def) {
-      return m_parameters.query(name, m_config->config.query(name, def));
+      return configValue(name,def);
     });
   callbacks.registerCallback("die", [this]() { m_timeToLive = 0.0f; });
   callbacks.registerCallback("sourceEntity", [this]() -> Maybe<EntityId> {

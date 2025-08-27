@@ -68,6 +68,8 @@ public:
   Maybe<LuaValue> evalScript(String const& code) override;
 
   String projectileType() const;
+  
+  Json configValue(String const& name, Json const& def = Json()) const;
 
   // InitialPosition, InitialDirection, InitialVelocity, PowerMultiplier, and
   // additional status effects must be set before the projectile is added to
