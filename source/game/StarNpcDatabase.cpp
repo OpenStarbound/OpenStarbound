@@ -51,7 +51,7 @@ NpcVariant NpcDatabase::generateNpcVariant(
 
   auto config = buildConfig(typeName, overrides);
 
-  variant.description = config.getString("description", "Some funny looking person");
+  variant.description = config.optString("description");
 
   auto levelVariance = jsonToVec2F(config.getArray("levelVariance", {0, 0}));
   variant.level = max(randSource.randf(level + levelVariance[0], level + levelVariance[1]), 0.0f);
@@ -60,17 +60,12 @@ NpcVariant NpcDatabase::generateNpcVariant(
   variant.initialScriptDelta = config.getUInt("initialScriptDelta", 5);
   variant.scriptConfig = config.get("scriptConfig");
 
-  HumanoidIdentity identity;
   auto speciesDatabase = Root::singleton().speciesDatabase();
   auto speciesDefinition = speciesDatabase->species(species);
+  auto result = speciesDatabase->generateHumanoid(species, seed);
+  HumanoidIdentity identity = result.identity;
 
-  variant.uniqueHumanoidConfig = config.contains("humanoidConfig");
-  if (variant.uniqueHumanoidConfig)
-    variant.humanoidConfig = Root::singleton().assets()->json(config.getString("humanoidConfig"));
-  else
-    variant.humanoidConfig = speciesDefinition->humanoidConfig();
-
-  speciesDefinition->generateHumanoid(identity, seed);
+  variant.humanoidParameters = jsonMerge(result.humanoidParameters, config.getObject("humanoidParameters", JsonObject())).toObject();
 
   if (config.contains("npcname"))
     identity.name = config.getString("npcname");
@@ -78,15 +73,28 @@ NpcVariant NpcDatabase::generateNpcVariant(
     identity.name = Root::singleton().nameGenerator()->generateName(
         jsonToStringList(config.get("nameGen"))[(int)identity.gender], randSource);
   }
+  // we're going to kinda end up doing this twice just to make sure it ends up generating with the right personality array
+  // its dumb that personality is the only identity value that isn't in the customization screen but comes from the humanoid config
+  // therefore we have to do this little dance here for the npcs that get unique humanoid configs, which is silly since if they
+  // got a unique humanoid config they probably would have had a predefined personality anyway, but whatever
+  if (config.contains("identity"))
+    identity = HumanoidIdentity(jsonMerge(identity.toJson(), config.get("identity")));
 
-  identity.personality = parsePersonalityArray(randSource.randFrom(variant.humanoidConfig.getArray("personalities")));
+  variant.uniqueHumanoidConfig = config.contains("humanoidConfig");
+  if (variant.uniqueHumanoidConfig){
+    variant.humanoidConfig = Root::singleton().assets()->json(config.getString("humanoidConfig"));
+    auto usedHumanoidConfig = speciesDatabase->humanoidConfig(identity, variant.humanoidParameters, variant.humanoidConfig);
+    // this only needs to be done if the npc has a unique humanoid config, otherwise the output from generateHumanoid should be fine
+    identity.personality = parsePersonalityArray(randSource.randFrom(usedHumanoidConfig.getArray("personalities")));
+  } else {
+    variant.humanoidConfig = speciesDefinition->humanoidConfig();
+  }
 
+  // and where it ususally merges the identity
   if (config.contains("identity"))
     identity = HumanoidIdentity(jsonMerge(identity.toJson(), config.get("identity")));
 
   variant.humanoidIdentity = identity;
-
-  variant.humanoidParameters = config.getObject("humanoidParameters", JsonObject());
 
   variant.movementParameters = config.get("movementParameters", {});
   variant.statusControllerSettings = config.get("statusControllerSettings");
@@ -174,6 +182,10 @@ ByteArray NpcDatabase::writeNpcVariant(NpcVariant const& variant, NetCompatibili
 
   ds.write(variant.initialScriptDelta);
   ds.write(variant.humanoidIdentity);
+  if (rules.version() >= 11 ) {
+    ds.write(variant.humanoidParameters);
+    ds.write(variant.description);
+  }
 
   ds.writeMapContainer(variant.items);
 
@@ -199,13 +211,19 @@ NpcVariant NpcDatabase::readNpcVariant(ByteArray const& data, NetCompatibilityRu
 
   auto config = buildConfig(variant.typeName, variant.overrides);
 
-  variant.description = config.getString("description", "Some funny looking person");
 
   variant.scripts = jsonToStringList(config.get("scripts"));
   variant.scriptConfig = config.get("scriptConfig");
 
   ds.read(variant.initialScriptDelta);
   ds.read(variant.humanoidIdentity);
+  if (rules.version() >= 11){
+    ds.read(variant.humanoidParameters);
+    ds.read(variant.description);
+  } else {
+    variant.humanoidParameters = config.getObject("humanoidParameters", JsonObject());
+    variant.description = config.optString("description");
+  }
 
   auto speciesDatabase = Root::singleton().speciesDatabase();
   auto speciesDefinition = speciesDatabase->species(variant.species);
@@ -214,8 +232,6 @@ NpcVariant NpcDatabase::readNpcVariant(ByteArray const& data, NetCompatibilityRu
     variant.humanoidConfig = Root::singleton().assets()->json(config.getString("humanoidConfig"));
   else
     variant.humanoidConfig = speciesDefinition->humanoidConfig();
-
-  variant.humanoidParameters = config.getObject("humanoidParameters", JsonObject());
 
   variant.movementParameters = config.get("movementParameters", {});
   variant.statusControllerSettings = config.get("statusControllerSettings");
@@ -254,26 +270,24 @@ NpcVariant NpcDatabase::readNpcVariant(ByteArray const& data, NetCompatibilityRu
 }
 
 Json NpcDatabase::writeNpcVariantToJson(NpcVariant const& variant) const {
-  JsonObject overrides;
-  if (variant.overrides)
-    overrides = variant.overrides.toObject();
-  overrides.set("humanoidParameters", variant.humanoidParameters);
+  JsonObject store {
+    {"species", variant.species},
+    {"typeName", variant.typeName},
+    {"level", variant.level},
+    {"seed", variant.seed},
+    {"overrides", variant.overrides},
+    {"initialScriptDelta", variant.initialScriptDelta},
+    {"humanoidIdentity", variant.humanoidIdentity.toJson()},
+    {"items", jsonFromMapV<StringMap<ItemDescriptor>>(variant.items, mem_fn(&ItemDescriptor::diskStore))},
+    {"persistent", variant.persistent},
+    {"keepAlive", variant.keepAlive},
+    {"damageTeam", variant.damageTeam},
+    {"damageTeamType", TeamTypeNames.getRight(variant.damageTeamType)},
+    {"humanoidParameters", variant.humanoidParameters}
+  };
   if (variant.description.isValid())
-    overrides.set("description", variant.description.value());
-
-  return JsonObject{{"species", variant.species},
-      {"typeName", variant.typeName},
-      {"level", variant.level},
-      {"seed", variant.seed},
-      {"overrides", overrides},
-      {"initialScriptDelta", variant.initialScriptDelta},
-      {"humanoidIdentity", variant.humanoidIdentity.toJson()},
-      {"items", jsonFromMapV<StringMap<ItemDescriptor>>(variant.items, mem_fn(&ItemDescriptor::diskStore))},
-      {"persistent", variant.persistent},
-      {"keepAlive", variant.keepAlive},
-      {"damageTeam", variant.damageTeam},
-      {"damageTeamType", TeamTypeNames.getRight(variant.damageTeamType)}
-    };
+    store.set("description", variant.description.value());
+  return store;
 }
 
 NpcVariant NpcDatabase::readNpcVariantFromJson(Json const& data) const {
@@ -287,13 +301,14 @@ NpcVariant NpcDatabase::readNpcVariantFromJson(Json const& data) const {
 
   auto config = buildConfig(variant.typeName, variant.overrides);
 
-  variant.description = config.optString("description");
+  variant.description = data.optString("description");
 
   variant.scripts = jsonToStringList(config.get("scripts"));
   variant.scriptConfig = config.get("scriptConfig");
 
   variant.initialScriptDelta = data.getInt("initialScriptDelta");
   variant.humanoidIdentity = HumanoidIdentity(data.get("humanoidIdentity"));
+  variant.humanoidParameters = data.getObject("humanoidParameters", JsonObject());
 
   auto speciesDatabase = Root::singleton().speciesDatabase();
   auto speciesDefinition = speciesDatabase->species(variant.species);
@@ -303,7 +318,6 @@ NpcVariant NpcDatabase::readNpcVariantFromJson(Json const& data) const {
   else
     variant.humanoidConfig = speciesDefinition->humanoidConfig();
 
-  variant.humanoidParameters = config.getObject("humanoidParameters", JsonObject());
 
   variant.movementParameters = config.get("movementParameters", {});
   variant.statusControllerSettings = config.get("statusControllerSettings", {});
@@ -355,8 +369,7 @@ NpcPtr NpcDatabase::netLoadNpc(ByteArray const& netStore, NetCompatibilityRules 
 }
 
 List<Drawable> NpcDatabase::npcPortrait(NpcVariant const& npcVariant, PortraitMode mode) const {
-  Humanoid humanoid(npcVariant.humanoidConfig);
-  humanoid.setIdentity(npcVariant.humanoidIdentity);
+  Humanoid humanoid(npcVariant.humanoidIdentity, npcVariant.humanoidParameters, npcVariant.uniqueHumanoidConfig ? npcVariant.humanoidConfig : Json());
 
   auto itemDatabase = Root::singleton().itemDatabase();
   auto items = StringMap<ItemDescriptor, CaseInsensitiveStringHash, CaseInsensitiveStringCompare>::from(npcVariant.items);
@@ -366,22 +379,11 @@ List<Drawable> NpcDatabase::npcPortrait(NpcVariant const& npcVariant, PortraitMo
   };
 
   ArmorWearer armor;
-  if (items.contains("head"))
-    armor.setHeadItem(as<HeadArmor>(makeItem(items["head"])));
-  if (items.contains("headCosmetic"))
-    armor.setHeadItem(as<HeadArmor>(makeItem(items["headCosmetic"])));
-  if (items.contains("chest"))
-    armor.setChestItem(as<ChestArmor>(makeItem(items["chest"])));
-  if (items.contains("chestCosmetic"))
-    armor.setChestCosmeticItem(as<ChestArmor>(makeItem(items["chestCosmetic"])));
-  if (items.contains("legs"))
-    armor.setLegsItem(as<LegsArmor>(makeItem(items["legs"])));
-  if (items.contains("legsCosmetic"))
-    armor.setLegsCosmeticItem(as<LegsArmor>(makeItem(items["legsCosmetic"])));
-  if (items.contains("back"))
-    armor.setBackItem(as<BackArmor>(makeItem(items["back"])));
-  if (items.contains("backCosmetic"))
-    armor.setBackCosmeticItem(as<BackArmor>(makeItem(items["backCosmetic"])));
+  for (auto item : npcVariant.items) {
+    if (auto equipmentSlot = EquipmentSlotNames.maybeLeft(item.first)) {
+      armor.setItem((uint8_t)*equipmentSlot, as<ArmorItem>(makeItem(ItemDescriptor(item.second))));
+    }
+  }
 
   armor.setupHumanoid(humanoid, false);
 

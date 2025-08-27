@@ -1509,7 +1509,7 @@ void Npc::refreshHumanoidParameters() {
         m_scriptComponent.invoke("refreshHumanoidParameters");
       }
     }
-    if (world()->isClient()) {
+    if (world()->isClient() && m_scriptedAnimator.initialized()) {
       m_scriptedAnimator.uninit();
       m_scriptedAnimator.removeCallbacks("animationConfig");
       m_scriptedAnimator.removeCallbacks("config");

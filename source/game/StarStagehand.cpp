@@ -84,6 +84,10 @@ void Stagehand::readNetState(ByteArray data, float interpolationTime, NetCompati
   m_netGroup.readNetState(data, interpolationTime, rules);
 }
 
+String Stagehand::name() const {
+  return typeName();
+}
+
 void Stagehand::update(float dt, uint64_t) {
   if (!inWorld())
     return;
@@ -111,6 +115,10 @@ Maybe<LuaValue> Stagehand::evalScript(String const& code) {
   return m_scriptComponent.eval(code);
 }
 
+Json Stagehand::configValue(String const& name, Json const& def) const {
+  return m_config.query(name, def);
+}
+
 Stagehand::Stagehand() {
   setPersistent(true);
 
@@ -130,6 +138,8 @@ Stagehand::Stagehand() {
 void Stagehand::readConfig(Json config) {
   m_config = config;
   m_scripted = m_config.contains("scripts");
+  
+  m_clientEntityMode = ClientEntityModeNames.getLeft(config.getString("clientEntityMode", "ClientSlaveOnly"));
 
   if (m_config.contains("position")) {
     auto pos = jsonToVec2F(m_config.get("position"));
@@ -181,6 +191,10 @@ LuaCallbacks Stagehand::makeStagehandCallbacks() {
     });
 
   return callbacks;
+}
+
+ClientEntityMode Stagehand::clientEntityMode() const {
+  return m_clientEntityMode;
 }
 
 String Stagehand::typeName() const {

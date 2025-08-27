@@ -19,6 +19,7 @@
 #include "StarLuaAnimationComponent.hpp"
 #include "StarLuaActorMovementComponent.hpp"
 #include "StarLoungingEntities.hpp"
+#include "StarActorEntity.hpp"
 
 namespace Star {
 
@@ -33,7 +34,8 @@ class Monster
     public virtual NametagEntity,
     public virtual ChattyEntity,
     public virtual InteractiveEntity,
-    public virtual LoungingEntity {
+    public virtual LoungingEntity,
+    public virtual ActorEntity {
 public:
   struct SkillInfo {
     String label;
@@ -68,6 +70,7 @@ public:
   void enableInterpolation(float extrapolationHint) override;
   void disableInterpolation() override;
 
+  String name() const override;
   String description() const override;
 
   List<LightSource> lightSources() const override;
@@ -108,7 +111,6 @@ public:
   SkillInfo activeSkillInfo() const;
 
   List<Drawable> portrait(PortraitMode mode) const override;
-  String name() const override;
   String typeName() const;
   MonsterVariant monsterVariant() const;
 
@@ -133,6 +135,9 @@ public:
   bool isInteractive() const override;
 
   Vec2F questIndicatorPosition() const override;
+
+  ActorMovementController* movementController() override;
+  StatusController* statusController() override;
 
   using Entity::setKeepAlive;
   using Entity::setUniqueId;

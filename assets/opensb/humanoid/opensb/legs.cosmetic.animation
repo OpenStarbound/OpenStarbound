@@ -1,0 +1,105 @@
+{
+	"globalTagDefaults" : {
+		"legsCosmetic<slot>Frameset" : "",
+		"legsCosmetic<slot>Directives" : ""
+	},
+
+	"animatedParts" : {
+		"parts" : {
+			"legsCosmetic<slot>": {
+				"properties": {
+					"centered": true,
+					"zLevel": 10.1234,
+					"anchorPart": "legsCosmetic",
+					"processingDirectives" : "<legsCosmetic<slot>Directives>"
+				},
+				"partStates": {
+					"body": {
+						"idle": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<personalityIdle>" } },
+						"duck": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<body_state>.<body_frame>" } },
+						"sit" : "duck",
+						"lay" : "duck",
+						"walk" : "duck",
+						"run": { "properties": { "image": "<legsCosmetic<slot>Frameset>:run.<body_frame>" } },
+						"runbackwards" : "run",
+						"jump" : "duck",
+						"fall" : "duck",
+						"swim" : "duck",
+						"swimIdle" : "duck"
+					},
+					"bodyDance" : {
+						"dance": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+
+						"idle.1": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"idle.2": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"idle.3": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"idle.4": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"idle.5": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+
+						"walk.1": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"walk.2": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"walk.3": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"walk.4": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"walk.5": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"walk.6": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"walk.7": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"walk.8": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+
+						"run.1": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"run.2": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"run.3": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"run.4": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"run.5": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"run.6": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"run.7": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"run.8": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+
+						"hidden.1": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+
+						"jump.1": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"jump.2": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"jump.3": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"jump.4": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+
+						"fall.1": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"fall.2": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"fall.3": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"fall.4": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+
+						"swimIdle.1": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"swimIdle.2": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+
+						"swim.1": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"swim.2": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"swim.3": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"swim.4": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"swim.5": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"swim.6": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"swim.7": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+
+						"sit.1": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"lay.1": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+
+						"idleMelee": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"duckMelee": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+
+						// doubt they'll see use but you never know
+						"climb.1": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"climb.2": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"climb.3": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"climb.4": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"climb.5": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"climb.6": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"climb.7": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"climb.8": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } }
+					},
+					"portraitMode" : {
+						"head": { "properties": {} },
+						"bust": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<personalityIdle><portraitMask>" } }
+					}
+				}
+			}
+		}
+	},
+	"transformationGroups" : {}
+}

@@ -54,3 +54,21 @@ end
 if count > 0 then
   sb.logInfo("Moved %s misplaced songs to /songs/", count)
 end
+
+-- pre generating the 20 occupant slot animations so we're not wasting time generating the same thing multiple times later
+local chestLegsSortOrder = { 14, 8, 2, 0, 15, 9, 3, 1, 4, 5, 6, 7, 10, 11, 12, 13, 16, 17, 18, 19 }
+for _, path in ipairs(assets.scan("/humanoid/", "cosmetic.animation")) do
+  for i = 1, 20 do
+    assets.add(path .. "." .. i, assets.bytes(path):gsub(
+      "%<slot%>", tostring(i)
+    ):gsub(
+      "%.1234", string.format(".%04d", i)
+    ):gsub(
+      "%.4567", string.format(".%04d", chestLegsSortOrder[i])
+    ):gsub(
+      "%.4321", string.format(".%04d", 20-i)
+    ):gsub(
+      "%.7654", string.format(".%04d", 20-chestLegsSortOrder[i])
+    ))
+  end
+end

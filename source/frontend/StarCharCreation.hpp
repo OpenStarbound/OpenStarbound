@@ -34,9 +34,6 @@ private:
 
   void createPlayer();
 
-  void setShirt(String const& shirt, size_t colorIndex);
-  void setPants(String const& pants, size_t colorIndex);
-
   PlayerPtr m_previewPlayer;
 
   StringList m_speciesList;

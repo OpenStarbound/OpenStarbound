@@ -1,7 +1,6 @@
-
 # Renderer
 
-The new renderer table is accessible from almost every clientside script and allows configuring shaders.
+The new `renderer` table is accessible from almost every clientside script and allows configuring shaders.
 
 ---
 
@@ -33,5 +32,3 @@ This is accessed from the shader as a uniform and must be defined in the effect'
 #### `RenderEffectParameter` renderer.getEffectParameter(String effectName, String parameterName)
 
 Returns the specified scriptable parameter of the specified shader effect.
-
----

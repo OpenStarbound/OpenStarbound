@@ -70,6 +70,10 @@ bool Entity::masterOnly() const {
   return false;
 }
 
+String Entity::name() const {
+  return "";
+}
+
 String Entity::description() const {
   return "";
 }

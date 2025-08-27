@@ -485,6 +485,7 @@ SET (star_game_SOURCES
     scripting/StarInputLuaBindings.cpp
     scripting/StarItemLuaBindings.cpp
     scripting/StarLuaComponents.cpp
+    scripting/StarLuaEntityUserdata.cpp
     scripting/StarLuaGameConverters.cpp
     scripting/StarLuaRoot.cpp
     scripting/StarMovementControllerLuaBindings.cpp

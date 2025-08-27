@@ -80,6 +80,7 @@ private:
     bool needsSync = true;
     bool needsStore = true;
     bool isCosmetic = false;
+    bool isCurrentlyVisible = false;
     NetElementData<ItemDescriptor> netState;
   };
 
