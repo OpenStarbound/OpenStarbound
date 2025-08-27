@@ -104,7 +104,7 @@ HumanoidIdentity::HumanoidIdentity(Json config) {
   personality.headOffset = jsonToVec2F(config.get("personalityHeadOffset", JsonArray{0, 0}));
   personality.armOffset = jsonToVec2F(config.get("personalityArmOffset", JsonArray{0, 0}));
 
-  color = jsonToColor(config.get("color", "white")).toRgba();
+  color = jsonToColor(config.get("color", JsonArray({51, 117, 237, 255}))).toRgba();
 
   imagePath = config.optString("imagePath");
 
