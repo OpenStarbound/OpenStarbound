@@ -499,6 +499,11 @@ namespace LuaBindings {
           else
             return {};
         });
+    
+    callbacks.registerCallbackWithSignature<EntityPtr, EntityId>("entity", [world](EntityId entityId) -> EntityPtr {
+      return world->entity(entityId);
+    });
+    
     callbacks.registerCallbackWithSignature<bool, int>("entityExists", bind(WorldEntityCallbacks::entityExists, world, _1));
     callbacks.registerCallbackWithSignature<bool, int, int>("entityCanDamage", bind(WorldEntityCallbacks::entityCanDamage, world, _1, _2));
     callbacks.registerCallbackWithSignature<Json, EntityId>("entityDamageTeam", bind(WorldEntityCallbacks::entityDamageTeam, world, _1));
