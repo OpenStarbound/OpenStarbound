@@ -499,11 +499,11 @@ namespace LuaBindings {
           else
             return {};
         });
-    
+
     callbacks.registerCallbackWithSignature<EntityPtr, EntityId>("entity", [world](EntityId entityId) -> EntityPtr {
       return world->entity(entityId);
     });
-    
+
     callbacks.registerCallbackWithSignature<bool, int>("entityExists", bind(WorldEntityCallbacks::entityExists, world, _1));
     callbacks.registerCallbackWithSignature<bool, int, int>("entityCanDamage", bind(WorldEntityCallbacks::entityCanDamage, world, _1, _2));
     callbacks.registerCallbackWithSignature<Json, EntityId>("entityDamageTeam", bind(WorldEntityCallbacks::entityDamageTeam, world, _1));
@@ -590,12 +590,6 @@ namespace LuaBindings {
         return {};
       });
 
-    callbacks.registerCallback("entityLoungeAnchor", [world](EntityId entityId, int anchorIndex) -> Maybe<JsonObject> {
-        if (auto entity = world->get<LoungeableEntity>(entityId))
-          if (auto anchor = entity->loungeAnchor(anchorIndex))
-            return anchor->toJson();
-        return {};
-      });
   }
 
   void addWorldEnvironmentCallbacks(LuaCallbacks& callbacks, World* world) {
@@ -1810,13 +1804,17 @@ namespace LuaBindings {
   }
 
   Maybe<List<EntityId>> WorldEntityCallbacks::loungingEntities(World* world, EntityId entityId, Maybe<size_t> anchorIndex) {
-    if (auto entity = world->get<LoungeableEntity>(entityId))
-      if (anchorIndex.isValid())
+    if (auto entity = world->get<LoungeableEntity>(entityId)){
+      if (anchorIndex.isValid()) {
         return entity->entitiesLoungingIn(anchorIndex.value()).values();
-      else
-        return entity->entitiesLounging().values().transformed([](pair<EntityId, size_t> p) -> EntityId {
-          return p.first;
-        });
+      } else {
+        return entity->entitiesLounging().values().transformed(
+          [](pair<EntityId, size_t> p) -> EntityId {
+            return p.first;
+          }
+        );
+      }
+    }
     return {};
   }
 
