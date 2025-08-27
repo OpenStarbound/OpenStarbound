@@ -54,7 +54,9 @@
 
 #if defined(LUA_USE_WINDOWS)
 #define LUA_DL_DLL	/* enable support for DLL */
-#define LUA_USE_C89	/* broadly, Windows is C89 */
+#if defined(_MSC_VER) && (_MSC_VER < 1700)	/* older versions of MSVC do not have C99 support */
+#define LUA_USE_C89
+#endif
 #endif
 
 
