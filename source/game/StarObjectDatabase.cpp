@@ -13,6 +13,8 @@
 #include "StarFarmableObject.hpp"
 #include "StarTeleporterObject.hpp"
 #include "StarPhysicsObject.hpp"
+#include "StarRootLuaBindings.hpp"
+#include "StarUtilityLuaBindings.hpp"
 
 namespace Star {
 
@@ -312,7 +314,7 @@ List<ObjectOrientationPtr> ObjectDatabase::parseOrientations(String const& path,
   return res;
 }
 
-ObjectDatabase::ObjectDatabase() {
+ObjectDatabase::ObjectDatabase() : m_luaRoot(make_shared<LuaRoot>()) {
   auto assets = Root::singleton().assets();
 
   auto& files = assets->scanExtension("object");
@@ -327,6 +329,13 @@ ObjectDatabase::ObjectDatabase() {
     } catch (std::exception const& e) {
       Logger::error("Error loading object file {}: {}", file, outputException(e, true));
     }
+  }
+
+  for (auto& path : assets->assetSources()) {
+    auto metadata = assets->assetSourceMetadata(path);
+    if (auto scripts = metadata.maybe("errorHandlers"))
+      if (auto rebuildScripts = scripts.value().optArray("object"))
+        m_rebuildScripts.insertAllAt(0, jsonToStringList(rebuildScripts.value()));
   }
 }
 
@@ -380,10 +389,35 @@ ObjectPtr ObjectDatabase::createObject(String const& objectName, Json const& par
 }
 
 ObjectPtr ObjectDatabase::diskLoadObject(Json const& diskStore) const {
-  auto object = createObject(diskStore.getString("name"), diskStore.get("parameters"));
-  object->readStoredData(diskStore);
-  object->setNetStates();
-  return object;
+  ObjectPtr object;
+  try {
+    object = createObject(diskStore.getString("name"), diskStore.get("parameters"));
+    object->readStoredData(diskStore);
+    object->setNetStates();
+    return object;
+  } catch (std::exception const& e) {
+    auto lastException = e;
+    Json newDiskStore = diskStore;
+    for (auto script : m_rebuildScripts) {
+      RecursiveMutexLocker locker(m_luaMutex);
+      auto context = m_luaRoot->createContext(script);
+      context.setCallbacks("root", LuaBindings::makeRootCallbacks());
+      context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
+      Json returnedDiskStore = context.invokePath<Json>("error", newDiskStore, strf("{}", outputException(lastException, false)));
+      if (returnedDiskStore != newDiskStore) {
+        newDiskStore = returnedDiskStore;
+        try {
+          object = createObject(newDiskStore.getString("name"), newDiskStore.get("parameters"));
+          object->readStoredData(newDiskStore);
+          object->setNetStates();
+          return object;
+        } catch (std::exception const& e) {
+          lastException = e;
+        }
+      }
+    }
+    throw lastException;
+  }
 }
 
 ObjectPtr ObjectDatabase::netLoadObject(ByteArray const& netStore, NetCompatibilityRules rules) const {

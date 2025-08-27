@@ -6,6 +6,7 @@
 #include "StarStatusTypes.hpp"
 #include "StarEntitySplash.hpp"
 #include "StarItemDescriptor.hpp"
+#include "StarLuaRoot.hpp"
 
 namespace Star {
 
@@ -80,6 +81,10 @@ private:
   // Recursively merges maps and lets any non-null merger (including lists)
   // override any base value
   Json mergeConfigValues(Json const& base, Json const& merger) const;
+
+  mutable RecursiveMutex m_luaMutex;
+  LuaRootPtr m_luaRoot;
+  List<String> m_rebuildScripts;
 
   StringMap<Json> m_npcTypes;
 };
