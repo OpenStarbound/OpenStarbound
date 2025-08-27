@@ -143,8 +143,8 @@ ItemDatabase::ItemDatabase()
   for (auto& path : assets->assetSources()) {
     auto metadata = assets->assetSourceMetadata(path);
     if (auto scripts = metadata.maybe("scripts"))
-      if (auto rebuildScripts = scripts.value().optArray("itemRebuild"))
-        m_rebuildScripts.appendAll(jsonToStringList(rebuildScripts.value()));
+      if (auto rebuildScripts = scripts.value().optArray("itemError"))
+        m_rebuildScripts.insertAllAt(0, jsonToStringList(rebuildScripts.value()));
   }
 }
 
@@ -527,21 +527,36 @@ ItemPtr ItemDatabase::tryCreateItem(ItemDescriptor const& descriptor, Maybe<floa
       parameters = storage.get("parameters");
     }
 	  result = createItem(m_items.get(name).type, itemConfig(name, parameters, level, seed));
+    result->setCount(descriptor.count());
+    return result;
   }
   catch (std::exception const& e) {
     if (!ignoreInvalid) {
-      RecursiveMutexLocker locker(m_luaMutex);
-      auto context = m_luaRoot->createContext(m_rebuildScripts);
-      context.setCallbacks("root", LuaBindings::makeRootCallbacks());
-      context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
-      auto newDescriptor = ItemDescriptor(context.invokePath<Json>("rebuild", descriptor.toJson(), strf("{}", outputException(e, false))));
-      result = createItem(m_items.get(newDescriptor.name()).type, itemConfig(newDescriptor.name(), newDescriptor.parameters(), level, seed));
-    } else
+      auto lastException = e;
+      Json newDiskStore = descriptor.toJson();
+      for (auto script : m_rebuildScripts) {
+        RecursiveMutexLocker locker(m_luaMutex);
+        auto context = m_luaRoot->createContext(script);
+        context.setCallbacks("root", LuaBindings::makeRootCallbacks());
+        context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
+        Json returnedDiskStore = context.invokePath<Json>("error", newDiskStore, strf("{}", outputException(lastException, false)));
+        if (!returnedDiskStore.isNull()) {
+          newDiskStore = returnedDiskStore;
+          try {
+            ItemDescriptor newDescriptor(newDiskStore);
+            result = createItem(m_items.get(newDescriptor.name()).type, itemConfig(newDescriptor.name(), newDescriptor.parameters(), level, seed));
+            result->setCount(descriptor.count());
+            return result;
+          } catch (std::exception const& e) {
+            lastException = e;
+          }
+        }
+      }
+      throw lastException;
+    } else {
       throw e;
+    }
   }
-  result->setCount(descriptor.count());
-
-  return result;
 }
 
 ItemDatabase::ItemData const& ItemDatabase::itemData(String const& name) const {

@@ -1,6 +1,9 @@
 
--- invoked when an item fails to instantiate, we must return a fallback item to create
-function rebuild(descriptor, e)
+-- invoked when an item fails to instantiate, we can return a fallback item to create
+-- return null if script did not handle the error
+
+-- we're catching any item error and converting them to the generic item format that the engine will try to re-instantiate later
+function error(descriptor, e)
     if descriptor.name == "perfectlygenericitem" then
         sb.logError("Could not re-instantiate item '%s'. %s", sb.printJson(descriptor), e)
         return descriptor

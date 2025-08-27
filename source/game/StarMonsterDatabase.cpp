@@ -143,8 +143,8 @@ MonsterDatabase::MonsterDatabase() : m_luaRoot(make_shared<LuaRoot>()) {
   for (auto& path : assets->assetSources()) {
     auto metadata = assets->assetSourceMetadata(path);
     if (auto scripts = metadata.maybe("scripts"))
-      if (auto rebuildScripts = scripts.value().optArray("monsterRebuild"))
-        m_rebuildScripts.appendAll(jsonToStringList(rebuildScripts.value()));
+      if (auto rebuildScripts = scripts.value().optArray("monsterError"))
+        m_rebuildScripts.insertAllAt(0, jsonToStringList(rebuildScripts.value()));
   }
 
 }
@@ -228,10 +228,24 @@ MonsterPtr MonsterDatabase::diskLoadMonster(Json const& diskStore) const {
   try {
     return make_shared<Monster>(diskStore);
   } catch (std::exception const& e) {
-    auto context = m_luaRoot->createContext(m_rebuildScripts);
-    context.setCallbacks("root", LuaBindings::makeRootCallbacks());
-    context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
-    return make_shared<Monster>(context.invokePath<Json>("rebuild", diskStore, strf("{}", outputException(e, false))));
+    auto lastException = e;
+    Json newDiskStore = diskStore;
+    for (auto script : m_rebuildScripts) {
+      RecursiveMutexLocker locker(m_luaMutex);
+      auto context = m_luaRoot->createContext(script);
+      context.setCallbacks("root", LuaBindings::makeRootCallbacks());
+      context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
+      Json returnedDiskStore = context.invokePath<Json>("error", newDiskStore, strf("{}", outputException(lastException, false)));
+      if (!returnedDiskStore.isNull()) {
+        newDiskStore = returnedDiskStore;
+        try {
+          return make_shared<Monster>(diskStore);
+        } catch (std::exception const& e) {
+          lastException = e;
+        }
+      }
+    }
+    throw lastException;
   }
 }
 

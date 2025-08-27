@@ -192,6 +192,7 @@ private:
 
   mutable Mutex m_cacheMutex;
 
+  mutable RecursiveMutex m_luaMutex;
   LuaRootPtr m_luaRoot;
   List<String> m_rebuildScripts;
 

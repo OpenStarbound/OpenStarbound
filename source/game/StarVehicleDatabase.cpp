@@ -29,8 +29,8 @@ VehicleDatabase::VehicleDatabase() : m_luaRoot(make_shared<LuaRoot>()) {
   for (auto& path : assets->assetSources()) {
     auto metadata = assets->assetSourceMetadata(path);
     if (auto scripts = metadata.maybe("scripts"))
-      if (auto rebuildScripts = scripts.value().optArray("vehicleRebuild"))
-        m_rebuildScripts.appendAll(jsonToStringList(rebuildScripts.value()));
+      if (auto rebuildScripts = scripts.value().optArray("vehicleError"))
+        m_rebuildScripts.insertAllAt(0, jsonToStringList(rebuildScripts.value()));
   }
 }
 
@@ -71,18 +71,25 @@ Json VehicleDatabase::diskStore(VehiclePtr const& vehicle) const {
 
 VehiclePtr VehicleDatabase::diskLoad(Json const& diskStore) const {
   VehiclePtr vehicle;
-  auto newDiskStore = diskStore;
   try {
     vehicle = create(diskStore.getString("name"), diskStore.get("dynamicConfig"));
+    vehicle->diskLoad(diskStore.get("state"));
   } catch (std::exception const& e) {
-    auto context = m_luaRoot->createContext(m_rebuildScripts);
-    context.setCallbacks("root", LuaBindings::makeRootCallbacks());
-    context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
-    newDiskStore = context.invokePath<Json>("rebuild", diskStore, strf("{}", outputException(e, false)));
+    Json newDiskStore;
+    for (auto script : m_rebuildScripts) {
+      RecursiveMutexLocker locker(m_luaMutex);
+      auto context = m_luaRoot->createContext(script);
+      context.setCallbacks("root", LuaBindings::makeRootCallbacks());
+      context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
+      newDiskStore = context.invokePath<Json>("error", diskStore, strf("{}", outputException(e, false)));
+      if (!newDiskStore.isNull())
+        break;
+    }
+    if (newDiskStore.isNull())
+      throw e;
     vehicle = create(newDiskStore.getString("name"), newDiskStore.get("dynamicConfig"));
+    vehicle->diskLoad(newDiskStore.get("state"));
   }
-
-  vehicle->diskLoad(newDiskStore.get("state"));
   return vehicle;
 }
 

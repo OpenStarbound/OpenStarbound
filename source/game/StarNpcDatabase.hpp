@@ -82,6 +82,7 @@ private:
   // override any base value
   Json mergeConfigValues(Json const& base, Json const& merger) const;
 
+  mutable RecursiveMutex m_luaMutex;
   LuaRootPtr m_luaRoot;
   List<String> m_rebuildScripts;
 

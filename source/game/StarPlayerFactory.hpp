@@ -66,6 +66,7 @@ public:
 private:
   PlayerConfigPtr m_config;
 
+  mutable RecursiveMutex m_luaMutex;
   LuaRootPtr m_luaRoot;
   List<String> m_rebuildScripts;
 };

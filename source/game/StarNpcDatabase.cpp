@@ -38,8 +38,8 @@ NpcDatabase::NpcDatabase() : m_luaRoot(make_shared<LuaRoot>()) {
   for (auto& path : assets->assetSources()) {
     auto metadata = assets->assetSourceMetadata(path);
     if (auto scripts = metadata.maybe("scripts"))
-      if (auto rebuildScripts = scripts.value().optArray("npcRebuild"))
-        m_rebuildScripts.appendAll(jsonToStringList(rebuildScripts.value()));
+      if (auto rebuildScripts = scripts.value().optArray("npcError"))
+        m_rebuildScripts.insertAllAt(0,jsonToStringList(rebuildScripts.value()));
   }
 
 }
@@ -355,16 +355,30 @@ NpcPtr NpcDatabase::createNpc(NpcVariant const& npcVariant) const {
 }
 
 NpcPtr NpcDatabase::diskLoadNpc(Json const& diskStore) const {
-  NpcVariant npcVariant;
   try {
-    npcVariant = readNpcVariantFromJson(diskStore.get("npcVariant"));
+    NpcVariant npcVariant = readNpcVariantFromJson(diskStore.get("npcVariant"));
+    return make_shared<Npc>(npcVariant, diskStore);
   } catch (std::exception const& e) {
-    auto context = m_luaRoot->createContext(m_rebuildScripts);
-    context.setCallbacks("root", LuaBindings::makeRootCallbacks());
-    context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
-    npcVariant = readNpcVariantFromJson(context.invokePath<Json>("rebuild", diskStore, strf("{}", outputException(e, false))));
+    auto lastException = e;
+    Json newDiskStore = diskStore;
+    for (auto script : m_rebuildScripts) {
+      RecursiveMutexLocker locker(m_luaMutex);
+      auto context = m_luaRoot->createContext(script);
+      context.setCallbacks("root", LuaBindings::makeRootCallbacks());
+      context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
+      Json returnedDiskStore = context.invokePath<Json>("error", newDiskStore, strf("{}", outputException(lastException, false)));
+      if (!returnedDiskStore.isNull()) {
+        newDiskStore = returnedDiskStore;
+        try {
+          NpcVariant npcVariant = readNpcVariantFromJson(newDiskStore.get("npcVariant"));
+          return make_shared<Npc>(npcVariant, newDiskStore);
+        } catch (std::exception const& e) {
+          lastException = e;
+        }
+      }
+    }
+    throw lastException;
   }
-  return make_shared<Npc>(npcVariant, diskStore);
 }
 
 NpcPtr NpcDatabase::netLoadNpc(ByteArray const& netStore, NetCompatibilityRules rules) const {

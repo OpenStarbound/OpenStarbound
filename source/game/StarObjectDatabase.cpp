@@ -334,8 +334,8 @@ ObjectDatabase::ObjectDatabase() : m_luaRoot(make_shared<LuaRoot>()) {
   for (auto& path : assets->assetSources()) {
     auto metadata = assets->assetSourceMetadata(path);
     if (auto scripts = metadata.maybe("scripts"))
-      if (auto rebuildScripts = scripts.value().optArray("objectRebuild"))
-        m_rebuildScripts.appendAll(jsonToStringList(rebuildScripts.value()));
+      if (auto rebuildScripts = scripts.value().optArray("objectError"))
+        m_rebuildScripts.insertAllAt(0, jsonToStringList(rebuildScripts.value()));
   }
 }
 
@@ -390,20 +390,34 @@ ObjectPtr ObjectDatabase::createObject(String const& objectName, Json const& par
 
 ObjectPtr ObjectDatabase::diskLoadObject(Json const& diskStore) const {
   ObjectPtr object;
-  Json newDiskStore = diskStore;
   try {
     object = createObject(diskStore.getString("name"), diskStore.get("parameters"));
+    object->readStoredData(diskStore);
+    object->setNetStates();
+    return object;
   } catch (std::exception const& e) {
-    auto context = m_luaRoot->createContext(m_rebuildScripts);
-    context.setCallbacks("root", LuaBindings::makeRootCallbacks());
-    context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
-    newDiskStore = context.invokePath<Json>("rebuild", diskStore, strf("{}", outputException(e, false)));
-    object = createObject(newDiskStore.getString("name"), newDiskStore.get("parameters"));
+    auto lastException = e;
+    Json newDiskStore = diskStore;
+    for (auto script : m_rebuildScripts) {
+      RecursiveMutexLocker locker(m_luaMutex);
+      auto context = m_luaRoot->createContext(script);
+      context.setCallbacks("root", LuaBindings::makeRootCallbacks());
+      context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
+      Json returnedDiskStore = context.invokePath<Json>("error", newDiskStore, strf("{}", outputException(lastException, false)));
+      if (!returnedDiskStore.isNull()) {
+        newDiskStore = returnedDiskStore;
+        try {
+          object = createObject(newDiskStore.getString("name"), newDiskStore.get("parameters"));
+          object->readStoredData(newDiskStore);
+          object->setNetStates();
+          return object;
+        } catch (std::exception const& e) {
+          lastException = e;
+        }
+      }
+    }
+    throw lastException;
   }
-
-  object->readStoredData(newDiskStore);
-  object->setNetStates();
-  return object;
 }
 
 ObjectPtr ObjectDatabase::netLoadObject(ByteArray const& netStore, NetCompatibilityRules rules) const {

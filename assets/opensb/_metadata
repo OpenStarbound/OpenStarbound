@@ -11,12 +11,11 @@
     //"onLoad" : ["/scripts/opensb/assets/onload.lua"],
     "postLoad" : ["/scripts/opensb/assets/postload.lua"],
 
-    "itemRebuild" : ["/scripts/opensb/rebuild/itemRebuild.lua"],
-    "objectRebuild" : ["/scripts/opensb/rebuild/objectRebuild.lua"],
-    "npcRebuild" : ["/scripts/opensb/rebuild/npcRebuild.lua"],
-    "playerRebuild" : ["/scripts/opensb/rebuild/playerRebuild.lua"],
-    "monsterRebuild" : ["/scripts/opensb/rebuild/monsterRebuild.lua"],
-    "vehicleRebuild" : ["/scripts/opensb/rebuild/vehicleRebuild.lua"]
-
+    "itemError" : ["/scripts/opensb/errorHandling/item.lua"],
+    "objectError" : ["/scripts/opensb/errorHandling/object.lua"],
+    // "npcError" : ["/scripts/opensb/errorHandling/npc.lua"],
+    // "playerError" : ["/scripts/opensb/errorHandling/player.lua"],
+    // "monsterError" : ["/scripts/opensb/errorHandling/monster.lua"],
+    // "vehicleError" : ["/scripts/opensb/errorHandling/vehicle.lua"]
   }
 }
