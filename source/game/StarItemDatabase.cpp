@@ -532,14 +532,15 @@ ItemPtr ItemDatabase::tryCreateItem(ItemDescriptor const& descriptor, Maybe<floa
   }
   catch (std::exception const& e) {
     if (!ignoreInvalid) {
-      auto lastException = e;
+      auto exception = std::current_exception();
+      auto error = strf("{}", outputException(e, false));
       Json newDiskStore = descriptor.toJson();
       for (auto script : m_rebuildScripts) {
         RecursiveMutexLocker locker(m_luaMutex);
         auto context = m_luaRoot->createContext(script);
         context.setCallbacks("root", LuaBindings::makeRootCallbacks());
         context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
-        Json returnedDiskStore = context.invokePath<Json>("error", newDiskStore, strf("{}", outputException(lastException, false)));
+        Json returnedDiskStore = context.invokePath<Json>("error", newDiskStore, error);
         if (returnedDiskStore != newDiskStore) {
           newDiskStore = returnedDiskStore;
           try {
@@ -547,12 +548,13 @@ ItemPtr ItemDatabase::tryCreateItem(ItemDescriptor const& descriptor, Maybe<floa
             result = createItem(m_items.get(newDescriptor.name()).type, itemConfig(newDescriptor.name(), newDescriptor.parameters(), level, seed));
             result->setCount(descriptor.count());
             return result;
-          } catch (std::exception const& e) {
-            lastException = e;
+          } catch (...) {
+            exception = std::current_exception();
+            error = strf("{}", outputException(e, false));
           }
         }
       }
-      throw lastException;
+      std::rethrow_exception(exception);
     } else {
       throw e;
     }
