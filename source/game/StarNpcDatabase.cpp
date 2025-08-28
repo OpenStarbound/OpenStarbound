@@ -383,15 +383,17 @@ NpcPtr NpcDatabase::diskLoadNpc(Json const& diskStore) const {
       Json returnedDiskStore = context.invokePath<Json>("error", newDiskStore, strf("{}", outputException(lastException, false)));
       if (returnedDiskStore != newDiskStore) {
         newDiskStore = returnedDiskStore;
-        try {
-          NpcVariant npcVariant = readNpcVariantFromJson(newDiskStore.get("npcVariant"));
-          return make_shared<Npc>(npcVariant, newDiskStore);
-        } catch (std::exception const& e) {
-          lastException = e;
-        }
+        if (script != m_rebuildScripts.last())
+          try {
+            NpcVariant npcVariant = readNpcVariantFromJson(newDiskStore.get("npcVariant"));
+            return make_shared<Npc>(npcVariant, newDiskStore);
+          } catch (std::exception const& e) {
+            lastException = e;
+          }
       }
     }
-    throw lastException;
+    NpcVariant npcVariant = readNpcVariantFromJson(newDiskStore.get("npcVariant"));
+    return make_shared<Npc>(npcVariant, newDiskStore);
   }
 }
 

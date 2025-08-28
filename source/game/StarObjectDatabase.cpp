@@ -406,17 +406,21 @@ ObjectPtr ObjectDatabase::diskLoadObject(Json const& diskStore) const {
       Json returnedDiskStore = context.invokePath<Json>("error", newDiskStore, strf("{}", outputException(lastException, false)));
       if (returnedDiskStore != newDiskStore) {
         newDiskStore = returnedDiskStore;
-        try {
-          object = createObject(newDiskStore.getString("name"), newDiskStore.get("parameters"));
-          object->readStoredData(newDiskStore);
-          object->setNetStates();
-          return object;
-        } catch (std::exception const& e) {
-          lastException = e;
-        }
+        if (script != m_rebuildScripts.last())
+          try {
+            object = createObject(newDiskStore.getString("name"), newDiskStore.get("parameters"));
+            object->readStoredData(newDiskStore);
+            object->setNetStates();
+            return object;
+          } catch (std::exception const& e) {
+            lastException = e;
+          }
       }
     }
-    throw lastException;
+    object = createObject(newDiskStore.getString("name"), newDiskStore.get("parameters"));
+    object->readStoredData(newDiskStore);
+    object->setNetStates();
+    return object;
   }
 }
 

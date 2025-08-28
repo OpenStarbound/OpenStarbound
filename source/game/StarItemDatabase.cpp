@@ -517,23 +517,20 @@ ItemPtr ItemDatabase::createItem(ItemType type, ItemConfig const& config) {
 
 ItemPtr ItemDatabase::tryCreateItem(ItemDescriptor const& descriptor, Maybe<float> level, Maybe<uint64_t> seed, bool ignoreInvalid) const {
   ItemPtr result;
-  String name = descriptor.name();
-  Json parameters = descriptor.parameters();
+  ItemDescriptor newDescriptor = descriptor;
 
   try {
-    if ((name == "perfectlygenericitem") && parameters.contains("genericItemStorage")) {
-      Json storage = parameters.get("genericItemStorage");
-      name = storage.getString("name");
-      parameters = storage.get("parameters");
+    if ((newDescriptor.name() == "perfectlygenericitem") && newDescriptor.parameters().contains("genericItemStorage")) {
+      newDescriptor = ItemDescriptor(descriptor.parameters().get("genericItemStorage"));
     }
-	  result = createItem(m_items.get(name).type, itemConfig(name, parameters, level, seed));
+    result = createItem(m_items.get(newDescriptor.name()).type, itemConfig(newDescriptor.name(), newDescriptor.parameters(), level, seed));
     result->setCount(descriptor.count());
     return result;
   }
   catch (std::exception const& e) {
     if (!ignoreInvalid) {
       auto lastException = e;
-      Json newDiskStore = descriptor.toJson();
+      Json newDiskStore = newDescriptor.toJson();
       for (auto script : m_rebuildScripts) {
         RecursiveMutexLocker locker(m_luaMutex);
         auto context = m_luaRoot->createContext(script);
@@ -542,21 +539,26 @@ ItemPtr ItemDatabase::tryCreateItem(ItemDescriptor const& descriptor, Maybe<floa
         Json returnedDiskStore = context.invokePath<Json>("error", newDiskStore, strf("{}", outputException(lastException, false)));
         if (returnedDiskStore != newDiskStore) {
           newDiskStore = returnedDiskStore;
-          try {
-            ItemDescriptor newDescriptor(newDiskStore);
-            result = createItem(m_items.get(newDescriptor.name()).type, itemConfig(newDescriptor.name(), newDescriptor.parameters(), level, seed));
-            result->setCount(descriptor.count());
-            return result;
-          } catch (std::exception const& e) {
-            lastException = e;
-          }
+          if (script != m_rebuildScripts.last())
+            try {
+              newDescriptor = ItemDescriptor(newDiskStore);
+              result = createItem(m_items.get(newDescriptor.name()).type, itemConfig(newDescriptor.name(), newDescriptor.parameters(), level, seed));
+              result->setCount(descriptor.count());
+              return result;
+            } catch (std::exception const& e) {
+              lastException = e;
+            }
         }
       }
-      throw lastException;
+      newDescriptor = ItemDescriptor(newDiskStore);
+      result = createItem(m_items.get(newDescriptor.name()).type, itemConfig(newDescriptor.name(), newDescriptor.parameters(), level, seed));
+      result->setCount(descriptor.count());
+      return result;
     } else {
       throw e;
     }
   }
+  return result;
 }
 
 ItemDatabase::ItemData const& ItemDatabase::itemData(String const& name) const {
