@@ -227,6 +227,7 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
 
   {
     auto& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
     m_immediateFont = *assets->bytes("/hobo.ttf");
     ImFontConfig config{};
     config.FontDataOwnedByAtlas = false;
