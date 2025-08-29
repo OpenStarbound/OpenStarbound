@@ -228,25 +228,26 @@ MonsterPtr MonsterDatabase::diskLoadMonster(Json const& diskStore) const {
   try {
     return make_shared<Monster>(diskStore);
   } catch (std::exception const& e) {
-    auto lastException = e;
+    auto exception = std::current_exception();
+    auto error = strf("{}", outputException(e, false));
     Json newDiskStore = diskStore;
     for (auto script : m_rebuildScripts) {
       RecursiveMutexLocker locker(m_luaMutex);
       auto context = m_luaRoot->createContext(script);
       context.setCallbacks("root", LuaBindings::makeRootCallbacks());
       context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
-      Json returnedDiskStore = context.invokePath<Json>("error", newDiskStore, strf("{}", outputException(lastException, false)));
+      Json returnedDiskStore = context.invokePath<Json>("error", newDiskStore, error);
       if (returnedDiskStore != newDiskStore) {
         newDiskStore = returnedDiskStore;
-        if (script != m_rebuildScripts.last())
-          try {
-            return make_shared<Monster>(newDiskStore);
-          } catch (std::exception const& e) {
-            lastException = e;
-          }
+        try {
+          return make_shared<Monster>(diskStore);
+        } catch (std::exception const& e) {
+          exception = std::current_exception();
+          error = strf("{}", outputException(e, false));
+        }
       }
     }
-    return make_shared<Monster>(newDiskStore);
+    std::rethrow_exception(exception);
   }
 }
 

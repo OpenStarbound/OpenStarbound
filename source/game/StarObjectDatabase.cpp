@@ -396,31 +396,29 @@ ObjectPtr ObjectDatabase::diskLoadObject(Json const& diskStore) const {
     object->setNetStates();
     return object;
   } catch (std::exception const& e) {
-    auto lastException = e;
+    auto exception = std::current_exception();
+    auto error = strf("{}", outputException(e, false));
     Json newDiskStore = diskStore;
     for (auto script : m_rebuildScripts) {
       RecursiveMutexLocker locker(m_luaMutex);
       auto context = m_luaRoot->createContext(script);
       context.setCallbacks("root", LuaBindings::makeRootCallbacks());
       context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
-      Json returnedDiskStore = context.invokePath<Json>("error", newDiskStore, strf("{}", outputException(lastException, false)));
+      Json returnedDiskStore = context.invokePath<Json>("error", newDiskStore, error);
       if (returnedDiskStore != newDiskStore) {
         newDiskStore = returnedDiskStore;
-        if (script != m_rebuildScripts.last())
-          try {
-            object = createObject(newDiskStore.getString("name"), newDiskStore.get("parameters"));
-            object->readStoredData(newDiskStore);
-            object->setNetStates();
-            return object;
-          } catch (std::exception const& e) {
-            lastException = e;
-          }
+        try {
+          object = createObject(newDiskStore.getString("name"), newDiskStore.get("parameters"));
+          object->readStoredData(newDiskStore);
+          object->setNetStates();
+          return object;
+        } catch (std::exception const& e) {
+          exception = std::current_exception();
+          error = strf("{}", outputException(e, false));
+        }
       }
     }
-    object = createObject(newDiskStore.getString("name"), newDiskStore.get("parameters"));
-    object->readStoredData(newDiskStore);
-    object->setNetStates();
-    return object;
+    std::rethrow_exception(exception);
   }
 }
 
