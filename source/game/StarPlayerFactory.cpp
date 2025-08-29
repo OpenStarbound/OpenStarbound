@@ -86,6 +86,7 @@ PlayerPtr PlayerFactory::diskLoadPlayer(Json const& diskStore) const {
           return make_shared<Player>(m_config, newDiskStore);
         } catch (std::exception const& e) {
           exception = std::current_exception();
+          error = strf("{}", outputException(e, false));
         }
       }
     }

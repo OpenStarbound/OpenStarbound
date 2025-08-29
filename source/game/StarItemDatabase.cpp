@@ -517,16 +517,13 @@ ItemPtr ItemDatabase::createItem(ItemType type, ItemConfig const& config) {
 
 ItemPtr ItemDatabase::tryCreateItem(ItemDescriptor const& descriptor, Maybe<float> level, Maybe<uint64_t> seed, bool ignoreInvalid) const {
   ItemPtr result;
-  String name = descriptor.name();
-  Json parameters = descriptor.parameters();
+  ItemDescriptor newDescriptor = descriptor;
 
   try {
-    if ((name == "perfectlygenericitem") && parameters.contains("genericItemStorage")) {
-      Json storage = parameters.get("genericItemStorage");
-      name = storage.getString("name");
-      parameters = storage.get("parameters");
+    if ((newDescriptor.name() == "perfectlygenericitem") && newDescriptor.parameters().contains("genericItemStorage")) {
+      newDescriptor = ItemDescriptor(descriptor.parameters().get("genericItemStorage"));
     }
-	  result = createItem(m_items.get(name).type, itemConfig(name, parameters, level, seed));
+    result = createItem(m_items.get(newDescriptor.name()).type, itemConfig(newDescriptor.name(), newDescriptor.parameters(), level, seed));
     result->setCount(descriptor.count());
     return result;
   }
@@ -544,11 +541,11 @@ ItemPtr ItemDatabase::tryCreateItem(ItemDescriptor const& descriptor, Maybe<floa
         if (returnedDiskStore != newDiskStore) {
           newDiskStore = returnedDiskStore;
           try {
-            ItemDescriptor newDescriptor(newDiskStore);
+            newDescriptor = ItemDescriptor(newDiskStore);
             result = createItem(m_items.get(newDescriptor.name()).type, itemConfig(newDescriptor.name(), newDescriptor.parameters(), level, seed));
             result->setCount(descriptor.count());
             return result;
-          } catch (...) {
+          } catch (std::exception const& e) {
             exception = std::current_exception();
             error = strf("{}", outputException(e, false));
           }
@@ -559,6 +556,7 @@ ItemPtr ItemDatabase::tryCreateItem(ItemDescriptor const& descriptor, Maybe<floa
       throw e;
     }
   }
+  return result;
 }
 
 ItemDatabase::ItemData const& ItemDatabase::itemData(String const& name) const {
