@@ -4,7 +4,6 @@
 #include "StarItemRecipe.hpp"
 #include "StarItem.hpp"
 #include "StarCasting.hpp"
-#include "StarLuaRoot.hpp"
 #include "StarTtlCache.hpp"
 
 namespace Star {
@@ -13,6 +12,7 @@ STAR_CLASS(RecipeDatabase);
 STAR_CLASS(AugmentItem);
 
 STAR_CLASS(ItemDatabase);
+STAR_CLASS(Rebuilder);
 
 STAR_EXCEPTION(ItemDatabaseException, ItemException);
 
@@ -182,13 +182,12 @@ private:
 
   mutable RecursiveMutex m_luaMutex;
   LuaRootPtr m_luaRoot;
+  RebuilderPtr m_rebuilder;
 
   typedef tuple<ItemDescriptor, Maybe<float>, Maybe<uint64_t>> ItemCacheEntry;
 
   mutable Mutex m_cacheMutex;
   mutable HashTtlCache<ItemCacheEntry, ItemPtr> m_itemCache;
-
-  List<String> m_rebuildScripts;
 };
 
 template <typename ItemT>

@@ -11,7 +11,6 @@
 #include "StarStatusTypes.hpp"
 #include "StarEntityRendering.hpp"
 #include "StarTileEntity.hpp"
-#include "StarLuaRoot.hpp"
 
 namespace Star {
 
@@ -23,6 +22,8 @@ STAR_CLASS(Object);
 STAR_STRUCT(ObjectOrientation);
 STAR_STRUCT(ObjectConfig);
 STAR_CLASS(ObjectDatabase);
+STAR_CLASS(LuaRoot);
+STAR_CLASS(Rebuilder);
 
 STAR_EXCEPTION(ObjectException, StarException);
 
@@ -218,9 +219,7 @@ private:
   mutable Mutex m_cacheMutex;
   mutable HashTtlCache<String, ObjectConfigPtr> m_configCache;
 
-  mutable RecursiveMutex m_luaMutex;
-  LuaRootPtr m_luaRoot;
-  List<String> m_rebuildScripts;
+  RebuilderPtr m_rebuilder;
 };
 
 }

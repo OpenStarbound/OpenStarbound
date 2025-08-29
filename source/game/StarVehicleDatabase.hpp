@@ -2,9 +2,10 @@
 
 #include "StarJson.hpp"
 #include "StarVehicle.hpp"
-#include "StarLuaRoot.hpp"
 
 namespace Star {
+
+STAR_CLASS(Rebuilder);
 
 STAR_EXCEPTION(VehicleDatabaseException, StarException);
 
@@ -24,8 +25,7 @@ private:
   StringMap<pair<String, Json>> m_vehicles;
 
   mutable RecursiveMutex m_luaMutex;
-  LuaRootPtr m_luaRoot;
-  List<String> m_rebuildScripts;
+  RebuilderPtr m_rebuilder;
 };
 
 }
