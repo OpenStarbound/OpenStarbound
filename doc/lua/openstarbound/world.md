@@ -38,6 +38,12 @@ Returns whether any players are in the world.
 
 ---
 
+#### `void` world.wire(`Vec2I` outputPosition, `int` outputIndex, `Vec2I` inputPosition, `int` inputIndex)
+
+Attempts to create a wire connection in the specified input and output positions. The node indexes must be correct for the input/output positions.
+
+---
+
 The following additional world bindings are available only for scripts running on the server.
 
 ---
