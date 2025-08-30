@@ -55,7 +55,7 @@ void LiquidItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
   float radius;
 
   if (!shifting)
-    radius = m_blockRadius;
+    radius = max(m_blockRadius * owner()->movementController()->getScale(), 1.0f);
   else
     radius = m_altBlockRadius;
 
@@ -92,7 +92,7 @@ List<PreviewTile> LiquidItem::previewTiles(bool shifting) const {
 
     float radius;
     if (!shifting)
-      radius = m_blockRadius;
+      radius = max(m_blockRadius * owner()->movementController()->getScale(), 1.0f);
     else
       radius = m_altBlockRadius;
 
@@ -116,7 +116,7 @@ bool LiquidItem::canPlace(bool shifting) const {
   if (initialized()) {
     float radius;
     if (!shifting)
-      radius = m_blockRadius;
+      radius = max(m_blockRadius * owner()->movementController()->getScale(), 1.0f);
     else
       radius = m_altBlockRadius;
 

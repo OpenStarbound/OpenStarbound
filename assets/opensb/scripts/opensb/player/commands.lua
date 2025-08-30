@@ -49,4 +49,13 @@ register("headrotation", function(arg)
   end
 end)
 
+register("scale", function(args)
+  if not args or args == "" then
+    mcontroller.scale(1)
+  else
+    local scale = chat.parseArguments(args)
+    mcontroller.scale(scale)
+  end
+end)
+
 module.register = register

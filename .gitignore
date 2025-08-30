@@ -41,7 +41,7 @@ CTestTestfile.cmake
 _deps
 
 
-.vscode/
+.vscode/*
 
 # Local History for Visual Studio Code
 .history/
