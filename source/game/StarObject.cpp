@@ -799,6 +799,10 @@ bool Object::nodeState(WireNode wireNode) const {
 
 void Object::addNodeConnection(WireNode wireNode, WireConnection nodeConnection) {
   if (wireNode.direction == WireDirection::Input) {
+    if (m_inputNodes.empty()) {
+      Logger::info("Tried to add wire connection to input node on object with no input nodes");
+      return;
+    }
     m_inputNodes.at(wireNode.nodeIndex).connections.update([&](auto& list) {
         if (list.contains(nodeConnection))
           return false;
@@ -806,6 +810,10 @@ void Object::addNodeConnection(WireNode wireNode, WireConnection nodeConnection)
         return true;
       });
   } else {
+    if (m_outputNodes.empty()) {
+      Logger::info("Tried to add wire connection to output node on object with no output nodes");
+      return;
+    }
     m_outputNodes.at(wireNode.nodeIndex).connections.update([&](auto& list) {
         if (list.contains(nodeConnection))
           return false;
