@@ -22,9 +22,11 @@ end
 -- patch function, called by the game
 function patch(config)
   local layout = config.paneLayout
-  layout.bgShine.zlevel = -10
   layout.panefeature.positionLocked = false
   layout.panefeature.anchor = "center"
+  if layout.bgShine then
+    layout.bgShine.zlevel = -10
+  end
   for i = 1, 32 do config.zoomList[i] = i end
   -- Create the camera pan speed widgets
   shift(clone(layout, "zoomLabel", "cameraSpeedLabel"), 100).value = "CAMERA PAN SPEED"
