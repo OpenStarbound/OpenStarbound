@@ -4,7 +4,6 @@
 #include "StarMixer.hpp"
 #include "StarAssets.hpp"
 #include "StarImageMetadataDatabase.hpp"
-#include <iostream>
 
 namespace Star {
 
