@@ -477,7 +477,7 @@ void Monster::update(float dt, uint64_t) {
         for (auto control : m_LoungeControlsHeld)
           loungeableEntity->loungeControl(anchorState->positionIndex, control);
 
-      m_statusController->setPersistentEffects("lounging", loungeAnchor->statusEffects);
+      m_statusController->setPersistentEffects("lounging", loungeAnchor->statusEffects, m_movementController->anchorState()->entityId);
       m_effectEmitter.addEffectSources("normal", loungeAnchor->effectEmitters);
     } else {
       m_statusController->setPersistentEffects("lounging", {});

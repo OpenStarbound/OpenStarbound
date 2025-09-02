@@ -236,15 +236,18 @@ List<PersistentStatusEffect> StatusController::getPersistentEffects(String const
 }
 
 void StatusController::addPersistentEffect(
-    String const& statusEffectCategory, PersistentStatusEffect const& persistentEffect) {
-  addPersistentEffects(statusEffectCategory, {persistentEffect});
+    String const& statusEffectCategory, PersistentStatusEffect const& persistentEffect, Maybe<EntityId> sourceEntityId) {
+  addPersistentEffects(statusEffectCategory, {persistentEffect}, sourceEntityId);
 }
 
 void StatusController::addPersistentEffects(
-    String const& statusEffectCategory, List<PersistentStatusEffect> const& effectList) {
+    String const& statusEffectCategory, List<PersistentStatusEffect> const& effectList, Maybe<EntityId> sourceEntityId) {
   auto& persistentEffectCategory = m_persistentEffects[statusEffectCategory];
   if (!persistentEffectCategory.modifierEffectsGroupId)
     persistentEffectCategory.modifierEffectsGroupId = m_statCollection.addStatModifierGroup();
+
+  if (sourceEntityId.isValid())
+    persistentEffectCategory.sourceEntityId = sourceEntityId;
 
   for (auto const& effect : effectList) {
     if (effect.is<StatModifier>())
@@ -259,7 +262,7 @@ void StatusController::addPersistentEffects(
 }
 
 void StatusController::setPersistentEffects(
-    String const& statusEffectCategory, List<PersistentStatusEffect> const& effectList) {
+    String const& statusEffectCategory, List<PersistentStatusEffect> const& effectList, Maybe<EntityId> sourceEntityId) {
   if (effectList.empty()) {
     if (auto groupId = m_persistentEffects[statusEffectCategory].modifierEffectsGroupId)
       m_statCollection.removeStatModifierGroup(*groupId);
@@ -270,7 +273,7 @@ void StatusController::setPersistentEffects(
     auto& persistentEffectCategory = m_persistentEffects[statusEffectCategory];
     persistentEffectCategory.statModifiers.clear();
     persistentEffectCategory.uniqueEffects.clear();
-    addPersistentEffects(statusEffectCategory, effectList);
+    addPersistentEffects(statusEffectCategory, effectList, sourceEntityId);
   }
 }
 
@@ -685,12 +688,14 @@ void StatusController::updatePersistentUniqueEffects() {
       // means that by applying a persistent effect and then clearing it, you can
       // remove an ephemeral effect.
       if (auto existingEffect = m_uniqueEffects.ptr(uniqueEffectName)) {
-        m_uniqueEffectMetadata.getNetElement(existingEffect->metadataId)->duration.reset();
+        auto metadata = m_uniqueEffectMetadata.getNetElement(existingEffect->metadataId);
+        metadata->duration.reset();
+        metadata->sourceEntityId.set(categoryPair.second.sourceEntityId);
         activePersistentUniqueEffects.add(uniqueEffectName);
       }
       // we want to make sure the effect it's applying actually exists
       // if not then it should be removed from the list
-      else if (addUniqueEffect(uniqueEffectName, {}, {}))
+      else if (addUniqueEffect(uniqueEffectName, {}, categoryPair.second.sourceEntityId))
         activePersistentUniqueEffects.add(uniqueEffectName);
       else
         categoryPair.second.uniqueEffects.remove(uniqueEffectName);

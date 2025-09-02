@@ -931,7 +931,7 @@ void Player::update(float dt, uint64_t) {
 
       if (auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor())) {
         m_state = State::Lounge;
-        m_statusController->setPersistentEffects("lounging", loungeAnchor->statusEffects);
+        m_statusController->setPersistentEffects("lounging", loungeAnchor->statusEffects, m_movementController->anchorState()->entityId);
         addEffectEmitters(loungeAnchor->effectEmitters);
         if (loungeAnchor->emote)
           requestEmote(*loungeAnchor->emote);

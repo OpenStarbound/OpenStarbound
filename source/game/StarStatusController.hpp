@@ -57,9 +57,9 @@ public:
   float modifyResourcePercentage(String const& resourceName, float resourcePercentage);
 
   List<PersistentStatusEffect> getPersistentEffects(String const& statEffectCategory) const;
-  void addPersistentEffect(String const& statEffectCategory, PersistentStatusEffect const& persistentEffect);
-  void addPersistentEffects(String const& statEffectCategory, List<PersistentStatusEffect> const& persistentEffects);
-  void setPersistentEffects(String const& statEffectCategory, List<PersistentStatusEffect> const& persistentEffects);
+  void addPersistentEffect(String const& statEffectCategory, PersistentStatusEffect const& persistentEffect, Maybe<EntityId> sourceEntityId = {});
+  void addPersistentEffects(String const& statEffectCategory, List<PersistentStatusEffect> const& persistentEffects, Maybe<EntityId> sourceEntityId = {});
+  void setPersistentEffects(String const& statEffectCategory, List<PersistentStatusEffect> const& persistentEffects, Maybe<EntityId> sourceEntityId = {});
   void clearPersistentEffects(String const& statEffectCategory);
   void clearAllPersistentEffects();
 
@@ -176,6 +176,7 @@ private:
     Maybe<StatModifierGroupId> modifierEffectsGroupId;
     List<StatModifier> statModifiers;
     HashSet<UniqueStatusEffect> uniqueEffects;
+    Maybe<EntityId> sourceEntityId;
   };
 
   struct UniqueEffectInstance {
