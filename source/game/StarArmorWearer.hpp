@@ -29,7 +29,7 @@ public:
   // returns true if movement parameters changed
   bool setupHumanoid(Humanoid& humanoid, bool forceNude);
   void effects(EffectEmitter& effectEmitter);
-  List<PersistentStatusEffect> statusEffects() const;
+  List<PersistentStatusEffect> statusEffects(bool cosmeticOnly = false) const;
 
   void reset();
 
