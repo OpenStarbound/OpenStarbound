@@ -4,6 +4,7 @@
 #include "StarMixer.hpp"
 #include "StarAssets.hpp"
 #include "StarImageMetadataDatabase.hpp"
+#include <iostream>
 
 namespace Star {
 
@@ -90,17 +91,17 @@ Vec2U GuiContext::windowInterfaceSize() const {
   return Vec2U::ceil(Vec2F(windowSize()) / interfaceScale());
 }
 
-int GuiContext::interfaceScale() const {
+float GuiContext::interfaceScale() const {
   return m_interfaceScale;
 }
 
-void GuiContext::setInterfaceScale(int interfaceScale) {
+void GuiContext::setInterfaceScale(float interfaceScale) {
   m_interfaceScale = interfaceScale;
 }
 
-Maybe<Vec2I> GuiContext::mousePosition(InputEvent const& event, int pixelRatio) const {
+Maybe<Vec2I> GuiContext::mousePosition(InputEvent const& event, float pixelRatio) const {
   auto getInterfacePosition = [pixelRatio](Vec2F pos) {
-    return Vec2I(pos) / pixelRatio;
+    return Vec2I(pos / pixelRatio);
   };
 
   if (auto mouseMoveEvent = event.ptr<MouseMoveEvent>())
@@ -132,7 +133,7 @@ void GuiContext::refreshKeybindings() {
 }
 
 void GuiContext::setInterfaceScissorRect(RectI const& scissor) {
-  renderer()->setScissorRect(RectI(scissor).scaled(interfaceScale()));
+  renderer()->setScissorRect(scissor.scaled(interfaceScale()));
 }
 
 void GuiContext::resetInterfaceScissorRect() {
@@ -197,7 +198,7 @@ void GuiContext::drawTriangles(List<tuple<Vec2F, Vec2F, Vec2F>> const& triangles
 }
 
 void GuiContext::drawInterfaceDrawable(Drawable drawable, Vec2F const& screenPos, Vec4B const& color) {
-  drawDrawable(std::move(drawable), screenPos * interfaceScale(), (float)interfaceScale(), color);
+  drawDrawable(std::move(drawable), screenPos * interfaceScale(), interfaceScale(), color);
 }
 
 void GuiContext::drawInterfaceLine(Vec2F const& begin, Vec2F const end, Vec4B const& color, float lineWidth) {
@@ -353,7 +354,7 @@ void GuiContext::setFontSize(unsigned size) {
   setFontSize(size, interfaceScale());
 }
 
-void GuiContext::setFontSize(unsigned size, int pixelRatio) {
+void GuiContext::setFontSize(unsigned size, float pixelRatio) {
   textPainter()->setFontSize(size * pixelRatio);
 }
 
@@ -405,7 +406,7 @@ int GuiContext::stringWidth(String const& s) {
 
 //TODO: Make this use StringView
 int GuiContext::stringInterfaceWidth(String const& s) {
-  if (interfaceScale()) {
+  if (interfaceScale() != 0) {
     // font size is already adjusted UP by interfaceScale, so we have to adjust
     // it back down
     return stringWidth(s) / interfaceScale();

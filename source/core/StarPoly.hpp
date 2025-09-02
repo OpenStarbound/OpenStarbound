@@ -1,17 +1,21 @@
 #pragma once
 
 #include <numeric>
+#include <type_traits>
 
 #include "StarRect.hpp"
 
 namespace Star {
 
-template <typename DataType>
+template <typename T>
 class Polygon {
 public:
-  typedef Vector<DataType, 2> Vertex;
-  typedef Star::Line<DataType, 2> Line;
-  typedef Star::Box<DataType, 2> Rect;
+  template<typename S>
+  using VertexT = Vector<S, 2>;
+  using Vertex = VertexT<T>;
+
+  using Line = Star::Line<T, 2>;
+  using Rect = Star::Box<T, 2>;
 
   struct IntersectResult {
     // Whether or not the two objects intersect
@@ -25,7 +29,7 @@ public:
     // Point of intersection
     Vertex point;
     // t value at the point of intersection of the line that was checked
-    DataType along;
+    T along;
     // Side that the line first intersected, if the line starts inside the
     // polygon, this will not be set.
     Maybe<size_t> intersectedSide;
@@ -43,11 +47,11 @@ public:
   Polygon(Polygon const& rhs);
   Polygon(Polygon&& rhs);
 
-  template <typename DataType2>
-  explicit Polygon(Box<DataType2, 2> const& rect);
+  template <typename T2>
+  explicit Polygon(Box<T2, 2> const& rect);
 
-  template <typename DataType2>
-  explicit Polygon(Polygon<DataType2> const& p2);
+  template <typename T2>
+  explicit Polygon(Polygon<T2> const& p2);
 
   // This seems weird, but it isn't.  SAT intersection works perfectly well
   // with one Poly having only a single vertex.
@@ -78,22 +82,24 @@ public:
 
   Line side(size_t i) const;
 
-  DataType distance(Vertex const& c) const;
+  T distance(Vertex const& c) const;
 
   void translate(Vertex const& c);
 
   void setCenter(Vertex const& c);
 
-  void rotate(DataType a, Vertex const& c = Vertex());
+  void rotate(T a, Vertex const& c = Vertex());
 
-  void scale(Vertex const& s, Vertex const& c = Vertex());
-  void scale(DataType s, Vertex const& c = Vertex());
+  template<typename S>
+  void scale(VertexT<S> const& s, VertexT<S> const& c = Vertex());
+  template<typename S>
+  void scale(S s, VertexT<S> const& c = Vertex());
 
-  void flipHorizontal(DataType horizontalPos = DataType());
-  void flipVertical(DataType verticalPos = DataType());
+  void flipHorizontal(T horizontalPos = T());
+  void flipVertical(T verticalPos = T());
 
-  template <typename DataType2>
-  void transform(Matrix3<DataType2> const& transMat);
+  template <typename T2>
+  void transform(Matrix3<T2> const& transMat);
 
   Vertex const& operator[](size_t i) const;
   Vertex& operator[](size_t i);
@@ -151,15 +157,15 @@ private:
   VertexList m_vertexes;
 };
 
-template <typename DataType>
-std::ostream& operator<<(std::ostream& os, Polygon<DataType> const& poly);
+template <typename T>
+std::ostream& operator<<(std::ostream& os, Polygon<T> const& poly);
 
 typedef Polygon<int> PolyI;
 typedef Polygon<float> PolyF;
 typedef Polygon<double> PolyD;
 
-template <typename DataType>
-Polygon<DataType> Polygon<DataType>::convexHull(VertexList points) {
+template <typename T>
+Polygon<T> Polygon<T>::convexHull(VertexList points) {
   if (points.empty())
     return {};
 
@@ -185,11 +191,11 @@ Polygon<DataType> Polygon<DataType>::convexHull(VertexList points) {
   upper.removeLast();
   lower.removeLast();
   lower.appendAll(take(upper));
-  return Polygon<DataType>(std::move(lower));
+  return Polygon<T>(std::move(lower));
 }
 
-template <typename DataType>
-Polygon<DataType> Polygon<DataType>::clip(Polygon inputPoly, Polygon convexClipPoly) {
+template <typename T>
+Polygon<T> Polygon<T>::clip(Polygon inputPoly, Polygon convexClipPoly) {
   if (inputPoly.sides() == 0)
     return inputPoly;
 
@@ -220,51 +226,51 @@ Polygon<DataType> Polygon<DataType>::clip(Polygon inputPoly, Polygon convexClipP
   return Polygon(std::move(outputVertexes));
 }
 
-template <typename DataType>
-Polygon<DataType>::Polygon() {}
+template <typename T>
+Polygon<T>::Polygon() {}
 
-template <typename DataType>
-Polygon<DataType>::Polygon(Polygon const& rhs)
+template <typename T>
+Polygon<T>::Polygon(Polygon const& rhs)
   : m_vertexes(rhs.m_vertexes) {}
 
-template <typename DataType>
-Polygon<DataType>::Polygon(Polygon&& rhs)
+template <typename T>
+Polygon<T>::Polygon(Polygon&& rhs)
   : m_vertexes(std::move(rhs.m_vertexes)) {}
 
-template <typename DataType>
-template <typename DataType2>
-Polygon<DataType>::Polygon(Box<DataType2, 2> const& rect) {
+template <typename T>
+template <typename T2>
+Polygon<T>::Polygon(Box<T2, 2> const& rect) {
   m_vertexes = {
       Vertex(rect.min()), Vertex(rect.max()[0], rect.min()[1]), Vertex(rect.max()), Vertex(rect.min()[0], rect.max()[1])};
 }
 
-template <typename DataType>
-template <typename DataType2>
-Polygon<DataType>::Polygon(Polygon<DataType2> const& p2) {
+template <typename T>
+template <typename T2>
+Polygon<T>::Polygon(Polygon<T2> const& p2) {
   for (auto const& v : p2)
     m_vertexes.push_back(Vertex(v));
 }
 
-template <typename DataType>
-Polygon<DataType>::Polygon(Vertex const& coord) {
+template <typename T>
+Polygon<T>::Polygon(Vertex const& coord) {
   m_vertexes.push_back(coord);
 }
 
-template <typename DataType>
-Polygon<DataType>::Polygon(VertexList const& vertexes)
+template <typename T>
+Polygon<T>::Polygon(VertexList const& vertexes)
   : m_vertexes(vertexes) {}
 
-template <typename DataType>
-Polygon<DataType>::Polygon(std::initializer_list<Vertex> vertexes)
+template <typename T>
+Polygon<T>::Polygon(std::initializer_list<Vertex> vertexes)
   : m_vertexes(vertexes) {}
 
-template <typename DataType>
-bool Polygon<DataType>::isNull() const {
+template <typename T>
+bool Polygon<T>::isNull() const {
   return m_vertexes.empty();
 }
 
-template <typename DataType>
-bool Polygon<DataType>::isConvex() const {
+template <typename T>
+bool Polygon<T>::isConvex() const {
   if (sides() < 2)
     return true;
 
@@ -276,8 +282,8 @@ bool Polygon<DataType>::isConvex() const {
   return true;
 }
 
-template <typename DataType>
-float Polygon<DataType>::convexArea() const {
+template <typename T>
+float Polygon<T>::convexArea() const {
   float area = 0.0f;
   for (size_t i = 0; i < m_vertexes.size(); ++i) {
     Vertex const& v1 = m_vertexes[i];
@@ -287,8 +293,8 @@ float Polygon<DataType>::convexArea() const {
   return area;
 }
 
-template <typename DataType>
-void Polygon<DataType>::deduplicateVertexes(float maxDistance) {
+template <typename T>
+void Polygon<T>::deduplicateVertexes(float maxDistance) {
   if (m_vertexes.empty())
     return;
 
@@ -305,157 +311,161 @@ void Polygon<DataType>::deduplicateVertexes(float maxDistance) {
   m_vertexes = std::move(newVertexes);
 }
 
-template <typename DataType>
-void Polygon<DataType>::add(Vertex const& a) {
+template <typename T>
+void Polygon<T>::add(Vertex const& a) {
   m_vertexes.push_back(a);
 }
 
-template <typename DataType>
-void Polygon<DataType>::remove(size_t i) {
+template <typename T>
+void Polygon<T>::remove(size_t i) {
   auto it = begin() + i % sides();
   m_vertexes.erase(it);
 }
 
-template <typename DataType>
-void Polygon<DataType>::clear() {
+template <typename T>
+void Polygon<T>::clear() {
   m_vertexes.clear();
 }
 
-template <typename DataType>
-typename Polygon<DataType>::VertexList const& Polygon<DataType>::vertexes() const {
+template <typename T>
+typename Polygon<T>::VertexList const& Polygon<T>::vertexes() const {
   return m_vertexes;
 }
 
-template <typename DataType>
-typename Polygon<DataType>::VertexList& Polygon<DataType>::vertexes() {
+template <typename T>
+typename Polygon<T>::VertexList& Polygon<T>::vertexes() {
   return m_vertexes;
 }
 
-template <typename DataType>
-size_t Polygon<DataType>::sides() const {
+template <typename T>
+size_t Polygon<T>::sides() const {
   return m_vertexes.size();
 }
 
-template <typename DataType>
-typename Polygon<DataType>::Line Polygon<DataType>::side(size_t i) const {
+template <typename T>
+typename Polygon<T>::Line Polygon<T>::side(size_t i) const {
   return sideAt(i % m_vertexes.size());
 }
 
-template <typename DataType>
-DataType Polygon<DataType>::distance(Vertex const& c) const {
+template <typename T>
+T Polygon<T>::distance(Vertex const& c) const {
   if (contains(c))
     return 0;
 
-  DataType dist = highest<DataType>();
+  T dist = highest<T>();
   for (size_t i = 0; i < m_vertexes.size(); ++i)
     dist = min(dist, sideAt(i).distanceTo(c));
 
   return dist;
 }
 
-template <typename DataType>
-void Polygon<DataType>::translate(Vertex const& c) {
+template <typename T>
+void Polygon<T>::translate(Vertex const& c) {
   for (auto& v : m_vertexes)
     v += c;
 }
 
-template <typename DataType>
-void Polygon<DataType>::setCenter(Vertex const& c) {
+template <typename T>
+void Polygon<T>::setCenter(Vertex const& c) {
   translate(c - center());
 }
 
-template <typename DataType>
-void Polygon<DataType>::rotate(DataType a, Vertex const& c) {
+template <typename T>
+void Polygon<T>::rotate(T a, Vertex const& c) {
   for (auto& v : m_vertexes)
     v = (v - c).rotate(a) + c;
 }
 
-template <typename DataType>
-void Polygon<DataType>::scale(Vertex const& s, Vertex const& c) {
-  for (auto& v : m_vertexes)
-    v = vmult((v - c), s) + c;
+template <typename T>
+template <typename U>
+void Polygon<T>::scale(VertexT<U> const& s, VertexT<U> const& c) {
+  using V = VertexT<std::common_type_t<T, U>>;
+  for (auto& v : m_vertexes) {
+    v = Vertex(vmult(V(v) - V(c), V(s)) + V(c));
+  }
 }
 
-template <typename DataType>
-void Polygon<DataType>::scale(DataType s, Vertex const& c) {
-  scale(Vertex::filled(s), c);
+template <typename T>
+template <typename U>
+void Polygon<T>::scale(U s, VertexT<U> const& c) {
+  scale(VertexT<U>::filled(s), c);
 }
 
-template <typename DataType>
-void Polygon<DataType>::flipHorizontal(DataType horizontalPos) {
+template <typename T>
+void Polygon<T>::flipHorizontal(T horizontalPos) {
   scale(Vertex(-1, 1), Vertex(horizontalPos, 0));
   // Reverse vertexes to make sure poly remains counter-clockwise after flip.
   std::reverse(m_vertexes.begin(), m_vertexes.end());
 }
 
-template <typename DataType>
-void Polygon<DataType>::flipVertical(DataType verticalPos) {
+template <typename T>
+void Polygon<T>::flipVertical(T verticalPos) {
   scale(Vertex(1, -1), Vertex(0, verticalPos));
   // Reverse vertexes to make sure poly remains counter-clockwise after flip.
   std::reverse(m_vertexes.begin(), m_vertexes.end());
 }
 
-template <typename DataType>
-template <typename DataType2>
-void Polygon<DataType>::transform(Matrix3<DataType2> const& transMat) {
+template <typename T>
+template <typename T2>
+void Polygon<T>::transform(Matrix3<T2> const& transMat) {
   for (auto& v : m_vertexes)
     v = transMat.transformVec2(v);
 }
 
-template <typename DataType>
-typename Polygon<DataType>::Vertex const& Polygon<DataType>::operator[](size_t i) const {
+template <typename T>
+typename Polygon<T>::Vertex const& Polygon<T>::operator[](size_t i) const {
   return m_vertexes[i];
 }
 
-template <typename DataType>
-typename Polygon<DataType>::Vertex& Polygon<DataType>::operator[](size_t i) {
+template <typename T>
+typename Polygon<T>::Vertex& Polygon<T>::operator[](size_t i) {
   return m_vertexes[i];
 }
 
-template <typename DataType>
-bool Polygon<DataType>::operator==(Polygon<DataType> const& rhs) const {
+template <typename T>
+bool Polygon<T>::operator==(Polygon<T> const& rhs) const {
   return m_vertexes == rhs.m_vertexes;
 }
 
-template <typename DataType>
-Polygon<DataType>& Polygon<DataType>::operator=(Polygon const& rhs) {
+template <typename T>
+Polygon<T>& Polygon<T>::operator=(Polygon const& rhs) {
   m_vertexes = rhs.m_vertexes;
   return *this;
 }
 
-template <typename DataType>
-Polygon<DataType>& Polygon<DataType>::operator=(Polygon&& rhs) {
+template <typename T>
+Polygon<T>& Polygon<T>::operator=(Polygon&& rhs) {
   m_vertexes = std::move(rhs.m_vertexes);
   return *this;
 }
 
-template <typename DataType>
-typename Polygon<DataType>::iterator Polygon<DataType>::begin() {
+template <typename T>
+typename Polygon<T>::iterator Polygon<T>::begin() {
   return m_vertexes.begin();
 }
 
-template <typename DataType>
-typename Polygon<DataType>::const_iterator Polygon<DataType>::begin() const {
+template <typename T>
+typename Polygon<T>::const_iterator Polygon<T>::begin() const {
   return m_vertexes.begin();
 }
 
-template <typename DataType>
-typename Polygon<DataType>::iterator Polygon<DataType>::end() {
+template <typename T>
+typename Polygon<T>::iterator Polygon<T>::end() {
   return m_vertexes.end();
 }
 
-template <typename DataType>
-typename Polygon<DataType>::const_iterator Polygon<DataType>::end() const {
+template <typename T>
+typename Polygon<T>::const_iterator Polygon<T>::end() const {
   return m_vertexes.end();
 }
 
-template <typename DataType>
-typename Polygon<DataType>::Vertex const& Polygon<DataType>::vertex(size_t i) const {
+template <typename T>
+typename Polygon<T>::Vertex const& Polygon<T>::vertex(size_t i) const {
   return m_vertexes[i % m_vertexes.size()];
 }
 
-template <typename DataType>
-typename Polygon<DataType>::Vertex Polygon<DataType>::normal(size_t i) const {
+template <typename T>
+typename Polygon<T>::Vertex Polygon<T>::normal(size_t i) const {
   Vertex diff = side(i).diff();
 
   if (diff == Vertex())
@@ -464,34 +474,34 @@ typename Polygon<DataType>::Vertex Polygon<DataType>::normal(size_t i) const {
   return diff.rot90().normalized();
 }
 
-template <typename DataType>
-typename Polygon<DataType>::Vertex Polygon<DataType>::center() const {
-  return std::accumulate(m_vertexes.begin(), m_vertexes.end(), Vertex()) / (DataType)m_vertexes.size();
+template <typename T>
+typename Polygon<T>::Vertex Polygon<T>::center() const {
+  return std::accumulate(m_vertexes.begin(), m_vertexes.end(), Vertex()) / (T)m_vertexes.size();
 }
 
-template <typename DataType>
-typename Polygon<DataType>::Vertex Polygon<DataType>::bottomCenter() const {
+template <typename T>
+typename Polygon<T>::Vertex Polygon<T>::bottomCenter() const {
   if (m_vertexes.size() == 0)
     return Vertex();
-  Polygon<DataType>::Vertex center = std::accumulate(m_vertexes.begin(), m_vertexes.end(), Vertex()) / (DataType)m_vertexes.size();
-  Polygon<DataType>::Vertex bottomLeft = *std::min_element(m_vertexes.begin(), m_vertexes.end());
-  Polygon<DataType>::Vertex topRight = *std::max_element(m_vertexes.begin(), m_vertexes.end());
-  Polygon<DataType>::Vertex size = topRight - bottomLeft;
+  Polygon<T>::Vertex center = std::accumulate(m_vertexes.begin(), m_vertexes.end(), Vertex()) / (T)m_vertexes.size();
+  Polygon<T>::Vertex bottomLeft = *std::min_element(m_vertexes.begin(), m_vertexes.end());
+  Polygon<T>::Vertex topRight = *std::max_element(m_vertexes.begin(), m_vertexes.end());
+  Polygon<T>::Vertex size = topRight - bottomLeft;
   if (size.x() > size.y())
     return center;
-  return Polygon<DataType>::Vertex(center.x(), bottomLeft.y() + size.x() / 2.0f);
+  return Polygon<T>::Vertex(center.x(), bottomLeft.y() + size.x() / 2.0f);
 }
 
-template <typename DataType>
-auto Polygon<DataType>::boundBox() const -> Rect {
+template <typename T>
+auto Polygon<T>::boundBox() const -> Rect {
   auto bounds = Rect::null();
   for (auto const& v : m_vertexes)
     bounds.combine(v);
   return bounds;
 }
 
-template <typename DataType>
-int Polygon<DataType>::windingNumber(Vertex const& p) const {
+template <typename T>
+int Polygon<T>::windingNumber(Vertex const& p) const {
 
   auto isLeft = [](Vertex const& p0, Vertex const& p1, Vertex const& p2) {
     return ((p1[0] - p0[0]) * (p2[1] - p0[1]) - (p2[0] - p0[0]) * (p1[1] - p0[1]));
@@ -531,29 +541,29 @@ int Polygon<DataType>::windingNumber(Vertex const& p) const {
   return wn;
 }
 
-template <typename DataType>
-bool Polygon<DataType>::contains(Vertex const& p) const {
+template <typename T>
+bool Polygon<T>::contains(Vertex const& p) const {
   return windingNumber(p) != 0;
 }
 
-template <typename DataType>
-typename Polygon<DataType>::IntersectResult Polygon<DataType>::satIntersection(Polygon const& p) const {
+template <typename T>
+typename Polygon<T>::IntersectResult Polygon<T>::satIntersection(Polygon const& p) const {
   // "Accumulates" the shortest separating distance and axis of this poly and
   // the given poly, after projecting all the vertexes of each poly onto a
   // given axis.  Used by SAT intersection, meant to be called with each tested
   // axis.
-  auto accumSeparator = [this](Polygon const& p, Vertex const& axis, DataType& shortestOverlap, Vertex& finalSepDir) {
-    DataType myProjectionLow = std::numeric_limits<DataType>::max();
-    DataType targetProjectionHigh = std::numeric_limits<DataType>::lowest();
+  auto accumSeparator = [this](Polygon const& p, Vertex const& axis, T& shortestOverlap, Vertex& finalSepDir) {
+    T myProjectionLow = std::numeric_limits<T>::max();
+    T targetProjectionHigh = std::numeric_limits<T>::lowest();
 
     for (auto const& v : m_vertexes) {
-      DataType p = axis[0] * v[0] + axis[1] * v[1];
+      T p = axis[0] * v[0] + axis[1] * v[1];
       if (p < myProjectionLow)
         myProjectionLow = p;
     }
 
     for (auto const& v : p.m_vertexes) {
-      DataType p = axis[0] * v[0] + axis[1] * v[1];
+      T p = axis[0] * v[0] + axis[1] * v[1];
       if (p > targetProjectionHigh)
         targetProjectionHigh = p;
     }
@@ -565,7 +575,7 @@ typename Polygon<DataType>::IntersectResult Polygon<DataType>::satIntersection(P
     }
   };
 
-  DataType overlap = std::numeric_limits<DataType>::max();
+  T overlap = std::numeric_limits<T>::max();
   Vertex separatingDir = Vertex();
 
   if (!m_vertexes.empty()) {
@@ -599,24 +609,24 @@ typename Polygon<DataType>::IntersectResult Polygon<DataType>::satIntersection(P
   return isect;
 }
 
-template <typename DataType>
-typename Polygon<DataType>::IntersectResult Polygon<DataType>::directionalSatIntersection(
+template <typename T>
+typename Polygon<T>::IntersectResult Polygon<T>::directionalSatIntersection(
     Polygon const& p, Vertex const& direction, bool chooseSign) const {
   // A "directional" version of accumSeparator, that when intersecting only
   // ever tries to separate in the given direction.
-  auto directionalAccumSeparator = [this](Polygon const& p, Vertex axis, DataType& shortestOverlap,
+  auto directionalAccumSeparator = [this](Polygon const& p, Vertex axis, T& shortestOverlap,
       Vertex const& separatingDir, Vertex& finalSepDir, bool chooseDir) {
-    DataType myProjectionLow = std::numeric_limits<DataType>::max();
-    DataType targetProjectionHigh = std::numeric_limits<DataType>::lowest();
+    T myProjectionLow = std::numeric_limits<T>::max();
+    T targetProjectionHigh = std::numeric_limits<T>::lowest();
 
     for (auto const& v : m_vertexes) {
-      DataType p = axis[0] * v[0] + axis[1] * v[1];
+      T p = axis[0] * v[0] + axis[1] * v[1];
       if (p < myProjectionLow)
         myProjectionLow = p;
     }
 
     for (auto const& v : p.m_vertexes) {
-      DataType p = axis[0] * v[0] + axis[1] * v[1];
+      T p = axis[0] * v[0] + axis[1] * v[1];
       if (p > targetProjectionHigh)
         targetProjectionHigh = p;
     }
@@ -632,7 +642,7 @@ typename Polygon<DataType>::IntersectResult Polygon<DataType>::directionalSatInt
       return;
     }
 
-    DataType axisDot = separatingDir * axis;
+    T axisDot = separatingDir * axis;
 
     // Now, if we don't have separation and the axis is perpendicular to
     // requested, we can do nothing, return.
@@ -641,9 +651,9 @@ typename Polygon<DataType>::IntersectResult Polygon<DataType>::directionalSatInt
 
     // Separate along the given separating direction enough to separate as
     // determined by this axis.
-    DataType projOverlap = overlap / axisDot;
+    T projOverlap = overlap / axisDot;
     if (chooseDir) {
-      DataType absProjOverlap = (projOverlap >= 0) ? projOverlap : -projOverlap;
+      T absProjOverlap = (projOverlap >= 0) ? projOverlap : -projOverlap;
       if (absProjOverlap < shortestOverlap) {
         shortestOverlap = absProjOverlap;
         finalSepDir = separatingDir * (projOverlap / absProjOverlap);
@@ -656,7 +666,7 @@ typename Polygon<DataType>::IntersectResult Polygon<DataType>::directionalSatInt
     }
   };
 
-  DataType overlap = std::numeric_limits<DataType>::max();
+  T overlap = std::numeric_limits<T>::max();
   Vertex separatingDir = Vertex();
 
   if (!m_vertexes.empty()) {
@@ -690,10 +700,10 @@ typename Polygon<DataType>::IntersectResult Polygon<DataType>::directionalSatInt
   return isect;
 }
 
-template <typename DataType>
-auto Polygon<DataType>::lineIntersection(Line const& l) const -> Maybe<LineIntersectResult> {
+template <typename T>
+auto Polygon<T>::lineIntersection(Line const& l) const -> Maybe<LineIntersectResult> {
   if (contains(l.min()))
-    return LineIntersectResult{l.min(), DataType(0), {}};
+    return LineIntersectResult{l.min(), T(0), {}};
 
   Maybe<LineIntersectResult> nearestIntersection;
   for (size_t i = 0; i < m_vertexes.size(); ++i) {
@@ -706,13 +716,13 @@ auto Polygon<DataType>::lineIntersection(Line const& l) const -> Maybe<LineInter
   return nearestIntersection;
 }
 
-template <typename DataType>
-bool Polygon<DataType>::intersects(Polygon const& p) const {
+template <typename T>
+bool Polygon<T>::intersects(Polygon const& p) const {
   return satIntersection(p).intersects;
 }
 
-template <typename DataType>
-bool Polygon<DataType>::intersects(Line const& l) const {
+template <typename T>
+bool Polygon<T>::intersects(Line const& l) const {
   if (contains(l.min()) || contains(l.max()))
     return true;
 
@@ -724,16 +734,16 @@ bool Polygon<DataType>::intersects(Line const& l) const {
   return false;
 }
 
-template <typename DataType>
-auto Polygon<DataType>::sideAt(size_t i) const -> Line {
+template <typename T>
+auto Polygon<T>::sideAt(size_t i) const -> Line {
   if (i == m_vertexes.size() - 1)
     return Line(m_vertexes[i], m_vertexes[0]);
   else
     return Line(m_vertexes[i], m_vertexes[i + 1]);
 }
 
-template <typename DataType>
-std::ostream& operator<<(std::ostream& os, Polygon<DataType> const& poly) {
+template <typename T>
+std::ostream& operator<<(std::ostream& os, Polygon<T> const& poly) {
   os << "[Poly: ";
   for (auto i = poly.begin(); i != poly.end(); ++i) {
     if (i != poly.begin())
