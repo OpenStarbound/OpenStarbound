@@ -32,7 +32,7 @@ GraphicsMenu::GraphicsMenu(PaneManager* manager,UniverseClientPtr client)
     });
   reader.registerCallback("interfaceScaleSlider", [=](Widget*) {
       auto interfaceScaleSlider = fetchChild<SliderBarWidget>("interfaceScaleSlider");
-      m_localChanges.set("interfaceScale", (uint64_t)m_interfaceScaleList[interfaceScaleSlider->val()]);
+      m_localChanges.set("interfaceScale", m_interfaceScaleList[interfaceScaleSlider->val()]);
       syncGui();
     });
   reader.registerCallback("zoomSlider", [=](Widget*) {
@@ -114,7 +114,7 @@ GraphicsMenu::GraphicsMenu(PaneManager* manager,UniverseClientPtr client)
   auto config = assets->json("/interface/windowconfig/graphicsmenu.config");
   Json paneLayout = config.get("paneLayout");
 
-  m_interfaceScaleList = jsonToIntList(assets->json("/interface/windowconfig/graphicsmenu.config:interfaceScaleList"));
+  m_interfaceScaleList = jsonToFloatList(assets->json("/interface/windowconfig/graphicsmenu.config:interfaceScaleList"));
   m_resList = jsonToVec2UList(assets->json("/interface/windowconfig/graphicsmenu.config:resolutionList"));
   m_zoomList = jsonToFloatList(assets->json("/interface/windowconfig/graphicsmenu.config:zoomList"));
   m_cameraSpeedList = jsonToFloatList(assets->json("/interface/windowconfig/graphicsmenu.config:cameraSpeedList"));
@@ -197,7 +197,7 @@ void GraphicsMenu::syncGui() {
   fetchChild<LabelWidget>("resValueLabel")->setText(strf("{}x{}", res[0], res[1]));
 
   auto interfaceScaleSlider = fetchChild<SliderBarWidget>("interfaceScaleSlider");
-  auto interfaceScale = m_localChanges.get("interfaceScale").optUInt().value();
+  auto interfaceScale = m_localChanges.get("interfaceScale").optFloat().value();
   auto interfaceScaleIt = std::lower_bound(m_interfaceScaleList.begin(), m_interfaceScaleList.end(), interfaceScale);
   if (interfaceScaleIt != m_interfaceScaleList.end()) {
     size_t scaleIndex = interfaceScaleIt - m_interfaceScaleList.begin();
@@ -205,7 +205,7 @@ void GraphicsMenu::syncGui() {
   } else {
     interfaceScaleSlider->setVal(m_interfaceScaleList.size() - 1);
   }
-  fetchChild<LabelWidget>("interfaceScaleValueLabel")->setText(interfaceScale ? toString(interfaceScale) : "AUTO");
+  fetchChild<LabelWidget>("interfaceScaleValueLabel")->setText(interfaceScale != 0 ? toString(interfaceScale) : "AUTO");
 
   auto zoomSlider = fetchChild<SliderBarWidget>("zoomSlider");
   auto zoomLevel = m_localChanges.get("zoomLevel").toFloat();

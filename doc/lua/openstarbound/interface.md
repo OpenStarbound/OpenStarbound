@@ -66,6 +66,6 @@ Binds the canvas widget on the main interface with the specified name as userdat
 
 ---
 
-#### `int` interface.scale()
+#### `float` interface.scale()
 
 Returns the scale used for interfaces.

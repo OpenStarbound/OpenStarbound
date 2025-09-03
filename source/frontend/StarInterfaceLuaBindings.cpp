@@ -38,7 +38,7 @@ LuaCallbacks LuaBindings::makeInterfaceCallbacks(MainInterface* mainInterface) {
       paneManager->displayRegisteredPane(pane);
   });
 
-  callbacks.registerCallback("scale", []() -> int {
+  callbacks.registerCallback("scale", []() {
     return GuiContext::singleton().interfaceScale();
   });
 

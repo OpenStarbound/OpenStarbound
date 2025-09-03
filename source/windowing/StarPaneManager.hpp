@@ -88,7 +88,7 @@ private:
   bool dismiss(PanePtr const& pane);
 
   GuiContext* m_context;
-  int m_prevInterfaceScale;
+  float m_prevInterfaceScale;
 
   // Map of each pane layer, where the 0th pane is the topmost pane in each layer.
   Map<PaneLayer, OrderedMap<PanePtr, DismissCallback>> m_displayedPanes;
