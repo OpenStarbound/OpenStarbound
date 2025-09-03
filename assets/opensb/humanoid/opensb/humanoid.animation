@@ -358,7 +358,6 @@
 					"zLevel": 2,
 					"transformationGroups": [],
 					"anchorPart" : "body",
-					"itemHidden" : true,
 					"processingDirectives" : "<bodyDirectives>",
 					"transforms" : [["reset"]]
 				},
@@ -378,7 +377,6 @@
 					},
 					"backArm" : {
 						"rotation": { "properties": {
-							"itemHidden" : false,
 							"transformationGroups": ["backArmRotation", "movementOffset"],
 							"image": "<humanoidPath><backArmFrameset>:<backArmFrame>"
 						} }
@@ -761,7 +759,6 @@
 					"zLevel": 16,
 					"transformationGroups": [],
 					"anchorPart" : "body",
-					"itemHidden" : true,
 					"processingDirectives" : "<bodyDirectives>",
 					"transforms" : [["reset"]]
 				},
@@ -781,7 +778,6 @@
 					},
 					"frontArm" : {
 						"rotation": { "properties": {
-							"itemHidden" : false,
 							"transformationGroups": ["frontArmRotation", "movementOffset"],
 							"image": "<humanoidPath><frontArmFrameset>:<frontArmFrame>"
 						} }
