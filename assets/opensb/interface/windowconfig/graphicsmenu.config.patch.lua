@@ -39,8 +39,8 @@ function patch(config)
   shift(clone(layout, "zoomLabel", "interfaceScaleLabel"), 0, 28).value = "INTERFACE SCALE"
   shift(clone(layout, "zoomSlider", "interfaceScaleSlider"), 0, 28)
   shift(clone(layout, "zoomValueLabel", "interfaceScaleValueLabel"), 0, 28)
-  config.interfaceScaleList = {0} -- 0 = AUTO!
-  for i = 1, 50 do config.interfaceScaleList[i] = i / 10 end
+  config.interfaceScaleList = {}
+  for i = 1, 17 do config.interfaceScaleList[i] = 0.75 + i / 4 end
 
   -- Create anti-aliasing toggle
   shift(clone(layout, "multiTextureLabel", "antiAliasingLabel"), 98).value = "SUPER-SAMPLED AA"
