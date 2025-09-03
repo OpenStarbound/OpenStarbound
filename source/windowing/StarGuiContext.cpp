@@ -377,7 +377,7 @@ void GuiContext::setDefaultFont() {
   textPainter()->setFont("");
 }
 
-TextStyle& GuiContext::setTextStyle(TextStyle const& textStyle, int pixelRatio) {
+TextStyle& GuiContext::setTextStyle(TextStyle const& textStyle, float pixelRatio) {
   TextStyle& setStyle = textPainter()->setTextStyle(textStyle);
   setStyle.fontSize *= pixelRatio;
   return setStyle;
