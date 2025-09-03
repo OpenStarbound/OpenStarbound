@@ -116,6 +116,7 @@ private:
   NetElementIntegral<EntityId> m_owningEntity;
   NetElementData<ItemDescriptor> m_itemDescriptor;
   MovementController m_movementController;
+  RectF m_defaultBoundBox;
 
   // Only updated on master
   bool m_eternal;
