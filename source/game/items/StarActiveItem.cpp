@@ -376,8 +376,21 @@ LuaCallbacks ActiveItem::makeActiveItemCallbacks() {
       Vec2F handRotationCenter = owner()->armPosition(hand(), owner()->facingDirection(), 0.0f, Vec2F());
       Vec2F ownerPosition = owner()->position();
 
-      // Vector in owner entity space from hand rotation center to target.
-      Vec2F toTarget = owner()->world()->geometry().diff(targetPosition, (ownerPosition + handRotationCenter));
+      // Vector in owner entity space to target.
+      Vec2F toTarget = owner()->world()->geometry().diff(targetPosition, ownerPosition);
+      // Raptor - in retail if you have a hand rotation center that is to the right of the entity centerline, then any time the
+      // aim position is behind it the character will repeatedly flip every single frame, we want to prevent this
+      auto dir = numericalDirection(owner()->facingDirection());
+      // get local X coords by multiplying by our direction
+      auto targetX = (toTarget[0] * dir);
+      auto centerX = (handRotationCenter[0] * dir);
+      if ((centerX >= 0) && (targetX >= 0) && (targetX < centerX)) {
+        // if the target is between the centerline and our rotation center then we need to
+        // change target x to a pixel offset from our rotation center x so we won't rapidly flip
+        toTarget[0] = handRotationCenter[0] + (0.125 * dir);
+      }
+      // get from owner entity space to hand rotation space
+      toTarget -= handRotationCenter;
       float toTargetDist = toTarget.magnitude();
 
       // If the aim position is inside the circle formed by the barrel line as it
