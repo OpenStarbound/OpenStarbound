@@ -2196,7 +2196,7 @@ void WorldClient::disconnectAllWires(Vec2I wireEntityPosition, WireNode const& n
   m_outgoingPackets.append(make_shared<DisconnectAllWiresPacket>(wireEntityPosition, node));
 }
 
-void WorldClient::wire(Vec2I const& outputPosition, int const& outputIndex, Vec2I const& inputPosition, int const& inputIndex) {
+void WorldClient::wire(Vec2I const& outputPosition, size_t outputIndex, Vec2I const& inputPosition, size_t inputIndex) {
   WireConnection output = {outputPosition, outputIndex};
   WireConnection input = {inputPosition, inputIndex};
   connectWire(output, input);
