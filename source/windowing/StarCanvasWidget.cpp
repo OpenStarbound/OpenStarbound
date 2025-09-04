@@ -99,7 +99,7 @@ bool CanvasWidget::sendEvent(InputEvent const& event) {
     return false;
 
   auto& context = GuiContext::singleton();
-  int interfaceScale = m_ignoreInterfaceScale ? 1 : context.interfaceScale();
+  auto interfaceScale = m_ignoreInterfaceScale ? 1 : context.interfaceScale();
   if (auto mouseButtonDown = event.ptr<MouseButtonDownEvent>()) {
     if (inMember(*context.mousePosition(event, interfaceScale)) && m_captureMouse) {
       m_clickEvents.append({*context.mousePosition(event, interfaceScale) - screenPosition(), mouseButtonDown->mouseButton, true});

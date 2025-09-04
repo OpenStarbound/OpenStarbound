@@ -19,7 +19,7 @@ public:
   Drawable drawable() const;
   Vec2I size() const;
   Vec2I offset() const;
-  unsigned int scale(unsigned int interfaceScale = 0) const;
+  float scale(float interfaceScale = 0) const;
 
   void update(float dt);
 

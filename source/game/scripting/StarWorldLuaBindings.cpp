@@ -378,7 +378,7 @@ namespace LuaBindings {
       callbacks.registerCallback("setTemplate", [clientWorld](Json worldTemplate) {
         clientWorld->setTemplate(worldTemplate);
       }); 
-      callbacks.registerCallback("wire", [clientWorld](Vec2I outputPosition, int outputIndex, Vec2I inputPosition, int inputIndex) {
+      callbacks.registerCallback("wire", [clientWorld](Vec2I outputPosition, size_t outputIndex, Vec2I inputPosition, size_t inputIndex) {
         clientWorld->wire(outputPosition, outputIndex, inputPosition, inputIndex);
       }); 
     }

@@ -12,7 +12,7 @@
     "opus",
     "zstd",
     "mimalloc",
-    { "name": "jemalloc", "platform": "!osx" },
+    { "name": "jemalloc", "platform": "linux" },
     "re2",
     { "name": "abseil", "features": ["cxx17"] },
     { "name": "imgui", "features": ["sdl3-binding", "opengl3-binding", "freetype"] }
