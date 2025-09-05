@@ -639,8 +639,8 @@ void MainInterface::update(float dt) {
         ChatReceivedMessage message = {
           {MessageContext::RadioMessage},
           ServerConnectionId,
-          Text::stripEscapeCodes(radioMessage->senderName),
-          Text::stripEscapeCodes(radioMessage->text),
+          radioMessage->senderName,
+          radioMessage->text,
           Text::stripEscapeCodes(radioMessage->portraitImage.replace("<frame>", "0"))
         };
         m_chat->addMessages({message}, false);
