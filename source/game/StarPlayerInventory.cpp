@@ -89,6 +89,8 @@ PlayerInventory::PlayerInventory() {
   addNetElement(&m_essentialNetState[EssentialItem::WireTool]);
   addNetElement(&m_essentialNetState[EssentialItem::PaintTool]);
   addNetElement(&m_essentialNetState[EssentialItem::InspectionTool]);
+
+  m_equipmentVisibilityMask = 0xFFFFFFFF;
 }
 
 ItemPtr PlayerInventory::itemsAt(InventorySlot const& slot) const {
@@ -443,7 +445,10 @@ BackArmorPtr PlayerInventory::backCosmetic() const {
   return as<BackArmor>(m_equipment.value(EquipmentSlot::BackCosmetic));
 }
 
-ArmorItemPtr PlayerInventory::equipment(EquipmentSlot slot) const {
+ArmorItemPtr PlayerInventory::equipment(EquipmentSlot slot, bool testMask) const {
+  if (testMask && !equipmentVisibility(slot))
+    return {};
+
   if (auto item = m_equipment.ptr(slot))
     if (auto armor = as<ArmorItem>(*item))
       return armor;
@@ -776,6 +781,17 @@ List<ItemPtr> PlayerInventory::pullOverflow() {
   return std::move(m_inventoryLoadOverflow);
 }
 
+bool PlayerInventory::equipmentVisibility(EquipmentSlot slot) const {
+  return (m_equipmentVisibilityMask >> (uint8_t)slot) & 0x1;
+}
+
+void PlayerInventory::setEquipmentVisibility(EquipmentSlot slot, bool visible) {
+  if (visible)
+    m_equipmentVisibilityMask |= (1 << (uint8_t)slot);
+  else
+    m_equipmentVisibilityMask &= ~(1 << (uint8_t)slot);
+}
+
 void PlayerInventory::load(Json const& store) {
   auto itemDatabase = Root::singleton().itemDatabase();
 
@@ -833,6 +849,8 @@ void PlayerInventory::load(Json const& store) {
   m_essential[EssentialItem::WireTool] = itemDatabase->diskLoad(store.get("wireTool"));
   m_essential[EssentialItem::PaintTool] = itemDatabase->diskLoad(store.get("paintTool"));
   m_essential[EssentialItem::InspectionTool] = itemDatabase->diskLoad(store.get("inspectionTool"));
+
+  m_equipmentVisibilityMask = (unsigned)store.optUInt("equipmentVisibilityMask").value(0xFFFFFFFF);
 }
 
 Json PlayerInventory::store() const {
@@ -870,6 +888,8 @@ Json PlayerInventory::store() const {
     if (equipment.first <= EquipmentSlot::BackCosmetic || equipment.second)
       data.set(strf("{}Slot", EquipmentSlotNames.getRight(equipment.first)), itemDatabase->diskStore(equipment.second));
   }
+
+  data.set("equipmentVisibilityMask", m_equipmentVisibilityMask);
 
   return data;
 }

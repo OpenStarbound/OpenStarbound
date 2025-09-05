@@ -272,6 +272,8 @@ public:
   template <typename Function>
   void registerCallback(String name, Function&& func);
 
+  bool removeCallback(String name);
+
   template <typename Return, typename... Args, typename Function>
   void registerCallbackWithSignature(String name, Function&& func);
 
@@ -523,7 +525,7 @@ public:
   ByteArray compile(char const* contents, size_t size, char const* name = nullptr);
   ByteArray compile(String const& contents, String const& name = String());
   ByteArray compile(ByteArray const& contents, String const& name = String());
-  
+
   // Returns the debug info of the state.
   lua_Debug const& debugInfo(int level = 1, const char* what = "nSlu");
 

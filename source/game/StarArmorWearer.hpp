@@ -36,7 +36,7 @@ public:
   Json diskStore() const;
   void diskLoad(Json const& diskStore);
 
-  bool setItem(uint8_t slot, ArmorItemPtr item);
+  bool setItem(uint8_t slot, ArmorItemPtr item, bool visible = true);
   void setHeadItem(HeadArmorPtr headItem);
   void setChestItem(ChestArmorPtr chestItem);
   void setLegsItem(LegsArmorPtr legsItem);
@@ -76,6 +76,7 @@ private:
 
   struct Armor {
     ArmorItemPtr item;
+    bool visible = true;
     bool needsSync = true;
     bool needsStore = true;
     bool isCosmetic = false;

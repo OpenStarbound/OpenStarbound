@@ -489,6 +489,34 @@ bool UniverseServer::updatePlanetType(CelestialCoordinate const& coordinate, Str
   return false;
 }
 
+bool UniverseServer::setWeather(CelestialCoordinate const& coordinate, String const& weatherName, bool force) {
+  RecursiveMutexLocker locker(m_mainLock);
+
+  if (!coordinate.isNull() && m_celestialDatabase->coordinateValid(coordinate)) {
+    if (auto world = createWorld(CelestialWorldId(coordinate))) {
+      locker.unlock();
+      world->executeAction([weatherName, force](WorldServerThread*, WorldServer* ws) { ws->setWeather(weatherName, force); });
+      return true;
+    }
+  }
+
+  return false;
+}
+
+StringList UniverseServer::weatherList(CelestialCoordinate const& coordinate) {
+  RecursiveMutexLocker locker(m_mainLock);
+
+  StringList result;
+  if (!coordinate.isNull() && m_celestialDatabase->coordinateValid(coordinate)) {
+    if (auto world = createWorld(CelestialWorldId(coordinate))) {
+      locker.unlock();
+      world->executeAction([&result](WorldServerThread*, WorldServer* ws) { result = ws->weatherList(); });
+    }
+  }
+
+  return result;
+}
+
 bool UniverseServer::sendPacket(ConnectionId clientId, PacketPtr packet) {
   RecursiveMutexLocker locker(m_mainLock);
   ReadLocker clientsLocker(m_clientsLock);
@@ -654,7 +682,7 @@ void UniverseServer::updateTeams() {
   StringMap<List<Uuid>> connectedPlayers;
   auto teams = m_teamManager->getPvpTeams();
   for (auto const& p : m_clients) {
-    connectedPlayers[p.second->playerName().toLower()].append(p.second->playerUuid());
+    connectedPlayers[p.second->playerName()].append(p.second->playerUuid());
 
     if (p.second->team().type == TeamType::PVP)
       p.second->setTeam(EntityDamageTeam(TeamType::PVP, teams.value(p.second->playerUuid(), soloPvpTeam(p.second->clientId()))));
@@ -1758,7 +1786,6 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
   }
   connection.packetSocket().setNetRules(netRules);
   Logger::log(LogLevel::Info, connectionLog.utf8Ptr());
-
   
   WriteLocker clientsLocker(m_clientsLock);
   if (auto clashId = getClientForUuid(clientConnect->playerUuid)) {
@@ -1780,10 +1807,6 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
   ConnectionId clientId = m_clients.nextId();
   auto clientContext = make_shared<ServerClientContext>(clientId, remoteAddress, netRules, clientConnect->playerUuid,
       clientConnect->playerName, clientConnect->playerSpecies, administrator, clientConnect->shipChunks);
-  m_clients.add(clientId, clientContext);
-  m_chatProcessor->connectClient(clientId, clientConnect->playerName);
-  clientsLocker.unlock();
-  m_connectionServer->addConnection(clientId, std::move(connection));
   clientContext->registerRpcHandlers(m_teamManager->rpcHandlers());
 
   String clientContextFile = File::relativeTo(m_storageDirectory, strf("{}.clientcontext", clientConnect->playerUuid.hex()));
@@ -1804,11 +1827,16 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
 
   clientContext->setShipUpgrades(clientConnect->shipUpgrades);
 
+  m_connectionServer->addConnection(clientId, std::move(connection));
   m_connectionServer->sendPackets(clientId, {
       make_shared<ConnectSuccessPacket>(clientId, m_universeSettings->uuid(), m_celestialDatabase->baseInformation()),
       make_shared<UniverseTimeUpdatePacket>(m_universeClock->time()),
       make_shared<PausePacket>(*m_pause, GlobalTimescale)
     });
+
+  m_clients.add(clientId, clientContext);
+  m_chatProcessor->connectClient(clientId, clientConnect->playerName);
+  clientsLocker.unlock();
 
   setPvp(clientId, false);
 

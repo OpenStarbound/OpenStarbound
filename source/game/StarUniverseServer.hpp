@@ -105,6 +105,10 @@ public:
 
   bool updatePlanetType(CelestialCoordinate const& coordinate, String const& newType, String const& weatherBiome);
 
+  bool setWeather(CelestialCoordinate const& coordinate, String const& weatherName, bool force = false);
+
+  StringList weatherList(CelestialCoordinate const& coordinate);
+
   bool sendPacket(ConnectionId clientId, PacketPtr packet);
 
 protected:

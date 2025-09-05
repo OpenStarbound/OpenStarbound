@@ -41,6 +41,7 @@ public:
 
   bool hasInvitationPending();
   pair<Uuid, String> pullInvitation();
+  List<Variant<pair<String, bool>, StringList>> pullInviteResults();
 
   void update();
 
@@ -72,6 +73,7 @@ private:
   bool m_hasPendingInvitation;
   pair<Uuid, String> m_pendingInvitation;
   double m_pollInvitationsTimer;
+  List<Variant<pair<String, bool>, StringList>> m_pendingInviteResults;
 
   bool m_fullUpdateRunning;
   double m_fullUpdateTimer;

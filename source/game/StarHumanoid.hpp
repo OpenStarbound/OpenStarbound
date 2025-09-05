@@ -4,6 +4,8 @@
 #include "StarGameTypes.hpp"
 #include "StarDrawable.hpp"
 #include "StarParticle.hpp"
+#include "StarNetworkedAnimator.hpp"
+#include "StarNetElement.hpp"
 
 namespace Star {
 
@@ -97,6 +99,7 @@ struct HumanoidIdentity {
   Vec4B color;
 
   Maybe<String> imagePath;
+
 };
 
 DataStream& operator>>(DataStream& ds, HumanoidIdentity& identity);
@@ -121,8 +124,9 @@ public:
 
   static bool& globalHeadRotation();
 
+  Humanoid();
   Humanoid(Json const& config);
-  Humanoid(HumanoidIdentity const& identity);
+  Humanoid(HumanoidIdentity const& identity, JsonObject parameters = JsonObject(), Json config = Json());
   Humanoid(Humanoid const&) = default;
 
   struct HumanoidTiming {
@@ -147,6 +151,8 @@ public:
   HumanoidIdentity const& identity() const;
 
   bool loadConfig(Json merger = JsonObject(), bool forceRefresh = false);
+  void loadAnimation();
+  void setHumanoidParameters(JsonObject parameters);
 
   // All of the image identifiers here are meant to be image *base* names, with
   // a collection of frames specific to each piece.  If an image is set to
@@ -156,6 +162,7 @@ public:
     String frameset;
     bool rotateWithHead = false;
     bool bypassNude = false;
+    HashMap<String, String> animationTags = {};
   };
 
   // Must have :normal, climb
@@ -173,7 +180,7 @@ public:
   struct WornBack : WornAny {};
 
   typedef MVariant<WornHead, WornChest, WornLegs, WornBack> Wearable;
-  
+
   struct Fashion {
     // 8 vanilla + 12 extra slots
     Array<Wearable, 20> wearables;
@@ -219,7 +226,6 @@ public:
   void setFacingDirection(Direction facingDirection);
   void setMovingBackwards(bool movingBackwards);
   void setHeadRotation(float headRotation);
-  void setBackRotatesWithHead(bool backRotatesWithHead);
   void setRotation(float rotation);
   void setScale(Vec2F scale);
 
@@ -244,7 +250,7 @@ public:
 
   // Updates the animation based on whatever the current animation state is,
   // wrapping or clamping animation time as appropriate.
-  void animate(float dt);
+  void animate(float dt, NetworkedAnimator::DynamicTarget * dynamicTarget);
 
   // Reset animation time to 0.0f
   void resetAnimation();
@@ -293,7 +299,8 @@ public:
   List<Particle> particles(String const& name) const;
 
   Json const& defaultMovementParameters() const;
-  
+  Maybe<Json> const& playerMovementParameters() const;
+
   String getHeadFromIdentity() const;
   String getBodyFromIdentity() const;
   String getBodyMaskFromIdentity() const;
@@ -305,6 +312,12 @@ public:
   String getBackArmFromIdentity() const;
   String getFrontArmFromIdentity() const;
   String getVaporTrailFrameset() const;
+
+  NetworkedAnimator * networkedAnimator();
+  NetworkedAnimator const* networkedAnimator() const;
+  List<String> animationScripts() const;
+
+  Json humanoidConfig(bool withOverrides = true);
 
   // Extracts scalenearest from directives and returns the combined scale and
   // a new Directives without those scalenearest directives.
@@ -327,7 +340,7 @@ private:
   };
 
   HandDrawingInfo const& getHand(ToolHand hand) const;
-  
+
   void wearableRemoved(Wearable const& wearable);
 
   String frameBase(State state) const;
@@ -345,6 +358,8 @@ private:
   int getBodyStateSequence() const;
 
   Maybe<DancePtr> getDance() const;
+
+  void refreshAnimationState(bool startNew = false);
 
   Json m_baseConfig;
   Json m_mergeConfig;
@@ -367,7 +382,7 @@ private:
   Vec2F m_chestArmorOffset;
   Vec2F m_legsArmorOffset;
   Vec2F m_backArmorOffset;
-  
+
   bool m_useBodyMask;
   bool m_useBodyHeadMask;
 
@@ -383,6 +398,8 @@ private:
   Vec2F m_backArmRotationCenter;
   Vec2F m_frontHandPosition;
   Vec2F m_backArmOffset;
+
+  Vec2F m_headRotationCenter;
 
   String m_headFrameset;
   String m_bodyFrameset;
@@ -408,7 +425,6 @@ private:
   Maybe<String> m_dance;
   Direction m_facingDirection;
   bool m_movingBackwards;
-  bool m_backRotatesWithHead;
   float m_headRotation;
   float m_headRotationTarget;
   float m_rotation;
@@ -431,6 +447,64 @@ private:
   String m_defaultDeathParticles;
 
   Json m_defaultMovementParameters;
+  Maybe<Json> m_playerMovementParameters;
+  bool m_useAnimation;
+
+  NetworkedAnimator m_networkedAnimator;
+
+  List<String> m_animationScripts;
+
+  struct AnimationStateArgs {
+    String state;
+    bool startNew;
+    bool reverse;
+  };
+  HashMap<Humanoid::State, HashMap<String,AnimationStateArgs>> m_animationStates;
+  HashMap<Humanoid::State, HashMap<String,AnimationStateArgs>> m_animationStatesBackwards;
+  HashMap<HumanoidEmote, HashMap<String,AnimationStateArgs>> m_emoteAnimationStates;
+  HashMap<PortraitMode, HashMap<String,AnimationStateArgs>> m_portraitAnimationStates;
+
+  pair<String, String> m_headRotationPoint;
+  pair<String, String> m_frontArmRotationPoint;
+  pair<String, String> m_backArmRotationPoint;
+
+  String m_frontItemPart;
+  String m_backItemPart;
+
+  pair<String, String> m_mouthOffsetPoint;
+  pair<String, String> m_headArmorOffsetPoint;
+  pair<String, String> m_chestArmorOffsetPoint;
+  pair<String, String> m_legsArmorOffsetPoint;
+  pair<String, String> m_backArmorOffsetPoint;
+  pair<String, String> m_feetOffsetPoint;
+  pair<String, String> m_throwPoint;
+  pair<String, String> m_interactPoint;
+
+};
+
+
+// this is because species can be changed on the fly and therefore the humanoid needs to re-initialize as the new species when it changes
+// therefore we need to have these in a dynamic group in players and NPCs for the sake of the networked animator not breaking the game
+class NetHumanoid : public NetElementSyncGroup {
+public:
+  NetHumanoid(HumanoidIdentity identity = HumanoidIdentity(), JsonObject parameters = JsonObject(), Json config = Json());
+
+  void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
+  void netLoad(DataStream& ds, NetCompatibilityRules rules) override;
+
+  void netElementsNeedLoad(bool full) override;
+  void netElementsNeedStore() override;
+
+  HumanoidPtr humanoid();
+  void setHumanoidParameters(JsonObject parameters);
+  JsonObject humanoidParameters();
+
+private:
+  void setupNetElements();
+
+  Json m_config;
+  NetElementHashMap<String,Json> m_humanoidParameters;
+  HumanoidPtr m_humanoid;
 };
 
 template <typename T>

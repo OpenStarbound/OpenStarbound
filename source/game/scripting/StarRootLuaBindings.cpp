@@ -23,6 +23,8 @@
 #include "StarDamageDatabase.hpp"
 #include "StarDungeonGenerator.hpp"
 #include "StarImageLuaBindings.hpp"
+#include "StarSpeciesDatabase.hpp"
+#include "StarStatusEffectDatabase.hpp"
 
 namespace Star {
 
@@ -217,6 +219,9 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
       DamageKind const& damageKind = root->damageDatabase()->damageKind(damageKindName);
       return root->damageDatabase()->elementalType(damageKind.elementalType).resistanceStat;
     });
+  callbacks.registerCallback("elementalType", [root](String const& damageKindName) -> String {
+      return root->damageDatabase()->damageKind(damageKindName).elementalType;
+    });
 
   callbacks.registerCallback("dungeonMetadata", [root](String const& name) {
       return root->dungeonDefinitions()->getMetadata(name);
@@ -244,7 +249,7 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
       root->configuration()->set(key, value);
     });
 
-  
+
   callbacks.registerCallback("getConfigurationPath", [root](String const& path) -> Json {
     if (path.empty() || path.beginsWith("title"))
       throw ConfigurationException(strf("cannot get {}", path));
@@ -258,6 +263,20 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
     else
       root->configuration()->setPath(path, value);
     });
+
+  callbacks.registerCallback("speciesConfig", [root](String const& species) -> Json {
+    return root->speciesDatabase()->species(species)->config();
+  });
+
+  callbacks.registerCallback("generateHumanoidIdentity", [root](String const& species, Maybe<uint64_t> seed, Maybe<String> gender) -> Json {
+    auto identity = HumanoidIdentity();
+    root->speciesDatabase()->species(species)->generateHumanoid(identity, seed.value(Random::randu64()), gender.isValid() ? GenderNames.getLeft(*gender) : Maybe<Gender>());
+    return identity.toJson();
+  });
+
+  callbacks.registerCallback("effectConfig", [root](String const& effect) -> Json {
+    return root->statusEffectDatabase()->uniqueEffectConfig(effect).toJson();
+  });
 
   return callbacks;
 }

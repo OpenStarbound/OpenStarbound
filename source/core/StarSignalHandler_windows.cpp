@@ -67,9 +67,9 @@ struct SignalHandlerImpl {
           (PVOID)ExceptionInfo->ExceptionRecord->ExceptionInformation[1]);
     } else {
       g_sehMessage = msg;
-      g_sehMessage = strf("{} (%p @ {})",
+      g_sehMessage = strf("{} ({} @ {})",
           g_sehMessage,
-          ExceptionInfo->ExceptionRecord->ExceptionCode,
+          (PVOID)ExceptionInfo->ExceptionRecord->ExceptionCode,
           ExceptionInfo->ExceptionRecord->ExceptionAddress);
       for (DWORD i = 0; i < ExceptionInfo->ExceptionRecord->NumberParameters; i++)
         g_sehMessage = strf("{} [{}]", g_sehMessage, (PVOID)ExceptionInfo->ExceptionRecord->ExceptionInformation[i]);

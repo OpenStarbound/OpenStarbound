@@ -76,6 +76,7 @@ Maybe<String> UniverseClient::connect(UniverseConnection connection, bool allowA
     throw StarException("Cannot call UniverseClient::connect with no main player");
 
   unsigned timeout = assets->json("/client.config:serverConnectTimeout").toUInt();
+  Logger::info("UniverseClient: Connecting to server, packet timeout is {}ms", timeout);
 
   {
     auto protocolRequest = make_shared<ProtocolRequestPacket>(StarProtocolVersion);
@@ -89,9 +90,12 @@ Maybe<String> UniverseClient::connect(UniverseConnection connection, bool allowA
   connection.sendAll(timeout);
   connection.receiveAny(timeout);
 
-  auto protocolResponsePacket = as<ProtocolResponsePacket>(connection.pullSingle());
-  if (!protocolResponsePacket)
-    return String("Join failed! Timeout while establishing connection.");
+  auto nextPacket = connection.pullSingle();
+  auto protocolResponsePacket = as<ProtocolResponsePacket>(nextPacket);
+  if (!nextPacket)
+    return String("Join failed! Expected ProtocolResponse, but none received");
+  else if (!protocolResponsePacket)
+    return String(strf("Join failed! Expected ProtocolResponse, got {}", PacketTypeNames.getRight(nextPacket->type())));
   else if (!protocolResponsePacket->allowed)
     return String(strf("Join failed! Server does not support connections with protocol version {}", StarProtocolVersion));
 
@@ -165,10 +169,13 @@ Maybe<String> UniverseClient::connect(UniverseConnection connection, bool allowA
   } else if (auto failure = as<ConnectFailurePacket>(packet)) {
     Logger::error("UniverseClient: Join failed: {}", failure->reason);
     return failure->reason;
+  } else if (packet) {
+    return String(strf("Join failed! Expected ConnectSuccess/Failure, got {}", PacketTypeNames.getRight(packet->type())));
   } else {
-    Logger::error("UniverseClient: Join failed! No server response received");
-    return String("Join failed! No server response received");
+    return String("Join failed! Expected ConnectSuccess/Failure, but none received");
   }
+
+  return {};
 }
 
 bool UniverseClient::isConnected() const {
@@ -281,6 +288,22 @@ void UniverseClient::update(float dt) {
   m_connection->push(m_systemWorldClient->pullOutgoingPackets());
 
   m_teamClient->update();
+  for (auto& result : m_teamClient->pullInviteResults()) {
+    String printout;
+    if (auto pair = result.ptr<std::pair<String, bool>>()) {
+      printout = strf(pair->second ? "Invited {}" : "Couldn't find anyone to invite named {}", pair->first);
+    } else if (auto invited = result.ptr<StringList>()) {
+      printout = "";
+      for (size_t i = 0; i != invited->size(); ++i) {
+        String& name = invited->at(i);
+        if (!printout.empty())
+          printout += (i == invited->size() - 1) ? "^reset;, and " : "^reset;, ";
+        printout += name;
+      }
+      printout = "Invited " + printout;
+    }
+    m_pendingMessages.emplaceAppend(MessageContext::CommandResult, 0, "", printout);
+  }
 
   auto contextUpdate = m_clientContext->writeUpdate(m_clientContext->netCompatibilityRules());
   if (!contextUpdate.empty())

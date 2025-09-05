@@ -24,59 +24,43 @@ namespace Star {
 
 #ifdef STAR_SYSTEM_WINDOWS
 static bool copyDibToClipboard(const uint8_t* buf, unsigned int width, unsigned int height) {
-	size_t size = (size_t)(width * height * 4u);
-	BITMAPV5HEADER hV5{};
-	hV5.bV5Size = sizeof(hV5);
-	hV5.bV5Width = width;
-	hV5.bV5Height = height;
-	hV5.bV5Planes = 1;
-	hV5.bV5BitCount = 32;
-	hV5.bV5Compression = BI_BITFIELDS;
-	hV5.bV5RedMask = 0x00FF0000;
-	hV5.bV5GreenMask = 0x0000FF00;
-	hV5.bV5BlueMask = 0x000000FF;
-	hV5.bV5AlphaMask = 0xFF000000;
+  size_t size = (size_t)(width * height * 4u);
 
-	BITMAPINFOHEADER hV1{};
-	hV1.biSize = sizeof(hV1);
-	hV1.biWidth = width;
-	hV1.biHeight = height;
-	hV1.biPlanes = 1;
-	hV1.biBitCount = 32;
-	hV1.biCompression = BI_BITFIELDS;
-	hV1.biSizeImage = size;
-	DWORD colors[3] = { 0x00FF0000, 0x0000FF00, 0x000000FF };
-	if (HGLOBAL handle = GlobalAlloc(GMEM_MOVEABLE, sizeof(hV1) + sizeof(colors) + size)) {
-		if (auto dst = (char*)GlobalLock(handle)) {
-			memcpy(dst, &hV1, sizeof(hV1));
-			memcpy(dst + sizeof(hV1), &colors, sizeof(colors));
-			unsigned int sizeI = width * height;
-			unsigned int* data = (unsigned int*)buf;
-			unsigned int* rgba = (unsigned int*)(dst + sizeof(hV1) + sizeof(colors));
-			for (unsigned int x = 0; x != sizeI; ++x) {
-				unsigned int c = data[x];
-				if ((c & 0xFF000000) != 0xFF000000) { //pre-multiply
-					float a = (float)(c >> 24) / 255.0f;
-					unsigned int v = c & 0xFF000000;
-					v |= (unsigned int)((c & 0x000000FF) * a) << 16; // r
-					v |= (unsigned int)(((c >> 8) & 0x000000FF) * a) << 8; // g
-					v |= (unsigned int)(((c >> 16) & 0x000000FF) * a); // b
-					rgba[x] = v;
-				} else {
-					unsigned int v = c & 0xFF00FF00; // a and g
-					v |= c << 16 & 0x00FF0000; // r
-					v |= c >> 16 & 0x000000FF; // b
-					rgba[x] = v;
-				}
-			}
-			GlobalUnlock(handle);
-		}
+  BITMAPV5HEADER hV5{};
+  hV5.bV5Size = sizeof(hV5);
+  hV5.bV5SizeImage = size;
+  hV5.bV5Width = width;
+  hV5.bV5Height = height;
+  hV5.bV5Planes = 1;
+  hV5.bV5BitCount = 32;
+  hV5.bV5Compression = BI_RGB;
+  hV5.bV5RedMask   = 0x00FF0000;
+  hV5.bV5GreenMask = 0x0000FF00;
+  hV5.bV5BlueMask  = 0x000000FF;
+  hV5.bV5AlphaMask = 0xFF000000;
+  hV5.bV5CSType = LCS_WINDOWS_COLOR_SPACE;
+  hV5.bV5Intent = LCS_GM_GRAPHICS;
+  if (HGLOBAL handle = GlobalAlloc(GMEM_MOVEABLE, sizeof(hV5) + size)) {
+    if (auto dst = (char*)GlobalLock(handle)) {
+      memcpy(dst, &hV5, sizeof(hV5));
+      unsigned int sizeI = width * height;
+      unsigned int* data = (unsigned int*)buf;
+      unsigned int* rgba = (unsigned int*)(dst + sizeof(hV5));
+      for (unsigned int x = 0; x != sizeI; ++x) {
+        unsigned int c = data[x];
+        unsigned int v = c & 0xFF00FF00; // a and g
+        v |= c << 16 & 0x00FF0000;       // r
+        v |= c >> 16 & 0x000000FF;       // b
+        rgba[x] = v;
+      }
+      GlobalUnlock(handle);
+    }
 
-		SetClipboardData(CF_DIB, handle);
+    SetClipboardData(CF_DIBV5, handle);
     return true;
-	}
+  }
 
-	return false;
+  return false;
 }
 
 static bool copyPngToClipboard(void* buf, size_t size) {
@@ -100,6 +84,28 @@ static bool duringClipboard(SDL_Window* window, std::function<void()> task) {
   task();
   CloseClipboard();
   return true;
+}
+
+static bool copyFileToClipboard(String const& path) {
+  DROPFILES drop{};
+  drop.pFiles = sizeof(DROPFILES);
+  drop.pt = {0, 0};
+  drop.fNC = false;
+  drop.fWide = true;
+  auto wide = path.wstring();
+  wide.push_back(0);
+  wide.push_back(0);
+  size_t wideSize = wide.size() * sizeof(std::wstring::value_type);
+  if (HGLOBAL handle = GlobalAlloc(GMEM_MOVEABLE, sizeof(DROPFILES) + wideSize)) {
+    if (auto dst = (char*)GlobalLock(handle)) {
+      memcpy(dst, &drop, sizeof(drop));
+      memcpy(dst + sizeof(DROPFILES), wide.data(), wideSize);
+      GlobalUnlock(handle);
+    }
+    SetClipboardData(CF_HDROP, handle);
+    return true;
+  }
+  return false;
 }
 #endif
 
@@ -321,6 +327,13 @@ public:
         return false;
       });
 
+    SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_NAME_STRING, "Starbound");
+    SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_VERSION_STRING, OpenStarVersionString);
+    SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_IDENTIFIER_STRING, "io.github.openstarbound.openstarbound");
+    SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_URL_STRING, "https://github.com/OpenStarbound/OpenStarbound");
+    SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_TYPE_STRING, "game");
+    SDL_SetHint(SDL_HINT_AUDIO_DEVICE_STREAM_NAME, "Audio");  
+	  
     Logger::info("Application: Initializing SDL");
     if (!SDL_Init(0))
       throw ApplicationException(strf("Couldn't initialize SDL: {}", SDL_GetError()));
@@ -348,10 +361,6 @@ public:
     if (!SDL_InitSubSystem(SDL_INIT_GAMEPAD))
       throw ApplicationException(strf("Couldn't initialize SDL Controller: {}", SDL_GetError()));
 
-#ifdef STAR_SYSTEM_WINDOWS // Newer SDL is defaulting to xaudio2, which does not support audio capture
-  SDL_setenv_unsafe("SDL_AUDIODRIVER", "directsound", 1);
-#endif
-
     Logger::info("Application: Initializing SDL Audio");
     if (!SDL_InitSubSystem(SDL_INIT_AUDIO))
       throw ApplicationException(strf("Couldn't initialize SDL Audio: {}", SDL_GetError()));
@@ -364,11 +373,11 @@ public:
     if (!m_platformServices)
       Logger::info("Application: No platform services available");
 
-    Logger::info("Application: Creating SDL Window");
-    m_sdlWindow = SDL_CreateWindow(m_windowTitle.utf8Ptr(), m_windowSize[0], m_windowSize[1], SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY);
+    Logger::info("Application: Creating SDL window");
+    m_sdlWindow = SDL_CreateWindow(m_windowTitle.utf8Ptr(), m_windowSize[0], m_windowSize[1], SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
     if (!m_sdlWindow)
       throw ApplicationException::format("Application: Could not create SDL Window: {}", SDL_GetError());
-
+	  
 #if defined(__APPLE__)
     // GL 3.2 Core + GLSL 150
     const char* glsl_version = "#version 150";
@@ -385,6 +394,7 @@ public:
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
 #endif
 
+    Logger::info("Application: Creating SDL OpenGL context");
     m_sdlGlContext = SDL_GL_CreateContext(m_sdlWindow);
     if (!m_sdlGlContext)
       throw ApplicationException::format("Application: Could not create OpenGL context: {}", SDL_GetError());
@@ -402,6 +412,8 @@ public:
 
     SDL_StopTextInput(m_sdlWindow);
 
+    Logger::info("Application: Opening audio device");
+    m_audioOutputData.clear();
     SDL_AudioSpec desired = {SDL_AUDIO_S16, 2, 44100};
     m_sdlAudioOutputStream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &desired,
     [](void* userdata, SDL_AudioStream* stream, int len, int) {
@@ -427,6 +439,7 @@ public:
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
+    io.ConfigNavCaptureKeyboard = false;
 
     ImGui::StyleColorsDark();
     ImGuiStyle& style = ImGui::GetStyle();
@@ -515,9 +528,6 @@ public:
       while (true) {
         cleanup();
 
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplSDL3_NewFrame();
-        ImGui::NewFrame();
 
         for (auto const& event : processEvents())
           m_application->processInput(event);
@@ -530,9 +540,17 @@ public:
         else
           SDL_HideCursor();
 
+        
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplSDL3_NewFrame();
+
         int updatesBehind = max<int>(round(m_updateTicker.ticksBehind()), 1);
         updatesBehind = min<int>(updatesBehind, m_maxFrameSkip + 1);
         for (int i = 0; i < updatesBehind; ++i) {
+          //since frame-skipping is a thing, we have to begin a new ImGui frame here to prevent duplicate elements made by updates
+          if (i != 0)
+            ImGui::EndFrame();
+          ImGui::NewFrame();
           m_application->update();
           m_updateRate = m_updateTicker.tick();
         }
@@ -615,8 +633,8 @@ private:
       return parent->setClipboardData(std::move(data));
     }
 
-    bool setClipboardImage(Image const& image, ByteArray* png) override {
-      return parent->setClipboardImage(image, png);
+    bool setClipboardImage(Image const& image, ByteArray* png, String const* path) override {
+      return parent->setClipboardImage(image, png, path);
     }
 
     bool setClipboardFile(String const& path) override {
@@ -647,7 +665,7 @@ private:
 
         SDL_DisplayMode closestDisplayMode;
         if (SDL_GetClosestFullscreenDisplayMode(currentDisplayIndex, (int)fullScreenResolution[0], (int)fullScreenResolution[1], 0.f, true, &closestDisplayMode)) {
-          if (SDL_SetWindowFullscreenMode(parent->m_sdlWindow, &closestDisplayMode) == 0) {
+          if (SDL_SetWindowFullscreenMode(parent->m_sdlWindow, &closestDisplayMode)) {
             if (parent->m_windowMode == WindowMode::Fullscreen)
               SDL_SetWindowFullscreen(parent->m_sdlWindow, 0);
             else if (parent->m_windowMode == WindowMode::Borderless)
@@ -849,6 +867,7 @@ private:
     ImGuiIO& io = ImGui::GetIO();
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
+      SDL_ConvertEventToRenderCoordinates(SDL_GetRenderer(m_sdlWindow), &event);
       ImGui_ImplSDL3_ProcessEvent(&event);
       Maybe<InputEvent> starEvent;
       if (event.type == SDL_EVENT_WINDOW_MAXIMIZED || event.type == SDL_EVENT_WINDOW_RESTORED) {
@@ -869,7 +888,7 @@ private:
         m_renderer->setScreenSize(m_windowSize);
         m_application->windowChanged(m_windowMode, m_windowSize);
       }
-      else if (event.type == SDL_EVENT_KEY_DOWN && !io.WantCaptureKeyboard) {
+      else if (event.type == SDL_EVENT_KEY_DOWN && (!io.WantCaptureKeyboard || !io.WantTextInput)) {
         if (!event.key.repeat) {
           if (auto key = keyFromSdlKeyCode(event.key.key))
             starEvent.set(KeyDownEvent{*key, keyModsFromSdlKeyMods(event.key.mod)});
@@ -877,7 +896,7 @@ private:
       } else if (event.type == SDL_EVENT_KEY_UP) {
         if (auto key = keyFromSdlKeyCode(event.key.key))
           starEvent.set(KeyUpEvent{*key});
-      } else if (event.type == SDL_EVENT_TEXT_INPUT && !io.WantCaptureKeyboard) {
+      } else if (event.type == SDL_EVENT_TEXT_INPUT && !io.WantTextInput) {
         starEvent.set(TextInputEvent{String(event.text.text)});
       } else if (event.type == SDL_EVENT_MOUSE_MOTION) {
         starEvent.set(MouseMoveEvent{
@@ -1033,14 +1052,18 @@ private:
     return false;
   }
 
-  bool setClipboardImage(Image const& image, ByteArray* png) {
+  bool setClipboardImage(Image const& image, ByteArray* png, String const* path) {
     #ifdef STAR_SYSTEM_WINDOWS // wow, SDL3's implementation is so bad!!
     return duringClipboard(m_sdlWindow, [&]() {
-      copyDibToClipboard(image.data(), image.width(), image.height());
+      if (path)
+        copyFileToClipboard(*path);
       copyPngToClipboard(png->ptr(), png->size());
+      auto converted = image.convert(PixelFormat::RGBA32);
+      copyDibToClipboard(converted.data(), converted.width(), converted.height());
     });
     #else
     _unused(image);
+    _unused(path);
     if (png) {
       StringMap<ByteArray> clipboardData = {{"image/png", std::move(*png)}};
       return setClipboardData(std::move(clipboardData));
@@ -1052,25 +1075,7 @@ private:
   bool setClipboardFile(String const& path) {
     #ifdef STAR_SYSTEM_WINDOWS
     return duringClipboard(m_sdlWindow, [&]() {
-      DROPFILES drop{};
-      drop.pFiles = sizeof(DROPFILES);
-      drop.pt = {0, 0};
-      drop.fNC = false;
-      drop.fWide = true;
-      auto wide = path.wstring();
-      wide.push_back(0);
-      wide.push_back(0);
-      size_t wideSize = wide.size() * sizeof(std::wstring::value_type);
-      if (HGLOBAL handle = GlobalAlloc(GMEM_MOVEABLE, sizeof(DROPFILES) + wideSize)) {
-        if (auto dst = (char*)GlobalLock(handle)) {
-          memcpy(dst, &drop, sizeof(drop));
-          memcpy(dst + sizeof(DROPFILES), wide.data(), wideSize);
-          GlobalUnlock(handle);
-        }
-        SetClipboardData(CF_HDROP, handle);
-        return true;
-      }
-      return false;
+      return copyFileToClipboard(path);
     });
     #else
     _unused(path);

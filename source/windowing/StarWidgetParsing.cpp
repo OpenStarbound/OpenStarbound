@@ -700,8 +700,6 @@ WidgetConstructResult WidgetParser::layoutHandler(String const& name, Json const
     throw WidgetParserException(strf("Invalid layout type \"{}\".  Options are \"basic\", \"flow\", \"vertical\".", type));
   }
   common(widget, config);
-  if (config.contains("children"))
-    constructImpl(config.get("children"), widget.get());
   widget->update(0);
 
   return WidgetConstructResult(widget, name, config.getFloat("zlevel", 0));
@@ -784,11 +782,11 @@ WidgetConstructResult WidgetParser::scrollAreaHandler(String const& name, Json c
 
   scrollArea->setUpdatesChildren(config.getBool("updatesChildren", false));
 
-  common(scrollArea, config);
+  common(scrollArea, config, false);
   return WidgetConstructResult(scrollArea, name, config.getFloat("zlevel", 0));
 }
 
-void WidgetParser::common(WidgetPtr widget, Json const& config) {
+void WidgetParser::common(WidgetPtr widget, Json const& config, bool getChildren) {
   if (config.contains("rect")) {
     auto rect = jsonToRectI(config.get("rect"));
     widget->setPosition(rect.min());
@@ -810,6 +808,9 @@ void WidgetParser::common(WidgetPtr widget, Json const& config) {
   if (!config.getBool("scissoring", true))
     widget->disableScissoring();
   widget->setMouseTransparent(config.getBool("mouseTransparent", false));
+
+  if (getChildren && config.contains("children"))
+    constructImpl(config.get("children"), widget.get());
 }
 
 ImageStretchSet WidgetParser::parseImageStretchSet(Json const& config) {
