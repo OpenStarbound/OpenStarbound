@@ -365,7 +365,7 @@ bool MainInterface::handleInputEvent(InputEvent const& event) {
   } else if (auto mouseDown = event.ptr<MouseButtonDownEvent>()) {
     auto mouseButton = mouseDown->mouseButton;
     if (mouseButton >= MouseButton::Left && mouseButton <= MouseButton::Right
-    && overlayClick(Vec2I::round(mouseDown->mousePosition), mouseDown->mouseButton)) {
+    && overlayClick(mouseDown->mousePosition, mouseDown->mouseButton)) {
       return true;
     } else {
       if (mouseButton == MouseButton::Left)
@@ -1060,8 +1060,8 @@ unsigned MainInterface::windowWidth() const {
   return m_guiContext->windowWidth();
 }
 
-Vec2I MainInterface::mainBarPosition() const {
-  return Vec2I(windowWidth(), windowHeight()) - m_config->mainBarSize * interfaceScale();
+Vec2F MainInterface::mainBarPosition() const {
+  return Vec2F(windowWidth(), windowHeight()) - Vec2F(m_config->mainBarSize) * interfaceScale();
 }
 
 void MainInterface::renderBreath() {
@@ -1224,21 +1224,21 @@ void MainInterface::renderSpecialDamageBar() {
 }
 
 void MainInterface::renderMainBar() {
-  Vec2I barPos = mainBarPosition();
+  Vec2F barPos = mainBarPosition();
 
   m_cursorTooltip = {};
 
   auto assets = Root::singleton().assets();
 
-  Vec2I inventoryButtonPos = barPos + m_config->mainBarInventoryButtonOffset * interfaceScale();
+  Vec2F inventoryButtonPos = barPos + Vec2F(m_config->mainBarInventoryButtonOffset) * interfaceScale();
   if (m_paneManager.registeredPaneIsDisplayed(MainInterfacePanes::Inventory)) {
-    if (overButton(m_config->mainBarInventoryButtonPoly, m_cursorScreenIPos)) {
+    if (overButton(m_config->mainBarInventoryButtonPoly, m_cursorScreenPos)) {
       m_guiContext->drawQuad(m_config->inventoryImageOpenHover, Vec2F(inventoryButtonPos), interfaceScale());
       m_cursorTooltip = assets->json("/interface.config:cursorTooltip.inventoryText").toString();
     } else {
       m_guiContext->drawQuad(m_config->inventoryImageOpen, Vec2F(inventoryButtonPos), interfaceScale());
     }
-  } else if (overButton(m_config->mainBarInventoryButtonPoly, m_cursorScreenIPos)) {
+  } else if (overButton(m_config->mainBarInventoryButtonPoly, m_cursorScreenPos)) {
     if (m_inventoryWindow->containsNewItems())
       m_guiContext->drawQuad(m_config->inventoryImageGlowHover, Vec2F(inventoryButtonPos), interfaceScale());
     else
@@ -1251,24 +1251,24 @@ void MainInterface::renderMainBar() {
       m_guiContext->drawQuad(m_config->inventoryImage, Vec2F(inventoryButtonPos), interfaceScale());
   }
 
-  auto drawStateButton = [this](MainInterfacePanes paneType, Vec2I pos, PolyI poly,
+  auto drawStateButton = [this](MainInterfacePanes paneType, Vec2F pos, PolyI poly,
       String image, String hoverImage, String openImage, String hoverOpenImage, String toolTip) {
     if (m_paneManager.registeredPaneIsDisplayed(paneType)) {
-      if (overButton(poly, m_cursorScreenIPos)) {
-        m_guiContext->drawQuad(hoverOpenImage, Vec2F(pos), interfaceScale());
+      if (overButton(poly, m_cursorScreenPos)) {
+        m_guiContext->drawQuad(hoverOpenImage, pos, interfaceScale());
         m_cursorTooltip = toolTip;
       } else {
-        m_guiContext->drawQuad(openImage, Vec2F(pos), interfaceScale());
+        m_guiContext->drawQuad(openImage, pos, interfaceScale());
       }
-    } else if (overButton(poly, m_cursorScreenIPos)) {
-      m_guiContext->drawQuad(hoverImage, Vec2F(pos), interfaceScale());
+    } else if (overButton(poly, m_cursorScreenPos)) {
+      m_guiContext->drawQuad(hoverImage, pos, interfaceScale());
       m_cursorTooltip = toolTip;
     } else {
-      m_guiContext->drawQuad(image, Vec2F(pos), interfaceScale());
+      m_guiContext->drawQuad(image, pos, interfaceScale());
     }
   };
 
-  Vec2I craftButtonPos = barPos + m_config->mainBarCraftButtonOffset * interfaceScale();
+  Vec2F craftButtonPos = barPos + Vec2F(m_config->mainBarCraftButtonOffset) * interfaceScale();
   drawStateButton(MainInterfacePanes::CraftingPlain,
       craftButtonPos,
       m_config->mainBarCraftButtonPoly,
@@ -1278,7 +1278,7 @@ void MainInterface::renderMainBar() {
       m_config->craftImageOpenHover,
       assets->json("/interface.config:cursorTooltip.craftingText").toString());
 
-  Vec2I codexButtonPos = barPos + m_config->mainBarCodexButtonOffset * interfaceScale();
+  Vec2F codexButtonPos = barPos + Vec2F(m_config->mainBarCodexButtonOffset) * interfaceScale();
   drawStateButton(MainInterfacePanes::Codex,
       codexButtonPos,
       m_config->mainBarCodexButtonPoly,
@@ -1288,7 +1288,7 @@ void MainInterface::renderMainBar() {
       m_config->codexImageHoverOpen,
       assets->json("/interface.config:cursorTooltip.codexText").toString());
 
-  Vec2I mmUpgradeButtonPos = barPos + m_config->mainBarMmUpgradeButtonOffset * interfaceScale();
+  Vec2F mmUpgradeButtonPos = barPos + Vec2F(m_config->mainBarMmUpgradeButtonOffset) * interfaceScale();
   if (m_client->mainPlayer()->inventory()->essentialItem(EssentialItem::BeamAxe)) {
     drawStateButton(MainInterfacePanes::MmUpgrade,
         mmUpgradeButtonPos,
@@ -1309,7 +1309,7 @@ void MainInterface::renderMainBar() {
         assets->json("/interface.config:cursorTooltip.disabledText").toString());
   }
 
-  Vec2I collectionsButtonPos = barPos + m_config->mainBarCollectionsButtonOffset * interfaceScale();
+  Vec2F collectionsButtonPos = barPos + Vec2F(m_config->mainBarCollectionsButtonOffset) * interfaceScale();
   drawStateButton(MainInterfacePanes::Collections,
     collectionsButtonPos,
     m_config->mainBarCollectionsButtonPoly,
@@ -1326,14 +1326,14 @@ void MainInterface::renderMainBar() {
 
   Vec2F deployButtonPos(Vec2F(barPos) + Vec2F(m_config->mainBarDeployButtonOffset) * interfaceScale());
   if (m_client->canBeamUp()) {
-    if (overButton(m_config->mainBarDeployButtonPoly, m_cursorScreenIPos)) {
+    if (overButton(m_config->mainBarDeployButtonPoly, m_cursorScreenPos)) {
       m_guiContext->drawQuad(m_config->beamUpImageHover, deployButtonPos, interfaceScale());
       m_cursorTooltip = assets->json("/interface.config:cursorTooltip.beamUpText").toString();
     } else {
       m_guiContext->drawQuad(m_config->beamUpImage, deployButtonPos, interfaceScale());
     }
   } else if (m_client->canBeamDown(true)) {
-    if (overButton(m_config->mainBarDeployButtonPoly, m_cursorScreenIPos)) {
+    if (overButton(m_config->mainBarDeployButtonPoly, m_cursorScreenPos)) {
       m_guiContext->drawQuad(m_config->deployImageHover, deployButtonPos, interfaceScale());
       m_cursorTooltip = assets->json("/interface.config:cursorTooltip.deployText").toString();
     } else {
@@ -1345,7 +1345,7 @@ void MainInterface::renderMainBar() {
 
   Vec2F beamButtonPos(Vec2F(barPos) + Vec2F(m_config->mainBarBeamButtonOffset) * interfaceScale());
   if (m_client->canBeamDown()) {
-    if (overButton(m_config->mainBarBeamButtonPoly, m_cursorScreenIPos)) {
+    if (overButton(m_config->mainBarBeamButtonPoly, m_cursorScreenPos)) {
       m_guiContext->drawQuad(m_config->beamDownImageHover, beamButtonPos, interfaceScale());
       m_cursorTooltip = assets->json("/interface.config:cursorTooltip.beamDownText").toString();
     } else {
@@ -1353,7 +1353,7 @@ void MainInterface::renderMainBar() {
     }
   }
 
-  Vec2I questLogButtonPos = barPos + m_config->mainBarQuestLogButtonOffset * interfaceScale();
+  Vec2F questLogButtonPos = barPos + Vec2F(m_config->mainBarQuestLogButtonOffset) * interfaceScale();
   drawStateButton(MainInterfacePanes::QuestLog,
       questLogButtonPos,
       m_config->mainBarQuestLogButtonPoly,
@@ -1545,16 +1545,17 @@ void MainInterface::renderCursor() {
   m_guiContext->resetInterfaceScissorRect();
 }
 
-bool MainInterface::overButton(PolyI buttonPoly, Vec2I const& mousePos) const {
-  Vec2I barPos = mainBarPosition();
-  buttonPoly.translate(barPos);
-  buttonPoly.scale(interfaceScale(), Vec2F(barPos));
-  return buttonPoly.contains(mousePos);
+bool MainInterface::overButton(PolyI const& buttonPoly, Vec2F const& mousePos) const {
+  Vec2F barPos = mainBarPosition();
+  PolyF poly(buttonPoly);
+  poly.translate(barPos);
+  poly.scale(interfaceScale(), Vec2F(barPos));
+  return poly.contains(mousePos);
 }
 
-bool MainInterface::overlayClick(Vec2I const& mousePos, MouseButton) {
-  PolyI mainBarPoly = m_config->mainBarPoly;
-  Vec2I barPos = mainBarPosition();
+bool MainInterface::overlayClick(Vec2F const& mousePos, MouseButton) {
+  PolyF mainBarPoly = (PolyF)m_config->mainBarPoly;
+  Vec2F barPos = mainBarPosition();
   mainBarPoly.translate(barPos);
   mainBarPoly.scale(interfaceScale(), Vec2F(barPos));
 

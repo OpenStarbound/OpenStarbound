@@ -138,7 +138,7 @@ private:
   float interfaceScale() const;
   unsigned windowHeight() const;
   unsigned windowWidth() const;
-  Vec2I mainBarPosition() const;
+  Vec2F mainBarPosition() const;
 
   void renderBreath();
   void renderMessages();
@@ -151,9 +151,9 @@ private:
   void updateCursor();
   void renderCursor();
 
-  bool overButton(PolyI buttonPoly, Vec2I const& mousePos) const;
+  bool overButton(PolyI const& buttonPoly, Vec2F const& mousePos) const;
 
-  bool overlayClick(Vec2I const& mousePos, MouseButton mouseButton);
+  bool overlayClick(Vec2F const& mousePos, MouseButton mouseButton);
 
   void displayScriptPane(ScriptPanePtr& scriptPane, EntityId sourceEntity);
 
