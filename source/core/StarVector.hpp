@@ -120,13 +120,8 @@ public:
   Vector operator+(Vector const& v) const;
   Vector operator-(Vector const& v) const;
   T operator*(Vector const& v) const;
-
-  // TODO: Make these more consistent. Change the other functions on this class to also take another type parameter.
-  template<typename T2>
-  Vector operator*(T2 s) const;
-  template<typename T2>
-  Vector operator/(T2 s) const;
-
+  Vector operator*(T s) const;
+  Vector operator/(T s) const;
   Vector& operator+=(Vector const& v);
   Vector& operator-=(Vector const& v);
   Vector& operator*=(T s);
@@ -595,8 +590,7 @@ T Vector<T, N>::operator*(Vector const& v) const {
 }
 
 template <typename T, size_t N>
-template <typename T2>
-Vector<T, N> Vector<T, N>::operator*(T2 s) const {
+Vector<T, N> Vector<T, N>::operator*(T s) const {
   Vector r;
   for (size_t i = 0; i < N; ++i)
     r[i] = (*this)[i] * s;
@@ -604,8 +598,7 @@ Vector<T, N> Vector<T, N>::operator*(T2 s) const {
 }
 
 template <typename T, size_t N>
-template <typename T2>
-Vector<T, N> Vector<T, N>::operator/(T2 s) const {
+Vector<T, N> Vector<T, N>::operator/(T s) const {
   Vector r;
   for (size_t i = 0; i < N; ++i)
     r[i] = (*this)[i] / s;

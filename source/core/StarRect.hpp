@@ -121,11 +121,8 @@ public:
   Box expanded(Vector<T, N> const& factor) const;
 
   // Scale around origin.
-  // TODO: Make these more consistent. Change the other functions on this class to also take another type parameter.
-  template<typename T2>
-  void scale(T2 factor);
-  template<typename T2>
-  Box scaled(T2 factor) const;
+  void scale(T factor);
+  Box scaled(T factor) const;
 
   // Scale around origin.
   void scale(Coord const& factor);
@@ -544,15 +541,13 @@ Box<T, N> Box<T, N>::expanded(Coord const& factor) const {
 }
 
 template <typename T, size_t N>
-template <typename T2>
-void Box<T, N>::scale(T2 factor) {
+void Box<T, N>::scale(T factor) {
   for (size_t i = 0; i < N; ++i)
     setRange(i, range(i) * factor);
 }
 
 template <typename T, size_t N>
-template <typename T2>
-Box<T, N> Box<T, N>::scaled(T2 factor) const {
+Box<T, N> Box<T, N>::scaled(T factor) const {
   auto b = *this;
   b.scale(factor);
   return b;
