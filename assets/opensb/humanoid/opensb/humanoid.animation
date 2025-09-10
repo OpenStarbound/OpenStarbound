@@ -57,6 +57,27 @@
 					"swimIdle": { "frames": 2, "cycle": 0.50, "mode": "end" }
 				}
 			},
+			"bodyHighPriority": {
+				"priority" : 10,
+				"default": "idle",
+				"states": {
+					"idle": { "frames": 1, "cycle": 0, "mode": "end" },
+					"duck": { "frames": 1, "cycle": 0, "mode": "end" },
+					"sit": { "frames": 1, "cycle": 0, "mode": "end" },
+					"lay": { "frames": 1, "cycle": 0, "mode": "end" },
+
+					"walk": { "frames": 8, "cycle": 0.75, "mode": "loop" },
+					"run": { "frames": 8, "cycle": 0.75, "mode": "loop" },
+					"runbackwards": { "frames": 8, "cycle": 0.75, "mode": "loop" },
+
+					"jump": { "frames": 4, "cycle": 0.25, "mode": "end" },
+					"fall": { "frames": 4, "cycle": 0.25, "mode": "end" },
+
+					"swim": { "frames": 7, "cycle": 0.50, "mode": "loop" },
+					"swimIdle": { "frames": 2, "cycle": 0.50, "mode": "end" }
+				}
+			},
+
 			"emote": {
 				"priority" : 0,
 				"default": "idle",

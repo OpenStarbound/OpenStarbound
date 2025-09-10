@@ -77,7 +77,7 @@ public:
     PostProcess,
     Load
   };
-  
+
   enum class AssetType {
     Json,
     Image,
@@ -263,7 +263,7 @@ private:
       {AssetType::Font, "font"},
       {AssetType::Bytes, "bytes"}
   };
-  
+
   static FramesSpecification parseFramesSpecification(Json const& frameConfig, String path);
 
   void queueAssets(List<AssetId> const& assetIds) const;
@@ -288,8 +288,10 @@ private:
   IODevicePtr open(String const& basePath) const;
   ByteArray read(String const& basePath) const;
   ImageConstPtr readImage(String const& path) const;
+  ImageConstPtr applyImagePatches(ImageConstPtr image, String const& path, List<pair<String, AssetSourcePtr>> patches) const;
 
   Json readJson(String const& basePath) const;
+  Json applyJsonPatches(Json const& input, String const& path, List<pair<String, AssetSourcePtr>> patches) const;
   Json checkPatchArray(String const& path, AssetSourcePtr const& source, Json const result, JsonArray const patchData, Maybe<Json> const external) const;
 
   // Load / post process an asset and log any exception.  Returns true if the

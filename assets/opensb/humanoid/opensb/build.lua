@@ -67,9 +67,13 @@ function build(identity, humanoidParameters, humanoidConfig, npcHumanoidConfig)
 	end
 	for i, bodyState in ipairs(bodyStates) do
 		setPath(stateTypes, { "body", "states", bodyState, "cycle" }, humanoidConfig.humanoidTiming.stateCycle[i])
+		setPath(stateTypes, { "bodyHighPriority", "states", bodyState, "cycle" }, humanoidConfig.humanoidTiming.stateCycle[i])
 		stateTypes.body.states[bodyState].frames = humanoidConfig.humanoidTiming.stateFrames[i]
 		stateTypes.body.states[bodyState].properties = {}
+		stateTypes.bodyHighPriority.states[bodyState].frames = humanoidConfig.humanoidTiming.stateFrames[i]
+		stateTypes.bodyHighPriority.states[bodyState].properties = {}
 		setPath(humanoidConfig, { "stateAnimations", bodyState, "body" }, { bodyState, false, false })
+		setPath(humanoidConfig, { "stateAnimations", bodyState, "bodyHighPriority" }, { bodyState, false, false })
 	end
 	for i, portraitMode in ipairs(portraitModes) do
 		setPath(humanoidConfig, { "portraitAnimations", portraitMode, "body" }, { "idle", true, false })
@@ -159,8 +163,11 @@ function build(identity, humanoidParameters, humanoidConfig, npcHumanoidConfig)
 
 	-- these states play in reverse for moving backwards, run has a duplicate state for this because back items have a different frameset for it
 	stateTypes.body.states.runbackwards = stateTypes.body.states.run
+	stateTypes.bodyHighPriority.states.runbackwards = stateTypes.bodyHighPriority.states.run
 	setPath(humanoidConfig, { "stateAnimationsBackwards", "walk", "body" }, { "walk", false, true })
+	setPath(humanoidConfig, { "stateAnimationsBackwards", "walk", "bodyHighPriority" }, { "walk", false, true })
 	setPath(humanoidConfig, { "stateAnimationsBackwards", "run", "body" }, { "runbackwards", false, true })
+	setPath(humanoidConfig, { "stateAnimationsBackwards", "run", "bodyHighPriority" }, { "runbackwards", false, true })
 
 	return humanoidConfig
 end
