@@ -343,6 +343,11 @@ void Humanoid::setIdentity(HumanoidIdentity const& identity) {
     m_networkedAnimator.resetLocalTransformationGroup("personalityArmOffset");
     m_networkedAnimator.translateLocalTransformationGroup("personalityArmOffset", m_identity.personality.armOffset / TilePixels);
 
+    if (m_useBodyMask)
+      m_networkedAnimator.setLocalTag("bodyMaskFrameset", (String)strf("mask/{}body.png", GenderNames.getRight(m_identity.gender)));
+    if (m_useBodyHeadMask)
+      m_networkedAnimator.setLocalTag("bodyHeadMaskFrameset", (String)strf("headmask/{}body.png",  GenderNames.getRight(m_identity.gender)));
+
     m_networkedAnimator.setLocalTag("headFrameset", (String)strf("{}head.png",  GenderNames.getRight(m_identity.gender)));
     m_networkedAnimator.setLocalTag("bodyFrameset", (String)strf("{}body.png", GenderNames.getRight(m_identity.gender)));
 
@@ -940,6 +945,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
 
   if (m_useAnimation) {
     m_networkedAnimator.resetLocalTransformationGroup("headRotation");
+    m_networkedAnimator.resetLocalTransformationGroup("bodyHeadRotation");
     for (uint8_t i : fashion.wornBacks) {
       if (i == 0)
         break;
@@ -949,22 +955,22 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
       float dir = numericalDirection(m_facingDirection);
       float headX = (m_headRotation / ((float)Constants::pi * 2.f));
       Vec2F translate = {
-        -(state() == State::Run ? (fmaxf(headX * dir, 0.f) * 2.f) * dir : headX),
+        -(state() == State::Run ? (fmaxf(headX, 0.f) * 2.f) : headX),
         -(fabsf(m_headRotation / ((float)Constants::pi * 4.f)))
       };
-      auto rotationPoint = *m_networkedAnimator.partPoint(m_headRotationPoint.first, m_headRotationPoint.second); // assuming we want the point after other transformations
-      rotationPoint[0] *= dir;
-      m_networkedAnimator.rotateLocalTransformationGroup("headRotation", m_headRotation * dir, rotationPoint);
+      auto rotationCenter = jsonToVec2F(m_networkedAnimator.partProperty(m_headRotationPoint.first, m_headRotationPoint.second));
+      auto bodyHeadRotationCenter = networkedAnimator()->partTransformation(m_headRotationPoint.first).transformVec2(rotationCenter);
+      m_networkedAnimator.rotateLocalTransformationGroup("headRotation", m_headRotation * dir, rotationCenter);
       m_networkedAnimator.translateLocalTransformationGroup("headRotation", translate);
-
+      m_networkedAnimator.rotateLocalTransformationGroup("bodyHeadRotation", m_headRotation * dir, rotationCenter);
+      m_networkedAnimator.translateLocalTransformationGroup("bodyHeadRotation", translate);
       for (uint8_t i : fashion.wornBacks) {
         if (i == 0)
           break;
         auto& back = fashion.wearables[size_t(i) - 1].get<WornBack>();
         if (back.rotateWithHead) {
-          m_networkedAnimator.rotateLocalTransformationGroup("backCosmetic" + toString(i) + "Rotation", m_headRotation * dir, rotationPoint);
+          m_networkedAnimator.rotateLocalTransformationGroup("backCosmetic" + toString(i) + "Rotation", m_headRotation * dir, bodyHeadRotationCenter);
           m_networkedAnimator.translateLocalTransformationGroup("backCosmetic" + toString(i) + "Rotation", translate);
-
         }
       }
     }
