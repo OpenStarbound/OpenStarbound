@@ -44,6 +44,12 @@ function build(identity, humanoidParameters, humanoidConfig, npcHumanoidConfig)
 			transformationGroups = {}
 		}
 	end
+	if humanoidConfig.useBodyMask then
+		table.insert(humanoidConfig.animation.includes, "/humanoid/opensb/bodyMask.animation")
+	end
+	if humanoidConfig.useBodyHeadMask then
+		table.insert(humanoidConfig.animation.includes, "/humanoid/opensb/bodyHeadMask.animation")
+	end
 	-- there are 20 cosmetic slots and we need to support any cosmetic being in any slot
 	-- in postload we generated 20 duplicates of each cosmetic's animation but with the <slot> tag changed and z levels changed to respect the slot
 	for _, path in ipairs(humanoidConfig.cosmeticAnimations or root.assetJson("/humanoid.config:cosmeticAnimations")) do
