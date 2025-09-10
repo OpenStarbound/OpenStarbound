@@ -23,7 +23,7 @@
 #include "StarUtilityLuaBindings.hpp"
 
 namespace Star {
-    
+
 // if a ptr is returned, can be optionally used to format an error
 static const char* validateBasePath(std::string_view const& basePath) {
   if (basePath.empty() || basePath[0] != '/')
@@ -178,7 +178,7 @@ Assets::Assets(Settings settings, StringList assetSources) {
       }
       return table;
     });
-    
+
     callbacks.registerCallback("sourceMetadata", [this](String const& sourcePath) -> Maybe<JsonObject> {
       if (auto assetSource = m_assetSourcePaths.rightPtr(sourcePath))
         return (*assetSource)->metadata();
@@ -190,7 +190,7 @@ Assets::Assets(Settings settings, StringList assetSources) {
         return this->assetSourcePath(descriptor->source);
       return {};
     });
-    
+
     callbacks.registerCallback("bytes", [this](String const& path) -> String {
       auto assetBytes = bytes(path);
       return String(assetBytes->ptr(), assetBytes->size());
@@ -239,7 +239,33 @@ Assets::Assets(Settings settings, StringList assetSources) {
       });
 
       callbacks.registerCallback("patch", [this, newFiles](String const& path, String const& patchPath) -> bool {
-        if (auto file = m_files.ptr(path)) {
+        if (newFiles->contains(path)) {
+          if (auto image = newFiles->image(path)) {
+            if (newFiles->contains(patchPath)) {
+              newFiles->set(path, *applyImagePatches(image, path, {make_pair(patchPath, newFiles)}).get());
+              return true;
+            } else {
+              if (auto asset = m_files.ptr(patchPath)) {
+                newFiles->set(path, *applyImagePatches(image, path, {make_pair(patchPath, asset->source)}).get());
+                return true;
+              }
+            }
+          } else {
+            if (newFiles->contains(patchPath)) {
+              auto file = newFiles->read(path);
+              auto json = applyJsonPatches(inputUtf8Json(file.begin(), file.end(), JsonParseType::Top), path, {make_pair(patchPath, newFiles)}).repr();
+              newFiles->set(path, ByteArray(json.utf8Ptr(), json.utf8Size()));
+              return true;
+            } else {
+              if (auto asset = m_files.ptr(patchPath)) {
+              auto file = newFiles->read(path);
+              auto json = applyJsonPatches(inputUtf8Json(file.begin(), file.end(), JsonParseType::Top), path, {make_pair(patchPath, asset->source)}).repr();
+              newFiles->set(path, ByteArray(json.utf8Ptr(), json.utf8Size()));
+                return true;
+              }
+            }
+          }
+        } else if (auto file = m_files.ptr(path)) {
           if (newFiles->contains(patchPath)) {
             file->patchSources.append(make_pair(patchPath, newFiles));
             return true;
@@ -391,7 +417,7 @@ Assets::Assets(Settings settings, StringList assetSources) {
   int workerPoolSize = m_settings.workerPoolSize;
   for (int i = 0; i < workerPoolSize; i++)
     m_workerThreads.append(Thread::invoke("Assets::workerMain", mem_fn(&Assets::workerMain), this));
-  
+
   // preload.config contains an array of files which will be loaded and then told to persist
   Json preload = json("/preload.config");
   Logger::info("Preloading assets");
@@ -996,46 +1022,48 @@ ImageConstPtr Assets::readImage(String const& path) const {
       image = make_shared<Image>(Image::readPng(p->source->open(p->sourceName)));
 
     if (!p->patchSources.empty()) {
-      RecursiveMutexLocker luaLocker(m_luaMutex);
-      LuaEngine* luaEngine = as<LuaEngine>(m_luaEngine.get());
-      LuaValue result = luaEngine->createUserData(*image);
-      luaLocker.unlock();
-      for (auto const& pair : p->patchSources) {
-        auto& patchPath = pair.first;
-        auto& patchSource = pair.second;
-        auto patchStream = patchSource->read(patchPath);
-        if (patchPath.endsWith(".lua")) {
-          std::pair<AssetSource*, String> contextKey = make_pair(patchSource.get(), patchPath);
-          luaLocker.lock();
-          LuaContextPtr& context = m_patchContexts[contextKey];
-          if (!context) {
-            context = make_shared<LuaContext>(luaEngine->createContext());
-            context->load(patchStream, patchPath);
-          }
-          auto newResult = context->invokePath<LuaValue>("patch", result, path);
-          if (!newResult.is<LuaNilType>()) {
-            if (auto ud = newResult.ptr<LuaUserData>()) {
-              if (ud->is<Image>())
-                result = std::move(newResult);
-              else
-                Logger::warn("Patch '{}' for image '{}' returned a non-Image userdata value, ignoring");
-            } else {
-              Logger::warn("Patch '{}' for image '{}' returned a non-Image value, ignoring");
-            }
-          }
-          luaLocker.unlock();
-        } else {
-          Logger::warn("Patch '{}' for image '{}' isn't a Lua script, ignoring", patchPath, path);
-        }
-      }
-      image = make_shared<Image>(std::move(result.get<LuaUserData>().get<Image>()));
+      return applyImagePatches(image, path, p->patchSources);
     }
-
     return image;
   }
   throw AssetException(strf("No such asset '{}'", path));
 }
 
+ImageConstPtr Assets::applyImagePatches(ImageConstPtr image, String const& path, List<pair<String, AssetSourcePtr>> patches) const {
+  RecursiveMutexLocker luaLocker(m_luaMutex);
+  LuaEngine* luaEngine = as<LuaEngine>(m_luaEngine.get());
+  LuaValue result = luaEngine->createUserData(*image);
+  luaLocker.unlock();
+  for (auto const& pair : patches) {
+    auto& patchPath = pair.first;
+    auto& patchSource = pair.second;
+    auto patchStream = patchSource->read(patchPath);
+    if (patchPath.endsWith(".lua")) {
+      std::pair<AssetSource*, String> contextKey = make_pair(patchSource.get(), patchPath);
+      luaLocker.lock();
+      LuaContextPtr& context = m_patchContexts[contextKey];
+      if (!context) {
+        context = make_shared<LuaContext>(luaEngine->createContext());
+        context->load(patchStream, patchPath);
+      }
+      auto newResult = context->invokePath<LuaValue>("patch", result, path);
+      if (!newResult.is<LuaNilType>()) {
+        if (auto ud = newResult.ptr<LuaUserData>()) {
+          if (ud->is<Image>())
+            result = std::move(newResult);
+          else
+            Logger::warn("Patch '{}' for image '{}' returned a non-Image userdata value, ignoring");
+        } else {
+          Logger::warn("Patch '{}' for image '{}' returned a non-Image value, ignoring");
+        }
+      }
+      luaLocker.unlock();
+    } else {
+      Logger::warn("Patch '{}' for image '{}' isn't a Lua script, ignoring", patchPath, path);
+    }
+  }
+  return make_shared<Image>(std::move(result.get<LuaUserData>().get<Image>()));
+}
 
 Json Assets::checkPatchArray(String const& path, AssetSourcePtr const& source, Json const result, JsonArray const patchData, Maybe<Json> const external) const {
   auto externalRef = external.value();
@@ -1072,52 +1100,55 @@ Json Assets::checkPatchArray(String const& path, AssetSourcePtr const& source, J
 Json Assets::readJson(String const& path) const {
   ByteArray streamData = read(path);
   try {
-    Json result = inputUtf8Json(streamData.begin(), streamData.end(), JsonParseType::Top);
-    for (auto const& pair : m_files.get(path).patchSources) {
-      auto patchAssetPath = AssetPath::split(pair.first);
-      auto& patchBasePath = patchAssetPath.basePath;
-      auto& patchSource = pair.second;
-      auto patchStream = patchSource->read(patchBasePath);
-      if (patchBasePath.endsWith(".lua")) {
-        std::pair<AssetSource*, String> contextKey = make_pair(patchSource.get(), patchBasePath);
-        RecursiveMutexLocker luaLocker(m_luaMutex);
-        // Kae: i don't like that lock. perhaps have a LuaEngine and patch context cache per worker thread later on?
-        LuaContextPtr& context = m_patchContexts[contextKey];
-        if (!context) {
-          context = make_shared<LuaContext>(as<LuaEngine>(m_luaEngine.get())->createContext());
-          context->load(patchStream, patchBasePath);
-        }
-        auto newResult = context->invokePath<Json>("patch", result, path);
-        if (newResult)
-          result = std::move(newResult);
-      } else {
-        try {
-          auto patchJson = inputUtf8Json(patchStream.begin(), patchStream.end(), JsonParseType::Top);
-          if (patchAssetPath.subPath)
-            patchJson = patchJson.query(*patchAssetPath.subPath);
-          if (patchJson.isType(Json::Type::Array)) {
-            auto patchData = patchJson.toArray();
-            try {
-              result = checkPatchArray(pair.first, patchSource, result, patchData, {});
-            } catch (JsonPatchTestFail const& e) {
-              Logger::debug("Patch test failure from file {} in source: '{}' at '{}'. Caused by: {}", pair.first, patchSource->metadata().value("name", ""), m_assetSourcePaths.getLeft(patchSource), e.what());
-            } catch (JsonPatchException const& e) {
-              Logger::error("Could not apply patch from file {} in source: '{}' at '{}'.  Caused by: {}", pair.first, patchSource->metadata().value("name", ""), m_assetSourcePaths.getLeft(patchSource), e.what());
-            }
-          } else if (patchJson.isType(Json::Type::Object)) {
-            result = jsonMergeNulling(result, patchJson.toObject());
-          }
-        } catch (std::exception const& e) {
-          throw JsonParsingException(strf("Cannot parse json patch file: {} in source {}", patchBasePath, patchSource->metadata().value("name", "")), e);
-        }
-      }
-    }
-    return result;
+    return applyJsonPatches(inputUtf8Json(streamData.begin(), streamData.end(), JsonParseType::Top), path, m_files.get(path).patchSources);
   } catch (std::exception const& e) {
     throw JsonParsingException(strf("Cannot parse json file: {}", path), e);
   }
 }
 
+Json Assets::applyJsonPatches(Json const& input, String const& path, List<pair<String, AssetSourcePtr>> patches) const {
+  Json result = input;
+  for (auto const& pair : patches) {
+    auto patchAssetPath = AssetPath::split(pair.first);
+    auto& patchBasePath = patchAssetPath.basePath;
+    auto& patchSource = pair.second;
+    auto patchStream = patchSource->read(patchBasePath);
+    if (patchBasePath.endsWith(".lua")) {
+      std::pair<AssetSource*, String> contextKey = make_pair(patchSource.get(), patchBasePath);
+      RecursiveMutexLocker luaLocker(m_luaMutex);
+      // Kae: i don't like that lock. perhaps have a LuaEngine and patch context cache per worker thread later on?
+      LuaContextPtr& context = m_patchContexts[contextKey];
+      if (!context) {
+        context = make_shared<LuaContext>(as<LuaEngine>(m_luaEngine.get())->createContext());
+        context->load(patchStream, patchBasePath);
+      }
+      auto newResult = context->invokePath<Json>("patch", result, path);
+      if (newResult)
+        result = std::move(newResult);
+    } else {
+      try {
+        auto patchJson = inputUtf8Json(patchStream.begin(), patchStream.end(), JsonParseType::Top);
+        if (patchAssetPath.subPath)
+          patchJson = patchJson.query(*patchAssetPath.subPath);
+        if (patchJson.isType(Json::Type::Array)) {
+          auto patchData = patchJson.toArray();
+          try {
+            result = checkPatchArray(pair.first, patchSource, result, patchData, {});
+          } catch (JsonPatchTestFail const& e) {
+            Logger::debug("Patch test failure from file {} in source: '{}' at '{}'. Caused by: {}", pair.first, patchSource->metadata().value("name", ""), m_assetSourcePaths.getLeft(patchSource), e.what());
+          } catch (JsonPatchException const& e) {
+            Logger::error("Could not apply patch from file {} in source: '{}' at '{}'.  Caused by: {}", pair.first, patchSource->metadata().value("name", ""), m_assetSourcePaths.getLeft(patchSource), e.what());
+          }
+        } else if (patchJson.isType(Json::Type::Object)) {
+          result = jsonMergeNulling(result, patchJson.toObject());
+        }
+      } catch (std::exception const& e) {
+        throw JsonParsingException(strf("Cannot parse json patch file: {} in source {}", patchBasePath, patchSource->metadata().value("name", "")), e);
+      }
+    }
+  }
+  return result;
+}
 
 bool Assets::doLoad(AssetId const& id) const {
   try {
