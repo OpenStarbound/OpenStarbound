@@ -343,17 +343,13 @@ void Humanoid::setIdentity(HumanoidIdentity const& identity) {
     m_networkedAnimator.resetLocalTransformationGroup("personalityArmOffset");
     m_networkedAnimator.translateLocalTransformationGroup("personalityArmOffset", m_identity.personality.armOffset / TilePixels);
 
-    if (m_useBodyMask)
-      m_networkedAnimator.setLocalTag("bodyMaskFrameset", (String)strf("mask/{}body.png", GenderNames.getRight(m_identity.gender)));
-    if (m_useBodyHeadMask)
-      m_networkedAnimator.setLocalTag("bodyHeadMaskFrameset", (String)strf("headmask/{}body.png",  GenderNames.getRight(m_identity.gender)));
-
-    m_networkedAnimator.setLocalTag("headFrameset", (String)strf("{}head.png",  GenderNames.getRight(m_identity.gender)));
-    m_networkedAnimator.setLocalTag("bodyFrameset", (String)strf("{}body.png", GenderNames.getRight(m_identity.gender)));
-
     m_networkedAnimator.setLocalTag("hairFrameset", m_identity.hairType.empty() ? "" : (String)strf("{}/{}.png", m_identity.hairGroup, m_identity.hairType));
     m_networkedAnimator.setLocalTag("facialHairFrameset", m_identity.facialHairType.empty() ? "" : (String)strf("{}/{}.png", m_identity.facialHairGroup, m_identity.facialHairType));
     m_networkedAnimator.setLocalTag("facialMaskFrameset", m_identity.facialMaskType.empty() ? "" : (String)strf("{}/{}.png", m_identity.facialMaskGroup, m_identity.facialMaskType));
+
+    for (auto p : m_identityFramesetTags) {
+      m_networkedAnimator.setLocalTag(m_networkedAnimator.applyPartTags("anchor", p.first), m_networkedAnimator.applyPartTags("anchor", p.second));
+    }
   }
 }
 
@@ -468,6 +464,7 @@ void Humanoid::loadAnimation() {
     m_throwPoint = {m_baseConfig.getString("throwPart", "head"), m_baseConfig.getString("throwPartPoint", "mouthOffset")};
     m_interactPoint = {m_baseConfig.getString("interactPart", "body"), m_baseConfig.getString("interactPartPoint", "interact")};
 
+    m_identityFramesetTags = jsonToMapV<StringMap<String>>(m_baseConfig.getObject("identityFramesetTags", JsonObject()), mem_fn(&Json::toString));
 
     for (auto pair : m_baseConfig.getObject("stateAnimations", JsonObject())) {
       HashMap<String,AnimationStateArgs> animations;
@@ -558,7 +555,10 @@ void Humanoid::setWearableFromHead(uint8_t slot, HeadArmor const& head, Gender g
   wornHead.animationTags.set(strf("headCosmetic{}Frameset", slot+1), wornHead.frameset);
   wornHead.animationTags.set(strf("headCosmetic{}Directives", slot+1), wornHead.directives.string());
   for (auto tag : head.instanceValue("humanoidAnimationTags", JsonObject()).iterateObject()) {
-    wornHead.animationTags.set(tag.first.replace("<slot>", toString(slot + 1)), tag.second.toString());
+    wornHead.animationTags.set(
+      m_networkedAnimator.applyPartTags(m_headArmorOffsetPoint.first, tag.first.replace("<slot>", toString(slot + 1))),
+      m_networkedAnimator.applyPartTags(m_headArmorOffsetPoint.first, tag.second.toString())
+    );
   }
 }
 
@@ -582,7 +582,10 @@ void Humanoid::setWearableFromChest(uint8_t slot, ChestArmor const& chest, Gende
   wornChest.animationTags.set(strf("backSleeve{}Frameset", slot+1), wornChest.backSleeveFrameset);
   wornChest.animationTags.set(strf("chestCosmetic{}Directives", slot+1), wornChest.directives.string());
   for (auto tag : chest.instanceValue("humanoidAnimationTags", JsonObject()).iterateObject()) {
-    wornChest.animationTags.set(tag.first.replace("<slot>", toString(slot + 1)), tag.second.toString());
+    wornChest.animationTags.set(
+      m_networkedAnimator.applyPartTags(m_chestArmorOffsetPoint.first, tag.first.replace("<slot>", toString(slot + 1))),
+      m_networkedAnimator.applyPartTags(m_chestArmorOffsetPoint.first, tag.second.toString())
+    );
   }
 }
 
@@ -602,7 +605,10 @@ void Humanoid::setWearableFromLegs(uint8_t slot, LegsArmor const& legs, Gender g
   wornLegs.animationTags.set(strf("legsCosmetic{}Frameset", slot+1), wornLegs.frameset);
   wornLegs.animationTags.set(strf("legsCosmetic{}Directives", slot+1), wornLegs.directives.string());
   for (auto tag : legs.instanceValue("humanoidAnimationTags", JsonObject()).iterateObject()) {
-    wornLegs.animationTags.set(tag.first.replace("<slot>", toString(slot + 1)), tag.second.toString());
+    wornLegs.animationTags.set(
+      m_networkedAnimator.applyPartTags(m_legsArmorOffsetPoint.first, tag.first.replace("<slot>", toString(slot + 1))),
+      m_networkedAnimator.applyPartTags(m_legsArmorOffsetPoint.first, tag.second.toString())
+    );
   }
 }
 
@@ -623,7 +629,10 @@ void Humanoid::setWearableFromBack(uint8_t slot, BackArmor const& back, Gender g
   wornBack.animationTags.set(strf("backCosmetic{}Frameset", slot+1), wornBack.frameset);
   wornBack.animationTags.set(strf("backCosmetic{}Directives", slot+1), wornBack.directives.string());
   for (auto tag : back.instanceValue("humanoidAnimationTags", JsonObject()).iterateObject()) {
-    wornBack.animationTags.set(tag.first.replace("<slot>", toString(slot + 1)), tag.second.toString());
+    wornBack.animationTags.set(
+      m_networkedAnimator.applyPartTags(m_backArmorOffsetPoint.first, tag.first.replace("<slot>", toString(slot + 1))),
+      m_networkedAnimator.applyPartTags(m_backArmorOffsetPoint.first, tag.second.toString())
+    );
   }
 }
 

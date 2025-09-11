@@ -145,27 +145,29 @@ function build(identity, humanoidParameters, humanoidConfig, npcHumanoidConfig)
 			setPath(parts, { v, "properties", "fullbright" }, true)
 		end
 	end
+	humanoidConfig.identityFramesetTags = humanoidConfig.identityFramesetTags or root.assetJson("/humanoid.config:identityFramesetTags")
+
 	setPath(parts, { "anchor", "properties", "offset" }, vecTilePixels(humanoidConfig.globalOffset))
-	setPath(parts, { "head", "properties", "mouthOffset" }, vecTilePixels(humanoidConfig.mouthOffset))
-	setPath(parts, { "body", "properties", "feetOffset" }, vecTilePixels(humanoidConfig.feetOffset))
+	setPath(parts, { humanoidConfig.mouthOffsetPart or "head", "properties", humanoidConfig.mouthOffsetPartPoint or "mouthOffset" }, vecTilePixels(humanoidConfig.mouthOffset))
+	setPath(parts, { humanoidConfig.feetOffsetPart or "body", "properties", humanoidConfig.feetOffsetPartPoint or "feetOffset" }, vecTilePixels(humanoidConfig.feetOffset))
 
-	setPath(parts, { "headCosmetic", "properties", "armorOffset" }, vecTilePixels(humanoidConfig.headArmorOffset))
-	setPath(parts, { "chestCosmetic", "properties", "armorOffset" }, vecTilePixels(humanoidConfig.chestArmorOffset))
-	setPath(parts, { "legsCosmetic", "properties", "armorOffset" }, vecTilePixels(humanoidConfig.legsArmorOffset))
-	setPath(parts, { "backCosmetic", "properties", "armorOffset" }, vecTilePixels(humanoidConfig.backArmorOffset))
+	setPath(parts, { humanoidConfig.headArmorOffsetPart or "headCosmetic", "properties", humanoidConfig.headArmorOffsetPartPoint or "armorOffset" }, vecTilePixels(humanoidConfig.headArmorOffset))
+	setPath(parts, { humanoidConfig.chestArmorOffsetPart or "chestCosmetic", "properties", humanoidConfig.chestArmorOffsetPartPoint or "armorOffset" }, vecTilePixels(humanoidConfig.chestArmorOffset))
+	setPath(parts, { humanoidConfig.legsArmorOffsetPart or "legsCosmetic", "properties", humanoidConfig.legsArmorOffsetPartPoint or "armorOffset" }, vecTilePixels(humanoidConfig.legsArmorOffset))
+	setPath(parts, { humanoidConfig.backArmorOffsetPart or "backCosmetic", "properties", humanoidConfig.backArmorOffsetPartPoint or "armorOffset" }, vecTilePixels(humanoidConfig.backArmorOffset))
 
-	setPath(parts, { "frontArm", "properties", "rotationCenter" }, vecTilePixels(humanoidConfig.frontArmRotationCenter))
-	setPath(parts, { "backArm", "properties", "rotationCenter" }, vecTilePixels({
+	setPath(parts, { humanoidConfig.frontArmRotationPart or "frontArm", "properties",  humanoidConfig.frontArmRotationPartPoint or "rotationCenter" }, vecTilePixels(humanoidConfig.frontArmRotationCenter))
+	setPath(parts, { humanoidConfig.backArmRotationPart or "backArm", "properties", humanoidConfig.backArmRotationPartPoint or "rotationCenter" }, vecTilePixels({
 		humanoidConfig.backArmRotationCenter[1] + humanoidConfig.backArmOffset[1],
 		humanoidConfig.backArmRotationCenter[2] + humanoidConfig.backArmOffset[2],
 	}))
-	setPath(parts, { "frontHandItem", "properties", "offset" }, vecTilePixels(humanoidConfig.frontHandPosition))
-	setPath(parts, { "backHandItem", "properties", "offset" }, vecTilePixels({
+	setPath(parts, { humanoidConfig.frontHandItemPart or "frontHandItem", "properties", "offset" }, vecTilePixels(humanoidConfig.frontHandPosition))
+	setPath(parts, { humanoidConfig.backHandItemPart or "backHandItem", "properties", "offset" }, vecTilePixels({
 		humanoidConfig.frontHandPosition[1] + humanoidConfig.backArmOffset[1],
 		humanoidConfig.frontHandPosition[2] + humanoidConfig.backArmOffset[2],
 	}))
-	setPath(parts, { "head", "properties", "rotationCenter" },
-		vecTilePixels(humanoidConfig.headRotationCenter or { 0, 0 }))
+	setPath(parts, { humanoidConfig.headRotationPart or "head", "properties",  humanoidConfig.headRotationPartPoint or "rotationCenter" },
+		vecTilePixels(humanoidConfig.headRotationCenter or { 0, -2 }))
 
 	-- these states play in reverse for moving backwards, run has a duplicate state for this because back items have a different frameset for it
 	stateTypes.body.states.runbackwards = stateTypes.body.states.run
