@@ -8,7 +8,7 @@
 			"bodyHead": {
 				"properties": {
 					"centered": true,
-					"zLevel": 2,
+					"zLevel": 9,
 					"anchorPart" : "body",
 					"transformationGroups": ["bodyHeadRotation"],
 					"processingDirectives" : "<bodyDirectives>",
