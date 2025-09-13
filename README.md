@@ -132,7 +132,7 @@ Note: Some of these [texts](## "hi :3") are just tooltips rather than links.
 * Open the repo directory in your IDE - it should detect the CMake project.
 * Build.
   * If you're using an IDE, it should detect the correct preset and allow you to build from within.
-  * Otherwise, build manually by running CMake in the **source/** directory: `cmake --build --preset=windows-release`
+  * Otherwise, build manually by running CMake in the **source/** directory: `cmake --preset=windows-release` then `cmake --build --preset=windows-release`
 * The built binaries will be in **dist/**. Copy the DLLs from **lib/windows/** and the **sbinit.config** above into **dist/** so the game can run.
 
 </details>
@@ -145,7 +145,7 @@ Note: Some of these [texts](## "hi :3") are just tooltips rather than links.
 * Clone [vcpkg](https://github.com/microsoft/vcpkg?tab=readme-ov-file#quick-start-unix) (outside the repo!) and bootstrap it with the linked instructions.
 * Set the **`VCPKG_ROOT`** environment value to your new vcpkg directory, so that CMake can find it.
   *  `export VCPKG_ROOT=/replace/with/full/path/to/your/vcpkg/directory/`
-* Change to the repo's **source/** directory, then run `cmake --build --preset=linux-release` to build.
+* Change to the repo's **source/** directory, then run `cmake --preset=linux-release` and `cmake --build --preset=linux-release` to build.
 * The built binaries will be in **dist/**. Copy the the .so libs from **lib/linux/** and the **sbinit.config** above into **dist/** so the game can run.
   * From the root dir of the repo, you can run the assembly script which is used by the GitHub Action: `scripts/ci/linux/assemble.sh`
     * This packs the game assets and copies the built binaries, premade sbinit configs & required libs into **client/** & **server/**.
