@@ -513,7 +513,7 @@
 				},
 				"partStates": {
 					"body": {
-						"idle": { "properties": { "image": "<humanoidPath><headFrameset>:normal", "transformationGroups" : ["headRotation", "personalityHeadOffset" ] } },
+						"idle": { "properties": { "image": "<humanoidPath><headFrameset>:normal", "transformationGroups" : ["headRotation", "personalityHeadOffset", "headOffset" ] } },
 						"duck": { "properties": { "image": "<humanoidPath><headFrameset>:normal" } },
 						"sit": "duck",
 						"lay": "duck",
@@ -526,7 +526,7 @@
 						"swimIdle": "duck"
 					},
 					"portraitMode" : {
-						"head": { "properties":{"image" : "<humanoidPath><headFrameset>:normal<portraitMask>", "transformationGroups" : [ "personalityHeadOffset" ]}},
+						"head": { "properties":{"image" : "<humanoidPath><headFrameset>:normal<portraitMask>", "transformationGroups" : [ "personalityHeadOffset", "headOffset" ]}},
 						"bust" : "head"
 					}
 				}
