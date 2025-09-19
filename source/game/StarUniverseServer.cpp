@@ -1229,6 +1229,7 @@ void UniverseServer::shutdownInactiveWorlds() {
         }
 
         if (worldId.is<ClientShipWorldId>()) {
+          world->unloadAll(true);
           if (auto clientId = getClientForUuid(worldId.get<ClientShipWorldId>()))
             m_clients.get(*clientId)->updateShipChunks(world->readChunks());
         }
@@ -1985,6 +1986,7 @@ void UniverseServer::doDisconnection(ConnectionId clientId, String const& reason
       // Send the client the last ship update.
       if (auto shipWorld = getWorld(ClientShipWorldId(clientContext->playerUuid()))) {
         locker.unlock();
+        shipWorld->unloadAll(true);
         clientContext->updateShipChunks(shipWorld->readChunks());
         shipWorld->stop();
         locker.lock();
