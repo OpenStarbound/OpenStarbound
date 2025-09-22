@@ -2047,6 +2047,10 @@ void WorldServer::sync() {
   m_worldStorage->sync();
 }
 
+void WorldServer::unloadAll(bool force) {
+  m_worldStorage->unloadAll(force);
+}
+
 WorldChunks WorldServer::readChunks() {
   writeMetadata();
   return m_worldStorage->readChunks();
