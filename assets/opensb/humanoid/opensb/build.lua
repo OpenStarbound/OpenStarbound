@@ -94,52 +94,57 @@ function build(identity, humanoidParameters, humanoidConfig, npcHumanoidConfig)
 		setPath(stateTypes.body.states.run, { "frameProperties", "animationTags", i, "armSequenceFrame" }, tostring(v))
 	end
 
-	for i, v in ipairs(humanoidConfig.walkBob) do
-		setPath(stateTypes.body.states.walk, { "frameProperties", "movementOffset", i },
-			{ { "reset" }, { "translate", { 0, v / tilePixels } } })
+	if not humanoidConfig.movementBobOffsets then
+		for i, v in ipairs(humanoidConfig.walkBob) do
+			setPath(stateTypes.body.states.walk, { "frameProperties", "movementOffset", i },
+				{ { "reset" }, { "translate", { 0, v / tilePixels } } })
+		end
+		for i, v in ipairs(humanoidConfig.runBob) do
+			setPath(stateTypes.body.states.run, { "frameProperties", "movementOffset", i },
+				{ { "reset" }, { "translate", { 0, (v + humanoidConfig.runFallOffset) / tilePixels } } })
+		end
+		for i, v in ipairs(humanoidConfig.swimBob) do
+			setPath(stateTypes.body.states.swim, { "frameProperties", "movementOffset", i },
+				{ { "reset" }, { "translate", { 0, v / tilePixels } } })
+		end
 	end
-	for i, v in ipairs(humanoidConfig.runBob) do
-		setPath(stateTypes.body.states.run, { "frameProperties", "movementOffset", i },
-			{ { "reset" }, { "translate", { 0, (v + humanoidConfig.runFallOffset) / tilePixels } } })
+	if not humanoidConfig.animationHeadOffsets then
+		stateTypes.body.states.run.properties.headOffset = {
+			{ "reset" }, { "translate", vecTilePixels(humanoidConfig.headRunOffset) },
+		}
+		stateTypes.body.states.swim.properties.headOffset = {
+			{ "reset" }, { "translate", vecTilePixels(humanoidConfig.headSwimOffset) },
+		}
+		stateTypes.body.states.swimIdle.properties.headOffset = {
+			{ "reset" }, { "translate", vecTilePixels(humanoidConfig.headSwimOffset) },
+		}
+		stateTypes.body.states.duck.properties.headOffset = {
+			{ "reset" }, { "translate", vecTilePixels(humanoidConfig.headDuckOffset) },
+		}
+		stateTypes.body.states.sit.properties.headOffset = {
+			{ "reset" }, { "translate", vecTilePixels(humanoidConfig.headSitOffset) },
+		}
+		stateTypes.body.states.lay.properties.headOffset = {
+			{ "reset" }, { "translate", vecTilePixels(humanoidConfig.headLayOffset) },
+		}
 	end
-	for i, v in ipairs(humanoidConfig.swimBob) do
-		setPath(stateTypes.body.states.swim, { "frameProperties", "movementOffset", i },
-			{ { "reset" }, { "translate", { 0, v / tilePixels } } })
+	if not humanoidConfig.animationMovementOffsets then
+		stateTypes.body.states.duck.properties.movementOffset = {
+			{ "reset" }, { "translate", { 0, humanoidConfig.duckOffset / tilePixels } },
+		}
+		stateTypes.body.states.sit.properties.movementOffset = {
+			{ "reset" }, { "translate", { 0, humanoidConfig.sitOffset / tilePixels } },
+		}
+		stateTypes.body.states.lay.properties.movementOffset = {
+			{ "reset" }, { "translate", { 0, humanoidConfig.layOffset / tilePixels } },
+		}
+		stateTypes.body.states.jump.properties.movementOffset = {
+			{ "reset" }, { "translate", { 0, humanoidConfig.jumpBob / tilePixels } },
+		}
+		stateTypes.body.states.fall.properties.movementOffset = {
+			{ "reset" }, { "translate", { 0, humanoidConfig.runFallOffset / tilePixels } }
+		}
 	end
-
-	stateTypes.body.states.run.properties.headOffset = {
-		{ "reset" }, { "translate", vecTilePixels(humanoidConfig.headRunOffset) },
-	}
-	stateTypes.body.states.swim.properties.headOffset = {
-		{ "reset" }, { "translate", vecTilePixels(humanoidConfig.headSwimOffset) },
-	}
-	stateTypes.body.states.swimIdle.properties.headOffset = {
-		{ "reset" }, { "translate", vecTilePixels(humanoidConfig.headSwimOffset) },
-	}
-	stateTypes.body.states.duck.properties.headOffset = {
-		{ "reset" }, { "translate", vecTilePixels(humanoidConfig.headDuckOffset) },
-	}
-	stateTypes.body.states.duck.properties.movementOffset = {
-		{ "reset" }, { "translate", { 0, humanoidConfig.duckOffset / tilePixels } },
-	}
-	stateTypes.body.states.sit.properties.headOffset = {
-		{ "reset" }, { "translate", vecTilePixels(humanoidConfig.headSitOffset) },
-	}
-	stateTypes.body.states.sit.properties.movementOffset = {
-		{ "reset" }, { "translate", { 0, humanoidConfig.sitOffset / tilePixels } },
-	}
-	stateTypes.body.states.lay.properties.headOffset = {
-		{ "reset" }, { "translate", vecTilePixels(humanoidConfig.headLayOffset) },
-	}
-	stateTypes.body.states.lay.properties.movementOffset = {
-		{ "reset" }, { "translate", { 0, humanoidConfig.layOffset / tilePixels } },
-	}
-	stateTypes.body.states.jump.properties.movementOffset = {
-		{ "reset" }, { "translate", { 0, humanoidConfig.jumpBob / tilePixels } },
-	}
-	stateTypes.body.states.fall.properties.movementOffset = {
-		{ "reset" }, { "translate", { 0, humanoidConfig.runFallOffset / tilePixels } }
-	}
 	if humanoidConfig.bodyFullbright then
 		for _, v in ipairs(humanoidConfig.bodyFullbrightParts or root.assetJson("/humanoid.config:bodyFullbrightParts")) do
 			setPath(parts, { v, "properties", "fullbright" }, true)
