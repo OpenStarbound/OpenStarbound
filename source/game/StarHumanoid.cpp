@@ -1793,7 +1793,7 @@ Vec2F Humanoid::primaryArmPosition(Direction facingDirection, float armAngle, Ve
       mat = m_networkedAnimator.groupTransformation(transformationGroups);
     }
     mat = m_networkedAnimator.partTransformation(anchor) * mat;
-    auto position = mat.transformVec2(offset);
+    auto position = mat.transformVec2(offset + rotationCenter);
     if (facingDirection == Direction::Left)
       position[0] *= -1;
     return position;
@@ -1860,7 +1860,7 @@ Vec2F Humanoid::altArmPosition(Direction facingDirection, float armAngle, Vec2F 
       mat = m_networkedAnimator.groupTransformation(transformationGroups);
     }
     mat = m_networkedAnimator.partTransformation(anchor) * mat;
-    auto position = mat.transformVec2(offset);
+    auto position = mat.transformVec2(offset + rotationCenter);
     if (facingDirection == Direction::Left)
       position[0] *= -1;
     return position;
