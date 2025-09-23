@@ -86,6 +86,8 @@ static const void *const disptab[NUM_OPCODES] = {
 
 &&L_OP_VARARG,
 
-&&L_OP_EXTRAARG
+&&L_OP_EXTRAARG,
+
+&&L_OP_DEFER
 
 };
