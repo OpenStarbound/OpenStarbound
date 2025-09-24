@@ -2626,7 +2626,7 @@ void WorldServer::setTemplate(WorldTemplatePtr newTemplate) {
   }
 }
 
-void WorldServer::wire(Vec2I const& outputPosition, int const& outputIndex, Vec2I const& inputPosition, int const& inputIndex) {
+void WorldServer::wire(Vec2I const& outputPosition, size_t const& outputIndex, Vec2I const& inputPosition, size_t const& inputIndex) {
   WireConnection output = {outputPosition, outputIndex};
   WireConnection input = {inputPosition, inputIndex};
   for (auto source : atTile<WireEntity>(input.entityLocation)) {
