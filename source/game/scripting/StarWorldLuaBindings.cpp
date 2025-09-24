@@ -413,6 +413,10 @@ namespace LuaBindings {
 
       callbacks.registerCallback("setExpiryTime", [serverWorld](float expiryTime) { serverWorld->setExpiryTime(expiryTime); });
 
+      callbacks.registerCallback("wire", [serverWorld](Vec2I outputPosition, size_t outputIndex, Vec2I inputPosition, size_t inputIndex) {
+        serverWorld->wire(outputPosition, outputIndex, inputPosition, inputIndex);
+      });
+
       callbacks.registerCallback("flyingType", [serverWorld]() -> String { return FlyingTypeNames.getRight(serverWorld->sky()->flyingType()); });
       callbacks.registerCallback("warpPhase", [serverWorld]() -> String { return WarpPhaseNames.getRight(serverWorld->sky()->warpPhase()); });
       callbacks.registerCallback("setUniverseFlag", [serverWorld](String flagName) { return serverWorld->universeSettings()->setFlag(flagName); });
