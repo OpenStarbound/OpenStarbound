@@ -21,7 +21,7 @@
 #include "StarUniverseServerLuaBindings.hpp"
 
 namespace Star {
-
+  
 UniverseServer::UniverseServer(String const& storageDir)
   : Thread("UniverseServer"),
     m_workerPool("UniverseServerWorkerPool"),
