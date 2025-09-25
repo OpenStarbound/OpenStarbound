@@ -94,7 +94,7 @@ function build(identity, humanoidParameters, humanoidConfig, npcHumanoidConfig)
 		setPath(stateTypes.body.states.run, { "frameProperties", "animationTags", i, "armSequenceFrame" }, tostring(v))
 	end
 
-	if not humanoidConfig.movementBobOffsets then
+	if not humanoidConfig.animationMovementBobOffsets then
 		for i, v in ipairs(humanoidConfig.walkBob) do
 			setPath(stateTypes.body.states.walk, { "frameProperties", "movementOffset", i },
 				{ { "reset" }, { "translate", { 0, v / tilePixels } } })
