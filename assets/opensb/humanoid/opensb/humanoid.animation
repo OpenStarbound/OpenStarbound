@@ -507,13 +507,13 @@
 				"properties": {
 					"centered": true,
 					"zLevel": 6,
-					"transformationGroups": ["movementOffset", "headOffset", "headRotation"],
+					"transformationGroups": ["headRotation", "movementOffset", "headOffset"],
 					"anchorPart" : "body",
 					"processingDirectives" : "<bodyDirectives>"
 				},
 				"partStates": {
 					"body": {
-						"idle": { "properties": { "image": "<humanoidPath><headFrameset>:normal", "transformationGroups" : ["personalityHeadOffset", "headRotation" ] } },
+						"idle": { "properties": { "image": "<humanoidPath><headFrameset>:normal", "transformationGroups" : ["headRotation", "personalityHeadOffset", "headOffset" ] } },
 						"duck": { "properties": { "image": "<humanoidPath><headFrameset>:normal" } },
 						"sit": "duck",
 						"lay": "duck",
@@ -526,7 +526,7 @@
 						"swimIdle": "duck"
 					},
 					"portraitMode" : {
-						"head": { "properties":{"image" : "<humanoidPath><headFrameset>:normal<portraitMask>", "transformationGroups" : [ "personalityHeadOffset" ]}},
+						"head": { "properties":{"image" : "<humanoidPath><headFrameset>:normal<portraitMask>", "transformationGroups" : [ "personalityHeadOffset", "headOffset" ]}},
 						"bust" : "head"
 					}
 				}
@@ -897,6 +897,7 @@
 		"armOffset" : {"interpolated": false},
 
 		"headRotation": {"interpolated": true},
+		"bodyHeadRotation": {"interpolated": true},
 		"frontArmRotation": {"interpolated": true},
 		"backArmRotation": {"interpolated": true},
 		"frontHandItemRotation": {"interpolated": true},
