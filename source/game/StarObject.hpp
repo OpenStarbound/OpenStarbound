@@ -127,6 +127,9 @@ public:
   virtual List<WireConnection> connectionsForNode(WireNode wireNode) const override;
   virtual bool nodeState(WireNode wireNode) const override;
 
+  virtual String nodeIcon(WireNode wireNode) const override;
+  virtual Color nodeColor(WireNode wireNode) const override;
+
   virtual void addNodeConnection(WireNode wireNode, WireConnection nodeConnection) override;
   virtual void removeNodeConnection(WireNode wireNode, WireConnection nodeConnection) override;
 
@@ -178,15 +181,21 @@ protected:
 
 private:
   struct InputNode {
+    InputNode(Json node);
     Vec2I position;
     NetElementData<List<WireConnection>> connections;
     NetElementBool state;
+    Color color;
+    String icon;
   };
 
   struct OutputNode {
+    OutputNode(Json node);
     Vec2I position;
     NetElementData<List<WireConnection>> connections;
     NetElementBool state;
+    Color color;
+    String icon;
   };
 
   LuaCallbacks makeObjectCallbacks();

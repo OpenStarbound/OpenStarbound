@@ -100,8 +100,6 @@ void WirePane::renderImpl() {
 
   auto const& camera = m_worldPainter->camera();
   auto badWire = Color::rgbf(0.6f + (float)sin(Time::monotonicTime() * Constants::pi * 2.0) * 0.4f, 0.0f, 0.0f);
-  auto highWire = Color::Red;
-  auto lowWire = Color::Red.mix(Color::Black, 0.8f);
   auto white = Color::White.toRgba();
   float phase = 0.5f + 0.5f * std::sin((double)Time::monotonicMilliseconds() / 100.0);
   auto drawLineColor = Color::Red.mix(Color::White, phase);
@@ -110,7 +108,7 @@ void WirePane::renderImpl() {
     for (size_t i = 0; i < entity->nodeCount(WireDirection::Input); ++i) {
       Vec2I position = entity->tilePosition() + entity->nodePosition({WireDirection::Input, i});
       if (!m_worldClient->isTileProtected(position)) {
-        context()->drawQuad("/interface/wires/inbound.png",
+        context()->drawQuad(entity->nodeIcon({WireDirection::Input, i}),
             camera.worldToScreen(centerOfTile(position) - (m_inSize / 2.0f)),
             camera.pixelRatio(), white);
       }
@@ -119,7 +117,7 @@ void WirePane::renderImpl() {
     for (size_t i = 0; i < entity->nodeCount(WireDirection::Output); ++i) {
       Vec2I position = entity->tilePosition() + entity->nodePosition({WireDirection::Output, i});
       if (!m_worldClient->isTileProtected(position)) {
-        context()->drawQuad("/interface/wires/outbound.png",
+        context()->drawQuad(entity->nodeIcon({WireDirection::Output, i}),
             camera.worldToScreen(centerOfTile(position) - (m_outSize / 2.0f)),
             camera.pixelRatio(), white);
       }
@@ -135,13 +133,14 @@ void WirePane::renderImpl() {
       for (auto const& connection : entity->connectionsForNode({WireDirection::Input, i})) {
         visitedConnections.add({{tilePosition, i}, connection});
 
-        auto wire = lowWire;
+        auto wire = entity->nodeColor({WireDirection::Input, i}).mix(Color::Black, 0.8f);
         Vec2I outPosition = connection.entityLocation;
         if (auto sourceEntity = m_worldClient->atTile<WireEntity>(connection.entityLocation).get(0)) {
           if (connection.nodeIndex < sourceEntity->nodeCount(WireDirection::Output)) {
             outPosition += sourceEntity->nodePosition({WireDirection::Output, connection.nodeIndex});
-            if (sourceEntity->nodeState(WireNode{WireDirection::Output, connection.nodeIndex}))
-              wire = highWire;
+            wire = sourceEntity->nodeColor({WireDirection::Output, i});
+            if (!sourceEntity->nodeState(WireNode{WireDirection::Output, connection.nodeIndex}))
+              wire = wire.mix(Color::Black, 0.8f);
           } else {
             wire = badWire;
           }
@@ -155,12 +154,13 @@ void WirePane::renderImpl() {
       Vec2I tilePosition = entity->tilePosition();
       Vec2I outPosition = tilePosition + entity->nodePosition({WireDirection::Output, i});
 
-      auto wire = lowWire;
-      if (entity->nodeState({WireDirection::Output, i}))
-        wire = highWire;
+      auto wire = entity->nodeColor({WireDirection::Output, i});
+      if (!entity->nodeState({WireDirection::Output, i}))
+        wire = wire.mix(Color::Black, 0.8f);
 
       for (auto const& connection : entity->connectionsForNode({WireDirection::Output, i})) {
-        visitedConnections.contains({connection, {tilePosition, i}});
+        if (visitedConnections.add({connection, {tilePosition, i}}))
+          continue;
 
         Vec2I inPosition = connection.entityLocation;
         if (auto sourceEntity = m_worldClient->atTile<WireEntity>(connection.entityLocation).get(0)) {
@@ -179,10 +179,13 @@ void WirePane::renderImpl() {
     Vec2F aimPos = m_worldPainter->camera().screenToWorld(Vec2F(m_mousePos) * m_context->interfaceScale());
     Vec2I sourcePosition = m_sourceConnector.entityLocation;
     if (auto sourceEntity = m_worldClient->atTile<WireEntity>(m_sourceConnector.entityLocation).get(0)) {
-      if (m_sourceDirection == WireDirection::Input)
+      if (m_sourceDirection == WireDirection::Input){
         sourcePosition += sourceEntity->nodePosition({WireDirection::Input, m_sourceConnector.nodeIndex});
-      else
+        drawLineColor = sourceEntity->nodeColor({WireDirection::Input, m_sourceConnector.nodeIndex}).mix(Color::White, phase);
+      }else{
         sourcePosition += sourceEntity->nodePosition({WireDirection::Output, m_sourceConnector.nodeIndex});
+        drawLineColor = sourceEntity->nodeColor({WireDirection::Output, m_sourceConnector.nodeIndex}).mix(Color::White, phase);
+      }
     }
     renderWire(centerOfTile(sourcePosition), aimPos, drawLineColor);
   }

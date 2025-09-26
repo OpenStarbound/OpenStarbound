@@ -69,10 +69,10 @@ Object::Object(ObjectConfigConstPtr config, Json const& parameters) {
   }
 
   for (auto const& node : configValue("inputNodes", JsonArray()).iterateArray())
-    m_inputNodes.append({jsonToVec2I(node), {}, {}});
+    m_inputNodes.append(InputNode(node));
 
   for (auto const& node : configValue("outputNodes", JsonArray()).iterateArray())
-    m_outputNodes.append({jsonToVec2I(node), {}, {}});
+    m_outputNodes.append(OutputNode(node));
 
   m_offeredQuests.set(configValue("offeredQuests", JsonArray()).toArray().transformed(&QuestArcDescriptor::fromJson));
   m_turnInQuests.set(jsonToStringSet(configValue("turnInQuests", JsonArray())));
@@ -796,6 +796,19 @@ bool Object::nodeState(WireNode wireNode) const {
   else
     return m_outputNodes.at(wireNode.nodeIndex).state.get();
 }
+String Object::nodeIcon(WireNode wireNode) const {
+  if (wireNode.direction == WireDirection::Input)
+    return m_inputNodes.at(wireNode.nodeIndex).icon;
+  else
+    return m_outputNodes.at(wireNode.nodeIndex).icon;
+}
+
+Color Object::nodeColor(WireNode wireNode) const { // only output nodes determine color
+  if (wireNode.direction == WireDirection::Input)
+    return m_inputNodes.at(wireNode.nodeIndex).color;
+  else
+    return m_outputNodes.at(wireNode.nodeIndex).color;
+}
 
 void Object::addNodeConnection(WireNode wireNode, WireConnection nodeConnection) {
   if (wireNode.direction == WireDirection::Input) {
@@ -1406,4 +1419,28 @@ void Object::checkLiquidBroken() {
   }
 }
 
+Object::OutputNode::OutputNode(Json node) {
+  if (node.isType(Json::Type::Array)) {
+    position = jsonToVec2I(node);
+    color = Color::Red;
+    icon = "/interface/wires/outbound.png";
+  } else {
+    position = jsonToVec2I(node.get("position"));
+    color = jsonToColor(node.get("color"));
+    icon = node.getString("icon", "/interface/wires/outbound.png");
+  }
 }
+
+Object::InputNode::InputNode(Json node) {
+  if (node.isType(Json::Type::Array)) {
+    position = jsonToVec2I(node);
+    color = Color::Red;
+    icon = "/interface/wires/inbound.png";
+  } else {
+    position = jsonToVec2I(node.get("position"));
+    color = jsonToColor(node.get("color"));
+    icon = node.getString("icon", "/interface/wires/inbound.png");
+  }
+}
+
+}// namespace Star
