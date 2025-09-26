@@ -138,7 +138,7 @@ void WirePane::renderImpl() {
         if (auto sourceEntity = m_worldClient->atTile<WireEntity>(connection.entityLocation).get(0)) {
           if (connection.nodeIndex < sourceEntity->nodeCount(WireDirection::Output)) {
             outPosition += sourceEntity->nodePosition({WireDirection::Output, connection.nodeIndex});
-            wire = sourceEntity->nodeColor({WireDirection::Output, i});
+            wire = sourceEntity->nodeColor({WireDirection::Output, connection.nodeIndex});
             if (!sourceEntity->nodeState(WireNode{WireDirection::Output, connection.nodeIndex}))
               wire = wire.mix(Color::Black, 0.8f);
           } else {
