@@ -68,11 +68,15 @@ Object::Object(ObjectConfigConstPtr config, Json const& parameters) {
     setTeam(EntityDamageTeam(TeamType::Environment));
   }
 
-  for (auto const& node : configValue("inputNodes", JsonArray()).iterateArray())
-    m_inputNodes.append(InputNode(node));
+  auto inputNodes = configValue("inputNodes", JsonArray());
+  auto inputNodeConfigs = configValue("inputNodesConfig", JsonArray());
+  for (auto i = 0; i != inputNodes.size(); i++)
+    m_inputNodes.append(InputNode(inputNodes.get(i), inputNodeConfigs.get(i, JsonObject())));
 
-  for (auto const& node : configValue("outputNodes", JsonArray()).iterateArray())
-    m_outputNodes.append(OutputNode(node));
+  auto outputNodes = configValue("outputNodes", JsonArray());
+  auto outputNodeConfigs = configValue("outputNodesConfig", JsonArray());
+  for (auto i = 0; i != outputNodes.size(); i++)
+    m_outputNodes.append(OutputNode(outputNodes.get(i), outputNodeConfigs.get(i, JsonObject())));
 
   m_offeredQuests.set(configValue("offeredQuests", JsonArray()).toArray().transformed(&QuestArcDescriptor::fromJson));
   m_turnInQuests.set(jsonToStringSet(configValue("turnInQuests", JsonArray())));
@@ -1419,28 +1423,16 @@ void Object::checkLiquidBroken() {
   }
 }
 
-Object::OutputNode::OutputNode(Json node) {
-  if (node.isType(Json::Type::Array)) {
-    position = jsonToVec2I(node);
-    color = Color::Red;
-    icon = "/interface/wires/outbound.png";
-  } else {
-    position = jsonToVec2I(node.get("position"));
-    color = jsonToColor(node.get("color"));
-    icon = node.getString("icon", "/interface/wires/outbound.png");
-  }
+Object::OutputNode::OutputNode(Json positionConfig, Json config) {
+  position = jsonToVec2I(positionConfig);
+  color = jsonToColor(config.get("color"));
+  icon = config.getString("icon", "/interface/wires/outbound.png");
 }
 
-Object::InputNode::InputNode(Json node) {
-  if (node.isType(Json::Type::Array)) {
-    position = jsonToVec2I(node);
-    color = Color::Red;
-    icon = "/interface/wires/inbound.png";
-  } else {
-    position = jsonToVec2I(node.get("position"));
-    color = jsonToColor(node.get("color"));
-    icon = node.getString("icon", "/interface/wires/inbound.png");
-  }
+Object::InputNode::InputNode(Json positionConfig, Json config) {
+  position = jsonToVec2I(positionConfig);
+  color = jsonToColor(config.get("color"));
+  icon = config.getString("icon", "/interface/wires/inbound.png");
 }
 
 }// namespace Star

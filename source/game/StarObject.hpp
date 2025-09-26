@@ -181,7 +181,7 @@ protected:
 
 private:
   struct InputNode {
-    InputNode(Json node);
+    InputNode(Json positionConfig, Json config);
     Vec2I position;
     NetElementData<List<WireConnection>> connections;
     NetElementBool state;
@@ -190,7 +190,7 @@ private:
   };
 
   struct OutputNode {
-    OutputNode(Json node);
+    OutputNode(Json positionConfig, Json config);
     Vec2I position;
     NetElementData<List<WireConnection>> connections;
     NetElementBool state;
