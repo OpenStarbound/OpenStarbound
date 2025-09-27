@@ -147,6 +147,10 @@ void WorldClient::setRespawnInWorld(bool respawnInWorld) {
   m_respawnInWorld = respawnInWorld;
 }
 
+int64_t WorldClient::latency() const {
+  return m_latency;
+}
+
 void WorldClient::resendEntity(EntityId entityId) {
   auto entity = m_entityMap->entity(entityId);
   if (!entity || !entity->isMaster() || !m_masterEntitiesNetVersion.contains(entity->entityId()))
