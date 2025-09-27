@@ -1314,16 +1314,7 @@ shared_ptr<Assets::AssetData> Assets::loadImage(AssetPath const& path) const {
 
     return unlockDuring([&]() {
       auto newData = make_shared<ImageData>();
-      Image newImage = *source->image;
-      path.directives.forEach([&](Directives::Entry const& entry, Directives const&) {
-        if (auto error = entry.operation.ptr<ErrorImageOperation>())
-          if (auto string = error->cause.ptr<std::string>())
-            throw DirectivesException::format("ImageOperation parse error: {}", *string);
-          else
-            std::rethrow_exception(error->cause.get<std::exception_ptr>());
-        else
-          processImageOperation(entry.operation, newImage, [&](String const& ref) { return references.get(ref).get(); });
-      });
+      auto newImage = path.directives.applyNewImage(*source->image, [&](String const& ref) { return references.get(ref).get(); });
       newData->image = make_shared<Image>(std::move(newImage));
       return newData;
     });

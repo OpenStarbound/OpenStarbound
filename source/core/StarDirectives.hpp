@@ -109,8 +109,8 @@ public:
   void forEach(DirectivesCallback callback) const;
   bool forEachAbortable(AbortableDirectivesCallback callback) const;
 
-  Image applyNewImage(const Image& image) const;
-  void applyExistingImage(Image& image) const;
+  Image applyNewImage(const Image& image, ImageReferenceCallback refCallback = {}) const;
+  void applyExistingImage(Image& image, ImageReferenceCallback refCallback = {}) const;
   
   size_t hash() const;
   const List<Directives>& list() const;
