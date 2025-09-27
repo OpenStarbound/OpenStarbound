@@ -1425,13 +1425,13 @@ void Object::checkLiquidBroken() {
 
 Object::OutputNode::OutputNode(Json positionConfig, Json config) {
   position = jsonToVec2I(positionConfig);
-  color = jsonToColor(config.get("color"));
+  color = jsonToColor(config.get("color", jsonFromColor(Color::Red)));
   icon = config.getString("icon", "/interface/wires/outbound.png");
 }
 
 Object::InputNode::InputNode(Json positionConfig, Json config) {
   position = jsonToVec2I(positionConfig);
-  color = jsonToColor(config.get("color"));
+  color = jsonToColor(config.get("color", jsonFromColor(Color::Red)));
   icon = config.getString("icon", "/interface/wires/inbound.png");
 }
 
