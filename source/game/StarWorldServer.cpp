@@ -2047,6 +2047,10 @@ void WorldServer::sync() {
   m_worldStorage->sync();
 }
 
+void WorldServer::unloadAll(bool force) {
+  m_worldStorage->unloadAll(force);
+}
+
 WorldChunks WorldServer::readChunks() {
   writeMetadata();
   return m_worldStorage->readChunks();
@@ -2619,6 +2623,17 @@ void WorldServer::setTemplate(WorldTemplatePtr newTemplate) {
       spawnTarget = SpawnTargetPosition(player->position() + player->feetOffset());
     removeClient(client);
     addClient(client, spawnTarget, local, isAdmin, netRules);
+  }
+}
+
+void WorldServer::wire(Vec2I const& outputPosition, size_t outputIndex, Vec2I const& inputPosition, size_t inputIndex) {
+  WireConnection output = {outputPosition, outputIndex};
+  WireConnection input = {inputPosition, inputIndex};
+  for (auto source : atTile<WireEntity>(input.entityLocation)) {
+    for (auto target : atTile<WireEntity>(output.entityLocation)) {
+      source->addNodeConnection(WireNode{WireDirection::Input, input.nodeIndex}, output);
+      target->addNodeConnection(WireNode{WireDirection::Output, output.nodeIndex}, input);
+    }
   }
 }
 

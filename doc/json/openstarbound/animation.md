@@ -39,7 +39,7 @@ Here is another example that could be within `properties`
 ```
 With the lack of a `reset` this transformation would be applied for every update tick, which would make `transformGroupName` continually rotate by 1 degree every tick endlessly.
 
-The transformations are applied in priority order for all stateTypes, so they can build upon eachother.
+The transformations of only the highest priority animation for the relevant transformGroup are applied.
 
 The animation transform property is an array of actions, which are themselves an array, where the first index is a string for the action to perform, and the following indices are the arguments for that action
 

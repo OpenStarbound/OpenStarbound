@@ -19,7 +19,7 @@ WireDirection otherWireDirection(WireDirection direction);
 // Identifier for a specific WireNode in a WireEntity, node indexes for input
 // and output nodes are separate.
 struct WireNode {
-  WireDirection direction; 
+  WireDirection direction;
   size_t nodeIndex;
 };
 

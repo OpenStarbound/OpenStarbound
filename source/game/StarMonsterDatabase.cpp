@@ -7,10 +7,11 @@
 #include "StarLexicalCast.hpp"
 #include "StarRootLuaBindings.hpp"
 #include "StarUtilityLuaBindings.hpp"
+#include "StarRebuilder.hpp"
 
 namespace Star {
 
-MonsterDatabase::MonsterDatabase() : m_luaRoot(make_shared<LuaRoot>()) {
+MonsterDatabase::MonsterDatabase() : m_rebuilder(make_shared<Rebuilder>("monster")) {
   auto assets = Root::singleton().assets();
 
   auto& monsterTypes = assets->scanExtension("monstertype");
@@ -139,14 +140,6 @@ MonsterDatabase::MonsterDatabase() : m_luaRoot(make_shared<LuaRoot>()) {
       throw MonsterException(strf("Error loading monster colors '{}'", file), e);
     }
   }
-
-  for (auto& path : assets->assetSources()) {
-    auto metadata = assets->assetSourceMetadata(path);
-    if (auto scripts = metadata.maybe("errorHandlers"))
-      if (auto rebuildScripts = scripts.value().optArray("monster"))
-        m_rebuildScripts.insertAllAt(0, jsonToStringList(rebuildScripts.value()));
-  }
-
 }
 
 void MonsterDatabase::cleanup() {
@@ -225,28 +218,25 @@ MonsterPtr MonsterDatabase::createMonster(
 }
 
 MonsterPtr MonsterDatabase::diskLoadMonster(Json const& diskStore) const {
+  MonsterPtr monster;
   try {
-    return make_shared<Monster>(diskStore);
+    monster = make_shared<Monster>(diskStore);
   } catch (std::exception const& e) {
-    auto lastException = e;
-    Json newDiskStore = diskStore;
-    for (auto script : m_rebuildScripts) {
-      RecursiveMutexLocker locker(m_luaMutex);
-      auto context = m_luaRoot->createContext(script);
-      context.setCallbacks("root", LuaBindings::makeRootCallbacks());
-      context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
-      Json returnedDiskStore = context.invokePath<Json>("error", newDiskStore, strf("{}", outputException(lastException, false)));
-      if (returnedDiskStore != newDiskStore) {
-        newDiskStore = returnedDiskStore;
-        try {
-          return make_shared<Monster>(diskStore);
-        } catch (std::exception const& e) {
-          lastException = e;
-        }
+    auto exception = std::current_exception();
+    bool success = m_rebuilder->rebuild(diskStore, strf("{}", outputException(e, false)), [&](Json const& store) -> String {
+      try {
+        monster = make_shared<Monster>(store);
+      } catch (std::exception const& e) {
+        exception = std::current_exception();
+        return strf("{}", outputException(e, false));
       }
-    }
-    throw lastException;
+      return {};
+    });
+
+    if (!success)
+      std::rethrow_exception(exception);
   }
+  return monster;
 }
 
 MonsterPtr MonsterDatabase::netLoadMonster(ByteArray const& netStore, NetCompatibilityRules rules) const {

@@ -15,5 +15,11 @@
 		"/humanoid/opensb/chest.cosmetic.animation",
 		"/humanoid/opensb/legs.cosmetic.animation",
 		"/humanoid/opensb/back.cosmetic.animation"
-	]
+	],
+	"identityFramesetTags" : {
+		"bodyFrameset" : "<gender>body.png",
+		"headFrameset" : "<gender>head.png",
+		"bodyMaskFrameset" : "mask/<gender>body.png",
+		"bodyHeadMaskFrameset" : "headmask/<gender>body.png"
+	}
 }

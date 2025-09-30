@@ -5,10 +5,11 @@
 #include "StarAssets.hpp"
 #include "StarRootLuaBindings.hpp"
 #include "StarUtilityLuaBindings.hpp"
+#include "StarRebuilder.hpp"
 
 namespace Star {
 
-VehicleDatabase::VehicleDatabase() : m_luaRoot(make_shared<LuaRoot>()) {
+VehicleDatabase::VehicleDatabase() : m_rebuilder(make_shared<Rebuilder>("vehicle")) {
   auto assets = Root::singleton().assets();
   auto& files = assets->scanExtension("vehicle");
   assets->queueJsons(files);
@@ -24,13 +25,6 @@ VehicleDatabase::VehicleDatabase() : m_luaRoot(make_shared<LuaRoot>()) {
     } catch (StarException const& e) {
       throw VehicleDatabaseException(strf("Error loading vehicle '{}'", file), e);
     }
-  }
-
-  for (auto& path : assets->assetSources()) {
-    auto metadata = assets->assetSourceMetadata(path);
-    if (auto scripts = metadata.maybe("errorHandlers"))
-      if (auto rebuildScripts = scripts.value().optArray("vehicle"))
-        m_rebuildScripts.insertAllAt(0, jsonToStringList(rebuildScripts.value()));
   }
 }
 
@@ -74,21 +68,23 @@ VehiclePtr VehicleDatabase::diskLoad(Json const& diskStore) const {
   try {
     vehicle = create(diskStore.getString("name"), diskStore.get("dynamicConfig"));
     vehicle->diskLoad(diskStore.get("state"));
+    return vehicle;
   } catch (std::exception const& e) {
-    Json newDiskStore;
-    for (auto script : m_rebuildScripts) {
-      RecursiveMutexLocker locker(m_luaMutex);
-      auto context = m_luaRoot->createContext(script);
-      context.setCallbacks("root", LuaBindings::makeRootCallbacks());
-      context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
-      newDiskStore = context.invokePath<Json>("error", diskStore, strf("{}", outputException(e, false)));
-      if (!newDiskStore.isNull())
-        break;
-    }
-    if (newDiskStore.isNull())
-      throw e;
-    vehicle = create(newDiskStore.getString("name"), newDiskStore.get("dynamicConfig"));
-    vehicle->diskLoad(newDiskStore.get("state"));
+    vehicle.reset();
+    auto exception = std::current_exception();
+    bool success = m_rebuilder->rebuild(diskStore, strf("{}", outputException(e, false)), [&](Json const& store) -> String {
+      try {
+        vehicle = create(store.getString("name"), store.get("dynamicConfig"));
+        vehicle->diskLoad(store.get("state"));
+      } catch (std::exception const& e) {
+        exception = std::current_exception();
+        return strf("{}", outputException(e, false));
+      }
+      return {};
+    });
+
+    if (!success)
+      std::rethrow_exception(exception);
   }
   return vehicle;
 }

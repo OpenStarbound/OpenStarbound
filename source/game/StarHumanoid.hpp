@@ -464,6 +464,8 @@ private:
   HashMap<HumanoidEmote, HashMap<String,AnimationStateArgs>> m_emoteAnimationStates;
   HashMap<PortraitMode, HashMap<String,AnimationStateArgs>> m_portraitAnimationStates;
 
+  HashMap<String, String> m_identityFramesetTags;
+
   pair<String, String> m_headRotationPoint;
   pair<String, String> m_frontArmRotationPoint;
   pair<String, String> m_backArmRotationPoint;

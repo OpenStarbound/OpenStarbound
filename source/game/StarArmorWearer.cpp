@@ -196,13 +196,13 @@ void ArmorWearer::diskLoad(Json const& diskStore) {
     load(i, strf("cosmetic{}Item", i - 7));
 }
 
-List<PersistentStatusEffect> ArmorWearer::statusEffects() const {
+List<PersistentStatusEffect> ArmorWearer::statusEffects(bool cosmeticOnly) const {
   List<PersistentStatusEffect> statusEffects;
 
   for (size_t i = 0; i != m_armors.size(); ++i) {
     if (!m_armors[i].item)
       continue;
-    if ((i < 4) ||  m_armors[i].item->statusEffectsInCosmeticSlot())
+    if (!cosmeticOnly && ((i < 4) ||  m_armors[i].item->statusEffectsInCosmeticSlot()))
       statusEffects.appendAll(m_armors[i].item->statusEffects());
     if (m_armors[i].isCurrentlyVisible)
       statusEffects.appendAll(m_armors[i].item->cosmeticStatusEffects());

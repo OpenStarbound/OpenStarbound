@@ -13,10 +13,11 @@
 #include "StarArmors.hpp"
 #include "StarRootLuaBindings.hpp"
 #include "StarUtilityLuaBindings.hpp"
+#include "StarRebuilder.hpp"
 
 namespace Star {
 
-NpcDatabase::NpcDatabase() : m_luaRoot(make_shared<LuaRoot>()) {
+NpcDatabase::NpcDatabase() : m_rebuilder(make_shared<Rebuilder>("npc")) {
   auto assets = Root::singleton().assets();
 
   auto& files = assets->scanExtension("npctype");
@@ -35,13 +36,6 @@ NpcDatabase::NpcDatabase() : m_luaRoot(make_shared<LuaRoot>()) {
       throw NpcException(strf("Error loading npc type '{}'", file), e);
     }
   }
-  for (auto& path : assets->assetSources()) {
-    auto metadata = assets->assetSourceMetadata(path);
-    if (auto scripts = metadata.maybe("errorHandlers"))
-      if (auto rebuildScripts = scripts.value().optArray("npc"))
-        m_rebuildScripts.insertAllAt(0,jsonToStringList(rebuildScripts.value()));
-  }
-
 }
 
 NpcVariant NpcDatabase::generateNpcVariant(String const& species, String const& typeName, float level) const {
@@ -369,30 +363,27 @@ NpcPtr NpcDatabase::createNpc(NpcVariant const& npcVariant) const {
 }
 
 NpcPtr NpcDatabase::diskLoadNpc(Json const& diskStore) const {
+  NpcPtr npc;
   try {
     NpcVariant npcVariant = readNpcVariantFromJson(diskStore.get("npcVariant"));
-    return make_shared<Npc>(npcVariant, diskStore);
+    npc = make_shared<Npc>(npcVariant, diskStore);
   } catch (std::exception const& e) {
-    auto lastException = e;
-    Json newDiskStore = diskStore;
-    for (auto script : m_rebuildScripts) {
-      RecursiveMutexLocker locker(m_luaMutex);
-      auto context = m_luaRoot->createContext(script);
-      context.setCallbacks("root", LuaBindings::makeRootCallbacks());
-      context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
-      Json returnedDiskStore = context.invokePath<Json>("error", newDiskStore, strf("{}", outputException(lastException, false)));
-      if (returnedDiskStore != newDiskStore) {
-        newDiskStore = returnedDiskStore;
-        try {
-          NpcVariant npcVariant = readNpcVariantFromJson(newDiskStore.get("npcVariant"));
-          return make_shared<Npc>(npcVariant, newDiskStore);
-        } catch (std::exception const& e) {
-          lastException = e;
-        }
+    auto exception = std::current_exception();
+    bool success = m_rebuilder->rebuild(diskStore, strf("{}", outputException(e, false)), [&](Json const& store) -> String {
+      try {
+        NpcVariant npcVariant = readNpcVariantFromJson(store.get("npcVariant"));
+        npc = make_shared<Npc>(npcVariant, store);
+      } catch (std::exception const& e) {
+        exception = std::current_exception();
+        return strf("{}", outputException(e, false));
       }
-    }
-    throw lastException;
+      return {};
+    });
+
+    if (!success)
+      std::rethrow_exception(exception);
   }
+  return npc;
 }
 
 NpcPtr NpcDatabase::netLoadNpc(ByteArray const& netStore, NetCompatibilityRules rules) const {

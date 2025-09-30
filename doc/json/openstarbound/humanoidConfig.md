@@ -84,6 +84,16 @@ These are never triggered on the player/npc in world, but instead in the animato
 
 ---
 
+## `JsonObject` identityFramesetTags
+Key Value pairs of strings where the key is an animation tag and value is a string containing tags that will be replaced with active animation tags, these are set after identity has been set, so you could for example do
+```
+"identityFramesetTags" : {
+    "bodyFrameset" : "<gender>body.png"
+}
+```
+
+---
+
 ## `String` frontHandItemPart
 ## `String` backHandItemPart
 When using the animator, the part that item drawables will be attached to.

@@ -22,9 +22,11 @@ end
 -- patch function, called by the game
 function patch(config)
   local layout = config.paneLayout
-  layout.bgShine.zlevel = -10
   layout.panefeature.positionLocked = false
   layout.panefeature.anchor = "center"
+  if layout.bgShine then
+    layout.bgShine.zlevel = -10
+  end
   for i = 1, 32 do config.zoomList[i] = i end
   -- Create the camera pan speed widgets
   shift(clone(layout, "zoomLabel", "cameraSpeedLabel"), 100).value = "CAMERA PAN SPEED"
@@ -37,7 +39,8 @@ function patch(config)
   shift(clone(layout, "zoomLabel", "interfaceScaleLabel"), 0, 28).value = "INTERFACE SCALE"
   shift(clone(layout, "zoomSlider", "interfaceScaleSlider"), 0, 28)
   shift(clone(layout, "zoomValueLabel", "interfaceScaleValueLabel"), 0, 28)
-  config.interfaceScaleList = {0, 1, 2, 3, 4, 5, 6} -- 0 = AUTO!
+  config.interfaceScaleList = {0} -- 0 = AUTO!
+  for i = 1, 17 do config.interfaceScaleList[i + 1] = 0.75 + i / 4 end
 
   -- Create anti-aliasing toggle
   shift(clone(layout, "multiTextureLabel", "antiAliasingLabel"), 98).value = "SUPER-SAMPLED AA"

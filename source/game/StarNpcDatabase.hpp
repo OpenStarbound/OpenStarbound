@@ -6,10 +6,10 @@
 #include "StarStatusTypes.hpp"
 #include "StarEntitySplash.hpp"
 #include "StarItemDescriptor.hpp"
-#include "StarLuaRoot.hpp"
 
 namespace Star {
 
+STAR_CLASS(Rebuilder);
 STAR_CLASS(Item);
 STAR_CLASS(Npc);
 STAR_CLASS(NpcDatabase);
@@ -82,9 +82,7 @@ private:
   // override any base value
   Json mergeConfigValues(Json const& base, Json const& merger) const;
 
-  mutable RecursiveMutex m_luaMutex;
-  LuaRootPtr m_luaRoot;
-  List<String> m_rebuildScripts;
+  RebuilderPtr m_rebuilder;
 
   StringMap<Json> m_npcTypes;
 };

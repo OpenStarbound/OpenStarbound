@@ -112,6 +112,8 @@ public:
   bool respawnInWorld() const;
   void setRespawnInWorld(bool respawnInWorld);
 
+  int64_t latency() const;
+
   void resendEntity(EntityId entityId);
   void removeEntity(EntityId entityId, bool andDie);
 
@@ -157,6 +159,7 @@ public:
   bool playerCanReachEntity(EntityId entityId, bool preferInteractive = true) const;
 
   void disconnectAllWires(Vec2I wireEntityPosition, WireNode const& node);
+  void wire(Vec2I const& outputPosition, size_t outputIndex, Vec2I const& inputPosition, size_t inputIndex);
   void connectWire(WireConnection const& output, WireConnection const& input);
 
   // Functions for sending broadcast messages to other players that can receive them,

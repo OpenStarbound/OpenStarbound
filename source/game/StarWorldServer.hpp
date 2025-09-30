@@ -183,6 +183,7 @@ public:
   RpcPromise<Vec2F> findUniqueEntity(String const& uniqueId) override;
   RpcPromise<Json> sendEntityMessage(Variant<EntityId, String> const& entity, String const& message, JsonArray const& args = {}) override;
   bool isTileProtected(Vec2I const& pos) const override;
+  void wire(Vec2I const& outputPosition, size_t outputIndex, Vec2I const& inputPosition, size_t inputIndex);
 
   bool getTileProtection(DungeonId dungeonId) const;
   void setTileProtection(DungeonId dungeonId, bool isProtected);
@@ -240,6 +241,8 @@ public:
 
   // Write all active sectors to disk without unloading them
   void sync();
+  // Unload all sectors
+  void unloadAll(bool force = false);
   // Copy full world to in memory representation
   WorldChunks readChunks();
 

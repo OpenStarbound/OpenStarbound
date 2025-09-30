@@ -13,17 +13,25 @@ By a truly unbelievable coincidence, I was recently out for a walk when I saw a 
 
 You **must** own a copy of Starbound. Base game assets are not provided for very obvious reasons.
 
+
 The code is worked on whenever I feel like it. Contributions are welcome!
 
 ## Installation
-You can download a nightly build below, or the [latest release](https://github.com/OpenStarbound/OpenStarbound/releases/latest). At the moment, you must copy the game assets (**packed.pak**) from your normal Starbound install to the OpenStarbound assets directory before playing.
+### Download the [latest stable release](https://github.com/OpenStarbound/OpenStarbound/releases/latest).
+The latest stable release is recommended, as the nightly build can have bugs.
+
+At the moment, you must copy the game assets (**packed.pak**) from your normal Starbound install to the OpenStarbound assets directory before playing.
 
 OpenStarbound is a separate installation/executable than Starbound. You can copy your `storage` folder from Starbound to transfer your save data and settings. Launching OpenStarbound with Steam open will load your subscribed Steam mods.
 
 An installer is available for Windows. otherwise, extract the client/server zip for your platform and copy the game assets (packed.pak) to the OpenStarbound assets folder.
-### Nightly Builds
-These link directly to the latest build from the [Actions](https://github.com/OpenStarbound/OpenStarbound/actions?query=branch%3Amain) tab.
 
+</details>
+<details>
+<summary><b>Nightly Builds</b></summary>
+ 
+These link directly to the latest build from the [Actions](https://github.com/OpenStarbound/OpenStarbound/actions?query=branch%3Amain) tab.
+ 
 **Windows**
 [Installer](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main/OpenStarbound-Windows-Installer.zip),
 [Client](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main/OpenStarbound-Windows-Client.zip),
@@ -38,6 +46,7 @@ These link directly to the latest build from the [Actions](https://github.com/Op
 [ARM](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main/OpenStarbound-macOS-Silicon-Client.zip)
 
 [All Nightly Builds](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main)
+</details>
 
 ## Changes
 Note: Not every function from [StarExtensions](https://github.com/StarExtensions/StarExtensions) has been ported yet, but near-full compatibility with mods that use StarExtensions features is planned.
@@ -123,7 +132,7 @@ Note: Some of these [texts](## "hi :3") are just tooltips rather than links.
 * Open the repo directory in your IDE - it should detect the CMake project.
 * Build.
   * If you're using an IDE, it should detect the correct preset and allow you to build from within.
-  * Otherwise, build manually by running CMake in the **source/** directory: `cmake --build --preset=windows-release`
+  * Otherwise, build manually by running CMake in the **source/** directory: `cmake --preset=windows-release` then `cmake --build --preset=windows-release`
 * The built binaries will be in **dist/**. Copy the DLLs from **lib/windows/** and the **sbinit.config** above into **dist/** so the game can run.
 
 </details>
@@ -136,7 +145,7 @@ Note: Some of these [texts](## "hi :3") are just tooltips rather than links.
 * Clone [vcpkg](https://github.com/microsoft/vcpkg?tab=readme-ov-file#quick-start-unix) (outside the repo!) and bootstrap it with the linked instructions.
 * Set the **`VCPKG_ROOT`** environment value to your new vcpkg directory, so that CMake can find it.
   *  `export VCPKG_ROOT=/replace/with/full/path/to/your/vcpkg/directory/`
-* Change to the repo's **source/** directory, then run `cmake --build --preset=linux-release` to build.
+* Change to the repo's **source/** directory, then run `cmake --preset=linux-release` and `cmake --build --preset=linux-release` to build.
 * The built binaries will be in **dist/**. Copy the the .so libs from **lib/linux/** and the **sbinit.config** above into **dist/** so the game can run.
   * From the root dir of the repo, you can run the assembly script which is used by the GitHub Action: `scripts/ci/linux/assemble.sh`
     * This packs the game assets and copies the built binaries, premade sbinit configs & required libs into **client/** & **server/**.

@@ -25,6 +25,8 @@
 #include "StarItemLuaBindings.hpp"
 #include "StarConfigLuaBindings.hpp"
 #include "StarUtilityLuaBindings.hpp"
+#include "StarLuaRoot.hpp"
+#include "StarRebuilder.hpp"
 
 namespace Star {
 
@@ -132,20 +134,12 @@ bool ItemDatabase::canMakeRecipe(ItemRecipe const& recipe, HashMap<ItemDescripto
 }
 
 ItemDatabase::ItemDatabase()
-  : m_luaRoot(make_shared<LuaRoot>()) {
+  : m_luaRoot(make_shared<LuaRoot>()), m_rebuilder(make_shared<Rebuilder>("item")) {
   scanItems();
   addObjectItems();
   addCodexes();
   scanRecipes();
   addBlueprints();
-
-  auto assets = Root::singleton().assets();
-  for (auto& path : assets->assetSources()) {
-    auto metadata = assets->assetSourceMetadata(path);
-    if (auto scripts = metadata.maybe("errorHandlers"))
-      if (auto rebuildScripts = scripts.value().optArray("item"))
-        m_rebuildScripts.insertAllAt(0, jsonToStringList(rebuildScripts.value()));
-  }
 }
 
 void ItemDatabase::cleanup() {
@@ -517,46 +511,44 @@ ItemPtr ItemDatabase::createItem(ItemType type, ItemConfig const& config) {
 
 ItemPtr ItemDatabase::tryCreateItem(ItemDescriptor const& descriptor, Maybe<float> level, Maybe<uint64_t> seed, bool ignoreInvalid) const {
   ItemPtr result;
-  String name = descriptor.name();
-  Json parameters = descriptor.parameters();
+  ItemDescriptor newDescriptor = descriptor;
 
   try {
-    if ((name == "perfectlygenericitem") && parameters.contains("genericItemStorage")) {
-      Json storage = parameters.get("genericItemStorage");
-      name = storage.getString("name");
-      parameters = storage.get("parameters");
-    }
-	  result = createItem(m_items.get(name).type, itemConfig(name, parameters, level, seed));
+    if (newDescriptor.name() == "perfectlygenericitem" && newDescriptor.parameters().contains("genericItemStorage"))
+      newDescriptor = ItemDescriptor(descriptor.parameters().get("genericItemStorage"));
+    result = createItem(m_items.get(newDescriptor.name()).type, itemConfig(newDescriptor.name(), newDescriptor.parameters(), level, seed));
     result->setCount(descriptor.count());
-    return result;
-  }
-  catch (std::exception const& e) {
+  } catch (std::exception const& e) {
     if (!ignoreInvalid) {
-      auto lastException = e;
-      Json newDiskStore = descriptor.toJson();
-      for (auto script : m_rebuildScripts) {
-        RecursiveMutexLocker locker(m_luaMutex);
-        auto context = m_luaRoot->createContext(script);
-        context.setCallbacks("root", LuaBindings::makeRootCallbacks());
-        context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
-        Json returnedDiskStore = context.invokePath<Json>("error", newDiskStore, strf("{}", outputException(lastException, false)));
-        if (returnedDiskStore != newDiskStore) {
-          newDiskStore = returnedDiskStore;
-          try {
-            ItemDescriptor newDescriptor(newDiskStore);
-            result = createItem(m_items.get(newDescriptor.name()).type, itemConfig(newDescriptor.name(), newDescriptor.parameters(), level, seed));
-            result->setCount(descriptor.count());
-            return result;
-          } catch (std::exception const& e) {
-            lastException = e;
-          }
+      bool success = m_rebuilder->rebuild(descriptor.toJson(), strf("{}", outputException(e, false)), [&](Json const& store) -> String {
+        try {
+          ItemDescriptor newDescriptor(store);
+          result = createItem(m_items.get(newDescriptor.name()).type, itemConfig(newDescriptor.name(), newDescriptor.parameters(), level, seed));
+          result->setCount(newDescriptor.count());
+        }
+        catch (std::exception const& e) {
+          return strf("{}", outputException(e, false));
+        }
+        return {};
+      });
+
+      if (!success) {
+        if (descriptor.name() == "perfectlygenericitem") {
+          Logger::error("Could not re-instantiate item '{}'. {}", descriptor, outputException(e, false));
+          result = createItem(m_items.get("perfectlygenericitem").type, itemConfig("perfectlygenericitem", descriptor.parameters(), level, seed));
+        } else {
+          Logger::error("Could not instantiate item '{}'. {}", descriptor, outputException(e, false));
+          result = createItem(m_items.get("perfectlygenericitem").type, itemConfig("perfectlygenericitem", JsonObject({
+            {"genericItemStorage", descriptor.toJson()},
+            {"shortdescription", descriptor.name()},
+            {"description", "Reinstall the parent mod to return this item to normal"}
+          }), {}, {}));
         }
       }
-      throw lastException;
-    } else {
-      throw e;
-    }
+    } else
+      throw;
   }
+  return result;
 }
 
 ItemDatabase::ItemData const& ItemDatabase::itemData(String const& name) const {

@@ -442,8 +442,7 @@ void Npc::update(float dt, uint64_t) {
     m_armor->effects(*m_effectEmitter);
     m_tools->effects(*m_effectEmitter);
 
-    if (!m_disableWornArmor.get())
-      m_statusController->setPersistentEffects("armor", m_armor->statusEffects());
+    m_statusController->setPersistentEffects("armor", m_armor->statusEffects(m_disableWornArmor.get()));
     m_statusController->setPersistentEffects("tools", m_tools->statusEffects());
 
     m_movementController->tickMaster(dt);
