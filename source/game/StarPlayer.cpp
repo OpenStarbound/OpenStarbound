@@ -980,9 +980,12 @@ void Player::update(float dt, uint64_t) {
       if (edgeTriggeredUse) {
         auto anchor = as<LoungeAnchor>(m_movementController->entityAnchor());
         bool useTool = canUseTool();
-        if (anchor && (!useTool || anchor->controllable) && anchor->dismountable)
-          m_movementController->resetAnchorState();
-        else if (useTool) {
+        if (anchor && (!useTool || anchor->controllable)) {
+          if (anchor->dismountable)
+            m_movementController->resetAnchorState();
+          else if (auto ie = as<InteractiveEntity>(world()->entity(m_movementController->anchorState()->entityId)))
+            interactWithEntity(ie);
+        } else if (useTool) {
           if (auto ie = bestInteractionEntity(true))
             interactWithEntity(ie);
         }
