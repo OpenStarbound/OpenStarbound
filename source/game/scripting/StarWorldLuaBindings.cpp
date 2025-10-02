@@ -360,6 +360,7 @@ namespace LuaBindings {
       callbacks.registerCallback("mainPlayer", [clientWorld]() { return clientWorld->clientState().playerId(); });
       callbacks.registerCallback("isClient", []() { return true;  });
       callbacks.registerCallback("isServer", []() { return false; });
+      callbacks.registerCallback("latency", [clientWorld]() { return clientWorld->latency(); });
       callbacks.registerCallbackWithSignature<void, EntityId>("resendEntity", bind(ClientWorldCallbacks::resendEntity, clientWorld, _1));
       callbacks.registerCallbackWithSignature<RectI>("clientWindow", bind(ClientWorldCallbacks::clientWindow, clientWorld));
       callbacks.registerCallback("players", [clientWorld]() {

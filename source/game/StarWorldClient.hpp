@@ -112,6 +112,8 @@ public:
   bool respawnInWorld() const;
   void setRespawnInWorld(bool respawnInWorld);
 
+  int64_t latency() const;
+
   void resendEntity(EntityId entityId);
   void removeEntity(EntityId entityId, bool andDie);
 
