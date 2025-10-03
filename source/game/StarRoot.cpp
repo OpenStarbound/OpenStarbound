@@ -673,7 +673,10 @@ StringList Root::scanForAssetSources(StringList const& directories, StringList c
   // priority ones
 
   assetSources.sort([](auto const& a, auto const& b) {
-      return a->priority < b->priority;
+      return 
+        a->priority == b->priority ? 
+          a->name.value(a->path) < b->name.value(b->path) : 
+          a->priority < b->priority;
     });
 
   // Finally, sort asset sources so that sources that have dependencies come
