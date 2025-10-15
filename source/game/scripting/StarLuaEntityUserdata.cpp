@@ -449,9 +449,9 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
             return actor->movementController()->liquidMovement();
         return {};
     });
-    methods.registerMethod("getScale", [&](EntityPtr entity) -> Maybe<float> {
+    methods.registerMethod("scale", [&](EntityPtr entity) -> Maybe<float> {
         if (auto actor = as<ActorEntity>(entity))
-            return actor->movementController()->getScale();
+            return actor->movementController()->scale();
         return {};
     });
 

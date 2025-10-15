@@ -176,7 +176,7 @@ List<Drawable> BeamItem::beamDrawables(bool canPlace) const {
           endImage = strf("{}?{}", endImage, imageOperationToString(op));
         }
 
-        Drawable ball = Drawable::makeImage(endImage, owner()->movementController()->getScale() / TilePixels, true, m_beamCurve.dest());
+        Drawable ball = Drawable::makeImage(endImage, owner()->movementController()->scale() / TilePixels, true, m_beamCurve.dest());
         Color ballColor = Color::White;
         ballColor.setAlphaF(getAppropriateOpacity());
         ball.color = ballColor;
@@ -184,7 +184,7 @@ List<Drawable> BeamItem::beamDrawables(bool canPlace) const {
       }
 
       for (auto line = 0; line < numLines; line++) {
-        float lineThickness = rangeRand(m_beamWidthDev, m_minBeamWidth, m_maxBeamWidth) * owner()->movementController()->getScale();
+        float lineThickness = rangeRand(m_beamWidthDev, m_minBeamWidth, m_maxBeamWidth) * owner()->movementController()->scale();
         float beamTransparency = rangeRand(m_beamTransDev, m_minBeamTrans, m_maxBeamTrans);
         mainColor.setAlphaF(mainColor.alphaF() * beamTransparency);
         Vec2F previousLoc = m_beamCurve.origin(); // lines meet at origin and dest.

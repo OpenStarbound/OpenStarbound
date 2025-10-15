@@ -272,7 +272,7 @@ void Vehicle::update(float dt, uint64_t) {
 
   if (isMaster()) {
     m_movementController.tickMaster(dt);
-    m_networkedAnimator.setZoom(m_movementController.getScale());
+    m_networkedAnimator.setZoom(m_movementController.scale());
 
     m_scriptComponent.update(m_scriptComponent.updateDt(dt));
 

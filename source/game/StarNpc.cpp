@@ -256,27 +256,27 @@ RectF Npc::metaBoundBox() const {
 
 Vec2F Npc::mouthOffset(bool ignoreAdjustments) const {
   return Vec2F{humanoid()->mouthOffset(ignoreAdjustments)[0] * numericalDirection(humanoid()->facingDirection()),
-      humanoid()->mouthOffset(ignoreAdjustments)[1]} * m_movementController->getScale();
+      humanoid()->mouthOffset(ignoreAdjustments)[1]} * m_movementController->scale();
 }
 
 Vec2F Npc::feetOffset() const {
-  return Vec2F{humanoid()->feetOffset()[0] * numericalDirection(humanoid()->facingDirection()), humanoid()->feetOffset()[1]} * m_movementController->getScale();
+  return Vec2F{humanoid()->feetOffset()[0] * numericalDirection(humanoid()->facingDirection()), humanoid()->feetOffset()[1]} * m_movementController->scale();
 }
 
 Vec2F Npc::headArmorOffset() const {
-  return Vec2F{humanoid()->headArmorOffset()[0] * numericalDirection(humanoid()->facingDirection()), humanoid()->headArmorOffset()[1]} * m_movementController->getScale();
+  return Vec2F{humanoid()->headArmorOffset()[0] * numericalDirection(humanoid()->facingDirection()), humanoid()->headArmorOffset()[1]} * m_movementController->scale();
 }
 
 Vec2F Npc::chestArmorOffset() const {
-  return Vec2F{humanoid()->chestArmorOffset()[0] * numericalDirection(humanoid()->facingDirection()), humanoid()->chestArmorOffset()[1]} * m_movementController->getScale();
+  return Vec2F{humanoid()->chestArmorOffset()[0] * numericalDirection(humanoid()->facingDirection()), humanoid()->chestArmorOffset()[1]} * m_movementController->scale();
 }
 
 Vec2F Npc::backArmorOffset() const {
-  return Vec2F{humanoid()->backArmorOffset()[0] * numericalDirection(humanoid()->facingDirection()), humanoid()->backArmorOffset()[1]} * m_movementController->getScale();
+  return Vec2F{humanoid()->backArmorOffset()[0] * numericalDirection(humanoid()->facingDirection()), humanoid()->backArmorOffset()[1]} * m_movementController->scale();
 }
 
 Vec2F Npc::legsArmorOffset() const {
-  return Vec2F{humanoid()->legsArmorOffset()[0] * numericalDirection(humanoid()->facingDirection()), humanoid()->legsArmorOffset()[1]} * m_movementController->getScale();
+  return Vec2F{humanoid()->legsArmorOffset()[0] * numericalDirection(humanoid()->facingDirection()), humanoid()->legsArmorOffset()[1]} * m_movementController->scale();
 }
 
 RectF Npc::collisionArea() const {
@@ -406,7 +406,7 @@ void Npc::update(float dt, uint64_t) {
   m_movementController->setTimestep(dt);
 
   if (isMaster()) {
-    m_statusController->setScale(m_movementController->getScale());
+    m_statusController->setScale(m_movementController->scale());
 
     m_scriptComponent.update(m_scriptComponent.updateDt(dt));
 
@@ -517,7 +517,7 @@ void Npc::render(RenderCallback* renderCallback) {
     scale = scale.piecewiseMultiply(result.first);
     humanoidDirectives.append(result.second);
   }
-  humanoid()->setScale(scale * m_movementController->getScale());
+  humanoid()->setScale(scale * m_movementController->scale());
 
   for (auto& drawable : humanoid()->render()) {
     drawable.translate(position());
@@ -1280,7 +1280,7 @@ List<DamageSource> Npc::damageSources() const {
     DamageSource damageSource(config);
     if (auto damagePoly = damageSource.damageArea.ptr<PolyF>()) {
       damagePoly->rotate(m_movementController->rotation());
-      damagePoly->scale(m_movementController->getScale());
+      damagePoly->scale(m_movementController->scale());
     }
     damageSource.damage *= m_statusController->stat("powerMultiplier");
     damageSources.append(damageSource);

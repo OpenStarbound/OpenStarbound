@@ -288,7 +288,7 @@ List<DamageSource> Monster::damageSources() const {
     DamageSource damageSource(m_monsterVariant.touchDamageConfig);
     if (auto damagePoly = damageSource.damageArea.ptr<PolyF>()) {
       damagePoly->rotate(m_movementController->rotation());
-      damagePoly->scale(m_movementController->getScale());
+      damagePoly->scale(m_movementController->scale());
     }
     damageSource.damage *= m_monsterVariant.touchDamageMultiplier * levelPowerMultiplier * m_statusController->stat("powerMultiplier");
     damageSource.sourceEntityId = entityId();
@@ -308,21 +308,21 @@ List<DamageSource> Monster::damageSources() const {
       poly.transform(m_networkedAnimator.partTransformation(anchorPart));
       if (m_networkedAnimator.flipped())
         poly.flipHorizontal(m_networkedAnimator.flippedRelativeCenterLine());
-      poly.scale(m_movementController->getScale());
+      poly.scale(m_movementController->scale());
     });
     if (ds.knockback.is<Vec2F>()) {
       Vec2F knockback = ds.knockback.get<Vec2F>();
       knockback = m_networkedAnimator.partTransformation(anchorPart).transformVec2(knockback);
       if (m_networkedAnimator.flipped())
         knockback = Vec2F(-knockback[0], knockback[1]);
-      ds.knockback = knockback * m_movementController->getScale();
+      ds.knockback = knockback * m_movementController->scale();
     }
 
     List<DamageSource> partSources;
     if (auto line = ds.damageArea.maybe<Line2F>()) {
       if (pair.second.getBool("checkLineCollision", false)) {
         Line2F worldLine = line.value().translated(position());
-        worldLine.scale(m_movementController->getScale());
+        worldLine.scale(m_movementController->scale());
         float length = worldLine.length();
 
         auto bounces = pair.second.getInt("bounces", 0);
@@ -457,7 +457,7 @@ void Monster::update(float dt, uint64_t) {
 
   if (isMaster()) {
     m_networkedAnimator.setFlipped((m_movementController->facingDirection() == Direction::Left) != m_monsterVariant.reversed);
-    m_networkedAnimator.setZoom(m_movementController->getScale());
+    m_networkedAnimator.setZoom(m_movementController->scale());
 
     if (m_knockedOut) {
       m_knockoutTimer -= dt;
@@ -855,10 +855,10 @@ List<PhysicsForceRegion> Monster::forceRegions() const {
   auto forceRegions = m_physicsForces.get();
   for (auto forceRegion : forceRegions) {
     if (auto dfr = forceRegion.ptr<DirectionalForceRegion>()) {
-      dfr->region.scale(m_movementController->getScale());
+      dfr->region.scale(m_movementController->scale());
     } else if (auto rfr = forceRegion.ptr<RadialForceRegion>()) {
-      rfr->innerRadius *= m_movementController->getScale();
-      rfr->outerRadius *= m_movementController->getScale();
+      rfr->innerRadius *= m_movementController->scale();
+      rfr->outerRadius *= m_movementController->scale();
     }
   }
   return forceRegions;

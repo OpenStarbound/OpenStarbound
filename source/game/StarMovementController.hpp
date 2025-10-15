@@ -108,7 +108,7 @@ public:
 
   virtual float rotation() const;
 
-  float getScale() const;
+  float scale() const;
 
   // CollisionPoly rotated and translated by position
   PolyF collisionBody() const;
@@ -157,7 +157,7 @@ public:
 
   void setRotation(float angle);
 
-  void scale(float scale);
+  void setScale(float scale);
 
   // Apply one timestep of rotation.
   void rotate(float rotationRate);

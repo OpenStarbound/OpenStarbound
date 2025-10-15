@@ -235,7 +235,7 @@ Json MovementController::storeState() const {
     {"position", jsonFromVec2F(position())},
     {"velocity", jsonFromVec2F(velocity())},
     {"rotation", rotation()},
-    {"scale", getScale()}
+    {"scale", scale()}
   };
 }
 
@@ -243,11 +243,11 @@ void MovementController::loadState(Json const& state) {
   setPosition(jsonToVec2F(state.get("position")));
   setVelocity(jsonToVec2F(state.get("velocity")));
   setRotation(state.getFloat("rotation"));
-  scale(state.getFloat("scale", 1));
+  setScale(state.getFloat("scale", 1));
 }
 
 float MovementController::mass() const {
-  return m_mass.get() * getScale();
+  return m_mass.get() * scale();
 }
 
 PolyF const& MovementController::collisionPoly() const {
@@ -286,7 +286,7 @@ float MovementController::rotation() const {
   return m_rotation.get();
 }
 
-float MovementController::getScale() const {
+float MovementController::scale() const {
   return m_scale.get();
 }
 
@@ -405,7 +405,7 @@ void MovementController::setRotation(float rotation) {
   m_rotation.set(rotation);
 }
 
-void MovementController::scale(float scale) {
+void MovementController::setScale(float scale) {
   if (scale > 0)
     m_scale.set(scale);
   else
@@ -667,7 +667,7 @@ void MovementController::tickMaster(float dt) {
   // in the correct controlled movement.
   if (!zeroG() && !stickingDirection()) {
     float buoyancy = *m_parameters.liquidBuoyancy * m_liquidPercentage + *m_parameters.airBuoyancy * (1.0f - liquidPercentage());
-    float gravity = world()->gravity(position()) * *m_parameters.gravityMultiplier * (1.0f - buoyancy) * getScale();
+    float gravity = world()->gravity(position()) * *m_parameters.gravityMultiplier * (1.0f - buoyancy) * scale();
     Vec2F environmentVelocity;
     environmentVelocity[1] -= gravity * dt;
 
@@ -1073,7 +1073,7 @@ MovementController::CollisionSeparation MovementController::collisionSeparate(Li
 void MovementController::updateParameters(MovementParameters parameters) {
   m_parameters = std::move(parameters);
   auto poly = *m_parameters.collisionPoly;
-  poly.scale(getScale());
+  poly.scale(scale());
   m_collisionPoly.set(poly);
   m_mass.set(*m_parameters.mass);
   updatePositionInterpolators();
@@ -1135,7 +1135,7 @@ void MovementController::queryCollisions(RectF const& region) {
 
 float MovementController::gravity() {
   float buoyancy = *m_parameters.liquidBuoyancy * m_liquidPercentage + *m_parameters.airBuoyancy * (1.0f - liquidPercentage());
-  return world()->gravity(position()) * *m_parameters.gravityMultiplier * (1.0f - buoyancy) * getScale();
+  return world()->gravity(position()) * *m_parameters.gravityMultiplier * (1.0f - buoyancy) * scale();
 }
 
 }

@@ -172,14 +172,14 @@ List<DamageSource> ActiveItem::damageSources() const {
     if (ds.damageArea.is<PolyF>()) {
       auto& poly = ds.damageArea.get<PolyF>();
       poly.rotate(m_armAngle.get());
-      poly.scale(owner()->movementController()->getScale());
+      poly.scale(owner()->movementController()->scale());
       if (owner()->facingDirection() == Direction::Left)
         poly.flipHorizontal(0.0f);
       poly.translate(handPosition(Vec2F()));
     } else if (ds.damageArea.is<Line2F>()) {
       auto& line = ds.damageArea.get<Line2F>();
       line.rotate(m_armAngle.get());
-      line.scale(owner()->movementController()->getScale());
+      line.scale(owner()->movementController()->scale());
       if (owner()->facingDirection() == Direction::Left)
         line.flipHorizontal(0.0f);
       line.translate(handPosition(Vec2F()));
@@ -193,7 +193,7 @@ List<PolyF> ActiveItem::shieldPolys() const {
   List<PolyF> shieldPolys = m_shieldPolys.get();
   for (auto sp : m_itemShieldPolys.get()) {
     sp.rotate(m_armAngle.get());
-    sp.scale(owner()->movementController()->getScale());
+    sp.scale(owner()->movementController()->scale());
     if (owner()->facingDirection() == Direction::Left)
       sp.flipHorizontal(0.0f);
     sp.translate(handPosition(Vec2F()));
@@ -207,14 +207,14 @@ List<PhysicsForceRegion> ActiveItem::forceRegions() const {
   for (auto fr : m_itemForceRegions.get()) {
     if (auto dfr = fr.ptr<DirectionalForceRegion>()) {
       dfr->region.rotate(m_armAngle.get());
-      dfr->region.scale(owner()->movementController()->getScale());
+      dfr->region.scale(owner()->movementController()->scale());
       if (owner()->facingDirection() == Direction::Left)
         dfr->region.flipHorizontal(0.0f);
       dfr->region.translate(owner()->position() + handPosition(Vec2F()));
     } else if (auto rfr = fr.ptr<RadialForceRegion>()) {
       rfr->center = rfr->center.rotate(m_armAngle.get());
-      rfr->innerRadius *= owner()->movementController()->getScale();
-      rfr->outerRadius *= owner()->movementController()->getScale();
+      rfr->innerRadius *= owner()->movementController()->scale();
+      rfr->outerRadius *= owner()->movementController()->scale();
       if (owner()->facingDirection() == Direction::Left)
         rfr->center[0] *= -1;
       rfr->center += owner()->position() + handPosition(Vec2F());

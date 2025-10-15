@@ -1214,7 +1214,7 @@ void WorldClient::update(float dt) {
 
     Vec2F playerPos = m_mainPlayer->position();
     // being smaller should decrease your pickup range, being larger shouldn't extend it that much further
-    auto pickupArea = m_mainPlayer->movementController()->collisionBoundBox().expanded(DropDist / 2 * clamp<float>(m_mainPlayer->movementController()->getScale(), 0, 1.5));
+    auto pickupArea = m_mainPlayer->movementController()->collisionBoundBox().expanded(DropDist / 2 * clamp<float>(m_mainPlayer->movementController()->scale(), 0, 1.5));
     auto dropList = m_entityMap->query<ItemDrop>(pickupArea);
     for (auto itemDrop : dropList) {
       auto distSquared = m_geometry.diff(itemDrop->position(), playerPos).magnitudeSquared();

@@ -233,10 +233,10 @@ List<DamageSource> Projectile::damageSources() const {
       if (angleSide.second == Direction::Left)
         damagePoly.flipHorizontal(0);
       damagePoly.rotate(angleSide.first);
-      damagePoly.scale(m_movementController->getScale());
+      damagePoly.scale(m_movementController->scale());
     } else {
       damagePoly.rotate(m_movementController->rotation());
-      damagePoly.scale(m_movementController->getScale());
+      damagePoly.scale(m_movementController->scale());
     }
     addDamageSource(damagePoly);
   } else if (!useDamageLine) {
@@ -376,7 +376,7 @@ void Projectile::render(RenderCallback* renderCallback) {
   m_effectEmitter->render(renderCallback);
 
   String image = strf("{}:{}{}", m_config->image, m_frame, m_imageSuffix);
-  Drawable drawable = Drawable::makeImage(image, m_movementController->getScale() / TilePixels, true, Vec2F());
+  Drawable drawable = Drawable::makeImage(image, m_movementController->scale() / TilePixels, true, Vec2F());
   drawable.imagePart().addDirectives(m_imageDirectives, true);
   if (m_config->flippable) {
     auto angleSide = getAngleSide(m_movementController->rotation(), true);
@@ -453,13 +453,13 @@ void Projectile::setSourceEntity(EntityId source, bool trackSource) {
 
       // projectiles inherit scale from their owners when they initialize
       if (auto actor = as<ActorEntity>(sourceEntity)) {
-        m_movementController->scale(m_movementController->getScale() * actor->movementController()->getScale());
-        m_movementController->setVelocity(m_movementController->velocity() * actor->movementController()->getScale());
-        m_acceleration *= actor->movementController()->getScale();
+        m_movementController->setScale(m_movementController->scale() * actor->movementController()->scale());
+        m_movementController->setVelocity(m_movementController->velocity() * actor->movementController()->scale());
+        m_acceleration *= actor->movementController()->scale();
       } else if (auto mob = as<MobileEntity>(sourceEntity)) {
-        m_movementController->scale(m_movementController->getScale() * mob->movementController()->getScale());
-        m_movementController->setVelocity(m_movementController->velocity() * mob->movementController()->getScale());
-        m_acceleration *= mob->movementController()->getScale();
+        m_movementController->setScale(m_movementController->scale() * mob->movementController()->scale());
+        m_movementController->setVelocity(m_movementController->velocity() * mob->movementController()->scale());
+        m_acceleration *= mob->movementController()->scale();
       }
       if (!m_damageTeam)
         setTeam(sourceEntity->getTeam());
@@ -496,10 +496,10 @@ List<PhysicsForceRegion> Projectile::forceRegions() const {
     if (p.second.enabled.get()) {
       PhysicsForceRegion forceRegion = p.second.forceRegion;
       if (auto dfr = forceRegion.ptr<DirectionalForceRegion>()) {
-        dfr->region.scale(m_movementController->getScale());
+        dfr->region.scale(m_movementController->scale());
       } else if (auto rfr = forceRegion.ptr<RadialForceRegion>()) {
-        rfr->innerRadius *= m_movementController->getScale();
-        rfr->outerRadius *= m_movementController->getScale();
+        rfr->innerRadius *= m_movementController->scale();
+        rfr->outerRadius *= m_movementController->scale();
       }
       forceRegion.call([pos = position()](auto& fr) {
         fr.translate(pos);
@@ -721,7 +721,7 @@ void Projectile::processAction(Json const& action) {
     }
     if (m_referenceVelocity)
       projectile->setReferenceVelocity(m_referenceVelocity);
-    projectile->setInitialPosition(position() + (offset * m_movementController->getScale()));
+    projectile->setInitialPosition(position() + (offset * m_movementController->scale()));
     if (parameters.contains("direction")) {
       projectile->setInitialDirection(jsonToVec2F(parameters.get("direction")));
     } else {
@@ -790,8 +790,8 @@ void Projectile::processAction(Json const& action) {
     if (isSlave())
       return;
 
-    float foregroundRadius = parameters.getFloat("foregroundRadius") * m_movementController->getScale();
-    float backgroundRadius = parameters.getFloat("backgroundRadius") * m_movementController->getScale();
+    float foregroundRadius = parameters.getFloat("foregroundRadius") * m_movementController->scale();
+    float backgroundRadius = parameters.getFloat("backgroundRadius") * m_movementController->scale();
     float explosiveDamageAmount = parameters.getFloat("explosiveDamageAmount");
     auto damageType = TileDamageTypeNames.getLeft(parameters.getString("tileDamageType", "explosive"));
     unsigned harvestLevel = parameters.getUInt("harvestLevel", 0);
@@ -823,10 +823,10 @@ void Projectile::processAction(Json const& action) {
 
       auto spawnPosition = position();
       if (parameters.contains("offset"))
-        spawnPosition += jsonToVec2F(parameters.get("offset")) * m_movementController->getScale();
+        spawnPosition += jsonToVec2F(parameters.get("offset")) * m_movementController->scale();
       monster->setPosition(spawnPosition);
       // make monsters inherit scale
-      monster->movementController()->scale(monster->movementController()->getScale() * m_movementController->getScale());
+      monster->movementController()->setScale(monster->movementController()->scale() * m_movementController->scale());
       world()->addEntity(monster);
     }
 

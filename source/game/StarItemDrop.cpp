@@ -52,7 +52,7 @@ ItemDropPtr ItemDrop::throwDrop(ItemPtr const& item, Vec2F const& position, Vec2
 
   itemDrop->setEternal(eternal);
   itemDrop->setIntangibleTime(idconfig.getFloat("throwIntangibleTime"));
-  itemDrop->movementController()->scale(scale);
+  itemDrop->movementController()->setScale(scale);
 
   return itemDrop;
 }
@@ -319,7 +319,7 @@ void ItemDrop::render(RenderCallback* renderCallback) {
   Vec2F dropPosition = position();
   for (Drawable drawable : *m_drawables) {
     drawable.position += dropPosition;
-    drawable.scale(m_movementController.getScale());
+    drawable.scale(m_movementController.scale());
     renderCallback->addDrawable(std::move(drawable), renderLayer);
   }
 }

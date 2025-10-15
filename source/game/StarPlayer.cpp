@@ -442,10 +442,10 @@ List<Drawable> Player::drawables() const {
       };
       extractScale(m_techController->parentDirectives().list());
       extractScale(m_statusController->parentDirectives().list());
-      humanoid()->setScale(scale * m_movementController->getScale());
+      humanoid()->setScale(scale * m_movementController->scale());
 
       for (auto& drawable : humanoid()->render()) {
-        drawable.translate(position() + (m_techController->parentOffset() * m_movementController->getScale()));
+        drawable.translate(position() + (m_techController->parentOffset() * m_movementController->scale()));
         if (drawable.isImage()) {
           drawable.imagePart().addDirectivesGroup(humanoidDirectives, true);
 
@@ -676,31 +676,31 @@ Vec2F Player::velocity() const {
 
 Vec2F Player::mouthOffset(bool ignoreAdjustments) const {
   return Vec2F(
-      humanoid()->mouthOffset(ignoreAdjustments)[0] * numericalDirection(facingDirection()), humanoid()->mouthOffset(ignoreAdjustments)[1]) * m_movementController->getScale();
+      humanoid()->mouthOffset(ignoreAdjustments)[0] * numericalDirection(facingDirection()), humanoid()->mouthOffset(ignoreAdjustments)[1]) * m_movementController->scale();
 }
 
 Vec2F Player::feetOffset() const {
-  return Vec2F(humanoid()->feetOffset()[0] * numericalDirection(facingDirection()), humanoid()->feetOffset()[1]) * m_movementController->getScale();
+  return Vec2F(humanoid()->feetOffset()[0] * numericalDirection(facingDirection()), humanoid()->feetOffset()[1]) * m_movementController->scale();
 }
 
 Vec2F Player::headArmorOffset() const {
   return Vec2F(
-      humanoid()->headArmorOffset()[0] * numericalDirection(facingDirection()), humanoid()->headArmorOffset()[1]) * m_movementController->getScale();
+      humanoid()->headArmorOffset()[0] * numericalDirection(facingDirection()), humanoid()->headArmorOffset()[1]) * m_movementController->scale();
 }
 
 Vec2F Player::chestArmorOffset() const {
   return Vec2F(
-      humanoid()->chestArmorOffset()[0] * numericalDirection(facingDirection()), humanoid()->chestArmorOffset()[1]) * m_movementController->getScale();
+      humanoid()->chestArmorOffset()[0] * numericalDirection(facingDirection()), humanoid()->chestArmorOffset()[1]) * m_movementController->scale();
 }
 
 Vec2F Player::backArmorOffset() const {
   return Vec2F(
-      humanoid()->backArmorOffset()[0] * numericalDirection(facingDirection()), humanoid()->backArmorOffset()[1]) * m_movementController->getScale();
+      humanoid()->backArmorOffset()[0] * numericalDirection(facingDirection()), humanoid()->backArmorOffset()[1]) * m_movementController->scale();
 }
 
 Vec2F Player::legsArmorOffset() const {
   return Vec2F(
-      humanoid()->legsArmorOffset()[0] * numericalDirection(facingDirection()), humanoid()->legsArmorOffset()[1]) * m_movementController->getScale();
+      humanoid()->legsArmorOffset()[0] * numericalDirection(facingDirection()), humanoid()->legsArmorOffset()[1]) * m_movementController->scale();
 }
 
 Vec2F Player::mouthPosition() const {
@@ -809,7 +809,7 @@ void Player::dropItem() {
   for (auto& throwSlot : {m_inventory->primaryHeldSlot(), m_inventory->secondaryHeldSlot()}) {
     if (throwSlot) {
       if (auto drop = m_inventory->takeSlot(*throwSlot)) {
-        world()->addEntity(ItemDrop::throwDrop(drop, throwItemPosition(), velocity(), throwDirection, m_movementController->getScale()));
+        world()->addEntity(ItemDrop::throwDrop(drop, throwItemPosition(), velocity(), throwDirection, m_movementController->scale()));
         break;
       }
     }
@@ -889,9 +889,9 @@ void Player::update(float dt, uint64_t) {
   m_movementController->setTimestep(dt);
 
   if (isMaster()) {
-    m_statusController->setScale(m_movementController->getScale());
-    m_techController->setScale(m_movementController->getScale());
-    m_effectsAnimator->setZoom(m_movementController->getScale());
+    m_statusController->setScale(m_movementController->scale());
+    m_techController->setScale(m_movementController->scale());
+    m_effectsAnimator->setZoom(m_movementController->scale());
 
     if (m_emoteCooldownTimer) {
       m_emoteCooldownTimer -= dt;
@@ -1115,7 +1115,7 @@ void Player::update(float dt, uint64_t) {
 
   if (isClient) {
     m_effectsAnimator->update(dt, &m_effectsAnimatorDynamicTarget);
-    m_effectsAnimatorDynamicTarget.updatePosition(position() + (m_techController->parentOffset() * m_movementController->getScale()));
+    m_effectsAnimatorDynamicTarget.updatePosition(position() + (m_techController->parentOffset() * m_movementController->scale()));
   } else {
     m_effectsAnimator->update(dt, nullptr);
   }
@@ -1640,7 +1640,7 @@ float Player::toolRadius() const {
 }
 
 float Player::interactRadius() const {
-  return m_interactRadius * m_movementController->getScale();
+  return m_interactRadius * m_movementController->scale();
 }
 
 void Player::setInteractRadius(float interactRadius) {
@@ -2623,7 +2623,7 @@ void Player::dropSelectedItems(function<bool(ItemPtr)> filter) {
 
   m_inventory->forEveryItem([&](InventorySlot const&, ItemPtr& item) {
       if (item && (!filter || filter(item)))
-        world()->addEntity(ItemDrop::throwDrop(take(item), position(), velocity(), Vec2F::withAngle(Random::randf(-Constants::pi, Constants::pi)), m_movementController->getScale(), true));
+        world()->addEntity(ItemDrop::throwDrop(take(item), position(), velocity(), Vec2F::withAngle(Random::randf(-Constants::pi, Constants::pi)), m_movementController->scale(), true));
     });
 }
 
