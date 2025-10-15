@@ -57,7 +57,7 @@ void MiningTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
 
   if (initialized()) {
     bool used = false;
-    int radius = !shifting ? max(m_blockRadius * owner()->movementController()->getScale(), 1.0f) : m_altBlockRadius;
+    int radius = !shifting ? m_blockRadius : m_altBlockRadius;
     String blockSound;
     List<Vec2I> brushArea;
 

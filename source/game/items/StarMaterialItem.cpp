@@ -407,7 +407,7 @@ float MaterialItem::calcRadius(bool shifting) const {
   if (!multiplaceEnabled())
     return 1;
   else
-    return !shifting ? (m_blockRadius * owner()->movementController()->getScale(), 1.0f) : m_altBlockRadius;
+    return !shifting ? m_blockRadius : m_altBlockRadius;
 }
 
 List<Vec2I>& MaterialItem::tileArea(float radius, Vec2F const& position) const {
