@@ -22,6 +22,8 @@ STAR_CLASS(Object);
 STAR_STRUCT(ObjectOrientation);
 STAR_STRUCT(ObjectConfig);
 STAR_CLASS(ObjectDatabase);
+STAR_CLASS(LuaRoot);
+STAR_CLASS(Rebuilder);
 
 STAR_EXCEPTION(ObjectException, StarException);
 
@@ -216,6 +218,8 @@ private:
   StringMap<String> m_paths;
   mutable Mutex m_cacheMutex;
   mutable HashTtlCache<String, ObjectConfigPtr> m_configCache;
+
+  RebuilderPtr m_rebuilder;
 };
 
 }

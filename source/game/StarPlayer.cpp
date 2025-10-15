@@ -292,6 +292,11 @@ void Player::diskLoad(Json const& diskStore) {
     m_blueprints->add(descriptor);
   for (auto const& descriptor : speciesDef->defaultBlueprints())
     m_blueprints->add(descriptor);
+
+  if (m_identity.gender == Gender::Male && m_description == "This gal seems to have nothing to say for herself.")
+    m_description = "This guy seems to have nothing to say for himself.";
+  else if (m_identity.gender == Gender::Female && m_description == "This guy seems to have nothing to say for himself.")
+    m_description = "This gal seems to have nothing to say for herself.";
 }
 
 ClientContextPtr Player::clientContext() const {

@@ -227,6 +227,7 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
 
   {
     auto& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
     m_immediateFont = *assets->bytes("/hobo.ttf");
     ImFontConfig config{};
     config.FontDataOwnedByAtlas = false;
@@ -235,8 +236,8 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
       16, &config, io.Fonts->GetGlyphRangesDefault());
   }
 
-  m_minInterfaceScale = assets->json("/interface.config:minInterfaceScale").toInt();
-  m_maxInterfaceScale = assets->json("/interface.config:maxInterfaceScale").toInt();
+  m_minInterfaceScale = assets->json("/interface.config:minInterfaceScale").toFloat();
+  m_maxInterfaceScale = assets->json("/interface.config:maxInterfaceScale").toFloat();
   m_crossoverRes = jsonToVec2F(assets->json("/interface.config:interfaceCrossoverRes"));
   
   appController->setApplicationTitle(assets->json("/client.config:windowTitle").toString());
@@ -393,7 +394,7 @@ void ClientApplication::render() {
   renderer->setMultiSampling(config->get("antiAliasing").optBool().value(false) ? 4 : 0);
   renderer->switchEffectConfig("interface");
 
-  if (auto interfaceScale = config->get("interfaceScale").optUInt().value())
+  if (auto interfaceScale = config->get("interfaceScale").optFloat().value(); interfaceScale != 0)
     m_guiContext->setInterfaceScale(interfaceScale);
   else if (m_guiContext->windowWidth() >= m_crossoverRes[0] && m_guiContext->windowHeight() >= m_crossoverRes[1])
     m_guiContext->setInterfaceScale(m_maxInterfaceScale);

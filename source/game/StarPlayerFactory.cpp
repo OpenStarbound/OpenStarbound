@@ -3,6 +3,9 @@
 #include "StarPlayer.hpp"
 #include "StarAssets.hpp"
 #include "StarRoot.hpp"
+#include "StarRootLuaBindings.hpp"
+#include "StarUtilityLuaBindings.hpp"
+#include "StarRebuilder.hpp"
 
 namespace Star {
 
@@ -48,8 +51,9 @@ PlayerConfig::PlayerConfig(JsonObject const& cfg) {
     genericScriptContexts[p.first] = p.second.toString();
 }
 
-PlayerFactory::PlayerFactory() {
-  m_config = make_shared<PlayerConfig>(Root::singleton().assets()->json("/player.config").toObject());
+PlayerFactory::PlayerFactory() : m_rebuilder(make_shared<Rebuilder>("player")) {
+  auto assets = Root::singleton().assets();
+  m_config = make_shared<PlayerConfig>(assets->json("/player.config").toObject());
 }
 
 PlayerPtr PlayerFactory::create() const {
@@ -57,7 +61,25 @@ PlayerPtr PlayerFactory::create() const {
 }
 
 PlayerPtr PlayerFactory::diskLoadPlayer(Json const& diskStore) const {
-  return make_shared<Player>(m_config, diskStore);
+  PlayerPtr player;
+  try {
+    player = make_shared<Player>(m_config, diskStore);
+  } catch (std::exception const& e) {
+    auto exception = std::current_exception();
+    bool success = m_rebuilder->rebuild(diskStore, strf("{}", outputException(e, false)), [&](Json const& store) -> String {
+      try {
+        player = make_shared<Player>(m_config, store);
+      } catch (std::exception const& e) {
+        exception = std::current_exception();
+        return strf("{}", outputException(e, false));
+      }
+      return {};
+    });
+
+    if (!success)
+      std::rethrow_exception(exception);
+  }
+  return player;
 }
 
 PlayerPtr PlayerFactory::netLoadPlayer(ByteArray const& netStore, NetCompatibilityRules rules) const {

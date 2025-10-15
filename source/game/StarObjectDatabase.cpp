@@ -13,6 +13,9 @@
 #include "StarFarmableObject.hpp"
 #include "StarTeleporterObject.hpp"
 #include "StarPhysicsObject.hpp"
+#include "StarRootLuaBindings.hpp"
+#include "StarUtilityLuaBindings.hpp"
+#include "StarRebuilder.hpp"
 
 namespace Star {
 
@@ -312,7 +315,7 @@ List<ObjectOrientationPtr> ObjectDatabase::parseOrientations(String const& path,
   return res;
 }
 
-ObjectDatabase::ObjectDatabase() {
+ObjectDatabase::ObjectDatabase() : m_rebuilder(make_shared<Rebuilder>("object")) {
   auto assets = Root::singleton().assets();
 
   auto& files = assets->scanExtension("object");
@@ -380,9 +383,46 @@ ObjectPtr ObjectDatabase::createObject(String const& objectName, Json const& par
 }
 
 ObjectPtr ObjectDatabase::diskLoadObject(Json const& diskStore) const {
-  auto object = createObject(diskStore.getString("name"), diskStore.get("parameters"));
-  object->readStoredData(diskStore);
-  object->setNetStates();
+  ObjectPtr object;
+  auto originalName = diskStore.getString("name");
+  auto originalParams = diskStore.get("parameters");
+  Json newStore = diskStore;
+  try {
+    if (originalName == "perfectlygenericitem" && originalParams.contains("genericItemStorage"))
+      newStore = diskStore.get("genericItemStorage");
+    object = createObject(newStore.getString("name"), newStore.get("parameters"));
+    object->readStoredData(newStore);
+    object->setNetStates();
+  } catch (std::exception const& e) {
+    object.reset();
+    auto error = strf("{}", outputException(e, false));
+    bool success = m_rebuilder->rebuild(newStore, strf("{}", outputException(e, false)), [&](Json const& store) -> String {
+      try {
+        object = createObject(store.getString("name"), store.get("parameters"));
+        object->readStoredData(store);
+        object->setNetStates();
+      } catch (std::exception const& e) {
+        object.reset();
+        return strf("{}", outputException(e, false));
+      }
+      return {};
+    });
+
+    if (!success) {
+      if (originalName == "perfectlygenericitem") {
+        Logger::error("Could not re-instantiate object '{}'. {}", diskStore, outputException(e, false));
+        object = createObject(originalName, originalParams);
+      } else {
+        Logger::error("Could not instantiate object '{}'. {}", diskStore, outputException(e, false));
+        Json newParameters = JsonObject({
+          {"genericItemStorage", diskStore},
+          {"shortdescription", originalName},
+          {"description", "Reinstall the parent mod to return this item to normal"}
+        });
+        object = createObject("perfectlygenericitem", newParameters);
+      }
+    }
+  }
   return object;
 }
 

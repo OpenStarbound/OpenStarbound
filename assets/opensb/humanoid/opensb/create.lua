@@ -5,7 +5,12 @@ function create(name, species, genderIndex, bodyColor, alty, hairChoice, heady, 
     -- these values are zero indexed!
 
     local speciesConfig = root.speciesConfig(species)
+    local humanoidConfig = sb.jsonMerge(root.assetJson(speciesConfig.humanoidConfig or "/humanoid.config"), speciesConfig.humanoidOverrides or {})
+
     genderIndex = math.fmod(genderIndex, #speciesConfig.genders)
+    personality = math.fmod(personality, #humanoidConfig.personalities)
+
+    local personalityIdle, personalityArmIdle, personalityHeadOffset, personalityArmOffset = table.unpack(humanoidConfig.personalities[personality+1])
 
     local identity = {
         name = name,
@@ -22,10 +27,10 @@ function create(name, species, genderIndex, bodyColor, alty, hairChoice, heady, 
         facialMaskGroup = "",
         facialMaskType = "",
         facialMaskDirectives = "",
-        personalityIdle = "idle.1",
-        personalityArmIdle = "idle.1",
-        personalityHeadOffset = {0,0},
-        personalityArmOffset = {0,0},
+        personalityIdle = personalityIdle,
+        personalityArmIdle = personalityArmIdle,
+        personalityHeadOffset = personalityHeadOffset,
+        personalityArmOffset = personalityArmOffset,
         color = {51, 117, 237, 255},
     }
     local parameters = {

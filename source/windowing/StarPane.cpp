@@ -407,7 +407,7 @@ LuaCallbacks Pane::makePaneCallbacks() {
   callbacks.registerCallback("removeWidget", [this](String const& widgetName) -> bool
     { return this->removeChild(widgetName); });
 
-  callbacks.registerCallback("scale", []() -> int { return GuiContext::singleton().interfaceScale(); });
+  callbacks.registerCallback("scale", []() { return GuiContext::singleton().interfaceScale(); });
   callbacks.registerCallback("isDisplayed", [this]() { return isDisplayed(); });
   callbacks.registerCallback("hasFocus", [this]() { return hasFocus(); });
   callbacks.registerCallback("show", [this]() { show(); });

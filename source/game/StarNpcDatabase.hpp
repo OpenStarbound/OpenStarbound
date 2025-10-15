@@ -9,6 +9,7 @@
 
 namespace Star {
 
+STAR_CLASS(Rebuilder);
 STAR_CLASS(Item);
 STAR_CLASS(Npc);
 STAR_CLASS(NpcDatabase);
@@ -80,6 +81,8 @@ private:
   // Recursively merges maps and lets any non-null merger (including lists)
   // override any base value
   Json mergeConfigValues(Json const& base, Json const& merger) const;
+
+  RebuilderPtr m_rebuilder;
 
   StringMap<Json> m_npcTypes;
 };

@@ -8,7 +8,7 @@
 			"backCosmetic<slot>": {
 				"properties": {
 					"centered": true,
-					"zLevel": 5.1234,
+					"zLevel": 5.0,
 					"transformationGroups": ["backCosmetic<slot>Rotation"],
 					"anchorPart" : "backCosmetic",
 					"processingDirectives" : "<backCosmetic<slot>Directives>"

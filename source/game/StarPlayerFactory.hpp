@@ -6,6 +6,7 @@
 
 namespace Star {
 
+STAR_CLASS(Rebuilder);
 STAR_CLASS(Player);
 STAR_STRUCT(PlayerConfig);
 STAR_CLASS(PlayerFactory);
@@ -64,6 +65,8 @@ public:
 
 private:
   PlayerConfigPtr m_config;
+
+  RebuilderPtr m_rebuilder;
 };
 
 }

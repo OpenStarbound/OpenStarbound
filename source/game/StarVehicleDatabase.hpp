@@ -5,6 +5,8 @@
 
 namespace Star {
 
+STAR_CLASS(Rebuilder);
+
 STAR_EXCEPTION(VehicleDatabaseException, StarException);
 
 class VehicleDatabase {
@@ -21,6 +23,9 @@ public:
 
 private:
   StringMap<pair<String, Json>> m_vehicles;
+
+  mutable RecursiveMutex m_luaMutex;
+  RebuilderPtr m_rebuilder;
 };
 
 }

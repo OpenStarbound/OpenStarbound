@@ -356,44 +356,44 @@ void AnimatedPartSet::freshenActivePart(Part& part) {
           activePart.nextProperties[pair.first] = pair.second.get(nextFrame);
       }
 
-      if (version() > 0) {
-        auto processTransforms = [](Mat3F mat, JsonArray transforms, JsonObject properties) -> Mat3F {
-          for (auto const& v : transforms) {
-            auto action = v.getString(0);
-            if (action == "reset") {
-              mat = Mat3F::identity();
-            } else if (action == "translate") {
-              mat.translate(jsonToVec2F(v.getArray(1)));
-            } else if (action == "rotate") {
-              mat.rotate(v.getFloat(1), jsonToVec2F(v.getArray(2, properties.maybe("rotationCenter").value(JsonArray({0,0})).toArray())));
-            } else if (action == "rotateDegrees") { // because radians are fucking annoying
-              mat.rotate(v.getFloat(1) * Star::Constants::pi / 180, jsonToVec2F(v.getArray(2, properties.maybe("rotationCenter").value(JsonArray({0,0})).toArray())));
-            } else if (action == "scale") {
-              mat.scale(jsonToVec2F(v.getArray(1)), jsonToVec2F(v.getArray(2, properties.maybe("scalingCenter").value(JsonArray({0,0})).toArray())));
-            } else if (action == "transform") {
-              mat = Mat3F(v.getFloat(1), v.getFloat(2), v.getFloat(3), v.getFloat(4), v.getFloat(5), v.getFloat(6), 0, 0, 1) * mat;
-            }
+      // Each part can only have one state type x state match, so we are done.
+      break;
+    }
+    if (version() > 0) {
+      auto processTransforms = [](Mat3F mat, JsonArray transforms, JsonObject properties) -> Mat3F {
+        for (auto const& v : transforms) {
+          auto action = v.getString(0);
+          if (action == "reset") {
+            mat = Mat3F::identity();
+          } else if (action == "translate") {
+            mat.translate(jsonToVec2F(v.getArray(1)));
+          } else if (action == "rotate") {
+            mat.rotate(v.getFloat(1), jsonToVec2F(v.getArray(2, properties.maybe("rotationCenter").value(JsonArray({0,0})).toArray())));
+          } else if (action == "rotateDegrees") { // because radians are fucking annoying
+            mat.rotate(v.getFloat(1) * Star::Constants::pi / 180, jsonToVec2F(v.getArray(2, properties.maybe("rotationCenter").value(JsonArray({0,0})).toArray())));
+          } else if (action == "scale") {
+            mat.scale(jsonToVec2F(v.getArray(1)), jsonToVec2F(v.getArray(2, properties.maybe("scalingCenter").value(JsonArray({0,0})).toArray())));
+          } else if (action == "transform") {
+            mat = Mat3F(v.getFloat(1), v.getFloat(2), v.getFloat(3), v.getFloat(4), v.getFloat(5), v.getFloat(6), 0, 0, 1) * mat;
           }
-          return mat;
-        };
+        }
+        return mat;
+      };
 
 
-        if (auto transforms = activePart.properties.ptr("transforms")) {
-          auto mat = processTransforms(activePart.animationAffineTransform(), transforms->toArray(), activePart.properties);
-          if (activePart.properties.maybe("interpolated").value(false)) {
-            if (auto nextTransforms = activePart.nextProperties.ptr("transforms")) {
-              auto nextMat = processTransforms(activePart.animationAffineTransform(), nextTransforms->toArray(), activePart.nextProperties);
-              activePart.setAnimationAffineTransform(mat, nextMat, stateType.activeState.frameProgress);
-            } else {
-              activePart.setAnimationAffineTransform(mat);
-            }
+      if (auto transforms = activePart.properties.ptr("transforms")) {
+        auto mat = processTransforms(activePart.animationAffineTransform(), transforms->toArray(), activePart.properties);
+        if (activePart.properties.maybe("interpolated").value(false).toBool()) {
+          if (auto nextTransforms = activePart.nextProperties.ptr("transforms")) {
+            auto nextMat = processTransforms(activePart.animationAffineTransform(), nextTransforms->toArray(), activePart.nextProperties);
+            activePart.setAnimationAffineTransform(mat, nextMat, activePart.activeState ? activePart.activeState->frameProgress : 1);
           } else {
             activePart.setAnimationAffineTransform(mat);
           }
+        } else {
+          activePart.setAnimationAffineTransform(mat);
         }
       }
-      // Each part can only have one state type x state match, so we are done.
-      break;
     }
 
     part.activePartDirty = false;

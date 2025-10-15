@@ -11,10 +11,13 @@
 #include "StarAssets.hpp"
 #include "StarEncode.hpp"
 #include "StarArmors.hpp"
+#include "StarRootLuaBindings.hpp"
+#include "StarUtilityLuaBindings.hpp"
+#include "StarRebuilder.hpp"
 
 namespace Star {
 
-NpcDatabase::NpcDatabase() {
+NpcDatabase::NpcDatabase() : m_rebuilder(make_shared<Rebuilder>("npc")) {
   auto assets = Root::singleton().assets();
 
   auto& files = assets->scanExtension("npctype");
@@ -360,8 +363,27 @@ NpcPtr NpcDatabase::createNpc(NpcVariant const& npcVariant) const {
 }
 
 NpcPtr NpcDatabase::diskLoadNpc(Json const& diskStore) const {
-  auto npcVariant = readNpcVariantFromJson(diskStore.get("npcVariant"));
-  return make_shared<Npc>(npcVariant, diskStore);
+  NpcPtr npc;
+  try {
+    NpcVariant npcVariant = readNpcVariantFromJson(diskStore.get("npcVariant"));
+    npc = make_shared<Npc>(npcVariant, diskStore);
+  } catch (std::exception const& e) {
+    auto exception = std::current_exception();
+    bool success = m_rebuilder->rebuild(diskStore, strf("{}", outputException(e, false)), [&](Json const& store) -> String {
+      try {
+        NpcVariant npcVariant = readNpcVariantFromJson(store.get("npcVariant"));
+        npc = make_shared<Npc>(npcVariant, store);
+      } catch (std::exception const& e) {
+        exception = std::current_exception();
+        return strf("{}", outputException(e, false));
+      }
+      return {};
+    });
+
+    if (!success)
+      std::rethrow_exception(exception);
+  }
+  return npc;
 }
 
 NpcPtr NpcDatabase::netLoadNpc(ByteArray const& netStore, NetCompatibilityRules rules) const {

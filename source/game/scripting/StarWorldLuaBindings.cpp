@@ -360,6 +360,7 @@ namespace LuaBindings {
       callbacks.registerCallback("mainPlayer", [clientWorld]() { return clientWorld->clientState().playerId(); });
       callbacks.registerCallback("isClient", []() { return true;  });
       callbacks.registerCallback("isServer", []() { return false; });
+      callbacks.registerCallback("latency", [clientWorld]() { return clientWorld->latency(); });
       callbacks.registerCallbackWithSignature<void, EntityId>("resendEntity", bind(ClientWorldCallbacks::resendEntity, clientWorld, _1));
       callbacks.registerCallbackWithSignature<RectI>("clientWindow", bind(ClientWorldCallbacks::clientWindow, clientWorld));
       callbacks.registerCallback("players", [clientWorld]() {
@@ -377,7 +378,10 @@ namespace LuaBindings {
       });
       callbacks.registerCallback("setTemplate", [clientWorld](Json worldTemplate) {
         clientWorld->setTemplate(worldTemplate);
-      });
+      }); 
+      callbacks.registerCallback("wire", [clientWorld](Vec2I outputPosition, size_t outputIndex, Vec2I inputPosition, size_t inputIndex) {
+        clientWorld->wire(outputPosition, outputIndex, inputPosition, inputIndex);
+      }); 
     }
 
     if (auto serverWorld = as<WorldServer>(world)) {
@@ -409,6 +413,10 @@ namespace LuaBindings {
         });
 
       callbacks.registerCallback("setExpiryTime", [serverWorld](float expiryTime) { serverWorld->setExpiryTime(expiryTime); });
+
+      callbacks.registerCallback("wire", [serverWorld](Vec2I outputPosition, size_t outputIndex, Vec2I inputPosition, size_t inputIndex) {
+        serverWorld->wire(outputPosition, outputIndex, inputPosition, inputIndex);
+      });
 
       callbacks.registerCallback("flyingType", [serverWorld]() -> String { return FlyingTypeNames.getRight(serverWorld->sky()->flyingType()); });
       callbacks.registerCallback("warpPhase", [serverWorld]() -> String { return WarpPhaseNames.getRight(serverWorld->sky()->warpPhase()); });

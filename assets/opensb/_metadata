@@ -10,5 +10,13 @@
   "scripts" : {
     //"onLoad" : ["/scripts/opensb/assets/onload.lua"],
     "postLoad" : ["/scripts/opensb/assets/postload.lua"]
+  },
+  "errorHandlers" : { // only here as an example
+    //"item"    : ["/scripts/opensb/errorHandling/item.lua"],
+    //"object"  : ["/scripts/opensb/errorHandling/object.lua"],
+    //"npc"     : ["/scripts/opensb/errorHandling/npc.lua"],
+    //"player"  : ["/scripts/opensb/errorHandling/player.lua"],
+    //"monster" : ["/scripts/opensb/errorHandling/monster.lua"],
+    //"vehicle" : ["/scripts/opensb/errorHandling/vehicle.lua"]
   }
 }

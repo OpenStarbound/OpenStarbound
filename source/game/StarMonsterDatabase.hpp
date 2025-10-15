@@ -10,6 +10,8 @@
 
 namespace Star {
 
+STAR_CLASS(LuaRoot);
+STAR_CLASS(Rebuilder);
 STAR_CLASS(RandomSource);
 STAR_CLASS(Monster);
 STAR_CLASS(MonsterDatabase);
@@ -190,6 +192,8 @@ private:
   StringMap<List<ColorReplaceMap>> m_colorSwaps;
 
   mutable Mutex m_cacheMutex;
+
+  RebuilderPtr m_rebuilder;
 
   // Key here is the type name, seed, and the serialized unique parameters JSON
   mutable HashTtlCache<tuple<String, uint64_t, Json>, MonsterVariant> m_monsterCache;

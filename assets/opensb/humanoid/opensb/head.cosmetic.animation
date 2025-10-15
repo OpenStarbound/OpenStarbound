@@ -9,7 +9,7 @@
 			"headCosmetic<slot>": {
 				"properties": {
 					"centered": true,
-					"zLevel": 14.1234,
+					"zLevel": 14.0,
 					"anchorPart": "headCosmetic",
 					"processingDirectives" : "<headCosmetic<slot>Directives>"
 				},

@@ -68,11 +68,15 @@ Object::Object(ObjectConfigConstPtr config, Json const& parameters) {
     setTeam(EntityDamageTeam(TeamType::Environment));
   }
 
-  for (auto const& node : configValue("inputNodes", JsonArray()).iterateArray())
-    m_inputNodes.append({jsonToVec2I(node), {}, {}});
+  auto inputNodes = configValue("inputNodes", JsonArray());
+  auto inputNodeConfigs = configValue("inputNodesConfig", JsonArray());
+  for (auto i = 0; i != inputNodes.size(); i++)
+    m_inputNodes.append(InputNode(inputNodes.get(i), inputNodeConfigs.get(i, JsonObject())));
 
-  for (auto const& node : configValue("outputNodes", JsonArray()).iterateArray())
-    m_outputNodes.append({jsonToVec2I(node), {}, {}});
+  auto outputNodes = configValue("outputNodes", JsonArray());
+  auto outputNodeConfigs = configValue("outputNodesConfig", JsonArray());
+  for (auto i = 0; i != outputNodes.size(); i++)
+    m_outputNodes.append(OutputNode(outputNodes.get(i), outputNodeConfigs.get(i, JsonObject())));
 
   m_offeredQuests.set(configValue("offeredQuests", JsonArray()).toArray().transformed(&QuestArcDescriptor::fromJson));
   m_turnInQuests.set(jsonToStringSet(configValue("turnInQuests", JsonArray())));
@@ -796,9 +800,26 @@ bool Object::nodeState(WireNode wireNode) const {
   else
     return m_outputNodes.at(wireNode.nodeIndex).state.get();
 }
+String Object::nodeIcon(WireNode wireNode) const {
+  if (wireNode.direction == WireDirection::Input)
+    return m_inputNodes.at(wireNode.nodeIndex).icon;
+  else
+    return m_outputNodes.at(wireNode.nodeIndex).icon;
+}
+
+Color Object::nodeColor(WireNode wireNode) const { // only output nodes determine color
+  if (wireNode.direction == WireDirection::Input)
+    return m_inputNodes.at(wireNode.nodeIndex).color;
+  else
+    return m_outputNodes.at(wireNode.nodeIndex).color;
+}
 
 void Object::addNodeConnection(WireNode wireNode, WireConnection nodeConnection) {
   if (wireNode.direction == WireDirection::Input) {
+    if (m_inputNodes.empty()) {
+      Logger::info("Tried to add wire connection to input node on object with no input nodes");
+      return;
+    }
     m_inputNodes.at(wireNode.nodeIndex).connections.update([&](auto& list) {
         if (list.contains(nodeConnection))
           return false;
@@ -806,6 +827,10 @@ void Object::addNodeConnection(WireNode wireNode, WireConnection nodeConnection)
         return true;
       });
   } else {
+    if (m_outputNodes.empty()) {
+      Logger::info("Tried to add wire connection to output node on object with no output nodes");
+      return;
+    }
     m_outputNodes.at(wireNode.nodeIndex).connections.update([&](auto& list) {
         if (list.contains(nodeConnection))
           return false;
@@ -1398,4 +1423,16 @@ void Object::checkLiquidBroken() {
   }
 }
 
+Object::OutputNode::OutputNode(Json positionConfig, Json config) {
+  position = jsonToVec2I(positionConfig);
+  color = jsonToColor(config.get("color", jsonFromColor(Color::Red)));
+  icon = config.getString("icon", "/interface/wires/outbound.png");
 }
+
+Object::InputNode::InputNode(Json positionConfig, Json config) {
+  position = jsonToVec2I(positionConfig);
+  color = jsonToColor(config.get("color", jsonFromColor(Color::Red)));
+  icon = config.getString("icon", "/interface/wires/inbound.png");
+}
+
+}// namespace Star

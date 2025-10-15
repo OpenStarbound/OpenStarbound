@@ -133,8 +133,8 @@ private:
   int m_cameraZoomDirection = 0;
 
   unsigned m_framesSkipped = 0;
-  int m_minInterfaceScale = 2;
-  int m_maxInterfaceScale = 3;
+  float m_minInterfaceScale = 2;
+  float m_maxInterfaceScale = 3;
   Vec2F m_crossoverRes;
 
   bool m_controllerInput;

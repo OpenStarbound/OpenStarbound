@@ -369,22 +369,26 @@ bool DirectivesGroup::forEachAbortable(AbortableDirectivesCallback callback) con
   return true;
 }
 
-Image DirectivesGroup::applyNewImage(Image const& image) const {
+Image DirectivesGroup::applyNewImage(Image const& image, ImageReferenceCallback refCallback) const {
   Image result = image;
-  applyExistingImage(result);
+  applyExistingImage(result, refCallback);
   return result;
 }
 
-void DirectivesGroup::applyExistingImage(Image& image) const {
-  forEach([&](auto const& entry, Directives const& directives) {
+void DirectivesGroup::applyExistingImage(Image& image, ImageReferenceCallback refCallback) const {
+  bool first = true;
+  forEach([&](Directives::Entry const& entry, Directives const& directives) {
     ImageOperation const& operation = entry.loadOperation(*directives);
     if (auto error = operation.ptr<ErrorImageOperation>())
       if (auto string = error->cause.ptr<std::string>())
         throw DirectivesException::format("ImageOperation parse error: {}", *string);
       else
         std::rethrow_exception(error->cause.get<std::exception_ptr>());
+    else if (!first && entry.begin != 0 && operation.is<NullImageOperation>())
+      throw DirectivesException::format("Invalid image operation: {}", entry.string(*directives));
     else
-      processImageOperation(operation, image);
+      processImageOperation(operation, image, refCallback);
+    first = false;
   });
 }
 

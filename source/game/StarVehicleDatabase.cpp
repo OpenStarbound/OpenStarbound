@@ -3,10 +3,13 @@
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
+#include "StarRootLuaBindings.hpp"
+#include "StarUtilityLuaBindings.hpp"
+#include "StarRebuilder.hpp"
 
 namespace Star {
 
-VehicleDatabase::VehicleDatabase() {
+VehicleDatabase::VehicleDatabase() : m_rebuilder(make_shared<Rebuilder>("vehicle")) {
   auto assets = Root::singleton().assets();
   auto& files = assets->scanExtension("vehicle");
   assets->queueJsons(files);
@@ -61,8 +64,28 @@ Json VehicleDatabase::diskStore(VehiclePtr const& vehicle) const {
 }
 
 VehiclePtr VehicleDatabase::diskLoad(Json const& diskStore) const {
-  auto vehicle = create(diskStore.getString("name"), diskStore.get("dynamicConfig"));
-  vehicle->diskLoad(diskStore.get("state"));
+  VehiclePtr vehicle;
+  try {
+    vehicle = create(diskStore.getString("name"), diskStore.get("dynamicConfig"));
+    vehicle->diskLoad(diskStore.get("state"));
+    return vehicle;
+  } catch (std::exception const& e) {
+    vehicle.reset();
+    auto exception = std::current_exception();
+    bool success = m_rebuilder->rebuild(diskStore, strf("{}", outputException(e, false)), [&](Json const& store) -> String {
+      try {
+        vehicle = create(store.getString("name"), store.get("dynamicConfig"));
+        vehicle->diskLoad(store.get("state"));
+      } catch (std::exception const& e) {
+        exception = std::current_exception();
+        return strf("{}", outputException(e, false));
+      }
+      return {};
+    });
+
+    if (!success)
+      std::rethrow_exception(exception);
+  }
   return vehicle;
 }
 

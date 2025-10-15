@@ -16,6 +16,12 @@ Returns whether the script is running on the server or client.
 
 ---
 
+#### `void` world.wire(`Vec2I` outputPosition, `int` outputIndex, `Vec2I` inputPosition, `int` inputIndex)
+
+Attempts a wire connection between the two objects positioned at `outputPosition` and `inputPosition`. The `outputIndex` and `inputIndex` parameters specify which output and input nodes to connect.
+
+---
+
 The following additional world bindings are available only for scripts running on the client.
 
 ---

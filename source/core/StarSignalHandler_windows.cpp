@@ -50,6 +50,11 @@ struct SignalHandlerImpl {
   }
 
   static void handleFatalError(String const& msg, PEXCEPTION_POINTERS ExceptionInfo) {
+    static bool dumpWritten = false;
+    if (!dumpWritten) {
+      dumpWritten = true;
+      writeMiniDump(ExceptionInfo);
+    }
     if (ExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION) {
       String mode;
       DWORD modeFlag = ExceptionInfo->ExceptionRecord->ExceptionInformation[0];
@@ -100,8 +105,8 @@ struct SignalHandlerImpl {
 
   static LONG CALLBACK vectoredExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo) {
     LONG result = EXCEPTION_CONTINUE_SEARCH;
+
     if (ExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_STACK_OVERFLOW) {
-      writeMiniDump(ExceptionInfo);
       handleFatalError("Stack overflow detected", ExceptionInfo);
       result = EXCEPTION_CONTINUE_EXECUTION;
     }

@@ -111,7 +111,7 @@ MaterialDatabase::MaterialDatabase() {
               matConfig.optUInt("requiredHarvestLevel"));
 
       material.collisionKind = CollisionKindNames.getLeft(matConfig.getString("collisionKind", "block"));
-      material.foregroundOnly = matConfig.getBool("foregroundOnly", true);
+      material.foregroundOnly = matConfig.getBool("foregroundOnly", false);
       material.supportsMods = matConfig.getBool("supportsMods", !(material.falling || material.cascading || material.collisionKind != CollisionKind::Block));
 
       material.blocksLiquidFlow = matConfig.getBool("blocksLiquidFlow", isSolidColliding(material.collisionKind));

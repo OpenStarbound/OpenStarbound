@@ -5,10 +5,13 @@
 #include "StarJsonExtra.hpp"
 #include "StarRandom.hpp"
 #include "StarLexicalCast.hpp"
+#include "StarRootLuaBindings.hpp"
+#include "StarUtilityLuaBindings.hpp"
+#include "StarRebuilder.hpp"
 
 namespace Star {
 
-MonsterDatabase::MonsterDatabase() {
+MonsterDatabase::MonsterDatabase() : m_rebuilder(make_shared<Rebuilder>("monster")) {
   auto assets = Root::singleton().assets();
 
   auto& monsterTypes = assets->scanExtension("monstertype");
@@ -159,7 +162,7 @@ MonsterVariant MonsterDatabase::randomMonster(String const& typeName, Json const
   } else {
     seed = Random::randu64();
   }
-  
+
   return monsterVariant(typeName, seed, uniqueParameters);
 }
 
@@ -215,7 +218,25 @@ MonsterPtr MonsterDatabase::createMonster(
 }
 
 MonsterPtr MonsterDatabase::diskLoadMonster(Json const& diskStore) const {
-  return make_shared<Monster>(diskStore);
+  MonsterPtr monster;
+  try {
+    monster = make_shared<Monster>(diskStore);
+  } catch (std::exception const& e) {
+    auto exception = std::current_exception();
+    bool success = m_rebuilder->rebuild(diskStore, strf("{}", outputException(e, false)), [&](Json const& store) -> String {
+      try {
+        monster = make_shared<Monster>(store);
+      } catch (std::exception const& e) {
+        exception = std::current_exception();
+        return strf("{}", outputException(e, false));
+      }
+      return {};
+    });
+
+    if (!success)
+      std::rethrow_exception(exception);
+  }
+  return monster;
 }
 
 MonsterPtr MonsterDatabase::netLoadMonster(ByteArray const& netStore, NetCompatibilityRules rules) const {

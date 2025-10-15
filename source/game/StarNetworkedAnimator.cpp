@@ -500,8 +500,10 @@ String NetworkedAnimator::applyPartTags(String const& partName, String apply) co
     frameStr = static_cast<String>(toString(stateFrame + 1));
     frameIndexStr = static_cast<String>(toString(stateFrame));
   }
-  if (version() > 0)
-    m_animatedParts.forEachActiveState([&](String const& stateTypeName, AnimatedPartSet::ActiveStateInformation const& activeState) {
+  if (version() > 0) {
+    animationTags.set("relativePath", m_relativePath);
+    for (auto& stateTypeName : m_animatedParts.stateTypes()) {
+      auto& activeState = m_animatedParts.activeState(stateTypeName);
       unsigned stateFrame = activeState.frame;
       Maybe<unsigned> frame;
       String frameStr;
@@ -518,9 +520,12 @@ String NetworkedAnimator::applyPartTags(String const& partName, String apply) co
 
       if (auto p = activeState.properties.ptr("animationTags")) {
         for (auto tag : p->iterateObject())
-          animationTags.set(tag.first, tag.second.toString());
+          if (!animationTags.contains(tag.first))
+            animationTags.set(tag.first, tag.second.toString());
       }
-    });
+    }
+  }
+
 
   auto applied = apply.maybeLookupTagsView([&](StringView tag) -> StringView {
     if (tag == "frame") {
@@ -795,8 +800,10 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
     }
   }
   HashMap<String, String> animationTags = m_localTags;
-  if (version() > 0)
-    m_animatedParts.forEachActiveState([&](String const& stateTypeName, AnimatedPartSet::ActiveStateInformation const& activeState) {
+  if (version() > 0) {
+    animationTags.set("relativePath", m_relativePath);
+    for (auto& stateTypeName : m_animatedParts.stateTypes()) {
+      auto& activeState = m_animatedParts.activeState(stateTypeName);
       unsigned stateFrame = activeState.frame;
       Maybe<unsigned> frame;
       String frameStr;
@@ -813,9 +820,11 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
 
       if (auto p = activeState.properties.ptr("animationTags")) {
         for (auto tag : p->iterateObject())
-          animationTags.set(tag.first, tag.second.toString());
+          if (!animationTags.contains(tag.first))
+            animationTags.set(tag.first, tag.second.toString());
       }
-    });
+    }
+  }
 
   List<tuple<AnimatedPartSet::ActivePartInformation const*, String const*, float>> parts;
   parts.reserve(partCount);
@@ -1089,45 +1098,48 @@ void NetworkedAnimator::update(float dt, DynamicTarget* dynamicTarget) {
           m_particleEmitters.get(name.toString()).active.set(false);
       }
 
-      if (version() > 0){
-        auto processTransforms = [](Mat3F mat, JsonArray transforms, JsonObject properties) -> Mat3F {
-          for (auto const& v : transforms) {
-            auto action = v.getString(0);
-            if (action == "reset") {
-              mat = Mat3F::identity();
-            } else if (action == "translate") {
-              mat.translate(jsonToVec2F(v.getArray(1)));
-            } else if (action == "rotate") {
-              mat.rotate(v.getFloat(1), jsonToVec2F(v.getArray(2, properties.maybe("rotationCenter").value(JsonArray({0,0})).toArray())));
-            } else if (action == "rotateDegrees") { // because radians are fucking annoying
-              mat.rotate(v.getFloat(1) * Star::Constants::pi / 180, jsonToVec2F(v.getArray(2, properties.maybe("rotationCenter").value(JsonArray({0,0})).toArray())));
-            } else if (action == "scale") {
-              mat.scale(jsonToVec2F(v.getArray(1)), jsonToVec2F(v.getArray(2, properties.maybe("scalingCenter").value(JsonArray({0,0})).toArray())));
-            } else if (action == "transform") {
-              mat = Mat3F(v.getFloat(1), v.getFloat(2), v.getFloat(3), v.getFloat(4), v.getFloat(5), v.getFloat(6), 0, 0, 1) * mat;
-            }
-          }
-          return mat;
-        };
 
-
-        for (auto& pair : m_transformationGroups) {
-          if (auto transforms = activeState.properties.ptr(pair.first)) {
-            auto mat = processTransforms(pair.second.animationAffineTransform(), transforms->toArray(), activeState.properties);
-            if (pair.second.interpolated) {
-              if (auto nextTransforms = activeState.nextProperties.ptr(pair.first)) {
-                auto nextMat = processTransforms(pair.second.animationAffineTransform(), nextTransforms->toArray(), activeState.nextProperties);
-                pair.second.setAnimationAffineTransform(mat, nextMat, activeState.frameProgress);
-              } else {
-                pair.second.setAnimationAffineTransform(mat);
-              }
+    });
+  if (version() > 0) {
+    auto processTransforms = [](Mat3F mat, JsonArray transforms, JsonObject properties) -> Mat3F {
+      for (auto const& v : transforms) {
+        auto action = v.getString(0);
+        if (action == "reset") {
+          mat = Mat3F::identity();
+        } else if (action == "translate") {
+          mat.translate(jsonToVec2F(v.getArray(1)));
+        } else if (action == "rotate") {
+          mat.rotate(v.getFloat(1), jsonToVec2F(v.getArray(2, properties.maybe("rotationCenter").value(JsonArray({0,0})).toArray())));
+        } else if (action == "rotateDegrees") { // because radians are fucking annoying
+          mat.rotate(v.getFloat(1) * Star::Constants::pi / 180, jsonToVec2F(v.getArray(2, properties.maybe("rotationCenter").value(JsonArray({0,0})).toArray())));
+        } else if (action == "scale") {
+          mat.scale(jsonToVec2F(v.getArray(1)), jsonToVec2F(v.getArray(2, properties.maybe("scalingCenter").value(JsonArray({0,0})).toArray())));
+        } else if (action == "transform") {
+          mat = Mat3F(v.getFloat(1), v.getFloat(2), v.getFloat(3), v.getFloat(4), v.getFloat(5), v.getFloat(6), 0, 0, 1) * mat;
+        }
+      }
+      return mat;
+    };
+    for (auto& pair : m_transformationGroups) {
+      for (auto& stateTypeName : m_animatedParts.stateTypes()) {
+        auto& activeState = m_animatedParts.activeState(stateTypeName);
+        if (auto transforms = activeState.properties.ptr(pair.first)) {
+          auto mat = processTransforms(pair.second.animationAffineTransform(), transforms->toArray(), activeState.properties);
+          if (pair.second.interpolated) {
+            if (auto nextTransforms = activeState.nextProperties.ptr(pair.first)) {
+              auto nextMat = processTransforms(pair.second.animationAffineTransform(), nextTransforms->toArray(), activeState.nextProperties);
+              pair.second.setAnimationAffineTransform(mat, nextMat, activeState.frameProgress);
             } else {
               pair.second.setAnimationAffineTransform(mat);
             }
+          } else {
+            pair.second.setAnimationAffineTransform(mat);
           }
+          break;//we got one with the highest priority so break the loop
         }
       }
-    });
+    }
+  }
 
   for (auto& pair : m_rotationGroups) {
     auto& rotationGroup = pair.second;

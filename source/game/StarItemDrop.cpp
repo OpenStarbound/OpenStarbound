@@ -399,6 +399,12 @@ ItemDrop::ItemDrop() {
   MovementParameters parameters = MovementParameters(m_config.get("movementSettings", JsonObject()));
   if (!parameters.physicsEffectCategories)
     parameters.physicsEffectCategories = StringSet({"itemdrop"});
+  if (parameters.collisionPoly)
+    m_defaultBoundBox = parameters.collisionPoly->boundBox();
+  else
+    m_defaultBoundBox = RectF{-0.499, -0.499, 0.499, 0.499};
+  m_boundBox = m_defaultBoundBox;
+
   m_movementController.applyParameters(parameters);
 
   m_netGroup.addNetElement(&m_mode);
@@ -423,16 +429,15 @@ ItemDrop::ItemDrop() {
 }
 
 void ItemDrop::updateCollisionPoly() {
-  RectF fallback = RectF{ -0.499, -0.499, 0.499, 0.499 };
-  if (auto mat = as<MaterialItem>(m_item.get()))
-    m_boundBox = fallback;
-  else {
+  /* // currently disabled due to causing items to get stuck
+  if (!as<MaterialItem>(m_item.get())) {
     m_boundBox = Drawable::boundBoxAll(m_item->dropDrawables(), true);
-    m_boundBox.rangeSetIfEmpty(fallback);
+    m_boundBox.rangeSetIfEmpty(m_defaultBoundBox);
+    MovementParameters parameters;
+    parameters.collisionPoly = PolyF(collisionArea());
+    m_movementController.applyParameters(parameters);
   }
-  MovementParameters parameters;
-  parameters.collisionPoly = PolyF(collisionArea());
-  m_movementController.applyParameters(parameters);
+  */
 }
 
 

@@ -181,6 +181,16 @@ void WorldServerThread::passMessages(List<Message>&& messages) {
   m_messages.appendAll(std::move(messages));
 }
 
+void WorldServerThread::unloadAll(bool force) {
+  try {
+    RecursiveMutexLocker locker(m_mutex);
+    m_worldServer->unloadAll(force);
+  } catch (std::exception const& e) {
+    Logger::error("WorldServerThread exception caught: {}", outputException(e, true));
+    m_errorOccurred = true;
+  }
+}
+
 WorldChunks WorldServerThread::readChunks() {
   try {
     RecursiveMutexLocker locker(m_mutex);
