@@ -1581,7 +1581,7 @@ void Player::playEmote(HumanoidEmote emote) {
 }
 
 bool Player::canUseTool() const {
-  bool canUse = !isDead() && !isTeleporting() && !m_techController->toolUsageSuppressed();
+  bool canUse = !isDead() && !isTeleporting() && !m_techController->toolUsageSuppressed() && !m_statusController->toolUsageSuppressed();
   if (canUse) {
     if (auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor()))
       if (loungeAnchor->suppressTools.value(loungeAnchor->controllable))
