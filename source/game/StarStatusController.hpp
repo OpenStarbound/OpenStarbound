@@ -122,6 +122,7 @@ public:
   List<Drawable> drawables() const;
   List<LightSource> lightSources() const;
   List<OverheadBar> overheadBars();
+  bool toolUsageSuppressed() const;
 
   // new audios and particles will only be generated on the client
   List<AudioInstancePtr> pullNewAudios();
@@ -185,6 +186,7 @@ private:
     StatScript script;
     UniqueEffectMetadataGroup::ElementId metadataId;
     EffectAnimatorGroup::ElementId animatorId;
+    bool toolUsageSuppressed;
   };
 
   void updateAnimators(float dt);
@@ -206,6 +208,7 @@ private:
   StatCollection m_statCollection;
   NetElementOverride<NetElementHashMap<String, Json>> m_statusProperties;
   NetElementData<DirectivesGroup> m_parentDirectives;
+  NetElementBool m_toolUsageSuppressed;
 
   UniqueEffectMetadataGroup m_uniqueEffectMetadata;
   EffectAnimatorGroup m_effectAnimators;
