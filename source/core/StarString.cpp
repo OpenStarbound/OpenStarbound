@@ -635,7 +635,7 @@ void String::append(std::string const& s) {
 }
 
 void String::append(Char const* s) {
-  while (s)
+  while (*s)
     append(*s++);
 }
 
