@@ -300,7 +300,7 @@ LuaCallbacks LoungeableEntity::addLoungeableCallbacks(LuaCallbacks callbacks){
 void LoungeableEntity::clearLoungingDrawables() {
   for (size_t i = 0; i < loungePositions()->size(); ++i) {
     auto const& thisLounge = loungePositions()->valueAt(i);
-    if (thisLounge.usePartZLevel && !thisLounge.hidden.get()) {
+    if (thisLounge.usePartZLevel) {
       networkedAnimator()->setPartDrawables(thisLounge.part, {});
     }
   }
