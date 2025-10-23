@@ -130,6 +130,8 @@ public:
 
   Maybe<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
 
+  void setScale(float scale);
+
 private:
   typedef LuaMessageHandlingComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>> StatScript;
 

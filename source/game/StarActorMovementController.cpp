@@ -483,7 +483,8 @@ Json ActorMovementController::storeState() const {
       {"rotation", MovementController::rotation()},
       {"movingDirection", DirectionNames.getRight(m_movingDirection.get())},
       {"facingDirection", DirectionNames.getRight(m_facingDirection.get())},
-      {"crouching", m_crouching.get()}};
+      {"crouching", m_crouching.get()},
+      {"scale", scale()}};
 }
 
 void ActorMovementController::loadState(Json const& state) {
@@ -493,6 +494,7 @@ void ActorMovementController::loadState(Json const& state) {
   m_movingDirection.set(DirectionNames.getLeft(state.getString("movingDirection")));
   m_facingDirection.set(DirectionNames.getLeft(state.getString("facingDirection")));
   m_crouching.set(state.getBool("crouching"));
+  setScale(state.getFloat("scale", 1.0f));
 }
 
 void ActorMovementController::setAnchorState(EntityAnchorState anchorState) {
@@ -832,12 +834,12 @@ void ActorMovementController::tickMaster(float dt) {
     if (m_controlFly) {
       Vec2F flyVelocity = *m_controlFly;
       if (flyVelocity.magnitudeSquared() != 0)
-        flyVelocity = flyVelocity.normalized() * *activeParameters.flySpeed;
+        flyVelocity = flyVelocity.normalized() * *activeParameters.flySpeed * scale();
 
       if (m_liquidMovement.get())
-        approachVelocity(flyVelocity * (1.0f - liquidImpedance) * activeModifiers.speedModifier, *activeParameters.liquidForce * activeModifiers.liquidMovementModifier);
+        approachVelocity(flyVelocity * (1.0f - liquidImpedance) * activeModifiers.speedModifier, *activeParameters.liquidForce * activeModifiers.liquidMovementModifier * scale());
       else
-        approachVelocity(flyVelocity * activeModifiers.speedModifier, *activeParameters.airForce);
+        approachVelocity(flyVelocity * activeModifiers.speedModifier, *activeParameters.airForce * scale());
 
       if (flyVelocity[0] > 0)
         updatedMovingDirection = Direction::Right;
@@ -852,7 +854,7 @@ void ActorMovementController::tickMaster(float dt) {
       if (m_liquidMovement.get()) {
         jumpModifier = activeModifiers.liquidJumpModifier;
         jumpProfile = activeParameters.liquidJumpProfile;
-        *jumpProfile.jumpSpeed *= (1.0f - liquidImpedance);
+        *jumpProfile.jumpSpeed *= (1.0f - liquidImpedance) * scale();
       } else {
         jumpModifier = activeModifiers.airJumpModifier;
         jumpProfile = activeParameters.airJumpProfile;
@@ -903,7 +905,7 @@ void ActorMovementController::tickMaster(float dt) {
         else
           m_jumpHoldTimer = {};
 
-        setYVelocity(yVelocity() + *jumpProfile.jumpSpeed * *jumpProfile.jumpInitialPercentage * jumpModifier);
+        setYVelocity(yVelocity() + *jumpProfile.jumpSpeed * *jumpProfile.jumpInitialPercentage * jumpModifier * scale());
 
         m_groundMovementSustainTimer = GameTimer(0);
 
@@ -912,7 +914,7 @@ void ActorMovementController::tickMaster(float dt) {
         if (m_jumpHoldTimer)
           m_jumpHoldTimer->tick(dt);
 
-        approachYVelocity(*jumpProfile.jumpSpeed * jumpModifier, *jumpProfile.jumpControlForce * jumpModifier);
+        approachYVelocity(*jumpProfile.jumpSpeed * jumpModifier * scale(), *jumpProfile.jumpControlForce * jumpModifier * scale());
 
       } else {
         m_jumping.set(false);
@@ -922,13 +924,13 @@ void ActorMovementController::tickMaster(float dt) {
       if (m_controlMove == Direction::Left) {
         updatedMovingDirection = Direction::Left;
         m_targetHorizontalAmbulatingVelocity =
-            -1.0f * (running ? *activeParameters.runSpeed * activeModifiers.speedModifier
-                             : *activeParameters.walkSpeed * activeModifiers.speedModifier);
+            -1.0f * (running ? *activeParameters.runSpeed * activeModifiers.speedModifier * scale()
+                             : *activeParameters.walkSpeed * activeModifiers.speedModifier * scale());
       } else if (m_controlMove == Direction::Right) {
         updatedMovingDirection = Direction::Right;
         m_targetHorizontalAmbulatingVelocity =
-            1.0f * (running ? *activeParameters.runSpeed * activeModifiers.speedModifier
-                            : *activeParameters.walkSpeed * activeModifiers.speedModifier);
+            1.0f * (running ? *activeParameters.runSpeed * activeModifiers.speedModifier * scale()
+                            : *activeParameters.walkSpeed * activeModifiers.speedModifier * scale());
       }
 
       m_targetHorizontalAmbulatingVelocity *= m_moveSpeedMultiplier;
@@ -951,7 +953,7 @@ void ActorMovementController::tickMaster(float dt) {
         else
           ambulatingAccel = *activeParameters.airForce;
 
-        approachXVelocity(m_targetHorizontalAmbulatingVelocity + surfaceVelocity[0], ambulatingAccel);
+        approachXVelocity(m_targetHorizontalAmbulatingVelocity + surfaceVelocity[0], ambulatingAccel * scale());
       }
     }
 
@@ -1282,17 +1284,17 @@ Maybe<bool> PathController::move(ActorMovementController& movementController, Ac
           // accelerate along path using airForce
           float angleFactor = movementController.velocity().normalized() * delta.normalized();
           float speedAlongAngle = angleFactor * movementController.velocity().magnitude();
-          auto acc = parameters.airForce.value(0.0) / movementController.mass();
-          sourceVelocity = delta.normalized() * fmin(parameters.flySpeed.value(0.0), speedAlongAngle + acc * dt);
+          auto acc = parameters.airForce.value(0.0) / movementController.mass() * movementController.scale();
+          sourceVelocity = delta.normalized() * fmin(parameters.flySpeed.value(0.0) * movementController.scale(), speedAlongAngle + acc * dt);
           targetVelocity = sourceVelocity;
         }
         break;
       case Action::Swim:
-        sourceVelocity = targetVelocity = delta.normalized() * parameters.flySpeed.value(0.0f) * (1.0f - parameters.liquidImpedance.value(0.0f));
+        sourceVelocity = targetVelocity = delta.normalized() * parameters.flySpeed.value(0.0f) * (1.0f - parameters.liquidImpedance.value(0.0f)) * movementController.scale();
         break;
       case Action::Walk:
         sourceVelocity = delta.normalized() * (run ? parameters.runSpeed.value(0.0f) : parameters.walkSpeed.value(0.0f));
-        sourceVelocity *= modifiers.speedModifier;
+        sourceVelocity *= modifiers.speedModifier * movementController.scale();
         targetVelocity = sourceVelocity;
         break;
       default: {}

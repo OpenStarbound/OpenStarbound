@@ -107,6 +107,8 @@ public:
 
   Vec2F mouthPosition() const override;
   Vec2F mouthPosition(bool ignoreAdjustments) const override;
+  Vec2F throwItemPosition() const;
+  Vec2F interactPosition() const;
   Vec2F mouthOffset(bool ignoreAdjustments = true) const;
   Vec2F feetOffset() const;
   Vec2F headArmorOffset() const;

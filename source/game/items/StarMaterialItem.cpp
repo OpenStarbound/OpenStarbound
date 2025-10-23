@@ -214,7 +214,7 @@ void MaterialItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
 
   if (m_blockSwap && owner()->inToolRange(aimPosition))
     total += blockSwap(radius, layer);
-  
+
   for (unsigned i = 0; i != steps; ++i) {
     auto placementOrigin = aimPosition + diff * (1.0f - (static_cast<float>(i) / steps));
     if (!owner()->inToolRange(placementOrigin))
@@ -251,11 +251,11 @@ size_t MaterialItem::blockSwap(float radius, TileLayer layer) {
   Player* player = as<Player>(owner());
   if (!player)
     return 0;
-  
+
   ItemPtr beamAxePtr = player->essentialItem(EssentialItem::BeamAxe);
   if (!beamAxePtr)
     return 0;
-  
+
   Item* beamAxe = beamAxePtr.get();
 
   List<Vec2I> swapPositions;
@@ -286,7 +286,7 @@ size_t MaterialItem::blockSwap(float radius, TileLayer layer) {
     if (!world()->damageWouldDestroy(pos, layer, damage))
       willDamage.append(pos);
   }
-  
+
   size_t success;
   size_t failed = world()->replaceTiles(toSwap, damage, true).size();
 
@@ -298,7 +298,7 @@ size_t MaterialItem::blockSwap(float radius, TileLayer layer) {
 
     for (auto pair : toSwap)
       toDamage.append(pair.first);
-    
+
     world()->damageTiles(toDamage, layer, owner()->position(), damage, owner()->entityId());
   }
 
@@ -336,7 +336,7 @@ size_t MaterialItem::blockSwap(float radius, TileLayer layer) {
 
   if (FireableItem* item = as<FireableItem>(beamAxe))
     setFireTimer(item->windupTime() + item->cooldownTime());
-  
+
   return success;
 }
 
@@ -397,7 +397,7 @@ void MaterialItem::updatePropertiesFromPlayer(Player* player) {
   auto collisionOverride = player->getSecretProperty(CollisionOverridePropertyKey);
   if (collisionOverride.isType(Json::Type::String))
     m_collisionOverride = TileCollisionOverrideNames.maybeLeft(collisionOverride.toString()).value(TileCollisionOverride::None);
-  
+
   auto blockSwap = player->getSecretProperty(BlockSwapPropertyKey);
   if (blockSwap.isType(Json::Type::Bool))
     m_blockSwap = blockSwap.toBool();

@@ -17,6 +17,8 @@
 #include "StarEntityLuaBindings.hpp"
 #include "StarMovementControllerLuaBindings.hpp"
 #include "StarParticleDatabase.hpp"
+#include "StarActorEntity.hpp"
+#include "StarMobileEntity.hpp"
 
 namespace Star {
 
@@ -231,8 +233,10 @@ List<DamageSource> Projectile::damageSources() const {
       if (angleSide.second == Direction::Left)
         damagePoly.flipHorizontal(0);
       damagePoly.rotate(angleSide.first);
+      damagePoly.scale(m_movementController->scale());
     } else {
       damagePoly.rotate(m_movementController->rotation());
+      damagePoly.scale(m_movementController->scale());
     }
     addDamageSource(damagePoly);
   } else if (!useDamageLine) {
@@ -372,7 +376,7 @@ void Projectile::render(RenderCallback* renderCallback) {
   m_effectEmitter->render(renderCallback);
 
   String image = strf("{}:{}{}", m_config->image, m_frame, m_imageSuffix);
-  Drawable drawable = Drawable::makeImage(image, 1.0f / TilePixels, true, Vec2F());
+  Drawable drawable = Drawable::makeImage(image, m_movementController->scale() / TilePixels, true, Vec2F());
   drawable.imagePart().addDirectives(m_imageDirectives, true);
   if (m_config->flippable) {
     auto angleSide = getAngleSide(m_movementController->rotation(), true);
@@ -446,6 +450,17 @@ void Projectile::setSourceEntity(EntityId source, bool trackSource) {
   if (inWorld()) {
     if (auto sourceEntity = world()->entity(source)) {
       m_lastEntityPosition = sourceEntity->position();
+
+      // projectiles inherit scale from their owners when they initialize
+      if (auto actor = as<ActorEntity>(sourceEntity)) {
+        m_movementController->setScale(m_movementController->scale() * actor->movementController()->scale());
+        m_movementController->setVelocity(m_movementController->velocity() * actor->movementController()->scale());
+        m_acceleration *= actor->movementController()->scale();
+      } else if (auto mob = as<MobileEntity>(sourceEntity)) {
+        m_movementController->setScale(m_movementController->scale() * mob->movementController()->scale());
+        m_movementController->setVelocity(m_movementController->velocity() * mob->movementController()->scale());
+        m_acceleration *= mob->movementController()->scale();
+      }
       if (!m_damageTeam)
         setTeam(sourceEntity->getTeam());
     } else {
@@ -480,7 +495,15 @@ List<PhysicsForceRegion> Projectile::forceRegions() const {
   for (auto const& p : m_physicsForces) {
     if (p.second.enabled.get()) {
       PhysicsForceRegion forceRegion = p.second.forceRegion;
-      forceRegion.call([pos = position()](auto& fr) { fr.translate(pos); });
+      if (auto dfr = forceRegion.ptr<DirectionalForceRegion>()) {
+        dfr->region.scale(m_movementController->scale());
+      } else if (auto rfr = forceRegion.ptr<RadialForceRegion>()) {
+        rfr->innerRadius *= m_movementController->scale();
+        rfr->outerRadius *= m_movementController->scale();
+      }
+      forceRegion.call([pos = position()](auto& fr) {
+        fr.translate(pos);
+      });
       forces.append(std::move(forceRegion));
     }
   }
@@ -698,7 +721,7 @@ void Projectile::processAction(Json const& action) {
     }
     if (m_referenceVelocity)
       projectile->setReferenceVelocity(m_referenceVelocity);
-    projectile->setInitialPosition(position() + offset);
+    projectile->setInitialPosition(position() + (offset * m_movementController->scale()));
     if (parameters.contains("direction")) {
       projectile->setInitialDirection(jsonToVec2F(parameters.get("direction")));
     } else {
@@ -723,7 +746,7 @@ void Projectile::processAction(Json const& action) {
     }
     projectile->setSourceEntity(m_sourceEntity, false);
     projectile->setPowerMultiplier(m_powerMultiplier);
-    
+
     // if the entity no longer exists and no explicit damage team is set, inherit damage team
     if (!projectile->m_damageTeam && !world()->entity(m_sourceEntity))
       projectile->setTeam(getTeam());
@@ -767,8 +790,8 @@ void Projectile::processAction(Json const& action) {
     if (isSlave())
       return;
 
-    float foregroundRadius = parameters.getFloat("foregroundRadius");
-    float backgroundRadius = parameters.getFloat("backgroundRadius");
+    float foregroundRadius = parameters.getFloat("foregroundRadius") * m_movementController->scale();
+    float backgroundRadius = parameters.getFloat("backgroundRadius") * m_movementController->scale();
     float explosiveDamageAmount = parameters.getFloat("explosiveDamageAmount");
     auto damageType = TileDamageTypeNames.getLeft(parameters.getString("tileDamageType", "explosive"));
     unsigned harvestLevel = parameters.getUInt("harvestLevel", 0);
@@ -800,8 +823,10 @@ void Projectile::processAction(Json const& action) {
 
       auto spawnPosition = position();
       if (parameters.contains("offset"))
-        spawnPosition += jsonToVec2F(parameters.get("offset"));
+        spawnPosition += jsonToVec2F(parameters.get("offset")) * m_movementController->scale();
       monster->setPosition(spawnPosition);
+      // make monsters inherit scale
+      monster->movementController()->setScale(monster->movementController()->scale() * m_movementController->scale());
       world()->addEntity(monster);
     }
 
@@ -1025,5 +1050,10 @@ void Projectile::renderPendingRenderables(RenderCallback* renderCallback) {
   }
   m_pendingRenderables.clear();
 }
+
+MovementController* Projectile::movementController() {
+  return m_movementController.get();
+}
+
 
 }

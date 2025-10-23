@@ -108,6 +108,8 @@ public:
 
   virtual float rotation() const;
 
+  float scale() const;
+
   // CollisionPoly rotated and translated by position
   PolyF collisionBody() const;
 
@@ -154,6 +156,8 @@ public:
   void addMomentum(Vec2F const& momentum);
 
   void setRotation(float angle);
+
+  void setScale(float scale);
 
   // Apply one timestep of rotation.
   void rotate(float rotationRate);
@@ -266,6 +270,7 @@ private:
   NetElementFloat m_xVelocity;
   NetElementFloat m_yVelocity;
   NetElementFloat m_rotation;
+  NetElementFloat m_scale;
 
   NetElementBool m_colliding;
   NetElementBool m_collisionStuck;

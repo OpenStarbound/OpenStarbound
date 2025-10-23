@@ -371,7 +371,7 @@ List<PreviewTile> BeamMiningTool::previewTiles(bool shifting) const {
       if (!ready())
         lightColor *= Color::rgbaf(0.75f, 0.75f, 0.75f, 1.0f);
       Vec3B light = lightColor.toRgb();
-      int radius = !shifting ? m_blockRadius : m_altBlockRadius;
+      int radius = !shifting ? max(m_blockRadius * owner()->movementController()->scale(), 1.0f) : m_altBlockRadius;
       for (auto pos : tileAreaBrush(radius, ownerp->aimPosition(), true)) {
         if (worldp->tileIsOccupied(pos, TileLayer::Foreground, true)) {
           result.append({pos, true, light, true});
@@ -414,7 +414,7 @@ void BeamMiningTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
   auto ownerp = owner();
   if (ownerp && worldp) {
     bool used = false;
-    int radius = !shifting ? m_blockRadius : m_altBlockRadius;
+    int radius = !shifting ? max(m_blockRadius * owner()->movementController()->scale(), 1.0f) : m_altBlockRadius;
     String blockSound;
     List<Vec2I> brushArea;
 
@@ -646,7 +646,7 @@ List<PreviewTile> PaintingBeamTool::previewTiles(bool shifting) const {
     Vec3B light = Color::White.toRgb();
 
     if (ownerp->isAdmin() || ownerp->inToolRange()) {
-      int radius = !shifting ? m_blockRadius : m_altBlockRadius;
+      int radius = !shifting ? max(m_blockRadius * owner()->movementController()->scale(), 1.0f) : m_altBlockRadius;
 
       for (auto pos : tileAreaBrush(radius, ownerp->aimPosition(), true)) {
         if (worldp->canModifyTile(pos, PlaceMaterialColor{TileLayer::Foreground, (MaterialColorVariant)m_colorIndex}, true)) {
@@ -693,7 +693,7 @@ void PaintingBeamTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
     auto ownerp = owner();
     if (ownerp && worldp) {
       bool used = false;
-      int radius = !shifting ? m_blockRadius : m_altBlockRadius;
+      int radius = !shifting ? max(m_blockRadius * owner()->movementController()->scale(), 1.0f) : m_altBlockRadius;
 
       if (ownerp->isAdmin() || ownerp->inToolRange()) {
         for (auto pos : tileAreaBrush(radius, ownerp->aimPosition(), true)) {
