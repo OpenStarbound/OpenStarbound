@@ -381,6 +381,9 @@ private:
   List<PhysicsForceRegion> m_forceRegions;
 
   BroadcastCallback m_broadcastCallback;
+
+  // used to keep track of already-printed stack traces caused by remote entities, so they don't clog the log
+  HashSet<uint64_t> m_entityExceptionsLogged;
 };
 
 }

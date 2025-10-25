@@ -549,7 +549,14 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
         if (entity->isMaster()) // this is YOUR problem!!
           throw e; 
         else { // this is THEIR problem!!
-          Logger::error("WorldClient: Exception caught in {}::render ({}): {}", EntityTypeNames.getRight(entity->entityType()), entity->entityId(), e.what());
+          auto issue = printException(e, true);
+          auto hash = hashOf(issue);
+          if (!m_entityExceptionsLogged.contains(hash))
+            m_entityExceptionsLogged.insert(hash);
+          else
+            issue = e.what();
+
+          Logger::error("WorldClient: Exception caught in {}::render ({}): {}", EntityTypeNames.getRight(entity->entityType()), entity->entityId(), issue);
           auto toolUser = as<ToolUserEntity>(entity);
           String image = toolUser ? strf("/rendering/sprites/error_{}.png", DirectionNames.getRight(toolUser->facingDirection())) : "/rendering/sprites/error.png";
           Color color = Color::rgbf(0.8f + (float)sin(m_currentTime * Constants::pi * 2.0) * 0.2f, 0.0f, 0.0f);
@@ -1179,9 +1186,17 @@ void WorldClient::update(float dt) {
       try { entity->update(dt, m_currentStep); }
       catch (StarException const& e) {
         if (entity->isMaster()) // this is YOUR problem!!
-          throw e; 
-        else // this is THEIR problem!!
-          Logger::error("WorldClient: Exception caught in {}::update ({}): {}", EntityTypeNames.getRight(entity->entityType()), entity->entityId(), e.what());
+          throw e;
+        else { // this is THEIR problem!!
+          auto issue = printException(e, true);
+          auto hash = hashOf(issue);
+          if (!m_entityExceptionsLogged.contains(hash))
+            m_entityExceptionsLogged.insert(hash);
+          else
+            issue = e.what();
+
+          Logger::error("WorldClient: Exception caught in {}::update ({}): {}", EntityTypeNames.getRight(entity->entityType()), entity->entityId(), issue);
+        }
       }
 
       if (entity->shouldDestroy() && entity->entityMode() == EntityMode::Master)
