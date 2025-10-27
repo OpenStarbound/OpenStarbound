@@ -1083,7 +1083,7 @@ void Player::update(float dt, uint64_t) {
   Direction facingDirection = m_movementController->facingDirection();
 
   auto overrideFacingDirection = m_tools->setupHumanoidHandItems(*humanoid(), position(), aimPosition());
-  if (overrideFacingDirection)
+  if (!loungingIn() && overrideFacingDirection)
     m_movementController->controlFace(facingDirection = *overrideFacingDirection);
 
   humanoid()->setFacingDirection(facingDirection);
