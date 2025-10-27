@@ -167,6 +167,9 @@ private:
   NetElementData<EntityDamageTeam> m_damageTeam;
   OrderedHashMap<String, DamageSourceConfig> m_damageSources;
 
+  EntityRenderLayer m_baseRenderLayer;
+  Maybe<EntityRenderLayer> m_overrideRenderLayer;
+  
   GameTimer m_slaveHeartbeatTimer;
 };
 
