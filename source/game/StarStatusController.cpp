@@ -64,6 +64,9 @@ StatusController::StatusController(Json const& config) : m_statCollection(config
   m_netGroup.addNetElement(&m_uniqueEffectMetadata);
   m_netGroup.addNetElement(&m_effectAnimators);
 
+  m_toolUsageSuppressed.setCompatibilityVersion(12);
+  m_netGroup.addNetElement(&m_toolUsageSuppressed);
+
   if (m_primaryAnimationConfig)
     m_primaryAnimatorId = m_effectAnimators.addNetElement(make_shared<EffectAnimator>(*m_primaryAnimationConfig));
   else
@@ -575,6 +578,10 @@ List<OverheadBar> StatusController::overheadBars() {
   return {};
 }
 
+bool StatusController::toolUsageSuppressed() const {
+  return m_toolUsageSuppressed.get();
+}
+
 List<AudioInstancePtr> StatusController::pullNewAudios() {
   List<AudioInstancePtr> newAudios;
   for (auto const& animator : m_effectAnimators.netElements())
@@ -734,6 +741,8 @@ bool StatusController::addUniqueEffect(
       uniqueEffect.animatorId =
           m_effectAnimators.addNetElement(make_shared<EffectAnimator>(uniqueEffect.effectConfig.animationConfig));
 
+    uniqueEffect.toolUsageSuppressed = false;
+
     if (m_parentEntity)
       initUniqueEffectScript(uniqueEffect);
 
@@ -863,6 +872,15 @@ LuaCallbacks StatusController::makeUniqueEffectCallbacks(UniqueEffectInstance& u
         throw StatusException("Cannot remove stat modifier group that was not added from this effect");
       m_statCollection.removeStatModifierGroup(groupId);
       uniqueEffect.modifierGroups.remove(groupId);
+    });
+  callbacks.registerCallback("setToolUsageSuppressed", [this, &uniqueEffect](bool suppressed) {
+      if (uniqueEffect.toolUsageSuppressed == suppressed)
+        return;
+      uniqueEffect.toolUsageSuppressed = suppressed;
+      bool anySuppressed = false;
+      for (auto& p : m_uniqueEffects)
+        anySuppressed = anySuppressed || p.second.toolUsageSuppressed;
+      m_toolUsageSuppressed.set(anySuppressed);
     });
 
   return callbacks;
