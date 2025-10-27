@@ -534,6 +534,8 @@ LuaCallbacks TechController::makeTechCallbacks(TechModule& techModule) {
     });
 
   callbacks.registerCallback("setToolUsageSuppressed", [this, &techModule](bool suppressed) {
+      if (techModule.toolUsageSuppressed == suppressed)
+        return;
       techModule.toolUsageSuppressed = suppressed;
       bool anySuppressed = false;
       for (auto& module : m_techModules)
