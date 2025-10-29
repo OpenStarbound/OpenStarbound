@@ -821,6 +821,11 @@ void ClientApplication::updateMods(float dt) {
         Logger::info("Reloading to include all user generated content");
         Root::singleton().reloadWithMods(modDirectories);
 
+        // We've just reloaded, so make sure to grab our config again!
+        // If we don't do this, we'll be able to read modsWarningShown
+        // just fine, but we won't be able to write it back to the file.
+        configuration = m_root->configuration();
+        
         auto assets = m_root->assets();
 
         if (configuration->get("modsWarningShown").optBool().value()) {
