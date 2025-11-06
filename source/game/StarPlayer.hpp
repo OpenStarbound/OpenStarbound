@@ -411,6 +411,7 @@ public:
 
   void addChatMessage(String const& message, Json const& config = {});
   void addEmote(HumanoidEmote const& emote, Maybe<float> emoteCooldown = {});
+  void setDance(Maybe<String> const & danceName);
   pair<HumanoidEmote, float> currentEmote() const;
 
   State currentState() const;
@@ -572,10 +573,13 @@ private:
   State m_state;
   HumanoidEmote m_emoteState;
 
+  Maybe<String> m_dance;
+  GameTimer m_danceCooldownTimer;
+
   float m_footstepTimer;
   float m_teleportTimer;
-  float m_emoteCooldownTimer;
-  float m_blinkCooldownTimer;
+  GameTimer m_emoteCooldownTimer;
+  GameTimer m_blinkCooldownTimer;
   float m_lastDamagedOtherTimer;
   EntityId m_lastDamagedTarget;
   GameTimer m_ageItemsTimer;
@@ -681,6 +685,7 @@ private:
   NetElementString m_chatMessageNetState;
   NetElementEvent m_newChatMessageNetState;
   NetElementString m_emoteNetState;
+  NetElementData<Maybe<String>> m_humanoidDanceNetState;
 };
 
 }
