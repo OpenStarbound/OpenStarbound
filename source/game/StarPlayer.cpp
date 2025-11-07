@@ -2429,7 +2429,7 @@ void Player::setDance(Maybe<String> const& danceName) {
 }
 
 pair<HumanoidEmote, float> Player::currentEmote() const {
-  return make_pair(m_emoteState, m_emoteCooldownTimer.time);
+  return make_pair(m_emoteState, m_emoteCooldownTimer.timer);
 }
 
 Player::State Player::currentState() const {
