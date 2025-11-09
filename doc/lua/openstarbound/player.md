@@ -475,3 +475,117 @@ Returns a JSON object of key-value pairs, which are the codex ID and read status
 #### `String` player.getNewCodex()
 
 Returns the codex ID of the newest codex not read and `nil` otherwise.
+
+---
+
+#### `Maybe<LuaValue>` player.callQuest(`String` questId, `String` functionName, `LuaVariadic` args)
+
+Calls a function in the specified quest script.
+
+---
+
+#### `Bool` player.canTurnInQuest(`String` questId)
+
+Returns `true` if the player can turn in the specified quest.
+
+---
+
+#### `Maybe<Json>` player.currentQuest()
+
+Returns the current quest as JSON, or `nil` if no quest is active.
+
+---
+
+#### `Maybe<String>` player.currentQuestId()
+
+Returns the current quest ID, or `nil` if no quest is active.
+
+---
+
+#### `void` player.dance(`String` dance)
+
+Makes the player perform a dance. Pass `nil` to stop dancing.
+
+---
+
+#### `LuaTable` player.effectsAnimator()
+
+Returns the effects animator callbacks table for the player.
+
+---
+
+#### `String` player.nametag()
+
+Returns the player's nametag.
+
+---
+
+#### `Json` player.quest(`String` questId)
+
+Returns quest information as JSON.
+
+---
+
+#### `StringList` player.questIds()
+
+Returns a list of all quest IDs the player has.
+
+---
+
+#### `Json` player.questObjectives(`String` questId)
+
+Returns the objectives for the specified quest.
+
+---
+
+#### `String` player.questPortrait(`String` questId)
+
+Returns the portrait for the specified quest.
+
+---
+
+#### `String` player.questState(`String` questId)
+
+Returns the state of the specified quest.
+
+---
+
+#### `Bool` player.removeTeleportBookmark(`Json` bookmarkConfig)
+
+Removes a teleport bookmark. Returns `true` if successful.
+
+---
+
+#### `StringList` player.serverQuestIds()
+
+Returns a list of server quest IDs.
+
+---
+
+#### `void` player.setAnimationParameter(`String` parameterName, `Json` value)
+
+Sets an animation parameter for the player's humanoid animator.
+
+---
+
+#### `void` player.setNametag(`String` nametag)
+
+Sets the player's nametag.
+
+---
+
+#### `void` player.setTrackedQuest(`String` questId)
+
+Sets the currently tracked quest.
+
+---
+
+#### `void` player.stopLounging()
+
+Makes the player stop lounging.
+
+---
+
+#### `String` player.trackedQuestId()
+
+Returns the ID of the currently tracked quest.

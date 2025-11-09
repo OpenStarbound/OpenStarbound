@@ -60,15 +60,17 @@ Returns a `String` representation of the world's id.
 
 ---
 
-#### `Maybe<LuaValue>` world.callScriptContext(`String` contextName, `String` function, `String` contextName, [`LuaValue` args ...])
+#### `Maybe<LuaValue>` world.callScriptContext(`String` contextName, `String` functionName, [`LuaValue` args ...])
 
 Calls a function in the specified world script context.
 
 ---
 
-#### `?` world.sendPacket(`?` ?)
+#### `bool` world.sendPacket(`ConnectionId` clientId, `String` packetType, `Json` packetData)
 
-?
+Sends a raw network packet to the specified client that is currently connected to this world. The `packetType` must be the name
+of a known packet in `Star::PacketTypeNames` (for example `"EntityInteractResult"`) and `packetData` must contain the JSON
+representation expected by `Star::createPacket` for that packet. Returns `true` when the packet is queued successfully.
 
 ---
 
