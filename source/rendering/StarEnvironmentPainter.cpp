@@ -50,7 +50,7 @@ void EnvironmentPainter::renderStars(float pixelRatio, Vec2F const& screenSize, 
   Vec2F viewMin = sky.starOffset - viewCenter;
 
   auto newStarsHash = starsHash(sky, viewSize);
-  if (newStarsHash != m_starsHash) {
+  if (newStarsHash != m_starsHash || !m_starGenerator) {
     m_starsHash = newStarsHash;
     setupStars(sky);
   }
