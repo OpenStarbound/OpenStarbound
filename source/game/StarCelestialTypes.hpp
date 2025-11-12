@@ -62,6 +62,7 @@ struct CelestialBaseInformation {
   int chunkSize;
   Vec2I xyCoordRange;
   Vec2I zCoordRange;
+  bool enforceCoordRange;
 };
 DataStream& operator>>(DataStream& ds, CelestialBaseInformation& celestialInformation);
 DataStream& operator<<(DataStream& ds, CelestialBaseInformation const& celestialInformation);
