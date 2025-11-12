@@ -55,7 +55,7 @@ void EnvironmentPainter::renderStars(float pixelRatio, Vec2F const& screenSize, 
     setupStars(sky);
   }
 
-  if (!sky.settings || sky.starFrames == 0 || sky.starTypes().empty())
+  if (!m_starGenerator || !sky.settings || sky.starFrames == 0 || sky.starTypes().empty())
     return;
 
   float screenBuffer = sky.settings.queryFloat("stars.screenBuffer");
