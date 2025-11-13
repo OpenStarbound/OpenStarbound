@@ -109,7 +109,7 @@ private:
   };
 
   struct WorkerStats {
-    atomice<uint64_t> packetsProcessed{0};
+    atomic<uint64_t> packetsProcessed{0};
     atomic<uint64_t> bytesReceived{0};
     atomic<uint64_t> bytesSent{0};
     atomic<uint64_t> connectionsHandled{0};
