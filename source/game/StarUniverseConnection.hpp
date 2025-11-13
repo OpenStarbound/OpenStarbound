@@ -69,7 +69,7 @@ private:
 };
 
 // Manage a set of UniverseConnections cheaply and in an asynchronous way.
-// Uses a single background thread to handle remote sending and receiving.
+// Uses multiple background threads to handle remote sending and receiving.
 class UniverseConnectionServer {
 public:
   // The packet receive callback is called asynchronously on every packet group
@@ -79,7 +79,7 @@ public:
   // that client is complete.
   typedef function<void(UniverseConnectionServer*, ConnectionId, List<PacketPtr>)> PacketReceiveCallback;
 
-  UniverseConnectionServer(PacketReceiveCallback packetReceiver);
+  UniverseConnectionServer(PacketReceiveCallback packetReceiver, size_t numWorkerThreads = 0);
   ~UniverseConnectionServer();
 
   bool hasConnection(ConnectionId clientId) const;
@@ -93,6 +93,11 @@ public:
 
   void sendPackets(ConnectionId clientId, List<PacketPtr> packets);
 
+  // Get total packets processed across all worker threads
+  uint64_t totalPacketsProcessed() const;
+  // Get number of worker threads
+  size_t numWorkerThreads() const;
+
 private:
   struct Connection {
     Mutex mutex;
@@ -100,6 +105,29 @@ private:
     List<PacketPtr> sendQueue;
     Deque<PacketPtr> receiveQueue;
     int64_t lastActivityTime;
+    size_t workerIndex;
+  };
+
+  struct WorkerStats {
+    atomice<uint64_t> packetsProcessed{0};
+    atomic<uint64_t> bytesReceived{0};
+    atomic<uint64_t> bytesSent{0};
+    atomic<uint64_t> connectionsHandled{0};
+
+    WorkerStats() = default;
+    WorkerStats(WorkerStats&& other) noexcept : packetsProcessed(other.packetsProcessed.load()), bytesReceived(other.bytesReceived.load()), bytesSent(other.bytesSent.load()), connectionsHandled(other.connectionsHandled.load()) {
+                                                };
+    WorkerStats(const WorkerStats&) = delete;
+    WorkerStats& operator=(WorkerStats&& other) noexcept {
+      if (this != &other) {
+        packetsProcessed = other.packetsProcessed.load();
+        bytesReceived = other.bytesReceived.load();
+        bytesSent = other.bytesSent.load();
+        connectionsHandled = other.connectionsHandled.load();
+      }
+      return *this;
+    };
+    WorkerStats& operator=(const WorkerStats&) = delete;
   };
 
   PacketReceiveCallback const m_packetReceiver;
@@ -107,8 +135,10 @@ private:
   mutable RecursiveMutex m_connectionsMutex;
   HashMap<ConnectionId, shared_ptr<Connection>> m_connections;
 
-  ThreadFunction<void> m_processingLoop;
+  List<ThreadFunction<void>> m_processingThreads;
+  List<WorkerStats> m_workerStats;
   atomic<bool> m_shutdown;
+  size_t m_numWorkerThreads;
 };
 
-}
+}// namespace Star

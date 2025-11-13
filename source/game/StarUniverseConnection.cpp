@@ -1,12 +1,14 @@
 #include "StarUniverseConnection.hpp"
+#include "StarFormat.hpp"
 #include "StarLogging.hpp"
+#include <thread>
 
 namespace Star {
 
 static const int PacketSocketPollSleep = 1;
 
 UniverseConnection::UniverseConnection(PacketSocketUPtr packetSocket)
-  : m_packetSocket(std::move(packetSocket)) {}
+    : m_packetSocket(std::move(packetSocket)) {}
 
 UniverseConnection::UniverseConnection(UniverseConnection&& rhs) {
   operator=(std::move(rhs));
@@ -121,9 +123,19 @@ Maybe<PacketStats> UniverseConnection::outgoingStats() const {
   return m_packetSocket->outgoingStats();
 }
 
-UniverseConnectionServer::UniverseConnectionServer(PacketReceiveCallback packetReceiver)
-  : m_packetReceiver(std::move(packetReceiver)), m_shutdown(false) {
-  m_processingLoop = Thread::invoke("UniverseConnectionServer::processingLoop", [this]() {
+UniverseConnectionServer::UniverseConnectionServer(PacketReceiveCallback packetReceiver, size_t numWorkerThreads)
+    : m_packetReceiver(std::move(packetReceiver)), m_shutdown(false) {
+  if (numWorkerThreads == 0)
+    m_numWorkerThreads = max<size_t>(2, std::thread::hardware_concurrency() / 4);
+  else
+    m_numWorkerThreads = numWorkerThreads;
+
+  Logger::info("UniverseConnectionServer: Starting {} network worker threads", m_numWorkerThreads);
+
+  m_workerStats.resize(m_numWorkerThreads);
+
+  for (size_t i = 0; i < m_numWorkerThreads; ++i) {
+    m_processingThreads.append(Thread::invoke(strf("UniverseConnectionServer::worker_{}", i), [this, i]() {
       RecursiveMutexLocker connectionsLocker(m_connectionsMutex);
       try {
         while (!m_shutdown) {
@@ -132,7 +144,12 @@ UniverseConnectionServer::UniverseConnectionServer(PacketReceiveCallback packetR
           connectionsLocker.unlock();
 
           bool dataTransmitted = false;
+          size_t handledCount = 0;
           for (auto& p : connections) {
+            if (p.second->workerIndex != i)
+              continue;
+
+            handledCount++;
             MutexLocker connectionLocker(p.second->mutex);
             if (!p.second->packetSocket || !p.second->packetSocket->isOpen())
               continue;
@@ -144,6 +161,7 @@ UniverseConnectionServer::UniverseConnectionServer(PacketReceiveCallback packetR
             List<PacketPtr> receivePackets = p.second->packetSocket->receivePackets();
             if (!receivePackets.empty()) {
               p.second->lastActivityTime = Time::monotonicMilliseconds();
+              m_workerStats[i].packetsProcessed += receivePackets.size();
               p.second->receiveQueue.appendAll(take(receivePackets));
             }
 
@@ -161,22 +179,26 @@ UniverseConnectionServer::UniverseConnectionServer(PacketReceiveCallback packetR
               }
             }
           }
+          m_workerStats[i].connectionsHandled = handledCount;
 
           if (!dataTransmitted)
             Thread::sleep(PacketSocketPollSleep);
         }
       } catch (std::exception const& e) {
-        Logger::error("Exception caught in UniverseConnectionServer::remoteProcessLoop, closing all remote connections: {}", e.what());
+        Logger::error("Exception caught in UniverseConnectionServer::worker_{}, closing assigned connections: {}", i, e.what());
         connectionsLocker.lock();
         for (auto& p : m_connections)
-          p.second->packetSocket->close();
+          if (p.second->workerIndex == i)
+            p.second->packetSocket->close();
       }
-    });
+    }));
+  }
 }
 
 UniverseConnectionServer::~UniverseConnectionServer() {
   m_shutdown = true;
-  m_processingLoop.finish();
+  for (auto& thread : m_processingThreads)
+    thread.finish();
   removeAllConnections();
 }
 
@@ -221,6 +243,7 @@ void UniverseConnectionServer::addConnection(ConnectionId clientId, UniverseConn
   connection->sendQueue = std::move(uc.m_sendQueue);
   connection->receiveQueue = std::move(uc.m_receiveQueue);
   connection->lastActivityTime = Time::monotonicMilliseconds();
+  connection->workerIndex = clientId % m_numWorkerThreads;
   m_connections.add(clientId, std::move(connection));
 }
 
@@ -264,4 +287,15 @@ void UniverseConnectionServer::sendPackets(ConnectionId clientId, List<PacketPtr
   }
 }
 
+uint64_t UniverseConnectionServer::totalPacketsProcessed() const {
+  uint64_t total = 0;
+  for (auto const& stats : m_workerStats)
+    total += stats.packetsProcessed.load();
+  return total;
 }
+
+size_t UniverseConnectionServer::numWorkerThreads() const {
+  return m_numWorkerThreads;
+}
+
+}// namespace Star
