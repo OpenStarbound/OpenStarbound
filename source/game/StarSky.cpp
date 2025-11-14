@@ -448,7 +448,8 @@ pair<Color, Color> Sky::skyRectColors() const {
 
 Color Sky::skyFlashColor() const {
   Color res = Color::White;
-  res.setAlphaF(m_flashTimer / m_settings.queryFloat("flashTimer"));
+  float duration = m_settings.queryFloat("flashTimer");
+  res.setAlphaF(duration == 0.0f ? 0.0f : m_flashTimer / duration);
   return res;
 }
 
