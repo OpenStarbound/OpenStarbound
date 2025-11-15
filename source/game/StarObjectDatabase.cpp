@@ -114,7 +114,7 @@ Json ObjectDatabase::parseTouchDamage(String const& path, Json const& config) {
   return touchDamage;
 }
 
-List<ObjectOrientationPtr> ObjectDatabase::parseOrientations(String const& path, Json const& configList) {
+List<ObjectOrientationPtr> ObjectDatabase::parseOrientations(String const& path, Json const& configList, Json const& baseConfig) {
   auto& root = Root::singleton();
   auto materialDatabase = root.materialDatabase();
   List<ObjectOrientationPtr> res;
@@ -195,7 +195,8 @@ List<ObjectOrientationPtr> ObjectDatabase::parseOrientations(String const& path,
       auto spaceScanSpaces = Set<Vec2I>::from(orientation->spaces);
       StringMap<String> imageKeys;
       imageKeys.set("color", orientationSettings.get("color", "default").toString().takeUtf8());
-      for (auto p : orientationSettings.get("defaultImageKeys", JsonObject()).toObject())
+
+      for (auto p : jsonMergeQueryDef("imageKeys", JsonObject(), baseConfig, orientation->config).toObject())
         imageKeys.set(p.first, p.second.toString());
 
       for (auto const& layer : orientation->imageLayers) {
@@ -575,7 +576,7 @@ ObjectConfigPtr ObjectDatabase::readConfig(String const& path) {
         objectConfig->animationConfig = jsonMerge(objectConfig->animationConfig, assets->fetchJson(customConfig, path));
     }
 
-    objectConfig->orientations = ObjectDatabase::parseOrientations(path, config.get("orientations"));
+    objectConfig->orientations = ObjectDatabase::parseOrientations(path, config.get("orientations"), config);
 
     // For compatibility, allow particle emitter specs in the base config as
     // well as in individual orientations.
@@ -604,13 +605,13 @@ List<Drawable> ObjectDatabase::cursorHintDrawables(World const* world, String co
   List<Drawable> drawables;
 
   auto config = getConfig(objectName);
-  parameters = jsonMerge(config->config, parameters);
+  auto mergeConfig = jsonMerge(config->config, parameters);
 
-  if (auto placementImage = parameters.optString("placementImage")) {
+  if (auto placementImage = mergeConfig.optString("placementImage")) {
     if (direction == Direction::Left)
       *placementImage += "?flipx";
     drawables = {Drawable::makeImage(AssetPath::relativeTo(config->path, *placementImage),
-        1.0 / TilePixels, false, Vec2F(position) + jsonToVec2F(parameters.get("placementImagePosition")) / TilePixels)};
+        1.0 / TilePixels, false, Vec2F(position) + jsonToVec2F(mergeConfig.get("placementImagePosition")) / TilePixels)};
   } else {
     size_t orientationIndex = config->findValidOrientation(world, position, direction);
     if (orientationIndex == NPos) {
@@ -631,7 +632,7 @@ List<Drawable> ObjectDatabase::cursorHintDrawables(World const* world, String co
 
     StringMap<String> imageKeys;
     imageKeys.set("color", orientation->config.get("color", "default").toString().takeUtf8());
-    for (auto p : orientation->config.get("defaultImageKeys", JsonObject()).toObject())
+    for (auto p : jsonMergeQueryDef("imageKeys", JsonObject(), config->config, orientation->config, parameters).toObject())
       imageKeys.set(p.first, p.second.toString());
 
     for (auto const& layer : orientation->imageLayers) {

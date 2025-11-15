@@ -35,7 +35,7 @@ Object::Object(ObjectConfigConstPtr config, Json const& parameters) {
     auto orientations = jOrientations->toArray();
     for (size_t i = 0; i != orientations.size(); ++i)
       base.set(i, jsonMergeNulling(base.get(i), orientations.get(i)));
-    m_orientations = ObjectDatabase::parseOrientations(m_config->path, base);
+    m_orientations = ObjectDatabase::parseOrientations(m_config->path, base, m_config->config);
   }
 
   m_animationTimer = 0.0f;
@@ -82,6 +82,12 @@ Object::Object(ObjectConfigConstPtr config, Json const& parameters) {
   m_turnInQuests.set(jsonToStringSet(configValue("turnInQuests", JsonArray())));
   if (!m_offeredQuests.get().empty() || !m_turnInQuests.get().empty())
     m_interactive.set(true);
+
+  auto colorName = configValue("color", "default").toString().takeUtf8();
+  m_imageKeys.set("color", colorName);
+  for (auto p : configValue("imageKeys", JsonObject()).toObject())
+    m_imageKeys.set(p.first, p.second.toString());
+
 
   setUniqueId(configValue("uniqueId").optString());
 
@@ -189,7 +195,7 @@ void Object::init(World* world, EntityId entityId, EntityMode mode) {
 
   if (isMaster()) {
     setImageKey("color", colorName);
-    for (auto p : configValue("defaultImageKeys", JsonObject()).toObject())
+    for (auto p : configValue("imageKeys", JsonObject()).toObject())
       setImageKey(p.first, p.second.toString());
 
     if (m_config->lightColors.contains(colorName))
