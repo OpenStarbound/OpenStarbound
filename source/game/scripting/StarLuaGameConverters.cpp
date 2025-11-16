@@ -557,6 +557,21 @@ Maybe<Collectable> LuaConverter<Collectable>::to(LuaEngine& engine, LuaValue con
   return {};
 }
 
+LuaValue LuaConverter<PhysicsMovingCollision>::from(LuaEngine& engine, PhysicsMovingCollision const& v) {
+  auto table = engine.createTable();
+  table.set("position", v.position);
+  table.set("collision", v.collision);
+  table.set("collisionKind", v.collisionKind);
+  auto categoryTable = engine.createTable();
+  table.set("categoryFilter", categoryTable);
+  // see jsonToPhysicsCategoryFilter
+  categoryTable.set(
+    v.categoryFilter.type == PhysicsCategoryFilter::Type::Whitelist ? "categoryWhitelist" : "categoryBlacklist",
+    v.categoryFilter.categories
+  );
+  return table;
+}
+
 LuaMethods<BehaviorStateWeakPtr> LuaUserDataMethods<BehaviorStateWeakPtr>::make() {
   LuaMethods<BehaviorStateWeakPtr> methods;
   methods.registerMethodWithSignature<NodeStatus, BehaviorStateWeakPtr, float>(
