@@ -18,5 +18,10 @@
     "op" : "add",
     "path" : "/scriptContexts",
     "value" : {}
+  },
+  {
+    "op" : "add",
+    "path" : "/networkWorkerThreads",
+    "value": 0
   }
 ]
