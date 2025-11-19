@@ -70,6 +70,18 @@ LuaAnimationComponent<Base>::LuaAnimationComponent() {
 
       m_drawables.append({std::move(drawable), renderLayer});
     });
+  animationCallbacks.registerCallback("addJsonDrawable", [this](Json drawableConfig, Maybe<String> renderLayerName) {
+      Maybe<EntityRenderLayer> renderLayer;
+      Drawable drawable(drawableConfig)
+      if (renderLayerName)
+        renderLayer = parseRenderLayer(*renderLayerName);
+
+      if (auto image = drawable.part.ptr<Drawable::ImagePart>())
+        image->transformation.scale(0.125f);
+
+      m_drawables.append({std::move(drawable), renderLayer});
+    });
+
   animationCallbacks.registerCallback("clearLightSources", [this]() {
       m_lightSources.clear();
     });
