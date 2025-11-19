@@ -72,7 +72,7 @@ LuaAnimationComponent<Base>::LuaAnimationComponent() {
     });
   animationCallbacks.registerCallback("addJsonDrawable", [this](Json drawableConfig, Maybe<String> renderLayerName) {
       Maybe<EntityRenderLayer> renderLayer;
-      Drawable drawable(drawableConfig)
+      Drawable drawable(drawableConfig);
       if (renderLayerName)
         renderLayer = parseRenderLayer(*renderLayerName);
 
