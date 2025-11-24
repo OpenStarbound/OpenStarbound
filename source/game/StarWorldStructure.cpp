@@ -62,6 +62,20 @@ WorldStructure::WorldStructure(String const& configPath) {
     else
       backgroundMatId = matDb->materialId(backgroundMat);
 
+    auto foregroundMod = blockKeyConfig.getString("foregroundMod", "");
+    ModId foregroundModId;
+    if (foregroundMod == "")
+      foregroundModId = NoModId;
+    else
+      foregroundModId = matDb->modId(foregroundMod);
+
+    auto backgroundMod = blockKeyConfig.getString("backgroundMod", "");
+    ModId backgroundModId;
+    if (backgroundMod == "")
+      backgroundModId = NoModId;
+    else
+      backgroundModId = matDb->modId(backgroundMod);
+
     BlockKey blockKey{blockKeyConfig.getBool("anchor", false),
         blockKeyConfig.getBool("foregroundBlock", false),
         foregroundMatId,
@@ -73,7 +87,14 @@ WorldStructure::WorldStructure(String const& configPath) {
         DirectionNames.getLeft(blockKeyConfig.getString("objectDirection", "left")),
         blockKeyConfig.getObject("objectParameters", JsonObject()),
         blockKeyConfig.getBool("objectResidual", false),
-        jsonToStringList(blockKeyConfig.get("flags", JsonArray()))};
+        jsonToStringList(blockKeyConfig.get("flags", JsonArray())),
+        blockKeyConfig.getUInt("foregroundMatColor", 0),
+        blockKeyConfig.getUInt("backgroundMatColor", 0),
+        blockKeyConfig.getUInt("foregroundMatHue", 0),
+        blockKeyConfig.getUInt("backgroundMatHue", 0),
+        foregroundModId,
+        backgroundModId,
+      };
     blockKeys[jsonToColor(blockKeyConfig.get("value")).toRgba()] = std::move(blockKey);
   }
 
@@ -91,7 +112,14 @@ WorldStructure::WorldStructure(String const& configPath) {
         Direction::Left,
         Json(),
         false,
-        StringList()};
+        StringList(),
+        0,
+        0,
+        0,
+        0,
+        NoModId,
+        NoModId
+      };
 
     for (size_t y = 0; y < blocksImage->height(); ++y) {
       for (size_t x = 0; x < blocksImage->width(); ++x) {
@@ -108,9 +136,9 @@ WorldStructure::WorldStructure(String const& configPath) {
         }
 
         if (blockKey.foregroundBlock)
-          m_foregroundBlocks.append({pos, blockKey.foregroundMat, blockKey.foregroundResidual});
+          m_foregroundBlocks.append({pos, blockKey.foregroundMat, blockKey.foregroundResidual, blockKey.foregroundMatColor, blockKey.foregroundMatHue, blockKey.foregroundMatMod});
         if (blockKey.backgroundBlock)
-          m_backgroundBlocks.append({pos, blockKey.backgroundMat, blockKey.backgroundResidual});
+          m_backgroundBlocks.append({pos, blockKey.backgroundMat, blockKey.backgroundResidual, blockKey.backgroundMatColor, blockKey.foregroundMatHue, blockKey.foregroundMatMod});
 
         if (!blockKey.object.empty())
           m_objects.append(Object{
@@ -140,7 +168,13 @@ WorldStructure::WorldStructure(Json const& store) {
   };
 
   auto blockFromJson = [](Json const& v) -> Block {
-    return Block{jsonToVec2I(v.get("position")), MaterialId(v.getUInt("materialId")), v.getBool("residual")};
+    return Block{jsonToVec2I(v.get("position")),
+      MaterialId(v.getUInt("materialId")),
+      v.getBool("residual"),
+      MaterialColorVariant(v.getUInt("materialColor", 0)),
+      MaterialHue(v.getUInt("materialHue", 0)),
+      ModId(v.getUInt("modId", NoModId))
+    };
   };
 
   auto objectFromJson = [](Json const& v) -> Object {
@@ -236,7 +270,15 @@ Json WorldStructure::store() const {
   };
 
   auto blockToJson = [](Block const& b) -> Json {
-    return JsonObject{{"position", jsonFromVec2I(b.position)}, {"materialId", b.materialId}, {"residual", b.residual}};
+    return JsonObject{
+      {"position", jsonFromVec2I(b.position)},
+      {"materialId", b.materialId},
+      {"residual", b.residual},
+      {"materialColor", b.materialColor},
+      {"materialHue", b.materialHue},
+      {"modId", b.materialMod}
+
+    };
   };
 
   auto objectToJson = [](Object const& o) -> Json {
