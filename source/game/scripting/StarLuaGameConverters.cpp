@@ -1,5 +1,4 @@
 #include "StarLuaGameConverters.hpp"
-#include "StarImageMetadataDatabase.hpp"
 
 namespace Star {
 
@@ -477,34 +476,28 @@ Maybe<Drawable> LuaConverter<Drawable>::to(LuaEngine&, LuaValue const& v) {
     result.emplace();
     Drawable& drawable = result.get();
 
-    if (auto line = table->get<Maybe<Line2F>>("line")){
-      drawable.part = Drawable::LinePart{line.take(), table->get<float>("width")};
-     }else if (auto poly = table->get<Maybe<PolyF>>("poly")){
-      drawable.part = Drawable::PolyPart{poly.take()};
-    } else if (auto image = table->get<Maybe<String>>("image")) {
-      Mat3F transformation = Mat3F::identity();
-      if (auto transformationConfig = table->get<Maybe<Mat3F>>("transformation")){
-        transformation = *transformationConfig;
-      } else {
-        if (table->get<Maybe<bool>>("centered").value(true)) {
-          auto imageMetadata = Root::singleton().imageMetadataDatabase();
-          Vec2F imageSize = Vec2F(imageMetadata->imageSize(*image));
-          transformation.translate(-imageSize / 2);
-        }
-        if (auto rotation = table->get<Maybe<float>>("rotation"))
-          transformation.rotate(*rotation);
-        if (table->get<bool>("mirrored"))
-          transformation.scale(Vec2F(-1, 1));
-        if (auto scale = table->get<Maybe<float>>("scale"))
-          transformation.scale(*scale);
-      }
-      drawable.part = Drawable::ImagePart{std::move(*image), std::move(transformation)};
-    } else {
-      return {}; // throw LuaAnimationComponentException("Drawable table must have 'line', 'poly', or 'image'");
-    }
+    Color color = table->get<Maybe<Color>>("color").value(Color::White);
 
-    drawable.position = table->get<Maybe<Vec2F>>("position").value();
-    drawable.color = table->get<Maybe<Color>>("color").value(Color::White);
+    if (auto line = table->get<Maybe<Line2F>>("line"))
+      drawable = Drawable::makeLine(line.take(), table->get<float>("width"), color);
+    else if (auto poly = table->get<Maybe<PolyF>>("poly"))
+      drawable = Drawable::makePoly(poly.take(), color);
+    else if (auto image = table->get<Maybe<String>>("image"))
+      drawable = Drawable::makeImage(image.take(), 1.0f, table->get<Maybe<bool>>("centered").value(true), Vec2F(), color);
+    else
+      return {}; // throw LuaAnimationComponentException("Drawable table must have 'line', 'poly', or 'image'");
+
+    if (auto transformation = table->get<Maybe<Mat3F>>("transformation"))
+      drawable.transform(*transformation);
+    if (auto rotation = table->get<Maybe<float>>("rotation"))
+      drawable.rotate(*rotation);
+    if (table->get<bool>("mirrored"))
+      drawable.scale(Vec2F(-1, 1));
+    if (auto scale = table->get<Maybe<float>>("scale"))
+      drawable.scale(*scale);
+    if (auto position = table->get<Maybe<Vec2F>>("position"))
+      drawable.translate(*position);
+
     drawable.fullbright = table->get<bool>("fullbright");
 
     return result;
@@ -555,6 +548,21 @@ Maybe<Collectable> LuaConverter<Collectable>::to(LuaEngine& engine, LuaValue con
   }
 
   return {};
+}
+
+LuaValue LuaConverter<PhysicsMovingCollision>::from(LuaEngine& engine, PhysicsMovingCollision const& v) {
+  auto table = engine.createTable();
+  table.set("position", v.position);
+  table.set("collision", v.collision);
+  table.set("collisionKind", v.collisionKind);
+  auto categoryTable = engine.createTable();
+  table.set("categoryFilter", categoryTable);
+  // see jsonToPhysicsCategoryFilter
+  categoryTable.set(
+    v.categoryFilter.type == PhysicsCategoryFilter::Type::Whitelist ? "categoryWhitelist" : "categoryBlacklist",
+    v.categoryFilter.categories
+  );
+  return table;
 }
 
 LuaMethods<BehaviorStateWeakPtr> LuaUserDataMethods<BehaviorStateWeakPtr>::make() {

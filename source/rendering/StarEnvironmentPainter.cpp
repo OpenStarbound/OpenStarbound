@@ -50,12 +50,12 @@ void EnvironmentPainter::renderStars(float pixelRatio, Vec2F const& screenSize, 
   Vec2F viewMin = sky.starOffset - viewCenter;
 
   auto newStarsHash = starsHash(sky, viewSize);
-  if (newStarsHash != m_starsHash) {
+  if (newStarsHash != m_starsHash || !m_starGenerator) {
     m_starsHash = newStarsHash;
     setupStars(sky);
   }
 
-  if (!sky.settings || sky.starFrames == 0 || sky.starTypes().empty())
+  if (!m_starGenerator || !sky.settings || sky.starFrames == 0 || sky.starTypes().empty())
     return;
 
   float screenBuffer = sky.settings.queryFloat("stars.screenBuffer");
