@@ -19,14 +19,15 @@
 #include "StarCurve25519.hpp"
 #include "StarInterpolation.hpp"
 
-#include "StarTeamClientLuaBindings.hpp"
-#include "StarCelestialLuaBindings.hpp"
-#include "StarInterfaceLuaBindings.hpp"
-#include "StarInputLuaBindings.hpp"
-#include "StarVoiceLuaBindings.hpp"
 #include "StarCameraLuaBindings.hpp"
+#include "StarCelestialLuaBindings.hpp"
 #include "StarClipboardLuaBindings.hpp"
+#include "StarInputLuaBindings.hpp"
+#include "StarInterfaceLuaBindings.hpp"
+#include "StarLuaHttpBindings.hpp"
 #include "StarRenderingLuaBindings.hpp"
+#include "StarTeamClientLuaBindings.hpp"
+#include "StarVoiceLuaBindings.hpp"
 #include "imgui.h"
 #include "imgui_freetype.h"
 
@@ -626,6 +627,9 @@ void ClientApplication::changeState(MainAppState newState) {
 
     Json alwaysAllow = m_root->configuration()->getPath("safe.alwaysAllowClipboard");
     m_universeClient->setLuaCallbacks("clipboard", LuaBindings::makeClipboardCallbacks(app, alwaysAllow && alwaysAllow.toBool()));
+    const bool luaHttpEnabled = m_root->configuration()->getPath("safe.luaHttp.enabled").optBool().value(false);
+
+    m_universeClient->setLuaCallbacks("http", LuaBindings::makeHttpCallbacks(luaHttpEnabled));
 
     auto heldScriptPanes = make_shared<List<MainInterface::ScriptPaneInfo>>();
 

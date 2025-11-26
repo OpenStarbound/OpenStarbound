@@ -38,6 +38,7 @@ SET (star_core_HEADERS
     StarFormat.hpp
     StarHash.hpp
     StarHostAddress.hpp
+    StarHttpClient.hpp
     StarIODevice.hpp
     StarIdMap.hpp
     StarImage.hpp
@@ -153,6 +154,7 @@ SET (star_core_SOURCES
     StarFile.cpp
     StarFont.cpp
     StarHostAddress.cpp
+    StarHttpClient.cpp
     StarIODevice.cpp
     StarImage.cpp
     StarImageProcessing.cpp
