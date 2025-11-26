@@ -82,9 +82,9 @@ typedef struct SHA512state_st
     unsigned int num, md_len;
 } SHA512_CTX;
 
-void SHA512_Init(SHA512_CTX *c);
-void SHA512_Update(SHA512_CTX *c, const void *data, size_t len);
-void SHA512_Final(unsigned char *md, SHA512_CTX *c);
+void S_SHA512_Init(SHA512_CTX *c);
+void S_SHA512_Update(SHA512_CTX *c, const void *data, size_t len);
+void S_SHA512_Final(unsigned char *md, SHA512_CTX *c);
 
 #ifdef  __cplusplus
 }
