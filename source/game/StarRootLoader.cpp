@@ -95,7 +95,11 @@ R"JSON(
 
       "safe" : {
         "alwaysAllowClipboard" : false,
-        "enableImGui" : false
+        "enableImGui" : false,
+        "luaHttp" : {
+          "enabled" : false,
+          "trustedSites" : []
+        }
       },
 
       "crafting" : {
