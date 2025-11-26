@@ -93,6 +93,11 @@ R"JSON(
 
       "monochromeLighting" : false,
 
+      "safe" : {
+        "alwaysAllowClipboard" : false,
+        "enableImGui" : false
+      },
+
       "crafting" : {
         "filterHaveMaterials" : false
       },
