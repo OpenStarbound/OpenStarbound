@@ -24,7 +24,6 @@
 #include "StarClipboardLuaBindings.hpp"
 #include "StarInputLuaBindings.hpp"
 #include "StarInterfaceLuaBindings.hpp"
-#include "StarLuaAssetBindings.hpp"
 #include "StarLuaHttpBindings.hpp"
 #include "StarRenderingLuaBindings.hpp"
 #include "StarTeamClientLuaBindings.hpp"
