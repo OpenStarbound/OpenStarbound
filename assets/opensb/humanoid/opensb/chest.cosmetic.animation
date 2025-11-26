@@ -1,7 +1,7 @@
 {
 	"globalTagDefaults" : {
 		"chestCosmetic<slot>Frameset" : "",
-		"chestCosmetic<slot>Directives" : "",
+		"cosmetic<slot>Directives" : "",
 
 		"frontSleeve<slot>Frameset" : "",
 		"backSleeve<slot>Frameset" : ""
@@ -15,7 +15,7 @@
 					"centered": true,
 					"zLevelChestLegs": 10.0,
 					"anchorPart" : "chestCosmetic",
-					"processingDirectives" : "<chestCosmetic<slot>Directives>",
+					"processingDirectives" : "<cosmetic<slot>Directives>",
 					"transformationGroups" : ["movementOffset"]
 				},
 				"partStates": {
@@ -47,7 +47,7 @@
 					"centered": true,
 					"zLevelChestLegs": 3.0,
 					"anchorPart": "backSleeve",
-					"processingDirectives" : "<chestCosmetic<slot>Directives>"
+					"processingDirectives" : "<cosmetic<slot>Directives>"
 				},
 				"partStates": {
 					"body": {
@@ -146,7 +146,7 @@
 					"centered": true,
 					"zLevelChestLegs": 17.0,
 					"anchorPart": "frontSleeve",
-					"processingDirectives" : "<chestCosmetic<slot>Directives>"
+					"processingDirectives" : "<cosmetic<slot>Directives>"
 				},
 				"partStates": {
 					"body": {

@@ -1,7 +1,7 @@
 {
 	"globalTagDefaults" : {
 		"legsCosmetic<slot>Frameset" : "",
-		"legsCosmetic<slot>Directives" : ""
+		"cosmetic<slot>Directives" : ""
 	},
 
 	"animatedParts" : {
@@ -11,7 +11,7 @@
 					"centered": true,
 					"zLevelChestLegs": 10.0,
 					"anchorPart": "legsCosmetic",
-					"processingDirectives" : "<legsCosmetic<slot>Directives>"
+					"processingDirectives" : "<cosmetic<slot>Directives>"
 				},
 				"partStates": {
 					"body": {
