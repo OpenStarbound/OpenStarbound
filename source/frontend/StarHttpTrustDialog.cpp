@@ -28,7 +28,7 @@ void HttpTrustDialog::displayRequest(String const& domain, function<void(HttpTru
 
   m_confirmed = false;
 
-  const Json config = assets->json("/interface/warning/warning.config");
+  const Json config = assets->json("/interface/httpwarning/warning.config");
 
   reader.construct(config.get("paneLayout"), this);
 
