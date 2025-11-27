@@ -22,9 +22,9 @@ void HttpTrustDialog::displayRequest(String const& domain, function<void(HttpTru
 
   reader.registerCallback("yes", [this](Widget*) { reply(HttpTrustReply::Allow); });
   reader.registerCallback("no", [this](Widget*) { reply(HttpTrustReply::Deny); });
-  reader.registerCallback("rememberCheckbox", [this](Widget*) {
-    // just to capture it
-  });
+  // reader.registerCallback("rememberCheckbox", [this](Widget*) {
+  //   // just to capture it
+  // });
 
   m_confirmed = false;
 

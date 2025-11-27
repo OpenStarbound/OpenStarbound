@@ -240,9 +240,9 @@ LuaCallbacks LuaBindings::makeHttpCallbacks(bool enabled) {
 
   callbacks.registerCallback("available", [enabled]() { return enabled; });
 
-  auto makeFailurePromise = [](String message) -> RpcPromise<LuaHttpResponse> {
-    return RpcPromise<LuaHttpResponse>::createFailed(std::move(message));
-  };
+  // auto makeFailurePromise = [](String message) -> RpcPromise<LuaHttpResponse> {
+  //   return RpcPromise<LuaHttpResponse>::createFailed(std::move(message));
+  // };
 
   auto requestForMethod = [enabled](LuaEngine& engine, String const& method, String const& url, Maybe<LuaTable> const& options) -> RpcPromise<LuaHttpResponse> {
     if (!enabled)
