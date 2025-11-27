@@ -13,6 +13,7 @@
 #include "StarQuestManager.hpp"
 #include "StarPopupInterface.hpp"
 #include "StarConfirmationDialog.hpp"
+#include "StarHttpTrustDialog.hpp"
 #include "StarJoinRequestDialog.hpp"
 #include "StarImageMetadataDatabase.hpp"
 #include "StarGuiReader.hpp"
@@ -127,6 +128,8 @@ MainInterface::MainInterface(UniverseClientPtr client, WorldPainterPtr painter, 
 
   m_confirmationDialog = make_shared<ConfirmationDialog>();
   m_paneManager.registerPane(MainInterfacePanes::Confirmation, PaneLayer::ModalWindow, m_confirmationDialog);
+
+  initHttpTrustDialog();
 
   m_joinRequestDialog = make_shared<JoinRequestDialog>();
   m_paneManager.registerPane(MainInterfacePanes::JoinRequest, PaneLayer::ModalWindow, m_joinRequestDialog);
@@ -531,7 +534,7 @@ void MainInterface::preUpdate(float) {
   auto player = m_client->mainPlayer();
   if (!m_client->paused())
     player->aim(cursorWorldPosition());
-  
+
   if (m_paneManager.topPane({PaneLayer::Window, PaneLayer::ModalWindow}))
     player->setBusyState(PlayerBusyState::Menu);
   else if (m_chat->hasFocus())
@@ -594,7 +597,7 @@ void MainInterface::update(float dt) {
   // special damage bar entities
   auto barConfig = Root::singleton().assets()->json("/interface.config:specialDamageBar");
   size_t maxBars = barConfig.getUInt("maxCount",10);
-  
+
   for (auto it = m_specialDamageBars.begin(); it != m_specialDamageBars.end();) {
     auto& bar = *it;
     auto damageBarEntity = as<DamageBarEntity>(m_client->worldClient()->entity(bar.first));
@@ -605,7 +608,7 @@ void MainInterface::update(float dt) {
         bar.second = targetHealth;
       else
         bar.second += copysign(1.0f, targetHealth - bar.second) * fillSpeed * dt;
-      
+
       it++;
     } else {
       it = m_specialDamageBars.erase(it);
@@ -814,7 +817,7 @@ void MainInterface::update(float dt) {
         m_chat->addMessages({message}, false);
       } else if (action.is<SayChatAction>()) {
         SayChatAction& sayAction = action.get<SayChatAction>();
-        
+
         if (sayAction.config) {
           if (auto message = sayAction.config.opt("message"))
             m_chat->addMessages({ChatReceivedMessage(*message)}, sayAction.config.getBool("showPane", false));
@@ -1204,27 +1207,27 @@ void MainInterface::renderSpecialDamageBar() {
   // NOTE: num and i including EVERYTHING will leave empty spaces for nonexistent entities in the list. Shouldn't persist for more than a frame.
   size_t num = m_specialDamageBars.size();
   if (num == 0) return;
-  
+
   auto assets = Root::singleton().assets();
   auto imgMetadata = Root::singleton().imageMetadataDatabase();
-  
+
   auto barConfig = assets->json("/interface.config:specialDamageBar");
-  
+
   // hSpacing should be equivalent to the width of the full bar, plus a bit of spacing
   float hSpacing = barConfig.getFloat("multibarSpacing",jsonToVec2F(barConfig.get("backgroundOffset")).x()*-2.0f) * interfaceScale();
-  
+
   size_t i = 0;
   float totalWidth = hSpacing*num;
   float maxWidth = std::min(totalWidth,windowWidth()-(barConfig.getFloat("multibarScreenEdgeOffset",20.0f)*interfaceScale()));
   float hScale = maxWidth/totalWidth;//1.0f/num;
-  
+
   float allOffset = -hSpacing*0.5f*(num-1);
   float center = windowWidth()/2.0f;
-  
+
   auto background = barConfig.getString("background");
   auto backgroundOffset = jsonToVec2F(barConfig.get("backgroundOffset")) * interfaceScale();
   backgroundOffset.setX(backgroundOffset.x()*hScale);
-  
+
   auto backgroundImageSize = Vec2F(imgMetadata->imageSize(background)) * interfaceScale();
   backgroundImageSize.setX(backgroundImageSize.x()*hScale);
 
@@ -1234,20 +1237,20 @@ void MainInterface::renderSpecialDamageBar() {
 
   auto nameOffset = jsonToVec2F(barConfig.get("nameOffset")) * interfaceScale();
   nameOffset.setX(nameOffset.x()*hScale);
-  
+
   for (auto& bar : m_specialDamageBars) {
       if (auto target = as<DamageBarEntity>(m_client->worldClient()->entity(bar.first))) {
-        
+
         Vec2F bottomCenter = Vec2F(center + (allOffset + hSpacing*i)*hScale, 0);
 
         auto screenPos = RectF::withSize(bottomCenter + backgroundOffset, backgroundImageSize);
         m_guiContext->drawQuad(background, screenPos);
-        
+
         Vec2F size = Vec2F(barConfig.getInt("fillWidth") * bar.second, imgMetadata->imageSize(fill).y());
         size.setX(size.x()*hScale);
-        
+
         m_guiContext->drawQuad(fill, RectF::withSize(bottomCenter + fillOffset, size * interfaceScale()));
-        
+
         m_guiContext->setFontColor(jsonToColor(barConfig.get("nameColor")).toRgba());
         m_guiContext->setFontSize(barConfig.getUInt("nameSize"));
         if (auto style = barConfig.get("nameStyle"))
@@ -1413,7 +1416,7 @@ void MainInterface::renderDebug() {
     return;
   }
   SpatialLogger::setObserved(true);
-  
+
   if (m_clientCommandProcessor->debugHudEnabled()) {
     auto assets = Root::singleton().assets();
     m_guiContext->setTextStyle(m_config->debugTextStyle);
@@ -1641,6 +1644,11 @@ bool MainInterface::overlayClick(Vec2F const& mousePos, MouseButton) {
   }
 
   return false;
+}
+
+void MainInterface::initHttpTrustDialog() {
+  const auto httpTrustDialog = make_shared<HttpTrustDialog>();
+  m_paneManager.registerPane(MainInterfacePanes::HttpTrustDialog, PaneLayer::ModalWindow, httpTrustDialog);
 }
 
 void MainInterface::displayScriptPane(ScriptPanePtr& scriptPane, EntityId sourceEntity) {

@@ -20,6 +20,21 @@ namespace Star {
 
 namespace {
 
+// Global callback for requesting trust
+Mutex s_trustCallbackMutex;
+LuaBindings::HttpTrustRequestCallback s_trustRequestCallback;
+
+//  struct
+struct PendingHttpRequest {
+  HttpRequest httpRequest;
+  RpcPromiseKeeper<LuaHttpResponse> rpcKeeper;
+  String domain;
+};
+
+// reequest queue
+Mutex s_pendingRequestsMutex;
+List<shared_ptr<PendingHttpRequest>> s_pendingRequests;
+
 // Structure to hold async HTTP request state
 struct AsyncHttpRequest {
   shared_ptr<WorkerPoolPromise<HttpResponse>> workerPromise;
@@ -44,6 +59,25 @@ bool isTrustedDomain(String const& domain) {
     }
   }
   return false;
+}
+
+// Add domain to trusted list
+void addTrustedDomain(String const& domain) {
+  auto& root = Root::singleton();
+  auto config = root.configuration();
+
+  JsonArray trustedSites;
+  if (auto existing = config->getPath("safe.luaHttp.trustedSites").optArray())
+    trustedSites = *existing;
+
+  // Check if already exists
+  for (auto const& site : trustedSites) {
+    if (site.toString() == domain)
+      return;
+  }
+
+  trustedSites.append(domain);
+  config->setPath("safe.luaHttp.trustedSites", trustedSites);
 }
 
 String extractDomain(String const& url) {
@@ -99,6 +133,48 @@ void pollAsyncRequests() {
   for (auto id : completedIds) {
     s_asyncRequests.remove(id);
   }
+}
+
+void executeHttpRequest(HttpRequest const& httpReq, RpcPromiseKeeper<LuaHttpResponse> rpcKeeper) {
+  try {
+    const auto workerPromise = make_shared<WorkerPoolPromise<HttpResponse>>(HttpClient::requestAsync(httpReq));
+
+    const auto asyncReq = make_shared<AsyncHttpRequest>();
+    asyncReq->workerPromise = workerPromise;
+    asyncReq->rpcKeeper = std::move(rpcKeeper);
+
+    {
+      MutexLocker locker(s_asyncRequestsMutex);
+      const uint64_t requestId = s_nextRequestId++;
+      s_asyncRequests[requestId] = asyncReq;
+    }
+  } catch (std::exception const& e) {
+    rpcKeeper.fail(strf("HTTP request failed: {}", e.what()));
+  }
+}
+
+// Handle usrs reply to trust dialog
+void handleTrustReply(String const& domain, bool allowed) {
+  MutexLocker locker(s_pendingRequestsMutex);
+
+  List<shared_ptr<PendingHttpRequest>> remainingRequests;
+
+  for (auto& pendingReq : s_pendingRequests) {
+    if (pendingReq->domain == domain) {
+      if (allowed) {
+        //  request
+        executeHttpRequest(pendingReq->httpRequest, std::move(pendingReq->rpcKeeper));
+      } else {
+        // Deny
+        pendingReq->rpcKeeper.fail(strf("HTTP request to domain '{}' denied by user", domain));
+      }
+    } else {
+      // Keep
+      remainingRequests.append(pendingReq);
+    }
+  }
+
+  s_pendingRequests = std::move(remainingRequests);
 }
 
 }
@@ -164,17 +240,15 @@ LuaCallbacks LuaBindings::makeHttpCallbacks(bool enabled) {
 
   callbacks.registerCallback("available", [enabled]() { return enabled; });
 
-  auto makeFailurePromise = [](String message) -> RpcPromise<LuaHttpResponse> {
-    return RpcPromise<LuaHttpResponse>::createFailed(std::move(message));
-  };
+  // auto makeFailurePromise = [](String message) -> RpcPromise<LuaHttpResponse> {
+  //   return RpcPromise<LuaHttpResponse>::createFailed(std::move(message));
+  // };
 
-  auto requestForMethod = [enabled, makeFailurePromise](LuaEngine& engine, String const& method, String const& url, Maybe<LuaTable> const& options) -> RpcPromise<LuaHttpResponse> {
+  auto requestForMethod = [enabled](LuaEngine& engine, String const& method, String const& url, Maybe<LuaTable> const& options) -> RpcPromise<LuaHttpResponse> {
     if (!enabled)
-      return makeFailurePromise("luaHttp disabled by configuration");
+      return RpcPromise<LuaHttpResponse>::createFailed("luaHttp disabled by configuration");
 
-    // Check if domain is trusted
-    if (String domain = extractDomain(url); !isTrustedDomain(domain))
-      return makeFailurePromise(strf("Domain '{}' is not in the trusted sites list", domain));
+    const String domain = extractDomain(url);
 
     try {
       HttpRequest httpReq;
@@ -211,26 +285,35 @@ LuaCallbacks LuaBindings::makeHttpCallbacks(bool enabled) {
       }
 
       // Create RpcPromise pair
-      const auto promisePair = RpcPromise<LuaHttpResponse>::createPair();
+      auto promisePair = RpcPromise<LuaHttpResponse>::createPair();
 
-      // Start async HTTP request
-      const auto workerPromise = make_shared<WorkerPoolPromise<HttpResponse>>(HttpClient::requestAsync(httpReq));
+      // if domain is trusted
+      if (isTrustedDomain(domain)) {
+        //  is trasted execute
+        executeHttpRequest(httpReq, std::move(promisePair.second));
+      } else {
+        // NOT trastedadded to pending queue
+        auto pendingReq = make_shared<PendingHttpRequest>();
+        pendingReq->httpRequest = httpReq;
+        pendingReq->rpcKeeper = std::move(promisePair.second);
+        pendingReq->domain = domain;
 
-      // Create async request tracker
-      const auto asyncReq = make_shared<AsyncHttpRequest>();
-      asyncReq->workerPromise = workerPromise;
-      asyncReq->rpcKeeper = promisePair.second;
+        {
+          MutexLocker locker(s_pendingRequestsMutex);
+          s_pendingRequests.append(pendingReq);
+        }
 
-      // Register the async request
-      {
-        MutexLocker locker(s_asyncRequestsMutex);
-        const uint64_t requestId = s_nextRequestId++;
-        s_asyncRequests[requestId] = asyncReq;
+        MutexLocker locker(s_trustCallbackMutex);
+        if (s_trustRequestCallback) {
+          s_trustRequestCallback(domain);
+        } else {
+          Logger::warn("HTTP request to untrusted domain '{}' but no trust dialog handler available", domain);
+        }
       }
 
       return promisePair.first;
     } catch (std::exception const& e) {
-      return makeFailurePromise(strf("HTTP request failed: {}", e.what()));
+      return RpcPromise<LuaHttpResponse>::createFailed(strf("HTTP request failed: {}", e.what()));
     }
   };
 
@@ -254,9 +337,26 @@ LuaCallbacks LuaBindings::makeHttpCallbacks(bool enabled) {
   callbacks.registerCallback("patch", [requestForMethod](LuaEngine& engine, String const& url, Maybe<LuaTable> const& options) {
     return requestForMethod(engine, "PATCH", url, options);
   });
+
   callbacks.registerCallback("isTrusted", [](String const& domain) -> bool {
     return isTrustedDomain(domain);
   });
+
   return callbacks;
 }
+
+void LuaBindings::setHttpTrustRequestCallback(HttpTrustRequestCallback callback) {
+  MutexLocker locker(s_trustCallbackMutex);
+  s_trustRequestCallback = std::move(callback);
+}
+
+void LuaBindings::clearHttpTrustRequestCallback() {
+  MutexLocker locker(s_trustCallbackMutex);
+  s_trustRequestCallback = {};
+}
+
+void LuaBindings::handleHttpTrustReply(String const& domain, const bool allowed) {
+  handleTrustReply(domain, allowed);
+}
+
 }
