@@ -57,3 +57,6 @@ Sets the current chat input text. If `moveCursor` is true, the cursor will be mo
 #### `void` chat.clear([`unsigned`] count)
 
 Clears the chat input text. If `count` is provided, it will clear the last `count` messages, all otherwise.
+
+
+#### `LuaVariadic<Json>` chat.parseArguments()

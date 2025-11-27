@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarPhysicsEntity.hpp"
 #include "StarLuaConverters.hpp"
 #include "StarInventoryTypes.hpp"
 #include "StarCollisionBlock.hpp"
@@ -168,6 +169,11 @@ template <>
 struct LuaConverter<NodeStatus> {
   static LuaValue from(LuaEngine& engine, NodeStatus const& status);
   static NodeStatus to(LuaEngine& engine, LuaValue const& v);
+};
+
+template <>
+struct LuaConverter<PhysicsMovingCollision> {
+  static LuaValue from(LuaEngine& engine, PhysicsMovingCollision const& v);
 };
 
 // Weak pointer for the same reasons as BehaviorState.

@@ -180,6 +180,18 @@ LuaCallbacks LuaBindings::makeNetworkedAnimatorCallbacks(NetworkedAnimator* netw
       "addPartDrawables", bind(&NetworkedAnimator::addPartDrawables, networkedAnimator, _1, _2));
   callbacks.registerCallbackWithSignature<void, String, List<Drawable>>(
       "setPartDrawables", bind(&NetworkedAnimator::setPartDrawables, networkedAnimator, _1, _2));
+  callbacks.registerCallback("addPartJsonDrawables",
+    [networkedAnimator](String const& part, JsonArray drawablesConfig) {
+      networkedAnimator->addPartDrawables(part, drawablesConfig.transformed([](Json config) -> Drawable {
+        return Drawable(config);
+      }));
+    });
+  callbacks.registerCallback("setPartJsonDrawables",
+    [networkedAnimator](String const& part, JsonArray drawablesConfig) {
+      networkedAnimator->setPartDrawables(part, drawablesConfig.transformed([](Json config) -> Drawable {
+        return Drawable(config);
+      }));
+    });
 
   callbacks.registerCallbackWithSignature<String, String, String>(
       "applyPartTags", bind(&NetworkedAnimator::applyPartTags, networkedAnimator, _1, _2));

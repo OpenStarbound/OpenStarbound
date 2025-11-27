@@ -29,6 +29,10 @@ Vehicle::Vehicle(Json baseConfig, String path, Json dynamicConfig)
   m_slaveHeartbeatTimer = GameTimer(configValue("slaveControlHeartbeat").toFloat());
   m_damageTeam.set(configValue("damageTeam").opt().apply(construct<EntityDamageTeam>()).value());
   m_interactive.set(configValue("interactive", true).toBool());
+  m_baseRenderLayer = parseRenderLayer(configValue("baseRenderLayer","Vehicle").toString());
+  if (!configValue("overrideRenderLayer").isNull()) {
+    m_overrideRenderLayer = parseRenderLayer(configValue("overrideRenderLayer").toString());
+  }
 
   if (auto animationScript = configValue("animationScript").optString())
     m_scriptedAnimator.setScript(*animationScript);
@@ -576,7 +580,7 @@ void Vehicle::setPosition(Vec2F const& position) {
 
 EntityRenderLayer Vehicle::renderLayer(VehicleLayer vehicleLayer) const {
   // Z-offset based on entity id, so vehicles don't overlap strangely.
-  return RenderLayerVehicle + ((EntityRenderLayer)(entityId() * 4 + (unsigned)vehicleLayer) & RenderLayerLowerMask);
+  return m_overrideRenderLayer ? (*m_overrideRenderLayer + (unsigned)vehicleLayer) : (m_baseRenderLayer + ((EntityRenderLayer)(entityId() * 4 + (unsigned)vehicleLayer) & RenderLayerLowerMask));
 }
 
 LuaCallbacks Vehicle::makeVehicleCallbacks() {

@@ -414,6 +414,8 @@ void Npc::update(float dt, uint64_t) {
     if (auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor())) {
       if (loungeAnchor->emote)
         requestEmote(*loungeAnchor->emote);
+      if (loungeAnchor->dance)
+        setDance(loungeAnchor->dance);
       m_statusController->setPersistentEffects("lounging", loungeAnchor->statusEffects);
       m_effectEmitter->addEffectSources("normal", loungeAnchor->effectEmitters);
       switch (loungeAnchor->orientation) {
@@ -1106,7 +1108,13 @@ bool Npc::setItemSlot(String const& slot, ItemDescriptor itemDescriptor) {
 }
 
 bool Npc::canUseTool() const {
-  return !shouldDestroy() && !loungingIn();
+  bool canUse = !shouldDestroy() && !m_statusController->toolUsageSuppressed();
+  if (canUse) {
+    if (auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor()))
+      if (loungeAnchor->suppressTools.value(loungeAnchor->controllable))
+        return false;
+  }
+  return canUse;
 }
 
 void Npc::disableWornArmor(bool disable) {

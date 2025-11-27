@@ -112,6 +112,8 @@ public:
   bool respawnInWorld() const;
   void setRespawnInWorld(bool respawnInWorld);
 
+  int64_t latency() const;
+
   void resendEntity(EntityId entityId);
   void removeEntity(EntityId entityId, bool andDie);
 
@@ -379,6 +381,9 @@ private:
   List<PhysicsForceRegion> m_forceRegions;
 
   BroadcastCallback m_broadcastCallback;
+
+  // used to keep track of already-printed stack traces caused by remote entities, so they don't clog the log
+  HashSet<uint64_t> m_entityExceptionsLogged;
 };
 
 }

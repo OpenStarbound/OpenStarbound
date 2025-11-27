@@ -268,6 +268,10 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
     return luaTupleReturn(HumanoidEmoteNames.getRight(currentEmote.first), currentEmote.second);
   });
 
+  callbacks.registerCallback("dance", [player](Maybe<String> const& dance) {
+    player->setDance(dance);
+  });
+
   callbacks.registerCallback("currentState", [player]() {
     return Player::StateNames.getRight(player->currentState());
   });

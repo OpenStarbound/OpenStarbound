@@ -129,6 +129,9 @@ WorldStructure WorldServer::setCentralStructure(WorldStructure centralStructure)
     if (auto tile = m_tileArray->modifyTile(foregroundBlock.position)) {
       if (tile->foreground == EmptyMaterialId) {
         tile->foreground = foregroundBlock.materialId;
+        tile->foregroundColorVariant = foregroundBlock.materialColor;
+        tile->foregroundHueShift = foregroundBlock.materialHue;
+        tile->foregroundMod = foregroundBlock.materialMod;
         tile->updateCollision(materialDatabase->materialCollisionKind(foregroundBlock.materialId));
         queueTileUpdates(foregroundBlock.position);
         dirtyCollision(RectI::withSize(foregroundBlock.position, {1, 1}));
@@ -141,6 +144,9 @@ WorldStructure WorldServer::setCentralStructure(WorldStructure centralStructure)
     if (auto tile = m_tileArray->modifyTile(backgroundBlock.position)) {
       if (tile->background == EmptyMaterialId) {
         tile->background = backgroundBlock.materialId;
+        tile->backgroundColorVariant = backgroundBlock.materialColor;
+        tile->backgroundHueShift = backgroundBlock.materialHue;
+        tile->backgroundMod = backgroundBlock.materialMod;
         queueTileUpdates(backgroundBlock.position);
       }
     }
@@ -2047,6 +2053,10 @@ void WorldServer::sync() {
   m_worldStorage->sync();
 }
 
+void WorldServer::unloadAll(bool force) {
+  m_worldStorage->unloadAll(force);
+}
+
 WorldChunks WorldServer::readChunks() {
   writeMetadata();
   return m_worldStorage->readChunks();
@@ -2619,6 +2629,17 @@ void WorldServer::setTemplate(WorldTemplatePtr newTemplate) {
       spawnTarget = SpawnTargetPosition(player->position() + player->feetOffset());
     removeClient(client);
     addClient(client, spawnTarget, local, isAdmin, netRules);
+  }
+}
+
+void WorldServer::wire(Vec2I const& outputPosition, size_t outputIndex, Vec2I const& inputPosition, size_t inputIndex) {
+  WireConnection output = {outputPosition, outputIndex};
+  WireConnection input = {inputPosition, inputIndex};
+  for (auto source : atTile<WireEntity>(input.entityLocation)) {
+    for (auto target : atTile<WireEntity>(output.entityLocation)) {
+      source->addNodeConnection(WireNode{WireDirection::Input, input.nodeIndex}, output);
+      target->addNodeConnection(WireNode{WireDirection::Output, output.nodeIndex}, input);
+    }
   }
 }
 

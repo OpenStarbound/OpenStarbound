@@ -16,9 +16,9 @@ Returns the notes of the song currently being played.
 
 ---
 
-#### `?` songbook.keepAlive(`?` ?)
+#### `void` songbook.keepAlive(`Float` duration)
 
-todo
+TODO: Add description for songbook.keepAlive
 
 ---
 
@@ -40,9 +40,9 @@ Returns whether the instrumentalist is currently performing part of a song.
 
 ---
 
-#### `void` songbook.play(`?` ?)
+#### `void` songbook.play(`Json` song)
 
-todo
+TODO: Add description for songbook.play
 
 ---
 

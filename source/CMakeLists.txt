@@ -475,19 +475,21 @@ endif()
 find_package(ZLIB REQUIRED)
 find_package(PNG REQUIRED)
 find_package(Freetype REQUIRED)
+find_package(cpr CONFIG REQUIRED)
 find_package(Opus CONFIG REQUIRED)
 find_package(OggVorbis REQUIRED)
 find_package(zstd CONFIG REQUIRED)
 find_package(re2 CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
 include_directories(SYSTEM
-    ${FREETYPE_INCLUDE_DIRS}
-    ${OGGVORBIS_INCLUDE_DIR}
+        ${FREETYPE_INCLUDE_DIRS}
+        ${OGGVORBIS_INCLUDE_DIR}
 )
 
 set(STAR_EXT_LIBS ${STAR_EXT_LIBS}
-    ZLIB::ZLIB
-    PNG::PNG
+        ZLIB::ZLIB
+        PNG::PNG
+        cpr::cpr
     $<IF:$<TARGET_EXISTS:Freetype::Freetype>,Freetype::Freetype,freetype>
     $<IF:$<TARGET_EXISTS:zstd::libzstd_shared>,zstd::libzstd_shared,zstd::libzstd_static>
     Opus::opus

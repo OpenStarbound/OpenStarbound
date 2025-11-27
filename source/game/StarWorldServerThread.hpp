@@ -72,6 +72,8 @@ public:
   // 
   void passMessages(List<Message>&& messages);
 
+  void unloadAll(bool force = false);
+
   // Syncs all active sectors to disk and reads the full content of the world
   // into memory, useful for the ship.
   WorldChunks readChunks();

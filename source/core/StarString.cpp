@@ -635,7 +635,7 @@ void String::append(std::string const& s) {
 }
 
 void String::append(Char const* s) {
-  while (s)
+  while (*s)
     append(*s++);
 }
 
@@ -717,7 +717,7 @@ bool String::regexMatch(String const& regex, bool full, bool caseSensitive) cons
   options.set_case_sensitive(caseSensitive);
   RE2 re(regex.utf8(), options);
   if (!re.ok())
-    throw StringException::format("Regex pattern is invalid: {}", re.error());
+    throw StringException::format("Invalid regex pattern '{}': {}", regex, re.error());
 
   return full ? RE2::FullMatch(utf8(), re) : RE2::PartialMatch(utf8(), re);
 }

@@ -19,14 +19,17 @@
 #include "StarCurve25519.hpp"
 #include "StarInterpolation.hpp"
 
-#include "StarTeamClientLuaBindings.hpp"
-#include "StarCelestialLuaBindings.hpp"
-#include "StarInterfaceLuaBindings.hpp"
-#include "StarInputLuaBindings.hpp"
-#include "StarVoiceLuaBindings.hpp"
 #include "StarCameraLuaBindings.hpp"
+#include "StarCelestialLuaBindings.hpp"
 #include "StarClipboardLuaBindings.hpp"
+#include "StarInputLuaBindings.hpp"
+#include "StarInterfaceLuaBindings.hpp"
+#include "StarLuaHttpBindings.hpp"
 #include "StarRenderingLuaBindings.hpp"
+#include "StarTeamClientLuaBindings.hpp"
+#include "StarVoiceLuaBindings.hpp"
+#include "StarHttpTrustDialog.hpp"
+#include "StarMainInterfaceTypes.hpp"
 #include "imgui.h"
 #include "imgui_freetype.h"
 
@@ -158,6 +161,9 @@ void ClientApplication::startup(StringList const& cmdLineArgs) {
 }
 
 void ClientApplication::shutdown() {
+  // Clear HTTP trust request callback
+  LuaBindings::clearHttpTrustRequestCallback();
+
   m_mainInterface.reset();
 
   if (m_universeClient)
@@ -582,6 +588,10 @@ void ClientApplication::changeState(MainAppState newState) {
       m_universeServer.reset();
     }
     m_cinematicOverlay->stop();
+
+    // Clear HTTP trust request callback
+    LuaBindings::clearHttpTrustRequestCallback();
+
     m_mainInterface.reset();
 
     m_voice->clearSpeakers();
@@ -626,6 +636,9 @@ void ClientApplication::changeState(MainAppState newState) {
 
     Json alwaysAllow = m_root->configuration()->getPath("safe.alwaysAllowClipboard");
     m_universeClient->setLuaCallbacks("clipboard", LuaBindings::makeClipboardCallbacks(app, alwaysAllow && alwaysAllow.toBool()));
+    const bool luaHttpEnabled = m_root->configuration()->getPath("safe.luaHttp.enabled").optBool().value(false);
+
+    m_universeClient->setLuaCallbacks("http", LuaBindings::makeHttpCallbacks(luaHttpEnabled));
 
     auto heldScriptPanes = make_shared<List<MainInterface::ScriptPaneInfo>>();
 
@@ -771,6 +784,19 @@ void ClientApplication::changeState(MainAppState newState) {
     m_universeClient->setLuaCallbacks("celestial", LuaBindings::makeCelestialCallbacks(m_universeClient.get()));
     m_universeClient->setLuaCallbacks("team", LuaBindings::makeTeamClientCallbacks(m_universeClient->teamClient().get()));
     m_universeClient->setLuaCallbacks("world", LuaBindings::makeWorldCallbacks(m_universeClient->worldClient().get()));
+
+    LuaBindings::setHttpTrustRequestCallback([mainInterface = m_mainInterface.get()](String const& domain) {
+      const auto paneManager = mainInterface->paneManager();
+      const auto httpTrustDialog = paneManager->registeredPane<HttpTrustDialog>(MainInterfacePanes::HttpTrustDialog);
+
+      httpTrustDialog->displayRequest(domain, [domain](const HttpTrustReply reply, bool remember) {
+        const bool allowed = (reply == HttpTrustReply::Allow);
+        LuaBindings::handleHttpTrustReply(domain, allowed);
+      });
+      paneManager->displayRegisteredPane(MainInterfacePanes::HttpTrustDialog);
+    });
+
+
     m_mainInterface->displayDefaultPanes();
     m_universeClient->startLuaScripts();
 
@@ -821,6 +847,11 @@ void ClientApplication::updateMods(float dt) {
         Logger::info("Reloading to include all user generated content");
         Root::singleton().reloadWithMods(modDirectories);
 
+        // We've just reloaded, so make sure to grab our config again!
+        // If we don't do this, we'll be able to read modsWarningShown
+        // just fine, but we won't be able to write it back to the file.
+        configuration = m_root->configuration();
+        
         auto assets = m_root->assets();
 
         if (configuration->get("modsWarningShown").optBool().value()) {

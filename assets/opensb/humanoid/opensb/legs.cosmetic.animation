@@ -9,7 +9,7 @@
 			"legsCosmetic<slot>": {
 				"properties": {
 					"centered": true,
-					"zLevel": 10.1234,
+					"zLevelChestLegs": 10.0,
 					"anchorPart": "legsCosmetic",
 					"processingDirectives" : "<legsCosmetic<slot>Directives>"
 				},

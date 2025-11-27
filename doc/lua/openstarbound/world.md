@@ -16,6 +16,12 @@ Returns whether the script is running on the server or client.
 
 ---
 
+#### `void` world.wire(`Vec2I` outputPosition, `int` outputIndex, `Vec2I` inputPosition, `int` inputIndex)
+
+Attempts a wire connection between the two objects positioned at `outputPosition` and `inputPosition`. The `outputIndex` and `inputIndex` parameters specify which output and input nodes to connect.
+
+---
+
 The following additional world bindings are available only for scripts running on the client.
 
 ---
@@ -38,12 +44,6 @@ Returns whether any players are in the world.
 
 ---
 
-#### `void` world.wire(`Vec2I` outputPosition, `int` outputIndex, `Vec2I` inputPosition, `int` inputIndex)
-
-Attempts to create a wire connection in the specified input and output positions. The node indexes must be correct for the input/output positions.
-
----
-
 The following additional world bindings are available only for scripts running on the server.
 
 ---
@@ -60,15 +60,17 @@ Returns a `String` representation of the world's id.
 
 ---
 
-#### `Maybe<LuaValue>` world.callScriptContext(`String` contextName, `String` function, `String` contextName, [`LuaValue` args ...])
+#### `Maybe<LuaValue>` world.callScriptContext(`String` contextName, `String` functionName, [`LuaValue` args ...])
 
 Calls a function in the specified world script context.
 
 ---
 
-#### `?` world.sendPacket(`?` ?)
+#### `bool` world.sendPacket(`ConnectionId` clientId, `String` packetType, `Json` packetData)
 
-?
+Sends a raw network packet to the specified client that is currently connected to this world. The `packetType` must be the name
+of a known packet in `Star::PacketTypeNames` (for example `"EntityInteractResult"`) and `packetData` must contain the JSON
+representation expected by `Star::createPacket` for that packet. Returns `true` when the packet is queued successfully.
 
 ---
 

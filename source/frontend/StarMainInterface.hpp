@@ -134,6 +134,7 @@ public:
   void displayDefaultPanes();
 private:
   PanePtr createEscapeDialog();
+  void initHttpTrustDialog();
 
   float interfaceScale() const;
   unsigned windowHeight() const;
@@ -226,8 +227,7 @@ private:
   GameTimer m_stickyTargetingTimer;
   int m_portraitScale{};
 
-  EntityId m_specialDamageBarTarget{NullEntityId};
-  float m_specialDamageBarValue{};
+  HashMap<EntityId, float> m_specialDamageBars;
 
   ContainerInteractorPtr m_containerInteractor;
 };

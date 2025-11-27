@@ -132,7 +132,7 @@ void GuiContext::refreshKeybindings() {
 }
 
 void GuiContext::setInterfaceScissorRect(RectI const& scissor) {
-  renderer()->setScissorRect(scissor.scaled(interfaceScale()));
+  renderer()->setScissorRect(RectI(RectF(scissor).scaled(interfaceScale())));
 }
 
 void GuiContext::resetInterfaceScissorRect() {
