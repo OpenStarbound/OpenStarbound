@@ -9,6 +9,14 @@ namespace Star::LuaBindings {
 // are currently resolved synchronously. The callbacks are only usable when
 // safe.luaHttp.eabled is truq
 LuaCallbacks makeHttpCallbacks(bool enabled);
+
+using HttpTrustRequestCallback = std::function<void(String const& domain)>;
+
+void setHttpTrustRequestCallback(HttpTrustRequestCallback callback);
+
+void clearHttpTrustRequestCallback();
+
+void handleHttpTrustReply(String const& domain, bool allowed);
 }
 
 
