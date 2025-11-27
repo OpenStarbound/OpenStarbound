@@ -29,6 +29,7 @@ STAR_CLASS(QuestLogInterface);
 STAR_CLASS(AiInterface);
 STAR_CLASS(PopupInterface);
 STAR_CLASS(ConfirmationDialog);
+STAR_CLASS(HttpTrustDialog);
 STAR_CLASS(JoinRequestDialog);
 STAR_CLASS(TeleportDialog);
 STAR_CLASS(LabelWidget);
@@ -180,6 +181,7 @@ private:
   ContainerPanePtr m_containerPane;
   PopupInterfacePtr m_popupInterface;
   ConfirmationDialogPtr m_confirmationDialog;
+  HttpTrustDialogPtr m_httpTrustDialog;
   JoinRequestDialogPtr m_joinRequestDialog;
   TeleportDialogPtr m_teleportDialog;
   QuestTrackerPanePtr m_questTracker;

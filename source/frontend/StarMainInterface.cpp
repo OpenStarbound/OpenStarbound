@@ -13,6 +13,7 @@
 #include "StarQuestManager.hpp"
 #include "StarPopupInterface.hpp"
 #include "StarConfirmationDialog.hpp"
+#include "StarHttpTrustDialog.hpp"
 #include "StarJoinRequestDialog.hpp"
 #include "StarImageMetadataDatabase.hpp"
 #include "StarGuiReader.hpp"
@@ -127,6 +128,9 @@ MainInterface::MainInterface(UniverseClientPtr client, WorldPainterPtr painter, 
 
   m_confirmationDialog = make_shared<ConfirmationDialog>();
   m_paneManager.registerPane(MainInterfacePanes::Confirmation, PaneLayer::ModalWindow, m_confirmationDialog);
+
+  m_httpTrustDialog = make_shared<HttpTrustDialog>();
+  m_paneManager.registerPane(MainInterfacePanes::HttpTrustDialog, PaneLayer::ModalWindow, m_httpTrustDialog);
 
   m_joinRequestDialog = make_shared<JoinRequestDialog>();
   m_paneManager.registerPane(MainInterfacePanes::JoinRequest, PaneLayer::ModalWindow, m_joinRequestDialog);
