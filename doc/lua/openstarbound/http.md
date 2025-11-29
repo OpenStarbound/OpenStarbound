@@ -41,34 +41,13 @@ local promise = http.get("https://example.com/api/data", {
 
 Creates and executes an asynchronous HTTP POST request to the specified URL.
 
-**Options table fields:**
-
-* `headers` - `Table<String, String>` - Optional. HTTP headers to include in the request
-* `body` - `String` - Optional. Request body content
-* `timeout` - `int` - Optional. Request timeout in milliseconds
-
 Returns an `HttpPromise` object that can be checked for completion.
-
-**Example:**
-
-```lua
-local promise = http.post("https://example.com/api/submit", {
-  headers = { ["Content-Type"] = "application/json" },
-  body = '{"key": "value"}'
-})
-```
 
 ---
 
 #### `HttpPromise` http.put(`String` url, [`Table` options])
 
 Creates and executes an asynchronous HTTP PUT request to the specified URL.
-
-**Options table fields:**
-
-* `headers` - `Table<String, String>` - Optional. HTTP headers to include in the request
-* `body` - `String` - Optional. Request body content
-* `timeout` - `int` - Optional. Request timeout in milliseconds
 
 Returns an `HttpPromise` object that can be checked for completion.
 
@@ -78,11 +57,6 @@ Returns an `HttpPromise` object that can be checked for completion.
 
 Creates and executes an asynchronous HTTP DELETE request to the specified URL.
 
-**Options table fields:**
-
-* `headers` - `Table<String, String>` - Optional. HTTP headers to include in the request
-* `body` - `String` - Optional. Request body content
-* `timeout` - `int` - Optional. Request timeout in milliseconds
 
 Returns an `HttpPromise` object that can be checked for completion.
 
@@ -92,12 +66,6 @@ Returns an `HttpPromise` object that can be checked for completion.
 
 Creates and executes an asynchronous HTTP PATCH request to the specified URL.
 
-**Options table fields:**
-
-* `headers` - `Table<String, String>` - Optional. HTTP headers to include in the request
-* `body` - `String` - Optional. Request body content
-* `timeout` - `int` - Optional. Request timeout in milliseconds
-
 Returns an `HttpPromise` object that can be checked for completion.
 
 ---
@@ -106,18 +74,12 @@ Returns an `HttpPromise` object that can be checked for completion.
 
 Creates and executes an asynchronous HTTP request with a custom method to the specified URL.
 
-**Parameters:**
-
-* `method` - `String` - HTTP method (e.g., "GET", "POST", "HEAD", "OPTIONS")
-* `url` - `String` - Target URL
-* `options` - `Table` - Optional. Same options as other HTTP methods
-
 Returns an `HttpPromise` object that can be checked for completion.
 
 **Example:**
 
 ```lua
-local promise = http.createRequest("HEAD", "https://example.com/resource")
+local promise = http.createRequest("PUT", "https://example.com/resource")
 ```
 
 ---
