@@ -61,24 +61,24 @@ bool isTrustedDomain(String const& domain) {
   return false;
 }
 
-// Add domain to trusted list
-void addTrustedDomain(String const& domain) {
-  auto& root = Root::singleton();
-  auto config = root.configuration();
-
-  JsonArray trustedSites;
-  if (auto existing = config->getPath("safe.luaHttp.trustedSites").optArray())
-    trustedSites = *existing;
-
-  // Check if already exists
-  for (auto const& site : trustedSites) {
-    if (site.toString() == domain)
-      return;
-  }
-
-  trustedSites.append(domain);
-  config->setPath("safe.luaHttp.trustedSites", trustedSites);
-}
+// // Add domain to trusted list
+// void addTrustedDomain(String const& domain) {
+//   auto& root = Root::singleton();
+//   auto config = root.configuration();
+//
+//   JsonArray trustedSites;
+//   if (auto existing = config->getPath("safe.luaHttp.trustedSites").optArray())
+//     trustedSites = *existing;
+//
+//   // Check if already exists
+//   for (auto const& site : trustedSites) {
+//     if (site.toString() == domain)
+//       return;
+//   }
+//
+//   trustedSites.append(domain);
+//   config->setPath("safe.luaHttp.trustedSites", trustedSites);
+// }
 
 String extractDomain(String const& url) {
   const size_t end = url.find("://");
@@ -159,7 +159,7 @@ void handleTrustReply(String const& domain, bool allowed) {
 
   List<shared_ptr<PendingHttpRequest>> remainingRequests;
 
-  for (auto& pendingReq : s_pendingRequests) {
+  for (const auto& pendingReq : s_pendingRequests) {
     if (pendingReq->domain == domain) {
       if (allowed) {
         //  request
@@ -276,7 +276,13 @@ LuaCallbacks LuaBindings::makeHttpCallbacks(bool enabled) {
         }
 
         if (optTable.contains("body")) {
-          httpReq.body = optTable.get<String>("body");
+          auto bodyValue = optTable.get("body");
+          if (const auto strValue = bodyValue.ptr<LuaString>()) {
+            httpReq.body = strValue->toString();
+          } else {
+            auto jsonBody = engine.luaTo<Json>(bodyValue);
+            httpReq.body = jsonBody.repr();
+          }
         }
 
         if (optTable.contains("timeout")) {
@@ -285,17 +291,17 @@ LuaCallbacks LuaBindings::makeHttpCallbacks(bool enabled) {
       }
 
       // Create RpcPromise pair
-      auto promisePair = RpcPromise<LuaHttpResponse>::createPair();
+      auto [fst, snd] = RpcPromise<LuaHttpResponse>::createPair();
 
       // if domain is trusted
       if (isTrustedDomain(domain)) {
         //  is trasted execute
-        executeHttpRequest(httpReq, std::move(promisePair.second));
+        executeHttpRequest(httpReq, std::move(snd));
       } else {
         // NOT trastedadded to pending queue
         auto pendingReq = make_shared<PendingHttpRequest>();
         pendingReq->httpRequest = httpReq;
-        pendingReq->rpcKeeper = std::move(promisePair.second);
+        pendingReq->rpcKeeper = std::move(snd);
         pendingReq->domain = domain;
 
         {
@@ -311,7 +317,7 @@ LuaCallbacks LuaBindings::makeHttpCallbacks(bool enabled) {
         }
       }
 
-      return promisePair.first;
+      return fst;
     } catch (std::exception const& e) {
       return RpcPromise<LuaHttpResponse>::createFailed(strf("HTTP request failed: {}", e.what()));
     }

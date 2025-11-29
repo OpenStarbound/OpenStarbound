@@ -22,7 +22,7 @@ Creates and executes an asynchronous HTTP GET request to the specified URL.
 
 * `headers` - `Table<String, String>` - Optional. HTTP headers to include in the request
 * `timeout` - `int` - Optional. Request timeout in milliseconds
-* `body` - `String` - Optional. Request body (not typically used with GET)
+* `body` - `String` or `Table` - Optional. Request body (not typically used with GET)
 
 Returns an `HttpPromise` object that can be checked for completion.
 
@@ -31,7 +31,7 @@ Returns an `HttpPromise` object that can be checked for completion.
 ```lua
 local promise = http.get("https://example.com/api/data", {
   headers = { ["User-Agent"] = "MyScript/1.0" },
-  timeout = 5000
+  timeout = 50
 })
 ```
 
