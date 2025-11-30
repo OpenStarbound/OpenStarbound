@@ -374,7 +374,7 @@ public:
       Logger::info("Application: No platform services available");
 
     Logger::info("Application: Creating SDL window");
-    m_sdlWindow = SDL_CreateWindow(m_windowTitle.utf8Ptr(), m_windowSize[0], m_windowSize[1], SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+    m_sdlWindow = SDL_CreateWindow(m_windowTitle.utf8Ptr(), m_windowSize[0], m_windowSize[1], SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY);
     if (!m_sdlWindow)
       throw ApplicationException::format("Application: Could not create SDL Window: {}", SDL_GetError());
 
@@ -909,14 +909,46 @@ private:
       } else if (event.type == SDL_EVENT_TEXT_INPUT && !io.WantTextInput) {
         starEvent.set(TextInputEvent{String(event.text.text)});
       } else if (event.type == SDL_EVENT_MOUSE_MOTION) {
-        starEvent.set(MouseMoveEvent{
-            {event.motion.xrel, -event.motion.yrel}, {event.motion.x, (int)m_windowSize[1] - event.motion.y}});
+        #ifdef STAR_SYSTEM_LINUX
+        if (strcmp(SDL_GetCurrentVideoDriver(), "wayland") == 0) {
+          float DisplayScale = SDL_GetWindowDisplayScale(m_sdlWindow);
+          starEvent.set(MouseMoveEvent{
+            {event.motion.xrel * DisplayScale, -event.motion.yrel * DisplayScale},
+            {event.motion.x * DisplayScale, (int)m_windowSize[1] - (event.motion.y * DisplayScale)}});
+        } else {
+          #endif
+          starEvent.set(MouseMoveEvent{
+            {event.motion.xrel, -event.motion.yrel},
+            {event.motion.x, (int)m_windowSize[1] - event.motion.y}});
+          #ifdef STAR_SYSTEM_LINUX
+        }
+        #endif
       } else if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN && !io.WantCaptureMouse) {
-        starEvent.set(MouseButtonDownEvent{mouseButtonFromSdlMouseButton(event.button.button),
+        #ifdef STAR_SYSTEM_LINUX
+        if (strcmp(SDL_GetCurrentVideoDriver(), "wayland") == 0) {
+          float DisplayScale = SDL_GetWindowDisplayScale(m_sdlWindow);
+          starEvent.set(MouseButtonDownEvent{mouseButtonFromSdlMouseButton(event.button.button),
+            {event.button.x * DisplayScale, (int)m_windowSize[1] - (event.button.y * DisplayScale)}});
+        } else {
+          #endif
+          starEvent.set(MouseButtonDownEvent{mouseButtonFromSdlMouseButton(event.button.button),
             {event.button.x, (int)m_windowSize[1] - event.button.y}});
+          #ifdef STAR_SYSTEM_LINUX
+        }
+        #endif
       } else if (event.type == SDL_EVENT_MOUSE_BUTTON_UP && !io.WantCaptureMouse) {
-        starEvent.set(MouseButtonUpEvent{mouseButtonFromSdlMouseButton(event.button.button),
+        #ifdef STAR_SYSTEM_LINUX
+        if (strcmp(SDL_GetCurrentVideoDriver(), "wayland") == 0) {
+          float DisplayScale = SDL_GetWindowDisplayScale(m_sdlWindow);
+          starEvent.set(MouseButtonUpEvent{mouseButtonFromSdlMouseButton(event.button.button),
+            {event.button.x * DisplayScale, (int)m_windowSize[1] - (event.button.y * DisplayScale)}});
+        } else {
+          #endif
+          starEvent.set(MouseButtonUpEvent{mouseButtonFromSdlMouseButton(event.button.button),
             {event.button.x, (int)m_windowSize[1] - event.button.y}});
+          #ifdef STAR_SYSTEM_LINUX
+        }
+        #endif
       } else if (event.type == SDL_EVENT_MOUSE_WHEEL && !io.WantCaptureMouse) {
         starEvent.set(MouseWheelEvent{event.wheel.y < 0 ? MouseWheel::Down : MouseWheel::Up,
           {event.wheel.mouse_x, (int)m_windowSize[1] - event.wheel.mouse_y}});
