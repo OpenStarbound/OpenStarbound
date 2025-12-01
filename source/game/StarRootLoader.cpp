@@ -93,6 +93,15 @@ R"JSON(
 
       "monochromeLighting" : false,
 
+      "safe" : {
+        "alwaysAllowClipboard" : false,
+        "enableImGui" : false,
+        "luaHttp" : {
+          "enabled" : false,
+          "trustedSites" : []
+        }
+      },
+
       "crafting" : {
         "filterHaveMaterials" : false
       },

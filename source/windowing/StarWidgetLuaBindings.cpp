@@ -15,6 +15,7 @@
 #include "StarItemDatabase.hpp"
 #include "StarFlowLayout.hpp"
 #include "StarImageStretchWidget.hpp"
+#include "StarScrollArea.hpp"
 
 namespace Star {
 
@@ -34,6 +35,16 @@ LuaMethods<CanvasWidgetPtr> LuaUserDataMethods<CanvasWidgetPtr>::make() {
     Vec2F pos = screenPos.value(Vec2F());
     for (auto& drawable : drawables)
       canvasWidget->drawDrawable(std::move(drawable), pos);
+  });
+
+  methods.registerMethod("drawJsonDrawable", [](CanvasWidgetPtr canvasWidget, Json drawable, Maybe<Vec2F> screenPos) {
+    canvasWidget->drawDrawable(std::move(Drawable(drawable)), screenPos.value(Vec2F()));
+  });
+
+  methods.registerMethod("drawJsonDrawables", [](CanvasWidgetPtr canvasWidget, JsonArray drawables, Maybe<Vec2F> screenPos) {
+    Vec2F pos = screenPos.value(Vec2F());
+    for (auto& drawable : drawables)
+      canvasWidget->drawDrawable(Drawable(drawable), pos);
   });
 
   methods.registerMethod("drawImage",
@@ -94,7 +105,7 @@ LuaMethods<CanvasWidgetPtr> LuaUserDataMethods<CanvasWidgetPtr>::make() {
 LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr reader) {
   if (!reader)
     reader = make_shared<GuiReader>();
-  
+
   LuaCallbacks callbacks;
 
   // a bit miscellaneous, but put this here since widgets have access to gui context
@@ -211,7 +222,7 @@ LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr
       if (auto textBox = as<TextBoxWidget>(widget))
         textBox->setHint(hint);
     }
-  });   
+  });
 
   callbacks.registerCallback("getHint", [parentWidget](String const& widgetName) -> Maybe<String> {
     if (auto widget = parentWidget->fetchChild(widgetName)) {
@@ -458,6 +469,23 @@ LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr
         imageStretch->setImageStretchSet(imageSet.getString("begin", ""), imageSet.getString("inner", ""), imageSet.getString("end", ""));
       }
     });
+
+  callbacks.registerCallback("getScrollOffset", [parentWidget](String const& widgetName) -> Maybe<Vec2I> {
+    if (auto scrollArea = parentWidget->fetchChild<ScrollArea>(widgetName))
+        return scrollArea->scrollOffset();
+      return {};
+  });
+
+  callbacks.registerCallback("setScrollOffset", [parentWidget](String const& widgetName, Vec2I const& offset) {
+    if (auto scrollArea = parentWidget->fetchChild<ScrollArea>(widgetName))
+        scrollArea->scrollAreaBy(offset - scrollArea->scrollOffset());
+  });
+
+  callbacks.registerCallback("getMaxScrollPosition", [parentWidget](String const& widgetName) -> Maybe<Vec2I> {
+    if (auto scrollArea = parentWidget->fetchChild<ScrollArea>(widgetName))
+        return scrollArea->maxScrollPosition();
+      return {};
+  });
 
   return callbacks;
 }

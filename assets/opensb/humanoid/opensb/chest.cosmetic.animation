@@ -15,7 +15,8 @@
 					"centered": true,
 					"zLevelChestLegs": 10.0,
 					"anchorPart" : "chestCosmetic",
-					"processingDirectives" : "<chestCosmetic<slot>Directives>"
+					"processingDirectives" : "<chestCosmetic<slot>Directives>",
+					"transformationGroups" : ["movementOffset"]
 				},
 				"partStates": {
 					"body": {

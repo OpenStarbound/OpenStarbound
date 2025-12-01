@@ -3,6 +3,7 @@
 #include "StarActorMovementController.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarWorld.hpp"
+#include "StarPhysicsEntity.hpp"
 #include "StarPlayer.hpp"
 #include "StarPlayerInventory.hpp"
 #include "StarMonster.hpp"
@@ -825,6 +826,24 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
         }
 
         return items;
+    });
+
+    methods.registerMethod("movingCollisionCount",
+    [&](EntityPtr const& entity) -> size_t {
+        if (auto phys = as<PhysicsEntity>(entity)) {
+            return phys->movingCollisionCount();
+        }
+
+        return 0;
+    });
+
+    methods.registerMethod("movingCollision",
+    [&](EntityPtr const& entity, size_t index) -> Maybe<PhysicsMovingCollision> {
+        if (auto phys = as<PhysicsEntity>(entity)) {
+            return phys->movingCollision(index);
+        }
+
+        return {};
     });
 
     return methods;

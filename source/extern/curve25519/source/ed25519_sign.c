@@ -308,10 +308,10 @@ void *ed25519_Blinding_Init(
 
     /* Use edp_custom_blinding to protect generation of the new blinder */
 
-    SHA512_Init(&d.H);
-    SHA512_Update(&d.H, edp_custom_blinding.zr, 32);
-    SHA512_Update(&d.H, seed, size);
-    SHA512_Final(d.digest, &d.H);
+    S_SHA512_Init(&d.H);
+    S_SHA512_Update(&d.H, edp_custom_blinding.zr, 32);
+    S_SHA512_Update(&d.H, seed, size);
+    S_SHA512_Final(d.digest, &d.H);
 
     ecp_BytesToWords(ctx->zr, d.digest+32);
     ecp_BytesToWords(d.t, d.digest);
@@ -353,9 +353,9 @@ void ed25519_CreateKeyPair(
     Affine_POINT Q;
 
     /* [a:b] = H(sk) */
-    SHA512_Init(&H);
-    SHA512_Update(&H, sk, 32);
-    SHA512_Final(md, &H);
+    S_SHA512_Init(&H);
+    S_SHA512_Update(&H, sk, 32);
+    S_SHA512_Final(md, &H);
     ecp_TrimSecretKey(md);
 
     ecp_BytesToWords(t, md);
@@ -382,17 +382,17 @@ void ed25519_SignMessage(
     U8 md[SHA512_DIGEST_LENGTH];
 
     /* [a:b] = H(sk) */
-    SHA512_Init(&H);
-    SHA512_Update(&H, privKey, 32);
-    SHA512_Final(md, &H);
+    S_SHA512_Init(&H);
+    S_SHA512_Update(&H, privKey, 32);
+    S_SHA512_Final(md, &H);
     ecp_TrimSecretKey(md);              /* a = first 32 bytes */
     ecp_BytesToWords(a, md);
 
     /* r = H(b + m) mod BPO */
-    SHA512_Init(&H);
-    SHA512_Update(&H, md+32, 32);
-    SHA512_Update(&H, msg, msg_size);
-    SHA512_Final(md, &H);
+    S_SHA512_Init(&H);
+    S_SHA512_Update(&H, md+32, 32);
+    S_SHA512_Update(&H, msg, msg_size);
+    S_SHA512_Final(md, &H);
     eco_DigestToWords(r, md);
     eco_Mod(r);                         /* r mod BPO */
 
@@ -401,11 +401,11 @@ void ed25519_SignMessage(
     ed25519_PackPoint(signature, R.y, R.x[0]); /* R part of signature */
 
     /* S = r + H(encoded(R) + pk + m) * a  mod BPO */
-    SHA512_Init(&H);
-    SHA512_Update(&H, signature, 32);   /* encoded(R) */
-    SHA512_Update(&H, privKey+32, 32);  /* pk */
-    SHA512_Update(&H, msg, msg_size);   /* m */
-    SHA512_Final(md, &H);
+    S_SHA512_Init(&H);
+    S_SHA512_Update(&H, signature, 32);   /* encoded(R) */
+    S_SHA512_Update(&H, privKey+32, 32);  /* pk */
+    S_SHA512_Update(&H, msg, msg_size);   /* m */
+    S_SHA512_Final(md, &H);
     eco_DigestToWords(t, md);
 
     eco_MulReduce(t, t, a);             /* h()*a */

@@ -39,6 +39,7 @@
 #include "StarNetworkedAnimatorLuaBindings.hpp"
 #include "StarScriptedAnimatorLuaBindings.hpp"
 #include "StarEntityLuaBindings.hpp"
+#include "StarDanceDatabase.hpp"
 
 namespace Star {
 
@@ -131,8 +132,8 @@ Player::Player(PlayerConfigPtr config, Uuid uuid) {
   m_emoteCooldown = assets->json("/player.config:emoteCooldown").toFloat();
   m_blinkInterval = jsonToVec2F(assets->json("/player.config:blinkInterval"));
 
-  m_emoteCooldownTimer = 0;
-  m_blinkCooldownTimer = 0;
+  m_emoteCooldownTimer = GameTimer(m_emoteCooldown);
+  m_blinkCooldownTimer = GameTimer(0);
 
   m_chatMessageChanged = false;
   m_chatMessageUpdated = false;
@@ -196,6 +197,9 @@ Player::Player(PlayerConfigPtr config, Uuid uuid) {
 
   m_deathParticleBurst.setCompatibilityVersion(10);
   m_netGroup.addNetElement(&m_deathParticleBurst);
+
+  m_humanoidDanceNetState.setCompatibilityVersion(13);
+  m_netGroup.addNetElement(&m_humanoidDanceNetState);
 
   m_netGroup.setNeedsLoadCallback(bind(&Player::getNetStates, this, _1));
   m_netGroup.setNeedsStoreCallback(bind(&Player::setNetStates, this));
@@ -883,13 +887,10 @@ void Player::update(float dt, uint64_t) {
   m_movementController->setTimestep(dt);
 
   if (isMaster()) {
-    if (m_emoteCooldownTimer) {
-      m_emoteCooldownTimer -= dt;
-      if (m_emoteCooldownTimer <= 0) {
-        m_emoteCooldownTimer = 0;
-        m_emoteState = HumanoidEmote::Idle;
-      }
-    }
+    if (m_emoteCooldownTimer.tick(dt))
+      m_emoteState = HumanoidEmote::Idle;
+    if (m_danceCooldownTimer.tick(dt))
+      m_dance = {};
 
     if (m_chatMessageUpdated) {
       auto state = Root::singleton().emoteProcessor()->detectEmotes(m_chatMessage);
@@ -898,9 +899,8 @@ void Player::update(float dt, uint64_t) {
       m_chatMessageUpdated = false;
     }
 
-    m_blinkCooldownTimer -= dt;
-    if (m_blinkCooldownTimer <= 0) {
-      m_blinkCooldownTimer = Random::randf(m_blinkInterval[0], m_blinkInterval[1]);
+    if (m_blinkCooldownTimer.tick(dt)) {
+      m_blinkCooldownTimer = GameTimer(Random::randf(m_blinkInterval[0], m_blinkInterval[1]));
       auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor());
       if (m_emoteState == HumanoidEmote::Idle && (!loungeAnchor || !loungeAnchor->emote))
         addEmote(HumanoidEmote::Blink);
@@ -1071,12 +1071,14 @@ void Player::update(float dt, uint64_t) {
   bool suppressedItems = !canUseTool();
 
   auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor());
-  if (loungeAnchor && loungeAnchor->dance)
+  if (loungeAnchor && loungeAnchor->dance){
     humanoid()->setDance(*loungeAnchor->dance);
-  else if ((!suppressedItems && (m_tools->primaryHandItem() || m_tools->altHandItem()))
-    || humanoid()->danceCyclicOrEnded() || m_movementController->running())
+  } else if (m_dance) {
+    humanoid()->setDance(m_dance);
+  } else if ((!suppressedItems && (m_tools->primaryHandItem() || m_tools->altHandItem()))
+    || humanoid()->danceCyclicOrEnded() || m_movementController->running()) {
     humanoid()->setDance({});
-
+  }
   bool isClient = world()->isClient();
 
   m_tools->suppressItems(suppressedItems);
@@ -2036,6 +2038,7 @@ void Player::getNetStates(bool initial) {
   }
 
   m_emoteState = HumanoidEmoteNames.getLeft(m_emoteNetState.get());
+  m_dance = m_humanoidDanceNetState.get();
 
   getNetArmorSecrets();
 }
@@ -2060,6 +2063,7 @@ void Player::setNetStates() {
   }
 
   m_emoteNetState.set(HumanoidEmoteNames.getRight(m_emoteState));
+  m_humanoidDanceNetState.set(m_dance);
 }
 
 void Player::setNetArmorSecret(EquipmentSlot slot, ArmorItemPtr const& armor, bool visible) {
@@ -2421,11 +2425,22 @@ void Player::addChatMessage(String const& message, Json const& config) {
 void Player::addEmote(HumanoidEmote const& emote, Maybe<float> emoteCooldown) {
   starAssert(!isSlave());
   m_emoteState = emote;
-  m_emoteCooldownTimer = emoteCooldown.value(m_emoteCooldown);
+  m_emoteCooldownTimer = GameTimer(emoteCooldown.value(m_emoteCooldown));
+}
+void Player::setDance(Maybe<String> const& danceName) {
+  starAssert(!isSlave());
+  assert(!isSlave());
+  m_dance = danceName;
+
+  if (danceName.isValid()) {
+    auto danceDatabase = Root::singleton().danceDatabase();
+    DancePtr dance = danceDatabase->getDance(*danceName);
+    m_danceCooldownTimer = GameTimer(dance->duration);
+  }
 }
 
 pair<HumanoidEmote, float> Player::currentEmote() const {
-  return make_pair(m_emoteState, m_emoteCooldownTimer);
+  return make_pair(m_emoteState, m_emoteCooldownTimer.timer);
 }
 
 Player::State Player::currentState() const {
@@ -2599,13 +2614,8 @@ bool Player::invisible() const {
 
 void Player::animatePortrait(float dt) {
   humanoid()->animate(dt, {});
-  if (m_emoteCooldownTimer) {
-    m_emoteCooldownTimer -= dt;
-    if (m_emoteCooldownTimer <= 0) {
-      m_emoteCooldownTimer = 0;
-      m_emoteState = HumanoidEmote::Idle;
-    }
-  }
+  if (m_emoteCooldownTimer.tick(dt))
+    m_emoteState = HumanoidEmote::Idle;
   humanoid()->setEmoteState(m_emoteState);
 }
 

@@ -64,6 +64,7 @@ CelestialMasterDatabase::CelestialMasterDatabase(Maybe<String> databaseFile) {
   m_baseInformation.chunkSize = config.getInt("chunkSize");
   m_baseInformation.xyCoordRange = jsonToVec2I(config.get("xyCoordRange"));
   m_baseInformation.zCoordRange = jsonToVec2I(config.get("zCoordRange"));
+  m_baseInformation.enforceCoordRange = config.getBool("enforceCoordRange", false);
 
   m_generationInformation.systemProbability = config.getFloat("systemProbability");
   m_generationInformation.constellationProbability = config.getFloat("constellationProbability");
@@ -416,10 +417,12 @@ CelestialChunk const& CelestialMasterDatabase::getChunk(Vec2I const& chunkIndex,
 CelestialChunk CelestialMasterDatabase::produceChunk(Vec2I const& chunkIndex) const {
   CelestialChunk chunkData;
   chunkData.chunkIndex = chunkIndex;
+  RectI region = chunkRegion(chunkIndex);
+  if (m_baseInformation.enforceCoordRange && !xyRange().contains(region, true))
+    return chunkData;
 
   RandomSource random(staticRandomU64(chunkIndex[0], chunkIndex[1], "ChunkIndexMix"));
 
-  RectI region = chunkRegion(chunkIndex);
   List<Vec3I> systemLocations;
   for (int x = region.xMin(); x < region.xMax(); ++x) {
     for (int y = region.yMin(); y < region.yMax(); ++y) {

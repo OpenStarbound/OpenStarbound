@@ -186,7 +186,7 @@ class ObjectDatabase {
 public:
   static List<Vec2I> scanImageSpaces(ImageConstPtr const& image, Vec2F const& position, float fillLimit, bool flip = false);
   static Json parseTouchDamage(String const& path, Json const& touchDamage);
-  static List<ObjectOrientationPtr> parseOrientations(String const& path, Json const& configList);
+  static List<ObjectOrientationPtr> parseOrientations(String const& path, Json const& configList, Json const& baseConfig);
 
   ObjectDatabase();
 

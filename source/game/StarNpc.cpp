@@ -419,6 +419,8 @@ void Npc::update(float dt, uint64_t) {
 
       if (loungeAnchor->emote)
         requestEmote(*loungeAnchor->emote);
+      if (loungeAnchor->dance)
+        setDance(loungeAnchor->dance);
       m_statusController->setPersistentEffects("lounging", loungeAnchor->statusEffects, m_movementController->anchorState()->entityId);
       m_effectEmitter->addEffectSources("normal", loungeAnchor->effectEmitters);
       switch (loungeAnchor->orientation) {
