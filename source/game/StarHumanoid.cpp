@@ -539,13 +539,8 @@ void Humanoid::removeWearable(uint8_t slot) {
 void Humanoid::setWearableFromHead(uint8_t slot, HeadArmor const& head, Gender gender) {
   auto& fashion = *m_fashion;
   Wearable& current = fashion.wearables.at(slot);
-  if (auto currentHead = current.ptr<WornHead>())
-    fashion.helmetMasksChanged |= currentHead->maskDirectives != head.maskDirectives();
-  else {
-    wearableRemoved(current);
-    fashion.wornHeadsChanged = true;
-    fashion.helmetMasksChanged |= !head.maskDirectives().empty();
-  }
+  wearableRemoved(current);
+
   current.makeType(current.typeIndexOf<WornHead>());
   auto& wornHead = current.get<WornHead>();
   wornHead.directives = head.directives(m_facingDirection == Direction::Left);
@@ -565,10 +560,7 @@ void Humanoid::setWearableFromHead(uint8_t slot, HeadArmor const& head, Gender g
 void Humanoid::setWearableFromChest(uint8_t slot, ChestArmor const& chest, Gender gender) {
   auto& fashion = *m_fashion;
   Wearable& current = fashion.wearables.at(slot);
-  if (!current.is<WornChest>() && !current.is<WornLegs>()) {
-    wearableRemoved(current);
-    fashion.wornChestsLegsChanged = true;
-  }
+  wearableRemoved(current);
 
   current.makeType(current.typeIndexOf<WornChest>());
   auto& wornChest = current.get<WornChest>();
@@ -592,10 +584,7 @@ void Humanoid::setWearableFromChest(uint8_t slot, ChestArmor const& chest, Gende
 void Humanoid::setWearableFromLegs(uint8_t slot, LegsArmor const& legs, Gender gender) {
   auto& fashion = *m_fashion;
   Wearable& current = fashion.wearables.at(slot);
-  if (!current.is<WornChest>() && !current.is<WornLegs>()) {
-    wearableRemoved(current);
-    fashion.wornChestsLegsChanged = true;
-  }
+  wearableRemoved(current);
 
   current.makeType(current.typeIndexOf<WornLegs>());
   auto& wornLegs = current.get<WornLegs>();
@@ -615,10 +604,7 @@ void Humanoid::setWearableFromLegs(uint8_t slot, LegsArmor const& legs, Gender g
 void Humanoid::setWearableFromBack(uint8_t slot, BackArmor const& back, Gender gender) {
   auto& fashion = *m_fashion;
   Wearable& current = fashion.wearables.at(slot);
-  if (!current.is<WornBack>()) {
-    wearableRemoved(current);
-    fashion.wornBacksChanged = true;
-  }
+  wearableRemoved(current);
 
   current.makeType(current.typeIndexOf<WornBack>());
   auto& wornBack = current.get<WornBack>();
@@ -1733,10 +1719,6 @@ List<Drawable> Humanoid::renderDummy(Gender gender, HeadArmor const* head, Chest
 
     drawables = render(false, false);
     Drawable::scaleAll(drawables, TilePixels);
-    removeWearable(0);
-    removeWearable(1);
-    removeWearable(2);
-    removeWearable(3);
   } catch (std::exception const&) {
     restore();
     throw;
