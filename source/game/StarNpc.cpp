@@ -1324,7 +1324,7 @@ List<DamageSource> Npc::damageSources() const {
   auto damageSources = m_tools->damageSources();
   auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor());
 
-  if (m_damageOnTouch.get() && !m_npcVariant.touchDamageConfig.isNull() && !(loungeAnchor && loungeAnchor->suppressTools)) {
+  if (m_damageOnTouch.get() && !m_npcVariant.touchDamageConfig.isNull() && canUseTool()) {
     Json config = m_npcVariant.touchDamageConfig;
     if (!config.contains("poly") && !config.contains("line")) {
       config = config.set("poly", jsonFromPolyF(m_movementController->collisionPoly()));
