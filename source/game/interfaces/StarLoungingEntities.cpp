@@ -366,9 +366,9 @@ void LoungeableEntity::LoungePositionConfig::setupNetStates(NetElementTopGroup *
   netGroup->addNetElement(&directives);
   statusEffects.setCompatibilityVersion(minimumVersion);
   netGroup->addNetElement(&statusEffects);
-  hidden.setCompatibilityVersion(max<uint8_t>(minimumVersion, 10));
+  hidden.setCompatibilityVersion(max<uint8_t>(minimumVersion, 14));
   netGroup->addNetElement(&hidden);
-  dismountable.setCompatibilityVersion(max<uint8_t>(minimumVersion, 10));
+  dismountable.setCompatibilityVersion(max<uint8_t>(minimumVersion, 14));
   netGroup->addNetElement(&dismountable);
 }
 JsonObject LoungeAnchor::toJson() const {

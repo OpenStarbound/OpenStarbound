@@ -16,7 +16,7 @@ LoungeableObject::LoungeableObject(ObjectConfigConstPtr config, Json const& para
       configValue("loungePositions", JsonObject()).toObject(),
       configValue("receiveExtraControls", false).toBool()
     );
-    setupLoungeNetStates(&m_netGroup, 10);
+    setupLoungeNetStates(&m_netGroup, 14);
   }
 }
 
