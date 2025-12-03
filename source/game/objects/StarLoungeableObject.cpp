@@ -74,6 +74,7 @@ LoungeAnchorConstPtr LoungeableObject::loungeAnchor(size_t positionIndex) const 
   auto loungeAnchor = make_shared<LoungeAnchor>();
 
   loungeAnchor->suppressTools = configValue("suppressTools", true).toBool();
+  loungeAnchor->dismountable = configValue("dismountable", true).toBool();
   loungeAnchor->controllable = false;
   loungeAnchor->direction = m_sitFlipDirection ? -direction() : direction();
 
