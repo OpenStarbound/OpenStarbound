@@ -38,6 +38,7 @@ struct VersionedJson {
   String identifier;
   VersionNumber version;
   Json content;
+  StringMap<VersionNumber> subVersions;
 };
 
 DataStream& operator>>(DataStream& ds, VersionedJson& versionedJson);
@@ -79,6 +80,9 @@ private:
 
   StringMap<VersionNumber> m_currentVersions;
   StringMap<List<VersionUpdateScript>> m_versionUpdateScripts;
+
+  StringMap<StringMap<VersionNumber>> m_currentSubVersions;
+  StringMap<HashMap<VersionNumber,StringMap<List<VersionUpdateScript>>>> m_subVersionUpdateScripts;
 };
 
 }
