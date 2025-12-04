@@ -78,10 +78,10 @@ DataStream& operator>>(DataStream& ds, VersionedJson& versionedJson) {
   versionedJson.version = ds.read<Maybe<VersionNumber>>().value();
   ds.read(versionedJson.content);
 
-  if (versionedJson.content.contains("subVersions")) {
+  if (versionedJson.content.isType(Json::Type::Object) && versionedJson.content.contains("subVersions")) {
     for (auto const& p : versionedJson.content.getObject("subVersions", JsonObject()))
       versionedJson.subVersions[p.first] = p.second.toUInt();
-    versionedJson.content.eraseKey("subVersions");
+    versionedJson.content = versionedJson.content.eraseKey("subVersions");
   }
 
   return ds;
