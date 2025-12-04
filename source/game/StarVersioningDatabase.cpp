@@ -91,12 +91,13 @@ DataStream& operator<<(DataStream& ds, VersionedJson const& versionedJson) {
   JsonObject subVersionsOut;
   for (auto const& p : versionedJson.subVersions)
     subVersionsOut.set(p.first, p.second);
-  JsonObject contentOut = versionedJson.content.toObject(); // I believe everything that writes to binary uses a jsonObject
-  contentOut.set("subVersions", subVersionsOut);
+  Json contentOut = versionedJson.content;
+  if (contentOut.isType(Json::Type::Object)) // This does mean sub versions are only preserved on object type json, however, I think the only things that ever get written to binary are object type
+     contentOut = contentOut.set("subVersions", subVersionsOut);
 
   ds.write(versionedJson.identifier);
   ds.write(Maybe<VersionNumber>(versionedJson.version));
-  ds.write(Json(contentOut));
+  ds.write(contentOut);
   return ds;
 }
 
@@ -121,8 +122,8 @@ VersioningDatabase::VersioningDatabase() {
         m_versionUpdateScripts[identifier.toLower()].append({scriptFile, fromVersion, toVersion});
       } else if (scriptParts.size() == 6) {
         String identifier = scriptParts.at(0);
-        String subIdentifier = scriptParts.at(1);
-        VersionNumber atVersion = lexicalCast<VersionNumber>(scriptParts.at(2));
+        VersionNumber atVersion = lexicalCast<VersionNumber>(scriptParts.at(1));
+        String subIdentifier = scriptParts.at(2);
         VersionNumber fromVersion = lexicalCast<VersionNumber>(scriptParts.at(3));
         VersionNumber toVersion = lexicalCast<VersionNumber>(scriptParts.at(4));
 
