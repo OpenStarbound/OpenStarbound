@@ -77,15 +77,26 @@ DataStream& operator>>(DataStream& ds, VersionedJson& versionedJson) {
   // celestial chunk database and world storage to a new format eventually
   versionedJson.version = ds.read<Maybe<VersionNumber>>().value();
   ds.read(versionedJson.content);
-  ds.read(versionedJson.subVersions);
+
+  if (versionedJson.content.contains("subVersions")) {
+    for (auto const& p : versionedJson.content.getObject("subVersions", JsonObject()))
+      versionedJson.subVersions[p.first] = p.second.toUInt();
+    versionedJson.content.eraseKey("subVersions");
+  }
+
   return ds;
 }
 
 DataStream& operator<<(DataStream& ds, VersionedJson const& versionedJson) {
+  JsonObject subVersionsOut;
+  for (auto const& p : versionedJson.subVersions)
+    subVersionsOut.set(p.first, p.second);
+  JsonObject contentOut = versionedJson.content.toObject(); // I believe everything that writes to binary uses a jsonObject
+  contentOut.set("subVersions", subVersionsOut);
+
   ds.write(versionedJson.identifier);
   ds.write(Maybe<VersionNumber>(versionedJson.version));
-  ds.write(versionedJson.content);
-  ds.write(versionedJson.subVersions);
+  ds.write(Json(contentOut));
   return ds;
 }
 
@@ -153,13 +164,13 @@ VersioningDatabase::VersioningDatabase() {
 
 VersionedJson VersioningDatabase::makeCurrentVersionedJson(String const& identifier, Json const& content) const {
   RecursiveMutexLocker locker(m_mutex);
-  return VersionedJson{identifier, m_currentVersions.get(identifier), content, m_currentSubVersions.get(identifier)};
+  return VersionedJson{identifier, m_currentVersions.get(identifier), content, m_currentSubVersions.value(identifier)};
 }
 
 bool VersioningDatabase::versionedJsonCurrent(VersionedJson const& versionedJson) const {
   RecursiveMutexLocker locker(m_mutex);
   return (versionedJson.version == m_currentVersions.get(versionedJson.identifier))
-  && (versionedJson.subVersions == m_currentSubVersions.get(versionedJson.identifier));
+  && (versionedJson.subVersions == m_currentSubVersions.value(versionedJson.identifier));
 }
 
 VersionedJson VersioningDatabase::updateVersionedJson(VersionedJson const& versionedJson) const {
@@ -181,7 +192,7 @@ VersionedJson VersioningDatabase::updateVersionedJson(VersionedJson const& versi
   try {
     for (auto const& updateScript : m_versionUpdateScripts.value(versionedJson.identifier.toLower())) {
       for (auto const& subVersionScripts : m_subVersionUpdateScripts.value(versionedJson.identifier.toLower()).value(result.version)) {
-        auto targetSubVersion = m_currentSubVersions.get(result.identifier).value(subVersionScripts.first);
+        auto targetSubVersion = m_currentSubVersions.value(result.identifier).value(subVersionScripts.first);
         for (auto const& subVersionUpdateScript : subVersionScripts.second) {
           if (result.subVersions.value(subVersionScripts.first) >= targetSubVersion)
             break;
