@@ -64,9 +64,9 @@ RadioMessage RadioMessageDatabase::createRadioMessage(Json const& config,  Maybe
     message.chatterSound = mergedConfig.getString("chatterSound");
 
     for (auto p : mergedConfig.getObject("speciesAiMessage", JsonObject()))
-      message.speciesMessage.set(p.first, createRadioMessage(p.second, messageId));
+      message.speciesMessage.set(p.first, createRadioMessage(jsonMerge(config.eraseKey("speciesAiMessage"), p.second), messageId));
     for (auto p : mergedConfig.getObject("speciesMessage", JsonObject()))
-      message.speciesMessage.set(p.first, createRadioMessage(p.second, messageId));
+      message.speciesMessage.set(p.first, createRadioMessage(jsonMerge(config.eraseKey("speciesMessage"), p.second), messageId));
 
     if (message.portraitFrames <= 0)
       throw RadioMessageDatabaseException(
