@@ -87,7 +87,7 @@ AiInterface::AiInterface(UniverseClientPtr client, CinematicPtr cinematic, MainI
   m_recruitIcon = findChild<ImageWidget>("recruitIcon");
   m_dismissRecruitButton = findChild<ButtonWidget>("dismissRecruit");
 
-  m_species = m_client->mainPlayer()->species();
+  m_species = m_client->mainPlayer()->shipSpecies();
   m_staticAnimation = m_aiDatabase->staticAnimation(m_species);
   m_scanlineAnimation = m_aiDatabase->scanlineAnimation();
 

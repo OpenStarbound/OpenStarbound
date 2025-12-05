@@ -20,13 +20,13 @@ STAR_CLASS(ServerClientContext);
 class ServerClientContext {
 public:
   ServerClientContext(ConnectionId clientId, Maybe<HostAddress> remoteAddress, NetCompatibilityRules netRules, Uuid playerUuid,
-      String playerName, String playerSpecies, bool canBecomeAdmin, WorldChunks initialShipChunks);
+      String playerName, String shipSpecies, bool canBecomeAdmin, WorldChunks initialShipChunks);
 
   ConnectionId clientId() const;
   Maybe<HostAddress> const& remoteAddress() const;
   Uuid const& playerUuid() const;
   String const& playerName() const;
-  String const& playerSpecies() const;
+  String const& shipSpecies() const;
   bool canBecomeAdmin() const;
   NetCompatibilityRules netRules() const;
   String descriptiveName() const;
@@ -55,6 +55,7 @@ public:
 
   ShipUpgrades shipUpgrades() const;
   void setShipUpgrades(ShipUpgrades shipUpgrades);
+  void setShipSpecies(String shipSpecies);
 
   WorldChunks shipChunks() const;
   void updateShipChunks(WorldChunks newShipChunks);
@@ -93,7 +94,7 @@ private:
   NetCompatibilityRules m_netRules;
   Uuid const m_playerUuid;
   String const m_playerName;
-  String const m_playerSpecies;
+  String m_shipSpecies;
   bool const m_canBecomeAdmin;
 
   mutable RecursiveMutex m_mutex;
