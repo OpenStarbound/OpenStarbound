@@ -2538,7 +2538,7 @@ Json Player::diskStore() {
     {"description", m_description},
     {"modeType", PlayerModeNames.getRight(m_modeType)},
     {"shipUpgrades", m_shipUpgrades.toJson()},
-    {"shipSpecies", m_shipSpecies},
+    {"shipSpecies", !m_shipSpecies.empty() ? m_shipSpecies : m_identity.species},
     {"blueprints", m_blueprints->toJson()},
     {"universeMap", m_universeMap->toJson()},
     {"codexes", m_codexes->toJson()},
