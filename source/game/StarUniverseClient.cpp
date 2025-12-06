@@ -735,7 +735,7 @@ void UniverseClient::handlePackets(List<PacketPtr> const& packets) {
 
         if (playerIsOriginal()) {
           m_mainPlayer->setShipUpgrades(m_clientContext->shipUpgrades());
-          if (playerOnOwnShip()) {
+          if (playerOnOwnShip() && m_mainPlayer->inWorld()) {
             auto shipSpecies = m_mainPlayer->world()->getProperty("ship.species");
             if (shipSpecies.isType(Json::Type::String))
               m_mainPlayer->setShipSpecies(shipSpecies.toString());
