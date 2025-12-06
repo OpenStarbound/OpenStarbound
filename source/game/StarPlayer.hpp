@@ -309,6 +309,8 @@ public:
   ShipUpgrades shipUpgrades();
   void setShipUpgrades(ShipUpgrades shipUpgrades);
   void applyShipUpgrades(Json const& upgrades);
+  void setShipSpecies(String species);
+  String shipSpecies() const;
 
   String name() const override;
   void setName(String const& name);
@@ -608,6 +610,7 @@ private:
   PlayerMode m_modeType;
   PlayerModeConfig m_modeConfig;
   ShipUpgrades m_shipUpgrades;
+  String m_shipSpecies;
 
   ToolUserPtr m_tools;
   ArmorWearerPtr m_armor;

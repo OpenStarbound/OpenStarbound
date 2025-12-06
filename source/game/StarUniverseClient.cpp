@@ -125,7 +125,7 @@ Maybe<String> UniverseClient::connect(UniverseConnection connection, bool allowA
   }
   connection.packetSocket().setNetRules(compatibilityRules);
   auto clientConnect = make_shared<ClientConnectPacket>(Root::singleton().assets()->digest(), allowAssetsMismatch, m_mainPlayer->uuid(), m_mainPlayer->name(),
-      m_mainPlayer->species(), m_playerStorage->loadShipData(m_mainPlayer->uuid()), m_mainPlayer->shipUpgrades(),
+      m_mainPlayer->shipSpecies(), m_playerStorage->loadShipData(m_mainPlayer->uuid()), m_mainPlayer->shipUpgrades(),
       m_mainPlayer->log()->introComplete(), account);
   clientConnect->info = JsonObject{
     {"brand", "OpenStarbound"},
@@ -733,8 +733,14 @@ void UniverseClient::handlePackets(List<PacketPtr> const& packets) {
         m_clientContext->readUpdate(clientContextUpdate->updateData, m_clientContext->netCompatibilityRules());
         m_playerStorage->applyShipUpdates(m_clientContext->playerUuid(), m_clientContext->newShipUpdates());
 
-        if (playerIsOriginal())
+        if (playerIsOriginal()) {
           m_mainPlayer->setShipUpgrades(m_clientContext->shipUpgrades());
+          if (playerOnOwnShip() && m_mainPlayer->inWorld()) {
+            auto shipSpecies = m_mainPlayer->world()->getProperty("ship.species");
+            if (shipSpecies.isType(Json::Type::String))
+              m_mainPlayer->setShipSpecies(shipSpecies.toString());
+          }
+        }
 
         m_mainPlayer->setAdmin(m_clientContext->isAdmin());
         m_mainPlayer->setTeam(m_clientContext->team());

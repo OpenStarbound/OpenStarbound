@@ -311,7 +311,7 @@ struct ServerInfoPacket : PacketBase<PacketType::ServerInfo> {
 struct ClientConnectPacket : PacketBase<PacketType::ClientConnect> {
   ClientConnectPacket();
   ClientConnectPacket(ByteArray assetsDigest, bool allowAssetsMismatch, Uuid playerUuid, String playerName,
-      String playerSpecies, WorldChunks shipChunks, ShipUpgrades shipUpgrades, bool introComplete,
+      String shipSpecies, WorldChunks shipChunks, ShipUpgrades shipUpgrades, bool introComplete,
       String account, Json info = {});
 
   void read(DataStream& ds, NetCompatibilityRules netRules) override;
@@ -321,7 +321,7 @@ struct ClientConnectPacket : PacketBase<PacketType::ClientConnect> {
   bool allowAssetsMismatch;
   Uuid playerUuid;
   String playerName;
-  String playerSpecies;
+  String shipSpecies;
   WorldChunks shipChunks;
   ShipUpgrades shipUpgrades;
   bool introComplete;
@@ -740,7 +740,7 @@ struct WorldStartAcknowledgePacket : PacketBase<PacketType::WorldStartAcknowledg
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
 };
-  
+
 struct PingPacket : PacketBase<PacketType::Ping> {
   PingPacket();
   PingPacket(int64_t time);

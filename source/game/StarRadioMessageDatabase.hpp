@@ -25,6 +25,9 @@ struct RadioMessage {
   float textSpeed;
   float persistTime;
   String chatterSound;
+
+  StringMap<RadioMessage> speciesAiMessage;
+  StringMap<RadioMessage> speciesMessage;
 };
 
 class RadioMessageDatabase {

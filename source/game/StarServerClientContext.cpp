@@ -11,18 +11,24 @@
 namespace Star {
 
 ServerClientContext::ServerClientContext(ConnectionId clientId, Maybe<HostAddress> remoteAddress, NetCompatibilityRules netRules, Uuid playerUuid,
-    String playerName, String playerSpecies, bool canBecomeAdmin, WorldChunks initialShipChunks)
+    String playerName, String shipSpecies, bool canBecomeAdmin, WorldChunks initialShipChunks)
   : m_clientId(clientId),
     m_remoteAddress(remoteAddress),
     m_netRules(netRules),
     m_playerUuid(playerUuid),
     m_playerName(playerName),
-    m_playerSpecies(playerSpecies),
+    m_shipSpecies(shipSpecies),
     m_canBecomeAdmin(canBecomeAdmin),
     m_shipChunks(std::move(initialShipChunks)) {
   m_rpc.registerHandler("ship.applyShipUpgrades", [this](Json const& args) -> Json {
       RecursiveMutexLocker locker(m_mutex);
       setShipUpgrades(shipUpgrades().apply(args));
+      return true;
+    });
+
+  m_rpc.registerHandler("ship.setShipSpecies", [this](Json const& species) -> Json {
+      RecursiveMutexLocker locker(m_mutex);
+      setShipSpecies(species.toString());
       return true;
     });
 
@@ -83,8 +89,8 @@ String const& ServerClientContext::playerName() const {
   return m_playerName;
 }
 
-String const& ServerClientContext::playerSpecies() const {
-  return m_playerSpecies;
+String const& ServerClientContext::shipSpecies() const {
+  return m_shipSpecies;
 }
 
 bool ServerClientContext::canBecomeAdmin() const {
@@ -163,6 +169,10 @@ ShipUpgrades ServerClientContext::shipUpgrades() const {
 void ServerClientContext::setShipUpgrades(ShipUpgrades upgrades) {
   RecursiveMutexLocker locker(m_mutex);
   m_shipUpgrades.set(upgrades);
+}
+
+void ServerClientContext::setShipSpecies(String shipSpecies) {
+  m_shipSpecies = shipSpecies;
 }
 
 WorldChunks ServerClientContext::shipChunks() const {
