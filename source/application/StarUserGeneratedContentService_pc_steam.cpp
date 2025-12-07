@@ -30,10 +30,12 @@ bool SteamUserGeneratedContentService::triggerContentDownload() {
   List<PublishedFileId_t> contentIds(SteamUGC()->GetNumSubscribedItems(), {});
   SteamUGC()->GetSubscribedItems(contentIds.ptr(), contentIds.size());
 
+  bool contentNeedsDownload = false;
   for (uint64 contentId : contentIds) {
     if (!m_currentDownloadState.contains(contentId)) {
       uint32 itemState = SteamUGC()->GetItemState(contentId);
       if (!(itemState & k_EItemStateInstalled) || itemState & k_EItemStateNeedsUpdate) {
+        contentNeedsDownload = true;
         SteamUGC()->DownloadItem(contentId, true);
         itemState = SteamUGC()->GetItemState(contentId);
         m_currentDownloadState[contentId] = !(itemState & k_EItemStateDownloading);
@@ -42,6 +44,8 @@ bool SteamUserGeneratedContentService::triggerContentDownload() {
       }
     }
   }
+  if (!contentNeedsDownload)
+    return false;
 
   bool allDownloaded = true;
   for (auto const& p : m_currentDownloadState) {

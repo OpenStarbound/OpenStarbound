@@ -77,6 +77,7 @@ private:
   void setError(String const& error);
   void setError(String const& error, std::exception const& e);
 
+  void loadMods();
   void updateMods(float dt);
   void updateModsWarning(float dt);
   void updateSplash(float dt);

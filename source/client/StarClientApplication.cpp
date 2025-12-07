@@ -220,6 +220,9 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
   appController->setVSyncEnabled(vsync);
   appController->setCursorHardware(configuration->get("hardwareCursor").optBool().value(true));
 
+  // Must be called before anything that can invoke an asset load.
+  loadMods();
+  
   AudioFormat audioFormat = appController->enableAudio();
   m_mainMixer = make_shared<MainMixer>(audioFormat.sampleRate, audioFormat.channels);
   m_mainMixer->setVolume(0.5);
@@ -228,7 +231,7 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
   m_guiContext = make_shared<GuiContext>(m_mainMixer->mixer(), appController);
   m_input = make_shared<Input>();
   m_voice = make_shared<Voice>(appController);  
-    
+
   auto assets = m_root->assets();
 
   {
@@ -822,13 +825,38 @@ void ClientApplication::setError(String const& error, std::exception const& e) {
   changeState(MainAppState::Title);
 }
 
+void ClientApplication::loadMods() {
+  auto ugcService = appController()->userGeneratedContentService();
+  auto configuration = m_root->configuration();
+  bool includeUGC = configuration->get("includeUGC", m_root->settings().includeUGC).toBool();
+  if (ugcService && includeUGC) {
+    StringList modDirectories;
+    Logger::info("Checking for user generated content...");
+    for (auto& contentId : ugcService->subscribedContentIds()) {
+      if (auto contentDirectory = ugcService->contentDownloadDirectory(contentId)) {
+        Logger::info("Loading mods from user generated content with id '{}' from directory '{}'", contentId, *contentDirectory);
+        modDirectories.append(*contentDirectory);
+      } else {
+        Logger::warn("User generated content with id '{}' is not available", contentId);
+      }
+    }
+
+    if (modDirectories.empty()) {
+      Logger::info("No subscribed user generated content");
+    } else {
+      Root::singleton().loadMods(modDirectories, false);
+      auto assets = m_root->assets();
+    }
+  }
+}
+
 void ClientApplication::updateMods(float dt) {
   m_cinematicOverlay->update(dt);
   auto ugcService = appController()->userGeneratedContentService();
   auto configuration = m_root->configuration();
   bool includeUGC = configuration->get("includeUGC", m_root->settings().includeUGC).toBool();
   if (ugcService && includeUGC) {
-    Logger::info("Checking for user generated content...");
+    Logger::info("Checking for user generated content updates...");
     if (ugcService->triggerContentDownload()) {
       StringList modDirectories;
       for (auto& contentId : ugcService->subscribedContentIds()) {
@@ -841,27 +869,25 @@ void ClientApplication::updateMods(float dt) {
       }
 
       if (modDirectories.empty()) {
-        Logger::info("No subscribed user generated content");
         changeState(MainAppState::Splash);
       } else {
-        Logger::info("Reloading to include all user generated content");
-        Root::singleton().reloadWithMods(modDirectories);
+        Logger::info("Reloading to include updated user generated content");
+        Root::singleton().loadMods(modDirectories);
 
         // We've just reloaded, so make sure to grab our config again!
         // If we don't do this, we'll be able to read modsWarningShown
         // just fine, but we won't be able to write it back to the file.
         configuration = m_root->configuration();
-        
-        auto assets = m_root->assets();
-
-        if (configuration->get("modsWarningShown").optBool().value()) {
-          changeState(MainAppState::Splash);
-        } else {
-          configuration->set("modsWarningShown", true);
-          m_errorScreen->setMessage(assets->json("/interface.config:modsWarningMessage").toString());
-          changeState(MainAppState::ModsWarning);
-        }
       }
+    }
+    auto assets = m_root->assets();
+    
+    if (configuration->get("modsWarningShown").optBool().value()) {
+      changeState(MainAppState::Splash);
+    } else {
+      configuration->set("modsWarningShown", true);
+      m_errorScreen->setMessage(assets->json("/interface.config:modsWarningMessage").toString());
+      changeState(MainAppState::ModsWarning);
     }
   } else {
     changeState(MainAppState::Splash);
