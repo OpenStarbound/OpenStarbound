@@ -807,6 +807,10 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
     player->setAnimationParameter(name, value);
   });
 
+  callbacks.registerCallback("setCameraFocusEntity", [player](Maybe<EntityId> const& entityId) {
+    player->setCameraFocusEntity(entityId);
+  });
+
   return callbacks;
 }
 
