@@ -18,6 +18,9 @@ public:
   // Start downloading subscribed content in the background, returns true when
   // all content is synchronized.
   virtual bool triggerContentDownload() = 0;
+
+  // Check if it's necessary to download steam workshop content.
+  virtual bool contentNeedsDownload() const = 0;
 };
 
 }
