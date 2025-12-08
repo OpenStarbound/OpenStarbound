@@ -61,12 +61,10 @@ bool SteamUserGeneratedContentService::contentNeedsDownload() const {
   SteamUGC()->GetSubscribedItems(contentIds.ptr(), contentIds.size());
 
   for (uint64 contentId : contentIds) {
-    if (!m_currentDownloadState.contains(contentId)) {
-      uint32 itemState = SteamUGC()->GetItemState(contentId);
-      if (!(itemState & k_EItemStateInstalled) || itemState & k_EItemStateNeedsUpdate) {
-        // Download is needed
-        return true;
-      }
+    uint32 itemState = SteamUGC()->GetItemState(contentId);
+    if (!(itemState & k_EItemStateInstalled) || itemState & k_EItemStateNeedsUpdate) {
+      // Download is needed
+      return true;
     }
   }
   // No download was needed

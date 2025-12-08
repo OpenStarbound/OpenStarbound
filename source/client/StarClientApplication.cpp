@@ -856,32 +856,38 @@ void ClientApplication::updateMods(float dt) {
   auto configuration = m_root->configuration();
   bool includeUGC = configuration->get("includeUGC", m_root->settings().includeUGC).toBool();
   if (ugcService && includeUGC) {
-    Logger::info("Checking for user generated content updates...");
+    // Prevent unnecessary log spam when UGC needs to be downloaded
+    if (!m_loggedUGCCheck) {
+      Logger::info("Checking for user generated content updates...");
+      m_loggedUGCCheck = true;
+    }
     if (ugcService->contentNeedsDownload()) {
-      if (ugcService->triggerContentDownload()) {
-        StringList modDirectories;
-        for (auto& contentId : ugcService->subscribedContentIds()) {
-          if (auto contentDirectory = ugcService->contentDownloadDirectory(contentId)) {
-            Logger::info("Loading mods from user generated content with id '{}' from directory '{}'", contentId, *contentDirectory);
-            modDirectories.append(*contentDirectory);
-          } else {
-            Logger::warn("User generated content with id '{}' is not available", contentId);
-          }
-        }
-
-        if (modDirectories.empty()) {
-          changeState(MainAppState::Splash);
+      ugcService->triggerContentDownload();
+    }
+    else if (!(ugcService->contentNeedsDownload()) && ugcService->triggerContentDownload()) {
+      Logger::info("Loading updated user generated content...");
+      StringList modDirectories;
+      for (auto& contentId : ugcService->subscribedContentIds()) {
+        if (auto contentDirectory = ugcService->contentDownloadDirectory(contentId)) {
+          Logger::info("Loading mods from user generated content with id '{}' from directory '{}'", contentId, *contentDirectory);
+          modDirectories.append(*contentDirectory);
         } else {
-          Logger::info("Reloading to include updated user generated content");
-          Root::singleton().loadMods(modDirectories);
-
-          // We've just reloaded, so make sure to grab our config again!
-          // If we don't do this, we'll be able to read modsWarningShown
-          // just fine, but we won't be able to write it back to the file.
-          configuration = m_root->configuration();
+          Logger::warn("User generated content with id '{}' is not available", contentId);
         }
       }
-    } else {
+
+      if (modDirectories.empty()) {
+        changeState(MainAppState::Splash);
+      } else {
+        Logger::info("Reloading to include updated user generated content");
+        Root::singleton().loadMods(modDirectories);
+
+        // We've just reloaded, so make sure to grab our config again!
+        // If we don't do this, we'll be able to read modsWarningShown
+        // just fine, but we won't be able to write it back to the file.
+        configuration = m_root->configuration();
+      }
+        
       auto assets = m_root->assets();
 
       if (configuration->get("modsWarningShown").optBool().value()) {

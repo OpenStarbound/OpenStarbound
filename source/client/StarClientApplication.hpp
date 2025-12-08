@@ -149,6 +149,8 @@ private:
   int64_t m_timeSinceJoin = 0;
 
   ByteArray m_immediateFont;
+
+  bool m_loggedUGCCheck;
 };
 
 }
