@@ -13,7 +13,7 @@ public:
   StringList subscribedContentIds() const override;
   Maybe<String> contentDownloadDirectory(String const& contentId) const override;
   bool triggerContentDownload() override;
-  bool contentNeedsDownload() const;
+  bool contentNeedsDownload() const override;
 
 private:
   STEAM_CALLBACK(SteamUserGeneratedContentService, onDownloadResult, DownloadItemResult_t, m_callbackDownloadResult);
