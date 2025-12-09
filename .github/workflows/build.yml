@@ -338,7 +338,7 @@ jobs:
 
   build-mac-intel:
     name: Build OpenStarbound macOS x86_64
-    runs-on: macos-13
+    runs-on: macos-15-intel
     if: ${{ (github.event_name != 'pull_request') && ((github.event_name != 'workflow_dispatch') || (inputs.macOS == true)) }}
     steps:
       - uses: actions/checkout@v4
