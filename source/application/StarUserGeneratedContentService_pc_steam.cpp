@@ -56,5 +56,19 @@ void SteamUserGeneratedContentService::onDownloadResult(DownloadItemResult_t* re
   m_currentDownloadState[result->m_nPublishedFileId] = true;
 }
 
+bool SteamUserGeneratedContentService::contentNeedsDownload() const {
+  List<PublishedFileId_t> contentIds(SteamUGC()->GetNumSubscribedItems(), {});
+  SteamUGC()->GetSubscribedItems(contentIds.ptr(), contentIds.size());
+
+  for (uint64 contentId : contentIds) {
+    uint32 itemState = SteamUGC()->GetItemState(contentId);
+    if (!(itemState & k_EItemStateInstalled) || itemState & k_EItemStateNeedsUpdate) {
+      // Download is needed
+      return true;
+    }
+  }
+  // No download was needed
+  return false;
+}
 
 }

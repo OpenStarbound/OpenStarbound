@@ -302,10 +302,16 @@ void Root::reload() {
   m_reloadListeners.trigger();
 }
 
-void Root::reloadWithMods(StringList modDirectories) {
+void Root::loadMods(StringList modDirectories, bool _reload) {
+  // Need to clear mod directories because there was an update for UGC, which have been added already as it assumes an update isn't needed.  
+  if (_reload)
+    m_modDirectories.clear();
+
   MutexLocker locker(m_modsMutex);
   m_modDirectories = std::move(modDirectories);
-  reload();
+  
+  if (_reload)
+    reload();
 }
 
 void Root::fullyLoad() {
