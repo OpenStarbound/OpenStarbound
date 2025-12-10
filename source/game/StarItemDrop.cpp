@@ -281,7 +281,11 @@ void ItemDrop::update(float dt, uint64_t) {
     if (m_mode.get() == Mode::Taken && m_dropAge.elapsedTime() > m_afterTakenLife)
       m_mode.set(Mode::Dead);
     
-    if (m_overrideMode) {
+    
+    
+    if (m_clientEntityMode != ClientEntityMode::ClientSlaveOnly && m_mode.get() == Mode::Available) {
+      m_mode.set(Mode::Intangible);
+    } else if (m_overrideMode) {
       m_mode.set(*m_overrideMode);
     }
 
