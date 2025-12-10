@@ -12,12 +12,14 @@
 namespace Star {
 
 ScriptableThread::ScriptableThread(Json parameters)
-  : Thread("ScriptableThread: " + parameters.getString("name")), // TODO
+  : Thread("ScriptableThread: " + parameters.getString("name")),
     m_parameters(std::move(parameters)),
     m_stop(false),
     m_errorOccurred(false),
     m_shouldExpire(true) {
       m_luaRoot = make_shared<LuaRoot>();
+      m_luaRoot->luaEngine().setNullTerminated(false);
+      m_luaRoot->tuneAutoGarbageCollection(m_parameters.getFloat("luaGcPause",1.2), m_parameters.getFloat("luaGcStepMultiplier",1.2));
       m_name = m_parameters.getString("name");
       
       m_timestep = 1.0f / m_parameters.getFloat("tickRate",60.0f);
@@ -132,6 +134,7 @@ void ScriptableThread::update() {
     else
       message.promise.fail("Message not handled by thread");
   }
+  LogMap::set(strf("lua_{}_lua_mem", m_name), m_luaRoot->luaMemoryUsage());
 }
 
 LuaCallbacks ScriptableThread::makeThreadCallbacks() {
