@@ -228,6 +228,38 @@ String printWarpAction(WarpAction const& warpAction) {
   return "UnknownWarpAction";
 }
 
+JsonObject warpActionToJson(WarpAction const& warpAction) {
+  if (auto warpAlias = warpAction.ptr<WarpAlias>()) {
+    auto out = JsonObject{
+      {"actionKind", "Alias"}
+    };
+    if (*warpAlias == WarpAlias::Return)
+      out.set("actionAlias","Return");
+    else if (*warpAlias == WarpAlias::OrbitedWorld)
+      out.set("actionAlias","OrbitedWorld");
+    else if (*warpAlias == WarpAlias::OwnShip)
+      out.set("actionAlias","OwnShip");
+    return out;
+  } else if (auto warpToPlayer = warpAction.ptr<WarpToPlayer>()) {
+    return JsonObject{
+      {"actionKind", "Player"},
+      {"uuid", warpToPlayer->hex()}
+    };
+  } else if (auto warpToWorld = warpAction.ptr<WarpToWorld>()) {
+    auto out = JsonObject{
+      {"actionKind", "World"},
+      {"worldId", printWorldId(warpToWorld->world)}
+    };
+    if (auto spawnTarget = warpToWorld->target)
+      out.set("spawnTarget", spawnTargetToJson(spawnTarget));
+    return out;
+  }
+
+  return JsonObject{
+      {"actionKind", "UnknownWarpAction"}
+  };
+}
+
 DataStream& operator>>(DataStream& ds, WarpToWorld& warpToWorld) {
   ds >> warpToWorld.world;
   ds >> warpToWorld.target;
