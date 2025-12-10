@@ -9,6 +9,10 @@
 #include "StarDataStreamExtra.hpp"
 #include "StarPlayer.hpp"
 #include "StarMaterialItem.hpp"
+#include "StarConfigLuaBindings.hpp"
+#include "StarEntityLuaBindings.hpp"
+#include "StarMovementControllerLuaBindings.hpp"
+#include "StarItemLuaBindings.hpp"
 
 namespace Star {
 
@@ -70,17 +74,21 @@ ItemDropPtr ItemDrop::throwDrop(ItemDescriptor const& itemDescriptor, Vec2F cons
 ItemDrop::ItemDrop(ItemPtr item)
   : ItemDrop() {
   m_item = std::move(item);
+  
+  m_parameters = m_item->instanceValueOfType("itemDrop",Json::Type::Object,JsonObject{});
 
   updateCollisionPoly();
 
   m_owningEntity.set(NullEntityId);
   m_mode.set(Mode::Available);
   m_itemDescriptor.set(m_item->descriptor());
+  m_clientEntityMode = ClientEntityModeNames.getLeft(configValue("clientEntityMode", "ClientSlaveOnly").toString());
 }
 
 ItemDrop::ItemDrop(Json const& diskStore)
   : ItemDrop() {
   Root::singleton().itemDatabase()->diskLoad(diskStore.get("item"), m_item);
+  m_parameters = m_item->instanceValueOfType("itemDrop",Json::Type::Object,JsonObject{});
   m_movementController.setPosition(jsonToVec2F(diskStore.get("position")));
   m_mode.set(ModeNames.getLeft(diskStore.getString("mode")));
   m_eternal = diskStore.getBool("eternal");
@@ -90,6 +98,7 @@ ItemDrop::ItemDrop(Json const& diskStore)
   updateCollisionPoly();
   m_owningEntity.set(NullEntityId);
   m_itemDescriptor.set(m_item->descriptor());
+  m_clientEntityMode = ClientEntityModeNames.getLeft(configValue("clientEntityMode", "ClientSlaveOnly").toString());
 }
 
 ItemDrop::ItemDrop(ByteArray store, NetCompatibilityRules rules) : ItemDrop() {
@@ -97,11 +106,14 @@ ItemDrop::ItemDrop(ByteArray store, NetCompatibilityRules rules) : ItemDrop() {
   ds.setStreamCompatibilityVersion(rules);
 
   Root::singleton().itemDatabase()->loadItem(ds.read<ItemDescriptor>(), m_item);
+  m_parameters = m_item->instanceValueOfType("itemDrop",Json::Type::Object,JsonObject{});
   ds.read(m_eternal);
   ds.read(m_dropAge);
   ds.read(m_intangibleTimer);
 
   updateCollisionPoly();
+  m_itemDescriptor.set(m_item->descriptor());
+  m_clientEntityMode = ClientEntityModeNames.getLeft(configValue("clientEntityMode", "ClientSlaveOnly").toString());
 }
 
 Json ItemDrop::diskStore() const {
@@ -136,11 +148,40 @@ void ItemDrop::init(World* world, EntityId entityId, EntityMode mode) {
   Entity::init(world, entityId, mode);
 
   m_movementController.init(world);
+  if (isMaster()) {
+    auto scripts = configValue("scripts").optArray().apply(jsonToStringList);
+    if (scripts && !(*scripts).empty()) {
+      m_scriptComponent.setScripts(*scripts);
+      m_scriptComponent.setUpdateDelta(configValue("scriptDelta",1).toUInt());
+
+      m_scriptComponent.addCallbacks("itemDrop", makeItemDropCallbacks());
+      m_scriptComponent.addCallbacks("item", LuaBindings::makeItemCallbacks(m_item.get()));
+      m_scriptComponent.addCallbacks("config", LuaBindings::makeConfigCallbacks(bind(&ItemDrop::configValue, this, _1, _2)));
+      m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
+      m_scriptComponent.addCallbacks("mcontroller", LuaBindings::makeMovementControllerCallbacks(&m_movementController));
+      m_scriptComponent.init(world);
+    }
+  }
+}
+
+ClientEntityMode ItemDrop::clientEntityMode() const {
+  return m_clientEntityMode;
 }
 
 void ItemDrop::uninit() {
   Entity::uninit();
   m_movementController.uninit();
+  if (isMaster()) {
+    auto scripts = configValue("scripts").optArray().apply(jsonToStringList);
+    if (scripts && !(*scripts).empty()) {
+      m_scriptComponent.uninit();
+      m_scriptComponent.removeCallbacks("itemDrop");
+      m_scriptComponent.removeCallbacks("item");
+      m_scriptComponent.removeCallbacks("config");
+      m_scriptComponent.removeCallbacks("entity");
+      m_scriptComponent.removeCallbacks("mcontroller");
+    }
+  }
 }
 
 String ItemDrop::name() const {
@@ -191,6 +232,8 @@ void ItemDrop::update(float dt, uint64_t) {
   m_dropAge.update(world()->epochTime());
 
   if (isMaster()) {
+    m_scriptComponent.update(m_scriptComponent.updateDt(dt));
+    
     if (m_owningEntity.get() != NullEntityId) {
       updateTaken(true);
     } else {
@@ -200,7 +243,8 @@ void ItemDrop::update(float dt, uint64_t) {
             if (auto closeDrop = as<ItemDrop>(entity)) {
               // Make sure not to try to merge with ourselves here.
               if (closeDrop.get() != this && closeDrop->canTake()
-                  && vmag(position() - closeDrop->position()) < m_combineRadius) {
+                  && vmag(position() - closeDrop->position()) < m_combineRadius
+                  && closeDrop->isMaster()) {
                 if (m_item->couldStack(closeDrop->item()) == closeDrop->item()->count()) {
                   m_item->stackWith(closeDrop->take());
                   m_dropAge.setElapsedTime(min(m_dropAge.elapsedTime(), closeDrop->m_dropAge.elapsedTime()));
@@ -223,7 +267,6 @@ void ItemDrop::update(float dt, uint64_t) {
       parameters.gravityEnabled = true;
       m_movementController.applyParameters(parameters);
     }
-
     m_movementController.tickMaster(dt);
 
     m_intangibleTimer.tick(dt);
@@ -237,6 +280,10 @@ void ItemDrop::update(float dt, uint64_t) {
       m_mode.set(Mode::Dead);
     if (m_mode.get() == Mode::Taken && m_dropAge.elapsedTime() > m_afterTakenLife)
       m_mode.set(Mode::Dead);
+    
+    if (m_overrideMode) {
+      m_mode.set(*m_overrideMode);
+    }
 
     if (m_mode.get() <= Mode::Available && m_ageItemsTimer.elapsedTime() > m_ageItemsEvery) {
       if (Root::singleton().itemDatabase()->ageItem(m_item, m_ageItemsTimer.elapsedTime())) {
@@ -349,7 +396,13 @@ void ItemDrop::setIntangibleTime(float intangibleTime) {
 }
 
 bool ItemDrop::canTake() const {
-  return m_mode.get() == Mode::Available && m_owningEntity.get() == NullEntityId && !m_item->empty();
+  if (m_mode.get() == Mode::Available && m_owningEntity.get() == NullEntityId && !m_item->empty()) {
+    if (isMaster())
+      if (auto res = m_scriptComponent.invoke<bool>("canTake"))
+        return *res;
+    return true;
+  }
+  return false;
 }
 
 ItemPtr ItemDrop::takeBy(EntityId entityId, float timeOffset) {
@@ -391,11 +444,16 @@ EnumMap<ItemDrop::Mode> const ItemDrop::ModeNames{
     {ItemDrop::Mode::Available, "Available"},
     {ItemDrop::Mode::Taken, "Taken"},
     {ItemDrop::Mode::Dead, "Dead"}};
+    
+Json ItemDrop::configValue(String const& name, Json const& def) const {
+  return m_parameters.query(name, m_config.query(name, def));
+}
 
 ItemDrop::ItemDrop() {
   setPersistent(true);
 
   m_config = Root::singleton().assets()->json("/itemdrop.config");
+  m_parameters = JsonObject{};
 
   MovementParameters parameters = MovementParameters(m_config.get("movementSettings", JsonObject()));
   if (!parameters.physicsEffectCategories)
@@ -427,6 +485,7 @@ ItemDrop::ItemDrop() {
 
   m_eternal = false;
   m_overForeground = false;
+  m_clientEntityMode = ClientEntityMode::ClientSlaveOnly;
 }
 
 void ItemDrop::updateCollisionPoly() {
@@ -474,6 +533,41 @@ void ItemDrop::updateTaken(bool master) {
   parameters.collisionEnabled = false;
   parameters.gravityEnabled = false;
   m_movementController.applyParameters(parameters);
+}
+
+Maybe<LuaValue> ItemDrop::callScript(String const& func, LuaVariadic<LuaValue> const& args) {
+  return m_scriptComponent.invoke(func, args);
+}
+
+Maybe<LuaValue> ItemDrop::evalScript(String const& code) {
+  return m_scriptComponent.eval(code);
+}
+
+LuaCallbacks ItemDrop::makeItemDropCallbacks() {
+  LuaCallbacks callbacks;
+  callbacks.registerCallback("takingEntity", [this]() -> Maybe<EntityId> {
+      if (m_owningEntity.get() == NullEntityId)
+        return {};
+      else
+        return m_owningEntity.get();
+  });
+  callbacks.registerCallback("setEternal", [this](bool const& eternal) { setEternal(eternal); });
+  callbacks.registerCallback("eternal", [this]() -> bool { return m_eternal; });
+  callbacks.registerCallback("setIntangibleTime", [this](float const& intangibleTime) { setIntangibleTime(intangibleTime); });
+  callbacks.registerCallback("intangibleTime", [this]() -> float { return m_intangibleTimer.timer; });
+  callbacks.registerCallback("setOverrideMode", [this](Maybe<String> const& mode) {
+    if (mode)
+      m_overrideMode = ModeNames.getLeft(*mode);
+    else
+      m_overrideMode = {};
+  });
+  callbacks.registerCallback("overrideMode", [this]() -> Maybe<String> {
+    if (m_overrideMode)
+      return ModeNames.getRight(*m_overrideMode);
+    else
+      return {};
+  });
+  return callbacks;
 }
 
 }
