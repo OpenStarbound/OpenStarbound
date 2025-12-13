@@ -16,6 +16,6 @@
     "re2",
     { "name": "abseil", "features": ["cxx17"] },
     { "name": "imgui", "features": ["sdl3-binding", "opengl3-binding", "freetype"] },
-    { "name": "cpr", "version>=": "1.10.5" }
+    { "name": "cpr", "version>=": "1.10.5", "features": ["ssl"] }
   ]
 }
