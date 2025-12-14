@@ -208,7 +208,7 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
       float textWidth = result.width() / pixelRatio + m_textPadding[0];
       float textHeight = result.height() / pixelRatio + m_textPadding[1];
 
-      Vec2I innerTiles = Vec2I::ceil(Vec2F((textWidth + 4) / partSize, (textHeight + 3) / partSize));
+      Vec2I innerTiles = Vec2I::ceil(Vec2F((textWidth + 4) / partSize, (textHeight + 4) / partSize));
       if (innerTiles[0] % 2 == 0)
         innerTiles[0] += 1;
       if (innerTiles[0] < 3)
@@ -254,7 +254,7 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
 
       float textMultiLineShift = textHeight;
       float horizontalCenter = partSize * innerTiles[0] * 0.5f;
-      float verticalShift = (partSize * innerTiles[1] - textMultiLineShift) * 0.5f + textMultiLineShift;
+      float verticalShift = (partSize * innerTiles[1] - textMultiLineShift) * 0.5f + textMultiLineShift - 1.0f;
       Vec2F position = Vec2F(horizontalCenter, verticalShift);
       List<BubbleText> bubbleTexts;
       TextStyle textStyle = m_textStyle;
