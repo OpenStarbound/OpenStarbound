@@ -56,7 +56,8 @@ Vec2I InterfaceCursor::offset() const {
 }
 
 float InterfaceCursor::scale(float interfaceScale) const {
-  return m_scale ? m_scale : interfaceScale;
+  float baseScale = m_scale ? m_scale : 1.0f;
+  return baseScale * (1.0f + (interfaceScale - 1.0f) * 0.8f);
 }
 
 void InterfaceCursor::update(float dt) {
