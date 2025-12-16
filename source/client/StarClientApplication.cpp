@@ -855,16 +855,17 @@ void ClientApplication::updateMods(float dt) {
   auto ugcService = appController()->userGeneratedContentService();
   auto configuration = m_root->configuration();
   bool includeUGC = configuration->get("includeUGC", m_root->settings().includeUGC).toBool();
+  bool skipUGCUpdates = configuration->get("skipUGCUpdates", m_root->settings().skipUGCUpdates).toBool();
   if (ugcService && includeUGC) {
     // Prevent unnecessary log spam when UGC needs to be downloaded
-    if (!m_loggedUGCCheck) {
+    if (!skipUGCUpdates && !m_loggedUGCCheck) {
       Logger::info("Checking for user generated content updates...");
       m_loggedUGCCheck = true;
     }
-    if (ugcService->contentNeedsDownload()) {
+    if (!skipUGCUpdates && ugcService->contentNeedsDownload()) {
       ugcService->triggerContentDownload();
     }
-    else if (!(ugcService->contentNeedsDownload()) && ugcService->triggerContentDownload()) {
+    else if (skipUGCUpdates || (!(ugcService->contentNeedsDownload()) && ugcService->triggerContentDownload())) {
       Logger::info("Loading updated user generated content...");
       StringList modDirectories;
       for (auto& contentId : ugcService->subscribedContentIds()) {

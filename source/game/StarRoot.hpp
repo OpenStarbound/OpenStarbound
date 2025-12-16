@@ -91,6 +91,9 @@ public:
     // If true, loads UGC from platform services if available. True by default.
     bool includeUGC;
 
+    // If true, we will not check for updates on user generated content. False by default.
+    bool skipUGCUpdates;
+
     // If given, will write changed configuration to the given file within the
     // storage directory.
     Maybe<String> runtimeConfigFile;

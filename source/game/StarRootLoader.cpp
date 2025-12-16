@@ -193,6 +193,7 @@ Root::Settings RootLoader::rootSettingsForOptions(Options const& options) const 
     rootSettings.logFile = options.parameters.value("logfile").maybeFirst().orMaybe(m_defaults.logFile);
     rootSettings.logFileBackups = bootConfig.getUInt("logFileBackups", 10);
     rootSettings.includeUGC = bootConfig.getBool("includeUGC", true);
+    rootSettings.skipUGCUpdates = bootConfig.getBool("skipUGCUpdates", false);
 
     if (auto ll = options.parameters.value("loglevel").maybeFirst())
       rootSettings.logLevel = LogLevelNames.getLeft(*ll);
