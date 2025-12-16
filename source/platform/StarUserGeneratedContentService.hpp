@@ -6,6 +6,12 @@ STAR_CLASS(UserGeneratedContentService);
 
 class UserGeneratedContentService {
 public:
+  enum class UGCState {
+    NoDownload = 0,
+    InProgress = 1,
+    Finished = 2
+  };
+	
   ~UserGeneratedContentService() = default;
 
   // Returns a list of the content the user is currently subscribed to.
@@ -17,10 +23,7 @@ public:
 
   // Start downloading subscribed content in the background, returns true when
   // all content is synchronized.
-  virtual bool triggerContentDownload() = 0;
-
-  // Check if it's necessary to download steam workshop content.
-  virtual bool contentNeedsDownload() const = 0;
+  virtual UserGeneratedContentService::UGCState triggerContentDownload() = 0;
 };
 
 }
