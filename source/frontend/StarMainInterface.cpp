@@ -1573,7 +1573,7 @@ void MainInterface::renderCursor() {
     m_guiContext->clearTextStyle();
   }
 
-  m_cursorItem->setPosition(m_cursorScreenIPos / interfaceScale() + m_config->inventoryItemMouseOffset);
+  m_cursorItem->setPosition(Vec2I::round(m_cursorScreenPos / interfaceScale() + Vec2F(m_config->inventoryItemMouseOffset)));
 
   if (auto swapItem = m_client->mainPlayer()->inventory()->swapSlotItem())
     m_cursorItem->setItem(swapItem);
