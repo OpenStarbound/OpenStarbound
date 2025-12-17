@@ -900,6 +900,8 @@ void ClientApplication::updateMods(float dt) {
         }
       }
     }
+  } else {
+    changeState(MainAppState::Splash);
   }
 }
 
