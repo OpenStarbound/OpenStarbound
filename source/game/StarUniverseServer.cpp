@@ -1915,6 +1915,22 @@ WarpToWorld UniverseServer::resolveWarpAction(WarpAction warpAction, ConnectionI
 
   WorldId toWorldId;
   SpawnTarget spawnTarget;
+  for (auto& p : m_scriptContexts) {
+    auto out = p.second->invoke<Json>("overrideWarp", warpActionToJson(warpAction), clientId, deploy);
+    if (out && *out) {
+      auto& jout = *out;
+      if (auto world = jout.optString("worldId")) {
+        toWorldId = parseWorldId(*world);
+      } else {
+        toWorldId = clientContext->playerWorldId();
+      }
+      if (jout.opt("spawnTarget")) {
+        spawnTarget = spawnTargetFromJson(jout.get("spawnTarget"));
+      }
+      return WarpToWorld(toWorldId, spawnTarget);
+    }
+  }
+  
   if (auto toWorld = warpAction.ptr<WarpToWorld>()) {
     if (!toWorld->world)
       toWorldId = clientContext->playerWorldId();

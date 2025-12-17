@@ -399,7 +399,7 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
 
     } else if (auto rdpacket = as<RequestDropPacket>(packet)) {
       auto drop = m_entityMap->get<ItemDrop>(rdpacket->dropEntityId);
-      if (drop && drop->canTake()) {
+      if (drop && drop->isMaster() && drop->canTake()) {
         if (auto taken = drop->takeBy(clientInfo->clientState.playerId()))
           clientInfo->outgoingPackets.append(make_shared<GiveItemPacket>(taken->descriptor()));
       }
