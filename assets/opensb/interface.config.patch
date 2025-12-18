@@ -51,5 +51,7 @@
   "buttonClickSound" : [ "/sfx/interface/button/click.wav" ],
   "buttonReleaseSound" : [ "/sfx/interface/button/release.wav" ],
   "buttonHoverSound" : [ "/sfx/interface/button/hover.wav" ],
-  "buttonHoverOffSound" : [ "/sfx/interface/button/hover_off.wav" ]
+  "buttonHoverOffSound" : [ "/sfx/interface/button/hover_off.wav" ],
+
+  "steamFlatpakWarning" : "Steam seems to be installed as a flatpak, which is not supported!\n\nIf you want to use workshop mods, you must either run OpenStarbound from Steam, or install Steam through your distribution's package manager instead."
 }

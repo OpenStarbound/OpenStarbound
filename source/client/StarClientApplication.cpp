@@ -30,6 +30,7 @@
 #include "StarVoiceLuaBindings.hpp"
 #include "StarHttpTrustDialog.hpp"
 #include "StarMainInterfaceTypes.hpp"
+
 #include "imgui.h"
 #include "imgui_freetype.h"
 
@@ -280,6 +281,20 @@ void ClientApplication::renderInit(RendererPtr renderer) {
   if (m_worldPainter)
     m_worldPainter->renderInit(renderer);
 
+  #ifdef STAR_ENABLE_STEAM_INTEGRATION
+  #ifdef STAR_SYSTEM_LINUX
+  if (g_steamIsFlatpak) {
+    auto config = m_root->configuration();
+    if (!config->get("steamFlatpakWarningShown").optBool().value()) {
+      config->set("steamFlatpakWarningShown", true);
+      m_errorScreen->setMessage(m_root->assets()->json("/interface.config:steamFlatpakWarning").toString());
+      changeState(MainAppState::SteamFlatpakWarning);
+      return;
+    }
+  }
+  #endif
+  #endif
+
   changeState(MainAppState::Mods);
 }
 
@@ -367,6 +382,15 @@ void ClientApplication::update() {
 
   if (!m_errorScreen->accepted())
     m_errorScreen->update(dt);
+
+  // This warning is only applicable to Linux systems so no need to process it otherwise.
+  #ifdef STAR_ENABLE_STEAM_INTEGRATION
+  #ifdef STAR_SYSTEM_LINUX
+  if (m_state == MainAppState::SteamFlatpakWarning)
+    updateSteamFlatpakWarning(dt);
+  else
+  #endif
+  #endif
 
   if (m_state == MainAppState::Mods)
     updateMods(dt);
@@ -848,6 +872,11 @@ void ClientApplication::loadMods() {
       auto assets = m_root->assets();
     }
   }
+}
+
+void ClientApplication::updateSteamFlatpakWarning(float) {
+  if (m_errorScreen->accepted())
+    changeState(MainAppState::Mods);
 }
 
 void ClientApplication::updateMods(float dt) {
