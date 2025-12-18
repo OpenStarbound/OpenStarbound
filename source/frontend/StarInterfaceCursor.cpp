@@ -56,9 +56,9 @@ Vec2I InterfaceCursor::offset() const {
 }
 
 float InterfaceCursor::scale(float interfaceScale) const {
-  // AUTO integer scaling: derive from interface scale
-  int intScale = static_cast<int>(interfaceScale);
-  return static_cast<float>(std::max(1, intScale - 1));
+  int baseScale = m_scale ? static_cast<int>(m_scale) : 1;
+  int intScale = std::max(1, static_cast<int>((interfaceScale + 1) / 2));
+  return static_cast<float>(baseScale * intScale);
 }
 
 void InterfaceCursor::update(float dt) {
