@@ -31,12 +31,6 @@
 #include "StarHttpTrustDialog.hpp"
 #include "StarMainInterfaceTypes.hpp"
 
-#ifdef STAR_ENABLE_STEAM_INTEGRATION
-#ifdef STAR_SYSTEM_LINUX
-#include "StarPlatformServices_pc.hpp"
-#endif
-#endif
-
 #include "imgui.h"
 #include "imgui_freetype.h"
 
