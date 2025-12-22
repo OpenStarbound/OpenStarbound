@@ -321,6 +321,7 @@ void Humanoid::setIdentity(HumanoidIdentity const& identity) {
   if (m_useBodyHeadMask) {
     m_bodyHeadMaskFrameset = getBodyHeadMaskFromIdentity();
   }
+
   if (m_useAnimation) {
     m_networkedAnimator.setLocalTag("name", m_identity.name);
     m_networkedAnimator.setLocalTag("species", m_identity.species);
@@ -344,59 +345,7 @@ void Humanoid::setIdentity(HumanoidIdentity const& identity) {
     m_networkedAnimator.translateLocalTransformationGroup("personalityArmOffset", m_identity.personality.armOffset / TilePixels);
 
     for (auto p : m_identityFramesetTags) {
-      bool valid = true;
-      auto applied = p.second.maybeLookupTagsView([&](StringView tag) -> StringView {
-        if (tag == "name") {
-          valid &= !m_identity.name.empty();
-          return m_identity.name;
-        } else if (tag == "species") {
-          valid &= !m_identity.species.empty();
-          return m_identity.species;
-        } else if (tag == "gender") {
-          return GenderNames.getRight(m_identity.gender);
-        } else if (tag == "hairGroup") {
-          valid &= !m_identity.hairGroup.empty();
-          return m_identity.hairGroup;
-        } else if (tag == "hairType") {
-          valid &= !m_identity.hairType.empty();
-          return m_identity.hairType;
-        } else if (tag == "hairDirectives") {
-          valid &= !m_identity.hairDirectives.empty();
-          return m_identity.hairDirectives.string();
-        } else if (tag == "facialHairGroup") {
-          valid &= !m_identity.facialHairGroup.empty();
-          return m_identity.facialHairGroup;
-        } else if (tag == "facialHairType") {
-          valid &= !m_identity.facialHairType.empty();
-          return m_identity.facialHairType;
-        } else if (tag == "facialHairDirectives") {
-          valid &= !m_identity.facialHairDirectives.empty();
-          return m_identity.facialHairDirectives.string();
-        } else if (tag == "facialMaskGroup") {
-          valid &= !m_identity.facialMaskGroup.empty();
-          return m_identity.facialMaskGroup;
-        } else if (tag == "facialMaskType") {
-          valid &= !m_identity.facialMaskType.empty();
-          return m_identity.facialMaskType;
-        } else if (tag == "facialMaskDirectives") {
-          valid &= !m_identity.facialMaskDirectives.empty();
-          return m_identity.facialMaskDirectives.string();
-        } else if (tag == "bodyDirectives") {
-          valid &= !m_identity.bodyDirectives.empty();
-          return m_identity.bodyDirectives.string();
-        } else if (tag == "emoteDirectives") {
-          valid &= !m_identity.emoteDirectives.empty();
-          return m_identity.emoteDirectives.string();
-        } else if (tag == "personalityIdle") {
-          valid &= !m_identity.personality.idle.empty();
-          return m_identity.personality.idle;
-        } else if (tag == "personalityArmIdle") {
-          valid &= !m_identity.personality.armIdle.empty();
-          return m_identity.personality.armIdle;
-        }
-        return StringView("default");
-      });
-      m_networkedAnimator.setLocalTag(p.first, valid ? applied.value(p.second) : "");
+      m_networkedAnimator.setLocalTag(p.first, applyIdentityTags(p.second));
     }
   }
 }
@@ -478,6 +427,9 @@ bool Humanoid::loadConfig(Json merger, bool forceRefresh) {
 
   m_headRotationCenter = jsonToVec2F(config.getArray("headRotationCenter", JsonArray{0,-2})) / TilePixels;
 
+  m_identityFramesetTags = jsonToMapV<StringMap<String>>(config.getObject("identityFramesetTags", JsonObject()), mem_fn(&Json::toString));
+  m_identityTags = jsonToMapV<StringMap<String>>(config.getObject("identityTags", JsonObject()), mem_fn(&Json::toString));
+
   return movementParametersChanged;
 }
 
@@ -512,7 +464,6 @@ void Humanoid::loadAnimation() {
     m_throwPoint = {m_baseConfig.getString("throwPart", "head"), m_baseConfig.getString("throwPartPoint", "mouthOffset")};
     m_interactPoint = {m_baseConfig.getString("interactPart", "body"), m_baseConfig.getString("interactPartPoint", "interact")};
 
-    m_identityFramesetTags = jsonToMapV<StringMap<String>>(m_baseConfig.getObject("identityFramesetTags", JsonObject()), mem_fn(&Json::toString));
 
     for (auto pair : m_baseConfig.getObject("stateAnimations", JsonObject())) {
       HashMap<String,AnimationStateArgs> animations;
@@ -2025,35 +1976,130 @@ String Humanoid::emoteFrameBase(HumanoidEmote state) const {
   }
 }
 
+String Humanoid::applyIdentityTags(String input) const {
+  bool valid = true;
+  auto out = input.maybeLookupTagsView([&](StringView tag) -> StringView {
+    if (tag == "name") {
+      valid &= !m_identity.name.empty();
+      return m_identity.name;
+    } else if (tag == "species") {
+      valid &= !m_identity.species.empty();
+      return m_identity.species;
+    } else if (tag == "gender") {
+      return GenderNames.getRight(m_identity.gender);
+    } else if (tag == "hairGroup") {
+      valid &= !m_identity.hairGroup.empty();
+      return m_identity.hairGroup;
+    } else if (tag == "hairType") {
+      valid &= !m_identity.hairType.empty();
+      return m_identity.hairType;
+    } else if (tag == "hairDirectives") {
+      valid &= !m_identity.hairDirectives.empty();
+      return m_identity.hairDirectives.string();
+    } else if (tag == "facialHairGroup") {
+      valid &= !m_identity.facialHairGroup.empty();
+      return m_identity.facialHairGroup;
+    } else if (tag == "facialHairType") {
+      valid &= !m_identity.facialHairType.empty();
+      return m_identity.facialHairType;
+    } else if (tag == "facialHairDirectives") {
+      valid &= !m_identity.facialHairDirectives.empty();
+      return m_identity.facialHairDirectives.string();
+    } else if (tag == "facialMaskGroup") {
+      valid &= !m_identity.facialMaskGroup.empty();
+      return m_identity.facialMaskGroup;
+    } else if (tag == "facialMaskType") {
+      valid &= !m_identity.facialMaskType.empty();
+      return m_identity.facialMaskType;
+    } else if (tag == "facialMaskDirectives") {
+      valid &= !m_identity.facialMaskDirectives.empty();
+      return m_identity.facialMaskDirectives.string();
+    } else if (tag == "bodyDirectives") {
+      valid &= !m_identity.bodyDirectives.empty();
+      return m_identity.bodyDirectives.string();
+    } else if (tag == "emoteDirectives") {
+      valid &= !m_identity.emoteDirectives.empty();
+      return m_identity.emoteDirectives.string();
+    } else if (tag == "personalityIdle") {
+      valid &= !m_identity.personality.idle.empty();
+      return m_identity.personality.idle;
+    } else if (tag == "personalityArmIdle") {
+      valid &= !m_identity.personality.armIdle.empty();
+      return m_identity.personality.armIdle;
+    } else if (auto p = m_identityTags.ptr(tag)) {
+      valid &= !(*p).empty();
+      return *p;
+    }
+    return StringView("default");
+  });
+  return valid ? out.value() : "";
+}
+
 String Humanoid::getHeadFromIdentity() const {
+  if (auto p = m_identityFramesetTags.ptr("headFrameset")){
+    return strf("/humanoid/{}/{}",
+                m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
+                applyIdentityTags(*p)
+              );
+  }
   return strf("/humanoid/{}/{}head.png",
       m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
       GenderNames.getRight(m_identity.gender));
 }
 
 String Humanoid::getBodyFromIdentity() const {
+  if (auto p = m_identityFramesetTags.ptr("bodyFrameset")){
+    return strf("/humanoid/{}/{}",
+                m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
+                applyIdentityTags(*p)
+              );
+  }
   return strf("/humanoid/{}/{}body.png",
       m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
       GenderNames.getRight(m_identity.gender));
 }
 
 String Humanoid::getBodyMaskFromIdentity() const {
+  if (auto p = m_identityFramesetTags.ptr("bodyMaskFrameset")){
+    return strf("/humanoid/{}/{}",
+                m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
+                applyIdentityTags(*p)
+              );
+  }
   return strf("/humanoid/{}/mask/{}body.png",
       m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
       GenderNames.getRight(m_identity.gender));
 }
 
 String Humanoid::getBodyHeadMaskFromIdentity() const {
+  if (auto p = m_identityFramesetTags.ptr("bodyHeadMaskFrameset")){
+    return strf("/humanoid/{}/{}",
+                m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
+                applyIdentityTags(*p)
+              );
+  }
   return strf("/humanoid/{}/headmask/{}body.png",
       m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
       GenderNames.getRight(m_identity.gender));
 }
 
 String Humanoid::getFacialEmotesFromIdentity() const {
+  if (auto p = m_identityFramesetTags.ptr("emoteFrameset")){
+    return strf("/humanoid/{}/{}",
+                m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
+                applyIdentityTags(*p)
+              );
+  }
   return strf("/humanoid/{}/emote.png", m_identity.imagePath ? *m_identity.imagePath : m_identity.species);
 }
 
 String Humanoid::getHairFromIdentity() const {
+  if (auto p = m_identityFramesetTags.ptr("hairFrameset")){
+    return strf("/humanoid/{}/{}",
+                m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
+                applyIdentityTags(*p)
+              );
+  }
   if (m_identity.hairType.empty())
     return "";
   return strf("/humanoid/{}/{}/{}.png",
@@ -2063,6 +2109,12 @@ String Humanoid::getHairFromIdentity() const {
 }
 
 String Humanoid::getFacialHairFromIdentity() const {
+  if (auto p = m_identityFramesetTags.ptr("facialHairFrameset")){
+    return strf("/humanoid/{}/{}",
+                m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
+                applyIdentityTags(*p)
+              );
+  }
   if (m_identity.facialHairType.empty())
     return "";
   return strf("/humanoid/{}/{}/{}.png",
@@ -2072,6 +2124,12 @@ String Humanoid::getFacialHairFromIdentity() const {
 }
 
 String Humanoid::getFacialMaskFromIdentity() const {
+  if (auto p = m_identityFramesetTags.ptr("facialMaskFrameset")){
+    return strf("/humanoid/{}/{}",
+                m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
+                applyIdentityTags(*p)
+              );
+  }
   if (m_identity.facialMaskType.empty())
     return "";
   return strf("/humanoid/{}/{}/{}.png",
@@ -2081,14 +2139,32 @@ String Humanoid::getFacialMaskFromIdentity() const {
 }
 
 String Humanoid::getBackArmFromIdentity() const {
+  if (auto p = m_identityFramesetTags.ptr("backArmFrameset")){
+    return strf("/humanoid/{}/{}",
+                m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
+                applyIdentityTags(*p)
+              );
+  }
   return strf("/humanoid/{}/backarm.png", m_identity.imagePath ? *m_identity.imagePath : m_identity.species);
 }
 
 String Humanoid::getFrontArmFromIdentity() const {
+  if (auto p = m_identityFramesetTags.ptr("frontArmFrameset")){
+    return strf("/humanoid/{}/{}",
+                m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
+                applyIdentityTags(*p)
+              );
+  }
   return strf("/humanoid/{}/frontarm.png", m_identity.imagePath ? *m_identity.imagePath : m_identity.species);
 }
 
 String Humanoid::getVaporTrailFrameset() const {
+  if (auto p = m_identityFramesetTags.ptr("vaporTrailFrameset")){
+    return strf("/humanoid/{}/{}",
+                m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
+                applyIdentityTags(*p)
+              );
+  }
   return "/humanoid/any/flames.png";
 }
 
