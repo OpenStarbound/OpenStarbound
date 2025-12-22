@@ -23,6 +23,11 @@ cp \
   scripts/ci/linux/run-client.sh \
   scripts/steam_appid.txt \
   client_distribution/linux/
+  
+mkdir client_distribution/linux/.icon
+cp \
+  source/client/starbound.bmp \
+  client_distribution/linux/.icon/
 
 mkdir server_distribution
 mkdir server_distribution/assets

@@ -24,6 +24,9 @@ public:
     // If the material here should not be removed on upgrade, this flag will be
     // set to true.
     bool residual;
+    MaterialColorVariant materialColor;
+    MaterialHue materialHue;
+    ModId materialMod;
   };
 
   struct Object {
@@ -74,6 +77,12 @@ private:
     Json objectParameters;
     bool objectResidual;
     StringList flags;
+    MaterialColorVariant foregroundMatColor;
+    MaterialColorVariant backgroundMatColor;
+    MaterialHue foregroundMatHue;
+    MaterialHue backgroundMatHue;
+    ModId foregroundMatMod;
+    ModId backgroundMatMod;
   };
 
   RectI m_region;

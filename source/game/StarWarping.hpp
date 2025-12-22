@@ -84,6 +84,7 @@ typedef MVariant<WarpToWorld, WarpToPlayer, WarpAlias> WarpAction;
 
 WarpAction parseWarpAction(String const& warpString);
 String printWarpAction(WarpAction const& warpAction);
+JsonObject warpActionToJson(WarpAction const& warpAction);
 
 DataStream& operator>>(DataStream& ds, WarpToWorld& warpToWorld);
 DataStream& operator<<(DataStream& ds, WarpToWorld const& warpToWorld);

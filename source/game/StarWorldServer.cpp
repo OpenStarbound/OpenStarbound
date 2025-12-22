@@ -129,6 +129,9 @@ WorldStructure WorldServer::setCentralStructure(WorldStructure centralStructure)
     if (auto tile = m_tileArray->modifyTile(foregroundBlock.position)) {
       if (tile->foreground == EmptyMaterialId) {
         tile->foreground = foregroundBlock.materialId;
+        tile->foregroundColorVariant = foregroundBlock.materialColor;
+        tile->foregroundHueShift = foregroundBlock.materialHue;
+        tile->foregroundMod = foregroundBlock.materialMod;
         tile->updateCollision(materialDatabase->materialCollisionKind(foregroundBlock.materialId));
         queueTileUpdates(foregroundBlock.position);
         dirtyCollision(RectI::withSize(foregroundBlock.position, {1, 1}));
@@ -141,6 +144,9 @@ WorldStructure WorldServer::setCentralStructure(WorldStructure centralStructure)
     if (auto tile = m_tileArray->modifyTile(backgroundBlock.position)) {
       if (tile->background == EmptyMaterialId) {
         tile->background = backgroundBlock.materialId;
+        tile->backgroundColorVariant = backgroundBlock.materialColor;
+        tile->backgroundHueShift = backgroundBlock.materialHue;
+        tile->backgroundMod = backgroundBlock.materialMod;
         queueTileUpdates(backgroundBlock.position);
       }
     }
@@ -393,7 +399,7 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
 
     } else if (auto rdpacket = as<RequestDropPacket>(packet)) {
       auto drop = m_entityMap->get<ItemDrop>(rdpacket->dropEntityId);
-      if (drop && drop->canTake()) {
+      if (drop && drop->isMaster() && drop->canTake()) {
         if (auto taken = drop->takeBy(clientInfo->clientState.playerId()))
           clientInfo->outgoingPackets.append(make_shared<GiveItemPacket>(taken->descriptor()));
       }

@@ -66,3 +66,23 @@ Sets the full image set of a ImageStretchWidget.
 
 Appends a new ImageWidget to the specified FlowLayout widget, using `childName` as the new widget's identifier within the
 layout.
+
+---
+
+### ScrollArea helpers
+
+#### `Maybe<Vec2I>` widget.getScrollOffset(`String` widgetName)
+
+Gets the current scroll offset of a ScrollArea widget. Returns `nil` if the widget is not a ScrollArea.
+
+---
+
+#### `void` widget.setScrollOffset(`String` widgetName, `Vec2I` offset)
+
+Sets the current scroll offset of a ScrollArea widget.
+
+---
+
+#### `Vec2I` widget.getMaxScrollPosition(`String` widgetName)
+
+Gets the maximum scroll position of a ScrollArea widget. This is the maximum offset that can be scrolled to.

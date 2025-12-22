@@ -19,14 +19,18 @@
 #include "StarCurve25519.hpp"
 #include "StarInterpolation.hpp"
 
-#include "StarTeamClientLuaBindings.hpp"
-#include "StarCelestialLuaBindings.hpp"
-#include "StarInterfaceLuaBindings.hpp"
-#include "StarInputLuaBindings.hpp"
-#include "StarVoiceLuaBindings.hpp"
 #include "StarCameraLuaBindings.hpp"
+#include "StarCelestialLuaBindings.hpp"
 #include "StarClipboardLuaBindings.hpp"
+#include "StarInputLuaBindings.hpp"
+#include "StarInterfaceLuaBindings.hpp"
+#include "StarLuaHttpBindings.hpp"
 #include "StarRenderingLuaBindings.hpp"
+#include "StarTeamClientLuaBindings.hpp"
+#include "StarVoiceLuaBindings.hpp"
+#include "StarHttpTrustDialog.hpp"
+#include "StarMainInterfaceTypes.hpp"
+
 #include "imgui.h"
 #include "imgui_freetype.h"
 
@@ -158,6 +162,9 @@ void ClientApplication::startup(StringList const& cmdLineArgs) {
 }
 
 void ClientApplication::shutdown() {
+  // Clear HTTP trust request callback
+  LuaBindings::clearHttpTrustRequestCallback();
+
   m_mainInterface.reset();
 
   if (m_universeClient)
@@ -214,6 +221,9 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
   appController->setVSyncEnabled(vsync);
   appController->setCursorHardware(configuration->get("hardwareCursor").optBool().value(true));
 
+  // Must be called before anything that can invoke an asset load.
+  loadMods();
+  
   AudioFormat audioFormat = appController->enableAudio();
   m_mainMixer = make_shared<MainMixer>(audioFormat.sampleRate, audioFormat.channels);
   m_mainMixer->setVolume(0.5);
@@ -222,7 +232,7 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
   m_guiContext = make_shared<GuiContext>(m_mainMixer->mixer(), appController);
   m_input = make_shared<Input>();
   m_voice = make_shared<Voice>(appController);  
-    
+
   auto assets = m_root->assets();
 
   {
@@ -270,6 +280,20 @@ void ClientApplication::renderInit(RendererPtr renderer) {
     m_titleScreen->renderInit(renderer);
   if (m_worldPainter)
     m_worldPainter->renderInit(renderer);
+
+  #ifdef STAR_ENABLE_STEAM_INTEGRATION
+  #ifdef STAR_SYSTEM_LINUX
+  if (g_steamIsFlatpak) {
+    auto config = m_root->configuration();
+    if (!config->get("steamFlatpakWarningShown").optBool().value()) {
+      config->set("steamFlatpakWarningShown", true);
+      m_errorScreen->setMessage(m_root->assets()->json("/interface.config:steamFlatpakWarning").toString());
+      changeState(MainAppState::SteamFlatpakWarning);
+      return;
+    }
+  }
+  #endif
+  #endif
 
   changeState(MainAppState::Mods);
 }
@@ -358,6 +382,15 @@ void ClientApplication::update() {
 
   if (!m_errorScreen->accepted())
     m_errorScreen->update(dt);
+
+  // This warning is only applicable to Linux systems so no need to process it otherwise.
+  #ifdef STAR_ENABLE_STEAM_INTEGRATION
+  #ifdef STAR_SYSTEM_LINUX
+  if (m_state == MainAppState::SteamFlatpakWarning)
+    updateSteamFlatpakWarning(dt);
+  else
+  #endif
+  #endif
 
   if (m_state == MainAppState::Mods)
     updateMods(dt);
@@ -582,6 +615,10 @@ void ClientApplication::changeState(MainAppState newState) {
       m_universeServer.reset();
     }
     m_cinematicOverlay->stop();
+
+    // Clear HTTP trust request callback
+    LuaBindings::clearHttpTrustRequestCallback();
+
     m_mainInterface.reset();
 
     m_voice->clearSpeakers();
@@ -626,6 +663,9 @@ void ClientApplication::changeState(MainAppState newState) {
 
     Json alwaysAllow = m_root->configuration()->getPath("safe.alwaysAllowClipboard");
     m_universeClient->setLuaCallbacks("clipboard", LuaBindings::makeClipboardCallbacks(app, alwaysAllow && alwaysAllow.toBool()));
+    const bool luaHttpEnabled = m_root->configuration()->getPath("safe.luaHttp.enabled").optBool().value(false);
+
+    m_universeClient->setLuaCallbacks("http", LuaBindings::makeHttpCallbacks(luaHttpEnabled));
 
     auto heldScriptPanes = make_shared<List<MainInterface::ScriptPaneInfo>>();
 
@@ -771,6 +811,19 @@ void ClientApplication::changeState(MainAppState newState) {
     m_universeClient->setLuaCallbacks("celestial", LuaBindings::makeCelestialCallbacks(m_universeClient.get()));
     m_universeClient->setLuaCallbacks("team", LuaBindings::makeTeamClientCallbacks(m_universeClient->teamClient().get()));
     m_universeClient->setLuaCallbacks("world", LuaBindings::makeWorldCallbacks(m_universeClient->worldClient().get()));
+
+    LuaBindings::setHttpTrustRequestCallback([mainInterface = m_mainInterface.get()](String const& domain) {
+      const auto paneManager = mainInterface->paneManager();
+      const auto httpTrustDialog = paneManager->registeredPane<HttpTrustDialog>(MainInterfacePanes::HttpTrustDialog);
+
+      httpTrustDialog->displayRequest(domain, [domain](const HttpTrustReply reply, bool remember) {
+        const bool allowed = (reply == HttpTrustReply::Allow);
+        LuaBindings::handleHttpTrustReply(domain, allowed);
+      });
+      paneManager->displayRegisteredPane(MainInterfacePanes::HttpTrustDialog);
+    });
+
+
     m_mainInterface->displayDefaultPanes();
     m_universeClient->startLuaScripts();
 
@@ -796,36 +849,75 @@ void ClientApplication::setError(String const& error, std::exception const& e) {
   changeState(MainAppState::Title);
 }
 
+void ClientApplication::loadMods() {
+  auto ugcService = appController()->userGeneratedContentService();
+  auto configuration = m_root->configuration();
+  bool includeUGC = configuration->get("includeUGC", m_root->settings().includeUGC).toBool();
+  if (ugcService && includeUGC) {
+    StringList modDirectories;
+    Logger::info("Checking for user generated content...");
+    for (auto& contentId : ugcService->subscribedContentIds()) {
+      if (auto contentDirectory = ugcService->contentDownloadDirectory(contentId)) {
+        Logger::info("Loading mods from user generated content with id '{}' from directory '{}'", contentId, *contentDirectory);
+        modDirectories.append(*contentDirectory);
+      } else {
+        Logger::warn("User generated content with id '{}' is not available", contentId);
+      }
+    }
+
+    if (modDirectories.empty()) {
+      Logger::info("No subscribed user generated content");
+    } else {
+      Root::singleton().loadMods(modDirectories, false);
+      auto assets = m_root->assets();
+    }
+  }
+}
+
+void ClientApplication::updateSteamFlatpakWarning(float) {
+  if (m_errorScreen->accepted())
+    changeState(MainAppState::Mods);
+}
+
 void ClientApplication::updateMods(float dt) {
   m_cinematicOverlay->update(dt);
   auto ugcService = appController()->userGeneratedContentService();
   auto configuration = m_root->configuration();
   bool includeUGC = configuration->get("includeUGC", m_root->settings().includeUGC).toBool();
   if (ugcService && includeUGC) {
-    Logger::info("Checking for user generated content...");
-    if (ugcService->triggerContentDownload()) {
-      StringList modDirectories;
-      for (auto& contentId : ugcService->subscribedContentIds()) {
-        if (auto contentDirectory = ugcService->contentDownloadDirectory(contentId)) {
-          Logger::info("Loading mods from user generated content with id '{}' from directory '{}'", contentId, *contentDirectory);
-          modDirectories.append(*contentDirectory);
-        } else {
-          Logger::warn("User generated content with id '{}' is not available", contentId);
+    // Prevent unnecessary log spam when UGC needs to be downloaded
+    if (!m_loggedUGCCheck) {
+      Logger::info("Checking for user generated content updates...");
+      m_loggedUGCCheck = true;
+    }
+    
+    if (ugcService->triggerContentDownload() == UserGeneratedContentService::UGCState::NoDownload) {
+      changeState(MainAppState::Splash);
+    } else {
+      if (ugcService->triggerContentDownload() == UserGeneratedContentService::UGCState::Finished) {
+        Logger::info("Loading updated user generated content...");
+        StringList modDirectories;
+        for (auto& contentId : ugcService->subscribedContentIds()) {
+          if (auto contentDirectory = ugcService->contentDownloadDirectory(contentId)) {
+            Logger::info("Loading mods from user generated content with id '{}' from directory '{}'", contentId, *contentDirectory);
+            modDirectories.append(*contentDirectory);
+          } else {
+            Logger::warn("User generated content with id '{}' is not available", contentId);
+          }
         }
-      }
 
-      if (modDirectories.empty()) {
-        Logger::info("No subscribed user generated content");
-        changeState(MainAppState::Splash);
-      } else {
-        Logger::info("Reloading to include all user generated content");
-        Root::singleton().reloadWithMods(modDirectories);
+        if (modDirectories.empty()) {
+          changeState(MainAppState::Splash);
+        } else {
+          Logger::info("Reloading to include updated user generated content");
+          Root::singleton().loadMods(modDirectories);
 
-        // We've just reloaded, so make sure to grab our config again!
-        // If we don't do this, we'll be able to read modsWarningShown
-        // just fine, but we won't be able to write it back to the file.
-        configuration = m_root->configuration();
-        
+          // We've just reloaded, so make sure to grab our config again!
+          // If we don't do this, we'll be able to read modsWarningShown
+          // just fine, but we won't be able to write it back to the file.
+          configuration = m_root->configuration();
+        }
+
         auto assets = m_root->assets();
 
         if (configuration->get("modsWarningShown").optBool().value()) {

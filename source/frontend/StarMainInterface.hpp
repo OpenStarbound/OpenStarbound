@@ -134,6 +134,7 @@ public:
   void displayDefaultPanes();
 private:
   PanePtr createEscapeDialog();
+  void initHttpTrustDialog();
 
   float interfaceScale() const;
   unsigned windowHeight() const;

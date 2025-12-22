@@ -4,6 +4,12 @@
 
 namespace Star {
 
+#ifdef STAR_ENABLE_STEAM_INTEGRATION
+#ifdef STAR_SYSTEM_LINUX
+extern bool g_steamIsFlatpak;
+#endif
+#endif
+
 STAR_CLASS(ApplicationController);
 STAR_CLASS(Renderer);
 STAR_CLASS(Application);

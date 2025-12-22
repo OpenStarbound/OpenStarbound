@@ -4,6 +4,14 @@
 
 namespace Star {
 
+#ifdef STAR_ENABLE_STEAM_INTEGRATION
+#ifdef STAR_SYSTEM_LINUX
+// Hacky, but I need to use this from StarClientApplication
+// and StarPlatformServies_pc...
+bool g_steamIsFlatpak = false;
+#endif
+#endif
+
 void Application::startup(StringList const&) {}
 
 void Application::applicationInit(ApplicationControllerPtr appController) {

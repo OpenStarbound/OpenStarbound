@@ -54,9 +54,9 @@ private:
   // edge of screen
   uint8_t calcDistanceFadeAlpha(Vec2F bubbleScreenPosition, StoredFunctionPtr fadeFunction) const;
 
-  RectF bubbleImageRect(Vec2F screenPos, BubbleImage const& bubbleImage, int pixelRatio);
-  void drawBubbleImage(Vec2F screenPos, BubbleImage const& bubbleImage, int pixelRatio, int alpha);
-  void drawBubbleText(Vec2F screenPos, BubbleText const& bubbleText, int pixelRatio, int alpha, bool isPortrait);
+  RectF bubbleImageRect(Vec2F screenPos, BubbleImage const& bubbleImage, float pixelRatio);
+  void drawBubbleImage(Vec2F screenPos, BubbleImage const& bubbleImage, float pixelRatio, int alpha);
+  void drawBubbleText(Vec2F screenPos, BubbleText const& bubbleText, float pixelRatio, int alpha, bool isPortrait);
 
   GuiContext* m_guiContext;
 
@@ -69,6 +69,7 @@ private:
 
   BubbleSeparator<Bubble> m_bubbles;
   int m_zoom;
+  float m_cachedInterfaceScale;
   Vec2F m_bubbleOffset;
   float m_maxAge;
   float m_portraitMaxAge;

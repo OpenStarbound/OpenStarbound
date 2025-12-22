@@ -115,7 +115,8 @@ void Projectile::uninit() {
     m_persistentAudio->stop();
   m_movementController->uninit();
   if (isMaster()) {
-    if (!m_config->scripts.empty()) {
+    auto scripts = configValue("scripts").optArray().apply(jsonToStringList);
+    if (scripts && !(*scripts).empty()) {
       m_scriptComponent.uninit();
       m_scriptComponent.removeCallbacks("projectile");
       m_scriptComponent.removeCallbacks("config");

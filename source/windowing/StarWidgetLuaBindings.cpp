@@ -15,6 +15,7 @@
 #include "StarItemDatabase.hpp"
 #include "StarFlowLayout.hpp"
 #include "StarImageStretchWidget.hpp"
+#include "StarScrollArea.hpp"
 
 namespace Star {
 
@@ -468,6 +469,23 @@ LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr
         imageStretch->setImageStretchSet(imageSet.getString("begin", ""), imageSet.getString("inner", ""), imageSet.getString("end", ""));
       }
     });
+
+  callbacks.registerCallback("getScrollOffset", [parentWidget](String const& widgetName) -> Maybe<Vec2I> {
+    if (auto scrollArea = parentWidget->fetchChild<ScrollArea>(widgetName))
+        return scrollArea->scrollOffset();
+      return {};
+  });
+
+  callbacks.registerCallback("setScrollOffset", [parentWidget](String const& widgetName, Vec2I const& offset) {
+    if (auto scrollArea = parentWidget->fetchChild<ScrollArea>(widgetName))
+        scrollArea->scrollAreaBy(offset - scrollArea->scrollOffset());
+  });
+
+  callbacks.registerCallback("getMaxScrollPosition", [parentWidget](String const& widgetName) -> Maybe<Vec2I> {
+    if (auto scrollArea = parentWidget->fetchChild<ScrollArea>(widgetName))
+        return scrollArea->maxScrollPosition();
+      return {};
+  });
 
   return callbacks;
 }

@@ -64,7 +64,6 @@ private:
   NetElementData<EntityDamageTeam> m_teamNetState;
   NetElementData<ShipUpgrades> m_shipUpgrades;
   NetElementData<CelestialCoordinate> m_shipCoordinate;
-
   WorldChunks m_newShipUpdates;
 };
 

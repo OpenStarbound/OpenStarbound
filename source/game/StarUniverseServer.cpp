@@ -725,8 +725,9 @@ void UniverseServer::updateShips() {
         if (jSpecies.isType(Json::Type::String))
           species = jSpecies.toString();
         else
-          shipWorld->setProperty("ship.species", species = p.second->playerSpecies());
+          shipWorld->setProperty("ship.species", species = p.second->shipSpecies());
 
+        p.second->setShipSpecies(species);
         auto const& speciesShips = m_speciesShips.get(species);
         Json jOldShipLevel = shipWorld->getProperty("ship.level");
         unsigned newShipLevel = min<unsigned>(speciesShips.size() - 1, newShipUpgrades.shipLevel);
@@ -1734,8 +1735,8 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
       }
     }
 
-    if (!m_speciesShips.contains(clientConnect->playerSpecies)) {
-      connectionFail("Unknown player species");
+    if (!m_speciesShips.contains(clientConnect->shipSpecies)) {
+      connectionFail("Unknown ship species");
       return;
     }
 
@@ -1815,7 +1816,7 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
 
   ConnectionId clientId = m_clients.nextId();
   auto clientContext = make_shared<ServerClientContext>(clientId, remoteAddress, netRules, clientConnect->playerUuid,
-                                                        clientConnect->playerName, clientConnect->playerSpecies, administrator, clientConnect->shipChunks);
+                                                        clientConnect->playerName, clientConnect->shipSpecies, administrator, clientConnect->shipChunks);
   clientContext->registerRpcHandlers(m_teamManager->rpcHandlers());
 
   String clientContextFile = File::relativeTo(m_storageDirectory, strf("{}.clientcontext", clientConnect->playerUuid.hex()));
@@ -1854,7 +1855,7 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
   }
 
   Json introInstance = assets->json("/universe_server.config:introInstance");
-  String speciesIntroInstance = introInstance.getString(clientConnect->playerSpecies, introInstance.getString("default", ""));
+  String speciesIntroInstance = introInstance.getString(clientConnect->shipSpecies, introInstance.getString("default", ""));
   if (!speciesIntroInstance.empty() && !clientConnect->introComplete) {
     Logger::info("UniverseServer: Spawning player in intro instance {}", speciesIntroInstance);
     WarpAction introWarp = WarpToWorld{InstanceWorldId(speciesIntroInstance, clientContext->playerUuid()), {}};
@@ -1914,6 +1915,22 @@ WarpToWorld UniverseServer::resolveWarpAction(WarpAction warpAction, ConnectionI
 
   WorldId toWorldId;
   SpawnTarget spawnTarget;
+  for (auto& p : m_scriptContexts) {
+    auto out = p.second->invoke<Json>("overrideWarp", warpActionToJson(warpAction), clientId, deploy);
+    if (out && *out) {
+      auto& jout = *out;
+      if (auto world = jout.optString("worldId")) {
+        toWorldId = parseWorldId(*world);
+      } else {
+        toWorldId = clientContext->playerWorldId();
+      }
+      if (jout.opt("spawnTarget")) {
+        spawnTarget = spawnTargetFromJson(jout.get("spawnTarget"));
+      }
+      return WarpToWorld(toWorldId, spawnTarget);
+    }
+  }
+  
   if (auto toWorld = warpAction.ptr<WarpToWorld>()) {
     if (!toWorld->world)
       toWorldId = clientContext->playerWorldId();
@@ -2135,7 +2152,7 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::shipWorldPromise(
 
     if (!shipWorld) {
       Logger::info("UniverseServer: Creating new client ship world {}", clientShipWorldId);
-      auto& species = clientContext->playerSpecies();
+      auto& species = clientContext->shipSpecies();
       auto shipStructure = WorldStructure(speciesShips.get(species).first());
       Vec2U worldSize(2048, 2048);
       if (auto jWorldSize = shipStructure.configValue("worldSize"))

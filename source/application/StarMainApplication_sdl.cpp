@@ -377,6 +377,16 @@ public:
     m_sdlWindow = SDL_CreateWindow(m_windowTitle.utf8Ptr(), m_windowSize[0], m_windowSize[1], SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
     if (!m_sdlWindow)
       throw ApplicationException::format("Application: Could not create SDL Window: {}", SDL_GetError());
+
+#ifdef STAR_SYSTEM_LINUX
+    SDL_Surface* iconSurface = SDL_LoadBMP(".icon/starbound.bmp");
+    if (iconSurface) {
+        SDL_SetWindowIcon(m_sdlWindow, iconSurface);
+        SDL_DestroySurface(iconSurface);
+    } else {
+        Logger::warn("Could not load icon: {}", SDL_GetError());
+    }
+#endif
 	  
 #if defined(__APPLE__)
     // GL 3.2 Core + GLSL 150

@@ -589,3 +589,9 @@ Makes the player stop lounging.
 #### `String` player.trackedQuestId()
 
 Returns the ID of the currently tracked quest.
+
+---
+
+#### `void` player.setCameraFocusEntity([`EntityId` entity])
+
+Sets that player's camera to be centered on the position of the specified entity, or recenters the camera on the player's position if no entity id is specified.

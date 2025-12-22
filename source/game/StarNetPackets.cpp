@@ -403,10 +403,10 @@ Json ServerInfoPacket::writeJson() const {
 ClientConnectPacket::ClientConnectPacket() {}
 
 ClientConnectPacket::ClientConnectPacket(ByteArray assetsDigest, bool allowAssetsMismatch, Uuid playerUuid,
-    String playerName, String playerSpecies, WorldChunks shipChunks, ShipUpgrades shipUpgrades,
+    String playerName, String shipSpecies, WorldChunks shipChunks, ShipUpgrades shipUpgrades,
     bool introComplete, String account, Json info)
   : assetsDigest(std::move(assetsDigest)), allowAssetsMismatch(allowAssetsMismatch), playerUuid(std::move(playerUuid)),
-    playerName(std::move(playerName)), playerSpecies(std::move(playerSpecies)), shipChunks(std::move(shipChunks)),
+    playerName(std::move(playerName)), shipSpecies(std::move(shipSpecies)), shipChunks(std::move(shipChunks)),
     shipUpgrades(std::move(shipUpgrades)), introComplete(std::move(introComplete)), account(std::move(account)), info(std::move(info)) {}
 
 
@@ -415,7 +415,7 @@ void ClientConnectPacket::read(DataStream& ds, NetCompatibilityRules netRules) {
   ds.read(allowAssetsMismatch);
   ds.read(playerUuid);
   ds.read(playerName);
-  ds.read(playerSpecies);
+  ds.read(shipSpecies);
   ds.read(shipChunks);
   ds.read(shipUpgrades);
   ds.read(introComplete);
@@ -429,7 +429,7 @@ void ClientConnectPacket::write(DataStream& ds, NetCompatibilityRules netRules) 
   ds.write(allowAssetsMismatch);
   ds.write(playerUuid);
   ds.write(playerName);
-  ds.write(playerSpecies);
+  ds.write(shipSpecies);
   ds.write(shipChunks);
   ds.write(shipUpgrades);
   ds.write(introComplete);
@@ -1298,7 +1298,7 @@ void PongPacket::read(DataStream& ds, NetCompatibilityRules netRules) {
   } else {
     ds.readVlqI(time);
   }
-  
+
 }
 
 void PongPacket::write(DataStream& ds, NetCompatibilityRules netRules) const {
