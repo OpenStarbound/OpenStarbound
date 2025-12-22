@@ -97,7 +97,6 @@ void EnvironmentPainter::renderDebrisFields(float pixelRatio, Vec2F const& scree
   if (!sky.settings)
     return;
 
-  if (sky.type == SkyType::Barren || sky.type == SkyType::Atmosphereless || sky.type == SkyType::Orbital || sky.type == SkyType::Warp || sky.type == SkyType::Space) {
     Vec2F viewSize = screenSize / pixelRatio;
     Vec2F viewCenter = viewSize / 2;
     Vec2D viewMin = Vec2D(sky.starOffset - viewCenter);
@@ -143,7 +142,6 @@ void EnvironmentPainter::renderDebrisFields(float pixelRatio, Vec2F const& scree
     }
 
     m_renderer->flush();
-  }
 }
 
 void EnvironmentPainter::renderBackOrbiters(float pixelRatio, Vec2F const& screenSize, SkyRenderData const& sky) {
