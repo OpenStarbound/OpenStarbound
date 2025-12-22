@@ -2032,7 +2032,7 @@ String Humanoid::applyIdentityTags(String input) const {
     }
     return StringView("default");
   });
-  return valid ? out.value() : "";
+  return valid ? out.value(input) : "";
 }
 
 String Humanoid::getHeadFromIdentity() const {
