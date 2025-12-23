@@ -20,6 +20,10 @@
 		"bodyFrameset" : "<gender>body.png",
 		"headFrameset" : "<gender>head.png",
 		"bodyMaskFrameset" : "mask/<gender>body.png",
-		"bodyHeadMaskFrameset" : "headmask/<gender>body.png"
+		"bodyHeadMaskFrameset" : "headmask/<gender>body.png",
+
+		"hairFrameset" : "<hairGroup>/<hairType>.png",
+		"facialHairFrameset" : "<facialHairGroup>/<facialHairType>.png",
+		"facialMaskFrameset" : "<facialMaskGroup>/<facialMaskType>.png"
 	}
 }

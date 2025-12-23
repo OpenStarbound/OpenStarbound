@@ -92,6 +92,26 @@ Key Value pairs of strings where the key is an animation tag and value is a stri
 }
 ```
 
+If any tag within the path is empty, the entire tag will be returned as empty. This is useful for parts such as facial hair/mask which often aren't always used by a species so the tag doesn't result in something like `facialHair/.png`.
+
+Specific values are also used by humanoids which are not using the networked animator if they exist, and are used in place of the normal hardcoded paths. This can be used to for example, add a gender tag to arm parts, or remove the gender tag from body or head parts.
+- `headFrameset`
+- `bodyFrameset`
+- `bodyMaskFrameset`
+- `bodyHeadMaskFrameset`
+- `emoteFrameset`
+- `hairFrameset`
+- `facialHairFrameset`
+- `facialMaskFrameset`
+- `backArmFrameset`
+- `frontArmFrameset`
+- `vaporTrailFrameset`
+
+## `JsonObject` identityTags
+
+Key value pairs for additional identity values that are used by identityFramesetTags and armor's humanoidAnimationTags that don't exist within retail starbound's identity struct.
+
+
 ---
 
 ## `String` frontHandItemPart
