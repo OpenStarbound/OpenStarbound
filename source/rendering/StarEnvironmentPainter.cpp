@@ -94,7 +94,7 @@ void EnvironmentPainter::renderStars(float pixelRatio, Vec2F const& screenSize, 
 }
 
 void EnvironmentPainter::renderDebrisFields(float pixelRatio, Vec2F const& screenSize, SkyRenderData const& sky) {
-  if (!sky.settings)
+  if (m_debrisGenerators.empty() || !sky.settings)
     return;
 
     Vec2F viewSize = screenSize / pixelRatio;
