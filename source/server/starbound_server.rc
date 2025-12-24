@@ -22,4 +22,4 @@ BEGIN
     VALUE "Translation", 0x409, 1252
   END
 END
-icon ICON "starbound_server.ico"
+icon ICON "openstarbound_server.ico"
