@@ -413,28 +413,24 @@ public:
           Logger::warn("Could not create SDL surface for icon '{}': {}", ".icon/openstarbound.png", SDL_GetError());
         }
       }
-    }
 
-    // Get XDG Icons Directory following XDG Base Directory Specification
-    String XdgIconsPath;
-    const char* xdgDataHome = getenv("XDG_DATA_HOME");
-    const char* home = getenv("HOME");
+      // Get XDG Icons Directory following XDG Base Directory Specification
+      String XdgIconsPath;
+      const char* xdgDataHome = getenv("XDG_DATA_HOME");
+      const char* home = getenv("HOME");
 
-    if (xdgDataHome && xdgDataHome[0] != '\0') {
-      XdgIconsPath = String::joinWith("", xdgDataHome, "/icons");
-    } else if (home && home[0] != '\0') {
-      XdgIconsPath = String::joinWith("", home, "/.local/share/icons");
-    } 
+      if (xdgDataHome && xdgDataHome[0] != '\0') {
+        XdgIconsPath = String::joinWith("", xdgDataHome, "/icons");
+      } else if (home && home[0] != '\0') {
+        XdgIconsPath = String::joinWith("", home, "/.local/share/icons");
+      } 
 
-    // Install Icon if not Installed
-    if (!XdgIconsPath.empty()) {
-      if (File::isDirectory(XdgIconsPath)) {
-        String XdgIcon = String::joinWith("", XdgIconsPath, "/openstarbound.png"); //
+      // Install Icon if not Installed
+      if (!XdgIconsPath.empty() && File::isDirectory(XdgIconsPath)) {
+        const String XdgIcon = String::joinWith("", XdgIconsPath, "/openstarbound.png");
         if (!File::isFile(XdgIcon)) {
-          if (File::isFile(".icon/openstarbound.png")) {
-            File::copy(".icon/openstarbound.png", XdgIcon);
-            Logger::info("Application: Installed Icon to XDG Icons Directory");
-          }
+          File::copy(".icon/openstarbound.png", XdgIcon);
+          Logger::info("Application: Installed Icon to XDG Icons Directory");
         }
       }
     }
