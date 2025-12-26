@@ -332,8 +332,6 @@ public:
     SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_IDENTIFIER_STRING, "io.github.openstarbound.openstarbound");
     SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_URL_STRING, "https://github.com/OpenStarbound/OpenStarbound");
     SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_TYPE_STRING, "game");
-    SDL_SetHint(SDL_HINT_AUDIO_DEVICE_STREAM_NAME, "Audio");
-    SDL_SetHint(SDL_HINT_AUDIO_DEVICE_APP_ICON_NAME, "openstarbound");
 
     Logger::info("Application: Initializing SDL");
     if (!SDL_Init(0))
@@ -416,13 +414,13 @@ public:
 
       // Get XDG Icons Directory following XDG Base Directory Specification
       String XdgIconsPath;
-      const char* xdgDataHome = getenv("XDG_DATA_HOME");
-      const char* home = getenv("HOME");
+      const char* XdgDataHome = getenv("XDG_DATA_HOME");
+      const char* Home = getenv("HOME");
 
-      if (xdgDataHome && xdgDataHome[0] != '\0') {
-        XdgIconsPath = String::joinWith("", xdgDataHome, "/icons");
-      } else if (home && home[0] != '\0') {
-        XdgIconsPath = String::joinWith("", home, "/.local/share/icons");
+      if (XdgDataHome && XdgDataHome[0] != '\0') {
+        XdgIconsPath = String::joinWith("", XdgDataHome, "/icons");
+      } else if (Home && Home[0] != '\0') {
+        XdgIconsPath = String::joinWith("", Home, "/.local/share/icons");
       } 
 
       // Install Icon if not Installed
@@ -434,6 +432,9 @@ public:
         }
       }
     }
+    
+    SDL_SetHint(SDL_HINT_AUDIO_DEVICE_APP_ICON_NAME, "openstarbound");
+    SDL_SetHint(SDL_HINT_AUDIO_DEVICE_STREAM_NAME, "Audio");
 #endif
 
 #if defined(__APPLE__)
