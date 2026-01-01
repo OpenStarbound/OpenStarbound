@@ -765,8 +765,10 @@ private:
 
         SDL_SetWindowBordered(window, true);
         SDL_SetWindowSize(window, windowSize[0], windowSize[1]);
-        SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
-
+        if (!SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED)) {
+          Logger::error("Failed to set window position: {}", SDL_GetError());
+        }
+        
         parent->m_windowMode = WindowMode::Normal;
         parent->m_windowSize = windowSize;
       }
@@ -798,7 +800,9 @@ private:
         if (auto displayMode = SDL_GetDesktopDisplayMode(SDL_GetDisplayForWindow(parent->m_sdlWindow))) {
           parent->m_windowSize = {(unsigned)displayMode->w, (unsigned)displayMode->h};
 
-          SDL_SetWindowPosition(parent->m_sdlWindow, 0, 0);
+          if (!SDL_SetWindowPosition(parent->m_sdlWindow, 0, 0)) {
+            Logger::error("Failed to set window position: {}", SDL_GetError());
+          }
           SDL_SetWindowSize(parent->m_sdlWindow, parent->m_windowSize[0], parent->m_windowSize[1]);
           parent->m_renderer->setScreenSize(parent->m_windowSize);
           parent->m_application->windowChanged(parent->m_windowMode, parent->m_windowSize);
