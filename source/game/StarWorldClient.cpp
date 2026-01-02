@@ -2208,7 +2208,8 @@ void WorldClient::setProperty(String const& propertyName, Json const& property) 
 }
 
 bool WorldClient::playerCanReachEntity(EntityId entityId, bool preferInteractive) const {
-  return m_mainPlayer->isAdmin() || canReachEntity(m_mainPlayer->position(), m_mainPlayer->interactRadius(), entityId, preferInteractive);
+  return (entityId == m_mainPlayer->entityId()) || m_mainPlayer->isAdmin()
+    || canReachEntity(m_mainPlayer->position(), m_mainPlayer->interactRadius(), entityId, preferInteractive);
 }
 
 void WorldClient::disconnectAllWires(Vec2I wireEntityPosition, WireNode const& node) {
