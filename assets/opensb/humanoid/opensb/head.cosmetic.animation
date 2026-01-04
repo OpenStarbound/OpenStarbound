@@ -1,7 +1,7 @@
 {
 	"globalTagDefaults" : {
 		"headCosmetic<slot>Frameset" : "",
-		"headCosmetic<slot>Directives" : ""
+		"cosmetic<slot>Directives" : ""
 	},
 
 	"animatedParts" : {
@@ -11,7 +11,7 @@
 					"centered": true,
 					"zLevel": 14.0,
 					"anchorPart": "headCosmetic",
-					"processingDirectives" : "<headCosmetic<slot>Directives>"
+					"processingDirectives" : "<cosmetic<slot>Directives>"
 				},
 				"partStates": {
 					"body": {
