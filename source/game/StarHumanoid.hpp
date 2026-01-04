@@ -413,6 +413,17 @@ private:
   String m_facialHairFrameset;
   String m_facialMaskFrameset;
 
+  String m_headFlippedFrameset;
+  String m_bodyFlippedFrameset;
+  String m_bodyMaskFlippedFrameset;
+  String m_bodyHeadMaskFlippedFrameset;
+  String m_backArmFlippedFrameset;
+  String m_frontArmFlippedFrameset;
+  String m_emoteFlippedFrameset;
+  String m_hairFlippedFrameset;
+  String m_facialHairFlippedFrameset;
+  String m_facialMaskFlippedFrameset;
+
   bool m_bodyFullbright;
 
   String m_vaporTrailFrameset;
