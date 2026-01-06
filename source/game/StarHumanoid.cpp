@@ -1299,7 +1299,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
           image = strf("{}:{}.{}{}", legs->frameset, frameBase(m_state), bodyStateSeq, prefix);
         auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, {});
         drawable.imagePart().addDirectives(legs->directives, true);
-        addDrawable(std::move(drawable), legs->directives);
+        addDrawable(std::move(drawable), legs->fullbright);
       } else {
         auto* chest = wearable.ptr<WornChest>();
         if (chest && !chest->frameset.empty()) {
