@@ -549,6 +549,7 @@ void Humanoid::setWearableFromHead(uint8_t slot, HeadArmor const& head, Gender g
   current.makeType(current.typeIndexOf<WornHead>());
   auto& wornHead = current.get<WornHead>();
   wornHead.directives = head.directives(m_facingDirection == Direction::Left);
+  wornHead.fullbright = head.fullbright();
   wornHead.frameset = head.frameset(gender);
   wornHead.maskDirectives = head.maskDirectives();
   wornHead.animationTags.clear();
@@ -573,6 +574,7 @@ void Humanoid::setWearableFromChest(uint8_t slot, ChestArmor const& chest, Gende
   current.makeType(current.typeIndexOf<WornChest>());
   auto& wornChest = current.get<WornChest>();
   wornChest.directives = chest.directives(m_facingDirection == Direction::Left);
+  wornChest.fullbright = chest.fullbright();
   wornChest.frameset = chest.bodyFrameset(gender);
   wornChest.backSleeveFrameset = chest.backSleeveFrameset(gender);
   wornChest.frontSleeveFrameset = chest.frontSleeveFrameset(gender);
@@ -600,6 +602,7 @@ void Humanoid::setWearableFromLegs(uint8_t slot, LegsArmor const& legs, Gender g
   current.makeType(current.typeIndexOf<WornLegs>());
   auto& wornLegs = current.get<WornLegs>();
   wornLegs.directives = legs.directives(m_facingDirection == Direction::Left);
+  wornLegs.fullbright = legs.fullbright();
   wornLegs.frameset = legs.frameset(gender);
   wornLegs.animationTags.clear();
   wornLegs.animationTags.set(strf("legsCosmetic{}Frameset", slot+1), wornLegs.frameset);
@@ -623,6 +626,7 @@ void Humanoid::setWearableFromBack(uint8_t slot, BackArmor const& back, Gender g
   current.makeType(current.typeIndexOf<WornBack>());
   auto& wornBack = current.get<WornBack>();
   wornBack.directives = back.directives(m_facingDirection == Direction::Left);
+  wornBack.fullbright = back.fullbright();
   wornBack.frameset = back.frameset(gender);
   wornBack.rotateWithHead = back.instanceValue("rotateWithHead", false).optBool().value();
   wornBack.animationTags.clear();
@@ -1144,7 +1148,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
 
         auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, Vec2F());
         drawable.imagePart().addDirectives(back.directives, true);
-        Drawable& applied = addDrawable(std::move(drawable));
+        Drawable& applied = addDrawable(std::move(drawable), back.fullbright);
         if (back.rotateWithHead)
           applyHeadRotation(applied);
       }
@@ -1195,7 +1199,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
             drawable.imagePart().addDirectives(chest->directives, true);
             if (dance.isValid())
               drawable.rotate(danceStep->backArmRotation);
-            addDrawable(std::move(drawable));
+            addDrawable(std::move(drawable), chest->fullbright);
           }
         }
       }
@@ -1295,7 +1299,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
           image = strf("{}:{}.{}{}", legs->frameset, frameBase(m_state), bodyStateSeq, prefix);
         auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, {});
         drawable.imagePart().addDirectives(legs->directives, true);
-        addDrawable(std::move(drawable));
+        addDrawable(std::move(drawable), legs->directives);
       } else {
         auto* chest = wearable.ptr<WornChest>();
         if (chest && !chest->frameset.empty()) {
@@ -1318,7 +1322,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
             position[1] += bobYOffset;
           auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, position);
           drawable.imagePart().addDirectives(chest->directives, true);
-          addDrawable(std::move(drawable));
+          addDrawable(std::move(drawable), chest->fullbright);
         }
       }
     }
@@ -1345,7 +1349,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
         String image = strf("{}:normal{}", head.frameset, head.directives.prefix());
         auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, headPosition);
         drawable.imagePart().addDirectives(head.directives, true);
-        addHeadDrawable(std::move(drawable));
+        addHeadDrawable(std::move(drawable), head.fullbright);
       }
     }
 
@@ -1387,7 +1391,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
         auto chest = fashion.wearables[size_t(i) - 1].ptr<WornChest>();
         if (chest && !chest->frontSleeveFrameset.empty()) {
           if (holdingItem) {
-            addDrawable(frontArmDrawable(chest->frontSleeveFrameset, chest->directives));
+            addDrawable(frontArmDrawable(chest->frontSleeveFrameset, chest->directives), chest->fullbright);
           } else {
             String image;
             Vec2F position;
@@ -1404,7 +1408,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
             drawable.imagePart().addDirectives(chest->directives, true);
             if (dance.isValid())
               drawable.rotate(danceStep->frontArmRotation);
-            addDrawable(drawable);
+            addDrawable(drawable, chest->fullbright);
           }
         }
       }
