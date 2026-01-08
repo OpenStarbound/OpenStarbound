@@ -120,7 +120,7 @@ public:
   virtual void set(List<RenderPrimitive>& primitives) = 0;
 };
 
-typedef Variant<float, int, Vec2F, Vec3F, Vec4F, bool> RenderEffectParameter;
+typedef Variant<float, int, Vec4F, Vec3F, Vec2F, bool> RenderEffectParameter;
 
 class Renderer {
 public:
