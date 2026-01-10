@@ -303,7 +303,7 @@ void ModUploader::uploadToSteam() {
     }
 
     if (m_steamItemCreateResult->first.m_eResult != k_EResultOK) {
-      QMessageBox::critical(this, "Error", strf("Error creating new Steam UGC Item ({})", m_steamItemCreateResult->first.m_eResult).c_str());
+      QMessageBox::critical(this, "Error", strf("Error creating new Steam UGC Item ({})", (int) m_steamItemCreateResult->first.m_eResult).c_str());
       return;
     }
 
@@ -347,7 +347,9 @@ void ModUploader::uploadToSteam() {
   for (int i = 0; i < tagList.size(); ++i) {
     tagStrings[i] = tagList[i].utf8Ptr();
   }
-  SteamUGC()->SetItemTags(updateHandle, &SteamParamStringArray_t{tagStrings, (int32_t)tagList.size()});
+
+  SteamParamStringArray_t itemTags = {tagStrings, (int32_t)tagList.size()};
+  SteamUGC()->SetItemTags(updateHandle, &itemTags);
 
   CCallResult<ModUploader, SubmitItemUpdateResult_t> callResultSubmit;
   callResultSubmit.Set(SteamUGC()->SubmitItemUpdate(updateHandle, nullptr),
@@ -378,7 +380,7 @@ void ModUploader::uploadToSteam() {
   }
 
   if (m_steamItemSubmitResult->first.m_eResult != k_EResultOK) {
-    QMessageBox::critical(this, "Error", strf("Error submitting changes to the Steam UGC item ({})", m_steamItemSubmitResult->first.m_eResult).c_str());
+    QMessageBox::critical(this, "Error", strf("Error submitting changes to the Steam UGC item ({})", (int) m_steamItemSubmitResult->first.m_eResult).c_str());
     return;
   }
 }
