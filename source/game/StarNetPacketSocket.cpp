@@ -455,14 +455,19 @@ bool P2PPacketSocket::writeData() {
   bool workDone = false;
 
   if (m_socket) {
-    while (!m_outputMessages.empty()) {
-      if (m_socket->sendMessage(m_outputMessages.first())) {
-        m_outgoingStats.mix(m_outputMessages.first().size());
-        m_outputMessages.removeFirst();
-        workDone = true;
-      } else {
-        break;
+    try {
+      while (!m_outputMessages.empty()) {
+        if (m_socket->sendMessage(m_outputMessages.first())) {
+          m_outgoingStats.mix(m_outputMessages.first().size());
+          m_outputMessages.removeFirst();
+          workDone = true;
+        } else {
+          break;
+        }
       }
+    } catch (StarException const& e) {
+      Logger::warn("Exception in P2PPacketSocket::writeData, closing: {}", outputException(e, false));
+      m_socket.reset();
     }
   }
 
@@ -473,12 +478,17 @@ bool P2PPacketSocket::readData() {
   bool workDone = false;
 
   if (m_socket) {
-    while (auto message = m_socket->receiveMessage()) {
-      m_incomingStats.mix(message->size());
-      m_inputMessages.append(compressionStreamEnabled()
-        ? m_decompressionStream.decompress(*message)
-        : *message);
-      workDone = true;
+    try {
+      while (auto message = m_socket->receiveMessage()) {
+        m_incomingStats.mix(message->size());
+        m_inputMessages.append(compressionStreamEnabled()
+          ? m_decompressionStream.decompress(*message)
+          : *message);
+        workDone = true;
+      }
+    } catch (StarException const& e) {
+      Logger::warn("Exception in P2PPacketSocket::readData, closing: {}", outputException(e, false));
+      m_socket.reset();
     }
   }
 

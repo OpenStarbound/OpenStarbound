@@ -332,8 +332,7 @@ public:
     SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_IDENTIFIER_STRING, "io.github.openstarbound.openstarbound");
     SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_URL_STRING, "https://github.com/OpenStarbound/OpenStarbound");
     SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_TYPE_STRING, "game");
-    SDL_SetHint(SDL_HINT_AUDIO_DEVICE_STREAM_NAME, "Audio");  
-	  
+
     Logger::info("Application: Initializing SDL");
     if (!SDL_Init(0))
       throw ApplicationException(strf("Couldn't initialize SDL: {}", SDL_GetError()));
@@ -350,6 +349,10 @@ public:
     } catch (std::exception const& e) {
       throw ApplicationException("Application threw exception during startup", e);
     }
+
+#ifdef STAR_SYSTEM_LINUX
+    SDL_SetHint(SDL_HINT_VIDEO_WAYLAND_SCALE_TO_DISPLAY, "1");
+#endif
     
     Logger::info("Application: Initializing SDL Video");
     if (!SDL_InitSubSystem(SDL_INIT_VIDEO))
@@ -374,20 +377,70 @@ public:
       Logger::info("Application: No platform services available");
 
     Logger::info("Application: Creating SDL window");
-    m_sdlWindow = SDL_CreateWindow(m_windowTitle.utf8Ptr(), m_windowSize[0], m_windowSize[1], SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+    m_sdlWindow = SDL_CreateWindow(m_windowTitle.utf8Ptr(), m_windowSize[0], m_windowSize[1], SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY);
     if (!m_sdlWindow)
       throw ApplicationException::format("Application: Could not create SDL Window: {}", SDL_GetError());
 
 #ifdef STAR_SYSTEM_LINUX
-    SDL_Surface* iconSurface = SDL_LoadBMP(".icon/starbound.bmp");
-    if (iconSurface) {
-        SDL_SetWindowIcon(m_sdlWindow, iconSurface);
-        SDL_DestroySurface(iconSurface);
-    } else {
-        Logger::warn("Could not load icon: {}", SDL_GetError());
+    if (File::isFile(".icon/openstarbound.png")) {
+      auto device = File::open(".icon/openstarbound.png", IOMode::Read);
+      if (device && Image::isPng(device)) {
+        Image img = Image::readPng(device);
+
+        Image conv = img.convert(PixelFormat::RGBA32);
+
+        Image flipped = processImageOperations(
+          List<ImageOperation>{ FlipImageOperation{ FlipImageOperation::Mode::FlipY } },
+          conv
+        );
+
+        SDL_PixelFormat sdlFmt = static_cast<SDL_PixelFormat>(SDL_PIXELFORMAT_ABGR8888);
+
+        int w = static_cast<int>(flipped.width());
+        int h = static_cast<int>(flipped.height());
+        int pitch = static_cast<int>(flipped.bytesPerPixel() * flipped.width());
+
+        SDL_Surface* iconSurface = SDL_CreateSurfaceFrom(
+          w,
+          h,
+          sdlFmt,
+          (void*)flipped.data(),
+          pitch
+        );
+
+        if (iconSurface) {
+          SDL_SetWindowIcon(m_sdlWindow, iconSurface);
+          SDL_DestroySurface(iconSurface);
+        } else {
+          Logger::warn("Could not create SDL surface for icon '{}': {}", ".icon/openstarbound.png", SDL_GetError());
+        }
+      }
+
+      // Get XDG Icons Directory following XDG Base Directory Specification
+      String XdgIconsPath;
+      const char* XdgDataHome = getenv("XDG_DATA_HOME");
+      const char* Home = getenv("HOME");
+
+      if (XdgDataHome && XdgDataHome[0] != '\0') {
+        XdgIconsPath = String::joinWith("", XdgDataHome, "/icons");
+      } else if (Home && Home[0] != '\0') {
+        XdgIconsPath = String::joinWith("", Home, "/.local/share/icons");
+      } 
+
+      // Install Icon if not Installed
+      if (!XdgIconsPath.empty() && File::isDirectory(XdgIconsPath)) {
+        const String XdgIcon = String::joinWith("", XdgIconsPath, "/openstarbound.png");
+        if (!File::isFile(XdgIcon)) {
+          File::copy(".icon/openstarbound.png", XdgIcon);
+          Logger::info("Application: Installed Icon to XDG Icons Directory");
+        }
+      }
     }
+    
+    SDL_SetHint(SDL_HINT_AUDIO_DEVICE_APP_ICON_NAME, "openstarbound");
+    SDL_SetHint(SDL_HINT_AUDIO_DEVICE_STREAM_NAME, "Audio");
 #endif
-	  
+
 #if defined(__APPLE__)
     // GL 3.2 Core + GLSL 150
     const char* glsl_version = "#version 150";
@@ -408,7 +461,7 @@ public:
     m_sdlGlContext = SDL_GL_CreateContext(m_sdlWindow);
     if (!m_sdlGlContext)
       throw ApplicationException::format("Application: Could not create OpenGL context: {}", SDL_GetError());
-    
+
     SDL_ShowWindow(m_sdlWindow);
     SDL_RaiseWindow(m_sdlWindow);
 
@@ -480,7 +533,7 @@ public:
 
     SDL_Quit();
   }
-  
+
   typedef std::function<void(uint8_t*, int)> AudioCallback;
   bool openAudioInputDevice(SDL_AudioDeviceID deviceId, int freq, int channels, AudioCallback callback) {
     closeAudioInputDevice();
@@ -550,7 +603,7 @@ public:
         else
           SDL_HideCursor();
 
-        
+
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL3_NewFrame();
 
@@ -682,7 +735,7 @@ private:
               SDL_SetWindowBordered(parent->m_sdlWindow, true);
             else if (parent->m_windowMode == WindowMode::Maximized)
               SDL_RestoreWindow(parent->m_sdlWindow);
-            
+
             parent->m_windowMode = WindowMode::Fullscreen;
             SDL_SetWindowFullscreen(parent->m_sdlWindow, SDL_WINDOW_FULLSCREEN);
           } else {
@@ -1005,7 +1058,7 @@ private:
       // Fix fully transparent pixels inverting the underlying display pixel on Windows (allowing this could be made configurable per cursor later!)
       newImage->forEachPixel([](unsigned /*x*/, unsigned /*y*/, Vec4B& pixel) { if (!pixel[3]) pixel[0] = pixel[1] = pixel[2] = 0; });
       entry->image = std::move(newImage);
-      
+
 
       auto size = entry->image->size();
       SDL_PixelFormat pixelFormat;
