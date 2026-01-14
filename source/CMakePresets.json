@@ -84,6 +84,18 @@
     },
     {
       "inherits": "linux-release",
+      "name": "linux-arm-release",
+      "displayName": "Linux ARM",
+      "binaryDir": "${sourceParentDir}/build/linux-arm-release",
+      "architecture": { "value": "arm64", "strategy": "external" },
+      "cacheVariables": {
+        "VCPKG_TARGET_TRIPLET": "arm64-linux-mixed",
+        "STAR_ENABLE_STEAM_INTEGRATION": false,
+        "STAR_ENABLE_DISCORD_INTEGRATION": false
+      }
+    },
+    {
+      "inherits": "linux-release",
       "name": "linux-release-clang",
       "displayName": "Linux Clang x64",
       "binaryDir": "${sourceParentDir}/build/linux-release-clang",
@@ -92,6 +104,18 @@
         "CMAKE_C_COMPILER": "clang",
         "CMAKE_CXX_COMPILER": "clang++",
         "VCPKG_TARGET_TRIPLET": "x64-linux-mixed-clang",
+        "STAR_USE_JEMALLOC": true
+      }
+    },
+    {
+      "inherits": "linux-arm-release",
+      "name": "linux-arm-release-clang",
+      "displayName": "Linux Clang ARM",
+      "binaryDir": "${sourceParentDir}/build/linux-arm-release-clang",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++",
+        "VCPKG_TARGET_TRIPLET": "arm64-linux-mixed-clang",
         "STAR_USE_JEMALLOC": true
       }
     },
@@ -151,8 +175,16 @@
       "configurePreset": "linux-release"
     },
     {
+      "name": "linux-arm-release",
+      "configurePreset": "linux-arm-release"
+    },
+    {
       "name": "linux-release-clang",
       "configurePreset": "linux-release-clang"
+    },
+    {
+      "name": "linux-arm-release-clang",
+      "configurePreset": "linux-arm-release-clang"
     },
     {
       "name": "macos-release",
@@ -180,6 +212,11 @@
       "inherits": "base",
       "name": "linux-release",
       "configurePreset": "linux-release"
+    },
+    {
+      "inherits": "base",
+      "name": "linux-arm-release",
+      "configurePreset": "linux-arm-release"
     },
     {
       "inherits": "base",
