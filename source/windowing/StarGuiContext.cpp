@@ -91,7 +91,8 @@ Vec2U GuiContext::windowInterfaceSize() const {
 }
 
 float GuiContext::interfaceScale() const {
-  return m_interfaceScale;
+  float DisplayScale {std::max(0.5f, std::floor(getDisplayScale() * 2.0f) / 2.0f)};
+  return m_interfaceScale * DisplayScale;
 }
 
 void GuiContext::setInterfaceScale(float interfaceScale) {
@@ -463,6 +464,10 @@ bool GuiContext::setClipboardImage(Image const& image, ByteArray* png, String co
 
 bool GuiContext::setClipboardFile(String const& path) {
   return m_applicationController->setClipboardFile(path);
+}
+
+float GuiContext::getDisplayScale() const {
+  return m_applicationController->getDisplayScale();
 }
 
 void GuiContext::cleanup() {
