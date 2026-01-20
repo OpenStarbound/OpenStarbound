@@ -48,7 +48,7 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
   callbacks.registerCallbackWithSignature<float, String>("projectileGravityMultiplier", bind(RootCallbacks::projectileGravityMultiplier, root, _1));
   callbacks.registerCallbackWithSignature<Json, String>("projectileConfig", bind(RootCallbacks::projectileConfig, root, _1));
   callbacks.registerCallbackWithSignature<JsonArray, String>("recipesForItem", bind(RootCallbacks::recipesForItem, root, _1));
-  callbacks.registerCallbackWithSignature<JsonArray>("allRecipes", bind(RootCallbacks::allRecipes, root));
+  callbacks.registerCallbackWithSignature<JsonArray, Maybe<StringSet>>("allRecipes", bind(RootCallbacks::allRecipes, root, _1));
   callbacks.registerCallbackWithSignature<String, String>("itemType", bind(RootCallbacks::itemType, root, _1));
   callbacks.registerCallbackWithSignature<Json, String>("itemTags", bind(RootCallbacks::itemTags, root, _1));
   callbacks.registerCallbackWithSignature<bool, String, String>("itemHasTag", bind(RootCallbacks::itemHasTag, root, _1, _2));
@@ -384,8 +384,13 @@ JsonArray LuaBindings::RootCallbacks::recipesForItem(Root* root, String const& a
   return result;
 }
 
-JsonArray LuaBindings::RootCallbacks::allRecipes(Root* root) {
-  auto& recipes = root->itemDatabase()->allRecipes();
+JsonArray LuaBindings::RootCallbacks::allRecipes(Root* root, Maybe<StringSet> filter) {
+  HashSet<ItemRecipe> recipes;
+  if (filter.isValid())
+    recipes = root->itemDatabase()->allRecipes(filter.value());
+  else
+    recipes = root->itemDatabase()->allRecipes();
+
   JsonArray result;
   result.reserve(recipes.size());
   for (auto& recipe : recipes)
