@@ -952,6 +952,13 @@ private:
         else
           m_windowMode = WindowMode::Normal;
 
+        if (strcmp(m_videoDriver, "wayland") == 0 || strcmp(m_videoDriver, "cocoa") == 0) {
+          if (m_windowMode == WindowMode::Fullscreen) {
+            m_displayScaleMouse = 1.0f;
+          } else {
+            m_displayScaleMouse = m_displayScale; 
+          }
+        } 
         m_application->windowChanged(m_windowMode, m_windowSize);
       } else if (event.type == SDL_EVENT_WINDOW_RESIZED || event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) {
         m_windowSize = Vec2U(event.window.data1, event.window.data2);
@@ -960,7 +967,11 @@ private:
       } else if (event.type == SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED) {
         m_displayScale = SDL_GetWindowDisplayScale(m_sdlWindow);
         if (strcmp(m_videoDriver, "wayland") == 0 || strcmp(m_videoDriver, "cocoa") == 0) {
-          m_displayScaleMouse = m_displayScale; 
+          if (m_windowMode == WindowMode::Fullscreen) {
+            m_displayScaleMouse = 1.0f;
+          } else {
+            m_displayScaleMouse = m_displayScale; 
+          }
         } 
       }
       else if (event.type == SDL_EVENT_KEY_DOWN && (!io.WantCaptureKeyboard || !io.WantTextInput)) {
