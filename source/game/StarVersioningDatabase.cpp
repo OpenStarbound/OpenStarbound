@@ -19,20 +19,40 @@ namespace Star {
 char const* const VersionedJson::Magic = "SBVJ01";
 size_t const VersionedJson::MagicStringSize = 6;
 
+VersionNumber const VersionedJson::SubVersioning = 1;
+
 VersionedJson VersionedJson::readFile(String const& filename) {
   DataStreamIODevice ds(File::open(filename, IOMode::Read));
 
   if (ds.readBytes(MagicStringSize) != ByteArray(Magic, MagicStringSize))
     throw IOException(strf("Wrong magic bytes at start of versioned json file, expected '{}'", Magic));
+  auto versionedJson = ds.read<VersionedJson>();
+  readSubVersioning(ds, versionedJson);
 
-  return ds.read<VersionedJson>();
+  return versionedJson;
 }
 
 void VersionedJson::writeFile(VersionedJson const& versionedJson, String const& filename) {
   DataStreamBuffer ds;
   ds.writeData(Magic, MagicStringSize);
   ds.write(versionedJson);
+  writeSubVersioning(ds, versionedJson);
   File::overwriteFileWithRename(ds.takeData(), filename);
+}
+
+void VersionedJson::writeSubVersioning(DataStream& ds, VersionedJson const& versionedJson) {
+  ds.write(VersionedJson::SubVersioning);
+  ds.write(versionedJson.subVersions);
+}
+void VersionedJson::readSubVersioning(DataStream& ds, VersionedJson& versionedJson) {
+  VersionNumber extraVersioning = 0;
+  try {
+    ds.read(extraVersioning);
+  } catch (...) {
+  }
+  if (extraVersioning == 1) {
+    ds.read(versionedJson.subVersions);
+  }
 }
 
 Json VersionedJson::toJson() const {
@@ -70,6 +90,7 @@ void VersionedJson::expectIdentifier(String const& expectedIdentifier) const {
     throw VersionedJsonException::format("VersionedJson identifier mismatch, expected '{}' but got '{}'", expectedIdentifier, identifier);
 }
 
+
 DataStream& operator>>(DataStream& ds, VersionedJson& versionedJson) {
   ds.read(versionedJson.identifier);
   // This is a holdover from when the verison number was optional in
@@ -78,26 +99,19 @@ DataStream& operator>>(DataStream& ds, VersionedJson& versionedJson) {
   versionedJson.version = ds.read<Maybe<VersionNumber>>().value();
   ds.read(versionedJson.content);
 
+  // this is a holdover from when sub versions were smuggled into content without realizing this caused issues, can potentially be removed later
   if (versionedJson.content.isType(Json::Type::Object) && versionedJson.content.contains("subVersions")) {
     for (auto const& p : versionedJson.content.getObject("subVersions", JsonObject()))
       versionedJson.subVersions[p.first] = p.second.toUInt();
     versionedJson.content = versionedJson.content.eraseKey("subVersions");
   }
-
   return ds;
 }
 
 DataStream& operator<<(DataStream& ds, VersionedJson const& versionedJson) {
-  JsonObject subVersionsOut;
-  for (auto const& p : versionedJson.subVersions)
-    subVersionsOut.set(p.first, p.second);
-  Json contentOut = versionedJson.content;
-  if (contentOut.isType(Json::Type::Object)) // This does mean sub versions are only preserved on object type json, however, I think the only things that ever get written to binary are object type
-     contentOut = contentOut.set("subVersions", subVersionsOut);
-
   ds.write(versionedJson.identifier);
   ds.write(Maybe<VersionNumber>(versionedJson.version));
-  ds.write(contentOut);
+  ds.write(versionedJson.content);
   return ds;
 }
 
