@@ -42,7 +42,12 @@ void VersionedJson::writeFile(VersionedJson const& versionedJson, String const& 
 
 void VersionedJson::writeSubVersioning(DataStream& ds, VersionedJson const& versionedJson) {
   ds.write(VersionedJson::SubVersioning);
-  ds.write(versionedJson.subVersions);
+  JsonObject subVersionsOut;
+  for (auto const& p : versionedJson.subVersions)
+    subVersionsOut.set(p.first, p.second);
+  ds.write(JsonObject{
+    {"subVersions", subVersionsOut}
+  });
 }
 void VersionedJson::readSubVersioning(DataStream& ds, VersionedJson& versionedJson) {
   VersionNumber extraVersioning = 0;
@@ -51,7 +56,9 @@ void VersionedJson::readSubVersioning(DataStream& ds, VersionedJson& versionedJs
   } catch (...) {
   }
   if (extraVersioning == 1) {
-    ds.read(versionedJson.subVersions);
+    JsonObject source = ds.read<JsonObject>();
+    for (auto const& p : source.get("subVersions").toObject())
+      versionedJson.subVersions[p.first] = p.second.toUInt();
   }
 }
 
