@@ -119,6 +119,7 @@ public:
 
   bool shouldExpire();
   void setExpiryTime(float expiryTime);
+  float expiryTime();
 
   void update(float dt);
 
