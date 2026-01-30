@@ -349,6 +349,10 @@ public:
     } catch (std::exception const& e) {
       throw ApplicationException("Application threw exception during startup", e);
     }
+
+#ifdef STAR_SYSTEM_LINUX
+    SDL_SetHint(SDL_HINT_VIDEO_WAYLAND_SCALE_TO_DISPLAY, "1");
+#endif
     
     Logger::info("Application: Initializing SDL Video");
     if (!SDL_InitSubSystem(SDL_INIT_VIDEO))
@@ -379,8 +383,8 @@ public:
     if (!m_sdlWindow)
       throw ApplicationException::format("Application: Could not create SDL Window: {}", SDL_GetError());
 
-    m_displayScale = SDL_GetWindowDisplayScale(m_sdlWindow);
-    if (strcmp(m_videoDriver, "wayland") == 0 || strcmp(m_videoDriver, "cocoa") == 0) {
+    m_displayScale = SDL_GetDisplayContentScale(SDL_GetDisplayForWindow(m_sdlWindow));
+    if (strcmp(m_videoDriver, "cocoa") == 0) {
       m_displayScaleMouse = m_displayScale;
     }
     
@@ -952,7 +956,7 @@ private:
         else
           m_windowMode = WindowMode::Normal;
 
-        if (strcmp(m_videoDriver, "wayland") == 0 || strcmp(m_videoDriver, "cocoa") == 0) {
+        if (strcmp(m_videoDriver, "cocoa") == 0) {
           if (m_windowMode == WindowMode::Fullscreen) {
             m_displayScaleMouse = 1.0f;
           } else {
@@ -965,8 +969,8 @@ private:
         m_renderer->setScreenSize(m_windowSize);
         m_application->windowChanged(m_windowMode, m_windowSize);
       } else if (event.type == SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED) {
-        m_displayScale = SDL_GetWindowDisplayScale(m_sdlWindow);
-        if (strcmp(m_videoDriver, "wayland") == 0 || strcmp(m_videoDriver, "cocoa") == 0) {
+        m_displayScale = SDL_GetDisplayContentScale(SDL_GetDisplayForWindow(m_sdlWindow));
+        if (strcmp(m_videoDriver, "cocoa") == 0) {
           if (m_windowMode == WindowMode::Fullscreen) {
             m_displayScaleMouse = 1.0f;
           } else {
