@@ -50,6 +50,8 @@ void VersionedJson::writeSubVersioning(DataStream& ds, VersionedJson const& vers
   });
 }
 void VersionedJson::readSubVersioning(DataStream& ds, VersionedJson& versionedJson) {
+  if (ds.atEnd())
+    return;
   VersionNumber extraVersioning = 0;
   try {
     ds.read(extraVersioning);
