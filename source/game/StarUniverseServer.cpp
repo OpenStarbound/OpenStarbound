@@ -1189,13 +1189,17 @@ void UniverseServer::handleWorldMessages() {
     if (auto worldResult = triggerWorldCreation(worldId)) {
       auto& world = *worldResult;
 
-      if (world)
-        world->passMessages(std::move(it->second));
-      else
-        for (auto& message : it->second)
+      if (world){
+        if (world->isRunning()){
+          world->passMessages(std::move(it->second));
+          it = m_pendingWorldMessages.erase(it);
+        }
+      } else {
+        for (auto& message : it->second){
           message.promise.fail("Error creating world");
-
-      it = m_pendingWorldMessages.erase(it);
+        }
+        it = m_pendingWorldMessages.erase(it);
+      }
     } else
       ++it;
   }
@@ -1936,7 +1940,7 @@ WarpToWorld UniverseServer::resolveWarpAction(WarpAction warpAction, ConnectionI
       return WarpToWorld(toWorldId, spawnTarget);
     }
   }
-  
+
   if (auto toWorld = warpAction.ptr<WarpToWorld>()) {
     if (!toWorld->world)
       toWorldId = clientContext->playerWorldId();

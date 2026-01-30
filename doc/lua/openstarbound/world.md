@@ -50,7 +50,13 @@ The following additional world bindings are available only for scripts running o
 
 #### `void` world.setExpiryTime(`float` expiryTime)
 
-Sets the amount of time to persist a ephemeral world when it is inactive.
+Sets the amount of time to persist an ephemeral world when it is inactive.
+
+---
+
+#### `float` world.expiryTime()
+
+Returns the amount of time an ephemeral world persists when it is inactive.
 
 ---
 
