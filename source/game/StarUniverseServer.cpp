@@ -1189,15 +1189,14 @@ void UniverseServer::handleWorldMessages() {
     if (auto worldResult = triggerWorldCreation(worldId)) {
       auto& world = *worldResult;
 
-      if (world){
-        if (world->isRunning()){
+      if (world) {
+        if (world->isRunning()) {
           world->passMessages(std::move(it->second));
           it = m_pendingWorldMessages.erase(it);
         }
       } else {
-        for (auto& message : it->second){
+        for (auto& message : it->second)
           message.promise.fail("Error creating world");
-        }
         it = m_pendingWorldMessages.erase(it);
       }
     } else
