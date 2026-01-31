@@ -362,7 +362,10 @@ void CelestialMasterDatabase::updateParameters(CelestialCoordinate const& coordi
   if (updated && m_database.isOpen()) {
     auto versioningDatabase = Root::singleton().versioningDatabase();
     auto versionedChunk = versioningDatabase->makeCurrentVersionedJson("CelestialChunk", chunk.toJson());
-    m_database.insert(DataStreamBuffer::serialize(chunkIndex), compressData(DataStreamBuffer::serialize<VersionedJson>(versionedChunk)));
+    DataStreamBuffer ds;
+    ds.write(versionedChunk);
+    VersionedJson::writeSubVersioning(ds, versionedChunk);
+    m_database.insert(DataStreamBuffer::serialize(chunkIndex), compressData(ds.data()));
 
     m_chunkCache.remove(chunkIndex);
   } else {
@@ -391,8 +394,10 @@ CelestialChunk const& CelestialMasterDatabase::getChunk(Vec2I const& chunkIndex,
           auto versionedChunk = DataStreamBuffer::deserialize<VersionedJson>(uncompressData(chunkData.take()));
           if (!versioningDatabase->versionedJsonCurrent(versionedChunk)) {
             versionedChunk = versioningDatabase->updateVersionedJson(versionedChunk);
-            m_database.insert(DataStreamBuffer::serialize(chunkIndex),
-                compressData(DataStreamBuffer::serialize<VersionedJson>(versionedChunk)));
+            DataStreamBuffer ds;
+            ds.write(versionedChunk);
+            VersionedJson::writeSubVersioning(ds, versionedChunk);
+            m_database.insert(DataStreamBuffer::serialize(chunkIndex), compressData(ds.data()));
           }
           return CelestialChunk(versionedChunk.content);
         }
@@ -406,8 +411,10 @@ CelestialChunk const& CelestialMasterDatabase::getChunk(Vec2I const& chunkIndex,
         producer();
       if (m_database.isOpen()) {
         auto versionedChunk = versioningDatabase->makeCurrentVersionedJson("CelestialChunk", newChunk.toJson());
-        m_database.insert(DataStreamBuffer::serialize(chunkIndex),
-            compressData(DataStreamBuffer::serialize<VersionedJson>(versionedChunk)));
+        DataStreamBuffer ds;
+        ds.write(versionedChunk);
+        VersionedJson::writeSubVersioning(ds, versionedChunk);
+        m_database.insert(DataStreamBuffer::serialize(chunkIndex), compressData(ds.data()));
       }
 
       return newChunk;
