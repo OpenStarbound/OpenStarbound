@@ -120,9 +120,11 @@ Sets a configuration value in `/storage/starbound.config` by path.
 
 ---
 
-#### `JsonArray` root.allRecipes()
+#### `JsonArray` root.allRecipes(`Maybe<StringSet>` filter)
 
 Returns all recipes.
+
+Optionally apply a filter for recipe groups.
 
 ---
 
