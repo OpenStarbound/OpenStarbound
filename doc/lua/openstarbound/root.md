@@ -163,3 +163,15 @@ Additional arguments **ext** are not used by the retail character creation, but 
 #### `JsonObject` root.effectConfig(`String` effect)
 
 Returns the config for the status effect.
+
+---
+
+#### `Json` root.materialConfig(`MaterialId` materialId)
+
+Returns a JSON object containing the `path` and base `config` for the specified material by its ID if it is a real material, or `nil` if it is a metamaterial or invalid.
+
+---
+
+#### `Json` root.modConfig(`ModId` modId)
+
+Returns a JSON object containing the `path` and base `config` for the specified mod by its ID if it is a real mod, or `nil` if it is a metamod or invalid.
