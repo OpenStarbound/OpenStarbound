@@ -310,6 +310,10 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
     return root->statusEffectDatabase()->uniqueEffectConfig(effect).toJson();
   });
 
+  callbacks.registerCallback("monsterConfig", [root](String const& typeName) -> Json {
+    return root->monsterDatabase()->monsterConfig(typeName);
+  });
+
   return callbacks;
 }
 

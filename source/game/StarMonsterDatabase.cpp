@@ -283,6 +283,10 @@ ColorReplaceMap MonsterDatabase::colorSwap(String const& setName, uint64_t seed)
   }
 }
 
+Json MonsterDatabase::monsterConfig(String const& typeName) const {
+  return m_monsterTypes.get(typeName).toJson();
+}
+
 Json MonsterDatabase::mergePartParameters(Json const& partParameterDescription, JsonArray const& parameters) {
   JsonObject mergedParameters;
 
@@ -522,4 +526,20 @@ pair<Json, Json> MonsterDatabase::chooseSkills(
   }
 }
 
+Json MonsterDatabase::MonsterType::toJson() const {
+  return JsonObject{
+    {"type", typeName},
+    {"shortdescription", shortDescription.value()},
+    {"description", description.value()},
+    {"categories", jsonFromStringList(categories)},
+    {"parts", jsonFromStringList(partTypes)},
+    {"animation", animationConfigPath},
+    {"colors", colors},
+    {"reversed", reversed},
+    {"dropPools", dropPools},
+    {"baseParameters", baseParameters},
+    {"partParameters", partParameterOverrides},
+    {"partParameterDescription", partParameterDescription}
+  };
+}
 }

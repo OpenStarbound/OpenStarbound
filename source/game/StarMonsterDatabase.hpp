@@ -117,6 +117,8 @@ public:
 
   ColorReplaceMap colorSwap(String const& setName, uint64_t seed) const;
 
+  Json monsterConfig(String const& typeName) const;
+
 private:
   struct MonsterType {
     String typeName;
@@ -141,6 +143,8 @@ private:
     // Description of all part parameters, and how they are combined and with
     // what defaults.
     Json partParameterDescription;
+
+    Json toJson() const;
   };
 
   struct MonsterPart {
