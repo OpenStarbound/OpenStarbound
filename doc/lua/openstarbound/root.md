@@ -163,3 +163,7 @@ Additional arguments **ext** are not used by the retail character creation, but 
 #### `JsonObject` root.effectConfig(`String` effect)
 
 Returns the config for the status effect.
+
+#### `Json` root.monsterConfig(`String` typeName)
+
+Returns the base config for the monsterType.
