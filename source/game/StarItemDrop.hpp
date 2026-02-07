@@ -136,6 +136,7 @@ private:
   GameTimer m_intangibleTimer;
   EpochTimer m_ageItemsTimer;
 
+  bool m_drawRarityBeam;
   bool m_overForeground;
   Maybe<List<Drawable>> m_drawables;
   

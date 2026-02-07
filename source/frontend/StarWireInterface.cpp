@@ -22,8 +22,6 @@ WirePane::WirePane(WorldClientPtr worldClient, PlayerPtr player, WorldPainterPtr
   GuiReader reader;
   reader.construct(assets->json("/interface/wires/wires.config:gui"), this);
 
-  m_inSize = Vec2F(context()->textureSize("/interface/wires/inbound.png")) / TilePixels;
-  m_outSize = Vec2F(context()->textureSize("/interface/wires/outbound.png")) / TilePixels;
   m_nodeSize = Vec2F(1.8f, 1.8f);
 
   JsonObject config = assets->json("/player.config:wireConfig").toObject();
@@ -108,8 +106,9 @@ void WirePane::renderImpl() {
     for (size_t i = 0; i < entity->nodeCount(WireDirection::Input); ++i) {
       Vec2I position = entity->tilePosition() + entity->nodePosition({WireDirection::Input, i});
       if (!m_worldClient->isTileProtected(position)) {
-        context()->drawQuad(entity->nodeIcon({WireDirection::Input, i}),
-            camera.worldToScreen(centerOfTile(position) - (m_inSize / 2.0f)),
+        auto icon = entity->nodeIcon({WireDirection::Input, i});
+        context()->drawQuad(icon,
+            camera.worldToScreen(centerOfTile(position) - ((Vec2F(context()->textureSize(icon)) / TilePixels) / 2.0f)),
             camera.pixelRatio(), white);
       }
     }
@@ -117,8 +116,9 @@ void WirePane::renderImpl() {
     for (size_t i = 0; i < entity->nodeCount(WireDirection::Output); ++i) {
       Vec2I position = entity->tilePosition() + entity->nodePosition({WireDirection::Output, i});
       if (!m_worldClient->isTileProtected(position)) {
-        context()->drawQuad(entity->nodeIcon({WireDirection::Output, i}),
-            camera.worldToScreen(centerOfTile(position) - (m_outSize / 2.0f)),
+        auto icon = entity->nodeIcon({WireDirection::Output, i});
+        context()->drawQuad(icon,
+            camera.worldToScreen(centerOfTile(position) - ((Vec2F(context()->textureSize(icon)) / TilePixels) / 2.0f)),
             camera.pixelRatio(), white);
       }
     }

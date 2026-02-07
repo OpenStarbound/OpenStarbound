@@ -120,9 +120,11 @@ Sets a configuration value in `/storage/starbound.config` by path.
 
 ---
 
-#### `JsonArray` root.allRecipes()
+#### `JsonArray` root.allRecipes(`Maybe<StringSet>` filter)
 
 Returns all recipes.
+
+Optionally apply a filter for recipe groups.
 
 ---
 
@@ -163,3 +165,7 @@ Additional arguments **ext** are not used by the retail character creation, but 
 #### `JsonObject` root.effectConfig(`String` effect)
 
 Returns the config for the status effect.
+
+#### `Json` root.monsterConfig(`String` typeName)
+
+Returns the base config for the monsterType.
