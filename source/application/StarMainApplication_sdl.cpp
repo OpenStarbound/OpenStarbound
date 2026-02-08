@@ -387,7 +387,7 @@ public:
       throw ApplicationException::format("Application: Could not create SDL Window: {}", SDL_GetError());
     
 #ifndef STAR_SYSTEM_MACOS
-    m_displayScale = SDL_GetDisplayContentScale(SDL_GetDisplayForWindow(m_sdlWindow));
+    m_displayScale = SDL_GetWindowDisplayScale(m_sdlWindow);
 #endif
     
 #ifdef STAR_SYSTEM_LINUX
@@ -971,7 +971,7 @@ private:
       }
 #ifndef STAR_SYSTEM_MACOS
       else if (event.type == SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED) {
-        m_displayScale = SDL_GetDisplayContentScale(SDL_GetDisplayForWindow(m_sdlWindow));
+        m_displayScale = SDL_GetWindowDisplayScale(m_sdlWindow);
       }
 #endif
       else if (event.type == SDL_EVENT_KEY_DOWN && (!io.WantCaptureKeyboard || !io.WantTextInput)) {
