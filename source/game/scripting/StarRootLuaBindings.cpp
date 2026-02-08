@@ -126,28 +126,24 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
       return root->itemDatabase()->itemFile(itemName);
     });
 
-  callbacks.registerCallback("materialConfig", [root](LuaEngine& engine, LuaValue materialNameOrId) -> Json {
+  callbacks.registerCallback("materialConfig", [root](Variant<MaterialId, String> const& materialNameOrId) -> Json {
       MaterialId materialId;
-      if (auto id = engine.luaMaybeTo<MaterialId>(materialNameOrId))
+      if (auto id = materialNameOrId.ptr<MaterialId>())
         materialId = *id;
-      else if (auto materialName = engine.luaMaybeTo<String>(materialNameOrId))
-          materialId = root->materialDatabase()->materialId(*materialName);
       else
-        return {};
+        materialId = root->materialDatabase()->materialId(materialNameOrId.get<String>());
       
       if (auto path = root->materialDatabase()->materialPath(materialId))
         return JsonObject{{"path", *path}, {"config", root->materialDatabase()->materialConfig(materialId).get()}};
       return {};
     });
 
-  callbacks.registerCallback("modConfig", [root](LuaEngine& engine, LuaValue modNameOrId) -> Json {
+  callbacks.registerCallback("modConfig", [root](Variant<ModId, String> const& modNameOrId) -> Json {
       ModId modId;
-      if (auto id = engine.luaMaybeTo<ModId>(modNameOrId))
+      if (auto id = modNameOrId.ptr<ModId>())
         modId = *id;
-      else if (auto modName = engine.luaMaybeTo<String>(modNameOrId))
-          modId = root->materialDatabase()->modId(*modName);
       else
-        return {};
+        modId = root->materialDatabase()->modId(modNameOrId.get<String>());
         
       if (auto path = root->materialDatabase()->modPath(modId))
         return JsonObject{{"path", *path}, {"config", root->materialDatabase()->modConfig(modId).get()}};
