@@ -17,12 +17,15 @@ STAR_EXCEPTION(VersioningDatabaseException, StarException);
 struct VersionedJson {
   static char const* const Magic;
   static size_t const MagicStringSize;
+  static VersionNumber const SubVersioning;
 
   // Writes and reads a binary file containing a versioned json with a magic
   // header marking it as a starbound versioned json file.  Writes using a
   // safe write/flush/swap.
   static VersionedJson readFile(String const& filename);
   static void writeFile(VersionedJson const& versionedJson, String const& filename);
+  static void writeSubVersioning(DataStream& ds, VersionedJson const& versionedJson);
+  static void readSubVersioning(DataStream& ds, VersionedJson& versionedJson);
 
   // Writes and reads a json containing a versioned json
   // This allows embedding versioned metadata within a file

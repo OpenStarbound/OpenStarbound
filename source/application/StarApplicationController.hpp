@@ -69,6 +69,8 @@ public:
   virtual float updateRate() const = 0;
   virtual float renderFps() const = 0;
 
+  virtual float getDisplayScale() const = 0;
+
   virtual StatisticsServicePtr statisticsService() const = 0;
   virtual P2PNetworkingServicePtr p2pNetworkingService() const = 0;
   virtual UserGeneratedContentServicePtr userGeneratedContentService() const = 0;

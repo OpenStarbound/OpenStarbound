@@ -75,10 +75,11 @@ bool NetElementGroup::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCom
   if (expectedSize == 0) {
     return false;
   } else if (expectedSize == 1) {
-    for (auto& element : m_elements)
+    for (auto& element : m_elements) {
       if (element.first->checkWithRules(rules)) {
         return element.first->writeNetDelta(ds, fromVersion, rules);
       }
+    }
   } else {
     bool deltaWritten = false;
     uint64_t i = 0;
@@ -101,6 +102,7 @@ bool NetElementGroup::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCom
       ds.writeVlqU(0);
     return deltaWritten;
   }
+  return false;
 }
 
 void NetElementGroup::readNetDelta(DataStream& ds, float interpolationTime, NetCompatibilityRules rules) {

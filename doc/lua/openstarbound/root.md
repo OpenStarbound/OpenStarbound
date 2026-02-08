@@ -120,9 +120,11 @@ Sets a configuration value in `/storage/starbound.config` by path.
 
 ---
 
-#### `JsonArray` root.allRecipes()
+#### `JsonArray` root.allRecipes(`Maybe<StringSet>` filter)
 
 Returns all recipes.
+
+Optionally apply a filter for recipe groups.
 
 ---
 
@@ -175,3 +177,9 @@ Returns a JSON object containing the `path` and base `config` for the specified 
 #### `Json` root.modConfig(`ModId` modId)
 
 Returns a JSON object containing the `path` and base `config` for the specified mod by its ID if it is a real mod, or `nil` if it is a metamod or invalid.
+
+---
+
+#### `Json` root.monsterConfig(`String` typeName)
+
+Returns the base config for the monsterType.
