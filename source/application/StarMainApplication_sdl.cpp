@@ -327,8 +327,7 @@ public:
         return false;
       });
 
-    SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_NAME_STRING, "Starbound");
-    SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_VERSION_STRING, OpenStarVersionString);
+    SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_NAME_STRING, "OpenStarbound");
     SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_IDENTIFIER_STRING, "io.github.openstarbound.openstarbound");
     SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_URL_STRING, "https://github.com/OpenStarbound/OpenStarbound");
     SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_TYPE_STRING, "game");
@@ -379,14 +378,17 @@ public:
       Logger::info("Application: No platform services available");
 
     Logger::info("Application: Creating SDL window");
+#ifdef STAR_SYSTEM_MACOS
+    m_sdlWindow = SDL_CreateWindow(m_windowTitle.utf8Ptr(), m_windowSize[0], m_windowSize[1], SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+#else
     m_sdlWindow = SDL_CreateWindow(m_windowTitle.utf8Ptr(), m_windowSize[0], m_windowSize[1], SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY);
+#endif
     if (!m_sdlWindow)
       throw ApplicationException::format("Application: Could not create SDL Window: {}", SDL_GetError());
-
-    m_displayScale = SDL_GetDisplayContentScale(SDL_GetDisplayForWindow(m_sdlWindow));
-    if (strcmp(m_videoDriver, "cocoa") == 0) {
-      m_displayScaleMouse = m_displayScale;
-    }
+    
+#ifndef STAR_SYSTEM_MACOS
+    m_displayScale = SDL_GetWindowDisplayScale(m_sdlWindow);
+#endif
     
 #ifdef STAR_SYSTEM_LINUX
     if (File::isFile(".icon/openstarbound.png")) {
@@ -840,7 +842,7 @@ private:
     }
 
     void setCursorPosition(Vec2I cursorPosition) override {
-      SDL_WarpMouseInWindow(parent->m_sdlWindow, cursorPosition[0] / parent->m_displayScaleMouse, cursorPosition[1] / parent->m_displayScaleMouse);
+      SDL_WarpMouseInWindow(parent->m_sdlWindow, cursorPosition[0], cursorPosition[1]);
     }
 
     void setCursorHardware(bool hardware) override {
@@ -961,28 +963,17 @@ private:
         else
           m_windowMode = WindowMode::Normal;
 
-        if (strcmp(m_videoDriver, "cocoa") == 0) {
-          if (m_windowMode == WindowMode::Fullscreen) {
-            m_displayScaleMouse = 1.0f;
-          } else {
-            m_displayScaleMouse = m_displayScale; 
-          }
-        } 
         m_application->windowChanged(m_windowMode, m_windowSize);
       } else if (event.type == SDL_EVENT_WINDOW_RESIZED || event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) {
         m_windowSize = Vec2U(event.window.data1, event.window.data2);
         m_renderer->setScreenSize(m_windowSize);
         m_application->windowChanged(m_windowMode, m_windowSize);
-      } else if (event.type == SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED) {
-        m_displayScale = SDL_GetDisplayContentScale(SDL_GetDisplayForWindow(m_sdlWindow));
-        if (strcmp(m_videoDriver, "cocoa") == 0) {
-          if (m_windowMode == WindowMode::Fullscreen) {
-            m_displayScaleMouse = 1.0f;
-          } else {
-            m_displayScaleMouse = m_displayScale; 
-          }
-        } 
       }
+#ifndef STAR_SYSTEM_MACOS
+      else if (event.type == SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED) {
+        m_displayScale = SDL_GetWindowDisplayScale(m_sdlWindow);
+      }
+#endif
       else if (event.type == SDL_EVENT_KEY_DOWN && (!io.WantCaptureKeyboard || !io.WantTextInput)) {
         if (!event.key.repeat) {
           if (auto key = keyFromSdlKeyCode(event.key.key))
@@ -995,14 +986,14 @@ private:
         starEvent.set(TextInputEvent{String(event.text.text)});
       } else if (event.type == SDL_EVENT_MOUSE_MOTION) {
         starEvent.set(MouseMoveEvent{
-          {event.motion.xrel * m_displayScaleMouse, -event.motion.yrel * m_displayScaleMouse},
-          {event.motion.x * m_displayScaleMouse, (int)m_windowSize[1] - (event.motion.y * m_displayScaleMouse)}});
+          {event.motion.xrel, -event.motion.yrel},
+          {event.motion.x, (int)m_windowSize[1] - event.motion.y}});
       } else if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN && !io.WantCaptureMouse) {
         starEvent.set(MouseButtonDownEvent{mouseButtonFromSdlMouseButton(event.button.button),
-          {event.button.x * m_displayScaleMouse, (int)m_windowSize[1] - (event.button.y * m_displayScaleMouse)}});
+          {event.button.x, (int)m_windowSize[1] - event.button.y}});
       } else if (event.type == SDL_EVENT_MOUSE_BUTTON_UP && !io.WantCaptureMouse) {
         starEvent.set(MouseButtonUpEvent{mouseButtonFromSdlMouseButton(event.button.button),
-          {event.button.x * m_displayScaleMouse, (int)m_windowSize[1] - (event.button.y * m_displayScaleMouse)}});
+          {event.button.x, (int)m_windowSize[1] - event.button.y}});
       } else if (event.type == SDL_EVENT_MOUSE_WHEEL && !io.WantCaptureMouse) {
         starEvent.set(MouseWheelEvent{event.wheel.y < 0 ? MouseWheel::Down : MouseWheel::Up,
           {event.wheel.mouse_x, (int)m_windowSize[1] - event.wheel.mouse_y}});
@@ -1225,7 +1216,6 @@ private:
   bool m_audioEnabled = false;
   bool m_quitRequested = false;
   float m_displayScale = 1.0f;
-  float m_displayScaleMouse = 1.0f; 
   const char* m_videoDriver;
   const char* m_audioDriver;
 
