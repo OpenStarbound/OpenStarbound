@@ -33,9 +33,9 @@ namespace LuaBindings {
     float setResourcePercentage(StatusController* statController, String const& arg1, float arg2);
     float modifyResourcePercentage(StatusController* statController, String const& arg1, float arg2);
     JsonArray getPersistentEffects(StatusController* statController, String const& arg1);
-    void addPersistentEffect(StatusController* statController, String const& arg1, Json const& arg2);
-    void addPersistentEffects(StatusController* statController, String const& arg1, JsonArray const& arg2);
-    void setPersistentEffects(StatusController* statController, String const& arg1, JsonArray const& arg2);
+    void addPersistentEffect(StatusController* statController, String const& arg1, Json const& arg2, Maybe<EntityId> sourceEntityId = {});
+    void addPersistentEffects(StatusController* statController, String const& arg1, JsonArray const& arg2, Maybe<EntityId> sourceEntityId = {});
+    void setPersistentEffects(StatusController* statController, String const& arg1, JsonArray const& arg2, Maybe<EntityId> sourceEntityId = {});
     void clearPersistentEffects(StatusController* statController, String const& arg1);
     void clearAllPersistentEffects(StatusController* statController);
     void addEphemeralEffect(StatusController* statController,

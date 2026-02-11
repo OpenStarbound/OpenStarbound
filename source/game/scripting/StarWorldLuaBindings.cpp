@@ -345,7 +345,7 @@ namespace LuaBindings {
 
         return {};
       });
-      
+
 
     callbacks.registerCallback("dungeonId", [world](Vec2I position) -> DungeonId {
         if (auto serverWorld = as<WorldServer>(world)) {
@@ -508,11 +508,11 @@ namespace LuaBindings {
           else
             return {};
         });
-    
+
     callbacks.registerCallbackWithSignature<EntityPtr, EntityId>("entity", [world](EntityId entityId) -> EntityPtr {
       return world->entity(entityId);
     });
-    
+
     callbacks.registerCallbackWithSignature<bool, int>("entityExists", bind(WorldEntityCallbacks::entityExists, world, _1));
     callbacks.registerCallbackWithSignature<bool, int, int>("entityCanDamage", bind(WorldEntityCallbacks::entityCanDamage, world, _1, _2));
     callbacks.registerCallbackWithSignature<Json, EntityId>("entityDamageTeam", bind(WorldEntityCallbacks::entityDamageTeam, world, _1));
@@ -598,6 +598,7 @@ namespace LuaBindings {
         }
         return {};
       });
+
   }
 
   void addWorldEnvironmentCallbacks(LuaCallbacks& callbacks, World* world) {
@@ -1129,7 +1130,7 @@ namespace LuaBindings {
   }
 
   RectI ClientWorldCallbacks::clientWindow(WorldClient* world) {
-    return world->clientWindow();	
+    return world->clientWindow();
   }
 
   String ServerWorldCallbacks::id(WorldServer* world) {
@@ -1812,8 +1813,17 @@ namespace LuaBindings {
   }
 
   Maybe<List<EntityId>> WorldEntityCallbacks::loungingEntities(World* world, EntityId entityId, Maybe<size_t> anchorIndex) {
-    if (auto entity = world->get<LoungeableEntity>(entityId))
-      return entity->entitiesLoungingIn(anchorIndex.value()).values();
+    if (auto entity = world->get<LoungeableEntity>(entityId)){
+      if (anchorIndex.isValid()) {
+        return entity->entitiesLoungingIn(anchorIndex.value()).values();
+      } else {
+        return entity->entitiesLounging().values().transformed(
+          [](pair<EntityId, size_t> p) -> EntityId {
+            return p.first;
+          }
+        );
+      }
+    }
     return {};
   }
 
