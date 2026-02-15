@@ -110,6 +110,10 @@ WorldLayoutPtr WorldTemplate::worldLayout() const {
   return m_layout;
 }
 
+void WorldTemplate::setCelestialParameters(CelestialParameters newParameters){
+  m_celestialParameters = take(newParameters);
+}
+
 void WorldTemplate::setWorldParameters(VisitableWorldParametersPtr newParameters) {
   m_worldParameters = take(newParameters);
 }
@@ -503,7 +507,7 @@ WorldTemplate::PotentialBiomeItems WorldTemplate::potentialBiomeItemsAt(int x, i
   auto lowerBlockBiome = blockBiome(x, y - 1);
   auto upperBlockBiome = blockBiome(x, y + 1);
   auto thisBlockBiome = blockBiome(x, y);
-  
+
   PotentialBiomeItems potentialBiomeItems;
   // surface floor, surface ocean
   if (lowerBlockBiome)

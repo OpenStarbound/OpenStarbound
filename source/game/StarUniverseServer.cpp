@@ -2230,6 +2230,17 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::celestialWorldPro
       try {
         Logger::info("UniverseServer: Loading celestial world {}", celestialWorldId);
         worldServer = make_shared<WorldServer>(File::open(storageFile, IOMode::ReadWrite));
+
+        auto worldTemplate = worldServer->worldTemplate();
+        auto worldParameters = worldTemplate->celestialParameters().value();
+        CelestialParameters newParameters(
+          celestialWorldId,
+          worldParameters.seed(),
+          worldParameters.name(),
+          worldParameters.parameters()
+        );
+        worldTemplate->setCelestialParameters(newParameters);
+        celestialDatabase->updateParameters(celestialWorldId, newParameters);
       } catch (std::exception const& e) {
         Logger::error("UniverseServer: Could not load celestial world {}, removing! Cause: {}",
                       celestialWorldId, outputException(e, false));

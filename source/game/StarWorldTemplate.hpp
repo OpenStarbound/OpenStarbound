@@ -82,6 +82,7 @@ public:
   SkyParameters skyParameters() const;
   WorldLayoutPtr worldLayout() const;
 
+  void setCelestialParameters(CelestialParameters newParameters);
   void setWorldParameters(VisitableWorldParametersPtr newParameters);
   void setWorldLayout(WorldLayoutPtr newLayout);
   void setSkyParameters(SkyParameters newParameters);
