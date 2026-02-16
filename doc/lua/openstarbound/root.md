@@ -183,3 +183,21 @@ Returns a JSON object containing the `path` and base `config` for the specified 
 #### `Json` root.monsterConfig(`String` typeName)
 
 Returns the base config for the monsterType.
+
+---
+
+#### `Json` root.biomeConfig(`String` typeName)
+
+Returns a json object of the config, name, and path of the given biome.
+
+---
+
+#### `Json` root.treeFoliageConfig(`String` typeName)
+
+Returns a json object of the config, and path for the given foliage.
+
+---
+
+#### `Json` root.treeStemConfig(`String` typeName)
+
+Returns a json object of the config, and path for the given stem.

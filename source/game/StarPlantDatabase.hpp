@@ -117,10 +117,14 @@ public:
   PlantPtr createPlant(GrassVariant const& grassVariant, uint64_t seed) const;
   PlantPtr createPlant(BushVariant const& bushVariant, uint64_t seed) const;
 
+  Json treeFoliageConfig(String const& foliageName) const;
+  Json treeStemConfig(String const& stemName) const;
+
 private:
   struct Config {
     String directory;
     Json settings;
+    Json toJson() const;
   };
 
   StringMap<Config> m_treeStemConfigs;
