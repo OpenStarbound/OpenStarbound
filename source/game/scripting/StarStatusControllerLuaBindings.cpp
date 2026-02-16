@@ -52,12 +52,12 @@ LuaCallbacks LuaBindings::makeStatusControllerCallbacks(StatusController* statCo
       "modifyResourcePercentage", bind(StatusControllerCallbacks::modifyResourcePercentage, statController, _1, _2));
   callbacks.registerCallbackWithSignature<JsonArray, String>(
       "getPersistentEffects", bind(StatusControllerCallbacks::getPersistentEffects, statController, _1));
-  callbacks.registerCallbackWithSignature<void, String, Json>(
-      "addPersistentEffect", bind(StatusControllerCallbacks::addPersistentEffect, statController, _1, _2));
-  callbacks.registerCallbackWithSignature<void, String, JsonArray>(
-      "addPersistentEffects", bind(StatusControllerCallbacks::addPersistentEffects, statController, _1, _2));
-  callbacks.registerCallbackWithSignature<void, String, JsonArray>(
-      "setPersistentEffects", bind(StatusControllerCallbacks::setPersistentEffects, statController, _1, _2));
+  callbacks.registerCallbackWithSignature<void, String, Json, Maybe<EntityId>>(
+      "addPersistentEffect", bind(StatusControllerCallbacks::addPersistentEffect, statController, _1, _2, _3));
+  callbacks.registerCallbackWithSignature<void, String, JsonArray, Maybe<EntityId>>(
+      "addPersistentEffects", bind(StatusControllerCallbacks::addPersistentEffects, statController, _1, _2, _3));
+  callbacks.registerCallbackWithSignature<void, String, JsonArray, Maybe<EntityId>>(
+      "setPersistentEffects", bind(StatusControllerCallbacks::setPersistentEffects, statController, _1, _2, _3));
   callbacks.registerCallbackWithSignature<void, String>(
       "clearPersistentEffects", bind(StatusControllerCallbacks::clearPersistentEffects, statController, _1));
   callbacks.registerCallbackWithSignature<void>(
@@ -190,18 +190,18 @@ JsonArray LuaBindings::StatusControllerCallbacks::getPersistentEffects(
 }
 
 void LuaBindings::StatusControllerCallbacks::addPersistentEffect(
-    StatusController* statController, String const& arg1, Json const& arg2) {
-  addPersistentEffects(statController, arg1, JsonArray{arg2});
+    StatusController* statController, String const& arg1, Json const& arg2, Maybe<EntityId> sourceEntityId) {
+  addPersistentEffects(statController, arg1, JsonArray{arg2}, sourceEntityId);
 }
 
 void LuaBindings::StatusControllerCallbacks::addPersistentEffects(
-    StatusController* statController, String const& arg1, JsonArray const& arg2) {
-  statController->addPersistentEffects(arg1, arg2.transformed(jsonToPersistentStatusEffect));
+    StatusController* statController, String const& arg1, JsonArray const& arg2, Maybe<EntityId> sourceEntityId) {
+  statController->addPersistentEffects(arg1, arg2.transformed(jsonToPersistentStatusEffect), sourceEntityId);
 }
 
 void LuaBindings::StatusControllerCallbacks::setPersistentEffects(
-    StatusController* statController, String const& arg1, JsonArray const& arg2) {
-  statController->setPersistentEffects(arg1, arg2.transformed(jsonToPersistentStatusEffect));
+    StatusController* statController, String const& arg1, JsonArray const& arg2, Maybe<EntityId> sourceEntityId) {
+  statController->setPersistentEffects(arg1, arg2.transformed(jsonToPersistentStatusEffect), sourceEntityId);
 }
 
 void LuaBindings::StatusControllerCallbacks::clearPersistentEffects(

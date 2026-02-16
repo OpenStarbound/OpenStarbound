@@ -536,7 +536,7 @@ private:
   void setNetArmorSecret(EquipmentSlot slot, ArmorItemPtr const& armor, bool visible = true);
   void setNetArmorSecrets(bool includeEmpty = false);
 
-  List<Drawable> drawables() const;
+  List<Drawable> drawables(Vec2F position = Vec2F()) override;
   List<OverheadBar> bars() const;
   List<Particle> particles();
   String getFootstepSound(Vec2I const& sensor) const;

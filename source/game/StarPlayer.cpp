@@ -427,11 +427,13 @@ void Player::uninit() {
   Entity::uninit();
 }
 
-List<Drawable> Player::drawables() const {
+List<Drawable> Player::drawables(Vec2F position) {
   List<Drawable> drawables;
 
   if (!isTeleporting()) {
-    drawables.appendAll(m_techController->backDrawables());
+    drawables.appendAll(m_techController->backDrawables(position));
+    auto anchor = as<LoungeAnchor>(m_movementController->entityAnchor());
+
     if (!m_techController->parentHidden()) {
       m_tools->setupHumanoidHandItemDrawables(*humanoid());
 
@@ -449,12 +451,12 @@ List<Drawable> Player::drawables() const {
       extractScale(m_statusController->parentDirectives().list());
       humanoid()->setScale(scale);
 
-      for (auto& drawable : humanoid()->render()) {
-        drawable.translate(position() + m_techController->parentOffset());
+      for (auto& drawable : humanoid()->render(true, true, (!anchor || !anchor->usePartZLevel), true)) {
+        drawable.translate(position + m_techController->parentOffset());
         if (drawable.isImage()) {
           drawable.imagePart().addDirectivesGroup(humanoidDirectives, true);
 
-          if (auto anchor = as<LoungeAnchor>(m_movementController->entityAnchor())) {
+          if (anchor) {
             if (auto& directives = anchor->directives)
               drawable.imagePart().addDirectives(*directives, true);
           }
@@ -462,14 +464,13 @@ List<Drawable> Player::drawables() const {
         drawables.append(std::move(drawable));
       }
     }
-    drawables.appendAll(m_techController->frontDrawables());
 
-    drawables.appendAll(m_statusController->drawables());
+    drawables.appendAll(m_techController->frontDrawables(position));
 
-    drawables.appendAll(m_tools->renderObjectPreviews(aimPosition(), walkingDirection(), inToolRange(), favoriteColor()));
+    drawables.appendAll(m_statusController->drawables(position));
   }
 
-  drawables.appendAll(m_effectsAnimator->drawables(position()));
+  drawables.appendAll(m_effectsAnimator->drawables(position));
 
   return drawables;
 }
@@ -664,7 +665,8 @@ bool Player::lounge(EntityId loungeableEntityId, size_t anchorIndex) {
 }
 
 void Player::stopLounging() {
-  if (loungingIn()) {
+  auto anchor = as<LoungeAnchor>(m_movementController->entityAnchor());
+  if (anchor && anchor->dismountable) {
     m_movementController->resetAnchorState();
     m_state = State::Idle;
     m_statusController->setPersistentEffects("lounging", {});
@@ -933,40 +935,37 @@ void Player::update(float dt, uint64_t) {
       if (inConflictingLoungeAnchor())
         m_movementController->resetAnchorState();
 
-      if (m_state == State::Lounge) {
-        if (auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor())) {
-          m_statusController->setPersistentEffects("lounging", loungeAnchor->statusEffects);
-          addEffectEmitters(loungeAnchor->effectEmitters);
-          if (loungeAnchor->emote)
-            requestEmote(*loungeAnchor->emote);
+      if (auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor())) {
+        m_state = State::Lounge;
+        m_statusController->setPersistentEffects("lounging", loungeAnchor->statusEffects, m_movementController->anchorState()->entityId);
+        addEffectEmitters(loungeAnchor->effectEmitters);
+        if (loungeAnchor->emote)
+          requestEmote(*loungeAnchor->emote);
 
-          auto itemDatabase = Root::singleton().itemDatabase();
-          if (auto headOverride = loungeAnchor->armorCosmeticOverrides.maybe("head")) {
-            auto overrideItem = itemDatabase->item(ItemDescriptor(*headOverride));
-            if (m_inventory->itemAllowedAsEquipment(overrideItem, EquipmentSlot::HeadCosmetic))
-              m_armor->setHeadCosmeticItem(as<HeadArmor>(overrideItem));
-          }
-          if (auto chestOverride = loungeAnchor->armorCosmeticOverrides.maybe("chest")) {
-            auto overrideItem = itemDatabase->item(ItemDescriptor(*chestOverride));
-            if (m_inventory->itemAllowedAsEquipment(overrideItem, EquipmentSlot::ChestCosmetic))
-              m_armor->setChestCosmeticItem(as<ChestArmor>(overrideItem));
-          }
-          if (auto legsOverride = loungeAnchor->armorCosmeticOverrides.maybe("legs")) {
-            auto overrideItem = itemDatabase->item(ItemDescriptor(*legsOverride));
-            if (m_inventory->itemAllowedAsEquipment(overrideItem, EquipmentSlot::LegsCosmetic))
-              m_armor->setLegsCosmeticItem(as<LegsArmor>(overrideItem));
-          }
-          if (auto backOverride = loungeAnchor->armorCosmeticOverrides.maybe("back")) {
-            auto overrideItem = itemDatabase->item(ItemDescriptor(*backOverride));
-            if (m_inventory->itemAllowedAsEquipment(overrideItem, EquipmentSlot::BackCosmetic))
-              m_armor->setBackCosmeticItem(as<BackArmor>(overrideItem));
-          }
-        } else {
-          m_state = State::Idle;
-          m_movementController->resetAnchorState();
+        auto itemDatabase = Root::singleton().itemDatabase();
+        if (auto headOverride = loungeAnchor->armorCosmeticOverrides.maybe("head")) {
+          auto overrideItem = itemDatabase->item(ItemDescriptor(*headOverride));
+          if (m_inventory->itemAllowedAsEquipment(overrideItem, EquipmentSlot::HeadCosmetic))
+            m_armor->setHeadCosmeticItem(as<HeadArmor>(overrideItem));
+        }
+        if (auto chestOverride = loungeAnchor->armorCosmeticOverrides.maybe("chest")) {
+          auto overrideItem = itemDatabase->item(ItemDescriptor(*chestOverride));
+          if (m_inventory->itemAllowedAsEquipment(overrideItem, EquipmentSlot::ChestCosmetic))
+            m_armor->setChestCosmeticItem(as<ChestArmor>(overrideItem));
+        }
+        if (auto legsOverride = loungeAnchor->armorCosmeticOverrides.maybe("legs")) {
+          auto overrideItem = itemDatabase->item(ItemDescriptor(*legsOverride));
+          if (m_inventory->itemAllowedAsEquipment(overrideItem, EquipmentSlot::LegsCosmetic))
+            m_armor->setLegsCosmeticItem(as<LegsArmor>(overrideItem));
+        }
+        if (auto backOverride = loungeAnchor->armorCosmeticOverrides.maybe("back")) {
+          auto overrideItem = itemDatabase->item(ItemDescriptor(*backOverride));
+          if (m_inventory->itemAllowedAsEquipment(overrideItem, EquipmentSlot::BackCosmetic))
+            m_armor->setBackCosmeticItem(as<BackArmor>(overrideItem));
         }
       } else {
-        m_movementController->resetAnchorState();
+        if (m_state == State::Lounge)
+          m_state = State::Idle;
         m_statusController->setPersistentEffects("lounging", {});
       }
 
@@ -987,9 +986,12 @@ void Player::update(float dt, uint64_t) {
       if (edgeTriggeredUse) {
         auto anchor = as<LoungeAnchor>(m_movementController->entityAnchor());
         bool useTool = canUseTool();
-        if (anchor && (!useTool || anchor->controllable))
-          m_movementController->resetAnchorState();
-        else if (useTool) {
+        if (anchor && !useTool) {
+          if (anchor->dismountable)
+            m_movementController->resetAnchorState();
+          else if (auto ie = as<InteractiveEntity>(world()->entity(m_movementController->anchorState()->entityId)))
+            interactWithEntity(ie);
+        } else if (useTool) {
           if (auto ie = bestInteractionEntity(true))
             interactWithEntity(ie);
         }
@@ -1217,9 +1219,16 @@ void Player::render(RenderCallback* renderCallback) {
   m_footstepPending = false;
   m_landingNoisePending = false;
 
-  renderCallback->addAudios(m_effectsAnimatorDynamicTarget.pullNewAudios());
-  renderCallback->addParticles(m_effectsAnimatorDynamicTarget.pullNewParticles());
+  auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor());
+  if (loungeAnchor && loungeAnchor->hidden) {
+    m_effectsAnimatorDynamicTarget.pullNewParticles();
+    particles();
+  } else {
+    renderCallback->addParticles(m_effectsAnimatorDynamicTarget.pullNewParticles());
+    renderCallback->addParticles(particles());
+  }
 
+  renderCallback->addAudios(m_effectsAnimatorDynamicTarget.pullNewAudios());
   renderCallback->addAudios(m_techController->pullNewAudios());
   renderCallback->addAudios(m_statusController->pullNewAudios());
   renderCallback->addAudios(m_humanoidDynamicTarget.pullNewAudios());
@@ -1232,13 +1241,15 @@ void Player::render(RenderCallback* renderCallback) {
     renderCallback->addAudio(std::move(audio));
   }
 
-  auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor());
   EntityRenderLayer renderLayer = loungeAnchor ? loungeAnchor->loungeRenderLayer : RenderLayerPlayer;
 
-  renderCallback->addDrawables(drawables(), renderLayer);
+  if (!loungeAnchor ||(!loungeAnchor->usePartZLevel && !loungeAnchor->hidden) ) {
+    renderCallback->addDrawables(drawables(position()), renderLayer);
+  }
+  renderCallback->addDrawables(m_tools->renderObjectPreviews(aimPosition(), walkingDirection(), inToolRange(), favoriteColor()), renderLayer);
+
   if (!isTeleporting())
     renderCallback->addOverheadBars(bars(), position());
-  renderCallback->addParticles(particles());
 
   m_tools->render(renderCallback, inToolRange(), m_shifting, renderLayer);
 
