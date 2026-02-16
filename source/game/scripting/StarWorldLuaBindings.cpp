@@ -345,7 +345,7 @@ namespace LuaBindings {
 
         return {};
       });
-      
+
 
     callbacks.registerCallback("dungeonId", [world](Vec2I position) -> DungeonId {
         if (auto serverWorld = as<WorldServer>(world)) {
@@ -353,6 +353,34 @@ namespace LuaBindings {
         } else {
           return as<WorldClient>(world)->dungeonId(position);
         }
+      });
+
+    callbacks.registerCallback("biomeAt", [world](Vec2I position) -> Json {
+        WorldTemplateConstPtr worldTemplate;
+        if (auto worldClient = as<WorldClient>(world))
+          worldTemplate = worldClient->currentTemplate();
+        else if (auto worldServer = as<WorldServer>(world))
+          worldTemplate = worldServer->worldTemplate();
+
+        if (worldTemplate) {
+          WorldTemplate::BlockInfo block = worldTemplate->blockInfo(position[0], position[1]);
+          if (auto biome = worldTemplate->biome(block.blockBiomeIndex)) {
+            return biome->toJson();
+          }
+        }
+        return {};
+      });
+    callbacks.registerCallback("blockInfoAt", [world](Vec2I position) -> Json {
+        WorldTemplateConstPtr worldTemplate;
+        if (auto worldClient = as<WorldClient>(world))
+          worldTemplate = worldClient->currentTemplate();
+        else if (auto worldServer = as<WorldServer>(world))
+          worldTemplate = worldServer->worldTemplate();
+
+        if (worldTemplate) {
+          return worldTemplate->blockInfo(position[0], position[1]).toJson();
+        }
+        return {};
       });
 
     if (auto clientWorld = as<WorldClient>(world)) {
@@ -508,11 +536,11 @@ namespace LuaBindings {
           else
             return {};
         });
-    
+
     callbacks.registerCallbackWithSignature<EntityPtr, EntityId>("entity", [world](EntityId entityId) -> EntityPtr {
       return world->entity(entityId);
     });
-    
+
     callbacks.registerCallbackWithSignature<bool, int>("entityExists", bind(WorldEntityCallbacks::entityExists, world, _1));
     callbacks.registerCallbackWithSignature<bool, int, int>("entityCanDamage", bind(WorldEntityCallbacks::entityCanDamage, world, _1, _2));
     callbacks.registerCallbackWithSignature<Json, EntityId>("entityDamageTeam", bind(WorldEntityCallbacks::entityDamageTeam, world, _1));
@@ -1129,7 +1157,7 @@ namespace LuaBindings {
   }
 
   RectI ClientWorldCallbacks::clientWindow(WorldClient* world) {
-    return world->clientWindow();	
+    return world->clientWindow();
   }
 
   String ServerWorldCallbacks::id(WorldServer* world) {

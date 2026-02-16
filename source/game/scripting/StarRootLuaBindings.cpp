@@ -132,7 +132,7 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
         materialId = *id;
       else
         materialId = root->materialDatabase()->materialId(materialNameOrId.get<String>());
-      
+
       if (auto path = root->materialDatabase()->materialPath(materialId))
         return JsonObject{{"path", *path}, {"config", root->materialDatabase()->materialConfig(materialId).get()}};
       return {};
@@ -144,7 +144,7 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
         modId = *id;
       else
         modId = root->materialDatabase()->modId(modNameOrId.get<String>());
-        
+
       if (auto path = root->materialDatabase()->modPath(modId))
         return JsonObject{{"path", *path}, {"config", root->materialDatabase()->modConfig(modId).get()}};
       return {};
@@ -322,6 +322,17 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
 
   callbacks.registerCallback("monsterConfig", [root](String const& typeName) -> Json {
     return root->monsterDatabase()->monsterConfig(typeName);
+  });
+
+  callbacks.registerCallback("biomeConfig", [root](String const& typeName) -> Json {
+    return root->biomeDatabase()->biomeConfig(typeName);
+  });
+
+  callbacks.registerCallback("treeFoliageConfig", [root](String const& typeName) -> Json {
+    return root->plantDatabase()->treeFoliageConfig(typeName);
+  });
+  callbacks.registerCallback("treeStemConfig", [root](String const& typeName) -> Json {
+    return root->plantDatabase()->treeStemConfig(typeName);
   });
 
   return callbacks;
