@@ -20,9 +20,9 @@ The code is worked on whenever I feel like it. Contributions are welcome!
 ### Download the [latest stable release](https://github.com/OpenStarbound/OpenStarbound/releases/latest).
 The latest stable release is recommended, as the nightly build can have bugs.
 
-At the moment, you must copy the game assets (**packed.pak**) from your normal Starbound install to the OpenStarbound assets directory before playing.
+At the moment, you must copy the game assets (**packed.pak**) from your normal Starbound install to the OpenStarbound assets directory before playing. Optionally copy the `user` folder in the same directory as `packed.pak` to move the vanilla playable instrument songs over.
 
-OpenStarbound is a separate installation/executable than Starbound. You can copy your `storage` folder from Starbound to transfer your save data and settings. Launching OpenStarbound with Steam open will load your subscribed Steam mods.
+OpenStarbound is a separate installation/executable than Starbound. You can copy your `storage` folder from Starbound to transfer your save data and settings. Launching OpenStarbound with Steam open will load your subscribed Steam mods. If you have any locally installed non-Steam mods, you may want to copy the `mods` folder as well.
 
 An installer is available for Windows. otherwise, extract the client/server zip for your platform and copy the game assets (packed.pak) to the OpenStarbound assets folder.
 
