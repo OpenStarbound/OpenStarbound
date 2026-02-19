@@ -327,7 +327,11 @@ void UniverseClient::update(float dt) {
 
   if (m_respawning) {
     if (m_respawnTimer.ready()) {
-      if ((playerOnOwnShip() || m_worldClient->respawnInWorld()) && m_worldClient->inWorld()) {
+      if (m_worldClient->inWorld()) {
+        if (!playerOnOwnShip() && !m_worldClient->respawnInWorld()) {
+          m_pendingWarp = WarpAlias::OwnShip;
+          m_warpDelay.reset();
+        }
         m_worldClient->reviveMainPlayer();
         m_respawning = false;
       }
@@ -339,9 +343,6 @@ void UniverseClient::update(float dt) {
             {"mode", PlayerModeNames.getRight(m_mainPlayer->modeType())}
           });
         m_mainPlayer->setPendingCinematic(Json(std::move(cinematic)));
-        if (!playerOnOwnShip() && !m_worldClient->respawnInWorld())
-          m_pendingWarp = WarpAlias::OwnShip;
-        m_warpDelay.reset();
       }
     }
   } else {
