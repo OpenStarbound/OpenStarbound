@@ -940,10 +940,12 @@ private:
         if (auto displayMode = SDL_GetDesktopDisplayMode(SDL_GetDisplayForWindow(parent->m_sdlWindow))) {
           parent->m_windowSize = {(unsigned)displayMode->w, (unsigned)displayMode->h};
           #ifdef STAR_SYSTEM_WINDOWS
+          if (m_borderlessWorkaround) { // breaks brightness on some setups god what the fuck fuck microsoft fuck nvidia
             auto handle = (HWND)SDL_GetPointerProperty(SDL_GetWindowProperties(parent->m_sdlWindow), SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
             SetWindowLongPtr(handle, GWL_STYLE, WS_OVERLAPPED);
             SetWindowLongPtr(handle, GWL_EXSTYLE, WS_EX_APPWINDOW);
             SetWindowPos(handle, HWND_TOP, 0, 0, displayMode->w, displayMode->h, SWP_FRAMECHANGED | SWP_NOOWNERZORDER | SWP_SHOWWINDOW);
+          } // fuck everything dude it's all so fucked. everything is so fucked
           #endif
           SDL_SetWindowPosition(parent->m_sdlWindow, 0, 0);
           SDL_SetWindowSize(parent->m_sdlWindow, parent->m_windowSize[0], parent->m_windowSize[1]);
@@ -954,6 +956,13 @@ private:
         }
       }
     }
+
+    #ifdef STAR_SYSTEM_WINDOWS
+    bool m_borderlessWorkaround = false;
+    void setBorderlessWorkaround(bool enabled) override {
+      m_borderlessWorkaround = enabled;
+    }
+    #endif
 
     void setVSyncEnabled(bool vSync) override {
       if (parent->m_windowVSync != vSync) {
