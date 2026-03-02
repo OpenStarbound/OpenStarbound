@@ -28,6 +28,13 @@
 
 namespace Star {
 
+enum VariantTerrainLayer { Background, Platform, Foreground };
+EnumMap<VariantTerrainLayer> VariantTerrainLayerNames{
+  {VariantTerrainLayer::Background, "Background"},
+  {VariantTerrainLayer::Platform, "Platform"},
+  {VariantTerrainLayer::Foreground, "Foreground"},
+};
+
 LuaCallbacks LuaBindings::makeRootCallbacks() {
   LuaCallbacks callbacks;
 
@@ -67,6 +74,29 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
 
   callbacks.registerCallbackWithSignature<Maybe<String>, String, Maybe<String>>("materialMiningSound", bind(RootCallbacks::materialMiningSound, root, _1, _2));
   callbacks.registerCallbackWithSignature<Maybe<String>, String, Maybe<String>>("materialFootstepSound", bind(RootCallbacks::materialFootstepSound, root, _1, _2));
+
+  auto getVariant = [](unsigned x, unsigned y, bool isMatMod, VariantTerrainLayer layer, unsigned variants) -> unsigned {
+    static thread_local std::unique_ptr<XXH32_state_t, decltype(&XXH32_freeState)>
+      unique_state(XXH32_createState(), XXH32_freeState);
+    XXH32_state_t* state = unique_state.get();
+    XXH32_reset(state, 2938728349);
+    XXH32_update(state, &x, sizeof(x));
+    XXH32_update(state, &y, sizeof(y));
+    XXH32_update(state, &layer, sizeof(layer));
+    if (isMatMod)
+      XXH32_update(state, "mod", 3);
+    else
+      XXH32_update(state, "main", 4);
+    return XXH32_digest(state) % variants;
+  };
+
+  callbacks.registerCallback("materialVariant", [root, getVariant](Vec2U const& tilePosition, String const& layer, unsigned variants) -> unsigned {
+    return getVariant(tilePosition.x(), tilePosition.y(), false, VariantTerrainLayerNames.getLeft(layer), variants);
+  });
+
+  callbacks.registerCallback("modVariant", [root, getVariant](Vec2U const& tilePosition, String const& layer, unsigned variants) -> unsigned {
+    return getVariant(tilePosition.x(), tilePosition.y(), true, VariantTerrainLayerNames.getLeft(layer), variants);
+  });
 
   callbacks.registerCallback("assetsByExtension", [root](String const& extension) -> CaseInsensitiveStringSet {
     return root->assets()->scanExtension(extension);

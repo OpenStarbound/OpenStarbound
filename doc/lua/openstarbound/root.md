@@ -4,6 +4,16 @@ The `root` table now contains extra asset bindings and bindings to return the ti
 
 ---
 
+#### `unsigned` root.materialVariant(`Vec2U` tilePosition, `String` layer, `unsigned` variants)
+
+Returns the variant index starting from 0 for the material variant used at the specified **tilePosition**. **layer** must be either `"foreground"`, `"background"` or `"platform"`, and **variants** must be the amount of variants the material has, which you can use the vanilla `root.materialConfig` function to fetch.
+
+#### `unsigned` root.modVariant(`Vec2U` tilePosition, `String` layer, `unsigned` variants)
+
+Works like `root.materialVariant` but for matmods.
+
+---
+
 #### `String[]` root.assetsByExtension(`String` extension)
 
 Returns an array containing all assets with the specified file extension.
