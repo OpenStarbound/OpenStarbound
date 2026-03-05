@@ -351,7 +351,9 @@ Maybe<EphemeralStatusEffect> LuaConverter<EphemeralStatusEffect>::to(LuaEngine& 
     return EphemeralStatusEffect{UniqueStatusEffect(s->ptr()), {}};
   } else if (auto table = v.ptr<LuaTable>()) {
     auto effect = engine.luaMaybeTo<String>(table->get("effect"));
-    auto duration = engine.luaMaybeTo<Maybe<float>>(table->get("duratino"));
+    auto duration = engine.luaMaybeTo<Maybe<float>>(table->get("duration"));
+    if (!duration)
+      duration = engine.luaMaybeTo<Maybe<float>>(table->get("duratino"));
     if (effect && duration)
       return EphemeralStatusEffect{effect.take(), duration.take()};
   }
