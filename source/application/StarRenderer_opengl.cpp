@@ -203,6 +203,14 @@ OpenGlRenderer::GlFrameBuffer::~GlFrameBuffer() {
 void OpenGlRenderer::loadConfig(Json const& config) {
   m_frameBuffers.clear();
 
+  // Effects will keep any framebuffer textures they use
+  // alive indefinitely, so clear those out here as well
+  for (auto& effect : m_effects) {
+    for (auto& texture : effect.second.textures) {
+      texture.second.textureValue.reset();
+    }
+  }
+
   for (auto& pair : config.getObject("frameBuffers", {})) {
     Json config = pair.second;
     config = config.set("multisample", m_multiSampling);
