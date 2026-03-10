@@ -610,26 +610,26 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
     });
 
   m_tileArray->tileEachTo(renderData.tiles, tileRange, [&](RenderTile& renderTile, Vec2I const&, ClientTile const& clientTile) {
-      renderTile.foreground = clientTile.foreground;
-      renderTile.foregroundMod = clientTile.foregroundMod;
+    renderTile.foreground = clientTile.foreground;
+    renderTile.foregroundMod = clientTile.foregroundMod;
 
-      renderTile.background = clientTile.background;
-      renderTile.backgroundMod = clientTile.backgroundMod;
+    renderTile.background = clientTile.background;
+    renderTile.backgroundMod = clientTile.backgroundMod;
 
-      renderTile.foregroundHueShift = clientTile.foregroundHueShift;
-      renderTile.foregroundModHueShift = clientTile.foregroundModHueShift;
-      renderTile.foregroundColorVariant = clientTile.foregroundColorVariant;
-      renderTile.foregroundDamageType = clientTile.foregroundDamage.damageType();
-      renderTile.foregroundDamageLevel = floatToByte(clientTile.foregroundDamage.damageEffectPercentage());
+    renderTile.foregroundHueShift = clientTile.foregroundHueShift;
+    renderTile.foregroundModHueShift = clientTile.foregroundModHueShift;
+    renderTile.foregroundColorVariant = clientTile.foregroundColorVariant;
+    renderTile.foregroundDamageType = clientTile.foregroundDamage.damageType();
+    renderTile.foregroundDamageLevel = floatToByte(clientTile.foregroundDamage.damageEffectPercentage());
 
-      renderTile.backgroundHueShift = clientTile.backgroundHueShift;
-      renderTile.backgroundModHueShift = clientTile.backgroundModHueShift;
-      renderTile.backgroundColorVariant = clientTile.backgroundColorVariant;
-      renderTile.backgroundDamageType = clientTile.backgroundDamage.damageType();
-      renderTile.backgroundDamageLevel = floatToByte(clientTile.backgroundDamage.damageEffectPercentage());
+    renderTile.backgroundHueShift = clientTile.backgroundHueShift;
+    renderTile.backgroundModHueShift = clientTile.backgroundModHueShift;
+    renderTile.backgroundColorVariant = clientTile.backgroundColorVariant;
+    renderTile.backgroundDamageType = clientTile.backgroundDamage.damageType();
+    renderTile.backgroundDamageLevel = floatToByte(clientTile.backgroundDamage.damageEffectPercentage());
 
-      renderTile.liquidId = clientTile.liquid.liquid;
-      renderTile.liquidLevel = floatToByte(clientTile.liquid.level);
+    renderTile.liquidId = clientTile.liquid.liquid;
+    renderTile.liquidLevel = floatToByte(clientTile.liquid.level);
     });
 
   for (auto& pair : m_predictedTiles) {
@@ -1708,7 +1708,7 @@ void WorldClient::lightingTileGather() {
 
   // Each column in tileEvalColumns is guaranteed to be no larger than the sector size.
 
-  m_tileArray->tileEvalColumns(m_lightingCalculator.calculationRegion(), [&](Vec2I const& pos, ClientTile const* column, size_t ySize) {
+  m_tileArray->tileEvalColumnsParallel(m_lightingCalculator.calculationRegion(), [&](Vec2I const& pos, ClientTile const* column, size_t ySize) {
     size_t baseIndex = m_lightingCalculator.baseIndexFor(pos);
     for (size_t y = 0; y < ySize; ++y) {
       auto& tile = column[y];
