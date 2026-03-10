@@ -342,7 +342,7 @@ void TileSectorArray<Tile, SectorSize>::tileEachTo(MultiArray& results, RectI co
   for (auto const& split : splitRect(region)) {
     auto clampedRect = yClampRect(split.rect);
     if (!clampedRect.isEmpty()) {
-      m_tileSectors.evalColumnsParallel(clampedRect.xMin(), clampedRect.yMin(), clampedRect.width(), clampedRect.height(), [&, function](size_t x, size_t y, Tile const* column, size_t columnSize) [[msvc::__forceinline]] {
+      m_tileSectors.evalColumnsParallel(clampedRect.xMin(), clampedRect.yMin(), clampedRect.width(), clampedRect.height(), [&, function](size_t x, size_t y, Tile const* column, size_t columnSize) {
           size_t arrayColumnIndex = (x + split.xOffset + xArrayOffset) * results.size(1) + y + yArrayOffset;
           if (column) {
             for (size_t i = 0; i < columnSize; ++i)
