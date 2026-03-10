@@ -499,7 +499,9 @@ String LuaBindings::RootCallbacks::generateName(Root* root, String const& rulesA
 }
 
 Json LuaBindings::RootCallbacks::questConfig(Root* root, String const& templateId) {
-  return root->questTemplateDatabase()->questTemplate(templateId)->config;
+  if (auto quest = root->questTemplateDatabase()->questTemplate(templateId))
+    return quest->config;
+  throw StarException(strf("No quest template found for id '{}'", templateId));
 }
 
 JsonArray LuaBindings::RootCallbacks::npcPortrait(Root* root,
