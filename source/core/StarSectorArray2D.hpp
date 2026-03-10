@@ -5,6 +5,8 @@
 #include "StarVector.hpp"
 #include "StarWorkerPool.hpp"
 
+#include "thread"
+
 namespace Star {
 
 // Holds a sparse 2d array of data based on sector size.  Meant to be used as a
