@@ -622,7 +622,16 @@ List<Drawable> PaintingBeamTool::drawables() const {
   for (auto& entry : result) {
     if (entry.isImage()) {
       auto& image = entry.imagePart().image;
-      image.subPath = image.subPath.value("0") + m_colorKeys[m_colorIndex];
+      auto& color = m_colorKeys[m_colorIndex];
+      if (size_t directives_start = color.find('?'); directives_start != NPos) {
+        auto index      = color.substr(0, directives_start);
+        auto directives = color.substr(directives_start);
+
+        image.subPath = image.subPath.value("0") + index;
+        image.directives += directives;
+      } else {
+        image.subPath = image.subPath.value("0") + color;
+      }
     }
   }
   return result;
