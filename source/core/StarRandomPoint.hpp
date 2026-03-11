@@ -47,8 +47,11 @@ auto Random2dPointGenerator<PointData, DataType>::generate(Poly const& area, Poi
   int64_t sectorYMin = std::floor(bound.yMin() / m_cellSize);
   int64_t sectorXMax = std::ceil(bound.xMax() / m_cellSize);
   int64_t sectorYMax = std::ceil(bound.yMax() / m_cellSize);
+  int64_t sectorCount = (sectorXMax - sectorXMin + 1) * (sectorYMax - sectorYMin + 1);
 
   PointSet finalResult;
+  // VT: Reserve space for worst case scenario, this gives ~2x speedup
+  finalResult.reserve(sectorCount * m_densityRange[1]); 
   RandomSource sectorRandomness;
 
   for (int64_t x = sectorXMin; x <= sectorXMax; ++x) {

@@ -3,6 +3,9 @@
 #include "StarMultiArray.hpp"
 #include "StarSet.hpp"
 #include "StarVector.hpp"
+#include "StarWorkerPool.hpp"
+
+#include "thread"
 
 namespace Star {
 
@@ -95,6 +98,10 @@ public:
       size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty = false) const;
   template <typename Function>
   bool evalColumns(size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty = false);
+  template <typename Function>
+  bool evalColumnsParallel(size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty = false) const;
+  template <typename Function>
+  bool evalColumnsParallel(size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty = false);
 
 private:
   typedef MultiArray<ArrayPtr, 2> SectorArray;
@@ -103,6 +110,10 @@ private:
   bool evalPriv(size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty);
   template <typename Function>
   bool evalColumnsPriv(size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty);
+  template <typename Function>
+  bool evalColumnsPrivPar(size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty);
+
+  WorkerPool& getWorkerPool() const;
 
   SectorArray m_sectors;
   HashSet<Sector> m_loadedSectors;
@@ -294,6 +305,21 @@ bool SectorArray2D<ElementT, SectorSize>::evalColumns(
 
 template <typename ElementT, size_t SectorSize>
 template <typename Function>
+bool SectorArray2D<ElementT, SectorSize>::evalColumnsParallel(
+    size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty) const {
+  return const_cast<SectorArray2D*>(this)->evalColumnsPrivPar(
+      minX, minY, width, height, std::forward<Function>(function), evalEmpty);
+}
+
+template <typename ElementT, size_t SectorSize>
+template <typename Function>
+bool SectorArray2D<ElementT, SectorSize>::evalColumnsParallel(
+    size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty) {
+  return evalColumnsPrivPar(minX, minY, width, height, std::forward<Function>(function), evalEmpty);
+}
+
+template <typename ElementT, size_t SectorSize>
+template <typename Function>
 bool SectorArray2D<ElementT, SectorSize>::evalPriv(
     size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty) {
   return evalColumnsPriv(minX,
@@ -339,6 +365,8 @@ bool SectorArray2D<ElementT, SectorSize>::evalColumnsPriv(
     if (xSector == maxXSector)
       maxXi = (maxX - 1) % SectorSize;
 
+    size_t x_ = xSector * SectorSize;
+
     for (size_t ySector = minYSector; ySector <= maxYSector; ++ySector) {
       Array* array = m_sectors(xSector, ySector).get();
 
@@ -354,7 +382,7 @@ bool SectorArray2D<ElementT, SectorSize>::evalColumnsPriv(
         maxYi = (maxY - 1) % SectorSize;
 
       size_t y_ = ySector * SectorSize;
-      size_t x_ = xSector * SectorSize;
+
       if (!array) {
         for (size_t xi = minXi; xi <= maxXi; ++xi) {
           if (!function(xi + x_, minYi + y_, nullptr, maxYi - minYi + 1))
@@ -370,6 +398,85 @@ bool SectorArray2D<ElementT, SectorSize>::evalColumnsPriv(
   }
 
   return true;
+}
+
+// VT: This is about as good as I can get it, I think it's bound by memory bandwidth when it's called with
+// huge width and height in the renderer (tiles, lighting etc.), should probably use compute shader and GPU
+// pipeline in the future.
+template <typename ElementT, size_t SectorSize>
+template <typename Function>
+bool SectorArray2D<ElementT, SectorSize>::evalColumnsPrivPar(
+    size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty) {
+  if (width == 0 || height == 0)
+    return true;
+
+  size_t maxX = minX + width;
+  size_t maxY = minY + height;
+  size_t minXSector = minX / SectorSize;
+  size_t maxXSector = (maxX - 1) / SectorSize;
+
+  size_t minYSector = minY / SectorSize;
+  size_t maxYSector = (maxY - 1) / SectorSize;
+
+  size_t sectorCount = maxXSector - minXSector + 1;
+
+  auto& workerPool = getWorkerPool();
+  std::vector<WorkerPoolHandle> futures;
+  futures.reserve(sectorCount);
+
+  for (size_t xSector = minXSector; xSector <= maxXSector; ++xSector) {
+    size_t minXi = 0;
+    if (xSector == minXSector)
+      minXi = minX % SectorSize;
+
+    size_t maxXi = SectorSize - 1;
+    if (xSector == maxXSector)
+      maxXi = (maxX - 1) % SectorSize;
+
+    size_t x_ = xSector * SectorSize;
+
+    futures.push_back(workerPool.addWork([=, &function]() {
+      for (size_t ySector = minYSector; ySector <= maxYSector; ++ySector) {
+        Array* array = m_sectors(xSector, ySector).get();
+
+        if (!array && !evalEmpty)
+          continue;
+
+        size_t minYi = 0;
+        if (ySector == minYSector)
+          minYi = minY % SectorSize;
+
+        size_t maxYi = SectorSize - 1;
+        if (ySector == maxYSector)
+          maxYi = (maxY - 1) % SectorSize;
+
+        size_t y_ = ySector * SectorSize;
+
+        if (!array) {
+          for (size_t xi = minXi; xi <= maxXi; ++xi) {
+            if (!function(xi + x_, minYi + y_, nullptr, maxYi - minYi + 1))
+              return false;
+          }
+        } else {
+          for (size_t xi = minXi; xi <= maxXi; ++xi) {
+            if (!function(xi + x_, minYi + y_, &array->elements[xi * SectorSize + minYi], maxYi - minYi + 1))
+              return false;
+          }
+        }
+      }
+      }));
+  }
+  for (const auto& f : futures) {
+    f.finish();
+  }
+
+  return true;
+}
+
+template <typename ElementT, size_t SectorSize>
+WorkerPool& SectorArray2D<ElementT, SectorSize>::getWorkerPool() const {
+  static WorkerPool pool("SectorArray2DWorkerPool", std::thread::hardware_concurrency());
+  return pool;
 }
 
 }
