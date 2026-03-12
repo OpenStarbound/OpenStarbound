@@ -187,6 +187,10 @@ BiomePtr BiomeDatabase::createBiome(String const& biomeName, uint64_t seed, floa
   }
 }
 
+Json BiomeDatabase::biomeConfig(String const & biomeName) const {
+  return m_biomes.get(biomeName).toJson();
+}
+
 float BiomeDatabase::pickHueShiftFromJson(Json source, uint64_t seed, String const& key) {
   if (source.isNull())
     return 0;
@@ -228,6 +232,14 @@ List<pair<ModId, float>> BiomeDatabase::readOres(Json const& oreDistribution, fl
     }
   }
   return ores;
+}
+
+Json BiomeDatabase::Config::toJson() const {
+  return JsonObject{
+    {"config", parameters},
+    {"name", name},
+    {"path", path}
+  };
 }
 
 }

@@ -256,6 +256,135 @@ Maybe<Key> keyFromSdlKeyCode(SDL_Keycode sym) {
   return KeyCodeMap.maybe(sym);
 }
 
+Maybe<Key> keyFromSdlScancode(SDL_Scancode scancode) {
+  static HashMap<int, Key> ScanCodeMap{
+  {SDL_SCANCODE_A, Key::A},
+  {SDL_SCANCODE_B, Key::B},
+  {SDL_SCANCODE_C, Key::C},
+  {SDL_SCANCODE_D, Key::D},
+  {SDL_SCANCODE_E, Key::E},
+  {SDL_SCANCODE_F, Key::F},
+  {SDL_SCANCODE_G, Key::G},
+  {SDL_SCANCODE_H, Key::H},
+  {SDL_SCANCODE_I, Key::I},
+  {SDL_SCANCODE_J, Key::J},
+  {SDL_SCANCODE_K, Key::K},
+  {SDL_SCANCODE_L, Key::L},
+  {SDL_SCANCODE_M, Key::M},
+  {SDL_SCANCODE_N, Key::N},
+  {SDL_SCANCODE_O, Key::O},
+  {SDL_SCANCODE_P, Key::P},
+  {SDL_SCANCODE_Q, Key::Q},
+  {SDL_SCANCODE_R, Key::R},
+  {SDL_SCANCODE_S, Key::S},
+  {SDL_SCANCODE_T, Key::T},
+  {SDL_SCANCODE_U, Key::U},
+  {SDL_SCANCODE_V, Key::V},
+  {SDL_SCANCODE_W, Key::W},
+  {SDL_SCANCODE_X, Key::X},
+  {SDL_SCANCODE_Y, Key::Y},
+  {SDL_SCANCODE_Z, Key::Z},
+  {SDL_SCANCODE_0, Key::Zero},
+  {SDL_SCANCODE_1, Key::One},
+  {SDL_SCANCODE_2, Key::Two},
+  {SDL_SCANCODE_3, Key::Three},
+  {SDL_SCANCODE_4, Key::Four},
+  {SDL_SCANCODE_5, Key::Five},
+  {SDL_SCANCODE_6, Key::Six},
+  {SDL_SCANCODE_7, Key::Seven},
+  {SDL_SCANCODE_8, Key::Eight},
+  {SDL_SCANCODE_9, Key::Nine},
+  {SDL_SCANCODE_MINUS, Key::Minus},
+  {SDL_SCANCODE_EQUALS, Key::Equals},
+  {SDL_SCANCODE_LEFTBRACKET, Key::LeftBracket},
+  {SDL_SCANCODE_RIGHTBRACKET, Key::RightBracket},
+  {SDL_SCANCODE_BACKSLASH, Key::Backslash},
+  {SDL_SCANCODE_SEMICOLON, Key::Semicolon},
+  {SDL_SCANCODE_APOSTROPHE, Key::Quote},
+  {SDL_SCANCODE_GRAVE, Key::Backquote},
+  {SDL_SCANCODE_COMMA, Key::Comma},
+  {SDL_SCANCODE_PERIOD, Key::Period},
+  {SDL_SCANCODE_SLASH, Key::Slash},
+  {SDL_SCANCODE_BACKSPACE, Key::Backspace},
+  {SDL_SCANCODE_TAB, Key::Tab},
+  {SDL_SCANCODE_RETURN, Key::Return},
+  {SDL_SCANCODE_ESCAPE, Key::Escape},
+  {SDL_SCANCODE_SPACE, Key::Space},
+  {SDL_SCANCODE_DELETE, Key::Delete},
+  {SDL_SCANCODE_INSERT, Key::Insert},
+  {SDL_SCANCODE_HOME, Key::Home},
+  {SDL_SCANCODE_END, Key::End},
+  {SDL_SCANCODE_PAGEUP, Key::PageUp},
+  {SDL_SCANCODE_PAGEDOWN, Key::PageDown},
+  {SDL_SCANCODE_UP, Key::Up},
+  {SDL_SCANCODE_DOWN, Key::Down},
+  {SDL_SCANCODE_LEFT, Key::Left},
+  {SDL_SCANCODE_RIGHT, Key::Right},
+  {SDL_SCANCODE_F1, Key::F1},
+  {SDL_SCANCODE_F2, Key::F2},
+  {SDL_SCANCODE_F3, Key::F3},
+  {SDL_SCANCODE_F4, Key::F4},
+  {SDL_SCANCODE_F5, Key::F5},
+  {SDL_SCANCODE_F6, Key::F6},
+  {SDL_SCANCODE_F7, Key::F7},
+  {SDL_SCANCODE_F8, Key::F8},
+  {SDL_SCANCODE_F9, Key::F9},
+  {SDL_SCANCODE_F10, Key::F10},
+  {SDL_SCANCODE_F11, Key::F11},
+  {SDL_SCANCODE_F12, Key::F12},
+  {SDL_SCANCODE_F13, Key::F13},
+  {SDL_SCANCODE_F14, Key::F14},
+  {SDL_SCANCODE_F15, Key::F15},
+  {SDL_SCANCODE_F16, Key::F16},
+  {SDL_SCANCODE_F17, Key::F17},
+  {SDL_SCANCODE_F18, Key::F18},
+  {SDL_SCANCODE_F19, Key::F19},
+  {SDL_SCANCODE_F20, Key::F20},
+  {SDL_SCANCODE_F21, Key::F21},
+  {SDL_SCANCODE_F22, Key::F22},
+  {SDL_SCANCODE_F23, Key::F23},
+  {SDL_SCANCODE_F24, Key::F24},
+  {SDL_SCANCODE_KP_0, Key::Keypad0},
+  {SDL_SCANCODE_KP_1, Key::Keypad1},
+  {SDL_SCANCODE_KP_2, Key::Keypad2},
+  {SDL_SCANCODE_KP_3, Key::Keypad3},
+  {SDL_SCANCODE_KP_4, Key::Keypad4},
+  {SDL_SCANCODE_KP_5, Key::Keypad5},
+  {SDL_SCANCODE_KP_6, Key::Keypad6},
+  {SDL_SCANCODE_KP_7, Key::Keypad7},
+  {SDL_SCANCODE_KP_8, Key::Keypad8},
+  {SDL_SCANCODE_KP_9, Key::Keypad9},
+  {SDL_SCANCODE_KP_PERIOD, Key::KeypadPeriod},
+  {SDL_SCANCODE_KP_DIVIDE, Key::KeypadDivide},
+  {SDL_SCANCODE_KP_MULTIPLY, Key::KeypadMultiply},
+  {SDL_SCANCODE_KP_MINUS, Key::KeypadMinus},
+  {SDL_SCANCODE_KP_PLUS, Key::KeypadPlus},
+  {SDL_SCANCODE_KP_ENTER, Key::KeypadEnter},
+  {SDL_SCANCODE_KP_EQUALS, Key::KeypadEquals},
+  {SDL_SCANCODE_LCTRL, Key::LCtrl},
+  {SDL_SCANCODE_RCTRL, Key::RCtrl},
+  {SDL_SCANCODE_LSHIFT, Key::LShift},
+  {SDL_SCANCODE_RSHIFT, Key::RShift},
+  {SDL_SCANCODE_LALT, Key::LAlt},
+  {SDL_SCANCODE_RALT, Key::RAlt},
+  {SDL_SCANCODE_LGUI, Key::LGui},
+  {SDL_SCANCODE_RGUI, Key::RGui},
+  {SDL_SCANCODE_MODE, Key::AltGr},
+  {SDL_SCANCODE_CAPSLOCK, Key::CapsLock},
+  {SDL_SCANCODE_NUMLOCKCLEAR, Key::NumLock},
+  {SDL_SCANCODE_SCROLLLOCK, Key::ScrollLock},
+  {SDL_SCANCODE_PRINTSCREEN, Key::PrintScreen},
+  {SDL_SCANCODE_PAUSE, Key::Pause},
+  {SDL_SCANCODE_MENU, Key::Menu},
+  {SDL_SCANCODE_APPLICATION, Key::Compose},
+  {SDL_SCANCODE_POWER, Key::Power},
+  {SDL_SCANCODE_HELP, Key::Help},
+  {SDL_SCANCODE_SYSREQ, Key::SysReq},
+  };
+
+  return ScanCodeMap.maybe(scancode);
+}
+
 KeyMod keyModsFromSdlKeyMods(uint16_t mod) {
   return static_cast<KeyMod>(mod);
 }
@@ -327,8 +456,7 @@ public:
         return false;
       });
 
-    SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_NAME_STRING, "Starbound");
-    SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_VERSION_STRING, OpenStarVersionString);
+    SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_NAME_STRING, "OpenStarbound");
     SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_IDENTIFIER_STRING, "io.github.openstarbound.openstarbound");
     SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_URL_STRING, "https://github.com/OpenStarbound/OpenStarbound");
     SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_TYPE_STRING, "game");
@@ -379,14 +507,17 @@ public:
       Logger::info("Application: No platform services available");
 
     Logger::info("Application: Creating SDL window");
+#ifdef STAR_SYSTEM_MACOS
+    m_sdlWindow = SDL_CreateWindow(m_windowTitle.utf8Ptr(), m_windowSize[0], m_windowSize[1], SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+#else
     m_sdlWindow = SDL_CreateWindow(m_windowTitle.utf8Ptr(), m_windowSize[0], m_windowSize[1], SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY);
+#endif
     if (!m_sdlWindow)
       throw ApplicationException::format("Application: Could not create SDL Window: {}", SDL_GetError());
-
-    m_displayScale = SDL_GetDisplayContentScale(SDL_GetDisplayForWindow(m_sdlWindow));
-    if (strcmp(m_videoDriver, "cocoa") == 0) {
-      m_displayScaleMouse = m_displayScale;
-    }
+    
+#ifndef STAR_SYSTEM_MACOS
+    m_displayScale = SDL_GetWindowDisplayScale(m_sdlWindow);
+#endif
     
 #ifdef STAR_SYSTEM_LINUX
     if (File::isFile(".icon/openstarbound.png")) {
@@ -840,7 +971,7 @@ private:
     }
 
     void setCursorPosition(Vec2I cursorPosition) override {
-      SDL_WarpMouseInWindow(parent->m_sdlWindow, cursorPosition[0] / parent->m_displayScaleMouse, cursorPosition[1] / parent->m_displayScaleMouse);
+      SDL_WarpMouseInWindow(parent->m_sdlWindow, cursorPosition[0], cursorPosition[1]);
     }
 
     void setCursorHardware(bool hardware) override {
@@ -961,48 +1092,43 @@ private:
         else
           m_windowMode = WindowMode::Normal;
 
-        if (strcmp(m_videoDriver, "cocoa") == 0) {
-          if (m_windowMode == WindowMode::Fullscreen) {
-            m_displayScaleMouse = 1.0f;
-          } else {
-            m_displayScaleMouse = m_displayScale; 
-          }
-        } 
         m_application->windowChanged(m_windowMode, m_windowSize);
       } else if (event.type == SDL_EVENT_WINDOW_RESIZED || event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) {
         m_windowSize = Vec2U(event.window.data1, event.window.data2);
         m_renderer->setScreenSize(m_windowSize);
         m_application->windowChanged(m_windowMode, m_windowSize);
-      } else if (event.type == SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED) {
-        m_displayScale = SDL_GetDisplayContentScale(SDL_GetDisplayForWindow(m_sdlWindow));
-        if (strcmp(m_videoDriver, "cocoa") == 0) {
-          if (m_windowMode == WindowMode::Fullscreen) {
-            m_displayScaleMouse = 1.0f;
-          } else {
-            m_displayScaleMouse = m_displayScale; 
-          }
-        } 
       }
+#ifndef STAR_SYSTEM_MACOS
+      else if (event.type == SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED) {
+        m_displayScale = SDL_GetWindowDisplayScale(m_sdlWindow);
+      }
+#endif
       else if (event.type == SDL_EVENT_KEY_DOWN && (!io.WantCaptureKeyboard || !io.WantTextInput)) {
         if (!event.key.repeat) {
-          if (auto key = keyFromSdlKeyCode(event.key.key))
+          auto key = keyFromSdlKeyCode(event.key.key);
+          if (!key)
+            key = keyFromSdlScancode(event.key.scancode);
+          if (key)
             starEvent.set(KeyDownEvent{*key, keyModsFromSdlKeyMods(event.key.mod)});
         }
       } else if (event.type == SDL_EVENT_KEY_UP) {
-        if (auto key = keyFromSdlKeyCode(event.key.key))
+        auto key = keyFromSdlKeyCode(event.key.key);
+        if (!key)
+          key = keyFromSdlScancode(event.key.scancode);
+        if (key)
           starEvent.set(KeyUpEvent{*key});
       } else if (event.type == SDL_EVENT_TEXT_INPUT && !io.WantTextInput) {
         starEvent.set(TextInputEvent{String(event.text.text)});
       } else if (event.type == SDL_EVENT_MOUSE_MOTION) {
         starEvent.set(MouseMoveEvent{
-          {event.motion.xrel * m_displayScaleMouse, -event.motion.yrel * m_displayScaleMouse},
-          {event.motion.x * m_displayScaleMouse, (int)m_windowSize[1] - (event.motion.y * m_displayScaleMouse)}});
+          {event.motion.xrel, -event.motion.yrel},
+          {event.motion.x, (int)m_windowSize[1] - event.motion.y}});
       } else if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN && !io.WantCaptureMouse) {
         starEvent.set(MouseButtonDownEvent{mouseButtonFromSdlMouseButton(event.button.button),
-          {event.button.x * m_displayScaleMouse, (int)m_windowSize[1] - (event.button.y * m_displayScaleMouse)}});
+          {event.button.x, (int)m_windowSize[1] - event.button.y}});
       } else if (event.type == SDL_EVENT_MOUSE_BUTTON_UP && !io.WantCaptureMouse) {
         starEvent.set(MouseButtonUpEvent{mouseButtonFromSdlMouseButton(event.button.button),
-          {event.button.x * m_displayScaleMouse, (int)m_windowSize[1] - (event.button.y * m_displayScaleMouse)}});
+          {event.button.x, (int)m_windowSize[1] - event.button.y}});
       } else if (event.type == SDL_EVENT_MOUSE_WHEEL && !io.WantCaptureMouse) {
         starEvent.set(MouseWheelEvent{event.wheel.y < 0 ? MouseWheel::Down : MouseWheel::Up,
           {event.wheel.mouse_x, (int)m_windowSize[1] - event.wheel.mouse_y}});
@@ -1225,7 +1351,6 @@ private:
   bool m_audioEnabled = false;
   bool m_quitRequested = false;
   float m_displayScale = 1.0f;
-  float m_displayScaleMouse = 1.0f; 
   const char* m_videoDriver;
   const char* m_audioDriver;
 

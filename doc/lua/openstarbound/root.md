@@ -166,6 +166,38 @@ Additional arguments **ext** are not used by the retail character creation, but 
 
 Returns the config for the status effect.
 
+---
+
+#### `Json` root.materialConfig(`MaterialId` materialId)
+
+Returns a JSON object containing the `path` and base `config` for the specified material by its ID if it is a real material, or `nil` if it is a metamaterial or invalid.
+
+---
+
+#### `Json` root.modConfig(`ModId` modId)
+
+Returns a JSON object containing the `path` and base `config` for the specified mod by its ID if it is a real mod, or `nil` if it is a metamod or invalid.
+
+---
+
 #### `Json` root.monsterConfig(`String` typeName)
 
 Returns the base config for the monsterType.
+
+---
+
+#### `Json` root.biomeConfig(`String` typeName)
+
+Returns a json object of the config, name, and path of the given biome.
+
+---
+
+#### `Json` root.treeFoliageConfig(`String` typeName)
+
+Returns a json object of the config, and path for the given foliage.
+
+---
+
+#### `Json` root.treeStemConfig(`String` typeName)
+
+Returns a json object of the config, and path for the given stem.

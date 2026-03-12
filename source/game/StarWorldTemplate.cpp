@@ -503,7 +503,7 @@ WorldTemplate::PotentialBiomeItems WorldTemplate::potentialBiomeItemsAt(int x, i
   auto lowerBlockBiome = blockBiome(x, y - 1);
   auto upperBlockBiome = blockBiome(x, y + 1);
   auto thisBlockBiome = blockBiome(x, y);
-  
+
   PotentialBiomeItems potentialBiomeItems;
   // surface floor, surface ocean
   if (lowerBlockBiome)
@@ -779,6 +779,27 @@ WorldTemplate::BlockInfo WorldTemplate::getBlockInfo(uint32_t x, uint32_t y) con
 
       return blockInfo;
     });
+}
+
+Json WorldTemplate::BlockInfo::toJson() const {
+  return JsonObject({
+    {"blockBiomeIndex", blockBiomeIndex},
+    {"environmentBiomeIndex", environmentBiomeIndex},
+    {"biomeTransition", biomeTransition},
+    {"terrain", terrain},
+    {"foregroundCave", foregroundCave},
+    {"backgroundCave", backgroundCave},
+    {"foreground", foreground},
+    {"foregroundMod", foregroundMod},
+    {"background", background},
+    {"backgroundMod", backgroundMod},
+    {"caveLiquid", caveLiquid},
+    {"caveLiquidSeedDensity", caveLiquidSeedDensity},
+    {"oceanLiquid", oceanLiquid},
+    {"oceanLiquidLevel", oceanLiquidLevel},
+    {"encloseLiquids", encloseLiquids},
+    {"fillMicrodungeons", fillMicrodungeons}
+  });
 }
 
 }

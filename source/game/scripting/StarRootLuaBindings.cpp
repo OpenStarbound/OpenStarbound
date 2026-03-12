@@ -126,15 +126,25 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
       return root->itemDatabase()->itemFile(itemName);
     });
 
-  callbacks.registerCallback("materialConfig", [root](String const& materialName) -> Json {
-      auto materialId = root->materialDatabase()->materialId(materialName);
+  callbacks.registerCallback("materialConfig", [root](Variant<MaterialId, String> const& materialNameOrId) -> Json {
+      MaterialId materialId;
+      if (auto id = materialNameOrId.ptr<MaterialId>())
+        materialId = *id;
+      else
+        materialId = root->materialDatabase()->materialId(materialNameOrId.get<String>());
+
       if (auto path = root->materialDatabase()->materialPath(materialId))
         return JsonObject{{"path", *path}, {"config", root->materialDatabase()->materialConfig(materialId).get()}};
       return {};
     });
 
-  callbacks.registerCallback("modConfig", [root](String const& modName) -> Json {
-      auto modId = root->materialDatabase()->modId(modName);
+  callbacks.registerCallback("modConfig", [root](Variant<ModId, String> const& modNameOrId) -> Json {
+      ModId modId;
+      if (auto id = modNameOrId.ptr<ModId>())
+        modId = *id;
+      else
+        modId = root->materialDatabase()->modId(modNameOrId.get<String>());
+
       if (auto path = root->materialDatabase()->modPath(modId))
         return JsonObject{{"path", *path}, {"config", root->materialDatabase()->modConfig(modId).get()}};
       return {};
@@ -312,6 +322,17 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
 
   callbacks.registerCallback("monsterConfig", [root](String const& typeName) -> Json {
     return root->monsterDatabase()->monsterConfig(typeName);
+  });
+
+  callbacks.registerCallback("biomeConfig", [root](String const& typeName) -> Json {
+    return root->biomeDatabase()->biomeConfig(typeName);
+  });
+
+  callbacks.registerCallback("treeFoliageConfig", [root](String const& typeName) -> Json {
+    return root->plantDatabase()->treeFoliageConfig(typeName);
+  });
+  callbacks.registerCallback("treeStemConfig", [root](String const& typeName) -> Json {
+    return root->plantDatabase()->treeStemConfig(typeName);
   });
 
   return callbacks;

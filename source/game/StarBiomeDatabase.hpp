@@ -27,11 +27,14 @@ public:
 
   BiomePtr createBiome(String const& biomeName, uint64_t seed, float verticalMidPoint, float threatLevel) const;
 
+  Json biomeConfig(String const& biomeName) const;
+
 private:
   struct Config {
     String path;
     String name;
     Json parameters;
+    Json toJson() const;
   };
   typedef StringMap<Config> ConfigMap;
 

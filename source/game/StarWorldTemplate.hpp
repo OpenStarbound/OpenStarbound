@@ -50,6 +50,8 @@ public:
 
     bool encloseLiquids = false;
     bool fillMicrodungeons = false;
+
+    Json toJson() const;
   };
 
   struct PotentialBiomeItems {
