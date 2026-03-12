@@ -1860,7 +1860,6 @@ Vec2F Humanoid::primaryArmPosition(Direction facingDirection, float armAngle, Ve
     Vec2F position = offset.rotate(armAngle) + rotationCenter;
     if (facingDirection == Direction::Left)
       position[0] *= -1;
-    Logger::info("{}", position);
     return position;
   }
 
