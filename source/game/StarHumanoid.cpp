@@ -542,8 +542,8 @@ void Humanoid::loadAnimation() {
 
     m_mouthOffsetPoint = {m_baseConfig.getString("mouthOffsetPart", "head"), m_baseConfig.getString("mouthOffsetPartPoint", "mouthOffset")};
     m_headArmorOffsetPoint = {m_baseConfig.getString("headArmorOffsetPart", "headCosmetic"), m_baseConfig.getString("headArmorOffsetPartPoint", "armorOffset")};
-    m_chestArmorOffsetPoint = {m_baseConfig.getString("chestArmorOffsetPart", "chestCosmetic"), m_baseConfig.getString("chestArmorOffsetPartPoint", "armorOffset")};
-    m_legsArmorOffsetPoint = {m_baseConfig.getString("legsArmorOffsetPart", "legsCosmetic"), m_baseConfig.getString("legsArmorOffsetPartPoint", "armorOffset")};
+    m_chestArmorOffsetPoint = {m_baseConfig.getString("chestArmorOffsetPart", "chestLegsCosmetic"), m_baseConfig.getString("chestArmorOffsetPartPoint", "chestArmorOffset")};
+    m_legsArmorOffsetPoint = {m_baseConfig.getString("legsArmorOffsetPart", "chestLegsCosmetic"), m_baseConfig.getString("legsArmorOffsetPartPoint", "legsArmorOffset")};
     m_backArmorOffsetPoint = {m_baseConfig.getString("backArmorOffsetPart", "backCosmetic"), m_baseConfig.getString("backArmorOffsetPartPoint", "armorOffset")};
     m_feetOffsetPoint = {m_baseConfig.getString("feetOffsetPart", "body"), m_baseConfig.getString("feetOffsetPartPoint", "feetOffset")};
     m_throwPoint = {m_baseConfig.getString("throwPart", "head"), m_baseConfig.getString("throwPartPoint", "mouthOffset")};

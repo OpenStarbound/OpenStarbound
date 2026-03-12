@@ -6,96 +6,93 @@
 
 	"animatedParts" : {
 		"parts" : {
-			"legsCosmetic<slot>": {
+			"chestLegsCosmetic": {
 				"properties": {
-					"centered": true,
-					"zLevelChestLegs": 10.0,
-					"anchorPart": "legsCosmetic",
-					"processingDirectives" : "<cosmetic<slot>Directives>"
+					"centered": true
 				},
 				"partStates": {
 					"body": {
-						"idle": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<personalityIdle>" } },
-						"duck": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<body_state>.<body_frame>" } },
-						"sit" : "duck",
-						"lay" : "duck",
-						"walk" : "duck",
-						"run": { "properties": { "image": "<legsCosmetic<slot>Frameset>:run.<body_frame>" } },
-						"runbackwards" : "run",
-						"jump" : "duck",
-						"fall" : "duck",
-						"swim" : "duck",
-						"swimIdle" : "duck"
+						"idle": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<personalityIdle><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"duck": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<body_state>.<body_frame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"sit" : { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<body_state>.<body_frame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"lay" : { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<body_state>.<body_frame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"walk" : { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<body_state>.<body_frame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"run": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:run.<body_frame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"runbackwards" : { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:run.<body_frame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"jump" : { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<body_state>.<body_frame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"fall" : { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<body_state>.<body_frame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"swim" : { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<body_state>.<body_frame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"swimIdle" : { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<body_state>.<body_frame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } }
 					},
 					"bodyDance" : {
-						"dance": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"dance": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
 
-						"idle.1": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
-						"idle.2": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
-						"idle.3": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
-						"idle.4": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
-						"idle.5": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"idle.1": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"idle.2": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"idle.3": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"idle.4": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"idle.5": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
 
-						"walk.1": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
-						"walk.2": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
-						"walk.3": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
-						"walk.4": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
-						"walk.5": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
-						"walk.6": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
-						"walk.7": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
-						"walk.8": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"walk.1": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"walk.2": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"walk.3": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"walk.4": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"walk.5": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"walk.6": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"walk.7": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"walk.8": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
 
-						"run.1": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
-						"run.2": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
-						"run.3": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
-						"run.4": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
-						"run.5": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
-						"run.6": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
-						"run.7": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
-						"run.8": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"run.1": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"run.2": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"run.3": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"run.4": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"run.5": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"run.6": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"run.7": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"run.8": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
 
-						"hidden.1": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"hidden.1": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
 
-						"jump.1": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
-						"jump.2": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
-						"jump.3": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
-						"jump.4": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"jump.1": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"jump.2": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"jump.3": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"jump.4": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
 
-						"fall.1": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
-						"fall.2": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
-						"fall.3": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
-						"fall.4": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"fall.1": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"fall.2": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"fall.3": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"fall.4": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
 
-						"swimIdle.1": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
-						"swimIdle.2": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"swimIdle.1": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"swimIdle.2": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
 
-						"swim.1": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
-						"swim.2": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
-						"swim.3": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
-						"swim.4": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
-						"swim.5": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
-						"swim.6": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
-						"swim.7": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"swim.1": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"swim.2": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"swim.3": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"swim.4": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"swim.5": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"swim.6": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"swim.7": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
 
-						"sit.1": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
-						"lay.1": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"sit.1": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"lay.1": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
 
-						"idleMelee": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
-						"duckMelee": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
+						"idleMelee": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"duckMelee": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
 
 						// doubt they'll see use but you never know
-						"climb.1": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
-						"climb.2": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
-						"climb.3": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
-						"climb.4": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
-						"climb.5": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
-						"climb.6": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
-						"climb.7": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } },
-						"climb.8": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<bodyDanceFrame>" } }
+						"climb.1": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"climb.2": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"climb.3": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"climb.4": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"climb.5": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"climb.6": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"climb.7": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } },
+						"climb.8": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<bodyDanceFrame><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } }
 					},
 					"portraitMode" : {
 						"head": { "properties": {} },
-						"bust": { "properties": { "image": "<legsCosmetic<slot>Frameset>:<personalityIdle><portraitMask>" } }
+						"bust": { "properties": { "imageParts":{"legs<slot>":{"image":"<legsCosmetic<slot>Frameset>:<personalityIdle><portraitMask><cosmetic<slot>Directives>","zLevelChestLegsSlot":0.0}} } }
 					}
 				}
 			}

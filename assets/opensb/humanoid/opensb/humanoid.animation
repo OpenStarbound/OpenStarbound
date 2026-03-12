@@ -693,18 +693,10 @@
 					}
 				}
 			},
-			"legsCosmetic" : { // this is merely a part for the generated cosmetic parts to anchor to
+			"chestLegsCosmetic" : { // chest and legs occupy the same part layer to layer over eachother
 				"properties" : {
 					"centered": true,
 					"anchorPart" : "body",
-					"zLevel" : 10
-				}
-			},
-			"chestCosmetic" : { // this is merely a part for the generated cosmetic parts to anchor to
-				"properties" : {
-					"centered": true,
-					"anchorPart" : "body",
-					"transformationGroups": [],
 					"zLevel" : 10
 				}
 			},
