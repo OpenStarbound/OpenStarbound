@@ -1046,7 +1046,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
         -(fabsf(m_headRotation / ((float)Constants::pi * 4.f)))
       };
       auto rotationCenter = jsonToVec2F(m_networkedAnimator.partProperty(m_headRotationPoint.first, m_headRotationPoint.second));
-      auto bodyHeadRotationCenter = networkedAnimator()->partTransformation(m_headRotationPoint.first).transformVec2(rotationCenter);
+      auto bodyHeadRotationCenter = m_networkedAnimator.partTransformation(m_headRotationPoint.first).transformVec2(rotationCenter);
       m_networkedAnimator.rotateLocalTransformationGroup("headRotation", m_headRotation * dir, rotationCenter);
       m_networkedAnimator.translateLocalTransformationGroup("headRotation", translate);
       m_networkedAnimator.rotateLocalTransformationGroup("bodyHeadRotation", m_headRotation * dir, rotationCenter);
@@ -1851,47 +1851,16 @@ Vec2F Humanoid::altHandPosition(Vec2F const& offset) const {
 
 Vec2F Humanoid::primaryArmPosition(Direction facingDirection, float armAngle, Vec2F const& offset) const {
   if (m_useAnimation){
-    // does the animator being configurable overcomplicate some things? yeah probably
     Vec2F rotationCenter;
-    String anchor;
-    StringList transformationGroups;
-    String rotationTransformGroup;
     if (facingDirection == Direction::Left || m_twoHanded) {
-      rotationTransformGroup = "frontArmRotation";
-      auto state = m_networkedAnimator.hasState("frontArm", m_primaryHand.frontFrame) ? m_primaryHand.frontFrame : "rotation";
-      // make sure we ge the properties for the arm rotation state
-      rotationCenter = jsonToVec2F(m_networkedAnimator.partProperty(m_frontArmRotationPoint.first,m_frontArmRotationPoint.second,{"frontArm"},state,1));
-      anchor = m_networkedAnimator.partProperty(m_frontArmRotationPoint.first, "anchorPart", {"frontArm"},state,1).toString();
-      transformationGroups = jsonToStringList(m_networkedAnimator.partProperty(m_frontArmRotationPoint.first, "transformationGroups", {"frontArm"},state,1));
+      rotationCenter = m_networkedAnimator.partTransformation(m_frontArmRotationPoint.first).transformVec2(jsonToVec2F(m_networkedAnimator.partProperty(m_frontArmRotationPoint.first,m_frontArmRotationPoint.second)));
     } else {
-      rotationTransformGroup = "backArmRotation";
-      auto state = m_networkedAnimator.hasState("backArm", m_primaryHand.backFrame) ? m_primaryHand.backFrame : "rotation";
-      // make sure we ge the properties for the arm rotation state
-      rotationCenter = jsonToVec2F(m_networkedAnimator.partProperty(m_backArmRotationPoint.first,m_backArmRotationPoint.second,{"backArm"},state,1));
-      anchor = m_networkedAnimator.partProperty(m_backArmRotationPoint.first, "anchorPart", {"backArm"},state,1).toString();
-      transformationGroups = jsonToStringList(m_networkedAnimator.partProperty(m_backArmRotationPoint.first, "transformationGroups", {"backArm"},state,1));
+      rotationCenter = m_networkedAnimator.partTransformation(m_backArmRotationPoint.first).transformVec2(jsonToVec2F(m_networkedAnimator.partProperty(m_backArmRotationPoint.first,m_backArmRotationPoint.second)));
     }
-    // and now, we do the group transformations for the part, but where it would do the rotation, we do some finagling to do it here instead of
-    // using the rotation stored in the animator
-    // now I DOUBT people will be doing crazy things using the animation transformation properties on the arm rotation parts themselves
-    // but rather parts that the arms are parented to with anchors, so I'm not accounting for that here
-    auto mat = Mat3F::identity();
-    auto i = transformationGroups.indexOf(rotationTransformGroup);
-    if (i != NPos) {
-      if (i > 0)
-        mat = m_networkedAnimator.groupTransformation(transformationGroups.slice(0, i-1));
-      auto rotated = Mat3F::identity();
-      rotated.rotate(armAngle, rotationCenter);
-      mat = rotated * mat;
-      if (i < (transformationGroups.size() -1))
-        mat = m_networkedAnimator.groupTransformation(transformationGroups.slice(i+1, transformationGroups.size() -1)) * mat;
-    } else {
-      mat = m_networkedAnimator.groupTransformation(transformationGroups);
-    }
-    mat = m_networkedAnimator.partTransformation(anchor) * mat;
-    auto position = mat.transformVec2(offset + rotationCenter);
+    Vec2F position = offset.rotate(armAngle) + rotationCenter;
     if (facingDirection == Direction::Left)
       position[0] *= -1;
+    Logger::info("{}", position);
     return position;
   }
 
@@ -1918,45 +1887,13 @@ Vec2F Humanoid::primaryArmPosition(Direction facingDirection, float armAngle, Ve
 
 Vec2F Humanoid::altArmPosition(Direction facingDirection, float armAngle, Vec2F const& offset) const {
   if (m_useAnimation){
-    // does the animator being configurable overcomplicate some things? yeah probably
     Vec2F rotationCenter;
-    String anchor;
-    StringList transformationGroups;
-    String rotationTransformGroup;
     if (facingDirection == Direction::Right) {
-      rotationTransformGroup = "frontArmRotation";
-      auto state = m_networkedAnimator.hasState("frontArm", m_primaryHand.frontFrame) ? m_primaryHand.frontFrame : "rotation";
-      // make sure we ge the properties for the arm rotation state
-      rotationCenter = jsonToVec2F(m_networkedAnimator.partProperty(m_frontArmRotationPoint.first,m_frontArmRotationPoint.second,{"frontArm"},state,1));
-      anchor = m_networkedAnimator.partProperty(m_frontArmRotationPoint.first, "anchorPart", {"frontArm"},state,1).toString();
-      transformationGroups = jsonToStringList(m_networkedAnimator.partProperty(m_frontArmRotationPoint.first, "transformationGroups", {"frontArm"},state,1));
+      rotationCenter = m_networkedAnimator.partTransformation(m_frontArmRotationPoint.first).transformVec2(jsonToVec2F(m_networkedAnimator.partProperty(m_frontArmRotationPoint.first,m_frontArmRotationPoint.second)));
     } else {
-      rotationTransformGroup = "backArmRotation";
-      auto state = m_networkedAnimator.hasState("backArm", m_primaryHand.backFrame) ? m_primaryHand.backFrame : "rotation";
-      // make sure we ge the properties for the arm rotation state
-      rotationCenter = jsonToVec2F(m_networkedAnimator.partProperty(m_backArmRotationPoint.first,m_backArmRotationPoint.second,{"backArm"},state,1));
-      anchor = m_networkedAnimator.partProperty(m_backArmRotationPoint.first, "anchorPart", {"backArm"},state,1).toString();
-      transformationGroups = jsonToStringList(m_networkedAnimator.partProperty(m_backArmRotationPoint.first, "transformationGroups", {"backArm"},state,1));
+      rotationCenter = m_networkedAnimator.partTransformation(m_backArmRotationPoint.first).transformVec2(jsonToVec2F(m_networkedAnimator.partProperty(m_backArmRotationPoint.first,m_backArmRotationPoint.second)));
     }
-    // and now, we do the group transformations for the part, but where it would do the rotation, we do some finagling to do it here instead of
-    // using the rotation stored in the animator
-    // now I DOUBT people will be doing crazy things using the animation transformation properties on the arm rotation parts themselves
-    // but rather parts that the arms are parented to with anchors, so I'm not accounting for that here
-    auto mat = Mat3F::identity();
-    auto i = transformationGroups.indexOf(rotationTransformGroup);
-    if (i != NPos) {
-      if (i > 0)
-        mat = m_networkedAnimator.groupTransformation(transformationGroups.slice(0, i-1));
-      auto rotated = Mat3F::identity();
-      rotated.rotate(armAngle, rotationCenter);
-      mat = rotated * mat;
-      if (i < (transformationGroups.size() -1))
-        mat = m_networkedAnimator.groupTransformation(transformationGroups.slice(i+1, transformationGroups.size() -1)) * mat;
-    } else {
-      mat = m_networkedAnimator.groupTransformation(transformationGroups);
-    }
-    mat = m_networkedAnimator.partTransformation(anchor) * mat;
-    auto position = mat.transformVec2(offset + rotationCenter);
+    Vec2F position = offset.rotate(armAngle) + rotationCenter;
     if (facingDirection == Direction::Left)
       position[0] *= -1;
     return position;
