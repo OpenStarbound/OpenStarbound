@@ -39,10 +39,10 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     [&](EntityPtr const& entity, EntityId const& otherId) -> bool {
         if (entity->inWorld()) {
             auto other = entity->world()->entity(otherId);
-            
+
             if (!other || !entity->getTeam().canDamage(other->getTeam(), false))
             return false;
-            
+
             return true;
         }
         return false;
@@ -131,7 +131,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     methods.registerMethod("getParameter",
     [&](EntityPtr const& entity, String const& parameterName, Maybe<Json> const& defaultValue) -> Json {
         Json val = Json();
-        
+
         bool handled = true;
         if (auto objectEntity = as<Object>(entity)) {
             val = objectEntity->configValue(parameterName);
@@ -449,7 +449,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->liquidMovement();
         return {};
-    }); 
+    });
 
     // tool user entity methods
     methods.registerMethod("handItem",
@@ -545,8 +545,17 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     [&](EntityPtr const& entity, Maybe<size_t> anchorIndex) -> Maybe<List<EntityId>> {
         if (!entity->inWorld())
             return {};
-        if (auto loungeable = as<LoungeableEntity>(entity))
-            return loungeable->entitiesLoungingIn(anchorIndex.value()).values();
+        if (auto loungeable = as<LoungeableEntity>(entity)) {
+            if (anchorIndex.isValid()) {
+                return loungeable->entitiesLoungingIn(anchorIndex.value()).values();
+            } else {
+                return loungeable->entitiesLounging().values().transformed(
+                    [](pair<EntityId, size_t> p) -> EntityId {
+                        return p.first;
+                    }
+                );
+            }
+        }
         return {};
     });
 
@@ -567,6 +576,15 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
             return {};
         if (auto loungeable = as<LoungeableEntity>(entity))
             return loungeable->anchorCount();
+        return {};
+    });
+    methods.registerMethod("loungeAnchor",
+    [&](EntityPtr const& entity, int anchorIndex) -> Maybe<JsonObject> {
+        if (!entity->inWorld())
+            return {};
+        if (auto loungeable = as<LoungeableEntity>(entity))
+            if (auto anchor = loungeable->loungeAnchor(anchorIndex))
+                return anchor->toJson();
         return {};
     });
 
@@ -829,6 +847,6 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     });
 
     return methods;
-} 
+}
 
 }
