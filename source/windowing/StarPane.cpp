@@ -90,26 +90,32 @@ bool Pane::sendEvent(InputEvent const& event) {
       WidgetPtr newMouseOver;
       WidgetPtr newFocusWidget;
 
+      List<WidgetPtr> validWidgets;
+      // gather valid widgets into our own list because any of them could mutate
+      // m_members while processing the event and fuck everything up
+      for (auto const& widget : reverseIterate(m_members)) {
+        if (widget->inMember(mousePos) && widget->active() && widget->interactive())
+          validWidgets.append(widget);
+      }
+
       // Then, go through widgets in highest to lowest z-order and handle mouse
       // over, focus, and capture events.
-      for (auto const& widget : reverseIterate(m_members)) {
-        if (widget->inMember(mousePos) && widget->active() && widget->interactive()) {
-          WidgetPtr topWidget = widget;
-          WidgetPtr child = getChildAt(mousePos);
-          if (child->active() && child->interactive()) {
-            if (event.is<MouseButtonDownEvent>()
-                && (event.get<MouseButtonDownEvent>().mouseButton == MouseButton::Left
-                       || event.get<MouseButtonDownEvent>().mouseButton == MouseButton::Right)) {
-              if (!newClickDown)
-                newClickDown = child;
+      for (auto const& widget : validWidgets) {
+        WidgetPtr topWidget = widget;
+        WidgetPtr child = getChildAt(mousePos);
+        if (child->active() && child->interactive()) {
+          if (event.is<MouseButtonDownEvent>()
+              && (event.get<MouseButtonDownEvent>().mouseButton == MouseButton::Left
+                      || event.get<MouseButtonDownEvent>().mouseButton == MouseButton::Right)) {
+            if (!newClickDown)
+              newClickDown = child;
 
-              if (!newFocusWidget)
-                newFocusWidget = child;
-            }
-
-            if (!newMouseOver)
-              newMouseOver = child;
+            if (!newFocusWidget)
+              newFocusWidget = child;
           }
+
+          if (!newMouseOver)
+            newMouseOver = child;
         }
       }
 
@@ -137,11 +143,9 @@ bool Pane::sendEvent(InputEvent const& event) {
 
       // Finally go through widgets in highest to lowest z-order and send the
       // raw event, stopping further processing if the widget consumes it.
-      for (auto const& widget : reverseIterate(m_members)) {
-        if (widget->inMember(mousePos) && widget->active() && widget->interactive()) {
-          if (widget->sendEvent(event))
-            return true;
-        }
+      for (auto const& widget : validWidgets) {
+        if (widget->sendEvent(event))
+          return true;
       }
     }
 
