@@ -282,9 +282,11 @@ bool InventoryPane::sendEvent(InputEvent const& event) {
   if (auto mousePosition = Widget::context()->mousePosition(event)) {
     bool displayingCosmetics = false;
     for (auto const& p : EquipmentSlotNames) {
-      if (auto itemSlot = fetchChild<ItemSlotWidget>(p.second)) {
-        if ((displayingCosmetics = itemSlot->inMember(*mousePosition)))
-          break;
+      if (p.first >= EquipmentSlot::HeadCosmetic) {
+        if (auto itemSlot = fetchChild<ItemSlotWidget>(p.second)) {
+          if ((displayingCosmetics = itemSlot->inMember(*mousePosition)))
+            break;
+        }
       }
     }
 

@@ -212,7 +212,7 @@ void* File::fopen(char const* filename, IOMode mode) {
 
 void File::fseek(void* f, StreamOffset offset, IOSeek seekMode) {
   auto fd = fdFromHandle(f);
-  int retCode;
+  StreamOffset retCode;
   if (seekMode == IOSeek::Relative)
     retCode = lseek(fd, offset, SEEK_CUR);
   else if (seekMode == IOSeek::Absolute)

@@ -50,7 +50,13 @@ The following additional world bindings are available only for scripts running o
 
 #### `void` world.setExpiryTime(`float` expiryTime)
 
-Sets the amount of time to persist a ephemeral world when it is inactive.
+Sets the amount of time to persist an ephemeral world when it is inactive.
+
+---
+
+#### `float` world.expiryTime()
+
+Returns the amount of time an ephemeral world persists when it is inactive.
 
 ---
 
@@ -83,3 +89,15 @@ Attempts to replace existing materials with the specified material in the specif
 #### `bool` world.replaceMaterialArea(`Vec2F` center, `float` radius, `String` layerName, `String` materialName, [`int` hueShift], [`bool` enableDrops])
 
 Identical to world.replaceMaterials but applies to tiles in a circular radius around the specified center point.
+
+---
+
+#### `Json` world.biomeAt(`Vec2I` position)
+
+Returns a json object containing configuation values for the biome generated at the given position.
+
+---
+
+#### `Json` world.blockInfoAt(`Vec2I` position)
+
+Returns a json object containing information about the position in the world's template.

@@ -364,4 +364,20 @@ PlantPtr PlantDatabase::createPlant(BushVariant const& bushVariant, uint64_t see
   }
 }
 
+Json PlantDatabase::Config::toJson() const {
+  return JsonObject{
+    {"config", settings},
+    {"path", directory}
+  };
+}
+
+
+Json PlantDatabase::treeFoliageConfig(String const & foliageName) const{
+  return m_treeFoliageConfigs.get(foliageName).toJson();
+}
+
+Json PlantDatabase::treeStemConfig(String const & stemName) const {
+  return m_treeStemConfigs.get(stemName).toJson();
+}
+
 }

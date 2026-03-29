@@ -28,6 +28,13 @@
 
 namespace Star {
 
+enum VariantTerrainLayer { Background, Platform, Foreground };
+EnumMap<VariantTerrainLayer> VariantTerrainLayerNames{
+  {VariantTerrainLayer::Background, "Background"},
+  {VariantTerrainLayer::Platform, "Platform"},
+  {VariantTerrainLayer::Foreground, "Foreground"},
+};
+
 LuaCallbacks LuaBindings::makeRootCallbacks() {
   LuaCallbacks callbacks;
 
@@ -48,7 +55,7 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
   callbacks.registerCallbackWithSignature<float, String>("projectileGravityMultiplier", bind(RootCallbacks::projectileGravityMultiplier, root, _1));
   callbacks.registerCallbackWithSignature<Json, String>("projectileConfig", bind(RootCallbacks::projectileConfig, root, _1));
   callbacks.registerCallbackWithSignature<JsonArray, String>("recipesForItem", bind(RootCallbacks::recipesForItem, root, _1));
-  callbacks.registerCallbackWithSignature<JsonArray>("allRecipes", bind(RootCallbacks::allRecipes, root));
+  callbacks.registerCallbackWithSignature<JsonArray, Maybe<StringSet>>("allRecipes", bind(RootCallbacks::allRecipes, root, _1));
   callbacks.registerCallbackWithSignature<String, String>("itemType", bind(RootCallbacks::itemType, root, _1));
   callbacks.registerCallbackWithSignature<Json, String>("itemTags", bind(RootCallbacks::itemTags, root, _1));
   callbacks.registerCallbackWithSignature<bool, String, String>("itemHasTag", bind(RootCallbacks::itemHasTag, root, _1, _2));
@@ -67,6 +74,29 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
 
   callbacks.registerCallbackWithSignature<Maybe<String>, String, Maybe<String>>("materialMiningSound", bind(RootCallbacks::materialMiningSound, root, _1, _2));
   callbacks.registerCallbackWithSignature<Maybe<String>, String, Maybe<String>>("materialFootstepSound", bind(RootCallbacks::materialFootstepSound, root, _1, _2));
+
+  auto getVariant = [](unsigned x, unsigned y, bool isMatMod, VariantTerrainLayer layer, unsigned variants) -> unsigned {
+    static thread_local std::unique_ptr<XXH32_state_t, decltype(&XXH32_freeState)>
+      unique_state(XXH32_createState(), XXH32_freeState);
+    XXH32_state_t* state = unique_state.get();
+    XXH32_reset(state, 2938728349);
+    XXH32_update(state, &x, sizeof(x));
+    XXH32_update(state, &y, sizeof(y));
+    XXH32_update(state, &layer, sizeof(layer));
+    if (isMatMod)
+      XXH32_update(state, "mod", 3);
+    else
+      XXH32_update(state, "main", 4);
+    return XXH32_digest(state) % variants;
+  };
+
+  callbacks.registerCallback("materialVariant", [root, getVariant](Vec2U const& tilePosition, String const& layer, unsigned variants) -> unsigned {
+    return getVariant(tilePosition.x(), tilePosition.y(), false, VariantTerrainLayerNames.getLeft(layer), variants);
+  });
+
+  callbacks.registerCallback("modVariant", [root, getVariant](Vec2U const& tilePosition, String const& layer, unsigned variants) -> unsigned {
+    return getVariant(tilePosition.x(), tilePosition.y(), true, VariantTerrainLayerNames.getLeft(layer), variants);
+  });
 
   callbacks.registerCallback("assetsByExtension", [root](String const& extension) -> CaseInsensitiveStringSet {
     return root->assets()->scanExtension(extension);
@@ -126,15 +156,25 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
       return root->itemDatabase()->itemFile(itemName);
     });
 
-  callbacks.registerCallback("materialConfig", [root](String const& materialName) -> Json {
-      auto materialId = root->materialDatabase()->materialId(materialName);
+  callbacks.registerCallback("materialConfig", [root](Variant<MaterialId, String> const& materialNameOrId) -> Json {
+      MaterialId materialId;
+      if (auto id = materialNameOrId.ptr<MaterialId>())
+        materialId = *id;
+      else
+        materialId = root->materialDatabase()->materialId(materialNameOrId.get<String>());
+
       if (auto path = root->materialDatabase()->materialPath(materialId))
         return JsonObject{{"path", *path}, {"config", root->materialDatabase()->materialConfig(materialId).get()}};
       return {};
     });
 
-  callbacks.registerCallback("modConfig", [root](String const& modName) -> Json {
-      auto modId = root->materialDatabase()->modId(modName);
+  callbacks.registerCallback("modConfig", [root](Variant<ModId, String> const& modNameOrId) -> Json {
+      ModId modId;
+      if (auto id = modNameOrId.ptr<ModId>())
+        modId = *id;
+      else
+        modId = root->materialDatabase()->modId(modNameOrId.get<String>());
+
       if (auto path = root->materialDatabase()->modPath(modId))
         return JsonObject{{"path", *path}, {"config", root->materialDatabase()->modConfig(modId).get()}};
       return {};
@@ -310,6 +350,21 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
     return root->statusEffectDatabase()->uniqueEffectConfig(effect).toJson();
   });
 
+  callbacks.registerCallback("monsterConfig", [root](String const& typeName) -> Json {
+    return root->monsterDatabase()->monsterConfig(typeName);
+  });
+
+  callbacks.registerCallback("biomeConfig", [root](String const& typeName) -> Json {
+    return root->biomeDatabase()->biomeConfig(typeName);
+  });
+
+  callbacks.registerCallback("treeFoliageConfig", [root](String const& typeName) -> Json {
+    return root->plantDatabase()->treeFoliageConfig(typeName);
+  });
+  callbacks.registerCallback("treeStemConfig", [root](String const& typeName) -> Json {
+    return root->plantDatabase()->treeStemConfig(typeName);
+  });
+
   return callbacks;
 }
 
@@ -384,8 +439,13 @@ JsonArray LuaBindings::RootCallbacks::recipesForItem(Root* root, String const& a
   return result;
 }
 
-JsonArray LuaBindings::RootCallbacks::allRecipes(Root* root) {
-  auto& recipes = root->itemDatabase()->allRecipes();
+JsonArray LuaBindings::RootCallbacks::allRecipes(Root* root, Maybe<StringSet> filter) {
+  HashSet<ItemRecipe> recipes;
+  if (filter.isValid())
+    recipes = root->itemDatabase()->allRecipes(filter.value());
+  else
+    recipes = root->itemDatabase()->allRecipes();
+
   JsonArray result;
   result.reserve(recipes.size());
   for (auto& recipe : recipes)
@@ -439,7 +499,9 @@ String LuaBindings::RootCallbacks::generateName(Root* root, String const& rulesA
 }
 
 Json LuaBindings::RootCallbacks::questConfig(Root* root, String const& templateId) {
-  return root->questTemplateDatabase()->questTemplate(templateId)->config;
+  if (auto quest = root->questTemplateDatabase()->questTemplate(templateId))
+    return quest->config;
+  throw StarException(strf("No quest template found for id '{}'", templateId));
 }
 
 JsonArray LuaBindings::RootCallbacks::npcPortrait(Root* root,

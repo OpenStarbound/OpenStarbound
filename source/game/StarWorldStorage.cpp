@@ -448,7 +448,7 @@ WorldStorage::WorldMetadataStore WorldStorage::readWorldMetadata(ByteArray const
   WorldMetadataStore metadata;
   ds.read(metadata.worldSize);
   ds.read(metadata.userMetadata);
-
+  VersionedJson::readSubVersioning(ds, metadata.userMetadata);
   return metadata;
 }
 
@@ -457,7 +457,7 @@ ByteArray WorldStorage::writeWorldMetadata(WorldMetadataStore const& metadata) {
 
   ds.write(metadata.worldSize);
   ds.write(metadata.userMetadata);
-
+  VersionedJson::writeSubVersioning(ds, metadata.userMetadata);
   return compressData(ds.data());
 }
 
@@ -470,11 +470,21 @@ ByteArray WorldStorage::entitySectorKey(Sector const& sector) {
 }
 
 WorldStorage::EntitySectorStore WorldStorage::readEntitySector(ByteArray const& data) {
-  return DataStreamBuffer::deserialize<EntitySectorStore>(uncompressData(data));
+  DataStreamBuffer ds(uncompressData(data));
+  auto store = ds.read<EntitySectorStore>();
+  for (auto& entity : store) {
+    VersionedJson::readSubVersioning(ds, entity);
+  }
+  return store;
 }
 
 ByteArray WorldStorage::writeEntitySector(EntitySectorStore const& store) {
-  return compressData(DataStreamBuffer::serialize(store));
+  DataStreamBuffer ds;
+  ds.write(store);
+  for (auto& entity : store) {
+    VersionedJson::writeSubVersioning(ds, entity);
+  }
+  return compressData(ds.data());
 }
 
 ByteArray WorldStorage::tileSectorKey(Sector const& sector) {

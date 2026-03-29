@@ -190,13 +190,13 @@ Returns the configured health value for the specified material.
 
 #### `Json` root.materialConfig(`String` materialName)
 
-Returns a JSON object containing the `path` and base `config` for the specified material if it is a real material, or `nil` if it is a metamaterial or invalid.
+Returns a JSON object containing the `path` and base `config` for the specified material if it is a real material, or `nil` if it is a metamaterial or invalid. OpenStarbound allows to retrieve this by its ID as well.
 
 ---
 
 #### `Json` root.modConfig(`String` modName)
 
-Returns a JSON object containing the `path` and base `config` for the specified mod if it is a real mod, or `nil` if it is a metamod or invalid.
+Returns a JSON object containing the `path` and base `config` for the specified mod if it is a real mod, or `nil` if it is a metamod or invalid. OpenStarbound allows to retrieve this by its ID as well.
 
 ---
 

@@ -199,6 +199,10 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
   bool maximized = configuration->get("maximized").toBool();
   m_controllerInput = configuration->get("controllerInput").optBool().value();
   
+  #ifdef STAR_SYSTEM_WINDOWS
+    appController->setBorderlessWorkaround(configuration->get("borderlessWorkaround", true).toBool());
+  #endif
+
   if (fullscreen)
     appController->setFullscreenWindow(fullscreenSize);
   else if (borderless)

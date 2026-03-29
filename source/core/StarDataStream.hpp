@@ -31,6 +31,7 @@ public:
   // Do direct reads and writes
   virtual void readData(char* data, size_t len) = 0;
   virtual void writeData(char const* data, size_t len) = 0;
+  virtual bool atEnd() { return false; };
 
   // These do not read / write sizes, they simply read / write directly.
   ByteArray readBytes(size_t len);

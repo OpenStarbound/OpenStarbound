@@ -607,6 +607,10 @@ void WorldServer::setExpiryTime(float expiryTime) {
   m_expiryTimer = GameTimer(expiryTime);
 }
 
+float WorldServer::expiryTime() {
+  return m_expiryTimer.timer;
+}
+
 void WorldServer::update(float dt) {
   m_currentTime += dt;
   ++m_currentStep;

@@ -4,6 +4,16 @@ The `root` table now contains extra asset bindings and bindings to return the ti
 
 ---
 
+#### `unsigned` root.materialVariant(`Vec2U` tilePosition, `String` layer, `unsigned` variants)
+
+Returns the variant index starting from 0 for the material variant used at the specified **tilePosition**. **layer** must be either `"foreground"`, `"background"` or `"platform"`, and **variants** must be the amount of variants the material has, which you can use the vanilla `root.materialConfig` function to fetch.
+
+#### `unsigned` root.modVariant(`Vec2U` tilePosition, `String` layer, `unsigned` variants)
+
+Works like `root.materialVariant` but for matmods.
+
+---
+
 #### `String[]` root.assetsByExtension(`String` extension)
 
 Returns an array containing all assets with the specified file extension.
@@ -120,9 +130,11 @@ Sets a configuration value in `/storage/starbound.config` by path.
 
 ---
 
-#### `JsonArray` root.allRecipes()
+#### `JsonArray` root.allRecipes(`Maybe<StringSet>` filter)
 
 Returns all recipes.
+
+Optionally apply a filter for recipe groups.
 
 ---
 
@@ -163,3 +175,39 @@ Additional arguments **ext** are not used by the retail character creation, but 
 #### `JsonObject` root.effectConfig(`String` effect)
 
 Returns the config for the status effect.
+
+---
+
+#### `Json` root.materialConfig(`MaterialId` materialId)
+
+Returns a JSON object containing the `path` and base `config` for the specified material by its ID if it is a real material, or `nil` if it is a metamaterial or invalid.
+
+---
+
+#### `Json` root.modConfig(`ModId` modId)
+
+Returns a JSON object containing the `path` and base `config` for the specified mod by its ID if it is a real mod, or `nil` if it is a metamod or invalid.
+
+---
+
+#### `Json` root.monsterConfig(`String` typeName)
+
+Returns the base config for the monsterType.
+
+---
+
+#### `Json` root.biomeConfig(`String` typeName)
+
+Returns a json object of the config, name, and path of the given biome.
+
+---
+
+#### `Json` root.treeFoliageConfig(`String` typeName)
+
+Returns a json object of the config, and path for the given foliage.
+
+---
+
+#### `Json` root.treeStemConfig(`String` typeName)
+
+Returns a json object of the config, and path for the given stem.
