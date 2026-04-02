@@ -140,10 +140,10 @@ MainInterface::MainInterface(UniverseClientPtr client, WorldPainterPtr painter, 
   m_questTracker = make_shared<QuestTrackerPane>();
   m_paneManager.registerPane(MainInterfacePanes::QuestTracker, PaneLayer::Hud, m_questTracker);
 
-  m_mmUpgrade = make_shared<ScriptPane>(m_client, Root::singleton().assets()->json("/interface.config:mainBar.mmUpgrade.scriptPane").toString());
+  m_mmUpgrade = make_shared<ScriptPane>(m_client, Root::singleton().assets()->json("/interface.config:mainBar.mmUpgrade").getString("scriptPane", "/interface/scripted/mmupgrade/mmupgradegui.config"));
   m_paneManager.registerPane(MainInterfacePanes::MmUpgrade, PaneLayer::Window, m_mmUpgrade);
 
-  m_collections = make_shared<ScriptPane>(m_client, Root::singleton().assets()->json("/interface.config:mainBar.collections.scriptPane").toString());
+  m_collections = make_shared<ScriptPane>(m_client, Root::singleton().assets()->json("/interface.config:mainBar.collections").getString("scriptPane", "/interface/scripted/collections/collectionsgui.config"));
   m_paneManager.registerPane(MainInterfacePanes::Collections, PaneLayer::Window, m_collections);
 
   m_chat = make_shared<Chat>(m_client, Root::singleton().assets()->json("/interface/chat/chat.config"));
