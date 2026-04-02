@@ -235,7 +235,7 @@ void OpenGlRenderer::loadConfig(Json const& config) {
 
   for (auto& pair : config.getObject("frameBuffers", {})) {
     Json config = pair.second;
-    config = config.set("multisample", m_multiSampling);
+    config = config.set("multisample", pair.first == "main"? m_multiSampling : 0);
     Logger::info("Creating framebuffer {}", pair.first);
     m_frameBuffers[pair.first] = make_ref<GlFrameBuffer>(config);
 
