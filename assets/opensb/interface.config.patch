@@ -48,7 +48,8 @@
     "fontSize" : 24
   },
 
-  /* You can edit which panes they open. They default to their vanilla values if unset
+  // You can edit which panes they open. They default to their vanilla values if unset
+  /*
   "mainBar" : {
     "collections" : {
       "scriptPane" : "/interface/scripted/collections/collectionsgui.config"
