@@ -84,6 +84,7 @@ Note: Not every function from [StarExtensions](https://github.com/StarExtensions
 * Perfectly Generic Items will retain the data for what item they were if a mod is uninstalled, and will attempt to restore themselves if re-installed.
 * Musical instruments have their own volume slider in the options menu.
 * Players can use items while lounging
+* Mods can change which scriptPane the Matter Manipulator/Collections sidebar button opens, in [interface.config.patch](https://github.com/OpenStarbound/OpenStarbound/blob/main/assets/interface.config.patch).
 
 * Client-side tile placement prediction (rewrite from StarExtensions)
   * You can also resize the placement area of tiles on the fly.
