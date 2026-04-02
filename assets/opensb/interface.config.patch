@@ -48,6 +48,7 @@
     "fontSize" : 24
   },
 
+  /* You can edit which panes they open. They default to their vanilla values if unset
   "mainBar" : {
     "collections" : {
       "scriptPane" : "/interface/scripted/collections/collectionsgui.config"
@@ -56,6 +57,7 @@
       "scriptPane" : "/interface/scripted/mmupgrade/mmupgradegui.config"
     }
   },
+  */
 
   "buttonClickSound" : [ "/sfx/interface/button/click.wav" ],
   "buttonReleaseSound" : [ "/sfx/interface/button/release.wav" ],
