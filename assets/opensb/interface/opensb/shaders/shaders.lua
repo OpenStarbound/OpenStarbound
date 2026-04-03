@@ -26,6 +26,11 @@ local function addGroupToList(data)
   return name
 end
 
+local function updateNoShadersMessage()
+local hasGroups = #sortedGroups > 0
+widget.setVisible("noShadersMessage", not hasGroups)
+end
+
 local function parseGroups()
   for name, data in next, renderer.postProcessGroups() do
     if not data.hidden then
@@ -52,6 +57,7 @@ local function parseGroups()
     widget.setListSelected(GROUP_LIST_WIDGET, first)
     selectGroup(first)
   end
+  updateNoShadersMessage()
 end
 
 local activeGroup
