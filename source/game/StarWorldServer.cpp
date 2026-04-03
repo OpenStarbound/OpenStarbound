@@ -100,6 +100,14 @@ UniverseSettingsPtr WorldServer::universeSettings() const {
 void WorldServer::setReferenceClock(ClockPtr clock) {
   m_weather.setReferenceClock(clock);
   m_sky->setReferenceClock(clock);
+  m_referenceClock = clock;
+}
+
+void WorldServer::setPause(bool pause) {
+  if (m_referenceClock && pause)
+    m_referenceClock->stop();
+  else if (m_referenceClock)
+    m_referenceClock->start();
 }
 
 void WorldServer::initLua(UniverseServer* universe) {

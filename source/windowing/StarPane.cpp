@@ -401,11 +401,14 @@ LuaCallbacks Pane::makePaneCallbacks() {
   callbacks.registerCallback("getSize", [this]() -> Vec2I         {  return size();  });
   callbacks.registerCallback("setSize", [this](Vec2I const& size) { setSize(size);   });
 
-  callbacks.registerCallback("addWidget", [this](Json const& newWidgetConfig, Maybe<String> const& newWidgetName) -> LuaCallbacks {
+  callbacks.registerCallback("addWidget", [this](Json const& newWidgetConfig, Maybe<String> const& newWidgetName) -> Maybe<LuaCallbacks> {
       String name = newWidgetName.value(toString(Random::randu64()));
-      WidgetPtr newWidget = reader()->makeSingle(name, newWidgetConfig);
-      this->addChild(name, newWidget);
-      return LuaBindings::makeWidgetCallbacks(newWidget.get(), reader());
+      if (auto newWidget = reader()->makeSingle(name, newWidgetConfig)) {
+        this->addChild(name, newWidget);
+        return LuaBindings::makeWidgetCallbacks(newWidget.get(), reader());
+      } else {
+        return {};
+      }
     });
 
   callbacks.registerCallback("removeWidget", [this](String const& widgetName) -> bool
