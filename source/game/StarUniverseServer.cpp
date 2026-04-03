@@ -152,6 +152,16 @@ void UniverseServer::setPause(bool pause) {
   else
     m_universeClock->start();
 
+  RecursiveMutexLocker locker(m_mainLock);
+  for (auto const& worldId : m_worlds.keys()) {
+    if (auto world = getWorld(worldId)) {
+      locker.unlock();
+      world->executeAction([&pause](WorldServerThread *, WorldServer *world) {world->setPause(pause);});
+      locker.lock();
+    }
+  }
+  locker.unlock();
+
   for (auto& p : m_clients)
     m_connectionServer->sendPackets(p.first, {make_shared<PausePacket>(*m_pause, GlobalTimescale)});
 }
