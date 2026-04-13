@@ -239,6 +239,7 @@ private:
   IdMap<ConnectionId, ServerClientContextPtr> m_clients;
 
   shared_ptr<atomic<bool>> m_pause;
+  bool m_secureWarps;
   Map<WorldId, Maybe<WorkerPoolPromise<WorldServerThreadPtr>>> m_worlds;
   Map<InstanceWorldId, pair<int64_t, int64_t>> m_tempWorldIndex;
   Map<Vec3I, SystemWorldServerThreadPtr> m_systemWorlds;

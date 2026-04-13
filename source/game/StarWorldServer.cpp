@@ -432,13 +432,6 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
       }
 
     } else if (auto entityInteract = as<EntityInteractPacket>(packet)) {
-      auto targetEntity = m_entityMap->entity(entityInteract->interactRequest.targetId);
-      if (targetEntity && targetEntity->entityType() == EntityType::Player) {
-        Logger::warn("WorldServer: Blocked EntityInteract packet from client {} targeting player entity {}", clientId, entityInteract->interactRequest.targetId);
-        clientInfo->outgoingPackets.append(make_shared<EntityInteractResultPacket>(InteractAction(), entityInteract->requestId, entityInteract->interactRequest.sourceId));
-        continue;
-      }
-
       auto targetEntityConnection = connectionForEntity(entityInteract->interactRequest.targetId);
       if (targetEntityConnection == ServerConnectionId) {
         auto interactResult = interact(entityInteract->interactRequest).result();
@@ -572,7 +565,8 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
       // setTemplate re-adds all clients currently, update clientInfo
       clientInfo = m_clientInfo.get(clientId);
     } else {
-      throw WorldServerException::format("Improper packet type {} received by client", (int)packet->type());
+      Logger::warn("UniverseServer: Dropping unexpected {} packet from client",
+          PacketTypeNames.getRight(packet->type()));
     }
   }
 }

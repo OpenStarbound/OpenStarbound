@@ -92,6 +92,8 @@ UniverseServer::UniverseServer(String const& storageDir)
     networkWorkerThreads);
 
   m_pause = make_shared<atomic<bool>>(false);
+
+  m_secureWarps = Root::singleton().configuration()->getPath("security.secureWarps").optBool().value(true);
 }
 
 UniverseServer::~UniverseServer() {
@@ -905,7 +907,7 @@ void UniverseServer::warpPlayers() {
       continue;
 
     if (auto toPlayerUuid = warpAction.ptr<WarpToPlayer>()) {
-      bool authorized = clientContext->isAdmin();
+      bool authorized = clientContext->isAdmin() || !m_secureWarps;
       if (!authorized) {
         auto requesterTeam = m_teamManager->getTeam(clientContext->playerUuid());
         auto targetTeam = m_teamManager->getTeam(*toPlayerUuid);
@@ -1640,50 +1642,9 @@ void UniverseServer::packetsReceived(UniverseConnectionServer*, ConnectionId cli
     for (auto& packet : packets) {
       auto packetType = packet->type();
 
-      switch (packetType) {
-        case PacketType::PlayerWarp:
-        case PacketType::FlyShip:
-        case PacketType::ChatSend:
-        case PacketType::ClientContextUpdate:
-        case PacketType::ClientDisconnectRequest:
-        case PacketType::CelestialRequest:
-        case PacketType::SystemObjectSpawn:
-        // World client -> server packets
-        case PacketType::ModifyTileList:
-        case PacketType::ReplaceTileList:
-        case PacketType::DamageTileGroup:
-        case PacketType::CollectLiquid:
-        case PacketType::RequestDrop:
-        case PacketType::SpawnEntity:
-        case PacketType::ConnectWire:
-        case PacketType::DisconnectAllWires:
-        case PacketType::WorldClientStateUpdate:
-        case PacketType::FindUniqueEntity:
-        case PacketType::WorldStartAcknowledge:
-        case PacketType::Ping:
-        // Bidirectional packets
-        case PacketType::EntityCreate:
-        case PacketType::EntityUpdateSet:
-        case PacketType::EntityDestroy:
-        case PacketType::EntityInteract:
-        case PacketType::EntityInteractResult:
-        case PacketType::HitRequest:
-        case PacketType::DamageRequest:
-        case PacketType::DamageNotification:
-        case PacketType::EntityMessage:
-        case PacketType::EntityMessageResponse:
-        case PacketType::UpdateWorldProperties:
-        case PacketType::StepUpdate:
-          break; // allowed
-        default:
-            Logger::warn("UniverseServer: Dropping unexpected {} packet from client {}", 
-                PacketTypeNames.getRight(packetType), clientContext->descriptiveName());
-        continue;
-      }
-
       if (auto warpAction = as<PlayerWarpPacket>(packet)) {
         auto const& action = warpAction->action;
-        bool blocked = true;
+        bool blocked = m_secureWarps;
 
         if (action.is<WarpAlias>() || action.is<WarpToPlayer>()) {
           blocked = false;
@@ -1723,7 +1684,7 @@ void UniverseServer::packetsReceived(UniverseConnectionServer*, ConnectionId cli
       } else if (auto entityMessage = as<EntityMessagePacket>(packet)) {
         entityMessage->fromConnection = clientId;
 
-        if (entityMessage->message == "warp") {
+        if (m_secureWarps && entityMessage->message == "warp") {
           bool blocked = false;
 
           if (entityMessage->args.size() < 1 || !entityMessage->args.get(0).canConvert(Json::Type::String)) {
@@ -2109,7 +2070,7 @@ WarpToWorld UniverseServer::resolveWarpAction(WarpAction warpAction, ConnectionI
   }
 
   if (auto shipWorldId = toWorldId.ptr<ClientShipWorldId>()) {
-    if (!canWarpToShip(clientId, *shipWorldId))
+    if (m_secureWarps && !canWarpToShip(clientId, *shipWorldId))
       return {};
   }
 

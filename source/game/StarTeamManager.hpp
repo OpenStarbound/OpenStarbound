@@ -74,6 +74,7 @@ private:
 
   unsigned m_maxTeamSize;
   double m_polledInvitationTimeout;
+  bool m_secureTeams;
 
   TeamNumber m_pvpTeamCounter;
 
