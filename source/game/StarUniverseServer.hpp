@@ -175,6 +175,7 @@ private:
 
   // Main lock and clients read lock must be held when calling
   WarpToWorld resolveWarpAction(WarpAction warpAction, ConnectionId clientId, bool deploy) const;
+  bool canWarpToShip(ConnectionId clientId, Uuid const& targetShipUuid) const;
 
   void doDisconnection(ConnectionId clientId, String const& reason);
 

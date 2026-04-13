@@ -904,6 +904,23 @@ void UniverseServer::warpPlayers() {
     if (!clientContext)
       continue;
 
+    if (auto toPlayerUuid = warpAction.ptr<WarpToPlayer>()) {
+      bool authorized = clientContext->isAdmin();
+      if (!authorized) {
+        auto requesterTeam = m_teamManager->getTeam(clientContext->playerUuid());
+        auto targetTeam = m_teamManager->getTeam(*toPlayerUuid);
+        if (requesterTeam && targetTeam && *requesterTeam == *targetTeam)
+          authorized = true;
+      }
+      if (!authorized) {
+        Logger::warn("UniverseServer: Denied WarpToPlayer from client {} ({}) to UUID {}",
+                     clientId, clientContext->descriptiveName(), toPlayerUuid->hex());
+        m_connectionServer->sendPackets(clientId, {make_shared<PlayerWarpResultPacket>(false, warpAction, true)});
+        m_pendingPlayerWarps.remove(clientId);
+        continue;
+      }
+    }
+
     WarpToWorld warpToWorld = resolveWarpAction(warpAction, clientId, deploy);
 
     if (auto maybeToWorld = triggerWorldCreation(warpToWorld.world)) {
@@ -1621,7 +1638,70 @@ void UniverseServer::packetsReceived(UniverseConnectionServer*, ConnectionId cli
     clientsLocker.unlock();
 
     for (auto& packet : packets) {
+      auto packetType = packet->type();
+
+      switch (packetType) {
+        case PacketType::PlayerWarp:
+        case PacketType::FlyShip:
+        case PacketType::ChatSend:
+        case PacketType::ClientContextUpdate:
+        case PacketType::ClientDisconnectRequest:
+        case PacketType::CelestialRequest:
+        case PacketType::SystemObjectSpawn:
+        // World client -> server packets
+        case PacketType::ModifyTileList:
+        case PacketType::ReplaceTileList:
+        case PacketType::DamageTileGroup:
+        case PacketType::CollectLiquid:
+        case PacketType::RequestDrop:
+        case PacketType::SpawnEntity:
+        case PacketType::ConnectWire:
+        case PacketType::DisconnectAllWires:
+        case PacketType::WorldClientStateUpdate:
+        case PacketType::FindUniqueEntity:
+        case PacketType::WorldStartAcknowledge:
+        case PacketType::Ping:
+        // Bidirectional packets
+        case PacketType::EntityCreate:
+        case PacketType::EntityUpdateSet:
+        case PacketType::EntityDestroy:
+        case PacketType::EntityInteract:
+        case PacketType::EntityInteractResult:
+        case PacketType::HitRequest:
+        case PacketType::DamageRequest:
+        case PacketType::DamageNotification:
+        case PacketType::EntityMessage:
+        case PacketType::EntityMessageResponse:
+        case PacketType::UpdateWorldProperties:
+        case PacketType::StepUpdate:
+          break; // allowed
+        default:
+            Logger::warn("UniverseServer: Dropping unexpected {} packet from client {}", 
+                PacketTypeNames.getRight(packetType), clientContext->descriptiveName());
+        continue;
+      }
+
       if (auto warpAction = as<PlayerWarpPacket>(packet)) {
+        auto const& action = warpAction->action;
+        bool allowed = false;
+
+        if (action.is<WarpAlias>() || action.is<WarpToPlayer>()) {
+          allowed = true;
+        } else if (auto warpToWorld = action.ptr<WarpToWorld>()) {
+          if (warpToWorld->world.empty() || 
+              warpToWorld->world.is<ClientShipWorldId>() || 
+              warpToWorld->world.is<CelestialWorldId>() ||
+              warpToWorld->world.is<InstanceWorldId>()) {
+            allowed = true;
+          }
+        }
+
+        if (!allowed) {
+          Logger::warn("UniverseServer: Blocked invalid warp action from client {}", clientId);
+          m_connectionServer->sendPackets(clientId, {make_shared<PlayerWarpResultPacket>(false, action, true)});
+          continue;
+        }
+
         clientWarpPlayer(clientId, warpAction->action, warpAction->deploy);
 
       } else if (auto flyShip = as<FlyShipPacket>(packet)) {
@@ -1639,6 +1719,48 @@ void UniverseServer::packetsReceived(UniverseConnectionServer*, ConnectionId cli
 
       } else if (auto celestialRequest = as<CelestialRequestPacket>(packet)) {
         addCelestialRequests(clientId, std::move(celestialRequest->requests));
+
+      } else if (auto entityMessage = as<EntityMessagePacket>(packet)) {
+        entityMessage->fromConnection = clientId;
+
+        if (entityMessage->message == "warp") {
+          bool blocked = false;
+
+          if (entityMessage->args.size() < 1 || !entityMessage->args.get(0).canConvert(Json::Type::String)) {
+            Logger::warn("UniverseServer: Blocked warp entity message with invalid args from client {}", clientId);
+            blocked = true;
+          } else {
+            try {
+              parseWarpAction(entityMessage->args.get(0).toString());
+            } catch (StarException const&) {
+              Logger::warn("UniverseServer: Blocked warp entity message with unparseable warp action from client {}", clientId);
+              blocked = true;
+            }
+          }
+
+          if (!blocked) {
+            if (auto targetEntityId = entityMessage->entityId.ptr<EntityId>()) {
+              auto targetConnection = connectionForEntity(*targetEntityId);
+              if (targetConnection != clientId) {
+                clientsLocker.lock();
+                bool isAdmin = clientContext->isAdmin();
+                clientsLocker.unlock();
+                if (!isAdmin) {
+                  Logger::warn("UniverseServer: Blocked warp entity message from non-admin client {} targeting entity owned by connection {}", clientId, targetConnection);
+                  blocked = true;
+                }
+              }
+            }
+          }
+
+          if (blocked) {
+            m_connectionServer->sendPackets(clientId, {make_shared<EntityMessageResponsePacket>(makeLeft(String("Warp entity message blocked by server")), entityMessage->uuid)});
+            continue;
+          }
+        }
+
+        if (auto currentWorld = clientContext->playerWorld())
+          currentWorld->pushIncomingPackets(clientId, {std::move(packet)});
 
       } else if (is<SystemObjectSpawnPacket>(packet)) {
         if (auto currentSystem = clientContext->systemWorld())
@@ -1830,7 +1952,7 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
   ConnectionId clientId = m_clients.nextId();
   auto clientContext = make_shared<ServerClientContext>(clientId, remoteAddress, netRules, clientConnect->playerUuid,
                                                         clientConnect->playerName, clientConnect->shipSpecies, administrator, clientConnect->shipChunks);
-  clientContext->registerRpcHandlers(m_teamManager->rpcHandlers());
+  clientContext->registerRpcHandlers(m_teamManager->authenticatedRpcHandlers(clientContext->playerUuid()));
 
   String clientContextFile = File::relativeTo(m_storageDirectory, strf("{}.clientcontext", clientConnect->playerUuid.hex()));
   if (File::isFile(clientContextFile)) {
@@ -1986,7 +2108,52 @@ WarpToWorld UniverseServer::resolveWarpAction(WarpAction warpAction, ConnectionI
     }
   }
 
+  if (auto shipWorldId = toWorldId.ptr<ClientShipWorldId>()) {
+    if (!canWarpToShip(clientId, *shipWorldId))
+      return {};
+  }
+
   return WarpToWorld(toWorldId, spawnTarget);
+}
+
+bool UniverseServer::canWarpToShip(ConnectionId clientId, Uuid const& targetShipUuid) const {
+  auto clientContext = m_clients.value(clientId);
+  if (!clientContext)
+    return false;
+
+  Uuid callerUuid = clientContext->playerUuid();
+
+  if (targetShipUuid == callerUuid)
+    return true;
+
+  if (clientContext->isAdmin())
+    return true;
+
+  auto callerTeam = m_teamManager->getTeam(callerUuid);
+  if (!callerTeam)
+    return false;
+
+  if (auto ownerTeam = m_teamManager->getTeam(targetShipUuid)) {
+    if (*ownerTeam == *callerTeam)
+      return true;
+  }
+
+  for (auto const& otherClient : m_clients) {
+    if (otherClient.first == clientId)
+      continue;
+    auto otherTeam = m_teamManager->getTeam(otherClient.second->playerUuid());
+    if (!otherTeam || *otherTeam != *callerTeam)
+      continue;
+    WorldId otherWorldId = otherClient.second->playerWorldId();
+    if (auto otherShipWorld = otherWorldId.ptr<ClientShipWorldId>()) {
+      if (*otherShipWorld == targetShipUuid)
+        return true;
+    }
+  }
+
+  Logger::warn("UniverseServer: Rejected ship warp from {} to ship {} - not in team and no teammate present",
+               callerUuid.hex(), targetShipUuid.hex());
+  return false;
 }
 
 void UniverseServer::doDisconnection(ConnectionId clientId, String const& reason) {
