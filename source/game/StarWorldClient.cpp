@@ -1684,10 +1684,10 @@ RpcPromise<InteractAction> WorldClient::interact(InteractRequest const& request)
   if (auto targetEntity = m_entityMap->entity(request.targetId)) {
     if (targetEntity->isMaster()) {
       // client-side-master entities need to be handled here rather than over network
-      auto interactiveTarget = as<InteractiveEntity>(targetEntity);
-      starAssert(interactiveTarget);
-
-      return RpcPromise<InteractAction>::createFulfilled(interactiveTarget->interact(request));
+      if (auto interactiveTarget = as<InteractiveEntity>(targetEntity))
+        return RpcPromise<InteractAction>::createFulfilled(interactiveTarget->interact(request));
+      else
+        return RpcPromise<InteractAction>::createFulfilled(InteractAction());
     }
   }
 
