@@ -1683,20 +1683,20 @@ void UniverseServer::packetsReceived(UniverseConnectionServer*, ConnectionId cli
 
       if (auto warpAction = as<PlayerWarpPacket>(packet)) {
         auto const& action = warpAction->action;
-        bool allowed = false;
+        bool blocked = true;
 
         if (action.is<WarpAlias>() || action.is<WarpToPlayer>()) {
-          allowed = true;
+          blocked = false;
         } else if (auto warpToWorld = action.ptr<WarpToWorld>()) {
           if (warpToWorld->world.empty() || 
               warpToWorld->world.is<ClientShipWorldId>() || 
               warpToWorld->world.is<CelestialWorldId>() ||
               warpToWorld->world.is<InstanceWorldId>()) {
-            allowed = true;
+            blocked = false;
           }
         }
 
-        if (!allowed) {
+        if (blocked) {
           Logger::warn("UniverseServer: Blocked invalid warp action from client {}", clientId);
           m_connectionServer->sendPackets(clientId, {make_shared<PlayerWarpResultPacket>(false, action, true)});
           continue;
@@ -2123,10 +2123,7 @@ bool UniverseServer::canWarpToShip(ConnectionId clientId, Uuid const& targetShip
 
   Uuid callerUuid = clientContext->playerUuid();
 
-  if (targetShipUuid == callerUuid)
-    return true;
-
-  if (clientContext->isAdmin())
+  if (targetShipUuid == callerUuid || clientContext->isAdmin())
     return true;
 
   auto callerTeam = m_teamManager->getTeam(callerUuid);
