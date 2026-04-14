@@ -565,7 +565,8 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
       // setTemplate re-adds all clients currently, update clientInfo
       clientInfo = m_clientInfo.get(clientId);
     } else {
-      throw WorldServerException::format("Improper packet type {} received by client", (int)packet->type());
+      Logger::warn("UniverseServer: Dropping unexpected {} packet from client",
+          PacketTypeNames.getRight(packet->type()));
     }
   }
 }

@@ -175,6 +175,7 @@ private:
 
   // Main lock and clients read lock must be held when calling
   WarpToWorld resolveWarpAction(WarpAction warpAction, ConnectionId clientId, bool deploy) const;
+  bool canWarpToShip(ConnectionId clientId, Uuid const& targetShipUuid) const;
 
   void doDisconnection(ConnectionId clientId, String const& reason);
 
@@ -238,6 +239,7 @@ private:
   IdMap<ConnectionId, ServerClientContextPtr> m_clients;
 
   shared_ptr<atomic<bool>> m_pause;
+  bool m_secureWarps;
   Map<WorldId, Maybe<WorkerPoolPromise<WorldServerThreadPtr>>> m_worlds;
   Map<InstanceWorldId, pair<int64_t, int64_t>> m_tempWorldIndex;
   Map<Vec3I, SystemWorldServerThreadPtr> m_systemWorlds;
