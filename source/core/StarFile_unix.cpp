@@ -65,13 +65,7 @@ List<pair<String, bool>> File::dirList(const String& dirName, bool skipDots) {
     if (!skipDots || (entryString != "." && entryString != "..")) {
       bool isDirectory = false;
       #ifdef STAR_SYSTEM_HAIKU
-      struct stat stbuf;
-	  stat(entry->d_name, &stbuf);
-	  if (S_ISDIR(stbuf.st_mode)) {
-        isDirectory = true; 
-	  } else if (S_ISLNK(stbuf.st_mode) || !S_ISREG(stbuf.st_mode)) {
-        isDirectory = File::isDirectory(File::relativeTo(dirName, entryString));
-      }
+      isDirectory = File::isDirectory(File::relativeTo(dirName, entryString));
       #else
       if (entry->d_type == DT_DIR) {
         isDirectory = true;
