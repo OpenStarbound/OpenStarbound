@@ -1882,6 +1882,7 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
                               accountString, clientConnect->playerName, remoteAddressString);
 
   NetCompatibilityRules netRules(legacyClient ? LegacyVersion : 1);
+  netRules.setIsAdmin(administrator);
   if (Json& info = clientConnect->info) {
     if (auto openProtocolVersion = info.optUInt("openProtocolVersion"))
       netRules.setVersion(*openProtocolVersion);
