@@ -412,11 +412,16 @@ void Npc::update(float dt, uint64_t) {
       m_movementController->resetAnchorState();
 
     if (auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor())) {
+      auto anchorState = m_movementController->anchorState();
+      if (auto loungeableEntity = world()->get<LoungeableEntity>(anchorState->entityId))
+        for (auto control : m_LoungeControlsHeld)
+          loungeableEntity->loungeControl(anchorState->positionIndex, control);
+
       if (loungeAnchor->emote)
         requestEmote(*loungeAnchor->emote);
       if (loungeAnchor->dance)
         setDance(loungeAnchor->dance);
-      m_statusController->setPersistentEffects("lounging", loungeAnchor->statusEffects);
+      m_statusController->setPersistentEffects("lounging", loungeAnchor->statusEffects, m_movementController->anchorState()->entityId);
       m_effectEmitter->addEffectSources("normal", loungeAnchor->effectEmitters);
       switch (loungeAnchor->orientation) {
         case LoungeOrientation::Sit:
@@ -505,10 +510,41 @@ void Npc::update(float dt, uint64_t) {
 
 void Npc::render(RenderCallback* renderCallback) {
   EntityRenderLayer renderLayer = RenderLayerNpc;
-  if (auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor()))
+  auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor());
+  if (loungeAnchor)
     renderLayer = loungeAnchor->loungeRenderLayer;
 
+  if (!loungeAnchor ||(!loungeAnchor->usePartZLevel && !loungeAnchor->hidden) ) {
+    renderCallback->addDrawables(drawables(position()), renderLayer);
+  }
+  renderCallback->addDrawables(m_tools->renderObjectPreviews(aimPosition(), walkingDirection(), inToolRange(), favoriteColor()), renderLayer);
+
+  if (loungeAnchor && loungeAnchor->hidden) {
+    m_statusController->pullNewParticles();
+    m_npcVariant.splashConfig.doSplash(position(), m_movementController->velocity(), world());
+    m_humanoidDynamicTarget.pullNewParticles();
+    m_humanoidDynamicTarget.pullNewAudios();
+  } else {
+    renderCallback->addParticles(m_statusController->pullNewParticles());
+    renderCallback->addParticles(m_npcVariant.splashConfig.doSplash(position(), m_movementController->velocity(), world()));
+    renderCallback->addParticles(m_humanoidDynamicTarget.pullNewParticles());
+    renderCallback->addAudios(m_humanoidDynamicTarget.pullNewAudios());
+
+  }
+
+
+  renderCallback->addAudios(m_statusController->pullNewAudios());
+
+  m_tools->render(renderCallback, inToolRange(), m_shifting.get(), renderLayer);
+
+  m_effectEmitter->render(renderCallback);
+  m_songbook->render(renderCallback);
+}
+
+List<Drawable> Npc::drawables(Vec2F position) {
+  List<Drawable> drawables;
   m_tools->setupHumanoidHandItemDrawables(*humanoid());
+  auto anchor = as<LoungeAnchor>(m_movementController->entityAnchor());
 
   DirectivesGroup humanoidDirectives;
   Vec2F scale = Vec2F::filled(1.f);
@@ -519,28 +555,22 @@ void Npc::render(RenderCallback* renderCallback) {
   }
   humanoid()->setScale(scale);
 
-  for (auto& drawable : humanoid()->render()) {
-    drawable.translate(position());
-    if (drawable.isImage())
+  for (auto& drawable : humanoid()->render(true, true, (!anchor || !anchor->usePartZLevel), true)) {
+    drawable.translate(position);
+    if (drawable.isImage()) {
       drawable.imagePart().addDirectivesGroup(humanoidDirectives, true);
-    renderCallback->addDrawable(std::move(drawable), renderLayer);
+
+      if (anchor) {
+        if (auto& directives = anchor->directives)
+          drawable.imagePart().addDirectives(*directives, true);
+      }
+    }
+    drawables.append(std::move(drawable));
   }
 
-  renderCallback->addParticles(m_humanoidDynamicTarget.pullNewParticles());
-  renderCallback->addAudios(m_humanoidDynamicTarget.pullNewAudios());
+  drawables.appendAll(m_statusController->drawables(position));
 
-  renderCallback->addDrawables(m_statusController->drawables(), renderLayer);
-  renderCallback->addParticles(m_statusController->pullNewParticles());
-  renderCallback->addAudios(m_statusController->pullNewAudios());
-
-  renderCallback->addParticles(m_npcVariant.splashConfig.doSplash(position(), m_movementController->velocity(), world()));
-
-  m_tools->render(renderCallback, inToolRange(), m_shifting.get(), renderLayer);
-
-  renderCallback->addDrawables(m_tools->renderObjectPreviews(aimPosition(), walkingDirection(), inToolRange(), favoriteColor()), renderLayer);
-
-  m_effectEmitter->render(renderCallback);
-  m_songbook->render(renderCallback);
+  return drawables;
 }
 
 void Npc::renderLightSources(RenderCallback* renderCallback) {
@@ -829,9 +859,24 @@ LuaCallbacks Npc::makeNpcCallbacks() {
       return true;
     });
 
-  callbacks.registerCallback("resetLounging", [this]() { m_movementController->resetAnchorState(); });
+  callbacks.registerCallback("resetLounging", [this]() {
+    auto anchor = as<LoungeAnchor>(m_movementController->entityAnchor());
+    if (anchor && anchor->dismountable) {
+      m_movementController->resetAnchorState();
+    }
+  });
 
   callbacks.registerCallback("isLounging", [this]() { return is<LoungeAnchor>(m_movementController->entityAnchor()); });
+
+  callbacks.registerCallback("setLoungeControlHeld", [this](String control, bool held) {
+    if (held)
+      m_LoungeControlsHeld.add(LoungeControlNames.getLeft(control));
+    else
+      m_LoungeControlsHeld.remove(LoungeControlNames.getLeft(control));
+  });
+  callbacks.registerCallback("isLoungeControlHeld", [this](String control) -> bool {
+    return m_LoungeControlsHeld.contains(LoungeControlNames.getLeft(control));
+  });
 
   callbacks.registerCallback("loungingIn", [this]() -> Maybe<EntityId> {
       auto loungingState = loungingIn();
@@ -1277,8 +1322,9 @@ void Npc::playEmote(HumanoidEmote emote) {
 
 List<DamageSource> Npc::damageSources() const {
   auto damageSources = m_tools->damageSources();
+  auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor());
 
-  if (m_damageOnTouch.get() && !m_npcVariant.touchDamageConfig.isNull()) {
+  if (m_damageOnTouch.get() && !m_npcVariant.touchDamageConfig.isNull() && canUseTool()) {
     Json config = m_npcVariant.touchDamageConfig;
     if (!config.contains("poly") && !config.contains("line")) {
       config = config.set("poly", jsonFromPolyF(m_movementController->collisionPoly()));
