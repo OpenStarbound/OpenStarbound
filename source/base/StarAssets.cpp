@@ -324,7 +324,7 @@ Assets::Assets(Settings settings, StringList assetSources) {
         } else {
           for (int i = 0; i < 10; i++) {
             if (filename.endsWith(AssetsPatchSuffix + toString(i), String::CaseInsensitive)) {
-              auto targetPatchFile = filename.substr(0, filename.size() - strlen(AssetsPatchSuffix) + 1);
+              auto targetPatchFile = filename.substr(0, filename.size() - strlen(AssetsPatchSuffix) - 1);
               if (auto p = m_files.ptr(targetPatchFile))
                 p->patchSources.append({filename, source});
               break;
