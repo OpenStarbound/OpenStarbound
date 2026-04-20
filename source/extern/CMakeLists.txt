@@ -85,4 +85,15 @@ IF (STAR_USE_RPMALLOC)
   )
 ENDIF()
 
+IF (STAR_SYSTEM_ANDROID)
+  SET(star_extern_HEADERS ${star_extern_HEADERS}
+    libexecinfo/execinfo.h
+    libexecinfo/stacktraverse.h
+  )
+  SET(star_extern_SOURCES ${star_extern_SOURCES}
+    libexecinfo/execinfo.c
+    libexecinfo/stacktraverse.c
+  )
+ENDIF()
+
 ADD_LIBRARY (star_extern OBJECT ${star_extern_SOURCES} ${star_extern_HEADERS})

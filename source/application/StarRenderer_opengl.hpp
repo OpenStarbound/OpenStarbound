@@ -3,7 +3,13 @@
 #include "StarTextureAtlas.hpp"
 #include "StarRenderer.hpp"
 
+#ifndef STAR_SYSTEM_ANDROID
 #include "GL/glew.h"
+#else
+#define GL_GLEXT_PROTOTYPES 1
+#include "GL/gl.h"
+#include "GL/glext.h"
+#endif
 
 namespace Star {
 

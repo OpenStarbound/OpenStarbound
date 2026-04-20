@@ -27,6 +27,13 @@ namespace Star {
     return Star::runMainApplication(Star::make_unique<ApplicationClass>(), args); \
   }
 
+#elif defined STAR_SYSTEM_ANDROID
+
+#define STAR_MAIN_APPLICATION(ApplicationClass)                                                                   \
+  extern "C" int SDL_main(int argc, char** argv) {                                                                               \
+    return Star::runMainApplication(Star::make_unique<ApplicationClass>(), Star::StringList(argc, argv)); \
+  }
+
 #else
 
 #define STAR_MAIN_APPLICATION(ApplicationClass)                                                                   \

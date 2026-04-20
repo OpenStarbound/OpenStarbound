@@ -123,7 +123,11 @@ String File::fullPath(const String& fileName) {
 }
 
 String File::temporaryFileName() {
+#ifdef STAR_SYSTEM_ANDROID
+  return relativeTo(SDL_GetAndroidCachePath(), strf("starbound.tmpfile.{}", hexEncode(Random::randBytes(16))));
+#else
   return relativeTo(P_tmpdir, strf("starbound.tmpfile.{}", hexEncode(Random::randBytes(16))));
+#endif
 }
 
 FilePtr File::temporaryFile() {
@@ -132,7 +136,11 @@ FilePtr File::temporaryFile() {
 
 FilePtr File::ephemeralFile() {
   auto file = make_shared<File>();
+#ifdef STAR_SYSTEM_ANDROID
+  ByteArray path = ByteArray::fromCStringWithNull(relativeTo(SDL_GetAndroidCachePath(), "starbound.tmpfile.XXXXXXXX").utf8Ptr());
+#else
   ByteArray path = ByteArray::fromCStringWithNull(relativeTo(P_tmpdir, "starbound.tmpfile.XXXXXXXX").utf8Ptr());
+#endif
   auto res = mkstemp(path.ptr());
   if (res < 0)
     throw IOException::format("tmpfile error: {}", strerror(errno));
@@ -144,7 +152,11 @@ FilePtr File::ephemeralFile() {
 }
 
 String File::temporaryDirectory() {
+#ifdef STAR_SYSTEM_ANDROID
+  String dirname = relativeTo(SDL_GetAndroidCachePath(), strf("starbound.tmpdir.{}", hexEncode(Random::randBytes(16))));
+#else
   String dirname = relativeTo(P_tmpdir, strf("starbound.tmpdir.{}", hexEncode(Random::randBytes(16))));
+#endif
   makeDirectory(dirname);
   return dirname;
 }

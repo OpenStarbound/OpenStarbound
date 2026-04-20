@@ -1,0 +1,390 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="GL4ES" />
+		<Option pch_mode="0" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Linux Static">
+				<Option output="./libGL4ES.a" prefix_auto="0" extension_auto="0" />
+				<Option working_dir="" />
+				<Option type="2" />
+				<Option compiler="gcc" />
+				<Option projectResourceIncludeDirsRelation="1" />
+			</Target>
+			<Target title="Linux Dynamic">
+				<Option output="./libGL.so" prefix_auto="0" extension_auto="0" />
+				<Option type="3" />
+				<Option compiler="gcc" />
+				<Option projectResourceIncludeDirsRelation="1" />
+			</Target>
+			<Target title="Amiga Dynamic">
+				<Option output="./libGL.so" prefix_auto="0" extension_auto="0" />
+				<Option type="3" />
+				<Option compiler="gcc" />
+				<Option projectResourceIncludeDirsRelation="1" />
+			</Target>
+		</Build>
+		<VirtualTargets>
+			<Add alias="All" targets="Linux Static;" />
+		</VirtualTargets>
+		<Compiler>
+			<Add option="-DNO_GBM" />
+			<Add directory="/home/Dev/libs/game/Irrlicht-SVN/include" />
+			<Add directory="include" />
+		</Compiler>
+		<Linker>
+			<Add directory="/home/Dev/libs/game/Irrlicht-SVN/lib/Linux" />
+		</Linker>
+		<Unit filename="include/EGL/egl.h" />
+		<Unit filename="include/EGL/eglext.h" />
+		<Unit filename="include/EGL/eglplatform.h" />
+		<Unit filename="include/GL/gl.h" />
+		<Unit filename="include/GL/gl_mangle.h" />
+		<Unit filename="include/GL/glext.h" />
+		<Unit filename="include/GL/glu.h" />
+		<Unit filename="include/GL/glu_mangle.h" />
+		<Unit filename="include/GL/glx.h" />
+		<Unit filename="include/GL/glx_mangle.h" />
+		<Unit filename="include/GL/glxext.h" />
+		<Unit filename="include/GL/internal/dri_interface.h" />
+		<Unit filename="include/GLES/egl.h" />
+		<Unit filename="include/GLES/gl.h" />
+		<Unit filename="include/GLES/gl2.h" />
+		<Unit filename="include/GLES/gl2ext.h" />
+		<Unit filename="include/GLES/gl2platform.h" />
+		<Unit filename="include/GLES/gl3.h" />
+		<Unit filename="include/GLES/gl3ext.h" />
+		<Unit filename="include/GLES/gl3platform.h" />
+		<Unit filename="include/GLES/glext.h" />
+		<Unit filename="include/GLES/glplatform.h" />
+		<Unit filename="include/KHR/khrplatform.h" />
+		<Unit filename="include/android_debug.h" />
+		<Unit filename="include/gl4eshint.h" />
+		<Unit filename="include/gl4esinit.h" />
+		<Unit filename="include/khash.h" />
+		<Unit filename="src/agl/agl.c">
+			<Option compilerVar="CC" />
+			<Option target="Amiga Dynamic" />
+		</Unit>
+		<Unit filename="src/agl/agl.h">
+			<Option target="Amiga Dynamic" />
+		</Unit>
+		<Unit filename="src/agl/amigaos.c">
+			<Option compilerVar="CC" />
+			<Option target="Amiga Dynamic" />
+		</Unit>
+		<Unit filename="src/agl/amigaos.h">
+			<Option target="Amiga Dynamic" />
+		</Unit>
+		<Unit filename="src/agl/lookup.c">
+			<Option compilerVar="CC" />
+			<Option target="Amiga Dynamic" />
+		</Unit>
+		<Unit filename="src/gl/arbconverter.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/arbconverter.h" />
+		<Unit filename="src/gl/arbgenerator.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/arbgenerator.h" />
+		<Unit filename="src/gl/arbhelper.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/arbhelper.h" />
+		<Unit filename="src/gl/arbparser.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/arbparser.h" />
+		<Unit filename="src/gl/array.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/array.h" />
+		<Unit filename="src/gl/attributes.h" />
+		<Unit filename="src/gl/blend.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/blend.h" />
+		<Unit filename="src/gl/blit.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/blit.h" />
+		<Unit filename="src/gl/buffers.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/buffers.h" />
+		<Unit filename="src/gl/build_info.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/build_info.h" />
+		<Unit filename="src/gl/const.h" />
+		<Unit filename="src/gl/debug.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/debug.h" />
+		<Unit filename="src/gl/decompress.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/decompress.h" />
+		<Unit filename="src/gl/depth.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/depth.h" />
+		<Unit filename="src/gl/directstate.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/directstate.h" />
+		<Unit filename="src/gl/drawing.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/enable.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/enum_info.h" />
+		<Unit filename="src/gl/envvars.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/envvars.h" />
+		<Unit filename="src/gl/eval.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/eval.h" />
+		<Unit filename="src/gl/face.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/face.h" />
+		<Unit filename="src/gl/fog.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/fog.h" />
+		<Unit filename="src/gl/fpe.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/fpe.h" />
+		<Unit filename="src/gl/fpe_cache.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/fpe_cache.h" />
+		<Unit filename="src/gl/fpe_shader.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/fpe_shader.h" />
+		<Unit filename="src/gl/framebuffers.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/framebuffers.h" />
+		<Unit filename="src/gl/getter.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/gl4es.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/gl4es.h" />
+		<Unit filename="src/gl/gl_lookup.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/gl_lookup.h" />
+		<Unit filename="src/gl/glcase.h" />
+		<Unit filename="src/gl/gles.h" />
+		<Unit filename="src/gl/glesfuncs.inc" />
+		<Unit filename="src/gl/glstate.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/glstate.h" />
+		<Unit filename="src/gl/hint.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/hint.h" />
+		<Unit filename="src/gl/init.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/init.h" />
+		<Unit filename="src/gl/light.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/light.h" />
+		<Unit filename="src/gl/line.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/line.h" />
+		<Unit filename="src/gl/list.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/list.h" />
+		<Unit filename="src/gl/listdraw.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/listrl.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/loader.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/loader.h" />
+		<Unit filename="src/gl/logs.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/logs.h" />
+		<Unit filename="src/gl/math/eval.h" />
+		<Unit filename="src/gl/math/matheval.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/matrix.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/matrix.h" />
+		<Unit filename="src/gl/matvec.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/matvec.h" />
+		<Unit filename="src/gl/oldprogram.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/oldprogram.h" />
+		<Unit filename="src/gl/pixel.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/pixel.h" />
+		<Unit filename="src/gl/planes.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/planes.h" />
+		<Unit filename="src/gl/pointsprite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/pointsprite.h" />
+		<Unit filename="src/gl/preproc.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/preproc.h" />
+		<Unit filename="src/gl/program.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/program.h" />
+		<Unit filename="src/gl/queries.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/queries.h" />
+		<Unit filename="src/gl/raster.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/raster.h" />
+		<Unit filename="src/gl/render.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/render.h" />
+		<Unit filename="src/gl/samplers.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/samplers.h" />
+		<Unit filename="src/gl/shader.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/shader.h" />
+		<Unit filename="src/gl/shader_hacks.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/shader_hacks.h" />
+		<Unit filename="src/gl/shaderconv.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/shaderconv.h" />
+		<Unit filename="src/gl/stack.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/stack.h" />
+		<Unit filename="src/gl/state.h" />
+		<Unit filename="src/gl/stb_dxt_104.h" />
+		<Unit filename="src/gl/stencil.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/stencil.h" />
+		<Unit filename="src/gl/string_utils.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/string_utils.h" />
+		<Unit filename="src/gl/stubs.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/texenv.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/texenv.h" />
+		<Unit filename="src/gl/texgen.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/texgen.h" />
+		<Unit filename="src/gl/texture.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/texture.h" />
+		<Unit filename="src/gl/texture_3d.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/texture_compressed.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/texture_params.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/texture_read.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/uniform.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/uniform.h" />
+		<Unit filename="src/gl/vertexattrib.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/vertexattrib.h" />
+		<Unit filename="src/gl/wrap/gl4es.h" />
+		<Unit filename="src/gl/wrap/gl4eswraps.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/wrap/gles.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/wrap/gles.h" />
+		<Unit filename="src/gl/wrap/glstub.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gl/wrap/skips.h" />
+		<Unit filename="src/gl/wrap/stub.h" />
+		<Unit filename="src/glx/drmfunc.h" />
+		<Unit filename="src/glx/gbm.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/glx/gbmfunc.h" />
+		<Unit filename="src/glx/glx.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/glx/glx.h" />
+		<Unit filename="src/glx/glx_gbm.h" />
+		<Unit filename="src/glx/glx_stubs.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/glx/hardext.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/glx/hardext.h" />
+		<Unit filename="src/glx/lookup.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/glx/rpi.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/glx/rpi.h" />
+		<Unit filename="src/glx/streaming.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/glx/streaming.h" />
+		<Unit filename="src/glx/utils.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/glx/utils.h" />
+		<Extensions />
+	</Project>
+</CodeBlocks_project_file>

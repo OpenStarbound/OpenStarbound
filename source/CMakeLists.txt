@@ -78,6 +78,8 @@ if(NOT DEFINED STAR_SYSTEM)
     set(STAR_SYSTEM "macos")
   elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
     set(STAR_SYSTEM "linux")
+  elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Android")
+    set(STAR_SYSTEM "android")
   elseif(${CMAKE_SYSTEM_NAME} STREQUAL "FreeBSD")
     set(STAR_SYSTEM "freebsd")
   elseif(${CMAKE_SYSTEM_NAME} STREQUAL "NetBSD")
@@ -152,6 +154,11 @@ message(STATUS "System: ${STAR_SYSTEM}")
 message(STATUS "System family: ${STAR_SYSTEM_FAMILY}")
 message(STATUS "C/C++ compiler: ${STAR_COMPILER}")
 
+if(ANDROID)
+  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+  set(STAR_PRECOMPILED_HEADERS FALSE)
+endif()
+
 if(DEFINED STAR_ENABLE_STATIC_LIBGCC_LIBSTDCXX)
   message(STATUS "Statically linking to libgcc / libstdc++: ${STAR_ENABLE_STATIC_LIBGCC_LIBSTDCXX}")
 endif()
@@ -210,6 +217,8 @@ elseif(STAR_SYSTEM STREQUAL "macos")
   set_flag(STAR_SYSTEM_MACOS)
 elseif(STAR_SYSTEM STREQUAL "linux")
   set_flag(STAR_SYSTEM_LINUX)
+elseif(STAR_SYSTEM STREQUAL "android")
+  set_flag(STAR_SYSTEM_ANDROID)
 elseif(STAR_SYSTEM STREQUAL "freebsd")
   set_flag(STAR_SYSTEM_FREEBSD)
 elseif(STAR_SYSTEM STREQUAL "netbsd")
@@ -415,6 +424,13 @@ else()
 
 endif()
 
+# Android release builds benefit from section GC and frame-pointer omission:
+# smaller binaries and modestly better codegen on low-end devices.
+if(STAR_SYSTEM_ANDROID AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+  add_compile_options(-ffunction-sections -fdata-sections -fomit-frame-pointer)
+  add_link_options(-Wl,--gc-sections)
+endif()
+
 # Set other global build settings based on environment...
 
 if(STAR_SYSTEM_MACOS)
@@ -517,7 +533,7 @@ else()
   message(STATUS "Wayland was not found")
 endif()
 
-if(STAR_SYSTEM_FAMILY STREQUAL "unix" AND NOT STAR_SYSTEM_HAIKU)
+if(STAR_SYSTEM_FAMILY STREQUAL "unix" AND NOT STAR_SYSTEM_ANDROID AND NOT STAR_SYSTEM_HAIKU)
   set_flag(STAR_USE_CPPTRACE)
   find_package(cpptrace CONFIG REQUIRED)
   set(STAR_EXT_LIBS ${STAR_EXT_LIBS} cpptrace::cpptrace)
@@ -532,14 +548,25 @@ if(STAR_BUILD_GUI)
     $<IF:$<TARGET_EXISTS:SDL3::SDL3>,SDL3::SDL3,SDL3::SDL3-static>
   )
 
-  find_package(OpenGL REQUIRED)
-  find_package(GLEW REQUIRED)
+  if(STAR_SYSTEM_ANDROID)
+    set(NOEGL ON)
+    set(NO_LOADER ON)
+    set(NO_INIT_CONSTRUCTOR ON)
+    add_subdirectory(${PROJECT_SOURCE_DIR}/extern/gl4es)
+    include_directories(SYSTEM ${PROJECT_SOURCE_DIR}/extern/gl4es/include)
+    set(STAR_EXT_GUI_LIBS ${STAR_EXT_GUI_LIBS}
+        ng_gl4es
+    )
+  else()
+    find_package(OpenGL REQUIRED)
+    find_package(GLEW REQUIRED)
 
-  include_directories(SYSTEM ${GLEW_INCLUDE_DIR})
-  set(STAR_EXT_GUI_LIBS ${STAR_EXT_GUI_LIBS}
-      ${OPENGL_LIBRARY}
-      $<IF:$<TARGET_EXISTS:GLEW::glew_s>,GLEW::glew_s,GLEW>
-  )
+    include_directories(SYSTEM ${GLEW_INCLUDE_DIR})
+    set(STAR_EXT_GUI_LIBS ${STAR_EXT_GUI_LIBS}
+        ${OPENGL_LIBRARY}
+        $<IF:$<TARGET_EXISTS:GLEW::glew_s>,GLEW::glew_s,GLEW>
+    )
+  endif()
 
   if(STAR_SYSTEM_MACOS)
     set(STAR_EXT_GUI_LIBS ${STAR_EXT_GUI_LIBS} "-framework CoreAudio")
@@ -573,6 +600,11 @@ endforeach(OUTPUTCONFIG CMAKE_CONFIGURATION_TYPES)
 
 # External code included with starbound source, which core depends on
 set(STAR_EXTERN_INCLUDES ${PROJECT_SOURCE_DIR}/extern)
+if(STAR_SYSTEM_ANDROID)
+    set(STAR_EXTERN_INCLUDES ${STAR_EXTERN_INCLUDES}
+        ${PROJECT_SOURCE_DIR}/extern/libexecinfo
+    )
+endif()
 add_subdirectory(extern)
 
 # Core support code, not specific to starbound.
@@ -638,6 +670,27 @@ if(STAR_BUILD_GUI)
 
   # Starbound game / client
   add_subdirectory(client)
+
+  if(STAR_SYSTEM_ANDROID)
+    set(STAR_ANDROID_DIR "${PROJECT_SOURCE_DIR}/../android")
+    file(GLOB STAR_ANDROID_SDL3_JAR_CANDIDATES
+      "${CMAKE_BINARY_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/share/java/SDL3/SDL3-*-sources.jar"
+    )
+    list(LENGTH STAR_ANDROID_SDL3_JAR_CANDIDATES STAR_ANDROID_SDL3_JAR_COUNT)
+    if(STAR_ANDROID_SDL3_JAR_COUNT)
+      list(GET STAR_ANDROID_SDL3_JAR_CANDIDATES 0 STAR_ANDROID_SDL3_JAR)
+    else()
+      set(STAR_ANDROID_SDL3_JAR "")
+    endif()
+
+    add_custom_target(android_apk ALL
+        COMMAND "${STAR_ANDROID_DIR}/build.sh" "${CMAKE_ANDROID_ARCH_ABI}" "${STAR_ANDROID_SDL3_JAR}"
+        DEPENDS starbound
+	WORKING_DIRECTORY "${STAR_ANDROID_DIR}"
+	USES_TERMINAL
+        COMMENT "Building Android APK"
+      )
+  endif()
 
   # Qt GUI tools
   if(STAR_BUILD_QT_TOOLS)

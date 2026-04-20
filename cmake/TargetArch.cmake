@@ -28,7 +28,7 @@ set(archdetect_c_code "
     #else
         #error cmake_ARCH arm
     #endif
-#elif defined(__arm64__)
+#elif defined(__arm64__) || defined(__aarch64__)
     #error cmake_ARCH arm64
 #elif defined(__i386) || defined(__i386__) || defined(_M_IX86)
     #error cmake_ARCH i386

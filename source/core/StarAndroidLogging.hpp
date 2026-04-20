@@ -1,0 +1,1 @@
+int start_logger();

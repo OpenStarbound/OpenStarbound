@@ -2,6 +2,9 @@
 
 #include "StarIODevice.hpp"
 #include "StarString.hpp"
+#ifdef STAR_SYSTEM_ANDROID
+#include "SDL3/SDL.h"
+#endif
 
 namespace Star {
 

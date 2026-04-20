@@ -1,0 +1,20 @@
+language: c
+sudo: false
+dist: buster
+      
+compiler:
+    - gcc
+
+#Build steps
+before_script:
+    - mkdir build
+    - cd build
+    - cmake .. -DODROID=1
+
+script:
+    - make
+
+#after_script:
+#    - sudo apt-get install apitrace-gl-frontend=5\* imagemagick xvfb -y
+#    - cd ../tests
+#    - xvfb-run ./tests.sh ../lib

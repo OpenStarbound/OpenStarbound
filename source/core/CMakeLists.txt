@@ -230,6 +230,16 @@ ELSEIF (STAR_SYSTEM_FAMILY_WINDOWS)
 
 ENDIF ()
 
+IF (STAR_SYSTEM_ANDROID)
+  SET (star_core_HEADERS ${star_core_HEADERS}
+      StarAndroidLogging.hpp
+    )
+
+  SET (star_core_SOURCES ${star_core_SOURCES}
+      StarAndroidLogging.cpp
+    )
+ENDIF ()
+
 CONFIGURE_FILE (StarVersion.cpp.in ${CMAKE_CURRENT_BINARY_DIR}/StarVersion.cpp)
 ADD_LIBRARY (star_core OBJECT ${star_core_SOURCES} ${star_core_HEADERS} ${CMAKE_CURRENT_BINARY_DIR}/StarVersion.cpp)
 

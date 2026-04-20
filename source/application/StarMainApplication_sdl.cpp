@@ -14,6 +14,10 @@
 #include <dwmapi.h>
 #include <objidl.h>
 #include <ShlObj_core.h>
+#elif defined STAR_SYSTEM_ANDROID
+#include "StarAndroidLogging.hpp"
+#include "StarRenderer_gl4es.hpp"
+#include "SDL3/SDL_main.h"
 #endif
 
 #include "imgui.h"
@@ -462,10 +466,17 @@ public:
     SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_TYPE_STRING, "game");
 
     Logger::info("Application: Initializing SDL");
+#ifdef STAR_SYSTEM_ANDROID
+    SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft LandscapeRight");
+#endif
     if (!SDL_Init(0))
       throw ApplicationException(strf("Couldn't initialize SDL: {}", SDL_GetError()));
 
+#ifdef STAR_SYSTEM_ANDROID
+    if (auto basePath = SDL_GetAndroidInternalStoragePath())
+#else
     if (auto basePath = SDL_GetBasePath())
+#endif
       File::changeDirectory(basePath);
 
     m_signalHandler.setHandleInterrupt(true);
@@ -586,6 +597,13 @@ public:
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+#elif defined(STAR_SYSTEM_ANDROID)
+    // GL 3.0 + GLSL 130
+    const char* glsl_version = "#version 130";
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
 #else
     // GL 3.0 + GLSL 130
     const char* glsl_version = "#version 130";
@@ -1369,6 +1387,9 @@ private:
 };
 
 int runMainApplication(ApplicationUPtr application, StringList cmdLineArgs) {
+#ifdef STAR_SYSTEM_ANDROID
+  start_logger();
+#endif
   try {
     {
       SdlPlatform platform(std::move(application), std::move(cmdLineArgs));
@@ -1377,6 +1398,7 @@ int runMainApplication(ApplicationUPtr application, StringList cmdLineArgs) {
     Logger::info("Application: stopped gracefully");
     return 0;
   } catch (std::exception const& e) {
+    Logger::info(e.what());
     fatalException(e, true);
   } catch (...) {
     fatalError("Unknown Exception", true);

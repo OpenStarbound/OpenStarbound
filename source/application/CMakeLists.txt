@@ -30,6 +30,15 @@ SET (star_application_SOURCES ${star_application_SOURCES}
     StarRenderer_opengl.cpp
   )
 
+IF (STAR_SYSTEM_ANDROID)
+  SET (star_application_HEADERS ${star_application_HEADERS}
+      StarRenderer_gl4es.cpp
+    )
+  SET (star_application_SOURCES ${star_application_SOURCES}
+      StarRenderer_gl4es.hpp
+    )
+ENDIF()
+
 IF (STAR_ENABLE_STEAM_INTEGRATION)
   SET (star_application_HEADERS ${star_application_HEADERS}
       StarDesktopService_pc_steam.hpp

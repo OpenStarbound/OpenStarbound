@@ -90,12 +90,14 @@ static void GLAPIENTRY GlMessageCallback(GLenum, GLenum type, GLuint, GLenum, GL
 */
 
 OpenGlRenderer::OpenGlRenderer() {
+#ifndef STAR_SYSTEM_ANDROID
   auto glewResult = glewInit();
   if (glewResult != GLEW_OK && glewResult != GLEW_ERROR_NO_GLX_DISPLAY)
     throw RendererException::format("Could not initialize GLEW: {}", (char*)glewGetErrorString(glewResult));
 
   if (!GLEW_VERSION_2_0)
     throw RendererException("OpenGL 2.0 not available!");
+#endif
 
   Logger::info("OpenGL version: '{}' vendor: '{}' renderer: '{}' shader: '{}'",
       (const char*)glGetString(GL_VERSION),
@@ -107,10 +109,12 @@ OpenGlRenderer::OpenGlRenderer() {
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glDisable(GL_DEPTH_TEST);
+#ifndef STAR_SYSTEM_ANDROID
   if (GLEW_VERSION_4_3) {
     //glEnable(GL_DEBUG_OUTPUT);
     //glDebugMessageCallback(GlMessageCallback, this);
   }
+#endif
 
   m_whiteTexture = createGlTexture(Image::filled({1, 1}, Vec4B(255, 255, 255, 255), PixelFormat::RGBA32),
       TextureAddressing::Clamp,
@@ -151,18 +155,26 @@ OpenGlRenderer::GlFrameBuffer::GlFrameBuffer(Json const& fbConfig) : config(fbCo
   if (texture->textureId == 0)
     throw RendererException("Could not generate OpenGL texture for framebuffer");
 
+#ifndef STAR_SYSTEM_ANDROID
   multisample = GLEW_VERSION_4_0 ? config.getUInt("multisample", 0) : 0;
+#else
+  multisample = 0;
+#endif
   GLenum target = multisample ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D;
   glBindTexture(target, texture->glTextureId());
 
   sizeDiv = config.getUInt("sizeDiv", 1);
   Vec2U size = jsonToVec2U(config.getArray("size", { 256, 256 })) / sizeDiv;
 
+#ifndef STAR_SYSTEM_ANDROID
   if (multisample)
     glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, multisample, GL_RGBA8, size[0], size[1], GL_TRUE);
   else {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, size[0], size[1], 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
   }
+#else
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, size[0], size[1], 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+#endif
   auto addressing = TextureAddressingNames.getLeft(config.getString("textureAddressing", "clamp"));
   auto filtering = TextureFilteringNames.getLeft(config.getString("textureFiltering", "nearest"));
   if (!multisample) {
@@ -548,6 +560,7 @@ void OpenGlRenderer::setMultiSampling(unsigned multiSampling) {
     return;
 
   m_multiSampling = multiSampling;
+#ifndef STAR_SYSTEM_ANDROID
   if (m_multiSampling) {
     glEnable(GL_MULTISAMPLE);
     glEnable(GL_SAMPLE_SHADING);
@@ -557,6 +570,10 @@ void OpenGlRenderer::setMultiSampling(unsigned multiSampling) {
     glDisable(GL_SAMPLE_SHADING);
     glDisable(GL_MULTISAMPLE);
   }
+#else
+  glDisable(GL_SAMPLE_SHADING);
+  glDisable(GL_MULTISAMPLE);
+#endif
   loadConfig(m_config);
 }
 
@@ -612,6 +629,7 @@ void OpenGlRenderer::setScreenSize(Vec2U screenSize) {
 
   for (auto& frameBuffer : m_frameBuffers) {
     unsigned sizeDiv = frameBuffer.second->sizeDiv;
+#ifndef STAR_SYSTEM_ANDROID
     if (unsigned multisample = frameBuffer.second->multisample) {
       glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, frameBuffer.second->texture->glTextureId());
       glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, multisample, GL_RGBA8, m_screenSize[0] / sizeDiv, m_screenSize[1] / sizeDiv, GL_TRUE);
@@ -619,6 +637,10 @@ void OpenGlRenderer::setScreenSize(Vec2U screenSize) {
       glBindTexture(GL_TEXTURE_2D, frameBuffer.second->texture->glTextureId());
       glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_screenSize[0] / sizeDiv, m_screenSize[1] / sizeDiv, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
     }
+#else
+    glBindTexture(GL_TEXTURE_2D, frameBuffer.second->texture->glTextureId());
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_screenSize[0] / sizeDiv, m_screenSize[1] / sizeDiv, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+#endif
   }
 }
 

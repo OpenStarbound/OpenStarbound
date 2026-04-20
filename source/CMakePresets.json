@@ -125,6 +125,27 @@
         "VCPKG_TARGET_TRIPLET": "arm64-osx-mixed",
         "CMAKE_LIBRARY_PATH": "${sourceParentDir}/lib/osx/arm64;${sourceParentDir}/lib/osx"
       }
+    },
+    {
+      "inherits": "base",
+      "name": "android-arm-release",
+      "displayName": "Android ARM",
+      "binaryDir": "${sourceParentDir}/build/android-arm-release",
+      "architecture": { "value": "arm64", "strategy": "external" },
+      "cacheVariables": {
+        "CMAKE_MAKE_PROGRAM": "ninja",
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "CMAKE_SYSTEM_NAME": "Android",
+        "CMAKE_SYSTEM_VERSION": "28",
+        "CMAKE_ANDROID_NDK": "$env{ANDROID_NDK_HOME}",
+        "CMAKE_ANDROID_ARCH_ABI": "arm64-v8a",
+        "CMAKE_ANDROID_STL_TYPE": "c++_static",
+        "VCPKG_TARGET_TRIPLET": "arm64-android-mixed",
+        "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "ON",
+        "STAR_USE_JEMALLOC": false,
+        "STAR_ENABLE_STEAM_INTEGRATION": false,
+        "STAR_ENABLE_DISCORD_INTEGRATION": false
+      }
     }
   ],
   "buildPresets": [
@@ -161,6 +182,10 @@
     {
       "name": "macos-arm-release",
       "configurePreset": "macos-arm-release"
+    },
+    {
+      "name": "android-arm-release",
+      "configurePreset": "android-arm-release"
     }
   ],
   "testPresets": [
@@ -190,6 +215,11 @@
       "inherits": "base",
       "name": "macos-arm-release",
       "configurePreset": "macos-arm-release"
+    },
+    {
+      "inherits": "base",
+      "name": "android-arm-release",
+      "configurePreset": "android-arm-release"
     }
   ]
 }

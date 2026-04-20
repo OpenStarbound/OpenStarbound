@@ -709,11 +709,16 @@ StringList Root::scanForAssetSources(StringList const& directories, StringList c
     for (auto const& requirementName : source->requires_) {
       if (auto requirement = namedSources.ptr(requirementName))
         dependencySortVisit(*requirement);
-      else
+      else {
+#ifdef STAR_SYSTEM_ANDROID
+        if (requirementName == "base")
+          SDL_ShowAndroidToast("Please provide a packed.pak file", 5000, -1, 0, 0);
+#endif
         throw AssetSourceException(strf("Asset source '{}' is missing dependency '{}'{}", source->name ? *source->name : "<unnamed>", requirementName,
           requirementName != "base" ? "" :
             "\n\nThe base Starbound asset package could not be found, please copy it from another Starbound install!\n"
             "(Locate 'packed.pak' in vanilla Starbound's assets folder, then copy it to OpenStarbound's assets folder.)\n"), false);
+      }
     }
 
     workingSet.remove(source);
