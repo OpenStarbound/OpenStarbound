@@ -166,6 +166,27 @@ private:
     VariantTypeIndex parameterType = 0;
     Maybe<RenderEffectParameter> parameterValue;
   };
+  
+  struct GlFrameBuffer : RefCounter {
+    GLuint id = 0;
+    RefPtr<GlLoneTexture> texture;
+    RefPtr<GlFrameBuffer> flatFrameBuffer; // shader-readable buffer when using multisampling
+
+    Json config;
+    bool blitted = false;
+    bool flattened = false;
+    unsigned multisample = 0;
+    unsigned sizeDiv = 1;
+
+    GlFrameBuffer& activeFrameBuffer() {
+      return flattened? *flatFrameBuffer : *this;
+    }
+
+    void prepareForShaderAccess(const Vec2U& screenSize);
+
+    GlFrameBuffer(Json const& config);
+    ~GlFrameBuffer();
+  };
 
   struct EffectTexture {
     GLint textureUniform = -1;
@@ -174,19 +195,7 @@ private:
     TextureFiltering textureFiltering = TextureFiltering::Linear;
     GLint textureSizeUniform = -1;
     RefPtr<GlLoneTexture> textureValue;
-  };
-  
-  struct GlFrameBuffer : RefCounter {
-    GLuint id = 0;
-    RefPtr<GlLoneTexture> texture;
-
-    Json config;
-    bool blitted = false;
-    unsigned multisample = 0;
-    unsigned sizeDiv = 1;
-
-    GlFrameBuffer(Json const& config);
-    ~GlFrameBuffer();
+    RefPtr<GlFrameBuffer> textureFrameBuffer;
   };
 
   class Effect {
