@@ -21,6 +21,7 @@
 #include "StarAssets.hpp"
 #include "StarWorldLuaBindings.hpp"
 #include "StarUniverseServerLuaBindings.hpp"
+#include "StarString.hpp"
 
 namespace Star {
 
@@ -94,25 +95,39 @@ String CommandProcessor::help(ConnectionId connectionId, String const& argumentS
   return res;
 }
 
-String CommandProcessor::admin(ConnectionId connectionId, String const&) {
+String CommandProcessor::admin(ConnectionId connectionId, String const& argumentString) {
   auto config = Root::singleton().configuration();
-  if (m_universe->canBecomeAdmin(connectionId)) {
-    if (connectionId == ServerConnectionId)
-      return "Invalid client state";
+  auto arguments = m_parser.tokenizeToStringList(argumentString);
 
-    if (!config->get("allowAdminCommands").toBool())
-      return "Admin commands disabled on this server.";
+  ConnectionId targetClientId = connectionId;
 
-    bool wasAdmin = m_universe->isAdmin(connectionId);
-    m_universe->setAdmin(connectionId, !wasAdmin);
+  if (!arguments.empty()) {
+    if (auto errorMsg = adminCheck(connectionId, "admin a user"))
+      return *errorMsg;
 
-    if (!wasAdmin)
-      return strf("Admin privileges now given to player {}", m_universe->clientNick(connectionId));
-    else
-      return strf("Admin privileges taken away from {}", m_universe->clientNick(connectionId));
+    auto targetCid = playerCidFromCommand(arguments[0], m_universe);
+    if (!targetCid)
+      return strf("No user with specifier {} found.", arguments[0]);
+
+    targetClientId = *targetCid;
   } else {
-    return "Insufficient privileges to make self admin.";
+    if (!m_universe->canBecomeAdmin(connectionId) && !m_universe->isAdmin(connectionId))
+      return "Insufficient privileges to make self admin.";
   }
+
+  if (targetClientId == ServerConnectionId)
+    return "Invalid client state";
+
+  if (!config->get("allowAdminCommands").toBool())
+    return "Admin commands disabled on this server.";
+
+  bool wasAdmin = m_universe->isAdmin(targetClientId);
+  m_universe->setAdmin(targetClientId, !wasAdmin);
+
+  if (!wasAdmin)
+    return strf("Admin privileges now given to {}", m_universe->clientNick(targetClientId));
+  else
+    return strf("Admin privileges taken away from {}", m_universe->clientNick(targetClientId));
 }
 
 String CommandProcessor::pvp(ConnectionId connectionId, String const&) {
@@ -336,12 +351,12 @@ String CommandProcessor::spawnItem(ConnectionId connectionId, String const& argu
   try {
     String kind = arguments.at(0);
     Json parameters = JsonObject();
-    unsigned amount = 1;
+    uint64_t amount = 1;
     Maybe<float> level;
     Maybe<uint64_t> seed;
 
     if (arguments.size() >= 2)
-      amount = lexicalCast<unsigned>(arguments.at(1));
+      amount = lexicalCast<uint64_t>(arguments.at(1));
 
     if (arguments.size() >= 3)
       parameters = Json::parse(arguments.at(2));
@@ -384,10 +399,10 @@ String CommandProcessor::spawnTreasure(ConnectionId connectionId, String const& 
 
   try {
     String treasurePool = arguments.at(0);
-    unsigned level = 1;
+    float level = 1;
 
     if (arguments.size() >= 2)
-      level = lexicalCast<unsigned>(arguments.at(1));
+      level = lexicalCast<float>(arguments.at(1));
 
     bool done = m_universe->executeForClient(connectionId, [&](WorldServer* world, PlayerPtr const& player) {
         auto treasureDatabase = Root::singleton().treasureDatabase();
@@ -965,93 +980,69 @@ Maybe<ConnectionId> CommandProcessor::playerCidFromCommand(String const& player,
   return universe->findNick(player);
 }
 
-//wow, wtf. TODO: replace with hashmap
+const StringMap<std::function<String(CommandProcessor*, ConnectionId, String)>> CommandProcessor::s_commandMap = []() {
+  StringMap<std::function<String(CommandProcessor*, ConnectionId, String)>> map;
+	
+  auto add = [&map](const char* cmd, String (CommandProcessor::*func)(ConnectionId, const String&)) {
+    map[cmd] = [func](CommandProcessor* self, ConnectionId cid, const String& args) {
+      return (self->*func)(cid, args);
+    };
+  };
+
+  // Register all commands
+  add("admin", &CommandProcessor::admin);
+  add("timewarp", &CommandProcessor::timewarp);
+  add("timescale", &CommandProcessor::timescale);
+  add("tickrate", &CommandProcessor::tickrate);
+  add("settileprotection", &CommandProcessor::setTileProtection);
+  add("setdungeonid", &CommandProcessor::setDungeonId);
+  add("setspawnpoint", &CommandProcessor::setPlayerStart);
+  add("spawnitem", &CommandProcessor::spawnItem);
+  add("spawntreasure", &CommandProcessor::spawnTreasure);
+  add("spawnmonster", &CommandProcessor::spawnMonster);
+  add("spawnnpc", &CommandProcessor::spawnNpc);
+  add("spawnstagehand", &CommandProcessor::spawnStagehand);
+  add("clearstagehand", &CommandProcessor::clearStagehand);
+  add("spawnvehicle", &CommandProcessor::spawnVehicle);
+  add("spawnliquid", &CommandProcessor::spawnLiquid);
+  add("pvp", &CommandProcessor::pvp);
+  add("serverwhoami", &CommandProcessor::whoami);
+  add("kick", &CommandProcessor::kick);
+  add("ban", &CommandProcessor::ban);
+  add("unbanip", &CommandProcessor::unbanIp);
+  add("unbanuuid", &CommandProcessor::unbanUuid);
+  add("list", &CommandProcessor::list);
+  add("help", &CommandProcessor::help);
+  add("warp", &CommandProcessor::warp);
+  add("warprandom", &CommandProcessor::warpRandom);
+  add("whereami", &CommandProcessor::clientCoordinate);
+  add("whereis", &CommandProcessor::clientCoordinate);
+  add("serverreload", &CommandProcessor::serverReload);
+  add("eval", &CommandProcessor::eval);
+  add("entityeval", &CommandProcessor::entityEval);
+  add("enablespawning", &CommandProcessor::enableSpawning);
+  add("disablespawning", &CommandProcessor::disableSpawning);
+  add("placedungeon", &CommandProcessor::placeDungeon);
+  add("setuniverseflag", &CommandProcessor::setUniverseFlag);
+  add("resetuniverseflags", &CommandProcessor::resetUniverseFlags);
+  add("addbiomeregion", &CommandProcessor::addBiomeRegion);
+  add("expandbiomeregion", &CommandProcessor::expandBiomeRegion);
+  add("updateplanettype", &CommandProcessor::updatePlanetType);
+  add("setweather", &CommandProcessor::setWeather);
+  add("setenvironmentbiome", &CommandProcessor::setEnvironmentBiome);
+
+  return map;
+}();
+
 String CommandProcessor::handleCommand(ConnectionId connectionId, String const& command, String const& argumentString) {
-  if (command == "admin") {
-    return admin(connectionId, argumentString);
-  } else if (command == "timewarp") {
-    return timewarp(connectionId, argumentString);
-  } else if (command == "timescale") {
-    return timescale(connectionId, argumentString);
-  } else if (command == "tickrate") {
-    return tickrate(connectionId, argumentString);
-  } else if (command == "settileprotection") {
-    return setTileProtection(connectionId, argumentString);
-  } else if (command == "setdungeonid") {
-    return setDungeonId(connectionId, argumentString);
-  } else if (command == "setspawnpoint") {
-    return setPlayerStart(connectionId, argumentString);
-  } else if (command == "spawnitem") {
-    return spawnItem(connectionId, argumentString);
-  } else if (command == "spawntreasure") {
-    return spawnTreasure(connectionId, argumentString);
-  } else if (command == "spawnmonster") {
-    return spawnMonster(connectionId, argumentString);
-  } else if (command == "spawnnpc") {
-    return spawnNpc(connectionId, argumentString);
-  } else if (command == "spawnstagehand") {
-    return spawnStagehand(connectionId, argumentString);
-  } else if (command == "clearstagehand") {
-    return clearStagehand(connectionId, argumentString);
-  } else if (command == "spawnvehicle") {
-    return spawnVehicle(connectionId, argumentString);
-  } else if (command == "spawnliquid") {
-    return spawnLiquid(connectionId, argumentString);
-  } else if (command == "pvp") {
-    return pvp(connectionId, argumentString);
-  } else if (command == "serverwhoami") {
-    return whoami(connectionId, argumentString);
-  } else if (command == "kick") {
-    return kick(connectionId, argumentString);
-  } else if (command == "ban") {
-    return ban(connectionId, argumentString);
-  } else if (command == "unbanip") {
-    return unbanIp(connectionId, argumentString);
-  } else if (command == "unbanuuid") {
-    return unbanUuid(connectionId, argumentString);
-  } else if (command == "list") {
-    return list(connectionId, argumentString);
-  } else if (command == "help") {
-    return help(connectionId, argumentString);
-  } else if (command == "warp") {
-    return warp(connectionId, argumentString);
-  } else if (command == "warprandom") {
-    return warpRandom(connectionId, argumentString);
-  } else if (command == "whereami") {
-    return clientCoordinate(connectionId, argumentString);
-  } else if (command == "whereis") {
-    return clientCoordinate(connectionId, argumentString);
-  } else if (command == "serverreload") {
-    return serverReload(connectionId, argumentString);
-  } else if (command == "eval") {
-    return eval(connectionId, argumentString);
-  } else if (command == "entityeval") {
-    return entityEval(connectionId, argumentString);
-  } else if (command == "enablespawning") {
-    return enableSpawning(connectionId, argumentString);
-  } else if (command == "disablespawning") {
-    return disableSpawning(connectionId, argumentString);
-  } else if (command == "placedungeon") {
-    return placeDungeon(connectionId, argumentString);
-  } else if (command == "setuniverseflag") {
-    return setUniverseFlag(connectionId, argumentString);
-  } else if (command == "resetuniverseflags") {
-    return resetUniverseFlags(connectionId, argumentString);
-  } else if (command == "addbiomeregion") {
-    return addBiomeRegion(connectionId, argumentString);
-  } else if (command == "expandbiomeregion") {
-    return expandBiomeRegion(connectionId, argumentString);
-  } else if (command == "updateplanettype") {
-    return updatePlanetType(connectionId, argumentString);
-  } else if (command == "setweather") {
-    return setWeather(connectionId, argumentString);
-  } else if (command == "setenvironmentbiome") {
-    return setEnvironmentBiome(connectionId, argumentString);
-  } else if (auto res = m_scriptComponent.invoke("command", command, connectionId, jsonFromStringList(m_parser.tokenizeToStringList(argumentString)))) {
-    return toString(*res);
-  } else {
-    return strf("No such command {}", command);
+  auto it = s_commandMap.find(command);
+  if (it != s_commandMap.end()) {
+    return it->second(this, connectionId, argumentString);
   }
+  if (auto res = m_scriptComponent.invoke("command", command, connectionId, jsonFromStringList(m_parser.tokenizeToStringList(argumentString)))) {
+    return toString(*res);
+  }
+  return strf("No such command {}", command);
 }
 
 Maybe<String> CommandProcessor::adminCheck(ConnectionId connectionId, String const& commandDescription) const {
