@@ -19,5 +19,6 @@
         "redstar" : [255, 213, 199]
       }
     }
-  }
+  },
+  "debrisSkyTypes": ["orbital", "warp"]
 }

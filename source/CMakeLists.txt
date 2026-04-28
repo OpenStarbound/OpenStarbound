@@ -82,6 +82,8 @@ if(NOT DEFINED STAR_SYSTEM)
     set(STAR_SYSTEM "freebsd")
   elseif(${CMAKE_SYSTEM_NAME} STREQUAL "NetBSD")
     set(STAR_SYSTEM "netbsd")
+  elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Haiku")
+    set(STAR_SYSTEM "haiku")
   elseif(UNIX)
     set(STAR_SYSTEM "unix")
   else()
@@ -192,7 +194,7 @@ endfunction()
 
 if(STAR_LITTLE_ENDIAN)
   set_flag(STAR_LITTLE_ENDIAN)
-elseif()
+else()
   set_flag(STAR_BIG_ENDIAN)
 endif()
 
@@ -212,6 +214,8 @@ elseif(STAR_SYSTEM STREQUAL "freebsd")
   set_flag(STAR_SYSTEM_FREEBSD)
 elseif(STAR_SYSTEM STREQUAL "netbsd")
   set_flag(STAR_SYSTEM_NETBSD)
+elseif(STAR_SYSTEM STREQUAL "haiku")
+  set_flag(STAR_SYSTEM_HAIKU)
 endif()
 
 if(STAR_SYSTEM_FAMILY STREQUAL "windows")
@@ -306,7 +310,7 @@ elseif(STAR_COMPILER_CLANG)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-export_dynamic")
     set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++17")
     set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++")
-  elseif()
+  else()
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread -D_REENTRANT")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -D_REENTRANT")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--export-dynamic")
@@ -453,6 +457,10 @@ elseif(STAR_SYSTEM_NETBSD)
   set(CMAKE_C_STANDARD_LIBRARIES "${CMAKE_C_STANDARD_LIBRARIES} -lpthread -lrt -lexecinfo")
   set(CMAKE_CXX_STANDARD_LIBRARIES "${CMAKE_CXX_STANDARD_LIBRARIES} -lpthread -lrt -lexecinfo")
 
+elseif(STAR_SYSTEM_HAIKU)
+  set(CMAKE_C_STANDARD_LIBRARIES "${CMAKE_C_STANDARD_LIBRARIES} -lpthread -lexecinfo -lnetwork")
+  set(CMAKE_CXX_STANDARD_LIBRARIES "${CMAKE_CXX_STANDARD_LIBRARIES} -lpthread -lexecinfo -lnetwork")
+
 endif()
 
 # Find all required external libraries, based on build settings...
@@ -476,24 +484,26 @@ find_package(ZLIB REQUIRED)
 find_package(PNG REQUIRED)
 find_package(Freetype REQUIRED)
 find_package(cpr CONFIG REQUIRED)
-find_package(Opus CONFIG REQUIRED)
 find_package(OggVorbis REQUIRED)
 find_package(zstd CONFIG REQUIRED)
-find_package(re2 CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
+if (NOT STAR_SYSTEM_HAIKU)
+	find_package(Opus CONFIG REQUIRED)
+	find_package(re2 CONFIG REQUIRED)
+endif()
 include_directories(SYSTEM
-        ${FREETYPE_INCLUDE_DIRS}
-        ${OGGVORBIS_INCLUDE_DIR}
+    ${FREETYPE_INCLUDE_DIRS}
+    ${OGGVORBIS_INCLUDE_DIR}
 )
 
 set(STAR_EXT_LIBS ${STAR_EXT_LIBS}
-        ZLIB::ZLIB
-        PNG::PNG
-        cpr::cpr
+    ZLIB::ZLIB
+    PNG::PNG
+    cpr::cpr
     $<IF:$<TARGET_EXISTS:Freetype::Freetype>,Freetype::Freetype,freetype>
     $<IF:$<TARGET_EXISTS:zstd::libzstd_shared>,zstd::libzstd_shared,zstd::libzstd_static>
-    Opus::opus
-    re2::re2
+    $<IF:$<TARGET_EXISTS:Opus::opus>,Opus::opus,opus>
+    $<IF:$<TARGET_EXISTS:re2::re2>,re2::re2,re2>
     imgui::imgui
     ${VORBISFILE_LIBRARY}
     ${VORBIS_LIBRARY}
@@ -507,7 +517,7 @@ else()
   message(STATUS "Wayland was not found")
 endif()
 
-if(STAR_SYSTEM_FAMILY STREQUAL "unix")
+if(STAR_SYSTEM_FAMILY STREQUAL "unix" AND NOT STAR_SYSTEM_HAIKU)
   set_flag(STAR_USE_CPPTRACE)
   find_package(cpptrace CONFIG REQUIRED)
   set(STAR_EXT_LIBS ${STAR_EXT_LIBS} cpptrace::cpptrace)
@@ -528,7 +538,7 @@ if(STAR_BUILD_GUI)
   include_directories(SYSTEM ${GLEW_INCLUDE_DIR})
   set(STAR_EXT_GUI_LIBS ${STAR_EXT_GUI_LIBS}
       ${OPENGL_LIBRARY}
-      GLEW::glew_s
+      $<IF:$<TARGET_EXISTS:GLEW::glew_s>,GLEW::glew_s,GLEW>
   )
 
   if(STAR_SYSTEM_MACOS)

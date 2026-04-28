@@ -14,6 +14,7 @@ STAR_CLASS(HeadArmor);
 STAR_CLASS(ChestArmor);
 STAR_CLASS(LegsArmor);
 STAR_CLASS(BackArmor);
+STAR_CLASS(Player);
 
 STAR_CLASS(PlayerInventory);
 
@@ -192,6 +193,14 @@ public:
   // tick.
   void cleanup();
 
+  // The given player pointer must be valid for the lifetime of this inventory
+  void setPlayer(Player*);
+
+  static PlayerInventory const& blankInventory();
+
+  void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
+  bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+
 private:
   typedef pair<Maybe<InventorySlot>, Maybe<InventorySlot>> CustomBarLink;
 
@@ -229,6 +238,8 @@ private:
 
   List<ItemPtr> m_inventoryLoadOverflow;
   unsigned m_equipmentVisibilityMask;
+
+  Player* m_player;
 };
 
 }

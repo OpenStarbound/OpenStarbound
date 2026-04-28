@@ -55,6 +55,42 @@ Returns `true` if the pane currently has keyboard focus.
 
 ---
 
+#### `String` pane.anchor()
+
+Returns the pane's current anchor as a string.
+
+---
+
+#### `void` pane.setAnchor(`String` anchor)
+
+Sets the pane's anchor to the specified value.
+
+---
+
+#### `Vec2I` pane.anchorOffset()
+
+Returns the pane's current anchor offset.
+
+---
+
+#### `void` pane.setAnchorOffset(`Vec2I` offset)
+
+Sets the pane's anchor offset to the specified value.
+
+---
+
+#### `Vec2I` pane.screenPosition()
+
+Returns the pane's current position on the screen, taking into account its anchor and offset.
+
+---
+
+#### `void` pane.setScreenPosition(`Vec2I` position)
+
+Moves the pane to the specified screen position, automatically calculating the appropriate position, anchor, and offset values.
+
+---
+
 #### `void` pane.show()
 
 Shows the pane if it is hidden.

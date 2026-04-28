@@ -38,6 +38,32 @@ function pane.isDisplayed() end
 ---@return boolean
 function pane.hasFocus() end
 
+--- Returns the pane's current anchor as a string. ---
+---@return string
+function pane.getAnchor() end
+
+--- Sets the pane's anchor to the specified value.
+---@return void
+function pane.setAnchor(anchor) end
+
+--- Returns the pane's current anchor offset. ---
+---@return Vec2I
+function pane.getAnchorOffset() end
+
+--- Sets the pane's anchor offset to the specified value. ---
+---@param offset Vec2I
+---@return void
+function pane.setAnchorOffset(offset) end
+
+--- Returns the pane's current position on the screen, taking into account its anchor and offset. ---
+---@return Vec2I
+function pane.screenPosition() end
+
+--- Moves the pane to the specified screen position, automatically calculating the appropriate position, anchor, and offset values. ---
+---@param position Vec2I
+---@return void
+function pane.moveToScreenPosition(position) end
+
 --- Shows the pane if it is hidden. ---
 ---@return void
 function pane.show() end
