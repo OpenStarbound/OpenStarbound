@@ -28,6 +28,10 @@ ContainerPane::ContainerPane(WorldClientPtr worldClient, PlayerPtr player, Conta
   m_containerInteractor = std::move(containerInteractor);
 
   auto container = m_containerInteractor->openContainer();
+
+  if (!container)
+    throw new StarException("Tried to instantiate a ContainerPane with no opened container!");
+
   auto guiConfig = container->containerGuiConfig();
 
   if (auto scripts = guiConfig.opt("scripts").apply(jsonToStringList)) {
@@ -57,7 +61,14 @@ ContainerPane::ContainerPane(WorldClientPtr worldClient, PlayerPtr player, Conta
     if (m_expectingSwap != ExpectingSwap::None)
       return;
 
-    if (ItemPtr slotItem = m_containerInteractor->openContainer()->itemBag()->at(index)) {
+    auto callbackContainer = m_containerInteractor->openContainer();
+
+    if (!callbackContainer) {
+      Logger::warn("rightClickCallback failed in ContainerPane because we do not have an open container!");
+      return;
+    }
+
+    if (ItemPtr slotItem = callbackContainer->itemBag()->at(index)) {
       auto swapItem = m_player->inventory()->swapSlotItem();
       if (!swapItem || swapItem->empty() || swapItem->couldStack(slotItem)) {
         size_t count = swapItem ? swapItem->couldStack(slotItem) : slotItem->maxStack();
@@ -152,7 +163,7 @@ ContainerPane::ContainerPane(WorldClientPtr worldClient, PlayerPtr player, Conta
   }
 
   if (containsChild("objectImage"))
-    if (auto containerObject = as<Object>(m_containerInteractor->openContainer()))
+    if (auto containerObject = as<Object>(container))
       fetchChild<ImageWidget>("objectImage")->setDrawables(containerObject->cursorHintDrawables());
 
   m_expectingSwap = ExpectingSwap::None;
@@ -245,7 +256,13 @@ void ContainerPane::stopCrafting() {
 }
 
 void ContainerPane::toggleCrafting() {
-  if (m_containerInteractor->openContainer()->isCrafting())
+  auto container = m_containerInteractor->openContainer();
+  if (!container) {
+    Logger::warn("ContainerPane::toggleCrafting failed because we don't have an open container!");
+    return;
+  }
+  
+  if (container->isCrafting())
     stopCrafting();
   else
     startCrafting();
@@ -268,40 +285,38 @@ void ContainerPane::update(float dt) {
   m_itemBag->clearItems();
   Input& input = Input::singleton();
 
-  if (!m_containerInteractor->containerOpen()) {
-    dismiss();
+  if (!m_containerInteractor->containerOpen())
+    return dismiss();
+  
+  auto container = m_containerInteractor->openContainer();
 
-  } else {
-    auto container = m_containerInteractor->openContainer();
+  for (size_t i = 0; i < m_itemBag->size(); ++i)
+    m_itemBag->putItems(i, container->containerItems()[i]);
 
-    for (size_t i = 0; i < m_itemBag->size(); ++i)
-      m_itemBag->putItems(i, container->containerItems()[i]);
+  if (container->isInteractive()) {
+    if (auto itemGrid = fetchChild<ItemGridWidget>("itemGrid")) {
+      itemGrid->setProgress(container->craftingProgress());
+      itemGrid->updateAllItemSlots();
+    }
+    if (auto itemGrid = fetchChild<ItemGridWidget>("itemGrid2")) {
+      itemGrid->setProgress(container->craftingProgress());
+      itemGrid->updateAllItemSlots();
+    }
 
-    if (container->isInteractive()) {
-      if (auto itemGrid = fetchChild<ItemGridWidget>("itemGrid")) {
-        itemGrid->setProgress(container->craftingProgress());
-        itemGrid->updateAllItemSlots();
+    if (auto fuelGauge = fetchChild<FuelWidget>("fuelGauge")) {
+      fuelGauge->setCurrentFuelLevel(m_worldClient->getProperty("ship.fuel", 0).toUInt());
+      fuelGauge->setMaxFuelLevel(m_worldClient->getProperty("ship.maxFuel", 0).toUInt());
+      float totalFuelAmount = 0;
+      for (auto& item : container->containerItems()) {
+        if (item)
+          totalFuelAmount += item->instanceValue("fuelAmount", 0).toUInt() * item->count();
       }
-      if (auto itemGrid = fetchChild<ItemGridWidget>("itemGrid2")) {
-        itemGrid->setProgress(container->craftingProgress());
-        itemGrid->updateAllItemSlots();
-      }
-
-      if (auto fuelGauge = fetchChild<FuelWidget>("fuelGauge")) {
-        fuelGauge->setCurrentFuelLevel(m_worldClient->getProperty("ship.fuel", 0).toUInt());
-        fuelGauge->setMaxFuelLevel(m_worldClient->getProperty("ship.maxFuel", 0).toUInt());
-        float totalFuelAmount = 0;
-        for (auto& item : container->containerItems()) {
-          if (item)
-            totalFuelAmount += item->instanceValue("fuelAmount", 0).toUInt() * item->count();
-        }
-        fuelGauge->setPotentialFuelAmount(totalFuelAmount);
-        fuelGauge->setRequestedFuelAmount(0);
-      }
-   
-      if (input.bindDown("opensb", "takeAll")) {
-        m_containerInteractor->clearContainer();
-      }
+      fuelGauge->setPotentialFuelAmount(totalFuelAmount);
+      fuelGauge->setRequestedFuelAmount(0);
+    }
+  
+    if (input.bindDown("opensb", "takeAll")) {
+      m_containerInteractor->clearContainer();
     }
   }
 }
