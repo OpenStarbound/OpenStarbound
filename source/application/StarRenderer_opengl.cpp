@@ -151,17 +151,31 @@ OpenGlRenderer::GlFrameBuffer::GlFrameBuffer(Json const& fbConfig) : config(fbCo
   if (texture->textureId == 0)
     throw RendererException("Could not generate OpenGL texture for framebuffer");
 
+  clear = config.getBool("clear",true);
+  
   multisample = GLEW_VERSION_4_0 ? config.getUInt("multisample", 0) : 0;
   GLenum target = multisample ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D;
   glBindTexture(target, texture->glTextureId());
+  
+  hdr = config.getBool("hdr",false);
+  alpha = config.getBool("alpha",false) || multisample;
 
   sizeDiv = config.getUInt("sizeDiv", 1);
   Vec2U size = jsonToVec2U(config.getArray("size", { 256, 256 })) / sizeDiv;
 
-  if (multisample)
-    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, multisample, GL_RGBA8, size[0], size[1], GL_TRUE);
-  else {
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, size[0], size[1], 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+  if (multisample) {
+    auto internalFormat =  hdr ? GL_RGBA16F : GL_RGBA8;
+    
+    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, multisample, internalFormat, size[0], size[1], GL_TRUE);
+  } else {
+    auto format = alpha ? GL_RGBA : GL_RGB;
+    auto internalFormat =  hdr ? 
+        (alpha ? GL_RGBA16F : GL_RGB16F) :
+        (alpha ? GL_RGBA8 : GL_RGB8);
+    auto type = hdr ? GL_FLOAT : GL_UNSIGNED_BYTE;
+    
+    glTexImage2D(
+      GL_TEXTURE_2D, 0, internalFormat, size[0], size[1], 0, format, type, NULL);
   }
   auto addressing = TextureAddressingNames.getLeft(config.getString("textureAddressing", "clamp"));
   auto filtering = TextureFilteringNames.getLeft(config.getString("textureFiltering", "nearest"));
@@ -613,11 +627,19 @@ void OpenGlRenderer::setScreenSize(Vec2U screenSize) {
   for (auto& frameBuffer : m_frameBuffers) {
     unsigned sizeDiv = frameBuffer.second->sizeDiv;
     if (unsigned multisample = frameBuffer.second->multisample) {
+      auto internalFormat =  frameBuffer.second->hdr ? GL_RGBA16F : GL_RGBA8;
+      
       glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, frameBuffer.second->texture->glTextureId());
-      glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, multisample, GL_RGBA8, m_screenSize[0] / sizeDiv, m_screenSize[1] / sizeDiv, GL_TRUE);
+      glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, multisample, internalFormat, m_screenSize[0] / sizeDiv, m_screenSize[1] / sizeDiv, GL_TRUE);
     } else {
+      auto format = frameBuffer.second->alpha ? GL_RGBA : GL_RGB;
+      auto internalFormat =  frameBuffer.second->hdr ? 
+          (frameBuffer.second->alpha ? GL_RGBA16F : GL_RGB16F) :
+          (frameBuffer.second->alpha ? GL_RGBA8 : GL_RGB8);
+      auto type = frameBuffer.second->hdr ? GL_FLOAT : GL_UNSIGNED_BYTE;
+      
       glBindTexture(GL_TEXTURE_2D, frameBuffer.second->texture->glTextureId());
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_screenSize[0] / sizeDiv, m_screenSize[1] / sizeDiv, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+      glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, m_screenSize[0] / sizeDiv, m_screenSize[1] / sizeDiv, 0, format, type, NULL);
     }
   }
 }
@@ -628,7 +650,8 @@ void OpenGlRenderer::startFrame() {
   
   for (auto& frameBuffer : m_frameBuffers) {
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, frameBuffer.second->id);
-    glClear(GL_COLOR_BUFFER_BIT);
+    if (frameBuffer.second->clear)
+      glClear(GL_COLOR_BUFFER_BIT);
     frameBuffer.second->blitted = false;
   }
 

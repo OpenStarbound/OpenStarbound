@@ -182,6 +182,9 @@ private:
 
     Json config;
     bool blitted = false;
+    bool hdr = false;
+    bool alpha = false;
+    bool clear = true;
     unsigned multisample = 0;
     unsigned sizeDiv = 1;
 
