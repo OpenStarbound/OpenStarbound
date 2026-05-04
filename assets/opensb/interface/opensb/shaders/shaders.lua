@@ -125,12 +125,12 @@ local function addOption(data, i, added)
     value = shaderConfig[activeGroup].parameters[data.name]
   end
   
-  -- todo: finish this
   if data.type == "slider" then
     local range = data.range or {0,1}
     local delta = data.delta or 0.01
+    local min = range[1]/delta
     -- for some reason ranges require ints so
-    local r = {range[1]/delta, range[2]/delta, 1}
+    local r = {0, range[2]/delta-min, 1}
     
     local slider = {
       type = "slider",
@@ -143,7 +143,7 @@ local function addOption(data, i, added)
     added[#added + 1] = name
     widget.addChild(OPTIONS_WIDGET, slider, name)
     
-    widget.setSliderValue(fmt("%s.%s",OPTIONS_WIDGET,name), value/delta)
+    widget.setSliderValue(fmt("%s.%s",OPTIONS_WIDGET,name), value/delta-min)
     local valLabel = {
       type = "label",
       value = fmt(digitRegex(delta),value),
@@ -205,7 +205,8 @@ end
 function sliderOptionModified(option, odata)
   local oname = string.sub(option, optionOffset)
   local parameter = groups[activeGroup].parameters[oname]
-  local value = widget.getSliderValue(fmt("%s.%s",OPTIONS_WIDGET,option))*parameter.delta
+  local min = parameter.range[1]/parameter.delta
+  local value = (widget.getSliderValue(fmt("%s.%s",OPTIONS_WIDGET,option))+min)*parameter.delta
   
   widget.setText(fmt("%s.%s",OPTIONS_WIDGET,option.."_value"), fmt(digitRegex(parameter.delta),value))
   
