@@ -47,6 +47,11 @@ void LabelWidget::setColor(Color newColor) {
   m_style.color = newColor.toRgba();
 }
 
+void LabelWidget::setFont(String const& font) {
+  m_style.font = font;
+  updateTextRegion();
+}
+
 void LabelWidget::setAnchor(HorizontalAnchor hAnchor, VerticalAnchor vAnchor) {
   m_hAnchor = hAnchor;
   m_vAnchor = vAnchor;

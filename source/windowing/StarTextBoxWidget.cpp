@@ -213,6 +213,10 @@ void TextBoxWidget::setFontSize(int fontSize) {
   m_textStyle.fontSize = fontSize;
 }
 
+void TextBoxWidget::setFont(String const& font) {
+  m_textStyle.font = font;
+}
+
 void TextBoxWidget::setMaxWidth(int maxWidth) {
   m_maxWidth = maxWidth;
   setSize({m_maxWidth + 6, m_textStyle.fontSize + 2});
