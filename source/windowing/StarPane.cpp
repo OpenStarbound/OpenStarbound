@@ -419,6 +419,90 @@ LuaCallbacks Pane::makePaneCallbacks() {
   callbacks.registerCallback("hasFocus", [this]() { return hasFocus(); });
   callbacks.registerCallback("show", [this]() { show(); });
   callbacks.registerCallback("hide", [this]() { hide(); });
+  callbacks.registerCallback("anchor", [this]() { return PaneAnchorNames.getRight(anchor()); });  
+  callbacks.registerCallback("setAnchor", [this](String anchorName) {
+    setAnchor(PaneAnchorNames.getLeft(anchorName)); 
+  });
+  callbacks.registerCallback("anchorOffset", [this]() { return anchorOffset(); });
+  callbacks.registerCallback("setAnchorOffset", [this](Vec2I offset) { setAnchorOffset(offset); });
+  callbacks.registerCallback("getScreenPosition", [this]() -> Vec2I {
+    Vec2I windowSize = Vec2I(m_context->windowInterfaceSize());
+    Vec2I sz = size();
+    Vec2I offset;
+    switch (anchor()) {
+    case PaneAnchor::None:
+    case PaneAnchor::BottomLeft:
+      offset = anchorOffset();
+      break;
+    case PaneAnchor::BottomRight:
+      offset = anchorOffset() + Vec2I{windowSize[0] - sz[0], 0};
+      break;
+    case PaneAnchor::TopLeft:
+      offset = anchorOffset() + Vec2I{0, windowSize[1] - sz[1]};
+      break;
+    case PaneAnchor::TopRight:
+      offset = anchorOffset() + (windowSize - sz);
+      break;
+    case PaneAnchor::CenterTop:
+      offset = anchorOffset() + Vec2I{(windowSize[0] - sz[0]) / 2, windowSize[1] - sz[1]};
+      break;
+    case PaneAnchor::CenterBottom:
+      offset = anchorOffset() + Vec2I{(windowSize[0] - sz[0]) / 2, 0};
+      break;
+    case PaneAnchor::CenterLeft:
+      offset = anchorOffset() + Vec2I{0, (windowSize[1] - sz[1]) / 2};
+      break;
+    case PaneAnchor::CenterRight:
+      offset = anchorOffset() + Vec2I{windowSize[0] - sz[0], (windowSize[1] - sz[1]) / 2};
+      break;
+    case PaneAnchor::Center:
+      offset = anchorOffset() + ((windowSize - sz) / 2);
+      break;
+    default:
+      offset = anchorOffset();
+    }
+    return offset + relativePosition();
+  });
+
+  callbacks.registerCallback("setScreenPosition", [this](Vec2I screenPos) {
+    Vec2I windowSize = Vec2I(m_context->windowInterfaceSize());
+    Vec2I sz = size();
+    Vec2I offset;
+    switch (anchor()) {
+    case PaneAnchor::None:
+    case PaneAnchor::BottomLeft:
+      offset = anchorOffset();
+      break;
+    case PaneAnchor::BottomRight:
+      offset = anchorOffset() + Vec2I{windowSize[0] - sz[0], 0};
+      break;
+    case PaneAnchor::TopLeft:
+      offset = anchorOffset() + Vec2I{0, windowSize[1] - sz[1]};
+      break;
+    case PaneAnchor::TopRight:
+      offset = anchorOffset() + (windowSize - sz);
+      break;
+    case PaneAnchor::CenterTop:
+      offset = anchorOffset() + Vec2I{(windowSize[0] - sz[0]) / 2, windowSize[1] - sz[1]};
+      break;
+    case PaneAnchor::CenterBottom:
+      offset = anchorOffset() + Vec2I{(windowSize[0] - sz[0]) / 2, 0};
+      break;
+    case PaneAnchor::CenterLeft:
+      offset = anchorOffset() + Vec2I{0, (windowSize[1] - sz[1]) / 2};
+      break;
+    case PaneAnchor::CenterRight:
+      offset = anchorOffset() + Vec2I{windowSize[0] - sz[0], (windowSize[1] - sz[1]) / 2};
+      break;
+    case PaneAnchor::Center:
+      offset = anchorOffset() + ((windowSize - sz) / 2);
+      break;
+    default:
+      offset = anchorOffset();
+    }
+
+    setPosition(screenPos - offset);
+  });
 
   return callbacks;
 }

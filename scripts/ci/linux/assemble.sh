@@ -41,7 +41,7 @@ mkdir server_distribution/linux
 
 # makes the server function on older Linux versions (this is so stupid)
 nm --dynamic --undefined-only --with-symbol-versions dist/starbound_server | grep GLIBC_2.29
-./scripts/ci/linux/patchelf dist/starbound_server \
+patchelf dist/starbound_server \
   --clear-symbol-version exp \
   --clear-symbol-version exp2 \
   --clear-symbol-version log \

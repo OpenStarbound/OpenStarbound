@@ -5,6 +5,10 @@
   "openSbHelpText": "OpenSB commands are: {}",
   "openSbDebugHelpText": "OpenSB Debug commands are: {}",
 
+  "basicCommands": {
+    "admin" : "Usage /admin [playerSpecifier]. Enables or disables admin mode for yourself or the specified player, which enables all crafting recipes, prevents damage or energy loss, and allows access to admin-only commands."
+  },
+
   "openSbDebugCommands": {
     "run": "Usage /run <lua>. Executes a script on the player and outputs the return value to chat."
   },

@@ -61,6 +61,8 @@ private:
   String setWeather(ConnectionId connectionId, String const& argumentString);
   String setEnvironmentBiome(ConnectionId connectionId, String const& argumentString);
 
+  static const StringMap<std::function<String(CommandProcessor*, ConnectionId, String)>> s_commandMap;
+
   mutable Mutex m_mutex;
 
   String handleCommand(ConnectionId connectionId, String const& command, String const& argumentString);

@@ -17,12 +17,17 @@ public:
 
   VersionNumber version() const;
   void setVersion(VersionNumber version);
+
+  bool isAdmin() const;
+  void setIsAdmin(bool admin);
+
   bool isLegacy() const;
 
   bool operator==(NetCompatibilityRules const& a) const;
 
 private:
   VersionNumber m_version = OpenProtocolVersion;
+  bool m_isAdmin = false;
 };
 
 inline NetCompatibilityRules::NetCompatibilityRules() : m_version(OpenProtocolVersion) {}
@@ -35,6 +40,14 @@ inline VersionNumber NetCompatibilityRules::version() const {
 
 inline void NetCompatibilityRules::setVersion(VersionNumber version) {
   m_version = version;
+}
+
+inline bool NetCompatibilityRules::isAdmin() const {
+  return m_isAdmin;
+}
+
+inline void NetCompatibilityRules::setIsAdmin(bool admin) {
+  m_isAdmin = admin;
 }
 
 inline bool NetCompatibilityRules::isLegacy() const {

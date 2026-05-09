@@ -64,11 +64,15 @@ List<pair<String, bool>> File::dirList(const String& dirName, bool skipDots) {
     String entryString = entry->d_name;
     if (!skipDots || (entryString != "." && entryString != "..")) {
       bool isDirectory = false;
+      #ifdef STAR_SYSTEM_HAIKU
+      isDirectory = File::isDirectory(File::relativeTo(dirName, entryString));
+      #else
       if (entry->d_type == DT_DIR) {
         isDirectory = true;
       } else if (entry->d_type == DT_LNK || entry->d_type == DT_UNKNOWN) {
         isDirectory = File::isDirectory(File::relativeTo(dirName, entryString));
       }
+      #endif
       fileList.append({entryString, isDirectory});
     }
   }
