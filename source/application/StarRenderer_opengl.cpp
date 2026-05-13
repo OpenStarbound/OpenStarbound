@@ -89,6 +89,20 @@ static void GLAPIENTRY GlMessageCallback(GLenum, GLenum type, GLuint, GLenum, GL
 }
 */
 
+extern EnumMap<BoolSettingMode> const BoolSettingModeNames{
+  {BoolSettingMode::Enabled, "Enabled"},
+  {BoolSettingMode::FromSetting, "FromSetting"},
+  {BoolSettingMode::Disabled, "Disabled"}
+};
+
+bool settingModeValue(BoolSettingMode const& mode, bool const& setting) {
+  if (mode == BoolSettingMode::FromSetting) {
+    return setting;
+  } else {
+    return mode == BoolSettingMode::Enabled;
+  }
+}
+
 OpenGlRenderer::OpenGlRenderer() {
   auto glewResult = glewInit();
   if (glewResult != GLEW_OK && glewResult != GLEW_ERROR_NO_GLX_DISPLAY)
@@ -157,7 +171,8 @@ OpenGlRenderer::GlFrameBuffer::GlFrameBuffer(Json const& fbConfig) : config(fbCo
   GLenum target = multisample ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D;
   glBindTexture(target, texture->glTextureId());
   
-  hdr = config.getBool("hdr",false);
+  hdrMode = BoolSettingModeNames.getLeft(config.getString("hdr","Disabled"));
+  bool hdr = settingModeValue(hdrMode,config.getBool("hdrSetting",false));
   alpha = config.getBool("alpha",false) || multisample;
 
   sizeDiv = config.getUInt("sizeDiv", 1);
@@ -220,6 +235,7 @@ void OpenGlRenderer::loadConfig(Json const& config) {
   for (auto& pair : config.getObject("frameBuffers", {})) {
     Json config = pair.second;
     config = config.set("multisample", m_multiSampling);
+    config = config.set("hdrSetting", m_hdrSetting);
     Logger::info("Creating framebuffer {}", pair.first);
     m_frameBuffers[pair.first] = make_ref<GlFrameBuffer>(config);
 
@@ -574,6 +590,14 @@ void OpenGlRenderer::setMultiSampling(unsigned multiSampling) {
   loadConfig(m_config);
 }
 
+void OpenGlRenderer::setMainHDR(bool enabled) {
+  if (m_hdrSetting == enabled)
+    return;
+  
+  m_hdrSetting = enabled;
+  loadConfig(m_config);
+}
+
 TextureGroupPtr OpenGlRenderer::createTextureGroup(TextureGroupSize textureSize, TextureFiltering filtering) {
   int maxTextureSize;
   glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureSize);
@@ -626,17 +650,18 @@ void OpenGlRenderer::setScreenSize(Vec2U screenSize) {
 
   for (auto& frameBuffer : m_frameBuffers) {
     unsigned sizeDiv = frameBuffer.second->sizeDiv;
+    bool hdr = settingModeValue(frameBuffer.second->hdrMode,m_hdrSetting);
     if (unsigned multisample = frameBuffer.second->multisample) {
-      auto internalFormat =  frameBuffer.second->hdr ? GL_RGBA16F : GL_RGBA8;
+      auto internalFormat =  hdr ? GL_RGBA16F : GL_RGBA8;
       
       glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, frameBuffer.second->texture->glTextureId());
       glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, multisample, internalFormat, m_screenSize[0] / sizeDiv, m_screenSize[1] / sizeDiv, GL_TRUE);
     } else {
       auto format = frameBuffer.second->alpha ? GL_RGBA : GL_RGB;
-      auto internalFormat =  frameBuffer.second->hdr ? 
+      auto internalFormat =  hdr ? 
           (frameBuffer.second->alpha ? GL_RGBA16F : GL_RGB16F) :
           (frameBuffer.second->alpha ? GL_RGBA8 : GL_RGB8);
-      auto type = frameBuffer.second->hdr ? GL_FLOAT : GL_UNSIGNED_BYTE;
+      auto type = hdr ? GL_FLOAT : GL_UNSIGNED_BYTE;
       
       glBindTexture(GL_TEXTURE_2D, frameBuffer.second->texture->glTextureId());
       glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, m_screenSize[0] / sizeDiv, m_screenSize[1] / sizeDiv, 0, format, type, NULL);
