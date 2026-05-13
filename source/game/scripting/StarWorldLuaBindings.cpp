@@ -537,8 +537,12 @@ namespace LuaBindings {
             return {};
         });
 
-    callbacks.registerCallbackWithSignature<EntityPtr, EntityId>("entity", [world](EntityId entityId) -> EntityPtr {
-      return world->entity(entityId);
+    callbacks.registerCallbackWithSignature<Maybe<EntityPtr>, EntityId>("entity", [world](EntityId entityId) -> Maybe<EntityPtr> {
+      if (auto entity = world->entity(entityId)) {
+        return entity;
+      } else {
+        return {};
+      }
     });
 
     callbacks.registerCallbackWithSignature<bool, int>("entityExists", bind(WorldEntityCallbacks::entityExists, world, _1));
