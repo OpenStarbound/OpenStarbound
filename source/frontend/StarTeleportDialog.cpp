@@ -104,15 +104,11 @@ TeleportDialog::TeleportDialog(UniverseClientPtr client,
   if (config.getBool("includePlayerBookmarks", false)) {
     auto teleportBookmarks = m_client->mainPlayer()->universeMap()->teleportBookmarks();
 
-    teleportBookmarks.sort([](auto const& a, auto const& b) { return a.bookmarkName.toLower() < b.bookmarkName.toLower(); });
+    teleportBookmarks.sort([](auto const& a, auto const& b) { return a == m_currentLocation || a.bookmarkName.toLower() < b.bookmarkName.toLower(); });
 
     for (auto bookmark : teleportBookmarks) {
       auto entry = destList->addItem();
       setupBookmarkEntry(entry, bookmark);
-      if (bookmark == m_currentLocation) {
-        destList->setEnabled(destList->itemPosition(entry), false);
-        entry->fetchChild<ButtonWidget>("editButton")->setEnabled(false);
-      }
       m_destinations.append({WarpToWorld(bookmark.target.first, bookmark.target.second), false});
     }
   }
