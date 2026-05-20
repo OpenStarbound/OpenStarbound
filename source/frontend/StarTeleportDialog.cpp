@@ -104,7 +104,7 @@ TeleportDialog::TeleportDialog(UniverseClientPtr client,
   if (config.getBool("includePlayerBookmarks", false)) {
     auto teleportBookmarks = m_client->mainPlayer()->universeMap()->teleportBookmarks();
 
-    teleportBookmarks.sort([](auto const& a, auto const& b) { return a == m_currentLocation || a.bookmarkName.toLower() < b.bookmarkName.toLower(); });
+    teleportBookmarks.sort([](auto const& a, auto const& b) { return (a == m_currentLocation) || (a.bookmarkName.toLower() < b.bookmarkName.toLower()); });
 
     for (auto bookmark : teleportBookmarks) {
       auto entry = destList->addItem();
