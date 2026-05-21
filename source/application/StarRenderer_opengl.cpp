@@ -192,6 +192,10 @@ OpenGlRenderer::GlFrameBuffer::GlFrameBuffer(Json const& fbConfig) : config(fbCo
   auto framebufferStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
   if (framebufferStatus != GL_FRAMEBUFFER_COMPLETE)
     throw RendererException("OpenGL framebuffer is not complete!");
+
+  if (multisample > 0) {
+    flatFrameBuffer = make_ref<GlFrameBuffer>(config.set("multisample", 0));
+  }
 }
 
 
@@ -200,12 +204,38 @@ OpenGlRenderer::GlFrameBuffer::~GlFrameBuffer() {
   texture.reset();
 }
 
+void OpenGlRenderer::GlFrameBuffer::prepareForShaderAccess(const Vec2U& screenSize) {
+  if (!flatFrameBuffer || flattened)
+    return;
+
+  glBindFramebuffer(GL_DRAW_FRAMEBUFFER, flatFrameBuffer->id);
+  glBindFramebuffer(GL_READ_FRAMEBUFFER, id);
+  glBlitFramebuffer(
+    0, 0, screenSize[0], screenSize[1],
+    0, 0, screenSize[0], screenSize[1],
+    GL_COLOR_BUFFER_BIT, GL_NEAREST
+  );
+
+  flattened = true;
+}
+
 void OpenGlRenderer::loadConfig(Json const& config) {
   m_frameBuffers.clear();
 
+  // Effects will keep any framebuffer textures they use
+  // alive indefinitely, so clear those out here as well
+  for (auto& effect : m_effects) {
+    for (auto& texture : effect.second.textures) {
+      if (texture.second.textureFrameBuffer) {
+        texture.second.textureFrameBuffer.reset();
+        texture.second.textureValue.reset();
+      }
+    }
+  }
+
   for (auto& pair : config.getObject("frameBuffers", {})) {
     Json config = pair.second;
-    config = config.set("multisample", m_multiSampling);
+    config = config.set("multisample", pair.first == "main"? m_multiSampling : 0);
     Logger::info("Creating framebuffer {}", pair.first);
     m_frameBuffers[pair.first] = make_ref<GlFrameBuffer>(config);
 
@@ -502,17 +532,26 @@ bool OpenGlRenderer::switchEffectConfig(String const& name) {
         auto ptr = m_currentEffect->textures.ptr(textureUniform);
         if (ptr) {
           if (!ptr->textureValue || ptr->textureValue->textureId == 0) {  
-            auto texture = getGlFrameBuffer(*frameBufferId)->texture;
-            ptr->textureValue = texture;
+            auto fb = getGlFrameBuffer(*frameBufferId);
+            fb->prepareForShaderAccess(m_screenSize);
+            ptr->textureFrameBuffer = fb;
+            ptr->textureValue = fb->activeFrameBuffer().texture;
             if (ptr->textureSizeUniform != -1) {
               auto textureSize = ptr->textureValue->glTextureSize();
               glUniform2f(ptr->textureSizeUniform, textureSize[0], textureSize[1]);
             }
+          } else if (ptr->textureFrameBuffer) {
+            ptr->textureFrameBuffer->prepareForShaderAccess(m_screenSize);
           }
         }
       }
     }
   }
+
+  // prepareForShaderAccess above may bind a different framebuffer if multisampling is used
+  auto frameBufferId = m_currentFrameBuffer? m_currentFrameBuffer->activeFrameBuffer().id : 0;
+  glBindFramebuffer(GL_DRAW_FRAMEBUFFER, frameBufferId);
+
   return true;
 }
 
@@ -619,6 +658,11 @@ void OpenGlRenderer::setScreenSize(Vec2U screenSize) {
       glBindTexture(GL_TEXTURE_2D, frameBuffer.second->texture->glTextureId());
       glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_screenSize[0] / sizeDiv, m_screenSize[1] / sizeDiv, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
     }
+
+    if (auto fb = frameBuffer.second->flatFrameBuffer) {
+      glBindTexture(GL_TEXTURE_2D, fb->texture->glTextureId());
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_screenSize[0] / sizeDiv, m_screenSize[1] / sizeDiv, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    }
   }
 }
 
@@ -630,6 +674,13 @@ void OpenGlRenderer::startFrame() {
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, frameBuffer.second->id);
     glClear(GL_COLOR_BUFFER_BIT);
     frameBuffer.second->blitted = false;
+    frameBuffer.second->flattened = false;
+
+    if (auto fb = frameBuffer.second->flatFrameBuffer) {
+      glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fb->id);
+      glClear(GL_COLOR_BUFFER_BIT);
+      fb->blitted = false;
+    }
   }
 
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -1159,8 +1210,9 @@ void OpenGlRenderer::blitGlFrameBuffer(RefPtr<GlFrameBuffer> const& frameBuffer)
     return;
 
   auto& size = m_screenSize;
+  auto& active_fb = frameBuffer->activeFrameBuffer();
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-  glBindFramebuffer(GL_READ_FRAMEBUFFER, frameBuffer->id);
+  glBindFramebuffer(GL_READ_FRAMEBUFFER, active_fb.id);
   glBlitFramebuffer(
     0, 0, size[0], size[1],
     0, 0, size[0], size[1],
@@ -1174,7 +1226,8 @@ void OpenGlRenderer::switchGlFrameBuffer(RefPtr<GlFrameBuffer> const& frameBuffe
   if (m_currentFrameBuffer == frameBuffer)
     return;
 
-  glBindFramebuffer(GL_DRAW_FRAMEBUFFER, frameBuffer->id);
+  auto& active_fb = frameBuffer->activeFrameBuffer();
+  glBindFramebuffer(GL_DRAW_FRAMEBUFFER, active_fb.id);
   m_currentFrameBuffer = frameBuffer;
 }
 
