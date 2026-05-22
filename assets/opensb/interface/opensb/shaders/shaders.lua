@@ -271,7 +271,17 @@ local function addEnabled(groupname, i, added)
 end
 
 function toggleGroupEnabled(checkbox, cdata)
-  renderer.setPostProcessGroupEnabled(activeGroup, widget.getChecked(fmt("%s.%s",OPTIONS_WIDGET,checkbox)), true)
+  local checked = widget.getChecked(fmt("%s.%s",OPTIONS_WIDGET,checkbox))
+  renderer.setPostProcessGroupEnabled(activeGroup, checked, true)
+  
+  local ep = groups[activeGroup].enabledParameter
+  if ep then
+      -- this group might need to handle enable/disabling itself, since maybe it patches another shader that can't be disabled
+      for _,e in next, groups[activeGroup].enabledParameterEffects do
+        renderer.setEffectParameter(e,ep,checked)
+      end
+  end
+  
   shaderConfig = root.getConfiguration("postProcessGroups")
 end
 
