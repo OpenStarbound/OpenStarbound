@@ -71,6 +71,7 @@ Json const AdditionalDefaultConfiguration = Json::parseJson(R"JSON(
       "borderless" : false,
       "maximized" : true,
       "antiAliasing" : false,
+      "hdr": true,
       "zoomLevel" : 3.0,
       "cameraSpeedFactor" : 1.0,
       "interfaceScale" : 0,
@@ -429,6 +430,7 @@ void ClientApplication::render() {
   auto& renderer = Application::renderer();
 
   renderer->setMultiSampling(config->get("antiAliasing").optBool().value(false) ? 4 : 0);
+  renderer->setMainHDR(config->get("hdr").optBool().value(true));
   renderer->switchEffectConfig("interface");
 
   if (auto interfaceScale = config->get("interfaceScale").optFloat().value(); interfaceScale != 0)
