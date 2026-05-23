@@ -422,6 +422,11 @@ LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr
           list->setSelectedWidget(selected);
     });
 
+  callbacks.registerCallback("clearListSelected", [parentWidget](String const& widgetName) {
+    if (auto list = parentWidget->fetchChild<ListWidget>(widgetName))
+      list->clearSelected();
+  });
+
   callbacks.registerCallback("registerMemberCallback", [parentWidget](String const& widgetName, String const& name, LuaFunction callback) {
       if (auto list = parentWidget->fetchChild<ListWidget>(widgetName)){
         list->registerMemberCallback(name, [callback](Widget* widget) {

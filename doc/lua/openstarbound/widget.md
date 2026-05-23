@@ -86,3 +86,11 @@ Sets the current scroll offset of a ScrollArea widget.
 #### `Vec2I` widget.getMaxScrollPosition(`String` widgetName)
 
 Gets the maximum scroll position of a ScrollArea widget. This is the maximum offset that can be scrolled to.
+
+---
+
+### ListWidget helpers
+
+#### `void` widget.clearListSelected(`String` widgetName)
+
+Clears the selected item in a ListWidget, if any.
