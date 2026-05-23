@@ -825,6 +825,14 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
     player->setCameraFocusEntity(entityId);
   });
 
+  callbacks.registerCallback("headRotation", [player](Maybe<EntityId> const& entityId) {
+    return player->getSecretProperty("humanoid.headRotation");
+  });
+  // more accurate than mcontroller.facingDirection
+  callbacks.registerCallback("facingDirection", [player](Maybe<EntityId> const& entityId) {
+    return numericalDirection(player->humanoid()->facingDirection());
+  });
+
   return callbacks;
 }
 

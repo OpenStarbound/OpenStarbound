@@ -1170,6 +1170,11 @@ void Player::update(float dt, uint64_t) {
         setSecretProperty("humanoid.headRotation", headRotation);
     }
   }
+  
+  if (isMaster()) {
+    for (auto& p : m_genericScriptContexts)
+      p.second->invoke("postUpdate");
+  }
 
   m_pendingMoves.clear();
 

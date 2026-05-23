@@ -3,18 +3,17 @@
 <details>
 <summary><b>What is this?</b></summary>
  
-tl;dr: **OpenStarbound** is a mod of the latest version of Starbound, 1.4.4. It fixes many bugs, adds many new features and improves performance.
+By a truly unbelievable coincidence, I was out for a walk when I saw a small package fall off a truck ahead of me. Inside, I found the 1.4.4 [**Starbound source code**](https://archive.org/details/starbound_source_code).
+**OpenStarbound** is derived from that source code. It fixes many bugs, adds many new features and improves performance. <sup>there is only so much you can do to polish a turd, just play Terraria or something</sup>
 
-By a truly unbelievable coincidence, I was recently out for a walk when I saw a small package fall off a truck ahead of me.  As I got closer, the typeface slowly came into focus: **Starbound**. Inside, I found a submachine gun, a fursuit (tells you something about their audience I guess!), and the latest version of the [**Starbound source code**](https://archive.org/details/starbound_source_code).
+**Q:** Doesn't 'Open{game}' imply an engine reversed from scratch? (see Open.. [TTD](https://github.com/OpenTTD/OpenTTD), [RCT2](https://github.com/OpenRCT2/OpenRCT2), [MW](https://gitlab.com/OpenMW/openmw))
 
-![185361129-9883fb92-9597-4ba4-b003-4be3dc4971a3](https://github.com/user-attachments/assets/b35dd133-2dc8-4205-9a3f-788e14192a05)
+**A:** yeah too late to change it now though. whoops
+
 
 </details>
 
-You **must** own a copy of Starbound. Base game assets are not provided for very obvious reasons.
-
-
-The code is worked on whenever I feel like it. Contributions are welcome!
+You must own Starbound for the game assets. The code is worked on whenever I rarely feel like it. Contributions are welcome!
 
 ## Installation
 ### Download the [latest stable release](https://github.com/OpenStarbound/OpenStarbound/releases/latest).
