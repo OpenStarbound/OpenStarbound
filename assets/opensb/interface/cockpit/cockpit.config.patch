@@ -10,8 +10,8 @@
       "pressed" : "/interface/cockpit/gobutton.png:inactive",
       "position" : [4, 300],
       "pressedOffset" : [0, 0],
-      "caption" : "",
-      "visible" : false,
+      "caption" : "FLY",
+      "visible" : true,
       "callback" : "flyToSelection"
     }
   },
