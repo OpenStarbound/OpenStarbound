@@ -1561,8 +1561,17 @@ void ClientApplication::updateRunning(float dt) {
         m_controllerAimOffset = Vec2F(facingDir * 0.5f, 0.0f);
       }
 
-      // Always apply offset relative to current player position
-      m_controllerAimPosition = m_player->position() + m_controllerAimOffset;
+      // Get aim origin — use vehicle position when in a mech, player position otherwise
+      Vec2F aimOrigin = m_player->position();
+      if (auto anchorState = m_player->loungingIn()) {
+        if (auto worldClient = m_universeClient->worldClient()) {
+          if (auto vehicle = as<Vehicle>(worldClient->entity(anchorState->entityId)))
+            aimOrigin = vehicle->position();
+        }
+      }
+
+      // Always apply offset relative to current aim origin
+      m_controllerAimPosition = aimOrigin + m_controllerAimOffset;
       m_player->aim(m_controllerAimPosition);
     }
 
