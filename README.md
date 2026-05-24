@@ -91,29 +91,29 @@ Note: Not every function from [StarExtensions](https://github.com/StarExtensions
 <details>
 <summary><b>Default Controller Bindings</b></summary>
 
-| Button | Action |
-|--------|--------|
-| **Left Stick** | Analog movement (walk/run) |
-| **Right Stick** | Aim direction and distance |
-| **RT / R2** | Primary fire (left hand item) |
-| **LT / L2** | Alt fire (right hand item) |
-| **RB / R1** | Next hotbar slot |
-| **LB / L1** | Previous hotbar slot |
-| **L1 + R1** | Beam up / beam down |
-| **A / X (South)** | Jump |
-| **B / Circle (East)** | Close / back (dismiss top pane) |
-| **X / Square (West)** | Interact |
-| **Y / Triangle (North)** | Inventory |
-| **D-pad Up** | Cycle hotbar group |
-| **D-pad Down** | Toggle matter manipulator (swap to MM / swap back to previously held slot) |
-| **D-pad Left** | Quest log |
-| **D-pad Right** | Tech action 1 (morphball, etc.) |
-| **Start / Options** | Escape menu |
-| **Select / Create** | Crafting |
-| **L3 (Left Stick Click)** | *Gamepad mode:* Toggle virtual cursor · *Hybrid mode:* Context action (MM → single-block mode, other → drop item) |
-| **R3 (Right Stick Click)** | *Pane open:* Right-click at cursor · *No pane:* Camera pan |
-| **R2 in virtual cursor** | Left click (UI interaction) |
-| **L2 in virtual cursor** | Right click (starmap travel, stack split) |
+| Xbox | PlayStation | Action |
+|------|------------|--------|
+| **Left Stick** | **Left Stick** | Analog movement (walk/run) |
+| **Right Stick** | **Right Stick** | Aim direction and distance |
+| **RT** | **R2** | Primary fire (left hand item) |
+| **LT** | **L2** | Alt fire (right hand item) |
+| **RB** | **R1** | Next hotbar slot |
+| **LB** | **L1** | Previous hotbar slot |
+| **LB + RB** | **L1 + R1** | Beam up / beam down |
+| **A** | **X (Cross)** | Jump |
+| **B** | **O (Circle)** | Close / back (dismiss top pane) |
+| **X** | **□ (Square)** | Interact |
+| **Y** | **△ (Triangle)** | Inventory |
+| **D-pad Up** | **D-pad Up** | Cycle hotbar group |
+| **D-pad Down** | **D-pad Down** | Toggle matter manipulator (swap to MM / swap back to previously held slot) |
+| **D-pad Left** | **D-pad Left** | Quest log |
+| **D-pad Right** | **D-pad Right** | Tech action 1 (morphball, etc.) |
+| **Menu** | **Options** | Escape menu |
+| **View** | **Create** | Crafting |
+| **L3** | **L3** | *Gamepad mode:* Toggle virtual cursor · *Hybrid mode:* Context action (MM → single-block mode, other → drop item) |
+| **R3** | **R3** | *Pane open:* Right-click at cursor · *No pane:* Camera pan |
+| **RT** *(virtual cursor)* | **R2** *(virtual cursor)* | Left click (UI interaction) |
+| **LT** *(virtual cursor)* | **L2** *(virtual cursor)* | Right click (starmap travel, stack split) |
 
 </details>
 
