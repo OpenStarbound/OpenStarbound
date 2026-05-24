@@ -33,7 +33,7 @@
         "name": "Jump"
       },
       "PlayerShifting": {
-        "default": [{"type": "controller", "value": "LeftStick"}],
+        "default": [{"type": "controller", "value": "LeftShoulder"}],
         "group": "movement",
         "name": "Walk / Shift"
       },
@@ -48,7 +48,7 @@
         "name": "Drop Item"
       },
       "PlayerTechAction1": {
-        "default": [{"type": "controller", "value": "LeftShoulder"}],
+        "default": [{"type": "controller", "value": "B"}],
         "group": "combat",
         "name": "Tech Action 1"
       },
@@ -93,7 +93,7 @@
         "name": "Inventory"
       },
       "InterfaceCrafting": {
-        "default": [{"type": "controller", "value": "Back"}],
+        "default": [],
         "group": "interface",
         "name": "Crafting"
       },
@@ -108,7 +108,7 @@
         "name": "Deselect Hands"
       },
       "GuiClose": {
-        "default": [{"type": "controller", "value": "B"}],
+        "default": [{"type": "controller", "value": "Back"}],
         "group": "interface",
         "name": "Close / Back"
       }

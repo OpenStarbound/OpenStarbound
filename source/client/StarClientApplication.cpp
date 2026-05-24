@@ -80,6 +80,7 @@ Json const AdditionalDefaultConfiguration = Json::parseJson(R"JSON(
       "controllerMode" : "auto",
       "controllerAimRadius" : 8.0,
       "controllerAimDeadzone" : 0.15,
+      "controllerVirtualCursorSpeed" : 800.0,
 
       "title" : {
         "multiPlayerAddress" : "",
@@ -213,6 +214,7 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
   m_gamepadActive = (m_controllerMode == ControllerMode::Gamepad);
   m_aimRadius = configuration->get("controllerAimRadius").optFloat().value(8.0f);
   m_aimDeadzone = configuration->get("controllerAimDeadzone").optFloat().value(0.15f);
+  m_virtualCursorSpeed = configuration->get("controllerVirtualCursorSpeed").optFloat().value(800.0f);
   
   #ifdef STAR_SYSTEM_WINDOWS
     appController->setBorderlessWorkaround(configuration->get("borderlessWorkaround", true).toBool());
@@ -358,13 +360,17 @@ void ClientApplication::processInput(InputEvent const& event) {
   }
   else if (auto mouseMove = event.ptr<MouseMoveEvent>()) {
     // Auto mode: mouse movement switches to mouse/keyboard
-    if (m_controllerMode == ControllerMode::Auto)
+    if (m_controllerMode == ControllerMode::Auto) {
       m_gamepadActive = false;
+      m_virtualCursorActive = false;
+    }
   }
   else if (event.is<MouseButtonDownEvent>() || event.is<MouseButtonUpEvent>()) {
     // Auto mode: mouse click switches to mouse/keyboard
-    if (m_controllerMode == ControllerMode::Auto)
+    if (m_controllerMode == ControllerMode::Auto) {
       m_gamepadActive = false;
+      m_virtualCursorActive = false;
+    }
   }
   else if (auto cAxis = event.ptr<ControllerAxisEvent>()) {
     if (cAxis->controllerAxis == ControllerAxis::LeftX)
@@ -1250,6 +1256,21 @@ void ClientApplication::updateRunning(float dt) {
         if (auto topPane = m_mainInterface->paneManager()->topPane({PaneLayer::Window, PaneLayer::ModalWindow}))
           m_mainInterface->paneManager()->dismissPane(topPane);
       }
+
+      // Virtual cursor toggle (only relevant in Gamepad mode or Auto-when-gamepad-active)
+      if (m_input->bindDown("opensb", "toggleVirtualCursor")) {
+        bool inGamepadState = (m_controllerMode == ControllerMode::Gamepad)
+          || (m_controllerMode == ControllerMode::Auto && m_gamepadActive);
+        if (inGamepadState) {
+          m_virtualCursorActive = !m_virtualCursorActive;
+          if (m_virtualCursorActive) {
+            // Initialize virtual cursor at screen center
+            Vec2U windowSize = m_guiContext->windowSize();
+            m_virtualCursorPos = Vec2F(windowSize[0] / 2.0f, windowSize[1] / 2.0f);
+          }
+          appController()->setCursorVisible(m_virtualCursorActive);
+        }
+      }
     }
 
     // Controller analog movement
@@ -1267,7 +1288,46 @@ void ClientApplication::updateRunning(float dt) {
       || (m_controllerMode == ControllerMode::Hybrid)
       || (m_controllerMode == ControllerMode::Auto && m_gamepadActive);
 
-    if (useGamepadAim) {
+    if (useGamepadAim && m_virtualCursorActive) {
+      // Virtual cursor mode: right stick moves screen cursor
+      float stickMag = m_controllerRightStick.magnitude();
+      if (stickMag > m_aimDeadzone) {
+        Vec2F stickDir = m_controllerRightStick / stickMag;
+        float normalizedMag = (stickMag - m_aimDeadzone) / (1.0f - m_aimDeadzone);
+        normalizedMag = min(1.0f, normalizedMag);
+        // Quadratic acceleration curve for precision at low tilt
+        float speedMult = normalizedMag * normalizedMag;
+        Vec2F delta = Vec2F(stickDir[0], -stickDir[1]) * (speedMult * m_virtualCursorSpeed * dt);
+        m_virtualCursorPos += delta;
+        // Clamp to screen bounds
+        Vec2U windowSize = m_guiContext->windowSize();
+        m_virtualCursorPos[0] = clamp(m_virtualCursorPos[0], 0.0f, (float)windowSize[0]);
+        m_virtualCursorPos[1] = clamp(m_virtualCursorPos[1], 0.0f, (float)windowSize[1]);
+      }
+      // Warp the hardware cursor to our virtual position and sync MainInterface cursor
+      Vec2I screenCursorPos = Vec2I(m_virtualCursorPos[0], (int)m_guiContext->windowHeight() - (int)m_virtualCursorPos[1]);
+      appController()->setCursorPosition(screenCursorPos);
+      // Send synthetic mouse move so MainInterface's m_cursorScreenPos stays in sync
+      InputEvent syntheticMove = MouseMoveEvent{Vec2F(), m_virtualCursorPos};
+      m_mainInterface->handleInputEvent(syntheticMove);
+
+      // Handle virtual cursor clicks (A button = left click on UI)
+      if (m_input->bindDown("opensb", "virtualCursorClick")) {
+        InputEvent syntheticDown = MouseButtonDownEvent{MouseButton::Left, m_virtualCursorPos};
+        m_mainInterface->handleInputEvent(syntheticDown);
+        m_input->handleInput(syntheticDown, true);
+      }
+      if (m_input->bindUp("opensb", "virtualCursorClick")) {
+        InputEvent syntheticUp = MouseButtonUpEvent{MouseButton::Left, m_virtualCursorPos};
+        m_mainInterface->handleInputEvent(syntheticUp);
+        m_input->handleInput(syntheticUp, true);
+      }
+
+      // Also update aim from the virtual cursor's world position
+      m_controllerAimPosition = m_mainInterface->cursorWorldPosition();
+      m_controllerAimActive = true;
+      m_player->aim(m_controllerAimPosition);
+    } else if (useGamepadAim) {
       float stickMag = m_controllerRightStick.magnitude();
       if (stickMag > m_aimDeadzone) {
         // Normalize and apply radius scaling (stick magnitude controls distance)
