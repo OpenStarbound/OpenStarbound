@@ -1315,16 +1315,6 @@ void ClientApplication::updateRunning(float dt) {
       m_aimRadius = configuration->get("controllerAimRadius").optFloat().value(8.0f);
       m_aimDeadzone = configuration->get("controllerAimDeadzone").optFloat().value(0.15f);
       m_virtualCursorSpeed = configuration->get("controllerVirtualCursorSpeed").optFloat().value(800.0f);
-
-      // Write active controller name to config so Lua settings pane can read it
-      if (m_activeController != (ControllerId)-1) {
-        if (auto name = appController()->activeControllerName(m_activeController))
-          configuration->set("controllerActiveName", *name);
-        else
-          configuration->set("controllerActiveName", "Unknown");
-      } else {
-        configuration->set("controllerActiveName", "");
-      }
     }
 
     // Controller-driven interface actions (these bypass handleInputEvent's KeyDown path)

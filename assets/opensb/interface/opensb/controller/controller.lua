@@ -18,19 +18,10 @@ end
 
 local function updateModeButtons()
   local mode = getConfig("controllerMode", "auto")
-  local modes = {
-    { widget = "modeAuto",    id = "auto",    label = "Auto" },
-    { widget = "modeGamepad", id = "gamepad", label = "Gamepad" },
-    { widget = "modeHybrid",  id = "hybrid",  label = "Hybrid" }
-  }
-  for _, m in ipairs(modes) do
-    if m.id == mode then
-      widget.setButtonCaption(m.widget, "^#ebd74a;[" .. m.label .. "]")
-    else
-      widget.setButtonCaption(m.widget, "^#999;" .. m.label)
-    end
-  end
-  widget.setText("modeDescLabel", "^#aaa;" .. (modeDescriptions[mode] or ""))
+  widget.setChecked("modeAuto", mode == "auto")
+  widget.setChecked("modeGamepad", mode == "gamepad")
+  widget.setChecked("modeHybrid", mode == "hybrid")
+  widget.setText("modeDescLabel", modeDescriptions[mode] or "")
 end
 
 local function updateSliders()
@@ -50,23 +41,9 @@ local function updateSliders()
   widget.setText("cursorSpeedValue", tostring(speedStep * 100))
 end
 
-local function updateControllerName()
-  local name = getConfig("controllerActiveName", "")
-  if name ~= "" then
-    widget.setText("controllerName", "^#6f6;" .. name)
-  else
-    widget.setText("controllerName", "^#888;None detected")
-  end
-end
-
 function init()
   updateModeButtons()
   updateSliders()
-  updateControllerName()
-end
-
-function update()
-  updateControllerName()
 end
 
 function selectModeAuto()

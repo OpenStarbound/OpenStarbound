@@ -48,7 +48,7 @@
     },
     "showController" : {
       "type" : "button",
-      "position" : [87, 79],
+      "position" : [153, 51],
       "caption" : "Controller",
       "base" : "/interface/optionsmenu/tricontrolsbutton.png",
       "hover" : "/interface/optionsmenu/tricontrolsbuttonhover.png"
