@@ -97,6 +97,54 @@ Note: Not every function from [StarExtensions](https://github.com/StarExtensions
   * Modded system types require a patch to display their custom sun.
   * You can also access the skybox sun scale and its default ray colors. For more details see, [sky.config.patch](https://github.com/OpenStarbound/OpenStarbound/blob/main/assets/opensb/sky.config.patch).
 
+### Controller Support
+**Full gamepad support with analog input, multiple input modes, and haptic feedback.** [Detailed documentation](https://github.com/OpenStarbound/OpenStarbound/blob/main/doc/CONTROLLER_SUPPORT.md)
+
+* **Direct analog aiming** — Right stick controls aim with vector-based mapping, not a virtual mouse cursor. Stick angle sets direction, magnitude sets distance. Aim offset tracks relative to the player (or vehicle center when in a mech).
+* **Analog movement** — Left stick provides proportional walk/run speed. Always active regardless of input mode.
+* **Four input modes** (configurable in Options → Controller):
+  * **Off** — Controller input completely disabled. Mouse and keyboard only.
+  * **Auto** — Automatically switches between gamepad and mouse/keyboard based on the last input device used.
+  * **Gamepad** — Right stick aims. L3 toggles a virtual cursor for menu interaction. Mouse input disabled.
+  * **Hybrid** — Right stick aims. Mouse/trackpad remains active for UI. Ideal for Steam Deck and DualSense (trackpad + sticks simultaneously).
+* **Haptic feedback** — Rumble on damage taken (intensity scales with damage), beam teleport, and mech/vehicle ground impact (intensity scales with fall speed). Supports both body rumble and trigger rumble.
+* **Trigger support** — LT/RT analog triggers converted to digital button events for the bind system, enabling trigger-based fire controls.
+* **Smart aim behavior** — Releasing the right stick retains facing direction. When in a vehicle, aim origin automatically switches to the vehicle's center.
+* **Virtual cursor** (Gamepad mode) — Full mouse emulation via right stick with quadratic acceleration. RT = left click, LT = right click. All existing menus and mod UIs work without modification.
+* **R3 right-click** — Right stick click acts as right-click when any pane is open (for inventory stack splitting, navigation console travel, etc.). Acts as camera pan when no pane is open.
+* **Dual-controller filtering** — Automatically handles Steam Deck's dual gamepad registration (physical + virtual). Locks to first active controller, with automatic handoff after 2 seconds of inactivity.
+* **LB+RB beam** — Press both shoulder buttons simultaneously to beam up/down. Also available as a rebindable standalone bind.
+* **Fully rebindable** — All controller binds appear in Options → Mod Binds and can be reassigned to any controller button.
+
+<details>
+<summary><b>Default Controller Bindings</b></summary>
+
+| Button | Action |
+|--------|--------|
+| **Left Stick** | Analog movement (walk/run) |
+| **Right Stick** | Aim direction and distance |
+| **RT (Right Trigger)** | Primary fire (left hand item) |
+| **LT (Left Trigger)** | Alt fire (right hand item) |
+| **RB (Right Shoulder)** | Next hotbar slot |
+| **LB (Left Shoulder)** | Previous hotbar slot |
+| **LB + RB** | Beam up / beam down |
+| **A (South)** | Jump |
+| **B (East)** | Close / back (dismiss top pane) |
+| **X (West)** | Interact |
+| **Y (North)** | Inventory |
+| **D-pad Up** | Cycle hotbar group |
+| **D-pad Down** | Toggle matter manipulator (swap to MM / swap back) |
+| **D-pad Left** | Quest log |
+| **D-pad Right** | Tech action 1 (morphball, etc.) |
+| **Start** | Escape menu |
+| **Back / Select** | Crafting |
+| **L3 (Left Stick Click)** | *Gamepad mode:* Toggle virtual cursor · *Hybrid mode:* Context action (MM → single-block mode, other → drop item) |
+| **R3 (Right Stick Click)** | *Pane open:* Right-click at cursor · *No pane:* Camera pan |
+| **RT in virtual cursor** | Left click (UI interaction) |
+| **LT in virtual cursor** | Right click (travel, stack split) |
+
+</details>
+
 **Discord:** reverse the text in the image and you will have the invite code (this is to prevent spam bots)
 
 <details>
