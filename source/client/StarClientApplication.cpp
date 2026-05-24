@@ -1373,23 +1373,17 @@ void ClientApplication::updateRunning(float dt) {
         // Y is inverted on SDL gamepad axes (up = negative)
         m_controllerAimOffset = Vec2F(aimDir[0], -aimDir[1]) * (normalizedMag * m_aimRadius);
         m_controllerAimActive = true;
-      } else if (m_controllerStickWasActive) {
-        // Stick just returned to deadzone — decide whether to lock or reset distance
-        bool toolInUse = m_player->isFiring();
-        if (!toolInUse && m_controllerAimOffset.magnitude() > 0.01f) {
-          // Not firing: keep direction, reset distance to default
-          Vec2F dir = m_controllerAimOffset.normalized();
-          m_controllerAimOffset = dir * 3.0f;
-        }
-        // If firing: offset stays exactly as-is (locked)
-      } else if (!m_controllerAimActive) {
+      } else if (m_controllerAimActive) {
+        // Stick at center, but was used before — keep facing direction,
+        // aim returns to near player (tiny offset just for facing)
+        Vec2F lastDir = m_controllerAimOffset.normalized();
+        if (lastDir.magnitude() > 0.01f)
+          m_controllerAimOffset = lastDir * 0.5f;
+      } else {
         // Never used the right stick yet — default to facing direction
         float facingDir = m_player->facingDirection() == Direction::Right ? 1.0f : -1.0f;
-        m_controllerAimOffset = Vec2F(facingDir * 3.0f, 0.0f);
+        m_controllerAimOffset = Vec2F(facingDir * 0.5f, 0.0f);
       }
-      // While stick is in deadzone (not transitioning), offset stays frozen
-
-      m_controllerStickWasActive = stickActive;
 
       // Always apply offset relative to current player position
       m_controllerAimPosition = m_player->position() + m_controllerAimOffset;
