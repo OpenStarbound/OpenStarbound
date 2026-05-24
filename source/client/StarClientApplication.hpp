@@ -169,6 +169,8 @@ private:
   uint64_t m_frameCounter = 0; // monotonic frame counter
   float m_lastPlayerHealth = 0.0f; // for rumble on damage
   bool m_wasTeleporting = false; // for rumble on beam
+  float m_lastYVelocity = 0.0f; // for rumble on mech/vehicle landing
+  bool m_lastOnGround = false; // for rumble on mech/vehicle landing
 
   List<KeyDownEvent> m_heldKeyEvents;
   List<KeyDownEvent> m_edgeKeyEvents;
