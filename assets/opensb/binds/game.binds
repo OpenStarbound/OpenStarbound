@@ -125,7 +125,7 @@
       "EssentialCycle": {
         "default": [{"type": "controller", "value": "DPadUp"}],
         "group": "interface",
-        "name": "Cycle Essential Items"
+        "name": "Cycle Hotbar Group"
       },
       "MatterManipulatorToggle": {
         "default": [{"type": "controller", "value": "DPadDown"}],

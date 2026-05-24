@@ -1333,11 +1333,13 @@ void ClientApplication::updateRunning(float dt) {
       }
 
       // Hotbar slot cycling via controller binds (mirrors mouse wheel behavior)
-      if (m_input->bindDown("game", "HotbarNext") || m_input->bindDown("game", "HotbarPrev")) {
+      // Skip if both shoulders held (that's the beam combo)
+      if ((m_input->bindDown("game", "HotbarNext") && !m_input->bindHeld("game", "HotbarPrev"))
+       || (m_input->bindDown("game", "HotbarPrev") && !m_input->bindHeld("game", "HotbarNext"))) {
         auto inventory = m_player->inventory();
         auto customBarIndexes = inventory->customBarIndexes();
         int totalSlots = customBarIndexes + EssentialItemCount;
-        bool forward = m_input->bindDown("game", "HotbarNext").value();
+        bool forward = (bool)m_input->bindDown("game", "HotbarNext");
 
         auto abl = inventory->selectedActionBarLocation();
         int index = 0;
@@ -1368,15 +1370,12 @@ void ClientApplication::updateRunning(float dt) {
         inventory->selectActionBarLocation(abl);
       }
 
-      // Essential bar cycling via controller bind
+      // Cycle hotbar group (swap between hotbar rows)
       if (m_input->bindDown("game", "EssentialCycle")) {
         auto inventory = m_player->inventory();
-        auto abl = inventory->selectedActionBarLocation();
-        int essentialIndex = 0;
-        if (auto ei = abl.ptr<EssentialItem>()) {
-          essentialIndex = ((int)*ei + 1) % EssentialItemCount;
-        }
-        inventory->selectActionBarLocation((EssentialItem)essentialIndex);
+        uint8_t current = inventory->customBarGroup();
+        uint8_t groups = inventory->customBarGroups();
+        inventory->setCustomBarGroup((current + 1) % groups);
       }
 
       // Matter manipulator toggle: select MM (essential slot 0), or switch back
