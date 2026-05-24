@@ -156,6 +156,7 @@ private:
   Vec2F m_controllerAimPosition; // world-space aim from right stick
   Vec2F m_controllerAimOffset; // relative aim offset from player (preserved when stick centered)
   bool m_controllerAimActive = false; // true once right stick has been used at least once
+  bool m_controllerStickWasActive = false; // edge detection for stick returning to deadzone
   bool m_virtualCursorActive = false; // true when right stick controls screen cursor
   Vec2F m_virtualCursorPos; // screen-space position of virtual cursor
   float m_virtualCursorSpeed = 800.0f; // pixels per second at full tilt

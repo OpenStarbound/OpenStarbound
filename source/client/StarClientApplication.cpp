@@ -1363,21 +1363,35 @@ void ClientApplication::updateRunning(float dt) {
       m_player->aim(m_controllerAimPosition);
     } else if (useGamepadAim) {
       float stickMag = m_controllerRightStick.magnitude();
-      if (stickMag > m_aimDeadzone) {
-        // Normalize and apply radius scaling (stick magnitude controls distance)
+      bool stickActive = stickMag > m_aimDeadzone;
+
+      if (stickActive) {
+        // Stick is being pushed — live aim from stick position
         Vec2F aimDir = m_controllerRightStick / stickMag;
         float normalizedMag = (stickMag - m_aimDeadzone) / (1.0f - m_aimDeadzone);
         normalizedMag = min(1.0f, normalizedMag);
         // Y is inverted on SDL gamepad axes (up = negative)
         m_controllerAimOffset = Vec2F(aimDir[0], -aimDir[1]) * (normalizedMag * m_aimRadius);
         m_controllerAimActive = true;
+      } else if (m_controllerStickWasActive) {
+        // Stick just returned to deadzone — decide whether to lock or reset distance
+        bool toolInUse = m_player->isFiring();
+        if (!toolInUse && m_controllerAimOffset.magnitude() > 0.01f) {
+          // Not firing: keep direction, reset distance to default
+          Vec2F dir = m_controllerAimOffset.normalized();
+          m_controllerAimOffset = dir * 3.0f;
+        }
+        // If firing: offset stays exactly as-is (locked)
       } else if (!m_controllerAimActive) {
         // Never used the right stick yet — default to facing direction
         float facingDir = m_player->facingDirection() == Direction::Right ? 1.0f : -1.0f;
         m_controllerAimOffset = Vec2F(facingDir * 3.0f, 0.0f);
       }
+      // While stick is in deadzone (not transitioning), offset stays frozen
+
+      m_controllerStickWasActive = stickActive;
+
       // Always apply offset relative to current player position
-      // (stick active: live tracking, stick centered: preserved last offset)
       m_controllerAimPosition = m_player->position() + m_controllerAimOffset;
       m_player->aim(m_controllerAimPosition);
     }
