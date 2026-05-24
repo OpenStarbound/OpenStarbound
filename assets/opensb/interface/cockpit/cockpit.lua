@@ -56,7 +56,7 @@ end
 function canvasClickEvent(position, button, isButtonDown)
   if widget.hasFocus("consoleScreenCanvas") and not widget.active("jumpDialog") then
     showTopLeftFrame(nil)
-
+    self.lastCanvasClickPos = position  -- OpenStarbound: track for fly button
     table.insert(self.clickEvents, {position, button, isButtonDown})
   end
 end
@@ -133,11 +133,8 @@ function update(dt)
     widget.setButtonEnabled("goToPeacekeeper", false)
   end
 
-  -- OpenStarbound: show/hide fly button based on selected star
-  local showFly = self.flySelection
-    and canFlyShip(self.flySelection)
-    and not compare(self.flySelection, celestial.currentSystem())
-  widget.setVisible("flyToSelection", showFly and true or false)
+  -- OpenStarbound: show fly button when ship can travel
+  widget.setVisible("flyToSelection", not celestial.flying() and not celestial.skyFlying())
 
   if not widget.active("coordinatesFrame") then
     setCoordinateTextbox(View.universeCamera.position, true)
@@ -204,11 +201,12 @@ end
 
 -- OpenStarbound: Fly button for controller/trackpad users without right-click
 function flyToSelection()
-  if self.flySelection then
-    if canFlyShip(self.flySelection) and not compare(self.flySelection, celestial.currentSystem()) then
-      pane.playSound(self.sounds.startTravel)
-      self.travel = { system = self.flySelection.location }
-    end
+  -- Generate a synthetic right-click at the last clicked position
+  -- so the existing cockpit travel logic handles it naturally
+  local clickPos = self.lastCanvasClickPos
+  if clickPos then
+    canvasClickEvent(clickPos, 2, true)
+    canvasClickEvent(clickPos, 2, false)
   end
 end
 
@@ -637,7 +635,6 @@ function universeScreenState(startSystem)
               self.viewSelection = true
             else
               selection = hover
-              self.flySelection = hover  -- OpenStarbound: track for fly button
               -- wait until system is loaded
               while #celestial.children(selection) == 0 do
                 coroutine.yield()
@@ -654,7 +651,6 @@ function universeScreenState(startSystem)
           -- clear selection only if the player has clicked in empty space without dragging
           if startDrag and not drag then
             selection = nil
-            self.flySelection = nil  -- OpenStarbound: clear fly button
             View:select(nil)
             View:showSystemInfo(false)
           end
