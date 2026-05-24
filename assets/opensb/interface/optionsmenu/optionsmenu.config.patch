@@ -27,29 +27,29 @@
     },
     "showKeybindings" : {
       "type" : "button",
-      "position" : [190, 95],
-      "caption" : "Gm Binds",
+      "position" : [153, 95],
+      "caption" : "Game Binds",
       "base" : "/interface/optionsmenu/tricontrolsbutton.png",
       "hover" : "/interface/optionsmenu/tricontrolsbuttonhover.png"
     },
     "showModBindings" : {
       "type" : "button",
-      "position" : [127, 95],
+      "position" : [87, 95],
       "caption" : "Mod Binds",
       "base" : "/interface/optionsmenu/tricontrolsbutton.png",
       "hover" : "/interface/optionsmenu/tricontrolsbuttonhover.png"
     },
     "showGraphics" : {
       "type" : "button",
-      "position" : [64, 95],
+      "position" : [21, 95],
       "caption" : "Graphics",
       "base" : "/interface/optionsmenu/tricontrolsbutton.png",
       "hover" : "/interface/optionsmenu/tricontrolsbuttonhover.png"
     },
     "showController" : {
       "type" : "button",
-      "position" : [1, 95],
-      "caption" : "Ctrl",
+      "position" : [87, 79],
+      "caption" : "Controller",
       "base" : "/interface/optionsmenu/tricontrolsbutton.png",
       "hover" : "/interface/optionsmenu/tricontrolsbuttonhover.png"
     },

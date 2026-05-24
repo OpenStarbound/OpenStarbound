@@ -1095,6 +1095,15 @@ private:
       }
     }
 
+    Maybe<String> activeControllerName(uint32_t controllerId) override {
+      auto find = parent->m_SdlControllers.find(controllerId);
+      if (find != parent->m_SdlControllers.end()) {
+        if (auto name = SDL_GetGamepadName(find->second.get()))
+          return String(name);
+      }
+      return {};
+    }
+
     SdlPlatform* parent;
   };
 
