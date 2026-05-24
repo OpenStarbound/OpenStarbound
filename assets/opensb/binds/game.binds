@@ -1,0 +1,117 @@
+{
+  "game": {
+    "name": "Game",
+    "groups": {
+      "movement": { "name": "Movement" },
+      "combat": { "name": "Combat" },
+      "interface": { "name": "Interface" }
+    },
+    "binds": {
+      "PlayerUp": {
+        "default": [{"type": "controller", "value": "DPadUp"}],
+        "group": "movement",
+        "name": "Up / Climb"
+      },
+      "PlayerDown": {
+        "default": [{"type": "controller", "value": "DPadDown"}],
+        "group": "movement",
+        "name": "Down / Crouch"
+      },
+      "PlayerLeft": {
+        "default": [{"type": "controller", "value": "DPadLeft"}],
+        "group": "movement",
+        "name": "Left"
+      },
+      "PlayerRight": {
+        "default": [{"type": "controller", "value": "DPadRight"}],
+        "group": "movement",
+        "name": "Right"
+      },
+      "PlayerJump": {
+        "default": [{"type": "controller", "value": "A"}],
+        "group": "movement",
+        "name": "Jump"
+      },
+      "PlayerShifting": {
+        "default": [{"type": "controller", "value": "LeftStick"}],
+        "group": "movement",
+        "name": "Walk / Shift"
+      },
+      "PlayerInteract": {
+        "default": [{"type": "controller", "value": "X"}],
+        "group": "combat",
+        "name": "Interact"
+      },
+      "PlayerDropItem": {
+        "default": [],
+        "group": "combat",
+        "name": "Drop Item"
+      },
+      "PlayerTechAction1": {
+        "default": [{"type": "controller", "value": "LeftShoulder"}],
+        "group": "combat",
+        "name": "Tech Action 1"
+      },
+      "PlayerTechAction2": {
+        "default": [],
+        "group": "combat",
+        "name": "Tech Action 2"
+      },
+      "PlayerTechAction3": {
+        "default": [],
+        "group": "combat",
+        "name": "Tech Action 3"
+      },
+      "PlayerMainItem": {
+        "default": [{"type": "controller", "value": "RightShoulder"}],
+        "group": "combat",
+        "name": "Primary Fire"
+      },
+      "PlayerAltItem": {
+        "default": [{"type": "controller", "value": "RightStick"}],
+        "group": "combat",
+        "name": "Alt Fire"
+      },
+      "ShowLabels": {
+        "default": [],
+        "group": "interface",
+        "name": "Show Labels"
+      },
+      "CameraShift": {
+        "default": [],
+        "group": "interface",
+        "name": "Camera Pan"
+      },
+      "InterfaceEscapeMenu": {
+        "default": [{"type": "controller", "value": "Start"}],
+        "group": "interface",
+        "name": "Menu / Pause"
+      },
+      "InterfaceInventory": {
+        "default": [{"type": "controller", "value": "Y"}],
+        "group": "interface",
+        "name": "Inventory"
+      },
+      "InterfaceCrafting": {
+        "default": [{"type": "controller", "value": "Back"}],
+        "group": "interface",
+        "name": "Crafting"
+      },
+      "InterfaceChangeBarGroup": {
+        "default": [],
+        "group": "interface",
+        "name": "Swap Hotbar"
+      },
+      "InterfaceDeselectHands": {
+        "default": [],
+        "group": "interface",
+        "name": "Deselect Hands"
+      },
+      "GuiClose": {
+        "default": [{"type": "controller", "value": "B"}],
+        "group": "interface",
+        "name": "Close / Back"
+      }
+    }
+  }
+}

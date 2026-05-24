@@ -1238,6 +1238,20 @@ void ClientApplication::updateRunning(float dt) {
       config->set("zoomLevel", min(1000000.f, newZoom));
     }
 
+    // Controller-driven interface actions (these bypass handleInputEvent's KeyDown path)
+    if (!m_cinematicOverlay->suppressInput()) {
+      if (isActionTakenEdge(InterfaceAction::InterfaceEscapeMenu))
+        m_mainInterface->paneManager()->toggleRegisteredPane(MainInterfacePanes::EscapeDialog);
+      if (isActionTakenEdge(InterfaceAction::InterfaceInventory))
+        m_mainInterface->paneManager()->toggleRegisteredPane(MainInterfacePanes::Inventory);
+      if (isActionTakenEdge(InterfaceAction::InterfaceCrafting))
+        m_mainInterface->paneManager()->toggleRegisteredPane(MainInterfacePanes::CraftingPlain);
+      if (isActionTakenEdge(InterfaceAction::GuiClose)) {
+        if (auto topPane = m_mainInterface->paneManager()->topPane({PaneLayer::Window, PaneLayer::ModalWindow}))
+          m_mainInterface->paneManager()->dismissPane(topPane);
+      }
+    }
+
     // Controller analog movement
     bool useGamepadMovement = (m_controllerMode == ControllerMode::Gamepad)
       || (m_controllerMode == ControllerMode::Hybrid)
@@ -1270,6 +1284,18 @@ void ClientApplication::updateRunning(float dt) {
         if (m_controllerAimActive)
           m_player->aim(m_controllerAimPosition);
       }
+    }
+
+    // Controller primary/alt fire via bind system
+    if (!m_mainInterface->inputFocus() && !m_cinematicOverlay->suppressInput()) {
+      if (m_input->bindDown("game", "PlayerMainItem"))
+        m_player->beginPrimaryFire();
+      if (m_input->bindUp("game", "PlayerMainItem"))
+        m_player->endPrimaryFire();
+      if (m_input->bindDown("game", "PlayerAltItem"))
+        m_player->beginAltFire();
+      if (m_input->bindUp("game", "PlayerAltItem"))
+        m_player->endAltFire();
     }
 
     m_voice->setInput(m_input->bindHeld("opensb", "pushToTalk"));
@@ -1396,12 +1422,24 @@ bool ClientApplication::isActionTaken(InterfaceAction action) const {
       return true;
   }
 
+  // Also check controller binds via the new Input bind system
+  if (auto name = InterfaceActionNames.maybeRight(action)) {
+    if (m_input->bindHeld("game", *name))
+      return true;
+  }
+
   return false;
 }
 
 bool ClientApplication::isActionTakenEdge(InterfaceAction action) const {
   for (auto keyEvent : m_edgeKeyEvents) {
     if (m_guiContext->actions(keyEvent).contains(action))
+      return true;
+  }
+
+  // Also check controller binds via the new Input bind system
+  if (auto name = InterfaceActionNames.maybeRight(action)) {
+    if (m_input->bindDown("game", *name))
       return true;
   }
 
