@@ -17,6 +17,7 @@
 #include "StarRootLoader.hpp"
 #include "StarInput.hpp"
 #include "StarVoice.hpp"
+#include "StarVehicle.hpp"
 #include "StarCurve25519.hpp"
 #include "StarInterpolation.hpp"
 
@@ -1634,17 +1635,22 @@ void ClientApplication::updateRunning(float dt) {
       }
       m_wasTeleporting = teleporting;
 
-      // Mech/vehicle landing rumble (only with gravity — uses onGround transition)
-      bool currentOnGround = m_player->movementController()->onGround();
+      // Mech/vehicle landing rumble (uses vehicle's onGround transition)
       float currentYVelocity = m_player->velocity()[1];
-      if (m_player->loungingIn() && currentOnGround && !m_lastOnGround && m_lastYVelocity < -10.0f) {
-        // Landing impact — intensity based on how fast we were falling
+      bool vehicleOnGround = false;
+      if (auto anchorState = m_player->loungingIn()) {
+        if (auto worldClient = m_universeClient->worldClient()) {
+          if (auto vehicle = as<Vehicle>(worldClient->entity(anchorState->entityId)))
+            vehicleOnGround = vehicle->onGround();
+        }
+      }
+      if (m_player->loungingIn() && vehicleOnGround && !m_lastOnGround && m_lastYVelocity < -10.0f) {
         float impactSpeed = -m_lastYVelocity;
         float intensity = clamp(impactSpeed / 40.0f, 0.3f, 1.0f);
         appController()->rumble(intensity, intensity * 0.7f, (uint32_t)(200 + impactSpeed * 5));
       }
       m_lastYVelocity = currentYVelocity;
-      m_lastOnGround = currentOnGround;
+      m_lastOnGround = vehicleOnGround;
     }
 
     m_mainInterface->preUpdate(dt);

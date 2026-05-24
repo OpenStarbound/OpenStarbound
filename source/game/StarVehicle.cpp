@@ -248,6 +248,10 @@ Vec2F Vehicle::velocity() const {
   return m_movementController.velocity();
 }
 
+bool Vehicle::onGround() const {
+  return m_movementController.onGround();
+}
+
 pair<ByteArray, uint64_t> Vehicle::writeNetState(uint64_t fromVersion, NetCompatibilityRules rules) {
   return m_netGroup.writeNetState(fromVersion, rules);
 }
