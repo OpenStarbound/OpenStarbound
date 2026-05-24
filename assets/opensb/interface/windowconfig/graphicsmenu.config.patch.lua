@@ -67,6 +67,9 @@ function patch(config)
   -- Create HDR toggle
   shift(clone(layout, "multiTextureLabel", "hdrLabel"), 0, -22).value = "HDR"
   shift(clone(layout, "multiTextureCheckbox", "hdrCheckbox"), 0, -22)
+    -- Create vsync toggle
+  shift(clone(layout, "multiTextureLabel", "vsyncLabel"), 98, -22).value = "VSYNC"
+  shift(clone(layout, "multiTextureCheckbox", "vsyncCheckbox"), 99, -22)
   
   -- Create shader menu button
   shift(moveto(clone(layout, "accept", "showShadersMenu"), layout.interfaceScaleSlider), 112, -2).caption = "Shaders"
