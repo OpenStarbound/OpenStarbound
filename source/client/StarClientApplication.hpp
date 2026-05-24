@@ -158,6 +158,7 @@ private:
   bool m_virtualCursorActive = false; // true when right stick controls screen cursor
   Vec2F m_virtualCursorPos; // screen-space position of virtual cursor
   float m_virtualCursorSpeed = 800.0f; // pixels per second at full tilt
+  ControllerId m_activeController = (ControllerId)-1; // which controller to accept axis input from
 
   List<KeyDownEvent> m_heldKeyEvents;
   List<KeyDownEvent> m_edgeKeyEvents;

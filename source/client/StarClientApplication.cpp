@@ -377,14 +377,23 @@ void ClientApplication::processInput(InputEvent const& event) {
     }
   }
   else if (auto cAxis = event.ptr<ControllerAxisEvent>()) {
-    if (cAxis->controllerAxis == ControllerAxis::LeftX)
-      m_controllerLeftStick[0] = cAxis->controllerAxisValue;
-    else if (cAxis->controllerAxis == ControllerAxis::LeftY)
-      m_controllerLeftStick[1] = cAxis->controllerAxisValue;
-    else if (cAxis->controllerAxis == ControllerAxis::RightX)
-      m_controllerRightStick[0] = cAxis->controllerAxisValue;
-    else if (cAxis->controllerAxis == ControllerAxis::RightY)
-      m_controllerRightStick[1] = cAxis->controllerAxisValue;
+    // Track which controller is actively being used (first one with significant input wins)
+    if (m_activeController == (ControllerId)-1) {
+      if (abs(cAxis->controllerAxisValue) > m_aimDeadzone)
+        m_activeController = cAxis->controller;
+    }
+
+    // Only accept axis input from the active controller
+    if (cAxis->controller == m_activeController || m_activeController == (ControllerId)-1) {
+      if (cAxis->controllerAxis == ControllerAxis::LeftX)
+        m_controllerLeftStick[0] = cAxis->controllerAxisValue;
+      else if (cAxis->controllerAxis == ControllerAxis::LeftY)
+        m_controllerLeftStick[1] = cAxis->controllerAxisValue;
+      else if (cAxis->controllerAxis == ControllerAxis::RightX)
+        m_controllerRightStick[0] = cAxis->controllerAxisValue;
+      else if (cAxis->controllerAxis == ControllerAxis::RightY)
+        m_controllerRightStick[1] = cAxis->controllerAxisValue;
+    }
 
     // Auto mode: significant stick movement switches to gamepad
     if (m_controllerMode == ControllerMode::Auto) {
@@ -393,8 +402,16 @@ void ClientApplication::processInput(InputEvent const& event) {
         m_gamepadActive = true;
     }
   }
-  else if (event.is<ControllerButtonDownEvent>() || event.is<ControllerButtonUpEvent>()) {
+  else if (auto controllerDown = event.ptr<ControllerButtonDownEvent>()) {
+    // Button press also establishes active controller
+    if (m_activeController == (ControllerId)-1)
+      m_activeController = controllerDown->controller;
     // Auto mode: button press switches to gamepad
+    if (m_controllerMode == ControllerMode::Auto)
+      m_gamepadActive = true;
+  }
+  else if (event.is<ControllerButtonUpEvent>()) {
+    // Auto mode: button activity keeps gamepad active
     if (m_controllerMode == ControllerMode::Auto)
       m_gamepadActive = true;
   }
@@ -1289,6 +1306,15 @@ void ClientApplication::updateRunning(float dt) {
     } else {
       m_player->setMoveVector(Vec2F());
     }
+
+    // Debug: show controller state
+    LogMap::set("ctrl_stick_raw", strf("[ {:+.3f}, {:+.3f} ] mag={:.3f} ctrl={}", m_controllerLeftStick[0], m_controllerLeftStick[1], leftStickMag, m_activeController));
+    LogMap::set("ctrl_stick_dz", strf("past_dz={} dz={:.2f}", leftStickMag > m_aimDeadzone ? "YES" : "NO", m_aimDeadzone));
+    LogMap::set("ctrl_kb_move", strf("R={} L={} U={} D={}",
+      isActionTaken(InterfaceAction::PlayerRight) ? 1 : 0,
+      isActionTaken(InterfaceAction::PlayerLeft) ? 1 : 0,
+      isActionTaken(InterfaceAction::PlayerUp) ? 1 : 0,
+      isActionTaken(InterfaceAction::PlayerDown) ? 1 : 0));
 
     // Controller analog aim (right stick → world-space aim position)
     bool useGamepadAim = (m_controllerMode == ControllerMode::Gamepad)
