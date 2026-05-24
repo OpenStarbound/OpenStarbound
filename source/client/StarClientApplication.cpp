@@ -1358,6 +1358,7 @@ void ClientApplication::updateRunning(float dt) {
 
       // Also update aim from the virtual cursor's world position
       m_controllerAimPosition = m_mainInterface->cursorWorldPosition();
+      m_controllerAimOffset = m_controllerAimPosition - m_player->position();
       m_controllerAimActive = true;
       m_player->aim(m_controllerAimPosition);
     } else if (useGamepadAim) {
@@ -1368,15 +1369,17 @@ void ClientApplication::updateRunning(float dt) {
         float normalizedMag = (stickMag - m_aimDeadzone) / (1.0f - m_aimDeadzone);
         normalizedMag = min(1.0f, normalizedMag);
         // Y is inverted on SDL gamepad axes (up = negative)
-        Vec2F aimOffset = Vec2F(aimDir[0], -aimDir[1]) * (normalizedMag * m_aimRadius);
-        m_controllerAimPosition = m_player->position() + aimOffset;
+        m_controllerAimOffset = Vec2F(aimDir[0], -aimDir[1]) * (normalizedMag * m_aimRadius);
         m_controllerAimActive = true;
-        m_player->aim(m_controllerAimPosition);
-      } else {
-        // Stick returned to center — keep aiming at last position
-        if (m_controllerAimActive)
-          m_player->aim(m_controllerAimPosition);
+      } else if (!m_controllerAimActive) {
+        // Never used the right stick yet — default to facing direction
+        float facingDir = m_player->facingDirection() == Direction::Right ? 1.0f : -1.0f;
+        m_controllerAimOffset = Vec2F(facingDir * 3.0f, 0.0f);
       }
+      // Always apply offset relative to current player position
+      // (stick active: live tracking, stick centered: preserved last offset)
+      m_controllerAimPosition = m_player->position() + m_controllerAimOffset;
+      m_player->aim(m_controllerAimPosition);
     }
 
     // Controller primary/alt fire via bind system
@@ -1417,7 +1420,7 @@ void ClientApplication::updateRunning(float dt) {
       return;
 
     // Tell MainInterface whether controller is handling aim
-    m_mainInterface->setOverrideAim(useGamepadAim && m_controllerAimActive);
+    m_mainInterface->setOverrideAim(useGamepadAim);
 
     m_mainInterface->preUpdate(dt);
     m_universeClient->update(dt);
