@@ -111,9 +111,16 @@ GraphicsMenu::GraphicsMenu(PaneManager* manager,UniverseClientPtr client)
     Root::singleton().configuration()->set("hdr", checked);
     syncGui();
   });
+  reader.registerCallback("vsyncCheckbox", [=](Widget*) {
+    bool checked = fetchChild<ButtonWidget>("vsyncCheckbox")->isChecked();
+    m_localChanges.set("vsync", checked);
+    Root::singleton().configuration()->set("vsync", checked);
+    GuiContext::singleton().applicationController()->setVSyncEnabled(checked);
+    syncGui();
+  });
   reader.registerCallback("showShadersMenu", [=](Widget*) {
       displayShaders();
-    });
+  });
 
   auto assets = Root::singleton().assets();
 
@@ -177,7 +184,8 @@ StringList const GraphicsMenu::ConfigKeys = {
   "hardwareCursor",
   "monochromeLighting",
   "newLighting",
-  "hdr"
+  "hdr",
+  "vsync"
 };
 
 void GraphicsMenu::initConfig() {
@@ -247,6 +255,7 @@ void GraphicsMenu::syncGui() {
   fetchChild<ButtonWidget>("newLightingCheckbox")->setChecked(m_localChanges.get("newLighting").optBool().value(true));
   fetchChild<ButtonWidget>("hardwareCursorCheckbox")->setChecked(m_localChanges.get("hardwareCursor").toBool());
   fetchChild<ButtonWidget>("hdrCheckbox")->setChecked(m_localChanges.get("hdr").optBool().value(true));
+  fetchChild<ButtonWidget>("vsyncCheckbox")->setChecked(m_localChanges.get("vsync").toBool());
 }
 
 void GraphicsMenu::apply() {
