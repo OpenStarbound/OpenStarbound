@@ -18,7 +18,6 @@ end
 
 local function updateModeButtons()
   local mode = getConfig("controllerMode", "auto")
-  -- Update button appearance via caption markup
   local modes = {
     { widget = "modeAuto",    id = "auto",    label = "Auto" },
     { widget = "modeGamepad", id = "gamepad", label = "Gamepad" },
@@ -26,9 +25,9 @@ local function updateModeButtons()
   }
   for _, m in ipairs(modes) do
     if m.id == mode then
-      widget.setButtonCaption(m.widget, "^#ebd74a;" .. m.label)
+      widget.setButtonCaption(m.widget, "^#ebd74a;> " .. m.label .. " <")
     else
-      widget.setButtonCaption(m.widget, m.label)
+      widget.setButtonCaption(m.widget, "^#aaa;" .. m.label)
     end
   end
   widget.setText("modeDescription", modeDescriptions[mode] or "")
