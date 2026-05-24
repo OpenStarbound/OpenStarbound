@@ -16,11 +16,23 @@ local function setConfig(key, value)
   root.setConfiguration(key, value)
 end
 
+local IMG_NORMAL = "/interface/optionsmenu/tricontrolsbutton.png"
+local IMG_SELECTED = "/interface/optionsmenu/tricontrolsbuttonhover.png"
+
 local function updateModeButtons()
   local mode = getConfig("controllerMode", "auto")
-  widget.setChecked("modeAuto", mode == "auto")
-  widget.setChecked("modeGamepad", mode == "gamepad")
-  widget.setChecked("modeHybrid", mode == "hybrid")
+  local modes = {
+    { widget = "modeAuto",    id = "auto" },
+    { widget = "modeGamepad", id = "gamepad" },
+    { widget = "modeHybrid",  id = "hybrid" }
+  }
+  for _, m in ipairs(modes) do
+    if m.id == mode then
+      widget.setButtonImages(m.widget, { base = IMG_SELECTED, hover = IMG_SELECTED })
+    else
+      widget.setButtonImages(m.widget, { base = IMG_NORMAL, hover = IMG_SELECTED })
+    end
+  end
   widget.setText("modeDescLabel", modeDescriptions[mode] or "")
 end
 

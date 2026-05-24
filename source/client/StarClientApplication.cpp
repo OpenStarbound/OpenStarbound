@@ -1392,9 +1392,13 @@ void ClientApplication::updateRunning(float dt) {
         }
       }
 
-      // LB+RB simultaneous press: beam up/down
-      if (m_input->bindHeld("game", "HotbarNext") && m_input->bindHeld("game", "HotbarPrev")
-          && (m_input->bindDown("game", "HotbarNext") || m_input->bindDown("game", "HotbarPrev"))) {
+      // LB+RB simultaneous press OR BeamUpDown bind: beam up/down
+      bool beamTriggered = (bool)m_input->bindDown("game", "BeamUpDown");
+      if (!beamTriggered) {
+        beamTriggered = m_input->bindHeld("game", "HotbarNext") && m_input->bindHeld("game", "HotbarPrev")
+          && (m_input->bindDown("game", "HotbarNext") || m_input->bindDown("game", "HotbarPrev"));
+      }
+      if (beamTriggered) {
         // Try beam down first, then beam up
         if (m_universeClient->canBeamDown(false))
           m_mainInterface->warpToOrbitedWorld(false);
