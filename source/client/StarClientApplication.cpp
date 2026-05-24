@@ -359,14 +359,18 @@ void ClientApplication::processInput(InputEvent const& event) {
       });
   }
   else if (auto mouseMove = event.ptr<MouseMoveEvent>()) {
-    // Auto mode: mouse movement switches to mouse/keyboard
+    // Auto mode: only significant mouse movement switches to mouse/keyboard.
+    // On Steam Deck, trackpads and gyro generate constant tiny MouseMoveEvents
+    // that would cause mode flip-flopping without a threshold.
     if (m_controllerMode == ControllerMode::Auto) {
-      m_gamepadActive = false;
-      m_virtualCursorActive = false;
+      if (mouseMove->mouseMove.magnitude() > 2.0f) {
+        m_gamepadActive = false;
+        m_virtualCursorActive = false;
+      }
     }
   }
   else if (event.is<MouseButtonDownEvent>() || event.is<MouseButtonUpEvent>()) {
-    // Auto mode: mouse click switches to mouse/keyboard
+    // Auto mode: mouse click always switches to mouse/keyboard
     if (m_controllerMode == ControllerMode::Auto) {
       m_gamepadActive = false;
       m_virtualCursorActive = false;
@@ -1273,15 +1277,18 @@ void ClientApplication::updateRunning(float dt) {
       }
     }
 
-    // Controller analog movement
-    bool useGamepadMovement = (m_controllerMode == ControllerMode::Gamepad)
-      || (m_controllerMode == ControllerMode::Hybrid)
-      || (m_controllerMode == ControllerMode::Auto && m_gamepadActive);
-
-    if (useGamepadMovement && m_controllerLeftStick.magnitudeSquared() > 0.01f)
-      m_player->setMoveVector(m_controllerLeftStick);
-    else
+    // Controller analog movement — always active when stick is pushed,
+    // regardless of input mode. Left stick movement is never gated by mode.
+    float leftStickMag = m_controllerLeftStick.magnitude();
+    if (leftStickMag > m_aimDeadzone) {
+      // Normalize past deadzone so gentle tilt still reads as low-magnitude
+      Vec2F stickDir = m_controllerLeftStick / leftStickMag;
+      float normalizedMag = (leftStickMag - m_aimDeadzone) / (1.0f - m_aimDeadzone);
+      normalizedMag = min(1.0f, normalizedMag);
+      m_player->setMoveVector(stickDir * normalizedMag);
+    } else {
       m_player->setMoveVector(Vec2F());
+    }
 
     // Controller analog aim (right stick → world-space aim position)
     bool useGamepadAim = (m_controllerMode == ControllerMode::Gamepad)
