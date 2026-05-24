@@ -1490,7 +1490,7 @@ void ClientApplication::updateRunning(float dt) {
       InputEvent syntheticMove = MouseMoveEvent{Vec2F(), m_virtualCursorPos};
       m_mainInterface->handleInputEvent(syntheticMove);
 
-      // Handle virtual cursor clicks (A button = left click on UI)
+      // Handle virtual cursor clicks (RT = left click, LT = right click on UI)
       if (m_input->bindDown("opensb", "virtualCursorClick")) {
         InputEvent syntheticDown = MouseButtonDownEvent{MouseButton::Left, m_virtualCursorPos};
         m_mainInterface->handleInputEvent(syntheticDown);
@@ -1498,6 +1498,16 @@ void ClientApplication::updateRunning(float dt) {
       }
       if (m_input->bindUp("opensb", "virtualCursorClick")) {
         InputEvent syntheticUp = MouseButtonUpEvent{MouseButton::Left, m_virtualCursorPos};
+        m_mainInterface->handleInputEvent(syntheticUp);
+        m_input->handleInput(syntheticUp, true);
+      }
+      if (m_input->bindDown("opensb", "virtualCursorRightClick")) {
+        InputEvent syntheticDown = MouseButtonDownEvent{MouseButton::Right, m_virtualCursorPos};
+        m_mainInterface->handleInputEvent(syntheticDown);
+        m_input->handleInput(syntheticDown, true);
+      }
+      if (m_input->bindUp("opensb", "virtualCursorRightClick")) {
+        InputEvent syntheticUp = MouseButtonUpEvent{MouseButton::Right, m_virtualCursorPos};
         m_mainInterface->handleInputEvent(syntheticUp);
         m_input->handleInput(syntheticUp, true);
       }
@@ -1539,7 +1549,8 @@ void ClientApplication::updateRunning(float dt) {
     // Controller primary/alt fire via bind system
     // When virtual cursor is active, suppress fire only for the button bound to virtualCursorClick
     if (!m_mainInterface->inputFocus() && !m_cinematicOverlay->suppressInput()) {
-      bool clickConsumed = m_virtualCursorActive && m_input->bindHeld("opensb", "virtualCursorClick");
+      bool clickConsumed = m_virtualCursorActive
+        && (m_input->bindHeld("opensb", "virtualCursorClick") || m_input->bindHeld("opensb", "virtualCursorRightClick"));
       if (!clickConsumed) {
         if (m_input->bindDown("game", "PlayerMainItem"))
           m_player->beginPrimaryFire();

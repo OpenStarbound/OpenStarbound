@@ -77,6 +77,11 @@
         "default": [{"type": "controller", "value": "TriggerRight"}],
         "name": "Virtual Cursor Click",
         "group": "interface"
+      },
+      "virtualCursorRightClick": {
+        "default": [{"type": "controller", "value": "TriggerLeft"}],
+        "name": "Virtual Cursor Right Click",
+        "group": "interface"
       }
     }
   }
