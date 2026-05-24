@@ -1420,6 +1420,25 @@ void ClientApplication::updateRunning(float dt) {
           m_mainInterface->warpToOwnShip();
       }
 
+      // R3 (RightStick click): right-click when a pane is open, camera pan otherwise
+      if (m_input->bindDown("game", "CameraShift")) {
+        if (auto topPane = m_mainInterface->paneManager()->topPane({PaneLayer::Window, PaneLayer::ModalWindow})) {
+          // A pane is open — send synthetic right-click at current cursor position
+          Vec2F cursorPos = m_virtualCursorActive ? m_virtualCursorPos : m_input->mousePosition();
+          InputEvent syntheticDown = MouseButtonDownEvent{MouseButton::Right, cursorPos};
+          m_mainInterface->handleInputEvent(syntheticDown);
+          m_input->handleInput(syntheticDown, true);
+        }
+      }
+      if (m_input->bindUp("game", "CameraShift")) {
+        if (auto topPane = m_mainInterface->paneManager()->topPane({PaneLayer::Window, PaneLayer::ModalWindow})) {
+          Vec2F cursorPos = m_virtualCursorActive ? m_virtualCursorPos : m_input->mousePosition();
+          InputEvent syntheticUp = MouseButtonUpEvent{MouseButton::Right, cursorPos};
+          m_mainInterface->handleInputEvent(syntheticUp);
+          m_input->handleInput(syntheticUp, true);
+        }
+      }
+
       // L3 (LeftStick click) context-sensitive action
       if (m_input->bindDown("opensb", "toggleVirtualCursor")) {
         bool inGamepadState = (m_controllerMode == ControllerMode::Gamepad)

@@ -80,7 +80,7 @@
       "CameraShift": {
         "default": [{"type": "controller", "value": "RightStick"}],
         "group": "interface",
-        "name": "Camera Pan"
+        "name": "Camera Pan / UI Right Click"
       },
       "InterfaceEscapeMenu": {
         "default": [{"type": "controller", "value": "Start"}],
