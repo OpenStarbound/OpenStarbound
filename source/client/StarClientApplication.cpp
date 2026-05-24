@@ -1323,6 +1323,12 @@ void ClientApplication::updateRunning(float dt) {
       m_aimRadius = configuration->get("controllerAimRadius").optFloat().value(8.0f);
       m_aimDeadzone = configuration->get("controllerAimDeadzone").optFloat().value(0.15f);
       m_virtualCursorSpeed = configuration->get("controllerVirtualCursorSpeed").optFloat().value(800.0f);
+
+      // Auto-exit virtual cursor mode when switching away from gamepad mode
+      if (m_virtualCursorActive && m_controllerMode != ControllerMode::Gamepad
+          && !(m_controllerMode == ControllerMode::Auto && m_gamepadActive)) {
+        m_virtualCursorActive = false;
+      }
     }
 
     // Controller-driven interface actions (these bypass handleInputEvent's KeyDown path)
@@ -1531,13 +1537,17 @@ void ClientApplication::updateRunning(float dt) {
     }
 
     // Controller primary/alt fire via bind system
+    // When virtual cursor is active, suppress fire only for the button bound to virtualCursorClick
     if (!m_mainInterface->inputFocus() && !m_cinematicOverlay->suppressInput()) {
-      if (m_input->bindDown("game", "PlayerMainItem"))
-        m_player->beginPrimaryFire();
+      bool clickConsumed = m_virtualCursorActive && m_input->bindHeld("opensb", "virtualCursorClick");
+      if (!clickConsumed) {
+        if (m_input->bindDown("game", "PlayerMainItem"))
+          m_player->beginPrimaryFire();
+        if (m_input->bindDown("game", "PlayerAltItem"))
+          m_player->beginAltFire();
+      }
       if (m_input->bindUp("game", "PlayerMainItem"))
         m_player->endPrimaryFire();
-      if (m_input->bindDown("game", "PlayerAltItem"))
-        m_player->beginAltFire();
       if (m_input->bindUp("game", "PlayerAltItem"))
         m_player->endAltFire();
     }

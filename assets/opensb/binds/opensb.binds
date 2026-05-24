@@ -74,7 +74,7 @@
         "group": "interface"
       },
       "virtualCursorClick": {
-        "default": [{"type": "controller", "value": "A"}],
+        "default": [{"type": "controller", "value": "TriggerRight"}],
         "name": "Virtual Cursor Click",
         "group": "interface"
       }
