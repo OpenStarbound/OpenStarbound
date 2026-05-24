@@ -63,12 +63,12 @@
         "name": "Tech Action 3"
       },
       "PlayerMainItem": {
-        "default": [{"type": "controller", "value": "TriggerLeft"}],
+        "default": [{"type": "controller", "value": "TriggerRight"}],
         "group": "combat",
         "name": "Primary Fire"
       },
       "PlayerAltItem": {
-        "default": [{"type": "controller", "value": "TriggerRight"}],
+        "default": [{"type": "controller", "value": "TriggerLeft"}],
         "group": "combat",
         "name": "Alt Fire"
       },
@@ -136,6 +136,11 @@
         "default": [{"type": "controller", "value": "DPadLeft"}],
         "group": "interface",
         "name": "Quest Log"
+      },
+      "BeamUpDown": {
+        "default": [],
+        "group": "interface",
+        "name": "Beam Up / Down"
       }
     }
   }

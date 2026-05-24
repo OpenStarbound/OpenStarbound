@@ -27,28 +27,28 @@
     },
     "showKeybindings" : {
       "type" : "button",
-      "position" : [153, 95],
+      "position" : [187, 95],
       "caption" : "Game Binds",
-      "base" : "/interface/optionsmenu/tricontrolsbutton.png",
-      "hover" : "/interface/optionsmenu/tricontrolsbuttonhover.png"
+      "base" : "/interface/optionsmenu/duocontrolsbutton.png",
+      "hover" : "/interface/optionsmenu/duocontrolsbuttonhover.png"
     },
     "showModBindings" : {
       "type" : "button",
-      "position" : [87, 95],
+      "position" : [112, 95],
       "caption" : "Mod Binds",
-      "base" : "/interface/optionsmenu/tricontrolsbutton.png",
-      "hover" : "/interface/optionsmenu/tricontrolsbuttonhover.png"
+      "base" : "/interface/optionsmenu/duocontrolsbutton.png",
+      "hover" : "/interface/optionsmenu/duocontrolsbuttonhover.png"
     },
     "showGraphics" : {
       "type" : "button",
-      "position" : [21, 95],
+      "position" : [37, 95],
       "caption" : "Graphics",
-      "base" : "/interface/optionsmenu/tricontrolsbutton.png",
-      "hover" : "/interface/optionsmenu/tricontrolsbuttonhover.png"
+      "base" : "/interface/optionsmenu/duocontrolsbutton.png",
+      "hover" : "/interface/optionsmenu/duocontrolsbuttonhover.png"
     },
     "showController" : {
       "type" : "button",
-      "position" : [21, 75],
+      "position" : [37, 77],
       "caption" : "Controller",
       "base" : "/interface/optionsmenu/duocontrolsbutton.png",
       "hover" : "/interface/optionsmenu/duocontrolsbuttonhover.png"

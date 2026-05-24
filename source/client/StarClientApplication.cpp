@@ -1393,11 +1393,21 @@ void ClientApplication::updateRunning(float dt) {
         }
       }
 
+      // LB+RB simultaneous press: beam up/down
+      if (m_input->bindHeld("game", "HotbarNext") && m_input->bindHeld("game", "HotbarPrev")
+          && (m_input->bindDown("game", "HotbarNext") || m_input->bindDown("game", "HotbarPrev"))) {
+        // Try beam down first, then beam up
+        if (m_universeClient->canBeamDown(false))
+          m_mainInterface->warpToOrbitedWorld(false);
+        else if (m_universeClient->canBeamUp())
+          m_mainInterface->warpToOwnShip();
+      }
+
       // L3 (LeftStick click) context-sensitive action
       if (m_input->bindDown("opensb", "toggleVirtualCursor")) {
         bool inGamepadState = (m_controllerMode == ControllerMode::Gamepad)
           || (m_controllerMode == ControllerMode::Auto && m_gamepadActive);
-        if (inGamepadState && m_controllerMode != ControllerMode::Hybrid) {
+        if (inGamepadState) {
           // Gamepad mode: toggle virtual cursor
           m_virtualCursorActive = !m_virtualCursorActive;
           if (m_virtualCursorActive) {
@@ -1405,8 +1415,8 @@ void ClientApplication::updateRunning(float dt) {
             m_virtualCursorPos = Vec2F(windowSize[0] / 2.0f, windowSize[1] / 2.0f);
           }
           appController()->setCursorVisible(m_virtualCursorActive);
-        } else if (inGamepadState) {
-          // Hybrid mode: context-sensitive action
+        } else {
+          // Hybrid mode (or Auto with mouse active): context-sensitive action
           auto inventory = m_player->inventory();
           auto abl = inventory->selectedActionBarLocation();
           if (auto ei = abl.ptr<EssentialItem>(); ei && *ei == EssentialItem::BeamAxe) {
