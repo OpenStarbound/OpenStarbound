@@ -11,6 +11,7 @@ function patch(original)
   image:copyInto({19, 26}, checkbox)  -- New Lighting
   image:copyInto({119, 26}, checkbox) -- Hardware Cursor
   image:copyInto({19, 15}, checkbox) -- HDR
+  image:copyInto({119, 15}, checkbox) -- Vsync
 
   image:copyInto({119, 79}, image:process("?crop=19;79;117;98")) -- Camera Pan Speed
 
