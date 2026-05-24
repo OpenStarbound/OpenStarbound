@@ -1,27 +1,19 @@
 -- Controller Settings Pane
 
 local modeDescriptions = {
+  off = "Controller input completely disabled. Mouse and keyboard only.",
   auto = "Auto-switches between gamepad and mouse based on last input.",
   gamepad = "Right stick aims. L3 toggles virtual cursor for menus.",
   hybrid = "Right stick aims. Mouse/trackpad handles UI directly."
 }
 
-local function getConfig(key, default)
-  local ok, val = pcall(root.getConfiguration, key)
-  if ok and val ~= nil then return val end
-  return default
-end
-
-local function setConfig(key, value)
-  root.setConfiguration(key, value)
-end
-
 local IMG_NORMAL = "/interface/optionsmenu/tricontrolsbutton.png"
 local IMG_SELECTED = "/interface/optionsmenu/tricontrolsbuttonhover.png"
 
 local function updateModeButtons()
-  local mode = getConfig("controllerMode", "auto")
+  local mode = root.getConfiguration("controllerMode") or "auto"
   local modes = {
+    { widget = "modeOff",     id = "off" },
     { widget = "modeAuto",    id = "auto" },
     { widget = "modeGamepad", id = "gamepad" },
     { widget = "modeHybrid",  id = "hybrid" }
@@ -37,17 +29,17 @@ local function updateModeButtons()
 end
 
 local function updateSliders()
-  local deadzone = getConfig("controllerAimDeadzone", 0.15)
+  local deadzone = root.getConfiguration("controllerAimDeadzone") or 0.15
   local deadzoneStep = math.max(1, math.min(20, math.floor(deadzone / 0.05 + 0.5)))
   widget.setSliderValue("deadzoneSlider", deadzoneStep)
   widget.setText("deadzoneValue", string.format("%.2f", deadzoneStep * 0.05))
 
-  local aimRadius = getConfig("controllerAimRadius", 8.0)
+  local aimRadius = root.getConfiguration("controllerAimRadius") or 8.0
   local aimStep = math.max(2, math.min(16, math.floor(aimRadius + 0.5)))
   widget.setSliderValue("aimRadiusSlider", aimStep)
   widget.setText("aimRadiusValue", tostring(aimStep))
 
-  local cursorSpeed = getConfig("controllerVirtualCursorSpeed", 800.0)
+  local cursorSpeed = root.getConfiguration("controllerVirtualCursorSpeed") or 800.0
   local speedStep = math.max(1, math.min(20, math.floor(cursorSpeed / 100 + 0.5)))
   widget.setSliderValue("cursorSpeedSlider", speedStep)
   widget.setText("cursorSpeedValue", tostring(speedStep * 100))
@@ -58,37 +50,32 @@ function init()
   updateSliders()
 end
 
-function selectModeAuto()
-  setConfig("controllerMode", "auto")
+local function selectMode(mode)
+  root.setConfiguration("controllerMode", mode)
   updateModeButtons()
 end
 
-function selectModeGamepad()
-  setConfig("controllerMode", "gamepad")
-  updateModeButtons()
-end
-
-function selectModeHybrid()
-  setConfig("controllerMode", "hybrid")
-  updateModeButtons()
-end
+function selectModeOff() selectMode("off") end
+function selectModeAuto() selectMode("auto") end
+function selectModeGamepad() selectMode("gamepad") end
+function selectModeHybrid() selectMode("hybrid") end
 
 function deadzoneChanged()
   local val = widget.getSliderValue("deadzoneSlider")
   local deadzone = val * 0.05
-  setConfig("controllerAimDeadzone", deadzone)
+  root.setConfiguration("controllerAimDeadzone", deadzone)
   widget.setText("deadzoneValue", string.format("%.2f", deadzone))
 end
 
 function aimRadiusChanged()
   local val = widget.getSliderValue("aimRadiusSlider")
-  setConfig("controllerAimRadius", val)
+  root.setConfiguration("controllerAimRadius", val)
   widget.setText("aimRadiusValue", tostring(val))
 end
 
 function cursorSpeedChanged()
   local val = widget.getSliderValue("cursorSpeedSlider")
   local speed = val * 100
-  setConfig("controllerVirtualCursorSpeed", speed)
+  root.setConfiguration("controllerVirtualCursorSpeed", speed)
   widget.setText("cursorSpeedValue", tostring(speed))
 end

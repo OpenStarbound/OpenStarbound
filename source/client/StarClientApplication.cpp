@@ -206,7 +206,9 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
   bool maximized = configuration->get("maximized").toBool();
   // Controller mode: "auto" (default), "gamepad", or "hybrid"
   String controllerModeStr = configuration->get("controllerMode").optString().value("auto");
-  if (controllerModeStr == "gamepad")
+  if (controllerModeStr == "off")
+    m_controllerMode = ControllerMode::Off;
+  else if (controllerModeStr == "gamepad")
     m_controllerMode = ControllerMode::Gamepad;
   else if (controllerModeStr == "hybrid")
     m_controllerMode = ControllerMode::Hybrid;
@@ -378,6 +380,7 @@ void ClientApplication::processInput(InputEvent const& event) {
     }
   }
   else if (auto cAxis = event.ptr<ControllerAxisEvent>()) {
+    if (m_controllerMode != ControllerMode::Off) {
     // Track which controller is actively being used (first one with significant input wins)
     if (m_activeController == (ControllerId)-1) {
       if (abs(cAxis->controllerAxisValue) > m_aimDeadzone)
@@ -430,8 +433,10 @@ void ClientApplication::processInput(InputEvent const& event) {
       generateTriggerButton(ControllerAxis::TriggerLeft, ControllerButton::TriggerLeft, m_triggerLeftPressed);
       generateTriggerButton(ControllerAxis::TriggerRight, ControllerButton::TriggerRight, m_triggerRightPressed);
     }
+    } // end if not Off
   }
   else if (auto controllerDown = event.ptr<ControllerButtonDownEvent>()) {
+   if (m_controllerMode != ControllerMode::Off) {
     // Button press also establishes active controller
     if (m_activeController == (ControllerId)-1)
       m_activeController = controllerDown->controller;
@@ -445,10 +450,11 @@ void ClientApplication::processInput(InputEvent const& event) {
     // Auto mode: button press switches to gamepad
     if (m_controllerMode == ControllerMode::Auto)
       m_gamepadActive = true;
+   } // end if not Off
   }
   else if (event.is<ControllerButtonUpEvent>()) {
     // Auto mode: button activity keeps gamepad active
-    if (m_controllerMode == ControllerMode::Auto)
+    if (m_controllerMode == ControllerMode::Auto && m_controllerMode != ControllerMode::Off)
       m_gamepadActive = true;
   }
 
@@ -1306,7 +1312,9 @@ void ClientApplication::updateRunning(float dt) {
     {
       auto configuration = m_root->configuration();
       String controllerModeStr = configuration->get("controllerMode").optString().value("auto");
-      if (controllerModeStr == "gamepad")
+      if (controllerModeStr == "off")
+        m_controllerMode = ControllerMode::Off;
+      else if (controllerModeStr == "gamepad")
         m_controllerMode = ControllerMode::Gamepad;
       else if (controllerModeStr == "hybrid")
         m_controllerMode = ControllerMode::Hybrid;
@@ -1434,8 +1442,9 @@ void ClientApplication::updateRunning(float dt) {
     }
 
     // Controller analog movement — always active when stick is pushed,
-    // regardless of input mode. Left stick movement is never gated by mode.
-    float leftStickMag = m_controllerLeftStick.magnitude();
+    // regardless of input mode (except Off). Left stick movement is never gated by mode.
+    if (m_controllerMode != ControllerMode::Off) {
+      float leftStickMag = m_controllerLeftStick.magnitude();
     if (leftStickMag > m_aimDeadzone) {
       // Normalize past deadzone so gentle tilt still reads as low-magnitude
       Vec2F stickDir = m_controllerLeftStick / leftStickMag;
@@ -1532,6 +1541,7 @@ void ClientApplication::updateRunning(float dt) {
       if (m_input->bindUp("game", "PlayerAltItem"))
         m_player->endAltFire();
     }
+    } // end if (m_controllerMode != Off) — movement, aim, controller actions
 
     m_voice->setInput(m_input->bindHeld("opensb", "pushToTalk"));
     DataStreamBuffer voiceData;
@@ -1559,7 +1569,14 @@ void ClientApplication::updateRunning(float dt) {
       return;
 
     // Tell MainInterface whether controller is handling aim
-    m_mainInterface->setOverrideAim(useGamepadAim);
+    if (m_controllerMode != ControllerMode::Off) {
+      bool useGamepadAim2 = (m_controllerMode == ControllerMode::Gamepad)
+        || (m_controllerMode == ControllerMode::Hybrid)
+        || (m_controllerMode == ControllerMode::Auto && m_gamepadActive);
+      m_mainInterface->setOverrideAim(useGamepadAim2);
+    } else {
+      m_mainInterface->setOverrideAim(false);
+    }
 
     // Controller rumble feedback
     {

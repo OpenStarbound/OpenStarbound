@@ -141,11 +141,12 @@ private:
   float m_maxInterfaceScale = 3;
   Vec2F m_crossoverRes;
 
-  // Controller input mode: "auto", "gamepad", "hybrid"
+  // Controller input mode: "off", "auto", "gamepad", "hybrid"
+  // off = controller input completely disabled
   // auto = switch between gamepad/mouse based on last input
   // gamepad = right stick aims, virtual cursor for menus, mouse disabled
   // hybrid = right stick aims, mouse still active for UI
-  enum class ControllerMode { Auto, Gamepad, Hybrid };
+  enum class ControllerMode { Off, Auto, Gamepad, Hybrid };
   ControllerMode m_controllerMode = ControllerMode::Auto;
   // In Auto mode, tracks whether gamepad is currently the active input device
   bool m_gamepadActive = false;

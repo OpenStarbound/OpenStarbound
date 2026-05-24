@@ -14,7 +14,7 @@ STAR_CLASS(VoiceSettingsMenu);
 STAR_CLASS(KeybindingsMenu);
 STAR_CLASS(GraphicsMenu);
 STAR_CLASS(BindingsMenu);
-STAR_CLASS(BaseScriptPane);
+STAR_CLASS(ControllerSettingsPane);
 STAR_CLASS(OptionsMenu);
 
 class OptionsMenu : public Pane {
@@ -73,7 +73,7 @@ private:
   BindingsMenuPtr m_modBindingsMenu;
   KeybindingsMenuPtr m_keybindingsMenu;
   GraphicsMenuPtr m_graphicsMenu;
-  BaseScriptPanePtr m_controllerMenu;
+  ControllerSettingsPanePtr m_controllerMenu;
   PaneManager* m_paneManager;
 };
 

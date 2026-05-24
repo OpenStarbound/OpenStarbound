@@ -10,7 +10,7 @@
 #include "StarVoiceSettingsMenu.hpp"
 #include "StarBindingsMenu.hpp"
 #include "StarGraphicsMenu.hpp"
-#include "StarBaseScriptPane.hpp"
+#include "StarControllerSettingsPane.hpp"
 #include "StarHumanoid.hpp"
 
 namespace Star {
@@ -100,7 +100,7 @@ OptionsMenu::OptionsMenu(PaneManager* manager, UniverseClientPtr client)
   m_modBindingsMenu = make_shared<BindingsMenu>(assets->json(config.getString("bindingsPanePath", "/interface/opensb/bindings/bindings.config")));
   m_keybindingsMenu = make_shared<KeybindingsMenu>();
   m_graphicsMenu = make_shared<GraphicsMenu>(manager,client);
-  m_controllerMenu = make_shared<BaseScriptPane>(assets->json(config.getString("controllerSettingsPanePath", "/interface/opensb/controller/controller.config")));
+  m_controllerMenu = make_shared<ControllerSettingsPane>(assets->json(config.getString("controllerSettingsPanePath", "/interface/opensb/controller/controller.config")));
 
   initConfig();
 }
