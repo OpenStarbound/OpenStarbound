@@ -1561,6 +1561,7 @@ void ClientApplication::updateRunning(float dt) {
         float dirOffset = m_player->loungingIn() ? 4.0f : 0.5f;
         float facingDir = m_player->facingDirection() == Direction::Right ? 1.0f : -1.0f;
         m_controllerAimOffset = Vec2F(facingDir * dirOffset, 0.0f);
+        m_controllerAimActive = true; // set once to avoid feedback loop with facingDirection
       }
 
       // Get aim origin — use vehicle position when in a mech, player position otherwise
