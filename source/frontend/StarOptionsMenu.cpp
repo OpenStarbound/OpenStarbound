@@ -10,6 +10,7 @@
 #include "StarVoiceSettingsMenu.hpp"
 #include "StarBindingsMenu.hpp"
 #include "StarGraphicsMenu.hpp"
+#include "StarBaseScriptPane.hpp"
 #include "StarHumanoid.hpp"
 
 namespace Star {
@@ -69,6 +70,9 @@ OptionsMenu::OptionsMenu(PaneManager* manager, UniverseClientPtr client)
   reader.registerCallback("showGraphics", [=](Widget*) {
       displayGraphics();
     });
+  reader.registerCallback("showController", [=](Widget*) {
+      displayController();
+    });
 
   Json config = assets->json("/interface/optionsmenu/optionsmenu.config");
 
@@ -96,6 +100,7 @@ OptionsMenu::OptionsMenu(PaneManager* manager, UniverseClientPtr client)
   m_modBindingsMenu = make_shared<BindingsMenu>(assets->json(config.getString("bindingsPanePath", "/interface/opensb/bindings/bindings.config")));
   m_keybindingsMenu = make_shared<KeybindingsMenu>();
   m_graphicsMenu = make_shared<GraphicsMenu>(manager,client);
+  m_controllerMenu = make_shared<BaseScriptPane>(assets->json(config.getString("controllerSettingsPanePath", "/interface/opensb/controller/controller.config")));
 
   initConfig();
 }
@@ -216,6 +221,10 @@ void OptionsMenu::displayModBindings() {
 
 void OptionsMenu::displayGraphics() {
   m_paneManager->displayPane(PaneLayer::ModalWindow, m_graphicsMenu);
+}
+
+void OptionsMenu::displayController() {
+  m_paneManager->displayPane(PaneLayer::ModalWindow, m_controllerMenu);
 }
 
 }

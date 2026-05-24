@@ -81,6 +81,10 @@ public:
 
   // Signals the application to quit
   virtual void quit() = 0;
+
+  // Controller rumble support (values are 0.0-1.0 intensity, durationMs in milliseconds)
+  virtual void rumble(float lowFreqIntensity, float highFreqIntensity, uint32_t durationMs) = 0;
+  virtual void rumbleTriggers(float leftIntensity, float rightIntensity, uint32_t durationMs) = 0;
 };
 
 }

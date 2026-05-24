@@ -14,6 +14,7 @@ STAR_CLASS(VoiceSettingsMenu);
 STAR_CLASS(KeybindingsMenu);
 STAR_CLASS(GraphicsMenu);
 STAR_CLASS(BindingsMenu);
+STAR_CLASS(BaseScriptPane);
 STAR_CLASS(OptionsMenu);
 
 class OptionsMenu : public Pane {
@@ -44,6 +45,7 @@ private:
   void displayVoiceSettings();
   void displayModBindings();
   void displayGraphics();
+  void displayController();
 
   SliderBarWidgetPtr m_instrumentSlider;
   SliderBarWidgetPtr m_sfxSlider;
@@ -71,6 +73,7 @@ private:
   BindingsMenuPtr m_modBindingsMenu;
   KeybindingsMenuPtr m_keybindingsMenu;
   GraphicsMenuPtr m_graphicsMenu;
+  BaseScriptPanePtr m_controllerMenu;
   PaneManager* m_paneManager;
 };
 

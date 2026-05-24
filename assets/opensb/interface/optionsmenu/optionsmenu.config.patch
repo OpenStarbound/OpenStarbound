@@ -1,4 +1,5 @@
 {
+  "controllerSettingsPanePath" : "/interface/opensb/controller/controller.config",
   "paneLayout" : {
     "panefeature" : {
       "anchor" : "center"
@@ -44,6 +45,13 @@
       "caption" : "Graphics",
       "base" : "/interface/optionsmenu/tricontrolsbutton.png",
       "hover" : "/interface/optionsmenu/tricontrolsbuttonhover.png"
+    },
+    "showController" : {
+      "type" : "button",
+      "position" : [21, 75],
+      "caption" : "Controller",
+      "base" : "/interface/optionsmenu/duocontrolsbutton.png",
+      "hover" : "/interface/optionsmenu/duocontrolsbuttonhover.png"
     },
 
     "volumeLabel" : { "position" : [119, 173] },

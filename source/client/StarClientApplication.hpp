@@ -10,6 +10,7 @@
 #include "StarErrorScreen.hpp"
 #include "StarCinematic.hpp"
 #include "StarKeyBindings.hpp"
+#include "StarInventoryTypes.hpp"
 #include "StarMainApplication.hpp"
 
 namespace Star {
@@ -160,6 +161,13 @@ private:
   Vec2F m_virtualCursorPos; // screen-space position of virtual cursor
   float m_virtualCursorSpeed = 800.0f; // pixels per second at full tilt
   ControllerId m_activeController = (ControllerId)-1; // which controller to accept axis input from
+  SelectedActionBarLocation m_prevActionBarLocation; // for MM toggle return
+  bool m_triggerLeftPressed = false; // trigger axis → button edge detection
+  bool m_triggerRightPressed = false;
+  uint64_t m_activeControllerLastSeen = 0; // frame counter for controller disconnect detection
+  uint64_t m_frameCounter = 0; // monotonic frame counter
+  float m_lastPlayerHealth = 0.0f; // for rumble on damage
+  bool m_wasTeleporting = false; // for rumble on beam
 
   List<KeyDownEvent> m_heldKeyEvents;
   List<KeyDownEvent> m_edgeKeyEvents;

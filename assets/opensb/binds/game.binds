@@ -8,22 +8,22 @@
     },
     "binds": {
       "PlayerUp": {
-        "default": [{"type": "controller", "value": "DPadUp"}],
+        "default": [],
         "group": "movement",
         "name": "Up / Climb"
       },
       "PlayerDown": {
-        "default": [{"type": "controller", "value": "DPadDown"}],
+        "default": [],
         "group": "movement",
         "name": "Down / Crouch"
       },
       "PlayerLeft": {
-        "default": [{"type": "controller", "value": "DPadLeft"}],
+        "default": [],
         "group": "movement",
         "name": "Left"
       },
       "PlayerRight": {
-        "default": [{"type": "controller", "value": "DPadRight"}],
+        "default": [],
         "group": "movement",
         "name": "Right"
       },
@@ -33,7 +33,7 @@
         "name": "Jump"
       },
       "PlayerShifting": {
-        "default": [{"type": "controller", "value": "LeftShoulder"}],
+        "default": [],
         "group": "movement",
         "name": "Walk / Shift"
       },
@@ -48,7 +48,7 @@
         "name": "Drop Item"
       },
       "PlayerTechAction1": {
-        "default": [{"type": "controller", "value": "B"}],
+        "default": [{"type": "controller", "value": "DPadRight"}],
         "group": "combat",
         "name": "Tech Action 1"
       },
@@ -63,12 +63,12 @@
         "name": "Tech Action 3"
       },
       "PlayerMainItem": {
-        "default": [{"type": "controller", "value": "RightShoulder"}],
+        "default": [{"type": "controller", "value": "TriggerLeft"}],
         "group": "combat",
         "name": "Primary Fire"
       },
       "PlayerAltItem": {
-        "default": [{"type": "controller", "value": "RightStick"}],
+        "default": [{"type": "controller", "value": "TriggerRight"}],
         "group": "combat",
         "name": "Alt Fire"
       },
@@ -78,7 +78,7 @@
         "name": "Show Labels"
       },
       "CameraShift": {
-        "default": [],
+        "default": [{"type": "controller", "value": "RightStick"}],
         "group": "interface",
         "name": "Camera Pan"
       },
@@ -93,7 +93,7 @@
         "name": "Inventory"
       },
       "InterfaceCrafting": {
-        "default": [],
+        "default": [{"type": "controller", "value": "Back"}],
         "group": "interface",
         "name": "Crafting"
       },
@@ -108,9 +108,34 @@
         "name": "Deselect Hands"
       },
       "GuiClose": {
-        "default": [{"type": "controller", "value": "Back"}],
+        "default": [{"type": "controller", "value": "B"}],
         "group": "interface",
         "name": "Close / Back"
+      },
+      "HotbarNext": {
+        "default": [{"type": "controller", "value": "RightShoulder"}],
+        "group": "interface",
+        "name": "Next Hotbar Slot"
+      },
+      "HotbarPrev": {
+        "default": [{"type": "controller", "value": "LeftShoulder"}],
+        "group": "interface",
+        "name": "Previous Hotbar Slot"
+      },
+      "EssentialCycle": {
+        "default": [{"type": "controller", "value": "DPadUp"}],
+        "group": "interface",
+        "name": "Cycle Essential Items"
+      },
+      "MatterManipulatorToggle": {
+        "default": [{"type": "controller", "value": "DPadDown"}],
+        "group": "interface",
+        "name": "Toggle Matter Manipulator"
+      },
+      "InterfaceQuest": {
+        "default": [{"type": "controller", "value": "DPadLeft"}],
+        "group": "interface",
+        "name": "Quest Log"
       }
     }
   }
