@@ -1551,14 +1551,16 @@ void ClientApplication::updateRunning(float dt) {
         m_controllerAimActive = true;
       } else if (m_controllerAimActive) {
         // Stick at center, but was used before — keep facing direction,
-        // aim returns to near player (tiny offset just for facing)
+        // aim returns to near player/vehicle (offset outside the body)
+        float dirOffset = m_player->loungingIn() ? 4.0f : 0.5f;
         Vec2F lastDir = m_controllerAimOffset.normalized();
         if (lastDir.magnitude() > 0.01f)
-          m_controllerAimOffset = lastDir * 0.5f;
+          m_controllerAimOffset = lastDir * dirOffset;
       } else {
         // Never used the right stick yet — default to facing direction
+        float dirOffset = m_player->loungingIn() ? 4.0f : 0.5f;
         float facingDir = m_player->facingDirection() == Direction::Right ? 1.0f : -1.0f;
-        m_controllerAimOffset = Vec2F(facingDir * 0.5f, 0.0f);
+        m_controllerAimOffset = Vec2F(facingDir * dirOffset, 0.0f);
       }
 
       // Get aim origin — use vehicle position when in a mech, player position otherwise
