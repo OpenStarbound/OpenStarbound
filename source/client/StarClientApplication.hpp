@@ -140,9 +140,22 @@ private:
   float m_maxInterfaceScale = 3;
   Vec2F m_crossoverRes;
 
-  bool m_controllerInput;
+  // Controller input mode: "auto", "gamepad", "hybrid"
+  // auto = switch between gamepad/mouse based on last input
+  // gamepad = right stick aims, virtual cursor for menus, mouse disabled
+  // hybrid = right stick aims, mouse still active for UI
+  enum class ControllerMode { Auto, Gamepad, Hybrid };
+  ControllerMode m_controllerMode = ControllerMode::Auto;
+  // In Auto mode, tracks whether gamepad is currently the active input device
+  bool m_gamepadActive = false;
+
   Vec2F m_controllerLeftStick;
   Vec2F m_controllerRightStick;
+  float m_aimRadius = 8.0f; // world tiles
+  float m_aimDeadzone = 0.15f;
+  Vec2F m_controllerAimPosition; // world-space aim from right stick
+  bool m_controllerAimActive = false; // true when right stick is outside deadzone
+
   List<KeyDownEvent> m_heldKeyEvents;
   List<KeyDownEvent> m_edgeKeyEvents;
 

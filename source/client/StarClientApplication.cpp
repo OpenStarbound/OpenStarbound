@@ -77,6 +77,10 @@ Json const AdditionalDefaultConfiguration = Json::parseJson(R"JSON(
       "interfaceScale" : 0,
       "speechBubbles" : true,
 
+      "controllerMode" : "auto",
+      "controllerAimRadius" : 8.0,
+      "controllerAimDeadzone" : 0.15,
+
       "title" : {
         "multiPlayerAddress" : "",
         "multiPlayerPort" : "",
@@ -198,7 +202,17 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
   bool fullscreen = configuration->get("fullscreen").toBool();
   bool borderless = configuration->get("borderless").toBool();
   bool maximized = configuration->get("maximized").toBool();
-  m_controllerInput = configuration->get("controllerInput").optBool().value();
+  // Controller mode: "auto" (default), "gamepad", or "hybrid"
+  String controllerModeStr = configuration->get("controllerMode").optString().value("auto");
+  if (controllerModeStr == "gamepad")
+    m_controllerMode = ControllerMode::Gamepad;
+  else if (controllerModeStr == "hybrid")
+    m_controllerMode = ControllerMode::Hybrid;
+  else
+    m_controllerMode = ControllerMode::Auto;
+  m_gamepadActive = (m_controllerMode == ControllerMode::Gamepad);
+  m_aimRadius = configuration->get("controllerAimRadius").optFloat().value(8.0f);
+  m_aimDeadzone = configuration->get("controllerAimDeadzone").optFloat().value(0.15f);
   
   #ifdef STAR_SYSTEM_WINDOWS
     appController->setBorderlessWorkaround(configuration->get("borderlessWorkaround", true).toBool());
@@ -328,6 +342,9 @@ void ClientApplication::processInput(InputEvent const& event) {
   if (auto keyDown = event.ptr<KeyDownEvent>()) {
     m_heldKeyEvents.append(*keyDown);
     m_edgeKeyEvents.append(*keyDown);
+    // Auto mode: keyboard input switches to mouse/keyboard
+    if (m_controllerMode == ControllerMode::Auto)
+      m_gamepadActive = false;
   } else if (auto keyUp = event.ptr<KeyUpEvent>()) {
     eraseWhere(m_heldKeyEvents, [&](auto& keyEvent) {
       return keyEvent.key == keyUp->key;
@@ -339,6 +356,16 @@ void ClientApplication::processInput(InputEvent const& event) {
         return KeyDownEvent{keyEvent.key, keyEvent.mods & ~*modKey};
       });
   }
+  else if (auto mouseMove = event.ptr<MouseMoveEvent>()) {
+    // Auto mode: mouse movement switches to mouse/keyboard
+    if (m_controllerMode == ControllerMode::Auto)
+      m_gamepadActive = false;
+  }
+  else if (event.is<MouseButtonDownEvent>() || event.is<MouseButtonUpEvent>()) {
+    // Auto mode: mouse click switches to mouse/keyboard
+    if (m_controllerMode == ControllerMode::Auto)
+      m_gamepadActive = false;
+  }
   else if (auto cAxis = event.ptr<ControllerAxisEvent>()) {
     if (cAxis->controllerAxis == ControllerAxis::LeftX)
       m_controllerLeftStick[0] = cAxis->controllerAxisValue;
@@ -348,6 +375,18 @@ void ClientApplication::processInput(InputEvent const& event) {
       m_controllerRightStick[0] = cAxis->controllerAxisValue;
     else if (cAxis->controllerAxis == ControllerAxis::RightY)
       m_controllerRightStick[1] = cAxis->controllerAxisValue;
+
+    // Auto mode: significant stick movement switches to gamepad
+    if (m_controllerMode == ControllerMode::Auto) {
+      float magnitude = max(m_controllerLeftStick.magnitude(), m_controllerRightStick.magnitude());
+      if (magnitude > m_aimDeadzone)
+        m_gamepadActive = true;
+    }
+  }
+  else if (event.is<ControllerButtonDownEvent>() || event.is<ControllerButtonUpEvent>()) {
+    // Auto mode: button press switches to gamepad
+    if (m_controllerMode == ControllerMode::Auto)
+      m_gamepadActive = true;
   }
 
   bool processed = !m_errorScreen->accepted() && m_errorScreen->handleInputEvent(event);
@@ -1199,10 +1238,39 @@ void ClientApplication::updateRunning(float dt) {
       config->set("zoomLevel", min(1000000.f, newZoom));
     }
 
-    if (m_controllerInput && m_controllerLeftStick.magnitudeSquared() > 0.01f)
+    // Controller analog movement
+    bool useGamepadMovement = (m_controllerMode == ControllerMode::Gamepad)
+      || (m_controllerMode == ControllerMode::Hybrid)
+      || (m_controllerMode == ControllerMode::Auto && m_gamepadActive);
+
+    if (useGamepadMovement && m_controllerLeftStick.magnitudeSquared() > 0.01f)
       m_player->setMoveVector(m_controllerLeftStick);
     else
       m_player->setMoveVector(Vec2F());
+
+    // Controller analog aim (right stick → world-space aim position)
+    bool useGamepadAim = (m_controllerMode == ControllerMode::Gamepad)
+      || (m_controllerMode == ControllerMode::Hybrid)
+      || (m_controllerMode == ControllerMode::Auto && m_gamepadActive);
+
+    if (useGamepadAim) {
+      float stickMag = m_controllerRightStick.magnitude();
+      if (stickMag > m_aimDeadzone) {
+        // Normalize and apply radius scaling (stick magnitude controls distance)
+        Vec2F aimDir = m_controllerRightStick / stickMag;
+        float normalizedMag = (stickMag - m_aimDeadzone) / (1.0f - m_aimDeadzone);
+        normalizedMag = min(1.0f, normalizedMag);
+        // Y is inverted on SDL gamepad axes (up = negative)
+        Vec2F aimOffset = Vec2F(aimDir[0], -aimDir[1]) * (normalizedMag * m_aimRadius);
+        m_controllerAimPosition = m_player->position() + aimOffset;
+        m_controllerAimActive = true;
+        m_player->aim(m_controllerAimPosition);
+      } else {
+        // Stick returned to center — keep aiming at last position
+        if (m_controllerAimActive)
+          m_player->aim(m_controllerAimPosition);
+      }
+    }
 
     m_voice->setInput(m_input->bindHeld("opensb", "pushToTalk"));
     DataStreamBuffer voiceData;
@@ -1228,6 +1296,9 @@ void ClientApplication::updateRunning(float dt) {
 
     if (checkDisconnection())
       return;
+
+    // Tell MainInterface whether controller is handling aim
+    m_mainInterface->setOverrideAim(useGamepadAim && m_controllerAimActive);
 
     m_mainInterface->preUpdate(dt);
     m_universeClient->update(dt);

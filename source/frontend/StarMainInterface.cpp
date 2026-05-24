@@ -530,9 +530,13 @@ void MainInterface::handleInteractAction(InteractAction interactAction) {
   }
 }
 
+void MainInterface::setOverrideAim(bool override) {
+  m_overrideAim = override;
+}
+
 void MainInterface::preUpdate(float) {
   auto player = m_client->mainPlayer();
-  if (!m_client->paused())
+  if (!m_client->paused() && !m_overrideAim)
     player->aim(cursorWorldPosition());
 
   if (m_paneManager.topPane({PaneLayer::Window, PaneLayer::ModalWindow}))
