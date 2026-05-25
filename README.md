@@ -74,7 +74,8 @@ Note: Not every function from [StarExtensions](https://github.com/StarExtensions
 ### Controller Support
 **Full gamepad support with analog input, multiple input modes, and haptic feedback.** [Detailed documentation](https://github.com/OpenStarbound/OpenStarbound/blob/main/doc/CONTROLLER_SUPPORT.md). Unfortunately, the main menu itself does not have focus-based navigation yet so you'll still need to mouse click to load in your character, actual gameplay now works with a controller.
 
-* **Vector-based direct analog input** — No more fiddling around with translating to mouse cursor and keyboard input mappings for analog stick controls. Full twin-stick omnidirectional analog input for both movement and aiming. Stick angle sets direction, magnitude sets distance or speed.
+* **Vector-based direct analog input** — No more fiddling around with translating to mouse cursor and keyboard input mappings for analog stick controls. Full twin-stick omnidirectional analog input for both movement and aiming. Stick angle sets direction, magnitude sets distance or speed. Vertical stick input handles zero-gravity flight, swimming, ladder climbing, and platform drop-through (configurable threshold).
+* **Cursor crosshair suppression** — When the controller handles aim, weapon crosshair cursors are hidden and Starbound's default cursor is shown instead. Contextual cursors (interaction highlights, inspection tool) still render normally.
 * **Four input modes** (configurable in new in-game menu Options → Controller):
   * **Off** — Controller input completely disabled. Mouse and keyboard only.
   * **Auto** — Automatically switches between gamepad and mouse/keyboard based on the last input device used. 
