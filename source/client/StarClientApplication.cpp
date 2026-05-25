@@ -1588,14 +1588,10 @@ void ClientApplication::updateRunning(float dt) {
         m_controllerAimActive = true; // set once to avoid feedback loop with facingDirection
       }
 
-      // Get aim origin — use vehicle position when in a mech, player position otherwise
-      Vec2F aimOrigin = m_player->position();
-      if (auto anchorState = m_player->loungingIn()) {
-        if (auto worldClient = m_universeClient->worldClient()) {
-          if (auto vehicle = as<Vehicle>(worldClient->entity(anchorState->entityId)))
-            aimOrigin = vehicle->position();
-        }
-      }
+      // Use cameraPosition() as aim origin — handles player position,
+      // vehicle lounging (returns vehicle center), and custom camera
+      // focus entities (e.g. setCameraFocusEntity scripts)
+      Vec2F aimOrigin = m_player->cameraPosition();
 
       // Always apply offset relative to current aim origin
       m_controllerAimPosition = aimOrigin + m_controllerAimOffset;
