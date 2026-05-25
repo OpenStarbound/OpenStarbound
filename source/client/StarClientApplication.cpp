@@ -1573,16 +1573,30 @@ void ClientApplication::updateRunning(float dt) {
         // Y is inverted on SDL gamepad axes (up = negative)
         m_controllerAimOffset = Vec2F(aimDir[0], -aimDir[1]) * (normalizedMag * m_aimRadius);
         m_controllerAimActive = true;
-      } else if (m_controllerAimActive) {
-        // Stick at center, but was used before — keep facing direction,
-        // aim returns to near player/vehicle (offset outside the body)
-        float dirOffset = m_player->loungingIn() ? 4.0f : 0.5f;
+      }
+
+      // Compute direction-retention offset: must be outside the entity body
+      // to prevent aim direction instability. For vehicles, derived from
+      // collision poly bounds; for player, a small fixed offset.
+      float dirOffset = 0.5f;
+      if (auto anchorState = m_player->loungingIn()) {
+        if (auto worldClient = m_universeClient->worldClient()) {
+          if (auto vehicle = as<Vehicle>(worldClient->entity(anchorState->entityId))) {
+            auto bounds = vehicle->collisionArea();
+            // Use the larger of width/height half-extents, plus a small margin
+            dirOffset = max(abs(bounds.xMax()), max(abs(bounds.xMin()),
+                       max(abs(bounds.yMax()), abs(bounds.yMin())))) + 1.0f;
+          }
+        }
+      }
+
+      if (m_controllerAimActive && stickMag <= m_aimDeadzone) {
+        // Stick at center, but was used before — keep facing direction
         Vec2F lastDir = m_controllerAimOffset.normalized();
         if (lastDir.magnitude() > 0.01f)
           m_controllerAimOffset = lastDir * dirOffset;
-      } else {
+      } else if (!m_controllerAimActive) {
         // Never used the right stick yet — default to facing direction
-        float dirOffset = m_player->loungingIn() ? 4.0f : 0.5f;
         float facingDir = m_player->facingDirection() == Direction::Right ? 1.0f : -1.0f;
         m_controllerAimOffset = Vec2F(facingDir * dirOffset, 0.0f);
         m_controllerAimActive = true; // set once to avoid feedback loop with facingDirection

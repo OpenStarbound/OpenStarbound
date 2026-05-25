@@ -86,7 +86,7 @@ When the controller handles aim (Hybrid, Gamepad, or Auto with gamepad active), 
 
 **Aim origin:** When the player is lounging in a vehicle (mech, hoverbike, etc.), `m_player->position()` returns the anchor point inside the vehicle, which is offset from the visual center. The aim origin switches to the vehicle entity's position via world entity lookup.
 
-**Direction retention offset:** Mechs are ~7 tiles tall with collision polys extending ~3.5 tiles from center. The 0.5-tile direction-retention offset used for on-foot players is inside the mech body, causing direction instability. Vehicles use a 4.0-tile offset instead.
+**Direction retention offset:** When the right stick returns to center, a small offset in the last aim direction is maintained to prevent facing instability. For on-foot players this is 0.5 tiles. For vehicles, it's computed dynamically from the vehicle's collision poly bounding box (maximum extent + 1 tile margin), ensuring the aim point is always outside the vehicle body regardless of size.
 
 **Initial direction:** The default aim direction (before the stick is used) is set once and marked active immediately. Without this, reading `facingDirection()` every frame creates a feedback loop — facingDirection depends on aim position, which depends on facingDirection — causing rapid visual flickering in mechs.
 
