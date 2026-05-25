@@ -1484,15 +1484,24 @@ void ClientApplication::updateRunning(float dt) {
     // regardless of input mode (except Off). Left stick movement is never gated by mode.
     if (m_controllerMode != ControllerMode::Off) {
       float leftStickMag = m_controllerLeftStick.magnitude();
-    if (leftStickMag > m_aimDeadzone) {
-      // Normalize past deadzone so gentle tilt still reads as low-magnitude
-      Vec2F stickDir = m_controllerLeftStick / leftStickMag;
-      float normalizedMag = (leftStickMag - m_aimDeadzone) / (1.0f - m_aimDeadzone);
-      normalizedMag = min(1.0f, normalizedMag);
-      m_player->setMoveVector(stickDir * normalizedMag);
-    } else {
-      m_player->setMoveVector(Vec2F());
-    }
+      if (leftStickMag > m_aimDeadzone) {
+        // Normalize past deadzone so gentle tilt still reads as low-magnitude
+        Vec2F stickDir = m_controllerLeftStick / leftStickMag;
+        float normalizedMag = (leftStickMag - m_aimDeadzone) / (1.0f - m_aimDeadzone);
+        normalizedMag = min(1.0f, normalizedMag);
+        m_player->setMoveVector(stickDir * normalizedMag);
+
+        // Also trigger digital up/down for zero-g, water, ladders, platform drop-through
+        // (setMoveVector only handles horizontal; vertical needs moveUp/moveDown)
+        // SDL Y axis: negative = up, positive = down
+        float yThreshold = 0.5f;
+        if (m_controllerLeftStick[1] < -yThreshold)
+          m_player->moveUp();
+        if (m_controllerLeftStick[1] > yThreshold)
+          m_player->moveDown();
+      } else {
+        m_player->setMoveVector(Vec2F());
+      }
 
 
     // Controller analog aim (right stick → world-space aim position)
