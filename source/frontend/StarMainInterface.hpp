@@ -203,7 +203,6 @@ private:
   Vec2F m_cursorScreenPos{};
   Vec2I m_cursorScreenIPos{};
   bool m_overrideAim = false;
-  bool m_cursorIsDefault = true; // tracks whether cursor is default crosshair or an override
   ItemSlotWidgetPtr m_cursorItem;
   Maybe<String> m_cursorTooltip;
 
