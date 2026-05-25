@@ -43,6 +43,11 @@ local function updateSliders()
   local speedStep = math.max(1, math.min(20, math.floor(cursorSpeed / 100 + 0.5)))
   widget.setSliderValue("cursorSpeedSlider", speedStep)
   widget.setText("cursorSpeedValue", tostring(speedStep * 100))
+
+  local vertThreshold = root.getConfiguration("controllerVerticalThreshold") or 0.5
+  local vertStep = math.max(1, math.min(19, math.floor(vertThreshold / 0.05 + 0.5)))
+  widget.setSliderValue("verticalThresholdSlider", vertStep)
+  widget.setText("verticalThresholdValue", string.format("%.2f", vertStep * 0.05))
 end
 
 function init()
@@ -78,4 +83,11 @@ function cursorSpeedChanged()
   local speed = val * 100
   root.setConfiguration("controllerVirtualCursorSpeed", speed)
   widget.setText("cursorSpeedValue", tostring(speed))
+end
+
+function verticalThresholdChanged()
+  local val = widget.getSliderValue("verticalThresholdSlider")
+  local threshold = val * 0.05
+  root.setConfiguration("controllerVerticalThreshold", threshold)
+  widget.setText("verticalThresholdValue", string.format("%.2f", threshold))
 end

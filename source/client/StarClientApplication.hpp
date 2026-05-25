@@ -155,6 +155,7 @@ private:
   Vec2F m_controllerRightStick;
   float m_aimRadius = 8.0f; // world tiles
   float m_aimDeadzone = 0.15f;
+  float m_verticalThreshold = 0.5f; // stick Y threshold for up/down movement
   Vec2F m_controllerAimPosition; // world-space aim from right stick
   Vec2F m_controllerAimOffset; // relative aim offset from player (preserved when stick centered)
   bool m_controllerAimActive = false; // true once right stick has been used at least once

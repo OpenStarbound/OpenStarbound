@@ -83,6 +83,7 @@ Json const AdditionalDefaultConfiguration = Json::parseJson(R"JSON(
       "controllerAimRadius" : 8.0,
       "controllerAimDeadzone" : 0.15,
       "controllerVirtualCursorSpeed" : 800.0,
+      "controllerVerticalThreshold" : 0.5,
 
       "title" : {
         "multiPlayerAddress" : "",
@@ -219,6 +220,7 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
   m_aimRadius = configuration->get("controllerAimRadius").optFloat().value(8.0f);
   m_aimDeadzone = configuration->get("controllerAimDeadzone").optFloat().value(0.15f);
   m_virtualCursorSpeed = configuration->get("controllerVirtualCursorSpeed").optFloat().value(800.0f);
+  m_verticalThreshold = configuration->get("controllerVerticalThreshold").optFloat().value(0.5f);
   
   #ifdef STAR_SYSTEM_WINDOWS
     appController->setBorderlessWorkaround(configuration->get("borderlessWorkaround", true).toBool());
@@ -1324,6 +1326,7 @@ void ClientApplication::updateRunning(float dt) {
       m_aimRadius = configuration->get("controllerAimRadius").optFloat().value(8.0f);
       m_aimDeadzone = configuration->get("controllerAimDeadzone").optFloat().value(0.15f);
       m_virtualCursorSpeed = configuration->get("controllerVirtualCursorSpeed").optFloat().value(800.0f);
+      m_verticalThreshold = configuration->get("controllerVerticalThreshold").optFloat().value(0.5f);
 
       // Auto-exit virtual cursor mode when switching away from gamepad mode
       if (m_virtualCursorActive && m_controllerMode != ControllerMode::Gamepad
@@ -1494,10 +1497,9 @@ void ClientApplication::updateRunning(float dt) {
         // Also trigger digital up/down for zero-g, water, ladders, platform drop-through
         // (setMoveVector only handles horizontal; vertical needs moveUp/moveDown)
         // SDL Y axis: negative = up, positive = down
-        float yThreshold = 0.5f;
-        if (m_controllerLeftStick[1] < -yThreshold)
+        if (m_controllerLeftStick[1] < -m_verticalThreshold)
           m_player->moveUp();
-        if (m_controllerLeftStick[1] > yThreshold)
+        if (m_controllerLeftStick[1] > m_verticalThreshold)
           m_player->moveDown();
       } else {
         m_player->setMoveVector(Vec2F());
