@@ -1529,16 +1529,24 @@ void MainInterface::updateCursor() {
     }
   }
 
-  if (cursorOverride)
+  if (cursorOverride) {
     m_cursor.setCursor(cursorOverride.take());
-  else
+    m_cursorIsDefault = false;
+  } else {
     m_cursor.resetCursor();
+    m_cursorIsDefault = true;
+  }
 }
 
 void MainInterface::renderCursor() {
   // if we're currently playing a cinematic, we should not render the mouse.
   if (m_cinematicOverlay && !m_cinematicOverlay->completed())
     return m_guiContext->applicationController()->setCursorVisible(false);
+
+  // When controller handles aim, hide the default crosshair cursor but
+  // keep interaction/context cursor overrides (e.g. red interact cursor)
+  if (m_overrideAim && m_cursorIsDefault)
+    return m_guiContext->applicationController()->setCursorVisible(true);
 
   Vec2I cursorPos = m_cursorScreenIPos;
   Vec2I cursorSize = m_cursor.size();

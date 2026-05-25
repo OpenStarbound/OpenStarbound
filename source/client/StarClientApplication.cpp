@@ -83,7 +83,7 @@ Json const AdditionalDefaultConfiguration = Json::parseJson(R"JSON(
       "controllerAimRadius" : 8.0,
       "controllerAimDeadzone" : 0.15,
       "controllerVirtualCursorSpeed" : 800.0,
-      "controllerVerticalThreshold" : 0.5,
+      "controllerVerticalThreshold" : 0.65,
 
       "title" : {
         "multiPlayerAddress" : "",
@@ -220,7 +220,7 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
   m_aimRadius = configuration->get("controllerAimRadius").optFloat().value(8.0f);
   m_aimDeadzone = configuration->get("controllerAimDeadzone").optFloat().value(0.15f);
   m_virtualCursorSpeed = configuration->get("controllerVirtualCursorSpeed").optFloat().value(800.0f);
-  m_verticalThreshold = configuration->get("controllerVerticalThreshold").optFloat().value(0.5f);
+  m_verticalThreshold = configuration->get("controllerVerticalThreshold").optFloat().value(0.65f);
   
   #ifdef STAR_SYSTEM_WINDOWS
     appController->setBorderlessWorkaround(configuration->get("borderlessWorkaround", true).toBool());
@@ -1326,7 +1326,7 @@ void ClientApplication::updateRunning(float dt) {
       m_aimRadius = configuration->get("controllerAimRadius").optFloat().value(8.0f);
       m_aimDeadzone = configuration->get("controllerAimDeadzone").optFloat().value(0.15f);
       m_virtualCursorSpeed = configuration->get("controllerVirtualCursorSpeed").optFloat().value(800.0f);
-      m_verticalThreshold = configuration->get("controllerVerticalThreshold").optFloat().value(0.5f);
+      m_verticalThreshold = configuration->get("controllerVerticalThreshold").optFloat().value(0.65f);
 
       // Auto-exit virtual cursor mode when switching away from gamepad mode
       if (m_virtualCursorActive && m_controllerMode != ControllerMode::Gamepad
