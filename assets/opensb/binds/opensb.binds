@@ -5,8 +5,7 @@
       "voice": { "name": "Voice" },
       "building": { "name": "Building" },
       "inventory": { "name": "Inventory" },
-      "editing" : { "name" : "Editing" },
-      "interface" : { "name" : "Interface" }
+      "editing" : { "name" : "Editing" }
     },
     "name": "Open^#ebd74a;Starbound",
     "binds": {
@@ -67,21 +66,6 @@
         "name": "Paste Item in Cursor",
         "group": "editing",
         "tags" : ["clipboard"]
-      },
-      "toggleVirtualCursor": {
-        "default": [{"type": "controller", "value": "LeftStick"}],
-        "name": "Toggle Virtual Cursor",
-        "group": "interface"
-      },
-      "virtualCursorClick": {
-        "default": [{"type": "controller", "value": "TriggerRight"}],
-        "name": "Virtual Cursor Click",
-        "group": "interface"
-      },
-      "virtualCursorRightClick": {
-        "default": [{"type": "controller", "value": "TriggerLeft"}],
-        "name": "Virtual Cursor Right Click",
-        "group": "interface"
       }
     }
   }

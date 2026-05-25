@@ -31,7 +31,7 @@ The implementation uses **two parallel binding systems** that coexist without co
 
 2. **OpenStarbound `Input` bind system** — Maps `InputVariant` (Key, MouseButton, or ControllerButton) → named binds via `.binds` asset files. Already existed for OpenStarbound features (zoom, voice, building).
 
-Controller support adds `game.binds` with entries whose IDs match `InterfaceAction` names (e.g., `PlayerJump`, `InterfaceInventory`). The `isActionTaken()` / `isActionTakenEdge()` functions in `StarClientApplication.cpp` were extended to check **both** systems:
+Controller support adds `controller.binds` with entries whose IDs match `InterfaceAction` names (e.g., `PlayerJump`, `InterfaceInventory`). The `isActionTaken()` / `isActionTakenEdge()` functions in `StarClientApplication.cpp` were extended to check **both** systems:
 
 ```cpp
 bool ClientApplication::isActionTaken(InterfaceAction action) const {
@@ -42,7 +42,7 @@ bool ClientApplication::isActionTaken(InterfaceAction action) const {
   }
   // Also check controller binds via the new Input bind system
   if (auto name = InterfaceActionNames.maybeRight(action)) {
-    if (m_input->bindHeld("game", *name))
+    if (m_input->bindHeld("controller", *name))
       return true;
   }
   return false;
@@ -141,7 +141,7 @@ Starbound's `checkable` button property creates a self-toggling button. When use
 
 | File | Purpose |
 |------|---------|
-| `assets/opensb/binds/game.binds` | Default controller button mappings for all game actions |
+| `assets/opensb/binds/controller.binds` | Default controller button mappings for all game actions |
 | `assets/opensb/binds/opensb.binds` | Virtual cursor toggle/click binds |
 | `assets/opensb/interface/opensb/controller/controller.config` | Controller settings pane layout |
 | `assets/opensb/interface/opensb/controller/controller.lua` | Settings pane logic (mode selection, sliders) |

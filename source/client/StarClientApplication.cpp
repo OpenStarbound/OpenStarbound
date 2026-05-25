@@ -1349,12 +1349,12 @@ void ClientApplication::updateRunning(float dt) {
 
       // Hotbar slot cycling via controller binds (mirrors mouse wheel behavior)
       // Skip if both shoulders held (that's the beam combo)
-      if ((m_input->bindDown("game", "HotbarNext") && !m_input->bindHeld("game", "HotbarPrev"))
-       || (m_input->bindDown("game", "HotbarPrev") && !m_input->bindHeld("game", "HotbarNext"))) {
+      if ((m_input->bindDown("controller", "HotbarNext") && !m_input->bindHeld("controller", "HotbarPrev"))
+       || (m_input->bindDown("controller", "HotbarPrev") && !m_input->bindHeld("controller", "HotbarNext"))) {
         auto inventory = m_player->inventory();
         auto customBarIndexes = inventory->customBarIndexes();
         int totalSlots = customBarIndexes + EssentialItemCount;
-        bool forward = (bool)m_input->bindDown("game", "HotbarNext");
+        bool forward = (bool)m_input->bindDown("controller", "HotbarNext");
 
         auto abl = inventory->selectedActionBarLocation();
         int index = 0;
@@ -1386,7 +1386,7 @@ void ClientApplication::updateRunning(float dt) {
       }
 
       // Cycle hotbar group (swap between hotbar rows)
-      if (m_input->bindDown("game", "EssentialCycle")) {
+      if (m_input->bindDown("controller", "EssentialCycle")) {
         auto inventory = m_player->inventory();
         uint8_t current = inventory->customBarGroup();
         uint8_t groups = inventory->customBarGroups();
@@ -1394,7 +1394,7 @@ void ClientApplication::updateRunning(float dt) {
       }
 
       // Matter manipulator toggle: select MM (essential slot 0), or switch back
-      if (m_input->bindDown("game", "MatterManipulatorToggle")) {
+      if (m_input->bindDown("controller", "MatterManipulatorToggle")) {
         auto inventory = m_player->inventory();
         auto abl = inventory->selectedActionBarLocation();
         if (auto ei = abl.ptr<EssentialItem>(); ei && *ei == EssentialItem::BeamAxe) {
@@ -1408,10 +1408,10 @@ void ClientApplication::updateRunning(float dt) {
       }
 
       // LB+RB simultaneous press OR BeamUpDown bind: beam up/down
-      bool beamTriggered = (bool)m_input->bindDown("game", "BeamUpDown");
+      bool beamTriggered = (bool)m_input->bindDown("controller", "BeamUpDown");
       if (!beamTriggered) {
-        beamTriggered = m_input->bindHeld("game", "HotbarNext") && m_input->bindHeld("game", "HotbarPrev")
-          && (m_input->bindDown("game", "HotbarNext") || m_input->bindDown("game", "HotbarPrev"));
+        beamTriggered = m_input->bindHeld("controller", "HotbarNext") && m_input->bindHeld("controller", "HotbarPrev")
+          && (m_input->bindDown("controller", "HotbarNext") || m_input->bindDown("controller", "HotbarPrev"));
       }
       if (beamTriggered) {
         // Try beam down first, then beam up
@@ -1422,7 +1422,7 @@ void ClientApplication::updateRunning(float dt) {
       }
 
       // R3 (RightStick click): right-click when a pane is open, camera pan otherwise
-      if (m_input->bindDown("game", "CameraShift")) {
+      if (m_input->bindDown("controller", "CameraShift")) {
         if (auto topPane = m_mainInterface->paneManager()->topPane({PaneLayer::Window, PaneLayer::ModalWindow})) {
           // A pane is open — send synthetic right-click at current cursor position
           Vec2F cursorPos = m_virtualCursorActive ? m_virtualCursorPos : m_input->mousePosition();
@@ -1431,7 +1431,7 @@ void ClientApplication::updateRunning(float dt) {
           m_input->handleInput(syntheticDown, true);
         }
       }
-      if (m_input->bindUp("game", "CameraShift")) {
+      if (m_input->bindUp("controller", "CameraShift")) {
         if (auto topPane = m_mainInterface->paneManager()->topPane({PaneLayer::Window, PaneLayer::ModalWindow})) {
           Vec2F cursorPos = m_virtualCursorActive ? m_virtualCursorPos : m_input->mousePosition();
           InputEvent syntheticUp = MouseButtonUpEvent{MouseButton::Right, cursorPos};
@@ -1441,7 +1441,7 @@ void ClientApplication::updateRunning(float dt) {
       }
 
       // L3 (LeftStick click) context-sensitive action
-      if (m_input->bindDown("opensb", "toggleVirtualCursor")) {
+      if (m_input->bindDown("controller", "toggleVirtualCursor")) {
         bool inGamepadState = (m_controllerMode == ControllerMode::Gamepad)
           || (m_controllerMode == ControllerMode::Auto && m_gamepadActive);
         if (inGamepadState) {
@@ -1463,6 +1463,18 @@ void ClientApplication::updateRunning(float dt) {
             // Other tool → drop item
             m_player->dropItem();
           }
+        }
+      }
+
+      // Standalone Shift/Drop bind (unbound by default, for users who want
+      // this function on a dedicated button regardless of input mode)
+      if (m_input->bindDown("controller", "ShiftDropAction")) {
+        auto inventory = m_player->inventory();
+        auto abl = inventory->selectedActionBarLocation();
+        if (auto ei = abl.ptr<EssentialItem>(); ei && *ei == EssentialItem::BeamAxe) {
+          m_player->setShifting(!m_player->shifting());
+        } else {
+          m_player->dropItem();
         }
       }
     }
@@ -1511,22 +1523,22 @@ void ClientApplication::updateRunning(float dt) {
       m_mainInterface->handleInputEvent(syntheticMove);
 
       // Handle virtual cursor clicks (RT = left click, LT = right click on UI)
-      if (m_input->bindDown("opensb", "virtualCursorClick")) {
+      if (m_input->bindDown("controller", "virtualCursorClick")) {
         InputEvent syntheticDown = MouseButtonDownEvent{MouseButton::Left, m_virtualCursorPos};
         m_mainInterface->handleInputEvent(syntheticDown);
         m_input->handleInput(syntheticDown, true);
       }
-      if (m_input->bindUp("opensb", "virtualCursorClick")) {
+      if (m_input->bindUp("controller", "virtualCursorClick")) {
         InputEvent syntheticUp = MouseButtonUpEvent{MouseButton::Left, m_virtualCursorPos};
         m_mainInterface->handleInputEvent(syntheticUp);
         m_input->handleInput(syntheticUp, true);
       }
-      if (m_input->bindDown("opensb", "virtualCursorRightClick")) {
+      if (m_input->bindDown("controller", "virtualCursorRightClick")) {
         InputEvent syntheticDown = MouseButtonDownEvent{MouseButton::Right, m_virtualCursorPos};
         m_mainInterface->handleInputEvent(syntheticDown);
         m_input->handleInput(syntheticDown, true);
       }
-      if (m_input->bindUp("opensb", "virtualCursorRightClick")) {
+      if (m_input->bindUp("controller", "virtualCursorRightClick")) {
         InputEvent syntheticUp = MouseButtonUpEvent{MouseButton::Right, m_virtualCursorPos};
         m_mainInterface->handleInputEvent(syntheticUp);
         m_input->handleInput(syntheticUp, true);
@@ -1582,16 +1594,16 @@ void ClientApplication::updateRunning(float dt) {
     // When virtual cursor is active, suppress fire only for the button bound to virtualCursorClick
     if (!m_mainInterface->inputFocus() && !m_cinematicOverlay->suppressInput()) {
       bool clickConsumed = m_virtualCursorActive
-        && (m_input->bindHeld("opensb", "virtualCursorClick") || m_input->bindHeld("opensb", "virtualCursorRightClick"));
+        && (m_input->bindHeld("controller", "virtualCursorClick") || m_input->bindHeld("controller", "virtualCursorRightClick"));
       if (!clickConsumed) {
-        if (m_input->bindDown("game", "PlayerMainItem"))
+        if (m_input->bindDown("controller", "PlayerMainItem"))
           m_player->beginPrimaryFire();
-        if (m_input->bindDown("game", "PlayerAltItem"))
+        if (m_input->bindDown("controller", "PlayerAltItem"))
           m_player->beginAltFire();
       }
-      if (m_input->bindUp("game", "PlayerMainItem"))
+      if (m_input->bindUp("controller", "PlayerMainItem"))
         m_player->endPrimaryFire();
-      if (m_input->bindUp("game", "PlayerAltItem"))
+      if (m_input->bindUp("controller", "PlayerAltItem"))
         m_player->endAltFire();
     }
     } // end if (m_controllerMode != Off) — movement, aim, controller actions
@@ -1763,7 +1775,7 @@ bool ClientApplication::isActionTaken(InterfaceAction action) const {
 
   // Also check controller binds via the new Input bind system
   if (auto name = InterfaceActionNames.maybeRight(action)) {
-    if (m_input->bindHeld("game", *name))
+    if (m_input->bindHeld("controller", *name))
       return true;
   }
 
@@ -1778,7 +1790,7 @@ bool ClientApplication::isActionTakenEdge(InterfaceAction action) const {
 
   // Also check controller binds via the new Input bind system
   if (auto name = InterfaceActionNames.maybeRight(action)) {
-    if (m_input->bindDown("game", *name))
+    if (m_input->bindDown("controller", *name))
       return true;
   }
 

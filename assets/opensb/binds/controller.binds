@@ -1,10 +1,11 @@
 {
-  "game": {
-    "name": "Game",
+  "controller": {
+    "name": "Controller",
     "groups": {
       "movement": { "name": "Movement" },
       "combat": { "name": "Combat" },
-      "interface": { "name": "Interface" }
+      "interface": { "name": "Interface" },
+      "context": { "name": "Context Actions" }
     },
     "binds": {
       "PlayerUp": {
@@ -141,6 +142,31 @@
         "default": [],
         "group": "interface",
         "name": "Beam Up / Down"
+      },
+      "toggleVirtualCursor": {
+        "default": [{"type": "controller", "value": "LeftStick"}],
+        "group": "context",
+        "name": "L3: Virtual Cursor / Shift / Drop"
+      },
+      "virtualCursorClick": {
+        "default": [{"type": "controller", "value": "TriggerRight"}],
+        "group": "context",
+        "name": "Virtual Cursor Click"
+      },
+      "virtualCursorRightClick": {
+        "default": [{"type": "controller", "value": "TriggerLeft"}],
+        "group": "context",
+        "name": "Virtual Cursor Right Click"
+      },
+      "CameraShift": {
+        "default": [{"type": "controller", "value": "RightStick"}],
+        "group": "context",
+        "name": "R3: Camera Pan / Right Click"
+      },
+      "ShiftDropAction": {
+        "default": [],
+        "group": "context",
+        "name": "Shift (MM) / Drop Item"
       }
     }
   }
