@@ -1513,7 +1513,8 @@ void MainInterface::updateCursor() {
             cursorOverride = cursorOverride.orMaybe(loungeAnchor->cursorOverride);
         }
       }
-      if (!cursorOverride) {
+      if (!cursorOverride && !m_overrideAim) {
+        // Only show weapon/item cursors when mouse handles aim
         for (auto item : {player->primaryHandItem(), player->altHandItem()}) {
           if (auto activeItem = as<ActiveItem>(item)) {
             if (auto cursor = activeItem->cursor()) {
@@ -1521,6 +1522,14 @@ void MainInterface::updateCursor() {
               break;
             }
           } else if (auto inspectionTool = as<InspectionTool>(item)) {
+            cursorOverride = String("/cursors/inspect.cursor");
+            break;
+          }
+        }
+      } else if (!cursorOverride) {
+        // Controller aims: still show inspection tool cursor
+        for (auto item : {player->primaryHandItem(), player->altHandItem()}) {
+          if (as<InspectionTool>(item)) {
             cursorOverride = String("/cursors/inspect.cursor");
             break;
           }
