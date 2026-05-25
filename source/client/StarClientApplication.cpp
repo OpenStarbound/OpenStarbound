@@ -1234,7 +1234,7 @@ void ClientApplication::updateRunning(float dt) {
     }
 
     if (!m_mainInterface->inputFocus() && !m_cinematicOverlay->suppressInput()) {
-      m_player->setShifting(isActionTaken(InterfaceAction::PlayerShifting));
+      m_player->setShifting(isActionTaken(InterfaceAction::PlayerShifting) || m_controllerShiftToggle);
 
       if (isActionTaken(InterfaceAction::PlayerRight))
         m_player->moveRight();
@@ -1399,6 +1399,7 @@ void ClientApplication::updateRunning(float dt) {
         auto abl = inventory->selectedActionBarLocation();
         if (auto ei = abl.ptr<EssentialItem>(); ei && *ei == EssentialItem::BeamAxe) {
           // Already on MM — switch back to previously selected location
+          m_controllerShiftToggle = false; // reset single-block mode
           inventory->selectActionBarLocation(m_prevActionBarLocation);
         } else {
           // Save current location and switch to MM
@@ -1457,8 +1458,8 @@ void ClientApplication::updateRunning(float dt) {
           auto inventory = m_player->inventory();
           auto abl = inventory->selectedActionBarLocation();
           if (auto ei = abl.ptr<EssentialItem>(); ei && *ei == EssentialItem::BeamAxe) {
-            // Matter manipulator selected → toggle shift mode
-            m_player->setShifting(!m_player->shifting());
+            // Matter manipulator selected → toggle single-block mode
+            m_controllerShiftToggle = !m_controllerShiftToggle;
           } else {
             // Other tool → drop item
             m_player->dropItem();
@@ -1472,7 +1473,7 @@ void ClientApplication::updateRunning(float dt) {
         auto inventory = m_player->inventory();
         auto abl = inventory->selectedActionBarLocation();
         if (auto ei = abl.ptr<EssentialItem>(); ei && *ei == EssentialItem::BeamAxe) {
-          m_player->setShifting(!m_player->shifting());
+          m_controllerShiftToggle = !m_controllerShiftToggle;
         } else {
           m_player->dropItem();
         }
@@ -1817,7 +1818,11 @@ void ClientApplication::updateCamera(float dt) {
 
   auto playerCameraPosition = m_player->cameraPosition();
 
-  if (isActionTaken(InterfaceAction::CameraShift)) {
+  // Suppress camera pan when R3 is being used as right-click in a pane
+  bool cameraShiftSuppressed = m_mainInterface->paneManager()->topPane({PaneLayer::Window, PaneLayer::ModalWindow})
+    && m_input->bindHeld("controller", "CameraShift");
+
+  if (isActionTaken(InterfaceAction::CameraShift) && !cameraShiftSuppressed) {
     m_snapBackCameraOffset = false;
     m_cameraOffsetDownTime += dt;
     Vec2F aim = m_universeClient->worldClient()->geometry().diff(m_mainInterface->cursorWorldPosition(), playerCameraPosition);
