@@ -74,8 +74,7 @@ Note: Not every function from [StarExtensions](https://github.com/StarExtensions
 ### Controller Support
 **Full gamepad support with analog input, multiple input modes, and haptic feedback.** [Detailed documentation](https://github.com/OpenStarbound/OpenStarbound/blob/main/doc/CONTROLLER_SUPPORT.md). Unfortunately, the main menu itself does not have focus-based navigation yet so you'll still need to mouse click to load in your character, actual gameplay now works with a controller.
 
-* **Vector-based direct analog input** — No more fiddling around with translating to mouse cursor and keyboard input mappings for analog stick controls. Full twin-stick omnidirectional analog input for both movement and aiming. Stick angle sets direction, magnitude sets distance or speed. Vertical stick input handles zero-gravity flight, swimming, ladder climbing, and platform drop-through (configurable threshold).
-* **Cursor crosshair suppression** — When the controller handles aim, weapon crosshair cursors are hidden and Starbound's default cursor is shown instead. Contextual cursors (interaction highlights, inspection tool) still render normally.
+* **Vector-based direct analog input** — No more fiddling around with translating to mouse cursor and keyboard input mappings! Full native support for twin-stick omnidirectional analog input has been added for both movement and aiming.
 * **Four input modes** (configurable in new in-game menu Options → Controller):
   * **Off** — Controller input completely disabled. Mouse and keyboard only.
   * **Auto** — Automatically switches between gamepad and mouse/keyboard based on the last input device used. 
@@ -86,7 +85,7 @@ Note: Not every function from [StarExtensions](https://github.com/StarExtensions
 * **Context-based bindings**
     * **Virtual cursor** (Gamepad mode) — Full mouse emulation via right stick with quadratic acceleration. RT = left click, LT = right click. All existing menus and mod UIs work without modification.
     * **R3 right-click** — Right stick click acts as right-click when any pane is open (for inventory stack splitting, navigation console travel, etc.). Acts as camera pan when no pane is open.
-    * **LB+RB beam** — Press both shoulder buttons simultaneously to beam up/down. Also available as a rebindable standalone bind.
+    * **LB+RB beam** — Press both shoulder buttons simultaneously to beam up/down.
 * **Mostly rebindable** — Controller binds appear in Options → Mod Binds and can be reassigned to any controller button. Due to some complexity with the context-based controls, these may act bizarrely if rebound.
 
 <details>
