@@ -7,8 +7,8 @@ local modeDescriptions = {
   hybrid = "Right stick aims. Mouse/trackpad handles UI directly."
 }
 
-local IMG_NORMAL = "/interface/optionsmenu/tricontrolsbutton.png"
-local IMG_SELECTED = "/interface/optionsmenu/tricontrolsbuttonhover.png"
+local IMG_NORMAL = "/interface/opensb/controller/select.png"
+local IMG_SELECTED = "/interface/opensb/controller/select.png?brightness=40"
 
 local function updateModeButtons()
   local mode = root.getConfiguration("controllerMode") or "auto"
@@ -48,6 +48,11 @@ local function updateSliders()
   local vertStep = math.max(1, math.min(19, math.floor(vertThreshold / 0.05 + 0.5)))
   widget.setSliderValue("verticalThresholdSlider", vertStep)
   widget.setText("verticalThresholdValue", string.format("%.2f", vertStep * 0.05))
+
+  local rumbleIntensity = root.getConfiguration("controllerRumbleIntensity") or 1.0
+  local rumbleStep = math.max(0, math.min(20, math.floor(rumbleIntensity * 20 + 0.5)))
+  widget.setSliderValue("rumbleIntensitySlider", rumbleStep)
+  widget.setText("rumbleIntensityValue", string.format("%.2f", rumbleStep / 20))
 end
 
 function init()
@@ -90,4 +95,11 @@ function verticalThresholdChanged()
   local threshold = val * 0.05
   root.setConfiguration("controllerVerticalThreshold", threshold)
   widget.setText("verticalThresholdValue", string.format("%.2f", threshold))
+end
+
+function rumbleIntensityChanged()
+  local val = widget.getSliderValue("rumbleIntensitySlider")
+  local intensity = val / 20
+  root.setConfiguration("controllerRumbleIntensity", intensity)
+  widget.setText("rumbleIntensityValue", string.format("%.2f", intensity))
 end
