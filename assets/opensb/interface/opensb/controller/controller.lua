@@ -7,23 +7,17 @@ local modeDescriptions = {
   hybrid = "Right stick aims. Mouse/trackpad handles UI directly."
 }
 
-local IMG_NORMAL = "/interface/opensb/controller/select.png"
-local IMG_SELECTED = "/interface/opensb/controller/select.png?brightness=40"
+local modeButtons = {
+  { widget = "modeOff",     id = "off" },
+  { widget = "modeAuto",    id = "auto" },
+  { widget = "modeGamepad", id = "gamepad" },
+  { widget = "modeHybrid",  id = "hybrid" }
+}
 
 local function updateModeButtons()
   local mode = root.getConfiguration("controllerMode") or "auto"
-  local modes = {
-    { widget = "modeOff",     id = "off" },
-    { widget = "modeAuto",    id = "auto" },
-    { widget = "modeGamepad", id = "gamepad" },
-    { widget = "modeHybrid",  id = "hybrid" }
-  }
-  for _, m in ipairs(modes) do
-    if m.id == mode then
-      widget.setButtonImages(m.widget, { base = IMG_SELECTED, hover = IMG_SELECTED })
-    else
-      widget.setButtonImages(m.widget, { base = IMG_NORMAL, hover = IMG_SELECTED })
-    end
+  for _, m in ipairs(modeButtons) do
+    widget.setChecked(m.widget, m.id == mode)
   end
   widget.setText("modeDescLabel", modeDescriptions[mode] or "")
 end
@@ -62,7 +56,13 @@ end
 
 local function selectMode(mode)
   root.setConfiguration("controllerMode", mode)
-  updateModeButtons()
+  -- Uncheck siblings; the clicked button's auto-toggle will check it
+  for _, m in ipairs(modeButtons) do
+    if m.id ~= mode then
+      widget.setChecked(m.widget, false)
+    end
+  end
+  widget.setText("modeDescLabel", modeDescriptions[mode] or "")
 end
 
 function selectModeOff() selectMode("off") end
