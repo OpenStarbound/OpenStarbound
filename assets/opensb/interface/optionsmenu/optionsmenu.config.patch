@@ -48,10 +48,10 @@
     },
     "showController" : {
       "type" : "button",
-      "position" : [140, 43],
+      "position" : [140, 44],
       "caption" : "Controller",
-      "base" : "/interface/optionsmenu/tricontrolsbutton.png",
-      "hover" : "/interface/optionsmenu/tricontrolsbuttonhover.png"
+      "base" : "/interface/button.png",
+      "hover" : "/interface/buttonhover.png"
     },
 
     "volumeLabel" : { "position" : [119, 173] },
