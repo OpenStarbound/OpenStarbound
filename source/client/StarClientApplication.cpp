@@ -1336,7 +1336,10 @@ void ClientApplication::updateRunning(float dt) {
     }
 
     // Controller-driven interface actions (these bypass handleInputEvent's KeyDown path)
-    if (!m_cinematicOverlay->suppressInput()) {
+    // Must check inputFocus() here — m_edgeKeyEvents is populated unconditionally for all
+    // KeyDown events, so isActionTakenEdge() will match keyboard keys even when a textbox
+    // (e.g. chat) has focus. Without this guard, typing 'I' in chat opens inventory, etc.
+    if (!m_mainInterface->inputFocus() && !m_cinematicOverlay->suppressInput()) {
       if (isActionTakenEdge(InterfaceAction::InterfaceEscapeMenu))
         m_mainInterface->paneManager()->toggleRegisteredPane(MainInterfacePanes::EscapeDialog);
       if (isActionTakenEdge(InterfaceAction::InterfaceInventory))
