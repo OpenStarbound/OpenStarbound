@@ -1,43 +1,15 @@
 function patch(config)
   engineEditor = assets.json("/interface/windowconfig/charcreation.config")
   config.speciesOrdering = engineEditor.speciesOrdering
---  local oldHeader = config.gui.background.fileHeader --debug grabby part
 
   local validCallbacks = {}
   for i = 1, #config.scriptWidgetCallbacks do
     validCallbacks[config.scriptWidgetCallbacks[i]] = true
   end
-  sb.logInfo(sb.print(config.scriptWidgetCallbacks))
-  sb.logInfo(sb.print(validCallbacks))
-
-  local CV = {
-    "speciesOrdering",
-    gui = {
-      "background",
-      species = {
-        "buttons"
-      }
-    }
-  }
---[[
-  for k, v in pairs(CV) do
-    if type(k) == "string" then
-      config[k] = engineEditor[k]
-    end
-  end
---]]
-
---[[
-  config.gui.background = engineEditor.paneLayout.background
-  config.gui.species.buttons = engineEditor.paneLayout.species.buttons
-]]
 
   for k, v in pairs(engineEditor.paneLayout) do
     if not config.gui[k] then
---    sb.logInfo("Adding: " ..k)
---    sb.logInfo("Adding: " ..sb.printJson(v))
       if v.callback and not validCallbacks[v.callback] then
---      sb.logInfo("Could not find" .. v.callback)
         v.callback = "null"
       end
       config.gui[k] = v
@@ -75,6 +47,5 @@ function patch(config)
   config.gui.cancel.callback = "close"
   config.gui.btnToggleClothing = nil
 
---  config.gui.background.fileHeader = oldHeader --debug grabby part
   return config
 end
