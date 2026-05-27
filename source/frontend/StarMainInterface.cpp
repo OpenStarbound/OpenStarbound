@@ -534,6 +534,10 @@ void MainInterface::setOverrideAim(bool override) {
   m_overrideAim = override;
 }
 
+void MainInterface::setCursorVisible(bool visible) {
+  m_cursorVisible = visible;
+}
+
 void MainInterface::preUpdate(float) {
   auto player = m_client->mainPlayer();
   if (!m_client->paused() && !m_overrideAim)
@@ -1548,6 +1552,10 @@ void MainInterface::updateCursor() {
 void MainInterface::renderCursor() {
   // if we're currently playing a cinematic, we should not render the mouse.
   if (m_cinematicOverlay && !m_cinematicOverlay->completed())
+    return m_guiContext->applicationController()->setCursorVisible(false);
+
+  // Hide cursor when controller aim is active (no virtual cursor).
+  if (!m_cursorVisible)
     return m_guiContext->applicationController()->setCursorVisible(false);
 
   Vec2I cursorPos = m_cursorScreenIPos;

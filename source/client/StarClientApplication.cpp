@@ -1783,8 +1783,12 @@ void ClientApplication::updateRunning(float dt) {
         || (m_controllerMode == ControllerMode::Hybrid)
         || (m_controllerMode == ControllerMode::Auto && m_gamepadActive);
       m_mainInterface->setOverrideAim(useGamepadAim2);
+      // Hide cursor when in gamepad aim mode without virtual cursor.
+      // The cursor is shown when: mouse is active, or virtual cursor is on.
+      m_mainInterface->setCursorVisible(!useGamepadAim2 || m_virtualCursorActive);
     } else {
       m_mainInterface->setOverrideAim(false);
+      m_mainInterface->setCursorVisible(true);
     }
 
     // Controller rumble feedback
