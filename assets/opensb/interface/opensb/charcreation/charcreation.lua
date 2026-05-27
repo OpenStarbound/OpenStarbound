@@ -107,9 +107,6 @@ function updateHumanoidIdentity()
     ext
   )
   player.setHumanoidIdentity(newIdentity)
---sb.logInfo(sb.print(newIdentity))
---sb.logInfo(sb.print(newParameters))
---sb.logInfo(sb.print(newEquipment))
 end
 
 function populateSpecies(_, direction)
@@ -193,8 +190,6 @@ end
 
 function randomize()
   identity, choices = root.generateHumanoidIdentity(player.species(), nil, player.gender())
-  sb.logInfo(sb.print(identity))
-  sb.logInfo(sb.print(choices))
 
   player.setHumanoidParameter("choices", choices.choices)
   updateChoices(choices.choices)
