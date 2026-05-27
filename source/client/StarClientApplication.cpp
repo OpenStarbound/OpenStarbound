@@ -1131,19 +1131,45 @@ void ClientApplication::updateTitle(float dt) {
       || (m_controllerMode == ControllerMode::Auto && m_gamepadActive);
 
     if (wantVirtualCursor && !m_virtualCursorActive) {
-      // Activate: center the cursor on screen
+      // Activate: start at the current mouse position so the cursor
+      // doesn't jump, then switch to software cursor rendering.
       m_virtualCursorActive = true;
-      Vec2U windowSize = m_guiContext->windowSize();
-      m_virtualCursorPos = Vec2F(windowSize[0] / 2.0f, windowSize[1] / 2.0f);
-      app->setCursorVisible(true);
+      m_virtualCursorPos = m_input->mousePosition();
     } else if (!wantVirtualCursor && m_virtualCursorActive) {
-      // Deactivate: mouse took over or mode changed
+      // Deactivate: warp the OS cursor to where the virtual cursor was
+      // so the hardware cursor appears at the same position. This is a
+      // one-time warp (not per-frame), so the resulting SDL mouse event
+      // is harmless — it just updates the mouse position to match.
       m_virtualCursorActive = false;
-      app->setCursorVisible(false);
+      Vec2I screenPos = Vec2I(m_virtualCursorPos[0], (int)m_guiContext->windowHeight() - (int)m_virtualCursorPos[1]);
+      app->setCursorPosition(screenPos);
     }
 
+    // Sync OS cursor state every frame based on virtual cursor state.
+    // This catches deactivation from any path (updateTitle or processInput)
+    // so setCursorHardware/setCursorVisible always get restored properly.
+    app->setCursorHardware(!m_virtualCursorActive);
+    app->setCursorVisible(!m_virtualCursorActive);
+
     if (m_virtualCursorActive) {
-      updateVirtualCursorMovement(dt);
+      // Accumulate stick input into virtual cursor position.
+      // Unlike the in-game path, we do NOT warp the hardware cursor here.
+      // The title screen renders a software cursor at m_cursorScreenPos,
+      // which we update via synthetic MouseMoveEvent below. This avoids
+      // SDL_WarpMouseInWindow generating mouse motion events that would
+      // interfere with auto-detection of input mode.
+      float stickMag = m_controllerRightStick.magnitude();
+      if (stickMag > m_aimDeadzone) {
+        Vec2F stickDir = m_controllerRightStick / stickMag;
+        float normalizedMag = (stickMag - m_aimDeadzone) / (1.0f - m_aimDeadzone);
+        normalizedMag = min(1.0f, normalizedMag);
+        float speedMult = normalizedMag * normalizedMag;
+        Vec2F delta = Vec2F(stickDir[0], -stickDir[1]) * (speedMult * m_virtualCursorSpeed * dt);
+        m_virtualCursorPos += delta;
+        Vec2U windowSize = m_guiContext->windowSize();
+        m_virtualCursorPos[0] = clamp(m_virtualCursorPos[0], 0.0f, (float)windowSize[0]);
+        m_virtualCursorPos[1] = clamp(m_virtualCursorPos[1], 0.0f, (float)windowSize[1]);
+      }
 
       // Send synthetic mouse move so the title screen's cursor position stays in sync
       InputEvent syntheticMove = MouseMoveEvent{Vec2F(), m_virtualCursorPos};
