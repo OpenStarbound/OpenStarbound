@@ -45,6 +45,9 @@ commands.register("identity", function(args)
       if arg1:find("%.") then
         return "Name cannot contain '.'"
       end
+        if not root.getConfigurationPath("savedHumanoids") then
+          root.setConfigurationPath("savedHumanoids", {})
+        end
         root.setConfigurationPath("savedHumanoids." .. arg1, {identity = player.humanoidIdentity(), parameters = player.getHumanoidParameters()})
       return "Saved identity to starbound.config:savedHumanoids."..arg1
     else
