@@ -87,6 +87,7 @@ private:
   void updateError(float dt);
   void updateTitle(float dt);
   void updateRunning(float dt);
+  void updateVirtualCursorMovement(float dt);
 
   bool isActionTaken(InterfaceAction action) const;
   bool isActionTakenEdge(InterfaceAction action) const;

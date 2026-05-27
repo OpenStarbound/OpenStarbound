@@ -833,6 +833,11 @@ void ClientApplication::changeState(MainAppState newState) {
   }
 
   if (m_state > MainAppState::Title) {
+    // Reset virtual cursor when entering gameplay — the player just clicked
+    // a menu button and will want aim mode, not cursor mode, when they load in.
+    m_virtualCursorActive = false;
+    app->setCursorVisible(false);
+
     if (m_titleScreen->currentlySelectedPlayer()) {
       m_player = m_titleScreen->currentlySelectedPlayer();
     } else {
@@ -1068,6 +1073,26 @@ void ClientApplication::updateError(float) {
     changeState(MainAppState::Title);
 }
 
+void ClientApplication::updateVirtualCursorMovement(float dt) {
+  float stickMag = m_controllerRightStick.magnitude();
+  if (stickMag > m_aimDeadzone) {
+    Vec2F stickDir = m_controllerRightStick / stickMag;
+    float normalizedMag = (stickMag - m_aimDeadzone) / (1.0f - m_aimDeadzone);
+    normalizedMag = min(1.0f, normalizedMag);
+    // Quadratic acceleration curve for precision at low tilt
+    float speedMult = normalizedMag * normalizedMag;
+    Vec2F delta = Vec2F(stickDir[0], -stickDir[1]) * (speedMult * m_virtualCursorSpeed * dt);
+    m_virtualCursorPos += delta;
+    // Clamp to screen bounds
+    Vec2U windowSize = m_guiContext->windowSize();
+    m_virtualCursorPos[0] = clamp(m_virtualCursorPos[0], 0.0f, (float)windowSize[0]);
+    m_virtualCursorPos[1] = clamp(m_virtualCursorPos[1], 0.0f, (float)windowSize[1]);
+  }
+  // Warp the hardware cursor to our virtual position
+  Vec2I screenCursorPos = Vec2I(m_virtualCursorPos[0], (int)m_guiContext->windowHeight() - (int)m_virtualCursorPos[1]);
+  appController()->setCursorPosition(screenCursorPos);
+}
+
 void ClientApplication::updateTitle(float dt) {
   m_cinematicOverlay->update(dt);
 
@@ -1083,6 +1108,72 @@ void ClientApplication::updateTitle(float dt) {
   else
     app->setTextArea();
   app->setAcceptingTextInput(inputActive);
+
+  // Virtual cursor for controller navigation on the title screen.
+  // In Gamepad mode, always enable. In Auto mode, enable when gamepad is active
+  // (significant stick/button input detected). Hybrid and Off never get it.
+  {
+    // Re-read controller settings (allows Options menu changes to take effect live)
+    auto configuration = m_root->configuration();
+    String controllerModeStr = configuration->get("controllerMode").optString().value("auto");
+    if (controllerModeStr == "off")
+      m_controllerMode = ControllerMode::Off;
+    else if (controllerModeStr == "gamepad")
+      m_controllerMode = ControllerMode::Gamepad;
+    else if (controllerModeStr == "hybrid")
+      m_controllerMode = ControllerMode::Hybrid;
+    else
+      m_controllerMode = ControllerMode::Auto;
+    m_aimDeadzone = configuration->get("controllerAimDeadzone").optFloat().value(0.15f);
+    m_virtualCursorSpeed = configuration->get("controllerVirtualCursorSpeed").optFloat().value(800.0f);
+
+    bool wantVirtualCursor = (m_controllerMode == ControllerMode::Gamepad)
+      || (m_controllerMode == ControllerMode::Auto && m_gamepadActive);
+
+    if (wantVirtualCursor && !m_virtualCursorActive) {
+      // Activate: center the cursor on screen
+      m_virtualCursorActive = true;
+      Vec2U windowSize = m_guiContext->windowSize();
+      m_virtualCursorPos = Vec2F(windowSize[0] / 2.0f, windowSize[1] / 2.0f);
+      app->setCursorVisible(true);
+    } else if (!wantVirtualCursor && m_virtualCursorActive) {
+      // Deactivate: mouse took over or mode changed
+      m_virtualCursorActive = false;
+      app->setCursorVisible(false);
+    }
+
+    if (m_virtualCursorActive) {
+      updateVirtualCursorMovement(dt);
+
+      // Send synthetic mouse move so the title screen's cursor position stays in sync
+      InputEvent syntheticMove = MouseMoveEvent{Vec2F(), m_virtualCursorPos};
+      m_titleScreen->handleInputEvent(syntheticMove);
+
+      // Left click (virtualCursorClick bind, default: RT)
+      if (m_input->bindDown("controller", "virtualCursorClick")) {
+        InputEvent syntheticDown = MouseButtonDownEvent{MouseButton::Left, m_virtualCursorPos};
+        m_titleScreen->handleInputEvent(syntheticDown);
+        m_input->handleInput(syntheticDown, true);
+      }
+      if (m_input->bindUp("controller", "virtualCursorClick")) {
+        InputEvent syntheticUp = MouseButtonUpEvent{MouseButton::Left, m_virtualCursorPos};
+        m_titleScreen->handleInputEvent(syntheticUp);
+        m_input->handleInput(syntheticUp, true);
+      }
+
+      // Right click (virtualCursorRightClick bind, default: LT)
+      if (m_input->bindDown("controller", "virtualCursorRightClick")) {
+        InputEvent syntheticDown = MouseButtonDownEvent{MouseButton::Right, m_virtualCursorPos};
+        m_titleScreen->handleInputEvent(syntheticDown);
+        m_input->handleInput(syntheticDown, true);
+      }
+      if (m_input->bindUp("controller", "virtualCursorRightClick")) {
+        InputEvent syntheticUp = MouseButtonUpEvent{MouseButton::Right, m_virtualCursorPos};
+        m_titleScreen->handleInputEvent(syntheticUp);
+        m_input->handleInput(syntheticUp, true);
+      }
+    }
+  }
 
   auto p2pNetworkingService = app->p2pNetworkingService();
   if (p2pNetworkingService) {
@@ -1516,23 +1607,7 @@ void ClientApplication::updateRunning(float dt) {
 
     if (useGamepadAim && m_virtualCursorActive) {
       // Virtual cursor mode: right stick moves screen cursor
-      float stickMag = m_controllerRightStick.magnitude();
-      if (stickMag > m_aimDeadzone) {
-        Vec2F stickDir = m_controllerRightStick / stickMag;
-        float normalizedMag = (stickMag - m_aimDeadzone) / (1.0f - m_aimDeadzone);
-        normalizedMag = min(1.0f, normalizedMag);
-        // Quadratic acceleration curve for precision at low tilt
-        float speedMult = normalizedMag * normalizedMag;
-        Vec2F delta = Vec2F(stickDir[0], -stickDir[1]) * (speedMult * m_virtualCursorSpeed * dt);
-        m_virtualCursorPos += delta;
-        // Clamp to screen bounds
-        Vec2U windowSize = m_guiContext->windowSize();
-        m_virtualCursorPos[0] = clamp(m_virtualCursorPos[0], 0.0f, (float)windowSize[0]);
-        m_virtualCursorPos[1] = clamp(m_virtualCursorPos[1], 0.0f, (float)windowSize[1]);
-      }
-      // Warp the hardware cursor to our virtual position and sync MainInterface cursor
-      Vec2I screenCursorPos = Vec2I(m_virtualCursorPos[0], (int)m_guiContext->windowHeight() - (int)m_virtualCursorPos[1]);
-      appController()->setCursorPosition(screenCursorPos);
+      updateVirtualCursorMovement(dt);
       // Send synthetic mouse move so MainInterface's m_cursorScreenPos stays in sync
       InputEvent syntheticMove = MouseMoveEvent{Vec2F(), m_virtualCursorPos};
       m_mainInterface->handleInputEvent(syntheticMove);
