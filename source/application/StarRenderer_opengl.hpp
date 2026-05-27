@@ -11,6 +11,16 @@ STAR_CLASS(OpenGlRenderer);
 
 constexpr size_t FrameBufferCount = 1;
 
+// TODO: Bott - This isn't really rendering-specific. Don't really like it either. It's nicer than having redundant bool options, though.
+enum class BoolSettingMode {
+  Enabled,
+  FromSetting,
+  Disabled
+};
+extern EnumMap<BoolSettingMode> const BoolSettingModeNames;
+
+bool settingModeValue(BoolSettingMode const& mode, bool const& setting);
+
 // OpenGL 2.0 implementation of Renderer.  OpenGL context must be created and
 // active during construction, destruction, and all method calls.
 class OpenGlRenderer : public Renderer {
@@ -38,6 +48,7 @@ public:
   void setSizeLimitEnabled(bool enabled) override;
   void setMultiTexturingEnabled(bool enabled) override;
   void setMultiSampling(unsigned multiSampling) override;
+  void setMainHDR(bool enabled) override;
   TextureGroupPtr createTextureGroup(TextureGroupSize size, TextureFiltering filtering) override;
   RenderBufferPtr createRenderBuffer() override;
 
@@ -182,6 +193,9 @@ private:
 
     Json config;
     bool blitted = false;
+    BoolSettingMode hdrMode = BoolSettingMode::Disabled;
+    bool alpha = false;
+    bool clear = true;
     unsigned multisample = 0;
     unsigned sizeDiv = 1;
 
@@ -251,6 +265,7 @@ private:
   bool m_limitTextureGroupSize;
   bool m_useMultiTexturing;
   unsigned m_multiSampling; // if non-zero, is enabled and acts as sample count
+  bool m_hdrSetting;
   List<shared_ptr<GlTextureGroup>> m_liveTextureGroups;
 
   List<RenderPrimitive> m_immediatePrimitives;
