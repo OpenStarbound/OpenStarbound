@@ -1199,6 +1199,20 @@ void ClientApplication::updateTitle(float dt) {
         m_input->handleInput(syntheticUp, true);
       }
     }
+
+    // Controller back/close on the title screen.
+    // The title screen's handleInputEvent only checks KeyDownEvent for TitleBack,
+    // so controller buttons need to be bridged here. Dismiss the top modal pane
+    // first (e.g. controller settings inside options), then send a synthetic Escape
+    // key which handleInputEvent maps to TitleBack → back().
+    if (!inputActive && (isActionTakenEdge(InterfaceAction::GuiClose) || isActionTakenEdge(InterfaceAction::TitleBack))) {
+      if (auto topPane = m_titleScreen->paneManager()->topPane({PaneLayer::ModalWindow}))
+        m_titleScreen->paneManager()->dismissPane(topPane);
+      else {
+        InputEvent syntheticEsc = KeyDownEvent{Key::Escape, KeyMod::NoMod};
+        m_titleScreen->handleInputEvent(syntheticEsc);
+      }
+    }
   }
 
   auto p2pNetworkingService = app->p2pNetworkingService();
