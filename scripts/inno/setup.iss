@@ -19,7 +19,7 @@ DisableProgramGroupPage=yes
 ; Uncomment the following line to run in non administrative install mode (install for current user only.)
 ;PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
-OutputBaseFilename=OpenStarbound
+OutputBaseFilename=OpenStarbound-Windows-Installer
 SetupIconFile=scripts\inno\openstarbound.ico
 Compression=lzma2/ultra64
 SolidCompression=yes

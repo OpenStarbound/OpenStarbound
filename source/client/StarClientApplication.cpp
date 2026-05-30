@@ -36,9 +36,13 @@
 
 #if defined STAR_SYSTEM_WINDOWS
 #include <windows.h>
+// graphics driver is told by these exports to default to the dedicated GPU
 extern "C" __declspec(dllexport) DWORD NvOptimusEnablement = 1;
 extern "C" __declspec(dllexport) DWORD AmdPowerXpressRequestHighPerformance = 1;
-#endif // graphics driver is told by these exports to default to the dedicated GPU
+
+// https://docs.kicad.org/doxygen/windows_2app_8cpp_source.html L45
+extern "C" __declspec(dllexport) void NoHotPatch() { return; }
+#endif 
 
 namespace Star {
 
