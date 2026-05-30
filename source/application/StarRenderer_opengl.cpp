@@ -8,7 +8,7 @@ namespace Star {
 size_t const MultiTextureCount = 4;
 
 char const* DefaultVertexShader = R"SHADER(
-#version 140
+#version 150
 
 uniform vec2 textureSize0;
 uniform vec2 textureSize1;
@@ -49,7 +49,7 @@ void main() {
 )SHADER";
 
 char const* DefaultFragmentShader = R"SHADER(
-#version 140
+#version 150
 
 uniform sampler2D texture0;
 uniform sampler2D texture1;
@@ -108,8 +108,8 @@ OpenGlRenderer::OpenGlRenderer() {
   if (glewResult != GLEW_OK && glewResult != GLEW_ERROR_NO_GLX_DISPLAY)
     throw RendererException::format("Could not initialize GLEW: {}", (char*)glewGetErrorString(glewResult));
 
-  if (!GLEW_VERSION_2_0)
-    throw RendererException("OpenGL 2.0 not available!");
+  if (!GLEW_VERSION_3_2)
+    throw RendererException("OpenGL 3.2 not available!");
 
   Logger::info("OpenGL version: '{}' vendor: '{}' renderer: '{}' shader: '{}'",
       (const char*)glGetString(GL_VERSION),
