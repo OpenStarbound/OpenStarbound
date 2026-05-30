@@ -1,4 +1,4 @@
-#version 140
+#version 150
 
 uniform vec2 textureSize0;
 uniform vec2 textureSize1;
