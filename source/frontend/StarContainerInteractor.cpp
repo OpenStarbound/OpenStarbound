@@ -48,67 +48,43 @@ List<ContainerResult> ContainerInteractor::pullContainerResults() {
 }
 
 void ContainerInteractor::swapInContainer(size_t slot, ItemPtr const& items) {
-  auto container = openContainer();
-  if (!container)
-    return;
-
-  m_pendingResults.append(container->swapItems(slot, items).wrap(resultFromItem));
+  if (auto container = openContainer())
+    m_pendingResults.append(container->swapItems(slot, items).wrap(resultFromItem));
 }
 
 void ContainerInteractor::addToContainer(ItemPtr const& items) {
-  auto container = openContainer();
-  if (!container)
-    return;
-    
-  m_pendingResults.append(container->addItems(items).wrap(resultFromItem));
+  if (auto container = openContainer())
+    m_pendingResults.append(container->addItems(items).wrap(resultFromItem));
 }
 
 void ContainerInteractor::takeFromContainerSlot(size_t slot, size_t count) {
-  auto container = openContainer();
-  if (!container)
-    return;
-    
-  m_pendingResults.append(container->takeItems(slot, count).wrap(resultFromItem));
+  if (auto container = openContainer())
+    m_pendingResults.append(container->takeItems(slot, count).wrap(resultFromItem));
 }
 
 void ContainerInteractor::applyAugmentInContainer(size_t slot, ItemPtr const& augment) {
-  auto container = openContainer();
-  if (!container)
-    return;
-    
-  m_pendingResults.append(container->applyAugment(slot, augment).wrap(resultFromItem));
+  if (auto container = openContainer())
+    m_pendingResults.append(container->applyAugment(slot, augment).wrap(resultFromItem));
 }
 
 void ContainerInteractor::startCraftingInContainer() {
-  auto container = openContainer();
-  if (!container)
-    return;
-    
-  container->startCrafting();
+  if (auto container = openContainer())
+    container->startCrafting();
 }
 
 void ContainerInteractor::stopCraftingInContainer() {
-  auto container = openContainer();
-  if (!container)
-    return;
-    
-  container->stopCrafting();
+  if (auto container = openContainer())
+    container->stopCrafting();
 }
 
 void ContainerInteractor::burnContainer() {
-  auto container = openContainer();
-  if (!container)
-    return;
-    
-  container->burnContainerContents();
+  if (auto container = openContainer())
+    container->burnContainerContents();
 }
 
 void ContainerInteractor::clearContainer() {
-  auto container = openContainer();
-  if (!container)
-    return;
-    
-  m_pendingResults.append(container->clearContainer());
+  if (auto container = openContainer())
+    m_pendingResults.append(container->clearContainer());
 }
 
 ContainerResult ContainerInteractor::resultFromItem(ItemPtr const& item) {

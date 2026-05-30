@@ -256,16 +256,13 @@ void ContainerPane::stopCrafting() {
 }
 
 void ContainerPane::toggleCrafting() {
-  auto container = m_containerInteractor->openContainer();
-  if (!container) {
-    Logger::warn("ContainerPane::toggleCrafting failed because we don't have an open container!");
-    return;
-  }
-  
-  if (container->isCrafting())
-    stopCrafting();
+  if (auto container = m_containerInteractor->openContainer())
+    if (container->isCrafting())
+      stopCrafting();
+    else
+      startCrafting();
   else
-    startCrafting();
+    Logger::warn("ContainerPane::toggleCrafting failed because we don't have an open container!");
 }
 
 void ContainerPane::clear() {
