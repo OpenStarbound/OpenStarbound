@@ -136,6 +136,7 @@ OpenGlRenderer::OpenGlRenderer() {
   m_limitTextureGroupSize = false;
   m_useMultiTexturing = true;
   m_multiSampling = false;
+  m_hdrSetting = false;
 
   logGlErrorSummary("OpenGL errors during renderer initialization");
 }
