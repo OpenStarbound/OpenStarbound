@@ -170,7 +170,7 @@ jobs:
         with:
           name: OpenStarbound-Windows-Installer
           path: installer/OpenStarbound-Windows-Installer.exe
-          archive: false
+          archive: true
   
   build_linux:
     name: Build OpenStarbound Linux x86_64
