@@ -32,17 +32,17 @@ An installer is available for Windows. otherwise, extract the client/server zip 
 These link directly to the latest build from the [Actions](https://github.com/OpenStarbound/OpenStarbound/actions?query=branch%3Amain) tab.
  
 **Windows**
-[Installer](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main/OpenStarbound-Windows-Installer.zip),
+[Installer](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main/OpenStarbound-Windows-Installer.exe),
 [Client](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main/OpenStarbound-Windows-Client.zip),
 [Server](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main/OpenStarbound-Windows-Server.zip)
 
 **Linux**
-[Client](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main/OpenStarbound-Linux-Clang-Client.zip),
-[Server](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main/OpenStarbound-Linux-Clang-Server.zip)
+[Client](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main/OpenStarbound-Linux-Clang-Client.tar.lz),
+[Server](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main/OpenStarbound-Linux-Clang-Server.tar.lz)
 
 **macOS**
-[Intel](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main/OpenStarbound-macOS-Intel-Client.zip),
-[ARM](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main/OpenStarbound-macOS-Silicon-Client.zip)
+[Intel](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main/OpenStarbound-macOS-Intel-Client.tar.lz),
+[ARM](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main/OpenStarbound-macOS-Silicon-Client.tar.lz)
 
 [All Nightly Builds](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main)
 </details>
