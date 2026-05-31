@@ -30,3 +30,6 @@ set win=windows
 if exist %win% rmdir %win% /S /Q
 xcopy %client% %win% /E /I /Y
 xcopy %server% %win% /E /I /Y
+
+7z -bb3 -mtp=2 -mm=Deflate64 -mx=9 a client.zip -r %client%
+7z -bb3 -mtp=2 -mm=Deflate64 -mx=9 a server.zip -r %server%
