@@ -250,7 +250,7 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
     m_immediateFont = *assets->bytes("/hobo.ttf");
     ImFontConfig config{};
     config.FontDataOwnedByAtlas = false;
-    config.FontBuilderFlags = ImGuiFreeTypeBuilderFlags_ForceAutoHint;
+    config.FontLoaderFlags = ImGuiFreeTypeLoaderFlags_ForceAutoHint;
     io.Fonts->AddFontFromMemoryTTF(m_immediateFont.ptr(), m_immediateFont.size(),
       16, &config, io.Fonts->GetGlyphRangesDefault());
   }
