@@ -91,7 +91,6 @@ public:
   // When true, preUpdate skips setting player aim from mouse cursor.
   // Used by controller input to control aim via right stick.
   void setOverrideAim(bool override);
-  void setCursorVisible(bool visible);
 
   void preUpdate(float dt);
   // Handles incoming client messages, aims main player, etc.
@@ -204,7 +203,6 @@ private:
   Vec2F m_cursorScreenPos{};
   Vec2I m_cursorScreenIPos{};
   bool m_overrideAim = false;
-  bool m_cursorVisible = true;
   ItemSlotWidgetPtr m_cursorItem;
   Maybe<String> m_cursorTooltip;
 
