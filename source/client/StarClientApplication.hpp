@@ -169,10 +169,6 @@ private:
   bool m_triggerRightPressed = false;
   uint64_t m_activeControllerLastSeen = 0; // frame counter for controller disconnect detection
   uint64_t m_frameCounter = 0; // monotonic frame counter
-  float m_lastPlayerHealth = 0.0f; // for rumble on damage
-  bool m_wasTeleporting = false; // for rumble on beam
-  float m_lastYVelocity = 0.0f; // for rumble on mech/vehicle landing
-  bool m_lastOnGround = false; // for rumble on mech/vehicle landing
   bool m_controllerShiftToggle = false; // persistent shift toggle for controller MM single-block mode
 
   List<KeyDownEvent> m_heldKeyEvents;

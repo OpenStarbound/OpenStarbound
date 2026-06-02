@@ -1822,39 +1822,7 @@ void ClientApplication::updateRunning(float dt) {
       m_mainInterface->setCursorVisible(true);
     }
 
-    // Controller rumble feedback
-    {
-      float currentHealth = m_player->health();
-      if (m_lastPlayerHealth > 0.0f && currentHealth < m_lastPlayerHealth) {
-        float damageFraction = (m_lastPlayerHealth - currentHealth) / m_player->maxHealth();
-        float intensity = clamp(damageFraction * 4.0f, 0.2f, 1.0f);
-        appController()->rumble(intensity, intensity * 0.5f, (uint32_t)(150 + damageFraction * 300));
-      }
-      m_lastPlayerHealth = currentHealth;
 
-      bool teleporting = m_player->isTeleporting() || m_player->isTeleportingOut();
-      if (teleporting && !m_wasTeleporting) {
-        appController()->rumble(0.3f, 0.6f, 500);
-      }
-      m_wasTeleporting = teleporting;
-
-      // Mech/vehicle landing rumble (uses vehicle's onGround transition)
-      float currentYVelocity = m_player->velocity()[1];
-      bool vehicleOnGround = false;
-      if (auto anchorState = m_player->loungingIn()) {
-        if (auto worldClient = m_universeClient->worldClient()) {
-          if (auto vehicle = as<Vehicle>(worldClient->entity(anchorState->entityId)))
-            vehicleOnGround = vehicle->onGround();
-        }
-      }
-      if (m_player->loungingIn() && vehicleOnGround && !m_lastOnGround && m_lastYVelocity < -10.0f) {
-        float impactSpeed = -m_lastYVelocity;
-        float intensity = clamp(impactSpeed / 40.0f, 0.3f, 1.0f);
-        appController()->rumble(intensity, intensity * 0.7f, (uint32_t)(200 + impactSpeed * 5));
-      }
-      m_lastYVelocity = currentYVelocity;
-      m_lastOnGround = vehicleOnGround;
-    }
 
     m_mainInterface->preUpdate(dt);
     m_universeClient->update(dt);
