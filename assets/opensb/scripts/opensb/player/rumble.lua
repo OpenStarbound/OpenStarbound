@@ -10,6 +10,7 @@ local vehicleState = {
 }
 
 function module.init()
+  sb.logInfo("[rumble] init called, input=%s, input.rumble=%s", tostring(input), tostring(input and input.rumble))
   lastHealth = status.resource("health")
   lastDamageTick = 0
   wasTeleporting = false
@@ -18,6 +19,11 @@ function module.init()
 end
 
 function module.update(dt)
+  -- debug: log once
+  if not module._logged then
+    sb.logInfo("[rumble] update called, input=%s, rumble=%s", tostring(input), tostring(input and input.rumble))
+    module._logged = true
+  end
   if not input or not input.rumble then return end
 
   updateDamageRumble()
@@ -34,6 +40,7 @@ function updateDamageRumble()
     local damageFraction = (lastHealth - currentHealth) / maxHealth
     local intensity = math.max(0.2, math.min(1.0, damageFraction * 4.0))
     local duration = math.floor(150 + damageFraction * 300)
+    sb.logInfo("[rumble] DAMAGE: fraction=%.3f intensity=%.3f duration=%d", damageFraction, intensity, duration)
     input.rumble(intensity, intensity * 0.5, duration)
   end
 
