@@ -84,6 +84,7 @@ Json const AdditionalDefaultConfiguration = Json::parseJson(R"JSON(
       "controllerAimDeadzone" : 0.15,
       "controllerVirtualCursorSpeed" : 800.0,
       "controllerVerticalThreshold" : 0.65,
+      "controllerRumbleIntensity" : 1.0,
 
       "title" : {
         "multiPlayerAddress" : "",
@@ -774,7 +775,37 @@ void ClientApplication::changeState(MainAppState newState) {
     m_statistics = make_shared<Statistics>(m_root->toStoragePath("player"), app->statisticsService());
     m_universeClient = make_shared<UniverseClient>(m_playerStorage, m_statistics);
 
-    m_universeClient->setLuaCallbacks("input", LuaBindings::makeInputCallbacks());
+    auto inputCallbacks = LuaBindings::makeInputCallbacks();
+    inputCallbacks.registerCallback("rumble", [this](float lowFreq, float highFreq, uint32_t durationMs) {
+      if (m_controllerMode == ControllerMode::Off)
+        return;
+      float multiplier = m_root->configuration()->get("controllerRumbleIntensity").toFloat();
+      appController()->rumble(lowFreq * multiplier, highFreq * multiplier, durationMs);
+    });
+    inputCallbacks.registerCallback("rumbleTriggers", [this](float left, float right, uint32_t durationMs) {
+      if (m_controllerMode == ControllerMode::Off)
+        return;
+      float multiplier = m_root->configuration()->get("controllerRumbleIntensity").toFloat();
+      appController()->rumbleTriggers(left * multiplier, right * multiplier, durationMs);
+    });
+    inputCallbacks.registerCallback("controllerMode", [this]() -> String {
+      switch (m_controllerMode) {
+        case ControllerMode::Off: return "off";
+        case ControllerMode::Auto: return "auto";
+        case ControllerMode::Gamepad: return "gamepad";
+        case ControllerMode::Hybrid: return "hybrid";
+        default: return "auto";
+      }
+    });
+    inputCallbacks.registerCallback("isGamepadActive", [this]() -> bool {
+      return m_gamepadActive;
+    });
+    inputCallbacks.registerCallback("controllerName", [this]() -> Maybe<String> {
+      if (m_activeController == (ControllerId)-1)
+        return {};
+      return appController()->activeControllerName(m_activeController);
+    });
+    m_universeClient->setLuaCallbacks("input", inputCallbacks);
     m_universeClient->setLuaCallbacks("voice", LuaBindings::makeVoiceCallbacks());
     m_universeClient->setLuaCallbacks("camera", LuaBindings::makeCameraCallbacks(&m_worldPainter->camera()));
     m_universeClient->setLuaCallbacks("renderer", LuaBindings::makeRenderingCallbacks(this));
