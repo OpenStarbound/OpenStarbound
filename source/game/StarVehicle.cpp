@@ -252,6 +252,18 @@ bool Vehicle::onGround() const {
   return m_movementController.onGround();
 }
 
+bool Vehicle::zeroG() const {
+  return m_movementController.zeroG();
+}
+
+float Vehicle::liquidPercentage() const {
+  return m_movementController.liquidPercentage();
+}
+
+bool Vehicle::atWorldLimit() const {
+  return m_movementController.atWorldLimit();
+}
+
 pair<ByteArray, uint64_t> Vehicle::writeNetState(uint64_t fromVersion, NetCompatibilityRules rules) {
   return m_netGroup.writeNetState(fromVersion, rules);
 }
