@@ -642,8 +642,8 @@ bool OpenGlRenderer::switchEffectConfig(String const& name) {
         if (ptr) {
           auto undefined = !ptr->textureValue || ptr->textureValue->textureId == 0;
           auto swapped = effect.doubleBuffered && (*frameBufferId).equals(*outFrameBufferId);
-          if (undefined || swapped) {
-            auto buf = getGlFrameBuffer(*frameBufferId);
+          auto buf = getGlFrameBuffer(*frameBufferId);
+          if (undefined || buf->hasAlt) {
             auto texture = swapped ? buf->altTexture : buf->texture;
             ptr->textureValue = texture;
             if (ptr->textureSizeUniform != -1 && undefined) {
