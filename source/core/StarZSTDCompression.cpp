@@ -107,7 +107,7 @@ ByteArray ZstdCompression::compress(const char* in, size_t inLen, int compressio
     return ByteArray();
     
   size_t const maxOutSize = ZSTD_compressBound(inLen);
-  ByteArray out(maxOutSize);
+  ByteArray out(maxOutSize, 0);
   
   size_t compressedSize = ZSTD_compress(
     out.ptr(), maxOutSize,
@@ -139,7 +139,7 @@ ByteArray ZstdCompression::decompress(const char* in, size_t inLen) {
   if (frameContentSize == ZSTD_CONTENTSIZE_ERROR || frameContentSize == ZSTD_CONTENTSIZE_UNKNOWN)
     throw IOException("Cannot determine ZSTD decompressed size");
   
-  ByteArray out(frameContentSize);
+  ByteArray out(frameContentSize, 0);
   size_t result = ZSTD_decompress(out.ptr(), frameContentSize, in, inLen);
   
   if (ZSTD_isError(result))
