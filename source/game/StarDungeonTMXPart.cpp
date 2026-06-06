@@ -156,57 +156,43 @@ namespace Dungeon {
     return false;
   }
 
-  TMXTileLayer::TMXTileLayer(Json const& layer) {
-    unsigned width = layer.getInt("width"), height = layer.getInt("height");
-    int x = layer.getInt("x", 0), y = layer.getInt("y", 0);
-    m_rect = RectI({x, y}, {x + (int)width - 1, y + (int)height - 1});
+TMXTileLayer::TMXTileLayer(Json const& layer) {
+  unsigned width = layer.getInt("width"), height = layer.getInt("height");
+  int x = layer.getInt("x", 0), y = layer.getInt("y", 0);
+  m_rect = RectI({x, y}, {x + (int)width - 1, y + (int)height - 1});
+  m_name = layer.getString("name");
+  m_layer = Tiled::LayerNames.getLeft(m_name);
 
-    m_name = layer.getString("name");
-    m_layer = Tiled::LayerNames.getLeft(m_name);
-
-    if (layer.optString("compression") == String("zlib")) {
-      ByteArray compressedData = base64Decode(layer.getString("data"));
-      ByteArray bytes = uncompressData(compressedData);
-      for (size_t i = 0; i + 3 < bytes.size(); i += 4) {
-        uint32_t gid = (uint8_t)bytes[i] | ((uint8_t)bytes[i + 1] << 8) | ((uint8_t)bytes[i + 2] << 16) | ((uint8_t)bytes[i + 3] << 24);
-        m_tileData.append(gid & ~TileFlip::AllBits);
-      }
-    } else if (layer.optString("compression") == String("zstd")) {
-      ByteArray compressedData = base64Decode(layer.getString("data"));
-      ByteArray bytes = ZstdCompression::decompress(compressedData);
-      for (size_t i = 0; i + 3 < bytes.size(); i += 4) {
-        uint32_t gid = (uint8_t)bytes[i] | ((uint8_t)bytes[i + 1] << 8) | ((uint8_t)bytes[i + 2] << 16) | ((uint8_t)bytes[i + 3] << 24);
-        m_tileData.append(gid & ~TileFlip::AllBits);
-      }
-    } else if (layer.optString("compression") == String("gzip")) {
-      ByteArray compressedData = base64Decode(layer.getString("data"));
-      ByteArray bytes = uncompressDataGzip(compressedData);
-      for (size_t i = 0; i + 3 < bytes.size(); i += 4) {
-        uint32_t gid = (uint8_t)bytes[i] | ((uint8_t)bytes[i + 1] << 8) | ((uint8_t)bytes[i + 2] << 16) | ((uint8_t)bytes[i + 3] << 24);
-        m_tileData.append(gid & ~TileFlip::AllBits);
-      }
-    } else if (layer.optString("compression") == String("")) {
-      ByteArray bytes = base64Decode(layer.getString("data"));
-      for (size_t i = 0; i + 3 < bytes.size(); i += 4) {
-        uint32_t gid = (uint8_t)bytes[i] | ((uint8_t)bytes[i + 1] << 8) | ((uint8_t)bytes[i + 2] << 16) | ((uint8_t)bytes[i + 3] << 24);
-        m_tileData.append(gid & ~TileFlip::AllBits);
-      }
-    } else if (!layer.contains("compression")) {
-      for (Json const& index : layer.getArray("data")) {
-        // Ignore flipped tiles. Tiled can flip selected regions with X, but
-        // this
-        // also flips individual tiles (setting the high bits on the GID).
-        // Starbound has no support for flipped tiles, but being able to flip
-        // regions is still useful.
-        m_tileData.append(index.toUInt() & ~TileFlip::AllBits);
-      }
-    } else {
-      throw StarException::format("TMXTileLayer does not support compression mode {}", layer.getString("compression"));
+  if (!layer.contains("compression")) {
+    for (Json const& index : layer.getArray("data")) {
+      m_tileData.append(index.toUInt() & ~TileFlip::AllBits);
     }
-
-    if (m_tileData.count() != width * height)
-      throw StarException("TMXTileLayer data length was inconsistent with width/height");
+  } else {
+    String compression = layer.getString("compression");
+    ByteArray compressedData = base64Decode(layer.getString("data"));
+    ByteArray bytes;
+        
+    if (compression == "") {
+      bytes = compressedData; // uncompressed base64
+    } else if (compression == "gzip") {
+      bytes = uncompressDataGzip(compressedData);
+    } else if (compression == "zlib") {
+      bytes = uncompressData(compressedData);
+    } else if (compression == "zstd") {
+      bytes = ZstdCompression::decompress(compressedData);
+    } else {
+      throw StarException::format("TMXTileLayer does not support compression mode {}", compression);
+    }
+        
+    for (size_t i = 0; i + 3 < bytes.size(); i += 4) {
+      uint32_t gid = (uint8_t)bytes[i] | ((uint8_t)bytes[i + 1] << 8) | ((uint8_t)bytes[i + 2] << 16) | ((uint8_t)bytes[i + 3] << 24);
+      m_tileData.append(gid & ~TileFlip::AllBits);
+    }
   }
+    
+  if (m_tileData.count() != width * height)
+    throw StarException("TMXTileLayer data length was inconsistent with width/height");
+}
 
   TMXMap::TMXMap(Json const& tmx) {
     if (tmx.getUInt("tileheight") != 8 || tmx.getUInt("tilewidth") != 8)
