@@ -169,17 +169,17 @@ TMXTileLayer::TMXTileLayer(Json const& layer) {
     }
   } else {
     String compression = layer.getString("compression");
-    ByteArray compressedData = base64Decode(layer.getString("data"));
+    ByteArray base64Data = base64Decode(layer.getString("data"));
     ByteArray bytes;
         
-    if (compression == "") {
-      bytes = compressedData; // uncompressed base64
+    if (compression == "") { // uncompressed base64
+      bytes = base64Data;
     } else if (compression == "gzip") {
-      bytes = uncompressDataGzip(compressedData);
+      bytes = uncompressDataGzip(base64Data);
     } else if (compression == "zlib") {
-      bytes = uncompressData(compressedData);
+      bytes = uncompressData(base64Data);
     } else if (compression == "zstd") {
-      bytes = ZstdCompression::decompress(compressedData);
+      bytes = ZstdCompression::decompress(base64Data);
     } else {
       throw StarException::format("TMXTileLayer does not support compression mode {}", compression);
     }
