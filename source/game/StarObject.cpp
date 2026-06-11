@@ -1181,8 +1181,7 @@ List<DamageNotification> Object::applyDamage(DamageRequest const& damage) {
   if (!m_config->smashable || !inWorld() || m_health.get() <= 0.0f)
     return {};
 
-  if (m_scriptComponent.context()->getPath("applyDamageRequest") != LuaNil) {
-    auto notifications = m_scriptComponent.invoke<List<DamageNotification>>("applyDamageRequest", damage);
+  if (auto notifications = m_scriptComponent.invoke<List<DamageNotification>>("applyDamageRequest", damage)) {
     float totalDamage = 0.0f;
     for (auto const& notification : *notifications)
       totalDamage += notification.healthLost;
