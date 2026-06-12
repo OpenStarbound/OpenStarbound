@@ -1475,7 +1475,9 @@ PlayerTechPtr Player::techs() const {
 }
 
 void Player::overrideTech(Maybe<StringList> const& techModules) {
-  if (techModules)
+  String const disableFlag = "disallowTechOverrides";
+  auto flag = getGenericProperty(disableFlag);
+  if (techModules && !(flag.isType(Json::Type::Bool) && flag.toBool()))
     m_techController->setOverrideTech(*techModules);
   else
     m_techController->clearOverrideTech();
