@@ -928,7 +928,8 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
     });
     String const& usedImage = processedImage ? processedImage.get() : image;
 
-    auto transformation = globalTransformation() * partTransformation(partName);
+    auto partTransformations = globalTransformation() * partTransformation(partName);
+    auto transformation = partTransformations;
     transformation.translate(position);
 
     if (!usedImage.empty() && usedImage[0] != ':' && usedImage[0] != '?') {
@@ -955,6 +956,81 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
       drawable.fullbright = fullbright;
       drawable.transform(transformation);
       drawables.append({std::move(drawable), get<2>(entry)});
+    }
+
+    if ((version() > 0)) {
+      if (auto maybeImageParts = activePart.properties.value("imageParts")) {
+
+        List<pair<Drawable, float>> imagePartDrawables;
+        for (auto imageLayer : maybeImageParts.toObject()) {
+
+          Maybe<float> maybeZLevel;
+          if (m_flipped.get()) {
+            if (auto maybeFlipped = imageLayer.second.optFloat("flippedZLevel"))
+              maybeZLevel = *maybeFlipped;
+          }
+          if (!maybeZLevel)
+            maybeZLevel = imageLayer.second.optFloat("zLevel");
+
+          Maybe<String> maybeImage;
+          if (m_flipped.get()) {
+            if (auto maybeFlipped = imageLayer.second.optString("flippedImage"))
+              maybeImage = *maybeFlipped;
+          }
+          if (!maybeImage)
+            maybeImage = imageLayer.second.optString("image");
+
+          Maybe<String> processedImage = maybeImage.value().maybeLookupTagsView([&](StringView tag) -> StringView {
+              if (tag == "frame") {
+                if (frame)
+                  return frameStr;
+              } else if (tag == "frameIndex") {
+                if (frame)
+                  return frameIndexStr;
+              } else if (auto p = animationTags.ptr(tag)) {
+                return StringView(*p);
+              } else if (auto p = partTags.ptr(tag)) {
+                return StringView(*p);
+              } else if (auto p = m_globalTags.ptr(tag)) {
+                return StringView(*p);
+              }
+              return StringView("default");
+            });
+          String const& usedImage = processedImage ? processedImage.get() : maybeImage.value();
+          if (!usedImage.empty() && usedImage[0] != ':' && usedImage[0] != '?') {
+            size_t hash = hashOf(usedImage);
+            auto find = m_cachedPartDrawables.find(partName+".imageParts."+imageLayer.first);
+            if (find == m_cachedPartDrawables.end() || find->second.first != hash) {
+              String relativeImage;
+              if (usedImage[0] != '/')
+                relativeImage = AssetPath::relativeTo(m_relativePath, usedImage);
+
+              Drawable drawable = Drawable::makeImage(!relativeImage.empty() ? relativeImage : usedImage, 1.0f / TilePixels, centered, Vec2F());
+              if (find == m_cachedPartDrawables.end())
+                find = m_cachedPartDrawables.emplace(partName+".imageParts."+imageLayer.first, std::pair{ hash, std::move(drawable) }).first;
+              else {
+                find->second.first = hash;
+                find->second.second = std::move(drawable);
+              }
+            }
+            auto transformation = partTransformations * groupTransformation(jsonToStringList(imageLayer.second.getArray("transformationGroups", JsonArray())));
+            transformation.translate(position);
+
+            Drawable drawable = find->second.second;
+            auto& imagePart = drawable.imagePart();
+            for (Directives const& directives : baseProcessingDirectives)
+              imagePart.addDirectives(directives, imageLayer.second.optBool("centered").value(centered));
+            drawable.fullbright = imageLayer.second.optBool("fullbright").value(fullbright);
+            drawable.transform(transformation);
+            imagePartDrawables.append({std::move(drawable), maybeZLevel.value(0)});
+          }
+        }
+        imagePartDrawables.sort([](auto const& a, auto const& b) {
+          return a.second < b.second;
+        });
+        for (auto part : imagePartDrawables)
+          drawables.append({std::move(part.first), get<2>(entry)});
+      }
     }
 
     if (m_partDrawables.contains(partName)) {

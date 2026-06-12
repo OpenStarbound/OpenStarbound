@@ -9,4 +9,6 @@ When a humanoid is using an animation config, the key value pairs of this table 
 
 The `<slot>` tag within any keys will be replaced with the slot index of the armor slot (1-20)
 
-Any additional tags will be replaced with the current tags at the time of equipping the armor. So for example things like `<species>` and `<gender>` will be replaced with the relevant species and gender, as the humanoid animator always sets those tags.
+The `<directory>` tag within any value will be replaced with the armor's directory.
+
+Any additional tags will be replaced with the current identity tags. So for example things like `<species>` and `<gender>` will be replaced with the relevant species and gender of the entity equipping it.
