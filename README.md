@@ -52,7 +52,7 @@ These link directly to the latest build from the [Actions](https://github.com/Op
 </details>
 
 ## Changes
-Note: Not every function from [StarExtensions](https://github.com/StarExtensions/StarExtensions) has been ported yet, but near-full compatibility with mods that use StarExtensions features is planned.
+Note: Mods that use StarExtensions features often work with OpenStarbound, StarExtensions is deprecated.
 
 ### Lighting
 **The lightmap generation has been moved off the main thread, and supports higher color range.**
