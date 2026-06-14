@@ -1077,6 +1077,33 @@ private:
       parent->m_quitRequested = true;
     }
 
+    void rumble(float lowFreqIntensity, float highFreqIntensity, uint32_t durationMs) override {
+      for (auto& pair : parent->m_SdlControllers) {
+        SDL_RumbleGamepad(pair.second.get(),
+          (uint16_t)(clamp(lowFreqIntensity, 0.0f, 1.0f) * 65535),
+          (uint16_t)(clamp(highFreqIntensity, 0.0f, 1.0f) * 65535),
+          durationMs);
+      }
+    }
+
+    void rumbleTriggers(float leftIntensity, float rightIntensity, uint32_t durationMs) override {
+      for (auto& pair : parent->m_SdlControllers) {
+        SDL_RumbleGamepadTriggers(pair.second.get(),
+          (uint16_t)(clamp(leftIntensity, 0.0f, 1.0f) * 65535),
+          (uint16_t)(clamp(rightIntensity, 0.0f, 1.0f) * 65535),
+          durationMs);
+      }
+    }
+
+    Maybe<String> activeControllerName(uint32_t controllerId) override {
+      auto find = parent->m_SdlControllers.find(controllerId);
+      if (find != parent->m_SdlControllers.end()) {
+        if (auto name = SDL_GetGamepadName(find->second.get()))
+          return String(name);
+      }
+      return {};
+    }
+
     SdlPlatform* parent;
   };
 

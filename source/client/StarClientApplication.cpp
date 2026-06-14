@@ -8,6 +8,7 @@
 #include "StarRoot.hpp"
 #include "StarVersion.hpp"
 #include "StarPlayer.hpp"
+#include "StarPlayerInventory.hpp"
 #include "StarPlayerStorage.hpp"
 #include "StarPlayerLog.hpp"
 #include "StarAssets.hpp"
@@ -16,6 +17,7 @@
 #include "StarRootLoader.hpp"
 #include "StarInput.hpp"
 #include "StarVoice.hpp"
+#include "StarVehicle.hpp"
 #include "StarCurve25519.hpp"
 #include "StarInterpolation.hpp"
 
@@ -80,6 +82,13 @@ Json const AdditionalDefaultConfiguration = Json::parseJson(R"JSON(
       "cameraSpeedFactor" : 1.0,
       "interfaceScale" : 0,
       "speechBubbles" : true,
+
+      "controllerMode" : "auto",
+      "controllerAimRadius" : 8.0,
+      "controllerAimDeadzone" : 0.15,
+      "controllerVirtualCursorSpeed" : 800.0,
+      "controllerVerticalThreshold" : 0.65,
+      "controllerRumbleIntensity" : 1.0,
 
       "title" : {
         "multiPlayerAddress" : "",
@@ -202,7 +211,21 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
   bool fullscreen = configuration->get("fullscreen").toBool();
   bool borderless = configuration->get("borderless").toBool();
   bool maximized = configuration->get("maximized").toBool();
-  m_controllerInput = configuration->get("controllerInput").optBool().value();
+  // Controller mode: "auto" (default), "gamepad", or "hybrid"
+  String controllerModeStr = configuration->get("controllerMode").optString().value("auto");
+  if (controllerModeStr == "off")
+    m_controllerMode = ControllerMode::Off;
+  else if (controllerModeStr == "gamepad")
+    m_controllerMode = ControllerMode::Gamepad;
+  else if (controllerModeStr == "hybrid")
+    m_controllerMode = ControllerMode::Hybrid;
+  else
+    m_controllerMode = ControllerMode::Auto;
+  m_gamepadActive = (m_controllerMode == ControllerMode::Gamepad);
+  m_aimRadius = configuration->get("controllerAimRadius").optFloat().value(8.0f);
+  m_aimDeadzone = configuration->get("controllerAimDeadzone").optFloat().value(0.15f);
+  m_virtualCursorSpeed = configuration->get("controllerVirtualCursorSpeed").optFloat().value(800.0f);
+  m_verticalThreshold = configuration->get("controllerVerticalThreshold").optFloat().value(0.65f);
   
   #ifdef STAR_SYSTEM_WINDOWS
     appController->setBorderlessWorkaround(configuration->get("borderlessWorkaround", true).toBool());
@@ -332,6 +355,9 @@ void ClientApplication::processInput(InputEvent const& event) {
   if (auto keyDown = event.ptr<KeyDownEvent>()) {
     m_heldKeyEvents.append(*keyDown);
     m_edgeKeyEvents.append(*keyDown);
+    // Auto mode: keyboard input switches to mouse/keyboard
+    if (m_controllerMode == ControllerMode::Auto)
+      m_gamepadActive = false;
   } else if (auto keyUp = event.ptr<KeyUpEvent>()) {
     eraseWhere(m_heldKeyEvents, [&](auto& keyEvent) {
       return keyEvent.key == keyUp->key;
@@ -343,15 +369,101 @@ void ClientApplication::processInput(InputEvent const& event) {
         return KeyDownEvent{keyEvent.key, keyEvent.mods & ~*modKey};
       });
   }
+  else if (auto mouseMove = event.ptr<MouseMoveEvent>()) {
+    // Auto mode: only significant mouse movement switches to mouse/keyboard.
+    // On Steam Deck, trackpads and gyro generate constant tiny MouseMoveEvents
+    // that would cause mode flip-flopping without a threshold.
+    if (m_controllerMode == ControllerMode::Auto) {
+      if (mouseMove->mouseMove.magnitude() > 2.0f) {
+        m_gamepadActive = false;
+        m_virtualCursorActive = false;
+      }
+    }
+  }
+  else if (event.is<MouseButtonDownEvent>() || event.is<MouseButtonUpEvent>()) {
+    // Auto mode: mouse click always switches to mouse/keyboard
+    if (m_controllerMode == ControllerMode::Auto) {
+      m_gamepadActive = false;
+      m_virtualCursorActive = false;
+    }
+  }
   else if (auto cAxis = event.ptr<ControllerAxisEvent>()) {
-    if (cAxis->controllerAxis == ControllerAxis::LeftX)
-      m_controllerLeftStick[0] = cAxis->controllerAxisValue;
-    else if (cAxis->controllerAxis == ControllerAxis::LeftY)
-      m_controllerLeftStick[1] = cAxis->controllerAxisValue;
-    else if (cAxis->controllerAxis == ControllerAxis::RightX)
-      m_controllerRightStick[0] = cAxis->controllerAxisValue;
-    else if (cAxis->controllerAxis == ControllerAxis::RightY)
-      m_controllerRightStick[1] = cAxis->controllerAxisValue;
+    if (m_controllerMode != ControllerMode::Off) {
+    // Track which controller is actively being used (first one with significant input wins)
+    if (m_activeController == (ControllerId)-1) {
+      if (abs(cAxis->controllerAxisValue) > m_aimDeadzone)
+        m_activeController = cAxis->controller;
+    }
+    // Reset active controller if a different controller sends significant input and the current one has been idle
+    if (cAxis->controller != m_activeController && m_activeController != (ControllerId)-1
+        && abs(cAxis->controllerAxisValue) > m_aimDeadzone
+        && m_activeControllerLastSeen > 0 && m_frameCounter > m_activeControllerLastSeen + 120) {
+      m_activeController = cAxis->controller;
+    }
+    if (cAxis->controller == m_activeController)
+      m_activeControllerLastSeen = m_frameCounter;
+
+    // Only accept axis input from the active controller
+    if (cAxis->controller == m_activeController || m_activeController == (ControllerId)-1) {
+      if (cAxis->controllerAxis == ControllerAxis::LeftX)
+        m_controllerLeftStick[0] = cAxis->controllerAxisValue;
+      else if (cAxis->controllerAxis == ControllerAxis::LeftY)
+        m_controllerLeftStick[1] = cAxis->controllerAxisValue;
+      else if (cAxis->controllerAxis == ControllerAxis::RightX)
+        m_controllerRightStick[0] = cAxis->controllerAxisValue;
+      else if (cAxis->controllerAxis == ControllerAxis::RightY)
+        m_controllerRightStick[1] = cAxis->controllerAxisValue;
+    }
+
+    // Auto mode: significant stick movement switches to gamepad
+    if (m_controllerMode == ControllerMode::Auto) {
+      float magnitude = max(m_controllerLeftStick.magnitude(), m_controllerRightStick.magnitude());
+      if (magnitude > m_aimDeadzone)
+        m_gamepadActive = true;
+    }
+
+    // Convert trigger axes to synthetic button events for the bind system
+    if (cAxis->controller == m_activeController || m_activeController == (ControllerId)-1) {
+      auto generateTriggerButton = [&](ControllerAxis axis, ControllerButton button, bool& pressed) {
+        if (cAxis->controllerAxis == axis) {
+          bool nowPressed = cAxis->controllerAxisValue > 0.5f;
+          if (nowPressed && !pressed) {
+            pressed = true;
+            InputEvent syntheticDown = ControllerButtonDownEvent{cAxis->controller, button};
+            m_input->handleInput(syntheticDown, false);
+          } else if (!nowPressed && pressed) {
+            pressed = false;
+            InputEvent syntheticUp = ControllerButtonUpEvent{cAxis->controller, button};
+            m_input->handleInput(syntheticUp, false);
+          }
+        }
+      };
+      generateTriggerButton(ControllerAxis::TriggerLeft, ControllerButton::TriggerLeft, m_triggerLeftPressed);
+      generateTriggerButton(ControllerAxis::TriggerRight, ControllerButton::TriggerRight, m_triggerRightPressed);
+    }
+    } // end if not Off
+  }
+  else if (auto controllerDown = event.ptr<ControllerButtonDownEvent>()) {
+   if (m_controllerMode != ControllerMode::Off) {
+    // Button press also establishes active controller
+    if (m_activeController == (ControllerId)-1)
+      m_activeController = controllerDown->controller;
+    // Reset active controller if a different controller sends input and the current one has been idle
+    if (controllerDown->controller != m_activeController && m_activeControllerLastSeen > 0
+        && m_frameCounter > m_activeControllerLastSeen + 120) {
+      m_activeController = controllerDown->controller;
+    }
+    if (controllerDown->controller == m_activeController)
+      m_activeControllerLastSeen = m_frameCounter;
+    // Auto mode: button press switches to gamepad
+    if (m_controllerMode == ControllerMode::Auto)
+      m_gamepadActive = true;
+   } // end if not Off
+  }
+  else if (event.is<ControllerButtonUpEvent>()) {
+    // Auto mode: button activity keeps gamepad active
+    if (m_controllerMode == ControllerMode::Auto && m_controllerMode != ControllerMode::Off)
+      m_gamepadActive = true;
   }
 
   bool processed = !m_errorScreen->accepted() && m_errorScreen->handleInputEvent(event);
@@ -425,6 +537,7 @@ void ClientApplication::update() {
   m_edgeKeyEvents.clear();
   m_input->update();
   ++m_framesSkipped;
+  ++m_frameCounter;
 }
 
 void ClientApplication::render() {
@@ -666,7 +779,37 @@ void ClientApplication::changeState(MainAppState newState) {
     m_statistics = make_shared<Statistics>(m_root->toStoragePath("player"), app->statisticsService());
     m_universeClient = make_shared<UniverseClient>(m_playerStorage, m_statistics);
 
-    m_universeClient->setLuaCallbacks("input", LuaBindings::makeInputCallbacks());
+    auto inputCallbacks = LuaBindings::makeInputCallbacks();
+    inputCallbacks.registerCallback("rumble", [this](float lowFreq, float highFreq, uint32_t durationMs) {
+      if (m_controllerMode == ControllerMode::Off)
+        return;
+      float multiplier = m_root->configuration()->get("controllerRumbleIntensity").toFloat();
+      appController()->rumble(lowFreq * multiplier, highFreq * multiplier, durationMs);
+    });
+    inputCallbacks.registerCallback("rumbleTriggers", [this](float left, float right, uint32_t durationMs) {
+      if (m_controllerMode == ControllerMode::Off)
+        return;
+      float multiplier = m_root->configuration()->get("controllerRumbleIntensity").toFloat();
+      appController()->rumbleTriggers(left * multiplier, right * multiplier, durationMs);
+    });
+    inputCallbacks.registerCallback("controllerMode", [this]() -> String {
+      switch (m_controllerMode) {
+        case ControllerMode::Off: return "off";
+        case ControllerMode::Auto: return "auto";
+        case ControllerMode::Gamepad: return "gamepad";
+        case ControllerMode::Hybrid: return "hybrid";
+        default: return "auto";
+      }
+    });
+    inputCallbacks.registerCallback("isGamepadActive", [this]() -> bool {
+      return m_gamepadActive;
+    });
+    inputCallbacks.registerCallback("controllerName", [this]() -> Maybe<String> {
+      if (m_activeController == (ControllerId)-1)
+        return {};
+      return appController()->activeControllerName(m_activeController);
+    });
+    m_universeClient->setLuaCallbacks("input", inputCallbacks);
     m_universeClient->setLuaCallbacks("voice", LuaBindings::makeVoiceCallbacks());
     m_universeClient->setLuaCallbacks("camera", LuaBindings::makeCameraCallbacks(&m_worldPainter->camera()));
     m_universeClient->setLuaCallbacks("renderer", LuaBindings::makeRenderingCallbacks(this));
@@ -1128,7 +1271,7 @@ void ClientApplication::updateRunning(float dt) {
     }
 
     if (!m_mainInterface->inputFocus() && !m_cinematicOverlay->suppressInput()) {
-      m_player->setShifting(isActionTaken(InterfaceAction::PlayerShifting));
+      m_player->setShifting(isActionTaken(InterfaceAction::PlayerShifting) || m_controllerShiftToggle);
 
       if (isActionTaken(InterfaceAction::PlayerRight))
         m_player->moveRight();
@@ -1203,10 +1346,331 @@ void ClientApplication::updateRunning(float dt) {
       config->set("zoomLevel", min(1000000.f, newZoom));
     }
 
-    if (m_controllerInput && m_controllerLeftStick.magnitudeSquared() > 0.01f)
-      m_player->setMoveVector(m_controllerLeftStick);
-    else
-      m_player->setMoveVector(Vec2F());
+    // Re-read controller settings from config (allows settings pane changes to take effect live)
+    {
+      auto configuration = m_root->configuration();
+      String controllerModeStr = configuration->get("controllerMode").optString().value("auto");
+      if (controllerModeStr == "off")
+        m_controllerMode = ControllerMode::Off;
+      else if (controllerModeStr == "gamepad")
+        m_controllerMode = ControllerMode::Gamepad;
+      else if (controllerModeStr == "hybrid")
+        m_controllerMode = ControllerMode::Hybrid;
+      else
+        m_controllerMode = ControllerMode::Auto;
+      m_aimRadius = configuration->get("controllerAimRadius").optFloat().value(8.0f);
+      m_aimDeadzone = configuration->get("controllerAimDeadzone").optFloat().value(0.15f);
+      m_virtualCursorSpeed = configuration->get("controllerVirtualCursorSpeed").optFloat().value(800.0f);
+      m_verticalThreshold = configuration->get("controllerVerticalThreshold").optFloat().value(0.65f);
+
+      // Auto-exit virtual cursor mode when switching away from gamepad mode
+      if (m_virtualCursorActive && m_controllerMode != ControllerMode::Gamepad
+          && !(m_controllerMode == ControllerMode::Auto && m_gamepadActive)) {
+        m_virtualCursorActive = false;
+      }
+    }
+
+    // Controller-driven interface actions (these bypass handleInputEvent's KeyDown path)
+    // Must check inputFocus() here — m_edgeKeyEvents is populated unconditionally for all
+    // KeyDown events, so isActionTakenEdge() will match keyboard keys even when a textbox
+    // (e.g. chat) has focus. Without this guard, typing 'I' in chat opens inventory, etc.
+    if (!m_mainInterface->inputFocus() && !m_cinematicOverlay->suppressInput()) {
+      if (isActionTakenEdge(InterfaceAction::InterfaceEscapeMenu))
+        m_mainInterface->paneManager()->toggleRegisteredPane(MainInterfacePanes::EscapeDialog);
+      if (isActionTakenEdge(InterfaceAction::InterfaceInventory))
+        m_mainInterface->paneManager()->toggleRegisteredPane(MainInterfacePanes::Inventory);
+      if (isActionTakenEdge(InterfaceAction::InterfaceCrafting))
+        m_mainInterface->paneManager()->toggleRegisteredPane(MainInterfacePanes::CraftingPlain);
+      if (isActionTakenEdge(InterfaceAction::InterfaceQuest))
+        m_mainInterface->paneManager()->toggleRegisteredPane(MainInterfacePanes::QuestLog);
+      if (isActionTakenEdge(InterfaceAction::GuiClose)) {
+        if (auto topPane = m_mainInterface->paneManager()->topPane({PaneLayer::Window, PaneLayer::ModalWindow}))
+          m_mainInterface->paneManager()->dismissPane(topPane);
+      }
+
+      // Hotbar slot cycling via controller binds (mirrors mouse wheel behavior)
+      // Skip if both shoulders held (that's the beam combo)
+      if ((m_input->bindDown("controller", "HotbarNext") && !m_input->bindHeld("controller", "HotbarPrev"))
+       || (m_input->bindDown("controller", "HotbarPrev") && !m_input->bindHeld("controller", "HotbarNext"))) {
+        auto inventory = m_player->inventory();
+        auto customBarIndexes = inventory->customBarIndexes();
+        int totalSlots = customBarIndexes + EssentialItemCount;
+        bool forward = (bool)m_input->bindDown("controller", "HotbarNext");
+
+        auto abl = inventory->selectedActionBarLocation();
+        int index = 0;
+        if (!abl) {
+          index = forward ? 0 : totalSlots - 1;
+        } else {
+          if (auto cbi = abl.ptr<CustomBarIndex>()) {
+            if (*cbi < customBarIndexes / 2)
+              index = *cbi;
+            else
+              index = *cbi + EssentialItemCount;
+          } else {
+            index = customBarIndexes / 2 + (int)abl.get<EssentialItem>();
+          }
+          if (forward)
+            index = pmod(index + 1, totalSlots);
+          else
+            index = pmod(index - 1, totalSlots);
+        }
+
+        if (index < customBarIndexes / 2)
+          abl = (CustomBarIndex)index;
+        else if (index < customBarIndexes / 2 + EssentialItemCount)
+          abl = (EssentialItem)(index - customBarIndexes / 2);
+        else
+          abl = (CustomBarIndex)(index - EssentialItemCount);
+
+        inventory->selectActionBarLocation(abl);
+      }
+
+      // Cycle hotbar group (swap between hotbar rows)
+      if (m_input->bindDown("controller", "EssentialCycle")) {
+        auto inventory = m_player->inventory();
+        uint8_t current = inventory->customBarGroup();
+        uint8_t groups = inventory->customBarGroups();
+        inventory->setCustomBarGroup((current + 1) % groups);
+      }
+
+      // Matter manipulator toggle: select MM (essential slot 0), or switch back
+      if (m_input->bindDown("controller", "MatterManipulatorToggle")) {
+        auto inventory = m_player->inventory();
+        auto abl = inventory->selectedActionBarLocation();
+        if (auto ei = abl.ptr<EssentialItem>(); ei && *ei == EssentialItem::BeamAxe) {
+          // Already on MM — switch back to previously selected location
+          m_controllerShiftToggle = false; // reset single-block mode
+          inventory->selectActionBarLocation(m_prevActionBarLocation);
+        } else {
+          // Save current location and switch to MM
+          m_prevActionBarLocation = abl;
+          inventory->selectActionBarLocation(EssentialItem::BeamAxe);
+        }
+      }
+
+      // LB+RB simultaneous press OR BeamUpDown bind: beam up/down
+      bool beamTriggered = (bool)m_input->bindDown("controller", "BeamUpDown");
+      if (!beamTriggered) {
+        beamTriggered = m_input->bindHeld("controller", "HotbarNext") && m_input->bindHeld("controller", "HotbarPrev")
+          && (m_input->bindDown("controller", "HotbarNext") || m_input->bindDown("controller", "HotbarPrev"));
+      }
+      if (beamTriggered) {
+        // Try beam down first, then beam up
+        if (m_universeClient->canBeamDown(false))
+          m_mainInterface->warpToOrbitedWorld(false);
+        else if (m_universeClient->canBeamUp())
+          m_mainInterface->warpToOwnShip();
+      }
+
+      // R3 (RightStick click): right-click when a pane is open, camera pan otherwise
+      if (m_input->bindDown("controller", "CameraShift")) {
+        if (auto topPane = m_mainInterface->paneManager()->topPane({PaneLayer::Window, PaneLayer::ModalWindow})) {
+          // A pane is open — send synthetic right-click at current cursor position
+          Vec2F cursorPos = m_virtualCursorActive ? m_virtualCursorPos : m_input->mousePosition();
+          InputEvent syntheticDown = MouseButtonDownEvent{MouseButton::Right, cursorPos};
+          m_mainInterface->handleInputEvent(syntheticDown);
+          m_input->handleInput(syntheticDown, true);
+        }
+      }
+      if (m_input->bindUp("controller", "CameraShift")) {
+        if (auto topPane = m_mainInterface->paneManager()->topPane({PaneLayer::Window, PaneLayer::ModalWindow})) {
+          Vec2F cursorPos = m_virtualCursorActive ? m_virtualCursorPos : m_input->mousePosition();
+          InputEvent syntheticUp = MouseButtonUpEvent{MouseButton::Right, cursorPos};
+          m_mainInterface->handleInputEvent(syntheticUp);
+          m_input->handleInput(syntheticUp, true);
+        }
+      }
+
+      // L3 (LeftStick click) context-sensitive action
+      if (m_input->bindDown("controller", "toggleVirtualCursor")) {
+        bool inGamepadState = (m_controllerMode == ControllerMode::Gamepad)
+          || (m_controllerMode == ControllerMode::Auto && m_gamepadActive);
+        if (inGamepadState) {
+          // Gamepad mode: toggle virtual cursor
+          m_virtualCursorActive = !m_virtualCursorActive;
+          if (m_virtualCursorActive) {
+            Vec2U windowSize = m_guiContext->windowSize();
+            m_virtualCursorPos = Vec2F(windowSize[0] / 2.0f, windowSize[1] / 2.0f);
+          }
+          appController()->setCursorVisible(m_virtualCursorActive);
+        } else {
+          // Hybrid mode (or Auto with mouse active): context-sensitive action
+          auto inventory = m_player->inventory();
+          auto abl = inventory->selectedActionBarLocation();
+          if (auto ei = abl.ptr<EssentialItem>(); ei && *ei == EssentialItem::BeamAxe) {
+            // Matter manipulator selected → toggle single-block mode
+            m_controllerShiftToggle = !m_controllerShiftToggle;
+          } else {
+            // Other tool → drop item
+            m_player->dropItem();
+          }
+        }
+      }
+
+      // Standalone Shift/Drop bind (unbound by default, for users who want
+      // this function on a dedicated button regardless of input mode)
+      if (m_input->bindDown("controller", "ShiftDropAction")) {
+        auto inventory = m_player->inventory();
+        auto abl = inventory->selectedActionBarLocation();
+        if (auto ei = abl.ptr<EssentialItem>(); ei && *ei == EssentialItem::BeamAxe) {
+          m_controllerShiftToggle = !m_controllerShiftToggle;
+        } else {
+          m_player->dropItem();
+        }
+      }
+    }
+
+    // Controller analog movement — always active when stick is pushed,
+    // regardless of input mode (except Off). Left stick movement is never gated by mode.
+    if (m_controllerMode != ControllerMode::Off) {
+      float leftStickMag = m_controllerLeftStick.magnitude();
+      if (leftStickMag > m_aimDeadzone) {
+        // Normalize past deadzone so gentle tilt still reads as low-magnitude
+        Vec2F stickDir = m_controllerLeftStick / leftStickMag;
+        float normalizedMag = (leftStickMag - m_aimDeadzone) / (1.0f - m_aimDeadzone);
+        normalizedMag = min(1.0f, normalizedMag);
+        m_player->setMoveVector(stickDir * normalizedMag);
+
+        // Also trigger digital up/down for zero-g, water, ladders, platform drop-through
+        // (setMoveVector only handles horizontal; vertical needs moveUp/moveDown)
+        // SDL Y axis: negative = up, positive = down
+        if (m_controllerLeftStick[1] < -m_verticalThreshold)
+          m_player->moveUp();
+        if (m_controllerLeftStick[1] > m_verticalThreshold)
+          m_player->moveDown();
+      } else {
+        m_player->setMoveVector(Vec2F());
+      }
+
+
+    // Controller analog aim (right stick → world-space aim position)
+    bool useGamepadAim = (m_controllerMode == ControllerMode::Gamepad)
+      || (m_controllerMode == ControllerMode::Hybrid)
+      || (m_controllerMode == ControllerMode::Auto && m_gamepadActive);
+
+    if (useGamepadAim && m_virtualCursorActive) {
+      // Virtual cursor mode: right stick moves screen cursor
+      float stickMag = m_controllerRightStick.magnitude();
+      if (stickMag > m_aimDeadzone) {
+        Vec2F stickDir = m_controllerRightStick / stickMag;
+        float normalizedMag = (stickMag - m_aimDeadzone) / (1.0f - m_aimDeadzone);
+        normalizedMag = min(1.0f, normalizedMag);
+        // Quadratic acceleration curve for precision at low tilt
+        float speedMult = normalizedMag * normalizedMag;
+        Vec2F delta = Vec2F(stickDir[0], -stickDir[1]) * (speedMult * m_virtualCursorSpeed * dt);
+        m_virtualCursorPos += delta;
+        // Clamp to screen bounds
+        Vec2U windowSize = m_guiContext->windowSize();
+        m_virtualCursorPos[0] = clamp(m_virtualCursorPos[0], 0.0f, (float)windowSize[0]);
+        m_virtualCursorPos[1] = clamp(m_virtualCursorPos[1], 0.0f, (float)windowSize[1]);
+      }
+      // Warp the hardware cursor to our virtual position and sync MainInterface cursor
+      Vec2I screenCursorPos = Vec2I(m_virtualCursorPos[0], (int)m_guiContext->windowHeight() - (int)m_virtualCursorPos[1]);
+      appController()->setCursorPosition(screenCursorPos);
+      // Send synthetic mouse move so MainInterface's m_cursorScreenPos stays in sync
+      InputEvent syntheticMove = MouseMoveEvent{Vec2F(), m_virtualCursorPos};
+      m_mainInterface->handleInputEvent(syntheticMove);
+
+      // Handle virtual cursor clicks (RT = left click, LT = right click on UI)
+      if (m_input->bindDown("controller", "virtualCursorClick")) {
+        InputEvent syntheticDown = MouseButtonDownEvent{MouseButton::Left, m_virtualCursorPos};
+        m_mainInterface->handleInputEvent(syntheticDown);
+        m_input->handleInput(syntheticDown, true);
+      }
+      if (m_input->bindUp("controller", "virtualCursorClick")) {
+        InputEvent syntheticUp = MouseButtonUpEvent{MouseButton::Left, m_virtualCursorPos};
+        m_mainInterface->handleInputEvent(syntheticUp);
+        m_input->handleInput(syntheticUp, true);
+      }
+      if (m_input->bindDown("controller", "virtualCursorRightClick")) {
+        InputEvent syntheticDown = MouseButtonDownEvent{MouseButton::Right, m_virtualCursorPos};
+        m_mainInterface->handleInputEvent(syntheticDown);
+        m_input->handleInput(syntheticDown, true);
+      }
+      if (m_input->bindUp("controller", "virtualCursorRightClick")) {
+        InputEvent syntheticUp = MouseButtonUpEvent{MouseButton::Right, m_virtualCursorPos};
+        m_mainInterface->handleInputEvent(syntheticUp);
+        m_input->handleInput(syntheticUp, true);
+      }
+
+      // Also update aim from the virtual cursor's world position
+      m_controllerAimPosition = m_mainInterface->cursorWorldPosition();
+      m_controllerAimOffset = m_controllerAimPosition - m_player->position();
+      m_controllerAimActive = true;
+      m_player->aim(m_controllerAimPosition);
+    } else if (useGamepadAim) {
+      float stickMag = m_controllerRightStick.magnitude();
+      bool stickActive = stickMag > m_aimDeadzone;
+
+      if (stickActive) {
+        // Stick is being pushed — live aim from stick position
+        Vec2F aimDir = m_controllerRightStick / stickMag;
+        float normalizedMag = (stickMag - m_aimDeadzone) / (1.0f - m_aimDeadzone);
+        normalizedMag = min(1.0f, normalizedMag);
+        // Y is inverted on SDL gamepad axes (up = negative)
+        m_controllerAimOffset = Vec2F(aimDir[0], -aimDir[1]) * (normalizedMag * m_aimRadius);
+        m_controllerAimActive = true;
+      }
+
+      // Compute direction-retention offset: must be outside the entity body
+      // to prevent aim direction instability. For vehicles, derived from
+      // collision poly bounds; for player, a small fixed offset.
+      float dirOffset = 0.5f;
+      if (auto anchorState = m_player->loungingIn()) {
+        if (auto worldClient = m_universeClient->worldClient()) {
+          if (auto vehicle = as<Vehicle>(worldClient->entity(anchorState->entityId))) {
+            auto bounds = vehicle->collisionArea();
+            // Use the larger of width/height half-extents, plus a small margin
+            dirOffset = max(abs(bounds.xMax()), max(abs(bounds.xMin()),
+                       max(abs(bounds.yMax()), abs(bounds.yMin())))) + 1.0f;
+          }
+        }
+      }
+
+      if (m_controllerAimActive && stickMag <= m_aimDeadzone) {
+        // Stick at center, but was used before — keep facing direction
+        Vec2F lastDir = m_controllerAimOffset.normalized();
+        if (lastDir.magnitude() > 0.01f)
+          m_controllerAimOffset = lastDir * dirOffset;
+      } else if (!m_controllerAimActive) {
+        // Never used the right stick yet — default to facing direction
+        float facingDir = m_player->facingDirection() == Direction::Right ? 1.0f : -1.0f;
+        m_controllerAimOffset = Vec2F(facingDir * dirOffset, 0.0f);
+        m_controllerAimActive = true; // set once to avoid feedback loop with facingDirection
+      }
+
+      // Get aim origin — use vehicle position when in a mech, player position otherwise
+      Vec2F aimOrigin = m_player->position();
+      if (auto anchorState = m_player->loungingIn()) {
+        if (auto worldClient = m_universeClient->worldClient()) {
+          if (auto vehicle = as<Vehicle>(worldClient->entity(anchorState->entityId)))
+            aimOrigin = vehicle->position();
+        }
+      }
+
+      // Always apply offset relative to current aim origin
+      m_controllerAimPosition = aimOrigin + m_controllerAimOffset;
+      m_player->aim(m_controllerAimPosition);
+    }
+
+    // Controller primary/alt fire via bind system
+    // When virtual cursor is active, suppress fire only for the button bound to virtualCursorClick
+    if (!m_mainInterface->inputFocus() && !m_cinematicOverlay->suppressInput()) {
+      bool clickConsumed = m_virtualCursorActive
+        && (m_input->bindHeld("controller", "virtualCursorClick") || m_input->bindHeld("controller", "virtualCursorRightClick"));
+      if (!clickConsumed) {
+        if (m_input->bindDown("controller", "PlayerMainItem"))
+          m_player->beginPrimaryFire();
+        if (m_input->bindDown("controller", "PlayerAltItem"))
+          m_player->beginAltFire();
+      }
+      if (m_input->bindUp("controller", "PlayerMainItem"))
+        m_player->endPrimaryFire();
+      if (m_input->bindUp("controller", "PlayerAltItem"))
+        m_player->endAltFire();
+    }
+    } // end if (m_controllerMode != Off) — movement, aim, controller actions
 
     m_voice->setInput(m_input->bindHeld("opensb", "pushToTalk"));
     DataStreamBuffer voiceData;
@@ -1232,6 +1696,18 @@ void ClientApplication::updateRunning(float dt) {
 
     if (checkDisconnection())
       return;
+
+    // Tell MainInterface whether controller is handling aim
+    if (m_controllerMode != ControllerMode::Off) {
+      bool useGamepadAim2 = (m_controllerMode == ControllerMode::Gamepad)
+        || (m_controllerMode == ControllerMode::Hybrid)
+        || (m_controllerMode == ControllerMode::Auto && m_gamepadActive);
+      m_mainInterface->setOverrideAim(useGamepadAim2);
+    } else {
+      m_mainInterface->setOverrideAim(false);
+    }
+
+
 
     m_mainInterface->preUpdate(dt);
     m_universeClient->update(dt);
@@ -1329,12 +1805,24 @@ bool ClientApplication::isActionTaken(InterfaceAction action) const {
       return true;
   }
 
+  // Also check controller binds via the new Input bind system
+  if (auto name = InterfaceActionNames.maybeRight(action)) {
+    if (m_input->bindHeld("controller", *name))
+      return true;
+  }
+
   return false;
 }
 
 bool ClientApplication::isActionTakenEdge(InterfaceAction action) const {
   for (auto keyEvent : m_edgeKeyEvents) {
     if (m_guiContext->actions(keyEvent).contains(action))
+      return true;
+  }
+
+  // Also check controller binds via the new Input bind system
+  if (auto name = InterfaceActionNames.maybeRight(action)) {
+    if (m_input->bindDown("controller", *name))
       return true;
   }
 
@@ -1361,7 +1849,11 @@ void ClientApplication::updateCamera(float dt) {
 
   auto playerCameraPosition = m_player->cameraPosition();
 
-  if (isActionTaken(InterfaceAction::CameraShift)) {
+  // Suppress camera pan when R3 is being used as right-click in a pane
+  bool cameraShiftSuppressed = m_mainInterface->paneManager()->topPane({PaneLayer::Window, PaneLayer::ModalWindow})
+    && m_input->bindHeld("controller", "CameraShift");
+
+  if (isActionTaken(InterfaceAction::CameraShift) && !cameraShiftSuppressed) {
     m_snapBackCameraOffset = false;
     m_cameraOffsetDownTime += dt;
     Vec2F aim = m_universeClient->worldClient()->geometry().diff(m_mainInterface->cursorWorldPosition(), playerCameraPosition);
