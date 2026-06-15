@@ -1,0 +1,1723 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/OpenStarbound/OpenStarbound/main/doc/gui-config.schema.json",
+  "title": "OpenStarbound GUI configuration",
+  "description": "Schema derived from StarGuiReader and StarWidgetParsing. Accepts a direct widget collection or a containing document with a gui/paneLayout property.",
+  "anyOf": [
+    {
+      "$ref": "#/$defs/rootWidgetCollection"
+    },
+    {
+      "type": "object",
+      "required": [
+        "gui"
+      ],
+      "properties": {
+        "gui": {
+          "$ref": "#/$defs/widgetCollection"
+        }
+      },
+      "additionalProperties": true
+    },
+    {
+      "type": "object",
+      "required": [
+        "paneLayout"
+      ],
+      "properties": {
+        "paneLayout": {
+          "$ref": "#/$defs/widgetCollection"
+        }
+      },
+      "additionalProperties": true
+    }
+  ],
+  "$defs": {
+    "integerVec2": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "integer"
+        }
+      ],
+      "items": false,
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "numberVec2": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        }
+      ],
+      "items": false,
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "integerRect": {
+      "oneOf": [
+        {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "items": false,
+          "minItems": 4,
+          "maxItems": 4
+        },
+        {
+          "type": "array",
+          "prefixItems": [
+            {
+              "$ref": "#/$defs/integerVec2"
+            },
+            {
+              "$ref": "#/$defs/integerVec2"
+            }
+          ],
+          "items": false,
+          "minItems": 2,
+          "maxItems": 2
+        }
+      ]
+    },
+    "color": {
+      "description": "A named/hex color string or an RGB/RGBA byte array.",
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 255
+          },
+          "minItems": 3,
+          "maxItems": 4
+        }
+      ]
+    },
+    "horizontalAnchor": {
+      "description": "Case-insensitive HorizontalAnchorNames value.",
+      "anyOf": [
+        {
+          "enum": [
+            "left",
+            "mid",
+            "right"
+          ]
+        },
+        {
+          "type": "string",
+          "pattern": "^(?:[Ll][Ee][Ff][Tt]|[Mm][Ii][Dd]|[Rr][Ii][Gg][Hh][Tt])$"
+        }
+      ]
+    },
+    "verticalAnchor": {
+      "description": "Case-insensitive VerticalAnchorNames value.",
+      "anyOf": [
+        {
+          "enum": [
+            "bottom",
+            "mid",
+            "top"
+          ]
+        },
+        {
+          "type": "string",
+          "pattern": "^(?:[Bb][Oo][Tt][Tt][Oo][Mm]|[Mm][Ii][Dd]|[Tt][Oo][Pp])$"
+        }
+      ]
+    },
+    "guiDirection": {
+      "description": "Case-insensitive GuiDirectionNames value.",
+      "anyOf": [
+        {
+          "enum": [
+            "horizontal",
+            "vertical"
+          ]
+        },
+        {
+          "type": "string",
+          "pattern": "^(?:[Hh][Oo][Rr][Ii][Zz][Oo][Nn][Tt][Aa][Ll]|[Vv][Ee][Rr][Tt][Ii][Cc][Aa][Ll])$"
+        }
+      ]
+    },
+    "portraitMode": {
+      "description": "Case-insensitive PortraitModeNames value.",
+      "anyOf": [
+        {
+          "enum": [
+            "head",
+            "bust",
+            "full",
+            "fullneutral",
+            "fullnude",
+            "fullneutralnude"
+          ]
+        },
+        {
+          "type": "string",
+          "pattern": "^(?:[Hh][Ee][Aa][Dd]|[Bb][Uu][Ss][Tt]|[Ff][Uu][Ll][Ll](?:[Nn][Ee][Uu][Tt][Rr][Aa][Ll])?(?:[Nn][Uu][Dd][Ee])?)$"
+        }
+      ]
+    },
+    "paneAnchor": {
+      "description": "Case-insensitive PaneAnchorNames value.",
+      "anyOf": [
+        {
+          "enum": [
+            "none",
+            "bottomLeft",
+            "bottomRight",
+            "topLeft",
+            "topRight",
+            "centerBottom",
+            "centerTop",
+            "centerLeft",
+            "centerRight",
+            "center"
+          ]
+        },
+        {
+          "type": "string",
+          "pattern": "^(?:[Nn][Oo][Nn][Ee]|[Bb][Oo][Tt][Tt][Oo][Mm](?:[Ll][Ee][Ff][Tt]|[Rr][Ii][Gg][Hh][Tt])|[Tt][Oo][Pp](?:[Ll][Ee][Ff][Tt]|[Rr][Ii][Gg][Hh][Tt])|[Cc][Ee][Nn][Tt][Ee][Rr](?:[Bb][Oo][Tt][Tt][Oo][Mm]|[Tt][Oo][Pp]|[Ll][Ee][Ff][Tt]|[Rr][Ii][Gg][Hh][Tt])?)$"
+        }
+      ]
+    },
+    "imageStretchSet": {
+      "type": "object",
+      "properties": {
+        "begin": {
+          "type": "string"
+        },
+        "inner": {
+          "type": "string"
+        },
+        "end": {
+          "type": "string"
+        },
+        "type": {
+          "enum": [
+            "repeat",
+            "stretch"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "drawable": {
+      "description": "Drawable accepted by Drawable(Json).",
+      "type": "object",
+      "required": [
+        "position"
+      ],
+      "properties": {
+        "image": {
+          "type": "string"
+        },
+        "line": {
+          "type": "array"
+        },
+        "poly": {
+          "type": "array"
+        },
+        "width": {
+          "type": "number"
+        },
+        "position": {
+          "$ref": "#/$defs/numberVec2"
+        },
+        "color": {
+          "$ref": "#/$defs/color"
+        },
+        "fullbright": {
+          "type": "boolean"
+        },
+        "centered": {
+          "type": "boolean"
+        },
+        "rotation": {
+          "type": "number"
+        },
+        "mirrored": {
+          "type": "boolean"
+        },
+        "scale": {
+          "type": "number"
+        },
+        "transformation": {
+          "type": "array"
+        }
+      },
+      "additionalProperties": true
+    },
+    "commonProperties": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Required only when the containing widget collection is an array."
+        },
+        "type": {
+          "type": "string"
+        },
+        "zlevel": {
+          "type": "number"
+        },
+        "rect": {
+          "$ref": "#/$defs/integerRect"
+        },
+        "size": {
+          "$ref": "#/$defs/integerVec2"
+        },
+        "position": {
+          "$ref": "#/$defs/integerVec2"
+        },
+        "visible": {
+          "type": "boolean"
+        },
+        "focus": {
+          "type": "boolean"
+        },
+        "data": true,
+        "scissoring": {
+          "type": "boolean"
+        },
+        "mouseTransparent": {
+          "type": "boolean"
+        },
+        "children": {
+          "$ref": "#/$defs/widgetCollection"
+        }
+      },
+      "additionalProperties": true
+    },
+    "namedWidget": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/widgetConfig"
+        },
+        {
+          "required": [
+            "name"
+          ]
+        }
+      ]
+    },
+    "rootWidgetCollection": {
+      "description": "A top-level widget collection. Object form permits the JSON Schema metadata property.",
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "$schema": {
+              "type": "string",
+              "format": "uri-reference"
+            }
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/widgetConfig"
+          }
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/namedWidget"
+          }
+        }
+      ]
+    },
+    "widgetCollection": {
+      "description": "Either an object whose keys become widget names, or an array whose entries explicitly contain name.",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/widgetConfig"
+          }
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/namedWidget"
+          }
+        }
+      ]
+    },
+    "widgetConfig": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/widgetObjectConfig"
+        },
+        {
+          "$ref": "#/$defs/include"
+        },
+        {
+          "$ref": "#/$defs/title"
+        },
+        {
+          "$ref": "#/$defs/panefeature"
+        },
+        {
+          "$ref": "#/$defs/background"
+        }
+      ]
+    },
+    "widgetObjectConfig": {
+      "description": "A type whose handler returns a Widget object; valid for title.icon.",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/widget"
+        },
+        {
+          "$ref": "#/$defs/container"
+        },
+        {
+          "$ref": "#/$defs/layout"
+        },
+        {
+          "$ref": "#/$defs/canvas"
+        },
+        {
+          "$ref": "#/$defs/image"
+        },
+        {
+          "$ref": "#/$defs/imageStretch"
+        },
+        {
+          "$ref": "#/$defs/label"
+        },
+        {
+          "$ref": "#/$defs/portrait"
+        },
+        {
+          "$ref": "#/$defs/fuelGauge"
+        },
+        {
+          "$ref": "#/$defs/progress"
+        },
+        {
+          "$ref": "#/$defs/largeCharPlate"
+        },
+        {
+          "$ref": "#/$defs/button"
+        },
+        {
+          "$ref": "#/$defs/itemslot"
+        },
+        {
+          "$ref": "#/$defs/itemgrid"
+        },
+        {
+          "$ref": "#/$defs/list"
+        },
+        {
+          "$ref": "#/$defs/radioGroup"
+        },
+        {
+          "$ref": "#/$defs/spinner"
+        },
+        {
+          "$ref": "#/$defs/slider"
+        },
+        {
+          "$ref": "#/$defs/textbox"
+        },
+        {
+          "$ref": "#/$defs/stack"
+        },
+        {
+          "$ref": "#/$defs/tabSet"
+        },
+        {
+          "$ref": "#/$defs/scrollArea"
+        }
+      ]
+    },
+    "include": {
+      "type": "object",
+      "required": [
+        "type",
+        "file"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "const": "include"
+        },
+        "file": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "widget": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/commonProperties"
+        },
+        {
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "const": "widget"
+            }
+          }
+        }
+      ]
+    },
+    "container": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/commonProperties"
+        },
+        {
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "const": "container"
+            }
+          }
+        }
+      ]
+    },
+    "layout": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/commonProperties"
+        },
+        {
+          "required": [
+            "type",
+            "layoutType"
+          ],
+          "properties": {
+            "type": {
+              "const": "layout"
+            },
+            "layoutType": {
+              "enum": [
+                "basic",
+                "flow",
+                "vertical"
+              ]
+            },
+            "spacing": {
+              "oneOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "$ref": "#/$defs/integerVec2"
+                }
+              ]
+            },
+            "hAnchor": {
+              "$ref": "#/$defs/horizontalAnchor"
+            },
+            "vAnchor": {
+              "$ref": "#/$defs/verticalAnchor"
+            },
+            "fillDown": {
+              "type": "boolean"
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "layoutType": {
+                    "const": "flow"
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "spacing"
+                ],
+                "properties": {
+                  "spacing": {
+                    "$ref": "#/$defs/integerVec2"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "layoutType": {
+                    "const": "vertical"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "spacing": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "canvas": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/commonProperties"
+        },
+        {
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "const": "canvas"
+            },
+            "captureKeyboardEvents": {
+              "type": "boolean"
+            },
+            "captureMouseEvents": {
+              "type": "boolean"
+            }
+          }
+        }
+      ]
+    },
+    "image": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/commonProperties"
+        },
+        {
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "const": "image"
+            },
+            "file": {
+              "type": "string"
+            },
+            "drawables": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/drawable"
+              }
+            },
+            "scale": {
+              "type": "number"
+            },
+            "rotation": {
+              "type": "number"
+            },
+            "centered": {
+              "type": "boolean"
+            },
+            "trim": {
+              "type": "boolean"
+            },
+            "offset": {
+              "$ref": "#/$defs/integerVec2"
+            },
+            "maxSize": {
+              "$ref": "#/$defs/integerVec2"
+            },
+            "minSize": {
+              "$ref": "#/$defs/integerVec2"
+            }
+          }
+        }
+      ]
+    },
+    "imageStretch": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/commonProperties"
+        },
+        {
+          "required": [
+            "type",
+            "stretchSet"
+          ],
+          "properties": {
+            "type": {
+              "const": "imageStretch"
+            },
+            "stretchSet": {
+              "$ref": "#/$defs/imageStretchSet"
+            },
+            "direction": {
+              "$ref": "#/$defs/guiDirection"
+            }
+          }
+        }
+      ]
+    },
+    "label": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/commonProperties"
+        },
+        {
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "const": "label"
+            },
+            "value": {
+              "type": "string"
+            },
+            "color": {
+              "$ref": "#/$defs/color"
+            },
+            "hAnchor": {
+              "$ref": "#/$defs/horizontalAnchor"
+            },
+            "vAnchor": {
+              "$ref": "#/$defs/verticalAnchor"
+            },
+            "fontSize": {
+              "type": "integer"
+            },
+            "wrapWidth": {
+              "type": "integer"
+            },
+            "charLimit": {
+              "type": "integer"
+            },
+            "lineSpacing": {
+              "type": "number"
+            },
+            "directives": {
+              "type": "string"
+            },
+            "font": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+    "portrait": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/commonProperties"
+        },
+        {
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "const": "portrait"
+            },
+            "portraitMode": {
+              "$ref": "#/$defs/portraitMode"
+            },
+            "renderHumanoid": {
+              "type": "boolean"
+            },
+            "scale": {
+              "type": "number"
+            }
+          }
+        }
+      ]
+    },
+    "fuelGauge": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/commonProperties"
+        },
+        {
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "const": "fuelGauge"
+            }
+          }
+        }
+      ]
+    },
+    "progress": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/commonProperties"
+        },
+        {
+          "required": [
+            "type",
+            "progressSet"
+          ],
+          "properties": {
+            "type": {
+              "const": "progress"
+            },
+            "background": {
+              "type": "string"
+            },
+            "overlay": {
+              "type": "string"
+            },
+            "progressSet": {
+              "$ref": "#/$defs/imageStretchSet"
+            },
+            "direction": {
+              "$ref": "#/$defs/guiDirection"
+            },
+            "barColor": {
+              "$ref": "#/$defs/color"
+            },
+            "max": {
+              "type": "number"
+            },
+            "initial": {
+              "type": "number"
+            }
+          }
+        }
+      ]
+    },
+    "largeCharPlate": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/commonProperties"
+        },
+        {
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "const": "largeCharPlate"
+            }
+          }
+        }
+      ]
+    },
+    "button": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/commonProperties"
+        },
+        {
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "const": "button"
+            },
+            "invisible": {
+              "type": "boolean"
+            },
+            "base": {
+              "type": "string"
+            },
+            "hover": {
+              "type": "string"
+            },
+            "pressed": {
+              "type": "string"
+            },
+            "disabledImage": {
+              "type": "string"
+            },
+            "baseImageChecked": {
+              "type": "string"
+            },
+            "hoverImageChecked": {
+              "type": "string"
+            },
+            "pressedImageChecked": {
+              "type": "string"
+            },
+            "disabledImageChecked": {
+              "type": "string"
+            },
+            "callback": {
+              "type": "string"
+            },
+            "caption": {
+              "type": "string"
+            },
+            "pressedOffset": {
+              "$ref": "#/$defs/integerVec2"
+            },
+            "textOffset": {
+              "$ref": "#/$defs/integerVec2"
+            },
+            "checkable": {
+              "type": "boolean"
+            },
+            "sustainCallbackOnDownHold": {
+              "type": "boolean"
+            },
+            "checked": {
+              "type": "boolean"
+            },
+            "textAlign": {
+              "enum": [
+                "left",
+                "center",
+                "right"
+              ]
+            },
+            "fontSize": {
+              "type": "integer"
+            },
+            "fontDirectives": {
+              "type": "string"
+            },
+            "fontColor": {
+              "$ref": "#/$defs/color"
+            },
+            "fontColorDisabled": {
+              "$ref": "#/$defs/color"
+            },
+            "disabled": {
+              "type": "boolean"
+            }
+          },
+          "if": {
+            "not": {
+              "properties": {
+                "invisible": {
+                  "const": true
+                }
+              },
+              "required": [
+                "invisible"
+              ]
+            }
+          },
+          "then": {
+            "required": [
+              "base"
+            ]
+          }
+        }
+      ]
+    },
+    "itemslot": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/commonProperties"
+        },
+        {
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "const": "itemslot"
+            },
+            "backingImage": {
+              "type": "string"
+            },
+            "callback": {
+              "type": "string"
+            },
+            "rightClickCallback": {
+              "type": "string"
+            },
+            "middleClickCallback": {
+              "type": "string"
+            },
+            "showBackingImageWhenFull": {
+              "type": "boolean"
+            },
+            "showBackingImageWhenEmpty": {
+              "type": "boolean"
+            },
+            "showDurability": {
+              "type": "boolean"
+            },
+            "showCount": {
+              "type": "boolean"
+            },
+            "showRarity": {
+              "type": "boolean"
+            }
+          }
+        }
+      ]
+    },
+    "itemgrid": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/commonProperties"
+        },
+        {
+          "required": [
+            "type",
+            "dimensions"
+          ],
+          "properties": {
+            "type": {
+              "const": "itemgrid"
+            },
+            "dimensions": {
+              "$ref": "#/$defs/integerVec2"
+            },
+            "spacing": {
+              "$ref": "#/$defs/integerVec2"
+            },
+            "rowSpacing": {
+              "$ref": "#/$defs/integerVec2"
+            },
+            "columnSpacing": {
+              "$ref": "#/$defs/integerVec2"
+            },
+            "callback": {
+              "type": "string"
+            },
+            "rightClickCallback": {
+              "type": "string"
+            },
+            "middleClickCallback": {
+              "type": "string"
+            },
+            "slotOffset": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "backingImage": {
+              "type": "string"
+            },
+            "showBackingImageWhenFull": {
+              "type": "boolean"
+            },
+            "showBackingImageWhenEmpty": {
+              "type": "boolean"
+            },
+            "showDurability": {
+              "type": "boolean"
+            }
+          },
+          "oneOf": [
+            {
+              "required": [
+                "spacing"
+              ]
+            },
+            {
+              "required": [
+                "rowSpacing",
+                "columnSpacing"
+              ],
+              "not": {
+                "required": [
+                  "spacing"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "listSchema": {
+      "type": "object",
+      "required": [
+        "spacing",
+        "memberSize",
+        "listTemplate"
+      ],
+      "properties": {
+        "selectedBG": {
+          "type": "string"
+        },
+        "unselectedBG": {
+          "type": "string"
+        },
+        "hoverBG": {
+          "type": "string"
+        },
+        "disabledBG": {
+          "type": "string"
+        },
+        "spacing": {
+          "$ref": "#/$defs/integerVec2"
+        },
+        "memberSize": {
+          "$ref": "#/$defs/integerVec2"
+        },
+        "listTemplate": {
+          "$ref": "#/$defs/widgetCollection"
+        }
+      },
+      "additionalProperties": true
+    },
+    "list": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/commonProperties"
+        },
+        {
+          "required": [
+            "type",
+            "schema"
+          ],
+          "properties": {
+            "type": {
+              "const": "list"
+            },
+            "schema": {
+              "$ref": "#/$defs/listSchema"
+            },
+            "callback": {
+              "type": "string"
+            },
+            "fillDown": {
+              "type": "boolean"
+            },
+            "columns": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        }
+      ]
+    },
+    "radioButton": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/commonProperties"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "image": {
+              "type": "string"
+            },
+            "id": {
+              "type": "integer"
+            },
+            "baseImage": {
+              "type": "string"
+            },
+            "hoverImage": {
+              "type": "string"
+            },
+            "pressedImage": {
+              "type": "string"
+            },
+            "disabledImage": {
+              "type": "string"
+            },
+            "baseImageChecked": {
+              "type": "string"
+            },
+            "hoverImageChecked": {
+              "type": "string"
+            },
+            "pressedImageChecked": {
+              "type": "string"
+            },
+            "disabledImageChecked": {
+              "type": "string"
+            },
+            "disabled": {
+              "type": "boolean"
+            },
+            "selected": {
+              "type": "boolean"
+            },
+            "fontSize": {
+              "type": "integer"
+            },
+            "fontColor": {
+              "$ref": "#/$defs/color"
+            },
+            "fontColorChecked": {
+              "$ref": "#/$defs/color"
+            },
+            "fontColorDisabled": {
+              "$ref": "#/$defs/color"
+            },
+            "text": {
+              "type": "string"
+            },
+            "pressedOffset": {
+              "$ref": "#/$defs/integerVec2"
+            }
+          }
+        }
+      ]
+    },
+    "radioGroup": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/commonProperties"
+        },
+        {
+          "required": [
+            "type",
+            "buttons"
+          ],
+          "properties": {
+            "type": {
+              "const": "radioGroup"
+            },
+            "toggleMode": {
+              "type": "boolean"
+            },
+            "callback": {
+              "type": "string"
+            },
+            "buttons": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/radioButton"
+              }
+            },
+            "baseImage": {
+              "type": "string"
+            },
+            "hoverImage": {
+              "type": "string"
+            },
+            "pressedImage": {
+              "type": "string"
+            },
+            "disabledImage": {
+              "type": "string"
+            },
+            "baseImageChecked": {
+              "type": "string"
+            },
+            "hoverImageChecked": {
+              "type": "string"
+            },
+            "pressedImageChecked": {
+              "type": "string"
+            },
+            "disabledImageChecked": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+    "spinner": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/commonProperties"
+        },
+        {
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "const": "spinner"
+            },
+            "callback": {
+              "type": "string"
+            },
+            "upOffset": {
+              "type": "number"
+            },
+            "leftBase": {
+              "type": "string"
+            },
+            "leftHover": {
+              "type": "string"
+            },
+            "rightBase": {
+              "type": "string"
+            },
+            "rightHover": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+    "slider": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/commonProperties"
+        },
+        {
+          "required": [
+            "type",
+            "gridImage"
+          ],
+          "properties": {
+            "type": {
+              "const": "slider"
+            },
+            "gridImage": {
+              "type": "string"
+            },
+            "showSpinner": {
+              "type": "boolean"
+            },
+            "callback": {
+              "type": "string"
+            },
+            "range": {
+              "type": "array",
+              "prefixItems": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "integer"
+                }
+              ],
+              "items": false,
+              "minItems": 3,
+              "maxItems": 3
+            },
+            "jogImages": {
+              "type": "object",
+              "required": [
+                "baseImage"
+              ],
+              "properties": {
+                "baseImage": {
+                  "type": "string"
+                },
+                "hoverImage": {
+                  "type": "string"
+                },
+                "pressedImage": {
+                  "type": "string"
+                },
+                "disabledImage": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "disabled": {
+              "type": "boolean"
+            }
+          }
+        }
+      ]
+    },
+    "textbox": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/commonProperties"
+        },
+        {
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "const": "textbox"
+            },
+            "callback": {
+              "type": "string"
+            },
+            "value": {
+              "type": "string"
+            },
+            "hint": {
+              "type": "string"
+            },
+            "blur": {
+              "type": "string"
+            },
+            "enterKey": {
+              "type": "string"
+            },
+            "escapeKey": {
+              "type": "string"
+            },
+            "nextFocus": {
+              "type": "string"
+            },
+            "prevFocus": {
+              "type": "string"
+            },
+            "textAlign": {
+              "enum": [
+                "left",
+                "center",
+                "right"
+              ]
+            },
+            "fontSize": {
+              "type": "integer"
+            },
+            "color": {
+              "$ref": "#/$defs/color"
+            },
+            "directives": {
+              "type": "string"
+            },
+            "font": {
+              "type": "string"
+            },
+            "border": {
+              "type": "boolean"
+            },
+            "maxWidth": {
+              "type": "integer"
+            },
+            "regex": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            }
+          }
+        }
+      ]
+    },
+    "stack": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/commonProperties"
+        },
+        {
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "const": "stack"
+            },
+            "stack": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/widgetCollection"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "tab": {
+      "type": "object",
+      "required": [
+        "tabName",
+        "tabTitle",
+        "children"
+      ],
+      "properties": {
+        "tabName": {
+          "type": "string"
+        },
+        "tabTitle": {
+          "type": "string"
+        },
+        "children": {
+          "$ref": "#/$defs/widgetCollection"
+        }
+      },
+      "additionalProperties": true
+    },
+    "tabSet": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/commonProperties"
+        },
+        {
+          "required": [
+            "type",
+            "tabButtonBaseImage",
+            "tabButtonHoverImage",
+            "tabButtonTextOffset",
+            "tabButtonSpacing",
+            "tabs"
+          ],
+          "properties": {
+            "type": {
+              "const": "tabSet"
+            },
+            "tabButtonBaseImage": {
+              "type": "string"
+            },
+            "tabButtonHoverImage": {
+              "type": "string"
+            },
+            "tabButtonPressedImage": {
+              "type": "string"
+            },
+            "tabButtonBaseImageSelected": {
+              "type": "string"
+            },
+            "tabButtonHoverImageSelected": {
+              "type": "string"
+            },
+            "tabButtonPressedImageSelected": {
+              "type": "string"
+            },
+            "tabButtonPressedOffset": {
+              "$ref": "#/$defs/integerVec2"
+            },
+            "tabButtonTextOffset": {
+              "$ref": "#/$defs/integerVec2"
+            },
+            "tabButtonSpacing": {
+              "$ref": "#/$defs/integerVec2"
+            },
+            "tabs": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/tab"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "scrollButtonState": {
+      "type": "object",
+      "required": [
+        "base",
+        "hover",
+        "pressed"
+      ],
+      "properties": {
+        "base": {
+          "type": "string"
+        },
+        "hover": {
+          "type": "string"
+        },
+        "pressed": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "scrollButtonsDirection": {
+      "type": "object",
+      "required": [
+        "forward",
+        "backward"
+      ],
+      "properties": {
+        "forward": {
+          "$ref": "#/$defs/scrollButtonState"
+        },
+        "backward": {
+          "$ref": "#/$defs/scrollButtonState"
+        }
+      },
+      "additionalProperties": true
+    },
+    "scrollButtons": {
+      "type": "object",
+      "required": [
+        "horizontal",
+        "vertical"
+      ],
+      "properties": {
+        "horizontal": {
+          "$ref": "#/$defs/scrollButtonsDirection"
+        },
+        "vertical": {
+          "$ref": "#/$defs/scrollButtonsDirection"
+        }
+      },
+      "additionalProperties": true
+    },
+    "scrollThumbState": {
+      "type": "object",
+      "required": [
+        "begin",
+        "inner",
+        "end"
+      ],
+      "properties": {
+        "begin": {
+          "type": "string"
+        },
+        "inner": {
+          "type": "string"
+        },
+        "end": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "scrollThumbDirection": {
+      "type": "object",
+      "required": [
+        "base",
+        "hover",
+        "pressed"
+      ],
+      "properties": {
+        "base": {
+          "$ref": "#/$defs/scrollThumbState"
+        },
+        "hover": {
+          "$ref": "#/$defs/scrollThumbState"
+        },
+        "pressed": {
+          "$ref": "#/$defs/scrollThumbState"
+        }
+      },
+      "additionalProperties": true
+    },
+    "scrollThumbs": {
+      "type": "object",
+      "required": [
+        "horizontal",
+        "vertical"
+      ],
+      "properties": {
+        "horizontal": {
+          "$ref": "#/$defs/scrollThumbDirection"
+        },
+        "vertical": {
+          "$ref": "#/$defs/scrollThumbDirection"
+        }
+      },
+      "additionalProperties": true
+    },
+    "scrollArea": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/commonProperties"
+        },
+        {
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "const": "scrollArea"
+            },
+            "buttons": {
+              "$ref": "#/$defs/scrollButtons"
+            },
+            "thumbs": {
+              "$ref": "#/$defs/scrollThumbs"
+            },
+            "horizontalScroll": {
+              "type": "boolean"
+            },
+            "verticalScroll": {
+              "type": "boolean"
+            },
+            "updatesChildren": {
+              "type": "boolean"
+            }
+          }
+        }
+      ]
+    },
+    "title": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "const": "title"
+        },
+        "title": {
+          "type": "string"
+        },
+        "subtitle": {
+          "type": "string"
+        },
+        "icon": {
+          "$ref": "#/$defs/widgetObjectConfig"
+        }
+      },
+      "additionalProperties": true
+    },
+    "panefeature": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "const": "panefeature"
+        },
+        "anchor": {
+          "$ref": "#/$defs/paneAnchor"
+        },
+        "offset": {
+          "$ref": "#/$defs/integerVec2"
+        },
+        "positionLocked": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": true
+    },
+    "background": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "const": "background"
+        },
+        "fileHeader": {
+          "type": "string"
+        },
+        "fileBody": {
+          "type": "string"
+        },
+        "fileFooter": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}

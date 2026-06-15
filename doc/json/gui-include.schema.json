@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gui-include.schema.json",
+  "title": "OpenStarbound included GUI fragment",
+  "description": "Schema for a root widget collection loaded by a GUI element with type include.",
+  "$ref": "gui-config.schema.json#/$defs/rootWidgetCollection"
+}
