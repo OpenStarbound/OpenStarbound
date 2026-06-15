@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/Mofurka/OpenStarbound/main/doc/json/gui-config.schema.json",
   "title": "OpenStarbound GUI configuration",
-  "description": "Schema derived from StarGuiReader and StarWidgetParsing. Accepts a direct widget collection or a containing document with a gui/paneLayout property.",
+  "description": "Strict schema derived from StarGuiReader and StarWidgetParsing. Accepts a direct widget collection or a containing document with a gui/paneLayout property. Store custom per-widget values inside data.",
   "anyOf": [
     {
       "$ref": "#/$defs/rootWidgetCollection"
@@ -225,7 +225,7 @@
           ]
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "drawable": {
       "description": "Drawable accepted by Drawable(Json).",
@@ -271,7 +271,7 @@
           "type": "array"
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "commonProperties": {
       "type": "object",
@@ -301,7 +301,9 @@
         "focus": {
           "type": "boolean"
         },
-        "data": true,
+        "data": {
+          "description": "Arbitrary custom data associated with the widget."
+        },
         "scissoring": {
           "type": "boolean"
         },
@@ -311,8 +313,7 @@
         "children": {
           "$ref": "#/$defs/widgetCollection"
         }
-      },
-      "additionalProperties": true
+      }
     },
     "namedWidget": {
       "allOf": [
@@ -383,7 +384,8 @@
         {
           "$ref": "#/$defs/background"
         }
-      ]
+      ],
+      "unevaluatedProperties": false
     },
     "widgetObjectConfig": {
       "description": "A type whose handler returns a Widget object; valid for title.icon.",
@@ -454,7 +456,8 @@
         {
           "$ref": "#/$defs/scrollArea"
         }
-      ]
+      ],
+      "unevaluatedProperties": false
     },
     "include": {
       "type": "object",
@@ -473,7 +476,7 @@
           "type": "string"
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "widget": {
       "allOf": [
@@ -1081,7 +1084,7 @@
           "$ref": "#/$defs/widgetCollection"
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "list": {
       "allOf": [
@@ -1178,7 +1181,8 @@
             }
           }
         }
-      ]
+      ],
+      "unevaluatedProperties": false
     },
     "radioGroup": {
       "allOf": [
@@ -1328,7 +1332,7 @@
                   "type": "string"
                 }
               },
-              "additionalProperties": true
+              "additionalProperties": false
             },
             "disabled": {
               "type": "boolean"
@@ -1450,7 +1454,7 @@
           "$ref": "#/$defs/widgetCollection"
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "tabSet": {
       "allOf": [
@@ -1525,7 +1529,7 @@
           "type": "string"
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "scrollButtonsDirection": {
       "type": "object",
@@ -1541,7 +1545,7 @@
           "$ref": "#/$defs/scrollButtonState"
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "scrollButtons": {
       "type": "object",
@@ -1557,7 +1561,7 @@
           "$ref": "#/$defs/scrollButtonsDirection"
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "scrollThumbState": {
       "type": "object",
@@ -1577,7 +1581,7 @@
           "type": "string"
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "scrollThumbDirection": {
       "type": "object",
@@ -1597,7 +1601,7 @@
           "$ref": "#/$defs/scrollThumbState"
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "scrollThumbs": {
       "type": "object",
@@ -1613,7 +1617,7 @@
           "$ref": "#/$defs/scrollThumbDirection"
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "scrollArea": {
       "allOf": [
@@ -1669,7 +1673,7 @@
           "$ref": "#/$defs/widgetObjectConfig"
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "panefeature": {
       "type": "object",
@@ -1693,7 +1697,7 @@
           "type": "boolean"
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "background": {
       "type": "object",
@@ -1717,7 +1721,7 @@
           "type": "string"
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     }
   }
 }
