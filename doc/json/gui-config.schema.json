@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/OpenStarbound/OpenStarbound/main/doc/gui-config.schema.json",
+  "$id": "https://raw.githubusercontent.com/Mofurka/OpenStarbound/main/doc/json/gui-config.schema.json"
   "title": "OpenStarbound GUI configuration",
   "description": "Schema derived from StarGuiReader and StarWidgetParsing. Accepts a direct widget collection or a containing document with a gui/paneLayout property.",
   "anyOf": [
