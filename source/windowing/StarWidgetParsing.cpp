@@ -431,6 +431,8 @@ WidgetConstructResult WidgetParser::textboxHandler(String const& name, Json cons
     textbox->setColor(jsonToColor(config.get("color")));
   if (config.contains("directives"))
     textbox->setDirectives(config.getString("directives"));
+  if (config.contains("font"))
+    textbox->setFont(config.getString("font"));
   if (config.contains("border"))
     textbox->setDrawBorder(config.getBool("border"));
   if (config.contains("maxWidth"))
@@ -466,6 +468,8 @@ WidgetConstructResult WidgetParser::labelHandler(String const& name, Json const&
     label->setLineSpacing(config.getFloat("lineSpacing"));
   if (config.contains("directives"))
     label->setDirectives(config.getString("directives"));
+  if (config.contains("font"))
+    label->setFont(config.getString("font"));
 
   return WidgetConstructResult(label, name, config.getFloat("zlevel", 0));
 }

@@ -229,6 +229,17 @@ function player.emote(emote, cooldown) end
 ---@return string, number
 function player.currentEmote() end
 
+--- Returns whether the player's armor in the specified slot is visible. Returns `nil` if the slot doesn't exist. ---
+---@param slotName string
+---@return Maybe<boolean>
+function player.armorVisible(slotName) end
+
+--- Sets whether the player's armor in the specified slot is visible. ---
+---@param slotName string
+---@param visible boolean
+---@return void
+function player.setArmorVisible(slotName, visible) end
+
 --- Returns the player's active action bar. ---
 ---@return unsigned
 function player.actionBarGroup() end

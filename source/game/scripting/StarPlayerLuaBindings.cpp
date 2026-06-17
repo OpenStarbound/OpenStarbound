@@ -375,6 +375,20 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
       return Json();
     });
 
+  callbacks.registerCallback("armorVisible", [player](String const& slotName) -> Maybe<bool> {
+    if (auto slotPtr = EquipmentSlotNames.leftPtr(slotName))
+      return player->inventory()->equipmentVisibility(*slotPtr);
+    return {};
+  });
+
+  callbacks.registerCallback("setArmorVisible", [player](String const& slotName, bool visible) -> bool {
+    if (auto slotPtr = EquipmentSlotNames.leftPtr(slotName)) {
+      player->inventory()->setEquipmentVisibility(*slotPtr, visible);
+      return true;
+    }
+    return false;
+  });
+
   callbacks.registerCallback("hasItem", [player](Json const& item, Maybe<bool> exactMatch) {
       return player->hasItem(ItemDescriptor(item), exactMatch.value(false));
     });
@@ -813,6 +827,14 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
 
   callbacks.registerCallback("setDeathParticleBurst", [player](Maybe<String> const& deathParticleBurst) {
     player->setDeathParticleBurst(deathParticleBurst);
+  });
+
+  callbacks.registerCallback("headRotation", [player](Maybe<EntityId> const& entityId) {
+    return player->getSecretProperty("humanoid.headRotation");
+  });
+  // more accurate than mcontroller.facingDirection
+  callbacks.registerCallback("facingDirection", [player](Maybe<EntityId> const& entityId) {
+    return numericalDirection(player->humanoid()->facingDirection());
   });
 
   return callbacks;

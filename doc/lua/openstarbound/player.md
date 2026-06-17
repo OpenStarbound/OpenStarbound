@@ -305,6 +305,18 @@ Returns the player's current emote and the seconds left in it.
 
 ---
 
+#### `Maybe<bool>` player.armorVisible(`String` slotName)
+
+Returns whether the player's armor in the specified slot is visible. Returns `nil` if the slot doesn't exist.
+
+---
+
+#### `void` player.setArmorVisible(`String` slotName, `bool` visible)
+
+Sets whether the player's armor in the specified slot is visible.
+
+---
+
 #### `unsigned` player.actionBarGroup()
 
 Returns the player's active action bar.

@@ -5,7 +5,8 @@
 namespace Star {
 
 SteamUserGeneratedContentService::SteamUserGeneratedContentService(PcPlatformServicesStatePtr)
-  : m_callbackDownloadResult(this, &SteamUserGeneratedContentService::onDownloadResult) {};
+  : m_callbackDownloadResult(this, &SteamUserGeneratedContentService::onDownloadResult),
+    m_checkedUGC(false) {};
 
 StringList SteamUserGeneratedContentService::subscribedContentIds() const {
   List<PublishedFileId_t> contentIds(SteamUGC()->GetNumSubscribedItems(), {});

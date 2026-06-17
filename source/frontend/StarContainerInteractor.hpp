@@ -18,7 +18,7 @@ public:
   // Returns NullEntityId if no container is open
   EntityId openContainerId() const;
 
-  // Throws exception if there is no currently open container.
+  // This does not perform any checks; make sure to check if it is valid if you use it!
   ContainerEntityPtr const& openContainer() const;
 
   List<ContainerResult> pullContainerResults();

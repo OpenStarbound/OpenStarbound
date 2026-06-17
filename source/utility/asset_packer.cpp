@@ -57,7 +57,7 @@ int main(int argc, char** argv) {
       }
     }
 
-    bool verbose = opts.parameters.contains("v");
+    bool verbose = opts.switches.contains("v");
 
     function<void(size_t, size_t, String, String, bool)> BuildProgressCallback;
     auto progressCallback = [verbose](size_t, size_t, String filePath, String assetPath) {

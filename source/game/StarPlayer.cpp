@@ -102,6 +102,8 @@ Player::Player(PlayerConfigPtr config, Uuid uuid) {
   m_deployment = make_shared<PlayerDeployment>(m_config->deploymentConfig);
 
   m_inventory = make_shared<PlayerInventory>();
+  m_inventory->setPlayer(this);
+
   m_blueprints = make_shared<PlayerBlueprints>();
   m_universeMap = make_shared<PlayerUniverseMap>();
   m_codexes = make_shared<PlayerCodexes>();
@@ -137,6 +139,8 @@ Player::Player(PlayerConfigPtr config, Uuid uuid) {
 
   m_chatMessageChanged = false;
   m_chatMessageUpdated = false;
+
+  m_interruptRadioMessage = false;
 
   m_songbook = make_shared<Songbook>(species());
 
@@ -365,6 +369,7 @@ void Player::init(World* world, EntityId entityId, EntityMode mode) {
     for (auto& p : m_genericScriptContexts) {
       p.second->addActorMovementCallbacks(m_movementController.get());
       p.second->addCallbacks("player", LuaBindings::makePlayerCallbacks(this));
+      p.second->addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
       p.second->addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(m_statusController.get()));
       p.second->addCallbacks("songbook", LuaBindings::makeSongbookCallbacks(m_songbook.get()));
       p.second->addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(humanoid()->networkedAnimator()));
@@ -1165,6 +1170,11 @@ void Player::update(float dt, uint64_t) {
       if (isMaster())
         setSecretProperty("humanoid.headRotation", headRotation);
     }
+  }
+  
+  if (isMaster()) {
+    for (auto& p : m_genericScriptContexts)
+      p.second->invoke("postUpdate");
   }
 
   m_pendingMoves.clear();

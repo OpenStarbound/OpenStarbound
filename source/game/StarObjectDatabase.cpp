@@ -611,7 +611,7 @@ List<Drawable> ObjectDatabase::cursorHintDrawables(World const* world, String co
     if (direction == Direction::Left)
       *placementImage += "?flipx";
     drawables = {Drawable::makeImage(AssetPath::relativeTo(config->path, *placementImage),
-        1.0 / TilePixels, false, Vec2F(position) + jsonToVec2F(mergeConfig.get("placementImagePosition")) / TilePixels)};
+                                     1.0 / TilePixels, false, Vec2F(position) + jsonToVec2F(mergeConfig.get("placementImagePosition", jsonFromVec2F(Vec2F()))) / TilePixels)};
   } else {
     size_t orientationIndex = config->findValidOrientation(world, position, direction);
     if (orientationIndex == NPos) {

@@ -100,6 +100,14 @@ UniverseSettingsPtr WorldServer::universeSettings() const {
 void WorldServer::setReferenceClock(ClockPtr clock) {
   m_weather.setReferenceClock(clock);
   m_sky->setReferenceClock(clock);
+  m_referenceClock = clock;
+}
+
+void WorldServer::setPause(bool pause) {
+  if (m_referenceClock && pause)
+    m_referenceClock->stop();
+  else if (m_referenceClock)
+    m_referenceClock->start();
 }
 
 void WorldServer::initLua(UniverseServer* universe) {
@@ -557,7 +565,8 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
       // setTemplate re-adds all clients currently, update clientInfo
       clientInfo = m_clientInfo.get(clientId);
     } else {
-      throw WorldServerException::format("Improper packet type {} received by client", (int)packet->type());
+      Logger::warn("UniverseServer: Dropping unexpected {} packet from client",
+          PacketTypeNames.getRight(packet->type()));
     }
   }
 }

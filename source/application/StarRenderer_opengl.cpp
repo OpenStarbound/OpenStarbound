@@ -8,7 +8,7 @@ namespace Star {
 size_t const MultiTextureCount = 4;
 
 char const* DefaultVertexShader = R"SHADER(
-#version 140
+#version 150
 
 uniform vec2 textureSize0;
 uniform vec2 textureSize1;
@@ -49,7 +49,7 @@ void main() {
 )SHADER";
 
 char const* DefaultFragmentShader = R"SHADER(
-#version 140
+#version 150
 
 uniform sampler2D texture0;
 uniform sampler2D texture1;
@@ -89,13 +89,27 @@ static void GLAPIENTRY GlMessageCallback(GLenum, GLenum type, GLuint, GLenum, GL
 }
 */
 
+extern EnumMap<BoolSettingMode> const BoolSettingModeNames{
+  {BoolSettingMode::Enabled, "Enabled"},
+  {BoolSettingMode::FromSetting, "FromSetting"},
+  {BoolSettingMode::Disabled, "Disabled"}
+};
+
+bool settingModeValue(BoolSettingMode const& mode, bool const& setting) {
+  if (mode == BoolSettingMode::FromSetting) {
+    return setting;
+  } else {
+    return mode == BoolSettingMode::Enabled;
+  }
+}
+
 OpenGlRenderer::OpenGlRenderer() {
   auto glewResult = glewInit();
   if (glewResult != GLEW_OK && glewResult != GLEW_ERROR_NO_GLX_DISPLAY)
     throw RendererException::format("Could not initialize GLEW: {}", (char*)glewGetErrorString(glewResult));
 
-  if (!GLEW_VERSION_2_0)
-    throw RendererException("OpenGL 2.0 not available!");
+  if (!GLEW_VERSION_3_2)
+    throw RendererException("OpenGL 3.2 not available!");
 
   Logger::info("OpenGL version: '{}' vendor: '{}' renderer: '{}' shader: '{}'",
       (const char*)glGetString(GL_VERSION),
@@ -122,6 +136,7 @@ OpenGlRenderer::OpenGlRenderer() {
   m_limitTextureGroupSize = false;
   m_useMultiTexturing = true;
   m_multiSampling = false;
+  m_hdrSetting = true;
 
   logGlErrorSummary("OpenGL errors during renderer initialization");
 }
@@ -151,28 +166,47 @@ OpenGlRenderer::GlFrameBuffer::GlFrameBuffer(Json const& fbConfig) : config(fbCo
   if (texture->textureId == 0)
     throw RendererException("Could not generate OpenGL texture for framebuffer");
 
+  clear = config.getBool("clear",true);
+  
   multisample = GLEW_VERSION_4_0 ? config.getUInt("multisample", 0) : 0;
   GLenum target = multisample ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D;
   glBindTexture(target, texture->glTextureId());
+  
+  hdrMode = BoolSettingModeNames.getLeft(config.getString("hdr","Disabled"));
+  bool hdr = settingModeValue(hdrMode,config.getBool("hdrSetting",false));
+  alpha = config.getBool("alpha",false) || multisample;
 
   sizeDiv = config.getUInt("sizeDiv", 1);
-  Vec2U size = jsonToVec2U(config.getArray("size", { 256, 256 })) / sizeDiv;
+  Vec2U size = Vec2U(256,256);
+  if (auto oSize = config.optArray("size")) {
+    overrideSize = jsonToVec2U(*oSize);
+    size = *overrideSize;
+  }
 
-  if (multisample)
-    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, multisample, GL_RGBA8, size[0], size[1], GL_TRUE);
-  else {
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, size[0], size[1], 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+  if (multisample) {
+    auto internalFormat =  hdr ? GL_RGBA16F : GL_RGBA8;
+    
+    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, multisample, internalFormat, size[0], size[1], GL_TRUE);
+  } else {
+    auto format = alpha ? GL_RGBA : GL_RGB;
+    auto internalFormat =  hdr ? 
+        (alpha ? GL_RGBA16F : GL_RGB16F) :
+        (alpha ? GL_RGBA8 : GL_RGB8);
+    auto type = hdr ? GL_FLOAT : GL_UNSIGNED_BYTE;
+    
+    glTexImage2D(
+      GL_TEXTURE_2D, 0, internalFormat, size[0], size[1], 0, format, type, NULL);
   }
   auto addressing = TextureAddressingNames.getLeft(config.getString("textureAddressing", "clamp"));
   auto filtering = TextureFilteringNames.getLeft(config.getString("textureFiltering", "nearest"));
-  if (addressing == TextureAddressing::Clamp) {
-    glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  } else {
-    glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_REPEAT);
-  }
   if (!multisample) {
+    if (addressing == TextureAddressing::Clamp) {
+      glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    } else {
+      glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_REPEAT);
+      glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    }
     if (filtering == TextureFiltering::Nearest) {
       glTexParameterf(target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
       glTexParameterf(target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -194,6 +228,80 @@ OpenGlRenderer::GlFrameBuffer::GlFrameBuffer(Json const& fbConfig) : config(fbCo
     throw RendererException("OpenGL framebuffer is not complete!");
 }
 
+void OpenGlRenderer::GlFrameBuffer::makeAlt(Vec2U const& screenSize) {
+  // Bott: ...this is a lot of repeated code. unfortunately it's also rather difficult to make it not repeated.
+  altTexture = make_ref<GlLoneTexture>();
+  altTexture->textureFiltering = TextureFiltering::Nearest;
+  altTexture->textureAddressing = TextureAddressing::Clamp;
+  altTexture->textureSize = {0, 0};
+  glGenTextures(1, &altTexture->textureId);
+  if (altTexture->textureId == 0)
+    throw RendererException("Could not generate OpenGL texture for framebuffer");
+
+  
+  GLenum target = multisample ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D;
+  glBindTexture(target, altTexture->glTextureId());
+  
+  bool hdr = settingModeValue(hdrMode,config.getBool("hdrSetting",false));
+
+  Vec2U size = overrideSize ? *overrideSize : (screenSize / sizeDiv);
+
+  if (multisample) {
+    auto internalFormat =  hdr ? GL_RGBA16F : GL_RGBA8;
+    
+    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, multisample, internalFormat, size[0], size[1], GL_TRUE);
+  } else {
+    auto format = alpha ? GL_RGBA : GL_RGB;
+    auto internalFormat =  hdr ? 
+        (alpha ? GL_RGBA16F : GL_RGB16F) :
+        (alpha ? GL_RGBA8 : GL_RGB8);
+    auto type = hdr ? GL_FLOAT : GL_UNSIGNED_BYTE;
+    
+    glTexImage2D(
+      GL_TEXTURE_2D, 0, internalFormat, size[0], size[1], 0, format, type, NULL);
+  }
+  auto addressing = TextureAddressingNames.getLeft(config.getString("textureAddressing", "clamp"));
+  auto filtering = TextureFilteringNames.getLeft(config.getString("textureFiltering", "nearest"));
+  if (!multisample) {
+    if (addressing == TextureAddressing::Clamp) {
+      glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    } else {
+      glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_REPEAT);
+      glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    }
+    if (filtering == TextureFiltering::Nearest) {
+      glTexParameterf(target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+      glTexParameterf(target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    } else {
+      glTexParameterf(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+      glTexParameterf(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    }
+  }
+
+  altId = 0;
+  glGenFramebuffers(1, &altId);
+  if (!altId)
+    throw RendererException("Failed to create OpenGL framebuffer");
+
+  glBindFramebuffer(GL_FRAMEBUFFER, altId);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, target, altTexture->glTextureId(), 0);
+
+  auto framebufferStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+  if (framebufferStatus != GL_FRAMEBUFFER_COMPLETE)
+    throw RendererException("OpenGL framebuffer is not complete!");
+  
+  hasAlt = true;
+}
+
+void OpenGlRenderer::GlFrameBuffer::swap() {
+  if (!hasAlt)
+    throw RendererException("Attempting to swap framebuffer without an alt!");
+  
+  std::swap(id,altId);
+  std::swap(texture,altTexture);
+  justSwapped = true;
+}
 
 OpenGlRenderer::GlFrameBuffer::~GlFrameBuffer() {
   glDeleteFramebuffers(1, &id);
@@ -206,8 +314,13 @@ void OpenGlRenderer::loadConfig(Json const& config) {
   for (auto& pair : config.getObject("frameBuffers", {})) {
     Json config = pair.second;
     config = config.set("multisample", m_multiSampling);
+    config = config.set("hdrSetting", m_hdrSetting);
     Logger::info("Creating framebuffer {}", pair.first);
-    m_frameBuffers[pair.first] = make_ref<GlFrameBuffer>(config);
+    auto buf = make_ref<GlFrameBuffer>(config);
+    if (config.getBool("double",false)) {
+      buf->makeAlt();
+    }
+    m_frameBuffers[pair.first] = buf;
 
   }
   setScreenSize(m_screenSize);
@@ -371,6 +484,26 @@ void OpenGlRenderer::loadEffectConfig(String const& name, Json const& effectConf
       effect.textures[p.first] = effectTexture;
     }
   }
+  
+  if (auto outFrameBufferId = effect.config.optString("frameBuffer")) {
+    if (auto blitFrameBufferId = effect.config.optString("blitFrameBuffer")) {
+      if ((*outFrameBufferId).equals((*blitFrameBufferId))) {
+        effect.doubleBuffered = true;
+      }
+    }
+    if (!effect.doubleBuffered) {
+      if (auto fbts = effect.config.optArray("frameBufferTextures")) {
+        for (auto const& fbt : *fbts) {
+          if (auto inFrameBufferId = fbt.optString("framebuffer")) {
+            if ((*outFrameBufferId).equals((*inFrameBufferId))) {
+              effect.doubleBuffered = true;
+              break;
+            }
+          }
+        }
+      }
+    }
+  }
 
   if (DebugEnabled)
     logGlErrorSummary("OpenGL errors setting effect config");
@@ -477,14 +610,20 @@ bool OpenGlRenderer::switchEffectConfig(String const& name) {
   if (m_currentEffect == &effect)
     return true;
 
-  if (auto blitFrameBufferId = effect.config.optString("blitFrameBuffer"))
-    blitGlFrameBuffer(getGlFrameBuffer(*blitFrameBufferId));
-
   auto effectScreenSize = m_screenSize;
-  if (auto frameBufferId = effect.config.optString("frameBuffer")) {
-    auto buf = getGlFrameBuffer(*frameBufferId);
-    switchGlFrameBuffer(buf);
+  
+  auto outFrameBufferId = effect.config.optString("frameBuffer");
+  if (outFrameBufferId) {
+    auto buf = getGlFrameBuffer(*outFrameBufferId);
     effectScreenSize = m_screenSize / (buf->sizeDiv);
+    if (effect.doubleBuffered) {
+      if (!buf->hasAlt) {
+        Logger::warn("Effect {} should be double buffered, but framebuffer {} doesn't have an alt! Making one!", name, *outFrameBufferId);
+        buf->makeAlt(m_screenSize);
+      }
+      buf->swap();
+    }
+    switchGlFrameBuffer(buf);
   } else {
     m_currentFrameBuffer.reset();
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
@@ -501,10 +640,13 @@ bool OpenGlRenderer::switchEffectConfig(String const& name) {
         auto textureUniform = fbt.getString("texture");
         auto ptr = m_currentEffect->textures.ptr(textureUniform);
         if (ptr) {
-          if (!ptr->textureValue || ptr->textureValue->textureId == 0) {  
-            auto texture = getGlFrameBuffer(*frameBufferId)->texture;
+          auto undefined = !ptr->textureValue || ptr->textureValue->textureId == 0;
+          auto swapped = effect.doubleBuffered && (*frameBufferId).equals(*outFrameBufferId);
+          auto buf = getGlFrameBuffer(*frameBufferId);
+          if (undefined || buf->hasAlt) {
+            auto texture = swapped ? buf->altTexture : buf->texture;
             ptr->textureValue = texture;
-            if (ptr->textureSizeUniform != -1) {
+            if (ptr->textureSizeUniform != -1 && undefined) {
               auto textureSize = ptr->textureValue->glTextureSize();
               glUniform2f(ptr->textureSizeUniform, textureSize[0], textureSize[1]);
             }
@@ -513,6 +655,10 @@ bool OpenGlRenderer::switchEffectConfig(String const& name) {
       }
     }
   }
+  
+  if (auto blitFrameBufferId = effect.config.optString("blitFrameBuffer"))
+    blitGlFrameBuffer(getGlFrameBuffer(*blitFrameBufferId), effect.doubleBuffered);
+  
   return true;
 }
 
@@ -557,6 +703,14 @@ void OpenGlRenderer::setMultiSampling(unsigned multiSampling) {
     glDisable(GL_SAMPLE_SHADING);
     glDisable(GL_MULTISAMPLE);
   }
+  loadConfig(m_config);
+}
+
+void OpenGlRenderer::setMainHDR(bool enabled) {
+  if (m_hdrSetting == enabled)
+    return;
+  
+  m_hdrSetting = enabled;
   loadConfig(m_config);
 }
 
@@ -611,13 +765,33 @@ void OpenGlRenderer::setScreenSize(Vec2U screenSize) {
   glUniform2f(m_screenSizeUniform, m_screenSize[0], m_screenSize[1]);
 
   for (auto& frameBuffer : m_frameBuffers) {
+    if (frameBuffer.second->overrideSize) {
+      continue; // don't resize this one
+    }
     unsigned sizeDiv = frameBuffer.second->sizeDiv;
+    bool hdr = settingModeValue(frameBuffer.second->hdrMode,m_hdrSetting);
     if (unsigned multisample = frameBuffer.second->multisample) {
+      auto internalFormat =  hdr ? GL_RGBA16F : GL_RGBA8;
+      
       glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, frameBuffer.second->texture->glTextureId());
-      glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, multisample, GL_RGBA8, m_screenSize[0] / sizeDiv, m_screenSize[1] / sizeDiv, GL_TRUE);
+      glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, multisample, internalFormat, m_screenSize[0] / sizeDiv, m_screenSize[1] / sizeDiv, GL_TRUE);
+      if (frameBuffer.second->hasAlt) {
+        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, frameBuffer.second->altTexture->glTextureId());
+        glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, multisample, internalFormat, m_screenSize[0] / sizeDiv, m_screenSize[1] / sizeDiv, GL_TRUE);
+      }
     } else {
+      auto format = frameBuffer.second->alpha ? GL_RGBA : GL_RGB;
+      auto internalFormat =  hdr ? 
+          (frameBuffer.second->alpha ? GL_RGBA16F : GL_RGB16F) :
+          (frameBuffer.second->alpha ? GL_RGBA8 : GL_RGB8);
+      auto type = hdr ? GL_FLOAT : GL_UNSIGNED_BYTE;
+      
       glBindTexture(GL_TEXTURE_2D, frameBuffer.second->texture->glTextureId());
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_screenSize[0] / sizeDiv, m_screenSize[1] / sizeDiv, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+      glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, m_screenSize[0] / sizeDiv, m_screenSize[1] / sizeDiv, 0, format, type, NULL);
+      if (frameBuffer.second->hasAlt) {
+        glBindTexture(GL_TEXTURE_2D, frameBuffer.second->altTexture->glTextureId());
+        glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, m_screenSize[0] / sizeDiv, m_screenSize[1] / sizeDiv, 0, format, type, NULL);
+      }
     }
   }
 }
@@ -628,7 +802,15 @@ void OpenGlRenderer::startFrame() {
   
   for (auto& frameBuffer : m_frameBuffers) {
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, frameBuffer.second->id);
-    glClear(GL_COLOR_BUFFER_BIT);
+    if (frameBuffer.second->clear)
+      glClear(GL_COLOR_BUFFER_BIT);
+    
+    if (frameBuffer.second->hasAlt) {
+      glBindFramebuffer(GL_DRAW_FRAMEBUFFER, frameBuffer.second->altId);
+      if (frameBuffer.second->clear)
+        glClear(GL_COLOR_BUFFER_BIT);
+    }
+    
     frameBuffer.second->blitted = false;
   }
 
@@ -1154,26 +1336,21 @@ RefPtr<OpenGlRenderer::GlFrameBuffer> OpenGlRenderer::getGlFrameBuffer(String co
     throw RendererException::format("Frame buffer '{}' does not exist", id);
 }
 
-void OpenGlRenderer::blitGlFrameBuffer(RefPtr<GlFrameBuffer> const& frameBuffer) {
-  if (frameBuffer->blitted)
-    return;
-
+void OpenGlRenderer::blitGlFrameBuffer(RefPtr<GlFrameBuffer> const& frameBuffer, bool const& useAlt) {
   auto& size = m_screenSize;
-  glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-  glBindFramebuffer(GL_READ_FRAMEBUFFER, frameBuffer->id);
+  glBindFramebuffer(GL_READ_FRAMEBUFFER, (useAlt && frameBuffer->hasAlt) ? frameBuffer->altId : frameBuffer->id);
   glBlitFramebuffer(
     0, 0, size[0], size[1],
     0, 0, size[0], size[1],
     GL_COLOR_BUFFER_BIT, GL_NEAREST
   );
-
-  frameBuffer->blitted = true;
 }
 
 void OpenGlRenderer::switchGlFrameBuffer(RefPtr<GlFrameBuffer> const& frameBuffer) {
-  if (m_currentFrameBuffer == frameBuffer)
+  if (m_currentFrameBuffer == frameBuffer && !frameBuffer->justSwapped)
     return;
-
+  
+  frameBuffer->justSwapped = false;
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, frameBuffer->id);
   m_currentFrameBuffer = frameBuffer;
 }

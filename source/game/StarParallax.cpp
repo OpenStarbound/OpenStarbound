@@ -264,6 +264,10 @@ void Parallax::buildLayer(Json const& layerSettings, String const& kind) {
     layer.addImageDirectives(String(strf("hueshift={}", m_hueShift)));
 
   layer.fadePercent = layerSettings.getFloat("fadePercent", 0);
+  
+  layer.frameNumber = layerSettings.getInt("frameNumber", 1);
+  layer.frameOffset = layerSettings.getInt("frameOffset", 0);
+  layer.animationCycle = layerSettings.getFloat("animationCycle", 1.0f);
 
   m_layers.append(layer);
 }

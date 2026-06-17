@@ -39,6 +39,9 @@ public:
   virtual void setNormalWindow(Vec2U windowSize) = 0;
   virtual void setMaximizedWindow() = 0;
   virtual void setBorderlessWindow() = 0;
+  #ifdef STAR_SYSTEM_WINDOWS
+  virtual void setBorderlessWorkaround(bool active) = 0;
+  #endif
   virtual void setVSyncEnabled(bool vSync) = 0;
   virtual void setCursorVisible(bool cursorVisible) = 0;
   virtual void setCursorPosition(Vec2I cursorPosition) = 0;

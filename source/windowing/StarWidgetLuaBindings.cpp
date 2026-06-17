@@ -200,8 +200,8 @@ LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr
   callbacks.registerCallback("addChild", [parentWidget, reader](String const& widgetName, Json const& newChildConfig, Maybe<String> const& newChildName) {
       if (auto widget = parentWidget->fetchChild<Widget>(widgetName)) {
         String name = newChildName.value(toString(Random::randu64()));
-        WidgetPtr newChild = reader->makeSingle(name, newChildConfig);
-        widget->addChild(name, newChild);
+        if (auto newChild = reader->makeSingle(name, newChildConfig))
+          widget->addChild(name, newChild);
       }
     });
 
@@ -421,6 +421,11 @@ LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr
         if (auto selected = list->fetchChild(selectedName))
           list->setSelectedWidget(selected);
     });
+
+  callbacks.registerCallback("clearListSelected", [parentWidget](String const& widgetName) {
+    if (auto list = parentWidget->fetchChild<ListWidget>(widgetName))
+      list->clearSelected();
+  });
 
   callbacks.registerCallback("registerMemberCallback", [parentWidget](String const& widgetName, String const& name, LuaFunction callback) {
       if (auto list = parentWidget->fetchChild<ListWidget>(widgetName)){

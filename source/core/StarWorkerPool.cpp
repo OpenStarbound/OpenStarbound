@@ -124,6 +124,10 @@ WorkerPoolHandle WorkerPool::addWork(function<void()> work) {
   return workerPoolHandleImpl;
 }
 
+size_t WorkerPool::getWorkerCount() const {
+  return m_workerThreads.size();
+}
+
 WorkerPool::WorkerThread::WorkerThread(WorkerPool* parent)
   : Thread(strf("WorkerThread for WorkerPool '{}'", parent->m_name)),
     parent(parent),

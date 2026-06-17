@@ -41,7 +41,7 @@ mkdir server_distribution/linux
 
 # makes the server function on older Linux versions (this is so stupid)
 nm --dynamic --undefined-only --with-symbol-versions dist/starbound_server | grep GLIBC_2.29
-./scripts/ci/linux/patchelf dist/starbound_server \
+patchelf dist/starbound_server \
   --clear-symbol-version exp \
   --clear-symbol-version exp2 \
   --clear-symbol-version log \
@@ -56,5 +56,5 @@ cp \
   scripts/steam_appid.txt \
   server_distribution/linux/
 
-tar -cvf client.tar client_distribution
-tar -cvf server.tar server_distribution
+tarlz -c9vf client.tar.lz client_distribution
+tarlz -c9vf server.tar.lz server_distribution

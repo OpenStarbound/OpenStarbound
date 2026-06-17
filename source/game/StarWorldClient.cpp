@@ -1684,10 +1684,10 @@ RpcPromise<InteractAction> WorldClient::interact(InteractRequest const& request)
   if (auto targetEntity = m_entityMap->entity(request.targetId)) {
     if (targetEntity->isMaster()) {
       // client-side-master entities need to be handled here rather than over network
-      auto interactiveTarget = as<InteractiveEntity>(targetEntity);
-      starAssert(interactiveTarget);
-
-      return RpcPromise<InteractAction>::createFulfilled(interactiveTarget->interact(request));
+      if (auto interactiveTarget = as<InteractiveEntity>(targetEntity))
+        return RpcPromise<InteractAction>::createFulfilled(interactiveTarget->interact(request));
+      else
+        return RpcPromise<InteractAction>::createFulfilled(InteractAction());
     }
   }
 
@@ -1708,7 +1708,7 @@ void WorldClient::lightingTileGather() {
 
   // Each column in tileEvalColumns is guaranteed to be no larger than the sector size.
 
-  m_tileArray->tileEvalColumns(m_lightingCalculator.calculationRegion(), [&](Vec2I const& pos, ClientTile const* column, size_t ySize) {
+  m_tileArray->tileEvalColumnsParallel(m_lightingCalculator.calculationRegion(), [&](Vec2I const& pos, ClientTile const* column, size_t ySize) {
     size_t baseIndex = m_lightingCalculator.baseIndexFor(pos);
     for (size_t y = 0; y < ySize; ++y) {
       auto& tile = column[y];
