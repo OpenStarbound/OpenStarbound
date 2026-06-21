@@ -22,9 +22,6 @@ ByteArray uncompressData(const char* in, size_t inLen, size_t limit = 0);
 void uncompressData(ByteArray const& in, ByteArray& out, size_t limit = 0);
 ByteArray uncompressData(ByteArray const& in, size_t limit = 0);
 
-void compressDataGzip(ByteArray const& in, ByteArray& out, CompressionLevel compression = MediumCompression);
-ByteArray compressDataGzip(ByteArray const& in, CompressionLevel compression = MediumCompression);
-
 void uncompressDataGzip(const char* in, size_t inLen, ByteArray& out, size_t limit = 0);
 ByteArray uncompressDataGzip(const char* in, size_t inLen, size_t limit = 0);
 void uncompressDataGzip(ByteArray const& in, ByteArray& out, size_t limit = 0);
