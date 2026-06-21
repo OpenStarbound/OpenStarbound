@@ -51,49 +51,6 @@ ByteArray compressData(ByteArray const& in, CompressionLevel compression) {
   return out;
 }
 
-void compressDataGzip(ByteArray const& in, ByteArray& out, CompressionLevel compression) {
-  out.clear();
-
-  if (in.empty())
-    return;
-
-  const size_t BUFSIZE = 32 * 1024;
-  auto tempBuffer = std::make_unique<unsigned char[]>(BUFSIZE);
-
-  z_stream strm{};
-  strm.zalloc = Z_NULL;
-  strm.zfree = Z_NULL;
-  strm.opaque = Z_NULL;
-  int deflate_res = deflateInit2(&strm, compression, Z_DEFLATED, 31, 8, Z_DEFAULT_STRATEGY);
-  if (deflate_res != Z_OK)
-    throw IOException(strf("Failed to initialise deflate ({})", deflate_res));
-
-  strm.next_in = (unsigned char*)in.ptr();
-  strm.avail_in = in.size();
-  strm.next_out = tempBuffer.get();
-  strm.avail_out = BUFSIZE;
-  while (deflate_res == Z_OK) {
-    deflate_res = deflate(&strm, Z_FINISH);
-    if (strm.avail_out == 0) {
-      out.append((char const*)tempBuffer.get(), BUFSIZE);
-      strm.next_out = tempBuffer.get();
-      strm.avail_out = BUFSIZE;
-    }
-  }
-  deflateEnd(&strm);
-
-  if (deflate_res != Z_STREAM_END)
-    throw IOException(strf("Internal error in compressDataGzip, deflate_res is {}", deflate_res));
-
-  out.append((char const*)tempBuffer.get(), BUFSIZE - strm.avail_out);
-}
-
-ByteArray compressDataGzip(ByteArray const& in, CompressionLevel compression) {
-  ByteArray out = ByteArray::withReserve(in.size());
-  compressDataGzip(in, out, compression);
-  return out;
-}
-
 void uncompressData(const char* in, size_t inLen, ByteArray& out, size_t limit) {
   out.clear();
 
