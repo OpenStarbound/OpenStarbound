@@ -115,14 +115,17 @@ void AudioInstance::setLoops(int loops) {
 }
 
 double AudioInstance::currentTime() const {
+  MutexLocker locker(m_mutex);
   return m_audio.currentTime();
 }
 
 double AudioInstance::totalTime() const {
+  MutexLocker locker(m_mutex);
   return m_audio.totalTime();
 }
 
 void AudioInstance::seekTime(double time) {
+  MutexLocker locker(m_mutex);
   m_audio.seekTime(time);
 }
 
