@@ -111,8 +111,8 @@ LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr
   // a bit miscellaneous, but put this here since widgets have access to gui context
 
   callbacks.registerCallback("playSound",
-      [parentWidget](String const& audio, Maybe<int> loops, Maybe<float> volume) {
-        parentWidget->context()->playAudio(audio, loops.value(0), volume.value(1.0f));
+      [parentWidget](String const& audio, Maybe<int> loops, Maybe<float> volume) -> AudioInstancePtr {
+        return parentWidget->context()->playAudio(audio, loops.value(0), volume.value(1.0f));
       });
 
   // widget userdata methods

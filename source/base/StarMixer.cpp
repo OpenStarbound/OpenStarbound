@@ -16,6 +16,12 @@ namespace {
       return 1.0f / rampTime;
   }
 }
+extern EnumMap<MixerGroup> const MixerGroupNames = {
+  {MixerGroup::Effects, "Effects"},
+  {MixerGroup::Music, "Music"},
+  {MixerGroup::Cinematic, "Cinematic"},
+  {MixerGroup::Instruments, "Instruments"}
+};
 
 AudioInstance::AudioInstance(Audio const& audio)
   : m_audio(audio) {
