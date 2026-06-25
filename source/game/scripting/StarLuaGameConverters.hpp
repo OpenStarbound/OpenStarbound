@@ -13,6 +13,7 @@
 #include "StarDrawable.hpp"
 #include "StarRpcThreadPromise.hpp"
 #include "StarEntity.hpp"
+#include "StarMixer.hpp"
 
 namespace Star {
 
@@ -191,6 +192,14 @@ struct LuaConverter<EntityPtr> : LuaUserDataConverter<EntityPtr> {};
 template <>
 struct LuaUserDataMethods<EntityPtr> {
   static LuaMethods<EntityPtr> make();
+};
+
+template <>
+struct LuaConverter<AudioInstancePtr> : LuaUserDataConverter<AudioInstancePtr> {};
+
+template <>
+struct LuaUserDataMethods<AudioInstancePtr> {
+  static LuaMethods<AudioInstancePtr> make();
 };
 
 }
