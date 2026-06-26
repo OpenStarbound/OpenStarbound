@@ -436,7 +436,7 @@ void GuiContext::playAudio(AudioInstancePtr audioInstance) {
   m_mixer->play(audioInstance);
 }
 
-void GuiContext::playAudio(String const& audioAsset, int loops, float volume, float pitch) {
+AudioInstancePtr GuiContext::playAudio(String const& audioAsset, int loops, float volume, float pitch) {
   auto assets = Root::singleton().assets();
   auto config = Root::singleton().configuration();
   auto audioInstance = make_shared<AudioInstance>(*assets->audio(audioAsset));
@@ -444,6 +444,7 @@ void GuiContext::playAudio(String const& audioAsset, int loops, float volume, fl
   audioInstance->setPitchMultiplier(pitch);
   audioInstance->setLoops(loops);
   m_mixer->play(std::move(audioInstance));
+  return audioInstance;
 }
 
 String GuiContext::getClipboard() const {

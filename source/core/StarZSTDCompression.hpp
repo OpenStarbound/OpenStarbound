@@ -37,4 +37,17 @@ private:
   ZSTD_DStream* m_dStream;
 };
 
+class ZstdCompression {
+public:
+  static void compress(const char* in, size_t inLen, ByteArray& out, int compressionLevel = 0);
+  static void compress(ByteArray const& in, ByteArray& out, int compressionLevel = 0);
+  static ByteArray compress(const char* in, size_t inLen, int compressionLevel = 0);
+  static ByteArray compress(ByteArray const& in, int compressionLevel = 0);
+
+  static void decompress(const char* in, size_t inLen, ByteArray& out);
+  static void decompress(ByteArray const& in, ByteArray& out);
+  static ByteArray decompress(const char* in, size_t inLen);
+  static ByteArray decompress(ByteArray const& in);
+};
+
 }

@@ -369,6 +369,7 @@ void Player::init(World* world, EntityId entityId, EntityMode mode) {
     for (auto& p : m_genericScriptContexts) {
       p.second->addActorMovementCallbacks(m_movementController.get());
       p.second->addCallbacks("player", LuaBindings::makePlayerCallbacks(this));
+      p.second->addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
       p.second->addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(m_statusController.get()));
       p.second->addCallbacks("songbook", LuaBindings::makeSongbookCallbacks(m_songbook.get()));
       p.second->addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(humanoid()->networkedAnimator()));

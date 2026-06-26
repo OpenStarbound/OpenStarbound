@@ -703,4 +703,101 @@ LuaMethods<BlackboardWeakPtr> LuaUserDataMethods<BlackboardWeakPtr>::make() {
   return methods;
 }
 
+LuaMethods<AudioInstancePtr> LuaUserDataMethods<AudioInstancePtr>::make() {
+    LuaMethods<AudioInstancePtr> methods;
+
+    methods.registerMethod("position",
+    [&](AudioInstancePtr const& audio) -> Maybe<Vec2F> {
+        return audio->position();
+    });
+    
+    methods.registerMethod("setPosition",
+    [&](AudioInstancePtr const& audio, Maybe<Vec2F> const& pos) {
+        audio->setPosition(pos);
+    });
+    
+    methods.registerMethod("translate",
+    [&](AudioInstancePtr const& audio, Vec2F const& distance) {
+        audio->translate(distance);
+    });
+    
+    methods.registerMethod("rangeMultiplier",
+    [&](AudioInstancePtr const& audio) -> float {
+        return audio->rangeMultiplier();
+    });
+    
+    methods.registerMethod("setRangeMultiplier",
+    [&](AudioInstancePtr const& audio, float const& rm) {
+        audio->setRangeMultiplier(rm);
+    });
+    
+    methods.registerMethod("setVolume",
+    [&](AudioInstancePtr const& audio, float const& targetValue, Maybe<float> const& rampTime) {
+        audio->setVolume(targetValue, rampTime.value(0.0f));
+    });
+    
+    methods.registerMethod("setPitchMultiplier",
+    [&](AudioInstancePtr const& audio, float const& targetValue, Maybe<float> const& rampTime) {
+        audio->setPitchMultiplier(targetValue, rampTime.value(0.0f));
+    });
+    
+    methods.registerMethod("loops",
+    [&](AudioInstancePtr const& audio) -> int {
+        return audio->loops();
+    });
+    
+    methods.registerMethod("setLoops",
+    [&](AudioInstancePtr const& audio, int const& loops) {
+        audio->setLoops(loops);
+    });
+    
+    methods.registerMethod("currentTime",
+    [&](AudioInstancePtr const& audio) -> double {
+        return audio->currentTime();
+    });
+    
+    methods.registerMethod("totalTime",
+    [&](AudioInstancePtr const& audio) -> double {
+        return audio->totalTime();
+    });
+    
+    methods.registerMethod("seekTime",
+    [&](AudioInstancePtr const& audio, double const& time) {
+        audio->seekTime(time);
+    });
+    
+    methods.registerMethod("mixerGroup",
+    [&](AudioInstancePtr const& audio) -> String {
+        return MixerGroupNames.getRight(audio->mixerGroup());
+    });
+    
+    methods.registerMethod("setMixerGroup",
+    [&](AudioInstancePtr const& audio, String const& group) {
+        audio->setMixerGroup(MixerGroupNames.getLeft(group));
+    });
+    
+    methods.registerMethod("setClockStart",
+    [&](AudioInstancePtr const& audio, Maybe<int64_t> const& time) {
+        audio->setClockStart(time);
+    });
+    
+    methods.registerMethod("setClockStop",
+    [&](AudioInstancePtr const& audio, Maybe<int64_t> const& time, Maybe<int64_t> const& fadeOutTime) {
+        audio->setClockStop(time,fadeOutTime.value(0));
+    });
+    
+    methods.registerMethod("stop",
+    [&](AudioInstancePtr const& audio, Maybe<float> const& rampTime) {
+        audio->stop(rampTime.value(0.0f));
+    });
+    
+    methods.registerMethod("finished",
+    [&](AudioInstancePtr const& audio) -> bool {
+        return audio->finished();
+    });
+
+
+    return methods;
+} 
+
 }

@@ -2013,7 +2013,7 @@ IMGUI_FUNCTION(SetMouseCursor)
 INT_ARG(cursor_type)
 CALL_FUNCTION_NO_RET(SetMouseCursor, cursor_type)
 END_IMGUI_FUNC
-//    IMGUI_API void          SetNextFrameWantCaptureMouse(bool want_capture_mouse);              // Override io.WantCaptureMouse flag next frame (said flag is left for your application to handle, typical when true it instucts your app to ignore inputs). This is equivalent to setting "io.WantCaptureMouse = want_capture_mouse;" after the next NewFrame() call.
+//    IMGUI_API void          SetNextFrameWantCaptureMouse(bool want_capture_mouse);              // Override io.WantCaptureMouse flag next frame (said flag is left for your application to handle, typical when true it instructs your app to ignore inputs). This is equivalent to setting "io.WantCaptureMouse = want_capture_mouse;" after the next NewFrame() call.
 IMGUI_FUNCTION(SetNextFrameWantCaptureMouse)
 BOOL_ARG(want_capture_mouse)
 CALL_FUNCTION_NO_RET(SetNextFrameWantCaptureMouse, want_capture_mouse)
@@ -2164,10 +2164,9 @@ MAKE_ENUM(ImGuiWindowFlags_Popup,Popup)
 MAKE_ENUM(ImGuiWindowFlags_Modal,Modal)
 //    ImGuiWindowFlags_ChildMenu              = 1 << 28,  // Don't use! For internal use by BeginMenu()
 MAKE_ENUM(ImGuiWindowFlags_ChildMenu,ChildMenu)
-//    ImGuiWindowFlags_NavFlattened           = 1 << 29,  // Obsoleted in 1.90.9: Use ImGuiChildFlags_NavFlattened in BeginChild() call.
-MAKE_ENUM(ImGuiWindowFlags_NavFlattened,NavFlattened)
-//    ImGuiWindowFlags_AlwaysUseWindowPadding = 1 << 30,  // Obsoleted in 1.90.0: Use ImGuiChildFlags_AlwaysUseWindowPadding in BeginChild() call.
-MAKE_ENUM(ImGuiWindowFlags_AlwaysUseWindowPadding,AlwaysUseWindowPadding)
+// Obsoleted in 1.90.9 / 1.90.0 — moved to ImGuiChildFlags_*. Removed in imgui 1.92.0 +.
+// MAKE_ENUM(ImGuiWindowFlags_NavFlattened,NavFlattened)
+// MAKE_ENUM(ImGuiWindowFlags_AlwaysUseWindowPadding,AlwaysUseWindowPadding)
 END_ENUM(WindowFlags)
 //enum ImGuiChildFlags_
 
@@ -2192,8 +2191,8 @@ MAKE_ENUM(ImGuiChildFlags_AlwaysAutoResize,AlwaysAutoResize)
 MAKE_ENUM(ImGuiChildFlags_FrameStyle,FrameStyle)
 //    ImGuiChildFlags_NavFlattened            = 1 << 8,   // [BETA] Share focus scope, allow keyboard/gamepad navigation to cross over parent border to this child or between sibling child windows.
 MAKE_ENUM(ImGuiChildFlags_NavFlattened,NavFlattened)
-//    ImGuiChildFlags_Border                  = ImGuiChildFlags_Borders,  // Renamed in 1.91.1 (August 2024) for consistency.
-MAKE_ENUM(ImGuiChildFlags_Border,Border)
+// Renamed in 1.91.1 → ImGuiChildFlags_Borders. Old alias removed in imgui 1.92.0 +.
+// MAKE_ENUM(ImGuiChildFlags_Border,Border)
 END_ENUM(ChildFlags)
 //enum ImGuiItemFlags_
 
@@ -2308,8 +2307,8 @@ MAKE_ENUM(ImGuiTreeNodeFlags_LabelSpanAllColumns,LabelSpanAllColumns)
 MAKE_ENUM(ImGuiTreeNodeFlags_NavLeftJumpsBackHere,NavLeftJumpsBackHere)
 //    ImGuiTreeNodeFlags_CollapsingHeader     = ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_NoAutoOpenOnLog,
 MAKE_ENUM(ImGuiTreeNodeFlags_CollapsingHeader,CollapsingHeader)
-//    ImGuiTreeNodeFlags_AllowItemOverlap     = ImGuiTreeNodeFlags_AllowOverlap,  // Renamed in 1.89.7
-MAKE_ENUM(ImGuiTreeNodeFlags_AllowItemOverlap,AllowItemOverlap)
+// Renamed in 1.89.7 → ImGuiTreeNodeFlags_AllowOverlap. Old alias removed in imgui 1.92.0 +.
+// MAKE_ENUM(ImGuiTreeNodeFlags_AllowItemOverlap,AllowItemOverlap)
 //    ImGuiTreeNodeFlags_SpanTextWidth        = ImGuiTreeNodeFlags_SpanLabelWidth,// Renamed in 1.90.7
 MAKE_ENUM(ImGuiTreeNodeFlags_SpanTextWidth,SpanTextWidth)
 END_ENUM(TreeNodeFlags)
@@ -2356,8 +2355,8 @@ MAKE_ENUM(ImGuiSelectableFlags_AllowOverlap,AllowOverlap)
 MAKE_ENUM(ImGuiSelectableFlags_Highlight,Highlight)
 //    ImGuiSelectableFlags_DontClosePopups    = ImGuiSelectableFlags_NoAutoClosePopups,   // Renamed in 1.91.0
 MAKE_ENUM(ImGuiSelectableFlags_DontClosePopups,DontClosePopups)
-//    ImGuiSelectableFlags_AllowItemOverlap   = ImGuiSelectableFlags_AllowOverlap,        // Renamed in 1.89.7
-MAKE_ENUM(ImGuiSelectableFlags_AllowItemOverlap,AllowItemOverlap)
+// Renamed in 1.89.7 → ImGuiSelectableFlags_AllowOverlap. Old alias removed in imgui 1.92.0 +.
+// MAKE_ENUM(ImGuiSelectableFlags_AllowItemOverlap,AllowItemOverlap)
 END_ENUM(SelectableFlags)
 //enum ImGuiComboFlags_
 
@@ -2690,6 +2689,8 @@ MAKE_ENUM(ImGuiCol_ResizeGrip,ResizeGrip)
 MAKE_ENUM(ImGuiCol_ResizeGripHovered,ResizeGripHovered)
 //    ImGuiCol_ResizeGripActive,
 MAKE_ENUM(ImGuiCol_ResizeGripActive,ResizeGripActive)
+//    ImGuiCol_InputTextCursor,       // InputText cursor/caret
+MAKE_ENUM(ImGuiCol_InputTextCursor,InputTextCursor)
 //    ImGuiCol_TabHovered,            // Tab background, when hovered
 MAKE_ENUM(ImGuiCol_TabHovered,TabHovered)
 //    ImGuiCol_Tab,                   // Tab background, when tab-bar is focused & tab is unselected
@@ -3601,19 +3602,13 @@ END_IMGUI_FUNC
 IMGUI_FUNCTION_DRAW_LIST(_OnChangedClipRect)
 DRAW_LIST_CALL_FUNCTION_NO_RET(_OnChangedClipRect)
 END_IMGUI_FUNC
-//    IMGUI_API void  _OnChangedTextureID();
-IMGUI_FUNCTION_DRAW_LIST(_OnChangedTextureID)
-DRAW_LIST_CALL_FUNCTION_NO_RET(_OnChangedTextureID)
-END_IMGUI_FUNC
 //    IMGUI_API void  _OnChangedVtxOffset();
 IMGUI_FUNCTION_DRAW_LIST(_OnChangedVtxOffset)
 DRAW_LIST_CALL_FUNCTION_NO_RET(_OnChangedVtxOffset)
 END_IMGUI_FUNC
-//    IMGUI_API void  _SetTextureID(ImTextureID texture_id);
-IMGUI_FUNCTION_DRAW_LIST(_SetTextureID)
-IM_TEXTURE_ID_ARG(texture_id)
-DRAW_LIST_CALL_FUNCTION_NO_RET(_SetTextureID, texture_id)
-END_IMGUI_FUNC
+// _OnChangedTextureID and _SetTextureID were ImDrawList internals, not part of
+// the public API, and were removed in imgui 1.92.0 along with the texture
+// management refactor. Plugins should not call them.
 //    IMGUI_API void  _PathArcToFastEx(const ImVec2& center, float radius, int a_min_sample, int a_max_sample, int a_step);
 IMGUI_FUNCTION_DRAW_LIST(_PathArcToFastEx)
 IM_VEC_2_ARG(center)

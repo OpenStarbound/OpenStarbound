@@ -9,7 +9,7 @@ TextBoxWidget::TextBoxWidget(String const& startingText, String const& hint, Wid
   : m_text(startingText), m_hint(hint), m_callback(callback) {
   auto assets = Root::singleton().assets();
   m_textHidden = false;
-  m_regex = ".*";
+  m_regex = "[\\s\\S]*";
   m_repeatKeyThreshold = 0;
   m_repeatCode = SpecialRepeatKeyCodes::None;
   m_isPressed = false;
@@ -60,9 +60,10 @@ void TextBoxWidget::renderImpl() {
     if (m_textHidden) {
       String hiddenText('*', m_text.length());
       context()->renderInterfaceText(hiddenText, { pos, m_hAnchor, m_vAnchor });
+    } else {
+      String displayText = m_text.replace("\n", " ");
+      context()->renderInterfaceText(displayText, { pos, m_hAnchor, m_vAnchor });
     }
-    else
-      context()->renderInterfaceText(m_text, { pos, m_hAnchor, m_vAnchor });
   }
   context()->clearTextStyle();
 
@@ -89,32 +90,21 @@ void TextBoxWidget::renderImpl() {
 int TextBoxWidget::getCursorDrawOffset() const { // horizontal only
   float scale;
   context()->setTextStyle(m_textStyle);
+  String displayText = m_textHidden ? String('*', m_text.length()) : m_text.replace("\n", " ");
   if (m_hAnchor == HorizontalAnchor::LeftAnchor) {
     scale = 1.0;
   } else if (m_hAnchor == HorizontalAnchor::HMidAnchor) {
     scale = 0.5;
   } else if (m_hAnchor == HorizontalAnchor::RightAnchor) {
     scale = -1.0;
-    if (m_textHidden) {
-      int width = context()->stringWidth("*");
-      size_t chars = m_text.size();
-      return (width * chars) * scale + (width * (chars - m_cursorOffset));
-    } else {
-      return context()->stringWidth(m_text) * scale
-           + context()->stringWidth(m_text.substr(m_cursorOffset, m_text.size()));
-    }
+    return context()->stringWidth(displayText) * scale
+         + context()->stringWidth(displayText.substr(m_cursorOffset, displayText.size()));
   } else {
     throw GuiException("Somehow, the value of m_hAnchor became bad");
   }
 
-  if (m_textHidden) {
-    int width = context()->stringWidth("*");
-    size_t chars = m_text.size();
-    return (int)std::ceil((width * chars) * scale - (width * (chars - m_cursorOffset)));
-  } else {
-  return (int)std::ceil(context()->stringWidth(m_text) * scale
-                      - context()->stringWidth(m_text.substr(m_cursorOffset, m_text.size())));
-  }
+  return (int)std::ceil(context()->stringWidth(displayText) * scale
+                      - context()->stringWidth(displayText.substr(m_cursorOffset, displayText.size())));
 }
 
 void TextBoxWidget::update(float dt) {

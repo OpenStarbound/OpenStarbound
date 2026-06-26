@@ -110,6 +110,65 @@ ByteArray uncompressData(ByteArray const& in, size_t limit) {
   return uncompressData(in.ptr(), in.size(), limit);
 }
 
+void uncompressDataGzip(const char* in, size_t inLen, ByteArray& out, size_t limit) {
+  out.clear();
+
+  if (!inLen)
+    return;
+
+  const size_t BUFSIZE = 32 * 1024;
+  auto tempBuffer = std::make_unique<unsigned char[]>(BUFSIZE);
+
+  z_stream strm{};
+  strm.zalloc = Z_NULL;
+  strm.zfree = Z_NULL;
+  strm.opaque = Z_NULL;
+  int inflate_res = inflateInit2(&strm, 31);
+  if (inflate_res != Z_OK)
+    throw IOException(strf("Failed to initialise inflate ({})", inflate_res));
+
+  strm.next_in = (unsigned char*)in;
+  strm.avail_in = inLen;
+  strm.next_out = tempBuffer.get();
+  strm.avail_out = BUFSIZE;
+
+  while (inflate_res == Z_OK || inflate_res == Z_BUF_ERROR) {
+    inflate_res = inflate(&strm, Z_FINISH);
+    if (strm.avail_out == 0) {
+      out.append((char const*)tempBuffer.get(), BUFSIZE);
+      strm.next_out = tempBuffer.get();
+      strm.avail_out = BUFSIZE;
+      if (limit && out.size() >= limit) {
+        inflateEnd(&strm);
+        throw IOException(strf("hit uncompressDataGzip limit of {} bytes", limit));
+        break;
+      }
+    } else if (inflate_res == Z_BUF_ERROR) {
+      break;
+    }
+  }
+  inflateEnd(&strm);
+
+  if (inflate_res != Z_STREAM_END)
+    throw IOException(strf("Internal error in uncompressDataGzip, inflate_res is {}", inflate_res));
+
+  out.append((char const*)tempBuffer.get(), BUFSIZE - strm.avail_out);
+}
+
+ByteArray uncompressDataGzip(const char* in, size_t inLen, size_t limit) {
+  ByteArray out = ByteArray::withReserve(inLen);
+  uncompressDataGzip(in, inLen, out, limit);
+  return out;
+}
+
+void uncompressDataGzip(ByteArray const& in, ByteArray& out, size_t limit) {
+  uncompressDataGzip(in.ptr(), in.size(), out, limit);
+}
+
+ByteArray uncompressDataGzip(ByteArray const& in, size_t limit) {
+  return uncompressDataGzip(in.ptr(), in.size(), limit);
+}
+
 CompressedFilePtr CompressedFile::open(String const& filename, IOMode mode, CompressionLevel comp) {
   CompressedFilePtr f = make_shared<CompressedFile>(filename);
   f->open(mode, comp);

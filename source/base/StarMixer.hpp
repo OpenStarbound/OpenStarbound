@@ -7,6 +7,7 @@
 #include "StarSet.hpp"
 #include "StarVector.hpp"
 #include "StarMaybe.hpp"
+#include "StarBiMap.hpp"
 
 namespace Star {
 
@@ -25,6 +26,7 @@ enum class MixerGroup : uint8_t {
   Cinematic,
   Instruments
 };
+extern EnumMap<MixerGroup> const MixerGroupNames;
 
 class AudioInstance {
 public:
