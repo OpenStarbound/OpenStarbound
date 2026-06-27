@@ -332,8 +332,10 @@ void UniverseClient::update(float dt) {
           m_pendingWarp = WarpAlias::OwnShip;
           m_warpDelay.reset();
         }
-        m_worldClient->reviveMainPlayer();
-        m_respawning = false;
+        if (!m_pendingWarp && !m_warping && m_worldClient->inWorld()) {
+          m_worldClient->reviveMainPlayer();
+          m_respawning = false;
+        }
       }
     } else {
       if (m_respawnTimer.tick(dt)) {
