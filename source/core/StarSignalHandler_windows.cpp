@@ -4,6 +4,7 @@
 #include "StarString.hpp"
 #include "StarLogging.hpp"
 
+#define NOMINMAX
 #include <windows.h>
 
 namespace Star {

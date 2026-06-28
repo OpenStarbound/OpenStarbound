@@ -162,8 +162,10 @@ Json const AdditionalDefaultConfiguration = Json::parseJson(R"JSON(
 void ClientApplication::startup(StringList const& cmdLineArgs) {
   RootLoader rootLoader({AdditionalAssetsSettings, AdditionalDefaultConfiguration, String("starbound.log"), LogLevel::Info, false, String("starbound.config")});
   m_root = rootLoader.initOrDie(cmdLineArgs).first;
-
-  Logger::info("OpenStarbound Client v{} for v{} ({}) Source ID: {} Protocol: {}", OpenStarVersionString, StarVersionString, StarArchitectureString, StarSourceIdentifierString, StarProtocolVersion);
+  Logger::info("OpenStarbound Client v{} for v{} ({}) Source ID: {}", OpenStarVersionString, StarVersionString, StarArchitectureString, StarSourceIdentifierString);
+  #ifdef __clang__
+  Logger::info("Compiled with Clang {}", __clang_version__);
+  #endif
 }
 
 void ClientApplication::shutdown() {

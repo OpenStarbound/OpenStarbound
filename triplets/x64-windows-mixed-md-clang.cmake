@@ -1,0 +1,56 @@
+set(VCPKG_TARGET_ARCHITECTURE x64)
+set(VCPKG_CRT_LINKAGE dynamic)
+set(VCPKG_LIBRARY_LINKAGE static)
+set(VCPKG_BUILD_TYPE release)
+
+set(VCPKG_CHAINLOAD_TOOLCHAIN_FILE ${CMAKE_CURRENT_LIST_DIR}/../toolchains/win-clang.cmake)
+set(VCPKG_LOAD_VCVARS_ENV ON)
+
+if(DEFINED VCPKG_PLATFORM_TOOLSET)
+    set(VCPKG_PLATFORM_TOOLSET ClangCL)
+endif()
+set(VCPKG_ENV_PASSTHROUGH_UNTRACKED "LLVMInstallDir;LLVMToolsVersion") # For the ClangCL toolset
+
+if(PORT MATCHES "jemalloc|sdl|discord-")
+    set(VCPKG_LIBRARY_LINKAGE dynamic)
+endif()
+
+if(PORT MATCHES "opus")
+  string(CONCAT VCPKG_CMAKE_CONFIGURE_OPTIONS
+    "-DOPUS_INSTALL_PKG_CONFIG_MODULE=OFF"
+    "-DOPUS_INSTALL_CMAKE_CONFIG_MODULE=OFF"
+    "-DOPUS_X86_MAY_HAVE_SSE=ON"
+    "-DOPUS_X86_MAY_HAVE_AVX=ON"
+    "-DOPUS_X86_MAY_HAVE_SSE4_1=ON"
+    "-DOPUS_ENABLE_FLOAT_API=ON"
+    "-DOPUS_FLOAT_APPROX=ON"
+    "-DOPUS_STACK_PROTECTOR=OFF"
+    "-DOPUS_NONTHREADSAFE_PSEUDOSTACK=OFF"
+    "-DOPUS_USE_ALLOCA=ON"
+    "-DBUILD_TESTING=OFF"
+  )
+endif()
+
+if (DEFINED ENV{ProgramW6432})
+        file(TO_CMAKE_PATH "$ENV{ProgramW6432}" PROG_ROOT)
+    else()
+        file(TO_CMAKE_PATH "$ENV{PROGRAMFILES}" PROG_ROOT)
+    endif()
+    if (DEFINED ENV{LLVMInstallDir})
+        file(TO_CMAKE_PATH "$ENV{LLVMInstallDir}/bin" POSSIBLE_LLVM_BIN_DIR)
+    else()
+        file(TO_CMAKE_PATH "${PROG_ROOT}/LLVM/bin" POSSIBLE_LLVM_BIN_DIR)
+    endif()
+
+    find_program(CLANG-CL_EXECUTABLE NAMES "clang-cl" "clang-cl.exe" PATHS "${POSSIBLE_LLVM_BIN_DIR}" ENV LLVMInstallDir PATH_SUFFIXES "bin" NO_DEFAULT_PATH)
+    if(NOT DEFINED ENV{LLVMInstallDir} AND NOT DEFINED ENV{LLVMToolsVersion})
+        find_program(CLANG-CL_EXECUTABLE NAMES "clang-cl" "clang-cl.exe")
+    endif()
+
+    if(NOT CLANG-CL_EXECUTABLE)
+        message(FATAL_ERROR "Unable to find LLVM installation. Please define environment variable 'LLVMInstallDir' and 'LLVMToolsVersion'")
+    endif()
+
+    get_filename_component(LLVM_BIN_DIR "${CLANG-CL_EXECUTABLE}" DIRECTORY)
+    set(LLVM_PATH_BACKUP "$ENV{PATH}")
+    set(ENV{PATH} "${LLVM_BIN_DIR};$ENV{PATH}")

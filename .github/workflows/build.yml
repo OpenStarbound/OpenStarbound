@@ -57,6 +57,11 @@ jobs:
         with:
           cmakeVersion: 3.29.2
 
+      - name: Setup LLVM
+        uses: ZhongRuoyu/setup-llvm@v0
+        with:
+          llvm-version: 22
+
       - name: setup 7-Zip action
         uses: milliewalky/setup-7-zip@v2
 
@@ -290,6 +295,11 @@ jobs:
         uses: lukka/get-cmake@latest
         with:
           cmakeVersion: 3.29.2
+
+      - name: Setup LLVM
+        uses: ZhongRuoyu/setup-llvm@v0
+        with:
+          llvm-version: 22
 
       - uses: actions/checkout@v4
         with:

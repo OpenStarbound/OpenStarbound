@@ -39,7 +39,9 @@
       "binaryDir": "${sourceParentDir}/build/windows-release",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
-        "VCPKG_TARGET_TRIPLET": "x64-windows-mixed-md",
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++",
+        "VCPKG_TARGET_TRIPLET": "x64-windows-mixed-md-clang",
         "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL",
         "CMAKE_INCLUDE_PATH": "${sourceParentDir}/lib/windows/include",
         "CMAKE_LIBRARY_PATH": "${sourceParentDir}/lib/windows",

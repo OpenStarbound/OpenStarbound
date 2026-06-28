@@ -1,6 +1,7 @@
 #pragma once
 
 #ifdef STAR_SYSTEM_WINDOWS
+#define NOMINMAX
 #include <windows.h>
 #endif
 
