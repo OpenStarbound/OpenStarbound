@@ -45,13 +45,18 @@ namespace Text {
 
   bool processText(StringView text, TextCallback textFunc, CommandsCallback commandsFunc, bool includeCommandSides) {
     std::string_view str = text.utf8();
+    size_t start = 0;
     while (true) {
-      size_t escape = str.find_first_of(AllEsc);
+      size_t escape = str.find_first_of(AllEsc, start);
+      start = 0;
       if (escape != NPos) {
         escape = str.find_first_not_of(AllEsc, escape) - 1; // jump to the last ^
-
-        size_t end = str.find_first_of(EndEsc, escape);
+        size_t end = str.find_first_of(AllEscEnd, escape + 1);
         if (end != NPos) {
+          if (str.at(end) != EndEsc) {
+            start = end;
+            continue;
+          }
           if (escape && !textFunc(str.substr(0, escape)))
             return false;
           if (commandsFunc) {
@@ -71,47 +76,6 @@ namespace Text {
 
       return true;
     }
-  }
-
-  // The below two functions aren't used anymore, not bothering with StringView for them
-  String preprocessEscapeCodes(String const& s) {
-    bool escape = false;
-    std::string result = s.utf8();
-
-    size_t escapeStartIdx = 0;
-    for (size_t i = 0; i < result.size(); i++) {
-      auto& c = result[i];
-      if (isEscapeCode(c)) {
-        escape = true;
-        escapeStartIdx = i;
-      }
-      if ((c <= SpecialCharLimit) && !(c == StartEsc))
-        escape = false;
-      if ((c == EndEsc) && escape)
-        result[escapeStartIdx] = StartEsc;
-    }
-    return {result};
-  }
-
-  String extractCodes(String const& s) {
-    bool escape = false;
-    StringList result;
-    String escapeCode;
-    for (auto c : preprocessEscapeCodes(s)) {
-      if (c == StartEsc)
-        escape = true;
-      if (c == EndEsc) {
-        escape = false;
-        for (auto command : escapeCode.split(','))
-          result.append(command);
-        escapeCode = "";
-      }
-      if (escape && (c != StartEsc))
-        escapeCode.append(c);
-    }
-    if (!result.size())
-      return "";
-    return "^" + result.join(",") + ";";
   }
 }
 
