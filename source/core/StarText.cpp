@@ -34,7 +34,7 @@ namespace Text {
   std::string const AllEsc = strf("{:c}{:c}", CmdEsc, StartEsc);
   std::string const AllEscEnd = strf("{:c}{:c}{:c}", CmdEsc, StartEsc, EndEsc);
 
-  static RE2 stripEscapeRegex = strf("\\{:c}[^;]*{:c}", CmdEsc, EndEsc);
+  static RE2 stripEscapeRegex = strf("\\{:c}[^;{:c}]*{:c}", CmdEsc, CmdEsc, EndEsc);
   String stripEscapeCodes(String const& s) {
     if (s.empty())
       return s;
