@@ -146,6 +146,7 @@ private:
   Maybe<GameTimer> m_warpCinemaCancelTimer;
 
   Maybe<WarpAction> m_warping;
+  bool m_respawnWarped;
   bool m_respawning;
   GameTimer m_respawnTimer;
 

@@ -326,19 +326,8 @@ void UniverseClient::update(float dt) {
   }
 
   if (m_respawning) {
-    if (m_respawnTimer.ready()) {
-      if (m_worldClient->inWorld()) {
-        if (!playerOnOwnShip() && !m_worldClient->respawnInWorld()) {
-          m_pendingWarp = WarpAlias::OwnShip;
-          m_warpDelay.reset();
-        }
-        if (!m_pendingWarp && !m_warping && m_worldClient->inWorld()) {
-          m_worldClient->reviveMainPlayer();
-          m_respawning = false;
-        }
-      }
-    } else {
-      if (m_respawnTimer.tick(dt)) {
+    if (m_respawnTimer.tick(dt)) {
+      if (m_respawnTimer.time > 0.f) {
         String cinematic = assets->json("/client.config:respawnCinematic").toString();
         cinematic = cinematic.replaceTags(StringMap<String>{
             {"species", m_mainPlayer->species()},
@@ -346,16 +335,24 @@ void UniverseClient::update(float dt) {
           });
         m_mainPlayer->setPendingCinematic(Json(std::move(cinematic)));
       }
+      if (m_worldClient->respawnInWorld()) {
+        m_worldClient->reviveMainPlayer();
+      } else if (!playerOnOwnShip() && !m_respawnWarped) {
+        m_respawnWarped = true;
+        m_pendingWarp = WarpAlias::OwnShip;
+        m_warpDelay.reset();
+      }
+      m_respawning = false;
+    }
+  } else if (m_worldClient->mainPlayerDead()) {
+    if (m_respawnWarped || m_mainPlayer->modeConfig().permadeath) {
+      // tooo bad....
+    } else {
+      m_respawning = true;
+      m_respawnTimer.reset();
     }
   } else {
-    if (m_worldClient->mainPlayerDead()) {
-      if (m_mainPlayer->modeConfig().permadeath) {
-        // tooo bad....
-      } else {
-        m_respawning = true;
-        m_respawnTimer.reset();
-      }
-    }
+    m_respawnWarped = false;
   }
 
   m_celestialDatabase->cleanup();
@@ -808,7 +805,7 @@ void UniverseClient::reset() {
   m_clientContext.reset();
   m_teamClient.reset();
   m_warping.reset();
-  m_respawning = false;
+  m_respawning = m_respawnWarped = false;
 
   auto assets = Root::singleton().assets();
   m_warpDelay = GameTimer(assets->json("/client.config:playerWarpDelay").toFloat());
