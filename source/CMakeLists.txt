@@ -430,7 +430,7 @@ if(STAR_SYSTEM_MACOS)
 elseif(STAR_SYSTEM_WINDOWS)
   set(CMAKE_RC_COMPILER_INIT windres)
 
-  enable_language(RC)
+  enable_language(RC) 
   #if(STAR_COMPILER STREQUAL "msvc")
     set(CMAKE_RC_COMPILE_OBJECT "<CMAKE_RC_COMPILER> /fo <OBJECT> <SOURCE>")
   #else()
