@@ -57,6 +57,17 @@
     },
     {
       "inherits": "windows-release",
+      "name": "windows-release-ci",
+      "displayName": "Windows x64 for CI",
+      "binaryDir": "${sourceParentDir}/build/windows-release",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "$env{LLVM_PATH}/bin/clang.exe",
+        "CMAKE_CXX_COMPILER": "$env{LLVM_PATH}/bin/clang++.exe"
+      },
+      "vendor": {}
+    },
+    {
+      "inherits": "windows-release",
       "name": "windows-release-VS2022",
       "displayName": "Windows x64 (Visual Studio 2022)",
       "generator": "Visual Studio 17 2022"
@@ -160,6 +171,10 @@
       "configurePreset": "windows-release"
     },
     {
+      "name": "windows-release-ci",
+      "configurePreset": "windows-release-ci"
+    },
+    {
       "name": "windows-debug",
       "configurePreset": "windows-release"
     },
@@ -209,6 +224,12 @@
       "inherits": "base",
       "name": "windows-release",
       "configurePreset": "windows-release",
+      "configuration": "Release"
+    },
+    {
+      "inherits": "base",
+      "name": "windows-release-ci",
+      "configurePreset": "windows-release-ci",
       "configuration": "Release"
     },
     {

@@ -94,9 +94,9 @@ jobs:
         #  VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
         with:
           cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
-          configurePreset: 'windows-release'
-          buildPreset: 'windows-release'
-          testPreset: 'windows-release'
+          configurePreset: 'windows-release-ci'
+          buildPreset: 'windows-release-ci'
+          testPreset: 'windows-release-ci'
 
       - name: Run Post-Build Task
         working-directory: ${{ github.workspace }}
