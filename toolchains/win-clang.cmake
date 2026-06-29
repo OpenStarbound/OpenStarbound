@@ -5,6 +5,7 @@ include($ENV{VCPKG_ROOT}/scripts/toolchains/windows.cmake)
 # and some ports do not work unless we match 'clang-cl'
 set(CMAKE_C_COMPILER "clang-cl")
 set(CMAKE_CXX_COMPILER "clang-cl")
+set(CMAKE_RC_COMPILER "rc.exe")
 
 set(ignore_werror "/WX-")
 cmake_language(DEFER CALL add_compile_options "${ignore_werror}")

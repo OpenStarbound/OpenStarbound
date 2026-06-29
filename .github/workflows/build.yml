@@ -13,7 +13,7 @@ on:
       linux_clang:
         type: boolean
         description: Linux (Clang)
-        default: true
+        default: false
       windows:
         type: boolean
         description: Windows
@@ -81,17 +81,17 @@ jobs:
           vcpkgJsonGlob: '**/source/vcpkg.json'
           vcpkgConfigurationJsonGlob: '**/source/vcpkg-configuration.json'
 
-      - name: Restore vcpkg cache
-        id: vcpkg-cache
-        uses: TAServers/vcpkg-cache@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+      #- name: Restore vcpkg cache
+      #  id: vcpkg-cache
+      #  uses: TAServers/vcpkg-cache@v3
+      #  with:
+      #    token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run CMake
         uses: lukka/run-cmake@v10
-        env:
-          VCPKG_FEATURE_FLAGS: "binarycaching"
-          VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
+        #env:
+        #  VCPKG_FEATURE_FLAGS: "binarycaching"
+        #  VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
         with:
           cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
           configurePreset: 'windows-release'
@@ -572,7 +572,7 @@ jobs:
   build-mac-intel:
     name: Build OpenStarbound macOS x86_64
     runs-on: macos-15-intel
-    if: ${{ (github.event_name != 'pull_request') && ((github.event_name != 'workflow_dispatch') || (inputs.macOS == true)) }}
+    if: ${{ (github.event_name != 'pull_request') && (inputs.macOS == true) }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -655,7 +655,7 @@ jobs:
   build-mac-arm:
     name: Build OpenStarbound macOS arm64
     runs-on: macos-14
-    if: ${{ (github.event_name != 'pull_request') && ((github.event_name != 'workflow_dispatch') || (inputs.macOS == true)) }}
+    if: ${{ (github.event_name != 'pull_request') && (inputs.macOS == true) }}
     steps:
       - uses: actions/checkout@v4
         with:
