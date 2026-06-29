@@ -182,7 +182,7 @@ jobs:
     name: Build OpenStarbound Linux x86_64
     runs-on: ubuntu-22.04
     #if: ${{ (github.event_name != 'pull_request') && ((github.event_name != 'workflow_dispatch') || (inputs.linux == true)) }}
-    if: ${{(github.event_name == 'workflow_dispatch') && (inputs.linux == true)) }}
+    if: ${{ (github.event_name == 'workflow_dispatch') && (inputs.linux == true) }}
     steps:
       - name: Install Packages
         run: |
@@ -278,7 +278,7 @@ jobs:
     name: Build OpenStarbound Linux Clang x86_64
     runs-on: ubuntu-22.04
     #if: ${{ (github.event_name != 'workflow_dispatch') || (inputs.linux_clang == true) }}
-    if: ${{(github.event_name == 'workflow_dispatch') && (inputs.linux_clang == true)) }}
+    if: ${{ (github.event_name == 'workflow_dispatch') && (inputs.linux_clang == true) }}
     env:
         CC: clang
         CXX: clang++
@@ -382,7 +382,7 @@ jobs:
     name: Build OpenStarbound Linux arm64
     runs-on: ubuntu-22.04-arm
     #if: ${{ (github.event_name != 'pull_request') && ((github.event_name != 'workflow_dispatch') || (inputs.linux == true)) }}
-    if: ${{ (github.event_name == 'workflow_dispatch') && (inputs.linux == true)) }}
+    if: ${{ (github.event_name == 'workflow_dispatch') && (inputs.linux == true) }}
     steps:
       - name: Install Packages
         run: |
@@ -478,7 +478,7 @@ jobs:
     name: Build OpenStarbound Linux Clang arm64
     runs-on: ubuntu-22.04-arm
     #if: ${{ (github.event_name != 'workflow_dispatch') || (inputs.linux_clang == true) }}
-    if: ${{(github.event_name == 'workflow_dispatch') && (inputs.linux_clang == true)) }}
+    if: ${{ (github.event_name == 'workflow_dispatch') && (inputs.linux_clang == true) }}
     env:
         CC: clang
         CXX: clang++
