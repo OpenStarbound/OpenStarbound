@@ -87,7 +87,9 @@ jobs:
 
       - name: Run CMake
         uses: lukka/run-cmake@v10
-        #env:
+        env:
+          LLVMInstallDir: ${{ env.LLVM_PATH }}
+          llvmX64: ${{ env.LLVM_PATH }}
         #  VCPKG_FEATURE_FLAGS: "binarycaching"
         #  VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
         with:
