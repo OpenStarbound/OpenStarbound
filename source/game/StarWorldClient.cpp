@@ -1925,6 +1925,7 @@ void WorldClient::clearWorld() {
   }
 
   m_entityMessageResponses = {};
+  m_findUniqueEntityResponses = {};
 
   m_forceRegions.clear();
 }
