@@ -203,6 +203,8 @@ EnumMap<ControllerButton> const ControllerButtonNames{
   {ControllerButton::Paddle3, "Paddle3"},
   {ControllerButton::Paddle4, "Paddle4"},
   {ControllerButton::Touchpad, "Touchpad"},
+  {ControllerButton::TriggerLeft, "TriggerLeft"},
+  {ControllerButton::TriggerRight, "TriggerRight"},
   {ControllerButton::Invalid, "Invalid"}
 };
 

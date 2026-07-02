@@ -281,6 +281,9 @@ public:
 
   bool canUseTool() const;
 
+  // Returns true if the player is currently firing primary or alt hand items.
+  bool isFiring() const;
+
   // "Fires" whatever is in the primary (left) item slot, or the primary fire
   // of the 2H item, at whatever the current aim position is.  Will auto-repeat
   // depending on the item auto repeat setting.
