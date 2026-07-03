@@ -277,8 +277,8 @@ jobs:
   build_linux_clang:
     name: Build OpenStarbound Linux Clang x86_64
     runs-on: ubuntu-22.04
-    #if: ${{ (github.event_name != 'workflow_dispatch') || (inputs.linux_clang == true) }}
-    if: ${{ (github.event_name == 'workflow_dispatch') && (inputs.linux_clang == true) }}
+    if: ${{ (github.event_name != 'workflow_dispatch') || (inputs.linux_clang == true) }}
+    #if: ${{ (github.event_name == 'workflow_dispatch') && (inputs.linux_clang == true) }}
     env:
         CC: clang
         CXX: clang++
@@ -477,8 +477,8 @@ jobs:
   build_linux_arm_clang:
     name: Build OpenStarbound Linux Clang arm64
     runs-on: ubuntu-22.04-arm
-    #if: ${{ (github.event_name != 'workflow_dispatch') || (inputs.linux_clang == true) }}
-    if: ${{ (github.event_name == 'workflow_dispatch') && (inputs.linux_clang == true) }}
+    if: ${{ (github.event_name != 'workflow_dispatch') || (inputs.linux_clang == true) }}
+    #if: ${{ (github.event_name == 'workflow_dispatch') && (inputs.linux_clang == true) }}
     env:
         CC: clang
         CXX: clang++
@@ -576,8 +576,8 @@ jobs:
   build-mac-intel:
     name: Build OpenStarbound macOS x86_64
     runs-on: macos-15-intel
-    #if: ${{ (github.event_name != 'pull_request') && ((github.event_name != 'workflow_dispatch') || (inputs.macOS == true)) }}
-    if: ${{ (github.event_name == 'workflow_dispatch') && (inputs.macOS == true) }}
+    if: ${{ (github.event_name != 'pull_request') && ((github.event_name != 'workflow_dispatch') || (inputs.macOS == true)) }}
+    #if: ${{ (github.event_name == 'workflow_dispatch') && (inputs.macOS == true) }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -660,8 +660,8 @@ jobs:
   build-mac-arm:
     name: Build OpenStarbound macOS arm64
     runs-on: macos-14
-    #if: ${{ (github.event_name != 'pull_request') && ((github.event_name != 'workflow_dispatch') || (inputs.macOS == true)) }}
-    if: ${{ (github.event_name == 'workflow_dispatch') && (inputs.macOS == true) }}
+    if: ${{ (github.event_name != 'pull_request') && ((github.event_name != 'workflow_dispatch') || (inputs.macOS == true)) }}
+    #if: ${{ (github.event_name == 'workflow_dispatch') && (inputs.macOS == true) }}
     steps:
       - uses: actions/checkout@v4
         with:
