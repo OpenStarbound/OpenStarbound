@@ -303,6 +303,11 @@ bool TextBoxWidget::innerSendEvent(InputEvent const& event) {
       return false;
     }
     if (keyDown->key == Key::Return || keyDown->key == Key::KeypadEnter) {
+      if ((keyDown->mods & (KeyMod::LShift | KeyMod::RShift)) != KeyMod::NoMod) {
+        if (modText(m_text.substr(0, m_cursorOffset) + "\n" + m_text.substr(m_cursorOffset)))
+          m_cursorOffset += 1;
+        return true;
+      }
       if (m_onEnterKey) {
         m_onEnterKey(this);
         return true;
