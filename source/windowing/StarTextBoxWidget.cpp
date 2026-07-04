@@ -61,7 +61,7 @@ void TextBoxWidget::renderImpl() {
       String hiddenText('*', m_text.length());
       context()->renderInterfaceText(hiddenText, { pos, m_hAnchor, m_vAnchor });
     } else {
-      String displayText = m_text.replace("\n", "↵");
+      String displayText = m_text.replace("\n", "↵").replace("\v", "↵");
       context()->renderInterfaceText(displayText, { pos, m_hAnchor, m_vAnchor });
     }
   }
@@ -90,7 +90,7 @@ void TextBoxWidget::renderImpl() {
 int TextBoxWidget::getCursorDrawOffset() const { // horizontal only
   float scale;
   context()->setTextStyle(m_textStyle);
-  String displayText = m_textHidden ? String('*', m_text.length()) : m_text.replace("\n", "↵");
+  String displayText = m_textHidden ? String('*', m_text.length()) : m_text.replace("\n", "↵").replace("\v", "↵");
   if (m_hAnchor == HorizontalAnchor::LeftAnchor) {
     scale = 1.0;
   } else if (m_hAnchor == HorizontalAnchor::HMidAnchor) {
