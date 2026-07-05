@@ -405,8 +405,12 @@ void Monster::destroy(RenderCallback* renderCallback) {
         treasurePool = m_dropPool.getString("default");
     }
 
-    for (auto const& treasureItem : treasureDatabase->createTreasure(treasurePool, *m_monsterLevel))
-      world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position()));
+    try {
+      for (auto const& treasureItem : treasureDatabase->createTreasure(treasurePool, *m_monsterLevel))
+        world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position()));
+    } catch (StarException const& e) {
+      Logger::warn("Invalid dropID in monster death. {}", outputException(e, false));
+    }
   }
 
   if (renderCallback) {
@@ -879,6 +883,5 @@ ActorMovementController* Monster::movementController() {
 StatusController* Monster::statusController() {
   return m_statusController.get();
 }
-
 
 }
