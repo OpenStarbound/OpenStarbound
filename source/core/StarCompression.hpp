@@ -22,6 +22,11 @@ ByteArray uncompressData(const char* in, size_t inLen, size_t limit = 0);
 void uncompressData(ByteArray const& in, ByteArray& out, size_t limit = 0);
 ByteArray uncompressData(ByteArray const& in, size_t limit = 0);
 
+void uncompressDataGzip(const char* in, size_t inLen, ByteArray& out, size_t limit = 0);
+ByteArray uncompressDataGzip(const char* in, size_t inLen, size_t limit = 0);
+void uncompressDataGzip(ByteArray const& in, ByteArray& out, size_t limit = 0);
+ByteArray uncompressDataGzip(ByteArray const& in, size_t limit = 0);
+
 // Random access to a (potentially) compressed file.
 class CompressedFile : public IODevice {
 public:

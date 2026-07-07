@@ -39,8 +39,6 @@ namespace Text {
   typedef function<bool(StringView text)> TextCallback;
   typedef function<bool(StringView commands)> CommandsCallback;
   bool processText(StringView text, TextCallback textFunc, CommandsCallback commandsFunc = CommandsCallback(), bool includeCommandSides = false);
-  String preprocessEscapeCodes(String const& s);
-  String extractCodes(String const& s);
 }
 
 }

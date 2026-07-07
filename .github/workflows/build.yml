@@ -13,11 +13,11 @@ on:
       linux_clang:
         type: boolean
         description: Linux (Clang)
-        default: true
+        default: false
       windows:
         type: boolean
         description: Windows
-        default: false
+        default: true
       macOS:
         type: boolean
         description: macOS
@@ -57,6 +57,11 @@ jobs:
         with:
           cmakeVersion: 3.29.2
 
+      - name: Setup LLVM
+        uses: ZhongRuoyu/setup-llvm@v0
+        with:
+          llvm-version: 22
+
       - name: setup 7-Zip action
         uses: milliewalky/setup-7-zip@v2
 
@@ -67,8 +72,6 @@ jobs:
           key: ${{ github.job }}-${{ runner.os }}
           max-size: 1000M
 
-      - uses: ilammy/msvc-dev-cmd@v1
-
       - name: vcpkg
         uses: lukka/run-vcpkg@v11
         id: runvcpkg
@@ -76,22 +79,24 @@ jobs:
           vcpkgJsonGlob: '**/source/vcpkg.json'
           vcpkgConfigurationJsonGlob: '**/source/vcpkg-configuration.json'
 
-      - name: Restore vcpkg cache
-        id: vcpkg-cache
-        uses: TAServers/vcpkg-cache@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+      #- name: Restore vcpkg cache
+      #  id: vcpkg-cache
+      #  uses: TAServers/vcpkg-cache@v3
+      #  with:
+      #    token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run CMake
         uses: lukka/run-cmake@v10
         env:
-          VCPKG_FEATURE_FLAGS: "binarycaching"
-          VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
+          LLVMInstallDir: ${{ env.LLVM_PATH }}
+          llvmX64: ${{ env.LLVM_PATH }}
+        #  VCPKG_FEATURE_FLAGS: "binarycaching"
+        #  VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
         with:
           cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
-          configurePreset: 'windows-release'
-          buildPreset: 'windows-release'
-          testPreset: 'windows-release'
+          configurePreset: 'windows-release-ci'
+          buildPreset: 'windows-release-ci'
+          testPreset: 'windows-release-ci'
 
       - name: Run Post-Build Task
         working-directory: ${{ github.workspace }}
@@ -176,7 +181,8 @@ jobs:
   build_linux:
     name: Build OpenStarbound Linux x86_64
     runs-on: ubuntu-22.04
-    if: ${{ (github.event_name != 'pull_request') && (inputs.linux == true) }}
+    #if: ${{ (github.event_name != 'pull_request') && ((github.event_name != 'workflow_dispatch') || (inputs.linux == true)) }}
+    if: ${{ (github.event_name == 'workflow_dispatch') && (inputs.linux == true) }}
     steps:
       - name: Install Packages
         run: |
@@ -272,6 +278,7 @@ jobs:
     name: Build OpenStarbound Linux Clang x86_64
     runs-on: ubuntu-22.04
     if: ${{ (github.event_name != 'workflow_dispatch') || (inputs.linux_clang == true) }}
+    #if: ${{ (github.event_name == 'workflow_dispatch') && (inputs.linux_clang == true) }}
     env:
         CC: clang
         CXX: clang++
@@ -290,6 +297,11 @@ jobs:
         uses: lukka/get-cmake@latest
         with:
           cmakeVersion: 3.29.2
+
+      - name: Setup LLVM
+        uses: ZhongRuoyu/setup-llvm@v0
+        with:
+          llvm-version: 22
 
       - uses: actions/checkout@v4
         with:
@@ -369,7 +381,8 @@ jobs:
   build_linux_arm:
     name: Build OpenStarbound Linux arm64
     runs-on: ubuntu-22.04-arm
-    if: ${{ (github.event_name != 'pull_request') && (inputs.linux == true) }}
+    #if: ${{ (github.event_name != 'pull_request') && ((github.event_name != 'workflow_dispatch') || (inputs.linux == true)) }}
+    if: ${{ (github.event_name == 'workflow_dispatch') && (inputs.linux == true) }}
     steps:
       - name: Install Packages
         run: |
@@ -465,6 +478,7 @@ jobs:
     name: Build OpenStarbound Linux Clang arm64
     runs-on: ubuntu-22.04-arm
     if: ${{ (github.event_name != 'workflow_dispatch') || (inputs.linux_clang == true) }}
+    #if: ${{ (github.event_name == 'workflow_dispatch') && (inputs.linux_clang == true) }}
     env:
         CC: clang
         CXX: clang++
@@ -563,6 +577,7 @@ jobs:
     name: Build OpenStarbound macOS x86_64
     runs-on: macos-15-intel
     if: ${{ (github.event_name != 'pull_request') && ((github.event_name != 'workflow_dispatch') || (inputs.macOS == true)) }}
+    #if: ${{ (github.event_name == 'workflow_dispatch') && (inputs.macOS == true) }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -646,6 +661,7 @@ jobs:
     name: Build OpenStarbound macOS arm64
     runs-on: macos-14
     if: ${{ (github.event_name != 'pull_request') && ((github.event_name != 'workflow_dispatch') || (inputs.macOS == true)) }}
+    #if: ${{ (github.event_name == 'workflow_dispatch') && (inputs.macOS == true) }}
     steps:
       - uses: actions/checkout@v4
         with:

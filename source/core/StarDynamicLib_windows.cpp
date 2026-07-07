@@ -2,6 +2,7 @@
 #include "StarFormat.hpp"
 #include "StarString_windows.hpp"
 
+#define NOMINMAX
 #include <windows.h>
 
 namespace Star {

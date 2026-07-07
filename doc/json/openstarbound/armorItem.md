@@ -11,4 +11,10 @@ The `<slot>` tag within any keys will be replaced with the slot index of the arm
 
 The `<directory>` tag within any value will be replaced with the armor's directory.
 
-Any additional tags will be replaced with the current identity tags. So for example things like `<species>` and `<gender>` will be replaced with the relevant species and gender of the entity equipping it.
+Any additional tags will be replaced with the current tags at the time of equipping the armor. So for example things like `<species>` and `<gender>` will be replaced with the relevant species and gender, as the humanoid animator always sets those tags.
+
+## `bool` bypassNude
+If true enables the armor to appear even when its wearer is in a nude state. Useful for body parts (tails, hair, etc)
+
+## `bool` rotateWithHead
+Applies to backArmor. If true enables the armor to rotate along with the wearer's head.

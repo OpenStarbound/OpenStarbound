@@ -2,6 +2,8 @@
 
 #include "StarPch.hpp"
 
+#define NOMINMAX
+
 namespace Star {
 
 // Some really common std namespace includes

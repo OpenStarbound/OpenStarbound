@@ -2,6 +2,7 @@
 #include "StarTime.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarFile.hpp"
+#include "StarVersionOptionParser.hpp"
 
 using namespace Star;
 
@@ -9,14 +10,18 @@ int main(int argc, char** argv) {
   try {
     double startTime = Time::monotonicTime();
 
-    if (argc != 3) {
-      cerrf("Usage: {} <assets pak path> <target output directory>\n", argv[0]);
-      cerrf("If the target output directory does not exist it will be created\n");
-      return 1;
-    }
+    VersionOptionParser optParse;
+    optParse.setSummary("Unpacks a starbound .pak file into an asset folder");
+    optParse.addSwitch("v", "Verbose, list each file extracted");
+    optParse.addArgument("input pak path", OptionParser::Required, "Path to the .pak file to unpack");
+    optParse.addArgument("output folder", OptionParser::Required, "Output folder");
 
-    String inputFile = argv[1];
-    String outputFolderPath = argv[2];
+    auto opts = optParse.commandParseOrDie(argc, argv);
+
+    String inputFile = opts.arguments.at(0);
+    String outputFolderPath = opts.arguments.at(1);
+
+    bool verbose = opts.switches.contains("v");
 
     PackedAssetSource assetsPack(inputFile);
 
@@ -34,6 +39,8 @@ int main(int argc, char** argv) {
         auto relativeDir = File::dirName(relativePath);
         File::makeDirectoryRecursive(relativeDir);
         File::writeFile(fileData, relativePath);
+        if (verbose)
+          coutf("Extracting file '{}' to the output directory as '{}'\n", file, relativePath);
       } catch (AssetSourceException const& e) {
         cerrf("Could not open file: {}\n", file);
         cerrf("Reason: {}\n", outputException(e, false));

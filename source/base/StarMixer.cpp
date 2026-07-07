@@ -16,6 +16,12 @@ namespace {
       return 1.0f / rampTime;
   }
 }
+extern EnumMap<MixerGroup> const MixerGroupNames = {
+  {MixerGroup::Effects, "Effects"},
+  {MixerGroup::Music, "Music"},
+  {MixerGroup::Cinematic, "Cinematic"},
+  {MixerGroup::Instruments, "Instruments"}
+};
 
 AudioInstance::AudioInstance(Audio const& audio)
   : m_audio(audio) {
@@ -109,14 +115,17 @@ void AudioInstance::setLoops(int loops) {
 }
 
 double AudioInstance::currentTime() const {
+  MutexLocker locker(m_mutex);
   return m_audio.currentTime();
 }
 
 double AudioInstance::totalTime() const {
+  MutexLocker locker(m_mutex);
   return m_audio.totalTime();
 }
 
 void AudioInstance::seekTime(double time) {
+  MutexLocker locker(m_mutex);
   m_audio.seekTime(time);
 }
 

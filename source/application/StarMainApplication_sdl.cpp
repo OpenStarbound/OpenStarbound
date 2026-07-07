@@ -576,7 +576,6 @@ public:
     }
 
     SDL_SetHint(SDL_HINT_AUDIO_DEVICE_APP_ICON_NAME, "openstarbound");
-    SDL_SetHint(SDL_HINT_AUDIO_DEVICE_STREAM_NAME, "Audio");
 #endif
 
 #if defined(__APPLE__)

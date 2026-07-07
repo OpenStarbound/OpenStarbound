@@ -183,7 +183,7 @@ void ModUploader::loadDirectory() {
   }
 
   String modId = metadata.value("steamContentId", "").toString();
-  m_modIdLabel->setText(toQString(strf("<a href=\"steam://url/CommunityFilePage/{}\">{}</a>", modId, modId)));
+  m_modIdLabel->setText(toQString(strf("<a href=\"https://steamcommunity.com/sharedfiles/filedetails/?id={}\">{}</a>", modId, modId)));
 
   String previewFile = File::relativeTo(*m_modDirectory, "_previewimage");
   if (File::isFile(previewFile)) {
@@ -308,7 +308,7 @@ void ModUploader::uploadToSteam() {
     }
 
     modIdString = toString(m_steamItemCreateResult->first.m_nPublishedFileId);
-    String modUrl = strf("steam://url/CommunityFilePage/{}", modIdString);
+    String modUrl = strf("https://steamcommunity.com/sharedfiles/filedetails/?id={}", modIdString);
 
     metadata.set("steamContentId", modIdString);
     metadata.set("link", modUrl);

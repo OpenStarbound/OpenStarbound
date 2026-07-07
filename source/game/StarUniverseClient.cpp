@@ -325,35 +325,36 @@ void UniverseClient::update(float dt) {
     m_storageTriggerDeadline = Time::monotonicMilliseconds() + assets->json("/client.config:storageTriggerInterval").toUInt();
   }
 
-  if (m_respawning) {
-    if (m_respawnTimer.ready()) {
-      if (m_worldClient->inWorld()) {
-        if (!playerOnOwnShip() && !m_worldClient->respawnInWorld()) {
-          m_pendingWarp = WarpAlias::OwnShip;
-          m_warpDelay.reset();
-        }
+  if (!m_worldClient->mainPlayerDead() || m_mainPlayer->modeConfig().permadeath) {
+    m_respawnWarped = m_respawning = false;
+  } else if (m_respawning) {
+    if (m_respawnTimer.tick(dt)) {
+      bool ownShip = playerOnOwnShip();
+      if (ownShip || m_worldClient->respawnInWorld()) {
         m_worldClient->reviveMainPlayer();
         m_respawning = false;
-      }
-    } else {
-      if (m_respawnTimer.tick(dt)) {
-        String cinematic = assets->json("/client.config:respawnCinematic").toString();
-        cinematic = cinematic.replaceTags(StringMap<String>{
+      } else if (!ownShip && !m_respawnWarped) {
+        if (m_respawnTimer.time > 0.f) {
+          String cinematic = assets->json("/client.config:respawnCinematic").toString();
+          cinematic = cinematic.replaceTags(StringMap<String>{
             {"species", m_mainPlayer->species()},
-            {"mode", PlayerModeNames.getRight(m_mainPlayer->modeType())}
-          });
-        m_mainPlayer->setPendingCinematic(Json(std::move(cinematic)));
+            {"mode", PlayerModeNames.getRight(m_mainPlayer->modeType())}});
+          m_mainPlayer->setPendingCinematic(Json(std::move(cinematic)));
+        }
+        m_respawnWarped = true;
+        m_pendingWarp = WarpAlias::OwnShip;
+        m_warpDelay.reset();
+        m_respawning = false;
       }
+    }
+  } else if (m_respawnWarped) {
+    if (m_respawnTimer.tick(dt) && playerOnOwnShip()) {
+      m_worldClient->reviveMainPlayer();
+      m_respawnWarped = m_respawning = false;
     }
   } else {
-    if (m_worldClient->mainPlayerDead()) {
-      if (m_mainPlayer->modeConfig().permadeath) {
-        // tooo bad....
-      } else {
-        m_respawning = true;
-        m_respawnTimer.reset();
-      }
-    }
+    m_respawning = true;
+    m_respawnTimer.reset();
   }
 
   m_celestialDatabase->cleanup();
@@ -806,7 +807,7 @@ void UniverseClient::reset() {
   m_clientContext.reset();
   m_teamClient.reset();
   m_warping.reset();
-  m_respawning = false;
+  m_respawning = m_respawnWarped = false;
 
   auto assets = Root::singleton().assets();
   m_warpDelay = GameTimer(assets->json("/client.config:playerWarpDelay").toFloat());

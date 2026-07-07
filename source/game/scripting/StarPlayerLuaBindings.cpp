@@ -829,11 +829,11 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
     player->setDeathParticleBurst(deathParticleBurst);
   });
 
-  callbacks.registerCallback("headRotation", [player](Maybe<EntityId> const& entityId) {
+  callbacks.registerCallback("headRotation", [player]() {
     return player->getSecretProperty("humanoid.headRotation");
   });
   // more accurate than mcontroller.facingDirection
-  callbacks.registerCallback("facingDirection", [player](Maybe<EntityId> const& entityId) {
+  callbacks.registerCallback("facingDirection", [player]() {
     return numericalDirection(player->humanoid()->facingDirection());
   });
 

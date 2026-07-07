@@ -468,7 +468,7 @@ String ClientCommandProcessor::render(String const& path) {
     } else if (first.equals("chest")) {
       if (args.size() <= 1) {
         return "Chest armors have multiple spritesheets. Do: "
-               "^white;/chest torso ^cyan;front^reset;/^cyan;torso^reset;/^cyan;back^reset;. "
+               "^white;/render chest ^cyan;front^reset;/^cyan;torso^reset;/^cyan;back^reset;. "
                "To repair old generated clothes, then also specify ^cyan;old^reset;.";
       }
       String sheet = args[1].toLower();

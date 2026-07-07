@@ -102,4 +102,63 @@ ByteArray DecompressionStream::decompress(ByteArray const& in) {
   return out;
 }
 
+ByteArray ZstdCompression::compress(const char* in, size_t inLen, int compressionLevel) {
+  if (inLen == 0)
+    return ByteArray();
+    
+  size_t const maxOutSize = ZSTD_compressBound(inLen);
+  ByteArray out(maxOutSize, 0);
+  
+  size_t compressedSize = ZSTD_compress(
+    out.ptr(), maxOutSize,
+    in, inLen,
+    compressionLevel
+  );
+  
+  if (ZSTD_isError(compressedSize))
+    throw IOException(strf("ZSTD compression error {}", ZSTD_getErrorName(compressedSize)));
+  
+  out.resize(compressedSize);
+  return out;
+}
+
+void ZstdCompression::compress(const char* in, size_t inLen, ByteArray& out, int compressionLevel) {
+  out = compress(in, inLen, compressionLevel);
+}
+
+ByteArray ZstdCompression::compress(ByteArray const& in, int compressionLevel) {
+  return compress(in.ptr(), in.size(), compressionLevel);
+}
+
+void ZstdCompression::compress(ByteArray const& in, ByteArray& out, int compressionLevel) {
+  out = compress(in, compressionLevel);
+}
+
+ByteArray ZstdCompression::decompress(const char* in, size_t inLen) {
+  unsigned long long const frameContentSize = ZSTD_getFrameContentSize(in, inLen);
+  if (frameContentSize == ZSTD_CONTENTSIZE_ERROR || frameContentSize == ZSTD_CONTENTSIZE_UNKNOWN)
+    throw IOException("Cannot determine ZSTD decompressed size");
+  
+  ByteArray out(frameContentSize, 0);
+  size_t result = ZSTD_decompress(out.ptr(), frameContentSize, in, inLen);
+  
+  if (ZSTD_isError(result))
+    throw IOException(strf("ZSTD decompression error {}", ZSTD_getErrorName(result)));
+  
+  out.resize(result);
+  return out;
+}
+
+void ZstdCompression::decompress(const char* in, size_t inLen, ByteArray& out) {
+  out = decompress(in, inLen);
+}
+
+ByteArray ZstdCompression::decompress(ByteArray const& in) {
+  return decompress(in.ptr(), in.size());
+}
+
+void ZstdCompression::decompress(ByteArray const& in, ByteArray& out) {
+  out = decompress(in);
+}
+
 }

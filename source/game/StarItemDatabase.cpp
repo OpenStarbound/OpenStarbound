@@ -536,13 +536,15 @@ ItemPtr ItemDatabase::tryCreateItem(ItemDescriptor const& descriptor, Maybe<floa
         if (descriptor.name() == "perfectlygenericitem") {
           Logger::error("Could not re-instantiate item '{}'. {}", descriptor, outputException(e, false));
           result = createItem(m_items.get("perfectlygenericitem").type, itemConfig("perfectlygenericitem", descriptor.parameters(), level, seed));
+          result->setCount(descriptor.count());
         } else {
           Logger::error("Could not instantiate item '{}'. {}", descriptor, outputException(e, false));
           result = createItem(m_items.get("perfectlygenericitem").type, itemConfig("perfectlygenericitem", JsonObject({
-            {"genericItemStorage", descriptor.toJson()},
+            {"genericItemStorage", descriptor.toJson().eraseKey("count")},
             {"shortdescription", descriptor.name()},
             {"description", "Reinstall the parent mod to return this item to normal"}
           }), {}, {}));
+          result->setCount(descriptor.count());
         }
       }
     } else

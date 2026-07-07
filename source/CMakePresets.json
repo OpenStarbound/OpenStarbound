@@ -39,7 +39,10 @@
       "binaryDir": "${sourceParentDir}/build/windows-release",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
-        "VCPKG_TARGET_TRIPLET": "x64-windows-mixed-md",
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++",
+        "CMAKE_RC_COMPILER": "rc.exe",
+        "VCPKG_TARGET_TRIPLET": "x64-windows-mixed-md-clang",
         "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL",
         "CMAKE_INCLUDE_PATH": "${sourceParentDir}/lib/windows/include",
         "CMAKE_LIBRARY_PATH": "${sourceParentDir}/lib/windows",
@@ -51,6 +54,17 @@
           "hostOS": [ "Windows" ]
         }
       }
+    },
+    {
+      "inherits": "windows-release",
+      "name": "windows-release-ci",
+      "displayName": "Windows x64 for CI",
+      "binaryDir": "${sourceParentDir}/build/windows-release",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "$env{LLVM_PATH}/bin/clang.exe",
+        "CMAKE_CXX_COMPILER": "$env{LLVM_PATH}/bin/clang++.exe"
+      },
+      "vendor": {}
     },
     {
       "inherits": "windows-release",
@@ -157,6 +171,10 @@
       "configurePreset": "windows-release"
     },
     {
+      "name": "windows-release-ci",
+      "configurePreset": "windows-release-ci"
+    },
+    {
       "name": "windows-debug",
       "configurePreset": "windows-release"
     },
@@ -206,6 +224,12 @@
       "inherits": "base",
       "name": "windows-release",
       "configurePreset": "windows-release",
+      "configuration": "Release"
+    },
+    {
+      "inherits": "base",
+      "name": "windows-release-ci",
+      "configurePreset": "windows-release-ci",
       "configuration": "Release"
     },
     {
