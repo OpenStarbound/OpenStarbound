@@ -388,7 +388,7 @@ void Npc::destroy(RenderCallback* renderCallback) {
           treasureDatabase->createTreasure(staticRandomFrom(m_dropPools.get(), m_npcVariant.seed), m_npcVariant.level))
         world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position()));
     } catch (StarException const& e) {
-      Logger::warn("Invalid dropID in NPC death. {}", outputException(e, false));
+      Logger::warn("Invalid dropID in npc death. {}", outputException(e, false));
     }
   }
 
