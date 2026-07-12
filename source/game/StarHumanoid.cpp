@@ -307,105 +307,31 @@ Humanoid::Humanoid(HumanoidIdentity const& identity, JsonObject parameters, Json
 void Humanoid::setIdentity(HumanoidIdentity const& identity) {
   m_identity = identity;
   m_headFrameset = getHeadFromIdentity();
+  m_headFlippedFrameset = getHeadFlippedFromIdentity();
   m_bodyFrameset = getBodyFromIdentity();
+  m_bodyFlippedFrameset = getBodyFlippedFromIdentity();
   m_emoteFrameset = getFacialEmotesFromIdentity();
+  m_emoteFlippedFrameset = getFacialEmotesFlippedFromIdentity();
   m_hairFrameset = getHairFromIdentity();
+  m_hairFlippedFrameset = getHairFlippedFromIdentity();
   m_facialHairFrameset = getFacialHairFromIdentity();
+  m_facialHairFlippedFrameset = getFacialHairFlippedFromIdentity();
   m_facialMaskFrameset = getFacialMaskFromIdentity();
+  m_facialMaskFlippedFrameset = getFacialMaskFlippedFromIdentity();
   m_backArmFrameset = getBackArmFromIdentity();
+  m_backArmFlippedFrameset = getBackArmFlippedFromIdentity();
   m_frontArmFrameset = getFrontArmFromIdentity();
+  m_frontArmFlippedFrameset = getFrontArmFlippedFromIdentity();
   m_vaporTrailFrameset = getVaporTrailFrameset();
 
   if (m_useBodyMask) {
     m_bodyMaskFrameset = getBodyMaskFromIdentity();
-
-    if (auto p = m_identityFramesetTags.ptr("bodyMaskFlippedFrameset")){
-      m_bodyMaskFlippedFrameset = strf("/humanoid/{}/{}",
-        m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
-        applyIdentityTags(*p)
-      );
-    } else {
-      m_bodyMaskFlippedFrameset = m_bodyMaskFrameset;
-    }
+    m_bodyMaskFlippedFrameset = getBodyMaskFlippedFromIdentity();
   }
   if (m_useBodyHeadMask) {
     m_bodyHeadMaskFrameset = getBodyHeadMaskFromIdentity();
-
-    if (auto p = m_identityFramesetTags.ptr("bodyHeadMaskFlippedFrameset")){
-      m_bodyHeadMaskFlippedFrameset = strf("/humanoid/{}/{}",
-        m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
-        applyIdentityTags(*p)
-      );
-    } else {
-      m_bodyHeadMaskFlippedFrameset = m_bodyHeadMaskFrameset;
-    }
+    m_bodyHeadMaskFrameset = getBodyHeadMaskFlippedFromIdentity();
   }
-
-  if (auto p = m_identityFramesetTags.ptr("headFlippedFrameset")){
-    m_headFlippedFrameset = strf("/humanoid/{}/{}",
-      m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
-      applyIdentityTags(*p)
-    );
-  } else {
-    m_headFlippedFrameset = m_headFrameset;
-  }
-  if (auto p = m_identityFramesetTags.ptr("bodyFlippedFrameset")){
-    m_bodyFlippedFrameset = strf("/humanoid/{}/{}",
-      m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
-      applyIdentityTags(*p)
-    );
-  } else {
-    m_bodyFlippedFrameset = m_bodyFrameset;
-  }
-  if (auto p = m_identityFramesetTags.ptr("emoteFlippedFrameset")){
-    m_emoteFlippedFrameset = strf("/humanoid/{}/{}",
-      m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
-      applyIdentityTags(*p)
-    );
-  } else {
-    m_emoteFlippedFrameset = m_emoteFrameset;
-  }
-  if (auto p = m_identityFramesetTags.ptr("hairFlippedFrameset")){
-    m_hairFlippedFrameset = strf("/humanoid/{}/{}",
-      m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
-      applyIdentityTags(*p)
-    );
-  } else {
-    m_hairFlippedFrameset = m_hairFrameset;
-  }
-  if (auto p = m_identityFramesetTags.ptr("facialHairFlippedFrameset")){
-    m_facialHairFlippedFrameset = strf("/humanoid/{}/{}",
-      m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
-      applyIdentityTags(*p)
-    );
-  } else {
-    m_facialHairFlippedFrameset = m_facialHairFrameset;
-  }
-  if (auto p = m_identityFramesetTags.ptr("facialMaskFlippedFrameset")){
-    m_facialMaskFlippedFrameset = strf("/humanoid/{}/{}",
-      m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
-      applyIdentityTags(*p)
-    );
-  } else {
-    m_facialMaskFlippedFrameset = m_facialMaskFrameset;
-  }
-  if (auto p = m_identityFramesetTags.ptr("backArmFlippedFrameset")){
-    m_backArmFlippedFrameset = strf("/humanoid/{}/{}",
-      m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
-      applyIdentityTags(*p)
-    );
-  } else {
-    m_backArmFlippedFrameset = m_backArmFrameset;
-  }
-  if (auto p = m_identityFramesetTags.ptr("frontArmFlippedFrameset")){
-    m_frontArmFlippedFrameset = strf("/humanoid/{}/{}",
-      m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
-      applyIdentityTags(*p)
-    );
-  } else {
-    m_frontArmFlippedFrameset = m_frontArmFrameset;
-  }
-
 
   if (m_useAnimation) {
     m_networkedAnimator.setLocalTag("name", m_identity.name);
@@ -2085,6 +2011,17 @@ String Humanoid::getHeadFromIdentity() const {
       m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
       GenderNames.getRight(m_identity.gender));
 }
+String Humanoid::getHeadFlippedFromIdentity() const {
+  if (auto p = m_identityFramesetTags.ptr("headFlippedFrameset")){
+    auto str = applyIdentityTags(*p);
+    if (str.empty())
+      return "";
+    else if (str[0] == '/')
+      return str;
+    return strf("/humanoid/{}/{}", m_identity.imagePath ? *m_identity.imagePath : m_identity.species, str);
+  }
+  return getHeadFromIdentity();
+}
 
 String Humanoid::getBodyFromIdentity() const {
   if (auto p = m_identityFramesetTags.ptr("bodyFrameset")){
@@ -2098,6 +2035,17 @@ String Humanoid::getBodyFromIdentity() const {
   return strf("/humanoid/{}/{}body.png",
       m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
       GenderNames.getRight(m_identity.gender));
+}
+String Humanoid::getBodyFlippedFromIdentity() const {
+  if (auto p = m_identityFramesetTags.ptr("bodyFlippedFrameset")){
+    auto str = applyIdentityTags(*p);
+    if (str.empty())
+      return "";
+    else if (str[0] == '/')
+      return str;
+    return strf("/humanoid/{}/{}", m_identity.imagePath ? *m_identity.imagePath : m_identity.species, str);
+  }
+  return getBodyFromIdentity();
 }
 
 String Humanoid::getBodyMaskFromIdentity() const {
@@ -2113,6 +2061,17 @@ String Humanoid::getBodyMaskFromIdentity() const {
       m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
       GenderNames.getRight(m_identity.gender));
 }
+String Humanoid::getBodyMaskFlippedFromIdentity() const {
+  if (auto p = m_identityFramesetTags.ptr("bodyMaskFlippedFrameset")){
+    auto str = applyIdentityTags(*p);
+    if (str.empty())
+      return "";
+    else if (str[0] == '/')
+      return str;
+    return strf("/humanoid/{}/{}", m_identity.imagePath ? *m_identity.imagePath : m_identity.species, str);
+  }
+  return getBodyMaskFromIdentity();
+}
 
 String Humanoid::getBodyHeadMaskFromIdentity() const {
   if (auto p = m_identityFramesetTags.ptr("bodyHeadMaskFrameset")){
@@ -2127,6 +2086,17 @@ String Humanoid::getBodyHeadMaskFromIdentity() const {
       m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
       GenderNames.getRight(m_identity.gender));
 }
+String Humanoid::getBodyHeadMaskFlippedFromIdentity() const {
+  if (auto p = m_identityFramesetTags.ptr("bodyHeadMaskFlippedFrameset")){
+    auto str = applyIdentityTags(*p);
+    if (str.empty())
+      return "";
+    else if (str[0] == '/')
+      return str;
+    return strf("/humanoid/{}/{}", m_identity.imagePath ? *m_identity.imagePath : m_identity.species, str);
+  }
+  return getBodyHeadMaskFromIdentity();
+}
 
 String Humanoid::getFacialEmotesFromIdentity() const {
   if (auto p = m_identityFramesetTags.ptr("emoteFrameset")){
@@ -2138,6 +2108,17 @@ String Humanoid::getFacialEmotesFromIdentity() const {
     return strf("/humanoid/{}/{}", m_identity.imagePath ? *m_identity.imagePath : m_identity.species, str);
   }
   return strf("/humanoid/{}/emote.png", m_identity.imagePath ? *m_identity.imagePath : m_identity.species);
+}
+String Humanoid::getFacialEmotesFlippedFromIdentity() const {
+  if (auto p = m_identityFramesetTags.ptr("emoteFrameset")){
+    auto str = applyIdentityTags(*p);
+    if (str.empty())
+      return "";
+    else if (str[0] == '/')
+      return str;
+    return strf("/humanoid/{}/{}", m_identity.imagePath ? *m_identity.imagePath : m_identity.species, str);
+  }
+  return getFacialEmotesFromIdentity();
 }
 
 String Humanoid::getHairFromIdentity() const {
@@ -2156,6 +2137,17 @@ String Humanoid::getHairFromIdentity() const {
       m_identity.hairGroup,
       m_identity.hairType);
 }
+String Humanoid::getHairFlippedFromIdentity() const {
+  if (auto p = m_identityFramesetTags.ptr("hairFlippedFrameset")){
+    auto str = applyIdentityTags(*p);
+    if (str.empty())
+      return "";
+    else if (str[0] == '/')
+      return str;
+    return strf("/humanoid/{}/{}", m_identity.imagePath ? *m_identity.imagePath : m_identity.species, str);
+  }
+  return getHairFromIdentity();
+}
 
 String Humanoid::getFacialHairFromIdentity() const {
   if (auto p = m_identityFramesetTags.ptr("facialHairFrameset")){
@@ -2172,6 +2164,17 @@ String Humanoid::getFacialHairFromIdentity() const {
       m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
       m_identity.facialHairGroup,
       m_identity.facialHairType);
+}
+String Humanoid::getFacialHairFlippedFromIdentity() const {
+  if (auto p = m_identityFramesetTags.ptr("facialHairFlippedFrameset")){
+    auto str = applyIdentityTags(*p);
+    if (str.empty())
+      return "";
+    else if (str[0] == '/')
+      return str;
+    return strf("/humanoid/{}/{}", m_identity.imagePath ? *m_identity.imagePath : m_identity.species, str);
+  }
+  return getFacialHairFromIdentity();
 }
 
 String Humanoid::getFacialMaskFromIdentity() const {
@@ -2190,6 +2193,17 @@ String Humanoid::getFacialMaskFromIdentity() const {
       m_identity.facialMaskGroup,
       m_identity.facialMaskType);
 }
+String Humanoid::getFacialMaskFlippedFromIdentity() const {
+  if (auto p = m_identityFramesetTags.ptr("facialMaskFrameset")){
+    auto str = applyIdentityTags(*p);
+    if (str.empty())
+      return "";
+    else if (str[0] == '/')
+      return str;
+    return strf("/humanoid/{}/{}", m_identity.imagePath ? *m_identity.imagePath : m_identity.species, str);
+  }
+  return getFacialMaskFromIdentity();
+}
 
 String Humanoid::getBackArmFromIdentity() const {
   if (auto p = m_identityFramesetTags.ptr("backArmFrameset")){
@@ -2202,6 +2216,17 @@ String Humanoid::getBackArmFromIdentity() const {
   }
   return strf("/humanoid/{}/backarm.png", m_identity.imagePath ? *m_identity.imagePath : m_identity.species);
 }
+String Humanoid::getBackArmFlippedFromIdentity() const {
+  if (auto p = m_identityFramesetTags.ptr("backArmFlippedFrameset")){
+    auto str = applyIdentityTags(*p);
+    if (str.empty())
+      return "";
+    else if (str[0] == '/')
+      return str;
+    return strf("/humanoid/{}/{}", m_identity.imagePath ? *m_identity.imagePath : m_identity.species, str);
+  }
+  return getBackArmFromIdentity();
+}
 
 String Humanoid::getFrontArmFromIdentity() const {
   if (auto p = m_identityFramesetTags.ptr("frontArmFrameset")){
@@ -2213,6 +2238,17 @@ String Humanoid::getFrontArmFromIdentity() const {
     return strf("/humanoid/{}/{}", m_identity.imagePath ? *m_identity.imagePath : m_identity.species, str);
   }
   return strf("/humanoid/{}/frontarm.png", m_identity.imagePath ? *m_identity.imagePath : m_identity.species);
+}
+String Humanoid::getFrontArmFlippedFromIdentity() const {
+  if (auto p = m_identityFramesetTags.ptr("frontArmFrameset")){
+    auto str = applyIdentityTags(*p);
+    if (str.empty())
+      return "";
+    else if (str[0] == '/')
+      return str;
+    return strf("/humanoid/{}/{}", m_identity.imagePath ? *m_identity.imagePath : m_identity.species, str);
+  }
+  return getFrontArmFromIdentity();
 }
 
 String Humanoid::getVaporTrailFrameset() const {

@@ -304,15 +304,25 @@ public:
 
   String applyIdentityTags(String input) const;
   String getHeadFromIdentity() const;
+  String getHeadFlippedFromIdentity() const;
   String getBodyFromIdentity() const;
+  String getBodyFlippedFromIdentity() const;
   String getBodyMaskFromIdentity() const;
+  String getBodyMaskFlippedFromIdentity() const;
   String getBodyHeadMaskFromIdentity() const;
+  String getBodyHeadMaskFlippedFromIdentity() const;
   String getFacialEmotesFromIdentity() const;
+  String getFacialEmotesFlippedFromIdentity() const;
   String getHairFromIdentity() const;
+  String getHairFlippedFromIdentity() const;
   String getFacialHairFromIdentity() const;
+  String getFacialHairFlippedFromIdentity() const;
   String getFacialMaskFromIdentity() const;
+  String getFacialMaskFlippedFromIdentity() const;
   String getBackArmFromIdentity() const;
+  String getBackArmFlippedFromIdentity() const;
   String getFrontArmFromIdentity() const;
+  String getFrontArmFlippedFromIdentity() const;
   String getVaporTrailFrameset() const;
 
   NetworkedAnimator * networkedAnimator();
