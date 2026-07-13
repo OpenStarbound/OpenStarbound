@@ -86,11 +86,12 @@ public:
   struct BindCategory {
     String id;
     String name;
-    Json config;
+    Json config = JsonObject{};
 
     StableHashMap<String, BindEntry> entries;
 
-    BindCategory(String categoryId, Json const& categoryConfig);
+    BindCategory();
+    void mergeJson(String const& categoryId, Json const& categoryConfig);
   };
 
   struct InputState {
