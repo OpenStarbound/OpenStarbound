@@ -530,7 +530,7 @@ void Object::destroy(RenderCallback* renderCallback) {
         }
       }
     } catch (StarException const& e) {
-      Logger::warn("Invalid dropID in entity death. {}", outputException(e, false));
+      Logger::warn("Invalid dropID in object destruction. {}", outputException(e, false));
     }
   }
 
