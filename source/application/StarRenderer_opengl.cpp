@@ -313,7 +313,18 @@ void OpenGlRenderer::loadConfig(Json const& config) {
 
   for (auto& pair : config.getObject("frameBuffers", {})) {
     Json config = pair.second;
-    config = config.set("multisample", m_multiSampling);
+    // Multisampling is OPT-IN per framebuffer, and only a framebuffer that is MSAA-RESOLVED to the screen
+    // (glBlitFramebuffer, i.e. "main") may opt in. A framebuffer that is SAMPLED AS A TEXTURE must stay
+    // single-sample: its texture would be GL_TEXTURE_2D_MULTISAMPLE, and the effect-texture bind site binds
+    // unconditionally to GL_TEXTURE_2D. That is GL_INVALID_OPERATION -- a NO-OP -- so the texture unit keeps
+    // its PREVIOUS binding (an atlas page) and the shader's sampler2D reads that instead, with no error
+    // surfaced.
+    //
+    // Stamping the global setting unconditionally, as this did, overwrote the framebuffer's own key, so not
+    // even a mod could opt out. Vanilla never noticed: it ships one framebuffer, "main", which is blitted to
+    // the screen and never sampled. Anything that samples a framebuffer -- every postprocess shader mod, and
+    // the double-buffered feedback effects that "double" exists for -- breaks the moment antiAliasing is on.
+    config = config.set("multisample", config.getBool("allowMultisample", false) ? m_multiSampling : 0);
     config = config.set("hdrSetting", m_hdrSetting);
     Logger::info("Creating framebuffer {}", pair.first);
     auto buf = make_ref<GlFrameBuffer>(config);
