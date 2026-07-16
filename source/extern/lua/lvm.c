@@ -751,7 +751,7 @@ void luaV_finishOp (lua_State *L) {
 /* execute a jump instruction */
 #define dojump(ci,i,e) \
   { int a = GETARG_A(i); \
-    if (a != 0) luaF_close(L, ci->u.l.base + a - 1); \
+    if (a != 0) Protect(luaF_close(L, ci->u.l.base + a - 1, LUA_OK)); \
     ci->u.l.savedpc += GETARG_sBx(i) + e; }
 
 /* for test instructions, execute the jump instruction that follows it */
@@ -1176,7 +1176,7 @@ void luaV_execute (lua_State *L) {
           StkId lim = nci->u.l.base + getproto(nfunc)->numparams;
           int aux;
           /* close all upvalues from previous call */
-          if (cl->p->sizep > 0) luaF_close(L, oci->u.l.base);
+          if (cl->p->sizep > 0) Protect(luaF_close(L, oci->u.l.base, NOCLOSINGMETH));
           /* move new frame into old one */
           for (aux = 0; nfunc + aux < lim; aux++)
             setobjs2s(L, ofunc + aux, nfunc + aux);
@@ -1192,7 +1192,10 @@ void luaV_execute (lua_State *L) {
       }
       vmcase(OP_RETURN) {
         int b = GETARG_B(i);
-        if (cl->p->sizep > 0) luaF_close(L, base);
+        if (cl->p->sizep > 0) {
+          Protect(luaF_close(L, base, LUA_OK));
+          ra = RA(i);
+        }
         b = luaD_poscall(L, ci, ra, (b != 0 ? b - 1 : cast_int(L->top - ra)));
         if (ci->callstatus & CIST_FRESH)  /* local 'ci' still from callee */
           return;  /* external invocation: return */
@@ -1329,6 +1332,12 @@ void luaV_execute (lua_State *L) {
       }
       vmcase(OP_EXTRAARG) {
         lua_assert(0);
+        vmbreak;
+      }
+      vmcase(OP_DEFER) {
+        UpVal *up = luaF_findupval(L, ra); /* create new upvalue */
+        up->flags = 1;  /* mark it as deferred */
+        setnilvalue(ra);  /* initialize it with nil */
         vmbreak;
       }
     }
