@@ -110,6 +110,10 @@ WorldLayoutPtr WorldTemplate::worldLayout() const {
   return m_layout;
 }
 
+void WorldTemplate::setCelestialParameters(CelestialParameters newParameters){
+  m_celestialParameters = take(newParameters);
+}
+
 void WorldTemplate::setWorldParameters(VisitableWorldParametersPtr newParameters) {
   m_worldParameters = take(newParameters);
 }
