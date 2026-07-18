@@ -3,7 +3,7 @@
 
 namespace Star {
 
-void VersionOptionParser::printVersion(std::ostream& os) {  
+void VersionOptionParser::printVersion(std::ostream& os) const {  
   String displayName = m_versionName ? *m_versionName : String();  
   format(os, "OpenStarbound{} v{} for v{} ({}) Source ID: {}\n", displayName.empty() ? "" : strf(" {}", displayName), OpenStarVersionString, StarVersionString, StarArchitectureString, StarSourceIdentifierString);  
 }
