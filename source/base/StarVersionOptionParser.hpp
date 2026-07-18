@@ -9,8 +9,7 @@ namespace Star {
 // version and exit.
 class VersionOptionParser : public OptionParser {
 public:
-  void printVersion(std::ostream& os) const;
-  
+  String getVersionString() const;
   void setVersionName(String const& name);
 
   VersionOptionParser();
