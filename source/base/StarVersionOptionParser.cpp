@@ -3,9 +3,9 @@
 
 namespace Star {
 
-void VersionOptionParser::printVersion(std::ostream& os) const {  
-  String displayName = m_versionName ? *m_versionName : String();  
-  format(os, "OpenStarbound{} v{} for v{} ({}) Source ID: {}\n", displayName.empty() ? "" : strf(" {}", displayName), OpenStarVersionString, StarVersionString, StarArchitectureString, StarSourceIdentifierString);  
+String VersionOptionParser::getVersionString() const {
+  String displayName = m_versionName ? *m_versionName : String();
+  return strf("OpenStarbound{} v{} for v{} ({}) Source ID: {}", displayName.empty() ? "" : strf(" {}", displayName), OpenStarVersionString, StarVersionString, StarArchitectureString, StarSourceIdentifierString);
 }
 
 void VersionOptionParser::setVersionName(String const& name) {
@@ -23,7 +23,7 @@ VersionOptionParser::Options VersionOptionParser::parseOrDie(StringList const& c
   tie(options, errors) = OptionParser::parseOptions(cmdLineArguments);
 
   if (options.switches.contains("version"))
-    printVersion(std::cout);
+    coutf("{}\n", getVersionString());
 
   if (options.switches.contains("help"))
     printHelp(std::cout);
