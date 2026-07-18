@@ -10,6 +10,8 @@ namespace Star {
 class VersionOptionParser : public OptionParser {
 public:
   static void printVersion(std::ostream& os);
+  
+  void setVersionName(String const& name);
 
   VersionOptionParser();
 
@@ -19,6 +21,9 @@ public:
 
   // First sets the command name based on argv[0], then calls parseOrDie.
   Options commandParseOrDie(int argc, char** argv);
+
+private:
+  Maybe<String> m_versionName;
 };
 
 }
