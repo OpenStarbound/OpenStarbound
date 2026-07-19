@@ -622,6 +622,9 @@ void MovementController::tickMaster(float dt) {
     }
   }
   
+  if (!m_colliding.get())
+    m_stickingDirection.set({});
+  
   Vec2F newVelocity = relativeVelocity + m_surfaceVelocity;
 
   PolyF body = collisionBody();
