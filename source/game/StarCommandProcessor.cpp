@@ -102,7 +102,7 @@ String CommandProcessor::admin(ConnectionId connectionId, String const& argument
   ConnectionId targetClientId = connectionId;
 
   if (!arguments.empty()) {
-    if (auto errorMsg = adminCheck(connectionId, "admin a user"))
+    if (auto errorMsg = adminCheck(connectionId, "make user admin"))
       return *errorMsg;
 
     auto targetCid = playerCidFromCommand(arguments[0], m_universe);
