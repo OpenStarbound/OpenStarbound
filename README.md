@@ -70,6 +70,8 @@ Note: Mods that use StarExtensions features often work with OpenStarbound, StarE
     * `/settileprotection`
       * You can now specify as many dungeon IDs as you want: `/settileprotection 69 420 false`
       * You can now specify a range: /settileprotection 0..65535 true
+    * `/admin`
+      * You can now admin other players: `/admin playerSpecifier` (requires OpenSB server)
 ### Bug Fixes
 * Invalid character inventories are updated when loading in, allowing players to swap inventory mods with pre-existing characters.
 * Fix vanilla world file size bloating issue.
