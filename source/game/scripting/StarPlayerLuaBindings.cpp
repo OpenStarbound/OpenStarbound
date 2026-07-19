@@ -825,6 +825,10 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
     player->setCameraFocusEntity(entityId);
   });
 
+  callbacks.registerCallback("setDeathParticleBurst", [player](Maybe<String> const& deathParticleBurst) {
+    player->setDeathParticleBurst(deathParticleBurst);
+  });
+
   callbacks.registerCallback("headRotation", [player]() {
     return player->getSecretProperty("humanoid.headRotation");
   });

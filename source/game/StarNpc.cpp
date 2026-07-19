@@ -671,7 +671,7 @@ LuaCallbacks Npc::makeNpcCallbacks() {
 
   callbacks.registerCallback("toAbsolutePosition", [this](Vec2F const& p) { return getAbsolutePosition(p); });
 
-  callbacks.registerCallback("species", [this]() { return m_npcVariant.species; });
+  callbacks.registerCallback("species", [this]() { return humanoid()->identity().species; });
 
   callbacks.registerCallback("gender", [this]() { return GenderNames.getRight(humanoid()->identity().gender); });
 
@@ -1454,6 +1454,7 @@ void Npc::refreshHumanoidParameters() {
   }else {
     m_npcVariant.humanoidParameters = m_netHumanoid.netElements().last()->humanoidParameters();
   }
+  m_npcVariant.species = m_npcVariant.humanoidIdentity.species;
 
   auto armor = m_armor->diskStore();
   m_armor->reset();
