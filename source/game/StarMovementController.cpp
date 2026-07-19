@@ -665,6 +665,7 @@ void MovementController::tickMaster(float dt) {
   // and was entirely (almost) cancelled by collision correction, put the
   // entity into rest for restDuration
   if (!m_resting &&
+      !stickingDirection() &&
       abs(originalMovement[0]) < 0.0001 &&
       originalMovement[1] * gravity() <= 0.0 &&
       abs(originalMovement[1] + m_collisionCorrection[1]) < 0.0001) {
