@@ -1243,7 +1243,14 @@ void Player::render(RenderCallback* renderCallback) {
   }
 
   auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor());
-  EntityRenderLayer renderLayer = loungeAnchor ? loungeAnchor->loungeRenderLayer : RenderLayerPlayer;
+  
+  EntityRenderLayer renderLayer = RenderLayerPlayer;
+  if (auto overrideRenderLayer = getSecretProperty("overrideRenderLayer"); overrideRenderLayer.canConvert(Json::Type::Int)) {
+    renderLayer = overrideRenderLayer.toUInt();
+  }
+  if (loungeAnchor) {
+    renderLayer = loungeAnchor->loungeRenderLayer;
+  }
 
   renderCallback->addDrawables(drawables(), renderLayer);
   if (!isTeleporting())
@@ -1262,6 +1269,10 @@ void Player::render(RenderCallback* renderCallback) {
 void Player::renderLightSources(RenderCallback* renderCallback) {
   renderCallback->addLightSources(lightSources());
   m_deployment->renderLightSources(renderCallback);
+}
+
+void Player::setRenderLayer(Maybe<EntityRenderLayer> layer) {
+  setSecretProperty("overrideRenderLayer", layer ? Json(*layer) : Json());
 }
 
 Json Player::getGenericProperty(String const& name, Json const& defaultValue) const {

@@ -164,6 +164,13 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
 
   callbacks.registerCallback(   "interactRadius", [player]()         { return player->interactRadius();       });
   callbacks.registerCallback("setInteractRadius", [player](float radius) { player->setInteractRadius(radius); });
+  
+  callbacks.registerCallback("setRenderLayer", [player](Maybe<String> const& layer) { 
+    if (layer)
+      player->setRenderLayer(parseRenderLayer(*layer)); 
+    else
+      player->setRenderLayer({});
+  });
 
   callbacks.registerCallback("actionBarGroup", [player]() {
     return luaTupleReturn(player->inventory()->customBarGroup() + 1, player->inventory()->customBarGroups());
