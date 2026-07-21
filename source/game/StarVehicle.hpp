@@ -43,6 +43,10 @@ public:
   RectF metaBoundBox() const override;
   RectF collisionArea() const override;
   Vec2F velocity() const;
+  bool onGround() const;
+  bool zeroG() const;
+  float liquidPercentage() const;
+  bool atWorldLimit() const;
 
   pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
   void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
