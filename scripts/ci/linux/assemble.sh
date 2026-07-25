@@ -21,6 +21,7 @@ cp \
   lib/linux/libsteam_api.so \
   scripts/ci/linux/sbinit.config \
   scripts/ci/linux/run-client.sh \
+  scripts/ci/linux/install-desktop.sh \
   scripts/steam_appid.txt \
   client_distribution/linux/
   
