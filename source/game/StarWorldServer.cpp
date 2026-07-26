@@ -293,6 +293,9 @@ bool WorldServer::addClient(ConnectionId clientId, SpawnTarget const& spawnTarge
 List<PacketPtr> WorldServer::removeClient(ConnectionId clientId) {
   auto const& info = m_clientInfo.get(clientId);
 
+  for (auto& p : m_scriptContexts)
+    p.second->invoke("removeClient", clientId);
+
   for (auto const& entityId : m_entityMap->entityIds()) {
     if (connectionForEntity(entityId) == clientId)
       removeEntity(entityId, false);
@@ -315,9 +318,6 @@ List<PacketPtr> WorldServer::removeClient(ConnectionId clientId) {
   m_clientInfo.remove(clientId);
 
   packets.append(make_shared<WorldStopPacket>("Removed"));
-
-  for (auto& p : m_scriptContexts)
-    p.second->invoke("removeClient", clientId);
 
   return packets;
 }

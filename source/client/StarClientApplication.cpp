@@ -6,7 +6,7 @@
 #include "StarLogging.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
-#include "StarVersion.hpp"
+#include "StarVersionOptionParser.hpp"
 #include "StarPlayer.hpp"
 #include "StarPlayerStorage.hpp"
 #include "StarPlayerLog.hpp"
@@ -161,8 +161,9 @@ Json const AdditionalDefaultConfiguration = Json::parseJson(R"JSON(
 
 void ClientApplication::startup(StringList const& cmdLineArgs) {
   RootLoader rootLoader({AdditionalAssetsSettings, AdditionalDefaultConfiguration, String("starbound.log"), LogLevel::Info, false, String("starbound.config")});
+  rootLoader.setVersionName("Client");  
   m_root = rootLoader.initOrDie(cmdLineArgs).first;
-  Logger::info("OpenStarbound Client v{} for v{} ({}) Source ID: {}", OpenStarVersionString, StarVersionString, StarArchitectureString, StarSourceIdentifierString);
+  Logger::info("{}", rootLoader.getVersionString());
   #ifdef __clang__
   Logger::info("Compiled with Clang {}", __clang_version__);
   #endif

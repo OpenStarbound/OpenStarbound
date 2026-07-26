@@ -102,7 +102,7 @@ String CommandProcessor::admin(ConnectionId connectionId, String const& argument
   ConnectionId targetClientId = connectionId;
 
   if (!arguments.empty()) {
-    if (auto errorMsg = adminCheck(connectionId, "admin a user"))
+    if (auto errorMsg = adminCheck(connectionId, "make user admin"))
       return *errorMsg;
 
     auto targetCid = playerCidFromCommand(arguments[0], m_universe);
@@ -980,8 +980,8 @@ Maybe<ConnectionId> CommandProcessor::playerCidFromCommand(String const& player,
   return universe->findNick(player);
 }
 
-const StringMap<std::function<String(CommandProcessor*, ConnectionId, String)>> CommandProcessor::s_commandMap = []() {
-  StringMap<std::function<String(CommandProcessor*, ConnectionId, String)>> map;
+const CaseInsensitiveStringMap<std::function<String(CommandProcessor*, ConnectionId, String)>> CommandProcessor::s_commandMap = []() {
+  CaseInsensitiveStringMap<std::function<String(CommandProcessor*, ConnectionId, String)>> map;
 	
   auto add = [&map](const char* cmd, String (CommandProcessor::*func)(ConnectionId, const String&)) {
     map[cmd] = [func](CommandProcessor* self, ConnectionId cid, const String& args) {

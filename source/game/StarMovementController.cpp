@@ -622,6 +622,9 @@ void MovementController::tickMaster(float dt) {
     }
   }
   
+  if (!m_colliding.get())
+    m_stickingDirection.set({});
+  
   Vec2F newVelocity = relativeVelocity + m_surfaceVelocity;
 
   PolyF body = collisionBody();
@@ -662,6 +665,7 @@ void MovementController::tickMaster(float dt) {
   // and was entirely (almost) cancelled by collision correction, put the
   // entity into rest for restDuration
   if (!m_resting &&
+      !stickingDirection() &&
       abs(originalMovement[0]) < 0.0001 &&
       originalMovement[1] * gravity() <= 0.0 &&
       abs(originalMovement[1] + m_collisionCorrection[1]) < 0.0001) {

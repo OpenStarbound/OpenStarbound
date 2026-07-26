@@ -11,6 +11,7 @@ int main(int argc, char** argv) {
     double startTime = Time::monotonicTime();
 
     VersionOptionParser optParse;
+    optParse.setVersionName("Asset Unpacker");
     optParse.setSummary("Unpacks a starbound .pak file into an asset folder");
     optParse.addSwitch("v", "Verbose, list each file extracted");
     optParse.addArgument("input pak path", OptionParser::Required, "Path to the .pak file to unpack");

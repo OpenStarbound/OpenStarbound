@@ -11,6 +11,7 @@ int main(int argc, char** argv) {
     double startTime = Time::monotonicTime();
 
     VersionOptionParser optParse;
+    optParse.setVersionName("Asset Packer");
     optParse.setSummary("Packs asset folder into a starbound .pak file");
     optParse.addParameter("c", "configFile", OptionParser::Optional, "JSON file with ignore lists and ordering info");
     optParse.addSwitch("s", "Enable server mode");

@@ -2119,6 +2119,9 @@ void UniverseServer::doDisconnection(ConnectionId clientId, String const& reason
   RecursiveMutexLocker locker(m_mainLock);
   WriteLocker clientsLocker(m_clientsLock);
   if (auto clientContext = m_clients.value(clientId)) {
+    for (auto& p : m_scriptContexts)
+      p.second->invoke("doDisconnection", clientId);
+
     m_teamManager->playerDisconnected(clientContext->playerUuid());
     clientsLocker.unlock();
     // The client should revive at their ship if they are in an un-revivable
@@ -2177,8 +2180,6 @@ void UniverseServer::doDisconnection(ConnectionId clientId, String const& reason
     }
     clientsLocker.unlock();
 
-    for (auto& p : m_scriptContexts)
-      p.second->invoke("doDisconnection", clientId);
   }
 }
 
