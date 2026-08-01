@@ -65,8 +65,11 @@ function patch(config)
   shift(clone(layout, "multiTextureLabel", "hardwareCursorLabel"), 98, -11).value = "HARDWARE CURSOR"
   shift(clone(layout, "multiTextureCheckbox", "hardwareCursorCheckbox"), 99, -11)
   -- Create HDR toggle
-  shift(clone(layout, "multiTextureLabel", "hdrLabel"), 0, -22).value = "HDR"
-  shift(clone(layout, "multiTextureCheckbox", "hdrCheckbox"), 0, -22)
+  shift(clone(layout, "multiTextureLabel", "hdrLabel"), 98, -22).value = "HDR"
+  shift(clone(layout, "multiTextureCheckbox", "hdrCheckbox"), 98, -22)
+  -- Create vertical sync toggle
+  shift(clone(layout, "multiTextureLabel", "vsyncLabel"), 0, -22).value = "VSYNC"
+  shift(clone(layout, "multiTextureCheckbox", "vsyncCheckbox"), 0, -22)
   
   -- Create shader menu button
   shift(moveto(clone(layout, "accept", "showShadersMenu"), layout.interfaceScaleSlider), 112, -2).caption = "Shaders"
