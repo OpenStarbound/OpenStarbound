@@ -1,20 +1,20 @@
 #pragma once
 
-#include "StarWorldClientState.hpp"
-#include "StarNetPackets.hpp"
-#include "StarWorldRenderData.hpp"
 #include "StarAmbient.hpp"
 #include "StarCellularLighting.hpp"
-#include "StarWeather.hpp"
-#include "StarInterpolationTracker.hpp"
-#include "StarWorldStructure.hpp"
 #include "StarChatAction.hpp"
-#include "StarWiring.hpp"
 #include "StarEntityRendering.hpp"
-#include "StarWorld.hpp"
 #include "StarGameTimers.hpp"
+#include "StarInterpolationTracker.hpp"
 #include "StarLuaRoot.hpp"
+#include "StarNetPackets.hpp"
 #include "StarTickRateMonitor.hpp"
+#include "StarWeather.hpp"
+#include "StarWiring.hpp"
+#include "StarWorld.hpp"
+#include "StarWorldClientState.hpp"
+#include "StarWorldRenderData.hpp"
+#include "StarWorldStructure.hpp"
 
 namespace Star {
 
@@ -181,8 +181,6 @@ public:
   typedef std::function<bool(PlayerPtr, StringView)> BroadcastCallback;
   BroadcastCallback& broadcastCallback();
 
-
-
 private:
   static const float DropDist;
 
@@ -216,7 +214,7 @@ private:
     bool operator<(DamageNumberKey const& other) const;
   };
 
-  typedef function<ClientTile const& (Vec2I)> ClientTileGetter;
+  typedef function<ClientTile const&(Vec2I)> ClientTileGetter;
 
   void lightingTileGather();
   void lightingCalc();
@@ -279,7 +277,7 @@ private:
   CellularLightingCalculator m_lightingCalculator;
   mutable CellularLightIntensityCalculator m_lightIntensityCalculator;
   ThreadFunction<void> m_lightingThread;
-  
+
   Mutex m_lightingMutex;
   ConditionVariable m_lightingCond;
   atomic<bool> m_stopLightingThread;
@@ -293,6 +291,7 @@ private:
   List<std::pair<Vec2F, Vec3F>> m_pendingParticleLights;
   RectI m_pendingLightRange;
   atomic<bool> m_pendingLightReady;
+  uint64_t m_lightMapVersion = 0;
   Vec2I m_lightMinPosition;
   List<PreviewTile> m_previewTiles;
 
@@ -386,4 +385,4 @@ private:
   HashSet<uint64_t> m_entityExceptionsLogged;
 };
 
-}
+}// namespace Star

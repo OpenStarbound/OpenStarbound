@@ -1,11 +1,11 @@
 #pragma once
 
-#include "StarWorldRenderData.hpp"
-#include "StarTilePainter.hpp"
-#include "StarEnvironmentPainter.hpp"
-#include "StarTextPainter.hpp"
 #include "StarDrawablePainter.hpp"
+#include "StarEnvironmentPainter.hpp"
 #include "StarRenderer.hpp"
+#include "StarTextPainter.hpp"
+#include "StarTilePainter.hpp"
+#include "StarWorldRenderData.hpp"
 
 namespace Star {
 
@@ -39,6 +39,10 @@ private:
 
   RendererPtr m_renderer;
 
+  // Lightmap texture upload is skipped while the version is unchanged, so
+  // unchanged frames don't pay a full texture re-upload.
+  uint64_t m_lightMapVersionLast = 0;
+
   TextPainterPtr m_textPainter;
   DrawablePainterPtr m_drawablePainter;
   EnvironmentPainterPtr m_environmentPainter;
@@ -63,4 +67,4 @@ private:
   float m_preloadTextureChance;
 };
 
-}
+}// namespace Star
