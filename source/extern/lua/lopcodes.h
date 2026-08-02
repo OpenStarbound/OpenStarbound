@@ -230,11 +230,13 @@ OP_CLOSURE,/*	A Bx	R(A) := closure(KPROTO[Bx])			*/
 
 OP_VARARG,/*	A B	R(A), R(A+1), ..., R(A+B-2) = vararg		*/
 
-OP_EXTRAARG/*	Ax	extra (larger) argument for previous opcode	*/
+OP_EXTRAARG,/*	Ax	extra (larger) argument for previous opcode	*/
+OP_DEFER    /*  A   mark variable A "deferred"	  */
+
 } OpCode;
 
 
-#define NUM_OPCODES	(cast(int, OP_EXTRAARG) + 1)
+#define NUM_OPCODES	(cast(int, OP_DEFER) + 1)
 
 
 
