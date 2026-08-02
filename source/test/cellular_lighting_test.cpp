@@ -349,7 +349,7 @@ TEST(cellularLightFlood, dumpGameScene) {
   array.addSpreadLight(sparkle);
   array.calculate(0, 0, 200, 150);
 
-  FILE* f = fopen("/tmp/opencode/lmap_scene.ppm", "wb");
+  FILE* f = fopen("lmap_scene.ppm", "wb");
   ASSERT_NE(f, nullptr);
   fprintf(f, "P6\n200 150\n255\n");
   for (size_t y = 0; y < 150; ++y)
