@@ -48,3 +48,5 @@ _deps
 
 # Built Visual Studio Code Extensions
 *.vsix
+# PR description (not committed)
+pr.md
