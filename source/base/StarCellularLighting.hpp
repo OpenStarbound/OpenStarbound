@@ -1,12 +1,12 @@
 #pragma once
 
-#include "StarEither.hpp"
-#include "StarRect.hpp"
-#include "StarImage.hpp"
-#include "StarJson.hpp"
-#include "StarColor.hpp"
-#include "StarInterpolation.hpp"
 #include "StarCellularLightArray.hpp"
+#include "StarColor.hpp"
+#include "StarEither.hpp"
+#include "StarImage.hpp"
+#include "StarInterpolation.hpp"
+#include "StarJson.hpp"
+#include "StarRect.hpp"
 #include "StarThread.hpp"
 
 namespace Star {
@@ -19,7 +19,7 @@ public:
   Lightmap(unsigned width, unsigned height);
   Lightmap(Lightmap const& lightMap);
   Lightmap(Lightmap&& lightMap) noexcept;
-  
+
   Lightmap& operator=(Lightmap const& lightMap);
   Lightmap& operator=(Lightmap&& lightMap) noexcept;
 
@@ -85,13 +85,12 @@ inline Vec3F Lightmap::get(unsigned x, unsigned y) const {
   return Vec3F(ptr[0], ptr[1], ptr[2]);
 }
 
-
 inline bool Lightmap::empty() const {
   return m_width == 0 || m_height == 0;
 }
 
 inline Vec2U Lightmap::size() const {
-  return { m_width, m_height };
+  return {m_width, m_height};
 }
 
 inline unsigned Lightmap::width() const {
@@ -145,13 +144,30 @@ public:
   // Same as above, but the color data in a float buffer instead.
   void calculate(Lightmap& output);
 
+  // Incremental update of the point light layer only: diffs the current point
+  // lights (accumulated via addPointLight) against the ones from the previous
+  // calculate() call, subtracts the contributions of removed/moved lights and
+  // adds the contributions of added/moved ones. The cell array is kept as-is
+  // (no begin()), so this is only valid when the query region, tiles and
+  // spread light sources are unchanged, and point lights are additive (see
+  // CellularLightArray::addPointLightContribution).
+  void calculateIncremental(Lightmap& output);
+
   void setupImage(Image& image, PixelFormat format = PixelFormat::RGB24) const;
+
 private:
+  void writeOutput(Lightmap& output) const;
+
   Json m_config;
   bool m_monochrome;
   Either<ColoredCellularLightArray, ScalarCellularLightArray> m_lightArray;
   RectI m_queryRegion;
   RectI m_calculationRegion;
+  // Point lights of the current calculation, in array coordinates, fed via
+  // addPointLight. Used for the incremental diff in calculateIncremental.
+  List<ColoredCellularLightArray::PointLight> m_pendingPointLights;
+  List<ColoredCellularLightArray::PointLight> m_lastPointLights;
+  bool m_hasLastPointLights = false;
 };
 
 // Produce light intensity values using the same algorithm as
@@ -178,7 +194,8 @@ public:
 private:
   ScalarCellularLightArray m_lightArray;
   Vec2F m_queryPosition;
-  RectI m_queryRegion;;
+  RectI m_queryRegion;
+  ;
   RectI m_calculationRegion;
 };
 
@@ -193,4 +210,4 @@ inline void CellularLightingCalculator::setCellIndex(size_t cellIndex, Vec3F con
     m_lightArray.left().cellAtIndex(cellIndex) = ColoredCellularLightArray::Cell{light, obstacle};
 }
 
-}
+}// namespace Star

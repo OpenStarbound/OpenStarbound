@@ -40,7 +40,9 @@ WorldClient::WorldClient(PlayerPtr mainPlayer, LuaRootPtr luaRoot) {
   // Async lighting by default: without it the full lightmap is recomputed
   // synchronously on the render thread every frame, which tanks fps with many
   // light sources. Toggle with /asyncLighting.
-  m_asyncLighting = true;
+  // ponytail: sync by default - async renders a stale lightmap during camera
+  // movement (light lag, flicker, "blurry" light); sync costs ~15-20ms/cull.
+  m_asyncLighting = false;
   m_worldDimTimer = GameTimer(m_clientConfig.getFloat("worldDimTime"));
   m_worldDimTimer.setDone();
   m_worldDimLevel = 0.0f;
@@ -965,6 +967,7 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
 
           if (!p)
             m_predictedTiles.erase(findPrediction);
+          m_tileVersion.fetch_add(1);
         }
 
         if (auto placeMaterial = modification.second.ptr<PlaceMaterial>()) {
@@ -978,8 +981,11 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
 
     } else if (auto liquidUpdate = as<TileLiquidUpdatePacket>(packet)) {
       m_predictedTiles.remove(liquidUpdate->position);
-      if (ClientTile* tile = m_tileArray->modifyTile(liquidUpdate->position))
+      m_tileVersion.fetch_add(1);
+      if (ClientTile* tile = m_tileArray->modifyTile(liquidUpdate->position)) {
         tile->liquid = liquidUpdate->liquidUpdate.liquidLevel();
+        m_tileVersion.fetch_add(1);
+      }
 
     } else if (auto giveItem = as<GiveItemPacket>(packet)) {
       tryGiveMainPlayerItem(itemDatabase->item(giveItem->item));
@@ -1150,6 +1156,7 @@ void WorldClient::update(float dt) {
 
   float expireTime = min(float(m_latency + 800), 2000.f);
   auto now = Time::monotonicMilliseconds();
+  size_t predictedTilesBefore = m_predictedTiles.size();
   eraseWhere(m_predictedTiles, [&](auto& pair) {
     float expiry = (float)(now - pair.second.time) / expireTime;
     auto center = Vec2F(pair.first) + Vec2F::filled(0.5f);
@@ -1163,6 +1170,8 @@ void WorldClient::update(float dt) {
       return false;
     }
   });
+  if (m_predictedTiles.size() != predictedTilesBefore)
+    m_tileVersion.fetch_add(1);
 
   // Secret broadcasts are transmitted through DamageNotifications for vanilla server compatibility.
   // Because DamageNotification packets are spoofable, we have to sign the data so other clients can validate that it is legitimate.
@@ -1711,6 +1720,49 @@ RpcPromise<InteractAction> WorldClient::interact(InteractRequest const& request)
   return pair.first;
 }
 
+namespace {
+bool lightSourceEqual(LightSource const& a, LightSource const& b) {
+  return a.type == b.type && a.position == b.position && a.color == b.color
+    && a.pointBeam == b.pointBeam && a.beamAngle == b.beamAngle && a.beamAmbience == b.beamAmbience;
+}
+
+bool lightSourcesEqual(List<LightSource> const& a, List<LightSource> const& b) {
+  if (a.size() != b.size())
+    return false;
+  for (size_t i = 0; i < a.size(); ++i)
+    if (!lightSourceEqual(a[i], b[i]))
+      return false;
+  return true;
+}
+
+bool particleLightsEqual(List<std::pair<Vec2F, Vec3F>> const& a, List<std::pair<Vec2F, Vec3F>> const& b) {
+  if (a.size() != b.size())
+    return false;
+  for (size_t i = 0; i < a.size(); ++i)
+    if (a[i].first != b[i].first || a[i].second != b[i].second)
+      return false;
+  return true;
+}
+
+// True when any spread-affecting light source (spread / hybrid / particle
+// lights) differs; point lights do not affect the spread layer.
+bool spreadSourcesChanged(List<LightSource> const& oldLights, List<LightSource> const& newLights) {
+  auto const contains = [](List<LightSource> const& list, LightSource const& light) {
+    for (auto const& other : list)
+      if (lightSourceEqual(light, other))
+        return true;
+    return false;
+  };
+  for (auto const& light : newLights)
+    if (light.type != LightType::Point && !contains(oldLights, light))
+      return true;
+  for (auto const& light : oldLights)
+    if (light.type != LightType::Point && !contains(newLights, light))
+      return true;
+  return false;
+}
+}// namespace
+
 void WorldClient::lightingTileGather() {
   int64_t start = Time::monotonicMicroseconds();
   Vec3F environmentLight = m_sky->environmentLight().toRgbF();
@@ -1756,10 +1808,8 @@ void WorldClient::lightingCalc() {
   bool monochrome = configuration->get("monochromeLighting").toBool();
   m_lightingCalculator.setParameters(root.assets()->json("/lighting.config:lighting").set("pointAdditive", newLighting));
   m_lightingCalculator.setMonochrome(monochrome);
-  m_lightingCalculator.begin(lightRange);
-  lightingTileGather();
 
-  prepLocker.unlock();
+  Vec3F environmentLight = m_sky->environmentLight().toRgbF();
 
   // Point lights are the expensive part of the calc (O(radius^2) per light
   // with a ray walk per cell). Cap their count, keeping the brightest ones;
@@ -1785,36 +1835,80 @@ void WorldClient::lightingCalc() {
     lights.appendAll(std::move(pointLights));
   }
 
-  for (auto const& light : lights) {
-    Vec2F position = m_geometry.nearestTo(Vec2F(m_lightingCalculator.calculationRegion().min()), light.position);
-    if (light.type == LightType::Spread)
-      m_lightingCalculator.addSpreadLight(position, light.color);
-    else {
-      if (light.type == LightType::PointAsSpread) {
-        if (!newLighting)
-          m_lightingCalculator.addSpreadLight(position, light.color);
-        else {// hybrid (used for auto-converted object lights) - 85% spread, 15% point (* .15 is applied in the calculation code)
-          m_lightingCalculator.addSpreadLight(position, light.color * 0.85f);
-          m_lightingCalculator.addPointLight(position, light.color, light.pointBeam, light.beamAngle, light.beamAmbience, true);
+  // Phase 2: skip the whole calculation when nothing that affects the lightmap
+  // changed since last frame (window, sky light, tiles, light sources or
+  // particle lights), and only do the incremental point-light diff when just
+  // the point lights changed. A periodic full recalculation flushes the
+  // accumulated float error of the incremental add/subtracts.
+  bool windowChanged = !m_hasLightState || lightRange != m_lastLightRange || environmentLight != m_lastEnvLight || m_tileVersion.load() != m_lastTileVersion;
+  bool lightsChanged = !m_hasLightState || !lightSourcesEqual(m_lastLights, lights);
+  bool particlesChanged = !m_hasLightState || !particleLightsEqual(m_lastParticleLights, particleLights);
+  bool spreadChanged = windowChanged || particlesChanged || spreadSourcesChanged(m_lastLights, lights);
+  bool forceFullRecalc = m_lightIncrementalCount >= 240;
+
+  if (!windowChanged && !lightsChanged && !particlesChanged && !forceFullRecalc) {
+    // Nothing changed: the lightmap from the previous frame is still valid.
+    ++m_lightIncrementalCount;
+    LogMap::set("client_render_world_async_light_calc", u8"skip");
+    return;
+  }
+
+  auto addLights = [&]() {
+    for (auto const& light : lights) {
+      Vec2F position = m_geometry.nearestTo(Vec2F(m_lightingCalculator.calculationRegion().min()), light.position);
+      if (light.type == LightType::Spread)
+        m_lightingCalculator.addSpreadLight(position, light.color);
+      else {
+        if (light.type == LightType::PointAsSpread) {
+          if (!newLighting)
+            m_lightingCalculator.addSpreadLight(position, light.color);
+          else {// hybrid (used for auto-converted object lights) - 85% spread, 15% point (* .15 is applied in the calculation code)
+            m_lightingCalculator.addSpreadLight(position, light.color * 0.85f);
+            m_lightingCalculator.addPointLight(position, light.color, light.pointBeam, light.beamAngle, light.beamAmbience, true);
+          }
+        } else {
+          m_lightingCalculator.addPointLight(position, light.color, light.pointBeam, light.beamAngle, light.beamAmbience);
         }
-      } else {
-        m_lightingCalculator.addPointLight(position, light.color, light.pointBeam, light.beamAngle, light.beamAmbience);
       }
     }
+
+    for (auto const& lightPair : particleLights) {
+      Vec2F position = m_geometry.nearestTo(Vec2F(m_lightingCalculator.calculationRegion().min()), lightPair.first);
+      m_lightingCalculator.addSpreadLight(position, lightPair.second);
+    }
+  };
+
+  if (!spreadChanged && newLighting && !forceFullRecalc) {
+    // Only point lights changed: incremental diff over their contributions.
+    // The cell array (base light + spread layer + point layer) is kept as-is
+    // and the query region is known unchanged, so no begin()/gather is needed.
+    addLights();
+    m_lightingCalculator.calculateIncremental(m_pendingLightMap);
+    ++m_lightIncrementalCount;
+  } else {
+    m_lightingCalculator.begin(lightRange);
+    lightingTileGather();
+
+    prepLocker.unlock();
+
+    addLights();
+    m_lightingCalculator.calculate(m_pendingLightMap);
+    m_lightIncrementalCount = 0;
   }
 
-  for (auto const& lightPair : particleLights) {
-    Vec2F position = m_geometry.nearestTo(Vec2F(m_lightingCalculator.calculationRegion().min()), lightPair.first);
-    m_lightingCalculator.addSpreadLight(position, lightPair.second);
-  }
-
-  m_lightingCalculator.calculate(m_pendingLightMap);
   {
     MutexLocker mapLocker(m_lightMapMutex);
     m_lightMinPosition = lightRange.min();
     m_lightMap = std::move(m_pendingLightMap);
     ++m_lightMapVersion;
   }
+
+  m_lastLightRange = lightRange;
+  m_lastEnvLight = environmentLight;
+  m_lastTileVersion = m_tileVersion.load();
+  m_lastLights = std::move(lights);
+  m_lastParticleLights = std::move(particleLights);
+  m_hasLightState = true;
 }
 
 void WorldClient::lightingMain() {
@@ -2109,6 +2203,8 @@ bool WorldClient::readNetTile(Vec2I const& pos, NetTile const& netTile, bool upd
 
   if (updateCollision)
     dirtyCollision(RectI::withSize(pos, {1, 1}));
+
+  m_tileVersion.fetch_add(1);
 
   return true;
 }
@@ -2482,6 +2578,8 @@ void WorldClient::informTilePrediction(Vec2I const& pos, TileModification const&
     else
       p.liquid->level += placeLiquid->liquidLevel;
   }
+
+  m_tileVersion.fetch_add(1);
 }
 
 void WorldClient::setupForceRegions() {

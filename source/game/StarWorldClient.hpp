@@ -293,6 +293,21 @@ private:
   atomic<bool> m_pendingLightReady;
   uint64_t m_lightMapVersion = 0;
   Vec2I m_lightMinPosition;
+  // Bumped whenever visible tiles (m_tileArray via readNetTile / liquid /
+  // prediction changes) change; lets the lighting thread skip lightmap
+  // recalculation when nothing that affects it changed (phase 2).
+  std::atomic<uint64_t> m_tileVersion{0};
+  // Last lighting state, used by the lighting thread to diff against the
+  // current frame (phase 2 incremental calculation).
+  uint64_t m_lastTileVersion = 0;
+  RectI m_lastLightRange;
+  Vec3F m_lastEnvLight;
+  List<LightSource> m_lastLights;
+  List<std::pair<Vec2F, Vec3F>> m_lastParticleLights;
+  bool m_hasLightState = false;
+  // Counts frames since the last full recalculation; triggers a periodic full
+  // recalc to flush accumulated float error from incremental add/subtracts.
+  unsigned m_lightIncrementalCount = 0;
   List<PreviewTile> m_previewTiles;
 
   SkyPtr m_sky;

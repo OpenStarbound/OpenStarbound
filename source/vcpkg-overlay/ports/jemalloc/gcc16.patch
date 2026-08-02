@@ -1,0 +1,11 @@
+--- a/src/jemalloc_cpp.cpp
++++ b/src/jemalloc_cpp.cpp
+@@ -100,7 +100,7 @@ fallbackNewImpl(std::size_t size, const std::nothrow_t &) noexcept {
+ 		ptr = je_malloc(size);
+ 	}
+ 
+ 	if (ptr == nullptr && !nothrow)
+-		std::__throw_bad_alloc();
++		throw std::bad_alloc();
+ 	return ptr;
+ }

@@ -694,11 +694,7 @@ void OpenGlRenderer::setMultiSampling(unsigned multiSampling) {
   m_multiSampling = multiSampling;
   if (m_multiSampling) {
     glEnable(GL_MULTISAMPLE);
-    glEnable(GL_SAMPLE_SHADING);
-    glMinSampleShading(1.f);
   } else {
-    glMinSampleShading(0.f);
-    glDisable(GL_SAMPLE_SHADING);
     glDisable(GL_MULTISAMPLE);
   }
   loadConfig(m_config);
