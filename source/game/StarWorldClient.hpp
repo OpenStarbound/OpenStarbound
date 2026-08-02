@@ -216,7 +216,7 @@ private:
 
   typedef function<ClientTile const&(Vec2I)> ClientTileGetter;
 
-  void lightingTileGather();
+  void lightingTileGather(RectI const& region);
   void lightingCalc();
   void lightingMain();
 

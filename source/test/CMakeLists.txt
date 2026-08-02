@@ -23,6 +23,7 @@ SET (star_core_tests_SOURCES
       clock_test.cpp
       color_test.cpp
       cellular_lighting_test.cpp
+      ../base/StarCellularLighting.cpp
       container_test.cpp
       encode_test.cpp
       file_test.cpp

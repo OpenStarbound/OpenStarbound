@@ -150,8 +150,27 @@ public:
   // adds the contributions of added/moved ones. The cell array is kept as-is
   // (no begin()), so this is only valid when the query region, tiles and
   // spread light sources are unchanged, and point lights are additive (see
-  // CellularLightArray::addPointLightContribution).
-  void calculateIncremental(Lightmap& output);
+  // CellularLightArray::addPointLightContribution).  The diff is clipped to
+  // the given world region (normally the query region).
+  void calculateIncremental(Lightmap& output, RectI const& worldRegion);
+
+  // Point light diff only (what calculateIncremental does before writing the
+  // output), clipped to the given world region, without bookkeeping.  Used by
+  // the scrolled path, where the diff must not touch the newly exposed
+  // strips.
+  void applyPointLightDiff(RectI const& worldRegion);
+
+  // Scrolled (dirty-region) update: shift the existing light data so the
+  // array covers the new query region (same size as the previous one - a
+  // plain translation), and return the newly exposed world regions (within
+  // the calculation region) that must be re-gathered before calling
+  // calculateScrolled.
+  List<RectI> scroll(RectI const& newQueryRegion);
+
+  // Finish a scrolled update: re-seed spread lights, recompute the spread and
+  // point phases only over the exposed regions returned by scroll() (the rest
+  // of the array is already valid), then write the output.
+  void calculateScrolled(Lightmap& output, List<RectI> const& exposedWorldRegions);
 
   void setupImage(Image& image, PixelFormat format = PixelFormat::RGB24) const;
 

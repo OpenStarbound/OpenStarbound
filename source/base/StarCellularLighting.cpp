@@ -162,9 +162,102 @@ void CellularLightingCalculator::calculate(Lightmap& output) {
   writeOutput(output);
 }
 
-void CellularLightingCalculator::calculateIncremental(Lightmap& output) {
-  Vec2S arrayMin = Vec2S(m_queryRegion.min() - m_calculationRegion.min());
-  Vec2S arrayMax = Vec2S(m_queryRegion.max() - m_calculationRegion.min());
+List<RectI> CellularLightingCalculator::scroll(RectI const& newQueryRegion) {
+  Vec2I delta = newQueryRegion.min() - m_queryRegion.min();
+  m_queryRegion = newQueryRegion;
+  if (m_monochrome)
+    m_calculationRegion = RectI(newQueryRegion).padded((int)m_lightArray.right().borderCells());
+  else
+    m_calculationRegion = RectI(newQueryRegion).padded((int)m_lightArray.left().borderCells());
+
+  if (m_monochrome)
+    m_lightArray.right().scroll(delta);
+  else
+    m_lightArray.left().scroll(delta);
+
+  // The array coordinates of the lights shift together with the data.
+  for (auto& light : m_lastPointLights)
+    light.position -= Vec2F(delta);
+
+  // The scrolled path re-fills the light lists via addLight* like begin()
+  // would.
+  m_pendingPointLights.clear();
+  if (m_monochrome)
+    m_lightArray.right().clearLights();
+  else
+    m_lightArray.left().clearLights();
+
+  // Newly exposed area of the array (data landed in the overlap):
+  // x/y in [max(0, -delta), min(size, size - delta)) stayed valid.
+  int w = m_calculationRegion.width();
+  int h = m_calculationRegion.height();
+  int validX0 = std::max(0, -delta[0]);
+  int validX1 = std::min(w, w - delta[0]);
+  int validY0 = std::max(0, -delta[1]);
+  int validY1 = std::min(h, h - delta[1]);
+
+  List<RectI> exposed;
+  auto appendStrip = [&](RectI const& arrayRect) {
+    exposed.append(arrayRect.translated(m_calculationRegion.min()));
+  };
+  if (delta[0] > 0)
+    appendStrip(RectI(validX1, 0, w, h));
+  else if (delta[0] < 0)
+    appendStrip(RectI(0, 0, validX0, h));
+  if (delta[1] > 0)
+    appendStrip(RectI(validX0, validY1, validX1, h));
+  else if (delta[1] < 0)
+    appendStrip(RectI(validX0, 0, validX1, validY0));
+
+  // Window cells that entered from the border of the old calculation region:
+  // their point values were never maintained by the window-scoped point
+  // phase, so the scrolled path re-gathers and re-floods them like the
+  // exposed strips (calculateScrolled zeroes the point channels first).
+  // The bands are disjoint from the strips (they lie inside the old
+  // calculation region) and from each other.
+  RectI oldQuery = newQueryRegion.translated(-delta);
+  if (delta[0] > 0)
+    exposed.append(RectI(oldQuery.xMax(), newQueryRegion.yMin(), newQueryRegion.xMax(), newQueryRegion.yMax()));
+  else if (delta[0] < 0)
+    exposed.append(RectI(newQueryRegion.xMin(), newQueryRegion.yMin(), oldQuery.xMin(), newQueryRegion.yMax()));
+  if (delta[1] > 0) {
+    int x0 = delta[0] > 0 ? newQueryRegion.xMin() : oldQuery.xMin();
+    int x1 = delta[0] > 0 ? oldQuery.xMax() : newQueryRegion.xMax();
+    exposed.append(RectI(x0, oldQuery.yMax(), x1, newQueryRegion.yMax()));
+  } else if (delta[1] < 0) {
+    int x0 = delta[0] > 0 ? newQueryRegion.xMin() : oldQuery.xMin();
+    int x1 = delta[0] > 0 ? oldQuery.xMax() : newQueryRegion.xMax();
+    exposed.append(RectI(x0, newQueryRegion.yMin(), x1, oldQuery.yMin()));
+  }
+
+  return exposed;
+}
+
+void CellularLightingCalculator::calculateScrolled(Lightmap& output, List<RectI> const& exposedWorldRegions) {
+  List<RectI> strips;
+  for (RectI const& r : exposedWorldRegions)
+    strips.append(r.translated(-m_calculationRegion.min()));
+
+  if (m_monochrome)
+    m_lightArray.right().calculateScrolled(strips);
+  else
+    m_lightArray.left().calculateScrolled(strips);
+
+  m_lastPointLights = std::move(m_pendingPointLights);
+  m_hasLastPointLights = true;
+
+  writeOutput(output);
+}
+
+void CellularLightingCalculator::applyPointLightDiff(RectI const& worldRegion) {
+  if (worldRegion.xMin() >= worldRegion.xMax() || worldRegion.yMin() >= worldRegion.yMax())
+    return;
+
+  RectI arrayRegion = worldRegion.translated(-m_calculationRegion.min());
+  size_t x0 = std::max(0, arrayRegion.xMin());
+  size_t y0 = std::max(0, arrayRegion.yMin());
+  size_t x1 = std::min((size_t)m_calculationRegion.width(), (size_t)arrayRegion.xMax());
+  size_t y1 = std::min((size_t)m_calculationRegion.height(), (size_t)arrayRegion.yMax());
 
   auto compare = [](ColoredCellularLightArray::PointLight const& a, ColoredCellularLightArray::PointLight const& b) {
     if (a.position[0] != b.position[0])
@@ -201,18 +294,22 @@ void CellularLightingCalculator::calculateIncremental(Lightmap& output) {
   if (m_monochrome) {
     for (auto const& light : removed) {
       ScalarCellularLightArray::PointLight scalar{light.position, light.value.max(), light.beam, light.beamAngle, light.beamAmbience, light.asSpread};
-      m_lightArray.right().addPointLightContribution(scalar, -1.0f);
+      m_lightArray.right().addPointLightContribution(scalar, -1.0f, x0, y0, x1, y1);
     }
     for (auto const& light : added) {
       ScalarCellularLightArray::PointLight scalar{light.position, light.value.max(), light.beam, light.beamAngle, light.beamAmbience, light.asSpread};
-      m_lightArray.right().addPointLightContribution(scalar, 1.0f);
+      m_lightArray.right().addPointLightContribution(scalar, 1.0f, x0, y0, x1, y1);
     }
   } else {
     for (auto const& light : removed)
-      m_lightArray.left().addPointLightContribution(light, -1.0f);
+      m_lightArray.left().addPointLightContribution(light, -1.0f, x0, y0, x1, y1);
     for (auto const& light : added)
-      m_lightArray.left().addPointLightContribution(light, 1.0f);
+      m_lightArray.left().addPointLightContribution(light, 1.0f, x0, y0, x1, y1);
   }
+}
+
+void CellularLightingCalculator::calculateIncremental(Lightmap& output, RectI const& worldRegion) {
+  applyPointLightDiff(worldRegion);
 
   m_lastPointLights = std::move(m_pendingPointLights);
   m_hasLastPointLights = true;

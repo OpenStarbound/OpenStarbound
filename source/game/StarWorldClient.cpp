@@ -1763,7 +1763,7 @@ bool spreadSourcesChanged(List<LightSource> const& oldLights, List<LightSource> 
 }
 }// namespace
 
-void WorldClient::lightingTileGather() {
+void WorldClient::lightingTileGather(RectI const& region) {
   int64_t start = Time::monotonicMicroseconds();
   Vec3F environmentLight = m_sky->environmentLight().toRgbF();
   float undergroundLevel = m_worldTemplate->undergroundLevel();
@@ -1772,7 +1772,7 @@ void WorldClient::lightingTileGather() {
 
   // Each column in tileEvalColumns is guaranteed to be no larger than the sector size.
 
-  m_tileArray->tileEvalColumnsParallel(m_lightingCalculator.calculationRegion(), [&](Vec2I const& pos, ClientTile const* column, size_t ySize) {
+  m_tileArray->tileEvalColumnsParallel(region, [&](Vec2I const& pos, ClientTile const* column, size_t ySize) {
     size_t baseIndex = m_lightingCalculator.baseIndexFor(pos);
     for (size_t y = 0; y < ySize; ++y) {
       auto& tile = column[y];
@@ -1840,10 +1840,11 @@ void WorldClient::lightingCalc() {
   // particle lights), and only do the incremental point-light diff when just
   // the point lights changed. A periodic full recalculation flushes the
   // accumulated float error of the incremental add/subtracts.
-  bool windowChanged = !m_hasLightState || lightRange != m_lastLightRange || environmentLight != m_lastEnvLight || m_tileVersion.load() != m_lastTileVersion;
+  bool windowChanged = !m_hasLightState || lightRange != m_lastLightRange;
+  bool tilesOrEnvChanged = !m_hasLightState || environmentLight != m_lastEnvLight || m_tileVersion.load() != m_lastTileVersion;
   bool lightsChanged = !m_hasLightState || !lightSourcesEqual(m_lastLights, lights);
   bool particlesChanged = !m_hasLightState || !particleLightsEqual(m_lastParticleLights, particleLights);
-  bool spreadChanged = windowChanged || particlesChanged || spreadSourcesChanged(m_lastLights, lights);
+  bool spreadChanged = tilesOrEnvChanged || particlesChanged || spreadSourcesChanged(m_lastLights, lights);
   bool forceFullRecalc = m_lightIncrementalCount >= 240;
 
   if (!windowChanged && !lightsChanged && !particlesChanged && !forceFullRecalc) {
@@ -1878,22 +1879,70 @@ void WorldClient::lightingCalc() {
     }
   };
 
-  if (!spreadChanged && newLighting && !forceFullRecalc) {
-    // Only point lights changed: incremental diff over their contributions.
-    // The cell array (base light + spread layer + point layer) is kept as-is
-    // and the query region is known unchanged, so no begin()/gather is needed.
-    addLights();
-    m_lightingCalculator.calculateIncremental(m_pendingLightMap);
-    ++m_lightIncrementalCount;
-  } else {
+  // Phase 2.3: when only the window moved (camera scroll) and the world data
+  // (tiles, sky light, spread sources) is unchanged, keep the light array as
+  // an atlas that scrolls with the camera: shift the existing data, gather
+  // and recalculate only the newly exposed strips, and diff moved point
+  // lights over the overlapping region.  A full recalculation is only needed
+  // when the spread layer itself changed, the window was resized, or the
+  // camera teleported.
+  bool fullRecalc = !m_hasLightState || spreadChanged || forceFullRecalc || (!newLighting && lightsChanged)
+    || (windowChanged && lightRange.size() != m_lastLightRange.size());
+  bool windowMoved = windowChanged && !fullRecalc;
+  if (fullRecalc) {
     m_lightingCalculator.begin(lightRange);
-    lightingTileGather();
+    lightingTileGather(m_lightingCalculator.calculationRegion());
 
     prepLocker.unlock();
 
     addLights();
     m_lightingCalculator.calculate(m_pendingLightMap);
     m_lightIncrementalCount = 0;
+  } else if (windowMoved) {
+    RectI calcRegion = m_lightingCalculator.calculationRegion();
+    Vec2I scrollDelta = lightRange.min() - m_lastLightRange.min();
+    if (abs(scrollDelta[0]) >= calcRegion.width() || abs(scrollDelta[1]) >= calcRegion.height()) {
+      // Teleport: the atlas would need to be fully re-gathered anyway.
+      m_lightingCalculator.begin(lightRange);
+      lightingTileGather(m_lightingCalculator.calculationRegion());
+
+      prepLocker.unlock();
+
+      addLights();
+      m_lightingCalculator.calculate(m_pendingLightMap);
+      m_lightIncrementalCount = 0;
+    } else {
+      List<RectI> exposed = m_lightingCalculator.scroll(lightRange);
+      for (RectI const& region : exposed)
+        lightingTileGather(region);
+
+      prepLocker.unlock();
+
+      addLights();
+      if (lightsChanged) {
+        // Diff the moved point lights over the window overlap.  Border cells
+        // are not maintained by the diff: when they enter the window, the
+        // re-gathered strips (scroll() includes the window cells that came
+        // from the border) zero and re-flood them with the current lights.
+        RectI diffRegion(
+          std::max(m_lastLightRange.xMin(), lightRange.xMin()),
+          std::max(m_lastLightRange.yMin(), lightRange.yMin()),
+          std::min(m_lastLightRange.xMax(), lightRange.xMax()),
+          std::min(m_lastLightRange.yMax(), lightRange.yMax()));
+        m_lightingCalculator.applyPointLightDiff(diffRegion);
+        ++m_lightIncrementalCount;
+      } else {
+        m_lightIncrementalCount = 0;
+      }
+      m_lightingCalculator.calculateScrolled(m_pendingLightMap, exposed);
+    }
+  } else {
+    // Only point lights changed: incremental diff over their contributions.
+    // The cell array (base light + spread layer + point layer) is kept as-is
+    // and the query region is known unchanged, so no begin()/gather is needed.
+    addLights();
+    m_lightingCalculator.calculateIncremental(m_pendingLightMap, lightRange);
+    ++m_lightIncrementalCount;
   }
 
   {

@@ -2,13 +2,16 @@
 
 #include "StarList.hpp"
 #include "StarMaybe.hpp"
+#include "StarRect.hpp"
 #include "StarVector.hpp"
 #include "StarWorkerPool.hpp"
 
 #include <atomic>
+#include <cstring>
 #include <limits>
 #include <queue>
 #include <thread>
+#include <type_traits>
 
 namespace Star {
 
@@ -171,8 +174,29 @@ public:
 
   // Incrementally add (scale = 1) or remove (scale = -1) a point light's
   // contribution in additive mode. No-op in non-additive mode, where callers
-  // must do a full recalculate instead.
-  void addPointLightContribution(PointLight const& light, float scale);
+  // must do a full recalculate instead.  The flood is clipped to the given
+  // array sub-rect (xMax / yMax 0 means the full array).
+  void addPointLightContribution(PointLight const& light, float scale,
+                                 size_t xmin = 0, size_t ymin = 0, size_t xmax = 0, size_t ymax = 0);
+
+  // Shift all existing data so the array represents a world region moved by
+  // `worldDelta` (each world position's content moves by -worldDelta in the
+  // array).  Cells that become out of range are zeroed and must be re-gathered
+  // and recalculated via calculateScrolled.  Used by the scrolled
+  // (dirty-region) path of CellularLightingCalculator.
+  void scroll(Vec2I const& worldDelta);
+
+  // Dirty-region update: seed spread lights, then run the spread and point
+  // phases only over the given sub-rects (array coordinates, disjoint).  The
+  // point phase is applied serially and clipped to the rects; the rest of the
+  // array is assumed to already be valid.  Seeds and spread use max()
+  // semantics, so touching already-lit cells is idempotent.
+  void calculateScrolled(List<RectI> const& rects);
+
+  // Drop the light source lists (spread + point), as begin() does, without
+  // resizing or clearing the cell data.  Needed by the scrolled path, where
+  // begin() is not called but the light lists are re-filled each frame.
+  void clearLights();
 
 private:
   // Set 4 points based on interpolated light position and free space
@@ -216,7 +240,12 @@ private:
 
   // Structure-of-arrays storage: one contiguous float array per light channel
   // (scalar lighting uses channel 0 only) plus an obstacle byte per cell.
+  // The point light layer is kept in separate channels so the spread phase
+  // only ever reads the base + spread layer (the scrolled dirty-region path
+  // recomputes spread in a strip whose border already holds point light data;
+  // mixing the layers would make that point light bleed into the strip).
   std::vector<float> m_lightChannels[3];
+  std::vector<float> m_pointChannels[3];
   std::vector<uint8_t> m_obstacles;
 
   List<SpreadLight> m_spreadLights;
@@ -319,6 +348,8 @@ void CellularLightArray<LightTraits>::begin(size_t newWidth, size_t newHeight) {
   size_t cellCount = newWidth * newHeight;
   for (size_t c = 0; c < ComponentCount; ++c)
     m_lightChannels[c].assign(cellCount, 0.0f);
+  for (size_t c = 0; c < ComponentCount; ++c)
+    m_pointChannels[c].assign(cellCount, 0.0f);
   m_obstacles.assign(cellCount, 0);
 }
 
@@ -384,6 +415,13 @@ void CellularLightArray<LightTraits>::pointLightFlood(PointLight const& light, f
   size_t lxmax = std::ceil(std::min<float>(m_width, light.position[0] + maxRange));
   size_t lymax = std::ceil(std::min<float>(m_height, light.position[1] + maxRange));
 
+  // Clip the flood to the requested sub-rect (used by the scrolled path and
+  // the incremental diff, which must not touch already-valid cells).
+  lxmin = std::max(lxmin, xmin);
+  lymin = std::max(lymin, ymin);
+  lxmax = std::min(lxmax, xmax);
+  lymax = std::min(lymax, ymax);
+
   for (size_t x = lxmin; x < lxmax; ++x) {
     for (size_t y = lymin; y < lymax; ++y) {
       Vec2F blockPos = Vec2F(x + 0.5f, y + 0.5f);
@@ -416,7 +454,7 @@ void CellularLightArray<LightTraits>::pointLightFlood(PointLight const& light, f
         LightTraits::subtractChannels(LightTraits::channels(light.value), attenuation, contrib);
         float* dst[ComponentCount];
         for (size_t c = 0; c < ComponentCount; ++c)
-          dst[c] = (writeTargets ? writeTargets[c] : m_lightChannels[c].data()) + index;
+          dst[c] = (writeTargets ? writeTargets[c] : m_pointChannels[c].data()) + index;
         if (m_pointAdditive) {
           // Original semantics: check max intensity of the (0.15-scaled for
           // asSpread) contribution before applying the signed scale.
@@ -623,7 +661,7 @@ void CellularLightArray<LightTraits>::calculatePointLighting(size_t xmin, size_t
     for (size_t x = xmin; x < xmax; ++x) {
       size_t index = x * m_height + y;
       for (size_t c = 0; c < ComponentCount; ++c) {
-        float acc = m_lightChannels[c][index];
+        float acc = m_pointChannels[c][index];
         for (unsigned w = 0; w < workerCount; ++w) {
           float v = m_workerBuffers[w][c * cellCount + index];
           if (m_pointAdditive)
@@ -631,19 +669,91 @@ void CellularLightArray<LightTraits>::calculatePointLighting(size_t xmin, size_t
           else
             acc = std::max(acc, v);
         }
-        m_lightChannels[c][index] = acc;
+        m_pointChannels[c][index] = acc;
       }
     }
   }
 }
 
 template <typename LightTraits>
-void CellularLightArray<LightTraits>::addPointLightContribution(PointLight const& light, float scale) {
+void CellularLightArray<LightTraits>::addPointLightContribution(PointLight const& light, float scale,
+                                                                size_t xmin, size_t ymin, size_t xmax, size_t ymax) {
   // Incremental point light update, additive mode only.
   if (!m_pointAdditive)
     return;
 
-  pointLightFlood(light, scale, 0, 0, m_width, m_height, nullptr);
+  pointLightFlood(light, scale, xmin, ymin, xmax ? xmax : m_width, ymax ? ymax : m_height, nullptr);
+}
+
+template <typename LightTraits>
+void CellularLightArray<LightTraits>::scroll(Vec2I const& worldDelta) {
+  if (worldDelta == Vec2I())
+    return;
+
+  // newData[i] = oldData[i + worldDelta]: content for each world position
+  // moves by -worldDelta, so a worldDelta > 0 shifts content towards lower
+  // indices.  Cells outside the array after the shift are zeroed.
+  size_t cellCount = m_width * m_height;
+  size_t rowSize = m_height;
+  auto scrollBuffer = [&](auto* data) {
+    using Elem = typename std::remove_pointer<decltype(data)>::type;
+    if (worldDelta[0] != 0) {
+      size_t shift = (size_t)std::abs(worldDelta[0]) * rowSize;
+      size_t n = shift >= cellCount ? 0 : cellCount - shift;
+      if (worldDelta[0] > 0) {
+        memmove(data, data + shift, n * sizeof(Elem));
+        memset(data + n, 0, (cellCount - n) * sizeof(Elem));
+      } else {
+        memmove(data + shift, data, n * sizeof(Elem));
+        memset(data, 0, (cellCount - n) * sizeof(Elem));
+      }
+    }
+    if (worldDelta[1] != 0) {
+      size_t shift = (size_t)std::abs(worldDelta[1]);
+      for (size_t x = 0; x < m_width; ++x) {
+        Elem* col = data + x * rowSize;
+        size_t n = shift >= rowSize ? 0 : rowSize - shift;
+        if (worldDelta[1] > 0) {
+          memmove(col, col + shift, n * sizeof(Elem));
+          memset(col + n, 0, (rowSize - n) * sizeof(Elem));
+        } else {
+          memmove(col + shift, col, n * sizeof(Elem));
+          memset(col, 0, (rowSize - n) * sizeof(Elem));
+        }
+      }
+    }
+  };
+  for (size_t c = 0; c < ComponentCount; ++c)
+    scrollBuffer(m_lightChannels[c].data());
+  for (size_t c = 0; c < ComponentCount; ++c)
+    scrollBuffer(m_pointChannels[c].data());
+  scrollBuffer(m_obstacles.data());
+}
+
+template <typename LightTraits>
+void CellularLightArray<LightTraits>::clearLights() {
+  m_spreadLights.clear();
+  m_pointLights.clear();
+}
+
+template <typename LightTraits>
+void CellularLightArray<LightTraits>::calculateScrolled(List<RectI> const& rects) {
+  setSpreadLightingPoints();
+  // The re-gathered rects cover the newly exposed strips (zeroed by the
+  // scroll) plus window cells that entered from the border of the old
+  // calculation region, whose point values were never maintained by the
+  // window-scoped point phase.  Zero them so the floods below do not add to
+  // stale contributions.
+  for (RectI const& r : rects)
+    for (size_t x = r.xMin(); x < r.xMax(); ++x)
+      for (size_t y = r.yMin(); y < r.yMax(); ++y)
+        for (size_t c = 0; c < ComponentCount; ++c)
+          m_pointChannels[c][x * m_height + y] = 0.0f;
+  for (RectI const& r : rects)
+    calculateLightSpread(r.xMin(), r.yMin(), r.xMax(), r.yMax());
+  for (RectI const& r : rects)
+    for (PointLight const& light : m_pointLights)
+      pointLightFlood(light, 1.0f, r.xMin(), r.yMin(), r.xMax(), r.yMax(), nullptr);
 }
 
 template <typename LightTraits>
@@ -653,7 +763,17 @@ void CellularLightArray<LightTraits>::setObstacle(size_t x, size_t y, bool obsta
 
 template <typename LightTraits>
 auto CellularLightArray<LightTraits>::getLight(size_t x, size_t y) const -> LightValue {
-  return lightAtIndex(x * m_height + y);
+  size_t index = x * m_height + y;
+  float total[ComponentCount];
+  for (size_t c = 0; c < ComponentCount; ++c) {
+    float l = m_lightChannels[c][index];
+    float p = m_pointChannels[c][index];
+    total[c] = m_pointAdditive ? l + p : std::max(l, p);
+  }
+  if constexpr (ComponentCount == 1)
+    return total[0];
+  else
+    return LightValue(total[0], total[1], total[2]);
 }
 
 template <typename LightTraits>
@@ -712,19 +832,21 @@ void CellularLightArray<LightTraits>::setSpreadLightingPoints() {
       oneBlockAtt = 1.0f / m_spreadMaxAir;
 
     // "pre fall-off" a 2x2 area of blocks to smooth out floating point
-    // positions using the cellular algorithm
+    // positions using the cellular algorithm.  Reads the raw base+spread
+    // layer (not getLight): the point layer must never feed back into the
+    // seeds or the spread phase.
 
     if (minX >= 0 && minX < (int)m_width && minY >= 0 && minY < (int)m_height)
-      setLight(minX, minY, LightTraits::max(getLight(minX, minY), LightTraits::subtract(light.value, oneBlockAtt * (2.0f - (1.0f - xdist) - (1.0f - ydist)))));
+      setLight(minX, minY, LightTraits::max(lightAtIndex(minX * m_height + minY), LightTraits::subtract(light.value, oneBlockAtt * (2.0f - (1.0f - xdist) - (1.0f - ydist)))));
 
     if (minX >= 0 && minX < (int)m_width && maxY >= 0 && maxY < (int)m_height)
-      setLight(minX, maxY, LightTraits::max(getLight(minX, maxY), LightTraits::subtract(light.value, oneBlockAtt * (2.0f - (1.0f - xdist) - (ydist)))));
+      setLight(minX, maxY, LightTraits::max(lightAtIndex(minX * m_height + maxY), LightTraits::subtract(light.value, oneBlockAtt * (2.0f - (1.0f - xdist) - (ydist)))));
 
     if (maxX >= 0 && maxX < (int)m_width && minY >= 0 && minY < (int)m_height)
-      setLight(maxX, minY, LightTraits::max(getLight(maxX, minY), LightTraits::subtract(light.value, oneBlockAtt * (2.0f - (xdist) - (1.0f - ydist)))));
+      setLight(maxX, minY, LightTraits::max(lightAtIndex(maxX * m_height + minY), LightTraits::subtract(light.value, oneBlockAtt * (2.0f - (xdist) - (1.0f - ydist)))));
 
     if (maxX >= 0 && maxX < (int)m_width && maxY >= 0 && maxY < (int)m_height)
-      setLight(maxX, maxY, LightTraits::max(getLight(maxX, maxY), LightTraits::subtract(light.value, oneBlockAtt * (2.0f - (xdist) - (ydist)))));
+      setLight(maxX, maxY, LightTraits::max(lightAtIndex(maxX * m_height + maxY), LightTraits::subtract(light.value, oneBlockAtt * (2.0f - (xdist) - (ydist)))));
   }
 }
 

@@ -1,7 +1,9 @@
 #include "StarCellularLightArray.hpp"
+#include "StarCellularLighting.hpp"
 
 #include "gtest/gtest.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 
@@ -208,6 +210,108 @@ TEST(cellularLightFlood, incrementalMovingLightMatchesFullRecalc) {
         maxDiff = std::max(maxDiff, std::fabs(a[c] - b[c]));
     }
   EXPECT_LT(maxDiff, 1e-3f) << "incremental diff diverged from full recalc";
+}
+
+TEST(cellularLightFlood, scrolledStripsMatchFullRecalc) {
+  // Calculator-level equivalence for the scrolled (dirty-region) path: a
+  // camera scroll followed by re-gathering only the newly exposed strips and
+  // diffing a moved point light over the overlap must produce the same
+  // lightmap as a full recalculation of the new window.
+  Json config = Json(JsonObject{
+    {"spreadPasses", 3},
+    {"spreadMaxAir", 32},
+    {"spreadMaxObstacle", 8},
+    {"pointMaxAir", 48},
+    {"pointMaxObstacle", 9},
+    {"pointObstacleBoost", 3},
+    {"pointAdditive", true},
+    {"brightnessLimit", 1.4}});
+
+  auto worldLight = [](Vec2I const& p) -> Vec3F {
+    Vec3F base(0.08f, 0.1f, 0.12f);
+    if (p[0] % 17 == 0 && p[1] % 13 == 0)
+      base += Vec3F(0.3f, 0.25f, 0.1f);
+    return base;
+  };
+  // A wall with a doorway: obstacles matter for both the ray walk and the
+  // spread phase.
+  auto worldObstacle = [](Vec2I const& p) {
+    return p[0] == 20 && (p[1] < 10 || p[1] > 14);
+  };
+
+  RectI query(0, 0, 60, 40);
+  Vec2F lightPos(25, 20);
+  Vec2F spreadPos(10, 30);
+
+  auto gatherAll = [&](CellularLightingCalculator& calc) {
+    RectI calcRegion = calc.calculationRegion();
+    for (int x = calcRegion.xMin(); x < calcRegion.xMax(); ++x)
+      for (int y = calcRegion.yMin(); y < calcRegion.yMax(); ++y) {
+        Vec2I p(x, y);
+        calc.setCellIndex(calc.baseIndexFor(p), worldLight(p), worldObstacle(p));
+      }
+  };
+  auto addLights = [&](CellularLightingCalculator& calc) {
+    calc.addPointLight(lightPos, Vec3F(1.0f, 0.7f, 0.5f), 0.5f, 0.0f, 0.0f);
+    calc.addSpreadLight(spreadPos, Vec3F(0.4f, 0.4f, 0.6f));
+  };
+
+  CellularLightingCalculator calc;
+  calc.setParameters(config);
+  calc.begin(query);
+  gatherAll(calc);
+  addLights(calc);
+  Lightmap fullMap;
+  calc.calculate(fullMap);
+
+  static const int steps[][2] = {{3, 0}, {2, 1}, {0, -2}, {-4, 0}, {1, -1}};
+  RectI current = query;
+  for (auto const& s : steps) {
+    current = current.translated(Vec2I(s[0], s[1]));
+    lightPos += Vec2F(s[0] * 0.5f, s[1] * 0.5f);
+
+    // Reference: full recalculation of the new window.
+    CellularLightingCalculator ref;
+    ref.setParameters(config);
+    ref.begin(current);
+    gatherAll(ref);
+    addLights(ref);
+    Lightmap refMap;
+    ref.calculate(refMap);
+
+    // Scrolled path: shift the atlas, re-gather only the exposed strips,
+    // diff the moved point light over the overlap.
+    List<RectI> exposed = calc.scroll(current);
+    for (RectI const& region : exposed)
+      for (int x = region.xMin(); x < region.xMax(); ++x)
+        for (int y = region.yMin(); y < region.yMax(); ++y) {
+          Vec2I p(x, y);
+          calc.setCellIndex(calc.baseIndexFor(p), worldLight(p), worldObstacle(p));
+        }
+    addLights(calc);
+    // Diff the moved point light over the window overlap; border cells are
+    // not maintained by the diff - the re-gathered strips returned by
+    // scroll() (which include window cells that entered from the border) are
+    // zeroed and re-flooded with the current lights by calculateScrolled.
+    RectI lastCurrent = current.translated(Vec2I(-s[0], -s[1]));
+    RectI overlap(
+      std::max(lastCurrent.xMin(), current.xMin()),
+      std::max(lastCurrent.yMin(), current.yMin()),
+      std::min(lastCurrent.xMax(), current.xMax()),
+      std::min(lastCurrent.yMax(), current.yMax()));
+    calc.applyPointLightDiff(overlap);
+    Lightmap scrolledMap;
+    calc.calculateScrolled(scrolledMap, exposed);
+
+    for (int x = 0; x < 60; ++x)
+      for (int y = 0; y < 40; ++y) {
+        Vec3F a = scrolledMap.get(x, y);
+        Vec3F b = refMap.get(x, y);
+        for (size_t c = 0; c < 3; ++c) {
+          EXPECT_NEAR(a[c], b[c], 1e-3f) << "step " << s[0] << "," << s[1] << " cell " << x << "," << y;
+        }
+      }
+  }
 }
 
 TEST(cellularLightFlood, dumpGameScene) {
