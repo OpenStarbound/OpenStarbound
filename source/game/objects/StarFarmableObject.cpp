@@ -75,7 +75,7 @@ bool FarmableObject::harvest() {
       for (auto const& treasureItem : Root::singleton().treasureDatabase()->createTreasure(m_stages.get(m_stage).getString("harvestPool"), world()->threatLevel()))
         world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position()));
     } catch (StarException const& e) {
-      Logger::warn("Invalid dropID in farmable object harvest. {}", outputException(e, false));
+      Logger::warn("Failed to create treasure for farmable object '{}': {}", name(), outputException(e, false));
     }
 
     if (m_stages.get(m_stage).contains("resetToStage")) {
