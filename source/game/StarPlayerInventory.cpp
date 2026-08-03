@@ -1006,7 +1006,7 @@ bool PlayerInventory::checkInventoryFilter(ItemPtr const& items, String const& f
     auto config = Root::singleton().assets()->json("/player.config:inventoryFilters");
     filterConfig = config.opt(filterName).value();
     if (!filterConfig.isType(Json::Type::Object))
-      filterConfig = config.get("default");
+      filterConfig = config.get("default", JsonObject());
   }
 
   // filter by item type if an itemTypes filter is set

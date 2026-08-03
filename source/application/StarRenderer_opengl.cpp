@@ -311,6 +311,14 @@ OpenGlRenderer::GlFrameBuffer::~GlFrameBuffer() {
 void OpenGlRenderer::loadConfig(Json const& config) {
   m_frameBuffers.clear();
 
+  // Effects will keep any framebuffer textures they use
+  // alive indefinitely, so clear them out here as well
+  for (auto& effect : m_effects) {
+    for (auto& texture : effect.second.textures) {
+      texture.second.textureValue.reset();
+    }
+  }
+
   for (auto& pair : config.getObject("frameBuffers", {})) {
     Json config = pair.second;
     config = config.set("multisample", m_multiSampling);
@@ -1269,15 +1277,20 @@ void OpenGlRenderer::renderGlBuffer(GlRenderBuffer const& renderBuffer, Mat3F co
 
     glBindBuffer(GL_ARRAY_BUFFER, vb.vertexBuffer);
 
-    glEnableVertexAttribArray(m_positionAttribute);
-    glEnableVertexAttribArray(m_texCoordAttribute);
-    glEnableVertexAttribArray(m_colorAttribute);
-    glEnableVertexAttribArray(m_dataAttribute);
+    // check if these exist (might not in mod shaders) so we don't get a bunch of useless errors
+#define APPLY_IF_VALID(Func, Arg1, ...) \
+    if (Arg1 != -1) Func(Arg1 __VA_OPT__(,) __VA_ARGS__)
 
-    glVertexAttribPointer(m_positionAttribute, 2, GL_FLOAT, GL_FALSE, sizeof(GlRenderVertex), (GLvoid*)offsetof(GlRenderVertex, pos));
-    glVertexAttribPointer(m_texCoordAttribute, 2, GL_FLOAT, GL_FALSE, sizeof(GlRenderVertex), (GLvoid*)offsetof(GlRenderVertex, uv));
-    glVertexAttribPointer(m_colorAttribute, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(GlRenderVertex), (GLvoid*)offsetof(GlRenderVertex, color));
-    glVertexAttribIPointer(m_dataAttribute, 1, GL_INT, sizeof(GlRenderVertex), (GLvoid*)offsetof(GlRenderVertex, pack));
+    APPLY_IF_VALID(glEnableVertexAttribArray, m_positionAttribute);
+    APPLY_IF_VALID(glEnableVertexAttribArray, m_texCoordAttribute);
+    APPLY_IF_VALID(glEnableVertexAttribArray, m_colorAttribute);
+    APPLY_IF_VALID(glEnableVertexAttribArray, m_dataAttribute);
+
+    APPLY_IF_VALID(glVertexAttribPointer,  m_positionAttribute, 2, GL_FLOAT,         GL_FALSE, sizeof(GlRenderVertex), (GLvoid*)offsetof(GlRenderVertex, pos));
+    APPLY_IF_VALID(glVertexAttribPointer,  m_texCoordAttribute, 2, GL_FLOAT,         GL_FALSE, sizeof(GlRenderVertex), (GLvoid*)offsetof(GlRenderVertex, uv));
+    APPLY_IF_VALID(glVertexAttribPointer,  m_colorAttribute,    4, GL_UNSIGNED_BYTE, GL_TRUE,  sizeof(GlRenderVertex), (GLvoid*)offsetof(GlRenderVertex, color));
+    APPLY_IF_VALID(glVertexAttribIPointer, m_dataAttribute,     1, GL_INT,                     sizeof(GlRenderVertex), (GLvoid*)offsetof(GlRenderVertex, pack));
+#undef APPLY_IF_VALID
 
     glDrawArrays(GL_TRIANGLES, 0, vb.vertexCount);
   }
