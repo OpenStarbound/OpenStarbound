@@ -520,6 +520,8 @@ public:
 
   void setAnimationParameter(String name, Json value);
 
+  void setDeathParticleBurst(Maybe<String> const& deathParticleBurst);
+
 private:
   typedef LuaMessageHandlingComponent<LuaStorableComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>>> GenericScriptComponent;
   typedef shared_ptr<GenericScriptComponent> GenericScriptComponentPtr;

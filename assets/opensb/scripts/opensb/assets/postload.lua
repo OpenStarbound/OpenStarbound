@@ -58,25 +58,27 @@ end
 -- pre generating the 20 occupant slot animations so we're not wasting time generating the same thing multiple times later
 local chestLegsSortOrder = { 14, 8, 2, 0, 15, 9, 3, 1, 4, 5, 6, 7, 10, 11, 12, 13, 16, 17, 18, 19 }
 for _, path in ipairs(assets.scan("/humanoid/", "cosmetic.animation")) do
-  for i = 1, 20 do
-    assets.add(path .. "." .. i, assets.bytes(path):gsub(
-      '<slot>', tostring(i)
-    ):gsub(
-      '"zLevel"%s*:%s*(%d+%.%d+)', '"zLevel":%1'..string.format('%04d', i)
-    ):gsub(
-      '"flippedZLevel"%s*:%s*(%d+%.%d+)', '"flippedZLevel":%1'..string.format('%04d', i)
-    ):gsub(
-      '"zLevelChestLegs"%s*:%s*(%d+%.%d+)', '"zLevel":%1'..string.format('%04d', chestLegsSortOrder[i])
-    ):gsub(
-      '"flippedZLevelChestLegs"%s*:%s*(%d+%.%d+)', '"flippedZLevel":%1'..string.format('%04d', chestLegsSortOrder[i])
-    ):gsub(
-      '"zLevel"%s*:%s*(%-%d+%.%d+)', '"zLevel":%1'..string.format('%04d', 20-i)
-    ):gsub(
-      '"flippedZLevel"%s*:%s*(%-%d+%.%d+)', '"flippedZLevel":%1'..string.format('%04d', 20-i)
-    ):gsub(
-      '"zLevelChestLegs"%s*:%s*(%-%d+%.%d+)', '"zLevel":%1'..string.format('%04d', 20-chestLegsSortOrder[i])
-    ):gsub(
-      '"flippedZLevelChestLegs"%s*:%s*(%-%d+%.%d+)', '"flippedZLevel":%1'..string.format('%04d', 20-chestLegsSortOrder[i])
-    ))
-  end
+    local merged = {}
+    for i = 1, 20 do
+        merged = sb.jsonMerge(merged, sb.parseJson(assets.bytes(path):gsub(
+            '<slot>', tostring(i)
+        ):gsub(
+            '"zLevelSlot"%s*:%s*(%d+%.%d+)', '"zLevel":%1' .. string.format('%04i', i)
+        ):gsub(
+            '"flippedZLevelSlot"%s*:%s*(%d+%.%d+)', '"flippedZLevel":%1' .. string.format('%04i', i)
+        ):gsub(
+            '"zLevelChestLegsSlot"%s*:%s*(%d+%.%d+)', '"zLevel":%1' .. string.format('%04i', chestLegsSortOrder[i])
+        ):gsub(
+            '"flippedZLevelChestLegsSlot"%s*:%s*(%d+%.%d+)', '"flippedZLevel":%1' .. string.format('%04i', chestLegsSortOrder[i])
+        ):gsub(
+            '"zLevelSlot"%s*:%s*(%-%d+%.%d+)', '"zLevel":%1' .. string.format('%04i', 20 - i)
+        ):gsub(
+            '"flippedZLevelSlot"%s*:%s*(%-%d+%.%d+)', '"flippedZLevel":%1' .. string.format('%04i', 20 - i)
+        ):gsub(
+            '"zLevelChestLegsSlot"%s*:%s*(%-%d+%.%d+)', '"zLevel":%1' .. string.format('%04i', 20 - chestLegsSortOrder[i])
+        ):gsub(
+            '"flippedZLevelChestLegsSlot"%s*:%s*(%-%d+%.%d+)', '"flippedZLevel":%1' .. string.format('%04i', 20 - chestLegsSortOrder[i])
+        )))
+    end
+    assets.add(path, sb.printJson(merged))
 end
