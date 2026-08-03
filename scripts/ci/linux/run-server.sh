@@ -14,10 +14,8 @@ uxterm
 xterm"
 
 for term in $terms; do
-  $term -- ./starbound_server $@
-  if [ $? -eq 0 ]; then
-    exit 0
-  fi
+  command -v "$term" > /dev/null 2>&1 || continue
+  "$term" -- ./starbound_server "$@" && exit 0
 done
 
 exit 1
