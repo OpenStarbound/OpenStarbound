@@ -34,7 +34,7 @@ STAR_CLASS(LuaRoot);
 
 class UniverseClient {
 public:
-  UniverseClient(PlayerStoragePtr playerStorage, StatisticsPtr statistics);
+  UniverseClient(PlayerStoragePtr playerStorage, StatisticsPtr statistics, String const& customWorldStorageDir);
   ~UniverseClient();
 
   void setMainPlayer(PlayerPtr player);
@@ -110,6 +110,8 @@ public:
   QuestManagerPtr questManager() const;
   PlayerStoragePtr playerStorage() const;
   StatisticsPtr statistics() const;
+  
+  void createCustomWorld(String const& name, Json templateData);
 
   bool paused() const;
 
@@ -123,10 +125,14 @@ private:
 
   void handlePackets(List<PacketPtr> const& packets);
   void reset();
+  
+  mutable RecursiveMutex m_mutex;
 
   PlayerStoragePtr m_playerStorage;
   StatisticsPtr m_statistics;
   PlayerPtr m_mainPlayer;
+  
+  String m_customWorldStorageDirectory;
 
   bool m_pause;
   ClockPtr m_universeClock;

@@ -230,7 +230,12 @@ Json TeamManager::fetchTeamStatus(Json const& arguments) {
       member["energy"] = mem.energyPercentage;
       member["x"] = mem.position[0];
       member["y"] = mem.position[1];
-      member["world"] = printWorldId(mem.world);
+      if (mem.world.is<CustomWorldId>() || mem.world.is<ClientCustomWorldId>()) {
+        // TODO: check if they're new enough to work with new world ids.
+        member["world"] = "InstanceWorld:testarena";
+      } else {
+        member["world"] = printWorldId(mem.world);
+      }
       member["warpMode"] = WarpModeNames.getRight(mem.warpMode);
       member["portrait"] = jsonFromList(mem.portrait, mem_fn(&Drawable::toJson));
       members.push_back(member);

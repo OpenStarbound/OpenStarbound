@@ -18,7 +18,6 @@
 #include "StarTeamManager.hpp"
 #include "StarUniverseServerLuaBindings.hpp"
 #include "StarVersioningDatabase.hpp"
-#include "StarWorldTemplate.hpp"
 
 namespace Star {
 
@@ -638,6 +637,42 @@ void UniverseServer::run() {
   } catch (std::exception const& e) {
     Logger::error("UniverseServer: exception caught cleaning up: {}", outputException(e, true));
   }
+}
+
+UniverseServer::WorldServerPromise::WorldServerPromise(function<WorkerPoolPromise<WorldServerThreadPtr>(WorldChunks)> producer, RpcThreadPromise<WorldChunks> promise)
+  : currentPromise(promise), producer(producer) {}
+  
+UniverseServer::WorldServerPromise::WorldServerPromise(WorkerPoolPromise<WorldServerThreadPtr> promise)
+  : currentPromise(promise) {}
+  
+bool UniverseServer::WorldServerPromise::done() const {
+  if (auto wpp = currentPromise.ptr<WorkerPoolPromise<WorldServerThreadPtr>>()) {
+    return wpp->done();
+  } else if (auto rpcp = currentPromise.ptr<RpcThreadPromise<WorldChunks>>()) {
+    return rpcp->finished();
+  }
+  return false;
+}
+bool UniverseServer::WorldServerPromise::poll() {
+  if (auto wpp = currentPromise.ptr<WorkerPoolPromise<WorldServerThreadPtr>>()) {
+    return wpp->poll();
+  } else if (auto rpcp = currentPromise.ptr<RpcThreadPromise<WorldChunks>>()) {
+    if (rpcp->finished()) {
+      if (rpcp->succeeded()) {
+        currentPromise = (*producer)(*rpcp->result());
+      } else {
+        throw UniverseServerException(strf("UniverseServer: World server promise failed! {}", rpcp->error()));
+      }
+    }
+    return false;
+  }
+  return false;
+}
+WorldServerThreadPtr UniverseServer::WorldServerPromise::get() {
+  if (auto wpp = currentPromise.ptr<WorkerPoolPromise<WorldServerThreadPtr>>()) {
+    return wpp->get();
+  }
+  return nullptr;
 }
 
 void UniverseServer::processUniverseFlags() {
@@ -1274,6 +1309,13 @@ void UniverseServer::shutdownInactiveWorlds() {
           world->unloadAll(true);
           if (auto clientId = getClientForUuid(worldId.get<ClientShipWorldId>()))
             m_clients.get(*clientId)->updateShipChunks(world->readChunks());
+        } else if (worldId.is<ClientCustomWorldId>()) {
+          world->unloadAll(true);
+          auto ccwId = worldId.get<ClientCustomWorldId>();
+          if (auto clientId = getClientForUuid(ccwId.uuid)) {
+            m_clients.get(*clientId)->updateCustomWorldChunks(ccwId.name, world->readChunks());
+            m_clients.get(*clientId)->setCustomWorldActive(ccwId.name, false);
+          }
         }
 
         m_worlds.remove(worldId);
@@ -1327,6 +1369,14 @@ void UniverseServer::doTriggeredStorage() {
     for (auto const& p : m_clients) {
       if (auto shipWorld = getWorld(ClientShipWorldId(p.second->playerUuid())))
         p.second->updateShipChunks(shipWorld->readChunks());
+      
+      for (auto worldName : p.second->customWorlds()) {
+        if (auto world = getWorld(ClientCustomWorldId(p.second->playerUuid(),worldName))) {
+          p.second->updateCustomWorldChunks(worldName,world->readChunks());
+        }
+      }
+      
+      p.second->cleanInactiveCustomWorlds();
 
       auto versioningDatabase = Root::singleton().versioningDatabase();
       String clientContextFile = File::relativeTo(m_storageDirectory, strf("{}.clientcontext", p.second->playerUuid().hex()));
@@ -1652,7 +1702,9 @@ void UniverseServer::packetsReceived(UniverseConnectionServer*, ConnectionId cli
           if (warpToWorld->world.empty() || 
               warpToWorld->world.is<ClientShipWorldId>() || 
               warpToWorld->world.is<CelestialWorldId>() ||
-              warpToWorld->world.is<InstanceWorldId>()) {
+              warpToWorld->world.is<InstanceWorldId>() || 
+              warpToWorld->world.is<CustomWorldId>() ||
+              warpToWorld->world.is<ClientCustomWorldId>()) {
             blocked = false;
           }
         }
@@ -1723,6 +1775,22 @@ void UniverseServer::packetsReceived(UniverseConnectionServer*, ConnectionId cli
         if (auto currentWorld = clientContext->playerWorld())
           currentWorld->pushIncomingPackets(clientId, {std::move(packet)});
 
+      } else if (auto clientCustomWorldResponse = as<ClientCustomWorldResponse>(packet)) {
+        clientContext->customWorldReceived(clientCustomWorldResponse->name, clientCustomWorldResponse->chunks);
+      } else if (auto clientCustomWorldCreate = as<ClientCustomWorldCreate>(packet)) {
+        RecursiveMutexLocker locker(m_mainLock);
+        clientsLocker.lock();
+        
+        auto worldId = ClientCustomWorldId(clientContext->playerUuid(),clientCustomWorldCreate->name);
+        if (!m_worlds.contains(worldId)) {
+          auto worldTemplate = make_shared<WorldTemplate>(clientCustomWorldCreate->templateData);
+          if (auto promise = clientCustomWorldPromise(worldId,worldTemplate)) {
+            m_worlds.add(worldId, promise.take());
+          }
+        }
+        
+        clientsLocker.unlock();
+        locker.unlock();
       } else if (is<SystemObjectSpawnPacket>(packet)) {
         if (auto currentSystem = clientContext->systemWorld())
           currentSystem->pushIncomingPacket(clientId, std::move(packet));
@@ -1974,7 +2042,9 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
         useReviveWarp = false;
     }
 
-    if (reviveWarp.world.is<ClientShipWorldId>() && reviveWarp.world.get<ClientShipWorldId>() != clientConnect->playerUuid)
+    if ((reviveWarp.world.is<ClientShipWorldId>() && reviveWarp.world.get<ClientShipWorldId>() != clientConnect->playerUuid)
+      || reviveWarp.world.is<ClientCustomWorldId>()
+    )
       useReviveWarp = false;
 
     if (useReviveWarp) {
@@ -2145,6 +2215,7 @@ void UniverseServer::doDisconnection(ConnectionId clientId, String const& reason
       systemWorld->removeClient(clientId);
 
     clientContext->clearSystemWorld();
+    clientContext->failWorldRequests();
 
     if (m_chatProcessor->hasClient(clientId))
       m_chatProcessor->disconnectClient(clientId);
@@ -2158,6 +2229,19 @@ void UniverseServer::doDisconnection(ConnectionId clientId, String const& reason
         shipWorld->stop();
         locker.lock();
       }
+      
+      // Send the client the last update for all custom worlds as well.
+      for (auto worldName : clientContext->customWorlds()) {
+        if (auto world = getWorld(ClientCustomWorldId(clientContext->playerUuid(), worldName))) {
+          locker.unlock();
+          world->unloadAll(true);
+          clientContext->updateCustomWorldChunks(worldName,world->readChunks());
+          clientContext->setCustomWorldActive(worldName,false);
+          world->stop();
+          locker.lock();
+        }
+      }
+      
       sendClientContextUpdate(clientContext);
 
       // Then send the disconnect packet.
@@ -2260,18 +2344,22 @@ Maybe<WorldServerThreadPtr> UniverseServer::triggerWorldCreation(WorldId const& 
   }
 }
 
-Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::makeWorldPromise(WorldId const& worldId) {
+Maybe<UniverseServer::WorldServerPromise> UniverseServer::makeWorldPromise(WorldId const& worldId) {
   if (auto celestialWorld = worldId.ptr<CelestialWorldId>())
     return celestialWorldPromise(*celestialWorld);
   else if (auto shipWorld = worldId.ptr<ClientShipWorldId>())
     return shipWorldPromise(*shipWorld);
   else if (auto instanceWorld = worldId.ptr<InstanceWorldId>())
     return instanceWorldPromise(*instanceWorld);
+  else if (auto customWorld = worldId.ptr<CustomWorldId>())
+    return customWorldPromise(*customWorld);
+  else if (auto clientCustomWorld = worldId.ptr<ClientCustomWorldId>())
+    return clientCustomWorldPromise(*clientCustomWorld);
   else
     return {};
 }
 
-Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::shipWorldPromise(
+Maybe<UniverseServer::WorldServerPromise> UniverseServer::shipWorldPromise(
   ClientShipWorldId const& clientShipWorldId) {
   auto clientId = clientForUuid(clientShipWorldId);
   if (!clientId)
@@ -2282,7 +2370,7 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::shipWorldPromise(
   auto celestialDatabase = m_celestialDatabase;
   auto universeClock = m_universeClock;
 
-  return m_workerPool.addProducer<WorldServerThreadPtr>([this, clientShipWorldId, clientContext, speciesShips, celestialDatabase, universeClock]() {
+  return WorldServerPromise(m_workerPool.addProducer<WorldServerThreadPtr>([this, clientShipWorldId, clientContext, speciesShips, celestialDatabase, universeClock]() {
     WorldServerPtr shipWorld;
 
     auto shipChunks = clientContext->shipChunks();
@@ -2349,10 +2437,10 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::shipWorldPromise(
     shipWorldThread->setUpdateAction(bind(&UniverseServer::worldUpdated, this, _1));
 
     return shipWorldThread;
-  });
+  }));
 }
 
-Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::celestialWorldPromise(CelestialWorldId const& celestialWorldId) {
+Maybe<UniverseServer::WorldServerPromise> UniverseServer::celestialWorldPromise(CelestialWorldId const& celestialWorldId) {
   if (!celestialWorldId)
     return {};
 
@@ -2360,7 +2448,7 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::celestialWorldPro
   auto celestialDatabase = m_celestialDatabase;
   auto universeClock = m_universeClock;
 
-  return m_workerPool.addProducer<WorldServerThreadPtr>([this, celestialWorldId, storageDirectory, celestialDatabase, universeClock]() {
+  return WorldServerPromise(m_workerPool.addProducer<WorldServerThreadPtr>([this, celestialWorldId, storageDirectory, celestialDatabase, universeClock]() {
     WorldServerPtr worldServer;
     String storageFile = File::relativeTo(storageDirectory, strf("{}.world", celestialWorldId.filename()));
     if (File::isFile(storageFile)) {
@@ -2390,13 +2478,13 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::celestialWorldPro
     worldThread->setUpdateAction(bind(&UniverseServer::worldUpdated, this, _1));
 
     return worldThread;
-  });
+  }));
 }
 
-Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::instanceWorldPromise(InstanceWorldId const& instanceWorldId) {
+Maybe<UniverseServer::WorldServerPromise> UniverseServer::instanceWorldPromise(InstanceWorldId const& instanceWorldId) {
   auto storageDirectory = m_storageDirectory;
   auto universeClock = m_universeClock;
-  return m_workerPool.addProducer<WorldServerThreadPtr>([this, storageDirectory, instanceWorldId, universeClock]() {
+  return WorldServerPromise(m_workerPool.addProducer<WorldServerThreadPtr>([this, storageDirectory, instanceWorldId, universeClock]() {
     Json worldConfig = Root::singleton().assets()->json("/instance_worlds.config").get(instanceWorldId.instance);
     uint64_t worldSeed;
     if (worldConfig.contains("seed"))
@@ -2511,7 +2599,119 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::instanceWorldProm
     worldThread->setUpdateAction(bind(&UniverseServer::worldUpdated, this, _1));
 
     return worldThread;
-  });
+  }));
+}
+
+Maybe<UniverseServer::WorldServerPromise> UniverseServer::customWorldPromise(CustomWorldId const& customWorldId, Maybe<WorldTemplatePtr> worldTemplate) {
+  auto storageDirectory = m_storageDirectory;
+  auto universeClock = m_universeClock;
+  return WorldServerPromise(m_workerPool.addProducer<WorldServerThreadPtr>([this, customWorldId, worldTemplate, storageDirectory, universeClock]() {
+    WorldServerPtr worldServer;
+
+    String storageFile = File::relativeTo(storageDirectory, strf("custom_{}.world", customWorldId));
+    if (File::isFile(storageFile)) {
+      Logger::info("UniverseServer: Loading custom world '{}'", customWorldId);
+      worldServer = make_shared<WorldServer>(File::open(storageFile, IOMode::ReadWrite));
+    } else if (worldTemplate) {
+      Logger::info("UniverseServer: Creating custom world '{}'", customWorldId);
+      worldServer = make_shared<WorldServer>(*worldTemplate, File::open(storageFile, IOMode::ReadWrite | IOMode::Truncate));
+    } else {
+      throw UniverseServerException(strf("UniverseServer: Custom world '{}' does not exist!\n",customWorldId));
+    }
+
+    worldServer->setUniverseSettings(m_universeSettings);
+    worldServer->setReferenceClock(universeClock);
+
+    worldServer->initLua(this);
+
+    auto worldThread = make_shared<WorldServerThread>(worldServer, customWorldId);
+    worldThread->setPause(m_pause);
+    worldThread->start();
+    worldThread->setUpdateAction(bind(&UniverseServer::worldUpdated, this, _1));
+
+    return worldThread;
+  }));
+}
+
+Maybe<UniverseServer::WorldServerPromise> UniverseServer::clientCustomWorldPromise(ClientCustomWorldId const& clientCustomWorldId, Maybe<WorldTemplatePtr> worldTemplate) {
+  auto configuration = Root::singleton().configuration();
+  if (configuration->get("disallowClientCustomWorlds").optBool().value(false))
+    return {};
+  
+  auto clientId = clientForUuid(clientCustomWorldId.uuid);
+  if (!clientId)
+    return {};
+  
+  
+  auto clientContext = m_clients.get(*clientId);
+  if (clientContext->netRules().version() < 15) {
+    Logger::warn("UniverseServer: Attempting to request custom world from old client!");
+    return {};
+  }
+  
+  auto producer = [this, clientCustomWorldId, worldTemplate, clientContext](WorldChunks worldChunks) -> WorkerPoolPromise<WorldServerThreadPtr> {
+    auto universeClock = m_universeClock;
+    return m_workerPool.addProducer<WorldServerThreadPtr>([this, clientCustomWorldId, worldTemplate, clientContext, universeClock, worldChunks]() {
+      WorldServerPtr worldServer;
+      
+      if (!worldChunks.empty()) {
+        Logger::info("UniverseServer: Loading client custom world '{}' for '{}'", clientCustomWorldId.name, clientCustomWorldId.uuid.hex());
+        worldServer = make_shared<WorldServer>(worldChunks);
+      } else if (worldTemplate) {
+        Logger::info("UniverseServer: Creating client custom world '{}' for '{}'", clientCustomWorldId.name, clientCustomWorldId.uuid.hex());
+        worldServer = make_shared<WorldServer>(*worldTemplate, File::ephemeralFile());
+      } else {
+        throw UniverseServerException(strf("UniverseServer: Client custom world '{}' for '{}' does not exist!\n",clientCustomWorldId.name, clientCustomWorldId.uuid.hex()));
+      }
+
+      auto worldClock = make_shared<Clock>();
+      auto worldTime = worldServer->getProperty("customWorld.epoch");
+      if (!worldTime.canConvert(Json::Type::Float)) {
+        auto now = Time::timeSinceEpoch();
+        worldServer->setProperty("customWorld.epoch", now);
+      } else {
+        worldClock->setTime(Time::timeSinceEpoch() - worldTime.toDouble());
+      }
+
+      worldServer->setUniverseSettings(m_universeSettings);
+      worldServer->setReferenceClock(worldClock);
+      worldClock->start();
+
+      worldServer->initLua(this);
+
+      auto worldThread = make_shared<WorldServerThread>(worldServer, clientCustomWorldId);
+      worldThread->setPause(m_pause);
+      clientContext->updateCustomWorldChunks(clientCustomWorldId.name, worldThread->readChunks());
+      clientContext->setCustomWorldActive(clientCustomWorldId.name, true);
+      worldThread->start();
+      worldThread->setUpdateAction(bind(&UniverseServer::worldUpdated, this, _1));
+
+      return worldThread;
+    });
+  };
+  if (auto worldChunks = clientContext->customWorldChunks(clientCustomWorldId.name)) {
+    return WorldServerPromise(producer(*worldChunks));
+  } else {
+    // request the world
+    Logger::info("UniverseServer: Requesting client custom world '{}' for '{}'", clientCustomWorldId.name, clientCustomWorldId.uuid.hex());
+    auto pair = RpcThreadPromise<WorldChunks>::createPair();
+    clientContext->customWorldRequested(clientCustomWorldId.name,pair.second);
+    m_connectionServer->sendPackets(*clientId, {make_shared<ClientCustomWorldRequest>(clientCustomWorldId.name)});
+    
+    return WorldServerPromise(
+      producer,
+      pair.first
+    );
+  }
+}
+
+void UniverseServer::createCustomWorld(CustomWorldId const& customWorld, WorldTemplatePtr worldTemplate) {
+  RecursiveMutexLocker locker(m_mainLock);
+  if (!m_worlds.contains(customWorld)) {
+    if (auto promise = customWorldPromise(customWorld,worldTemplate)) {
+      m_worlds.add(customWorld, promise.take());
+    }
+  }
 }
 
 SystemWorldServerThreadPtr UniverseServer::createSystemWorld(Vec3I const& location) {

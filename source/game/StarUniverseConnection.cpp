@@ -154,29 +154,36 @@ UniverseConnectionServer::UniverseConnectionServer(PacketReceiveCallback packetR
             if (!p.second->packetSocket || !p.second->packetSocket->isOpen())
               continue;
 
-            p.second->packetSocket->sendPackets(take(p.second->sendQueue));
-            dataTransmitted |= p.second->packetSocket->writeData();
+            try {
+              p.second->packetSocket->sendPackets(take(p.second->sendQueue));
+              dataTransmitted |= p.second->packetSocket->writeData();
 
-            dataTransmitted |= p.second->packetSocket->readData();
-            List<PacketPtr> receivePackets = p.second->packetSocket->receivePackets();
-            if (!receivePackets.empty()) {
-              p.second->lastActivityTime = Time::monotonicMilliseconds();
-              m_workerStats[i].packetsProcessed += receivePackets.size();
-              p.second->receiveQueue.appendAll(take(receivePackets));
-            }
-
-            if (!p.second->receiveQueue.empty()) {
-              List<PacketPtr> toReceive = List<PacketPtr>::from(take(p.second->receiveQueue));
-              connectionLocker.unlock();
-
-              try {
-                m_packetReceiver(this, p.first, std::move(toReceive));
-              } catch (std::exception const& e) {
-                Logger::error("Exception caught handling incoming server packets, disconnecting client '{}' {}", p.first, outputException(e, true));
-
-                connectionLocker.lock();
-                p.second->packetSocket->close();
+              dataTransmitted |= p.second->packetSocket->readData();
+              List<PacketPtr> receivePackets = p.second->packetSocket->receivePackets();
+              if (!receivePackets.empty()) {
+                p.second->lastActivityTime = Time::monotonicMilliseconds();
+                m_workerStats[i].packetsProcessed += receivePackets.size();
+                p.second->receiveQueue.appendAll(take(receivePackets));
               }
+
+              if (!p.second->receiveQueue.empty()) {
+                List<PacketPtr> toReceive = List<PacketPtr>::from(take(p.second->receiveQueue));
+                connectionLocker.unlock();
+
+                try {
+                  m_packetReceiver(this, p.first, std::move(toReceive));
+                } catch (std::exception const& e) {
+                  Logger::error("Exception caught handling incoming server packets, disconnecting client '{}' {}", p.first, outputException(e, true));
+
+                  connectionLocker.lock();
+                  p.second->packetSocket->close();
+                }
+              }
+            } catch (std::exception const& e) {
+              Logger::error("Exception caught receiving incoming server packets, disconnecting client '{}' {}", p.first, outputException(e, true));
+              
+              connectionLocker.lock();
+              p.second->packetSocket->close();
             }
           }
           m_workerStats[i].connectionsHandled = handledCount;

@@ -117,7 +117,10 @@ enum class PacketType : uint8_t {
 
   // OpenStarbound packets
   ReplaceTileList,
-  UpdateWorldTemplate
+  UpdateWorldTemplate,
+  ClientCustomWorldRequest,
+  ClientCustomWorldResponse,
+  ClientCustomWorldCreate
 };
 extern EnumMap<PacketType> const PacketTypeNames;
 
@@ -979,6 +982,38 @@ struct UpdateWorldTemplatePacket : PacketBase<PacketType::UpdateWorldTemplate> {
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
 
+  Json templateData;
+};
+
+struct ClientCustomWorldRequest : PacketBase<PacketType::ClientCustomWorldRequest> {
+  ClientCustomWorldRequest();
+  ClientCustomWorldRequest(String name);
+
+  void read(DataStream& ds) override;
+  void write(DataStream& ds) const override;
+
+  String name;
+};
+
+struct ClientCustomWorldResponse : PacketBase<PacketType::ClientCustomWorldResponse> {
+  ClientCustomWorldResponse();
+  ClientCustomWorldResponse(String name, WorldChunks chunks);
+
+  void read(DataStream& ds) override;
+  void write(DataStream& ds) const override;
+
+  String name;
+  WorldChunks chunks;
+};
+
+struct ClientCustomWorldCreate : PacketBase<PacketType::ClientCustomWorldCreate> {
+  ClientCustomWorldCreate();
+  ClientCustomWorldCreate(String name, Json templateData);
+
+  void read(DataStream& ds) override;
+  void write(DataStream& ds) const override;
+
+  String name;
   Json templateData;
 };
 }
