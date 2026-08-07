@@ -23,7 +23,6 @@ SET (star_extern_HEADERS
     lua.hpp
     luaconf.h
     lualib.h
-    tinyformat.h
     xxhash.h
   )
 

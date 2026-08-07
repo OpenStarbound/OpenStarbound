@@ -22,6 +22,8 @@ SET (star_core_tests_SOURCES
       byte_array_test.cpp
       clock_test.cpp
       color_test.cpp
+      cellular_lighting_test.cpp
+      ../base/StarCellularLighting.cpp
       container_test.cpp
       encode_test.cpp
       file_test.cpp
@@ -60,6 +62,11 @@ ADD_EXECUTABLE (core_tests
   ${star_core_tests_SOURCES})
 TARGET_LINK_LIBRARIES (core_tests ${STAR_EXT_LIBS})
 ADD_TEST (NAME core_tests WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/core_tests)
+
+ADD_EXECUTABLE (cellular_lighting_bench
+  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core>
+  cellular_lighting_bench.cpp)
+TARGET_LINK_LIBRARIES (cellular_lighting_bench ${STAR_EXT_LIBS})
 
 SET (star_game_tests_SOURCES
       gtest/gtest-all.cc

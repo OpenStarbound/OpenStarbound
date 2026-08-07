@@ -1,26 +1,26 @@
 #include "StarWorldClient.hpp"
-#include "StarIterator.hpp"
-#include "StarLogging.hpp"
+#include "StarAggressiveEntity.hpp"
 #include "StarBiome.hpp"
-#include "StarMaterialRenderProfile.hpp"
-#include "StarLiquidTypes.hpp"
+#include "StarCurve25519.hpp"
 #include "StarDamageDatabase.hpp"
+#include "StarEntityFactory.hpp"
+#include "StarInspectableEntity.hpp"
+#include "StarItemDatabase.hpp"
+#include "StarItemDrop.hpp"
+#include "StarIterator.hpp"
+#include "StarLiquidTypes.hpp"
+#include "StarLogging.hpp"
+#include "StarMaterialRenderProfile.hpp"
+#include "StarObject.hpp"
+#include "StarObjectDatabase.hpp"
 #include "StarParticleDatabase.hpp"
 #include "StarParticleManager.hpp"
-#include "StarWorldImpl.hpp"
+#include "StarPhysicsEntity.hpp"
 #include "StarPlayer.hpp"
 #include "StarPlayerLog.hpp"
-#include "StarAggressiveEntity.hpp"
-#include "StarPhysicsEntity.hpp"
-#include "StarItemDrop.hpp"
-#include "StarItemDatabase.hpp"
-#include "StarObjectDatabase.hpp"
-#include "StarObject.hpp"
-#include "StarEntityFactory.hpp"
-#include "StarWorldTemplate.hpp"
 #include "StarStoredFunctions.hpp"
-#include "StarInspectableEntity.hpp"
-#include "StarCurve25519.hpp"
+#include "StarWorldImpl.hpp"
+#include "StarWorldTemplate.hpp"
 
 namespace Star {
 
@@ -37,6 +37,11 @@ WorldClient::WorldClient(PlayerPtr mainPlayer, LuaRootPtr luaRoot) {
   m_currentStep = 0;
   m_currentTime = 0;
   m_fullBright = false;
+  // Async lighting by default: without it the full lightmap is recomputed
+  // synchronously on the render thread every frame, which tanks fps with many
+  // light sources. Toggle with /asyncLighting.
+  // ponytail: sync by default - async renders a stale lightmap during camera
+  // movement (light lag, flicker, "blurry" light); sync costs ~15-20ms/cull.
   m_asyncLighting = false;
   m_worldDimTimer = GameTimer(m_clientConfig.getFloat("worldDimTime"));
   m_worldDimTimer.setDone();
@@ -282,14 +287,14 @@ void WorldClient::forEachCollisionBlock(RectI const& region, function<void(Colli
 
   const_cast<WorldClient*>(this)->freshenCollision(region);
   m_tileArray->tileEach(region, [iterator](Vec2I const& pos, ClientTile const& tile) {
-      if (tile.getCollision() == CollisionKind::Null) {
-        iterator(CollisionBlock::nullBlock(pos));
-      } else {
-        starAssert(!tile.collisionCacheDirty);
-        for (auto const& block : tile.collisionCache)
-          iterator(block);
-      }
-    });
+    if (tile.getCollision() == CollisionKind::Null) {
+      iterator(CollisionBlock::nullBlock(pos));
+    } else {
+      starAssert(!tile.collisionCacheDirty);
+      for (auto const& block : tile.collisionCache)
+        iterator(block);
+    }
+  });
 }
 
 bool WorldClient::isTileConnectable(Vec2I const& pos, TileLayer layer, bool tilesOnly) const {
@@ -321,7 +326,7 @@ Maybe<pair<Vec2F, Vec2I>> WorldClient::lineTileCollisionPoint(Vec2F const& begin
 }
 
 List<Vec2I> WorldClient::collidingTilesAlongLine(
-    Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet, int maxSize, bool includeEdges) const {
+  Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet, int maxSize, bool includeEdges) const {
   if (!inWorld())
     return {};
 
@@ -352,16 +357,17 @@ TileModificationList WorldClient::validTileModifications(TileModificationList co
     return {};
 
   return WorldImpl::splitTileModifications(m_entityMap, modificationList, allowEntityOverlap, m_tileGetterFunction, [this](Vec2I pos, TileModification) {
-      return !isTileProtected(pos);
-    }).first;
+           return !isTileProtected(pos);
+         })
+    .first;
 }
 
 TileModificationList WorldClient::applyTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap) {
   if (!inWorld())
     return {};
-  
+
   // thanks to new prediction: do each one by one so that previous modifications affect placeability
-  
+
   TileModificationList success, failures, temp;
   TileModificationList const* list = &modificationList;
 
@@ -385,8 +391,8 @@ TileModificationList WorldClient::applyTileModifications(TileModificationList co
       list = &(temp = std::move(failures));
       failures = {};
       continue;
-    }
-    else break;
+    } else
+      break;
   }
 
   if (!success.empty())
@@ -398,12 +404,12 @@ TileModificationList WorldClient::applyTileModifications(TileModificationList co
 TileModificationList WorldClient::replaceTiles(TileModificationList const& modificationList, TileDamage const& tileDamage, bool applyDamage) {
   if (!inWorld())
     return {};
-  
+
   // Tell client it can't send a replace packet
   auto netRules = m_clientState.netCompatibilityRules();
   if (netRules.isLegacy() || netRules.version() <= 3)
     return modificationList;
-  
+
   TileModificationList success, failures;
   for (auto pair : modificationList) {
     if (!isTileProtected(pair.first) && WorldImpl::validateTileReplacement(pair.second))
@@ -475,7 +481,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
 
   // Spends 80% of the time at pitch black with 10% ramp up and down
 
-  m_worldDimColor = {}; // always reset this to prevent persistent dimming from other sources
+  m_worldDimColor = {};// always reset this to prevent persistent dimming from other sources
   if (dimRatio) {
     if (dimRatio <= 0.1f)
       m_worldDimLevel = dimRatio / 0.1f;
@@ -507,11 +513,27 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
   if (!m_fullBright) {
     {
       MutexLocker m_prepLocker(m_lightMapPrepMutex);
+      // Drop lights that cannot possibly affect the visible region before
+      // handing them to the lighting thread. The lightmap covers
+      // window.padded(1); a light only reaches it if it is within one light
+      // radius of that region, so cull with the max radius from the lighting
+      // config to never cut off visible light.
+      auto lightingConfig = Root::singleton().assets()->json("/lighting.config:lighting");
+      float maxLightRadius = std::max(lightingConfig.getFloat("pointMaxAir"), lightingConfig.getFloat("spreadMaxAir"));
+      RectI cullPad = window.padded(1 + (int)ceil(maxLightRadius));
+      RectF cullRegion = RectF::withSize(Vec2F(cullPad.min()), Vec2F(cullPad.size()));
+      renderLightSources.filter([&](LightSource const& light) {
+        return cullRegion.contains(light.position);
+      });
+      auto particleLights = m_particles->lightSources();
+      particleLights.filter([&](std::pair<Vec2F, Vec3F> const& light) {
+        return cullRegion.contains(light.first);
+      });
       m_pendingLights = std::move(renderLightSources);
-      m_pendingParticleLights = m_particles->lightSources();
+      m_pendingParticleLights = std::move(particleLights);
       m_pendingLightRange = window.padded(1);
       m_pendingLightReady = true;
-    } //Kae: Padded by one to fix light spread issues at the edges of the frame.
+    }//Kae: Padded by one to fix light spread issues at the edges of the frame.
 
     if (m_asyncLighting)
       m_lightingCond.signal();
@@ -539,98 +561,97 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
         directives = &globalDirectives.get();
   }
   m_entityMap->forAllEntities([&](EntityPtr const& entity) {
-      if (m_startupHiddenEntities.contains(entity->entityId()))
-        return;
+    if (m_startupHiddenEntities.contains(entity->entityId()))
+      return;
 
-      ClientRenderCallback renderCallback;
+    ClientRenderCallback renderCallback;
 
-      try { entity->render(&renderCallback); }
-      catch (StarException const& e) {
-        if (entity->isMaster()) // this is YOUR problem!!
-          throw e; 
-        else { // this is THEIR problem!!
-          auto issue = printException(e, true);
-          auto hash = hashOf(issue);
-          if (!m_entityExceptionsLogged.contains(hash))
-            m_entityExceptionsLogged.insert(hash);
-          else
-            issue = e.what();
+    try {
+      entity->render(&renderCallback);
+    } catch (StarException const& e) {
+      if (entity->isMaster())// this is YOUR problem!!
+        throw e;
+      else {// this is THEIR problem!!
+        auto issue = printException(e, true);
+        auto hash = hashOf(issue);
+        if (!m_entityExceptionsLogged.contains(hash))
+          m_entityExceptionsLogged.insert(hash);
+        else
+          issue = e.what();
 
-          Logger::error("WorldClient: Exception caught in {}::render ({}): {}", EntityTypeNames.getRight(entity->entityType()), entity->entityId(), issue);
-          auto toolUser = as<ToolUserEntity>(entity);
-          String image = toolUser ? strf("/rendering/sprites/error_{}.png", DirectionNames.getRight(toolUser->facingDirection())) : "/rendering/sprites/error.png";
-          Color color = Color::rgbf(0.8f + (float)sin(m_currentTime * Constants::pi * 2.0) * 0.2f, 0.0f, 0.0f);
-          auto drawable = Drawable::makeImage(image, 1.0f / TilePixels, true, entity->position(), color);
-          drawable.fullbright = true;
-          renderCallback.addDrawable(std::move(drawable), RenderLayerMiddleParticle);
-        }
+        Logger::error("WorldClient: Exception caught in {}::render ({}): {}", EntityTypeNames.getRight(entity->entityType()), entity->entityId(), issue);
+        auto toolUser = as<ToolUserEntity>(entity);
+        String image = toolUser ? strf("/rendering/sprites/error_{}.png", DirectionNames.getRight(toolUser->facingDirection())) : "/rendering/sprites/error.png";
+        Color color = Color::rgbf(0.8f + (float)sin(m_currentTime * Constants::pi * 2.0) * 0.2f, 0.0f, 0.0f);
+        auto drawable = Drawable::makeImage(image, 1.0f / TilePixels, true, entity->position(), color);
+        drawable.fullbright = true;
+        renderCallback.addDrawable(std::move(drawable), RenderLayerMiddleParticle);
       }
-      
+    }
 
-      EntityDrawables ed;
-      for (auto& p : renderCallback.drawables) {
-        if (directives) {
-          int directiveIndex = unsigned(entity->entityId()) % directives->size();
-          for (auto& d : p.second) {
-            if (d.isImage())
-              d.imagePart().addDirectives(directives->at(directiveIndex), true);
-          }
-        }
-        ed.layers[p.first] = std::move(p.second);
-      }
-
-      if (m_interactiveHighlightMode || (!inspecting && entity->entityId() == playerAimInteractive)) {
-        if (auto interactive = as<InteractiveEntity>(entity)) {
-          if (interactive->isInteractive()) {
-            ed.highlightEffect.type = EntityHighlightEffectType::Interactive;
-            ed.highlightEffect.level = pulseLevel;
-          }
-        }
-      } else if (inspecting) {
-        if (auto inspectable = as<InspectableEntity>(entity)) {
-          ed.highlightEffect = m_mainPlayer->inspectionHighlight(inspectable);
-          ed.highlightEffect.level *= inspectionFlickerMultiplier;
-        }
-      }
-      renderData.entityDrawables.append(std::move(ed));
-
+    EntityDrawables ed;
+    for (auto& p : renderCallback.drawables) {
       if (directives) {
         int directiveIndex = unsigned(entity->entityId()) % directives->size();
-        for (auto& p : renderCallback.particles)
-          p.directives.append(directives->get(directiveIndex));
+        for (auto& d : p.second) {
+          if (d.isImage())
+            d.imagePart().addDirectives(directives->at(directiveIndex), true);
+        }
       }
-      
-      m_particles->addParticles(std::move(renderCallback.particles));
-      m_samples.appendAll(std::move(renderCallback.audios));
-      m_previewTiles.appendAll(std::move(renderCallback.previewTiles));
-      renderData.overheadBars.appendAll(std::move(renderCallback.overheadBars));
+      ed.layers[p.first] = std::move(p.second);
+    }
 
-    }, [](EntityPtr const& a, EntityPtr const& b) {
-      return a->entityId() < b->entityId();
-    });
+    if (m_interactiveHighlightMode || (!inspecting && entity->entityId() == playerAimInteractive)) {
+      if (auto interactive = as<InteractiveEntity>(entity)) {
+        if (interactive->isInteractive()) {
+          ed.highlightEffect.type = EntityHighlightEffectType::Interactive;
+          ed.highlightEffect.level = pulseLevel;
+        }
+      }
+    } else if (inspecting) {
+      if (auto inspectable = as<InspectableEntity>(entity)) {
+        ed.highlightEffect = m_mainPlayer->inspectionHighlight(inspectable);
+        ed.highlightEffect.level *= inspectionFlickerMultiplier;
+      }
+    }
+    renderData.entityDrawables.append(std::move(ed));
+
+    if (directives) {
+      int directiveIndex = unsigned(entity->entityId()) % directives->size();
+      for (auto& p : renderCallback.particles)
+        p.directives.append(directives->get(directiveIndex));
+    }
+
+    m_particles->addParticles(std::move(renderCallback.particles));
+    m_samples.appendAll(std::move(renderCallback.audios));
+    m_previewTiles.appendAll(std::move(renderCallback.previewTiles));
+    renderData.overheadBars.appendAll(std::move(renderCallback.overheadBars)); },
+                              [](EntityPtr const& a, EntityPtr const& b) {
+                                return a->entityId() < b->entityId();
+                              });
 
   m_tileArray->tileEachTo(renderData.tiles, tileRange, [&](RenderTile& renderTile, Vec2I const&, ClientTile const& clientTile) {
-      renderTile.foreground = clientTile.foreground;
-      renderTile.foregroundMod = clientTile.foregroundMod;
+    renderTile.foreground = clientTile.foreground;
+    renderTile.foregroundMod = clientTile.foregroundMod;
 
-      renderTile.background = clientTile.background;
-      renderTile.backgroundMod = clientTile.backgroundMod;
+    renderTile.background = clientTile.background;
+    renderTile.backgroundMod = clientTile.backgroundMod;
 
-      renderTile.foregroundHueShift = clientTile.foregroundHueShift;
-      renderTile.foregroundModHueShift = clientTile.foregroundModHueShift;
-      renderTile.foregroundColorVariant = clientTile.foregroundColorVariant;
-      renderTile.foregroundDamageType = clientTile.foregroundDamage.damageType();
-      renderTile.foregroundDamageLevel = floatToByte(clientTile.foregroundDamage.damageEffectPercentage());
+    renderTile.foregroundHueShift = clientTile.foregroundHueShift;
+    renderTile.foregroundModHueShift = clientTile.foregroundModHueShift;
+    renderTile.foregroundColorVariant = clientTile.foregroundColorVariant;
+    renderTile.foregroundDamageType = clientTile.foregroundDamage.damageType();
+    renderTile.foregroundDamageLevel = floatToByte(clientTile.foregroundDamage.damageEffectPercentage());
 
-      renderTile.backgroundHueShift = clientTile.backgroundHueShift;
-      renderTile.backgroundModHueShift = clientTile.backgroundModHueShift;
-      renderTile.backgroundColorVariant = clientTile.backgroundColorVariant;
-      renderTile.backgroundDamageType = clientTile.backgroundDamage.damageType();
-      renderTile.backgroundDamageLevel = floatToByte(clientTile.backgroundDamage.damageEffectPercentage());
+    renderTile.backgroundHueShift = clientTile.backgroundHueShift;
+    renderTile.backgroundModHueShift = clientTile.backgroundModHueShift;
+    renderTile.backgroundColorVariant = clientTile.backgroundColorVariant;
+    renderTile.backgroundDamageType = clientTile.backgroundDamage.damageType();
+    renderTile.backgroundDamageLevel = floatToByte(clientTile.backgroundDamage.damageEffectPercentage());
 
-      renderTile.liquidId = clientTile.liquid.liquid;
-      renderTile.liquidLevel = floatToByte(clientTile.liquid.level);
-    });
+    renderTile.liquidId = clientTile.liquid.liquid;
+    renderTile.liquidLevel = floatToByte(clientTile.liquid.level);
+  });
 
   for (auto& pair : m_predictedTiles) {
     Vec2I tileArrayPos = m_geometry.diff(pair.first, renderData.tileMinPosition);
@@ -642,8 +663,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
         if (liquid.liquid == renderTile.liquidId) {
           uint8_t added = floatToByte(liquid.level, true);
           renderTile.liquidLevel = (renderTile.liquidLevel > 255 - added) ? 255 : renderTile.liquidLevel + added;
-        }
-        else {
+        } else {
           renderTile.liquidId = liquid.liquid;
           renderTile.liquidLevel = floatToByte(liquid.level, true);
         }
@@ -721,8 +741,8 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
   }
 
   stableSort(renderData.parallaxLayers, [](ParallaxLayer const& a, ParallaxLayer const& b) {
-      return tie(a.zLevel, a.verticalOrigin) > tie(b.zLevel, b.verticalOrigin);
-    });
+    return tie(a.zLevel, a.verticalOrigin) > tie(b.zLevel, b.verticalOrigin);
+  });
 
   auto overlayToDrawable = [](WorldStructure::Overlay const& overlay) -> Drawable {
     Drawable drawable = Drawable::makeImage(overlay.image, 1.0f / TilePixels, false, overlay.min);
@@ -841,19 +861,19 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
         // state.
         m_startupHiddenEntities.add(entityCreate->entityId);
         timer(m_interpolationTracker.interpolationLeadTime(), [this, entityId = entityCreate->entityId](World*) {
-            m_startupHiddenEntities.remove(entityId);
-          });
+          m_startupHiddenEntities.remove(entityId);
+        });
       }
 
     } else if (auto entityUpdateSet = as<EntityUpdateSetPacket>(packet)) {
       float interpolationLeadTime = m_interpolationTracker.interpolationLeadTime();
       m_entityMap->forAllEntities([&](EntityPtr const& entity) {
-          EntityId entityId = entity->entityId();
-          if (connectionForEntity(entityId) == entityUpdateSet->forConnection) {
-            starAssert(entity->isSlave());
-            entity->readNetState(entityUpdateSet->deltas.value(entityId), interpolationLeadTime, m_clientState.netCompatibilityRules());
-          }
-        });
+        EntityId entityId = entity->entityId();
+        if (connectionForEntity(entityId) == entityUpdateSet->forConnection) {
+          starAssert(entity->isSlave());
+          entity->readNetState(entityUpdateSet->deltas.value(entityId), interpolationLeadTime, m_clientState.netCompatibilityRules());
+        }
+      });
 
     } else if (auto entityDestroy = as<EntityDestroyPacket>(packet)) {
       if (auto entity = m_entityMap->entity(entityDestroy->entityId)) {
@@ -866,9 +886,9 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
           // Delay death packets by the interpolation step to give time for
           // interpolation to catch up.
           timer(m_interpolationTracker.interpolationLeadTime(), [this, entity, entityDestroy](World*) {
-              entity->disableInterpolation();
-              removeEntity(entityDestroy->entityId, entityDestroy->death);
-            });
+            entity->disableInterpolation();
+            removeEntity(entityDestroy->entityId, entityDestroy->death);
+          });
         } else {
           entity->disableInterpolation();
           removeEntity(entityDestroy->entityId, entityDestroy->death);
@@ -922,10 +942,9 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
               p.foregroundHueShift.reset();
               if (p.collision) {
                 p.collision.reset();
-                dirtyCollision(RectI::withSize(modification.first, { 1, 1 }));
+                dirtyCollision(RectI::withSize(modification.first, {1, 1}));
               }
-            }
-            else {
+            } else {
               p.background.reset();
               p.backgroundHueShift.reset();
             }
@@ -933,8 +952,7 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
             if (placeMod->layer == TileLayer::Foreground) {
               p.foregroundMod.reset();
               p.foregroundModHueShift.reset();
-            }
-            else {
+            } else {
               p.backgroundMod.reset();
               p.backgroundModHueShift.reset();
             }
@@ -949,6 +967,7 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
 
           if (!p)
             m_predictedTiles.erase(findPrediction);
+          m_tileVersion.fetch_add(1);
         }
 
         if (auto placeMaterial = modification.second.ptr<PlaceMaterial>()) {
@@ -962,8 +981,11 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
 
     } else if (auto liquidUpdate = as<TileLiquidUpdatePacket>(packet)) {
       m_predictedTiles.remove(liquidUpdate->position);
-      if (ClientTile* tile = m_tileArray->modifyTile(liquidUpdate->position))
+      m_tileVersion.fetch_add(1);
+      if (ClientTile* tile = m_tileArray->modifyTile(liquidUpdate->position)) {
         tile->liquid = liquidUpdate->liquidUpdate.liquidLevel();
+        m_tileVersion.fetch_add(1);
+      }
 
     } else if (auto giveItem = as<GiveItemPacket>(packet)) {
       tryGiveMainPlayerItem(itemDatabase->item(giveItem->item));
@@ -995,37 +1017,29 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
 
               auto rawBroadcast = view.substr(FULL_SIZE);
               if (Curve25519::verify(
-                (uint8_t const*)signature.data(),
-                (uint8_t const*)publicKey->utf8Ptr(),
-                (void*)rawBroadcast.data(),
-                       rawBroadcast.size()
-              )) {
+                    (uint8_t const*)signature.data(),
+                    (uint8_t const*)publicKey->utf8Ptr(),
+                    (void*)rawBroadcast.data(),
+                    rawBroadcast.size())) {
                 handleSecretBroadcast(player, rawBroadcast);
               }
             }
           }
         }
-      }
-      else if (view.size() > 75 && view.rfind(LEGACY_VOICE_PREFIX, 0) != NPos) {
+      } else if (view.size() > 75 && view.rfind(LEGACY_VOICE_PREFIX, 0) != NPos) {
         // this is a StarExtensions voice packet
         // (remove this and stop transmitting like this once most SE features are ported over)
         if (auto player = m_entityMap->get<Player>(damage->remoteDamageNotification.sourceEntityId)) {
           if (auto publicKey = player->effectsAnimator()->globalTagPtr("\0SE_VOICE_SIGNING_KEY"s)) {
             auto raw = view.substr(75);
-            if (m_broadcastCallback && Curve25519::verify(
-              (uint8_t const*)view.data() + LEGACY_VOICE_PREFIX.size(),
-              (uint8_t const*)publicKey->utf8Ptr(),
-              (void*)raw.data(),
-                     raw.size()
-            )) {
+            if (m_broadcastCallback && Curve25519::verify((uint8_t const*)view.data() + LEGACY_VOICE_PREFIX.size(), (uint8_t const*)publicKey->utf8Ptr(), (void*)raw.data(), raw.size())) {
               auto broadcastData = "Voice\0"s;
               broadcastData.append(raw.data(), raw.size());
               m_broadcastCallback(player, broadcastData);
             }
           }
         }
-      }
-      else {
+      } else {
         m_damageManager->pushRemoteDamageNotification(damage->remoteDamageNotification);
       }
 
@@ -1045,7 +1059,7 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
 
       } else {
         ConnectionId fromConnection = entityMessagePacket->fromConnection;
-        if (fromConnection == *m_clientId) // Kae: The server should not be able to forge entity messages that appear as if they're from us
+        if (fromConnection == *m_clientId)// Kae: The server should not be able to forge entity messages that appear as if they're from us
           fromConnection = ServerConnectionId;
 
         auto response = entity->receiveMessage(entityMessagePacket->fromConnection, entityMessagePacket->message, entityMessagePacket->args);
@@ -1121,7 +1135,7 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
     } else if (auto pongPacket = as<PongPacket>(packet)) {
       if (pongPacket->time)
         m_latency = Time::monotonicMilliseconds() - pongPacket->time;
-      else if (m_pingTime) 
+      else if (m_pingTime)
         m_latency = Time::monotonicMilliseconds() - m_pingTime.take();
 
     } else {
@@ -1142,6 +1156,7 @@ void WorldClient::update(float dt) {
 
   float expireTime = min(float(m_latency + 800), 2000.f);
   auto now = Time::monotonicMilliseconds();
+  size_t predictedTilesBefore = m_predictedTiles.size();
   eraseWhere(m_predictedTiles, [&](auto& pair) {
     float expiry = (float)(now - pair.second.time) / expireTime;
     auto center = Vec2F(pair.first) + Vec2F::filled(0.5f);
@@ -1149,12 +1164,14 @@ void WorldClient::update(float dt) {
     auto poly = PolyF(RectF::withCenter(center, size));
     SpatialLogger::logPoly("world", poly, Color::Cyan.mix(Color::Red, expiry).toRgba());
     if (expiry >= 1.0f) {
-      dirtyCollision(RectI::withSize(pair.first, { 1, 1 }));
+      dirtyCollision(RectI::withSize(pair.first, {1, 1}));
       return true;
     } else {
       return false;
     }
   });
+  if (m_predictedTiles.size() != predictedTilesBefore)
+    m_tileVersion.fetch_add(1);
 
   // Secret broadcasts are transmitted through DamageNotifications for vanilla server compatibility.
   // Because DamageNotification packets are spoofable, we have to sign the data so other clients can validate that it is legitimate.
@@ -1170,12 +1187,12 @@ void WorldClient::update(float dt) {
 
   List<WorldAction> triggeredActions;
   eraseWhere(m_timers, [&triggeredActions, dt](pair<float, WorldAction>& timer) {
-      if ((timer.first -= dt) <= 0) {
-        triggeredActions.append(timer.second);
-        return true;
-      }
-      return false;
-    });
+    if ((timer.first -= dt) <= 0) {
+      triggeredActions.append(timer.second);
+      return true;
+    }
+    return false;
+  });
 
   for (auto const& action : triggeredActions)
     action(this);
@@ -1202,10 +1219,7 @@ void WorldClient::update(float dt) {
       if (entity->shouldDestroy() && entity->entityMode() == EntityMode::Master)
         toRemove.append(entity->entityId());
       if (entity->isMaster() && entity->clientEntityMode() == ClientEntityMode::ClientPresenceMaster)
-        clientPresenceEntities.append(entity->entityId());
-    }, [](EntityPtr const& a, EntityPtr const& b) {
-      return a->entityType() < b->entityType();
-    });
+        clientPresenceEntities.append(entity->entityId()); }, [](EntityPtr const& a, EntityPtr const& b) { return a->entityType() < b->entityType(); });
 
   m_clientState.setPlayer(m_mainPlayer->entityId());
   m_clientState.setClientPresenceEntities(std::move(clientPresenceEntities));
@@ -1306,17 +1320,24 @@ void WorldClient::update(float dt) {
   // Remove active sectors that are outside of the current monitoring region
   Set<ClientTileSectorArray::Sector> neededSectors;
   auto monitoredRegions = m_clientState.monitoringRegions([this](EntityId entityId) -> Maybe<RectI> {
-      if (auto entity = this->entity(entityId))
-        return RectI::integral(entity->metaBoundBox().translated(entity->position()));
-      return {};
-    });
+    if (auto entity = this->entity(entityId))
+      return RectI::integral(entity->metaBoundBox().translated(entity->position()));
+    return {};
+  });
   for (auto monitoredRegion : monitoredRegions)
     neededSectors.addAll(m_tileArray->validSectorsFor(monitoredRegion.padded(WorldSectorSize)));
 
   auto loadedSectors = m_tileArray->loadedSectors();
-  for (auto sector : loadedSectors) {
-    if (!neededSectors.contains(sector))
-      m_tileArray->unloadSector(sector);
+  if (loadedSectors.size() > neededSectors.size()) {
+    // The lighting thread reads sector memory without the tile-array lock;
+    // unloading sectors must not race it, or the worker tasks hold freed
+    // Array pointers (use-after-free). Torn reads on tile fields are harmless
+    // (one frame of flicker), freed memory is not.
+    MutexLocker prepLocker(m_lightMapPrepMutex);
+    for (auto sector : loadedSectors) {
+      if (!neededSectors.contains(sector))
+        m_tileArray->unloadSector(sector);
+    }
   }
 
   if (m_collisionDebug)
@@ -1478,12 +1499,13 @@ bool WorldClient::waitForLighting(WorldRenderData* renderData) {
       if (previewTile.updateLight) {
         Vec2I lightArrayPos = m_geometry.diff(previewTile.position, m_lightMinPosition);
         if (lightArrayPos[0] >= 0 && lightArrayPos[0] < (int)m_lightMap.width()
-         && lightArrayPos[1] >= 0 && lightArrayPos[1] < (int)m_lightMap.height())
+            && lightArrayPos[1] >= 0 && lightArrayPos[1] < (int)m_lightMap.height())
           m_lightMap.set(lightArrayPos[0], lightArrayPos[1], Color::v3bToFloat(previewTile.light));
       }
     }
     renderData->lightMap = std::move(m_lightMap);
     renderData->lightMinPosition = m_lightMinPosition;
+    renderData->lightMapVersion = m_lightMapVersion;
     return true;
   }
   return false;
@@ -1526,13 +1548,13 @@ void WorldClient::queueUpdatePackets(bool sendEntityUpdates) {
     entityUpdateSet->forConnection = *m_clientId;
     auto netRules = m_clientState.netCompatibilityRules();
     m_entityMap->forAllEntities([&](EntityPtr const& entity) {
-        if (auto version = m_masterEntitiesNetVersion.ptr(entity->entityId())) {
-          auto updateAndVersion = entity->writeNetState(*version, netRules);
-          if (!updateAndVersion.first.empty())
-            entityUpdateSet->deltas[entity->entityId()] = std::move(updateAndVersion.first);
-          *version = updateAndVersion.second;
-        }
-      });
+      if (auto version = m_masterEntitiesNetVersion.ptr(entity->entityId())) {
+        auto updateAndVersion = entity->writeNetState(*version, netRules);
+        if (!updateAndVersion.first.empty())
+          entityUpdateSet->deltas[entity->entityId()] = std::move(updateAndVersion.first);
+        *version = updateAndVersion.second;
+      }
+    });
     m_outgoingPackets.append(std::move(entityUpdateSet));
   }
 
@@ -1559,12 +1581,12 @@ void WorldClient::handleDamageNotifications() {
   };
 
   eraseWhere(m_damageNumbers, [&](std::pair<DamageNumberKey, DamageNumber> const& entry) -> bool {
-      if (Time::monotonicTime() - entry.second.timestamp > m_damageNotificationBatchDuration) {
-        renderParticle(entry.second.position, entry.second.amount, entry.first.damageNumberParticleKind);
-        return true;
-      }
-      return false;
-    });
+    if (Time::monotonicTime() - entry.second.timestamp > m_damageNotificationBatchDuration) {
+      renderParticle(entry.second.position, entry.second.amount, entry.first.damageNumberParticleKind);
+      return true;
+    }
+    return false;
+  });
 
   for (auto const& damageNotification : m_damageManager->pullPendingNotifications()) {
     auto damageDatabase = Root::singleton().damageDatabase();
@@ -1572,8 +1594,7 @@ void WorldClient::handleDamageNotifications() {
     ElementalType const& elementalType = damageDatabase->elementalType(damageKind.elementalType);
 
     auto damageNumberParticleKind = elementalType.damageNumberParticles.get(damageNotification.hitType);
-    auto damageNumberKey = DamageNumberKey{ damageNumberParticleKind, damageNotification.sourceEntityId, damageNotification.targetEntityId};
-
+    auto damageNumberKey = DamageNumberKey{damageNumberParticleKind, damageNotification.sourceEntityId, damageNotification.targetEntityId};
 
     DamageNumber number;
     if (m_damageNumbers.contains(damageNumberKey)) {
@@ -1581,8 +1602,8 @@ void WorldClient::handleDamageNotifications() {
 
       if (damageNotification.hitType == HitType::Kill)
         renderParticle(damageNotification.position,
-            damageNotification.damageDealt + number.amount,
-            damageNumberKey.damageNumberParticleKind);
+                       damageNotification.damageDealt + number.amount,
+                       damageNumberKey.damageNumberParticleKind);
     } else {
       if (damageNotification.hitType == HitType::Kill)
         renderParticle(damageNotification.position, damageNotification.damageDealt, damageNumberParticleKind);
@@ -1601,9 +1622,9 @@ void WorldClient::handleDamageNotifications() {
       // default to normal hit
       HitType effectHitType = damageKind.effects.get(material).contains(damageNotification.hitType) ? damageNotification.hitType : HitType::Hit;
       m_samples.appendAll(soundsFromDefinition(damageKind.effects.get(material).get(effectHitType).sounds, damageNotification.position));
-      
+
       auto hitParticles = particlesFromDefinition(damageKind.effects.get(material).get(effectHitType).particles, damageNotification.position);
-      
+
       const List<Directives>* directives = nullptr;
       if (auto& worldTemplate = m_worldTemplate) {
         if (const auto& parameters = worldTemplate->worldParameters())
@@ -1615,7 +1636,7 @@ void WorldClient::handleDamageNotifications() {
         for (auto& p : hitParticles)
           p.directives.append(directives->get(directiveIndex));
       }
-      
+
       m_particles->addParticles(hitParticles);
     }
   }
@@ -1642,7 +1663,7 @@ void WorldClient::sparkDamagedBlocks() {
 
         particle.position += centerOfTile(pos);
         particle.velocity = particle.velocity.magnitude()
-            * vnorm(m_geometry.diff(tile->foregroundDamage.sourcePosition(), particle.position));
+          * vnorm(m_geometry.diff(tile->foregroundDamage.sourcePosition(), particle.position));
         particle.applyVariance(m_blockDamageParticleVariance);
         m_particles->add(particle);
       }
@@ -1657,7 +1678,7 @@ void WorldClient::sparkDamagedBlocks() {
 
         particle.position += centerOfTile(pos);
         particle.velocity = particle.velocity.magnitude()
-            * vnorm(m_geometry.diff(tile->backgroundDamage.sourcePosition(), particle.position));
+          * vnorm(m_geometry.diff(tile->backgroundDamage.sourcePosition(), particle.position));
         particle.applyVariance(m_blockDamageParticleVariance);
         m_particles->add(particle);
       }
@@ -1699,7 +1720,50 @@ RpcPromise<InteractAction> WorldClient::interact(InteractRequest const& request)
   return pair.first;
 }
 
-void WorldClient::lightingTileGather() {
+namespace {
+bool lightSourceEqual(LightSource const& a, LightSource const& b) {
+  return a.type == b.type && a.position == b.position && a.color == b.color
+    && a.pointBeam == b.pointBeam && a.beamAngle == b.beamAngle && a.beamAmbience == b.beamAmbience;
+}
+
+bool lightSourcesEqual(List<LightSource> const& a, List<LightSource> const& b) {
+  if (a.size() != b.size())
+    return false;
+  for (size_t i = 0; i < a.size(); ++i)
+    if (!lightSourceEqual(a[i], b[i]))
+      return false;
+  return true;
+}
+
+bool particleLightsEqual(List<std::pair<Vec2F, Vec3F>> const& a, List<std::pair<Vec2F, Vec3F>> const& b) {
+  if (a.size() != b.size())
+    return false;
+  for (size_t i = 0; i < a.size(); ++i)
+    if (a[i].first != b[i].first || a[i].second != b[i].second)
+      return false;
+  return true;
+}
+
+// True when any spread-affecting light source (spread / hybrid / particle
+// lights) differs; point lights do not affect the spread layer.
+bool spreadSourcesChanged(List<LightSource> const& oldLights, List<LightSource> const& newLights) {
+  auto const contains = [](List<LightSource> const& list, LightSource const& light) {
+    for (auto const& other : list)
+      if (lightSourceEqual(light, other))
+        return true;
+    return false;
+  };
+  for (auto const& light : newLights)
+    if (light.type != LightType::Point && !contains(oldLights, light))
+      return true;
+  for (auto const& light : oldLights)
+    if (light.type != LightType::Point && !contains(newLights, light))
+      return true;
+  return false;
+}
+}// namespace
+
+void WorldClient::lightingTileGather(RectI const& region) {
   int64_t start = Time::monotonicMicroseconds();
   Vec3F environmentLight = m_sky->environmentLight().toRgbF();
   float undergroundLevel = m_worldTemplate->undergroundLevel();
@@ -1708,7 +1772,7 @@ void WorldClient::lightingTileGather() {
 
   // Each column in tileEvalColumns is guaranteed to be no larger than the sector size.
 
-  m_tileArray->tileEvalColumnsParallel(m_lightingCalculator.calculationRegion(), [&](Vec2I const& pos, ClientTile const* column, size_t ySize) {
+  m_tileArray->tileEvalColumnsParallel(region, [&](Vec2I const& pos, ClientTile const* column, size_t ySize) {
     size_t baseIndex = m_lightingCalculator.baseIndexFor(pos);
     for (size_t y = 0; y < ySize; ++y) {
       auto& tile = column[y];
@@ -1744,40 +1808,156 @@ void WorldClient::lightingCalc() {
   bool monochrome = configuration->get("monochromeLighting").toBool();
   m_lightingCalculator.setParameters(root.assets()->json("/lighting.config:lighting").set("pointAdditive", newLighting));
   m_lightingCalculator.setMonochrome(monochrome);
-  m_lightingCalculator.begin(lightRange);
-  lightingTileGather();
 
-  prepLocker.unlock();
+  Vec3F environmentLight = m_sky->environmentLight().toRgbF();
 
-  for (auto const& light : lights) {
-    Vec2F position = m_geometry.nearestTo(Vec2F(m_lightingCalculator.calculationRegion().min()), light.position);
-    if (light.type == LightType::Spread)
-      m_lightingCalculator.addSpreadLight(position, light.color);
-    else {
-      if (light.type == LightType::PointAsSpread) {
-        if (!newLighting)
-          m_lightingCalculator.addSpreadLight(position, light.color);
-        else { // hybrid (used for auto-converted object lights) - 85% spread, 15% point (* .15 is applied in the calculation code)
-          m_lightingCalculator.addSpreadLight(position, light.color * 0.85f);
-          m_lightingCalculator.addPointLight(position, light.color, light.pointBeam, light.beamAngle, light.beamAmbience, true);
+  // Point lights are the expensive part of the calc (O(radius^2) per light
+  // with a ray walk per cell). Cap their count, keeping the brightest ones;
+  // spread and hybrid lights are far cheaper and are never dropped. The cap
+  // is configurable via "maxPointLights" in configuration.json.
+  unsigned maxPointLights = configuration->get("maxPointLights").optUInt().value(128);
+  {
+    List<LightSource> pointLights;
+    List<LightSource> cheapLights;
+    for (auto const& light : lights) {
+      if (light.type == LightType::Point)
+        pointLights.append(light);
+      else
+        cheapLights.append(light);
+    }
+    if (pointLights.size() > maxPointLights) {
+      pointLights.sort([](LightSource const& a, LightSource const& b) {
+        return a.color.max() > b.color.max();
+      });
+      pointLights.resize(maxPointLights);
+    }
+    lights = std::move(cheapLights);
+    lights.appendAll(std::move(pointLights));
+  }
+
+  // Phase 2: skip the whole calculation when nothing that affects the lightmap
+  // changed since last frame (window, sky light, tiles, light sources or
+  // particle lights), and only do the incremental point-light diff when just
+  // the point lights changed. A periodic full recalculation flushes the
+  // accumulated float error of the incremental add/subtracts.
+  bool windowChanged = !m_hasLightState || lightRange != m_lastLightRange;
+  bool tilesOrEnvChanged = !m_hasLightState || environmentLight != m_lastEnvLight || m_tileVersion.load() != m_lastTileVersion;
+  bool lightsChanged = !m_hasLightState || !lightSourcesEqual(m_lastLights, lights);
+  bool particlesChanged = !m_hasLightState || !particleLightsEqual(m_lastParticleLights, particleLights);
+  bool spreadChanged = tilesOrEnvChanged || particlesChanged || spreadSourcesChanged(m_lastLights, lights);
+  bool forceFullRecalc = m_lightIncrementalCount >= 240;
+
+  if (!windowChanged && !lightsChanged && !particlesChanged && !forceFullRecalc) {
+    // Nothing changed: the lightmap from the previous frame is still valid.
+    ++m_lightIncrementalCount;
+    LogMap::set("client_render_world_async_light_calc", u8"skip");
+    return;
+  }
+
+  auto addLights = [&]() {
+    for (auto const& light : lights) {
+      Vec2F position = m_geometry.nearestTo(Vec2F(m_lightingCalculator.calculationRegion().min()), light.position);
+      if (light.type == LightType::Spread)
+        m_lightingCalculator.addSpreadLight(position, light.color);
+      else {
+        if (light.type == LightType::PointAsSpread) {
+          if (!newLighting)
+            m_lightingCalculator.addSpreadLight(position, light.color);
+          else {// hybrid (used for auto-converted object lights) - 85% spread, 15% point (* .15 is applied in the calculation code)
+            m_lightingCalculator.addSpreadLight(position, light.color * 0.85f);
+            m_lightingCalculator.addPointLight(position, light.color, light.pointBeam, light.beamAngle, light.beamAmbience, true);
+          }
+        } else {
+          m_lightingCalculator.addPointLight(position, light.color, light.pointBeam, light.beamAngle, light.beamAmbience);
         }
-      } else {
-        m_lightingCalculator.addPointLight(position, light.color, light.pointBeam, light.beamAngle, light.beamAmbience);
       }
     }
+
+    for (auto const& lightPair : particleLights) {
+      Vec2F position = m_geometry.nearestTo(Vec2F(m_lightingCalculator.calculationRegion().min()), lightPair.first);
+      m_lightingCalculator.addSpreadLight(position, lightPair.second);
+    }
+  };
+
+  // Phase 2.3: when only the window moved (camera scroll) and the world data
+  // (tiles, sky light, spread sources) is unchanged, keep the light array as
+  // an atlas that scrolls with the camera: shift the existing data, gather
+  // and recalculate only the newly exposed strips, and diff moved point
+  // lights over the overlapping region.  A full recalculation is only needed
+  // when the spread layer itself changed, the window was resized, or the
+  // camera teleported.
+  bool fullRecalc = !m_hasLightState || spreadChanged || forceFullRecalc || (!newLighting && lightsChanged)
+    || (windowChanged && lightRange.size() != m_lastLightRange.size());
+  bool windowMoved = windowChanged && !fullRecalc;
+  if (fullRecalc) {
+    m_lightingCalculator.begin(lightRange);
+    lightingTileGather(m_lightingCalculator.calculationRegion());
+
+    prepLocker.unlock();
+
+    addLights();
+    m_lightingCalculator.calculate(m_pendingLightMap);
+    m_lightIncrementalCount = 0;
+  } else if (windowMoved) {
+    RectI calcRegion = m_lightingCalculator.calculationRegion();
+    Vec2I scrollDelta = lightRange.min() - m_lastLightRange.min();
+    if (abs(scrollDelta[0]) >= calcRegion.width() || abs(scrollDelta[1]) >= calcRegion.height()) {
+      // Teleport: the atlas would need to be fully re-gathered anyway.
+      m_lightingCalculator.begin(lightRange);
+      lightingTileGather(m_lightingCalculator.calculationRegion());
+
+      prepLocker.unlock();
+
+      addLights();
+      m_lightingCalculator.calculate(m_pendingLightMap);
+      m_lightIncrementalCount = 0;
+    } else {
+      List<RectI> exposed = m_lightingCalculator.scroll(lightRange);
+      for (RectI const& region : exposed)
+        lightingTileGather(region);
+
+      prepLocker.unlock();
+
+      addLights();
+      if (lightsChanged) {
+        // Diff the moved point lights over the window overlap.  Border cells
+        // are not maintained by the diff: when they enter the window, the
+        // re-gathered strips (scroll() includes the window cells that came
+        // from the border) zero and re-flood them with the current lights.
+        RectI diffRegion(
+          std::max(m_lastLightRange.xMin(), lightRange.xMin()),
+          std::max(m_lastLightRange.yMin(), lightRange.yMin()),
+          std::min(m_lastLightRange.xMax(), lightRange.xMax()),
+          std::min(m_lastLightRange.yMax(), lightRange.yMax()));
+        m_lightingCalculator.applyPointLightDiff(diffRegion);
+        ++m_lightIncrementalCount;
+      } else {
+        m_lightIncrementalCount = 0;
+      }
+      m_lightingCalculator.calculateScrolled(m_pendingLightMap, exposed);
+    }
+  } else {
+    // Only point lights changed: incremental diff over their contributions.
+    // The cell array (base light + spread layer + point layer) is kept as-is
+    // and the query region is known unchanged, so no begin()/gather is needed.
+    addLights();
+    m_lightingCalculator.calculateIncremental(m_pendingLightMap, lightRange);
+    ++m_lightIncrementalCount;
   }
 
-  for (auto const& lightPair : particleLights) {
-    Vec2F position = m_geometry.nearestTo(Vec2F(m_lightingCalculator.calculationRegion().min()), lightPair.first);
-    m_lightingCalculator.addSpreadLight(position, lightPair.second);
-  }
-
-  m_lightingCalculator.calculate(m_pendingLightMap);
   {
     MutexLocker mapLocker(m_lightMapMutex);
     m_lightMinPosition = lightRange.min();
     m_lightMap = std::move(m_pendingLightMap);
+    ++m_lightMapVersion;
   }
+
+  m_lastLightRange = lightRange;
+  m_lastEnvLight = environmentLight;
+  m_lastTileVersion = m_tileVersion.load();
+  m_lastLights = std::move(lights);
+  m_lastParticleLights = std::move(particleLights);
+  m_hasLightState = true;
 }
 
 void WorldClient::lightingMain() {
@@ -1847,9 +2027,9 @@ void WorldClient::initWorld(WorldStartPacket const& startPacket) {
   m_sky->readUpdate(startPacket.skyData, m_clientState.netCompatibilityRules());
 
   m_weather.setup(m_geometry, [this](Vec2I const& pos) {
-      auto const& tile = m_tileArray->tile(pos);
-      return !isRealMaterial(tile.background) && !isSolidColliding(tile.getCollision());
-    });
+    auto const& tile = m_tileArray->tile(pos);
+    return !isRealMaterial(tile.background) && !isSolidColliding(tile.getCollision());
+  });
   m_weather.readUpdate(startPacket.weatherData, m_clientState.netCompatibilityRules());
 
   m_lightingCalculator.setMonochrome(Root::singleton().configuration()->get("monochromeLighting").toBool());
@@ -1857,7 +2037,7 @@ void WorldClient::initWorld(WorldStartPacket const& startPacket) {
   m_lightIntensityCalculator.setParameters(assets->json("/lighting.config:intensity"));
 
   m_inWorld = true;
-  
+
   if (!m_mainPlayer->isDead()) {
     m_mainPlayer->init(this, m_entityMap->reserveEntityId(), EntityMode::Master);
     m_entityMap->addEntity(m_mainPlayer);
@@ -1942,7 +2122,7 @@ void WorldClient::notifyEntityCreate(EntityPtr const& entity) {
     auto firstNetState = entity->writeNetState(0, netRules);
     m_masterEntitiesNetVersion[entity->entityId()] = firstNetState.second;
     m_outgoingPackets.append(make_shared<EntityCreatePacket>(entity->entityType(),
-      Root::singleton().entityFactory()->netStoreEntity(entity, netRules), std::move(firstNetState.first), entity->entityId()));
+                                                             Root::singleton().entityFactory()->netStoreEntity(entity, netRules), std::move(firstNetState.first), entity->entityId()));
   }
 }
 
@@ -2068,10 +2248,12 @@ bool WorldClient::readNetTile(Vec2I const& pos, NetTile const& netTile, bool upd
   auto materialDatabase = Root::singleton().materialDatabase();
   tile->backgroundLightTransparent = materialDatabase->backgroundLightTransparent(tile->background);
   tile->foregroundLightTransparent =
-      materialDatabase->foregroundLightTransparent(tile->foreground) && tile->collision != CollisionKind::Dynamic;
+    materialDatabase->foregroundLightTransparent(tile->foreground) && tile->collision != CollisionKind::Dynamic;
 
   if (updateCollision)
     dirtyCollision(RectI::withSize(pos, {1, 1}));
+
+  m_tileVersion.fetch_add(1);
 
   return true;
 }
@@ -2151,7 +2333,7 @@ StringList WorldClient::weatherStatusEffects(Vec2F const& pos) const {
     return {};
 
   if (!m_weather.statusEffects().empty()) {
-     if (exposedToWeather(pos))
+    if (exposedToWeather(pos))
       return m_weather.statusEffects();
   }
 
@@ -2257,7 +2439,6 @@ bool WorldClient::handleSecretBroadcast(PlayerPtr player, StringView broadcast) 
   else
     return false;
 }
-
 
 void WorldClient::ClientRenderCallback::addDrawable(Drawable drawable, EntityRenderLayer renderLayer) {
   drawables[renderLayer].append(std::move(drawable));
@@ -2370,7 +2551,7 @@ WorldStructure const& WorldClient::centralStructure() const {
 
 bool WorldClient::DamageNumberKey::operator<(DamageNumberKey const& other) const {
   return tie(sourceEntityId, targetEntityId, damageNumberParticleKind)
-      < tie(other.sourceEntityId, other.targetEntityId, other.damageNumberParticleKind);
+    < tie(other.sourceEntityId, other.targetEntityId, other.damageNumberParticleKind);
 }
 
 void WorldClient::renderCollisionDebug() {
@@ -2384,8 +2565,8 @@ void WorldClient::renderCollisionDebug() {
   };
 
   forEachCollisionBlock(clientWindow, [&](auto const& block) {
-      logPoly(block.poly, Vec2F{}, 1.0f, 0.0f, 0.0f);
-    });
+    logPoly(block.poly, Vec2F{}, 1.0f, 0.0f, 0.0f);
+  });
 
   for (auto const& object : query<TileEntity>(RectF(clientWindow))) {
     for (auto const& space : object->spaces())
@@ -2416,40 +2597,38 @@ void WorldClient::informTilePrediction(Vec2I const& pos, TileModification const&
     if (placeMaterial->layer == TileLayer::Foreground) {
       auto materialDatabase = Root::singleton().materialDatabase();
       if (!materialDatabase->isCascadingFallingMaterial(placeMaterial->material)
-       && !materialDatabase->         isFallingMaterial(placeMaterial->material)) {
+          && !materialDatabase->isFallingMaterial(placeMaterial->material)) {
         p.foreground = placeMaterial->material;
         p.foregroundHueShift = placeMaterial->materialHueShift;
-      }
-      else
+      } else
         p.foreground = StructureMaterialId;
       if (placeMaterial->collisionOverride != TileCollisionOverride::None)
         p.collision = collisionKindFromOverride(placeMaterial->collisionOverride);
       else
         p.collision = materialDatabase->materialCollisionKind(placeMaterial->material);
-      dirtyCollision(RectI::withSize(pos, { 1, 1 }));
+      dirtyCollision(RectI::withSize(pos, {1, 1}));
     } else {
       p.background = placeMaterial->material;
       p.backgroundHueShift = placeMaterial->materialHueShift;
     }
-  }
-  else if (auto placeMod = modification.ptr<PlaceMod>()) {
+  } else if (auto placeMod = modification.ptr<PlaceMod>()) {
     if (placeMod->layer == TileLayer::Foreground)
       p.foregroundMod = placeMod->mod;
     else
       p.backgroundMod = placeMod->mod;
-  }
-  else if (auto placeColor = modification.ptr<PlaceMaterialColor>()) {
+  } else if (auto placeColor = modification.ptr<PlaceMaterialColor>()) {
     if (placeColor->layer == TileLayer::Foreground)
       p.foregroundColorVariant = placeColor->color;
     else
       p.backgroundColorVariant = placeColor->color;
-  }
-  else if (auto placeLiquid = modification.ptr<PlaceLiquid>()) {
+  } else if (auto placeLiquid = modification.ptr<PlaceLiquid>()) {
     if (!p.liquid || p.liquid->liquid != placeLiquid->liquid)
       p.liquid = LiquidLevel(placeLiquid->liquid, placeLiquid->liquidLevel);
     else
       p.liquid->level += placeLiquid->liquidLevel;
   }
+
+  m_tileVersion.fetch_add(1);
 }
 
 void WorldClient::setupForceRegions() {
@@ -2476,11 +2655,10 @@ void WorldClient::setupForceRegions() {
 
   if (addTopRegion) {
     auto topForceRegion = GradientForceRegion();
-    topForceRegion.region = PolyF({
-        {0, worldSize[1] - regionHeight},
-        {worldSize[0], worldSize[1] - regionHeight},
-        (worldSize),
-        {0, worldSize[1]}});
+    topForceRegion.region = PolyF({{0, worldSize[1] - regionHeight},
+                                   {worldSize[0], worldSize[1] - regionHeight},
+                                   (worldSize),
+                                   {0, worldSize[1]}});
     topForceRegion.gradient = Line2F({0, worldSize[1]}, {0, worldSize[1] - regionHeight});
     topForceRegion.baseTargetVelocity = regionVelocity;
     topForceRegion.baseControlForce = regionForce;
@@ -2490,11 +2668,10 @@ void WorldClient::setupForceRegions() {
 
   if (addBottomRegion) {
     auto bottomForceRegion = GradientForceRegion();
-    bottomForceRegion.region = PolyF({
-        {0, 0},
-        {worldSize[0], 0},
-        {worldSize[0], regionHeight},
-        {0, regionHeight}});
+    bottomForceRegion.region = PolyF({{0, 0},
+                                      {worldSize[0], 0},
+                                      {worldSize[0], regionHeight},
+                                      {0, regionHeight}});
     bottomForceRegion.gradient = Line2F({0, 0}, {0, regionHeight});
     bottomForceRegion.baseTargetVelocity = regionVelocity;
     bottomForceRegion.baseControlForce = regionForce;
@@ -2503,4 +2680,4 @@ void WorldClient::setupForceRegions() {
   }
 }
 
-}
+}// namespace Star

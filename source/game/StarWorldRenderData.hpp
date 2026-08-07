@@ -1,15 +1,15 @@
 #pragma once
 
-#include "StarImage.hpp"
-#include "StarWorldTiles.hpp"
+#include "StarCellularLighting.hpp"
+#include "StarEntity.hpp"
 #include "StarEntityRenderingTypes.hpp"
-#include "StarSkyRenderData.hpp"
+#include "StarImage.hpp"
 #include "StarParallax.hpp"
 #include "StarParticle.hpp"
-#include "StarWeatherTypes.hpp"
-#include "StarEntity.hpp"
+#include "StarSkyRenderData.hpp"
 #include "StarThread.hpp"
-#include "StarCellularLighting.hpp"
+#include "StarWeatherTypes.hpp"
+#include "StarWorldTiles.hpp"
 
 namespace Star {
 
@@ -17,7 +17,6 @@ struct EntityDrawables {
   EntityHighlightEffect highlightEffect;
   Map<EntityRenderLayer, List<Drawable>> layers;
 };
-
 
 struct WorldRenderData {
   void clear();
@@ -28,6 +27,9 @@ struct WorldRenderData {
   RenderTileArray tiles;
   Vec2I lightMinPosition;
   Lightmap lightMap;
+  // Bumped by the world client whenever a freshly computed lightmap is
+  // published; lets the painter skip redundant texture uploads.
+  uint64_t lightMapVersion = 0;
 
   List<EntityDrawables> entityDrawables;
   List<Particle> const* particles;
@@ -48,7 +50,7 @@ struct WorldRenderData {
 };
 
 inline void WorldRenderData::clear() {
-  tiles.resize({0, 0}); // keep reserved
+  tiles.resize({0, 0});// keep reserved
 
   entityDrawables.clear();
   particles = nullptr;
@@ -59,4 +61,4 @@ inline void WorldRenderData::clear() {
   parallaxLayers.clear();
 }
 
-}
+}// namespace Star

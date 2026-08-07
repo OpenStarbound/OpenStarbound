@@ -79,19 +79,17 @@ jobs:
           vcpkgJsonGlob: '**/source/vcpkg.json'
           vcpkgConfigurationJsonGlob: '**/source/vcpkg-configuration.json'
 
-      #- name: Restore vcpkg cache
-      #  id: vcpkg-cache
-      #  uses: TAServers/vcpkg-cache@v3
-      #  with:
-      #    token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Cache vcpkg binaries
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.LOCALAPPDATA }}\vcpkg\archives
+          key: vcpkg-${{ runner.os }}-${{ hashFiles('source/vcpkg.json', 'source/vcpkg-configuration.json') }}
 
       - name: Run CMake
         uses: lukka/run-cmake@v10
         env:
           LLVMInstallDir: ${{ env.LLVM_PATH }}
           llvmX64: ${{ env.LLVM_PATH }}
-        #  VCPKG_FEATURE_FLAGS: "binarycaching"
-        #  VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
         with:
           cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
           configurePreset: 'windows-release-ci'

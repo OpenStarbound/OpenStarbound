@@ -1,9 +1,9 @@
 #include "StarWorldPainter.hpp"
 #include "StarAnimation.hpp"
-#include "StarRoot.hpp"
-#include "StarConfiguration.hpp"
 #include "StarAssets.hpp"
+#include "StarConfiguration.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarRoot.hpp"
 
 namespace Star {
 
@@ -80,12 +80,13 @@ void WorldPainter::render(WorldRenderData& renderData, function<bool()> lightWai
 
   m_renderer->setEffectParameter("lightMapEnabled", !renderData.isFullbright);
   if (renderData.isFullbright) {
-    m_renderer->setEffectTexture("lightMap", Image::filled(Vec2U(1, 1), { 255, 255, 255, 255 }, PixelFormat::RGB24));
+    m_renderer->setEffectTexture("lightMap", Image::filled(Vec2U(1, 1), {255, 255, 255, 255}, PixelFormat::RGB24));
     m_renderer->setEffectParameter("lightMapMultiplier", 1.0f);
   } else {
-    if (lightMapUpdated) {
+    if (lightMapUpdated && renderData.lightMapVersion != m_lightMapVersionLast) {
       adjustLighting(renderData);
       m_renderer->setEffectTexture("lightMap", renderData.lightMap);
+      m_lightMapVersionLast = renderData.lightMapVersion;
     }
     m_renderer->setEffectParameter("lightMapMultiplier", m_assets->json("/rendering.config:lightMapMultiplier").toFloat());
     m_renderer->setEffectParameter("lightMapScale", Vec2F::filled(TilePixels * m_camera.pixelRatio()));
@@ -186,9 +187,9 @@ void WorldPainter::renderParticles(WorldRenderData& renderData, Particle::Layer 
 
     if (particle.type == Particle::Type::Ember) {
       m_renderer->immediatePrimitives().emplace_back(std::in_place_type_t<RenderQuad>(),
-        RectF(position - size / 2, position + size / 2),
-        particle.color.toRgba(),
-        particle.fullbright ? 0.0f : 1.0f);
+                                                     RectF(position - size / 2, position + size / 2),
+                                                     particle.color.toRgba(),
+                                                     particle.fullbright ? 0.0f : 1.0f);
 
     } else if (particle.type == Particle::Type::Streak) {
       // Draw a rotated quad streaking in the direction the particle is coming from.
@@ -199,11 +200,11 @@ void WorldPainter::renderParticles(WorldRenderData& renderData, Particle::Layer 
       Vec4B color = particle.color.toRgba();
       float lightMapMultiplier = particle.fullbright ? 0.0f : 1.0f;
       m_renderer->immediatePrimitives().emplace_back(std::in_place_type_t<RenderQuad>(),
-        position - sideHalf,
-        position + sideHalf,
-        position - dir * length + sideHalf,
-        position - dir * length - sideHalf,
-        color, lightMapMultiplier);
+                                                     position - sideHalf,
+                                                     position + sideHalf,
+                                                     position - dir * length + sideHalf,
+                                                     position - dir * length - sideHalf,
+                                                     color, lightMapMultiplier);
 
     } else if (particle.type == Particle::Type::Textured || particle.type == Particle::Type::Animated) {
       Drawable drawable;
@@ -321,4 +322,4 @@ void WorldPainter::drawDrawableSet(List<Drawable>& drawables) {
   m_renderer->flush();
 }
 
-}
+}// namespace Star

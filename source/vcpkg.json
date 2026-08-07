@@ -1,21 +1,41 @@
 {
-  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
-  "dependencies": [
-    "glew",
-    { "name": "sdl3", "default-features": false, "features": ["wayland", "x11", "alsa", "ibus", "dbus"], "platform": "linux" },
-    { "name": "sdl3", "platform": "!linux" },
-    { "name": "cpptrace", "platform": "!windows" },
-    "libvorbis",
-    "zlib",
-    "freetype",
-    "libpng",
-    "opus",
-    "zstd",
-    "mimalloc",
-    { "name": "jemalloc", "platform": "linux" },
-    "re2",
-    "abseil",
-    { "name": "imgui", "features": ["sdl3-binding", "opengl3-binding", "freetype"] },
-    { "name": "cpr", "version>=": "1.10.5", "features": ["ssl"] }
-  ]
+	"$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+	"dependencies": [
+		"glew",
+		{
+			"name": "sdl3",
+			"default-features": false,
+			"features": ["wayland", "x11", "alsa", "ibus", "dbus"],
+			"platform": "linux"
+		},
+		{
+			"name": "sdl3",
+			"platform": "!linux"
+		},
+		{
+			"name": "cpptrace",
+			"platform": "!windows"
+		},
+		"libvorbis",
+		"zlib",
+		"freetype",
+		"libpng",
+		"opus",
+		"zstd",
+		{
+			"name": "jemalloc",
+			"platform": "linux"
+		},
+		"re2",
+		"abseil",
+		{
+			"name": "imgui",
+			"features": ["sdl3-binding", "opengl3-binding", "freetype"]
+		},
+		{
+			"name": "cpr",
+			"version>=": "1.10.5",
+			"features": ["ssl"]
+		}
+	]
 }
