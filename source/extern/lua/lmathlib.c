@@ -298,6 +298,34 @@ static int math_type (lua_State *L) {
 
 /*
 ** {==================================================================
+** C99 functions
+** ===================================================================
+*/
+#if !defined(LUA_USE_C89)
+
+static int math_round (lua_State *L) {
+  if (lua_isinteger(L, 1))
+    lua_settop(L, 1);  /* integer is already round */
+  else {
+    lua_Number d = l_mathop(round)(luaL_checknumber(L, 1));
+    pushnumint(L, d);
+  }
+  return 1;
+}
+
+static int math_copysign (lua_State *L) {
+  lua_Number mag = luaL_checknumber(L, 1);
+  lua_Number sgn = luaL_optnumber(L, 2, 1);
+  lua_pushnumber(L, l_mathop(copysign)(mag, sgn));
+  return 1;
+}
+
+#endif
+/* }================================================================== */
+
+
+/*
+** {==================================================================
 ** Deprecated functions (for compatibility only)
 ** ===================================================================
 */
@@ -373,6 +401,10 @@ static const luaL_Reg mathlib[] = {
   {"sqrt",  math_sqrt},
   {"tan",   math_tan},
   {"type", math_type},
+#if !defined(LUA_USE_C89)
+  {"round", math_round},
+  {"copysign", math_copysign},
+#endif
 #if defined(LUA_COMPAT_MATHLIB)
   {"atan2", math_atan},
   {"cosh",   math_cosh},
