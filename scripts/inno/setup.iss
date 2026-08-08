@@ -24,6 +24,7 @@ SetupIconFile=scripts\inno\openstarbound.ico
 Compression=lzma2/ultra64
 SolidCompression=yes
 ArchitecturesInstallIn64BitMode=x64
+SetupArchitecture=x64
 WizardStyle=modern
 WizardImageAlphaFormat=premultiplied
 WizardSmallImageFile=scripts\inno\small.bmp
