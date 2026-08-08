@@ -73,6 +73,10 @@ WorldChunks ClientContext::newShipUpdates() {
   return take(m_newShipUpdates);
 }
 
+StringMap<WorldChunks> ClientContext::newCustomWorldUpdates() {
+  return take(m_newCustomWorldUpdates);
+}
+
 ShipUpgrades ClientContext::shipUpgrades() const {
   return m_shipUpgrades.get();
 }
@@ -90,6 +94,13 @@ void ClientContext::readUpdate(ByteArray data, NetCompatibilityRules rules) {
   if (!shipUpdates.empty())
     m_newShipUpdates.merge(DataStreamBuffer::deserialize<WorldChunks>(std::move(shipUpdates)), true);
 
+  if (rules.version() >= 15) {
+    auto customWorldUpdates = ds.read<StringMap<ByteArray>>();
+    for (auto& p : customWorldUpdates) {
+      m_newCustomWorldUpdates[p.first].merge(DataStreamBuffer::deserialize<WorldChunks>(std::move(p.second)), true);
+    }
+  }
+  
   m_netGroup.readNetState(ds.read<ByteArray>(), 0.0f, rules);
 }
 

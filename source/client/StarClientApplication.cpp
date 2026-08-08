@@ -19,6 +19,7 @@
 #include "StarCurve25519.hpp"
 #include "StarInterpolation.hpp"
 
+#include "StarUniverseClientLuaBindings.hpp"
 #include "StarCameraLuaBindings.hpp"
 #include "StarCelestialLuaBindings.hpp"
 #include "StarClipboardLuaBindings.hpp"
@@ -667,8 +668,9 @@ void ClientApplication::changeState(MainAppState newState) {
 
     m_playerStorage = make_shared<PlayerStorage>(m_root->toStoragePath("player"));
     m_statistics = make_shared<Statistics>(m_root->toStoragePath("player"), app->statisticsService());
-    m_universeClient = make_shared<UniverseClient>(m_playerStorage, m_statistics);
+    m_universeClient = make_shared<UniverseClient>(m_playerStorage, m_statistics, m_root->toStoragePath("universeclient"));
 
+    m_universeClient->setLuaCallbacks("universe", LuaBindings::makeUniverseClientCallbacks(m_universeClient));
     m_universeClient->setLuaCallbacks("input", LuaBindings::makeInputCallbacks());
     m_universeClient->setLuaCallbacks("voice", LuaBindings::makeVoiceCallbacks());
     m_universeClient->setLuaCallbacks("camera", LuaBindings::makeCameraCallbacks(&m_worldPainter->camera()));

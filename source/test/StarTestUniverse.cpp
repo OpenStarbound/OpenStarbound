@@ -20,7 +20,7 @@ TestUniverse::TestUniverse(Vec2U clientWindowSize) {
   auto playerStorage = make_shared<PlayerStorage>(File::relativeTo(m_storagePath, "player"));
   auto statistics = make_shared<Statistics>(File::relativeTo(m_storagePath, "statistics"));
   m_server = make_shared<UniverseServer>(File::relativeTo(m_storagePath, "universe"));
-  m_client = make_shared<UniverseClient>(playerStorage, statistics);
+  m_client = make_shared<UniverseClient>(playerStorage, statistics, File::relativeTo(m_storagePath, "universeclient"));
 
   m_server->start();
 

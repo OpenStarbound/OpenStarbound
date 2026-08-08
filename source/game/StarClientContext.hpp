@@ -39,6 +39,8 @@ public:
 
   WorldChunks newShipUpdates();
   ShipUpgrades shipUpgrades() const;
+  
+  StringMap<WorldChunks> newCustomWorldUpdates();
 
   void readUpdate(ByteArray data, NetCompatibilityRules rules);
   ByteArray writeUpdate(NetCompatibilityRules rules);
@@ -65,6 +67,7 @@ private:
   NetElementData<ShipUpgrades> m_shipUpgrades;
   NetElementData<CelestialCoordinate> m_shipCoordinate;
   WorldChunks m_newShipUpdates;
+  StringMap<WorldChunks> m_newCustomWorldUpdates;
 };
 
 }

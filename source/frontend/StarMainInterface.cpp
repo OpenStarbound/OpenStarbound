@@ -486,6 +486,12 @@ void MainInterface::handleInteractAction(InteractAction interactAction) {
           } else if (m_client->playerWorld().is<InstanceWorldId>()) {
             icon = worldTemplate->worldParameters()->typeName;
             planetName = worldTemplate->worldName();
+          } else if (m_client->playerWorld().is<CustomWorldId>()) {
+            icon = worldTemplate->worldParameters()->typeName;
+            planetName = worldTemplate->worldName();
+          } else if (m_client->playerWorld().is<ClientCustomWorldId>()) {
+            icon = worldTemplate->worldParameters()->typeName;
+            planetName = worldTemplate->worldName();
           } else {
             icon = "default";
             planetName = "???";
