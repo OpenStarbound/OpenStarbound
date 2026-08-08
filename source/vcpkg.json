@@ -6,7 +6,7 @@
     { "name": "sdl3", "platform": "!linux" },
     { "name": "cpptrace", "platform": "!windows" },
     "libvorbis",
-    "zlib",
+    "zlib-ng",
     "freetype",
     "libpng",
     "opus",

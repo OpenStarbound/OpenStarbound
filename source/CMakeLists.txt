@@ -488,7 +488,8 @@ if (STAR_USE_MIMALLOC)
   set(STAR_EXT_LIBS ${STAR_EXT_LIBS} $<IF:$<TARGET_EXISTS:mimalloc-static>,mimalloc-static,mimalloc>)
 endif()
 
-find_package(ZLIB REQUIRED)
+find_package(zlib-ng CONFIG REQUIRED)
+add_compile_definitions(WITH_GZFILEOP) # Needed to make zlib-ng have gz
 find_package(PNG REQUIRED)
 find_package(Freetype REQUIRED)
 find_package(cpr CONFIG REQUIRED)
@@ -505,7 +506,7 @@ include_directories(SYSTEM
 )
 
 set(STAR_EXT_LIBS ${STAR_EXT_LIBS}
-    ZLIB::ZLIB
+    zlib-ng::zlib
     PNG::PNG
     cpr::cpr
     $<IF:$<TARGET_EXISTS:Freetype::Freetype>,Freetype::Freetype,freetype>
