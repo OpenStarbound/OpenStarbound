@@ -140,7 +140,7 @@ jobs:
         run: |
           echo "Checking pre-installation..."
           
-          set "ISCC_PATH=%programfiles(x86)%\Inno Setup 6\ISCC.exe"
+          set "ISCC_PATH=%programfiles%\Inno Setup 7\ISCC.exe"
           
           if exist "%ISCC_PATH%" (
             echo ::warning::Inno Setup is already installed
@@ -149,7 +149,7 @@ jobs:
           
           echo "Downloading Inno Setup..."
   
-          set "_url_=https://jrsoftware.org/download.php/is.exe?site=1"
+          set "_url_=https://github.com/jrsoftware/issrc/releases/download/is-7_0_2/innosetup-7.0.2-x64.exe"
           set "_file_=innosetup.exe"
   
           curl -L -o "%tmp%\%_file_%" "%_url_%"
@@ -168,7 +168,7 @@ jobs:
       - name: Create Installer
         working-directory: ${{ github.workspace }}
         run: |
-          & "C:\Program Files (x86)\Inno Setup 6\iscc.exe" /Oinstaller scripts\inno\setup.iss
+          & "C:\Program Files\Inno Setup 7\iscc.exe" /Oinstaller scripts\inno\setup.iss
 
       - name: Upload Installer
         uses: actions/upload-artifact@v7.0.1
