@@ -76,6 +76,53 @@ Note: Mods that use StarExtensions features often work with OpenStarbound, StarE
 * Invalid character inventories are updated when loading in, allowing players to swap inventory mods with pre-existing characters.
 * Fix vanilla world file size bloating issue.
 * Modifying a single status property no longer re-networks every status property on the entity (server and client must be running at least OpenStarbound 0.15)
+
+### Controller Support
+**Full gamepad support with analog input, multiple input modes, and haptic feedback.** [Detailed documentation](https://github.com/OpenStarbound/OpenStarbound/blob/main/doc/CONTROLLER_SUPPORT.md). Unfortunately, the main menu itself does not have focus-based navigation yet so you'll still need to mouse click to load in your character, actual gameplay now works with a controller.
+
+* **Vector-based direct analog input** — No more fiddling around with translating to mouse cursor and keyboard input mappings! Full native support for twin-stick omnidirectional analog input has been added for both movement and aiming.
+* **Four input modes** (configurable in new in-game menu Options → Controller):
+  * **Off** — Controller input completely disabled. Mouse and keyboard only.
+  * **Auto** — Automatically switches between gamepad and mouse/keyboard based on the last input device used. 
+  * **Gamepad** — Right stick aims. L3 toggles a virtual cursor for menu interaction. Mouse input disabled. This is intended for individuals using a gamepad that does not have an integrated trackpad.
+  * **Hybrid** — Right stick aims. Mouse/trackpad remains active for UI. Ideal for Steam Deck, Steam Controller, and DualSense users to allow use of both trackpad + sticks simultaneously.
+* **Haptic feedback** — Rumble on damage taken (intensity scales with damage), beam teleport, and mech/vehicle ground impact (intensity scales with fall speed). Support for both body rumble and trigger rumble is baked in for future use, but is not currently exposed for modder use outside of C++.
+* **Dual-controller filtering** — Automatically handles Steam Deck's dual gamepad registration (physical + virtual). Locks to first active controller, with automatic handoff after 2 seconds of inactivity.
+* **Context-based bindings**
+    * **Virtual cursor** (Gamepad mode) — Full mouse emulation via right stick with quadratic acceleration. RT = left click, LT = right click. All existing menus and mod UIs work without modification.
+    * **R3 right-click** — Right stick click acts as right-click when any pane is open (for inventory stack splitting, navigation console travel, etc.). Acts as camera pan when no pane is open.
+    * **LB+RB beam** — Press both shoulder buttons simultaneously to beam up/down.
+* **Mostly rebindable** — Controller binds appear in Options → Mod Binds and can be reassigned to any controller button. Due to some complexity with the context-based controls, these may act bizarrely if rebound.
+
+<details>
+<summary><b>Default Controller Bindings</b></summary>
+
+| Xbox | PlayStation | Action |
+|------|------------|--------|
+| **Left Stick** | **Left Stick** | Analog movement (walk/run) |
+| **Right Stick** | **Right Stick** | Aim direction and distance |
+| **RT** | **R2** | Primary fire (left hand item) |
+| **LT** | **L2** | Alt fire (right hand item) |
+| **RB** | **R1** | Next hotbar slot |
+| **LB** | **L1** | Previous hotbar slot |
+| **LB + RB** | **L1 + R1** | Beam up / beam down |
+| **A** | **X (Cross)** | Jump |
+| **B** | **O (Circle)** | Close / back (dismiss top pane) |
+| **X** | **□ (Square)** | Interact |
+| **Y** | **△ (Triangle)** | Inventory |
+| **D-pad Up** | **D-pad Up** | Cycle hotbar group |
+| **D-pad Down** | **D-pad Down** | Toggle matter manipulator (swap to MM / swap back to previously held slot) |
+| **D-pad Left** | **D-pad Left** | Quest log |
+| **D-pad Right** | **D-pad Right** | Tech action 1 (morphball, etc.) |
+| **Menu** | **Options** | Escape menu |
+| **View** | **Create** | Crafting |
+| **L3** | **L3** | *Gamepad mode:* Toggle virtual cursor · *Hybrid mode:* Context action (MM → single-block mode, other → drop item) |
+| **R3** | **R3** | *Pane open:* Right-click at cursor · *No pane:* Camera pan |
+| **RT** *(virtual cursor)* | **R2** *(virtual cursor)* | Left click (UI interaction) |
+| **LT** *(virtual cursor)* | **L2** *(virtual cursor)* | Right click (starmap travel, stack split) |
+
+</details>
+
 ### Misc
 * Player functions for saving/loading, modifying the humanoid identity, manipulating the inventory. [Documentation](https://github.com/OpenStarbound/OpenStarbound/tree/main/doc/lua/openstarbound)
 * Character swapping (rewrite from StarExtensions, currently command-only: `/swap name` case-insensitive, only substring required)

@@ -530,9 +530,13 @@ void MainInterface::handleInteractAction(InteractAction interactAction) {
   }
 }
 
+void MainInterface::setOverrideAim(bool override) {
+  m_overrideAim = override;
+}
+
 void MainInterface::preUpdate(float) {
   auto player = m_client->mainPlayer();
-  if (!m_client->paused())
+  if (!m_client->paused() && !m_overrideAim)
     player->aim(cursorWorldPosition());
 
   if (m_paneManager.topPane({PaneLayer::Window, PaneLayer::ModalWindow}))
@@ -1509,7 +1513,8 @@ void MainInterface::updateCursor() {
             cursorOverride = cursorOverride.orMaybe(loungeAnchor->cursorOverride);
         }
       }
-      if (!cursorOverride) {
+      if (!cursorOverride && !m_overrideAim) {
+        // Only show weapon/item cursors when mouse handles aim
         for (auto item : {player->primaryHandItem(), player->altHandItem()}) {
           if (auto activeItem = as<ActiveItem>(item)) {
             if (auto cursor = activeItem->cursor()) {
@@ -1521,14 +1526,23 @@ void MainInterface::updateCursor() {
             break;
           }
         }
+      } else if (!cursorOverride) {
+        // Controller aims: still show inspection tool cursor
+        for (auto item : {player->primaryHandItem(), player->altHandItem()}) {
+          if (as<InspectionTool>(item)) {
+            cursorOverride = String("/cursors/inspect.cursor");
+            break;
+          }
+        }
       }
     }
   }
 
-  if (cursorOverride)
+  if (cursorOverride) {
     m_cursor.setCursor(cursorOverride.take());
-  else
+  } else {
     m_cursor.resetCursor();
+  }
 }
 
 void MainInterface::renderCursor() {

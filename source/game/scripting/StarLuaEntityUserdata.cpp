@@ -354,6 +354,8 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     methods.registerMethod("liquidPercentage", [&](EntityPtr entity) -> Maybe<float> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->liquidPercentage();
+        if (auto vehicle = as<Vehicle>(entity))
+            return vehicle->liquidPercentage();
         return {};
     });
     methods.registerMethod("liquidId", [&](EntityPtr entity) -> Maybe<float> {
@@ -364,16 +366,22 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     methods.registerMethod("onGround", [&](EntityPtr entity) -> Maybe<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->onGround();
+        if (auto vehicle = as<Vehicle>(entity))
+            return vehicle->onGround();
         return {};
     });
     methods.registerMethod("zeroG", [&](EntityPtr entity) -> Maybe<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->zeroG();
+        if (auto vehicle = as<Vehicle>(entity))
+            return vehicle->zeroG();
         return {};
     });
     methods.registerMethod("atWorldLimit", [&](EntityPtr entity) -> Maybe<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->atWorldLimit();
+        if (auto vehicle = as<Vehicle>(entity))
+            return vehicle->atWorldLimit();
         return {};
     });
     methods.registerMethod("anchorState", [&](EntityPtr entity) -> LuaVariadic<LuaValue> {

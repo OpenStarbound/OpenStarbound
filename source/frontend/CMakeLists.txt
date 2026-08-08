@@ -26,6 +26,7 @@ SET (star_frontend_HEADERS
     StarClipboardLuaBindings.hpp
     StarCodexInterface.hpp
     StarConfirmationDialog.hpp
+    StarControllerSettingsPane.hpp
     StarHttpTrustDialog.hpp
     StarContainerInterface.hpp
     StarContainerInteractor.hpp
@@ -80,6 +81,7 @@ SET (star_frontend_SOURCES
     StarClipboardLuaBindings.cpp
     StarCodexInterface.cpp
     StarConfirmationDialog.cpp
+    StarControllerSettingsPane.cpp
     StarHttpTrustDialog.cpp
     StarContainerInterface.cpp
     StarContainerInteractor.cpp

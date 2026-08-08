@@ -1614,6 +1614,10 @@ bool Player::canUseTool() const {
   return canUse;
 }
 
+bool Player::isFiring() const {
+  return m_tools->firingPrimary() || m_tools->firingAlt();
+}
+
 void Player::beginPrimaryFire() {
   m_techController->beginPrimaryFire();
   m_tools->beginPrimaryFire();

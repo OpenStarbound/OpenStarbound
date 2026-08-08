@@ -225,6 +225,8 @@ enum class ControllerButton : uint8_t {
   Paddle3,
   Paddle4,
   Touchpad,
+  TriggerLeft,
+  TriggerRight,
   Invalid = 255
 };
 extern EnumMap<ControllerButton> const ControllerButtonNames;

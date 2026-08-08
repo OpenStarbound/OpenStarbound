@@ -88,6 +88,10 @@ public:
   bool textInputActive() const;
   void handleInteractAction(InteractAction interactAction);
 
+  // When true, preUpdate skips setting player aim from mouse cursor.
+  // Used by controller input to control aim via right stick.
+  void setOverrideAim(bool override);
+
   void preUpdate(float dt);
   // Handles incoming client messages, aims main player, etc.
   void update(float dt);
@@ -198,6 +202,7 @@ private:
   ActionBarPtr m_actionBar;
   Vec2F m_cursorScreenPos{};
   Vec2I m_cursorScreenIPos{};
+  bool m_overrideAim = false;
   ItemSlotWidgetPtr m_cursorItem;
   Maybe<String> m_cursorTooltip;
 

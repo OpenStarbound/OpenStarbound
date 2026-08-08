@@ -10,6 +10,7 @@
 #include "StarErrorScreen.hpp"
 #include "StarCinematic.hpp"
 #include "StarKeyBindings.hpp"
+#include "StarInventoryTypes.hpp"
 #include "StarMainApplication.hpp"
 
 namespace Star {
@@ -140,9 +141,35 @@ private:
   float m_maxInterfaceScale = 3;
   Vec2F m_crossoverRes;
 
-  bool m_controllerInput;
+  // Controller input mode: "off", "auto", "gamepad", "hybrid"
+  // off = controller input completely disabled
+  // auto = switch between gamepad/mouse based on last input
+  // gamepad = right stick aims, virtual cursor for menus, mouse disabled
+  // hybrid = right stick aims, mouse still active for UI
+  enum class ControllerMode { Off, Auto, Gamepad, Hybrid };
+  ControllerMode m_controllerMode = ControllerMode::Auto;
+  // In Auto mode, tracks whether gamepad is currently the active input device
+  bool m_gamepadActive = false;
+
   Vec2F m_controllerLeftStick;
   Vec2F m_controllerRightStick;
+  float m_aimRadius = 8.0f; // world tiles
+  float m_aimDeadzone = 0.15f;
+  float m_verticalThreshold = 0.5f; // stick Y threshold for up/down movement
+  Vec2F m_controllerAimPosition; // world-space aim from right stick
+  Vec2F m_controllerAimOffset; // relative aim offset from player (preserved when stick centered)
+  bool m_controllerAimActive = false; // true once right stick has been used at least once
+  bool m_virtualCursorActive = false; // true when right stick controls screen cursor
+  Vec2F m_virtualCursorPos; // screen-space position of virtual cursor
+  float m_virtualCursorSpeed = 800.0f; // pixels per second at full tilt
+  ControllerId m_activeController = (ControllerId)-1; // which controller to accept axis input from
+  SelectedActionBarLocation m_prevActionBarLocation; // for MM toggle return
+  bool m_triggerLeftPressed = false; // trigger axis → button edge detection
+  bool m_triggerRightPressed = false;
+  uint64_t m_activeControllerLastSeen = 0; // frame counter for controller disconnect detection
+  uint64_t m_frameCounter = 0; // monotonic frame counter
+  bool m_controllerShiftToggle = false; // persistent shift toggle for controller MM single-block mode
+
   List<KeyDownEvent> m_heldKeyEvents;
   List<KeyDownEvent> m_edgeKeyEvents;
 
