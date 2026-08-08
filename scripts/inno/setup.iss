@@ -36,7 +36,8 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 Source: "windows\win\{#AppExeName}"; DestDir: "{app}\win\"; Flags: ignoreversion
-Source: "windows\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "windows\*"; Excludes: "*.pdb"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "windows\*.pdb"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs setntfscompression
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Dirs]
