@@ -387,7 +387,7 @@ void ClientWeather::spawnWeatherParticles(RectF newClientRegion, float dt) {
   for (auto const& particleConfig : m_currentWeatherType->particles) {
     // Move client region to same wrap region as newClientRegion
     RectF visibleRegion(m_worldGeometry.nearestTo(newClientRegion.min(), m_lastParticleVisibleRegion.min()),
-        m_worldGeometry.nearestTo(newClientRegion.min(), m_lastParticleVisibleRegion.max()));
+        m_worldGeometry.nearestTo(newClientRegion.max(), m_lastParticleVisibleRegion.max()));
 
     Vec2F targetVelocity = particleConfig.particle.velocity + Vec2F(wind(), 0);
     float angleChange = Vec2F::angleBetween2(Vec2F(0, 1), targetVelocity);
