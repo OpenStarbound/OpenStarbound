@@ -7,6 +7,7 @@
 #include "StarCelestialCoordinate.hpp"
 #include "StarServerClientContext.hpp"
 #include "StarWorldServerThread.hpp"
+#include "StarWorldTemplate.hpp"
 #include "StarSystemWorldServerThread.hpp"
 #include "StarUniverseConnection.hpp"
 #include "StarUniverseSettings.hpp"
@@ -108,6 +109,8 @@ public:
   bool setWeather(CelestialCoordinate const& coordinate, String const& weatherName, bool force = false);
 
   StringList weatherList(CelestialCoordinate const& coordinate);
+  
+  void createCustomWorld(CustomWorldId const& customWorld, WorldTemplatePtr worldTemplate);
 
   bool sendPacket(ConnectionId clientId, PacketPtr packet);
 
@@ -120,6 +123,21 @@ private:
     String reason;
     Maybe<HostAddress> ip;
     Maybe<Uuid> uuid;
+  };
+  
+  struct WorldServerPromise {
+    Variant<WorkerPoolPromise<WorldServerThreadPtr>,RpcThreadPromise<WorldChunks>> currentPromise;
+    Maybe<function<WorkerPoolPromise<WorldServerThreadPtr>(WorldChunks)>> producer;
+    
+    double startTime;
+    
+    WorldServerPromise(function<WorkerPoolPromise<WorldServerThreadPtr>(WorldChunks)> producer, RpcThreadPromise<WorldChunks> promise);
+    WorldServerPromise(WorkerPoolPromise<WorldServerThreadPtr> promise);
+    
+    bool done() const;
+    bool poll();
+    
+    WorldServerThreadPtr get();
   };
 
   enum class TcpState : uint8_t { No, Yes, Fuck };
@@ -197,10 +215,12 @@ private:
 
   // Main lock and clients read lock must be held when calling world promise
   // generators
-  Maybe<WorkerPoolPromise<WorldServerThreadPtr>> makeWorldPromise(WorldId const& worldId);
-  Maybe<WorkerPoolPromise<WorldServerThreadPtr>> shipWorldPromise(ClientShipWorldId const& uuid);
-  Maybe<WorkerPoolPromise<WorldServerThreadPtr>> celestialWorldPromise(CelestialWorldId const& coordinate);
-  Maybe<WorkerPoolPromise<WorldServerThreadPtr>> instanceWorldPromise(InstanceWorldId const& instanceWorld);
+  Maybe<WorldServerPromise> makeWorldPromise(WorldId const& worldId);
+  Maybe<WorldServerPromise> shipWorldPromise(ClientShipWorldId const& uuid);
+  Maybe<WorldServerPromise> celestialWorldPromise(CelestialWorldId const& coordinate);
+  Maybe<WorldServerPromise> instanceWorldPromise(InstanceWorldId const& instanceWorld);
+  Maybe<WorldServerPromise> customWorldPromise(CustomWorldId const& customWorld, Maybe<WorldTemplatePtr> worldTemplate = {});
+  Maybe<WorldServerPromise> clientCustomWorldPromise(ClientCustomWorldId const& clientCustomWorld, Maybe<WorldTemplatePtr> worldTemplate = {});
 
   // If the system world is not created, initialize it, otherwise return the
   // already initialized one
@@ -240,7 +260,7 @@ private:
 
   shared_ptr<atomic<bool>> m_pause;
   bool m_secureWarps;
-  Map<WorldId, Maybe<WorkerPoolPromise<WorldServerThreadPtr>>> m_worlds;
+  Map<WorldId, Maybe<WorldServerPromise>> m_worlds;
   Map<InstanceWorldId, pair<int64_t, int64_t>> m_tempWorldIndex;
   Map<Vec3I, SystemWorldServerThreadPtr> m_systemWorlds;
   UniverseConnectionServerPtr m_connectionServer;

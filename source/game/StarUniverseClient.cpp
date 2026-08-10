@@ -26,10 +26,11 @@
 
 namespace Star {
 
-UniverseClient::UniverseClient(PlayerStoragePtr playerStorage, StatisticsPtr statistics) {
+UniverseClient::UniverseClient(PlayerStoragePtr playerStorage, StatisticsPtr statistics, String const& customWorldStorageDir) {
   m_storageTriggerDeadline = 0;
   m_playerStorage = std::move(playerStorage);
   m_statistics = std::move(statistics);
+  m_customWorldStorageDirectory = customWorldStorageDir;
   m_pause = false;
   m_luaRoot = make_shared<LuaRoot>();
   reset();
@@ -228,6 +229,19 @@ void UniverseClient::update(float dt) {
       warpPlayer(parseWarpAction(playerWarp->action), (bool)playerWarp->animation, playerWarp->animation.value("default"), playerWarp->deploy);
   }
 
+  if (m_pendingWarp) {
+    // completely forbid warps to custom worlds on old servers to prevent issues
+    if (m_connection->packetSocket().netRules().version() < 15) {
+      if (auto warpToWorld = m_pendingWarp.ptr<WarpToWorld>()) {
+        if (warpToWorld->world.is<CustomWorldId>() || warpToWorld->world.is<ClientCustomWorldId>()) {
+          Logger::warn("Attempting to warp to a custom world on an old server, cancelling.");
+          m_pendingWarp = WarpAction();
+          m_warping.reset();
+          m_warpDelay.reset();
+        }
+      }
+    }
+  }
   if (m_pendingWarp) {
     if ((m_warping && !m_mainPlayer->isTeleportingOut()) || (!m_warping && m_warpDelay.tick(dt))) {
       m_connection->pushSingle(make_shared<PlayerWarpPacket>(take(m_pendingWarp), m_mainPlayer->isDeploying()));
@@ -698,6 +712,14 @@ StatisticsPtr UniverseClient::statistics() const {
   return m_statistics;
 }
 
+void UniverseClient::createCustomWorld(String const& name, Json templateData) {
+  RecursiveMutexLocker locker(m_mutex);
+  String filename = File::relativeTo(m_customWorldStorageDirectory, strf("{}.world", name));
+  if (!File::exists(filename)) {
+    m_connection->pushSingle(make_shared<ClientCustomWorldCreate>(name, templateData));
+  }
+}
+
 bool UniverseClient::paused() const {
   return m_pause;
 }
@@ -734,6 +756,17 @@ void UniverseClient::handlePackets(List<PacketPtr> const& packets) {
       if (auto clientContextUpdate = as<ClientContextUpdatePacket>(packet)) {
         m_clientContext->readUpdate(clientContextUpdate->updateData, m_clientContext->netCompatibilityRules());
         m_playerStorage->applyShipUpdates(m_clientContext->playerUuid(), m_clientContext->newShipUpdates());
+        
+        auto customWorldUpdates = m_clientContext->newCustomWorldUpdates();
+        if (!customWorldUpdates.empty()) {
+          RecursiveMutexLocker locker(m_mutex);
+          for (auto p : customWorldUpdates) {
+            if (!p.second.empty()) {
+              String filePath = File::relativeTo(m_customWorldStorageDirectory, strf("{}.world", p.first));
+              WorldStorage::applyWorldChunksUpdateToFile(filePath, p.second);
+            }
+          }
+        }
 
         if (playerIsOriginal()) {
           m_mainPlayer->setShipUpgrades(m_clientContext->shipUpgrades());
@@ -786,6 +819,20 @@ void UniverseClient::handlePackets(List<PacketPtr> const& packets) {
         GlobalTimescale = clamp(pausePacket->timescale, 0.0f, 1024.f);
       } else if (auto serverInfoPacket = as<ServerInfoPacket>(packet)) {
         m_serverInfo = ServerInfo{serverInfoPacket->players, serverInfoPacket->maxPlayers};
+      } else if (auto clientCustomWorldRequest = as<ClientCustomWorldRequest>(packet)) {
+        RecursiveMutexLocker locker(m_mutex);
+        String filename = File::relativeTo(m_customWorldStorageDirectory, strf("{}.world", clientCustomWorldRequest->name));
+        if (File::exists(filename)) {
+          try {
+              m_connection->pushSingle(make_shared<ClientCustomWorldResponse>(clientCustomWorldRequest->name, WorldStorage::getWorldChunksFromFile(filename)));
+          } catch (StarException const& e) {
+            Logger::error("Failed to load custom world file {} : {}", filename, outputException(e, false));
+            m_connection->pushSingle(make_shared<ClientCustomWorldResponse>(clientCustomWorldRequest->name, WorldChunks()));
+          }
+        } else {
+          Logger::error("Custom world file {} does not exist", filename);
+          m_connection->pushSingle(make_shared<ClientCustomWorldResponse>(clientCustomWorldRequest->name, WorldChunks()));
+        }
       } else if (!m_systemWorldClient->handleIncomingPacket(packet)) {
         // see if the system world will handle it, otherwise pass it along to the world client
         m_worldClient->handleIncomingPackets({packet});

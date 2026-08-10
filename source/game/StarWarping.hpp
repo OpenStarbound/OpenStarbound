@@ -35,9 +35,29 @@ struct hash<InstanceWorldId> {
 DataStream& operator>>(DataStream& ds, InstanceWorldId& missionWorldId);
 DataStream& operator<<(DataStream& ds, InstanceWorldId const& missionWorldId);
 
+struct ClientCustomWorldId {
+  Uuid uuid;
+  String name;
+
+  ClientCustomWorldId();
+  ClientCustomWorldId(Uuid uuid, String name);
+
+  bool operator==(ClientCustomWorldId const& rhs) const;
+  bool operator<(ClientCustomWorldId const& rhs) const;
+};
+
+template <>
+struct hash<ClientCustomWorldId> {
+  size_t operator()(ClientCustomWorldId const& id) const;
+};
+
+DataStream& operator>>(DataStream& ds, ClientCustomWorldId& clientWorldId);
+DataStream& operator<<(DataStream& ds, ClientCustomWorldId const& clientWorldId);
+
 strong_typedef(CelestialCoordinate, CelestialWorldId);
 strong_typedef(Uuid, ClientShipWorldId);
-typedef MVariant<CelestialWorldId, ClientShipWorldId, InstanceWorldId> WorldId;
+strong_typedef(String, CustomWorldId);
+typedef MVariant<CelestialWorldId, ClientShipWorldId, InstanceWorldId, CustomWorldId, ClientCustomWorldId> WorldId;
 
 String printWorldId(WorldId const& worldId);
 WorldId parseWorldId(String const& printedId);
@@ -46,6 +66,8 @@ WorldId parseWorldId(String const& printedId);
 std::ostream& operator<<(std::ostream& os, CelestialWorldId const& worldId);
 std::ostream& operator<<(std::ostream& os, ClientShipWorldId const& worldId);
 std::ostream& operator<<(std::ostream& os, InstanceWorldId const& worldId);
+std::ostream& operator<<(std::ostream& os, CustomWorldId const& worldId);
+std::ostream& operator<<(std::ostream& os, ClientCustomWorldId const& worldId);
 std::ostream& operator<<(std::ostream& os, WorldId const& worldId);
 
 strong_typedef(String, SpawnTargetUniqueEntity);
@@ -94,5 +116,7 @@ DataStream& operator<<(DataStream& ds, WarpToWorld const& warpToWorld);
 template <> struct fmt::formatter<Star::CelestialWorldId> : ostream_formatter {};
 template <> struct fmt::formatter<Star::ClientShipWorldId> : ostream_formatter {};
 template <> struct fmt::formatter<Star::InstanceWorldId> : ostream_formatter {};
+template <> struct fmt::formatter<Star::CustomWorldId> : ostream_formatter {};
+template <> struct fmt::formatter<Star::ClientCustomWorldId> : ostream_formatter {};
 template <> struct fmt::formatter<Star::WorldId> : ostream_formatter {};
 template <> struct fmt::formatter<Star::WarpToWorld> : ostream_formatter {};

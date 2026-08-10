@@ -7,6 +7,9 @@
 #include "StarLogging.hpp"
 
 namespace Star {
+  
+// update this in the rare case that backwards compat code has to be set up in TeamClient
+VersionNumber const TeamManagerVersion = 0;
 
 TeamManager::TeamManager() {
   m_pvpTeamCounter = 1;
@@ -213,8 +216,10 @@ Json TeamManager::fetchTeamStatus(Json const& arguments) {
   }
 
   JsonObject result;
+  result["version"] = TeamManagerVersion;
   if (auto teamUuid = getTeam(playerUuid)) {
     auto& team = m_teams.get(*teamUuid);
+    auto& playerMem = team.members.get(playerUuid);
 
     result["teamUuid"] = teamUuid->hex();
     result["leader"] = team.leaderUuid.hex();
@@ -230,7 +235,12 @@ Json TeamManager::fetchTeamStatus(Json const& arguments) {
       member["energy"] = mem.energyPercentage;
       member["x"] = mem.position[0];
       member["y"] = mem.position[1];
-      member["world"] = printWorldId(mem.world);
+      if ((mem.world.is<CustomWorldId>() || mem.world.is<ClientCustomWorldId>()) && playerMem.version < 1) {
+        // caller is too old to handle custom worlds, pretend they're testarena instead to prevent invalid worldid disconnects
+        member["world"] = "InstanceWorld:testarena";
+      } else {
+        member["world"] = printWorldId(mem.world);
+      }
       member["warpMode"] = WarpModeNames.getRight(mem.warpMode);
       member["portrait"] = jsonFromList(mem.portrait, mem_fn(&Drawable::toJson));
       members.push_back(member);
@@ -267,6 +277,8 @@ Json TeamManager::updateStatus(Json const& arguments) {
       entry.world = parseWorldId(arguments.getString("world"));
     if (arguments.contains("portrait"))
       entry.portrait = jsonToList<Drawable>(arguments.get("portrait"));
+    if (arguments.contains("version"))
+      entry.version = arguments.getInt("version");
     return {};
   } else {
     return "notAMemberOfTeam";

@@ -78,7 +78,10 @@ EnumMap<PacketType> const PacketTypeNames{
   {PacketType::SystemObjectSpawn, "SystemObjectSpawn"},
   // OpenStarbound packets
   {PacketType::ReplaceTileList, "ReplaceTileList"},
-  {PacketType::UpdateWorldTemplate, "UpdateWorldTemplate"}
+  {PacketType::UpdateWorldTemplate, "UpdateWorldTemplate"},
+  {PacketType::ClientCustomWorldRequest, "ClientCustomWorldRequest"},
+  {PacketType::ClientCustomWorldResponse, "ClientCustomWorldResponse"},
+  {PacketType::ClientCustomWorldCreate, "ClientCustomWorldCreate"}
 };
 
 EnumMap<NetCompressionMode> const NetCompressionModeNames {
@@ -172,6 +175,9 @@ PacketPtr createPacket(PacketType type) {
     // OpenStarbound
     case PacketType::ReplaceTileList: return make_shared<ReplaceTileListPacket>();
     case PacketType::UpdateWorldTemplate: return make_shared<UpdateWorldTemplatePacket>();
+    case PacketType::ClientCustomWorldRequest: return make_shared<ClientCustomWorldRequest>();
+    case PacketType::ClientCustomWorldResponse: return make_shared<ClientCustomWorldResponse>();
+    case PacketType::ClientCustomWorldCreate: return make_shared<ClientCustomWorldCreate>();
     default:
       throw StarPacketException(strf("Unrecognized packet type {}", (unsigned int)type));
   }
@@ -1442,6 +1448,48 @@ void UpdateWorldTemplatePacket::read(DataStream& ds) {
 }
 
 void UpdateWorldTemplatePacket::write(DataStream& ds) const {
+  ds.write(templateData);
+}
+
+
+
+ClientCustomWorldRequest::ClientCustomWorldRequest() {}
+
+ClientCustomWorldRequest::ClientCustomWorldRequest(String name) : name(std::move(name)) {}
+
+void ClientCustomWorldRequest::read(DataStream& ds) {
+  ds.read(name);
+}
+
+void ClientCustomWorldRequest::write(DataStream& ds) const {
+  ds.write(name);
+}
+
+ClientCustomWorldResponse::ClientCustomWorldResponse() {}
+
+ClientCustomWorldResponse::ClientCustomWorldResponse(String name, WorldChunks chunks) : name(std::move(name)), chunks(std::move(chunks)) {}
+
+void ClientCustomWorldResponse::read(DataStream& ds) {
+  ds.read(name);
+  ds.read(chunks);
+}
+
+void ClientCustomWorldResponse::write(DataStream& ds) const {
+  ds.write(name);
+  ds.write(chunks);
+}
+
+ClientCustomWorldCreate::ClientCustomWorldCreate() {}
+
+ClientCustomWorldCreate::ClientCustomWorldCreate(String name, Json templateData) : name(std::move(name)), templateData(std::move(templateData)) {}
+
+void ClientCustomWorldCreate::read(DataStream& ds) {
+  ds.read(name);
+  ds.read(templateData);
+}
+
+void ClientCustomWorldCreate::write(DataStream& ds) const {
+  ds.write(name);
   ds.write(templateData);
 }
 

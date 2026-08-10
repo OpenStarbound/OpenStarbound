@@ -43,6 +43,35 @@ DataStream& operator<<(DataStream& ds, InstanceWorldId const& instanceWorldId) {
   return ds;
 }
 
+ClientCustomWorldId::ClientCustomWorldId() {}
+
+ClientCustomWorldId::ClientCustomWorldId(Uuid uuid, String name)
+  : uuid(std::move(uuid)), name(std::move(name)) {}
+
+bool ClientCustomWorldId::operator==(ClientCustomWorldId const& rhs) const {
+  return tie(uuid, name) == tie(rhs.uuid, rhs.name);
+}
+
+bool ClientCustomWorldId::operator<(ClientCustomWorldId const& rhs) const {
+  return tie(uuid, name) < tie(rhs.uuid, rhs.name);
+}
+
+size_t hash<ClientCustomWorldId>::operator()(ClientCustomWorldId const& id) const {
+  return hashOf(id.uuid, id.name);
+}
+
+DataStream& operator>>(DataStream& ds, ClientCustomWorldId& clientWorldId) {
+  ds >> clientWorldId.uuid;
+  ds >> clientWorldId.name;
+  return ds;
+}
+
+DataStream& operator<<(DataStream& ds, ClientCustomWorldId const& clientWorldId) {
+  ds << clientWorldId.uuid;
+  ds << clientWorldId.name;
+  return ds;
+}
+
 String printWorldId(WorldId const& worldId) {
   if (auto instanceWorldId = worldId.ptr<InstanceWorldId>()) {
     if (instanceWorldId->level && *instanceWorldId->level < 0.0f)
@@ -55,6 +84,10 @@ String printWorldId(WorldId const& worldId) {
     return strf("CelestialWorld:{}", *celestialWorldId);
   } else if (auto clientShipWorldId = worldId.ptr<ClientShipWorldId>()) {
     return strf("ClientShipWorld:{}", clientShipWorldId->hex());
+  } else if (auto customWorldId = worldId.ptr<CustomWorldId>()) {
+    return strf("CustomWorld:{}", *customWorldId);
+  } else if (auto clientCustomWorldId = worldId.ptr<ClientCustomWorldId>()) {
+    return strf("ClientCustomWorld:{}:{}", clientCustomWorldId->uuid.hex(), clientCustomWorldId->name);
   } else {
     return "Nowhere";
   }
@@ -95,6 +128,14 @@ WorldId parseWorldId(String const& printedId) {
     return CelestialWorldId(CelestialCoordinate(parts.at(1)));
   } else if (type.equalsIgnoreCase("ClientShipWorld")) {
     return ClientShipWorldId(Uuid(parts.at(1)));
+  } else if (type.equalsIgnoreCase("CustomWorld")) {
+    return CustomWorldId(parts.at(1));
+  } else if (type.equalsIgnoreCase("ClientCustomWorld")) {
+    auto rest = parts.at(1).split(":", 1);
+    if (rest.size() <= 1 || rest.size() > 2)
+      throw StarException::format("Wrong number of parts in ClientCustomWorldId");
+    
+    return ClientCustomWorldId(Uuid(rest.at(0)),rest.at(1));
   } else if (type.equalsIgnoreCase("Nowhere")) {
     return {};
   } else {
@@ -114,6 +155,16 @@ std::ostream& operator<<(std::ostream& os, ClientShipWorldId const& worldId) {
 }
 
 std::ostream& operator<<(std::ostream& os, InstanceWorldId const& worldId) {
+  os << printWorldId(worldId);
+  return os;
+}
+
+std::ostream& operator<<(std::ostream& os, CustomWorldId const& worldId) {
+  os << (String)worldId;
+  return os;
+}
+
+std::ostream& operator<<(std::ostream& os, ClientCustomWorldId const& worldId) {
   os << printWorldId(worldId);
   return os;
 }
