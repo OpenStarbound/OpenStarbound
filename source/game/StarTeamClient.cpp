@@ -10,7 +10,10 @@
 #include "StarJsonRpc.hpp"
 
 namespace Star {
-
+  
+// update this in the rare case that backwards compat code has to be set up in TeamManager
+VersionNumber const TeamClientVersion = 1;
+  
 TeamClient::TeamClient(PlayerPtr mainPlayer, ClientContextPtr clientContext) {
   m_mainPlayer = mainPlayer;
   m_clientContext = clientContext;
@@ -156,6 +159,8 @@ void TeamClient::pullFullUpdate() {
   invokeRemote("team.fetchTeamStatus", request, [this](Json response) {
       m_fullUpdateRunning = false;
 
+      m_teamManagerVersion = response.optInt("version").value(0);
+      
       m_teamUuid = response.optString("teamUuid").apply(construct<Uuid>());
 
       if (m_teamUuid) {
@@ -232,6 +237,7 @@ void TeamClient::handleRpcResponses() {
 }
 
 void TeamClient::writePlayerData(JsonObject& request, PlayerPtr player, bool fullWrite) const {
+  request["version"] = TeamClientVersion;
   request["playerUuid"] = m_clientContext->playerUuid().hex();
   request["entity"] = player->entityId();
   request["health"] = player->health() / player->maxHealth();

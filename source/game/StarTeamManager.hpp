@@ -6,8 +6,11 @@
 #include "StarWarping.hpp"
 #include "StarThread.hpp"
 #include "StarDamageTypes.hpp"
+#include "StarVersion.hpp"
 
 namespace Star {
+  
+extern VersionNumber const TeamManagerVersion;
 
 STAR_CLASS(TeamManager);
 
@@ -35,6 +38,8 @@ private:
     WorldId world;
     Vec2F position;
     WarpMode warpMode;
+    
+    int version = 0;
 
     List<Drawable> portrait;
   };
