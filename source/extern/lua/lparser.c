@@ -1175,6 +1175,60 @@ static void assignment (LexState *ls, struct LHS_assign *lh, int nvars) {
 }
 
 
+static void compound_assign_op (LexState *ls, expdesc *v) {
+  int line;
+  BinOpr op = OPR_NOBINOPR;
+  FuncState *fs = ls->fs;
+  expdesc e = *v, v2;
+  switch (ls->t.token) {
+    case TK_SCPLUS:
+      op = OPR_ADD;
+      break;
+    case TK_SCMINUS:
+      op = OPR_SUB;
+      break;
+    case TK_SCMULTIPLY:
+      op = OPR_MUL;
+      break;
+    case TK_SCMODULATE:
+      op = OPR_MOD;
+      break;
+    case TK_SCDIVIDE:
+      op = OPR_DIV;
+      break;
+    case TK_SCFLOORDIVIDE:
+      op = OPR_IDIV;
+      break;
+    case TK_SCCONCAT:
+      op = OPR_CONCAT;
+      break;
+    case TK_SCBITLEFTSHIFT:
+      op = OPR_SHL;
+      break;
+    case TK_SCBITRIGHTSHIFT:
+      op = OPR_SHR;
+      break;
+    case TK_SCBITAND:
+      op = OPR_BAND;
+      break;
+    case TK_SCBITOR:
+      op = OPR_BOR;
+      break;
+  }
+  luaK_reserveregs(fs,fs->freereg-fs->nactvar); /* reserve all registers needed by the lvalue */
+  luaX_next(ls);
+  line = ls->linenumber;
+  enterlevel(ls);
+  luaK_infix(fs,op,&e);
+  expr(ls, &v2);
+  luaK_posfix(fs, op, &e, &v2, line);
+  leavelevel(ls);
+  luaK_exp2nextreg(fs, &e);
+  luaK_setoneret(ls->fs, &e);
+  luaK_storevar(ls->fs, v, &e);
+}
+
+
 static int cond (LexState *ls) {
   /* cond -> exp */
   expdesc v;
@@ -1494,6 +1548,10 @@ static void exprstat (LexState *ls) {
   if (ls->t.token == '=' || ls->t.token == ',') { /* stat -> assignment ? */
     v.prev = NULL;
     assignment(ls, &v, 1);
+  }
+  else if (ls->t.token >= TK_SCPLUS && ls->t.token <= TK_SCBITOR) { /* compound op token range */
+    v.prev = NULL;
+    compound_assign_op(ls, &v.v);
   }
   else {  /* stat -> func */
     check_condition(ls, v.v.k == VCALL, "syntax error");
