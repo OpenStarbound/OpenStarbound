@@ -61,7 +61,8 @@ private:
 
 template <typename Function>
 void TileDrawer::forEachRenderTile(WorldRenderData const& renderData, RectI const& worldCoordRange, Function&& function) {
-  RectI indexRect = RectI::withSize(renderData.geometry.diff(worldCoordRange.min(), renderData.tileMinPosition), worldCoordRange.size());
+  Vec2I indexMin(renderData.geometry.pdiff(worldCoordRange.min()[0], renderData.tileMinPosition[0]), worldCoordRange.min()[1] - renderData.tileMinPosition[1]);
+  RectI indexRect = RectI::withSize(indexMin, worldCoordRange.size());
   indexRect.limit(RectI::withSize(Vec2I(0, 0), Vec2I(renderData.tiles.size())));
 
   if (!indexRect.isEmpty()) {
