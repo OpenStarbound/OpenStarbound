@@ -1749,8 +1749,15 @@ void WorldClient::lightingCalc() {
 
   prepLocker.unlock();
 
+  Vec2I regionMin = m_lightingCalculator.calculationRegion().min();
+  auto resolvePosition = [&](Vec2F const& pos) -> Vec2F {
+    float xFloor = floor(pos[0]);
+    float xOffset = (float)m_geometry.pdiff((int)xFloor, regionMin[0]) + (pos[0] - xFloor);
+    return Vec2F(regionMin[0] + xOffset, pos[1]);
+  };
+
   for (auto const& light : lights) {
-    Vec2F position = m_geometry.nearestTo(Vec2F(m_lightingCalculator.calculationRegion().min()), light.position);
+    Vec2F position = resolvePosition(light.position);
     if (light.type == LightType::Spread)
       m_lightingCalculator.addSpreadLight(position, light.color);
     else {
@@ -1768,7 +1775,7 @@ void WorldClient::lightingCalc() {
   }
 
   for (auto const& lightPair : particleLights) {
-    Vec2F position = m_geometry.nearestTo(Vec2F(m_lightingCalculator.calculationRegion().min()), lightPair.first);
+    Vec2F position = resolvePosition(lightPair.first);
     m_lightingCalculator.addSpreadLight(position, lightPair.second);
   }
 
