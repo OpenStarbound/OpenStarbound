@@ -53,9 +53,7 @@ function build(identity, humanoidParameters, humanoidConfig, npcHumanoidConfig)
 	-- there are 20 cosmetic slots and we need to support any cosmetic being in any slot
 	-- in postload we generated 20 duplicates of each cosmetic's animation but with the <slot> tag changed and z levels changed to respect the slot
 	for _, path in ipairs(humanoidConfig.cosmeticAnimations or root.assetJson("/humanoid.config:cosmeticAnimations")) do
-		for i = 1, 20 do
-			table.insert(humanoidConfig.animation.includes, path .. "." .. i)
-		end
+		table.insert(humanoidConfig.animation.includes, path)
 	end
 
 	for k, v in pairs(identity) do
@@ -157,8 +155,8 @@ function build(identity, humanoidParameters, humanoidConfig, npcHumanoidConfig)
 	setPath(parts, { humanoidConfig.feetOffsetPart or "body", "properties", humanoidConfig.feetOffsetPartPoint or "feetOffset" }, vecTilePixels(humanoidConfig.feetOffset))
 
 	setPath(parts, { humanoidConfig.headArmorOffsetPart or "headCosmetic", "properties", humanoidConfig.headArmorOffsetPartPoint or "armorOffset" }, vecTilePixels(humanoidConfig.headArmorOffset))
-	setPath(parts, { humanoidConfig.chestArmorOffsetPart or "chestCosmetic", "properties", humanoidConfig.chestArmorOffsetPartPoint or "armorOffset" }, vecTilePixels(humanoidConfig.chestArmorOffset))
-	setPath(parts, { humanoidConfig.legsArmorOffsetPart or "legsCosmetic", "properties", humanoidConfig.legsArmorOffsetPartPoint or "armorOffset" }, vecTilePixels(humanoidConfig.legsArmorOffset))
+	setPath(parts, { humanoidConfig.chestArmorOffsetPart or "chestLegsCosmetic", "properties", humanoidConfig.chestArmorOffsetPartPoint or "chestArmorOffset" }, vecTilePixels(humanoidConfig.chestArmorOffset))
+	setPath(parts, { humanoidConfig.legsArmorOffsetPart or "chestLegsCosmetic", "properties", humanoidConfig.legsArmorOffsetPartPoint or "legsArmorOffset" }, vecTilePixels(humanoidConfig.legsArmorOffset))
 	setPath(parts, { humanoidConfig.backArmorOffsetPart or "backCosmetic", "properties", humanoidConfig.backArmorOffsetPartPoint or "armorOffset" }, vecTilePixels(humanoidConfig.backArmorOffset))
 
 	setPath(parts, { humanoidConfig.frontArmRotationPart or "frontArm", "properties",  humanoidConfig.frontArmRotationPartPoint or "rotationCenter" }, vecTilePixels(humanoidConfig.frontArmRotationCenter))
