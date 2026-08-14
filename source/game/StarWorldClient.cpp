@@ -633,7 +633,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
     });
 
   for (auto& pair : m_predictedTiles) {
-    Vec2I tileArrayPos = m_geometry.diff(pair.first, renderData.tileMinPosition);
+    Vec2I tileArrayPos(m_geometry.pdiff(pair.first[0], renderData.tileMinPosition[0]), pair.first[1] - renderData.tileMinPosition[1]);
     if (tileArrayPos[0] >= 0 && tileArrayPos[0] < (int)renderData.tiles.size(0) && tileArrayPos[1] >= 0 && tileArrayPos[1] < (int)renderData.tiles.size(1)) {
       RenderTile& renderTile = renderData.tiles(tileArrayPos[0], tileArrayPos[1]);
       PredictedTile& p = pair.second;
@@ -654,7 +654,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
   }
 
   for (auto const& previewTile : m_previewTiles) {
-    Vec2I tileArrayPos = m_geometry.diff(previewTile.position, renderData.tileMinPosition);
+    Vec2I tileArrayPos(m_geometry.pdiff(previewTile.position[0], renderData.tileMinPosition[0]), previewTile.position[1] - renderData.tileMinPosition[1]);
     if (tileArrayPos[0] >= 0 && tileArrayPos[0] < (int)renderData.tiles.size(0) && tileArrayPos[1] >= 0 && tileArrayPos[1] < (int)renderData.tiles.size(1)) {
       RenderTile& renderTile = renderData.tiles(tileArrayPos[0], tileArrayPos[1]);
 
@@ -1476,7 +1476,7 @@ bool WorldClient::waitForLighting(WorldRenderData* renderData) {
   if (renderData && !m_lightMap.empty()) {
     for (auto& previewTile : m_previewTiles) {
       if (previewTile.updateLight) {
-        Vec2I lightArrayPos = m_geometry.diff(previewTile.position, m_lightMinPosition);
+        Vec2I lightArrayPos(m_geometry.pdiff(previewTile.position[0], m_lightMinPosition[0]), previewTile.position[1] - m_lightMinPosition[1]);
         if (lightArrayPos[0] >= 0 && lightArrayPos[0] < (int)m_lightMap.width()
          && lightArrayPos[1] >= 0 && lightArrayPos[1] < (int)m_lightMap.height())
           m_lightMap.set(lightArrayPos[0], lightArrayPos[1], Color::v3bToFloat(previewTile.light));
@@ -1749,8 +1749,15 @@ void WorldClient::lightingCalc() {
 
   prepLocker.unlock();
 
+  Vec2I regionMin = m_lightingCalculator.calculationRegion().min();
+  auto resolvePosition = [&](Vec2F const& pos) -> Vec2F {
+    float xFloor = floor(pos[0]);
+    float xOffset = (float)m_geometry.pdiff((int)xFloor, regionMin[0]) + (pos[0] - xFloor);
+    return Vec2F(regionMin[0] + xOffset, pos[1]);
+  };
+
   for (auto const& light : lights) {
-    Vec2F position = m_geometry.nearestTo(Vec2F(m_lightingCalculator.calculationRegion().min()), light.position);
+    Vec2F position = resolvePosition(light.position);
     if (light.type == LightType::Spread)
       m_lightingCalculator.addSpreadLight(position, light.color);
     else {
@@ -1768,7 +1775,7 @@ void WorldClient::lightingCalc() {
   }
 
   for (auto const& lightPair : particleLights) {
-    Vec2F position = m_geometry.nearestTo(Vec2F(m_lightingCalculator.calculationRegion().min()), lightPair.first);
+    Vec2F position = resolvePosition(lightPair.first);
     m_lightingCalculator.addSpreadLight(position, lightPair.second);
   }
 
