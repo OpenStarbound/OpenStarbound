@@ -2608,6 +2608,9 @@ Maybe<UniverseServer::WorldServerPromise> UniverseServer::customWorldPromise(Cus
   return WorldServerPromise(m_workerPool.addProducer<WorldServerThreadPtr>([this, customWorldId, worldTemplate, storageDirectory, universeClock]() {
     WorldServerPtr worldServer;
 
+    if (customWorldId.find("../") || customWorldId.find("..\\")) {
+      throw UniverseServerException(strf("UniverseServer: Custom world '{}' contains upwards paths!\n",customWorldId));
+    }
     String storageFile = File::relativeTo(storageDirectory, strf("custom_{}.world", customWorldId));
     if (File::isFile(storageFile)) {
       Logger::info("UniverseServer: Loading custom world '{}'", customWorldId);
