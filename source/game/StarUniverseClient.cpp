@@ -714,6 +714,10 @@ StatisticsPtr UniverseClient::statistics() const {
 
 void UniverseClient::createCustomWorld(String const& name, Json templateData) {
   RecursiveMutexLocker locker(m_mutex);
+  if (!File::isDirectory(m_customWorldStorageDirectory)) {
+    Logger::info("UniverseClient: Creating universe client storage directory");
+    File::makeDirectory(m_customWorldStorageDirectory);
+  }
   String filename = File::relativeTo(m_customWorldStorageDirectory, strf("{}.world", name));
   if (!File::exists(filename)) {
     m_connection->pushSingle(make_shared<ClientCustomWorldCreate>(name, templateData));
