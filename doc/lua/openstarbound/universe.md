@@ -1,7 +1,10 @@
 # Universe
 
-Server-side scripts gain access to a new `universe` table that exposes administrative helpers for connected clients and worlds.
-All of these functions are only available in contexts that already run on the server (such as world scripts or the command
+Server-side and client-side scripts gain access to a `universe` table that exposes helpers for worlds, as well as administrative helpers for connected clients on server-side scripts.
+
+--- 
+
+The following callbacks are only available in contexts that run on the server (such as world scripts or the command
 processor).
 
 ---
@@ -113,3 +116,35 @@ Disconnects the client, optionally providing a disconnect reason.
 
 Bans a client by connection ID. The `banIp` and `banUuid` parameters control which identifiers are recorded; `timeout` (in
 seconds) performs a temporary ban when provided.
+
+---
+
+#### `void` universe.createCustomWorld(`String` name, `Json` template)
+
+Creates a new custom world with the given name from the given template.
+Its world ID will be `CustomWorld:<name>`, and it will be stored under the server's `universe/custom_<name>.world`
+
+---
+
+#### `void` universe.createCustomWorldFromConfig(`String` name, `Json` config)
+
+Creates a new custom world with the given name from the given config. This config functions similarly to instance world configs.
+Otherwise, functionally similar to `universe.createCustomWorld`.
+
+---
+
+The following functions are available on all scripts on the client main thread.
+
+---
+
+#### `void` universe.createClientCustomWorld(`String` name, `Json` template)
+
+Creates a new client custom world with the given name from the given template.
+Its world ID will be `ClientCustomWorld:<client uuid>:<name>`, and it will be stored under the client's `universeclient/<name>.world`
+
+---
+
+#### `void` universe.createClientCustomWorldFromConfig(`String` name, `Json` config)
+
+Creates a new custom world with the given name from the given config. This config functions similarly to instance world configs.
+Otherwise, functionally similar to `universe.createClientCustomWorld`.
