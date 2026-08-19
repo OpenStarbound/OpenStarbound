@@ -766,8 +766,12 @@ void UniverseClient::handlePackets(List<PacketPtr> const& packets) {
           RecursiveMutexLocker locker(m_mutex);
           for (auto p : customWorldUpdates) {
             if (!p.second.empty()) {
-              String filePath = File::relativeTo(m_customWorldStorageDirectory, strf("{}.world", p.first));
-              WorldStorage::applyWorldChunksUpdateToFile(filePath, p.second);
+              if (p.first.find("../") || p.first.find("..\\")) {
+                Logger::error("Not saving custom world named {}, path attempts to go up.", p.first);
+              } else {
+                String filePath = File::relativeTo(m_customWorldStorageDirectory, strf("{}.world", p.first));
+                WorldStorage::applyWorldChunksUpdateToFile(filePath, p.second);
+              }
             }
           }
         }
@@ -824,18 +828,23 @@ void UniverseClient::handlePackets(List<PacketPtr> const& packets) {
       } else if (auto serverInfoPacket = as<ServerInfoPacket>(packet)) {
         m_serverInfo = ServerInfo{serverInfoPacket->players, serverInfoPacket->maxPlayers};
       } else if (auto clientCustomWorldRequest = as<ClientCustomWorldRequest>(packet)) {
-        RecursiveMutexLocker locker(m_mutex);
-        String filename = File::relativeTo(m_customWorldStorageDirectory, strf("{}.world", clientCustomWorldRequest->name));
-        if (File::exists(filename)) {
-          try {
-              m_connection->pushSingle(make_shared<ClientCustomWorldResponse>(clientCustomWorldRequest->name, WorldStorage::getWorldChunksFromFile(filename)));
-          } catch (StarException const& e) {
-            Logger::error("Failed to load custom world file {} : {}", filename, outputException(e, false));
+        if (clientCustomWorldRequest->name.find("../") || clientCustomWorldRequest->name.find("..\\")) {
+          Logger::error("Rejecting custom world name {}, path attempts to go up.", clientCustomWorldRequest->name);
+          m_connection->pushSingle(make_shared<ClientCustomWorldResponse>(clientCustomWorldRequest->name, WorldChunks()));
+        } else {
+          RecursiveMutexLocker locker(m_mutex);
+          String filename = File::relativeTo(m_customWorldStorageDirectory, strf("{}.world", clientCustomWorldRequest->name));
+          if (File::exists(filename)) {
+            try {
+                m_connection->pushSingle(make_shared<ClientCustomWorldResponse>(clientCustomWorldRequest->name, WorldStorage::getWorldChunksFromFile(filename)));
+            } catch (StarException const& e) {
+              Logger::error("Failed to load custom world file {} : {}", filename, outputException(e, false));
+              m_connection->pushSingle(make_shared<ClientCustomWorldResponse>(clientCustomWorldRequest->name, WorldChunks()));
+            }
+          } else {
+            Logger::error("Custom world file {} does not exist", filename);
             m_connection->pushSingle(make_shared<ClientCustomWorldResponse>(clientCustomWorldRequest->name, WorldChunks()));
           }
-        } else {
-          Logger::error("Custom world file {} does not exist", filename);
-          m_connection->pushSingle(make_shared<ClientCustomWorldResponse>(clientCustomWorldRequest->name, WorldChunks()));
         }
       } else if (!m_systemWorldClient->handleIncomingPacket(packet)) {
         // see if the system world will handle it, otherwise pass it along to the world client
