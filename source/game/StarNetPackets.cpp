@@ -1508,8 +1508,8 @@ ClientSubWorldPackets::ClientSubWorldPackets(ClientSubWorldId const& subWorldId,
 void ClientSubWorldPackets::read(DataStream& ds) {
   ds.read(subWorldId);
   // note: this approach may have an issue with packet size
-  size_t count = ds.read<size_t>();
-  for (size_t i = 0; i < count; i++) {
+  uint32_t count = ds.read<uint32_t>();
+  for (uint32_t i = 0; i < count; i++) {
     auto packetType = ds.read<PacketType>();
     PacketPtr packet = createPacket(packetType);
     packet->read(ds);
@@ -1519,7 +1519,7 @@ void ClientSubWorldPackets::read(DataStream& ds) {
 
 void ClientSubWorldPackets::write(DataStream& ds) const {
   ds.write(subWorldId);
-  ds.write(packets.count());
+  ds.write<uint32_t>(packets.count());
   for (PacketPtr const& packet : packets) {
     auto packetType = packet->type();
     ds.write(packetType);
