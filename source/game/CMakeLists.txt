@@ -165,6 +165,8 @@ SET (star_game_HEADERS
     StarWiring.hpp
     StarWorldCamera.hpp
     StarWorldClient.hpp
+    StarWorldThreadedClient.hpp
+    StarWorldClientThread.hpp
     StarWorldClientState.hpp
     StarWorldGeneration.hpp
     StarWorldImpl.hpp
@@ -432,6 +434,8 @@ SET (star_game_SOURCES
     StarWiring.cpp
     StarWorldCamera.cpp
     StarWorldClient.cpp
+    StarWorldThreadedClient.cpp
+    StarWorldClientThread.cpp
     StarWorldClientState.cpp
     StarWorldGeneration.cpp
     StarWorldLayout.cpp

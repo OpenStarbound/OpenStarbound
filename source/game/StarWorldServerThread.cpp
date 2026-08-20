@@ -66,10 +66,10 @@ bool WorldServerThread::spawnTargetValid(SpawnTarget const& spawnTarget) {
   }
 }
 
-bool WorldServerThread::addClient(ConnectionId clientId, SpawnTarget const& spawnTarget, bool isLocal, bool isAdmin, NetCompatibilityRules netRules) {
+bool WorldServerThread::addClient(ConnectionId clientId, SpawnTarget const& spawnTarget, bool isLocal, bool isAdmin, NetCompatibilityRules netRules, ClientSubWorldId subWorldId) {
   try {
     RecursiveMutexLocker locker(m_mutex);
-    if (m_worldServer->addClient(clientId, spawnTarget, isLocal, isAdmin, netRules)) {
+    if (m_worldServer->addClient(clientId, spawnTarget, isLocal, isAdmin, netRules, subWorldId)) {
       m_clients.add(clientId);
       return true;
     }
@@ -125,6 +125,10 @@ bool WorldServerThread::noClients() const {
   return m_clients.empty();
 }
 
+ClientSubWorldId WorldServerThread::clientSubWorld(ConnectionId clientId) const {
+  RecursiveMutexLocker locker(m_mutex);
+  return m_worldServer->clientSubWorld(clientId);
+}
 
 List<ConnectionId> WorldServerThread::erroredClients() const {
   RecursiveMutexLocker locker(m_mutex);

@@ -9,6 +9,7 @@
 #include "StarAiTypes.hpp"
 #include "StarSky.hpp"
 #include "StarUniverseConnection.hpp"
+#include "StarWorldClientThread.hpp"
 #include "StarLuaComponents.hpp"
 
 namespace Star {
@@ -34,6 +35,9 @@ STAR_CLASS(LuaRoot);
 
 class UniverseClient {
 public:
+  typedef LuaUpdatableComponent<LuaBaseComponent> ScriptComponent;
+  typedef shared_ptr<ScriptComponent> ScriptComponentPtr;
+  
   UniverseClient(PlayerStoragePtr playerStorage, StatisticsPtr statistics, String const& customWorldStorageDir);
   ~UniverseClient();
 
@@ -45,6 +49,8 @@ public:
   bool isConnected() const;
   void disconnect();
   Maybe<String> disconnectReason() const;
+  
+  unsigned connectionVersion();
 
   // WorldClient may be null if the UniverseClient is not connected.
   WorldClientPtr worldClient() const;
@@ -110,8 +116,19 @@ public:
   QuestManagerPtr questManager() const;
   PlayerStoragePtr playerStorage() const;
   StatisticsPtr statistics() const;
+
+  ScriptComponentPtr scriptContext(String const& contextName);
   
   void createCustomWorld(String const& name, Json templateData);
+  
+  ClientSubWorldId createSubWorld();
+  void setSubWorldWorld(ClientSubWorldId subWorldId, WorldId worldId = WorldId());
+  bool subWorldExistsOnWorld(WorldId worldId) const;
+  ClientSubWorldId getSubWorldOnWorld(WorldId worldId);
+  void destroySubWorldOnWorld(WorldId worldId);
+
+  RpcThreadPromise<Json> sendSubWorldOnWorldMessage(WorldId const& worldId, String const& message, JsonArray const& args = {});
+  RpcPromise<Json> sendMainWorldMessage(String const& message, JsonArray const& args = {});
 
   bool paused() const;
 
@@ -134,7 +151,7 @@ private:
   
   String m_customWorldStorageDirectory;
 
-  bool m_pause;
+  shared_ptr<atomic<bool>> m_pause;
   ClockPtr m_universeClock;
   WorldClientPtr m_worldClient;
   SystemWorldClientPtr m_systemWorldClient;
@@ -163,10 +180,11 @@ private:
   Maybe<String> m_disconnectReason;
 
   LuaRootPtr m_luaRoot;
-
-  typedef LuaUpdatableComponent<LuaBaseComponent> ScriptComponent;
-  typedef shared_ptr<ScriptComponent> ScriptComponentPtr;
+  
   StringMap<ScriptComponentPtr> m_scriptContexts;
+  
+  BiMap<ClientSubWorldId, WorldId> m_subWorlds;
+  IdMap<ClientSubWorldId,WorldClientThreadPtr> m_subWorldThreads;
 
   ReloadPlayerCallback m_playerReloadPreCallback;
   ReloadPlayerCallback m_playerReloadCallback;

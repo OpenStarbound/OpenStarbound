@@ -62,6 +62,7 @@ public:
   bool isConnectedClient(ConnectionId clientId) const;
 
   String clientDescriptor(ConnectionId clientId) const;
+  unsigned clientConnectionVersion(ConnectionId clientId) const;
 
   String clientNick(ConnectionId clientId) const;
   Maybe<ConnectionId> findNick(String const& nick) const;
@@ -221,6 +222,8 @@ private:
   Maybe<WorldServerPromise> instanceWorldPromise(InstanceWorldId const& instanceWorld);
   Maybe<WorldServerPromise> customWorldPromise(CustomWorldId const& customWorld, Maybe<WorldTemplatePtr> worldTemplate = {});
   Maybe<WorldServerPromise> clientCustomWorldPromise(ClientCustomWorldId const& clientCustomWorld, Maybe<WorldTemplatePtr> worldTemplate = {});
+  
+  void notifyWorldCreated(WorldId const& worldId);
 
   // If the system world is not created, initialize it, otherwise return the
   // already initialized one
@@ -274,6 +277,7 @@ private:
   TeamManagerPtr m_teamManager;
 
   HashMap<ConnectionId, pair<WarpAction, bool>> m_pendingPlayerWarps;
+  HashMap<ConnectionId, HashMap<ClientSubWorldId, WorldId>> m_pendingSubWorlds;
   HashMap<ConnectionId, pair<tuple<Vec3I, SystemLocation, Json>, Maybe<double>>> m_queuedFlights;
   HashMap<ConnectionId, tuple<Vec3I, SystemLocation, Json>> m_pendingFlights;
   HashMap<ConnectionId, CelestialCoordinate> m_pendingArrivals;
