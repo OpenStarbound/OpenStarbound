@@ -301,8 +301,10 @@ void UniverseClient::update(float dt) {
       p.second->update();
   }
   m_connection->push(m_worldClient->getOutgoingPackets());
-  for (auto& p : m_subWorldThreads) {
-    m_connection->push(p.second->pullOutgoingPackets());
+  if (m_connection->packetSocket().netRules().version() >= 16) {
+    for (auto& p : m_subWorldThreads) {
+      m_connection->push(p.second->pullOutgoingPackets());
+    }
   }
 
   if (!*m_pause)
