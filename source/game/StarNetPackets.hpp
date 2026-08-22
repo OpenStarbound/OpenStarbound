@@ -118,9 +118,15 @@ enum class PacketType : uint8_t {
   // OpenStarbound packets
   ReplaceTileList,
   UpdateWorldTemplate,
+  
   ClientCustomWorldRequest,
   ClientCustomWorldResponse,
-  ClientCustomWorldCreate
+  ClientCustomWorldCreate,
+  
+  ClientSubWorldPackets,
+  ClientSubWorldRequest,
+  ClientSubWorldReject,
+  NotifyWorldLoad
 };
 extern EnumMap<PacketType> const PacketTypeNames;
 
@@ -1015,5 +1021,48 @@ struct ClientCustomWorldCreate : PacketBase<PacketType::ClientCustomWorldCreate>
 
   String name;
   Json templateData;
+};
+
+// wrapper packet for client world threads
+struct ClientSubWorldPackets : PacketBase<PacketType::ClientSubWorldPackets> {
+  ClientSubWorldPackets();
+  ClientSubWorldPackets(ClientSubWorldId const& subWorldId, List<PacketPtr> packets);
+
+  void read(DataStream& ds) override;
+  void write(DataStream& ds) const override;
+
+  ClientSubWorldId subWorldId;
+  List<PacketPtr> packets;
+};
+
+struct ClientSubWorldRequest : PacketBase<PacketType::ClientSubWorldRequest> {
+  ClientSubWorldRequest();
+  ClientSubWorldRequest(ClientSubWorldId const& subWorldId, WorldId worldId);
+
+  void read(DataStream& ds) override;
+  void write(DataStream& ds) const override;
+
+  ClientSubWorldId subWorldId;
+  WorldId worldId;
+};
+
+struct ClientSubWorldReject : PacketBase<PacketType::ClientSubWorldReject> {
+  ClientSubWorldReject();
+  ClientSubWorldReject(ClientSubWorldId const& subWorldId);
+
+  void read(DataStream& ds) override;
+  void write(DataStream& ds) const override;
+
+  ClientSubWorldId subWorldId;
+};
+
+struct NotifyWorldLoad : PacketBase<PacketType::NotifyWorldLoad> {
+  NotifyWorldLoad();
+  NotifyWorldLoad(WorldId worldId);
+
+  void read(DataStream& ds) override;
+  void write(DataStream& ds) const override;
+
+  WorldId worldId;
 };
 }

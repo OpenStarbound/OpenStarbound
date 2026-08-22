@@ -80,6 +80,8 @@ namespace LuaBindings {
     Maybe<pair<Vec2F, float>> radiusQuery;
     if (auto radius = options.get<Maybe<float>>("radius"))
       radiusQuery = make_pair(options.get<Vec2F>("center"), *radius);
+    
+    bool globalQuery = !lineQuery && !polyQuery && !rectQuery && !radiusQuery;
 
     EntityBoundMode boundMode = EntityBoundModeNames.getLeft(options.get<Maybe<String>>("boundMode").value("CollisionArea"));
     Maybe<LuaString> order = options.get<Maybe<LuaString>>("order");
@@ -107,7 +109,9 @@ namespace LuaBindings {
       }
 
       auto position = entity->position();
-      if (boundMode == EntityBoundMode::MetaBoundBox) {
+      if (globalQuery) {
+        return true;
+      } else if (boundMode == EntityBoundMode::MetaBoundBox) {
         // If using MetaBoundBox, the regular line / box query methods already
         // enforce collision with MetaBoundBox
         if (radiusQuery)
@@ -155,6 +159,14 @@ namespace LuaBindings {
       RectF region(radiusQuery->first - Vec2F::filled(radiusQuery->second),
           radiusQuery->first + Vec2F::filled(radiusQuery->second));
       entities = world->query<EntityT>(region, innerSelector);
+    } else {
+      // global query
+      world->forAllEntities([&](EntityPtr const& entity) {
+          if (auto ofType = as<EntityT>(entity)) {
+            if (innerSelector(ofType))
+              entities.emplace_back(ofType);
+          }
+      });
     }
 
     if (order) {
@@ -385,7 +397,15 @@ namespace LuaBindings {
 
     if (auto clientWorld = as<WorldClient>(world)) {
       callbacks.registerCallback("inWorld", [clientWorld]() { return clientWorld->inWorld(); });
-      callbacks.registerCallback("mainPlayer", [clientWorld]() { return clientWorld->clientState().playerId(); });
+      callbacks.registerCallback("mainPlayer", [clientWorld]() -> Maybe<int> {
+        if (clientWorld->isHeadless()) {
+          return {};
+        } else {
+          return clientWorld->clientState().playerId(); 
+        }
+      });
+      callbacks.registerCallback("headless", [clientWorld]() { return clientWorld->isHeadless();  });
+      callbacks.registerCallback("subWorldId", [clientWorld]() { return clientWorld->subWorldId();  });
       callbacks.registerCallback("isClient", []() { return true;  });
       callbacks.registerCallback("isServer", []() { return false; });
       callbacks.registerCallback("latency", [clientWorld]() { return clientWorld->latency(); });
@@ -400,6 +420,17 @@ namespace LuaBindings {
         });
 
         return playerIds;
+      });
+      callbacks.registerCallback("callScriptContext", [clientWorld](String const& contextName, String const& function, LuaVariadic<LuaValue> const& args) -> Maybe<LuaValue> {
+        auto context = clientWorld->scriptContext(contextName);
+        if (!context)
+          throw StarException::format("Context {} does not exist", contextName);
+        return context->invoke(function, args);
+      });
+      callbacks.registerCallback("unload", [clientWorld]() {
+        if (!clientWorld->isHeadless())
+          throw StarException::format("Non-headless worlds cannot be unloaded.");
+        clientWorld->requestDestroy();
       });
       callbacks.registerCallback("template", [clientWorld]() {
         return clientWorld->currentTemplate()->store();
@@ -543,6 +574,13 @@ namespace LuaBindings {
       } else {
         return {};
       }
+    });
+    
+    callbacks.registerCallback("entities", [world](LuaEngine& engine, Maybe<LuaTable> options) {
+      if (!options) {
+        options = engine.createTable();
+      }
+      return entityQueryImpl<Entity>(world, engine, *options, {});
     });
 
     callbacks.registerCallbackWithSignature<bool, int>("entityExists", bind(WorldEntityCallbacks::entityExists, world, _1));

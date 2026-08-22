@@ -31,8 +31,9 @@ UniverseClient::UniverseClient(PlayerStoragePtr playerStorage, StatisticsPtr sta
   m_playerStorage = std::move(playerStorage);
   m_statistics = std::move(statistics);
   m_customWorldStorageDirectory = customWorldStorageDir;
-  m_pause = false;
+  m_pause = make_shared<atomic<bool>>(false);
   m_luaRoot = make_shared<LuaRoot>();
+  m_subWorldThreads = IdMap<ClientSubWorldId,WorldClientThreadPtr>(MinClientSubWorldId,MaxClientSubWorldId);
   reset();
 }
 
@@ -210,6 +211,10 @@ Maybe<String> UniverseClient::disconnectReason() const {
   return m_disconnectReason;
 }
 
+unsigned UniverseClient::connectionVersion() {
+  return m_connection->packetSocket().netRules().version();
+}
+
 WorldClientPtr UniverseClient::worldClient() const {
   return m_worldClient;
 }
@@ -290,14 +295,19 @@ void UniverseClient::update(float dt) {
 
   m_statistics->update();
 
-  if (!m_pause) {
+  if (!*m_pause) {
     m_worldClient->update(dt);
     for (auto& p : m_scriptContexts)
       p.second->update();
   }
   m_connection->push(m_worldClient->getOutgoingPackets());
+  if (m_connection->packetSocket().netRules().version() >= 16) {
+    for (auto& p : m_subWorldThreads) {
+      m_connection->push(p.second->pullOutgoingPackets());
+    }
+  }
 
-  if (!m_pause)
+  if (!*m_pause)
     m_systemWorldClient->update(dt);
   m_connection->push(m_systemWorldClient->pullOutgoingPackets());
 
@@ -337,6 +347,20 @@ void UniverseClient::update(float dt) {
     }
 
     m_storageTriggerDeadline = Time::monotonicMilliseconds() + assets->json("/client.config:storageTriggerInterval").toUInt();
+    
+    // clean up inactive/errored subworlds as well
+    for (auto const& subWorldId : m_subWorldThreads.keys()) {
+      auto thread = m_subWorldThreads.get(subWorldId);
+      if (thread->errorOccurred() || thread->shouldExpire()) {
+        Logger::info("UniverseClient: Cleaning up subworld {}.",subWorldId);
+        thread->stop();
+        m_subWorldThreads.remove(subWorldId);
+        if (m_subWorlds.hasLeftValue(subWorldId)) {
+          m_subWorlds.removeLeft(subWorldId);
+          m_connection->pushSingle(make_shared<ClientSubWorldRequest>(subWorldId, WorldId()));
+        }
+      }
+    }
   }
 
   if (!m_worldClient->mainPlayerDead() || m_mainPlayer->modeConfig().permadeath) {
@@ -712,6 +736,13 @@ StatisticsPtr UniverseClient::statistics() const {
   return m_statistics;
 }
 
+UniverseClient::ScriptComponentPtr UniverseClient::scriptContext(String const& contextName) {
+  if (auto context = m_scriptContexts.ptr(contextName))
+    return *context;
+  else
+    return nullptr;
+}
+
 void UniverseClient::createCustomWorld(String const& name, Json templateData) {
   RecursiveMutexLocker locker(m_mutex);
   if (!File::isDirectory(m_customWorldStorageDirectory)) {
@@ -724,12 +755,100 @@ void UniverseClient::createCustomWorld(String const& name, Json templateData) {
   }
 }
 
+ClientSubWorldId UniverseClient::createSubWorld() {
+  auto swid = m_subWorldThreads.nextId();
+  auto thread = make_shared<WorldClientThread>(swid);
+  thread->setPause(m_pause);
+  thread->start();
+  m_subWorldThreads.add(swid,thread);
+  return swid;
+}
+
+void UniverseClient::setSubWorldWorld(ClientSubWorldId subWorldId, WorldId worldId) {
+  // asks to change worlds. the server's response will update the thread (in WorldStop and WorldStart packets)
+  if (m_connection->packetSocket().netRules().version() < 16) {
+    // server too old, don't.
+    Logger::error("UniverseClient: Not setting subworld world, server is too old.");
+    return;
+  }
+  if (worldId) {
+    if (m_subWorlds.hasRightValue(worldId)) {
+      Logger::error("UniverseClient: Not setting subworld world, one is already on world {}.",worldId);
+      return;
+    }
+    Logger::info("UniverseClient: Requesting subworld {} on world {}", subWorldId, worldId);
+    m_subWorlds.add(subWorldId,worldId);
+  } else if (m_subWorlds.hasLeftValue(subWorldId)) {
+    // clear the world
+    Logger::info("UniverseClient: Requesting destroy of subworld {}", subWorldId, worldId);
+    m_subWorlds.removeLeft(subWorldId);
+  }
+  m_connection->pushSingle(make_shared<ClientSubWorldRequest>(subWorldId,worldId));
+}
+
+bool UniverseClient::subWorldExistsOnWorld(WorldId worldId) const {
+  return m_subWorlds.hasRightValue(worldId);
+}
+
+ClientSubWorldId UniverseClient::getSubWorldOnWorld(WorldId worldId) {
+  // will always return a subworld id for a world. creates one if one is not present.
+  if (m_subWorlds.hasRightValue(worldId)) {
+    return m_subWorlds.getLeft(worldId); // a subworld already exists here, return that
+  }
+  ClientSubWorldId swid = 0;
+  for (auto const& p : m_subWorldThreads) {
+    if (p.second->errorOccurred()) {
+      continue;
+    }
+    if (!m_subWorlds.hasLeftValue(p.first)) {
+      swid = p.first; // reuse an existing subworld
+      break;
+    }
+  }
+  if (swid == 0) {
+    swid = createSubWorld(); // create a new one
+  }
+  if (worldId) {
+    setSubWorldWorld(swid, worldId);
+  }
+  return swid;
+}
+
+void UniverseClient::destroySubWorldOnWorld(WorldId worldId) {
+  if (!m_subWorlds.hasRightValue(worldId)) {
+    return;
+  }
+  setSubWorldWorld(m_subWorlds.getLeft(worldId), WorldId());
+}
+
+RpcThreadPromise<Json> UniverseClient::sendSubWorldOnWorldMessage(WorldId const& worldId, String const& message, JsonArray const& args) {
+  if (m_connection->packetSocket().netRules().version() < 16) {
+    return RpcThreadPromise<Json>::createFailed("Server too old");
+  }
+  auto subWorldId = getSubWorldOnWorld(worldId);
+  auto pair = RpcThreadPromise<Json>::createPair();
+  m_subWorldThreads.get(subWorldId)->passMessage({message, args, pair.second});
+  return pair.first;
+}
+
+// though it resolves instantly, still use a promise for consistency
+RpcPromise<Json> UniverseClient::sendMainWorldMessage(String const& message, JsonArray const& args) {
+  if (!isConnected()) {
+    return RpcPromise<Json>::createFailed("Not connected");
+  }
+  if (auto resp = m_worldClient->receiveMessage(ServerConnectionId, message, args)) {
+    return RpcPromise<Json>::createFulfilled(*resp);
+  } else {
+    return RpcPromise<Json>::createFailed("Message not handled by world");
+  }
+}
+
 bool UniverseClient::paused() const {
-  return m_pause;
+  return *m_pause;
 }
 
 void UniverseClient::setPause(bool pause) {
-  m_pause = pause;
+  *m_pause = pause;
 
   if (pause)
     m_universeClock->stop();
@@ -846,6 +965,40 @@ void UniverseClient::handlePackets(List<PacketPtr> const& packets) {
             m_connection->pushSingle(make_shared<ClientCustomWorldResponse>(clientCustomWorldRequest->name, WorldChunks()));
           }
         }
+      } else if (auto worldLoadNotification = as<NotifyWorldLoad>(packet)) {
+        if (auto customWorldId = worldLoadNotification->worldId.ptr<ClientCustomWorldId>()) {
+          if (customWorldId->uuid == m_clientContext->playerUuid()) {
+            for (auto& p : m_scriptContexts) {
+              p.second->invoke("clientCustomWorldLoaded",customWorldId->name,printWorldId(worldLoadNotification->worldId));
+            }
+          }
+        } else if (auto shipWorldId = worldLoadNotification->worldId.ptr<ClientShipWorldId>()) {
+          if (*shipWorldId == m_clientContext->playerUuid()) {
+            for (auto& p : m_scriptContexts) {
+              p.second->invoke("shipWorldLoaded",printWorldId(worldLoadNotification->worldId));
+            }
+          }
+        }
+        for (auto& p : m_scriptContexts) {
+          p.second->invoke("serverWorldLoaded",printWorldId(worldLoadNotification->worldId));
+        }
+      } else if (auto cwtReject = as<ClientSubWorldReject>(packet)) {
+        Logger::warn("UniverseClient: Subworld {} rejected by server", cwtReject->subWorldId);
+        if (m_subWorlds.hasLeftValue(cwtReject->subWorldId)) {
+          m_subWorlds.removeLeft(cwtReject->subWorldId);
+          // thread will time out on its own if left unused.
+        }
+        for (auto& p : m_scriptContexts) {
+          p.second->invoke("subWorldRejected",cwtReject->subWorldId);
+        }
+      } else if (auto cwtPacket = as<ClientSubWorldPackets>(packet)) {
+        // packets for a world thread
+        if (m_subWorldThreads.contains(cwtPacket->subWorldId)) {
+          auto worldThread = m_subWorldThreads.get(cwtPacket->subWorldId);
+          worldThread->pushIncomingPackets(cwtPacket->packets);
+        } else {
+          Logger::warn("UniverseClient: Received packets for non-existent subworld {}", cwtPacket->subWorldId);
+        }
       } else if (!m_systemWorldClient->handleIncomingPacket(packet)) {
         // see if the system world will handle it, otherwise pass it along to the world client
         m_worldClient->handleIncomingPackets({packet});
@@ -860,7 +1013,12 @@ void UniverseClient::handlePackets(List<PacketPtr> const& packets) {
 
 void UniverseClient::reset() {
   stopLua();
+  for (auto const& p : m_subWorldThreads) {
+    p.second->stop();
+  }
 
+  m_subWorlds.clear();
+  m_subWorldThreads.clear();
   m_universeClock.reset();
   m_worldClient.reset();
   m_celestialDatabase.reset();

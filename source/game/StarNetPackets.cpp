@@ -81,7 +81,11 @@ EnumMap<PacketType> const PacketTypeNames{
   {PacketType::UpdateWorldTemplate, "UpdateWorldTemplate"},
   {PacketType::ClientCustomWorldRequest, "ClientCustomWorldRequest"},
   {PacketType::ClientCustomWorldResponse, "ClientCustomWorldResponse"},
-  {PacketType::ClientCustomWorldCreate, "ClientCustomWorldCreate"}
+  {PacketType::ClientCustomWorldCreate, "ClientCustomWorldCreate"},
+  {PacketType::ClientSubWorldPackets, "ClientSubWorldPackets"},
+  {PacketType::ClientSubWorldRequest, "ClientSubWorldRequest"},
+  {PacketType::ClientSubWorldReject, "ClientSubWorldReject"},
+  {PacketType::NotifyWorldLoad, "NotifyWorldLoad"}
 };
 
 EnumMap<NetCompressionMode> const NetCompressionModeNames {
@@ -178,6 +182,10 @@ PacketPtr createPacket(PacketType type) {
     case PacketType::ClientCustomWorldRequest: return make_shared<ClientCustomWorldRequest>();
     case PacketType::ClientCustomWorldResponse: return make_shared<ClientCustomWorldResponse>();
     case PacketType::ClientCustomWorldCreate: return make_shared<ClientCustomWorldCreate>();
+    case PacketType::ClientSubWorldPackets: return make_shared<ClientSubWorldPackets>();
+    case PacketType::ClientSubWorldRequest: return make_shared<ClientSubWorldRequest>();
+    case PacketType::ClientSubWorldReject: return make_shared<ClientSubWorldReject>();
+    case PacketType::NotifyWorldLoad: return make_shared<NotifyWorldLoad>();
     default:
       throw StarPacketException(strf("Unrecognized packet type {}", (unsigned int)type));
   }
@@ -1491,6 +1499,70 @@ void ClientCustomWorldCreate::read(DataStream& ds) {
 void ClientCustomWorldCreate::write(DataStream& ds) const {
   ds.write(name);
   ds.write(templateData);
+}
+
+ClientSubWorldPackets::ClientSubWorldPackets() {}
+
+ClientSubWorldPackets::ClientSubWorldPackets(ClientSubWorldId const& subWorldId, List<PacketPtr> packets) : subWorldId(subWorldId), packets(std::move(packets)) {}
+
+void ClientSubWorldPackets::read(DataStream& ds) {
+  ds.read(subWorldId);
+  // note: this approach may have an issue with packet size
+  uint32_t count = ds.read<uint32_t>();
+  for (uint32_t i = 0; i < count; i++) {
+    auto packetType = ds.read<PacketType>();
+    PacketPtr packet = createPacket(packetType);
+    packet->read(ds);
+    packets.append(packet);
+  }
+}
+
+void ClientSubWorldPackets::write(DataStream& ds) const {
+  ds.write(subWorldId);
+  ds.write<uint32_t>(packets.count());
+  for (PacketPtr const& packet : packets) {
+    auto packetType = packet->type();
+    ds.write(packetType);
+    packet->write(ds);
+  }
+}
+
+ClientSubWorldRequest::ClientSubWorldRequest() {}
+
+ClientSubWorldRequest::ClientSubWorldRequest(ClientSubWorldId const& subWorldId, WorldId worldId) : subWorldId(subWorldId), worldId(std::move(worldId)) {}
+
+void ClientSubWorldRequest::read(DataStream& ds) {
+  ds.read(subWorldId);
+  ds.read(worldId);
+}
+
+void ClientSubWorldRequest::write(DataStream& ds) const {
+  ds.write(subWorldId);
+  ds.write(worldId);
+}
+
+ClientSubWorldReject::ClientSubWorldReject() {}
+
+ClientSubWorldReject::ClientSubWorldReject(ClientSubWorldId const& subWorldId) : subWorldId(subWorldId) {}
+
+void ClientSubWorldReject::read(DataStream& ds) {
+  ds.read(subWorldId);
+}
+
+void ClientSubWorldReject::write(DataStream& ds) const {
+  ds.write(subWorldId);
+}
+
+NotifyWorldLoad::NotifyWorldLoad() {}
+
+NotifyWorldLoad::NotifyWorldLoad(WorldId worldId) : worldId(std::move(worldId)) {}
+
+void NotifyWorldLoad::read(DataStream& ds) {
+  ds.read(worldId);
+}
+
+void NotifyWorldLoad::write(DataStream& ds) const {
+  ds.write(worldId);
 }
 
 }

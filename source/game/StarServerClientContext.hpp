@@ -71,6 +71,12 @@ public:
   WorldId playerWorldId() const;
   void clearPlayerWorld();
 
+  void setSubWorld(ClientSubWorldId subWorldId, WorldServerThreadPtr worldThread);
+  WorldServerThreadPtr subWorld(ClientSubWorldId subWorldId) const;
+  bool hasSubWorld(ClientSubWorldId subWorldId) const;
+  void clearSubWorld(ClientSubWorldId subWorldId);
+  List<ClientSubWorldId> subWorlds() const;
+
   void setSystemWorld(SystemWorldServerThreadPtr systemWorldThread);
   SystemWorldServerThreadPtr systemWorld() const;
   void clearSystemWorld();
@@ -129,6 +135,8 @@ private:
   WorldServerThreadPtr m_worldThread;
   WarpToWorld m_returnWarp;
   WarpToWorld m_reviveWarp;
+  
+  HashMap<ClientSubWorldId, WorldServerThreadPtr> m_subWorldThreads;
 
   SystemWorldServerThreadPtr m_systemWorldThread;
 

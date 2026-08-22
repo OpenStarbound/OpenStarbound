@@ -30,6 +30,10 @@ LuaCallbacks LuaBindings::makeUniverseServerCallbacks(UniverseServer* universe) 
     universe->clientWarpPlayer(clientId, parseWarpAction(action), deploy.value(false));
   });
   
+  callbacks.registerCallback("clientOpenProtocolVersion", [universe](ConnectionId clientId) {
+    return universe->clientConnectionVersion(clientId);
+  });
+  
   callbacks.registerCallback("createCustomWorld", [universe](String name, Json templateData) {
     universe->createCustomWorld(CustomWorldId(name), make_shared<WorldTemplate>(templateData));
   });

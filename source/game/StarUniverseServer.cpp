@@ -224,6 +224,14 @@ String UniverseServer::clientDescriptor(ConnectionId clientId) const {
     return "disconnected_client";
 }
 
+unsigned UniverseServer::clientConnectionVersion(ConnectionId clientId) const {
+  ReadLocker clientsLocker(m_clientsLock);
+  if (auto clientContext = m_clients.value(clientId))
+    return clientContext->netRules().version();
+  else
+    return 0;
+}
+
 String UniverseServer::clientNick(ConnectionId clientId) const {
   return m_chatProcessor->connectionNick(clientId);
 }
@@ -1015,9 +1023,46 @@ void UniverseServer::warpPlayers() {
         m_pendingPlayerWarps.remove(clientId);
       }
     } else {
-      // If the world is not created yet, just set a new warp again to wait for
-      // it to create.
-      m_pendingPlayerWarps[clientId] = {warpAction, deploy};
+      // If the world is not created yet, just wait for it to create.
+      //m_pendingPlayerWarps[clientId] = {warpAction, deploy}; // Bott: ...there's no point to setting it again like this since it's already set. Nothing above removes it by this point.
+    }
+  }
+  
+  for (auto const& clientId : m_pendingSubWorlds.keys()) {
+    auto& pendingSubWorlds = m_pendingSubWorlds.get(clientId);
+    auto clientContext = m_clients.value(clientId);
+    if (!clientContext)
+      continue;
+
+    for (auto const& swid : pendingSubWorlds.keys()) {
+      auto& worldId = pendingSubWorlds.get(swid);
+      if (auto maybeToWorld = triggerWorldCreation(worldId)) {
+        Logger::info("UniverseServer: Sending player {} subworld {} to {}", clientId, swid, printWorldId(worldId));
+        if (auto toWorld = maybeToWorld.value()) {
+          locker.unlock();
+
+          bool clientAdded = toWorld && toWorld->addClient(mainToSubWorldConnectionId(clientId), SpawnTarget(), !clientContext->remoteAddress(), clientContext->canBecomeAdmin(), clientContext->netRules(), swid);
+
+          locker.lock();
+          if (clientAdded) {
+            clientContext->setSubWorld(swid,toWorld);
+            //m_chatProcessor->joinChannel(clientId, printWorldId(warpToWorld.world));
+            
+          } else {
+            Logger::info("UniverseServer: Player {} subworld {} failed", clientId, swid);
+            m_connectionServer->sendPackets(clientId, {make_shared<ClientSubWorldReject>(swid)});
+          }
+        } else {
+          Logger::info("UniverseServer: Player {} subworld {} failed, invalid world '{}' or world failed to load", clientId, swid, printWorldId(worldId));
+          m_connectionServer->sendPackets(clientId, {make_shared<ClientSubWorldReject>(swid)});
+        }
+        pendingSubWorlds.remove(swid);
+      } else {
+        // If the world is not created yet, wait for it to create.
+      }
+    }
+    if (pendingSubWorlds.empty()) {
+      m_pendingSubWorlds.remove(clientId);
     }
   }
 }
@@ -1281,7 +1326,7 @@ void UniverseServer::shutdownInactiveWorlds() {
         world->stop();
         Logger::error("UniverseServer: World {} has stopped due to an error", worldId);
         worldDiedWithError(world->worldId());
-      } else if (world->noClients()) {
+      } else if (world->noClients() && world->shouldExpire()) {
         bool anyPendingWarps = false;
         for (auto const& p : m_pendingPlayerWarps) {
           if (resolveWarpAction(p.second.first, p.first, p.second.second).world == world->worldId()) {
@@ -1289,8 +1334,22 @@ void UniverseServer::shutdownInactiveWorlds() {
             break;
           }
         }
+        if (!anyPendingWarps) {
+          for (auto const& p : m_pendingSubWorlds) {
+            for (auto const& ps : p.second) {
+              if (ps.second == world->worldId()) {
+                // not really a warp, but close enough.
+                anyPendingWarps = true;
+                break;
+              } 
+            }
+            if (anyPendingWarps) {
+              break;
+            }
+          }
+        }
 
-        if (!anyPendingWarps && world->shouldExpire()) {
+        if (!anyPendingWarps) {
           Logger::info("UniverseServer: Stopping idle world {}", worldId);
           world->stop();
         }
@@ -1300,9 +1359,18 @@ void UniverseServer::shutdownInactiveWorlds() {
       if (world->isJoined()) {
         auto kickClients = world->clients();
         if (!kickClients.empty()) {
-          Logger::info("UniverseServer: World {} shutdown, kicking {} players to their own ships", worldId, world->clients().size());
-          for (auto clientId : world->clients())
-            clientWarpPlayer(clientId, WarpAlias::OwnShip);
+          Logger::info("UniverseServer: World {} shutdown, kicking/removing {} players/subworlds", worldId, world->clients().size());
+          for (auto clientId : world->clients()) {
+            if (clientId >= MinClientSubWorldConnectionId) {
+              // subworlds are immediately removed
+              auto swid = world->clientSubWorld(clientId);
+              auto cid = subWorldToMainConnectionId(clientId);
+              m_connectionServer->sendPackets(cid, world->removeClient(clientId));
+              m_clients.get(cid)->clearSubWorld(swid);
+            } else {
+              clientWarpPlayer(clientId, WarpAlias::OwnShip);
+            }
+          }
         }
 
         if (worldId.is<ClientShipWorldId>()) {
@@ -1673,7 +1741,12 @@ void UniverseServer::addCelestialRequests(ConnectionId clientId, List<CelestialR
 void UniverseServer::worldUpdated(WorldServerThread* server) {
   for (auto clientId : server->clients()) {
     auto packets = server->pullOutgoingPackets(clientId);
-    m_connectionServer->sendPackets(clientId, std::move(packets));
+    if (clientId >= MinClientSubWorldConnectionId) {
+      // this is just going to be one wrapper packet.
+      m_connectionServer->sendPackets(subWorldToMainConnectionId(clientId), std::move(packets));
+    } else {
+      m_connectionServer->sendPackets(clientId, std::move(packets));
+    }
   }
 }
 
@@ -1791,6 +1864,45 @@ void UniverseServer::packetsReceived(UniverseConnectionServer*, ConnectionId cli
         
         clientsLocker.unlock();
         locker.unlock();
+      } else if (auto cwtRequest = as<ClientSubWorldRequest>(packet)) {
+        if (auto currentWorld = clientContext->subWorld(cwtRequest->subWorldId)) {
+          //Logger::info("UniverseServer: Clearing client {} subworld {} world", clientId, cwtRequest->subWorldId);
+          m_connectionServer->sendPackets(clientId, currentWorld->removeClient(mainToSubWorldConnectionId(clientId)));
+          clientContext->clearSubWorld(cwtRequest->subWorldId);
+        }
+        if (cwtRequest->worldId) {
+          auto configuration = Root::singleton().configuration();
+          bool ownWorld = false;
+          if (auto shipWorldId = cwtRequest->worldId.ptr<ClientShipWorldId>()) {
+            ownWorld = (*shipWorldId) == clientContext->playerUuid();
+          } else if (auto customWorldId = cwtRequest->worldId.ptr<ClientCustomWorldId>()) {
+            ownWorld = customWorldId->uuid == clientContext->playerUuid();
+          }
+          if (
+            configuration->get("disallowClientSubWorlds").optBool().value(false)
+            || !(ownWorld
+              || configuration->get("allowClientSubWorldsAllWorlds").optBool().value(true)
+              || clientContext->isAdmin()
+              || (cwtRequest->worldId == clientContext->playerWorldId() && configuration->get("allowClientSubWorldsCurrentWorld").optBool().value(true)))
+          ) {
+            // not valid, immediately reject it
+            Logger::info("UniverseServer: Rejecting client {} subworld {} request for world {}", clientId, cwtRequest->subWorldId, cwtRequest->worldId);
+            m_connectionServer->sendPackets(clientId, {make_shared<ClientSubWorldReject>(cwtRequest->subWorldId)});
+          } else {
+            //Logger::info("UniverseServer: Accepting client {} subworld {} on world {}", clientId, cwtRequest->subWorldId, cwtRequest->worldId);
+            m_pendingSubWorlds[clientId][cwtRequest->subWorldId] = cwtRequest->worldId;
+          }
+        } else {
+          if (m_pendingSubWorlds.contains(clientId)) {
+            if (m_pendingSubWorlds[clientId].contains(cwtRequest->subWorldId)) {
+              //Logger::info("UniverseServer: Cancelling pending client {} subworld {}", clientId, cwtRequest->subWorldId);
+              m_pendingSubWorlds[clientId].remove(cwtRequest->subWorldId);
+            }
+          }
+        }
+      } else if (auto cwtPackets = as<ClientSubWorldPackets>(packet)) {
+        if (auto currentWorld = clientContext->subWorld(cwtPackets->subWorldId))
+          currentWorld->pushIncomingPackets(mainToSubWorldConnectionId(clientId), std::move(cwtPackets->packets));
       } else if (is<SystemObjectSpawnPacket>(packet)) {
         if (auto currentSystem = clientContext->systemWorld())
           currentSystem->pushIncomingPacket(clientId, std::move(packet));
@@ -2207,6 +2319,15 @@ void UniverseServer::doDisconnection(ConnectionId clientId, String const& reason
       m_chatProcessor->leaveChannel(clientId, printWorldId(currentWorld->worldId()));
       locker.lock();
     }
+    
+    // clean up subworlds as well
+    for (auto const& subWorldId : clientContext->subWorlds()) {
+      auto currentWorld = clientContext->subWorld(subWorldId);
+      locker.unlock();
+      auto finalPackets = currentWorld->removeClient(mainToSubWorldConnectionId(clientId));
+      m_connectionServer->sendPackets(clientId, finalPackets);
+      locker.lock();
+    }
 
     clientContext->clearPlayerWorld();
     clientContext->setPlayerReviveWarp(reviveWarp);
@@ -2435,6 +2556,8 @@ Maybe<UniverseServer::WorldServerPromise> UniverseServer::shipWorldPromise(
     clientContext->updateShipChunks(shipWorldThread->readChunks());
     shipWorldThread->start();
     shipWorldThread->setUpdateAction(bind(&UniverseServer::worldUpdated, this, _1));
+    
+    notifyWorldCreated(clientShipWorldId);
 
     return shipWorldThread;
   }));
@@ -2476,6 +2599,8 @@ Maybe<UniverseServer::WorldServerPromise> UniverseServer::celestialWorldPromise(
     worldThread->setPause(m_pause);
     worldThread->start();
     worldThread->setUpdateAction(bind(&UniverseServer::worldUpdated, this, _1));
+    
+    notifyWorldCreated(celestialWorldId);
 
     return worldThread;
   }));
@@ -2597,6 +2722,8 @@ Maybe<UniverseServer::WorldServerPromise> UniverseServer::instanceWorldPromise(I
     worldThread->setPause(m_pause);
     worldThread->start();
     worldThread->setUpdateAction(bind(&UniverseServer::worldUpdated, this, _1));
+    
+    notifyWorldCreated(instanceWorldId);
 
     return worldThread;
   }));
@@ -2631,6 +2758,8 @@ Maybe<UniverseServer::WorldServerPromise> UniverseServer::customWorldPromise(Cus
     worldThread->setPause(m_pause);
     worldThread->start();
     worldThread->setUpdateAction(bind(&UniverseServer::worldUpdated, this, _1));
+    
+    notifyWorldCreated(customWorldId);
 
     return worldThread;
   }));
@@ -2688,6 +2817,8 @@ Maybe<UniverseServer::WorldServerPromise> UniverseServer::clientCustomWorldPromi
       clientContext->setCustomWorldActive(clientCustomWorldId.name, true);
       worldThread->start();
       worldThread->setUpdateAction(bind(&UniverseServer::worldUpdated, this, _1));
+    
+      notifyWorldCreated(clientCustomWorldId);
 
       return worldThread;
     });
@@ -2705,6 +2836,49 @@ Maybe<UniverseServer::WorldServerPromise> UniverseServer::clientCustomWorldPromi
       producer,
       pair.first
     );
+  }
+}
+
+void UniverseServer::notifyWorldCreated(WorldId const& worldId) {
+  auto configuration = Root::singleton().configuration();
+  ReadLocker clientsLocker(m_clientsLock);
+  
+  bool notifyAll = configuration->get("notifyClientsOnWorldCreate").optBool().value(false);
+  if (notifyAll || configuration->get("notifyAdminsOnWorldCreate").optBool().value(false)) {
+    for (auto const& p : m_clients) {
+      if (p.second->netRules().version() >= 16) {
+        if (notifyAll || p.second->isAdmin()) {
+          m_connectionServer->sendPackets(p.first, {make_shared<NotifyWorldLoad>(worldId)});
+        } else {
+          bool ownWorld = false;
+          if (auto shipWorldId = worldId.ptr<ClientShipWorldId>()) {
+            ownWorld = (*shipWorldId) == p.second->playerUuid();
+          } else if (auto customWorldId = worldId.ptr<ClientCustomWorldId>()) {
+            ownWorld = customWorldId->uuid == p.second->playerUuid();
+          }
+          if (ownWorld) {
+            m_connectionServer->sendPackets(p.first, {make_shared<NotifyWorldLoad>(worldId)});
+          }
+        }
+      }
+    }
+  } else {
+    // notify only the world owner
+    Maybe<Uuid> uuid = {};
+    if (auto shipWorldId = worldId.ptr<ClientShipWorldId>()) {
+      uuid = *shipWorldId;
+    } else if (auto customWorldId = worldId.ptr<ClientCustomWorldId>()) {
+      uuid = customWorldId->uuid;
+    }
+    if (uuid) {
+      auto clientId = clientForUuid(*uuid);
+      if (clientId) {
+        auto clientContext = m_clients.get(*clientId);
+        if (clientContext->netRules().version() >= 16) {
+          m_connectionServer->sendPackets(*clientId, {make_shared<NotifyWorldLoad>(worldId)});
+        }
+      }
+    }
   }
 }
 
