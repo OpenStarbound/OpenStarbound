@@ -1025,7 +1025,7 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
         tile->liquid = liquidUpdate->liquidUpdate.liquidLevel();
 
     } else if (auto giveItem = as<GiveItemPacket>(packet)) {
-      if (!m_headless) {
+      if (m_headless) {
         // TODO: call something on world script
       } else {
         tryGiveMainPlayerItem(itemDatabase->item(giveItem->item));
