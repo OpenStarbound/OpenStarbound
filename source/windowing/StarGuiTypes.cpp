@@ -23,7 +23,7 @@ EnumMap<GuiDirection> const GuiDirectionNames{
 };
 
 String rarityBorder(String border) {
-  return strf("/interface/inventory/itemborder{}.png", border.toLower());
+  return (border.beginsWith("/") ? border.toLower() : strf("/interface/inventory/itemborder{}.png", border.toLower()));
 }
 
 }
