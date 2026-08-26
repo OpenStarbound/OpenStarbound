@@ -1,17 +1,17 @@
 find_package(SDL3 CONFIG REQUIRED)
 SET(imgui_SOURCES
-    extern/imgui/backends/imgui_impl_opengl3.cpp
-    extern/imgui/backends/imgui_impl_sdl3.cpp
-    extern/imgui/imgui.cpp
-    extern/imgui/imgui_demo.cpp
-    extern/imgui/imgui_draw.cpp
-    extern/imgui/imgui_tables.cpp
-    extern/imgui/imgui_widgets.cpp
+    ${PROJECT_SOURCE_DIR}/extern/imgui/backends/imgui_impl_opengl3.cpp
+    ${PROJECT_SOURCE_DIR}/extern/imgui/backends/imgui_impl_sdl3.cpp
+    ${PROJECT_SOURCE_DIR}/extern/imgui/imgui.cpp
+    ${PROJECT_SOURCE_DIR}/extern/imgui/imgui_demo.cpp
+    ${PROJECT_SOURCE_DIR}/extern/imgui/imgui_draw.cpp
+    ${PROJECT_SOURCE_DIR}/extern/imgui/imgui_tables.cpp
+    ${PROJECT_SOURCE_DIR}/extern/imgui/imgui_widgets.cpp
 )
 SET(imgui_HEADERS
-    extern/imgui/backends/imgui_impl_opengl3.h
-    imgui/backends/imgui_impl_sdl3.h
-    imgui/imgui.h
+    ${PROJECT_SOURCE_DIR}/extern/imgui/backends/imgui_impl_opengl3.h
+    ${PROJECT_SOURCE_DIR}/extern/imgui/backends/imgui_impl_sdl3.h
+    ${PROJECT_SOURCE_DIR}/extern/imgui/imgui.h
 )
 ADD_LIBRARY (imgui STATIC ${imgui_SOURCES} ${imgui_HEADERS})
 target_link_directories(imgui PUBLIC SDL3::SDL3)
