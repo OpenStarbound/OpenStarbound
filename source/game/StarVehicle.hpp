@@ -1,7 +1,7 @@
 #pragma once
 
 #include "StarNetElementSystem.hpp"
-#include "StarEntity.hpp"
+#include "StarMobileEntity.hpp"
 #include "StarNetworkedAnimator.hpp"
 #include "StarMovementController.hpp"
 #include "StarLuaComponents.hpp"
@@ -14,7 +14,12 @@ namespace Star {
 STAR_EXCEPTION(VehicleException, StarException);
 STAR_CLASS(Vehicle);
 
-class Vehicle : public virtual LoungeableEntity, public virtual InteractiveEntity, public virtual PhysicsEntity, public virtual ScriptedEntity {
+class Vehicle : 
+  public virtual MobileEntity,
+  public virtual LoungeableEntity, 
+  public virtual InteractiveEntity, 
+  public virtual PhysicsEntity, 
+  public virtual ScriptedEntity {
 public:
   Vehicle(Json baseConfig, String path, Json dynamicConfig);
 
@@ -78,6 +83,8 @@ public:
 
   Maybe<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
   Maybe<LuaValue> evalScript(String const& code) override;
+  
+  MovementController* movementController() override;
 
   void setPosition(Vec2F const& position);
 

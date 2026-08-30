@@ -4,7 +4,7 @@
 #include "StarMovementController.hpp"
 #include "StarItemDescriptor.hpp"
 #include "StarGameTimers.hpp"
-#include "StarEntity.hpp"
+#include "StarMobileEntity.hpp"
 #include "StarScriptedEntity.hpp"
 #include "StarDrawable.hpp"
 #include "StarLuaComponents.hpp"
@@ -14,7 +14,7 @@ namespace Star {
 STAR_CLASS(Item);
 STAR_CLASS(ItemDrop);
 
-class ItemDrop : public virtual Entity, public virtual ScriptedEntity {
+class ItemDrop : public virtual MobileEntity, public virtual ScriptedEntity {
 public:
   // Creates a drop at the given position and adds a hard-coded amount of
   // randomness to the drop position / velocity.
@@ -61,6 +61,9 @@ public:
 
   virtual void render(RenderCallback* renderCallback) override;
   virtual void renderLightSources(RenderCallback* renderCallback) override;
+  
+  MovementController* movementController() override;
+  
   // The item that this drop contains
   ItemPtr item() const;
 

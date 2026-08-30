@@ -574,6 +574,10 @@ Maybe<LuaValue> Vehicle::evalScript(String const& code) {
   return m_scriptComponent.eval(code);
 }
 
+MovementController* Vehicle::movementController() {
+  return &m_movementController;
+}
+
 void Vehicle::setPosition(Vec2F const& position) {
   m_movementController.setPosition(position);
 }

@@ -22,6 +22,7 @@ private:
 
   String help(ConnectionId connectionId, String const& argumentString);
   String admin(ConnectionId connectionId, String const& argumentString);
+  String serverDebug(ConnectionId connectionId, String const& argumentString);
   String pvp(ConnectionId connectionId, String const& argumentString);
   String whoami(ConnectionId connectionId, String const& argumentString);
 	

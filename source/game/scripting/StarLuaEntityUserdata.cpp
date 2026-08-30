@@ -96,14 +96,8 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
 
     methods.registerMethod("velocity",
     [&](EntityPtr const& entity) -> Maybe<Vec2F> {
-        if (auto monsterEntity = as<Monster>(entity))
-            return monsterEntity->velocity();
-        else if (auto toolUserEntity = as<ToolUserEntity>(entity))
-            return toolUserEntity->velocity();
-        else if (auto vehicleEntity = as<Vehicle>(entity))
-            return vehicleEntity->velocity();
-        else if (auto projectileEntity = as<Projectile>(entity))
-            return projectileEntity->velocity();
+        if (auto mobileEntity = as<MobileEntity>(entity))
+            return mobileEntity->movementController()->velocity();
 
         return {};
     });
@@ -297,83 +291,83 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     // movement controller methods, they're networked anyway so might as well make them available to read
 
     methods.registerMethod("mass", [&](EntityPtr entity) -> Maybe<float> {
-        if (auto actor = as<ActorEntity>(entity))
-            return actor->movementController()->mass();
+        if (auto mobile = as<MobileEntity>(entity))
+            return mobile->movementController()->mass();
         return {};
     });
     methods.registerMethod("boundBox", [&](EntityPtr entity) -> Maybe<RectF> {
-        if (auto actor = as<ActorEntity>(entity))
-            return actor->movementController()->collisionPoly().boundBox();
+        if (auto mobile = as<MobileEntity>(entity))
+            return mobile->movementController()->collisionPoly().boundBox();
         return {};
     });
     methods.registerMethod("collisionPoly", [&](EntityPtr entity) -> Maybe<PolyF> {
-        if (auto actor = as<ActorEntity>(entity))
-            return actor->movementController()->collisionPoly();
+        if (auto mobile = as<MobileEntity>(entity))
+            return mobile->movementController()->collisionPoly();
         return {};
     });
     methods.registerMethod("collisionBody", [&](EntityPtr entity) -> Maybe<PolyF> {
-        if (auto actor = as<ActorEntity>(entity))
-            return actor->movementController()->collisionBody();
+        if (auto mobile = as<MobileEntity>(entity))
+            return mobile->movementController()->collisionBody();
         return {};
     });
     methods.registerMethod("collisionBoundBox", [&](EntityPtr entity) -> Maybe<RectF> {
-        if (auto actor = as<ActorEntity>(entity))
-            return actor->movementController()->collisionBody().boundBox();
+        if (auto mobile = as<MobileEntity>(entity))
+            return mobile->movementController()->collisionBody().boundBox();
         return {};
     });
     methods.registerMethod("localBoundBox", [&](EntityPtr entity) -> Maybe<RectF> {
-        if (auto actor = as<ActorEntity>(entity))
-            return actor->movementController()->localBoundBox();
+        if (auto mobile = as<MobileEntity>(entity))
+            return mobile->movementController()->localBoundBox();
         return {};
     });
     methods.registerMethod("rotation", [&](EntityPtr entity) -> Maybe<float> {
-        if (auto actor = as<ActorEntity>(entity))
-            return actor->movementController()->rotation();
+        if (auto mobile = as<MobileEntity>(entity))
+            return mobile->movementController()->rotation();
         return {};
     });
     methods.registerMethod("isColliding", [&](EntityPtr entity) -> Maybe<bool> {
-        if (auto actor = as<ActorEntity>(entity))
-            return actor->movementController()->isColliding();
+        if (auto mobile = as<MobileEntity>(entity))
+            return mobile->movementController()->isColliding();
         return {};
     });
     methods.registerMethod("isNullColliding", [&](EntityPtr entity) -> Maybe<bool> {
-        if (auto actor = as<ActorEntity>(entity))
-            return actor->movementController()->isNullColliding();
+        if (auto mobile = as<MobileEntity>(entity))
+            return mobile->movementController()->isNullColliding();
         return {};
     });
     methods.registerMethod("isCollisionStuck", [&](EntityPtr entity) -> Maybe<bool> {
-        if (auto actor = as<ActorEntity>(entity))
-            return actor->movementController()->isCollisionStuck();
+        if (auto mobile = as<MobileEntity>(entity))
+            return mobile->movementController()->isCollisionStuck();
         return {};
     });
     methods.registerMethod("stickingDirection", [&](EntityPtr entity) -> Maybe<float> {
-        if (auto actor = as<ActorEntity>(entity))
-            return actor->movementController()->stickingDirection();
+        if (auto mobile = as<MobileEntity>(entity))
+            return mobile->movementController()->stickingDirection();
         return {};
     });
     methods.registerMethod("liquidPercentage", [&](EntityPtr entity) -> Maybe<float> {
-        if (auto actor = as<ActorEntity>(entity))
-            return actor->movementController()->liquidPercentage();
+        if (auto mobile = as<MobileEntity>(entity))
+            return mobile->movementController()->liquidPercentage();
         return {};
     });
-    methods.registerMethod("liquidId", [&](EntityPtr entity) -> Maybe<float> {
-        if (auto actor = as<ActorEntity>(entity))
-            return actor->movementController()->liquidId();
+    methods.registerMethod("liquidId", [&](EntityPtr entity) -> Maybe<uint8_t> {
+        if (auto mobile = as<MobileEntity>(entity))
+            return mobile->movementController()->liquidId();
         return {};
     });
     methods.registerMethod("onGround", [&](EntityPtr entity) -> Maybe<bool> {
-        if (auto actor = as<ActorEntity>(entity))
-            return actor->movementController()->onGround();
+        if (auto mobile = as<MobileEntity>(entity))
+            return mobile->movementController()->onGround();
         return {};
     });
     methods.registerMethod("zeroG", [&](EntityPtr entity) -> Maybe<bool> {
-        if (auto actor = as<ActorEntity>(entity))
-            return actor->movementController()->zeroG();
+        if (auto mobile = as<MobileEntity>(entity))
+            return mobile->movementController()->zeroG();
         return {};
     });
     methods.registerMethod("atWorldLimit", [&](EntityPtr entity) -> Maybe<bool> {
-        if (auto actor = as<ActorEntity>(entity))
-            return actor->movementController()->atWorldLimit();
+        if (auto mobile = as<MobileEntity>(entity))
+            return mobile->movementController()->atWorldLimit();
         return {};
     });
     methods.registerMethod("anchorState", [&](EntityPtr entity) -> LuaVariadic<LuaValue> {
@@ -390,8 +384,8 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     });
     // slightly inconsistent for the sake of being more clear what the function is
     methods.registerMethod("movementParameters", [&](EntityPtr entity) -> Maybe<Json> {
-        if (auto actor = as<ActorEntity>(entity))
-            return actor->movementController()->parameters().toJson();
+        if (auto mobile = as<MobileEntity>(entity))
+            return mobile->movementController()->parameters().toJson();
         return {};
     });
 

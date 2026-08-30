@@ -9,7 +9,9 @@
 #include "StarAiTypes.hpp"
 #include "StarSky.hpp"
 #include "StarUniverseConnection.hpp"
+#include "StarWorldClientThread.hpp"
 #include "StarLuaComponents.hpp"
+#include "StarUniverse.hpp"
 
 namespace Star {
 
@@ -32,8 +34,11 @@ STAR_CLASS(QuestManager);
 STAR_CLASS(UniverseClient);
 STAR_CLASS(LuaRoot);
 
-class UniverseClient {
+class UniverseClient : public Universe {
 public:
+  typedef LuaUpdatableComponent<LuaBaseComponent> ScriptComponent;
+  typedef shared_ptr<ScriptComponent> ScriptComponentPtr;
+  
   UniverseClient(PlayerStoragePtr playerStorage, StatisticsPtr statistics, String const& customWorldStorageDir);
   ~UniverseClient();
 
@@ -45,6 +50,8 @@ public:
   bool isConnected() const;
   void disconnect();
   Maybe<String> disconnectReason() const;
+  
+  unsigned connectionVersion();
 
   // WorldClient may be null if the UniverseClient is not connected.
   WorldClientPtr worldClient() const;
@@ -63,7 +70,7 @@ public:
   void warpPlayer(WarpAction const& warpAction, bool animate = true, String const& animationType = "default", bool deploy = false);
   void flyShip(Vec3I const& system, SystemLocation const& destination, Json const& settings = {});
 
-  CelestialDatabasePtr celestialDatabase() const;
+  CelestialDatabasePtr celestialDatabase() override;
 
   CelestialCoordinate shipCoordinate() const;
 
@@ -110,8 +117,19 @@ public:
   QuestManagerPtr questManager() const;
   PlayerStoragePtr playerStorage() const;
   StatisticsPtr statistics() const;
+
+  ScriptComponentPtr scriptContext(String const& contextName);
   
   void createCustomWorld(String const& name, Json templateData);
+  
+  ClientSubWorldId createSubWorld();
+  void setSubWorldWorld(ClientSubWorldId subWorldId, WorldId worldId = WorldId());
+  bool subWorldExistsOnWorld(WorldId worldId) const;
+  ClientSubWorldId getSubWorldOnWorld(WorldId worldId);
+  void destroySubWorldOnWorld(WorldId worldId);
+
+  RpcThreadPromise<Json> sendSubWorldOnWorldMessage(WorldId const& worldId, String const& message, JsonArray const& args = {});
+  RpcPromise<Json> sendMainWorldMessage(String const& message, JsonArray const& args = {});
 
   bool paused() const;
 
@@ -134,7 +152,7 @@ private:
   
   String m_customWorldStorageDirectory;
 
-  bool m_pause;
+  shared_ptr<atomic<bool>> m_pause;
   ClockPtr m_universeClock;
   WorldClientPtr m_worldClient;
   SystemWorldClientPtr m_systemWorldClient;
@@ -163,10 +181,11 @@ private:
   Maybe<String> m_disconnectReason;
 
   LuaRootPtr m_luaRoot;
-
-  typedef LuaUpdatableComponent<LuaBaseComponent> ScriptComponent;
-  typedef shared_ptr<ScriptComponent> ScriptComponentPtr;
+  
   StringMap<ScriptComponentPtr> m_scriptContexts;
+  
+  BiMap<ClientSubWorldId, WorldId> m_subWorlds;
+  IdMap<ClientSubWorldId,WorldClientThreadPtr> m_subWorldThreads;
 
   ReloadPlayerCallback m_playerReloadPreCallback;
   ReloadPlayerCallback m_playerReloadCallback;

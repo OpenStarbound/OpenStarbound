@@ -51,6 +51,9 @@ public:
   bool isAdmin() const;
   void setAdmin(bool admin);
 
+  bool serverDebug() const;
+  void setServerDebug(bool serverDebug);
+
   EntityDamageTeam team() const;
   void setTeam(EntityDamageTeam team);
 
@@ -70,6 +73,12 @@ public:
   WorldServerThreadPtr playerWorld() const;
   WorldId playerWorldId() const;
   void clearPlayerWorld();
+
+  void setSubWorld(ClientSubWorldId subWorldId, WorldServerThreadPtr worldThread);
+  WorldServerThreadPtr subWorld(ClientSubWorldId subWorldId) const;
+  bool hasSubWorld(ClientSubWorldId subWorldId) const;
+  void clearSubWorld(ClientSubWorldId subWorldId);
+  List<ClientSubWorldId> subWorlds() const;
 
   void setSystemWorld(SystemWorldServerThreadPtr systemWorldThread);
   SystemWorldServerThreadPtr systemWorld() const;
@@ -118,6 +127,8 @@ private:
   String const m_playerName;
   String m_shipSpecies;
   bool const m_canBecomeAdmin;
+  
+  bool m_serverDebug;
 
   mutable RecursiveMutex m_mutex;
 
@@ -129,6 +140,8 @@ private:
   WorldServerThreadPtr m_worldThread;
   WarpToWorld m_returnWarp;
   WarpToWorld m_reviveWarp;
+  
+  HashMap<ClientSubWorldId, WorldServerThreadPtr> m_subWorldThreads;
 
   SystemWorldServerThreadPtr m_systemWorldThread;
 

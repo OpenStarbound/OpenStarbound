@@ -22,6 +22,7 @@
 #include "StarClientContext.hpp"
 #include "StarUuid.hpp"
 #include "StarCelestialLuaBindings.hpp"
+#include "StarUniverseClient.hpp"
 
 namespace Star {
 

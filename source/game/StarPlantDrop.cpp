@@ -359,6 +359,10 @@ void PlantDrop::render(RenderCallback* renderCallback) {
   }
 }
 
+MovementController* PlantDrop::movementController() {
+  return &m_movementController;
+}
+
 pair<ByteArray, uint64_t> PlantDrop::writeNetState(uint64_t fromVersion, NetCompatibilityRules rules) {
   return m_netGroup.writeNetState(fromVersion, rules);
 }

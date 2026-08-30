@@ -22,8 +22,8 @@ EnumMap<GuiDirection> const GuiDirectionNames{
     {GuiDirection::Horizontal, "horizontal"}, {GuiDirection::Vertical, "vertical"},
 };
 
-String rarityBorder(Rarity rarity) {
-  return strf("/interface/inventory/itemborder{}.png", RarityNames.getRight(rarity).toLower());
+String rarityBorder(String rarity) {
+  return (rarity.beginsWith("/") ? rarity : strf("/interface/inventory/itemborder{}.png", rarity)).toLower();
 }
 
 }

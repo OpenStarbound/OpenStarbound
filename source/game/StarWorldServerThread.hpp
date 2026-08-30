@@ -38,13 +38,14 @@ public:
 
   bool spawnTargetValid(SpawnTarget const& spawnTarget);
 
-  bool addClient(ConnectionId clientId, SpawnTarget const& spawnTarget, bool isLocal, bool isAdmin = false, NetCompatibilityRules netRules = {});
+  bool addClient(ConnectionId clientId, SpawnTarget const& spawnTarget, bool isLocal, bool isAdmin = false, NetCompatibilityRules netRules = {}, ClientSubWorldId subWorldId = MainClientWorldId);
   // Returns final outgoing packets
   List<PacketPtr> removeClient(ConnectionId clientId);
 
   List<ConnectionId> clients() const;
   bool hasClient(ConnectionId clientId) const;
   bool noClients() const;
+  ClientSubWorldId clientSubWorld(ConnectionId clientId) const;
 
   // Clients that have caused an error with incoming packets are removed from
   // the world and no further packets are handled from them.  They are still

@@ -203,7 +203,7 @@ void ItemSlotWidget::renderImpl() {
     List<Drawable> iconDrawables = m_showSecondaryIcon ? m_item->secondaryDrawables().value(m_item->iconDrawables()) : m_item->iconDrawables();
 
     if (m_showRarity) {
-      String border = rarityBorder(m_item->rarity());
+      String border = rarityBorder(m_item->instanceValue("rarityBorder", RarityNames.getRight(m_item->rarity())).toString());
       context()->drawInterfaceQuad(border, Vec2F(screenPosition()));
     }
 

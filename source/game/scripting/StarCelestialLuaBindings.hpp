@@ -5,9 +5,9 @@
 namespace Star {
 
 STAR_CLASS(Root);
-STAR_CLASS(UniverseClient);
+STAR_CLASS(Universe);
 
 namespace LuaBindings {
-  LuaCallbacks makeCelestialCallbacks(UniverseClient* client);
+  LuaCallbacks makeCelestialCallbacks(Universe* universe);
 }
 }

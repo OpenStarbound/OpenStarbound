@@ -1,7 +1,7 @@
 #pragma once
 
 #include "StarOrderedMap.hpp"
-#include "StarEntity.hpp"
+#include "StarMobileEntity.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarScriptedEntity.hpp"
 #include "StarStatusEffectEntity.hpp"
@@ -19,7 +19,7 @@ STAR_STRUCT(ProjectileConfig);
 
 STAR_CLASS(Projectile);
 
-class Projectile : public virtual Entity, public virtual ScriptedEntity, public virtual PhysicsEntity, public virtual StatusEffectEntity {
+class Projectile : public virtual MobileEntity, public virtual ScriptedEntity, public virtual PhysicsEntity, public virtual StatusEffectEntity {
 public:
   Projectile(ProjectileConfigPtr const& config, Json const& parameters);
   Projectile(ProjectileConfigPtr const& config, DataStreamBuffer& netState, NetCompatibilityRules rules = {});
@@ -102,6 +102,8 @@ public:
   Maybe<PhysicsMovingCollision> movingCollision(size_t positionIndex) const override;
 
   using Entity::setTeam;
+  
+  MovementController* movementController() override;
 
 private:
   struct PhysicsForceConfig {

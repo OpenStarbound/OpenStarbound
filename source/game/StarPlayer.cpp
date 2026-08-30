@@ -40,6 +40,7 @@
 #include "StarScriptedAnimatorLuaBindings.hpp"
 #include "StarEntityLuaBindings.hpp"
 #include "StarDanceDatabase.hpp"
+#include "StarUniverseClient.hpp"
 
 namespace Star {
 

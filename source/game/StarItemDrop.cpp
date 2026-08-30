@@ -386,6 +386,9 @@ void ItemDrop::renderLightSources(RenderCallback* renderCallback) {
   renderCallback->addLightSource(std::move(light));
 }
 
+MovementController* ItemDrop::movementController() {
+  return &m_movementController;
+}
 
 ItemPtr ItemDrop::item() const {
   return m_item;

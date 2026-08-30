@@ -501,6 +501,10 @@ Maybe<PhysicsMovingCollision> Projectile::movingCollision(size_t positionIndex) 
   return collision;
 }
 
+MovementController* Projectile::movementController() {
+  return m_movementController.get();
+}
+
 List<Particle> Projectile::sparkBlock(World* world, Vec2I const& position, Vec2F const& damageSource) {
   auto& root = Root::singleton();
   auto assets = root.assets();

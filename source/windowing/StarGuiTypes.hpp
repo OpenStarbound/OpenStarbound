@@ -33,7 +33,7 @@ GuiDirection otherDirection(GuiDirection direction);
 template <typename T>
 T directionalValueFromVector(GuiDirection direction, Vector<T, 2> const& vec);
 
-String rarityBorder(Rarity rarity);
+String rarityBorder(String border);
 
 template <typename T>
 T& directionalValueFromVector(GuiDirection direction, Vector<T, 2> const& vec) {

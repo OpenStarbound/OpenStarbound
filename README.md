@@ -90,6 +90,7 @@ Note: Mods that use StarExtensions features often work with OpenStarbound, StarE
 * Musical instruments have their own volume slider in the options menu.
 * Players can use items while lounging
 * Mods can change which scriptPane the Matter Manipulator/Collections sidebar button opens, in [interface.config.patch](https://github.com/OpenStarbound/OpenStarbound/blob/main/assets/opensb/interface.config.patch).
+* Items can change their rarity border. [Documentation](https://github.com/OpenStarbound/OpenStarbound/blob/main/doc/json/openstarbound/items.md)
 
 * Client-side tile placement prediction (rewrite from StarExtensions)
   * You can also resize the placement area of tiles on the fly.

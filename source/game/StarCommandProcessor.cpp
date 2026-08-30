@@ -21,6 +21,7 @@
 #include "StarAssets.hpp"
 #include "StarWorldLuaBindings.hpp"
 #include "StarUniverseServerLuaBindings.hpp"
+#include "StarCelestialLuaBindings.hpp"
 #include "StarString.hpp"
 
 namespace Star {
@@ -29,6 +30,7 @@ CommandProcessor::CommandProcessor(UniverseServer* universe, LuaRootPtr luaRoot)
   : m_universe(universe) {
   auto assets = Root::singleton().assets();
   m_scriptComponent.addCallbacks("universe", LuaBindings::makeUniverseServerCallbacks(m_universe));
+  m_scriptComponent.addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(m_universe));
   m_scriptComponent.addCallbacks("CommandProcessor", makeCommandCallbacks());
   m_scriptComponent.setScripts(jsonToStringList(assets->json("/universe_server.config:commandProcessorScripts")));
   luaRoot->luaEngine().setNullTerminated(false);
@@ -130,6 +132,19 @@ String CommandProcessor::admin(ConnectionId connectionId, String const& argument
     return strf("Admin privileges taken away from {}", m_universe->clientNick(targetClientId));
 }
 
+String CommandProcessor::serverDebug(ConnectionId connectionId, String const& argumentString) {
+  if (auto errorMsg = adminCheck(connectionId, "debug server"))
+    return *errorMsg;
+  if (m_universe->isLocal(connectionId))
+    return "Server is local, server debug already active";
+  if (m_universe->clientConnectionVersion(connectionId) < 17)
+    return "Client is not new enough to debug server";
+  
+  bool nowEnabled = !m_universe->serverDebug(connectionId);
+  m_universe->setServerDebug(connectionId,nowEnabled);
+  return strf("Server debug {}", nowEnabled ? "enabled" : "disabled");
+}
+
 String CommandProcessor::pvp(ConnectionId connectionId, String const&) {
   if (!m_universe->isPvp(connectionId)) {
     m_universe->setPvp(connectionId, true);
@@ -171,11 +186,11 @@ String CommandProcessor::warpRandom(ConnectionId connectionId, String const& typ
     return *errorMsg;
 
 	Vec2I size = {2, 2};
-	auto& celestialDatabase = m_universe->celestialDatabase();
+	auto celestialDatabase = m_universe->celestialDatabase();
 	Maybe<CelestialCoordinate> target = {};
 
-	auto validPlanet = [&celestialDatabase, &typeName](CelestialCoordinate const& p) {
-			if (auto celestialParams = celestialDatabase.parameters(p)) {
+	auto validPlanet = [celestialDatabase, &typeName](CelestialCoordinate const& p) {
+			if (auto celestialParams = celestialDatabase->parameters(p)) {
 				if (auto visitableParams = celestialParams->visitableParameters()) {
 					if (visitableParams->typeName == typeName)
 						return true;
@@ -187,16 +202,16 @@ String CommandProcessor::warpRandom(ConnectionId connectionId, String const& typ
 	while (target.isNothing()) {
 		RectI region = RectI::withSize(Vec2I(Random::randi32(), Random::randi32()), size);
 
-		while (!celestialDatabase.scanRegionFullyLoaded(region)) {
-			celestialDatabase.scanSystems(region);
+		while (!celestialDatabase->scanRegionFullyLoaded(region)) {
+			celestialDatabase->scanSystems(region);
 		}
-		auto systems = celestialDatabase.scanSystems(region);
+		auto systems = celestialDatabase->scanSystems(region);
 		for (auto s : systems) {
-			for (auto planet : celestialDatabase.children(s)) {
+			for (auto planet : celestialDatabase->children(s)) {
 				if (validPlanet(planet))
 					target = planet;
 				if (target.isNothing()) {
-					for (auto moon : celestialDatabase.children(planet)) {
+					for (auto moon : celestialDatabase->children(planet)) {
 						if (validPlanet(moon)) {
 							target = moon;
 							break;
@@ -991,6 +1006,7 @@ const CaseInsensitiveStringMap<std::function<String(CommandProcessor*, Connectio
 
   // Register all commands
   add("admin", &CommandProcessor::admin);
+  add("serverdebug", &CommandProcessor::serverDebug);
   add("timewarp", &CommandProcessor::timewarp);
   add("timescale", &CommandProcessor::timescale);
   add("tickrate", &CommandProcessor::tickrate);

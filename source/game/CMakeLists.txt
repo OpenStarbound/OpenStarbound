@@ -165,6 +165,7 @@ SET (star_game_HEADERS
     StarWiring.hpp
     StarWorldCamera.hpp
     StarWorldClient.hpp
+    StarWorldClientThread.hpp
     StarWorldClientState.hpp
     StarWorldGeneration.hpp
     StarWorldImpl.hpp
@@ -178,6 +179,7 @@ SET (star_game_HEADERS
     StarWorldTemplate.hpp
     StarWorldTiles.hpp
 
+    interfaces/StarActorEntity.hpp
     interfaces/StarAnchorableEntity.hpp
     interfaces/StarActivatableItem.hpp
     interfaces/StarAggressiveEntity.hpp
@@ -192,6 +194,7 @@ SET (star_game_HEADERS
     interfaces/StarFireableItem.hpp
     interfaces/StarInteractiveEntity.hpp
     interfaces/StarLoungingEntities.hpp
+    interfaces/StarMobileEntity.hpp
     interfaces/StarNametagEntity.hpp
     interfaces/StarNonRotatedDrawablesItem.hpp
     interfaces/StarPhysicsEntity.hpp
@@ -210,6 +213,7 @@ SET (star_game_HEADERS
     interfaces/StarWarpTargetEntity.hpp
     interfaces/StarWireEntity.hpp
     interfaces/StarWorld.hpp
+    interfaces/StarUniverse.hpp
 
     items/StarActiveItem.hpp
     items/StarArmors.hpp
@@ -432,6 +436,7 @@ SET (star_game_SOURCES
     StarWiring.cpp
     StarWorldCamera.cpp
     StarWorldClient.cpp
+    StarWorldClientThread.cpp
     StarWorldClientState.cpp
     StarWorldGeneration.cpp
     StarWorldLayout.cpp

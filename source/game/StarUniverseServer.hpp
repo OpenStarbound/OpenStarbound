@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarUniverse.hpp"
 #include "StarLockFile.hpp"
 #include "StarIdMap.hpp"
 #include "StarWorkerPool.hpp"
@@ -30,9 +31,9 @@ STAR_EXCEPTION(UniverseServerException, StarException);
 // Manages all running worlds, listens for new client connections and marshalls
 // between all the different worlds and all the different client connections
 // and routes packets between them.
-class UniverseServer : public Thread {
+class UniverseServer : public Universe, public Thread {
 public:
-  UniverseServer(String const& storageDir);
+  UniverseServer(String const& storageDir, bool const& isLocal = false);
   ~UniverseServer();
 
   // If enabled, will listen on the configured server port for incoming
@@ -62,6 +63,7 @@ public:
   bool isConnectedClient(ConnectionId clientId) const;
 
   String clientDescriptor(ConnectionId clientId) const;
+  unsigned clientConnectionVersion(ConnectionId clientId) const;
 
   String clientNick(ConnectionId clientId) const;
   Maybe<ConnectionId> findNick(String const& nick) const;
@@ -76,6 +78,9 @@ public:
   bool isAdmin(ConnectionId clientId) const;
   bool canBecomeAdmin(ConnectionId clientId) const;
   void setAdmin(ConnectionId clientId, bool admin);
+
+  bool serverDebug(ConnectionId clientId) const;
+  void setServerDebug(ConnectionId clientId, bool serverDebug);
 
   bool isLocal(ConnectionId clientId) const;
 
@@ -92,7 +97,7 @@ public:
   ClockPtr universeClock() const;
   UniverseSettingsPtr universeSettings() const;
 
-	CelestialDatabase& celestialDatabase();
+  CelestialDatabasePtr celestialDatabase() override;
 
   // If the client exists and is in a valid connection state, executes the
   // given function on the client world and player object in a thread safe way.
@@ -115,7 +120,7 @@ public:
   bool sendPacket(ConnectionId clientId, PacketPtr packet);
 
 protected:
-  virtual void run();
+  virtual void run() override;
 
 private:
   struct TimeoutBan {
@@ -221,6 +226,8 @@ private:
   Maybe<WorldServerPromise> instanceWorldPromise(InstanceWorldId const& instanceWorld);
   Maybe<WorldServerPromise> customWorldPromise(CustomWorldId const& customWorld, Maybe<WorldTemplatePtr> worldTemplate = {});
   Maybe<WorldServerPromise> clientCustomWorldPromise(ClientCustomWorldId const& clientCustomWorld, Maybe<WorldTemplatePtr> worldTemplate = {});
+  
+  void notifyWorldCreated(WorldId const& worldId);
 
   // If the system world is not created, initialize it, otherwise return the
   // already initialized one
@@ -238,6 +245,8 @@ private:
   SkyParameters celestialSkyParameters(CelestialCoordinate const& coordinate) const;
 
   mutable RecursiveMutex m_mainLock;
+  
+  bool m_isLocal;
 
   String m_storageDirectory;
   ByteArray m_assetsDigest;
@@ -274,6 +283,7 @@ private:
   TeamManagerPtr m_teamManager;
 
   HashMap<ConnectionId, pair<WarpAction, bool>> m_pendingPlayerWarps;
+  HashMap<ConnectionId, HashMap<ClientSubWorldId, WorldId>> m_pendingSubWorlds;
   HashMap<ConnectionId, pair<tuple<Vec3I, SystemLocation, Json>, Maybe<double>>> m_queuedFlights;
   HashMap<ConnectionId, tuple<Vec3I, SystemLocation, Json>> m_pendingFlights;
   HashMap<ConnectionId, CelestialCoordinate> m_pendingArrivals;

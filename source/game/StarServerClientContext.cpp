@@ -151,6 +151,16 @@ void ServerClientContext::setAdmin(bool admin) {
   m_isAdminNetState.set(admin);
 }
 
+bool ServerClientContext::serverDebug() const {
+  RecursiveMutexLocker locker(m_mutex);
+  return m_serverDebug;
+}
+
+void ServerClientContext::setServerDebug(bool serverDebug) {
+  RecursiveMutexLocker locker(m_mutex);
+  m_serverDebug = serverDebug;
+}
+
 EntityDamageTeam ServerClientContext::team() const {
   RecursiveMutexLocker locker(m_mutex);
   return m_teamNetState.get();
@@ -265,6 +275,37 @@ WorldId ServerClientContext::playerWorldId() const {
 
 void ServerClientContext::clearPlayerWorld() {
   setPlayerWorld({});
+}
+
+void ServerClientContext::setSubWorld(ClientSubWorldId subWorldId, WorldServerThreadPtr worldThread) {
+  RecursiveMutexLocker locker(m_mutex);
+  if (m_subWorldThreads[subWorldId] == worldThread)
+    return;
+
+  m_subWorldThreads[subWorldId] = std::move(worldThread);
+}
+
+WorldServerThreadPtr ServerClientContext::subWorld(ClientSubWorldId subWorldId) const {
+  RecursiveMutexLocker locker(m_mutex);
+  if (m_subWorldThreads.contains(subWorldId)) {
+    return m_subWorldThreads.get(subWorldId);
+  } else {
+    return {};
+  }
+}
+
+bool ServerClientContext::hasSubWorld(ClientSubWorldId subWorldId) const {
+  RecursiveMutexLocker locker(m_mutex);
+  return m_subWorldThreads.contains(subWorldId);
+}
+
+void ServerClientContext::clearSubWorld(ClientSubWorldId subWorldId) {
+  m_subWorldThreads.remove(subWorldId);
+}
+
+List<ClientSubWorldId> ServerClientContext::subWorlds() const {
+  RecursiveMutexLocker locker(m_mutex);
+  return m_subWorldThreads.keys();
 }
 
 WarpToWorld ServerClientContext::playerReturnWarp() const {

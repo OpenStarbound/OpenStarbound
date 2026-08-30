@@ -337,13 +337,13 @@ void ClientWeather::update(double dt) {
   if (m_currentWeatherIndex == NPos) {
     m_currentWeatherType = {};
   } else {
-    if (m_visibleRegion.yMax() > m_undergroundLevel)
+    if (m_visibleRegion == RectI() || m_visibleRegion.yMax() > m_undergroundLevel)
       m_currentWeatherType = Root::singleton().biomeDatabase()->weatherType(m_weatherPool.item(m_currentWeatherIndex));
     else
       m_currentWeatherType = {};
   }
 
-  if (m_currentWeatherType)
+  if (m_currentWeatherType && m_visibleRegion != RectI())
     spawnWeatherParticles(RectF(m_visibleRegion), dt);
 }
 
