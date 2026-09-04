@@ -58,5 +58,9 @@ Sets the current chat input text. If `moveCursor` is true, the cursor will be mo
 
 Clears the chat input text. If `count` is provided, it will clear the last `count` messages, all otherwise.
 
+---
 
 #### `LuaVariadic<Json>` chat.parseArguments()
+
+Parses a space-separated sequence of JSON values in a string into multiple values. Useful for parsing command arguments.
+Similar to `sb.parseJsonSequence`.
