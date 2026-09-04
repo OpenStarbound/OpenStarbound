@@ -339,7 +339,7 @@ List<Particle> TechController::pullNewParticles() {
   return newParticles;
 }
 
-Maybe<Json> TechController::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
+Maybe<ChainableJsonMessageResponse> TechController::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
   for (auto& module : m_techModules) {
     if (auto res = module.scriptComponent.handleMessage(message, localMessage, args))
       return res;

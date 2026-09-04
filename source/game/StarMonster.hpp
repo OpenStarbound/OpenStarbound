@@ -98,7 +98,7 @@ public:
 
   void setPosition(Vec2F const& pos);
 
-  Maybe<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
+  Maybe<ChainableJsonMessageResponse> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
 
   float maxHealth() const override;
   float health() const override;

@@ -320,7 +320,7 @@ Maybe<String> ActiveItem::cursor() const {
   return m_cursor;
 }
 
-Maybe<Json> ActiveItem::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
+Maybe<ChainableJsonMessageResponse> ActiveItem::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
   return m_script.handleMessage(message, localMessage, args);
 }
 

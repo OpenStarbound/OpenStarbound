@@ -593,8 +593,8 @@ List<Particle> StatusController::pullNewParticles() {
   return newParticles;
 }
 
-Maybe<Json> StatusController::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
-  Maybe<Json> result = m_primaryScript.handleMessage(message, localMessage, args);
+Maybe<ChainableJsonMessageResponse> StatusController::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
+  Maybe<ChainableJsonMessageResponse> result = m_primaryScript.handleMessage(message, localMessage, args);
   for (auto& p : m_uniqueEffects)
     result = result.orMaybe(p.second.script.handleMessage(message, localMessage, args));
   return result;

@@ -1133,8 +1133,8 @@ List<LightSource> Npc::lightSources() const {
   return lights;
 }
 
-Maybe<Json> Npc::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
-  Maybe<Json> result = m_scriptComponent.handleMessage(message, world()->connection() == sendingConnection, args);
+Maybe<ChainableJsonMessageResponse> Npc::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
+  Maybe<ChainableJsonMessageResponse> result = m_scriptComponent.handleMessage(message, world()->connection() == sendingConnection, args);
   if (!result)
     result = m_statusController->receiveMessage(message, world()->connection() == sendingConnection, args);
   return result;

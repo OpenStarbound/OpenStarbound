@@ -14,7 +14,7 @@
 #include "StarLuaComponents.hpp"
 #include "StarWorldRenderData.hpp"
 #include "StarWarping.hpp"
-#include "StarRpcThreadPromise.hpp"
+#include "StarRpcPromise.hpp"
 
 namespace Star {
 
@@ -110,7 +110,7 @@ public:
   List<PacketPtr> getOutgoingPackets(ConnectionId clientId);
   bool sendPacket(ConnectionId clientId, PacketPtr const& packet);
 
-  Maybe<Json> receiveMessage(ConnectionId fromConnection, String const& message, JsonArray const& args);
+  Maybe<ChainableJsonMessageResponse> receiveMessage(ConnectionId fromConnection, String const& message, JsonArray const& args);
 
   void startFlyingSky(bool enterHyperspace, bool startInWarp, Json settings = {});
   void stopFlyingSkyAt(SkyParameters const& destination);
@@ -431,6 +431,7 @@ private:
   bool m_tileProtectionEnabled;
 
   HashMap<Uuid, pair<ConnectionId, MVariant<ConnectionId, RpcPromiseKeeper<Json>>>> m_entityMessageResponses;
+  HashMap<Uuid, pair<ConnectionId, RpcPromise<Json>>> m_entityMessagePromises;
 
   List<PhysicsForceRegion> m_forceRegions;
 

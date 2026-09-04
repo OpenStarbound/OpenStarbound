@@ -22,7 +22,7 @@ public:
   void destroy(RenderCallback* renderCallback) override;
   InteractAction interact(InteractRequest const& request) override;
 
-  Maybe<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
+  Maybe<ChainableJsonMessageResponse> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
 
   Json containerGuiConfig() const override;
   String containerDescription() const override;

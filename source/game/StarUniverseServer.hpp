@@ -87,7 +87,7 @@ public:
   bool isPvp(ConnectionId clientId) const;
   void setPvp(ConnectionId clientId, bool pvp);
 
-  RpcThreadPromise<Json> sendWorldMessage(WorldId const& worldId, String const& message, JsonArray const& args = {});
+  RpcPromise<Json> sendWorldMessage(WorldId const& worldId, String const& message, JsonArray const& args = {});
 
   void clientWarpPlayer(ConnectionId clientId, WarpAction action, bool deploy = false);
   void clientFlyShip(ConnectionId clientId, Vec3I const& system, SystemLocation const& location, Json const& settings = {});
@@ -131,12 +131,12 @@ private:
   };
   
   struct WorldServerPromise {
-    Variant<WorkerPoolPromise<WorldServerThreadPtr>,RpcThreadPromise<WorldChunks>> currentPromise;
+    Variant<WorkerPoolPromise<WorldServerThreadPtr>,RpcPromise<WorldChunks>> currentPromise;
     Maybe<function<WorkerPoolPromise<WorldServerThreadPtr>(WorldChunks)>> producer;
     
     double startTime;
     
-    WorldServerPromise(function<WorkerPoolPromise<WorldServerThreadPtr>(WorldChunks)> producer, RpcThreadPromise<WorldChunks> promise);
+    WorldServerPromise(function<WorkerPoolPromise<WorldServerThreadPtr>(WorldChunks)> producer, RpcPromise<WorldChunks> promise);
     WorldServerPromise(WorkerPoolPromise<WorldServerThreadPtr> promise);
     
     bool done() const;

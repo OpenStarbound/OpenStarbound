@@ -40,7 +40,7 @@ Stops and destroys a thread.
 
 ---
 
-#### `RpcThreadPromise<Json>` threads.sendMessage(`String` threadName, `String` messageName, [`LuaValue` args...])
+#### `RpcPromise<Json>` threads.sendMessage(`String` threadName, `String` messageName, [`LuaValue` args...])
 
 Sends a message to the given thread. Note that the return value from this is currently the only way to get data from the thread.
 
@@ -81,6 +81,6 @@ Stops the thread.
 
 ---
 
-#### `RpcThreadPromise<Json>` thread.sendParentMessage(`String` messageName, [`LuaValue` args...])
+#### `RpcPromise<Json>` thread.sendParentMessage(`String` messageName, [`LuaValue` args...])
 
 Sends a message to the parent context.

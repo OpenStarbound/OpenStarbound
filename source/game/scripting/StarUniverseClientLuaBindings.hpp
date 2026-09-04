@@ -2,7 +2,7 @@
 
 #include "StarLua.hpp"
 #include "StarGameTypes.hpp"
-#include "StarRpcThreadPromise.hpp"
+#include "StarRpcPromise.hpp"
 
 namespace Star {
 

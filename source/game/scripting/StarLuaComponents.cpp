@@ -2,7 +2,6 @@
 #include "StarUtilityLuaBindings.hpp"
 #include "StarRootLuaBindings.hpp"
 #include "StarScriptableThread.hpp"
-#include "StarLuaGameConverters.hpp"
 
 namespace Star {
 
@@ -198,15 +197,15 @@ LuaCallbacks LuaBaseComponent::makeThreadsCallbacks() {
     }
     cleanThreads();
   });
-  callbacks.registerCallback("sendMessage", [this](String const& threadName, String const& message, LuaVariadic<Json> args) -> RpcThreadPromise<Json> {
+  callbacks.registerCallback("sendMessage", [this](String const& threadName, String const& message, LuaVariadic<Json> args) -> RpcPromise<Json> {
     if (!m_threads.contains(threadName))
-      return RpcThreadPromise<Json>::createFailed("Thread does not exist");
+      return RpcPromise<Json>::createFailed("Thread does not exist");
     
     auto thread = m_threads.get(threadName);
     if (thread->shouldExpire())
-      return RpcThreadPromise<Json>::createFailed("Thread is stopped");
+      return RpcPromise<Json>::createFailed("Thread is stopped");
     
-    auto pair = RpcThreadPromise<Json>::createPair();
+    auto pair = RpcPromise<Json>::createPair();
     thread->passMessage({ message, JsonArray::from(std::move(args)), pair.second });
     return pair.first;
   });
@@ -214,11 +213,11 @@ LuaCallbacks LuaBaseComponent::makeThreadsCallbacks() {
   return callbacks;
 }
 
-RpcThreadPromise<Json> LuaBaseComponent::threadPassMessage(String const& thread, String const& message, JsonArray const& args) {
+RpcPromise<Json> LuaBaseComponent::threadPassMessage(String const& thread, String const& message, JsonArray const& args) {
   _unused(thread);
   _unused(message);
   _unused(args);
-  return RpcThreadPromise<Json>::createFailed("Lua component cannot handle messages");
+  return RpcPromise<Json>::createFailed("Lua component cannot handle messages");
 }
 
 }

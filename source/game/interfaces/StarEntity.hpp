@@ -148,7 +148,7 @@ public:
   // to messages.  If the message is NOT handled, should return Nothing,
   // otherwise should return some Json value.
   // This will only ever be called on master entities.
-  virtual Maybe<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args);
+  virtual Maybe<ChainableJsonMessageResponse> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args);
 
   virtual void update(float dt, uint64_t currentStep);
 

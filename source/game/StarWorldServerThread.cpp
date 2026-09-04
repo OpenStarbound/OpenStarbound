@@ -294,7 +294,10 @@ void WorldServerThread::update(WorldServerFidelity fidelity) {
   }
   for (auto& message : messages) {
     if (auto resp = m_worldServer->receiveMessage(ServerConnectionId, message.message, message.args))
-      message.promise.fulfill(*resp);
+      if (resp->is<RpcPromise<Json>>())
+        message.promise.chain(resp->get<RpcPromise<Json>>());
+      else
+        message.promise.fulfill(resp->get<Json>());
     else
       message.promise.fail("Message not handled by world");
   }

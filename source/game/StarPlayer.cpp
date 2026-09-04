@@ -819,7 +819,7 @@ void Player::dropItem() {
   }
 }
 
-Maybe<Json> Player::receiveMessage(ConnectionId fromConnection, String const& message, JsonArray const& args) {
+Maybe<ChainableJsonMessageResponse> Player::receiveMessage(ConnectionId fromConnection, String const& message, JsonArray const& args) {
   bool localMessage = fromConnection == world()->connection();
   if (message == "queueRadioMessage" && args.size() > 0) {
     float delay = 0;
@@ -866,7 +866,7 @@ Maybe<Json> Player::receiveMessage(ConnectionId fromConnection, String const& me
     if (Root::singleton().collectionDatabase()->hasCollectable(collection, collectable))
       addCollectable(collection, collectable);
   } else {
-    Maybe<Json> result = m_tools->receiveMessage(message, localMessage, args);
+    Maybe<ChainableJsonMessageResponse> result = m_tools->receiveMessage(message, localMessage, args);
     if (!result)
       result = m_statusController->receiveMessage(message, localMessage, args);
     if (!result)

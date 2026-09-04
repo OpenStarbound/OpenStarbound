@@ -7,6 +7,7 @@
 #include "StarLine.hpp"
 #include "StarLua.hpp"
 #include "StarVariant.hpp"
+#include "StarRpcPromise.hpp"
 
 namespace Star {
 
@@ -281,5 +282,40 @@ struct LuaConverter<LuaCallbacks> {
   static LuaValue from(LuaEngine& engine, LuaCallbacks const& c);
   static Maybe<LuaCallbacks> to(LuaEngine& engine, LuaValue const& v);
 };
+
+template <typename T>
+struct LuaConverter<RpcPromise<T>> : LuaUserDataConverter<RpcPromise<T>> {};
+
+template <typename T>
+struct LuaUserDataMethods<RpcPromise<T>> {
+  static LuaMethods<RpcPromise<T>> make();
+};
+
+template <typename T>
+LuaMethods<RpcPromise<T>> LuaUserDataMethods<RpcPromise<T>>::make() {
+  LuaMethods<RpcPromise<T>> methods;
+  methods.template registerMethodWithSignature<bool, RpcPromise<T>&>("finished",        std::mem_fn(&RpcPromise<T>::finished));
+  methods.template registerMethodWithSignature<bool, RpcPromise<T>&>("succeeded",       std::mem_fn(&RpcPromise<T>::succeeded));
+  methods.template registerMethodWithSignature<Maybe<T>, RpcPromise<T>&>("result",      std::mem_fn(&RpcPromise<T>::result));
+  methods.template registerMethodWithSignature<Maybe<String>, RpcPromise<T>&>("error",  std::mem_fn(&RpcPromise<T>::error));
+  return methods;
+}
+
+template <typename T>
+struct LuaConverter<RpcPromiseKeeper<T>> : LuaUserDataConverter<RpcPromiseKeeper<T>> {};
+
+template <typename T>
+struct LuaUserDataMethods<RpcPromiseKeeper<T>> {
+  static LuaMethods<RpcPromiseKeeper<T>> make();
+};
+
+template <typename T>
+LuaMethods<RpcPromiseKeeper<T>> LuaUserDataMethods<RpcPromiseKeeper<T>>::make() {
+  LuaMethods<RpcPromiseKeeper<T>> methods;
+  methods.template registerMethodWithSignature<void, RpcPromiseKeeper<T>&, RpcPromise<T>>("chain",  std::mem_fn(&RpcPromiseKeeper<T>::chain));
+  methods.template registerMethodWithSignature<void, RpcPromiseKeeper<T>&, T>("fulfill",            std::mem_fn(&RpcPromiseKeeper<T>::fulfill));
+  methods.template registerMethodWithSignature<void, RpcPromiseKeeper<T>&, String>("fail",          std::mem_fn(&RpcPromiseKeeper<T>::fail));
+  return methods;
+}
 
 }

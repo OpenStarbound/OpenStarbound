@@ -3,10 +3,14 @@
 #include "StarString.hpp"
 #include "StarBiMap.hpp"
 #include "StarVector.hpp"
+#include "StarJson.hpp"
+#include "StarRpcPromise.hpp"
 #include "StarLiquidTypes.hpp"
 #include "StarMaterialTypes.hpp"
 
 namespace Star {
+
+typedef Variant<Json,RpcPromise<Json>> ChainableJsonMessageResponse;
 
 enum class Direction : uint8_t {
   Left,

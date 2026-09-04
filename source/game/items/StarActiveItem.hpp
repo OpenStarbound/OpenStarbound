@@ -55,7 +55,7 @@ public:
 
   Maybe<String> cursor() const;
 
-  Maybe<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
+  Maybe<ChainableJsonMessageResponse> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
 
   float durabilityStatus() override;
 

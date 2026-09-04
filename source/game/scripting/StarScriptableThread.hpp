@@ -3,7 +3,7 @@
 #include "StarThread.hpp"
 #include "StarLuaRoot.hpp"
 #include "StarLuaComponents.hpp"
-#include "StarRpcThreadPromise.hpp"
+#include "StarRpcPromise.hpp"
 
 namespace Star {
 
@@ -17,7 +17,7 @@ public:
   struct Message {
     String message;
     JsonArray args;
-    RpcThreadPromiseKeeper<Json> promise;
+    RpcPromiseKeeper<Json> promise;
   };
 
   typedef LuaMessageHandlingComponent<LuaUpdatableComponent<LuaBaseComponent>> ScriptComponent;
@@ -44,7 +44,7 @@ protected:
 
 private:
   void update();
-  Maybe<Json> receiveMessage(String const& message, JsonArray const& args);
+  Maybe<ChainableJsonMessageResponse> receiveMessage(String const& message, JsonArray const& args);
 
   mutable RecursiveMutex m_mutex;
   

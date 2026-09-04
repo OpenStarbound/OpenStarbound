@@ -103,7 +103,6 @@ SET (star_core_HEADERS
     StarRandomPoint.hpp
     StarRect.hpp
     StarRpcPromise.hpp
-    StarRpcThreadPromise.hpp
     StarSectorArray2D.hpp
     StarSecureRandom.hpp
     StarSet.hpp

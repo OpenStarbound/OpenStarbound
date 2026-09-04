@@ -112,7 +112,7 @@ bool Entity::shouldDestroy() const {
 
 void Entity::destroy(RenderCallback*) {}
 
-Maybe<Json> Entity::receiveMessage(ConnectionId, String const&, JsonArray const&) {
+Maybe<ChainableJsonMessageResponse> Entity::receiveMessage(ConnectionId, String const&, JsonArray const&) {
   return {};
 }
 

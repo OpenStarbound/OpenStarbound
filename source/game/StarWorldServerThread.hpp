@@ -2,7 +2,7 @@
 
 #include "StarWorldServer.hpp"
 #include "StarThread.hpp"
-#include "StarRpcThreadPromise.hpp"
+#include "StarRpcPromise.hpp"
 
 namespace Star {
 
@@ -16,7 +16,7 @@ public:
   struct Message {
     String message;
     JsonArray args;
-    RpcThreadPromiseKeeper<Json> promise;
+    RpcPromiseKeeper<Json> promise;
   };
 
   typedef function<void(WorldServerThread*, WorldServer*)> WorldServerAction;

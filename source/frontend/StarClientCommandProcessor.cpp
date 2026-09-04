@@ -98,12 +98,17 @@ StringList ClientCommandProcessor::handleCommand(String const& commandLine, bool
       }
     } else {
       auto player = m_universeClient->mainPlayer();
-      if (auto messageResult = player->receiveMessage(connectionForEntity(player->entityId()), "/" + command, {allArguments})) {
-        if (messageResult->isType(Json::Type::String))
-          result.append(*messageResult->stringPtr());
-        else if (!messageResult->isNull())
-          result.append(messageResult->repr(1, true));
-      } else
+      if (auto messageResult = player->receiveMessage(connectionForEntity(player->entityId()), "/" + command, {allArguments}))
+        if (messageResult->is<Json>()) {
+          auto res = messageResult->ptr<Json>();
+          if (res->isType(Json::Type::String))
+            result.append(*res->stringPtr());
+          else if (!res->isNull())
+            result.append(res->repr(1, true));
+        } else if (messageResult->is<RpcPromise<Json>>()) {
+          // TODO
+        }
+      else
         m_universeClient->sendChat(commandLine, ChatSendMode::Broadcast);
     }
     return result;

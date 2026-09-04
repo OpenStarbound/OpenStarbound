@@ -684,7 +684,7 @@ Vec2F Object::questIndicatorPosition() const {
   }
 }
 
-Maybe<Json> Object::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
+Maybe<ChainableJsonMessageResponse> Object::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
   return m_scriptComponent.handleMessage(message, sendingConnection == world()->connection(), args);
 }
 
