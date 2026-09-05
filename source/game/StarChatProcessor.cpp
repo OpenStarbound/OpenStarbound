@@ -247,7 +247,13 @@ bool ChatProcessor::handleCommand(ChatReceivedMessage& message) {
     else
       response = strf("No such nick {}", target);
   } else if (m_commandHandler) {
-    response = m_commandHandler(message.fromConnection, command, commandLine);
+    auto res = m_commandHandler(message.fromConnection, command, commandLine);
+    if (res.is<String>()) {
+      response = res.get<String>();
+    } else {
+      Uuid uuid;
+      m_commandPromises[uuid] = make_pair(message.fromConnection,res.get<RpcPromise<String>>());
+    }
   } else {
     response = strf("No such command {}", command);
   }
@@ -262,6 +268,29 @@ bool ChatProcessor::handleCommand(ChatReceivedMessage& message) {
   }
 
   return true;
+}
+
+void ChatProcessor::updatePromises() {
+  RecursiveMutexLocker locker(m_mutex);
+  for (auto& uuid : m_commandPromises.keys()) {
+    if (m_commandPromises[uuid].second.finished()) {
+      String response;
+      if (m_commandPromises[uuid].second.succeeded()) {
+        response = *m_commandPromises[uuid].second.result();
+      } else {
+        response = strf("Error: {}", *m_commandPromises[uuid].second.error());
+      }
+      if (!response.empty()) {
+        m_clients.get(m_commandPromises[uuid].first).pendingMessages.append({
+            MessageContext(MessageContext::CommandResult),
+            ServerConnectionId,
+            connectionNick(ServerConnectionId),
+            response
+          });
+      }
+      m_commandPromises.remove(uuid);
+    }
+  }
 }
 
 }

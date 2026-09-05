@@ -73,7 +73,7 @@ public:
 
   void adminBroadcast(String const& text);
   void adminWhisper(ConnectionId clientId, String const& text);
-  String adminCommand(String text);
+  ServerCommandResult adminCommand(String text);
 
   bool isAdmin(ConnectionId clientId) const;
   bool canBecomeAdmin(ConnectionId clientId) const;

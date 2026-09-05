@@ -263,7 +263,7 @@ void UniverseServer::adminWhisper(ConnectionId clientId, String const& text) {
   m_chatProcessor->adminWhisper(clientId, text);
 }
 
-String UniverseServer::adminCommand(String text) {
+ServerCommandResult UniverseServer::adminCommand(String text) {
   String command = text.extract();
   return m_commandProcessor->adminCommand(command, text);
 }
@@ -1266,7 +1266,7 @@ void UniverseServer::respondToCelestialRequests() {
 void UniverseServer::processChat() {
   RecursiveMutexLocker locker(m_mainLock);
   ReadLocker clientsLocker(m_clientsLock);
-
+  
   for (auto const& p : take(m_pendingChat)) {
     if (auto clientContext = m_clients.get(p.first)) {
       for (auto const& chat : p.second) {
@@ -1288,6 +1288,8 @@ void UniverseServer::processChat() {
       }
     }
   }
+
+  m_chatProcessor->updatePromises();
 }
 
 void UniverseServer::clearBrokenWorlds() {

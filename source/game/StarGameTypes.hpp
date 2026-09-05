@@ -10,6 +10,7 @@
 
 namespace Star {
 
+typedef Variant<String,RpcPromise<String>> ServerCommandResult;
 typedef Variant<Json,RpcPromise<Json>> ChainableJsonMessageResponse;
 
 enum class Direction : uint8_t {

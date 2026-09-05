@@ -301,20 +301,27 @@ LuaMethods<RpcPromise<T>> LuaUserDataMethods<RpcPromise<T>>::make() {
   return methods;
 }
 
+// all RpcPromiseKeepers should be wrapped in this before being passed to Lua
 template <typename T>
-struct LuaConverter<RpcPromiseKeeper<T>> : LuaUserDataConverter<RpcPromiseKeeper<T>> {};
+struct LuaConverter<AutoFailRpcPromiseKeeperPtr<T>> : LuaUserDataConverter<AutoFailRpcPromiseKeeperPtr<T>> {};
 
 template <typename T>
-struct LuaUserDataMethods<RpcPromiseKeeper<T>> {
-  static LuaMethods<RpcPromiseKeeper<T>> make();
+struct LuaUserDataMethods<AutoFailRpcPromiseKeeperPtr<T>> {
+  static LuaMethods<AutoFailRpcPromiseKeeperPtr<T>> make();
 };
 
 template <typename T>
-LuaMethods<RpcPromiseKeeper<T>> LuaUserDataMethods<RpcPromiseKeeper<T>>::make() {
-  LuaMethods<RpcPromiseKeeper<T>> methods;
-  methods.template registerMethodWithSignature<void, RpcPromiseKeeper<T>&, RpcPromise<T>>("chain",  std::mem_fn(&RpcPromiseKeeper<T>::chain));
-  methods.template registerMethodWithSignature<void, RpcPromiseKeeper<T>&, T>("fulfill",            std::mem_fn(&RpcPromiseKeeper<T>::fulfill));
-  methods.template registerMethodWithSignature<void, RpcPromiseKeeper<T>&, String>("fail",          std::mem_fn(&RpcPromiseKeeper<T>::fail));
+LuaMethods<AutoFailRpcPromiseKeeperPtr<T>> LuaUserDataMethods<AutoFailRpcPromiseKeeperPtr<T>>::make() {
+  LuaMethods<AutoFailRpcPromiseKeeperPtr<T>> methods;
+  methods.template registerMethodWithSignature<void, AutoFailRpcPromiseKeeperPtr<T>, RpcPromise<T>>("chain",  [&](AutoFailRpcPromiseKeeperPtr<T> const& keeper, RpcPromise<T> const& promise) {
+        keeper->chain(promise);
+  });
+  methods.template registerMethodWithSignature<void, AutoFailRpcPromiseKeeperPtr<T>, T>("fulfill",            [&](AutoFailRpcPromiseKeeperPtr<T> const& keeper, T const& result) {
+        keeper->fulfill(result);
+  });
+  methods.template registerMethodWithSignature<void, AutoFailRpcPromiseKeeperPtr<T>, String>("fail",          [&](AutoFailRpcPromiseKeeperPtr<T> const& keeper, String const& error) {
+        keeper->fail(error);
+  });
   return methods;
 }
 

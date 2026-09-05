@@ -31,6 +31,24 @@ private:
   function<void(Error)> m_fail;
 };
 
+// Wraps an RpcPromiseKeeper, best used as a shared_ptr. Fails the promise on destruction.
+template <typename Result, typename Error = String>
+class AutoFailRpcPromiseKeeper {
+public:
+  void chain(RpcPromise<Result,Error> promise);
+  void fulfill(Result result);
+  void fail(Error error);
+
+  AutoFailRpcPromiseKeeper(RpcPromiseKeeper<Result,Error> keeper);
+  ~AutoFailRpcPromiseKeeper();
+private:
+  RpcPromiseKeeper<Result,Error> m_keeper;
+  bool m_done = false;
+};
+
+template <typename Result, typename Error = String>
+using AutoFailRpcPromiseKeeperPtr = shared_ptr<AutoFailRpcPromiseKeeper<Result,Error>>;
+
 // A generic promise for the result of a remote procedure call.  It has
 // reference semantics and is implicitly shared. Thread safe via mutexes. Can be chained.
 template <typename Result, typename Error = String>
@@ -87,6 +105,34 @@ void RpcPromiseKeeper<Result, Error>::fulfill(Result result) {
 template <typename Result, typename Error>
 void RpcPromiseKeeper<Result, Error>::fail(Error error) {
   m_fail(std::move(error));
+}
+
+template <typename Result, typename Error>
+void AutoFailRpcPromiseKeeper<Result, Error>::chain(RpcPromise<Result,Error> promise) {
+  m_done = true;
+  m_keeper.chain(std::move(promise));
+}
+
+template <typename Result, typename Error>
+void AutoFailRpcPromiseKeeper<Result, Error>::fulfill(Result result) {
+  m_done = true;
+  m_keeper.fulfill(std::move(result));
+}
+
+template <typename Result, typename Error>
+void AutoFailRpcPromiseKeeper<Result, Error>::fail(Error error) {
+  m_done = true;
+  m_keeper.fail(std::move(error));
+}
+
+template <typename Result, typename Error>
+AutoFailRpcPromiseKeeper<Result, Error>::AutoFailRpcPromiseKeeper(RpcPromiseKeeper<Result,Error> keeper) : m_keeper(keeper) {}
+
+template <typename Result, typename Error>
+AutoFailRpcPromiseKeeper<Result, Error>::~AutoFailRpcPromiseKeeper() {
+  if (!m_done) {
+    m_keeper.fail("Keeper destroyed");
+  }
 }
 
 template <typename Result, typename Error>

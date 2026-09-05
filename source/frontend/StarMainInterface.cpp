@@ -676,6 +676,8 @@ void MainInterface::update(float dt) {
     queueItemPickupText(drop);
 
   m_chat->addMessages(m_client->pullChatMessages());
+  for (auto const& result : m_clientCommandProcessor->updatePromises())
+    m_chat->addLine(result);
 
   if (auto worldClient = m_client->worldClient()) {
     if (worldClient->inWorld()) {
