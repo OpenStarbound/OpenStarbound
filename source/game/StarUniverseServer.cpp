@@ -84,7 +84,7 @@ UniverseServer::UniverseServer(String const& storageDir, bool const& isLocal)
   m_teamManager = make_shared<TeamManager>();
   m_workerPool.start(universeConfig.getUInt("workerPoolThreads"));
 
-  m_commandProcessor = make_shared<CommandProcessor>(this, m_luaRoot);
+  m_commandProcessor = make_shared<CommandProcessor>(this);
   m_chatProcessor = make_shared<ChatProcessor>();
   m_chatProcessor->setCommandHandler(bind(&CommandProcessor::userCommand, m_commandProcessor.get(), _1, _2, _3));
 

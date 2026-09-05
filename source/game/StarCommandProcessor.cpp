@@ -26,15 +26,19 @@
 
 namespace Star {
 
-CommandProcessor::CommandProcessor(UniverseServer* universe, LuaRootPtr luaRoot)
+CommandProcessor::CommandProcessor(UniverseServer* universe)
   : m_universe(universe) {
   auto assets = Root::singleton().assets();
+  auto universeConfig = assets->json("/universe_server.config");
+  
+  m_luaRoot = make_shared<LuaRoot>();
+  m_luaRoot->tuneAutoGarbageCollection(universeConfig.getFloat("luaGcPause"), universeConfig.getFloat("luaGcStepMultiplier"));
   m_scriptComponent.addCallbacks("universe", LuaBindings::makeUniverseServerCallbacks(m_universe));
   m_scriptComponent.addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(m_universe));
   m_scriptComponent.addCallbacks("CommandProcessor", makeCommandCallbacks());
-  m_scriptComponent.setScripts(jsonToStringList(assets->json("/universe_server.config:commandProcessorScripts")));
-  luaRoot->luaEngine().setNullTerminated(false);
-  m_scriptComponent.setLuaRoot(luaRoot);
+  m_scriptComponent.setScripts(jsonToStringList(universeConfig.get("commandProcessorScripts")));
+  m_luaRoot->luaEngine().setNullTerminated(false);
+  m_scriptComponent.setLuaRoot(m_luaRoot);
   m_scriptComponent.init();
 }
 

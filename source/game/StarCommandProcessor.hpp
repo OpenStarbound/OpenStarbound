@@ -12,7 +12,7 @@ STAR_CLASS(CommandProcessor);
 
 class CommandProcessor {
 public:
-  CommandProcessor(UniverseServer* universe, LuaRootPtr luaRoot);
+  CommandProcessor(UniverseServer* universe);
 
   ServerCommandResult adminCommand(String const& command, String const& argumentString);
   ServerCommandResult userCommand(ConnectionId clientId, String const& command, String const& argumentString);
@@ -73,6 +73,9 @@ private:
   UniverseServer* m_universe;
   ShellParser m_parser;
 
+  // CommandProcessor can be accessed from multiple threads.
+  // To avoid issues of thread unsafe accesses where an rcon command might be handled while a universe server script context is running, CommandProcessor instances have their own lua root instead.
+  LuaRootPtr m_luaRoot;
   LuaBaseComponent m_scriptComponent;
 };
 
