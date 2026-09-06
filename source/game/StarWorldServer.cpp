@@ -169,6 +169,8 @@ void WorldServer::initLua(UniverseServer* universe) {
   for (auto& p : assets->json("/worldserver.config:scriptContexts").toObject()) {
     auto scriptComponent = make_shared<ScriptComponent>();
     scriptComponent->setScripts(jsonToStringList(p.second.toArray()));
+    scriptComponent->addThreadCallbacks("universe", LuaBindings::makeUniverseServerCallbacks(universe));
+    scriptComponent->addThreadCallbacks("celestial", LuaBindings::makeCelestialCallbacks(universe));
 
     m_scriptContexts.set(p.first, scriptComponent);
     scriptComponent->init(this);

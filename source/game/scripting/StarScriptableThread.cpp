@@ -32,15 +32,6 @@ ScriptableThread::ScriptableThread(Json parameters, LuaBaseComponent* parent)
       m_luaRoot->addCallbacks("thread", makeThreadCallbacks());
       m_luaRoot->addCallbacks(
           "config", LuaBindings::makeConfigCallbacks(bind(&ScriptableThread::configValue, this, _1, _2)));
-      
-      for (auto& p : m_parameters.getObject("scripts")) {
-        auto scriptComponent = make_shared<ScriptComponent>();
-        scriptComponent->setLuaRoot(m_luaRoot);
-        scriptComponent->setScripts(jsonToStringList(p.second.toArray()));
-
-        m_scriptContexts.set(p.first, scriptComponent);
-        scriptComponent->init();
-      }
 }
 
 ScriptableThread::~ScriptableThread() {
@@ -49,6 +40,23 @@ ScriptableThread::~ScriptableThread() {
   m_scriptContexts.clear();
   
   join();
+}
+
+void ScriptableThread::addCallbacks(String const& groupName, LuaCallbacks const& callbacks) {
+  if (m_threadCallbacks.insert(groupName, callbacks).second) {
+    for (auto const& p : m_scriptContexts) {
+      p.second->addCallbacks(groupName,callbacks);
+      p.second->addThreadCallbacks(groupName,callbacks);
+    }
+  }
+}
+void ScriptableThread::removeCallbacks(String const& groupName) {
+  if (m_threadCallbacks.remove(groupName)) {
+    for (auto const& p : m_scriptContexts) {
+      p.second->removeCallbacks(groupName);
+      p.second->removeThreadCallbacks(groupName);
+    }
+  }
 }
 
 void ScriptableThread::start() {
@@ -81,6 +89,20 @@ void ScriptableThread::passMessage(Message&& message) {
 
 void ScriptableThread::run() {
   try {
+    for (auto& p : m_parameters.getObject("scripts")) {
+      auto scriptComponent = make_shared<ScriptComponent>();
+      scriptComponent->setLuaRoot(m_luaRoot);
+      scriptComponent->setScripts(jsonToStringList(p.second.toArray()));
+      
+      for (auto const& callbackPair : m_threadCallbacks) {
+        scriptComponent->addCallbacks(callbackPair.first, callbackPair.second);
+        scriptComponent->addThreadCallbacks(callbackPair.first, callbackPair.second);
+      }
+
+      m_scriptContexts.set(p.first, scriptComponent);
+      scriptComponent->init();
+    }
+    
     double updateMeasureWindow = m_parameters.getDouble("updateMeasureWindow",0.5);
     TickRateApproacher tickApproacher(1.0f / m_timestep, updateMeasureWindow);
 

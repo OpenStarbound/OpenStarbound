@@ -35,6 +35,8 @@ CommandProcessor::CommandProcessor(UniverseServer* universe)
   m_luaRoot->tuneAutoGarbageCollection(universeConfig.getFloat("luaGcPause"), universeConfig.getFloat("luaGcStepMultiplier"));
   m_scriptComponent.addCallbacks("universe", LuaBindings::makeUniverseServerCallbacks(m_universe));
   m_scriptComponent.addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(m_universe));
+  m_scriptComponent.addThreadCallbacks("universe", LuaBindings::makeUniverseServerCallbacks(m_universe));
+  m_scriptComponent.addThreadCallbacks("celestial", LuaBindings::makeCelestialCallbacks(m_universe));
   m_scriptComponent.addCallbacks("CommandProcessor", makeCommandCallbacks());
   m_scriptComponent.setScripts(jsonToStringList(universeConfig.get("commandProcessorScripts")));
   m_luaRoot->luaEngine().setNullTerminated(false);

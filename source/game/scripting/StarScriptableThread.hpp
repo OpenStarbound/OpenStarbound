@@ -38,6 +38,10 @@ public:
 
   // 
   void passMessage(Message&& message);
+  
+  // expected to be run before the thread is started or after it is stopped!
+  void addCallbacks(String const& groupName, LuaCallbacks const& callbacks);
+  void removeCallbacks(String const& groupName);
 
 protected:
   virtual void run();
@@ -67,6 +71,8 @@ private:
   mutable atomic<bool> m_shouldExpire;
   
   LuaBaseComponent* m_parent;
+  
+  StringMap<LuaCallbacks> m_threadCallbacks;
   
   LuaCallbacks makeThreadCallbacks();
   Json configValue(String const& name, Json def) const;

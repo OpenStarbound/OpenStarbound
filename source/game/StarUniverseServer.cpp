@@ -2982,6 +2982,8 @@ void UniverseServer::startLuaScripts() {
     scriptComponent->setLuaRoot(m_luaRoot);
     scriptComponent->addCallbacks("universe", LuaBindings::makeUniverseServerCallbacks(this));
     scriptComponent->addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(this));
+    scriptComponent->addThreadCallbacks("universe", LuaBindings::makeUniverseServerCallbacks(this));
+    scriptComponent->addThreadCallbacks("celestial", LuaBindings::makeCelestialCallbacks(this));
     scriptComponent->setScripts(jsonToStringList(p.second.toArray()));
 
     m_scriptContexts.set(p.first, scriptComponent);

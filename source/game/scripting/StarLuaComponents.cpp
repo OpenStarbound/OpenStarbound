@@ -47,6 +47,25 @@ bool LuaBaseComponent::removeCallbacks(String const& groupName) {
   return false;
 }
 
+void LuaBaseComponent::addThreadCallbacks(String groupName, LuaCallbacks callbacks) {
+  if (!m_threadCallbacks.insert(groupName, callbacks).second)
+    throw LuaComponentException::format("Duplicate thread callbacks named '{}' in LuaBaseComponent", groupName);
+
+  for (auto const& p : m_threads) {
+    p.second->addCallbacks(groupName,callbacks);
+  }
+}
+
+bool LuaBaseComponent::removeThreadCallbacks(String const& groupName) {
+  if (m_threadCallbacks.remove(groupName)) {
+    for (auto const& p : m_threads) {
+      p.second->removeCallbacks(groupName);
+    }
+    return true;
+  }
+  return false;
+}
+
 bool LuaBaseComponent::autoReInit() const {
   return (bool)m_reloadTracker;
 }
@@ -181,6 +200,10 @@ LuaCallbacks LuaBaseComponent::makeThreadsCallbacks() {
       m_threads.remove(name);
     }
     auto thread = make_shared<ScriptableThread>(parameters.set("name",name), this);
+    
+    for (auto const& callbackPair : m_threadCallbacks)
+      thread->addCallbacks(callbackPair.first, callbackPair.second);
+    
     thread->setPause(false);
     thread->start();
     m_threads.set(name,thread);
