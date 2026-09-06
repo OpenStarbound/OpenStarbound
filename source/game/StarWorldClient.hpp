@@ -159,7 +159,7 @@ public:
   RectI clientWindow() const;
   WorldClientState& clientState();
 
-  Maybe<Json> receiveMessage(ConnectionId fromConnection, String const& message, JsonArray const& args);
+  Maybe<ChainableJsonMessageResponse> receiveMessage(ConnectionId fromConnection, String const& message, JsonArray const& args);
 
   ScriptComponentPtr scriptContext(String const& contextName);
 
@@ -407,6 +407,7 @@ private:
 
   HashMap<String, List<RpcPromiseKeeper<Vec2F>>> m_findUniqueEntityResponses;
   HashMap<Uuid, RpcPromiseKeeper<Json>> m_entityMessageResponses;
+  HashMap<Uuid, RpcPromise<Json>> m_entityMessagePromises;
   HashMap<Uuid, RpcPromiseKeeper<InteractAction>> m_entityInteractionResponses;
 
   List<PhysicsForceRegion> m_forceRegions;

@@ -374,16 +374,16 @@ void Vehicle::destroy(RenderCallback* renderCallback) {
   }
 }
 
-Maybe<Json> Vehicle::receiveMessage(ConnectionId connectionId, String const& message, JsonArray const& args) {
+Maybe<ChainableJsonMessageResponse> Vehicle::receiveMessage(ConnectionId connectionId, String const& message, JsonArray const& args) {
   m_aliveMasterConnections[connectionId] = GameTimer(m_slaveControlTimeout);
   if (message.equalsIgnoreCase("control_on")) {
     auto& loungePosition = m_loungePositions.valueAt(args.at(0).toUInt());
     loungePosition.masterControlState[LoungeControlNames.getLeft(args.at(1).toString())].slavesHeld.add(connectionId);
-    return Json();
+    return ChainableJsonMessageResponse(Json());
   } else if (message.equalsIgnoreCase("control_off")) {
     auto& loungePosition = m_loungePositions.valueAt(args.at(0).toUInt());
     loungePosition.masterControlState[LoungeControlNames.getLeft(args.at(1).toString())].slavesHeld.remove(connectionId);
-    return Json();
+    return ChainableJsonMessageResponse(Json());
   } else if (message.equalsIgnoreCase("control_all")) {
     auto& loungePosition = m_loungePositions.valueAt(args.at(0).toUInt());
     Set<LoungeControl> allControlsHeld;
@@ -395,11 +395,11 @@ Maybe<Json> Vehicle::receiveMessage(ConnectionId connectionId, String const& mes
       else
         p.second.slavesHeld.remove(connectionId);
     }
-    return Json();
+    return ChainableJsonMessageResponse(Json());
   } else if (message.equalsIgnoreCase("aim")) {
     auto& loungePosition = m_loungePositions.valueAt(args.at(0).toUInt());
     loungePosition.masterAimPosition = {args.at(1).toFloat(), args.at(2).toFloat()};
-    return Json();
+    return ChainableJsonMessageResponse(Json());
   } else {
     return m_scriptComponent.handleMessage(message, connectionId == world()->connection(), args);
   }

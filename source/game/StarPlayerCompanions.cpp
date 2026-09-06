@@ -110,7 +110,7 @@ void PlayerCompanions::dismissCompanion(String const& category, Uuid const& podU
   m_scriptComponent.invoke("dismissCompanion", category, podUuid.hex());
 }
 
-Maybe<Json> PlayerCompanions::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
+Maybe<ChainableJsonMessageResponse> PlayerCompanions::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
   return m_scriptComponent.handleMessage(message, localMessage, args);
 }
 

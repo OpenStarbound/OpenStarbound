@@ -128,7 +128,7 @@ public:
   ClientSubWorldId getSubWorldOnWorld(WorldId worldId);
   void destroySubWorldOnWorld(WorldId worldId);
 
-  RpcThreadPromise<Json> sendSubWorldOnWorldMessage(WorldId const& worldId, String const& message, JsonArray const& args = {});
+  RpcPromise<Json> sendSubWorldOnWorldMessage(WorldId const& worldId, String const& message, JsonArray const& args = {});
   RpcPromise<Json> sendMainWorldMessage(String const& message, JsonArray const& args = {});
 
   bool paused() const;

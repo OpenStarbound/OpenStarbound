@@ -4,6 +4,12 @@ The `widget` table now contains extra bindings.
 
 ---
 
+#### `AudioInstance` widget.playSound(`String` audio, [`int` loops = 0], [`float` volume = 1.0f])
+
+An existing callback, now returns the played sound instance.
+
+---
+
 ## Widget specific callbacks
 
 These callbacks only work for some widget types.

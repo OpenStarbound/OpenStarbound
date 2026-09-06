@@ -99,12 +99,19 @@ StringList ClientCommandProcessor::handleCommand(String const& commandLine, bool
     } else {
       auto player = m_universeClient->mainPlayer();
       if (auto messageResult = player->receiveMessage(connectionForEntity(player->entityId()), "/" + command, {allArguments})) {
-        if (messageResult->isType(Json::Type::String))
-          result.append(*messageResult->stringPtr());
-        else if (!messageResult->isNull())
-          result.append(messageResult->repr(1, true));
-      } else
+        if (messageResult->is<Json>()) {
+          auto res = messageResult->ptr<Json>();
+          if (res->isType(Json::Type::String))
+            result.append(*res->stringPtr());
+          else if (!res->isNull())
+            result.append(res->repr(1, true));
+        } else {
+          Uuid uuid;
+          m_commandPromises[uuid] = messageResult->get<RpcPromise<Json>>();
+        }
+      } else {
         m_universeClient->sendChat(commandLine, ChatSendMode::Broadcast);
+      }
     }
     return result;
   } catch (ShellParsingException const& e) {
@@ -114,6 +121,25 @@ StringList ClientCommandProcessor::handleCommand(String const& commandLine, bool
     Logger::error("Exception caught handling client command {}: {}", commandLine, outputException(e, true));
     return {strf("Exception caught handling client command {}", commandLine)};
   }
+}
+
+StringList ClientCommandProcessor::updatePromises() {
+  StringList result;
+  for (auto const& uuid : m_commandPromises.keys()) {
+    if (m_commandPromises[uuid].finished()) {
+      if (m_commandPromises[uuid].succeeded()) {
+        auto res = m_commandPromises[uuid].result();
+        if (res->isType(Json::Type::String))
+          result.append(*res->stringPtr());
+        else if (!res->isNull())
+          result.append(res->repr(1, true));
+      } else {
+        result.append(strf("Error: {}", *m_commandPromises[uuid].error()));
+      }
+      m_commandPromises.remove(uuid);
+    }
+  }
+  return result;
 }
 
 bool ClientCommandProcessor::debugDisplayEnabled() const {

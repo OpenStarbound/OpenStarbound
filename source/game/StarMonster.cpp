@@ -526,8 +526,8 @@ void Monster::setPosition(Vec2F const& pos) {
   m_movementController->setPosition(pos);
 }
 
-Maybe<Json> Monster::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
-  Maybe<Json> result = m_scriptComponent.handleMessage(message, world()->connection() == sendingConnection, args);
+Maybe<ChainableJsonMessageResponse> Monster::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
+  Maybe<ChainableJsonMessageResponse> result = m_scriptComponent.handleMessage(message, world()->connection() == sendingConnection, args);
   if (!result)
     result = m_statusController->receiveMessage(message, world()->connection() == sendingConnection, args);
   return result;

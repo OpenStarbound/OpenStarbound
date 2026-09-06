@@ -106,8 +106,8 @@ void ScriptableThread::run() {
     p.second->uninit();
 }
 
-Maybe<Json> ScriptableThread::receiveMessage(String const& message, JsonArray const& args) {
-  Maybe<Json> result;
+Maybe<ChainableJsonMessageResponse> ScriptableThread::receiveMessage(String const& message, JsonArray const& args) {
+  Maybe<ChainableJsonMessageResponse> result;
   for (auto& p : m_scriptContexts) {
     result = p.second->handleMessage(message, true, args);
     if (result)
@@ -132,7 +132,10 @@ void ScriptableThread::update() {
   }
   for (auto& message : messages) {
     if (auto resp = receiveMessage(message.message, message.args))
-      message.promise.fulfill(*resp);
+      if (resp->is<RpcPromise<Json>>())
+        message.promise.chain(resp->get<RpcPromise<Json>>());
+      else
+        message.promise.fulfill(resp->get<Json>());
     else
       message.promise.fail("Message not handled by thread");
   }

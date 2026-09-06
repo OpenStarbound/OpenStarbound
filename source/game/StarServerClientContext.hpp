@@ -4,7 +4,7 @@
 #include "StarThread.hpp"
 #include "StarUuid.hpp"
 #include "StarJsonRpc.hpp"
-#include "StarRpcThreadPromise.hpp"
+#include "StarRpcPromise.hpp"
 #include "StarDamageTypes.hpp"
 #include "StarGameTypes.hpp"
 #include "StarHostAddress.hpp"
@@ -90,7 +90,7 @@ public:
   WarpToWorld playerReviveWarp() const;
   void setPlayerReviveWarp(WarpToWorld warp);
   
-  void customWorldRequested(String name, RpcThreadPromiseKeeper<WorldChunks> promise);
+  void customWorldRequested(String name, RpcPromiseKeeper<WorldChunks> promise);
   void customWorldReceived(String name, WorldChunks chunks);
   void failWorldRequests();
   
@@ -149,7 +149,7 @@ private:
   uint64_t m_netVersion = 0;
   int64_t m_creationTime;
   
-  StringMap<RpcThreadPromiseKeeper<WorldChunks>> m_worldRequests;
+  StringMap<RpcPromiseKeeper<WorldChunks>> m_worldRequests;
   StringMap<CustomWorld> m_customWorlds;
 
   NetElementData<Maybe<pair<WarpAction, WarpMode>>> m_orbitWarpActionNetState;

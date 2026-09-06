@@ -201,7 +201,7 @@ public:
   Direction walkingDirection() const override;
   Direction facingDirection() const override;
 
-  Maybe<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args = {}) override;
+  Maybe<ChainableJsonMessageResponse> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args = {}) override;
 
   void update(float dt, uint64_t currentStep) override;
 

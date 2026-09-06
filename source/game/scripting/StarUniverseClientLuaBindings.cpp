@@ -73,7 +73,7 @@ LuaCallbacks LuaBindings::makeUniverseClientCallbacks(UniverseClientPtr universe
     universe->destroySubWorldOnWorld(parseWorldId(worldId));
   });
   
-  callbacks.registerCallback("sendSubWorldMessage", [universe](String const& worldId, String const& message, LuaVariadic<Json> args) -> RpcThreadPromise<Json> {
+  callbacks.registerCallback("sendSubWorldMessage", [universe](String const& worldId, String const& message, LuaVariadic<Json> args) -> RpcPromise<Json> {
     return universe->sendSubWorldOnWorldMessage(parseWorldId(worldId), message, JsonArray::from(std::move(args)));
   });
   

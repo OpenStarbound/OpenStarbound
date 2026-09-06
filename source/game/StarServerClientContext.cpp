@@ -331,7 +331,7 @@ void ServerClientContext::setPlayerReviveWarp(WarpToWorld warp) {
 ServerClientContext::CustomWorld::CustomWorld() : chunks(WorldChunks()), chunksUpdate(WorldChunks()), active(false) {}
 ServerClientContext::CustomWorld::CustomWorld(WorldChunks initialChunks) : chunks(initialChunks), chunksUpdate(WorldChunks()), active(false) {}
 
-void ServerClientContext::customWorldRequested(String name, RpcThreadPromiseKeeper<WorldChunks> promise) {
+void ServerClientContext::customWorldRequested(String name, RpcPromiseKeeper<WorldChunks> promise) {
   RecursiveMutexLocker locker(m_mutex);
   m_worldRequests.add(name,promise);
 }

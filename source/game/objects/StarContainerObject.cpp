@@ -153,46 +153,46 @@ void ContainerObject::destroy(RenderCallback* renderCallback) {
   }
 }
 
-Maybe<Json> ContainerObject::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
+Maybe<ChainableJsonMessageResponse> ContainerObject::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
   auto itemDb = Root::singleton().itemDatabase();
 
   if (message.equalsIgnoreCase("startCrafting")) {
     startCrafting();
-    return Json();
+    return ChainableJsonMessageResponse(Json());
 
   } else if (message.equalsIgnoreCase("stopCrafting")) {
     stopCrafting();
-    return Json();
+    return ChainableJsonMessageResponse(Json());
 
   } else if (message.equalsIgnoreCase("burnContainerContents")) {
     burnContainerContents();
-    return Json();
+    return ChainableJsonMessageResponse(Json());
 
   } else if (message.equalsIgnoreCase("addItems")) {
-    return itemSafeDescriptor(doAddItems(itemDb->fromJson(args.at(0)))).toJson();
+    return ChainableJsonMessageResponse(itemSafeDescriptor(doAddItems(itemDb->fromJson(args.at(0)))).toJson());
 
   } else if (message.equalsIgnoreCase("putItems")) {
-    return itemSafeDescriptor(doPutItems(args.at(0).toUInt(), itemDb->fromJson(args.at(1)))).toJson();
+    return ChainableJsonMessageResponse(itemSafeDescriptor(doPutItems(args.at(0).toUInt(), itemDb->fromJson(args.at(1)))).toJson());
 
   } else if (message.equalsIgnoreCase("takeItems")) {
-    return itemSafeDescriptor(doTakeItems(args.at(0).toUInt(), args.at(1).toUInt())).toJson();
+    return ChainableJsonMessageResponse(itemSafeDescriptor(doTakeItems(args.at(0).toUInt(), args.at(1).toUInt())).toJson());
 
   } else if (message.equalsIgnoreCase("swapItems")) {
-    return itemSafeDescriptor(doSwapItems(args.at(0).toUInt(), itemDb->fromJson(args.at(1)), args.get(2).optBool().value(true))).toJson();
+    return ChainableJsonMessageResponse(itemSafeDescriptor(doSwapItems(args.at(0).toUInt(), itemDb->fromJson(args.at(1)), args.get(2).optBool().value(true))).toJson());
 
   } else if (message.equalsIgnoreCase("applyAugment")) {
-    return itemSafeDescriptor(doApplyAugment(args.at(0).toUInt(), itemDb->fromJson(args.at(1)))).toJson();
+    return ChainableJsonMessageResponse(itemSafeDescriptor(doApplyAugment(args.at(0).toUInt(), itemDb->fromJson(args.at(1)))).toJson());
 
   } else if (message.equalsIgnoreCase("consumeItems")) {
-    return Json(doConsumeItems(ItemDescriptor(args.at(0))));
+    return ChainableJsonMessageResponse(Json(doConsumeItems(ItemDescriptor(args.at(0)))));
 
   } else if (message.equalsIgnoreCase("consumeItemsAt")) {
-    return Json(doConsumeItems(args.at(0).toUInt(), args.at(1).toUInt()));
+    return ChainableJsonMessageResponse(Json(doConsumeItems(args.at(0).toUInt(), args.at(1).toUInt())));
 
   } else if (message.equalsIgnoreCase("clearContainer")) {
-    return Json(transform<JsonArray>(doClearContainer(), [](auto const& item) {
+    return ChainableJsonMessageResponse(Json(transform<JsonArray>(doClearContainer(), [](auto const& item) {
         return itemSafeDescriptor(item).toJson();
-      }));
+      })));
 
   } else {
     return Object::receiveMessage(sendingConnection, message, args);

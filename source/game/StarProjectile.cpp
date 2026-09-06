@@ -396,7 +396,7 @@ void Projectile::renderLightSources(RenderCallback* renderCallback) {
   renderCallback->addLightSource({position(), m_config->lightColor.toRgbF(), m_config->lightType, 0.0f, 0.0f, 0.0f});
 }
 
-Maybe<Json> Projectile::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
+Maybe<ChainableJsonMessageResponse> Projectile::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
   return m_scriptComponent.handleMessage(message, sendingConnection == world()->connection(), args);
 }
 

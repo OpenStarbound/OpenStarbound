@@ -44,7 +44,7 @@ public:
   void init(Player* player, World* world, UniverseClient* client);
   void uninit();
 
-  Maybe<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
+  Maybe<ChainableJsonMessageResponse> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
   Maybe<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args);
   void update(float dt);
 

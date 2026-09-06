@@ -585,10 +585,14 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
         clientInfo->outgoingPackets.append(make_shared<EntityMessageResponsePacket>(makeLeft("Unknown entity"), entityMessagePacket->uuid));
       } else {
         if (entity->isMaster()) {
-          auto response = entity->receiveMessage(clientId, entityMessagePacket->message, entityMessagePacket->args);
-          if (response)
-            clientInfo->outgoingPackets.append(make_shared<EntityMessageResponsePacket>(makeRight(response.take()), entityMessagePacket->uuid));
-          else
+          if (auto response = entity->receiveMessage(clientId, entityMessagePacket->message, entityMessagePacket->args)) {
+            if (response->is<Json>())
+              clientInfo->outgoingPackets.append(make_shared<EntityMessageResponsePacket>(makeRight(response->get<Json>()), entityMessagePacket->uuid));
+            else {
+              // delay the response until this promise is done
+              m_entityMessagePromises[entityMessagePacket->uuid] = make_pair(clientId,response->get<RpcPromise<Json>>());
+            }
+          } else
             clientInfo->outgoingPackets.append(make_shared<EntityMessageResponsePacket>(makeLeft("Message not handled by entity"), entityMessagePacket->uuid));
         } else if (auto const& clientInfo = m_clientInfo.value(connectionForEntity(entity->entityId()))) {
           m_entityMessageResponses[entityMessagePacket->uuid] = {clientInfo->clientId, clientId};
@@ -658,8 +662,8 @@ bool WorldServer::sendPacket(ConnectionId clientId, PacketPtr const& packet) {
   return false;
 }
 
-Maybe<Json> WorldServer::receiveMessage(ConnectionId fromConnection, String const& message, JsonArray const& args) {
-  Maybe<Json> result;
+Maybe<ChainableJsonMessageResponse> WorldServer::receiveMessage(ConnectionId fromConnection, String const& message, JsonArray const& args) {
+  Maybe<ChainableJsonMessageResponse> result;
   for (auto& p : m_scriptContexts) {
     result = p.second->handleMessage(message, fromConnection == ServerConnectionId, args);
     if (result)
@@ -807,6 +811,21 @@ void WorldServer::update(float dt) {
 
   for (EntityId entityId : toRemove)
     removeEntity(entityId, true);
+
+  for (auto const& uuid : m_entityMessagePromises.keys()) {
+    if (auto clientInfo = m_clientInfo.value(m_entityMessagePromises[uuid].first)) {
+      if (m_entityMessagePromises[uuid].second.finished()) {
+        if (m_entityMessagePromises[uuid].second.succeeded()) {
+          clientInfo->outgoingPackets.append(make_shared<EntityMessageResponsePacket>(makeRight(*m_entityMessagePromises[uuid].second.result()), uuid));
+        } else {
+          clientInfo->outgoingPackets.append(make_shared<EntityMessageResponsePacket>(makeLeft(*m_entityMessagePromises[uuid].second.error()), uuid));
+        }
+        m_entityMessagePromises.remove(uuid);
+      }
+    } else {
+      m_entityMessagePromises.remove(uuid);
+    }
+  }
 
   bool sendRemoteUpdates = m_entityUpdateTimer.wrapTick(dt);
   for (auto const& pair : m_clientInfo) {
@@ -1520,6 +1539,7 @@ void WorldServer::init(bool firstTime) {
   m_lightIntensityCalculator.setParameters(assets->json("/lighting.config:intensity"));
 
   m_entityMessageResponses = {};
+  m_entityMessagePromises = {};
 
   m_collisionGenerator.init([=](int x, int y) {
       return m_tileArray->tile({x, y}).getCollision();
@@ -2500,9 +2520,12 @@ RpcPromise<Json> WorldServer::sendEntityMessage(Variant<EntityId, String> const&
   if (!entity) {
     return RpcPromise<Json>::createFailed("Unknown entity");
   } else if (entity->isMaster()) {
-    if (auto resp = entity->receiveMessage(ServerConnectionId, message, args))
-      return RpcPromise<Json>::createFulfilled(resp.take());
-    else
+    if (auto resp = entity->receiveMessage(ServerConnectionId, message, args)) {
+      if (resp->is<Json>())
+        return RpcPromise<Json>::createFulfilled(resp->get<Json>());
+      else
+        return resp->get<RpcPromise<Json>>();
+    } else
       return RpcPromise<Json>::createFailed("Message not handled by entity");
   } else {
     auto pair = RpcPromise<Json>::createPair();

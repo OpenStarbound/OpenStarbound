@@ -822,12 +822,12 @@ void UniverseClient::destroySubWorldOnWorld(WorldId worldId) {
   setSubWorldWorld(m_subWorlds.getLeft(worldId), WorldId());
 }
 
-RpcThreadPromise<Json> UniverseClient::sendSubWorldOnWorldMessage(WorldId const& worldId, String const& message, JsonArray const& args) {
+RpcPromise<Json> UniverseClient::sendSubWorldOnWorldMessage(WorldId const& worldId, String const& message, JsonArray const& args) {
   if (m_connection->packetSocket().netRules().version() < 16) {
-    return RpcThreadPromise<Json>::createFailed("Server too old");
+    return RpcPromise<Json>::createFailed("Server too old");
   }
   auto subWorldId = getSubWorldOnWorld(worldId);
-  auto pair = RpcThreadPromise<Json>::createPair();
+  auto pair = RpcPromise<Json>::createPair();
   m_subWorldThreads.get(subWorldId)->passMessage({message, args, pair.second});
   return pair.first;
 }
@@ -838,7 +838,10 @@ RpcPromise<Json> UniverseClient::sendMainWorldMessage(String const& message, Jso
     return RpcPromise<Json>::createFailed("Not connected");
   }
   if (auto resp = m_worldClient->receiveMessage(ServerConnectionId, message, args)) {
-    return RpcPromise<Json>::createFulfilled(*resp);
+    if (resp->is<RpcPromise<Json>>())
+      return resp->get<RpcPromise<Json>>();
+    else
+      return RpcPromise<Json>::createFulfilled(resp->get<Json>());
   } else {
     return RpcPromise<Json>::createFailed("Message not handled by world");
   }

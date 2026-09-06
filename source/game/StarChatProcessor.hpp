@@ -3,6 +3,7 @@
 #include "StarChatTypes.hpp"
 #include "StarSet.hpp"
 #include "StarThread.hpp"
+#include "StarUuid.hpp"
 
 namespace Star {
 
@@ -16,7 +17,7 @@ public:
 
   // CommandHandler is passed the origin connection, the command portion
   // excluding the '/' character, and the remaining command line in full.
-  typedef function<String(ConnectionId, String, String)> CommandHandler;
+  typedef function<ServerCommandResult(ConnectionId, String, String)> CommandHandler;
 
   String connectClient(ConnectionId clientId, String nick = "");
   // Returns any pending messages.
@@ -55,6 +56,8 @@ public:
 
   void setCommandHandler(CommandHandler commandHandler);
   void clearCommandHandler();
+  
+  void updatePromises();
 
 private:
   struct ClientInfo {
@@ -78,6 +81,8 @@ private:
   StringMap<Set<ConnectionId>> m_channels;
 
   CommandHandler m_commandHandler;
+  
+  HashMap<Uuid,pair<ConnectionId,RpcPromise<String>>> m_commandPromises;
 };
 
 }

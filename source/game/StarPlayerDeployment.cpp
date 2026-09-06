@@ -76,7 +76,7 @@ void PlayerDeployment::teleportOut() {
   m_scriptComponent.invoke("teleportOut");
 }
 
-Maybe<Json> PlayerDeployment::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
+Maybe<ChainableJsonMessageResponse> PlayerDeployment::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
   return m_scriptComponent.handleMessage(message, localMessage, args);
 }
 

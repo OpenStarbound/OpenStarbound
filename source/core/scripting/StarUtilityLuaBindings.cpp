@@ -176,6 +176,12 @@ LuaCallbacks LuaBindings::makeUtilityCallbacks() {
       []() -> int64_t {
         return Time::millisecondsSinceEpoch();
       });
+  
+  callbacks.registerCallback("makePromise",
+      []() -> pair<RpcPromise<Json>,AutoFailRpcPromiseKeeperPtr<Json>> {
+        auto pair = RpcPromise<Json>::createPair();
+        return make_pair(pair.first,make_shared<AutoFailRpcPromiseKeeper<Json>>(pair.second));
+      });
 
   return callbacks;
 }

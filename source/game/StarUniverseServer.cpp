@@ -84,7 +84,7 @@ UniverseServer::UniverseServer(String const& storageDir, bool const& isLocal)
   m_teamManager = make_shared<TeamManager>();
   m_workerPool.start(universeConfig.getUInt("workerPoolThreads"));
 
-  m_commandProcessor = make_shared<CommandProcessor>(this, m_luaRoot);
+  m_commandProcessor = make_shared<CommandProcessor>(this);
   m_chatProcessor = make_shared<ChatProcessor>();
   m_chatProcessor->setCommandHandler(bind(&CommandProcessor::userCommand, m_commandProcessor.get(), _1, _2, _3));
 
@@ -263,7 +263,7 @@ void UniverseServer::adminWhisper(ConnectionId clientId, String const& text) {
   m_chatProcessor->adminWhisper(clientId, text);
 }
 
-String UniverseServer::adminCommand(String text) {
+ServerCommandResult UniverseServer::adminCommand(String text) {
   String command = text.extract();
   return m_commandProcessor->adminCommand(command, text);
 }
@@ -329,8 +329,8 @@ void UniverseServer::setPvp(ConnectionId clientId, bool pvp) {
   }
 }
 
-RpcThreadPromise<Json> UniverseServer::sendWorldMessage(WorldId const& worldId, String const& message, JsonArray const& args) {
-  auto pair = RpcThreadPromise<Json>::createPair();
+RpcPromise<Json> UniverseServer::sendWorldMessage(WorldId const& worldId, String const& message, JsonArray const& args) {
+  auto pair = RpcPromise<Json>::createPair();
   RecursiveMutexLocker locker(m_mainLock);
   m_pendingWorldMessages[worldId].push_back({message, args, pair.second});
   return pair.first;
@@ -663,7 +663,7 @@ void UniverseServer::run() {
   }
 }
 
-UniverseServer::WorldServerPromise::WorldServerPromise(function<WorkerPoolPromise<WorldServerThreadPtr>(WorldChunks)> producer, RpcThreadPromise<WorldChunks> promise)
+UniverseServer::WorldServerPromise::WorldServerPromise(function<WorkerPoolPromise<WorldServerThreadPtr>(WorldChunks)> producer, RpcPromise<WorldChunks> promise)
   : currentPromise(promise), producer(producer) {}
   
 UniverseServer::WorldServerPromise::WorldServerPromise(WorkerPoolPromise<WorldServerThreadPtr> promise)
@@ -672,7 +672,7 @@ UniverseServer::WorldServerPromise::WorldServerPromise(WorkerPoolPromise<WorldSe
 bool UniverseServer::WorldServerPromise::done() const {
   if (auto wpp = currentPromise.ptr<WorkerPoolPromise<WorldServerThreadPtr>>()) {
     return wpp->done();
-  } else if (auto rpcp = currentPromise.ptr<RpcThreadPromise<WorldChunks>>()) {
+  } else if (auto rpcp = currentPromise.ptr<RpcPromise<WorldChunks>>()) {
     return rpcp->finished();
   }
   return false;
@@ -680,7 +680,7 @@ bool UniverseServer::WorldServerPromise::done() const {
 bool UniverseServer::WorldServerPromise::poll() {
   if (auto wpp = currentPromise.ptr<WorkerPoolPromise<WorldServerThreadPtr>>()) {
     return wpp->poll();
-  } else if (auto rpcp = currentPromise.ptr<RpcThreadPromise<WorldChunks>>()) {
+  } else if (auto rpcp = currentPromise.ptr<RpcPromise<WorldChunks>>()) {
     if (rpcp->finished()) {
       if (rpcp->succeeded()) {
         currentPromise = (*producer)(*rpcp->result());
@@ -1266,7 +1266,7 @@ void UniverseServer::respondToCelestialRequests() {
 void UniverseServer::processChat() {
   RecursiveMutexLocker locker(m_mainLock);
   ReadLocker clientsLocker(m_clientsLock);
-
+  
   for (auto const& p : take(m_pendingChat)) {
     if (auto clientContext = m_clients.get(p.first)) {
       for (auto const& chat : p.second) {
@@ -1288,6 +1288,8 @@ void UniverseServer::processChat() {
       }
     }
   }
+
+  m_chatProcessor->updatePromises();
 }
 
 void UniverseServer::clearBrokenWorlds() {
@@ -2850,7 +2852,7 @@ Maybe<UniverseServer::WorldServerPromise> UniverseServer::clientCustomWorldPromi
   } else {
     // request the world
     Logger::info("UniverseServer: Requesting client custom world '{}' for '{}'", clientCustomWorldId.name, clientCustomWorldId.uuid.hex());
-    auto pair = RpcThreadPromise<WorldChunks>::createPair();
+    auto pair = RpcPromise<WorldChunks>::createPair();
     clientContext->customWorldRequested(clientCustomWorldId.name,pair.second);
     m_connectionServer->sendPackets(*clientId, {make_shared<ClientCustomWorldRequest>(clientCustomWorldId.name)});
     

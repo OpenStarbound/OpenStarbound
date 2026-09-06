@@ -207,7 +207,7 @@ If a subworld is active on the given world, unloads it.
 
 ---
 
-#### `RpcThreadPromise<Json>` universe.sendSubWorldMessage(`String` worldId, `String` messageName, [`Json` args ...])
+#### `RpcPromise<Json>` universe.sendSubWorldMessage(`String` worldId, `String` messageName, [`Json` args ...])
 
 Loads the given world as a subworld if it is not loaded.
 If it is loaded, sends a message to the subworld on the given world.

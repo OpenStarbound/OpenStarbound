@@ -211,7 +211,7 @@ void Quest::uninit() {
   m_world = nullptr;
 }
 
-Maybe<Json> Quest::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
+Maybe<ChainableJsonMessageResponse> Quest::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
   if (!m_inited)
     return {};
   return m_scriptComponent.handleMessage(message, localMessage, args);

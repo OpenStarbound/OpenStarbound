@@ -1178,10 +1178,14 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
         if (fromConnection == *m_clientId) // Kae: The server should not be able to forge entity messages that appear as if they're from us
           fromConnection = ServerConnectionId;
 
-        auto response = entity->receiveMessage(entityMessagePacket->fromConnection, entityMessagePacket->message, entityMessagePacket->args);
-        if (response)
-          m_outgoingPackets.append(make_shared<EntityMessageResponsePacket>(makeRight(response.take()), entityMessagePacket->uuid));
-        else
+        if (auto response = entity->receiveMessage(entityMessagePacket->fromConnection, entityMessagePacket->message, entityMessagePacket->args)) {
+          if (response->is<Json>()) {
+            m_outgoingPackets.append(make_shared<EntityMessageResponsePacket>(makeRight(response->get<Json>()), entityMessagePacket->uuid));
+          } else {
+            // delay the response until this promise is done
+            m_entityMessagePromises[entityMessagePacket->uuid] = response->get<RpcPromise<Json>>();
+          } 
+        } else
           m_outgoingPackets.append(make_shared<EntityMessageResponsePacket>(makeLeft("Message not handled by entity"), entityMessagePacket->uuid));
       }
 
@@ -1264,13 +1268,13 @@ List<PacketPtr> WorldClient::getOutgoingPackets() {
   return std::move(m_outgoingPackets);
 }
 
-Maybe<Json> WorldClient::receiveMessage(ConnectionId fromConnection, String const& message, JsonArray const& args) {
+Maybe<ChainableJsonMessageResponse> WorldClient::receiveMessage(ConnectionId fromConnection, String const& message, JsonArray const& args) {
   m_expiryTimer.reset();
   if (!inWorld()) {
     // script contexts aren't active to handle this message
     return {};
   }
-  Maybe<Json> result;
+  Maybe<ChainableJsonMessageResponse> result;
   for (auto& p : m_scriptContexts) {
     result = p.second->handleMessage(message, fromConnection == ServerConnectionId, args);
     if (result)
@@ -1488,6 +1492,17 @@ void WorldClient::update(float dt) {
 
   for (EntityId entityId : toRemove)
     removeEntity(entityId, true);
+  
+  for (auto const& uuid : m_entityMessagePromises.keys()) {
+    if (m_entityMessagePromises[uuid].finished()) {
+      if (m_entityMessagePromises[uuid].succeeded()) {
+        m_outgoingPackets.append(make_shared<EntityMessageResponsePacket>(makeRight(*m_entityMessagePromises[uuid].result()), uuid));
+      } else {
+        m_outgoingPackets.append(make_shared<EntityMessageResponsePacket>(makeLeft(*m_entityMessagePromises[uuid].error()), uuid));
+      }
+      m_entityMessagePromises.remove(uuid);
+    }
+  }
 
   queueUpdatePackets(m_entityUpdateTimer.wrapTick(dt));
 
@@ -2178,6 +2193,7 @@ void WorldClient::clearWorld() {
 
   m_entityMessageResponses = {};
   m_findUniqueEntityResponses = {};
+  m_entityMessagePromises = {};
 
   m_forceRegions.clear();
   
@@ -2630,9 +2646,12 @@ RpcPromise<Json> WorldClient::sendEntityMessage(Variant<EntityId, String> const&
   if (entityId.is<EntityId>() && !entity && m_clientId == connectionForEntity(entityId.get<EntityId>())) {
     return RpcPromise<Json>::createFailed("Unknown entity");
   } else if (entity && entity->isMaster()) {
-    if (auto resp = entity->receiveMessage(*m_clientId, message, args))
-      return RpcPromise<Json>::createFulfilled(resp.take());
-    else
+    if (auto resp = entity->receiveMessage(*m_clientId, message, args)) {
+      if (resp->is<Json>())
+        return RpcPromise<Json>::createFulfilled(resp->get<Json>());
+      else
+        return resp->get<RpcPromise<Json>>();
+    } else
       return RpcPromise<Json>::createFailed("Message not handled by entity");
   } else {
     auto pair = RpcPromise<Json>::createPair();
