@@ -1512,11 +1512,6 @@ void WorldServer::init(bool firstTime) {
 
   m_sky = make_shared<Sky>(m_worldTemplate->skyParameters(), false);
 
-  // Entity scripts can query weather while initial dungeons and regions are
-  // still being generated, before the configured weather domains are set up.
-  // Keep a valid weatherless fallback available throughout initialization.
-  m_emptyWeather = make_shared<ServerWeather>();
-
   m_lightIntensityCalculator.setParameters(assets->json("/lighting.config:intensity"));
 
   m_entityMessageResponses = {};
@@ -1533,6 +1528,10 @@ void WorldServer::init(bool firstTime) {
     m_liquidEngine->setLiquidTickDelta(liquidSettings->id, liquidSettings->tickDelta);
 
   m_fallingBlocksAgent = make_shared<FallingBlocksAgent>(make_shared<FallingBlocksWorld>(this));
+
+  // Dungeon and spawned entity scripts may query wind or weather while the
+  // initial world regions are being generated, so domains must exist first.
+  setupWeatherDomains();
 
   setupForceRegions();
 
@@ -1589,8 +1588,6 @@ void WorldServer::init(bool firstTime) {
       m_playerStart = findPlayerStart(firstTime ? Maybe<Vec2F>() : m_playerStart);
 
     generateRegion(RectI::integral(RectF(m_playerStart, m_playerStart)).padded(m_serverConfig.getInt("playerStartInitialGenRadius")));
-
-    setupWeatherDomains();
   } catch (std::exception const& e) {
     m_worldStorage->unloadAll(true);
     throw WorldServerException("Exception encountered initializing world", e);
