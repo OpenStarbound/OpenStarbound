@@ -108,7 +108,6 @@ StringList ClientCommandProcessor::handleCommand(String const& commandLine, bool
         } else {
           Uuid uuid;
           m_commandPromises[uuid] = messageResult->get<RpcPromise<Json>>();
-          result.append("Command promise results currently unsupported.");
         }
       } else {
         m_universeClient->sendChat(commandLine, ChatSendMode::Broadcast);
