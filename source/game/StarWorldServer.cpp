@@ -1512,6 +1512,11 @@ void WorldServer::init(bool firstTime) {
 
   m_sky = make_shared<Sky>(m_worldTemplate->skyParameters(), false);
 
+  // Entity scripts can query weather while initial dungeons and regions are
+  // still being generated, before the configured weather domains are set up.
+  // Keep a valid weatherless fallback available throughout initialization.
+  m_emptyWeather = make_shared<ServerWeather>();
+
   m_lightIntensityCalculator.setParameters(assets->json("/lighting.config:intensity"));
 
   m_entityMessageResponses = {};
