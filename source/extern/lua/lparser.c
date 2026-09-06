@@ -869,6 +869,44 @@ static void funcargs (LexState *ls, expdesc *f, int line) {
 */
 
 
+static void safe_navigation(LexState *ls, expdesc *v) {
+    FuncState *fs = ls->fs;
+    luaX_next(ls);
+    luaK_exp2nextreg(fs, v);
+    luaK_codeABC(fs,OP_TEST, v->u.info, NO_REG, 0 );
+    {
+    int old_free=fs->freereg;             
+    int vreg=v->u.info;
+    int j = luaK_codeAsBx(fs, OP_JMP, 0, NO_JUMP);
+    expdesc key;
+    switch(ls->t.token) {
+    case '[':
+        yindex(ls, &key);
+        luaK_indexed(fs, v, &key);
+        luaK_exp2nextreg(fs, v);
+        break;        
+    case '.':
+        luaX_next(ls);
+        checkname(ls, &key);
+        luaK_indexed(fs, v, &key);
+        break;
+    default:
+         luaX_syntaxerror(ls, "unexpected symbol");
+    }
+    luaK_exp2nextreg(fs, v);
+    fs->freereg=old_free;
+    /* i think this check is unnecessary, as any complex key
+      expressions should be courteous enough to leave the top of
+      the stack where they found it. */
+    if(v->u.info!=vreg) {
+        luaK_codeABC(fs,OP_MOVE, vreg, v->u.info, 0 );
+        v->u.info=vreg;
+    }
+    SETARG_sBx(fs->f->code[j], fs->pc-j-1);
+    }
+}
+
+
 static void primaryexp (LexState *ls, expdesc *v) {
   /* primaryexp -> NAME | '(' expr ')' */
   switch (ls->t.token) {
@@ -899,6 +937,10 @@ static void suffixedexp (LexState *ls, expdesc *v) {
   primaryexp(ls, v);
   for (;;) {
     switch (ls->t.token) {
+      case '?': {  /* safe navigation */
+        safe_navigation(ls, v);
+        break;
+      }
       case '.': {  /* fieldsel */
         fieldsel(ls, v);
         break;
