@@ -796,6 +796,11 @@ void luaV_finishOp (lua_State *L) {
     Protect(luaV_finishset(L,t,k,v,slot)); }
 
 
+/* to check step magnitude edge case in floating point for loops */
+#define forstepcheck(ns,ni,nl)  \
+          (luai_numeq(ni, luai_numadd(L, ni, ns)) ||  \
+           luai_numeq(nl, luai_numsub(L, nl, ns)))
+
 
 void luaV_execute (lua_State *L) {
   CallInfo *ci = L->ci;
@@ -1207,21 +1212,25 @@ void luaV_execute (lua_State *L) {
       vmcase(OP_FORLOOP) {
         if (ttisinteger(ra)) {  /* integer loop? */
           lua_Integer step = ivalue(ra + 2);
-          lua_Integer idx = intop(+, ivalue(ra), step); /* increment index */
+          lua_Integer idx = ivalue(ra);
           lua_Integer limit = ivalue(ra + 1);
-          if ((0 < step) ? (idx <= limit) : (limit <= idx)) {
+          if (0 < step ? l_castS2U( step) <= uintop(-, limit, idx)
+                       : l_castS2U(-step) <= uintop(-, idx, limit)) {
             ci->u.l.savedpc += GETARG_sBx(i);  /* jump back */
+            idx = intop(+, idx, step);  /* increment index */
             chgivalue(ra, idx);  /* update internal index... */
             setivalue(ra + 3, idx);  /* ...and external index */
           }
         }
         else {  /* floating loop */
           lua_Number step = fltvalue(ra + 2);
-          lua_Number idx = luai_numadd(L, fltvalue(ra), step); /* inc. index */
+          lua_Number idx = fltvalue(ra);
           lua_Number limit = fltvalue(ra + 1);
-          if (luai_numlt(0, step) ? luai_numle(idx, limit)
-                                  : luai_numle(limit, idx)) {
+          if (luai_numlt(0, step)
+                ? luai_numle( step, luai_numsub(L, limit, idx))
+                : luai_numle(-step, luai_numsub(L, idx, limit))) {
             ci->u.l.savedpc += GETARG_sBx(i);  /* jump back */
+            idx = luai_numadd(L, idx, step);  /* increment index */
             chgfltvalue(ra, idx);  /* update internal index... */
             setfltvalue(ra + 3, idx);  /* ...and external index */
           }
@@ -1232,14 +1241,19 @@ void luaV_execute (lua_State *L) {
         TValue *init = ra;
         TValue *plimit = ra + 1;
         TValue *pstep = ra + 2;
+        TValue *xinit = ra + 3;
         lua_Integer ilimit;
-        int stopnow;
+        int stopnow = 0;
         if (ttisinteger(init) && ttisinteger(pstep) &&
             forlimit(plimit, &ilimit, ivalue(pstep), &stopnow)) {
           /* all values are integer */
-          lua_Integer initv = (stopnow ? 0 : ivalue(init));
+          lua_Integer initv = ivalue(init);
+          lua_Integer istep = ivalue(pstep);
           setivalue(plimit, ilimit);
-          setivalue(init, intop(-, initv, ivalue(pstep)));
+          setivalue(init, initv);
+          setivalue(xinit, initv);
+          stopnow = (stopnow || (0 < istep ? ilimit < initv
+                                           : initv < ilimit));
         }
         else {  /* try making all values floats */
           lua_Number ninit; lua_Number nlimit; lua_Number nstep;
@@ -1251,9 +1265,17 @@ void luaV_execute (lua_State *L) {
           setfltvalue(pstep, nstep);
           if (!tonumber(init, &ninit))
             luaG_runerror(L, "'for' initial value must be a number");
-          setfltvalue(init, luai_numsub(L, ninit, nstep));
+          if (0 < nstep ? forstepcheck( nstep, ninit, nlimit)
+                        : forstepcheck(-nstep, nlimit, ninit))
+            luaG_runerror(L, "'for' step magnitude too small");
+          setfltvalue(init, ninit);
+          setfltvalue(xinit, ninit);
+          stopnow = (stopnow || (luai_numlt(0, nstep)
+                                   ? luai_numlt(nlimit, ninit)
+                                   : luai_numlt(ninit, nlimit)));
         }
-        ci->u.l.savedpc += GETARG_sBx(i);
+        if (stopnow)
+          ci->u.l.savedpc += GETARG_sBx(i) + 1;  /* no iterations; skip loop */
         vmbreak;
       }
       vmcase(OP_TFORCALL) {
