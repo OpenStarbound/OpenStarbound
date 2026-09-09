@@ -52,6 +52,10 @@ public:
 
   void addCallbacks(String groupName, LuaCallbacks callbacks);
   bool removeCallbacks(String const& groupName);
+  
+  // Allows adding callbacks that are also accessible to threads made by this context. The callbacks must be thread safe.
+  void addThreadCallbacks(String groupName, LuaCallbacks callbacks);
+  bool removeThreadCallbacks(String const& groupName);
 
   // If true, component will automatically uninit and re-init when root is
   // reloaded.
@@ -106,6 +110,7 @@ private:
   
   StringList m_scripts;
   StringMap<LuaCallbacks> m_callbacks;
+  StringMap<LuaCallbacks> m_threadCallbacks;
   LuaRootPtr m_luaRoot;
   TrackerListenerPtr m_reloadTracker;
   Maybe<LuaContext> m_context;

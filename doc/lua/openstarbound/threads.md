@@ -67,9 +67,13 @@ Threads have simple updateable scripts with access to only a few tables.
 They include:
  - the basic tables all scripts have access to (including `threads`)
  - `updateablescript` bindings
- - `message`
+ - `message`, for handling thread messages
  - `config`
  - `thread`
+
+They may include additional bindings depending on what script context created them.
+- `universe` on server universe/world scripts
+- `celestial` on server universe/world scripts
  
 ---
 
