@@ -21,7 +21,10 @@
 #include "StarWorldTemplate.hpp"
 #include "StarStoredFunctions.hpp"
 #include "StarInspectableEntity.hpp"
+#include "StarUniverseClient.hpp"
 #include "StarCurve25519.hpp"
+
+#include "StarUniverseClientLuaBindings.hpp"
 
 namespace Star {
 
@@ -29,10 +32,12 @@ const std::string SECRET_BROADCAST_PUBLIC_KEY = "SecretBroadcastPublicKey";
 const std::string SECRET_BROADCAST_PREFIX = "\0Broadcast\0"s;
 
 const float WorldClient::DropDist = 6.0f;
-WorldClient::WorldClient(PlayerPtr mainPlayer, LuaRootPtr luaRoot) {
+WorldClient::WorldClient(PlayerPtr mainPlayer, LuaRootPtr luaRoot, UniverseClient* universe) {
   // main client world, set up to render
   auto& root = Root::singleton();
   auto assets = root.assets();
+  
+  m_universe = universe;
 
   m_clientConfig = assets->json("/client.config");
   
@@ -102,10 +107,12 @@ WorldClient::WorldClient(PlayerPtr mainPlayer, LuaRootPtr luaRoot) {
   clearWorld();
 }
 
-WorldClient::WorldClient(ClientSubWorldId subWorldId) {
+WorldClient::WorldClient(ClientSubWorldId subWorldId, UniverseClient* universe) {
   // client subworld, doesn't render
   auto& root = Root::singleton();
   auto assets = root.assets();
+  
+  m_universe = universe;
 
   m_clientConfig = assets->json("/client.config");
   
@@ -122,6 +129,7 @@ WorldClient::WorldClient(ClientSubWorldId subWorldId) {
   m_luaRoot = make_shared<LuaRoot>();
   m_luaRoot->luaEngine().setNullTerminated(false);
   m_luaRoot->tuneAutoGarbageCollection(m_clientConfig.getFloat("luaGcPause"), m_clientConfig.getFloat("luaGcStepMultiplier"));
+  m_luaRoot->addCallbacks("universe",LuaBindings::makeUniverseClientThreadCallbacks(universe));
 
   m_collisionGenerator.init([this](int x, int y) {
     if (!m_predictedTiles.empty()) {
@@ -2104,6 +2112,8 @@ void WorldClient::initWorld(WorldStartPacket const& startPacket) {
   for (auto& p : m_clientConfig.getObject("worldScriptContexts")) {
     auto scriptComponent = make_shared<ScriptComponent>();
     scriptComponent->setScripts(jsonToStringList(p.second.toArray()));
+    
+    scriptComponent->addThreadCallbacks("universe",LuaBindings::makeUniverseClientThreadCallbacks(m_universe));
 
     m_scriptContexts.set(p.first, scriptComponent);
     scriptComponent->init(this);

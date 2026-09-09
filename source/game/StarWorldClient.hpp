@@ -28,6 +28,7 @@ STAR_CLASS(DamageManager);
 STAR_CLASS(EntityMap);
 STAR_CLASS(ParticleManager);
 STAR_CLASS(WorldClient);
+STAR_CLASS(UniverseClient);
 STAR_CLASS(Player);
 STAR_CLASS(Item);
 STAR_CLASS(CelestialLog);
@@ -42,8 +43,8 @@ public:
   typedef LuaMessageHandlingComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> ScriptComponent;
   typedef shared_ptr<ScriptComponent> ScriptComponentPtr;
   
-  WorldClient(PlayerPtr mainPlayer, LuaRootPtr luaRoot);
-  WorldClient(ClientSubWorldId subWorldId);
+  WorldClient(PlayerPtr mainPlayer, LuaRootPtr luaRoot, UniverseClient* universe);
+  WorldClient(ClientSubWorldId subWorldId, UniverseClient* universe);
   ~WorldClient();
 
   ConnectionId connection() const override;
@@ -420,6 +421,8 @@ private:
   StringMap<ScriptComponentPtr> m_scriptContexts;
 
   GameTimer m_expiryTimer;
+  
+  UniverseClient* m_universe;
 };
 
 }

@@ -7,8 +7,20 @@
 
 namespace Star {
 
-LuaCallbacks LuaBindings::makeUniverseClientCallbacks(UniverseClientPtr universe) {
+LuaCallbacks LuaBindings::makeUniverseClientThreadCallbacks(UniverseClient* universe) {
   LuaCallbacks callbacks;
+  
+  callbacks.registerCallback("sendOwnUniverseMessage", [universe](String const& message, LuaVariadic<Json> args) -> RpcPromise<Json> {
+    auto pair = RpcPromise<Json>::createPair();
+    universe->passMessage({message,JsonArray::from(std::move(args)),pair.second});
+    return pair.first;
+  });
+  callbacks.registerCallback("sendUniverseMessage", [universe](ConnectionId const& connection, String const& message, LuaVariadic<Json> args) -> RpcPromise<Json> {
+    return universe->sendUniverseMessage(connection,message,JsonArray::from(std::move(args)));
+  });
+  callbacks.registerCallback("sendServerUniverseMessage", [universe](String const& message, LuaVariadic<Json> args) -> RpcPromise<Json> {
+    return universe->sendUniverseMessage(ServerConnectionId,message,JsonArray::from(std::move(args)));
+  });
   
   callbacks.registerCallback("createClientCustomWorld", [universe](String name, Json templateData) {
     universe->createCustomWorld(name, templateData);
@@ -45,6 +57,12 @@ LuaCallbacks LuaBindings::makeUniverseClientCallbacks(UniverseClientPtr universe
     universe->createCustomWorld(name, worldTemplate.store());
   });
   
+  callbacks.registerCallback("connectionId", [universe]() {
+    if (!universe->isConnected())
+      throw StarException("Universe is not connected");
+    return universe->clientContext()->connectionId();
+  });
+  
   callbacks.registerCallback("clientUuid", [universe]() {
     if (!universe->isConnected())
       throw StarException("Universe is not connected");
@@ -60,6 +78,12 @@ LuaCallbacks LuaBindings::makeUniverseClientCallbacks(UniverseClientPtr universe
       return Vec2U();
     return Vec2U(universe->players(),universe->maxPlayers());
   });
+  
+  return callbacks;
+}
+
+LuaCallbacks LuaBindings::makeUniverseClientCallbacks(UniverseClient* universe) {
+  LuaCallbacks callbacks = makeUniverseClientThreadCallbacks(universe);
   
   callbacks.registerCallback("subWorldActive", [universe](String const& worldId) -> bool {
     return universe->subWorldExistsOnWorld(parseWorldId(worldId));

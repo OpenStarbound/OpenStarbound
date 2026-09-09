@@ -13,6 +13,8 @@
 #include "StarLuaComponents.hpp"
 #include "StarUniverse.hpp"
 
+// TODO: make this more thread safe
+
 namespace Star {
 
 STAR_CLASS(WorldTemplate);
@@ -36,7 +38,7 @@ STAR_CLASS(LuaRoot);
 
 class UniverseClient : public Universe {
 public:
-  typedef LuaUpdatableComponent<LuaBaseComponent> ScriptComponent;
+  typedef LuaMessageHandlingComponent<LuaUpdatableComponent<LuaBaseComponent>> ScriptComponent;
   typedef shared_ptr<ScriptComponent> ScriptComponentPtr;
   
   UniverseClient(PlayerStoragePtr playerStorage, StatisticsPtr statistics, String const& customWorldStorageDir);
@@ -132,6 +134,11 @@ public:
   RpcPromise<Json> sendMainWorldMessage(String const& message, JsonArray const& args = {});
 
   bool paused() const;
+  
+  void passMessage(Universe::Message&& message) override;
+  RpcPromise<Json> sendUniverseMessage(ConnectionId const& connectionId, String const& message, JsonArray const& args = {}) override;
+  
+  Maybe<ChainableJsonMessageResponse> receiveMessage(String const& message, bool const& local, JsonArray const& args) override;
 
 private:
   struct ServerInfo {
@@ -189,6 +196,12 @@ private:
 
   ReloadPlayerCallback m_playerReloadPreCallback;
   ReloadPlayerCallback m_playerReloadCallback;
+
+  mutable RecursiveMutex m_messageMutex;
+  List<Universe::Message> m_universeMessages;
+  
+  HashMap<Uuid, RpcPromiseKeeper<Json>> m_universeMessageResponses;
+  HashMap<Uuid, RpcPromise<Json>> m_universeMessagePromises;
 };
 
 }

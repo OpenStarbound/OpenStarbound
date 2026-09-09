@@ -24,6 +24,8 @@
 #include "StarPlayerUniverseMap.hpp"
 #include "StarWorldTemplate.hpp"
 
+#include "StarUniverseClientLuaBindings.hpp"
+
 namespace Star {
 
 UniverseClient::UniverseClient(PlayerStoragePtr playerStorage, StatisticsPtr statistics, String const& customWorldStorageDir) {
@@ -158,7 +160,7 @@ Maybe<String> UniverseClient::connect(UniverseConnection connection, bool allowA
     m_teamClient = make_shared<TeamClient>(m_mainPlayer, m_clientContext);
     m_mainPlayer->setClientContext(m_clientContext);
     m_mainPlayer->setStatistics(m_statistics);
-    m_worldClient = make_shared<WorldClient>(m_mainPlayer, m_luaRoot);
+    m_worldClient = make_shared<WorldClient>(m_mainPlayer, m_luaRoot, this);
     m_worldClient->clientState().setNetCompatibilityRules(compatibilityRules);
     m_worldClient->setAsyncLighting(true);
 
@@ -305,6 +307,32 @@ void UniverseClient::update(float dt) {
     for (auto& p : m_subWorldThreads) {
       m_connection->push(p.second->pullOutgoingPackets());
     }
+  }
+  
+  for (auto const& uuid : m_universeMessagePromises.keys()) {
+    if (m_universeMessagePromises[uuid].finished()) {
+      if (m_universeMessagePromises[uuid].succeeded()) {
+        m_connection->pushSingle(make_shared<UniverseMessageResponse>(makeRight(*m_universeMessagePromises[uuid].result()), uuid));
+      } else {
+        m_connection->pushSingle(make_shared<UniverseMessageResponse>(makeLeft(*m_universeMessagePromises[uuid].error()), uuid));
+      }
+      m_universeMessagePromises.remove(uuid);
+    }
+  }
+  
+  RecursiveMutexLocker messageLocker(m_messageMutex);
+  List<Message> messages = std::move(m_universeMessages);
+  messageLocker.unlock();
+  
+  for (auto& message : messages) {
+    auto keeper = message.keeper.get<RpcPromiseKeeper<Json>>();
+    if (auto resp = receiveMessage(message.message, true, message.args))
+      if (resp->is<RpcPromise<Json>>())
+        keeper.chain(resp->get<RpcPromise<Json>>());
+      else
+        keeper.fulfill(resp->get<Json>());
+    else
+      keeper.fail("Message not handled by universe");
   }
 
   if (!*m_pause)
@@ -592,6 +620,8 @@ void UniverseClient::startLuaScripts() {
     auto scriptComponent = make_shared<ScriptComponent>();
     scriptComponent->setLuaRoot(m_luaRoot);
     scriptComponent->setScripts(jsonToStringList(p.second.toArray()));
+    
+    scriptComponent->addThreadCallbacks("universe",LuaBindings::makeUniverseClientThreadCallbacks(this));
 
     m_scriptContexts.set(p.first, scriptComponent);
     scriptComponent->init();
@@ -758,7 +788,7 @@ void UniverseClient::createCustomWorld(String const& name, Json templateData) {
 
 ClientSubWorldId UniverseClient::createSubWorld() {
   auto swid = m_subWorldThreads.nextId();
-  auto thread = make_shared<WorldClientThread>(swid);
+  auto thread = make_shared<WorldClientThread>(swid,this);
   thread->setPause(m_pause);
   thread->start();
   m_subWorldThreads.add(swid,thread);
@@ -1013,6 +1043,27 @@ void UniverseClient::handlePackets(List<PacketPtr> const& packets) {
         for (auto& p : logMapUpdate->map) {
           LogMap::setValue(p.first,p.second);
         }
+      } else if (auto universeMessage = as<UniverseMessage>(packet)) {
+        if (auto response = receiveMessage(universeMessage->message, false, universeMessage->args)) {
+          if (response->is<Json>()) {
+            m_connection->pushSingle(make_shared<UniverseMessageResponse>(makeRight(response->get<Json>()), universeMessage->uuid));
+          } else {
+            // delay the response until this promise is done
+            m_universeMessagePromises[universeMessage->uuid] = response->get<RpcPromise<Json>>();
+          } 
+        } else
+          m_connection->pushSingle(make_shared<UniverseMessageResponse>(makeLeft("Message not handled by universe"), universeMessage->uuid));
+      } else if (auto universeMessageResponse = as<UniverseMessageResponse>(packet)) {
+        RecursiveMutexLocker messageLocker(m_messageMutex);
+        if (!m_universeMessageResponses.contains(universeMessageResponse->uuid))
+          Logger::warn("UniverseClient: UniverseMessageResponse received for unknown context [{}]!", universeMessageResponse->uuid.hex());
+        else {
+          auto response = m_universeMessageResponses.take(universeMessageResponse->uuid);
+          if (universeMessageResponse->response.isRight())
+            response.fulfill(universeMessageResponse->response.right());
+          else
+            response.fail(universeMessageResponse->response.left());
+        }
       } else if (!m_systemWorldClient->handleIncomingPacket(packet)) {
         // see if the system world will handle it, otherwise pass it along to the world client
         m_worldClient->handleIncomingPackets({packet});
@@ -1049,6 +1100,45 @@ void UniverseClient::reset() {
     m_playerStorage->savePlayer(m_mainPlayer);
 
   m_connection.reset();
+  
+  RecursiveMutexLocker messageLocker(m_messageMutex);
+  m_universeMessageResponses = {};
+  m_universeMessagePromises = {};
+  messageLocker.unlock();
+}
+
+void UniverseClient::passMessage(Universe::Message&& message) {
+  RecursiveMutexLocker locker(m_messageMutex);
+  m_universeMessages.append(std::move(message));
+}
+
+RpcPromise<Json> UniverseClient::sendUniverseMessage(ConnectionId const& connectionId, String const& message, JsonArray const& args) {
+  if (connectionId == m_clientContext->connectionId()) {
+    auto pair = RpcPromise<Json>::createPair();
+    passMessage({message,args,pair.second});
+    return pair.first;
+  } else {
+    if (connectionVersion() < 18) {
+      return RpcPromise<Json>::createFailed("Server is not new enough");
+    }
+    auto pair = RpcPromise<Json>::createPair();
+    Uuid uuid;
+    RecursiveMutexLocker messageLocker(m_messageMutex);
+    m_universeMessageResponses[uuid] = pair.second;
+    messageLocker.unlock();
+    m_connection->pushSingle(make_shared<UniverseMessage>(connectionId, message, args, uuid));
+    return pair.first;
+  }
+}
+
+Maybe<ChainableJsonMessageResponse> UniverseClient::receiveMessage(String const& message, bool const& local, JsonArray const& args) {
+  Maybe<ChainableJsonMessageResponse> result;
+  for (auto& p : m_scriptContexts) {
+    result = p.second->handleMessage(message, local, args);
+    if (result)
+      break;
+  }
+  return result;
 }
 
 }

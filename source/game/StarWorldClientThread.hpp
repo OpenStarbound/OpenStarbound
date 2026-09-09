@@ -7,6 +7,7 @@
 namespace Star {
 
 STAR_CLASS(WorldClientThread);
+STAR_CLASS(UniverseClient);
 
 // Runs a WorldThreadedClient in a separate thread.
 class WorldClientThread : public Thread {
@@ -19,7 +20,7 @@ public:
 
   typedef function<void(WorldClientThread*, WorldClient*)> WorldClientAction;
 
-  WorldClientThread(ClientSubWorldId subWorldId);
+  WorldClientThread(ClientSubWorldId subWorldId, UniverseClient* universe);
   ~WorldClientThread();
 
   ClientSubWorldId subWorldId() const;
