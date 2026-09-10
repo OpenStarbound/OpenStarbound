@@ -86,7 +86,9 @@ EnumMap<PacketType> const PacketTypeNames{
   {PacketType::ClientSubWorldRequest, "ClientSubWorldRequest"},
   {PacketType::ClientSubWorldReject, "ClientSubWorldReject"},
   {PacketType::NotifyWorldLoad, "NotifyWorldLoad"},
-  {PacketType::LogMapUpdate, "LogMapUpdate"}
+  {PacketType::LogMapUpdate, "LogMapUpdate"},
+  {PacketType::UniverseMessage, "UniverseMessage"},
+  {PacketType::UniverseMessageResponse, "UniverseMessageResponse"}
 };
 
 EnumMap<NetCompressionMode> const NetCompressionModeNames {
@@ -188,6 +190,8 @@ PacketPtr createPacket(PacketType type) {
     case PacketType::ClientSubWorldReject: return make_shared<ClientSubWorldReject>();
     case PacketType::NotifyWorldLoad: return make_shared<NotifyWorldLoad>();
     case PacketType::LogMapUpdate: return make_shared<LogMapUpdate>();
+    case PacketType::UniverseMessage: return make_shared<UniverseMessage>();
+    case PacketType::UniverseMessageResponse: return make_shared<UniverseMessageResponse>();
     default:
       throw StarPacketException(strf("Unrecognized packet type {}", (unsigned int)type));
   }
@@ -1577,6 +1581,60 @@ void LogMapUpdate::read(DataStream& ds) {
 
 void LogMapUpdate::write(DataStream& ds) const {
   ds.write(map);
+}
+
+UniverseMessage::UniverseMessage() {}
+
+UniverseMessage::UniverseMessage(ConnectionId connection, String message, JsonArray args, Uuid uuid, ConnectionId fromConnection)
+  : connection(connection), message(std::move(message)), args(std::move(args)), uuid(uuid), fromConnection(fromConnection) {}
+
+void UniverseMessage::read(DataStream& ds) {
+  ds.read(connection);
+  ds.read(message);
+  ds.read(args);
+  ds.read(uuid);
+  ds.read(fromConnection);
+}
+
+void UniverseMessage::write(DataStream& ds) const {
+  ds.write(connection);
+  ds.write(message);
+  ds.write(args);
+  ds.write(uuid);
+  ds.write(fromConnection);
+}
+
+void UniverseMessage::readJson(Json const& json) {
+  connection = json.getUInt("connection");
+  message = json.getString("message");
+  args = json.getArray("args");
+  uuid = Uuid(json.getString("uuid"));
+  fromConnection = json.getUInt("fromConnection");
+}
+
+Json UniverseMessage::writeJson() const {
+  return JsonObject{
+    {"connection", connection},
+    {"message", message},
+    {"args", args},
+    {"uuid", uuid.hex()},
+    {"fromConnection", fromConnection}
+  };
+}
+
+UniverseMessageResponse::UniverseMessageResponse() {}
+
+UniverseMessageResponse::UniverseMessageResponse(Either<String, Json> response, Uuid uuid)
+  : response(std::move(response)), uuid(uuid) {}
+
+void UniverseMessageResponse::read(DataStream& ds) {
+  ds.read(response);
+  ds.read(uuid);
+}
+
+void UniverseMessageResponse::write(DataStream& ds) const {
+  ds.write(response);
+  ds.write(uuid);
 }
 
 }

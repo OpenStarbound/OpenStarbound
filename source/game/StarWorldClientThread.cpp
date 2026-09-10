@@ -8,13 +8,13 @@
 
 namespace Star {
 
-WorldClientThread::WorldClientThread(ClientSubWorldId subWorldId)
+WorldClientThread::WorldClientThread(ClientSubWorldId subWorldId, UniverseClient* universe)
   : Thread("WorldClientThread: " + String(subWorldId)),
     m_subWorldId(subWorldId),
     m_stop(false),
     m_errorOccurred(false),
     m_shouldExpire(false) {
-    m_worldClient = make_shared<WorldClient>(subWorldId);
+    m_worldClient = make_shared<WorldClient>(subWorldId,universe);
 }
 
 WorldClientThread::~WorldClientThread() {

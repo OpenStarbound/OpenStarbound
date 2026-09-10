@@ -9,7 +9,8 @@ namespace Star {
 STAR_CLASS(UniverseClient);
 
 namespace LuaBindings {
-  LuaCallbacks makeUniverseClientCallbacks(UniverseClientPtr universe);
+  LuaCallbacks makeUniverseClientThreadCallbacks(UniverseClient* universe); // thread-safe callbacks
+  LuaCallbacks makeUniverseClientCallbacks(UniverseClient* universe); // non-thread-safe callbacks
 
   namespace UniverseClientCallbacks {
   }

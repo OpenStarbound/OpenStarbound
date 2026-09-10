@@ -2,6 +2,24 @@
 
 Server-side and client-side scripts gain access to a `universe` table that exposes helpers for worlds, as well as administrative helpers for connected clients on server-side scripts.
 
+---
+
+#### `ConnectionId` universe.connectionId()
+
+Returns the universe's connection id. For server universes this is always 0.
+
+---
+
+#### `RpcPromise<Json>` universe.sendUniverseMessage(`ConnectionId` connection, `String` messageName, [`Json` args ...])
+
+Sends a message to the given connectionId's universe.
+
+---
+
+#### `RpcPromise<Json>` universe.sendOwnUniverseMessage(`String` messageName, [`Json` args ...])
+
+Sends a message to the main UniverseClient on clientside or UniverseServer on serverside. Useful for threads communicating with the primary universe thread.
+
 --- 
 
 The following callbacks are only available in contexts that run on the server (such as world scripts or the command
@@ -145,7 +163,13 @@ Otherwise, functionally similar to `universe.createCustomWorld`.
 
 ---
 
-The following functions are available on all scripts on the client main thread.
+The following functions are available on all scripts on the client main thread, all scripts in subworlds, and all scriptable threads made by world contexts and universe client contexts.
+
+---
+
+#### `RpcPromise<Json>` universe.sendServerUniverseMessage(`String` messageName, [`Json` args ...])
+
+Sends a message to the server universe.
 
 ---
 
@@ -178,6 +202,10 @@ Returns the OpenProtocolVersion used for networking with the server.
 #### `Vec2U` universe.playerCount()
 
 Returns the server's current player count and maximum players.
+
+---
+
+The following callbacks are only available on the client main thread.
 
 ---
 

@@ -128,7 +128,10 @@ enum class PacketType : uint8_t {
   ClientSubWorldReject,
   NotifyWorldLoad,
   
-  LogMapUpdate
+  LogMapUpdate,
+  
+  UniverseMessage,
+  UniverseMessageResponse
 };
 extern EnumMap<PacketType> const PacketTypeNames;
 
@@ -1076,5 +1079,33 @@ struct LogMapUpdate : PacketBase<PacketType::LogMapUpdate> {
   void write(DataStream& ds) const override;
 
   Map<String,String> map;
+};
+
+struct UniverseMessage : PacketBase<PacketType::UniverseMessage> {
+  UniverseMessage();
+  UniverseMessage(ConnectionId connection, String message, JsonArray args, Uuid uuid, ConnectionId fromConnection = ServerConnectionId);
+
+  void read(DataStream& ds) override;
+  void write(DataStream& ds) const override;
+
+  void readJson(Json const& json) override;
+  Json writeJson() const override;
+
+  ConnectionId connection;
+  String message;
+  JsonArray args;
+  Uuid uuid;
+  ConnectionId fromConnection;
+};
+
+struct UniverseMessageResponse : PacketBase<PacketType::UniverseMessageResponse> {
+  UniverseMessageResponse();
+  UniverseMessageResponse(Either<String,Json> response, Uuid uuid);
+
+  void read(DataStream& ds) override;
+  void write(DataStream& ds) const override;
+
+  Either<String, Json> response;
+  Uuid uuid;
 };
 }

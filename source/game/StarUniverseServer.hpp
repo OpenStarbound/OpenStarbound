@@ -118,6 +118,12 @@ public:
   void createCustomWorld(CustomWorldId const& customWorld, WorldTemplatePtr worldTemplate);
 
   bool sendPacket(ConnectionId clientId, PacketPtr packet);
+  
+  void passMessage(Universe::Message&& message) override;
+  
+  RpcPromise<Json> sendUniverseMessage(ConnectionId const& connectionId, String const& message, JsonArray const& args = {}) override;
+  
+  Maybe<ChainableJsonMessageResponse> receiveMessage(String const& message, bool const& local, JsonArray const& args) override;
 
 protected:
   virtual void run() override;
@@ -164,6 +170,7 @@ private:
   void processChat();
   void clearBrokenWorlds();
   void handleWorldMessages();
+  void handleUniverseMessages();
   void shutdownInactiveWorlds();
   void doTriggeredStorage();
 
@@ -298,9 +305,15 @@ private:
 
   LuaRootPtr m_luaRoot;
 
-  typedef LuaUpdatableComponent<LuaBaseComponent> ScriptComponent;
+  typedef LuaMessageHandlingComponent<LuaUpdatableComponent<LuaBaseComponent>> ScriptComponent;
   typedef shared_ptr<ScriptComponent> ScriptComponentPtr;
   StringMap<ScriptComponentPtr> m_scriptContexts;
+
+  mutable RecursiveMutex m_messageLock;
+  List<Universe::Message> m_universeMessages;
+  
+  HashMap<Uuid, pair<ConnectionId, MVariant<ConnectionId, RpcPromiseKeeper<Json>>>> m_universeMessageResponses;
+  HashMap<Uuid, pair<ConnectionId, RpcPromise<Json>>> m_universeMessagePromises;
 };
 
 }

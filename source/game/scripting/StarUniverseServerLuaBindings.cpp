@@ -68,6 +68,17 @@ LuaCallbacks LuaBindings::makeUniverseServerCallbacks(UniverseServer* universe) 
     Json worldProperties = worldConfig.get("worldProperties", JsonObject{});
     universe->createCustomWorld(CustomWorldId(name), worldTemplate);
   });
+  
+  callbacks.registerCallback("sendOwnUniverseMessage", [universe](String const& message, LuaVariadic<Json> args) -> RpcPromise<Json> {
+    return universe->sendUniverseMessage(ServerConnectionId,message,JsonArray::from(std::move(args)));
+  });
+  callbacks.registerCallback("sendUniverseMessage", [universe](ConnectionId const& connection, String const& message, LuaVariadic<Json> args) -> RpcPromise<Json> {
+    return universe->sendUniverseMessage(connection,message,JsonArray::from(std::move(args)));
+  });
+  
+  callbacks.registerCallback("connectionId", [universe]() {
+    return ServerConnectionId;
+  });
 
   return callbacks;
 }
