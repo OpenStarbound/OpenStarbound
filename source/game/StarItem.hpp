@@ -119,6 +119,8 @@ public:
 
   static bool itemsEqual(ItemConstPtr const& a, ItemConstPtr const& b);
 
+  String const& directory() const;
+
 protected:
   void setMaxStack(uint64_t maxStack);
   void setDescription(String const& description);
@@ -134,7 +136,6 @@ protected:
 
   void setInstanceValue(String const& name, Json const& val);
 
-  String const& directory() const;
 
 private:
   Json m_config;
