@@ -25,6 +25,7 @@
 #include "StarCurve25519.hpp"
 
 #include "StarUniverseClientLuaBindings.hpp"
+#include "StarCelestialLuaBindings.hpp"
 
 namespace Star {
 
@@ -61,6 +62,8 @@ WorldClient::WorldClient(PlayerPtr mainPlayer, LuaRootPtr luaRoot, UniverseClien
   m_inWorld = false;
 
   m_luaRoot = luaRoot;
+  m_luaThreadCallbacks["universe"] = LuaBindings::makeUniverseClientThreadCallbacks(universe);
+  m_luaThreadCallbacks["celestial"] = LuaBindings::makeCelestialCallbacks(universe->celestialDatabase());
 
   m_mainPlayer = mainPlayer;
 
@@ -129,7 +132,10 @@ WorldClient::WorldClient(ClientSubWorldId subWorldId, UniverseClient* universe) 
   m_luaRoot = make_shared<LuaRoot>();
   m_luaRoot->luaEngine().setNullTerminated(false);
   m_luaRoot->tuneAutoGarbageCollection(m_clientConfig.getFloat("luaGcPause"), m_clientConfig.getFloat("luaGcStepMultiplier"));
-  m_luaRoot->addCallbacks("universe",LuaBindings::makeUniverseClientThreadCallbacks(universe));
+  m_luaThreadCallbacks["universe"] = LuaBindings::makeUniverseClientThreadCallbacks(universe);
+  m_luaThreadCallbacks["celestial"] = LuaBindings::makeCelestialCallbacks(universe->celestialDatabase());
+  m_luaRoot->addCallbacks("universe",m_luaThreadCallbacks["universe"]);
+  m_luaRoot->addCallbacks("celestial",m_luaThreadCallbacks["celestial"]);
 
   m_collisionGenerator.init([this](int x, int y) {
     if (!m_predictedTiles.empty()) {
@@ -2112,8 +2118,6 @@ void WorldClient::initWorld(WorldStartPacket const& startPacket) {
   for (auto& p : m_clientConfig.getObject("worldScriptContexts")) {
     auto scriptComponent = make_shared<ScriptComponent>();
     scriptComponent->setScripts(jsonToStringList(p.second.toArray()));
-    
-    scriptComponent->addThreadCallbacks("universe",LuaBindings::makeUniverseClientThreadCallbacks(m_universe));
 
     m_scriptContexts.set(p.first, scriptComponent);
     scriptComponent->init(this);
@@ -2478,6 +2482,12 @@ bool WorldClient::exposedToWeather(Vec2F const& pos) const {
   return false;
 }
 
+Maybe<String> WorldClient::activeWeather(Vec2F const& pos) const {
+  if (!inWorld())
+    return {};
+  return m_weather.activeWeather();
+}
+
 bool WorldClient::isUnderground(Vec2F const& pos) const {
   if (!inWorld())
     return true;
@@ -2612,6 +2622,10 @@ float WorldClient::timeOfDay() const {
 
 LuaRootPtr WorldClient::luaRoot() {
   return m_luaRoot;
+}
+
+StringMap<LuaCallbacks> WorldClient::luaThreadCallbacks() const {
+  return m_luaThreadCallbacks;
 }
 
 bool WorldClient::pullRequestedDestroy() {

@@ -127,6 +127,7 @@ public:
   virtual StringList environmentStatusEffects(Vec2F const& pos) const = 0;
   virtual StringList weatherStatusEffects(Vec2F const& pos) const = 0;
   virtual bool exposedToWeather(Vec2F const& pos) const = 0;
+  virtual Maybe<String> activeWeather(Vec2F const& pos) const = 0;
   virtual bool isUnderground(Vec2F const& pos) const = 0;
   virtual bool disableDeathDrops() const = 0;
   virtual List<PhysicsForceRegion> forceRegions() const = 0;
@@ -142,6 +143,7 @@ public:
   virtual float timeOfDay() const = 0;
 
   virtual LuaRootPtr luaRoot() = 0;
+  virtual StringMap<LuaCallbacks> luaThreadCallbacks() const = 0;
 
   // Locate a unique entity, if the target is local, the promise will be
   // finished before being returned.  If the unique entity is not found, the

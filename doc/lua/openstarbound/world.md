@@ -47,6 +47,27 @@ Holding an Entity instance in Lua will keep the entity present in memory even af
 
 ---
 
+#### `List<String>` world.weatherStatusEffects(`Vec2F` position)
+
+Returns a list of the weather status effects at the specified position.
+
+---
+
+#### `bool` world.exposedToWeather(`Vec2F` position)
+
+Returns whether the given position is considered exposed to weather.
+
+---
+
+#### `Maybe<String>` world.activeWeather(`Vec2F` position)
+
+Returns the current weather for the given position. This is `nil` if the weather pool at that position has no options.
+If an area has weather, it will always return the current weather. Note that `"clear"` is a weather type.
+
+For client worlds, only one weather domain is networked at a time, so the output is based on the player position instead.
+
+---
+
 The following additional world bindings are available only for scripts running on the client.
 
 ---
