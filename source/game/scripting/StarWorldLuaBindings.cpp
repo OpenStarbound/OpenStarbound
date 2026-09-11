@@ -238,32 +238,24 @@ namespace LuaBindings {
 
     return entityQueryImpl<EntityT>(world, engine, *options, selector);
   }
+  
+  // Thread-safe callbacks that can be used from any thread under the world
+  LuaCallbacks makeWorldThreadCallbacks(World* world) {
+    LuaCallbacks callbacks;
+    
+    addWorldDebugCallbacks(callbacks);
+    addWorldGeometryCallbacks(callbacks, world);
+    
+    return callbacks;
+  }
 
   LuaCallbacks makeWorldCallbacks(World* world) {
-    LuaCallbacks callbacks;
+    LuaCallbacks callbacks = makeWorldThreadCallbacks(world);
 
-    addWorldDebugCallbacks(callbacks);
     addWorldEnvironmentCallbacks(callbacks, world);
     addWorldEntityCallbacks(callbacks, world);
+    addWorldCollisionCallbacks(callbacks, world);
 
-    callbacks.registerCallbackWithSignature<float, Vec2F, Maybe<Vec2F>>("magnitude", bind(&WorldCallbacks::magnitude, world, _1, _2));
-    callbacks.registerCallbackWithSignature<Vec2F, Vec2F, Vec2F>("distance", bind(WorldCallbacks::distance, world, _1, _2));
-    callbacks.registerCallbackWithSignature<bool, PolyF, Vec2F>("polyContains", bind(WorldCallbacks::polyContains, world, _1, _2));
-    callbacks.registerCallbackWithSignature<LuaValue, LuaEngine&, LuaValue>("xwrap", bind(WorldCallbacks::xwrap, world, _1, _2));
-    callbacks.registerCallbackWithSignature<LuaValue, LuaEngine&, Variant<Vec2F, float>, Variant<Vec2F, float>>("nearestTo", bind(WorldCallbacks::nearestTo, world, _1, _2, _3));
-
-    callbacks.registerCallbackWithSignature<bool, RectF, Maybe<CollisionSet>>("rectCollision", bind(WorldCallbacks::rectCollision, world, _1, _2));
-    callbacks.registerCallbackWithSignature<bool, Vec2F, Maybe<CollisionSet>>("pointTileCollision", bind(WorldCallbacks::pointTileCollision, world, _1, _2));
-    callbacks.registerCallbackWithSignature<bool, Vec2F, Vec2F, Maybe<CollisionSet>>("lineTileCollision", bind(WorldCallbacks::lineTileCollision, world, _1, _2, _3));
-    callbacks.registerCallbackWithSignature<Maybe<pair<Vec2F, Vec2I>>, Vec2F, Vec2F, Maybe<CollisionSet>>("lineTileCollisionPoint", bind(WorldCallbacks::lineTileCollisionPoint, world, _1, _2, _3));
-    callbacks.registerCallbackWithSignature<bool, RectF, Maybe<CollisionSet>>("rectTileCollision", bind(WorldCallbacks::rectTileCollision, world, _1, _2));
-    callbacks.registerCallbackWithSignature<bool, Vec2F, Maybe<CollisionSet>>("pointCollision", bind(WorldCallbacks::pointCollision, world, _1, _2));
-    callbacks.registerCallbackWithSignature<LuaTupleReturn<Maybe<Vec2F>, Maybe<Vec2F>>, Vec2F, Vec2F, Maybe<CollisionSet>>("lineCollision", bind(WorldCallbacks::lineCollision, world, _1, _2, _3));
-    callbacks.registerCallbackWithSignature<bool, PolyF, Maybe<Vec2F>, Maybe<CollisionSet>>("polyCollision", bind(WorldCallbacks::polyCollision, world, _1, _2, _3));
-    callbacks.registerCallbackWithSignature<List<Vec2I>, Vec2F, Vec2F, Maybe<CollisionSet>, Maybe<int>>("collisionBlocksAlongLine", bind(WorldCallbacks::collisionBlocksAlongLine, world, _1, _2, _3, _4));
-    callbacks.registerCallbackWithSignature<List<pair<Vec2I, LiquidLevel>>, Vec2F, Vec2F>("liquidAlongLine", bind(WorldCallbacks::liquidAlongLine, world, _1, _2));
-    callbacks.registerCallbackWithSignature<Maybe<Vec2F>, PolyF, Vec2F, float, Maybe<CollisionSet>>("resolvePolyCollision", bind(WorldCallbacks::resolvePolyCollision, world, _1, _2, _3, _4));
-    callbacks.registerCallbackWithSignature<bool, Vec2I, Maybe<bool>, Maybe<bool>>("tileIsOccupied", bind(WorldCallbacks::tileIsOccupied, world, _1, _2, _3));
     callbacks.registerCallbackWithSignature<bool, String, Vec2I, Maybe<int>, Json>("placeObject", bind(WorldCallbacks::placeObject, world, _1, _2, _3, _4));
     callbacks.registerCallbackWithSignature<Maybe<EntityId>, Json, Vec2F, Maybe<size_t>, Json, Maybe<Vec2F>, Maybe<float>>("spawnItem", bind(WorldCallbacks::spawnItem, world, _1, _2, _3, _4, _5, _6));
     callbacks.registerCallbackWithSignature<List<EntityId>, Vec2F, String, float, Maybe<uint64_t>>("spawnTreasure", bind(WorldCallbacks::spawnTreasure, world, _1, _2, _3, _4));
@@ -272,18 +264,8 @@ namespace LuaBindings {
     callbacks.registerCallbackWithSignature<Maybe<EntityId>, Vec2F, String, Json>("spawnStagehand", bind(WorldCallbacks::spawnStagehand, world, _1, _2, _3));
     callbacks.registerCallbackWithSignature<Maybe<EntityId>, String, Vec2F, Maybe<EntityId>, Maybe<Vec2F>, bool, Json>("spawnProjectile", bind(WorldCallbacks::spawnProjectile, world, _1, _2, _3, _4, _5, _6));
     callbacks.registerCallbackWithSignature<Maybe<EntityId>, String, Vec2F, Json>("spawnVehicle", bind(WorldCallbacks::spawnVehicle, world, _1, _2, _3));
-    callbacks.registerCallbackWithSignature<float>("threatLevel", bind(&World::threatLevel, world));
-    callbacks.registerCallbackWithSignature<double>("time", bind(WorldCallbacks::time, world));
-    callbacks.registerCallbackWithSignature<uint64_t>("day", bind(WorldCallbacks::day, world));
-    callbacks.registerCallbackWithSignature<double>("timeOfDay", bind(WorldCallbacks::timeOfDay, world));
-    callbacks.registerCallbackWithSignature<float>("dayLength", bind(WorldCallbacks::dayLength, world));
     callbacks.registerCallbackWithSignature<Json, String, Json>("getProperty", bind(WorldCallbacks::getProperty, world, _1, _2));
     callbacks.registerCallbackWithSignature<void, String, Json>("setProperty", bind(WorldCallbacks::setProperty, world, _1, _2));
-    callbacks.registerCallbackWithSignature<Maybe<LiquidLevel>, Variant<RectF, Vec2I>>("liquidAt", bind(WorldCallbacks::liquidAt, world, _1));
-    callbacks.registerCallbackWithSignature<float, Vec2F>("gravity", bind(WorldCallbacks::gravity, world, _1));
-    callbacks.registerCallbackWithSignature<bool, Vec2F, LiquidId, float>("spawnLiquid", bind(WorldCallbacks::spawnLiquid, world, _1, _2, _3));
-    callbacks.registerCallbackWithSignature<Maybe<LiquidLevel>, Vec2F>("destroyLiquid", bind(WorldCallbacks::destroyLiquid, world, _1));
-    callbacks.registerCallbackWithSignature<bool, Vec2F>("isTileProtected", bind(WorldCallbacks::isTileProtected, world, _1));
     callbacks.registerCallbackWithSignature<Maybe<PlatformerAStar::Path>, Vec2F, Vec2F, ActorMovementParameters, PlatformerAStar::Parameters>("findPlatformerPath", bind(WorldCallbacks::findPlatformerPath, world, _1, _2, _3, _4));
     callbacks.registerCallbackWithSignature<PlatformerAStar::PathFinder, Vec2F, Vec2F, ActorMovementParameters, PlatformerAStar::Parameters>("platformerPathStart", bind(WorldCallbacks::platformerPathStart, world, _1, _2, _3, _4));
 
@@ -296,14 +278,6 @@ namespace LuaBindings {
             return engine.createString(worldParameters->typeName);
         }
         return engine.createString("unknown");
-      });
-
-    callbacks.registerCallback("size", [world]() -> Vec2I {
-        if (auto serverWorld = as<WorldServer>(world))
-          return (Vec2I)serverWorld->worldTemplate()->size();
-        else if (auto clientWorld = as<WorldClient>(world))
-          return (Vec2I)clientWorld->currentTemplate()->size();
-        return Vec2I();
       });
 
     callbacks.registerCallback("inSurfaceLayer", [world](Vec2I const& position) -> bool {
@@ -332,12 +306,6 @@ namespace LuaBindings {
             return worldParameters->type() == WorldParametersType::TerrestrialWorldParameters;
         }
         return false;
-      });
-
-    callbacks.registerCallback("itemDropItem", [world](EntityId const& entityId) -> Json {
-        if (auto itemDrop = world->get<ItemDrop>(entityId))
-          return itemDrop->item()->descriptor().toJson();
-        return {};
       });
 
     callbacks.registerCallback("biomeBlocksAt", [world](Vec2I position) -> Maybe<List<MaterialId>> {
@@ -669,6 +637,11 @@ namespace LuaBindings {
         }
         return {};
       });
+      callbacks.registerCallback("itemDropItem", [world](EntityId const& entityId) -> Json {
+          if (auto itemDrop = world->get<ItemDrop>(entityId))
+            return itemDrop->item()->descriptor().toJson();
+          return {};
+        });
   }
 
   void addWorldEnvironmentCallbacks(LuaCallbacks& callbacks, World* world) {
@@ -695,6 +668,15 @@ namespace LuaBindings {
     callbacks.registerCallback("environmentStatusEffects", [world](Vec2F const& position) {
         return world->environmentStatusEffects(position);
       });
+    callbacks.registerCallback("weatherStatusEffects", [world](Vec2F const& position) {
+        return world->weatherStatusEffects(position);
+      });
+    callbacks.registerCallback("exposedToWeather", [world](Vec2F const& position) {
+        return world->exposedToWeather(position);
+      });
+    callbacks.registerCallback("activeWeather", [world](Vec2F const& position) {
+        return world->activeWeather(position);
+      });
 
     callbacks.registerCallbackWithSignature<bool, List<Vec2I>, String, Vec2F, String, float, Maybe<unsigned>, Maybe<EntityId>>("damageTiles", bind(WorldEnvironmentCallbacks::damageTiles, world, _1, _2, _3, _4, _5, _6, _7));
     callbacks.registerCallbackWithSignature<bool, Vec2F, float, String, Vec2F, String, float, Maybe<unsigned>, Maybe<EntityId>>("damageTileArea", bind(WorldEnvironmentCallbacks::damageTileArea, world, _1, _2, _3, _4, _5, _6, _7, _8));
@@ -709,30 +691,68 @@ namespace LuaBindings {
         return world->material(t, layer) != EmptyMaterialId;
       });
     });
+    
+    callbacks.registerCallbackWithSignature<List<pair<Vec2I, LiquidLevel>>, Vec2F, Vec2F>("liquidAlongLine", bind(WorldEnvironmentCallbacks::liquidAlongLine, world, _1, _2));
+    callbacks.registerCallbackWithSignature<bool, Vec2I, Maybe<bool>, Maybe<bool>>("tileIsOccupied", bind(WorldEnvironmentCallbacks::tileIsOccupied, world, _1, _2, _3));
+    callbacks.registerCallbackWithSignature<float>("threatLevel", bind(&World::threatLevel, world));
+    callbacks.registerCallbackWithSignature<double>("time", bind(WorldEnvironmentCallbacks::time, world));
+    callbacks.registerCallbackWithSignature<uint64_t>("day", bind(WorldEnvironmentCallbacks::day, world));
+    callbacks.registerCallbackWithSignature<double>("timeOfDay", bind(WorldEnvironmentCallbacks::timeOfDay, world));
+    callbacks.registerCallbackWithSignature<float>("dayLength", bind(WorldEnvironmentCallbacks::dayLength, world));
+    callbacks.registerCallbackWithSignature<Maybe<LiquidLevel>, Variant<RectF, Vec2I>>("liquidAt", bind(WorldEnvironmentCallbacks::liquidAt, world, _1));
+    callbacks.registerCallbackWithSignature<float, Vec2F>("gravity", bind(WorldEnvironmentCallbacks::gravity, world, _1));
+    callbacks.registerCallbackWithSignature<bool, Vec2F, LiquidId, float>("spawnLiquid", bind(WorldEnvironmentCallbacks::spawnLiquid, world, _1, _2, _3));
+    callbacks.registerCallbackWithSignature<Maybe<LiquidLevel>, Vec2F>("destroyLiquid", bind(WorldEnvironmentCallbacks::destroyLiquid, world, _1));
+    callbacks.registerCallbackWithSignature<bool, Vec2F>("isTileProtected", bind(WorldEnvironmentCallbacks::isTileProtected, world, _1));
+  }
+  
+  void addWorldGeometryCallbacks(LuaCallbacks& callbacks, World* world) {
+
+    callbacks.registerCallback("size", [world]() -> Vec2U {
+        return world->geometry().size();
+      });
+    callbacks.registerCallbackWithSignature<float, Vec2F, Maybe<Vec2F>>("magnitude", bind(&WorldGeometryCallbacks::magnitude, world, _1, _2));
+    callbacks.registerCallbackWithSignature<Vec2F, Vec2F, Vec2F>("distance", bind(WorldGeometryCallbacks::distance, world, _1, _2));
+    callbacks.registerCallbackWithSignature<bool, PolyF, Vec2F>("polyContains", bind(WorldGeometryCallbacks::polyContains, world, _1, _2));
+    callbacks.registerCallbackWithSignature<LuaValue, LuaEngine&, LuaValue>("xwrap", bind(WorldGeometryCallbacks::xwrap, world, _1, _2));
+    callbacks.registerCallbackWithSignature<LuaValue, LuaEngine&, Variant<Vec2F, float>, Variant<Vec2F, float>>("nearestTo", bind(WorldGeometryCallbacks::nearestTo, world, _1, _2, _3));
+  }
+  
+  void addWorldCollisionCallbacks(LuaCallbacks& callbacks, World* world) {
+    callbacks.registerCallbackWithSignature<bool, RectF, Maybe<CollisionSet>>("rectCollision", bind(WorldCollisionCallbacks::rectCollision, world, _1, _2));
+    callbacks.registerCallbackWithSignature<bool, Vec2F, Maybe<CollisionSet>>("pointTileCollision", bind(WorldCollisionCallbacks::pointTileCollision, world, _1, _2));
+    callbacks.registerCallbackWithSignature<bool, Vec2F, Vec2F, Maybe<CollisionSet>>("lineTileCollision", bind(WorldCollisionCallbacks::lineTileCollision, world, _1, _2, _3));
+    callbacks.registerCallbackWithSignature<Maybe<pair<Vec2F, Vec2I>>, Vec2F, Vec2F, Maybe<CollisionSet>>("lineTileCollisionPoint", bind(WorldCollisionCallbacks::lineTileCollisionPoint, world, _1, _2, _3));
+    callbacks.registerCallbackWithSignature<bool, RectF, Maybe<CollisionSet>>("rectTileCollision", bind(WorldCollisionCallbacks::rectTileCollision, world, _1, _2));
+    callbacks.registerCallbackWithSignature<bool, Vec2F, Maybe<CollisionSet>>("pointCollision", bind(WorldCollisionCallbacks::pointCollision, world, _1, _2));
+    callbacks.registerCallbackWithSignature<LuaTupleReturn<Maybe<Vec2F>, Maybe<Vec2F>>, Vec2F, Vec2F, Maybe<CollisionSet>>("lineCollision", bind(WorldCollisionCallbacks::lineCollision, world, _1, _2, _3));
+    callbacks.registerCallbackWithSignature<bool, PolyF, Maybe<Vec2F>, Maybe<CollisionSet>>("polyCollision", bind(WorldCollisionCallbacks::polyCollision, world, _1, _2, _3));
+    callbacks.registerCallbackWithSignature<List<Vec2I>, Vec2F, Vec2F, Maybe<CollisionSet>, Maybe<int>>("collisionBlocksAlongLine", bind(WorldCollisionCallbacks::collisionBlocksAlongLine, world, _1, _2, _3, _4));
+    callbacks.registerCallbackWithSignature<Maybe<Vec2F>, PolyF, Vec2F, float, Maybe<CollisionSet>>("resolvePolyCollision", bind(WorldCollisionCallbacks::resolvePolyCollision, world, _1, _2, _3, _4));
   }
 
-  float WorldCallbacks::magnitude(World* world, Vec2F pos1, Maybe<Vec2F> pos2) {
+  float WorldGeometryCallbacks::magnitude(World* world, Vec2F pos1, Maybe<Vec2F> pos2) {
     if (pos2)
       return world->geometry().diff(pos1, *pos2).magnitude();
     else
       return pos1.magnitude();
   }
 
-  Vec2F WorldCallbacks::distance(World* world, Vec2F const& arg1, Vec2F const& arg2) {
+  Vec2F WorldGeometryCallbacks::distance(World* world, Vec2F const& arg1, Vec2F const& arg2) {
     return world->geometry().diff(arg1, arg2);
   }
 
-  bool WorldCallbacks::polyContains(World* world, PolyF const& poly, Vec2F const& pos) {
+  bool WorldGeometryCallbacks::polyContains(World* world, PolyF const& poly, Vec2F const& pos) {
     return world->geometry().polyContains(poly, pos);
   }
 
-  LuaValue WorldCallbacks::xwrap(World* world, LuaEngine& engine, LuaValue const& positionOrX) {
+  LuaValue WorldGeometryCallbacks::xwrap(World* world, LuaEngine& engine, LuaValue const& positionOrX) {
     if (auto x = engine.luaMaybeTo<float>(positionOrX))
       return LuaFloat(world->geometry().xwrap(*x));
     return engine.luaFrom<Vec2F>(world->geometry().xwrap(engine.luaTo<Vec2F>(positionOrX)));
   }
 
-  LuaValue WorldCallbacks::nearestTo(World* world, LuaEngine& engine, Variant<Vec2F, float> const& sourcePositionOrX, Variant<Vec2F, float> const& targetPositionOrX) {
+  LuaValue WorldGeometryCallbacks::nearestTo(World* world, LuaEngine& engine, Variant<Vec2F, float> const& sourcePositionOrX, Variant<Vec2F, float> const& targetPositionOrX) {
     if (targetPositionOrX.is<Vec2F>()) {
       Vec2F targetPosition = targetPositionOrX.get<Vec2F>();
       Vec2F sourcePosition;
@@ -755,7 +775,7 @@ namespace LuaBindings {
     }
   }
 
-  bool WorldCallbacks::rectCollision(World* world, RectF const& arg1, Maybe<CollisionSet> const& arg2) {
+  bool WorldCollisionCallbacks::rectCollision(World* world, RectF const& arg1, Maybe<CollisionSet> const& arg2) {
     PolyF body = PolyF(arg1);
 
     if (arg2)
@@ -764,14 +784,14 @@ namespace LuaBindings {
       return world->polyCollision(body);
   }
 
-  bool WorldCallbacks::pointTileCollision(World* world, Vec2F const& arg1, Maybe<CollisionSet> const& arg2) {
+  bool WorldCollisionCallbacks::pointTileCollision(World* world, Vec2F const& arg1, Maybe<CollisionSet> const& arg2) {
     if (arg2)
       return world->pointTileCollision(arg1, *arg2);
     else
       return world->pointTileCollision(arg1);
   }
 
-  bool WorldCallbacks::lineTileCollision(
+  bool WorldCollisionCallbacks::lineTileCollision(
       World* world, Vec2F const& arg1, Vec2F const& arg2, Maybe<CollisionSet> const& arg3) {
     Vec2F const begin = arg1;
     Vec2F const end = arg2;
@@ -782,14 +802,14 @@ namespace LuaBindings {
       return world->lineTileCollision(begin, end);
   }
 
-  Maybe<pair<Vec2F, Vec2I>> WorldCallbacks::lineTileCollisionPoint(World* world, Vec2F const& begin, Vec2F const& end, Maybe<CollisionSet> const& collisionSet) {
+  Maybe<pair<Vec2F, Vec2I>> WorldCollisionCallbacks::lineTileCollisionPoint(World* world, Vec2F const& begin, Vec2F const& end, Maybe<CollisionSet> const& collisionSet) {
     if (collisionSet)
       return world->lineTileCollisionPoint(begin, end, *collisionSet);
     else
       return world->lineTileCollisionPoint(begin, end);
   }
 
-  bool WorldCallbacks::rectTileCollision(World* world, RectF const& arg1, Maybe<CollisionSet> const& arg2) {
+  bool WorldCollisionCallbacks::rectTileCollision(World* world, RectF const& arg1, Maybe<CollisionSet> const& arg2) {
     RectI const region = RectI::integral(arg1);
 
     if (arg2)
@@ -798,11 +818,11 @@ namespace LuaBindings {
       return world->rectTileCollision(region);
   }
 
-  bool WorldCallbacks::pointCollision(World* world, Vec2F const& point, Maybe<CollisionSet> const& collisionSet) {
+  bool WorldCollisionCallbacks::pointCollision(World* world, Vec2F const& point, Maybe<CollisionSet> const& collisionSet) {
     return world->pointCollision(point, collisionSet.value(DefaultCollisionSet));
   }
 
-  LuaTupleReturn<Maybe<Vec2F>, Maybe<Vec2F>> WorldCallbacks::lineCollision(World* world, Vec2F const& start, Vec2F const& end, Maybe<CollisionSet> const& collisionSet) {
+  LuaTupleReturn<Maybe<Vec2F>, Maybe<Vec2F>> WorldCollisionCallbacks::lineCollision(World* world, Vec2F const& start, Vec2F const& end, Maybe<CollisionSet> const& collisionSet) {
     Maybe<Vec2F> point;
     Maybe<Vec2F> normal;
     auto collision = world->lineCollision(Line2F(start, end), collisionSet.value(DefaultCollisionSet));
@@ -813,7 +833,7 @@ namespace LuaBindings {
     return luaTupleReturn(point, normal);
   }
 
-  bool WorldCallbacks::polyCollision(
+  bool WorldCollisionCallbacks::polyCollision(
       World* world, PolyF const& arg1, Maybe<Vec2F> const& arg2, Maybe<CollisionSet> const& arg3) {
     PolyF body = arg1;
 
@@ -829,7 +849,7 @@ namespace LuaBindings {
       return world->polyCollision(body);
   }
 
-  List<Vec2I> WorldCallbacks::collisionBlocksAlongLine(
+  List<Vec2I> WorldCollisionCallbacks::collisionBlocksAlongLine(
       World* world, Vec2F const& arg1, Vec2F const& arg2, Maybe<CollisionSet> const& arg3, Maybe<int> const& arg4) {
     Vec2F const begin = arg1;
     Vec2F const end = arg2;
@@ -839,18 +859,7 @@ namespace LuaBindings {
     return world->collidingTilesAlongLine(begin, end, collisionSet, maxSize);
   }
 
-  List<pair<Vec2I, LiquidLevel>> WorldCallbacks::liquidAlongLine(World* world, Vec2F const& start, Vec2F const& end) {
-    List<pair<Vec2I, LiquidLevel>> levels;
-    forBlocksAlongLine<float>(start, world->geometry().diff(end, start), [&](int x, int y) {
-        auto liquidLevel = world->liquidLevel(RectF::withSize(Vec2F(x, y), Vec2F(1, 1)));
-        if (liquidLevel.liquid != EmptyLiquidId)
-          levels.append(pair<Vec2I, LiquidLevel>(Vec2I(x, y), liquidLevel));
-        return true;
-      });
-    return levels;
-  }
-
-  Maybe<Vec2F> WorldCallbacks::resolvePolyCollision(
+  Maybe<Vec2F> WorldCollisionCallbacks::resolvePolyCollision(
       World* world, PolyF poly, Vec2F const& position, float maximumCorrection, Maybe<CollisionSet> const& maybeCollisionSet) {
     struct CollisionPoly {
       PolyF poly;
@@ -921,7 +930,18 @@ namespace LuaBindings {
     return {};
   }
 
-  bool WorldCallbacks::tileIsOccupied(
+  List<pair<Vec2I, LiquidLevel>> WorldEnvironmentCallbacks::liquidAlongLine(World* world, Vec2F const& start, Vec2F const& end) {
+    List<pair<Vec2I, LiquidLevel>> levels;
+    forBlocksAlongLine<float>(start, world->geometry().diff(end, start), [&](int x, int y) {
+        auto liquidLevel = world->liquidLevel(RectF::withSize(Vec2F(x, y), Vec2F(1, 1)));
+        if (liquidLevel.liquid != EmptyLiquidId)
+          levels.append(pair<Vec2I, LiquidLevel>(Vec2I(x, y), liquidLevel));
+        return true;
+      });
+    return levels;
+  }
+
+  bool WorldEnvironmentCallbacks::tileIsOccupied(
       World* world, Vec2I const& arg1, Maybe<bool> const& arg2, Maybe<bool> const& arg3) {
     Vec2I const tile = arg1;
     bool const tileLayerBool = arg2.value(true);
@@ -1125,19 +1145,19 @@ namespace LuaBindings {
     return {};
   }
 
-  double WorldCallbacks::time(World* world) {
+  double WorldEnvironmentCallbacks::time(World* world) {
     return world->epochTime();
   }
 
-  uint64_t WorldCallbacks::day(World* world) {
+  uint64_t WorldEnvironmentCallbacks::day(World* world) {
     return world->day();
   }
 
-  double WorldCallbacks::timeOfDay(World* world) {
+  double WorldEnvironmentCallbacks::timeOfDay(World* world) {
     return world->timeOfDay() / world->dayLength();
   }
 
-  float WorldCallbacks::dayLength(World* world) {
+  float WorldEnvironmentCallbacks::dayLength(World* world) {
     return world->dayLength();
   }
 
@@ -1149,22 +1169,22 @@ namespace LuaBindings {
     world->setProperty(arg1, arg2);
   }
 
-  Maybe<LiquidLevel> WorldCallbacks::liquidAt(World* world, Variant<RectF, Vec2I> boundBoxOrPoint) {
+  Maybe<LiquidLevel> WorldEnvironmentCallbacks::liquidAt(World* world, Variant<RectF, Vec2I> boundBoxOrPoint) {
     LiquidLevel liquidLevel = boundBoxOrPoint.call([world](auto const& bbop) { return world->liquidLevel(bbop); });
     if (liquidLevel.liquid != EmptyLiquidId)
       return liquidLevel;
     return {};
   }
 
-  float WorldCallbacks::gravity(World* world, Vec2F const& arg1) {
+  float WorldEnvironmentCallbacks::gravity(World* world, Vec2F const& arg1) {
     return world->gravity(arg1);
   }
 
-  bool WorldCallbacks::spawnLiquid(World* world, Vec2F const& position, LiquidId liquid, float quantity) {
+  bool WorldEnvironmentCallbacks::spawnLiquid(World* world, Vec2F const& position, LiquidId liquid, float quantity) {
     return world->modifyTile(Vec2I::floor(position), PlaceLiquid{liquid, quantity}, true);
   }
 
-  Maybe<LiquidLevel> WorldCallbacks::destroyLiquid(World* world, Vec2F const& position) {
+  Maybe<LiquidLevel> WorldEnvironmentCallbacks::destroyLiquid(World* world, Vec2F const& position) {
     auto liquidLevel = world->liquidLevel(Vec2I::floor(position));
     if (liquidLevel.liquid != EmptyLiquidId) {
       if (world->modifyTile(Vec2I::floor(position), PlaceLiquid{EmptyLiquidId, 0}, true))
@@ -1173,7 +1193,7 @@ namespace LuaBindings {
     return {};
   }
 
-  bool WorldCallbacks::isTileProtected(World* world, Vec2F const& position) {
+  bool WorldEnvironmentCallbacks::isTileProtected(World* world, Vec2F const& position) {
     return world->isTileProtected(Vec2I::floor(position));
   }
 

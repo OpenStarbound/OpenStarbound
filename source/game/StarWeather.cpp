@@ -129,6 +129,13 @@ List<ProjectilePtr> ServerWeather::pullNewProjectiles() {
   return take(m_newProjectiles);
 }
 
+Maybe<String> ServerWeather::activeWeather() const {
+  if (m_currentWeatherIndex == NPos)
+    return {};
+  else
+    return m_weatherPool.item(m_currentWeatherIndex);
+}
+
 StringList ServerWeather::weatherList() const {
   StringList weatherList;
   for (size_t i = 0; i < m_weatherPool.size(); ++i)
@@ -174,11 +181,11 @@ void ServerWeather::setWeatherIndex(size_t weatherIndex, bool force) {
   setNetStates();
   }
 
-  void ServerWeather::forceWeather(bool force) {
+void ServerWeather::forceWeather(bool force) {
   m_forceWeather = force;
   if (force)
     m_nextWeatherChangeTime = INFINITY;
-  }
+}
 
 void ServerWeather::setNetStates() {
   m_weatherPoolNetState.set(DataStreamBuffer::serializeContainer(m_weatherPool.items()));
@@ -373,6 +380,13 @@ StringList ClientWeather::statusEffects() const {
 
 List<Particle> ClientWeather::pullNewParticles() {
   return take(m_particles);
+}
+
+Maybe<String> ClientWeather::activeWeather() const {
+  if (m_currentWeatherIndex == NPos)
+    return {};
+  else
+    return m_weatherPool.item(m_currentWeatherIndex);
 }
 
 StringList ClientWeather::weatherTrackOptions() const {
