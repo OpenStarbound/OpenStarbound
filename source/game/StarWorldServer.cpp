@@ -163,14 +163,14 @@ void WorldServer::setPause(bool pause) {
 }
 
 void WorldServer::initLua(UniverseServer* universe) {
-  m_luaRoot->addCallbacks("universe", LuaBindings::makeUniverseServerCallbacks(universe));
-  m_luaRoot->addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(universe));
+  m_luaThreadCallbacks["universe"] = LuaBindings::makeUniverseServerCallbacks(universe);
+  m_luaThreadCallbacks["celestial"] = LuaBindings::makeCelestialCallbacks(universe);
+  m_luaRoot->addCallbacks("universe",m_luaThreadCallbacks["universe"]);
+  m_luaRoot->addCallbacks("celestial",m_luaThreadCallbacks["celestial"]);
   auto assets = Root::singleton().assets();
   for (auto& p : assets->json("/worldserver.config:scriptContexts").toObject()) {
     auto scriptComponent = make_shared<ScriptComponent>();
     scriptComponent->setScripts(jsonToStringList(p.second.toArray()));
-    scriptComponent->addThreadCallbacks("universe", LuaBindings::makeUniverseServerCallbacks(universe));
-    scriptComponent->addThreadCallbacks("celestial", LuaBindings::makeCelestialCallbacks(universe));
 
     m_scriptContexts.set(p.first, scriptComponent);
     scriptComponent->init(this);
@@ -2427,6 +2427,11 @@ bool WorldServer::exposedToWeather(Vec2F const& pos) const {
   return false;
 }
 
+Maybe<String> WorldServer::activeWeather(Vec2F const& pos) const {
+  auto weather = weatherAt(pos);
+  return weather->activeWeather();
+}
+
 bool WorldServer::isUnderground(Vec2F const& pos) const {
   return m_worldTemplate->undergroundLevel() >= pos[1];
 }
@@ -2500,6 +2505,10 @@ float WorldServer::timeOfDay() const {
 
 LuaRootPtr WorldServer::luaRoot() {
   return m_luaRoot;
+}
+
+StringMap<LuaCallbacks> WorldServer::luaThreadCallbacks() const {
+  return m_luaThreadCallbacks;
 }
 
 RpcPromise<Vec2F> WorldServer::findUniqueEntity(String const& uniqueId) {
