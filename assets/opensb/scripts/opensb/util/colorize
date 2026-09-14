@@ -1,5 +1,16 @@
+local DEFAULT_COLOR = "white"
+
 -- Wraps text in Starbound's inline chat color escape codes                                                                                                                        
 -- (^colorname;...^reset;), e.g. chatColor("Saved!", "green").                                                                                                                     
-function chatColor(text, color)                                                                                                                                                    
+function colorText(text, color)                                                                                                                                                    
   return "^" .. color .. ";" .. text .. "^reset;"                                                                                                                              
+end
+
+-- Wraps multiples text in Starbound's inline chat color escape codes
+function colorTexts(texts, colors)
+  local parts = {}
+  for i, text in ipairs(texts) do                                                                                                                     
+    parts[i] = chatColor(text, colors[i] or DEFAULT_COLOR)
+  end                                                                                                                                                   
+  return table.concat(parts)
 end
