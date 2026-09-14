@@ -1,16 +1,22 @@
 local DEFAULT_COLOR = "white"
 
--- Wraps text in Starbound's inline chat color escape codes                                                                                                                        
--- (^colorname;...^reset;), e.g. chatColor("Saved!", "green").                                                                                                                     
-function colorText(text, color)                                                                                                                                                    
-  return "^" .. color .. ";" .. text .. "^reset;"                                                                                                                              
+-- Starbound chat color is an inline escape code in the text itself
+-- (^colorname;...^reset;) — not a `color` option on chat.addMessage.
+function colorizeText(text, color)
+  return "^" .. color .. ";" .. tostring(text) .. "^reset;"
 end
 
--- Wraps multiples text in Starbound's inline chat color escape codes
-function colorTexts(texts, colors)
+-- Colors each texts[i] with colors[i] and joins the results. Falls back
+-- to DEFAULT_COLOR if colors is shorter than texts.
+function colorizeTexts(texts, colors)
   local parts = {}
-  for i, text in ipairs(texts) do                                                                                                                     
-    parts[i] = chatColor(text, colors[i] or DEFAULT_COLOR)
-  end                                                                                                                                                   
+  for i, text in ipairs(texts) do
+    parts[i] = colorizeText(text, colors[i] or DEFAULT_COLOR)
+  end
   return table.concat(parts)
 end
+
+-- Example:
+--   chat.addMessage(colorizeTexts({ "Hello ", "world" }, { "red", "orange" }), { mode = "Local" })
+
+
