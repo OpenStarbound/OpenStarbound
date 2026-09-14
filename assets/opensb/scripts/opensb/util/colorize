@@ -1,0 +1,5 @@
+-- Wraps text in Starbound's inline chat color escape codes                                                                                                                        
+-- (^colorname;...^reset;), e.g. chatColor("Saved!", "green").                                                                                                                     
+function chatColor(text, color)                                                                                                                                                    
+  return "^" .. color .. ";" .. text .. "^reset;"                                                                                                                              
+end
