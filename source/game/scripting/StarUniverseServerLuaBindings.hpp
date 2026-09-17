@@ -18,9 +18,11 @@ namespace LuaBindings {
     bool isConnectedClient(UniverseServer* universe, ConnectionId arg1);
     String clientNick(UniverseServer* universe, ConnectionId arg1);
     Maybe<ConnectionId> findNick(UniverseServer* universe, String const& arg1);
+    String clientAccount(UniverseServer* universe, ConnectionId arg1);
     void adminBroadcast(UniverseServer* universe, String const& arg1);
     void adminWhisper(UniverseServer* universe, ConnectionId arg1, String const& arg2);
     bool isAdmin(UniverseServer* universe, ConnectionId arg1);
+    void setAdmin(UniverseServer* universe, ConnectionId arg1, Maybe<bool> arg2);
     bool isPvp(UniverseServer* universe, ConnectionId arg1);
     void setPvp(UniverseServer* universe, ConnectionId arg1, Maybe<bool> arg2);
     bool isWorldActive(UniverseServer* universe, String const& worldId);

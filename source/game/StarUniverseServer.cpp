@@ -243,6 +243,16 @@ Maybe<ConnectionId> UniverseServer::findNick(String const& nick) const {
   return m_chatProcessor->findNick(nick);
 }
 
+String UniverseServer::clientAccount(ConnectionId clientId) const {
+  ReadLocker clientsLocker(m_clientsLock);
+  if (auto clientContext = m_clients.value(clientId)) {
+    if (!clientContext->account().empty())
+      return clientContext->account();
+  }
+  return "<anonymous>";
+}
+
+
 Maybe<Uuid> UniverseServer::uuidForClient(ConnectionId clientId) const {
   ReadLocker clientsLocker(m_clientsLock);
   if (auto clientContext = m_clients.value(clientId))
@@ -2207,7 +2217,7 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
 
   ConnectionId clientId = m_clients.nextId();
   auto clientContext = make_shared<ServerClientContext>(clientId, remoteAddress, netRules, clientConnect->playerUuid,
-                                                        clientConnect->playerName, clientConnect->shipSpecies, administrator, clientConnect->shipChunks);
+                                                        clientConnect->playerName, clientConnect->shipSpecies, administrator, clientConnect->shipChunks, clientConnect->account);
   clientContext->registerRpcHandlers(m_teamManager->authenticatedRpcHandlers(clientContext->playerUuid()));
 
   String clientContextFile = File::relativeTo(m_storageDirectory, strf("{}.clientcontext", clientConnect->playerUuid.hex()));
