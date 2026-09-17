@@ -362,14 +362,17 @@ List<PacketPtr> WorldServer::removeClient(ConnectionId clientId) {
   }
 
   for (auto const& uuid : m_entityMessageResponses.keys()) {
-    if (m_entityMessageResponses[uuid].first == clientId) {
-      auto response = m_entityMessageResponses[uuid].second;
+    auto& entry = m_entityMessageResponses[uuid];
+    if (entry.first == clientId) {
+      auto response = entry.second;
       if (response.is<ConnectionId>()) {
         if (auto clientInfo = m_clientInfo.value(response.get<ConnectionId>()))
           clientInfo->outgoingPackets.append(make_shared<EntityMessageResponsePacket>(makeLeft("Client disconnected"), uuid));
       } else {
         response.get<RpcPromiseKeeper<Json>>().fail("Client disconnected");
       }
+      m_entityMessageResponses.remove(uuid);
+    } else if (entry.second.is<ConnectionId>() && entry.second.get<ConnectionId>() == clientId) {
       m_entityMessageResponses.remove(uuid);
     }
   }
@@ -425,6 +428,7 @@ List<EntityId> WorldServer::players() const {
   return playerIds;
 }
 
+
 void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> const& packets) {
   shared_ptr<ClientInfo> clientInfo = m_clientInfo.get(clientId);
   auto& root = Root::singleton();
@@ -455,12 +459,46 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
       clientInfo->pendingSectors.addAll(clientInfo->activeSectors.difference(oldSectors));
 
     } else if (auto mtpacket = as<ModifyTileListPacket>(packet)) {
-      auto unappliedModifications = applyTileModifications(mtpacket->modifications, mtpacket->allowEntityOverlap);
+      auto liquidsDb = Root::singleton().liquidsDatabase();
+      auto materialDb = Root::singleton().materialDatabase();
+      TileModificationList sanitized;
+      TileModificationList rejected;
+      sanitized.reserve(mtpacket->modifications.size());
+      for (auto const& pair : mtpacket->modifications) {
+        bool ok = true;
+        if (auto pl = pair.second.ptr<PlaceLiquid>())
+          ok = liquidsDb->isValidLiquidId(pl->liquid);
+        else if (auto pm = pair.second.ptr<PlaceMaterial>())
+          ok = materialDb->isValidMaterialId(pm->material);
+        else if (auto pmod = pair.second.ptr<PlaceMod>())
+          ok = materialDb->isValidModId(pmod->mod);
+        if (ok)
+          sanitized.append(pair);
+        else {
+          rejected.append(pair);
+          Logger::warn("WorldServer: dropped tile mod with invalid id from client {}", clientId);
+        }
+      }
+      auto unappliedModifications = applyTileModifications(sanitized, mtpacket->allowEntityOverlap);
+      unappliedModifications.appendAll(rejected);
       if (!unappliedModifications.empty())
         clientInfo->outgoingPackets.append(make_shared<TileModificationFailurePacket>(unappliedModifications));
 
     } else if (auto rtpacket = as<ReplaceTileListPacket>(packet)) {
-      auto unappliedModifications = replaceTiles(rtpacket->modifications, rtpacket->tileDamage, rtpacket->applyDamage);
+      auto materialDb = Root::singleton().materialDatabase();
+      TileModificationList sanitized;
+      TileModificationList rejected;
+      for (auto const& pair : rtpacket->modifications) {
+        bool ok = true;
+        if (auto pm = pair.second.ptr<PlaceMaterial>())
+          ok = materialDb->isValidMaterialId(pm->material);
+        if (ok)
+          sanitized.append(pair);
+        else
+          rejected.append(pair);
+      }
+      auto unappliedModifications = replaceTiles(sanitized, rtpacket->tileDamage, rtpacket->applyDamage);
+      unappliedModifications.appendAll(rejected);
       if (!unappliedModifications.empty())
         clientInfo->outgoingPackets.append(make_shared<TileModificationFailurePacket>(unappliedModifications));
 
@@ -468,14 +506,22 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
       damageTiles(dtgpacket->tilePositions, dtgpacket->layer, dtgpacket->sourcePosition, dtgpacket->tileDamage, dtgpacket->sourceEntity);
 
     } else if (auto clpacket = as<CollectLiquidPacket>(packet)) {
+      if (!Root::singleton().liquidsDatabase()->isValidLiquidId(clpacket->liquidId)) {
+        Logger::warn("WorldServer: dropped CollectLiquid with invalid liquid id {} from client {}", clpacket->liquidId, clientId);
+        continue;
+      }
       if (auto item = collectLiquid(clpacket->tilePositions, clpacket->liquidId))
         clientInfo->outgoingPackets.append(make_shared<GiveItemPacket>(item));
 
     } else if (auto sepacket = as<SpawnEntityPacket>(packet)) {
-      auto netRules = clientInfo->clientState.netCompatibilityRules();
-      auto entity = entityFactory->netLoadEntity(sepacket->entityType, std::move(sepacket->storeData), netRules);
-      entity->readNetState(std::move(sepacket->firstNetState), 0.0f, netRules);
-      addEntity(std::move(entity));
+      try {
+        auto netRules = clientInfo->clientState.netCompatibilityRules();
+        auto entity = entityFactory->netLoadEntity(sepacket->entityType, std::move(sepacket->storeData), netRules);
+        entity->readNetState(std::move(sepacket->firstNetState), 0.0f, netRules);
+        addEntity(std::move(entity));
+      } catch (std::exception const& e) {
+        Logger::warn("WorldServer: rejected SpawnEntity from client {}: {}", clientId, e.what());
+      }
 
     } else if (auto rdpacket = as<RequestDropPacket>(packet)) {
       auto drop = m_entityMap->get<ItemDrop>(rdpacket->dropEntityId);
@@ -521,20 +567,22 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
       if (!entityIdInSpace(entityCreate->entityId, clientInfo->clientId)) {
         throw WorldServerException::format("WorldServer received entity create packet with illegal entity id {}.", entityCreate->entityId);
       } else {
-        if (m_entityMap->entity(entityCreate->entityId)) {
-          Logger::error("WorldServer received duplicate entity create packet from client, deleting old entity {}", entityCreate->entityId);
-          removeEntity(entityCreate->entityId, false);
+        try {
+          if (m_entityMap->entity(entityCreate->entityId)) {
+            Logger::error("WorldServer received duplicate entity create packet from client, deleting old entity {}", entityCreate->entityId);
+            removeEntity(entityCreate->entityId, false);
+          }
+          auto netRules = clientInfo->clientState.netCompatibilityRules();
+          auto entity = entityFactory->netLoadEntity(entityCreate->entityType, entityCreate->storeData, netRules);
+          entity->readNetState(entityCreate->firstNetState, 0.0f, netRules);
+          entity->init(this, entityCreate->entityId, EntityMode::Slave);
+          m_entityMap->addEntity(entity);
+          if (clientInfo->interpolationTracker.interpolationEnabled())
+            entity->enableInterpolation(clientInfo->interpolationTracker.extrapolationHint());
+        } catch (std::exception const& e) {
+          Logger::warn("WorldServer: rejected EntityCreate from client {}: {}", clientId, e.what());
         }
-        auto netRules = clientInfo->clientState.netCompatibilityRules();
-        auto entity = entityFactory->netLoadEntity(entityCreate->entityType, entityCreate->storeData, netRules);
-        entity->readNetState(entityCreate->firstNetState, 0.0f, netRules);
-        entity->init(this, entityCreate->entityId, EntityMode::Slave);
-        m_entityMap->addEntity(entity);
-
-        if (clientInfo->interpolationTracker.interpolationEnabled())
-          entity->enableInterpolation(clientInfo->interpolationTracker.extrapolationHint());
       }
-
     } else if (auto entityUpdateSet = as<EntityUpdateSetPacket>(packet)) {
       float interpolationLeadTime = clientInfo->interpolationTracker.interpolationLeadTime();
       m_entityMap->forAllEntities([&](EntityPtr const& entity) {
@@ -577,6 +625,101 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
           m_worldStorage->findUniqueEntity(findUniqueEntity->uniqueEntityId)));
 
     } else if (auto entityMessagePacket = as<EntityMessagePacket>(packet)) {
+      auto rejectMessage = [&](String const& reason) {
+        Logger::warn("WorldServer: rejecting EntityMessage '{}' from client {}: {}",
+                     entityMessagePacket->message, clientId, reason);
+        clientInfo->outgoingPackets.append(make_shared<EntityMessageResponsePacket>(
+          makeLeft(reason), entityMessagePacket->uuid));
+      };
+
+      auto assetPathExists = [](String const& path) -> bool {
+        if (path.empty())
+          return false;
+        try {
+          auto assets = Root::singleton().assets();
+          String checkPath = AssetPath::split(path).basePath;
+          return !checkPath.empty() && assets->assetExists(checkPath);
+        } catch (std::exception const&) {
+          return false;
+        }
+      };
+
+      bool messageRejected = false;
+
+      if (entityMessagePacket->message == "playCinematic" && !entityMessagePacket->args.empty()) {
+        Json const& cinematicArg = entityMessagePacket->args.get(0);
+        bool valid = false;
+        if (cinematicArg.isType(Json::Type::Object)) {
+          // Inline cinematic definition - accept as-is.
+          valid = true;
+        } else if (cinematicArg.isType(Json::Type::String)) {
+          valid = assetPathExists(cinematicArg.toString());
+          if (!valid)
+            rejectMessage(strf("invalid cinematic asset path '{}'", cinematicArg.toString()));
+        } else if (!cinematicArg.isNull()) {
+          rejectMessage(strf("non-string/non-object cinematic argument of type {}", (int)cinematicArg.type()));
+        }
+        if (!valid)
+          messageRejected = true;
+
+      } else if (entityMessagePacket->message == "playAltMusic" && !entityMessagePacket->args.empty()) {
+        Json const& tracksArg = entityMessagePacket->args.get(0);
+        bool valid = true;
+        if (tracksArg.canConvert(Json::Type::Array)) {
+          for (auto const& trackJson : tracksArg.toArray()) {
+            if (!trackJson.isType(Json::Type::String) || !assetPathExists(trackJson.toString())) {
+              valid = false;
+              rejectMessage(strf("invalid music asset path '{}'", trackJson.toString()));
+              break;
+            }
+          }
+        } else if (tracksArg.isType(Json::Type::String)) {
+          if (!assetPathExists(tracksArg.toString())) {
+            valid = false;
+            rejectMessage(strf("invalid music asset path '{}'", tracksArg.toString()));
+          }
+        } else {
+          valid = false;
+          rejectMessage(strf("invalid playAltMusic argument of type {}", (int)tracksArg.type()));
+        }
+        if (!valid)
+          messageRejected = true;
+
+      } else if (entityMessagePacket->message == "warp" && !entityMessagePacket->args.empty()) {
+        Json const& warpArg = entityMessagePacket->args.get(0);
+        bool valid = false;
+        if (warpArg.isType(Json::Type::String)) {
+          try {
+            // parseWarpAction throws on malformed input; we just check it parses.
+            (void)parseWarpAction(warpArg.toString());
+            valid = true;
+          } catch (std::exception const& e) {
+            rejectMessage(strf("invalid warp action '{}': {}", warpArg.toString(), e.what()));
+          }
+        } else {
+          rejectMessage(strf("non-string warp argument of type {}", (int)warpArg.type()));
+        }
+        if (!valid)
+          messageRejected = true;
+
+      } else if (entityMessagePacket->message == "queueRadioMessage" && !entityMessagePacket->args.empty()) {
+        Json const& configArg = entityMessagePacket->args.get(0);
+        bool valid = false;
+        try {
+          // createRadioMessage throws RadioMessageDatabaseException on invalid input
+          // (unknown messageId, missing required fields, etc.).
+          (void)Root::singleton().radioMessageDatabase()->createRadioMessage(configArg);
+          valid = true;
+        } catch (std::exception const& e) {
+          rejectMessage(strf("invalid radio message: {}", e.what()));
+        }
+        if (!valid)
+          messageRejected = true;
+      }
+
+      if (messageRejected)
+        continue;
+
       EntityPtr entity;
       if (entityMessagePacket->entityId.is<EntityId>())
         entity = m_entityMap->entity(entityMessagePacket->entityId.get<EntityId>());
@@ -592,7 +735,7 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
               clientInfo->outgoingPackets.append(make_shared<EntityMessageResponsePacket>(makeRight(response->get<Json>()), entityMessagePacket->uuid));
             else {
               // delay the response until this promise is done
-              m_entityMessagePromises[entityMessagePacket->uuid] = make_pair(clientId,response->get<RpcPromise<Json>>());
+              m_entityMessagePromises[entityMessagePacket->uuid] = make_pair(clientId, response->get<RpcPromise<Json>>());
             }
           } else
             clientInfo->outgoingPackets.append(make_shared<EntityMessageResponsePacket>(makeLeft("Message not handled by entity"), entityMessagePacket->uuid));
@@ -1741,6 +1884,11 @@ TileModificationList WorldServer::doApplyTileModifications(TileModificationList 
       queueTileUpdates(pos);
 
     } else if (auto plpacket = modification.ptr<PlaceLiquid>()) {
+      if (!Root::singleton().liquidsDatabase()->isValidLiquidId(plpacket->liquid)) {
+        Logger::warn("WorldServer: rejected PlaceLiquid with invalid liquid id {} at ({}, {})",
+                     (int)plpacket->liquid, pos[0], pos[1]);
+        continue;// leave in `unapplied` so caller sees a failure
+      }
       modifyLiquid(pos, plpacket->liquid, plpacket->liquidLevel, true);
       m_liquidEngine->visitLocation(pos);
       m_fallingBlocksAgent->visitLocation(pos);

@@ -682,10 +682,28 @@ void MainInterface::update(float dt) {
   if (auto worldClient = m_client->worldClient()) {
     if (worldClient->inWorld()) {
       if (auto cinematic = m_client->mainPlayer()->pullPendingCinematic()) {
-        if (*cinematic)
-          m_cinematicOverlay->load(Root::singleton().assets()->fetchJson(cinematic.take()));
-        else
+        if (*cinematic) {
+          Json definition;
+          try {
+            definition = Root::singleton().assets()->fetchJson(cinematic.take());
+          } catch (std::exception const& e) {
+            Logger::warn("MainInterface: failed to fetch cinematic: {}", e.what());
+            definition = Json();
+          }
+          if (definition.isType(Json::Type::Object)) {
+            try {
+              m_cinematicOverlay->load(definition);
+            } catch (std::exception const& e) {
+              Logger::warn("MainInterface: rejected malformed cinematic ({}), stopping overlay", e.what());
+              m_cinematicOverlay->stop();
+            }
+          } else {
+            Logger::warn("MainInterface: ignoring non-object cinematic of type {}", (int)definition.type());
+            m_cinematicOverlay->stop();
+          }
+        } else {
           m_cinematicOverlay->stop();
+        }
       }
     }
   }
