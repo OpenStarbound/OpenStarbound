@@ -21,7 +21,7 @@ STAR_CLASS(ServerClientContext);
 class ServerClientContext {
 public:
   ServerClientContext(ConnectionId clientId, Maybe<HostAddress> remoteAddress, NetCompatibilityRules netRules, Uuid playerUuid,
-      String playerName, String shipSpecies, bool canBecomeAdmin, WorldChunks initialShipChunks);
+      String playerName, String shipSpecies, bool canBecomeAdmin, WorldChunks initialShipChunks, String account);
 
   ConnectionId clientId() const;
   Maybe<HostAddress> const& remoteAddress() const;
@@ -31,6 +31,7 @@ public:
   bool canBecomeAdmin() const;
   NetCompatibilityRules netRules() const;
   String descriptiveName() const;
+  String const& account() const;
 
   // Register additional rpc methods from other server side services.
   void registerRpcHandlers(JsonRpcHandlers const& rpcHandlers);
@@ -125,6 +126,7 @@ private:
   NetCompatibilityRules m_netRules;
   Uuid const m_playerUuid;
   String const m_playerName;
+  String const m_account;
   String m_shipSpecies;
   bool const m_canBecomeAdmin;
   
