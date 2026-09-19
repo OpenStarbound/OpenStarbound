@@ -2324,6 +2324,7 @@ WarpToWorld UniverseServer::resolveWarpAction(WarpAction warpAction, ConnectionI
 
   WorldId toWorldId;
   SpawnTarget spawnTarget;
+    /*
   for (auto& p : m_scriptContexts) {
     auto out = p.second->invoke<Json>("overrideWarp", warpActionToJson(warpAction), clientId, deploy);
     if (out && *out) {
@@ -2338,7 +2339,7 @@ WarpToWorld UniverseServer::resolveWarpAction(WarpAction warpAction, ConnectionI
       }
       return WarpToWorld(toWorldId, spawnTarget);
     }
-  }
+  }*/
 
   if (auto toWorld = warpAction.ptr<WarpToWorld>()) {
     if (!toWorld->world)
