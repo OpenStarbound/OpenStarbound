@@ -432,6 +432,10 @@ namespace LuaBindings {
       callbacks.registerCallbackWithSignature<LuaString, LuaEngine&>("fidelity", bind(ServerWorldCallbacks::fidelity, world, _1));
       callbacks.registerCallbackWithSignature<Maybe<LuaValue>, String, String, LuaVariadic<LuaValue>>("callScriptContext", bind(ServerWorldCallbacks::callScriptContext, world, _1, _2, _3));
       callbacks.registerCallbackWithSignature<bool, ConnectionId, String, Json>("sendPacket", bind(ServerWorldCallbacks::sendPacket, serverWorld, _1, _2, _3));
+      
+      callbacks.registerCallbackWithSignature<Maybe<float>, Vec2I>("sectorTimeToLive", [serverWorld](Vec2I const& pos) {
+          return serverWorld->sectorTimeToLive(pos);
+        });
 
       callbacks.registerCallbackWithSignature<double>("skyTime", [serverWorld]() {
           return serverWorld->sky()->epochTime();

@@ -294,6 +294,8 @@ public:
 
   // used to notify the universe server that the celestial planet type has changed
   Maybe<pair<String, String>> pullNewPlanetType();
+  
+  Maybe<float> sectorTimeToLive(Vec2I const& position) const;
 
 private:
   struct ClientInfo {
