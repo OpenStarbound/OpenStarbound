@@ -163,11 +163,11 @@ void LiquidWorld::liquidCollision(Vec2I const& liquidPos, LiquidId liquidId, Vec
 FallingBlocksWorld::FallingBlocksWorld(WorldServer* w)
   : m_worldServer(w), m_materialDatabase(Root::singleton().materialDatabase()) {}
 
-FallingBlockType FallingBlocksWorld::blockType(Vec2I const& pos) {
-  auto const& tile =  m_worldServer->getServerTile(pos, true);
+FallingBlockType FallingBlocksWorld::blockType(Vec2I const& pos, bool const& withSignal) {
+  auto const& tile =  m_worldServer->getServerTile(pos, withSignal);
   if (tile.rootSource) {
     return FallingBlockType::Immovable;
-  } if (tile.foreground == EmptyMaterialId) {
+  } else if (tile.foreground == EmptyMaterialId) {
     if (m_worldServer->tileIsOccupied(pos, TileLayer::Foreground))
       return FallingBlockType::Immovable;
     else

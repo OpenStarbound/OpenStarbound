@@ -39,7 +39,7 @@ class FallingBlocksWorld : public FallingBlocksFacade {
 public:
   FallingBlocksWorld(WorldServer* world);
 
-  FallingBlockType blockType(Vec2I const& pos) override;
+  FallingBlockType blockType(Vec2I const& pos, bool const& withSignal = true) override;
   void moveBlock(Vec2I const& from, Vec2I const& to) override;
 
 private:
