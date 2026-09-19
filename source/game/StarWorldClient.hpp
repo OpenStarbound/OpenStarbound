@@ -92,6 +92,7 @@ public:
   StringList environmentStatusEffects(Vec2F const& pos) const override;
   StringList weatherStatusEffects(Vec2F const& pos) const override;
   bool exposedToWeather(Vec2F const& pos) const override;
+  Maybe<String> activeWeather(Vec2F const& pos) const override;
   bool isUnderground(Vec2F const& pos) const override;
   bool disableDeathDrops() const override;
   List<PhysicsForceRegion> forceRegions() const override;
@@ -106,6 +107,7 @@ public:
   RpcPromise<Vec2F> findUniqueEntity(String const& uniqueId) override;
   RpcPromise<Json> sendEntityMessage(Variant<EntityId, String> const& entity, String const& message, JsonArray const& args = {}) override;
   bool isTileProtected(Vec2I const& pos) const override;
+  StringMap<LuaCallbacks> luaThreadCallbacks() const override;
 
   // Is this WorldClient properly initialized in a world
   bool inWorld() const;
@@ -423,6 +425,8 @@ private:
   GameTimer m_expiryTimer;
   
   UniverseClient* m_universe;
+  
+  StringMap<LuaCallbacks> m_luaThreadCallbacks;
 };
 
 }

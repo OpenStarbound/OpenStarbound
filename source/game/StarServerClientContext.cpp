@@ -11,12 +11,13 @@
 namespace Star {
 
 ServerClientContext::ServerClientContext(ConnectionId clientId, Maybe<HostAddress> remoteAddress, NetCompatibilityRules netRules, Uuid playerUuid,
-    String playerName, String shipSpecies, bool canBecomeAdmin, WorldChunks initialShipChunks)
+                                         String playerName, String shipSpecies, bool canBecomeAdmin, WorldChunks initialShipChunks, String account)
   : m_clientId(clientId),
     m_remoteAddress(remoteAddress),
     m_netRules(netRules),
     m_playerUuid(playerUuid),
     m_playerName(playerName),
+    m_account(account),
     m_shipSpecies(shipSpecies),
     m_canBecomeAdmin(canBecomeAdmin),
     m_shipChunks(std::move(initialShipChunks)) {
@@ -87,6 +88,10 @@ Uuid const& ServerClientContext::playerUuid() const {
 
 String const& ServerClientContext::playerName() const {
   return m_playerName;
+}
+
+String const& ServerClientContext::account() const {
+  return m_account;
 }
 
 String const& ServerClientContext::shipSpecies() const {

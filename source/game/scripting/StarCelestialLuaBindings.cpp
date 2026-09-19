@@ -7,11 +7,8 @@
 #include "StarJsonExtra.hpp"
 
 namespace Star {
-
-LuaCallbacks LuaBindings::makeCelestialCallbacks(Universe* universe) {
+LuaCallbacks LuaBindings::makeCelestialCallbacks(CelestialDatabasePtr celestialDatabase) {
   LuaCallbacks callbacks;
-
-  auto celestialDatabase = universe->celestialDatabase();
   
   callbacks.registerCallback("planetParameters", [celestialDatabase](Json const& coords) -> Json {
       CelestialCoordinate coordinate = CelestialCoordinate(coords);
@@ -106,6 +103,14 @@ LuaCallbacks LuaBindings::makeCelestialCallbacks(Universe* universe) {
       CelestialCoordinate coordinate = CelestialCoordinate(coords);
       return CelestialGraphics::drawSystemTwinkle(celestialDatabase, coordinate, twinkleTime);
     });
+  
+  return callbacks;
+}
+
+LuaCallbacks LuaBindings::makeCelestialCallbacks(Universe* universe) {
+  auto celestialDatabase = universe->celestialDatabase();
+  
+  LuaCallbacks callbacks = makeCelestialCallbacks(celestialDatabase);
   
   if (auto client = as<UniverseClient>(universe)) {
     auto systemWorld = client->systemWorldClient();

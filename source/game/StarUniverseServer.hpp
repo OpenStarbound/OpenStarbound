@@ -68,6 +68,8 @@ public:
   String clientNick(ConnectionId clientId) const;
   Maybe<ConnectionId> findNick(String const& nick) const;
 
+  String clientAccount(ConnectionId clientId) const;
+
   Maybe<Uuid> uuidForClient(ConnectionId clientId) const;
   Maybe<ConnectionId> clientForUuid(Uuid const& uuid) const;
 

@@ -21,30 +21,16 @@ STAR_CLASS(ScriptedEntity);
 namespace LuaBindings {
   typedef function<Json(ScriptedEntityPtr const& entity, String const& functionName, JsonArray const& args)> CallEntityScriptFunction;
 
+  LuaCallbacks makeWorldThreadCallbacks(World* world);
   LuaCallbacks makeWorldCallbacks(World* world);
 
   void addWorldDebugCallbacks(LuaCallbacks& callbacks);
   void addWorldEntityCallbacks(LuaCallbacks& callbacks, World* world);
   void addWorldEnvironmentCallbacks(LuaCallbacks& callbacks, World* world);
+  void addWorldGeometryCallbacks(LuaCallbacks& callbacks, World* world);
+  void addWorldCollisionCallbacks(LuaCallbacks& callbacks, World* world);
 
   namespace WorldCallbacks {
-    float magnitude(World* world, Vec2F pos1, Maybe<Vec2F> pos2);
-    Vec2F distance(World* world, Vec2F const& arg1, Vec2F const& arg2);
-    bool polyContains(World* world, PolyF const& poly, Vec2F const& pos);
-    LuaValue xwrap(World* world, LuaEngine& engine, LuaValue const& positionOrX);
-    LuaValue nearestTo(World* world, LuaEngine& engine, Variant<Vec2F, float> const& sourcePositionOrX, Variant<Vec2F, float> const& targetPositionOrX);
-    bool rectCollision(World* world, RectF const& arg1, Maybe<CollisionSet> const& arg2);
-    bool pointTileCollision(World* world, Vec2F const& arg1, Maybe<CollisionSet> const& arg2);
-    bool lineTileCollision(World* world, Vec2F const& arg1, Vec2F const& arg2, Maybe<CollisionSet> const& arg3);
-    Maybe<pair<Vec2F, Vec2I>> lineTileCollisionPoint(World* world, Vec2F const& start, Vec2F const& end, Maybe<CollisionSet> const& maybeCollisionSet);
-    bool rectTileCollision(World* world, RectF const& arg1, Maybe<CollisionSet> const& arg2);
-    bool pointCollision(World* world, Vec2F const& point, Maybe<CollisionSet> const& collisionSet);
-    LuaTupleReturn<Maybe<Vec2F>, Maybe<Vec2F>> lineCollision(World* world, Vec2F const& start, Vec2F const& end, Maybe<CollisionSet> const& maybeCollisionSet);
-    bool polyCollision(World* world, PolyF const& arg1, Maybe<Vec2F> const& arg2, Maybe<CollisionSet> const& arg3);
-    List<Vec2I> collisionBlocksAlongLine(World* world, Vec2F const& arg1, Vec2F const& arg2, Maybe<CollisionSet> const& arg3, Maybe<int> const& arg4);
-    List<pair<Vec2I, LiquidLevel>> liquidAlongLine(World* world, Vec2F const& start, Vec2F const& end);
-    Maybe<Vec2F> resolvePolyCollision(World* world, PolyF poly, Vec2F const& position, float maximumCorrection, Maybe<CollisionSet> const& collisionSet);
-    bool tileIsOccupied(World* world, Vec2I const& arg1, Maybe<bool> const& arg2, Maybe<bool> const& arg3);
     bool placeObject(World* world, String const& arg1, Vec2I const& arg2, Maybe<int> const& arg3, Json const& arg4);
     Maybe<EntityId> spawnItem(World* world, Json const& itemType, Vec2F const& worldPosition, Maybe<size_t> const& inputCount, Json const& inputParameters, Maybe<Vec2F> const& initialVelocity, Maybe<float> const& intangibleTime);
     List<EntityId> spawnTreasure(World* world, Vec2F const& position, String const& pool, float level, Maybe<uint64_t> seed);
@@ -53,17 +39,8 @@ namespace LuaBindings {
     Maybe<EntityId> spawnStagehand(World* world, Vec2F const& spawnPosition, String const& typeName, Json const& overrides);
     Maybe<EntityId> spawnProjectile(World* world, String const& arg1, Vec2F const& arg2, Maybe<EntityId> const& arg3, Maybe<Vec2F> const& arg4, bool arg5, Json const& arg6);
     Maybe<EntityId> spawnVehicle(World* world, String const& vehicleName, Vec2F const& pos, Json const& extraConfig);
-    double time(World* world);
-    uint64_t day(World* world);
-    double timeOfDay(World* world);
-    float dayLength(World* world);
     Json getProperty(World* world, String const& arg1, Json const& arg2);
     void setProperty(World* world, String const& arg1, Json const& arg2);
-    Maybe<LiquidLevel> liquidAt(World* world, Variant<RectF, Vec2I> boundBoxOrPoint);
-    float gravity(World* world, Vec2F const& arg1);
-    bool spawnLiquid(World* world, Vec2F const& arg1, LiquidId arg2, float arg3);
-    Maybe<LiquidLevel> destroyLiquid(World* world, Vec2F const& position);
-    bool isTileProtected(World* world, Vec2F const& position);
     Maybe<PlatformerAStar::Path> findPlatformerPath(World* world, Vec2F const& start, Vec2F const& end, ActorMovementParameters actorMovementParameters, PlatformerAStar::Parameters searchParameters);
     PlatformerAStar::PathFinder platformerPathStart(World* world, Vec2F const& start, Vec2F const& end, ActorMovementParameters actorMovementParameters, PlatformerAStar::Parameters searchParameters);
   }
@@ -90,6 +67,27 @@ namespace LuaBindings {
     LuaString fidelity(World* world, LuaEngine& engine);
     Maybe<LuaValue> callScriptContext(World* world, String const& contextName, String const& function, LuaVariadic<LuaValue> const& args);
     bool sendPacket(WorldServer* world, ConnectionId clientId, String const& packetType, Json const& packetData);
+  }
+  
+  namespace WorldGeometryCallbacks {
+    float magnitude(World* world, Vec2F pos1, Maybe<Vec2F> pos2);
+    Vec2F distance(World* world, Vec2F const& arg1, Vec2F const& arg2);
+    bool polyContains(World* world, PolyF const& poly, Vec2F const& pos);
+    LuaValue xwrap(World* world, LuaEngine& engine, LuaValue const& positionOrX);
+    LuaValue nearestTo(World* world, LuaEngine& engine, Variant<Vec2F, float> const& sourcePositionOrX, Variant<Vec2F, float> const& targetPositionOrX);
+  }
+  
+  namespace WorldCollisionCallbacks {
+    bool rectCollision(World* world, RectF const& arg1, Maybe<CollisionSet> const& arg2);
+    bool pointTileCollision(World* world, Vec2F const& arg1, Maybe<CollisionSet> const& arg2);
+    bool lineTileCollision(World* world, Vec2F const& arg1, Vec2F const& arg2, Maybe<CollisionSet> const& arg3);
+    Maybe<pair<Vec2F, Vec2I>> lineTileCollisionPoint(World* world, Vec2F const& start, Vec2F const& end, Maybe<CollisionSet> const& maybeCollisionSet);
+    bool rectTileCollision(World* world, RectF const& arg1, Maybe<CollisionSet> const& arg2);
+    bool pointCollision(World* world, Vec2F const& point, Maybe<CollisionSet> const& collisionSet);
+    LuaTupleReturn<Maybe<Vec2F>, Maybe<Vec2F>> lineCollision(World* world, Vec2F const& start, Vec2F const& end, Maybe<CollisionSet> const& maybeCollisionSet);
+    bool polyCollision(World* world, PolyF const& arg1, Maybe<Vec2F> const& arg2, Maybe<CollisionSet> const& arg3);
+    List<Vec2I> collisionBlocksAlongLine(World* world, Vec2F const& arg1, Vec2F const& arg2, Maybe<CollisionSet> const& arg3, Maybe<int> const& arg4);
+    Maybe<Vec2F> resolvePolyCollision(World* world, PolyF poly, Vec2F const& position, float maximumCorrection, Maybe<CollisionSet> const& collisionSet);
   }
 
   namespace WorldDebugCallbacks {
@@ -183,6 +181,17 @@ namespace LuaBindings {
     bool replaceMaterials(World* world, List<Vec2I> const& tilePositions, String const& layer, String const& materialName, Maybe<int> const& hueShift, bool enableDrops);
     bool replaceMaterialArea(World* world, Vec2F center, float radius, String const& layer, String const& materialName, Maybe<int> const& hueShift, bool enableDrops);
     bool placeMod(World* world, Vec2I const& arg1, String const& arg2, String const& arg3, Maybe<int> const& arg4, bool arg5);
+    List<pair<Vec2I, LiquidLevel>> liquidAlongLine(World* world, Vec2F const& start, Vec2F const& end);
+    bool tileIsOccupied(World* world, Vec2I const& arg1, Maybe<bool> const& arg2, Maybe<bool> const& arg3);
+    double time(World* world);
+    uint64_t day(World* world);
+    double timeOfDay(World* world);
+    float dayLength(World* world);
+    Maybe<LiquidLevel> liquidAt(World* world, Variant<RectF, Vec2I> boundBoxOrPoint);
+    float gravity(World* world, Vec2F const& arg1);
+    bool spawnLiquid(World* world, Vec2F const& arg1, LiquidId arg2, float arg3);
+    Maybe<LiquidLevel> destroyLiquid(World* world, Vec2F const& position);
+    bool isTileProtected(World* world, Vec2F const& position);
   }
 }
 

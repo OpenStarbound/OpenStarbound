@@ -199,6 +199,9 @@ public:
 protected:
   using Base::setLuaRoot;
   using Base::init;
+  
+private:
+  StringSet m_worldThreadCallbacks;
 };
 
 // Component for scripts which can be used as entity message handlers, provides
@@ -401,6 +404,11 @@ void LuaWorldComponent<Base>::init(World* world) {
 
   Base::setLuaRoot(world->luaRoot());
   Base::addCallbacks("world", LuaBindings::makeWorldCallbacks(world));
+  Base::addThreadCallbacks("world", LuaBindings::makeWorldThreadCallbacks(world));
+  for (auto& p : world->luaThreadCallbacks()) {
+    Base::addThreadCallbacks(p.first,p.second);
+    m_worldThreadCallbacks.add(p.first);
+  }
   Base::init();
 }
 
@@ -408,6 +416,11 @@ template <typename Base>
 void LuaWorldComponent<Base>::uninit() {
   Base::uninit();
   Base::removeCallbacks("world");
+  Base::removeThreadCallbacks("world");
+  for (auto& c : m_worldThreadCallbacks) {
+    Base::removeThreadCallbacks(c);
+  }
+  m_worldThreadCallbacks = {};
 }
 
 template <typename Base>
