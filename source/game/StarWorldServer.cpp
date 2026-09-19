@@ -1419,6 +1419,12 @@ Maybe<pair<String, String>> WorldServer::pullNewPlanetType() {
   return {};
 }
 
+Maybe<float> WorldServer::sectorTimeToLive(Vec2I const& position) const {
+  if (auto s = m_worldStorage->sectorForPosition(position))
+    return m_worldStorage->sectorTimeToLive(*s);
+  return {};
+}
+
 bool WorldServer::isTileProtected(Vec2I const& pos) const {
   if (!m_tileProtectionEnabled)
     return false;
