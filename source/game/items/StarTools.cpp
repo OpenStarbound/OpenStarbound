@@ -88,7 +88,7 @@ void MiningTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
 
       damage.harvestLevel = instanceValue("harvestLevel", 1).toUInt();
 
-      auto damageResult = world()->damageTiles(brushArea, layer, owner()->position(), damage, owner()->entityId());
+      auto damageResult = world()->connectionCanModify(owner()->originConnection()) ? world()->damageTiles(brushArea, layer, owner()->position(), damage, owner()->entityId()) : TileDamageResult::Protected;
 
       if (damageResult != TileDamageResult::None) {
         used = true;
@@ -437,7 +437,9 @@ void BeamMiningTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
         }
       }
 
-      auto damageResult = worldp->damageTiles(List<Vec2I>{brushArea}, layer, ownerp->position(), {TileDamageType::Beamish, m_tileDamage, m_harvestLevel}, ownerp->entityId());
+      auto damageResult = worldp->connectionCanModify(ownerp->originConnection()) ? 
+        worldp->damageTiles(List<Vec2I>{brushArea}, layer, ownerp->position(), {TileDamageType::Beamish, m_tileDamage, m_harvestLevel}, ownerp->entityId()) 
+        : TileDamageResult::Protected;
       used = damageResult != TileDamageResult::None;
 
       if (damageResult == TileDamageResult::Protected) {
@@ -450,6 +452,8 @@ void BeamMiningTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
         float totalLiquid = 0;
         for (auto pos : brushArea) {
           if (worldp->isTileProtected(pos))
+            continue;
+          if (!worldp->connectionCanModify(ownerp->originConnection()))
             continue;
 
           auto liquid = worldp->liquidLevel(pos);

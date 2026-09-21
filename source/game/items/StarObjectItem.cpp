@@ -97,8 +97,10 @@ bool ObjectItem::canPlace(bool) const {
   if (initialized()) {
     if (owner()->isAdmin() || owner()->inToolRange()) {
       auto pos = Vec2I(owner()->aimPosition().floor());
-      auto objectDatabase = Root::singleton().objectDatabase();
-      return objectDatabase->canPlaceObject(world(), pos, objectName());
+      if (world()->connectionCanModify(owner()->originConnection())) {
+        auto objectDatabase = Root::singleton().objectDatabase();
+        return objectDatabase->canPlaceObject(world(), pos, objectName());
+      }
     }
   }
   return false;

@@ -5,6 +5,8 @@
 #include "StarListener.hpp"
 #include "StarWorld.hpp"
 #include "StarWorldLuaBindings.hpp"
+#include "StarEntity.hpp"
+#include "StarEntityLuaBindings.hpp"
 #include "StarRpcPromise.hpp"
 #include "StarLuaGameConverters.hpp"
 
@@ -193,7 +195,7 @@ private:
 template <typename Base>
 class LuaWorldComponent : public Base {
 public:
-  void init(World* world);
+  void init(World* world, ConnectionId originConnection = ServerConnectionId);
   void uninit();
 
 protected:
@@ -202,6 +204,17 @@ protected:
   
 private:
   StringSet m_worldThreadCallbacks;
+};
+
+
+template <typename Base>
+class LuaEntityComponent : public LuaWorldComponent<Base> {
+public:
+  void init(Entity* entity);
+  void uninit();
+
+protected:
+  using LuaWorldComponent<Base>::init;
 };
 
 // Component for scripts which can be used as entity message handlers, provides
@@ -398,13 +411,13 @@ Maybe<Ret> LuaUpdatableComponent<Base>::update(V&&... args) {
 }
 
 template <typename Base>
-void LuaWorldComponent<Base>::init(World* world) {
+void LuaWorldComponent<Base>::init(World* world, ConnectionId originConnection) {
   if (Base::initialized())
     uninit();
 
   Base::setLuaRoot(world->luaRoot());
-  Base::addCallbacks("world", LuaBindings::makeWorldCallbacks(world));
-  Base::addThreadCallbacks("world", LuaBindings::makeWorldThreadCallbacks(world));
+  Base::addCallbacks("world", LuaBindings::makeWorldCallbacks(world, originConnection));
+  Base::addThreadCallbacks("world", LuaBindings::makeWorldThreadCallbacks(world, originConnection));
   for (auto& p : world->luaThreadCallbacks()) {
     Base::addThreadCallbacks(p.first,p.second);
     m_worldThreadCallbacks.add(p.first);
@@ -421,6 +434,21 @@ void LuaWorldComponent<Base>::uninit() {
     Base::removeThreadCallbacks(c);
   }
   m_worldThreadCallbacks = {};
+}
+
+template <typename Base>
+void LuaEntityComponent<Base>::init(Entity* entity) {
+  if (Base::initialized())
+    uninit();
+
+  Base::addCallbacks("entity", LuaBindings::makeEntityCallbacks(entity));
+  LuaWorldComponent<Base>::init(entity->world(), entity->originConnection());
+}
+
+template <typename Base>
+void LuaEntityComponent<Base>::uninit() {
+  LuaWorldComponent<Base>::uninit();
+  Base::removeCallbacks("entity");
 }
 
 template <typename Base>

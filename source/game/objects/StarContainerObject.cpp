@@ -38,11 +38,11 @@ ContainerObject::ContainerObject(ObjectConfigConstPtr config, Json const& parame
   m_craftingProgress.setInterpolator(lerp<float, float>);
 }
 
-void ContainerObject::init(World* world, EntityId entityId, EntityMode mode) {
+void ContainerObject::init(World* world, EntityId entityId, EntityMode mode, ConnectionId originConnection) {
   if (mode == EntityMode::Master)
     m_interactive.set(true);
 
-  Object::init(world, entityId, mode);
+  Object::init(world, entityId, mode, originConnection);
   if (mode == EntityMode::Master) {
     if (!m_initialized) {
       m_initialized = true;

@@ -132,6 +132,8 @@ bool LiquidItem::canPlace(bool shifting) const {
 }
 
 bool LiquidItem::canPlaceAtTile(Vec2I pos) const {
+  if (!world()->connectionCanModify(owner()->originConnection()))
+    return false;
   auto bgTileMaterial = world()->material(pos, TileLayer::Background);
   if (bgTileMaterial != EmptyMaterialId) {
     auto fgTileMaterial = world()->material(pos, TileLayer::Foreground);

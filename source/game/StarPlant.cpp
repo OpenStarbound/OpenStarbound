@@ -582,8 +582,8 @@ EntityType Plant::entityType() const {
   return EntityType::Plant;
 }
 
-void Plant::init(World* world, EntityId entityId, EntityMode mode) {
-  Entity::init(world, entityId, mode);
+void Plant::init(World* world, EntityId entityId, EntityMode mode, ConnectionId originConnection) {
+  Entity::init(world, entityId, mode, originConnection);
   validatePieces();
   m_tilePosition = world->geometry().xwrap(m_tilePosition);
 }

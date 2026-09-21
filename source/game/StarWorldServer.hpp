@@ -144,6 +144,7 @@ public:
   bool damageWouldDestroy(Vec2I const& pos, TileLayer layer, TileDamage const& tileDamage) const override;
   EntityPtr entity(EntityId entityId) const override;
   void addEntity(EntityPtr const& entity, EntityId entityId = NullEntityId) override;
+  void addEntity(EntityPtr const& entity, ConnectionId connection, EntityId entityId = NullEntityId) override;
   EntityPtr closestEntity(Vec2F const& center, float radius, EntityFilter selector = EntityFilter()) const override;
   void forAllEntities(EntityCallback entityCallback) const override;
   void forEachEntity(RectF const& boundBox, EntityCallback callback) const override;
@@ -190,6 +191,8 @@ public:
   bool isTileProtected(Vec2I const& pos) const override;
   
   StringMap<LuaCallbacks> luaThreadCallbacks() const override;
+  
+  bool connectionCanModify(ConnectionId connection) const override;
   
   void wire(Vec2I const& outputPosition, size_t outputIndex, Vec2I const& inputPosition, size_t inputIndex);
 

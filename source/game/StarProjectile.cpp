@@ -66,8 +66,8 @@ Json Projectile::configValue(String const& name, Json const& def) const {
   return m_parameters.query(name, m_config->config.query(name, def));
 }
 
-void Projectile::init(World* world, EntityId entityId, EntityMode mode) {
-  Entity::init(world, entityId, mode);
+void Projectile::init(World* world, EntityId entityId, EntityMode mode, ConnectionId originConnection) {
+  Entity::init(world, entityId, mode, originConnection);
   m_movementController->init(world);
   m_movementController->setIgnorePhysicsEntities({entityId});
 
@@ -92,9 +92,8 @@ void Projectile::init(World* world, EntityId entityId, EntityMode mode) {
 
       m_scriptComponent.addCallbacks("projectile", makeProjectileCallbacks());
       m_scriptComponent.addCallbacks("config", LuaBindings::makeConfigCallbacks(bind(&Projectile::configValue, this, _1, _2)));
-      m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
       m_scriptComponent.addCallbacks("mcontroller", LuaBindings::makeMovementControllerCallbacks(m_movementController.get()));
-      m_scriptComponent.init(world);
+      m_scriptComponent.init(this);
     }
   }
   m_travelLine = Line2F(position(), position());
@@ -120,7 +119,6 @@ void Projectile::uninit() {
       m_scriptComponent.uninit();
       m_scriptComponent.removeCallbacks("projectile");
       m_scriptComponent.removeCallbacks("config");
-      m_scriptComponent.removeCallbacks("entity");
       m_scriptComponent.removeCallbacks("mcontroller");
     }
   }
@@ -780,16 +778,18 @@ void Projectile::processAction(Json const& action) {
     Vec2F explosionPosition = position();
 
     doWithDelay(parameters.getUInt("delaySteps", 0), [=](World* world) {
-        world->damageTiles(tileAreaBrush(foregroundRadius, explosionPosition, false),
-            TileLayer::Foreground,
-            explosionPosition,
-            {damageType, explosiveDamageAmount, harvestLevel},
-            sourceEntity());
-        world->damageTiles(tileAreaBrush(backgroundRadius, explosionPosition, false),
-            TileLayer::Background,
-            explosionPosition,
-            {damageType, explosiveDamageAmount, harvestLevel},
-            sourceEntity());
+        if (world->connectionCanModify(originConnection())) {
+          world->damageTiles(tileAreaBrush(foregroundRadius, explosionPosition, false),
+              TileLayer::Foreground,
+              explosionPosition,
+              {damageType, explosiveDamageAmount, harvestLevel},
+              sourceEntity());
+          world->damageTiles(tileAreaBrush(backgroundRadius, explosionPosition, false),
+              TileLayer::Background,
+              explosionPosition,
+              {damageType, explosiveDamageAmount, harvestLevel},
+              sourceEntity());
+        }
       });
 
   } else if (command == "spawnmonster") {

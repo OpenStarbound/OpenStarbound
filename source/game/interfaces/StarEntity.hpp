@@ -53,7 +53,7 @@ public:
 
   // Called when an entity is first inserted into a World.  Calling base class
   // init sets the world pointer, entityId, and entityMode.
-  virtual void init(World* world, EntityId entityId, EntityMode mode);
+  virtual void init(World* world, EntityId entityId, EntityMode mode, ConnectionId originConnection = ServerConnectionId);
 
   // Should do whatever steps necessary to take an entity out of a world,
   // default implementation clears the world pointer, entityMode, and entityId.
@@ -187,6 +187,10 @@ public:
   Maybe<EntityMode> entityMode() const;
   bool isMaster() const;
   bool isSlave() const;
+  
+  // ConnectionId that spawned this entity. Mostly important for server master entities that may have been spawned by a client.
+  ConnectionId originConnection() const;
+  void setOriginConnection(ConnectionId connection);
 
 protected:
   Entity();
@@ -204,6 +208,7 @@ private:
   Maybe<String> m_uniqueId;
   World* m_world;
   EntityDamageTeam m_team;
+  ConnectionId m_originConnection = ServerConnectionId;
 };
 
 template <typename EntityT>

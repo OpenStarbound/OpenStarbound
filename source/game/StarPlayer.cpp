@@ -344,8 +344,8 @@ ClientEntityMode Player::clientEntityMode() const {
   return ClientEntityMode::ClientPresenceMaster;
 }
 
-void Player::init(World* world, EntityId entityId, EntityMode mode) {
-  Entity::init(world, entityId, mode);
+void Player::init(World* world, EntityId entityId, EntityMode mode, ConnectionId originConnection) {
+  Entity::init(world, entityId, mode, originConnection);
 
 
   m_tools->init(this);
@@ -370,13 +370,12 @@ void Player::init(World* world, EntityId entityId, EntityMode mode) {
     for (auto& p : m_genericScriptContexts) {
       p.second->addActorMovementCallbacks(m_movementController.get());
       p.second->addCallbacks("player", LuaBindings::makePlayerCallbacks(this));
-      p.second->addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
       p.second->addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(m_statusController.get()));
       p.second->addCallbacks("songbook", LuaBindings::makeSongbookCallbacks(m_songbook.get()));
       p.second->addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(humanoid()->networkedAnimator()));
       if (m_client)
         p.second->addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(m_client));
-      p.second->init(world);
+      p.second->init(this);
     }
 
     for (auto& p : m_inventory->pullOverflow()) {
@@ -392,8 +391,7 @@ void Player::init(World* world, EntityId entityId, EntityMode mode) {
         [this](String const& name, Json const& defaultValue) -> Json {
           return m_scriptedAnimationParameters.value(name, defaultValue);
         }));
-      m_scriptedAnimator.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
-      m_scriptedAnimator.init(world);
+      m_scriptedAnimator.init(this);
   }
 
   m_xAimPositionNetState.setInterpolator(world->geometry().xLerpFunction());
@@ -414,7 +412,6 @@ void Player::uninit() {
     for (auto& p : m_genericScriptContexts) {
       p.second->uninit();
       p.second->removeCallbacks("animator");
-      p.second->removeCallbacks("entity");
       p.second->removeCallbacks("player");
       p.second->removeCallbacks("mcontroller");
       p.second->removeCallbacks("status");
@@ -427,7 +424,6 @@ void Player::uninit() {
   if (world()->isClient()) {
     m_scriptedAnimator.uninit();
     m_scriptedAnimator.removeCallbacks("animationConfig");
-    m_scriptedAnimator.removeCallbacks("entity");
   }
 
   Entity::uninit();
@@ -2931,15 +2927,13 @@ void Player::refreshHumanoidParameters() {
     if (world()->isClient() && m_scriptedAnimator.initialized()) {
       m_scriptedAnimator.uninit();
       m_scriptedAnimator.removeCallbacks("animationConfig");
-      m_scriptedAnimator.removeCallbacks("entity");
 
       m_scriptedAnimator.setScripts(humanoid()->animationScripts());
       m_scriptedAnimator.addCallbacks("animationConfig", LuaBindings::makeScriptedAnimatorCallbacks(humanoid()->networkedAnimator(),
         [this](String const& name, Json const& defaultValue) -> Json {
           return m_scriptedAnimationParameters.value(name, defaultValue);
         }));
-      m_scriptedAnimator.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
-      m_scriptedAnimator.init(world());
+      m_scriptedAnimator.init(this);
     }
   }
 }

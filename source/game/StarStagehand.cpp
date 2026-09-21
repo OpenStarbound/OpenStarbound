@@ -34,17 +34,16 @@ ByteArray Stagehand::netStore(NetCompatibilityRules) {
   return DataStreamBuffer::serialize(m_config);
 }
 
-void Stagehand::init(World* world, EntityId entityId, EntityMode mode) {
-  Entity::init(world, entityId, mode);
+void Stagehand::init(World* world, EntityId entityId, EntityMode mode, ConnectionId originConnection) {
+  Entity::init(world, entityId, mode, originConnection);
 
   if (isMaster() && m_scripted) {
     m_scriptComponent.addCallbacks("stagehand", makeStagehandCallbacks());
     m_scriptComponent.addCallbacks("config", LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def) {
         return m_config.query(name, def);
       }));
-    m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
     m_scriptComponent.addCallbacks("behavior", LuaBindings::makeBehaviorCallbacks(&m_behaviors));
-    m_scriptComponent.init(world);
+    m_scriptComponent.init(this);
   }
 }
 
@@ -55,7 +54,6 @@ void Stagehand::uninit() {
     m_scriptComponent.uninit();
     m_scriptComponent.removeCallbacks("stagehand");
     m_scriptComponent.removeCallbacks("config");
-    m_scriptComponent.removeCallbacks("entity");
   }
 }
 
