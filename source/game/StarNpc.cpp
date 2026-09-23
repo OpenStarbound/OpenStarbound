@@ -382,7 +382,7 @@ void Npc::destroy(RenderCallback* renderCallback) {
     try {
       for (auto const& treasureItem :
           treasureDatabase->createTreasure(staticRandomFrom(m_dropPools.get(), m_npcVariant.seed), m_npcVariant.level))
-        world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position()));
+        world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position()),originConnection());
     } catch (StarException const& e) {
       Logger::warn("Failed to create treasure for NPC '{}': {}", npcType(), outputException(e, false));
     }

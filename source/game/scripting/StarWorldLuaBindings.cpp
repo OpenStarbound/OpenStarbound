@@ -240,7 +240,8 @@ namespace LuaBindings {
   }
   
   // Thread-safe callbacks that can be used from any thread under the world
-  LuaCallbacks makeWorldThreadCallbacks(World* world, ConnectionId originConnection) {
+  LuaCallbacks makeWorldThreadCallbacks(World* world, WorldCaller caller) {
+    _unused(caller);
     LuaCallbacks callbacks;
     
     addWorldDebugCallbacks(callbacks);
@@ -249,23 +250,23 @@ namespace LuaBindings {
     return callbacks;
   }
 
-  LuaCallbacks makeWorldCallbacks(World* world, ConnectionId originConnection) {
-    LuaCallbacks callbacks = makeWorldThreadCallbacks(world, originConnection);
+  LuaCallbacks makeWorldCallbacks(World* world, WorldCaller caller) {
+    LuaCallbacks callbacks = makeWorldThreadCallbacks(world, caller);
 
-    addWorldEnvironmentCallbacks(callbacks, world, originConnection);
-    addWorldEntityCallbacks(callbacks, world, originConnection);
+    addWorldEnvironmentCallbacks(callbacks, world, caller);
+    addWorldEntityCallbacks(callbacks, world, caller);
     addWorldCollisionCallbacks(callbacks, world);
 
-    callbacks.registerCallbackWithSignature<bool, String, Vec2I, Maybe<int>, Json>("placeObject", bind(WorldCallbacks::placeObject, world, originConnection, _1, _2, _3, _4));
-    callbacks.registerCallbackWithSignature<Maybe<EntityId>, Json, Vec2F, Maybe<size_t>, Json, Maybe<Vec2F>, Maybe<float>>("spawnItem", bind(WorldCallbacks::spawnItem, world, originConnection, _1, _2, _3, _4, _5, _6));
-    callbacks.registerCallbackWithSignature<List<EntityId>, Vec2F, String, float, Maybe<uint64_t>>("spawnTreasure", bind(WorldCallbacks::spawnTreasure, world, originConnection, _1, _2, _3, _4));
-    callbacks.registerCallbackWithSignature<Maybe<EntityId>, String, Vec2F, Maybe<JsonObject>>("spawnMonster", bind(WorldCallbacks::spawnMonster, world, originConnection, _1, _2, _3));
-    callbacks.registerCallbackWithSignature<Maybe<EntityId>, Vec2F, String, String, float, Maybe<uint64_t>, Json>("spawnNpc", bind(WorldCallbacks::spawnNpc, world, originConnection, _1, _2, _3, _4, _5, _6));
-    callbacks.registerCallbackWithSignature<Maybe<EntityId>, Vec2F, String, Json>("spawnStagehand", bind(WorldCallbacks::spawnStagehand, world, originConnection, _1, _2, _3));
-    callbacks.registerCallbackWithSignature<Maybe<EntityId>, String, Vec2F, Maybe<EntityId>, Maybe<Vec2F>, bool, Json>("spawnProjectile", bind(WorldCallbacks::spawnProjectile, world, originConnection, _1, _2, _3, _4, _5, _6));
-    callbacks.registerCallbackWithSignature<Maybe<EntityId>, String, Vec2F, Json>("spawnVehicle", bind(WorldCallbacks::spawnVehicle, world, originConnection, _1, _2, _3));
+    callbacks.registerCallbackWithSignature<bool, String, Vec2I, Maybe<int>, Json>("placeObject", bind(WorldCallbacks::placeObject, world, caller, _1, _2, _3, _4));
+    callbacks.registerCallbackWithSignature<Maybe<EntityId>, Json, Vec2F, Maybe<size_t>, Json, Maybe<Vec2F>, Maybe<float>>("spawnItem", bind(WorldCallbacks::spawnItem, world, caller, _1, _2, _3, _4, _5, _6));
+    callbacks.registerCallbackWithSignature<List<EntityId>, Vec2F, String, float, Maybe<uint64_t>>("spawnTreasure", bind(WorldCallbacks::spawnTreasure, world, caller, _1, _2, _3, _4));
+    callbacks.registerCallbackWithSignature<Maybe<EntityId>, String, Vec2F, Maybe<JsonObject>>("spawnMonster", bind(WorldCallbacks::spawnMonster, world, caller, _1, _2, _3));
+    callbacks.registerCallbackWithSignature<Maybe<EntityId>, Vec2F, String, String, float, Maybe<uint64_t>, Json>("spawnNpc", bind(WorldCallbacks::spawnNpc, world, caller, _1, _2, _3, _4, _5, _6));
+    callbacks.registerCallbackWithSignature<Maybe<EntityId>, Vec2F, String, Json>("spawnStagehand", bind(WorldCallbacks::spawnStagehand, world, caller, _1, _2, _3));
+    callbacks.registerCallbackWithSignature<Maybe<EntityId>, String, Vec2F, Maybe<EntityId>, Maybe<Vec2F>, bool, Json>("spawnProjectile", bind(WorldCallbacks::spawnProjectile, world, caller, _1, _2, _3, _4, _5, _6));
+    callbacks.registerCallbackWithSignature<Maybe<EntityId>, String, Vec2F, Json>("spawnVehicle", bind(WorldCallbacks::spawnVehicle, world, caller, _1, _2, _3));
     callbacks.registerCallbackWithSignature<Json, String, Json>("getProperty", bind(WorldCallbacks::getProperty, world, _1, _2));
-    callbacks.registerCallbackWithSignature<void, String, Json>("setProperty", bind(WorldCallbacks::setProperty, world, originConnection, _1, _2));
+    callbacks.registerCallbackWithSignature<void, String, Json>("setProperty", bind(WorldCallbacks::setProperty, world, caller, _1, _2));
     callbacks.registerCallbackWithSignature<Maybe<PlatformerAStar::Path>, Vec2F, Vec2F, ActorMovementParameters, PlatformerAStar::Parameters>("findPlatformerPath", bind(WorldCallbacks::findPlatformerPath, world, _1, _2, _3, _4));
     callbacks.registerCallbackWithSignature<PlatformerAStar::PathFinder, Vec2F, Vec2F, ActorMovementParameters, PlatformerAStar::Parameters>("platformerPathStart", bind(WorldCallbacks::platformerPathStart, world, _1, _2, _3, _4));
 
@@ -417,17 +418,17 @@ namespace LuaBindings {
       callbacks.registerCallback("isServer", []() { return true;  });
 
       callbacks.registerCallbackWithSignature<String>("id", bind(ServerWorldCallbacks::id, serverWorld));
-      callbacks.registerCallbackWithSignature<bool, EntityId, bool>("breakObject", bind(ServerWorldCallbacks::breakObject, serverWorld, originConnection, _1, _2));
+      callbacks.registerCallbackWithSignature<bool, EntityId, bool>("breakObject", bind(ServerWorldCallbacks::breakObject, serverWorld, caller, _1, _2));
       callbacks.registerCallbackWithSignature<bool, RectF>("isVisibleToPlayer", bind(ServerWorldCallbacks::isVisibleToPlayer, serverWorld, _1));
       callbacks.registerCallbackWithSignature<bool, RectF>("loadRegion", bind(ServerWorldCallbacks::loadRegion, serverWorld, _1));
       callbacks.registerCallbackWithSignature<bool, RectF>("regionActive", bind(ServerWorldCallbacks::regionActive, serverWorld, _1));
-      callbacks.registerCallbackWithSignature<void, DungeonId, bool>("setTileProtection", bind(ServerWorldCallbacks::setTileProtection, serverWorld, originConnection, _1, _2));
+      callbacks.registerCallbackWithSignature<void, DungeonId, bool>("setTileProtection", bind(ServerWorldCallbacks::setTileProtection, serverWorld, caller, _1, _2));
       callbacks.registerCallbackWithSignature<bool, RectI>("isPlayerModified", bind(ServerWorldCallbacks::isPlayerModified, serverWorld, _1));
-      callbacks.registerCallbackWithSignature<Maybe<LiquidLevel>, Vec2F>("forceDestroyLiquid", bind(ServerWorldCallbacks::forceDestroyLiquid, serverWorld, originConnection, _1));
+      callbacks.registerCallbackWithSignature<Maybe<LiquidLevel>, Vec2F>("forceDestroyLiquid", bind(ServerWorldCallbacks::forceDestroyLiquid, serverWorld, caller, _1));
       callbacks.registerCallbackWithSignature<EntityId, String>("loadUniqueEntity", bind(ServerWorldCallbacks::loadUniqueEntity, serverWorld, _1));
-      callbacks.registerCallbackWithSignature<void, EntityId, String>("setUniqueId", bind(ServerWorldCallbacks::setUniqueId, serverWorld, originConnection, _1, _2));
+      callbacks.registerCallbackWithSignature<void, EntityId, String>("setUniqueId", bind(ServerWorldCallbacks::setUniqueId, serverWorld, caller, _1, _2));
       callbacks.registerCallbackWithSignature<Json, EntityId, Maybe<EntityId>>("takeItemDrop", bind(ServerWorldCallbacks::takeItemDrop, world, _1, _2));
-      callbacks.registerCallbackWithSignature<void, Vec2F, Maybe<bool>>("setPlayerStart", bind(ServerWorldCallbacks::setPlayerStart, serverWorld, originConnection, _1, _2));
+      callbacks.registerCallbackWithSignature<void, Vec2F, Maybe<bool>>("setPlayerStart", bind(ServerWorldCallbacks::setPlayerStart, serverWorld, caller, _1, _2));
       callbacks.registerCallbackWithSignature<List<EntityId>>("players", bind(ServerWorldCallbacks::players, world));
       callbacks.registerCallbackWithSignature<LuaString, LuaEngine&>("fidelity", bind(ServerWorldCallbacks::fidelity, world, _1));
       callbacks.registerCallbackWithSignature<Maybe<LuaValue>, String, String, LuaVariadic<LuaValue>>("callScriptContext", bind(ServerWorldCallbacks::callScriptContext, serverWorld, _1, _2, _3));
@@ -440,92 +441,92 @@ namespace LuaBindings {
       callbacks.registerCallbackWithSignature<double>("skyTime", [serverWorld]() {
           return serverWorld->sky()->epochTime();
         });
-      callbacks.registerCallbackWithSignature<void, double>("setSkyTime", [serverWorld, originConnection](double skyTime) {
-          if (serverWorld->connectionCanModify(originConnection))
+      callbacks.registerCallbackWithSignature<void, double>("setSkyTime", [serverWorld, caller](double skyTime) {
+          if (serverWorld->connectionCanModify(callerConnection(caller)))
             serverWorld->sky()->setEpochTime(skyTime);
         });
 
       callbacks.registerCallback("expiryTime", [serverWorld]() -> float { return serverWorld->expiryTime(); });
-      callbacks.registerCallback("setExpiryTime", [serverWorld,originConnection](float expiryTime) {
-        if (serverWorld->connectionCanModify(originConnection))
+      callbacks.registerCallback("setExpiryTime", [serverWorld,caller](float expiryTime) {
+        if (serverWorld->connectionCanModify(callerConnection(caller)))
           serverWorld->setExpiryTime(expiryTime); 
       });
 
-      callbacks.registerCallback("wire", [serverWorld,originConnection](Vec2I outputPosition, size_t outputIndex, Vec2I inputPosition, size_t inputIndex) {
-        if (serverWorld->connectionCanModify(originConnection))
+      callbacks.registerCallback("wire", [serverWorld,caller](Vec2I outputPosition, size_t outputIndex, Vec2I inputPosition, size_t inputIndex) {
+        if (serverWorld->connectionCanModify(callerConnection(caller)))
           serverWorld->wire(outputPosition, outputIndex, inputPosition, inputIndex);
       });
 
       callbacks.registerCallback("flyingType", [serverWorld]() -> String { return FlyingTypeNames.getRight(serverWorld->sky()->flyingType()); });
       callbacks.registerCallback("warpPhase", [serverWorld]() -> String { return WarpPhaseNames.getRight(serverWorld->sky()->warpPhase()); });
-      callbacks.registerCallback("setUniverseFlag", [serverWorld,originConnection](String flagName) {
-        if (serverWorld->connectionCanModify(originConnection))
+      callbacks.registerCallback("setUniverseFlag", [serverWorld,caller](String flagName) {
+        if (serverWorld->connectionCanModify(callerConnection(caller)))
           serverWorld->universeSettings()->setFlag(flagName); 
       });
       callbacks.registerCallback("universeFlags", [serverWorld]() { return serverWorld->universeSettings()->flags(); });
       callbacks.registerCallback("universeFlagSet", [serverWorld](String const& flagName) { return serverWorld->universeSettings()->flags().contains(flagName); });
-      callbacks.registerCallback("placeDungeon", [serverWorld, originConnection](String dungeonName, Vec2I position, Maybe<DungeonId> dungeonId) -> bool {
-          if (serverWorld->connectionCanModify(originConnection))
+      callbacks.registerCallback("placeDungeon", [serverWorld, caller](String dungeonName, Vec2I position, Maybe<DungeonId> dungeonId) -> bool {
+          if (serverWorld->connectionCanModify(callerConnection(caller)))
             return serverWorld->placeDungeon(dungeonName, position, dungeonId);
           else
             return false;
         });
-      callbacks.registerCallback("tryPlaceDungeon", [serverWorld, originConnection](String dungeonName, Vec2I position, Maybe<DungeonId> dungeonId) -> bool {
-          if (serverWorld->connectionCanModify(originConnection))
+      callbacks.registerCallback("tryPlaceDungeon", [serverWorld, caller](String dungeonName, Vec2I position, Maybe<DungeonId> dungeonId) -> bool {
+          if (serverWorld->connectionCanModify(callerConnection(caller)))
             return serverWorld->placeDungeon(dungeonName, position, dungeonId, false);
           else
             return false;
         });
 
-      callbacks.registerCallback("addBiomeRegion", [serverWorld, originConnection](Vec2I position, String biomeName, String subBlockSelector, int width) {
-          if (serverWorld->connectionCanModify(originConnection))
+      callbacks.registerCallback("addBiomeRegion", [serverWorld, caller](Vec2I position, String biomeName, String subBlockSelector, int width) {
+          if (serverWorld->connectionCanModify(callerConnection(caller)))
             serverWorld->addBiomeRegion(position, biomeName, subBlockSelector, width);
         });
-      callbacks.registerCallback("expandBiomeRegion", [serverWorld, originConnection](Vec2I position, int width) {
-          if (serverWorld->connectionCanModify(originConnection))
+      callbacks.registerCallback("expandBiomeRegion", [serverWorld, caller](Vec2I position, int width) {
+          if (serverWorld->connectionCanModify(callerConnection(caller)))
             serverWorld->expandBiomeRegion(position, width);
         });
 
-      callbacks.registerCallback("pregenerateAddBiome", [serverWorld, originConnection](Vec2I position, int width) {
-          if (serverWorld->connectionCanModify(originConnection))
+      callbacks.registerCallback("pregenerateAddBiome", [serverWorld, caller](Vec2I position, int width) {
+          if (serverWorld->connectionCanModify(callerConnection(caller)))
             return serverWorld->pregenerateAddBiome(position, width);
           else
             return false;
         });
-      callbacks.registerCallback("pregenerateExpandBiome", [serverWorld, originConnection](Vec2I position, int width) {
-          if (serverWorld->connectionCanModify(originConnection))
+      callbacks.registerCallback("pregenerateExpandBiome", [serverWorld, caller](Vec2I position, int width) {
+          if (serverWorld->connectionCanModify(callerConnection(caller)))
             return serverWorld->pregenerateExpandBiome(position, width);
           else
             return false;
         });
 
-      callbacks.registerCallback("setLayerEnvironmentBiome", [serverWorld, originConnection](Vec2I position) {
-          if (serverWorld->connectionCanModify(originConnection))
+      callbacks.registerCallback("setLayerEnvironmentBiome", [serverWorld, caller](Vec2I position) {
+          if (serverWorld->connectionCanModify(callerConnection(caller)))
             serverWorld->setLayerEnvironmentBiome(position);
         });
 
-      callbacks.registerCallback("setPlanetType", [serverWorld, originConnection](String planetType, String primaryBiomeName) {
-          if (serverWorld->connectionCanModify(originConnection))
+      callbacks.registerCallback("setPlanetType", [serverWorld, caller](String planetType, String primaryBiomeName) {
+          if (serverWorld->connectionCanModify(callerConnection(caller)))
             serverWorld->setPlanetType(planetType, primaryBiomeName);
         });
 
-      callbacks.registerCallback("setDungeonGravity", [serverWorld, originConnection](DungeonId dungeonId, Maybe<float> gravity) {
-          if (serverWorld->connectionCanModify(originConnection))
+      callbacks.registerCallback("setDungeonGravity", [serverWorld, caller](DungeonId dungeonId, Maybe<float> gravity) {
+          if (serverWorld->connectionCanModify(callerConnection(caller)))
             serverWorld->setDungeonGravity(dungeonId, gravity);
         });
 
-      callbacks.registerCallback("setDungeonBreathable", [serverWorld, originConnection](DungeonId dungeonId, Maybe<bool> breathable) {
-          if (serverWorld->connectionCanModify(originConnection))
+      callbacks.registerCallback("setDungeonBreathable", [serverWorld, caller](DungeonId dungeonId, Maybe<bool> breathable) {
+          if (serverWorld->connectionCanModify(callerConnection(caller)))
             serverWorld->setDungeonBreathable(dungeonId, breathable);
         });
 
-      callbacks.registerCallback("setDungeonId", [serverWorld, originConnection](RectI tileRegion, DungeonId dungeonId) {
-          if (serverWorld->connectionCanModify(originConnection))
+      callbacks.registerCallback("setDungeonId", [serverWorld, caller](RectI tileRegion, DungeonId dungeonId) {
+          if (serverWorld->connectionCanModify(callerConnection(caller)))
             serverWorld->setDungeonId(tileRegion, dungeonId);
         });
 
-      callbacks.registerCallback("enqueuePlacement", [serverWorld, originConnection](List<Json> distributionConfigs, Maybe<DungeonId> id) {
-          if (serverWorld->connectionCanModify(originConnection)) {
+      callbacks.registerCallback("enqueuePlacement", [serverWorld, caller](List<Json> distributionConfigs, Maybe<DungeonId> id) {
+          if (serverWorld->connectionCanModify(callerConnection(caller))) {
             auto distributions = distributionConfigs.transformed([](Json const& config) {
               return BiomeItemDistribution(config, Random::randu64());
             });
@@ -537,8 +538,8 @@ namespace LuaBindings {
       callbacks.registerCallback("template", [serverWorld]() {
         return serverWorld->worldTemplate()->store();
       });
-      callbacks.registerCallback("setTemplate", [serverWorld, originConnection](Json worldTemplate) {
-        if (serverWorld->connectionCanModify(originConnection)) {
+      callbacks.registerCallback("setTemplate", [serverWorld, caller](Json worldTemplate) {
+        if (serverWorld->connectionCanModify(callerConnection(caller))) {
           auto newTemplate = make_shared<WorldTemplate>(worldTemplate);
           serverWorld->setTemplate(newTemplate);
         }
@@ -555,7 +556,7 @@ namespace LuaBindings {
     callbacks.registerCallback("debugText", WorldDebugCallbacks::debugText);
   }
 
-  void addWorldEntityCallbacks(LuaCallbacks& callbacks, World* world, ConnectionId originConnection) {
+  void addWorldEntityCallbacks(LuaCallbacks& callbacks, World* world, WorldCaller caller) {
     callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, Maybe<LuaTable>>("entityQuery", bind(WorldEntityCallbacks::entityQuery, world, _1, _2, _3, _4));
     callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, Maybe<LuaTable>>("monsterQuery", bind(WorldEntityCallbacks::monsterQuery, world, _1, _2, _3, _4));
     callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, Maybe<LuaTable>>("npcQuery", bind(WorldEntityCallbacks::npcQuery, world, _1, _2, _3, _4));
@@ -574,10 +575,10 @@ namespace LuaBindings {
             return {};
         });
 
-    callbacks.registerCallbackWithSignature<Maybe<EntityPtr>, EntityId>("entity", [world, originConnection](EntityId entityId) -> Maybe<EntityPtr> {
+    callbacks.registerCallbackWithSignature<Maybe<EntityPtr>, EntityId>("entity", [world, caller](EntityId entityId) -> Maybe<EntityPtr> {
       // TODO: wrap EntityPtr in something to pass the connection there
       // for now, disable entirely if connection has no permissions
-      if (!world->connectionCanModify(originConnection))
+      if (!world->connectionCanModify(callerConnection(caller)))
         return {};
       if (auto entity = world->entity(entityId)) {
         return entity;
@@ -618,25 +619,25 @@ namespace LuaBindings {
     callbacks.registerCallbackWithSignature<List<Vec2I>, EntityId>("objectSpaces", bind(WorldEntityCallbacks::objectSpaces, world, _1));
     callbacks.registerCallbackWithSignature<Maybe<int>, EntityId>("farmableStage", bind(WorldEntityCallbacks::farmableStage, world, _1));
     callbacks.registerCallbackWithSignature<Maybe<int>, EntityId>("containerSize", bind(WorldEntityCallbacks::containerSize, world, _1));
-    callbacks.registerCallbackWithSignature<bool, EntityId>("containerClose", bind(WorldEntityCallbacks::containerClose, world, originConnection, _1));
-    callbacks.registerCallbackWithSignature<bool, EntityId>("containerOpen", bind(WorldEntityCallbacks::containerOpen, world, originConnection, _1));
+    callbacks.registerCallbackWithSignature<bool, EntityId>("containerClose", bind(WorldEntityCallbacks::containerClose, world, caller, _1));
+    callbacks.registerCallbackWithSignature<bool, EntityId>("containerOpen", bind(WorldEntityCallbacks::containerOpen, world, caller, _1));
     callbacks.registerCallbackWithSignature<Json, EntityId>("containerItems", bind(WorldEntityCallbacks::containerItems, world, _1));
     callbacks.registerCallbackWithSignature<Json, EntityId, size_t>("containerItemAt", bind(WorldEntityCallbacks::containerItemAt, world, _1, _2));
-    callbacks.registerCallbackWithSignature<Maybe<bool>, EntityId, Json>("containerConsume", bind(WorldEntityCallbacks::containerConsume, world, originConnection, _1, _2));
-    callbacks.registerCallbackWithSignature<Maybe<bool>, EntityId, size_t, int>("containerConsumeAt", bind(WorldEntityCallbacks::containerConsumeAt, world, originConnection, _1, _2, _3));
+    callbacks.registerCallbackWithSignature<Maybe<bool>, EntityId, Json>("containerConsume", bind(WorldEntityCallbacks::containerConsume, world, caller, _1, _2));
+    callbacks.registerCallbackWithSignature<Maybe<bool>, EntityId, size_t, int>("containerConsumeAt", bind(WorldEntityCallbacks::containerConsumeAt, world, caller, _1, _2, _3));
     callbacks.registerCallbackWithSignature<Maybe<size_t>, EntityId, Json>("containerAvailable", bind(WorldEntityCallbacks::containerAvailable, world, _1, _2));
-    callbacks.registerCallbackWithSignature<Json, EntityId>("containerTakeAll", bind(WorldEntityCallbacks::containerTakeAll, world, originConnection, _1));
-    callbacks.registerCallbackWithSignature<Json, EntityId, size_t>("containerTakeAt", bind(WorldEntityCallbacks::containerTakeAt, world, originConnection, _1, _2));
-    callbacks.registerCallbackWithSignature<Json, EntityId, size_t, int>("containerTakeNumItemsAt", bind(WorldEntityCallbacks::containerTakeNumItemsAt, world, originConnection, _1, _2, _3));
+    callbacks.registerCallbackWithSignature<Json, EntityId>("containerTakeAll", bind(WorldEntityCallbacks::containerTakeAll, world, caller, _1));
+    callbacks.registerCallbackWithSignature<Json, EntityId, size_t>("containerTakeAt", bind(WorldEntityCallbacks::containerTakeAt, world, caller, _1, _2));
+    callbacks.registerCallbackWithSignature<Json, EntityId, size_t, int>("containerTakeNumItemsAt", bind(WorldEntityCallbacks::containerTakeNumItemsAt, world, caller, _1, _2, _3));
     callbacks.registerCallbackWithSignature<Maybe<size_t>, EntityId, Json>("containerItemsCanFit", bind(WorldEntityCallbacks::containerItemsCanFit, world, _1, _2));
     callbacks.registerCallbackWithSignature<Json, EntityId, Json>("containerItemsFitWhere", bind(WorldEntityCallbacks::containerItemsFitWhere, world, _1, _2));
-    callbacks.registerCallbackWithSignature<Json, EntityId, Json>("containerAddItems", bind(WorldEntityCallbacks::containerAddItems, world, originConnection, _1, _2));
-    callbacks.registerCallbackWithSignature<Json, EntityId, Json>("containerStackItems", bind(WorldEntityCallbacks::containerStackItems, world, originConnection, _1, _2));
-    callbacks.registerCallbackWithSignature<Json, EntityId, Json, size_t>("containerPutItemsAt", bind(WorldEntityCallbacks::containerPutItemsAt, world, originConnection, _1, _2, _3));
-    callbacks.registerCallbackWithSignature<Json, EntityId, Json, size_t>("containerSwapItems", bind(WorldEntityCallbacks::containerSwapItems, world, originConnection, _1, _2, _3));
-    callbacks.registerCallbackWithSignature<Json, EntityId, Json, size_t>("containerSwapItemsNoCombine", bind(WorldEntityCallbacks::containerSwapItemsNoCombine, world, originConnection, _1, _2, _3));
-    callbacks.registerCallbackWithSignature<Json, EntityId, Json, size_t>("containerItemApply", bind(WorldEntityCallbacks::containerItemApply, world, originConnection, _1, _2, _3));
-    callbacks.registerCallbackWithSignature<Maybe<LuaValue>, EntityId, String, LuaVariadic<LuaValue>>("callScriptedEntity", bind(WorldEntityCallbacks::callScriptedEntity, world, originConnection, _1, _2, _3));
+    callbacks.registerCallbackWithSignature<Json, EntityId, Json>("containerAddItems", bind(WorldEntityCallbacks::containerAddItems, world, caller, _1, _2));
+    callbacks.registerCallbackWithSignature<Json, EntityId, Json>("containerStackItems", bind(WorldEntityCallbacks::containerStackItems, world, caller, _1, _2));
+    callbacks.registerCallbackWithSignature<Json, EntityId, Json, size_t>("containerPutItemsAt", bind(WorldEntityCallbacks::containerPutItemsAt, world, caller, _1, _2, _3));
+    callbacks.registerCallbackWithSignature<Json, EntityId, Json, size_t>("containerSwapItems", bind(WorldEntityCallbacks::containerSwapItems, world, caller, _1, _2, _3));
+    callbacks.registerCallbackWithSignature<Json, EntityId, Json, size_t>("containerSwapItemsNoCombine", bind(WorldEntityCallbacks::containerSwapItemsNoCombine, world, caller, _1, _2, _3));
+    callbacks.registerCallbackWithSignature<Json, EntityId, Json, size_t>("containerItemApply", bind(WorldEntityCallbacks::containerItemApply, world, caller, _1, _2, _3));
+    callbacks.registerCallbackWithSignature<Maybe<LuaValue>, EntityId, String, LuaVariadic<LuaValue>>("callScriptedEntity", bind(WorldEntityCallbacks::callScriptedEntity, world, caller, _1, _2, _3));
     callbacks.registerCallbackWithSignature<RpcPromise<Vec2F>, String>("findUniqueEntity", bind(WorldEntityCallbacks::findUniqueEntity, world, _1));
     callbacks.registerCallbackWithSignature<RpcPromise<Json>, LuaEngine&, LuaValue, String, LuaVariadic<Json>>("sendEntityMessage", bind(WorldEntityCallbacks::sendEntityMessage, world, _1, _2, _3, _4));
     callbacks.registerCallbackWithSignature<Maybe<List<EntityId>>, EntityId, Maybe<size_t>>("loungingEntities", bind(WorldEntityCallbacks::loungingEntities, world, _1, _2));
@@ -685,7 +686,7 @@ namespace LuaBindings {
         });
   }
 
-  void addWorldEnvironmentCallbacks(LuaCallbacks& callbacks, World* world, ConnectionId originConnection) {
+  void addWorldEnvironmentCallbacks(LuaCallbacks& callbacks, World* world, WorldCaller caller) {
     callbacks.registerCallbackWithSignature<float, Vec2F>("lightLevel", bind(WorldEnvironmentCallbacks::lightLevel, world, _1));
     callbacks.registerCallbackWithSignature<float, Vec2F>("windLevel", bind(WorldEnvironmentCallbacks::windLevel, world, _1));
     callbacks.registerCallbackWithSignature<bool, Vec2F>("breathable", bind(WorldEnvironmentCallbacks::breathable, world, _1));
@@ -695,7 +696,7 @@ namespace LuaBindings {
     callbacks.registerCallbackWithSignature<float, Vec2F, String>("materialHueShift", bind(WorldEnvironmentCallbacks::materialHueShift, world, _1, _2));
     callbacks.registerCallbackWithSignature<float, Vec2F, String>("modHueShift", bind(WorldEnvironmentCallbacks::modHueShift, world, _1, _2));
     callbacks.registerCallbackWithSignature<MaterialColorVariant, Vec2F, String>("materialColor", bind(WorldEnvironmentCallbacks::materialColor, world, _1, _2));
-    callbacks.registerCallbackWithSignature<void, Vec2F, String, MaterialColorVariant>("setMaterialColor", bind(WorldEnvironmentCallbacks::setMaterialColor, world, originConnection, _1, _2, _3));
+    callbacks.registerCallbackWithSignature<void, Vec2F, String, MaterialColorVariant>("setMaterialColor", bind(WorldEnvironmentCallbacks::setMaterialColor, world, caller, _1, _2, _3));
 
     callbacks.registerCallback("oceanLevel", [world](Vec2I position) -> int {
         if (auto serverWorld = as<WorldServer>(world)) {
@@ -719,12 +720,12 @@ namespace LuaBindings {
         return world->activeWeather(position);
       });
 
-    callbacks.registerCallbackWithSignature<bool, List<Vec2I>, String, Vec2F, String, float, Maybe<unsigned>, Maybe<EntityId>>("damageTiles", bind(WorldEnvironmentCallbacks::damageTiles, world, originConnection, _1, _2, _3, _4, _5, _6, _7));
-    callbacks.registerCallbackWithSignature<bool, Vec2F, float, String, Vec2F, String, float, Maybe<unsigned>, Maybe<EntityId>>("damageTileArea", bind(WorldEnvironmentCallbacks::damageTileArea, world, originConnection, _1, _2, _3, _4, _5, _6, _7, _8));
-    callbacks.registerCallbackWithSignature<bool, Vec2I, String, String, Maybe<int>, bool>("placeMaterial", bind(WorldEnvironmentCallbacks::placeMaterial, world, originConnection, _1, _2, _3, _4, _5));
-    callbacks.registerCallbackWithSignature<bool, List<Vec2I>, String, String, Maybe<int>, bool>("replaceMaterials", bind(WorldEnvironmentCallbacks::replaceMaterials, world, originConnection, _1, _2, _3, _4, _5));
-    callbacks.registerCallbackWithSignature<bool, Vec2F, float, String, String, Maybe<int>, bool>("replaceMaterialArea", bind(WorldEnvironmentCallbacks::replaceMaterialArea, world, originConnection, _1, _2, _3, _4, _5, _6));
-    callbacks.registerCallbackWithSignature<bool, Vec2I, String, String, Maybe<int>, bool>("placeMod", bind(WorldEnvironmentCallbacks::placeMod, world, originConnection, _1, _2, _3, _4, _5));
+    callbacks.registerCallbackWithSignature<bool, List<Vec2I>, String, Vec2F, String, float, Maybe<unsigned>, Maybe<EntityId>>("damageTiles", bind(WorldEnvironmentCallbacks::damageTiles, world, caller, _1, _2, _3, _4, _5, _6, _7));
+    callbacks.registerCallbackWithSignature<bool, Vec2F, float, String, Vec2F, String, float, Maybe<unsigned>, Maybe<EntityId>>("damageTileArea", bind(WorldEnvironmentCallbacks::damageTileArea, world, caller, _1, _2, _3, _4, _5, _6, _7, _8));
+    callbacks.registerCallbackWithSignature<bool, Vec2I, String, String, Maybe<int>, bool>("placeMaterial", bind(WorldEnvironmentCallbacks::placeMaterial, world, caller, _1, _2, _3, _4, _5));
+    callbacks.registerCallbackWithSignature<bool, List<Vec2I>, String, String, Maybe<int>, bool>("replaceMaterials", bind(WorldEnvironmentCallbacks::replaceMaterials, world, caller, _1, _2, _3, _4, _5));
+    callbacks.registerCallbackWithSignature<bool, Vec2F, float, String, String, Maybe<int>, bool>("replaceMaterialArea", bind(WorldEnvironmentCallbacks::replaceMaterialArea, world, caller, _1, _2, _3, _4, _5, _6));
+    callbacks.registerCallbackWithSignature<bool, Vec2I, String, String, Maybe<int>, bool>("placeMod", bind(WorldEnvironmentCallbacks::placeMod, world, caller, _1, _2, _3, _4, _5));
 
     callbacks.registerCallback("radialTileQuery", [world](Vec2F center, float radius, String layerName) -> List<Vec2I> {
       auto layer = TileLayerNames.getLeft(layerName);
@@ -742,9 +743,9 @@ namespace LuaBindings {
     callbacks.registerCallbackWithSignature<float>("dayLength", bind(WorldEnvironmentCallbacks::dayLength, world));
     callbacks.registerCallbackWithSignature<Maybe<LiquidLevel>, Variant<RectF, Vec2I>>("liquidAt", bind(WorldEnvironmentCallbacks::liquidAt, world, _1));
     callbacks.registerCallbackWithSignature<float, Vec2F>("gravity", bind(WorldEnvironmentCallbacks::gravity, world, _1));
-    callbacks.registerCallbackWithSignature<bool, Vec2F, LiquidId, float>("spawnLiquid", bind(WorldEnvironmentCallbacks::spawnLiquid, world, originConnection, _1, _2, _3));
-    callbacks.registerCallbackWithSignature<Maybe<LiquidLevel>, Vec2F>("destroyLiquid", bind(WorldEnvironmentCallbacks::destroyLiquid, world, originConnection, _1));
-    callbacks.registerCallbackWithSignature<bool, Vec2F>("isTileProtected", bind(WorldEnvironmentCallbacks::isTileProtected, world, originConnection, _1));
+    callbacks.registerCallbackWithSignature<bool, Vec2F, LiquidId, float>("spawnLiquid", bind(WorldEnvironmentCallbacks::spawnLiquid, world, caller, _1, _2, _3));
+    callbacks.registerCallbackWithSignature<Maybe<LiquidLevel>, Vec2F>("destroyLiquid", bind(WorldEnvironmentCallbacks::destroyLiquid, world, caller, _1));
+    callbacks.registerCallbackWithSignature<bool, Vec2F>("isTileProtected", bind(WorldEnvironmentCallbacks::isTileProtected, world, caller, _1));
   }
   
   void addWorldGeometryCallbacks(LuaCallbacks& callbacks, World* world) {
@@ -993,12 +994,12 @@ namespace LuaBindings {
     return world->tileIsOccupied(tile, tileLayer, includeEphemeral);
   }
 
-  bool WorldCallbacks::placeObject(World* world, ConnectionId originConnection,
+  bool WorldCallbacks::placeObject(World* world, WorldCaller caller,
       String const& objectType,
       Vec2I const& worldPosition,
       Maybe<int> const& objectDirection,
       Json const& objectParameters) {
-    if (!world->connectionCanModify(originConnection))
+    if (!world->connectionCanModify(callerConnection(caller)))
       return false;
     auto objectDatabase = Root::singleton().objectDatabase();
 
@@ -1011,7 +1012,7 @@ namespace LuaBindings {
 
       auto placedObject = objectDatabase->createForPlacement(world, objectType, worldPosition, direction, parameters);
       if (placedObject) {
-        world->addEntity(placedObject);
+        world->addEntity(placedObject,callerConnection(caller));
         return true;
       }
     } catch (StarException const& exception) {
@@ -1023,7 +1024,7 @@ namespace LuaBindings {
     return false;
   }
 
-  Maybe<EntityId> WorldCallbacks::spawnItem(World* world, ConnectionId originConnection,
+  Maybe<EntityId> WorldCallbacks::spawnItem(World* world, WorldCaller caller,
       Json const& itemType,
       Vec2F const& worldPosition,
       Maybe<size_t> const& inputCount,
@@ -1049,7 +1050,7 @@ namespace LuaBindings {
           itemDrop->setVelocity(*initialVelocity);
         if (intangibleTime)
           itemDrop->setIntangibleTime(*intangibleTime);
-        world->addEntity(itemDrop,originConnection);
+        world->addEntity(itemDrop,callerConnection(caller));
         return itemDrop->inWorld() ? itemDrop->entityId() : Maybe<EntityId>();
       }
 
@@ -1062,13 +1063,13 @@ namespace LuaBindings {
   }
 
   List<EntityId> WorldCallbacks::spawnTreasure(
-      World* world, ConnectionId originConnection, Vec2F const& position, String const& pool, float level, Maybe<uint64_t> seed) {
+      World* world, WorldCaller caller, Vec2F const& position, String const& pool, float level, Maybe<uint64_t> seed) {
     List<EntityId> entities;
     auto treasureDatabase = Root::singleton().treasureDatabase();
     try {
       for (auto const& treasureItem : treasureDatabase->createTreasure(pool, level, seed.value(Random::randu64()))) {
         ItemDropPtr entity = ItemDrop::createRandomizedDrop(treasureItem, position);
-        world->addEntity(entity,originConnection);
+        world->addEntity(entity,callerConnection(caller));
         if (entity->inWorld())
           entities.append(entity->entityId());
       }
@@ -1080,7 +1081,7 @@ namespace LuaBindings {
   }
 
   Maybe<EntityId> WorldCallbacks::spawnMonster(
-      World* world, ConnectionId originConnection, String const& arg1, Vec2F const& arg2, Maybe<JsonObject> const& arg3) {
+      World* world, WorldCaller caller, String const& arg1, Vec2F const& arg2, Maybe<JsonObject> const& arg3) {
     Vec2F const spawnPosition = arg2;
     auto monsterDatabase = Root::singleton().monsterDatabase();
 
@@ -1096,7 +1097,7 @@ namespace LuaBindings {
       auto monster = monsterDatabase->createMonster(monsterDatabase->randomMonster(arg1, parameters), level);
 
       monster->setPosition(spawnPosition);
-      world->addEntity(monster,originConnection);
+      world->addEntity(monster,callerConnection(caller));
       return monster->inWorld() ? monster->entityId() : Maybe<EntityId>();
     } catch (StarException const& exception) {
       Logger::warn(
@@ -1105,7 +1106,7 @@ namespace LuaBindings {
     }
   }
 
-  Maybe<EntityId> WorldCallbacks::spawnNpc(World* world, ConnectionId originConnection,
+  Maybe<EntityId> WorldCallbacks::spawnNpc(World* world, WorldCaller caller,
       Vec2F const& arg1,
       String const& arg2,
       String const& arg3,
@@ -1129,7 +1130,7 @@ namespace LuaBindings {
     try {
       auto npc = npcDatabase->createNpc(npcDatabase->generateNpcVariant(arg2, typeName, level, seed, overrides));
       npc->setPosition(spawnPosition);
-      world->addEntity(npc,originConnection);
+      world->addEntity(npc,callerConnection(caller));
       return npc->inWorld() ? npc->entityId() : Maybe<EntityId>();
     } catch (StarException const& exception) {
       Logger::warn("Could not spawn NPC of species '{}' and type '{}', exception caught: {}",
@@ -1141,12 +1142,12 @@ namespace LuaBindings {
   }
 
   Maybe<EntityId> WorldCallbacks::spawnStagehand(
-      World* world, ConnectionId originConnection, Vec2F const& spawnPosition, String const& typeName, Json const& overrides) {
+      World* world, WorldCaller caller, Vec2F const& spawnPosition, String const& typeName, Json const& overrides) {
     auto stagehandDatabase = Root::singleton().stagehandDatabase();
     try {
       auto stagehand = stagehandDatabase->createStagehand(typeName, overrides);
       stagehand->setPosition(spawnPosition);
-      world->addEntity(stagehand,originConnection);
+      world->addEntity(stagehand,callerConnection(caller));
       return stagehand->inWorld() ? stagehand->entityId() : Maybe<EntityId>();
     } catch (StarException const& exception) {
       Logger::warn(
@@ -1155,7 +1156,7 @@ namespace LuaBindings {
     }
   }
 
-  Maybe<EntityId> WorldCallbacks::spawnProjectile(World* world, ConnectionId originConnection,
+  Maybe<EntityId> WorldCallbacks::spawnProjectile(World* world, WorldCaller caller,
       String const& projectileType,
       Vec2F const& spawnPosition,
       Maybe<EntityId> const& sourceEntityId,
@@ -1169,7 +1170,7 @@ namespace LuaBindings {
       projectile->setInitialPosition(spawnPosition);
       projectile->setInitialDirection(projectileDirection.value());
       projectile->setSourceEntity(sourceEntityId.value(NullEntityId), trackSourceEntity);
-      world->addEntity(projectile,originConnection);
+      world->addEntity(projectile,callerConnection(caller));
       return projectile->inWorld() ? projectile->entityId() : Maybe<EntityId>();
     } catch (StarException const& exception) {
       Logger::warn(
@@ -1179,11 +1180,11 @@ namespace LuaBindings {
   }
 
   Maybe<EntityId> WorldCallbacks::spawnVehicle(
-      World* world, ConnectionId originConnection, String const& vehicleName, Vec2F const& pos, Json const& extraConfig) {
+      World* world, WorldCaller caller, String const& vehicleName, Vec2F const& pos, Json const& extraConfig) {
     auto vehicleDatabase = Root::singleton().vehicleDatabase();
     auto vehicle = vehicleDatabase->create(vehicleName, extraConfig);
     vehicle->setPosition(pos);
-    world->addEntity(vehicle,originConnection);
+    world->addEntity(vehicle,callerConnection(caller));
     if (vehicle->inWorld())
       return vehicle->entityId();
     return {};
@@ -1209,8 +1210,8 @@ namespace LuaBindings {
     return world->getProperty(arg1, arg2);
   }
 
-  void WorldCallbacks::setProperty(World* world, ConnectionId originConnection, String const& arg1, Json const& arg2) {
-    if (world->connectionCanModify(originConnection))
+  void WorldCallbacks::setProperty(World* world, WorldCaller caller, String const& arg1, Json const& arg2) {
+    if (world->connectionCanModify(callerConnection(caller)))
       world->setProperty(arg1, arg2);
   }
 
@@ -1225,15 +1226,15 @@ namespace LuaBindings {
     return world->gravity(arg1);
   }
 
-  bool WorldEnvironmentCallbacks::spawnLiquid(World* world, ConnectionId originConnection, Vec2F const& position, LiquidId liquid, float quantity) {
-    if (world->connectionCanModify(originConnection))
+  bool WorldEnvironmentCallbacks::spawnLiquid(World* world, WorldCaller caller, Vec2F const& position, LiquidId liquid, float quantity) {
+    if (world->connectionCanModify(callerConnection(caller)))
       return world->modifyTile(Vec2I::floor(position), PlaceLiquid{liquid, quantity}, true);
     else
       return false;
   }
 
-  Maybe<LiquidLevel> WorldEnvironmentCallbacks::destroyLiquid(World* world, ConnectionId originConnection, Vec2F const& position) {
-    if (!world->connectionCanModify(originConnection))
+  Maybe<LiquidLevel> WorldEnvironmentCallbacks::destroyLiquid(World* world, WorldCaller caller, Vec2F const& position) {
+    if (!world->connectionCanModify(callerConnection(caller)))
       return {};
     auto liquidLevel = world->liquidLevel(Vec2I::floor(position));
     if (liquidLevel.liquid != EmptyLiquidId) {
@@ -1243,8 +1244,8 @@ namespace LuaBindings {
     return {};
   }
 
-  bool WorldEnvironmentCallbacks::isTileProtected(World* world, ConnectionId originConnection, Vec2F const& position) {
-    if (!world->connectionCanModify(originConnection))
+  bool WorldEnvironmentCallbacks::isTileProtected(World* world, WorldCaller caller, Vec2F const& position) {
+    if (!world->connectionCanModify(callerConnection(caller)))
       return true;
     return world->isTileProtected(Vec2I::floor(position));
   }
@@ -1279,8 +1280,8 @@ namespace LuaBindings {
     return world->worldId();
   }
 
-  bool ServerWorldCallbacks::breakObject(WorldServer* world, ConnectionId originConnection, EntityId arg1, bool arg2) {
-    if (!world->connectionCanModify(originConnection))
+  bool ServerWorldCallbacks::breakObject(WorldServer* world, WorldCaller caller, EntityId arg1, bool arg2) {
+    if (!world->connectionCanModify(callerConnection(caller)))
       return false;
     if (auto entity = world->get<Object>(arg1)) {
       bool smash = arg2;
@@ -1302,8 +1303,8 @@ namespace LuaBindings {
     return world->regionActive(RectI::integral(arg1));
   }
 
-  void ServerWorldCallbacks::setTileProtection(WorldServer* world, ConnectionId originConnection, DungeonId arg1, bool arg2) {
-    if (!world->connectionCanModify(originConnection))
+  void ServerWorldCallbacks::setTileProtection(WorldServer* world, WorldCaller caller, DungeonId arg1, bool arg2) {
+    if (!world->connectionCanModify(callerConnection(caller)))
       return;
     DungeonId dungeonId = arg1;
     bool isProtected = arg2;
@@ -1314,8 +1315,8 @@ namespace LuaBindings {
     return world->isPlayerModified(region);
   }
 
-  Maybe<LiquidLevel> ServerWorldCallbacks::forceDestroyLiquid(WorldServer* world, ConnectionId originConnection, Vec2F const& position) {
-    if (!world->connectionCanModify(originConnection))
+  Maybe<LiquidLevel> ServerWorldCallbacks::forceDestroyLiquid(WorldServer* world, WorldCaller caller, Vec2F const& position) {
+    if (!world->connectionCanModify(callerConnection(caller)))
       return {};
     auto liquidLevel = world->liquidLevel(Vec2I::floor(position));
     if (liquidLevel.liquid != EmptyLiquidId) {
@@ -1329,8 +1330,8 @@ namespace LuaBindings {
     return world->loadUniqueEntity(uniqueId);
   }
 
-  void ServerWorldCallbacks::setUniqueId(WorldServer* world, ConnectionId originConnection, EntityId entityId, Maybe<String> const& uniqueId) {
-    if (!world->connectionCanModify(originConnection))
+  void ServerWorldCallbacks::setUniqueId(WorldServer* world, WorldCaller caller, EntityId entityId, Maybe<String> const& uniqueId) {
+    if (!world->connectionCanModify(callerConnection(caller)))
       return;
     auto entity = world->entity(entityId);
     if (auto npc = as<Npc>(entity.get()))
@@ -1363,8 +1364,8 @@ namespace LuaBindings {
     return Json();
   }
 
-  void ServerWorldCallbacks::setPlayerStart(WorldServer* world, ConnectionId originConnection, Vec2F const& playerStart, Maybe<bool> respawnInWorld) {
-    if (world->connectionCanModify(originConnection))
+  void ServerWorldCallbacks::setPlayerStart(WorldServer* world, WorldCaller caller, Vec2F const& playerStart, Maybe<bool> respawnInWorld) {
+    if (world->connectionCanModify(callerConnection(caller)))
       world->setPlayerStart(playerStart, respawnInWorld.isValid() && respawnInWorld.value());
   }
 
@@ -1728,8 +1729,8 @@ namespace LuaBindings {
     return {};
   }
 
-  bool WorldEntityCallbacks::containerClose(World* world, ConnectionId originConnection, EntityId entityId) {
-    if (!world->connectionCanModify(originConnection))
+  bool WorldEntityCallbacks::containerClose(World* world, WorldCaller caller, EntityId entityId) {
+    if (!world->connectionCanModify(callerConnection(caller)))
       return false;
     
     if (auto container = world->get<ContainerObject>(entityId)) {
@@ -1740,8 +1741,8 @@ namespace LuaBindings {
     return false;
   }
 
-  bool WorldEntityCallbacks::containerOpen(World* world, ConnectionId originConnection, EntityId entityId) {
-    if (!world->connectionCanModify(originConnection))
+  bool WorldEntityCallbacks::containerOpen(World* world, WorldCaller caller, EntityId entityId) {
+    if (!world->connectionCanModify(callerConnection(caller)))
       return false;
     
     if (auto container = world->get<ContainerObject>(entityId)) {
@@ -1776,8 +1777,8 @@ namespace LuaBindings {
     return Json();
   }
 
-  Maybe<bool> WorldEntityCallbacks::containerConsume(World* world, ConnectionId originConnection, EntityId entityId, Json const& items) {
-    if (!world->connectionCanModify(originConnection))
+  Maybe<bool> WorldEntityCallbacks::containerConsume(World* world, WorldCaller caller, EntityId entityId, Json const& items) {
+    if (!world->connectionCanModify(callerConnection(caller)))
       return {};
     
     if (auto container = world->get<ContainerObject>(entityId)) {
@@ -1788,8 +1789,8 @@ namespace LuaBindings {
     return {};
   }
 
-  Maybe<bool> WorldEntityCallbacks::containerConsumeAt(World* world, ConnectionId originConnection, EntityId entityId, size_t offset, int count) {
-    if (!world->connectionCanModify(originConnection))
+  Maybe<bool> WorldEntityCallbacks::containerConsumeAt(World* world, WorldCaller caller, EntityId entityId, size_t offset, int count) {
+    if (!world->connectionCanModify(callerConnection(caller)))
       return {};
     
     if (auto container = world->get<ContainerObject>(entityId)) {
@@ -1811,7 +1812,10 @@ namespace LuaBindings {
     return {};
   }
 
-  Json WorldEntityCallbacks::containerTakeAll(World* world, ConnectionId originConnection, EntityId entityId) {
+  Json WorldEntityCallbacks::containerTakeAll(World* world, WorldCaller caller, EntityId entityId) {
+    if (!world->connectionCanModify(callerConnection(caller)))
+      return Json();
+    
     auto itemDb = Root::singleton().itemDatabase();
     if (auto container = world->get<ContainerObject>(entityId)) {
       if (auto itemList = container->clearContainer().result()) {
@@ -1825,8 +1829,8 @@ namespace LuaBindings {
     return Json();
   }
 
-  Json WorldEntityCallbacks::containerTakeAt(World* world, ConnectionId originConnection, EntityId entityId, size_t offset) {
-    if (!world->connectionCanModify(originConnection))
+  Json WorldEntityCallbacks::containerTakeAt(World* world, WorldCaller caller, EntityId entityId, size_t offset) {
+    if (!world->connectionCanModify(callerConnection(caller)))
       return Json();
     
     if (auto container = world->get<ContainerObject>(entityId)) {
@@ -1840,8 +1844,8 @@ namespace LuaBindings {
     return Json();
   }
 
-  Json WorldEntityCallbacks::containerTakeNumItemsAt(World* world, ConnectionId originConnection, EntityId entityId, size_t offset, int const& count) {
-    if (!world->connectionCanModify(originConnection))
+  Json WorldEntityCallbacks::containerTakeNumItemsAt(World* world, WorldCaller caller, EntityId entityId, size_t offset, int const& count) {
+    if (!world->connectionCanModify(callerConnection(caller)))
       return Json();
     
     if (auto container = world->get<ContainerObject>(entityId)) {
@@ -1881,8 +1885,8 @@ namespace LuaBindings {
     return Json();
   }
 
-  Json WorldEntityCallbacks::containerAddItems(World* world, ConnectionId originConnection, EntityId entityId, Json const& items) {
-    if (!world->connectionCanModify(originConnection))
+  Json WorldEntityCallbacks::containerAddItems(World* world, WorldCaller caller, EntityId entityId, Json const& items) {
+    if (!world->connectionCanModify(callerConnection(caller)))
       return items;
     
     if (auto container = world->get<ContainerObject>(entityId)) {
@@ -1895,8 +1899,8 @@ namespace LuaBindings {
     return items;
   }
 
-  Json WorldEntityCallbacks::containerStackItems(World* world, ConnectionId originConnection, EntityId entityId, Json const& items) {
-    if (!world->connectionCanModify(originConnection))
+  Json WorldEntityCallbacks::containerStackItems(World* world, WorldCaller caller, EntityId entityId, Json const& items) {
+    if (!world->connectionCanModify(callerConnection(caller)))
       return items;
     
     if (auto container = world->get<ContainerObject>(entityId)) {
@@ -1909,8 +1913,8 @@ namespace LuaBindings {
     return items;
   }
 
-  Json WorldEntityCallbacks::containerPutItemsAt(World* world, ConnectionId originConnection, EntityId entityId, Json const& items, size_t offset) {
-    if (!world->connectionCanModify(originConnection))
+  Json WorldEntityCallbacks::containerPutItemsAt(World* world, WorldCaller caller, EntityId entityId, Json const& items, size_t offset) {
+    if (!world->connectionCanModify(callerConnection(caller)))
       return items;
     
     if (auto container = world->get<ContainerObject>(entityId)) {
@@ -1925,8 +1929,8 @@ namespace LuaBindings {
     return items;
   }
 
-  Json WorldEntityCallbacks::containerSwapItems(World* world, ConnectionId originConnection, EntityId entityId, Json const& items, size_t offset) {
-    if (!world->connectionCanModify(originConnection))
+  Json WorldEntityCallbacks::containerSwapItems(World* world, WorldCaller caller, EntityId entityId, Json const& items, size_t offset) {
+    if (!world->connectionCanModify(callerConnection(caller)))
       return items;
     
     if (auto container = world->get<ContainerObject>(entityId)) {
@@ -1941,8 +1945,8 @@ namespace LuaBindings {
     return items;
   }
 
-  Json WorldEntityCallbacks::containerSwapItemsNoCombine(World* world, ConnectionId originConnection, EntityId entityId, Json const& items, size_t offset) {
-    if (!world->connectionCanModify(originConnection))
+  Json WorldEntityCallbacks::containerSwapItemsNoCombine(World* world, WorldCaller caller, EntityId entityId, Json const& items, size_t offset) {
+    if (!world->connectionCanModify(callerConnection(caller)))
       return items;
     
     if (auto container = world->get<ContainerObject>(entityId)) {
@@ -1957,8 +1961,8 @@ namespace LuaBindings {
     return items;
   }
 
-  Json WorldEntityCallbacks::containerItemApply(World* world, ConnectionId originConnection, EntityId entityId, Json const& items, size_t offset) {
-    if (!world->connectionCanModify(originConnection))
+  Json WorldEntityCallbacks::containerItemApply(World* world, WorldCaller caller, EntityId entityId, Json const& items, size_t offset) {
+    if (!world->connectionCanModify(callerConnection(caller)))
       return items;
     
     if (auto container = world->get<ContainerObject>(entityId)) {
@@ -1973,7 +1977,7 @@ namespace LuaBindings {
     return items;
   }
 
-  Maybe<LuaValue> WorldEntityCallbacks::callScriptedEntity(World* world, ConnectionId originConnection, EntityId entityId, String const& function, LuaVariadic<LuaValue> const& args) {
+  Maybe<LuaValue> WorldEntityCallbacks::callScriptedEntity(World* world, WorldCaller caller, EntityId entityId, String const& function, LuaVariadic<LuaValue> const& args) {
     auto entity = as<ScriptedEntity>(world->entity(entityId));
     if (!entity)
       throw StarException::format("Entity {} does not exist", entityId);
@@ -1981,7 +1985,7 @@ namespace LuaBindings {
       return {};
     
     // entities with no permission to modify can't call on entities that do have permission to modify.
-    if (!world->connectionCanModify(originConnection))
+    if (!world->connectionCanModify(callerConnection(caller)))
       if (world->connectionCanModify(entity->originConnection()))
         return {};
     return entity->callScript(function, args);
@@ -2149,8 +2153,8 @@ namespace LuaBindings {
     return world->colorVariant(Vec2I::floor(position), layer);
   }
 
-  void WorldEnvironmentCallbacks::setMaterialColor(World* world, ConnectionId originConnection, Vec2F const& position, String const& layerName, MaterialColorVariant color) {
-    if (!world->connectionCanModify(originConnection))
+  void WorldEnvironmentCallbacks::setMaterialColor(World* world, WorldCaller caller, Vec2F const& position, String const& layerName, MaterialColorVariant color) {
+    if (!world->connectionCanModify(callerConnection(caller)))
       return;
     
     TileLayer layer;
@@ -2165,7 +2169,7 @@ namespace LuaBindings {
     world->modifyTile(Vec2I::floor(position), PlaceMaterialColor{layer, color}, true);
   }
 
-  bool WorldEnvironmentCallbacks::damageTiles(World* world, ConnectionId originConnection,
+  bool WorldEnvironmentCallbacks::damageTiles(World* world, WorldCaller caller,
       List<Vec2I> const& arg1,
       String const& arg2,
       Vec2F const& arg3,
@@ -2173,7 +2177,7 @@ namespace LuaBindings {
       float arg5,
       Maybe<unsigned> const& arg6,
       Maybe<EntityId> sourceEntity) {
-    if (!world->connectionCanModify(originConnection))
+    if (!world->connectionCanModify(callerConnection(caller)))
       return false;
     
     List<Vec2I> tilePositions = arg1;
@@ -2197,7 +2201,7 @@ namespace LuaBindings {
     return res != TileDamageResult::None;
   }
 
-  bool WorldEnvironmentCallbacks::damageTileArea(World* world, ConnectionId originConnection,
+  bool WorldEnvironmentCallbacks::damageTileArea(World* world, WorldCaller caller,
       Vec2F center,
       float radius,
       String layer,
@@ -2207,11 +2211,11 @@ namespace LuaBindings {
       Maybe<unsigned> const& harvestLevel,
       Maybe<EntityId> sourceEntity) {
     auto tiles = tileAreaBrush(radius, center, false);
-    return damageTiles(world, originConnection, tiles, layer, sourcePosition, damageType, damage, harvestLevel, sourceEntity);
+    return damageTiles(world, caller, tiles, layer, sourcePosition, damageType, damage, harvestLevel, sourceEntity);
   }
 
-  bool WorldEnvironmentCallbacks::placeMaterial(World* world, ConnectionId originConnection, Vec2I const& arg1, String const& arg2, String const& arg3, Maybe<int> const& arg4, bool arg5) {
-    if (!world->connectionCanModify(originConnection))
+  bool WorldEnvironmentCallbacks::placeMaterial(World* world, WorldCaller caller, Vec2I const& arg1, String const& arg2, String const& arg3, Maybe<int> const& arg4, bool arg5) {
+    if (!world->connectionCanModify(callerConnection(caller)))
       return false;
     
     auto tilePosition = arg1;
@@ -2254,13 +2258,13 @@ namespace LuaBindings {
     return world->modifyTile(tilePosition, placeMaterial, allowOverlap);
   }
 
-  bool WorldEnvironmentCallbacks::replaceMaterials(World* world, ConnectionId originConnection,
+  bool WorldEnvironmentCallbacks::replaceMaterials(World* world, WorldCaller caller,
       List<Vec2I> const& tilePositions,
       String const& layer,
       String const& materialName,
       Maybe<int> const& hueShift,
       bool enableDrops) {
-    if (!world->connectionCanModify(originConnection))
+    if (!world->connectionCanModify(callerConnection(caller)))
       return false;
     
     PlaceMaterial placeMaterial;
@@ -2316,7 +2320,7 @@ namespace LuaBindings {
     return world->replaceTiles(modifications, damage).empty();;
   }
 
-  bool WorldEnvironmentCallbacks::replaceMaterialArea(World* world, ConnectionId originConnection,
+  bool WorldEnvironmentCallbacks::replaceMaterialArea(World* world, WorldCaller caller,
       Vec2F center,
       float radius,
       String const& layer,
@@ -2324,11 +2328,11 @@ namespace LuaBindings {
       Maybe<int> const& hueShift,
       bool enableDrops) {
     auto tiles = tileAreaBrush(radius, center, false);
-    return replaceMaterials(world, originConnection, tiles, layer, materialName, hueShift, enableDrops);
+    return replaceMaterials(world, caller, tiles, layer, materialName, hueShift, enableDrops);
   }
 
-  bool WorldEnvironmentCallbacks::placeMod(World* world, ConnectionId originConnection, Vec2I const& arg1, String const& arg2, String const& arg3, Maybe<int> const& arg4, bool arg5) {
-    if (!world->connectionCanModify(originConnection))
+  bool WorldEnvironmentCallbacks::placeMod(World* world, WorldCaller caller, Vec2I const& arg1, String const& arg2, String const& arg3, Maybe<int> const& arg4, bool arg5) {
+    if (!world->connectionCanModify(callerConnection(caller)))
       return false;
     
     auto tilePosition = arg1;

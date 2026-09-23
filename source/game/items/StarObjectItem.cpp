@@ -78,7 +78,7 @@ bool ObjectItem::placeInWorld(FireMode, bool shifting) {
   try {
     if (auto object = objectDatabase->createForPlacement(world(), objectName(), pos, owner()->walkingDirection(), objectParameters())) {
       if (consume(1)) {
-        world()->addEntity(object);
+        world()->addEntity(object,owner()->originConnection());
         return true;
       }
     }

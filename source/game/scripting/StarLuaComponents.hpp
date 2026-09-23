@@ -195,7 +195,7 @@ private:
 template <typename Base>
 class LuaWorldComponent : public Base {
 public:
-  void init(World* world, ConnectionId originConnection = ServerConnectionId);
+  void init(World* world, WorldCaller caller = {});
   void uninit();
 
 protected:
@@ -411,13 +411,13 @@ Maybe<Ret> LuaUpdatableComponent<Base>::update(V&&... args) {
 }
 
 template <typename Base>
-void LuaWorldComponent<Base>::init(World* world, ConnectionId originConnection) {
+void LuaWorldComponent<Base>::init(World* world, WorldCaller caller) {
   if (Base::initialized())
     uninit();
 
   Base::setLuaRoot(world->luaRoot());
-  Base::addCallbacks("world", LuaBindings::makeWorldCallbacks(world, originConnection));
-  Base::addThreadCallbacks("world", LuaBindings::makeWorldThreadCallbacks(world, originConnection));
+  Base::addCallbacks("world", LuaBindings::makeWorldCallbacks(world, caller));
+  Base::addThreadCallbacks("world", LuaBindings::makeWorldThreadCallbacks(world, caller));
   for (auto& p : world->luaThreadCallbacks()) {
     Base::addThreadCallbacks(p.first,p.second);
     m_worldThreadCallbacks.add(p.first);
@@ -442,7 +442,7 @@ void LuaEntityComponent<Base>::init(Entity* entity) {
     uninit();
 
   Base::addCallbacks("entity", LuaBindings::makeEntityCallbacks(entity));
-  LuaWorldComponent<Base>::init(entity->world(), entity->originConnection());
+  LuaWorldComponent<Base>::init(entity->world(), entity);
 }
 
 template <typename Base>

@@ -1037,7 +1037,7 @@ void Plant::breakAtPosition(Vec2I const& position, Vec2F const& sourcePosition) 
         m_foliageDropConfig,
         m_saplingDropConfig,
         first,
-        random));
+        random),originConnection());
     first = false;
   }
 

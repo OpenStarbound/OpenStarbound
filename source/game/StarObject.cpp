@@ -497,23 +497,23 @@ void Object::destroy(RenderCallback* renderCallback) {
         auto smashDropPool = configValue("smashDropPool", "").toString();
         if (!smashDropPool.empty()) {
           for (auto const& treasureItem : Root::singleton().treasureDatabase()->createTreasure(smashDropPool, world()->threatLevel()))
-            world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position()));
+            world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position()),originConnection());
         } else if (!m_config->smashDropOptions.empty()) {
           List<ItemDescriptor> drops;
           auto dropOption = Random::randFrom(m_config->smashDropOptions);
           for (auto o : dropOption)
-            world()->addEntity(ItemDrop::createRandomizedDrop(o, position()));
+            world()->addEntity(ItemDrop::createRandomizedDrop(o, position()),originConnection());
         }
       } else {
         auto breakDropPool = configValue("breakDropPool", "").toString();
         if (!breakDropPool.empty()) {
           for (auto const& treasureItem : Root::singleton().treasureDatabase()->createTreasure(breakDropPool, world()->threatLevel()))
-            world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position()));
+            world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position()),originConnection());
         } else if (!m_config->breakDropOptions.empty()) {
           List<ItemDescriptor> drops;
           auto dropOption = Random::randFrom(m_config->breakDropOptions);
           for (auto o : dropOption)
-            world()->addEntity(ItemDrop::createRandomizedDrop(o, position()));
+            world()->addEntity(ItemDrop::createRandomizedDrop(o, position()),originConnection());
         } else if (m_config->hasObjectItem) {
           ItemDescriptor objectItem(m_config->name, 1);
           if (configValue("retainObjectParametersInItem", m_config->retainObjectParametersInItem).optBool().value()) {
@@ -522,7 +522,7 @@ void Object::destroy(RenderCallback* renderCallback) {
             parameters["scriptStorage"] = m_scriptComponent.getScriptStorage();
             objectItem = objectItem.applyParameters(parameters);
           }
-          world()->addEntity(ItemDrop::createRandomizedDrop(objectItem, position()));
+          world()->addEntity(ItemDrop::createRandomizedDrop(objectItem, position()),originConnection());
         }
       }
     } catch (StarException const& e) {
