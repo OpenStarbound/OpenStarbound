@@ -454,58 +454,59 @@ List<String> ItemDatabase::allItems() const {
 }
 
 ItemPtr ItemDatabase::createItem(ItemType type, ItemConfig const& config) {
-  if (type == ItemType::Generic) {
-    return make_shared<GenericItem>(config.config, config.directory, config.parameters);
-  } else if (type == ItemType::LiquidItem) {
-    return make_shared<LiquidItem>(config.config, config.directory, config.parameters);
-  } else if (type == ItemType::MaterialItem) {
-    return make_shared<MaterialItem>(config.config, config.directory, config.parameters);
-  } else if (type == ItemType::ObjectItem) {
-    return make_shared<ObjectItem>(config.config, config.directory, config.parameters);
-  } else if (type == ItemType::CurrencyItem) {
-    return make_shared<CurrencyItem>(config.config, config.directory);
-  } else if (type == ItemType::MiningTool) {
-    return make_shared<MiningTool>(config.config, config.directory, config.parameters);
-  } else if (type == ItemType::Flashlight) {
-    return make_shared<Flashlight>(config.config, config.directory, config.parameters);
-  } else if (type == ItemType::WireTool) {
-    return make_shared<WireTool>(config.config, config.directory, config.parameters);
-  } else if (type == ItemType::BeamMiningTool) {
-    return make_shared<BeamMiningTool>(config.config, config.directory, config.parameters);
-  } else if (type == ItemType::PaintingBeamTool) {
-    return make_shared<PaintingBeamTool>(config.config, config.directory, config.parameters);
-  } else if (type == ItemType::TillingTool) {
-    return make_shared<TillingTool>(config.config, config.directory, config.parameters);
-  } else if (type == ItemType::HarvestingTool) {
-    return make_shared<HarvestingTool>(config.config, config.directory, config.parameters);
-  } else if (type == ItemType::HeadArmor) {
-    return make_shared<HeadArmor>(config.config, config.directory, config.parameters);
-  } else if (type == ItemType::ChestArmor) {
-    return make_shared<ChestArmor>(config.config, config.directory, config.parameters);
-  } else if (type == ItemType::LegsArmor) {
-    return make_shared<LegsArmor>(config.config, config.directory, config.parameters);
-  } else if (type == ItemType::BackArmor) {
-    return make_shared<BackArmor>(config.config, config.directory, config.parameters);
-  } else if (type == ItemType::Consumable) {
-    return make_shared<ConsumableItem>(config.config, config.directory, config.parameters);
-  } else if (type == ItemType::Blueprint) {
-    return make_shared<BlueprintItem>(config.config, config.directory, config.parameters);
-  } else if (type == ItemType::Codex) {
-    return make_shared<CodexItem>(config.config, config.directory, config.parameters);
-  } else if (type == ItemType::InspectionTool) {
-    return make_shared<InspectionTool>(config.config, config.directory, config.parameters);
-  } else if (type == ItemType::InstrumentItem) {
-    return make_shared<InstrumentItem>(config.config, config.directory, config.parameters);
-  } else if (type == ItemType::ThrownItem) {
-    return make_shared<ThrownItem>(config.config, config.directory, config.parameters);
-  } else if (type == ItemType::UnlockItem) {
-    return make_shared<UnlockItem>(config.config, config.directory, config.parameters);
-  } else if (type == ItemType::ActiveItem) {
-    return make_shared<ActiveItem>(config.config, config.directory, config.parameters);
-  } else if (type == ItemType::AugmentItem) {
-    return make_shared<AugmentItem>(config.config, config.directory, config.parameters);
-  } else {
-    throw ItemException(strf("Unknown item type {}", (int)type));
+  switch (type) {
+    case ItemType::Generic:
+      return make_shared<GenericItem>(config.config, config.directory, config.parameters);
+    case ItemType::LiquidItem:
+      return make_shared<LiquidItem>(config.config, config.directory, config.parameters);
+    case ItemType::MaterialItem:
+      return make_shared<MaterialItem>(config.config, config.directory, config.parameters);
+    case ItemType::ObjectItem:
+      return make_shared<ObjectItem>(config.config, config.directory, config.parameters);
+    case ItemType::CurrencyItem:
+      return make_shared<CurrencyItem>(config.config, config.directory);
+    case ItemType::MiningTool:
+      return make_shared<MiningTool>(config.config, config.directory, config.parameters);
+    case ItemType::Flashlight:
+      return make_shared<Flashlight>(config.config, config.directory, config.parameters);
+    case ItemType::WireTool:
+      return make_shared<WireTool>(config.config, config.directory, config.parameters);
+    case ItemType::BeamMiningTool:
+      return make_shared<BeamMiningTool>(config.config, config.directory, config.parameters);
+    case ItemType::PaintingBeamTool:
+      return make_shared<PaintingBeamTool>(config.config, config.directory, config.parameters);
+    case ItemType::TillingTool:
+      return make_shared<TillingTool>(config.config, config.directory, config.parameters);
+    case ItemType::HarvestingTool:
+      return make_shared<HarvestingTool>(config.config, config.directory, config.parameters);
+    case ItemType::HeadArmor:
+      return make_shared<HeadArmor>(config.config, config.directory, config.parameters);
+    case ItemType::ChestArmor:
+      return make_shared<ChestArmor>(config.config, config.directory, config.parameters);
+    case ItemType::LegsArmor:
+      return make_shared<LegsArmor>(config.config, config.directory, config.parameters);
+    case ItemType::BackArmor:
+      return make_shared<BackArmor>(config.config, config.directory, config.parameters);
+    case ItemType::Consumable:
+      return make_shared<ConsumableItem>(config.config, config.directory, config.parameters);
+    case ItemType::Blueprint:
+      return make_shared<BlueprintItem>(config.config, config.directory, config.parameters);
+    case ItemType::Codex:
+      return make_shared<CodexItem>(config.config, config.directory, config.parameters);
+    case ItemType::InspectionTool:
+      return make_shared<InspectionTool>(config.config, config.directory, config.parameters);
+    case ItemType::InstrumentItem:
+      return make_shared<InstrumentItem>(config.config, config.directory, config.parameters);
+    case ItemType::ThrownItem:
+      return make_shared<ThrownItem>(config.config, config.directory, config.parameters);
+    case ItemType::UnlockItem:
+      return make_shared<UnlockItem>(config.config, config.directory, config.parameters);
+    case ItemType::ActiveItem:
+      return make_shared<ActiveItem>(config.config, config.directory, config.parameters);
+    case ItemType::AugmentItem:
+      return make_shared<AugmentItem>(config.config, config.directory, config.parameters);
+    default:
+      throw ItemException(strf("Unknown item type {}", (int)type));
   }
 }
 

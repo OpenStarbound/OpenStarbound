@@ -1441,14 +1441,13 @@ bool Player::addBlueprint(ItemDescriptor const& descriptor, bool showFailure) {
     return false;
 
   auto itemDb = Root::singleton().itemDatabase();
-  auto item = itemDb->item(descriptor);
   auto assets = Root::singleton().assets();
   if (!m_blueprints->isKnown(descriptor)) {
     m_blueprints->add(descriptor);
-    queueUIMessage(assets->json("/player.config:blueprintUnlock").toString().replace("<ItemName>", item->friendlyName()));
+    queueUIMessage(assets->json("/player.config:blueprintUnlock").toString().replace("<ItemName>", itemDb->item(descriptor)->friendlyName()));
     return true;
   } else if (showFailure) {
-    queueUIMessage(assets->json("/player.config:blueprintAlreadyKnown").toString().replace("<ItemName>", item->friendlyName()));
+    queueUIMessage(assets->json("/player.config:blueprintAlreadyKnown").toString().replace("<ItemName>", itemDb->item(descriptor)->friendlyName()));
   }
 
   return false;
