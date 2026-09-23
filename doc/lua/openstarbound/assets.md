@@ -48,13 +48,13 @@ Returns the sourcePath for the specified asset or `nil` if the asset doesn't exi
 
 #### `Json` assets.getConfiguration(`String` key)
 
-Gets a configuration value in `/storage/starbound.config`.
+Gets a configuration value in `/storage/starbound.config`. Similar to `root.getConfiguration`
 
 ---
 
 #### `Json` assets.getConfigurationPath(`String` path)
 
-Gets a configuration value in `/storage/starbound.config` by path.
+Gets a configuration value in `/storage/starbound.config` by path. Similar to `root.getConfigurationPath`
 
 *Both getters will error if you try to get `title`, as that can contain the player's saved server login.*
 
@@ -62,13 +62,13 @@ Gets a configuration value in `/storage/starbound.config` by path.
 
 #### `Json` assets.setConfiguration(`String` key, `Json` value)
 
-Sets a configuration value in `/storage/starbound.config`.
+Sets a configuration value in `/storage/starbound.config`. Similar to `root.setConfiguration`
 
 ---
 
 #### `Json` assets.setConfigurationPath(`String` path,  `Json` value)
 
-Sets a configuration value in `/storage/starbound.config` by path.
+Sets a configuration value in `/storage/starbound.config` by path. Similar to `root.setConfigurationPath`
 
 *Both setters will error if you try to set `safeScripts`, as that can break Starbound's sandbox.*
 
