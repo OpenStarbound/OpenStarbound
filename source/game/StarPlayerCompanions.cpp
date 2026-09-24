@@ -83,7 +83,6 @@ void PlayerCompanions::init(Entity* player, World* world) {
   m_scriptComponent.setScripts(jsonToStringList(m_config.getArray("scripts", JsonArray())));
   m_scriptComponent.setUpdateDelta(m_config.getInt("scriptDelta", 10));
 
-  m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(player));
   m_scriptComponent.addCallbacks("player", LuaBindings::makePlayerCallbacks(as<Player>(player)));
   m_scriptComponent.addCallbacks(
       "status", LuaBindings::makeStatusControllerCallbacks(as<Player>(player)->statusController()));
@@ -93,12 +92,11 @@ void PlayerCompanions::init(Entity* player, World* world) {
       LuaBindings::makeConfigCallbacks([this](
           String const& name, Json const& def) { return m_config.query(name, def); }));
 
-  m_scriptComponent.init(world);
+  m_scriptComponent.init(player);
 }
 
 void PlayerCompanions::uninit() {
   m_scriptComponent.uninit();
-  m_scriptComponent.removeCallbacks("entity");
   m_scriptComponent.removeCallbacks("player");
   m_scriptComponent.removeCallbacks("status");
   m_scriptComponent.removeCallbacks("playerCompanions");

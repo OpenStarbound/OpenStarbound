@@ -171,8 +171,8 @@ ClientEntityMode Npc::clientEntityMode() const {
   return m_clientEntityMode;
 }
 
-void Npc::init(World* world, EntityId entityId, EntityMode mode) {
-  Entity::init(world, entityId, mode);
+void Npc::init(World* world, EntityId entityId, EntityMode mode, ConnectionId originConnection) {
+  Entity::init(world, entityId, mode, originConnection);
   m_movementController->init(world);
   m_movementController->setIgnorePhysicsEntities({entityId});
   m_statusController->init(this, m_movementController.get());
@@ -190,13 +190,12 @@ void Npc::init(World* world, EntityId entityId, EntityMode mode) {
     m_scriptComponent.addCallbacks("config",
         LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def)
             { return m_npcVariant.scriptConfig.query(name, def); }));
-    m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
     m_scriptComponent.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(m_statusController.get()));
     m_scriptComponent.addCallbacks("behavior", LuaBindings::makeBehaviorCallbacks(&m_behaviors));
     m_scriptComponent.addCallbacks("songbook", LuaBindings::makeSongbookCallbacks(m_songbook.get()));
     m_scriptComponent.addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(humanoid()->networkedAnimator()));
     m_scriptComponent.addActorMovementCallbacks(m_movementController.get());
-    m_scriptComponent.init(world);
+    m_scriptComponent.init(this);
   }
   if (world->isClient()) {
     m_scriptedAnimator.setScripts(humanoid()->animationScripts());
@@ -207,8 +206,7 @@ void Npc::init(World* world, EntityId entityId, EntityMode mode) {
     m_scriptedAnimator.addCallbacks("config",
         LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def)
             { return m_npcVariant.scriptConfig.query(name, def); }));
-    m_scriptedAnimator.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
-    m_scriptedAnimator.init(world);
+    m_scriptedAnimator.init(this);
   }
 
 }
@@ -219,7 +217,6 @@ void Npc::uninit() {
     m_scriptComponent.uninit();
     m_scriptComponent.removeCallbacks("npc");
     m_scriptComponent.removeCallbacks("config");
-    m_scriptComponent.removeCallbacks("entity");
     m_scriptComponent.removeCallbacks("status");
     m_scriptComponent.removeCallbacks("behavior");
     m_scriptComponent.removeCallbacks("songbook");
@@ -230,7 +227,6 @@ void Npc::uninit() {
     m_scriptedAnimator.uninit();
     m_scriptedAnimator.removeCallbacks("animationConfig");
     m_scriptedAnimator.removeCallbacks("config");
-    m_scriptedAnimator.removeCallbacks("entity");
   }
   m_tools->uninit();
   m_statusController->uninit();
@@ -386,7 +382,7 @@ void Npc::destroy(RenderCallback* renderCallback) {
     try {
       for (auto const& treasureItem :
           treasureDatabase->createTreasure(staticRandomFrom(m_dropPools.get(), m_npcVariant.seed), m_npcVariant.level))
-        world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position()));
+        world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position()),originConnection());
     } catch (StarException const& e) {
       Logger::warn("Failed to create treasure for NPC '{}': {}", npcType(), outputException(e, false));
     }
@@ -1478,7 +1474,6 @@ void Npc::refreshHumanoidParameters() {
       m_scriptedAnimator.uninit();
       m_scriptedAnimator.removeCallbacks("animationConfig");
       m_scriptedAnimator.removeCallbacks("config");
-      m_scriptedAnimator.removeCallbacks("entity");
 
       m_scriptedAnimator.setScripts(humanoid()->animationScripts());
       m_scriptedAnimator.addCallbacks("animationConfig", LuaBindings::makeScriptedAnimatorCallbacks(humanoid()->networkedAnimator(),
@@ -1488,8 +1483,7 @@ void Npc::refreshHumanoidParameters() {
       m_scriptedAnimator.addCallbacks("config",
           LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def)
               { return m_npcVariant.scriptConfig.query(name, def); }));
-      m_scriptedAnimator.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
-      m_scriptedAnimator.init(world());
+      m_scriptedAnimator.init(this);
     }
   }
 }

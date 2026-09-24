@@ -60,6 +60,7 @@ public:
   // id in this world and be ready for use.  This is always the case on the
   // server, but not *always* the case on the client.
   virtual void addEntity(EntityPtr const& entity, EntityId entityId = NullEntityId) = 0;
+  virtual void addEntity(EntityPtr const& entity, ConnectionId connection, EntityId entityId = NullEntityId) = 0;
 
   virtual EntityPtr closestEntity(Vec2F const& center, float radius, EntityFilter selector = {}) const = 0;
 
@@ -144,6 +145,8 @@ public:
 
   virtual LuaRootPtr luaRoot() = 0;
   virtual StringMap<LuaCallbacks> luaThreadCallbacks() const = 0;
+  
+  virtual bool connectionCanModify(ConnectionId connection) const = 0;
 
   // Locate a unique entity, if the target is local, the promise will be
   // finished before being returned.  If the unique entity is not found, the

@@ -765,19 +765,17 @@ void StatusController::removeUniqueEffect(UniqueStatusEffect const& effect) {
 
 void StatusController::initPrimaryScript() {
   m_primaryScript.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(this));
-  m_primaryScript.addCallbacks("entity", LuaBindings::makeEntityCallbacks(m_parentEntity));
   if (m_primaryAnimatorId != EffectAnimatorGroup::NullElementId) {
     auto animator = m_effectAnimators.getNetElement(m_primaryAnimatorId);
     m_primaryScript.addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(&animator->animator));
   }
   m_primaryScript.addActorMovementCallbacks(m_movementController);
-  m_primaryScript.init(m_parentEntity->world());
+  m_primaryScript.init(m_parentEntity);
 }
 
 void StatusController::uninitPrimaryScript() {
   m_primaryScript.uninit();
   m_primaryScript.removeCallbacks("status");
-  m_primaryScript.removeCallbacks("entity");
   m_primaryScript.removeCallbacks("animator");
   m_primaryScript.removeActorMovementCallbacks();
 }
@@ -788,13 +786,12 @@ void StatusController::initUniqueEffectScript(UniqueEffectInstance& uniqueEffect
   uniqueEffect.script.addCallbacks("config", LuaBindings::makeConfigCallbacks([&uniqueEffect](String const& name, Json const& def) {
       return uniqueEffect.effectConfig.effectConfig.query(name, def);
     }));
-  uniqueEffect.script.addCallbacks("entity", LuaBindings::makeEntityCallbacks(m_parentEntity));
   if (uniqueEffect.animatorId != EffectAnimatorGroup::NullElementId) {
     auto animator = m_effectAnimators.getNetElement(uniqueEffect.animatorId);
     uniqueEffect.script.addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(&animator->animator));
   }
   uniqueEffect.script.addActorMovementCallbacks(m_movementController);
-  uniqueEffect.script.init(m_parentEntity->world());
+  uniqueEffect.script.init(m_parentEntity);
 }
 
 void StatusController::uninitUniqueEffectScript(UniqueEffectInstance& uniqueEffect) {
@@ -802,7 +799,6 @@ void StatusController::uninitUniqueEffectScript(UniqueEffectInstance& uniqueEffe
   uniqueEffect.script.removeCallbacks("effect");
   uniqueEffect.script.removeCallbacks("status");
   uniqueEffect.script.removeCallbacks("config");
-  uniqueEffect.script.removeCallbacks("entity");
   uniqueEffect.script.removeCallbacks("animator");
   uniqueEffect.script.removeActorMovementCallbacks();
 

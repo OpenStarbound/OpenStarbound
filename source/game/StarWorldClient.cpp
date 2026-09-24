@@ -1621,6 +1621,10 @@ void WorldClient::addEntity(EntityPtr const& entity, EntityId entityId) {
   }
 }
 
+void WorldClient::addEntity(EntityPtr const& entity, ConnectionId connection, EntityId entityId) {
+  addEntity(entity,entityId);
+}
+
 TileDamageResult WorldClient::damageTiles(List<Vec2I> const& pos, TileLayer layer, Vec2F const& sourcePosition, TileDamage const& tileDamage, Maybe<EntityId> sourceEntity) {
   if (!inWorld())
     return TileDamageResult::None;
@@ -2626,6 +2630,10 @@ LuaRootPtr WorldClient::luaRoot() {
 
 StringMap<LuaCallbacks> WorldClient::luaThreadCallbacks() const {
   return m_luaThreadCallbacks;
+}
+
+bool WorldClient::connectionCanModify(ConnectionId connection) const {
+  return true;
 }
 
 bool WorldClient::pullRequestedDestroy() {

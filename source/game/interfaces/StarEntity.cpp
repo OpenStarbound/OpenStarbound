@@ -1,4 +1,5 @@
 #include "StarEntity.hpp"
+#include "StarWorld.hpp"
 #include "StarDamageManager.hpp"
 #include "StarNetCompatibility.hpp"
 
@@ -25,7 +26,7 @@ EnumMap<EntityType> const EntityTypeNames{
 
 Entity::~Entity() {}
 
-void Entity::init(World* world, EntityId entityId, EntityMode mode) {
+void Entity::init(World* world, EntityId entityId, EntityMode mode, ConnectionId originConnection) {
   if (!world)
     throw EntityException("Entity::init called with null world pointer");
   if (entityId == NullEntityId)
@@ -36,6 +37,7 @@ void Entity::init(World* world, EntityId entityId, EntityMode mode) {
   m_world = world;
   m_entityMode = mode;
   m_entityId = entityId;
+  m_originConnection = originConnection;
 }
 
 void Entity::uninit() {
@@ -152,6 +154,8 @@ World* Entity::worldPtr() const {
 }
 
 bool Entity::persistent() const {
+  if (m_world && !m_world->connectionCanModify(m_originConnection))
+    return false;
   return m_persistent;
 }
 
@@ -173,6 +177,14 @@ bool Entity::isMaster() const {
 
 bool Entity::isSlave() const {
   return m_entityMode == EntityMode::Slave;
+}
+
+ConnectionId Entity::originConnection() const {
+  return m_originConnection;
+}
+
+void Entity::setOriginConnection(ConnectionId connection) {
+  m_originConnection = connection;
 }
 
 Entity::Entity() {

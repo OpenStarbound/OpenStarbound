@@ -12,7 +12,7 @@ public:
   void enableInterpolation(float extrapolationHint = 0.0f) override;
   void disableInterpolation() override;
 
-  void init(World* world, EntityId entityId, EntityMode mode) override;
+  void init(World* world, EntityId entityId, EntityMode mode, ConnectionId originConnection = ServerConnectionId) override;
   void uninit() override;
 
   void update(float dt, uint64_t currentStep) override;

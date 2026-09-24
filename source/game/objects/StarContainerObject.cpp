@@ -38,11 +38,11 @@ ContainerObject::ContainerObject(ObjectConfigConstPtr config, Json const& parame
   m_craftingProgress.setInterpolator(lerp<float, float>);
 }
 
-void ContainerObject::init(World* world, EntityId entityId, EntityMode mode) {
+void ContainerObject::init(World* world, EntityId entityId, EntityMode mode, ConnectionId originConnection) {
   if (mode == EntityMode::Master)
     m_interactive.set(true);
 
-  Object::init(world, entityId, mode);
+  Object::init(world, entityId, mode, originConnection);
   if (mode == EntityMode::Master) {
     if (!m_initialized) {
       m_initialized = true;
@@ -69,7 +69,7 @@ void ContainerObject::update(float dt, uint64_t currentStep) {
 
   if (isMaster()) {
     for (auto const& drop : take(m_lostItems))
-      world()->addEntity(ItemDrop::createRandomizedDrop(drop, position()));
+      world()->addEntity(ItemDrop::createRandomizedDrop(drop, position()),originConnection());
 
     if (m_crafting.get())
       tickCrafting(dt);
@@ -149,7 +149,7 @@ void ContainerObject::destroy(RenderCallback* renderCallback) {
   Object::destroy(renderCallback);
   if (isMaster()) {
     for (auto const& drop : m_items->items())
-      world()->addEntity(ItemDrop::createRandomizedDrop(drop, position()));
+      world()->addEntity(ItemDrop::createRandomizedDrop(drop, position()),originConnection());
   }
 }
 
@@ -490,7 +490,7 @@ void ContainerObject::tickCrafting(float dt) {
     ItemPtr overflow =
         m_items->putItems(m_items->size() - 1, Root::singleton().itemDatabase()->item(m_goalRecipe.output));
     if (overflow)
-      world()->addEntity(ItemDrop::createRandomizedDrop(overflow, position()));
+      world()->addEntity(ItemDrop::createRandomizedDrop(overflow, position()),originConnection());
     itemsUpdated();
   }
 }

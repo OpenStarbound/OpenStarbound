@@ -220,8 +220,10 @@ void MaterialItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
     if (!owner()->inToolRange(placementOrigin))
       continue;
 
-    for (Vec2I& pos : tileArea(radius, placementOrigin))
-      modifications.emplaceAppend(pos, PlaceMaterial{layer, materialId(), placementHueShift(pos), m_collisionOverride});
+    for (Vec2I& pos : tileArea(radius, placementOrigin)) {
+      if (world()->connectionCanModify(owner()->originConnection()))
+        modifications.emplaceAppend(pos, PlaceMaterial{layer, materialId(), placementHueShift(pos), m_collisionOverride});
+    }
 
     // Make sure not to make any more modifications than we have consumables.
     if (modifications.size() > count())
@@ -265,6 +267,8 @@ size_t MaterialItem::blockSwap(float radius, TileLayer layer) {
     if (world()->isTileProtected(pos))
       continue;
     if (world()->material(pos, layer) == materialId())
+      continue;
+    if (!world()->connectionCanModify(owner()->originConnection()))
       continue;
     swapPositions.append(pos);
   }
