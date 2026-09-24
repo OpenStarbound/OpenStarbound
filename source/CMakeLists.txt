@@ -474,10 +474,19 @@ endif()
 # Find all required external libraries, based on build settings...
 find_package(PkgConfig)
 
+# Use vcpkg-sourced imgui unless otherwise requested
+option(STAR_USE_VENDORED_IMGUI "Use a vendored copy of imgui in source/extern/imgui/" OFF)
+if(NOT STAR_USE_VENDORED_IMGUI)
+  find_package(imgui CONFIG REQUIRED)
+  set(STAR_EXT_LIBS ${STAR_EXT_LIBS} imgui::imgui)
+else()
+  include(VendorImgui)
+endif()
+
 if(STAR_USE_JEMALLOC)
   pkg_check_modules(JEMALLOC REQUIRED IMPORTED_TARGET GLOBAL jemalloc)
 
-  set(STAR_EXT_LIBS PkgConfig::JEMALLOC)
+  set(STAR_EXT_LIBS ${STAR_EXT_LIBS} PkgConfig::JEMALLOC)
   if (STAR_SYSTEM_WINDOWS OR STAR_SYSTEM_MACOS)
     set_flag(STAR_JEMALLOC_IS_PREFIXED)
   endif()
@@ -495,7 +504,6 @@ find_package(Freetype REQUIRED)
 find_package(cpr CONFIG REQUIRED)
 find_package(OggVorbis REQUIRED)
 find_package(zstd CONFIG REQUIRED)
-find_package(imgui CONFIG REQUIRED)
 if (NOT STAR_SYSTEM_HAIKU)
 	find_package(Opus CONFIG REQUIRED)
 	find_package(re2 CONFIG REQUIRED)
@@ -513,7 +521,6 @@ set(STAR_EXT_LIBS ${STAR_EXT_LIBS}
     $<IF:$<TARGET_EXISTS:zstd::libzstd_shared>,zstd::libzstd_shared,zstd::libzstd_static>
     $<IF:$<TARGET_EXISTS:Opus::opus>,Opus::opus,opus>
     $<IF:$<TARGET_EXISTS:re2::re2>,re2::re2,re2>
-    imgui::imgui
     ${VORBISFILE_LIBRARY}
     ${VORBIS_LIBRARY}
     ${OGG_LIBRARY}
@@ -581,7 +588,7 @@ foreach(OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES})
 endforeach(OUTPUTCONFIG CMAKE_CONFIGURATION_TYPES)
 
 # External code included with starbound source, which core depends on
-set(STAR_EXTERN_INCLUDES ${PROJECT_SOURCE_DIR}/extern)
+set(STAR_EXTERN_INCLUDES ${STAR_EXTERN_INCLUDES} ${PROJECT_SOURCE_DIR}/extern)
 add_subdirectory(extern)
 
 # Core support code, not specific to starbound.
