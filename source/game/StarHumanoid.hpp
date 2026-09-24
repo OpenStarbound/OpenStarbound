@@ -302,16 +302,27 @@ public:
   Json const& defaultMovementParameters() const;
   Maybe<Json> const& playerMovementParameters() const;
 
+  String applyIdentityTags(String input) const;
   String getHeadFromIdentity() const;
+  String getHeadFlippedFromIdentity() const;
   String getBodyFromIdentity() const;
+  String getBodyFlippedFromIdentity() const;
   String getBodyMaskFromIdentity() const;
+  String getBodyMaskFlippedFromIdentity() const;
   String getBodyHeadMaskFromIdentity() const;
+  String getBodyHeadMaskFlippedFromIdentity() const;
   String getFacialEmotesFromIdentity() const;
+  String getFacialEmotesFlippedFromIdentity() const;
   String getHairFromIdentity() const;
+  String getHairFlippedFromIdentity() const;
   String getFacialHairFromIdentity() const;
+  String getFacialHairFlippedFromIdentity() const;
   String getFacialMaskFromIdentity() const;
+  String getFacialMaskFlippedFromIdentity() const;
   String getBackArmFromIdentity() const;
+  String getBackArmFlippedFromIdentity() const;
   String getFrontArmFromIdentity() const;
+  String getFrontArmFlippedFromIdentity() const;
   String getVaporTrailFrameset() const;
 
   NetworkedAnimator * networkedAnimator();
@@ -413,6 +424,17 @@ private:
   String m_facialHairFrameset;
   String m_facialMaskFrameset;
 
+  String m_headFlippedFrameset;
+  String m_bodyFlippedFrameset;
+  String m_bodyMaskFlippedFrameset;
+  String m_bodyHeadMaskFlippedFrameset;
+  String m_backArmFlippedFrameset;
+  String m_frontArmFlippedFrameset;
+  String m_emoteFlippedFrameset;
+  String m_hairFlippedFrameset;
+  String m_facialHairFlippedFrameset;
+  String m_facialMaskFlippedFrameset;
+
   bool m_bodyFullbright;
 
   String m_vaporTrailFrameset;
@@ -466,6 +488,7 @@ private:
   HashMap<PortraitMode, HashMap<String,AnimationStateArgs>> m_portraitAnimationStates;
 
   HashMap<String, String> m_identityFramesetTags;
+  HashMap<String, String> m_identityTags;
 
   pair<String, String> m_headRotationPoint;
   pair<String, String> m_frontArmRotationPoint;
