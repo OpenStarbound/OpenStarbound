@@ -38,7 +38,7 @@ public:
   void setEffectScriptableParameter(String const& effectName, String const& parameterName, RenderEffectParameter const& parameter) override;
   Maybe<RenderEffectParameter> getEffectScriptableParameter(String const& effectName, String const& parameterName) override;
   Maybe<VariantTypeIndex> getEffectScriptableParameterType(String const& effectName, String const& parameterName) override;
-  void setEffectTexture(String const& textureName, ImageView const& image) override;
+  void setTexture(String const& textureName, ImageView const& image) override;
 
   void setScissorRect(Maybe<RectI> const& scissorRect) override;
 
@@ -181,8 +181,6 @@ private:
   struct EffectTexture {
     GLint textureUniform = -1;
     unsigned textureUnit = 0;
-    TextureAddressing textureAddressing = TextureAddressing::Clamp;
-    TextureFiltering textureFiltering = TextureFiltering::Linear;
     GLint textureSizeUniform = -1;
     RefPtr<GlLoneTexture> textureValue;
   };
@@ -234,6 +232,7 @@ private:
   static void uploadTextureImage(PixelFormat pixelFormat, Vec2U size, uint8_t const* data);
 
   
+  static RefPtr<GlLoneTexture> createGlTexture(TextureAddressing addressing, TextureFiltering filtering, Vec2U size = Vec2U(0,0));
   static RefPtr<GlLoneTexture> createGlTexture(ImageView const& image, TextureAddressing addressing, TextureFiltering filtering);
 
   shared_ptr<GlRenderBuffer> createGlRenderBuffer();
@@ -266,6 +265,7 @@ private:
   StringMap<Effect> m_effects;
   Effect* m_currentEffect;
 
+  StringMap<RefPtr<GlLoneTexture>> m_textures;
   StringMap<RefPtr<GlFrameBuffer>> m_frameBuffers;
   RefPtr<GlFrameBuffer> m_currentFrameBuffer;
 
