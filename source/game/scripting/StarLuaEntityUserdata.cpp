@@ -534,6 +534,14 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
         return {};
     });
 
+    methods.registerMethod("isAdmin",
+    [&](EntityPtr const& entity) -> Maybe<bool> {
+        if (auto player = as<Player>(entity)) {
+            return player->isAdmin();
+        }
+        return {};
+    });
+
     // loungeable entity methods
     methods.registerMethod("loungingEntities",
     [&](EntityPtr const& entity, Maybe<size_t> anchorIndex) -> Maybe<List<EntityId>> {

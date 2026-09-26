@@ -87,6 +87,12 @@ NOTE: This function currently does not work correctly over the network, making i
 
 ---
 
+#### `Maybe<bool>` entity:isAdmin()
+
+Returns `true` if the entity is an admin, and `false` if not. Returns `nil` if the entity is not a player.
+
+---
+
 #### `Vec2F` entity:health()
 
 Returns a `Vec2F` containing the entity's current and maximum health if the entity is a player, monster or NPC and `nil` otherwise.
