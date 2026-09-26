@@ -14,6 +14,7 @@
 
 #include "lua.h"
 
+#include "ldo.h"
 #include "lfunc.h"
 #include "lgc.h"
 #include "lmem.h"
@@ -61,13 +62,15 @@ UpVal *luaF_findupval (lua_State *L, StkId level) {
   lua_assert(isintwups(L) || L->openupval == NULL);
   while (*pp != NULL && (p = *pp)->v >= level) {
     lua_assert(upisopen(p));
-    if (p->v == level)  /* found a corresponding upvalue? */
-      return p;  /* return it */
+    if (p->v == level && !p->flags)  /* found a corresponding upvalue that is not a deferred value? */ {
+      return p; /* return it */
+    }
     pp = &p->u.open.next;
   }
   /* not found: create a new upvalue */
   uv = luaM_new(L, UpVal);
   uv->refcount = 0;
+  uv->flags = 0;
   uv->u.open.next = *pp;  /* link it to list of open upvalues */
   uv->u.open.touched = 1;
   *pp = uv;
@@ -79,20 +82,84 @@ UpVal *luaF_findupval (lua_State *L, StkId level) {
   return uv;
 }
 
+static void calldeferred(lua_State *L, void *ud) {
+  UNUSED(ud);
+  luaD_callnoyield(L, L->top - 2, 0);
+}
 
-void luaF_close (lua_State *L, StkId level) {
+/*
+** Prepare deferred function plus its arguments for object 'obj' with
+** error message 'err'. (This function assumes EXTRA_STACK.)
+*/
+static int preparetocall(lua_State *L, TValue *func, TValue *err) {
+  StkId top = L->top;
+  setobj2s(L, top, func);  /* will call deferred function */
+  if (err) {
+    setobj2s(L, top + 1, err); /* and error msg. as 1st argument */
+  }
+  else {
+    setnilvalue(top + 1);
+  }
+  L->top = top + 2;  /* add function and arguments */
+  return 1;
+}
+
+/*
+** Prepare and call a deferred function. If status is OK, code is still
+** inside the original protected call, and so any error will be handled
+** there. Otherwise, a previous error already activated the original
+** protected call, and so the call to the deferred method must be
+** protected here. (A status == -1 behaves like a previous
+** error, to also run the closing method in protected mode).
+** If status is OK, the call to the deferred method will be pushed
+** at the top of the stack. Otherwise, values are pushed after
+** the 'level' of the upvalue containing deferred function, as everything after
+** that won't be used again.
+*/
+static int calldeferredfunction(lua_State *L, StkId level, int status) {
+  TValue *uv = level; /* value being closed */
+  if (status == LUA_OK) {
+    preparetocall(L, uv, NULL); /* something to call? */
+    calldeferred(L, NULL);      /* call closing method */
+  }
+  else { /* must close the object in protected mode */
+    ptrdiff_t oldtop;
+    level++;                            /* space for error message */
+    oldtop = savestack(L, level + 1);   /* top will be after that */
+    luaD_seterrorobj(L, status, level); /* set error message */
+    preparetocall(L, uv, level);
+    int newstatus = luaD_pcall(L, calldeferred, NULL, oldtop, 0);
+    if (newstatus != LUA_OK && status == CLOSEPROTECT) /* first error? */
+      status = newstatus;                    /* this will be the new error */
+    else {
+      /* leave original error (or nil) on top */
+      L->top = restorestack(L, oldtop);
+    }
+  }
+  return status;
+}
+
+int luaF_close (lua_State *L, StkId level, int status) {
   UpVal *uv;
   while (L->openupval != NULL && (uv = L->openupval)->v >= level) {
     lua_assert(upisopen(uv));
     L->openupval = uv->u.open.next;  /* remove from 'open' list */
-    if (uv->refcount == 0)  /* no references? */
-      luaM_free(L, uv);  /* free upvalue */
+    if (uv->refcount == 0) {        /* no references? */
+      UpVal uv1 = *uv;              /* copy the upvalue as we will free it below */
+      luaM_free(L, uv);             /* free upvalue before invoking any deferred functions */
+      if (status != NOCLOSINGMETH && uv1.flags && ttisfunction(uv1.v)) {
+        ptrdiff_t levelrel = savestack(L, level);
+        status = calldeferredfunction(L, uv1.v, status);
+        level = restorestack(L, levelrel);
+      }
+    }
     else {
       setobj(L, &uv->u.value, uv->v);  /* move value to upvalue slot */
       uv->v = &uv->u.value;  /* now current value lives here */
       luaC_upvalbarrier(L, uv);
     }
   }
+  return status;
 }
 
 
