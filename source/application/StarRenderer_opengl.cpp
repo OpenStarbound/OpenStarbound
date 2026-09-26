@@ -328,6 +328,20 @@ void OpenGlRenderer::loadConfig(Json const& config) {
     m_frameBuffers[pair.first] = buf;
 
   }
+
+  for (auto& pair : config.getObject("textures", {})) {
+    Json config = pair.second;
+    Logger::info("Creating texture {}", pair.first);
+    
+    auto textureAddressing = TextureAddressingNames.getLeft(config.getString("textureAddressing", "clamp"));
+    auto textureFiltering = TextureFilteringNames.getLeft(config.getString("textureFiltering", "nearest"));
+    auto initialSize = Vec2U(0,0);
+    if (auto iSize = config.optArray("initialSize"))
+      initialSize = jsonToVec2U(*iSize);
+    
+    auto tex = createGlTexture(textureAddressing,textureFiltering,initialSize);
+    m_textures[pair.first] = tex;
+  }
   setScreenSize(m_screenSize);
   m_config = config;
 }
@@ -477,9 +491,12 @@ void OpenGlRenderer::loadEffectConfig(String const& name, Json const& effectConf
     } else {
         effectTexture.textureUnit = parameterTextureUnit++;
         glUniform1i(effectTexture.textureUniform, effectTexture.textureUnit);
-
-        effectTexture.textureAddressing = TextureAddressingNames.getLeft(p.second.getString("textureAddressing", "clamp"));
-        effectTexture.textureFiltering = TextureFilteringNames.getLeft(p.second.getString("textureFiltering", "nearest"));
+        
+        if (m_textures.contains(p.first)) {
+          // in cases where the texture may share a name with a texture while also being defined as a texture for a framebuffer, the framebuffer will override it anyway.
+          effectTexture.textureValue = m_textures.get(p.first);
+        }
+        
         if (auto tsu = p.second.optString("textureSizeUniform")) {
           effectTexture.textureSizeUniform = glGetUniformLocation(m_program, tsu->utf8Ptr());
           if (effectTexture.textureSizeUniform == -1)
@@ -584,24 +601,28 @@ Maybe<VariantTypeIndex> OpenGlRenderer::getEffectScriptableParameterType(String 
   return ptr->parameterType;
 }
 
-void OpenGlRenderer::setEffectTexture(String const& textureName, ImageView const& image) {
-  auto ptr = m_currentEffect->textures.ptr(textureName);
-  if (!ptr)
+void OpenGlRenderer::setTexture(String const& textureName, ImageView const& image) {
+  if (!m_textures.contains(textureName))
     return;
+  auto ptr = m_textures.get(textureName);
 
   flushImmediatePrimitives();
 
-  if (!ptr->textureValue || ptr->textureValue->textureId == 0) {
-    ptr->textureValue = createGlTexture(image, ptr->textureAddressing, ptr->textureFiltering);
+  if (ptr->textureId == 0) {
+    Logger::warn("Attempting to set image for improperly initialized texture {}.");
+    return;
   } else {
-    glBindTexture(GL_TEXTURE_2D, ptr->textureValue->textureId);
-    ptr->textureValue->textureSize = image.size;
+    glBindTexture(GL_TEXTURE_2D, ptr->textureId);
+    ptr->textureSize = image.size;
     uploadTextureImage(image.format, image.size, image.data);
   }
 
-  if (ptr->textureSizeUniform != -1) {
-    auto textureSize = ptr->textureValue->glTextureSize();
-    glUniform2f(ptr->textureSizeUniform, textureSize[0], textureSize[1]);
+  if (m_currentEffect->textures.contains(textureName)) {
+    auto ePtr = m_currentEffect->textures.ptr(textureName);
+    if (ePtr->textureSizeUniform != -1) {
+      auto textureSize = ptr->glTextureSize();
+      glUniform2f(ePtr->textureSizeUniform, textureSize[0], textureSize[1]);
+    }
   }
 }
 
@@ -1210,12 +1231,12 @@ void OpenGlRenderer::flushImmediatePrimitives(Mat3F const& transformation) {
   renderGlBuffer(*m_immediateRenderBuffer, transformation);
 }
 
-auto OpenGlRenderer::createGlTexture(ImageView const& image, TextureAddressing addressing, TextureFiltering filtering)
+auto OpenGlRenderer::createGlTexture(TextureAddressing addressing, TextureFiltering filtering, Vec2U size)
     ->RefPtr<GlLoneTexture> {
   auto glLoneTexture = make_ref<GlLoneTexture>();
   glLoneTexture->textureFiltering = filtering;
   glLoneTexture->textureAddressing = addressing;
-  glLoneTexture->textureSize = image.size;
+  glLoneTexture->textureSize = size;
 
   glGenTextures(1, &glLoneTexture->textureId);
   if (glLoneTexture->textureId == 0)
@@ -1239,10 +1260,16 @@ auto OpenGlRenderer::createGlTexture(ImageView const& image, TextureAddressing a
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   }
 
+  return glLoneTexture;
+}
 
+auto OpenGlRenderer::createGlTexture(ImageView const& image, TextureAddressing addressing, TextureFiltering filtering)
+    ->RefPtr<GlLoneTexture> {
+  auto glLoneTexture = createGlTexture(addressing, filtering, image.size);
+  
   if (!image.empty())
     uploadTextureImage(image.format, image.size, image.data);
-
+      
   return glLoneTexture;
 }
 
@@ -1335,6 +1362,15 @@ void OpenGlRenderer::setupGlUniforms(Effect& effect, Vec2U screenSize) {
         glUniform3f(ptr->parameterUniform, (*v)[0], (*v)[1], (*v)[2]);
       else if (auto v = value.ptr<Vec4F>())
         glUniform4f(ptr->parameterUniform, (*v)[0], (*v)[1], (*v)[2], (*v)[3]);
+    }
+  }
+  
+  for (auto& p : effect.textures) {
+    // update texture sizes in case the texture was changed when the effect was inactive
+    auto ptr = &p.second;
+    if (ptr->textureSizeUniform != -1) {
+      auto textureSize = ptr->textureValue->glTextureSize();
+      glUniform2f(ptr->textureSizeUniform, textureSize[0], textureSize[1]);
     }
   }
 }
