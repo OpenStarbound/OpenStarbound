@@ -69,7 +69,7 @@ StatusController::StatusController(Json const& config) : m_statCollection(config
 
   if (m_primaryAnimationConfig) {
     auto effectAnimator = make_shared<EffectAnimator>(*m_primaryAnimationConfig);
-    effectAnimator->includeBack = config.getBool("primaryAnimationIncludeBack",true);
+    effectAnimator->includeBack = config.getBool("primaryAnimationIncludeBack",false);
     m_primaryAnimatorId = m_effectAnimators.addNetElement(effectAnimator);
   } else
     m_primaryAnimatorId = EffectAnimatorGroup::NullElementId;
