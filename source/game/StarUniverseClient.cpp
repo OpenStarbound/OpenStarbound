@@ -28,19 +28,44 @@
 
 namespace Star {
 
-UniverseClient::UniverseClient(PlayerStoragePtr playerStorage, StatisticsPtr statistics, String const& customWorldStorageDir) {
+UniverseClient::UniverseClient(PlayerStoragePtr playerStorage, StatisticsPtr statistics, String const& universeClientStorageDir) {
   m_storageTriggerDeadline = 0;
   m_playerStorage = std::move(playerStorage);
   m_statistics = std::move(statistics);
-  m_customWorldStorageDirectory = customWorldStorageDir;
+  m_storageDirectory = universeClientStorageDir;
   m_pause = make_shared<atomic<bool>>(false);
   m_luaRoot = make_shared<LuaRoot>();
   m_subWorldThreads = IdMap<ClientSubWorldId,WorldClientThreadPtr>(MinClientSubWorldId,MaxClientSubWorldId);
+  {
+    RecursiveMutexLocker locker(m_mutex);
+    
+    auto versioningDatabase = Root::singleton().versioningDatabase();
+    auto storageFile = File::relativeTo(m_storageDirectory, "universeclient.dat");
+    if (File::isFile(storageFile)) {
+      try {
+        auto settings = versioningDatabase->loadVersionedJson(VersionedJson::readFile(storageFile), "UniverseClientSettings");
+        m_uuid = Uuid(settings.getString("uuid"));
+      } catch (std::exception const& e) {
+        Logger::error("UniverseClient: Could not load universe settings file, loading defaults {}", outputException(e, false));
+        File::rename(storageFile, strf("{}.{}.fail", storageFile, Time::millisecondsSinceEpoch()));
+      }
+    } else {
+    }
+  }
   reset();
 }
 
 UniverseClient::~UniverseClient() {
   disconnect();
+  {
+    RecursiveMutexLocker locker(m_mutex);
+    auto versioningDatabase = Root::singleton().versioningDatabase();
+    auto versionedSettings = versioningDatabase->makeCurrentVersionedJson("UniverseClientSettings",
+    JsonObject{
+      {"uuid",m_uuid.hex()}
+    });
+    VersionedJson::writeFile(versionedSettings, File::relativeTo(m_storageDirectory, "universeclient.dat"));
+  }
 }
 
 void UniverseClient::setMainPlayer(PlayerPtr player) {
@@ -128,7 +153,8 @@ Maybe<String> UniverseClient::connect(UniverseConnection connection, bool allowA
     }
   }
   connection.packetSocket().setNetRules(compatibilityRules);
-  auto clientConnect = make_shared<ClientConnectPacket>(Root::singleton().assets()->digest(), allowAssetsMismatch, m_mainPlayer->uuid(), m_mainPlayer->name(),
+  auto clientUuid = root.configuration()->getPath("consistentClientUuid").optBool().value(false) ? m_uuid : m_mainPlayer->uuid();
+  auto clientConnect = make_shared<ClientConnectPacket>(Root::singleton().assets()->digest(), allowAssetsMismatch, clientUuid, m_mainPlayer->name(),
       m_mainPlayer->shipSpecies(), m_playerStorage->loadShipData(m_mainPlayer->uuid()), m_mainPlayer->shipUpgrades(),
       m_mainPlayer->log()->introComplete(), account);
   clientConnect->info = JsonObject{
@@ -155,7 +181,7 @@ Maybe<String> UniverseClient::connect(UniverseConnection connection, bool allowA
 
   if (auto success = as<ConnectSuccessPacket>(packet)) {
     m_universeClock = make_shared<Clock>();
-    m_clientContext = make_shared<ClientContext>(success->serverUuid, m_mainPlayer->uuid());
+    m_clientContext = make_shared<ClientContext>(success->serverUuid, m_mainPlayer->uuid(), clientUuid);
     m_clientContext->setNetCompatibilityRules(compatibilityRules);
     m_teamClient = make_shared<TeamClient>(m_mainPlayer, m_clientContext);
     m_mainPlayer->setClientContext(m_clientContext);
@@ -545,7 +571,7 @@ CelestialCoordinate UniverseClient::shipCoordinate() const {
 }
 
 bool UniverseClient::playerOnOwnShip() const {
-  return playerWorld().is<ClientShipWorldId>() && playerWorld().get<ClientShipWorldId>() == m_clientContext->playerUuid();
+  return playerWorld().is<ClientShipWorldId>() && playerWorld().get<ClientShipWorldId>() == m_clientContext->clientUuid();
 }
 
 bool UniverseClient::playerIsOriginal() const {
@@ -563,7 +589,7 @@ bool UniverseClient::isAdmin() const {
 Uuid UniverseClient::teamUuid() const {
   if (auto team = m_teamClient->currentTeam())
     return *team;
-  return m_clientContext->playerUuid();
+  return m_clientContext->clientUuid();
 }
 
 WorldTemplateConstPtr UniverseClient::currentTemplate() const {
@@ -776,11 +802,11 @@ UniverseClient::ScriptComponentPtr UniverseClient::scriptContext(String const& c
 
 void UniverseClient::createCustomWorld(String const& name, Json templateData) {
   RecursiveMutexLocker locker(m_mutex);
-  if (!File::isDirectory(m_customWorldStorageDirectory)) {
+  if (!File::isDirectory(m_storageDirectory)) {
     Logger::info("UniverseClient: Creating universe client storage directory");
-    File::makeDirectory(m_customWorldStorageDirectory);
+    File::makeDirectory(m_storageDirectory);
   }
-  String filename = File::relativeTo(m_customWorldStorageDirectory, strf("{}.world", name));
+  String filename = File::relativeTo(m_storageDirectory, strf("{}.world", name));
   if (!File::exists(filename)) {
     m_connection->pushSingle(make_shared<ClientCustomWorldCreate>(name, templateData));
   }
@@ -922,7 +948,7 @@ void UniverseClient::handlePackets(List<PacketPtr> const& packets) {
               if (p.first.contains("../") || p.first.contains("..\\")) {
                 Logger::error("Not saving custom world named {}, path attempts to go up.", p.first);
               } else {
-                String filePath = File::relativeTo(m_customWorldStorageDirectory, strf("{}.world", p.first));
+                String filePath = File::relativeTo(m_storageDirectory, strf("{}.world", p.first));
                 WorldStorage::applyWorldChunksUpdateToFile(filePath, p.second);
               }
             }
@@ -987,7 +1013,7 @@ void UniverseClient::handlePackets(List<PacketPtr> const& packets) {
           m_connection->pushSingle(make_shared<ClientCustomWorldResponse>(clientCustomWorldRequest->name, WorldChunks()));
         } else {
           RecursiveMutexLocker locker(m_mutex);
-          String filename = File::relativeTo(m_customWorldStorageDirectory, strf("{}.world", clientCustomWorldRequest->name));
+          String filename = File::relativeTo(m_storageDirectory, strf("{}.world", clientCustomWorldRequest->name));
           if (File::exists(filename)) {
             try {
                 m_connection->pushSingle(make_shared<ClientCustomWorldResponse>(clientCustomWorldRequest->name, WorldStorage::getWorldChunksFromFile(filename)));
@@ -1002,13 +1028,13 @@ void UniverseClient::handlePackets(List<PacketPtr> const& packets) {
         }
       } else if (auto worldLoadNotification = as<NotifyWorldLoad>(packet)) {
         if (auto customWorldId = worldLoadNotification->worldId.ptr<ClientCustomWorldId>()) {
-          if (customWorldId->uuid == m_clientContext->playerUuid()) {
+          if (customWorldId->uuid == m_clientContext->clientUuid()) {
             for (auto& p : m_scriptContexts) {
               p.second->invoke("clientCustomWorldLoaded",customWorldId->name,printWorldId(worldLoadNotification->worldId));
             }
           }
         } else if (auto shipWorldId = worldLoadNotification->worldId.ptr<ClientShipWorldId>()) {
-          if (*shipWorldId == m_clientContext->playerUuid()) {
+          if (*shipWorldId == m_clientContext->clientUuid()) {
             for (auto& p : m_scriptContexts) {
               p.second->invoke("shipWorldLoaded",printWorldId(worldLoadNotification->worldId));
             }

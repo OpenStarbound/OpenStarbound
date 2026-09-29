@@ -16,12 +16,17 @@ STAR_CLASS(ClientContext);
 
 class ClientContext {
 public:
-  ClientContext(Uuid serverUuid, Uuid playerUuid);
+  ClientContext(Uuid serverUuid, Uuid playerUuid, Uuid clientUuid);
 
   Uuid serverUuid() const;
+  // Original player uuid for the player used to join the server.
   // The player Uuid can differ from the mainPlayer's Uuid
   //  if the player has swapped character - use this for ship saving.
   Uuid playerUuid() const;
+  
+  // Client uuid sent to the server, used for ship/custom world ids as well as server client context data.
+  // If consistent client uuid is enabled, differs from player uuid and is consistent.
+  Uuid clientUuid() const;
 
   // The coordinate for the world which the player's ship is currently
   // orbiting.
@@ -54,6 +59,7 @@ public:
 private:
   Uuid m_serverUuid;
   Uuid m_playerUuid;
+  Uuid m_clientUuid;
   ConnectionId m_connectionId = 0;
   NetCompatibilityRules m_netCompatibilityRules;
 

@@ -41,7 +41,7 @@ public:
   typedef LuaMessageHandlingComponent<LuaUpdatableComponent<LuaBaseComponent>> ScriptComponent;
   typedef shared_ptr<ScriptComponent> ScriptComponentPtr;
   
-  UniverseClient(PlayerStoragePtr playerStorage, StatisticsPtr statistics, String const& customWorldStorageDir);
+  UniverseClient(PlayerStoragePtr playerStorage, StatisticsPtr statistics, String const& universeClientStorageDir);
   ~UniverseClient();
 
   void setMainPlayer(PlayerPtr player);
@@ -157,7 +157,7 @@ private:
   StatisticsPtr m_statistics;
   PlayerPtr m_mainPlayer;
   
-  String m_customWorldStorageDirectory;
+  String m_storageDirectory;
 
   shared_ptr<atomic<bool>> m_pause;
   ClockPtr m_universeClock;
@@ -202,6 +202,8 @@ private:
   
   HashMap<Uuid, RpcPromiseKeeper<Json>> m_universeMessageResponses;
   HashMap<Uuid, RpcPromise<Json>> m_universeMessagePromises;
+  
+  Uuid m_uuid = Uuid();
 };
 
 }
