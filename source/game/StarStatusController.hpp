@@ -119,7 +119,8 @@ public:
   void tickSlave(float dt);
 
   const DirectivesGroup& parentDirectives() const;
-  List<Drawable> drawables() const;
+  List<Drawable> backDrawables() const;
+  List<Drawable> frontDrawables() const;
   List<LightSource> lightSources() const;
   List<OverheadBar> overheadBars();
   bool toolUsageSuppressed() const;
@@ -152,6 +153,7 @@ private:
     Maybe<String> animationConfig;
     NetworkedAnimator animator;
     NetworkedAnimator::DynamicTarget dynamicTarget;
+    bool includeBack = false;
   };
   typedef NetElementDynamicGroup<EffectAnimator> EffectAnimatorGroup;
 

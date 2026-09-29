@@ -437,6 +437,7 @@ List<Drawable> Player::drawables() const {
   List<Drawable> drawables;
 
   if (!isTeleporting()) {
+    drawables.appendAll(m_statusController->backDrawables());
     drawables.appendAll(m_techController->backDrawables());
     if (!m_techController->parentHidden()) {
       m_tools->setupHumanoidHandItemDrawables(*humanoid());
@@ -470,7 +471,7 @@ List<Drawable> Player::drawables() const {
     }
     drawables.appendAll(m_techController->frontDrawables());
 
-    drawables.appendAll(m_statusController->drawables());
+    drawables.appendAll(m_statusController->frontDrawables());
 
     drawables.appendAll(m_tools->renderObjectPreviews(aimPosition(), walkingDirection(), inToolRange(), favoriteColor()));
   }

@@ -22,6 +22,8 @@ struct UniqueStatusEffectConfig {
   String label;
   String description;
   Maybe<String> icon;
+  
+  bool includeBack;
 
   JsonObject toJson();
 };
