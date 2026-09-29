@@ -584,12 +584,11 @@ void Quest::initScript() {
   m_scriptComponent.addCallbacks("config", LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def) {
       return Json(getTemplate()->scriptConfig).query(name, def);
     }));
-  m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(m_player));
   m_scriptComponent.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(m_player->statusController()));
   m_scriptComponent.addActorMovementCallbacks(m_player->movementController());
   m_inited = true;
 
-  m_scriptComponent.init(m_world);
+  m_scriptComponent.init(m_player);
 }
 
 void Quest::uninitScript() {
@@ -598,7 +597,6 @@ void Quest::uninitScript() {
   m_scriptComponent.removeCallbacks("celestial");
   m_scriptComponent.removeCallbacks("player");
   m_scriptComponent.removeCallbacks("config");
-  m_scriptComponent.removeCallbacks("entity");
   m_scriptComponent.removeCallbacks("status");
   m_scriptComponent.removeActorMovementCallbacks();
   m_inited = false;

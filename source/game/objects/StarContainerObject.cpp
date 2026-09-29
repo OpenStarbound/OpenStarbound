@@ -38,11 +38,11 @@ ContainerObject::ContainerObject(ObjectConfigConstPtr config, Json const& parame
   m_craftingProgress.setInterpolator(lerp<float, float>);
 }
 
-void ContainerObject::init(World* world, EntityId entityId, EntityMode mode) {
+void ContainerObject::init(World* world, EntityId entityId, EntityMode mode, ConnectionId originConnection) {
   if (mode == EntityMode::Master)
     m_interactive.set(true);
 
-  Object::init(world, entityId, mode);
+  Object::init(world, entityId, mode, originConnection);
   if (mode == EntityMode::Master) {
     if (!m_initialized) {
       m_initialized = true;
@@ -69,7 +69,7 @@ void ContainerObject::update(float dt, uint64_t currentStep) {
 
   if (isMaster()) {
     for (auto const& drop : take(m_lostItems))
-      world()->addEntity(ItemDrop::createRandomizedDrop(drop, position()));
+      world()->addEntity(ItemDrop::createRandomizedDrop(drop, position()),originConnection());
 
     if (m_crafting.get())
       tickCrafting(dt);
@@ -149,58 +149,61 @@ void ContainerObject::destroy(RenderCallback* renderCallback) {
   Object::destroy(renderCallback);
   if (isMaster()) {
     for (auto const& drop : m_items->items())
-      world()->addEntity(ItemDrop::createRandomizedDrop(drop, position()));
+      world()->addEntity(ItemDrop::createRandomizedDrop(drop, position()),originConnection());
   }
 }
 
 Maybe<ChainableJsonMessageResponse> ContainerObject::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
   auto itemDb = Root::singleton().itemDatabase();
 
-  if (message.equalsIgnoreCase("startCrafting")) {
-    startCrafting();
-    return ChainableJsonMessageResponse(Json());
+  if (world()->connectionHasPermission(sendingConnection, WorldPermissionType::Containers)) {
+    if (message.equalsIgnoreCase("startCrafting")) {
+      startCrafting();
+      return ChainableJsonMessageResponse(Json());
 
-  } else if (message.equalsIgnoreCase("stopCrafting")) {
-    stopCrafting();
-    return ChainableJsonMessageResponse(Json());
+    } else if (message.equalsIgnoreCase("stopCrafting")) {
+      stopCrafting();
+      return ChainableJsonMessageResponse(Json());
 
-  } else if (message.equalsIgnoreCase("burnContainerContents")) {
-    burnContainerContents();
-    return ChainableJsonMessageResponse(Json());
+    } else if (message.equalsIgnoreCase("burnContainerContents")) {
+      burnContainerContents();
+      return ChainableJsonMessageResponse(Json());
 
-  } else if (message.equalsIgnoreCase("addItems")) {
-    return ChainableJsonMessageResponse(itemSafeDescriptor(doAddItems(itemDb->fromJson(args.at(0)))).toJson());
+    } else if (message.equalsIgnoreCase("addItems")) {
+      return ChainableJsonMessageResponse(itemSafeDescriptor(doAddItems(itemDb->fromJson(args.at(0)))).toJson());
 
-  } else if (message.equalsIgnoreCase("putItems")) {
-    return ChainableJsonMessageResponse(itemSafeDescriptor(doPutItems(args.at(0).toUInt(), itemDb->fromJson(args.at(1)))).toJson());
+    } else if (message.equalsIgnoreCase("putItems")) {
+      return ChainableJsonMessageResponse(itemSafeDescriptor(doPutItems(args.at(0).toUInt(), itemDb->fromJson(args.at(1)))).toJson());
 
-  } else if (message.equalsIgnoreCase("takeItems")) {
-    return ChainableJsonMessageResponse(itemSafeDescriptor(doTakeItems(args.at(0).toUInt(), args.at(1).toUInt())).toJson());
+    } else if (message.equalsIgnoreCase("takeItems")) {
+      return ChainableJsonMessageResponse(itemSafeDescriptor(doTakeItems(args.at(0).toUInt(), args.at(1).toUInt())).toJson());
 
-  } else if (message.equalsIgnoreCase("swapItems")) {
-    return ChainableJsonMessageResponse(itemSafeDescriptor(doSwapItems(args.at(0).toUInt(), itemDb->fromJson(args.at(1)), args.get(2).optBool().value(true))).toJson());
+    } else if (message.equalsIgnoreCase("swapItems")) {
+      return ChainableJsonMessageResponse(itemSafeDescriptor(doSwapItems(args.at(0).toUInt(), itemDb->fromJson(args.at(1)), args.get(2).optBool().value(true))).toJson());
 
-  } else if (message.equalsIgnoreCase("applyAugment")) {
-    return ChainableJsonMessageResponse(itemSafeDescriptor(doApplyAugment(args.at(0).toUInt(), itemDb->fromJson(args.at(1)))).toJson());
+    } else if (message.equalsIgnoreCase("applyAugment")) {
+      return ChainableJsonMessageResponse(itemSafeDescriptor(doApplyAugment(args.at(0).toUInt(), itemDb->fromJson(args.at(1)))).toJson());
 
-  } else if (message.equalsIgnoreCase("consumeItems")) {
-    return ChainableJsonMessageResponse(Json(doConsumeItems(ItemDescriptor(args.at(0)))));
+    } else if (message.equalsIgnoreCase("consumeItems")) {
+      return ChainableJsonMessageResponse(Json(doConsumeItems(ItemDescriptor(args.at(0)))));
 
-  } else if (message.equalsIgnoreCase("consumeItemsAt")) {
-    return ChainableJsonMessageResponse(Json(doConsumeItems(args.at(0).toUInt(), args.at(1).toUInt())));
+    } else if (message.equalsIgnoreCase("consumeItemsAt")) {
+      return ChainableJsonMessageResponse(Json(doConsumeItems(args.at(0).toUInt(), args.at(1).toUInt())));
 
-  } else if (message.equalsIgnoreCase("clearContainer")) {
-    return ChainableJsonMessageResponse(Json(transform<JsonArray>(doClearContainer(), [](auto const& item) {
-        return itemSafeDescriptor(item).toJson();
-      })));
-
-  } else {
-    return Object::receiveMessage(sendingConnection, message, args);
+    } else if (message.equalsIgnoreCase("clearContainer")) {
+      return ChainableJsonMessageResponse(Json(transform<JsonArray>(doClearContainer(), [](auto const& item) {
+          return itemSafeDescriptor(item).toJson();
+        })));
+    }
   }
+  return Object::receiveMessage(sendingConnection, message, args);
 }
 
-InteractAction ContainerObject::interact(InteractRequest const&) {
-  return InteractAction(InteractActionType::OpenContainer, entityId(), Json());
+InteractAction ContainerObject::interact(InteractRequest const& request) {
+  if (world()->connectionHasPermission(connectionForEntity(request.sourceId), WorldPermissionType::Containers))
+    return InteractAction(InteractActionType::OpenContainer, entityId(), Json());
+  else
+    return InteractAction(InteractActionType::None, entityId(), Json());
 }
 
 Json ContainerObject::containerGuiConfig() const {
@@ -490,7 +493,7 @@ void ContainerObject::tickCrafting(float dt) {
     ItemPtr overflow =
         m_items->putItems(m_items->size() - 1, Root::singleton().itemDatabase()->item(m_goalRecipe.output));
     if (overflow)
-      world()->addEntity(ItemDrop::createRandomizedDrop(overflow, position()));
+      world()->addEntity(ItemDrop::createRandomizedDrop(overflow, position()),originConnection());
     itemsUpdated();
   }
 }

@@ -131,7 +131,7 @@ public:
   Maybe<ChainableJsonMessageResponse> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
 
 private:
-  typedef LuaMessageHandlingComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>> StatScript;
+  typedef LuaMessageHandlingComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaEntityComponent<LuaBaseComponent>>>> StatScript;
 
   struct EffectAnimator : public NetElement {
     EffectAnimator(Maybe<String> animationConfig = {});

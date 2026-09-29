@@ -153,8 +153,8 @@ ClientEntityMode Object::clientEntityMode() const {
   return m_clientEntityMode;
 }
 
-void Object::init(World* world, EntityId entityId, EntityMode mode) {
-  Entity::init(world, entityId, mode);
+void Object::init(World* world, EntityId entityId, EntityMode mode, ConnectionId originConnection) {
+  Entity::init(world, entityId, mode, originConnection);
   // Only try and find a new orientation if we do not already have one,
   // otherwise we may have a valid orientation that depends on non-tile data
   // that is not loaded yet.
@@ -219,9 +219,8 @@ void Object::init(World* world, EntityId entityId, EntityMode mode) {
 
     m_scriptComponent.addCallbacks("object", makeObjectCallbacks());
     m_scriptComponent.addCallbacks("config", LuaBindings::makeConfigCallbacks(bind(&Object::configValue, this, _1, _2)));
-    m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
     m_scriptComponent.addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(m_networkedAnimator.get()));
-    m_scriptComponent.init(world);
+    m_scriptComponent.init(this);
   }
 
   if (world->isClient()) {
@@ -233,8 +232,7 @@ void Object::init(World* world, EntityId entityId, EntityMode mode) {
       }));
     m_scriptedAnimator.addCallbacks("objectAnimator", makeAnimatorObjectCallbacks());
     m_scriptedAnimator.addCallbacks("config", LuaBindings::makeConfigCallbacks(bind(&Object::configValue, this, _1, _2)));
-    m_scriptedAnimator.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
-    m_scriptedAnimator.init(world);
+    m_scriptedAnimator.init(this);
   }
 
   m_xTilePosition.set(world->geometry().xwrap((int)m_xTilePosition.get()));
@@ -263,7 +261,6 @@ void Object::uninit() {
     m_scriptComponent.uninit();
     m_scriptComponent.removeCallbacks("object");
     m_scriptComponent.removeCallbacks("config");
-    m_scriptComponent.removeCallbacks("entity");
     m_scriptComponent.removeCallbacks("animator");
   }
 
@@ -272,7 +269,6 @@ void Object::uninit() {
     m_scriptedAnimator.removeCallbacks("animationConfig");
     m_scriptedAnimator.removeCallbacks("objectAnimator");
     m_scriptedAnimator.removeCallbacks("config");
-    m_scriptedAnimator.removeCallbacks("entity");
   }
 
   if (m_soundEffect)
@@ -501,23 +497,23 @@ void Object::destroy(RenderCallback* renderCallback) {
         auto smashDropPool = configValue("smashDropPool", "").toString();
         if (!smashDropPool.empty()) {
           for (auto const& treasureItem : Root::singleton().treasureDatabase()->createTreasure(smashDropPool, world()->threatLevel()))
-            world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position()));
+            world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position()),originConnection());
         } else if (!m_config->smashDropOptions.empty()) {
           List<ItemDescriptor> drops;
           auto dropOption = Random::randFrom(m_config->smashDropOptions);
           for (auto o : dropOption)
-            world()->addEntity(ItemDrop::createRandomizedDrop(o, position()));
+            world()->addEntity(ItemDrop::createRandomizedDrop(o, position()),originConnection());
         }
       } else {
         auto breakDropPool = configValue("breakDropPool", "").toString();
         if (!breakDropPool.empty()) {
           for (auto const& treasureItem : Root::singleton().treasureDatabase()->createTreasure(breakDropPool, world()->threatLevel()))
-            world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position()));
+            world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position()),originConnection());
         } else if (!m_config->breakDropOptions.empty()) {
           List<ItemDescriptor> drops;
           auto dropOption = Random::randFrom(m_config->breakDropOptions);
           for (auto o : dropOption)
-            world()->addEntity(ItemDrop::createRandomizedDrop(o, position()));
+            world()->addEntity(ItemDrop::createRandomizedDrop(o, position()),originConnection());
         } else if (m_config->hasObjectItem) {
           ItemDescriptor objectItem(m_config->name, 1);
           if (configValue("retainObjectParametersInItem", m_config->retainObjectParametersInItem).optBool().value()) {
@@ -526,7 +522,7 @@ void Object::destroy(RenderCallback* renderCallback) {
             parameters["scriptStorage"] = m_scriptComponent.getScriptStorage();
             objectItem = objectItem.applyParameters(parameters);
           }
-          world()->addEntity(ItemDrop::createRandomizedDrop(objectItem, position()));
+          world()->addEntity(ItemDrop::createRandomizedDrop(objectItem, position()),originConnection());
         }
       }
     } catch (StarException const& e) {

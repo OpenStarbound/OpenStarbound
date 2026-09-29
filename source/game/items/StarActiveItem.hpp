@@ -66,12 +66,12 @@ private:
   LuaCallbacks makeActiveItemCallbacks();
   LuaCallbacks makeScriptedAnimationCallbacks();
 
-  mutable LuaMessageHandlingComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaStorableComponent<LuaWorldComponent<LuaBaseComponent>>>>> m_script;
+  mutable LuaMessageHandlingComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaStorableComponent<LuaEntityComponent<LuaBaseComponent>>>>> m_script;
 
   NetworkedAnimator m_itemAnimator;
   NetworkedAnimator::DynamicTarget m_itemAnimatorDynamicTarget;
 
-  mutable LuaAnimationComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptedAnimator;
+  mutable LuaAnimationComponent<LuaUpdatableComponent<LuaEntityComponent<LuaBaseComponent>>> m_scriptedAnimator;
 
   HashMap<AudioInstancePtr, Vec2F> m_activeAudio;
 
