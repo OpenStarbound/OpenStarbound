@@ -67,9 +67,11 @@ StatusController::StatusController(Json const& config) : m_statCollection(config
   m_toolUsageSuppressed.setCompatibilityVersion(12);
   m_netGroup.addNetElement(&m_toolUsageSuppressed);
 
-  if (m_primaryAnimationConfig)
-    m_primaryAnimatorId = m_effectAnimators.addNetElement(make_shared<EffectAnimator>(*m_primaryAnimationConfig));
-  else
+  if (m_primaryAnimationConfig) {
+    auto effectAnimator = make_shared<EffectAnimator>(*m_primaryAnimationConfig);
+    effectAnimator->includeBack = config.getBool("primaryAnimationIncludeBack",true);
+    m_primaryAnimatorId = m_effectAnimators.addNetElement(effectAnimator);
+  } else
     m_primaryAnimatorId = EffectAnimatorGroup::NullElementId;
 }
 
@@ -555,10 +557,28 @@ const DirectivesGroup& StatusController::parentDirectives() const {
   return m_parentDirectives.get();
 }
 
-List<Drawable> StatusController::drawables() const {
+List<Drawable> StatusController::backDrawables() const {
   List<Drawable> drawables;
   for (auto const& animator : m_effectAnimators.netElements())
-    drawables.appendAll(animator->animator.drawables(m_movementController->position()));
+    if (animator->includeBack)
+      for (auto& piece : animator->animator.drawablesWithZLevel(m_movementController->position())) {
+        if (piece.second < 0.0f)
+          drawables.append(std::move(piece.first));
+      }
+  return drawables;
+}
+
+List<Drawable> StatusController::frontDrawables() const {
+  List<Drawable> drawables;
+  for (auto const& animator : m_effectAnimators.netElements())
+    if (animator->includeBack) {
+      for (auto& piece : animator->animator.drawablesWithZLevel(m_movementController->position())) {
+        if (piece.second >= 0.0f)
+          drawables.append(std::move(piece.first));
+      }
+    } else {
+      drawables.appendAll(animator->animator.drawables(m_movementController->position()));
+    }
   return drawables;
 }
 
@@ -612,12 +632,16 @@ void StatusController::EffectAnimator::initNetVersion(NetElementVersion const* v
 void StatusController::EffectAnimator::netStore(DataStream& ds, NetCompatibilityRules rules) const {
   if (!checkWithRules(rules)) return;
   ds.write(animationConfig);
+  if (rules.version() >= 19)
+    ds.write(includeBack);
   animator.netStore(ds, rules);
 }
 
 void StatusController::EffectAnimator::netLoad(DataStream& ds, NetCompatibilityRules rules) {
   if (!checkWithRules(rules)) return;
   ds.read(animationConfig);
+  if (rules.version() >= 19)
+    ds.read(includeBack);
   animator = animationConfig ? NetworkedAnimator(*animationConfig) : NetworkedAnimator();
   animator.netLoad(ds, rules);
 }
@@ -732,9 +756,11 @@ bool StatusController::addUniqueEffect(
         m_uniqueEffectMetadata.addNetElement(make_shared<UniqueEffectMetadata>(effect, duration, sourceEntityId));
 
     uniqueEffect.animatorId = UniqueEffectMetadataGroup::NullElementId;
-    if (uniqueEffect.effectConfig.animationConfig)
-      uniqueEffect.animatorId =
-          m_effectAnimators.addNetElement(make_shared<EffectAnimator>(uniqueEffect.effectConfig.animationConfig));
+    if (uniqueEffect.effectConfig.animationConfig) {
+      auto animator = make_shared<EffectAnimator>(uniqueEffect.effectConfig.animationConfig);
+      animator->includeBack = uniqueEffect.effectConfig.includeBack;
+      uniqueEffect.animatorId = m_effectAnimators.addNetElement(animator);
+    }
 
     uniqueEffect.toolUsageSuppressed = false;
 
