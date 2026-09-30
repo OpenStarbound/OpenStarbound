@@ -41,7 +41,7 @@ TeamBar::TeamBar(MainInterface* mainInterface, UniverseClientPtr client) {
         return;
       auto position = jsonToVec2I(Root::singleton().assets()->json("/interface/windowconfig/teambar.config:selfMenuOffset"));
       position[1] += windowHeight() / m_guiContext->interfaceScale();
-      showMemberMenu(m_client->mainPlayer()->clientContext()->playerUuid(), position);
+      showMemberMenu(m_client->mainPlayer()->clientContext()->clientUuid(), position);
     });
 
   reader.construct(assets->json("/interface/windowconfig/teambar.config:paneLayout"), this);
@@ -156,7 +156,7 @@ void TeamBar::buildTeamBar() {
   int memberSize = assets->json("/interface/windowconfig/teambar.config:memberSize").toInt();
   int memberSpacing = assets->json("/interface/windowconfig/teambar.config:memberSpacing").toInt();
 
-  Uuid myUuid = player->clientContext()->playerUuid();
+  Uuid myUuid = player->clientContext()->clientUuid();
   for (auto member : teamClient->members()) {
     if (member.uuid == myUuid) {
       continue;
@@ -359,7 +359,7 @@ void TeamMemberMenu::update(float dt) {
 
 void TeamMemberMenu::updateWidgets() {
   bool isLeader = m_owner->m_client->teamClient()->isTeamLeader();
-  bool isSelf = m_owner->m_client->mainPlayer()->clientContext()->playerUuid() == m_memberUuid;
+  bool isSelf = m_owner->m_client->mainPlayer()->clientContext()->clientUuid() == m_memberUuid;
 
   fetchChild<ButtonWidget>("beamToShip")->setEnabled(m_canBeam);
   fetchChild<ButtonWidget>("makeLeader")->setEnabled(isLeader && !isSelf);

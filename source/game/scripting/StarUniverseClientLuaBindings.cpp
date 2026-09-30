@@ -63,10 +63,28 @@ LuaCallbacks LuaBindings::makeUniverseClientThreadCallbacks(UniverseClient* univ
     return universe->clientContext()->connectionId();
   });
   
-  callbacks.registerCallback("clientUuid", [universe]() {
+  callbacks.registerCallback("time", [universe]() {
+    if (!universe->isConnected())
+      throw StarException("Universe is not connected");
+    return universe->universeClock()->time();
+  });
+  
+  callbacks.registerCallback("serverUuid", [universe]() {
+    if (!universe->isConnected())
+      throw StarException("Universe is not connected");
+    return universe->clientContext()->serverUuid().hex();
+  });
+  
+  callbacks.registerCallback("originalPlayerUuid", [universe]() {
     if (!universe->isConnected())
       throw StarException("Universe is not connected");
     return universe->clientContext()->playerUuid().hex();
+  });
+  
+  callbacks.registerCallback("clientUuid", [universe]() {
+    if (!universe->isConnected())
+      throw StarException("Universe is not connected");
+    return universe->clientContext()->clientUuid().hex();
   });
   
   callbacks.registerCallback("serverOpenProtocolVersion", [universe]() {

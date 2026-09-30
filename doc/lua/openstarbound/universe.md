@@ -187,9 +187,30 @@ Otherwise, functionally similar to `universe.createClientCustomWorld`.
 
 ---
 
-#### `unsigned` universe.clientUuid()
+#### `double` universe.time()
 
-Returns the client uuid. This is the uuid of the player the client joined with, which is the uuid present in client custom world IDs and the client's shipworld ID.
+Returns the universe time.
+
+---
+
+#### `Uuid` universe.serverUuid()
+
+Returns the uuid of the server. This is the uuid used to track bookmarks.
+
+---
+
+#### `Uuid` universe.originalPlayerUuid()
+
+Returns the original player uuid. This is the uuid of the player the client joined with, which is the player the client's ship is for.
+
+---
+
+#### `Uuid` universe.clientUuid()
+
+Returns the client uuid. This is the uuid of the client, which is the uuid present in client custom world IDs, the client's shipworld ID, and other warps related to the client.
+
+If `consistentClientUuid` in the configuration is `false` or undefined, or the client universe lock can't be acquired (due to another client running with the same storage folder),
+this is equivalent to `universe.originalPlayerUuid`.
 
 ---
 
