@@ -12,6 +12,7 @@
 #include "StarWorldClientThread.hpp"
 #include "StarLuaComponents.hpp"
 #include "StarUniverse.hpp"
+#include "StarLockFile.hpp"
 
 // TODO: make this more thread safe
 
@@ -158,6 +159,7 @@ private:
   PlayerPtr m_mainPlayer;
   
   String m_storageDirectory;
+  Maybe<LockFile> m_storageDirectoryLock;
 
   shared_ptr<atomic<bool>> m_pause;
   ClockPtr m_universeClock;

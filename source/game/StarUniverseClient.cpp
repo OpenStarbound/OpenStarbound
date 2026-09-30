@@ -10,6 +10,7 @@
 #include "StarPlayer.hpp"
 #include "StarPlayerLog.hpp"
 #include "StarAssets.hpp"
+#include "StarFile.hpp"
 #include "StarTime.hpp"
 #include "StarNetPackets.hpp"
 #include "StarTcp.hpp"
@@ -36,9 +37,18 @@ UniverseClient::UniverseClient(PlayerStoragePtr playerStorage, StatisticsPtr sta
   m_pause = make_shared<atomic<bool>>(false);
   m_luaRoot = make_shared<LuaRoot>();
   m_subWorldThreads = IdMap<ClientSubWorldId,WorldClientThreadPtr>(MinClientSubWorldId,MaxClientSubWorldId);
-  {
-    RecursiveMutexLocker locker(m_mutex);
-    
+  
+  String const lockFile = "universe.lock";
+  
+  if (!File::isDirectory(m_storageDirectory)) {
+    Logger::info("UniverseClient: Creating universe client storage directory");
+    File::makeDirectory(m_storageDirectory);
+  }
+  
+  m_storageDirectoryLock = LockFile::acquireLock(File::relativeTo(m_storageDirectory, lockFile));
+  if (!m_storageDirectoryLock) {
+    Logger::warn("Could not acquire lock for the universe client directory. Client custom worlds and consistent client uuid are disabled.");
+  } else {
     auto versioningDatabase = Root::singleton().versioningDatabase();
     auto storageFile = File::relativeTo(m_storageDirectory, "universeclient.dat");
     if (File::isFile(storageFile)) {
@@ -57,8 +67,7 @@ UniverseClient::UniverseClient(PlayerStoragePtr playerStorage, StatisticsPtr sta
 
 UniverseClient::~UniverseClient() {
   disconnect();
-  {
-    RecursiveMutexLocker locker(m_mutex);
+  if (m_storageDirectoryLock) {
     auto versioningDatabase = Root::singleton().versioningDatabase();
     auto versionedSettings = versioningDatabase->makeCurrentVersionedJson("UniverseClientSettings",
     JsonObject{
@@ -153,7 +162,7 @@ Maybe<String> UniverseClient::connect(UniverseConnection connection, bool allowA
     }
   }
   connection.packetSocket().setNetRules(compatibilityRules);
-  auto clientUuid = root.configuration()->getPath("consistentClientUuid").optBool().value(false) ? m_uuid : m_mainPlayer->uuid();
+  auto clientUuid = (m_storageDirectoryLock && root.configuration()->getPath("consistentClientUuid").optBool().value(false)) ? m_uuid : m_mainPlayer->uuid();
   auto clientConnect = make_shared<ClientConnectPacket>(Root::singleton().assets()->digest(), allowAssetsMismatch, clientUuid, m_mainPlayer->name(),
       m_mainPlayer->shipSpecies(), m_playerStorage->loadShipData(m_mainPlayer->uuid()), m_mainPlayer->shipUpgrades(),
       m_mainPlayer->log()->introComplete(), account);
@@ -801,11 +810,9 @@ UniverseClient::ScriptComponentPtr UniverseClient::scriptContext(String const& c
 }
 
 void UniverseClient::createCustomWorld(String const& name, Json templateData) {
+  if (!m_storageDirectoryLock)
+    return;
   RecursiveMutexLocker locker(m_mutex);
-  if (!File::isDirectory(m_storageDirectory)) {
-    Logger::info("UniverseClient: Creating universe client storage directory");
-    File::makeDirectory(m_storageDirectory);
-  }
   String filename = File::relativeTo(m_storageDirectory, strf("{}.world", name));
   if (!File::exists(filename)) {
     m_connection->pushSingle(make_shared<ClientCustomWorldCreate>(name, templateData));
@@ -941,7 +948,7 @@ void UniverseClient::handlePackets(List<PacketPtr> const& packets) {
         m_playerStorage->applyShipUpdates(m_clientContext->playerUuid(), m_clientContext->newShipUpdates());
         
         auto customWorldUpdates = m_clientContext->newCustomWorldUpdates();
-        if (!customWorldUpdates.empty()) {
+        if (!customWorldUpdates.empty() && m_storageDirectoryLock) {
           RecursiveMutexLocker locker(m_mutex);
           for (auto p : customWorldUpdates) {
             if (!p.second.empty()) {
@@ -1008,7 +1015,10 @@ void UniverseClient::handlePackets(List<PacketPtr> const& packets) {
         m_serverInfo = ServerInfo{serverInfoPacket->players, serverInfoPacket->maxPlayers};
       } else if (auto clientCustomWorldRequest = as<ClientCustomWorldRequest>(packet)) {
         Logger::info("UniverseClient: Received request for client custom world {}.", clientCustomWorldRequest->name);
-        if (clientCustomWorldRequest->name.contains("../") || clientCustomWorldRequest->name.contains("..\\")) {
+        if (!m_storageDirectoryLock) {
+          Logger::error("Rejecting custom world {}, client lacks universe lock.", clientCustomWorldRequest->name);
+          m_connection->pushSingle(make_shared<ClientCustomWorldResponse>(clientCustomWorldRequest->name, WorldChunks()));
+        } else if (clientCustomWorldRequest->name.contains("../") || clientCustomWorldRequest->name.contains("..\\")) {
           Logger::error("Rejecting custom world name {}, path attempts to go up.", clientCustomWorldRequest->name);
           m_connection->pushSingle(make_shared<ClientCustomWorldResponse>(clientCustomWorldRequest->name, WorldChunks()));
         } else {
