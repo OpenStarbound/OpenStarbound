@@ -8,13 +8,10 @@
 #include "StarGameTypes.hpp"
 #include "StarCollisionBlock.hpp"
 #include "StarLua.hpp"
+#include "StarLuaEntityContext.hpp"
 #include "StarPlatformerAStar.hpp"
 
 namespace Star {
-
-// can be replaced with an MVariant in case non-server non-entity world contexts are added in the future
-// if no caller specified, caller origin connection is assumed to be server
-typedef Maybe<Entity*> WorldCaller;
 
 STAR_CLASS(Entity);
 STAR_CLASS(World);
@@ -25,13 +22,6 @@ STAR_CLASS(ScriptedEntity);
 
 namespace LuaBindings {
   typedef function<Json(ScriptedEntityPtr const& entity, String const& functionName, JsonArray const& args)> CallEntityScriptFunction;
-  
-  
-  inline ConnectionId callerConnection(WorldCaller caller) {
-    if (caller)
-      return (*caller)->originConnection();
-    return ServerConnectionId;
-  }
 
   LuaCallbacks makeWorldThreadCallbacks(World* world, WorldCaller caller = {});
   LuaCallbacks makeWorldCallbacks(World* world, WorldCaller caller = {});

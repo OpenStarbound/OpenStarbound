@@ -150,14 +150,6 @@ struct LuaUserDataMethods<BlackboardWeakPtr> {
 };
 
 template <>
-struct LuaConverter<EntityPtr> : LuaUserDataConverter<EntityPtr> {};
-
-template <>
-struct LuaUserDataMethods<EntityPtr> {
-  static LuaMethods<EntityPtr> make();
-};
-
-template <>
 struct LuaConverter<AudioInstancePtr> : LuaUserDataConverter<AudioInstancePtr> {};
 
 template <>

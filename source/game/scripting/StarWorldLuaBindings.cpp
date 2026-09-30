@@ -583,13 +583,9 @@ namespace LuaBindings {
             return {};
         });
 
-    callbacks.registerCallbackWithSignature<Maybe<EntityPtr>, EntityId>("entity", [world, caller](EntityId entityId) -> Maybe<EntityPtr> {
-      // TODO: wrap EntityPtr in something to pass the connection there
-      // for now, disable entirely if connection has no permission to access containers (as that and interaction are the things that need checks)
-      if (!world->connectionHasPermission(callerConnection(caller), WorldPermissionType::Containers))
-        return {};
+    callbacks.registerCallbackWithSignature<Maybe<EntityContext>, EntityId>("entity", [world, caller](EntityId entityId) -> Maybe<EntityContext> {
       if (auto entity = world->entity(entityId)) {
-        return entity;
+        return EntityContext{entity,caller};
       } else {
         return {};
       }
