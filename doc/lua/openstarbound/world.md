@@ -166,3 +166,27 @@ Returns a json object containing configuation values for the biome generated at 
 #### `Json` world.blockInfoAt(`Vec2I` position)
 
 Returns a json object containing information about the position in the world's template.
+
+---
+
+#### `bool` world.connectionHasPermission(`ConnectionId` connection, [`WorldPermissionType` permission])
+
+Returns if the given connection has the given permission. The permission defaults to `"Build"`.
+
+---
+
+#### `void` world.setConnectionHasPermission(`ConnectionId` connection, `WorldPermissionType` permission, `bool` hasPermission)
+
+Sets whether or not the client with the given connection has this permission on the world.
+Clients by default have all permissions. Can be called from `addClient` if needed.
+Blocks all changes to the world by the given client or entities spawned by the given client.
+
+A client's main world shares this data with its subworlds. Changes to the main world's permissions are reflected with subworlds.
+This data is not tracked for clients not on the world, if the given connection is not on the world, nothing will happen.
+
+The permissions are `"Build"`, `"Container"`, and `"Interact"`.
+If a client can `"Build"`, they can do everything.
+If a client lacks `"Container"`, they cannot use containers.
+If a client lacks `"Interact"`, they cannot interact with nor send entity messages to server master entities that do not also lack `"Interact"` permissions.
+
+These permissions affect both client master entities and server master entities spawned by this client.

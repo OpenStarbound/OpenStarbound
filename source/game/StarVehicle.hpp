@@ -41,7 +41,7 @@ public:
   List<DamageNotification> applyDamage(DamageRequest const& damage) override;
   List<DamageNotification> selfDamageNotifications() override;
 
-  void init(World* world, EntityId entityId, EntityMode mode) override;
+  void init(World* world, EntityId entityId, EntityMode mode, ConnectionId originConnection = ServerConnectionId) override;
   void uninit() override;
 
   Vec2F position() const override;
@@ -164,9 +164,9 @@ private:
   MovementController m_movementController;
   NetworkedAnimator m_networkedAnimator;
   NetworkedAnimator::DynamicTarget m_networkedAnimatorDynamicTarget;
-  LuaMessageHandlingComponent<LuaStorableComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>> m_scriptComponent;
+  LuaMessageHandlingComponent<LuaStorableComponent<LuaUpdatableComponent<LuaEntityComponent<LuaBaseComponent>>>> m_scriptComponent;
   
-  LuaAnimationComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptedAnimator;
+  LuaAnimationComponent<LuaUpdatableComponent<LuaEntityComponent<LuaBaseComponent>>> m_scriptedAnimator;
   NetElementHashMap<String, Json> m_scriptedAnimationParameters;
 
   Map<ConnectionId, GameTimer> m_aliveMasterConnections;

@@ -57,6 +57,12 @@ EnumMap<Rarity> const RarityNames{
   {Rarity::Essential, "essential"}
 };
 
+EnumMap<WorldPermissionType> const WorldPermissionTypeNames{
+  {WorldPermissionType::Build, "Build"},
+  {WorldPermissionType::Containers, "Containers"},
+  {WorldPermissionType::Interact, "Interact"}
+};
+
 std::pair<EntityId, EntityId> connectionEntitySpace(ConnectionId connectionId) {
   if (connectionId == ServerConnectionId) {
     return {MinServerEntityId, MaxServerEntityId};

@@ -117,7 +117,7 @@ private:
   struct TechModule {
     TechConfig config;
 
-    LuaMessageHandlingComponent<LuaStorableComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>>>
+    LuaMessageHandlingComponent<LuaStorableComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaEntityComponent<LuaBaseComponent>>>>>
         scriptComponent;
     bool visible;
     bool toolUsageSuppressed;

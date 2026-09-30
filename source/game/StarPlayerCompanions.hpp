@@ -56,7 +56,7 @@ private:
   Json m_config;
   StringMap<List<CompanionPtr>> m_companions;
 
-  LuaMessageHandlingComponent<LuaStorableComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>>
+  LuaMessageHandlingComponent<LuaStorableComponent<LuaUpdatableComponent<LuaEntityComponent<LuaBaseComponent>>>>
       m_scriptComponent;
 };
 

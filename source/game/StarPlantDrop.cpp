@@ -141,8 +141,8 @@ EntityType PlantDrop::entityType() const {
   return EntityType::PlantDrop;
 }
 
-void PlantDrop::init(World* world, EntityId entityId, EntityMode mode) {
-  Entity::init(world, entityId, mode);
+void PlantDrop::init(World* world, EntityId entityId, EntityMode mode, ConnectionId originConnection) {
+  Entity::init(world, entityId, mode, originConnection);
   m_movementController.init(world);
 
   PolyF collisionPoly = PolyF(RectF::withCenter(m_collisionRect.center(), m_collisionRect.size() / 2.0f));
@@ -228,10 +228,10 @@ void PlantDrop::update(float dt, uint64_t) {
                 + Vec2F(Random::randf(-0.2f, 0.2f), Random::randf(-0.2f, 0.2f));
             if (drop.getString("item") == "sapling")
               world()->addEntity(ItemDrop::createRandomizedDrop(
-                  ItemDescriptor("sapling", (size_t)drop.getInt("count", 1), m_saplingConfig), position() + pos));
+                  ItemDescriptor("sapling", (size_t)drop.getInt("count", 1), m_saplingConfig), position() + pos),originConnection());
             else
               world()->addEntity(ItemDrop::createRandomizedDrop(
-                  {drop.getString("item"), (size_t)drop.getInt("count", 1)}, position() + pos));
+                  {drop.getString("item"), (size_t)drop.getInt("count", 1)}, position() + pos),originConnection());
           }
         }
       }

@@ -36,7 +36,7 @@ public:
 
   EntityType entityType() const override;
 
-  void init(World* world, EntityId entityId, EntityMode mode) override;
+  void init(World* world, EntityId entityId, EntityMode mode, ConnectionId originConnection = ServerConnectionId) override;
   void uninit() override;
 
   String name() const override;
@@ -145,7 +145,7 @@ private:
   
   ClientEntityMode m_clientEntityMode;
   
-  mutable LuaMessageHandlingComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptComponent;
+  mutable LuaMessageHandlingComponent<LuaUpdatableComponent<LuaEntityComponent<LuaBaseComponent>>> m_scriptComponent;
   Maybe<Mode> m_overrideMode;
 };
 

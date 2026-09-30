@@ -20,7 +20,7 @@ public:
   Json diskStore() const;
   ByteArray netStore(NetCompatibilityRules rules = {});
 
-  void init(World* world, EntityId entityId, EntityMode mode) override;
+  void init(World* world, EntityId entityId, EntityMode mode, ConnectionId originConnection = ServerConnectionId) override;
   void uninit() override;
 
   EntityType entityType() const override;
@@ -77,7 +77,7 @@ private:
 
   bool m_scripted = false;
   List<BehaviorStatePtr> m_behaviors;
-  LuaMessageHandlingComponent<LuaStorableComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>>
+  LuaMessageHandlingComponent<LuaStorableComponent<LuaUpdatableComponent<LuaEntityComponent<LuaBaseComponent>>>>
       m_scriptComponent;
 };
 

@@ -48,7 +48,7 @@ extern EnumMap<WorldServerFidelity> const WorldServerFidelityNames;
 
 class WorldServer : public World {
 public:
-  typedef LuaMessageHandlingComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> ScriptComponent;
+  typedef LuaMessageHandlingComponent<LuaUpdatableComponent<LuaWorldComponent<LuaStorableComponent<LuaBaseComponent>>>> ScriptComponent;
   typedef shared_ptr<ScriptComponent> ScriptComponentPtr;
   typedef function<void(Json const&)> WorldPropertyListener;
 
@@ -144,6 +144,7 @@ public:
   bool damageWouldDestroy(Vec2I const& pos, TileLayer layer, TileDamage const& tileDamage) const override;
   EntityPtr entity(EntityId entityId) const override;
   void addEntity(EntityPtr const& entity, EntityId entityId = NullEntityId) override;
+  void addEntity(EntityPtr const& entity, ConnectionId connection, EntityId entityId = NullEntityId) override;
   EntityPtr closestEntity(Vec2F const& center, float radius, EntityFilter selector = EntityFilter()) const override;
   void forAllEntities(EntityCallback entityCallback) const override;
   void forEachEntity(RectF const& boundBox, EntityCallback callback) const override;
@@ -190,6 +191,8 @@ public:
   bool isTileProtected(Vec2I const& pos) const override;
   
   StringMap<LuaCallbacks> luaThreadCallbacks() const override;
+  
+  bool connectionHasPermission(ConnectionId connection, WorldPermissionType permission) const override;
   
   void wire(Vec2I const& outputPosition, size_t outputIndex, Vec2I const& inputPosition, size_t inputIndex);
 
@@ -296,10 +299,21 @@ public:
   Maybe<pair<String, String>> pullNewPlanetType();
   
   Maybe<float> sectorTimeToLive(Vec2I const& position) const;
+  
+  void setConnectionHasPermission(ConnectionId const& connectionId, WorldPermissionType const& permission, bool const& hasPermission);
 
 private:
+  // general data for a client, should be the same whether main or subworld.
   struct ClientInfo {
-    ClientInfo(ConnectionId clientId, InterpolationTracker const trackerInit);
+    bool local = false;
+    bool admin = false;
+    bool canBuild = true;
+    bool canInteract = true;
+    bool canAccessContainers = true;
+  };
+  // info for a given WorldClient, can either be their main world or their subworld.
+  struct ClientWorldInfo {
+    ClientWorldInfo(ConnectionId clientId, InterpolationTracker const trackerInit);
 
     List<RectI> monitoringRegions(EntityMapPtr const& entityMap) const;
 
@@ -313,8 +327,10 @@ private:
     WorldClientState clientState;
     bool pendingForward;
     bool started;
-    bool local;
-    bool admin;
+    
+    shared_ptr<ClientInfo> info; // data that is shared between subworld and main world for clients
+    
+    bool couldModify;
 
     List<PacketPtr> outgoingPackets;
 
@@ -420,7 +436,7 @@ private:
   List<CollisionBlock> m_workingCollisionBlocks;
 
   HashMap<NetCompatibilityRules, HashMap<pair<EntityId, uint64_t>, pair<ByteArray, uint64_t>>> m_netStateCache;
-  OrderedHashMap<ConnectionId, shared_ptr<ClientInfo>> m_clientInfo;
+  OrderedHashMap<ConnectionId, shared_ptr<ClientWorldInfo>> m_clientInfo;
 
   GameTimer m_entityUpdateTimer;
   GameTimer m_tileEntityBreakCheckTimer;
@@ -454,6 +470,7 @@ private:
   GameTimer m_expiryTimer;
   
   StringMap<LuaCallbacks> m_luaThreadCallbacks;
+  JsonObject m_scriptStorage = {};
 };
 
 }
