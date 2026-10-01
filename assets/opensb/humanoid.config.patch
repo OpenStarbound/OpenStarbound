@@ -18,8 +18,24 @@
 	],
 	"identityFramesetTags" : {
 		"bodyFrameset" : "<gender>body.png",
+		"bodyFlippedFrameset" : "<gender>body.png",
+
 		"headFrameset" : "<gender>head.png",
+		"headFlippedFrameset" : "<gender>head.png",
+
 		"bodyMaskFrameset" : "mask/<gender>body.png",
-		"bodyHeadMaskFrameset" : "headmask/<gender>body.png"
+		"bodyMaskFlippedFrameset" : "mask/<gender>body.png",
+
+		"bodyHeadMaskFrameset" : "headmask/<gender>body.png",
+		"bodyHeadMaskFlippedFrameset" : "headmask/<gender>body.png",
+
+		"hairFrameset" : "<hairGroup>/<hairType>.png",
+		"hairFlippedFrameset" : "<hairGroup>/<hairType>.png",
+
+		"facialHairFrameset" : "<facialHairGroup>/<facialHairType>.png",
+		"facialHairFlippedFrameset" : "<facialHairGroup>/<facialHairType>.png",
+
+		"facialMaskFrameset" : "<facialMaskGroup>/<facialMaskType>.png",
+		"facialMaskFlippedFrameset" : "<facialMaskGroup>/<facialMaskType>.png"
 	}
 }
