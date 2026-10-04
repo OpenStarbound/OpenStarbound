@@ -491,6 +491,8 @@ void Monster::update(float dt, uint64_t) {
 }
 
 void Monster::render(RenderCallback* renderCallback) {
+  renderCallback->addDrawables(m_statusController->backDrawables(), m_monsterVariant.renderLayer);
+  
   for (auto& drawable : m_networkedAnimator.drawables(position())) {
     if (drawable.isImage())
       drawable.imagePart().addDirectivesGroup(m_statusController->parentDirectives(), true);
@@ -500,7 +502,7 @@ void Monster::render(RenderCallback* renderCallback) {
   renderCallback->addAudios(m_networkedAnimatorDynamicTarget.pullNewAudios());
   renderCallback->addParticles(m_networkedAnimatorDynamicTarget.pullNewParticles());
 
-  renderCallback->addDrawables(m_statusController->drawables(), m_monsterVariant.renderLayer);
+  renderCallback->addDrawables(m_statusController->frontDrawables(), m_monsterVariant.renderLayer);
   renderCallback->addParticles(m_statusController->pullNewParticles());
   renderCallback->addAudios(m_statusController->pullNewAudios());
 

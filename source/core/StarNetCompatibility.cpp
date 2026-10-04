@@ -2,6 +2,6 @@
 
 namespace Star {
 
-VersionNumber const OpenProtocolVersion = 18; // update StreamCompatibilityVersion too!
+VersionNumber const OpenProtocolVersion = 19; // update StreamCompatibilityVersion too!
 
 }

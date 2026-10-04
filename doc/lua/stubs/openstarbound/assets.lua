@@ -15,10 +15,37 @@ function assets.byExtension(extension) end
 ---@return StringList
 function assets.scan(a, b) end
 
---- Returns the JSON contents of a JSON asset file. Similar to `root.assetJson`. --- #### Maybe<`String`> assets.origin(`String` path) Returns the sourcePath for the specified asset or `nil` if the asset doesn't exist. Similar to `root.assetOrigin`. ---
+--- Returns the JSON contents of a JSON asset file. Similar to `root.assetJson`. ---
 ---@param path string
 ---@return Json
 function assets.json(path) end
+
+--- Returns the sourcePath for the specified asset or `nil` if the asset doesn't exist. Similar to `root.assetOrigin`. ---
+---@param path string
+---@return Maybe<String>
+function assets.origin(path)
+
+--- Gets a configuration value in `/storage/starbound.config`. Similar to `root.getConfiguration`. ---
+---@param key string
+---@return Json
+function assets.getConfiguration(key) end
+
+--- Gets a configuration value in `/storage/starbound.config` by path. Similar to `root.getConfigurationPath`. *Both getters will error if you try to get `title`, as that can contain the player's saved server login.* ---
+---@param path string
+---@return Json
+function assets.getConfigurationPath(path) end
+
+--- Sets a configuration value in `/storage/starbound.config`. Similar to root.setConfiguration. ---
+---@param key string
+---@param value Json
+---@return Json
+function assets.setConfiguration(key, value) end
+
+--- Sets a configuration value in `/storage/starbound.config` by path. Similar to `root.setConfigurationPath`. *Both setters will error if you try to set `safeScripts`, as that can break Starbound's sandbox.* ---
+---@param path string
+---@param value Json
+---@return Json
+function assets.setConfigurationPath(path, value) end
 
 --- Returns the raw contents of the specified asset file as a String. Similar to `root.assetData`. ---
 ---@param path string

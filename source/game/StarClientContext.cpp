@@ -24,9 +24,10 @@ DataStream& operator<<(DataStream& ds, ShipUpgrades const& upgrades) {
   return ds;
 }
 
-ClientContext::ClientContext(Uuid serverUuid, Uuid playerUuid) {
+ClientContext::ClientContext(Uuid serverUuid, Uuid playerUuid, Uuid clientUuid) {
   m_serverUuid = std::move(serverUuid);
   m_playerUuid = std::move(playerUuid);
+  m_clientUuid = std::move(clientUuid);
   m_rpc = std::make_shared<JsonRpc>();
 
   m_netGroup.addNetElement(&m_orbitWarpActionNetState);
@@ -43,6 +44,10 @@ Uuid ClientContext::serverUuid() const {
 
 Uuid ClientContext::playerUuid() const {
   return m_playerUuid;
+}
+
+Uuid ClientContext::clientUuid() const {
+  return m_clientUuid;
 }
 
 CelestialCoordinate ClientContext::shipCoordinate() const {

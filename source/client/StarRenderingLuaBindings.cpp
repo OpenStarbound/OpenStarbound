@@ -1,5 +1,6 @@
 #include "StarRenderingLuaBindings.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarImageLuaBindings.hpp"
 #include "StarLuaConverters.hpp"
 #include "StarClientApplication.hpp"
 #include "StarRenderer.hpp"
@@ -37,6 +38,17 @@ LuaCallbacks LuaBindings::makeRenderingCallbacks(ClientApplication* app) {
   callbacks.registerCallback("getEffectParameter", [app](String const& effectName, String const& effectParameter) {
     auto renderer = app->renderer();
     return renderer->getEffectScriptableParameter(effectName, effectParameter);
+  });
+  
+  callbacks.registerCallback("setTexture", [app](String const& textureName, Variant<Image,String> const& value) {
+    auto renderer = app->renderer();
+    Image image;
+    if (value.is<String>()) {
+      image = *Root::singleton().assets()->image(value.get<String>());
+    } else {
+      image = value.get<Image>();
+    }
+    renderer->setTexture(textureName,image);
   });
   
   // not saved; should be loaded by Lua again

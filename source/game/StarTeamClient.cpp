@@ -31,7 +31,7 @@ TeamClient::TeamClient(PlayerPtr mainPlayer, ClientContextPtr clientContext) {
 bool TeamClient::isTeamLeader() {
   if (!m_teamUuid)
     return false;
-  return m_teamLeader == m_clientContext->playerUuid();
+  return m_teamLeader == m_clientContext->clientUuid();
 }
 
 bool TeamClient::isTeamLeader(Uuid const& playerUuid) {
@@ -50,7 +50,7 @@ void TeamClient::invitePlayer(String const& playerName) {
 
   JsonObject request;
   request["inviteeName"] = playerName;
-  request["inviterUuid"] = m_clientContext->playerUuid().hex();
+  request["inviterUuid"] = m_clientContext->clientUuid().hex();
   request["inviterName"] = m_mainPlayer->name();
   invokeRemote("team.invite", request, [=](Json response) {
     if (!response)
@@ -74,7 +74,7 @@ void TeamClient::invitePlayer(String const& playerName) {
 void TeamClient::acceptInvitation(Uuid const& inviterUuid) {
   JsonObject request;
   request["inviterUuid"] = inviterUuid.hex();
-  request["inviteeUuid"] = m_clientContext->playerUuid().hex();
+  request["inviteeUuid"] = m_clientContext->clientUuid().hex();
   invokeRemote("team.acceptInvitation", request, [this](Json) { forceUpdate(); });
 }
 
@@ -96,7 +96,7 @@ void TeamClient::makeLeader(Uuid const& playerUuid) {
 void TeamClient::removeFromTeam(Uuid const& playerUuid) {
   if (!m_teamUuid)
     return;
-  if (!isTeamLeader() && playerUuid != m_clientContext->playerUuid())
+  if (!isTeamLeader() && playerUuid != m_clientContext->clientUuid())
     return;
   JsonObject request;
   request["teamUuid"] = m_teamUuid->hex();
@@ -124,7 +124,7 @@ void TeamClient::update() {
     if (Time::monotonicTime() - m_pollInvitationsTimer > Root::singleton().assets()->json("/interface.config:invitationPollInterval").toFloat()) {
       m_pollInvitationsTimer = Time::monotonicTime();
       JsonObject request;
-      request["playerUuid"] = m_clientContext->playerUuid().hex();
+      request["playerUuid"] = m_clientContext->clientUuid().hex();
       invokeRemote("team.pollInvitation", request, [this](Json response) {
           if (response.isNull())
             return;
@@ -154,7 +154,7 @@ void TeamClient::pullFullUpdate() {
     return;
   m_fullUpdateRunning = true;
   JsonObject request;
-  request["playerUuid"] = m_clientContext->playerUuid().hex();
+  request["playerUuid"] = m_clientContext->clientUuid().hex();
 
   invokeRemote("team.fetchTeamStatus", request, [this](Json response) {
       m_fullUpdateRunning = false;
@@ -238,7 +238,7 @@ void TeamClient::handleRpcResponses() {
 
 void TeamClient::writePlayerData(JsonObject& request, PlayerPtr player, bool fullWrite) const {
   request["version"] = TeamClientVersion;
-  request["playerUuid"] = m_clientContext->playerUuid().hex();
+  request["playerUuid"] = m_clientContext->clientUuid().hex();
   request["entity"] = player->entityId();
   request["health"] = player->health() / player->maxHealth();
   request["energy"] = player->energy() / player->maxEnergy();

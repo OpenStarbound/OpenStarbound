@@ -508,6 +508,8 @@ void Npc::render(RenderCallback* renderCallback) {
   if (auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor()))
     renderLayer = loungeAnchor->loungeRenderLayer;
 
+  renderCallback->addDrawables(m_statusController->backDrawables(), renderLayer);
+  
   m_tools->setupHumanoidHandItemDrawables(*humanoid());
 
   DirectivesGroup humanoidDirectives;
@@ -529,7 +531,7 @@ void Npc::render(RenderCallback* renderCallback) {
   renderCallback->addParticles(m_humanoidDynamicTarget.pullNewParticles());
   renderCallback->addAudios(m_humanoidDynamicTarget.pullNewAudios());
 
-  renderCallback->addDrawables(m_statusController->drawables(), renderLayer);
+  renderCallback->addDrawables(m_statusController->frontDrawables(), renderLayer);
   renderCallback->addParticles(m_statusController->pullNewParticles());
   renderCallback->addAudios(m_statusController->pullNewAudios());
 

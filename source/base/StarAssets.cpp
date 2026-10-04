@@ -21,6 +21,8 @@
 #include "StarLua.hpp"
 #include "StarImageLuaBindings.hpp"
 #include "StarUtilityLuaBindings.hpp"
+#include "StarConfiguration.hpp"
+#include "StarRootBase.hpp"
 
 namespace Star {
 
@@ -190,6 +192,34 @@ Assets::Assets(Settings settings, StringList assetSources) {
         return this->assetSourcePath(descriptor->source);
       return {};
     });
+
+    callbacks.registerCallback("getConfiguration", [](String const& key) -> Json {
+      if (key == "title")
+        throw StarException(strf("Cannot get {}", key));
+      else
+        return RootBase::singleton().configuration()->get(key);
+    });
+
+    callbacks.registerCallback("setConfiguration", [](String const& key, Json const& value) {
+      if (key == "safeScripts" || key == "safe")
+        throw StarException(strf("Cannot set {}", key));
+      else
+        RootBase::singleton().configuration()->set(key, value);
+      });
+
+    callbacks.registerCallback("getConfigurationPath", [](String const& path) -> Json {
+      if (path.empty() || path.beginsWith("title"))
+        throw ConfigurationException(strf("Cannot get {}", path));
+      else
+        return RootBase::singleton().configuration()->getPath(path);
+      });
+
+    callbacks.registerCallback("setConfigurationPath", [](String const& path, Json const& value) {
+      if (path.empty() || path.beginsWith("safeScripts") || path.splitAny("[].").get(0) == "safe")
+        throw ConfigurationException(strf("Cannot set {}", path));
+      else
+        RootBase::singleton().configuration()->setPath(path, value);
+      });
 
     callbacks.registerCallback("bytes", [this](String const& path) -> String {
       auto assetBytes = bytes(path);
