@@ -430,6 +430,8 @@ private:
   UniverseClient* m_universe;
   
   StringMap<LuaCallbacks> m_luaThreadCallbacks;
+  
+  WorldPermissions m_permissions;
 };
 
 }

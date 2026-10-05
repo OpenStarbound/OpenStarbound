@@ -131,7 +131,9 @@ enum class PacketType : uint8_t {
   LogMapUpdate,
   
   UniverseMessage,
-  UniverseMessageResponse
+  UniverseMessageResponse,
+  
+  WorldPermissionsUpdate
 };
 extern EnumMap<PacketType> const PacketTypeNames;
 
@@ -435,6 +437,8 @@ struct WorldStartPacket : PacketBase<PacketType::WorldStart> {
   Json worldProperties;
   ConnectionId clientId;
   bool localInterpolationMode;
+
+  WorldPermissions permissions;
 };
 
 // Sent when a client is leaving a world
@@ -1107,5 +1111,16 @@ struct UniverseMessageResponse : PacketBase<PacketType::UniverseMessageResponse>
 
   Either<String, Json> response;
   Uuid uuid;
+};
+
+struct WorldPermissionsUpdate : PacketBase<PacketType::WorldPermissionsUpdate> {
+  WorldPermissionsUpdate();
+  WorldPermissionsUpdate(WorldPermissionType permission, bool hasPermission);
+
+  void read(DataStream& ds) override;
+  void write(DataStream& ds) const override;
+
+  WorldPermissionType permission;
+  bool hasPermission;
 };
 }

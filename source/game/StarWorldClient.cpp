@@ -1265,7 +1265,20 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
 
     } else if (auto worldParametersUpdate = as<WorldParametersUpdatePacket>(packet)) {
       m_worldTemplate->setWorldParameters(netLoadVisitableWorldParameters(worldParametersUpdate->parametersData));
-
+      
+    } else if (auto worldPermissionsUpdate = as<WorldPermissionsUpdate>(packet)) {
+      auto hasPermission = worldPermissionsUpdate->hasPermission;
+      switch (worldPermissionsUpdate->permission) {
+        case WorldPermissionType::Build:
+          m_permissions.build = hasPermission;
+          break;
+        case WorldPermissionType::Containers:
+          m_permissions.containers = hasPermission;
+          break;
+        case WorldPermissionType::Interact:
+          m_permissions.interact = hasPermission;
+          break;
+      }
     } else if (auto pongPacket = as<PongPacket>(packet)) {
       if (pongPacket->time)
         m_latency = Time::monotonicMilliseconds() - pongPacket->time;
@@ -1724,6 +1737,8 @@ WorldClient::BroadcastCallback& WorldClient::broadcastCallback() {
 bool WorldClient::isTileProtected(Vec2I const& pos) const {
   if (!inWorld())
     return true;
+  if (!connectionHasPermission(0,WorldPermissionType::Build))
+    return true;
 
   auto const& tile = m_tileArray->tile(pos);
   return m_protectedDungeonIds.contains(tile.dungeonId);
@@ -2077,6 +2092,8 @@ void WorldClient::initWorld(WorldStartPacket const& startPacket) {
   m_dungeonIdGravity = startPacket.dungeonIdGravity;
   m_dungeonIdBreathable = startPacket.dungeonIdBreathable;
   m_protectedDungeonIds = startPacket.protectedDungeonIds;
+  
+  m_permissions = startPacket.permissions;
 
   m_geometry = WorldGeometry(m_worldTemplate->size());
 
@@ -2633,7 +2650,19 @@ StringMap<LuaCallbacks> WorldClient::luaThreadCallbacks() const {
 }
 
 bool WorldClient::connectionHasPermission(ConnectionId connection, WorldPermissionType permission) const {
-  return true;
+  if (!m_headless)
+    if (m_mainPlayer->isAdmin()) {
+      return true;
+    }
+  if (m_permissions.build)
+    return true;
+  if (!m_permissions.interact)
+    return false;
+  if (permission == WorldPermissionType::Containers) {
+    return m_permissions.containers;
+  } else {
+    return permission == WorldPermissionType::Interact;
+  }
 }
 
 bool WorldClient::pullRequestedDestroy() {

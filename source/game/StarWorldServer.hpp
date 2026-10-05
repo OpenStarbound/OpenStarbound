@@ -307,9 +307,7 @@ private:
   struct ClientInfo {
     bool local = false;
     bool admin = false;
-    bool canBuild = true;
-    bool canInteract = true;
-    bool canAccessContainers = true;
+    WorldPermissions permissions = {};
   };
   // info for a given WorldClient, can either be their main world or their subworld.
   struct ClientWorldInfo {
@@ -326,6 +324,7 @@ private:
     Maybe<String> weatherDomain;
     WorldClientState clientState;
     bool pendingForward;
+    bool startSent;
     bool started;
     
     shared_ptr<ClientInfo> info; // data that is shared between subworld and main world for clients

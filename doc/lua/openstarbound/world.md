@@ -68,6 +68,20 @@ For client worlds, only one weather domain is networked at a time, so the output
 
 ---
 
+#### `bool` world.havePermission([`WorldPermissionType` permission])
+
+Returns whether the calling context has the given permission.
+
+---
+
+#### `ConnectionId` world.permissionConnection()
+
+Returns the ConnectionId used for permission checks for this world.
+In client worlds, this is just the world's ConnectionId.
+In server worlds, this is the ConnectionId that spawned the entity.
+
+---
+
 The following additional world bindings are available only for scripts running on the client.
 
 ---

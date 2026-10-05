@@ -364,6 +364,11 @@ namespace LuaBindings {
         }
         return {};
       });
+    
+  
+    callbacks.registerCallback("havePermission", [world, caller](Maybe<String> const& perm) {
+      return world->connectionHasPermission(callerConnection(caller), perm ? WorldPermissionTypeNames.getLeft(*perm) : WorldPermissionType::Build);
+    });
 
     if (auto clientWorld = as<WorldClient>(world)) {
       callbacks.registerCallback("inWorld", [clientWorld]() { return clientWorld->inWorld(); });
@@ -410,6 +415,9 @@ namespace LuaBindings {
       });
       callbacks.registerCallback("wire", [clientWorld](Vec2I outputPosition, size_t outputIndex, Vec2I inputPosition, size_t inputIndex) {
         clientWorld->wire(outputPosition, outputIndex, inputPosition, inputIndex);
+      });
+      callbacks.registerCallback("permissionConnection", [clientWorld]() {
+        return clientWorld->connection();
       });
     }
 
@@ -543,6 +551,9 @@ namespace LuaBindings {
           auto newTemplate = make_shared<WorldTemplate>(worldTemplate);
           serverWorld->setTemplate(newTemplate);
         }
+      });
+      callbacks.registerCallback("permissionConnection", [caller]() {
+        return callerConnection(caller);
       });
       callbacks.registerCallback("connectionHasPermission", [serverWorld](ConnectionId const& connection, Maybe<String> const& perm) {
         return serverWorld->connectionHasPermission(connection, perm ? WorldPermissionTypeNames.getLeft(*perm) : WorldPermissionType::Build);

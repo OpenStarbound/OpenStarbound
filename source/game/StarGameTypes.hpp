@@ -93,12 +93,18 @@ enum class Rarity {
 };
 extern EnumMap<Rarity> const RarityNames;
 
-enum class WorldPermissionType {
+enum class WorldPermissionType : uint8_t {
   Build, // supersedes the others. if a client can build, they can do everything else too.
   Containers, // if not allowed, forbids container accesses
   Interact // if not allowed, forbids most entity messages and interactions to server master entities; also by extension containers, since you can't interact with them anyway.
 };
 extern EnumMap<WorldPermissionType> const WorldPermissionTypeNames;
+
+struct WorldPermissions {
+  bool build = true;
+  bool interact = true;
+  bool containers = true;
+};
 
 // Transformation from tile space to pixel space.  Number of pixels in 1.0
 // distance (one tile).

@@ -350,14 +350,18 @@ bool WorldServer::addClient(ConnectionId clientId, SpawnTarget const& spawnTarge
   worldStartPacket->worldProperties = m_worldProperties;
   worldStartPacket->dungeonIdGravity = m_dungeonIdGravity;
   worldStartPacket->dungeonIdBreathable = m_dungeonIdBreathable;
-  if (connectionHasPermission(clientId, WorldPermissionType::Build)) {
+  if (netRules.version() >= 20 || connectionHasPermission(clientId, WorldPermissionType::Build)) {
     worldStartPacket->protectedDungeonIds = m_protectedDungeonIds;
   } else {
     worldStartPacket->protectedDungeonIds = m_protectedDungeonIds.combination(NoPermissionProtectedDungeonIds);
+    clientInfo->couldModify = false;
   }
   worldStartPacket->clientId = clientId;
   worldStartPacket->localInterpolationMode = isLocal;
+  worldStartPacket->permissions = clientInfo->info->permissions;
   clientInfo->outgoingPackets.append(worldStartPacket);
+  
+  clientInfo->startSent = true;
 
   clientInfo->outgoingPackets.append(make_shared<CentralStructureUpdatePacket>(m_centralStructure.store()));
 
@@ -942,21 +946,23 @@ void WorldServer::update(float dt) {
   ++m_currentStep;
   for (auto const& pair : m_clientInfo) {
     pair.second->interpolationTracker.update(m_currentTime);
-    auto canModify = connectionHasPermission(pair.first, WorldPermissionType::Build);
-    if (pair.second->couldModify != canModify) {
-      // permissions changed; update the client's tile protection so they know
-      if (canModify) {
-        for (auto const& dungeonId : NoPermissionProtectedDungeonIds) {
-          if (!m_protectedDungeonIds.contains(dungeonId))
-            pair.second->outgoingPackets.append(make_shared<UpdateTileProtectionPacket>(dungeonId, false));
-        }
-      } else {
-        for (auto const& dungeonId : NoPermissionProtectedDungeonIds) {
-          pair.second->outgoingPackets.append(make_shared<UpdateTileProtectionPacket>(dungeonId, true));
+    if (pair.second->clientState.netCompatibilityRules().version() < 20) {
+      auto canModify = connectionHasPermission(pair.first, WorldPermissionType::Build);
+      if (pair.second->couldModify != canModify) {
+        // permissions changed; update the client's tile protection so they know
+        if (canModify) {
+          for (auto const& dungeonId : NoPermissionProtectedDungeonIds) {
+            if (!m_protectedDungeonIds.contains(dungeonId))
+              pair.second->outgoingPackets.append(make_shared<UpdateTileProtectionPacket>(dungeonId, false));
+          }
+        } else {
+          for (auto const& dungeonId : NoPermissionProtectedDungeonIds) {
+            pair.second->outgoingPackets.append(make_shared<UpdateTileProtectionPacket>(dungeonId, true));
+          }
         }
       }
+      pair.second->couldModify = canModify;
     }
-    pair.second->couldModify = canModify;
   }
 
   List<WorldAction> triggeredActions;
@@ -1699,7 +1705,7 @@ void WorldServer::setTileProtection(DungeonId dungeonId, bool isProtected) {
 
   if (updated) {
     for (auto const& pair : m_clientInfo) {
-      if (connectionHasPermission(pair.first, WorldPermissionType::Build) || !NoPermissionProtectedDungeonIds.contains(dungeonId))
+      if (pair.second->clientState.netCompatibilityRules().version() >= 20 || connectionHasPermission(pair.first, WorldPermissionType::Build) || !NoPermissionProtectedDungeonIds.contains(dungeonId))
         pair.second->outgoingPackets.append(make_shared<UpdateTileProtectionPacket>(dungeonId, isProtected));
     }
   
@@ -1725,7 +1731,7 @@ size_t WorldServer::setTileProtection(List<DungeonId> const& dungeonIds, bool is
 
   for (auto const& pair : m_clientInfo) {
     pair.second->outgoingPackets.appendAll(updates);
-    if (connectionHasPermission(pair.first, WorldPermissionType::Build))
+    if (pair.second->clientState.netCompatibilityRules().version() >= 20 || connectionHasPermission(pair.first, WorldPermissionType::Build))
       pair.second->outgoingPackets.appendAll(permissionUpdates);
   }
 
@@ -2792,12 +2798,12 @@ bool WorldServer::connectionHasPermission(ConnectionId connection, WorldPermissi
     auto client = m_clientInfo.get(connection);
     if (client->info->admin)
       return true;
-    if (client->info->canBuild)
+    if (client->info->permissions.build)
       return true;
-    if (!client->info->canInteract)
+    if (!client->info->permissions.interact)
       return false;
     if (permission == WorldPermissionType::Containers) {
-      return client->info->canAccessContainers;
+      return client->info->permissions.containers;
     } else {
       return permission == WorldPermissionType::Interact;
     }
@@ -2809,24 +2815,40 @@ void WorldServer::setConnectionHasPermission(ConnectionId const& connectionId, W
   // can either provide main connection id or subworld connection id
   shared_ptr<ClientInfo> info;
   auto otherConnId = invertMainSubWorldConnectionId(connectionId);
-  if (m_clientInfo.contains(connectionId)) {
-    info = m_clientInfo.get(connectionId)->info;
-  } else if (m_clientInfo.contains(otherConnId)) {
-    info = m_clientInfo.get(otherConnId)->info;
+  auto main = m_clientInfo.maybe(connectionId);
+  auto other = m_clientInfo.maybe(otherConnId);
+  unsigned version;
+  if (main) {
+    info = (*main)->info;
+    version = (*main)->clientState.netCompatibilityRules().version();
+  } else if (other) {
+    info = (*other)->info;
+    version = (*other)->clientState.netCompatibilityRules().version();
   } else {
     // connection doesn't exist
     return;
   }
   switch (permission) {
     case WorldPermissionType::Build:
-      info->canBuild = hasPermission;
+      info->permissions.build = hasPermission;
       break;
     case WorldPermissionType::Containers:
-      info->canAccessContainers = hasPermission;
+      info->permissions.containers = hasPermission;
       break;
     case WorldPermissionType::Interact:
-      info->canInteract = hasPermission;
+      info->permissions.interact = hasPermission;
       break;
+    default:
+      return;
+      break;
+  }
+  if (version >= 20) {
+    if (main && (*main)->startSent) {
+      (*main)->outgoingPackets.append(make_shared<WorldPermissionsUpdate>(permission, hasPermission));
+    }
+    if (other && (*other)->startSent) {
+      (*other)->outgoingPackets.append(make_shared<WorldPermissionsUpdate>(permission, hasPermission));
+    }
   }
 }
 

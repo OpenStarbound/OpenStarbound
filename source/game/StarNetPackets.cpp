@@ -88,7 +88,8 @@ EnumMap<PacketType> const PacketTypeNames{
   {PacketType::NotifyWorldLoad, "NotifyWorldLoad"},
   {PacketType::LogMapUpdate, "LogMapUpdate"},
   {PacketType::UniverseMessage, "UniverseMessage"},
-  {PacketType::UniverseMessageResponse, "UniverseMessageResponse"}
+  {PacketType::UniverseMessageResponse, "UniverseMessageResponse"},
+  {PacketType::WorldPermissionsUpdate, "WorldPermissionsUpdate"}
 };
 
 EnumMap<NetCompressionMode> const NetCompressionModeNames {
@@ -192,6 +193,7 @@ PacketPtr createPacket(PacketType type) {
     case PacketType::LogMapUpdate: return make_shared<LogMapUpdate>();
     case PacketType::UniverseMessage: return make_shared<UniverseMessage>();
     case PacketType::UniverseMessageResponse: return make_shared<UniverseMessageResponse>();
+    case PacketType::WorldPermissionsUpdate: return make_shared<WorldPermissionsUpdate>();
     default:
       throw StarPacketException(strf("Unrecognized packet type {}", (unsigned int)type));
   }
@@ -573,6 +575,11 @@ void WorldStartPacket::read(DataStream& ds) {
   ds.read(protectedDungeonIds);
   ds.read(clientId);
   ds.read(localInterpolationMode);
+  if (ds.streamCompatibilityVersion() >= 20) {
+    ds.read(permissions.build);
+    ds.read(permissions.interact);
+    ds.read(permissions.containers);
+  }
 }
 
 void WorldStartPacket::write(DataStream& ds) const {
@@ -588,6 +595,11 @@ void WorldStartPacket::write(DataStream& ds) const {
   ds.write(protectedDungeonIds);
   ds.write(clientId);
   ds.write(localInterpolationMode);
+  if (ds.streamCompatibilityVersion() >= 20) {
+    ds.write(permissions.build);
+    ds.write(permissions.interact);
+    ds.write(permissions.containers);
+  }
 }
 
 WorldStopPacket::WorldStopPacket() {}
@@ -1635,6 +1647,20 @@ void UniverseMessageResponse::read(DataStream& ds) {
 void UniverseMessageResponse::write(DataStream& ds) const {
   ds.write(response);
   ds.write(uuid);
+}
+
+WorldPermissionsUpdate::WorldPermissionsUpdate() {}
+
+WorldPermissionsUpdate::WorldPermissionsUpdate(WorldPermissionType permission, bool hasPermission) : permission(permission), hasPermission(hasPermission) {}
+
+void WorldPermissionsUpdate::read(DataStream& ds) {
+  ds.read(permission);
+  ds.read(hasPermission);
+}
+
+void WorldPermissionsUpdate::write(DataStream& ds) const {
+  ds.write(permission);
+  ds.write(hasPermission);
 }
 
 }
