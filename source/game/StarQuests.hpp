@@ -186,7 +186,7 @@ private:
   Maybe<float> m_progress;
   Maybe<float> m_compassDirection;
 
-  LuaMessageHandlingComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaStorableComponent<LuaWorldComponent<LuaBaseComponent>>>>>
+  LuaMessageHandlingComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaStorableComponent<LuaEntityComponent<LuaBaseComponent>>>>>
       m_scriptComponent;
 };
 

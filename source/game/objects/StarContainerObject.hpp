@@ -14,7 +14,7 @@ class ContainerObject : public Object, public virtual ContainerEntity {
 public:
   ContainerObject(ObjectConfigConstPtr config, Json const& parameters);
 
-  void init(World* world, EntityId entityId, EntityMode mode) override;
+  void init(World* world, EntityId entityId, EntityMode mode, ConnectionId originConnection = ServerConnectionId) override;
 
   void update(float dt, uint64_t currentStep) override;
   void render(RenderCallback* renderCallback) override;

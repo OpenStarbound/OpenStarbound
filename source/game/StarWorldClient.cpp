@@ -1265,7 +1265,20 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
 
     } else if (auto worldParametersUpdate = as<WorldParametersUpdatePacket>(packet)) {
       m_worldTemplate->setWorldParameters(netLoadVisitableWorldParameters(worldParametersUpdate->parametersData));
-
+      
+    } else if (auto worldPermissionsUpdate = as<WorldPermissionsUpdate>(packet)) {
+      auto hasPermission = worldPermissionsUpdate->hasPermission;
+      switch (worldPermissionsUpdate->permission) {
+        case WorldPermissionType::Build:
+          m_permissions.build = hasPermission;
+          break;
+        case WorldPermissionType::Containers:
+          m_permissions.containers = hasPermission;
+          break;
+        case WorldPermissionType::Interact:
+          m_permissions.interact = hasPermission;
+          break;
+      }
     } else if (auto pongPacket = as<PongPacket>(packet)) {
       if (pongPacket->time)
         m_latency = Time::monotonicMilliseconds() - pongPacket->time;
@@ -1621,6 +1634,10 @@ void WorldClient::addEntity(EntityPtr const& entity, EntityId entityId) {
   }
 }
 
+void WorldClient::addEntity(EntityPtr const& entity, ConnectionId connection, EntityId entityId) {
+  addEntity(entity,entityId);
+}
+
 TileDamageResult WorldClient::damageTiles(List<Vec2I> const& pos, TileLayer layer, Vec2F const& sourcePosition, TileDamage const& tileDamage, Maybe<EntityId> sourceEntity) {
   if (!inWorld())
     return TileDamageResult::None;
@@ -1719,6 +1736,8 @@ WorldClient::BroadcastCallback& WorldClient::broadcastCallback() {
 
 bool WorldClient::isTileProtected(Vec2I const& pos) const {
   if (!inWorld())
+    return true;
+  if (!connectionHasPermission(0,WorldPermissionType::Build))
     return true;
 
   auto const& tile = m_tileArray->tile(pos);
@@ -2073,6 +2092,8 @@ void WorldClient::initWorld(WorldStartPacket const& startPacket) {
   m_dungeonIdGravity = startPacket.dungeonIdGravity;
   m_dungeonIdBreathable = startPacket.dungeonIdBreathable;
   m_protectedDungeonIds = startPacket.protectedDungeonIds;
+  
+  m_permissions = startPacket.permissions;
 
   m_geometry = WorldGeometry(m_worldTemplate->size());
 
@@ -2626,6 +2647,22 @@ LuaRootPtr WorldClient::luaRoot() {
 
 StringMap<LuaCallbacks> WorldClient::luaThreadCallbacks() const {
   return m_luaThreadCallbacks;
+}
+
+bool WorldClient::connectionHasPermission(ConnectionId connection, WorldPermissionType permission) const {
+  if (!m_headless)
+    if (m_mainPlayer->isAdmin()) {
+      return true;
+    }
+  if (m_permissions.build)
+    return true;
+  if (!m_permissions.interact)
+    return false;
+  if (permission == WorldPermissionType::Containers) {
+    return m_permissions.containers;
+  } else {
+    return permission == WorldPermissionType::Interact;
+  }
 }
 
 bool WorldClient::pullRequestedDestroy() {

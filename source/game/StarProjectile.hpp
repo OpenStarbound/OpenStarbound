@@ -28,7 +28,7 @@ public:
 
   EntityType entityType() const override;
 
-  void init(World* world, EntityId entityId, EntityMode mode) override;
+  void init(World* world, EntityId entityId, EntityMode mode, ConnectionId originConnection = ServerConnectionId) override;
   void uninit() override;
 
   String typeName() const;
@@ -186,7 +186,7 @@ private:
   Vec2I m_collisionTile;
   Vec2I m_lastNonCollidingTile;
 
-  mutable LuaMessageHandlingComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptComponent;
+  mutable LuaMessageHandlingComponent<LuaUpdatableComponent<LuaEntityComponent<LuaBaseComponent>>> m_scriptComponent;
 
   OrderedHashMap<String, PhysicsForceConfig> m_physicsForces;
   OrderedHashMap<String, PhysicsCollisionConfig> m_physicsCollisions;

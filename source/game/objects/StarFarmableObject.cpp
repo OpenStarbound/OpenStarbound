@@ -73,7 +73,7 @@ bool FarmableObject::harvest() {
   if (isMaster() && m_stages.get(m_stage).contains("harvestPool")) {
     try {
       for (auto const& treasureItem : Root::singleton().treasureDatabase()->createTreasure(m_stages.get(m_stage).getString("harvestPool"), world()->threatLevel()))
-        world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position()));
+        world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position()),originConnection());
     } catch (StarException const& e) {
       Logger::warn("Failed to create treasure for farmable object '{}': {}", name(), outputException(e, false));
     }

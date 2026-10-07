@@ -44,7 +44,7 @@ void ThrownItem::fireTriggered() {
       projectile->setInitialDirection(direction);
       projectile->setSourceEntity(owner()->entityId(), false);
       projectile->setPowerMultiplier(owner()->powerMultiplier());
-      world()->addEntity(projectile);
+      world()->addEntity(projectile,owner()->originConnection());
     }
 
     FireableItem::fireTriggered();

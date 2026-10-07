@@ -144,8 +144,8 @@ EntityType ItemDrop::entityType() const {
   return EntityType::ItemDrop;
 }
 
-void ItemDrop::init(World* world, EntityId entityId, EntityMode mode) {
-  Entity::init(world, entityId, mode);
+void ItemDrop::init(World* world, EntityId entityId, EntityMode mode, ConnectionId originConnection) {
+  Entity::init(world, entityId, mode, originConnection);
 
   m_movementController.init(world);
   if (isMaster()) {
@@ -157,9 +157,8 @@ void ItemDrop::init(World* world, EntityId entityId, EntityMode mode) {
       m_scriptComponent.addCallbacks("itemDrop", makeItemDropCallbacks());
       m_scriptComponent.addCallbacks("item", LuaBindings::makeItemCallbacks(m_item.get()));
       m_scriptComponent.addCallbacks("config", LuaBindings::makeConfigCallbacks(bind(&ItemDrop::configValue, this, _1, _2)));
-      m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
       m_scriptComponent.addCallbacks("mcontroller", LuaBindings::makeMovementControllerCallbacks(&m_movementController));
-      m_scriptComponent.init(world);
+      m_scriptComponent.init(this);
     }
   }
 }
@@ -178,7 +177,6 @@ void ItemDrop::uninit() {
       m_scriptComponent.removeCallbacks("itemDrop");
       m_scriptComponent.removeCallbacks("item");
       m_scriptComponent.removeCallbacks("config");
-      m_scriptComponent.removeCallbacks("entity");
       m_scriptComponent.removeCallbacks("mcontroller");
     }
   }
