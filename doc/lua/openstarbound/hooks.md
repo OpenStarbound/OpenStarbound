@@ -49,6 +49,18 @@ If a value is returned, the warp is overridden:
 
 ---
 
+#### `Json` chatMessage(`ConnectionId` clientId, `String` message, `String` sendMode, `JsonObject` data)
+
+Invoked whenever a chat message is sent.
+If a value is returned, the chat message is changed.
+    `discard` discards the message entirely if true.
+    `message` overwrites the text content of the message.
+    `sendMode` changes the sending mode of the message.
+        The send modes are `Broadcast`, `Local`, and `Party`.
+    `data` overwrites the data content of the message.
+
+---
+
 ## UniverseClient
 
 UniverseClient script contexts can be created by adding them to `client.config` under `universeScriptContexts`, functionally similar to generic player scripts.

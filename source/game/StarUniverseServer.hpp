@@ -305,6 +305,7 @@ private:
 
   List<TimeoutBan> m_tempBans;
 
+  mutable RecursiveMutex m_luaLock;
   LuaRootPtr m_luaRoot;
 
   typedef LuaMessageHandlingComponent<LuaUpdatableComponent<LuaBaseComponent>> ScriptComponent;
