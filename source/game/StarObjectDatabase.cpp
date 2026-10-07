@@ -390,7 +390,7 @@ ObjectPtr ObjectDatabase::diskLoadObject(Json const& diskStore) const {
   Json newStore = diskStore;
   try {
     if (originalName == "perfectlygenericitem" && originalParams.contains("genericItemStorage"))
-      newStore = diskStore.get("genericItemStorage");
+      newStore = originalParams.get("genericItemStorage");
     object = createObject(newStore.getString("name"), newStore.get("parameters"));
     object->readStoredData(newStore);
     object->setNetStates();
