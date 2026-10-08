@@ -16,11 +16,22 @@ TEST(EncodeTest, Base64) {
       "ciBhbmltYWxzLCB3aGljaCBpcyBhIGx1c3Qgb2YgdGhlIG1pbmQsIHRoYXQgYnkgYSBwZXJzZXZlcmFuY2Ugb2YgZGVsaWdodCBpbiB0aGUgY29u"
       "dGludWVkIGFuZCBpbmRlZmF0aWdhYmxlIGdlbmVyYXRpb24gb2Yga25vd2xlZGdlLCBleGNlZWRzIHRoZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55"
       "IGNhcm5hbCBwbGVhc3VyZS4=";
+  String testEncodedUrl =
+      "TWFuIGlzIGRpc3Rpbmd1aXNoZWQsIG5vdCBvbmx5IGJ5IGhpcyByZWFzb24sIGJ1dCBieSB0aGlzIHNpbmd1bGFyIHBhc3Npb24gZnJvbSBvdGhl"
+      "ciBhbmltYWxzLCB3aGljaCBpcyBhIGx1c3Qgb2YgdGhlIG1pbmQsIHRoYXQgYnkgYSBwZXJzZXZlcmFuY2Ugb2YgZGVsaWdodCBpbiB0aGUgY29u"
+      "dGludWVkIGFuZCBpbmRlZmF0aWdhYmxlIGdlbmVyYXRpb24gb2Yga25vd2xlZGdlLCBleGNlZWRzIHRoZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55"
+      "IGNhcm5hbCBwbGVhc3VyZS4";
 
   String encoded = base64Encode(testSource);
   ByteArray decoded = base64Decode(encoded);
 
   EXPECT_EQ(encoded, testEncoded);
+  EXPECT_EQ(decoded, testSource);
+  
+  encoded = base64Encode(testSource, true);
+  decoded = base64Decode(encoded);
+
+  EXPECT_EQ(encoded, testEncodedUrl);
   EXPECT_EQ(decoded, testSource);
 }
 

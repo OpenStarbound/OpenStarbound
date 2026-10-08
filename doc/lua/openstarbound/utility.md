@@ -58,3 +58,23 @@ Fails the promise with the provided error.
 
 Fulfills or fails the promise depending on the provided promise.
 
+---
+
+#### `String` sb.embedData(`String` data, `String` compression)
+
+Encodes the provided data, whether actual plaintext or raw such as from `root.assetData` or `assets.bytes`, into an embedded asset path.
+It is optionally compressed using the given mode, which is either `none`, `zlib`, or `zstd`.
+
+---
+
+#### `String` sb.embedJson(`Json` data, `String` compression)
+
+Encodes the provided Json data into an embedded asset path using Starbound's internal binary format for Json data.
+It is optionally compressed using the given mode, which is either `none`, `zlib`, or `zstd`.
+
+---
+
+#### `String` sb.embedText(`String` data)
+
+Creates an embedded asset path with the provided plaintext data, adding escape codes as necessary.
+
