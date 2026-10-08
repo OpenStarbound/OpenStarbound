@@ -60,6 +60,11 @@ Fulfills or fails the promise depending on the provided promise.
 
 ---
 
+**Warning: The feature offered by the following methods should only be used on pure OpenStarbound servers.**
+**Attempting to use this with older OpenStarbound or vanilla clients will cause crashes and other issues.**
+
+---
+
 #### `String` sb.embedData(`String` data, `String` compression)
 
 Encodes the provided data, whether actual plaintext or raw such as from `root.assetData` or `assets.bytes`, into an embedded asset path.

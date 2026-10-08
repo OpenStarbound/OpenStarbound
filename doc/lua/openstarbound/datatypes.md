@@ -38,6 +38,8 @@ Returns a new image created from running image processing directives on this ima
 
 ##### `String` embed(`String` compression, [Variant<String,Json> frames, [`String` framesCompressionMode]])
 
+**Warning: This feature should only be used on pure OpenStarbound servers. Attempting to use it with older OpenStarbound or vanilla clients will cause issues.**
+
 Embeds this image as an asset path with the specified compression mode, which can be either `none`, `zlib`, or `zstd`.
 
 Optionally allows specifying frames data to embed with the image, which optionally allows its own compression mode, which can also be `text` to encode it in escaped plaintext.
