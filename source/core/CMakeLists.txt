@@ -93,6 +93,7 @@ SET (star_core_HEADERS
     StarOrderedSet.hpp
     StarOutputProxy.hpp
     StarParametricFunction.hpp
+    StarPathEmbed.hpp
     StarPch.hpp
     StarPeriodic.hpp
     StarPeriodicFunction.hpp
@@ -178,6 +179,7 @@ SET (star_core_SOURCES
     StarNetElementGroup.cpp
     StarNetElementSyncGroup.cpp
     StarOptionParser.cpp
+    StarPathEmbed.cpp
     StarPerlin.cpp
     StarRandom.cpp
     StarSha256.cpp

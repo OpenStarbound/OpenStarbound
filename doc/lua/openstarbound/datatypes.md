@@ -2,6 +2,49 @@
 OpenStarbound includes some additional datatypes.
 
 --- 
+#### Image
+
+An image.
+
+Has the following methods:
+
+##### `Vec2U` size()
+
+Returns the size of the image.
+
+##### `void` copyInto(`Vec2U` position, `Image` other)
+
+Copies the image into the given other image.
+
+##### `void` drawInto(`Vec2U` position, `Image` other)
+
+Draws the image into the given other image, based on transparency.
+
+##### `void` set(`unsigned` x, `unsigned` y, `Color` color)
+
+Sets a pixel of the image.
+
+##### `Color` get(`unsigned` x, `unsigned` y)
+
+Gets a pixel of the image.
+
+##### `Image` subImage(`Vec2U` min, `Vec2U` size)
+
+Returns a new image taken from part of this image.
+
+##### `Image` process(`String` directives)
+
+Returns a new image created from running image processing directives on this image.
+
+##### `String` embed(`String` compression, [Variant<String,Json> frames, [`String` framesCompressionMode]])
+
+**Warning: This feature should only be used on pure OpenStarbound servers. Attempting to use it with older OpenStarbound or vanilla clients will cause issues.**
+
+Embeds this image as an asset path with the specified compression mode, which can be either `none`, `zlib`, or `zstd`.
+
+Optionally allows specifying frames data to embed with the image, which optionally allows its own compression mode, which can also be `text` to encode it in escaped plaintext.
+
+--- 
 #### AudioInstance
 
 An instance of currently playing audio.

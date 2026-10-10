@@ -64,11 +64,13 @@ size_t nibbleDecode(char const* src, size_t len, char* output, size_t outLen) {
 }
 
 static const std::string base64_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+static const std::string base64url_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 
-size_t base64Encode(char const* data, size_t len, char* output, size_t outLen) {
+size_t base64Encode(char const* data, size_t len, char* output, size_t outLen, bool useUrl) {
   if (outLen == 0)
     return 0;
   size_t written = 0;
+  std::string const& charsString = useUrl ? base64url_chars : base64_chars;
 
   unsigned char ca3[3] = {0, 0, 0};
   unsigned char ca4[4] = {0, 0, 0, 0};
@@ -84,7 +86,7 @@ size_t base64Encode(char const* data, size_t len, char* output, size_t outLen) {
       ca4[3] = ca3[2] & 0x3f;
       for (i = 0; (i < 4); i++) {
         --outLen;
-        *output = base64_chars[ca4[i]];
+        *output = charsString[ca4[i]];
         ++output;
         ++written;
 
@@ -104,13 +106,17 @@ size_t base64Encode(char const* data, size_t len, char* output, size_t outLen) {
     ca4[3] = ca3[2] & 0x3f;
     for (j = 0; (j < i + 1); j++) {
       --outLen;
-      *output = base64_chars[ca4[j]];
+      *output = charsString[ca4[j]];
       ++output;
       ++written;
 
       if (outLen == 0)
         return written;
     }
+    if (useUrl)
+      // Base64URL excludes padding, so don't include it.
+      return written;
+    
     while ((i++ < 3)) {
       --outLen;
       *output = '=';
@@ -125,8 +131,17 @@ size_t base64Encode(char const* data, size_t len, char* output, size_t outLen) {
   return written;
 }
 
+// Follows Base64URL standard as well.
 static inline bool is_base64(unsigned char c) {
-  return (isalnum(c) || (c == '+') || (c == '/'));
+  return (isalnum(c) || (c == '+') || (c == '/') || (c == '-') || (c == '_'));
+}
+
+static inline size_t decodeBase64Char(unsigned char c) {
+  if (c == '-')
+    return 62;
+  if (c == '_')
+    return 63;
+  return base64_chars.find(c);
 }
 
 size_t base64Decode(char const* src, size_t len, char* output, size_t outLen) {
@@ -142,7 +157,7 @@ size_t base64Decode(char const* src, size_t len, char* output, size_t outLen) {
     ca4[i++] = src[in_++];
     if (i == 4) {
       for (i = 0; i < 4; i++)
-        ca4[i] = base64_chars.find(ca4[i]);
+        ca4[i] = decodeBase64Char(ca4[i]);
       ca3[0] = (ca4[0] << 2) + ((ca4[1] & 0x30) >> 4);
       ca3[1] = ((ca4[1] & 0xf) << 4) + ((ca4[2] & 0x3c) >> 2);
       ca3[2] = ((ca4[2] & 0x3) << 6) + ca4[3];
@@ -163,7 +178,7 @@ size_t base64Decode(char const* src, size_t len, char* output, size_t outLen) {
     for (j = i; j < 4; j++)
       ca4[j] = 0;
     for (j = 0; j < 4; j++)
-      ca4[j] = base64_chars.find(ca4[j]);
+      ca4[j] = decodeBase64Char(ca4[j]);
     ca3[0] = (ca4[0] << 2) + ((ca4[1] & 0x30) >> 4);
     ca3[1] = ((ca4[1] & 0xf) << 4) + ((ca4[2] & 0x3c) >> 2);
     ca3[2] = ((ca4[2] & 0x3) << 6) + ca4[3];
@@ -189,9 +204,9 @@ String hexEncode(char const* data, size_t len) {
   return res;
 }
 
-String base64Encode(char const* data, size_t len) {
+String base64Encode(char const* data, size_t len, bool useUrl) {
   std::string res(len * 4 / 3 + 3, '\0');
-  size_t encoded = base64Encode(data, len, &res[0], res.size());
+  size_t encoded = base64Encode(data, len, &res[0], res.size(), useUrl);
   _unused(encoded);
   starAssert(encoded <= res.size());
   res.resize(encoded);
@@ -210,8 +225,8 @@ ByteArray hexDecode(String const& encodedData) {
   return res;
 }
 
-String base64Encode(ByteArray const& data) {
-  return base64Encode(data.ptr(), data.size());
+String base64Encode(ByteArray const& data, bool useUrl) {
+  return base64Encode(data.ptr(), data.size(), useUrl);
 }
 
 ByteArray base64Decode(String const& encodedData) {
