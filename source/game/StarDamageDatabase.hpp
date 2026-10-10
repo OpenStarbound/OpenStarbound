@@ -36,7 +36,7 @@ public:
   ElementalType const& elementalType(String const& name) const;
 
 private:
-  StringMap<DamageKind> m_damageKinds;
+  CaseInsensitiveStringMap<DamageKind> m_damageKinds;
   StringMap<ElementalType> m_elementalTypes;
 };
 
