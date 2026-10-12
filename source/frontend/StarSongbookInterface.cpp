@@ -52,7 +52,7 @@ bool SongbookInterface::play() {
 
   JsonObject song;
   song["resource"] = songName;
-  auto buffer = Root::singleton().assets()->bytes(songName);
+  auto buffer = Root::singleton().assets()->bytes(songName,true);
   song["abc"] = String(buffer->ptr(), buffer->size());
 
   m_player->songbook()->play(song, group);

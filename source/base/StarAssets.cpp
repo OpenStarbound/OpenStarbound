@@ -22,12 +22,15 @@
 #include "StarImageLuaBindings.hpp"
 #include "StarUtilityLuaBindings.hpp"
 #include "StarConfiguration.hpp"
+#include "StarPathEmbed.hpp"
 #include "StarRootBase.hpp"
 
 namespace Star {
-
+  
 // if a ptr is returned, can be optionally used to format an error
 static const char* validateBasePath(std::string_view const& basePath) {
+  if (AssetPath::isRemote(basePath))
+    return nullptr;
   if (basePath.empty() || basePath[0] != '/')
     return "Path '{}' must be absolute";
 
@@ -150,6 +153,7 @@ Assets::Assets(Settings settings, StringList assetSources) {
   m_settings = std::move(settings);
   m_stopThreads = false;
   m_assetSources = std::move(assetSources);
+  m_allowRemote = RootBase::singleton().configuration()->getPath("safe.allowRemoteAssets").optBool().value(true);
 
   auto luaEngine = LuaEngine::create();
   m_luaEngine = luaEngine;
@@ -221,8 +225,8 @@ Assets::Assets(Settings settings, StringList assetSources) {
         RootBase::singleton().configuration()->setPath(path, value);
       });
 
-    callbacks.registerCallback("bytes", [this](String const& path) -> String {
-      auto assetBytes = bytes(path);
+    callbacks.registerCallback("bytes", [this](String const& path, Maybe<bool> const& allowRemote) -> String {
+      auto assetBytes = bytes(path, allowRemote.value(false));
       return String(assetBytes->ptr(), assetBytes->size());
     });
 
@@ -629,9 +633,13 @@ ImageConstPtr Assets::tryImage(AssetPath const& path) const {
 FramesSpecificationConstPtr Assets::imageFrames(String const& path) const {
   auto components = AssetPath::split(path);
   validatePath(components, false, false);
-
-  MutexLocker assetsLocker(m_assetsMutex);
-  return bestFramesSpecification(path);
+  if (AssetPath::isRemote(components.basePath)) {
+    auto imageData = as<ImageData>(getAsset(AssetId{AssetType::Image, {components.basePath,{},{}}}));
+    return imageData->frames;
+  } else {
+    MutexLocker assetsLocker(m_assetsMutex);
+    return bestFramesSpecification(path);
+  }
 }
 
 AudioConstPtr Assets::audio(String const& path) const {
@@ -677,9 +685,11 @@ FontConstPtr Assets::font(String const& path) const {
   return as<FontData>(getAsset(AssetId{AssetType::Font, std::move(components)}))->font;
 }
 
-ByteArrayConstPtr Assets::bytes(String const& path) const {
+ByteArrayConstPtr Assets::bytes(String const& path, bool const& allowRemote) const {
   auto components = AssetPath::split(path);
   validatePath(components, false, false);
+  if (!allowRemote && AssetPath::isRemote(components.basePath))
+    throw AssetException("Attempted to load bytes from remote asset where not allowed.");
 
   return as<BytesData>(getAsset(AssetId{AssetType::Bytes, std::move(components)}))->bytes;
 }
@@ -1180,6 +1190,169 @@ Json Assets::applyJsonPatches(Json const& input, String const& path, List<pair<S
   return result;
 }
 
+Json Assets::embeddedDataToJson(EmbeddedAsset const& data) const {
+  if (data.is<Json>()) {
+    return data.get<Json>();
+  } if (data.is<String>()) {
+    auto str = data.get<String>();
+    try {
+      return inputUtf8Json(str.begin(), str.end(), JsonParseType::Top);
+    } catch (StarException const& e) {
+      throw AssetException("Could not read plaintext embedded JSON asset", e);
+    }
+  } else if (data.is<ByteArrayPtr>()) {
+    auto bytes = data.get<ByteArrayPtr>();
+    try {
+      return inputUtf8Json(bytes->begin(), bytes->end(), JsonParseType::Top);
+    } catch (StarException const& e) {
+      throw AssetException("Could not read binary embedded JSON asset", e);
+    }
+  } else {
+    throw AssetException("Embedded JSON is of wrong type");
+  }
+}
+
+EmbeddedAsset Assets::loadEmbeddedData(String const& basePath, bool const& asBytes) const {
+  if (!m_allowRemote)
+    throw AssetException("Embedded data is disallowed by config.");
+  // assumes asset in question has already been checked for '/opensb_data;' embedded header. excludes that.
+  
+  auto split = basePath.split(";");
+  return loadEmbeddedData(split,1,asBytes);
+}
+
+EmbeddedAsset Assets::loadEmbeddedData(StringList const& split, int const& startOffset, bool const& asBytes) const {
+  // first is data type
+  // optionally, binary compression type is included. defaults to uncompressed.
+  // then the data in Base64.
+  // finally, if the datatype is image:
+    // either frames or framespath, defining what the frames file is
+    // either a frames file path, or embedded json for frames. which one is defined by the prior.
+  if (split.size() < 3) {
+    throw AssetException("Embedded data has invalid amount of components.");
+  }
+  if (split[startOffset+0] == "text") {
+    return parseEmbeddedString(split[startOffset+1]);
+  }
+  else if (split[startOffset+0] == "image" || split[startOffset+0] == "json" || split[startOffset+0] == "bin") {
+    size_t indexOff = 0;
+    EmbeddedCompressionMethod method = EmbeddedCompressionMethod::None;
+    if (split[startOffset+1].length() < 5 && split.size() >= (split[startOffset+0] == "image") ? 6 : 4 && EmbeddedCompressionMethodNames.hasRightValue(split[startOffset+1])) {
+      // the binary data is compressed.
+      indexOff++;
+      method = EmbeddedCompressionMethodNames.getLeft(split[startOffset+1]);
+    }
+    auto base64Data = base64Decode(split[startOffset+1+indexOff]);
+    ByteArray bytes;
+    switch (method) {
+      case EmbeddedCompressionMethod::None:
+        bytes = base64Data;
+        break;
+      case EmbeddedCompressionMethod::Gzip:
+        bytes = uncompressDataGzip(base64Data);
+        break;
+      case EmbeddedCompressionMethod::Zlib:
+        bytes = uncompressData(base64Data);
+        break;
+      case EmbeddedCompressionMethod::Zstd:
+        bytes = ZstdCompression::decompress(base64Data);
+        break;
+    }
+    if (asBytes) {
+      // output should be bytes, so just return them directly
+      return make_shared<ByteArray>(bytes);
+    }
+    if (split[1] == "image") {
+      // this is an image, and must have a frame specification.
+      if (split.size() < 5+indexOff) {
+        throw AssetException("Embedded image requires a frame specification."); // embedded images without frame specifications should be embedded as regular binaries!
+      }
+      ImagePtr img = make_shared<Image>(Image::readPng(make_shared<ExternalBuffer>(bytes.ptr(), bytes.size())));
+      if (split[3+indexOff] == "frames") {
+        try {
+          auto json = embeddedDataToJson(loadEmbeddedData(split,4+indexOff));
+          return make_pair(img,make_shared<FramesSpecification>(parseFramesSpecification(json,"<embedded frames>")));
+        } catch (StarException const& e) {
+          throw AssetException("Could not read embedded frame specification", e);
+        }
+      } else if (split[3+indexOff] == "framespath") {
+        return make_pair(img,split[4+indexOff]);
+      } else {
+        throw AssetException("Embedded image data has an unsupported frames specification type.");
+      }
+    } else if (split[1] == "json") {
+      // binary-encoded JSON, encoded similarly to how it's networked
+      DataStreamBuffer ds(bytes);
+      Json out;
+      ds.read(out);
+      return out;
+    } else {
+      // direct binary data
+      return make_shared<ByteArray>(bytes);
+    }
+  } else {
+    throw AssetException("Embedded data has an unsupported type.");
+  }
+}
+
+String Assets::parseEmbeddedString(String const& baseStr) const {
+  // swaps out a few characters for escaped versions.
+  // meant to be fast.
+  typedef std::string::const_iterator const_iterator;
+  auto out = std::string(baseStr.utf8Size(),'\0');
+  auto const& in = baseStr.utf8();
+  auto outIt = out.begin();
+  auto end = in.end();
+  size_t len = 0;
+  for (const_iterator it = in.begin(); it < end; ++it) {
+    if (*it == '%') {
+      auto next = ++const_iterator(it);
+      if (next < end) {
+        switch (*next) {
+          case '%':
+            // percent
+            *outIt = '%';
+            it = next;
+            break;
+          case 'c':
+            // colon
+            *outIt = ':';
+            it = next;
+            break;
+          case 'q':
+            // question
+            *outIt = '?';
+            it = next;
+            break;
+          case 's':
+            // semicolon
+            *outIt = ';';
+            it = next;
+            break;
+          case 'b':
+            // slash
+            *outIt = '/';
+            it = next;
+            break;
+          default:
+            // not a valid escape
+            *outIt = '%';
+            break;
+        }
+      } else {
+        // last char in the string.
+        *outIt = '%';
+      }
+    } else {
+      *outIt = *it;
+    }
+    outIt++;
+    len++;
+  }
+  out.resize(len);
+  return String(std::move(out));
+}
+
 bool Assets::doLoad(AssetId const& id) const {
   try {
     // loadAsset automatically manages the queue and freshens the asset
@@ -1304,12 +1477,18 @@ shared_ptr<Assets::AssetData> Assets::loadJson(AssetPath const& path) const {
     }
   } else {
     return unlockDuring([&]() {
-      try {
+      if (AssetPath::isEmbedded(path.basePath)) {      
         auto newData = make_shared<JsonData>();
-        newData->json = readJson(path.basePath);
+        newData->json = embeddedDataToJson(loadEmbeddedData(path.basePath));
         return newData;
-      } catch (StarException const& e) {
-        throw AssetException(strf("Could not read JSON asset {}", path), e);
+      } else {
+        try {
+          auto newData = make_shared<JsonData>();
+          newData->json = readJson(path.basePath);
+          return newData;
+        } catch (StarException const& e) {
+          throw AssetException(strf("Could not read JSON asset {}", path), e);
+        }
       }
     });
   }
@@ -1384,38 +1563,94 @@ shared_ptr<Assets::AssetData> Assets::loadImage(AssetPath const& path) const {
     }
 
   } else {
-    auto imageData = make_shared<ImageData>();
-    imageData->image = unlockDuring([&]() {
-      return readImage(path.basePath);
-    });
-    imageData->frames = bestFramesSpecification(path.basePath);
+    if (AssetPath::isEmbedded(path.basePath)) {
+      return unlockDuring([&]() {
+        auto data = loadEmbeddedData(path.basePath);
+        auto imageData = make_shared<ImageData>();
+        if (data.is<ImageWithFramesPath>()) {
+          auto datap = data.get<ImageWithFramesPath>();
+          imageData->image = datap.first;
+          imageData->frames = make_shared<FramesSpecification>(parseFramesSpecification(readJson(datap.second), datap.second));
+        } else if (data.is<ImageWithFrames>()) {
+          auto datap = data.get<ImageWithFrames>();
+          imageData->image = datap.first;
+          imageData->frames = datap.second;
+        } else if (data.is<ByteArrayPtr>()) {
+          auto bytes = data.get<ByteArrayPtr>();
+          imageData->image = make_shared<Image>(Image::readPng(make_shared<ExternalBuffer>(bytes->ptr(), bytes->size())));
+        } else {
+          throw AssetException("Embedded image is of wrong type");
+        }
+        return imageData;
+      });
+    } else {
+      auto imageData = make_shared<ImageData>();
+      imageData->image = unlockDuring([&]() {
+        return readImage(path.basePath);
+      });
+      imageData->frames = bestFramesSpecification(path.basePath);
 
-    return imageData;
+      return imageData;
+    }
   }
 }
 
 shared_ptr<Assets::AssetData> Assets::loadAudio(AssetPath const& path) const {
   return unlockDuring([&]() {
-    auto newData = make_shared<AudioData>();
-    newData->audio = make_shared<Audio>(open(path.basePath), path.basePath);
-    newData->needsPostProcessing = newData->audio->compressed();
-    return newData;
+    if (AssetPath::isEmbedded(path.basePath)) {
+      auto data = loadEmbeddedData(path.basePath);
+      if (data.is<ByteArrayPtr>()) {
+        auto newData = make_shared<AudioData>();
+        newData->audio = make_shared<Audio>(make_shared<Buffer>(*data.get<ByteArrayPtr>()), "<embedded audio>");
+        newData->needsPostProcessing = newData->audio->compressed();
+        return newData;
+      } else {
+        throw AssetException("Embedded audio is of wrong type");
+      }
+    } else {
+      auto newData = make_shared<AudioData>();
+      newData->audio = make_shared<Audio>(open(path.basePath), path.basePath);
+      newData->needsPostProcessing = newData->audio->compressed();
+      return newData;
+    }
   });
 }
 
 shared_ptr<Assets::AssetData> Assets::loadFont(AssetPath const& path) const {
   return unlockDuring([&]() {
-    auto newData = make_shared<FontData>();
-    newData->font = Font::loadFont(make_shared<ByteArray>(read(path.basePath)));
-    return newData;
+    if (AssetPath::isEmbedded(path.basePath)) {
+      auto data = loadEmbeddedData(path.basePath);
+      if (data.is<ByteArrayPtr>()) {
+        auto newData = make_shared<FontData>();
+        newData->font = Font::loadFont(data.get<ByteArrayPtr>());
+        return newData;
+      } else {
+        throw AssetException("Embedded font is of wrong type");
+      }
+    } else {
+      auto newData = make_shared<FontData>();
+      newData->font = Font::loadFont(make_shared<ByteArray>(read(path.basePath)));
+      return newData;
+    }
   });
 }
 
 shared_ptr<Assets::AssetData> Assets::loadBytes(AssetPath const& path) const {
   return unlockDuring([&]() {
+  if (AssetPath::isEmbedded(path.basePath)) {
+    auto data = loadEmbeddedData(path.basePath, true);
+    auto newData = make_shared<BytesData>();
+    if (data.is<ByteArrayPtr>()) {
+      newData->bytes = data.get<ByteArrayPtr>();
+    } else if (data.is<String>()) {
+      newData->bytes = make_shared<ByteArray>(data.get<String>().utf8Bytes());
+    }
+    return newData;
+  } else {
     auto newData = make_shared<BytesData>();
     newData->bytes = make_shared<ByteArray>(read(path.basePath));
     return newData;
+  }
   });
 }
 

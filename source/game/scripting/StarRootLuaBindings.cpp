@@ -40,7 +40,7 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
 
   auto root = Root::singletonPtr();
 
-  callbacks.registerCallbackWithSignature<String, String>("assetData", bind(RootCallbacks::assetData, root, _1));
+  callbacks.registerCallbackWithSignature<String, String, Maybe<bool>>("assetData", bind(RootCallbacks::assetData, root, _1, _2));
   callbacks.registerCallbackWithSignature<Image, String>("assetImage", bind(RootCallbacks::assetImage, root, _1));
   callbacks.registerCallbackWithSignature<Json, String>("assetFrames", bind(RootCallbacks::assetFrames, root, _1));
   callbacks.registerCallbackWithSignature<Json, String>("assetJson", bind(RootCallbacks::assetJson, root, _1));
@@ -368,8 +368,8 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
   return callbacks;
 }
 
-String LuaBindings::RootCallbacks::assetData(Root* root, String const& path) {
-  auto bytes = root->assets()->bytes(path);
+String LuaBindings::RootCallbacks::assetData(Root* root, String const& path, Maybe<bool> const& allowRemote) {
+  auto bytes = root->assets()->bytes(path,allowRemote.value(false));
   return String(bytes->ptr(), bytes->size());
 }
 

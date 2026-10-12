@@ -59,9 +59,12 @@ By the way, here's a list of every file extension the game does Special Thingsâ„
 
 ---
 
-#### `String` root.assetData(`String` path)
+#### `String` root.assetData(`String` path, [`bool` allowRemote])
 
 Returns the raw data of an asset.
+
+If `allowRemote` is true, allows reading the binary data of embedded assets.
+    This is disallowed by default for security reasons in cases where an older script may `loadstring` this data, only enable this if you know what you are doing!
 
 ---
 

@@ -102,6 +102,13 @@ String AssetPath::directory(String const& path) {
   }
 }
 
+bool AssetPath::isEmbedded(String const& path) {
+  return path.beginsWith("/opensb_data;");
+}
+bool AssetPath::isRemote(String const& path) {
+  return AssetPath::isEmbedded(path);
+}
+
 String AssetPath::filename(String const& path) {
   if (auto p = findFilenameRange(path.utf8())) {
     return String(path.utf8().substr(p->first, p->second));

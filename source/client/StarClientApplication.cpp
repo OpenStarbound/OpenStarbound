@@ -521,7 +521,7 @@ void ClientApplication::renderReload() {
         if (entry.second.isType(Json::Type::String)) {
           String shader = entry.second.toString();
           if (!shader.hasChar('\n')) {
-            auto shaderBytes = assets->bytes(AssetPath::relativeTo(path, shader));
+            auto shaderBytes = assets->bytes(AssetPath::relativeTo(path, shader),true);
             shader = std::string(shaderBytes->ptr(), shaderBytes->size());
           }
           shaders[entry.first] = shader;

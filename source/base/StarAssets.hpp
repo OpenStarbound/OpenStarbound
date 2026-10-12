@@ -38,6 +38,11 @@ struct FramesSpecification {
   StringMap<String> aliases;
 };
 
+// Asset paths can optionally be embedded data as well.
+typedef pair<ImagePtr,String> ImageWithFramesPath;
+typedef pair<ImagePtr,FramesSpecificationPtr> ImageWithFrames;
+typedef Variant<ImageWithFramesPath,ImageWithFrames,String,Json,ByteArrayPtr> EmbeddedAsset;
+
 // The assets system can load image, font, json, and data assets from a set of
 // sources.  Each source is either a directory on the filesystem or a single
 // packed asset file.
@@ -244,7 +249,8 @@ public:
   FontConstPtr font(String const& path) const;
 
   // Returns a bytes asset (Reads asset as an opaque binary blob)
-  ByteArrayConstPtr bytes(String const& path) const;
+  // For security reasons, disallows remote (embedded) assets by default
+  ByteArrayConstPtr bytes(String const& path, bool const& allowRemote = false) const;
 
   // Bypass asset caching and open an asset file directly.
   IODevicePtr openFile(String const& basePath) const;
@@ -293,6 +299,11 @@ private:
   Json readJson(String const& basePath) const;
   Json applyJsonPatches(Json const& input, String const& path, List<pair<String, AssetSourcePtr>> patches) const;
   Json checkPatchArray(String const& path, AssetSourcePtr const& source, Json const result, JsonArray const patchData, Maybe<Json> const external) const;
+  
+  Json embeddedDataToJson(EmbeddedAsset const& data) const;
+  EmbeddedAsset loadEmbeddedData(String const& basePath, bool const& asBytes = false) const;
+  EmbeddedAsset loadEmbeddedData(StringList const& split, int const& startOffset, bool const& asBytes = false) const;
+  String parseEmbeddedString(String const& baseStr) const;
 
   // Load / post process an asset and log any exception.  Returns true if the
   // work was performed (whether successful or not), false if the work is
@@ -351,6 +362,7 @@ private:
 
   List<ThreadFunction<void>> m_workerThreads;
   atomic<bool> m_stopThreads;
+  bool m_allowRemote;
 };
 
 }

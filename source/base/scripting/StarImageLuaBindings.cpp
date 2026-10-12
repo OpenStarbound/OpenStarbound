@@ -2,6 +2,9 @@
 #include "StarLuaConverters.hpp"
 #include "StarImage.hpp"
 #include "StarRootBase.hpp"
+#include "StarDataStreamDevices.hpp"
+#include "StarBuffer.hpp"
+#include "StarPathEmbed.hpp"
 
 namespace Star {
 
@@ -30,6 +33,29 @@ LuaMethods<Image> LuaUserDataMethods<Image>::make() {
       else
         return nullptr;
     });
+  });
+
+  methods.registerMethod("embed", [](Image& image, String const& compression, MVariant<String,Json> const& frames, Maybe<String> const& framesCompressionMode) -> String {
+    auto compressionMethod = EmbeddedCompressionMethodNames.getLeft(compression);
+    BufferPtr buf = make_shared<Buffer>();
+    image.writePng(buf);
+    String const outType = frames ? "image" : "bin";
+    String outStr = strf("/opensb_data;{};{}",outType,embedAndCompressData(buf->takeData(),compressionMethod));
+    if (frames.is<String>()) {
+      outStr += strf(";framespath;{}",frames.get<String>());
+    } else if (frames.is<Json>()) {
+      if (framesCompressionMode && framesCompressionMode->equalsIgnoreCase("text")) {
+        outStr += strf(";frames;text;{}",embedEscapeText(frames.get<Json>().repr()));
+      } else {
+        auto framesCompressionMethod = compressionMethod;
+        if (framesCompressionMode)
+          framesCompressionMethod = EmbeddedCompressionMethodNames.getLeft(*framesCompressionMode);
+        DataStreamBuffer ds;
+        ds.write(frames.get<Json>());
+        outStr += strf(";frames;json;{}",embedAndCompressData(ds.takeData(),framesCompressionMethod));
+      }
+    }
+    return outStr;
   });
 
   return methods;

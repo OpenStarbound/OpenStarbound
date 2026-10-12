@@ -13,7 +13,7 @@ namespace LuaBindings {
   LuaCallbacks makeRootCallbacks();
 
   namespace RootCallbacks {
-    String assetData(Root* root, String const& path);
+    String assetData(Root* root, String const& path, Maybe<bool> const& allowRemote);
     Image assetImage(Root* root, String const& path);
     Json assetFrames(Root* root, String const& path);
     Json assetJson(Root* root, String const& path);

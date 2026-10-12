@@ -74,7 +74,7 @@ Sets a configuration value in `/storage/starbound.config` by path. Similar to `r
 
 ---
 
-#### `String` assets.bytes(`String` path)
+#### `String` assets.bytes(`String` path, [`bool` allowRemote])
 
 Returns the raw contents of the specified asset file as a String. Similar to `root.assetData`.
 

@@ -94,6 +94,7 @@ R"JSON(
       "monochromeLighting" : false,
 
       "safe" : {
+        "allowRemoteAssets": true,
         "alwaysAllowClipboard" : false,
         "enableImGui" : false,
         "luaHttp" : {
