@@ -99,3 +99,8 @@ commands.register("description", function(args)
     return "Description set to " .. args .. ". Warp or rejoin for it to take effect."
   end
 end)
+
+commands.register("editor", function()
+  player.interact("scriptPane", "/interface/opensb/charcreation/charcreation.config", player.id())
+  return "Opened experimental character editor. To avoid losing your appearance, try the '/identity save' command."
+end)
