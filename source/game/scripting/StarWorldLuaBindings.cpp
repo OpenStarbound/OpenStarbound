@@ -749,6 +749,13 @@ namespace LuaBindings {
       });
     });
     
+    callbacks.registerCallback("radialModQuery", [world](Vec2F center, float radius, String layerName) -> List<Vec2I> {
+      auto layer = TileLayerNames.getLeft(layerName);
+      return tileAreaBrush(radius, center, false).filtered([&](Vec2I const& t) -> bool {
+        return world->mod(t, layer) != NoModId;
+      });
+    });
+    
     callbacks.registerCallbackWithSignature<List<pair<Vec2I, LiquidLevel>>, Vec2F, Vec2F>("liquidAlongLine", bind(WorldEnvironmentCallbacks::liquidAlongLine, world, _1, _2));
     callbacks.registerCallbackWithSignature<bool, Vec2I, Maybe<bool>, Maybe<bool>>("tileIsOccupied", bind(WorldEnvironmentCallbacks::tileIsOccupied, world, _1, _2, _3));
     callbacks.registerCallbackWithSignature<float>("threatLevel", bind(&World::threatLevel, world));
