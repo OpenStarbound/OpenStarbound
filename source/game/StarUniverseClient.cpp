@@ -337,6 +337,16 @@ void UniverseClient::update(float dt) {
     for (auto& p : m_scriptContexts)
       p.second->update();
   }
+  
+  List<UniverseAction> actions;
+  {
+    MutexLocker locker(m_actionsMutex);
+    actions = take(m_actions);
+  }
+  for (auto action : actions) {
+    action(this);
+  }
+  
   m_connection->push(m_worldClient->getOutgoingPackets());
   if (m_connection->packetSocket().netRules().version() >= 16) {
     for (auto& p : m_subWorldThreads) {
@@ -1175,6 +1185,11 @@ Maybe<ChainableJsonMessageResponse> UniverseClient::receiveMessage(String const&
       break;
   }
   return result;
+}
+
+void UniverseClient::executeActionLater(UniverseAction action) {
+  MutexLocker locker(m_actionsMutex);
+  m_actions.append(action);
 }
 
 }

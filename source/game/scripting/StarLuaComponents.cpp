@@ -1,13 +1,17 @@
 #include "StarLuaComponents.hpp"
 #include "StarUtilityLuaBindings.hpp"
 #include "StarRootLuaBindings.hpp"
+#include "StarLuaHttpBindings.hpp"
 #include "StarScriptableThread.hpp"
 
 namespace Star {
 
 LuaBaseComponent::LuaBaseComponent() {
+  static const bool luaHttpEnabled = Root::singleton().configuration()->getPath("safe.luaHttp.enabled").optBool().value(false);
   addCallbacks("sb", LuaBindings::makeUtilityCallbacks());
   addCallbacks("root", LuaBindings::makeRootCallbacks());
+  addCallbacks("http", LuaBindings::makeHttpCallbacks(luaHttpEnabled));
+  
   setAutoReInit(true);
 }
 

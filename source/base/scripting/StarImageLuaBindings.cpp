@@ -58,6 +58,12 @@ LuaMethods<Image> LuaUserDataMethods<Image>::make() {
     return outStr;
   });
 
+  methods.registerMethod("toDataURI", [](Image& image) -> String {
+    BufferPtr buf = make_shared<Buffer>();
+    image.writePng(buf);
+    return strf("data:image/png;base64,{}",base64Encode(buf->takeData()));
+  });
+
   return methods;
 }
 

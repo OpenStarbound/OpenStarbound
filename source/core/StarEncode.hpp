@@ -13,7 +13,7 @@ size_t base64Encode(char const* data, size_t len, char* output, size_t outLen = 
 size_t base64Decode(char const* src, size_t len, char* output, size_t outLen = NPos);
 
 String hexEncode(char const* data, size_t len);
-String base64Encode(char const* data, size_t len);
+String base64Encode(char const* data, size_t len, bool useUrl = false);
 
 String hexEncode(ByteArray const& data);
 ByteArray hexDecode(String const& encodedData);

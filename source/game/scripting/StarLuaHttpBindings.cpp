@@ -295,10 +295,10 @@ LuaCallbacks LuaBindings::makeHttpCallbacks(bool enabled) {
 
       // if domain is trusted
       if (isTrustedDomain(domain)) {
-        //  is trasted execute
+        //  is trusted execute
         executeHttpRequest(httpReq, std::move(snd));
       } else {
-        // NOT trastedadded to pending queue
+        // NOT trusted, add to pending queue
         auto pendingReq = make_shared<PendingHttpRequest>();
         pendingReq->httpRequest = httpReq;
         pendingReq->rpcKeeper = std::move(snd);

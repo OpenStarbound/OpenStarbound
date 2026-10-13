@@ -9,6 +9,8 @@ namespace Star {
 STAR_CLASS(Universe);
 STAR_CLASS(CelestialDatabase);
 
+typedef function<void(Universe*)> UniverseAction;
+
 // Shared base class for UniverseClient and UniverseServer
 class Universe {
 public:
@@ -25,6 +27,9 @@ public:
   virtual RpcPromise<Json> sendUniverseMessage(ConnectionId const& connectionId, String const& message, JsonArray const& args = {}) = 0;
   
   virtual Maybe<ChainableJsonMessageResponse> receiveMessage(String const& message, bool const& local, JsonArray const& args) = 0;
+  
+  // Thread-safe method for thread-unsafe handling. Doesn't block.
+  virtual void executeActionLater(UniverseAction action) = 0;
 };
 
 }

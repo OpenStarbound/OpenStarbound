@@ -25,9 +25,9 @@
 #include "StarClipboardLuaBindings.hpp"
 #include "StarInputLuaBindings.hpp"
 #include "StarInterfaceLuaBindings.hpp"
-#include "StarLuaHttpBindings.hpp"
 #include "StarRenderingLuaBindings.hpp"
 #include "StarTeamClientLuaBindings.hpp"
+#include "StarLuaHttpBindings.hpp"
 #include "StarVoiceLuaBindings.hpp"
 #include "StarHttpTrustDialog.hpp"
 #include "StarMainInterfaceTypes.hpp"
@@ -678,9 +678,6 @@ void ClientApplication::changeState(MainAppState newState) {
 
     Json alwaysAllow = m_root->configuration()->getPath("safe.alwaysAllowClipboard");
     m_universeClient->setLuaCallbacks("clipboard", LuaBindings::makeClipboardCallbacks(app, alwaysAllow && alwaysAllow.toBool()));
-    const bool luaHttpEnabled = m_root->configuration()->getPath("safe.luaHttp.enabled").optBool().value(false);
-
-    m_universeClient->setLuaCallbacks("http", LuaBindings::makeHttpCallbacks(luaHttpEnabled));
 
     auto heldScriptPanes = make_shared<List<MainInterface::ScriptPaneInfo>>();
 
@@ -827,15 +824,17 @@ void ClientApplication::changeState(MainAppState newState) {
     m_universeClient->setLuaCallbacks("team", LuaBindings::makeTeamClientCallbacks(m_universeClient->teamClient().get()));
     m_universeClient->setLuaCallbacks("world", LuaBindings::makeWorldCallbacks(m_universeClient->worldClient().get()));
 
-    LuaBindings::setHttpTrustRequestCallback([mainInterface = m_mainInterface.get()](String const& domain) {
-      const auto paneManager = mainInterface->paneManager();
-      const auto httpTrustDialog = paneManager->registeredPane<HttpTrustDialog>(MainInterfacePanes::HttpTrustDialog);
+    LuaBindings::setHttpTrustRequestCallback([mainInterface = m_mainInterface.get(), universeClient = m_universeClient.get()](String domain) {
+      universeClient->executeActionLater([mainInterface,domain](Universe*) {
+        const auto paneManager = mainInterface->paneManager();
+        const auto httpTrustDialog = paneManager->registeredPane<HttpTrustDialog>(MainInterfacePanes::HttpTrustDialog);
 
-      httpTrustDialog->displayRequest(domain, [domain](const HttpTrustReply reply, bool remember) {
-        const bool allowed = (reply == HttpTrustReply::Allow);
-        LuaBindings::handleHttpTrustReply(domain, allowed);
+        httpTrustDialog->displayRequest(domain, [domain](const HttpTrustReply reply, bool remember) {
+          const bool allowed = (reply == HttpTrustReply::Allow);
+          LuaBindings::handleHttpTrustReply(domain, allowed);
+        });
+        paneManager->displayRegisteredPane(MainInterfacePanes::HttpTrustDialog);
       });
-      paneManager->displayRegisteredPane(MainInterfacePanes::HttpTrustDialog);
     });
 
 

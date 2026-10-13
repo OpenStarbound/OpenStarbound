@@ -1290,8 +1290,8 @@ void UniverseServer::processChat() {
         
         bool discard = false;
         luaLocker.lock();
-        for (auto& p : m_scriptContexts) {
-          auto out = p.second->invoke<Json>("chatMessage", p.first, message, ChatSendModeNames.getRight(sendMode), data);
+        for (auto& sc : m_scriptContexts) {
+          auto out = sc.second->invoke<Json>("chatMessage", p.first, message, ChatSendModeNames.getRight(sendMode), data);
           if (out && *out) {
             // chat message is being overridden.
             auto& jout = *out;
@@ -1428,6 +1428,15 @@ void UniverseServer::handleUniverseMessages() {
       else
         keeper.fail("Message not handled by universe");
     }
+  }
+  
+  List<UniverseAction> actions;
+  {
+    MutexLocker locker(m_actionsMutex);
+    actions = take(m_actions);
+  }
+  for (auto action : actions) {
+    action(this);
   }
 }
 
@@ -2463,13 +2472,13 @@ void UniverseServer::doDisconnection(ConnectionId clientId, String const& reason
   WriteLocker clientsLocker(m_clientsLock);
   RecursiveMutexLocker luaLocker(m_luaLock,false);
   if (auto clientContext = m_clients.value(clientId)) {
+    clientsLocker.unlock();
     luaLocker.lock();
     for (auto& p : m_scriptContexts)
       p.second->invoke("doDisconnection", clientId);
     luaLocker.unlock();
 
     m_teamManager->playerDisconnected(clientContext->playerUuid());
-    clientsLocker.unlock();
     // The client should revive at their ship if they are in an un-revivable
     // state
     WarpToWorld reviveWarp = WarpToWorld(ClientShipWorldId(clientContext->playerUuid()));
@@ -3186,4 +3195,10 @@ Maybe<ChainableJsonMessageResponse> UniverseServer::receiveMessage(String const&
   }
   return result;
 }
+
+void UniverseServer::executeActionLater(UniverseAction action) {
+  MutexLocker locker(m_actionsMutex);
+  m_actions.append(action);
+}
+
 }// namespace Star
