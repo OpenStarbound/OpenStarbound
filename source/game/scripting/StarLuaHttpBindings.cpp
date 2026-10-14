@@ -295,25 +295,29 @@ LuaCallbacks LuaBindings::makeHttpCallbacks(bool enabled) {
 
       // if domain is trusted
       if (isTrustedDomain(domain)) {
-        //  is trasted execute
+        //  is trusted, execute
         executeHttpRequest(httpReq, std::move(snd));
       } else {
-        // NOT trastedadded to pending queue
-        auto pendingReq = make_shared<PendingHttpRequest>();
-        pendingReq->httpRequest = httpReq;
-        pendingReq->rpcKeeper = std::move(snd);
-        pendingReq->domain = domain;
-
-        {
-          MutexLocker locker(s_pendingRequestsMutex);
-          s_pendingRequests.append(pendingReq);
-        }
-
+        // if a handler exists, use it. if not, autofail.
         MutexLocker locker(s_trustCallbackMutex);
         if (s_trustRequestCallback) {
+          locker.unlock();
+          // NOT trusted, add to pending queue
+          auto pendingReq = make_shared<PendingHttpRequest>();
+          pendingReq->httpRequest = httpReq;
+          pendingReq->rpcKeeper = std::move(snd);
+          pendingReq->domain = domain;
+
+          {
+            MutexLocker prlocker(s_pendingRequestsMutex);
+            s_pendingRequests.append(pendingReq);
+          }
+          
+          locker.lock();
           s_trustRequestCallback(domain);
         } else {
-          Logger::warn("HTTP request to untrusted domain '{}' but no trust dialog handler available", domain);
+          snd.fail(strf("Domain '{}' is untrusted, no trust dialog handler available.",domain));
+          //Logger::warn("HTTP request to untrusted domain '{}' but no trust dialog handler available", domain);
         }
       }
 

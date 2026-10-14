@@ -44,6 +44,10 @@ Embeds this image as an asset path with the specified compression mode, which ca
 
 Optionally allows specifying frames data to embed with the image, which optionally allows its own compression mode, which can also be `text` to encode it in escaped plaintext.
 
+##### `String` toDataURI()
+
+Converts the image to a Data URI, for use with `http`.
+
 --- 
 #### AudioInstance
 

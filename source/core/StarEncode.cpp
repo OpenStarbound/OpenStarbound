@@ -70,7 +70,7 @@ size_t base64Encode(char const* data, size_t len, char* output, size_t outLen, b
   if (outLen == 0)
     return 0;
   size_t written = 0;
-  std::string const& charsString = useUrl ? base64url_chars : base64_chars;
+  std::string const charsString = useUrl ? base64url_chars : base64_chars;
 
   unsigned char ca3[3] = {0, 0, 0};
   unsigned char ca4[4] = {0, 0, 0, 0};

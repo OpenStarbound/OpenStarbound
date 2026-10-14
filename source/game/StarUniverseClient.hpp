@@ -140,6 +140,8 @@ public:
   RpcPromise<Json> sendUniverseMessage(ConnectionId const& connectionId, String const& message, JsonArray const& args = {}) override;
   
   Maybe<ChainableJsonMessageResponse> receiveMessage(String const& message, bool const& local, JsonArray const& args) override;
+  
+  void executeActionLater(UniverseAction action) override;
 
 private:
   struct ServerInfo {
@@ -206,6 +208,9 @@ private:
   HashMap<Uuid, RpcPromise<Json>> m_universeMessagePromises;
   
   Uuid m_uuid = Uuid();
+  
+  mutable Mutex m_actionsMutex;
+  List<UniverseAction> m_actions;
 };
 
 }
