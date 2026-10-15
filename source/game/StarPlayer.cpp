@@ -2160,7 +2160,25 @@ bool Player::isDeployed() const {
 }
 
 void Player::setBusyState(PlayerBusyState busyState) {
-  m_effectsAnimator->setState("busy", PlayerBusyStateNames.getRight(busyState));
+  m_busyState = busyState;
+  bool hidden = m_hiddenBusyIndicators.contains(busyState);
+  m_effectsAnimator->setState("busy", PlayerBusyStateNames.getRight(hidden ? PlayerBusyState::None : busyState));
+}
+
+PlayerBusyState Player::busyState() const {
+  return m_busyState;
+}
+
+void Player::setBusyIndicatorHidden(PlayerBusyState busyState, bool hidden) {
+  if (hidden)
+    m_hiddenBusyIndicators.add(busyState);
+  else
+    m_hiddenBusyIndicators.remove(busyState);
+  setBusyState(m_busyState); // apply right away
+}
+
+bool Player::busyIndicatorHidden(PlayerBusyState busyState) const {
+  return m_hiddenBusyIndicators.contains(busyState);
 }
 
 void Player::teleportOut(String const& animationType, bool deploy) {
