@@ -208,7 +208,7 @@ public:
   void render(RenderCallback* renderCallback) override;
 
   void renderLightSources(RenderCallback* renderCallback) override;
-  
+
   void setRenderLayer(Maybe<EntityRenderLayer> layer);
 
   Json getGenericProperty(String const& name, Json const& defaultValue = Json()) const;
@@ -403,6 +403,11 @@ public:
   bool isDeployed() const;
 
   void setBusyState(PlayerBusyState busyState);
+  // The busy state most recently requested (by the interface), before any hidden indicators are applied.
+  PlayerBusyState busyState() const;
+  // Scripts can hide the indicator of a busy state. While hidden, requesting that state shows none instead.
+  void setBusyIndicatorHidden(PlayerBusyState busyState, bool hidden);
+  bool busyIndicatorHidden(PlayerBusyState busyState) const;
 
   // A hard move to a specified location
   void moveTo(Vec2F const& footPosition);
@@ -597,6 +602,8 @@ private:
 
   String m_teleportAnimationType;
   NetworkedAnimatorPtr m_effectsAnimator;
+  PlayerBusyState m_busyState = PlayerBusyState::None;
+  Set<PlayerBusyState> m_hiddenBusyIndicators;
   NetworkedAnimator::DynamicTarget m_effectsAnimatorDynamicTarget;
 
   float m_emoteCooldown;
