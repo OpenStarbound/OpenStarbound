@@ -10,10 +10,10 @@
 #include "StarJsonRpc.hpp"
 
 namespace Star {
-  
+
 // update this in the rare case that backwards compat code has to be set up in TeamManager
 VersionNumber const TeamClientVersion = 1;
-  
+
 TeamClient::TeamClient(PlayerPtr mainPlayer, ClientContextPtr clientContext) {
   m_mainPlayer = mainPlayer;
   m_clientContext = clientContext;
@@ -160,7 +160,7 @@ void TeamClient::pullFullUpdate() {
       m_fullUpdateRunning = false;
 
       m_teamManagerVersion = response.optInt("version").value(0);
-      
+
       m_teamUuid = response.optString("teamUuid").apply(construct<Uuid>());
 
       if (m_teamUuid) {
@@ -257,7 +257,24 @@ void TeamClient::writePlayerData(JsonObject& request, PlayerPtr player, bool ful
 
   if (fullWrite) {
     request["name"] = player->name();
+
+    // the name the party sees.
+    auto nameOverride = player->getGenericProperty("teamName");
+    if (nameOverride.isType(Json::Type::String) && !nameOverride.toString().empty())
+      request["name"] = nameOverride.toString().slice(0, 64); // by characters, so a multi-byte one is never cut
+
     request["portrait"] = jsonFromList(player->portrait(PortraitMode::Head), mem_fn(&Drawable::toJson));
+
+    // the portrait the rest of the party sees.
+    auto portraitOverride = player->getGenericProperty("teamPortrait");
+    if (portraitOverride.isType(Json::Type::Array) && portraitOverride.size() <= 32) {
+      try {
+        jsonToList<Drawable>(portraitOverride);
+        request["portrait"] = portraitOverride;
+      } catch (StarException const& e) {
+        Logger::warn("Ignoring invalid teamPortrait property: {}", e.what());
+      }
+    }
   }
 }
 

@@ -93,6 +93,13 @@ bool BaseScriptPane::sendEvent(InputEvent const& event) {
   return Pane::sendEvent(event);
 }
 
+Json BaseScriptPane::windowConfig(String const& path, bool dismissable) {
+  auto config = Root::singleton().assets()->json(path);
+  if (!config.contains("gui"))
+    config = config.set("gui", config.get("paneLayout"));
+  return config.set("dismissable", config.getBool("dismissable", dismissable));
+}
+
 Json const& BaseScriptPane::config() const { return m_config; }
 Json const& BaseScriptPane::rawConfig() const { return m_rawConfig; }
 
@@ -158,6 +165,10 @@ void BaseScriptPane::construct(Json config) {
   for (auto pair : m_config.getObject("canvasKeyCallbacks", {}))
     m_canvasKeyCallbacks.set(findChild<CanvasWidget>(pair.first), pair.second.toString());
 
+  setupScript();
+}
+
+void BaseScriptPane::setupScript() {
   m_script.setScripts(jsonToStringList(m_config.get("scripts", JsonArray())));
   m_script.setUpdateDelta(m_config.getUInt("scriptDelta", 1));
 }

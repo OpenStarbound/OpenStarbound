@@ -131,7 +131,7 @@ MainInterface::MainInterface(UniverseClientPtr client, WorldPainterPtr painter, 
 
   initHttpTrustDialog();
 
-  m_joinRequestDialog = make_shared<JoinRequestDialog>();
+  m_joinRequestDialog = make_shared<JoinRequestDialog>(m_client);
   m_paneManager.registerPane(MainInterfacePanes::JoinRequest, PaneLayer::ModalWindow, m_joinRequestDialog);
 
   m_actionBar = make_shared<ActionBar>(&m_paneManager, m_client->mainPlayer());
