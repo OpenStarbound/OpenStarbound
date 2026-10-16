@@ -256,14 +256,22 @@ LD_LIBRARY_PATH="$LD_LIBRARY_PATH:./" padsp ./starbound "$@"`
 <details>
 <summary><b>Linux (Arch)</b></summary>
 
-* Ensure your system is up-to-date and you have CMake 3.23 or newer:
+* Ensure your system is up to date and you have CMake 3.23 or newer:
   1. `sudo pacman -Syu` to update your system
   2. `sudo pacman -S cmake`
   3. `cmake --version` to verify
 
-* Install the required dependencies:
-  * `sudo pacman -S pkg-config libxmu libxi mesa glu sdl2 python-jinja2 ninja`
-  * Arch Linux includes development files in the main packages, so you don't need separate -dev or -devel packages.
+* The [extra] repository must be enabled in */etc/pacman.conf*
+    1. Run: `sudo nano /etc/pacman.conf`
+    2. Look for and uncomment the lines:
+      `#[extra]`
+      `#Include = /etc/pacman.d/mirrorlist`
+    3. Save the file and exit.
+    4. Update your package database with: `sudo pacman -Sy`
+  
+  * Install the required dependencies:
+  * `sudo pacman -S libxmu libxi mesa glu sdl2 python-jinja2 ninja`
+
 
 * Clone [vcpkg](https://github.com/microsoft/vcpkg?tab=readme-ov-file#quick-start-unix) (outside the repo!) and bootstrap it:
   1. `. <(curl https://aka.ms/vcpkg-init.sh -L)` to install VCPKG to `~/.vcpkg`
