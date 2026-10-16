@@ -1368,7 +1368,7 @@ void OpenGlRenderer::setupGlUniforms(Effect& effect, Vec2U screenSize) {
   for (auto& p : effect.textures) {
     // update texture sizes in case the texture was changed when the effect was inactive
     auto ptr = &p.second;
-    if (ptr->textureSizeUniform != -1) {
+    if (ptr->textureSizeUniform != -1 && ptr->textureValue) {
       auto textureSize = ptr->textureValue->glTextureSize();
       glUniform2f(ptr->textureSizeUniform, textureSize[0], textureSize[1]);
     }
