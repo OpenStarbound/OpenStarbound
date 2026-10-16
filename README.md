@@ -201,7 +201,7 @@ If this step throws errors, Fedora probably still lacks some packages not listed
 * Run `cmake --build --preset=linux-release` to build. It includes previous two steps, so if any of them throw errors, you will have problems. If that's the case, run and debug them separately as described earlier, as CMake itself can just throw `Error: could not load cache` without specifying the exact problem. In case of major changes (example: you've reinstalled VCPKG to a different location and need to regenerate path to it for CMake) purge CMake cache by deleting **source/CMakeCache.txt**.
 
 Building will take some time, be patient ;)
-
+</details>
 <details>
 <summary><b>Linux (Arch)</b></summary>
 
