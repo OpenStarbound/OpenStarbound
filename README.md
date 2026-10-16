@@ -269,8 +269,8 @@ LD_LIBRARY_PATH="$LD_LIBRARY_PATH:./" padsp ./starbound "$@"`
     3. Save the file and exit.
     4. Update your package database with: `sudo pacman -Sy`
   
-  * Install the required dependencies:
-  * `sudo pacman -S pkgconf libxmu libxi mesa glu sdl2 python-jinja2 ninja`
+* Install the required dependencies:
+  `sudo pacman -S pkgconf libxmu libxi mesa glu sdl2 python-jinja2 ninja`
 
 
 * Clone [vcpkg](https://github.com/microsoft/vcpkg?tab=readme-ov-file#quick-start-unix) (outside the repo!) and bootstrap it:
