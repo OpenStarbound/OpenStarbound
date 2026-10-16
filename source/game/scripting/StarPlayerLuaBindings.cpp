@@ -684,6 +684,12 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
   callbacks.registerCallback("busyState", [player]() {
       return PlayerBusyStateNames.getRight(player->busyState());
     });
+  callbacks.registerCallback("busyStates", [player]() {
+      StringList names;
+      for (auto state : player->busyStates())
+        names.append(PlayerBusyStateNames.getRight(state));
+      return names;
+    });
   callbacks.registerCallback("busyIndicatorHidden", [player](String const& state) {
       return player->busyIndicatorHidden(PlayerBusyStateNames.getLeft(state));
     });
