@@ -203,7 +203,7 @@ If this step throws errors, Fedora probably still lacks some packages not listed
 Building will take some time, be patient ;)
 
 <details>
- <details>
+<details>
 <summary><b>Linux (Arch)</b></summary>
 
 * Ensure your system is up-to-date and you have CMake 3.23 or newer:
