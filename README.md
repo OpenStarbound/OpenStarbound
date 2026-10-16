@@ -263,14 +263,14 @@ LD_LIBRARY_PATH="$LD_LIBRARY_PATH:./" padsp ./starbound "$@"`
 
 * The [extra] repository must be enabled in */etc/pacman.conf*
     1. Run: `sudo nano /etc/pacman.conf`
-    2. Look for and uncomment the lines:
+    2. Look for and un-comment the lines:
       `#[extra]`
       `#Include = /etc/pacman.d/mirrorlist`
     3. Save the file and exit.
     4. Update your package database with: `sudo pacman -Sy`
   
   * Install the required dependencies:
-  * `sudo pacman -S libxmu libxi mesa glu sdl2 python-jinja2 ninja`
+  * `sudo pacman -S pkgconf libxmu libxi mesa glu sdl2 python-jinja2 ninja`
 
 
 * Clone [vcpkg](https://github.com/microsoft/vcpkg?tab=readme-ov-file#quick-start-unix) (outside the repo!) and bootstrap it:
