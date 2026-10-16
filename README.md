@@ -201,31 +201,7 @@ If this step throws errors, Fedora probably still lacks some packages not listed
 * Run `cmake --build --preset=linux-release` to build. It includes previous two steps, so if any of them throw errors, you will have problems. If that's the case, run and debug them separately as described earlier, as CMake itself can just throw `Error: could not load cache` without specifying the exact problem. In case of major changes (example: you've reinstalled VCPKG to a different location and need to regenerate path to it for CMake) purge CMake cache by deleting **source/CMakeCache.txt**.
 
 Building will take some time, be patient ;)
-</details>
 <details>
-<summary><b>Linux (Arch)</b></summary>
-
-* Ensure your system is up-to-date and you have CMake 3.23 or newer:
-  1. `sudo pacman -Syu` to update your system
-  2. `sudo pacman -S cmake`
-  3. `cmake --version` to verify
-
-* Install the required dependencies:
-  * `sudo pacman -S pkg-config libxmu libxi mesa glu sdl2 python-jinja2 ninja`
-  * Arch Linux includes development files in the main packages, so you don't need separate -dev or -devel packages.
-
-* Clone [vcpkg](https://github.com/microsoft/vcpkg?tab=readme-ov-file#quick-start-unix) (outside the repo!) and bootstrap it:
-  1. `. <(curl https://aka.ms/vcpkg-init.sh -L)` to install VCPKG to `~/.vcpkg`
-  2. Run `. ~/.vcpkg/vcpkg-init` to set up the **`VCPKG_ROOT`** environment variable
-  3. You'll need to run `. ~/.vcpkg/vcpkg-init` in **every new terminal window** before building, as environment variables don't persist between sessions
-
-* Change to the repo's **source/** directory, then run `cmake --preset=linux-release` and `cmake --build --preset=linux-release` to build.
-
-* The built binaries will be in **dist/**. Copy the .so libs from **lib/linux/** and the **sbinit.config** into **dist/** so the game can run.
-  * From the root dir of the repo, you can run the assembly script: `scripts/ci/linux/assemble.sh`
-    * This packs the game assets and copies the built binaries, premade sbinit configs & required libs into **client/** & **server/**.
-
-</details>
 <summary><b>Specific problem: If your VCPKG can't build meson for libsystemd</b></summary>
 <br>
 
@@ -246,7 +222,6 @@ Next you need to copy original Starbound assets at **assets/packed.pak** of the 
 
 The game now can be run by executing **client_distribution/linux/run-client.sh** (or the corresponding server bash script) from terminal.
 
-</details>
 <details>
 <summary><b>Fedora-specific problem with OSS (dsp: No such audio device)</b></summary>
 <br>
@@ -277,6 +252,31 @@ LD_LIBRARY_PATH="$LD_LIBRARY_PATH:./" padsp ./starbound "$@"`
 </details>
 
 </details>
+
+<details>
+<summary><b>Linux (Arch)</b></summary>
+
+* Ensure your system is up-to-date and you have CMake 3.23 or newer:
+  1. `sudo pacman -Syu` to update your system
+  2. `sudo pacman -S cmake`
+  3. `cmake --version` to verify
+
+* Install the required dependencies:
+  * `sudo pacman -S pkg-config libxmu libxi mesa glu sdl2 python-jinja2 ninja`
+  * Arch Linux includes development files in the main packages, so you don't need separate -dev or -devel packages.
+
+* Clone [vcpkg](https://github.com/microsoft/vcpkg?tab=readme-ov-file#quick-start-unix) (outside the repo!) and bootstrap it:
+  1. `. <(curl https://aka.ms/vcpkg-init.sh -L)` to install VCPKG to `~/.vcpkg`
+  2. Run `. ~/.vcpkg/vcpkg-init` to set up the **`VCPKG_ROOT`** environment variable
+  3. You'll need to run `. ~/.vcpkg/vcpkg-init` in **every new terminal window** before building, as environment variables don't persist between sessions
+
+* Change to the repo's **source/** directory, then run `cmake --preset=linux-release` and `cmake --build --preset=linux-release` to build.
+
+* The built binaries will be in **dist/**. Copy the .so libs from **lib/linux/** and the **sbinit.config** into **dist/** so the game can run.
+  * From the root dir of the repo, you can run the assembly script: `scripts/ci/linux/assemble.sh`
+    * This packs the game assets and copies the built binaries, premade sbinit configs & required libs into **client/** & **server/**.
+
+</details>
 <details>
 <summary><b>macOS</b></summary>
  
@@ -292,6 +292,8 @@ LD_LIBRARY_PATH="$LD_LIBRARY_PATH:./" padsp ./starbound "$@"`
  * This last command makes vcpkg added to the current terminal path. This lasts only while the terminal is active, and will have to be rerun for new terminal instances.
 * Download the source code [here](https://github.com/OpenStarbound/OpenStarbound/archive/refs/heads/main.zip). This is the current code in main. Unpack the code to your downloads folder. 
 * Unpack the zip, and open it up. Navigate to OpenStarbound-main/source using the terminal -> `cd ~/Downloads/OpenStarbound-main`. Then navigate to the source folder, using `cd source`.
+
+  </details>
   <details>
    <summary>If using an Arm Mac</summary>
 
