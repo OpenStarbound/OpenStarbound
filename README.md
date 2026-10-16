@@ -246,6 +246,7 @@ Next you need to copy original Starbound assets at **assets/packed.pak** of the 
 
 The game now can be run by executing **client_distribution/linux/run-client.sh** (or the corresponding server bash script) from terminal.
 
+</details>
 <details>
 <summary><b>Fedora-specific problem with OSS (dsp: No such audio device)</b></summary>
 <br>
