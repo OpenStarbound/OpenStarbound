@@ -44,9 +44,9 @@ Available methods are `zstd`, `gzip`, `zlib`, and `none`. The data is uncompress
 Useable for any kind of file. JSON data in this format is treated as plaintext.
     `image` is similar to `bin` but allows attaching frames data to the end:
         ```
-        /opensb_data;bin;T2dnUwACAAAAAAAAAAABAA...Dg==;framespath;/humanoid/frontarm.frames
-        /opensb_data;bin;T2dnUwACAAAAAAAAAAABAA...Dg==;framespath;text;{"frameGrid"%c{"size"%c[43,43],"dimensions"%c[1,1],"names"%c[["h"]]}}
-        /opensb_data;bin;T2dnUwACAAAAAAAAAAABAA...Dg==;framespath;bin;eyJmcmFtZUdyaWQiOnsic2l6ZSI6WzQzLDQzXSwiZGltZW5zaW9ucyI6WzEsMV0sIm5hbWVzIjpb
+        /opensb_data;image;T2dnUwACAAAAAAAAAAABAA...Dg==;framespath;/humanoid/frontarm.frames
+        /opensb_data;image;T2dnUwACAAAAAAAAAAABAA...Dg==;framespath;text;{"frameGrid"%c{"size"%c[43,43],"dimensions"%c[1,1],"names"%c[["h"]]}}
+        /opensb_data;image;T2dnUwACAAAAAAAAAAABAA...Dg==;framespath;bin;eyJmcmFtZUdyaWQiOnsic2l6ZSI6WzQzLDQzXSwiZGltZW5zaW9ucyI6WzEsMV0sIm5hbWVzIjpb
 WyJoIl1dfX0=
         ```
     `json` is similar to `bin`, but encodes in Starbound's binary JSON format, rather than plaintext JSON.
