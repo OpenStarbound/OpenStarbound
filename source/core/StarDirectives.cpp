@@ -377,19 +377,49 @@ Image DirectivesGroup::applyNewImage(Image const& image, ImageReferenceCallback 
 
 void DirectivesGroup::applyExistingImage(Image& image, ImageReferenceCallback refCallback) const {
   bool first = true;
+  // A scale is held back until the next operation is known.
+  // When that is a crop the two are applied together, which only computes the pixels the crop keeps (see processScaleCrop).
+  // Anything else applies the held scale first, so every other case behaves as before.
+  ImageOperation const* pendingScale = nullptr;
+  auto flushScale = [&]() {
+    if (pendingScale) {
+      processImageOperation(*pendingScale, image, refCallback);
+      pendingScale = nullptr;
+    }
+  };
+
   forEach([&](Directives::Entry const& entry, Directives const& directives) {
     ImageOperation const& operation = entry.loadOperation(*directives);
-    if (auto error = operation.ptr<ErrorImageOperation>())
+    if (auto error = operation.ptr<ErrorImageOperation>()) {
+      flushScale();
       if (auto string = error->cause.ptr<std::string>())
         throw DirectivesException::format("ImageOperation parse error: {}", *string);
       else
         std::rethrow_exception(error->cause.get<std::exception_ptr>());
-    else if (!first && entry.begin != 0 && operation.is<NullImageOperation>())
+    } else if (!first && entry.begin != 0 && operation.is<NullImageOperation>()) {
+      flushScale();
       throw DirectivesException::format("Invalid image operation: {}", entry.string(*directives));
-    else
-      processImageOperation(operation, image, refCallback);
+    } else {
+      bool handled = false;
+      if (pendingScale) {
+        auto crop = operation.ptr<CropImageOperation>();
+        if (crop && processScaleCrop(pendingScale->get<ScaleImageOperation>(), *crop, image)) {
+          pendingScale = nullptr;
+          handled = true;
+        } else {
+          flushScale();
+        }
+      }
+      if (!handled) {
+        if (operation.is<ScaleImageOperation>())
+          pendingScale = &operation;
+        else
+          processImageOperation(operation, image, refCallback);
+      }
+    }
     first = false;
   });
+  flushScale();
 }
 
 size_t DirectivesGroup::hash() const {

@@ -156,6 +156,13 @@ typedef function<Image const*(String const& refName)> ImageReferenceCallback;
 
 void processImageOperation(ImageOperation const& operation, Image& input, ImageReferenceCallback refCallback = {});
 
+// A scale followed by a crop only needs the pixels the crop keeps, which is much cheaper when the scale makes a large image
+// and the crop keeps a small part of it.
+// Applies both operations with the same result as processImageOperation on each and returns true.
+// Returns false without touching the image when they can't be combined (bicubic scale, negative scale, a crop
+// outside the scaled image), in which case the two operations must be applied one by one.
+bool processScaleCrop(ScaleImageOperation const& scale, CropImageOperation const& crop, Image& image);
+
 Image processImageOperations(List<ImageOperation> const& operations, Image input, ImageReferenceCallback refCallback = {});
 
 }
