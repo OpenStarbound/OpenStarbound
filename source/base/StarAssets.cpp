@@ -716,13 +716,37 @@ void Assets::cleanup() {
 
   double time = Time::monotonicTime();
 
+  // Reference images live longer than other assets, but only the most recently used ones that fit the pixel budget do.
+  HashSet<AssetData const*> keepLonger;
+  if (m_settings.referenceImageTimeToLive > m_settings.assetTimeToLive) {
+    List<pair<double, shared_ptr<ImageData>>> references;
+    for (auto const& pair : m_assetsCache) {
+      if (pair.second && pair.second->isReference)
+        if (auto image = as<ImageData>(pair.second))
+          references.append({image->time, image});
+    }
+    references.sort([](auto const& a, auto const& b) { return a.first > b.first; });
+
+    uint64_t pixels = 0;
+    for (auto const& reference : references) {
+      if (!reference.second->image)
+        continue;
+      uint64_t size = (uint64_t)reference.second->image->width() * reference.second->image->height();
+      if (pixels + size > m_settings.referenceImagePixelBudget)
+        continue;
+      pixels += size;
+      keepLonger.add(reference.second.get());
+    }
+  }
+
   auto it = makeSMutableMapIterator(m_assetsCache);
   while (it.hasNext()) {
     auto pair = it.next();
     // Don't clean up broken assets or queued assets.
     if (pair.second && !m_queue.contains(pair.first)) {
       double liveTime = time - pair.second->time;
-      if (liveTime > m_settings.assetTimeToLive) {
+      float timeToLive = keepLonger.contains(pair.second.get()) ? m_settings.referenceImageTimeToLive : m_settings.assetTimeToLive;
+      if (liveTime > timeToLive) {
         // If the asset should persist, just refresh the access time.
         if (pair.second->shouldPersist())
           pair.second->time = time;
@@ -1518,6 +1542,7 @@ shared_ptr<Assets::AssetData> Assets::loadImage(AssetPath const& path) const {
       auto refImage = as<ImageData>(loadAsset(AssetId{AssetType::Image, std::move(components)}));
       if (!refImage)
         return {};
+      refImage->isReference = true;
       references[ref] = refImage->image;
     }
 

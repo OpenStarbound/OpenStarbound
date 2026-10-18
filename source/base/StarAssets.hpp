@@ -54,6 +54,13 @@ public:
     // TTL for cached assets
     float assetTimeToLive;
 
+    // Images that directives refer to (blend and mask images) are slow to decode compared to applying them and are needed again
+    // whenever another image that uses them is loaded.
+    // Thus, they are kept this many seconds after their last use instead of assetTimeToLive, but only as many of them (most
+    // recently used first) as fit in referenceImagePixelBudget pixels together.
+    float referenceImageTimeToLive = 300;
+    uint64_t referenceImagePixelBudget = 16 * 1024 * 1024;
+
     // Audio under this length will be automatically decompressed
     float audioDecompressLimit;
 
@@ -113,6 +120,9 @@ public:
     double time = 0.0;
     bool needsPostProcessing = false;
     bool forcePersist = false;
+
+    // Set on images that some directive chain uses as a reference image
+    bool isReference = false;
   };
 
   struct JsonData : AssetData {
@@ -299,7 +309,7 @@ private:
   Json readJson(String const& basePath) const;
   Json applyJsonPatches(Json const& input, String const& path, List<pair<String, AssetSourcePtr>> patches) const;
   Json checkPatchArray(String const& path, AssetSourcePtr const& source, Json const result, JsonArray const patchData, Maybe<Json> const external) const;
-  
+
   Json embeddedDataToJson(EmbeddedAsset const& data) const;
   EmbeddedAsset loadEmbeddedData(String const& basePath, bool const& asBytes = false) const;
   EmbeddedAsset loadEmbeddedData(StringList const& split, int const& startOffset, bool const& asBytes = false) const;
