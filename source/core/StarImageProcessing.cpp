@@ -489,13 +489,34 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
         bits[bit >> 6] |= 1ull << (bit & 63);
       }
 
-      image.forEachPixel([&](unsigned, unsigned, Vec4B& pixel) {
+      // Large areas of one color are common (the backgrounds of sign and costume drawables), and a pixel that equals the one before it
+      // gets the same result, so that one is remembered.
+      static_assert(sizeof(Vec4B) == sizeof(uint32_t), "a pixel is four bytes");
+      size_t count = (size_t)image.width() * image.height();
+      uint8_t* data = image.data();
+      uint32_t lastIn = 0, lastOut = 0;
+      bool haveLast = false;
+      for (size_t i = 0; i < count; ++i) {
+        uint32_t value;
+        memcpy(&value, data + i * 4, 4);
+        if (haveLast && value == lastIn) {
+          memcpy(data + i * 4, &lastOut, 4);
+          continue;
+        }
+        Vec4B pixel;
+        memcpy(&pixel, &value, 4);
+        uint32_t result = value;
         unsigned bit = bitFor(pixel);
-        if (!((bits[bit >> 6] >> (bit & 63)) & 1))
-          return;
-        if (auto m = replaceMap.maybe(pixel))
-          pixel = *m;
-      });
+        if ((bits[bit >> 6] >> (bit & 63)) & 1) {
+          if (auto m = replaceMap.maybe(pixel)) {
+            memcpy(&result, m->ptr(), 4);
+            memcpy(data + i * 4, &result, 4);
+          }
+        }
+        lastIn = value;
+        lastOut = result;
+        haveLast = true;
+      }
     }
 
   } else if (auto op = operation.ptr<AlphaMaskImageOperation>()) {
