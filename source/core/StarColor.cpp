@@ -394,21 +394,46 @@ float Color::saturation() const {
 float Color::value() const {
   return max(max(m_data[0], m_data[1]), m_data[2]);
 }
+#ifdef STAR_COMPILER_GNU
+#pragma GCC pop_options
+#endif
+
 // Fused versions of Color::rgba(p), setSaturation / setValue and toRgba() for one pixel, giving the same bytes without
 // building a Color, calling toHsva() twice, or going through the setters.
-// They are inside the no-fast-math region like the functions they replace.
-// The byte to float table is made by Color::rgba so it matches whatever that compiled to.
+//
+// The build uses fast-math and every compiler does something different with it: a division becomes a multiplication by
+// the reciprocal (or not, or the reciprocal is shared between several divisions), sums are reordered, and a multiply
+// and an add are fused when the CPU can (ARM, or x86 with -march=native). Each changes the last bit, and a different
+// last bit decides the rounding to bytes, so the same ?saturation gave different pixels per compiler.
+// So these are written out with the operations GCC settled on (a division by a constant is a multiplication by its
+// reciprocal, the other divisions are real divisions), and fast-math and fusing are turned off for them.
+#if defined(STAR_COMPILER_CLANG)
+#pragma float_control(precise, on, push)
+#pragma float_control(except, on)
+#define STAR_PRECISE_BODY _Pragma("clang fp contract(off)")
+#elif defined(STAR_COMPILER_MSVC)
+#pragma float_control(precise, on, push)
+#pragma fp_contract(off)
+#define STAR_PRECISE_BODY
+#else
+#pragma GCC push_options
+#pragma GCC optimize("-fno-fast-math", "-ffp-contract=off")
+#define STAR_PRECISE_BODY
+#endif
+
 static float const* byteToFloatTable() {
   static float const* table = []() {
+    STAR_PRECISE_BODY
     float* t = new float[256];
     for (int i = 0; i < 256; ++i)
-      t[i] = Color::rgba(Vec4B(i, 0, 0, 255)).redF();
+      t[i] = i * (1.0f / 255.0f);
     return t;
   }();
   return table;
 }
 
 static inline void bytesToHsv(Vec4B const& c, float const* table, float& h, float& s, float& v) {
+  STAR_PRECISE_BODY
   float var_r = table[c[0]], var_g = table[c[1]], var_b = table[c[2]];
   float var_min = min(min(var_r, var_g), var_b);
   float var_max = max(max(var_r, var_g), var_b);
@@ -419,9 +444,9 @@ static inline void bytesToHsv(Vec4B const& c, float const* table, float& h, floa
     s = 0.0f;
   } else {
     s = del_max / var_max;
-    float del_r = (((var_max - var_r) / 6.0f) + (del_max / 2.0f)) / del_max;
-    float del_g = (((var_max - var_g) / 6.0f) + (del_max / 2.0f)) / del_max;
-    float del_b = (((var_max - var_b) / 6.0f) + (del_max / 2.0f)) / del_max;
+    float del_r = (((var_max - var_r) * (1.0f / 6.0f)) + (del_max * 0.5f)) / del_max;
+    float del_g = (((var_max - var_g) * (1.0f / 6.0f)) + (del_max * 0.5f)) / del_max;
+    float del_b = (((var_max - var_b) * (1.0f / 6.0f)) + (del_max * 0.5f)) / del_max;
     if (var_r == var_max)
       h = del_b - del_g;
     else if (var_g == var_max)
@@ -437,6 +462,7 @@ static inline void bytesToHsv(Vec4B const& c, float const* table, float& h, floa
 
 // s and v have to be clamped already, the same as Color::hsva followed by toRgba()
 static inline Vec4B hsvToBytes(float h, float s, float v, float a) {
+  STAR_PRECISE_BODY
   float var_r, var_g, var_b;
   if (s == 0.0f) {
     var_r = var_g = var_b = v;
@@ -469,6 +495,7 @@ static inline Vec4B hsvToBytes(float h, float s, float v, float a) {
 }
 
 Vec4B Color::shiftSaturationVec4B(Vec4B color, float shift) {
+  STAR_PRECISE_BODY
   float const* table = byteToFloatTable();
   float h, s, v;
   bytesToHsv(color, table, h, s, v);
@@ -476,14 +503,19 @@ Vec4B Color::shiftSaturationVec4B(Vec4B color, float shift) {
 }
 
 Vec4B Color::scaleValueVec4B(Vec4B color, float multiply) {
+  STAR_PRECISE_BODY
   float const* table = byteToFloatTable();
   float h, s, v;
   bytesToHsv(color, table, h, s, v);
   return hsvToBytes(h, s, clamp(v * multiply, 0.0f, 1.0f), table[color[3]]);
 }
-#ifdef STAR_COMPILER_GNU
+
+#if defined(STAR_COMPILER_CLANG) || defined(STAR_COMPILER_MSVC)
+#pragma float_control(pop)
+#else
 #pragma GCC pop_options
 #endif
+#undef STAR_PRECISE_BODY
 
 void Color::setHue(float h) {
   auto hsva = toHsva();
