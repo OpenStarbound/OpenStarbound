@@ -401,12 +401,18 @@ float Color::value() const {
 // Fused versions of Color::rgba(p), setSaturation / setValue and toRgba() for one pixel, giving the same bytes without
 // building a Color, calling toHsva() twice, or going through the setters.
 //
-// The build uses fast-math and every compiler does something different with it: a division becomes a multiplication by
-// the reciprocal (or not, or the reciprocal is shared between several divisions), sums are reordered, and a multiply
-// and an add are fused when the CPU can (ARM, or x86 with -march=native). Each changes the last bit, and a different
-// last bit decides the rounding to bytes, so the same ?saturation gave different pixels per compiler.
-// So these are written out with the operations GCC settled on (a division by a constant is a multiplication by its
-// reciprocal, the other divisions are real divisions), and fast-math and fusing are turned off for them.
+// The build uses fast-math and every compiler does something different with it.
+// A division becomes a multiplication by the reciprocal, or not, or the reciprocal is shared between several divisions.
+// Sums are reordered.
+// A multiply and an add are fused when the CPU can (ARM, or x86 with -march=native).
+// Each changes the last bit and a different last bit decides the rounding to bytes, so the same ?saturation gave different
+// pixels per compiler.
+// Now, these are written out with the operations the vanilla Windows build of Starbound (MSVC /fp:fast) settled on, which is
+// what most players run.
+// There, a division by a constant is a multiplication by its reciprocal, the three hue terms share one reciprocal of the
+// chroma, the other divisions are real divisions.
+// Fast-math and fusing are turned off for them.
+// The Linux build of Starbound (GCC) divides three times instead and so differs by 1 in about 0.3% of the bytes.
 #if defined(STAR_COMPILER_CLANG)
 #pragma float_control(precise, on, push)
 #pragma float_control(except, on)
@@ -444,9 +450,10 @@ static inline void bytesToHsv(Vec4B const& c, float const* table, float& h, floa
     s = 0.0f;
   } else {
     s = del_max / var_max;
-    float del_r = (((var_max - var_r) * (1.0f / 6.0f)) + (del_max * 0.5f)) / del_max;
-    float del_g = (((var_max - var_g) * (1.0f / 6.0f)) + (del_max * 0.5f)) / del_max;
-    float del_b = (((var_max - var_b) * (1.0f / 6.0f)) + (del_max * 0.5f)) / del_max;
+    float dmi = 1.0f / del_max;
+    float del_r = (((var_max - var_r) * (1.0f / 6.0f)) + (del_max * 0.5f)) * dmi;
+    float del_g = (((var_max - var_g) * (1.0f / 6.0f)) + (del_max * 0.5f)) * dmi;
+    float del_b = (((var_max - var_b) * (1.0f / 6.0f)) + (del_max * 0.5f)) * dmi;
     if (var_r == var_max)
       h = del_b - del_g;
     else if (var_g == var_max)
