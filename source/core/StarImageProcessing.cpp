@@ -717,8 +717,11 @@ static bool isPerPixelColorOperation(ImageOperation const& operation) {
       || operation.is<MultiplyImageOperation>();
 }
 
-// A nearest neighbour scale that makes the image bigger by copying pixels
+// A nearest neighbour scale that makes the image bigger by copying pixels.
+// An image with no pixels has none to copy, so the scale then makes pixels of {0, 0, 0, 0} out of nothing, which later color operations would change, so that is not a case for this.
 static bool scaleEnlargesByCopying(ScaleImageOperation const& scale, Image const& image) {
+  if (image.width() == 0 || image.height() == 0)
+    return false;
   if (scale.mode != ScaleImageOperation::Nearest || scale.scale[0] < 0.0f || scale.scale[1] < 0.0f)
     return false;
   Vec2U destSize = Vec2U::round(vmult(Vec2F(image.size()), scale.scale));
