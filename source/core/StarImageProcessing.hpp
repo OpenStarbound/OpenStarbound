@@ -163,6 +163,16 @@ void processImageOperation(ImageOperation const& operation, Image& input, ImageR
 // outside the scaled image), in which case the two operations must be applied one by one.
 bool processScaleCrop(ScaleImageOperation const& scale, CropImageOperation const& crop, Image& image);
 
+// Applies the operations in order, saving work where doing it in a different order or together gives exactly the same image.
+// * a scale followed by a crop only computes the pixels the crop keeps (processScaleCrop);
+// * operations that look at one pixel at a time and nothing else (hue, saturation, brightness, fade, setcolor, replace, multiply)
+//   come out the same before a nearest neighbour scale as after it, since that scale only copies pixels, so they are applied to
+//   the smaller image before an enlarging scale;
+// * the same operations come out the same after a crop as before it, so they are applied after a crop that makes the image smaller.
+//
+// Operations that depend on position or on neighbouring pixels (scanlines, border, blends, masks, bilinear scales...) are never moved.
+void processImageOperationList(List<ImageOperation const*> const& operations, Image& image, ImageReferenceCallback refCallback = {});
+
 Image processImageOperations(List<ImageOperation> const& operations, Image input, ImageReferenceCallback refCallback = {});
 
 }

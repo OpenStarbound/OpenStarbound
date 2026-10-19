@@ -706,21 +706,105 @@ bool processScaleCrop(ScaleImageOperation const& scale, CropImageOperation const
   return true;
 }
 
-Image processImageOperations(List<ImageOperation> const& operations, Image image, ImageReferenceCallback refCallback) {
-  for (size_t i = 0; i < operations.size(); ++i) {
-    if (auto scale = operations[i].ptr<ScaleImageOperation>()) {
-      if (i + 1 < operations.size()) {
-        if (auto crop = operations[i + 1].ptr<CropImageOperation>()) {
+// Operations whose result for a pixel depends on that pixel alone.
+static bool isPerPixelColorOperation(ImageOperation const& operation) {
+  return operation.is<HueShiftImageOperation>()
+      || operation.is<SaturationShiftImageOperation>()
+      || operation.is<BrightnessMultiplyImageOperation>()
+      || operation.is<FadeToColorImageOperation>()
+      || operation.is<SetColorImageOperation>()
+      || operation.is<ColorReplaceImageOperation>()
+      || operation.is<MultiplyImageOperation>();
+}
+
+// A nearest neighbour scale that makes the image bigger by copying pixels
+static bool scaleEnlargesByCopying(ScaleImageOperation const& scale, Image const& image) {
+  if (scale.mode != ScaleImageOperation::Nearest || scale.scale[0] < 0.0f || scale.scale[1] < 0.0f)
+    return false;
+  Vec2U destSize = Vec2U::round(vmult(Vec2F(image.size()), scale.scale));
+  destSize[0] = max(destSize[0], 1u);
+  destSize[1] = max(destSize[1], 1u);
+  return (uint64_t)destSize[0] * destSize[1] > (uint64_t)image.width() * image.height();
+}
+
+// A crop that fits in the image and keeps fewer pixels than it has
+static bool cropShrinks(CropImageOperation const& crop, Image const& image) {
+  Vec2I min = crop.subset.min();
+  Vec2I size = Vec2I(crop.subset.size());
+  if (min[0] < 0 || min[1] < 0 || size[0] < 0 || size[1] < 0 || min[0] + size[0] > (int)image.width() || min[1] + size[1] > (int)image.height())
+    return false;
+  return (uint64_t)size[0] * size[1] < (uint64_t)image.width() * image.height();
+}
+
+void processImageOperationList(List<ImageOperation const*> const& operations, Image& image, ImageReferenceCallback refCallback) {
+  size_t count = operations.size();
+  size_t i = 0;
+  while (i < count) {
+    ImageOperation const& operation = *operations[i];
+
+    if (isPerPixelColorOperation(operation)) {
+      size_t end = i;
+      while (end < count && isPerPixelColorOperation(*operations[end]))
+        ++end;
+      // Colors then crop that makes the image smaller get swapped, so the colors are applied to fewer pixels
+      if (end < count) {
+        if (auto crop = operations[end]->ptr<CropImageOperation>()) {
+          if (cropShrinks(*crop, image)) {
+            processImageOperation(*operations[end], image, refCallback);
+            for (size_t k = i; k < end; ++k)
+              processImageOperation(*operations[k], image, refCallback);
+            i = end + 1;
+            continue;
+          }
+        }
+      }
+      for (size_t k = i; k < end; ++k)
+        processImageOperation(*operations[k], image, refCallback);
+      i = end;
+      continue;
+    }
+
+    if (auto scale = operation.ptr<ScaleImageOperation>()) {
+      size_t end = i + 1;
+      while (end < count && isPerPixelColorOperation(*operations[end]))
+        ++end;
+      // Scale, then colors get swapped, so the scale only copies pixels into a bigger image
+      if (end > i + 1 && scaleEnlargesByCopying(*scale, image)) {
+        for (size_t k = i + 1; k < end; ++k)
+          processImageOperation(*operations[k], image, refCallback);
+        // then the scale itself, together with a crop right after it if there is one
+        if (end < count) {
+          if (auto crop = operations[end]->ptr<CropImageOperation>()) {
+            if (processScaleCrop(*scale, *crop, image)) {
+              i = end + 1;
+              continue;
+            }
+          }
+        }
+        processImageOperation(operation, image, refCallback);
+        i = end;
+        continue;
+      }
+      if (i + 1 < count) {
+        if (auto crop = operations[i + 1]->ptr<CropImageOperation>()) {
           if (processScaleCrop(*scale, *crop, image)) {
-            ++i;
+            i += 2;
             continue;
           }
         }
       }
     }
-    processImageOperation(operations[i], image, refCallback);
-  }
 
+    processImageOperation(operation, image, refCallback);
+    ++i;
+  }
+}
+
+Image processImageOperations(List<ImageOperation> const& operations, Image image, ImageReferenceCallback refCallback) {
+  List<ImageOperation const*> pointers;
+  for (auto const& operation : operations)
+    pointers.append(&operation);
+  processImageOperationList(pointers, image, refCallback);
   return image;
 }
 
