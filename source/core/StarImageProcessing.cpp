@@ -111,7 +111,7 @@ ImageOperation imageOperationFromString(StringView string) {
                 return ErrorImageOperation{strf("Improper size for hex string '{}'", StringView(hexPtr, hexLen))};
             else // we're in A of A=B. In vanilla only A=B pairs are evaluated, so only throw an error if B is also there.
                 return operation;
-              
+
             if ((which = !which))
               operation.colorReplaceMap[*(Vec4B*)&a] = *(Vec4B*)&b;
 
@@ -418,10 +418,47 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
       pixel[2] = op->color[2];
     });
   } else if (auto op = operation.ptr<ColorReplaceImageOperation>()) {
-    image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
-      if (auto m = op->colorReplaceMap.maybe(pixel))
-        pixel = *m;
-    });
+    auto const& replaceMap = op->colorReplaceMap;
+    if (replaceMap.empty())
+      return;
+
+    if (image.width() * image.height() < 1024) {
+      image.forEachPixel([&replaceMap](unsigned, unsigned, Vec4B& pixel) {
+        if (auto m = replaceMap.maybe(pixel))
+          pixel = *m;
+      });
+    } else {
+      // Most pixels are not a key, but each one costs a hash lookup.
+      // A bitmap of the keys' hashes rejects almost all of the non-keys without touching the map.
+      // A pixel is only ever replaced if it is a key, so the result is the same.
+      unsigned bitCount = 4096;
+      while (bitCount < replaceMap.size() * 32 && bitCount < (1u << 20))
+        bitCount <<= 1;
+#if defined(STAR_COMPILER_GNU) || defined(STAR_COMPILER_CLANG)
+      unsigned shift = 32 - __builtin_ctz(bitCount);
+#else
+      unsigned shift = 32;
+      for (unsigned n = bitCount; n > 1; n >>= 1)
+        --shift;
+#endif
+      std::vector<uint64_t> bits(bitCount / 64, 0);
+      auto bitFor = [shift](Vec4B const& c) -> unsigned {
+        uint32_t v = (uint32_t)c[0] | (uint32_t)c[1] << 8 | (uint32_t)c[2] << 16 | (uint32_t)c[3] << 24;
+        return (v * 2654435761u) >> shift;
+      };
+      for (auto const& entry : replaceMap) {
+        unsigned bit = bitFor(entry.first);
+        bits[bit >> 6] |= 1ull << (bit & 63);
+      }
+
+      image.forEachPixel([&](unsigned, unsigned, Vec4B& pixel) {
+        unsigned bit = bitFor(pixel);
+        if (!((bits[bit >> 6] >> (bit & 63)) & 1))
+          return;
+        if (auto m = replaceMap.maybe(pixel))
+          pixel = *m;
+      });
+    }
 
   } else if (auto op = operation.ptr<AlphaMaskImageOperation>()) {
     if (op->maskImages.empty())
@@ -466,20 +503,34 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
     for (auto const& reference : op->blendImages)
       blendImages.append(refCallback(reference));
 
-    image.forEachPixel([&op, &blendImages](unsigned x, unsigned y, Vec4B& pixel) {
-      Vec2U pos = Vec2U(Vec2I(x, y) + op->offset);
-      Vec4F fpixel = Color::v4bToFloat(pixel);
-      for (auto blend : blendImages) {
-        if (pos[0] < blend->width() && pos[1] < blend->height()) {
-          Vec4F blendPixel = Color::v4bToFloat(blend->get(pos));
-          if (op->mode == BlendImageOperation::Multiply)
-            fpixel = fpixel.piecewiseMultiply(blendPixel);
-          else if (op->mode == BlendImageOperation::Screen)
-            fpixel = Vec4F::filled(1.0f) - (Vec4F::filled(1.0f) - fpixel).piecewiseMultiply(Vec4F::filled(1.0f) - blendPixel);
+    // A pixel is only changed where one of the blend images lies under it.
+    // Everywhere else, the original loop converted the pixel to float and back, which gives the same byte again.
+    // Large images blended with a small one (sign tiles) therefore only need the bounding box of the places where a blend image overlaps.
+    long minX = (long)image.width(), minY = (long)image.height(), maxX = 0, maxY = 0;
+    for (auto blend : blendImages) {
+      minX = std::min(minX, std::max(0L, -(long)op->offset[0]));
+      minY = std::min(minY, std::max(0L, -(long)op->offset[1]));
+      maxX = std::max(maxX, std::min((long)image.width(), (long)blend->width() - op->offset[0]));
+      maxY = std::max(maxY, std::min((long)image.height(), (long)blend->height() - op->offset[1]));
+    }
+
+    for (long y = minY; y < maxY; ++y) {
+      for (long x = minX; x < maxX; ++x) {
+        Vec2U pos = Vec2U(Vec2I(x, y) + op->offset);
+        Vec4B pixel = image.get(x, y);
+        Vec4F fpixel = Color::v4bToFloat(pixel);
+        for (auto blend : blendImages) {
+          if (pos[0] < blend->width() && pos[1] < blend->height()) {
+            Vec4F blendPixel = Color::v4bToFloat(blend->get(pos));
+            if (op->mode == BlendImageOperation::Multiply)
+              fpixel = fpixel.piecewiseMultiply(blendPixel);
+            else if (op->mode == BlendImageOperation::Screen)
+              fpixel = Vec4F::filled(1.0f) - (Vec4F::filled(1.0f) - fpixel).piecewiseMultiply(Vec4F::filled(1.0f) - blendPixel);
+          }
         }
+        image.set(x, y, Color::v4fToByte(fpixel));
       }
-      pixel = Color::v4fToByte(fpixel);
-    });
+    }
 
   } else if (auto op = operation.ptr<MultiplyImageOperation>()) {
     image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
@@ -588,9 +639,41 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
   }
 }
 
+bool processScaleCrop(ScaleImageOperation const& scale, CropImageOperation const& crop, Image& image) {
+  if (scale.mode == ScaleImageOperation::Bicubic)
+    return false;
+  if (scale.scale[0] < 0.0f || scale.scale[1] < 0.0f)
+    return false;  // processImageOperation warns about this and clamps it
+
+  if (image.bytesPerPixel() == 3) {
+    // Same conversion processImageOperation does before any operation
+    image = image.convert(image.pixelFormat() == PixelFormat::BGR24 ? PixelFormat::BGRA32 : PixelFormat::RGBA32);
+  }
+
+  if (!scaledCropFits(image, scale.scale, crop.subset))
+    return false;
+
+  if (scale.mode == ScaleImageOperation::Nearest)
+    image = scaleNearestCropped(image, scale.scale, crop.subset);
+  else
+    image = scaleBilinearCropped(image, scale.scale, crop.subset);
+  return true;
+}
+
 Image processImageOperations(List<ImageOperation> const& operations, Image image, ImageReferenceCallback refCallback) {
-  for (auto const& operation : operations)
-    processImageOperation(operation, image, refCallback);
+  for (size_t i = 0; i < operations.size(); ++i) {
+    if (auto scale = operations[i].ptr<ScaleImageOperation>()) {
+      if (i + 1 < operations.size()) {
+        if (auto crop = operations[i + 1].ptr<CropImageOperation>()) {
+          if (processScaleCrop(*scale, *crop, image)) {
+            ++i;
+            continue;
+          }
+        }
+      }
+    }
+    processImageOperation(operations[i], image, refCallback);
+  }
 
   return image;
 }

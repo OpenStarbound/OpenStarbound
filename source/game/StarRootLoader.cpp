@@ -8,6 +8,12 @@ Json const BaseAssetsSettings = Json::parseJson(R"JSON(
     {
       "assetTimeToLive" : 30,
 
+      // Images that directives refer to (blend and mask images) are decoded again every time they are needed after they expire,
+      // which takes far longer than applying them, so they are kept this many seconds after their last use, as long as together
+      // they are no more than this many pixels (16 million pixels is 64 MB decoded).
+      "referenceImageTimeToLive" : 300,
+      "referenceImagePixelBudget" : 16777216,
+
       // In seconds, audio less than this long will be decompressed in memory.
       "audioDecompressLimit" : 4.0,
 
@@ -173,6 +179,8 @@ Root::Settings RootLoader::rootSettingsForOptions(Options const& options) const 
 
     Root::Settings rootSettings;
     rootSettings.assetsSettings.assetTimeToLive = assetsSettings.getInt("assetTimeToLive");
+    rootSettings.assetsSettings.referenceImageTimeToLive = assetsSettings.getFloat("referenceImageTimeToLive");
+    rootSettings.assetsSettings.referenceImagePixelBudget = assetsSettings.getUInt("referenceImagePixelBudget");
     rootSettings.assetsSettings.audioDecompressLimit = assetsSettings.getFloat("audioDecompressLimit");
     rootSettings.assetsSettings.workerPoolSize = assetsSettings.getUInt("workerPoolSize");
     rootSettings.assetsSettings.missingImage = assetsSettings.optString("missingImage");
