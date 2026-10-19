@@ -1,0 +1,16 @@
+#!/bin/sh
+# Reject commits whose staged C++ sources aren't clang-format clean.
+: ${CLANG_FORMAT:=clang-format}
+bad=""
+for f in $(git diff --cached --name-only --diff-filter=ACM -- 'source/*.cpp' 'source/*.hpp'); do
+  case "$f" in source/extern/*) continue ;; esac
+  if ! git show ":$f" | $CLANG_FORMAT -fallback-style=none --assume-filename="$f" --dry-run -Werror >/dev/null 2>&1; then
+    bad="$bad $f"
+  fi
+done
+if [ -n "$bad" ]; then
+  echo "pre-commit: not clang-format clean:" >&2
+  for f in $bad; do echo "  $f" >&2; done
+  echo "Run: clang-format -i <files> && git add <files>  (or scripts/format-source.sh)" >&2
+  exit 1
+fi
