@@ -413,7 +413,11 @@ float Color::value() const {
 // chroma, the other divisions are real divisions.
 // Fast-math and fusing are turned off for them.
 // The Linux build of Starbound (GCC) divides three times instead and so differs by 1 in about 0.3% of the bytes.
-#if defined(STAR_COMPILER_CLANG)
+#if defined(STAR_COMPILER_CLANG) && defined(STAR_COLOR_PRECISE_BY_FLAGS)
+// On targets other than x86, float_control is not supported everywhere and does not stop fused multiply-adds (ARM64), so
+// there the file is compiled with -fno-fast-math -ffp-contract=off instead, see CMakeLists.txt.
+#define STAR_PRECISE_BODY _Pragma("clang fp contract(off)")
+#elif defined(STAR_COMPILER_CLANG)
 #pragma float_control(precise, on, push)
 #pragma float_control(except, on)
 #define STAR_PRECISE_BODY _Pragma("clang fp contract(off)")
@@ -536,7 +540,9 @@ float Color::fromLinear(float in) {
   return (1.0f + a) * powf(in, 1.0f / 2.4f) - a;
 }
 
-#if defined(STAR_COMPILER_CLANG) || defined(STAR_COMPILER_MSVC)
+#if defined(STAR_COMPILER_CLANG) && defined(STAR_COLOR_PRECISE_BY_FLAGS)
+// nothing to undo
+#elif defined(STAR_COMPILER_CLANG) || defined(STAR_COMPILER_MSVC)
 #pragma float_control(pop)
 #else
 #pragma GCC pop_options
