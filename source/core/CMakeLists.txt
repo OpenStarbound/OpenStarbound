@@ -238,8 +238,14 @@ IF(STAR_PRECOMPILED_HEADERS)
   TARGET_PRECOMPILE_HEADERS (star_core PUBLIC StarPch.hpp)
 ENDIF()
 
-IF(STAR_COMPILER_CLANG AND STAR_SYSTEM_MACOS)
-  SET_SOURCE_FILES_PROPERTIES(StarColor.cpp PROPERTIES COMPILE_FLAGS "-fno-fast-math -fassociative-math -freciprocal-math")
+# The color math is written out to match the Windows build of Starbound (see StarColor.cpp), which needs fast-math and fused
+# multiply-adds off.
+# On x86, clang does that with pragmas around just that code, so the rest of the file keeps fast-math.
+# On other targets (ARM64) there is no pragma that works, so the whole file is compiled without them.
+IF(STAR_COMPILER_CLANG AND NOT STAR_ARCHITECTURE_X86_64 AND NOT STAR_ARCHITECTURE_I386)
+  SET_SOURCE_FILES_PROPERTIES(StarColor.cpp PROPERTIES
+    COMPILE_FLAGS "-fno-fast-math -ffp-contract=off"
+    COMPILE_DEFINITIONS STAR_COLOR_PRECISE_BY_FLAGS)
 ENDIF()
 
 IF(STAR_USE_JEMALLOC AND JEMALLOC_IS_PREFIXED)
