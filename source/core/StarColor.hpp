@@ -67,6 +67,9 @@ public:
   static Color temperature(float temp);
 
   static Vec4B hueShiftVec4B(Vec4B color, float hue);
+  // The same bytes as rgba(color), setSaturation(saturation() + shift) and toRgba(), or setValue(value() * multiply)
+  static Vec4B shiftSaturationVec4B(Vec4B color, float shift);
+  static Vec4B scaleValueVec4B(Vec4B color, float multiply);
   static Vec4B hexToVec4B(StringView s);
   // Black
   Color();

@@ -394,11 +394,7 @@ static void processSaturationShift(Image& image, SaturationShiftImageOperation c
   RecentColors recent;
   image.forEachPixel([&](unsigned, unsigned, Vec4B& pixel) {
     if (pixel[3] != 0) {
-      recent.apply(pixel, [&op](Vec4B const& p) {
-        Color color = Color::rgba(p);
-        color.setSaturation(clamp(color.saturation() + op->saturationShiftAmount, 0.0f, 1.0f));
-        return color.toRgba();
-      });
+      recent.apply(pixel, [&op](Vec4B const& p) { return Color::shiftSaturationVec4B(p, op->saturationShiftAmount); });
     }
   });
 }
@@ -432,11 +428,7 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
     RecentColors recent;
     image.forEachPixel([&](unsigned, unsigned, Vec4B& pixel) {
       if (pixel[3] != 0) {
-        recent.apply(pixel, [&op](Vec4B const& p) {
-          Color color = Color::rgba(p);
-          color.setValue(clamp(color.value() * op->brightnessMultiply, 0.0f, 1.0f));
-          return color.toRgba();
-        });
+        recent.apply(pixel, [&op](Vec4B const& p) { return Color::scaleValueVec4B(p, op->brightnessMultiply); });
       }
     });
   } else if (auto op = operation.ptr<FadeToColorImageOperation>()) {

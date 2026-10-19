@@ -394,6 +394,93 @@ float Color::saturation() const {
 float Color::value() const {
   return max(max(m_data[0], m_data[1]), m_data[2]);
 }
+// Fused versions of Color::rgba(p), setSaturation / setValue and toRgba() for one pixel, giving the same bytes without
+// building a Color, calling toHsva() twice, or going through the setters.
+// They are inside the no-fast-math region like the functions they replace.
+// The byte to float table is made by Color::rgba so it matches whatever that compiled to.
+static float const* byteToFloatTable() {
+  static float const* table = []() {
+    float* t = new float[256];
+    for (int i = 0; i < 256; ++i)
+      t[i] = Color::rgba(Vec4B(i, 0, 0, 255)).redF();
+    return t;
+  }();
+  return table;
+}
+
+static inline void bytesToHsv(Vec4B const& c, float const* table, float& h, float& s, float& v) {
+  float var_r = table[c[0]], var_g = table[c[1]], var_b = table[c[2]];
+  float var_min = min(min(var_r, var_g), var_b);
+  float var_max = max(max(var_r, var_g), var_b);
+  float del_max = var_max - var_min;
+  v = var_max;
+  if (del_max == 0.0f) {
+    h = 0.0f;
+    s = 0.0f;
+  } else {
+    s = del_max / var_max;
+    float del_r = (((var_max - var_r) / 6.0f) + (del_max / 2.0f)) / del_max;
+    float del_g = (((var_max - var_g) / 6.0f) + (del_max / 2.0f)) / del_max;
+    float del_b = (((var_max - var_b) / 6.0f) + (del_max / 2.0f)) / del_max;
+    if (var_r == var_max)
+      h = del_b - del_g;
+    else if (var_g == var_max)
+      h = (1.0f / 3.0f) + del_r - del_b;
+    else
+      h = (2.0f / 3.0f) + del_g - del_r;
+    if (h < 0.0f)
+      h += 1.0f;
+    if (h >= 1.0f)
+      h -= 1.0f;
+  }
+}
+
+// s and v have to be clamped already, the same as Color::hsva followed by toRgba()
+static inline Vec4B hsvToBytes(float h, float s, float v, float a) {
+  float var_r, var_g, var_b;
+  if (s == 0.0f) {
+    var_r = var_g = var_b = v;
+  } else {
+    float var_h = h * 6.0f;
+    if (var_h == 6.0f)
+      var_h = 0.0f;
+    float var_i = floor(var_h);
+    float var_1 = v * (1.0f - s);
+    float var_2 = v * (1.0f - s * (var_h - var_i));
+    float var_3 = v * (1.0f - s * (1.0f - (var_h - var_i)));
+    if (var_i == 0) {
+      var_r = v; var_g = var_3; var_b = var_1;
+    } else if (var_i == 1) {
+      var_r = var_2; var_g = v; var_b = var_1;
+    } else if (var_i == 2) {
+      var_r = var_1; var_g = v; var_b = var_3;
+    } else if (var_i == 3) {
+      var_r = var_1; var_g = var_2; var_b = v;
+    } else if (var_i == 4) {
+      var_r = var_3; var_g = var_1; var_b = v;
+    } else {
+      var_r = v; var_g = var_1; var_b = var_2;
+    }
+  }
+  var_r = clamp(var_r, 0.0f, 1.0f);
+  var_g = clamp(var_g, 0.0f, 1.0f);
+  var_b = clamp(var_b, 0.0f, 1.0f);
+  return Vec4B(uint8_t(round(var_r * 255)), uint8_t(round(var_g * 255)), uint8_t(round(var_b * 255)), uint8_t(a * 255));
+}
+
+Vec4B Color::shiftSaturationVec4B(Vec4B color, float shift) {
+  float const* table = byteToFloatTable();
+  float h, s, v;
+  bytesToHsv(color, table, h, s, v);
+  return hsvToBytes(h, clamp(s + shift, 0.0f, 1.0f), v, table[color[3]]);
+}
+
+Vec4B Color::scaleValueVec4B(Vec4B color, float multiply) {
+  float const* table = byteToFloatTable();
+  float h, s, v;
+  bytesToHsv(color, table, h, s, v);
+  return hsvToBytes(h, s, clamp(v * multiply, 0.0f, 1.0f), table[color[3]]);
+}
 #ifdef STAR_COMPILER_GNU
 #pragma GCC pop_options
 #endif
