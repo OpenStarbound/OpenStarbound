@@ -377,49 +377,28 @@ Image DirectivesGroup::applyNewImage(Image const& image, ImageReferenceCallback 
 
 void DirectivesGroup::applyExistingImage(Image& image, ImageReferenceCallback refCallback) const {
   bool first = true;
-  // A scale is held back until the next operation is known.
-  // When that is a crop the two are applied together, which only computes the pixels the crop keeps (see processScaleCrop).
-  // Anything else applies the held scale first, so every other case behaves as before.
-  ImageOperation const* pendingScale = nullptr;
-  auto flushScale = [&]() {
-    if (pendingScale) {
-      processImageOperation(*pendingScale, image, refCallback);
-      pendingScale = nullptr;
-    }
-  };
+  // The operations are collected and applied together, which lets processImageOperationList apply them in a cheaper order where that
+  // gives the same image.
+  // An operation that can't be applied ends the list.
+  List<ImageOperation const*> operations;
 
   forEach([&](Directives::Entry const& entry, Directives const& directives) {
     ImageOperation const& operation = entry.loadOperation(*directives);
     if (auto error = operation.ptr<ErrorImageOperation>()) {
-      flushScale();
+      processImageOperationList(operations, image, refCallback);
       if (auto string = error->cause.ptr<std::string>())
         throw DirectivesException::format("ImageOperation parse error: {}", *string);
       else
         std::rethrow_exception(error->cause.get<std::exception_ptr>());
     } else if (!first && entry.begin != 0 && operation.is<NullImageOperation>()) {
-      flushScale();
+      processImageOperationList(operations, image, refCallback);
       throw DirectivesException::format("Invalid image operation: {}", entry.string(*directives));
     } else {
-      bool handled = false;
-      if (pendingScale) {
-        auto crop = operation.ptr<CropImageOperation>();
-        if (crop && processScaleCrop(pendingScale->get<ScaleImageOperation>(), *crop, image)) {
-          pendingScale = nullptr;
-          handled = true;
-        } else {
-          flushScale();
-        }
-      }
-      if (!handled) {
-        if (operation.is<ScaleImageOperation>())
-          pendingScale = &operation;
-        else
-          processImageOperation(operation, image, refCallback);
-      }
+      operations.append(&operation);
     }
     first = false;
   });
-  flushScale();
+  processImageOperationList(operations, image, refCallback);
 }
 
 size_t DirectivesGroup::hash() const {
