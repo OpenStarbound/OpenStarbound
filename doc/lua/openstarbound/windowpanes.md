@@ -45,23 +45,23 @@ For a portrait that is not an entity at all, hide it with `widget.setVisible("po
 
 #### The Party Portrait and Name
 
-The name and portrait the rest of the party sees for you come from the player, not from the window.
-`teamName` is a string (at most 64 characters, an empty one is ignored) shown in place of your name in everybody's team bar and member menu.
+The name and portrait the rest of the party sees for you come from the player, not from the window, and are set with `player.setTeamName` and `player.setTeamPortrait`.
+The name is a string (at most 64 characters, an empty one is ignored) shown in place of your name in everybody's team bar and member menu.
 
 ```lua
-player.setProperty("teamName", "^#ff9ad5;Someone Else")
+player.setTeamName("^#ff9ad5;Someone Else")
 ```
 
-The portrait works the same way, allowing you to set the player property `teamPortrait` to a list of drawables.
+The portrait is a list of drawables.
 Similarly to the name, it is sent with your other party data so everyone in the party sees it in their team bar.
 
 ```lua
-player.setProperty("teamPortrait", {
+player.setTeamPortrait({
   { image = "/items/generic/crafting/ironbar/ironbar.png", centered = true, scale = 1 }
 })
 ```
 
 The drawables are in portrait pixels, like the `head` portrait they replace, with `image` and optionally `position`, `scale`, `rotation`, `color`, `fullbright`.
-Clear them with `player.setProperty(name, nil)`.
+Clear either with `nil`. They are not saved, so set them again whenever the script starts.
 The images have to exist on the other players' games, so stick to vanilla assets unless they have your mod.
-A list with more than 32 drawables, or one that cannot be read, is ignored.
+A list with more than 32 drawables, or one that cannot be read, raises an error.

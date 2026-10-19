@@ -446,6 +446,30 @@ Hides or shows the indicator for the specified busy state (`"chatting"` or `"men
 
 ---
 
+#### `Maybe<String>` player.teamName()
+
+Returns the name the party sees in place of the player's own, or nil if none is set.
+
+---
+
+#### `void` player.setTeamName(`Maybe<String>` name)
+
+Sets the name the party sees in place of the player's own (at most 64 characters). Nil or an empty string clears it. Not saved.
+
+---
+
+#### `Maybe<JsonArray>` player.teamPortrait()
+
+Returns the list of drawables the party sees in place of the player's head portrait, or nil if none is set.
+
+---
+
+#### `void` player.setTeamPortrait(`Maybe<JsonArray>` drawables)
+
+Sets the portrait the party sees, as a list of at most 32 drawables. Nil clears it, an invalid list raises an error. Not saved.
+
+---
+
 #### `void` player.warp(`String` warpAction, [`String` animation], [`bool` deploy])
 
 Immediately warps the player to the specified warp target, optionally using the specified warp animation and deployment.

@@ -256,25 +256,8 @@ void TeamClient::writePlayerData(JsonObject& request, PlayerPtr player, bool ful
   request["warpMode"] = WarpModeNames.getRight(mode);
 
   if (fullWrite) {
-    request["name"] = player->name();
-
-    // the name the party sees.
-    auto nameOverride = player->getGenericProperty("teamName");
-    if (nameOverride.isType(Json::Type::String) && !nameOverride.toString().empty())
-      request["name"] = nameOverride.toString().slice(0, 64); // by characters, so a multi-byte one is never cut
-
-    request["portrait"] = jsonFromList(player->portrait(PortraitMode::Head), mem_fn(&Drawable::toJson));
-
-    // the portrait the rest of the party sees.
-    auto portraitOverride = player->getGenericProperty("teamPortrait");
-    if (portraitOverride.isType(Json::Type::Array) && portraitOverride.size() <= 32) {
-      try {
-        jsonToList<Drawable>(portraitOverride);
-        request["portrait"] = portraitOverride;
-      } catch (StarException const& e) {
-        Logger::warn("Ignoring invalid teamPortrait property: {}", e.what());
-      }
-    }
+    request["name"] = player->teamName().value(player->name());
+    request["portrait"] = jsonFromList(player->teamPortrait().value(player->portrait(PortraitMode::Head)), mem_fn(&Drawable::toJson));
   }
 }
 

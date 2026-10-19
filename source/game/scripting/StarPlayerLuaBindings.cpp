@@ -690,6 +690,16 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
   callbacks.registerCallback("setBusyIndicatorHidden", [player](String const& state, bool hidden) {
       player->setBusyIndicatorHidden(PlayerBusyStateNames.getLeft(state), hidden);
     });
+  callbacks.registerCallback("teamName", [player]() { return player->teamName(); });
+  callbacks.registerCallback("setTeamName", [player](Maybe<String> name) { player->setTeamName(std::move(name)); });
+  callbacks.registerCallback("teamPortrait", [player]() -> Maybe<Json> {
+      if (auto const& portrait = player->teamPortrait())
+        return jsonFromList(*portrait, mem_fn(&Drawable::toJson));
+      return {};
+    });
+  callbacks.registerCallback("setTeamPortrait", [player](Maybe<Json> const& portrait) {
+      player->setTeamPortrait(portrait ? jsonToList<Drawable>(*portrait) : Maybe<List<Drawable>>());
+    });
   callbacks.registerCallback("setIntroComplete", [player](bool complete) {
       return player->log()->setIntroComplete(complete);
     });
