@@ -403,6 +403,126 @@ static void processSaturationShift(Image& image, SaturationShiftImageOperation c
 #endif
 
 
+// The pixels [x0, x1) x [y0, y1) of an image
+struct PixelRect {
+  long x0 = 0, y0 = 0, x1 = 0, y1 = 0;
+  bool empty() const { return x0 >= x1 || y0 >= y1; }
+};
+
+// Replaces the colors of the pixels inside the rectangle. The image has four bytes per pixel.
+static void replaceColors(ColorReplaceMap const& replaceMap, Image& image, PixelRect rect) {
+  if (replaceMap.empty() || rect.empty())
+    return;
+
+  if ((rect.x1 - rect.x0) * (rect.y1 - rect.y0) < 1024) {
+    for (long y = rect.y0; y < rect.y1; ++y) {
+      for (long x = rect.x0; x < rect.x1; ++x) {
+        Vec4B pixel = image.get(x, y);
+        if (auto m = replaceMap.maybe(pixel))
+          image.set(x, y, *m);
+      }
+    }
+    return;
+  }
+
+  // Most pixels are not a key, but each one costs a hash lookup.
+  // A bitmap of the keys' hashes rejects almost all of the non-keys without touching the map.
+  // A pixel is only ever replaced if it is a key, so the result is the same.
+  unsigned bitCount = 4096;
+  while (bitCount < replaceMap.size() * 32 && bitCount < (1u << 20))
+    bitCount <<= 1;
+#if defined(STAR_COMPILER_GNU) || defined(STAR_COMPILER_CLANG)
+  unsigned shift = 32 - __builtin_ctz(bitCount);
+#else
+  unsigned shift = 32;
+  for (unsigned n = bitCount; n > 1; n >>= 1)
+    --shift;
+#endif
+  std::vector<uint64_t> bits(bitCount / 64, 0);
+  auto bitFor = [shift](Vec4B const& c) -> unsigned {
+    uint32_t v = (uint32_t)c[0] | (uint32_t)c[1] << 8 | (uint32_t)c[2] << 16 | (uint32_t)c[3] << 24;
+    return (v * 2654435761u) >> shift;
+  };
+  for (auto const& entry : replaceMap) {
+    unsigned bit = bitFor(entry.first);
+    bits[bit >> 6] |= 1ull << (bit & 63);
+  }
+
+  // Large areas of one color are common (the backgrounds of sign and costume drawables), and a pixel that equals the one before it
+  // gets the same result, so that one is remembered.
+  static_assert(sizeof(Vec4B) == sizeof(uint32_t), "a pixel is four bytes");
+  uint8_t* data = image.data();
+  uint32_t lastIn = 0, lastOut = 0;
+  bool haveLast = false;
+  for (long y = rect.y0; y < rect.y1; ++y) {
+    uint8_t* row = data + ((size_t)y * image.width() + rect.x0) * 4;
+    for (long x = 0; x < rect.x1 - rect.x0; ++x) {
+      uint32_t value;
+      memcpy(&value, row + x * 4, 4);
+      if (haveLast && value == lastIn) {
+        memcpy(row + x * 4, &lastOut, 4);
+        continue;
+      }
+      Vec4B pixel;
+      memcpy(&pixel, &value, 4);
+      uint32_t result = value;
+      unsigned bit = bitFor(pixel);
+      if ((bits[bit >> 6] >> (bit & 63)) & 1) {
+        if (auto m = replaceMap.maybe(pixel)) {
+          memcpy(&result, m->ptr(), 4);
+          memcpy(row + x * 4, &result, 4);
+        }
+      }
+      lastIn = value;
+      lastOut = result;
+      haveLast = true;
+    }
+  }
+}
+
+// Blends the images into the target and returns the rectangle of pixels that can have changed.
+static PixelRect applyBlend(BlendImageOperation const& op, Image& image, ImageReferenceCallback const& refCallback) {
+  if (op.blendImages.empty())
+    return {};
+
+  if (!refCallback)
+    throw StarException("Missing image ref callback during BlendImageOperation in ImageProcessor::process");
+
+  List<Image const*> blendImages;
+  for (auto const& reference : op.blendImages)
+    blendImages.append(refCallback(reference));
+
+  // A pixel is only changed where one of the blend images lies under it.
+  // Everywhere else, the original loop converted the pixel to float and back, which gives the same byte again.
+  // Large images blended with a small one (sign tiles) therefore only need the bounding box of the places where a blend image overlaps.
+  long minX = (long)image.width(), minY = (long)image.height(), maxX = 0, maxY = 0;
+  for (auto blend : blendImages) {
+    minX = std::min(minX, std::max(0L, -(long)op.offset[0]));
+    minY = std::min(minY, std::max(0L, -(long)op.offset[1]));
+    maxX = std::max(maxX, std::min((long)image.width(), (long)blend->width() - op.offset[0]));
+    maxY = std::max(maxY, std::min((long)image.height(), (long)blend->height() - op.offset[1]));
+  }
+
+  for (long y = minY; y < maxY; ++y) {
+    for (long x = minX; x < maxX; ++x) {
+      Vec2U pos = Vec2U(Vec2I(x, y) + op.offset);
+      Vec4B pixel = image.get(x, y);
+      Vec4F fpixel = Color::v4bToFloat(pixel);
+      for (auto blend : blendImages) {
+        if (pos[0] < blend->width() && pos[1] < blend->height()) {
+          Vec4F blendPixel = Color::v4bToFloat(blend->get(pos));
+          if (op.mode == BlendImageOperation::Multiply)
+            fpixel = fpixel.piecewiseMultiply(blendPixel);
+          else if (op.mode == BlendImageOperation::Screen)
+            fpixel = Vec4F::filled(1.0f) - (Vec4F::filled(1.0f) - fpixel).piecewiseMultiply(Vec4F::filled(1.0f) - blendPixel);
+        }
+      }
+      image.set(x, y, Color::v4fToByte(fpixel));
+    }
+  }
+  return {minX, minY, maxX, maxY};
+}
+
 
 void processImageOperation(ImageOperation const& operation, Image& image, ImageReferenceCallback refCallback) {
   if (image.bytesPerPixel() == 3) {
@@ -456,68 +576,7 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
       pixel[2] = op->color[2];
     });
   } else if (auto op = operation.ptr<ColorReplaceImageOperation>()) {
-    auto const& replaceMap = op->colorReplaceMap;
-    if (replaceMap.empty())
-      return;
-
-    if (image.width() * image.height() < 1024) {
-      image.forEachPixel([&replaceMap](unsigned, unsigned, Vec4B& pixel) {
-        if (auto m = replaceMap.maybe(pixel))
-          pixel = *m;
-      });
-    } else {
-      // Most pixels are not a key, but each one costs a hash lookup.
-      // A bitmap of the keys' hashes rejects almost all of the non-keys without touching the map.
-      // A pixel is only ever replaced if it is a key, so the result is the same.
-      unsigned bitCount = 4096;
-      while (bitCount < replaceMap.size() * 32 && bitCount < (1u << 20))
-        bitCount <<= 1;
-#if defined(STAR_COMPILER_GNU) || defined(STAR_COMPILER_CLANG)
-      unsigned shift = 32 - __builtin_ctz(bitCount);
-#else
-      unsigned shift = 32;
-      for (unsigned n = bitCount; n > 1; n >>= 1)
-        --shift;
-#endif
-      std::vector<uint64_t> bits(bitCount / 64, 0);
-      auto bitFor = [shift](Vec4B const& c) -> unsigned {
-        uint32_t v = (uint32_t)c[0] | (uint32_t)c[1] << 8 | (uint32_t)c[2] << 16 | (uint32_t)c[3] << 24;
-        return (v * 2654435761u) >> shift;
-      };
-      for (auto const& entry : replaceMap) {
-        unsigned bit = bitFor(entry.first);
-        bits[bit >> 6] |= 1ull << (bit & 63);
-      }
-
-      // Large areas of one color are common (the backgrounds of sign and costume drawables), and a pixel that equals the one before it
-      // gets the same result, so that one is remembered.
-      static_assert(sizeof(Vec4B) == sizeof(uint32_t), "a pixel is four bytes");
-      size_t count = (size_t)image.width() * image.height();
-      uint8_t* data = image.data();
-      uint32_t lastIn = 0, lastOut = 0;
-      bool haveLast = false;
-      for (size_t i = 0; i < count; ++i) {
-        uint32_t value;
-        memcpy(&value, data + i * 4, 4);
-        if (haveLast && value == lastIn) {
-          memcpy(data + i * 4, &lastOut, 4);
-          continue;
-        }
-        Vec4B pixel;
-        memcpy(&pixel, &value, 4);
-        uint32_t result = value;
-        unsigned bit = bitFor(pixel);
-        if ((bits[bit >> 6] >> (bit & 63)) & 1) {
-          if (auto m = replaceMap.maybe(pixel)) {
-            memcpy(&result, m->ptr(), 4);
-            memcpy(data + i * 4, &result, 4);
-          }
-        }
-        lastIn = value;
-        lastOut = result;
-        haveLast = true;
-      }
-    }
+    replaceColors(op->colorReplaceMap, image, {0, 0, (long)image.width(), (long)image.height()});
 
   } else if (auto op = operation.ptr<AlphaMaskImageOperation>()) {
     if (op->maskImages.empty())
@@ -552,44 +611,7 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
     });
 
   } else if (auto op = operation.ptr<BlendImageOperation>()) {
-    if (op->blendImages.empty())
-      return;
-
-    if (!refCallback)
-      throw StarException("Missing image ref callback during BlendImageOperation in ImageProcessor::process");
-
-    List<Image const*> blendImages;
-    for (auto const& reference : op->blendImages)
-      blendImages.append(refCallback(reference));
-
-    // A pixel is only changed where one of the blend images lies under it.
-    // Everywhere else, the original loop converted the pixel to float and back, which gives the same byte again.
-    // Large images blended with a small one (sign tiles) therefore only need the bounding box of the places where a blend image overlaps.
-    long minX = (long)image.width(), minY = (long)image.height(), maxX = 0, maxY = 0;
-    for (auto blend : blendImages) {
-      minX = std::min(minX, std::max(0L, -(long)op->offset[0]));
-      minY = std::min(minY, std::max(0L, -(long)op->offset[1]));
-      maxX = std::max(maxX, std::min((long)image.width(), (long)blend->width() - op->offset[0]));
-      maxY = std::max(maxY, std::min((long)image.height(), (long)blend->height() - op->offset[1]));
-    }
-
-    for (long y = minY; y < maxY; ++y) {
-      for (long x = minX; x < maxX; ++x) {
-        Vec2U pos = Vec2U(Vec2I(x, y) + op->offset);
-        Vec4B pixel = image.get(x, y);
-        Vec4F fpixel = Color::v4bToFloat(pixel);
-        for (auto blend : blendImages) {
-          if (pos[0] < blend->width() && pos[1] < blend->height()) {
-            Vec4F blendPixel = Color::v4bToFloat(blend->get(pos));
-            if (op->mode == BlendImageOperation::Multiply)
-              fpixel = fpixel.piecewiseMultiply(blendPixel);
-            else if (op->mode == BlendImageOperation::Screen)
-              fpixel = Vec4F::filled(1.0f) - (Vec4F::filled(1.0f) - fpixel).piecewiseMultiply(Vec4F::filled(1.0f) - blendPixel);
-          }
-        }
-        image.set(x, y, Color::v4fToByte(fpixel));
-      }
-    }
+    applyBlend(*op, image, refCallback);
 
   } else if (auto op = operation.ptr<MultiplyImageOperation>()) {
     image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
@@ -752,6 +774,65 @@ static bool cropShrinks(CropImageOperation const& crop, Image const& image) {
   return (uint64_t)size[0] * size[1] < (uint64_t)image.width() * image.height();
 }
 
+// A replace leaves no pixel that is one of its keys, as long as none of the colors it makes is a key itself.
+static bool replaceSettles(ColorReplaceMap const& map) {
+  for (auto const& entry : map) {
+    if (map.contains(entry.second))
+      return false;
+  }
+  return true;
+}
+
+static bool replaceKeysAreKeysOf(ColorReplaceMap const& map, ColorReplaceMap const& other) {
+  for (auto const& entry : map) {
+    if (!other.contains(entry.first))
+      return false;
+  }
+  return true;
+}
+
+// Signs and costume drawables are made of a replace, blends that each touch a small area, the same replace again, and so on.
+// After a replace that settles, none of the pixels are its keys. The blends only change the areas they cover, and a following replace
+// with keys that are all keys of the one before can only find any in those areas, so it only needs to look there.
+// Called with the index of the operation after a replace that has been applied, and returns the index of the next one to apply.
+static size_t processReplaceBlendChain(List<ImageOperation const*> const& operations, size_t i, ColorReplaceImageOperation const* current, Image& image, ImageReferenceCallback const& refCallback) {
+  size_t count = operations.size();
+  if (image.bytesPerPixel() != 4 || i >= count || !operations[i]->is<BlendImageOperation>() || !replaceSettles(current->colorReplaceMap))
+    return i;
+
+  while (i < count && operations[i]->is<BlendImageOperation>()) {
+    PixelRect changed;
+    bool any = false;
+    while (i < count && operations[i]->is<BlendImageOperation>()) {
+      PixelRect rect = applyBlend(*operations[i]->ptr<BlendImageOperation>(), image, refCallback);
+      ++i;
+      if (rect.empty())
+        continue;
+      if (!any) {
+        changed = rect;
+        any = true;
+      } else {
+        changed.x0 = std::min(changed.x0, rect.x0);
+        changed.y0 = std::min(changed.y0, rect.y0);
+        changed.x1 = std::max(changed.x1, rect.x1);
+        changed.y1 = std::max(changed.y1, rect.y1);
+      }
+    }
+    if (i < count) {
+      if (auto next = operations[i]->ptr<ColorReplaceImageOperation>()) {
+        if (replaceKeysAreKeysOf(next->colorReplaceMap, current->colorReplaceMap) && replaceSettles(next->colorReplaceMap)) {
+          replaceColors(next->colorReplaceMap, image, changed);
+          current = next;
+          ++i;
+          continue;
+        }
+      }
+    }
+    break;
+  }
+  return i;
+}
+
 void processImageOperationList(List<ImageOperation const*> const& operations, Image& image, ImageReferenceCallback refCallback) {
   size_t count = operations.size();
   size_t i = 0;
@@ -777,6 +858,8 @@ void processImageOperationList(List<ImageOperation const*> const& operations, Im
       for (size_t k = i; k < end; ++k)
         processImageOperation(*operations[k], image, refCallback);
       i = end;
+      if (auto replace = operations[end - 1]->ptr<ColorReplaceImageOperation>())
+        i = processReplaceBlendChain(operations, i, replace, image, refCallback);
       continue;
     }
 
