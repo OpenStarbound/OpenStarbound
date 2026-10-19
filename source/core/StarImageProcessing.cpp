@@ -354,16 +354,51 @@ StringList imageOperationReferences(List<ImageOperation> const& operations) {
   return references;
 }
 
+// The hue, saturation and brightness operations below turn every pixel through floating point color math.
+// However, most images have far fewer distinct colors than pixels, especially the heaviest, largest ones..
+// This remembers the result for recently seen colors, the pixel that computing it again would give.
+struct RecentColors {
+  struct Entry {
+    uint32_t in = 0;   // 0 is never looked u,: a pixel with alpha 0 is skipped before it gets here
+    uint32_t out = 0;
+  };
+
+  static uint32_t pack(Vec4B const& c) {
+    return (uint32_t)c[0] | (uint32_t)c[1] << 8 | (uint32_t)c[2] << 16 | (uint32_t)c[3] << 24;
+  }
+
+  static Vec4B unpack(uint32_t v) {
+    return Vec4B(v & 255, (v >> 8) & 255, (v >> 16) & 255, v >> 24);
+  }
+
+  // Replaces the pixel with compute(pixel)
+  template <typename Function>
+  void apply(Vec4B& pixel, Function&& compute) {
+    uint32_t key = pack(pixel);
+    Entry& entry = entries[(key * 2654435761u) >> 24];
+    if (entry.in != key) {
+      entry.out = pack(compute(pixel));
+      entry.in = key;
+    }
+    pixel = unpack(entry.out);
+  }
+
+  Entry entries[256];
+};
+
 #ifdef STAR_COMPILER_GNU
 #pragma GCC push_options
 #pragma GCC optimize("-fno-fast-math", "-fassociative-math", "-freciprocal-math")
 #endif
 static void processSaturationShift(Image& image, SaturationShiftImageOperation const* op) {
-  image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
+  RecentColors recent;
+  image.forEachPixel([&](unsigned, unsigned, Vec4B& pixel) {
     if (pixel[3] != 0) {
-      Color color = Color::rgba(pixel);
-      color.setSaturation(clamp(color.saturation() + op->saturationShiftAmount, 0.0f, 1.0f));
-      pixel = color.toRgba();
+      recent.apply(pixel, [&op](Vec4B const& p) {
+        Color color = Color::rgba(p);
+        color.setSaturation(clamp(color.saturation() + op->saturationShiftAmount, 0.0f, 1.0f));
+        return color.toRgba();
+      });
     }
   });
 }
@@ -378,19 +413,30 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
     // Convert to an image format that has alpha so certain operations function properly
     image = image.convert(image.pixelFormat() == PixelFormat::BGR24 ? PixelFormat::BGRA32 : PixelFormat::RGBA32);
   }
+  // A hue shift, saturation shift or brightness multiplier of exactly zero (?hueshift=0 is in every vanilla parallax path) hands
+  // back every pixel unchanged, for every color and every alpha value, so those passes are skipped.
   if (auto op = operation.ptr<HueShiftImageOperation>()) {
-    image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
+    if (op->hueShiftAmount == 0.0f)
+      return;
+    RecentColors recent;
+    image.forEachPixel([&](unsigned, unsigned, Vec4B& pixel) {
       if (pixel[3] != 0)
-        pixel = Color::hueShiftVec4B(pixel, op->hueShiftAmount);
+        recent.apply(pixel, [&op](Vec4B const& p) { return Color::hueShiftVec4B(p, op->hueShiftAmount); });
     });
   } else if (auto op = operation.ptr<SaturationShiftImageOperation>()) {
-    processSaturationShift(image, op);
+    if (op->saturationShiftAmount != 0.0f)
+      processSaturationShift(image, op);
   } else if (auto op = operation.ptr<BrightnessMultiplyImageOperation>()) {
-    image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
+    if (op->brightnessMultiply == 1.0f)
+      return;
+    RecentColors recent;
+    image.forEachPixel([&](unsigned, unsigned, Vec4B& pixel) {
       if (pixel[3] != 0) {
-        Color color = Color::rgba(pixel);
-        color.setValue(clamp(color.value() * op->brightnessMultiply, 0.0f, 1.0f));
-        pixel = color.toRgba();
+        recent.apply(pixel, [&op](Vec4B const& p) {
+          Color color = Color::rgba(p);
+          color.setValue(clamp(color.value() * op->brightnessMultiply, 0.0f, 1.0f));
+          return color.toRgba();
+        });
       }
     });
   } else if (auto op = operation.ptr<FadeToColorImageOperation>()) {
