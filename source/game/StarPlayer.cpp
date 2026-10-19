@@ -2207,6 +2207,28 @@ bool Player::busyIndicatorHidden(PlayerBusyState busyState) const {
   return m_hiddenBusyIndicators.contains(busyState);
 }
 
+Maybe<String> const& Player::teamName() const {
+  return m_teamName;
+}
+
+void Player::setTeamName(Maybe<String> name) {
+  if (name && name->empty())
+    name.reset();
+  else if (name)
+    name = name->slice(0, 64); // by characters, so a multi-byte one is never cut
+  m_teamName = std::move(name);
+}
+
+Maybe<List<Drawable>> const& Player::teamPortrait() const {
+  return m_teamPortrait;
+}
+
+void Player::setTeamPortrait(Maybe<List<Drawable>> portrait) {
+  if (portrait && portrait->size() > 32)
+    throw StarException("A team portrait can have at most 32 drawables");
+  m_teamPortrait = std::move(portrait);
+}
+
 void Player::teleportOut(String const& animationType, bool deploy) {
   m_state = State::TeleportOut;
   m_teleportAnimationType = animationType;

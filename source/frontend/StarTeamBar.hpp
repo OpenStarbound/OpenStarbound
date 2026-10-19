@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StarPane.hpp"
+#include "StarBaseScriptPane.hpp"
 #include "StarUuid.hpp"
 #include "StarMainInterfaceTypes.hpp"
 #include "StarProgressWidget.hpp"
@@ -17,8 +17,9 @@ STAR_CLASS(TeamInvite);
 STAR_CLASS(TeamInvitation);
 STAR_CLASS(TeamMemberMenu);
 STAR_CLASS(TeamBar);
+STAR_CLASS(PortraitWidget);
 
-class TeamInvite : public Pane {
+class TeamInvite : public BaseScriptPane {
 public:
   TeamInvite(TeamBar* owner);
 
@@ -31,27 +32,35 @@ private:
   void close();
 };
 
-class TeamInvitation : public Pane {
+class TeamInvitation : public BaseScriptPane {
 public:
   TeamInvitation(TeamBar* owner);
 
   void open(Uuid const& inviterUuid, String const& inviterName);
 
+  // A script gets "invited(inviterName, inviterUuid)" once the pane is displayed and can change anything on it.
+  void displayed() override;
+
 private:
   TeamBar* m_owner;
   Uuid m_inviterUuid;
+  String m_inviterName;
 
   void ok();
   void close();
 };
 
-class TeamMemberMenu : public Pane {
+class TeamMemberMenu : public BaseScriptPane {
 public:
   TeamMemberMenu(TeamBar* owner);
 
   void open(Uuid memberUuid, Vec2I position);
 
   virtual void update(float dt) override;
+
+  // the script gets "opened(memberUuid, memberName)" once the menu is displayed and runs after update() each frame
+  void displayed() override;
+  void tick(float dt) override;
 
 private:
   void updateWidgets();
@@ -63,14 +72,18 @@ private:
 
   TeamBar* m_owner;
   Uuid m_memberUuid;
+  String m_memberName;
   bool m_canBeam;
 };
 
-class TeamBar : public Pane {
+class TeamBar : public BaseScriptPane {
 public:
   TeamBar(MainInterface* mainInterface, UniverseClientPtr client);
 
   bool sendEvent(InputEvent const& event) override;
+
+  // A script runs after the native update every frame, so what it sets wins.
+  void tick(float dt) override;
 
   void invitePlayer(String const& playerName);
   void acceptInvitation(Uuid const& inviterUuid);
@@ -108,8 +121,11 @@ private:
   Color m_energyBarColor;
   Color m_energyBarRegenMixColor;
   Color m_energyBarUnusableColor;
+  PortraitWidgetPtr m_portrait;
 
   friend class TeamMemberMenu;
+  friend class TeamInvitation;
+  friend class TeamInvite;
 };
 
 }

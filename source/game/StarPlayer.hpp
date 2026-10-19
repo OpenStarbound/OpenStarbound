@@ -412,6 +412,12 @@ public:
   void setBusyIndicatorHidden(PlayerBusyState busyState, bool hidden);
   bool busyIndicatorHidden(PlayerBusyState busyState) const;
 
+  // What the party sees in place of this player's name and portrait. Not saved, set by scripts.
+  Maybe<String> const& teamName() const;
+  void setTeamName(Maybe<String> name);
+  Maybe<List<Drawable>> const& teamPortrait() const;
+  void setTeamPortrait(Maybe<List<Drawable>> portrait);
+
   // A hard move to a specified location
   void moveTo(Vec2F const& footPosition);
 
@@ -609,6 +615,8 @@ private:
   PlayerBusyState m_busyState = PlayerBusyState::None;
   Set<PlayerBusyState> m_busyStates;
   Set<PlayerBusyState> m_hiddenBusyIndicators;
+  Maybe<String> m_teamName;
+  Maybe<List<Drawable>> m_teamPortrait;
   NetworkedAnimator::DynamicTarget m_effectsAnimatorDynamicTarget;
 
   float m_emoteCooldown;
