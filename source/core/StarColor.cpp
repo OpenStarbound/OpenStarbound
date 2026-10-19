@@ -517,6 +517,25 @@ Vec4B Color::scaleValueVec4B(Vec4B color, float multiply) {
   return hsvToBytes(h, s, clamp(v * multiply, 0.0f, 1.0f), table[color[3]]);
 }
 
+// The sRGB curve, which the fade operations use, pinned the same way.
+// The Windows build turns (in + a) / (1 + a) into in * (1 / (1 + a)) + a / (1 + a), and the division by 12.92 into a
+// multiplication, which gives another last bit than the GCC build of the same source.
+float Color::toLinear(float in) {
+  STAR_PRECISE_BODY
+  const float a = 0.055f;
+  if (in <= 0.04045f)
+    return in * (1.0f / 12.92f);
+  return powf(in * (1.0f / (1.0f + a)) + a / (1.0f + a), 2.4f);
+}
+
+float Color::fromLinear(float in) {
+  STAR_PRECISE_BODY
+  const float a = 0.055f;
+  if (in <= 0.0031308f)
+    return 12.92f * in;
+  return (1.0f + a) * powf(in, 1.0f / 2.4f) - a;
+}
+
 #if defined(STAR_COMPILER_CLANG) || defined(STAR_COMPILER_MSVC)
 #pragma float_control(pop)
 #else
@@ -559,20 +578,6 @@ bool Color::operator!=(const Color& c) const {
 std::ostream& operator<<(std::ostream& os, const Color& c) {
   os << c.toRgbaF();
   return os;
-}
-
-float Color::toLinear(float in) {
-  const float a = 0.055f;
-  if (in <= 0.04045f)
-    return in / 12.92f;
-  return powf((in + a) / (1.0f + a), 2.4f);
-}
-
-float Color::fromLinear(float in) {
-  const float a = 0.055f;
-  if (in <= 0.0031308f)
-    return 12.92f * in;
-  return (1.0f + a) * powf(in, 1.0f / 2.4f) - a;
 }
 
 String Color::toHex() const {
