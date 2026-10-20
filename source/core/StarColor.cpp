@@ -398,6 +398,157 @@ float Color::value() const {
 #pragma GCC pop_options
 #endif
 
+// Fused versions of Color::rgba(p), setSaturation / setValue and toRgba() for one pixel, giving the same bytes without
+// building a Color, calling toHsva() twice, or going through the setters.
+//
+// The build uses fast-math and every compiler does something different with it.
+// A division becomes a multiplication by the reciprocal, or not, or the reciprocal is shared between several divisions.
+// Sums are reordered.
+// A multiply and an add are fused when the CPU can (ARM, or x86 with -march=native).
+// Each changes the last bit and a different last bit decides the rounding to bytes, so the same ?saturation gave different
+// pixels per compiler.
+// Now, these are written out with the operations the vanilla Windows build of Starbound (MSVC /fp:fast) settled on, which is
+// what most players run.
+// There, a division by a constant is a multiplication by its reciprocal, the three hue terms share one reciprocal of the
+// chroma, the other divisions are real divisions.
+// Fast-math and fusing are turned off for them.
+// The Linux build of Starbound (GCC) divides three times instead and so differs by 1 in about 0.3% of the bytes.
+#if defined(STAR_COMPILER_CLANG) && defined(STAR_COLOR_PRECISE_BY_FLAGS)
+// On targets other than x86, float_control is not supported everywhere and does not stop fused multiply-adds (ARM64), so
+// there the file is compiled with -fno-fast-math -ffp-contract=off instead, see CMakeLists.txt.
+#define STAR_PRECISE_BODY _Pragma("clang fp contract(off)")
+#elif defined(STAR_COMPILER_CLANG)
+#pragma float_control(precise, on, push)
+#pragma float_control(except, on)
+#define STAR_PRECISE_BODY _Pragma("clang fp contract(off)")
+#elif defined(STAR_COMPILER_MSVC)
+#pragma float_control(precise, on, push)
+#pragma fp_contract(off)
+#define STAR_PRECISE_BODY
+#else
+#pragma GCC push_options
+#pragma GCC optimize("-fno-fast-math", "-ffp-contract=off")
+#define STAR_PRECISE_BODY
+#endif
+
+static float const* byteToFloatTable() {
+  static float const* table = []() {
+    STAR_PRECISE_BODY
+    float* t = new float[256];
+    for (int i = 0; i < 256; ++i)
+      t[i] = i * (1.0f / 255.0f);
+    return t;
+  }();
+  return table;
+}
+
+static inline void bytesToHsv(Vec4B const& c, float const* table, float& h, float& s, float& v) {
+  STAR_PRECISE_BODY
+  float var_r = table[c[0]], var_g = table[c[1]], var_b = table[c[2]];
+  float var_min = min(min(var_r, var_g), var_b);
+  float var_max = max(max(var_r, var_g), var_b);
+  float del_max = var_max - var_min;
+  v = var_max;
+  if (del_max == 0.0f) {
+    h = 0.0f;
+    s = 0.0f;
+  } else {
+    s = del_max / var_max;
+    float dmi = 1.0f / del_max;
+    float del_r = (((var_max - var_r) * (1.0f / 6.0f)) + (del_max * 0.5f)) * dmi;
+    float del_g = (((var_max - var_g) * (1.0f / 6.0f)) + (del_max * 0.5f)) * dmi;
+    float del_b = (((var_max - var_b) * (1.0f / 6.0f)) + (del_max * 0.5f)) * dmi;
+    if (var_r == var_max)
+      h = del_b - del_g;
+    else if (var_g == var_max)
+      h = (1.0f / 3.0f) + del_r - del_b;
+    else
+      h = (2.0f / 3.0f) + del_g - del_r;
+    if (h < 0.0f)
+      h += 1.0f;
+    if (h >= 1.0f)
+      h -= 1.0f;
+  }
+}
+
+// s and v have to be clamped already, the same as Color::hsva followed by toRgba()
+static inline Vec4B hsvToBytes(float h, float s, float v, float a) {
+  STAR_PRECISE_BODY
+  float var_r, var_g, var_b;
+  if (s == 0.0f) {
+    var_r = var_g = var_b = v;
+  } else {
+    float var_h = h * 6.0f;
+    if (var_h == 6.0f)
+      var_h = 0.0f;
+    float var_i = floor(var_h);
+    float var_1 = v * (1.0f - s);
+    float var_2 = v * (1.0f - s * (var_h - var_i));
+    float var_3 = v * (1.0f - s * (1.0f - (var_h - var_i)));
+    if (var_i == 0) {
+      var_r = v; var_g = var_3; var_b = var_1;
+    } else if (var_i == 1) {
+      var_r = var_2; var_g = v; var_b = var_1;
+    } else if (var_i == 2) {
+      var_r = var_1; var_g = v; var_b = var_3;
+    } else if (var_i == 3) {
+      var_r = var_1; var_g = var_2; var_b = v;
+    } else if (var_i == 4) {
+      var_r = var_3; var_g = var_1; var_b = v;
+    } else {
+      var_r = v; var_g = var_1; var_b = var_2;
+    }
+  }
+  var_r = clamp(var_r, 0.0f, 1.0f);
+  var_g = clamp(var_g, 0.0f, 1.0f);
+  var_b = clamp(var_b, 0.0f, 1.0f);
+  return Vec4B(uint8_t(round(var_r * 255)), uint8_t(round(var_g * 255)), uint8_t(round(var_b * 255)), uint8_t(a * 255));
+}
+
+Vec4B Color::shiftSaturationVec4B(Vec4B color, float shift) {
+  STAR_PRECISE_BODY
+  float const* table = byteToFloatTable();
+  float h, s, v;
+  bytesToHsv(color, table, h, s, v);
+  return hsvToBytes(h, clamp(s + shift, 0.0f, 1.0f), v, table[color[3]]);
+}
+
+Vec4B Color::scaleValueVec4B(Vec4B color, float multiply) {
+  STAR_PRECISE_BODY
+  float const* table = byteToFloatTable();
+  float h, s, v;
+  bytesToHsv(color, table, h, s, v);
+  return hsvToBytes(h, s, clamp(v * multiply, 0.0f, 1.0f), table[color[3]]);
+}
+
+// The sRGB curve, which the fade operations use, pinned the same way.
+// The Windows build turns (in + a) / (1 + a) into in * (1 / (1 + a)) + a / (1 + a), and the division by 12.92 into a
+// multiplication, which gives another last bit than the GCC build of the same source.
+float Color::toLinear(float in) {
+  STAR_PRECISE_BODY
+  const float a = 0.055f;
+  if (in <= 0.04045f)
+    return in * (1.0f / 12.92f);
+  return powf(in * (1.0f / (1.0f + a)) + a / (1.0f + a), 2.4f);
+}
+
+float Color::fromLinear(float in) {
+  STAR_PRECISE_BODY
+  const float a = 0.055f;
+  if (in <= 0.0031308f)
+    return 12.92f * in;
+  return (1.0f + a) * powf(in, 1.0f / 2.4f) - a;
+}
+
+#if defined(STAR_COMPILER_CLANG) && defined(STAR_COLOR_PRECISE_BY_FLAGS)
+// nothing to undo
+#elif defined(STAR_COMPILER_CLANG) || defined(STAR_COMPILER_MSVC)
+#pragma float_control(pop)
+#else
+#pragma GCC pop_options
+#endif
+#undef STAR_PRECISE_BODY
+
 void Color::setHue(float h) {
   auto hsva = toHsva();
   *this = Color::hsva(clamp(h, 0.0f, 1.0f), hsva[1], hsva[2], alphaF());
@@ -433,20 +584,6 @@ bool Color::operator!=(const Color& c) const {
 std::ostream& operator<<(std::ostream& os, const Color& c) {
   os << c.toRgbaF();
   return os;
-}
-
-float Color::toLinear(float in) {
-  const float a = 0.055f;
-  if (in <= 0.04045f)
-    return in / 12.92f;
-  return powf((in + a) / (1.0f + a), 2.4f);
-}
-
-float Color::fromLinear(float in) {
-  const float a = 0.055f;
-  if (in <= 0.0031308f)
-    return 12.92f * in;
-  return (1.0f + a) * powf(in, 1.0f / 2.4f) - a;
 }
 
 String Color::toHex() const {
