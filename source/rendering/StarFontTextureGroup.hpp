@@ -5,6 +5,8 @@
 #include "StarRenderer.hpp"
 #include "StarDirectives.hpp"
 
+#include "c-emoji/emoji_ucd.h"
+
 namespace Star {
 
 STAR_CLASS(FontTextureGroup);
