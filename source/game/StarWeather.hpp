@@ -81,10 +81,13 @@ private:
   double m_currentTime;
   double m_lastWeatherChangeTime;
   double m_nextWeatherChangeTime;
+  double m_weatherCooldownTime = 1.0;
+  double m_weatherWarmupTime = 1.0;
 
   List<ProjectilePtr> m_newProjectiles;
 
   NetElementTopGroup m_netGroup;
+  ByteArray m_weatherPoolNetBytes;
   NetElementBytes m_weatherPoolNetState;
   NetElementFloat m_undergroundLevelNetState;
   NetElementSize m_currentWeatherIndexNetState;
@@ -129,6 +132,7 @@ private:
 
   size_t m_currentWeatherIndex;
   Maybe<WeatherType> m_currentWeatherType;
+  size_t m_cachedWeatherIndex = NPos;
   float m_currentWeatherIntensity;
   float m_currentWind;
 

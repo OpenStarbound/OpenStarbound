@@ -42,6 +42,12 @@ void ServerWeather::setup(WeatherPool weatherPool, float undergroundLevel, World
   m_currentTime = 0.0;
   m_lastWeatherChangeTime = 0.0;
   m_nextWeatherChangeTime = 0.0;
+
+  auto assets = Root::singleton().assets();
+  m_weatherCooldownTime = assets->json("/weather.config:weatherCooldownTime").toDouble();
+  m_weatherWarmupTime = assets->json("/weather.config:weatherWarmupTime").toDouble();
+
+  m_weatherPoolNetBytes = DataStreamBuffer::serializeContainer(m_weatherPool.items());
 }
 
 void ServerWeather::setReferenceClock(ClockConstPtr referenceClock) {
@@ -84,10 +90,6 @@ void ServerWeather::update(double dt) {
     else
       m_currentWeatherIntensity = 0.0f;
   } else if (!m_weatherPool.empty()) {
-    auto assets = Root::singleton().assets();
-    double weatherCooldownTime = assets->json("/weather.config:weatherCooldownTime").toDouble();
-    double weatherWarmupTime = assets->json("/weather.config:weatherWarmupTime").toDouble();
-
     if (m_currentTime >= m_nextWeatherChangeTime) {
       m_currentWeatherIndex = m_weatherPool.selectIndex();
       if (m_currentWeatherIndex == NPos)
@@ -96,14 +98,27 @@ void ServerWeather::update(double dt) {
         m_currentWeatherType = Root::singleton().biomeDatabase()->weatherType(m_weatherPool.item(m_currentWeatherIndex));
 
       m_lastWeatherChangeTime = m_nextWeatherChangeTime;
-      m_nextWeatherChangeTime = m_currentTime + Random::randd(m_currentWeatherType->duration[0], m_currentWeatherType->duration[1]);
 
-      // TODO: For now just set the wind at maximum either left or right, nothing exciting.
-      m_currentWind = m_currentWeatherType->maximumWind * (Random::randb() ? 1 : -1);
+      // A pool can select no weather at all (for example a modded weighted pool
+      // with no eligible entries), in which case there is no type to read a
+      // duration or wind from.
+      if (m_currentWeatherType) {
+        m_nextWeatherChangeTime = m_currentTime + Random::randd(m_currentWeatherType->duration[0], m_currentWeatherType->duration[1]);
+
+        // TODO: For now just set the wind at maximum either left or right, nothing exciting.
+        m_currentWind = m_currentWeatherType->maximumWind * (Random::randb() ? 1 : -1);
+      } else {
+        m_nextWeatherChangeTime = m_currentTime + m_weatherCooldownTime;
+        m_currentWind = 0.0f;
+      }
     }
 
-    m_currentWeatherIntensity = min(clamp((m_currentTime - m_lastWeatherChangeTime) / weatherWarmupTime, 0.0, 1.0),
-        clamp((m_nextWeatherChangeTime - m_currentTime) / weatherCooldownTime, 0.0, 1.0));
+    if (m_currentWeatherType) {
+      m_currentWeatherIntensity = min(clamp((m_currentTime - m_lastWeatherChangeTime) / m_weatherWarmupTime, 0.0, 1.0),
+          clamp((m_nextWeatherChangeTime - m_currentTime) / m_weatherCooldownTime, 0.0, 1.0));
+    } else {
+      m_currentWeatherIntensity = 0.0f;
+    }
 
   } else {
     m_currentWeatherIndex = NPos;
@@ -188,7 +203,7 @@ void ServerWeather::forceWeather(bool force) {
 }
 
 void ServerWeather::setNetStates() {
-  m_weatherPoolNetState.set(DataStreamBuffer::serializeContainer(m_weatherPool.items()));
+  m_weatherPoolNetState.set(m_weatherPoolNetBytes);
   m_undergroundLevelNetState.set(m_undergroundLevel);
   m_currentWeatherIndexNetState.set(m_currentWeatherIndex);
   m_currentWeatherIntensityNetState.set(m_currentWeatherIntensity);
@@ -325,18 +340,22 @@ void ClientWeather::setup(WorldGeometry worldGeometry, WeatherEffectsActiveQuery
   m_worldGeometry = worldGeometry;
   m_weatherEffectsActiveQuery = weatherEffectsActiveQuery;
   m_currentTime = 0.0;
+  m_cachedWeatherIndex = NPos;
 }
 
 void ClientWeather::readUpdate(ByteArray data, NetCompatibilityRules rules) {
   if (!data.empty()) {
     m_netGroup.readNetState(data, 0.0f, rules);
     getNetStates();
+    // The pool may have changed while the index stayed the same.
+    m_cachedWeatherIndex = NPos;
   }
 }
 
 void ClientWeather::clear() {
   m_currentWeatherIndex = NPos;
   m_currentWeatherType.reset();
+  m_cachedWeatherIndex = NPos;
   m_currentWeatherIntensity = 0.0f;
   m_currentWind = 0.0f;
   m_visibleRegion = {};
@@ -351,13 +370,17 @@ void ClientWeather::setVisibleRegion(RectI visibleRegion) {
 void ClientWeather::update(double dt) {
   m_currentTime += dt;
 
-  if (m_currentWeatherIndex == NPos) {
+  // Rebuilding a WeatherType parses its particle list out of the asset JSON, so
+  // only do it when the active weather or its visibility actually changes.
+  bool weatherVisible = m_currentWeatherIndex != NPos &&
+      (m_visibleRegion == RectI() || m_visibleRegion.yMax() > m_undergroundLevel);
+
+  if (!weatherVisible) {
     m_currentWeatherType = {};
-  } else {
-    if (m_visibleRegion == RectI() || m_visibleRegion.yMax() > m_undergroundLevel)
-      m_currentWeatherType = Root::singleton().biomeDatabase()->weatherType(m_weatherPool.item(m_currentWeatherIndex));
-    else
-      m_currentWeatherType = {};
+    m_cachedWeatherIndex = NPos;
+  } else if (m_cachedWeatherIndex != m_currentWeatherIndex || !m_currentWeatherType) {
+    m_currentWeatherType = Root::singleton().biomeDatabase()->weatherType(m_weatherPool.item(m_currentWeatherIndex));
+    m_cachedWeatherIndex = m_currentWeatherIndex;
   }
 
   if (m_currentWeatherType && m_visibleRegion != RectI())
