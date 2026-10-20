@@ -325,18 +325,22 @@ void ClientWeather::setup(WorldGeometry worldGeometry, WeatherEffectsActiveQuery
   m_worldGeometry = worldGeometry;
   m_weatherEffectsActiveQuery = weatherEffectsActiveQuery;
   m_currentTime = 0.0;
+  m_cachedWeatherIndex = NPos;
 }
 
 void ClientWeather::readUpdate(ByteArray data, NetCompatibilityRules rules) {
   if (!data.empty()) {
     m_netGroup.readNetState(data, 0.0f, rules);
     getNetStates();
+    // The pool may have changed while the index stayed the same.
+    m_cachedWeatherIndex = NPos;
   }
 }
 
 void ClientWeather::clear() {
   m_currentWeatherIndex = NPos;
   m_currentWeatherType.reset();
+  m_cachedWeatherIndex = NPos;
   m_currentWeatherIntensity = 0.0f;
   m_currentWind = 0.0f;
   m_visibleRegion = {};
@@ -351,13 +355,17 @@ void ClientWeather::setVisibleRegion(RectI visibleRegion) {
 void ClientWeather::update(double dt) {
   m_currentTime += dt;
 
-  if (m_currentWeatherIndex == NPos) {
+  // Rebuilding a WeatherType parses its particle list out of the asset JSON, so
+  // only do it when the active weather or its visibility actually changes.
+  bool weatherVisible = m_currentWeatherIndex != NPos &&
+      (m_visibleRegion == RectI() || m_visibleRegion.yMax() > m_undergroundLevel);
+
+  if (!weatherVisible) {
     m_currentWeatherType = {};
-  } else {
-    if (m_visibleRegion == RectI() || m_visibleRegion.yMax() > m_undergroundLevel)
-      m_currentWeatherType = Root::singleton().biomeDatabase()->weatherType(m_weatherPool.item(m_currentWeatherIndex));
-    else
-      m_currentWeatherType = {};
+    m_cachedWeatherIndex = NPos;
+  } else if (m_cachedWeatherIndex != m_currentWeatherIndex || !m_currentWeatherType) {
+    m_currentWeatherType = Root::singleton().biomeDatabase()->weatherType(m_weatherPool.item(m_currentWeatherIndex));
+    m_cachedWeatherIndex = m_currentWeatherIndex;
   }
 
   if (m_currentWeatherType && m_visibleRegion != RectI())

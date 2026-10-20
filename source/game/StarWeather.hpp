@@ -129,6 +129,7 @@ private:
 
   size_t m_currentWeatherIndex;
   Maybe<WeatherType> m_currentWeatherType;
+  size_t m_cachedWeatherIndex = NPos;
   float m_currentWeatherIntensity;
   float m_currentWind;
 
