@@ -2417,15 +2417,17 @@ void WorldServer::queueUpdatePackets(ConnectionId clientId, bool sendRemoteUpdat
       updateSetPackets.add(p.first, make_shared<EntityUpdateSetPacket>(p.first));
   }
 
+  auto netRules = clientInfo->clientState.netCompatibilityRules();
+  auto& netStateCache = m_netStateCache[netRules];
+
   for (auto const& monitoredEntity : monitoredEntities) {
     EntityId entityId = monitoredEntity->entityId();
     ConnectionId connectionId = connectionForEntity(entityId);
     if (connectionId != clientId) {
-      auto netRules = clientInfo->clientState.netCompatibilityRules();
       if (auto version = clientInfo->clientSlavesNetVersion.ptr(entityId)) {
         if (auto updateSetPacket = updateSetPackets.value(connectionId)) {
           auto pair = make_pair(entityId, *version);
-          auto& cache = m_netStateCache[netRules];
+          auto& cache = netStateCache;
           auto i = cache.find(pair);
           if (i == cache.end())
             i = cache.insert(pair, monitoredEntity->writeNetState(*version, netRules)).first;
