@@ -1,6 +1,6 @@
 m6x11: managore.itch.io/m6x11
 beech: 04.jp.org
-twemoji: github.com/jdecked/twemoji
+twemoji: github.com/jdecked/twemoji + github.com/win98se/twemoji-colr
 unifont: github.com/stgiga/UnifontEX
 dotsies: dotsies.org
 newspaper: onlygfx.com/newspaper-cutout
