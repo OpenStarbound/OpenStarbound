@@ -1,62 +1,71 @@
 -- Adds an OpenStarbound page to the end of the credits of the final cinematic.
 -- The names come from /opensb/credits/contributors.json, so only that file changes when the list does.
--- The page copies how the vanilla backers are laid out: the heading scrolls up like "BACKERS", then blocks of names, each one
--- starting a little after the one before and every block scrolls up the screen for 12 seconds.
+-- The page is laid out like the Starbound team pages of the vanilla credits: a heading that stays up, and pages of three columns of three
+-- names that are typed out one column after the other, stay for a moment and fade out together. It comes after the vanilla credits have
+-- faded to black (the black panel of the vanilla cinematic is fully opaque from 223.5 seconds).
 
 local SOURCE = "/opensb/credits/contributors.json"
 
-local START = 207.9        -- the vanilla credits start their last block of names at 204.4 and the blocks are 3.53 seconds apart
-local HEADING_LEAD = 1.3   -- the heading comes this long before the first names, like "BACKERS" before the vanilla names
-local BLOCK_SPACING = 3.53
-local SCROLL_TIME = 12
-local NAMES_PER_LINE = 4
-local LINES_PER_BLOCK = 20
-local SEPARATOR = "  ^#4d4d4d;|^white;  "
+local BLACK_START = 223.5     -- when the vanilla credits are fully black
+local HEADING_START = 224.5
+local HEADING_LEAD = 1.5      -- the first names come this long after the heading, like in the vanilla pages
+local PAGE_TIME = 8           -- how long a page of names is up
+local PAGE_GAP = 0.2
+local COLUMN_DELAY = 1.1      -- each column is typed out this much after the one before it, and they all fade out together
+local TYPE_TIME = 1.5
+local FADE_TIME = 0.5
+local COLUMNS = {500, 650, 800}
+local ROWS = 3
+local HEADING_Y = 360
+local NAMES_Y = 325
 
 local function clean(name)
   -- ^ starts a text command, so a name can't carry one
   return (tostring(name):gsub("[%^;\"\\%c]", ""))
 end
 
-local function scrolling(startTime)
+local function heading(text, startTime, endTime)
+  local duration = endTime - startTime
   return {
     startTime = startTime,
-    endTime = startTime + SCROLL_TIME
+    endTime = endTime,
+    fontColor = jarray{78, 78, 78, 255},
+    fontSize = 16,
+    text = text,
+    textPosition = {
+      position = jarray{650, HEADING_Y},
+      vAnchor = "top",
+      horizontalAnchor = "mid",
+      desiredWidth = 500
+    },
+    keyframes = jarray{
+      {timecode = 0.0, alpha = 0, zoom = 1.5, textPercentage = 1},
+      {timecode = 1.5, alpha = 1.0},
+      {timecode = duration - FADE_TIME, alpha = 1.0},
+      {timecode = duration, alpha = 0}
+    }
   }
 end
 
-local function heading(text, startTime)
-  local panel = scrolling(startTime)
-  panel.fontColor = jarray{78, 78, 78, 255}
-  panel.fontSize = 16
-  panel.text = text
-  panel.textPosition = {
-    position = jarray{650, 380},
-    vAnchor = "top",
-    horizontalAnchor = "mid",
-    desiredWidth = 500
+local function column(names, x, startTime, endTime)
+  local duration = endTime - startTime
+  return {
+    startTime = startTime,
+    endTime = endTime,
+    text = "\n" .. table.concat(names, "\n") .. "\n      ",
+    textPosition = {
+      position = jarray{x, NAMES_Y},
+      vAnchor = "top",
+      horizontalAnchor = "mid",
+      desiredWidth = 500
+    },
+    keyframes = jarray{
+      {timecode = 0.0, alpha = 1, zoom = 1, textPercentage = 0},
+      {timecode = TYPE_TIME, textPercentage = 1},
+      {timecode = duration - FADE_TIME, alpha = 1},
+      {timecode = duration, alpha = 0}
+    }
   }
-  panel.keyframes = jarray{
-    {timecode = 0.0, alpha = 1.0, zoom = 1.5, position = jarray{0, -500}},
-    {timecode = SCROLL_TIME, position = jarray{0, 800}}
-  }
-  return panel
-end
-
-local function block(text, startTime)
-  local panel = scrolling(startTime)
-  panel.text = text
-  panel.textPosition = {
-    position = jarray{650, 500},
-    vAnchor = "top",
-    horizontalAnchor = "mid",
-    desiredWidth = 500
-  }
-  panel.keyframes = jarray{
-    {timecode = 0.0, alpha = 1.0, zoom = 1.0, position = jarray{0, -500}, textPercentage = 1},
-    {timecode = SCROLL_TIME, textPercentage = 1, position = jarray{0, 800}}
-  }
-  return panel
 end
 
 function patch(data, path)
@@ -70,23 +79,35 @@ function patch(data, path)
   end
   if #names == 0 then return data end
 
-  data.panels[#data.panels + 1] = heading(clean(credits.heading or "OPENSTARBOUND"), START)
+  local perPage = #COLUMNS * ROWS
+  local pageCount = math.ceil(#names / perPage)
+  local firstPage = HEADING_START + HEADING_LEAD
+  local lastEnd = firstPage + pageCount * (PAGE_TIME + PAGE_GAP) - PAGE_GAP
 
-  local lines, blockStart = {}, START + HEADING_LEAD
-  local function flush()
-    if #lines == 0 then return end
-    data.panels[#data.panels + 1] = block("\n" .. table.concat(lines, "\n") .. "\n      ", blockStart)
-    blockStart = blockStart + BLOCK_SPACING
-    lines = {}
+  local panels = {}
+  -- black until the end, like the last panel of the vanilla credits
+  panels[#panels + 1] = {
+    startTime = BLACK_START,
+    endTime = lastEnd + FADE_TIME,
+    drawables = jarray{{image = "/cinematics/story/black.png"}},
+    keyframes = jarray{{timecode = 0, alpha = 1, zoom = 5, position = jarray{480, 350}, frame = 0}}
+  }
+  panels[#panels + 1] = heading(clean(credits.heading or "OPENSTARBOUND"), HEADING_START, lastEnd)
+
+  for page = 0, pageCount - 1 do
+    local pageStart = firstPage + page * (PAGE_TIME + PAGE_GAP)
+    local pageEnd = pageStart + PAGE_TIME
+    for c = 1, #COLUMNS do
+      local first = page * perPage + (c - 1) * ROWS + 1
+      local last = math.min(first + ROWS - 1, #names)
+      if first <= last then
+        local shown = {}
+        for i = first, last do shown[#shown + 1] = names[i] end
+        panels[#panels + 1] = column(shown, COLUMNS[c], pageStart + (c - 1) * COLUMN_DELAY, pageEnd)
+      end
+    end
   end
 
-  for i = 1, #names, NAMES_PER_LINE do
-    local line = {}
-    for j = i, math.min(i + NAMES_PER_LINE - 1, #names) do line[#line + 1] = names[j] end
-    lines[#lines + 1] = table.concat(line, SEPARATOR) .. SEPARATOR
-    if #lines == LINES_PER_BLOCK then flush() end
-  end
-  flush()
-
+  for _, panel in ipairs(panels) do data.panels[#data.panels + 1] = panel end
   return data
 end
