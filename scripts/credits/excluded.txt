@@ -1,0 +1,2 @@
+# GitHub logins that are left out of the credits page, one per line. Add yours here (in a pull request) to be left out.
+# Bots are left out already.
