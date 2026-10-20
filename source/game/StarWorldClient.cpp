@@ -205,6 +205,9 @@ void WorldClient::reviveMainPlayer() {
     m_mainPlayer->revive(m_playerStart);
     m_mainPlayer->init(this, m_entityMap->reserveEntityId(), EntityMode::Master);
     m_entityMap->addEntity(m_mainPlayer);
+
+    // init() resets player state, so the signing key has to be set again.
+    m_broadcastKeySet = false;
   }
 }
 

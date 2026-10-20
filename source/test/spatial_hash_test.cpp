@@ -81,3 +81,20 @@ TEST(SpatialHash2DTest, ForEachVisitsEachEntryOnce) {
   for (int i = 0; i < 8; ++i)
     EXPECT_EQ(visited[i], i * 10);
 }
+
+TEST(SpatialHash2DTest, SetWithoutValueInsertsNewEntry) {
+  SpatialHash2D<int, float, int> hash(16.0f);
+
+  hash.set(7, RectF::withSize({0.0f, 0.0f}, {8.0f, 8.0f}));
+  hash.set(8, Vec2F{40.0f, 40.0f});
+
+  EXPECT_EQ(hash.size(), 2u);
+  EXPECT_TRUE(hash.contains(7));
+  EXPECT_TRUE(hash.contains(8));
+  EXPECT_EQ(hash.value(7), 0);
+  EXPECT_EQ(hash.value(8), 0);
+
+  auto values = hash.queryValues(RectF::withSize({0.0f, 0.0f}, {8.0f, 8.0f}));
+  ASSERT_EQ(values.size(), 1u);
+  EXPECT_EQ(values[0], 0);
+}

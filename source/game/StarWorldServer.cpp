@@ -919,6 +919,10 @@ void WorldServer::setFidelity(WorldServerFidelity fidelity) {
   m_fidelity = fidelity;
   m_fidelityConfig = m_serverConfig.get("fidelitySettings").get(WorldServerFidelityNames.getRight(m_fidelity));
 
+  rebuildStepTimings();
+}
+
+void WorldServer::rebuildStepTimings() {
   m_stepTimings.clear();
   for (char const* key : {"wiringUpdate", "liquidUpdate", "fallingBlocksUpdate", "blockDamageUpdate",
            "worldStorageTick", "worldStorageGenerate", "environmentUpdate"}) {
@@ -1900,6 +1904,9 @@ void WorldServer::init(bool firstTime) {
 }
 
 Maybe<unsigned> WorldServer::shouldRunThisStep(String const& timingConfiguration) {
+  if (m_stepTimings.empty())
+    rebuildStepTimings();
+
   auto timingIt = m_stepTimings.find(timingConfiguration);
   if (timingIt == m_stepTimings.end())
     return {};

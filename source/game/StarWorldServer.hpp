@@ -359,6 +359,7 @@ private:
   // should not run this tick, if it should run this tick, returns the number
   // of ticks since the last run.
   Maybe<unsigned> shouldRunThisStep(String const& timingConfiguration);
+  void rebuildStepTimings();
 
   TileModificationList doApplyTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap, bool ignoreTileProtection = false, bool updateNeighbors = true);
 
