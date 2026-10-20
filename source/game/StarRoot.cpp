@@ -604,14 +604,33 @@ StringList Root::scanForAssetSources(StringList const& directories, StringList c
   List<shared_ptr<AssetSource>> assetSources;
   StringMap<shared_ptr<AssetSource>> namedSources;
 
-  auto processEntry = [&](String const& sourcePath, bool isDirectory) -> bool {
+  function<bool(String const&, bool)> processEntry;
+  processEntry = [&](String const& sourcePath, bool isDirectory) -> bool {
     AssetSourcePtr source;
     auto name = File::baseName(sourcePath);
     if (name.beginsWith(".") || name.beginsWith("_"))
       Logger::info("Root: Skipping hidden '{}' in asset directory", name);
-    else if (isDirectory)
+    String resolvedPath = sourcePath;
+    if (isDirectory) {
+      // A mod folder may contain one or more pak files.  Steam Workshop items
+      // are handed to us as a single pak path, but local mods are dropped into
+      // the mods directory and can ship several paks (TerraLib ships three).
+      // Register every pak as its own asset source; treating the folder as a
+      // plain directory would only expose the pak files themselves.
+      StringList pakFiles;
+      for (auto const& entry : File::dirList(sourcePath, true).sorted()) {
+        if (!entry.second && entry.first.endsWith(".pak", String::CaseInsensitive))
+          pakFiles.append(File::relativeTo(sourcePath, entry.first));
+      }
+
+      if (!pakFiles.empty()) {
+        for (auto const& pakFile : pakFiles)
+          processEntry(pakFile, false);
+        return true;
+      }
+
       source = make_shared<DirectoryAssetSource>(sourcePath);
-    else if (sourcePath.endsWith(".pak"))
+    } else if (sourcePath.endsWith(".pak"))
       source = make_shared<PackedAssetSource>(sourcePath);
     else
       Logger::warn("Root: Unrecognized file in asset directory '{}', skipping", name);
@@ -622,7 +641,7 @@ StringList Root::scanForAssetSources(StringList const& directories, StringList c
     auto metadata = source->metadata();
 
     auto assetSource = make_shared<AssetSource>();
-    assetSource->path = sourcePath;
+    assetSource->path = resolvedPath;
     assetSource->name = metadata.maybe("name").apply(mem_fn(&Json::toString));
     assetSource->version = metadata.maybe("version").apply(mem_fn(&Json::printString));
     assetSource->priority = metadata.value("priority", 0.0f).toFloat();
