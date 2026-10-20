@@ -1,8 +1,9 @@
 -- Adds an OpenStarbound page to the end of the credits of the final cinematic.
 -- The names come from /opensb/credits/contributors.json, so only that file changes when the list does.
--- The page is laid out like the Starbound team pages of the vanilla credits: a heading that stays up, and pages of three columns of three
+-- The page is laid out like the Starbound team pages of the vanilla credits: a heading that stays up, and pages of three columns of six
 -- names that are typed out one column after the other, stay for a moment and fade out together. It comes after the vanilla credits have
 -- faded to black (the black panel of the vanilla cinematic is fully opaque from 223.5 seconds).
+-- Each page has a picture on the left, where the vanilla pages have their slideshow, and they take turns: the OpenStarbound title logos.
 
 local SOURCE = "/opensb/credits/contributors.json"
 
@@ -15,9 +16,16 @@ local COLUMN_DELAY = 1.1      -- each column is typed out this much after the on
 local TYPE_TIME = 1.5
 local FADE_TIME = 0.5
 local COLUMNS = {500, 650, 800}
-local ROWS = 3
+local ROWS = 6
 local HEADING_Y = 360
 local NAMES_Y = 325
+local PICTURE_POSITION = {224, 280}   -- where the pictures of the vanilla credits are
+local PICTURE_FADE_IN = 2
+-- the title screen logos, scaled to about the width of the vanilla pictures (a zoom of 0.5 on a 653 pixel wide one)
+local PICTURES = {
+  {image = "/interface/title/barstound.png", zoom = 0.25},
+  {image = "/interface/title/starraria.png", zoom = 0.55}
+}
 
 local function clean(name)
   -- ^ starts a text command, so a name can't carry one
@@ -68,6 +76,21 @@ local function column(names, x, startTime, endTime)
   }
 end
 
+local function picture(entry, startTime, endTime)
+  local duration = endTime - startTime
+  return {
+    startTime = startTime,
+    endTime = endTime,
+    drawables = jarray{{image = entry.image}},
+    keyframes = jarray{
+      {timecode = 0, alpha = 0, zoom = entry.zoom, position = jarray{PICTURE_POSITION[1], PICTURE_POSITION[2]}},
+      {timecode = PICTURE_FADE_IN, alpha = 1},
+      {timecode = duration - FADE_TIME, alpha = 1},
+      {timecode = duration, alpha = 0}
+    }
+  }
+end
+
 function patch(data, path)
   if not assets.exists(SOURCE) then return data end
 
@@ -97,6 +120,9 @@ function patch(data, path)
   for page = 0, pageCount - 1 do
     local pageStart = firstPage + page * (PAGE_TIME + PAGE_GAP)
     local pageEnd = pageStart + PAGE_TIME
+    if #PICTURES > 0 then
+      panels[#panels + 1] = picture(PICTURES[page % #PICTURES + 1], pageStart, pageEnd)
+    end
     for c = 1, #COLUMNS do
       local first = page * perPage + (c - 1) * ROWS + 1
       local last = math.min(first + ROWS - 1, #names)
