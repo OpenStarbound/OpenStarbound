@@ -918,6 +918,17 @@ WorldServerFidelity WorldServer::fidelity() const {
 void WorldServer::setFidelity(WorldServerFidelity fidelity) {
   m_fidelity = fidelity;
   m_fidelityConfig = m_serverConfig.get("fidelitySettings").get(WorldServerFidelityNames.getRight(m_fidelity));
+
+  rebuildStepTimings();
+}
+
+void WorldServer::rebuildStepTimings() {
+  m_stepTimings.clear();
+  for (char const* key : {"wiringUpdate", "liquidUpdate", "fallingBlocksUpdate", "blockDamageUpdate",
+           "worldStorageTick", "worldStorageGenerate", "environmentUpdate"}) {
+    if (m_fidelityConfig.contains(key))
+      m_stepTimings.set(key, jsonToVec2U(m_fidelityConfig.get(key)));
+  }
 }
 
 bool WorldServer::shouldExpire() {
@@ -1085,9 +1096,12 @@ void WorldServer::update(float dt) {
   }
 
   bool sendRemoteUpdates = m_entityUpdateTimer.wrapTick(dt);
+  Vec2I activeRegionPad = Vec2I();
+  if (!m_clientInfo.empty())
+    activeRegionPad = jsonToVec2I(m_serverConfig.get("playerActiveRegionPad"));
   for (auto const& pair : m_clientInfo) {
     for (auto const& monitoredRegion : pair.second->monitoringRegions(m_entityMap))
-      signalRegion(monitoredRegion.padded(jsonToVec2I(m_serverConfig.get("playerActiveRegionPad"))));
+      signalRegion(monitoredRegion.padded(activeRegionPad));
     queueUpdatePackets(pair.first, sendRemoteUpdates);
   }
   m_netStateCache.clear();
@@ -1892,7 +1906,14 @@ void WorldServer::init(bool firstTime) {
 }
 
 Maybe<unsigned> WorldServer::shouldRunThisStep(String const& timingConfiguration) {
-  Vec2U timing = jsonToVec2U(m_fidelityConfig.get(timingConfiguration));
+  if (m_stepTimings.empty())
+    rebuildStepTimings();
+
+  auto timingIt = m_stepTimings.find(timingConfiguration);
+  if (timingIt == m_stepTimings.end())
+    return {};
+
+  Vec2U timing = timingIt->second;
   if ((m_currentStep + timing[1]) % timing[0] == 0)
     return timing[0];
   return {};
@@ -2417,18 +2438,19 @@ void WorldServer::queueUpdatePackets(ConnectionId clientId, bool sendRemoteUpdat
       updateSetPackets.add(p.first, make_shared<EntityUpdateSetPacket>(p.first));
   }
 
+  auto netRules = clientInfo->clientState.netCompatibilityRules();
+  auto& netStateCache = m_netStateCache[netRules];
+
   for (auto const& monitoredEntity : monitoredEntities) {
     EntityId entityId = monitoredEntity->entityId();
     ConnectionId connectionId = connectionForEntity(entityId);
     if (connectionId != clientId) {
-      auto netRules = clientInfo->clientState.netCompatibilityRules();
       if (auto version = clientInfo->clientSlavesNetVersion.ptr(entityId)) {
         if (auto updateSetPacket = updateSetPackets.value(connectionId)) {
           auto pair = make_pair(entityId, *version);
-          auto& cache = m_netStateCache[netRules];
-          auto i = cache.find(pair);
-          if (i == cache.end())
-            i = cache.insert(pair, monitoredEntity->writeNetState(*version, netRules)).first;
+          auto i = netStateCache.find(pair);
+          if (i == netStateCache.end())
+            i = netStateCache.insert(pair, monitoredEntity->writeNetState(*version, netRules)).first;
           const auto& netState = i->second;
           if (!netState.first.empty())
             updateSetPacket->deltas[entityId] = netState.first;

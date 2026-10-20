@@ -200,8 +200,7 @@ List<DamageSource> Projectile::damageSources() const {
 
   EntityDamageTeam sourceTeam = getTeam();
 
-  auto statusEffects = m_config->statusEffects;
-  statusEffects.appendAll(m_parameters.getArray("statusEffects", {}).transformed(jsonToEphemeralStatusEffect));
+  auto const& statusEffects = m_mergedStatusEffects;
 
   float knockbackMagnitude = m_parameters.getFloat("knockback", m_config->knockback);
 
@@ -920,6 +919,12 @@ void Projectile::setup() {
   m_acceleration = m_parameters.getFloat("acceleration", m_config->acceleration);
   m_power = m_parameters.getFloat("power", m_config->power);
   m_powerMultiplier = m_parameters.getFloat("powerMultiplier", 1.0f);
+
+  // m_config and m_parameters are fixed after construction, so the merged
+  // status effect list only has to be built once instead of on every
+  // damageSources() call.
+  m_mergedStatusEffects = m_config->statusEffects;
+  m_mergedStatusEffects.appendAll(m_parameters.getArray("statusEffects", {}).transformed(jsonToEphemeralStatusEffect));
   { // it is possible to shove a frame name in processing. I hope nobody actually does this but account for it...
     String processing = m_parameters.getString("processing", "");
     auto begin = processing.utf8().find_first_of('?');
