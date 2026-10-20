@@ -1394,6 +1394,7 @@ void WorldClient::update(float dt) {
 
   List<EntityId> toRemove;
   List<EntityId> clientPresenceEntities;
+  auto entityUpdateStart = std::chrono::steady_clock::now();
   m_entityMap->updateAllEntities([&](EntityPtr const& entity) {
       try { entity->update(dt, m_currentStep); }
       catch (StarException const& e) {
@@ -1418,6 +1419,9 @@ void WorldClient::update(float dt) {
     }, [](EntityPtr const& a, EntityPtr const& b) {
       return a->entityType() < b->entityType();
     });
+
+  double entityUpdateMs = std::chrono::duration<double, std::milli>(
+      std::chrono::steady_clock::now() - entityUpdateStart).count();
   
   if (m_headless) {
     if (m_entityMap->size() > 0) {
@@ -1460,17 +1464,30 @@ void WorldClient::update(float dt) {
   
   m_clientState.setClientPresenceEntities(std::move(clientPresenceEntities));
 
+  double slowestScriptMs = 0.0;
+  String slowestScriptName;
   for (auto& pair : m_scriptContexts) {
     auto scriptStart = std::chrono::steady_clock::now();
     pair.second->update(pair.second->updateDt(dt));
     double scriptMs = std::chrono::duration<double, std::milli>(
         std::chrono::steady_clock::now() - scriptStart).count();
     LogMap::set(strf("client_{}_script_{}_ms", m_subWorldId, pair.first), scriptMs);
+    if (scriptMs > slowestScriptMs) {
+      slowestScriptMs = scriptMs;
+      slowestScriptName = pair.first;
+    }
     if (scriptMs > 25.0 && m_currentStep >= m_lastScriptWarnStep + 120) {
       m_lastScriptWarnStep = m_currentStep;
       Logger::warn("WorldClient: script context '{}' took {:.1f} ms in a single update (world {})",
           pair.first, scriptMs, m_subWorldId);
     }
+  }
+
+  if (m_currentStep >= m_lastDesyncLogStep + 600) {
+    m_lastDesyncLogStep = m_currentStep;
+    Logger::info("[desync] world {} step {} | entities {} | unknown_entity_updates {} | dropped_net_tiles {} | entity_update {:.1f} ms | slowest_world_script '{}' {:.1f} ms",
+        m_subWorldId, m_currentStep, m_entityMap->size(), m_unknownEntityUpdates, m_droppedNetTiles,
+        entityUpdateMs, slowestScriptName, slowestScriptMs);
   }
 
   m_damageManager->update(dt);

@@ -301,6 +301,9 @@ private:
   uint64_t m_lastUnknownEntityWarnStep = 0;
   uint64_t m_unknownEntityUpdates = 0;
   uint64_t m_droppedNetTiles = 0;
+  uint64_t m_lastDesyncLogStep = 0;
+  uint64_t m_lastLoggedUnknownEntityUpdates = 0;
+  uint64_t m_lastLoggedDroppedNetTiles = 0;
   double m_currentTime;
   bool m_fullBright;
   bool m_asyncLighting;
