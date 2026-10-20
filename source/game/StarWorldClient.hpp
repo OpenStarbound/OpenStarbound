@@ -297,6 +297,10 @@ private:
 
   WorldGeometry m_geometry;
   uint64_t m_currentStep;
+  uint64_t m_lastScriptWarnStep = 0;
+  uint64_t m_lastUnknownEntityWarnStep = 0;
+  uint64_t m_unknownEntityUpdates = 0;
+  uint64_t m_droppedNetTiles = 0;
   double m_currentTime;
   bool m_fullBright;
   bool m_asyncLighting;

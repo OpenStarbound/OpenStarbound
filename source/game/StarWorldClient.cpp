@@ -1,3 +1,5 @@
+#include <chrono>
+
 #include "StarWorldClient.hpp"
 #include "StarAssets.hpp"
 #include "StarIterator.hpp"
@@ -980,6 +982,26 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
 
     } else if (auto entityUpdateSet = as<EntityUpdateSetPacket>(packet)) {
       float interpolationLeadTime = m_interpolationTracker.interpolationLeadTime();
+
+      uint64_t unknownEntities = 0;
+      String unknownEntityList;
+      for (auto const& deltaEntry : entityUpdateSet->deltas) {
+        if (!m_entityMap->entity(deltaEntry.first)) {
+          if (unknownEntities < 5)
+            unknownEntityList += strf("{}{}", unknownEntities ? ", " : "", deltaEntry.first);
+          ++unknownEntities;
+        }
+      }
+      if (unknownEntities) {
+        m_unknownEntityUpdates += unknownEntities;
+        LogMap::set(strf("client_{}_unknown_entity_updates", m_subWorldId), m_unknownEntityUpdates);
+        if (m_currentStep >= m_lastUnknownEntityWarnStep + 120) {
+          m_lastUnknownEntityWarnStep = m_currentStep;
+          Logger::warn("WorldClient: update set for connection {} referenced {} unknown entities (first ids: {})",
+              entityUpdateSet->forConnection, unknownEntities, unknownEntityList);
+        }
+      }
+
       m_entityMap->forAllEntities([&](EntityPtr const& entity) {
           EntityId entityId = entity->entityId();
           if (connectionForEntity(entityId) == entityUpdateSet->forConnection) {
@@ -1006,6 +1028,9 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
           entity->disableInterpolation();
           removeEntity(entityDestroy->entityId, entityDestroy->death);
         }
+      } else {
+        Logger::warn("WorldClient: destroy packet for unknown entity {} (death: {}, connection: {})",
+            entityDestroy->entityId, entityDestroy->death, connectionForEntity(entityDestroy->entityId));
       }
 
     } else if (auto structurePacket = as<CentralStructureUpdatePacket>(packet)) {
@@ -1435,8 +1460,18 @@ void WorldClient::update(float dt) {
   
   m_clientState.setClientPresenceEntities(std::move(clientPresenceEntities));
 
-  for (auto& pair : m_scriptContexts)
+  for (auto& pair : m_scriptContexts) {
+    auto scriptStart = std::chrono::steady_clock::now();
     pair.second->update(pair.second->updateDt(dt));
+    double scriptMs = std::chrono::duration<double, std::milli>(
+        std::chrono::steady_clock::now() - scriptStart).count();
+    LogMap::set(strf("client_{}_script_{}_ms", m_subWorldId, pair.first), scriptMs);
+    if (scriptMs > 25.0 && m_currentStep >= m_lastScriptWarnStep + 120) {
+      m_lastScriptWarnStep = m_currentStep;
+      Logger::warn("WorldClient: script context '{}' took {:.1f} ms in a single update (world {})",
+          pair.first, scriptMs, m_subWorldId);
+    }
+  }
 
   m_damageManager->update(dt);
   handleDamageNotifications();
@@ -2341,8 +2376,11 @@ BiomeConstPtr WorldClient::mainEnvironmentBiome() const {
 
 bool WorldClient::readNetTile(Vec2I const& pos, NetTile const& netTile, bool updateCollision) {
   ClientTile* tile = m_tileArray->modifyTile(pos);
-  if (!tile)
+  if (!tile) {
+    ++m_droppedNetTiles;
+    LogMap::set(strf("client_{}_dropped_net_tiles", m_subWorldId), m_droppedNetTiles);
     return false;
+  }
 
   if (!m_predictedTiles.empty()) {
     auto findPrediction = m_predictedTiles.find(pos);
