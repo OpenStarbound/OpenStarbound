@@ -412,6 +412,7 @@ private:
   WorldStoragePtr m_worldStorage;
   WorldServerFidelity m_fidelity;
   Json m_fidelityConfig;
+  HashMap<String, Vec2U> m_stepTimings;
 
   HashSet<Vec2I> m_damagedBlocks;
   DamageManagerPtr m_damageManager;

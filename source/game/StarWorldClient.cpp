@@ -1341,7 +1341,8 @@ void WorldClient::update(float dt) {
     }
   });
 
-  if (!m_headless) {
+  if (!m_headless && !m_broadcastKeySet) {
+    m_broadcastKeySet = true;
     // Secret broadcasts are transmitted through DamageNotifications for vanilla server compatibility.
     // Because DamageNotification packets are spoofable, we have to sign the data so other clients can validate that it is legitimate.
     auto& publicKey = Curve25519::publicKey();

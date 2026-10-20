@@ -918,6 +918,13 @@ WorldServerFidelity WorldServer::fidelity() const {
 void WorldServer::setFidelity(WorldServerFidelity fidelity) {
   m_fidelity = fidelity;
   m_fidelityConfig = m_serverConfig.get("fidelitySettings").get(WorldServerFidelityNames.getRight(m_fidelity));
+
+  m_stepTimings.clear();
+  for (char const* key : {"wiringUpdate", "liquidUpdate", "fallingBlocksUpdate", "blockDamageUpdate",
+           "worldStorageTick", "worldStorageGenerate", "environmentUpdate"}) {
+    if (m_fidelityConfig.contains(key))
+      m_stepTimings.set(key, jsonToVec2U(m_fidelityConfig.get(key)));
+  }
 }
 
 bool WorldServer::shouldExpire() {
@@ -1892,7 +1899,11 @@ void WorldServer::init(bool firstTime) {
 }
 
 Maybe<unsigned> WorldServer::shouldRunThisStep(String const& timingConfiguration) {
-  Vec2U timing = jsonToVec2U(m_fidelityConfig.get(timingConfiguration));
+  auto timingIt = m_stepTimings.find(timingConfiguration);
+  if (timingIt == m_stepTimings.end())
+    return {};
+
+  Vec2U timing = timingIt->second;
   if ((m_currentStep + timing[1]) % timing[0] == 0)
     return timing[0];
   return {};
