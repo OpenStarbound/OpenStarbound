@@ -1,0 +1,13 @@
+// The names shown on the OpenStarbound page at the end of the credits (see cinematics/story/finale/finale.cinematic.patch.lua).
+// This is a seed made from the GitHub accounts of the merged pull requests in the repository history. It is meant to be
+// replaced by a list generated from the contributors of the repository when a release is built.
+{
+  "heading" : "OPENSTARBOUND",
+  "contributors" : [
+    "Bottinator22", "WasabiRaptor", "grbr404", "KrashV", "SilverSokolova", "ErodeesFleurs", "goodusername123", "Mofurka",
+    "lumikalt", "kblaschke", "WereTech", "Lonaasan", "emmyposs", "Omega68nova", "namje0", "JamesTheMaker", "Emmaker",
+    "chililisoup", "bmdhacks", "RohanBhattacharyya", "N1ffe", "Kilkenni", "J0w03L", "floydinator-git", "FalseIlyu",
+    "Debug6057", "yzh5606", "Silvernoon", "Sharp-Edged", "patmanf", "JenyaRostov", "IsaacClark69", "fpiesche", "Firobe",
+    "dressupgeekout", "danellos"
+  ]
+}
