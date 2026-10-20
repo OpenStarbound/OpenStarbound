@@ -180,13 +180,9 @@ Idea: an extension that bundles the stubs, adds them to the library setting by i
 
 Make it aware of which script it is in, which the plain stubs cannot be: an object script gets `object` and `animator`, a status effect gets `effect`, an ActiveItem script gets `activeItem`, and so on, so that functions from the wrong context are not offered. The script type is known from the `scripts` lists in the `.object`, `.activeitem`, `.statuseffect` and similar config files that refer to the script.
 
-Also: completion and checking of asset paths in the config files, jumping from a call to its page in `doc/lua/`, and a way to keep the stubs and the markdown pages from drifting apart (some stubs still say `TODO: Add description`, and `songbook.keepAlive` and `songbook.play` are undocumented, see the songbook item below).
+Also: completion and checking of asset paths in the config files, jumping from a call to its page in `doc/lua/`, and a way to keep the stubs and the markdown pages from drifting apart (some stubs still say `TODO: Add description`).
 
 Open questions: where it lives (this repository, so the stubs are in step with the code, or its own), and publishing it to the Marketplace and Open VSX.
-
----
-
-Document `songbook.keepAlive` and `songbook.play` (`doc/lua/openstarbound/songbook.md`, `doc/lua/stubs/openstarbound/songbook.lua`).
 
 ---
 

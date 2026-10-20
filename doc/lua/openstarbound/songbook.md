@@ -16,9 +16,9 @@ Returns the notes of the song currently being played.
 
 ---
 
-#### `void` songbook.keepAlive(`Float` duration)
+#### `void` songbook.keepAlive(`String` instrument, `Vec2F` position)
 
-TODO: Add description for songbook.keepAlive
+Must be called repeatedly while the instrument is equipped to signal that it is still in use. Sets the instrument type and the world position the sound plays from. If a song is active, this also resets the idle cooldown that would otherwise stop playback.
 
 ---
 
@@ -40,9 +40,9 @@ Returns whether the instrumentalist is currently performing part of a song.
 
 ---
 
-#### `void` songbook.play(`Json` song)
+#### `void` songbook.play(`Json` song, `String` timeSource)
 
-TODO: Add description for songbook.play
+Starts playing `song`, stopping any already playing. `song` is a JSON object whose `abc` field holds the song in ABC notation. `timeSource` is an identifier for synchronising playback, so instrumentalists that use the same `timeSource` share a clock to play in sync. If it is empty, a random one is generated.
 
 ---
 
