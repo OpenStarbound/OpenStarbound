@@ -1269,7 +1269,7 @@ EmbeddedAsset Assets::loadEmbeddedData(StringList const& split, int const& start
   else if (split[startOffset+0] == "image" || split[startOffset+0] == "json" || split[startOffset+0] == "bin") {
     size_t indexOff = 0;
     EmbeddedCompressionMethod method = EmbeddedCompressionMethod::None;
-    if (split[startOffset+1].length() < 5 && split.size() >= (split[startOffset+0] == "image") ? 6 : 4 && EmbeddedCompressionMethodNames.hasRightValue(split[startOffset+1])) {
+    if (split[startOffset+1].length() < 5 && split.size() >= (split[startOffset+0] == "image" ? 6 : 4) && EmbeddedCompressionMethodNames.hasRightValue(split[startOffset+1])) {
       // the binary data is compressed.
       indexOff++;
       method = EmbeddedCompressionMethodNames.getLeft(split[startOffset+1]);
