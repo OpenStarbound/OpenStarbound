@@ -112,6 +112,25 @@ Directives& Directives::operator=(Directives const& other) {
   return *this;
 }
 
+Directives& Directives::operator+=(Directives const& other) {
+  if (other.empty())
+    return *this;
+
+  if (empty()) {
+    m_shared = other.m_shared;
+    return *this;
+  }
+
+  String string = m_shared->string;
+  auto& otherString = other.m_shared->string;
+  if (otherString.utf8().front() != '?')
+    string += "?";
+  string += otherString;
+
+  parse(std::move(string));
+  return *this;
+}
+
 void Directives::loadOperations() const {
   if (!m_shared)
     return;

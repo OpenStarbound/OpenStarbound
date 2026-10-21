@@ -72,22 +72,7 @@ Json ParallaxLayer::store() const {
 }
 
 void ParallaxLayer::addImageDirectives(Directives const& newDirectives) {
-  if (newDirectives) { // TODO: Move to Directives +=
-    if (directives) {
-      String dirString = directives.string();
-
-      auto& newString = newDirectives->string;
-      if (!newString.empty()) {
-        if (newString.utf8().front() != '?')
-          dirString += "?";
-        dirString += newString;
-      }
-
-      directives = std::move(dirString);
-    }
-    else
-      directives = newDirectives;
-  }
+  directives += newDirectives;
 }
 
 void ParallaxLayer::fadeToSkyColor(Color skyColor) {

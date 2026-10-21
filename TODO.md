@@ -228,7 +228,7 @@ Write full player data less often in the team client (`source/game/StarTeamClien
 
 ### Directives and Images
 
-Directives: move to `+=` in `StarParallax.cpp:75`; improve the quick fix in `StarAssets.cpp:1536`.
+Directives: improve the quick fix in `StarAssets.cpp:1536`.
 
 ---
 
