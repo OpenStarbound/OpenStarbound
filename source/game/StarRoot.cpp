@@ -608,8 +608,10 @@ StringList Root::scanForAssetSources(StringList const& directories, StringList c
   processEntry = [&](String const& sourcePath, bool isDirectory) -> bool {
     AssetSourcePtr source;
     auto name = File::baseName(sourcePath);
-    if (name.beginsWith(".") || name.beginsWith("_"))
+    if (name.beginsWith(".") || name.beginsWith("_")) {
       Logger::info("Root: Skipping hidden '{}' in asset directory", name);
+      return false;
+    }
     String resolvedPath = sourcePath;
     if (isDirectory) {
       // A mod folder may contain one or more pak files.  Steam Workshop items
