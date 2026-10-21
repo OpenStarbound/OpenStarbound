@@ -1176,7 +1176,15 @@ Json Assets::applyJsonPatches(Json const& input, String const& path, List<pair<S
     auto patchAssetPath = AssetPath::split(pair.first);
     auto& patchBasePath = patchAssetPath.basePath;
     auto& patchSource = pair.second;
-    auto patchStream = patchSource->read(patchBasePath);
+    ByteArray patchStream;
+    try {
+      patchStream = patchSource->read(patchBasePath);
+    } catch (IOException const& e) {
+      // a directory source whose file went away after the file list was made (a mod folder removed while the game
+      // runs): skip the patch instead of failing the asset it patches
+      Logger::warn("Skipping patch {} in source '{}' that can no longer be read. Caused by: {}", pair.first, patchSource->metadata().value("name", ""), e.what());
+      continue;
+    }
     if (patchBasePath.endsWith(".lua")) {
       std::pair<AssetSource*, String> contextKey = make_pair(patchSource.get(), patchBasePath);
       RecursiveMutexLocker luaLocker(m_luaMutex);
