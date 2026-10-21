@@ -620,7 +620,6 @@ StringList Root::scanForAssetSources(StringList const& directories, StringList c
       Logger::info("Root: Skipping hidden '{}' in asset directory", name);
       return false;
     }
-    String resolvedPath = sourcePath;
     if (isDirectory) {
       // A mod folder may contain one or more pak files.  Steam Workshop items
       // are handed to us as a single pak path, but local mods are dropped into
@@ -651,7 +650,7 @@ StringList Root::scanForAssetSources(StringList const& directories, StringList c
     auto metadata = source->metadata();
 
     auto assetSource = make_shared<AssetSource>();
-    assetSource->path = resolvedPath;
+    assetSource->path = sourcePath;
     assetSource->name = metadata.maybe("name").apply(mem_fn(&Json::toString));
     assetSource->version = metadata.maybe("version").apply(mem_fn(&Json::printString));
     assetSource->priority = metadata.value("priority", 0.0f).toFloat();
