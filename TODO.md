@@ -208,10 +208,6 @@ Open questions: whether a catch at the entity update level (log, then drop or di
 
 ## Multiplayer and Servers
 
-Server query thread: two unimplemented handlers (`source/server/StarServerQueryThread.cpp:67,80`).
-
----
-
 Network full world protection directly to newer clients (`source/game/StarGameTypes.hpp:188`).
 
 ---

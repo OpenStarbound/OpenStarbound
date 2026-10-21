@@ -72,7 +72,7 @@ private:
   // Server API
   uint8_t serverPlayerCount();
   bool serverPassworded();
-  const char* serverPlugins();
+  String serverPlugins();
   String serverWorldNames();
 
   UniverseServer* m_universe;

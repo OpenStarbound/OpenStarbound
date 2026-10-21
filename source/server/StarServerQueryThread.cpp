@@ -64,8 +64,8 @@ uint8_t ServerQueryThread::serverPlayerCount() {
 }
 
 bool ServerQueryThread::serverPassworded() {
-  // TODO: implement
-  return false;
+  // Clients need an account on the server unless anonymous connections are allowed
+  return !Root::singleton().configuration()->get("allowAnonymousConnections").toBool();
 }
 
 String ServerQueryThread::serverWorldNames() {
@@ -76,9 +76,18 @@ String ServerQueryThread::serverWorldNames() {
   return StringList(activeWorlds.transformed(printWorldId)).join(",");
 }
 
-const char* ServerQueryThread::serverPlugins() {
-  // TODO: implement
-  return "none";
+String ServerQueryThread::serverPlugins() {
+  auto assets = Root::singleton().assets();
+  StringList names;
+  for (auto const& source : assets->assetSources()) {
+    auto name = assets->assetSourceMetadata(source).value("name", {}).optString();
+    if (name && !name->empty())
+      names.append(*name);
+  }
+  if (names.empty())
+    return String("none");
+
+  return names.join(",");
 }
 
 bool ServerQueryThread::processPacket(HostAddressWithPort const& address, char const* data, size_t length) {
