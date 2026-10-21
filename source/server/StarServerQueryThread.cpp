@@ -76,18 +76,9 @@ String ServerQueryThread::serverWorldNames() {
   return StringList(activeWorlds.transformed(printWorldId)).join(",");
 }
 
-String ServerQueryThread::serverPlugins() {
-  auto assets = Root::singleton().assets();
-  StringList names;
-  for (auto const& source : assets->assetSources()) {
-    auto name = assets->assetSourceMetadata(source).value("name", {}).optString();
-    if (name && !name->empty())
-      names.append(*name);
-  }
-  if (names.empty())
-    return String("none");
-
-  return names.join(",");
+const char* ServerQueryThread::serverPlugins() {
+  // TODO: implement
+  return "none";
 }
 
 bool ServerQueryThread::processPacket(HostAddressWithPort const& address, char const* data, size_t length) {
