@@ -1248,7 +1248,7 @@ namespace LuaDetail {
   struct FunctionWrapper {
     template <typename Function, size_t... Indexes>
     static LuaWrappedFunction wrapIndexes(Function func, IndexSequence<Indexes...> const&) {
-      return [func = std::move(func)](LuaEngine& engine, size_t argc, LuaValue* argv) {
+      return [func = std::move(func)](LuaEngine& engine, [[maybe_unused]] size_t argc, [[maybe_unused]] LuaValue* argv) {
         return toWrappedReturn(engine, (Return const&)func(ArgGet<Args>::get(engine, argc, argv, Indexes)...));
       };
     }
@@ -1263,7 +1263,7 @@ namespace LuaDetail {
   struct FunctionWrapper<void, Args...> {
     template <typename Function, size_t... Indexes>
     static LuaWrappedFunction wrapIndexes(Function func, IndexSequence<Indexes...> const&) {
-      return [func = std::move(func)](LuaEngine& engine, size_t argc, LuaValue* argv) {
+      return [func = std::move(func)](LuaEngine& engine, [[maybe_unused]] size_t argc, [[maybe_unused]] LuaValue* argv) {
         func(ArgGet<Args>::get(engine, argc, argv, Indexes)...);
         return LuaFunctionReturn();
       };
@@ -1279,7 +1279,7 @@ namespace LuaDetail {
   struct FunctionWrapper<Return, LuaEngine, Args...> {
     template <typename Function, size_t... Indexes>
     static LuaWrappedFunction wrapIndexes(Function func, IndexSequence<Indexes...> const&) {
-      return [func = std::move(func)](LuaEngine& engine, size_t argc, LuaValue* argv) {
+      return [func = std::move(func)](LuaEngine& engine, [[maybe_unused]] size_t argc, [[maybe_unused]] LuaValue* argv) {
         return toWrappedReturn(engine, (Return const&)func(engine, ArgGet<Args>::get(engine, argc, argv, Indexes)...));
       };
     }
@@ -1294,7 +1294,7 @@ namespace LuaDetail {
   struct FunctionWrapper<void, LuaEngine, Args...> {
     template <typename Function, size_t... Indexes>
     static LuaWrappedFunction wrapIndexes(Function func, IndexSequence<Indexes...> const&) {
-      return [func = std::move(func)](LuaEngine& engine, size_t argc, LuaValue* argv) {
+      return [func = std::move(func)](LuaEngine& engine, [[maybe_unused]] size_t argc, [[maybe_unused]] LuaValue* argv) {
         func(engine, ArgGet<Args>::get(engine, argc, argv, Indexes)...);
         return LuaFunctionReturn();
       };
@@ -1344,7 +1344,7 @@ namespace LuaDetail {
   struct MethodWrapper<void, T, Args...> {
     template <typename Function, size_t... Indexes>
     static LuaWrappedFunction wrapIndexes(Function func, IndexSequence<Indexes...> const&) {
-      return [func = std::move(func)](LuaEngine& engine, size_t argc, LuaValue* argv) {
+      return [func = std::move(func)](LuaEngine& engine, [[maybe_unused]] size_t argc, [[maybe_unused]] LuaValue* argv) {
         if (argc == 0)
           throw LuaException("No object argument passed to wrapped method");
         func(argv[0].get<LuaUserData>().get<T>(), ArgGet<Args>::get(engine, argc - 1, argv + 1, Indexes)...);
@@ -1362,7 +1362,7 @@ namespace LuaDetail {
   struct MethodWrapper<Return, T, LuaEngine, Args...> {
     template <typename Function, size_t... Indexes>
     static LuaWrappedFunction wrapIndexes(Function func, IndexSequence<Indexes...> const&) {
-      return [func = std::move(func)](LuaEngine& engine, size_t argc, LuaValue* argv) {
+      return [func = std::move(func)](LuaEngine& engine, [[maybe_unused]] size_t argc, [[maybe_unused]] LuaValue* argv) {
         if (argc == 0)
           throw LuaException("No object argument passed to wrapped method");
         return toWrappedReturn(
@@ -1381,7 +1381,7 @@ namespace LuaDetail {
   struct MethodWrapper<void, T, LuaEngine, Args...> {
     template <typename Function, size_t... Indexes>
     static LuaWrappedFunction wrapIndexes(Function func, IndexSequence<Indexes...> const&) {
-      return [func = std::move(func)](LuaEngine& engine, size_t argc, LuaValue* argv) {
+      return [func = std::move(func)](LuaEngine& engine, [[maybe_unused]] size_t argc, [[maybe_unused]] LuaValue* argv) {
         if (argc == 0)
           throw LuaException("No object argument passed to wrapped method");
         func(argv[0].get<LuaUserData>().get<T>(), engine, ArgGet<Args>::get(engine, argc - 1, argv + 1, Indexes)...);

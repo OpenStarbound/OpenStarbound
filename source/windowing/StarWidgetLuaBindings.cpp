@@ -38,7 +38,7 @@ LuaMethods<CanvasWidgetPtr> LuaUserDataMethods<CanvasWidgetPtr>::make() {
   });
 
   methods.registerMethod("drawJsonDrawable", [](CanvasWidgetPtr canvasWidget, Json drawable, Maybe<Vec2F> screenPos) {
-    canvasWidget->drawDrawable(std::move(Drawable(drawable)), screenPos.value(Vec2F()));
+    canvasWidget->drawDrawable(Drawable(drawable), screenPos.value(Vec2F()));
   });
 
   methods.registerMethod("drawJsonDrawables", [](CanvasWidgetPtr canvasWidget, JsonArray drawables, Maybe<Vec2F> screenPos) {

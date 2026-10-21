@@ -171,7 +171,7 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
   for (auto const p : EquipmentSlotNames) {
     EquipmentSlot slot = p.first;
     registerSlotCallbacks(p.second, slot);
-    invWindowReader.registerCallback(p.second + ".middle", [slot, this](Widget* paneObj) {
+    invWindowReader.registerCallback(p.second + ".middle", [slot, this](Widget*) {
       auto inventory = m_player->inventory();
       inventory->setEquipmentVisibility(slot, !inventory->equipmentVisibility(slot));
     });

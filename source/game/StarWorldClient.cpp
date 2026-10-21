@@ -1076,7 +1076,7 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
               p.foregroundColorVariant.reset();
             else
               p.backgroundColorVariant.reset();
-          } else if (auto placeLiquid = modification.second.ptr<PlaceLiquid>()) {
+          } else if (modification.second.ptr<PlaceLiquid>()) {
             p.liquid.reset();
           }
 
@@ -1634,7 +1634,7 @@ void WorldClient::addEntity(EntityPtr const& entity, EntityId entityId) {
   }
 }
 
-void WorldClient::addEntity(EntityPtr const& entity, ConnectionId connection, EntityId entityId) {
+void WorldClient::addEntity(EntityPtr const& entity, ConnectionId /*connection*/, EntityId entityId) {
   addEntity(entity,entityId);
 }
 
@@ -2503,7 +2503,7 @@ bool WorldClient::exposedToWeather(Vec2F const& pos) const {
   return false;
 }
 
-Maybe<String> WorldClient::activeWeather(Vec2F const& pos) const {
+Maybe<String> WorldClient::activeWeather(Vec2F const& /*pos*/) const {
   if (!inWorld())
     return {};
   return m_weather.activeWeather();
@@ -2649,7 +2649,7 @@ StringMap<LuaCallbacks> WorldClient::luaThreadCallbacks() const {
   return m_luaThreadCallbacks;
 }
 
-bool WorldClient::connectionHasPermission(ConnectionId connection, WorldPermissionType permission) const {
+bool WorldClient::connectionHasPermission(ConnectionId /*connection*/, WorldPermissionType permission) const {
   if (!m_headless)
     if (m_mainPlayer->isAdmin()) {
       return true;

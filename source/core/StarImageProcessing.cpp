@@ -464,7 +464,7 @@ static void replaceColors(ColorReplaceMap const& replaceMap, Image& image, Pixel
         continue;
       }
       Vec4B pixel;
-      memcpy(&pixel, &value, 4);
+      memcpy(static_cast<void*>(&pixel), &value, 4);
       uint32_t result = value;
       unsigned bit = bitFor(pixel);
       if ((bits[bit >> 6] >> (bit & 63)) & 1) {
