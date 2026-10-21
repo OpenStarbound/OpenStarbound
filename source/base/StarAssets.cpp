@@ -26,7 +26,7 @@
 #include "StarRootBase.hpp"
 
 namespace Star {
-  
+
 // if a ptr is returned, can be optionally used to format an error
 static const char* validateBasePath(std::string_view const& basePath) {
   if (AssetPath::isRemote(basePath))
@@ -1176,7 +1176,14 @@ Json Assets::applyJsonPatches(Json const& input, String const& path, List<pair<S
     auto patchAssetPath = AssetPath::split(pair.first);
     auto& patchBasePath = patchAssetPath.basePath;
     auto& patchSource = pair.second;
-    auto patchStream = patchSource->read(patchBasePath);
+    ByteArray patchStream;
+    try {
+      patchStream = patchSource->read(patchBasePath);
+    } catch (IOException const& e) {
+      // a directory source whose file was deleted during execution now skips the patch instead of failing the asset it patches
+      Logger::warn("Skipping patch {} in source '{}' that can no longer be read. Caused by: {}", pair.first, patchSource->metadata().value("name", ""), e.what());
+      continue;
+    }
     if (patchBasePath.endsWith(".lua")) {
       std::pair<AssetSource*, String> contextKey = make_pair(patchSource.get(), patchBasePath);
       RecursiveMutexLocker luaLocker(m_luaMutex);
@@ -1240,7 +1247,7 @@ EmbeddedAsset Assets::loadEmbeddedData(String const& basePath, bool const& asByt
   if (!m_allowRemote)
     throw AssetException("Embedded data is disallowed by config.");
   // assumes asset in question has already been checked for '/opensb_data;' embedded header. excludes that.
-  
+
   auto split = basePath.split(";");
   return loadEmbeddedData(split,1,asBytes);
 }
@@ -1501,7 +1508,7 @@ shared_ptr<Assets::AssetData> Assets::loadJson(AssetPath const& path) const {
     }
   } else {
     return unlockDuring([&]() {
-      if (AssetPath::isEmbedded(path.basePath)) {      
+      if (AssetPath::isEmbedded(path.basePath)) {
         auto newData = make_shared<JsonData>();
         newData->json = embeddedDataToJson(loadEmbeddedData(path.basePath));
         return newData;
