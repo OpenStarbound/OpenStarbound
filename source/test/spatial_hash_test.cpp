@@ -98,3 +98,20 @@ TEST(SpatialHash2DTest, SetWithoutValueInsertsNewEntry) {
   ASSERT_EQ(values.size(), 1u);
   EXPECT_EQ(values[0], 0);
 }
+
+TEST(SpatialHash2DTest, SetSectorSizeRebuildsSpatialIndex) {
+  SpatialHash2D<int, float, int> hash(16.0f);
+
+  hash.set(1, RectF::withSize({0.0f, 0.0f}, {8.0f, 8.0f}), 100);
+  hash.set(2, RectF::withSize({100.0f, 100.0f}, {8.0f, 8.0f}), 200);
+
+  hash.setSectorSize(64.0f);
+
+  EXPECT_EQ(hash.size(), 2u);
+  auto first = hash.queryValues(RectF::withSize({0.0f, 0.0f}, {8.0f, 8.0f}));
+  ASSERT_EQ(first.size(), 1u);
+  EXPECT_EQ(first[0], 100);
+  auto second = hash.queryValues(RectF::withSize({100.0f, 100.0f}, {8.0f, 8.0f}));
+  ASSERT_EQ(second.size(), 1u);
+  EXPECT_EQ(second[0], 200);
+}
