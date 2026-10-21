@@ -74,7 +74,7 @@ LuaMethods<EntityContext> LuaUserDataMethods<EntityContext>::make() {
     });
 
     methods.registerMethod("typeName",
-    [&](EntityContext const& context, LuaEngine& engine) -> Maybe<String> {
+    [&](EntityContext const& context, LuaEngine&) -> Maybe<String> {
         auto const& entity = context.entity;
         if (auto monster = as<Monster>(entity))
             return monster->typeName();

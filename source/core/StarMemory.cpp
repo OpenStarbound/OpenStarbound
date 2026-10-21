@@ -32,7 +32,7 @@ namespace Star {
     je_free(ptr);
   }
 
-  void free(void* ptr, size_t size) {
+  void free(void* ptr, size_t /*size*/) {
     if (ptr)
       je_sdallocx(ptr, size, 0);
   }
@@ -49,7 +49,7 @@ namespace Star {
     ::free(ptr);
   }
 
-  void free(void* ptr, size_t size) {
+  void free(void* ptr, size_t /*size*/) {
     ::free(ptr);
   }
 #endif
@@ -66,7 +66,7 @@ namespace Star {
     return mi_free(ptr);
   }
 
-  void free(void* ptr, size_t size) {
+  void free(void* ptr, size_t /*size*/) {
     return mi_free_size(ptr, size);
   }
 #elif STAR_USE_RPMALLOC

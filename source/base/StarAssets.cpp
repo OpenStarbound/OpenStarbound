@@ -90,7 +90,7 @@ static bool validatePath(AssetPath const& components, bool canContainSubPath, bo
   return true;
 }
 
-static bool validatePath(StringView path, bool canContainSubPath, bool canContainDirectives, bool throwing = true) {
+static bool validatePath(StringView path, bool /*canContainSubPath*/, bool canContainDirectives, bool throwing = true) {
   std::string_view const& str = path.utf8();
 
   size_t end = str.find_first_of(":?");
@@ -109,7 +109,7 @@ static bool validatePath(StringView path, bool canContainSubPath, bool canContai
       end = str.find_first_of('?', beg);
       if (end == NPos && beg + 1 != str.size())
         subPath = true;
-      else if (size_t len = end - beg)
+      else if (end != beg)
         subPath = true;
     }
   }

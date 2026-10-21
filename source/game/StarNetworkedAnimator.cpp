@@ -838,7 +838,7 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
     if (!maybeZLevel)
       maybeZLevel = activePart.properties.value("zLevel").optFloat();
 
-    if (auto drawables = m_partDrawables.contains(partName))
+    if (m_partDrawables.contains(partName))
       drawableCount += m_partDrawables.get(partName).size();
     parts.append(make_tuple(&activePart, &partName, maybeZLevel.value(0.0f)));
   });
