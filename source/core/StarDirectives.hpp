@@ -112,6 +112,9 @@ public:
   void forEach(DirectivesCallback callback) const;
   bool forEachAbortable(AbortableDirectivesCallback callback) const;
 
+  // The paths of all the images that the operations refer to (masks, blends), loading the operations as needed
+  StringList imageReferences() const;
+
   Image applyNewImage(const Image& image, ImageReferenceCallback refCallback = {}) const;
   void applyExistingImage(Image& image, ImageReferenceCallback refCallback = {}) const;
   

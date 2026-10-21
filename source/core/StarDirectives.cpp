@@ -388,6 +388,18 @@ bool DirectivesGroup::forEachAbortable(AbortableDirectivesCallback callback) con
   return true;
 }
 
+StringList DirectivesGroup::imageReferences() const {
+  StringList references;
+  for (auto& directives : m_directives) {
+    if (!directives)
+      continue;
+    directives.loadOperations();
+    for (auto& entry : directives->entries)
+      addImageOperationReferences(entry.operation, references);
+  }
+  return references;
+}
+
 Image DirectivesGroup::applyNewImage(Image const& image, ImageReferenceCallback refCallback) const {
   Image result = image;
   applyExistingImage(result, refCallback);

@@ -224,9 +224,6 @@ Write full player data less often in the team client (`source/game/StarTeamClien
 
 ### Directives and Images
 
-Directives: improve the quick fix in `StarAssets.cpp:1536`.
-
----
 
 **Directives still worth a look for speed.** Found by replaying the paths in `storage/slow-textures.txt` after #652. A world load still spends a few seconds in these, mostly parallax, sky and plant images.
 

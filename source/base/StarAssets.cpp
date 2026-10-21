@@ -1526,17 +1526,7 @@ shared_ptr<Assets::AssetData> Assets::loadImage(AssetPath const& path) const {
     if (!source)
       return {};
     StringMap<ImageConstPtr> references;
-    StringList referencePaths;
-
-    for (auto& directives : path.directives.list())
-      directives.loadOperations();
-
-    path.directives.forEach([&](auto const& entry, Directives const&) {
-      addImageOperationReferences(entry.operation, referencePaths);
-    }); // TODO: This can definitely be better, was changed quickly to support the new Directives.
-
-
-    for (auto const& ref : referencePaths) {
+    for (auto const& ref : path.directives.imageReferences()) {
       auto components = AssetPath::split(ref);
       validatePath(components, true, false);
       auto refImage = as<ImageData>(loadAsset(AssetId{AssetType::Image, std::move(components)}));
