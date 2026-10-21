@@ -2,6 +2,8 @@
 #include "StarLexicalCast.hpp"
 #include "StarJsonExtra.hpp"
 
+#include <thread>
+
 namespace Star {
 
 Json const BaseAssetsSettings = Json::parseJson(R"JSON(
@@ -17,7 +19,9 @@ Json const BaseAssetsSettings = Json::parseJson(R"JSON(
       // In seconds, audio less than this long will be decompressed in memory.
       "audioDecompressLimit" : 4.0,
 
-      "workerPoolSize" : 2,
+      // Threads that load and decode assets in the background. 0 picks a number from the processor: a third of its
+      // threads, but at least 2 and at most 8.
+      "workerPoolSize" : 0,
 
       "pathIgnore" : [
         "/\\.",
@@ -182,7 +186,10 @@ Root::Settings RootLoader::rootSettingsForOptions(Options const& options) const 
     rootSettings.assetsSettings.referenceImageTimeToLive = assetsSettings.getFloat("referenceImageTimeToLive");
     rootSettings.assetsSettings.referenceImagePixelBudget = assetsSettings.getUInt("referenceImagePixelBudget");
     rootSettings.assetsSettings.audioDecompressLimit = assetsSettings.getFloat("audioDecompressLimit");
-    rootSettings.assetsSettings.workerPoolSize = assetsSettings.getUInt("workerPoolSize");
+    unsigned workerPoolSize = assetsSettings.getUInt("workerPoolSize");
+    if (workerPoolSize == 0)
+      workerPoolSize = clamp<unsigned>(std::thread::hardware_concurrency() / 3, 2, 8);
+    rootSettings.assetsSettings.workerPoolSize = workerPoolSize;
     rootSettings.assetsSettings.missingImage = assetsSettings.optString("missingImage");
     rootSettings.assetsSettings.missingAudio = assetsSettings.optString("missingAudio");
     rootSettings.assetsSettings.pathIgnore = jsonToStringList(assetsSettings.get("pathIgnore"));
