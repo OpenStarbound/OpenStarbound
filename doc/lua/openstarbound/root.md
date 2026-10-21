@@ -133,6 +133,32 @@ Sets a configuration value in `/storage/starbound.config` by path.
 
 ---
 
+#### `Json` root.getModStorage(`String` key)
+
+Returns the value stored under `key` in the calling mod's persistent storage, or `null` if there is none.
+
+Each mod has its own storage, saved as `/storage/modstorage/<mod name>.json`. The mod is the asset source (pak or asset directory) of the script making the call, so scripts can only reach their own mod's data, and this works with `safeScripts` on. The name comes from the `name` in the source's metadata, or its file name if it has none. Only scripts loaded from assets can use it.
+
+---
+
+#### `void` root.setModStorage(`String` key, `Json` value)
+
+Stores `value` under `key` in the calling mod's storage and writes it to disk immediately. Setting `null` removes the key. Errors if the mod's data would grow past 4 MiB.
+
+---
+
+#### `JsonArray` root.modStorageKeys()
+
+Returns all keys in the calling mod's storage.
+
+---
+
+#### `void` root.clearModStorage()
+
+Removes everything from the calling mod's storage.
+
+---
+
 #### `JsonArray` root.allRecipes(`Maybe<StringSet>` filter)
 
 Returns all recipes.

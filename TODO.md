@@ -268,11 +268,6 @@ Open questions: where it lives (this repository, so the stubs are in step with t
 
 ---
 
-**Isolated virtual persistent storage for mods.**
-Give each mod its own sandboxed, persistent key/value or file store, so mods can save data without needing `safeScripts` turned off.
-
----
-
 **Utility bindings for building image directives.**
 Something like a native stargen.
 Lua functions that build directive strings (`?replace`, `?crop`, `?scalenearest`, `?blendmult` and so on) from tables, with the escaping and the number formatting done for you, instead of every mod concatenating strings by hand.

@@ -34,6 +34,7 @@ STAR_CLASS(StatisticsDatabase);
 STAR_CLASS(EmoteProcessor);
 STAR_CLASS(SpeciesDatabase);
 STAR_CLASS(ImageMetadataDatabase);
+STAR_CLASS(ModStorage);
 STAR_CLASS(VersioningDatabase);
 STAR_CLASS(QuestTemplateDatabase);
 STAR_CLASS(AiDatabase);
@@ -173,6 +174,8 @@ public:
   EmoteProcessorConstPtr emoteProcessor();
   SpeciesDatabaseConstPtr speciesDatabase();
   ImageMetadataDatabaseConstPtr imageMetadataDatabase();
+  // Not reset on reload, it writes through to disk.
+  ModStoragePtr modStorage();
   VersioningDatabaseConstPtr versioningDatabase();
   QuestTemplateDatabaseConstPtr questTemplateDatabase();
   AiDatabaseConstPtr aiDatabase();
@@ -298,6 +301,8 @@ private:
 
   ImageMetadataDatabasePtr m_imageMetadataDatabase;
   Mutex m_imageMetadataDatabaseMutex;
+  ModStoragePtr m_modStorage;
+  Mutex m_modStorageMutex;
 
   VersioningDatabasePtr m_versioningDatabase;
   Mutex m_versioningDatabaseMutex;

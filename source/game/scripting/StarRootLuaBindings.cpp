@@ -1,6 +1,7 @@
 #include "StarRootLuaBindings.hpp"
 #include "StarLuaGameConverters.hpp"
 #include "StarRoot.hpp"
+#include "StarModStorage.hpp"
 #include "StarStoredFunctions.hpp"
 #include "StarNpcDatabase.hpp"
 #include "StarProjectileDatabase.hpp"
@@ -302,6 +303,39 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
       throw ConfigurationException(strf("cannot set {}", path));
     else
       root->configuration()->setPath(path, value);
+    });
+
+  // The mod is the asset source of the script that made the call, which
+  // scripts cannot fake: the chunk name is the asset path they were loaded from.
+  auto callingMod = [root](LuaEngine& engine) -> String {
+      auto const& info = engine.debugInfo(1, "S");
+      String chunk = info.source ? info.source : "";
+      if (chunk.beginsWith("@") || chunk.beginsWith("="))
+        chunk = chunk.substr(1);
+      auto assets = root->assets();
+      auto descriptor = assets->assetDescriptor(chunk);
+      if (!descriptor)
+        throw StarException("Mod storage is only available to scripts loaded from assets");
+      auto sourcePath = assets->assetSourcePath(descriptor->source);
+      if (!sourcePath)
+        throw StarException("Mod storage could not find the mod of this script");
+      if (auto name = assets->assetSourceMetadata(*sourcePath).maybe("name"))
+        if (name->isType(Json::Type::String) && !name->toString().empty())
+          return name->toString();
+      return File::baseName(*sourcePath);
+    };
+
+  callbacks.registerCallback("getModStorage", [root, callingMod](LuaEngine& engine, String const& key) -> Json {
+      return root->modStorage()->get(callingMod(engine), key);
+    });
+  callbacks.registerCallback("setModStorage", [root, callingMod](LuaEngine& engine, String const& key, Json const& value) {
+      root->modStorage()->set(callingMod(engine), key, value);
+    });
+  callbacks.registerCallback("modStorageKeys", [root, callingMod](LuaEngine& engine) -> JsonArray {
+      return root->modStorage()->keys(callingMod(engine));
+    });
+  callbacks.registerCallback("clearModStorage", [root, callingMod](LuaEngine& engine) {
+      root->modStorage()->clear(callingMod(engine));
     });
 
   callbacks.registerCallback("speciesConfig", [root](String const& species) -> Json {

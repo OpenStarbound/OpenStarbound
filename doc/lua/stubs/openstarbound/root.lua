@@ -79,6 +79,23 @@ function root.setConfiguration(key, value) end
 ---@return Json
 function root.setConfigurationPath(path, value) end
 
+--- Returns the value stored under `key` in the calling mod's persistent storage, or `nil`. Private to the mod, works with safeScripts on. ---
+---@param key string
+---@return Json
+function root.getModStorage(key) end
+
+--- Stores `value` under `key` in the calling mod's persistent storage. `nil` removes the key. Errors past 4 MiB. ---
+---@param key string
+---@param value Json
+function root.setModStorage(key, value) end
+
+--- Returns all keys in the calling mod's persistent storage. ---
+---@return JsonArray
+function root.modStorageKeys() end
+
+--- Removes everything from the calling mod's persistent storage. ---
+function root.clearModStorage() end
+
 --- Returns all recipes. ---
 ---@return JsonArray
 function root.allRecipes() end
