@@ -83,6 +83,7 @@ private:
 
   bool m_statusUpdateRunning;
   double m_statusUpdateTimer;
+  double m_fullWriteTimer;
 
   List<RpcResponseHandler> m_pendingResponses;
   

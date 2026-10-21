@@ -212,10 +212,6 @@ Network full world protection directly to newer clients (`source/game/StarGameTy
 
 ---
 
-Write full player data less often in the team client (`source/game/StarTeamClient.cpp:200`).
-
----
-
 **Fixes StarExtensions lists, to check against OSB** (reproduce first): crash when disconnecting with the inventory open, chat color lost when wrapping text, audio problems when joining while a song plays, and the connection error screen disappearing.
 
 ---
