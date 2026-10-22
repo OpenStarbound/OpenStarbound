@@ -390,9 +390,13 @@ AssetsConstPtr Root::assets() {
   return loadMemberFunction<Assets>(m_assets, m_assetsMutex, "Assets", [this]() {
       StringList assetDirectories = m_settings.assetDirectories;
       assetDirectories.appendAll(m_modDirectories);
-      StringList assetSources = scanForAssetSources(assetDirectories, m_settings.assetSources);
+      StringList assetSources = scanForAssetSources(assetDirectories, m_settings.assetSources,
+          m_settings.ignoreAssetSources, m_settings.assetSourcePriorities);
 
-      auto assets = make_shared<Assets>(m_settings.assetsSettings, assetSources);
+      auto assetsSettings = m_settings.assetsSettings;
+      assetsSettings.protectedAssetPaths = m_settings.protectedAssetPaths;
+
+      auto assets = make_shared<Assets>(assetsSettings, assetSources);
       Logger::info("Assets digest is {}", hexEncode(assets->digest()));
       return assets;
     });
@@ -592,7 +596,31 @@ Root::Settings& Root::settings() {
   return m_settings;
 }
 
-StringList Root::scanForAssetSources(StringList const& directories, StringList const& manual) {
+// Asset source selectors (used for 'ignoreAssetSources' and
+// 'assetSourcePriorities' in sbinit.config) may be the source name, the
+// containing folder name (e.g. Steam Workshop item id) or the full path.
+static String assetSourceFolderName(String const& path) {
+  String dir = path;
+  while (!dir.empty() && (dir.endsWith("/") || dir.endsWith("\\")))
+    dir = dir.substr(0, dir.size() - 1);
+  size_t lastSlash = dir.findLast('/');
+  size_t lastBackslash = dir.findLast('\\');
+  size_t lastSeparator = lastSlash == NPos ? lastBackslash : (lastBackslash == NPos ? lastSlash : std::max(lastSlash, lastBackslash));
+  if (lastSeparator == NPos)
+    return {};
+  String parent = dir.substr(0, lastSeparator);
+  return parent.empty() ? String() : File::baseName(parent);
+}
+
+static bool assetSourceSelectorMatches(String const& selector, String const& name, String const& path) {
+  if (selector.equalsIgnoreCase(name) || selector.equalsIgnoreCase(path) || selector.equalsIgnoreCase(File::baseName(path)))
+    return true;
+  String folderName = assetSourceFolderName(path);
+  return !folderName.empty() && selector.equalsIgnoreCase(folderName);
+}
+
+StringList Root::scanForAssetSources(StringList const& directories, StringList const& manual,
+    StringList const& ignoreSelectors, StringMap<float> const& priorityOverrides) {
   struct AssetSource {
     String path;
     Maybe<String> name;
@@ -603,6 +631,17 @@ StringList Root::scanForAssetSources(StringList const& directories, StringList c
   };
   List<shared_ptr<AssetSource>> assetSources;
   StringMap<shared_ptr<AssetSource>> namedSources;
+  HashSet<String> ignoredSourceNames;
+
+  auto isIgnoredSource = [&](String const& name) {
+    if (ignoredSourceNames.contains(name))
+      return true;
+    for (auto const& selector : ignoreSelectors) {
+      if (!selector.empty() && selector.equalsIgnoreCase(name))
+        return true;
+    }
+    return false;
+  };
 
   auto processEntry = [&](String const& sourcePath, bool isDirectory) -> bool {
     AssetSourcePtr source;
@@ -628,6 +667,52 @@ StringList Root::scanForAssetSources(StringList const& directories, StringList c
     assetSource->priority = metadata.value("priority", 0.0f).toFloat();
     assetSource->requires_ = jsonToStringList(metadata.value("requires", JsonArray{}));
     assetSource->includes = jsonToStringList(metadata.value("includes", JsonArray{}));
+
+    for (auto const& selector : ignoreSelectors) {
+      if (selector.empty())
+        continue;
+
+      if (assetSourceSelectorMatches(selector, assetSource->name.value(sourcePath), sourcePath)) {
+        String sourceName = assetSource->name.value("");
+        if (sourceName == "base" || sourceName == "opensb_base") {
+          Logger::warn("Root: Refusing to ignore required asset source '{}'", sourceName);
+          continue;
+        }
+
+        Logger::info("Root: Ignoring asset source '{}' at '{}' (matched '{}' in ignoreAssetSources)",
+            assetSource->name.value("<unnamed>"), sourcePath, selector);
+        if (assetSource->name)
+          ignoredSourceNames.add(*assetSource->name);
+        return false;
+      }
+    }
+
+    {
+      bool matchedPriority = false;
+      bool conflictingPriority = false;
+      float newPriority = assetSource->priority;
+      for (auto const& override : priorityOverrides) {
+        if (override.first.empty())
+          continue;
+
+        if (assetSourceSelectorMatches(override.first, assetSource->name.value(sourcePath), sourcePath)) {
+          if (matchedPriority && override.second != newPriority)
+            conflictingPriority = true;
+          newPriority = matchedPriority ? std::max(newPriority, override.second) : override.second;
+          matchedPriority = true;
+        }
+      }
+
+      if (matchedPriority) {
+        if (conflictingPriority)
+          Logger::warn("Root: Multiple assetSourcePriorities entries match '{}', using priority {}",
+              assetSource->name.value("<unnamed>"), newPriority);
+
+        Logger::info("Root: Overriding priority of asset source '{}' from {} to {}",
+            assetSource->name.value("<unnamed>"), assetSource->priority, newPriority);
+        assetSource->priority = newPriority;
+      }
+    }
 
     if (assetSource->name.value() == "opensb_base" && assetSource->version.value() != OpenStarVersionString) {
       throw AssetSourceException(strf("\n\nOpenStarbound assets version mismatch!\nOpenStarbound v{}, but opensb.pak is v{}\n",
@@ -707,13 +792,17 @@ StringList Root::scanForAssetSources(StringList const& directories, StringList c
     }
 
     for (auto const& requirementName : source->requires_) {
-      if (auto requirement = namedSources.ptr(requirementName))
+      if (auto requirement = namedSources.ptr(requirementName)) {
         dependencySortVisit(*requirement);
-      else
+      } else if (isIgnoredSource(requirementName)) {
+        Logger::warn("Asset source '{}' requires ignored asset source '{}', continuing without it",
+            source->name ? *source->name : "<unnamed>", requirementName);
+      } else {
         throw AssetSourceException(strf("Asset source '{}' is missing dependency '{}'{}", source->name ? *source->name : "<unnamed>", requirementName,
           requirementName != "base" ? "" :
             "\n\nThe base Starbound asset package could not be found, please copy it from another Starbound install!\n"
             "(Locate 'packed.pak' in vanilla Starbound's assets folder, then copy it to OpenStarbound's assets folder.)\n"), false);
+      }
     }
 
     workingSet.remove(source);

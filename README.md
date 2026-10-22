@@ -64,6 +64,7 @@ Note: Mods that use StarExtensions features often work with OpenStarbound, StarE
   * These scripts can modify, read, patch and create new assets!
 * Lua patch files now exist - **.patch.lua**
   * These can patch JSON assets, as well as images!
+* Asset sources can be ignored, reprioritized and protected from `sbinit.config`, see [doc/sbinit.md](doc/sbinit.md).
 ### Commands
 **View OpenStarbound commands with `/help`! You can also view them [here](https://github.com/OpenStarbound/OpenStarbound/blob/main/assets/opensb/help.config.patch)**
   * Changes to vanilla commands:

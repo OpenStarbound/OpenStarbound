@@ -90,6 +90,16 @@ static bool validatePath(AssetPath const& components, bool canContainSubPath, bo
   return true;
 }
 
+static bool isBaseAssetSourceName(String const& name) {
+  size_t groupSeparator = name.find("::");
+  String baseName = groupSeparator == NPos ? name : name.substr(0, groupSeparator);
+  return baseName == "base" || baseName == "opensb_base";
+}
+
+static bool isBaseAssetSource(AssetSourcePtr const& source) {
+  return source && isBaseAssetSourceName(source->metadata().value("name", "").toString());
+}
+
 static bool validatePath(StringView path, bool canContainSubPath, bool canContainDirectives, bool throwing = true) {
   std::string_view const& str = path.utf8();
 
@@ -127,6 +137,16 @@ static bool validatePath(StringView path, bool canContainSubPath, bool canContai
   }
 
   return true;
+}
+
+bool Assets::isProtectedAsset(String const& path) const {
+  for (auto const& prefix : m_settings.protectedAssetPaths) {
+    if (prefix.empty())
+      continue;
+    if (path.beginsWith(prefix, String::CaseInsensitive))
+      return true;
+  }
+  return false;
 }
 
 Maybe<RectU> FramesSpecification::getRect(String const& frame) const {
@@ -273,6 +293,12 @@ Assets::Assets(Settings settings, StringList assetSources) {
       });
 
       callbacks.registerCallback("patch", [this, newFiles](String const& path, String const& patchPath) -> bool {
+        if (isProtectedAsset(path) && !isBaseAssetSource(newFiles)) {
+          Logger::warn("Ignoring patch of protected asset '{}' from '{}'", path,
+              newFiles->metadata().value("name", "").toString());
+          return false;
+        }
+
         if (newFiles->contains(path)) {
           if (auto image = newFiles->image(path)) {
             if (newFiles->contains(patchPath)) {
@@ -313,7 +339,13 @@ Assets::Assets(Settings settings, StringList assetSources) {
         return false;
       });
 
-      callbacks.registerCallback("erase", [this](String const& path) -> bool {
+      callbacks.registerCallback("erase", [this, newFiles](String const& path) -> bool {
+        if (isProtectedAsset(path) && !isBaseAssetSource(newFiles)) {
+          Logger::warn("Ignoring attempt to erase protected asset '{}' from '{}'", path,
+              newFiles->metadata().value("name", "").toString());
+          return false;
+        }
+
         bool erased = m_files.erase(path);
         if (erased)
           m_filesByExtension[AssetPath::extension(path).toLower()].erase(path);
@@ -327,30 +359,39 @@ Assets::Assets(Settings settings, StringList assetSources) {
   auto addSource = [&](String const& sourcePath, AssetSourcePtr source) {
     m_assetSourcePaths.add(sourcePath, source);
 
+    String const sourceName = source->metadata().value("name", "").toString();
+    bool const sourceIsBase = isBaseAssetSourceName(sourceName);
+
+    auto attachPatch = [&](String const& targetPath, String const& patchPath, AssetSourcePtr const& patchSource) {
+      if (isProtectedAsset(targetPath) && !sourceIsBase) {
+        Logger::warn("Ignoring patch of protected asset '{}' from '{}'", targetPath, sourceName);
+        return;
+      }
+
+      if (auto p = m_files.ptr(targetPath))
+        p->patchSources.append({patchPath, patchSource});
+    };
+
     for (auto const& filename : source->assetPaths()) {
       if (filename.contains(AssetsPatchSuffix, String::CaseInsensitive)) {
         if (filename.endsWith(AssetsPatchSuffix, String::CaseInsensitive)) {
           auto targetPatchFile = filename.substr(0, filename.size() - strlen(AssetsPatchSuffix));
-          if (auto p = m_files.ptr(targetPatchFile))
-            p->patchSources.append({filename, source});
+          attachPatch(targetPatchFile, filename, source);
         } else if (filename.endsWith(AssetsLuaPatchSuffix, String::CaseInsensitive)) {
           auto targetPatchFile = filename.substr(0, filename.size() - strlen(AssetsLuaPatchSuffix));
-          if (auto p = m_files.ptr(targetPatchFile))
-            p->patchSources.append({filename, source});
+          attachPatch(targetPatchFile, filename, source);
         } else if (filename.endsWith(AssetsPatchListSuffix, String::CaseInsensitive)) {
           auto stream = source->read(filename);
           size_t patchIndex = 0;
           for (auto const& patchPair : inputUtf8Json(stream.begin(), stream.end(), JsonParseType::Top).iterateArray()) {
             auto patches = patchPair.getArray("patches");
             for (auto& path : patchPair.getArray("paths")) {
-              if (auto p = m_files.ptr(path.toString())) {
-                for (size_t i = 0; i != patches.size(); ++i) {
-                  auto& patch = patches[i];
-                  if (patch.isType(Json::Type::String))
-                    p->patchSources.append({patch.toString(), source});
-                  else
-                    p->patchSources.append({strf("{}:[{}].patches[{}]", filename, patchIndex, i), source});
-                }
+              for (size_t i = 0; i != patches.size(); ++i) {
+                auto& patch = patches[i];
+                if (patch.isType(Json::Type::String))
+                  attachPatch(path.toString(), patch.toString(), source);
+                else
+                  attachPatch(path.toString(), strf("{}:[{}].patches[{}]", filename, patchIndex, i), source);
               }
             }
             patchIndex++;
@@ -359,10 +400,18 @@ Assets::Assets(Settings settings, StringList assetSources) {
           for (int i = 0; i < 10; i++) {
             if (filename.endsWith(AssetsPatchSuffix + toString(i), String::CaseInsensitive)) {
               auto targetPatchFile = filename.substr(0, filename.size() - strlen(AssetsPatchSuffix) - 1);
-              if (auto p = m_files.ptr(targetPatchFile))
-                p->patchSources.append({filename, source});
+              attachPatch(targetPatchFile, filename, source);
               break;
             }
+          }
+        }
+      }
+
+      if (isProtectedAsset(filename) && !sourceIsBase) {
+        if (auto existing = m_files.ptr(filename)) {
+          if (isBaseAssetSourceName(existing->source->metadata().value("name", "").toString())) {
+            Logger::warn("Ignoring replacement of protected asset '{}' from '{}'", filename, sourceName);
+            continue;
           }
         }
       }
@@ -378,7 +427,7 @@ Assets::Assets(Settings settings, StringList assetSources) {
     auto metadata = source->metadata();
     if (auto scripts = metadata.ptr("scripts")) {
       if (auto scriptGroup = scripts->optArray(groupName)) {
-        auto memoryName = strf("{}::{}", metadata.value("name", File::baseName(sourcePath)), groupName);
+        auto memoryName = strf("{}::{}", metadata.value("name", File::baseName(sourcePath)).toString(), groupName);
         JsonObject memoryMetadata{ {"name", memoryName} };
         auto memoryAssets = make_shared<MemoryAssetSource>(memoryName, memoryMetadata);
         auto now = Time::monotonicTime();
@@ -424,6 +473,15 @@ Assets::Assets(Settings settings, StringList assetSources) {
     runLoadScripts("postLoad", pair.first, pair.second);
 
   Sha256Hasher digest;
+
+  // Protected paths change which source wins, so they are part of the digest
+  // for client/server consistency.
+  {
+    StringList protectedPaths = m_settings.protectedAssetPaths;
+    protectedPaths.sort();
+    for (auto const& protectedPath : protectedPaths)
+      digest.push(strf("protectedAssetPath={}", protectedPath));
+  }
 
   for (auto const& assetPath : m_files.keys().transformed([](String const& s) {
         return s.toLower();

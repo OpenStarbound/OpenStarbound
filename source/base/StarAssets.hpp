@@ -81,6 +81,12 @@ public:
     // Same, but only ignores the file for the purposes of calculating the
     // digest.
     StringList digestIgnore;
+
+    // Asset path prefixes that mods may not replace, patch, or erase.  Used to
+    // keep mods designed for vanilla Starbound from breaking the UI that
+    // OpenStarbound itself owns (for example the mods menu).  Adding a new
+    // asset under a protected prefix is allowed.
+    StringList protectedAssetPaths;
   };
 
   enum class QueuePriority {
@@ -309,6 +315,8 @@ private:
   Json readJson(String const& basePath) const;
   Json applyJsonPatches(Json const& input, String const& path, List<pair<String, AssetSourcePtr>> patches) const;
   Json checkPatchArray(String const& path, AssetSourcePtr const& source, Json const result, JsonArray const patchData, Maybe<Json> const external) const;
+
+  bool isProtectedAsset(String const& path) const;
 
   Json embeddedDataToJson(EmbeddedAsset const& data) const;
   EmbeddedAsset loadEmbeddedData(String const& basePath, bool const& asBytes = false) const;

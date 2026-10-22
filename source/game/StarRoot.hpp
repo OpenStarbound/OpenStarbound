@@ -66,6 +66,19 @@ public:
     // Just raw asset source paths.
     StringList assetSources;
 
+    // Asset sources whose name, containing folder or full path matches any of
+    // these selectors are not loaded at all.
+    StringList ignoreAssetSources;
+
+    // Priority overrides for asset sources, keyed by source name, containing
+    // folder or full path.  Higher priority sources are loaded later, so they
+    // win conflicts and are patched after lower priority sources.
+    StringMap<float> assetSourcePriorities;
+
+    // Asset path prefixes that mods may not replace, patch, or erase.  Only
+    // the base game and OpenStarbound's own assets may modify them.
+    StringList protectedAssetPaths;
+
     Json defaultConfiguration;
 
     // Top-level storage directory under which all game data is saved
@@ -188,7 +201,8 @@ public:
   Settings& settings();
 
 private:
-  static StringList scanForAssetSources(StringList const& directories, StringList const& manual = {});
+  static StringList scanForAssetSources(StringList const& directories, StringList const& manual = {},
+      StringList const& ignoreSelectors = {}, StringMap<float> const& priorityOverrides = {});
   template <typename T, typename... Params>
   static shared_ptr<T> loadMember(shared_ptr<T>& ptr, Mutex& mutex, char const* name, Params&&... params);
   template <typename T>

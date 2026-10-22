@@ -190,6 +190,26 @@ Root::Settings RootLoader::rootSettingsForOptions(Options const& options) const 
 
     rootSettings.assetDirectories = jsonToStringList(bootConfig.get("assetDirectories", JsonArray()));
     rootSettings.assetSources     = jsonToStringList(bootConfig.get("assetSources",     JsonArray()));
+    rootSettings.ignoreAssetSources = jsonToStringList(bootConfig.get("ignoreAssetSources", JsonArray()));
+    if (bootConfig.contains("protectedAssetPaths"))
+      rootSettings.protectedAssetPaths = jsonToStringList(bootConfig.get("protectedAssetPaths"));
+    else
+      rootSettings.protectedAssetPaths = StringList{String("/interface/modsmenu/")};
+
+    StringList filteredProtectedPaths;
+    for (auto path : rootSettings.protectedAssetPaths) {
+      path = path.trim();
+      if (path.empty())
+        continue;
+      if (!path.beginsWith("/"))
+        path = "/" + path;
+      filteredProtectedPaths.append(path);
+    }
+    rootSettings.protectedAssetPaths = std::move(filteredProtectedPaths);
+    if (auto priorities = bootConfig.optObject("assetSourcePriorities")) {
+      for (auto const& pair : *priorities)
+        rootSettings.assetSourcePriorities[pair.first] = pair.second.toFloat();
+    }
 
     rootSettings.defaultConfiguration = jsonMerge(
         BaseDefaultConfiguration,
