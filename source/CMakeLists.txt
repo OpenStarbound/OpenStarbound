@@ -588,7 +588,8 @@ foreach(OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES})
 endforeach(OUTPUTCONFIG CMAKE_CONFIGURATION_TYPES)
 
 # External code included with starbound source, which core depends on
-set(STAR_EXTERN_INCLUDES ${STAR_EXTERN_INCLUDES} ${PROJECT_SOURCE_DIR}/extern)
+# Marked SYSTEM so that warnings from the bundled third party headers (fmt, etc.) are not reported
+include_directories(SYSTEM ${PROJECT_SOURCE_DIR}/extern)
 add_subdirectory(extern)
 
 # Core support code, not specific to starbound.

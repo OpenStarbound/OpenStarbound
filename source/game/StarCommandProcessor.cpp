@@ -138,7 +138,7 @@ String CommandProcessor::admin(ConnectionId connectionId, String const& argument
     return strf("Admin privileges taken away from {}", m_universe->clientNick(targetClientId));
 }
 
-String CommandProcessor::serverDebug(ConnectionId connectionId, String const& argumentString) {
+String CommandProcessor::serverDebug(ConnectionId connectionId, String const& /*argumentString*/) {
   if (auto errorMsg = adminCheck(connectionId, "debug server"))
     return *errorMsg;
   if (m_universe->isLocal(connectionId))

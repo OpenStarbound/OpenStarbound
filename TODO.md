@@ -180,13 +180,9 @@ Idea: an extension that bundles the stubs, adds them to the library setting by i
 
 Make it aware of which script it is in, which the plain stubs cannot be: an object script gets `object` and `animator`, a status effect gets `effect`, an ActiveItem script gets `activeItem`, and so on, so that functions from the wrong context are not offered. The script type is known from the `scripts` lists in the `.object`, `.activeitem`, `.statuseffect` and similar config files that refer to the script.
 
-Also: completion and checking of asset paths in the config files, jumping from a call to its page in `doc/lua/`, and a way to keep the stubs and the markdown pages from drifting apart (some stubs still say `TODO: Add description`, and `songbook.keepAlive` and `songbook.play` are undocumented, see the songbook item below).
+Also: completion and checking of asset paths in the config files, jumping from a call to its page in `doc/lua/`, and a way to keep the stubs and the markdown pages from drifting apart (some stubs still say `TODO: Add description`).
 
 Open questions: where it lives (this repository, so the stubs are in step with the code, or its own), and publishing it to the Marketplace and Open VSX.
-
----
-
-Document `songbook.keepAlive` and `songbook.play` (`doc/lua/openstarbound/songbook.md`, `doc/lua/stubs/openstarbound/songbook.lua`).
 
 ---
 
@@ -212,15 +208,11 @@ Open questions: whether a catch at the entity update level (log, then drop or di
 
 ## Multiplayer and Servers
 
-Server query thread: two unimplemented handlers (`source/server/StarServerQueryThread.cpp:67,80`).
+Server query thread: the plugins handler is unimplemented (`source/server/StarServerQueryThread.cpp:80`).
 
 ---
 
 Network full world protection directly to newer clients (`source/game/StarGameTypes.hpp:188`).
-
----
-
-Write full player data less often in the team client (`source/game/StarTeamClient.cpp:200`).
 
 ---
 
@@ -232,9 +224,6 @@ Write full player data less often in the team client (`source/game/StarTeamClien
 
 ### Directives and Images
 
-Directives: move to `+=` in `StarParallax.cpp:75`; improve the quick fix in `StarAssets.cpp:1536`.
-
----
 
 **Directives still worth a look for speed.** Found by replaying the paths in `storage/slow-textures.txt` after #652. A world load still spends a few seconds in these, mostly parallax, sky and plant images.
 

@@ -70,12 +70,12 @@ Object::Object(ObjectConfigConstPtr config, Json const& parameters) {
 
   auto inputNodes = configValue("inputNodes", JsonArray());
   auto inputNodeConfigs = configValue("inputNodesConfig", JsonArray());
-  for (auto i = 0; i != inputNodes.size(); i++)
+  for (size_t i = 0; i != inputNodes.size(); i++)
     m_inputNodes.append(InputNode(inputNodes.get(i), inputNodeConfigs.get(i, JsonObject())));
 
   auto outputNodes = configValue("outputNodes", JsonArray());
   auto outputNodeConfigs = configValue("outputNodesConfig", JsonArray());
-  for (auto i = 0; i != outputNodes.size(); i++)
+  for (size_t i = 0; i != outputNodes.size(); i++)
     m_outputNodes.append(OutputNode(outputNodes.get(i), outputNodeConfigs.get(i, JsonObject())));
 
   m_offeredQuests.set(configValue("offeredQuests", JsonArray()).toArray().transformed(&QuestArcDescriptor::fromJson));

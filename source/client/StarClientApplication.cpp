@@ -829,7 +829,7 @@ void ClientApplication::changeState(MainAppState newState) {
         const auto paneManager = mainInterface->paneManager();
         const auto httpTrustDialog = paneManager->registeredPane<HttpTrustDialog>(MainInterfacePanes::HttpTrustDialog);
 
-        httpTrustDialog->displayRequest(domain, [domain](const HttpTrustReply reply, bool remember) {
+        httpTrustDialog->displayRequest(domain, [domain](const HttpTrustReply reply, bool /*remember*/) {
           const bool allowed = (reply == HttpTrustReply::Allow);
           LuaBindings::handleHttpTrustReply(domain, allowed);
         });

@@ -64,8 +64,8 @@ uint8_t ServerQueryThread::serverPlayerCount() {
 }
 
 bool ServerQueryThread::serverPassworded() {
-  // TODO: implement
-  return false;
+  // Clients need an account on the server unless anonymous connections are allowed
+  return !Root::singleton().configuration()->get("allowAnonymousConnections").toBool();
 }
 
 String ServerQueryThread::serverWorldNames() {

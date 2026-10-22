@@ -112,6 +112,25 @@ Directives& Directives::operator=(Directives const& other) {
   return *this;
 }
 
+Directives& Directives::operator+=(Directives const& other) {
+  if (other.empty())
+    return *this;
+
+  if (empty()) {
+    m_shared = other.m_shared;
+    return *this;
+  }
+
+  String string = m_shared->string;
+  auto& otherString = other.m_shared->string;
+  if (otherString.utf8().front() != '?')
+    string += "?";
+  string += otherString;
+
+  parse(std::move(string));
+  return *this;
+}
+
 void Directives::loadOperations() const {
   if (!m_shared)
     return;
@@ -367,6 +386,18 @@ bool DirectivesGroup::forEachAbortable(AbortableDirectivesCallback callback) con
   }
 
   return true;
+}
+
+StringList DirectivesGroup::imageReferences() const {
+  StringList references;
+  for (auto& directives : m_directives) {
+    if (!directives)
+      continue;
+    directives.loadOperations();
+    for (auto& entry : directives->entries)
+      addImageOperationReferences(entry.operation, references);
+  }
+  return references;
 }
 
 Image DirectivesGroup::applyNewImage(Image const& image, ImageReferenceCallback refCallback) const {

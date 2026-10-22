@@ -12,10 +12,11 @@ function songbook.band() end
 ---@return song
 function songbook.song() end
 
---- TODO: Add description for songbook.keepAlive ---
----@param duration Float
+--- Must be called repeatedly while the instrument is equipped to signal that it is still in use. Sets the instrument type and the world position the sound plays from. If a song is active, this also resets the idle cooldown that would otherwise stop playback. ---
+---@param instrument string
+---@param position Vec2F
 ---@return void
-function songbook.keepAlive(duration) end
+function songbook.keepAlive(instrument, position) end
 
 --- Causes the instrumentalist to stop playing. ---
 ---@return void
@@ -29,10 +30,11 @@ function songbook.active() end
 ---@return boolean
 function songbook.instrumentPlaying() end
 
---- TODO: Add description for songbook.play ---
+--- Starts playing `song`, stopping any already playing. `song` is a JSON object whose `abc` field holds the song in ABC notation. `timeSource` is an identifier for synchronising playback, so instrumentalists that use the same `timeSource` share a clock to play in sync. If it is empty, a random one is generated. ---
 ---@param song Json
+---@param timeSource string
 ---@return void
-function songbook.play(song) end
+function songbook.play(song, timeSource) end
 
 --- Returns the type of instrument last played, as determined by the instrument's `kind` value. Defaults to `""`.
 ---@return string

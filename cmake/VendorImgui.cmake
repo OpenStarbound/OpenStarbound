@@ -15,9 +15,9 @@ SET(imgui_HEADERS
 )
 ADD_LIBRARY (imgui STATIC ${imgui_SOURCES} ${imgui_HEADERS})
 target_link_directories(imgui PUBLIC SDL3::SDL3)
-target_include_directories(imgui PUBLIC extern/imgui)
+target_include_directories(imgui SYSTEM PUBLIC extern/imgui)
 set(STAR_EXT_LIBS ${STAR_EXT_LIBS} imgui)
-set(STAR_EXTERN_INCLUDES ${STAR_EXTERN_INCLUDES}
+include_directories(SYSTEM
     ${PROJECT_SOURCE_DIR}/extern/imgui
     ${PROJECT_SOURCE_DIR}/extern/imgui/backends
     ${PROJECT_SOURCE_DIR}/extern/imgui/misc/freetype)
