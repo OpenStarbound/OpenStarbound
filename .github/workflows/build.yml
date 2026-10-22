@@ -2,7 +2,10 @@ name: Build
 permissions:
   actions: read
 
-  
+# for scripts/credits/generate-contributors.sh, which reads the contributors of the repository while the assets are packed
+env:
+  GITHUB_TOKEN: ${{ github.token }}
+
 on:
   workflow_dispatch:
     inputs:

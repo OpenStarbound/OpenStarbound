@@ -4,6 +4,9 @@ mkdir client_distribution
 mkdir client_distribution/assets
 mkdir client_distribution/assets/user
 
+# the OpenStarbound page of the credits lists the contributors of the repository (leaves the committed list alone if GitHub can't be reached)
+sh scripts/credits/generate-contributors.sh
+
 ./dist/asset_packer -c scripts/packing.config assets/opensb client_distribution/assets/opensb.pak
 
 mkdir client_distribution/mods
