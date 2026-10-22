@@ -73,6 +73,7 @@ Note: Mods that use StarExtensions features often work with OpenStarbound, StarE
     * `/admin`
       * You can now admin other players: `/admin playerSpecifier` (requires OpenSB server)
 ### Bug Fixes
+* Full-file JSON overrides are merged with the lower priority asset when a patch from another mod fails on them, so cross-mod patches keep working. See [doc/mod-compatibility.md](doc/mod-compatibility.md).
 * Invalid character inventories are updated when loading in, allowing players to swap inventory mods with pre-existing characters.
 * Fix vanilla world file size bloating issue.
 * Modifying a single status property no longer re-networks every status property on the entity (server and client must be running at least OpenStarbound 0.15)

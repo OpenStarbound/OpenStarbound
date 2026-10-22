@@ -67,6 +67,11 @@ public:
     // Number of background worker threads
     unsigned workerPoolSize;
 
+    // When a mod replaces a whole JSON asset and a different mod patches that
+    // same asset, merge the replacing file over the lower priority versions
+    // instead of dropping the patch on missing keys.  Enabled by default.
+    bool autoMergePatchedOverrides = true;
+
     // If given, if an image is unable to load, will log the error and load
     // this path instead
     Maybe<String> missingImage;
@@ -172,6 +177,9 @@ public:
     AssetSourcePtr source;
     // List of source names and sources for patches to this file.
     List<pair<String, AssetSourcePtr>> patchSources;
+    // Paths and sources of other copies that were overridden by 'source', in
+    // load order.
+    List<pair<String, AssetSourcePtr>> shadowedSources;
   };
 
   Assets(Settings settings, StringList assetSources);
@@ -307,8 +315,10 @@ private:
   ImageConstPtr applyImagePatches(ImageConstPtr image, String const& path, List<pair<String, AssetSourcePtr>> patches) const;
 
   Json readJson(String const& basePath) const;
-  Json applyJsonPatches(Json const& input, String const& path, List<pair<String, AssetSourcePtr>> patches) const;
-  Json checkPatchArray(String const& path, AssetSourcePtr const& source, Json const result, JsonArray const patchData, Maybe<Json> const external) const;
+  Json applyJsonPatches(Json const& input, String const& path, List<pair<String, AssetSourcePtr>> patches,
+      bool* failed = nullptr, bool logFailures = true) const;
+  Json checkPatchArray(String const& path, AssetSourcePtr const& source, Json const result, JsonArray const patchData,
+      Maybe<Json> const external, bool* failed = nullptr, bool logFailures = true) const;
 
   Json embeddedDataToJson(EmbeddedAsset const& data) const;
   EmbeddedAsset loadEmbeddedData(String const& basePath, bool const& asBytes = false) const;

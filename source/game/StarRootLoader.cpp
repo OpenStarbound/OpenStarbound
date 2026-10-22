@@ -187,6 +187,7 @@ Root::Settings RootLoader::rootSettingsForOptions(Options const& options) const 
     rootSettings.assetsSettings.missingAudio = assetsSettings.optString("missingAudio");
     rootSettings.assetsSettings.pathIgnore = jsonToStringList(assetsSettings.get("pathIgnore"));
     rootSettings.assetsSettings.digestIgnore = jsonToStringList(assetsSettings.get("digestIgnore"));
+    rootSettings.assetsSettings.autoMergePatchedOverrides = bootConfig.getBool("autoMergePatchedOverrides", true);
 
     rootSettings.assetDirectories = jsonToStringList(bootConfig.get("assetDirectories", JsonArray()));
     rootSettings.assetSources     = jsonToStringList(bootConfig.get("assetSources",     JsonArray()));

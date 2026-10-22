@@ -129,6 +129,23 @@ static bool validatePath(StringView path, bool canContainSubPath, bool canContai
   return true;
 }
 
+// Identity of the mod an asset source belongs to.  Memory asset sources
+// created by load scripts are named "<mod>::<group>", so strip the group and
+// fall back to the source file or folder name when metadata has no name.
+static String assetSourceIdentity(AssetSourcePtr const& source, String const& sourcePath) {
+  if (!source)
+    return {};
+
+  String name = source->metadata().value("name", "").toString();
+  if (name.empty())
+    name = File::baseName(sourcePath);
+
+  size_t groupSeparator = name.find("::");
+  if (groupSeparator != NPos)
+    name = name.substr(0, groupSeparator);
+  return name;
+}
+
 Maybe<RectU> FramesSpecification::getRect(String const& frame) const {
   if (auto alias = aliases.ptr(frame)) {
     return frames.get(*alias);
@@ -324,33 +341,42 @@ Assets::Assets(Settings settings, StringList assetSources) {
     }
   };
 
+  // Patches that target an asset which has not been loaded yet.  They are
+  // attached after all asset sources (and their load scripts) have been
+  // processed, so that a patch-only mod that loads before the mod providing
+  // the target asset is not silently dropped.
+  CaseInsensitiveStringMap<List<pair<String, AssetSourcePtr>>> pendingPatches;
+
   auto addSource = [&](String const& sourcePath, AssetSourcePtr source) {
     m_assetSourcePaths.add(sourcePath, source);
+
+    auto attachPatch = [&](String const& targetPath, String const& patchPath, AssetSourcePtr const& patchSource) {
+      if (auto p = m_files.ptr(targetPath))
+        p->patchSources.append({patchPath, patchSource});
+      else
+        pendingPatches[targetPath].append({patchPath, patchSource});
+    };
 
     for (auto const& filename : source->assetPaths()) {
       if (filename.contains(AssetsPatchSuffix, String::CaseInsensitive)) {
         if (filename.endsWith(AssetsPatchSuffix, String::CaseInsensitive)) {
           auto targetPatchFile = filename.substr(0, filename.size() - strlen(AssetsPatchSuffix));
-          if (auto p = m_files.ptr(targetPatchFile))
-            p->patchSources.append({filename, source});
+          attachPatch(targetPatchFile, filename, source);
         } else if (filename.endsWith(AssetsLuaPatchSuffix, String::CaseInsensitive)) {
           auto targetPatchFile = filename.substr(0, filename.size() - strlen(AssetsLuaPatchSuffix));
-          if (auto p = m_files.ptr(targetPatchFile))
-            p->patchSources.append({filename, source});
+          attachPatch(targetPatchFile, filename, source);
         } else if (filename.endsWith(AssetsPatchListSuffix, String::CaseInsensitive)) {
           auto stream = source->read(filename);
           size_t patchIndex = 0;
           for (auto const& patchPair : inputUtf8Json(stream.begin(), stream.end(), JsonParseType::Top).iterateArray()) {
             auto patches = patchPair.getArray("patches");
             for (auto& path : patchPair.getArray("paths")) {
-              if (auto p = m_files.ptr(path.toString())) {
-                for (size_t i = 0; i != patches.size(); ++i) {
-                  auto& patch = patches[i];
-                  if (patch.isType(Json::Type::String))
-                    p->patchSources.append({patch.toString(), source});
-                  else
-                    p->patchSources.append({strf("{}:[{}].patches[{}]", filename, patchIndex, i), source});
-                }
+              for (size_t i = 0; i != patches.size(); ++i) {
+                auto& patch = patches[i];
+                if (patch.isType(Json::Type::String))
+                  attachPatch(path.toString(), patch.toString(), source);
+                else
+                  attachPatch(path.toString(), strf("{}:[{}].patches[{}]", filename, patchIndex, i), source);
               }
             }
             patchIndex++;
@@ -359,8 +385,7 @@ Assets::Assets(Settings settings, StringList assetSources) {
           for (int i = 0; i < 10; i++) {
             if (filename.endsWith(AssetsPatchSuffix + toString(i), String::CaseInsensitive)) {
               auto targetPatchFile = filename.substr(0, filename.size() - strlen(AssetsPatchSuffix) - 1);
-              if (auto p = m_files.ptr(targetPatchFile))
-                p->patchSources.append({filename, source});
+              attachPatch(targetPatchFile, filename, source);
               break;
             }
           }
@@ -368,6 +393,8 @@ Assets::Assets(Settings settings, StringList assetSources) {
       }
 
       auto& descriptor = m_files[filename];
+      if (descriptor.source && descriptor.source != source)
+        descriptor.shadowedSources.append({descriptor.sourceName, descriptor.source});
       descriptor.sourceName = filename;
       descriptor.source = source;
       m_filesByExtension[AssetPath::extension(filename).toLower()].insert(filename);
@@ -378,7 +405,7 @@ Assets::Assets(Settings settings, StringList assetSources) {
     auto metadata = source->metadata();
     if (auto scripts = metadata.ptr("scripts")) {
       if (auto scriptGroup = scripts->optArray(groupName)) {
-        auto memoryName = strf("{}::{}", metadata.value("name", File::baseName(sourcePath)), groupName);
+        auto memoryName = strf("{}::{}", metadata.value("name", File::baseName(sourcePath)).toString(), groupName);
         JsonObject memoryMetadata{ {"name", memoryName} };
         auto memoryAssets = make_shared<MemoryAssetSource>(memoryName, memoryMetadata);
         auto now = Time::monotonicTime();
@@ -423,7 +450,28 @@ Assets::Assets(Settings settings, StringList assetSources) {
   for (auto& pair : sources)
     runLoadScripts("postLoad", pair.first, pair.second);
 
+  for (auto const& pending : pendingPatches) {
+    if (auto p = m_files.ptr(pending.first)) {
+      // Deferred patches come from sources that loaded before the source
+      // providing the target, so they must run before the patches that were
+      // attached immediately.  Keep their original load order.
+      List<pair<String, AssetSourcePtr>> mergedPatches = pending.second;
+      mergedPatches.appendAll(p->patchSources);
+      p->patchSources = std::move(mergedPatches);
+    } else {
+      for (auto const& patch : pending.second) {
+        Logger::debug("Asset patch '{}' from '{}' targets missing asset '{}'", patch.first,
+            m_assetSourcePaths.valueLeft(patch.second), pending.first);
+      }
+    }
+  }
+
   Sha256Hasher digest;
+
+  // This changes what the loaded assets contain, so it must be part of the
+  // digest, otherwise a client and server with different settings would still
+  // consider their assets to match.
+  digest.push(strf("autoMergePatchedOverrides={}", m_settings.autoMergePatchedOverrides ? "true" : "false"));
 
   for (auto const& assetPath : m_files.keys().transformed([](String const& s) {
         return s.toLower();
@@ -1129,18 +1177,24 @@ ImageConstPtr Assets::applyImagePatches(ImageConstPtr image, String const& path,
   return make_shared<Image>(std::move(result.get<LuaUserData>().get<Image>()));
 }
 
-Json Assets::checkPatchArray(String const& path, AssetSourcePtr const& source, Json const result, JsonArray const patchData, Maybe<Json> const external) const {
+Json Assets::checkPatchArray(String const& path, AssetSourcePtr const& source, Json const result, JsonArray const patchData,
+    Maybe<Json> const external, bool* failed, bool logFailures) const {
   auto externalRef = external.value();
   auto newResult = result;
   for (auto const& patch : patchData) {
     switch(patch.type()) {
       case Json::Type::Array: // if the patch is an array, go down recursively until we get objects
         try {
-          newResult = checkPatchArray(path, source, newResult, patch.toArray(), externalRef);
+          newResult = checkPatchArray(path, source, newResult, patch.toArray(), externalRef, failed, logFailures);
         } catch (JsonPatchTestFail const& e) {
+          if (failed)
+            *failed = true;
           Logger::debug("Patch test failure from file {} in source: '{}' at '{}'. Caused by: {}", path, source->metadata().value("name", ""), m_assetSourcePaths.getLeft(source), e.what());
         } catch (JsonPatchException const& e) {
-          Logger::error("Could not apply patch from file {} in source: '{}' at '{}'.  Caused by: {}", path, source->metadata().value("name", ""), m_assetSourcePaths.getLeft(source), e.what());
+          if (failed)
+            *failed = true;
+          if (logFailures)
+            Logger::error("Could not apply patch from file {} in source: '{}' at '{}'.  Caused by: {}", path, source->metadata().value("name", ""), m_assetSourcePaths.getLeft(source), e.what());
         }
         break;
       case Json::Type::Object: // if its an object, check for operations, or for if an external file is needed for patches to reference
@@ -1162,15 +1216,139 @@ Json Assets::checkPatchArray(String const& path, AssetSourcePtr const& source, J
 }
 
 Json Assets::readJson(String const& path) const {
-  ByteArray streamData = read(path);
+  auto const& descriptor = m_files.get(path);
+  String winnerSource = m_assetSourcePaths.valueLeft(descriptor.source);
+
+  auto readSourceJson = [&](AssetSourcePtr const& source, String const& sourceName) -> Json {
+    ByteArray data = source->read(sourceName);
+    return inputUtf8Json(data.begin(), data.end(), JsonParseType::Top);
+  };
+
+  auto mergedBaseJson = [&]() -> Maybe<Json> {
+    if (descriptor.shadowedSources.empty())
+      return {};
+
+    try {
+      Json merged;
+      bool hasBase = false;
+      for (auto const& shadowed : descriptor.shadowedSources) {
+        Json lower = readSourceJson(shadowed.second, shadowed.first);
+        merged = hasBase ? jsonMergeNulling(merged, lower) : std::move(lower);
+        hasBase = true;
+      }
+      merged = jsonMergeNulling(merged, readSourceJson(descriptor.source, descriptor.sourceName));
+      return merged;
+    } catch (std::exception const& e) {
+      Logger::debug("Could not merge lower priority version of '{}' from '{}', using the full override: {}",
+          path, winnerSource, e.what());
+      return {};
+    }
+  };
+
+  auto applyWith = [&](Json const& base, List<pair<String, AssetSourcePtr>> const& patches,
+      bool* failed, bool logFailures) -> Json {
+    try {
+      return applyJsonPatches(base, path, patches, failed, logFailures);
+    } catch (std::exception const& e) {
+      throw JsonParsingException(strf("Cannot parse json file: {}", path), e);
+    }
+  };
+
+  auto applyAll = [&](Json const& base, bool* failed, bool logFailures) -> Json {
+    return applyWith(base, descriptor.patchSources, failed, logFailures);
+  };
+
+  auto applyMerged = [&]() -> Maybe<Json> {
+    if (auto merged = mergedBaseJson()) {
+      bool mergedFailed = false;
+      Json mergedResult = applyAll(*merged, &mergedFailed, true);
+      if (!mergedFailed) {
+        Logger::debug("Merged lower priority keys into '{}' so patches from other mods can apply", path);
+        return mergedResult;
+      }
+    }
+    return {};
+  };
+
+  // The fallback can re-run the patches after they already ran once on the
+  // full override.  Start the Lua patches from a fresh context so that state
+  // kept by a patch script cannot be applied twice.
+  auto resetLuaPatchContexts = [&]() {
+    RecursiveMutexLocker luaLocker(m_luaMutex);
+    for (auto const& patch : descriptor.patchSources) {
+      auto patchPath = AssetPath::split(patch.first);
+      if (patchPath.basePath.endsWith(".lua"))
+        m_patchContexts.erase(make_pair(patch.second.get(), patchPath.basePath));
+    }
+  };
+
+  Json base;
   try {
-    return applyJsonPatches(inputUtf8Json(streamData.begin(), streamData.end(), JsonParseType::Top), path, m_files.get(path).patchSources);
+    base = readSourceJson(descriptor.source, descriptor.sourceName);
   } catch (std::exception const& e) {
     throw JsonParsingException(strf("Cannot parse json file: {}", path), e);
   }
+
+  // Automatic merge only makes sense when a mod replaces the asset while a
+  // different mod patches it.
+  bool canAutoMerge = m_settings.autoMergePatchedOverrides && !descriptor.shadowedSources.empty();
+  if (canAutoMerge) {
+    String winnerIdentity = assetSourceIdentity(descriptor.source, winnerSource);
+    if (winnerIdentity == "base" || winnerIdentity == "opensb_base") {
+      canAutoMerge = false;
+    } else {
+      bool crossSourcePatch = false;
+      for (auto const& patch : descriptor.patchSources) {
+        if (assetSourceIdentity(patch.second, m_assetSourcePaths.valueLeft(patch.second)) != winnerIdentity) {
+          crossSourcePatch = true;
+          break;
+        }
+      }
+      canAutoMerge = crossSourcePatch;
+    }
+  }
+
+  // Detect JSON patch failures on the full override first.  This pass skips
+  // Lua patches so that their side effects are not repeated when we retry.
+  bool preferMerged = false;
+  if (canAutoMerge) {
+    List<pair<String, AssetSourcePtr>> jsonPatches;
+    for (auto const& patch : descriptor.patchSources) {
+      if (!AssetPath::split(patch.first).basePath.endsWith(".lua"))
+        jsonPatches.append(patch);
+    }
+
+    if (!jsonPatches.empty()) {
+      bool jsonFailed = false;
+      applyWith(base, jsonPatches, &jsonFailed, false);
+      preferMerged = jsonFailed;
+    }
+  }
+
+  if (preferMerged) {
+    if (auto merged = applyMerged())
+      return *merged;
+  }
+
+  // If merging did not help (for example because a lower priority key
+  // conflicts with the override), fall back to the full override.
+  bool failed = false;
+  Json result = applyAll(base, &failed, true);
+
+  // The JSON-only detection can miss a failure that only appears after a Lua
+  // patch has run.  This is rare, so retry here even though it runs the Lua
+  // patches a second time.
+  if (failed && canAutoMerge) {
+    resetLuaPatchContexts();
+    if (auto merged = applyMerged())
+      return *merged;
+  }
+
+  return result;
 }
 
-Json Assets::applyJsonPatches(Json const& input, String const& path, List<pair<String, AssetSourcePtr>> patches) const {
+Json Assets::applyJsonPatches(Json const& input, String const& path, List<pair<String, AssetSourcePtr>> patches,
+    bool* failed, bool logFailures) const {
   Json result = input;
   for (auto const& pair : patches) {
     auto patchAssetPath = AssetPath::split(pair.first);
@@ -1197,11 +1375,16 @@ Json Assets::applyJsonPatches(Json const& input, String const& path, List<pair<S
         if (patchJson.isType(Json::Type::Array)) {
           auto patchData = patchJson.toArray();
           try {
-            result = checkPatchArray(pair.first, patchSource, result, patchData, {});
+            result = checkPatchArray(pair.first, patchSource, result, patchData, {}, failed, logFailures);
           } catch (JsonPatchTestFail const& e) {
+            if (failed)
+              *failed = true;
             Logger::debug("Patch test failure from file {} in source: '{}' at '{}'. Caused by: {}", pair.first, patchSource->metadata().value("name", ""), m_assetSourcePaths.getLeft(patchSource), e.what());
           } catch (JsonPatchException const& e) {
-            Logger::error("Could not apply patch from file {} in source: '{}' at '{}'.  Caused by: {}", pair.first, patchSource->metadata().value("name", ""), m_assetSourcePaths.getLeft(patchSource), e.what());
+            if (failed)
+              *failed = true;
+            if (logFailures)
+              Logger::error("Could not apply patch from file {} in source: '{}' at '{}'.  Caused by: {}", pair.first, patchSource->metadata().value("name", ""), m_assetSourcePaths.getLeft(patchSource), e.what());
           }
         } else if (patchJson.isType(Json::Type::Object)) {
           result = jsonMergeNulling(result, patchJson.toObject());
