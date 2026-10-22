@@ -54,6 +54,13 @@ private:
   // edge of screen
   uint8_t calcDistanceFadeAlpha(Vec2F bubbleScreenPosition, StoredFunctionPtr fadeFunction) const;
 
+  // Text sizes and wrap widths are stored unscaled, in interface pixels. These
+  // turn them into screen pixels for the given interface scale.
+  TextPositioning scaledPositioning(TextPositioning positioning, float pixelRatio) const;
+  Vec2F measureText(String const& text, TextStyle const& style, float pixelRatio) const;
+  TextStyle bubbleTextStyle(Json const& config) const;
+  static List<BubbleImage> bubbleBackground(Vec2I innerTiles, float partSize);
+
   RectF bubbleImageRect(Vec2F screenPos, BubbleImage const& bubbleImage, float pixelRatio);
   void drawBubbleImage(Vec2F screenPos, BubbleImage const& bubbleImage, float pixelRatio, int alpha);
   void drawBubbleText(Vec2F screenPos, BubbleText const& bubbleText, float pixelRatio, int alpha, bool isPortrait);
@@ -68,7 +75,7 @@ private:
   Vec2F m_textPadding;
 
   BubbleSeparator<Bubble> m_bubbles;
-  int m_zoom;
+  float m_partSize;
   float m_cachedInterfaceScale;
   Vec2F m_bubbleOffset;
   float m_maxAge;
