@@ -30,6 +30,7 @@ TEST(DataStreamTest, All) {
   testMap(map2);
   testMap(map3);
 
+  // Update this if String serialization ever changes.
   DataStreamBuffer ds;
   ds.setStreamCompatibilityVersion(20);
   std::string testStr = "\x80\x80";
