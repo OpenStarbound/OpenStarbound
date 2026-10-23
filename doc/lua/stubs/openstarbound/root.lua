@@ -96,6 +96,9 @@ function root.modStorageKeys() end
 --- Removes everything from the calling mod's persistent storage. ---
 function root.clearModStorage() end
 
+--- Writes all pending mod storage changes to disk now instead of after the usual delay. ---
+function root.flushModStorage() end
+
 --- Returns all recipes. ---
 ---@return JsonArray
 function root.allRecipes() end

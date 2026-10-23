@@ -139,6 +139,8 @@ Returns the value stored under `key` in the calling mod's persistent storage, or
 
 Each mod has its own storage, saved as `/storage/modstorage/<mod name>.json`. The mod is the asset source (pak or asset directory) of the script making the call, so scripts can only reach their own mod's data, and this works with `safeScripts` on. The name comes from the `name` in the source's metadata, or its file name if it has none. If several loaded sources share a name, the first in load order keeps it and the others are stored as `name (file name)`, so they never share data. Only scripts loaded from assets can use it.
 
+Storage is per mod and per machine. To keep data per character or per world, put the id in the key, for example `root.setModStorage(player.uniqueId() .. ".volume", 3)` or `root.getModStorage(world.id() .. ".visited")`.
+
 ---
 
 #### `void` root.setModStorage(`String` key, `Json` value)
@@ -156,6 +158,12 @@ Returns all keys in the calling mod's storage.
 #### `void` root.clearModStorage()
 
 Removes everything from the calling mod's storage.
+
+---
+
+#### `void` root.flushModStorage()
+
+Writes all pending mod storage changes to disk now, instead of waiting for the delay. Use it before something that could crash the game or after a change that must not be lost. Flushing is cheap when nothing changed.
 
 ---
 

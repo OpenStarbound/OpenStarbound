@@ -367,6 +367,9 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
   callbacks.registerCallback("clearModStorage", [root, callingMod](LuaEngine& engine) {
       root->modStorage()->clear(callingMod(engine));
     });
+  callbacks.registerCallback("flushModStorage", [root]() {
+      root->modStorage()->flush();
+    });
 
   callbacks.registerCallback("speciesConfig", [root](String const& species) -> Json {
     return root->speciesDatabase()->species(species)->config();
