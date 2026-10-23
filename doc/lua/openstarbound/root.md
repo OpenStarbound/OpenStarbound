@@ -143,7 +143,7 @@ Each mod has its own storage, saved as `/storage/modstorage/<mod name>.json`. Th
 
 #### `void` root.setModStorage(`String` key, `Json` value)
 
-Stores `value` under `key` in the calling mod's storage and writes it to disk immediately. Setting `null` removes the key. Errors if the mod's data would grow past 4 MiB.
+Stores `value` under `key` in the calling mod's storage and writes it to disk a couple of seconds later (and at exit), so frequent sets are cheap. Setting `null` removes the key. Errors if the mod's data would grow past 4 MiB.
 
 ---
 
