@@ -254,24 +254,24 @@ size_t DataStream::readVlqS() {
 }
 
 DataStream& DataStream::operator<<(char const* s) {
-  if (m_streamCompatibilityVersion < 21 && !isValidUtf8(s, strlen(s))) {
+  /*if (m_streamCompatibilityVersion < 21 && !isValidUtf8(s, strlen(s))) {
     auto sanitized = String(s).sanitize();
     writeStringData(sanitized.utf8Ptr(), sanitized.utf8Size());
     return *this;
-  }
+  }*/
   writeStringData(s, strlen(s));
   return *this;
 }
 
 DataStream& DataStream::operator<<(std::string const& d) {
-  if (m_streamCompatibilityVersion < 21) {
+  /*if (m_streamCompatibilityVersion < 21) {
     String u8s = String(d);
     if (!u8s.isValid()) {
       auto sanitized = u8s.sanitize();
       writeStringData(sanitized.utf8Ptr(), sanitized.utf8Size());
       return *this;
     }
-  }
+  }*/
   writeStringData(d.c_str(), d.size());
   return *this;
 }
@@ -283,12 +283,12 @@ DataStream& DataStream::operator<<(const ByteArray& d) {
 }
 
 DataStream& DataStream::operator<<(const String& s) {
-  if (m_streamCompatibilityVersion < 21 && !s.isValid()) {
+  /*if (m_streamCompatibilityVersion < 21 && !s.isValid()) {
     auto sanitized = s.sanitize();
     writeStringData(sanitized.utf8Ptr(), sanitized.utf8Size());
-  } else {
+  } else {*/
     writeStringData(s.utf8Ptr(), s.utf8Size());
-  }
+  //}
   return *this;
 }
 
