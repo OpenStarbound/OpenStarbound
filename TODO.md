@@ -10,6 +10,7 @@
   - [Modding and Scripting](#modding-and-scripting)
     - [Lua API and Tooling](#lua-api-and-tooling)
     - [Robustness and Safety](#robustness-and-safety)
+    - [Features That Should Be Mods](#features-that-should-be-mods)
   - [Multiplayer and Servers](#multiplayer-and-servers)
   - [Rendering and Performance](#rendering-and-performance)
     - [Directives and Images](#directives-and-images)
@@ -218,6 +219,9 @@ Or it can be a Lagrange point of the planet and star, which stays fixed relative
 
 Open questions: which of the two fits the planet and moon sizes and distances in this game (`orbitInterval` and the gravitational constants in the system world config), how the ship moves from the end of the slingshot into that place without a jump and what moons and the star itself (no planet to orbit) should do.
 
+Scope: this is only to be explored as far as the engine changes it needs.
+OpenStarbound should get what a script needs (for example a hook or Lua callback that decides the ship's path and where it rests, and the data to compute them), and the behavior itself, the slingshot curve and the geostationary or Lagrange resting point, should be a mod and not something contained in OpenStarbound.
+
 ---
 
 ### Characters, Items and Animation
@@ -293,6 +297,14 @@ Additionally, whether the sandbox still removes the same functions from the new 
 
 ---
 
+**Let a drawable take an `Image` and not only an image path.**
+`localAnimator.addDrawable` and the other drawable callbacks take an `image` property that is a path (`Drawable::ImagePart::image` is an `AssetPath`, `source/game/StarDrawable.hpp`), so an image a script has made or changed has to be turned into an asset before it can be drawn.
+The idea is to let `image` hold a Lua `Image` directly, which a script can already build and edit and which `renderer.setTexture` already accepts (`Variant<Image,String>`).
+
+Open questions: how such an image becomes a texture (a generated asset name registered with the texture group, so the rest of the drawing code can stay as it is) and how it is cached, since a script that passes a new `Image` every frame must not upload a texture every frame (an identity or a hash to tell a changed image from the same one), when the texture is released again, and what the drawable does when it is sent to other clients, which cannot have the image.
+
+---
+
 ### Robustness and Safety
 
 **Stop crashing on errors that could be logged and skipped.**
@@ -313,6 +325,33 @@ Open questions: whether a catch at the entity update level (log, then drop or di
 **Protecting items and portraits from being copied by scripts.**
 *(From StarExtensions.)*
 Find out what a script can currently get of another player's items and portrait on a server (for example through the entity and portrait callbacks), what the extension actually blocks and whether a server or a player setting should decide.
+
+---
+
+### Features That Should Be Mods
+
+These are features OpenStarbound has today that are written almost entirely in Lua and assets on top of a few engine callbacks.
+They ended up in OpenStarbound because there was nowhere else to put them, but they are mod material.
+For each one the engine callbacks it rests on stay in OpenStarbound and the feature itself moves to a mod.
+
+---
+
+- The ItemDrop light pillar, which should be at least configurable.
+
+---
+
+ItemDrop pickups floating towards the player. Changes vanilla player cosmetically.
+
+---
+
+From the packed assets:
+
+- Humanoid sprite changes.
+- Inventory sounds.
+- Movement of the player display in the inventory pane.
+- Dummies not showing the dummy sprite when wearing outfits.
+- HD cursor.
+- Character preview when hovering clothes.
 
 ---
 
@@ -372,6 +411,16 @@ Needs a look at where and when the baked image would be stored and how it is inv
 `?hueshift`, `?saturation`, `?brightness`, `?fade` and `?scanlines` were checked against the Windows (MSVC) and Linux vanilla binaries and match the Windows output.
 Not yet compared against the Windows binary: `?replace`, `?addmask`, `?blendmult` / `?blendscreen`, `?border`.
 A full ARM64 build of `StarColor.cpp` has not been tried either.
+
+---
+
+**Offscreen GL contexts to process directives on the GPU.**
+Directives run on the CPU on the asset worker threads today.
+Running them as shaders in offscreen GL contexts could be much faster for large images and is the base for mod-defined directives (see the item under Shaders and Render Pipeline).
+
+Things to weigh: the work needs a GL context on every thread that processes images, or a queue to the render thread, and the result has to be read back (`glReadPixels` and a sync) when it is a normal asset, which can cost more than a small CPU operation does.
+After the CPU speedups the slow loads are in the tens of milliseconds, with the slowest cityscape load at 126 ms, so measure what is left before building this.
+The byte-exact output is the other cost: the color directives were made to give the same bytes on every compiler and as the Windows build of Starbound, and a GPU's float math would not match that, so a GPU path would have to be opt-in or limited to operations where exact bytes do not matter.
 
 ---
 
@@ -463,6 +512,16 @@ It is the base for a deferred pass and for effects that need more than the final
 
 ---
 
+**Let mods define their own image processing directives.**
+Probably through shaders.
+Directives are a fixed set: `ImageOperation` is a `Variant` of the built-in operations (`source/core/StarImageProcessing.hpp`) and `imageOperationFromString` only knows those, so a mod cannot add a `?mydirective=...`.
+
+A new directive would need a registry of names that map to an implementation, which could be a shader or a Lua function.
+Directives are applied on asset worker threads on the CPU, while a shader needs a GL context, so this depends on the offscreen GL contexts item under Directives and Images, and a Lua function would be much slower than the built-in operations.
+It is probably a lot of engine work, and the part that stays in OpenStarbound should be the registry and the way a directive runs, not the effects themselves.
+
+---
+
 ### Engine Performance
 
 `Vec` inefficiency (`source/core/StarVector.hpp:639`); `StringView` conversions and speed (`StarGuiContext.cpp:407`, `StarStringView.cpp:301`).
@@ -486,6 +545,12 @@ Voice buffer should be a ring buffer (`source/frontend/StarVoice.cpp:66`).
 The motivating case is a pathfinder written entirely in Lua running in another thread without having to ask the main context about collision all the time.
 
 Ideas to look at: giving the thread a snapshot of what it needs (for example the collision data around it) that it can read without any lock, passing messages between threads in queues, so that data is copied or handed over and is never shared, and structures that are read often and rarely changed.
+
+ A concern about the snapshot idea: the main problem is memory.
+With a lot of threads, a snapshot per thread means each one holds its own copy of what it needs, which can use a lot of memory, and copying all of that data costs time as well.
+He is not fond of the simplistic approaches of some other languages, JavaScript in particular.
+So a per-thread copy should not be the default.
+What to look at instead: one read-only snapshot that all threads share (so the memory is paid once), copies kept small and local (for example only the area a pathfinder searches), and handing a structure over without copying it when only one thread uses it at a time.
 
 Open questions: how a snapshot of the world stays cheap, how stale it may become and what a Lua script is allowed to share without a lock.
 
@@ -603,20 +668,6 @@ Hard-coded scroll area values (`source/windowing/StarScrollArea.cpp:7`).
 ## Project and Community
 
 **An automatic credits page with the GitHub usernames of everyone who contributed to OpenStarbound.**
-A page at the end of the game's credits, built from the project's contributors instead of a hand-kept list that falls behind.
-The vanilla credits are not code but a timed cinematic: the end of `/cinematics/story/finale/finale.cinematic` (from about 126 s, with texts such as `STARBOUND TEAM` and `SPECIAL THANKS` and picture slides from `/cinematics/story/credits/`), which the eye boss death behavior starts (`behaviors/monsters/boss/eyeboss/eyebossdeath.behavior`).
-Nothing in this repository adds to it.
-(Read from a local copy of the vanilla assets in `attic/chucklefish`, which is git-ignored.)
-
-Idea: generate the list when a release is built, from the GitHub contributors of the repository (the API's contributors endpoint) or from `git log`, write it to an asset (for example a JSON list in `assets/opensb`), and add a cinematic part that shows that list after the existing credits, for example with a patch of `finale.cinematic` that appends text entries with their own `startTime` and `endTime`.
-A very long list would need to be split over several entries or scrolled.
-Generating it at build time keeps the game from needing the network, and the release job is the place that can reach GitHub.
-
-Things to decide: `git log` gives names and emails and not GitHub usernames, so the API (or the `Co-authored-by` and noreply addresses) is needed to get usernames.
-Bots such as dependency updaters should be left out.
-People should be able to ask to be left out or listed differently, since a username is public but not everyone wants it in a game.
-Merged PRs squashed into one commit keep the author (as with #652), but co-authors need the trailers.
-
 Not checked: whether the credits can also be opened from somewhere else (the title screen, a command), which would be the better place for a long list than a cinematic that only plays after the boss.
 
 ---
