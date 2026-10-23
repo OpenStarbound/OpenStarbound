@@ -279,7 +279,15 @@ List<DamageNotification> Monster::selfDamageNotifications() {
 List<DamageSource> Monster::damageSources() const {
   List<DamageSource> damageSources = m_damageSources.get();
 
-  float levelPowerMultiplier = Root::singleton().functionDatabase()->function(m_monsterVariant.powerLevelFunction)->evaluate(*m_monsterLevel);
+  float levelPowerMultiplier;
+  if (m_levelPowerMultiplierValid && m_levelPowerMultiplierLevel == m_monsterLevel) {
+    levelPowerMultiplier = m_levelPowerMultiplier;
+  } else {
+    levelPowerMultiplier = Root::singleton().functionDatabase()->function(m_monsterVariant.powerLevelFunction)->evaluate(m_monsterLevel.value(0.0f));
+    m_levelPowerMultiplierLevel = m_monsterLevel;
+    m_levelPowerMultiplier = levelPowerMultiplier;
+    m_levelPowerMultiplierValid = true;
+  }
   if (m_damageOnTouch && !m_monsterVariant.touchDamageConfig.isNull()) {
     DamageSource damageSource(m_monsterVariant.touchDamageConfig);
     if (auto damagePoly = damageSource.damageArea.ptr<PolyF>())
