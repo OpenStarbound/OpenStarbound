@@ -36,6 +36,39 @@ EnumMap<VariantTerrainLayer> VariantTerrainLayerNames{
   {VariantTerrainLayer::Foreground, "Foreground"},
 };
 
+// The id a mod's storage is kept under: the name in the metadata of its asset
+// source, or the source's file name without one.  Sources that share a name
+// must not share storage, so the first of them in load order keeps the plain
+// name and the others get their file name added.  Kept for the session, so an
+// id does not change when sources are reloaded.
+static String modStorageId(Assets const& assets, String const& sourcePath) {
+  static Mutex mutex;
+  static StringMap<String> ids;
+  MutexLocker locker(mutex);
+  if (auto id = ids.maybe(sourcePath))
+    return *id;
+
+  auto nameOf = [&](String const& path) -> String {
+      if (auto name = assets.assetSourceMetadata(path).maybe("name"))
+        if (name->isType(Json::Type::String) && !name->toString().empty())
+          return name->toString();
+      return File::baseName(path);
+    };
+
+  String name = nameOf(sourcePath);
+  String id = name;
+  for (auto const& other : assets.assetSources()) {
+    if (other == sourcePath)
+      break;
+    if (nameOf(other) == name) {
+      id = strf("{} ({})", name, File::baseName(sourcePath));
+      break;
+    }
+  }
+  ids.set(sourcePath, id);
+  return id;
+}
+
 LuaCallbacks LuaBindings::makeRootCallbacks() {
   LuaCallbacks callbacks;
 
@@ -319,10 +352,7 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
       auto sourcePath = assets->assetSourcePath(descriptor->source);
       if (!sourcePath)
         throw StarException("Mod storage could not find the mod of this script");
-      if (auto name = assets->assetSourceMetadata(*sourcePath).maybe("name"))
-        if (name->isType(Json::Type::String) && !name->toString().empty())
-          return name->toString();
-      return File::baseName(*sourcePath);
+      return modStorageId(*assets, *sourcePath);
     };
 
   callbacks.registerCallback("getModStorage", [root, callingMod](LuaEngine& engine, String const& key) -> Json {

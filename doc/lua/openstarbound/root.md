@@ -137,7 +137,7 @@ Sets a configuration value in `/storage/starbound.config` by path.
 
 Returns the value stored under `key` in the calling mod's persistent storage, or `null` if there is none.
 
-Each mod has its own storage, saved as `/storage/modstorage/<mod name>.json`. The mod is the asset source (pak or asset directory) of the script making the call, so scripts can only reach their own mod's data, and this works with `safeScripts` on. The name comes from the `name` in the source's metadata, or its file name if it has none. Only scripts loaded from assets can use it.
+Each mod has its own storage, saved as `/storage/modstorage/<mod name>.json`. The mod is the asset source (pak or asset directory) of the script making the call, so scripts can only reach their own mod's data, and this works with `safeScripts` on. The name comes from the `name` in the source's metadata, or its file name if it has none. If several loaded sources share a name, the first in load order keeps it and the others are stored as `name (file name)`, so they never share data. Only scripts loaded from assets can use it.
 
 ---
 

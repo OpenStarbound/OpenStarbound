@@ -151,13 +151,18 @@ void ModStorage::writeDirty() {
 }
 
 String ModStorage::filePath(String const& mod) const {
-  // The mod name comes from pak metadata, so never let it act as a path.
-  String safe;
-  for (auto c : mod)
-    safe.append((isalnum(c) && c < 128) || c == '-' || c == '_' ? c : '_');
+  // The mod id comes from pak metadata, so never let it act as a path. Every
+  // other byte is escaped as %XX, so different ids never share a file.
+  std::string safe;
+  for (unsigned char c : mod.utf8()) {
+    if ((isalnum(c) && c < 128) || c == '-' || c == '_')
+      safe.push_back((char)c);
+    else
+      safe += strf("%{:02X}", (unsigned)c);
+  }
   if (safe.empty())
-    safe = "_";
-  return File::relativeTo(m_directory, safe + ".json");
+    safe = "%";
+  return File::relativeTo(m_directory, String(safe) + ".json");
 }
 
 }
