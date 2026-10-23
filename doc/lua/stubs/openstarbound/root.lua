@@ -79,24 +79,28 @@ function root.setConfiguration(key, value) end
 ---@return Json
 function root.setConfigurationPath(path, value) end
 
---- Returns the value stored under `key` in the calling mod's persistent storage, or `nil`. Private to the mod, works with safeScripts on. ---
+--- Returns the value stored under `key` in the calling mod's persistent storage, or `nil` if there is none. ---
+--- The storage is private to the mod the calling script was loaded from and works with `safeScripts` on. The result is a copy. ---
+--- Errors if the script was not loaded from assets. ---
 ---@param key string
 ---@return Json
 function root.getModStorage(key) end
 
---- Stores `value` under `key` in the calling mod's persistent storage. `nil` removes the key. Errors past 4 MiB. ---
+--- Stores `value` under `key` in the calling mod's persistent storage. `nil` removes the key. ---
+--- The change is written to disk about two seconds later and when the game exits, see `root.flushModStorage`. ---
+--- Errors, changing nothing, if the mod's data would be over 4 MiB or if the script was not loaded from assets. ---
 ---@param key string
 ---@param value Json
 function root.setModStorage(key, value) end
 
---- Returns all keys in the calling mod's persistent storage. ---
+--- Returns all keys in the calling mod's persistent storage, in no particular order. ---
 ---@return JsonArray
 function root.modStorageKeys() end
 
---- Removes everything from the calling mod's persistent storage. ---
+--- Removes every key from the calling mod's persistent storage. ---
 function root.clearModStorage() end
 
---- Writes all pending mod storage changes to disk now instead of after the usual delay. ---
+--- Writes all pending mod storage changes (of every mod) to disk now instead of after the usual delay. ---
 function root.flushModStorage() end
 
 --- Returns all recipes. ---

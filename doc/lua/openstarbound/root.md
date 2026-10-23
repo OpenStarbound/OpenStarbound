@@ -133,37 +133,67 @@ Sets a configuration value in `/storage/starbound.config` by path.
 
 ---
 
+### Mod storage
+
+A mod can keep data between sessions with `root.getModStorage` and the functions next to it. This is a key/value store that is private to the mod and works with `safeScripts` on, so a mod does not need to turn the sandbox off to save its settings or progress.
+
+- **Which mod:** the mod is the asset source (the pak or asset directory) that the calling script was loaded from. A script cannot name another mod and so cannot read or change another mod's data. The functions only work in scripts loaded from assets, and error in code made with `loadstring`.
+- **Name:** the storage is named after the `name` in the source's `_metadata`, or after its file name if it has none. If several loaded sources have the same name, the first in load order keeps it and the others are stored as `name (file name)`, so they never share data.
+- **Where:** `/storage/modstorage/<name>.json`, one file per mod. Characters that are not letters, digits, `-` or `_` are written as `%XX` in the file name. It is plain JSON, so it can be read or edited by hand while the game is closed.
+- **Values:** anything JSON can hold (`nil` is "not set"). Lua tables become JSON objects or arrays in the usual way, and the usual rules for JSON in Lua apply (a table with keys 1 to n is an array, any other table is an object, so an empty table is an object, use the global `jarray()` to store an empty array). Functions and other values JSON cannot hold make the call error.
+- **Size:** at most 4 MiB of serialized data per mod. A `set` that would go over errors and changes nothing.
+- **Saving:** changes are kept in memory and written about two seconds after the first change, and when the game exits, so setting a key every frame is cheap. A crash can lose the last two seconds of changes, use `root.flushModStorage` to write at once.
+- **Scope:** the data is per mod and per machine. A server runs its own copy in its own storage directory. To keep data per character or per world, put the id in the key, for example `player.uniqueId() .. ".volume"` or `world.id() .. ".visited"`.
+
+```lua
+function init()
+  -- 1 + the number of earlier sessions, kept across restarts
+  local runs = (root.getModStorage("runs") or 0) + 1
+  root.setModStorage("runs", runs)
+
+  -- per character
+  local key = player.uniqueId() .. ".settings"
+  local settings = root.getModStorage(key) or {volume = 5}
+  settings.volume = math.min(settings.volume + 1, 10)
+  root.setModStorage(key, settings)
+end
+```
+
+---
+
 #### `Json` root.getModStorage(`String` key)
 
-Returns the value stored under `key` in the calling mod's persistent storage, or `null` if there is none.
+Returns the value stored under **key** in the calling mod's storage, or `nil` if there is none. The result is a copy, so changing a returned table does not change the stored value until it is passed to `root.setModStorage` again.
 
-Each mod has its own storage, saved as `/storage/modstorage/<mod name>.json`. The mod is the asset source (pak or asset directory) of the script making the call, so scripts can only reach their own mod's data, and this works with `safeScripts` on. The name comes from the `name` in the source's metadata, or its file name if it has none. If several loaded sources share a name, the first in load order keeps it and the others are stored as `name (file name)`, so they never share data. Only scripts loaded from assets can use it.
-
-Storage is per mod and per machine. To keep data per character or per world, put the id in the key, for example `root.setModStorage(player.uniqueId() .. ".volume", 3)` or `root.getModStorage(world.id() .. ".visited")`.
+Errors if the script was not loaded from assets.
 
 ---
 
 #### `void` root.setModStorage(`String` key, `Json` value)
 
-Stores `value` under `key` in the calling mod's storage and writes it to disk a couple of seconds later (and at exit), so frequent sets are cheap. Setting `null` removes the key. Errors if the mod's data would grow past 4 MiB.
+Stores **value** under **key** in the calling mod's storage. Passing `nil` removes the key. Setting a value equal to the stored one does nothing, and the write to disk comes after a short delay, see above.
+
+Errors, and leaves the storage as it was, if the mod's data would be larger than 4 MiB afterwards, or if the script was not loaded from assets.
 
 ---
 
 #### `JsonArray` root.modStorageKeys()
 
-Returns all keys in the calling mod's storage.
+Returns all keys in the calling mod's storage, in no particular order.
 
 ---
 
 #### `void` root.clearModStorage()
 
-Removes everything from the calling mod's storage.
+Removes every key from the calling mod's storage.
 
 ---
 
 #### `void` root.flushModStorage()
 
-Writes all pending mod storage changes to disk now, instead of waiting for the delay. Use it before something that could crash the game or after a change that must not be lost. Flushing is cheap when nothing changed.
+Writes all mod storage changes that are waiting for disk to disk now, instead of waiting for the delay. Use it right before something that could crash the game, or after a change that must not be lost. It does nothing when no change is waiting, so it is cheap to call.
+
+Unlike the other functions it applies to the storage of every mod, not only the calling one.
 
 ---
 
