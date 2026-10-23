@@ -284,10 +284,14 @@ void Image::fill(Vec3B const& c) {
     for (unsigned y = 0; y < m_height; ++y)
       for (unsigned x = 0; x < m_width; ++x)
         set24(x, y, c);
-  } else {
+  } else if (bitsPerPixel() == 32) {
     for (unsigned y = 0; y < m_height; ++y)
       for (unsigned x = 0; x < m_width; ++x)
         set32(x, y, Vec4B(c, 255));
+  } else {
+    for (unsigned y = 0; y < m_height; ++y)
+      for (unsigned x = 0; x < m_width; ++x)
+        set(x, y, c);
   }
 }
 
@@ -296,11 +300,21 @@ void Image::fill(Vec4B const& c) {
     for (unsigned y = 0; y < m_height; ++y)
       for (unsigned x = 0; x < m_width; ++x)
         set24(x, y, c.vec3());
-  } else {
+  } else if (bitsPerPixel() == 32) {
     for (unsigned y = 0; y < m_height; ++y)
       for (unsigned x = 0; x < m_width; ++x)
         set32(x, y, c);
+  } else {
+    for (unsigned y = 0; y < m_height; ++y)
+      for (unsigned x = 0; x < m_width; ++x)
+        set(x, y, c);
   }
+}
+
+void Image::fillF(Color const& c) {
+  for (unsigned y = 0; y < m_height; ++y)
+    for (unsigned x = 0; x < m_width; ++x)
+      setF(x, y, c);
 }
 
 void Image::fillRect(Vec2U const& pos, Vec2U const& size, Vec3B const& c) {
@@ -313,6 +327,12 @@ void Image::fillRect(Vec2U const& pos, Vec2U const& size, Vec4B const& c) {
   for (unsigned y = pos[1]; y < pos[1] + size[1] && y < m_height; ++y)
     for (unsigned x = pos[0]; x < pos[0] + size[0] && x < m_width; ++x)
       set(Vec2U(x, y), c);
+}
+
+void Image::fillRectF(Vec2U const& pos, Vec2U const& size, Color const& c) {
+  for (unsigned y = pos[1]; y < pos[1] + size[1] && y < m_height; ++y)
+    for (unsigned x = pos[0]; x < pos[0] + size[0] && x < m_width; ++x)
+      setF(Vec2U(x, y), c);
 }
 
 void Image::set(Vec2U const& pos, Vec4B const& c) {
@@ -329,6 +349,17 @@ void Image::set(Vec2U const& pos, Vec4B const& c) {
     m_data[offset] = c[0];
     m_data[offset + 1] = c[1];
     m_data[offset + 2] = c[2];
+  } else if (m_pixelFormat == PixelFormat::RGB_F) {
+    size_t offset = pos[1] * m_width * 3 + pos[0] * 3;
+    ((float*)m_data)[offset  ] = float(c[0])/255.0f;
+    ((float*)m_data)[offset+1] = float(c[1])/255.0f;
+    ((float*)m_data)[offset+2] = float(c[2])/255.0f;
+  } else if (m_pixelFormat == PixelFormat::RGBA_F) {
+    size_t offset = pos[1] * m_width * 4 + pos[0] * 4;
+    ((float*)m_data)[offset  ] = float(c[0])/255.0f;
+    ((float*)m_data)[offset+1] = float(c[1])/255.0f;
+    ((float*)m_data)[offset+2] = float(c[2])/255.0f;
+    ((float*)m_data)[offset+3] = float(c[3])/255.0f;
   }
 }
 
@@ -346,6 +377,17 @@ void Image::set(Vec2U const& pos, Vec3B const& c) {
     m_data[offset] = c[0];
     m_data[offset + 1] = c[1];
     m_data[offset + 2] = c[2];
+  } else if (m_pixelFormat == PixelFormat::RGB_F) {
+    size_t offset = pos[1] * m_width * 3 + pos[0] * 3;
+    ((float*)m_data)[offset  ] = float(c[0])/255.0f;
+    ((float*)m_data)[offset+1] = float(c[1])/255.0f;
+    ((float*)m_data)[offset+2] = float(c[2])/255.0f;
+  } else if (m_pixelFormat == PixelFormat::RGBA_F) {
+    size_t offset = pos[1] * m_width * 4 + pos[0] * 4;
+    ((float*)m_data)[offset  ] = float(c[0])/255.0f;
+    ((float*)m_data)[offset+1] = float(c[1])/255.0f;
+    ((float*)m_data)[offset+2] = float(c[2])/255.0f;
+    ((float*)m_data)[offset+3] = 1.0f;
   }
 }
 
@@ -365,6 +407,18 @@ Vec4B Image::get(Vec2U const& pos) const {
     c[1] = m_data[offset + 1];
     c[2] = m_data[offset + 2];
     c[3] = 255;
+  } else if (m_pixelFormat == PixelFormat::RGB_F) {
+    size_t offset = pos[1] * m_width * 3 + pos[0] * 3;
+    c[0] = uint8_t(std::clamp(((float*)m_data)[offset  ]*255, 0.0f, 255.0f));
+    c[1] = uint8_t(std::clamp(((float*)m_data)[offset+1]*255, 0.0f, 255.0f));
+    c[2] = uint8_t(std::clamp(((float*)m_data)[offset+2]*255, 0.0f, 255.0f));
+    c[3] = 255;
+  } else if (m_pixelFormat == PixelFormat::RGBA_F) {
+    size_t offset = pos[1] * m_width * 4 + pos[0] * 4;
+    c[0] = uint8_t(std::clamp(((float*)m_data)[offset  ]*255, 0.0f, 255.0f));
+    c[1] = uint8_t(std::clamp(((float*)m_data)[offset+1]*255, 0.0f, 255.0f));
+    c[2] = uint8_t(std::clamp(((float*)m_data)[offset+2]*255, 0.0f, 255.0f));
+    c[3] = uint8_t(std::clamp(((float*)m_data)[offset+3]*255, 0.0f, 255.0f));
   }
   return c;
 }
@@ -391,26 +445,59 @@ Vec4B Image::getrgb(Vec2U const& pos) const {
     return c;
 }
 
+void Image::setF(Vec2U const& pos, Color const& c) {
+  if (pos[0] >= m_width || pos[1] >= m_height) {
+    throw ImageException(strf("{} out of range in Image::setF", pos));
+  } else if (m_pixelFormat == PixelFormat::RGB_F) {
+    size_t offset = pos[1] * m_width * 3 + pos[0] * 3;
+    ((float*)m_data)[offset  ] = c.redF();
+    ((float*)m_data)[offset+1] = c.greenF();
+    ((float*)m_data)[offset+2] = c.blueF();
+  } else if (m_pixelFormat == PixelFormat::RGBA_F) {
+    size_t offset = pos[1] * m_width * 4 + pos[0] * 4;
+    ((float*)m_data)[offset  ] = c.redF();
+    ((float*)m_data)[offset+1] = c.greenF();
+    ((float*)m_data)[offset+2] = c.blueF();
+    ((float*)m_data)[offset+3] = c.alphaF();
+  } else {
+    setrgb(pos,c.toRgba());
+  }
+}
+
+Color Image::getF(Vec2U const& pos) const {
+  if (pos[0] >= m_width || pos[1] >= m_height) {
+    throw ImageException(strf("{} out of range in Image::getF", pos));
+  } else if (m_pixelFormat == PixelFormat::RGB_F) {
+    size_t offset = pos[1] * m_width * 3 + pos[0] * 3;
+    auto data = ((float*)m_data);
+    return Color::rgbf(
+      data[offset  ],
+      data[offset+1],
+      data[offset+2]
+    );
+  } else if (m_pixelFormat == PixelFormat::RGBA_F) {
+    size_t offset = pos[1] * m_width * 4 + pos[0] * 4;
+    auto data = ((float*)m_data);
+    return Color::rgbaf(
+      data[offset  ],
+      data[offset+1],
+      data[offset+2],
+      data[offset+3]
+    );
+  } else {
+    Vec4B c = getrgb(pos);
+    return Color::rgba(c[0],c[1],c[2],c[3]);
+  }
+}
+
 Vec4B Image::clamp(Vec2I const& pos) const {
-  Vec4B c;
   unsigned x = (unsigned)Star::clamp<int>(pos[0], 0, m_width - 1);
   unsigned y = (unsigned)Star::clamp<int>(pos[1], 0, m_height - 1);
   if (m_width == 0 || m_height == 0) {
     return {0, 0, 0, 0};
-  } else if (bytesPerPixel() == 4) {
-    size_t offset = y * m_width * 4 + x * 4;
-    c[0] = m_data[offset];
-    c[1] = m_data[offset + 1];
-    c[2] = m_data[offset + 2];
-    c[3] = m_data[offset + 3];
-  } else if (bytesPerPixel() == 3) {
-    size_t offset = y * m_width * 3 + x * 3;
-    c[0] = m_data[offset];
-    c[1] = m_data[offset + 1];
-    c[2] = m_data[offset + 2];
-    c[3] = 255;
+  } else {
+    return get(x,y);
   }
-  return c;
 }
 
 Vec4B Image::clamprgb(Vec2I const& pos) const {
@@ -421,15 +508,33 @@ Vec4B Image::clamprgb(Vec2I const& pos) const {
     return c;
 }
 
+Color Image::clampF(Vec2I const& pos) const {
+  unsigned x = (unsigned)Star::clamp<int>(pos[0], 0, m_width - 1);
+  unsigned y = (unsigned)Star::clamp<int>(pos[1], 0, m_height - 1);
+  if (m_width == 0 || m_height == 0) {
+    return Color::rgbaf(0.0f,0.0f,0.0f,1.0f);
+  } else {
+    return getF(x,y);
+  }
+}
+
 Image Image::subImage(Vec2U const& pos, Vec2U const& size) const {
   if (pos[0] + size[0] > m_width || pos[1] + size[1] > m_height)
     throw ImageException(strf("call to subImage with pos {} size {} out of image bounds ({}, {})", pos, size, m_width, m_height));
 
   Image sub(size[0], size[1], m_pixelFormat);
 
-  for (unsigned y = 0; y < size[1]; ++y) {
-    for (unsigned x = 0; x < size[0]; ++x) {
-      sub.set({x, y}, get(pos + Vec2U(x, y)));
+  if (isFloat()) {
+    for (unsigned y = 0; y < size[1]; ++y) {
+      for (unsigned x = 0; x < size[0]; ++x) {
+        sub.setF({x, y}, getF(pos + Vec2U(x, y)));
+      }
+    }
+  } else {
+    for (unsigned y = 0; y < size[1]; ++y) {
+      for (unsigned x = 0; x < size[0]; ++x) {
+        sub.set({x, y}, get(pos + Vec2U(x, y)));
+      }
     }
   }
 
@@ -439,28 +544,53 @@ Image Image::subImage(Vec2U const& pos, Vec2U const& size) const {
 void Image::copyInto(Vec2U const& min, Image const& image) {
   Vec2U max = (min + image.size()).piecewiseMin(size());
 
-  for (unsigned y = min[1]; y < max[1]; ++y) {
-    for (unsigned x = min[0]; x < max[0]; ++x)
-      set(x, y, image.get(Vec2U(x, y) - min));
+  if (isFloat() || image.isFloat()) {
+    for (unsigned y = min[1]; y < max[1]; ++y) {
+      for (unsigned x = min[0]; x < max[0]; ++x)
+        setF(x, y, image.getF(Vec2U(x, y) - min));
+    }
+  } else {
+    for (unsigned y = min[1]; y < max[1]; ++y) {
+      for (unsigned x = min[0]; x < max[0]; ++x)
+        set(x, y, image.get(Vec2U(x, y) - min));
+    }
   }
 }
 
 void Image::drawInto(Vec2U const& min, Image const& image) {
   Vec2U max = (min + image.size()).piecewiseMin(size());
 
-  for (unsigned y = min[1]; y < max[1]; ++y) {
-    for (unsigned x = min[0]; x < max[0]; ++x) {
-      Vec4B dest = get(Vec2U(x, y));
-      Vec4B src = image.get(Vec2U(x, y) - min);
+  if (isFloat() || image.isFloat()) {
+    for (unsigned y = min[1]; y < max[1]; ++y) {
+      for (unsigned x = min[0]; x < max[0]; ++x) {
+        Vec4F dest = getF(Vec2U(x, y)).toRgbaF();
+        Vec4F src = image.getF(Vec2U(x, y) - min).toRgbaF();
 
-      Vec3U destMultiplied = Vec3U(dest[0], dest[1], dest[2]) * dest[3] / 255;
-      Vec3U srcMultiplied = Vec3U(src[0], src[1], src[2]) * src[3] / 255;
+        Vec3F destMultiplied = Vec3F(dest[0], dest[1], dest[2]) * dest[3];
+        Vec3F srcMultiplied = Vec3F(src[0], src[1], src[2]) * src[3];
 
-      // Src over dest alpha composition
-      Vec3U over = srcMultiplied + destMultiplied * (255 - src[3]) / 255;
-      unsigned alpha = src[3] + dest[3] * (255 - src[3]) / 255;
+        // Src over dest alpha composition
+        Vec3F over = srcMultiplied + destMultiplied * (1.0f - src[3]);
+        float alpha = src[3] + dest[3] * (1.0f - src[3]);
 
-      set(x, y, Vec4B(over[0], over[1], over[2], alpha));
+        setF(x, y, Color::rgbaf(over[0], over[1], over[2], alpha));
+      }
+    }
+  } else {
+    for (unsigned y = min[1]; y < max[1]; ++y) {
+      for (unsigned x = min[0]; x < max[0]; ++x) {
+        Vec4B dest = get(Vec2U(x, y));
+        Vec4B src = image.get(Vec2U(x, y) - min);
+
+        Vec3U destMultiplied = Vec3U(dest[0], dest[1], dest[2]) * dest[3] / 255;
+        Vec3U srcMultiplied = Vec3U(src[0], src[1], src[2]) * src[3] / 255;
+
+        // Src over dest alpha composition
+        Vec3U over = srcMultiplied + destMultiplied * (255 - src[3]) / 255;
+        unsigned alpha = src[3] + dest[3] * (255 - src[3]) / 255;
+
+        set(x, y, Vec4B(over[0], over[1], over[2], alpha));
+      }
     }
   }
 }
@@ -472,6 +602,19 @@ Image Image::convert(PixelFormat pixelFormat) const {
 }
 
 void Image::writePng(IODevicePtr device) const {
+  if (m_pixelFormat != PixelFormat::RGB24 && m_pixelFormat != PixelFormat::RGBA32) {
+    // this method doesn't support the other formats, so convert it first.
+    PixelFormat outFormat = PixelFormat::RGB24;
+    switch (m_pixelFormat) {
+      case PixelFormat::BGRA32:
+      case PixelFormat::RGBA_F:
+        outFormat = PixelFormat::RGBA32;
+      default:
+        break;
+    }
+    convert(outFormat).writePng(device);
+    return;
+  }
   auto writePngData = [](png_structp pngPtr, png_bytep data, png_size_t length) {
     IODevice* device = (IODevice*)png_get_io_ptr(pngPtr);
     device->writeFull((char*)data, length);
