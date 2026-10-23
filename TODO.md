@@ -14,11 +14,13 @@
   - [Rendering and Performance](#rendering-and-performance)
     - [Directives and Images](#directives-and-images)
     - [Rendering and Fonts](#rendering-and-fonts)
+    - [Shaders and Render Pipeline](#shaders-and-render-pipeline)
     - [Engine Performance](#engine-performance)
   - [Build and Tooling](#build-and-tooling)
     - [Build System](#build-system)
     - [Warnings and Formatting](#warnings-and-formatting)
     - [Testing and Profiling](#testing-and-profiling)
+    - [Platforms and Packaging](#platforms-and-packaging)
   - [Cleanup and Tech Debt](#cleanup-and-tech-debt)
     - [Interfaces and Structure](#interfaces-and-structure)
     - [Hard-Coded Values](#hard-coded-values)
@@ -28,7 +30,7 @@
 <!--toc:end-->
 
 Every item is a paragraph or a few, and items are separated by `---`.
-Items that came from another project say so in their text; see [Sources of Ideas](#sources-of-ideas).
+Items that came from another project say so in their text, see [Sources of Ideas](#sources-of-ideas).
 
 ## Gameplay and Features
 
@@ -190,6 +192,20 @@ Open questions: where it lives (this repository, so the stubs are in step with t
 
 ---
 
+**Utility bindings for building image directives.** Something like a native stargen. Lua functions that build directive strings (`?replace`, `?crop`, `?scalenearest`, `?blendmult` and so on) from tables, with the escaping and the number formatting done for you, instead of every mod concatenating strings by hand. Mods that draw with directives (a lot of them, since they cannot ship images) would use it for the long `?replace` lists in particular.
+
+Open questions: how far to go (just a builder per directive, or composing a whole chain) and parsing a directive string back into a table.
+
+---
+
+**A Lua-compatible engine such as Pluto, for more programming constructs.** OpenStarbound embeds plain Lua 5.3.6, vendored in `source/extern/lua` and wrapped by its own engine in `source/core/StarLua.cpp` (instruction limits, per-engine state kept in the Lua extra space). Pluto is a superset of Lua 5.4 that adds syntax and library features on top, such as `continue`, `switch`, compound assignment (`+=`) and classes (see its documentation for the full list), which would make bigger scripts and mods easier to write and read.
+
+The main constraint is compatibility with what exists. Every existing script, vanilla and mod, has to run unchanged, and vanilla Starbound runs Lua 5.3. Moving to a 5.4 base is itself a change of behavior (integer for loops, the removal of the `bit32` library, new attributes like `<close>`, garbage collector modes), so the vanilla assets and a set of mods need to be run through it first. Mods that do not need to work with vanilla are free to use the new constructs and mods that do simply do not use them, since a vanilla server or client would fail to parse Pluto-only syntax. Keeping the new syntax opt-in per file (for example by extension) is still worth considering so that plain Lua files parse exactly as before.
+
+Work to check: porting what `StarLua.cpp` and the vendored copy changed (the instruction limit hook, profiling, the extra space, memory accounting), performance against the current engine (the `parallelism` and `lua-perf` benchmarks can measure it). Additionally, whether the sandbox still removes the same functions from the new standard library, the Lua stubs and docs which would have to understand the new syntax, and the license and build.
+
+---
+
 ### Robustness and Safety
 
 **Stop crashing on errors that could be logged and skipped.** A missing status effect, animation or similar asset reference takes the whole game down, where the harm of ignoring it is one effect not showing. For example, `StatusEffectDatabase` throws `No such unique stat effect '...'` (`StarStatusEffectDatabase.cpp:29`), and an exception that is not caught near where it happens goes up to the main loop and ends the session. Mods hit this most, since they refer to each other's assets.
@@ -279,6 +295,40 @@ Open questions: the order when ranges overlap, whether a font still has to `exis
 
 ---
 
+**HDR lights.** Animator lights take their color from the config as an ordinary color (`StarNetworkedAnimator.cpp:164`, `jsonToColor`), which is bytes from 0 to 255, so a light cannot be brighter than white. `LightSource` itself holds a `Vec3F` (`StarLightSource.hpp`), so the cap may be only in how the color is read and sent. Find out what the lighting code does with values above 1 (it may just work) and how a brighter-than-white color would be written in the animator config and sent to other clients.
+
+Could be useful for strong lights without having to raise the radius and for shaders that read the light levels.
+
+---
+
+### Shaders and Render Pipeline
+
+**Shaders on individual drawables.** A drawable cannot pick its own shader.
+`Drawable` (`source/game/StarDrawable.hpp`) has no effect field and shaders apply to a whole render step.
+A mod that wants fancy surfaces, such as the void cells and the void rocks of the Void Fields in Risk of Rain 2 or my own magnifier lense has no way to ask for one.
+Examples: the void cells and rocks from Risk of Rain 2's Void fields, my (Lumi) amplifier lense shader.
+
+This is probably the hardest item in this group. Deferred rendering would be the most efficient way to give many drawables different shaders, but it handles transparency badly.
+A deferred renderer cannot blend transparent surfaces at all, so renderers that have both draw the transparent things in a separate forward pass, or (as in Doom 2016) draw the main pass forward and do only some things deferred in a pass of their own. Depth peeling would be a half solution for transparency. The alternative is to stay forward and batch drawables by shader, which costs more state changes but keeps transparency simple.
+
+Open questions: where the choice lives (a field on `Drawable`, set from Lua through `localAnimator` and the animator's parts), how a shader gets per-drawable uniforms and how this fits with the multiple color attachments item below.
+
+---
+
+**More flexible post processing than a fullscreen quad.** Post processing is a list of layers in `/client.config:postProcessLayers`. Each layer has effects and each effect is drawn as one screen-sized quad (`renderFlatRect`, `StarClientApplication.cpp:473-484`), repeated `passes` times (settable with `renderer.setPostProcessLayerPasses`). Uniforms are set per effect with `renderer.setEffectParameter`, so every pass of a layer sees the same values, and a pass can only be a quad over the whole screen.
+
+Wanted: setting uniforms per pass, running any number of passes and drawing real geometry in a post processing pass, not just a quad. An example is the shield around the pillars in Terraria, which is a shape in the world with a shader on it, not a screen effect. Related to the item above, since it is the same need seen from the other side.
+
+---
+
+**Render the sky and the background separately from the world.** The sky and background are drawn together with the world and the post processing layers then run over the whole picture. Drawing them as their own step would let effects apply to one and not the other (a color grade or a blur on the world with an untouched sky, or the sky alone) and would be needed for sky shaders that do not know about the world.
+
+---
+
+**Shaders that write to several framebuffers (multiple color buffers).** The OpenGL renderer's framebuffers have a single color attachment (`GL_COLOR_ATTACHMENT0` plus an alternate texture to swap with, in `StarRenderer_opengl.cpp`). Allowing an effect to declare several outputs would let one pass write color and, say, normals, glow or a mask at the same time, which later passes read. It is the base for a deferred pass and for effects that need more than the final color.
+
+---
+
 ### Engine Performance
 
 `Vec` inefficiency (`source/core/StarVector.hpp:639`); `StringView` conversions and speed (`StarGuiContext.cpp:407`, `StarStringView.cpp:301`).
@@ -294,6 +344,14 @@ Wire processor is recursive depth-first (`StarWireProcessor.cpp:70`); weather up
 ---
 
 Voice buffer should be a ring buffer (`source/frontend/StarVoice.cpp:66`).
+
+---
+
+**A better multithreading model for Lua threads.** `threads.create` (`doc/lua/openstarbound/threads.md`) lets a script run in its own thread, but anything shared with the main context goes through mutexes and locks, which has its problems and slows things down. The motivating case is a pathfinder written entirely in Lua running in another thread without having to ask the main context about collision all the time.
+
+Ideas to look at: giving the thread a snapshot of what it needs (for example the collision data around it) that it can read without any lock, passing messages between threads in queues, so that data is copied or handed over and is never shared, and structures that are read often and rarely changed.
+
+Open questions: how a snapshot of the world stays cheap, how stale it may become and what a Lua script is allowed to share without a lock.
 
 ---
 
@@ -338,6 +396,22 @@ Then make new warnings visible, for example `-Werror` for a short list of warnin
 ---
 
 **Keep the texture-load timing as an opt-in tool.** While looking for slow directives, a development build logged every texture load that took more than a few milliseconds (path, time split into image work and texture creation), plus per-interval texture-cache and loop statistics. It made the work above possible and nothing like it exists upstream. If it goes in, make it off by default, keep the paths out of the normal log (they can be megabytes long) and cap or rotate the file it writes. The patch is kept in `deconstruction/costume-directives/instrumentation/` next to the benchmarks.
+
+---
+
+### Platforms and Packaging
+
+**A native Wayland client, not just X11.** On a Wayland desktop, the game should open as a Wayland window and not through XWayland.
+
+Support is partly there already: the vcpkg manifest builds SDL3 with its `wayland` feature on Linux (`source/vcpkg.json`), `StarMainApplication_sdl.cpp:482` sets `SDL_HINT_VIDEO_WAYLAND_SCALE_TO_DISPLAY` and the log prints `Application: using Video Driver '...'` at startup (line 490), which says which driver was picked. The CI Linux jobs install `libwayland-dev` and `libdecor`.
+
+First find out what the released builds really use (the log line tells) and why they fall back to X11 where they do: the Wayland libraries missing from the packaged build, the driver being forced somewhere or only some environments (the Steam runtime, the AppImage or tarball, the Nix package). Then check what works under Wayland: window decorations (libdecor), the cursor and custom cursors, fractional scaling and the scale hint, fullscreen and resizing, text input and the input method and the clipboard. The game also has to keep working on X11.
+
+---
+
+**A main menu button to update OpenStarbound.** A button on the title screen (`assets/opensb/interface/windowconfig/title.config.patch.lua` builds `mainMenuButtons`, and `interface/title/title.lua` is the title script) that tells the player when a newer OpenStarbound release exists and takes them to it,possibly also installing it later. The first step could just check the latest GitHub release against the running version (`StarVersion`) and open the download page, through the existing HTTP trust dialog.
+
+Things to decide: where the check happens and whether it is on by default (it contacts GitHub, so respect the privacy notes in the client privacy work and make it a setting) and which installs it applies to. A build from Steam, a distribution package or Nix updates through its own channel, so there the button should be hidden or only link to the release notes. Installing a download in place is a lot more work (files in use, permissions, checking signatures) and can be left out at first.
 
 ---
 
