@@ -199,6 +199,27 @@ Platformer A* should avoid damaging liquids (`StarPlatformerAStar.cpp:261`).
 
 ---
 
+**Animate the ship's trip across a star system as a slingshot and keep it at a fixed point.**
+While traveling between stars and planets on the star map, the ship moves in a straight line.
+This can even pass over the star in 2D, plus it's unrealistic and uninteresting.
+A curved, slingshot-like path around the star and past the planets would look better and would never cut through the star.
+`SystemClientShip::serverUpdate` (`source/game/StarSystemWorld.cpp`) moves the ship by stepping a fixed distance toward its destination each tick (`pos += toTarget.normalized() * (m_speed * dt)`) and the straight line comes from that.
+
+Idea: work out a path from the start to the destination when the trip begins (an arc that bends around the star when the straight line would pass close to it, or a gravity-assist style curve) and move the ship along it by progress, at the same speed.
+The arrival test, the departure delay and the speed then work on the length of the path and not on the straight distance.
+The server keeps setting the ship position every tick and clients interpolate it (`m_xPosition` and `m_yPosition` use `lerp`), so older clients would just see a curved path and nothing in the network state has to change.
+Check that the interpolation stays smooth on a curve at the normal update rate, and whether the system view draws a route preview that would need to follow the same path.
+
+The second part is where the ship stays.
+Today it sits in an orbit around the planet (`CelestialOrbit` made by `nearPlanetOrbit`, positioned with `orbitPosition`), so it keeps moving.
+The teleporter always beams down to the same place, so the ship should look fixed relative to the planet.
+This can either be a geostationary orbit, where the orbital period is equal to the planet's rotation, so the ship stays over the same spot.
+Or it can be a Lagrange point of the planet and star, which stays fixed relative to the line between them.
+
+Open questions: which of the two fits the planet and moon sizes and distances in this game (`orbitInterval` and the gravitational constants in the system world config), how the ship moves from the end of the slingshot into that place without a jump and what moons and the star itself (no planet to orbit) should do.
+
+---
+
 ### Characters, Items and Animation
 
 **Humanoid breathing animation and chest dynamics.**
