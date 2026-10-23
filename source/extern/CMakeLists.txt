@@ -9,6 +9,18 @@ SET (star_extern_HEADERS
     curve25519/include/ed25519_signature.h
     curve25519/include/external_calls.h
     imgui_iterator.inl
+    c-emoji/emoji_dfa.h
+    c-emoji/emoji_dfa_classify.h
+    c-emoji/emoji_presentation.h
+    c-emoji/emoji_qualification.h
+    c-emoji/emoji_range.h
+    c-emoji/emoji_scan.h
+    c-emoji/emoji_span.h
+    c-emoji/emoji_types.h
+    c-emoji/emoji_ucd.h
+    c-emoji/emoji_ucd_builtin.h
+    c-emoji/emoji_ucd_classify.h
+    c-emoji/emoji_ucd_icu.h
     fmt/core.h
     fmt/format.h
     fmt/format-inl.h
