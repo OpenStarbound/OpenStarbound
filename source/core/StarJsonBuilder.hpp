@@ -56,8 +56,8 @@ Json inputUtf8Json(InputIterator begin, InputIterator end, JsonParseType parseTy
 
   JsonBuilderStream stream;
   Parser parser(stream);
-  Utf32Input wbegin(begin);
-  Utf32Input wend(end);
+  Utf32Input wbegin(begin, begin, end);
+  Utf32Input wend(end, begin, end);
   Utf32Input pend = parser.parse(wbegin, wend, parseType);
 
   if (parser.error())

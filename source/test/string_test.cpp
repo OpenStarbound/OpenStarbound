@@ -1,5 +1,6 @@
-#include "StarString.hpp"
+#include "StarEncode.hpp"
 #include "StarFormat.hpp"
+#include "StarString.hpp"
 
 #include "gtest/gtest.h"
 
@@ -183,8 +184,65 @@ TEST(StringTest, utf8) {
 
   EXPECT_EQ(String("𠜎𠜱𠝹𠱓𠱸𠲖𠳏𠳕𠴕𠵼𠵿𠸎𠸏𠹷𠺝𠺢𠻗𠻹𠻺𠼭𠼮𠽌𠾴𠾼𠿪𡁜𡁯𡁵𡁶𡁻𡃁𡃉𡇙𢃇𢞵𢫕𢭃𢯊𢱑𢱕𢳂𢴈𢵌𢵧𢺳𣲷𤓓𤶸𤷪"
                    "𥄫𦉘𦟌𦧲𦧺𧨾𨅝𨈇𨋢𨳊𨳍𨳒𩶘")
-                .size(),
-      62u);
+              .size(),
+            62u);
+
+  auto testString = [&](std::string utf8str, bool valid = false, size_t expectedLen = NPos) {
+    size_t len = utf8str.length();
+    char const* bytes = utf8str.c_str();
+    String hexStr = hexEncode(bytes, len);
+    if (expectedLen == NPos)
+      expectedLen = len;
+
+    EXPECT_EQ(isValidUtf8(bytes, len), valid);
+
+    String str = String(bytes, len);
+    size_t u32len = str.length();
+
+    size_t forwardcount = 0;
+    for (auto c : str) {
+      _unused(c);
+      forwardcount++;
+    }
+    size_t reversecount = 0;
+    auto it = str.end();
+    auto begin = str.begin();
+    while (it != begin) {
+      --it;
+      reversecount++;
+    }
+    EXPECT_EQ(u32len, expectedLen) << "Tested string: " << hexStr;
+    EXPECT_EQ(forwardcount, expectedLen) << "Tested string: " << hexStr;
+    EXPECT_EQ(reversecount, expectedLen) << "Tested string: " << hexStr;
+    EXPECT_EQ(str.sanitize().length(), expectedLen) << "Tested string: " << hexStr;
+    EXPECT_TRUE(str.sanitize().isValid()) << "Tested string: " << hexStr;
+    EXPECT_TRUE(valid == (str.sanitize() == str)) << "Tested string: " << hexStr;
+  };
+  testString("\x80");
+  testString("\xc0");
+  testString("\xc0\xa1");
+  testString("\x80\xc0");
+  testString("\xc3\xbf", true, 1);
+  testString("\x80\xc3\xbf", false, 2);
+  testString("\xc3\xc3\xbf", false, 2);
+  testString("\xe3\xc3\xbf", false, 2);
+  testString("\xc3\xbf\x80", false, 2);
+  testString("\xe3\xbf");
+  testString("\xf3\xbf");
+  testString("\xf3\xbf\xbf");
+  testString("\xed\xa0\x80");
+  testString("\xf4\x90\x80\x80");
+  testString("\xf8\x90\x80\x80");
+  testString("\xe0\x80\x80\x80");
+  testString("\xf0\x80\x80\x80");
+  testString("\xc2\x80", true, 1);
+  testString("\xdf\xbf", true, 1);
+  testString("\xee\x80\x80", true, 1);
+  testString("\xed\x9f\xbf", true, 1);
+  testString("\xf4\x8f\xbf\xbf", true, 1);
+  testString("\xf0\x90\x80\x80", true, 1);
+  testString("\xe0\xa0\x80", true, 1);
+  testString("the \xf0\x9f\x9e\x9b thing", true, 11);
 }
 
 TEST(StringTest, tags) {
