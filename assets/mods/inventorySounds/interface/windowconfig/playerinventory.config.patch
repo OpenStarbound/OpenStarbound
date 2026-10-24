@@ -1,0 +1,4 @@
+[
+  { "op" : "add", "path" : "/sounds/someup", "value" : [ "/sfx/interface/inventory_someup.ogg" ] },
+  { "op" : "add", "path" : "/sounds/somedown", "value" : [ "/sfx/interface/inventory_somedown.ogg" ] }
+]

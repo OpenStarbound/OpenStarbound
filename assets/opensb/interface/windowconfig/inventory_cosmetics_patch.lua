@@ -1,6 +1,4 @@
 function patch(data)
-  data.sounds.someup = jarray{"/sfx/interface/inventory_someup.ogg"}  
-  data.sounds.somedown = jarray{"/sfx/interface/inventory_somedown.ogg"}
   local layout = data.paneLayout
 
   local function addHiddenIndicator(slot)
