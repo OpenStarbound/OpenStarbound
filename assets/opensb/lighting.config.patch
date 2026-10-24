@@ -1,5 +1,11 @@
 {
   "lighting" : {
-    "brightnessLimit" : 1.4
+    "brightnessLimit" : 1.4,
+    "pointMaxValue" : 1.0,
+    "spreadMaxValue" : 1.0
+  },
+  "intensity":{
+    "pointMaxValue" : 1.0,
+    "spreadMaxValue" : 1.0
   }
 }

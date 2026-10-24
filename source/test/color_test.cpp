@@ -1,4 +1,7 @@
 #include "StarColor.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarLua.hpp"
+#include "StarLuaConverters.hpp"
 
 #include "gtest/gtest.h"
 
@@ -34,4 +37,29 @@ TEST(ColorTest, ColorTemperature) {
   EXPECT_EQ(temp20000.red(), 171);
   EXPECT_EQ(temp20000.green(), 198);
   EXPECT_EQ(temp20000.blue(), 255);
+}
+
+TEST(ColorTest, OutOfRangeIsClampedTo8Bit) {
+  Color c = Color::rgbaf(2.0f, -1.0f, 0.5f, 3.0f);
+  EXPECT_EQ(c.red(), 255);
+  EXPECT_EQ(c.green(), 0);
+  EXPECT_EQ(c.alpha(), 255);
+  EXPECT_FLOAT_EQ(c.redF(), 2.0f);
+}
+
+TEST(ColorTest, JsonComponentsAreAlways0To255) {
+  Color a = jsonToColor(Json::parse("[255, 0, 0, 255]"));
+  Color b = jsonToColor(Json::parse("[255.0, 0.0, 0.0, 255.0]"));
+  EXPECT_EQ(a, b);
+  EXPECT_EQ(a.alpha(), 255);
+  EXPECT_FLOAT_EQ(jsonToColor(Json::parse("[510, 0, 0]")).redF(), 2.0f);
+}
+
+TEST(ColorTest, LuaColorsStayWholeNumbers) {
+  auto engineP = LuaEngine::create();
+  auto& engine = *engineP;
+  auto table = engine.createArrayTable(initializer_list<int>{51, 102, 204});
+  Color c = engine.luaTo<Color>(table);
+  auto back = engine.luaTo<Vec3F>(engine.luaFrom(c));
+  EXPECT_EQ(back, Vec3F(51, 102, 204));
 }

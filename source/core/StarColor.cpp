@@ -64,10 +64,10 @@ Color Color::rgbf(float r, float g, float b) {
 
 Color Color::rgbaf(float r, float g, float b, float a) {
   Color c;
-  c.m_data[0] = clamp(r, 0.0f, 1.0f);
-  c.m_data[1] = clamp(g, 0.0f, 1.0f);
-  c.m_data[2] = clamp(b, 0.0f, 1.0f);
-  c.m_data[3] = clamp(a, 0.0f, 1.0f);
+  c.m_data[0] = r;
+  c.m_data[1] = g;
+  c.m_data[2] = b;
+  c.m_data[3] = a;
   return c;
 }
 
@@ -251,35 +251,35 @@ bool Color::isClear() const {
 }
 
 uint8_t Color::red() const {
-  return uint8_t(round(m_data[0] * 255));
+  return uint8_t(round(clamp(m_data[0], 0.0f, 1.0f) * 255));
 }
 
 uint8_t Color::green() const {
-  return uint8_t(round(m_data[1] * 255));
+  return uint8_t(round(clamp(m_data[1], 0.0f, 1.0f) * 255));
 }
 
 uint8_t Color::blue() const {
-  return uint8_t(round(m_data[2] * 255));
+  return uint8_t(round(clamp(m_data[2], 0.0f, 1.0f) * 255));
 }
 
 uint8_t Color::alpha() const {
-  return uint8_t(m_data[3] * 255);
+  return uint8_t(round(clamp(m_data[3], 0.0f, 1.0f) * 255));
 }
 
 void Color::setRedF(float r) {
-  m_data[0] = clamp(r, 0.0f, 1.0f);
+  m_data[0] = r;
 }
 
 void Color::setGreenF(float g) {
-  m_data[1] = clamp(g, 0.0f, 1.0f);
+  m_data[1] = g;
 }
 
 void Color::setBlueF(float b) {
-  m_data[2] = clamp(b, 0.0f, 1.0f);
+  m_data[2] = b;
 }
 
 void Color::setAlphaF(float a) {
-  m_data[3] = clamp(a, 0.0f, 1.0f);
+  m_data[3] = a;
 }
 
 void Color::setRed(uint8_t r) {
