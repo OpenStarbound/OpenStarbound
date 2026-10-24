@@ -32,6 +32,7 @@
 #include "StarEmoteProcessor.hpp"
 #include "StarSpeciesDatabase.hpp"
 #include "StarImageMetadataDatabase.hpp"
+#include "StarModStorage.hpp"
 #include "StarLogging.hpp"
 #include "StarProjectileDatabase.hpp"
 #include "StarPlayerFactory.hpp"
@@ -538,6 +539,13 @@ EmoteProcessorConstPtr Root::emoteProcessor() {
 
 SpeciesDatabaseConstPtr Root::speciesDatabase() {
   return loadMember(m_speciesDatabase, m_speciesDatabaseMutex, "SpeciesDatabase");
+}
+
+ModStoragePtr Root::modStorage() {
+  MutexLocker locker(m_modStorageMutex);
+  if (!m_modStorage)
+    m_modStorage = make_shared<ModStorage>(toStoragePath("modstorage"));
+  return m_modStorage;
 }
 
 ImageMetadataDatabaseConstPtr Root::imageMetadataDatabase() {
