@@ -305,6 +305,21 @@ Open questions: how such an image becomes a texture (a generated asset name regi
 
 ---
 
+**Scripting for the SystemWorld.**
+The system world, the space where the ship travels between planets, has no script context today, unlike the planet worlds (celestial worlds), which have world scripts.
+The same goes for the system objects in it (`SystemObject`, defined in `/system_objects.config`), such as space stations, pirate ships and derelicts.
+These may be what is really meant here: the scripting could belong to the `SystemWorld` as a whole, to each `SystemObject`, or to both.
+`SystemWorld`, `SystemWorldServer`, `SystemWorldClient` and `SystemObject` contain no Lua at all.
+The only Lua access to it is the client-side `celestial` table (`StarCelestialLuaBindings.cpp`), which reads system positions and objects (`systemObjects`, `objectOrbit`, `planetPosition`), flies the ship (`flyShip`) and can spawn an object (`systemSpawnObject`).
+
+Idea: give the system world on the server a script context of its own, and possibly one per system object, so that mods can run logic there.
+Examples are deciding where the ship goes and how (the slingshot item under World and Objects needs a hook like this), reacting to the ship arriving and leaving, spawning and moving system objects such as space stations, pirate ships, anomalies and asteroids, and changing orbits.
+The Lua table for it needs a name of its own, for example `systemcelestial`, and not `system`, which is far too generic.
+
+Open questions: how the scripts are registered (a list in the system config, as other script contexts have, or in the universe config), what to do about the overlap with the existing `celestial` table (keep it and add to it, or move the functions over), how it works with the thread each system world runs on (`SystemWorldServerThread`, see the threading item), and which of it clients need (the scripts would run on the server, so a client without them only sees the results).
+
+---
+
 ### Robustness and Safety
 
 **Stop crashing on errors that could be logged and skipped.**
