@@ -50,6 +50,5 @@ function patch(data)
   addHiddenIndicator(layout.headCosmetic)
   addHiddenIndicator(layout.backCosmetic)
   
-  layout.portrait.renderHumanoid = true
   return data
 end
