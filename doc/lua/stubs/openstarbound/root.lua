@@ -80,25 +80,29 @@ function root.setConfiguration(key, value) end
 function root.setConfigurationPath(path, value) end
 
 --- Returns the value stored under `key` in the calling mod's persistent storage, or `nil` if there is none. ---
---- The storage is private to the mod the calling script was loaded from and works with `safeScripts` on. The result is a copy. ---
---- Errors if the script was not loaded from assets. ---
+--- By default the storage is that of the mod the calling script was loaded from, and works with `safeScripts` on; `mod` names another loaded mod (one with a `name` in its metadata) instead. The result is a copy. ---
+--- Errors if the script was not loaded from assets (without `mod`) or no loaded mod has that name. ---
 ---@param key string
+---@param mod string? name of another loaded mod to use its storage instead of the calling mod's
 ---@return Json
-function root.getModStorage(key) end
+function root.getModStorage(key, mod) end
 
 --- Stores `value` under `key` in the calling mod's persistent storage. `nil` removes the key. ---
 --- The change is written to disk about two seconds later and when the game exits, see `root.flushModStorage`. ---
---- Errors, changing nothing, if the mod's data would be over 4 MiB or if the script was not loaded from assets. ---
+--- Errors, changing nothing, if the mod's data would be over 4 MiB, if the script was not loaded from assets (without `mod`) or if no loaded mod has that name. ---
 ---@param key string
 ---@param value Json
-function root.setModStorage(key, value) end
+---@param mod string? name of another loaded mod to use its storage instead of the calling mod's
+function root.setModStorage(key, value, mod) end
 
 --- Returns all keys in the calling mod's persistent storage, in no particular order. ---
+---@param mod string? name of another loaded mod to use its storage instead of the calling mod's
 ---@return JsonArray
-function root.modStorageKeys() end
+function root.modStorageKeys(mod) end
 
 --- Removes every key from the calling mod's persistent storage. ---
-function root.clearModStorage() end
+---@param mod string? name of another loaded mod to use its storage instead of the calling mod's
+function root.clearModStorage(mod) end
 
 --- Writes all pending mod storage changes (of every mod) to disk now instead of after the usual delay. ---
 function root.flushModStorage() end

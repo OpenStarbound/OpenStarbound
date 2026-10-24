@@ -338,14 +338,26 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
       root->configuration()->setPath(path, value);
     });
 
-  // The mod is the asset source of the script that made the call, which
-  // scripts cannot fake: the chunk name is the asset path they were loaded from.
-  auto callingMod = [root](LuaEngine& engine) -> String {
+  // Without a mod name the storage is the one of the asset source of the script
+  // that made the call, which scripts cannot fake.
+  // The chunk name is the asset path they were loaded from.
+  // With one it is the storage of the loaded source with that metadata name.
+  auto storageMod = [root](LuaEngine& engine, Maybe<String> const& modName) -> String {
+      auto assets = root->assets();
+      if (modName) {
+        for (auto const& sourcePath : assets->assetSources()) {
+          if (auto name = assets->assetSourceMetadata(sourcePath).maybe("name")) {
+            if (name->isType(Json::Type::String) && name->toString() == *modName)
+              return *modName;
+          }
+        }
+        throw StarException(strf("Mod storage: no loaded mod is named '{}'", *modName));
+      }
+
       auto const& info = engine.debugInfo(1, "S");
       String chunk = info.source ? info.source : "";
       if (chunk.beginsWith("@") || chunk.beginsWith("="))
         chunk = chunk.substr(1);
-      auto assets = root->assets();
       auto descriptor = assets->assetDescriptor(chunk);
       if (!descriptor)
         throw StarException("Mod storage is only available to scripts loaded from assets");
@@ -355,17 +367,17 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
       return modStorageId(*assets, *sourcePath);
     };
 
-  callbacks.registerCallback("getModStorage", [root, callingMod](LuaEngine& engine, String const& key) -> Json {
-      return root->modStorage()->get(callingMod(engine), key);
+  callbacks.registerCallback("getModStorage", [root, storageMod](LuaEngine& engine, String const& key, Maybe<String> const& mod) -> Json {
+      return root->modStorage()->get(storageMod(engine, mod), key);
     });
-  callbacks.registerCallback("setModStorage", [root, callingMod](LuaEngine& engine, String const& key, Json const& value) {
-      root->modStorage()->set(callingMod(engine), key, value);
+  callbacks.registerCallback("setModStorage", [root, storageMod](LuaEngine& engine, String const& key, Json const& value, Maybe<String> const& mod) {
+      root->modStorage()->set(storageMod(engine, mod), key, value);
     });
-  callbacks.registerCallback("modStorageKeys", [root, callingMod](LuaEngine& engine) -> JsonArray {
-      return root->modStorage()->keys(callingMod(engine));
+  callbacks.registerCallback("modStorageKeys", [root, storageMod](LuaEngine& engine, Maybe<String> const& mod) -> JsonArray {
+      return root->modStorage()->keys(storageMod(engine, mod));
     });
-  callbacks.registerCallback("clearModStorage", [root, callingMod](LuaEngine& engine) {
-      root->modStorage()->clear(callingMod(engine));
+  callbacks.registerCallback("clearModStorage", [root, storageMod](LuaEngine& engine, Maybe<String> const& mod) {
+      root->modStorage()->clear(storageMod(engine, mod));
     });
   callbacks.registerCallback("flushModStorage", [root]() {
       root->modStorage()->flush();

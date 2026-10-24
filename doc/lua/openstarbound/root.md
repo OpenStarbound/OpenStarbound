@@ -137,7 +137,7 @@ Sets a configuration value in `/storage/starbound.config` by path.
 
 A mod can keep data between sessions with `root.getModStorage` and the functions next to it. This is a key/value store that is private to the mod and works with `safeScripts` on, so a mod does not need to turn the sandbox off to save its settings or progress.
 
-- **Which mod:** the mod is the asset source (the pak or asset directory) that the calling script was loaded from. A script cannot name another mod and so cannot read or change another mod's data. The functions only work in scripts loaded from assets, and error in code made with `loadstring`.
+- **Which mod:** by default the mod is the asset source (the pak or asset directory) that the calling script was loaded from, so two mods never overwrite each other's keys by accident. The functions only work in scripts loaded from assets, and error in code made with `loadstring`. Every function also takes an optional last argument, the `name` of another loaded mod, to use its storage instead. That is for mods that work together, for example one that patches or replaces the scripts of another and needs to read what they saved. It is not a sandbox: a mod can patch a script of another mod and so run as that mod anyway. Only mods that have a `name` in `_metadata` can be reached this way, and the call errors if no loaded mod has that name.
 - **Name:** the storage is named after the `name` in the source's `_metadata`, or after its file name if it has none. If several loaded sources have the same name, the first in load order keeps it and the others are stored as `name (file name)`, so they never share data.
 - **Where:** `/storage/modstorage/<name>.json`, one file per mod. Characters that are not letters, digits, `-` or `_` are written as `%XX` in the file name. It is plain JSON, so it can be read or edited by hand while the game is closed.
 - **Values:** anything JSON can hold (`nil` is "not set"). Lua tables become JSON objects or arrays in the usual way, and the usual rules for JSON in Lua apply (a table with keys 1 to n is an array, any other table is an object, so an empty table is an object, use the global `jarray()` to store an empty array). Functions and other values JSON cannot hold make the call error.
@@ -156,36 +156,39 @@ function init()
   local settings = root.getModStorage(key) or {volume = 5}
   settings.volume = math.min(settings.volume + 1, 10)
   root.setModStorage(key, settings)
+
+  -- another mod's storage, for example in a mod that replaces one of its scripts
+  local theirs = root.getModStorage("progress", "OtherMod")
 end
 ```
 
 ---
 
-#### `Json` root.getModStorage(`String` key)
+#### `Json` root.getModStorage(`String` key, `Maybe<String>` mod)
 
-Returns the value stored under **key** in the calling mod's storage, or `nil` if there is none. The result is a copy, so changing a returned table does not change the stored value until it is passed to `root.setModStorage` again.
+Returns the value stored under **key** in the calling mod's storage (or in that of the loaded mod named **mod**), or `nil` if there is none. The result is a copy, so changing a returned table does not change the stored value until it is passed to `root.setModStorage` again.
 
-Errors if the script was not loaded from assets.
-
----
-
-#### `void` root.setModStorage(`String` key, `Json` value)
-
-Stores **value** under **key** in the calling mod's storage. Passing `nil` removes the key. Setting a value equal to the stored one does nothing, and the write to disk comes after a short delay, see above.
-
-Errors, and leaves the storage as it was, if the mod's data would be larger than 4 MiB afterwards, or if the script was not loaded from assets.
+Errors if the script was not loaded from assets (when no **mod** is given), or if no loaded mod is named **mod**.
 
 ---
 
-#### `JsonArray` root.modStorageKeys()
+#### `void` root.setModStorage(`String` key, `Json` value, `Maybe<String>` mod)
 
-Returns all keys in the calling mod's storage, in no particular order.
+Stores **value** under **key** in the calling mod's storage (or in that of the loaded mod named **mod**). Passing `nil` removes the key. Setting a value equal to the stored one does nothing, and the write to disk comes after a short delay, see above.
+
+Errors, and leaves the storage as it was, if the mod's data would be larger than 4 MiB afterwards, if the script was not loaded from assets (when no **mod** is given), or if no loaded mod is named **mod**.
 
 ---
 
-#### `void` root.clearModStorage()
+#### `JsonArray` root.modStorageKeys(`Maybe<String>` mod)
 
-Removes every key from the calling mod's storage.
+Returns all keys in the calling mod's storage (or in that of the loaded mod named **mod**), in no particular order.
+
+---
+
+#### `void` root.clearModStorage(`Maybe<String>` mod)
+
+Removes every key from the calling mod's storage (or from that of the loaded mod named **mod**).
 
 ---
 
