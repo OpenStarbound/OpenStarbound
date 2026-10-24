@@ -61,8 +61,8 @@ private:
 
   StringList m_pickUpSounds;
   StringList m_putDownSounds;
-  StringList m_someUpSounds;
-  StringList m_someDownSounds;
+  StringList m_addToStackSounds;
+  StringList m_takeFromStackSounds;
   Maybe<ItemDescriptor> m_currentSwapSlotItem;
 
   List<ImageWidgetPtr> m_disabledTechOverlays;
