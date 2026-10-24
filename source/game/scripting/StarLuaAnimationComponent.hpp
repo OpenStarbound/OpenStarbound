@@ -11,6 +11,7 @@
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarLuaConverters.hpp"
+#include "StarLuaChain.hpp"
 
 namespace Star {
 
@@ -81,6 +82,12 @@ LuaAnimationComponent<Base>::LuaAnimationComponent() {
         image->transformation.scale(0.125f);
 
       m_drawables.append({std::move(drawable), renderLayer});
+    });
+
+  // Native segment building for /items/active/effects/chain.lua.  Returns false
+  // if the script has to build the chain itself.
+  animationCallbacks.registerCallback("addChain", [this](Vec2D startPosition, Vec2D chainVec, LuaTable const& chain) -> bool {
+      return LuaChain::addChain(startPosition, chainVec, chain, m_drawables, m_lightSources);
     });
 
   animationCallbacks.registerCallback("clearLightSources", [this]() {
