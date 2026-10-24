@@ -65,6 +65,8 @@ void CellularLightingCalculator::setMonochrome(bool monochrome) {
 }
 
 void CellularLightingCalculator::setParameters(Json const& config) {
+  m_pointMaxValue = config.getFloat("pointMaxValue", 1.0);
+  m_spreadMaxValue = config.getFloat("spreadMaxValue", 1.0);
   m_config = config;
   if (m_monochrome)
     m_lightArray.right().setParameters(
@@ -74,7 +76,9 @@ void CellularLightingCalculator::setParameters(Json const& config) {
         config.getFloat("pointMaxAir"),
         config.getFloat("pointMaxObstacle"),
         config.getFloat("pointObstacleBoost"),
-        config.getBool("pointAdditive", false)
+        config.getBool("pointAdditive", false),
+        m_pointMaxValue,
+        m_spreadMaxValue
       );
   else
     m_lightArray.left().setParameters(
@@ -84,7 +88,9 @@ void CellularLightingCalculator::setParameters(Json const& config) {
         config.getFloat("pointMaxAir"),
         config.getFloat("pointMaxObstacle"),
         config.getFloat("pointObstacleBoost"),
-        config.getBool("pointAdditive", false)
+        config.getBool("pointAdditive", false),
+        m_pointMaxValue,
+        m_spreadMaxValue
       );
 }
 
@@ -106,17 +112,18 @@ RectI CellularLightingCalculator::calculationRegion() const {
 void CellularLightingCalculator::addSpreadLight(Vec2F const& position, Vec3F const& light) {
   Vec2F arrayPosition = position - Vec2F(m_calculationRegion.min());
   if (m_monochrome)
-    m_lightArray.right().addSpreadLight({arrayPosition, light.max()});
+    m_lightArray.right().addSpreadLight({arrayPosition, min(light.max(),m_spreadMaxValue)});
   else
-    m_lightArray.left().addSpreadLight({arrayPosition, light});
+    m_lightArray.left().addSpreadLight({arrayPosition, light.max() > m_spreadMaxValue ? light/light.max()*m_spreadMaxValue : light});
 }
 
 void CellularLightingCalculator::addPointLight(Vec2F const& position, Vec3F const& light, float beam, float beamAngle, float beamAmbience, bool asSpread) {
   Vec2F arrayPosition = position - Vec2F(m_calculationRegion.min());
   if (m_monochrome)
-    m_lightArray.right().addPointLight({arrayPosition, light.max(), beam, beamAngle, beamAmbience, asSpread});
-  else
-    m_lightArray.left().addPointLight({arrayPosition, light, beam, beamAngle, beamAmbience, asSpread});
+    m_lightArray.right().addPointLight({arrayPosition, min(light.max(),m_pointMaxValue), beam, beamAngle, beamAmbience, asSpread});
+  else {
+    m_lightArray.left().addPointLight({arrayPosition, light.max() > m_pointMaxValue ? light/light.max()*m_pointMaxValue : light, beam, beamAngle, beamAmbience, asSpread});
+  }
 }
 
 void CellularLightingCalculator::calculate(Image& output) {
@@ -186,6 +193,8 @@ void CellularLightingCalculator::setupImage(Image& image, PixelFormat format) co
 }
 
 void CellularLightIntensityCalculator::setParameters(Json const& config) {
+  m_pointMaxValue = config.getFloat("pointMaxValue", 1.0);
+  m_spreadMaxValue = config.getFloat("spreadMaxValue", 1.0);
   m_lightArray.setParameters(
       config.getInt("spreadPasses"),
       config.getFloat("spreadMaxAir"),
@@ -193,7 +202,9 @@ void CellularLightIntensityCalculator::setParameters(Json const& config) {
       config.getFloat("pointMaxAir"),
       config.getFloat("pointMaxObstacle"),
       config.getFloat("pointObstacleBoost"),
-      config.getBool("pointAdditive", false)
+      config.getBool("pointAdditive", false),
+      m_pointMaxValue,
+      m_spreadMaxValue
     );
 }
 
@@ -221,12 +232,12 @@ void CellularLightIntensityCalculator::setCellColumn(Vec2I const& position, Cell
 
 void CellularLightIntensityCalculator::addSpreadLight(Vec2F const& position, float light) {
   Vec2F arrayPosition = position - Vec2F(m_calculationRegion.min());
-  m_lightArray.addSpreadLight({arrayPosition, light});
+  m_lightArray.addSpreadLight({arrayPosition, min(light,m_spreadMaxValue)});
 }
 
 void CellularLightIntensityCalculator::addPointLight(Vec2F const& position, float light, float beam, float beamAngle, float beamAmbience) {
   Vec2F arrayPosition = position - Vec2F(m_calculationRegion.min());
-  m_lightArray.addPointLight({arrayPosition, light, beam, beamAngle, beamAmbience, false});
+  m_lightArray.addPointLight({arrayPosition, min(light,m_pointMaxValue), beam, beamAngle, beamAmbience, false});
 }
 
 

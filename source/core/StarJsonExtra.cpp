@@ -215,19 +215,29 @@ Color jsonToColor(Json const& v) {
       throw JsonException("Json not an array of size 3 or 4 in jsonToColor");
     Color c = Color::rgbaf(0.0f, 0.0f, 0.0f, 1.0f);
     if (v.get(0).type() == Json::Type::Float) {
-      c.setRedF(v.getFloat(0));
-      c.setGreenF(v.getFloat(1));
-      c.setBlueF(v.getFloat(2));
+      c.setRedF(v.getFloat(0)/255.0f);
+      c.setGreenF(v.getFloat(1)/255.0f);
+      c.setBlueF(v.getFloat(2)/255.0f);
 
       if (v.size() == 4)
         c.setAlphaF(v.getFloat(3));
     } else {
-      c.setRed(v.getInt(0));
-      c.setGreen(v.getInt(1));
-      c.setBlue(v.getInt(2));
-
-      if (v.size() == 4)
-        c.setAlpha(v.getInt(3));
+      auto r = v.getInt(0);
+      auto g = v.getInt(1);
+      auto b = v.getInt(2);
+      auto a = v.size() == 4 ? v.getInt(3) : 255;
+      if (max(max(r,g),max(b,a)) > 255 || min(min(r,g),min(b,a)) < 0) {
+        // out of range, use floats
+        c.setRedF((float)r/255.0f);
+        c.setGreenF((float)g/255.0f);
+        c.setBlueF((float)b/255.0f);
+        c.setAlphaF((float)a/255.0f);
+      } else {
+        c.setRed(r);
+        c.setGreen(g);
+        c.setBlue(b);
+        c.setAlpha(a);
+      }
     }
     return c;
   } else if (v.type() == Json::Type::String) {

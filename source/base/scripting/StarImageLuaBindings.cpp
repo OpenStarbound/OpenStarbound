@@ -15,11 +15,11 @@ LuaMethods<Image> LuaUserDataMethods<Image>::make() {
   methods.registerMethodWithSignature<void, Image&, Vec2U, Image&>("drawInto", mem_fn(&Image::drawInto));
   methods.registerMethodWithSignature<void, Image&, Vec2U, Image&>("copyInto", mem_fn(&Image::copyInto));
   methods.registerMethod("set", [](Image& image, unsigned x, unsigned y, Color const& color) {
-    image.set(x, y, color.toRgba()); 
+    image.setF(x, y, color);
   });
 
   methods.registerMethod("get", [](Image& image, unsigned x, unsigned y) {
-    return Color::rgba(image.get(x, y));
+    return image.getF(x, y);
   });
 
   methods.registerMethod("subImage", [](Image& image, Vec2U const& min, Vec2U const& size) {
