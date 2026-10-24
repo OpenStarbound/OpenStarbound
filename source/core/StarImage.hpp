@@ -2,6 +2,7 @@
 
 #include "StarString.hpp"
 #include "StarVector.hpp"
+#include "StarColor.hpp"
 #include "StarIODevice.hpp"
 
 namespace Star {
@@ -17,6 +18,7 @@ enum class PixelFormat : uint8_t {
 
 uint8_t bitsPerPixel(PixelFormat pf);
 uint8_t bytesPerPixel(PixelFormat pf);
+bool isFormatFloat(PixelFormat pf);
 
 STAR_EXCEPTION(ImageException, StarException);
 
@@ -48,6 +50,7 @@ public:
 
   uint8_t bitsPerPixel() const;
   uint8_t bytesPerPixel() const;
+  bool isFloat() const;
 
   unsigned width() const;
   unsigned height() const;
@@ -69,10 +72,12 @@ public:
   // Fill the image with a given color
   void fill(Vec3B const& c);
   void fill(Vec4B const& c);
+  void fillF(Color const& c);
 
   // Fill a rectangle with a given color
   void fillRect(Vec2U const& pos, Vec2U const& size, Vec3B const& c);
   void fillRect(Vec2U const& pos, Vec2U const& size, Vec4B const& c);
+  void fillRectF(Vec2U const& pos, Vec2U const& size, Color const& c);
 
   // Color parameters / return values here are in whatever the internal format
   // is.  Fourth byte, if missing or not provided, is assumed to be 255.  If
@@ -87,11 +92,16 @@ public:
   void setrgb(Vec2U const& pos, Vec3B const& c);
   Vec4B getrgb(Vec2U const& pos) const;
 
+  // Setting and getting based on Color in RGB
+  void setF(Vec2U const& pos, Color const& c);
+  Color getF(Vec2U const& pos) const;
+
   // Get pixel value, but if pos is out of the normal pixel range, it is
   // clamped back into the valid pixel range.  Returns (0, 0, 0, 0) if image is
   // empty.
   Vec4B clamp(Vec2I const& pos) const;
   Vec4B clamprgb(Vec2I const& pos) const;
+  Color clampF(Vec2I const& pos) const;
 
   // x / y versions of set / get, for compatibility
   void set(unsigned x, unsigned y, Vec4B const& c);
@@ -102,15 +112,19 @@ public:
   Vec4B getrgb(unsigned x, unsigned y) const;
   Vec4B clamp(int x, int y) const;
   Vec4B clamprgb(int x, int y) const;
+  Color clampF(int x, int y) const;
+
+  void setF(unsigned x, unsigned y, Color const& c);
+  Color getF(unsigned x, unsigned y) const;
 
   // Must be 32 bitsPerPixel, no format conversion or bounds checking takes
-  // place.  Very fast inline versions.
+  // place.  Very fast inline versions, won't work with float images.
   void set32(Vec2U const& pos, Vec4B const& c);
   void set32(unsigned x, unsigned y, Vec4B const& c);
   Vec4B get32(unsigned x, unsigned y) const;
 
   // Must be 24 bitsPerPixel, no format conversion or bounds checking takes
-  // place.  Very fast inline versions.
+  // place.  Very fast inline versions, won't work with float images.
   void set24(Vec2U const& pos, Vec3B const& c);
   void set24(unsigned x, unsigned y, Vec3B const& c);
   Vec3B get24(unsigned x, unsigned y) const;
@@ -122,6 +136,12 @@ public:
   // Called as callback(unsigned x, unsigned y, Vec4B& pixel)
   template <typename CallbackType>
   void forEachPixel(CallbackType&& callback);
+
+  // Versions that use Color instead
+  template <typename CallbackType>
+  void forEachPixelF(CallbackType&& callback) const;
+  template <typename CallbackType>
+  void forEachPixelF(CallbackType&& callback);
 
   // Pixel rectangle, lower left position and size of rectangle.
   Image subImage(Vec2U const& pos, Vec2U const& size) const;
@@ -177,12 +197,26 @@ inline uint8_t bytesPerPixel(PixelFormat pf) {
   }
 }
 
+inline bool isFormatFloat(PixelFormat pf) {
+  switch (pf) {
+    case PixelFormat::RGB_F:
+    case PixelFormat::RGBA_F:
+      return true;
+    default:
+      return false;
+  }
+}
+
 inline uint8_t Image::bitsPerPixel() const {
   return Star::bitsPerPixel(m_pixelFormat);
 }
 
 inline uint8_t Image::bytesPerPixel() const {
   return Star::bytesPerPixel(m_pixelFormat);
+}
+
+inline bool Image::isFloat() const {
+  return Star::isFormatFloat(m_pixelFormat);
 }
 
 inline unsigned Image::width() const {
@@ -243,6 +277,18 @@ inline Vec4B Image::clamp(int x, int y) const {
 
 inline Vec4B Image::clamprgb(int x, int y) const {
   return clamprgb({x, y});
+}
+
+inline Color Image::clampF(int x, int y) const {
+  return clampF({x, y});
+}
+
+inline void Image::setF(unsigned x, unsigned y, Color const& c) {
+  return setF({x, y},c);
+}
+
+inline Color Image::getF(unsigned x, unsigned y) const {
+  return getF({x, y});
 }
 
 inline void Image::set32(Vec2U const& pos, Vec4B const& c) {
@@ -314,6 +360,25 @@ void Image::forEachPixel(CallbackType&& callback) {
       Vec4B pixel = get(x, y);
       callback(x, y, pixel);
       set(x, y, pixel);
+    }
+  }
+}
+
+template <typename CallbackType>
+void Image::forEachPixelF(CallbackType&& callback) const {
+  for (unsigned y = 0; y < m_height; y++) {
+    for (unsigned x = 0; x < m_width; x++)
+      callback(x, y, getF(x, y));
+  }
+}
+
+template <typename CallbackType>
+void Image::forEachPixelF(CallbackType&& callback) {
+  for (unsigned y = 0; y < m_height; y++) {
+    for (unsigned x = 0; x < m_width; x++) {
+      Color pixel = getF(x, y);
+      callback(x, y, pixel);
+      setF(x, y, pixel);
     }
   }
 }
