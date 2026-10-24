@@ -148,8 +148,8 @@ public:
   void setupImage(Image& image, PixelFormat format = PixelFormat::RGB24) const;
 private:
   Json m_config;
-  float m_pointMaxValue;
-  float m_spreadMaxValue;
+  float m_pointMaxValue = 1.0f;
+  float m_spreadMaxValue = 1.0f;
   bool m_monochrome;
   Either<ColoredCellularLightArray, ScalarCellularLightArray> m_lightArray;
   RectI m_queryRegion;
@@ -178,8 +178,8 @@ public:
   float calculate();
 
 private:
-  float m_pointMaxValue;
-  float m_spreadMaxValue;
+  float m_pointMaxValue = 1.0f;
+  float m_spreadMaxValue = 1.0f;
   ScalarCellularLightArray m_lightArray;
   Vec2F m_queryPosition;
   RectI m_queryRegion;;

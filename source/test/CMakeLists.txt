@@ -22,6 +22,7 @@ SET (star_core_tests_SOURCES
       byte_array_test.cpp
       clock_test.cpp
       color_test.cpp
+      image_test.cpp
       container_test.cpp
       encode_test.cpp
       file_test.cpp

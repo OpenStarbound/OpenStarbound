@@ -3,11 +3,22 @@
 
 namespace Star {
 
+// Colors are 0-255 in Lua, but may be out of range for HDR.
+// Snap values that are float noise away from a whole number so ordinary colors stay integers.
+static float luaColorComponent(float f) {
+  float scaled = f * 255.0f;
+  float rounded = std::round(scaled);
+  return std::abs(scaled - rounded) < 0.001f ? rounded : scaled;
+}
 LuaValue LuaConverter<Color>::from(LuaEngine& engine, Color const& c) {
-  if (c.alpha() == 255)
-    return engine.createArrayTable(initializer_list<float>{c.redF()*255.0f, c.greenF()*255.0f, c.blueF()*255.0f});
+  float r = luaColorComponent(c.redF());
+  float g = luaColorComponent(c.greenF());
+  float b = luaColorComponent(c.blueF());
+  float a = luaColorComponent(c.alphaF());
+  if (a == 255.0f)
+    return engine.createArrayTable(initializer_list<float>{r, g, b});
   else
-    return engine.createArrayTable(initializer_list<float>{c.redF()*255.0f, c.greenF()*255.0f, c.blueF()*255.0f, c.alphaF()*255.0f});
+    return engine.createArrayTable(initializer_list<float>{r, g, b, a});
 }
 
 Maybe<Color> LuaConverter<Color>::to(LuaEngine& engine, LuaValue const& v) {

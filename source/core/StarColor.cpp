@@ -251,19 +251,19 @@ bool Color::isClear() const {
 }
 
 uint8_t Color::red() const {
-  return uint8_t(round(m_data[0] * 255));
+  return uint8_t(round(clamp(m_data[0], 0.0f, 1.0f) * 255));
 }
 
 uint8_t Color::green() const {
-  return uint8_t(round(m_data[1] * 255));
+  return uint8_t(round(clamp(m_data[1], 0.0f, 1.0f) * 255));
 }
 
 uint8_t Color::blue() const {
-  return uint8_t(round(m_data[2] * 255));
+  return uint8_t(round(clamp(m_data[2], 0.0f, 1.0f) * 255));
 }
 
 uint8_t Color::alpha() const {
-  return uint8_t(m_data[3] * 255);
+  return uint8_t(round(clamp(m_data[3], 0.0f, 1.0f) * 255));
 }
 
 void Color::setRedF(float r) {

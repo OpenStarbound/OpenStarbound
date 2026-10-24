@@ -549,10 +549,16 @@ void Image::copyInto(Vec2U const& min, Image const& image) {
       for (unsigned x = min[0]; x < max[0]; ++x)
         setF(x, y, image.getF(Vec2U(x, y) - min));
     }
-  } else {
+  } else if (m_pixelFormat == image.m_pixelFormat) {
     for (unsigned y = min[1]; y < max[1]; ++y) {
       for (unsigned x = min[0]; x < max[0]; ++x)
         set(x, y, image.get(Vec2U(x, y) - min));
+    }
+  } else {
+    // RGB and BGR formats store the channels in a different order.
+    for (unsigned y = min[1]; y < max[1]; ++y) {
+      for (unsigned x = min[0]; x < max[0]; ++x)
+        setrgb(Vec2U(x, y), image.getrgb(Vec2U(x, y) - min));
     }
   }
 }
