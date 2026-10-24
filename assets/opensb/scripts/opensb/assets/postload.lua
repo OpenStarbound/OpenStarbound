@@ -15,6 +15,38 @@ assets.patch(
   "/interface/windowconfig/inventory_cosmetics_patch.lua"
 )
 
+-- The sounds of the inventory pane were renamed (someup and somedown became addToStack and takeFromStack).
+-- Carry over what a mod set under the old names, so it keeps working.
+do
+  local config = "/interface/windowconfig/playerinventory.config"
+  local sounds = assets.json(config).sounds or {}
+  local renamed = {
+    { old = "someup", new = "addToStack", file = "/sfx/interface/inventory_someup.ogg" },
+    { old = "somedown", new = "takeFromStack", file = "/sfx/interface/inventory_somedown.ogg" }
+  }
+  local ops = {}
+  for _, r in ipairs(renamed) do
+    -- the old key counts when its sounds exist (a config copied from before the rename lists files that are gone)
+    local list = {}
+    for _, sound in ipairs(sounds[r.old] or {}) do
+      if assets.exists(sound) then list[#list + 1] = sound end
+    end
+    -- otherwise a mod may have replaced the old sound file and left the config alone
+    if #list == 0 and assets.exists(r.file) then list[1] = r.file end
+    if #list > 0 then
+      ops[#ops + 1] = { op = "add", path = "/sounds/" .. r.new, value = list }
+    end
+    if sounds[r.old] ~= nil then
+      ops[#ops + 1] = { op = "remove", path = "/sounds/" .. r.old }
+    end
+  end
+  if #ops > 0 then
+    local path = "/interface/windowconfig/opensb/sounds_rename.patch"
+    assets.add(path, sb.printJson(ops))
+    assets.patch(config, path)
+  end
+end
+
 -- Relocate songs to the /songs/ folder
 
 local songs = assets.byExtension("abc")
