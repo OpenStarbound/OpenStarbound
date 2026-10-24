@@ -73,6 +73,7 @@ SET (star_game_HEADERS
     StarMaterialRenderProfile.hpp
     StarMaterialTypes.hpp
     StarMicroDungeon.hpp
+    StarModStorage.hpp
     StarMonster.hpp
     StarMonsterDatabase.hpp
     StarMovementController.hpp
@@ -346,6 +347,7 @@ SET (star_game_SOURCES
     StarMaterialDatabase.cpp
     StarMaterialRenderProfile.cpp
     StarMicroDungeon.cpp
+    StarModStorage.cpp
     StarMonster.cpp
     StarMonsterDatabase.cpp
     StarMovementController.cpp
