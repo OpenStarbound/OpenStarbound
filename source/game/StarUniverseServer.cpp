@@ -22,6 +22,17 @@
 
 namespace Star {
 
+// Local clients are not checked against the known ship species on connect,
+// so an unset or unknown species gets here and needs a readable error.
+static StringList const& shipsForSpecies(StringMap<StringList> const& speciesShips, String const& species) {
+  auto ships = speciesShips.ptr(species);
+  if (!ships)
+    throw StarException(strf("Unknown ship species '{}', it is not in /universe_server.config:speciesShips", species));
+  if (ships->empty())
+    throw StarException(strf("Ship species '{}' has no ships in /universe_server.config:speciesShips", species));
+  return *ships;
+}
+
 UniverseServer::UniverseServer(String const& storageDir, bool const& isLocal)
     : Thread("UniverseServer"),
       m_workerPool("UniverseServerWorkerPool"),
@@ -810,7 +821,7 @@ void UniverseServer::updateShips() {
           shipWorld->setProperty("ship.species", species = p.second->shipSpecies());
 
         p.second->setShipSpecies(species);
-        auto const& speciesShips = m_speciesShips.get(species);
+        auto const& speciesShips = shipsForSpecies(m_speciesShips, species);
         Json jOldShipLevel = shipWorld->getProperty("ship.level");
         unsigned newShipLevel = min<unsigned>(speciesShips.size() - 1, newShipUpgrades.shipLevel);
 
@@ -2680,7 +2691,7 @@ Maybe<UniverseServer::WorldServerPromise> UniverseServer::shipWorldPromise(
     if (!shipWorld) {
       Logger::info("UniverseServer: Creating new client ship world {}", clientShipWorldId);
       auto& species = clientContext->shipSpecies();
-      auto shipStructure = WorldStructure(speciesShips.get(species).first());
+      auto shipStructure = WorldStructure(shipsForSpecies(speciesShips, species).first());
       Vec2U worldSize(2048, 2048);
       if (auto jWorldSize = shipStructure.configValue("worldSize"))
         worldSize = jsonToVec2U(jWorldSize);
