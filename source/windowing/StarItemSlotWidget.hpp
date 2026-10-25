@@ -57,6 +57,7 @@ private:
 
   Vec2I m_durabilityOffset;
   int m_cooldownFrames;
+  String m_linkIndicatorImage;
   RectI m_itemDraggableArea;
 
   TextStyle m_textStyle;
