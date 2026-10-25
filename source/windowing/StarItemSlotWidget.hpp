@@ -56,6 +56,7 @@ private:
   FontMode m_countFontMode;
 
   Vec2I m_durabilityOffset;
+  int m_cooldownFrames;
   RectI m_itemDraggableArea;
 
   TextStyle m_textStyle;
