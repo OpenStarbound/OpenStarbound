@@ -441,12 +441,16 @@ void ClientApplication::render() {
   renderer->setMainHDR(config->get("hdr").optBool().value(true));
   renderer->switchEffectConfig("interface");
 
-  if (auto interfaceScale = config->get("interfaceScale").optFloat().value(); interfaceScale != 0)
+  if (auto interfaceScale = config->get("interfaceScale").optFloat().value(); interfaceScale != 0) {
     m_guiContext->setInterfaceScale(interfaceScale);
-  else if (m_guiContext->windowWidth() >= m_crossoverRes[0] && m_guiContext->windowHeight() >= m_crossoverRes[1])
-    m_guiContext->setInterfaceScale(m_maxInterfaceScale);
+  } else {
+    // pick the scale for the window size as the desktop sees it then apply its display scale
+    float displayScale = std::max(1.0f, m_guiContext->getDisplayScale());
+    if (m_guiContext->windowWidth() / displayScale >= m_crossoverRes[0] && m_guiContext->windowHeight() / displayScale >= m_crossoverRes[1])
+      m_guiContext->setInterfaceScale(m_maxInterfaceScale * displayScale);
   else
-    m_guiContext->setInterfaceScale(m_minInterfaceScale);
+      m_guiContext->setInterfaceScale(m_minInterfaceScale * displayScale);
+  }
 
   if (m_state == MainAppState::Mods || m_state == MainAppState::Splash) {
     m_cinematicOverlay->render();
