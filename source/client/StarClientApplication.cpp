@@ -444,11 +444,11 @@ void ClientApplication::render() {
   if (auto interfaceScale = config->get("interfaceScale").optFloat().value(); interfaceScale != 0) {
     m_guiContext->setInterfaceScale(interfaceScale);
   } else {
-    // pick the scale for the window size as the desktop sees it then apply its display scale
+    // pick the min or max scale from the real window size, then apply the display scale so it grows with it
     float displayScale = std::max(1.0f, m_guiContext->getDisplayScale());
-    if (m_guiContext->windowWidth() / displayScale >= m_crossoverRes[0] && m_guiContext->windowHeight() / displayScale >= m_crossoverRes[1])
+    if (m_guiContext->windowWidth() >= m_crossoverRes[0] && m_guiContext->windowHeight() >= m_crossoverRes[1])
       m_guiContext->setInterfaceScale(m_maxInterfaceScale * displayScale);
-  else
+    else
       m_guiContext->setInterfaceScale(m_minInterfaceScale * displayScale);
   }
 
