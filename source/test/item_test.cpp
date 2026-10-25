@@ -41,25 +41,27 @@ TEST(ItemTest, ItemDescriptorConstruction) {
   testItemDescriptor = ItemDescriptor("perfectlygenericitem", 1, JsonObject{{"testParameter", "testValue"}});
 }
 
+// Uses a plain item: perfectlygenericitem retains object parameters in the item
+// (scriptStorage), so it never has empty parameters.
 TEST(ItemTest, ItemComparison) {
   auto itemDatabase = Root::singleton().itemDatabase();
-  ItemPtr testItem = itemDatabase->item(ItemDescriptor("perfectlygenericitem", 1));
-  ItemPtr testItemParams = itemDatabase->item(ItemDescriptor("perfectlygenericitem", 1, JsonObject{{"testParameter", "testValue"}}));
+  ItemPtr testItem = itemDatabase->item(ItemDescriptor("copperbar", 1));
+  ItemPtr testItemParams = itemDatabase->item(ItemDescriptor("copperbar", 1, JsonObject{{"testParameter", "testValue"}}));
 
   List<ItemDescriptor> testItemDescriptors = List<ItemDescriptor>{
-    ItemDescriptor("perfectlygenericitem", 1),
-    ItemDescriptor(JsonArray{"perfectlygenericitem"}),
-    ItemDescriptor(JsonArray{"perfectlygenericitem", 1}),
-    ItemDescriptor(JsonArray{"perfectlygenericitem", 1, JsonObject()}),
-    ItemDescriptor(JsonObject{{"name", "perfectlygenericitem"}}),
-    ItemDescriptor(JsonObject{{"item", "perfectlygenericitem"}}),
-    ItemDescriptor(JsonObject{{"name", "perfectlygenericitem"}, {"count", 1}}),
-    ItemDescriptor(JsonObject{{"name", "perfectlygenericitem"}, {"count", 1}, {"parameters", JsonObject()}})
+    ItemDescriptor("copperbar", 1),
+    ItemDescriptor(JsonArray{"copperbar"}),
+    ItemDescriptor(JsonArray{"copperbar", 1}),
+    ItemDescriptor(JsonArray{"copperbar", 1, JsonObject()}),
+    ItemDescriptor(JsonObject{{"name", "copperbar"}}),
+    ItemDescriptor(JsonObject{{"item", "copperbar"}}),
+    ItemDescriptor(JsonObject{{"name", "copperbar"}, {"count", 1}}),
+    ItemDescriptor(JsonObject{{"name", "copperbar"}, {"count", 1}, {"parameters", JsonObject()}})
   };
 
   List<ItemDescriptor> testItemDescriptorsParams = List<ItemDescriptor>{
-    ItemDescriptor(JsonArray{"perfectlygenericitem", 1, JsonObject{{"testParameter", "testValue"}}}),
-    ItemDescriptor(JsonObject{{"name", "perfectlygenericitem"}, {"count", 1}, {"parameters", JsonObject{{"testParameter", "testValue"}}}})
+    ItemDescriptor(JsonArray{"copperbar", 1, JsonObject{{"testParameter", "testValue"}}}),
+    ItemDescriptor(JsonObject{{"name", "copperbar"}, {"count", 1}, {"parameters", JsonObject{{"testParameter", "testValue"}}}})
   };
 
   // comparisons WITHOUT exactMatch

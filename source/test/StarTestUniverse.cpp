@@ -8,6 +8,7 @@
 #include "StarPlayer.hpp"
 #include "StarAssets.hpp"
 #include "StarWorldClient.hpp"
+#include "StarLuaComponents.hpp"
 
 namespace Star {
 
@@ -22,11 +23,21 @@ TestUniverse::TestUniverse(Vec2U clientWindowSize) {
   m_server = make_shared<UniverseServer>(File::relativeTo(m_storagePath, "universe"));
   m_client = make_shared<UniverseClient>(playerStorage, statistics, File::relativeTo(m_storagePath, "universeclient"));
 
+  // The client application registers the real input callbacks, which need a
+  // window. Player scripts poll them every update, so provide inert ones.
+  LuaCallbacks inputCallbacks;
+  inputCallbacks.registerCallback("bindDown", [](String const&, String const&) -> Maybe<unsigned> { return {}; });
+  inputCallbacks.registerCallback("bindUp", [](String const&, String const&) -> Maybe<unsigned> { return {}; });
+  inputCallbacks.registerCallback("bindHeld", [](String const&, String const&) -> bool { return false; });
+  inputCallbacks.registerCallback("bind", [](String const&, String const&) -> bool { return false; });
+  m_client->setLuaCallbacks("input", inputCallbacks);
+
   m_server->start();
 
   m_mainPlayer = root.playerFactory()->create();
   m_mainPlayer->finalizeCreation();
   m_mainPlayer->setAdmin(true);
+  m_mainPlayer->setShipSpecies("apex"); // a new player has none, and the ship world cannot be created without one
   m_mainPlayer->setModeType(PlayerMode::Survival);
   m_client->setMainPlayer(m_mainPlayer);
   m_client->connect(m_server->addLocalClient(), "test", "");
