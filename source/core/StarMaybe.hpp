@@ -3,6 +3,12 @@
 #include "StarException.hpp"
 #include "StarHash.hpp"
 
+// GCC cannot see through the m_initialized flag when it inlines Maybe.
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
+
 namespace Star {
 
 STAR_EXCEPTION(InvalidMaybeAccessException, StarException);
@@ -395,6 +401,10 @@ size_t hash<Maybe<T>>::operator()(Maybe<T> const& m) const {
 }
 
 }
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+
 
 template <typename T>
 struct fmt::formatter<Star::Maybe<T>> : ostream_formatter {};
