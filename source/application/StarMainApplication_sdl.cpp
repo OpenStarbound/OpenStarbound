@@ -480,6 +480,9 @@ public:
 
 #ifdef STAR_SYSTEM_LINUX
     SDL_SetHint(SDL_HINT_VIDEO_WAYLAND_SCALE_TO_DISPLAY, "1");
+    // Wayland lost to X11 (XWayland), so force it to have precedence when set.
+    if (!SDL_getenv("SDL_VIDEO_DRIVER") && !SDL_getenv("SDL_VIDEODRIVER") && SDL_getenv("WAYLAND_DISPLAY"))
+      SDL_SetHint(SDL_HINT_VIDEO_DRIVER, "wayland,x11");
 #endif
     
     Logger::info("Application: Initializing SDL Video");
