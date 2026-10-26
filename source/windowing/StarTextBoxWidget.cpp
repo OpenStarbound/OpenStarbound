@@ -48,7 +48,11 @@ void TextBoxWidget::renderImpl() {
 
   context()->setTextStyle(m_textStyle);
   if ((m_maxWidth != -1) && m_overfillMode) {
-    float shift = std::max(0.f, cursorOffset - m_maxWidth);
+    float shift;
+    if (m_hAnchor == HorizontalAnchor::RightAnchor)
+      shift = std::min(0.f, cursorOffset + m_maxWidth);
+    else
+      shift = std::max(0.f, cursorOffset - m_maxWidth);
     pos[0] -= shift;
   }
 
@@ -96,9 +100,7 @@ int TextBoxWidget::getCursorDrawOffset() const { // horizontal only
   } else if (m_hAnchor == HorizontalAnchor::HMidAnchor) {
     scale = 0.5;
   } else if (m_hAnchor == HorizontalAnchor::RightAnchor) {
-    scale = -1.0;
-    return context()->stringWidth(displayText) * scale
-         + context()->stringWidth(displayText.substr(m_cursorOffset, displayText.size()));
+    scale = 0.0;
   } else {
     throw GuiException("Somehow, the value of m_hAnchor became bad");
   }
