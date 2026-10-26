@@ -2620,13 +2620,13 @@ MAKE_ENUM(ImGuiConfigFlags_IsSRGB,IsSRGB)
 //    ImGuiConfigFlags_IsTouchScreen          = 1 << 21,  // Application is using a touch screen instead of a mouse.
 MAKE_ENUM(ImGuiConfigFlags_IsTouchScreen,IsTouchScreen)
 //    ImGuiConfigFlags_NavEnableSetMousePos   = 1 << 2,   // [moved/renamed in 1.91.4] -> use bool io.ConfigNavMoveSetMousePos
-// FIXME: not sure how to set this up right for newer versions
-#if IMGUI_VERSION_NUM < 19140
+// still defined in newer versions unless the obsolete API is disabled
+#if IMGUI_VERSION_NUM < 19140 || !defined(IMGUI_DISABLE_OBSOLETE_FUNCTIONS)
   MAKE_ENUM(ImGuiConfigFlags_NavEnableSetMousePos,NavEnableSetMousePos)
 #endif
 //    ImGuiConfigFlags_NavNoCaptureKeyboard   = 1 << 3,   // [moved/renamed in 1.91.4] -> use bool io.ConfigNavCaptureKeyboard
-// FIXME: not sure how to set this up right for newer versions
-#if IMGUI_VERSION_NUM < 19140
+// still defined in newer versions unless the obsolete API is disabled
+#if IMGUI_VERSION_NUM < 19140 || !defined(IMGUI_DISABLE_OBSOLETE_FUNCTIONS)
   MAKE_ENUM(ImGuiConfigFlags_NavNoCaptureKeyboard,NavNoCaptureKeyboard)
 #endif
 END_ENUM(ConfigFlags)
