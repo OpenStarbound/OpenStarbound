@@ -55,7 +55,7 @@ void LiquidItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
   float radius;
 
   if (!shifting)
-    radius = 1.0f;
+    radius = m_blockRadius;
   else
     radius = m_altBlockRadius;
 
@@ -92,7 +92,7 @@ List<PreviewTile> LiquidItem::previewTiles(bool shifting) const {
 
     float radius;
     if (!shifting)
-      radius = 1.0f;
+      radius = m_blockRadius;
     else
       radius = m_altBlockRadius;
 
