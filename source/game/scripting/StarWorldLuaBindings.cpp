@@ -2036,8 +2036,17 @@ namespace LuaBindings {
   }
 
   Maybe<List<EntityId>> WorldEntityCallbacks::loungingEntities(World* world, EntityId entityId, Maybe<size_t> anchorIndex) {
-    if (auto entity = world->get<LoungeableEntity>(entityId))
-      return entity->entitiesLoungingIn(anchorIndex.value()).values();
+    if (auto entity = world->get<LoungeableEntity>(entityId)){
+      if (anchorIndex.isValid()) {
+        return entity->entitiesLoungingIn(anchorIndex.value()).values();
+      } else {
+        return entity->entitiesLounging().values().transformed(
+          [](pair<EntityId, size_t> p) -> EntityId {
+            return p.first;
+          }
+        );
+      }
+    }
     return {};
   }
 

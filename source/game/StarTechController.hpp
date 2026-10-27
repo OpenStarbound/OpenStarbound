@@ -74,8 +74,8 @@ public:
 
   bool parentHidden() const;
 
-  List<Drawable> backDrawables();
-  List<Drawable> frontDrawables();
+  List<Drawable> backDrawables(Vec2F position = Vec2F());
+  List<Drawable> frontDrawables(Vec2F position = Vec2F());
 
   List<LightSource> lightSources() const;
 

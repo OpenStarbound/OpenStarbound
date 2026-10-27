@@ -272,12 +272,12 @@ bool TechController::parentHidden() const {
   return m_parentHidden.get();
 }
 
-List<Drawable> TechController::backDrawables() {
+List<Drawable> TechController::backDrawables(Vec2F position) {
   List<Drawable> drawables;
 
   for (auto const& animator : m_techAnimators.netElements()) {
     if (animator->isVisible()) {
-      for (auto& piece : animator->animator.drawablesWithZLevel(m_movementController->position())) {
+      for (auto& piece : animator->animator.drawablesWithZLevel(position)) {
         if (piece.second < 0.0f)
           drawables.append(std::move(piece.first));
       }
@@ -287,12 +287,12 @@ List<Drawable> TechController::backDrawables() {
   return drawables;
 }
 
-List<Drawable> TechController::frontDrawables() {
+List<Drawable> TechController::frontDrawables(Vec2F position) {
   List<Drawable> drawables;
 
   for (auto const& animator : m_techAnimators.netElements()) {
     if (animator->isVisible()) {
-      for (auto& piece : animator->animator.drawablesWithZLevel(m_movementController->position())) {
+      for (auto& piece : animator->animator.drawablesWithZLevel(position)) {
         if (piece.second >= 0.0f)
           drawables.append(std::move(piece.first));
       }
