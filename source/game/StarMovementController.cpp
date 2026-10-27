@@ -211,7 +211,7 @@ MovementController::MovementController(MovementParameters const& parameters) {
 
   m_world = nullptr;
 
-  m_scale.setCompatibilityVersion(8);
+  m_scale.setCompatibilityVersion(22);
   m_scale.set(1.0f);
   addNetElement(&m_scale);
 
