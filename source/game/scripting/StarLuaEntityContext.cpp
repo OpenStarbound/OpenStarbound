@@ -658,7 +658,8 @@ LuaMethods<EntityContext> LuaUserDataMethods<EntityContext>::make() {
         return {};
     });
     methods.registerMethod("loungeAnchor",
-    [&](EntityPtr const& entity, int anchorIndex) -> Maybe<JsonObject> {
+    [&](EntityContext const& context, int anchorIndex) -> Maybe<JsonObject> {
+        auto const& entity = context.entity;
         if (!entity->inWorld())
             return {};
         if (auto loungeable = as<LoungeableEntity>(entity))

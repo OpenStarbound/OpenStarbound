@@ -16,7 +16,7 @@ LoungeableObject::LoungeableObject(ObjectConfigConstPtr config, Json const& para
       configValue("loungePositions", JsonObject()).toObject(),
       configValue("receiveExtraControls", false).toBool()
     );
-    setupLoungeNetStates(&m_netGroup, 14);
+    setupLoungeNetStates(&m_netGroup, 22);
   }
 }
 
@@ -103,8 +103,8 @@ LoungeAnchorConstPtr LoungeableObject::loungeAnchor(size_t positionIndex) const 
   return loungeAnchor;
 }
 
-void LoungeableObject::init(World* world, EntityId entityId, EntityMode mode) {
-  Object::init(world, entityId, mode);
+void LoungeableObject::init(World* world, EntityId entityId, EntityMode mode, ConnectionId originConnection) {
+  Object::init(world, entityId, mode, originConnection);
   if (m_useLoungePositions){
     loungeInit();
   }
@@ -144,10 +144,10 @@ NetworkedAnimator * LoungeableObject::networkedAnimator()  {
   return Object::networkedAnimator();
 }
 
-Maybe<Json> LoungeableObject::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
+Maybe<ChainableJsonMessageResponse> LoungeableObject::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
   if (m_useLoungePositions)
-    if (receiveLoungeMessage(sendingConnection, message, args).isValid())
-      return Json();
+    if (auto resp = receiveLoungeMessage(sendingConnection, message, args))
+      return resp;
   return Object::receiveMessage(sendingConnection, message, args);
 }
 

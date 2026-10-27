@@ -68,7 +68,7 @@ public:
   void loungeTickMaster(float dt);
   void loungeTickSlave(float dt);
 
-  Maybe<Json> receiveLoungeMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args);
+  Maybe<ChainableJsonMessageResponse> receiveLoungeMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args);
   Maybe<size_t> loungeInteract(InteractRequest const& request);
   LuaCallbacks addLoungeableCallbacks(LuaCallbacks callbacks);
 

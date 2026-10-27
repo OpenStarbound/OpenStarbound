@@ -16,7 +16,7 @@ public:
   size_t anchorCount() const override;
   LoungeAnchorConstPtr loungeAnchor(size_t positionIndex) const override;
 
-  virtual void init(World* world, EntityId entityId, EntityMode mode) override;
+  virtual void init(World* world, EntityId entityId, EntityMode mode, ConnectionId originConnection = ServerConnectionId) override;
   virtual void uninit() override;
   virtual void update(float dt, uint64_t currentStep) override;
 
@@ -27,7 +27,7 @@ public:
   virtual NetworkedAnimator const* networkedAnimator() const override;
   virtual NetworkedAnimator * networkedAnimator() override;
 
-  virtual Maybe<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args = {}) override;
+  virtual Maybe<ChainableJsonMessageResponse> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args = {}) override;
 
   virtual LoungeableEntity::LoungePositions* loungePositions() override;
   virtual LoungeableEntity::LoungePositions const* loungePositions() const override;

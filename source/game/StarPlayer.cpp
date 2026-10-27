@@ -1248,7 +1248,6 @@ void Player::render(RenderCallback* renderCallback) {
     renderCallback->addAudio(std::move(audio));
   }
 
-  auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor());
 
   EntityRenderLayer renderLayer = RenderLayerPlayer;
   if (auto overrideRenderLayer = getSecretProperty("overrideRenderLayer"); overrideRenderLayer.canConvert(Json::Type::Int)) {
