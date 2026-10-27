@@ -680,9 +680,5 @@ Json Vehicle::configValue(String const& name, Json def) const {
   return jsonMergeQueryDef(name, std::move(def), m_baseConfig, m_dynamicConfig);
 }
 
-MovementController* Vehicle::movementController() {
-  return &m_movementController;
-}
-
 
 }

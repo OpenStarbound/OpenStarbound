@@ -1057,9 +1057,4 @@ void Projectile::renderPendingRenderables(RenderCallback* renderCallback) {
   m_pendingRenderables.clear();
 }
 
-MovementController* Projectile::movementController() {
-  return m_movementController.get();
-}
-
-
 }

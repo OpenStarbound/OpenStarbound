@@ -89,8 +89,6 @@ public:
 
   void setPosition(Vec2F const& position);
 
-  MovementController* movementController() override;
-
 private:
   struct MasterControlState {
     Set<ConnectionId> slavesHeld;

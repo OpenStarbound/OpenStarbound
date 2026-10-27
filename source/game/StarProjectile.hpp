@@ -106,8 +106,6 @@ public:
   
   MovementController* movementController() override;
 
-  MovementController* movementController() override;
-
 private:
   struct PhysicsForceConfig {
     PhysicsForceRegion forceRegion;
