@@ -15,6 +15,7 @@ public:
   StringList biomeNames() const;
 
   float biomeHueShift(String const& biomeName, uint64_t seed) const;
+  bool biomeHasWeather(String const& biomeName) const;
   WeatherPool biomeWeathers(String const& biomeName, uint64_t seed, float threatLevel) const;
   bool biomeIsAirless(String const& biomeName) const;
   SkyColoring biomeSkyColoring(String const& biomeName, uint64_t seed) const;
@@ -27,11 +28,14 @@ public:
 
   BiomePtr createBiome(String const& biomeName, uint64_t seed, float verticalMidPoint, float threatLevel) const;
 
+  Json biomeConfig(String const& biomeName) const;
+
 private:
   struct Config {
     String path;
     String name;
     Json parameters;
+    Json toJson() const;
   };
   typedef StringMap<Config> ConfigMap;
 

@@ -11,5 +11,12 @@
     "letterbox" : false
   },
   "postProcessLayers": [],
-  "postProcessGroups": {}
+  "postProcessGroups": {},
+  
+  "worldScriptContexts":{},
+  "mainWorldScriptContexts":{},
+  "subWorldScriptContexts":{},
+  
+  "idleSubWorldExpireTime":10.0,
+  "subWorldUpdateMeasureWindow" : 0.5
 }

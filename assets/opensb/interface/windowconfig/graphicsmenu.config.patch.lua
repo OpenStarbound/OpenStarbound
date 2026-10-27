@@ -27,6 +27,13 @@ function patch(config)
   if layout.bgShine then
     layout.bgShine.zlevel = -10
   end
+  
+  -- upshift from bottom, so we can add new checkbox rows
+  local upshift = 11
+  
+  shift(layout.zoomLabel, 0, upshift)
+  shift(layout.zoomSlider, 0, upshift)
+  shift(layout.zoomValueLabel, 0, upshift)
   for i = 1, 32 do config.zoomList[i] = i end
   -- Create the camera pan speed widgets
   shift(clone(layout, "zoomLabel", "cameraSpeedLabel"), 100).value = "CAMERA PAN SPEED"
@@ -41,6 +48,12 @@ function patch(config)
   shift(clone(layout, "zoomValueLabel", "interfaceScaleValueLabel"), 0, 28)
   config.interfaceScaleList = {0} -- 0 = AUTO!
   for i = 1, 17 do config.interfaceScaleList[i + 1] = 0.75 + i / 4 end
+  
+  -- shift up all checkboxes
+  for _,k in next, {"fullscreen","borderless","monochrome","interactiveHighlight","speechBubble","textureLimit","multiTexture"} do
+    shift(layout[k.."Label"],0,upshift)
+    shift(layout[k.."Checkbox"],0,upshift)
+  end
 
   -- Create anti-aliasing toggle
   shift(clone(layout, "multiTextureLabel", "antiAliasingLabel"), 98).value = "SUPER-SAMPLED AA"
@@ -51,14 +64,17 @@ function patch(config)
   -- Create hardware cursor toggle
   shift(clone(layout, "multiTextureLabel", "hardwareCursorLabel"), 98, -11).value = "HARDWARE CURSOR"
   shift(clone(layout, "multiTextureCheckbox", "hardwareCursorCheckbox"), 99, -11)
+  -- Create HDR toggle
+  shift(clone(layout, "multiTextureLabel", "hdrLabel"), 0, -22).value = "HDR"
+  shift(clone(layout, "multiTextureCheckbox", "hdrCheckbox"), 0, -22)
   
   -- Create shader menu button
   shift(moveto(clone(layout, "accept", "showShadersMenu"), layout.interfaceScaleSlider), 112, -2).caption = "Shaders"
   
 
-  shift(layout.title, 0, 24)
-  shift(layout.resLabel, 0, 28)
-  shift(layout.resSlider, 0, 28)
-  shift(layout.resValueLabel, 0, 28)
+  shift(layout.title, 0, 24+upshift)
+  shift(layout.resLabel, 0, 28+upshift)
+  shift(layout.resSlider, 0, 28+upshift)
+  shift(layout.resValueLabel, 0, 28+upshift)
   return config
 end

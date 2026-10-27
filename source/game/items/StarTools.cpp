@@ -88,7 +88,7 @@ void MiningTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
 
       damage.harvestLevel = instanceValue("harvestLevel", 1).toUInt();
 
-      auto damageResult = world()->damageTiles(brushArea, layer, owner()->position(), damage, owner()->entityId());
+      auto damageResult = world()->connectionHasPermission(owner()->originConnection(), WorldPermissionType::Build) ? world()->damageTiles(brushArea, layer, owner()->position(), damage, owner()->entityId()) : TileDamageResult::Protected;
 
       if (damageResult != TileDamageResult::None) {
         used = true;
@@ -437,7 +437,9 @@ void BeamMiningTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
         }
       }
 
-      auto damageResult = worldp->damageTiles(List<Vec2I>{brushArea}, layer, ownerp->position(), {TileDamageType::Beamish, m_tileDamage, m_harvestLevel}, ownerp->entityId());
+      auto damageResult = worldp->connectionHasPermission(ownerp->originConnection(), WorldPermissionType::Build) ? 
+        worldp->damageTiles(List<Vec2I>{brushArea}, layer, ownerp->position(), {TileDamageType::Beamish, m_tileDamage, m_harvestLevel}, ownerp->entityId()) 
+        : TileDamageResult::Protected;
       used = damageResult != TileDamageResult::None;
 
       if (damageResult == TileDamageResult::Protected) {
@@ -450,6 +452,8 @@ void BeamMiningTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
         float totalLiquid = 0;
         for (auto pos : brushArea) {
           if (worldp->isTileProtected(pos))
+            continue;
+          if (!worldp->connectionHasPermission(ownerp->originConnection(), WorldPermissionType::Build))
             continue;
 
           auto liquid = worldp->liquidLevel(pos);
@@ -622,7 +626,16 @@ List<Drawable> PaintingBeamTool::drawables() const {
   for (auto& entry : result) {
     if (entry.isImage()) {
       auto& image = entry.imagePart().image;
-      image.subPath = image.subPath.value("0") + m_colorKeys[m_colorIndex];
+      auto& color = m_colorKeys[m_colorIndex];
+      if (size_t directives_start = color.find('?'); directives_start != NPos) {
+        auto index      = color.substr(0, directives_start);
+        auto directives = color.substr(directives_start);
+
+        image.subPath = image.subPath.value("0") + index;
+        image.directives += directives;
+      } else {
+        image.subPath = image.subPath.value("0") + color;
+      }
     }
   }
   return result;

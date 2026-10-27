@@ -11,8 +11,8 @@
 #include "StarBehaviorState.hpp"
 #include "StarSystemWorld.hpp"
 #include "StarDrawable.hpp"
-#include "StarRpcThreadPromise.hpp"
 #include "StarEntity.hpp"
+#include "StarMixer.hpp"
 
 namespace Star {
 
@@ -32,22 +32,6 @@ template <>
 struct LuaConverter<CollisionSet> {
   static LuaValue from(LuaEngine& engine, CollisionSet const& s);
   static Maybe<CollisionSet> to(LuaEngine& engine, LuaValue const& v);
-};
-
-template <typename T>
-struct LuaConverter<RpcPromise<T>> : LuaUserDataConverter<RpcPromise<T>> {};
-
-template <typename T>
-struct LuaUserDataMethods<RpcPromise<T>> {
-  static LuaMethods<RpcPromise<T>> make();
-};
-
-template <typename T>
-struct LuaConverter<RpcThreadPromise<T>> : LuaUserDataConverter<RpcThreadPromise<T>> {};
-
-template <typename T>
-struct LuaUserDataMethods<RpcThreadPromise<T>> {
-  static LuaMethods<RpcThreadPromise<T>> make();
 };
 
 template <>
@@ -122,26 +106,6 @@ struct LuaConverter<Drawable> {
   static Maybe<Drawable> to(LuaEngine& engine, LuaValue const& v);
 };
 
-template <typename T>
-LuaMethods<RpcPromise<T>> LuaUserDataMethods<RpcPromise<T>>::make() {
-  LuaMethods<RpcPromise<T>> methods;
-  methods.template registerMethodWithSignature<bool, RpcPromise<T>&>("finished", mem_fn(&RpcPromise<T>::finished));
-  methods.template registerMethodWithSignature<bool, RpcPromise<T>&>("succeeded", mem_fn(&RpcPromise<T>::succeeded));
-  methods.template registerMethodWithSignature<Maybe<T>, RpcPromise<T>&>("result", mem_fn(&RpcPromise<T>::result));
-  methods.template registerMethodWithSignature<Maybe<String>, RpcPromise<T>&>("error", mem_fn(&RpcPromise<T>::error));
-  return methods;
-}
-
-template <typename T>
-LuaMethods<RpcThreadPromise<T>> LuaUserDataMethods<RpcThreadPromise<T>>::make() {
-  LuaMethods<RpcThreadPromise<T>> methods;
-  methods.template registerMethodWithSignature<bool, RpcThreadPromise<T>&>("finished", mem_fn(&RpcThreadPromise<T>::finished));
-  methods.template registerMethodWithSignature<bool, RpcThreadPromise<T>&>("succeeded", mem_fn(&RpcThreadPromise<T>::succeeded));
-  methods.template registerMethodWithSignature<Maybe<T>, RpcThreadPromise<T>&>("result", mem_fn(&RpcThreadPromise<T>::result));
-  methods.template registerMethodWithSignature<Maybe<String>, RpcThreadPromise<T>&>("error", mem_fn(&RpcThreadPromise<T>::error));
-  return methods;
-}
-
 template <>
 struct LuaConverter<Collection> {
   static LuaValue from(LuaEngine& engine, Collection const& c);
@@ -186,11 +150,11 @@ struct LuaUserDataMethods<BlackboardWeakPtr> {
 };
 
 template <>
-struct LuaConverter<EntityPtr> : LuaUserDataConverter<EntityPtr> {};
+struct LuaConverter<AudioInstancePtr> : LuaUserDataConverter<AudioInstancePtr> {};
 
 template <>
-struct LuaUserDataMethods<EntityPtr> {
-  static LuaMethods<EntityPtr> make();
+struct LuaUserDataMethods<AudioInstancePtr> {
+  static LuaMethods<AudioInstancePtr> make();
 };
 
 }

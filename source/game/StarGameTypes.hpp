@@ -3,10 +3,15 @@
 #include "StarString.hpp"
 #include "StarBiMap.hpp"
 #include "StarVector.hpp"
+#include "StarJson.hpp"
+#include "StarRpcPromise.hpp"
 #include "StarLiquidTypes.hpp"
 #include "StarMaterialTypes.hpp"
 
 namespace Star {
+
+typedef Variant<String,RpcPromise<String>> ServerCommandResult;
+typedef Variant<Json,RpcPromise<Json>> ChainableJsonMessageResponse;
 
 enum class Direction : uint8_t {
   Left,
@@ -88,6 +93,19 @@ enum class Rarity {
 };
 extern EnumMap<Rarity> const RarityNames;
 
+enum class WorldPermissionType : uint8_t {
+  Build, // supersedes the others. if a client can build, they can do everything else too.
+  Containers, // if not allowed, forbids container accesses
+  Interact // if not allowed, forbids most entity messages and interactions to server master entities; also by extension containers, since you can't interact with them anyway.
+};
+extern EnumMap<WorldPermissionType> const WorldPermissionTypeNames;
+
+struct WorldPermissions {
+  bool build = true;
+  bool interact = true;
+  bool containers = true;
+};
+
 // Transformation from tile space to pixel space.  Number of pixels in 1.0
 // distance (one tile).
 unsigned const TilePixels = 8;
@@ -116,7 +134,31 @@ typedef uint16_t ConnectionId;
 ConnectionId const ServerConnectionId = 0;
 // Minimum and maximum valid client ids
 ConnectionId const MinClientConnectionId = 1;
-ConnectionId const MaxClientConnectionId = 32767;
+ConnectionId const MaxClientConnectionId = 16383;
+ConnectionId const MinClientSubWorldConnectionId = MaxClientConnectionId+1;
+ConnectionId const MaxClientSubWorldConnectionId = MaxClientConnectionId-MinClientConnectionId+MinClientSubWorldConnectionId;
+
+inline ConnectionId mainToSubWorldConnectionId(ConnectionId const& id) {
+  return id-MinClientConnectionId+MinClientSubWorldConnectionId;
+}
+inline ConnectionId subWorldToMainConnectionId(ConnectionId const& id) {
+  return id-MinClientSubWorldConnectionId+MinClientConnectionId;
+}
+// main connectionid for a connection, accounting for subworlds
+inline ConnectionId maybeSubWorldToMainConnectionId(ConnectionId const& id) {
+  return id >= MinClientSubWorldConnectionId ? subWorldToMainConnectionId(id) : id;
+}
+// subworld connection if main connection, main connection if subworld
+inline ConnectionId invertMainSubWorldConnectionId(ConnectionId const& id) {
+  return id >= MinClientSubWorldConnectionId ? subWorldToMainConnectionId(id) : mainToSubWorldConnectionId(id);
+}
+
+// for client sub-world threads. indexes by *world* rather than by thread.
+// this should allow the client to possibly split the subworlds to multiple threads in the future.
+typedef uint16_t ClientSubWorldId;
+ConnectionId const MainClientWorldId = 0;
+ConnectionId const MinClientSubWorldId = 1;
+ConnectionId const MaxClientSubWorldId = highest<ClientSubWorldId>();
 
 template <typename Vec2T>
 inline Vec2F centerOfTile(Vec2T const& tile) {
@@ -139,6 +181,16 @@ static const DungeonId ProtectedZeroGDungeonId = 65524;
 
 // The first dungeon id that is reserved for special hard-coded dungeon values.
 DungeonId const FirstMetaDungeonId = 65520;
+
+// Dungeon ids that are networked as protected to clients that have no permission to edit the world
+// Misses most dungeon ids but it's better than networking at least 128 KiB of DungeonIds every tile protection update
+// Every dungeonid not in this list gets networked normally regardless of its actual tile protection state
+// TODO: directly network full world protection for newer clients.
+static const StableHashSet<DungeonId> NoPermissionProtectedDungeonIds = {
+  65520,65521,65522,65523,65524,65525,65526,65527,65528,65529,
+  65530,65531,65532,65533,65534,65535,
+  0,1,2,3,4,5,6,7,8,9
+};
 
 inline bool isRealDungeon(DungeonId dungeon) {
   return dungeon < FirstMetaDungeonId;

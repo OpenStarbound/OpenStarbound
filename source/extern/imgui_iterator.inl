@@ -2013,7 +2013,7 @@ IMGUI_FUNCTION(SetMouseCursor)
 INT_ARG(cursor_type)
 CALL_FUNCTION_NO_RET(SetMouseCursor, cursor_type)
 END_IMGUI_FUNC
-//    IMGUI_API void          SetNextFrameWantCaptureMouse(bool want_capture_mouse);              // Override io.WantCaptureMouse flag next frame (said flag is left for your application to handle, typical when true it instucts your app to ignore inputs). This is equivalent to setting "io.WantCaptureMouse = want_capture_mouse;" after the next NewFrame() call.
+//    IMGUI_API void          SetNextFrameWantCaptureMouse(bool want_capture_mouse);              // Override io.WantCaptureMouse flag next frame (said flag is left for your application to handle, typical when true it instructs your app to ignore inputs). This is equivalent to setting "io.WantCaptureMouse = want_capture_mouse;" after the next NewFrame() call.
 IMGUI_FUNCTION(SetNextFrameWantCaptureMouse)
 BOOL_ARG(want_capture_mouse)
 CALL_FUNCTION_NO_RET(SetNextFrameWantCaptureMouse, want_capture_mouse)
@@ -2164,10 +2164,9 @@ MAKE_ENUM(ImGuiWindowFlags_Popup,Popup)
 MAKE_ENUM(ImGuiWindowFlags_Modal,Modal)
 //    ImGuiWindowFlags_ChildMenu              = 1 << 28,  // Don't use! For internal use by BeginMenu()
 MAKE_ENUM(ImGuiWindowFlags_ChildMenu,ChildMenu)
-//    ImGuiWindowFlags_NavFlattened           = 1 << 29,  // Obsoleted in 1.90.9: Use ImGuiChildFlags_NavFlattened in BeginChild() call.
-MAKE_ENUM(ImGuiWindowFlags_NavFlattened,NavFlattened)
-//    ImGuiWindowFlags_AlwaysUseWindowPadding = 1 << 30,  // Obsoleted in 1.90.0: Use ImGuiChildFlags_AlwaysUseWindowPadding in BeginChild() call.
-MAKE_ENUM(ImGuiWindowFlags_AlwaysUseWindowPadding,AlwaysUseWindowPadding)
+// Obsoleted in 1.90.9 / 1.90.0 — moved to ImGuiChildFlags_*. Removed in imgui 1.92.0 +.
+// MAKE_ENUM(ImGuiWindowFlags_NavFlattened,NavFlattened)
+// MAKE_ENUM(ImGuiWindowFlags_AlwaysUseWindowPadding,AlwaysUseWindowPadding)
 END_ENUM(WindowFlags)
 //enum ImGuiChildFlags_
 
@@ -2192,8 +2191,11 @@ MAKE_ENUM(ImGuiChildFlags_AlwaysAutoResize,AlwaysAutoResize)
 MAKE_ENUM(ImGuiChildFlags_FrameStyle,FrameStyle)
 //    ImGuiChildFlags_NavFlattened            = 1 << 8,   // [BETA] Share focus scope, allow keyboard/gamepad navigation to cross over parent border to this child or between sibling child windows.
 MAKE_ENUM(ImGuiChildFlags_NavFlattened,NavFlattened)
-//    ImGuiChildFlags_Border                  = ImGuiChildFlags_Borders,  // Renamed in 1.91.1 (August 2024) for consistency.
-MAKE_ENUM(ImGuiChildFlags_Border,Border)
+#if IMGUI_VERSION_NUM < 19110
+  MAKE_ENUM(ImGuiChildFlags_Border,Border)
+#else
+  MAKE_ENUM(ImGuiChildFlags_Borders,Border)
+#endif
 END_ENUM(ChildFlags)
 //enum ImGuiItemFlags_
 
@@ -2308,10 +2310,16 @@ MAKE_ENUM(ImGuiTreeNodeFlags_LabelSpanAllColumns,LabelSpanAllColumns)
 MAKE_ENUM(ImGuiTreeNodeFlags_NavLeftJumpsBackHere,NavLeftJumpsBackHere)
 //    ImGuiTreeNodeFlags_CollapsingHeader     = ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_NoAutoOpenOnLog,
 MAKE_ENUM(ImGuiTreeNodeFlags_CollapsingHeader,CollapsingHeader)
-//    ImGuiTreeNodeFlags_AllowItemOverlap     = ImGuiTreeNodeFlags_AllowOverlap,  // Renamed in 1.89.7
-MAKE_ENUM(ImGuiTreeNodeFlags_AllowItemOverlap,AllowItemOverlap)
-//    ImGuiTreeNodeFlags_SpanTextWidth        = ImGuiTreeNodeFlags_SpanLabelWidth,// Renamed in 1.90.7
-MAKE_ENUM(ImGuiTreeNodeFlags_SpanTextWidth,SpanTextWidth)
+#if IMGUI_VERSION_NUM < 18970
+  MAKE_ENUM(ImGuiTreeNodeFlags_AllowItemOverlap,AllowItemOverlap)
+#else
+  MAKE_ENUM(ImGuiTreeNodeFlags_AllowOverlap,AllowItemOverlap)
+#endif
+#if IMGUI_VERSION_NUM < 19070
+  MAKE_ENUM(ImGuiTreeNodeFlags_SpanTextWidth,SpanTextWidth)
+#else
+  MAKE_ENUM(ImGuiTreeNodeFlags_SpanLabelWidth,SpanTextWidth)
+#endif
 END_ENUM(TreeNodeFlags)
 //enum ImGuiPopupFlags_
 
@@ -2354,10 +2362,16 @@ MAKE_ENUM(ImGuiSelectableFlags_Disabled,Disabled)
 MAKE_ENUM(ImGuiSelectableFlags_AllowOverlap,AllowOverlap)
 //    ImGuiSelectableFlags_Highlight          = 1 << 5,   // Make the item be displayed as if it is hovered
 MAKE_ENUM(ImGuiSelectableFlags_Highlight,Highlight)
-//    ImGuiSelectableFlags_DontClosePopups    = ImGuiSelectableFlags_NoAutoClosePopups,   // Renamed in 1.91.0
-MAKE_ENUM(ImGuiSelectableFlags_DontClosePopups,DontClosePopups)
-//    ImGuiSelectableFlags_AllowItemOverlap   = ImGuiSelectableFlags_AllowOverlap,        // Renamed in 1.89.7
-MAKE_ENUM(ImGuiSelectableFlags_AllowItemOverlap,AllowItemOverlap)
+#if IMGUI_VERSION_NUM < 19100
+  MAKE_ENUM(ImGuiSelectableFlags_DontClosePopups,DontClosePopups)
+#else
+  MAKE_ENUM(ImGuiSelectableFlags_NoAutoClosePopups,DontClosePopups)
+#endif
+#if IMGUI_VERSION_NUM < 18970
+  MAKE_ENUM(ImGuiSelectableFlags_AllowItemOverlap,AllowItemOverlap)
+#else
+  MAKE_ENUM(ImGuiSelectableFlags_AllowOverlap,AllowItemOverlap)
+#endif
 END_ENUM(SelectableFlags)
 //enum ImGuiComboFlags_
 
@@ -2518,8 +2532,11 @@ MAKE_ENUM(ImGuiDragDropFlags_AcceptNoDrawDefaultRect,AcceptNoDrawDefaultRect)
 MAKE_ENUM(ImGuiDragDropFlags_AcceptNoPreviewTooltip,AcceptNoPreviewTooltip)
 //    ImGuiDragDropFlags_AcceptPeekOnly               = ImGuiDragDropFlags_AcceptBeforeDelivery | ImGuiDragDropFlags_AcceptNoDrawDefaultRect, // For peeking ahead and inspecting the payload before delivery.
 MAKE_ENUM(ImGuiDragDropFlags_AcceptPeekOnly,AcceptPeekOnly)
-//    ImGuiDragDropFlags_SourceAutoExpirePayload = ImGuiDragDropFlags_PayloadAutoExpire, // Renamed in 1.90.9
-MAKE_ENUM(ImGuiDragDropFlags_SourceAutoExpirePayload,SourceAutoExpirePayload)
+#if IMGUI_VERSION_NUM < 19090
+  MAKE_ENUM(ImGuiDragDropFlags_SourceAutoExpirePayload,SourceAutoExpirePayload)
+#else
+  MAKE_ENUM(ImGuiDragDropFlags_PayloadAutoExpire,SourceAutoExpirePayload)
+#endif
 END_ENUM(DragDropFlags)
 //enum ImGuiDataType_
 
@@ -2603,9 +2620,15 @@ MAKE_ENUM(ImGuiConfigFlags_IsSRGB,IsSRGB)
 //    ImGuiConfigFlags_IsTouchScreen          = 1 << 21,  // Application is using a touch screen instead of a mouse.
 MAKE_ENUM(ImGuiConfigFlags_IsTouchScreen,IsTouchScreen)
 //    ImGuiConfigFlags_NavEnableSetMousePos   = 1 << 2,   // [moved/renamed in 1.91.4] -> use bool io.ConfigNavMoveSetMousePos
-MAKE_ENUM(ImGuiConfigFlags_NavEnableSetMousePos,NavEnableSetMousePos)
+// still defined in newer versions unless the obsolete API is disabled
+#if IMGUI_VERSION_NUM < 19140 || !defined(IMGUI_DISABLE_OBSOLETE_FUNCTIONS)
+  MAKE_ENUM(ImGuiConfigFlags_NavEnableSetMousePos,NavEnableSetMousePos)
+#endif
 //    ImGuiConfigFlags_NavNoCaptureKeyboard   = 1 << 3,   // [moved/renamed in 1.91.4] -> use bool io.ConfigNavCaptureKeyboard
-MAKE_ENUM(ImGuiConfigFlags_NavNoCaptureKeyboard,NavNoCaptureKeyboard)
+// still defined in newer versions unless the obsolete API is disabled
+#if IMGUI_VERSION_NUM < 19140 || !defined(IMGUI_DISABLE_OBSOLETE_FUNCTIONS)
+  MAKE_ENUM(ImGuiConfigFlags_NavNoCaptureKeyboard,NavNoCaptureKeyboard)
+#endif
 END_ENUM(ConfigFlags)
 //enum ImGuiBackendFlags_
 
@@ -2690,6 +2713,8 @@ MAKE_ENUM(ImGuiCol_ResizeGrip,ResizeGrip)
 MAKE_ENUM(ImGuiCol_ResizeGripHovered,ResizeGripHovered)
 //    ImGuiCol_ResizeGripActive,
 MAKE_ENUM(ImGuiCol_ResizeGripActive,ResizeGripActive)
+//    ImGuiCol_InputTextCursor,       // InputText cursor/caret
+MAKE_ENUM(ImGuiCol_InputTextCursor,InputTextCursor)
 //    ImGuiCol_TabHovered,            // Tab background, when hovered
 MAKE_ENUM(ImGuiCol_TabHovered,TabHovered)
 //    ImGuiCol_Tab,                   // Tab background, when tab-bar is focused & tab is unselected
@@ -2738,14 +2763,20 @@ MAKE_ENUM(ImGuiCol_NavWindowingDimBg,NavWindowingDimBg)
 MAKE_ENUM(ImGuiCol_ModalWindowDimBg,ModalWindowDimBg)
 //    ImGuiCol_COUNT,
 MAKE_ENUM(ImGuiCol_COUNT,COUNT)
-//    ImGuiCol_TabActive = ImGuiCol_TabSelected,                  // [renamed in 1.90.9]
-MAKE_ENUM(ImGuiCol_TabActive,TabActive)
-//    ImGuiCol_TabUnfocused = ImGuiCol_TabDimmed,                 // [renamed in 1.90.9]
-MAKE_ENUM(ImGuiCol_TabUnfocused,TabUnfocused)
-//    ImGuiCol_TabUnfocusedActive = ImGuiCol_TabDimmedSelected,   // [renamed in 1.90.9]
-MAKE_ENUM(ImGuiCol_TabUnfocusedActive,TabUnfocusedActive)
-//    ImGuiCol_NavHighlight = ImGuiCol_NavCursor,                 // [renamed in 1.91.4]
-MAKE_ENUM(ImGuiCol_NavHighlight,NavHighlight)
+#if IMGUI_VERSION_NUM < 19090
+  MAKE_ENUM(ImGuiCol_TabActive,TabActive)
+  MAKE_ENUM(ImGuiCol_TabUnfocused,TabUnfocused)
+  MAKE_ENUM(ImGuiCol_TabUnfocusedActive,TabUnfocusedActive)
+#else
+  MAKE_ENUM(ImGuiCol_TabSelected,TabActive)
+  MAKE_ENUM(ImGuiCol_TabDimmed,TabUnfocused)
+  MAKE_ENUM(ImGuiCol_TabDimmedSelected,TabUnfocusedActive)
+#endif
+#if IMGUI_VERSION_NUM < 19140
+  MAKE_ENUM(ImGuiCol_NavHighlight,NavHighlight)
+#else
+  MAKE_ENUM(ImGuiCol_NavCursor,NavHighlight)
+#endif
 END_ENUM(Col)
 //enum ImGuiStyleVar_
 
@@ -3601,19 +3632,13 @@ END_IMGUI_FUNC
 IMGUI_FUNCTION_DRAW_LIST(_OnChangedClipRect)
 DRAW_LIST_CALL_FUNCTION_NO_RET(_OnChangedClipRect)
 END_IMGUI_FUNC
-//    IMGUI_API void  _OnChangedTextureID();
-IMGUI_FUNCTION_DRAW_LIST(_OnChangedTextureID)
-DRAW_LIST_CALL_FUNCTION_NO_RET(_OnChangedTextureID)
-END_IMGUI_FUNC
 //    IMGUI_API void  _OnChangedVtxOffset();
 IMGUI_FUNCTION_DRAW_LIST(_OnChangedVtxOffset)
 DRAW_LIST_CALL_FUNCTION_NO_RET(_OnChangedVtxOffset)
 END_IMGUI_FUNC
-//    IMGUI_API void  _SetTextureID(ImTextureID texture_id);
-IMGUI_FUNCTION_DRAW_LIST(_SetTextureID)
-IM_TEXTURE_ID_ARG(texture_id)
-DRAW_LIST_CALL_FUNCTION_NO_RET(_SetTextureID, texture_id)
-END_IMGUI_FUNC
+// _OnChangedTextureID and _SetTextureID were ImDrawList internals, not part of
+// the public API, and were removed in imgui 1.92.0 along with the texture
+// management refactor. Plugins should not call them.
 //    IMGUI_API void  _PathArcToFastEx(const ImVec2& center, float radius, int a_min_sample, int a_max_sample, int a_step);
 IMGUI_FUNCTION_DRAW_LIST(_PathArcToFastEx)
 IM_VEC_2_ARG(center)

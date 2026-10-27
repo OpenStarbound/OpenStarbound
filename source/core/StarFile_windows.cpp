@@ -209,7 +209,7 @@ void File::rename(String const& source, String const& target) {
     }
     if (!MoveFileExW(stringToUtf16(target).get(), stringToUtf16(temp).get(), MOVEFILE_COPY_ALLOWED | MOVEFILE_WRITE_THROUGH)) {
       auto error = GetLastError();
-      throw IOException(strf("error temporary file '{}': {}", temp, GetLastError()));
+      throw IOException(strf("error temporary file '{}': {}", temp, error));
     }
   }
 
@@ -220,7 +220,7 @@ void File::rename(String const& source, String const& target) {
 
   if (replace && !DeleteFileW(stringToUtf16(temp).get())) {
     auto error = GetLastError();
-    throw IOException(strf("error deleting temp file '{}': {}", temp, GetLastError()));
+    throw IOException(strf("error deleting temp file '{}': {}", temp, error));
   }
 }
 

@@ -4,9 +4,12 @@
 #include "StarDrawable.hpp"
 #include "StarWarping.hpp"
 #include "StarJsonRpc.hpp"
+#include "StarVersion.hpp"
 
 namespace Star {
 
+extern VersionNumber const TeamClientVersion;
+  
 STAR_CLASS(Player);
 STAR_CLASS(ClientContext);
 STAR_CLASS(TeamClient);
@@ -80,8 +83,11 @@ private:
 
   bool m_statusUpdateRunning;
   double m_statusUpdateTimer;
+  double m_fullWriteTimer;
 
   List<RpcResponseHandler> m_pendingResponses;
+  
+  int m_teamManagerVersion = 0;
 };
 
 }

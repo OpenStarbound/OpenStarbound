@@ -102,7 +102,8 @@ local function parseBinds()
     for categoryId, data in pairs(data) do
       if not data.name then data.name = categoryId end
       data.categoryId = categoryId
-      categories[categoryId] = data
+      local existing = categories[categoryId]
+      categories[categoryId] = existing and sb.jsonMerge(existing, data) or data
     end
   end
 

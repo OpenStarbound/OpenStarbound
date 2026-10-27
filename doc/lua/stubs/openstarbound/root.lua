@@ -4,6 +4,18 @@
 ---@class root
 root = {}
 
+--- Returns the variant index starting from 0 for the material variant used at the specified **tilePosition**. **layer** must be either `"foreground"`, `"background"` or `"platform"`, and **matVariants** must be the amount of variants the material has, which you can use the vanilla `root.materialConfig` function to fetch.
+---@param tilePosition table
+---@param layer string
+---@param variants integer
+function root.materialVariant(tilePosition, layer, variants) end
+
+--- Works like `root.materialVariant` but for matmods.
+---@param tilePosition table
+---@param layer string
+---@param variants integer
+function root.modVariant(tilePosition, layer, variants) end
+
 --- Returns an array containing all assets with the specified file extension. By the way, here's a list of every file extension the game does Special Things™ for when loading assets. - Items: `item`, `liqitem`, `matitem`, `miningtool`, `flashlight`, `wiretool`, `beamaxe`, `tillingtool`, `painttool`, `harvestingtool`, `head`, `chest`, `legs`, `back`, `currency`, `consumable`, `blueprint`, `inspectiontool`, `instrument`, `thrownitem`, `unlock`, `activeitem`, `augment` - Materials: `material`, `matmod` - Liquids: `liquid` - NPCs: `npctype` - Tenants: `tenant` - Objects: `object` - Vehicles: `vehicle` - Monsters: `monstertype`, `monsterpart`, `monsterskill`, `monstercolors` - Plants: `modularstem`, `modularfoliage`, `grass`, `bush` - Projectiles: `projectile` - Particles: `particle` - Name Gen: `namesource` - AI Missions: `aimission` - Quests: `questtemplate` - Radio Messages: `radiomessages` - Spawn Types: `spawntypes` - Species: `species` - Stagehand: `stagehand` - Behaviors: `nodes`, `behavior` - Biomes: `biome`, `weather` - Terrain: `terrain` - Treasure: `treasurepools`, `treasurechests` - Codex Entries: `codex` - Collections: `collection` - Statistics: `event`, `achievement` - Status Effects: `statuseffect` - Functions: `functions`, `2functions`, `configfunctions` - Tech: `tech` - Damage: `damage` - Dances: `dance` - Effect Sources: `effectsource` - Command Macros: `macros` - Recipes: `recipe` ---
 ---@param extension string
 ---@return string[]
@@ -66,6 +78,34 @@ function root.setConfiguration(key, value) end
 ---@param value Json
 ---@return Json
 function root.setConfigurationPath(path, value) end
+
+--- Returns the value stored under `key` in the calling mod's persistent storage, or `nil` if there is none. ---
+--- By default the storage is that of the mod the calling script was loaded from, and works with `safeScripts` on; `mod` names another loaded mod (one with a `name` in its metadata) instead. The result is a copy. ---
+--- Errors if the script was not loaded from assets (without `mod`) or no loaded mod has that name. ---
+---@param key string
+---@param mod string? name of another loaded mod to use its storage instead of the calling mod's
+---@return Json
+function root.getModStorage(key, mod) end
+
+--- Stores `value` under `key` in the calling mod's persistent storage. `nil` removes the key. ---
+--- The change is written to disk about two seconds later and when the game exits, see `root.flushModStorage`. ---
+--- Errors, changing nothing, if the mod's data would be over 4 MiB, if the script was not loaded from assets (without `mod`) or if no loaded mod has that name. ---
+---@param key string
+---@param value Json
+---@param mod string? name of another loaded mod to use its storage instead of the calling mod's
+function root.setModStorage(key, value, mod) end
+
+--- Returns all keys in the calling mod's persistent storage, in no particular order. ---
+---@param mod string? name of another loaded mod to use its storage instead of the calling mod's
+---@return JsonArray
+function root.modStorageKeys(mod) end
+
+--- Removes every key from the calling mod's persistent storage. ---
+---@param mod string? name of another loaded mod to use its storage instead of the calling mod's
+function root.clearModStorage(mod) end
+
+--- Writes all pending mod storage changes (of every mod) to disk now instead of after the usual delay. ---
+function root.flushModStorage() end
 
 --- Returns all recipes. ---
 ---@return JsonArray

@@ -30,6 +30,26 @@ namespace Star {
 
 static int const PlantAdjustmentLimit = 2;
 
+namespace {
+
+bool isPreservedTileCollisionOverride(CollisionKind collision) {
+  return collision == CollisionKind::None
+      || collision == CollisionKind::Platform
+      || collision == CollisionKind::Block;
+}
+
+CollisionKind biomeForegroundCollision(MaterialDatabaseConstPtr const& materialDatabase, MaterialId oldForeground, MaterialId newForeground, CollisionKind currentCollision) {
+  CollisionKind oldCollision = materialDatabase->materialCollisionKind(oldForeground);
+  CollisionKind newCollision = materialDatabase->materialCollisionKind(newForeground);
+
+  if (currentCollision != oldCollision && isPreservedTileCollisionOverride(currentCollision))
+    return currentCollision;
+
+  return newCollision;
+}
+
+}
+
 LiquidWorld::LiquidWorld(WorldServer* world) {
   m_worldServer = world;
   auto& root = Root::singleton();
@@ -143,11 +163,11 @@ void LiquidWorld::liquidCollision(Vec2I const& liquidPos, LiquidId liquidId, Vec
 FallingBlocksWorld::FallingBlocksWorld(WorldServer* w)
   : m_worldServer(w), m_materialDatabase(Root::singleton().materialDatabase()) {}
 
-FallingBlockType FallingBlocksWorld::blockType(Vec2I const& pos) {
-  auto const& tile =  m_worldServer->getServerTile(pos, true);
+FallingBlockType FallingBlocksWorld::blockType(Vec2I const& pos, bool const& withSignal) {
+  auto const& tile =  m_worldServer->getServerTile(pos, withSignal);
   if (tile.rootSource) {
     return FallingBlockType::Immovable;
-  } if (tile.foreground == EmptyMaterialId) {
+  } else if (tile.foreground == EmptyMaterialId) {
     if (m_worldServer->tileIsOccupied(pos, TileLayer::Foreground))
       return FallingBlockType::Immovable;
     else
@@ -711,6 +731,9 @@ RpcPromise<Vec2I> WorldGenerator::enqueuePlacement(List<BiomeItemDistribution> d
 }
 
 void WorldGenerator::replaceBiomeBlocks(ServerTile* tile) {
+  auto materialDatabase = Root::singleton().materialDatabase();
+  MaterialId oldForeground = tile->foreground;
+
   if (auto blockBiome = m_worldServer->worldTemplate()->biome(tile->blockBiomeIndex)) {
     if (tile->foreground == BiomeMaterialId) {
       tile->foreground = blockBiome->mainBlock;
@@ -754,6 +777,8 @@ void WorldGenerator::replaceBiomeBlocks(ServerTile* tile) {
       tile->backgroundModHueShift = 0;
     }
   }
+
+  tile->updateCollision(biomeForegroundCollision(materialDatabase, oldForeground, tile->foreground, tile->collision));
 }
 
 void WorldGenerator::prepareTiles(WorldStorage* worldStorage, ServerTileSectorArray::Sector const& sector) {
@@ -1029,7 +1054,7 @@ void WorldGenerator::prepareSector(WorldStorage* worldStorage, ServerTileSectorA
       replaceBiomeBlocks(tile);
       placeBiomeGrass(worldStorage, tile, position);
 
-      tile->collision = maxCollision(tile->collision, materialDatabase->materialCollisionKind(tile->foreground));
+      tile->updateCollision(biomeForegroundCollision(materialDatabase, tile->foreground, tile->foreground, tile->collision));
     }
   }
 
@@ -1100,7 +1125,7 @@ void WorldGenerator::prepareSectorBiomeBlocks(WorldStorage* worldStorage, Server
       replaceBiomeBlocks(tile);
       placeBiomeGrass(worldStorage, tile, position);
 
-      tile->collision = maxCollision(tile->collision, materialDatabase->materialCollisionKind(tile->foreground));
+      tile->updateCollision(biomeForegroundCollision(materialDatabase, tile->foreground, tile->foreground, tile->collision));
     }
   }
 }
@@ -1188,6 +1213,7 @@ void WorldGenerator::reapplyBiome(WorldStorage* worldStorage, ServerTileSectorAr
       if (blockInfo.blockBiomeIndex != tile->blockBiomeIndex) {
         auto newBiome = planet->biome(blockInfo.blockBiomeIndex);
         auto oldBiome = planet->biome(tile->blockBiomeIndex);
+        MaterialId oldForeground = tile->foreground;
 
         biomeTileEntities.filter([&, position](TileEntityPtr tileEntity) {
             if (tileEntity->tilePosition() == position) {
@@ -1284,7 +1310,7 @@ void WorldGenerator::reapplyBiome(WorldStorage* worldStorage, ServerTileSectorAr
           tile->backgroundMod = NoModId;
         }
 
-        tile->collision = maxCollision(tile->collision, materialDatabase->materialCollisionKind(tile->foreground));
+        tile->updateCollision(biomeForegroundCollision(materialDatabase, oldForeground, tile->foreground, tile->collision));
       }
 
       if (tile->biomeTransition && !blockInfo.biomeTransition) {

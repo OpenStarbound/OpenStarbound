@@ -1,7 +1,28 @@
 # Universe
 
-Server-side scripts gain access to a new `universe` table that exposes administrative helpers for connected clients and worlds.
-All of these functions are only available in contexts that already run on the server (such as world scripts or the command
+Server-side and client-side scripts gain access to a `universe` table that exposes helpers for worlds, as well as administrative helpers for connected clients on server-side scripts.
+
+---
+
+#### `ConnectionId` universe.connectionId()
+
+Returns the universe's connection id. For server universes this is always 0.
+
+---
+
+#### `RpcPromise<Json>` universe.sendUniverseMessage(`ConnectionId` connection, `String` messageName, [`Json` args ...])
+
+Sends a message to the given connectionId's universe.
+
+---
+
+#### `RpcPromise<Json>` universe.sendOwnUniverseMessage(`String` messageName, [`Json` args ...])
+
+Sends a message to the main UniverseClient on clientside or UniverseServer on serverside. Useful for threads communicating with the primary universe thread.
+
+--- 
+
+The following callbacks are only available in contexts that run on the server (such as world scripts or the command
 processor).
 
 ---
@@ -113,3 +134,149 @@ Disconnects the client, optionally providing a disconnect reason.
 
 Bans a client by connection ID. The `banIp` and `banUuid` parameters control which identifiers are recorded; `timeout` (in
 seconds) performs a temporary ban when provided.
+
+---
+
+#### `void` universe.warpClient(`ConnectionId` clientId, `String` action, [`bool` deploy])
+
+Warps a client to a given world.
+
+---
+
+#### `unsigned` universe.clientOpenProtocolVersion(`ConnectionId` clientId)
+
+Returns the OpenProtocolVersion used for networking with the client.
+
+---
+
+#### `void` universe.createCustomWorld(`String` name, `Json` template)
+
+Creates a new custom world with the given name from the given template.
+Its world ID will be `CustomWorld:<name>`, and it will be stored under the server's `universe/custom_<name>.world`
+
+---
+
+#### `void` universe.createCustomWorldFromConfig(`String` name, `Json` config)
+
+Creates a new custom world with the given name from the given config. This config functions similarly to instance world configs.
+Otherwise, functionally similar to `universe.createCustomWorld`.
+
+---
+
+The following functions are available on all scripts on the client main thread, all scripts in subworlds, and all scriptable threads made by world contexts and universe client contexts.
+
+---
+
+#### `RpcPromise<Json>` universe.sendServerUniverseMessage(`String` messageName, [`Json` args ...])
+
+Sends a message to the server universe.
+
+---
+
+#### `void` universe.createClientCustomWorld(`String` name, `Json` template)
+
+Creates a new client custom world with the given name from the given template.
+Its world ID will be `ClientCustomWorld:<client uuid>:<name>`, and it will be stored under the client's `universeclient/<name>.world`
+
+---
+
+#### `void` universe.createClientCustomWorldFromConfig(`String` name, `Json` config)
+
+Creates a new custom world with the given name from the given config. This config functions similarly to instance world configs.
+Otherwise, functionally similar to `universe.createClientCustomWorld`.
+
+---
+
+#### `double` universe.time()
+
+Returns the universe time.
+
+---
+
+#### `Uuid` universe.serverUuid()
+
+Returns the uuid of the server. This is the uuid used to track bookmarks.
+
+---
+
+#### `Uuid` universe.originalPlayerUuid()
+
+Returns the original player uuid. This is the uuid of the player the client joined with, which is the player the client's ship is for.
+
+---
+
+#### `Uuid` universe.clientUuid()
+
+Returns the client uuid. This is the uuid of the client, which is the uuid present in client custom world IDs, the client's shipworld ID, and other warps related to the client.
+
+If `consistentClientUuid` in the configuration is `false` or undefined, or the client universe lock can't be acquired (due to another client running with the same storage folder),
+this is equivalent to `universe.originalPlayerUuid`.
+
+---
+
+#### `unsigned` universe.serverOpenProtocolVersion()
+
+Returns the OpenProtocolVersion used for networking with the server.
+
+---
+
+#### `Vec2U` universe.playerCount()
+
+Returns the server's current player count and maximum players.
+
+---
+
+The following callbacks are only available on the client main thread.
+
+---
+
+#### `bool` universe.subWorldActive(`String` worldId)
+
+Returns if a subworld is currently active or requested on the given world.
+
+---
+
+#### `void` universe.loadSubWorld(`String` worldId)
+
+Loads the given world as a subworld if it is not loaded.
+Subworlds are client worlds that are considered headless. 
+They do not render, they do not have a main player, and they do not have a screen.
+World script contexts are required to do anything with them.
+`clientPresenceMaster` entities are required to load anything in them.
+They automatically unload after a few seconds of no activity. (No entities, no incoming messages.)
+
+They function independently of the client main world, persisting even if the player warps elsewhere. 
+Subworld master entities are considered different master to client main world entities.
+
+---
+
+#### `void` universe.unloadSubWorld(`String` worldId)
+
+If a subworld is active on the given world, unloads it.
+
+---
+
+#### `RpcPromise<Json>` universe.sendSubWorldMessage(`String` worldId, `String` messageName, [`Json` args ...])
+
+Loads the given world as a subworld if it is not loaded.
+If it is loaded, sends a message to the subworld on the given world.
+
+---
+
+#### `RpcPromise<Json>` universe.sendMainWorldMessage(`String` messageName, [`Json` args ...])
+
+Sends a message to the client's main world. The message is handled immediately, so the RpcPromise will immediately be finished once returned.
+
+---
+
+#### `LuaValue` universe.callScriptContext(`String` contextName, `String` function, [`LuaValue` args ...])
+
+Calls a function on the given universe client script context.
+
+---
+
+#### `LuaValue` universe.callMainWorldScriptContext(`String` contextName, `String` function, [`LuaValue` args ...])
+
+Calls a function on the given script context on the client's main world.
+
+

@@ -22,6 +22,7 @@ SET (star_core_tests_SOURCES
       byte_array_test.cpp
       clock_test.cpp
       color_test.cpp
+      image_test.cpp
       container_test.cpp
       encode_test.cpp
       file_test.cpp
@@ -70,6 +71,7 @@ SET (star_game_tests_SOURCES
       assets_test.cpp
       function_test.cpp
       item_test.cpp
+      mod_storage_test.cpp
       root_test.cpp
       server_test.cpp
       spawn_test.cpp
@@ -77,6 +79,8 @@ SET (star_game_tests_SOURCES
       tile_array_test.cpp
       world_geometry_test.cpp
       universe_connection_test.cpp
+      weather_domain_test.cpp
+      weather_test.cpp
     )
 ADD_EXECUTABLE (game_tests
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>

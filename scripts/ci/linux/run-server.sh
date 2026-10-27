@@ -3,6 +3,7 @@
 cd "`dirname \"$0\"`"
 
 terms="
+xdg-terminal-exec
 x-terminal-emulator
 konsole
 gnome-terminal.wrapper
@@ -13,9 +14,9 @@ uxterm
 xterm"
 
 for term in $terms; do
-  $term -e ./starbound_server $@
+  $term -- ./starbound_server $@
   if [ $? -eq 0 ]; then
-    exit 0;
+    exit 0
   fi
 done
 

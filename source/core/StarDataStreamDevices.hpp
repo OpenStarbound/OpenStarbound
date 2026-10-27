@@ -27,7 +27,7 @@ public:
   IODevicePtr const& device() const;
 
   void seek(size_t pos, IOSeek seek = IOSeek::Absolute);
-  bool atEnd();
+  bool atEnd() override;
   StreamOffset pos();
 
   void readData(char* data, size_t len) override;
@@ -109,7 +109,7 @@ public:
   bool empty() const;
 
   void seek(size_t pos, IOSeek seek = IOSeek::Absolute);
-  bool atEnd();
+  bool atEnd() override;
   size_t pos();
 
   // Set new buffer.
@@ -138,7 +138,7 @@ public:
   bool empty() const;
 
   void seek(size_t pos, IOSeek mode = IOSeek::Absolute);
-  bool atEnd();
+  bool atEnd() override;
   size_t pos();
   size_t remaining();
 

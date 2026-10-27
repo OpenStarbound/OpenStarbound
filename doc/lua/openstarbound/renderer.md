@@ -32,3 +32,15 @@ This is accessed from the shader as a uniform and must be defined in the effect'
 #### `Json` renderer.getEffectParameter(`String` effectName, `String` parameterName)
 
 Returns the specified scriptable parameter of the specified shader effect.
+
+---
+
+#### `Json` renderer.setTexture(`String` effectName, `Variant<Image,String>` value)
+
+Sets the specified renderer texture to contain the specified image.
+
+---
+
+#### `Json` renderer.setPostProcessLayerPasses(`String` layerName, `unsigned` passes)
+
+Sets the number of passes for the specified post process layer. This requires the layer be named.

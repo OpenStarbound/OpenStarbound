@@ -322,7 +322,7 @@ auto PcP2PNetworkingService::createSteamP2PSocket(CSteamID steamId) -> unique_pt
 
 void PcP2PNetworkingService::steamOnConnectionFailure(P2PSessionConnectFail_t* callback) {
   MutexLocker serviceLocker(m_mutex);
-  Logger::warn("Connection with Steam user {} failed", callback->m_steamIDRemote.ConvertToUint64());
+  Logger::warn("Connection with Steam user {} failed (error code: {})", callback->m_steamIDRemote.ConvertToUint64(), callback->m_eP2PSessionError);
   if (auto socket = m_steamOpenSockets.value(callback->m_steamIDRemote.ConvertToUint64())) {
     MutexLocker socketLocker(socket->mutex);
     steamCloseSocket(socket);

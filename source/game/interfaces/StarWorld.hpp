@@ -60,6 +60,7 @@ public:
   // id in this world and be ready for use.  This is always the case on the
   // server, but not *always* the case on the client.
   virtual void addEntity(EntityPtr const& entity, EntityId entityId = NullEntityId) = 0;
+  virtual void addEntity(EntityPtr const& entity, ConnectionId connection, EntityId entityId = NullEntityId) = 0;
 
   virtual EntityPtr closestEntity(Vec2F const& center, float radius, EntityFilter selector = {}) const = 0;
 
@@ -127,6 +128,7 @@ public:
   virtual StringList environmentStatusEffects(Vec2F const& pos) const = 0;
   virtual StringList weatherStatusEffects(Vec2F const& pos) const = 0;
   virtual bool exposedToWeather(Vec2F const& pos) const = 0;
+  virtual Maybe<String> activeWeather(Vec2F const& pos) const = 0;
   virtual bool isUnderground(Vec2F const& pos) const = 0;
   virtual bool disableDeathDrops() const = 0;
   virtual List<PhysicsForceRegion> forceRegions() const = 0;
@@ -142,6 +144,9 @@ public:
   virtual float timeOfDay() const = 0;
 
   virtual LuaRootPtr luaRoot() = 0;
+  virtual StringMap<LuaCallbacks> luaThreadCallbacks() const = 0;
+  
+  virtual bool connectionHasPermission(ConnectionId connection, WorldPermissionType permission) const = 0;
 
   // Locate a unique entity, if the target is local, the promise will be
   // finished before being returned.  If the unique entity is not found, the

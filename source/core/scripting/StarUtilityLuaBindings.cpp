@@ -8,6 +8,10 @@
 #include "StarInterpolation.hpp"
 #include "StarLuaConverters.hpp"
 #include "StarText.hpp"
+#include "StarTime.hpp"
+#include "StarDataStreamDevices.hpp"
+#include "StarBuffer.hpp"
+#include "StarPathEmbed.hpp"
 
 namespace Star {
 
@@ -170,6 +174,34 @@ LuaCallbacks LuaBindings::makeUtilityCallbacks() {
           throw LuaException("Maximum bound in staticRandomDoubleRange must be >= minimum bound!");
         return (hash64LuaValues(hashValues) & 0x7fffffffffffffff) / 9223372036854775808.0 * (max - min) + min;
       });
+  
+  callbacks.registerCallback("millisecondsSinceEpoch",
+      []() -> int64_t {
+        return Time::millisecondsSinceEpoch();
+      });
+  
+  callbacks.registerCallback("makePromise",
+      []() -> pair<RpcPromise<Json>,AutoFailRpcPromiseKeeperPtr<Json>> {
+        auto pair = RpcPromise<Json>::createPair();
+        return make_pair(pair.first,make_shared<AutoFailRpcPromiseKeeper<Json>>(pair.second));
+      });
+  
+  callbacks.registerCallback("embedData", [](String const& data, String const& compression) -> String {
+    auto compressionMethod = EmbeddedCompressionMethodNames.getLeft(compression);
+    ByteArray ba = ByteArray(data.utf8Ptr(),data.utf8Size());
+    return strf("/opensb_data;bin;{}",embedAndCompressData(ba,compressionMethod));
+  });
+
+  callbacks.registerCallback("embedJson", [](Json const& data, String const& compression) -> String {
+    auto compressionMethod = EmbeddedCompressionMethodNames.getLeft(compression);
+    DataStreamBuffer ds;
+    ds.write(data);
+    return strf("/opensb_data;json;{}",embedAndCompressData(ds.takeData(),compressionMethod));
+  });
+
+  callbacks.registerCallback("embedText", [](String const& data) -> String {
+    return strf("/opensb_data;text;{}",embedEscapeText(data));
+  });
 
   return callbacks;
 }

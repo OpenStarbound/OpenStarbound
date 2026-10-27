@@ -61,7 +61,7 @@ public:
   // Handled at this level to allow multiple active quests to specify interestingObjects
   StringSet interestingObjects();
 
-  Maybe<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
+  Maybe<ChainableJsonMessageResponse> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
   void update(float dt);
 
 private:

@@ -2,7 +2,8 @@
   "directives" : "",
   "pickupDistance" : 0.5,
   "afterTakenLife" : 0.75,
-  "overheadTime" : 0.5,
+  "drawRarityBeam" : true,
+  "overheadTime" : 0.0,
   "overheadApproach" : 2000,
   "overheadRandomizedDistance" : 0.25,
   "movementSettings" : {

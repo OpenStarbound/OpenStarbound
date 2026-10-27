@@ -3,6 +3,7 @@
 #include "StarLogging.hpp"
 #include "StarDynamicLib.hpp"
 
+#define NOMINMAX
 #include <windows.h>
 #include <stdio.h>
 #include <process.h>

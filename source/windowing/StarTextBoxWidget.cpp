@@ -9,7 +9,7 @@ TextBoxWidget::TextBoxWidget(String const& startingText, String const& hint, Wid
   : m_text(startingText), m_hint(hint), m_callback(callback) {
   auto assets = Root::singleton().assets();
   m_textHidden = false;
-  m_regex = ".*";
+  m_regex = "[\\s\\S]*";
   m_repeatKeyThreshold = 0;
   m_repeatCode = SpecialRepeatKeyCodes::None;
   m_isPressed = false;
@@ -48,7 +48,11 @@ void TextBoxWidget::renderImpl() {
 
   context()->setTextStyle(m_textStyle);
   if ((m_maxWidth != -1) && m_overfillMode) {
-    float shift = std::max(0.f, cursorOffset - m_maxWidth);
+    float shift;
+    if (m_hAnchor == HorizontalAnchor::RightAnchor)
+      shift = std::min(0.f, cursorOffset + m_maxWidth);
+    else
+      shift = std::max(0.f, cursorOffset - m_maxWidth);
     pos[0] -= shift;
   }
 
@@ -60,9 +64,10 @@ void TextBoxWidget::renderImpl() {
     if (m_textHidden) {
       String hiddenText('*', m_text.length());
       context()->renderInterfaceText(hiddenText, { pos, m_hAnchor, m_vAnchor });
+    } else {
+      String displayText = m_text.replace("\n", "↵").replace("\v", "↵");
+      context()->renderInterfaceText(displayText, { pos, m_hAnchor, m_vAnchor });
     }
-    else
-      context()->renderInterfaceText(m_text, { pos, m_hAnchor, m_vAnchor });
   }
   context()->clearTextStyle();
 
@@ -89,32 +94,19 @@ void TextBoxWidget::renderImpl() {
 int TextBoxWidget::getCursorDrawOffset() const { // horizontal only
   float scale;
   context()->setTextStyle(m_textStyle);
+  String displayText = m_textHidden ? String('*', m_text.length()) : m_text.replace("\n", "↵").replace("\v", "↵");
   if (m_hAnchor == HorizontalAnchor::LeftAnchor) {
     scale = 1.0;
   } else if (m_hAnchor == HorizontalAnchor::HMidAnchor) {
     scale = 0.5;
   } else if (m_hAnchor == HorizontalAnchor::RightAnchor) {
-    scale = -1.0;
-    if (m_textHidden) {
-      int width = context()->stringWidth("*");
-      size_t chars = m_text.size();
-      return (width * chars) * scale + (width * (chars - m_cursorOffset));
-    } else {
-      return context()->stringWidth(m_text) * scale
-           + context()->stringWidth(m_text.substr(m_cursorOffset, m_text.size()));
-    }
+    scale = 0.0;
   } else {
     throw GuiException("Somehow, the value of m_hAnchor became bad");
   }
 
-  if (m_textHidden) {
-    int width = context()->stringWidth("*");
-    size_t chars = m_text.size();
-    return (int)std::ceil((width * chars) * scale - (width * (chars - m_cursorOffset)));
-  } else {
-  return (int)std::ceil(context()->stringWidth(m_text) * scale
-                      - context()->stringWidth(m_text.substr(m_cursorOffset, m_text.size())));
-  }
+  return (int)std::ceil(context()->stringWidth(displayText) * scale
+                      - context()->stringWidth(displayText.substr(m_cursorOffset, displayText.size())));
 }
 
 void TextBoxWidget::update(float dt) {
@@ -213,6 +205,10 @@ void TextBoxWidget::setFontSize(int fontSize) {
   m_textStyle.fontSize = fontSize;
 }
 
+void TextBoxWidget::setFont(String const& font) {
+  m_textStyle.font = font;
+}
+
 void TextBoxWidget::setMaxWidth(int maxWidth) {
   m_maxWidth = maxWidth;
   setSize({m_maxWidth + 6, m_textStyle.fontSize + 2});
@@ -309,6 +305,11 @@ bool TextBoxWidget::innerSendEvent(InputEvent const& event) {
       return false;
     }
     if (keyDown->key == Key::Return || keyDown->key == Key::KeypadEnter) {
+      if ((keyDown->mods & (KeyMod::LShift | KeyMod::RShift)) != KeyMod::NoMod) {
+        if (modText(m_text.substr(0, m_cursorOffset) + "\n" + m_text.substr(m_cursorOffset)))
+          m_cursorOffset += 1;
+        return true;
+      }
       if (m_onEnterKey) {
         m_onEnterKey(this);
         return true;

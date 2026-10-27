@@ -355,15 +355,16 @@ Maybe<QuestIndicator> QuestManager::getQuestIndicator(EntityPtr const& entity) c
 StringSet QuestManager::interestingObjects() {
   StringSet result;
   m_quests.values().exec([&result](QuestPtr const& quest) {
-    if (auto questObjects = quest->receiveMessage("interestingObjects", true, JsonArray()))
-      result.addAll(jsonToStringSet(*questObjects));
+    if (auto resp = quest->receiveMessage("interestingObjects", true, JsonArray()))
+      if (resp->is<Json>())
+        result.addAll(jsonToStringSet(resp->get<Json>()));
   });
   return result;
 }
 
-Maybe<Json> QuestManager::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
+Maybe<ChainableJsonMessageResponse> QuestManager::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
   starAssert(m_world);
-  Maybe<Json> result;
+  Maybe<ChainableJsonMessageResponse> result;
   m_quests.values().exec([&result, message, localMessage, args](
       QuestPtr const& quest) { result = result.orMaybe(quest->receiveMessage(message, localMessage, args)); });
   return result;

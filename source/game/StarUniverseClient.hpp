@@ -9,7 +9,12 @@
 #include "StarAiTypes.hpp"
 #include "StarSky.hpp"
 #include "StarUniverseConnection.hpp"
+#include "StarWorldClientThread.hpp"
 #include "StarLuaComponents.hpp"
+#include "StarUniverse.hpp"
+#include "StarLockFile.hpp"
+
+// TODO: make this more thread safe
 
 namespace Star {
 
@@ -32,9 +37,12 @@ STAR_CLASS(QuestManager);
 STAR_CLASS(UniverseClient);
 STAR_CLASS(LuaRoot);
 
-class UniverseClient {
+class UniverseClient : public Universe {
 public:
-  UniverseClient(PlayerStoragePtr playerStorage, StatisticsPtr statistics);
+  typedef LuaMessageHandlingComponent<LuaUpdatableComponent<LuaBaseComponent>> ScriptComponent;
+  typedef shared_ptr<ScriptComponent> ScriptComponentPtr;
+  
+  UniverseClient(PlayerStoragePtr playerStorage, StatisticsPtr statistics, String const& universeClientStorageDir);
   ~UniverseClient();
 
   void setMainPlayer(PlayerPtr player);
@@ -45,6 +53,8 @@ public:
   bool isConnected() const;
   void disconnect();
   Maybe<String> disconnectReason() const;
+  
+  unsigned connectionVersion();
 
   // WorldClient may be null if the UniverseClient is not connected.
   WorldClientPtr worldClient() const;
@@ -63,7 +73,7 @@ public:
   void warpPlayer(WarpAction const& warpAction, bool animate = true, String const& animationType = "default", bool deploy = false);
   void flyShip(Vec3I const& system, SystemLocation const& destination, Json const& settings = {});
 
-  CelestialDatabasePtr celestialDatabase() const;
+  CelestialDatabasePtr celestialDatabase() override;
 
   CelestialCoordinate shipCoordinate() const;
 
@@ -111,7 +121,27 @@ public:
   PlayerStoragePtr playerStorage() const;
   StatisticsPtr statistics() const;
 
+  ScriptComponentPtr scriptContext(String const& contextName);
+  
+  void createCustomWorld(String const& name, Json templateData);
+  
+  ClientSubWorldId createSubWorld();
+  void setSubWorldWorld(ClientSubWorldId subWorldId, WorldId worldId = WorldId());
+  bool subWorldExistsOnWorld(WorldId worldId) const;
+  ClientSubWorldId getSubWorldOnWorld(WorldId worldId);
+  void destroySubWorldOnWorld(WorldId worldId);
+
+  RpcPromise<Json> sendSubWorldOnWorldMessage(WorldId const& worldId, String const& message, JsonArray const& args = {});
+  RpcPromise<Json> sendMainWorldMessage(String const& message, JsonArray const& args = {});
+
   bool paused() const;
+  
+  void passMessage(Universe::Message&& message) override;
+  RpcPromise<Json> sendUniverseMessage(ConnectionId const& connectionId, String const& message, JsonArray const& args = {}) override;
+  
+  Maybe<ChainableJsonMessageResponse> receiveMessage(String const& message, bool const& local, JsonArray const& args) override;
+  
+  void executeActionLater(UniverseAction action) override;
 
 private:
   struct ServerInfo {
@@ -123,12 +153,17 @@ private:
 
   void handlePackets(List<PacketPtr> const& packets);
   void reset();
+  
+  mutable RecursiveMutex m_mutex;
 
   PlayerStoragePtr m_playerStorage;
   StatisticsPtr m_statistics;
   PlayerPtr m_mainPlayer;
+  
+  String m_storageDirectory;
+  Maybe<LockFile> m_storageDirectoryLock;
 
-  bool m_pause;
+  shared_ptr<atomic<bool>> m_pause;
   ClockPtr m_universeClock;
   WorldClientPtr m_worldClient;
   SystemWorldClientPtr m_systemWorldClient;
@@ -146,6 +181,7 @@ private:
   Maybe<GameTimer> m_warpCinemaCancelTimer;
 
   Maybe<WarpAction> m_warping;
+  bool m_respawnWarped;
   bool m_respawning;
   GameTimer m_respawnTimer;
 
@@ -156,13 +192,25 @@ private:
   Maybe<String> m_disconnectReason;
 
   LuaRootPtr m_luaRoot;
-
-  typedef LuaUpdatableComponent<LuaBaseComponent> ScriptComponent;
-  typedef shared_ptr<ScriptComponent> ScriptComponentPtr;
+  
   StringMap<ScriptComponentPtr> m_scriptContexts;
+  
+  BiMap<ClientSubWorldId, WorldId> m_subWorlds;
+  IdMap<ClientSubWorldId,WorldClientThreadPtr> m_subWorldThreads;
 
   ReloadPlayerCallback m_playerReloadPreCallback;
   ReloadPlayerCallback m_playerReloadCallback;
+
+  mutable RecursiveMutex m_messageMutex;
+  List<Universe::Message> m_universeMessages;
+  
+  HashMap<Uuid, RpcPromiseKeeper<Json>> m_universeMessageResponses;
+  HashMap<Uuid, RpcPromise<Json>> m_universeMessagePromises;
+  
+  Uuid m_uuid = Uuid();
+  
+  mutable Mutex m_actionsMutex;
+  List<UniverseAction> m_actions;
 };
 
 }

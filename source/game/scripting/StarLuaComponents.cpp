@@ -1,16 +1,17 @@
 #include "StarLuaComponents.hpp"
 #include "StarUtilityLuaBindings.hpp"
 #include "StarRootLuaBindings.hpp"
+#include "StarLuaHttpBindings.hpp"
 #include "StarScriptableThread.hpp"
-#include "StarRpcThreadPromise.hpp"
-#include "StarLuaGameConverters.hpp"
 
 namespace Star {
 
 LuaBaseComponent::LuaBaseComponent() {
+  static const bool luaHttpEnabled = Root::singleton().configuration()->getPath("safe.luaHttp.enabled").optBool().value(false);
   addCallbacks("sb", LuaBindings::makeUtilityCallbacks());
   addCallbacks("root", LuaBindings::makeRootCallbacks());
-  addCallbacks("threads", makeThreadsCallbacks());
+  addCallbacks("http", LuaBindings::makeHttpCallbacks(luaHttpEnabled));
+  
   setAutoReInit(true);
 }
 
@@ -45,6 +46,25 @@ bool LuaBaseComponent::removeCallbacks(String const& groupName) {
   if (m_callbacks.remove(groupName)) {
     if (m_context)
       m_context->remove(groupName);
+    return true;
+  }
+  return false;
+}
+
+void LuaBaseComponent::addThreadCallbacks(String groupName, LuaCallbacks callbacks) {
+  if (!m_threadCallbacks.insert(groupName, callbacks).second)
+    throw LuaComponentException::format("Duplicate thread callbacks named '{}' in LuaBaseComponent", groupName);
+
+  for (auto const& p : m_threads) {
+    p.second->addCallbacks(groupName,callbacks);
+  }
+}
+
+bool LuaBaseComponent::removeThreadCallbacks(String const& groupName) {
+  if (m_threadCallbacks.remove(groupName)) {
+    for (auto const& p : m_threads) {
+      p.second->removeCallbacks(groupName);
+    }
     return true;
   }
   return false;
@@ -141,6 +161,10 @@ Maybe<LuaContext>& LuaBaseComponent::context() {
 void LuaBaseComponent::contextSetup() {
   m_context->setPath("self", m_context->createTable());
 
+  // set up here instead
+  if (!m_callbacks.contains("threads"))
+    addCallbacks("threads", makeThreadsCallbacks());
+  
   for (auto const& p : m_callbacks)
     m_context->setCallbacks(p.first, p.second);
 }
@@ -161,36 +185,66 @@ bool LuaBaseComponent::checkInitialization() {
   return initialized();
 }
 
+void LuaBaseComponent::cleanThreads() {
+  for (auto const& p : m_threads) {
+    if (p.second->shouldExpire()) {
+      m_threads.remove(p.first);
+    }
+  }
+}
+
 LuaCallbacks LuaBaseComponent::makeThreadsCallbacks() {
   LuaCallbacks callbacks;
   
   callbacks.registerCallback("create", [this](Json parameters) {
-    auto name = parameters.getString("name");
+    cleanThreads();
+    auto name = parameters.getString("name",Uuid().hex());
     if (m_threads.contains(name)) {
       m_threads.get(name)->stop();
       m_threads.remove(name);
     }
-    auto thread = make_shared<ScriptableThread>(parameters);
+    auto thread = make_shared<ScriptableThread>(parameters.set("name",name), this);
+    
+    for (auto const& callbackPair : m_threadCallbacks)
+      thread->addCallbacks(callbackPair.first, callbackPair.second);
+    
     thread->setPause(false);
     thread->start();
     m_threads.set(name,thread);
     return name;
   });
   callbacks.registerCallback("setPause", [this](String const& threadName, bool paused) {
+    if (m_threads.contains(threadName))
       m_threads.get(threadName)->setPause(paused);
   });
   callbacks.registerCallback("stop", [this](String const& threadName) {
+    if (m_threads.contains(threadName)) {
       m_threads.get(threadName)->stop();
       m_threads.remove(threadName);
+    }
+    cleanThreads();
   });
-  callbacks.registerCallback("sendMessage", [this](String const& threadName, String const& message, LuaVariadic<Json> args) {
-    auto pair = RpcThreadPromise<Json>::createPair();
-    RecursiveMutexLocker locker(m_threadLock);
-    m_threads.get(threadName)->passMessage({ message, args, pair.second });
+  callbacks.registerCallback("sendMessage", [this](String const& threadName, String const& message, LuaVariadic<Json> args) -> RpcPromise<Json> {
+    if (!m_threads.contains(threadName))
+      return RpcPromise<Json>::createFailed("Thread does not exist");
+    
+    auto thread = m_threads.get(threadName);
+    if (thread->shouldExpire())
+      return RpcPromise<Json>::createFailed("Thread is stopped");
+    
+    auto pair = RpcPromise<Json>::createPair();
+    thread->passMessage({ message, JsonArray::from(std::move(args)), pair.second });
     return pair.first;
   });
   
   return callbacks;
+}
+
+RpcPromise<Json> LuaBaseComponent::threadPassMessage(String const& thread, String const& message, JsonArray const& args) {
+  _unused(thread);
+  _unused(message);
+  _unused(args);
+  return RpcPromise<Json>::createFailed("Lua component cannot handle messages");
 }
 
 }

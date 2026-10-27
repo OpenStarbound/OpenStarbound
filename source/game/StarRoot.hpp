@@ -34,6 +34,7 @@ STAR_CLASS(StatisticsDatabase);
 STAR_CLASS(EmoteProcessor);
 STAR_CLASS(SpeciesDatabase);
 STAR_CLASS(ImageMetadataDatabase);
+STAR_CLASS(ModStorage);
 STAR_CLASS(VersioningDatabase);
 STAR_CLASS(QuestTemplateDatabase);
 STAR_CLASS(AiDatabase);
@@ -120,7 +121,7 @@ public:
   // Reloads with the given mod sources applied on top of the base mod source
   // specified in the settings.  Mods in the base mod source will override mods
   // in the given mod sources
-  void reloadWithMods(StringList modDirectories);
+  void loadMods(StringList modDirectories, bool _reload = true);
 
   // Ensures all Root members are loaded without waiting for them to be auto
   // loaded.
@@ -173,6 +174,8 @@ public:
   EmoteProcessorConstPtr emoteProcessor();
   SpeciesDatabaseConstPtr speciesDatabase();
   ImageMetadataDatabaseConstPtr imageMetadataDatabase();
+  // Not reset on reload, it writes through to disk.
+  ModStoragePtr modStorage();
   VersioningDatabaseConstPtr versioningDatabase();
   QuestTemplateDatabaseConstPtr questTemplateDatabase();
   AiDatabaseConstPtr aiDatabase();
@@ -298,6 +301,8 @@ private:
 
   ImageMetadataDatabasePtr m_imageMetadataDatabase;
   Mutex m_imageMetadataDatabaseMutex;
+  ModStoragePtr m_modStorage;
+  Mutex m_modStorageMutex;
 
   VersioningDatabasePtr m_versioningDatabase;
   Mutex m_versioningDatabaseMutex;

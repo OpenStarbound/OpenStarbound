@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarMaybe.hpp"
 #include "StarWeightedPool.hpp"
 #include "StarParticle.hpp"
 
@@ -36,6 +37,9 @@ struct WeatherType {
   float maximumWind;
   Vec2F duration;
   StringList weatherNoises;
+
+  // Resolved from local assets and intentionally excluded from legacy binary serialization.
+  Maybe<String> parallax;
 };
 
 typedef WeightedPool<String> WeatherPool;

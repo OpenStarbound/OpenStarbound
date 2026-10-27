@@ -117,7 +117,23 @@ enum class PacketType : uint8_t {
 
   // OpenStarbound packets
   ReplaceTileList,
-  UpdateWorldTemplate
+  UpdateWorldTemplate,
+  
+  ClientCustomWorldRequest,
+  ClientCustomWorldResponse,
+  ClientCustomWorldCreate,
+  
+  ClientSubWorldPackets,
+  ClientSubWorldRequest,
+  ClientSubWorldReject,
+  NotifyWorldLoad,
+  
+  LogMapUpdate,
+  
+  UniverseMessage,
+  UniverseMessageResponse,
+  
+  WorldPermissionsUpdate
 };
 extern EnumMap<PacketType> const PacketTypeNames;
 
@@ -311,7 +327,7 @@ struct ServerInfoPacket : PacketBase<PacketType::ServerInfo> {
 struct ClientConnectPacket : PacketBase<PacketType::ClientConnect> {
   ClientConnectPacket();
   ClientConnectPacket(ByteArray assetsDigest, bool allowAssetsMismatch, Uuid playerUuid, String playerName,
-      String playerSpecies, WorldChunks shipChunks, ShipUpgrades shipUpgrades, bool introComplete,
+      String shipSpecies, WorldChunks shipChunks, ShipUpgrades shipUpgrades, bool introComplete,
       String account, Json info = {});
 
   void read(DataStream& ds, NetCompatibilityRules netRules) override;
@@ -321,7 +337,7 @@ struct ClientConnectPacket : PacketBase<PacketType::ClientConnect> {
   bool allowAssetsMismatch;
   Uuid playerUuid;
   String playerName;
-  String playerSpecies;
+  String shipSpecies;
   WorldChunks shipChunks;
   ShipUpgrades shipUpgrades;
   bool introComplete;
@@ -421,6 +437,8 @@ struct WorldStartPacket : PacketBase<PacketType::WorldStart> {
   Json worldProperties;
   ConnectionId clientId;
   bool localInterpolationMode;
+
+  WorldPermissions permissions;
 };
 
 // Sent when a client is leaving a world
@@ -740,7 +758,7 @@ struct WorldStartAcknowledgePacket : PacketBase<PacketType::WorldStartAcknowledg
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
 };
-  
+
 struct PingPacket : PacketBase<PacketType::Ping> {
   PingPacket();
   PingPacket(int64_t time);
@@ -980,5 +998,129 @@ struct UpdateWorldTemplatePacket : PacketBase<PacketType::UpdateWorldTemplate> {
   void write(DataStream& ds) const override;
 
   Json templateData;
+};
+
+struct ClientCustomWorldRequest : PacketBase<PacketType::ClientCustomWorldRequest> {
+  ClientCustomWorldRequest();
+  ClientCustomWorldRequest(String name);
+
+  void read(DataStream& ds) override;
+  void write(DataStream& ds) const override;
+
+  String name;
+};
+
+struct ClientCustomWorldResponse : PacketBase<PacketType::ClientCustomWorldResponse> {
+  ClientCustomWorldResponse();
+  ClientCustomWorldResponse(String name, WorldChunks chunks);
+
+  void read(DataStream& ds) override;
+  void write(DataStream& ds) const override;
+
+  String name;
+  WorldChunks chunks;
+};
+
+struct ClientCustomWorldCreate : PacketBase<PacketType::ClientCustomWorldCreate> {
+  ClientCustomWorldCreate();
+  ClientCustomWorldCreate(String name, Json templateData);
+
+  void read(DataStream& ds) override;
+  void write(DataStream& ds) const override;
+
+  String name;
+  Json templateData;
+};
+
+// wrapper packet for client world threads
+struct ClientSubWorldPackets : PacketBase<PacketType::ClientSubWorldPackets> {
+  ClientSubWorldPackets();
+  ClientSubWorldPackets(ClientSubWorldId const& subWorldId, List<PacketPtr> packets);
+
+  void read(DataStream& ds) override;
+  void write(DataStream& ds) const override;
+
+  ClientSubWorldId subWorldId;
+  List<PacketPtr> packets;
+};
+
+struct ClientSubWorldRequest : PacketBase<PacketType::ClientSubWorldRequest> {
+  ClientSubWorldRequest();
+  ClientSubWorldRequest(ClientSubWorldId const& subWorldId, WorldId worldId);
+
+  void read(DataStream& ds) override;
+  void write(DataStream& ds) const override;
+
+  ClientSubWorldId subWorldId;
+  WorldId worldId;
+};
+
+struct ClientSubWorldReject : PacketBase<PacketType::ClientSubWorldReject> {
+  ClientSubWorldReject();
+  ClientSubWorldReject(ClientSubWorldId const& subWorldId);
+
+  void read(DataStream& ds) override;
+  void write(DataStream& ds) const override;
+
+  ClientSubWorldId subWorldId;
+};
+
+struct NotifyWorldLoad : PacketBase<PacketType::NotifyWorldLoad> {
+  NotifyWorldLoad();
+  NotifyWorldLoad(WorldId worldId);
+
+  void read(DataStream& ds) override;
+  void write(DataStream& ds) const override;
+
+  WorldId worldId;
+};
+
+struct LogMapUpdate : PacketBase<PacketType::LogMapUpdate> {
+  LogMapUpdate();
+  LogMapUpdate(Map<String,String> map);
+
+  void read(DataStream& ds) override;
+  void write(DataStream& ds) const override;
+
+  Map<String,String> map;
+};
+
+struct UniverseMessage : PacketBase<PacketType::UniverseMessage> {
+  UniverseMessage();
+  UniverseMessage(ConnectionId connection, String message, JsonArray args, Uuid uuid, ConnectionId fromConnection = ServerConnectionId);
+
+  void read(DataStream& ds) override;
+  void write(DataStream& ds) const override;
+
+  void readJson(Json const& json) override;
+  Json writeJson() const override;
+
+  ConnectionId connection;
+  String message;
+  JsonArray args;
+  Uuid uuid;
+  ConnectionId fromConnection;
+};
+
+struct UniverseMessageResponse : PacketBase<PacketType::UniverseMessageResponse> {
+  UniverseMessageResponse();
+  UniverseMessageResponse(Either<String,Json> response, Uuid uuid);
+
+  void read(DataStream& ds) override;
+  void write(DataStream& ds) const override;
+
+  Either<String, Json> response;
+  Uuid uuid;
+};
+
+struct WorldPermissionsUpdate : PacketBase<PacketType::WorldPermissionsUpdate> {
+  WorldPermissionsUpdate();
+  WorldPermissionsUpdate(WorldPermissionType permission, bool hasPermission);
+
+  void read(DataStream& ds) override;
+  void write(DataStream& ds) const override;
+
+  WorldPermissionType permission;
+  bool hasPermission;
 };
 }

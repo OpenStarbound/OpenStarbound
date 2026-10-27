@@ -2,6 +2,9 @@
 #include "StarLuaConverters.hpp"
 #include "StarImage.hpp"
 #include "StarRootBase.hpp"
+#include "StarDataStreamDevices.hpp"
+#include "StarBuffer.hpp"
+#include "StarPathEmbed.hpp"
 
 namespace Star {
 
@@ -12,11 +15,11 @@ LuaMethods<Image> LuaUserDataMethods<Image>::make() {
   methods.registerMethodWithSignature<void, Image&, Vec2U, Image&>("drawInto", mem_fn(&Image::drawInto));
   methods.registerMethodWithSignature<void, Image&, Vec2U, Image&>("copyInto", mem_fn(&Image::copyInto));
   methods.registerMethod("set", [](Image& image, unsigned x, unsigned y, Color const& color) {
-    image.set(x, y, color.toRgba()); 
+    image.setF(x, y, color);
   });
 
   methods.registerMethod("get", [](Image& image, unsigned x, unsigned y) {
-    return Color::rgba(image.get(x, y));
+    return image.getF(x, y);
   });
 
   methods.registerMethod("subImage", [](Image& image, Vec2U const& min, Vec2U const& size) {
@@ -30,6 +33,35 @@ LuaMethods<Image> LuaUserDataMethods<Image>::make() {
       else
         return nullptr;
     });
+  });
+
+  methods.registerMethod("embed", [](Image& image, String const& compression, MVariant<String,Json> const& frames, Maybe<String> const& framesCompressionMode) -> String {
+    auto compressionMethod = EmbeddedCompressionMethodNames.getLeft(compression);
+    BufferPtr buf = make_shared<Buffer>();
+    image.writePng(buf);
+    String const outType = frames ? "image" : "bin";
+    String outStr = strf("/opensb_data;{};{}",outType,embedAndCompressData(buf->takeData(),compressionMethod));
+    if (frames.is<String>()) {
+      outStr += strf(";framespath;{}",frames.get<String>());
+    } else if (frames.is<Json>()) {
+      if (framesCompressionMode && framesCompressionMode->equalsIgnoreCase("text")) {
+        outStr += strf(";frames;text;{}",embedEscapeText(frames.get<Json>().repr()));
+      } else {
+        auto framesCompressionMethod = compressionMethod;
+        if (framesCompressionMode)
+          framesCompressionMethod = EmbeddedCompressionMethodNames.getLeft(*framesCompressionMode);
+        DataStreamBuffer ds;
+        ds.write(frames.get<Json>());
+        outStr += strf(";frames;json;{}",embedAndCompressData(ds.takeData(),framesCompressionMethod));
+      }
+    }
+    return outStr;
+  });
+
+  methods.registerMethod("toDataURI", [](Image& image) -> String {
+    BufferPtr buf = make_shared<Buffer>();
+    image.writePng(buf);
+    return strf("data:image/png;base64,{}",base64Encode(buf->takeData()));
   });
 
   return methods;

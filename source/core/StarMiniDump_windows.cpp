@@ -1,5 +1,4 @@
 #include "StarMiniDump.hpp"
-#include <windows.h>
 #include "minidumpapiset.h"
 
 namespace Star {

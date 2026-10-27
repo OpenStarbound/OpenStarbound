@@ -82,6 +82,8 @@ if(NOT DEFINED STAR_SYSTEM)
     set(STAR_SYSTEM "freebsd")
   elseif(${CMAKE_SYSTEM_NAME} STREQUAL "NetBSD")
     set(STAR_SYSTEM "netbsd")
+  elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Haiku")
+    set(STAR_SYSTEM "haiku")
   elseif(UNIX)
     set(STAR_SYSTEM "unix")
   else()
@@ -192,7 +194,7 @@ endfunction()
 
 if(STAR_LITTLE_ENDIAN)
   set_flag(STAR_LITTLE_ENDIAN)
-elseif()
+else()
   set_flag(STAR_BIG_ENDIAN)
 endif()
 
@@ -212,6 +214,8 @@ elseif(STAR_SYSTEM STREQUAL "freebsd")
   set_flag(STAR_SYSTEM_FREEBSD)
 elseif(STAR_SYSTEM STREQUAL "netbsd")
   set_flag(STAR_SYSTEM_NETBSD)
+elseif(STAR_SYSTEM STREQUAL "haiku")
+  set_flag(STAR_SYSTEM_HAIKU)
 endif()
 
 if(STAR_SYSTEM_FAMILY STREQUAL "windows")
@@ -297,8 +301,8 @@ if(STAR_COMPILER_GNU)
   set(CMAKE_SKIP_BUILD_RPATH TRUE)
 
 elseif(STAR_COMPILER_CLANG)
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wuninitialized -Wno-parentheses-equality -Wno-deprecated-declarations")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -Wall -Wextra -Wuninitialized -Wno-parentheses-equality -Wno-deprecated-declarations")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wuninitialized -Wno-parentheses-equality -Wno-deprecated-declarations -Wno-nan-infinity-disabled -Wno-unknown-warning-option")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -Wall -Wextra -Wuninitialized -Wno-parentheses-equality -Wno-deprecated-declarations -Wno-nan-infinity-disabled -Wno-unknown-warning-option")
 
   if(STAR_SYSTEM_MACOS)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
@@ -306,7 +310,7 @@ elseif(STAR_COMPILER_CLANG)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-export_dynamic")
     set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++17")
     set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++")
-  elseif()
+  elseif(NOT STAR_SYSTEM_WINDOWS)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread -D_REENTRANT")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -D_REENTRANT")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--export-dynamic")
@@ -319,8 +323,16 @@ elseif(STAR_COMPILER_CLANG)
   set(CMAKE_C_FLAGS_RELWITHASSERTS "-g -O3 -ffast-math")
   set(CMAKE_CXX_FLAGS_RELWITHASSERTS "-g -O3 -ffast-math")
 
-  set(CMAKE_C_FLAGS_RELWITHDEBINFO "-gline-tables-only -gz=zlib -DNDEBUG -O3 -ffast-math")
-  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-gline-tables-only -gz=zlib -DNDEBUG -O3 -ffast-math")
+	set(CMAKE_C_FLAGS_RELWITHDEBINFO "-gline-tables-only -DNDEBUG -O3 -ffast-math")
+  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-gline-tables-only -DNDEBUG -O3 -ffast-math")
+
+	if(STAR_SYSTEM_WINDOWS)
+		set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -gcodeview")
+		set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -gcodeview")
+	else()
+		set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -gz=zlib")
+		set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -gz=zlib")
+	endif()
 
   set(CMAKE_C_FLAGS_RELEASE "-DNDEBUG -O3 -ffast-math")
   set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -O3 -ffast-math")
@@ -418,12 +430,12 @@ if(STAR_SYSTEM_MACOS)
 elseif(STAR_SYSTEM_WINDOWS)
   set(CMAKE_RC_COMPILER_INIT windres)
 
-  enable_language(RC)
-  if(STAR_COMPILER STREQUAL "msvc")
+  enable_language(RC) 
+  #if(STAR_COMPILER STREQUAL "msvc")
     set(CMAKE_RC_COMPILE_OBJECT "<CMAKE_RC_COMPILER> /fo <OBJECT> <SOURCE>")
-  else()
-    set(CMAKE_RC_COMPILE_OBJECT "<CMAKE_RC_COMPILER> <FLAGS> -O coff <DEFINES> -i <SOURCE> -o <OBJECT>")
-  endif()
+  #else()
+  #  set(CMAKE_RC_COMPILE_OBJECT "<CMAKE_RC_COMPILER> <FLAGS> -O coff <DEFINES> -i <SOURCE> -o <OBJECT>")
+  #endif()
 endif()
 
 if(STAR_COMPILER STREQUAL "msvc")
@@ -438,8 +450,8 @@ if(STAR_COMPILER STREQUAL "msvc")
 endif()
 
 if(STAR_SYSTEM_WINDOWS)
-  set(CMAKE_C_STANDARD_LIBRARIES "${CMAKE_C_STANDARD_LIBRARIES} ws2_32.lib iphlpapi.lib shlwapi.lib dbghelp.lib")
-  set(CMAKE_CXX_STANDARD_LIBRARIES "${CMAKE_CXX_STANDARD_LIBRARIES} ws2_32.lib iphlpapi.lib shlwapi.lib dbghelp.lib")
+  set(CMAKE_C_STANDARD_LIBRARIES "${CMAKE_C_STANDARD_LIBRARIES} -lws2_32 -liphlpapi -lshlwapi -ldbghelp")
+  set(CMAKE_CXX_STANDARD_LIBRARIES "${CMAKE_CXX_STANDARD_LIBRARIES} -lws2_32 -liphlpapi -lshlwapi -ldbghelp")
 
 elseif(STAR_SYSTEM_LINUX)
   set(CMAKE_C_STANDARD_LIBRARIES "${CMAKE_C_STANDARD_LIBRARIES} -lpthread -ldl -lrt")
@@ -453,15 +465,28 @@ elseif(STAR_SYSTEM_NETBSD)
   set(CMAKE_C_STANDARD_LIBRARIES "${CMAKE_C_STANDARD_LIBRARIES} -lpthread -lrt -lexecinfo")
   set(CMAKE_CXX_STANDARD_LIBRARIES "${CMAKE_CXX_STANDARD_LIBRARIES} -lpthread -lrt -lexecinfo")
 
+elseif(STAR_SYSTEM_HAIKU)
+  set(CMAKE_C_STANDARD_LIBRARIES "${CMAKE_C_STANDARD_LIBRARIES} -lpthread -lexecinfo -lnetwork")
+  set(CMAKE_CXX_STANDARD_LIBRARIES "${CMAKE_CXX_STANDARD_LIBRARIES} -lpthread -lexecinfo -lnetwork")
+
 endif()
 
 # Find all required external libraries, based on build settings...
 find_package(PkgConfig)
 
+# Use vcpkg-sourced imgui unless otherwise requested
+option(STAR_USE_VENDORED_IMGUI "Use a vendored copy of imgui in source/extern/imgui/" OFF)
+if(NOT STAR_USE_VENDORED_IMGUI)
+  find_package(imgui CONFIG REQUIRED)
+  set(STAR_EXT_LIBS ${STAR_EXT_LIBS} imgui::imgui)
+else()
+  include(VendorImgui)
+endif()
+
 if(STAR_USE_JEMALLOC)
   pkg_check_modules(JEMALLOC REQUIRED IMPORTED_TARGET GLOBAL jemalloc)
 
-  set(STAR_EXT_LIBS PkgConfig::JEMALLOC)
+  set(STAR_EXT_LIBS ${STAR_EXT_LIBS} PkgConfig::JEMALLOC)
   if (STAR_SYSTEM_WINDOWS OR STAR_SYSTEM_MACOS)
     set_flag(STAR_JEMALLOC_IS_PREFIXED)
   endif()
@@ -472,29 +497,30 @@ if (STAR_USE_MIMALLOC)
   set(STAR_EXT_LIBS ${STAR_EXT_LIBS} $<IF:$<TARGET_EXISTS:mimalloc-static>,mimalloc-static,mimalloc>)
 endif()
 
-find_package(ZLIB REQUIRED)
+find_package(zlib-ng CONFIG REQUIRED)
+add_compile_definitions(WITH_GZFILEOP) # Needed to make zlib-ng have gz
 find_package(PNG REQUIRED)
 find_package(Freetype REQUIRED)
 find_package(cpr CONFIG REQUIRED)
-find_package(Opus CONFIG REQUIRED)
 find_package(OggVorbis REQUIRED)
 find_package(zstd CONFIG REQUIRED)
-find_package(re2 CONFIG REQUIRED)
-find_package(imgui CONFIG REQUIRED)
+if (NOT STAR_SYSTEM_HAIKU)
+	find_package(Opus CONFIG REQUIRED)
+	find_package(re2 CONFIG REQUIRED)
+endif()
 include_directories(SYSTEM
-        ${FREETYPE_INCLUDE_DIRS}
-        ${OGGVORBIS_INCLUDE_DIR}
+    ${FREETYPE_INCLUDE_DIRS}
+    ${OGGVORBIS_INCLUDE_DIR}
 )
 
 set(STAR_EXT_LIBS ${STAR_EXT_LIBS}
-        ZLIB::ZLIB
-        PNG::PNG
-        cpr::cpr
+    zlib-ng::zlib
+    PNG::PNG
+    cpr::cpr
     $<IF:$<TARGET_EXISTS:Freetype::Freetype>,Freetype::Freetype,freetype>
     $<IF:$<TARGET_EXISTS:zstd::libzstd_shared>,zstd::libzstd_shared,zstd::libzstd_static>
-    Opus::opus
-    re2::re2
-    imgui::imgui
+    $<IF:$<TARGET_EXISTS:Opus::opus>,Opus::opus,opus>
+    $<IF:$<TARGET_EXISTS:re2::re2>,re2::re2,re2>
     ${VORBISFILE_LIBRARY}
     ${VORBIS_LIBRARY}
     ${OGG_LIBRARY}
@@ -507,7 +533,7 @@ else()
   message(STATUS "Wayland was not found")
 endif()
 
-if(STAR_SYSTEM_FAMILY STREQUAL "unix")
+if(STAR_SYSTEM_FAMILY STREQUAL "unix" AND NOT STAR_SYSTEM_HAIKU)
   set_flag(STAR_USE_CPPTRACE)
   find_package(cpptrace CONFIG REQUIRED)
   set(STAR_EXT_LIBS ${STAR_EXT_LIBS} cpptrace::cpptrace)
@@ -528,7 +554,7 @@ if(STAR_BUILD_GUI)
   include_directories(SYSTEM ${GLEW_INCLUDE_DIR})
   set(STAR_EXT_GUI_LIBS ${STAR_EXT_GUI_LIBS}
       ${OPENGL_LIBRARY}
-      GLEW::glew_s
+      $<IF:$<TARGET_EXISTS:GLEW::glew_s>,GLEW::glew_s,GLEW>
   )
 
   if(STAR_SYSTEM_MACOS)
@@ -562,7 +588,8 @@ foreach(OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES})
 endforeach(OUTPUTCONFIG CMAKE_CONFIGURATION_TYPES)
 
 # External code included with starbound source, which core depends on
-set(STAR_EXTERN_INCLUDES ${PROJECT_SOURCE_DIR}/extern)
+# Marked SYSTEM so that warnings from the bundled third party headers (fmt, etc.) are not reported
+include_directories(SYSTEM ${PROJECT_SOURCE_DIR}/extern)
 add_subdirectory(extern)
 
 # Core support code, not specific to starbound.

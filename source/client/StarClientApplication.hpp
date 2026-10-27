@@ -45,6 +45,7 @@ private:
   enum class MainAppState {
     Quit,
     Startup,
+    SteamFlatpakWarning,
     Mods,
     ModsWarning,
     Splash,
@@ -77,6 +78,8 @@ private:
   void setError(String const& error);
   void setError(String const& error, std::exception const& e);
 
+  void loadMods();
+  void updateSteamFlatpakWarning(float dt);
   void updateMods(float dt);
   void updateModsWarning(float dt);
   void updateSplash(float dt);
@@ -148,6 +151,8 @@ private:
   int64_t m_timeSinceJoin = 0;
 
   ByteArray m_immediateFont;
+
+  bool m_loggedUGCCheck;
 };
 
 }

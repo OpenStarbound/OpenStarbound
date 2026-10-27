@@ -305,6 +305,18 @@ Returns the player's current emote and the seconds left in it.
 
 ---
 
+#### `Maybe<bool>` player.armorVisible(`String` slotName)
+
+Returns whether the player's armor in the specified slot is visible. Returns `nil` if the slot doesn't exist.
+
+---
+
+#### `void` player.setArmorVisible(`String` slotName, `bool` visible)
+
+Sets whether the player's armor in the specified slot is visible.
+
+---
+
 #### `unsigned` player.actionBarGroup()
 
 Returns the player's active action bar.
@@ -589,3 +601,9 @@ Makes the player stop lounging.
 #### `String` player.trackedQuestId()
 
 Returns the ID of the currently tracked quest.
+
+---
+
+#### `void` player.setCameraFocusEntity([`EntityId` entity])
+
+Sets that player's camera to be centered on the position of the specified entity, or recenters the camera on the player's position if no entity id is specified.

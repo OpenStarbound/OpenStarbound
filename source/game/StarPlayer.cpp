@@ -40,6 +40,7 @@
 #include "StarScriptedAnimatorLuaBindings.hpp"
 #include "StarEntityLuaBindings.hpp"
 #include "StarDanceDatabase.hpp"
+#include "StarUniverseClient.hpp"
 
 namespace Star {
 
@@ -102,6 +103,8 @@ Player::Player(PlayerConfigPtr config, Uuid uuid) {
   m_deployment = make_shared<PlayerDeployment>(m_config->deploymentConfig);
 
   m_inventory = make_shared<PlayerInventory>();
+  m_inventory->setPlayer(this);
+
   m_blueprints = make_shared<PlayerBlueprints>();
   m_universeMap = make_shared<PlayerUniverseMap>();
   m_codexes = make_shared<PlayerCodexes>();
@@ -137,6 +140,8 @@ Player::Player(PlayerConfigPtr config, Uuid uuid) {
 
   m_chatMessageChanged = false;
   m_chatMessageUpdated = false;
+
+  m_interruptRadioMessage = false;
 
   m_songbook = make_shared<Songbook>(species());
 
@@ -258,6 +263,7 @@ void Player::diskLoad(Json const& diskStore) {
 
   auto speciesDatabase = Root::singleton().speciesDatabase();
   auto speciesDef = speciesDatabase->species(m_identity.species);
+  m_shipSpecies = diskStore.getString("shipSpecies", m_identity.species);
 
   m_questManager->diskLoad(diskStore.get("quests", JsonObject{}));
   m_companions->diskLoad(diskStore.get("companions", JsonObject{}));
@@ -338,8 +344,8 @@ ClientEntityMode Player::clientEntityMode() const {
   return ClientEntityMode::ClientPresenceMaster;
 }
 
-void Player::init(World* world, EntityId entityId, EntityMode mode) {
-  Entity::init(world, entityId, mode);
+void Player::init(World* world, EntityId entityId, EntityMode mode, ConnectionId originConnection) {
+  Entity::init(world, entityId, mode, originConnection);
 
 
   m_tools->init(this);
@@ -369,7 +375,7 @@ void Player::init(World* world, EntityId entityId, EntityMode mode) {
       p.second->addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(humanoid()->networkedAnimator()));
       if (m_client)
         p.second->addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(m_client));
-      p.second->init(world);
+      p.second->init(this);
     }
 
     for (auto& p : m_inventory->pullOverflow()) {
@@ -385,8 +391,7 @@ void Player::init(World* world, EntityId entityId, EntityMode mode) {
         [this](String const& name, Json const& defaultValue) -> Json {
           return m_scriptedAnimationParameters.value(name, defaultValue);
         }));
-      m_scriptedAnimator.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
-      m_scriptedAnimator.init(world);
+      m_scriptedAnimator.init(this);
   }
 
   m_xAimPositionNetState.setInterpolator(world->geometry().xLerpFunction());
@@ -407,7 +412,6 @@ void Player::uninit() {
     for (auto& p : m_genericScriptContexts) {
       p.second->uninit();
       p.second->removeCallbacks("animator");
-      p.second->removeCallbacks("entity");
       p.second->removeCallbacks("player");
       p.second->removeCallbacks("mcontroller");
       p.second->removeCallbacks("status");
@@ -420,7 +424,6 @@ void Player::uninit() {
   if (world()->isClient()) {
     m_scriptedAnimator.uninit();
     m_scriptedAnimator.removeCallbacks("animationConfig");
-    m_scriptedAnimator.removeCallbacks("entity");
   }
 
   Entity::uninit();
@@ -431,6 +434,7 @@ List<Drawable> Player::drawables(Vec2F position) {
 
   if (!isTeleporting()) {
     drawables.appendAll(m_techController->backDrawables(position));
+    drawables.appendAll(m_statusController->backDrawables(position));
     auto anchor = as<LoungeAnchor>(m_movementController->entityAnchor());
 
     if (!m_techController->parentHidden()) {
@@ -465,8 +469,7 @@ List<Drawable> Player::drawables(Vec2F position) {
     }
 
     drawables.appendAll(m_techController->frontDrawables(position));
-
-    drawables.appendAll(m_statusController->drawables(position));
+    drawables.appendAll(m_statusController->frontDrawables(position));
   }
 
   drawables.appendAll(m_effectsAnimator->drawables(position));
@@ -814,7 +817,7 @@ void Player::dropItem() {
   }
 }
 
-Maybe<Json> Player::receiveMessage(ConnectionId fromConnection, String const& message, JsonArray const& args) {
+Maybe<ChainableJsonMessageResponse> Player::receiveMessage(ConnectionId fromConnection, String const& message, JsonArray const& args) {
   bool localMessage = fromConnection == world()->connection();
   if (message == "queueRadioMessage" && args.size() > 0) {
     float delay = 0;
@@ -861,7 +864,7 @@ Maybe<Json> Player::receiveMessage(ConnectionId fromConnection, String const& me
     if (Root::singleton().collectionDatabase()->hasCollectable(collection, collectable))
       addCollectable(collection, collectable);
   } else {
-    Maybe<Json> result = m_tools->receiveMessage(message, localMessage, args);
+    Maybe<ChainableJsonMessageResponse> result = m_tools->receiveMessage(message, localMessage, args);
     if (!result)
       result = m_statusController->receiveMessage(message, localMessage, args);
     if (!result)
@@ -1168,6 +1171,11 @@ void Player::update(float dt, uint64_t) {
     }
   }
 
+  if (isMaster()) {
+    for (auto& p : m_genericScriptContexts)
+      p.second->invoke("postUpdate");
+  }
+
   m_pendingMoves.clear();
 
   if (isClient)
@@ -1240,7 +1248,15 @@ void Player::render(RenderCallback* renderCallback) {
     renderCallback->addAudio(std::move(audio));
   }
 
-  EntityRenderLayer renderLayer = loungeAnchor ? loungeAnchor->loungeRenderLayer : RenderLayerPlayer;
+  auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor());
+
+  EntityRenderLayer renderLayer = RenderLayerPlayer;
+  if (auto overrideRenderLayer = getSecretProperty("overrideRenderLayer"); overrideRenderLayer.canConvert(Json::Type::Int)) {
+    renderLayer = overrideRenderLayer.toUInt();
+  }
+  if (loungeAnchor) {
+    renderLayer = loungeAnchor->loungeRenderLayer;
+  }
 
   if (!loungeAnchor ||(!loungeAnchor->usePartZLevel && !loungeAnchor->hidden) ) {
     renderCallback->addDrawables(drawables(position()), renderLayer);
@@ -1262,6 +1278,10 @@ void Player::render(RenderCallback* renderCallback) {
 void Player::renderLightSources(RenderCallback* renderCallback) {
   renderCallback->addLightSources(lightSources());
   m_deployment->renderLightSources(renderCallback);
+}
+
+void Player::setRenderLayer(Maybe<EntityRenderLayer> layer) {
+  setSecretProperty("overrideRenderLayer", layer ? Json(*layer) : Json());
 }
 
 Json Player::getGenericProperty(String const& name, Json const& defaultValue) const {
@@ -1429,14 +1449,13 @@ bool Player::addBlueprint(ItemDescriptor const& descriptor, bool showFailure) {
     return false;
 
   auto itemDb = Root::singleton().itemDatabase();
-  auto item = itemDb->item(descriptor);
   auto assets = Root::singleton().assets();
   if (!m_blueprints->isKnown(descriptor)) {
     m_blueprints->add(descriptor);
-    queueUIMessage(assets->json("/player.config:blueprintUnlock").toString().replace("<ItemName>", item->friendlyName()));
+    queueUIMessage(assets->json("/player.config:blueprintUnlock").toString().replace("<ItemName>", itemDb->item(descriptor)->friendlyName()));
     return true;
   } else if (showFailure) {
-    queueUIMessage(assets->json("/player.config:blueprintAlreadyKnown").toString().replace("<ItemName>", item->friendlyName()));
+    queueUIMessage(assets->json("/player.config:blueprintAlreadyKnown").toString().replace("<ItemName>", itemDb->item(descriptor)->friendlyName()));
   }
 
   return false;
@@ -2152,7 +2171,73 @@ bool Player::isDeployed() const {
 }
 
 void Player::setBusyState(PlayerBusyState busyState) {
-  m_effectsAnimator->setState("busy", PlayerBusyStateNames.getRight(busyState));
+  Set<PlayerBusyState> busyStates;
+  if (busyState != PlayerBusyState::None)
+    busyStates.add(busyState);
+  setBusyStates(busyStates);
+}
+
+void Player::setBusyStates(Set<PlayerBusyState> const& busyStates) {
+  m_busyStates = busyStates;
+  updateBusyIndicator();
+}
+
+PlayerBusyState Player::busyState() const {
+  return m_busyState;
+}
+
+Set<PlayerBusyState> const& Player::busyStates() const {
+  return m_busyStates;
+}
+
+void Player::updateBusyIndicator() {
+  m_busyState = PlayerBusyState::None;
+  PlayerBusyState shown = PlayerBusyState::None;
+  for (auto state : {PlayerBusyState::Menu, PlayerBusyState::Chatting}) {
+    if (!m_busyStates.contains(state))
+      continue;
+    if (m_busyState == PlayerBusyState::None)
+      m_busyState = state;
+    if (!m_hiddenBusyIndicators.contains(state)) {
+      shown = state;
+      break;
+    }
+  }
+  m_effectsAnimator->setState("busy", PlayerBusyStateNames.getRight(shown));
+}
+
+void Player::setBusyIndicatorHidden(PlayerBusyState busyState, bool hidden) {
+  if (hidden)
+    m_hiddenBusyIndicators.add(busyState);
+  else
+    m_hiddenBusyIndicators.remove(busyState);
+  updateBusyIndicator(); // apply right away
+}
+
+bool Player::busyIndicatorHidden(PlayerBusyState busyState) const {
+  return m_hiddenBusyIndicators.contains(busyState);
+}
+
+Maybe<String> const& Player::teamName() const {
+  return m_teamName;
+}
+
+void Player::setTeamName(Maybe<String> name) {
+  if (name && name->empty())
+    name.reset();
+  else if (name)
+    name = name->slice(0, 64); // by characters, so a multi-byte one is never cut
+  m_teamName = std::move(name);
+}
+
+Maybe<List<Drawable>> const& Player::teamPortrait() const {
+  return m_teamPortrait;
+}
+
+void Player::setTeamPortrait(Maybe<List<Drawable>> portrait) {
+  if (portrait && portrait->size() > 32)
+    throw StarException("A team portrait can have at most 32 drawables");
+  m_teamPortrait = std::move(portrait);
 }
 
 void Player::teleportOut(String const& animationType, bool deploy) {
@@ -2225,6 +2310,14 @@ void Player::applyShipUpgrades(Json const& upgrades) {
     m_clientContext->rpcInterface()->invokeRemote("ship.applyShipUpgrades", upgrades);
   else
     m_shipUpgrades.apply(upgrades);
+}
+
+void Player::setShipSpecies(String species) {
+  m_shipSpecies = std::move(species);
+}
+
+String Player::shipSpecies() const {
+  return m_shipSpecies;
 }
 
 String Player::name() const {
@@ -2540,6 +2633,7 @@ Json Player::diskStore() {
     {"description", m_description},
     {"modeType", PlayerModeNames.getRight(m_modeType)},
     {"shipUpgrades", m_shipUpgrades.toJson()},
+    {"shipSpecies", !m_shipSpecies.empty() ? m_shipSpecies : m_identity.species},
     {"blueprints", m_blueprints->toJson()},
     {"universeMap", m_universeMap->toJson()},
     {"codexes", m_codexes->toJson()},
@@ -2668,12 +2762,16 @@ void Player::queueRadioMessage(Json const& messageConfig, float delay) {
   try {
     message = Root::singleton().radioMessageDatabase()->createRadioMessage(messageConfig);
 
+    while (message.speciesAiMessage.contains(shipSpecies()) || message.speciesMessage.contains(species()))
+      message = message.speciesAiMessage.value(shipSpecies(), message.speciesMessage.value(species()));
+
     if (message.type == RadioMessageType::Tutorial && !Root::singleton().configuration()->get("tutorialMessages").toBool())
       return;
 
     // non-absolute portrait image paths are assumed to be a frame name within the player's species-specific AI
+
     if (!message.portraitImage.empty() && message.portraitImage[0] != '/')
-      message.portraitImage = Root::singleton().aiDatabase()->portraitImage(species(), message.portraitImage);
+      message.portraitImage = Root::singleton().aiDatabase()->portraitImage(shipSpecies(), message.portraitImage);
   } catch (RadioMessageDatabaseException const& e) {
     Logger::error("Couldn't queue radio message '{}': {}", messageConfig, e.what());
     return;
@@ -2906,21 +3004,23 @@ void Player::refreshHumanoidParameters() {
     if (world()->isClient() && m_scriptedAnimator.initialized()) {
       m_scriptedAnimator.uninit();
       m_scriptedAnimator.removeCallbacks("animationConfig");
-      m_scriptedAnimator.removeCallbacks("entity");
 
       m_scriptedAnimator.setScripts(humanoid()->animationScripts());
       m_scriptedAnimator.addCallbacks("animationConfig", LuaBindings::makeScriptedAnimatorCallbacks(humanoid()->networkedAnimator(),
         [this](String const& name, Json const& defaultValue) -> Json {
           return m_scriptedAnimationParameters.value(name, defaultValue);
         }));
-      m_scriptedAnimator.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
-      m_scriptedAnimator.init(world());
+      m_scriptedAnimator.init(this);
     }
   }
 }
 
 void Player::setAnimationParameter(String name, Json value) {
   m_scriptedAnimationParameters.set(std::move(name), std::move(value));
+}
+
+void Player::setDeathParticleBurst(Maybe<String> const& deathParticleBurst) {
+  m_deathParticleBurst.set(deathParticleBurst);
 }
 
 }

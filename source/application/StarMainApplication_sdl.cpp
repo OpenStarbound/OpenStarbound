@@ -256,6 +256,135 @@ Maybe<Key> keyFromSdlKeyCode(SDL_Keycode sym) {
   return KeyCodeMap.maybe(sym);
 }
 
+Maybe<Key> keyFromSdlScancode(SDL_Scancode scancode) {
+  static HashMap<int, Key> ScanCodeMap{
+  {SDL_SCANCODE_A, Key::A},
+  {SDL_SCANCODE_B, Key::B},
+  {SDL_SCANCODE_C, Key::C},
+  {SDL_SCANCODE_D, Key::D},
+  {SDL_SCANCODE_E, Key::E},
+  {SDL_SCANCODE_F, Key::F},
+  {SDL_SCANCODE_G, Key::G},
+  {SDL_SCANCODE_H, Key::H},
+  {SDL_SCANCODE_I, Key::I},
+  {SDL_SCANCODE_J, Key::J},
+  {SDL_SCANCODE_K, Key::K},
+  {SDL_SCANCODE_L, Key::L},
+  {SDL_SCANCODE_M, Key::M},
+  {SDL_SCANCODE_N, Key::N},
+  {SDL_SCANCODE_O, Key::O},
+  {SDL_SCANCODE_P, Key::P},
+  {SDL_SCANCODE_Q, Key::Q},
+  {SDL_SCANCODE_R, Key::R},
+  {SDL_SCANCODE_S, Key::S},
+  {SDL_SCANCODE_T, Key::T},
+  {SDL_SCANCODE_U, Key::U},
+  {SDL_SCANCODE_V, Key::V},
+  {SDL_SCANCODE_W, Key::W},
+  {SDL_SCANCODE_X, Key::X},
+  {SDL_SCANCODE_Y, Key::Y},
+  {SDL_SCANCODE_Z, Key::Z},
+  {SDL_SCANCODE_0, Key::Zero},
+  {SDL_SCANCODE_1, Key::One},
+  {SDL_SCANCODE_2, Key::Two},
+  {SDL_SCANCODE_3, Key::Three},
+  {SDL_SCANCODE_4, Key::Four},
+  {SDL_SCANCODE_5, Key::Five},
+  {SDL_SCANCODE_6, Key::Six},
+  {SDL_SCANCODE_7, Key::Seven},
+  {SDL_SCANCODE_8, Key::Eight},
+  {SDL_SCANCODE_9, Key::Nine},
+  {SDL_SCANCODE_MINUS, Key::Minus},
+  {SDL_SCANCODE_EQUALS, Key::Equals},
+  {SDL_SCANCODE_LEFTBRACKET, Key::LeftBracket},
+  {SDL_SCANCODE_RIGHTBRACKET, Key::RightBracket},
+  {SDL_SCANCODE_BACKSLASH, Key::Backslash},
+  {SDL_SCANCODE_SEMICOLON, Key::Semicolon},
+  {SDL_SCANCODE_APOSTROPHE, Key::Quote},
+  {SDL_SCANCODE_GRAVE, Key::Backquote},
+  {SDL_SCANCODE_COMMA, Key::Comma},
+  {SDL_SCANCODE_PERIOD, Key::Period},
+  {SDL_SCANCODE_SLASH, Key::Slash},
+  {SDL_SCANCODE_BACKSPACE, Key::Backspace},
+  {SDL_SCANCODE_TAB, Key::Tab},
+  {SDL_SCANCODE_RETURN, Key::Return},
+  {SDL_SCANCODE_ESCAPE, Key::Escape},
+  {SDL_SCANCODE_SPACE, Key::Space},
+  {SDL_SCANCODE_DELETE, Key::Delete},
+  {SDL_SCANCODE_INSERT, Key::Insert},
+  {SDL_SCANCODE_HOME, Key::Home},
+  {SDL_SCANCODE_END, Key::End},
+  {SDL_SCANCODE_PAGEUP, Key::PageUp},
+  {SDL_SCANCODE_PAGEDOWN, Key::PageDown},
+  {SDL_SCANCODE_UP, Key::Up},
+  {SDL_SCANCODE_DOWN, Key::Down},
+  {SDL_SCANCODE_LEFT, Key::Left},
+  {SDL_SCANCODE_RIGHT, Key::Right},
+  {SDL_SCANCODE_F1, Key::F1},
+  {SDL_SCANCODE_F2, Key::F2},
+  {SDL_SCANCODE_F3, Key::F3},
+  {SDL_SCANCODE_F4, Key::F4},
+  {SDL_SCANCODE_F5, Key::F5},
+  {SDL_SCANCODE_F6, Key::F6},
+  {SDL_SCANCODE_F7, Key::F7},
+  {SDL_SCANCODE_F8, Key::F8},
+  {SDL_SCANCODE_F9, Key::F9},
+  {SDL_SCANCODE_F10, Key::F10},
+  {SDL_SCANCODE_F11, Key::F11},
+  {SDL_SCANCODE_F12, Key::F12},
+  {SDL_SCANCODE_F13, Key::F13},
+  {SDL_SCANCODE_F14, Key::F14},
+  {SDL_SCANCODE_F15, Key::F15},
+  {SDL_SCANCODE_F16, Key::F16},
+  {SDL_SCANCODE_F17, Key::F17},
+  {SDL_SCANCODE_F18, Key::F18},
+  {SDL_SCANCODE_F19, Key::F19},
+  {SDL_SCANCODE_F20, Key::F20},
+  {SDL_SCANCODE_F21, Key::F21},
+  {SDL_SCANCODE_F22, Key::F22},
+  {SDL_SCANCODE_F23, Key::F23},
+  {SDL_SCANCODE_F24, Key::F24},
+  {SDL_SCANCODE_KP_0, Key::Keypad0},
+  {SDL_SCANCODE_KP_1, Key::Keypad1},
+  {SDL_SCANCODE_KP_2, Key::Keypad2},
+  {SDL_SCANCODE_KP_3, Key::Keypad3},
+  {SDL_SCANCODE_KP_4, Key::Keypad4},
+  {SDL_SCANCODE_KP_5, Key::Keypad5},
+  {SDL_SCANCODE_KP_6, Key::Keypad6},
+  {SDL_SCANCODE_KP_7, Key::Keypad7},
+  {SDL_SCANCODE_KP_8, Key::Keypad8},
+  {SDL_SCANCODE_KP_9, Key::Keypad9},
+  {SDL_SCANCODE_KP_PERIOD, Key::KeypadPeriod},
+  {SDL_SCANCODE_KP_DIVIDE, Key::KeypadDivide},
+  {SDL_SCANCODE_KP_MULTIPLY, Key::KeypadMultiply},
+  {SDL_SCANCODE_KP_MINUS, Key::KeypadMinus},
+  {SDL_SCANCODE_KP_PLUS, Key::KeypadPlus},
+  {SDL_SCANCODE_KP_ENTER, Key::KeypadEnter},
+  {SDL_SCANCODE_KP_EQUALS, Key::KeypadEquals},
+  {SDL_SCANCODE_LCTRL, Key::LCtrl},
+  {SDL_SCANCODE_RCTRL, Key::RCtrl},
+  {SDL_SCANCODE_LSHIFT, Key::LShift},
+  {SDL_SCANCODE_RSHIFT, Key::RShift},
+  {SDL_SCANCODE_LALT, Key::LAlt},
+  {SDL_SCANCODE_RALT, Key::RAlt},
+  {SDL_SCANCODE_LGUI, Key::LGui},
+  {SDL_SCANCODE_RGUI, Key::RGui},
+  {SDL_SCANCODE_MODE, Key::AltGr},
+  {SDL_SCANCODE_CAPSLOCK, Key::CapsLock},
+  {SDL_SCANCODE_NUMLOCKCLEAR, Key::NumLock},
+  {SDL_SCANCODE_SCROLLLOCK, Key::ScrollLock},
+  {SDL_SCANCODE_PRINTSCREEN, Key::PrintScreen},
+  {SDL_SCANCODE_PAUSE, Key::Pause},
+  {SDL_SCANCODE_MENU, Key::Menu},
+  {SDL_SCANCODE_APPLICATION, Key::Compose},
+  {SDL_SCANCODE_POWER, Key::Power},
+  {SDL_SCANCODE_HELP, Key::Help},
+  {SDL_SCANCODE_SYSREQ, Key::SysReq},
+  };
+
+  return ScanCodeMap.maybe(scancode);
+}
+
 KeyMod keyModsFromSdlKeyMods(uint16_t mod) {
   return static_cast<KeyMod>(mod);
 }
@@ -327,13 +456,11 @@ public:
         return false;
       });
 
-    SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_NAME_STRING, "Starbound");
-    SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_VERSION_STRING, OpenStarVersionString);
+    SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_NAME_STRING, "OpenStarbound");
     SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_IDENTIFIER_STRING, "io.github.openstarbound.openstarbound");
     SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_URL_STRING, "https://github.com/OpenStarbound/OpenStarbound");
     SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_TYPE_STRING, "game");
-    SDL_SetHint(SDL_HINT_AUDIO_DEVICE_STREAM_NAME, "Audio");  
-	  
+
     Logger::info("Application: Initializing SDL");
     if (!SDL_Init(0))
       throw ApplicationException(strf("Couldn't initialize SDL: {}", SDL_GetError()));
@@ -350,12 +477,17 @@ public:
     } catch (std::exception const& e) {
       throw ApplicationException("Application threw exception during startup", e);
     }
+
+#ifdef STAR_SYSTEM_LINUX
+    SDL_SetHint(SDL_HINT_VIDEO_WAYLAND_SCALE_TO_DISPLAY, "1");
+#endif
     
     Logger::info("Application: Initializing SDL Video");
     if (!SDL_InitSubSystem(SDL_INIT_VIDEO))
       throw ApplicationException(strf("Couldn't initialize SDL Video: {}", SDL_GetError()));
 
-    Logger::info("Application: using Video Driver '{}'", SDL_GetCurrentVideoDriver());
+    m_videoDriver = SDL_GetCurrentVideoDriver();
+    Logger::info("Application: using Video Driver '{}'", m_videoDriver);
 
     Logger::info("Application: Initializing SDL Controller");
     if (!SDL_InitSubSystem(SDL_INIT_GAMEPAD))
@@ -365,7 +497,8 @@ public:
     if (!SDL_InitSubSystem(SDL_INIT_AUDIO))
       throw ApplicationException(strf("Couldn't initialize SDL Audio: {}", SDL_GetError()));
 
-    Logger::info("Application: using Audio Driver '{}'", SDL_GetCurrentAudioDriver());
+    m_audioDriver = SDL_GetCurrentAudioDriver();
+    Logger::info("Application: using Audio Driver '{}'", m_audioDriver);
 
     SDL_SetJoystickEventsEnabled(true);
 
@@ -374,41 +507,90 @@ public:
       Logger::info("Application: No platform services available");
 
     Logger::info("Application: Creating SDL window");
+#ifdef STAR_SYSTEM_MACOS
     m_sdlWindow = SDL_CreateWindow(m_windowTitle.utf8Ptr(), m_windowSize[0], m_windowSize[1], SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+#else
+    m_sdlWindow = SDL_CreateWindow(m_windowTitle.utf8Ptr(), m_windowSize[0], m_windowSize[1], SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY);
+#endif
     if (!m_sdlWindow)
       throw ApplicationException::format("Application: Could not create SDL Window: {}", SDL_GetError());
-
-#ifdef STAR_SYSTEM_LINUX
-    SDL_Surface* iconSurface = SDL_LoadBMP(".icon/starbound.bmp");
-    if (iconSurface) {
-        SDL_SetWindowIcon(m_sdlWindow, iconSurface);
-        SDL_DestroySurface(iconSurface);
-    } else {
-        Logger::warn("Could not load icon: {}", SDL_GetError());
-    }
+    
+#ifndef STAR_SYSTEM_MACOS
+    m_displayScale = SDL_GetWindowDisplayScale(m_sdlWindow);
 #endif
-	  
-#if defined(__APPLE__)
-    // GL 3.2 Core + GLSL 150
-    const char* glsl_version = "#version 150";
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG); // Always required on Mac
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
-#else
-    // GL 3.0 + GLSL 130
-    const char* glsl_version = "#version 130";
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+    
+#ifdef STAR_SYSTEM_LINUX
+    if (File::isFile(".icon/openstarbound.png")) {
+      auto device = File::open(".icon/openstarbound.png", IOMode::Read);
+      if (device && Image::isPng(device)) {
+        Image img = Image::readPng(device);
+
+        Image conv = img.convert(PixelFormat::RGBA32);
+
+        Image flipped = processImageOperations(
+          List<ImageOperation>{ FlipImageOperation{ FlipImageOperation::Mode::FlipY } },
+          conv
+        );
+
+        SDL_PixelFormat sdlFmt = static_cast<SDL_PixelFormat>(SDL_PIXELFORMAT_ABGR8888);
+
+        int w = static_cast<int>(flipped.width());
+        int h = static_cast<int>(flipped.height());
+        int pitch = static_cast<int>(flipped.bytesPerPixel() * flipped.width());
+
+        SDL_Surface* iconSurface = SDL_CreateSurfaceFrom(
+          w,
+          h,
+          sdlFmt,
+          (void*)flipped.data(),
+          pitch
+        );
+
+        if (iconSurface) {
+          SDL_SetWindowIcon(m_sdlWindow, iconSurface);
+          SDL_DestroySurface(iconSurface);
+        } else {
+          Logger::warn("Could not create SDL surface for icon '{}': {}", ".icon/openstarbound.png", SDL_GetError());
+        }
+      }
+
+      // Get XDG Icons Directory following XDG Base Directory Specification
+      String XdgIconsPath;
+      const char* XdgDataHome = getenv("XDG_DATA_HOME");
+      const char* Home = getenv("HOME");
+
+      if (XdgDataHome && XdgDataHome[0] != '\0') {
+        XdgIconsPath = String::joinWith("", XdgDataHome, "/icons");
+      } else if (Home && Home[0] != '\0') {
+        XdgIconsPath = String::joinWith("", Home, "/.local/share/icons");
+      }
+
+      // Install Icon if not Installed
+      if (!XdgIconsPath.empty() && File::isDirectory(XdgIconsPath)) {
+        const String XdgIcon = String::joinWith("", XdgIconsPath, "/openstarbound.png");
+        if (!File::isFile(XdgIcon)) {
+          File::copy(".icon/openstarbound.png", XdgIcon);
+          Logger::info("Application: Installed Icon to XDG Icons Directory");
+        }
+      }
+    }
+
+    SDL_SetHint(SDL_HINT_AUDIO_DEVICE_APP_ICON_NAME, "openstarbound");
 #endif
 
     Logger::info("Application: Creating SDL OpenGL context");
-    m_sdlGlContext = SDL_GL_CreateContext(m_sdlWindow);
+    static const std::pair<int,int> versions[] = {{4,6},{4,5},{4,4},{4,3},{4,2},{4,1},{4,0},{3,3},{3,2},{3,1}};
+    for (auto& [majorVersion, minorVersion] : versions) {
+      SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
+      SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+      SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, majorVersion);
+      SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, minorVersion);
+      m_sdlGlContext = SDL_GL_CreateContext(m_sdlWindow);
+      if (m_sdlGlContext) break;
+    }
     if (!m_sdlGlContext)
       throw ApplicationException::format("Application: Could not create OpenGL context: {}", SDL_GetError());
-    
+
     SDL_ShowWindow(m_sdlWindow);
     SDL_RaiseWindow(m_sdlWindow);
 
@@ -457,7 +639,7 @@ public:
     style.ScaleAllSizes(main_scale);
 
     ImGui_ImplSDL3_InitForOpenGL(m_sdlWindow, m_sdlGlContext);
-    ImGui_ImplOpenGL3_Init(glsl_version);
+    ImGui_ImplOpenGL3_Init(nullptr);
 
   }
 
@@ -480,7 +662,7 @@ public:
 
     SDL_Quit();
   }
-  
+
   typedef std::function<void(uint8_t*, int)> AudioCallback;
   bool openAudioInputDevice(SDL_AudioDeviceID deviceId, int freq, int channels, AudioCallback callback) {
     closeAudioInputDevice();
@@ -550,7 +732,7 @@ public:
         else
           SDL_HideCursor();
 
-        
+
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL3_NewFrame();
 
@@ -682,7 +864,7 @@ private:
               SDL_SetWindowBordered(parent->m_sdlWindow, true);
             else if (parent->m_windowMode == WindowMode::Maximized)
               SDL_RestoreWindow(parent->m_sdlWindow);
-            
+
             parent->m_windowMode = WindowMode::Fullscreen;
             SDL_SetWindowFullscreen(parent->m_sdlWindow, SDL_WINDOW_FULLSCREEN);
           } else {
@@ -748,7 +930,14 @@ private:
 
         if (auto displayMode = SDL_GetDesktopDisplayMode(SDL_GetDisplayForWindow(parent->m_sdlWindow))) {
           parent->m_windowSize = {(unsigned)displayMode->w, (unsigned)displayMode->h};
-
+          #ifdef STAR_SYSTEM_WINDOWS
+          if (m_borderlessWorkaround) { // breaks brightness on some setups god what the fuck fuck microsoft fuck nvidia
+            auto handle = (HWND)SDL_GetPointerProperty(SDL_GetWindowProperties(parent->m_sdlWindow), SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
+            SetWindowLongPtr(handle, GWL_STYLE, WS_OVERLAPPED);
+            SetWindowLongPtr(handle, GWL_EXSTYLE, WS_EX_APPWINDOW);
+            SetWindowPos(handle, HWND_TOP, 0, 0, displayMode->w, displayMode->h, SWP_FRAMECHANGED | SWP_NOOWNERZORDER | SWP_SHOWWINDOW);
+          } // fuck everything dude it's all so fucked. everything is so fucked
+          #endif
           SDL_SetWindowPosition(parent->m_sdlWindow, 0, 0);
           SDL_SetWindowSize(parent->m_sdlWindow, parent->m_windowSize[0], parent->m_windowSize[1]);
           parent->m_renderer->setScreenSize(parent->m_windowSize);
@@ -758,6 +947,13 @@ private:
         }
       }
     }
+
+    #ifdef STAR_SYSTEM_WINDOWS
+    bool m_borderlessWorkaround = false;
+    void setBorderlessWorkaround(bool enabled) override {
+      m_borderlessWorkaround = enabled;
+    }
+    #endif
 
     void setVSyncEnabled(bool vSync) override {
       if (parent->m_windowVSync != vSync) {
@@ -840,6 +1036,10 @@ private:
       return parent->m_renderRate;
     }
 
+  float getDisplayScale() const override {
+    return parent->m_displayScale;
+  }
+
     StatisticsServicePtr statisticsService() const override {
       if (parent->m_platformServices)
         return parent->m_platformServices->statisticsService();
@@ -898,25 +1098,37 @@ private:
         m_renderer->setScreenSize(m_windowSize);
         m_application->windowChanged(m_windowMode, m_windowSize);
       }
+#ifndef STAR_SYSTEM_MACOS
+      else if (event.type == SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED) {
+        m_displayScale = SDL_GetWindowDisplayScale(m_sdlWindow);
+      }
+#endif
       else if (event.type == SDL_EVENT_KEY_DOWN && (!io.WantCaptureKeyboard || !io.WantTextInput)) {
         if (!event.key.repeat) {
-          if (auto key = keyFromSdlKeyCode(event.key.key))
+          auto key = keyFromSdlKeyCode(event.key.key);
+          if (!key)
+            key = keyFromSdlScancode(event.key.scancode);
+          if (key)
             starEvent.set(KeyDownEvent{*key, keyModsFromSdlKeyMods(event.key.mod)});
         }
       } else if (event.type == SDL_EVENT_KEY_UP) {
-        if (auto key = keyFromSdlKeyCode(event.key.key))
+        auto key = keyFromSdlKeyCode(event.key.key);
+        if (!key)
+          key = keyFromSdlScancode(event.key.scancode);
+        if (key)
           starEvent.set(KeyUpEvent{*key});
       } else if (event.type == SDL_EVENT_TEXT_INPUT && !io.WantTextInput) {
         starEvent.set(TextInputEvent{String(event.text.text)});
       } else if (event.type == SDL_EVENT_MOUSE_MOTION) {
         starEvent.set(MouseMoveEvent{
-            {event.motion.xrel, -event.motion.yrel}, {event.motion.x, (int)m_windowSize[1] - event.motion.y}});
+          {event.motion.xrel, -event.motion.yrel},
+          {event.motion.x, (int)m_windowSize[1] - event.motion.y}});
       } else if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN && !io.WantCaptureMouse) {
         starEvent.set(MouseButtonDownEvent{mouseButtonFromSdlMouseButton(event.button.button),
-            {event.button.x, (int)m_windowSize[1] - event.button.y}});
+          {event.button.x, (int)m_windowSize[1] - event.button.y}});
       } else if (event.type == SDL_EVENT_MOUSE_BUTTON_UP && !io.WantCaptureMouse) {
         starEvent.set(MouseButtonUpEvent{mouseButtonFromSdlMouseButton(event.button.button),
-            {event.button.x, (int)m_windowSize[1] - event.button.y}});
+          {event.button.x, (int)m_windowSize[1] - event.button.y}});
       } else if (event.type == SDL_EVENT_MOUSE_WHEEL && !io.WantCaptureMouse) {
         starEvent.set(MouseWheelEvent{event.wheel.y < 0 ? MouseWheel::Down : MouseWheel::Up,
           {event.wheel.mouse_x, (int)m_windowSize[1] - event.wheel.mouse_y}});
@@ -1005,7 +1217,7 @@ private:
       // Fix fully transparent pixels inverting the underlying display pixel on Windows (allowing this could be made configurable per cursor later!)
       newImage->forEachPixel([](unsigned /*x*/, unsigned /*y*/, Vec4B& pixel) { if (!pixel[3]) pixel[0] = pixel[1] = pixel[2] = 0; });
       entry->image = std::move(newImage);
-      
+
 
       auto size = entry->image->size();
       SDL_PixelFormat pixelFormat;
@@ -1138,6 +1350,9 @@ private:
   bool m_acceptingTextInput = false;
   bool m_audioEnabled = false;
   bool m_quitRequested = false;
+  float m_displayScale = 1.0f;
+  const char* m_videoDriver;
+  const char* m_audioDriver;
 
   OpenGlRendererPtr m_renderer;
   ApplicationUPtr m_application;

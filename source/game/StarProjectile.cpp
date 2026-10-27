@@ -66,8 +66,8 @@ Json Projectile::configValue(String const& name, Json const& def) const {
   return m_parameters.query(name, m_config->config.query(name, def));
 }
 
-void Projectile::init(World* world, EntityId entityId, EntityMode mode) {
-  Entity::init(world, entityId, mode);
+void Projectile::init(World* world, EntityId entityId, EntityMode mode, ConnectionId originConnection) {
+  Entity::init(world, entityId, mode, originConnection);
   m_movementController->init(world);
   m_movementController->setIgnorePhysicsEntities({entityId});
 
@@ -92,9 +92,8 @@ void Projectile::init(World* world, EntityId entityId, EntityMode mode) {
 
       m_scriptComponent.addCallbacks("projectile", makeProjectileCallbacks());
       m_scriptComponent.addCallbacks("config", LuaBindings::makeConfigCallbacks(bind(&Projectile::configValue, this, _1, _2)));
-      m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
       m_scriptComponent.addCallbacks("mcontroller", LuaBindings::makeMovementControllerCallbacks(m_movementController.get()));
-      m_scriptComponent.init(world);
+      m_scriptComponent.init(this);
     }
   }
   m_travelLine = Line2F(position(), position());
@@ -115,11 +114,11 @@ void Projectile::uninit() {
     m_persistentAudio->stop();
   m_movementController->uninit();
   if (isMaster()) {
-    if (!m_config->scripts.empty()) {
+    auto scripts = configValue("scripts").optArray().apply(jsonToStringList);
+    if (scripts && !(*scripts).empty()) {
       m_scriptComponent.uninit();
       m_scriptComponent.removeCallbacks("projectile");
       m_scriptComponent.removeCallbacks("config");
-      m_scriptComponent.removeCallbacks("entity");
       m_scriptComponent.removeCallbacks("mcontroller");
     }
   }
@@ -395,7 +394,7 @@ void Projectile::renderLightSources(RenderCallback* renderCallback) {
   renderCallback->addLightSource({position(), m_config->lightColor.toRgbF(), m_config->lightType, 0.0f, 0.0f, 0.0f});
 }
 
-Maybe<Json> Projectile::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
+Maybe<ChainableJsonMessageResponse> Projectile::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
   return m_scriptComponent.handleMessage(message, sendingConnection == world()->connection(), args);
 }
 
@@ -498,6 +497,10 @@ Maybe<PhysicsMovingCollision> Projectile::movingCollision(size_t positionIndex) 
   PhysicsMovingCollision collision = mc.movingCollision;
   collision.translate(position());
   return collision;
+}
+
+MovementController* Projectile::movementController() {
+  return m_movementController.get();
 }
 
 List<Particle> Projectile::sparkBlock(World* world, Vec2I const& position, Vec2F const& damageSource) {
@@ -613,7 +616,7 @@ void Projectile::processAction(Json const& action) {
     for (auto& tile : zip(openSpaces, tileDrops)) {
       if (!world()->modifyTile(std::get<0>(tile), PlaceMaterial{TileLayer::Foreground, std::get<1>(tile), MaterialHue()}, allowEntityOverlap)) {
         auto itemDrop = ItemDrop::createRandomizedDrop(materialDatabase->materialItemDrop(std::get<1>(tile)), (Vec2F)std::get<0>(tile));
-        world()->addEntity(itemDrop);
+        world()->addEntity(itemDrop,originConnection());
       }
     }
 
@@ -773,18 +776,21 @@ void Projectile::processAction(Json const& action) {
     auto damageType = TileDamageTypeNames.getLeft(parameters.getString("tileDamageType", "explosive"));
     unsigned harvestLevel = parameters.getUInt("harvestLevel", 0);
     Vec2F explosionPosition = position();
-
+    
+    auto connection = originConnection();
     doWithDelay(parameters.getUInt("delaySteps", 0), [=](World* world) {
-        world->damageTiles(tileAreaBrush(foregroundRadius, explosionPosition, false),
-            TileLayer::Foreground,
-            explosionPosition,
-            {damageType, explosiveDamageAmount, harvestLevel},
-            sourceEntity());
-        world->damageTiles(tileAreaBrush(backgroundRadius, explosionPosition, false),
-            TileLayer::Background,
-            explosionPosition,
-            {damageType, explosiveDamageAmount, harvestLevel},
-            sourceEntity());
+        if (world->connectionHasPermission(connection, WorldPermissionType::Build)) {
+          world->damageTiles(tileAreaBrush(foregroundRadius, explosionPosition, false),
+              TileLayer::Foreground,
+              explosionPosition,
+              {damageType, explosiveDamageAmount, harvestLevel},
+              sourceEntity());
+          world->damageTiles(tileAreaBrush(backgroundRadius, explosionPosition, false),
+              TileLayer::Background,
+              explosionPosition,
+              {damageType, explosiveDamageAmount, harvestLevel},
+              sourceEntity());
+        }
       });
 
   } else if (command == "spawnmonster") {
@@ -802,7 +808,7 @@ void Projectile::processAction(Json const& action) {
       if (parameters.contains("offset"))
         spawnPosition += jsonToVec2F(parameters.get("offset"));
       monster->setPosition(spawnPosition);
-      world()->addEntity(monster);
+      world()->addEntity(monster,originConnection());
     }
 
     if (world()->isClient() && parameters.contains("particle")) {
@@ -821,7 +827,7 @@ void Projectile::processAction(Json const& action) {
     JsonObject data = parameters.getObject("data", JsonObject{});
 
     auto itemDrop = ItemDrop::createRandomizedDrop(ItemDescriptor(name, count, data), position());
-    world()->addEntity(itemDrop);
+    world()->addEntity(itemDrop,originConnection());
 
   } else if (command == "sound") {
     if (!world()->isClient())

@@ -26,7 +26,7 @@ public:
   void uninit();
 
   void teleportOut();
-  Maybe<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
+  Maybe<ChainableJsonMessageResponse> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
   void update(float dt);
 
   void render(RenderCallback* renderCallback, Vec2F const& position);
@@ -38,7 +38,7 @@ private:
 
   bool m_deploying;
   bool m_deployed;
-  LuaAnimationComponent<LuaMessageHandlingComponent<LuaStorableComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>>> m_scriptComponent;
+  LuaAnimationComponent<LuaMessageHandlingComponent<LuaStorableComponent<LuaUpdatableComponent<LuaEntityComponent<LuaBaseComponent>>>>> m_scriptComponent;
 };
 
 }

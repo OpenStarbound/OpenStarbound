@@ -45,6 +45,7 @@ public:
   List<String> const& colorOptions();
 
   Directives const& directives(bool flip = false) const;
+  bool fullbright() const;
   bool flipping() const;
   bool visible(bool extraCosmetics = false) const;
   HashSet<ArmorType> const& armorTypesToHide();
@@ -66,6 +67,7 @@ private:
   bool m_bypassNude;
   bool m_hideInVanillaSlots;
   bool m_statusEffectsInCosmeticSlot;
+  bool m_fullbright;
   List<PersistentStatusEffect> m_cosmeticStatusEffects;
   Maybe<HashSet<ArmorType>> m_armorTypesToHide;
   Maybe<String> m_techModule;

@@ -213,14 +213,10 @@ Color jsonToColor(Json const& v) {
   if (v.type() == Json::Type::Array) {
     if (v.type() != Json::Type::Array || (v.size() != 3 && v.size() != 4))
       throw JsonException("Json not an array of size 3 or 4 in jsonToColor");
-    Color c = Color::rgba(0, 0, 0, 255);
-    c.setRed(v.getInt(0));
-    c.setGreen(v.getInt(1));
-    c.setBlue(v.getInt(2));
-
+    // Components are 0-255, and may be floats or out of range for HDR colors.
+    Color c = Color::rgbaf(v.getFloat(0) / 255.0f, v.getFloat(1) / 255.0f, v.getFloat(2) / 255.0f, 1.0f);
     if (v.size() == 4)
-      c.setAlpha(v.getInt(3));
-
+      c.setAlphaF(v.getFloat(3) / 255.0f);
     return c;
   } else if (v.type() == Json::Type::String) {
     return Color(v.toString());

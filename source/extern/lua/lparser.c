@@ -52,6 +52,7 @@ typedef struct BlockCnt {
   lu_byte nactvar;  /* # active locals outside the block */
   lu_byte upval;  /* true if some variable in the block is an upvalue */
   lu_byte isloop;  /* true if 'block' is a loop */
+  lu_byte insidetbc;  /* true if inside the scope of a defer stmt (i.e. defer closure var) */
 } BlockCnt;
 
 
@@ -442,6 +443,7 @@ static void enterblock (FuncState *fs, BlockCnt *bl, lu_byte isloop) {
   bl->firstlabel = fs->ls->dyd->label.n;
   bl->firstgoto = fs->ls->dyd->gt.n;
   bl->upval = 0;
+  bl->insidetbc = (fs->bl != NULL && fs->bl->insidetbc);
   bl->previous = fs->bl;
   fs->bl = bl;
   lua_assert(fs->freereg == fs->nactvar);
@@ -519,10 +521,17 @@ static Proto *addprototype (LexState *ls) {
 ** so that, if it invokes the GC, the GC knows which registers
 ** are in use at that time.
 */
-static void codeclosure (LexState *ls, expdesc *v) {
+static void codeclosure (LexState *ls, expdesc *v, int deferred) {
   FuncState *fs = ls->fs->prev;
+  int pc = -1;
+  if (deferred) {
+    pc = luaK_codeABC(fs, OP_DEFER, 0, 0, 0);
+  }
   init_exp(v, VRELOCABLE, luaK_codeABx(fs, OP_CLOSURE, 0, fs->np - 1));
   luaK_exp2nextreg(fs, v);  /* fix it at the last register */
+  if (deferred) {
+    SETARG_A(fs->f->code[pc], v->u.info);
+  }
 }
 
 
@@ -780,24 +789,26 @@ static void parlist (LexState *ls) {
 }
 
 
-static void body (LexState *ls, expdesc *e, int ismethod, int line) {
+static void body (LexState *ls, expdesc *e, int ismethod, int line, int deferred) {
   /* body ->  '(' parlist ')' block END */
   FuncState new_fs;
   BlockCnt bl;
   new_fs.f = addprototype(ls);
   new_fs.f->linedefined = line;
   open_func(ls, &new_fs, &bl);
-  checknext(ls, '(');
-  if (ismethod) {
-    new_localvarliteral(ls, "self");  /* create 'self' parameter */
-    adjustlocalvars(ls, 1);
+  if (!deferred) {
+    checknext(ls, '(');
+    if (ismethod) {
+      new_localvarliteral(ls, "self");  /* create 'self' parameter */
+      adjustlocalvars(ls, 1);
+    }
+    parlist(ls);
+    checknext(ls, ')');
   }
-  parlist(ls);
-  checknext(ls, ')');
   statlist(ls);
   new_fs.f->lastlinedefined = ls->linenumber;
   check_match(ls, TK_END, TK_FUNCTION, line);
-  codeclosure(ls, e);
+  codeclosure(ls, e, deferred);
   close_func(ls);
 }
 
@@ -869,6 +880,44 @@ static void funcargs (LexState *ls, expdesc *f, int line) {
 */
 
 
+static void safe_navigation(LexState *ls, expdesc *v) {
+    FuncState *fs = ls->fs;
+    luaX_next(ls);
+    luaK_exp2nextreg(fs, v);
+    luaK_codeABC(fs,OP_TEST, v->u.info, NO_REG, 0 );
+    {
+    int old_free=fs->freereg;             
+    int vreg=v->u.info;
+    int j = luaK_codeAsBx(fs, OP_JMP, 0, NO_JUMP);
+    expdesc key;
+    switch(ls->t.token) {
+    case '[':
+        yindex(ls, &key);
+        luaK_indexed(fs, v, &key);
+        luaK_exp2nextreg(fs, v);
+        break;        
+    case '.':
+        luaX_next(ls);
+        checkname(ls, &key);
+        luaK_indexed(fs, v, &key);
+        break;
+    default:
+         luaX_syntaxerror(ls, "unexpected symbol");
+    }
+    luaK_exp2nextreg(fs, v);
+    fs->freereg=old_free;
+    /* i think this check is unnecessary, as any complex key
+      expressions should be courteous enough to leave the top of
+      the stack where they found it. */
+    if(v->u.info!=vreg) {
+        luaK_codeABC(fs,OP_MOVE, vreg, v->u.info, 0 );
+        v->u.info=vreg;
+    }
+    SETARG_sBx(fs->f->code[j], fs->pc-j-1);
+    }
+}
+
+
 static void primaryexp (LexState *ls, expdesc *v) {
   /* primaryexp -> NAME | '(' expr ')' */
   switch (ls->t.token) {
@@ -899,6 +948,10 @@ static void suffixedexp (LexState *ls, expdesc *v) {
   primaryexp(ls, v);
   for (;;) {
     switch (ls->t.token) {
+      case '?': {  /* safe navigation */
+        safe_navigation(ls, v);
+        break;
+      }
       case '.': {  /* fieldsel */
         fieldsel(ls, v);
         break;
@@ -972,7 +1025,7 @@ static void simpleexp (LexState *ls, expdesc *v) {
     }
     case TK_FUNCTION: {
       luaX_next(ls);
-      body(ls, v, 0, ls->linenumber);
+      body(ls, v, 0, ls->linenumber, 0);
       return;
     }
     default: {
@@ -1172,6 +1225,60 @@ static void assignment (LexState *ls, struct LHS_assign *lh, int nvars) {
   }
   init_exp(&e, VNONRELOC, ls->fs->freereg-1);  /* default assignment */
   luaK_storevar(ls->fs, &lh->v, &e);
+}
+
+
+static void compound_assign_op (LexState *ls, expdesc *v) {
+  int line;
+  BinOpr op = OPR_NOBINOPR;
+  FuncState *fs = ls->fs;
+  expdesc e = *v, v2;
+  switch (ls->t.token) {
+    case TK_SCPLUS:
+      op = OPR_ADD;
+      break;
+    case TK_SCMINUS:
+      op = OPR_SUB;
+      break;
+    case TK_SCMULTIPLY:
+      op = OPR_MUL;
+      break;
+    case TK_SCMODULATE:
+      op = OPR_MOD;
+      break;
+    case TK_SCDIVIDE:
+      op = OPR_DIV;
+      break;
+    case TK_SCFLOORDIVIDE:
+      op = OPR_IDIV;
+      break;
+    case TK_SCCONCAT:
+      op = OPR_CONCAT;
+      break;
+    case TK_SCBITLEFTSHIFT:
+      op = OPR_SHL;
+      break;
+    case TK_SCBITRIGHTSHIFT:
+      op = OPR_SHR;
+      break;
+    case TK_SCBITAND:
+      op = OPR_BAND;
+      break;
+    case TK_SCBITOR:
+      op = OPR_BOR;
+      break;
+  }
+  luaK_reserveregs(fs,fs->freereg-fs->nactvar); /* reserve all registers needed by the lvalue */
+  luaX_next(ls);
+  line = ls->linenumber;
+  enterlevel(ls);
+  luaK_infix(fs,op,&e);
+  expr(ls, &v2);
+  luaK_posfix(fs, op, &e, &v2, line);
+  leavelevel(ls);
+  luaK_exp2nextreg(fs, &e);
+  luaK_setoneret(ls->fs, &e);
+  luaK_storevar(ls->fs, v, &e);
 }
 
 
@@ -1429,12 +1536,19 @@ static void ifstat (LexState *ls, int line) {
 }
 
 
-static void localfunc (LexState *ls) {
+static void localfunc (LexState *ls, int defer) {
   expdesc b;
   FuncState *fs = ls->fs;
-  new_localvar(ls, str_checkname(ls));  /* new local variable */
+  if (defer) {
+    static const char funcname[] = "(deferred function)";
+    new_localvar(ls, luaX_newstring(ls, funcname, sizeof funcname-1));  /* new local variable */
+    markupval(fs, fs->nactvar);
+    fs->bl->insidetbc = 1;  /* in the scope of a defer closure variable */
+  } else {
+    new_localvar(ls, str_checkname(ls));  /* new local variable */
+  }
   adjustlocalvars(ls, 1);  /* enter its scope */
-  body(ls, &b, 0, ls->linenumber);  /* function created in next register */
+  body(ls, &b, 0, ls->linenumber, defer);  /* function created in next register */
   /* debug information will only see the variable after this point! */
   getlocvar(fs, b.u.info)->startpc = fs->pc;
 }
@@ -1480,7 +1594,7 @@ static void funcstat (LexState *ls, int line) {
   expdesc v, b;
   luaX_next(ls);  /* skip FUNCTION */
   ismethod = funcname(ls, &v);
-  body(ls, &b, ismethod, line);
+  body(ls, &b, ismethod, line, 0);
   luaK_storevar(ls->fs, &v, &b);
   luaK_fixline(ls->fs, line);  /* definition "happens" in the first line */
 }
@@ -1494,6 +1608,10 @@ static void exprstat (LexState *ls) {
   if (ls->t.token == '=' || ls->t.token == ',') { /* stat -> assignment ? */
     v.prev = NULL;
     assignment(ls, &v, 1);
+  }
+  else if (ls->t.token >= TK_SCPLUS && ls->t.token <= TK_SCBITOR) { /* compound op token range */
+    v.prev = NULL;
+    compound_assign_op(ls, &v.v);
   }
   else {  /* stat -> func */
     check_condition(ls, v.v.k == VCALL, "syntax error");
@@ -1513,7 +1631,7 @@ static void retstat (LexState *ls) {
     nret = explist(ls, &e);  /* optional return values */
     if (hasmultret(e.k)) {
       luaK_setmultret(fs, &e);
-      if (e.k == VCALL && nret == 1) {  /* tail call? */
+      if (e.k == VCALL && nret == 1 && !fs->bl->insidetbc) {  /* tail call? */
         SET_OPCODE(getinstruction(fs,&e), OP_TAILCALL);
         lua_assert(GETARG_A(getinstruction(fs,&e)) == fs->nactvar);
       }
@@ -1572,9 +1690,14 @@ static void statement (LexState *ls) {
     case TK_LOCAL: {  /* stat -> localstat */
       luaX_next(ls);  /* skip LOCAL */
       if (testnext(ls, TK_FUNCTION))  /* local function? */
-        localfunc(ls);
+        localfunc(ls, 0);
       else
         localstat(ls);
+      break;
+    }
+    case TK_DEFER: {  /* stat -> deferstat */
+      luaX_next(ls);  /* skip DEFER */
+      localfunc(ls, 1);
       break;
     }
     case TK_DBCOLON: {  /* stat -> label */

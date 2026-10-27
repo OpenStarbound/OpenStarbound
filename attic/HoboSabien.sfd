@@ -22,7 +22,7 @@ OS2Version: 1
 OS2_WeightWidthSlopeOnly: 0
 OS2_UseTypoMetrics: 0
 CreationTime: 1280473793
-ModificationTime: 1691146268
+ModificationTime: 1783435712
 PfmFamily: 17
 TTFWeight: 500
 TTFWidth: 5
@@ -87,14 +87,14 @@ NameList: AGL For New Fonts
 DisplaySize: -72
 AntiAlias: 1
 FitToEm: 0
-WinInfo: 60 30 14
+WinInfo: 8580 30 14
 BeginPrivate: 0
 EndPrivate
 Grid
 -1235.5 1280 m 0
  -1235.5 -768 l 1024
 EndSplineSet
-BeginChars: 65539 658
+BeginChars: 65539 659
 
 StartChar: .notdef
 Encoding: 65536 -1 0
@@ -10065,7 +10065,7 @@ StartChar: uni044F
 Encoding: 1103 1103 400
 Width: 576
 GlyphClass: 2
-Flags: WO
+Flags: W
 LayerCount: 2
 Fore
 SplineSet
@@ -11233,14 +11233,14 @@ Flags: W
 LayerCount: 2
 Fore
 SplineSet
-640 640 m 5
- 640 512 l 5
- 512 512 l 5
- 512 640 l 5
- 640 640 l 5
+640 640 m 5,0,-1
+ 640 512 l 5,1,-1
+ 512 512 l 5,2,-1
+ 512 640 l 5,3,-1
+ 640 640 l 5,0,-1
 EndSplineSet
 Refer: 57 86 S 1 0 0 1 0 0 2
-Validated: 98309
+Validated: 32773
 EndChar
 
 StartChar: uni0475
@@ -11282,7 +11282,7 @@ SplineSet
 128 640 m 1025
 EndSplineSet
 Refer: 437 1140 N 1 0 0 1 0 0 2
-Validated: 98309
+Validated: 32773
 EndChar
 
 StartChar: uni0477
@@ -19283,6 +19283,28 @@ Flags: W
 LayerCount: 2
 Fore
 Validated: 1
+EndChar
+
+StartChar: carriagereturn
+Encoding: 8629 8629 658
+Width: 908
+Flags: WO
+LayerCount: 2
+Fore
+SplineSet
+768 576 m 25,0,-1
+ 640 576 l 25,1,-1
+ 640 448 l 25,2,-1
+ 256 448 l 25,3,-1
+ 256 576 l 25,4,-1
+ 192 576 l 25,5,-1
+ 0 384 l 25,6,-1
+ 192 192 l 25,7,-1
+ 256 192 l 25,8,-1
+ 256 320 l 25,9,-1
+ 768 320 l 25,10,-1
+ 768 576 l 25,0,-1
+EndSplineSet
 EndChar
 EndChars
 EndSplineFont

@@ -46,3 +46,8 @@ function widget.setImageStretchSet(widgetName, imageStretchSet) end
 ---@param imagePath string
 ---@return void
 function widget.addFlowImage(widgetName, childName, imagePath) end
+
+--- Clears the selection of a ListWidget.
+---@param widgetName string
+---@return void
+function widget.clearListSelected(widgetName) end

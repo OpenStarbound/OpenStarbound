@@ -17,7 +17,7 @@ public:
   WorldGeometry(unsigned width, unsigned height);
   WorldGeometry(Vec2U const& size);
 
-  bool isNull();
+  bool isNull() const;
 
   bool operator==(WorldGeometry const& other) const;
   bool operator!=(WorldGeometry const& other) const;
@@ -130,7 +130,7 @@ inline WorldGeometry::WorldGeometry(unsigned width, unsigned height)
 inline WorldGeometry::WorldGeometry(Vec2U const& size)
   : m_size(size) {}
 
-inline bool WorldGeometry::isNull() {
+inline bool WorldGeometry::isNull() const {
   return m_size == Vec2U();
 }
 

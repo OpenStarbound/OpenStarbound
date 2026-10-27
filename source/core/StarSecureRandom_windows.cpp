@@ -1,4 +1,5 @@
 #include "StarSecureRandom.hpp"
+#define NOMINMAX
 #include <windows.h>
 #include <wincrypt.h>
 

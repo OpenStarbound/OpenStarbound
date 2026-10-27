@@ -39,13 +39,13 @@ void CellularLightArray<ScalarLightTraits>::calculatePointLighting(size_t xmin, 
         }
 
         float attenuation = distance * perBlockAirAttenuation;
-        if (attenuation >= 1.0f)
+        if (attenuation >= maxIntensity)
           continue;
 
         Vec2F direction = relativeLightPosition / distance;
         if (light.beam > 0.0001f) {
-          attenuation += (1.0f - light.beamAmbience) * clamp(light.beam * (1.0f - direction * beamDirection), 0.0f, 1.0f);
-          if (attenuation >= 1.0f)
+          attenuation += (1.0f - light.beamAmbience) * clamp(light.beam * (1.0f - direction * beamDirection), 0.0f, max(1.0f,maxIntensity));
+          if (attenuation >= maxIntensity)
             continue;
         }
 
@@ -63,7 +63,7 @@ void CellularLightArray<ScalarLightTraits>::calculatePointLighting(size_t xmin, 
         if (!light.asSpread)
          attenuation += min(blockAttenuation, circularizedPerBlockObstacleAttenuation) * m_pointObstacleBoost;
 
-        if (attenuation < 1.0f) {
+        if (attenuation < maxIntensity) {
           if (m_pointAdditive) {
             auto newLight = ScalarLightTraits::subtract(light.value, attenuation);
             if (ScalarLightTraits::maxIntensity(newLight) > 0.0001f)
@@ -112,13 +112,13 @@ void CellularLightArray<ColoredLightTraits>::calculatePointLighting(size_t xmin,
         }
 
         float attenuation = distance * perBlockAirAttenuation;
-        if (attenuation >= 1.0f)
+        if (attenuation >= maxIntensity)
           continue;
 
         Vec2F direction = relativeLightPosition / distance;
         if (light.beam > 0.0f) {
-          attenuation += (1.0f - light.beamAmbience) * clamp(light.beam * (1.0f - direction * beamDirection), 0.0f, 1.0f);
-          if (attenuation >= 1.0f)
+          attenuation += (1.0f - light.beamAmbience) * clamp(light.beam * (1.0f - direction * beamDirection), 0.0f, max(1.0f,maxIntensity));
+          if (attenuation >= maxIntensity)
             continue;
         }
 
@@ -136,7 +136,7 @@ void CellularLightArray<ColoredLightTraits>::calculatePointLighting(size_t xmin,
         if (!light.asSpread)
           attenuation += min(blockAttenuation, circularizedPerBlockObstacleAttenuation) * m_pointObstacleBoost;
 
-        if (attenuation < 1.0f) {
+        if (attenuation < maxIntensity) {
           if (m_pointAdditive) {
             auto newLight = ColoredLightTraits::subtract(light.value, attenuation);
             if (ColoredLightTraits::maxIntensity(newLight) > 0.0001f)

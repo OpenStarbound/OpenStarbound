@@ -38,7 +38,7 @@ LuaMethods<CanvasWidgetPtr> LuaUserDataMethods<CanvasWidgetPtr>::make() {
   });
 
   methods.registerMethod("drawJsonDrawable", [](CanvasWidgetPtr canvasWidget, Json drawable, Maybe<Vec2F> screenPos) {
-    canvasWidget->drawDrawable(std::move(Drawable(drawable)), screenPos.value(Vec2F()));
+    canvasWidget->drawDrawable(Drawable(drawable), screenPos.value(Vec2F()));
   });
 
   methods.registerMethod("drawJsonDrawables", [](CanvasWidgetPtr canvasWidget, JsonArray drawables, Maybe<Vec2F> screenPos) {
@@ -111,8 +111,8 @@ LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr
   // a bit miscellaneous, but put this here since widgets have access to gui context
 
   callbacks.registerCallback("playSound",
-      [parentWidget](String const& audio, Maybe<int> loops, Maybe<float> volume) {
-        parentWidget->context()->playAudio(audio, loops.value(0), volume.value(1.0f));
+      [parentWidget](String const& audio, Maybe<int> loops, Maybe<float> volume) -> AudioInstancePtr {
+        return parentWidget->context()->playAudio(audio, loops.value(0), volume.value(1.0f));
       });
 
   // widget userdata methods
@@ -200,8 +200,8 @@ LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr
   callbacks.registerCallback("addChild", [parentWidget, reader](String const& widgetName, Json const& newChildConfig, Maybe<String> const& newChildName) {
       if (auto widget = parentWidget->fetchChild<Widget>(widgetName)) {
         String name = newChildName.value(toString(Random::randu64()));
-        WidgetPtr newChild = reader->makeSingle(name, newChildConfig);
-        widget->addChild(name, newChild);
+        if (auto newChild = reader->makeSingle(name, newChildConfig))
+          widget->addChild(name, newChild);
       }
     });
 
@@ -421,6 +421,11 @@ LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr
         if (auto selected = list->fetchChild(selectedName))
           list->setSelectedWidget(selected);
     });
+
+  callbacks.registerCallback("clearListSelected", [parentWidget](String const& widgetName) {
+    if (auto list = parentWidget->fetchChild<ListWidget>(widgetName))
+      list->clearSelected();
+  });
 
   callbacks.registerCallback("registerMemberCallback", [parentWidget](String const& widgetName, String const& name, LuaFunction callback) {
       if (auto list = parentWidget->fetchChild<ListWidget>(widgetName)){

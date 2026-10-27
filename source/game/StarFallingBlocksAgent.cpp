@@ -28,16 +28,15 @@ void FallingBlocksAgent::update() {
       Vec2I belowLeftPos = pos + Vec2I(-1, -1);
       Vec2I belowRightPos = pos + Vec2I(1, -1);
 
-      FallingBlockType thisBlock = m_facade->blockType(pos);
-      FallingBlockType belowBlock = m_facade->blockType(belowPos);
+      FallingBlockType thisBlock = m_facade->blockType(pos,false);
 
       Maybe<Vec2I> moveTo;
 
       if (thisBlock == FallingBlockType::Falling) {
-        if (belowBlock == FallingBlockType::Open)
+        if (m_facade->blockType(belowPos) == FallingBlockType::Open)
           moveTo = belowPos;
       } else if (thisBlock == FallingBlockType::Cascading) {
-        if (belowBlock == FallingBlockType::Open) {
+        if (m_facade->blockType(belowPos) == FallingBlockType::Open) {
           moveTo = belowPos;
         } else {
           FallingBlockType belowLeftBlock = m_facade->blockType(belowLeftPos);

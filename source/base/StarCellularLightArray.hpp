@@ -60,7 +60,7 @@ public:
   };
 
   void setParameters(unsigned spreadPasses, float spreadMaxAir, float spreadMaxObstacle,
-      float pointMaxAir, float pointMaxObstacle, float pointObstacleBoost, bool pointAdditive);
+      float pointMaxAir, float pointMaxObstacle, float pointObstacleBoost, bool pointAdditive, float pointMaxValue, float spreadMaxValue);
 
   // The border around the target lighting array where initial lighting / light
   // source data is required.  Based on parameters.
@@ -130,6 +130,8 @@ private:
   float m_pointMaxObstacle;
   float m_pointObstacleBoost;
   bool m_pointAdditive;
+  float m_pointMaxValue;
+  float m_spreadMaxValue;
 };
 
 typedef CellularLightArray<ColoredLightTraits> ColoredCellularLightArray;
@@ -205,7 +207,7 @@ inline Vec3F ColoredLightTraits::max(Vec3F const& v1, Vec3F const& v2) {
 
 template <typename LightTraits>
 void CellularLightArray<LightTraits>::setParameters(unsigned spreadPasses, float spreadMaxAir, float spreadMaxObstacle,
-    float pointMaxAir, float pointMaxObstacle, float pointObstacleBoost, bool pointAdditive) {
+    float pointMaxAir, float pointMaxObstacle, float pointObstacleBoost, bool pointAdditive, float pointMaxValue, float spreadMaxValue) {
   m_spreadPasses = spreadPasses;
   m_spreadMaxAir = spreadMaxAir;
   m_spreadMaxObstacle = spreadMaxObstacle;
@@ -213,11 +215,13 @@ void CellularLightArray<LightTraits>::setParameters(unsigned spreadPasses, float
   m_pointMaxObstacle = pointMaxObstacle;
   m_pointObstacleBoost = pointObstacleBoost;
   m_pointAdditive = pointAdditive;
+  m_pointMaxValue = pointMaxValue;
+  m_spreadMaxValue = spreadMaxValue;
 }
 
 template <typename LightTraits>
 size_t CellularLightArray<LightTraits>::borderCells() const {
-  return (size_t)ceil(max(0.0f, max(m_spreadMaxAir, m_pointMaxAir)));
+  return (size_t)ceil(max(0.0f, max(m_spreadMaxAir*m_spreadMaxValue, m_pointMaxAir*m_pointMaxValue)));
 }
 
 template <typename LightTraits>
@@ -346,10 +350,10 @@ void CellularLightArray<LightTraits>::calculateLightSpread(size_t xMin, size_t y
   float dropoffObstacleDiag = 1.0f / m_spreadMaxObstacle * Constants::sqrt2;
 
   // enlarge x/y min/max taking into ambient spread of light
-  xMin = xMin - min(xMin, (size_t)ceil(m_spreadMaxAir));
-  yMin = yMin - min(yMin, (size_t)ceil(m_spreadMaxAir));
-  xMax = min(m_width, xMax + (size_t)ceil(m_spreadMaxAir));
-  yMax = min(m_height, yMax + (size_t)ceil(m_spreadMaxAir));
+  xMin = xMin - min(xMin, (size_t)ceil(m_spreadMaxAir*m_spreadMaxValue));
+  yMin = yMin - min(yMin, (size_t)ceil(m_spreadMaxAir*m_spreadMaxValue));
+  xMax = min(m_width, xMax + (size_t)ceil(m_spreadMaxAir*m_spreadMaxValue));
+  yMax = min(m_height, yMax + (size_t)ceil(m_spreadMaxAir*m_spreadMaxValue));
 
   for (unsigned p = 0; p < m_spreadPasses; ++p) {
     // Spread right and up and diag up right / diag down right

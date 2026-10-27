@@ -131,7 +131,7 @@ MainInterface::MainInterface(UniverseClientPtr client, WorldPainterPtr painter, 
 
   initHttpTrustDialog();
 
-  m_joinRequestDialog = make_shared<JoinRequestDialog>();
+  m_joinRequestDialog = make_shared<JoinRequestDialog>(m_client);
   m_paneManager.registerPane(MainInterfacePanes::JoinRequest, PaneLayer::ModalWindow, m_joinRequestDialog);
 
   m_actionBar = make_shared<ActionBar>(&m_paneManager, m_client->mainPlayer());
@@ -140,10 +140,10 @@ MainInterface::MainInterface(UniverseClientPtr client, WorldPainterPtr painter, 
   m_questTracker = make_shared<QuestTrackerPane>();
   m_paneManager.registerPane(MainInterfacePanes::QuestTracker, PaneLayer::Hud, m_questTracker);
 
-  m_mmUpgrade = make_shared<ScriptPane>(m_client, "/interface/scripted/mmupgrade/mmupgradegui.config");
+  m_mmUpgrade = make_shared<ScriptPane>(m_client, Root::singleton().assets()->json("/interface.config:mainBar.mmUpgrade").getString("scriptPane", "/interface/scripted/mmupgrade/mmupgradegui.config"));
   m_paneManager.registerPane(MainInterfacePanes::MmUpgrade, PaneLayer::Window, m_mmUpgrade);
 
-  m_collections = make_shared<ScriptPane>(m_client, "/interface/scripted/collections/collectionsgui.config");
+  m_collections = make_shared<ScriptPane>(m_client, Root::singleton().assets()->json("/interface.config:mainBar.collections").getString("scriptPane", "/interface/scripted/collections/collectionsgui.config"));
   m_paneManager.registerPane(MainInterfacePanes::Collections, PaneLayer::Window, m_collections);
 
   m_chat = make_shared<Chat>(m_client, Root::singleton().assets()->json("/interface/chat/chat.config"));
@@ -486,6 +486,12 @@ void MainInterface::handleInteractAction(InteractAction interactAction) {
           } else if (m_client->playerWorld().is<InstanceWorldId>()) {
             icon = worldTemplate->worldParameters()->typeName;
             planetName = worldTemplate->worldName();
+          } else if (m_client->playerWorld().is<CustomWorldId>()) {
+            icon = worldTemplate->worldParameters()->typeName;
+            planetName = worldTemplate->worldName();
+          } else if (m_client->playerWorld().is<ClientCustomWorldId>()) {
+            icon = worldTemplate->worldParameters()->typeName;
+            planetName = worldTemplate->worldName();
           } else {
             icon = "default";
             planetName = "???";
@@ -535,12 +541,12 @@ void MainInterface::preUpdate(float) {
   if (!m_client->paused())
     player->aim(cursorWorldPosition());
 
+  Set<PlayerBusyState> busyStates;
   if (m_paneManager.topPane({PaneLayer::Window, PaneLayer::ModalWindow}))
-    player->setBusyState(PlayerBusyState::Menu);
-  else if (m_chat->hasFocus())
-    player->setBusyState(PlayerBusyState::Chatting);
-  else
-    player->setBusyState(PlayerBusyState::None);
+    busyStates.add(PlayerBusyState::Menu);
+  if (m_chat->hasFocus())
+    busyStates.add(PlayerBusyState::Chatting);
+  player->setBusyStates(busyStates);
 }
 
 void MainInterface::update(float dt) {
@@ -670,14 +676,34 @@ void MainInterface::update(float dt) {
     queueItemPickupText(drop);
 
   m_chat->addMessages(m_client->pullChatMessages());
+  for (auto const& result : m_clientCommandProcessor->updatePromises())
+    m_chat->addLine(result);
 
   if (auto worldClient = m_client->worldClient()) {
     if (worldClient->inWorld()) {
       if (auto cinematic = m_client->mainPlayer()->pullPendingCinematic()) {
-        if (*cinematic)
-          m_cinematicOverlay->load(Root::singleton().assets()->fetchJson(cinematic.take()));
-        else
+        if (*cinematic) {
+          Json definition;
+          try {
+            definition = Root::singleton().assets()->fetchJson(cinematic.take());
+          } catch (std::exception const& e) {
+            Logger::warn("MainInterface: failed to fetch cinematic: {}", e.what());
+            definition = Json();
+          }
+          if (definition.isType(Json::Type::Object)) {
+            try {
+              m_cinematicOverlay->load(definition);
+            } catch (std::exception const& e) {
+              Logger::warn("MainInterface: rejected malformed cinematic ({}), stopping overlay", e.what());
+              m_cinematicOverlay->stop();
+            }
+          } else {
+            Logger::warn("MainInterface: ignoring non-object cinematic of type {}", (int)definition.type());
+            m_cinematicOverlay->stop();
+          }
+        } else {
           m_cinematicOverlay->stop();
+        }
       }
     }
   }
@@ -1573,7 +1599,7 @@ void MainInterface::renderCursor() {
     m_guiContext->clearTextStyle();
   }
 
-  m_cursorItem->setPosition(m_cursorScreenIPos / interfaceScale() + m_config->inventoryItemMouseOffset);
+  m_cursorItem->setPosition(Vec2I::round(m_cursorScreenPos / interfaceScale() + Vec2F(m_config->inventoryItemMouseOffset)));
 
   if (auto swapItem = m_client->mainPlayer()->inventory()->swapSlotItem())
     m_cursorItem->setItem(swapItem);

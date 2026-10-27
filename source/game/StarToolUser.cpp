@@ -595,8 +595,8 @@ void ToolUser::suppressItems(bool suppress) {
   m_suppress.set(suppress);
 }
 
-Maybe<Json> ToolUser::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
-  Maybe<Json> result;
+Maybe<ChainableJsonMessageResponse> ToolUser::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
+  Maybe<ChainableJsonMessageResponse> result;
   for (auto item : {m_primaryHandItem.get(), m_altHandItem.get()}) {
     if (auto activeItem = as<ActiveItem>(item))
       result = activeItem->receiveMessage(message, localMessage, args);

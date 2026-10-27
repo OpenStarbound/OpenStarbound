@@ -58,3 +58,16 @@ The `properties` or `frameProperties` of a stateType's state can define an `anim
 
 ## flipped image property
 `properties` or `frameProperties` can contain a `flippedImage` property that gets used for the image when the animator is flipped, much like how there is a `flippedZlevel` property
+
+## imageParts property
+The `properties` or `frameProperties` of a partState can define an `imageParts` object, this is an object rather than an array so they can be cleanly merged over eachother when a part state overrides base properties of the part. Each entry in imageParts can be defined like so
+```json
+{
+    "image" : "path.png",
+    "flippedImage" : "path.png", // optional
+    "zLevel" : 0.0, // optional
+    "flippedZLevel" : 0.0, // optional
+    "fullbright" : false, // inherits from part properties if not defined
+    "centered" : false, // inherits from part properties if not defined
+}
+The zLevel for imageParts is self contained to the part it is attached to and only used for sorting between images attached to the same part.

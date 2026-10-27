@@ -120,7 +120,7 @@ public:
   virtual void set(List<RenderPrimitive>& primitives) = 0;
 };
 
-typedef Variant<float, int, Vec2F, Vec3F, Vec4F, bool> RenderEffectParameter;
+typedef Variant<float, int, Vec4F, Vec3F, Vec2F, bool> RenderEffectParameter;
 
 class Renderer {
 public:
@@ -144,7 +144,7 @@ public:
   virtual void setEffectScriptableParameter(String const& effectName, String const& parameterName, RenderEffectParameter const& parameter) = 0;
   virtual Maybe<RenderEffectParameter> getEffectScriptableParameter(String const& effectName, String const& parameterName) = 0;
   virtual Maybe<VariantTypeIndex> getEffectScriptableParameterType(String const& effectName, String const& parameterName) = 0;
-  virtual void setEffectTexture(String const& textureName, ImageView const& image) = 0;
+  virtual void setTexture(String const& textureName, ImageView const& image) = 0;
   virtual bool switchEffectConfig(String const& name) = 0;
 
   // Any further rendering will be scissored based on this rect, specified in
@@ -157,6 +157,7 @@ public:
   virtual void setSizeLimitEnabled(bool enabled) = 0;
   virtual void setMultiTexturingEnabled(bool enabled) = 0;
   virtual void setMultiSampling(unsigned multiSampling) = 0;
+  virtual void setMainHDR(bool enabled) = 0;
   virtual TextureGroupPtr createTextureGroup(TextureGroupSize size = TextureGroupSize::Medium, TextureFiltering filtering = TextureFiltering::Nearest) = 0;
   virtual RenderBufferPtr createRenderBuffer() = 0;
 

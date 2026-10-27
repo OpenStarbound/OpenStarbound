@@ -43,6 +43,8 @@ public:
   void setNextFocus(Maybe<String> nextFocus);
   void setPrevFocus(Maybe<String> prevFocus);
 
+  void setFont(String const& font);
+
   bool sendEvent(InputEvent const& event) override;
 
   void setDrawBorder(bool drawBorder);

@@ -11,6 +11,7 @@ int main(int argc, char** argv) {
     double startTime = Time::monotonicTime();
 
     VersionOptionParser optParse;
+    optParse.setVersionName("Asset Packer");
     optParse.setSummary("Packs asset folder into a starbound .pak file");
     optParse.addParameter("c", "configFile", OptionParser::Optional, "JSON file with ignore lists and ordering info");
     optParse.addSwitch("s", "Enable server mode");
@@ -57,7 +58,7 @@ int main(int argc, char** argv) {
       }
     }
 
-    bool verbose = opts.parameters.contains("v");
+    bool verbose = opts.switches.contains("v");
 
     function<void(size_t, size_t, String, String, bool)> BuildProgressCallback;
     auto progressCallback = [verbose](size_t, size_t, String filePath, String assetPath) {

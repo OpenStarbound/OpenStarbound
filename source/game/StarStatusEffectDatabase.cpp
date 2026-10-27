@@ -45,6 +45,7 @@ UniqueStatusEffectConfig StatusEffectDatabase::parseUniqueEffect(Json const& con
     effect.label = config.getString("label", "");
     effect.description = config.getString("description", "");
     effect.icon = config.optString("icon").apply(bind(&AssetPath::relativeTo, path, _1));
+    effect.includeBack = config.getBool("includeBack",false);
     return effect;
   } catch (std::exception const& e) {
     throw StatusEffectDatabaseException("Error reading StatusEffect config", e);

@@ -1,5 +1,4 @@
 #include "StarContainerInteractor.hpp"
-
 namespace Star {
 
 void ContainerInteractor::openContainer(ContainerEntityPtr containerEntity) {
@@ -30,12 +29,10 @@ EntityId ContainerInteractor::openContainerId() const {
   return NullEntityId;
 }
 
+// Make sure to check if this is valid when you use it!
 ContainerEntityPtr const& ContainerInteractor::openContainer() const {
   if (m_openContainer && !m_openContainer->inWorld())
     m_openContainer = {};
-
-  if (!m_openContainer)
-    throw StarException("ContainerInteractor has no open container");
 
   return m_openContainer;
 }
@@ -51,35 +48,43 @@ List<ContainerResult> ContainerInteractor::pullContainerResults() {
 }
 
 void ContainerInteractor::swapInContainer(size_t slot, ItemPtr const& items) {
-  m_pendingResults.append(openContainer()->swapItems(slot, items).wrap(resultFromItem));
+  if (auto container = openContainer())
+    m_pendingResults.append(container->swapItems(slot, items).wrap(resultFromItem));
 }
 
 void ContainerInteractor::addToContainer(ItemPtr const& items) {
-  m_pendingResults.append(openContainer()->addItems(items).wrap(resultFromItem));
+  if (auto container = openContainer())
+    m_pendingResults.append(container->addItems(items).wrap(resultFromItem));
 }
 
 void ContainerInteractor::takeFromContainerSlot(size_t slot, size_t count) {
-  m_pendingResults.append(openContainer()->takeItems(slot, count).wrap(resultFromItem));
+  if (auto container = openContainer())
+    m_pendingResults.append(container->takeItems(slot, count).wrap(resultFromItem));
 }
 
 void ContainerInteractor::applyAugmentInContainer(size_t slot, ItemPtr const& augment) {
-  m_pendingResults.append(openContainer()->applyAugment(slot, augment).wrap(resultFromItem));
+  if (auto container = openContainer())
+    m_pendingResults.append(container->applyAugment(slot, augment).wrap(resultFromItem));
 }
 
 void ContainerInteractor::startCraftingInContainer() {
-  openContainer()->startCrafting();
+  if (auto container = openContainer())
+    container->startCrafting();
 }
 
 void ContainerInteractor::stopCraftingInContainer() {
-  openContainer()->stopCrafting();
+  if (auto container = openContainer())
+    container->stopCrafting();
 }
 
 void ContainerInteractor::burnContainer() {
-  openContainer()->burnContainerContents();
+  if (auto container = openContainer())
+    container->burnContainerContents();
 }
 
 void ContainerInteractor::clearContainer() {
-  m_pendingResults.append(openContainer()->clearContainer());
+  if (auto container = openContainer())
+    m_pendingResults.append(container->clearContainer());
 }
 
 ContainerResult ContainerInteractor::resultFromItem(ItemPtr const& item) {

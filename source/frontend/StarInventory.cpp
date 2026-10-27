@@ -171,7 +171,7 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
   for (auto const p : EquipmentSlotNames) {
     EquipmentSlot slot = p.first;
     registerSlotCallbacks(p.second, slot);
-    invWindowReader.registerCallback(p.second + ".middle", [slot, this](Widget* paneObj) {
+    invWindowReader.registerCallback(p.second + ".middle", [slot, this](Widget*) {
       auto inventory = m_player->inventory();
       inventory->setEquipmentVisibility(slot, !inventory->equipmentVisibility(slot));
     });
@@ -282,9 +282,11 @@ bool InventoryPane::sendEvent(InputEvent const& event) {
   if (auto mousePosition = Widget::context()->mousePosition(event)) {
     bool displayingCosmetics = false;
     for (auto const& p : EquipmentSlotNames) {
-      if (auto itemSlot = fetchChild<ItemSlotWidget>(p.second)) {
-        if ((displayingCosmetics = itemSlot->inMember(*mousePosition)))
-          break;
+      if (p.first >= EquipmentSlot::HeadCosmetic) {
+        if (auto itemSlot = fetchChild<ItemSlotWidget>(p.second)) {
+          if ((displayingCosmetics = itemSlot->inMember(*mousePosition)))
+            break;
+        }
       }
     }
 

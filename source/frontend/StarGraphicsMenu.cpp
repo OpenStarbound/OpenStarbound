@@ -105,6 +105,12 @@ GraphicsMenu::GraphicsMenu(PaneManager* manager,UniverseClientPtr client)
     Root::singleton().configuration()->set("newLighting", checked);
     syncGui();
   });
+  reader.registerCallback("hdrCheckbox", [=](Widget*) {
+    bool checked = fetchChild<ButtonWidget>("hdrCheckbox")->isChecked();
+    m_localChanges.set("hdr", checked);
+    Root::singleton().configuration()->set("hdr", checked);
+    syncGui();
+  });
   reader.registerCallback("showShadersMenu", [=](Widget*) {
       displayShaders();
     });
@@ -170,7 +176,8 @@ StringList const GraphicsMenu::ConfigKeys = {
   "antiAliasing",
   "hardwareCursor",
   "monochromeLighting",
-  "newLighting"
+  "newLighting",
+  "hdr"
 };
 
 void GraphicsMenu::initConfig() {
@@ -239,6 +246,7 @@ void GraphicsMenu::syncGui() {
   fetchChild<ButtonWidget>("monochromeCheckbox")->setChecked(m_localChanges.get("monochromeLighting").toBool());
   fetchChild<ButtonWidget>("newLightingCheckbox")->setChecked(m_localChanges.get("newLighting").optBool().value(true));
   fetchChild<ButtonWidget>("hardwareCursorCheckbox")->setChecked(m_localChanges.get("hardwareCursor").toBool());
+  fetchChild<ButtonWidget>("hdrCheckbox")->setChecked(m_localChanges.get("hdr").optBool().value(true));
 }
 
 void GraphicsMenu::apply() {

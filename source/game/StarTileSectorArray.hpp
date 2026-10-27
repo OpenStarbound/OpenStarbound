@@ -3,6 +3,8 @@
 #include "StarRect.hpp"
 #include "StarSectorArray2D.hpp"
 
+#include "StarWorkerPool.hpp"
+
 namespace Star {
 
 // Storage container for world tiles that understands the sector based
@@ -102,6 +104,8 @@ public:
   void tileEachColumns(RectI const& region, Function&& function) const;
   template <typename Function>
   void tileEvalColumns(RectI const& region, Function&& function);
+  template <typename Function>
+  void tileEvalColumnsParallel(RectI const& region, Function&& function);
 
   // Searches for a tile that satisfies a given condition in a block-area.
   // Returns true on the first instance found.  Passed in function must accept
@@ -338,7 +342,7 @@ void TileSectorArray<Tile, SectorSize>::tileEachTo(MultiArray& results, RectI co
   for (auto const& split : splitRect(region)) {
     auto clampedRect = yClampRect(split.rect);
     if (!clampedRect.isEmpty()) {
-      m_tileSectors.evalColumns(clampedRect.xMin(), clampedRect.yMin(), clampedRect.width(), clampedRect.height(), [&](size_t x, size_t y, Tile const* column, size_t columnSize) {
+      m_tileSectors.evalColumnsParallel(clampedRect.xMin(), clampedRect.yMin(), clampedRect.width(), clampedRect.height(), [&, function](size_t x, size_t y, Tile const* column, size_t columnSize) {
           size_t arrayColumnIndex = (x + split.xOffset + xArrayOffset) * results.size(1) + y + yArrayOffset;
           if (column) {
             for (size_t i = 0; i < columnSize; ++i)
@@ -346,7 +350,7 @@ void TileSectorArray<Tile, SectorSize>::tileEachTo(MultiArray& results, RectI co
           } else {
             for (size_t i = 0; i < columnSize; ++i)
               function(results.atIndex(arrayColumnIndex + i), Vec2I((int)x + split.xOffset, y + i), m_default);
-          }
+            }
           return true;
         }, true);
     }
@@ -400,6 +404,21 @@ void TileSectorArray<Tile, SectorSize>::tileEvalColumns(RectI const& region, Fun
         return true;
       };
       m_tileSectors.evalColumns(clampedRect.xMin(), clampedRect.yMin(), clampedRect.width(), clampedRect.height(), fwrapper, false);
+    }
+  }
+}
+
+template <typename Tile, unsigned SectorSize>
+template <typename Function>
+void TileSectorArray<Tile, SectorSize>::tileEvalColumnsParallel(RectI const& region, Function&& function) {
+  for (auto const& split : splitRect(region)) {
+    auto clampedRect = yClampRect(split.rect);
+    if (!clampedRect.isEmpty()) {
+      auto fwrapper = [&](size_t x, size_t y, Tile* column, size_t columnSize) {
+        function(Vec2I((int)x + split.xOffset, (int)y), column, columnSize);
+        return true;
+      };
+      m_tileSectors.evalColumnsParallel(clampedRect.xMin(), clampedRect.yMin(), clampedRect.width(), clampedRect.height(), fwrapper, false);
     }
   }
 }

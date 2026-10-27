@@ -3,6 +3,7 @@
 #include "StarThread.hpp"
 #include "StarTcp.hpp"
 #include "StarMap.hpp"
+#include "StarGameTypes.hpp"
 #include "StarDataStreamDevices.hpp"
 
 namespace Star {
@@ -35,7 +36,7 @@ private:
   void sendCmdResponse(uint32_t requestId, String response);
   void closeSocket();
   void processRequest();
-  String handleCommand(String commandLine);
+  ServerCommandResult handleCommand(String commandLine);
 
   UniverseServer* m_universe;
   TcpSocketPtr m_socket;
@@ -43,6 +44,8 @@ private:
   bool m_stop;
   bool m_authed;
   String m_rconPassword;
+  
+  HashMap<uint32_t,RpcPromise<String>> m_commandPromises;
 };
 typedef shared_ptr<ServerRconClient> ServerRconClientPtr;
 }

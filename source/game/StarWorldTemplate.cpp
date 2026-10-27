@@ -3,6 +3,7 @@
 #include "StarInterpolation.hpp"
 #include "StarIterator.hpp"
 #include "StarBiome.hpp"
+#include "StarBiomeDatabase.hpp"
 #include "StarRoot.hpp"
 #include "StarTerrainDatabase.hpp"
 #include "StarLiquidTypes.hpp"
@@ -39,6 +40,7 @@ WorldTemplate::WorldTemplate(CelestialCoordinate const& celestialCoordinate, Cel
     m_layout = make_shared<WorldLayout>(WorldLayout::buildFloatingDungeonLayout(*floatingDungeonParameters, m_seed));
 
   determineWorldName();
+  setupWeatherDomains();
 }
 
 WorldTemplate::WorldTemplate(VisitableWorldParametersConstPtr const& worldParameters, SkyParameters const& skyParameters, uint64_t seed)
@@ -59,6 +61,7 @@ WorldTemplate::WorldTemplate(VisitableWorldParametersConstPtr const& worldParame
     m_layout = make_shared<WorldLayout>(WorldLayout::buildFloatingDungeonLayout(*floatingDungeonParameters, m_seed));
 
   determineWorldName();
+  setupWeatherDomains();
 }
 
 WorldTemplate::WorldTemplate(Json const& store) : WorldTemplate() {
@@ -78,6 +81,7 @@ WorldTemplate::WorldTemplate(Json const& store) : WorldTemplate() {
     });
 
   determineWorldName();
+  setupWeatherDomains();
 }
 
 Json WorldTemplate::store() const {
@@ -112,6 +116,7 @@ WorldLayoutPtr WorldTemplate::worldLayout() const {
 
 void WorldTemplate::setWorldParameters(VisitableWorldParametersPtr newParameters) {
   m_worldParameters = take(newParameters);
+  setupWeatherDomains();
 }
 
 void WorldTemplate::setWorldLayout(WorldLayoutPtr newLayout) {
@@ -411,6 +416,26 @@ WeatherPool WorldTemplate::weathers() const {
   return {};
 }
 
+List<WorldTemplate::WeatherDomain> const& WorldTemplate::weatherDomains() const {
+  return m_weatherDomains;
+}
+
+WorldTemplate::WeatherDomain const* WorldTemplate::weatherDomain(String const& name) const {
+  for (auto const& domain : m_weatherDomains) {
+    if (domain.name == name)
+      return &domain;
+  }
+  return nullptr;
+}
+
+WorldTemplate::WeatherLayer const* WorldTemplate::weatherLayerAt(Vec2I const& position) const {
+  for (auto const& layer : m_weatherLayers) {
+    if (position[1] >= layer.minHeight && position[1] < layer.maxHeight)
+      return &layer;
+  }
+  return nullptr;
+}
+
 AmbientNoisesDescriptionPtr WorldTemplate::ambientNoises(int x, int y) const {
   if (auto floatingDungeonParameters = as<FloatingDungeonWorldParameters>(m_worldParameters)) {
     if (floatingDungeonParameters->dayAmbientNoises || floatingDungeonParameters->nightAmbientNoises) {
@@ -503,7 +528,7 @@ WorldTemplate::PotentialBiomeItems WorldTemplate::potentialBiomeItemsAt(int x, i
   auto lowerBlockBiome = blockBiome(x, y - 1);
   auto upperBlockBiome = blockBiome(x, y + 1);
   auto thisBlockBiome = blockBiome(x, y);
-  
+
   PotentialBiomeItems potentialBiomeItems;
   // surface floor, surface ocean
   if (lowerBlockBiome)
@@ -589,6 +614,59 @@ void WorldTemplate::determineWorldName() {
     m_worldName = Root::singleton().dungeonDefinitions()->get(floatingDungeonParameters->primaryDungeon)->displayName();
   else
     m_worldName = "";
+}
+
+void WorldTemplate::setupWeatherDomains() {
+  m_weatherDomains.clear();
+  m_weatherLayers.clear();
+
+  if (!m_worldParameters)
+    return;
+
+  if (auto terrestrial = as<TerrestrialWorldParameters>(m_worldParameters)) {
+    struct LayerDefinition {
+      String name;
+      TerrestrialWorldParameters::TerrestrialLayer const* layer;
+      bool inheritsSurface;
+    };
+
+    List<LayerDefinition> definitions;
+    definitions.append({"core", &terrestrial->coreLayer, false});
+    for (size_t i = terrestrial->undergroundLayers.size(); i != 0; --i)
+      definitions.append({strf("underground{}", i), &terrestrial->undergroundLayers[i - 1], false});
+    definitions.append({"subsurface", &terrestrial->subsurfaceLayer, true});
+    definitions.append({"surface", &terrestrial->surfaceLayer, false});
+    definitions.append({"atmosphere", &terrestrial->atmosphereLayer, true});
+    definitions.append({"space", &terrestrial->spaceLayer, false});
+
+    m_weatherDomains.append({"surface", terrestrial->weatherPool, terrestrial->surfaceLayer.layerMinHeight});
+
+    auto biomeDatabase = Root::singleton().biomeDatabase();
+    for (size_t i = 0; i < definitions.size(); ++i) {
+      auto const& definition = definitions[i];
+      int minHeight = definition.layer->layerMinHeight;
+      int maxHeight = i + 1 < definitions.size()
+          ? definitions[i + 1].layer->layerMinHeight
+          : (int)m_geometry.height();
+
+      Maybe<String> domain;
+      if (definition.name == "surface") {
+        domain = String("surface");
+      } else if (biomeDatabase->biomeHasWeather(definition.layer->primaryRegion.biome)) {
+        domain = definition.name;
+        auto pool = biomeDatabase->biomeWeathers(definition.layer->primaryRegion.biome, m_seed, threatLevel());
+        m_weatherDomains.append({definition.name, take(pool), minHeight});
+      } else if (definition.inheritsSurface) {
+        domain = String("surface");
+        m_weatherDomains[0].effectsMinHeight = std::min(m_weatherDomains[0].effectsMinHeight, minHeight);
+      }
+
+      m_weatherLayers.append({definition.name, take(domain), minHeight, maxHeight});
+    }
+  } else {
+    m_weatherDomains.append({"surface", m_worldParameters->weatherPool, (int)undergroundLevel()});
+    m_weatherLayers.append({"surface", Maybe<String>(String("surface")), 0, (int)m_geometry.height()});
+  }
 }
 
 pair<float, float> WorldTemplate::customTerrainWeighting(int x, int y) const {
@@ -779,6 +857,27 @@ WorldTemplate::BlockInfo WorldTemplate::getBlockInfo(uint32_t x, uint32_t y) con
 
       return blockInfo;
     });
+}
+
+Json WorldTemplate::BlockInfo::toJson() const {
+  return JsonObject({
+    {"blockBiomeIndex", blockBiomeIndex},
+    {"environmentBiomeIndex", environmentBiomeIndex},
+    {"biomeTransition", biomeTransition},
+    {"terrain", terrain},
+    {"foregroundCave", foregroundCave},
+    {"backgroundCave", backgroundCave},
+    {"foreground", foreground},
+    {"foregroundMod", foregroundMod},
+    {"background", background},
+    {"backgroundMod", backgroundMod},
+    {"caveLiquid", caveLiquid},
+    {"caveLiquidSeedDensity", caveLiquidSeedDensity},
+    {"oceanLiquid", oceanLiquid},
+    {"oceanLiquidLevel", oceanLiquidLevel},
+    {"encloseLiquids", encloseLiquids},
+    {"fillMicrodungeons", fillMicrodungeons}
+  });
 }
 
 }

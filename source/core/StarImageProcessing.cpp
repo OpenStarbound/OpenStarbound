@@ -111,7 +111,7 @@ ImageOperation imageOperationFromString(StringView string) {
                 return ErrorImageOperation{strf("Improper size for hex string '{}'", StringView(hexPtr, hexLen))};
             else // we're in A of A=B. In vanilla only A=B pairs are evaluated, so only throw an error if B is also there.
                 return operation;
-              
+
             if ((which = !which))
               operation.colorReplaceMap[*(Vec4B*)&a] = *(Vec4B*)&b;
 
@@ -354,23 +354,174 @@ StringList imageOperationReferences(List<ImageOperation> const& operations) {
   return references;
 }
 
-#ifdef STAR_COMPILER_CLANG
+// The hue, saturation and brightness operations below turn every pixel through floating point color math.
+// However, most images have far fewer distinct colors than pixels, especially the heaviest, largest ones..
+// This remembers the result for recently seen colors, the pixel that computing it again would give.
+struct RecentColors {
+  struct Entry {
+    uint32_t in = 0;   // 0 is never looked u,: a pixel with alpha 0 is skipped before it gets here
+    uint32_t out = 0;
+  };
+
+  static uint32_t pack(Vec4B const& c) {
+    return (uint32_t)c[0] | (uint32_t)c[1] << 8 | (uint32_t)c[2] << 16 | (uint32_t)c[3] << 24;
+  }
+
+  static Vec4B unpack(uint32_t v) {
+    return Vec4B(v & 255, (v >> 8) & 255, (v >> 16) & 255, v >> 24);
+  }
+
+  // Replaces the pixel with compute(pixel)
+  template <typename Function>
+  void apply(Vec4B& pixel, Function&& compute) {
+    uint32_t key = pack(pixel);
+    Entry& entry = entries[(key * 2654435761u) >> 24];
+    if (entry.in != key) {
+      entry.out = pack(compute(pixel));
+      entry.in = key;
+    }
+    pixel = unpack(entry.out);
+  }
+
+  Entry entries[256];
+};
+
+#ifdef STAR_COMPILER_GNU
 #pragma GCC push_options
 #pragma GCC optimize("-fno-fast-math", "-fassociative-math", "-freciprocal-math")
 #endif
 static void processSaturationShift(Image& image, SaturationShiftImageOperation const* op) {
-  image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
+  RecentColors recent;
+  image.forEachPixel([&](unsigned, unsigned, Vec4B& pixel) {
     if (pixel[3] != 0) {
-      Color color = Color::rgba(pixel);
-      color.setSaturation(clamp(color.saturation() + op->saturationShiftAmount, 0.0f, 1.0f));
-      pixel = color.toRgba();
+      recent.apply(pixel, [&op](Vec4B const& p) { return Color::shiftSaturationVec4B(p, op->saturationShiftAmount); });
     }
   });
 }
-#ifdef STAR_COMPILER_CLANG
+#ifdef STAR_COMPILER_GNU
 #pragma GCC pop_options
 #endif
 
+
+// The pixels [x0, x1) x [y0, y1) of an image
+struct PixelRect {
+  long x0 = 0, y0 = 0, x1 = 0, y1 = 0;
+  bool empty() const { return x0 >= x1 || y0 >= y1; }
+};
+
+// Replaces the colors of the pixels inside the rectangle. The image has four bytes per pixel.
+static void replaceColors(ColorReplaceMap const& replaceMap, Image& image, PixelRect rect) {
+  if (replaceMap.empty() || rect.empty())
+    return;
+
+  if ((rect.x1 - rect.x0) * (rect.y1 - rect.y0) < 1024) {
+    for (long y = rect.y0; y < rect.y1; ++y) {
+      for (long x = rect.x0; x < rect.x1; ++x) {
+        Vec4B pixel = image.get(x, y);
+        if (auto m = replaceMap.maybe(pixel))
+          image.set(x, y, *m);
+      }
+    }
+    return;
+  }
+
+  // Most pixels are not a key, but each one costs a hash lookup.
+  // A bitmap of the keys' hashes rejects almost all of the non-keys without touching the map.
+  // A pixel is only ever replaced if it is a key, so the result is the same.
+  unsigned bitCount = 4096;
+  while (bitCount < replaceMap.size() * 32 && bitCount < (1u << 20))
+    bitCount <<= 1;
+#if defined(STAR_COMPILER_GNU) || defined(STAR_COMPILER_CLANG)
+  unsigned shift = 32 - __builtin_ctz(bitCount);
+#else
+  unsigned shift = 32;
+  for (unsigned n = bitCount; n > 1; n >>= 1)
+    --shift;
+#endif
+  std::vector<uint64_t> bits(bitCount / 64, 0);
+  auto bitFor = [shift](Vec4B const& c) -> unsigned {
+    uint32_t v = (uint32_t)c[0] | (uint32_t)c[1] << 8 | (uint32_t)c[2] << 16 | (uint32_t)c[3] << 24;
+    return (v * 2654435761u) >> shift;
+  };
+  for (auto const& entry : replaceMap) {
+    unsigned bit = bitFor(entry.first);
+    bits[bit >> 6] |= 1ull << (bit & 63);
+  }
+
+  // Large areas of one color are common (the backgrounds of sign and costume drawables), and a pixel that equals the one before it
+  // gets the same result, so that one is remembered.
+  static_assert(sizeof(Vec4B) == sizeof(uint32_t), "a pixel is four bytes");
+  uint8_t* data = image.data();
+  uint32_t lastIn = 0, lastOut = 0;
+  bool haveLast = false;
+  for (long y = rect.y0; y < rect.y1; ++y) {
+    uint8_t* row = data + ((size_t)y * image.width() + rect.x0) * 4;
+    for (long x = 0; x < rect.x1 - rect.x0; ++x) {
+      uint32_t value;
+      memcpy(&value, row + x * 4, 4);
+      if (haveLast && value == lastIn) {
+        memcpy(row + x * 4, &lastOut, 4);
+        continue;
+      }
+      Vec4B pixel;
+      memcpy(static_cast<void*>(&pixel), &value, 4);
+      uint32_t result = value;
+      unsigned bit = bitFor(pixel);
+      if ((bits[bit >> 6] >> (bit & 63)) & 1) {
+        if (auto m = replaceMap.maybe(pixel)) {
+          memcpy(&result, m->ptr(), 4);
+          memcpy(row + x * 4, &result, 4);
+        }
+      }
+      lastIn = value;
+      lastOut = result;
+      haveLast = true;
+    }
+  }
+}
+
+// Blends the images into the target and returns the rectangle of pixels that can have changed.
+static PixelRect applyBlend(BlendImageOperation const& op, Image& image, ImageReferenceCallback const& refCallback) {
+  if (op.blendImages.empty())
+    return {};
+
+  if (!refCallback)
+    throw StarException("Missing image ref callback during BlendImageOperation in ImageProcessor::process");
+
+  List<Image const*> blendImages;
+  for (auto const& reference : op.blendImages)
+    blendImages.append(refCallback(reference));
+
+  // A pixel is only changed where one of the blend images lies under it.
+  // Everywhere else, the original loop converted the pixel to float and back, which gives the same byte again.
+  // Large images blended with a small one (sign tiles) therefore only need the bounding box of the places where a blend image overlaps.
+  long minX = (long)image.width(), minY = (long)image.height(), maxX = 0, maxY = 0;
+  for (auto blend : blendImages) {
+    minX = std::min(minX, std::max(0L, -(long)op.offset[0]));
+    minY = std::min(minY, std::max(0L, -(long)op.offset[1]));
+    maxX = std::max(maxX, std::min((long)image.width(), (long)blend->width() - op.offset[0]));
+    maxY = std::max(maxY, std::min((long)image.height(), (long)blend->height() - op.offset[1]));
+  }
+
+  for (long y = minY; y < maxY; ++y) {
+    for (long x = minX; x < maxX; ++x) {
+      Vec2U pos = Vec2U(Vec2I(x, y) + op.offset);
+      Vec4B pixel = image.get(x, y);
+      Vec4F fpixel = Color::v4bToFloat(pixel);
+      for (auto blend : blendImages) {
+        if (pos[0] < blend->width() && pos[1] < blend->height()) {
+          Vec4F blendPixel = Color::v4bToFloat(blend->get(pos));
+          if (op.mode == BlendImageOperation::Multiply)
+            fpixel = fpixel.piecewiseMultiply(blendPixel);
+          else if (op.mode == BlendImageOperation::Screen)
+            fpixel = Vec4F::filled(1.0f) - (Vec4F::filled(1.0f) - fpixel).piecewiseMultiply(Vec4F::filled(1.0f) - blendPixel);
+        }
+      }
+      image.set(x, y, Color::v4fToByte(fpixel));
+    }
+  }
+  return {minX, minY, maxX, maxY};
+}
 
 
 void processImageOperation(ImageOperation const& operation, Image& image, ImageReferenceCallback refCallback) {
@@ -378,19 +529,26 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
     // Convert to an image format that has alpha so certain operations function properly
     image = image.convert(image.pixelFormat() == PixelFormat::BGR24 ? PixelFormat::BGRA32 : PixelFormat::RGBA32);
   }
+  // A hue shift, saturation shift or brightness multiplier of exactly zero (?hueshift=0 is in every vanilla parallax path) hands
+  // back every pixel unchanged, for every color and every alpha value, so those passes are skipped.
   if (auto op = operation.ptr<HueShiftImageOperation>()) {
-    image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
+    if (op->hueShiftAmount == 0.0f)
+      return;
+    RecentColors recent;
+    image.forEachPixel([&](unsigned, unsigned, Vec4B& pixel) {
       if (pixel[3] != 0)
-        pixel = Color::hueShiftVec4B(pixel, op->hueShiftAmount);
+        recent.apply(pixel, [&op](Vec4B const& p) { return Color::hueShiftVec4B(p, op->hueShiftAmount); });
     });
   } else if (auto op = operation.ptr<SaturationShiftImageOperation>()) {
-    processSaturationShift(image, op);
+    if (op->saturationShiftAmount != 0.0f)
+      processSaturationShift(image, op);
   } else if (auto op = operation.ptr<BrightnessMultiplyImageOperation>()) {
-    image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
+    if (op->brightnessMultiply == 1.0f)
+      return;
+    RecentColors recent;
+    image.forEachPixel([&](unsigned, unsigned, Vec4B& pixel) {
       if (pixel[3] != 0) {
-        Color color = Color::rgba(pixel);
-        color.setValue(clamp(color.value() * op->brightnessMultiply, 0.0f, 1.0f));
-        pixel = color.toRgba();
+        recent.apply(pixel, [&op](Vec4B const& p) { return Color::scaleValueVec4B(p, op->brightnessMultiply); });
       }
     });
   } else if (auto op = operation.ptr<FadeToColorImageOperation>()) {
@@ -418,10 +576,7 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
       pixel[2] = op->color[2];
     });
   } else if (auto op = operation.ptr<ColorReplaceImageOperation>()) {
-    image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
-      if (auto m = op->colorReplaceMap.maybe(pixel))
-        pixel = *m;
-    });
+    replaceColors(op->colorReplaceMap, image, {0, 0, (long)image.width(), (long)image.height()});
 
   } else if (auto op = operation.ptr<AlphaMaskImageOperation>()) {
     if (op->maskImages.empty())
@@ -456,30 +611,7 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
     });
 
   } else if (auto op = operation.ptr<BlendImageOperation>()) {
-    if (op->blendImages.empty())
-      return;
-
-    if (!refCallback)
-      throw StarException("Missing image ref callback during BlendImageOperation in ImageProcessor::process");
-
-    List<Image const*> blendImages;
-    for (auto const& reference : op->blendImages)
-      blendImages.append(refCallback(reference));
-
-    image.forEachPixel([&op, &blendImages](unsigned x, unsigned y, Vec4B& pixel) {
-      Vec2U pos = Vec2U(Vec2I(x, y) + op->offset);
-      Vec4F fpixel = Color::v4bToFloat(pixel);
-      for (auto blend : blendImages) {
-        if (pos[0] < blend->width() && pos[1] < blend->height()) {
-          Vec4F blendPixel = Color::v4bToFloat(blend->get(pos));
-          if (op->mode == BlendImageOperation::Multiply)
-            fpixel = fpixel.piecewiseMultiply(blendPixel);
-          else if (op->mode == BlendImageOperation::Screen)
-            fpixel = Vec4F::filled(1.0f) - (Vec4F::filled(1.0f) - fpixel).piecewiseMultiply(Vec4F::filled(1.0f) - blendPixel);
-        }
-      }
-      pixel = Color::v4fToByte(fpixel);
-    });
+    applyBlend(*op, image, refCallback);
 
   } else if (auto op = operation.ptr<MultiplyImageOperation>()) {
     image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
@@ -588,10 +720,190 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
   }
 }
 
-Image processImageOperations(List<ImageOperation> const& operations, Image image, ImageReferenceCallback refCallback) {
-  for (auto const& operation : operations)
-    processImageOperation(operation, image, refCallback);
+bool processScaleCrop(ScaleImageOperation const& scale, CropImageOperation const& crop, Image& image) {
+  if (scale.mode == ScaleImageOperation::Bicubic)
+    return false;
+  if (scale.scale[0] < 0.0f || scale.scale[1] < 0.0f)
+    return false;  // processImageOperation warns about this and clamps it
 
+  if (image.bytesPerPixel() == 3) {
+    // Same conversion processImageOperation does before any operation
+    image = image.convert(image.pixelFormat() == PixelFormat::BGR24 ? PixelFormat::BGRA32 : PixelFormat::RGBA32);
+  }
+
+  if (!scaledCropFits(image, scale.scale, crop.subset))
+    return false;
+
+  if (scale.mode == ScaleImageOperation::Nearest)
+    image = scaleNearestCropped(image, scale.scale, crop.subset);
+  else
+    image = scaleBilinearCropped(image, scale.scale, crop.subset);
+  return true;
+}
+
+// Operations whose result for a pixel depends on that pixel alone.
+static bool isPerPixelColorOperation(ImageOperation const& operation) {
+  return operation.is<HueShiftImageOperation>()
+      || operation.is<SaturationShiftImageOperation>()
+      || operation.is<BrightnessMultiplyImageOperation>()
+      || operation.is<FadeToColorImageOperation>()
+      || operation.is<SetColorImageOperation>()
+      || operation.is<ColorReplaceImageOperation>()
+      || operation.is<MultiplyImageOperation>();
+}
+
+// A nearest neighbour scale that makes the image bigger by copying pixels.
+// An image with no pixels has none to copy, so the scale then makes pixels of {0, 0, 0, 0} out of nothing, which later color operations would change, so that is not a case for this.
+static bool scaleEnlargesByCopying(ScaleImageOperation const& scale, Image const& image) {
+  if (image.width() == 0 || image.height() == 0)
+    return false;
+  if (scale.mode != ScaleImageOperation::Nearest || scale.scale[0] < 0.0f || scale.scale[1] < 0.0f)
+    return false;
+  Vec2U destSize = Vec2U::round(vmult(Vec2F(image.size()), scale.scale));
+  destSize[0] = max(destSize[0], 1u);
+  destSize[1] = max(destSize[1], 1u);
+  return (uint64_t)destSize[0] * destSize[1] > (uint64_t)image.width() * image.height();
+}
+
+// A crop that fits in the image and keeps fewer pixels than it has
+static bool cropShrinks(CropImageOperation const& crop, Image const& image) {
+  Vec2I min = crop.subset.min();
+  Vec2I size = Vec2I(crop.subset.size());
+  if (min[0] < 0 || min[1] < 0 || size[0] < 0 || size[1] < 0 || min[0] + size[0] > (int)image.width() || min[1] + size[1] > (int)image.height())
+    return false;
+  return (uint64_t)size[0] * size[1] < (uint64_t)image.width() * image.height();
+}
+
+// A replace leaves no pixel that is one of its keys, as long as none of the colors it makes is a key itself.
+static bool replaceSettles(ColorReplaceMap const& map) {
+  for (auto const& entry : map) {
+    if (map.contains(entry.second))
+      return false;
+  }
+  return true;
+}
+
+static bool replaceKeysAreKeysOf(ColorReplaceMap const& map, ColorReplaceMap const& other) {
+  for (auto const& entry : map) {
+    if (!other.contains(entry.first))
+      return false;
+  }
+  return true;
+}
+
+// Signs and costume drawables are made of a replace, blends that each touch a small area, the same replace again, and so on.
+// After a replace that settles, none of the pixels are its keys. The blends only change the areas they cover, and a following replace
+// with keys that are all keys of the one before can only find any in those areas, so it only needs to look there.
+// Called with the index of the operation after a replace that has been applied, and returns the index of the next one to apply.
+static size_t processReplaceBlendChain(List<ImageOperation const*> const& operations, size_t i, ColorReplaceImageOperation const* current, Image& image, ImageReferenceCallback const& refCallback) {
+  size_t count = operations.size();
+  if (image.bytesPerPixel() != 4 || i >= count || !operations[i]->is<BlendImageOperation>() || !replaceSettles(current->colorReplaceMap))
+    return i;
+
+  while (i < count && operations[i]->is<BlendImageOperation>()) {
+    PixelRect changed;
+    bool any = false;
+    while (i < count && operations[i]->is<BlendImageOperation>()) {
+      PixelRect rect = applyBlend(*operations[i]->ptr<BlendImageOperation>(), image, refCallback);
+      ++i;
+      if (rect.empty())
+        continue;
+      if (!any) {
+        changed = rect;
+        any = true;
+      } else {
+        changed.x0 = std::min(changed.x0, rect.x0);
+        changed.y0 = std::min(changed.y0, rect.y0);
+        changed.x1 = std::max(changed.x1, rect.x1);
+        changed.y1 = std::max(changed.y1, rect.y1);
+      }
+    }
+    if (i < count) {
+      if (auto next = operations[i]->ptr<ColorReplaceImageOperation>()) {
+        if (replaceKeysAreKeysOf(next->colorReplaceMap, current->colorReplaceMap) && replaceSettles(next->colorReplaceMap)) {
+          replaceColors(next->colorReplaceMap, image, changed);
+          current = next;
+          ++i;
+          continue;
+        }
+      }
+    }
+    break;
+  }
+  return i;
+}
+
+void processImageOperationList(List<ImageOperation const*> const& operations, Image& image, ImageReferenceCallback refCallback) {
+  size_t count = operations.size();
+  size_t i = 0;
+  while (i < count) {
+    ImageOperation const& operation = *operations[i];
+
+    if (isPerPixelColorOperation(operation)) {
+      size_t end = i;
+      while (end < count && isPerPixelColorOperation(*operations[end]))
+        ++end;
+      // Colors then crop that makes the image smaller get swapped, so the colors are applied to fewer pixels
+      if (end < count) {
+        if (auto crop = operations[end]->ptr<CropImageOperation>()) {
+          if (cropShrinks(*crop, image)) {
+            processImageOperation(*operations[end], image, refCallback);
+            for (size_t k = i; k < end; ++k)
+              processImageOperation(*operations[k], image, refCallback);
+            i = end + 1;
+            continue;
+          }
+        }
+      }
+      for (size_t k = i; k < end; ++k)
+        processImageOperation(*operations[k], image, refCallback);
+      i = end;
+      if (auto replace = operations[end - 1]->ptr<ColorReplaceImageOperation>())
+        i = processReplaceBlendChain(operations, i, replace, image, refCallback);
+      continue;
+    }
+
+    if (auto scale = operation.ptr<ScaleImageOperation>()) {
+      size_t end = i + 1;
+      while (end < count && isPerPixelColorOperation(*operations[end]))
+        ++end;
+      // Scale, then colors get swapped, so the scale only copies pixels into a bigger image
+      if (end > i + 1 && scaleEnlargesByCopying(*scale, image)) {
+        for (size_t k = i + 1; k < end; ++k)
+          processImageOperation(*operations[k], image, refCallback);
+        // then the scale itself, together with a crop right after it if there is one
+        if (end < count) {
+          if (auto crop = operations[end]->ptr<CropImageOperation>()) {
+            if (processScaleCrop(*scale, *crop, image)) {
+              i = end + 1;
+              continue;
+            }
+          }
+        }
+        processImageOperation(operation, image, refCallback);
+        i = end;
+        continue;
+      }
+      if (i + 1 < count) {
+        if (auto crop = operations[i + 1]->ptr<CropImageOperation>()) {
+          if (processScaleCrop(*scale, *crop, image)) {
+            i += 2;
+            continue;
+          }
+        }
+      }
+    }
+
+    processImageOperation(operation, image, refCallback);
+    ++i;
+  }
+}
+
+Image processImageOperations(List<ImageOperation> const& operations, Image image, ImageReferenceCallback refCallback) {
+  List<ImageOperation const*> pointers;
+  for (auto const& operation : operations)
+    pointers.append(&operation);
+  processImageOperationList(pointers, image, refCallback);
   return image;
 }
 

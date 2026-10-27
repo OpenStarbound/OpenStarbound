@@ -43,6 +43,15 @@ WeatherType::WeatherType(Json config, String path) {
   duration = jsonToVec2F(config.get("duration"));
   weatherNoises = jsonToStringList(config.get("weatherNoises", JsonArray()));
   statusEffects = jsonToStringList(config.get("statusEffects", JsonArray()));
+
+  if (auto parallaxReference = config.optString("parallax")) {
+    if (!parallaxReference->empty()) {
+      if (parallaxReference->beginsWith("/"))
+        parallax = *parallaxReference;
+      else
+        parallax = "/parallax/weather/" + *parallaxReference + ".parallax";
+    }
+  }
 }
 
 Json WeatherType::toJson() const {
@@ -65,7 +74,8 @@ Json WeatherType::toJson() const {
       {"maximumWind", maximumWind},
       {"duration", jsonFromVec2F(duration)},
       {"weatherNoises", jsonFromStringList(weatherNoises)},
-      {"statusEffects", jsonFromStringList(statusEffects)}};
+      {"statusEffects", jsonFromStringList(statusEffects)},
+      {"parallax", parallax ? Json(*parallax) : Json()}};
 }
 
 DataStream& operator>>(DataStream& ds, WeatherType& weatherType) {

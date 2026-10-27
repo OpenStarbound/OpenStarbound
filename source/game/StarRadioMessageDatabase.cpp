@@ -35,7 +35,7 @@ RadioMessage RadioMessageDatabase::radioMessage(String const& messageName) const
   throw RadioMessageDatabaseException(strf("Unknown radio message {}", messageName));
 }
 
-RadioMessage RadioMessageDatabase::createRadioMessage(Json const& config, Maybe<String> const& messageId) const {
+RadioMessage RadioMessageDatabase::createRadioMessage(Json const& config,  Maybe<String> const& messageId) const {
   if (config.isType(Json::Type::String)) {
     return radioMessage(config.toString());
   } else if (config.isType(Json::Type::Object)) {
@@ -62,6 +62,12 @@ RadioMessage RadioMessageDatabase::createRadioMessage(Json const& config, Maybe<
     message.textSpeed = mergedConfig.getFloat("textSpeed");
     message.persistTime = mergedConfig.getFloat("persistTime");
     message.chatterSound = mergedConfig.getString("chatterSound");
+
+    auto merger = config.eraseKey("speciesAiMessage").eraseKey("speciesMessage");
+    for (auto p : mergedConfig.getObject("speciesAiMessage", JsonObject()))
+      message.speciesMessage.set(p.first, createRadioMessage(jsonMerge(merger, p.second), messageId));
+    for (auto p : mergedConfig.getObject("speciesMessage", JsonObject()))
+      message.speciesMessage.set(p.first, createRadioMessage(jsonMerge(merger, p.second), messageId));
 
     if (message.portraitFrames <= 0)
       throw RadioMessageDatabaseException(

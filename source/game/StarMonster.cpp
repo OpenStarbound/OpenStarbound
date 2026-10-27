@@ -122,8 +122,8 @@ ClientEntityMode Monster::clientEntityMode() const {
   return m_monsterVariant.clientEntityMode;
 }
 
-void Monster::init(World* world, EntityId entityId, EntityMode mode) {
-  Entity::init(world, entityId, mode);
+void Monster::init(World* world, EntityId entityId, EntityMode mode, ConnectionId originConnection) {
+  Entity::init(world, entityId, mode, originConnection);
 
   m_movementController->init(world);
   m_movementController->setIgnorePhysicsEntities({entityId});
@@ -141,12 +141,11 @@ void Monster::init(World* world, EntityId entityId, EntityMode mode) {
     m_scriptComponent.addCallbacks("config", LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def) {
         return m_monsterVariant.parameters.query(name, def);
       }));
-    m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
     m_scriptComponent.addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(&m_networkedAnimator));
     m_scriptComponent.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(m_statusController.get()));
     m_scriptComponent.addCallbacks("behavior", LuaBindings::makeBehaviorCallbacks(&m_behaviors));
     m_scriptComponent.addActorMovementCallbacks(m_movementController.get());
-    m_scriptComponent.init(world);
+    m_scriptComponent.init(this);
   }
 
   if (world->isClient()) {
@@ -159,8 +158,7 @@ void Monster::init(World* world, EntityId entityId, EntityMode mode) {
     m_scriptedAnimator.addCallbacks("config", LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def) {
         return m_monsterVariant.parameters.query(name, def);
       }));
-    m_scriptedAnimator.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
-    m_scriptedAnimator.init(world);
+    m_scriptedAnimator.init(this);
   }
 
   setPosition(position());
@@ -171,7 +169,6 @@ void Monster::uninit() {
     m_scriptComponent.uninit();
     m_scriptComponent.removeCallbacks("monster");
     m_scriptComponent.removeCallbacks("config");
-    m_scriptComponent.removeCallbacks("entity");
     m_scriptComponent.removeCallbacks("animator");
     m_scriptComponent.removeCallbacks("status");
     m_scriptComponent.removeActorMovementCallbacks();
@@ -179,7 +176,6 @@ void Monster::uninit() {
   if (world()->isClient()) {
     m_scriptedAnimator.removeCallbacks("animationConfig");
     m_scriptedAnimator.removeCallbacks("config");
-    m_scriptedAnimator.removeCallbacks("entity");
   }
   m_statusController->uninit();
   m_movementController->uninit();
@@ -409,8 +405,12 @@ void Monster::destroy(RenderCallback* renderCallback) {
         treasurePool = m_dropPool.getString("default");
     }
 
-    for (auto const& treasureItem : treasureDatabase->createTreasure(treasurePool, *m_monsterLevel))
-      world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position()));
+    try {
+      for (auto const& treasureItem : treasureDatabase->createTreasure(treasurePool, *m_monsterLevel))
+        world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position()),originConnection());
+    } catch (StarException const& e) {
+      Logger::warn("Failed to create treasure for monster '{}': {}", m_monsterVariant.type, outputException(e, false));
+    }
   }
 
   if (renderCallback) {
@@ -538,7 +538,7 @@ void Monster::render(RenderCallback* renderCallback) {
 }
 
 List<Drawable> Monster::drawables(Vec2F position) {
-  List<Drawable> drawables;
+  List<Drawable> drawables = m_statusController->backDrawables(position);
   auto anchor = as<LoungeAnchor>(m_movementController->entityAnchor());
 
   for (auto& drawable : m_networkedAnimator.drawables(position)) {
@@ -551,7 +551,7 @@ List<Drawable> Monster::drawables(Vec2F position) {
     }
     drawables.append(std::move(drawable));
   }
-  drawables.appendAll(m_statusController->drawables(position));
+  drawables.appendAll(m_statusController->frontDrawables(position));
 
   return drawables;
 }
@@ -566,8 +566,8 @@ void Monster::setPosition(Vec2F const& pos) {
   m_movementController->setPosition(pos);
 }
 
-Maybe<Json> Monster::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
-  Maybe<Json> result = m_scriptComponent.handleMessage(message, world()->connection() == sendingConnection, args);
+Maybe<ChainableJsonMessageResponse> Monster::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
+  Maybe<ChainableJsonMessageResponse> result = m_scriptComponent.handleMessage(message, world()->connection() == sendingConnection, args);
   if (!result)
     result = m_statusController->receiveMessage(message, world()->connection() == sendingConnection, args);
   return result;
@@ -971,6 +971,5 @@ ActorMovementController* Monster::movementController() {
 StatusController* Monster::statusController() {
   return m_statusController.get();
 }
-
 
 }

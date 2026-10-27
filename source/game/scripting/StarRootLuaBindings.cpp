@@ -1,6 +1,7 @@
 #include "StarRootLuaBindings.hpp"
 #include "StarLuaGameConverters.hpp"
 #include "StarRoot.hpp"
+#include "StarModStorage.hpp"
 #include "StarStoredFunctions.hpp"
 #include "StarNpcDatabase.hpp"
 #include "StarProjectileDatabase.hpp"
@@ -28,12 +29,52 @@
 
 namespace Star {
 
+enum VariantTerrainLayer { Background, Platform, Foreground };
+EnumMap<VariantTerrainLayer> VariantTerrainLayerNames{
+  {VariantTerrainLayer::Background, "Background"},
+  {VariantTerrainLayer::Platform, "Platform"},
+  {VariantTerrainLayer::Foreground, "Foreground"},
+};
+
+// The id a mod's storage is kept under: the name in the metadata of its asset
+// source, or the source's file name without one.  Sources that share a name
+// must not share storage, so the first of them in load order keeps the plain
+// name and the others get their file name added.  Kept for the session, so an
+// id does not change when sources are reloaded.
+static String modStorageId(Assets const& assets, String const& sourcePath) {
+  static Mutex mutex;
+  static StringMap<String> ids;
+  MutexLocker locker(mutex);
+  if (auto id = ids.maybe(sourcePath))
+    return *id;
+
+  auto nameOf = [&](String const& path) -> String {
+      if (auto name = assets.assetSourceMetadata(path).maybe("name"))
+        if (name->isType(Json::Type::String) && !name->toString().empty())
+          return name->toString();
+      return File::baseName(path);
+    };
+
+  String name = nameOf(sourcePath);
+  String id = name;
+  for (auto const& other : assets.assetSources()) {
+    if (other == sourcePath)
+      break;
+    if (nameOf(other) == name) {
+      id = strf("{} ({})", name, File::baseName(sourcePath));
+      break;
+    }
+  }
+  ids.set(sourcePath, id);
+  return id;
+}
+
 LuaCallbacks LuaBindings::makeRootCallbacks() {
   LuaCallbacks callbacks;
 
   auto root = Root::singletonPtr();
 
-  callbacks.registerCallbackWithSignature<String, String>("assetData", bind(RootCallbacks::assetData, root, _1));
+  callbacks.registerCallbackWithSignature<String, String, Maybe<bool>>("assetData", bind(RootCallbacks::assetData, root, _1, _2));
   callbacks.registerCallbackWithSignature<Image, String>("assetImage", bind(RootCallbacks::assetImage, root, _1));
   callbacks.registerCallbackWithSignature<Json, String>("assetFrames", bind(RootCallbacks::assetFrames, root, _1));
   callbacks.registerCallbackWithSignature<Json, String>("assetJson", bind(RootCallbacks::assetJson, root, _1));
@@ -48,7 +89,7 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
   callbacks.registerCallbackWithSignature<float, String>("projectileGravityMultiplier", bind(RootCallbacks::projectileGravityMultiplier, root, _1));
   callbacks.registerCallbackWithSignature<Json, String>("projectileConfig", bind(RootCallbacks::projectileConfig, root, _1));
   callbacks.registerCallbackWithSignature<JsonArray, String>("recipesForItem", bind(RootCallbacks::recipesForItem, root, _1));
-  callbacks.registerCallbackWithSignature<JsonArray>("allRecipes", bind(RootCallbacks::allRecipes, root));
+  callbacks.registerCallbackWithSignature<JsonArray, Maybe<StringSet>>("allRecipes", bind(RootCallbacks::allRecipes, root, _1));
   callbacks.registerCallbackWithSignature<String, String>("itemType", bind(RootCallbacks::itemType, root, _1));
   callbacks.registerCallbackWithSignature<Json, String>("itemTags", bind(RootCallbacks::itemTags, root, _1));
   callbacks.registerCallbackWithSignature<bool, String, String>("itemHasTag", bind(RootCallbacks::itemHasTag, root, _1, _2));
@@ -67,6 +108,29 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
 
   callbacks.registerCallbackWithSignature<Maybe<String>, String, Maybe<String>>("materialMiningSound", bind(RootCallbacks::materialMiningSound, root, _1, _2));
   callbacks.registerCallbackWithSignature<Maybe<String>, String, Maybe<String>>("materialFootstepSound", bind(RootCallbacks::materialFootstepSound, root, _1, _2));
+
+  auto getVariant = [](unsigned x, unsigned y, bool isMatMod, VariantTerrainLayer layer, unsigned variants) -> unsigned {
+    static thread_local std::unique_ptr<XXH32_state_t, decltype(&XXH32_freeState)>
+      unique_state(XXH32_createState(), XXH32_freeState);
+    XXH32_state_t* state = unique_state.get();
+    XXH32_reset(state, 2938728349);
+    XXH32_update(state, &x, sizeof(x));
+    XXH32_update(state, &y, sizeof(y));
+    XXH32_update(state, &layer, sizeof(layer));
+    if (isMatMod)
+      XXH32_update(state, "mod", 3);
+    else
+      XXH32_update(state, "main", 4);
+    return XXH32_digest(state) % variants;
+  };
+
+  callbacks.registerCallback("materialVariant", [root, getVariant](Vec2U const& tilePosition, String const& layer, unsigned variants) -> unsigned {
+    return getVariant(tilePosition.x(), tilePosition.y(), false, VariantTerrainLayerNames.getLeft(layer), variants);
+  });
+
+  callbacks.registerCallback("modVariant", [root, getVariant](Vec2U const& tilePosition, String const& layer, unsigned variants) -> unsigned {
+    return getVariant(tilePosition.x(), tilePosition.y(), true, VariantTerrainLayerNames.getLeft(layer), variants);
+  });
 
   callbacks.registerCallback("assetsByExtension", [root](String const& extension) -> CaseInsensitiveStringSet {
     return root->assets()->scanExtension(extension);
@@ -126,15 +190,25 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
       return root->itemDatabase()->itemFile(itemName);
     });
 
-  callbacks.registerCallback("materialConfig", [root](String const& materialName) -> Json {
-      auto materialId = root->materialDatabase()->materialId(materialName);
+  callbacks.registerCallback("materialConfig", [root](Variant<MaterialId, String> const& materialNameOrId) -> Json {
+      MaterialId materialId;
+      if (auto id = materialNameOrId.ptr<MaterialId>())
+        materialId = *id;
+      else
+        materialId = root->materialDatabase()->materialId(materialNameOrId.get<String>());
+
       if (auto path = root->materialDatabase()->materialPath(materialId))
         return JsonObject{{"path", *path}, {"config", root->materialDatabase()->materialConfig(materialId).get()}};
       return {};
     });
 
-  callbacks.registerCallback("modConfig", [root](String const& modName) -> Json {
-      auto modId = root->materialDatabase()->modId(modName);
+  callbacks.registerCallback("modConfig", [root](Variant<ModId, String> const& modNameOrId) -> Json {
+      ModId modId;
+      if (auto id = modNameOrId.ptr<ModId>())
+        modId = *id;
+      else
+        modId = root->materialDatabase()->modId(modNameOrId.get<String>());
+
       if (auto path = root->materialDatabase()->modPath(modId))
         return JsonObject{{"path", *path}, {"config", root->materialDatabase()->modConfig(modId).get()}};
       return {};
@@ -264,6 +338,51 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
       root->configuration()->setPath(path, value);
     });
 
+  // Without a mod name the storage is the one of the asset source of the script
+  // that made the call, which scripts cannot fake.
+  // The chunk name is the asset path they were loaded from.
+  // With one it is the storage of the loaded source with that metadata name.
+  auto storageMod = [root](LuaEngine& engine, Maybe<String> const& modName) -> String {
+      auto assets = root->assets();
+      if (modName) {
+        for (auto const& sourcePath : assets->assetSources()) {
+          if (auto name = assets->assetSourceMetadata(sourcePath).maybe("name")) {
+            if (name->isType(Json::Type::String) && name->toString() == *modName)
+              return *modName;
+          }
+        }
+        throw StarException(strf("Mod storage: no loaded mod is named '{}'", *modName));
+      }
+
+      auto const& info = engine.debugInfo(1, "S");
+      String chunk = info.source ? info.source : "";
+      if (chunk.beginsWith("@") || chunk.beginsWith("="))
+        chunk = chunk.substr(1);
+      auto descriptor = assets->assetDescriptor(chunk);
+      if (!descriptor)
+        throw StarException("Mod storage is only available to scripts loaded from assets");
+      auto sourcePath = assets->assetSourcePath(descriptor->source);
+      if (!sourcePath)
+        throw StarException("Mod storage could not find the mod of this script");
+      return modStorageId(*assets, *sourcePath);
+    };
+
+  callbacks.registerCallback("getModStorage", [root, storageMod](LuaEngine& engine, String const& key, Maybe<String> const& mod) -> Json {
+      return root->modStorage()->get(storageMod(engine, mod), key);
+    });
+  callbacks.registerCallback("setModStorage", [root, storageMod](LuaEngine& engine, String const& key, Json const& value, Maybe<String> const& mod) {
+      root->modStorage()->set(storageMod(engine, mod), key, value);
+    });
+  callbacks.registerCallback("modStorageKeys", [root, storageMod](LuaEngine& engine, Maybe<String> const& mod) -> JsonArray {
+      return root->modStorage()->keys(storageMod(engine, mod));
+    });
+  callbacks.registerCallback("clearModStorage", [root, storageMod](LuaEngine& engine, Maybe<String> const& mod) {
+      root->modStorage()->clear(storageMod(engine, mod));
+    });
+  callbacks.registerCallback("flushModStorage", [root]() {
+      root->modStorage()->flush();
+    });
+
   callbacks.registerCallback("speciesConfig", [root](String const& species) -> Json {
     return root->speciesDatabase()->species(species)->config();
   });
@@ -310,11 +429,26 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
     return root->statusEffectDatabase()->uniqueEffectConfig(effect).toJson();
   });
 
+  callbacks.registerCallback("monsterConfig", [root](String const& typeName) -> Json {
+    return root->monsterDatabase()->monsterConfig(typeName);
+  });
+
+  callbacks.registerCallback("biomeConfig", [root](String const& typeName) -> Json {
+    return root->biomeDatabase()->biomeConfig(typeName);
+  });
+
+  callbacks.registerCallback("treeFoliageConfig", [root](String const& typeName) -> Json {
+    return root->plantDatabase()->treeFoliageConfig(typeName);
+  });
+  callbacks.registerCallback("treeStemConfig", [root](String const& typeName) -> Json {
+    return root->plantDatabase()->treeStemConfig(typeName);
+  });
+
   return callbacks;
 }
 
-String LuaBindings::RootCallbacks::assetData(Root* root, String const& path) {
-  auto bytes = root->assets()->bytes(path);
+String LuaBindings::RootCallbacks::assetData(Root* root, String const& path, Maybe<bool> const& allowRemote) {
+  auto bytes = root->assets()->bytes(path,allowRemote.value(false));
   return String(bytes->ptr(), bytes->size());
 }
 
@@ -384,8 +518,13 @@ JsonArray LuaBindings::RootCallbacks::recipesForItem(Root* root, String const& a
   return result;
 }
 
-JsonArray LuaBindings::RootCallbacks::allRecipes(Root* root) {
-  auto& recipes = root->itemDatabase()->allRecipes();
+JsonArray LuaBindings::RootCallbacks::allRecipes(Root* root, Maybe<StringSet> filter) {
+  HashSet<ItemRecipe> recipes;
+  if (filter.isValid())
+    recipes = root->itemDatabase()->allRecipes(filter.value());
+  else
+    recipes = root->itemDatabase()->allRecipes();
+
   JsonArray result;
   result.reserve(recipes.size());
   for (auto& recipe : recipes)
@@ -439,7 +578,9 @@ String LuaBindings::RootCallbacks::generateName(Root* root, String const& rulesA
 }
 
 Json LuaBindings::RootCallbacks::questConfig(Root* root, String const& templateId) {
-  return root->questTemplateDatabase()->questTemplate(templateId)->config;
+  if (auto quest = root->questTemplateDatabase()->questTemplate(templateId))
+    return quest->config;
+  throw StarException(strf("No quest template found for id '{}'", templateId));
 }
 
 JsonArray LuaBindings::RootCallbacks::npcPortrait(Root* root,

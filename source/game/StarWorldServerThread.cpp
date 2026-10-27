@@ -66,10 +66,10 @@ bool WorldServerThread::spawnTargetValid(SpawnTarget const& spawnTarget) {
   }
 }
 
-bool WorldServerThread::addClient(ConnectionId clientId, SpawnTarget const& spawnTarget, bool isLocal, bool isAdmin, NetCompatibilityRules netRules) {
+bool WorldServerThread::addClient(ConnectionId clientId, SpawnTarget const& spawnTarget, bool isLocal, bool isAdmin, NetCompatibilityRules netRules, ClientSubWorldId subWorldId) {
   try {
     RecursiveMutexLocker locker(m_mutex);
-    if (m_worldServer->addClient(clientId, spawnTarget, isLocal, isAdmin, netRules)) {
+    if (m_worldServer->addClient(clientId, spawnTarget, isLocal, isAdmin, netRules, subWorldId)) {
       m_clients.add(clientId);
       return true;
     }
@@ -125,6 +125,10 @@ bool WorldServerThread::noClients() const {
   return m_clients.empty();
 }
 
+ClientSubWorldId WorldServerThread::clientSubWorld(ConnectionId clientId) const {
+  RecursiveMutexLocker locker(m_mutex);
+  return m_worldServer->clientSubWorld(clientId);
+}
 
 List<ConnectionId> WorldServerThread::erroredClients() const {
   RecursiveMutexLocker locker(m_mutex);
@@ -290,7 +294,10 @@ void WorldServerThread::update(WorldServerFidelity fidelity) {
   }
   for (auto& message : messages) {
     if (auto resp = m_worldServer->receiveMessage(ServerConnectionId, message.message, message.args))
-      message.promise.fulfill(*resp);
+      if (resp->is<RpcPromise<Json>>())
+        message.promise.chain(resp->get<RpcPromise<Json>>());
+      else
+        message.promise.fulfill(resp->get<Json>());
     else
       message.promise.fail("Message not handled by world");
   }

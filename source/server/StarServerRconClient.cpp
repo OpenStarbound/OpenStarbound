@@ -29,17 +29,17 @@ ServerRconClient::~ServerRconClient() {
   join();
 }
 
-String ServerRconClient::handleCommand(String commandLine) {
+ServerCommandResult ServerRconClient::handleCommand(String commandLine) {
   String command = commandLine.extract();
 
   if (command == "echo") {
     return commandLine;
   } else if (command == "broadcast" || command == "say") {
     m_universe->adminBroadcast(commandLine);
-    return strf("OK: said {}", commandLine);
+    return String(strf("OK: said {}", commandLine));
   } else if (command == "stop") {
     m_universe->stop();
-    return "OK: shutting down";
+    return String("OK: shutting down");
   } else {
     return m_universe->adminCommand(strf("{} {}", command, commandLine));
   }
@@ -119,7 +119,11 @@ void ServerRconClient::processRequest() {
         m_packetBuffer >> command;
         try {
           Logger::info("RCON {}: {}", m_socket->remoteAddress(), command);
-          sendCmdResponse(requestId, handleCommand(command));
+          auto res = handleCommand(command);
+          if (res.is<String>())
+            sendCmdResponse(requestId, res.get<String>());
+          else
+            m_commandPromises[requestId] = res.get<RpcPromise<String>>();
         } catch (std::exception const& e) {
           sendCmdResponse(requestId, strf("RCON: Error executing: {}: {}", command, outputException(e, true)));
         }
@@ -129,6 +133,17 @@ void ServerRconClient::processRequest() {
       break;
     default:
       sendCmdResponse(requestId, strf("Unknown request {:06x}", cmd));
+  }
+  
+  for (auto const& requestId : m_commandPromises.keys()) {
+    if (m_commandPromises[requestId].finished()) {
+      if (m_commandPromises[requestId].succeeded()) {
+        sendCmdResponse(requestId, *m_commandPromises[requestId].result());
+      } else {
+        sendCmdResponse(requestId, strf("RCON: Command promise failed: {}", *m_commandPromises[requestId].error()));
+      }
+      m_commandPromises.remove(requestId);
+    }
   }
 }
 

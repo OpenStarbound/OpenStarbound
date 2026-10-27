@@ -2,7 +2,10 @@ name: Build
 permissions:
   actions: read
 
-  
+# for scripts/credits/generate-contributors.sh, which reads the contributors of the repository while the assets are packed
+env:
+  GITHUB_TOKEN: ${{ github.token }}
+
 on:
   workflow_dispatch:
     inputs:
@@ -13,11 +16,11 @@ on:
       linux_clang:
         type: boolean
         description: Linux (Clang)
-        default: true
+        default: false
       windows:
         type: boolean
         description: Windows
-        default: false
+        default: true
       macOS:
         type: boolean
         description: macOS
@@ -57,14 +60,20 @@ jobs:
         with:
           cmakeVersion: 3.29.2
 
+      - name: Setup LLVM
+        uses: ZhongRuoyu/setup-llvm@v0
+        with:
+          llvm-version: 22
+
+      - name: setup 7-Zip action
+        uses: milliewalky/setup-7-zip@v2
+
       - name: sccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
           variant: sccache
           key: ${{ github.job }}-${{ runner.os }}
           max-size: 1000M
-
-      - uses: ilammy/msvc-dev-cmd@v1
 
       - name: vcpkg
         uses: lukka/run-vcpkg@v11
@@ -73,22 +82,24 @@ jobs:
           vcpkgJsonGlob: '**/source/vcpkg.json'
           vcpkgConfigurationJsonGlob: '**/source/vcpkg-configuration.json'
 
-      - name: Restore vcpkg cache
-        id: vcpkg-cache
-        uses: TAServers/vcpkg-cache@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+      #- name: Restore vcpkg cache
+      #  id: vcpkg-cache
+      #  uses: TAServers/vcpkg-cache@v3
+      #  with:
+      #    token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run CMake
         uses: lukka/run-cmake@v10
         env:
-          VCPKG_FEATURE_FLAGS: "binarycaching"
-          VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
+          LLVMInstallDir: ${{ env.LLVM_PATH }}
+          llvmX64: ${{ env.LLVM_PATH }}
+        #  VCPKG_FEATURE_FLAGS: "binarycaching"
+        #  VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
         with:
           cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
-          configurePreset: 'windows-release'
-          buildPreset: 'windows-release'
-          testPreset: 'windows-release'
+          configurePreset: 'windows-release-ci'
+          buildPreset: 'windows-release-ci'
+          testPreset: 'windows-release-ci'
 
       - name: Run Post-Build Task
         working-directory: ${{ github.workspace }}
@@ -96,31 +107,43 @@ jobs:
 
       - name: Assemble Files
         working-directory: ${{ github.workspace }}
-        run: scripts\ci\windows\assemble.bat
+        run: |
+          scripts/ci/windows/assemble.bat
+          ren client.zip OpenStarbound-Windows-Client.zip
+          ren server.zip OpenStarbound-Windows-Server.zip
+
+      - name: Prepare Artifacts
+        working-directory: ${{ github.workspace }}
+        run: |
+          7z -bb3 -mtp=2 -mm=Deflate64 -mx=9 a dist.zip -r dist\
+          ren dist.zip OpenStarbound-Windows-All-DevOnly.zip
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: OpenStarbound-Windows-All-DevOnly
-          path: dist/*
+          path: OpenStarbound-Windows-All-DevOnly.zip
+          archive: false
 
       - name: Upload Client
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: OpenStarbound-Windows-Client
-          path: client_distribution/*
+          path: OpenStarbound-Windows-Client.zip
+          archive: false
 
       - name: Upload Server
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: OpenStarbound-Windows-Server
-          path: server_distribution/*
+          path: OpenStarbound-Windows-Server.zip
+          archive: false
           
       - name: Install Inno Setup
         run: |
           echo "Checking pre-installation..."
           
-          set "ISCC_PATH=%programfiles(x86)%\Inno Setup 6\ISCC.exe"
+          set "ISCC_PATH=%programfiles%\Inno Setup 7\ISCC.exe"
           
           if exist "%ISCC_PATH%" (
             echo ::warning::Inno Setup is already installed
@@ -129,7 +152,7 @@ jobs:
           
           echo "Downloading Inno Setup..."
   
-          set "_url_=https://jrsoftware.org/download.php/is.exe?site=1"
+          set "_url_=https://github.com/jrsoftware/issrc/releases/download/is-7_0_2/innosetup-7.0.2-x64.exe"
           set "_file_=innosetup.exe"
   
           curl -L -o "%tmp%\%_file_%" "%_url_%"
@@ -148,19 +171,21 @@ jobs:
       - name: Create Installer
         working-directory: ${{ github.workspace }}
         run: |
-          & "C:\Program Files (x86)\Inno Setup 6\iscc.exe" /Oinstaller scripts\inno\setup.iss
+          & "C:\Program Files\Inno Setup 7\iscc.exe" /Oinstaller scripts\inno\setup.iss
 
       - name: Upload Installer
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: OpenStarbound-Windows-Installer
-          path: installer/*
+          path: installer/OpenStarbound-Windows-Installer.exe
+          archive: true
           compression-level: 0
   
   build_linux:
     name: Build OpenStarbound Linux x86_64
     runs-on: ubuntu-22.04
-    if: ${{ (github.event_name != 'pull_request') && (inputs.linux == true) }}
+    #if: ${{ (github.event_name != 'pull_request') && ((github.event_name != 'workflow_dispatch') || (inputs.linux == true)) }}
+    if: ${{ (github.event_name == 'workflow_dispatch') && (inputs.linux == true) }}
     steps:
       - name: Install Packages
         run: |
@@ -169,7 +194,8 @@ jobs:
           libaudio-dev libjack-dev libsndio-dev libx11-dev libxext-dev \
           libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev \
           libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev \
-          libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev libpipewire-0.3-dev libwayland-dev libdecor-0-dev liburing-dev
+          libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev libpipewire-0.3-dev libwayland-dev libdecor-0-dev liburing-dev \
+          autoconf autoconf-archive automake libtool patchelf tarlz
 
       - name: Install CMake & Ninja
         uses: lukka/get-cmake@latest
@@ -212,13 +238,14 @@ jobs:
 
       - name: Prepare Artifacts
         working-directory: ${{ github.workspace }}
-        run: tar -cvf dist.tar dist
+        run: tarlz -c9vf OpenStarbound-Linux-GCC.tar.lz dist
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: OpenStarbound-Linux-GCC
-          path: dist.tar
+          path: OpenStarbound-Linux-GCC.tar.lz
+          archive: false
 
       - name: Run Tests
         uses: lukka/run-cmake@v10
@@ -231,24 +258,30 @@ jobs:
 
       - name: Assemble Files
         working-directory: ${{ github.workspace }}
-        run: scripts/ci/linux/assemble.sh
+        run: |
+          scripts/ci/linux/assemble.sh
+          mv -v client.tar.lz OpenStarbound-Linux-GCC-Client.tar.lz
+          mv -v server.tar.lz OpenStarbound-Linux-GCC-Server.tar.lz
 
       - name: Upload Client Files
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: OpenStarbound-Linux-GCC-Client
-          path: client.tar
+          path: OpenStarbound-Linux-GCC-Client.tar.lz
+          archive: false
 
       - name: Upload Server Files
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: OpenStarbound-Linux-GCC-Server
-          path: server.tar
+          path: OpenStarbound-Linux-GCC-Server.tar.lz
+          archive: false
 
   build_linux_clang:
     name: Build OpenStarbound Linux Clang x86_64
     runs-on: ubuntu-22.04
     if: ${{ (github.event_name != 'workflow_dispatch') || (inputs.linux_clang == true) }}
+    #if: ${{ (github.event_name == 'workflow_dispatch') && (inputs.linux_clang == true) }}
     env:
         CC: clang
         CXX: clang++
@@ -260,12 +293,18 @@ jobs:
           libaudio-dev libjack-dev libsndio-dev libx11-dev libxext-dev \
           libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev \
           libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev \
-          libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev libpipewire-0.3-dev libwayland-dev libdecor-0-dev liburing-dev
+          libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev libpipewire-0.3-dev libwayland-dev libdecor-0-dev liburing-dev \
+          autoconf autoconf-archive automake libtool patchelf tarlz
 
       - name: Install CMake & Ninja
         uses: lukka/get-cmake@latest
         with:
           cmakeVersion: 3.29.2
+
+      - name: Setup LLVM
+        uses: ZhongRuoyu/setup-llvm@v0
+        with:
+          llvm-version: 22
 
       - uses: actions/checkout@v4
         with:
@@ -303,13 +342,14 @@ jobs:
 
       - name: Prepare Artifacts
         working-directory: ${{ github.workspace }}
-        run: tar -cvf dist.tar dist
+        run: tarlz -c9vf OpenStarbound-Linux-Clang.tar.lz dist
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: OpenStarbound-Linux-Clang
-          path: dist.tar
+          path: OpenStarbound-Linux-Clang.tar.lz
+          archive: false
 
       - name: Run Tests
         uses: lukka/run-cmake@v10
@@ -322,24 +362,225 @@ jobs:
 
       - name: Assemble Files
         working-directory: ${{ github.workspace }}
-        run: scripts/ci/linux/assemble.sh
+        run: |
+          scripts/ci/linux/assemble.sh
+          mv -v client.tar.lz OpenStarbound-Linux-Clang-Client.tar.lz
+          mv -v server.tar.lz OpenStarbound-Linux-Clang-Server.tar.lz
 
       - name: Upload Client Files
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: OpenStarbound-Linux-Clang-Client
-          path: client.tar
+          path: OpenStarbound-Linux-Clang-Client.tar.lz
+          archive: false
 
       - name: Upload Server Files
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: OpenStarbound-Linux-Clang-Server
-          path: server.tar
+          path: OpenStarbound-Linux-Clang-Server.tar.lz
+          archive: false
+  
+  build_linux_arm:
+    name: Build OpenStarbound Linux arm64
+    runs-on: ubuntu-22.04-arm
+    #if: ${{ (github.event_name != 'pull_request') && ((github.event_name != 'workflow_dispatch') || (inputs.linux == true)) }}
+    if: ${{ (github.event_name == 'workflow_dispatch') && (inputs.linux == true) }}
+    steps:
+      - name: Install Packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkgconf libxmu-dev libgl-dev libglu1-mesa-dev libasound2-dev libpulse-dev \
+          libaudio-dev libjack-dev libsndio-dev libx11-dev libxext-dev \
+          libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev \
+          libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev \
+          libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev libpipewire-0.3-dev libwayland-dev libdecor-0-dev liburing-dev \
+          autoconf autoconf-archive automake libtool patchelf tarlz
+
+      - name: Install CMake & Ninja
+        uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: 3.29.2
+
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: sccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          variant: sccache
+          key: ${{ github.job }}-${{ runner.os }}
+          max-size: 250M
+
+      - name: vcpkg
+        uses: lukka/run-vcpkg@v11
+        id: runvcpkg
+        with:
+          vcpkgJsonGlob: '**/source/vcpkg.json'
+          vcpkgConfigurationJsonGlob: '**/source/vcpkg-configuration.json'
+
+      - name: Restore vcpkg cache
+        id: vcpkg-cache
+        uses: TAServers/vcpkg-cache@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run CMake
+        uses: lukka/run-cmake@v10
+        env:
+          VCPKG_FEATURE_FLAGS: "binarycaching"
+          VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
+        with:
+          cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
+          configurePreset: 'linux-arm-release'
+          buildPreset: 'linux-arm-release'
+
+      - name: Prepare Artifacts
+        working-directory: ${{ github.workspace }}
+        run: tarlz -c9vf OpenStarbound-Linux-ARM-GCC.tar.lz dist
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: OpenStarbound-Linux-ARM-GCC
+          path: OpenStarbound-Linux-ARM-GCC.tar.lz
+          archive: false
+
+      - name: Run Tests
+        uses: lukka/run-cmake@v10
+        env:
+          VCPKG_FEATURE_FLAGS: "binarycaching"
+          VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
+        with:
+          cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
+          testPreset: 'linux-arm-release'
+
+      - name: Assemble Files
+        working-directory: ${{ github.workspace }}
+        run: |
+          scripts/ci/linux/assemble.sh
+          mv -v client.tar.lz OpenStarbound-Linux-ARM-GCC-Client.tar.lz
+          mv -v server.tar.lz OpenStarbound-Linux-ARM-GCC-Server.tar.lz
+
+      - name: Upload Client Files
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: OpenStarbound-Linux-ARM-GCC-Client
+          path: OpenStarbound-Linux-ARM-GCC-Client.tar.lz
+          archive: false
+
+      - name: Upload Server Files
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: OpenStarbound-Linux-ARM-GCC-Server
+          path: OpenStarbound-Linux-ARM-GCC-Server.tar.lz
+          archive: false
+
+  build_linux_arm_clang:
+    name: Build OpenStarbound Linux Clang arm64
+    runs-on: ubuntu-22.04-arm
+    if: ${{ (github.event_name != 'workflow_dispatch') || (inputs.linux_clang == true) }}
+    #if: ${{ (github.event_name == 'workflow_dispatch') && (inputs.linux_clang == true) }}
+    env:
+        CC: clang
+        CXX: clang++
+    steps:
+      - name: Install Packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkgconf libxmu-dev libgl-dev libglu1-mesa-dev libasound2-dev libpulse-dev \
+          libaudio-dev libjack-dev libsndio-dev libx11-dev libxext-dev \
+          libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev \
+          libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev \
+          libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev libpipewire-0.3-dev libwayland-dev libdecor-0-dev liburing-dev \
+          autoconf autoconf-archive automake libtool patchelf tarlz
+
+      - name: Install CMake & Ninja
+        uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: 3.29.2
+
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: sccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          variant: sccache
+          key: ${{ github.job }}-${{ runner.os }}
+          max-size: 250M
+
+      - name: vcpkg
+        uses: lukka/run-vcpkg@v11
+        id: runvcpkg
+        with:
+          vcpkgJsonGlob: '**/source/vcpkg.json'
+          vcpkgConfigurationJsonGlob: '**/source/vcpkg-configuration.json'
+
+      - name: Restore vcpkg cache
+        id: vcpkg-cache
+        uses: TAServers/vcpkg-cache@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run CMake
+        uses: lukka/run-cmake@v10
+        env:
+          VCPKG_FEATURE_FLAGS: "binarycaching"
+          VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
+        with:
+          cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
+          configurePreset: 'linux-arm-release-clang'
+          buildPreset: 'linux-arm-release-clang'
+
+      - name: Prepare Artifacts
+        working-directory: ${{ github.workspace }}
+        run: tarlz -c9vf OpenStarbound-Linux-ARM-Clang.tar.lz dist
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: OpenStarbound-Linux-ARM-Clang
+          path: OpenStarbound-Linux-ARM-Clang.tar.lz
+          archive: false
+
+      - name: Run Tests
+        uses: lukka/run-cmake@v10
+        env:
+          VCPKG_FEATURE_FLAGS: "binarycaching"
+          VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
+        with:
+          cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
+          testPreset: 'linux-arm-release'
+
+      - name: Assemble Files
+        working-directory: ${{ github.workspace }}
+        run: |
+          scripts/ci/linux/assemble.sh
+          mv -v client.tar.lz OpenStarbound-Linux-ARM-Clang-Client.tar.lz
+          mv -v server.tar.lz OpenStarbound-Linux-ARM-Clang-Server.tar.lz
+
+      - name: Upload Client Files
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: OpenStarbound-Linux-ARM-Clang-Client
+          path: OpenStarbound-Linux-ARM-Clang-Client.tar.lz
+          archive: false
+
+      - name: Upload Server Files
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: OpenStarbound-Linux-ARM-Clang-Server
+          path: OpenStarbound-Linux-ARM-Clang-Server.tar.lz
+          archive: false
 
   build-mac-intel:
     name: Build OpenStarbound macOS x86_64
-    runs-on: macos-13
+    runs-on: macos-15-intel
     if: ${{ (github.event_name != 'pull_request') && ((github.event_name != 'workflow_dispatch') || (inputs.macOS == true)) }}
+    #if: ${{ (github.event_name == 'workflow_dispatch') && (inputs.macOS == true) }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -347,7 +588,7 @@ jobs:
 
       - name: Install Packages
         run: |
-          brew install autoconf automake libtool
+          brew install autoconf automake libtool tarlz
 
       - name: Install CMake & Ninja
         uses: lukka/get-cmake@latest
@@ -393,26 +634,37 @@ jobs:
             lib/osx/libsteam_api.dylib \
             dist/
 
+      - name: Prepare Artifacts
+        working-directory: ${{ github.workspace }}
+        run: |
+          tarlz -c9vf dist.tar.lz dist
+          mv -v dist.tar.lz OpenStarbound-macOS-Intel.tar.lz
+
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: OpenStarbound-macOS-Intel
-          path: dist/*
+          path: OpenStarbound-macOS-Intel.tar.lz
+          archive: false
 
       - name: Assemble Files
         working-directory: ${{ github.workspace }}
-        run: scripts/ci/macos/assemble.sh
+        run: |
+          scripts/ci/macos/assemble.sh
+          mv -v client.tar.lz OpenStarbound-macOS-Intel-Client.tar.lz
 
       - name: Upload Client Files
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: OpenStarbound-macOS-Intel-Client
-          path: client.tar
+          path: OpenStarbound-macOS-Intel-Client.tar.lz
+          archive: false
 
   build-mac-arm:
     name: Build OpenStarbound macOS arm64
     runs-on: macos-14
     if: ${{ (github.event_name != 'pull_request') && ((github.event_name != 'workflow_dispatch') || (inputs.macOS == true)) }}
+    #if: ${{ (github.event_name == 'workflow_dispatch') && (inputs.macOS == true) }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -420,7 +672,7 @@ jobs:
 
       - name: Install Packages
         run: |
-          brew install autoconf automake libtool
+          brew install autoconf automake libtool tarlz
 
       - name: Install CMake & Ninja
         uses: lukka/get-cmake@latest
@@ -466,18 +718,28 @@ jobs:
             lib/osx/libsteam_api.dylib \
             dist/
 
+      - name: Prepare Artifacts
+        working-directory: ${{ github.workspace }}
+        run: |
+          tarlz -c9vf dist.tar.lz dist
+          mv -v dist.tar.lz OpenStarbound-macOS-Silicon.tar.lz
+
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: OpenStarbound-macOS-Silicon
-          path: dist/*
+          path: OpenStarbound-macOS-Silicon.tar.lz
+          archive: false
 
       - name: Assemble Files
         working-directory: ${{ github.workspace }}
-        run: scripts/ci/macos/assemble.sh
+        run: |
+          scripts/ci/macos/assemble.sh
+          mv -v client.tar.lz OpenStarbound-macOS-Silicon-Client.tar.lz
 
       - name: Upload Client Files
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: OpenStarbound-macOS-Silicon-Client
-          path: client.tar
+          path: OpenStarbound-macOS-Silicon-Client.tar.lz
+          archive: false

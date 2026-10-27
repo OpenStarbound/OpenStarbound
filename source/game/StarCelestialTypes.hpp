@@ -49,6 +49,9 @@ struct CelestialChunk {
   // can be two phases of loading, one for basic system-level parameters for an
   // entire chunk the other for each set of sub objects for each system.
   HashMap<Vec3I, HashMap<int, CelestialPlanet>> systemObjects;
+  
+  // only persistent chunks are saved to storage
+  bool persistent = false;
 };
 DataStream& operator>>(DataStream& ds, CelestialChunk& chunk);
 DataStream& operator<<(DataStream& ds, CelestialChunk const& chunk);

@@ -15,12 +15,25 @@
 #include "StarWorldClient.hpp"
 #include "StarPortraitWidget.hpp"
 #include "StarMathCommon.hpp"
+#include "StarPlayerLuaBindings.hpp"
+#include "StarStatusControllerLuaBindings.hpp"
+#include "StarCelestialLuaBindings.hpp"
+#include "StarLuaGameConverters.hpp"
 
 namespace Star {
 
-TeamBar::TeamBar(MainInterface* mainInterface, UniverseClientPtr client) {
+static void addGameCallbacks(LuaBaseComponent& script, UniverseClientPtr const& client) {
+  script.setLuaRoot(client->luaRoot());
+  script.addCallbacks("player", LuaBindings::makePlayerCallbacks(client->mainPlayer().get()));
+  script.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(client->mainPlayer()->statusController()));
+  script.addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(client.get()));
+}
+
+TeamBar::TeamBar(MainInterface* mainInterface, UniverseClientPtr client)
+  : BaseScriptPane(BaseScriptPane::windowConfig("/interface/windowconfig/teambar.config", false), false) {
   m_mainInterface = mainInterface;
   m_client = client;
+  addGameCallbacks(m_script, m_client);
 
   m_guiContext = GuiContext::singletonPtr();
   auto assets = Root::singleton().assets();
@@ -33,18 +46,16 @@ TeamBar::TeamBar(MainInterface* mainInterface, UniverseClientPtr client) {
   m_nameStyle.fontSize = assets->json("/interface.config:font.nameSize").toInt();
   m_nameOffset = jsonToVec2F(assets->json("/interface.config:nameOffset"));
 
-  GuiReader reader;
-
-  reader.registerCallback("inviteButton", [this](Widget*) { inviteButton(); });
-  reader.registerCallback("showSelfMenu", [this](Widget*) {
+  m_reader->registerCallback("inviteButton", [this](Widget*) { inviteButton(); });
+  m_reader->registerCallback("showSelfMenu", [this](Widget*) {
       if (!m_client->teamClient()->isMemberOfTeam())
         return;
       auto position = jsonToVec2I(Root::singleton().assets()->json("/interface/windowconfig/teambar.config:selfMenuOffset"));
       position[1] += windowHeight() / m_guiContext->interfaceScale();
-      showMemberMenu(m_client->mainPlayer()->clientContext()->playerUuid(), position);
+      showMemberMenu(m_client->mainPlayer()->clientContext()->clientUuid(), position);
     });
 
-  reader.construct(assets->json("/interface/windowconfig/teambar.config:paneLayout"), this);
+  construct(m_config.get("gui"));
 
   m_healthBar = fetchChild<ProgressWidget>("healthBar");
   m_energyBar = fetchChild<ProgressWidget>("energyBar");
@@ -57,8 +68,26 @@ TeamBar::TeamBar(MainInterface* mainInterface, UniverseClientPtr client) {
 
   m_energyBar->setColor(m_energyBarColor);
 
-  auto playerPortrait = fetchChild<PortraitWidget>("portrait");
-  playerPortrait->setEntity(as<PortraitEntity>(m_client->mainPlayer()));
+  m_portrait = fetchChild<PortraitWidget>("portrait");
+  m_portrait->setEntity(as<PortraitEntity>(m_client->mainPlayer()));
+
+  // "teamBar" script callbacks: the identity portrait can show another entity (defaults to the player) or another mode
+  LuaCallbacks teamBarCallbacks;
+  teamBarCallbacks.registerCallback("setPortraitEntity", [this](Maybe<EntityId> entityId) {
+      PortraitEntityPtr entity;
+      if (!entityId)
+        entity = as<PortraitEntity>(m_client->mainPlayer());
+      else if (auto world = m_client->worldClient())
+        entity = as<PortraitEntity>(world->entity(*entityId));
+      m_portrait->setEntity(entity);
+    });
+  teamBarCallbacks.registerCallback("setPortraitMode", [this](String const& mode) {
+      m_portrait->setMode(PortraitModeNames.getLeft(mode));
+    });
+  teamBarCallbacks.registerCallback("setPortraitScale", [this](float scale) {
+      m_portrait->setScale(scale);
+    });
+  m_script.addCallbacks("teamBar", std::move(teamBarCallbacks));
 
   updatePlayerResources();
   disableScissoring();
@@ -103,6 +132,13 @@ void TeamBar::update(float dt) {
   fetchChild<ImageWidget>("leader")->setVisibility(teamClient->isTeamLeader());
 
   buildTeamBar();
+
+  BaseScriptPane::tick(dt);
+}
+
+void TeamBar::tick(float dt) {
+  // the script is updated from update(), after the native update, so that what it sets wins
+  Pane::tick(dt);
 }
 
 void TeamBar::updatePlayerResources() {
@@ -156,7 +192,7 @@ void TeamBar::buildTeamBar() {
   int memberSize = assets->json("/interface/windowconfig/teambar.config:memberSize").toInt();
   int memberSpacing = assets->json("/interface/windowconfig/teambar.config:memberSpacing").toInt();
 
-  Uuid myUuid = player->clientContext()->playerUuid();
+  Uuid myUuid = player->clientContext()->clientUuid();
   for (auto member : teamClient->members()) {
     if (member.uuid == myUuid) {
       continue;
@@ -248,14 +284,15 @@ void TeamBar::showMemberMenu(Uuid memberUuid, Vec2I position) {
     m_mainInterface->paneManager()->displayPane(PaneLayer::Window, m_teamMemberMenu);
 }
 
-TeamInvite::TeamInvite(TeamBar* owner) {
+TeamInvite::TeamInvite(TeamBar* owner)
+  : BaseScriptPane(BaseScriptPane::windowConfig("/interface/windowconfig/teaminvite.config"), false) {
   m_owner = owner;
-  GuiReader reader;
-  auto assets = Root::singleton().assets();
-  reader.registerCallback("ok", [this](Widget*) { ok(); });
-  reader.registerCallback("close", [this](Widget*) { close(); });
-  reader.registerCallback("name", [](Widget*) {});
-  reader.construct(assets->json("/interface/windowconfig/teaminvite.config:paneLayout"), this);
+  addGameCallbacks(m_script, m_owner->m_client);
+
+  m_reader->registerCallback("ok", [this](Widget*) { ok(); });
+  m_reader->registerCallback("close", [this](Widget*) { close(); });
+  m_reader->registerCallback("name", [](Widget*) {});
+  construct(m_config.get("gui"));
   dismiss();
 }
 
@@ -266,7 +303,17 @@ void TeamInvite::show() {
 }
 
 void TeamInvite::ok() {
-  m_owner->invitePlayer(fetchChild<TextBoxWidget>("name")->getText());
+  String name = fetchChild<TextBoxWidget>("name")->getText();
+
+  // a script may change the name that is invited or return false to stop the invitation
+  if (auto result = m_script.invoke<Json>("invite", name)) {
+    if (result->type() == Json::Type::Bool && !result->toBool())
+      return;
+    if (result->type() == Json::Type::String)
+      name = result->toString();
+  }
+
+  m_owner->invitePlayer(name);
   dismiss();
 }
 
@@ -274,15 +321,15 @@ void TeamInvite::close() {
   dismiss();
 }
 
-TeamInvitation::TeamInvitation(TeamBar* owner) {
+TeamInvitation::TeamInvitation(TeamBar* owner)
+  : BaseScriptPane(BaseScriptPane::windowConfig("/interface/windowconfig/teaminvitation.config"), false) {
   m_owner = owner;
-  GuiReader reader;
-  auto assets = Root::singleton().assets();
+  addGameCallbacks(m_script, m_owner->m_client);
 
-  reader.registerCallback("ok", [this](Widget*) { ok(); });
-  reader.registerCallback("close", [this](Widget*) { close(); });
+  m_reader->registerCallback("ok", [this](Widget*) { ok(); });
+  m_reader->registerCallback("close", [this](Widget*) { close(); });
 
-  reader.construct(assets->json("/interface/windowconfig/teaminvitation.config:paneLayout"), this);
+  construct(m_config.get("gui"));
   dismiss();
 }
 
@@ -290,8 +337,14 @@ void TeamInvitation::open(Uuid const& inviterUuid, String const& inviterName) {
   if (active())
     return;
   m_inviterUuid = inviterUuid;
+  m_inviterName = inviterName;
   fetchChild<LabelWidget>("inviterName")->setText(inviterName);
   Pane::show();
+}
+
+void TeamInvitation::displayed() {
+  BaseScriptPane::displayed();
+  m_script.invoke("invited", m_inviterName, m_inviterUuid.hex());
 }
 
 void TeamInvitation::ok() {
@@ -303,16 +356,16 @@ void TeamInvitation::close() {
   dismiss();
 }
 
-TeamMemberMenu::TeamMemberMenu(TeamBar* owner) {
+TeamMemberMenu::TeamMemberMenu(TeamBar* owner)
+  : BaseScriptPane(BaseScriptPane::windowConfig("/interface/windowconfig/teammembermenu.config"), false) {
   m_owner = owner;
+  addGameCallbacks(m_script, m_owner->m_client);
 
-  auto assets = Root::singleton().assets();
-  GuiReader reader;
-  reader.registerCallback("beamToShip", [this](Widget*) { beamToShip(); });
-  reader.registerCallback("close", [this](Widget*) { close(); });
-  reader.registerCallback("makeLeader", [this](Widget*) { makeLeader(); });
-  reader.registerCallback("removeFromTeam", [this](Widget*) { removeFromTeam(); });
-  reader.construct(assets->json("/interface/windowconfig/teammembermenu.config:paneLayout"), this);
+  m_reader->registerCallback("beamToShip", [this](Widget*) { beamToShip(); });
+  m_reader->registerCallback("close", [this](Widget*) { close(); });
+  m_reader->registerCallback("makeLeader", [this](Widget*) { makeLeader(); });
+  m_reader->registerCallback("removeFromTeam", [this](Widget*) { removeFromTeam(); });
+  construct(m_config.get("gui"));
 }
 
 void TeamMemberMenu::open(Uuid memberUuid, Vec2I position) {
@@ -327,6 +380,7 @@ void TeamMemberMenu::open(Uuid memberUuid, Vec2I position) {
   auto members = m_owner->m_client->teamClient()->members();
   for (auto member : members) {
     if (member.uuid == m_memberUuid) {
+      m_memberName = member.name;
       fetchChild<LabelWidget>("name")->setText(member.name);
       break;
     }
@@ -355,11 +409,23 @@ void TeamMemberMenu::update(float dt) {
   updateWidgets();
 
   Pane::update(dt);
+
+  BaseScriptPane::tick(dt);
+}
+
+void TeamMemberMenu::tick(float dt) {
+  // the script is updated from update(), after the native update
+  Pane::tick(dt);
+}
+
+void TeamMemberMenu::displayed() {
+  BaseScriptPane::displayed();
+  m_script.invoke("opened", m_memberUuid.hex(), m_memberName);
 }
 
 void TeamMemberMenu::updateWidgets() {
   bool isLeader = m_owner->m_client->teamClient()->isTeamLeader();
-  bool isSelf = m_owner->m_client->mainPlayer()->clientContext()->playerUuid() == m_memberUuid;
+  bool isSelf = m_owner->m_client->mainPlayer()->clientContext()->clientUuid() == m_memberUuid;
 
   fetchChild<ButtonWidget>("beamToShip")->setEnabled(m_canBeam);
   fetchChild<ButtonWidget>("makeLeader")->setEnabled(isLeader && !isSelf);

@@ -17,6 +17,19 @@ STAR_CLASS(WorldTemplate);
 // throughout the life of a World.
 class WorldTemplate {
 public:
+  struct WeatherDomain {
+    String name;
+    WeatherPool pool;
+    int effectsMinHeight;
+  };
+
+  struct WeatherLayer {
+    String name;
+    Maybe<String> domain;
+    int minHeight;
+    int maxHeight;
+  };
+
   struct Dungeon {
     String dungeon;
     int baseHeight;
@@ -50,6 +63,8 @@ public:
 
     bool encloseLiquids = false;
     bool fillMicrodungeons = false;
+
+    Json toJson() const;
   };
 
   struct PotentialBiomeItems {
@@ -155,6 +170,10 @@ public:
 
   WeatherPool weathers() const;
 
+  List<WeatherDomain> const& weatherDomains() const;
+  WeatherDomain const* weatherDomain(String const& name) const;
+  WeatherLayer const* weatherLayerAt(Vec2I const& position) const;
+
   // Return potential items that would spawn at the given block.
 	void addPotentialBiomeItems(int x, int y, PotentialBiomeItems& items, List<BiomeItemDistribution> const& distributions, BiomePlacementArea area, Maybe<BiomePlacementMode> mode = {}) const;
   PotentialBiomeItems potentialBiomeItemsAt(int x, int y) const;
@@ -178,6 +197,7 @@ private:
   WorldTemplate();
 
   void determineWorldName();
+  void setupWeatherDomains();
 
   pair<float, float> customTerrainWeighting(int x, int y) const;
 
@@ -195,6 +215,9 @@ private:
   WorldGeometry m_geometry;
   WorldLayoutPtr m_layout;
   String m_worldName;
+
+  List<WeatherDomain> m_weatherDomains;
+  List<WeatherLayer> m_weatherLayers;
 
   List<CustomTerrainRegion> m_customTerrainRegions;
 

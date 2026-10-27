@@ -64,11 +64,15 @@ List<pair<String, bool>> File::dirList(const String& dirName, bool skipDots) {
     String entryString = entry->d_name;
     if (!skipDots || (entryString != "." && entryString != "..")) {
       bool isDirectory = false;
+      #ifdef STAR_SYSTEM_HAIKU
+      isDirectory = File::isDirectory(File::relativeTo(dirName, entryString));
+      #else
       if (entry->d_type == DT_DIR) {
         isDirectory = true;
       } else if (entry->d_type == DT_LNK || entry->d_type == DT_UNKNOWN) {
         isDirectory = File::isDirectory(File::relativeTo(dirName, entryString));
       }
+      #endif
       fileList.append({entryString, isDirectory});
     }
   }
@@ -212,7 +216,7 @@ void* File::fopen(char const* filename, IOMode mode) {
 
 void File::fseek(void* f, StreamOffset offset, IOSeek seekMode) {
   auto fd = fdFromHandle(f);
-  int retCode;
+  StreamOffset retCode;
   if (seekMode == IOSeek::Relative)
     retCode = lseek(fd, offset, SEEK_CUR);
   else if (seekMode == IOSeek::Absolute)

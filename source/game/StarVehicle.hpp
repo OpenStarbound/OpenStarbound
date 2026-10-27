@@ -1,7 +1,7 @@
 #pragma once
 
 #include "StarNetElementSystem.hpp"
-#include "StarEntity.hpp"
+#include "StarMobileEntity.hpp"
 #include "StarNetworkedAnimator.hpp"
 #include "StarMovementController.hpp"
 #include "StarLuaComponents.hpp"
@@ -14,7 +14,12 @@ namespace Star {
 STAR_EXCEPTION(VehicleException, StarException);
 STAR_CLASS(Vehicle);
 
-class Vehicle : public virtual LoungeableEntity, public virtual InteractiveEntity, public virtual PhysicsEntity, public virtual ScriptedEntity {
+class Vehicle : 
+  public virtual MobileEntity,
+  public virtual LoungeableEntity, 
+  public virtual InteractiveEntity, 
+  public virtual PhysicsEntity, 
+  public virtual ScriptedEntity {
 public:
   Vehicle(Json baseConfig, String path, Json dynamicConfig);
 
@@ -36,7 +41,7 @@ public:
   List<DamageNotification> applyDamage(DamageRequest const& damage) override;
   List<DamageNotification> selfDamageNotifications() override;
 
-  void init(World* world, EntityId entityId, EntityMode mode) override;
+  void init(World* world, EntityId entityId, EntityMode mode, ConnectionId originConnection = ServerConnectionId) override;
   void uninit() override;
 
   Vec2F position() const override;
@@ -61,7 +66,7 @@ public:
   bool shouldDestroy() const override;
   void destroy(RenderCallback* renderCallback) override;
 
-  Maybe<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
+  Maybe<ChainableJsonMessageResponse> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
 
   RectF interactiveBoundBox() const override;
   bool isInteractive() const override;
@@ -73,6 +78,8 @@ public:
 
   Maybe<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
   Maybe<LuaValue> evalScript(String const& code) override;
+  
+  MovementController* movementController() override;
 
   void setPosition(Vec2F const& position);
 
@@ -124,9 +131,9 @@ private:
   MovementController m_movementController;
   NetworkedAnimator m_networkedAnimator;
   NetworkedAnimator::DynamicTarget m_networkedAnimatorDynamicTarget;
-  LuaMessageHandlingComponent<LuaStorableComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>> m_scriptComponent;
-
-  LuaAnimationComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptedAnimator;
+  LuaMessageHandlingComponent<LuaStorableComponent<LuaUpdatableComponent<LuaEntityComponent<LuaBaseComponent>>>> m_scriptComponent;
+  
+  LuaAnimationComponent<LuaUpdatableComponent<LuaEntityComponent<LuaBaseComponent>>> m_scriptedAnimator;
   NetElementHashMap<String, Json> m_scriptedAnimationParameters;
 
   bool m_shouldDestroy = false;
