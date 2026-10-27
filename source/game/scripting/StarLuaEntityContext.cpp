@@ -519,9 +519,12 @@ LuaMethods<EntityContext> LuaUserDataMethods<EntityContext>::make() {
             return actor->movementController()->liquidMovement();
         return {};
     });
-    methods.registerMethod("scale", [&](EntityPtr entity) -> Maybe<float> {
+    methods.registerMethod("scale", [&](EntityContext const& context) -> Maybe<float> {
+        auto const& entity = context.entity;
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->scale();
+        else if (auto mob = as<MobileEntity>(entity))
+            return mob->movementController()->scale();
         return {};
     });
 
