@@ -5,7 +5,6 @@
 #include "StarMobileEntity.hpp"
 #include "StarPlant.hpp"
 #include "StarAssetPath.hpp"
-#include "StarMobileEntity.hpp"
 
 namespace Star {
 

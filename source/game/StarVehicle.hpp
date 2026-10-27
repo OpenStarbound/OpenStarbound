@@ -8,7 +8,6 @@
 #include "StarLoungingEntities.hpp"
 #include "StarScriptedEntity.hpp"
 #include "StarLuaAnimationComponent.hpp"
-#include "StarMobileEntity.hpp"
 
 namespace Star {
 

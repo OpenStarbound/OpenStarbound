@@ -10,7 +10,6 @@
 #include "StarMovementController.hpp"
 #include "StarParticle.hpp"
 #include "StarLuaComponents.hpp"
-#include "StarMobileEntity.hpp"
 
 namespace Star {
 
