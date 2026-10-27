@@ -46,6 +46,17 @@ LuaCallbacks LuaBindings::makeInterfaceCallbacks(MainInterface* mainInterface) {
     mainInterface->queueMessage(message, cooldown, springState.value(0));
   });
 
+  callbacks.registerCallback("sendMessage", [mainInterface](String const& message, LuaVariadic<Json> args) -> RpcPromise<Json> {
+    for (auto p : mainInterface->paneManager()->getAllPanes()) {
+      if (auto resp = p->receiveMessage(message, true, args)) {
+        if (resp->is<Json>())
+          return RpcPromise<Json>::createFulfilled(resp->get<Json>());
+        else
+          return resp->get<RpcPromise<Json>>();
+      }
+    }
+    return RpcPromise<Json>::createFailed("Message not handled by interface");
+  });
 
   return callbacks;
 }

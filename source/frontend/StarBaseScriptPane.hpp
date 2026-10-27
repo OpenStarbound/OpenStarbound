@@ -39,6 +39,8 @@ public:
   Maybe<String> cursorOverride(Vec2I const& screenPosition) override;
   Maybe<ItemPtr> shiftItemFromInventory(ItemPtr const& input) override;
 
+  virtual Maybe<ChainableJsonMessageResponse> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {}) override;
+
 protected:
   virtual GuiReaderPtr reader() override;
   void construct(Json config);
@@ -57,7 +59,7 @@ protected:
   bool m_interactive;
 
   bool m_callbacksAdded;
-  mutable LuaUpdatableComponent<LuaBaseComponent> m_script;
+  mutable LuaMessageHandlingComponent<LuaUpdatableComponent<LuaBaseComponent>> m_script;
 };
 
 }
