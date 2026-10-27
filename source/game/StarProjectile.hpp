@@ -147,6 +147,7 @@ private:
   String m_imageSuffix;
   Json m_damageTeam;
   String m_damageKind;
+  List<EphemeralStatusEffect> m_mergedStatusEffects;
   DamageType m_damageType;
   Maybe<String> m_damageRepeatGroup;
   Maybe<float> m_damageRepeatTimeout;
