@@ -67,7 +67,7 @@ struct WorldGeneratorFacade {
   // Should return true if this entity should be stored along with the world,
   // false otherwise.
   virtual bool entityPersistent(WorldStorage* storage, EntityPtr const& entity) const = 0;
-  
+
   // Queues up a microdungeon. Fulfills the rpc promise with the position the
   // microdungeon was placed at
   virtual RpcPromise<Vec2I> enqueuePlacement(List<BiomeItemDistribution> placements, Maybe<DungeonId> id) = 0;
@@ -132,7 +132,7 @@ public:
   // Immediately (synchronously) fully generates the sector, then flags it as requiring
   // terraforming (biome reapplication) which will be handled by the normal generation process
   void triggerTerraformSector(Sector sector);
-  
+
   // Queues up a microdungeon. Fulfills the rpc promise with the position the
   // microdungeon was placed at
   RpcPromise<Vec2I> enqueuePlacement(List<BiomeItemDistribution> placements, Maybe<DungeonId> id);

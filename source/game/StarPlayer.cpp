@@ -39,6 +39,8 @@
 #include "StarNetworkedAnimatorLuaBindings.hpp"
 #include "StarScriptedAnimatorLuaBindings.hpp"
 #include "StarEntityLuaBindings.hpp"
+#include "StarDanceDatabase.hpp"
+#include "StarUniverseClient.hpp"
 
 namespace Star {
 
@@ -101,6 +103,8 @@ Player::Player(PlayerConfigPtr config, Uuid uuid) {
   m_deployment = make_shared<PlayerDeployment>(m_config->deploymentConfig);
 
   m_inventory = make_shared<PlayerInventory>();
+  m_inventory->setPlayer(this);
+
   m_blueprints = make_shared<PlayerBlueprints>();
   m_universeMap = make_shared<PlayerUniverseMap>();
   m_codexes = make_shared<PlayerCodexes>();
@@ -131,11 +135,13 @@ Player::Player(PlayerConfigPtr config, Uuid uuid) {
   m_emoteCooldown = assets->json("/player.config:emoteCooldown").toFloat();
   m_blinkInterval = jsonToVec2F(assets->json("/player.config:blinkInterval"));
 
-  m_emoteCooldownTimer = 0;
-  m_blinkCooldownTimer = 0;
+  m_emoteCooldownTimer = GameTimer(m_emoteCooldown);
+  m_blinkCooldownTimer = GameTimer(0);
 
   m_chatMessageChanged = false;
   m_chatMessageUpdated = false;
+
+  m_interruptRadioMessage = false;
 
   m_songbook = make_shared<Songbook>(species());
 
@@ -197,6 +203,9 @@ Player::Player(PlayerConfigPtr config, Uuid uuid) {
   m_deathParticleBurst.setCompatibilityVersion(10);
   m_netGroup.addNetElement(&m_deathParticleBurst);
 
+  m_humanoidDanceNetState.setCompatibilityVersion(13);
+  m_netGroup.addNetElement(&m_humanoidDanceNetState);
+
   m_netGroup.setNeedsLoadCallback(bind(&Player::getNetStates, this, _1));
   m_netGroup.setNeedsStoreCallback(bind(&Player::setNetStates, this));
 }
@@ -254,6 +263,7 @@ void Player::diskLoad(Json const& diskStore) {
 
   auto speciesDatabase = Root::singleton().speciesDatabase();
   auto speciesDef = speciesDatabase->species(m_identity.species);
+  m_shipSpecies = diskStore.getString("shipSpecies", m_identity.species);
 
   m_questManager->diskLoad(diskStore.get("quests", JsonObject{}));
   m_companions->diskLoad(diskStore.get("companions", JsonObject{}));
@@ -334,8 +344,8 @@ ClientEntityMode Player::clientEntityMode() const {
   return ClientEntityMode::ClientPresenceMaster;
 }
 
-void Player::init(World* world, EntityId entityId, EntityMode mode) {
-  Entity::init(world, entityId, mode);
+void Player::init(World* world, EntityId entityId, EntityMode mode, ConnectionId originConnection) {
+  Entity::init(world, entityId, mode, originConnection);
 
 
   m_tools->init(this);
@@ -365,7 +375,7 @@ void Player::init(World* world, EntityId entityId, EntityMode mode) {
       p.second->addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(humanoid()->networkedAnimator()));
       if (m_client)
         p.second->addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(m_client));
-      p.second->init(world);
+      p.second->init(this);
     }
 
     for (auto& p : m_inventory->pullOverflow()) {
@@ -381,8 +391,7 @@ void Player::init(World* world, EntityId entityId, EntityMode mode) {
         [this](String const& name, Json const& defaultValue) -> Json {
           return m_scriptedAnimationParameters.value(name, defaultValue);
         }));
-      m_scriptedAnimator.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
-      m_scriptedAnimator.init(world);
+      m_scriptedAnimator.init(this);
   }
 
   m_xAimPositionNetState.setInterpolator(world->geometry().xLerpFunction());
@@ -403,7 +412,6 @@ void Player::uninit() {
     for (auto& p : m_genericScriptContexts) {
       p.second->uninit();
       p.second->removeCallbacks("animator");
-      p.second->removeCallbacks("entity");
       p.second->removeCallbacks("player");
       p.second->removeCallbacks("mcontroller");
       p.second->removeCallbacks("status");
@@ -416,7 +424,6 @@ void Player::uninit() {
   if (world()->isClient()) {
     m_scriptedAnimator.uninit();
     m_scriptedAnimator.removeCallbacks("animationConfig");
-    m_scriptedAnimator.removeCallbacks("entity");
   }
 
   Entity::uninit();
@@ -426,6 +433,7 @@ List<Drawable> Player::drawables() const {
   List<Drawable> drawables;
 
   if (!isTeleporting()) {
+    drawables.appendAll(m_statusController->backDrawables());
     drawables.appendAll(m_techController->backDrawables());
     if (!m_techController->parentHidden()) {
       m_tools->setupHumanoidHandItemDrawables(*humanoid());
@@ -459,7 +467,7 @@ List<Drawable> Player::drawables() const {
     }
     drawables.appendAll(m_techController->frontDrawables());
 
-    drawables.appendAll(m_statusController->drawables());
+    drawables.appendAll(m_statusController->frontDrawables());
 
     drawables.appendAll(m_tools->renderObjectPreviews(aimPosition(), walkingDirection(), inToolRange(), favoriteColor()));
   }
@@ -816,7 +824,7 @@ void Player::dropItem() {
   }
 }
 
-Maybe<Json> Player::receiveMessage(ConnectionId fromConnection, String const& message, JsonArray const& args) {
+Maybe<ChainableJsonMessageResponse> Player::receiveMessage(ConnectionId fromConnection, String const& message, JsonArray const& args) {
   bool localMessage = fromConnection == world()->connection();
   if (message == "queueRadioMessage" && args.size() > 0) {
     float delay = 0;
@@ -863,7 +871,7 @@ Maybe<Json> Player::receiveMessage(ConnectionId fromConnection, String const& me
     if (Root::singleton().collectionDatabase()->hasCollectable(collection, collectable))
       addCollectable(collection, collectable);
   } else {
-    Maybe<Json> result = m_tools->receiveMessage(message, localMessage, args);
+    Maybe<ChainableJsonMessageResponse> result = m_tools->receiveMessage(message, localMessage, args);
     if (!result)
       result = m_statusController->receiveMessage(message, localMessage, args);
     if (!result)
@@ -893,13 +901,10 @@ void Player::update(float dt, uint64_t) {
     m_techController->setScale(m_movementController->scale());
     m_effectsAnimator->setZoom(m_movementController->scale());
 
-    if (m_emoteCooldownTimer) {
-      m_emoteCooldownTimer -= dt;
-      if (m_emoteCooldownTimer <= 0) {
-        m_emoteCooldownTimer = 0;
-        m_emoteState = HumanoidEmote::Idle;
-      }
-    }
+    if (m_emoteCooldownTimer.tick(dt))
+      m_emoteState = HumanoidEmote::Idle;
+    if (m_danceCooldownTimer.tick(dt))
+      m_dance = {};
 
     if (m_chatMessageUpdated) {
       auto state = Root::singleton().emoteProcessor()->detectEmotes(m_chatMessage);
@@ -908,9 +913,8 @@ void Player::update(float dt, uint64_t) {
       m_chatMessageUpdated = false;
     }
 
-    m_blinkCooldownTimer -= dt;
-    if (m_blinkCooldownTimer <= 0) {
-      m_blinkCooldownTimer = Random::randf(m_blinkInterval[0], m_blinkInterval[1]);
+    if (m_blinkCooldownTimer.tick(dt)) {
+      m_blinkCooldownTimer = GameTimer(Random::randf(m_blinkInterval[0], m_blinkInterval[1]));
       auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor());
       if (m_emoteState == HumanoidEmote::Idle && (!loungeAnchor || !loungeAnchor->emote))
         addEmote(HumanoidEmote::Blink);
@@ -1081,12 +1085,14 @@ void Player::update(float dt, uint64_t) {
   bool suppressedItems = !canUseTool();
 
   auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor());
-  if (loungeAnchor && loungeAnchor->dance)
+  if (loungeAnchor && loungeAnchor->dance){
     humanoid()->setDance(*loungeAnchor->dance);
-  else if ((!suppressedItems && (m_tools->primaryHandItem() || m_tools->altHandItem()))
-    || humanoid()->danceCyclicOrEnded() || m_movementController->running())
+  } else if (m_dance) {
+    humanoid()->setDance(m_dance);
+  } else if ((!suppressedItems && (m_tools->primaryHandItem() || m_tools->altHandItem()))
+    || humanoid()->danceCyclicOrEnded() || m_movementController->running()) {
     humanoid()->setDance({});
-
+  }
   bool isClient = world()->isClient();
 
   m_tools->suppressItems(suppressedItems);
@@ -1095,7 +1101,7 @@ void Player::update(float dt, uint64_t) {
   Direction facingDirection = m_movementController->facingDirection();
 
   auto overrideFacingDirection = m_tools->setupHumanoidHandItems(*humanoid(), position(), aimPosition());
-  if (overrideFacingDirection)
+  if (!loungingIn() && overrideFacingDirection)
     m_movementController->controlFace(facingDirection = *overrideFacingDirection);
 
   humanoid()->setFacingDirection(facingDirection);
@@ -1176,6 +1182,11 @@ void Player::update(float dt, uint64_t) {
     }
   }
 
+  if (isMaster()) {
+    for (auto& p : m_genericScriptContexts)
+      p.second->invoke("postUpdate");
+  }
+
   m_pendingMoves.clear();
 
   if (isClient)
@@ -1242,7 +1253,14 @@ void Player::render(RenderCallback* renderCallback) {
   }
 
   auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor());
-  EntityRenderLayer renderLayer = loungeAnchor ? loungeAnchor->loungeRenderLayer : RenderLayerPlayer;
+
+  EntityRenderLayer renderLayer = RenderLayerPlayer;
+  if (auto overrideRenderLayer = getSecretProperty("overrideRenderLayer"); overrideRenderLayer.canConvert(Json::Type::Int)) {
+    renderLayer = overrideRenderLayer.toUInt();
+  }
+  if (loungeAnchor) {
+    renderLayer = loungeAnchor->loungeRenderLayer;
+  }
 
   renderCallback->addDrawables(drawables(), renderLayer);
   if (!isTeleporting())
@@ -1261,6 +1279,10 @@ void Player::render(RenderCallback* renderCallback) {
 void Player::renderLightSources(RenderCallback* renderCallback) {
   renderCallback->addLightSources(lightSources());
   m_deployment->renderLightSources(renderCallback);
+}
+
+void Player::setRenderLayer(Maybe<EntityRenderLayer> layer) {
+  setSecretProperty("overrideRenderLayer", layer ? Json(*layer) : Json());
 }
 
 Json Player::getGenericProperty(String const& name, Json const& defaultValue) const {
@@ -1428,14 +1450,13 @@ bool Player::addBlueprint(ItemDescriptor const& descriptor, bool showFailure) {
     return false;
 
   auto itemDb = Root::singleton().itemDatabase();
-  auto item = itemDb->item(descriptor);
   auto assets = Root::singleton().assets();
   if (!m_blueprints->isKnown(descriptor)) {
     m_blueprints->add(descriptor);
-    queueUIMessage(assets->json("/player.config:blueprintUnlock").toString().replace("<ItemName>", item->friendlyName()));
+    queueUIMessage(assets->json("/player.config:blueprintUnlock").toString().replace("<ItemName>", itemDb->item(descriptor)->friendlyName()));
     return true;
   } else if (showFailure) {
-    queueUIMessage(assets->json("/player.config:blueprintAlreadyKnown").toString().replace("<ItemName>", item->friendlyName()));
+    queueUIMessage(assets->json("/player.config:blueprintAlreadyKnown").toString().replace("<ItemName>", itemDb->item(descriptor)->friendlyName()));
   }
 
   return false;
@@ -1593,7 +1614,7 @@ void Player::playEmote(HumanoidEmote emote) {
 }
 
 bool Player::canUseTool() const {
-  bool canUse = !isDead() && !isTeleporting() && !m_techController->toolUsageSuppressed();
+  bool canUse = !isDead() && !isTeleporting() && !m_techController->toolUsageSuppressed() && !m_statusController->toolUsageSuppressed();
   if (canUse) {
     if (auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor()))
       if (loungeAnchor->suppressTools.value(loungeAnchor->controllable))
@@ -2037,6 +2058,7 @@ void Player::getNetStates(bool initial) {
   }
 
   m_emoteState = HumanoidEmoteNames.getLeft(m_emoteNetState.get());
+  m_dance = m_humanoidDanceNetState.get();
 
   getNetArmorSecrets();
 }
@@ -2061,6 +2083,7 @@ void Player::setNetStates() {
   }
 
   m_emoteNetState.set(HumanoidEmoteNames.getRight(m_emoteState));
+  m_humanoidDanceNetState.set(m_dance);
 }
 
 void Player::setNetArmorSecret(EquipmentSlot slot, ArmorItemPtr const& armor, bool visible) {
@@ -2149,7 +2172,73 @@ bool Player::isDeployed() const {
 }
 
 void Player::setBusyState(PlayerBusyState busyState) {
-  m_effectsAnimator->setState("busy", PlayerBusyStateNames.getRight(busyState));
+  Set<PlayerBusyState> busyStates;
+  if (busyState != PlayerBusyState::None)
+    busyStates.add(busyState);
+  setBusyStates(busyStates);
+}
+
+void Player::setBusyStates(Set<PlayerBusyState> const& busyStates) {
+  m_busyStates = busyStates;
+  updateBusyIndicator();
+}
+
+PlayerBusyState Player::busyState() const {
+  return m_busyState;
+}
+
+Set<PlayerBusyState> const& Player::busyStates() const {
+  return m_busyStates;
+}
+
+void Player::updateBusyIndicator() {
+  m_busyState = PlayerBusyState::None;
+  PlayerBusyState shown = PlayerBusyState::None;
+  for (auto state : {PlayerBusyState::Menu, PlayerBusyState::Chatting}) {
+    if (!m_busyStates.contains(state))
+      continue;
+    if (m_busyState == PlayerBusyState::None)
+      m_busyState = state;
+    if (!m_hiddenBusyIndicators.contains(state)) {
+      shown = state;
+      break;
+    }
+  }
+  m_effectsAnimator->setState("busy", PlayerBusyStateNames.getRight(shown));
+}
+
+void Player::setBusyIndicatorHidden(PlayerBusyState busyState, bool hidden) {
+  if (hidden)
+    m_hiddenBusyIndicators.add(busyState);
+  else
+    m_hiddenBusyIndicators.remove(busyState);
+  updateBusyIndicator(); // apply right away
+}
+
+bool Player::busyIndicatorHidden(PlayerBusyState busyState) const {
+  return m_hiddenBusyIndicators.contains(busyState);
+}
+
+Maybe<String> const& Player::teamName() const {
+  return m_teamName;
+}
+
+void Player::setTeamName(Maybe<String> name) {
+  if (name && name->empty())
+    name.reset();
+  else if (name)
+    name = name->slice(0, 64); // by characters, so a multi-byte one is never cut
+  m_teamName = std::move(name);
+}
+
+Maybe<List<Drawable>> const& Player::teamPortrait() const {
+  return m_teamPortrait;
+}
+
+void Player::setTeamPortrait(Maybe<List<Drawable>> portrait) {
+  if (portrait && portrait->size() > 32)
+    throw StarException("A team portrait can have at most 32 drawables");
+  m_teamPortrait = std::move(portrait);
 }
 
 void Player::teleportOut(String const& animationType, bool deploy) {
@@ -2222,6 +2311,14 @@ void Player::applyShipUpgrades(Json const& upgrades) {
     m_clientContext->rpcInterface()->invokeRemote("ship.applyShipUpgrades", upgrades);
   else
     m_shipUpgrades.apply(upgrades);
+}
+
+void Player::setShipSpecies(String species) {
+  m_shipSpecies = std::move(species);
+}
+
+String Player::shipSpecies() const {
+  return m_shipSpecies;
 }
 
 String Player::name() const {
@@ -2422,11 +2519,22 @@ void Player::addChatMessage(String const& message, Json const& config) {
 void Player::addEmote(HumanoidEmote const& emote, Maybe<float> emoteCooldown) {
   starAssert(!isSlave());
   m_emoteState = emote;
-  m_emoteCooldownTimer = emoteCooldown.value(m_emoteCooldown);
+  m_emoteCooldownTimer = GameTimer(emoteCooldown.value(m_emoteCooldown));
+}
+void Player::setDance(Maybe<String> const& danceName) {
+  starAssert(!isSlave());
+  assert(!isSlave());
+  m_dance = danceName;
+
+  if (danceName.isValid()) {
+    auto danceDatabase = Root::singleton().danceDatabase();
+    DancePtr dance = danceDatabase->getDance(*danceName);
+    m_danceCooldownTimer = GameTimer(dance->duration);
+  }
 }
 
 pair<HumanoidEmote, float> Player::currentEmote() const {
-  return make_pair(m_emoteState, m_emoteCooldownTimer);
+  return make_pair(m_emoteState, m_emoteCooldownTimer.timer);
 }
 
 Player::State Player::currentState() const {
@@ -2526,6 +2634,7 @@ Json Player::diskStore() {
     {"description", m_description},
     {"modeType", PlayerModeNames.getRight(m_modeType)},
     {"shipUpgrades", m_shipUpgrades.toJson()},
+    {"shipSpecies", !m_shipSpecies.empty() ? m_shipSpecies : m_identity.species},
     {"blueprints", m_blueprints->toJson()},
     {"universeMap", m_universeMap->toJson()},
     {"codexes", m_codexes->toJson()},
@@ -2600,13 +2709,8 @@ bool Player::invisible() const {
 
 void Player::animatePortrait(float dt) {
   humanoid()->animate(dt, {});
-  if (m_emoteCooldownTimer) {
-    m_emoteCooldownTimer -= dt;
-    if (m_emoteCooldownTimer <= 0) {
-      m_emoteCooldownTimer = 0;
-      m_emoteState = HumanoidEmote::Idle;
-    }
-  }
+  if (m_emoteCooldownTimer.tick(dt))
+    m_emoteState = HumanoidEmote::Idle;
   humanoid()->setEmoteState(m_emoteState);
 }
 
@@ -2659,12 +2763,16 @@ void Player::queueRadioMessage(Json const& messageConfig, float delay) {
   try {
     message = Root::singleton().radioMessageDatabase()->createRadioMessage(messageConfig);
 
+    while (message.speciesAiMessage.contains(shipSpecies()) || message.speciesMessage.contains(species()))
+      message = message.speciesAiMessage.value(shipSpecies(), message.speciesMessage.value(species()));
+
     if (message.type == RadioMessageType::Tutorial && !Root::singleton().configuration()->get("tutorialMessages").toBool())
       return;
 
     // non-absolute portrait image paths are assumed to be a frame name within the player's species-specific AI
+
     if (!message.portraitImage.empty() && message.portraitImage[0] != '/')
-      message.portraitImage = Root::singleton().aiDatabase()->portraitImage(species(), message.portraitImage);
+      message.portraitImage = Root::singleton().aiDatabase()->portraitImage(shipSpecies(), message.portraitImage);
   } catch (RadioMessageDatabaseException const& e) {
     Logger::error("Couldn't queue radio message '{}': {}", messageConfig, e.what());
     return;
@@ -2897,21 +3005,23 @@ void Player::refreshHumanoidParameters() {
     if (world()->isClient() && m_scriptedAnimator.initialized()) {
       m_scriptedAnimator.uninit();
       m_scriptedAnimator.removeCallbacks("animationConfig");
-      m_scriptedAnimator.removeCallbacks("entity");
 
       m_scriptedAnimator.setScripts(humanoid()->animationScripts());
       m_scriptedAnimator.addCallbacks("animationConfig", LuaBindings::makeScriptedAnimatorCallbacks(humanoid()->networkedAnimator(),
         [this](String const& name, Json const& defaultValue) -> Json {
           return m_scriptedAnimationParameters.value(name, defaultValue);
         }));
-      m_scriptedAnimator.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
-      m_scriptedAnimator.init(world());
+      m_scriptedAnimator.init(this);
     }
   }
 }
 
 void Player::setAnimationParameter(String name, Json value) {
   m_scriptedAnimationParameters.set(std::move(name), std::move(value));
+}
+
+void Player::setDeathParticleBurst(Maybe<String> const& deathParticleBurst) {
+  m_deathParticleBurst.set(deathParticleBurst);
 }
 
 }

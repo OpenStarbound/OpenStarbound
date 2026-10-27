@@ -2,11 +2,12 @@
 #include "StarCasting.hpp"
 #include "StarLogging.hpp"
 
-#include <execinfo.h>
 #include <cstdlib>
 #ifdef STAR_USE_CPPTRACE
 #include "cpptrace/cpptrace.hpp"
 #include "cpptrace/formatting.hpp"
+#else
+#include <execinfo.h>
 #endif
 
 namespace Star {
@@ -20,8 +21,8 @@ static inline std::string captureBacktrace() {
   formatter.print(out, cpptrace::generate_trace());
   return out.str();
 }
-  
-#endif
+
+#else
 
 static size_t const StackLimit = 256;
 
@@ -48,6 +49,8 @@ OutputProxy outputStack(StackCapture stack) {
       ::free(symbols);
     });
 }
+  
+#endif
 
 StarException::StarException() noexcept
   : StarException(std::string("StarException")) {}

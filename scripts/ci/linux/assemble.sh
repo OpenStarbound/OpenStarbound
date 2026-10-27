@@ -4,6 +4,9 @@ mkdir client_distribution
 mkdir client_distribution/assets
 mkdir client_distribution/assets/user
 
+# the OpenStarbound page of the credits lists the contributors of the repository (leaves the committed list alone if GitHub can't be reached)
+sh scripts/credits/generate-contributors.sh
+
 ./dist/asset_packer -c scripts/packing.config assets/opensb client_distribution/assets/opensb.pak
 
 mkdir client_distribution/mods
@@ -23,6 +26,11 @@ cp \
   scripts/ci/linux/run-client.sh \
   scripts/steam_appid.txt \
   client_distribution/linux/
+  
+mkdir client_distribution/linux/.icon
+cp \
+  source/client/openstarbound.png \
+  client_distribution/linux/.icon/
 
 mkdir server_distribution
 mkdir server_distribution/assets
@@ -36,7 +44,7 @@ mkdir server_distribution/linux
 
 # makes the server function on older Linux versions (this is so stupid)
 nm --dynamic --undefined-only --with-symbol-versions dist/starbound_server | grep GLIBC_2.29
-./scripts/ci/linux/patchelf dist/starbound_server \
+patchelf dist/starbound_server \
   --clear-symbol-version exp \
   --clear-symbol-version exp2 \
   --clear-symbol-version log \
@@ -51,5 +59,5 @@ cp \
   scripts/steam_appid.txt \
   server_distribution/linux/
 
-tar -cvf client.tar client_distribution
-tar -cvf server.tar server_distribution
+tarlz -c9vf client.tar.lz client_distribution
+tarlz -c9vf server.tar.lz server_distribution

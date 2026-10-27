@@ -12,16 +12,16 @@ STAR_CLASS(CommandProcessor);
 
 class CommandProcessor {
 public:
-  CommandProcessor(UniverseServer* universe, LuaRootPtr luaRoot);
+  CommandProcessor(UniverseServer* universe);
 
-  String adminCommand(String const& command, String const& argumentString);
-  String userCommand(ConnectionId clientId, String const& command, String const& argumentString);
-
+  ServerCommandResult adminCommand(String const& command, String const& argumentString);
+  ServerCommandResult userCommand(ConnectionId clientId, String const& command, String const& argumentString);
 private:
   static Maybe<ConnectionId> playerCidFromCommand(String const& player, UniverseServer* universe);
 
   String help(ConnectionId connectionId, String const& argumentString);
   String admin(ConnectionId connectionId, String const& argumentString);
+  String serverDebug(ConnectionId connectionId, String const& argumentString);
   String pvp(ConnectionId connectionId, String const& argumentString);
   String whoami(ConnectionId connectionId, String const& argumentString);
 	
@@ -61,9 +61,11 @@ private:
   String setWeather(ConnectionId connectionId, String const& argumentString);
   String setEnvironmentBiome(ConnectionId connectionId, String const& argumentString);
 
+  static const CaseInsensitiveStringMap<std::function<String(CommandProcessor*, ConnectionId, String)>> s_commandMap;
+
   mutable Mutex m_mutex;
 
-  String handleCommand(ConnectionId connectionId, String const& command, String const& argumentString);
+  ServerCommandResult handleCommand(ConnectionId connectionId, String const& command, String const& argumentString);
   Maybe<String> adminCheck(ConnectionId connectionId, String const& commandDescription) const;
   Maybe<String> localCheck(ConnectionId connectionId, String const& commandDescription) const;
   LuaCallbacks makeCommandCallbacks();
@@ -71,6 +73,9 @@ private:
   UniverseServer* m_universe;
   ShellParser m_parser;
 
+  // CommandProcessor can be accessed from multiple threads.
+  // To avoid issues of thread unsafe accesses where an rcon command might be handled while a universe server script context is running, CommandProcessor instances have their own lua root instead.
+  LuaRootPtr m_luaRoot;
   LuaBaseComponent m_scriptComponent;
 };
 

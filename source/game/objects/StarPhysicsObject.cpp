@@ -45,7 +45,7 @@ void PhysicsObject::disableInterpolation() {
   m_netGroup.disableNetInterpolation();
 }
 
-void PhysicsObject::init(World* world, EntityId entityId, EntityMode mode) {
+void PhysicsObject::init(World* world, EntityId entityId, EntityMode mode, ConnectionId originConnection) {
   if (mode == EntityMode::Master) {
     LuaCallbacks physicsCallbacks;
     physicsCallbacks.registerCallback("setForceEnabled", [this](String const& force, bool enabled) {
@@ -62,7 +62,7 @@ void PhysicsObject::init(World* world, EntityId entityId, EntityMode mode) {
       });
     m_scriptComponent.addCallbacks("physics", std::move(physicsCallbacks));
   }
-  Object::init(world, entityId, mode);
+  Object::init(world, entityId, mode, originConnection);
   m_metaBoundBox = Object::metaBoundBox();
   for (auto const& p : m_physicsForces) {
     PhysicsForceRegion forceRegion = p.second.forceRegion;

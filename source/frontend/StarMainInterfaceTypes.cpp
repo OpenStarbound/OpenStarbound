@@ -16,6 +16,7 @@ EnumMap<MainInterfacePanes> const MainInterfacePanesNames{
   {MainInterfacePanes::Ai, "Ai"},
   {MainInterfacePanes::Popup, "Popup"},
   {MainInterfacePanes::Confirmation, "Confirmation"},
+  {MainInterfacePanes::HttpTrustDialog, "HttpTrustDialog"},
   {MainInterfacePanes::JoinRequest, "JoinRequest"},
   {MainInterfacePanes::Options, "Options"},
   {MainInterfacePanes::QuestLog, "QuestLog"},

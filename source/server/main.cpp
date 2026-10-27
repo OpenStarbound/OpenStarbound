@@ -5,7 +5,7 @@
 #include "StarUniverseServer.hpp"
 #include "StarRootLoader.hpp"
 #include "StarConfiguration.hpp"
-#include "StarVersion.hpp"
+#include "StarVersionOptionParser.hpp"
 #include "StarServerQueryThread.hpp"
 #include "StarServerRconThread.hpp"
 #include "StarSignalHandler.hpp"
@@ -44,6 +44,7 @@ int main(int argc, char** argv) {
     SetThreadStackGuarantee(&exceptionStackSize);
     #endif
     RootLoader rootLoader({{}, AdditionalDefaultConfiguration, String("starbound_server.log"), LogLevel::Info, false, String("starbound_server.config")});
+    rootLoader.setVersionName("Server");
     RootUPtr root = rootLoader.commandInitOrDie(argc, argv).first;
     root->fullyLoad();
 
@@ -53,7 +54,7 @@ int main(int argc, char** argv) {
 
     auto configuration = root->configuration();
     {
-      Logger::info("OpenStarbound Server v{} for v{} ({}) Source ID: {} Protocol: {}", OpenStarVersionString, StarVersionString, StarArchitectureString, StarSourceIdentifierString, StarProtocolVersion);
+      Logger::info("{}", rootLoader.getVersionString());
 
       float updateRate = 1.0f / GlobalTimestep;
       if (auto jUpdateRate = configuration->get("updateRate")) {

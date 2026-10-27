@@ -14,6 +14,7 @@ ParallaxLayer::ParallaxLayer() {
   zLevel = 0;
   verticalOrigin = 0;
   speed = { 0, 0 };
+  followsWind = false;
   unlit = false;
   lightMapped = false;
   fadePercent = 0;
@@ -39,6 +40,8 @@ ParallaxLayer::ParallaxLayer(Json const& store) : ParallaxLayer() {
   parallaxOffset = jsonToVec2F(store.get("parallaxOffset"));
   timeOfDayCorrelation = store.getString("timeOfDayCorrelation");
   speed = { store.getFloat("speed"), store.getFloat("speedY", 0.0f) };
+  followsWind = store.getBool("followsWind", false);
+  windSpeedMultiplier = store.optFloat("windSpeedMultiplier");
   unlit = store.getBool("unlit");
   lightMapped = store.getBool("lightMapped");
   fadePercent = store.getFloat("fadePercent");
@@ -61,28 +64,15 @@ Json ParallaxLayer::store() const {
       {"timeOfDayCorrelation", timeOfDayCorrelation},
       {"speed",  speed[0]},
       {"speedY", speed[1]},
+      {"followsWind", followsWind},
+      {"windSpeedMultiplier", jsonFromMaybe(windSpeedMultiplier)},
       {"unlit", unlit},
       {"lightMapped", lightMapped},
       {"fadePercent", fadePercent}};
 }
 
 void ParallaxLayer::addImageDirectives(Directives const& newDirectives) {
-  if (newDirectives) { // TODO: Move to Directives +=
-    if (directives) {
-      String dirString = directives.string();
-
-      auto& newString = newDirectives->string;
-      if (!newString.empty()) {
-        if (newString.utf8().front() != '?')
-          dirString += "?";
-        dirString += newString;
-      }
-
-      directives = std::move(dirString);
-    }
-    else
-      directives = newDirectives;
-  }
+  directives += newDirectives;
 }
 
 void ParallaxLayer::fadeToSkyColor(Color skyColor) {
@@ -105,6 +95,8 @@ DataStream& operator>>(DataStream& ds, ParallaxLayer& parallaxLayer) {
   ds.read(parallaxLayer.parallaxOffset);
   ds.read(parallaxLayer.timeOfDayCorrelation);
   ds.read(parallaxLayer.speed);
+  ds.read(parallaxLayer.followsWind);
+  ds.read(parallaxLayer.windSpeedMultiplier);
   ds.read(parallaxLayer.unlit);
   ds.read(parallaxLayer.lightMapped);
   ds.read(parallaxLayer.fadePercent);
@@ -124,6 +116,8 @@ DataStream& operator<<(DataStream& ds, ParallaxLayer const& parallaxLayer) {
   ds.write(parallaxLayer.parallaxOffset);
   ds.write(parallaxLayer.timeOfDayCorrelation);
   ds.write(parallaxLayer.speed);
+  ds.write(parallaxLayer.followsWind);
+  ds.write(parallaxLayer.windSpeedMultiplier);
   ds.write(parallaxLayer.unlit);
   ds.write(parallaxLayer.lightMapped);
   ds.write(parallaxLayer.fadePercent);
@@ -190,6 +184,10 @@ void Parallax::fadeToSkyColor(Color const& skyColor) {
   }
 }
 
+ParallaxPtr Parallax::createOverlay(String const& assetFile) const {
+  return make_shared<Parallax>(assetFile, m_seed, m_verticalOrigin, m_hueShift, m_parallaxTreeVariant);
+}
+
 ParallaxLayers const& Parallax::layers() const {
   return m_layers;
 }
@@ -252,6 +250,8 @@ void Parallax::buildLayer(Json const& layerSettings, String const& kind) {
     maxSpeed = JsonArray{ maxSpeed, 0.0f };
   layer.speed = { rnd.randf(minSpeed.getFloat(0), maxSpeed.getFloat(0)),
                   rnd.randf(minSpeed.getFloat(1), maxSpeed.getFloat(1)) };
+  layer.followsWind = layerSettings.getBool("followsWind", false);
+  layer.windSpeedMultiplier = layerSettings.optFloat("windSpeedMultiplier");
   layer.unlit = layerSettings.getBool("unlit", false);
   layer.lightMapped = layerSettings.getBool("lightMapped", false);
 
@@ -264,6 +264,10 @@ void Parallax::buildLayer(Json const& layerSettings, String const& kind) {
     layer.addImageDirectives(String(strf("hueshift={}", m_hueShift)));
 
   layer.fadePercent = layerSettings.getFloat("fadePercent", 0);
+  
+  layer.frameNumber = layerSettings.getInt("frameNumber", 1);
+  layer.frameOffset = layerSettings.getInt("frameOffset", 0);
+  layer.animationCycle = layerSettings.getFloat("animationCycle", 1.0f);
 
   m_layers.append(layer);
 }

@@ -43,6 +43,9 @@ private:
   HashMap<AssetPath, pair<TexturePtr, int64_t>> m_textureMap;
   HashMap<ImageConstPtr, TexturePtr> m_textureDeduplicationMap;
   TrackerListenerPtr m_reloadTracker;
+  // When the last full pass over the textures ran. Expiry is measured in seconds, so
+  // cleanup() does not need to walk every texture on every call.
+  int64_t m_lastCleanup = 0;
 };
 
 }

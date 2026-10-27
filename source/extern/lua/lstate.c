@@ -241,7 +241,7 @@ static void preinit_thread (lua_State *L, global_State *g) {
 
 static void close_state (lua_State *L) {
   global_State *g = G(L);
-  luaF_close(L, L->stack);  /* close all upvalues for this thread */
+  luaF_close(L, L->stack, CLOSEPROTECT);  /* close all upvalues for this thread */
   luaC_freeallobjects(L);  /* collect all objects */
   if (g->version)  /* closing a fully built state? */
     luai_userstateclose(L);
@@ -284,13 +284,33 @@ LUA_API lua_State *lua_newthread (lua_State *L) {
 
 void luaE_freethread (lua_State *L, lua_State *L1) {
   LX *l = fromstate(L1);
-  luaF_close(L1, L1->stack);  /* close all upvalues for this thread */
+  luaF_close(L1, L1->stack, NOCLOSINGMETH);  /* close all upvalues for this thread */
   lua_assert(L1->openupval == NULL);
   luai_userstatefree(L, L1);
   freestack(L1);
   luaM_free(L, l);
 }
 
+int lua_resetthread (lua_State *L) {
+  CallInfo *ci;
+  int status;
+  lua_lock(L);
+  L->ci = ci = &L->base_ci;  /* unwind CallInfo list */
+  setnilvalue(L->stack);  /* 'function' entry for basic 'ci' */
+  ci->func = L->stack;
+  ci->callstatus = 0;
+  status = luaF_close(L, L->stack, CLOSEPROTECT);
+  if (status != CLOSEPROTECT)  /* real errors? */
+    luaD_seterrorobj(L, status, L->stack + 1);
+  else {
+    status = LUA_OK;
+    L->top = L->stack + 1;
+  }
+  ci->top = L->top + LUA_MINSTACK;
+  L->status = status;
+  lua_unlock(L);
+  return status;
+}
 
 LUA_API lua_State *lua_newstate (lua_Alloc f, void *ud) {
   int i;

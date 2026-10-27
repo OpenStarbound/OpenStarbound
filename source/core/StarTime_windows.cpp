@@ -3,6 +3,7 @@
 #include "StarMathCommon.hpp"
 
 #include <ctime>
+#define NOMINMAX
 #include <windows.h>
 
 namespace Star {

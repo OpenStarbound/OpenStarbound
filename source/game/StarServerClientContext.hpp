@@ -4,6 +4,7 @@
 #include "StarThread.hpp"
 #include "StarUuid.hpp"
 #include "StarJsonRpc.hpp"
+#include "StarRpcPromise.hpp"
 #include "StarDamageTypes.hpp"
 #include "StarGameTypes.hpp"
 #include "StarHostAddress.hpp"
@@ -20,16 +21,17 @@ STAR_CLASS(ServerClientContext);
 class ServerClientContext {
 public:
   ServerClientContext(ConnectionId clientId, Maybe<HostAddress> remoteAddress, NetCompatibilityRules netRules, Uuid playerUuid,
-      String playerName, String playerSpecies, bool canBecomeAdmin, WorldChunks initialShipChunks);
+      String playerName, String shipSpecies, bool canBecomeAdmin, WorldChunks initialShipChunks, String account);
 
   ConnectionId clientId() const;
   Maybe<HostAddress> const& remoteAddress() const;
   Uuid const& playerUuid() const;
   String const& playerName() const;
-  String const& playerSpecies() const;
+  String const& shipSpecies() const;
   bool canBecomeAdmin() const;
   NetCompatibilityRules netRules() const;
   String descriptiveName() const;
+  String const& account() const;
 
   // Register additional rpc methods from other server side services.
   void registerRpcHandlers(JsonRpcHandlers const& rpcHandlers);
@@ -50,11 +52,15 @@ public:
   bool isAdmin() const;
   void setAdmin(bool admin);
 
+  bool serverDebug() const;
+  void setServerDebug(bool serverDebug);
+
   EntityDamageTeam team() const;
   void setTeam(EntityDamageTeam team);
 
   ShipUpgrades shipUpgrades() const;
   void setShipUpgrades(ShipUpgrades shipUpgrades);
+  void setShipSpecies(String shipSpecies);
 
   WorldChunks shipChunks() const;
   void updateShipChunks(WorldChunks newShipChunks);
@@ -69,6 +75,12 @@ public:
   WorldId playerWorldId() const;
   void clearPlayerWorld();
 
+  void setSubWorld(ClientSubWorldId subWorldId, WorldServerThreadPtr worldThread);
+  WorldServerThreadPtr subWorld(ClientSubWorldId subWorldId) const;
+  bool hasSubWorld(ClientSubWorldId subWorldId) const;
+  void clearSubWorld(ClientSubWorldId subWorldId);
+  List<ClientSubWorldId> subWorlds() const;
+
   void setSystemWorld(SystemWorldServerThreadPtr systemWorldThread);
   SystemWorldServerThreadPtr systemWorld() const;
   void clearSystemWorld();
@@ -78,6 +90,17 @@ public:
 
   WarpToWorld playerReviveWarp() const;
   void setPlayerReviveWarp(WarpToWorld warp);
+  
+  void customWorldRequested(String name, RpcPromiseKeeper<WorldChunks> promise);
+  void customWorldReceived(String name, WorldChunks chunks);
+  void failWorldRequests();
+  
+  Maybe<WorldChunks> customWorldChunks(String name) const;
+  void updateCustomWorldChunks(String name, WorldChunks newWorldChunks);
+  void setCustomWorldActive(String name, bool active);
+  List<String> customWorlds() const;
+  
+  void cleanInactiveCustomWorlds();
 
   // Store and load the data for this client that should be persisted on the
   // server, such as celestial log data, admin state, team, and current ship
@@ -88,13 +111,26 @@ public:
   int64_t creationTime() const;
 
 private:
+  struct CustomWorld {
+    WorldChunks chunks;
+    WorldChunks chunksUpdate;
+    
+    bool active;
+    
+    CustomWorld(WorldChunks initialChunks);
+    CustomWorld();
+  };
+  
   ConnectionId const m_clientId;
   Maybe<HostAddress> const m_remoteAddress;
   NetCompatibilityRules m_netRules;
   Uuid const m_playerUuid;
   String const m_playerName;
-  String const m_playerSpecies;
+  String const m_account;
+  String m_shipSpecies;
   bool const m_canBecomeAdmin;
+  
+  bool m_serverDebug = false;
 
   mutable RecursiveMutex m_mutex;
 
@@ -106,12 +142,17 @@ private:
   WorldServerThreadPtr m_worldThread;
   WarpToWorld m_returnWarp;
   WarpToWorld m_reviveWarp;
+  
+  HashMap<ClientSubWorldId, WorldServerThreadPtr> m_subWorldThreads;
 
   SystemWorldServerThreadPtr m_systemWorldThread;
 
   NetElementTopGroup m_netGroup;
   uint64_t m_netVersion = 0;
   int64_t m_creationTime;
+  
+  StringMap<RpcPromiseKeeper<WorldChunks>> m_worldRequests;
+  StringMap<CustomWorld> m_customWorlds;
 
   NetElementData<Maybe<pair<WarpAction, WarpMode>>> m_orbitWarpActionNetState;
   NetElementData<WorldId> m_playerWorldIdNetState;

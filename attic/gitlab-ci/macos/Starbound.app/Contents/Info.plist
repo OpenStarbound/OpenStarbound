@@ -23,5 +23,7 @@
   </dict>
   <key>SDL_FILESYSTEM_BASE_DIR_TYPE</key>
   <string>parent</string>
+  <key>NSHighResolutionCapable</key>
+  <false/>
 </dict>
 </plist>

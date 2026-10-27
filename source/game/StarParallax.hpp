@@ -34,6 +34,8 @@ struct ParallaxLayer {
   Vec2F parallaxOffset;
   String timeOfDayCorrelation;
   Vec2F speed;
+  bool followsWind;
+  Maybe<float> windSpeedMultiplier;
   bool unlit;
   bool lightMapped;
   float fadePercent;
@@ -56,6 +58,7 @@ public:
   Json store() const;
 
   void fadeToSkyColor(Color const& skyColor);
+  ParallaxPtr createOverlay(String const& assetFile) const;
 
   ParallaxLayers const& layers() const;
 

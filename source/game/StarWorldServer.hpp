@@ -14,7 +14,7 @@
 #include "StarLuaComponents.hpp"
 #include "StarWorldRenderData.hpp"
 #include "StarWarping.hpp"
-#include "StarRpcThreadPromise.hpp"
+#include "StarRpcPromise.hpp"
 
 namespace Star {
 
@@ -48,7 +48,7 @@ extern EnumMap<WorldServerFidelity> const WorldServerFidelityNames;
 
 class WorldServer : public World {
 public:
-  typedef LuaMessageHandlingComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> ScriptComponent;
+  typedef LuaMessageHandlingComponent<LuaUpdatableComponent<LuaWorldComponent<LuaStorableComponent<LuaBaseComponent>>>> ScriptComponent;
   typedef shared_ptr<ScriptComponent> ScriptComponentPtr;
   typedef function<void(Json const&)> WorldPropertyListener;
 
@@ -69,6 +69,7 @@ public:
   void setUniverseSettings(UniverseSettingsPtr universeSettings);
   UniverseSettingsPtr universeSettings() const;
 
+  void setPause(bool pause);
   void setReferenceClock(ClockPtr clock);
 
   void initLua(UniverseServer* universe);
@@ -88,7 +89,7 @@ public:
 
   // Returns false if the client id already exists, or the spawn target is
   // invalid.
-  bool addClient(ConnectionId clientId, SpawnTarget const& spawnTarget, bool isLocal, bool isAdmin = false, NetCompatibilityRules netRules = {});
+  bool addClient(ConnectionId clientId, SpawnTarget const& spawnTarget, bool isLocal, bool isAdmin = false, NetCompatibilityRules netRules = {}, ClientSubWorldId subWorldId = MainClientWorldId);
 
   // Removes client, sends the WorldStopPacket, and returns any pending packets
   // for that client
@@ -100,6 +101,8 @@ public:
   // May return null if a Player is not available or if the client id is not
   // valid.
   PlayerPtr clientPlayer(ConnectionId clientId) const;
+  
+  ClientSubWorldId clientSubWorld(ConnectionId clientId) const;
 
   List<EntityId> players() const;
 
@@ -107,7 +110,7 @@ public:
   List<PacketPtr> getOutgoingPackets(ConnectionId clientId);
   bool sendPacket(ConnectionId clientId, PacketPtr const& packet);
 
-  Maybe<Json> receiveMessage(ConnectionId fromConnection, String const& message, JsonArray const& args);
+  Maybe<ChainableJsonMessageResponse> receiveMessage(ConnectionId fromConnection, String const& message, JsonArray const& args);
 
   void startFlyingSky(bool enterHyperspace, bool startInWarp, Json settings = {});
   void stopFlyingSkyAt(SkyParameters const& destination);
@@ -119,6 +122,7 @@ public:
 
   bool shouldExpire();
   void setExpiryTime(float expiryTime);
+  float expiryTime();
 
   void update(float dt);
 
@@ -140,6 +144,7 @@ public:
   bool damageWouldDestroy(Vec2I const& pos, TileLayer layer, TileDamage const& tileDamage) const override;
   EntityPtr entity(EntityId entityId) const override;
   void addEntity(EntityPtr const& entity, EntityId entityId = NullEntityId) override;
+  void addEntity(EntityPtr const& entity, ConnectionId connection, EntityId entityId = NullEntityId) override;
   EntityPtr closestEntity(Vec2F const& center, float radius, EntityFilter selector = EntityFilter()) const override;
   void forAllEntities(EntityCallback entityCallback) const override;
   void forEachEntity(RectF const& boundBox, EntityCallback callback) const override;
@@ -169,6 +174,7 @@ public:
   StringList environmentStatusEffects(Vec2F const& pos) const override;
   StringList weatherStatusEffects(Vec2F const& pos) const override;
   bool exposedToWeather(Vec2F const& pos) const override;
+  Maybe<String> activeWeather(Vec2F const& pos) const override;
   bool isUnderground(Vec2F const& pos) const override;
   bool disableDeathDrops() const override;
   List<PhysicsForceRegion> forceRegions() const override;
@@ -183,6 +189,11 @@ public:
   RpcPromise<Vec2F> findUniqueEntity(String const& uniqueId) override;
   RpcPromise<Json> sendEntityMessage(Variant<EntityId, String> const& entity, String const& message, JsonArray const& args = {}) override;
   bool isTileProtected(Vec2I const& pos) const override;
+  
+  StringMap<LuaCallbacks> luaThreadCallbacks() const override;
+  
+  bool connectionHasPermission(ConnectionId connection, WorldPermissionType permission) const override;
+  
   void wire(Vec2I const& outputPosition, size_t outputIndex, Vec2I const& inputPosition, size_t inputIndex);
 
   bool getTileProtection(DungeonId dungeonId) const;
@@ -206,6 +217,8 @@ public:
   bool regionActive(RectI const& region);
 
   ScriptComponentPtr scriptContext(String const& contextName);
+
+  List<EntityId> entityIds() const;
 
   // Queues a microdungeon for placement
   RpcPromise<Vec2I> enqueuePlacement(List<BiomeItemDistribution> distributions, Maybe<DungeonId> id);
@@ -276,30 +289,47 @@ public:
   void setWeatherIndex(size_t weatherIndex, bool force = false);
   // Force the current weather to a specific weather type by name
   void setWeather(String const& weatherName, bool force = false);
+  void setWeather(Vec2F const& position, String const& weatherName, bool force = false);
 
   // Returns the list of weather names available in this world
   StringList weatherList() const;
-
+  StringList weatherList(Vec2F const& position) const;
 
   // used to notify the universe server that the celestial planet type has changed
   Maybe<pair<String, String>> pullNewPlanetType();
+  
+  Maybe<float> sectorTimeToLive(Vec2I const& position) const;
+  
+  void setConnectionHasPermission(ConnectionId const& connectionId, WorldPermissionType const& permission, bool const& hasPermission);
 
 private:
+  // general data for a client, should be the same whether main or subworld.
   struct ClientInfo {
-    ClientInfo(ConnectionId clientId, InterpolationTracker const trackerInit);
+    bool local = false;
+    bool admin = false;
+    WorldPermissions permissions = {};
+  };
+  // info for a given WorldClient, can either be their main world or their subworld.
+  struct ClientWorldInfo {
+    ClientWorldInfo(ConnectionId clientId, InterpolationTracker const trackerInit);
 
     List<RectI> monitoringRegions(EntityMapPtr const& entityMap) const;
 
     bool needsDamageNotification(RemoteDamageNotification const& rdn) const;
 
     ConnectionId clientId;
+    ClientSubWorldId subWorldId;
     uint64_t skyNetVersion;
     uint64_t weatherNetVersion;
+    Maybe<String> weatherDomain;
     WorldClientState clientState;
     bool pendingForward;
+    bool startSent;
     bool started;
-    bool local;
-    bool admin;
+    
+    shared_ptr<ClientInfo> info; // data that is shared between subworld and main world for clients
+    
+    bool couldModify;
 
     List<PacketPtr> outgoingPackets;
 
@@ -357,6 +387,10 @@ private:
   bool isFloatingDungeonWorld() const;
 
   void setupForceRegions();
+  void setupWeatherDomains(bool preserveNonSurface = false);
+  ServerWeatherPtr weatherForDomain(Maybe<String> const& domain) const;
+  ServerWeatherPtr weatherAt(Vec2F const& position) const;
+  ServerWeatherPtr surfaceWeather() const;
 
   Json m_serverConfig;
 
@@ -392,13 +426,16 @@ private:
   mutable CellularLightIntensityCalculator m_lightIntensityCalculator;
   SkyPtr m_sky;
 
-  ServerWeather m_weather;
+  StringMap<ServerWeatherPtr> m_weatherDomains;
+  ServerWeatherPtr m_emptyWeather;
+
+  ClockPtr m_referenceClock;
 
   CollisionGenerator m_collisionGenerator;
   List<CollisionBlock> m_workingCollisionBlocks;
 
   HashMap<NetCompatibilityRules, HashMap<pair<EntityId, uint64_t>, pair<ByteArray, uint64_t>>> m_netStateCache;
-  OrderedHashMap<ConnectionId, shared_ptr<ClientInfo>> m_clientInfo;
+  OrderedHashMap<ConnectionId, shared_ptr<ClientWorldInfo>> m_clientInfo;
 
   GameTimer m_entityUpdateTimer;
   GameTimer m_tileEntityBreakCheckTimer;
@@ -423,12 +460,16 @@ private:
   bool m_tileProtectionEnabled;
 
   HashMap<Uuid, pair<ConnectionId, MVariant<ConnectionId, RpcPromiseKeeper<Json>>>> m_entityMessageResponses;
+  HashMap<Uuid, pair<ConnectionId, RpcPromise<Json>>> m_entityMessagePromises;
 
   List<PhysicsForceRegion> m_forceRegions;
 
   String m_worldId;
 
   GameTimer m_expiryTimer;
+  
+  StringMap<LuaCallbacks> m_luaThreadCallbacks;
+  JsonObject m_scriptStorage = {};
 };
 
 }

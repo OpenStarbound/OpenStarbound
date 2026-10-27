@@ -17,6 +17,7 @@ ChatBubbleManager::ChatBubbleManager()
   auto assets = Root::singleton().assets();
 
   m_guiContext = GuiContext::singletonPtr();
+  m_cachedInterfaceScale = m_guiContext->interfaceScale();
 
   auto jsonData = assets->json("/interface/windowconfig/chatbubbles.config");
 
@@ -24,13 +25,13 @@ ChatBubbleManager::ChatBubbleManager()
   m_textStyle.loadJson(jsonData.get("textStyle"));
   m_textPadding = jsonToVec2F(jsonData.get("textPadding"));
 
-  m_zoom = jsonData.getInt("textZoom");
+  m_partSize = jsonData.getFloat("partSize");
   m_bubbleOffset = jsonToVec2F(jsonData.get("bubbleOffset"));
   m_maxAge = jsonData.getFloat("maxAge");
   m_portraitMaxAge = jsonData.getFloat("portraitMaxAge");
 
   unsigned textWrapWidth = jsonData.getUInt("textWrapWidth");
-  m_textTemplate = TextPositioning{Vec2F(), HorizontalAnchor::HMidAnchor, VerticalAnchor::TopAnchor, textWrapWidth * m_zoom};
+  m_textTemplate = TextPositioning{Vec2F(), HorizontalAnchor::HMidAnchor, VerticalAnchor::TopAnchor, textWrapWidth};
 
   m_interBubbleMargin = jsonData.getFloat("interBubbleMargin");
 
@@ -50,7 +51,7 @@ ChatBubbleManager::ChatBubbleManager()
   m_portraitChatterFramerate = jsonData.getFloat("portraitChatterFramerate");
   m_portraitChatterDuration = jsonData.getFloat("portraitChatterDuration");
 
-  m_portraitTextTemplate = TextPositioning{Vec2F(m_portraitTextPosition), HorizontalAnchor::LeftAnchor, VerticalAnchor::TopAnchor, m_portraitTextWidth * m_zoom};
+  m_portraitTextTemplate = TextPositioning{Vec2F(m_portraitTextPosition), HorizontalAnchor::LeftAnchor, VerticalAnchor::TopAnchor, m_portraitTextWidth};
 
   // This is a factor(0.0 - 1.0) based on the window size.
   // 0.0 is directly over the player, 1.0 is the edge of the window
@@ -65,8 +66,10 @@ ChatBubbleManager::ChatBubbleManager()
 
 void ChatBubbleManager::setCamera(WorldCamera const& camera) {
   float oldPixelRatio = m_camera.pixelRatio();
+  float oldInterfaceScale = m_cachedInterfaceScale;
   m_camera = camera;
-  if (m_camera.pixelRatio() != oldPixelRatio) {
+  m_cachedInterfaceScale = m_guiContext->interfaceScale();
+  if (m_camera.pixelRatio() != oldPixelRatio || m_cachedInterfaceScale != oldInterfaceScale) {
     List<ChatAction> actions;
     m_bubbles.forEach([&actions](BubbleState<Bubble> const& state, Bubble& bubble) {
         actions.append(SayChatAction{bubble.entity, bubble.text, state.idealDestination, bubble.config});
@@ -147,14 +150,16 @@ void ChatBubbleManager::render() {
   if (!Root::singleton().configuration()->get("speechBubbles").toBool())
     return;
 
-  m_bubbles.forEach([this](BubbleState<Bubble> const& state, Bubble& bubble) {
+  float pixelRatio = m_guiContext->interfaceScale();
+
+  m_bubbles.forEach([this, pixelRatio](BubbleState<Bubble> const& state, Bubble& bubble) {
       if (bubble.onscreen) {
         int alpha = calcDistanceFadeAlpha(state.currentPosition, m_bubbleFadeFunction);
         if (alpha) {
           for (auto const& bubbleImage : bubble.backgroundImages)
-            drawBubbleImage(state.currentPosition, bubbleImage, m_zoom, alpha);
+            drawBubbleImage(state.currentPosition, bubbleImage, pixelRatio, alpha);
           for (auto const& bubbleText : bubble.bubbleText)
-            drawBubbleText(state.currentPosition, bubbleText, m_zoom, alpha, false);
+            drawBubbleText(state.currentPosition, bubbleText, pixelRatio, alpha, false);
         }
       }
     });
@@ -167,19 +172,16 @@ void ChatBubbleManager::render() {
         frame = int((portraitBubble.age / m_portraitChatterFramerate) * 2) % 2;
       // 255 here because portrait bubbles are always full opacity
       for (auto const& bubbleImage : portraitBubble.backgroundImages)
-        drawBubbleImage(screenPos, make_tuple(get<0>(bubbleImage).replace("<frame>", toString(frame)), get<1>(bubbleImage)), m_zoom, 255);
+        drawBubbleImage(screenPos, make_tuple(get<0>(bubbleImage).replace("<frame>", toString(frame)), get<1>(bubbleImage)), pixelRatio, 255);
       // 255 here because portrait bubbles are always full opacity
       for (auto const& bubbleText : portraitBubble.bubbleText)
-        drawBubbleText(screenPos, bubbleText, m_zoom, 255, true);
+        drawBubbleText(screenPos, bubbleText, pixelRatio, 255, true);
     }
   }
 }
 
 void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent) {
-  auto assets = Root::singleton().assets();
-  auto config = assets->json("/interface/windowconfig/chatbubbles.config");
-
-  float partSize = config.getFloat("partSize");
+  float pixelRatio = m_guiContext->interfaceScale();
 
   for (auto action : chatActions) {
     Json config = JsonObject{};
@@ -190,87 +192,48 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
       config = sayAction.config.optObject().value(JsonObject{});
       position = sayAction.position;
 
-      // TODO: Get rid of this stupid fucking bullshit, this is the ugliest
+      // Get rid of this stupid fucking bullshit, this is the ugliest
       // fragilest pointlessest horseshit code in the codebase.  It wouldn't
       // bother me so bad if it weren't so fucking easy to do right.
 
       // yea I agree
-      m_guiContext->setTextStyle(m_textStyle, m_zoom);
-      auto result = m_guiContext->determineTextSize(sayAction.text, m_textTemplate);
-      float textWidth = result.width() / m_zoom + m_textPadding[0];
-      float textHeight = result.height() / m_zoom + m_textPadding[1];
 
-      Vec2I innerTiles = Vec2I::ceil(Vec2F((textWidth + 4) / partSize, (textHeight + 3) / partSize));
+      // tada~!
+
+      // Measure with the style the text is drawn with, so bubbles using a
+      // custom font size or style are still sized to fit.
+      TextStyle textStyle = bubbleTextStyle(config);
+      Vec2F textSize = measureText(sayAction.text, textStyle, pixelRatio) + m_textPadding;
+
+      Vec2I innerTiles = Vec2I::ceil((textSize + Vec2F::filled(4)) / m_partSize);
       if (innerTiles[0] % 2 == 0)
         innerTiles[0] += 1;
       if (innerTiles[0] < 3)
         innerTiles[0] = 3;
-      int middleIdx = (innerTiles[0] - 1) / 2;
 
       List<BubbleImage> backgroundImages;
-      if (config.getBool("drawBorder", true)) {
-        for (int y = 0; y < innerTiles[1]; y++) {
-          for (int x = 0; x < innerTiles[0]; x++) {
-            auto partPosition = [partSize](int x, int y) {
-              return Vec2F(x * partSize, y * partSize);
-            };
-            if (y == 0) {
-              if (x == 0) {
-                backgroundImages.append(make_tuple("/interface/chatbubbles/cornerBottomLeft.png", partPosition(x, y)));
-              } else if (x == innerTiles[0] - 1) {
-                backgroundImages.append(make_tuple("/interface/chatbubbles/cornerBottomRight.png", partPosition(x, y)));
-              } else {
-                if (middleIdx == x)
-                  backgroundImages.append(make_tuple("/interface/chatbubbles/point.png", partPosition(x, y - 1)));
-                else
-                  backgroundImages.append(make_tuple("/interface/chatbubbles/sideDown.png", partPosition(x, y)));
-              }
-            } else if (y == innerTiles[1] - 1) {
-              if (x == 0)
-                backgroundImages.append(make_tuple("/interface/chatbubbles/cornerTopLeft.png", partPosition(x, y)));
-              else if (x == innerTiles[0] - 1)
-                backgroundImages.append(make_tuple("/interface/chatbubbles/cornerTopRight.png", partPosition(x, y)));
-              else
-                backgroundImages.append(make_tuple("/interface/chatbubbles/sideUp.png", partPosition(x, y)));
-            } else {
-              if (x == 0)
-                backgroundImages.append(make_tuple("/interface/chatbubbles/sideLeft.png", partPosition(x, y)));
-              else if (x == innerTiles[0] - 1)
-                backgroundImages.append(make_tuple("/interface/chatbubbles/sideRight.png", partPosition(x, y)));
-              else
-                backgroundImages.append(make_tuple("/interface/chatbubbles/center.png", partPosition(x, y)));
-            }
-          }
-        }
-      }
+      if (config.getBool("drawBorder", true))
+        backgroundImages = bubbleBackground(innerTiles, m_partSize);
 
-      float textMultiLineShift = textHeight;
-      float horizontalCenter = partSize * innerTiles[0] * 0.5f;
-      float verticalShift = (partSize * innerTiles[1] - textMultiLineShift) * 0.5f + textMultiLineShift;
-      Vec2F position = Vec2F(horizontalCenter, verticalShift);
-      List<BubbleText> bubbleTexts;
-      TextStyle textStyle = m_textStyle;
-      textStyle.fontSize = config.getUInt("fontSize", textStyle.fontSize);
-      if (auto jColor = config.opt("color"))
-        textStyle.color = jsonToColor(*jColor).toRgba();
-      textStyle.loadJson(config.get("style", Json()));
-      bubbleTexts.append(make_tuple(sayAction.text, textStyle, true, position));
-
+      float horizontalCenter = m_partSize * innerTiles[0] * 0.5f;
+      float verticalShift = (m_partSize * innerTiles[1] - textSize[1]) * 0.5f + textSize[1] - 1.0f;
+      // Anchor everything on the bottom middle of the bubble, just above the speaker
+      Vec2F origin = Vec2F(-horizontalCenter, m_partSize);
       for (auto& backgroundImage : backgroundImages)
-        get<1>(backgroundImage) += Vec2F(-horizontalCenter, partSize);
-      for (auto& bubbleText : bubbleTexts)
-        get<3>(bubbleText) += Vec2F(-horizontalCenter, partSize);
+        get<1>(backgroundImage) += origin;
+      List<BubbleText> bubbleTexts;
+      bubbleTexts.append(make_tuple(sayAction.text, textStyle, true, Vec2F(horizontalCenter, verticalShift) + origin));
 
       auto pos = m_camera.worldToScreen(sayAction.position + m_bubbleOffset);
-      RectF boundBox = fold(backgroundImages, RectF::null(), [pos, this](RectF const& boundBox, BubbleImage const& bubbleImage) {
-          return boundBox.combined(bubbleImageRect(pos, bubbleImage, m_zoom));
+      RectF boundBox = fold(backgroundImages, RectF::null(), [pos, pixelRatio, this](RectF const& boundBox, BubbleImage const& bubbleImage) {
+          return boundBox.combined(bubbleImageRect(pos, bubbleImage, pixelRatio));
         });
       Bubble bubble = {sayAction.entity, sayAction.text, sayAction.config, 0, std::move(backgroundImages), std::move(bubbleTexts), false};
       List<BubbleState<Bubble>> oldBubbles = m_bubbles.filtered([&sayAction](BubbleState<Bubble> const&, Bubble const& bubble) {
           return bubble.entity == sayAction.entity;
         });
       m_bubbles.filter([&sayAction](BubbleState<Bubble> const&, Bubble const& bubble) { return bubble.entity != sayAction.entity; });
-      m_bubbles.addBubble(pos, boundBox, std::move(bubble), m_interBubbleMargin * m_zoom);
+      m_bubbles.addBubble(pos, boundBox, std::move(bubble), m_interBubbleMargin * pixelRatio);
       oldBubbles.sort([](BubbleState<Bubble> const& a, BubbleState<Bubble> const& b) { return a.contents.age < b.contents.age; });
       for (auto& bubble : oldBubbles.slice(0, m_maxMessagePerEntity - 1))
         m_bubbles.addBubble(bubble.idealDestination, bubble.boundBox, bubble.contents, 0);
@@ -319,26 +282,90 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
   }
 }
 
-RectF ChatBubbleManager::bubbleImageRect(Vec2F screenPos, BubbleImage const& bubbleImage, int pixelRatio) {
+RectF ChatBubbleManager::bubbleImageRect(Vec2F screenPos, BubbleImage const& bubbleImage, float pixelRatio) {
   auto imgMetadata = Root::singleton().imageMetadataDatabase();
   auto& image = get<0>(bubbleImage);
   return RectF::withSize(screenPos + get<1>(bubbleImage) * pixelRatio, Vec2F(imgMetadata->imageSize(image)) * pixelRatio);
 }
 
-void ChatBubbleManager::drawBubbleImage(Vec2F screenPos, BubbleImage const& bubbleImage, int pixelRatio, int alpha) {
+void ChatBubbleManager::drawBubbleImage(Vec2F screenPos, BubbleImage const& bubbleImage, float pixelRatio, int alpha) {
   auto& image = get<0>(bubbleImage);
   auto offset = get<1>(bubbleImage) * pixelRatio;
   m_guiContext->drawQuad(image, screenPos + offset, pixelRatio, {255, 255, 255, alpha});
 }
 
-void ChatBubbleManager::drawBubbleText(Vec2F screenPos, BubbleText const& bubbleText, int pixelRatio, int alpha, bool isPortrait) {
+void ChatBubbleManager::drawBubbleText(Vec2F screenPos, BubbleText const& bubbleText, float pixelRatio, int alpha, bool isPortrait) {
   TextStyle style = get<1>(bubbleText);
   style.color[3] *= ((float)alpha / 255.f);
-  m_guiContext->setTextStyle(style, m_zoom);
+  m_guiContext->setTextStyle(style, pixelRatio);
   auto offset = get<3>(bubbleText) * pixelRatio;
   TextPositioning tp = isPortrait ? m_portraitTextTemplate : m_textTemplate;
   tp.pos = screenPos + offset;
-  m_guiContext->renderText(get<0>(bubbleText), tp);
+  m_guiContext->renderText(get<0>(bubbleText), scaledPositioning(tp, pixelRatio));
+}
+
+TextPositioning ChatBubbleManager::scaledPositioning(TextPositioning positioning, float pixelRatio) const {
+  positioning.wrapWidth = positioning.wrapWidth.apply([=](unsigned w) { return (unsigned)(w * pixelRatio); });
+  return positioning;
+}
+
+Vec2F ChatBubbleManager::measureText(String const& text, TextStyle const& style, float pixelRatio) const {
+  m_guiContext->setTextStyle(style, pixelRatio);
+  auto size = m_guiContext->determineTextSize(text, scaledPositioning(m_textTemplate, pixelRatio));
+  return Vec2F(size.width(), size.height()) / pixelRatio;
+}
+
+TextStyle ChatBubbleManager::bubbleTextStyle(Json const& config) const {
+  TextStyle style = m_textStyle;
+  style.fontSize = config.getUInt("fontSize", style.fontSize);
+  if (auto jColor = config.opt("color"))
+    style.color = jsonToColor(*jColor).toRgba();
+  style.loadJson(config.get("style", Json()));
+  return style;
+}
+
+// Every bubble is made of tiles, with a point on the bottom edge in the middle:
+// the bottom row (y = 0) has the point, the top row is the roof and the
+// rows in between are walls and filling.
+List<ChatBubbleManager::BubbleImage> ChatBubbleManager::bubbleBackground(Vec2I innerTiles, float partSize) {
+  List<BubbleImage> images;
+  int middleIdx = (innerTiles[0] - 1) / 2;
+  auto partPosition = [partSize](int x, int y) { return Vec2F(x * partSize, y * partSize); };
+  auto add = [&](char const* part, int x, int y, int yOffset = 0) {
+    images.append(make_tuple(strf("/interface/chatbubbles/{}.png", part), partPosition(x, y + yOffset)));
+  };
+
+  for (int y = 0; y < innerTiles[1]; y++) {
+    for (int x = 0; x < innerTiles[0]; x++) {
+      bool left = x == 0;
+      bool right = x == innerTiles[0] - 1;
+      if (y == 0) {
+        if (left)
+          add("cornerBottomLeft", x, y);
+        else if (right)
+          add("cornerBottomRight", x, y);
+        else if (x == middleIdx)
+          add("point", x, y, -1);
+        else
+          add("sideDown", x, y);
+      } else if (y == innerTiles[1] - 1) {
+        if (left)
+          add("cornerTopLeft", x, y);
+        else if (right)
+          add("cornerTopRight", x, y);
+        else
+          add("sideUp", x, y);
+      } else {
+        if (left)
+          add("sideLeft", x, y);
+        else if (right)
+          add("sideRight", x, y);
+        else
+          add("center", x, y);
+      }
+    }
+  }
+  return images;
 }
 
 }

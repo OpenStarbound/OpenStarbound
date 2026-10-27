@@ -10,6 +10,7 @@
 #include "StarItemBag.hpp"
 #include "StarAssets.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarPlayer.hpp"
 
 namespace Star {
 
@@ -91,6 +92,7 @@ PlayerInventory::PlayerInventory() {
   addNetElement(&m_essentialNetState[EssentialItem::InspectionTool]);
 
   m_equipmentVisibilityMask = 0xFFFFFFFF;
+  m_player = nullptr;
 }
 
 ItemPtr PlayerInventory::itemsAt(InventorySlot const& slot) const {
@@ -966,6 +968,30 @@ void PlayerInventory::cleanup() {
     });
 }
 
+void PlayerInventory::setPlayer(Player* player) {
+  m_player = player;
+}
+
+PlayerInventory const& PlayerInventory::blankInventory() {
+  static thread_local auto inventory = std::make_shared<PlayerInventory>();
+  return *inventory;
+}
+
+void PlayerInventory::netStore(DataStream& ds, NetCompatibilityRules rules) const {
+  if (m_player && !m_player->isMaster() && !rules.isAdmin())
+    return blankInventory().netStore(ds, rules);
+  else
+    return NetElementSyncGroup::netStore(ds, rules);
+}
+
+
+bool PlayerInventory::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const {
+  if (m_player && !m_player->isMaster() && !rules.isAdmin())
+    return blankInventory().writeNetDelta(ds, fromVersion, rules);
+  else
+    return NetElementSyncGroup::writeNetDelta(ds, fromVersion, rules);
+}
+
 bool PlayerInventory::checkInventoryFilter(ItemPtr const& items, String const& filterName) {
   Json filterConfig;
 
@@ -980,7 +1006,7 @@ bool PlayerInventory::checkInventoryFilter(ItemPtr const& items, String const& f
     auto config = Root::singleton().assets()->json("/player.config:inventoryFilters");
     filterConfig = config.opt(filterName).value();
     if (!filterConfig.isType(Json::Type::Object))
-      filterConfig = config.get("default");
+      filterConfig = config.get("default", JsonObject());
   }
 
   // filter by item type if an itemTypes filter is set

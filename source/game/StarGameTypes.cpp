@@ -57,10 +57,16 @@ EnumMap<Rarity> const RarityNames{
   {Rarity::Essential, "essential"}
 };
 
+EnumMap<WorldPermissionType> const WorldPermissionTypeNames{
+  {WorldPermissionType::Build, "Build"},
+  {WorldPermissionType::Containers, "Containers"},
+  {WorldPermissionType::Interact, "Interact"}
+};
+
 std::pair<EntityId, EntityId> connectionEntitySpace(ConnectionId connectionId) {
   if (connectionId == ServerConnectionId) {
     return {MinServerEntityId, MaxServerEntityId};
-  } else if (connectionId >= MinClientConnectionId && connectionId <= MaxClientConnectionId) {
+  } else if (connectionId >= MinClientConnectionId && connectionId <= MaxClientSubWorldConnectionId) {
     EntityId beginIdSpace = (EntityId)connectionId * -65536;
     EntityId endIdSpace = beginIdSpace + 65535;
     return {beginIdSpace, endIdSpace};

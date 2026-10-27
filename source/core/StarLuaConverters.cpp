@@ -3,30 +3,38 @@
 
 namespace Star {
 
+// Colors are 0-255 in Lua, but may be out of range for HDR.
+// Snap values that are float noise away from a whole number so ordinary colors stay integers.
+static float luaColorComponent(float f) {
+  float scaled = f * 255.0f;
+  float rounded = std::round(scaled);
+  return std::abs(scaled - rounded) < 0.001f ? rounded : scaled;
+}
 LuaValue LuaConverter<Color>::from(LuaEngine& engine, Color const& c) {
-  if (c.alpha() == 255)
-    return engine.createArrayTable(initializer_list<uint8_t>{c.red(), c.green(), c.blue()});
+  float r = luaColorComponent(c.redF());
+  float g = luaColorComponent(c.greenF());
+  float b = luaColorComponent(c.blueF());
+  float a = luaColorComponent(c.alphaF());
+  if (a == 255.0f)
+    return engine.createArrayTable(initializer_list<float>{r, g, b});
   else
-    return engine.createArrayTable(initializer_list<uint8_t>{c.red(), c.green(), c.blue(), c.alpha()});
+    return engine.createArrayTable(initializer_list<float>{r, g, b, a});
 }
 
 Maybe<Color> LuaConverter<Color>::to(LuaEngine& engine, LuaValue const& v) {
   if (auto t = v.ptr<LuaTable>()) {
-    Color c = Color::rgba(0, 0, 0, 255);
-    Maybe<int> r = engine.luaMaybeTo<int>(t->get(1));
-    Maybe<int> g = engine.luaMaybeTo<int>(t->get(2));
-    Maybe<int> b = engine.luaMaybeTo<int>(t->get(3));
+    Maybe<float> r = engine.luaMaybeTo<float>(t->get(1));
+    Maybe<float> g = engine.luaMaybeTo<float>(t->get(2));
+    Maybe<float> b = engine.luaMaybeTo<float>(t->get(3));
     if (!r || !g || !b)
       return {};
 
-    c.setRed(*r);
-    c.setGreen(*g);
-    c.setBlue(*b);
+    Color c = Color::rgbaf(*r/255.0f, *g/255.0f, *b/255.0f, 1.0f);
 
-    if (Maybe<int> a = engine.luaMaybeTo<int>(t->get(4))) {
+    if (Maybe<float> a = engine.luaMaybeTo<float>(t->get(4))) {
       if (!a)
         return {};
-      c.setAlpha(*a);
+      c.setAlphaF(*a/255.0f);
     }
 
     return c;

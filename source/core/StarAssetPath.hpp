@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarVariant.hpp"
 #include "StarDirectives.hpp"
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
@@ -10,6 +11,8 @@ namespace Star {
 // and it is not possible to escape any asset source directory.  '\' is never a
 // valid directory separator.  All asset paths are considered case-insensitive.
 //
+// Asset paths can optionally be embedded data. They are considered embedded if they start with /opensb_data where semicolons separate parts of that.
+//
 // In addition to the path portion of the asset path, some asset types may also
 // have a sub-path, which is always separated from the path portion of the asset
 // by ':'.  There can be at most 1 sub-path component.
@@ -18,6 +21,7 @@ namespace Star {
 // must come after the path and optional sub-path comopnent.  The directives
 // portion of the path starts with a '?', and '?' separates each subsquent
 // directive.
+  
 struct AssetPath {
   static AssetPath split(String const& path);
   static String join(AssetPath const& path);
@@ -30,6 +34,11 @@ struct AssetPath {
   static String getDirectives(String const& joinedPath);
   static String addDirectives(String const& joinedPath, String const& directives);
   static String removeDirectives(String const& joinedPath);
+  
+  // Checks if the path defines an asset embedded in it
+  static bool isEmbedded(String const& path);
+  // Checks if the path can at all be defined remotely (for now, only embedded assets)
+  static bool isRemote(String const& path);
 
   // The base directory name for any given path, including the trailing '/'.
   // Ignores sub-path and directives.

@@ -171,7 +171,7 @@ bool TextPainter::processWrapText(StringView text, unsigned* wrapWidth, WrapText
           }
         });
         // jump the iterator to the character after the command
-        iterator = text.utf8().begin() + commandEnd + 1;
+        iterator = StringView::const_iterator(text.utf8().begin() + commandEnd + 1, iterator);
         commandStart = commandEnd = NPos;
         continue;
       }

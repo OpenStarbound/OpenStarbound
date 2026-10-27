@@ -11,6 +11,12 @@
 
 namespace Star {
 
+// update this in the rare case that backwards compat code has to be set up in TeamManager
+VersionNumber const TeamClientVersion = 1;
+
+// The name and portrait rarely change, so they are only sent with the status this often (in seconds)
+double const FullPlayerDataInterval = 10.0;
+
 TeamClient::TeamClient(PlayerPtr mainPlayer, ClientContextPtr clientContext) {
   m_mainPlayer = mainPlayer;
   m_clientContext = clientContext;
@@ -23,12 +29,13 @@ TeamClient::TeamClient(PlayerPtr mainPlayer, ClientContextPtr clientContext) {
 
   m_statusUpdateRunning = false;
   m_statusUpdateTimer = 0;
+  m_fullWriteTimer = 0;
 }
 
 bool TeamClient::isTeamLeader() {
   if (!m_teamUuid)
     return false;
-  return m_teamLeader == m_clientContext->playerUuid();
+  return m_teamLeader == m_clientContext->clientUuid();
 }
 
 bool TeamClient::isTeamLeader(Uuid const& playerUuid) {
@@ -47,7 +54,7 @@ void TeamClient::invitePlayer(String const& playerName) {
 
   JsonObject request;
   request["inviteeName"] = playerName;
-  request["inviterUuid"] = m_clientContext->playerUuid().hex();
+  request["inviterUuid"] = m_clientContext->clientUuid().hex();
   request["inviterName"] = m_mainPlayer->name();
   invokeRemote("team.invite", request, [=](Json response) {
     if (!response)
@@ -71,7 +78,7 @@ void TeamClient::invitePlayer(String const& playerName) {
 void TeamClient::acceptInvitation(Uuid const& inviterUuid) {
   JsonObject request;
   request["inviterUuid"] = inviterUuid.hex();
-  request["inviteeUuid"] = m_clientContext->playerUuid().hex();
+  request["inviteeUuid"] = m_clientContext->clientUuid().hex();
   invokeRemote("team.acceptInvitation", request, [this](Json) { forceUpdate(); });
 }
 
@@ -93,7 +100,7 @@ void TeamClient::makeLeader(Uuid const& playerUuid) {
 void TeamClient::removeFromTeam(Uuid const& playerUuid) {
   if (!m_teamUuid)
     return;
-  if (!isTeamLeader() && playerUuid != m_clientContext->playerUuid())
+  if (!isTeamLeader() && playerUuid != m_clientContext->clientUuid())
     return;
   JsonObject request;
   request["teamUuid"] = m_teamUuid->hex();
@@ -121,7 +128,7 @@ void TeamClient::update() {
     if (Time::monotonicTime() - m_pollInvitationsTimer > Root::singleton().assets()->json("/interface.config:invitationPollInterval").toFloat()) {
       m_pollInvitationsTimer = Time::monotonicTime();
       JsonObject request;
-      request["playerUuid"] = m_clientContext->playerUuid().hex();
+      request["playerUuid"] = m_clientContext->clientUuid().hex();
       invokeRemote("team.pollInvitation", request, [this](Json response) {
           if (response.isNull())
             return;
@@ -151,10 +158,12 @@ void TeamClient::pullFullUpdate() {
     return;
   m_fullUpdateRunning = true;
   JsonObject request;
-  request["playerUuid"] = m_clientContext->playerUuid().hex();
+  request["playerUuid"] = m_clientContext->clientUuid().hex();
 
   invokeRemote("team.fetchTeamStatus", request, [this](Json response) {
       m_fullUpdateRunning = false;
+
+      m_teamManagerVersion = response.optInt("version").value(0);
 
       m_teamUuid = response.optString("teamUuid").apply(construct<Uuid>());
 
@@ -192,8 +201,10 @@ void TeamClient::statusUpdate() {
   JsonObject request;
   auto player = m_mainPlayer;
 
-  // TODO: write full player data less often?
-  writePlayerData(request, player, true);
+  bool fullWrite = Time::monotonicTime() - m_fullWriteTimer > FullPlayerDataInterval;
+  if (fullWrite)
+    m_fullWriteTimer = Time::monotonicTime();
+  writePlayerData(request, player, fullWrite);
 
   invokeRemote("team.updateStatus", request, [this](Json) {
       m_statusUpdateRunning = false;
@@ -206,6 +217,7 @@ List<TeamClient::Member> TeamClient::members() {
 
 void TeamClient::forceUpdate() {
   m_statusUpdateTimer = 0;
+  m_fullWriteTimer = 0;
   m_fullUpdateTimer = 0;
   m_pollInvitationsTimer = 0;
 }
@@ -232,7 +244,8 @@ void TeamClient::handleRpcResponses() {
 }
 
 void TeamClient::writePlayerData(JsonObject& request, PlayerPtr player, bool fullWrite) const {
-  request["playerUuid"] = m_clientContext->playerUuid().hex();
+  request["version"] = TeamClientVersion;
+  request["playerUuid"] = m_clientContext->clientUuid().hex();
   request["entity"] = player->entityId();
   request["health"] = player->health() / player->maxHealth();
   request["energy"] = player->energy() / player->maxEnergy();
@@ -250,8 +263,8 @@ void TeamClient::writePlayerData(JsonObject& request, PlayerPtr player, bool ful
   request["warpMode"] = WarpModeNames.getRight(mode);
 
   if (fullWrite) {
-    request["name"] = player->name();
-    request["portrait"] = jsonFromList(player->portrait(PortraitMode::Head), mem_fn(&Drawable::toJson));
+    request["name"] = player->teamName().value(player->name());
+    request["portrait"] = jsonFromList(player->teamPortrait().value(player->portrait(PortraitMode::Head)), mem_fn(&Drawable::toJson));
   }
 }
 

@@ -366,7 +366,8 @@ void TilePainter::produceLiquidPrimitives(HashMap<LiquidId, List<RenderPrimitive
   if (drawLevel <= 0.0f)
     return;
 
-  RenderTile const& tileBottom = getRenderTile(renderData, pos - Vec2I(0, 1));
+  Vec2I belowPos = pos - Vec2I(0, 1);
+  RenderTile const& tileBottom = getRenderTile(renderData, belowPos);
   float bottomDrawLevel = liquidDrawLevel(byteToFloat(tileBottom.liquidLevel));
 
   RectF worldRect;

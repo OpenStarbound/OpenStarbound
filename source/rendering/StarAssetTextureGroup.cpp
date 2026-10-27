@@ -33,6 +33,15 @@ void AssetTextureGroup::cleanup(int64_t textureTimeout) {
   } else {
     int64_t time = Time::monotonicMilliseconds();
 
+    // This is called every frame.
+    // A pass filters the whole map, sorts the live textures and prunes the deduplication map, which costs far more than a lookup once many textures are loaded, but
+    // textures only expire after textureTimeout.
+    // Walking them a tenth of the timeout (at most once a second) apart frees them at most that much later and skips the work on the frames in between.
+    int64_t interval = clamp<int64_t>(textureTimeout / 10, 0, 1000);
+    if (time - m_lastCleanup < interval)
+      return;
+    m_lastCleanup = time;
+
     List<Texture const*> liveTextures;
     filter(m_textureMap, [&](auto const& pair) {
         if (time - pair.second.second < textureTimeout) {

@@ -3,16 +3,75 @@
 
 namespace Star {
 
-void throwInvalidUtf8Sequence() {
-  throw UnicodeException("Invalid UTF-8 code unit sequence in utf8Length");
-}
+bool isValidUtf8(const Utf8Type* utf8, size_t remain) {
+  bool stopOnNull = remain == NPos;
 
-void throwMissingUtf8End() {
-  throw UnicodeException("UTF-8 string missing trailing code units in utf8Length");
-}
+  while (true) {
+    if (remain == 0)
+      break;
 
-void throwInvalidUtf32CodePoint(Utf32Type val) {
-  throw UnicodeException::format("Invalid UTF-32 code point {} encountered while trying to encode UTF-8", (int32_t)val);
+    if (stopOnNull && utf8[0] == 0)
+      break;
+
+    if ((utf8[0] & 0x80) == 0x00) {
+      // ASCII
+      ++utf8;
+      --remain;
+      continue;
+    }
+
+    if (remain == 1) {
+      // 1 invalid character with missing end
+      return false;
+    }
+
+    if ((utf8[0] & 0xe0) == 0xc0 && (utf8[1] & 0xc0) == 0x80) {
+      if (((utf8[0] & 0x1fL) << 6) >= 0x00000080L) {
+        utf8 += 2;
+        remain -= 2;
+        continue;
+      } else {
+        return false;
+      }
+    }
+
+    if (remain == 2) {
+      // 2 invalid characters with missing end
+      return false;
+    }
+
+    if ((utf8[0] & 0xf0) == 0xe0 && (utf8[1] & 0xc0) == 0x80 && (utf8[2] & 0xc0) == 0x80) {
+      auto utf32char = ((utf8[0] & 0x0fL) << 12) | ((utf8[1] & 0x3fL) << 6);
+      // ensure it's not overlong, and ensure it's not a UTF16 surrogate
+      if (utf32char >= 0x00000800L && !isUtf16Surrogate(utf32char)) {
+        utf8 += 3;
+        remain -= 3;
+        continue;
+      } else {
+        return false;
+      }
+    }
+
+    if (remain == 3) {
+      // 3 invalid characters with missing end
+      return false;
+    }
+
+    if ((utf8[0] & 0xf8) == 0xf0 && (utf8[1] & 0xc0) == 0x80 && (utf8[2] & 0xc0) == 0x80 && (utf8[3] & 0xc0) == 0x80) {
+      auto utf32char = ((utf8[0] & 0x07L) << 18) | ((utf8[1] & 0x3fL) << 12);
+      if (utf32char >= 0x00010000L && utf32char <= 0x0010ffffL) {
+        utf8 += 4;
+        remain -= 4;
+        continue;
+      } else {
+        return false;
+      }
+    } else {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 size_t utf8Length(const Utf8Type* utf8, size_t remain) {
@@ -33,8 +92,12 @@ size_t utf8Length(const Utf8Type* utf8, size_t remain) {
       continue;
     }
 
-    if (remain == 1)
-      throwMissingUtf8End();
+    if (remain == 1) {
+      // 1 invalid character with missing end
+      ++length;
+      --remain;
+      break;
+    }
 
     if ((utf8[0] & 0xe0) == 0xc0 && (utf8[1] & 0xc0) == 0x80) {
       if (((utf8[0] & 0x1fL) << 6) >= 0x00000080L) {
@@ -43,38 +106,68 @@ size_t utf8Length(const Utf8Type* utf8, size_t remain) {
         remain -= 2;
         continue;
       } else {
-        throwInvalidUtf8Sequence();
+        // invalid, assume a single placeholder character
+        ++length;
+        ++utf8;
+        --remain;
+        continue;
       }
     }
 
-    if (remain == 2)
-      throwMissingUtf8End();
+    if (remain == 2) {
+      // 2 invalid characters with missing end
+      // only 1 trailing byte remains so the next character must be either ASCII or invalid
+      length += 2;
+      remain -= 2;
+      break;
+    }
 
     if ((utf8[0] & 0xf0) == 0xe0 && (utf8[1] & 0xc0) == 0x80 && (utf8[2] & 0xc0) == 0x80) {
-      if ((((utf8[0] & 0x0fL) << 12) | ((utf8[1] & 0x3fL) << 6)) >= 0x00000800L) {
+      auto utf32char = ((utf8[0] & 0x0fL) << 12) | ((utf8[1] & 0x3fL) << 6);
+      // ensure it's not overlong, and ensure it's not a UTF16 surrogate
+      if (utf32char >= 0x00000800L && !isUtf16Surrogate(utf32char)) {
         ++length;
         utf8 += 3;
         remain -= 3;
         continue;
       } else {
-        throwInvalidUtf8Sequence();
+        // invalid, assume a single placeholder character
+        ++length;
+        ++utf8;
+        --remain;
+        continue;
       }
     }
 
-    if (remain == 3)
-      throwMissingUtf8End();
+    if (remain == 3) {
+      // 3 invalid characters with missing end
+      // there is the possibility that there is a valid utf-8 sequence after this, so only advance once
+      ++length;
+      ++utf8;
+      --remain;
+      continue;
+    }
 
     if ((utf8[0] & 0xf8) == 0xf0 && (utf8[1] & 0xc0) == 0x80 && (utf8[2] & 0xc0) == 0x80 && (utf8[3] & 0xc0) == 0x80) {
-      if ((((utf8[0] & 0x07L) << 18) | ((utf8[1] & 0x3fL) << 12)) >= 0x00010000L) {
+      auto utf32char = ((utf8[0] & 0x07L) << 18) | ((utf8[1] & 0x3fL) << 12);
+      if (utf32char >= 0x00010000L && utf32char <= 0x0010ffffL) {
         ++length;
         utf8 += 4;
         remain -= 4;
         continue;
       } else {
-        throwInvalidUtf8Sequence();
+        // invalid, assume a single placeholder character
+        ++length;
+        ++utf8;
+        --remain;
+        continue;
       }
     } else {
-      throwInvalidUtf8Sequence();
+      // invalid, assume a single placeholder character
+      ++length;
+      ++utf8;
+      --remain;
+      continue;
     }
   }
 
@@ -97,40 +190,53 @@ size_t utf8DecodeChar(const Utf8Type* utf8, Utf32Type* utf32, size_t remain) {
       return utf8 - start + 1;
     }
 
-    if (remain == 1)
-      throwMissingUtf8End();
+    if (remain == 1) {
+      *utf32 = STAR_UTF32_REPLACEMENT_CHAR;
+      return utf8 - start + 1;
+    }
 
     if ((utf8[0] & 0xe0) == 0xc0 && (utf8[1] & 0xc0) == 0x80) {
       *utf32 = ((utf8[0] & 0x1fL) << 6) | ((utf8[1] & 0x3fL) << 0);
-      if (*utf32 >= 0x00000080L)
+      if (*utf32 >= 0x00000080L) {
         return utf8 - start + 2;
-      else
-        throwInvalidUtf8Sequence();
+      } else {
+        *utf32 = STAR_UTF32_REPLACEMENT_CHAR;
+        return utf8 - start + 1;
+      }
     }
 
-    if (remain == 2)
-      throwMissingUtf8End();
+    if (remain == 2) {
+      *utf32 = STAR_UTF32_REPLACEMENT_CHAR;
+      return utf8 - start + 1;
+    }
 
     if ((utf8[0] & 0xf0) == 0xe0 && (utf8[1] & 0xc0) == 0x80 && (utf8[2] & 0xc0) == 0x80) {
       *utf32 = ((utf8[0] & 0x0fL) << 12) | ((utf8[1] & 0x3fL) << 6) | ((utf8[2] & 0x3fL) << 0);
-      if (*utf32 >= 0x00000800L)
+      if (*utf32 >= 0x00000800L && !isUtf16Surrogate(*utf32)) {
         return utf8 - start + 3;
-      else
-        throwInvalidUtf8Sequence();
+      } else {
+        *utf32 = STAR_UTF32_REPLACEMENT_CHAR;
+        return utf8 - start + 1;
+      }
     }
 
-    if (remain == 3)
-      throwMissingUtf8End();
+    if (remain == 3) {
+      *utf32 = STAR_UTF32_REPLACEMENT_CHAR;
+      return utf8 - start + 1;
+    }
 
     if ((utf8[0] & 0xf8) == 0xf0 && (utf8[1] & 0xc0) == 0x80 && (utf8[2] & 0xc0) == 0x80 && (utf8[3] & 0xc0) == 0x80) {
       *utf32 =
-          ((utf8[0] & 0x07L) << 18) | ((utf8[1] & 0x3fL) << 12) | ((utf8[2] & 0x3fL) << 6) | ((utf8[3] & 0x3fL) << 0);
-      if (*utf32 >= 0x00010000L)
+        ((utf8[0] & 0x07L) << 18) | ((utf8[1] & 0x3fL) << 12) | ((utf8[2] & 0x3fL) << 6) | ((utf8[3] & 0x3fL) << 0);
+      if (*utf32 >= 0x00010000L && *utf32 <= 0x0010ffffL) {
         return utf8 - start + 4;
-      else
-        throwInvalidUtf8Sequence();
+      } else {
+        *utf32 = STAR_UTF32_REPLACEMENT_CHAR;
+        return utf8 - start + 1;
+      }
     } else {
-      throwInvalidUtf8Sequence();
+      *utf32 = STAR_UTF32_REPLACEMENT_CHAR;
+      return utf8 - start + 1;
     }
   }
 
@@ -138,8 +244,8 @@ size_t utf8DecodeChar(const Utf8Type* utf8, Utf32Type* utf32, size_t remain) {
 }
 
 size_t utf8EncodeChar(Utf8Type* utf8, Utf32Type utf32, size_t len) {
-  if (utf32 > 0x10FFFFu)
-    throwInvalidUtf32CodePoint(utf32);
+  if (utf32 > 0x10FFFFu || isUtf16Surrogate(utf32))
+    return utf8EncodeChar(utf8, STAR_UTF32_REPLACEMENT_CHAR, len);
 
   if (utf32 <= 0x0000007fL) {
     if (len < 1)
@@ -270,4 +376,4 @@ pair<Utf32Type, Maybe<Utf32Type>> utf32ToUtf16SurrogatePair(Utf32Type codepoint)
   return {codepoint, {}};
 }
 
-}
+}// namespace Star

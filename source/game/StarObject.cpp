@@ -35,7 +35,7 @@ Object::Object(ObjectConfigConstPtr config, Json const& parameters) {
     auto orientations = jOrientations->toArray();
     for (size_t i = 0; i != orientations.size(); ++i)
       base.set(i, jsonMergeNulling(base.get(i), orientations.get(i)));
-    m_orientations = ObjectDatabase::parseOrientations(m_config->path, base);
+    m_orientations = ObjectDatabase::parseOrientations(m_config->path, base, m_config->config);
   }
 
   m_animationTimer = 0.0f;
@@ -70,18 +70,24 @@ Object::Object(ObjectConfigConstPtr config, Json const& parameters) {
 
   auto inputNodes = configValue("inputNodes", JsonArray());
   auto inputNodeConfigs = configValue("inputNodesConfig", JsonArray());
-  for (auto i = 0; i != inputNodes.size(); i++)
+  for (size_t i = 0; i != inputNodes.size(); i++)
     m_inputNodes.append(InputNode(inputNodes.get(i), inputNodeConfigs.get(i, JsonObject())));
 
   auto outputNodes = configValue("outputNodes", JsonArray());
   auto outputNodeConfigs = configValue("outputNodesConfig", JsonArray());
-  for (auto i = 0; i != outputNodes.size(); i++)
+  for (size_t i = 0; i != outputNodes.size(); i++)
     m_outputNodes.append(OutputNode(outputNodes.get(i), outputNodeConfigs.get(i, JsonObject())));
 
   m_offeredQuests.set(configValue("offeredQuests", JsonArray()).toArray().transformed(&QuestArcDescriptor::fromJson));
   m_turnInQuests.set(jsonToStringSet(configValue("turnInQuests", JsonArray())));
   if (!m_offeredQuests.get().empty() || !m_turnInQuests.get().empty())
     m_interactive.set(true);
+
+  auto colorName = configValue("color", "default").toString().takeUtf8();
+  m_imageKeys.set("color", colorName);
+  for (auto p : configValue("imageKeys", JsonObject()).toObject())
+    m_imageKeys.set(p.first, p.second.toString());
+
 
   setUniqueId(configValue("uniqueId").optString());
 
@@ -147,8 +153,8 @@ ClientEntityMode Object::clientEntityMode() const {
   return m_clientEntityMode;
 }
 
-void Object::init(World* world, EntityId entityId, EntityMode mode) {
-  Entity::init(world, entityId, mode);
+void Object::init(World* world, EntityId entityId, EntityMode mode, ConnectionId originConnection) {
+  Entity::init(world, entityId, mode, originConnection);
   // Only try and find a new orientation if we do not already have one,
   // otherwise we may have a valid orientation that depends on non-tile data
   // that is not loaded yet.
@@ -189,7 +195,7 @@ void Object::init(World* world, EntityId entityId, EntityMode mode) {
 
   if (isMaster()) {
     setImageKey("color", colorName);
-    for (auto p : configValue("defaultImageKeys", JsonObject()).toObject())
+    for (auto p : configValue("imageKeys", JsonObject()).toObject())
       setImageKey(p.first, p.second.toString());
 
     if (m_config->lightColors.contains(colorName))
@@ -213,9 +219,8 @@ void Object::init(World* world, EntityId entityId, EntityMode mode) {
 
     m_scriptComponent.addCallbacks("object", makeObjectCallbacks());
     m_scriptComponent.addCallbacks("config", LuaBindings::makeConfigCallbacks(bind(&Object::configValue, this, _1, _2)));
-    m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
     m_scriptComponent.addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(m_networkedAnimator.get()));
-    m_scriptComponent.init(world);
+    m_scriptComponent.init(this);
   }
 
   if (world->isClient()) {
@@ -227,8 +232,7 @@ void Object::init(World* world, EntityId entityId, EntityMode mode) {
       }));
     m_scriptedAnimator.addCallbacks("objectAnimator", makeAnimatorObjectCallbacks());
     m_scriptedAnimator.addCallbacks("config", LuaBindings::makeConfigCallbacks(bind(&Object::configValue, this, _1, _2)));
-    m_scriptedAnimator.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
-    m_scriptedAnimator.init(world);
+    m_scriptedAnimator.init(this);
   }
 
   m_xTilePosition.set(world->geometry().xwrap((int)m_xTilePosition.get()));
@@ -257,7 +261,6 @@ void Object::uninit() {
     m_scriptComponent.uninit();
     m_scriptComponent.removeCallbacks("object");
     m_scriptComponent.removeCallbacks("config");
-    m_scriptComponent.removeCallbacks("entity");
     m_scriptComponent.removeCallbacks("animator");
   }
 
@@ -266,7 +269,6 @@ void Object::uninit() {
     m_scriptedAnimator.removeCallbacks("animationConfig");
     m_scriptedAnimator.removeCallbacks("objectAnimator");
     m_scriptedAnimator.removeCallbacks("config");
-    m_scriptedAnimator.removeCallbacks("entity");
   }
 
   if (m_soundEffect)
@@ -495,23 +497,23 @@ void Object::destroy(RenderCallback* renderCallback) {
         auto smashDropPool = configValue("smashDropPool", "").toString();
         if (!smashDropPool.empty()) {
           for (auto const& treasureItem : Root::singleton().treasureDatabase()->createTreasure(smashDropPool, world()->threatLevel()))
-            world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position()));
+            world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position()),originConnection());
         } else if (!m_config->smashDropOptions.empty()) {
           List<ItemDescriptor> drops;
           auto dropOption = Random::randFrom(m_config->smashDropOptions);
           for (auto o : dropOption)
-            world()->addEntity(ItemDrop::createRandomizedDrop(o, position()));
+            world()->addEntity(ItemDrop::createRandomizedDrop(o, position()),originConnection());
         }
       } else {
         auto breakDropPool = configValue("breakDropPool", "").toString();
         if (!breakDropPool.empty()) {
           for (auto const& treasureItem : Root::singleton().treasureDatabase()->createTreasure(breakDropPool, world()->threatLevel()))
-            world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position()));
+            world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position()),originConnection());
         } else if (!m_config->breakDropOptions.empty()) {
           List<ItemDescriptor> drops;
           auto dropOption = Random::randFrom(m_config->breakDropOptions);
           for (auto o : dropOption)
-            world()->addEntity(ItemDrop::createRandomizedDrop(o, position()));
+            world()->addEntity(ItemDrop::createRandomizedDrop(o, position()),originConnection());
         } else if (m_config->hasObjectItem) {
           ItemDescriptor objectItem(m_config->name, 1);
           if (configValue("retainObjectParametersInItem", m_config->retainObjectParametersInItem).optBool().value()) {
@@ -520,11 +522,11 @@ void Object::destroy(RenderCallback* renderCallback) {
             parameters["scriptStorage"] = m_scriptComponent.getScriptStorage();
             objectItem = objectItem.applyParameters(parameters);
           }
-          world()->addEntity(ItemDrop::createRandomizedDrop(objectItem, position()));
+          world()->addEntity(ItemDrop::createRandomizedDrop(objectItem, position()),originConnection());
         }
       }
     } catch (StarException const& e) {
-      Logger::warn("Invalid dropID in entity death. {}", outputException(e, false));
+      Logger::warn("Failed to create treasure for object '{}': {}", name(), outputException(e, false));
     }
   }
 
@@ -678,7 +680,7 @@ Vec2F Object::questIndicatorPosition() const {
   }
 }
 
-Maybe<Json> Object::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
+Maybe<ChainableJsonMessageResponse> Object::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
   return m_scriptComponent.handleMessage(message, sendingConnection == world()->connection(), args);
 }
 
@@ -1175,8 +1177,7 @@ List<DamageNotification> Object::applyDamage(DamageRequest const& damage) {
   if (!m_config->smashable || !inWorld() || m_health.get() <= 0.0f)
     return {};
 
-  if (m_scriptComponent.context()->getPath("applyDamageRequest") != LuaNil) {
-    auto notifications = m_scriptComponent.invoke<List<DamageNotification>>("applyDamageRequest", damage);
+  if (auto notifications = m_scriptComponent.invoke<List<DamageNotification>>("applyDamageRequest", damage)) {
     float totalDamage = 0.0f;
     for (auto const& notification : *notifications)
       totalDamage += notification.healthLost;

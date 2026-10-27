@@ -99,7 +99,7 @@ public:
   EntityType entityType() const override;
   ClientEntityMode clientEntityMode() const override;
 
-  void init(World* world, EntityId entityId, EntityMode mode) override;
+  void init(World* world, EntityId entityId, EntityMode mode, ConnectionId originConnection = ServerConnectionId) override;
   void uninit() override;
 
   Vec2F position() const override;
@@ -203,13 +203,15 @@ public:
   Direction walkingDirection() const override;
   Direction facingDirection() const override;
 
-  Maybe<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args = {}) override;
+  Maybe<ChainableJsonMessageResponse> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args = {}) override;
 
   void update(float dt, uint64_t currentStep) override;
 
   void render(RenderCallback* renderCallback) override;
 
   void renderLightSources(RenderCallback* renderCallback) override;
+
+  void setRenderLayer(Maybe<EntityRenderLayer> layer);
 
   Json getGenericProperty(String const& name, Json const& defaultValue = Json()) const;
   void setGenericProperty(String const& name, Json const& value);
@@ -311,6 +313,8 @@ public:
   ShipUpgrades shipUpgrades();
   void setShipUpgrades(ShipUpgrades shipUpgrades);
   void applyShipUpgrades(Json const& upgrades);
+  void setShipSpecies(String species);
+  String shipSpecies() const;
 
   String name() const override;
   void setName(String const& name);
@@ -401,6 +405,20 @@ public:
   bool isDeployed() const;
 
   void setBusyState(PlayerBusyState busyState);
+  // All the busy states the interface currently wants shown (a window can be open while the chat box has focus).
+  void setBusyStates(Set<PlayerBusyState> const& busyStates);
+  Set<PlayerBusyState> const& busyStates() const;
+  // The strongest of those (menu, then chatting), before any hidden indicators are applied.
+  PlayerBusyState busyState() const;
+  // Scripts can hide the indicator of a busy state. While hidden, requesting that state shows none instead.
+  void setBusyIndicatorHidden(PlayerBusyState busyState, bool hidden);
+  bool busyIndicatorHidden(PlayerBusyState busyState) const;
+
+  // What the party sees in place of this player's name and portrait. Not saved, set by scripts.
+  Maybe<String> const& teamName() const;
+  void setTeamName(Maybe<String> name);
+  Maybe<List<Drawable>> const& teamPortrait() const;
+  void setTeamPortrait(Maybe<List<Drawable>> portrait);
 
   // A hard move to a specified location
   void moveTo(Vec2F const& footPosition);
@@ -413,6 +431,7 @@ public:
 
   void addChatMessage(String const& message, Json const& config = {});
   void addEmote(HumanoidEmote const& emote, Maybe<float> emoteCooldown = {});
+  void setDance(Maybe<String> const & danceName);
   pair<HumanoidEmote, float> currentEmote() const;
 
   State currentState() const;
@@ -517,8 +536,10 @@ public:
 
   void setAnimationParameter(String name, Json value);
 
+  void setDeathParticleBurst(Maybe<String> const& deathParticleBurst);
+
 private:
-  typedef LuaMessageHandlingComponent<LuaStorableComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>>> GenericScriptComponent;
+  typedef LuaMessageHandlingComponent<LuaStorableComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaEntityComponent<LuaBaseComponent>>>>> GenericScriptComponent;
   typedef shared_ptr<GenericScriptComponent> GenericScriptComponentPtr;
 
   typedef std::function<void(ItemPtr)> ItemSetFunc;
@@ -546,7 +567,7 @@ private:
 
   NetElementDynamicGroup<NetHumanoid> m_netHumanoid;
   NetElementData<Maybe<String>> m_deathParticleBurst;
-  LuaAnimationComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptedAnimator;
+  LuaAnimationComponent<LuaUpdatableComponent<LuaEntityComponent<LuaBaseComponent>>> m_scriptedAnimator;
   NetElementHashMap<String, Json> m_scriptedAnimationParameters;
   NetworkedAnimator::DynamicTarget m_humanoidDynamicTarget;
 
@@ -574,10 +595,13 @@ private:
   State m_state;
   HumanoidEmote m_emoteState;
 
+  Maybe<String> m_dance;
+  GameTimer m_danceCooldownTimer;
+
   float m_footstepTimer;
   float m_teleportTimer;
-  float m_emoteCooldownTimer;
-  float m_blinkCooldownTimer;
+  GameTimer m_emoteCooldownTimer;
+  GameTimer m_blinkCooldownTimer;
   float m_lastDamagedOtherTimer;
   EntityId m_lastDamagedTarget;
   GameTimer m_ageItemsTimer;
@@ -589,6 +613,12 @@ private:
 
   String m_teleportAnimationType;
   NetworkedAnimatorPtr m_effectsAnimator;
+  void updateBusyIndicator();
+  PlayerBusyState m_busyState = PlayerBusyState::None;
+  Set<PlayerBusyState> m_busyStates;
+  Set<PlayerBusyState> m_hiddenBusyIndicators;
+  Maybe<String> m_teamName;
+  Maybe<List<Drawable>> m_teamPortrait;
   NetworkedAnimator::DynamicTarget m_effectsAnimatorDynamicTarget;
 
   float m_emoteCooldown;
@@ -606,6 +636,7 @@ private:
   PlayerMode m_modeType;
   PlayerModeConfig m_modeConfig;
   ShipUpgrades m_shipUpgrades;
+  String m_shipSpecies;
 
   ToolUserPtr m_tools;
   ArmorWearerPtr m_armor;
@@ -683,6 +714,7 @@ private:
   NetElementString m_chatMessageNetState;
   NetElementEvent m_newChatMessageNetState;
   NetElementString m_emoteNetState;
+  NetElementData<Maybe<String>> m_humanoidDanceNetState;
 };
 
 }

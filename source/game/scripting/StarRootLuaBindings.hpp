@@ -13,7 +13,7 @@ namespace LuaBindings {
   LuaCallbacks makeRootCallbacks();
 
   namespace RootCallbacks {
-    String assetData(Root* root, String const& path);
+    String assetData(Root* root, String const& path, Maybe<bool> const& allowRemote);
     Image assetImage(Root* root, String const& path);
     Json assetFrames(Root* root, String const& path);
     Json assetJson(Root* root, String const& path);
@@ -28,7 +28,7 @@ namespace LuaBindings {
     float projectileGravityMultiplier(Root* root, String const& arg1);
     Json projectileConfig(Root* root, String const& arg1);
     JsonArray recipesForItem(Root* root, String const& arg1);
-    JsonArray allRecipes(Root* root);
+    JsonArray allRecipes(Root* root, Maybe<StringSet> filter);
     String itemType(Root* root, String const& itemName);
     Json itemTags(Root* root, String const& itemName);
     bool itemHasTag(Root* root, String const& itemName, String const& itemTag);

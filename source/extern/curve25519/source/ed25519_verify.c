@@ -295,11 +295,11 @@ int ed25519_Verify_Check(
     U8 md[SHA512_DIGEST_LENGTH];
 
     /* h = H(enc(R) + pk + m)  mod BPO */
-    SHA512_Init(&H);
-    SHA512_Update(&H, signature, 32);       /* enc(R) */
-    SHA512_Update(&H, ((EDP_SIGV_CTX*)context)->pk, 32);
-    SHA512_Update(&H, msg, msg_size);
-    SHA512_Final(md, &H);
+    S_SHA512_Init(&H);
+    S_SHA512_Update(&H, signature, 32);       /* enc(R) */
+    S_SHA512_Update(&H, ((EDP_SIGV_CTX*)context)->pk, 32);
+    S_SHA512_Update(&H, msg, msg_size);
+    S_SHA512_Final(md, &H);
     eco_DigestToWords(h, md);
     eco_Mod(h);
 

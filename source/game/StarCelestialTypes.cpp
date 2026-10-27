@@ -43,6 +43,8 @@ DataStream& operator<<(DataStream& ds, CelestialSystemObjects const& systemObjec
 CelestialChunk::CelestialChunk() {}
 
 CelestialChunk::CelestialChunk(Json const& store) {
+  persistent = true;
+  
   chunkIndex = jsonToVec2I(store.get("chunkIndex"));
 
   for (auto const& lines : store.getArray("constellations")) {

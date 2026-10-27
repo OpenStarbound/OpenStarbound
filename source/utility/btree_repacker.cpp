@@ -10,6 +10,7 @@ int main(int argc, char** argv) {
     double startTime = Time::monotonicTime();
 
     VersionOptionParser optParse;
+    optParse.setVersionName("Btree Repacker");
     optParse.setSummary("Repacks a Starbound BTree file to shrink its file size");
     optParse.addArgument("input file path", OptionParser::Required, "Path to the BTree to be repacked");
     optParse.addArgument("output filename", OptionParser::Optional, "Output BTree file");

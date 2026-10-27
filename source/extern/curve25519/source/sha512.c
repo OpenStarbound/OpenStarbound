@@ -45,9 +45,9 @@
 
 #define UINT64(X)   X##ULL
 
-void SHA512_Transform (SHA512_CTX *ctx, const void *in);
+void curve25519_SHA512_Transform (SHA512_CTX *ctx, const void *in);
 
-void SHA512_Init (SHA512_CTX *c)
+void S_SHA512_Init (SHA512_CTX *c)
 {
     c->h[0]=UINT64(0x6a09e667f3bcc908);
     c->h[1]=UINT64(0xbb67ae8584caa73b);
@@ -64,7 +64,7 @@ void SHA512_Init (SHA512_CTX *c)
     c->md_len=SHA512_DIGEST_LENGTH;
 }
 
-void SHA512_Final (unsigned char *md, SHA512_CTX *c)
+void S_SHA512_Final (unsigned char *md, SHA512_CTX *c)
 {
     unsigned char *p=(unsigned char *)c->u.p;
     size_t n=c->num;
@@ -73,7 +73,7 @@ void SHA512_Final (unsigned char *md, SHA512_CTX *c)
     n++;
     if (n > (SHA512_CBLOCK-16))
         mem_fill (p+n,0,SHA512_CBLOCK-n), n=0,
-        SHA512_Transform (c,p);
+        curve25519_SHA512_Transform (c,p);
 
     mem_fill (p+n,0,SHA512_CBLOCK-16-n);
 #ifdef  ECP_CONFIG_BIG_ENDIAN
@@ -98,7 +98,7 @@ void SHA512_Final (unsigned char *md, SHA512_CTX *c)
     p[SHA512_CBLOCK-16] = (unsigned char)(c->Nh>>56);
 #endif
 
-    SHA512_Transform (c,p);
+    curve25519_SHA512_Transform (c,p);
 
     if (md) for (n=0; n < SHA512_DIGEST_LENGTH/8; n++)
     {
@@ -115,7 +115,7 @@ void SHA512_Final (unsigned char *md, SHA512_CTX *c)
     }
 }
 
-void SHA512_Update (SHA512_CTX *c, const void *_data, size_t len)
+void S_SHA512_Update (SHA512_CTX *c, const void *_data, size_t len)
 {
     SHA_LONG64 l;
     unsigned char *p=c->u.p;
@@ -141,13 +141,13 @@ void SHA512_Update (SHA512_CTX *c, const void *_data, size_t len)
         {
             memcpy (p+c->num,data,n), c->num = 0;
             len-=n, data+=n;
-            SHA512_Transform (c,p);
+            curve25519_SHA512_Transform (c,p);
         }
     }
 
     while (len >= SHA512_CBLOCK)
     {
-        SHA512_Transform (c,data);//,len/SHA512_CBLOCK),
+        curve25519_SHA512_Transform (c,data);//,len/SHA512_CBLOCK),
         data += SHA512_CBLOCK;
         len  -= SHA512_CBLOCK;
     }
@@ -223,7 +223,7 @@ static const SHA_LONG64 K512[80] =
     T1 = X[(j)&0x0f] += s0 + s1 + X[(j+9)&0x0f]; \
     ROUND_00_15(i+j,a,b,c,d,e,f,g,h); } while (0)
 
-void SHA512_Transform (SHA512_CTX *ctx, const void *in)
+void curve25519_SHA512_Transform (SHA512_CTX *ctx, const void *in)
 {
     const SHA_LONG64 *W = (SHA_LONG64*)in;
     SHA_LONG64  a,b,c,d,e,f,g,h,s0,s1,T1;

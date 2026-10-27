@@ -274,10 +274,13 @@ Input::BindRef::BindRef(BindEntry& bindEntry) {
   mods = KeyMod::NoMod;
 }
 
-Input::BindCategory::BindCategory(String categoryId, Json const& categoryConfig) {
+Input::BindCategory::BindCategory() {};
+
+void Input::BindCategory::mergeJson(String const& categoryId, Json const& categoryConfig) {
   id = categoryId;
-  config = categoryConfig;
+  config = jsonMerge(config, categoryConfig);
   name = config.getString("name", id);
+  entries.clear();
 
   ConfigurationPtr userConfig = Root::singletonPtr()->configuration();
   auto userBindings = userConfig->get(InputBindingConfigRoot);
@@ -558,7 +561,7 @@ void Input::reload() {;
       if (!categoryConfig.isType(Json::Type::Object))
         continue;
 
-      m_bindCategories.try_emplace(categoryId, categoryId, categoryConfig);
+      m_bindCategories[categoryId].mergeJson(categoryId, categoryConfig);
     }
   }
 

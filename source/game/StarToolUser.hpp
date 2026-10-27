@@ -72,7 +72,7 @@ public:
 
   void suppressItems(bool suppress);
 
-  Maybe<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
+  Maybe<ChainableJsonMessageResponse> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
 
   float beamGunRadius() const;
 

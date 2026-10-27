@@ -165,6 +165,13 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
   callbacks.registerCallback(   "interactRadius", [player]()         { return player->interactRadius();       });
   callbacks.registerCallback("setInteractRadius", [player](float radius) { player->setInteractRadius(radius); });
 
+  callbacks.registerCallback("setRenderLayer", [player](Maybe<String> const& layer) {
+    if (layer)
+      player->setRenderLayer(parseRenderLayer(*layer));
+    else
+      player->setRenderLayer({});
+  });
+
   callbacks.registerCallback("actionBarGroup", [player]() {
     return luaTupleReturn(player->inventory()->customBarGroup() + 1, player->inventory()->customBarGroups());
   });
@@ -266,6 +273,10 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
   callbacks.registerCallback("currentEmote", [player]() {
     auto currentEmote = player->currentEmote();
     return luaTupleReturn(HumanoidEmoteNames.getRight(currentEmote.first), currentEmote.second);
+  });
+
+  callbacks.registerCallback("dance", [player](Maybe<String> const& dance) {
+    player->setDance(dance);
   });
 
   callbacks.registerCallback("currentState", [player]() {
@@ -370,6 +381,20 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
         return item->descriptor().toJson();
       return Json();
     });
+
+  callbacks.registerCallback("armorVisible", [player](String const& slotName) -> Maybe<bool> {
+    if (auto slotPtr = EquipmentSlotNames.leftPtr(slotName))
+      return player->inventory()->equipmentVisibility(*slotPtr);
+    return {};
+  });
+
+  callbacks.registerCallback("setArmorVisible", [player](String const& slotName, bool visible) -> bool {
+    if (auto slotPtr = EquipmentSlotNames.leftPtr(slotName)) {
+      player->inventory()->setEquipmentVisibility(*slotPtr, visible);
+      return true;
+    }
+    return false;
+  });
 
   callbacks.registerCallback("hasItem", [player](Json const& item, Maybe<bool> exactMatch) {
       return player->hasItem(ItemDescriptor(item), exactMatch.value(false));
@@ -655,6 +680,32 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
   callbacks.registerCallback("playTime", [player]() { return player->log()->playTime(); });
 
   callbacks.registerCallback("introComplete", [player]() { return player->log()->introComplete(); });
+
+  callbacks.registerCallback("busyState", [player]() {
+      return PlayerBusyStateNames.getRight(player->busyState());
+    });
+  callbacks.registerCallback("busyStates", [player]() {
+      StringList names;
+      for (auto state : player->busyStates())
+        names.append(PlayerBusyStateNames.getRight(state));
+      return names;
+    });
+  callbacks.registerCallback("busyIndicatorHidden", [player](String const& state) {
+      return player->busyIndicatorHidden(PlayerBusyStateNames.getLeft(state));
+    });
+  callbacks.registerCallback("setBusyIndicatorHidden", [player](String const& state, bool hidden) {
+      player->setBusyIndicatorHidden(PlayerBusyStateNames.getLeft(state), hidden);
+    });
+  callbacks.registerCallback("teamName", [player]() { return player->teamName(); });
+  callbacks.registerCallback("setTeamName", [player](Maybe<String> name) { player->setTeamName(std::move(name)); });
+  callbacks.registerCallback("teamPortrait", [player]() -> Maybe<Json> {
+      if (auto const& portrait = player->teamPortrait())
+        return jsonFromList(*portrait, mem_fn(&Drawable::toJson));
+      return {};
+    });
+  callbacks.registerCallback("setTeamPortrait", [player](Maybe<Json> const& portrait) {
+      player->setTeamPortrait(portrait ? jsonToList<Drawable>(*portrait) : Maybe<List<Drawable>>());
+    });
   callbacks.registerCallback("setIntroComplete", [player](bool complete) {
       return player->log()->setIntroComplete(complete);
     });
@@ -801,6 +852,22 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
 
   callbacks.registerCallback("setAnimationParameter", [player](String name, Json value) {
     player->setAnimationParameter(name, value);
+  });
+
+  callbacks.registerCallback("setCameraFocusEntity", [player](Maybe<EntityId> const& entityId) {
+    player->setCameraFocusEntity(entityId);
+  });
+
+  callbacks.registerCallback("setDeathParticleBurst", [player](Maybe<String> const& deathParticleBurst) {
+    player->setDeathParticleBurst(deathParticleBurst);
+  });
+
+  callbacks.registerCallback("headRotation", [player]() {
+    return player->getSecretProperty("humanoid.headRotation");
+  });
+  // more accurate than mcontroller.facingDirection
+  callbacks.registerCallback("facingDirection", [player]() {
+    return numericalDirection(player->humanoid()->facingDirection());
   });
 
   return callbacks;

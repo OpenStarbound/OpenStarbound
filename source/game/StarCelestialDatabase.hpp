@@ -106,6 +106,8 @@ public:
 
   // overwrite the celestial parameters for the world at the given celestial coordinate
   void updateParameters(CelestialCoordinate const& coordinate, CelestialParameters const& parameters);
+  
+  void markPersistent(CelestialCoordinate const& coordinate);
 
 protected:
   struct SatelliteType {
@@ -171,6 +173,8 @@ protected:
       RandomSource& random, List<Vec2I> const& constellationCandidates) const;
 
   GenerationInformation m_generationInformation;
+  
+  bool m_chunksAlwaysPersistent = false;
 
   mutable RecursiveMutex m_mutex;
 

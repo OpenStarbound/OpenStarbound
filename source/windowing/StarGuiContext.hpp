@@ -120,7 +120,7 @@ public:
   StringList wrapInterfaceText(String const& s, Maybe<unsigned> wrapWidth);
 
   void playAudio(AudioInstancePtr audioInstance);
-  void playAudio(String const& audioAsset, int loops = 0, float volume = 1.0f, float pitch = 1.0f);
+  AudioInstancePtr playAudio(String const& audioAsset, int loops = 0, float volume = 1.0f, float pitch = 1.0f);
 
   bool shiftHeld() const;
   void setShiftHeld(bool held);
@@ -130,6 +130,7 @@ public:
   bool setClipboardData(StringMap<ByteArray> data);
   bool setClipboardImage(Image const& image, ByteArray* png, String const* path = nullptr);
   bool setClipboardFile(String const& path);
+  float getDisplayScale() const;
 
   void cleanup();
 

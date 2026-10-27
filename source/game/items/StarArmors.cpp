@@ -28,6 +28,7 @@ ArmorItem::ArmorItem(Json const& config, String const& directory, Json const& da
 
   auto directives = instanceValue("directives", "").toString();
   m_directives = directives;
+  m_fullbright = instanceValue("fullbright",false).toBool();
 
   m_colorOptions = colorDirectivesFromConfig(config.getArray("colorOptions", JsonArray{""}));
   if (!m_directives)
@@ -96,6 +97,10 @@ List<String> const& ArmorItem::colorOptions() {
 
 Directives const& ArmorItem::directives(bool flip) const {
   return (flip && m_flipDirectives) ? *m_flipDirectives : m_directives;
+}
+
+bool ArmorItem::fullbright() const {
+  return m_fullbright;
 }
 
 bool ArmorItem::flipping() const {

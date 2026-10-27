@@ -121,18 +121,7 @@ unsigned FontTextureGroup::glyphWidth(String::Char c, unsigned fontSize) {
 }
 
 Font* FontTextureGroup::getFontForCharacter(String::Char c) {
-  if (((c >= 0x1F600 && c <= 0x1F64F) || // Emoticons
-       (c >= 0x1F300 && c <= 0x1F5FF) || // Misc Symbols and Pictographs
-       (c >= 0x1F680 && c <= 0x1F6FF) || // Transport and Map
-       (c >= 0x1F1E6 && c <= 0x1F1FF) || // Regional country flags
-       (c >= 0x2600  && c <= 0x26FF ) || // Misc symbols 9728 - 9983
-       (c >= 0x2700  && c <= 0x27BF ) || // Dingbats
-       (c >= 0xFE00  && c <= 0xFE0F ) || // Variation Selectors
-       (c >= 0x1F900 && c <= 0x1F9FF) || // Supplemental Symbols and Pictographs
-       (c >= 0x1F018 && c <= 0x1F270) || // Various asian characters
-       (c >= 65024   && c <= 65039  ) || // Variation selector
-       (c >= 9100    && c <= 9300   ) || // Misc items
-       (c >= 8400    && c <= 8447   ))&& // Combining Diacritical Marks for Symbols
+  if ((emoji_ucd_is_presentation(c) || emoji_ucd_is_modifier_base(c)) && // Check only for Unicode emojis marked with a preference for emoji display/presentation (so that random symbols and digits don't get overridden) + Unicode emoji modifier bases (since for the purposes of simple single codepoint handling here they are just more regular emojis that need to be included)
       m_emojiFont->exists(c)
     )
     return m_emojiFont.get();

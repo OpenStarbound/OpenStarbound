@@ -16,6 +16,7 @@ public:
       MainInterfacePaneManager* paneManager, StringMap<StringList> macroCommands);
 
   StringList handleCommand(String const& commandLine, bool userInput = false);
+  StringList updatePromises();
 
   bool debugDisplayEnabled() const;
   bool debugHudEnabled() const;
@@ -67,8 +68,8 @@ private:
   MainInterfacePaneManager* m_paneManager;
   CaseInsensitiveStringMap<function<String(String const&)>> m_builtinCommands;
   StringMap<StringList> m_macroCommands;
+  HashMap<Uuid,RpcPromise<Json>> m_commandPromises;
   ShellParser m_parser;
-  LuaBaseComponent m_scriptComponent;
   bool m_debugDisplayEnabled = false;
   bool m_debugHudEnabled = true;
   bool m_fixedCameraEnabled = false;

@@ -45,12 +45,13 @@ private:
 template <typename Base>
 LuaAnimationComponent<Base>::LuaAnimationComponent() {
   LuaCallbacks animationCallbacks;
-  animationCallbacks.registerCallback("playAudio", [this](String const& sound, Maybe<int> loops, Maybe<float> volume) {
+  animationCallbacks.registerCallback("playAudio", [this](String const& sound, Maybe<int> loops, Maybe<float> volume) -> AudioInstancePtr {
       auto audio = make_shared<AudioInstance>(*Root::singleton().assets()->audio(sound));
       audio->setLoops(loops.value(0));
       audio->setVolume(volume.value(1.0f));
       m_pendingAudios.append(audio);
       m_activeAudio.append(audio);
+      return audio;
     });
   animationCallbacks.registerCallback("spawnParticle", [this](Json const& particleConfig, Maybe<Vec2F> const& position) {
       auto particle = Root::singleton().particleDatabase()->particle(particleConfig);
@@ -70,6 +71,18 @@ LuaAnimationComponent<Base>::LuaAnimationComponent() {
 
       m_drawables.append({std::move(drawable), renderLayer});
     });
+  animationCallbacks.registerCallback("addJsonDrawable", [this](Json drawableConfig, Maybe<String> renderLayerName) {
+      Maybe<EntityRenderLayer> renderLayer;
+      Drawable drawable(drawableConfig);
+      if (renderLayerName)
+        renderLayer = parseRenderLayer(*renderLayerName);
+
+      if (auto image = drawable.part.ptr<Drawable::ImagePart>())
+        image->transformation.scale(0.125f);
+
+      m_drawables.append({std::move(drawable), renderLayer});
+    });
+
   animationCallbacks.registerCallback("clearLightSources", [this]() {
       m_lightSources.clear();
     });

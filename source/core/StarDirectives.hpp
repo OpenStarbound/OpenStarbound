@@ -53,6 +53,9 @@ public:
   Directives& operator=(Directives&& other) noexcept;
   Directives& operator=(Directives const& other);
 
+  // Appends other's operations after this one's, adding the '?' between them if needed
+  Directives& operator+=(Directives const& other);
+
   void loadOperations() const;
   void parse(String&& directives);
   StringView prefix() const;
@@ -108,6 +111,9 @@ public:
 
   void forEach(DirectivesCallback callback) const;
   bool forEachAbortable(AbortableDirectivesCallback callback) const;
+
+  // The paths of all the images that the operations refer to (masks, blends), loading the operations as needed
+  StringList imageReferences() const;
 
   Image applyNewImage(const Image& image, ImageReferenceCallback refCallback = {}) const;
   void applyExistingImage(Image& image, ImageReferenceCallback refCallback = {}) const;

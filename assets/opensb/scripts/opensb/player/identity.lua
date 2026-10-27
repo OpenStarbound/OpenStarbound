@@ -45,6 +45,9 @@ commands.register("identity", function(args)
       if arg1:find("%.") then
         return "Name cannot contain '.'"
       end
+        if not root.getConfigurationPath("savedHumanoids") then
+          root.setConfigurationPath("savedHumanoids", {})
+        end
         root.setConfigurationPath("savedHumanoids." .. arg1, {identity = player.humanoidIdentity(), parameters = player.getHumanoidParameters()})
       return "Saved identity to starbound.config:savedHumanoids."..arg1
     else
@@ -95,4 +98,9 @@ commands.register("description", function(args)
     player.setDescription(args)
     return "Description set to " .. args .. ". Warp or rejoin for it to take effect."
   end
+end)
+
+commands.register("editor", function()
+  player.interact("scriptPane", "/interface/opensb/charcreation/charcreation.config", player.id())
+  return "Opened experimental character editor. To avoid losing your appearance, try the '/identity save' command."
 end)

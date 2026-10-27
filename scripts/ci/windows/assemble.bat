@@ -14,6 +14,9 @@ set server=server_distribution
 if exist %server% rmdir %server% /S /Q
 xcopy %client% %server% /E /I
 
+rem the OpenStarbound page of the credits lists the contributors of the repository (leaves the committed list alone if GitHub can't be reached)
+bash scripts/credits/generate-contributors.sh
+
 .\dist\asset_packer.exe -c scripts\packing.config assets\opensb %client%\assets\opensb.pak
 
 for /f "delims=" %%f in (scripts\ci\windows\files_client.txt) do (
@@ -30,3 +33,6 @@ set win=windows
 if exist %win% rmdir %win% /S /Q
 xcopy %client% %win% /E /I /Y
 xcopy %server% %win% /E /I /Y
+
+7z -bb3 -mtp=2 -mm=Deflate64 -mx=9 a client.zip -r %client%
+7z -bb3 -mtp=2 -mm=Deflate64 -mx=9 a server.zip -r %server%

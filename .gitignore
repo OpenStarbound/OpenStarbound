@@ -39,6 +39,7 @@ install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake
 _deps
+CMakeUserPresets.json
 
 
 .vscode/*
@@ -48,3 +49,6 @@ _deps
 
 # Built Visual Studio Code Extensions
 *.vsix
+
+# Nix Flake
+result

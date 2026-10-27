@@ -1,7 +1,7 @@
 #pragma once
 
 #include "StarOrderedMap.hpp"
-#include "StarEntity.hpp"
+#include "StarMobileEntity.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarScriptedEntity.hpp"
 #include "StarStatusEffectEntity.hpp"
@@ -20,12 +20,7 @@ STAR_STRUCT(ProjectileConfig);
 
 STAR_CLASS(Projectile);
 
-class Projectile :
-  public virtual Entity,
-  public virtual ScriptedEntity,
-  public virtual PhysicsEntity,
-  public virtual StatusEffectEntity,
-  public virtual MobileEntity {
+class Projectile : public virtual MobileEntity, public virtual ScriptedEntity, public virtual PhysicsEntity, public virtual StatusEffectEntity {
 public:
   Projectile(ProjectileConfigPtr const& config, Json const& parameters);
   Projectile(ProjectileConfigPtr const& config, DataStreamBuffer& netState, NetCompatibilityRules rules = {});
@@ -34,7 +29,7 @@ public:
 
   EntityType entityType() const override;
 
-  void init(World* world, EntityId entityId, EntityMode mode) override;
+  void init(World* world, EntityId entityId, EntityMode mode, ConnectionId originConnection = ServerConnectionId) override;
   void uninit() override;
 
   String typeName() const;
@@ -68,7 +63,7 @@ public:
   void render(RenderCallback* renderCallback) override;
   void renderLightSources(RenderCallback* renderCallback) override;
 
-  Maybe<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
+  Maybe<ChainableJsonMessageResponse> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
 
   Maybe<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
   Maybe<LuaValue> evalScript(String const& code) override;
@@ -108,6 +103,8 @@ public:
   Maybe<PhysicsMovingCollision> movingCollision(size_t positionIndex) const override;
 
   using Entity::setTeam;
+  
+  MovementController* movementController() override;
 
   MovementController* movementController() override;
 
@@ -192,7 +189,7 @@ private:
   Vec2I m_collisionTile;
   Vec2I m_lastNonCollidingTile;
 
-  mutable LuaMessageHandlingComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptComponent;
+  mutable LuaMessageHandlingComponent<LuaUpdatableComponent<LuaEntityComponent<LuaBaseComponent>>> m_scriptComponent;
 
   OrderedHashMap<String, PhysicsForceConfig> m_physicsForces;
   OrderedHashMap<String, PhysicsCollisionConfig> m_physicsCollisions;

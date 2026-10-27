@@ -22,6 +22,7 @@
 #include "StarClientContext.hpp"
 #include "StarUuid.hpp"
 #include "StarCelestialLuaBindings.hpp"
+#include "StarUniverseClient.hpp"
 
 namespace Star {
 
@@ -210,7 +211,7 @@ void Quest::uninit() {
   m_world = nullptr;
 }
 
-Maybe<Json> Quest::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
+Maybe<ChainableJsonMessageResponse> Quest::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
   if (!m_inited)
     return {};
   return m_scriptComponent.handleMessage(message, localMessage, args);
@@ -583,12 +584,11 @@ void Quest::initScript() {
   m_scriptComponent.addCallbacks("config", LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def) {
       return Json(getTemplate()->scriptConfig).query(name, def);
     }));
-  m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(m_player));
   m_scriptComponent.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(m_player->statusController()));
   m_scriptComponent.addActorMovementCallbacks(m_player->movementController());
   m_inited = true;
 
-  m_scriptComponent.init(m_world);
+  m_scriptComponent.init(m_player);
 }
 
 void Quest::uninitScript() {
@@ -597,7 +597,6 @@ void Quest::uninitScript() {
   m_scriptComponent.removeCallbacks("celestial");
   m_scriptComponent.removeCallbacks("player");
   m_scriptComponent.removeCallbacks("config");
-  m_scriptComponent.removeCallbacks("entity");
   m_scriptComponent.removeCallbacks("status");
   m_scriptComponent.removeActorMovementCallbacks();
   m_inited = false;

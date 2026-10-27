@@ -50,8 +50,6 @@ DamageDatabase::DamageDatabase() {
 DamageKind const& DamageDatabase::damageKind(String kind) const {
   if (kind.empty())
     kind = "default";
-  else
-    kind = kind.toLower();
 
   if (!m_damageKinds.contains(kind))
     throw StarException(strf("Unknown damage definition with kind '{}'.", kind));
@@ -60,7 +58,7 @@ DamageKind const& DamageDatabase::damageKind(String kind) const {
 }
 
 ElementalType const& DamageDatabase::elementalType(String const& name) const {
-  if (!m_damageKinds.contains(name))
+  if (!m_elementalTypes.contains(name))
     throw StarException(strf("Unknown elemental type with name '{}'.", name));
 
   return m_elementalTypes.get(name);

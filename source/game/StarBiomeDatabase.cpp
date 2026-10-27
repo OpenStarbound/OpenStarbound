@@ -42,9 +42,13 @@ float BiomeDatabase::biomeHueShift(String const& biomeName, uint64_t seed) const
   return pickHueShiftFromJson(config.parameters.get("hueShiftOptions", {}), seed, "BiomeHueShift");
 }
 
+bool BiomeDatabase::biomeHasWeather(String const& biomeName) const {
+  return m_biomes.get(biomeName).parameters.contains("weather");
+}
+
 WeatherPool BiomeDatabase::biomeWeathers(String const& biomeName, uint64_t seed, float threatLevel) const {
   WeatherPool weatherPool;
-  if (auto weatherList = binnedChoiceFromJson(m_biomes.get(biomeName).parameters.get("weather", JsonArray{}), threatLevel).optArray()) {
+  if (auto weatherList = binnedChoiceFromJson(m_biomes.get(biomeName).parameters.get("weather", JsonArray{}), threatLevel).optArray(); weatherList && !weatherList->empty()) {
     auto weatherPoolPath = staticRandomFrom(*weatherList, seed, "WeatherPool");
 
     auto assets = Root::singleton().assets();
@@ -187,6 +191,10 @@ BiomePtr BiomeDatabase::createBiome(String const& biomeName, uint64_t seed, floa
   }
 }
 
+Json BiomeDatabase::biomeConfig(String const & biomeName) const {
+  return m_biomes.get(biomeName).toJson();
+}
+
 float BiomeDatabase::pickHueShiftFromJson(Json source, uint64_t seed, String const& key) {
   if (source.isNull())
     return 0;
@@ -228,6 +236,14 @@ List<pair<ModId, float>> BiomeDatabase::readOres(Json const& oreDistribution, fl
     }
   }
   return ores;
+}
+
+Json BiomeDatabase::Config::toJson() const {
+  return JsonObject{
+    {"config", parameters},
+    {"name", name},
+    {"path", path}
+  };
 }
 
 }

@@ -21,6 +21,7 @@ enum class MainInterfacePanes {
   Ai,
   Popup,
   Confirmation,
+  HttpTrustDialog, // sorry i need it here
   JoinRequest,
   Options,
   QuestLog,

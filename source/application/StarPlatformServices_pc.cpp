@@ -22,12 +22,61 @@ PcPlatformServicesState::PcPlatformServicesState()
 #endif
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
-  SteamErrMsg errMsg;
-  if (SteamAPI_InitEx(&errMsg) == k_ESteamAPIInitResult_OK) {
-    steamAvailable = true;
-    Logger::info("Initialized Steam platform services");
+  bool shouldLoadSteam = true;
+
+  #ifdef STAR_SYSTEM_LINUX
+  // Flatpak doesn't create ~/.steam by default, which prevents
+  // SteamAPI from initializing...
+  //
+  // Flatpak also causes crashes should the user rectify this by
+  // symlinking.
+  //
+  // We'll determine if the user is using Flatpak for Steam here,
+  // so we can warn them about such issues.
+  shouldLoadSteam = true;
+
+  bool steamFlatpakInstalled = false;
+
+  if (File::isDirectory("/var/lib/flatpak/app/com.valvesoftware.Steam")) {
+    Logger::info("Steam flatpak is installed");
+    steamFlatpakInstalled = true;
+  }
+
+  String steamRootPath = String::joinWith("", getenv("HOME"), "/.steam");
+  if (!File::isDirectory(steamRootPath)) {
+    if (steamFlatpakInstalled) {
+      g_steamIsFlatpak = true;
+    } else {
+      Logger::info("Could not find ~/.steam; Steam platform services will be unavailable!");
+      shouldLoadSteam = false;
+    }
   } else {
-    Logger::info("Failed to initialize Steam platform services: {}", errMsg);
+    // Account for the user having Steam installed as both a flatpak
+    // and normal.
+    if (steamFlatpakInstalled) {
+      // Check if ~/.steam points to a flatpak installation
+      String steamAbsRootPath = File::fullPath(steamRootPath);
+      if (steamAbsRootPath.contains("com.valvesoftware.Steam")) {
+        Logger::info("~/.steam points towards the installed flatpak");
+        g_steamIsFlatpak = true;
+        shouldLoadSteam = false;
+      } else {
+        Logger::info("~/.steam does not point towards the installed flatpak");
+      }
+    }
+  }
+  #endif
+
+  if (shouldLoadSteam) {
+    SteamErrMsg errMsg;
+    if (SteamAPI_InitEx(&errMsg) == k_ESteamAPIInitResult_OK) {
+      steamAvailable = true;
+      Logger::info("Initialized Steam platform services");
+    } else {
+      Logger::info("Failed to initialize Steam platform services: {}", errMsg);
+    }
+  } else {
+    Logger::info("Skipping Steam platform initialization");
   }
 #endif
 

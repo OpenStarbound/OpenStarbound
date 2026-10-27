@@ -44,7 +44,7 @@ public:
   void init(Player* player, World* world, UniverseClient* client);
   void uninit();
 
-  Maybe<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
+  Maybe<ChainableJsonMessageResponse> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
   Maybe<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args);
   void update(float dt);
 
@@ -186,7 +186,7 @@ private:
   Maybe<float> m_progress;
   Maybe<float> m_compassDirection;
 
-  LuaMessageHandlingComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaStorableComponent<LuaWorldComponent<LuaBaseComponent>>>>>
+  LuaMessageHandlingComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaStorableComponent<LuaEntityComponent<LuaBaseComponent>>>>>
       m_scriptComponent;
 };
 

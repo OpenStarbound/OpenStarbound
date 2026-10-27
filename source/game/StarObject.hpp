@@ -42,7 +42,7 @@ public:
   virtual EntityType entityType() const override;
   virtual ClientEntityMode clientEntityMode() const override;
 
-  virtual void init(World* world, EntityId entityId, EntityMode mode) override;
+  virtual void init(World* world, EntityId entityId, EntityMode mode, ConnectionId originConnection = ServerConnectionId) override;
   virtual void uninit() override;
 
   virtual Vec2F position() const override;
@@ -139,7 +139,7 @@ public:
   virtual StringSet turnInQuests() const override;
   virtual Vec2F questIndicatorPosition() const override;
 
-  Maybe<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args = {}) override;
+  Maybe<ChainableJsonMessageResponse> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args = {}) override;
 
   // Check, in order, the passed in object parameters, the config parameters,
   // and then the orientation parameters for the given key.  Returns 'def' if
@@ -172,8 +172,8 @@ protected:
 
   PolyF volume() const;
 
-  LuaMessageHandlingComponent<LuaStorableComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>> m_scriptComponent;
-  mutable LuaAnimationComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptedAnimator;
+  LuaMessageHandlingComponent<LuaStorableComponent<LuaUpdatableComponent<LuaEntityComponent<LuaBaseComponent>>>> m_scriptComponent;
+  mutable LuaAnimationComponent<LuaUpdatableComponent<LuaEntityComponent<LuaBaseComponent>>> m_scriptedAnimator;
 
   NetElementTopGroup m_netGroup;
   NetElementBool m_interactive;

@@ -1,4 +1,5 @@
 #include "StarCompression.hpp"
+#include "StarZSTDCompression.hpp"
 #include "StarEncode.hpp"
 #include "StarRoot.hpp"
 #include "StarGameTypes.hpp"
@@ -155,37 +156,43 @@ namespace Dungeon {
     return false;
   }
 
-  TMXTileLayer::TMXTileLayer(Json const& layer) {
-    unsigned width = layer.getInt("width"), height = layer.getInt("height");
-    int x = layer.getInt("x", 0), y = layer.getInt("y", 0);
-    m_rect = RectI({x, y}, {x + (int)width - 1, y + (int)height - 1});
+TMXTileLayer::TMXTileLayer(Json const& layer) {
+  unsigned width = layer.getInt("width"), height = layer.getInt("height");
+  int x = layer.getInt("x", 0), y = layer.getInt("y", 0);
+  m_rect = RectI({x, y}, {x + (int)width - 1, y + (int)height - 1});
+  m_name = layer.getString("name");
+  m_layer = Tiled::LayerNames.getLeft(m_name);
 
-    m_name = layer.getString("name");
-    m_layer = Tiled::LayerNames.getLeft(m_name);
-
-    if (layer.optString("compression") == String("zlib")) {
-      ByteArray compressedData = base64Decode(layer.getString("data"));
-      ByteArray bytes = uncompressData(compressedData);
-      for (size_t i = 0; i + 3 < bytes.size(); i += 4) {
-        uint32_t gid = (uint8_t)bytes[i] | ((uint8_t)bytes[i + 1] << 8) | ((uint8_t)bytes[i + 2] << 16) | ((uint8_t)bytes[i + 3] << 24);
-        m_tileData.append(gid & ~TileFlip::AllBits);
-      }
-    } else if (!layer.contains("compression")) {
-      for (Json const& index : layer.getArray("data")) {
-        // Ignore flipped tiles. Tiled can flip selected regions with X, but
-        // this
-        // also flips individual tiles (setting the high bits on the GID).
-        // Starbound has no support for flipped tiles, but being able to flip
-        // regions is still useful.
-        m_tileData.append(index.toUInt() & ~TileFlip::AllBits);
-      }
-    } else {
-      throw StarException::format("TMXTileLayer does not support compression mode {}", layer.getString("compression"));
+  if (!layer.contains("compression")) {
+    for (Json const& index : layer.getArray("data")) {
+      m_tileData.append(index.toUInt() & ~TileFlip::AllBits);
     }
-
-    if (m_tileData.count() != width * height)
-      throw StarException("TMXTileLayer data length was inconsistent with width/height");
+  } else {
+    String compression = layer.getString("compression");
+    ByteArray base64Data = base64Decode(layer.getString("data"));
+    ByteArray bytes;
+        
+    if (compression == "") { // uncompressed base64
+      bytes = base64Data;
+    } else if (compression == "gzip") {
+      bytes = uncompressDataGzip(base64Data);
+    } else if (compression == "zlib") {
+      bytes = uncompressData(base64Data);
+    } else if (compression == "zstd") {
+      bytes = ZstdCompression::decompress(base64Data);
+    } else {
+      throw StarException::format("TMXTileLayer does not support compression mode {}", compression);
+    }
+        
+    for (size_t i = 0; i + 3 < bytes.size(); i += 4) {
+      uint32_t gid = (uint8_t)bytes[i] | ((uint8_t)bytes[i + 1] << 8) | ((uint8_t)bytes[i + 2] << 16) | ((uint8_t)bytes[i + 3] << 24);
+      m_tileData.append(gid & ~TileFlip::AllBits);
+    }
   }
+    
+  if (m_tileData.count() != width * height)
+    throw StarException("TMXTileLayer data length was inconsistent with width/height");
+}
 
   TMXMap::TMXMap(Json const& tmx) {
     if (tmx.getUInt("tileheight") != 8 || tmx.getUInt("tilewidth") != 8)

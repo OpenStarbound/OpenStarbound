@@ -139,14 +139,11 @@ void BubbleSeparator<T>::forEach(function<void(Bubble&, T&)> func) {
   List<Box<float, 2>> rightEdges = std::move(m_sortedRightEdges);
 
   m_bubbles.exec([this, func, &anyMoved, &leftEdges, &rightEdges](Bubble& bubble) {
-    RectF oldBoundBox = bubble.boundBox;
-
     func(bubble, bubble.contents);
 
     // Kae: I'm disabling the movement threshold check for now because it also
     // stops bubble sorting on bubbles that haven't moved, which causes problems.
 
-    Vec2F sizeDelta = bubble.boundBox.size() - oldBoundBox.size();
     leftEdges.remove(bubble.separatedBox);
     rightEdges.remove(bubble.separatedBox);
     RectF boundBox = RectF::withCenter(bubble.idealDestination, bubble.boundBox.size());

@@ -64,9 +64,14 @@ StatusController::StatusController(Json const& config) : m_statCollection(config
   m_netGroup.addNetElement(&m_uniqueEffectMetadata);
   m_netGroup.addNetElement(&m_effectAnimators);
 
-  if (m_primaryAnimationConfig)
-    m_primaryAnimatorId = m_effectAnimators.addNetElement(make_shared<EffectAnimator>(*m_primaryAnimationConfig));
-  else
+  m_toolUsageSuppressed.setCompatibilityVersion(12);
+  m_netGroup.addNetElement(&m_toolUsageSuppressed);
+
+  if (m_primaryAnimationConfig) {
+    auto effectAnimator = make_shared<EffectAnimator>(*m_primaryAnimationConfig);
+    effectAnimator->includeBack = config.getBool("primaryAnimationIncludeBack",false);
+    m_primaryAnimatorId = m_effectAnimators.addNetElement(effectAnimator);
+  } else
     m_primaryAnimatorId = EffectAnimatorGroup::NullElementId;
 }
 
@@ -552,10 +557,28 @@ const DirectivesGroup& StatusController::parentDirectives() const {
   return m_parentDirectives.get();
 }
 
-List<Drawable> StatusController::drawables() const {
+List<Drawable> StatusController::backDrawables() const {
   List<Drawable> drawables;
   for (auto const& animator : m_effectAnimators.netElements())
-    drawables.appendAll(animator->animator.drawables(m_movementController->position()));
+    if (animator->includeBack)
+      for (auto& piece : animator->animator.drawablesWithZLevel(m_movementController->position())) {
+        if (piece.second < 0.0f)
+          drawables.append(std::move(piece.first));
+      }
+  return drawables;
+}
+
+List<Drawable> StatusController::frontDrawables() const {
+  List<Drawable> drawables;
+  for (auto const& animator : m_effectAnimators.netElements())
+    if (animator->includeBack) {
+      for (auto& piece : animator->animator.drawablesWithZLevel(m_movementController->position())) {
+        if (piece.second >= 0.0f)
+          drawables.append(std::move(piece.first));
+      }
+    } else {
+      drawables.appendAll(animator->animator.drawables(m_movementController->position()));
+    }
   return drawables;
 }
 
@@ -572,6 +595,10 @@ List<OverheadBar> StatusController::overheadBars() {
   return {};
 }
 
+bool StatusController::toolUsageSuppressed() const {
+  return m_toolUsageSuppressed.get();
+}
+
 List<AudioInstancePtr> StatusController::pullNewAudios() {
   List<AudioInstancePtr> newAudios;
   for (auto const& animator : m_effectAnimators.netElements())
@@ -586,8 +613,8 @@ List<Particle> StatusController::pullNewParticles() {
   return newParticles;
 }
 
-Maybe<Json> StatusController::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
-  Maybe<Json> result = m_primaryScript.handleMessage(message, localMessage, args);
+Maybe<ChainableJsonMessageResponse> StatusController::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
+  Maybe<ChainableJsonMessageResponse> result = m_primaryScript.handleMessage(message, localMessage, args);
   for (auto& p : m_uniqueEffects)
     result = result.orMaybe(p.second.script.handleMessage(message, localMessage, args));
   return result;
@@ -605,12 +632,16 @@ void StatusController::EffectAnimator::initNetVersion(NetElementVersion const* v
 void StatusController::EffectAnimator::netStore(DataStream& ds, NetCompatibilityRules rules) const {
   if (!checkWithRules(rules)) return;
   ds.write(animationConfig);
+  if (rules.version() >= 19)
+    ds.write(includeBack);
   animator.netStore(ds, rules);
 }
 
 void StatusController::EffectAnimator::netLoad(DataStream& ds, NetCompatibilityRules rules) {
   if (!checkWithRules(rules)) return;
   ds.read(animationConfig);
+  if (rules.version() >= 19)
+    ds.read(includeBack);
   animator = animationConfig ? NetworkedAnimator(*animationConfig) : NetworkedAnimator();
   animator.netLoad(ds, rules);
 }
@@ -725,9 +756,13 @@ bool StatusController::addUniqueEffect(
         m_uniqueEffectMetadata.addNetElement(make_shared<UniqueEffectMetadata>(effect, duration, sourceEntityId));
 
     uniqueEffect.animatorId = UniqueEffectMetadataGroup::NullElementId;
-    if (uniqueEffect.effectConfig.animationConfig)
-      uniqueEffect.animatorId =
-          m_effectAnimators.addNetElement(make_shared<EffectAnimator>(uniqueEffect.effectConfig.animationConfig));
+    if (uniqueEffect.effectConfig.animationConfig) {
+      auto animator = make_shared<EffectAnimator>(uniqueEffect.effectConfig.animationConfig);
+      animator->includeBack = uniqueEffect.effectConfig.includeBack;
+      uniqueEffect.animatorId = m_effectAnimators.addNetElement(animator);
+    }
+
+    uniqueEffect.toolUsageSuppressed = false;
 
     if (m_parentEntity)
       initUniqueEffectScript(uniqueEffect);
@@ -756,19 +791,17 @@ void StatusController::removeUniqueEffect(UniqueStatusEffect const& effect) {
 
 void StatusController::initPrimaryScript() {
   m_primaryScript.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(this));
-  m_primaryScript.addCallbacks("entity", LuaBindings::makeEntityCallbacks(m_parentEntity));
   if (m_primaryAnimatorId != EffectAnimatorGroup::NullElementId) {
     auto animator = m_effectAnimators.getNetElement(m_primaryAnimatorId);
     m_primaryScript.addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(&animator->animator));
   }
   m_primaryScript.addActorMovementCallbacks(m_movementController);
-  m_primaryScript.init(m_parentEntity->world());
+  m_primaryScript.init(m_parentEntity);
 }
 
 void StatusController::uninitPrimaryScript() {
   m_primaryScript.uninit();
   m_primaryScript.removeCallbacks("status");
-  m_primaryScript.removeCallbacks("entity");
   m_primaryScript.removeCallbacks("animator");
   m_primaryScript.removeActorMovementCallbacks();
 }
@@ -779,13 +812,12 @@ void StatusController::initUniqueEffectScript(UniqueEffectInstance& uniqueEffect
   uniqueEffect.script.addCallbacks("config", LuaBindings::makeConfigCallbacks([&uniqueEffect](String const& name, Json const& def) {
       return uniqueEffect.effectConfig.effectConfig.query(name, def);
     }));
-  uniqueEffect.script.addCallbacks("entity", LuaBindings::makeEntityCallbacks(m_parentEntity));
   if (uniqueEffect.animatorId != EffectAnimatorGroup::NullElementId) {
     auto animator = m_effectAnimators.getNetElement(uniqueEffect.animatorId);
     uniqueEffect.script.addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(&animator->animator));
   }
   uniqueEffect.script.addActorMovementCallbacks(m_movementController);
-  uniqueEffect.script.init(m_parentEntity->world());
+  uniqueEffect.script.init(m_parentEntity);
 }
 
 void StatusController::uninitUniqueEffectScript(UniqueEffectInstance& uniqueEffect) {
@@ -793,7 +825,6 @@ void StatusController::uninitUniqueEffectScript(UniqueEffectInstance& uniqueEffe
   uniqueEffect.script.removeCallbacks("effect");
   uniqueEffect.script.removeCallbacks("status");
   uniqueEffect.script.removeCallbacks("config");
-  uniqueEffect.script.removeCallbacks("entity");
   uniqueEffect.script.removeCallbacks("animator");
   uniqueEffect.script.removeActorMovementCallbacks();
 
@@ -858,6 +889,15 @@ LuaCallbacks StatusController::makeUniqueEffectCallbacks(UniqueEffectInstance& u
         throw StatusException("Cannot remove stat modifier group that was not added from this effect");
       m_statCollection.removeStatModifierGroup(groupId);
       uniqueEffect.modifierGroups.remove(groupId);
+    });
+  callbacks.registerCallback("setToolUsageSuppressed", [this, &uniqueEffect](bool suppressed) {
+      if (uniqueEffect.toolUsageSuppressed == suppressed)
+        return;
+      uniqueEffect.toolUsageSuppressed = suppressed;
+      bool anySuppressed = false;
+      for (auto& p : m_uniqueEffects)
+        anySuppressed = anySuppressed || p.second.toolUsageSuppressed;
+      m_toolUsageSuppressed.set(anySuppressed);
     });
 
   return callbacks;

@@ -90,26 +90,32 @@ bool Pane::sendEvent(InputEvent const& event) {
       WidgetPtr newMouseOver;
       WidgetPtr newFocusWidget;
 
+      List<WidgetPtr> validWidgets;
+      // gather valid widgets into our own list because any of them could mutate
+      // m_members while processing the event and fuck everything up
+      for (auto const& widget : reverseIterate(m_members)) {
+        if (widget->inMember(mousePos) && widget->active() && widget->interactive())
+          validWidgets.append(widget);
+      }
+
       // Then, go through widgets in highest to lowest z-order and handle mouse
       // over, focus, and capture events.
-      for (auto const& widget : reverseIterate(m_members)) {
-        if (widget->inMember(mousePos) && widget->active() && widget->interactive()) {
-          WidgetPtr topWidget = widget;
-          WidgetPtr child = getChildAt(mousePos);
-          if (child->active() && child->interactive()) {
-            if (event.is<MouseButtonDownEvent>()
-                && (event.get<MouseButtonDownEvent>().mouseButton == MouseButton::Left
-                       || event.get<MouseButtonDownEvent>().mouseButton == MouseButton::Right)) {
-              if (!newClickDown)
-                newClickDown = child;
+      for (auto const& widget : validWidgets) {
+        WidgetPtr topWidget = widget;
+        WidgetPtr child = getChildAt(mousePos);
+        if (child->active() && child->interactive()) {
+          if (event.is<MouseButtonDownEvent>()
+              && (event.get<MouseButtonDownEvent>().mouseButton == MouseButton::Left
+                      || event.get<MouseButtonDownEvent>().mouseButton == MouseButton::Right)) {
+            if (!newClickDown)
+              newClickDown = child;
 
-              if (!newFocusWidget)
-                newFocusWidget = child;
-            }
-
-            if (!newMouseOver)
-              newMouseOver = child;
+            if (!newFocusWidget)
+              newFocusWidget = child;
           }
+
+          if (!newMouseOver)
+            newMouseOver = child;
         }
       }
 
@@ -137,11 +143,9 @@ bool Pane::sendEvent(InputEvent const& event) {
 
       // Finally go through widgets in highest to lowest z-order and send the
       // raw event, stopping further processing if the widget consumes it.
-      for (auto const& widget : reverseIterate(m_members)) {
-        if (widget->inMember(mousePos) && widget->active() && widget->interactive()) {
-          if (widget->sendEvent(event))
-            return true;
-        }
+      for (auto const& widget : validWidgets) {
+        if (widget->sendEvent(event))
+          return true;
       }
     }
 
@@ -397,11 +401,14 @@ LuaCallbacks Pane::makePaneCallbacks() {
   callbacks.registerCallback("getSize", [this]() -> Vec2I         {  return size();  });
   callbacks.registerCallback("setSize", [this](Vec2I const& size) { setSize(size);   });
 
-  callbacks.registerCallback("addWidget", [this](Json const& newWidgetConfig, Maybe<String> const& newWidgetName) -> LuaCallbacks {
+  callbacks.registerCallback("addWidget", [this](Json const& newWidgetConfig, Maybe<String> const& newWidgetName) -> Maybe<LuaCallbacks> {
       String name = newWidgetName.value(toString(Random::randu64()));
-      WidgetPtr newWidget = reader()->makeSingle(name, newWidgetConfig);
-      this->addChild(name, newWidget);
-      return LuaBindings::makeWidgetCallbacks(newWidget.get(), reader());
+      if (auto newWidget = reader()->makeSingle(name, newWidgetConfig)) {
+        this->addChild(name, newWidget);
+        return LuaBindings::makeWidgetCallbacks(newWidget.get(), reader());
+      } else {
+        return {};
+      }
     });
 
   callbacks.registerCallback("removeWidget", [this](String const& widgetName) -> bool
@@ -412,6 +419,90 @@ LuaCallbacks Pane::makePaneCallbacks() {
   callbacks.registerCallback("hasFocus", [this]() { return hasFocus(); });
   callbacks.registerCallback("show", [this]() { show(); });
   callbacks.registerCallback("hide", [this]() { hide(); });
+  callbacks.registerCallback("anchor", [this]() { return PaneAnchorNames.getRight(anchor()); });  
+  callbacks.registerCallback("setAnchor", [this](String anchorName) {
+    setAnchor(PaneAnchorNames.getLeft(anchorName)); 
+  });
+  callbacks.registerCallback("anchorOffset", [this]() { return anchorOffset(); });
+  callbacks.registerCallback("setAnchorOffset", [this](Vec2I offset) { setAnchorOffset(offset); });
+  callbacks.registerCallback("getScreenPosition", [this]() -> Vec2I {
+    Vec2I windowSize = Vec2I(m_context->windowInterfaceSize());
+    Vec2I sz = size();
+    Vec2I offset;
+    switch (anchor()) {
+    case PaneAnchor::None:
+    case PaneAnchor::BottomLeft:
+      offset = anchorOffset();
+      break;
+    case PaneAnchor::BottomRight:
+      offset = anchorOffset() + Vec2I{windowSize[0] - sz[0], 0};
+      break;
+    case PaneAnchor::TopLeft:
+      offset = anchorOffset() + Vec2I{0, windowSize[1] - sz[1]};
+      break;
+    case PaneAnchor::TopRight:
+      offset = anchorOffset() + (windowSize - sz);
+      break;
+    case PaneAnchor::CenterTop:
+      offset = anchorOffset() + Vec2I{(windowSize[0] - sz[0]) / 2, windowSize[1] - sz[1]};
+      break;
+    case PaneAnchor::CenterBottom:
+      offset = anchorOffset() + Vec2I{(windowSize[0] - sz[0]) / 2, 0};
+      break;
+    case PaneAnchor::CenterLeft:
+      offset = anchorOffset() + Vec2I{0, (windowSize[1] - sz[1]) / 2};
+      break;
+    case PaneAnchor::CenterRight:
+      offset = anchorOffset() + Vec2I{windowSize[0] - sz[0], (windowSize[1] - sz[1]) / 2};
+      break;
+    case PaneAnchor::Center:
+      offset = anchorOffset() + ((windowSize - sz) / 2);
+      break;
+    default:
+      offset = anchorOffset();
+    }
+    return offset + relativePosition();
+  });
+
+  callbacks.registerCallback("setScreenPosition", [this](Vec2I screenPos) {
+    Vec2I windowSize = Vec2I(m_context->windowInterfaceSize());
+    Vec2I sz = size();
+    Vec2I offset;
+    switch (anchor()) {
+    case PaneAnchor::None:
+    case PaneAnchor::BottomLeft:
+      offset = anchorOffset();
+      break;
+    case PaneAnchor::BottomRight:
+      offset = anchorOffset() + Vec2I{windowSize[0] - sz[0], 0};
+      break;
+    case PaneAnchor::TopLeft:
+      offset = anchorOffset() + Vec2I{0, windowSize[1] - sz[1]};
+      break;
+    case PaneAnchor::TopRight:
+      offset = anchorOffset() + (windowSize - sz);
+      break;
+    case PaneAnchor::CenterTop:
+      offset = anchorOffset() + Vec2I{(windowSize[0] - sz[0]) / 2, windowSize[1] - sz[1]};
+      break;
+    case PaneAnchor::CenterBottom:
+      offset = anchorOffset() + Vec2I{(windowSize[0] - sz[0]) / 2, 0};
+      break;
+    case PaneAnchor::CenterLeft:
+      offset = anchorOffset() + Vec2I{0, (windowSize[1] - sz[1]) / 2};
+      break;
+    case PaneAnchor::CenterRight:
+      offset = anchorOffset() + Vec2I{windowSize[0] - sz[0], (windowSize[1] - sz[1]) / 2};
+      break;
+    case PaneAnchor::Center:
+      offset = anchorOffset() + ((windowSize - sz) / 2);
+      break;
+    default:
+      offset = anchorOffset();
+    }
+
+    setPosition(screenPos - offset);
+  });
 
   return callbacks;
 }

@@ -19,27 +19,60 @@ namespace Star {
 char const* const VersionedJson::Magic = "SBVJ01";
 size_t const VersionedJson::MagicStringSize = 6;
 
+VersionNumber const VersionedJson::SubVersioning = 1;
+
 VersionedJson VersionedJson::readFile(String const& filename) {
   DataStreamIODevice ds(File::open(filename, IOMode::Read));
 
   if (ds.readBytes(MagicStringSize) != ByteArray(Magic, MagicStringSize))
     throw IOException(strf("Wrong magic bytes at start of versioned json file, expected '{}'", Magic));
+  auto versionedJson = ds.read<VersionedJson>();
+  readSubVersioning(ds, versionedJson);
 
-  return ds.read<VersionedJson>();
+  return versionedJson;
 }
 
 void VersionedJson::writeFile(VersionedJson const& versionedJson, String const& filename) {
   DataStreamBuffer ds;
   ds.writeData(Magic, MagicStringSize);
   ds.write(versionedJson);
+  writeSubVersioning(ds, versionedJson);
   File::overwriteFileWithRename(ds.takeData(), filename);
 }
 
+void VersionedJson::writeSubVersioning(DataStream& ds, VersionedJson const& versionedJson) {
+  ds.write(VersionedJson::SubVersioning);
+  JsonObject subVersionsOut;
+  for (auto const& p : versionedJson.subVersions)
+    subVersionsOut.set(p.first, p.second);
+  ds.write(JsonObject{
+    {"subVersions", subVersionsOut}
+  });
+}
+void VersionedJson::readSubVersioning(DataStream& ds, VersionedJson& versionedJson) {
+  if (ds.atEnd())
+    return;
+  VersionNumber extraVersioning = 0;
+  try {
+    ds.read(extraVersioning);
+  } catch (...) {
+  }
+  if (extraVersioning == 1) {
+    JsonObject source = ds.read<JsonObject>();
+    for (auto const& p : source.get("subVersions").toObject())
+      versionedJson.subVersions[p.first] = p.second.toUInt();
+  }
+}
+
 Json VersionedJson::toJson() const {
+  JsonObject subVersionsOut;
+  for (auto const& p : subVersions)
+    subVersionsOut.set(p.first, p.second);
   return JsonObject{
     {"id", identifier},
     {"version", version},
-    {"content", content}
+    {"content", content},
+    {"subVersions", subVersionsOut}
   };
 }
 
@@ -50,7 +83,11 @@ VersionedJson VersionedJson::fromJson(Json const& source) {
   auto id = source.optString("id").orMaybe(source.optString("__id"));
   auto version = source.optUInt("version").orMaybe(source.optUInt("__version"));
   auto content = source.opt("content").orMaybe(source.opt("__content"));
-  return {*id, (VersionNumber)*version, *content};
+  StringMap<VersionNumber> subVersions;
+  for (auto const& p : source.getObject("subVersions", JsonObject()))
+    subVersions[p.first] = p.second.toUInt();
+
+  return {*id, (VersionNumber)*version, *content, subVersions};
 }
 
 bool VersionedJson::empty() const {
@@ -62,6 +99,7 @@ void VersionedJson::expectIdentifier(String const& expectedIdentifier) const {
     throw VersionedJsonException::format("VersionedJson identifier mismatch, expected '{}' but got '{}'", expectedIdentifier, identifier);
 }
 
+
 DataStream& operator>>(DataStream& ds, VersionedJson& versionedJson) {
   ds.read(versionedJson.identifier);
   // This is a holdover from when the verison number was optional in
@@ -70,6 +108,12 @@ DataStream& operator>>(DataStream& ds, VersionedJson& versionedJson) {
   versionedJson.version = ds.read<Maybe<VersionNumber>>().value();
   ds.read(versionedJson.content);
 
+  // this is a holdover from when sub versions were smuggled into content without realizing this caused issues, can potentially be removed later
+  if (versionedJson.content.isType(Json::Type::Object) && versionedJson.content.contains("subVersions")) {
+    for (auto const& p : versionedJson.content.getObject("subVersions", JsonObject()))
+      versionedJson.subVersions[p.first] = p.second.toUInt();
+    versionedJson.content = versionedJson.content.eraseKey("subVersions");
+  }
   return ds;
 }
 
@@ -77,7 +121,6 @@ DataStream& operator<<(DataStream& ds, VersionedJson const& versionedJson) {
   ds.write(versionedJson.identifier);
   ds.write(Maybe<VersionNumber>(versionedJson.version));
   ds.write(versionedJson.content);
-
   return ds;
 }
 
@@ -87,17 +130,31 @@ VersioningDatabase::VersioningDatabase() {
   for (auto const& pair : assets->json("/versioning.config").iterateObject())
     m_currentVersions[pair.first] = pair.second.toUInt();
 
+  for (auto const& pair : assets->json("/versioning/subVersioning.config").iterateObject())
+    for (auto const& p : pair.second.iterateObject())
+      m_currentSubVersions[pair.first][p.first] = p.second.toUInt();
+
   for (auto const& scriptFile : assets->scan("/versioning/", ".lua")) {
     try {
       auto scriptParts = File::baseName(scriptFile).splitAny("_.");
-      if (scriptParts.size() != 4)
-        throw VersioningDatabaseException::format("Script file '{}' filename not of the form <identifier>_<fromversion>_<toversion>.lua", scriptFile);
+      if (scriptParts.size() == 4) {
+        String identifier = scriptParts.at(0);
+        VersionNumber fromVersion = lexicalCast<VersionNumber>(scriptParts.at(1));
+        VersionNumber toVersion = lexicalCast<VersionNumber>(scriptParts.at(2));
 
-      String identifier = scriptParts.at(0);
-      VersionNumber fromVersion = lexicalCast<VersionNumber>(scriptParts.at(1));
-      VersionNumber toVersion = lexicalCast<VersionNumber>(scriptParts.at(2));
+        m_versionUpdateScripts[identifier.toLower()].append({scriptFile, fromVersion, toVersion});
+      } else if (scriptParts.size() == 6) {
+        String identifier = scriptParts.at(0);
+        VersionNumber atVersion = lexicalCast<VersionNumber>(scriptParts.at(1));
+        String subIdentifier = scriptParts.at(2);
+        VersionNumber fromVersion = lexicalCast<VersionNumber>(scriptParts.at(3));
+        VersionNumber toVersion = lexicalCast<VersionNumber>(scriptParts.at(4));
 
-      m_versionUpdateScripts[identifier.toLower()].append({scriptFile, fromVersion, toVersion});
+        m_subVersionUpdateScripts[identifier.toLower()][atVersion][subIdentifier.toLower()].append({scriptFile, fromVersion, toVersion});
+      } else {
+        throw VersioningDatabaseException::format("Script file '{}' filename not of the form <identifier>_<fromversion>_<toversion>.lua or <identifier>_<atVersion>_<subIdentifier>_<fromSubVersion>_<toSubVersion>.lua", scriptFile);
+      }
+
     } catch (StarException const&) {
       throw VersioningDatabaseException::format("Error parsing version information from versioning script '{}'", scriptFile);
     }
@@ -114,16 +171,30 @@ VersioningDatabase::VersioningDatabase() {
         return lhs.toVersion < rhs.toVersion;
     });
   }
+  for (auto& p : m_subVersionUpdateScripts)
+    for (auto& version : p.second)
+      for (auto& pair : version.second) {
+        pair.second.sort([](VersionUpdateScript const& lhs, VersionUpdateScript const& rhs) {
+          if (lhs.fromVersion != rhs.fromVersion)
+            return lhs.fromVersion < rhs.fromVersion;
+          else
+            return lhs.toVersion < rhs.toVersion;
+        });
+      }
+
+
+
 }
 
 VersionedJson VersioningDatabase::makeCurrentVersionedJson(String const& identifier, Json const& content) const {
   RecursiveMutexLocker locker(m_mutex);
-  return VersionedJson{identifier, m_currentVersions.get(identifier), content};
+  return VersionedJson{identifier, m_currentVersions.get(identifier), content, m_currentSubVersions.value(identifier)};
 }
 
 bool VersioningDatabase::versionedJsonCurrent(VersionedJson const& versionedJson) const {
   RecursiveMutexLocker locker(m_mutex);
-  return versionedJson.version == m_currentVersions.get(versionedJson.identifier);
+  return (versionedJson.version == m_currentVersions.get(versionedJson.identifier))
+  && (versionedJson.subVersions == m_currentSubVersions.value(versionedJson.identifier));
 }
 
 VersionedJson VersioningDatabase::updateVersionedJson(VersionedJson const& versionedJson) const {
@@ -144,6 +215,33 @@ VersionedJson VersioningDatabase::updateVersionedJson(VersionedJson const& versi
 
   try {
     for (auto const& updateScript : m_versionUpdateScripts.value(versionedJson.identifier.toLower())) {
+      for (auto const& subVersionScripts : m_subVersionUpdateScripts.value(versionedJson.identifier.toLower()).value(result.version)) {
+        auto targetSubVersion = m_currentSubVersions.value(result.identifier).value(subVersionScripts.first);
+        for (auto const& subVersionUpdateScript : subVersionScripts.second) {
+          if (result.subVersions.value(subVersionScripts.first) >= targetSubVersion)
+            break;
+
+          if (subVersionUpdateScript.fromVersion == result.subVersions.value(subVersionScripts.first)) {
+            auto scriptContext = m_luaRoot.createContext();
+            scriptContext.load(*root.assets()->bytes(subVersionUpdateScript.script), subVersionUpdateScript.script);
+            scriptContext.setCallbacks("root", LuaBindings::makeRootCallbacks());
+            scriptContext.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
+            scriptContext.setCallbacks("celestial", celestialCallbacks);
+            scriptContext.setCallbacks("versioning", makeVersioningCallbacks());
+
+            result.content = scriptContext.invokePath<Json>("update", result.content);
+            if (!result.content) {
+              throw VersioningDatabaseException::format(
+                  "Could not bring versionedJson with identifier '{}' and version {} forward to current version of {}, conversion script of sub identifier '{}' from {} to {} returned null (un-upgradeable)",
+                  versionedJson.identifier, result.version, targetVersion, subVersionScripts.first, subVersionUpdateScript.fromVersion, subVersionUpdateScript.toVersion);
+            }
+            Logger::debug("Brought versionedJson '{}' sub identifier '{}' from version {} to {}",
+                versionedJson.identifier, subVersionScripts.first, result.subVersions.value(subVersionScripts.first), subVersionUpdateScript.toVersion);
+            result.subVersions[subVersionScripts.first] = subVersionUpdateScript.toVersion;
+          }
+        }
+      }
+
       if (result.version >= *targetVersion)
         break;
 

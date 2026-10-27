@@ -22,13 +22,79 @@ Attempts a wire connection between the two objects positioned at `outputPosition
 
 ---
 
+#### `Maybe<LuaValue>` world.callScriptContext(`String` contextName, `String` functionName, [`LuaValue` args ...])
+
+Calls a function in the specified world script context.
+
+---
+
+#### `List<EntityId>` world.entities([`Json` options])
+
+Queries the entire world for entities. Takes the same options as entity queries, but should be more efficient especially on very large worlds.
+For server worlds, this returns every entity on the world with the given criteria, or every entity if none are provided.
+For client worlds, this returns every entity that is loaded and known to the client.
+
+---
+
+#### `Entity` world.entity(`EntityId` id)
+
+Returns the entity with the given id as a userdata. 
+This has some additional methods that can be used to acquire data from the entity that cannot be obtained otherwise.
+
+Clean this up properly when the entity no longer exists or is no longer being used.
+Besides the client main player, Entity instances are not reused.
+Holding an Entity instance in Lua will keep the entity present in memory even after its destruction.
+
+---
+
+#### `List<String>` world.weatherStatusEffects(`Vec2F` position)
+
+Returns a list of the weather status effects at the specified position.
+
+---
+
+#### `bool` world.exposedToWeather(`Vec2F` position)
+
+Returns whether the given position is considered exposed to weather.
+
+---
+
+#### `Maybe<String>` world.activeWeather(`Vec2F` position)
+
+Returns the current weather for the given position. This is `nil` if the weather pool at that position has no options.
+If an area has weather, it will always return the current weather. Note that `"clear"` is a weather type.
+
+For client worlds, only one weather domain is networked at a time, so the output is based on the player position instead.
+
+---
+
+#### `bool` world.havePermission([`WorldPermissionType` permission])
+
+Returns whether the calling context has the given permission.
+
+---
+
+#### `ConnectionId` world.permissionConnection()
+
+Returns the ConnectionId used for permission checks for this world.
+In client worlds, this is just the world's ConnectionId.
+In server worlds, this is the ConnectionId that spawned the entity.
+
+---
+
 The following additional world bindings are available only for scripts running on the client.
+
+---
+
+#### List<EntityId> world.players()
+
+A client version of the server binding. Returns every player loaded on the client world.
 
 ---
 
 #### `entityId` world.mainPlayer()
 
-Returns the entity ID of the player hosting the world.
+Returns the entity ID of the client world's main player. Returns `nil` if this is a subworld.
 
 ---
 
@@ -40,7 +106,26 @@ Returns the current cursor aim position of the specified entity.
 
 #### `bool` world.inWorld()
 
-Returns whether any players are in the world.
+Returns if the client world is actually in a world.
+
+---
+
+#### `bool` world.headless()
+
+Returns true if the client world is a subworld.
+
+---
+
+#### `ClientSubWorldId` world.subWorldId()
+
+Returns the current world's subworld id. If the world is not a subworld, this is 0.
+This is the same number visible in the `/debug` log map.
+
+---
+
+#### `void` world.unload()
+
+If this is a subworld, requests to unload it.
 
 ---
 
@@ -50,7 +135,13 @@ The following additional world bindings are available only for scripts running o
 
 #### `void` world.setExpiryTime(`float` expiryTime)
 
-Sets the amount of time to persist a ephemeral world when it is inactive.
+Sets the amount of time to persist an ephemeral world when it is inactive.
+
+---
+
+#### `float` world.expiryTime()
+
+Returns the amount of time an ephemeral world persists when it is inactive.
 
 ---
 
@@ -60,15 +151,11 @@ Returns a `String` representation of the world's id.
 
 ---
 
-#### `Maybe<LuaValue>` world.callScriptContext(`String` contextName, `String` function, `String` contextName, [`LuaValue` args ...])
+#### `bool` world.sendPacket(`ConnectionId` clientId, `String` packetType, `Json` packetData)
 
-Calls a function in the specified world script context.
-
----
-
-#### `?` world.sendPacket(`?` ?)
-
-?
+Sends a raw network packet to the specified client that is currently connected to this world. The `packetType` must be the name
+of a known packet in `Star::PacketTypeNames` (for example `"EntityInteractResult"`) and `packetData` must contain the JSON
+representation expected by `Star::createPacket` for that packet. Returns `true` when the packet is queued successfully.
 
 ---
 
@@ -81,3 +168,39 @@ Attempts to replace existing materials with the specified material in the specif
 #### `bool` world.replaceMaterialArea(`Vec2F` center, `float` radius, `String` layerName, `String` materialName, [`int` hueShift], [`bool` enableDrops])
 
 Identical to world.replaceMaterials but applies to tiles in a circular radius around the specified center point.
+
+---
+
+#### `Json` world.biomeAt(`Vec2I` position)
+
+Returns a json object containing configuation values for the biome generated at the given position.
+
+---
+
+#### `Json` world.blockInfoAt(`Vec2I` position)
+
+Returns a json object containing information about the position in the world's template.
+
+---
+
+#### `bool` world.connectionHasPermission(`ConnectionId` connection, [`WorldPermissionType` permission])
+
+Returns if the given connection has the given permission. The permission defaults to `"Build"`.
+
+---
+
+#### `void` world.setConnectionHasPermission(`ConnectionId` connection, `WorldPermissionType` permission, `bool` hasPermission)
+
+Sets whether or not the client with the given connection has this permission on the world.
+Clients by default have all permissions. Can be called from `addClient` if needed.
+Blocks all changes to the world by the given client or entities spawned by the given client.
+
+A client's main world shares this data with its subworlds. Changes to the main world's permissions are reflected with subworlds.
+This data is not tracked for clients not on the world, if the given connection is not on the world, nothing will happen.
+
+The permissions are `"Build"`, `"Container"`, and `"Interact"`.
+If a client can `"Build"`, they can do everything.
+If a client lacks `"Container"`, they cannot use containers.
+If a client lacks `"Interact"`, they cannot interact with nor send entity messages to server master entities that do not also lack `"Interact"` permissions.
+
+These permissions affect both client master entities and server master entities spawned by this client.

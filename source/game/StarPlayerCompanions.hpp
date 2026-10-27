@@ -46,7 +46,7 @@ public:
 
   void dismissCompanion(String const& category, Uuid const& podUuid);
 
-  Maybe<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
+  Maybe<ChainableJsonMessageResponse> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
   void update(float dt);
 
 private:
@@ -56,7 +56,7 @@ private:
   Json m_config;
   StringMap<List<CompanionPtr>> m_companions;
 
-  LuaMessageHandlingComponent<LuaStorableComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>>
+  LuaMessageHandlingComponent<LuaStorableComponent<LuaUpdatableComponent<LuaEntityComponent<LuaBaseComponent>>>>
       m_scriptComponent;
 };
 

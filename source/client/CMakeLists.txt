@@ -23,6 +23,7 @@ SET (star_client_SOURCES
 IF (STAR_SYSTEM_WINDOWS)
   SET (star_client_RESOURCES
       starbound.rc
+      starbound.exe.manifest
     )
 ENDIF ()
 

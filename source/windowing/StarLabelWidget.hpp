@@ -26,6 +26,7 @@ public:
   void setDirectives(String const& directives);
   void setTextCharLimit(Maybe<unsigned> charLimit);
   void setTextStyle(TextStyle const& style);
+  void setFont(String const& font);
 
   RectI relativeBoundRect() const override;
 

@@ -78,7 +78,18 @@ EnumMap<PacketType> const PacketTypeNames{
   {PacketType::SystemObjectSpawn, "SystemObjectSpawn"},
   // OpenStarbound packets
   {PacketType::ReplaceTileList, "ReplaceTileList"},
-  {PacketType::UpdateWorldTemplate, "UpdateWorldTemplate"}
+  {PacketType::UpdateWorldTemplate, "UpdateWorldTemplate"},
+  {PacketType::ClientCustomWorldRequest, "ClientCustomWorldRequest"},
+  {PacketType::ClientCustomWorldResponse, "ClientCustomWorldResponse"},
+  {PacketType::ClientCustomWorldCreate, "ClientCustomWorldCreate"},
+  {PacketType::ClientSubWorldPackets, "ClientSubWorldPackets"},
+  {PacketType::ClientSubWorldRequest, "ClientSubWorldRequest"},
+  {PacketType::ClientSubWorldReject, "ClientSubWorldReject"},
+  {PacketType::NotifyWorldLoad, "NotifyWorldLoad"},
+  {PacketType::LogMapUpdate, "LogMapUpdate"},
+  {PacketType::UniverseMessage, "UniverseMessage"},
+  {PacketType::UniverseMessageResponse, "UniverseMessageResponse"},
+  {PacketType::WorldPermissionsUpdate, "WorldPermissionsUpdate"}
 };
 
 EnumMap<NetCompressionMode> const NetCompressionModeNames {
@@ -172,6 +183,17 @@ PacketPtr createPacket(PacketType type) {
     // OpenStarbound
     case PacketType::ReplaceTileList: return make_shared<ReplaceTileListPacket>();
     case PacketType::UpdateWorldTemplate: return make_shared<UpdateWorldTemplatePacket>();
+    case PacketType::ClientCustomWorldRequest: return make_shared<ClientCustomWorldRequest>();
+    case PacketType::ClientCustomWorldResponse: return make_shared<ClientCustomWorldResponse>();
+    case PacketType::ClientCustomWorldCreate: return make_shared<ClientCustomWorldCreate>();
+    case PacketType::ClientSubWorldPackets: return make_shared<ClientSubWorldPackets>();
+    case PacketType::ClientSubWorldRequest: return make_shared<ClientSubWorldRequest>();
+    case PacketType::ClientSubWorldReject: return make_shared<ClientSubWorldReject>();
+    case PacketType::NotifyWorldLoad: return make_shared<NotifyWorldLoad>();
+    case PacketType::LogMapUpdate: return make_shared<LogMapUpdate>();
+    case PacketType::UniverseMessage: return make_shared<UniverseMessage>();
+    case PacketType::UniverseMessageResponse: return make_shared<UniverseMessageResponse>();
+    case PacketType::WorldPermissionsUpdate: return make_shared<WorldPermissionsUpdate>();
     default:
       throw StarPacketException(strf("Unrecognized packet type {}", (unsigned int)type));
   }
@@ -403,10 +425,10 @@ Json ServerInfoPacket::writeJson() const {
 ClientConnectPacket::ClientConnectPacket() {}
 
 ClientConnectPacket::ClientConnectPacket(ByteArray assetsDigest, bool allowAssetsMismatch, Uuid playerUuid,
-    String playerName, String playerSpecies, WorldChunks shipChunks, ShipUpgrades shipUpgrades,
+    String playerName, String shipSpecies, WorldChunks shipChunks, ShipUpgrades shipUpgrades,
     bool introComplete, String account, Json info)
   : assetsDigest(std::move(assetsDigest)), allowAssetsMismatch(allowAssetsMismatch), playerUuid(std::move(playerUuid)),
-    playerName(std::move(playerName)), playerSpecies(std::move(playerSpecies)), shipChunks(std::move(shipChunks)),
+    playerName(std::move(playerName)), shipSpecies(std::move(shipSpecies)), shipChunks(std::move(shipChunks)),
     shipUpgrades(std::move(shipUpgrades)), introComplete(std::move(introComplete)), account(std::move(account)), info(std::move(info)) {}
 
 
@@ -415,7 +437,7 @@ void ClientConnectPacket::read(DataStream& ds, NetCompatibilityRules netRules) {
   ds.read(allowAssetsMismatch);
   ds.read(playerUuid);
   ds.read(playerName);
-  ds.read(playerSpecies);
+  ds.read(shipSpecies);
   ds.read(shipChunks);
   ds.read(shipUpgrades);
   ds.read(introComplete);
@@ -429,7 +451,7 @@ void ClientConnectPacket::write(DataStream& ds, NetCompatibilityRules netRules) 
   ds.write(allowAssetsMismatch);
   ds.write(playerUuid);
   ds.write(playerName);
-  ds.write(playerSpecies);
+  ds.write(shipSpecies);
   ds.write(shipChunks);
   ds.write(shipUpgrades);
   ds.write(introComplete);
@@ -553,6 +575,11 @@ void WorldStartPacket::read(DataStream& ds) {
   ds.read(protectedDungeonIds);
   ds.read(clientId);
   ds.read(localInterpolationMode);
+  if (ds.streamCompatibilityVersion() >= 20) {
+    ds.read(permissions.build);
+    ds.read(permissions.interact);
+    ds.read(permissions.containers);
+  }
 }
 
 void WorldStartPacket::write(DataStream& ds) const {
@@ -568,6 +595,11 @@ void WorldStartPacket::write(DataStream& ds) const {
   ds.write(protectedDungeonIds);
   ds.write(clientId);
   ds.write(localInterpolationMode);
+  if (ds.streamCompatibilityVersion() >= 20) {
+    ds.write(permissions.build);
+    ds.write(permissions.interact);
+    ds.write(permissions.containers);
+  }
 }
 
 WorldStopPacket::WorldStopPacket() {}
@@ -1298,7 +1330,7 @@ void PongPacket::read(DataStream& ds, NetCompatibilityRules netRules) {
   } else {
     ds.readVlqI(time);
   }
-  
+
 }
 
 void PongPacket::write(DataStream& ds, NetCompatibilityRules netRules) const {
@@ -1443,6 +1475,192 @@ void UpdateWorldTemplatePacket::read(DataStream& ds) {
 
 void UpdateWorldTemplatePacket::write(DataStream& ds) const {
   ds.write(templateData);
+}
+
+
+
+ClientCustomWorldRequest::ClientCustomWorldRequest() {}
+
+ClientCustomWorldRequest::ClientCustomWorldRequest(String name) : name(std::move(name)) {}
+
+void ClientCustomWorldRequest::read(DataStream& ds) {
+  ds.read(name);
+}
+
+void ClientCustomWorldRequest::write(DataStream& ds) const {
+  ds.write(name);
+}
+
+ClientCustomWorldResponse::ClientCustomWorldResponse() {}
+
+ClientCustomWorldResponse::ClientCustomWorldResponse(String name, WorldChunks chunks) : name(std::move(name)), chunks(std::move(chunks)) {}
+
+void ClientCustomWorldResponse::read(DataStream& ds) {
+  ds.read(name);
+  ds.read(chunks);
+}
+
+void ClientCustomWorldResponse::write(DataStream& ds) const {
+  ds.write(name);
+  ds.write(chunks);
+}
+
+ClientCustomWorldCreate::ClientCustomWorldCreate() {}
+
+ClientCustomWorldCreate::ClientCustomWorldCreate(String name, Json templateData) : name(std::move(name)), templateData(std::move(templateData)) {}
+
+void ClientCustomWorldCreate::read(DataStream& ds) {
+  ds.read(name);
+  ds.read(templateData);
+}
+
+void ClientCustomWorldCreate::write(DataStream& ds) const {
+  ds.write(name);
+  ds.write(templateData);
+}
+
+ClientSubWorldPackets::ClientSubWorldPackets() {}
+
+ClientSubWorldPackets::ClientSubWorldPackets(ClientSubWorldId const& subWorldId, List<PacketPtr> packets) : subWorldId(subWorldId), packets(std::move(packets)) {}
+
+void ClientSubWorldPackets::read(DataStream& ds) {
+  ds.read(subWorldId);
+  // note: this approach may have an issue with packet size
+  uint32_t count = ds.read<uint32_t>();
+  for (uint32_t i = 0; i < count; i++) {
+    auto packetType = ds.read<PacketType>();
+    PacketPtr packet = createPacket(packetType);
+    packet->read(ds);
+    packets.append(packet);
+  }
+}
+
+void ClientSubWorldPackets::write(DataStream& ds) const {
+  ds.write(subWorldId);
+  ds.write<uint32_t>(packets.count());
+  for (PacketPtr const& packet : packets) {
+    auto packetType = packet->type();
+    ds.write(packetType);
+    packet->write(ds);
+  }
+}
+
+ClientSubWorldRequest::ClientSubWorldRequest() {}
+
+ClientSubWorldRequest::ClientSubWorldRequest(ClientSubWorldId const& subWorldId, WorldId worldId) : subWorldId(subWorldId), worldId(std::move(worldId)) {}
+
+void ClientSubWorldRequest::read(DataStream& ds) {
+  ds.read(subWorldId);
+  ds.read(worldId);
+}
+
+void ClientSubWorldRequest::write(DataStream& ds) const {
+  ds.write(subWorldId);
+  ds.write(worldId);
+}
+
+ClientSubWorldReject::ClientSubWorldReject() {}
+
+ClientSubWorldReject::ClientSubWorldReject(ClientSubWorldId const& subWorldId) : subWorldId(subWorldId) {}
+
+void ClientSubWorldReject::read(DataStream& ds) {
+  ds.read(subWorldId);
+}
+
+void ClientSubWorldReject::write(DataStream& ds) const {
+  ds.write(subWorldId);
+}
+
+NotifyWorldLoad::NotifyWorldLoad() {}
+
+NotifyWorldLoad::NotifyWorldLoad(WorldId worldId) : worldId(std::move(worldId)) {}
+
+void NotifyWorldLoad::read(DataStream& ds) {
+  ds.read(worldId);
+}
+
+void NotifyWorldLoad::write(DataStream& ds) const {
+  ds.write(worldId);
+}
+
+LogMapUpdate::LogMapUpdate() {}
+
+LogMapUpdate::LogMapUpdate(Map<String,String> map) : map(std::move(map)) {}
+
+void LogMapUpdate::read(DataStream& ds) {
+  ds.read(map);
+}
+
+void LogMapUpdate::write(DataStream& ds) const {
+  ds.write(map);
+}
+
+UniverseMessage::UniverseMessage() {}
+
+UniverseMessage::UniverseMessage(ConnectionId connection, String message, JsonArray args, Uuid uuid, ConnectionId fromConnection)
+  : connection(connection), message(std::move(message)), args(std::move(args)), uuid(uuid), fromConnection(fromConnection) {}
+
+void UniverseMessage::read(DataStream& ds) {
+  ds.read(connection);
+  ds.read(message);
+  ds.read(args);
+  ds.read(uuid);
+  ds.read(fromConnection);
+}
+
+void UniverseMessage::write(DataStream& ds) const {
+  ds.write(connection);
+  ds.write(message);
+  ds.write(args);
+  ds.write(uuid);
+  ds.write(fromConnection);
+}
+
+void UniverseMessage::readJson(Json const& json) {
+  connection = json.getUInt("connection");
+  message = json.getString("message");
+  args = json.getArray("args");
+  uuid = Uuid(json.getString("uuid"));
+  fromConnection = json.getUInt("fromConnection");
+}
+
+Json UniverseMessage::writeJson() const {
+  return JsonObject{
+    {"connection", connection},
+    {"message", message},
+    {"args", args},
+    {"uuid", uuid.hex()},
+    {"fromConnection", fromConnection}
+  };
+}
+
+UniverseMessageResponse::UniverseMessageResponse() {}
+
+UniverseMessageResponse::UniverseMessageResponse(Either<String, Json> response, Uuid uuid)
+  : response(std::move(response)), uuid(uuid) {}
+
+void UniverseMessageResponse::read(DataStream& ds) {
+  ds.read(response);
+  ds.read(uuid);
+}
+
+void UniverseMessageResponse::write(DataStream& ds) const {
+  ds.write(response);
+  ds.write(uuid);
+}
+
+WorldPermissionsUpdate::WorldPermissionsUpdate() {}
+
+WorldPermissionsUpdate::WorldPermissionsUpdate(WorldPermissionType permission, bool hasPermission) : permission(permission), hasPermission(hasPermission) {}
+
+void WorldPermissionsUpdate::read(DataStream& ds) {
+  ds.read(permission);
+  ds.read(hasPermission);
+}
+
+void WorldPermissionsUpdate::write(DataStream& ds) const {
+  ds.write(permission);
+  ds.write(hasPermission);
 }
 
 }

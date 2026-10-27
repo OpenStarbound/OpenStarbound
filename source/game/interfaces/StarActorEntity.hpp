@@ -1,7 +1,7 @@
 #pragma once
 
 #include "StarActorMovementController.hpp"
-#include "StarEntity.hpp"
+#include "StarMobileEntity.hpp"
 
 
 namespace Star {
@@ -11,9 +11,9 @@ STAR_CLASS(ActorMovementController);
 
 // this is just used to have a base for what the game generally considers 'actors' as they all use the ActorMovementController, as well as have a StatusController
 // theres potentially more things shared that could be moved here
-class ActorEntity : public virtual Entity {
+class ActorEntity : public virtual MobileEntity {
 public:
-  virtual ActorMovementController* movementController() = 0;
+  virtual ActorMovementController* movementController() override = 0;
   virtual StatusController* statusController() = 0;
 };
 }

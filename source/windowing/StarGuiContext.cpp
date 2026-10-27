@@ -91,7 +91,8 @@ Vec2U GuiContext::windowInterfaceSize() const {
 }
 
 float GuiContext::interfaceScale() const {
-  return m_interfaceScale;
+  float DisplayScale {std::max(1.0f, std::round(getDisplayScale()))};
+  return m_interfaceScale * DisplayScale;
 }
 
 void GuiContext::setInterfaceScale(float interfaceScale) {
@@ -435,7 +436,7 @@ void GuiContext::playAudio(AudioInstancePtr audioInstance) {
   m_mixer->play(audioInstance);
 }
 
-void GuiContext::playAudio(String const& audioAsset, int loops, float volume, float pitch) {
+AudioInstancePtr GuiContext::playAudio(String const& audioAsset, int loops, float volume, float pitch) {
   auto assets = Root::singleton().assets();
   auto config = Root::singleton().configuration();
   auto audioInstance = make_shared<AudioInstance>(*assets->audio(audioAsset));
@@ -443,6 +444,7 @@ void GuiContext::playAudio(String const& audioAsset, int loops, float volume, fl
   audioInstance->setPitchMultiplier(pitch);
   audioInstance->setLoops(loops);
   m_mixer->play(std::move(audioInstance));
+  return audioInstance;
 }
 
 String GuiContext::getClipboard() const {
@@ -463,6 +465,10 @@ bool GuiContext::setClipboardImage(Image const& image, ByteArray* png, String co
 
 bool GuiContext::setClipboardFile(String const& path) {
   return m_applicationController->setClipboardFile(path);
+}
+
+float GuiContext::getDisplayScale() const {
+  return m_applicationController->getDisplayScale();
 }
 
 void GuiContext::cleanup() {

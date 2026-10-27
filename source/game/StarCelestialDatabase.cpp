@@ -58,12 +58,15 @@ CelestialMasterDatabase::CelestialMasterDatabase(Maybe<String> databaseFile) {
   auto assets = Root::singleton().assets();
 
   auto config = assets->json("/celestial.config");
+  
+  m_chunksAlwaysPersistent = config.getBool("saveAllChunks",false);
 
   m_baseInformation.planetOrbitalLevels = config.getInt("planetOrbitalLevels");
   m_baseInformation.satelliteOrbitalLevels = config.getInt("satelliteOrbitalLevels");
   m_baseInformation.chunkSize = config.getInt("chunkSize");
   m_baseInformation.xyCoordRange = jsonToVec2I(config.get("xyCoordRange"));
   m_baseInformation.zCoordRange = jsonToVec2I(config.get("zCoordRange"));
+  m_baseInformation.enforceCoordRange = config.getBool("enforceCoordRange", false);
 
   m_generationInformation.systemProbability = config.getFloat("systemProbability");
   m_generationInformation.constellationProbability = config.getFloat("constellationProbability");
@@ -361,7 +364,11 @@ void CelestialMasterDatabase::updateParameters(CelestialCoordinate const& coordi
   if (updated && m_database.isOpen()) {
     auto versioningDatabase = Root::singleton().versioningDatabase();
     auto versionedChunk = versioningDatabase->makeCurrentVersionedJson("CelestialChunk", chunk.toJson());
-    m_database.insert(DataStreamBuffer::serialize(chunkIndex), compressData(DataStreamBuffer::serialize<VersionedJson>(versionedChunk)));
+    DataStreamBuffer ds;
+    ds.write(versionedChunk);
+    VersionedJson::writeSubVersioning(ds, versionedChunk);
+    m_database.insert(DataStreamBuffer::serialize(chunkIndex), compressData(ds.data()));
+    chunk.persistent = true;
 
     m_chunkCache.remove(chunkIndex);
   } else {
@@ -381,6 +388,26 @@ Maybe<CelestialOrbitRegion> CelestialMasterDatabase::orbitRegion(
   return {};
 }
 
+void CelestialMasterDatabase::markPersistent(CelestialCoordinate const& coordinate) {
+  RecursiveMutexLocker locker(m_mutex);
+
+  auto chunkIndex = chunkIndexFor(coordinate);
+  auto chunk = getChunk(chunkIndex);
+  if (chunk.persistent) {
+    // chunk is already considered persistent and is in the database
+    return;
+  }
+  if (m_database.isOpen()) {
+    auto versioningDatabase = Root::singleton().versioningDatabase();
+    auto versionedChunk = versioningDatabase->makeCurrentVersionedJson("CelestialChunk", chunk.toJson());
+    DataStreamBuffer ds;
+    ds.write(versionedChunk);
+    VersionedJson::writeSubVersioning(ds, versionedChunk);
+    m_database.insert(DataStreamBuffer::serialize(chunkIndex), compressData(ds.data()));
+    chunk.persistent = true;
+  }
+}
+
 CelestialChunk const& CelestialMasterDatabase::getChunk(Vec2I const& chunkIndex, UnlockDuringFunction unlockDuring) {
   return m_chunkCache.get(chunkIndex, [&](Vec2I const& chunkIndex) -> CelestialChunk {
       auto versioningDatabase = Root::singleton().versioningDatabase();
@@ -390,8 +417,10 @@ CelestialChunk const& CelestialMasterDatabase::getChunk(Vec2I const& chunkIndex,
           auto versionedChunk = DataStreamBuffer::deserialize<VersionedJson>(uncompressData(chunkData.take()));
           if (!versioningDatabase->versionedJsonCurrent(versionedChunk)) {
             versionedChunk = versioningDatabase->updateVersionedJson(versionedChunk);
-            m_database.insert(DataStreamBuffer::serialize(chunkIndex),
-                compressData(DataStreamBuffer::serialize<VersionedJson>(versionedChunk)));
+            DataStreamBuffer ds;
+            ds.write(versionedChunk);
+            VersionedJson::writeSubVersioning(ds, versionedChunk);
+            m_database.insert(DataStreamBuffer::serialize(chunkIndex), compressData(ds.data()));
           }
           return CelestialChunk(versionedChunk.content);
         }
@@ -403,10 +432,16 @@ CelestialChunk const& CelestialMasterDatabase::getChunk(Vec2I const& chunkIndex,
         unlockDuring(producer);
       else
         producer();
-      if (m_database.isOpen()) {
-        auto versionedChunk = versioningDatabase->makeCurrentVersionedJson("CelestialChunk", newChunk.toJson());
-        m_database.insert(DataStreamBuffer::serialize(chunkIndex),
-            compressData(DataStreamBuffer::serialize<VersionedJson>(versionedChunk)));
+    
+      if (m_chunksAlwaysPersistent) {
+        if (m_database.isOpen()) {
+          auto versionedChunk = versioningDatabase->makeCurrentVersionedJson("CelestialChunk", newChunk.toJson());
+          DataStreamBuffer ds;
+          ds.write(versionedChunk);
+          VersionedJson::writeSubVersioning(ds, versionedChunk);
+          m_database.insert(DataStreamBuffer::serialize(chunkIndex), compressData(ds.data()));
+          newChunk.persistent = true;
+        }
       }
 
       return newChunk;
@@ -416,10 +451,12 @@ CelestialChunk const& CelestialMasterDatabase::getChunk(Vec2I const& chunkIndex,
 CelestialChunk CelestialMasterDatabase::produceChunk(Vec2I const& chunkIndex) const {
   CelestialChunk chunkData;
   chunkData.chunkIndex = chunkIndex;
+  RectI region = chunkRegion(chunkIndex);
+  if (m_baseInformation.enforceCoordRange && !xyRange().contains(region, true))
+    return chunkData;
 
   RandomSource random(staticRandomU64(chunkIndex[0], chunkIndex[1], "ChunkIndexMix"));
 
-  RectI region = chunkRegion(chunkIndex);
   List<Vec3I> systemLocations;
   for (int x = region.xMin(); x < region.xMax(); ++x) {
     for (int y = region.yMin(); y < region.yMax(); ++y) {
