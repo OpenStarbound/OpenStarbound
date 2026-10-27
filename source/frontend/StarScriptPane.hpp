@@ -28,6 +28,7 @@ public:
 private:
   UniverseClientPtr m_client;
   EntityId m_sourceEntityId;
+  Maybe<float> m_autoDismissRadius;
 };
 
 }

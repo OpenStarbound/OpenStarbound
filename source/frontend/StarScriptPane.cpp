@@ -27,6 +27,7 @@ ScriptPane::ScriptPane(UniverseClientPtr client, Json config, EntityId sourceEnt
 
   m_client = std::move(client);
   m_sourceEntityId = sourceEntityId;
+  m_autoDismissRadius = m_config.optFloat("autoDismissRadius");
 
   m_script.addCallbacks("player", LuaBindings::makePlayerCallbacks(m_client->mainPlayer().get()));
   m_script.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(m_client->mainPlayer()->statusController()));
@@ -48,7 +49,7 @@ void ScriptPane::dismissed() {
 }
 
 void ScriptPane::tick(float dt) {
-  if (m_sourceEntityId != NullEntityId && !m_client->worldClient()->playerCanReachEntity(m_sourceEntityId))
+  if (m_sourceEntityId != NullEntityId && !m_client->worldClient()->playerCanReachEntity(m_sourceEntityId, true, m_autoDismissRadius))
     dismiss();
 
   BaseScriptPane::tick(dt);
@@ -81,6 +82,7 @@ PanePtr ScriptPane::createTooltip(Vec2I const& screenPosition) {
 LuaCallbacks ScriptPane::makePaneCallbacks() {
   LuaCallbacks callbacks = BaseScriptPane::makePaneCallbacks();
   callbacks.registerCallback("sourceEntity", [this]() { return m_sourceEntityId; });
+  callbacks.registerCallback("setDismissRadius", [this](Maybe<float> radius) { m_autoDismissRadius = radius; });
   return callbacks;
 }
 
