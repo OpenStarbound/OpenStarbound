@@ -369,8 +369,8 @@ void ItemDrop::render(RenderCallback* renderCallback) {
   EntityRenderLayer renderLayer = m_mode.get() == Mode::Taken || m_overForeground ? RenderLayerForegroundTile : RenderLayerItemDrop;
   Vec2F dropPosition = position();
   for (Drawable drawable : *m_drawables) {
-    drawable.position += dropPosition;
     drawable.scale(m_movementController.scale());
+    drawable.position += dropPosition;
     renderCallback->addDrawable(std::move(drawable), renderLayer);
   }
 }
