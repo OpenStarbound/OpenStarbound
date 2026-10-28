@@ -854,7 +854,7 @@ void ActorMovementController::tickMaster(float dt) {
       if (m_liquidMovement.get()) {
         jumpModifier = activeModifiers.liquidJumpModifier;
         jumpProfile = activeParameters.liquidJumpProfile;
-        *jumpProfile.jumpSpeed *= (1.0f - liquidImpedance) * scale();
+        *jumpProfile.jumpSpeed *= (1.0f - liquidImpedance);
       } else {
         jumpModifier = activeModifiers.airJumpModifier;
         jumpProfile = activeParameters.airJumpProfile;
