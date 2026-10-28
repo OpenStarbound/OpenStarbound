@@ -450,15 +450,17 @@ void Projectile::setSourceEntity(EntityId source, bool trackSource) {
     if (auto sourceEntity = world()->entity(source)) {
       m_lastEntityPosition = sourceEntity->position();
 
-      // projectiles inherit scale from their owners when they initialize
-      if (auto actor = as<ActorEntity>(sourceEntity)) {
-        m_movementController->setScale(m_movementController->scale() * actor->movementController()->scale());
-        m_movementController->setVelocity(m_movementController->velocity() * actor->movementController()->scale());
-        m_acceleration *= actor->movementController()->scale();
-      } else if (auto mob = as<MobileEntity>(sourceEntity)) {
-        m_movementController->setScale(m_movementController->scale() * mob->movementController()->scale());
-        m_movementController->setVelocity(m_movementController->velocity() * mob->movementController()->scale());
-        m_acceleration *= mob->movementController()->scale();
+      // projectiles inherit scale from their owners when they initialize, replicas get it over the network
+      if (isMaster()) {
+        if (auto actor = as<ActorEntity>(sourceEntity)) {
+          m_movementController->setScale(m_movementController->scale() * actor->movementController()->scale());
+          m_movementController->setVelocity(m_movementController->velocity() * actor->movementController()->scale());
+          m_acceleration *= actor->movementController()->scale();
+        } else if (auto mob = as<MobileEntity>(sourceEntity)) {
+          m_movementController->setScale(m_movementController->scale() * mob->movementController()->scale());
+          m_movementController->setVelocity(m_movementController->velocity() * mob->movementController()->scale());
+          m_acceleration *= mob->movementController()->scale();
+        }
       }
       if (!m_damageTeam)
         setTeam(sourceEntity->getTeam());
