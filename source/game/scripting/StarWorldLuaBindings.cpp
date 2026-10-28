@@ -712,6 +712,8 @@ namespace LuaBindings {
     callbacks.registerCallbackWithSignature<float, Vec2F, String>("modHueShift", bind(WorldEnvironmentCallbacks::modHueShift, world, _1, _2));
     callbacks.registerCallbackWithSignature<MaterialColorVariant, Vec2F, String>("materialColor", bind(WorldEnvironmentCallbacks::materialColor, world, _1, _2));
     callbacks.registerCallbackWithSignature<void, Vec2F, String, MaterialColorVariant>("setMaterialColor", bind(WorldEnvironmentCallbacks::setMaterialColor, world, caller, _1, _2, _3));
+    callbacks.registerCallbackWithSignature<bool, Vec2F, String, float>("setMaterialHue", bind(WorldEnvironmentCallbacks::setMaterialHue, world, caller, _1, _2, _3));
+    callbacks.registerCallbackWithSignature<bool, Vec2F, String, float>("setModHue", bind(WorldEnvironmentCallbacks::setModHue, world, caller, _1, _2, _3));
 
     callbacks.registerCallback("oceanLevel", [world](Vec2I position) -> int {
         if (auto serverWorld = as<WorldServer>(world)) {
@@ -2200,6 +2202,35 @@ namespace LuaBindings {
     }
 
     world->modifyTile(Vec2I::floor(position), PlaceMaterialColor{layer, color}, true);
+  }
+
+  static bool setTileHue(World* world, WorldCaller caller, Vec2F const& position, String const& layerName, bool mod, float hue) {
+    TileLayer layer;
+    if (layerName == "foreground") {
+      layer = TileLayer::Foreground;
+    } else if (layerName == "background") {
+      layer = TileLayer::Background;
+    } else {
+      throw StarException(strf("Unsupported material layer {}", layerName));
+    }
+
+    // Written straight onto the server's tile and sent in the usual tile update,
+    // so there is no tile modification a vanilla server would have to understand.
+    auto serverWorld = as<WorldServer>(world);
+    if (!serverWorld)
+      return false;
+    if (!world->connectionHasPermission(callerConnection(caller), WorldPermissionType::Build))
+      return false;
+
+    return serverWorld->setTileHueShift(Vec2I::floor(position), layer, mod, (MaterialHue)clamp(hue, 0.0f, 255.0f));
+  }
+
+  bool WorldEnvironmentCallbacks::setMaterialHue(World* world, WorldCaller caller, Vec2F const& position, String const& layerName, float hue) {
+    return setTileHue(world, caller, position, layerName, false, hue);
+  }
+
+  bool WorldEnvironmentCallbacks::setModHue(World* world, WorldCaller caller, Vec2F const& position, String const& layerName, float hue) {
+    return setTileHue(world, caller, position, layerName, true, hue);
   }
 
   bool WorldEnvironmentCallbacks::damageTiles(World* world, WorldCaller caller,

@@ -2042,6 +2042,26 @@ TileModificationList WorldServer::doApplyTileModifications(TileModificationList 
   return unapplied;
 }
 
+bool WorldServer::setTileHueShift(Vec2I const& pos, TileLayer layer, bool mod, MaterialHue hueShift) {
+  ServerTile* tile = m_tileArray->modifyTile(pos);
+  if (!tile)
+    return false;
+
+  bool foreground = layer == TileLayer::Foreground;
+  if (mod) {
+    if ((foreground ? tile->foregroundMod : tile->backgroundMod) == NoModId)
+      return false;
+    (foreground ? tile->foregroundModHueShift : tile->backgroundModHueShift) = hueShift;
+  } else {
+    if ((foreground ? tile->foreground : tile->background) == EmptyMaterialId)
+      return false;
+    (foreground ? tile->foregroundHueShift : tile->backgroundHueShift) = hueShift;
+  }
+
+  queueTileUpdates(pos);
+  return true;
+}
+
 void WorldServer::updateTileEntityTiles(TileEntityPtr const& entity, bool removing, bool checkBreaks) {
   // This method of updating tile entity collision only works if each tile
   // entity's collision spaces are a subset of their normal spaces, and thus no

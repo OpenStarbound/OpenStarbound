@@ -140,6 +140,9 @@ public:
   TileModificationList validTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap) const override;
   TileModificationList applyTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap) override;
   bool replaceTile(Vec2I const& pos, TileModification const& modification, TileDamage const& tileDamage);
+  // Sets the hue shift of the material (or the mod) already on a tile and
+  // sends the tile on to clients. Returns false if there is none to shift.
+  bool setTileHueShift(Vec2I const& pos, TileLayer layer, bool mod, MaterialHue hueShift);
   TileModificationList replaceTiles(TileModificationList const& modificationList, TileDamage const& tileDamage, bool applyDamage = false) override;
   bool damageWouldDestroy(Vec2I const& pos, TileLayer layer, TileDamage const& tileDamage) const override;
   EntityPtr entity(EntityId entityId) const override;

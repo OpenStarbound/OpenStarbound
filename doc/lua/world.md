@@ -352,6 +352,18 @@ Sets the color variant of the material at the specified position and layer to th
 
 ---
 
+#### `bool` world.setMaterialHue(`Vec2F` position, `String` layerName, `float` hue)
+
+OpenStarbound only. Sets the hue shift of the material already at the specified position and layer, in the units `world.materialHueShift` returns (0 to 255, clamped), without touching its color variant. Returns `true` if the hue was set. Does nothing and returns `false` when there is no material there, when the caller lacks build permission or when the script does not run on the world's server (client scripts). A vanilla server never runs this.
+
+---
+
+#### `bool` world.setModHue(`Vec2F` position, `String` layerName, `float` hue)
+
+The same as `world.setMaterialHue`, for the mod at the position.
+
+---
+
 #### `bool` world.damageTiles(`List<Vec2I>` positions, `String` layerName, `Vec2F` sourcePosition, `String` damageType, `float` damageAmount, [`unsigned` harvestLevel], [`EntityId` sourceEntity])
 
 Damages all tiles in the specified layer and positions by the specified amount. The source position of the damage determines the initial direction of the damage particles. Damage types are: "plantish", "blockish", "beamish", "explosive", "fire", "tilling". Harvest level determines whether destroyed materials or mods will drop as items. Returns `true` if any damage was done and `false` otherwise.
