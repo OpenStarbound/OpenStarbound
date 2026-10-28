@@ -318,7 +318,7 @@ List<DamageSource> Monster::damageSources() const {
     if (auto line = ds.damageArea.maybe<Line2F>()) {
       if (pair.second.getBool("checkLineCollision", false)) {
         Line2F worldLine = line.value().translated(position());
-        worldLine.scale(m_movementController->scale());
+        worldLine.scale(m_movementController->scale(), position());
         float length = worldLine.length();
 
         auto bounces = pair.second.getInt("bounces", 0);
