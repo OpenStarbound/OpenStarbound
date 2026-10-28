@@ -4,6 +4,7 @@
 #include "StarVariant.hpp"
 #include "StarGameTypes.hpp"
 #include "StarCollisionBlock.hpp"
+#include "StarNetCompatibility.hpp"
 
 namespace Star {
 
@@ -55,5 +56,11 @@ DataStream& operator<<(DataStream& ds, PlaceLiquid const& tileLiquidPlacement);
 
 typedef MVariant<PlaceMaterial, PlaceMod, PlaceMaterialColor, PlaceLiquid, SetHueShift> TileModification;
 typedef List<pair<Vec2I, TileModification>> TileModificationList;
+
+// Whether a peer with these net rules can read the modification.
+// A legacy peer cannot read SetHueShift so it must never be sent one.
+inline bool tileModificationSupported(TileModification const& modification, NetCompatibilityRules const& netRules) {
+  return !(modification.is<SetHueShift>() && netRules.isLegacy());
+}
 
 }

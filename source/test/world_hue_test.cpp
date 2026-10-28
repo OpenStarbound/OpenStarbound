@@ -3,6 +3,8 @@
 #include "StarFile.hpp"
 #include "StarRoot.hpp"
 #include "StarLua.hpp"
+#include "StarItemDrop.hpp"
+#include "StarItemDatabase.hpp"
 #include "StarWorldLuaBindings.hpp"
 
 #include "gtest/gtest.h"
@@ -166,4 +168,49 @@ TEST(WorldHueTest, SetHueShiftModification) {
   EXPECT_EQ(world.applyTileModifications({{pos, SetHueShift{TileLayer::Background, false, 5}}}, true).size(), 1u);
   EXPECT_FALSE(world.canModifyTile(empty, SetHueShift{TileLayer::Foreground, true, 5}, true));
   EXPECT_TRUE(world.canModifyTile(pos, SetHueShift{TileLayer::Foreground, true, 5}, true));
+}
+
+TEST(WorldHueTest, LegacyPeerIsNotSentSetHueShift) {
+  TileModification hue = SetHueShift{TileLayer::Foreground, false, 5};
+  TileModification paint = PlaceMaterialColor{TileLayer::Foreground, 1};
+
+  // A vanilla server cannot read SetHueShift, everything else it can.
+  EXPECT_FALSE(tileModificationSupported(hue, NetCompatibilityRules(LegacyVersion)));
+  EXPECT_TRUE(tileModificationSupported(paint, NetCompatibilityRules(LegacyVersion)));
+  EXPECT_TRUE(tileModificationSupported(hue, NetCompatibilityRules()));
+  EXPECT_TRUE(tileModificationSupported(hue, NetCompatibilityRules(OpenProtocolVersion)));
+}
+
+TEST(WorldHueTest, LuaCallbacksNeedBuildPermission) {
+  auto materialDatabase = Root::singleton().materialDatabase();
+  MaterialId dirt = materialDatabase->materialId("dirt");
+
+  WorldServer world(Vec2U(1024, 1024), File::ephemeralFile());
+  Vec2I pos(100, 0);
+  world.generateRegion(RectI(90, 0, 120, 20));
+  ASSERT_TRUE(world.applyTileModifications({{pos, PlaceMaterial{TileLayer::Foreground, dirt, MaterialHue(10)}}}, true).empty());
+
+  // A connected player who may not build and an entity that is theirs.
+  ConnectionId client = 5;
+  ASSERT_TRUE(world.addClient(client, SpawnTargetPosition(Vec2F(100, 5)), false));
+  world.setConnectionHasPermission(client, WorldPermissionType::Build, false);
+  ASSERT_FALSE(world.connectionHasPermission(client, WorldPermissionType::Build));
+
+  auto drop = ItemDrop::createRandomizedDrop(ItemDescriptor("dirtmaterial", 1), Vec2F(100, 5));
+  world.addEntity(drop, client);
+  ASSERT_EQ(drop->originConnection(), client);
+
+  auto luaEngine = LuaEngine::create();
+  auto context = luaEngine->createContext();
+  context.setCallbacks("world", LuaBindings::makeWorldCallbacks(&world, drop.get()));
+
+  EXPECT_FALSE(context.eval<bool>("return world.setMaterialHue({100, 0}, 'foreground', 99)"));
+  EXPECT_FALSE(context.eval<bool>("return world.setModHue({100, 0}, 'foreground', 99)"));
+  context.eval<Json>("world.setMaterialColor({100, 0}, 'foreground', 1, 99); return 0");
+  EXPECT_EQ(world.materialHueShift(pos, TileLayer::Foreground), 10);
+
+  // Once they may build, the same script works.
+  world.setConnectionHasPermission(client, WorldPermissionType::Build, true);
+  EXPECT_TRUE(context.eval<bool>("return world.setMaterialHue({100, 0}, 'foreground', 99)"));
+  EXPECT_EQ(world.materialHueShift(pos, TileLayer::Foreground), 99);
 }
