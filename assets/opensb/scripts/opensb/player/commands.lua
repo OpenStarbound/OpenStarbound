@@ -54,6 +54,9 @@ register("scale", function(args)
     mcontroller.setScale(1)
   else
     local scale = chat.parseArguments(args)
+    if type(scale) ~= "number" or scale <= 0 then
+      return "Usage: /scale <positive number>"
+    end
     mcontroller.setScale(scale)
   end
 end)
