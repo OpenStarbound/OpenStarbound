@@ -55,6 +55,12 @@ namespace WorldImpl {
   template <typename GetTileFunction>
   bool canPlaceMaterialColorVariant(Vec2I const& pos, TileLayer layer, MaterialColorVariant color, GetTileFunction& getTile);
   template <typename GetTileFunction>
+  bool canSetHueShift(Vec2I const& pos, TileLayer layer, bool mod, GetTileFunction& getTile) {
+    auto& tile = getTile(pos);
+    return mod ? tile.mod(layer) != NoModId : tile.material(layer) != EmptyMaterialId;
+  }
+
+  template <typename GetTileFunction>
   bool canPlaceMod(Vec2I const& pos, TileLayer layer, ModId mod, GetTileFunction& getTile);
   template <typename GetTileFunction>
   pair<bool, bool> validateTileModification(EntityMapPtr const& entityMap, Vec2I const& pos, TileModification const& modification, bool allowEntityOverlap, GetTileFunction& getTile);
@@ -375,6 +381,8 @@ namespace WorldImpl {
       good = WorldImpl::canPlaceMod(pos, placeMod->layer, placeMod->mod, getTile);
     } else if (auto placeMaterialColor = modification.ptr<PlaceMaterialColor>()) {
       good = WorldImpl::canPlaceMaterialColorVariant(pos, placeMaterialColor->layer, placeMaterialColor->color, getTile);
+    } else if (auto setHueShift = modification.ptr<SetHueShift>()) {
+      good = WorldImpl::canSetHueShift(pos, setHueShift->layer, setHueShift->mod, getTile);
     } else if (modification.is<PlaceLiquid>()) {
       good = getTile(pos).collision == CollisionKind::None;
     } else {

@@ -128,3 +128,42 @@ TEST(WorldHueTest, LuaCallbacks) {
   context.eval<Json>("world.setMaterialColor({100, 0}, 'foreground', 0, 40); return 0");
   EXPECT_EQ(world.materialHueShift(pos, TileLayer::Foreground), 40);
 }
+
+TEST(WorldHueTest, SetHueShiftModification) {
+  auto materialDatabase = Root::singleton().materialDatabase();
+  MaterialId dirt = materialDatabase->materialId("dirt");
+  ModId grass = materialDatabase->modId("grass");
+
+  WorldServer world(Vec2U(1024, 1024), File::ephemeralFile());
+  Vec2I pos(100, 0);
+  Vec2I empty(103, 0);
+  world.generateRegion(RectI(90, 0, 120, 20));
+  ASSERT_TRUE(world.applyTileModifications({{pos, PlaceMaterial{TileLayer::Foreground, dirt, MaterialHue(10)}}}, true).empty());
+  ASSERT_TRUE(world.applyTileModifications({{pos, PlaceMod{TileLayer::Foreground, grass, MaterialHue(30)}}}, true).empty());
+
+  // What a client sends survives the wire.
+  TileModification sent = SetHueShift{TileLayer::Foreground, true, 77};
+  DataStreamBuffer buffer;
+  buffer.write(sent);
+  buffer.seek(0);
+  auto received = buffer.read<TileModification>();
+  ASSERT_TRUE(received.is<SetHueShift>());
+  EXPECT_EQ(received.get<SetHueShift>().layer, TileLayer::Foreground);
+  EXPECT_TRUE(received.get<SetHueShift>().mod);
+  EXPECT_EQ(received.get<SetHueShift>().hueShift, 77);
+
+  // The server applies it like any other tile modification.
+  EXPECT_TRUE(world.applyTileModifications({{pos, received}}, true).empty());
+  EXPECT_EQ(world.modHueShift(pos, TileLayer::Foreground), 77);
+  EXPECT_EQ(world.materialHueShift(pos, TileLayer::Foreground), 10);
+
+  EXPECT_TRUE(world.applyTileModifications({{pos, SetHueShift{TileLayer::Foreground, false, 200}}}, true).empty());
+  EXPECT_EQ(world.materialHueShift(pos, TileLayer::Foreground), 200);
+  EXPECT_EQ(world.modHueShift(pos, TileLayer::Foreground), 77);
+
+  // Nothing to shift: it is handed back as unapplied.
+  EXPECT_EQ(world.applyTileModifications({{empty, SetHueShift{TileLayer::Foreground, false, 5}}}, true).size(), 1u);
+  EXPECT_EQ(world.applyTileModifications({{pos, SetHueShift{TileLayer::Background, false, 5}}}, true).size(), 1u);
+  EXPECT_FALSE(world.canModifyTile(empty, SetHueShift{TileLayer::Foreground, true, 5}, true));
+  EXPECT_TRUE(world.canModifyTile(pos, SetHueShift{TileLayer::Foreground, true, 5}, true));
+}
