@@ -421,7 +421,7 @@ TileModificationList WorldClient::validTileModifications(TileModificationList co
     return {};
 
   return WorldImpl::splitTileModifications(m_entityMap, modificationList, allowEntityOverlap, m_tileGetterFunction, [this](Vec2I pos, TileModification const& modification) {
-      return !isTileProtected(pos) && !(modification.is<SetHueShift>() && m_clientState.netCompatibilityRules().isLegacy());
+      return !isTileProtected(pos) && tileModificationSupported(modification, m_clientState.netCompatibilityRules());
     }).first;
 }
 
@@ -439,7 +439,7 @@ TileModificationList WorldClient::applyTileModifications(TileModificationList co
     for (size_t i = 0; i != list->size(); ++i) {
       auto& pair = list->at(i);
       // A vanilla server cannot read this modification, so it is never sent to one.
-      bool unsupported = pair.second.is<SetHueShift>() && m_clientState.netCompatibilityRules().isLegacy();
+      bool unsupported = !tileModificationSupported(pair.second, m_clientState.netCompatibilityRules());
       if (!unsupported && !isTileProtected(pair.first)) {
         auto result = WorldImpl::validateTileModification(m_entityMap, pair.first, pair.second, allowEntityOverlap, m_tileGetterFunction);
 
