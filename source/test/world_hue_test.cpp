@@ -55,3 +55,35 @@ TEST(WorldHueTest, SetTileHueShift) {
   // Outside the world, or in a sector that is not loaded.
   EXPECT_FALSE(world.setTileHueShift(Vec2I(100, -5), TileLayer::Foreground, false, 99));
 }
+
+TEST(WorldHueTest, PaintThenHue) {
+  auto materialDatabase = Root::singleton().materialDatabase();
+  MaterialId dirt = materialDatabase->materialId("dirt");
+  MaterialId colorful = NullMaterialId;
+  for (auto const& name : materialDatabase->materialNames()) {
+    auto id = materialDatabase->materialId(name);
+    if (isRealMaterial(id) && materialDatabase->isMultiColor(id) && materialDatabase->canPlaceInLayer(id, TileLayer::Foreground)) {
+      colorful = id;
+      break;
+    }
+  }
+  ASSERT_NE(colorful, NullMaterialId);
+
+  WorldServer world(Vec2U(1024, 1024), File::ephemeralFile());
+  Vec2I pos(100, 0);
+  world.generateRegion(RectI(90, 0, 120, 20));
+
+  ASSERT_TRUE(world.applyTileModifications({{pos, PlaceMaterial{TileLayer::Background, dirt, MaterialHue(20)}}}, true).empty());
+  ASSERT_TRUE(world.applyTileModifications({{pos, PlaceMaterial{TileLayer::Foreground, colorful, MaterialHue(10)}}}, true).empty());
+
+  // Painting resets the hue, which is what scripts have always got.
+  ASSERT_TRUE(world.modifyTile(pos, PlaceMaterialColor{TileLayer::Foreground, 1}, true));
+  EXPECT_EQ(world.colorVariant(pos, TileLayer::Foreground), 1);
+  EXPECT_EQ(world.materialHueShift(pos, TileLayer::Foreground), 0);
+
+  // A hue written afterwards leaves the paint alone.
+  EXPECT_TRUE(world.setTileHueShift(pos, TileLayer::Foreground, false, 100));
+  EXPECT_EQ(world.colorVariant(pos, TileLayer::Foreground), 1);
+  EXPECT_EQ(world.materialHueShift(pos, TileLayer::Foreground), 100);
+  EXPECT_EQ(world.materialHueShift(pos, TileLayer::Background), 20);
+}
