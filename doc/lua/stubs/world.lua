@@ -352,6 +352,20 @@ function world.materialColor(position, layerName) end
 ---@return void
 function world.setMaterialColor(position, layerName, color) end
 
+--- OpenStarbound only. Sets the hue shift (0-255) of the material already at the position and layer. Returns whether it was set. Does nothing outside the world's server. ---
+---@param position Vec2F
+---@param layerName string
+---@param hue number
+---@return boolean
+function world.setMaterialHue(position, layerName, hue) end
+
+--- The same as `world.setMaterialHue`, for the mod at the position. ---
+---@param position Vec2F
+---@param layerName string
+---@param hue number
+---@return boolean
+function world.setModHue(position, layerName, hue) end
+
 --- Damages all tiles in the specified layer and positions by the specified amount. The source position of the damage determines the initial direction of the damage particles. Damage types are: "plantish", "blockish", "beamish", "explosive", "fire", "tilling". Harvest level determines whether destroyed materials or mods will drop as items. Returns `true` if any damage was done and `false` otherwise. ---
 ---@param positions List<Vec2I>
 ---@param layerName string
