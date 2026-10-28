@@ -2,6 +2,8 @@
 #include "StarMaterialDatabase.hpp"
 #include "StarFile.hpp"
 #include "StarRoot.hpp"
+#include "StarLua.hpp"
+#include "StarWorldLuaBindings.hpp"
 
 #include "gtest/gtest.h"
 
@@ -86,4 +88,43 @@ TEST(WorldHueTest, PaintThenHue) {
   EXPECT_EQ(world.colorVariant(pos, TileLayer::Foreground), 1);
   EXPECT_EQ(world.materialHueShift(pos, TileLayer::Foreground), 100);
   EXPECT_EQ(world.materialHueShift(pos, TileLayer::Background), 20);
+}
+
+TEST(WorldHueTest, LuaCallbacks) {
+  auto materialDatabase = Root::singleton().materialDatabase();
+  MaterialId dirt = materialDatabase->materialId("dirt");
+  ModId grass = materialDatabase->modId("grass");
+
+  WorldServer world(Vec2U(1024, 1024), File::ephemeralFile());
+  Vec2I pos(100, 0);
+  world.generateRegion(RectI(90, 0, 120, 20));
+  ASSERT_TRUE(world.applyTileModifications({{pos, PlaceMaterial{TileLayer::Foreground, dirt, MaterialHue(0)}}}, true).empty());
+  ASSERT_TRUE(world.applyTileModifications({{pos, PlaceMod{TileLayer::Foreground, grass, MaterialHue(0)}}}, true).empty());
+
+  auto luaEngine = LuaEngine::create();
+  auto context = luaEngine->createContext();
+  context.setCallbacks("world", LuaBindings::makeWorldCallbacks(&world));
+
+  // Hue is clamped to the 0-255 the tile can hold.
+  EXPECT_TRUE(context.eval<bool>("return world.setMaterialHue({100, 0}, 'foreground', 300)"));
+  EXPECT_EQ(world.materialHueShift(pos, TileLayer::Foreground), 255);
+  EXPECT_TRUE(context.eval<bool>("return world.setMaterialHue({100, 0}, 'foreground', -20)"));
+  EXPECT_EQ(world.materialHueShift(pos, TileLayer::Foreground), 0);
+  EXPECT_TRUE(context.eval<bool>("return world.setModHue({100, 0}, 'foreground', 77)"));
+  EXPECT_EQ(world.modHueShift(pos, TileLayer::Foreground), 77);
+
+  // Nothing there, or nothing to shift: false rather than an error.
+  EXPECT_FALSE(context.eval<bool>("return world.setMaterialHue({103, 0}, 'foreground', 5)"));
+  EXPECT_FALSE(context.eval<bool>("return world.setModHue({100, 0}, 'background', 5)"));
+
+  // An unknown layer is a script error.
+  EXPECT_ANY_THROW(context.eval<bool>("return world.setMaterialHue({100, 0}, 'middle', 5)"));
+
+  // setMaterialColor resets the hue as before, unless a hue is passed.
+  context.eval<Json>("world.setMaterialColor({100, 0}, 'foreground', 0); return 0");
+  EXPECT_EQ(world.materialHueShift(pos, TileLayer::Foreground), 0);
+  context.eval<Json>("world.setMaterialColor({100, 0}, 'foreground', 0, 9000); return 0");
+  EXPECT_EQ(world.materialHueShift(pos, TileLayer::Foreground), 255);
+  context.eval<Json>("world.setMaterialColor({100, 0}, 'foreground', 0, 40); return 0");
+  EXPECT_EQ(world.materialHueShift(pos, TileLayer::Foreground), 40);
 }
