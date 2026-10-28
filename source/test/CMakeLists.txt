@@ -80,6 +80,7 @@ SET (star_game_tests_SOURCES
       world_geometry_test.cpp
       universe_connection_test.cpp
       weather_domain_test.cpp
+      world_hue_test.cpp
       weather_test.cpp
     )
 ADD_EXECUTABLE (game_tests
