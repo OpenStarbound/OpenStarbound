@@ -176,7 +176,7 @@ namespace LuaBindings {
     float materialHueShift(World* world, Vec2F const& position, String const& layerName);
     float modHueShift(World* world, Vec2F const& position, String const& layerName);
     MaterialColorVariant materialColor(World* world, Vec2F const& position, String const& layerName);
-    void setMaterialColor(World* world, WorldCaller caller, Vec2F const& position, String const& layerName, MaterialColorVariant color);
+    void setMaterialColor(World* world, WorldCaller caller, Vec2F const& position, String const& layerName, MaterialColorVariant color, Maybe<float> const& hue);
     bool setMaterialHue(World* world, WorldCaller caller, Vec2F const& position, String const& layerName, float hue);
     bool setModHue(World* world, WorldCaller caller, Vec2F const& position, String const& layerName, float hue);
     bool damageTiles(World* world, WorldCaller caller, List<Vec2I> const& arg1, String const& arg2, Vec2F const& arg3, String const& arg4, float arg5, Maybe<unsigned> const& arg6, Maybe<EntityId> sourceEntity);

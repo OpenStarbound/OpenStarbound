@@ -711,7 +711,7 @@ namespace LuaBindings {
     callbacks.registerCallbackWithSignature<float, Vec2F, String>("materialHueShift", bind(WorldEnvironmentCallbacks::materialHueShift, world, _1, _2));
     callbacks.registerCallbackWithSignature<float, Vec2F, String>("modHueShift", bind(WorldEnvironmentCallbacks::modHueShift, world, _1, _2));
     callbacks.registerCallbackWithSignature<MaterialColorVariant, Vec2F, String>("materialColor", bind(WorldEnvironmentCallbacks::materialColor, world, _1, _2));
-    callbacks.registerCallbackWithSignature<void, Vec2F, String, MaterialColorVariant>("setMaterialColor", bind(WorldEnvironmentCallbacks::setMaterialColor, world, caller, _1, _2, _3));
+    callbacks.registerCallbackWithSignature<void, Vec2F, String, MaterialColorVariant, Maybe<float>>("setMaterialColor", bind(WorldEnvironmentCallbacks::setMaterialColor, world, caller, _1, _2, _3, _4));
     callbacks.registerCallbackWithSignature<bool, Vec2F, String, float>("setMaterialHue", bind(WorldEnvironmentCallbacks::setMaterialHue, world, caller, _1, _2, _3));
     callbacks.registerCallbackWithSignature<bool, Vec2F, String, float>("setModHue", bind(WorldEnvironmentCallbacks::setModHue, world, caller, _1, _2, _3));
 
@@ -2188,7 +2188,7 @@ namespace LuaBindings {
     return world->colorVariant(Vec2I::floor(position), layer);
   }
 
-  void WorldEnvironmentCallbacks::setMaterialColor(World* world, WorldCaller caller, Vec2F const& position, String const& layerName, MaterialColorVariant color) {
+  void WorldEnvironmentCallbacks::setMaterialColor(World* world, WorldCaller caller, Vec2F const& position, String const& layerName, MaterialColorVariant color, Maybe<float> const& hue) {
     if (!world->connectionHasPermission(callerConnection(caller), WorldPermissionType::Build))
       return;
     
@@ -2201,7 +2201,15 @@ namespace LuaBindings {
       throw StarException(strf("Unsupported material layer {}", layerName));
     }
 
-    world->modifyTile(Vec2I::floor(position), PlaceMaterialColor{layer, color}, true);
+    Vec2I tilePosition = Vec2I::floor(position);
+    world->modifyTile(tilePosition, PlaceMaterialColor{layer, color}, true);
+
+    // Painting resets the hue, so a hue the script asked for is written after it,
+    // straight onto the server tile (see setMaterialHue). A client world only paints.
+    if (hue) {
+      if (auto serverWorld = as<WorldServer>(world))
+        serverWorld->setTileHueShift(tilePosition, layer, false, (MaterialHue)clamp(*hue, 0.0f, 255.0f));
+    }
   }
 
   static bool setTileHue(World* world, WorldCaller caller, Vec2F const& position, String const& layerName, bool mod, float hue) {
