@@ -66,6 +66,22 @@ DataStream& operator<<(DataStream& ds, PlaceMaterialColor const& tileMaterialCol
   return ds;
 }
 
+DataStream& operator>>(DataStream& ds, SetHueShift& tileHueShift) {
+  ds.read(tileHueShift.layer);
+  ds.read(tileHueShift.mod);
+  ds.read(tileHueShift.hueShift);
+
+  return ds;
+}
+
+DataStream& operator<<(DataStream& ds, SetHueShift const& tileHueShift) {
+  ds.write(tileHueShift.layer);
+  ds.write(tileHueShift.mod);
+  ds.write(tileHueShift.hueShift);
+
+  return ds;
+}
+
 DataStream& operator>>(DataStream& ds, PlaceLiquid& tileLiquidPlacement) {
   ds.read(tileLiquidPlacement.liquid);
   ds.read(tileLiquidPlacement.liquidLevel);

@@ -420,8 +420,8 @@ TileModificationList WorldClient::validTileModifications(TileModificationList co
   if (!inWorld())
     return {};
 
-  return WorldImpl::splitTileModifications(m_entityMap, modificationList, allowEntityOverlap, m_tileGetterFunction, [this](Vec2I pos, TileModification) {
-      return !isTileProtected(pos);
+  return WorldImpl::splitTileModifications(m_entityMap, modificationList, allowEntityOverlap, m_tileGetterFunction, [this](Vec2I pos, TileModification const& modification) {
+      return !isTileProtected(pos) && !(modification.is<SetHueShift>() && m_clientState.netCompatibilityRules().isLegacy());
     }).first;
 }
 
@@ -438,7 +438,9 @@ TileModificationList WorldClient::applyTileModifications(TileModificationList co
     bool yay = false;
     for (size_t i = 0; i != list->size(); ++i) {
       auto& pair = list->at(i);
-      if (!isTileProtected(pair.first)) {
+      // A vanilla server cannot read this modification, so it is never sent to one.
+      bool unsupported = pair.second.is<SetHueShift>() && m_clientState.netCompatibilityRules().isLegacy();
+      if (!unsupported && !isTileProtected(pair.first)) {
         auto result = WorldImpl::validateTileModification(m_entityMap, pair.first, pair.second, allowEntityOverlap, m_tileGetterFunction);
 
         if (result.first) {
@@ -1076,6 +1078,10 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
               p.foregroundColorVariant.reset();
             else
               p.backgroundColorVariant.reset();
+          } else if (auto setHue = modification.second.ptr<SetHueShift>()) {
+            bool foreground = setHue->layer == TileLayer::Foreground;
+            (setHue->mod ? (foreground ? p.foregroundModHueShift : p.backgroundModHueShift)
+                         : (foreground ? p.foregroundHueShift : p.backgroundHueShift)).reset();
           } else if (modification.second.ptr<PlaceLiquid>()) {
             p.liquid.reset();
           }
@@ -2811,6 +2817,11 @@ void WorldClient::informTilePrediction(Vec2I const& pos, TileModification const&
       p.foregroundColorVariant = placeColor->color;
     else
       p.backgroundColorVariant = placeColor->color;
+  }
+  else if (auto setHue = modification.ptr<SetHueShift>()) {
+    bool foreground = setHue->layer == TileLayer::Foreground;
+    (setHue->mod ? (foreground ? p.foregroundModHueShift : p.backgroundModHueShift)
+                 : (foreground ? p.foregroundHueShift : p.backgroundHueShift)) = setHue->hueShift;
   }
   else if (auto placeLiquid = modification.ptr<PlaceLiquid>()) {
     if (!p.liquid || p.liquid->liquid != placeLiquid->liquid)

@@ -2188,6 +2188,14 @@ namespace LuaBindings {
     return world->colorVariant(Vec2I::floor(position), layer);
   }
 
+  // A server world writes the hue straight onto its tile and sends it in the usual tile update.
+  static bool applyHueShift(World* world, Vec2I const& position, TileLayer layer, bool mod, float hue) {
+    MaterialHue hueShift = (MaterialHue)clamp(hue, 0.0f, 255.0f);
+    if (auto serverWorld = as<WorldServer>(world))
+      return serverWorld->setTileHueShift(position, layer, mod, hueShift);
+    return world->modifyTile(position, SetHueShift{layer, mod, hueShift}, true);
+  }
+
   void WorldEnvironmentCallbacks::setMaterialColor(World* world, WorldCaller caller, Vec2F const& position, String const& layerName, MaterialColorVariant color, Maybe<float> const& hue) {
     if (!world->connectionHasPermission(callerConnection(caller), WorldPermissionType::Build))
       return;
@@ -2204,12 +2212,9 @@ namespace LuaBindings {
     Vec2I tilePosition = Vec2I::floor(position);
     world->modifyTile(tilePosition, PlaceMaterialColor{layer, color}, true);
 
-    // Painting resets the hue, so a hue the script asked for is written after it,
-    // straight onto the server tile (see setMaterialHue). A client world only paints.
-    if (hue) {
-      if (auto serverWorld = as<WorldServer>(world))
-        serverWorld->setTileHueShift(tilePosition, layer, false, (MaterialHue)clamp(*hue, 0.0f, 255.0f));
-    }
+    // Painting resets the hue, so a hue the script asked for is set after it.
+    if (hue)
+      applyHueShift(world, tilePosition, layer, false, *hue);
   }
 
   static bool setTileHue(World* world, WorldCaller caller, Vec2F const& position, String const& layerName, bool mod, float hue) {
@@ -2222,15 +2227,10 @@ namespace LuaBindings {
       throw StarException(strf("Unsupported material layer {}", layerName));
     }
 
-    // Written straight onto the server's tile and sent in the usual tile update,
-    // so there is no tile modification a vanilla server would have to understand.
-    auto serverWorld = as<WorldServer>(world);
-    if (!serverWorld)
-      return false;
     if (!world->connectionHasPermission(callerConnection(caller), WorldPermissionType::Build))
       return false;
 
-    return serverWorld->setTileHueShift(Vec2I::floor(position), layer, mod, (MaterialHue)clamp(hue, 0.0f, 255.0f));
+    return applyHueShift(world, Vec2I::floor(position), layer, mod, hue);
   }
 
   bool WorldEnvironmentCallbacks::setMaterialHue(World* world, WorldCaller caller, Vec2F const& position, String const& layerName, float hue) {

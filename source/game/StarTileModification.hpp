@@ -36,6 +36,16 @@ struct PlaceMaterialColor {
 DataStream& operator>>(DataStream& ds, PlaceMaterialColor& tileMaterialColorPlacement);
 DataStream& operator<<(DataStream& ds, PlaceMaterialColor const& tileMaterialColorPlacement);
 
+// Sets only the hue of what is already on the tile.
+// oSB servers only since a vanilla server cannot read it.
+struct SetHueShift {
+  TileLayer layer;
+  bool mod;
+  MaterialHue hueShift;
+};
+DataStream& operator>>(DataStream& ds, SetHueShift& tileHueShift);
+DataStream& operator<<(DataStream& ds, SetHueShift const& tileHueShift);
+
 struct PlaceLiquid {
   LiquidId liquid;
   float liquidLevel;
@@ -43,7 +53,7 @@ struct PlaceLiquid {
 DataStream& operator>>(DataStream& ds, PlaceLiquid& tileLiquidPlacement);
 DataStream& operator<<(DataStream& ds, PlaceLiquid const& tileLiquidPlacement);
 
-typedef MVariant<PlaceMaterial, PlaceMod, PlaceMaterialColor, PlaceLiquid> TileModification;
+typedef MVariant<PlaceMaterial, PlaceMod, PlaceMaterialColor, PlaceLiquid, SetHueShift> TileModification;
 typedef List<pair<Vec2I, TileModification>> TileModificationList;
 
 }

@@ -2015,6 +2015,10 @@ TileModificationList WorldServer::doApplyTileModifications(TileModificationList 
 
       queueTileUpdates(pos);
 
+    } else if (auto setHueShift = modification.ptr<SetHueShift>()) {
+      if (!setTileHueShift(pos, setHueShift->layer, setHueShift->mod, setHueShift->hueShift))
+        continue;
+
     } else if (auto plpacket = modification.ptr<PlaceLiquid>()) {
       if (!Root::singleton().liquidsDatabase()->isValidLiquidId(plpacket->liquid)) {
         Logger::warn("WorldServer: rejected PlaceLiquid with invalid liquid id {} at ({}, {})",

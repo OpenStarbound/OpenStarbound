@@ -349,11 +349,11 @@ function world.materialColor(position, layerName) end
 ---@param position Vec2F
 ---@param layerName string
 ---@param color unsigned
----@param hue number? Hue (0-255) to set after painting, which is otherwise reset
+---@param hue number? Hue (0-255) to set after painting, otherwise reset
 ---@return void
 function world.setMaterialColor(position, layerName, color, hue) end
 
---- Sets the hue shift (0-255) of the material already at the position and layer. Returns whether it was set. Does nothing outside the world's server. ---
+--- Sets the hue shift (0-255) of the material already at the position and layer. Returns whether it was set. On a client, an OpenStarbound server is needed. Returns false on a vanilla one. ---
 ---@param position Vec2F
 ---@param layerName string
 ---@param hue number
