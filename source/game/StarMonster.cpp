@@ -855,7 +855,7 @@ List<ChatAction> Monster::pullPendingChatActions() {
 
 List<PhysicsForceRegion> Monster::forceRegions() const {
   auto forceRegions = m_physicsForces.get();
-  for (auto forceRegion : forceRegions) {
+  for (auto& forceRegion : forceRegions) {
     if (auto dfr = forceRegion.ptr<DirectionalForceRegion>()) {
       dfr->region.scale(m_movementController->scale());
     } else if (auto rfr = forceRegion.ptr<RadialForceRegion>()) {
