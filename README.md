@@ -103,6 +103,11 @@ Note: Mods that use StarExtensions features often work with OpenStarbound, StarE
   * Previously generated planets will not have this feature and will display the default sun.
   * Modded system types require a patch to display their custom sun.
   * You can also access the skybox sun scale and its default ray colors. For more details see, [sky.config.patch](https://github.com/OpenStarbound/OpenStarbound/blob/main/assets/opensb/sky.config.patch).
+ 
+* Extended syntax for Lua.
+  * Compound operators (`+=`, `-=`, `*=`, `%=`, `/=`, `//=`, `..=`, `<<=`, `>>=`, `&=`, `|=`).
+  * Safe table navigation (`?.`,`?[`).
+  * `defer` statement.
 
 **Discord:** reverse the text in the image and you will have the invite code (this is to prevent spam bots)
 
