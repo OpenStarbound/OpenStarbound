@@ -25,6 +25,7 @@
 namespace Star {
 
 Object::Object(ObjectConfigConstPtr config, Json const& parameters) {
+  m_scriptComponent.setGameTimeCadence(true);
   m_config = config;
   if (!parameters.isNull())
     m_parameters.reset(parameters.toObject());
