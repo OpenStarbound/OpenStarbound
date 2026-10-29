@@ -259,17 +259,50 @@ String CommandProcessor::timewarp(ConnectionId connectionId, String const& argum
 }
 
 String CommandProcessor::timescale(ConnectionId connectionId, String const& argumentsString) {
-  if (auto errorMsg = adminCheck(connectionId, "mess with time"))
-    return *errorMsg;
+  // singleplayer host needs no admin rights
+  if (m_universe->numberOfClients() > 1) {
+    if (auto errorMsg = adminCheck(connectionId, "mess with time"))
+      return *errorMsg;
+  }
 
   auto arguments = m_parser.tokenizeToStringList(argumentsString);
 
   if (arguments.empty())
     return strf("Current timescale is {:6.6f}x", GlobalTimescale);
 
-  float timescale = clamp(lexicalCast<float>(arguments[0]), 0.001f, 32.0f);
+  float timescale = clamp(lexicalCast<float>(arguments[0]), 0.025f, 40.0f);
   m_universe->setTimescale(timescale);
   return strf("Set timescale to {:6.6f}x", timescale);
+}
+
+String CommandProcessor::pause(ConnectionId connectionId, String const& argumentsString) {
+  if (m_universe->numberOfClients() > 1) {
+    if (auto errorMsg = adminCheck(connectionId, "pause the universe"))
+      return *errorMsg;
+  }
+
+  auto arguments = m_parser.tokenizeToStringList(argumentsString);
+  bool state = !m_universe->paused();
+  if (!arguments.empty()) {
+    String mode = arguments[0].toLower();
+    if (mode == "on" || mode == "true" || mode == "1")
+      state = true;
+    else if (mode == "off" || mode == "false" || mode == "0")
+      state = false;
+    else if (mode != "toggle")
+      return strf("Usage: /pause [on|off|toggle]");
+  }
+
+  m_universe->setPause(state, true);
+  return state ? "Universe paused" : "Universe running";
+}
+
+String CommandProcessor::serverclock(ConnectionId connectionId, String const&) {
+  if (auto errorMsg = adminCheck(connectionId, "read the universe clock"))
+    return *errorMsg;
+
+  return strf("Universe time {:.3f}s, timescale {:.3f}x, {}",
+      m_universe->universeClock()->time(), GlobalTimescale, m_universe->paused() ? "paused" : "running");
 }
 
 String CommandProcessor::tickrate(ConnectionId connectionId, String const& argumentsString) {
@@ -1015,6 +1048,8 @@ const CaseInsensitiveStringMap<std::function<String(CommandProcessor*, Connectio
   add("serverdebug", &CommandProcessor::serverDebug);
   add("timewarp", &CommandProcessor::timewarp);
   add("timescale", &CommandProcessor::timescale);
+  add("pause", &CommandProcessor::pause);
+  add("serverclock", &CommandProcessor::serverclock);
   add("tickrate", &CommandProcessor::tickrate);
   add("settileprotection", &CommandProcessor::setTileProtection);
   add("setdungeonid", &CommandProcessor::setDungeonId);
