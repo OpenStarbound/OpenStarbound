@@ -42,10 +42,10 @@ LuaMethods<EntityContext> LuaUserDataMethods<EntityContext>::make() {
         auto const& entity = context.entity;
         if (entity->inWorld()) {
             auto other = entity->world()->entity(otherId);
-            
+
             if (!other || !entity->getTeam().canDamage(other->getTeam(), false))
             return false;
-            
+
             return true;
         }
         return false;
@@ -139,7 +139,7 @@ LuaMethods<EntityContext> LuaUserDataMethods<EntityContext>::make() {
     [&](EntityContext const& context, String const& parameterName, Maybe<Json> const& defaultValue) -> Json {
         auto const& entity = context.entity;
         Json val = Json();
-        
+
         bool handled = true;
         if (auto objectEntity = as<Object>(entity)) {
             val = objectEntity->configValue(parameterName);
@@ -518,7 +518,15 @@ LuaMethods<EntityContext> LuaUserDataMethods<EntityContext>::make() {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->liquidMovement();
         return {};
-    }); 
+    });
+    methods.registerMethod("scale", [&](EntityContext const& context) -> Maybe<float> {
+        auto const& entity = context.entity;
+        if (auto actor = as<ActorEntity>(entity))
+            return actor->movementController()->scale();
+        else if (auto mob = as<MobileEntity>(entity))
+            return mob->movementController()->scale();
+        return {};
+    });
 
     // tool user entity methods
     methods.registerMethod("handItem",
@@ -969,6 +977,6 @@ LuaMethods<EntityContext> LuaUserDataMethods<EntityContext>::make() {
     });
 
     return methods;
-} 
+}
 
 }

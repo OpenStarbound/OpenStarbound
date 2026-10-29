@@ -131,6 +131,8 @@ public:
 
   Maybe<ChainableJsonMessageResponse> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
 
+  void setScale(float scale);
+
 private:
   typedef LuaMessageHandlingComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaEntityComponent<LuaBaseComponent>>>> StatScript;
 

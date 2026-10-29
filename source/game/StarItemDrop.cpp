@@ -43,7 +43,7 @@ ItemDropPtr ItemDrop::createRandomizedDrop(ItemDescriptor const& descriptor, Vec
   return itemDrop;
 }
 
-ItemDropPtr ItemDrop::throwDrop(ItemPtr const& item, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal) {
+ItemDropPtr ItemDrop::throwDrop(ItemPtr const& item, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, float scale, bool eternal) {
   if (!item)
     return {};
 
@@ -52,23 +52,21 @@ ItemDropPtr ItemDrop::throwDrop(ItemPtr const& item, Vec2F const& position, Vec2
   ItemDropPtr itemDrop = make_shared<ItemDrop>(item);
   itemDrop->setPosition(position);
   if (direction != Vec2F())
-    itemDrop->setVelocity(velocity + vnorm(direction) * idconfig.getFloat("throwSpeed"));
+    itemDrop->setVelocity(velocity + vnorm(direction) * idconfig.getFloat("throwSpeed") * scale);
 
   itemDrop->setEternal(eternal);
   itemDrop->setIntangibleTime(idconfig.getFloat("throwIntangibleTime"));
+  itemDrop->movementController()->setScale(scale);
 
   return itemDrop;
 }
 
-ItemDropPtr ItemDrop::throwDrop(ItemDescriptor const& itemDescriptor, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal) {
+ItemDropPtr ItemDrop::throwDrop(ItemDescriptor const& itemDescriptor, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, float scale, bool eternal) {
   if (!itemDescriptor || itemDescriptor.isEmpty())
     return {};
 
   auto itemDatabase = Root::singleton().itemDatabase();
-  auto itemDrop = throwDrop(itemDatabase->item(itemDescriptor), position, velocity, direction);
-  itemDrop->setEternal(eternal);
-
-  return itemDrop;
+  return throwDrop(itemDatabase->item(itemDescriptor), position, velocity, direction, scale, eternal);
 }
 
 ItemDrop::ItemDrop(ItemPtr item)
@@ -371,6 +369,7 @@ void ItemDrop::render(RenderCallback* renderCallback) {
   EntityRenderLayer renderLayer = m_mode.get() == Mode::Taken || m_overForeground ? RenderLayerForegroundTile : RenderLayerItemDrop;
   Vec2F dropPosition = position();
   for (Drawable drawable : *m_drawables) {
+    drawable.scale(m_movementController.scale());
     drawable.position += dropPosition;
     renderCallback->addDrawable(std::move(drawable), renderLayer);
   }
