@@ -64,11 +64,8 @@ void PhysicsObject::init(World* world, EntityId entityId, EntityMode mode, Conne
   }
   Object::init(world, entityId, mode, originConnection);
   m_metaBoundBox = Object::metaBoundBox();
-  for (auto const& p : m_physicsForces) {
-    PhysicsForceRegion forceRegion = p.second.forceRegion;
-    forceRegion.call([pos = position()](auto& fr) { fr.translate(pos); });
-    m_metaBoundBox.combine(forceRegion.call([](auto& fr) { return fr.boundBox(); }));
-  }
+  for (auto const& p : m_physicsForces)
+    m_metaBoundBox.combine(p.second.forceRegion.call([](auto& fr) { return fr.boundBox(); }));
 }
 
 void PhysicsObject::uninit() {
