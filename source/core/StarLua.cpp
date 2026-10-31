@@ -214,6 +214,8 @@ LuaEnginePtr LuaEngine::create(bool safe) {
   self->m_scriptDefaultEnvRegistryId = LUA_NOREF;
   self->m_wrappedFunctionMetatableRegistryId = LUA_NOREF;
   self->m_requireFunctionMetatableRegistryId = LUA_NOREF;
+  self->m_jsonArrayMetatableRegistryId = LUA_NOREF;
+  self->m_jsonObjectMetatableRegistryId = LUA_NOREF;
 
   self->m_instructionLimit = 0;
   self->m_profilingEnabled = false;
@@ -1348,59 +1350,285 @@ void LuaDetail::shallowCopy(lua_State* state, int sourceIndex, int targetIndex) 
   }
 }
 
-LuaTable LuaDetail::insertJsonMetatable(LuaEngine& engine, LuaTable const& table, Json::Type type) {
-  auto newIndexMetaMethod = [](LuaTable const& table, LuaValue const& key, LuaValue const& value) {
-    auto mt = table.getMetatable();
-    auto nils = mt->rawGet<LuaTable>("__nils");
+namespace {
 
-    // If we are setting an entry to nil, need to add a bogus integer entry
-    // to the __nils table, otherwise need to set the entry *in* the __nils
-    // table to nil and remove it.
-    if (value == LuaNil)
-      nils.rawSet(key, 0);
-    else
-      nils.rawSet(key, LuaNil);
-    table.rawSet(key, value);
-  };
+// Pushes the table of nil entries for the Json container table at tableIndex,
+// giving the table its own metatable first if it is still on the shared one.
+void pushNilsTable(lua_State* L, int tableIndex) {
+  tableIndex = lua_absindex(L, tableIndex);
+  lua_getmetatable(L, tableIndex);
+  lua_pushliteral(L, "__nils");
+  lua_rawget(L, -2);
+  if (lua_istable(L, -1)) {
+    lua_remove(L, -2);
+    return;
+  }
+  lua_pop(L, 1);
 
-  auto mt = engine.createTable();
-  auto nils = engine.createTable();
-  mt.rawSet("__nils", nils);
-  mt.rawSet("__newindex", engine.createFunction(newIndexMetaMethod));
-  mt.rawSet("__typehint", type == Json::Type::Array ? 1 : 2);
-  table.setMetatable(mt);
-  return nils;
+  lua_createtable(L, 0, 3);
+  for (char const* field : {"__newindex", "__typehint"}) {
+    lua_pushstring(L, field);
+    lua_pushstring(L, field);
+    lua_rawget(L, -4);
+    lua_rawset(L, -3);
+  }
+  lua_createtable(L, 0, 1);
+  lua_pushliteral(L, "__nils");
+  lua_pushvalue(L, -2);
+  lua_rawset(L, -4);
+  lua_pushvalue(L, -2);
+  lua_setmetatable(L, tableIndex);
+  lua_remove(L, -2);
+  lua_remove(L, -2);
 }
 
-LuaTable LuaDetail::jsonContainerToTable(LuaEngine& engine, Json const& container) {
+// __newindex of Json container tables: remembers entries set to nil, so they
+// convert back to Json null.
+int jsonNewIndex(lua_State* L) {
+  luaL_checktype(L, 1, LUA_TTABLE);
+  lua_settop(L, 3);
+  if (lua_isnil(L, 3)) {
+    pushNilsTable(L, 1);
+    lua_pushvalue(L, 2);
+    lua_pushinteger(L, 0);
+    lua_rawset(L, -3);
+    lua_pop(L, 1);
+  } else if (lua_getmetatable(L, 1)) {
+    lua_pushliteral(L, "__nils");
+    lua_rawget(L, -2);
+    if (lua_istable(L, -1)) {
+      lua_pushvalue(L, 2);
+      lua_pushnil(L);
+      lua_rawset(L, -3);
+    }
+    lua_pop(L, 2);
+  }
+  lua_settop(L, 3);
+  lua_rawset(L, 1);
+  return 0;
+}
+
+}
+
+void LuaEngine::pushJsonMetatable(lua_State* L, Json::Type type) {
+  int& id = type == Json::Type::Array ? m_jsonArrayMetatableRegistryId : m_jsonObjectMetatableRegistryId;
+  if (id == LUA_NOREF) {
+    lua_createtable(L, 0, 2);
+    lua_pushcfunction(L, jsonNewIndex);
+    lua_setfield(L, -2, "__newindex");
+    lua_pushinteger(L, type == Json::Type::Array ? 1 : 2);
+    lua_setfield(L, -2, "__typehint");
+    id = luaL_ref(L, LUA_REGISTRYINDEX);
+  }
+  lua_rawgeti(L, LUA_REGISTRYINDEX, id);
+}
+
+LuaTable LuaEngine::jsonMetatable(Json::Type type) {
+  lua_checkstack(m_state, 4);
+  pushJsonMetatable(m_state, type);
+  return popLuaValue(m_state).get<LuaTable>();
+}
+
+void LuaEngine::pushJson(lua_State* L, Json const& json, int depth) {
+  if (depth > 200 || !lua_checkstack(L, 8))
+    throw LuaException("Json is nested too deeply to convert to a lua table");
+
+  switch (json.type()) {
+    case Json::Type::Null:
+      lua_pushnil(L);
+      break;
+    case Json::Type::Float:
+      lua_pushnumber(L, json.toDouble());
+      break;
+    case Json::Type::Bool:
+      lua_pushboolean(L, json.toBool());
+      break;
+    case Json::Type::Int:
+      lua_pushinteger(L, json.toInt());
+      break;
+    case Json::Type::String: {
+      auto const& str = *json.stringPtr();
+      lua_pushlstring(L, str.utf8Ptr(), str.utf8Size());
+      break;
+    }
+    case Json::Type::Array: {
+      auto const& list = *json.arrayPtr();
+      lua_createtable(L, list.size(), 0);
+      pushJsonMetatable(L, Json::Type::Array);
+      lua_setmetatable(L, -2);
+      for (size_t i = 0; i < list.size(); ++i) {
+        if (list[i]) {
+          pushJson(L, list[i], depth + 1);
+          lua_rawseti(L, -2, i + 1);
+        } else {
+          pushNilsTable(L, -1);
+          lua_pushinteger(L, 0);
+          lua_rawseti(L, -2, i + 1);
+          lua_pop(L, 1);
+        }
+      }
+      break;
+    }
+    case Json::Type::Object: {
+      auto const& map = *json.objectPtr();
+      lua_createtable(L, 0, map.size());
+      pushJsonMetatable(L, Json::Type::Object);
+      lua_setmetatable(L, -2);
+      for (auto const& pair : map) {
+        if (pair.second) {
+          lua_pushlstring(L, pair.first.utf8Ptr(), pair.first.utf8Size());
+          pushJson(L, pair.second, depth + 1);
+          lua_rawset(L, -3);
+        } else {
+          pushNilsTable(L, -1);
+          lua_pushlstring(L, pair.first.utf8Ptr(), pair.first.utf8Size());
+          lua_pushinteger(L, 0);
+          lua_rawset(L, -3);
+          lua_pop(L, 1);
+        }
+      }
+      break;
+    }
+  }
+}
+
+LuaTable LuaEngine::jsonContainerToTable(Json const& container) {
   if (!container.isType(Json::Type::Array) && !container.isType(Json::Type::Object))
     throw LuaException("jsonContainerToTable called on improper json type");
 
-  auto table = engine.createTable();
-  auto nils = insertJsonMetatable(engine, table, container.type());
+  pushJson(m_state, container, 0);
+  return popLuaValue(m_state).get<LuaTable>();
+}
 
-  if (container.isType(Json::Type::Array)) {
-    auto vlist = container.arrayPtr();
-    for (size_t i = 0; i < vlist->size(); ++i) {
-      auto const& val = (*vlist)[i];
-      if (val)
-        table.rawSet(i + 1, val);
-      else
-        nils.rawSet(i + 1, 0);
+Maybe<Json> LuaEngine::stackTableToJson(lua_State* L, int index, int depth, bool& fallback) {
+  if (depth > 100 || !lua_checkstack(L, 8)) {
+    fallback = true;
+    return {};
+  }
+  index = lua_absindex(L, index);
+
+  int typeHint = 0;
+  if (lua_getmetatable(L, index)) {
+    lua_pushliteral(L, "__typehint");
+    lua_rawget(L, -2);
+    if (lua_isinteger(L, -1))
+      typeHint = (int)lua_tointeger(L, -1);
+    lua_pop(L, 1);
+
+    lua_pushliteral(L, "__nils");
+    lua_rawget(L, -2);
+    if (lua_istable(L, -1)) {
+      // Tables with nil entries take the general path
+      lua_pushnil(L);
+      bool hasNils = lua_next(L, -2) != 0;
+      lua_settop(L, lua_gettop(L) - (hasNils ? 3 : 1));
+      if (hasNils) {
+        lua_pop(L, 1);
+        fallback = true;
+        return {};
+      }
+    } else {
+      lua_pop(L, 1);
     }
-  } else {
-    for (auto const& pair : *container.objectPtr()) {
-      if (pair.second)
-        table.rawSet(pair.first, pair.second);
-      else
-        nils.rawSet(pair.first, 0);
-    }
+    lua_pop(L, 1);
   }
 
-  return table;
+  JsonObject stringEntries;
+  List<pair<lua_Integer, Json>> intEntries;
+
+  lua_pushnil(L);
+  while (lua_next(L, index) != 0) {
+    Json value;
+    switch (lua_type(L, -1)) {
+      case LUA_TBOOLEAN:
+        value = Json((bool)lua_toboolean(L, -1));
+        break;
+      case LUA_TNUMBER:
+        if (lua_isinteger(L, -1))
+          value = Json((int64_t)lua_tointeger(L, -1));
+        else
+          value = Json((double)lua_tonumber(L, -1));
+        break;
+      case LUA_TSTRING: {
+        size_t len;
+        char const* str = lua_tolstring(L, -1, &len);
+        value = Json(String(str, len));
+        break;
+      }
+      case LUA_TTABLE: {
+        auto converted = stackTableToJson(L, -1, depth + 1, fallback);
+        if (!converted) {
+          lua_pop(L, 2);
+          return {};
+        }
+        value = converted.take();
+        break;
+      }
+      default:
+        // Functions, userdata and threads cannot be converted
+        lua_pop(L, 2);
+        return {};
+    }
+
+    if (lua_type(L, -2) == LUA_TSTRING) {
+      size_t len;
+      char const* str = lua_tolstring(L, -2, &len);
+      stringEntries[String(str, len)] = std::move(value);
+    } else if (lua_type(L, -2) == LUA_TNUMBER && lua_isinteger(L, -2) && lua_tointeger(L, -2) > 0) {
+      intEntries.append({lua_tointeger(L, -2), std::move(value)});
+    } else {
+      // Other kinds of key take the general path
+      lua_pop(L, 2);
+      fallback = true;
+      return {};
+    }
+    lua_pop(L, 1);
+  }
+
+  intEntries.sort([](auto const& a, auto const& b) { return a.first < b.first; });
+  bool interpretAsList = stringEntries.empty()
+      && (typeHint == 1 || (typeHint != 2 && !intEntries.empty() && intEntries.last().first == (lua_Integer)intEntries.size()));
+  if (interpretAsList) {
+    JsonArray list;
+    list.reserve(intEntries.size());
+    for (size_t i = 0; i < intEntries.size(); ++i) {
+      if (intEntries[i].first != (lua_Integer)i + 1) {
+        // Sparse lists take the general path
+        fallback = true;
+        return {};
+      }
+      list.append(std::move(intEntries[i].second));
+    }
+    return Json(std::move(list));
+  }
+
+  for (auto& p : intEntries)
+    stringEntries[toString(p.first)] = std::move(p.second);
+  return Json(std::move(stringEntries));
+}
+
+Maybe<Json> LuaEngine::tableToJsonFast(LuaTable const& table, bool& fallback) {
+  lua_checkstack(m_state, 4);
+  pushHandle(m_state, table.handleIndex());
+  auto result = stackTableToJson(m_state, -1, 0, fallback);
+  lua_pop(m_state, 1);
+  return result;
+}
+
+void LuaDetail::insertJsonMetatable(LuaEngine& engine, LuaTable const& table, Json::Type type) {
+  table.setMetatable(engine.jsonMetatable(type));
+}
+
+LuaTable LuaDetail::jsonContainerToTable(LuaEngine& engine, Json const& container) {
+  return engine.jsonContainerToTable(container);
 }
 
 Maybe<Json> LuaDetail::tableToJsonContainer(LuaTable const& table) {
+  bool fallback = false;
+  auto fast = table.engine().tableToJsonFast(table, fallback);
+  if (!fallback)
+    return fast;
+
   JsonObject stringEntries;
   Map<unsigned, Json> intEntries;
   int typeHint = 0;
