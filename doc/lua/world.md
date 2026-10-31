@@ -346,9 +346,21 @@ Returns the color variant (painted color) of the material at the specified posit
 
 ---
 
-#### `void` world.setMaterialColor(`Vec2F` position, `String` layerName, `unsigned` color)
+#### `void` world.setMaterialColor(`Vec2F` position, `String` layerName, `unsigned` color, [`float` hue])
 
-Sets the color variant of the material at the specified position and layer to the specified color.
+Sets the color variant of the material at the specified position and layer to the specified color. Painting resets the material's hue shift to 0. If `hue` is given (0 to 255), it is set after the paint. On a vanilla server, the tile is painted and the hue is left reset.
+
+---
+
+#### `bool` world.setMaterialHue(`Vec2F` position, `String` layerName, `float` hue)
+
+Sets the hue shift of the material already at the specified position and layer, 0 to 255, without touching its color variant. Returns `true` if it was set. Returns `false` and does nothing when there is no material there or the caller lacks permissions. This is OpenStarbound-only, on a vanilla server nothing is sent and returns `false`. Note that a vanilla client on an OpenStarbound server still sees the new hue in the normal tile update!
+
+---
+
+#### `bool` world.setModHue(`Vec2F` position, `String` layerName, `float` hue)
+
+The same as `world.setMaterialHue`, for the mod at the position.
 
 ---
 

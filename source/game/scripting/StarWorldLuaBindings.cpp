@@ -711,7 +711,9 @@ namespace LuaBindings {
     callbacks.registerCallbackWithSignature<float, Vec2F, String>("materialHueShift", bind(WorldEnvironmentCallbacks::materialHueShift, world, _1, _2));
     callbacks.registerCallbackWithSignature<float, Vec2F, String>("modHueShift", bind(WorldEnvironmentCallbacks::modHueShift, world, _1, _2));
     callbacks.registerCallbackWithSignature<MaterialColorVariant, Vec2F, String>("materialColor", bind(WorldEnvironmentCallbacks::materialColor, world, _1, _2));
-    callbacks.registerCallbackWithSignature<void, Vec2F, String, MaterialColorVariant>("setMaterialColor", bind(WorldEnvironmentCallbacks::setMaterialColor, world, caller, _1, _2, _3));
+    callbacks.registerCallbackWithSignature<void, Vec2F, String, MaterialColorVariant, Maybe<float>>("setMaterialColor", bind(WorldEnvironmentCallbacks::setMaterialColor, world, caller, _1, _2, _3, _4));
+    callbacks.registerCallbackWithSignature<bool, Vec2F, String, float>("setMaterialHue", bind(WorldEnvironmentCallbacks::setMaterialHue, world, caller, _1, _2, _3));
+    callbacks.registerCallbackWithSignature<bool, Vec2F, String, float>("setModHue", bind(WorldEnvironmentCallbacks::setModHue, world, caller, _1, _2, _3));
 
     callbacks.registerCallback("oceanLevel", [world](Vec2I position) -> int {
         if (auto serverWorld = as<WorldServer>(world)) {
@@ -2186,7 +2188,15 @@ namespace LuaBindings {
     return world->colorVariant(Vec2I::floor(position), layer);
   }
 
-  void WorldEnvironmentCallbacks::setMaterialColor(World* world, WorldCaller caller, Vec2F const& position, String const& layerName, MaterialColorVariant color) {
+  // A server world writes the hue straight onto its tile and sends it in the usual tile update.
+  static bool applyHueShift(World* world, Vec2I const& position, TileLayer layer, bool mod, float hue) {
+    MaterialHue hueShift = (MaterialHue)clamp(hue, 0.0f, 255.0f);
+    if (auto serverWorld = as<WorldServer>(world))
+      return serverWorld->setTileHueShift(position, layer, mod, hueShift);
+    return world->modifyTile(position, SetHueShift{layer, mod, hueShift}, true);
+  }
+
+  void WorldEnvironmentCallbacks::setMaterialColor(World* world, WorldCaller caller, Vec2F const& position, String const& layerName, MaterialColorVariant color, Maybe<float> const& hue) {
     if (!world->connectionHasPermission(callerConnection(caller), WorldPermissionType::Build))
       return;
     
@@ -2199,7 +2209,36 @@ namespace LuaBindings {
       throw StarException(strf("Unsupported material layer {}", layerName));
     }
 
-    world->modifyTile(Vec2I::floor(position), PlaceMaterialColor{layer, color}, true);
+    Vec2I tilePosition = Vec2I::floor(position);
+    world->modifyTile(tilePosition, PlaceMaterialColor{layer, color}, true);
+
+    // Painting resets the hue, so a hue the script asked for is set after it.
+    if (hue)
+      applyHueShift(world, tilePosition, layer, false, *hue);
+  }
+
+  static bool setTileHue(World* world, WorldCaller caller, Vec2F const& position, String const& layerName, bool mod, float hue) {
+    TileLayer layer;
+    if (layerName == "foreground") {
+      layer = TileLayer::Foreground;
+    } else if (layerName == "background") {
+      layer = TileLayer::Background;
+    } else {
+      throw StarException(strf("Unsupported material layer {}", layerName));
+    }
+
+    if (!world->connectionHasPermission(callerConnection(caller), WorldPermissionType::Build))
+      return false;
+
+    return applyHueShift(world, Vec2I::floor(position), layer, mod, hue);
+  }
+
+  bool WorldEnvironmentCallbacks::setMaterialHue(World* world, WorldCaller caller, Vec2F const& position, String const& layerName, float hue) {
+    return setTileHue(world, caller, position, layerName, false, hue);
+  }
+
+  bool WorldEnvironmentCallbacks::setModHue(World* world, WorldCaller caller, Vec2F const& position, String const& layerName, float hue) {
+    return setTileHue(world, caller, position, layerName, true, hue);
   }
 
   bool WorldEnvironmentCallbacks::damageTiles(World* world, WorldCaller caller,
