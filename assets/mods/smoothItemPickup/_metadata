@@ -1,0 +1,8 @@
+{
+  "name" : "smoothItemPickup",
+  "friendlyName" : "OpenStarbound smooth item pickup",
+  "author" : "Not Chucklefish",
+  "version" : "1.0",
+  "description" : "Items you pick up ease in at your own speed, vanish closer to you and quicker, and draw over tiles. Needs to be on the server too to change the movement.",
+  "requires" : ["opensb_base"]
+}

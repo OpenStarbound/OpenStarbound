@@ -61,6 +61,8 @@ private:
   bool m_shifting;
   bool m_multiplace;
   StringList m_placeSounds;
+  StringList m_blockSwapOnSounds;
+  StringList m_blockSwapOffSounds;
   Maybe<Vec2F> m_lastAimPosition;
   TileCollisionOverride m_collisionOverride;
 

@@ -1,0 +1,8 @@
+{
+  "name" : "nakedHumanoid",
+  "friendlyName" : "OpenStarbound naked human body",
+  "author" : "Not Chucklefish",
+  "version" : "1.0",
+  "description" : "Replaces the body sprites of the human with ones without underwear, for the extra cosmetic slots.",
+  "requires" : ["opensb_base"]
+}

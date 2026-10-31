@@ -22,7 +22,7 @@ ChatBubbleManager::ChatBubbleManager()
   auto jsonData = assets->json("/interface/windowconfig/chatbubbles.config");
 
   m_textStyle.color = jsonToColor(jsonData.get("textColor")).toRgba();
-  m_textStyle.loadJson(jsonData.get("textStyle"));
+  m_textStyle.loadJson(jsonData.get("textStyle", JsonObject()));
   m_textPadding = jsonToVec2F(jsonData.get("textPadding"));
 
   m_partSize = jsonData.getFloat("partSize");

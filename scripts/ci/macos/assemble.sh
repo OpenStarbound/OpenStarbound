@@ -8,8 +8,9 @@ mkdir client_distribution/assets/user
 sh scripts/credits/generate-contributors.sh
 
 ./dist/asset_packer -c scripts/packing.config assets/opensb client_distribution/assets/opensb.pak
+sh scripts/pack-mods.sh ./dist/asset_packer client_distribution/mods
 
-mkdir client_distribution/mods
+mkdir -p client_distribution/mods
 touch client_distribution/mods/mods_go_here
 
 mkdir client_distribution/osx

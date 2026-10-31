@@ -1,0 +1,6 @@
+{
+  "materialItems" : {
+    "blockSwapOnSounds" : [ "/sfx/interface/button/click.wav" ],
+    "blockSwapOffSounds" : [ "/sfx/interface/button/release.wav" ]
+  }
+}
