@@ -2,9 +2,11 @@
 #include "StarFormat.hpp"
 #include "StarLexicalCast.hpp"
 
-#include <zlib-ng.h>
 #include <errno.h>
 #include <string.h>
+
+#define WITH_GZFILEOP // Needed to make zlib-ng have gz
+#include <zlib-ng.h>
 
 namespace Star {
 

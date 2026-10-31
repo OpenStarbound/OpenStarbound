@@ -498,7 +498,6 @@ if (STAR_USE_MIMALLOC)
 endif()
 
 find_package(zlib-ng CONFIG REQUIRED)
-add_compile_definitions(WITH_GZFILEOP) # Needed to make zlib-ng have gz
 find_package(PNG REQUIRED)
 find_package(Freetype REQUIRED)
 find_package(cpr CONFIG REQUIRED)
