@@ -68,7 +68,7 @@ bool ArmorWearer::setupHumanoid(Humanoid& humanoid, bool forceNude) {
   };
 
   std::exception_ptr configException;
-  bool movementParametersChanged;
+  bool movementParametersChanged = false;
   if (anyNeedsSync) {
     for (size_t i = 0; i != m_armors.size(); ++i) {
       Armor& armor = m_armors[i];

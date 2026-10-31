@@ -8,6 +8,10 @@
 
 namespace Star {
 
+static float itemIconSize() {
+  return Root::singleton().assets()->json("/interface.config").optQueryFloat("itemIconSize").value(16.0f);
+}
+
 Item::Item(Json config, String directory, Json parameters) {
   m_config = std::move(config);
   m_directory = std::move(directory);
@@ -238,9 +242,7 @@ void Item::setIconDrawables(List<Drawable> drawables) {
   if (!boundBox.isEmpty()) {
     for (auto& drawable : m_iconDrawables)
       drawable.translate(-boundBox.center());
-    // TODO: Why 16?  Is this the size of the icon container?  Shouldn't this
-    // be configurable?
-    float zoom = 16.0f / std::max(boundBox.width(), boundBox.height());
+    float zoom = itemIconSize() / std::max(boundBox.width(), boundBox.height());
     if (zoom < 1) {
       for (auto& drawable : m_iconDrawables)
         drawable.scale(zoom);
@@ -257,9 +259,7 @@ void Item::setSecondaryIconDrawables(Maybe<List<Drawable>> drawables) {
   if (!boundBox.isEmpty()) {
     for (auto& drawable : *m_secondaryIconDrawables)
       drawable.translate(-boundBox.center());
-    // TODO: Why 16?  Is this the size of the icon container?  Shouldn't this
-    // be configurable?
-    float zoom = 16.0f / std::max(boundBox.width(), boundBox.height());
+    float zoom = itemIconSize() / std::max(boundBox.width(), boundBox.height());
     if (zoom < 1) {
       for (auto& drawable : *m_secondaryIconDrawables)
         drawable.scale(zoom);

@@ -62,6 +62,8 @@ ItemSlotWidget::ItemSlotWidget(ItemPtr const& item, String const& backingImage)
   m_textStyle = interfaceConfig.get("itemSlotTextStyle");
   m_itemDraggableArea = jsonToRectI(interfaceConfig.get("itemDraggableArea"));
   m_durabilityOffset = jsonToVec2I(interfaceConfig.get("itemIconDurabilityOffset"));
+  m_cooldownFrames = interfaceConfig.getInt("itemCooldownFrames", 18);
+  m_linkIndicatorImage = interfaceConfig.getString("itemLinkIndicatorImage", "/interface/inventory/itemlinkindicator.png");
 
   auto newItemIndicatorConfig = interfaceConfig.get("newItemAnimation");
   m_newItemIndicator = Animation(newItemIndicatorConfig);
@@ -193,7 +195,7 @@ void ItemSlotWidget::setHighlightEnabled(bool highlight) {
 
 void ItemSlotWidget::renderImpl() {
   auto drawCooldown = [this]() {
-    int frame = (int)roundf(m_progress * 18);// TODO: Hardcoded lol
+    int frame = (int)roundf(m_progress * m_cooldownFrames);
     context()->drawInterfaceQuad(String(strf("/interface/cooldown.png:{}", frame)), Vec2F(screenPosition()));
   };
   if (m_item) {
@@ -208,8 +210,7 @@ void ItemSlotWidget::renderImpl() {
     }
 
     if (m_showLinkIndicator) {
-      // TODO: Hardcoded
-      context()->drawInterfaceQuad(String("/interface/inventory/itemlinkindicator.png"), Vec2F(screenPosition() - Vec2I(1, 1)));
+      context()->drawInterfaceQuad(m_linkIndicatorImage, Vec2F(screenPosition() - Vec2I(1, 1)));
     }
 
     for (auto i : iconDrawables)

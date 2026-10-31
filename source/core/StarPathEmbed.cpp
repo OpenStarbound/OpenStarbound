@@ -20,6 +20,7 @@ String embedAndCompressData(ByteArray const& data, EmbeddedCompressionMethod con
     case EmbeddedCompressionMethod::Zstd:
       return "zstd;"+base64Encode(ZstdCompression::compress(data),true);
   }
+  throw StarException("Unknown embedded compression method.");
 }
 String embedEscapeText(String const& data) {
   // swaps out a few characters for escaped versions.

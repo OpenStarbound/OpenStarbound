@@ -1308,7 +1308,7 @@ TileModificationList WorldServer::replaceTiles(TileModificationList const& modif
 
   if (applyDamage) {
     List<Vec2I> toDamage;
-    TileLayer layer;
+    TileLayer layer = TileLayer::Foreground;
 
     for (auto pair : modificationList) {
       if (auto placeMaterial = pair.second.ptr<PlaceMaterial>()) {
