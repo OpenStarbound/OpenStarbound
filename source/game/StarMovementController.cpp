@@ -406,9 +406,14 @@ void MovementController::setRotation(float rotation) {
 }
 
 void MovementController::setScale(float scale) {
-  if (scale > 0)
-    m_scale.set(scale);
-  else
+  if (scale > 0){
+    if (scale != m_scale.get()) {
+      m_scale.set(scale);
+      auto poly = *m_parameters.collisionPoly;
+      poly.scale(scale);
+      m_collisionPoly.set(poly);
+    }
+  } else
     Logger::warn("Cannot set scale to 0 or below.");
 }
 
