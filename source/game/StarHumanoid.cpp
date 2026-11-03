@@ -330,7 +330,7 @@ void Humanoid::setIdentity(HumanoidIdentity const& identity) {
   }
   if (m_useBodyHeadMask) {
     m_bodyHeadMaskFrameset = getBodyHeadMaskFromIdentity();
-    m_bodyHeadMaskFrameset = getBodyHeadMaskFlippedFromIdentity();
+    m_bodyHeadMaskFlippedFrameset = getBodyHeadMaskFlippedFromIdentity();
   }
 
   if (m_useAnimation) {
