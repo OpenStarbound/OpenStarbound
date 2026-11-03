@@ -1038,7 +1038,10 @@ void WorldServer::update(float dt) {
   if (shouldRunThisStep("liquidUpdate")) {
     m_liquidEngine->setProcessingLimit(m_fidelityConfig.optUInt("liquidEngineBackgroundProcessingLimit"));
     m_liquidEngine->setNoProcessingLimitRegions(clientMonitoringRegions);
-    m_liquidEngine->update();
+    // liquid advances by passes, otherwise it falls behind the accelerated world
+    int passes = clamp((int)ceilf(GlobalTimescale), 1, 4);
+    for (int i = 0; i < passes; ++i)
+      m_liquidEngine->update();
   }
 
   if (shouldRunThisStep("fallingBlocksUpdate"))
@@ -1893,7 +1896,12 @@ void WorldServer::init(bool firstTime) {
 
 Maybe<unsigned> WorldServer::shouldRunThisStep(String const& timingConfiguration) {
   Vec2U timing = jsonToVec2U(m_fidelityConfig.get(timingConfiguration));
-  if ((m_currentStep + timing[1]) % timing[0] == 0)
+  // only liquid flow and falling blocks gain from extra passes
+  unsigned period = timing[0];
+  bool speedUp = timingConfiguration == "liquidUpdate" || timingConfiguration == "fallingBlocksUpdate";
+  if (speedUp && GlobalTimescale > 1.0f)
+    period = max(1u, (unsigned)round(period / min(GlobalTimescale, 4.0f)));
+  if ((m_currentStep + timing[1]) % period == 0)
     return timing[0];
   return {};
 }

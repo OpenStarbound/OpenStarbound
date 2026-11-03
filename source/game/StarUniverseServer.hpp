@@ -49,7 +49,8 @@ public:
   // Signals the UniverseServer to stop and then joins the thread.
   void stop();
 
-  void setPause(bool pause);
+  void setPause(bool pause, bool manual = false);
+  bool paused() const;
   void setTimescale(float timescale);
   void setTickRate(float tickRate);
 
@@ -279,6 +280,7 @@ private:
   IdMap<ConnectionId, ServerClientContextPtr> m_clients;
 
   shared_ptr<atomic<bool>> m_pause;
+  bool m_manualPause = false;
   bool m_secureWarps;
   Map<WorldId, Maybe<WorldServerPromise>> m_worlds;
   Map<InstanceWorldId, pair<int64_t, int64_t>> m_tempWorldIndex;

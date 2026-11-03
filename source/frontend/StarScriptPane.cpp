@@ -1,5 +1,8 @@
 #include "StarScriptPane.hpp"
 #include "StarRoot.hpp"
+#include "StarLua.hpp"
+#include "StarGameTypes.hpp"
+#include "StarChatTypes.hpp"
 #include "StarAssets.hpp"
 #include "StarGuiReader.hpp"
 #include "StarJsonExtra.hpp"
@@ -31,6 +34,18 @@ ScriptPane::ScriptPane(UniverseClientPtr client, Json config, EntityId sourceEnt
   m_script.addCallbacks("player", LuaBindings::makePlayerCallbacks(m_client->mainPlayer().get()));
   m_script.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(m_client->mainPlayer()->statusController()));
   m_script.addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(m_client.get()));
+
+  LuaCallbacks timeControlCallbacks;
+  timeControlCallbacks.registerCallback("sendCommand", [client = m_client](String const& command) {
+      client->sendChat(command, ChatSendMode::Local);
+    });
+  timeControlCallbacks.registerCallback("timescale", []() {
+      return GlobalTimescale;
+    });
+  timeControlCallbacks.registerCallback("paused", [client = m_client]() {
+      return client->paused();
+    });
+  m_script.addCallbacks("timecontrol", std::move(timeControlCallbacks));
 }
 
 void ScriptPane::displayed() {

@@ -969,7 +969,7 @@ void ClientApplication::updateTitle(float dt) {
 
   m_titleScreen->update(dt);
   m_mainMixer->update(dt);
-  m_mainMixer->setSpeed(GlobalTimescale);
+  m_mainMixer->setSpeed(1.0f); // pitch must not follow the world timescale
 
   auto& app = appController();
   bool inputActive = m_titleScreen->textInputActive();
@@ -1284,7 +1284,7 @@ void ClientApplication::updateRunning(float dt) {
     m_cinematicOverlay->update(dt);
     m_mainInterface->update(dt);
     m_mainMixer->update(dt, m_cinematicOverlay->muteSfx(), m_cinematicOverlay->muteMusic());
-    m_mainMixer->setSpeed(GlobalTimescale);
+    m_mainMixer->setSpeed(1.0f); // pitch must not follow the world timescale
 
     bool inputActive = m_mainInterface->textInputActive();
     m_input->setTextInputActive(inputActive);

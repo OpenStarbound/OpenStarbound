@@ -886,7 +886,9 @@ Maybe<ChainableJsonMessageResponse> Player::receiveMessage(ConnectionId fromConn
 }
 
 void Player::update(float dt, uint64_t) {
-  m_movementController->setTimestep(dt);
+  // scaling the movement step breaks collision, so the player keeps real time
+  float movementDt = clamp(dt, 0.0f, GlobalTimestep);
+  m_movementController->setTimestep(movementDt);
 
   if (isMaster()) {
     if (m_emoteCooldownTimer.tick(dt))
@@ -979,10 +981,10 @@ void Player::update(float dt, uint64_t) {
       m_tools->effects(*m_effectEmitter);
 
       auto aimRelative = world()->geometry().diff(m_aimPosition, position()); // dumb, but due to how things are ordered
-      m_movementController->tickMaster(dt);
+      m_movementController->tickMaster(movementDt);
       m_aimPosition = position() + aimRelative;                               // it's gonna have to be like this for now
 
-      m_techController->tickMaster(dt);
+      m_techController->tickMaster(movementDt);
 
       for (auto& p : m_genericScriptContexts)
         p.second->update(p.second->updateDt(dt));
@@ -1924,11 +1926,17 @@ void Player::processStateChanges(float dt) {
       }
     }
   }
+  // locomotion in real time, actions on world time
+  bool locomotion = m_state == State::Idle || m_state == State::Walk || m_state == State::Run
+      || m_state == State::Jump || m_state == State::Fall || m_state == State::Swim
+      || m_state == State::SwimIdle || m_state == State::Crouch;
+  float animDt = locomotion ? clamp(dt, 0.0f, GlobalTimestep) : dt;
+
   if (world()->isClient()) {
-    humanoid()->animate(dt, &m_humanoidDynamicTarget);
+    humanoid()->animate(animDt, &m_humanoidDynamicTarget);
     m_humanoidDynamicTarget.updatePosition(position() + (m_techController->parentOffset()));
   } else {
-    humanoid()->animate(dt, {});
+    humanoid()->animate(animDt, {});
   }
   m_scriptedAnimator.update();
 
