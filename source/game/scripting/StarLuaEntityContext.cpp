@@ -42,10 +42,10 @@ LuaMethods<EntityContext> LuaUserDataMethods<EntityContext>::make() {
         auto const& entity = context.entity;
         if (entity->inWorld()) {
             auto other = entity->world()->entity(otherId);
-            
+
             if (!other || !entity->getTeam().canDamage(other->getTeam(), false))
             return false;
-            
+
             return true;
         }
         return false;
@@ -139,7 +139,7 @@ LuaMethods<EntityContext> LuaUserDataMethods<EntityContext>::make() {
     [&](EntityContext const& context, String const& parameterName, Maybe<Json> const& defaultValue) -> Json {
         auto const& entity = context.entity;
         Json val = Json();
-        
+
         bool handled = true;
         if (auto objectEntity = as<Object>(entity)) {
             val = objectEntity->configValue(parameterName);
@@ -518,7 +518,7 @@ LuaMethods<EntityContext> LuaUserDataMethods<EntityContext>::make() {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->liquidMovement();
         return {};
-    }); 
+    });
 
     // tool user entity methods
     methods.registerMethod("handItem",
@@ -622,8 +622,17 @@ LuaMethods<EntityContext> LuaUserDataMethods<EntityContext>::make() {
         auto const& entity = context.entity;
         if (!entity->inWorld())
             return {};
-        if (auto loungeable = as<LoungeableEntity>(entity))
-            return loungeable->entitiesLoungingIn(anchorIndex.value()).values();
+        if (auto loungeable = as<LoungeableEntity>(entity)) {
+            if (anchorIndex.isValid()) {
+                return loungeable->entitiesLoungingIn(anchorIndex.value()).values();
+            } else {
+                return loungeable->entitiesLounging().values().transformed(
+                    [](pair<EntityId, size_t> p) -> EntityId {
+                        return p.first;
+                    }
+                );
+            }
+        }
         return {};
     });
 
@@ -646,6 +655,16 @@ LuaMethods<EntityContext> LuaUserDataMethods<EntityContext>::make() {
             return {};
         if (auto loungeable = as<LoungeableEntity>(entity))
             return loungeable->anchorCount();
+        return {};
+    });
+    methods.registerMethod("loungeAnchor",
+    [&](EntityContext const& context, int anchorIndex) -> Maybe<JsonObject> {
+        auto const& entity = context.entity;
+        if (!entity->inWorld())
+            return {};
+        if (auto loungeable = as<LoungeableEntity>(entity))
+            if (auto anchor = loungeable->loungeAnchor(anchorIndex))
+                return anchor->toJson();
         return {};
     });
 
@@ -969,6 +988,6 @@ LuaMethods<EntityContext> LuaUserDataMethods<EntityContext>::make() {
     });
 
     return methods;
-} 
+}
 
 }

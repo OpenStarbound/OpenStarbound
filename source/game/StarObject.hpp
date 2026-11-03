@@ -152,6 +152,9 @@ public:
 
   bool biomePlaced() const;
 
+  virtual NetworkedAnimator const* networkedAnimator() const;
+  virtual NetworkedAnimator * networkedAnimator();
+
   using Entity::setUniqueId;
 
 protected:
@@ -171,6 +174,7 @@ protected:
   virtual void setOrientationIndex(size_t orientationIndex);
 
   PolyF volume() const;
+  virtual LuaCallbacks makeObjectCallbacks();
 
   LuaMessageHandlingComponent<LuaStorableComponent<LuaUpdatableComponent<LuaEntityComponent<LuaBaseComponent>>>> m_scriptComponent;
   mutable LuaAnimationComponent<LuaUpdatableComponent<LuaEntityComponent<LuaBaseComponent>>> m_scriptedAnimator;
@@ -198,7 +202,6 @@ private:
     String icon;
   };
 
-  LuaCallbacks makeObjectCallbacks();
   LuaCallbacks makeAnimatorObjectCallbacks();
 
   void ensureNetSetup();

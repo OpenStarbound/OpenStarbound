@@ -18,6 +18,7 @@
 #include "StarLuaComponents.hpp"
 #include "StarLuaAnimationComponent.hpp"
 #include "StarLuaActorMovementComponent.hpp"
+#include "StarLoungingEntities.hpp"
 #include "StarActorEntity.hpp"
 
 namespace Star {
@@ -33,6 +34,7 @@ class Monster
     public virtual NametagEntity,
     public virtual ChattyEntity,
     public virtual InteractiveEntity,
+    public virtual LoungingEntity,
     public virtual ActorEntity {
 public:
   struct SkillInfo {
@@ -93,6 +95,7 @@ public:
   void update(float dt, uint64_t currentStep) override;
 
   void render(RenderCallback* renderCallback) override;
+  List<Drawable> drawables(Vec2F position = Vec2F()) override;
 
   void renderLightSources(RenderCallback* renderCallback) override;
 
@@ -138,6 +141,8 @@ public:
 
   using Entity::setKeepAlive;
   using Entity::setUniqueId;
+
+  Maybe<EntityAnchorState> loungingIn() const override;
 
 private:
   Vec2F getAbsolutePosition(Vec2F relativePosition) const;
@@ -210,6 +215,9 @@ private:
   NetElementData<DamageBarType> m_damageBar;
 
   NetElementHashMap<String, Json> m_scriptedAnimationParameters;
+
+  HashSet<LoungeControl> m_LoungeControlsHeld;
+
 };
 
 }
