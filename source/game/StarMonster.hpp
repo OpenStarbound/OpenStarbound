@@ -158,6 +158,12 @@ private:
   MonsterVariant m_monsterVariant;
   Maybe<float> m_monsterLevel;
 
+  // Cached result of the powerLevelFunction for m_monsterLevel, which only
+  // changes when the level itself changes.
+  mutable bool m_levelPowerMultiplierValid = false;
+  mutable Maybe<float> m_levelPowerMultiplierLevel;
+  mutable float m_levelPowerMultiplier = 1.0f;
+
   NetworkedAnimator m_networkedAnimator;
   NetworkedAnimator::DynamicTarget m_networkedAnimatorDynamicTarget;
 

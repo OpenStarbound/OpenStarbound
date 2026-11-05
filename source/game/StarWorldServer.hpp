@@ -359,6 +359,7 @@ private:
   // should not run this tick, if it should run this tick, returns the number
   // of ticks since the last run.
   Maybe<unsigned> shouldRunThisStep(String const& timingConfiguration);
+  void rebuildStepTimings();
 
   TileModificationList doApplyTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap, bool ignoreTileProtection = false, bool updateNeighbors = true);
 
@@ -412,6 +413,7 @@ private:
   WorldStoragePtr m_worldStorage;
   WorldServerFidelity m_fidelity;
   Json m_fidelityConfig;
+  HashMap<String, Vec2U> m_stepTimings;
 
   HashSet<Vec2I> m_damagedBlocks;
   DamageManagerPtr m_damageManager;
