@@ -85,7 +85,7 @@ void EnvironmentPainter::renderStars(float pixelRatio, Vec2F const& screenSize, 
   for (auto& star : stars) {
     Vec2F screenPos = transform.transformVec2(star.first);
     if (viewRect.contains(screenPos)) {
-      size_t starFrame = (size_t)(fmod(sky.epochTime + star.second.second, sky.starFrames) * starAnimationRate) % sky.starFrames;
+      size_t starFrame = (size_t)fmod((sky.epochTime + star.second.second) * starAnimationRate, sky.starFrames);
       if (auto const& texture = m_starTextures[star.second.first * sky.starFrames + starFrame])
         primitives.emplace_back(std::in_place_type_t<RenderQuad>(), texture, screenPos * pixelRatio - Vec2F(texture->size()) / 2, 1.0, color, 0.0f);
     }
