@@ -69,7 +69,7 @@ void EnvironmentPainter::renderStars(float pixelRatio, Vec2F const& screenSize, 
 
   int starTwinkleMin = sky.settings.queryInt("stars.twinkleMin");
   int starTwinkleMax = sky.settings.queryInt("stars.twinkleMax");
-  float starAnimationRate = sky.settings.queryFloat("stars.animationRate", 1);
+  float starAnimationRate = std::max(0.f, sky.settings.queryFloat("stars.animationRate", 1));
   size_t starTypesSize = sky.starTypes().size();
 
   auto stars = m_starGenerator->generate(field, [&](RandomSource& rand) {
