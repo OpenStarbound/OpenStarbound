@@ -20,5 +20,8 @@
       }
     }
   },
-  "debrisSkyTypes": ["orbital", "warp"]
+  "debrisSkyTypes": ["orbital", "warp"],
+  "stars": {
+    "animationRate": 1 // Just here so mods can check that this functionality is present in the current oSB version
+  }
 }
