@@ -222,28 +222,36 @@ void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::forEach(Rec
 
 template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
 void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::set(Key const& key, Coord const& pos) {
-  set(key, {Rect(pos, pos)});
+  SmallList<Rect, 2> rects;
+  rects.append(Rect(pos, pos));
+  set(key, rects);
 }
 
 template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
 void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::set(Key const& key, Rect const& rect) {
-  set(key, {rect});
+  SmallList<Rect, 2> rects;
+  rects.append(rect);
+  set(key, rects);
 }
 
 template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
 template <typename RectCollection>
 void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::set(Key const& key, RectCollection const& rects) {
-  updateSpatial(&m_entryMap.get(key), rects);
+  updateSpatial(&m_entryMap[key], rects);
 }
 
 template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
 void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::set(Key const& key, Coord const& pos, Value value) {
-  set(key, {Rect(pos, pos)}, std::move(value));
+  SmallList<Rect, 2> rects;
+  rects.append(Rect(pos, pos));
+  set(key, rects, std::move(value));
 }
 
 template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
 void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::set(Key const& key, Rect const& rect, Value value) {
-  set(key, {rect}, std::move(value));
+  SmallList<Rect, 2> rects;
+  rects.append(rect);
+  set(key, rects, std::move(value));
 }
 
 template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
@@ -271,7 +279,7 @@ void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::setSectorSi
   m_sectorSize = sectorSize;
   m_sectorMap.clear();
   for (auto const& pair : m_entryMap)
-    addSpatial(pair.first, pair.second);
+    addSpatial(&pair.second);
 }
 
 template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
