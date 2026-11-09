@@ -7,6 +7,7 @@
 #include "StarMobileEntity.hpp"
 #include "StarScriptedEntity.hpp"
 #include "StarDrawable.hpp"
+#include "StarEntityRenderingTypes.hpp"
 #include "StarLuaComponents.hpp"
 
 namespace Star {
@@ -140,6 +141,9 @@ private:
   EpochTimer m_ageItemsTimer;
 
   bool m_drawRarityBeam;
+  bool m_takenVelocityRamp;
+  bool m_takenAddsOwnerVelocity;
+  EntityRenderLayer m_takenRenderLayer;
   bool m_overForeground;
   Maybe<List<Drawable>> m_drawables;
   

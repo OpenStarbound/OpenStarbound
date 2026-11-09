@@ -1,3 +1,6 @@
 {
-  "materialItems" : { "cooldown" : 0 } // tile prediction makes a cooldown pointless
+  "materialItems" : {
+    "cooldown" : 0, // tile prediction makes a cooldown pointless
+    "blockSwapOnSounds" : [ "/sfx/interface/clickon_success.ogg" ]
+  }
 }

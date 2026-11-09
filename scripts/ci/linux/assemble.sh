@@ -8,8 +8,9 @@ mkdir client_distribution/assets/user
 sh scripts/credits/generate-contributors.sh
 
 ./dist/asset_packer -c scripts/packing.config assets/opensb client_distribution/assets/opensb.pak
+sh scripts/pack-mods.sh ./dist/asset_packer client_distribution/mods
 
-mkdir client_distribution/mods
+mkdir -p client_distribution/mods
 touch client_distribution/mods/mods_go_here
 
 mkdir client_distribution/linux
@@ -35,10 +36,11 @@ cp \
 mkdir server_distribution
 mkdir server_distribution/assets
 
-mkdir server_distribution/mods
+mkdir -p server_distribution/mods
 touch server_distribution/mods/mods_go_here
 
 ./dist/asset_packer -c scripts/packing.config -s assets/opensb server_distribution/assets/opensb.pak
+sh scripts/pack-mods.sh ./dist/asset_packer server_distribution/mods -s
 
 mkdir server_distribution/linux
 

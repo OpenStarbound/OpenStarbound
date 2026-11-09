@@ -119,7 +119,7 @@ void ItemTooltipBuilder::buildItemDescriptionInner(
         if (is<ArmorItem>(previewable)) {
           objectImage->disableScissoring();
           PlayerPtr armorViewer;
-          if (assets->json("/interface.config:tooltip.previewArmorWith").toString() == "player")
+          if (assets->json("/interface.config:tooltip").getString("previewArmorWith", "dummy") == "player")
             armorViewer = viewer;
           objectImage->setDrawables(previewable->preview(armorViewer));
         } else {

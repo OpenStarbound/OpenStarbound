@@ -1,0 +1,8 @@
+{
+  "name" : "snuggetFullbright",
+  "friendlyName" : "OpenStarbound fullbright snugget",
+  "author" : "Not Chucklefish",
+  "version" : "1.0",
+  "description" : "The body of the snugget pet is drawn fullbright, so it does not go dark in the shade.",
+  "requires" : ["opensb_base"]
+}

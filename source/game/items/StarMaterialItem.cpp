@@ -44,6 +44,8 @@ MaterialItem::MaterialItem(Json const& config, String const& directory, Json con
   m_altBlockRadius = config.getFloat("altBlockRadius", defaultParameters.getFloat("altBlockRadius"));
   m_collisionOverride = TileCollisionOverrideNames.maybeLeft(config.getString("collisionOverride", "None")).value(TileCollisionOverride::None);
   m_blockSwap = false;
+  m_blockSwapOnSounds = jsonToStringList(config.query("materialItems.blockSwapOnSounds", defaultParameters.query("materialItems.blockSwapOnSounds", JsonArray())));
+  m_blockSwapOffSounds = jsonToStringList(config.query("materialItems.blockSwapOffSounds", defaultParameters.query("materialItems.blockSwapOffSounds", JsonArray())));
 
   m_multiplace = config.getBool("allowMultiplace", BlockCollisionSet.contains(materialDatabase->materialCollisionKind(m_material)));
   m_placeSounds = jsonToStringList(config.get("placeSounds", JsonArray()));
@@ -121,7 +123,9 @@ void MaterialItem::update(float dt, FireMode fireMode, bool shifting, HashSet<Mo
         if (*presses % 2 != 0)
           m_blockSwap = !m_blockSwap;
         player->setSecretProperty(BlockSwapPropertyKey, m_blockSwap);
-        owner()->addSound(m_blockSwap ? "/sfx/interface/button/click.wav" : "/sfx/interface/button/release.wav", 1.0f, Random::randf(0.9f, 1.1f));
+        auto const& swapSounds = m_blockSwap ? m_blockSwapOnSounds : m_blockSwapOffSounds;
+        if (!swapSounds.empty())
+          owner()->addSound(Random::randValueFrom(swapSounds), 1.0f, Random::randf(0.9f, 1.1f));
       }
     }
     else

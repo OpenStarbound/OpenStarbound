@@ -1,0 +1,11 @@
+{
+  "nametag" : {
+    "showMasterNames" : true,
+    // outline is double here as it otherwise fades out near the end
+    // (could just the end to opaque too, but then diagonals are more jaggy)
+    "textStyle" : { "backDirectives" : "border=1;fff;fff4?border=1;fff;fff4?multiply=222" },
+    "inspectOpacityRate" : 0.15,
+    "movementThreshold" : 0.5,
+    "offset" : [0, 13]
+  }
+}

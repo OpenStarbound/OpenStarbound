@@ -1,0 +1,8 @@
+{
+  "name" : "dynamicSun",
+  "friendlyName" : "OpenStarbound dynamic sun",
+  "author" : "Not Chucklefish",
+  "version" : "1.0",
+  "description" : "The sun in the sky takes the look and the ray color of the star the system orbits, and its rays are slightly yellow.",
+  "requires" : ["opensb_base"]
+}

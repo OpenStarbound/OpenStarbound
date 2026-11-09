@@ -1,0 +1,4 @@
+[
+  { "op" : "add", "path" : "/sounds/addToStack", "value" : [ "/sfx/interface/inventory_addtostack.ogg" ] },
+  { "op" : "add", "path" : "/sounds/takeFromStack", "value" : [ "/sfx/interface/inventory_takefromstack.ogg" ] }
+]

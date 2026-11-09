@@ -1,0 +1,8 @@
+{
+  "name" : "inventorySounds",
+  "friendlyName" : "OpenStarbound inventory sounds",
+  "author" : "Not Chucklefish",
+  "version" : "1.0",
+  "description" : "A shorter item pickup sound, and sounds for adding to and taking from a stack held with the cursor.",
+  "requires" : ["opensb_base"]
+}
