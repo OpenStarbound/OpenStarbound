@@ -342,6 +342,14 @@ void OpenGlRenderer::loadConfig(Json const& config) {
     auto tex = createGlTexture(textureAddressing,textureFiltering,initialSize);
     m_textures[pair.first] = tex;
   }
+
+  for (auto& effect : m_effects) {
+    for (auto& texture : effect.second.textures) {
+      if (m_textures.contains(texture.first))
+        texture.second.textureValue = m_textures.get(texture.first);
+    }
+  }
+
   setScreenSize(m_screenSize);
   m_config = config;
 }
