@@ -324,33 +324,42 @@ Assets::Assets(Settings settings, StringList assetSources) {
     }
   };
 
+  // Patches that target an asset which has not been loaded yet.  They are
+  // attached after all asset sources (and their load scripts) have been
+  // processed, so that a patch-only mod that loads before the mod providing
+  // the target asset is not silently dropped.
+  CaseInsensitiveStringMap<List<pair<String, AssetSourcePtr>>> pendingPatches;
+
   auto addSource = [&](String const& sourcePath, AssetSourcePtr source) {
     m_assetSourcePaths.add(sourcePath, source);
+
+    auto attachPatch = [&](String const& targetPath, String const& patchPath, AssetSourcePtr const& patchSource) {
+      if (auto p = m_files.ptr(targetPath))
+        p->patchSources.append({patchPath, patchSource});
+      else
+        pendingPatches[targetPath].append({patchPath, patchSource});
+    };
 
     for (auto const& filename : source->assetPaths()) {
       if (filename.contains(AssetsPatchSuffix, String::CaseInsensitive)) {
         if (filename.endsWith(AssetsPatchSuffix, String::CaseInsensitive)) {
           auto targetPatchFile = filename.substr(0, filename.size() - strlen(AssetsPatchSuffix));
-          if (auto p = m_files.ptr(targetPatchFile))
-            p->patchSources.append({filename, source});
+          attachPatch(targetPatchFile, filename, source);
         } else if (filename.endsWith(AssetsLuaPatchSuffix, String::CaseInsensitive)) {
           auto targetPatchFile = filename.substr(0, filename.size() - strlen(AssetsLuaPatchSuffix));
-          if (auto p = m_files.ptr(targetPatchFile))
-            p->patchSources.append({filename, source});
+          attachPatch(targetPatchFile, filename, source);
         } else if (filename.endsWith(AssetsPatchListSuffix, String::CaseInsensitive)) {
           auto stream = source->read(filename);
           size_t patchIndex = 0;
           for (auto const& patchPair : inputUtf8Json(stream.begin(), stream.end(), JsonParseType::Top).iterateArray()) {
             auto patches = patchPair.getArray("patches");
             for (auto& path : patchPair.getArray("paths")) {
-              if (auto p = m_files.ptr(path.toString())) {
-                for (size_t i = 0; i != patches.size(); ++i) {
-                  auto& patch = patches[i];
-                  if (patch.isType(Json::Type::String))
-                    p->patchSources.append({patch.toString(), source});
-                  else
-                    p->patchSources.append({strf("{}:[{}].patches[{}]", filename, patchIndex, i), source});
-                }
+              for (size_t i = 0; i != patches.size(); ++i) {
+                auto& patch = patches[i];
+                if (patch.isType(Json::Type::String))
+                  attachPatch(path.toString(), patch.toString(), source);
+                else
+                  attachPatch(path.toString(), strf("{}:[{}].patches[{}]", filename, patchIndex, i), source);
               }
             }
             patchIndex++;
@@ -359,8 +368,7 @@ Assets::Assets(Settings settings, StringList assetSources) {
           for (int i = 0; i < 10; i++) {
             if (filename.endsWith(AssetsPatchSuffix + toString(i), String::CaseInsensitive)) {
               auto targetPatchFile = filename.substr(0, filename.size() - strlen(AssetsPatchSuffix) - 1);
-              if (auto p = m_files.ptr(targetPatchFile))
-                p->patchSources.append({filename, source});
+              attachPatch(targetPatchFile, filename, source);
               break;
             }
           }
@@ -422,6 +430,22 @@ Assets::Assets(Settings settings, StringList assetSources) {
 
   for (auto& pair : sources)
     runLoadScripts("postLoad", pair.first, pair.second);
+
+  for (auto const& pending : pendingPatches) {
+    if (auto p = m_files.ptr(pending.first)) {
+      // Deferred patches come from sources that loaded before the source
+      // providing the target, so they must run before the patches that were
+      // attached immediately.  Keep their original load order.
+      List<pair<String, AssetSourcePtr>> mergedPatches = pending.second;
+      mergedPatches.appendAll(p->patchSources);
+      p->patchSources = std::move(mergedPatches);
+    } else {
+      for (auto const& patch : pending.second) {
+        Logger::debug("Asset patch '{}' from '{}' targets missing asset '{}'", patch.first,
+            m_assetSourcePaths.valueLeft(patch.second), pending.first);
+      }
+    }
+  }
 
   Sha256Hasher digest;
 
