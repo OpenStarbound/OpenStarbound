@@ -344,9 +344,18 @@ void OpenGlRenderer::loadConfig(Json const& config) {
   }
 
   for (auto& effect : m_effects) {
+    auto fbts = effect.second.config.optArray("frameBufferTextures");
     for (auto& texture : effect.second.textures) {
-      if (m_textures.contains(texture.first))
-        texture.second.textureValue = m_textures.get(texture.first);
+      // a framebuffer texture listed for the effect takes the slot instead
+      bool fbTexture = false;
+      if (fbts) {
+        for (auto const& fbt : *fbts)
+          fbTexture |= fbt.optString("texture") == texture.first;
+      }
+      if (!fbTexture) {
+        if (auto tex = m_textures.ptr(texture.first))
+          texture.second.textureValue = *tex;
+      }
     }
   }
 
