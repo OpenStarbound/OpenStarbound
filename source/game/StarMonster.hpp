@@ -133,11 +133,11 @@ public:
 
   Vec2F questIndicatorPosition() const override;
 
-  ActorMovementController* movementController() override;
-  StatusController* statusController() override;
-
   using Entity::setKeepAlive;
   using Entity::setUniqueId;
+
+  virtual ActorMovementController* movementController() override;
+  virtual StatusController* statusController() override;
 
 private:
   Vec2F getAbsolutePosition(Vec2F relativePosition) const;

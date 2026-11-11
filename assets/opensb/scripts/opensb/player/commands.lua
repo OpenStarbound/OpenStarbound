@@ -49,4 +49,19 @@ register("headrotation", function(arg)
   end
 end)
 
+register("scale", function(args)
+  if not args or args == "" then
+    mcontroller.setScale(1)
+  else
+    local scale, force = chat.parseArguments(args)
+    if type(scale) ~= "number" or scale <= 0 then
+      return "Usage: /scale <positive number>"
+    end
+    if scale > 10 and (not force or type(force) ~= "boolean") then
+        return "Are you sure? Large scaling values can make your character much larger than the screen!\n If you're sure then do:\n/scale "..scale.." true"
+    end
+    mcontroller.setScale(scale)
+  end
+end)
+
 module.register = register
