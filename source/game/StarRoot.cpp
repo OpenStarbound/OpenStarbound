@@ -79,13 +79,13 @@ Root::Root(Settings settings) : RootBase() {
     m_runtimeConfigFile = toStoragePath(*m_settings.runtimeConfigFile);
 
   if (!File::isDirectory(m_settings.storageDirectory))
-    File::makeDirectory(m_settings.storageDirectory);
+    File::makeDirectoryRecursive(m_settings.storageDirectory);
 
   if (m_settings.logFile) {
     String logFile = File::relativeTo(m_settings.logDirectory.value(m_settings.storageDirectory), *m_settings.logFile);
     String oldLogDirectory = m_settings.logDirectory.value(File::relativeTo(m_settings.storageDirectory, "logs"));
     if (!File::isDirectory(oldLogDirectory))
-      File::makeDirectory(oldLogDirectory);
+      File::makeDirectoryRecursive(oldLogDirectory);
 
     File::backupFileInSequence(logFile, File::relativeTo(oldLogDirectory, *m_settings.logFile), m_settings.logFileBackups);
     Logger::addSink(make_shared<FileLogSink>(logFile, m_settings.logLevel, true));
