@@ -538,4 +538,8 @@ void Pane::renderImpl() {
   }
 }
 
+Maybe<ChainableJsonMessageResponse> Pane::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
+  return {};
+}
+
 }

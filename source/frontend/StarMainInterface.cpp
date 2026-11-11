@@ -523,12 +523,13 @@ void MainInterface::handleInteractAction(InteractAction interactAction) {
     m_popupInterface->displayMessage(interactAction.data.getString("message"), interactAction.data.getString("title", ""), interactAction.data.getString("subtitle", ""), interactAction.data.optString("sound"));
   } else if (interactAction.type == InteractActionType::ScriptPane) {
     auto sourceEntity = interactAction.entityId;
+    auto unique = interactAction.data.getBool("uniqueSourceEntityPane", true);
     // dismiss if there's already a scriptpane open for this source entity
-    if (sourceEntity != NullEntityId && m_interactionScriptPanes.contains(sourceEntity) && m_paneManager.isDisplayed(m_interactionScriptPanes[sourceEntity]))
+    if (sourceEntity != NullEntityId && unique && m_interactionScriptPanes.contains(sourceEntity) && m_paneManager.isDisplayed(m_interactionScriptPanes[sourceEntity]))
       m_paneManager.dismissPane(m_interactionScriptPanes[sourceEntity]);
 
     ScriptPanePtr scriptPane = make_shared<ScriptPane>(m_client, interactAction.data, sourceEntity);
-    displayScriptPane(scriptPane, sourceEntity);
+    displayScriptPane(scriptPane, unique ? sourceEntity : NullEntityId);
 
   } else if (interactAction.type == InteractActionType::Message) {
     m_client->mainPlayer()->receiveMessage(connectionForEntity(interactAction.entityId),

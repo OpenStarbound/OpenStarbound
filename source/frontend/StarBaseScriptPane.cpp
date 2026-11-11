@@ -173,4 +173,8 @@ void BaseScriptPane::setupScript() {
   m_script.setUpdateDelta(m_config.getUInt("scriptDelta", 1));
 }
 
+Maybe<ChainableJsonMessageResponse> BaseScriptPane::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
+  return m_script.handleMessage(message, localMessage, args);
+}
+
 }
