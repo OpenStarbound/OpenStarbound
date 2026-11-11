@@ -2015,6 +2015,10 @@ TileModificationList WorldServer::doApplyTileModifications(TileModificationList 
 
       queueTileUpdates(pos);
 
+    } else if (auto setHueShift = modification.ptr<SetHueShift>()) {
+      if (!setTileHueShift(pos, setHueShift->layer, setHueShift->mod, setHueShift->hueShift))
+        continue;
+
     } else if (auto plpacket = modification.ptr<PlaceLiquid>()) {
       if (!Root::singleton().liquidsDatabase()->isValidLiquidId(plpacket->liquid)) {
         Logger::warn("WorldServer: rejected PlaceLiquid with invalid liquid id {} at ({}, {})",
@@ -2040,6 +2044,26 @@ TileModificationList WorldServer::doApplyTileModifications(TileModificationList 
   }
 
   return unapplied;
+}
+
+bool WorldServer::setTileHueShift(Vec2I const& pos, TileLayer layer, bool mod, MaterialHue hueShift) {
+  ServerTile* tile = m_tileArray->modifyTile(pos);
+  if (!tile)
+    return false;
+
+  bool foreground = layer == TileLayer::Foreground;
+  if (mod) {
+    if ((foreground ? tile->foregroundMod : tile->backgroundMod) == NoModId)
+      return false;
+    (foreground ? tile->foregroundModHueShift : tile->backgroundModHueShift) = hueShift;
+  } else {
+    if ((foreground ? tile->foreground : tile->background) == EmptyMaterialId)
+      return false;
+    (foreground ? tile->foregroundHueShift : tile->backgroundHueShift) = hueShift;
+  }
+
+  queueTileUpdates(pos);
+  return true;
 }
 
 void WorldServer::updateTileEntityTiles(TileEntityPtr const& entity, bool removing, bool checkBreaks) {

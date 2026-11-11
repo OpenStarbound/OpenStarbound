@@ -4,6 +4,7 @@
 #include "StarVariant.hpp"
 #include "StarGameTypes.hpp"
 #include "StarCollisionBlock.hpp"
+#include "StarNetCompatibility.hpp"
 
 namespace Star {
 
@@ -36,6 +37,16 @@ struct PlaceMaterialColor {
 DataStream& operator>>(DataStream& ds, PlaceMaterialColor& tileMaterialColorPlacement);
 DataStream& operator<<(DataStream& ds, PlaceMaterialColor const& tileMaterialColorPlacement);
 
+// Sets only the hue of what is already on the tile.
+// Needs protocol version 22 as older servers cannot read it.
+struct SetHueShift {
+  TileLayer layer;
+  bool mod;
+  MaterialHue hueShift;
+};
+DataStream& operator>>(DataStream& ds, SetHueShift& tileHueShift);
+DataStream& operator<<(DataStream& ds, SetHueShift const& tileHueShift);
+
 struct PlaceLiquid {
   LiquidId liquid;
   float liquidLevel;
@@ -43,7 +54,14 @@ struct PlaceLiquid {
 DataStream& operator>>(DataStream& ds, PlaceLiquid& tileLiquidPlacement);
 DataStream& operator<<(DataStream& ds, PlaceLiquid const& tileLiquidPlacement);
 
-typedef MVariant<PlaceMaterial, PlaceMod, PlaceMaterialColor, PlaceLiquid> TileModification;
+typedef MVariant<PlaceMaterial, PlaceMod, PlaceMaterialColor, PlaceLiquid, SetHueShift> TileModification;
 typedef List<pair<Vec2I, TileModification>> TileModificationList;
+
+// Whether a peer with these net rules can read the modification.
+// A peer older than protocol version 22 (including a vanilla one) cannot read
+// SetHueShift so it must never be sent one.
+inline bool tileModificationSupported(TileModification const& modification, NetCompatibilityRules const& netRules) {
+  return !(modification.is<SetHueShift>() && netRules.version() < 22);
+}
 
 }
