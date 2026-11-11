@@ -302,6 +302,8 @@ void OpenGlRenderer::GlFrameBuffer::swap() {
 
 OpenGlRenderer::GlFrameBuffer::~GlFrameBuffer() {
   glDeleteFramebuffers(1, &id);
+  if (resolveId)
+    glDeleteFramebuffers(1, &resolveId);
   texture.reset();
 }
 
@@ -686,7 +688,15 @@ bool OpenGlRenderer::switchEffectConfig(String const& name) {
           auto undefined = !ptr->textureValue || ptr->textureValue->textureId == 0;
           auto swapped = effect.doubleBuffered && (*frameBufferId).equals(*outFrameBufferId);
           auto buf = getGlFrameBuffer(*frameBufferId);
-          if (undefined || buf->hasAlt) {
+          if (buf->multisample) {
+            // shaders sample a plain sampler2D, which can't read a multisample texture
+            resolveGlFrameBuffer(buf, swapped);
+            ptr->textureValue = buf->resolveTexture;
+            if (ptr->textureSizeUniform != -1) {
+              auto textureSize = buf->resolveTexture->glTextureSize();
+              glUniform2f(ptr->textureSizeUniform, textureSize[0], textureSize[1]);
+            }
+          } else if (undefined || buf->hasAlt) {
             auto texture = swapped ? buf->altTexture : buf->texture;
             ptr->textureValue = texture;
             if (ptr->textureSizeUniform != -1 && undefined) {
@@ -1407,6 +1417,57 @@ void OpenGlRenderer::blitGlFrameBuffer(RefPtr<GlFrameBuffer> const& frameBuffer,
     0, 0, size[0], size[1],
     GL_COLOR_BUFFER_BIT, GL_NEAREST
   );
+}
+
+void OpenGlRenderer::resolveGlFrameBuffer(RefPtr<GlFrameBuffer> const& frameBuffer, bool const& useAlt) {
+  Vec2U size = frameBuffer->overrideSize ? *frameBuffer->overrideSize : m_screenSize / frameBuffer->sizeDiv;
+  bool hdr = settingModeValue(frameBuffer->hdrMode, m_hdrSetting);
+
+  auto& texture = frameBuffer->resolveTexture;
+  if (!texture || texture->textureSize != size || frameBuffer->resolveHdr != hdr) {
+    if (!texture) {
+      texture = make_ref<GlLoneTexture>();
+      texture->textureFiltering = TextureFiltering::Nearest;
+      texture->textureAddressing = TextureAddressing::Clamp;
+      glGenTextures(1, &texture->textureId);
+      if (texture->textureId == 0)
+        throw RendererException("Could not generate OpenGL texture for framebuffer resolve");
+    }
+
+    // a resolve has to keep the format of the multisample texture
+    glBindTexture(GL_TEXTURE_2D, texture->glTextureId());
+    glTexImage2D(GL_TEXTURE_2D, 0, hdr ? GL_RGBA16F : GL_RGBA8, size[0], size[1], 0, GL_RGBA, hdr ? GL_FLOAT : GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    texture->textureSize = size;
+    frameBuffer->resolveHdr = hdr;
+
+    if (!frameBuffer->resolveId) {
+      glGenFramebuffers(1, &frameBuffer->resolveId);
+      if (!frameBuffer->resolveId)
+        throw RendererException("Failed to create OpenGL framebuffer");
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer->resolveId);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture->glTextureId(), 0);
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+      throw RendererException("OpenGL framebuffer is not complete!");
+  }
+
+  // a blit is clipped by the scissor test
+  if (m_scissorRect)
+    glDisable(GL_SCISSOR_TEST);
+  glBindFramebuffer(GL_READ_FRAMEBUFFER, (useAlt && frameBuffer->hasAlt) ? frameBuffer->altId : frameBuffer->id);
+  glBindFramebuffer(GL_DRAW_FRAMEBUFFER, frameBuffer->resolveId);
+  glBlitFramebuffer(
+    0, 0, size[0], size[1],
+    0, 0, size[0], size[1],
+    GL_COLOR_BUFFER_BIT, GL_NEAREST);
+  if (m_scissorRect)
+    glEnable(GL_SCISSOR_TEST);
+
+  glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_currentFrameBuffer ? m_currentFrameBuffer->id : 0);
 }
 
 void OpenGlRenderer::switchGlFrameBuffer(RefPtr<GlFrameBuffer> const& frameBuffer) {

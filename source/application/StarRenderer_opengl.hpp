@@ -201,6 +201,11 @@ private:
     unsigned multisample = 0;
     unsigned sizeDiv = 1;
     
+    // single sample copy of a multisample framebuffer, which effect shaders can sample
+    GLuint resolveId = 0;
+    RefPtr<GlLoneTexture> resolveTexture;
+    bool resolveHdr = false;
+
     bool blitted = false;
     bool justSwapped = false;
     
@@ -246,6 +251,7 @@ private:
   RefPtr<OpenGlRenderer::GlFrameBuffer> getGlFrameBuffer(String const& id);
   void blitGlFrameBuffer(RefPtr<OpenGlRenderer::GlFrameBuffer> const& frameBuffer, bool const& useAlt = false);
   void switchGlFrameBuffer(RefPtr<OpenGlRenderer::GlFrameBuffer> const& frameBuffer);
+  void resolveGlFrameBuffer(RefPtr<OpenGlRenderer::GlFrameBuffer> const& frameBuffer, bool const& useAlt = false);
 
   Vec2U m_screenSize;
 
