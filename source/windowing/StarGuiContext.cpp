@@ -91,8 +91,7 @@ Vec2U GuiContext::windowInterfaceSize() const {
 }
 
 float GuiContext::interfaceScale() const {
-  float DisplayScale {std::max(1.0f, std::round(getDisplayScale()))};
-  return m_interfaceScale * DisplayScale;
+  return m_interfaceScale;
 }
 
 void GuiContext::setInterfaceScale(float interfaceScale) {

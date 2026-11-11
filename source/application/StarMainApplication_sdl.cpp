@@ -480,6 +480,9 @@ public:
 
 #ifdef STAR_SYSTEM_LINUX
     SDL_SetHint(SDL_HINT_VIDEO_WAYLAND_SCALE_TO_DISPLAY, "1");
+    // Wayland lost to X11 (XWayland), so force it to have precedence when set.
+    if (!SDL_getenv("SDL_VIDEO_DRIVER") && !SDL_getenv("SDL_VIDEODRIVER") && SDL_getenv("WAYLAND_DISPLAY"))
+      SDL_SetHint(SDL_HINT_VIDEO_DRIVER, "wayland,x11");
 #endif
     
     Logger::info("Application: Initializing SDL Video");
@@ -853,6 +856,22 @@ private:
 
     void setFullscreenWindow(Vec2U fullScreenResolution) override {
       if (parent->m_windowMode != WindowMode::Fullscreen || parent->m_windowSize != fullScreenResolution) {
+        if (String(parent->m_videoDriver) == "wayland") {
+          // Wayland only tells the window which output (monitor) it's on after it's already been mapped there.
+          // This made the Window Manager map fullscreen to the wrong window and stretched the window if the monitors have different resolutions.
+
+          if (parent->m_windowMode == WindowMode::Borderless)
+            SDL_SetWindowBordered(parent->m_sdlWindow, true);
+          else if (parent->m_windowMode == WindowMode::Maximized)
+            SDL_RestoreWindow(parent->m_sdlWindow);
+
+          SDL_SetWindowFullscreenMode(parent->m_sdlWindow, nullptr);
+          SDL_SetWindowFullscreen(parent->m_sdlWindow, true);
+          parent->m_windowMode = WindowMode::Fullscreen;
+          // the window size follows from the resize events once the compositor has configured the window
+          return;
+        }
+
         int currentDisplayIndex = SDL_GetDisplayForWindow(parent->m_sdlWindow);
 
         SDL_DisplayMode closestDisplayMode;
