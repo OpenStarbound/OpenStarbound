@@ -78,6 +78,9 @@ private:
   Maybe<String> m_trackedQuestId;
   bool m_trackOnWorldQuests;
   Maybe<String> m_onWorldQuestId;
+
+  // Seconds until initial quests are next checked, see update()
+  float m_initialQuestTimer = 0.0f;
 };
 
 }

@@ -412,3 +412,126 @@ TEST(LuaJsonTest, IntFloat) {
   EXPECT_EQ(context.invokePath<String>("printNumber", 1.0), "1.0");
   EXPECT_EQ(context.invokePath<String>("printNumber", 1), "1");
 }
+
+// Json containers turned into lua tables remember entries set to nil, and
+// whether they started out as an array or an object.  These pin the behaviour
+// of the conversion in both directions, including the nil bookkeeping.
+TEST(LuaJsonTest, ContainerNilEntries) {
+  auto engine = LuaEngine::create();
+  auto context = engine->createContext();
+  context.load(R"SCRIPT(
+    function nilNew(j) j.zzz = nil; return j end
+    function nilThenSet(j) j.zzz = nil; j.zzz = 3; return j end
+    function nilExisting(j) j.a = nil; return j end
+    function twice(j) j.q = nil; j.q = nil; j.r = nil; j.r = 1; return j end
+    function arrayNil(j) j[2] = nil; return j end
+    function arrayAppend(j) j[#j + 1] = 9; j[7] = nil; return j end
+    function resize(j) jresize(j, 5); return j end
+    function remove(j) jremove(j, 1); return j end
+    function size(j) return {jsize(j), #j} end
+    function nested(j) j.child.extra = nil; j.list[4] = "x"; return j end
+  )SCRIPT");
+
+  // Existing nulls survive the round trip
+  Json withNulls = Json::parse(R"JSON({"a":1,"n":null,"list":[1,null,3],"child":{"k":null}})JSON");
+  EXPECT_EQ(context.invokePath<Json>("nilNew", withNulls), Json::parse(R"JSON({"a":1,"n":null,"list":[1,null,3],"child":{"k":null},"zzz":null})JSON"));
+
+  // Setting an absent key to nil is remembered, setting it again forgets that
+  EXPECT_EQ(context.invokePath<Json>("nilThenSet", JsonObject()), Json::parse(R"JSON({"zzz":3})JSON"));
+  EXPECT_EQ(context.invokePath<Json>("nilThenSet", Json::parse("[10,20,null,40]")), Json::parse(R"JSON({"1":10,"2":20,"3":null,"4":40,"zzz":3})JSON"));
+  EXPECT_EQ(context.invokePath<Json>("twice", JsonObject()), Json::parse(R"JSON({"q":null,"r":1})JSON"));
+
+  // Setting a key that exists to nil removes it, a missing one is remembered as null
+  EXPECT_EQ(context.invokePath<Json>("nilExisting", Json::parse(R"JSON({"a":1,"b":2})JSON")), Json::parse(R"JSON({"b":2})JSON"));
+  EXPECT_EQ(context.invokePath<Json>("nilExisting", JsonObject()), Json::parse(R"JSON({"a":null})JSON"));
+
+  // Arrays stay arrays, with nils in place
+  EXPECT_EQ(context.invokePath<Json>("arrayNil", Json::parse("[10,20,30]")), Json::parse("[10,null,30]"));
+  EXPECT_EQ(context.invokePath<Json>("arrayAppend", JsonArray()), Json::parse("[9,null,null,null,null,null,null]"));
+  EXPECT_EQ(context.invokePath<Json>("arrayAppend", JsonObject()), Json::parse(R"JSON({"1":9,"7":null})JSON"));
+  EXPECT_EQ(context.invokePath<Json>("resize", Json::parse("[10,20,null,40,50,60]")), Json::parse("[10,20,null,40,50]"));
+  EXPECT_EQ(context.invokePath<Json>("resize", JsonArray()), Json::parse("[null,null,null,null,null]"));
+  EXPECT_EQ(context.invokePath<Json>("remove", Json::parse("[10,20,null,40]")), Json::parse("[null,20,null,40]"));
+  EXPECT_EQ(context.invokePath<Json>("size", Json::parse("[10,20,null,40,50,60]")), Json::parse("[6,6]"));
+  EXPECT_EQ(context.invokePath<Json>("size", JsonArray()), Json::parse("[0,0]"));
+
+  // Nested containers keep their own bookkeeping
+  EXPECT_EQ(context.invokePath<Json>("nested", Json::parse(R"JSON({"child":{"x":1},"list":[1,2,3]})JSON")),
+      Json::parse(R"JSON({"child":{"x":1,"extra":null},"list":[1,2,3,"x"]})JSON"));
+}
+
+TEST(LuaJsonTest, ContainerTypeHints) {
+  auto engine = LuaEngine::create();
+  auto context = engine->createContext();
+  context.load(R"SCRIPT(
+    function same(j) return j end
+    function newArray() return jarray() end
+    function newObject() return jobject() end
+    function wrapArray() local t = {1, 2, 3}; jarray(t); t[5] = nil; return t end
+    function wrapObject() local t = {a = 1}; jobject(t); t.b = nil; return t end
+    function plain() return {} end
+    function plainList() return {1, 2, 3} end
+    function copied(j) local c = {} for k, v in pairs(j) do c[k] = v end return c end
+    function hint(j) return getmetatable(j).__typehint end
+  )SCRIPT");
+
+  // Empty containers come back as the kind they went in as
+  EXPECT_EQ(context.invokePath<Json>("same", JsonArray()), Json(JsonArray()));
+  EXPECT_EQ(context.invokePath<Json>("same", JsonObject()), Json(JsonObject()));
+  EXPECT_EQ(context.invokePath<Json>("newArray"), Json(JsonArray()));
+  EXPECT_EQ(context.invokePath<Json>("newObject"), Json(JsonObject()));
+  EXPECT_EQ(context.invokePath<int>("hint", JsonArray()), 1);
+  EXPECT_EQ(context.invokePath<int>("hint", JsonObject()), 2);
+
+  // Existing tables can be turned into either kind
+  EXPECT_EQ(context.invokePath<Json>("wrapArray"), Json::parse("[1,2,3,null,null]"));
+  EXPECT_EQ(context.invokePath<Json>("wrapObject"), Json::parse(R"JSON({"a":1,"b":null})JSON"));
+
+  // A plain lua table is a list if its keys are 1..n, otherwise an object
+  EXPECT_EQ(context.invokePath<Json>("plain"), Json(JsonObject()));
+  EXPECT_EQ(context.invokePath<Json>("plainList"), Json::parse("[1,2,3]"));
+
+  // A copy made by a script has no hint and no nil entries
+  EXPECT_EQ(context.invokePath<Json>("copied", Json::parse("[1,2,3]")), Json::parse("[1,2,3]"));
+  EXPECT_EQ(context.invokePath<Json>("copied", Json::parse(R"JSON({"a":1,"b":[1,2]})JSON")), Json::parse(R"JSON({"a":1,"b":[1,2]})JSON"));
+}
+
+TEST(LuaJsonTest, ContainerRoundTripValues) {
+  auto engine = LuaEngine::create();
+
+  Json deep = Json::parse(R"JSON({
+    "int": 5, "negative": -7, "float": 2.5, "big": 123456789012, "bool": false, "string": "text with \"quotes\" and unicode é",
+    "array": [1, 2.5, "three", true, [4, 5], {"six": 6}],
+    "object": {"nested": {"deeper": [0, {"deepest": null}]}},
+    "empty array": [], "empty object": {}
+  })JSON");
+
+  EXPECT_EQ(engine->luaTo<Json>(engine->luaFrom<Json>(deep)), deep);
+
+  // Integers stay integers and floats stay floats
+  auto table = engine->luaFrom<Json>(Json::parse(R"JSON({"i": 3, "f": 3.0})JSON")).get<LuaTable>();
+  EXPECT_TRUE(table.get<LuaValue>("i").is<LuaInt>());
+  EXPECT_TRUE(table.get<LuaValue>("f").is<LuaFloat>());
+}
+
+TEST(LuaJsonTest, UnconvertibleTables) {
+  auto engine = LuaEngine::create();
+  auto context = engine->createContext();
+  context.load(R"SCRIPT(
+    function withFunction() return {1, 2, print} end
+    function withFunctionNested() return {a = {b = print}} end
+    function sparse() return {[1] = "a", [2] = "b", [5] = "c"} end
+    function mixed() return {1, 2, a = 3} end
+    function floatKeys() return {[1.5] = "x"} end
+    function boolKey() local t = {} t[true] = 1 return t end
+  )SCRIPT");
+
+  EXPECT_THROW(context.invokePath<Json>("withFunction"), LuaException);
+  EXPECT_THROW(context.invokePath<Json>("withFunctionNested"), LuaException);
+  EXPECT_THROW(context.invokePath<Json>("boolKey"), LuaException);
+
+  // Sparse lists and mixed tables become objects with integer keys as strings
+  EXPECT_EQ(context.invokePath<Json>("mixed"), Json::parse(R"JSON({"1":1,"2":2,"a":3})JSON"));
+  EXPECT_EQ(context.invokePath<Json>("sparse"), Json::parse(R"JSON({"1":"a","2":"b","5":"c"})JSON"));
+  EXPECT_EQ(context.invokePath<Json>("floatKeys"), Json::parse(R"JSON({"1.5":"x"})JSON"));
+}
