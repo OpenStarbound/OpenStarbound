@@ -14,6 +14,7 @@
 #include "StarImageWidget.hpp"
 #include "StarLabelWidget.hpp"
 #include "StarListWidget.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
@@ -104,7 +105,7 @@ TeleportDialog::TeleportDialog(UniverseClientPtr client,
   if (config.getBool("includePlayerBookmarks", false)) {
     auto teleportBookmarks = m_client->mainPlayer()->universeMap()->teleportBookmarks();
 
-    teleportBookmarks.sort([](auto const& a, auto const& b) { return a.bookmarkName.toLower() < b.bookmarkName.toLower(); });
+    sortByComputedValue(teleportBookmarks, [](auto const& bookmark) { return bookmark.bookmarkName.toLower(); });
 
     for (auto bookmark : teleportBookmarks) {
       auto entry = destList->addItem();
@@ -159,7 +160,7 @@ void TeleportDialog::editBookmark() {
   if (destList->selectedItem() != NPos) {
     size_t selectedItem = destList->selectedItem();
     auto bookmarks = m_client->mainPlayer()->universeMap()->teleportBookmarks();
-    bookmarks.sort([](auto const& a, auto const& b) { return a.bookmarkName.toLower() < b.bookmarkName.toLower(); });
+    sortByComputedValue(bookmarks, [](auto const& bookmark) { return bookmark.bookmarkName.toLower(); });
     selectedItem = selectedItem - (m_destinations.size() - bookmarks.size());
     if (bookmarks.size() > selectedItem) {
       auto editBookmarkDialog = make_shared<EditBookmarkDialog>(m_client->mainPlayer()->universeMap());
