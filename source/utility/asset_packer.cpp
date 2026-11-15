@@ -60,11 +60,11 @@ int main(int argc, char** argv) {
 
     bool verbose = opts.switches.contains("v");
 
-    function<void(size_t, size_t, String, String, bool)> BuildProgressCallback;
-    auto progressCallback = [verbose](size_t, size_t, String filePath, String assetPath) {
-      if (verbose)
+    function<void(size_t, size_t, String, String)> progressCallback;
+    if (verbose)
+      progressCallback = [](size_t, size_t, String filePath, String assetPath) {
         coutf("Adding file '{}' to the target pak as '{}'\n", filePath, assetPath);
-    };
+      };
 
     outputFilename = File::relativeTo(File::fullPath(File::dirName(outputFilename)), File::baseName(outputFilename));
     DirectoryAssetSource directorySource(assetsFolderPath, ignoreFiles);

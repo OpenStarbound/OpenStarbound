@@ -5,6 +5,7 @@
 #include "StarDataStreamExtra.hpp"
 #include "StarSha256.hpp"
 #include "StarFile.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
@@ -45,9 +46,7 @@ void PackedAssetSource::build(DirectoryAssetSource& directorySource, String cons
     }
   };
 
-  assetPaths.sort([&getOrderingValue](String const& a, String const& b) {
-      return getOrderingValue(a) < getOrderingValue(b);
-    });
+  sortByComputedValue(assetPaths, getOrderingValue);
 
   for (size_t i = 0; i < assetPaths.size(); ++i) {
     String const& assetPath = assetPaths[i];
