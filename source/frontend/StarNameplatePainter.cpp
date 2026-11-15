@@ -11,11 +11,11 @@ NameplatePainter::NameplatePainter() {
   auto assets = Root::singleton().assets();
 
   Json nametagConfig = assets->json("/interface.config:nametag");
-  m_showMasterNames = nametagConfig.getBool("showMasterNames");
+  m_showMasterNames = nametagConfig.getBool("showMasterNames", false);
   m_opacityRate = nametagConfig.getFloat("opacityRate");
   m_inspectOpacityRate = nametagConfig.queryFloat("inspectOpacityRate", m_opacityRate);
   m_offset = jsonToVec2F(nametagConfig.get("offset"));
-  Json textStyle = nametagConfig.get("textStyle");
+  Json textStyle = nametagConfig.get("textStyle", JsonObject());
   m_textStyle = textStyle;
   m_statusTextStyle = nametagConfig.get("statusTextStyle", textStyle);
   m_statusOffset = jsonToVec2F(nametagConfig.get("statusOffset"));

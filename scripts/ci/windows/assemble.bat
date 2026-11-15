@@ -18,12 +18,14 @@ rem the OpenStarbound page of the credits lists the contributors of the reposito
 bash scripts/credits/generate-contributors.sh
 
 .\dist\asset_packer.exe -c scripts\packing.config assets\opensb %client%\assets\opensb.pak
+bash scripts/pack-mods.sh ./dist/asset_packer.exe %client%/mods
 
 for /f "delims=" %%f in (scripts\ci\windows\files_client.txt) do (
     xcopy "%%f" "%client%\win\" /Y
 )
 
 .\dist\asset_packer.exe -c scripts\packing.config -s assets\opensb %server%\assets\opensb.pak
+bash scripts/pack-mods.sh ./dist/asset_packer.exe %server%/mods -s
 
 for /f "delims=" %%f in (scripts\ci\windows\files_server.txt) do (
     xcopy "%%f" "%server%\win\" /Y

@@ -1,0 +1,8 @@
+{
+  "name" : "rarityBeam",
+  "friendlyName" : "OpenStarbound item rarity beam",
+  "author" : "Not Chucklefish",
+  "version" : "1.0",
+  "description" : "Dropped items shine a pillar of light in the color of their rarity.",
+  "requires" : ["opensb_base"]
+}

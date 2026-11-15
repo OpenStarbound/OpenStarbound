@@ -1,0 +1,8 @@
+{
+  "name" : "livePlayerPortrait",
+  "friendlyName" : "OpenStarbound live inventory portrait",
+  "author" : "Not Chucklefish",
+  "version" : "1.0",
+  "description" : "The player in the inventory pane is drawn from your live character, so it moves with what you are doing in the world.",
+  "requires" : ["opensb_base"]
+}

@@ -27,9 +27,9 @@ ButtonWidget::ButtonWidget() {
   m_pressedOffset = jsonToVec2I(interfaceConfig.get("buttonPressedOffset"));
   m_textStyle = interfaceConfig.get("buttonTextStyle");
   m_clickSounds = jsonToStringList(interfaceConfig.get("buttonClickSound"));
-  m_releaseSounds = jsonToStringList(interfaceConfig.get("buttonReleaseSound"));
+  m_releaseSounds = jsonToStringList(interfaceConfig.get("buttonReleaseSound", JsonArray()));
   m_hoverSounds = jsonToStringList(interfaceConfig.get("buttonHoverSound"));
-  m_hoverOffSounds = jsonToStringList(interfaceConfig.get("buttonHoverOffSound"));
+  m_hoverOffSounds = jsonToStringList(interfaceConfig.get("buttonHoverOffSound", JsonArray()));
 }
 
 ButtonWidget::ButtonWidget(WidgetCallbackFunc callback,

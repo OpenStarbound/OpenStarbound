@@ -1,0 +1,8 @@
+{
+  "name" : "buttonSounds",
+  "friendlyName" : "OpenStarbound button sounds",
+  "author" : "Not Chucklefish",
+  "version" : "1.0",
+  "description" : "Buttons click when pressed, release and hover, and the block swap toggle of tile tools clicks and releases.",
+  "requires" : ["opensb_base"]
+}

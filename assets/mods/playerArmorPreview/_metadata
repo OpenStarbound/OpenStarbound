@@ -1,0 +1,8 @@
+{
+  "name" : "playerArmorPreview",
+  "friendlyName" : "OpenStarbound armor preview on the player",
+  "author" : "Not Chucklefish",
+  "version" : "1.0",
+  "description" : "Armor tooltips show the item worn by your own character instead of the dummy.",
+  "requires" : ["opensb_base"]
+}

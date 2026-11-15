@@ -1,0 +1,11 @@
+{
+  "name" : "hdCursor",
+  "friendlyName" : "OpenStarbound HD cursors",
+  "author" : "Not Chucklefish",
+  "version" : "1.0",
+  "description" : "Double resolution mouse cursors.",
+  "requires" : ["opensb_base"],
+  "scripts" : {
+    "postLoad" : [ "/scripts/hdCursor/postload.lua" ]
+  }
+}

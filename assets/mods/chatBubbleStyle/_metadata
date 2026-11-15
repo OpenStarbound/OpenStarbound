@@ -1,0 +1,8 @@
+{
+  "name" : "chatBubbleStyle",
+  "friendlyName" : "OpenStarbound chat bubble and nametag style",
+  "author" : "Not Chucklefish",
+  "version" : "1.0",
+  "description" : "Chat bubbles sit higher and move less, and bubbles and nametags get an outline around their text. Nametags are also shown over your own character.",
+  "requires" : ["opensb_base"]
+}

@@ -1,0 +1,7 @@
+{
+  "pickupDistance" : 0.5,
+  "afterTakenLife" : 0.75,
+  "takenVelocityRamp" : true,
+  "takenAddsOwnerVelocity" : true,
+  "takenRenderLayer" : "ForegroundTile"
+}
