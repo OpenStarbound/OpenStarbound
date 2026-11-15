@@ -428,9 +428,9 @@ TileModificationList WorldClient::validTileModifications(TileModificationList co
 TileModificationList WorldClient::applyTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap) {
   if (!inWorld())
     return {};
-  
+
   // thanks to new prediction: do each one by one so that previous modifications affect placeability
-  
+
   TileModificationList success, failures, temp;
   TileModificationList const* list = &modificationList;
 
@@ -467,12 +467,12 @@ TileModificationList WorldClient::applyTileModifications(TileModificationList co
 TileModificationList WorldClient::replaceTiles(TileModificationList const& modificationList, TileDamage const& tileDamage, bool applyDamage) {
   if (!inWorld())
     return {};
-  
+
   // Tell client it can't send a replace packet
   auto netRules = m_clientState.netCompatibilityRules();
   if (netRules.isLegacy() || netRules.version() <= 3)
     return modificationList;
-  
+
   TileModificationList success, failures;
   for (auto pair : modificationList) {
     if (!isTileProtected(pair.first) && WorldImpl::validateTileReplacement(pair.second))
@@ -623,7 +623,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
       try { entity->render(&renderCallback); }
       catch (StarException const& e) {
         if (entity->isMaster()) // this is YOUR problem!!
-          throw e; 
+          throw e;
         else { // this is THEIR problem!!
           auto issue = printException(e, true);
           auto hash = hashOf(issue);
@@ -641,7 +641,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
           renderCallback.addDrawable(std::move(drawable), RenderLayerMiddleParticle);
         }
       }
-      
+
 
       EntityDrawables ed;
       for (auto& p : renderCallback.drawables) {
@@ -675,7 +675,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
         for (auto& p : renderCallback.particles)
           p.directives.append(directives->get(directiveIndex));
       }
-      
+
       m_particles->addParticles(std::move(renderCallback.particles));
       m_samples.appendAll(std::move(renderCallback.audios));
       m_previewTiles.appendAll(std::move(renderCallback.previewTiles));
@@ -1282,7 +1282,7 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
     } else if (auto pongPacket = as<PongPacket>(packet)) {
       if (pongPacket->time)
         m_latency = Time::monotonicMilliseconds() - pongPacket->time;
-      else if (m_pingTime) 
+      else if (m_pingTime)
         m_latency = Time::monotonicMilliseconds() - m_pingTime.take();
 
     } else {
@@ -1453,7 +1453,13 @@ void WorldClient::update(float dt) {
         m_requestedDrops.clear();
 
       Vec2F playerPos = m_mainPlayer->position();
-      auto dropList = m_entityMap->query<ItemDrop>(RectF(playerPos - Vec2F::filled(DropDist / 2), playerPos + Vec2F::filled(DropDist / 2)));
+      // scale should decrease the pickup region for smaller entities, but not increase it for larger ones
+      float expand = DropDist / 2 * clamp<float>(m_mainPlayer->movementController()->scale(), 0, 1);
+      RectF dropRect;
+
+      dropRect = RectF(playerPos - Vec2F::filled(expand), playerPos + Vec2F::filled(expand));
+
+      auto dropList = m_entityMap->query<ItemDrop>(dropRect);
       for (auto itemDrop : dropList) {
         auto distSquared = m_geometry.diff(itemDrop->position(), playerPos).magnitudeSquared();
 
@@ -1850,9 +1856,9 @@ void WorldClient::handleDamageNotifications() {
       // default to normal hit
       HitType effectHitType = damageKind.effects.get(material).contains(damageNotification.hitType) ? damageNotification.hitType : HitType::Hit;
       m_samples.appendAll(soundsFromDefinition(damageKind.effects.get(material).get(effectHitType).sounds, damageNotification.position));
-      
+
       auto hitParticles = particlesFromDefinition(damageKind.effects.get(material).get(effectHitType).particles, damageNotification.position);
-      
+
       const List<Directives>* directives = nullptr;
       if (auto& worldTemplate = m_worldTemplate) {
         if (const auto& parameters = worldTemplate->worldParameters())
@@ -1864,7 +1870,7 @@ void WorldClient::handleDamageNotifications() {
         for (auto& p : hitParticles)
           p.directives.append(directives->get(directiveIndex));
       }
-      
+
       m_particles->addParticles(hitParticles);
     }
   }
