@@ -124,11 +124,11 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
     return XXH32_digest(state) % variants;
   };
 
-  callbacks.registerCallback("materialVariant", [root, getVariant](Vec2U const& tilePosition, String const& layer, unsigned variants) -> unsigned {
+  callbacks.registerCallback("materialVariant", [getVariant](Vec2U const& tilePosition, String const& layer, unsigned variants) -> unsigned {
     return getVariant(tilePosition.x(), tilePosition.y(), false, VariantTerrainLayerNames.getLeft(layer), variants);
   });
 
-  callbacks.registerCallback("modVariant", [root, getVariant](Vec2U const& tilePosition, String const& layer, unsigned variants) -> unsigned {
+  callbacks.registerCallback("modVariant", [getVariant](Vec2U const& tilePosition, String const& layer, unsigned variants) -> unsigned {
     return getVariant(tilePosition.x(), tilePosition.y(), true, VariantTerrainLayerNames.getLeft(layer), variants);
   });
 

@@ -9,6 +9,23 @@ namespace Star {
 
 namespace PlatformerAStar {
 
+std::ostream& operator<<(std::ostream& os, Node const& node) {
+  return os << strf("Node{position = {}, velocity = {}}", node.position, node.velocity);
+}
+
+std::ostream& operator<<(std::ostream& os, Action action) {
+  return os << ActionNames.getRight(action);
+}
+
+std::ostream& operator<<(std::ostream& os, Edge const& edge) {
+  return os << strf("Edge{cost = {}, action = {}, jumpVelocity = {}, source = {}, target = {}}",
+          edge.cost,
+          edge.action,
+          edge.jumpVelocity,
+          edge.source,
+          edge.target);
+}
+
   // The desired spacing between nodes:
   float const NodeGranularity = 1.f;
   float const SimulateArcGranularity = 0.5f;

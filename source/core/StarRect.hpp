@@ -967,7 +967,7 @@ auto Box<T, N>::edgeIntersection(Line const& l) const -> Enable2D<P, LineInterse
 
   for (auto i : edges()) {
     auto res = l.intersection(i);
-    if (res.intersects)
+    if (res.intersects && numCandidates < candidates.size())
       candidates[numCandidates++] = res;
   }
 
@@ -995,9 +995,11 @@ auto Box<T, N>::edgeIntersection(Line const& l) const -> Enable2D<P, LineInterse
   // if there are 4 candidates then the only possible case is false (cutting
   // through both corners
   if (numCandidates != 0) {
-    std::sort(candidates.ptr(),
-        candidates.ptr() + numCandidates,
-        [&](LineIntersectResult const& a, LineIntersectResult const& b) { return a.t < b.t; });
+    // at most four candidates, so an insertion sort is enough (and GCC can see the bound)
+    for (size_t i = 1; i < numCandidates; ++i) {
+      for (size_t j = i; j > 0 && candidates[j].t < candidates[j - 1].t; --j)
+        std::swap(candidates[j], candidates[j - 1]);
+    }
     if (numCandidates == 1) {
       if (contains(l.min(), false) || contains(l.max(), false)) {
         candidates[0].glances = false;

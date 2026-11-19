@@ -39,7 +39,8 @@ BeamItem::BeamItem(Json config) {
   m_firstStripeThickness = config.get("firstStripeThickness").toFloat();
   m_secondStripeThickness = config.get("secondStripeThickness").toFloat();
   m_color = Color::White;
-  m_particleGenerateCooldown = .25;
+  m_particleGenerateCooldownTime = config.getFloat("particleGenerateCooldown", .25f);
+  m_particleGenerateCooldown = m_particleGenerateCooldownTime;
   m_inRangeLastUpdate = false;
 }
 
@@ -228,7 +229,7 @@ List<Drawable> BeamItem::beamDrawables(bool canPlace) const {
     } else {
       if (m_inRangeLastUpdate) {
         m_inRangeLastUpdate = false;
-        m_particleGenerateCooldown = .25; // TODO, expose to json
+        m_particleGenerateCooldown = m_particleGenerateCooldownTime;
         List<Particle> beamLeftovers;
         for (auto i = 1; i < (int)(curveLen * m_targetSegmentRun * 2 - .5); i++) { // one less than full length
           float pos =

@@ -67,6 +67,7 @@ protected:
 
   mutable bool m_inRangeLastUpdate;
   mutable Color m_lastUpdateColor;
+  float m_particleGenerateCooldownTime;
   mutable float m_particleGenerateCooldown;
 
   CSplineF m_beamCurve;

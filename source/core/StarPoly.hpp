@@ -695,15 +695,20 @@ auto Polygon<DataType>::lineIntersection(Line const& l) const -> Maybe<LineInter
   if (contains(l.min()))
     return LineIntersectResult{l.min(), DataType(0), {}};
 
-  Maybe<LineIntersectResult> nearestIntersection;
+  bool found = false;
+  LineIntersectResult nearest{};
   for (size_t i = 0; i < m_vertexes.size(); ++i) {
     auto intersection = l.intersection(sideAt(i));
     if (intersection.intersects) {
-      if (!nearestIntersection || intersection.t < nearestIntersection->along)
-        nearestIntersection = LineIntersectResult{intersection.point, intersection.t, i};
+      if (!found || intersection.t < nearest.along) {
+        found = true;
+        nearest = LineIntersectResult{intersection.point, intersection.t, i};
+      }
     }
   }
-  return nearestIntersection;
+  if (!found)
+    return {};
+  return nearest;
 }
 
 template <typename DataType>

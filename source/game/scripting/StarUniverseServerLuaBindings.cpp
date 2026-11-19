@@ -31,21 +31,21 @@ LuaCallbacks LuaBindings::makeUniverseServerCallbacks(UniverseServer* universe) 
     universe->clientWarpPlayer(clientId, parseWarpAction(action), deploy.value(false));
   });
 
-  callbacks.registerCallback("setServerAccount", [universe](String const& account, String const& password, Maybe<bool> admin) {
+  callbacks.registerCallback("setServerAccount", [](String const& account, String const& password, Maybe<bool> admin) {
     auto config = Root::singleton().configuration();
     auto serverUsers = config->get("serverUsers").toObject();
     serverUsers[account] = JsonObject{{"password", password}, {"admin", admin.value(false)}};
     config->set("serverUsers", serverUsers);
   });
 
-  callbacks.registerCallback("removeServerAccount", [universe](String const& account) {
+  callbacks.registerCallback("removeServerAccount", [](String const& account) {
     auto config = Root::singleton().configuration();
     auto serverUsers = config->get("serverUsers").toObject();
     serverUsers.erase(account);
     config->set("serverUsers", serverUsers);
   });
 
-  callbacks.registerCallback("getServerAccounts", [universe]() -> Json {
+  callbacks.registerCallback("getServerAccounts", []() -> Json {
     auto config = Root::singleton().configuration();
     auto serverUsers = config->get("serverUsers");
     JsonObject result;
@@ -101,7 +101,7 @@ LuaCallbacks LuaBindings::makeUniverseServerCallbacks(UniverseServer* universe) 
     return universe->sendUniverseMessage(connection,message,JsonArray::from(std::move(args)));
   });
   
-  callbacks.registerCallback("connectionId", [universe]() {
+  callbacks.registerCallback("connectionId", []() {
     return ServerConnectionId;
   });
 
