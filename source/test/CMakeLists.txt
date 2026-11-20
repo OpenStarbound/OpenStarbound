@@ -49,6 +49,7 @@ SET (star_core_tests_SOURCES
       small_vector_test.cpp
       sha_test.cpp
       shell_parse.cpp
+      spatial_hash_test.cpp
       string_test.cpp
       strong_typedef_test.cpp
       thread_test.cpp
