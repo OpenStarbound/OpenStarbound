@@ -165,6 +165,12 @@ public:
   // method.
   bool updateReady() const;
 
+  // object scripts tick on game time; creature and player scripts stay frame-based
+  void setGameTimeCadence(bool on) {
+    m_gameTimeCadence = on;
+    m_updateAccumulator = 0.0f;
+  }
+
   template <typename Ret = LuaValue, typename... V>
   Maybe<Ret> update(V&&... args);
   
@@ -177,6 +183,8 @@ private:
   
   Periodic m_updatePeriodic;
   mutable float m_lastDt;
+  bool m_gameTimeCadence = false;
+  float m_updateAccumulator = 0.0f;
   
   List<ThreadMessage> m_threadMessages;
   mutable RecursiveMutex m_threadMessageMutex;
@@ -338,7 +346,13 @@ void LuaUpdatableComponent<Base>::setUpdateDelta(unsigned updateDelta) {
 
 template <typename Base>
 bool LuaUpdatableComponent<Base>::updateReady() const {
-  return m_updatePeriodic.ready();
+  if (!m_gameTimeCadence)
+    return m_updatePeriodic.ready();
+
+  unsigned stepCount = m_updatePeriodic.stepCount();
+  if (stepCount == 0)
+    return false;
+  return m_updateAccumulator + 1e-5f >= stepCount * GlobalTimestep;
 }
 
 template <typename Base>
@@ -402,7 +416,27 @@ Maybe<Ret> LuaUpdatableComponent<Base>::update(V&&... args) {
       message.promise.fail("Message not handled");
   }
   
-  if (!m_updatePeriodic.tick())
+  if (m_gameTimeCadence) {
+    m_updateAccumulator += m_lastDt;
+    unsigned stepCount = m_updatePeriodic.stepCount();
+    if (stepCount == 0)
+      return {};
+
+    // station throughput must not depend on frame rate
+    float interval = stepCount * GlobalTimestep;
+    // drop the excess instead of accumulating debt
+    if (m_updateAccumulator > interval * 8.0f)
+      m_updateAccumulator = interval * 8.0f;
+    Maybe<Ret> result;
+    int calls = 0;
+    while (m_updateAccumulator + 1e-5f >= interval && calls < 8) {
+      m_updateAccumulator -= interval;
+      Base::cleanThreads();
+      result = Base::template invoke<Ret>("update", args...);
+      ++calls;
+    }
+    return result;
+  } else if (!m_updatePeriodic.tick())
     return {};
   
   Base::cleanThreads();

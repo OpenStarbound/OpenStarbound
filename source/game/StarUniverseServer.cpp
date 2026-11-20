@@ -151,11 +151,16 @@ void UniverseServer::stop() {
   m_stop = true;
 }
 
-void UniverseServer::setPause(bool pause) {
+void UniverseServer::setPause(bool pause, bool manual) {
   ReadLocker clientsLocker(m_clientsLock);
   // Pausing is disabled for multiplayer
   if (m_clients.size() > 1)
     pause = false;
+
+  if (manual)
+    m_manualPause = pause;
+  else if (m_manualPause)
+    pause = true; // explicit /pause wins over UI-driven (escape dialog) requests
 
   if (pause == *m_pause)
     return;
@@ -179,6 +184,10 @@ void UniverseServer::setPause(bool pause) {
 
   for (auto& p : m_clients)
     m_connectionServer->sendPackets(p.first, {make_shared<PausePacket>(*m_pause, GlobalTimescale)});
+}
+
+bool UniverseServer::paused() const {
+  return *m_pause;
 }
 
 void UniverseServer::setTimescale(float timescale) {
@@ -595,6 +604,8 @@ void UniverseServer::run() {
 
   TcpServerPtr tcpServer;
 
+  double lastClockTime = Time::monotonicTime();
+
   while (!m_stop) {
     if (m_tcpState == TcpState::Yes && !tcpServer) {
       auto& root = Root::singleton();
@@ -629,6 +640,14 @@ void UniverseServer::run() {
     }
 
     LogMap::set("universe_time", m_universeClock->time());
+
+    {
+      double now = Time::monotonicTime();
+      double realDt = now - lastClockTime;
+      lastClockTime = now;
+      if (GlobalTimescale != 1.0f && realDt > 0.0 && realDt < 1.0 && m_universeClock->running())
+        m_universeClock->adjustTime(realDt * (GlobalTimescale - 1.0f));
+    }
 
     try {
       updateLua();
