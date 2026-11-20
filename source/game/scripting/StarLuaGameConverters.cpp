@@ -1,5 +1,7 @@
 #include "StarLuaGameConverters.hpp"
 
+#include "StarAssetPathCache.hpp"
+
 namespace Star {
 
 LuaValue LuaConverter<InventorySlot>::from(LuaEngine& engine, InventorySlot k) {
@@ -485,7 +487,7 @@ Maybe<Drawable> LuaConverter<Drawable>::to(LuaEngine&, LuaValue const& v) {
     else if (auto poly = table->get<Maybe<PolyF>>("poly"))
       drawable = Drawable::makePoly(poly.take(), color);
     else if (auto image = table->get<Maybe<String>>("image"))
-      drawable = Drawable::makeImage(image.take(), 1.0f, table->get<Maybe<bool>>("centered").value(true), Vec2F(), color);
+      drawable = Drawable::makeImage(cachedAssetPath(*image), 1.0f, table->get<Maybe<bool>>("centered").value(true), Vec2F(), color);
     else
       return {}; // throw LuaAnimationComponentException("Drawable table must have 'line', 'poly', or 'image'");
 
