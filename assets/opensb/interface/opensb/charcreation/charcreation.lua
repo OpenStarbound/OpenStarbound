@@ -1,11 +1,9 @@
---Silver Sokolova
-
 --[[
 CHANGES FROM VANILLA
 mode radioGroup has a `mode` value in its data, for the name of the mode
 gender radioGroup has a `data` value, set to the name of the gender
 
-TODO: use root.assetsByExtension to gather all species files and put
+TODO: use root.assetsByExtension to gather all species files, and maybe put
 them in a table, as people can put species files in any folder
 {
   "species": {
@@ -16,6 +14,11 @@ them in a table, as people can put species files in any folder
 
 function init()
   debug = false
+
+  if not config.getParameter("speciesOrdering") then
+    makeUI()
+    pane.dismiss()
+  end
 
   spinners = config.getParameter("spinners")
   spinnerIndices = config.getParameter("spinnerIndices")
@@ -457,6 +460,60 @@ pantsColor.up   = function() pantsColor.main(1) end
 pantsColor.down = function() pantsColor.main(-1) end
 pantsColor.main = function(n) spinnerClothingColor("pants", "legs", n) end
 
+
+--former lua patch
+function makeUI()
+  local cfg = config.getParameter("")
+  engineEditor = root.assetJson("/interface/windowconfig/charcreation.config")
+  cfg.speciesOrdering = engineEditor.speciesOrdering
+
+  local validCallbacks = {}
+  for i = 1, #cfg.scriptWidgetCallbacks do
+    validCallbacks[cfg.scriptWidgetCallbacks[i]] = true
+  end
+
+  for k, v in pairs(engineEditor.paneLayout) do
+    if not cfg.gui[k] then
+      if v.callback and not validCallbacks[v.callback] then
+        v.callback = "null"
+      end
+      cfg.gui[k] = v
+    else
+      sb.logInfo(k)
+    end
+  end
+
+  cfg.speciesOrdering = engineEditor.speciesOrdering
+
+  if cfg.gui.labelRandomise then
+    cfg.gui.labelRandomise.value = cfg.labelRandomise
+  end
+
+  cfg.gui.btnSpeciesUp.position = {
+    engineEditor.paneLayout.labelSpeciesRadio.position[1] + 19,
+    engineEditor.paneLayout.labelSpeciesRadio.position[2] - 1
+  }
+  cfg.gui.btnSpeciesDown.position = {
+    engineEditor.paneLayout.labelSpeciesRadio.position[1] - 27,
+    engineEditor.paneLayout.labelSpeciesRadio.position[2] - 1
+  }
+
+  cfg.gui.gender.buttons[1].data = "male"
+  cfg.gui.gender.buttons[2].data = "female"
+
+  cfg.gui.mode.buttons[1].data.mode = "casual"
+  cfg.gui.mode.buttons[2].data.mode = "survival"
+  cfg.gui.mode.buttons[3].data.mode = "hardcore"
+
+--cfg.gui.name.enterKey = nil
+--cfg.gui.name.escapeKey = nil
+  cfg.gui.name.focus = false
+
+  cfg.gui.cancel.callback = "close"
+  cfg.gui.btnToggleClothing = nil
+
+  player.interact("scriptPane", cfg, pane.sourceEntity())
+end
 
 --DEBUG FUNCTIONS
 --[[
