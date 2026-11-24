@@ -612,14 +612,34 @@ StringList Root::scanForAssetSources(StringList const& directories, StringList c
   List<shared_ptr<AssetSource>> assetSources;
   StringMap<shared_ptr<AssetSource>> namedSources;
 
-  auto processEntry = [&](String const& sourcePath, bool isDirectory) -> bool {
+  function<bool(String const&, bool)> processEntry;
+  processEntry = [&](String const& sourcePath, bool isDirectory) -> bool {
     AssetSourcePtr source;
     auto name = File::baseName(sourcePath);
-    if (name.beginsWith(".") || name.beginsWith("_"))
+    if (name.beginsWith(".") || name.beginsWith("_")) {
       Logger::info("Root: Skipping hidden '{}' in asset directory", name);
-    else if (isDirectory)
+      return false;
+    }
+    if (isDirectory) {
+      // A mod folder may contain one or more pak files.  Steam Workshop items
+      // are handed to us as a single pak path, but local mods are dropped into
+      // the mods directory and can ship several paks (TerraLib ships three).
+      // Register every pak as its own asset source; treating the folder as a
+      // plain directory would only expose the pak files themselves.
+      StringList pakFiles;
+      for (auto const& entry : File::dirList(sourcePath, true).sorted()) {
+        if (!entry.second && entry.first.endsWith(".pak", String::CaseInsensitive))
+          pakFiles.append(File::relativeTo(sourcePath, entry.first));
+      }
+
+      if (!pakFiles.empty()) {
+        for (auto const& pakFile : pakFiles)
+          processEntry(pakFile, false);
+        return true;
+      }
+
       source = make_shared<DirectoryAssetSource>(sourcePath);
-    else if (sourcePath.endsWith(".pak"))
+    } else if (sourcePath.endsWith(".pak"))
       source = make_shared<PackedAssetSource>(sourcePath);
     else
       Logger::warn("Root: Unrecognized file in asset directory '{}', skipping", name);
@@ -718,7 +738,7 @@ StringList Root::scanForAssetSources(StringList const& directories, StringList c
       if (auto requirement = namedSources.ptr(requirementName))
         dependencySortVisit(*requirement);
       else
-        throw AssetSourceException(strf("Asset source '{}' is missing dependency '{}'{}", source->name ? *source->name : "<unnamed>", requirementName,
+        throw AssetSourceException(strf("Asset source '{}' ({}) is missing dependency '{}'{}", source->name ? *source->name : "<unnamed>", source->path, requirementName,
           requirementName != "base" ? "" :
             "\n\nThe base Starbound asset package could not be found, please copy it from another Starbound install!\n"
             "(Locate 'packed.pak' in vanilla Starbound's assets folder, then copy it to OpenStarbound's assets folder.)\n"), false);
