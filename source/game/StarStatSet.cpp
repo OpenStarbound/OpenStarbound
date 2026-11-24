@@ -275,8 +275,12 @@ void StatSet::update(float dt) {
     // actually changed: with fast-math the rescale can be evaluated as
     // (value * newMax) / oldMax, which for some maximums is not exactly
     // value when newMax == oldMax, leaving a full resource slightly below max.
-    if (p.second.maxValue && newMaxValue && *p.second.maxValue > 0.0f && *newMaxValue != *p.second.maxValue)
-      p.second.value *= *newMaxValue / *p.second.maxValue;
+    if (p.second.maxValue && newMaxValue && *p.second.maxValue > 0.0f && *newMaxValue != *p.second.maxValue) {
+      if (p.second.value >= *p.second.maxValue)
+        p.second.value = *newMaxValue;
+      else
+        p.second.value *= *newMaxValue / *p.second.maxValue;
+    }
 
     p.second.maxValue = newMaxValue;
     if (p.second.maxValue)
