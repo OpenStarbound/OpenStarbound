@@ -271,9 +271,16 @@ void StatSet::update(float dt) {
 
     // If the resource has a maximum value, rather than keeping the absolute
     // value of the resource the same between updates, the resource value
-    // should instead track the percentage.
-    if (p.second.maxValue && newMaxValue && *p.second.maxValue > 0.0f)
-      p.second.value *= *newMaxValue / *p.second.maxValue;
+    // should instead track the percentage. Only rescale when the maximum
+    // actually changed: with fast-math the rescale can be evaluated as
+    // (value * newMax) / oldMax, which for some maximums is not exactly
+    // value when newMax == oldMax, leaving a full resource slightly below max.
+    if (p.second.maxValue && newMaxValue && *p.second.maxValue > 0.0f && *newMaxValue != *p.second.maxValue) {
+      if (p.second.value >= *p.second.maxValue)
+        p.second.value = *newMaxValue;
+      else
+        p.second.value *= *newMaxValue / *p.second.maxValue;
+    }
 
     p.second.maxValue = newMaxValue;
     if (p.second.maxValue)
