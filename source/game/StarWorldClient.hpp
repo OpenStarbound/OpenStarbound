@@ -296,6 +296,7 @@ private:
   LuaRootPtr m_luaRoot;
 
   WorldGeometry m_geometry;
+  bool m_broadcastKeySet = false;
   uint64_t m_currentStep;
   double m_currentTime;
   bool m_fullBright;
