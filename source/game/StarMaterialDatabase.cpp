@@ -2,6 +2,7 @@
 #include "StarJsonExtra.hpp"
 #include "StarFormat.hpp"
 #include "StarAssets.hpp"
+#include "StarAssetDiagnostics.hpp"
 #include "StarRoot.hpp"
 #include "StarLogging.hpp"
 #include "StarParticleDatabase.hpp"
@@ -119,8 +120,13 @@ MaterialDatabase::MaterialDatabase() {
       if (material.id != materialId || !isRealMaterial(material.id))
         throw MaterialException(strf("Material id {} does not fall in the valid range\n", materialId));
 
-      if (containsMaterial(material.id))
-        throw MaterialException(strf("Duplicate material id {} found for material {}", material.id, material.name));
+      if (containsMaterial(material.id)) {
+        auto const& existing = getMaterialInfo(material.id);
+        throw MaterialException(strf("Duplicate material id {} found for material {}\n  Incoming: {}\n  Already registered: {}",
+            material.id, material.name,
+            AssetDiagnostics::describeDefinition(assets, material.name, material.path),
+            AssetDiagnostics::describeDefinition(assets, existing->name, existing->path)));
+      }
 
       if (isMaterialName(material.name))
         throw MaterialException(strf("Duplicate material name '{}' found", material.name));
@@ -189,8 +195,13 @@ MaterialDatabase::MaterialDatabase() {
       if (modId != mod.id || !isRealMod(mod.id))
         throw MaterialException(strf("Mod id {} does not fall in the valid range\n", mod.id));
 
-      if (containsMod(mod.id))
-        throw MaterialException(strf("Duplicate mod id {} found for mod {}", mod.id, mod.name));
+      if (containsMod(mod.id)) {
+        auto const& existing = getModInfo(mod.id);
+        throw MaterialException(strf("Duplicate mod id {} found for mod {}\n  Incoming: {}\n  Already registered: {}",
+            mod.id, mod.name,
+            AssetDiagnostics::describeDefinition(assets, mod.name, mod.path),
+            AssetDiagnostics::describeDefinition(assets, existing->name, existing->path)));
+      }
 
       if (m_modIndex.contains(mod.name) || m_metaModIndex.hasLeftValue(mod.name))
         throw MaterialException(strf("Duplicate mod name '{}' found", mod.name));

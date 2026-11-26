@@ -1,6 +1,7 @@
 #include "StarLiquidsDatabase.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarAssets.hpp"
+#include "StarAssetDiagnostics.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarMaterialDatabase.hpp"
 #include "StarRoot.hpp"
@@ -39,7 +40,7 @@ LiquidsDatabase::LiquidsDatabase() {
     try {
       auto liquidConfig = assets->json(file);
 
-      unsigned id = liquidConfig.getUInt("liquidId");
+      auto id = liquidConfig.getUInt("liquidId");
       if (id != (LiquidId)id)
         throw LiquidException(strf("Liquid id {} does not fall in the valid range, wrapped to {}\n", id, (LiquidId)id));
 
@@ -48,6 +49,25 @@ LiquidsDatabase::LiquidsDatabase() {
       entry->name = liquidConfig.getString("name");
       entry->path = file;
       entry->config = liquidConfig;
+
+      if (entry->id == EmptyLiquidId)
+        throw LiquidException(strf("Liquid id {} is reserved for engine liquid 'empty'\n  Incoming: {}",
+            entry->id, AssetDiagnostics::describeDefinition(assets, entry->name, entry->path)));
+
+      if (auto existing = liquidSettings(entry->id))
+        throw LiquidException(strf("Duplicate liquid id {} found for liquid {}\n  Incoming: {}\n  Already registered: {}",
+            entry->id, entry->name,
+            AssetDiagnostics::describeDefinition(assets, entry->name, entry->path),
+            AssetDiagnostics::describeDefinition(assets, existing->name, existing->path)));
+
+      if (auto existingId = m_liquidNames.maybe(entry->name)) {
+        auto existing = liquidSettings(*existingId);
+        auto description = existing
+            ? AssetDiagnostics::describeDefinition(assets, existing->name, existing->path)
+            : String("engine liquid 'empty' (reserved)");
+        throw LiquidException(strf("Duplicate liquid name '{}' found\n  Incoming: {}\n  Already registered: {}",
+            entry->name, AssetDiagnostics::describeDefinition(assets, entry->name, entry->path), description));
+      }
 
       JsonObject descriptions;
       for (auto pair : liquidConfig.iterateObject())
